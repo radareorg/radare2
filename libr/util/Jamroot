@@ -1,0 +1,8 @@
+OBJS = mem.c pool.c num.c str.c hex.c file.c alloca.c range.c log.c lib.c ;
+OBJS += prof.c cache.c sys.c buf.c w32-sys.c base64.c base85.c name.c ;
+OBJS += list.c flist.c ht.c ht64.c mixed.c btree.c chmod.c graph.c ;
+OBJS += regex/regcomp.c regex/regerror.c regex/regexec.c uleb128.c ;
+OBJS += sandbox.c calc.c thread.c lock.c strpool.c bitmap.c strht.c ;
+OBJS += p_date.c p_format.c print.c p_seven.c slist.c randomart.c strbuf.c ;
+
+lib r_util : $(OBJS) : <include>../include ;

@@ -14,8 +14,9 @@ R_API RAnalOp *r_anal_op_new() {
 		op->fail = -1;
 		op->ptr = -1;
 		op->val = -1;
-		op->esil[0] = 0;
+		r_strbuf_init (&op->esil);
 		op->next = NULL;
+		op->switch_op = NULL;
 	}
 	return op;
 }
@@ -27,10 +28,15 @@ R_API RList *r_anal_op_list_new() {
 }
 
 R_API void r_anal_op_fini(RAnalOp *op) {
-	if (op->src[0]) r_anal_value_free (op->src[0]);
-	if (op->src[1]) r_anal_value_free (op->src[1]);
-	if (op->src[2]) r_anal_value_free (op->src[2]);
-	if (op->dst) r_anal_value_free (op->dst);
+	r_anal_value_free (op->src[0]);
+	r_anal_value_free (op->src[1]);
+	r_anal_value_free (op->src[2]);
+	r_anal_value_free (op->dst);
+	if (op->switch_op) r_anal_switch_op_free(op->switch_op);
+	op->src[0] = NULL;
+	op->src[1] = NULL;
+	op->src[2] = NULL;
+	op->dst = NULL;
 	free (op->mnemonic);
 	op->mnemonic = NULL;
 	//op->src[0] = op->src[1] = op->src[2] = op->dst = NULL;
@@ -45,6 +51,7 @@ R_API void r_anal_op_free(void *_op) {
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ret = R_FALSE;
+	memset (op, 0, sizeof (RAnalOp));
 	if (len>0 && anal && op && anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret<1) op->type = R_ANAL_OP_TYPE_ILL;
@@ -60,6 +67,8 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	nop->src[1] = r_anal_value_copy (op->src[1]);
 	nop->src[2] = r_anal_value_copy (op->src[2]);
 	nop->dst = r_anal_value_copy (op->dst);
+	r_strbuf_init (&nop->esil);
+	r_strbuf_set (&nop->esil, r_strbuf_get (&op->esil));
 	return nop;
 }
 
@@ -139,8 +148,10 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
 	case R_ANAL_OP_TYPE_CALL  : return "call";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
+	case R_ANAL_OP_TYPE_CCALL : return "ccall";
 	case R_ANAL_OP_TYPE_REP   : return "rep";
 	case R_ANAL_OP_TYPE_RET   : return "ret";
+	case R_ANAL_OP_TYPE_CRET  : return "cret";
 	case R_ANAL_OP_TYPE_ILL   : return "ill";
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
 	case R_ANAL_OP_TYPE_NOP   : return "nop";
@@ -165,12 +176,17 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_LOAD  : return "load";
 	case R_ANAL_OP_TYPE_LEA   : return "lea";
 	case R_ANAL_OP_TYPE_LEAVE : return "leave";
+	case R_ANAL_OP_TYPE_ROR : return "ror";
+	case R_ANAL_OP_TYPE_ROL : return "rol";
+	case R_ANAL_OP_TYPE_XCHG : return "xchg";
+	case R_ANAL_OP_TYPE_MOD : return "mod";
+	case R_ANAL_OP_TYPE_SWITCH : return "switch";
 	}
 	return "undefined";
 }
 
 R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
-	return op->esil;
+	return r_strbuf_get (&op->esil);
 }
 
 // TODO: use esil here?
@@ -216,6 +232,21 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if (f) snprintf (ret, sizeof (ret), "%s()", f->name);
 		else  snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
+		break;
+	case R_ANAL_OP_TYPE_CCALL:
+		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
+		{
+		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
+		if (bb) {
+			cstr = r_anal_cond_to_string (bb->cond);
+			if (f) snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
+			else snprintf (ret, sizeof (ret), "if (%s) 0x%"PFMT64x"()", cstr, op->jump);
+			free (cstr);
+		} else {
+			if (f) snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
+			else snprintf (ret, sizeof (ret), "if (unk) 0x%"PFMT64x"()", op->jump);
+		}
+		}
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 		if (a1 == NULL || !strcmp (a0, a1))
@@ -264,9 +295,37 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_RET:
 		memcpy (ret, "ret", 4);
 		break;
+	case R_ANAL_OP_TYPE_CRET:
+		{
+		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
+		if (bb) {
+			cstr = r_anal_cond_to_string (bb->cond);
+			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
+			free (cstr);
+		} else memcpy (ret, "if (unk) ret", 13);
+		}
+		break;
 	case R_ANAL_OP_TYPE_LEAVE:
 		memcpy (ret, "leave", 6);
 		break;
+	case R_ANAL_OP_TYPE_MOD:
+		if (a1 == NULL || !strcmp (a0, a1))
+			snprintf (ret, sizeof (ret), "%s %%= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s %% %s", r0, a0, a1);
+		break;
+	case R_ANAL_OP_TYPE_XCHG:
+		if (a1 == NULL || !strcmp (a0, a1))
+			snprintf (ret, sizeof (ret), "tmp = %s; %s = %s; %s = tmp", r0, r0, a0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		break;
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_SWITCH:
+		eprintf ("Command not implemented.\n");
+		free (r0);
+		free (a0);
+		free (a1);
+		return NULL;
 	default:
 		free (r0);
 		free (a0);

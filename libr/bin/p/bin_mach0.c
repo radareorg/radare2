@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,22 +6,24 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
+static int load(RBinFile *arch) {
+	if (!(arch->o->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
 		return R_FALSE;
+	struct MACH0_(r_bin_mach0_obj_t) *mo = arch->o->bin_obj;
+	arch->o->kv = mo->kv;
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
-	MACH0_(r_bin_mach0_free) (arch->bin_obj);
+static int destroy(RBinFile *arch) {
+	MACH0_(r_bin_mach0_free) (arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
-	return MACH0_(r_bin_mach0_get_baddr) (arch->bin_obj);
+static ut64 baddr(RBinFile *arch) {
+	return MACH0_(r_bin_mach0_get_baddr) (arch->o->bin_obj);
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_mach0_addr_t *entry = NULL;
@@ -29,7 +31,7 @@ static RList* entries(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (arch->bin_obj)))
+	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->offset = entry->offset;
@@ -40,7 +42,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
@@ -49,7 +51,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = MACH0_(r_bin_mach0_get_sections) (arch->bin_obj)))
+	if (!(sections = MACH0_(r_bin_mach0_get_sections) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
@@ -68,7 +70,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	struct r_bin_mach0_symbol_t *symbols = NULL;
 	RList *ret = r_list_new ();
 	RBinSymbol *ptr = NULL;
@@ -76,11 +78,11 @@ static RList* symbols(RBinArch *arch) {
 
 	if (!ret) return NULL;
 	ret->free = free;
-	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (arch->bin_obj)))
+	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
 		if (!symbols[i].name[0] || symbols[i].addr<100) continue;
-		if (!(ptr = R_NEW (RBinSymbol)))
+		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -100,18 +102,18 @@ static RList* symbols(RBinArch *arch) {
 	return ret;
 }
 
-static RList* imports(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinImport *ptr = NULL;
+static RList* imports(RBinFile *arch) {
+	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->o->bin_obj;
 	struct r_bin_mach0_import_t *imports = NULL;
-	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->bin_obj;
-	int i;
 	const char *name, *type;
+	RBinImport *ptr = NULL;
+	RList *ret = NULL;
+	int i;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->bin_obj)))
+	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW (RBinImport)))
@@ -119,7 +121,7 @@ static RList* imports(RBinArch *arch) {
 		name = imports[i].name;
 		type = "FUNC";
 
-		// Objective-C class and metaclass imports.
+		// Objective-C class and dbginfoclass imports.
 		if (!strncmp (name, "_OBJC_CLASS_$", strlen ("_OBJC_CLASS_$"))) {
 			name += strlen ("_OBJC_CLASS_$");
 			type = "OBJC_CLASS";
@@ -131,12 +133,11 @@ static RList* imports(RBinArch *arch) {
 		// Remove the extra underscore that every import seems to have in Mach-O.
 		if (*name == '_')
 			name++;
-
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS-1);
+		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS-1);
+		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS-1);
 		ptr->ordinal = imports[i].ord;
-		if(bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
+		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
 			bin->imports_by_ord[ptr->ordinal] = ptr;
 		r_list_append (ret, ptr);
 	}
@@ -144,17 +145,17 @@ static RList* imports(RBinArch *arch) {
 	return ret;
 }
 
-static RList* relocs(RBinArch *arch) {
+static RList* relocs(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	struct r_bin_mach0_reloc_t *relocs = NULL;
-	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->bin_obj;
+	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->o->bin_obj;
 	int i;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(relocs = MACH0_(r_bin_mach0_get_relocs) (arch->bin_obj)))
+	if (!(relocs = MACH0_(r_bin_mach0_get_relocs) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !relocs[i].last; i++) {
 		// TODO(eddyb) filter these out earlier.
@@ -164,10 +165,9 @@ static RList* relocs(RBinArch *arch) {
 			break;
 		ptr->type = relocs[i].type;
 		ptr->additive = 0;
-		if(bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
+		if (bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
 			ptr->import = bin->imports_by_ord[relocs[i].ord];
-		else
-			ptr->import = NULL;
+		else ptr->import = NULL;
 		ptr->addend = relocs[i].addend;
 		ptr->rva = relocs[i].addr;
 		ptr->offset = relocs[i].offset;
@@ -177,14 +177,14 @@ static RList* relocs(RBinArch *arch) {
 	return ret;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	int i;
 	char *ptr = NULL;
 	struct r_bin_mach0_lib_t *libs;
 	RList *ret = r_list_new ();
 	if (!ret) return NULL;
 	ret->free = free;
-	if ((libs = MACH0_(r_bin_mach0_get_libs) (arch->bin_obj))) {
+	if ((libs = MACH0_(r_bin_mach0_get_libs) (arch->o->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
 			ptr = strdup (libs[i].name);
 			r_list_append (ret, ptr);
@@ -194,7 +194,7 @@ static RList* libs(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
@@ -202,36 +202,37 @@ static RBinInfo* info(RBinArch *arch) {
 	ret->lang = "c";
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if ((str = MACH0_(r_bin_mach0_get_class) (arch->bin_obj))) {
+	if ((str = MACH0_(r_bin_mach0_get_class) (arch->o->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
 	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, MACH0_(r_bin_mach0_get_os) (arch->bin_obj), R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->os, MACH0_(r_bin_mach0_get_os) (arch->o->bin_obj),
+		R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
-	if ((str = MACH0_(r_bin_mach0_get_cputype) (arch->bin_obj))) {
+	if ((str = MACH0_(r_bin_mach0_get_cputype) (arch->o->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = MACH0_(r_bin_mach0_get_cpusubtype) (arch->bin_obj))) {
+	if ((str = MACH0_(r_bin_mach0_get_cpusubtype) (arch->o->bin_obj))) {
 		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = MACH0_(r_bin_mach0_get_filetype) (arch->bin_obj))) {
+	if ((str = MACH0_(r_bin_mach0_get_filetype) (arch->o->bin_obj))) {
 		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->bin_obj);
-	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->bin_obj);
+	ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
+	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
 	/* TODO detailed debug info */
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
-	ret->has_pi = MACH0_(r_bin_mach0_is_pie) (arch->bin_obj);
+	ret->has_pi = MACH0_(r_bin_mach0_is_pie) (arch->o->bin_obj);
 	return ret;
 }
 
 #if !R_BIN_MACH064
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf) {
 		if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
 			!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4))
@@ -244,23 +245,23 @@ static int check(RBinArch *arch) {
 typedef struct r_bin_create_t {
 	int arch;
 	ut8 *code;
-	int codelen;
+	int clen;
 	ut8 *data;
-	int datalen;
+	int dlen;
 } RBinCreate;
 #endif
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen) {
 	ut32 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen;
 	ut32 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
 	ut32 p_datafsz = 0, p_datava = 0, p_datasz = 0, p_datapa = 0;
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
-	int is_arm = !strcmp (bin->cur.o->info->arch, "arm");
+	int is_arm = !strcmp (bin->cur->o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
-	if (bin->cur.o->info->bits == 64) {
+	if (bin->cur->o->info->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
 		return NULL;
 	}
@@ -284,7 +285,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	}
 	D (2); // filetype (executable)
 
-	if (data && datalen>0) {
+	if (data && dlen>0) {
 		ncmds = 3;
 		cmdsize = 0;
 	} else {
@@ -327,7 +328,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // reserved
 	D (0);
 
-	if (data && datalen>0) {
+	if (data && dlen>0) {
 		/* DATA SEGMENT */
 		D (1);   // cmd.LC_SEGMENT
 		D (124); // sizeof (cmd)
@@ -382,40 +383,40 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	cmdsize = buf->length - magiclen;
 
 	codeva = buf->length + baddr;
-	datava = buf->length + codelen + baddr;
+	datava = buf->length + clen + baddr;
 	W (p_entry, &codeva, 4); // set PC
 
 	/* fill header variables */
 	W (p_cmdsize, &cmdsize, 4);
-	filesize = magiclen + cmdsize + codelen + datalen;
+	filesize = magiclen + cmdsize + clen + dlen;
 	// TEXT SEGMENT //
 	W (p_codefsz, &filesize, 4);
 	W (p_codeva, &codeva, 4);
-	W (p_codesz, &codelen, 4);
+	W (p_codesz, &clen, 4);
 	p_tmp = codeva - baddr;
 	W (p_codepa, &p_tmp, 4);
 
-	B (code, codelen);
+	B (code, clen);
 
-	if (data && datalen>0) {
+	if (data && dlen>0) {
 		/* append data */
 		W (p_datafsz, &filesize, 4);
 		W (p_datava, &datava, 4);
-		W (p_datasz, &datalen, 4);
+		W (p_datasz, &dlen, 4);
 		p_tmp = datava - baddr;
 		W (p_datapa, &p_tmp, 4);
-		B (data, datalen);
+		B (data, dlen);
 	}
 
 	return buf;
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
+static RBinAddr* binsym(RBinFile *arch, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		addr = MACH0_(r_bin_mach0_get_main) (arch->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
 		ret->offset = ret->rva = addr;
@@ -424,7 +425,7 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 	return ret;
 }
 
-static int size(RBinArch *arch) {
+static int size(RBinFile *arch) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!arch->o->sections) {
@@ -441,15 +442,17 @@ static int size(RBinArch *arch) {
 	return off+len;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mach0 = {
+RBinPlugin r_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -461,7 +464,7 @@ struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

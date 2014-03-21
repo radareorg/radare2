@@ -1,14 +1,15 @@
-.Em
 .TH RAHASH2 1
 .SH NAME
 hasher2 \- block based hashing utility
-.Dd Apr 2, 2013
+.Dd Nov 11, 2013
 .Sh SYNOPSIS
 .Nm hasher2
-.Op Fl hBrkv
+.Op Fl heBrkv
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
 .Op Fl s Ar string
+.Op Fl i Ar iterations
+.Op Fl S Ar seed
 .Op Fl f Ar from
 .Op Fl t Ar to
 .Op [file] ...
@@ -27,12 +28,18 @@ This is the command used by the '#' command of radare.
 Select an algorithm for the hashing. Valid values are md5, crc32 and sha1
 .It Fl b Ar blocksize
 Define the block size
+.It Fl e
+Use little endian to display checksums
+.It Fl i Ar iters
+Apply the hash Iters times to itself+seed
 .It Fl B
 Show per-block hash
 .It Fl k
 Show result using OpenSSH's VisualHostKey randomart algorithm
 .It Fl s Ar string
 Hash this string instead of using the 'source' and 'hash-file' arguments.
+.It Fl S Ar [^]s:string|hexstr
+Set seed to hash with, use ^to prefix seed, otherwise its suffixed.
 .It Fl f Ar from
 Start hashing at given address
 .It Fl t Ar to
@@ -57,5 +64,4 @@ Show usage help message.
 .Xr rax2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <pancake@nopcode.org>,
-nibble <nibble@develsec.org>
+pancake <pancake@nopcode.org>

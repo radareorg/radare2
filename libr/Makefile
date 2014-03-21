@@ -9,10 +9,10 @@ IFX=${DESTDIR}/${INCLUDEDIR}
 PWD=$(shell pwd)
 
 LIBS0=util hash
-LIBS1=reg cons db magic lib diff bp search config socket
-LIBS2=syscall cmd lang io crypto flags bin
+LIBS1=reg cons db magic diff bp search config socket
+LIBS2=syscall lang io crypto flags bin
 LIBS3=fs anal
-LIBS4=parse sign
+LIBS4=parse
 LIBS5=asm debug
 LIBS6=egg
 #LIBS6+=print
@@ -92,28 +92,25 @@ symstall install-symlink:
 			ln -fs ${PWD}/../pkgcfg/$${a} ${LFX}/pkgconfig/$${a} ; \
 		fi ; \
 	done
-	for a in ${LIBS} ; do \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${LFX}/libr_$${a}.${EXT_SO} ; \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${LFX}/libr_$${a}.${EXT_SO}.${LIBVERSION} ; \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${LFX}/libr_$${a}.${EXT_AR} ; \
-		for b in $${a}/p/*.${EXT_SO} ; do \
-			if [ -e ${PWD}/$${b} ] ; then \
-				ln -fs ${PWD}/$${b} ${LFX}/radare2/${VERSION}/ ; \
-			fi ; \
-		done ; \
-		( cd ${LFX}/radare2 ; ln -fs ${VERSION} last ) ; \
-	done
+	@$(foreach lib,${LIBS}, \
+	  ln -fs ${PWD}/$(lib)/libr_$(lib).${EXT_SO} ${LFX}/libr_$(lib).${EXT_SO} ; \
+	  ln -fs ${PWD}/$(lib)/libr_$(lib).${EXT_SO} ${LFX}/$(call libname-version,libr_$(lib).${EXT_SO},${LIBVERSION}) ; \
+	  ln -fs ${PWD}/$(lib)/libr_$(lib).${EXT_AR} ${LFX}/libr_$(lib).${EXT_AR} ; \
+	  $(foreach module,$(wildcard $(lib)/p/*.${EXT_SO}), \
+	    ln -fs ${PWD}/$(module) ${LFX}/radare2/${VERSION}/ ; \
+	  ) \
+	  ( cd ${LFX}/radare2 ; ln -fs ${VERSION} last ) ; \
+	)
 
 install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${LFX}
-	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib | grep -v /p/` ; do \
-	  b=`echo $$a|cut -d / -f 2`; \
-	  echo " ${LFX}/$$b.${LIBVERSION}"; \
-	  ${INSTALL_LIB} $$a ${LFX}/$$b.${LIBVERSION} ; \
-	  ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b ) ; \
-	done
+	@$(foreach lib,$(shell find * -type f | grep -e '\.${EXT_SO}$$' | grep -Ev '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
+	  echo " ${LFX}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
+	  ${INSTALL_LIB} $(lib) ${LFX}/$(call libpath-to-name-version,$(lib),${LIBVERSION}); \
+	  ( cd ${LFX} ; ln -fs $(call libpath-to-name-version,$(lib),${LIBVERSION}) $(call libpath-to-name,$(lib)) ) ; \
+	)
 	# object archives
 	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
 	  echo " ${LFX}/$$a"; ${INSTALL_DATA} $$a ${LFX} ; done
@@ -122,9 +119,10 @@ install: install-includes install-pkgconfig
 	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll | grep ${EXT_SO}`; \
 	  do echo " ${LFX}/radare2/${VERSION}/$$a"; \
 	${INSTALL_DATA} $$a ${LFX}/radare2/${VERSION} ; done
-	@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
-	${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
 	cd ${LFX}/radare2 ; ln -fs ${VERSION} last
+
+#@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
+#${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
 
 deinstall uninstall:
 	# libraries

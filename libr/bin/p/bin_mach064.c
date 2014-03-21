@@ -3,7 +3,7 @@
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
 		!memcmp (arch->buf->buf, "\xcf\xfa\xed\xfe", 4))
@@ -160,12 +160,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
+static RBinAddr* binsym(RBinFile *arch, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		addr = MACH0_(r_bin_mach0_get_main) (arch->o->bin_obj);
 		if (!addr || !(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
@@ -178,12 +178,14 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 RBinPlugin r_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -194,7 +196,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
@@ -8,11 +8,24 @@ static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len = strlen (input);
 	char *tmp, *str, *ostr;
 	RCore *core = (RCore *)data;
-	#define WSEEK(x,y) if(wseek)r_core_seek_delta(x,y)
+	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	str = ostr = strdup (input+1);
 
 	switch (*input) {
+	case 'h':
+		{
+		char *p = strchr (input, ' ');
+		if (p) {
+			while (*p==' ') p++;
+			p = r_file_path (p);
+			if (p) {
+				r_cons_printf ("%s\n", p);
+				free (p);
+			}
+		}
+		}
+		break;
 	case 'p':
 		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
 			const char *tmpfile = ".tmp";
@@ -29,6 +42,60 @@ static int cmd_write(void *data, const char *input) {
 		} else {
 			eprintf ("Usage: wp [-|r2patch-file]\n"
 			         "TODO: rapatch format documentation here\n");
+		}
+		break;
+	case 'u':
+		// TODO: implement it in an API RCore.write_unified_hexpatch() is ETOOLONG
+		if (input[1]==' ') {
+			char *data = r_file_slurp (input+2, NULL);
+			if (data) {
+				char sign = ' ';
+				int line = 0, offs = 0, hexa = 0;
+				int newline = 1;
+				for (i=0; data[i]; i++) {
+					switch (data[i]) {
+					case '+':
+						if (newline)
+							sign = 1;
+						break;
+					case '-':
+						if (newline) {
+							sign = 0;
+							offs = i + ((data[i+1]==' ')?2:1);
+						}
+						break;
+					case ' ':
+						data[i] = 0;
+						if (sign) {
+							if (!line) line = i+1;
+							else
+							if (!hexa) hexa = i+1;
+						}
+						break;
+					case '\r':
+						break;
+					case '\n':
+						newline = 1;
+						if (sign == -1) {
+							offs = 0;
+							line = 0;
+							hexa = 0;
+						} else if (sign) {
+							if (offs && hexa) {
+								r_cons_printf ("wx %s @ %s\n", data+hexa, data+offs);
+							} else eprintf ("food\n");
+							offs = 0;
+							line = 0;
+						} else hexa = 0;
+						sign = -1;
+						continue;
+					}
+					newline = 0;
+				}
+				free (data);
+			}
+		} else {
+			eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
 		}
 		break;
 	case 'r':
@@ -63,14 +130,14 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '?':
 		default:
-			r_cons_printf ("Usage: wA [type] [value]\n"
-			"Types:\n"
-			" r   raw write value\n"
-			" v   set value (taking care of current address)\n"
-			" d   destination register\n"
-			" 0   1st src register\n"
-			" 1   2nd src register\n"
-			"Example: wA r 0 # e800000000\n");
+			r_cons_printf ("|Usage: wA [type] [value]\n"
+			"|Types:\n"
+			"| r   raw write value\n"
+			"| v   set value (taking care of current address)\n"
+			"| d   destination register\n"
+			"| 0   1st src register\n"
+			"| 1   2nd src register\n"
+			"|Example: wA r 0 # e800000000\n");
 			break;
 		}
 		break;
@@ -117,13 +184,13 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '?':
 			r_cons_printf (
-			"Usage: wc[ir*?]\n"
-			" wc           list all write changes\n"
-			" wc- [a] [b]  remove write op at curseek or given addr\n"
-			" wc*          \"\" in radare commands\n"
-			" wcr          reset all write changes in cache\n"
-			" wci          commit write cache\n"
-			"NOTE: Requires 'e io.cache=true'\n");
+			"|Usage: wc[ir*?]\n"
+			"| wc           list all write changes\n"
+			"| wc- [a] [b]  remove write op at curseek or given addr\n"
+			"| wc*          \"\" in radare commands\n"
+			"| wcr          reset all write changes in cache\n"
+			"| wci          commit write cache\n"
+			"|NOTE: Requires 'e io.cache=true'\n");
 			break;
 		case '*':
 			r_io_cache_list (core->io, R_TRUE);
@@ -137,7 +204,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case ' ':
 		/* write string */
-		len = r_str_escape (str);
+		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str, len);
 #if 0
 		r_io_set_fd (core->io, core->file->fd);
@@ -176,7 +243,7 @@ static int cmd_write(void *data, const char *input) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
 			WSEEK (core, size);
-			free(buf);
+			free (buf);
 			r_core_block_read (core, 0);
 		} else eprintf ("Cannot open file '%s'\n", arg);
 		break;
@@ -230,8 +297,10 @@ static int cmd_write(void *data, const char *input) {
 		len = r_hex_str2bin (input+1, buf);
 		if (len != 0) {
 			if (len<0) len = -len+1;
-			b = core->block[len]&0xf;
-			b |= (buf[len]&0xf0);
+			if (len<core->blocksize) {
+				b = core->block[len]&0xf;
+				b |= (buf[len]&0xf0);
+			} else b = buf[len];
 			buf[len] = b;
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
@@ -258,8 +327,8 @@ static int cmd_write(void *data, const char *input) {
 					r_cons_printf ("wx %s\n", acode->buf_hex);
 				} else {
 					if (r_config_get_i (core->config, "scr.prompt"))
-					eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-					r_core_write_at (core, core->offset, acode->buf, acode->len);
+						eprintf ("Written %d bytes (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
+						r_core_write_at (core, core->offset, acode->buf, acode->len);
 					WSEEK (core, acode->len);
 					r_core_block_read (core, 0);
 				}
@@ -287,13 +356,13 @@ static int cmd_write(void *data, const char *input) {
 			} else eprintf ("Wrong argument\n");
 			break;
 		default:
-			eprintf ("Usage: wa[of*] [arg]\n"
-				" wa nop           : write nopcode using asm.arch and asm.bits\n"
-				" wa* mov eax, 33  : show 'wx' op with hexpair bytes of sassembled opcode\n"
-				" \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
-				" waf foo.asm      : assemble file and write bytes\n"
-				" wao nop          : convert current opcode into nops\n"
-				" wao?             : show help for assembler operation on current opcode (hack)\n");
+			r_cons_printf ("|Usage: wa[of*] [arg]\n"
+				"| wa nop           : write nopcode using asm.arch and asm.bits\n"
+				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of sassembled opcode\n"
+				"| \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
+				"| waf foo.asm      : assemble file and write bytes\n"
+				"| wao nop          : convert current opcode into nops\n"
+				"| wao?             : show help for assembler operation on current opcode (hack)\n");
 			break;
 		}
 		break;
@@ -322,7 +391,7 @@ static int cmd_write(void *data, const char *input) {
 		case '?':
 			break;
 		case '-':
-			r_io_set_write_mask(core->io, 0, 0);
+			r_io_set_write_mask (core->io, 0, 0);
 			eprintf ("Write mask disabled\n");
 			break;
 		case ' ':
@@ -348,10 +417,10 @@ static int cmd_write(void *data, const char *input) {
 
 			switch (input[1]) {
 			case '?':
-				r_cons_printf ("Usage: wv[size] [value]    # write value of given size\n"
-					"  wv1 234      # write one byte with this value\n"
-					"  wv 0x834002  # write dword with this value\n"
-					"Supported sizes are: 1, 2, 4, 8\n");
+				r_cons_printf ("|Usage: wv[size] [value]    # write value of given size\n"
+					"|  wv1 234      # write one byte with this value\n"
+					"|  wv 0x834002  # write dword with this value\n"
+					"|Supported sizes are: 1, 2, 4, 8\n");
 				return 0;
 			case '1': type = 1; break;
 			case '2': type = 2; break;
@@ -429,27 +498,27 @@ static int cmd_write(void *data, const char *input) {
 			case '?':
 			default:
 				r_cons_printf (
-						"Usage: wo[asmdxoArl24] [hexpairs] @ addr[:bsize]\n"
-						"Example:\n"
-						"  wox 0x90   ; xor cur block with 0x90\n"
-						"  wox 90     ; xor cur block with 0x90\n"
-						"  wox 0x0203 ; xor cur block with 0203\n"
-						"  woa 02 03  ; add [0203][0203][...] to curblk\n"
-						"  woe 02 03  \n"
-						"Supported operations:\n"
-						"  wow  ==  write looped value (alias for 'wb')\n"
-						"  woa  +=  addition\n"
-						"  wos  -=  substraction\n"
-						"  wom  *=  multiply\n"
-						"  wod  /=  divide\n"
-						"  wox  ^=  xor\n"
-						"  woo  |=  or\n"
-						"  woA  &=  and\n"
-						"  woR  random bytes (alias for 'wr $b'\n"
-						"  wor  >>= shift right\n"
-						"  wol  <<= shift left\n"
-						"  wo2  2=  2 byte endian swap\n"
-						"  wo4  4=  4 byte endian swap\n"
+					"|Usage: wo[asmdxoArl24] [hexpairs] @ addr[:bsize]\n"
+					"|Example:\n"
+					"|  wox 0x90   ; xor cur block with 0x90\n"
+					"|  wox 90     ; xor cur block with 0x90\n"
+					"|  wox 0x0203 ; xor cur block with 0203\n"
+					"|  woa 02 03  ; add [0203][0203][...] to curblk\n"
+					"|  woe 02 03  \n"
+					"|Supported operations:\n"
+					"|  wow  ==  write looped value (alias for 'wb')\n"
+					"|  woa  +=  addition\n"
+					"|  wos  -=  substraction\n"
+					"|  wom  *=  multiply\n"
+					"|  wod  /=  divide\n"
+					"|  wox  ^=  xor\n"
+					"|  woo  |=  or\n"
+					"|  woA  &=  and\n"
+					"|  woR  random bytes (alias for 'wr $b'\n"
+					"|  wor  >>= shift right\n"
+					"|  wol  <<= shift left\n"
+					"|  wo2  2=  2 byte endian swap\n"
+					"|  wo4  4=  4 byte endian swap\n"
 						);
 				break;
 		}
@@ -457,7 +526,7 @@ static int cmd_write(void *data, const char *input) {
 	case 's':
 		{
 			ut8 ulen;
-			len = r_str_escape (str+1);
+			len = r_str_unescape (str+1);
 			if (len>255) {
 				eprintf ("Too large\n");
 			} else {
@@ -478,24 +547,25 @@ static int cmd_write(void *data, const char *input) {
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core, 0);
 		} else r_cons_printf (
-			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
-			" w foobar     write string 'foobar'\n"
-			" wr 10        write 10 random bytes\n"
-			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
-			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
-			" waf file     assemble file and write bytes\n"
-			" wA r 0       alter/modify opcode at current seek (see wA?)\n"
-			" wb 010203    fill current block with cyclic hexpairs\n"
-			" wc[ir*?]     write cache undo/commit/reset/list (io.cache)\n"
-			" wx 9090      write two intel nops\n"
-			" wv eip+34    write 32-64 bit value\n"
-			" wo? hex      write in block with operation. 'wo?' fmi\n"
-			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
-			" ws pstring   write 1 byte for length and then the string\n"
-			" wf -|file    write contents of file at current offset\n"
-			" wF -|file    write contents of hexpairs file here\n"
-			" wp -|file    apply radare patch file. See wp? fmi\n"
-			" wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
+			"|Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
+			"| w foobar     write string 'foobar'\n"
+			"| wh r2        whereis/which shell command\n"
+			"| wr 10        write 10 random bytes\n"
+			"| ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
+			"| wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
+			"| waf file     assemble file and write bytes\n"
+			"| wA r 0       alter/modify opcode at current seek (see wA?)\n"
+			"| wb 010203    fill current block with cyclic hexpairs\n"
+			"| wc[ir*?]     write cache undo/commit/reset/list (io.cache)\n"
+			"| wx 9090      write two intel nops\n"
+			"| wv eip+34    write 32-64 bit value\n"
+			"| wo? hex      write in block with operation. 'wo?' fmi\n"
+			"| wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
+			"| ws pstring   write 1 byte for length and then the string\n"
+			"| wf -|file    write contents of file at current offset\n"
+			"| wF -|file    write contents of hexpairs file here\n"
+			"| wp -|file    apply radare patch file. See wp? fmi\n"
+			"| wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
 			);
 			//TODO: add support for offset+seek
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"

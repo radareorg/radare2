@@ -1,0 +1,57 @@
+=pc	eip
+=sp	esp
+=bp	ebp
+=a0	eax
+=a1	ebx
+=a2	ecx
+=a3	edi
+=zf	zf
+=sf	sf
+=of	of
+=cf	cf
+gpr	eip	.32	128	0
+gpr	ip	.16	128	0
+gpr	oeax	.32	120	0
+gpr	eax	.32	80	0
+gpr	ax	.16	80	0
+gpr	ah	.8	80	0
+gpr	al	.8	81	0
+gpr	ebx	.32	40	0
+gpr	bx	.16	40	0
+gpr	bh	.8	40	0
+gpr	bl	.8	41	0
+gpr	ecx	.32	88	0
+gpr	cx	.16	88	0
+gpr	ch	.8	88	0
+gpr	cl	.8	89	0
+gpr	edx	.32	96	0
+gpr	dx	.16	96	0
+gpr	dh	.8	96	0
+gpr	dl	.8	97	0
+gpr	esp	.32	152	0
+gpr	sp	.16	152	0
+gpr	ebp	.32	32	0
+gpr	bp	.16	32	0
+gpr	esi	.32	104	0
+gpr	si	.16	104	0
+gpr	edi	.32	112	0
+gpr	di	.16	112	0
+seg	xfs	.32	200	0
+seg	xgs	.32	208	0
+seg	xcs	.32	136	0
+seg	cs	.16	136	0
+seg	xss	.32	160	0
+gpr	eflags	.32	144	0	c1p.a.zstido.n.rv
+gpr	flags	.16	144	0
+gpr	cf	.1	.1152	0	carry
+gpr	pf	.1	.1154	0	parity
+gpr	af	.1	.1156	0	adjust
+gpr	zf	.1	.1158	0	zero
+gpr	sf	.1	.1159	0	sign
+gpr	tf	.1	.1160	0	trap
+gpr	if	.1	.1161	0	interrupt
+gpr	df	.1	.1162	0	direction
+gpr	of	.1	.1163	0	overflow
+drx	dr0	.32	0	0
+drx	dr1	.32	4	0
+drx	dr2	.32	8	0

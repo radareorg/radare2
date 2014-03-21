@@ -1,0 +1,40 @@
+IO_OBJS = buffer.c cache.c desc.c dummy.c io.c ;
+IO_OBJS += map.c plugin.c section.c undo.c ;
+
+# plugins
+
+IO_OBJS +=
+    p/io_bfdbg.c
+    p/io_debug.c
+ p/io_ewf.c
+    p/io_gdb.c
+    p/io_haret.c
+    p/io_http.c
+    p/io_ihex.c
+    p/io_mach.c
+    p/io_malloc.c
+    p/io_mmap.c
+    p/io_procpid.c
+    p/io_ptrace.c
+    p/io_rap.c
+    p/io_shm.c
+    p/io_w32.c
+    p/io_w32dbg.c
+    p/io_zip.c
+;
+
+IO_EXTRA +=
+    <library>../../shlr/zip
+    <include>../../shlr/zip/include
+    <include>../debug/p/libgdbwrap/include
+;
+
+lib r_io : $(IO_OBJS) : <include>../include
+    <define>CORELIB
+    <library>../util 
+    <library>../lib
+    <library>../socket
+    <library>../cons
+    <define>HAVE_LIB_EWF=0
+    $(IO_EXTRA)
+;

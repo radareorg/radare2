@@ -1,0 +1,4 @@
+OBJS = state.c md5c.c crc16.c crc32.c sha1.c hash.c md4.c ;
+OBJS += hamdist.c entropy.c sha2.c calc.c xxhash.c adler32.c ;
+
+lib r_hash : $(OBJS) : <include>../include ;

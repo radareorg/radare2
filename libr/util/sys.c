@@ -10,11 +10,11 @@
 #if __APPLE__
 #include <errno.h>
 #include <execinfo.h>
-#ifndef PROC_PIDPATHINFO_MAXSIZE
-#define PROC_PIDPATHINFO_MAXSIZE 512
-#else
-#include <libproc.h>
-#endif
+# ifndef PROC_PIDPATHINFO_MAXSIZE
+#  define PROC_PIDPATHINFO_MAXSIZE 1024
+int proc_pidpath(int pid, void * buffer, ut32 buffersize);
+//#  include <libproc.h>
+# endif
 #endif
 #if __UNIX__
 # include <sys/wait.h>
@@ -40,7 +40,7 @@ struct {const char* name; ut64 bit;} const static arch_bit_array[] = {
     {"mips", R_SYS_ARCH_MIPS},
     {"sparc", R_SYS_ARCH_SPARC},
     {"csr", R_SYS_ARCH_CSR},
-    {"c55+", R_SYS_ARCH_C55PLUS},
+    {"tms320", R_SYS_ARCH_TMS320},
     {"msil", R_SYS_ARCH_MSIL},
     {"objd", R_SYS_ARCH_OBJD},
     {"bf", R_SYS_ARCH_BF},
@@ -61,8 +61,8 @@ R_API ut64 r_sys_now(void) {
 	struct timeval now;
 	gettimeofday (&now, NULL);
 	ret = now.tv_sec;
-	ret <<= 32;
-	ret += now.tv_usec;
+	ret <<= 20;
+	ret |= now.tv_usec;
 	//(sizeof (now.tv_sec) == 4
 	return ret;
 }
@@ -93,6 +93,7 @@ R_API RList *r_sys_dir(const char *path) {
 			return list;
 		}
 	}
+	closedir (dir);
 	return NULL;
 }
 
@@ -145,7 +146,7 @@ R_API void r_sys_backtrace(void) {
 
 R_API int r_sys_sleep(int secs) {
 #if __UNIX__
-	return sleep(secs);
+	return sleep (secs);
 #else
 	Sleep (secs * 1000); // W32
 	return 0;
@@ -154,8 +155,11 @@ R_API int r_sys_sleep(int secs) {
 
 R_API int r_sys_usleep(int usecs) {
 #if __UNIX__
+	// unix api uses microseconds
 	return usleep (usecs);
 #else
+	// w32 api uses milliseconds
+	usecs /= 1000;
 	Sleep (usecs); // W32
 	return 0;
 #endif
@@ -238,23 +242,30 @@ R_API int r_sys_crash_handler(const char *cmd) {
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__
 	static char envbuf[1024];
+	if (!key) return NULL;
 	envbuf[0] = 0;
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	// TODO: handle return value of GEV
 	return *envbuf? strdup (envbuf): NULL;
 #else
-	char *b = getenv (key);
+	char *b;
+	if (!key) return NULL;
+	b = getenv (key);
 	return b? strdup (b): NULL;
 #endif
 }
 
 R_API char *r_sys_getdir(void) {
+	char *ret;
 #if __WINDOWS__
 	char *cwd = _getcwd (NULL, 0);
 #else
 	char *cwd = getcwd (NULL, 0);
 #endif
-	return cwd? strdup (cwd): NULL;
+	ret = cwd ? strdup (cwd) : NULL;
+	if (cwd)
+		free (cwd);
+	return ret;
 }
 
 R_API int r_sys_chdir(const char *s) {
@@ -275,14 +286,14 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		if (pipe (sh_out)) {
 			close (sh_in[0]);
 			close (sh_in[1]);
+			close (sh_out[0]);
+			close (sh_out[1]);
 			return R_FALSE;
 		}
 	}
 	if (pipe (sh_err)) {
 		close (sh_in[0]);
 		close (sh_in[1]);
-		close (sh_out[0]);
-		close (sh_out[1]);
 		return R_FALSE;
 	}
 
@@ -334,6 +345,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				outputptr = r_str_concat (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
 				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;
+				buffer[sizeof(buffer) - 1] = '\0';
 				*sterr = r_str_concat (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				bytes = write (sh_in[1], inputptr, strlen (inputptr));
@@ -352,18 +364,16 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		close (sh_in[1]);
 		waitpid (pid, &status, 0);
 		if (status != 0) {
-			eprintf ("%s: command '%s' returned !0\n", __func__, cmd);
+			char *escmd = r_str_escape (cmd);
+			eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			free (escmd);
 			return R_FALSE;
 		}
 
-		if (output) {
-			*output = outputptr;
-		} else if (outputptr) {
-			free(outputptr);
-		}
+		if (output) *output = outputptr;
+		else free (outputptr);
 		return R_TRUE;
 	}
-	free(outputptr);
 	return R_FALSE;
 }
 #elif __WINDOWS__
@@ -504,9 +514,13 @@ R_API const char *r_sys_arch_str(int arch) {
 	return "none";
 }
 
+#define USE_FORK 0
 R_API int r_sys_run(const ut8 *buf, int len) {
 	const int sz = 4096;
 	int pdelta, ret, (*cb)();
+#if USE_FORK
+	int st, pid;
+#endif
 // TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *ptr, *p = malloc ((sz+len)<<1);
 	ptr = p;
@@ -522,7 +536,32 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	r_mem_protect (ptr, sz, "rx");
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
+#if USE_FORK
+#if __UNIX__
+	pid = fork ();
+	//pid = -1;
+#else
+	pid = -1;
+#endif
+	if (pid<0) {
+		return cb ();
+	} else if (!pid) {
+		ret = cb ();
+		exit (ret);
+		return ret;
+	}
+	st = 0;
+	waitpid (pid, &st, 0);
+	if (WIFSIGNALED (st)) {
+		int num = WTERMSIG(st);
+		eprintf ("Got signal %d\n", num);
+		ret = num;
+	} else {
+		ret = WEXITSTATUS (st);
+	}
+#else
 	ret = cb ();
+#endif
 	free (p);
 	return ret;
 }
@@ -550,10 +589,32 @@ R_API char *r_sys_pid_to_path(int pid) {
 		return NULL;
 	return strdup (pathbuf);
 #else
+	int ret;
 	char buf[128], pathbuf[1024];
+#if __FreeBSD__
+	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+#else
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	if (readlink (buf, pathbuf, sizeof (pathbuf))<1)
+#endif
+	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
+	if (ret<1)
 		return NULL;
+	pathbuf[ret] = 0;
 	return strdup (pathbuf);
 #endif
+}
+
+static char** env = NULL;
+
+R_API char **r_sys_get_environ () {
+	// return environ if available??
+	if (!env) {
+		env = r_lib_dl_sym (NULL, "environ");
+eprintf ("SET %p\n", env);
+}
+	return env;
+}
+
+R_API void r_sys_set_environ (char **e) {
+	env = e;
 }

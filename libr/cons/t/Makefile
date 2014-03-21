@@ -1,3 +1,7 @@
+CFLAGS+=-I../../include
+LDFLAGS+=-lr_cons -L../../libr/cons
+LDFLAGS+=-lr_util -L../../libr/util
+
 all:
-	gcc -o editor editor.c -I../../include -lr_cons -L../../libr/cons -L../../libr/util -lr_util
-	gcc -o test-rgb test-rgb.c -I../../include -lr_cons -L../../libr/cons -L../../libr/util -lr_util
+	$(CC) -o editor editor.c $(CFLAGS) $(LDFLAGS)
+	$(CC) -o test-rgb test-rgb.c $(CFLAGS) $(LDFLAGS)

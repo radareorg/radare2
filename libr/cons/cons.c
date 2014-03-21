@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_cons.h>
 #include <stdio.h>
@@ -137,19 +137,41 @@ static void resize (int sig) {
 }
 #endif
 
+// http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
+R_API int r_cons_enable_mouse (const int enable) {
+#if __UNIX__
+// TODO: this sequence must be flushed, so maybe we should not use the rcons buffer api
+	int enabled = I.mouse;
+	if ((I.mouse = enable)) {
+	//	r_cons_memcat ("\x1b[?1001s", 8);
+		eprintf ("\x1b[?1001s");
+		eprintf ("\x1b[?1000h");
+	} else {
+		//r_cons_memcat ("\x1b[?1001r", 8);
+		eprintf ("\x1b[?1001r");
+		eprintf ("\x1b[?1000l");
+	}
+	return enabled;
+#else
+	return R_FALSE;
+#endif
+}
+
 R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
 	I.event_interrupt = NULL;
+	I.fps = 0;
 	I.blankline = R_TRUE;
-	I.heightfix = 0;
-	I.widthfix = 0;
+	I.teefile = NULL;
+	I.fix_columns = 0;
+	I.fix_rows = 0;
+	I.force_rows = 0;
+	I.force_columns = 0;
 	I.event_resize = NULL;
 	I.data = NULL;
 	I.event_data = NULL;
 	I.is_interactive = R_TRUE;
 	I.noflush = R_FALSE;
-	I.force_rows = 0;
-	I.force_columns = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = R_FALSE;
@@ -159,6 +181,7 @@ R_API RCons *r_cons_new () {
 	I.buffer_len = 0;
 	r_cons_get_size (NULL);
 	I.num = NULL;
+	I.null = 0;
 #if EMSCRIPTEN
 	/* do nothing here :? */
 #elif __UNIX__
@@ -179,6 +202,7 @@ R_API RCons *r_cons_new () {
 #endif
 	I.pager = NULL; /* no pager by default */
 	I.truecolor = 0;
+	I.mouse = 0;
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
 	r_cons_reset ();
@@ -241,27 +265,26 @@ R_API void r_cons_fill_line() {
 	char *p, white[1024];
 	int cols = I.columns-1;
 	if (cols<1) return;
-	if (cols>=sizeof (white)) {
-		p = malloc (cols+1);
-	} else p = white;
+	p = (cols>=sizeof (white))?
+		malloc (cols+1): white;
 	memset (p, ' ', cols);
 	p[cols] = 0;
 	r_cons_strcat (p);
 	if (white != p) free (p);
 }
 
-R_API void r_cons_clear_line() {
+R_API void r_cons_clear_line(int std_err) {
 #if __WINDOWS__
 	char white[1024];
 	memset (&white, ' ', sizeof (white));
 	if (I.columns<sizeof (white))
 		white[I.columns-1] = 0;
 	else white[sizeof (white)-1] = 0; // HACK
-	printf ("\r%s\r", white);
+	fprintf (std_err? stderr:stdout, "\r%s\r", white);
 #else
-	printf ("\x1b[0K\r");
+	fprintf (std_err? stderr: stdout,"\x1b[0K\r");
 #endif
-	fflush (stdout);
+	fflush (std_err? stderr: stdout);
 }
 
 R_API void r_cons_clear00() {
@@ -275,8 +298,8 @@ R_API void r_cons_reset_colors() {
 
 R_API void r_cons_clear() {
 	r_cons_strcat (Color_RESET"\x1b[2J");
-	r_cons_gotoxy (0, 0);
-	r_cons_flush ();
+	//r_cons_gotoxy (0, 0);
+//	r_cons_flush ();
 	I.lines = 0;
 }
 
@@ -300,7 +323,7 @@ R_API const char *r_cons_get_buffer() {
 
 R_API void r_cons_filter() {
 	/* grep*/
-	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1)
+	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1 || I.grep.less)
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 	/* html */
 	/* TODO */
@@ -310,6 +333,10 @@ R_API void r_cons_flush() {
 	const char *tee = I.teefile;
 	if (I.noflush)
 		return;
+	if (I.null) {
+		r_cons_reset ();
+		return;
+	}
 	r_cons_filter ();
 	if (I.is_interactive) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
@@ -317,7 +344,7 @@ R_API void r_cons_flush() {
 				&& I.buffer_len > 0
 				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
 			I.buffer[I.buffer_len-1] = 0;
-			r_sys_cmd_str_full(I.pager, I.buffer, NULL, NULL, NULL);
+			r_sys_cmd_str_full (I.pager, I.buffer, NULL, NULL, NULL);
 			r_cons_reset ();
 
 		} else if (I.buffer_len > CONS_MAX_USER) {
@@ -345,13 +372,28 @@ R_API void r_cons_flush() {
 R_API void r_cons_visual_flush() {
 	if (I.noflush)
 		return;
+	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-	r_cons_w32_print ((ut8*)I.buffer, 1);
+		r_cons_w32_print ((ut8*)I.buffer, 1);
 #else
-	r_cons_visual_write (I.buffer);
+		r_cons_visual_write (I.buffer);
 #endif
+	}
 	r_cons_reset ();
+	if (I.fps) {
+		int w = r_cons_get_size (NULL);
+		int fps = 0;
+		static ut64 prev = 0LL; //r_sys_now ();
+		fps = 0;
+		if (prev) {
+			ut64 now = r_sys_now ();
+			ut64 diff = now-prev;
+			fps = (diff<1000000)? (1000000/diff): 0;
+			prev = now;
+		} else prev = r_sys_now ();
+		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
+	}
 	return;
 }
 
@@ -362,13 +404,23 @@ R_API void r_cons_visual_write (char *buffer) {
 	const char *endptr;
 	char *nl, *ptr = buffer;
 
+	if (I.null)
+		return;
 	memset (&white, ' ', sizeof (white));
 
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
-		alen = r_str_ansi_len (ptr);
+		//alen = r_str_ansi_len (ptr);
+// handle ansi chars
+		 {
+			int utf8len = r_str_len_utf8 (ptr);
+			int ansilen = r_str_ansi_len (ptr);
+			int diff = len-utf8len;
+			if (diff) diff--;
+			alen = ansilen - diff;
+		 }
 		*nl = '\n';
 
 		if (alen>cols) {
@@ -389,12 +441,15 @@ R_API void r_cons_visual_write (char *buffer) {
 					r_cons_write (white, w);
 				}
 			}
+#if 1
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = I.rows;
 				r_cons_write (ptr, len);
 			}
+#endif
 		}
+//r_cons_write ("\r\n", 2);
 		lines--; // do not use last line
 		ptr = nl+1;
 	}
@@ -411,6 +466,7 @@ R_API void r_cons_printf(const char *format, ...) {
 	size_t size, written;
 	va_list ap;
 
+	if (I.null) return;
 	if (strchr (format, '%')) {
 		palloc (MOAR);
 		size = I.buffer_sz-I.buffer_len; /* remaining space in I.buffer */
@@ -439,7 +495,7 @@ R_API int r_cons_get_column() {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len) {
-	if (str && len>0) {
+	if (str && len>0 && !I.null) {
 		palloc (len+1);
 		memcpy (I.buffer+I.buffer_len, str, len);
 		I.buffer_len += len;
@@ -448,6 +504,7 @@ R_API void r_cons_memcat(const char *str, int len) {
 }
 
 R_API void r_cons_memset(char ch, int len) {
+	if (I.null) return;
 	if (len>0) {
 		palloc (len+1);
 		memset (I.buffer+I.buffer_len, ch, len+1);
@@ -457,14 +514,15 @@ R_API void r_cons_memset(char ch, int len) {
 
 R_API void r_cons_strcat(const char *str) {
 	int len;
-	if (!str) return;
+	if (!str||I.null) return;
 	len = strlen (str);
 	if (len>0)
 		r_cons_memcat (str, len);
 }
 
 R_API void r_cons_newline() {
-	r_cons_strcat ("\n");
+	if (!I.null)
+		r_cons_strcat ("\n");
 	//if (I.is_html) r_cons_strcat ("<br />\n");
 	//else r_cons_strcat ("\n");
 }
@@ -475,11 +533,20 @@ R_API int r_cons_get_size(int *rows) {
 	I.rows = 23;
 #elif __UNIX__
 	struct winsize win;
-	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
+	if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
+		if (win.ws_col==0) {
+			int fd = open ("/dev/tty", O_RDONLY);
+			if (fd != -1) {
+				if (ioctl (fd, TIOCGWINSZ, &win) != 0) {
+					I.columns = 80;
+					I.rows = 23;
+				}
+				close (fd);
+			}
+
+		}
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
-		if (I.heightfix)
-			I.rows--;
 	} else {
 		I.columns = 80;
 		I.rows = 23;
@@ -497,9 +564,10 @@ R_API int r_cons_get_size(int *rows) {
 #endif
 	if (rows)
 		*rows = I.rows;
-	if (I.widthfix) I.columns--;
 	if (I.force_columns) I.columns = I.force_columns;
 	if (I.force_rows) I.rows = I.force_rows;
+	if (I.fix_columns) I.columns += I.fix_columns;
+	if (I.fix_rows) I.rows += I.fix_rows;
 	return I.columns;
 }
 
@@ -589,4 +657,9 @@ R_API void r_cons_set_interactive(int x) {
 
 R_API void r_cons_set_last_interactive() {
 	r_cons_singleton ()->is_interactive = lasti;
+}
+
+R_API void r_cons_set_title(const char *str) {
+	r_cons_printf ("\x1b]0;%s\007", str);
+	
 }

@@ -16,6 +16,7 @@ R_API void r_debug_trace_free (RDebug *dbg) {
 	if (dbg->trace == NULL)
 		return;
 	r_list_destroy (dbg->trace->traces);
+	free (dbg->trace->traces);
 	free (dbg->trace);
 	dbg->trace = NULL;
 }
@@ -39,7 +40,7 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
 			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
 				if (oldpc!=0LL)
-					r_debug_trace_add (dbg, oldpc, op.length);
+					r_debug_trace_add (dbg, oldpc, op.size);
 				oldpc = addr;
 				return R_TRUE;
 			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);

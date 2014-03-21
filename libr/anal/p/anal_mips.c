@@ -16,10 +16,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
         memset (op, 0, sizeof (RAnalOp));
         op->type = R_ANAL_OP_TYPE_UNK;
-	op->length = oplen;
+	op->size = oplen;
 	op->delay = 4;
-	op->esil[0] = 0;
-
+	r_strbuf_init (&op->esil);
 	//r_mem_copyendian ((ut8*)&opcode, b, 4, !anal->big_endian);
 	memcpy (&opcode, b, 4);
 
@@ -135,18 +134,18 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
                    |             |
                (b[0]>>2)  ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]
 #endif
-		int address = ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3];
+		int address = (((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]) << 2;
 		switch (optype) {
 		case 2: // j
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = address;
-			sprintf (op->esil, "pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "pc=0x%08x", address);
 			break;
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = address;
 			op->fail = addr+8;
-			sprintf (op->esil, "lr=pc+4,pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "lr=pc+4,pc=0x%08x", address);
 			break;
 		}
 		family = 'J';
@@ -204,6 +203,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 #endif
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
+		if (((optype >> 2) ^ 0x3) && (imm & 0x8000))
+			imm = 0 - (0x10000 - imm);
 		switch (optype) {
 		case 1: if (rt) { /* bgez */ } else { /* bltz */ }
 		case 4: // beq
@@ -345,12 +346,13 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		mul.s 	fd, fs, ft 	000010 	10000
 		sub.s 	fd, fs, ft 	000001 	10000 
 #endif
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_mips = {
 	.name = "mips",
 	.desc = "MIPS code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_MIPS,
 	.bits = 32,
 	.init = NULL,

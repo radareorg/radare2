@@ -52,7 +52,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			}
 			if (fs2) {
 				r_cons_printf ("\n Selected: %s\n\n", fs2);
-
 				// Honor MAX_FORMATS here
 				switch (format) {
 				case 0: snprintf (cmd, sizeof (cmd), "px @ %s!64", fs2); core->printidx = 0; break;
@@ -99,6 +98,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		}
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
+		if (ch==-1||ch==4) return R_FALSE;
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'J': option += 10; break;
@@ -257,47 +257,60 @@ R_API int r_core_visual_trackflags(RCore *core) {
 }
 
 R_API int r_core_visual_comments (RCore *core) {
-	char *str, cmd[512], *p = NULL;
+	char cmd[512], *p = NULL;
 	int mode = 0;
 	int delta = 7;
 	int i, ch, option = 0;
 	int format = 0;
 	int found = 0;
 	ut64 from = 0, size = 0;
-	RListIter *iter;
-	RMetaItem *d;
 
 // XXX: mode is always 0, remove useless code
 	for (;;) {
 		r_cons_gotoxy (0, 0);
 		r_cons_clear ();
 		r_cons_strcat ("Comments:\n");
-
 		i = 0;
 		found = 0;
 		mode = 0;
-		r_list_foreach (core->anal->meta->data, iter, d) {
-			str = r_str_unscape (d->str);
-			if (str) {
-				if (d->type=='s') /* Ignore strings, there are in trackflags */
-					continue;
-				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-					r_str_sanitize (str);
-					if (option==i) {
-						mode = 0;
-						found = 1;
-						from = d->from;
-						size = d->size;
-						p = str;
-						r_cons_printf ("  >  %s\n", str);
-					} else {
-						r_cons_printf ("     %s\n", str);
-						free (str);
+#undef DB
+#define DB core->anal->sdb_meta
+				ut64 addr;
+				char key[128];
+				const char *val, *comma;
+				char *list = sdb_get (DB, "meta.C", 0);
+				char *str, *next, *cur = list;
+				if (list) {
+					for (i=0; ;i++) {
+						cur = sdb_array_string (cur, &next);
+						addr = sdb_atoi (cur);
+						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
+						val = sdb_const_get (DB, key, 0);
+						comma = strchr (val, ',');
+						if (comma) {
+							str = (char *)sdb_decode (comma+1, 0);
+							if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+								r_str_sanitize (str);
+								if (option==i) {
+									mode = 0;
+									found = 1;
+									from = addr;
+									size = 1; // XXX: remove this thing size for comments is useless d->size;
+									free (p);
+									p = str;
+									r_cons_printf ("  >  %s\n", str);
+								} else {
+									r_cons_printf ("     %s\n", str);
+									free (str);
+								}
+							} else free (str);
+						}
+						if (!next)
+							break;
+						cur = next;
 					}
 				}
-				i++;
-			}
-		}
+		
 		if (!found) {
 			option--;
 			if (option<0) break;
@@ -338,7 +351,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			break;
 		case 'd':
 			if (mode == 0) {
-				if (p) r_meta_del (core->anal->meta, R_META_TYPE_ANY, from, size, p);
+				if (p) r_meta_del (core->anal, R_META_TYPE_ANY, from, size, p);
 			} else {
 				r_anal_fcn_del_locs (core->anal, from);
 				r_anal_fcn_del (core->anal, from);
@@ -518,6 +531,8 @@ R_API void r_core_visual_config(RCore *core) {
 			r_core_cmd (core, "pd 5", 0);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
+		if (ch==4||ch==-1)
+			return;
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
@@ -685,6 +700,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 
 		/* Ask for option */
 		ch = r_cons_readchar ();
+		if (ch==-1||ch==4) return;
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 			case 'l':
@@ -748,8 +764,10 @@ R_API void r_core_visual_mounts (RCore *core) {
 
 				} else if (mode == 3) {
 					fsroot = r_list_get_n (core->fs->roots, option);
-					root = strdup (fsroot->path);
-					strncpy (path, root, sizeof (path)-1);
+					if (fsroot) {
+						root = strdup (fsroot->path);
+						strncpy (path, root, sizeof (path)-1);
+					}
 					mode = 2;
 				}
 				dir = partition = option = 0;
@@ -789,6 +807,9 @@ R_API void r_core_visual_mounts (RCore *core) {
 				break;
 			case 'h':
 				if (mode == 2) {
+					if (!root) {
+						mode = 0;
+					} else 
 					if (strcmp (path, root)) {
 						strcat (path, "/..");
 						r_str_chop_path (path);
@@ -1037,6 +1058,12 @@ R_API void r_core_visual_anal(RCore *core) {
 	for (;;) {
 		r_core_visual_anal_refresh (core);
 		ch = r_cons_readchar ();
+		if (ch==4||ch==-1) {
+			if (level==0)
+				goto beach;
+			level--;
+			continue;
+		}
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '?':
@@ -1060,7 +1087,7 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'a':
 			switch (level) {
 			case 0:
-eprintf ("TODO: Add new function manually\n");
+				eprintf ("TODO: Add new function manually\n");
 /*
 				r_cons_show_cursor (R_TRUE);
 				r_cons_set_raw (R_FALSE);
@@ -1144,7 +1171,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	if (strstr (type, "opc")) {
 		RAnalOp aop;
 		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize))
-			next = core->offset + aop.length;
+			next = core->offset + aop.size;
 		else eprintf ("Invalid opcode\n");
 	} else
 	if (strstr (type, "fun")) {
@@ -1206,18 +1233,21 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 }
 
 R_API void r_core_visual_define (RCore *core) {
-	int cur = R_MIN (core->print->cur, core->print->ocur);
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
 	ut8 *p = core->block;
 	RAnalFunction *f;
 	char *name;
-
 	if (core->print->cur_enabled) {
+		int cur = core->print->cur;
+		if (core->print->ocur != -1) {
+			plen = R_ABS (core->print->cur- core->print->ocur)+1;
+			if (core->print->ocur<cur)
+				cur = core->print->ocur;
+		}
 		off += cur;
 		p += cur;
-		plen = R_ABS (core->print->cur- core->print->ocur)+1;
 	}
 	r_cons_printf ("Define current block as:\n"
 		" r  - rename function\n"
@@ -1235,7 +1265,7 @@ R_API void r_core_visual_define (RCore *core) {
 
 	switch (ch) {
 	case 'r':
-		r_core_cmd0 (core, "?i new function name;afr `?y`");
+		r_core_cmd0 (core, "?i new function name;afn `?y`");
 		break;
 	case 'S':
 		do {
@@ -1244,7 +1274,7 @@ R_API void r_core_visual_define (RCore *core) {
 			strcpy (name, "str.");
 			strncpy (name+4, (const char *)p+ntotal, n);
 			r_flag_set (core->flags, name, off, n, 0);
-			r_meta_add (core->anal->meta, R_META_TYPE_STRING,
+			r_meta_add (core->anal, R_META_TYPE_STRING,
 				off+ntotal, off+n+ntotal, (const char *)p+ntotal);
 			free (name);
 			if (n<2) break;
@@ -1258,22 +1288,22 @@ R_API void r_core_visual_define (RCore *core) {
 		strcpy (name, "str.");
 		strncpy (name+4, (const char *)p, n);
 		r_flag_set (core->flags, name, off, n, 0);
-		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
+		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)p);
 		free (name);
 		break;
 	case 'd': // TODO: check
-		r_meta_cleanup (core->anal->meta, off, off+plen);
-		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+plen, "");
+		r_meta_cleanup (core->anal, off, off+plen);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+plen, "");
 		break;
 	case 'c': // TODO: check
-		r_meta_cleanup (core->anal->meta, off, off+plen);
-		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+plen, "");
+		r_meta_cleanup (core->anal, off, off+plen);
+		r_meta_add (core->anal, R_META_TYPE_CODE, off, off+plen, "");
 		break;
 	case 'u':
 		r_flag_unset_i (core->flags, off, NULL);
 		f = r_anal_fcn_find (core->anal, off, 0);
 		r_anal_fcn_del_locs (core->anal, off);
-		if (f) r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, f->size, "");
+		if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
 		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':
@@ -1281,10 +1311,12 @@ R_API void r_core_visual_define (RCore *core) {
 			int funsize = 0;
 			int depth = r_config_get_i (core->config, "anal.depth");
 			if (core->print->cur_enabled) {
-				funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
+				if (core->print->ocur != -1) {
+					funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
+				}
 				depth = 0;
 			}
-			r_cons_break (NULL,NULL);
+			r_cons_break (NULL, NULL);
 			r_core_anal_fcn (core, off, UT64_MAX,
 				R_ANAL_REF_TYPE_NULL, depth);
 			r_cons_break_end ();

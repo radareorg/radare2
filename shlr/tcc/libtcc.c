@@ -400,6 +400,7 @@ static int tcc_compile(TCCState *s1)
 
 	/* define some often used types */
     int_type.t = VT_INT;
+	llong_type.t = VT_LLONG;
 
     char_pointer_type.t = VT_BYTE;
     mk_pointer(&char_pointer_type);
@@ -445,9 +446,11 @@ static int tcc_compile(TCCState *s1)
         decl(VT_CONST);
         if (tok != TOK_EOF)
             expect("declaration");
+#if 0
         if (pvtop != vtop)
-            tcc_warning("internal compiler error: vstack leak? (%d)", vtop - pvtop);
-
+            fprintf (stderr, "internal compiler error:"
+		" vstack leak? (%d)", vtop - pvtop);
+#endif
     }
 
     s1->error_set_jmp_enabled = 0;
@@ -844,24 +847,6 @@ ST_FUNC int set_flag(TCCState *s, const FlagDef *flags, int nb_flags,
     return 0;
 }
 
-/* set/reset a warning */
-static int tcc_set_warning(TCCState *s, const char *warning_name, int value)
-{
-    int i;
-    const FlagDef *p;
-
-    if (!strcmp(warning_name, "all")) {
-        for(i = 0, p = warning_defs; i < countof(warning_defs); i++, p++) {
-            if (p->flags & WD_ALL)
-                *(int *)((uint8_t *)s + p->offset) = 1;
-        }
-        return 0;
-    } else {
-        return set_flag(s, warning_defs, countof(warning_defs),
-                        warning_name, value);
-    }
-}
-
 static const FlagDef flag_defs[] = {
     { offsetof(TCCState, char_is_unsigned), 0, "unsigned-char" },
     { offsetof(TCCState, char_is_unsigned), FD_INVERT, "signed-char" },
@@ -869,28 +854,6 @@ static const FlagDef flag_defs[] = {
     { offsetof(TCCState, leading_underscore), 0, "leading-underscore" },
 };
 
-/* set/reset a flag */
-static int tcc_set_flag(TCCState *s, const char *flag_name, int value)
-{
-    return set_flag(s, flag_defs, countof(flag_defs),
-                    flag_name, value);
-}
-
-
-static int strstart(const char *val, const char **str)
-{
-    const char *p, *q;
-    p = *str;
-    q = val;
-    while (*q) {
-        if (*p != *q)
-            return 0;
-        p++;
-        q++;
-    }
-    *str = p;
-    return 1;
-}
 PUB_FUNC void tcc_set_callback (TCCState *s, void (*cb)(const char *,char**), char **p) {
 	tcc_cb = cb;
 	tcc_cb_ptr = p;

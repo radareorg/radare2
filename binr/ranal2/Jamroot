@@ -1,0 +1,4 @@
+exe ranal2 : ranal2.c :
+    <library>../../libr/util
+    <library>../../libr/anal
+    <include>../../libr/include ;

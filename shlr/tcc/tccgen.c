@@ -60,7 +60,7 @@ ST_DATA int func_vc;
 ST_DATA int last_line_num, last_ind, func_ind; /* debug last line number and pc */
 ST_DATA char *funcname;
 
-ST_DATA CType char_pointer_type, func_old_type, int_type, size_type;
+ST_DATA CType char_pointer_type, func_old_type, int_type, llong_type, size_type;
 
 /* ------------------------------------------------------------------------- */
 static inline CType *pointed_type(CType *type);
@@ -311,29 +311,31 @@ ST_FUNC void vpushi(int v)
 /* push a pointer sized constant */
 static void vpushs(long long v)
 {
-  CValue cval;
-  if (PTR_SIZE == 4)
-    cval.i = (int)v;
-  else
-    cval.ull = v;
-  vsetc(&size_type, VT_CONST, &cval);
+	CValue cval;
+	if (PTR_SIZE == 4)
+		cval.i = (int)v;
+	else
+		cval.ull = v;
+	vsetc(&size_type, VT_CONST, &cval);
 }
 
-/* push arbitrary 64bit constant */
+/* push arbitrary 64 bit constant */
 void vpush64(int ty, unsigned long long v)
 {
-    CValue cval;
-    CType ctype;
-    ctype.t = ty;
-    ctype.ref = NULL;
-    cval.ull = v;
-    vsetc(&ctype, VT_CONST, &cval);
+	CValue cval;
+	CType ctype;
+	ctype.t = ty;
+	ctype.ref = NULL;
+	cval.ull = v;
+	vsetc(&ctype, VT_CONST, &cval);
 }
 
 /* push long long constant */
-static inline void vpushll(long long v)
+ST_FUNC void vpushll(long long v)
 {
-    vpush64(VT_LLONG, v);
+	CValue cval;
+	cval.ll = v;
+	vsetc(&llong_type, VT_CONST, &cval);
 }
 
 ST_FUNC void vset(CType *type, int r, int v)
@@ -460,7 +462,12 @@ ST_FUNC int type_size(CType *type, int *a)
         *a = 8;
 #endif
         return 8;
-    } else if (bt == VT_INT || bt == VT_ENUM || bt == VT_FLOAT) {
+	} else if (bt == VT_ENUM) {
+		/* Non standard, but still widely used
+		 * and implemented in GCC, MSVC */
+		*a = 8;
+		return 8;
+    } else if (bt == VT_INT || bt == VT_FLOAT) {
         *a = 4;
         return 4;
     } else if (bt == VT_SHORT) {
@@ -674,7 +681,8 @@ static void type_to_str(char *buf, int buf_size,
  */
 static void parse_attribute(AttributeDef *ad)
 {
-    int t, n;
+    int t;
+	long long n;
 
     while (tok == TOK_ATTRIBUTE1 || tok == TOK_ATTRIBUTE2) {
     next();
@@ -809,16 +817,17 @@ static void parse_attribute(AttributeDef *ad)
 /* enum/struct/union declaration. u is either VT_ENUM or VT_STRUCT */
 static void struct_decl(CType *type, int u)
 {
-    int a, v, size, align, maxalign, c, offset;
+    int a, v, size, align, maxalign, offset;
+	long long c;
     int bit_size, bit_pos, bsize, bt, lbit_pos, prevbt;
     Sym *s, *ss, *ass, **ps;
     AttributeDef ad;
     CType type1, btype;
-const char *name = NULL;
+	const char *name = NULL;
 
     a = tok; /* save decl type */
     next();
-name = get_tok_str (tok, NULL);
+	name = get_tok_str (tok, NULL);
     if (tok != '{') {
         v = tok;
         next();
@@ -851,12 +860,12 @@ name = get_tok_str (tok, NULL);
         c = 0;
         /* non empty enums are not allowed */
         if (a == TOK_ENUM) {
-		if (!strcmp (name, "{")) {
-			// UNNAMED
-			fprintf (stderr, "anonymous enums are ignored\n");
-		} else {
-			tcc_appendf ("%s=enum\n", name);
-		}
+			if (!strcmp (name, "{")) {
+				// UNNAMED
+				fprintf (stderr, "anonymous enums are ignored\n");
+			} else {
+				tcc_appendf ("%s=enum\n", name);
+			}
             for(;;) {
                 v = tok;
                 if (v < TOK_UIDENT)
@@ -866,12 +875,12 @@ name = get_tok_str (tok, NULL);
                     next();
                     c = expr_const();
                 }
-	if (strcmp (name, "{")) {
-		char *varstr = get_tok_str (v, NULL);
-		tcc_appendf ("%s.%s=%d\n", name, varstr, c);
-	}
+				if (strcmp (name, "{")) {
+					char *varstr = get_tok_str (v, NULL);
+					tcc_appendf ("%s.%s=%d\n", name, varstr, c);
+				}
                 /* enum symbols have static storage */
-                ss = sym_push(v, &int_type, VT_CONST, c);
+                ss = sym_push(v, &llong_type, VT_CONST, c);
                 ss->type.t |= VT_STATIC;
                 if (tok != ',')
                     break;
@@ -905,7 +914,7 @@ name = get_tok_str (tok, NULL);
                     }
                     if (tok == ':') {
                         next();
-                        bit_size = expr_const();
+                        bit_size = (int)expr_const();
                         /* XXX: handle v = 0 case for messages */
                         if (bit_size < 0)
                             tcc_error("negative width in bit-field '%s'",
@@ -986,10 +995,10 @@ name = get_tok_str (tok, NULL);
 			char *varstr = get_tok_str (v, NULL);
 			type_to_str (b, sizeof(b), &type1, NULL);
 			tcc_appendf ("%s=struct\n", name);
-			tcc_appendf ("(+)struct.%s=%s\n",
+			tcc_appendf ("[+]struct.%s=%s\n",
 				name, varstr);
 			/* compact form */
-			tcc_appendf ("()struct.%s.%s=%s,%d,%d\n",
+			tcc_appendf ("struct.%s.%s=%s,%d,%d\n",
 				name,varstr,b,offset,arraysize);
 #if 0
 			printf ("struct.%s.%s.type=%s\n", name, varstr, b);
@@ -1330,7 +1339,7 @@ static void post_type(CType *type, AttributeDef *ad)
         t1 = 0;
         if (tok != ']') {
             if (!local_stack || nocode_wanted)
-                 vpushi(expr_const());
+                 vpushll(expr_const());
             else gexpr();
             if ((vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST) {
                 n = vtop->c.i;
@@ -1691,7 +1700,8 @@ ST_FUNC void unary(void)
         break;
     case TOK_builtin_constant_p:
         {
-            int saved_nocode_wanted, res;
+            int saved_nocode_wanted;
+			long long res;
             next();
             skip('(');
             saved_nocode_wanted = nocode_wanted;
@@ -1700,7 +1710,7 @@ ST_FUNC void unary(void)
             res = (vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
             nocode_wanted = saved_nocode_wanted;
             skip(')');
-            vpushi(res);
+            vpushll(res);
         }
         break;
     case TOK_builtin_frame_address:
@@ -1749,7 +1759,7 @@ ST_FUNC void unary(void)
             skip('(');
             parse_type(&type);
             skip(')');
-            vpushi(classify_x86_64_va_arg(&type));
+            vpushll(classify_x86_64_va_arg(&type));
         }
         break;
 #endif
@@ -2063,13 +2073,13 @@ static void expr_const1(void)
 }
 
 /* parse an integer constant and return its value. */
-ST_FUNC int expr_const(void)
+ST_FUNC long long expr_const(void)
 {
-    int c;
+    long long c;
     expr_const1();
     if ((vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) != VT_CONST)
         expect("constant expression");
-    c = vtop->c.i;
+    c = vtop->c.ll;
     return c;
 }
 
@@ -2099,11 +2109,12 @@ static int is_label(void)
    value. 'size_only' is true if only size info is needed (only used
    in arrays) */
 static void decl_designator(CType *type, unsigned long c,
-                            int *cur_index, Sym **cur_field,
+                            long long *cur_index, Sym **cur_field,
                             int size_only)
 {
     Sym *s, *f;
-    int notfirst, index, index_last, align, l, nb_elems, elem_size;
+	long long index, index_last;
+    int notfirst, align, l, nb_elems, elem_size;
     CType type1;
 
     notfirst = 0;
@@ -2201,14 +2212,14 @@ static void decl_designator(CType *type, unsigned long c,
 
 /* store a value or an expression directly in global data or in local array */
 static void init_putv(CType *type, unsigned long c,
-                      int v, int expr_type)
+                      long long v, int expr_type)
 {
     int saved_global_expr;
     CType dtype;
 
     switch(expr_type) {
     case EXPR_VAL:
-        vpushi(v);
+        vpushll(v);
         break;
     case EXPR_CONST:
         /* compound literals must be allocated globally in this case */
@@ -2248,7 +2259,8 @@ static void init_putz(CType *t, unsigned long c, int size)
 static void decl_initializer(CType *type, unsigned long c,
                              int first, int size_only)
 {
-    int index, array_length, n, no_oblock, nb, parlevel, parlevel1, i;
+    long long index;
+    int array_length, n, no_oblock, nb, parlevel, parlevel1, i;
     int size1, align1, expr_type;
     Sym *s, *f;
     CType *t1;

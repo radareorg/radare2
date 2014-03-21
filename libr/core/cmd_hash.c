@@ -31,6 +31,16 @@ static int cmd_hash(void *data, const char *input) {
 	}
 	if (input[0]=='!') {
 		const char *lang = input+1;
+		if (*lang=='/') {
+			const char *ptr = lang+1;
+			while (*lang) {
+				if (*lang=='/')
+					ptr = lang+1;
+				lang++;
+			}
+			RLangPlugin *p = r_lang_get_by_extension (core->lang, ptr);
+			if (p && p->name) lang = p->name;
+		}
 		if (*lang==' ') {
 			RLangPlugin *p = r_lang_get_by_extension (core->lang, input+2);
 			if (p && p->name) lang = p->name;
@@ -45,7 +55,9 @@ static int cmd_hash(void *data, const char *input) {
 			r_lang_setup (core->lang);
 			if (p) r_lang_run_file (core->lang, p+1);
 			else r_lang_prompt (core->lang);
-		} else eprintf ("Invalid hashbang. See '#!' for help.\n");
+		} else
+		if (!p || *p)
+			eprintf ("Invalid hashbang. See '#!' for help.\n");
 		return R_TRUE;
 	}
 

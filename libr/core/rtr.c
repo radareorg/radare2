@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2013 - pancake, nibble */
+/* radare - Copyright 2009-2014 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -285,21 +285,21 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 
 R_API void r_core_rtr_help(RCore *core) {
 	r_cons_printf (
-	"remote commands:\n"
-	" =:port              listen on given port using rap protocol (o rap://9999)\n"
-	" =:host:port cmd     run 'cmd' command on remote server.\n"
-	"rap commands:\n"
-	" =                   list all open connections\n"
-	//" =:port [cmd]      ; same as .: but allow to send command if cmd\n"
-	" =<[fd] cmd          send output of local command to remote fd\n"
-	" =[fd] cmd           exec cmd at remote 'fd' (last open is default one)\n"
-	" =! cmd              run command via r_io_system\n"
-	" =+ [proto://]host   add host (default=rap://, tcp://, udp://)\n"
-	" =-[fd]              remove all hosts or host 'fd'\n"
-	" ==[fd]              open remote session with host 'fd', 'q' to quit\n"
-	"http server:\n"
-	" =h                  listen for http connections (r2 -qc=H /bin/ls)\n"
-	" =H                  launch browser and listen for http\n");
+	"|Usage: =[:!+-=hH] [...]   # radare remote command execution protocol\n"
+	"| =:port              listen on given port using rap protocol (o rap://9999)\n"
+	"| =:host:port cmd     run 'cmd' command on remote server.\n"
+	"|rap commands:\n"
+	"| =                   list all open connections\n"
+	//"| =:port [cmd]      ; same as .: but allow to send command if cmd\n"
+	"| =<[fd] cmd          send output of local command to remote fd\n"
+	"| =[fd] cmd           exec cmd at remote 'fd' (last open is default one)\n"
+	"| =! cmd              run command via r_io_system\n"
+	"| =+ [proto://]host   add host (default=rap://, tcp://, udp://)\n"
+	"| =-[fd]              remove all hosts or host 'fd'\n"
+	"| ==[fd]              open remote session with host 'fd', 'q' to quit\n"
+	"|http server:\n"
+	"| =h                  listen for http connections (r2 -qc=H /bin/ls)\n"
+	"| =H                  launch browser and listen for http\n");
 }
 
 R_API void r_core_rtr_pushout(RCore *core, const char *input) {
@@ -357,12 +357,13 @@ R_API void r_core_rtr_list(RCore *core) {
 		
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	char *port, input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
-	int proto, i;
+	int proto, i, timeout, ret;
 	RSocket *fd;
 
+	timeout = r_config_get_i (core->config, "http.timeout");
 	strncpy (input, _input, sizeof (input)-4);
 	/* Parse uri */
-	if ((ptr = strstr(input, "tcp://"))) {
+	if ((ptr = strstr (input, "tcp://"))) {
 		proto = RTR_PROT_TCP;
 		host = ptr+6;
 	} else if ((ptr = strstr(input, "http://"))) {
@@ -394,6 +395,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		return;
 	}
 	*file++ = 0;
+	port = r_str_chop (port);
+	while (*file==' ') file++;
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: connect disabled\n");
+		return;
+	}
 
 	fd = r_socket_new (R_FALSE);
 	if (!fd) {
@@ -402,10 +409,6 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	}
 	switch (proto) {
 	case RTR_PROT_HTTP:
-		if (r_sandbox_enable (0)) {
-			eprintf ("sandbox: connect disabled\n");
-			return;
-		}
 		{
 			char uri[1024], prompt[64];
 			int len;
@@ -436,7 +439,8 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				}
 				return;
 			}
-			snprintf (uri, sizeof (uri), "http://%s:%s/%s", host, port, file);
+			snprintf (uri, sizeof (uri), "http://%s:%s/%s",
+				host, port, file);
 			str = r_socket_http_get (uri, NULL, &len);
 			if (str) {
 				str[len] = 0;
@@ -451,15 +455,11 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		break;
 	case RTR_PROT_RAP:
-		if (r_sandbox_enable (0)) {
-			eprintf ("sandbox: connect disabled\n");
-			return;
-		}
-		if (!r_socket_connect_tcp (fd, host, port, 10)) { //TODO: Use rap.ssl
+		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
-		eprintf ("Connected to: %s at port %s\n", host, port);
+		eprintf ("Connected to %s at port %s\n", host, port);
 		/* send */
 		buf[0] = RTR_RAP_OPEN;
 		buf[1] = 0;
@@ -477,39 +477,37 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("ok\n");
 		break;
 	case RTR_PROT_TCP:
-		if (r_sandbox_enable (0)) {
-			eprintf ("sandbox: connect disabled\n");
-			return;
-		}
-		if (!r_socket_connect_tcp (fd, host, port, 10)) { //TODO: Use rap.ssl
+		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
+			core->num->value = 1;
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
+		core->num->value = 0;
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROT_UDP:
-		if (r_sandbox_enable (0)) {
-			eprintf ("sandbox: connect disabled\n");
+		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
+			core->num->value = 1;
+			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
-		if (!r_socket_connect_udp (fd, host, port, 30)) { //TODO: Use rap.ssl
-			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
-			return;
-		}
+		core->num->value = 0;
 		eprintf("Connected to: %s at port %s\n", host, port);
 		break;
 	}
 
+	ret = core->num->value;
 	for (i = 0; i < RTR_MAX_HOSTS; i++)
 		if (!rtr_host[i].fd) {
 			rtr_host[i].proto = proto;
 			memcpy (rtr_host[i].host, host, 512);
-			rtr_host[i].port = atoi (port);
+			rtr_host[i].port = r_num_get (core->num, port);
 			memcpy (rtr_host[i].file, file, 1024);
 			rtr_host[i].fd = fd;
 			rtr_n = i;
 			break;
 		}
+	core->num->value = ret;
 	//r_core_rtr_list (core);
 }
 
@@ -536,9 +534,10 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 }
 
 R_API void r_core_rtr_session(RCore *core, const char *input) {
-	char prompt[32], buf[4096];
+	char prompt[64], buf[4096];
 	int fd;
 
+	prompt[0] = 0;
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
 		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \
@@ -585,6 +584,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	if (!rtr_host[rtr_n].fd){
 		eprintf ("Error: Unknown host\n");
+		core->num->value = 1; // fail
 		return;
 	}
 
@@ -593,6 +593,12 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
+	core->num->value = 0; // that's fine
+	if (!strlen (cmd)) {
+		// just check if we can connect
+		r_socket_close (rtr_host[rtr_n].fd);
+		return;
+	}
 	/* send */
 	bufw[0] = RTR_RAP_CMD;
 	i = strlen (cmd) + 1;

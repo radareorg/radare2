@@ -46,6 +46,7 @@ typedef struct r_cons_grep_t {
 	int nstrings;
 	char *str;
 	int counter;
+	int less;
 	int line;
 	int tokenfrom;
 	int tokento;
@@ -111,9 +112,12 @@ typedef struct r_cons_t {
 	int is_interactive;
 	int lines;
 	int rows;
+	int fps;
 	int columns;
 	int force_rows;
 	int force_columns;
+	int fix_rows;
+	int fix_columns;
 	int breaked;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
@@ -134,9 +138,9 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int widthfix;
-	int heightfix;
 	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
+	int null; // if set, does not show anything
+	int mouse;
 	RConsPalette pal;
 	struct r_line_t *line;
 	const char **vline;
@@ -237,6 +241,7 @@ enum {
 #define LINE_HORIZ 6
 #define LUP_CORNER 7
 #define LDWN_CORNER 8
+#define LINE_UP 9
 
 
 #ifdef R_API
@@ -255,7 +260,7 @@ R_API void r_cons_break(void (*cb)(void *u), void *user);
 R_API void r_cons_break_end();
 
 /* pipe */
-R_API int r_cons_pipe_open(const char *file, int append);
+R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
@@ -269,7 +274,7 @@ R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();
 R_API void r_cons_clear();
 R_API void r_cons_clear00();
-R_API void r_cons_clear_line();
+R_API void r_cons_clear_line(int err);
 R_API void r_cons_fill_line();
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
@@ -288,6 +293,8 @@ R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline();
 R_API void r_cons_filter();
 R_API void r_cons_flush();
+R_API void r_cons_less_str(const char *str);
+R_API void r_cons_less();
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush();
 R_API void r_cons_visual_write (char *buffer);
@@ -336,6 +343,8 @@ R_API void r_cons_set_cup(int enable);
 R_API void r_cons_column(int c);
 R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
+R_API void r_cons_set_title(const char *str);
+R_API int r_cons_enable_mouse(const int enable);
 #endif
 
 /* r_line */

@@ -21,19 +21,14 @@ static dumpMeNot(fd, ea) {
 	for (func=ea; func != BADADDR && func < SegEnd(ea); func=NextFunction(func)) {
 		// If the current address is function process it
 //		if (GetFunctionFlags(func) != -1) {
-			fprintf(fd, "f %s @ 0x%08lx\n", GetFunctionName(func), func);
+			sz = FindFuncEnd(func) - func;
+			fprintf(fd, "af+ 0x%08lx %d %s\n", func, sz, GetFunctionName(func));
 
 			comment = GetFunctionCmt(func, 0);
 			if (comment != "")
 				fprintf(fd, "CC %s@0x%08x\n", comment, func);
 
 			fprintf(fd, "CC framesize=%d@0x%08x\n", func, GetFrameSize(func));
-			
-			sz = FindFuncEnd(func);
-			fprintf(fd, "CC bytes=0x%08lx ", func);			
-			for(i=func;i<sz;i++)
-				fprintf(fd, "%02x ", Byte(i));
-			fprintf(fd, "\n");
 
 			// Find all code references to func
 			for (ref=RfirstB(func); ref != BADADDR; ref=RnextB(func, ref)) {
@@ -72,7 +67,7 @@ static main() {
 	}
 
 	entry="";
-	// Walk entrypoints 
+	// Walk entrypoints
 	for ( i=0; ; i++ ) {
 		ord = GetEntryOrdinal(i);
 		if ( ord == 0 ) break;
@@ -84,7 +79,7 @@ static main() {
 	// XXX last entrypoint taken as ok??
 	dumpMeNot(fd, entry);
 
-	// eof 
+	// eof
 	fclose(fd);
 
 	Message(file+"file generated.\n");

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -56,6 +56,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static RCore* opencore(const char *f) {
+	const ut64 baddr = 0;
 	RCore *c = r_core_new ();
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", R_TRUE);
@@ -63,21 +64,19 @@ static RCore* opencore(const char *f) {
 		r_core_free (c);
 		return NULL;
 	}
-	r_core_bin_load (c, NULL);
+	r_core_bin_load (c, NULL, baddr);
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
 }
 
-static void diff_graph(RCore *c, RCore *c2, const char *arg) {
-	r_core_cmdf (c, "agd %s", arg);
-}
-
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-cCdrspOv] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdrspOv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 //		"  -l        diff lines of text\n"
+		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
+		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -c         count of changes\n"
-		"  -C         graphdiff code\n"
+		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
 		"  -d         use delta diffing\n"
 		"  -g [sym]   graph diff of given symbol\n"
 		"  -O         code diffing with opcode bytes only\n"
@@ -117,6 +116,8 @@ int main(int argc, char **argv) {
 	const char *addr = NULL;
 	RCore *c, *c2;
 	RDiff *d;
+	const char *arch = NULL;
+	int bits = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
 	int o, sza, szb, rad = 0, delta = 0;
@@ -125,8 +126,14 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Cpg:Orhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "a:b:Cpg:Orhcdsvxt:")) != -1) {
 		switch (o) {
+		case 'a':
+			arch = optarg;
+			break;
+		case 'b':
+			bits = atoi (optarg);
+			break;
 		case 'p':
 			useva = R_FALSE;
 			break;
@@ -187,12 +194,21 @@ int main(int argc, char **argv) {
 			eprintf ("Cannot open '%s'\n", file2);
 			return 1;
 		}
+		if (arch) {
+			r_config_set (c->config, "asm.arch", arch);
+			r_config_set (c2->config, "asm.arch", arch);
+		}
+		if (bits) {
+			r_config_set_i (c->config, "asm.bits", bits);
+			r_config_set_i (c2->config, "asm.bits", bits);
+		}
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		r_core_gdiff (c, c2);
-		if (mode == MODE_GRAPH)
-			diff_graph (c, c2, addr);
-		else r_core_diff_show (c, c2);
+		if (mode == MODE_GRAPH) {
+			/* show only ->diff info from main core */
+			r_core_cmdf (c, "agd %s", addr);
+		} else r_core_diff_show (c, c2);
 		return 0;
 	}
 

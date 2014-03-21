@@ -1,0 +1,8 @@
+OBJS = apprentice.c ascmagic.c fsmagic.c funcs.c ;
+OBJS += is_tar.c magic.c print.c softmagic.c ;
+
+lib r_magic : $(OBJS) :
+    <define>HAVE_CONFIG_H
+    <include>.
+    <include>../include
+    <library>../util ;

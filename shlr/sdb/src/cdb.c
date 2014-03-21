@@ -9,8 +9,9 @@
 #endif
 
 /* XXX: this code must be rewritten . too slow */
-int getkvlen(int fd, ut32 *klen, ut32 *vlen) {
+int cdb_getkvlen(int fd, ut32 *klen, ut32 *vlen) {
 	ut8 buf[4];
+	*klen = *vlen = 0;
 	if (fd == -1 || read (fd, buf, 4) != 4)
 		return 0;
 	*klen = (ut32)buf[0];
@@ -56,7 +57,7 @@ int cdb_read(struct cdb *c, char *buf, ut32 len, ut32 pos) {
 	if (c->map) {
 		if ((pos > c->size) || (c->size - pos < len))
 			return 0;
-		byte_copy (buf, len, c->map + pos);
+		memcpy (buf, c->map + pos, len);
 		return 1;
 	}
 	if (!seek_set (c->fd, pos))
@@ -77,7 +78,7 @@ static int match(struct cdb *c, const char *key, ut32 len, ut32 pos) {
 		int n = (szb>len)? len: szb;
 		if (!cdb_read (c, buf, n, pos))
 			return -1;
-		if (byte_diff (buf, n, key))
+		if (memcmp (buf, key, n))
 			return 0;
 		pos += n;
 		key += n;
@@ -95,14 +96,11 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
 		if (!cdb_read (c, buf, 8, (u << 3) & 2047))
 			return -1;
 		ut32_unpack (buf + 4, &c->hslots);
-		if (!c->hslots) {
+		if (!c->hslots)
 			return 0;
-		}
 		ut32_unpack (buf, &c->hpos);
 		c->khash = u;
-		u >>= 8;
-		u %= c->hslots;
-		u <<= 3;
+		u = ((u>>8)%c->hslots)<<3;
 		c->kpos = c->hpos + u;
 	}
 
@@ -119,7 +117,7 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
 		if (u == c->khash) {
 			if (!seek_set (c->fd, pos))
 				return -1;
-			if (!getkvlen (c->fd, &u, &c->dlen))
+			if (!cdb_getkvlen (c->fd, &u, &c->dlen))
 				return -1;
 			if (u == 0)
 				return -1;

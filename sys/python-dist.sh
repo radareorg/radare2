@@ -1,6 +1,6 @@
 #!/bin/sh
 cd `dirname $PWD/$0`
-
 ./python.sh --no-install
-cd ../r2-bindings
+./clone-r2-bindings.sh
+cd ../radare2-bindings
 make dist

@@ -1,33 +1,33 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int check(RBinArch *arch);
+static int check(RBinFile *arch);
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (check (arch))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-static int destroy(RBinArch *arch) {
-	//r_bin_bios_free ((struct r_bin_bios_obj_t*)arch->bin_obj);
+static int destroy(RBinFile *arch) {
+	//r_bin_bios_free ((struct r_bin_bios_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinArch *arch) {
+static RList *strings(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
@@ -49,7 +49,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if ((arch->buf) && (arch->buf->length > 0xffff)) {
 		const ut32 ep = arch->buf->length - 0x10000 + 0xfff0; /* F000:FFF0 address */
 		/* Check if this a 'jmp' opcode */
@@ -59,7 +59,7 @@ static int check(RBinArch *arch) {
 	return 0;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 
@@ -78,7 +78,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -95,13 +95,15 @@ static RList* entries(RBinArch *arch) {
 
 struct r_bin_plugin_t r_bin_plugin_bios = {
 	.name = "bios",
-	.desc = "filesystem bin plugin",
+	.desc = "BIOS bin plugin",
+	.license = "LGPL",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = entries,
 	.sections = sections,
@@ -112,7 +114,7 @@ struct r_bin_plugin_t r_bin_plugin_bios = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.demangle_type = NULL
 };

@@ -1,0 +1,12 @@
+exe rasm2 : rasm2.c :
+    <library>../../libr/asm
+    <library>../../libr/parse
+    <library>../../libr/syscall
+    <library>../../libr/anal
+    <library>../../libr/reg
+    <library>../../libr/diff
+    <library>../../libr/db
+    <library>../../libr/flags
+    <library>../../libr/util
+    <library>../../libr/cons
+    <include>../../libr/include ;

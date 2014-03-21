@@ -1,0 +1,62 @@
+OBJS = bin.c bin_meta.c bin_write.c demangle.c dwarf.c ;
+OBJS += mangling/cxx/cp-demangle.c ;
+OBJS += mangling/objc.c mangling/cxx.c ;
+
+OBJS += p/bin_fs.c ;
+OBJS += p/bin_bf.c ;
+OBJS += p/bin_mz.c ;
+OBJS += p/bin_any.c ;
+OBJS += p/bin_ningb.c ;
+OBJS += p/bin_bios.c ;
+OBJS += p/bin_rar.c ;
+
+# Plan9
+OBJS += p/bin_p9.c format/p9/p9bin.c ;
+
+# TE
+OBJS += p/bin_te.c format/te/te.c ;
+
+# ELF
+# TODO: rename bin_write_elf64 to bin_elf64_write
+OBJS += p/bin_meta_elf.c p/bin_meta_elf64.c ;
+OBJS += p/bin_elf.c format/elf/elf.c ;
+OBJS += p/bin_write_elf.c format/elf/elf_write.c ;
+OBJS += p/bin_elf64.c format/elf/elf64.c ;
+OBJS += p/bin_write_elf64.c format/elf/elf64_write.c ;
+
+# MACH0
+OBJS += p/bin_mach0.c format/mach0/mach0.c ;
+OBJS += p/bin_mach064.c format/mach0/mach064.c ;
+
+# DyldCache
+OBJS += p/bin_xtr_dyldcache.c format/mach0/dyldcache.c ;
+
+# FatMACH0
+OBJS += p/bin_xtr_fatmach0.c format/mach0/fatmach0.c ;
+
+# PE
+OBJS += p/bin_pe.c format/pe/pe.c ;
+OBJS += p/bin_pe64.c format/pe/pe64.c ;
+
+# DEX
+OBJS += p/bin_dex.c format/dex/dex.c ;
+EXTRA +=
+    <include>format
+;
+
+# Java
+OBJS += p/bin_java.c ;
+EXTRA +=
+	<library>../../shlr/java
+;
+
+lib r_bin : $(OBJS) :
+    <include>../include
+    <include>mangling
+    <define>CORELIB
+    <library>../util 
+    <library>../lib
+    <library>../db
+    <library>../../shlr/sdb
+    $(EXTRA)
+;

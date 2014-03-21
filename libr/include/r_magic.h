@@ -11,8 +11,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_magic);
 
-#ifndef MAGIC
-#define MAGIC "/etc/magic"
+#ifndef MAGICFILE
+#define MAGICFILE "/etc/magic"
 #endif
 
 #define R_MAGIC_PATH R2_LIBDIR"/radare2/"R2_VERSION"/magic"

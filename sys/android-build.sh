@@ -102,8 +102,8 @@ rm -rf ${PWD}/${D}/${PREFIX}/bin/*
 # use busybox style symlinkz
 HERE=${PWD}
 cd binr/blob
-make STATIC_BUILD=1
-make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}"
+make STATIC_BUILD=1 || exit 1
+make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
 cd ../..
 
 chmod +x ${PWD}/${D}/${PREFIX}/bin/*
@@ -121,7 +121,7 @@ tar -czovf ../$D.tar.gz data
 cd ..
 D2=`git log HEAD 2>/dev/null|head -n1|awk '{print $2}'|cut -c 1-8`
 if [ -n "$D2" ]; then
-	ln -fs $D.tar.gz "${D}${D2}".tar.gz
+	ln -fs $D.tar.gz "${D}-${D2}".tar.gz
 fi
 echo `pwd`"/${D}.tar.gz"
 echo `pwd`"/${D}${D2}.tar.gz"

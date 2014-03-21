@@ -1,5 +1,5 @@
 NAME=r_crypto
-DEPS=r_lib
+DEPS=r_util
 CFLAGS+=-DCORELIB
 
 include ../config.mk

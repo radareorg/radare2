@@ -1,8 +1,8 @@
 include ../config.mk
 
 CFLAGS+= -g -ggdb
-OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o sdba.o query.o
-OBJ+=json.o ns.o lock.o util.o
+OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o num.o base64.o
+OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o
 
 SOBJ=$(subst .o,._o,${OBJ})
 
@@ -13,6 +13,9 @@ BIN=sdb${EXEXT}
 all: ${BIN}
 	${MAKE} static
 	${MAKE} shared
+
+install:
+	$(MAKE) -C .. install
 
 sdb-version.h:
 	cd .. ; ${MAKE} src/sdb-version.h

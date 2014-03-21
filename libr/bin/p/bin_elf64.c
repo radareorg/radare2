@@ -1,16 +1,16 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #define R_BIN_ELF64 1
 #include "bin_elf.c"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x02", 5))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-extern struct r_bin_meta_t r_bin_meta_elf64;
+extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
@@ -94,15 +94,17 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-struct r_bin_plugin_t r_bin_plugin_elf64 = {
+RBinPlugin r_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -113,7 +115,7 @@ struct r_bin_plugin_t r_bin_plugin_elf64 = {
 	.fields = &fields,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = &r_bin_meta_elf64,
+	.dbginfo = &r_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &r_bin_write_elf64,
 };

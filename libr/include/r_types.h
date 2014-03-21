@@ -8,6 +8,16 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+// HACK to fix capstone-android-mips build
+#undef mips
+#define mips mips
+
+#ifdef __GNUC__
+#  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
+#else
+#  define UNUSED_FUNCTION(x) UNUSED_ ## x
+#endif
+
 #ifdef __HAIKU__
 # define __UNIX__ 1
 #endif
@@ -64,6 +74,8 @@ const char *x##_version();
 #define R_LIB_VERSION(x) \
 const char *x##_version() { return ""GIT_TAP; }
 
+#define TODO(x) eprintf(__FUNCTION__"  "x)
+
 // TODO: FS or R_SYS_DIR ??
 #undef FS
 #if __WINDOWS__
@@ -105,6 +117,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
 #define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
 
+#ifdef R_IPI
+#undef R_IPI
+#endif
+
 #ifdef R_API
 #undef R_API
 #endif
@@ -127,7 +143,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 // TODO: Make R_NEW_COPY be 1 arg, not two
-#define R_NEW_COPY(x,y) x=(y*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
+#define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
@@ -158,10 +174,13 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+
+#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
 #define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
 #define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
-#define R_MAX(x,y) ((x)>(y))?x:y
-#define R_MIN(x,y) ((x)>(y))?y:x
+#define R_MAX(x,y) (((x)>(y))?(x):(y))
+#define R_MIN(x,y) (((x)>(y))?(y):(x))
 #define R_ABS(x) (((x)<0)?-(x):(x))
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
@@ -255,7 +274,9 @@ enum {
 	R_SYS_ARCH_I8080 = 0x10000,
 	R_SYS_ARCH_RAR = 0x20000,
 	R_SYS_ARCH_8051 = 0x40000,
-	R_SYS_ARCH_C55PLUS = 0x80000,
+	R_SYS_ARCH_TMS320 = 0x80000,
+	R_SYS_ARCH_EBC = 0x100000,
+	R_SYS_ARCH_H8300 = 0x8300,
 };
 
 /* os */

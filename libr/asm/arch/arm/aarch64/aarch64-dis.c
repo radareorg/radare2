@@ -2118,6 +2118,7 @@ print_insn_aarch64_word (bfd_vma pc,
 			 uint32_t word,
 			 struct disassemble_info *info)
 {
+#if 0
   static const char *err_msg[6] =
     {
       [ERR_OK]   = "_",
@@ -2125,6 +2126,7 @@ print_insn_aarch64_word (bfd_vma pc,
       [-ERR_UNP] = "unpredictable",
       [-ERR_NYI] = "NYI"
     };
+#endif
 
   int ret;
   aarch64_inst inst;

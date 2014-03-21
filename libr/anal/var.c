@@ -57,6 +57,9 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope, RAnalType *type, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
+	if (!fcn) {
+		return R_FALSE;
+	}
 	if (from != 0LL)
 	r_list_foreach (fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta)

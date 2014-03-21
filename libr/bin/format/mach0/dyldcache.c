@@ -42,7 +42,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	curoffset = bin->hdr.startaddr+idx*32;
 	libla = *(ut64*)(bin->b->buf+curoffset);
 	liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
-	if (liboff < 0 || liboff > bin->size) {
+	if (liboff > bin->size) {
 		eprintf ("Corrupted file\n");
 		free (ret);
 		return NULL;

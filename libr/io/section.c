@@ -87,7 +87,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->offset,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
 		} else {
-			io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+			io->printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s",
 			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
@@ -225,8 +225,10 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 
 	r_list_foreach (io->sections, iter, s) {
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+			/* XXX: Do we need this hack?
 			if (s->vaddr == 0) // hack
 				return vaddr;
+			*/
 			return (vaddr - s->vaddr + s->offset);
 		}
 	}
@@ -238,8 +240,10 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
 		if (offset >= s->offset && offset < s->offset + s->size) {
+			/* XXX: Do we need this hack?
 			if (s->vaddr == 0) // hack
 				return offset;
+			*/
 			io->section = s;
 			return (s->vaddr + offset - s->offset);
 		}

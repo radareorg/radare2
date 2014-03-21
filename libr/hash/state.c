@@ -40,7 +40,9 @@ R_API void r_hash_free(RHash *ctx) {
 	free (ctx);
 }
 
-R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, ut32 len) {
+R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
+	if (len<0)
+		return NULL;
 	if (ctx->rst)
 		MD5Init (&ctx->md5);
 	if (len>0)
@@ -50,7 +52,9 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, ut32 len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, ut32 len) {
+R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len) {
+	if (len<0)
+		return NULL;
 	if (ctx->rst)
 		SHA1_Init (&ctx->sha1);
 	SHA1_Update (&ctx->sha1, input, len);
@@ -59,12 +63,14 @@ R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, ut32 len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, ut32 len) {
+R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
+	if (len<0) return NULL;
 	mdfour (ctx->digest, input, len);
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, ut32 len) {
+R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len) {
+	if (len<0) return NULL;
 	if (ctx->rst)
 		SHA256_Init (&ctx->sha256);
 	SHA256_Update (&ctx->sha256, input, len);
@@ -73,7 +79,8 @@ R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, ut32 len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, ut32 len) {
+R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len) {
+	if (len<0) return NULL;
 	if (ctx->rst)
 		SHA384_Init (&ctx->sha384);
 	SHA384_Update (&ctx->sha384, input, len);
@@ -82,7 +89,8 @@ R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, ut32 len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, ut32 len) {
+R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
+	if (len<0) return NULL;
 	if (ctx->rst)
 		SHA512_Init (&ctx->sha512);
 	SHA512_Update (&ctx->sha512, input, len);

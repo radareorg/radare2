@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2013 - pancake */
+/* radare2 - Copyleft 2011-2014 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,13 +13,16 @@
 
 #define NARGS (sizeof (_args)/sizeof(*_args))
 static char *_args[512] = {NULL};
+static char *_system = NULL;
 static char *_program = NULL;
 static char *_stdin = NULL;
 static char *_stdout = NULL;
 static char *_stderr = NULL;
 static char *_chgdir = NULL;
 static char *_chroot = NULL;
+static char *_libpath = NULL;
 static char *_preload = NULL;
+static int _r2preload = 0;
 static char *_setuid = NULL;
 static char *_seteuid = NULL;
 static char *_setgid = NULL;
@@ -54,7 +57,7 @@ static char *getstr(const char *src) {
 				len--;
 				if (ret[len]=='"') {
 					ret[len] = 0;
-					r_str_escape (ret);
+					r_str_unescape (ret);
 					return ret;
 				} else eprintf ("Missing \"\n");
 			}
@@ -75,8 +78,7 @@ static char *getstr(const char *src) {
 			return NULL;
 		}
 	}
-	ret = strdup (src);
-	r_str_escape (ret);
+	r_str_unescape ((ret = strdup (src)));
 	return ret;
 }
 
@@ -88,6 +90,7 @@ static void parseline (char *b) {
 	if (*e=='$') e = r_sys_getenv (e);
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _args[0] = _program = strdup (e);
+	else if (!strcmp (b, "system")) _system = strdup (e);
 	else if (!strcmp (b, "connect")) _connect = strdup (e);
 	else if (!strcmp (b, "listen")) _listen = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
@@ -98,7 +101,10 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "input")) _input = strdup (e);
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
+	else if (!strcmp (b, "libpath")) _libpath = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
+	else if (!strcmp (b, "r2preload")) _r2preload = \
+		(strcmp (e, "yes")? (strcmp (e, "true")? (strcmp (e, "1")? 0: 1): 1): 1);
 	else if (!strcmp (b, "setuid")) _setuid = strdup (e);
 	else if (!strcmp (b, "seteuid")) _seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) _setgid = strdup (e);
@@ -151,8 +157,8 @@ static void parseinput (char *s) {
 #endif
 
 static int runfile () {
-	if (!_program) {
-		printf ("No program rule defined\n");
+	if (!_program && !_system) {
+		printf ("No program or system rule defined\n");
 		return 1;
 	}
 	if (_stdin) {
@@ -230,6 +236,21 @@ static int runfile () {
 		write (f2[1], _input, strlen (_input));
 	}
 #endif
+	if (_r2preload) {
+		if (_preload) {
+			eprintf ("WARNING: Only one library can be opened at a time\n");
+		}
+		_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
+	}
+	if (_libpath) {
+#if __WINDOWS__
+		eprintf ("rarun2: libpath unsupported for this platform\n");
+#elif __APPLE__
+		r_sys_setenv ("DYLD_LIBRARY_PATH", _libpath);
+#else
+		r_sys_setenv ("LD_LIBRARY_PATH", _libpath);
+#endif
+	}
 	if (_preload) {
 #if __APPLE__
 		// 10.6
@@ -255,6 +276,9 @@ static int runfile () {
 		eprintf ("timeout not supported for this platform\n");
 #endif
 	}
+	if (_system) {
+		exit (r_sys_cmd (_system));
+	}
 	if (!r_file_exists (_program)) {
 		eprintf ("rarun2: %s: file not found\n", _program);
 		return 1;
@@ -275,6 +299,7 @@ int main(int argc, char **argv) {
 			"# arg3=\"hello\\nworld\"\n"
 			"# arg4=:048490184058104849\n"
 			"# arg4=@arg.txt\n"
+			"# system=r2 -\n"
 			"setenv=FOO=BAR\n"
 			"# unsetenv=FOO\n"
 			"# envfile=environ.txt\n"
@@ -288,6 +313,8 @@ int main(int argc, char **argv) {
 			"# input=input.txt\n"
 			"# chdir=/\n"
 			"# chroot=/mnt/chroot\n"
+			"# libpath=$PWD:/tmp/lib\n"
+			"# r2preload=yes\n"
 			"# preload=/lib/libfoo.so\n"
 			"# setuid=2000\n"
 			"# seteuid=2000\n"

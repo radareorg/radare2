@@ -8,21 +8,21 @@
 
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	psosvmasm_init();
-	op->inst_len = psosvm_disasm(buf, op->buf_asm);
-
-	return op->inst_len;
+	op->size = psosvm_disasm(buf, op->buf_asm);
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	op->inst_len = psosvm_assemble(op->buf, buf);
-	return op->inst_len;
+	op->size = psosvm_assemble(op->buf, buf);
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_psosvm = {
 	.name = "psosvm",
-	.desc = "PSOS-VM disassembly plugin",
+	.desc = "Smartcard PSOS Virtual Machine",
+	.license = "BSD",
 	.arch = "psosvm",
-	.bits = (int[]){ 8, 16, 0 },
+	.bits = 8|16,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

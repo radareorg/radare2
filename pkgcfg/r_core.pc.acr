@@ -7,5 +7,5 @@ Name: r_core
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_core -lr_config -lr_cons -lr_io -lr_cmd -lr_util -lr_flags -lr_asm -lr_lib -lr_db -lr_debug -lr_hash -lr_bin -lr_lang -lr_io -lr_anal -lr_parse -lr_bp -lr_egg -lr_reg -lr_search -lr_syscall -lr_sign -lr_diff -lr_socket -lr_fs @LIBMAGIC@
+Libs: -L${libdir} -lr_core -lr_config -lr_cons -lr_io -lr_util -lr_flags -lr_asm -lr_db -lr_debug -lr_hash -lr_bin -lr_lang -lr_io -lr_anal -lr_parse -lr_bp -lr_egg -lr_reg -lr_search -lr_syscall -lr_diff -lr_socket -lr_fs @LIBMAGIC@
 Cflags: -I${includedir}/libr

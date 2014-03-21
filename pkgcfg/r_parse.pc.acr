@@ -7,5 +7,5 @@ Name: r_parse
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_parse -lr_lib -lr_flags -lr_util -lr_anal
+Libs: -L${libdir} -lr_parse -lr_flags -lr_util -lr_anal
 Cflags: -I${includedir}/libr

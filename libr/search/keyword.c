@@ -55,8 +55,8 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 	ut8 *kw, *bm;
 	int bmlen, kwlen;
 	if (kwstr != NULL) {
-		kw = malloc (strlen (kwstr));
-		bm = malloc (strlen (bmstr));
+		kw = malloc (strlen (kwstr)+1);
+		bm = malloc (strlen (bmstr)+1);
 		if (kw != NULL && bm != NULL) {
 			bmlen = r_hex_str2bin (bmstr, (ut8*)bm);
 			kwlen = r_hex_str2bin (kwstr, (ut8*)kw);

@@ -1,0 +1,4 @@
+exe rarun2 : rarun2.c :
+    <library>../../libr/util
+    <library>../../libr/socket
+    <include>../../libr/include ;

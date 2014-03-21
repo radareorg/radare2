@@ -1,14 +1,15 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
+	ut64 addr, baddr = r_config_get_i (core->config, "bin.baddr");
+	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	RIOMap *map = NULL;
 	RCoreFile *file;
 	RListIter *iter;
 	int num = -1;
 	int isn = 0;
-	ut64 addr;
 	char *ptr;
 
 	switch (*input) {
@@ -36,9 +37,22 @@ static int cmd_open(void *data, const char *input) {
 			if (file) {
 				// MUST CLEAN BEFORE LOADING
 				if (!isn)
-					r_core_bin_load (core, fn);
-			} else eprintf ("Cannot open file '%s'\n", fn);
-		} else r_io_raise (core->io, num);
+					r_core_bin_load (core, fn, baddr);
+			} else if (!nowarn) {
+				eprintf ("Cannot open file '%s'\n", fn);
+			}
+		} else {
+			RListIter *iter = NULL;
+			RCoreFile *f;
+			core->switch_file_view = 0;
+			r_list_foreach (core->files, iter, f) {
+				if (f->fd->fd == num) {
+					r_io_raise (core->io, num);
+					core->switch_file_view = 1;
+					break;
+				}
+			}
+		}
 		r_core_block_read (core, 0);
 		break;
 	case '-':
@@ -72,7 +86,6 @@ static int cmd_open(void *data, const char *input) {
 					map->from = new;
 					map->to = new+diff;
 				} else eprintf ("Cannot find any map here\n");
-				
 			}
 			}
 			break;
@@ -122,11 +135,11 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		default:
 		case '?':
-			r_cons_printf ("Usage: om[-] [arg]  # map opened files\n");
-			r_cons_printf ("om                  list all defined IO maps\n");
-			r_cons_printf ("om-0x10000          remove the map at given address\n");
-			r_cons_printf ("om fd addr [size]   create new io map\n");
-			r_cons_printf ("omr fd|0xADDR ADDR  relocate current map\n");
+			r_cons_printf ("|Usage: om[-] [arg]  # map opened files\n"
+				"| om                  list all defined IO maps\n"
+				"| om-0x10000          remove the map at given address\n"
+				"| om fd addr [size]   create new io map\n"
+				"| omr fd|0xADDR ADDR  relocate current map\n");
 			break;
 		}
 		r_core_block_read (core, 0);
@@ -141,23 +154,23 @@ static int cmd_open(void *data, const char *input) {
 		r_core_init (core);
 		if (!r_core_file_open (core, input+2, R_IO_READ, 0))
 			eprintf ("Cannot open file\n");
-		if (!r_core_bin_load (core, NULL))
+		if (!r_core_bin_load (core, NULL, baddr))
 			r_config_set (core->config, "io.va", "false");
 		break;
 	case '?':
 	default:
-		eprintf ("Usage: o[com- ] [file] ([offset])\n"
-		" o                  list opened files\n"
-		" oc [file]          open core file, like relaunching r2\n"
-		" oo                 reopen current file (kill+fork in debugger)\n"
-		" oo+                reopen current file in read-write\n"
-		" o 4                priorize io on fd 4 (bring to front)\n"
-		" o-1                close file index 1\n"
-		" o /bin/ls          open /bin/ls file in read-only\n"
-		" o+/bin/ls          open /bin/ls file in read-write mode\n"
-		" o /bin/ls 0x4000   map file at 0x4000\n"
-		" on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
-		" om[?]              create, list, remove IO maps\n");
+		r_cons_printf ("|Usage: o[com- ] [file] ([offset])\n"
+		"| o                  list opened files\n"
+		"| oc [file]          open core file, like relaunching r2\n"
+		"| oo                 reopen current file (kill+fork in debugger)\n"
+		"| oo+                reopen current file in read-write\n"
+		"| o 4                priorize io on fd 4 (bring to front)\n"
+		"| o-1                close file index 1\n"
+		"| o /bin/ls          open /bin/ls file in read-only\n"
+		"| o+/bin/ls          open /bin/ls file in read-write mode\n"
+		"| o /bin/ls 0x4000   map file at 0x4000\n"
+		"| on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
+		"| om[?]              create, list, remove IO maps\n");
 		break;
 	}
 	return 0;

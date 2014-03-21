@@ -19,11 +19,24 @@ R_API const char *r_file_basename (const char *path) {
 	return path;
 }
 
-R_API boolt r_file_is_directory(const char *str) {
+R_API boolt r_file_is_regular(const char *str) {
 	struct stat buf = {0};
+	if (!str||!*str)
+		return R_FALSE;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
-	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
+	return ((S_IFREG & buf.st_mode)==S_IFREG)? R_TRUE: R_FALSE;
+}
+
+R_API boolt r_file_is_directory(const char *str) {
+	struct stat buf = {0};
+	if (!str||!*str)
+		return R_FALSE;
+	if (stat (str, &buf)==-1)
+		return R_FALSE;
+	if ((S_IFBLK & buf.st_mode) == S_IFBLK)
+		return R_FALSE;
+	return (S_IFDIR==(S_IFDIR & buf.st_mode))? R_TRUE: R_FALSE;
 }
 
 R_API boolt r_file_fexists(const char *fmt, ...) {
@@ -58,10 +71,10 @@ R_API char *r_file_abspath(const char *file) {
 		return r_str_home (file+2);
 #if __UNIX__
 	if (cwd && *file != '/')
-		ret = r_str_dup_printf ("%s/%s", cwd, file);
+		ret = r_str_newf ("%s/%s", cwd, file);
 #elif __WINDOWS__
 	if (cwd && !strchr (file, ':'))
-		ret = r_str_dup_printf ("%s\\%s", cwd, file);
+		ret = r_str_newf ("%s\\%s", cwd, file);
 #endif
 	free (cwd);
 // TODO: remove // and ./
@@ -133,8 +146,10 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	sz = ftell (fd);
 	fseek (fd, 0, SEEK_SET);
 	ret = (ut8*)malloc ((sz>>1)+1);
-	if (!ret)
+	if (!ret) {
+		fclose (fd);
 		return NULL;
+	}
 	for (;;) {
 		if (fscanf (fd, " #%*[^\n]") == 1)
 			continue;
@@ -145,6 +160,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 		if (feof (fd))
 			break;
 		free (ret);
+		fclose (fd);
 		return NULL;
 	}
 
@@ -156,16 +172,26 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	char *ret;
+	size_t read_items;
 	FILE *fd = r_sandbox_fopen (str, "rb");
 	if (fd == NULL)
 		return NULL;
 	// XXX handle out of bound reads (eof)
-	fseek (fd, off, SEEK_SET);
+	if (fseek (fd, off, SEEK_SET) < 0) {
+		fclose (fd);
+		return NULL;
+	}
 	ret = (char *)malloc (sz+1);
 	if (ret != NULL) {
 		if (osz)
 			*osz = (int)(size_t)fread (ret, 1, sz, fd);
-		else fread (ret, 1, sz, fd);
+		else {
+			read_items = fread (ret, 1, sz, fd);
+			if (!read_items) {
+				fclose (fd);
+				return ret;
+			}
+		}
 		ret[sz] = '\0';
 	}
 	fclose (fd);
@@ -274,7 +300,10 @@ R_API boolt r_file_rmrf(const char *file) {
         char *nfile = strdup (file);
         nfile[ strlen (nfile)-1 ] = '_';
         nfile[ strlen (nfile)-2 ] = '_';
-        rename (file, nfile);
+        if (rename (file, nfile)) {
+            free (nfile);
+		return R_FALSE;
+	}
         eprintf ("mv %s %s\n", file, nfile);
         free (nfile);
         return R_TRUE;
@@ -391,6 +420,11 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 	m->rw = rw;
 	m->fd = fd;
 	m->len = lseek (fd, (off_t)0, SEEK_END);
+	if (m->len == (off_t)-1) {
+		close (fd);
+		R_FREE (m);
+		return NULL;
+	}
 #if __UNIX__
 	m->buf = mmap (NULL, m->len,
 		rw?PROT_READ|PROT_WRITE:PROT_READ,
@@ -465,13 +499,16 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
 	char name[1024];
+	mode_t mask;
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
 		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	else h = -1;
 #else
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
+	mask = umask(S_IWGRP | S_IWOTH);
 	h = mkstemp (name);
+	umask(mask);
 #endif
 	if (oname) *oname = (h!=-1)? strdup (name): NULL;
 	free (path);
@@ -486,6 +523,10 @@ R_API char *r_file_tmpdir() {
 	char *path = strdup ("/data/data/org.radare.installer/radare2/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
+	if (path && !*path) {
+		free (path);
+		path = NULL;
+	}
 	if (!path) path = strdup ("/tmp");
 #endif
 	if (!r_file_is_directory (path)) {

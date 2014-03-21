@@ -61,7 +61,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 
 	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
-	str = (char *)malloc (strlen (arg));
+	str = (char *)malloc (strlen (arg)+1);
 	if (buf == NULL || str == NULL)
 		goto beach;
 	memcpy (buf, core->block, core->blocksize);
@@ -249,13 +249,47 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
+static RCoreFile * r_core_file_set_first_valid(RCore *core) {
+	RListIter *iter;
+	RCoreFile *file = NULL;
+
+	r_list_foreach (core->files, iter, file) {
+		if (file && file->fd){
+			core->io->raised = file->fd->fd;
+			core->switch_file_view = 1;
+			break;
+		}
+	}
+	return file;
+}
+
+static RCoreFile * r_core_file_set_by_fd(RCore *core, int fd) {
+	RListIter *iter;
+	RCoreFile *file = NULL;
+
+	r_list_foreach (core->files, iter, file) {
+		if (file && file->fd && file->fd->fd == fd){
+		    core->file = file;
+			break;
+		}
+	}
+	return file;
+}
+
 R_API int r_core_block_read(RCore *core, int next) {
 	ut64 off;
-	if (core->file == NULL) {
+	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
 		memset (core->block, 0xff, core->blocksize);
 		return -1;
 	}
-	r_io_set_fd (core->io, core->file->fd);
+	r_io_set_fdn (core->io, core->io->raised);
+	if (core->switch_file_view) {
+		r_core_file_set_by_fd (core, core->io->raised);
+		r_core_bin_set_by_fd (core, core->io->raised);
+		core->offset = core->file && core->file->map ? core->file->map->from : 0;
+		core->switch_file_view = 0;
+	}
+
 	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0),
 		R_IO_SEEK_SET);
 	if (off == UT64_MAX) {
@@ -264,6 +298,7 @@ R_API int r_core_block_read(RCore *core, int next) {
 		if (!core->io->va)
 			return -1;
 	}
+	core->io->off = off;
 	return (int)r_io_read (core->io, core->block, core->blocksize);
 }
 

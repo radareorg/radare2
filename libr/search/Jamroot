@@ -1,0 +1,4 @@
+OBJS = search.c bytepat.c strings.c aes-find.c ;
+OBJS += regexp.c xrefs.c keyword.c ;
+
+lib r_search : $(OBJS) : <include>../include <library>../util ;

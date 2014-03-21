@@ -1,7 +1,6 @@
 OBJ_X86=asm_x86.o
 # udis86
 SHARED_X86=../../shlr/udis86/decode.o
-SHARED_X86+=../../shlr/udis86/input.o
 SHARED_X86+=../../shlr/udis86/itab.o
 SHARED_X86+=../../shlr/udis86/syn-att.o
 SHARED_X86+=../../shlr/udis86/syn-intel.o

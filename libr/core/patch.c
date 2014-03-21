@@ -2,21 +2,6 @@
 
 #include <r_core.h>
 
-#if 0
-Patch format
-============
-
-^# -> comments
-. -> execute command
-! -> execute command
-OFFSET { code block }
-OFFSET "string"
-OFFSET 01020304
-OFFSET : assembly
-+ {code}|"str"|0210|: asm
-
-#endif
-
 R_API int r_core_patch (RCore *core, const char *patch) {
 	char *p, *p2, *q, str[200], tmp[64];
 	ut64 noff = 0LL;

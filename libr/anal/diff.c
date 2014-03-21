@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 - nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -16,8 +16,10 @@ R_API RAnalDiff *r_anal_diff_new() {
 }
 
 R_API void* r_anal_diff_free(RAnalDiff *diff) {
-	if (diff && diff->name)
+	if (diff && diff->name) {
 		free (diff->name);
+		diff->name = NULL;
+	}
 	free (diff);
 	return NULL;
 }
@@ -123,7 +125,7 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 					mbb2 = bb2;
 					if (t == 1) break;
 				}
-			}
+}
 		}
 		if (mbb != NULL && mbb2 != NULL) {
 			if (ot == 1 || t > anal->diff_thfcn )
@@ -157,7 +159,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	r_list_foreach (fcns, iter, fcn) {
 		if (fcn->type != R_ANAL_FCN_TYPE_SYM || fcn->name == NULL)
 			continue;
-		r_list_foreach (fcns2, iter, fcn2) {
+		r_list_foreach (fcns2, iter2, fcn2) {
 			if (fcn2->type != R_ANAL_FCN_TYPE_SYM || fcn2->name == NULL ||
 				strcmp (fcn->name, fcn2->name))
 				continue;

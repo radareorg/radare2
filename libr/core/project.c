@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
+/* radare - LGPL - Copyright 2010-2014 - pancake */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -40,6 +40,12 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 		fgets (buf, sizeof (buf), fd);
 		if (feof (fd))
 			break;
+		if (!memcmp (buf, "\"e file.path = ", 15)) {
+			buf[strlen(buf)-2]=0;
+			file = r_str_new (buf+15);
+			break;
+		}
+		// TODO: deprecate before 1.0
 		if (!memcmp (buf, "e file.path = ", 14)) {
 			buf[strlen(buf)-1]=0;
 			file = r_str_new (buf+14);
@@ -47,7 +53,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 		}
 	}
 	if (fd) fclose (fd);
-	r_cons_printf ("Project : %s\n", prj);
+	r_cons_printf ("%s\n", prj);
 	if (file) r_cons_printf ("FilePath: %s\n", file);
 	free (prj);
 	return file;
@@ -61,6 +67,10 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		return R_FALSE;
 
 	prj = r_core_project_file (core, file);
+	if (r_file_is_directory (prj)) {
+		eprintf ("Error: Target is a directory\n");
+		return R_FALSE;
+	}
 	r_core_project_init (core);
 	r_anal_project_save (core->anal, prj);
 	fd = r_sandbox_open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
@@ -83,8 +93,14 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_io_section_list (core->io, core->offset, 1);
 		r_cons_flush ();
 		r_str_write (fd, "# meta\n");
-		r_meta_list (core->anal->meta, R_META_TYPE_ANY, 1);
+		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
+		 {
+			char buf[1024];
+			snprintf (buf, sizeof (buf), "%s.d/xrefs", prj);
+			sdb_file (core->anal->sdb_xrefs, buf);
+			sdb_sync (core->anal->sdb_xrefs);
+		 }
 		r_core_cmd (core, "ar*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "af*", 0);

@@ -1,14 +1,21 @@
 include ../../global.mk
 
 NAME=r_asm
-DEPS=r_lib r_util r_parse r_db r_syscall
+DEPS=r_util r_parse r_db r_syscall
 CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 
 include $(TOP)/libr/config.mk
 
 .PHONY: all plugins
 
+EXTRA_CLEAN=doclean
+
 all: plugins
+
+doclean:
+	@cd d && ${MAKE} clean
+	@cd p && ${MAKE} clean
+	rm -f `find arch/| grep '\.o$$'`
 
 plugins: ${LIBSO} ${LIBAR}
 	@cd d && ${MAKE}

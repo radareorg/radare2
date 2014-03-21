@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
 #include <r_egg.h>
 #include "../config.h"
@@ -25,7 +25,7 @@ R_API REgg *r_egg_new () {
 	egg->rasm = r_asm_new ();
 	egg->bits = 0;
 	egg->endian = 0;
-	egg->pair = r_pair_new ();
+	egg->db = sdb_new (NULL, NULL, 0);
 	egg->patches = r_list_new ();
 	egg->patches->free = (RListFree)r_buf_free;
 	egg->plugins = r_list_new ();
@@ -64,7 +64,7 @@ R_API void r_egg_free (REgg *egg) {
 	r_list_free(egg->list);
 	r_asm_free (egg->rasm);
 	r_syscall_free (egg->syscall);
-	r_pair_free(egg->pair);
+	sdb_free (egg->db);
 	r_list_free (egg->plugins);
 	r_list_free (egg->patches);
 	free (egg);
@@ -205,10 +205,10 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 }
 
 R_API int r_egg_assemble(REgg *egg) {
+	RAsmCode *asmcode = NULL;
+	char *code = NULL;
+	int ret = R_FALSE;
 	if (egg->emit == &emit_x86 || egg->emit == &emit_x64) {
-		RAsmCode *asmcode;
-		char *code;
-		//rasm2
 		r_asm_use (egg->rasm, "x86.nz");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, 0);
@@ -221,13 +221,8 @@ R_API int r_egg_assemble(REgg *egg) {
 				r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
 			// LEAK r_asm_code_free (asmcode);
 		} else eprintf ("fail assembling\n");
-		free (code);
-		return (asmcode != NULL);
 	} else
 	if (egg->emit == &emit_arm) {
-		RAsmCode *asmcode;
-		char *code;
-		//rasm2
 		r_asm_use (egg->rasm, "arm");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian); // XXX
@@ -239,10 +234,11 @@ R_API int r_egg_assemble(REgg *egg) {
 			r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
 			// LEAK r_asm_code_free (asmcode);
 		}
-		free (code);
-		return (asmcode != NULL);
 	}
-	return R_FALSE;
+	free (code);
+	ret = (asmcode != NULL);
+	r_asm_code_free (asmcode);
+	return ret;
 }
 
 R_API int r_egg_compile(REgg *egg) {
@@ -260,6 +256,10 @@ R_API int r_egg_compile(REgg *egg) {
 	for (; *b; b++) {
 		r_egg_lang_parsechar (egg, *b);
 		// XXX: some parse fail errors are false positives :(
+	}
+	if (egg->context>0) {
+		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
+		return R_FALSE;
 	}
 	// TODO: handle errors here
 	return R_TRUE;
@@ -354,11 +354,11 @@ R_API void r_egg_fill(REgg *egg, int pos, int type, int argc, int length) {
 }
 
 R_API void r_egg_option_set(REgg *egg, const char *key, const char *val) {
-	return r_pair_set (egg->pair, key, val);
+	sdb_set (egg->db, key, val, 0);
 }
 
 R_API char *r_egg_option_get(REgg *egg, const char *key) {
-	return r_pair_get (egg->pair, key);
+	return sdb_get (egg->db, key, NULL);
 }
 
 R_API int r_egg_shellcode(REgg *egg, const char *name) {

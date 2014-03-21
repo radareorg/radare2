@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -55,9 +55,9 @@ R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 }
 
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
+	if (length<=0 || !buf) return R_FALSE;
 	if (b->buf) free (b->buf);
-	if (length<0) return R_FALSE;
-	if (!(b->buf = malloc (length+1)))
+	if (!(b->buf = malloc (length)))
 		return R_FALSE;
 	memcpy (b->buf, buf, length);
 	b->length = length;
@@ -223,13 +223,28 @@ R_API void r_buf_deinit(RBuffer *b) {
 	if (b->mmap) {
 		r_file_mmap_free (b->mmap);
 		b->mmap = NULL;
-	} else {
-		free (b->buf);
-	}
+	} else free (b->buf);
 }
 
 R_API void r_buf_free(struct r_buf_t *b) {
 	if (!b) return;
 	r_buf_deinit (b);
 	free (b);
+}
+
+R_API int r_buf_append_string (RBuffer *b, const char *str) {
+	return r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+}
+
+R_API char *r_buf_free_to_string (RBuffer *b) {
+	char *p;
+	if (!b) return NULL;
+	if (b->mmap) {
+		p = r_buf_to_string (b);
+	} else {
+		r_buf_append_bytes (b, (const ut8*)"", 1);
+		p = (char *)b->buf;
+	}
+	free (b);
+	return p;
 }

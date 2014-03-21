@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -43,24 +43,24 @@ struct EXE_RELOC {
 };
 
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	// parse stuff 
 	return R_TRUE;
 }
 
-static int destroy (RBinArch *arch) {
+static int destroy (RBinFile *arch) {
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0; // XXX
 }
 
-static RBinAddr* binsym(RBinArch *arch, int type) {
+static RBinAddr* binsym(RBinFile *arch, int type) {
 	return NULL;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	ut64 off = 0LL;
 	RList* ret;
 	RBinAddr *ptr = NULL;
@@ -80,7 +80,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
@@ -122,15 +122,15 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
 	RBinInfo *ret = NULL;
 
@@ -161,7 +161,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int idx, ret = R_TRUE;
 	const ut8 *b;
 	if (!arch || !arch->buf || !arch->buf->buf)
@@ -176,15 +176,17 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mz = {
+RBinPlugin r_bin_plugin_mz = {
 	.name = "mz",
-	.desc = "MZbin plugin",
+	.desc = "MZ bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -195,7 +197,7 @@ struct r_bin_plugin_t r_bin_plugin_mz = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = NULL,
 };

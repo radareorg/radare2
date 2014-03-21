@@ -8,5 +8,4 @@ ${TARGET_PROCPID}: ${OBJ_PROCPID}
 	${CC} $(call libname,io_procpid) \
 		${CFLAGS} ${LDFLAGS_LIB} \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
-		${LDFLAGS_LINKPATH}.. -L.. -L../../lib -lr_lib -lr_io \
-		${OBJ_PROCPID}
+		${LDFLAGS_LINKPATH}.. -L.. -lr_io ${OBJ_PROCPID}

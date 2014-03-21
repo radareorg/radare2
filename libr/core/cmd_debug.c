@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
 	RGraphNode *n, *n2;
@@ -47,7 +47,8 @@ static int step_until(RCore *core, ut64 addr) {
 static int step_until_eof(RCore *core) {
 	ut64 off, now = r_debug_reg_get (core->dbg, "sp");
 	do {
-		r_debug_step (core->dbg, 1);
+		if (!r_debug_step (core->dbg, 1))
+			break;
 		if (checkbpcallback (core)) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
@@ -68,7 +69,7 @@ static int step_line(RCore *core, int times) {
 	}
 	file[0] = 0;
 	file2[0] = 0;
-	if (r_bin_meta_get_line (core->bin, off, file, sizeof (file), &line)) {
+	if (r_bin_addr2line (core->bin, off, file, sizeof (file), &line)) {
 		eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file, line);
 		eprintf ("--> %s\n", r_file_slurp_line (file, line, 0));
 		find_meta = R_FALSE;
@@ -83,7 +84,7 @@ static int step_line(RCore *core, int times) {
 			break;
 		}
 		off = r_debug_reg_get (core->dbg, "pc");
-		if (!r_bin_meta_get_line (core->bin, off, file2, sizeof (file2), &line2)) {
+		if (!r_bin_addr2line (core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
 				continue;
 			eprintf ("Cannot retrieve dwarf info at 0x%08"PFMT64x"\n", off);
@@ -163,20 +164,20 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			(int) r_num_math (core->num, input+2));
 		break;
 	case '?':
-		r_cons_printf ("Usage: dp[=][pid]\n"
-			" dp      list current pid and childrens\n"
-			" dp 748  list children of pid\n"
-			" dp*     list all attachable pids\n"
-			" dpe     show path to executable\n"
-			" dpa 377 attach and select this pid\n"
-			" dp=748  select this pid\n"
-			" dpf     Attach to pid like file fd // HACK\n"
-			" dpn     Create new process (fork)\n"
-			" dpnt    Create new thread (clone)\n"
-			" dpt     List threads of current pid\n"
-			" dpt 74  List threads of given process\n"
-			" dpt=64  Attach to thread\n"
-			" dpk P S send signal S to P process id\n");
+		r_cons_printf ("|Usage: dp[=][pid]\n"
+			"| dp      list current pid and childrens\n"
+			"| dp 748  list children of pid\n"
+			"| dp*     list all attachable pids\n"
+			"| dpe     show path to executable\n"
+			"| dpa 377 attach and select this pid\n"
+			"| dp=748  select this pid\n"
+			"| dpf     Attach to pid like file fd // HACK\n"
+			"| dpn     Create new process (fork)\n"
+			"| dpnt    Create new thread (clone)\n"
+			"| dpt     List threads of current pid\n"
+			"| dpt 74  List threads of given process\n"
+			"| dpt=64  Attach to thread\n"
+			"| dpk P S send signal S to P process id\n");
 		break;
 	default:
 		eprintf ("selected: %d %d\n", core->dbg->pid, core->dbg->tid);
@@ -219,7 +220,7 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 			// XXX Do asm.arch should define the max size of opcode?
 			r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
 			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf));
-		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.length));
+		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		r_bp_traptrace_enable (core->dbg->bp, R_FALSE);
 	}
 }
@@ -233,19 +234,19 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
-		"Usage: dm [size]\n"
-		" dm            List memory maps of target process\n"
-		" dmj           List memmaps in JSON format\n"
-		" dm*           Same as above but in radare commands\n"
-		" dm addr size  Allocate size bytes at addr (anywhere if addr is -1) in child process\n"
-		" dm-0x8048     Deallocate memory map of address 0x8048\n"
-		" dmp A S rwx   Change page at A with size S protection permissions\n"
-		" dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
-		" dml file      Load contents of file into the current map region (see Sl)\n"
-		" dmi [addr|libname] [symname]   List symbols of target lib\n"
-		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
-		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
-		"TODO: map files in process memory. (dmf file @ [addr])\n");
+		"|Usage: dm [size]\n"
+		"| dm            List memory maps of target process\n"
+		"| dmj           List memmaps in JSON format\n"
+		"| dm*           Same as above but in radare commands\n"
+		"| dm addr size  Allocate size bytes at addr (anywhere if addr is -1) in child process\n"
+		"| dm-0x8048     Deallocate memory map of address 0x8048\n"
+		"| dmp A S rwx   Change page at A with size S protection permissions\n"
+		"| dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
+		"| dml file      Load contents of file into the current map region (see Sl)\n"
+		"| dmi [addr|libname] [symname]   List symbols of target lib\n"
+		"| dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
+		//"| dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
+		"|TODO: map files in process memory. (dmf file @ [addr])\n");
 		break;
 	case 'p':
 		if (input[1] == ' ') {
@@ -344,7 +345,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
-				RBinObject *o = core->bin->cur.o;
+				RBinObject *o = core->bin->cur->o;
 				filter.offset = 0LL;
 				filter.name = (char *)symname;
 				baddr = o->baddr;
@@ -396,42 +397,43 @@ static int cmd_debug_map(RCore *core, const char *input) {
 }
 
 static void cmd_debug_reg(RCore *core, const char *str) {
+	int size, i, type = R_REG_TYPE_GPR;
+	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
-	int size, i, type = R_REG_TYPE_GPR;
-	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	switch (str[0]) {
 	case '?':
 		if (str[1]) {
 			ut64 off;
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, R_FALSE);
 			off = r_debug_reg_get (core->dbg, str+1);
 	//		r = r_reg_get (core->dbg->reg, str+1, 0);
 	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
 			r_cons_printf ("0x%08"PFMT64x"\n", off); 
 			//r_reg_get_value (core->dbg->reg, r));
 		} else
-		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
-			" dr         show 'gpr' registers\n"
-			" dr all     show all registers\n"
-			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
-			" dr 16      show 16 bit registers\n"
-			" dr 32      show 32 bit registers\n"
-			" dr eax=33  set register value. eax = 33\n"
-			" dr?        display this help message\n"
-			" drs?       stack register states\n"
-			" drt        show all register types\n"
-			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
-			" drd        show only different registers\n"
-			" dro        show previous (old) values of registers\n"
-			" dr=        show registers in columns\n"
-			" dr?eax     show value of eax register\n"
-			" .dr*       include common register values in flags\n"
-			" .dr-       unflag all registers\n"
-			" drp [file] load register metadata file\n"
-			" drp        display current register profile\n"
-			" drb [type] display hexdump of gpr arena (WIP)\n");
+		r_cons_printf ("|Usage: dr[*] [type] [size] - get/set registers\n"
+			"| dr         show 'gpr' registers\n"
+			"| dr all     show all registers\n"
+			"| dr flg 1   show flag registers ('flg' is type, see drt)\n"
+			"| dr 16      show 16 bit registers\n"
+			"| dr 32      show 32 bit registers\n"
+			"| dr eax=33  set register value. eax = 33\n"
+			"| dr?        display this help message\n"
+			"| drs?       stack register states\n"
+			"| drt        show all register types\n"
+			"| drn [pc]   get regname for pc,sp,bp,a0-3,zf,cf,of,sg\n"
+			"| drc [name] related to conditional flag registers\n"
+			"| drd        show only different registers\n"
+			"| dro        show previous (old) values of registers\n"
+			"| dr=        show registers in columns\n"
+			"| dr?eax     show value of eax register\n"
+			"| .dr*       include common register values in flags\n"
+			"| .dr-       unflag all registers\n"
+			"| drp [file] load register metadata file\n"
+			"| drp        display current register profile\n"
+			"| drb [type] display hexdump of gpr arena (WIP)\n");
 		// TODO: 'drs' to swap register arenas and display old register valuez
 		break;
 	case 'b':
@@ -440,6 +442,96 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		}
+		break;
+	case 'c':
+// TODO: set flag values with drc zf=1
+		{
+		RRegItem *r;
+		const char *name = str+1;
+		while (*name==' ') name++;
+		if (*name && name[1]) {
+			r = r_reg_cond_get (core->dbg->reg, name);
+			if (r) {
+				r_cons_printf ("%s\n", r->name);
+			} else {
+				int id = r_reg_cond_from_string (name);
+				RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+				if (rf) {
+					int o = r_reg_cond_bits (core->dbg->reg, id, rf);
+					core->num->value = o;
+					// ORLY?
+					r_cons_printf ("%d\n", o);
+free (rf);
+				} else eprintf ("unknown conditional or flag register\n");
+			}
+		} else {
+			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+			if (rf) {
+				r_cons_printf ("| s:%d z:%d c:%d o:%d p:%d\n",
+					rf->s, rf->z, rf->c, rf->o, rf->p);
+				if (*name=='=') {
+					for (i=0; i<R_REG_COND_LAST; i++) {
+						r_cons_printf ("%s:%d ",
+							r_reg_cond_to_string (i),
+							r_reg_cond_bits (core->dbg->reg, i, rf));
+					}
+					r_cons_newline ();
+				} else {
+					for (i=0; i<R_REG_COND_LAST; i++) {
+						r_cons_printf ("%d %s\n",
+							r_reg_cond_bits (core->dbg->reg, i, rf),
+							r_reg_cond_to_string (i));
+					}
+				}
+				free (rf);
+			}
+		}
+		}
+		break;
+	case 'x':
+		switch (str[1]) {
+		case '-':
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+			r_debug_drx_unset (core->dbg, atoi (str+2));
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
+			break;
+		case ' ': {
+			char *s = strdup (str+2);
+			char sl, n, rwx;
+			int len;
+			ut64 off;
+
+			sl = r_str_word_set0 (s);
+			if (sl == 4) {
+#define ARG(x) r_str_word_get0(s,x)
+				n = (char)r_num_math (core->num, ARG(0));
+				off = r_num_math (core->num, ARG(1));
+				len = (int)r_num_math (core->num, ARG(2));
+				rwx = (char)r_str_rwx (ARG(3));
+				if (len== -1) {
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+					r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
+				} else {
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+					r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
+				}
+			} else eprintf ("|Usage: drx N [address] [length] [rwx]\n");
+			free (s);
+			} break;
+		case '\0':
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+			r_debug_drx_list (core->dbg);
+			break;
+		default:
+			r_cons_printf (
+				"|Usage: drx[-] [N A L RWX]\n"
+				"| drx             list all (x86?) hardware breakpoints\n"
+				"| drx N A L RWX   set drN to Address with Length and perms\n"
+				"| drx-N           clear drN hw breakpoint\n");
+			break;
 		}
 		break;
 	case 's':
@@ -459,7 +551,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drs    list register stack\n");
 			break;
 		default:
-			r_cons_printf ("%d\n", r_list_length (core->dbg->reg->regset[0].pool));
+			r_cons_printf ("%d\n", r_list_length (
+				core->dbg->reg->regset[0].pool));
 			break;
 		}
 		break;
@@ -480,7 +573,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
-		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
+		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
 		break;
 	case 'd':
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3); // XXX detect which one is current usage
@@ -510,13 +603,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		arg = strchr (str+1, '=');
 		if (arg) {
 			*arg = 0;
-			r = r_reg_get (core->dbg->reg, str+1, R_REG_TYPE_GPR);
+			r = r_reg_get (core->dbg->reg, str+1, -1); //R_REG_TYPE_GPR);
 			if (r) {
 				r_cons_printf ("0x%08"PFMT64x" ->", str,
 					r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 					r_num_math (core->num, arg+1));
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_TRUE);
+				r_debug_reg_sync (core->dbg, -1, R_TRUE);
 				r_cons_printf ("0x%08"PFMT64x"\n",
 					r_reg_get_value (core->dbg->reg, r));
 			} else eprintf ("Unknown register '%s'\n", str+1);
@@ -805,10 +898,10 @@ static int cmd_debug(void *data, const char *input) {
 	case 't':
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: dt[*] [tag]\n");
-			r_cons_printf ("  dtc  - trace call/ret\n");
-			r_cons_printf ("  dtg  - graph call/ret trace\n");
-			r_cons_printf ("  dtr  - reset traces (instruction//cals)\n");
+			r_cons_printf ("|Usage: dt[*] [tag]\n"
+			"|  dtc  - trace call/ret\n"
+			"|  dtg  - graph call/ret trace\n"
+			"|  dtr  - reset traces (instruction//cals)\n");
 			break;
 		case 'c':
 			if (r_debug_is_dead (core->dbg))
@@ -865,12 +958,12 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '?':
 		default:
-			r_cons_printf ("Usage: dd[*sdrw-?]\n"
-				" dd       list filedescriptors\n"
-				" dd*      list filedescriptors (in radare commands)\n"
-				" dd-1     close stdout fd\n"
-				" dd file  open and map that file into the UI\n"
-				" dd?      show this help\n");
+			r_cons_printf ("|Usage: dd[*sdrw-?]\n"
+				"| dd       list filedescriptors\n"
+				"| dd*      list filedescriptors (in radare commands)\n"
+				"| dd-1     close stdout fd\n"
+				"| dd file  open and map that file into the UI\n"
+				"| dd?      show this help\n");
 			break;
 		}
 		break;
@@ -879,17 +972,17 @@ static int cmd_debug(void *data, const char *input) {
 		if (times<1) times = 1;
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: ds[ol] [count]\n"
-				" ds          step one instruction\n"
-				" ds 4        step 4 instructions\n"
-				" dsf         step until end of frame\n"
-				" dsi [cond]  continue until condition matches\n"
-				" dsl         step one source line\n"
-				" dsl 40      step 40 source lines\n"
-				" dso 3       step over 3 instructions\n"
-				" dsp         step into program (skip libs)\n"
-				" dss 3       skip 3 step instructions\n"
-				" dsu addr    step until address\n"
+			r_cons_printf ("|Usage: ds[ol] [count]\n"
+				"| ds          step one instruction\n"
+				"| ds 4        step 4 instructions\n"
+				"| dsf         step until end of frame\n"
+				"| dsi [cond]  continue until condition matches\n"
+				"| dsl         step one source line\n"
+				"| dsl 40      step 40 source lines\n"
+				"| dso 3       step over 3 instructions\n"
+				"| dsp         step into program (skip libs)\n"
+				"| dss 3       skip 3 step instructions\n"
+				"| dsu addr    step until address\n"
 				);
 			break;
 		case 'i':
@@ -956,10 +1049,10 @@ static int cmd_debug(void *data, const char *input) {
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
 				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-					eprintf ("Dont know how to skip this instruction\n");
+					eprintf ("Don't know how to skip this instruction\n");
 					break;
 				}
-				addr += aop.length;
+				addr += aop.size;
 			}
 			r_debug_reg_set (core->dbg, "pc", addr);
 			}
@@ -998,25 +1091,25 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_break (static_debug_stop, core->dbg);
 		switch (input[1]) {
 		case '?':
-			eprintf("Usage: dc[?]  -- continue execution\n"
-				" dc?              show this help\n"
-				" dc               continue execution of all children\n"
-				" dcf              continue until fork (TODO)\n"
-				" dca [sym] [sym]. continue at every hit on any given symbol\n"
-				" dct [len]        traptrace from curseek to len, no argument to list\n"
-				" dcu [addr]       continue until address\n"
-				" dcu [addr] [end] continue until given address range\n"
-				" dco [num]        step over N instructions\n"
-				" dcp              continue until program code (mapped io section)\n"
-				" dcs [num]        continue until syscall\n"
-				" dcc              continue until call (use step into)\n"
-				" dcr              continue until ret (uses step over)\n"
-				" dck [sig] [pid]  continue sending kill 9 to process\n"
-				" dc [pid]         continue execution of pid\n"
-				" dc[-pid]         stop execution of pid\n"
-				"TODO: dcu/dcr needs dbg.untilover=true??\n"
-				"TODO: same for only user/libs side, to avoid steping into libs\n"
-				"TODO: support for threads?\n");
+			eprintf("|Usage: dc[?]  -- continue execution\n"
+				"| dc?              show this help\n"
+				"| dc               continue execution of all children\n"
+				"| dcf              continue until fork (TODO)\n"
+				"| dca [sym] [sym]. continue at every hit on any given symbol\n"
+				"| dct [len]        traptrace from curseek to len, no argument to list\n"
+				"| dcu [addr]       continue until address\n"
+				"| dcu [addr] [end] continue until given address range\n"
+				"| dco [num]        step over N instructions\n"
+				"| dcp              continue until program code (mapped io section)\n"
+				"| dcs [num]        continue until syscall\n"
+				"| dcc              continue until call (use step into)\n"
+				"| dcr              continue until ret (uses step over)\n"
+				"| dck [sig] [pid]  continue sending kill 9 to process\n"
+				"| dc [pid]         continue execution of pid\n"
+				"| dc[-pid]         stop execution of pid\n"
+				"|TODO: dcu/dcr needs dbg.untilover=true??\n"
+				"|TODO: same for only user/libs side, to avoid steping into libs\n"
+				"|TODO: support for threads?\n");
 			break;
 		case 'a':
 			eprintf ("TODO: dca\n");
@@ -1188,15 +1281,16 @@ static int cmd_debug(void *data, const char *input) {
 			{
 			ut8 bytes[4096];
 			int bytes_len = r_hex_str2bin (input+2, bytes);
-			r_debug_execute (core->dbg, bytes, bytes_len, 0);
+			if (bytes_len>0)
+				r_debug_execute (core->dbg, bytes, bytes_len, 0);
 			}
 			break;
 		default:
-			r_cons_printf ("Usage: di[asr] [arg| ...]\n"
-			" di 9090                           ; inject two x86 nops\n"
-			" \"dia mov eax,6;mov ebx,0;int 0x80\"  ; inject and restore state\n"
-			" dir 9090                          ; inject and restore state\n"
-			" dis write 1, 0x8048, 12           ; syscall injection (see gs)\n");
+			r_cons_printf ("|Usage: di[asr] [arg| ...]\n"
+			"| di 9090                           ; inject two x86 nops\n"
+			"| \"dia mov eax,6;mov ebx,0;int 0x80\"  ; inject and restore state\n"
+			"| dir 9090                          ; inject and restore state\n"
+			"| dis write 1, 0x8048, 12           ; syscall injection (see gs)\n");
 			break;
 		}
 		break;
@@ -1218,22 +1312,22 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_debug_kill (core, input+1);
 		break;
 	default:
-		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
-		" dh [handler]   list or set debugger handler\n"
-		" dH [handler]   transplant process to a new handler\n"
-		" dd             file descriptors (!fd in r1)\n"
-		" ds[ol] N       step, over, source line\n"
-		" do             open process (reload, alias for 'oo')\n"
-		" dk [sig][=act] list, send, get, set, signal handlers of child\n"
-		" di[s] [arg..]  inject code on running process and execute it (See gs)\n"
-		" dp[=*?t][pid]  list, attach to process or thread id\n"
-		" dc[?]          continue execution. dc? for more\n"
-		" dr[?]          cpu registers, dr? for extended help\n"
-		" db[?]          breakpoints\n"
-		" dbt            display backtrace\n"
-		" dt[?r] [tag]   display instruction traces (dtr=reset)\n"
-		" dm[?*]         show memory maps\n"
-		" dw [pid]       block prompt until pid dies\n");
+		r_cons_printf ("|Usage: d[sbhcrbo] [arg]\n"
+		"| dh [handler]   list or set debugger handler\n"
+		"| dH [handler]   transplant process to a new handler\n"
+		"| dd             file descriptors (!fd in r1)\n"
+		"| ds[ol] N       step, over, source line\n"
+		"| do             open process (reload, alias for 'oo')\n"
+		"| dk [sig][=act] list, send, get, set, signal handlers of child\n"
+		"| di[s] [arg..]  inject code on running process and execute it (See gs)\n"
+		"| dp[=*?t][pid]  list, attach to process or thread id\n"
+		"| dc[?]          continue execution. dc? for more\n"
+		"| dr[?]          cpu registers, dr? for extended help\n"
+		"| db[?]          breakpoints\n"
+		"| dbt            display backtrace\n"
+		"| dt[?r] [tag]   display instruction traces (dtr=reset)\n"
+		"| dm[?*]         show memory maps\n"
+		"| dw [pid]       block prompt until pid dies\n");
 		break;
 	}
 	if (follow>0) {

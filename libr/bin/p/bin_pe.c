@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,35 +6,37 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
+static int load(RBinFile *arch) {
+	if(!(arch->o->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
-	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj);
+static int destroy(RBinFile *arch) {
+	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
-	return PE_(r_bin_pe_get_image_base) (arch->bin_obj);
+static ut64 baddr(RBinFile *arch) {
+	return PE_(r_bin_pe_get_image_base) (arch->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinArch *arch, int type) {
+static RBinAddr* binsym(RBinFile *arch, int type) {
+	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+		addr = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
+		if (!addr) return NULL;
+		if (!(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->bin_obj);
+		ret->offset = ret->rva = addr;
 		break;
 	}
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_pe_addr_t *entry = NULL;
@@ -42,7 +44,7 @@ static RList* entries(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->bin_obj)))
+	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->offset = entry->offset;
@@ -53,7 +55,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
@@ -62,7 +64,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = PE_(r_bin_pe_get_sections)(arch->bin_obj)))
+	if (!(sections = PE_(r_bin_pe_get_sections)(arch->o->bin_obj)))
 		return NULL;
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
@@ -87,7 +89,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
@@ -96,10 +98,10 @@ static RList* symbols(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(symbols = PE_(r_bin_pe_get_exports)(arch->bin_obj)))
+	if (!(symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
-		if (!(ptr = R_NEW (RBinSymbol)))
+		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
@@ -125,7 +127,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	RList *ret = NULL, *relocs = NULL;
 	RBinImport *ptr = NULL;
 	RBinReloc *rel = NULL;
@@ -138,9 +140,9 @@ static RList* imports(RBinArch *arch) {
 	ret->free = free;
 	relocs->free = free;
 
-	((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj)->relocs = relocs;
+	((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->bin_obj)))
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW (RBinImport)))
@@ -175,20 +177,20 @@ static RList* imports(RBinArch *arch) {
 	return ret;
 }
 
-static RList* relocs(RBinArch *arch) {
-	return ((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj)->relocs;
+static RList* relocs(RBinFile *arch) {
+	return ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
+	struct r_bin_pe_lib_t *libs = NULL;
 	RList *ret = NULL;
 	char *ptr = NULL;
-	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(libs = PE_(r_bin_pe_get_libs)(arch->bin_obj)))
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup (libs[i].name);
@@ -198,53 +200,76 @@ static RList* libs(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static int is_dot_net(RBinFile *arch) {
+	struct r_bin_pe_lib_t *libs = NULL;
+	int i;
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+		return R_FALSE;
+	for (i = 0; !libs[i].last; i++) {
+		if (!strcmp (libs[i].name, "mscoree.dll")) {
+			free (libs);
+			return R_TRUE;
+		}
+	}
+	free (libs);
+	return R_FALSE;
+}
+
+static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if ((str = PE_(r_bin_pe_get_class) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_class) (arch->o->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
 	strncpy (ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
-	if ((str = PE_(r_bin_pe_get_os) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_os) (arch->o->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = PE_(r_bin_pe_get_arch) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_arch) (arch->o->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = PE_(r_bin_pe_get_machine) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_machine) (arch->o->bin_obj))) {
 		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = PE_(r_bin_pe_get_subsystem) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj))) {
 		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if (PE_(r_bin_pe_is_dll) (arch->bin_obj))
+	if (is_dot_net (arch)) {
+		ret->lang = "msil";
+	}
+	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		strncpy (ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
 	else strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
-	ret->bits = PE_(r_bin_pe_get_bits) (arch->bin_obj);
-	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->bin_obj);
+	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
+	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
-	if (!PE_(r_bin_pe_is_stripped_debug) (arch->bin_obj))
+	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= 0x01;
-	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
 		ret->dbg_info |= 0x04;
-	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj))
 		ret->dbg_info |= 0x08;
-	if (PE_(r_bin_pe_is_stripped_relocs) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj))
 		ret->dbg_info |= 0x10;
 	return ret;
 }
 
+static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+	if (!baddr) return vaddr;
+	return baddr + vaddr;
+}
+
 #if !R_BIN_PE64
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int idx, ret = R_FALSE;
 	if (!arch || !arch->buf || !arch->buf->buf)
 		return R_FALSE;
@@ -264,55 +289,63 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	RBuffer *buf = r_buf_new ();
 
 #define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
-#define D(x) r_buf_append_ut32(buf,x)
 #define H(x) r_buf_append_ut16(buf,x)
+#define D(x) r_buf_append_ut32(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
 #define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)y,z)
 #define WZ(x,y) p_tmp=buf->length;Z(x);W(p_tmp,y,strlen(y))
 
-	B ("MZ\x00\x00", 4);
-	B ("PE\x00\x00", 4);
-	H (0x14c);
-	H (1);
-	D (0); // nothing
-	p_start = 97; // HACK this is filesize
-
-	D (0);
-	D (0);
+	B ("MZ\x00\x00", 4); // MZ Header
+	B ("PE\x00\x00", 4); // PE Signature
+	H (0x14c); // Machine
+	H (1); // Number of sections
+	D (0); // Timestamp (Unused)
+	D (0); // PointerToSymbolTable (Unused)
+	D (0); // NumberOfSymbols (Unused)
 	p_lsrlc = buf->length;
-	H (-1); // sections-opthdr
-	H (0x103);
-	// opthdr:
+	H (-1); // SizeOfOptionalHeader
+	H (0x103); // Characteristics
+
+	/* Optional Header */
 	p_opthdr = buf->length;
-	H (0x10b);
-	B ("\x08\x00", 2);
+	H (0x10b); // Magic
+	B ("\x08\x00", 2); // (Major/Minor)LinkerVersion (Unused)
+
 	p_sections = buf->length;
 	n = p_sections-p_opthdr;
-	W (p_lsrlc, &n, 4);
-	// sections:
-	D (R_ROUND (codelen, 4));
-	D (0);
+	W (p_lsrlc, &n, 2); // Fix SizeOfOptionalHeader
+
+	/* Sections */
+	p_start = 0x7c; //HACK: Headersize
+	hdrsize = 0x7c;
+
+	D (R_ROUND (codelen, 4)); // SizeOfCode (Unused)
+	D (0); // SizeOfInitializedData (Unused)
 	D (codelen); // codesize
 	D (p_start);
 	D (codelen);
 	D (p_start);
-	D (baddr);
-	D (4); // sect align
-	D (4); // file align
-	H (4);
-	H (0);
-	H (0);
-	H (0);
-	H (4);
-	H (0);
-	D (0);
-	hdrsize = 100;
-	D (R_ROUND (hdrsize, 4)+R_ROUND (codelen, 4));
-	D (R_ROUND (hdrsize, 4));
-	D (0);
-	B ("\x02", 1);
-	//hdrsize = filesize; // 97
-	//printf ("FILESIZE = %d\n", buf->length);
+	D (baddr); // ImageBase
+	D (4); // SectionAlignment
+	D (4); // FileAlignment
+	H (4); // MajorOperatingSystemVersion (Unused)
+	H (0); // MinorOperatingSystemVersion (Unused)
+	H (0); // MajorImageVersion (Unused)
+	H (0); // MinorImageVersion (Unused)
+	H (4); // MajorSubsystemVersion
+	H (0); // MinorSubsystemVersion (Unused)
+	D (0); // Win32VersionValue (Unused)
+	D ((R_ROUND (hdrsize, 4)) + (R_ROUND (codelen, 4))); // SizeOfImage
+	D (R_ROUND (hdrsize, 4)); // SizeOfHeaders
+	D (0); // CheckSum (Unused)
+	H (2); // Subsystem (Win32 GUI)
+	H (0x400); // DllCharacteristics (Unused)
+	D (0x100000); // SizeOfStackReserve (Unused)
+	D (0x1000); // SizeOfStackCommit
+	D (0x100000); // SizeOfHeapReserve
+	D (0x1000); // SizeOfHeapCommit (Unused)
+	D (0); // LoaderFlags (Unused)
+	D (0); // NumberOfRvaAndSizes (Unused)
 	B (code, codelen);
 
 	if (data && datalen>0) {
@@ -326,12 +359,14 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 struct r_bin_plugin_t r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -342,10 +377,11 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.minstrlen = 4,
 	.create = &create,
+	.get_vaddr = &get_vaddr
 };
 
 #ifndef CORELIB

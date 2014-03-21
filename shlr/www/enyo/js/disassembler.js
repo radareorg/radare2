@@ -47,7 +47,7 @@ enyo.kind ({
       x = docss (r2.filter_asm (x, "pd"));
       text.setContent (x);
     });
-    this.colorbar_create ();
+    //this.colorbar_create ();
   },
   create: function() {
     this.inherited (arguments);
@@ -57,7 +57,7 @@ enyo.kind ({
     r2ui._dis = this;
     r2ui.history_push ("entry0");
 
-    this.colorbar_create ();
+    //this.colorbar_create ();
     //this.refresh ();
   },
   colorbar_create: function () {

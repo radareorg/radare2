@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $PWD/$0`
+./clone-r2-bindings.sh
+cd ..
 
 . ./sys/CONFIG
 echo =============
@@ -17,7 +19,7 @@ else
 fi
 [ -n "${NOSUDO}" ] && SUDO=
 
-cd r2-bindings
+cd radare2-bindings
 ./configure --prefix=${PREFIX} --enable=lua || exit 1
 cd lua
 make clean

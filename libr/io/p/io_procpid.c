@@ -50,14 +50,14 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 	return procpid_write_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file) {
-	return (!memcmp (file, "procpid://", 10));
+static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
+	return (!strncmp (file, "procpid://", 10));
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
 	int fd, ret = -1;
-	if (__plugin_open (io, file)) {
+	if (__plugin_open (io, file,0)) {
 		int pid = atoi (file+10);
 		if (file[0]=='a') {
 			ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
@@ -122,11 +122,10 @@ static int __init(struct r_io_t *io) {
 	return R_TRUE;
 }
 
-// TODO: rename ptrace to io_ptrace .. err io.ptrace ??
-struct r_io_plugin_t r_io_plugin_procpid = {
-        //void *plugin;
+RIOPlugin r_io_plugin_procpid = {
 	.name = "procpid",
-        .desc = "proc/pid/mem io",
+        .desc = "/proc/pid/mem io",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

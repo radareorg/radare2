@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - earada, pancake */
+/* radare - LGPL - Copyright 2009-2014 - earada, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -381,13 +381,13 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	} else if (len>0) {
 		strcpy (op->buf_asm, "invalid ");
-		op->inst_len = len;
+		op->size = len;
 		size = len;
 	}
 	op->payload = payload;
 	size += payload; // XXX
 	// align to 2
-	op->inst_len = size;
+	op->size = size;
 	return size;
 }
 
@@ -400,8 +400,8 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	for (i=0; i<256; i++)
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
 			r_mem_copyendian (op->buf, (void*)&i, 4, a->big_endian);
-			op->inst_len = dalvik_opcodes[i].len;
-			return op->inst_len;
+			op->size = dalvik_opcodes[i].len;
+			return op->size;
 		}
 	return 0;
 }
@@ -413,8 +413,9 @@ static int init (void *user) {
 RAsmPlugin r_asm_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
-	.desc = "Dalvik (Android VM) disassembly plugin",
-	.bits = (int[]){ 32, 64, 0 },
+	.license = "LGPL3",
+	.desc = "AndroidVM Dalvik",
+	.bits = 32|64,
 	.init = &init,
 	.fini = NULL,
 	.disassemble = &dalvik_disassemble,

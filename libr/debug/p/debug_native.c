@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -8,14 +8,17 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include "native/drx.c" // x86 specific
 
 #if DEBUGGER
 
 #if __UNIX__
-#include <errno.h>
-#include <sys/ptrace.h>
-#include <sys/wait.h>
-#include <signal.h>
+# include <errno.h>
+# if !defined (__HAIKU__)
+#  include <sys/ptrace.h>
+# endif
+# include <sys/wait.h>
+# include <signal.h>
 #endif
 
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
@@ -102,6 +105,12 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
 #elif __arm
 #include <mach/arm/thread_status.h>
+#ifndef ARM_THREAD_STATE
+#define ARM_THREAD_STATE                1
+#endif
+#ifndef ARM_THREAD_STATE64
+#define ARM_THREAD_STATE64              6
+#endif
 #define R_DEBUG_REG_T arm_thread_state_t
 #define R_DEBUG_STATE_T ARM_THREAD_STATE
 #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
@@ -117,7 +126,10 @@ typedef union {
 	ut32 x32[16];
 } R_DEBUG_REG_T;
 
+// APPLE
 #define R_DEBUG_STATE_T XXX
+
+
 //(dbg->bits==64)?x86_THREAD_STATE:_STRUCT_X86_THREAD_STATE32
 //#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
 #define R_DEBUG_STATE_SZ ((dbg->bits==R_SYS_BITS_64)?168:64)
@@ -134,27 +146,27 @@ typedef union {
 #define R_DEBUG_STATE_SZ x86_THREAD_STATE_COUNT
 #if 0
 ut64[21]
-        __uint64_t      rax;
-        __uint64_t      rbx;
-        __uint64_t      rcx;
-        __uint64_t      rdx;
-        __uint64_t      rdi;
-        __uint64_t      rsi;
-        __uint64_t      rbp;
-        __uint64_t      rsp;
-        __uint64_t      r8;
-        __uint64_t      r9;
-        __uint64_t      r10;
-        __uint64_t      r11;
-        __uint64_t      r12;
-        __uint64_t      r13;
-        __uint64_t      r14;
-        __uint64_t      r15;
-        __uint64_t      rip;
-        __uint64_t      rflags;
-        __uint64_t      cs;
-        __uint64_t      fs;
-        __uint64_t      gs;
+        __ut64      rax;
+        __ut64      rbx;
+        __ut64      rcx;
+        __ut64      rdx;
+        __ut64      rdi;
+        __ut64      rsi;
+        __ut64      rbp;
+        __ut64      rsp;
+        __ut64      r8;
+        __ut64      r9;
+        __ut64      r10;
+        __ut64      r11;
+        __ut64      r12;
+        __ut64      r13;
+        __ut64      r14;
+        __ut64      r15;
+        __ut64      rip;
+        __ut64      rflags;
+        __ut64      cs;
+        __ut64      fs;
+        __ut64      gs;
 21*8
 #endif
 #else
@@ -347,16 +359,14 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 	int ret = -1;
 #if __WINDOWS__
 	HANDLE hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid)) {
+	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid))
 		ret = w32_first_thread (pid);
-	} else ret = -1;
+	else ret = -1;
 	ret = w32_first_thread (pid);
 #elif __APPLE__ || __KFBSD__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
-	if (ret!=-1) {
-		perror ("ptrace(PT_ATTACH)");
-		ret = pid;
-	}
+	if (ret!=-1)
+		perror ("ptrace (PT_ATTACH)");
 	ret = pid;
 #else
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
@@ -406,7 +416,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	unsigned int inferior_thread_count = 0;
 
 // XXX: detach is noncontrollable continue
-        ptrace(PT_DETACH, pid, 0, 0);
+        ptrace (PT_DETACH, pid, 0, 0);
 #if 0
 	ptrace (PT_THUPDATE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
 	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
@@ -427,7 +437,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 1;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
-	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, data);
+	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, (int)(size_t)data);
         return 0;
 #endif
 #elif __BSD__
@@ -510,6 +520,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	gs	.32	140	0\n"
 	"seg	fs	.32	144	0\n"
 	"gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	cf	.1	.1536	0	carry\n"
+	"gpr	pf	.1	.1538	0	parity\n"
+	"gpr	af	.1	.1540	0	adjust\n"
+	"gpr	zf	.1	.1542	0	zero\n"
+	"gpr	sf	.1	.1543	0	sign\n"
+	"gpr	tf	.1	.1544	0	trap\n"
+	"gpr	if	.1	.1545	0	interrupt\n"
+	"gpr	df	.1	.1546	0	direction\n"
+	"gpr	of	.1	.1547	0	overflow\n"
 	"seg	ss	.32	200	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
 	);
@@ -547,7 +566,18 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	ds	.32	152	0\n"
 	"seg	gs	.32	140	0\n"
 	"seg	fs	.32	144	0\n"
-	"gpr	rflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	flags	.16	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	rflags	.64	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	cf	.1	.1536	0	carry\n"
+	"gpr	pf	.1	.1538	0	parity\n"
+	"gpr	af	.1	.1540	0	adjust\n"
+	"gpr	zf	.1	.1542	0	zero\n"
+	"gpr	sf	.1	.1543	0	sign\n"
+	"gpr	tf	.1	.1544	0	trap\n"
+	"gpr	if	.1	.1545	0	interrupt\n"
+	"gpr	df	.1	.1546	0	direction\n"
+	"gpr	of	.1	.1547	0	overflow\n"
 	"seg	ss	.32	200	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
 	);
@@ -672,6 +702,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	eip	.32	32	0\n"
 	"gpr	ip	.16	32	0\n"
 	"gpr	eflags	.32	36	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.288	0	carry\n"
+	"gpr	pf	.1	.290	0	parity\n"
+	"gpr	af	.1	.292	0	adjust\n"
+	"gpr	zf	.1	.294	0	zero\n"
+	"gpr	sf	.1	.295	0	sign\n"
+	"gpr	tf	.1	.296	0	trap\n"
+	"gpr	if	.1	.297	0	interrupt\n"
+	"gpr	df	.1	.298	0	direction\n"
+	"gpr	of	.1	.299	0	overflow\n"
 	"seg	cs	.32	40	0\n"
 	"seg	ss	.32	44	0\n"
 	"seg	ds	.32	48	0\n"
@@ -721,6 +760,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	ip	.16	52	0\n"
 	"seg	cs	.32	56	0\n"
 	"gpr	eflags	.32	60	0	c1p.a.zstido.n.rv\n"
+
+	"gpr	cf	.1	.480	0	carry\n"
+	"gpr	pf	.1	.482	0	parity\n"
+	"gpr	af	.1	.484	0	adjust\n"
+	"gpr	zf	.1	.486	0	zero\n"
+	"gpr	sf	.1	.487	0	sign\n"
+	"gpr	tf	.1	.488	0	trap\n"
+	"gpr	if	.1	.489	0	interrupt\n"
+	"gpr	df	.1	.490	0	direction\n"
+	"gpr	of	.1	.491	0	overflow\n"
+
 	"gpr	esp	.32	64	0\n"
 	"gpr	sp	.16	64	0\n"
 	"seg	ss	.32	68	0\n"
@@ -817,6 +867,10 @@ if (dbg->bits & R_SYS_BITS_32) {
  	"=a1	ebx\n"
  	"=a2	ecx\n"
  	"=a3	edi\n"
+ 	"=zf	zf\n"
+ 	"=sf	sf\n"
+ 	"=of	of\n"
+ 	"=cf	cf\n"
 	"gpr	eip	.32	128	0\n"
 	"gpr	ip	.16	128	0\n"
 	"gpr	oeax	.32	120	0\n"
@@ -849,21 +903,36 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	xcs	.32	136	0\n"
 	"seg	cs	.16	136	0\n"
 	"seg	xss	.32	160	0\n"
-	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	flags	.16	144	0\n"
-	"flg	carry	.1	.1152	0\n"
-	"flg	flag_p	.1	.1153	0\n"
-	"flg	flag_a	.1	.1154	0\n"
-	"flg	zero	.1	.1155	0\n"
-	"flg	sign	.1	.1156	0\n"
-	"flg	flag_t	.1	.1157	0\n"
-	"flg	flag_i	.1	.1158	0\n"
-	"flg	flag_d	.1	.1159	0\n"
-	"flg	flag_o	.1	.1160	0\n"
-	"flg	flag_r	.1	.1161	0\n"
- 	"drx	dr0	.32	0	0\n"
- 	"drx	dr1	.32	4	0\n"
- 	"drx	dr2	.32	8	0\n"
+	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.1152	0	carry\n"
+	"gpr	pf	.1	.1154	0	parity\n"
+	"gpr	af	.1	.1156	0	adjust\n"
+	"gpr	zf	.1	.1158	0	zero\n"
+	"gpr	sf	.1	.1159	0	sign\n"
+	"gpr	tf	.1	.1160	0	trap\n"
+	"gpr	if	.1	.1161	0	interrupt\n"
+	"gpr	df	.1	.1162	0	direction\n"
+	"gpr	of	.1	.1163	0	overflow\n"
+#if 0
+ 	"drx	dr0	.64	0	0\n"
+ 	"drx	dr1	.64	8	0\n"
+ 	"drx	dr2	.64	16	0\n"
+ 	"drx	dr3	.64	24	0\n"
+	// dr4 32
+	// dr5 40
+ 	"drx	dr6	.64	48	0\n"
+ 	"drx	dr7	.64	56	0\n"
+#endif
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	//"drx	dr4	.32	16	0\n"
+	//"drx	dr5	.32	20	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
 	);
 #else
 	// 32bit host debugging 32bit target
@@ -909,16 +978,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	xss	.32	52	0\n"
 	"gpr	eflags	.32	56	0	c1p.a.zstido.n.rv\n"
 	"gpr	flags	.16	56	0\n"
-	"flg	carry	.1	.448	0\n"
-	"flg	flag_p	.1	.449	0\n"
-	"flg	flag_a	.1	.450	0\n"
-	"flg	zero	.1	.451	0\n"
-	"flg	sign	.1	.452	0\n"
-	"flg	flag_t	.1	.453	0\n"
-	"flg	flag_i	.1	.454	0\n"
-	"flg	flag_d	.1	.455	0\n"
-	"flg	flag_o	.1	.456	0\n"
-	"flg	flag_r	.1	.457	0\n"
+	"gpr	cf	.1	.448	0	carry\n"
+	"gpr	pf	.1	.450	0	parity\n"
+	"gpr	af	.1	.452	0	adjust\n"
+	"gpr	zf	.1	.454	0	zero\n"
+	"gpr	sf	.1	.455	0	sign\n"
+	"gpr	tf	.1	.456	0	trap\n"
+	"gpr	if	.1	.457	0	interrupt\n"
+	"gpr	df	.1	.458	0	direction\n"
+	"gpr	of	.1	.459	0	overflow\n"
 	"drx	dr0	.32	0	0\n"
 	"drx	dr1	.32	4	0\n"
 	"drx	dr2	.32	8	0\n"
@@ -974,8 +1042,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	oeax	.64	120	0\n"
 	"gpr	rip	.64	128	0\n"
 	"seg	cs	.64	136	0\n"
-	//"flg	eflags	.64	144	0\n"
 	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.1152	0	carry\n"
+	"gpr	pf	.1	.1154	0	parity\n"
+	"gpr	af	.1	.1156	0	adjust\n"
+	"gpr	zf	.1	.1158	0	zero\n"
+	"gpr	sf	.1	.1159	0	sign\n"
+	"gpr	tf	.1	.1160	0	trap\n"
+	"gpr	if	.1	.1161	0	interrupt\n"
+	"gpr	df	.1	.1162	0	direction\n"
+	"gpr	of	.1	.1163	0	overflow\n"
+
 	"gpr	rsp	.64	152	0\n"
 	"seg	ss	.64	160	0\n"
 	"seg	fs_base	.64	168	0\n"
@@ -984,15 +1061,111 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	es	.64	192	0\n"
 	"seg	fs	.64	200	0\n"
 	"seg	gs	.64	208	0\n"
-	"drx	dr0	.32	0	0\n"
-	"drx	dr1	.32	4	0\n"
-	"drx	dr2	.32	8	0\n"
-	"drx	dr3	.32	12	0\n"
-	"drx	dr6	.32	24	0\n"
-	"drx	dr7	.32	28	0\n"
+ 	"drx	dr0	.64	0	0\n"
+ 	"drx	dr1	.64	8	0\n"
+ 	"drx	dr2	.64	16	0\n"
+ 	"drx	dr3	.64	24	0\n"
+	// dr4 32
+	// dr5 40
+ 	"drx	dr6	.64	48	0\n"
+ 	"drx	dr7	.64	56	0\n"
 	);
 }
-#elif __arm__ && __APPLE__
+#elif (defined(__arm64__) || __arm__) && __APPLE__
+// arm64 aarch64
+if (dbg->bits & R_SYS_BITS_64) {
+#if 0
+        __ut64    __x[29];  /* General purpose registers x0-x28 */
+        __ut64    __fp;             /* Frame pointer x29 */
+        __ut64    __lr;             /* Link register x30 */
+        __ut64    __sp;             /* Stack pointer x31 */
+        __ut64    __pc;             /* Program counter */
+        __uint32_t    __cpsr;   /* Current program status register */
+#endif
+	return strdup (
+	"=pc	pc\n"
+	"=sp	sp\n" // XXX
+	"=bp	x30\n" // XXX
+	"=a0	x0\n"
+	"=a1	x1\n"
+	"=a2	x2\n"
+	"=a3	x3\n"
+ 	"=zf	zf\n"
+ 	"=sf	nf\n"
+ 	"=of	vf\n"
+ 	"=cf	cf\n"
+	"gpr	x0	.64	0	0\n" // r14
+	"gpr	x1	.64	8	0\n" // r14
+	"gpr	x2	.64	16	0\n" // r14
+	"gpr	x3	.64	24	0\n" // r14
+	"gpr	x4	.64	32	0\n" // r14
+	"gpr	x5	.64	40	0\n" // r14
+	"gpr	x6	.64	48	0\n" // r14
+	"gpr	x7	.64	56	0\n" // r14
+	"gpr	x8	.64	64	0\n" // r14
+	"gpr	x9	.64	72	0\n" // r14
+	"gpr	x10	.64	80	0\n" // r14
+	"gpr	x11	.64	88	0\n" // r14
+	"gpr	x12	.64	96	0\n" // r14
+	"gpr	x13	.64	104	0\n" // r14
+	"gpr	x14	.64	112	0\n" // r14
+	"gpr	x15	.64	120	0\n" // r14
+	"gpr	x16	.64	128	0\n" // r14
+	"gpr	x17	.64	136	0\n" // r14
+	"gpr	x18	.64	144	0\n" // r14
+	"gpr	x19	.64	152	0\n" // r14
+	"gpr	x20	.64	160	0\n" // r14
+	"gpr	x21	.64	168	0\n" // r14
+	"gpr	x22	.64	176	0\n" // r14
+	"gpr	x23	.64	184	0\n" // r14
+	"gpr	x24	.64	192	0\n" // r14
+	"gpr	x25	.64	200	0\n" // r14
+	"gpr	x26	.64	208	0\n" // r14
+	"gpr	x27	.64	216	0\n" // r14
+	"gpr	x28	.64	224	0\n" // r14
+	"gpr	x29	.64	232	0\n" // r14
+	// words (32bit lower part of x
+	"gpr	w0	.32	0	0\n" // w0
+	"gpr	w1	.32	8	0\n" // w0
+	"gpr	w2	.32	16	0\n" // w0
+	"gpr	w3	.32	24	0\n" // w0
+	"gpr	w4	.32	32	0\n" // w0
+	"gpr	w5	.32	40	0\n" // w0
+	"gpr	w6	.32	48	0\n" // w0
+	"gpr	w7	.32	56	0\n" // w0
+	"gpr	w8	.32	64	0\n" // w0
+	"gpr	w9	.32	72	0\n" // w0
+	"gpr	w10	.32	80	0\n" // w0
+	"gpr	w11	.32	88	0\n" // w0
+	"gpr	w12	.32	96	0\n" // w0
+	"gpr	w13	.32	104	0\n" // w0
+	"gpr	w14	.32	112	0\n" // w0
+	"gpr	w15	.32	120	0\n" // w0
+	"gpr	w16	.32	128	0\n" // w0
+	"gpr	w17	.32	136	0\n" // w0
+	"gpr	w18	.32	144	0\n" // w0
+	"gpr	w19	.32	152	0\n" // w0
+	"gpr	w20	.32	160	0\n" // w0
+	"gpr	w21	.32	168	0\n" // w0
+	"gpr	w22	.32	176	0\n" // w0
+	"gpr	w23	.32	184	0\n" // w0
+	"gpr	w24	.32	192	0\n" // w0
+	"gpr	w25	.32	200	0\n" // w0
+	"gpr	w26	.32	208	0\n" // w0
+	"gpr	w27	.32	216	0\n" // w0
+	"gpr	w28	.32	224	0\n" // w0
+	"gpr	w29	.32	232	0\n" // w0
+	// TODO complete w list ...
+	// special registers
+	"gpr	fp	.64	240	0\n" // r15
+	"gpr	lr	.64	248	0\n" // r15
+	"gpr	sp	.64	256	0\n" // r15
+	"gpr	pc	.64	264	0\n" // r15
+	"gpr	cpsr	.32	272	0\n" // r16
+	// TODO flags
+	"gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
+	);
+} else {
 #if 0
 ut32 r[13]
 ut32 sp -- r13
@@ -1000,6 +1173,14 @@ ut32 lr -- r14
 ut32 pc -- r15
 ut32 cpsr -- program status
 --> ut32[17]
+// TODO: add
+MMX: NEON
+	ut128 v[32] // or 16 in arm32
+	ut32 fpsr;
+	ut32 fpcr;
+VFP: FPU
+	ut32 r[64]
+	ut32 fpscr
 #endif
 	return strdup (
 	"=pc	r15\n"
@@ -1008,10 +1189,26 @@ ut32 cpsr -- program status
 	"=a1	r1\n"
 	"=a2	r2\n"
 	"=a3	r3\n"
+ 	"=zf	zf\n"
+ 	"=sf	nf\n"
+ 	"=of	vf\n"
+ 	"=cf	cf\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
-	"gpr	cprsr	.32	64	0\n" // r16
-
+	"gpr	cpsr	.32	64	0\n" // r16
+	"gpr	nf	.1	.512	0	sign\n" // msb bit of last op
+	"gpr	zf	.1	.513	0	zero\n" // set if last op is 0
+/*
+A carry occurs:
+    if the result of an addition is greater than or equal to 232
+    if the result of a subtraction is positive or zero
+    as the result of an inline barrel shifter operation in a move or logical instruction.
+*/
+	"gpr	cf	.1	.514	0	carry\n" // set if last op carries
+/*
+Overflow occurs if the result of an add, subtract, or compare is greater than or equal to 231, or less than -231.
+*/
+	"gpr	vf	.1	.515	0	overflow\n" // set if overflows
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
 	"gpr	r2	.32	8	0\n"
@@ -1029,6 +1226,7 @@ ut32 cpsr -- program status
 	"gpr	r14	.32	56	0\n"
 	"gpr	r15	.32	60	0\n"
 	);
+}
 #elif __APPLE__
 if (dbg->bits & R_SYS_BITS_32) {
 	return strdup (
@@ -1039,6 +1237,10 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a1	ebx\n"
 	"=a2	ecx\n"
 	"=a3	edi\n"
+	"=zf	zf\n"
+	"=of	of\n"
+	"=sf	sf\n"
+	"=cf	cf\n"
 	"gpr	eax	.32	0	0\n"
 	"gpr	ebx	.32	4	0\n"
 	"gpr	ecx	.32	8	0\n"
@@ -1049,7 +1251,22 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	esp	.32	28	0\n"
 	"seg	ss	.32	32	0\n"
 	"gpr	eflags	.32	36	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.288	0	carry\n"
+	"gpr	pf	.1	.290	0	parity\n"
+	"gpr	af	.1	.292	0	adjust\n"
+	"gpr	zf	.1	.294	0	zero\n"
+	"gpr	sf	.1	.295	0	sign\n"
+	"gpr	tf	.1	.296	0	trap\n"
+	"gpr	if	.1	.297	0	interrupt\n"
+	"gpr	df	.1	.298	0	direction\n"
+	"gpr	of	.1	.299	0	overflow\n"
 	"gpr	eip	.32	40	0\n"
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
 	"seg	cs	.32	44	0\n"
 	"seg	ds	.32	48	0\n"
 	"seg	es	.32	52	0\n"
@@ -1065,6 +1282,10 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a1	rbx\n"
 	"=a2	rcx\n"
 	"=a3	rdx\n"
+	"=zf	zf\n"
+	"=of	of\n"
+	"=sf	sf\n"
+	"=cf	cf\n"
 	"gpr	rax	.64	8	0\n"
 	"gpr	rbx	.64	16	0\n"
 	"gpr	rcx	.64	24	0\n"
@@ -1082,18 +1303,27 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	r14	.64	120	0\n"
 	"gpr	r15	.64	128	0\n"
 	"gpr	rip	.64	136	0\n"
+	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.1152	0	carry\n"
+	"gpr	pf	.1	.1154	0	parity\n"
+	"gpr	af	.1	.1156	0	adjust\n"
+	"gpr	zf	.1	.1158	0	zero\n"
+	"gpr	sf	.1	.1159	0	sign\n"
+	"gpr	tf	.1	.1160	0	trap\n"
+	"gpr	if	.1	.1161	0	interrupt\n"
+	"gpr	df	.1	.1162	0	direction\n"
+	"gpr	of	.1	.1163	0	overflow\n"
 	"seg	cs	.64	144	0\n"
 	"seg	fs	.64	152	0\n"
 	"seg	gs	.64	160	0\n"
-#if 0
-	"drx	dr0	.32	0	0\n"
-	"drx	dr1	.32	4	0\n"
-	"drx	dr2	.32	8	0\n"
-	"drx	dr3	.32	12	0\n"
-	"drx	dr6	.32	24	0\n"
-	"drx	dr7	.32	28	0\n"
-#endif
+
+	"drx	dr0	.64	0	0\n"
+	"drx	dr1	.64	8	0\n"
+	"drx	dr2	.64	16	0\n"
+	"drx	dr3	.64	24	0\n"
+	"drx	dr6	.64	32	0\n"
+	"drx	dr7	.64	40	0\n"
 	);
 } else {
 	eprintf ("invalid bit size\n");
@@ -1173,7 +1403,7 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	rsp	.64	160	0\n"
 	"seg	ss	.64	168	0\n"
 	);
-#elif __arm__
+#elif __arm__ && __linux__
 	return strdup (
 	"=pc	r15\n"
 	"=sp	r14\n" // XXX
@@ -1181,8 +1411,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a1	r1\n"
 	"=a2	r2\n"
 	"=a3	r3\n"
+ 	"=zf	zf\n"
+ 	"=sf	nf\n"
+ 	"=of	vf\n"
+ 	"=cf	cf\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
+	"gpr	cpsr	.32	64	0\n" // r16
+	"gpr	nf	.1	.512	0	sign\n" // msb bit of last op
+	"gpr	zf	.1	.513	0	zero\n" // set if last op is 0
+	"gpr	cf	.1	.514	0	carry\n" // set if last op carries
+	"gpr	vf	.1	.515	0	overflow\n" // set if overflows
 
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
@@ -1285,6 +1524,7 @@ static RDebugPid *darwin_get_pid(int pid) {
 	start_args = iter_args; //reset start position to beginning of cmdline
 	foo = 1;
 	*psname = 0;
+	psnamelen = 0;
 	while (iter_args < end_args && nargs > 0) {
 		if (*iter_args++ == '\0') {
 			int alen = strlen (curr_arg);
@@ -1565,16 +1805,43 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		}
 // XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
-		if (dbg->bits== R_SYS_BITS_64) {
+		switch (type) {
+		case R_REG_TYPE_SEG:
+		case R_REG_TYPE_FLG:
+		case R_REG_TYPE_GPR:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					x86_THREAD_STATE, (thread_state_t) regs,
+					&gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					i386_THREAD_STATE, (thread_state_t) regs,
+					&gp_count);
+			}
+			break;
+		case R_REG_TYPE_DRX:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					x86_DEBUG_STATE64, (x86_debug_state64_t*)
+					regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					x86_DEBUG_STATE32, (x86_debug_state32_t*)
+					regs, &gp_count);
+			}
+			break;
+		}
+#elif __arm__ || __arm64__
+		if (dbg->bits==R_SYS_BITS_64) {
 			ret = thread_get_state (inferior_threads[tid],
-				x86_THREAD_STATE, (thread_state_t) regs, &gp_count);
+				ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
 		} else {
 			ret = thread_get_state (inferior_threads[tid],
-				i386_THREAD_STATE, (thread_state_t) regs, &gp_count);
+				ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
+				//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
 		}
 #else
-		ret = thread_get_state (inferior_threads[tid],
-			R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+		eprintf ("Unknown architecture\n");
 #endif
 		if (ret != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
@@ -1599,19 +1866,19 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
-#ifdef __ANDROID__
-		return R_TRUE;
-#else
+#ifndef __ANDROID__
 	{
 		int i;
-		for (i=0; i<7; i++) { // DR0-DR7
-			ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
+		for (i=0; i<8; i++) { // DR0-DR7
+			if (i==4 || i == 5) continue;
+			long ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
 				struct user, u_debugreg[i]), 0);
-			if (ret != 0)
-				return R_FALSE;
-			memcpy (buf+(i*4), &ret, 4);
+			memcpy (buf+(i*sizeof(ret)), &ret, sizeof(ret));
 		}
+		return sizeof (R_DEBUG_REG_T);
 	}
+#else
+#warning Android X86 does not support DRX
 #endif
 #endif
 #endif
@@ -1682,17 +1949,77 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #ifndef __ANDROID__
 		{
 		int i;
-		ut32 *val = (ut32 *)buf;
-		for (i=0; i<7; i++) { // DR0-DR7
-			ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
-				struct user, u_debugreg[i]), *(val+i));
-			//if (ret != 0)
-			//	return R_FALSE;
+		long *val = (long*)buf;
+		for (i=0; i<8; i++) { // DR0-DR7
+			if (i==4 || i == 5) continue;
+			long ret = ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
+				struct user, u_debugreg[i]), val[i]); //*(val+i));
+			if (ret != 0) {
+				eprintf ("ptrace error for dr %d\n", i);
+				perror("ptrace");
+				//return R_FALSE;
+			}
 		}
 		}
+		return sizeof (R_DEBUG_REG_T);
 #else
 		return R_FALSE;
 #endif
+#elif __APPLE__
+		int ret; 
+		thread_array_t inferior_threads = NULL;
+		unsigned int inferior_thread_count = 0;
+		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
+		unsigned int gp_count = R_DEBUG_STATE_SZ;
+
+		ret = task_threads (pid_to_task (dbg->pid),
+			&inferior_threads, &inferior_thread_count);
+		if (ret != KERN_SUCCESS) {
+			eprintf ("debug_getregs\n");
+			return R_FALSE;
+		}
+
+		/* TODO: thread cannot be selected */
+		if (inferior_thread_count>0) {
+			gp_count = ((dbg->bits == R_SYS_BITS_64))? 44:16;
+			// XXX: kinda spaguetti coz multi-arch
+			int tid = inferior_threads[0];
+#if __i386__ || __x86_64__
+			switch (type) {
+			case R_REG_TYPE_DRX:
+				if (dbg->bits== R_SYS_BITS_64) {
+					ret = thread_set_state (inferior_threads[tid],
+						x86_DEBUG_STATE64, (x86_debug_state64_t*)
+						regs, &gp_count);
+				} else {
+					ret = thread_set_state (inferior_threads[tid],
+						x86_DEBUG_STATE32, (x86_debug_state32_t*)
+						regs, &gp_count);
+				}
+				break;
+			default:
+				if (dbg->bits == R_SYS_BITS_64) {
+					ret = thread_set_state (tid, x86_THREAD_STATE,
+						(thread_state_t) regs, gp_count);
+				} else {
+					ret = thread_set_state (tid, i386_THREAD_STATE,
+						(thread_state_t) regs, gp_count);
+				}
+			}
+#else
+			ret = thread_set_state (inferior_threads[tid],
+					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+#endif
+//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
+		if (ret != KERN_SUCCESS) {
+			eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
+					(int)dbg->pid, pid_to_task (dbg->pid), (int)ret,
+					MACH_ERROR_STRING (ret));
+			perror ("thread_set_state");
+			return R_FALSE;
+		}
+		} else eprintf ("There are no threads!\n");
+		return sizeof (R_DEBUG_REG_T);
 #else
 		eprintf ("TODO: add support for write DRX registers\n");
 		return R_FALSE;
@@ -1740,12 +2067,26 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			// XXX: kinda spaguetti coz multi-arch
 			int tid = inferior_threads[0];
 #if __i386__ || __x86_64__
-			if (dbg->bits == R_SYS_BITS_64) {
-				ret = thread_set_state (tid, x86_THREAD_STATE,
+			switch (type) {
+			case R_REG_TYPE_DRX:
+				if (dbg->bits== R_SYS_BITS_64) {
+					ret = thread_get_state (inferior_threads[tid],
+						x86_DEBUG_STATE64, (x86_debug_state64_t*)
+					regs, &gp_count);
+				} else {
+					ret = thread_get_state (inferior_threads[tid],
+						x86_DEBUG_STATE32, (x86_debug_state32_t*)
+					regs, &gp_count);
+				}
+				break;
+			default:
+				if (dbg->bits == R_SYS_BITS_64) {
+					ret = thread_set_state (tid, x86_THREAD_STATE,
 						(thread_state_t) regs, gp_count);
-			} else {
-				ret = thread_set_state (tid, i386_THREAD_STATE,
+				} else {
+					ret = thread_set_state (tid, i386_THREAD_STATE,
 						(thread_state_t) regs, gp_count);
+				}
 			}
 #else
 			ret = thread_set_state (inferior_threads[tid],
@@ -1843,7 +2184,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				|| (info.reserved != prev_info.reserved))
 			print = 1;
 
-		#define xwr2rwx(x) ((x&1)<<2) && (x&2) && ((x&4)>>2)
+		#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 		if (print) {
 			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s",
 					r_str_rwx_i (xwr2rwx (prev_info.max_protection)), i,
@@ -1852,7 +2193,8 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 					prev_info.reserved ? "reserved" : "not-reserved");
 			// TODO: MAPS can have min and max protection rules
 			// :: prev_info.max_protection
-			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size, prev_info.protection, 0);
+			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
+				xwr2rwx (prev_info.protection), 0);
 			if (mr == NULL) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
@@ -2049,9 +2391,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		if (pos_c) strncpy (path, pos_c, sizeof (path)-1);
 		else path[0]='\0';
 #else
-		char null[16];
+		char null[64]; // XXX: this can overflow
 		sscanf (line, "%s %s %s %s %s %s",
-			&region[2], perms,  null, null, null, path);
+			&region[2], perms, null, null, null, path);
 
 		pos_c = strchr (&region[2], '-');
 		if (!pos_c)
@@ -2284,6 +2626,46 @@ static int drx_del(RDebug *dbg, ut64 addr, int rwx) {
 }
 #endif
 
+static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
+#if __i386__ || __x86_64__
+	drxt regs[8] = {0};
+
+	// sync drx regs
+#define R dbg->reg
+	regs[0] = r_reg_getv (R, "dr0");
+	regs[1] = r_reg_getv (R, "dr1");
+	regs[2] = r_reg_getv (R, "dr2");
+	regs[3] = r_reg_getv (R, "dr3");
+/*
+	RESERVED
+	regs[4] = r_reg_getv (R, "dr4");
+	regs[5] = r_reg_getv (R, "dr5");
+*/
+	regs[6] = r_reg_getv (R, "dr6");
+	regs[7] = r_reg_getv (R, "dr7");
+
+	if (sz == 0) {
+		drx_list ((drxt*)&regs);
+		return R_FALSE;
+	}
+	if (sz<0) { // remove
+		drx_set (&regs, n, addr, -1, 0, 0);
+	} else {
+		drx_set (&regs, n, addr, sz, rwx, g);
+	}
+	r_reg_setv (R, "dr0", regs[0]);
+	r_reg_setv (R, "dr1", regs[1]);
+	r_reg_setv (R, "dr2", regs[2]);
+	r_reg_setv (R, "dr3", regs[3]);
+	r_reg_setv (R, "dr6", regs[6]);
+	r_reg_setv (R, "dr7", regs[7]);
+	return R_TRUE;
+#else
+	eprintf ("drx: Unsupported platform\n");
+#endif
+	return R_FALSE;
+}
+
 static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
 #if __i386__ || __x86_64__
 	RDebug *dbg = user;
@@ -2304,33 +2686,28 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 	struct sockaddr_in *sin;
 	struct sockaddr_un *sun;
 
+	if (buflen>0)
 	switch (ss->ss_family) {
 	case AF_LOCAL:
 		sun = (struct sockaddr_un *)ss;
-		if (strlen (sun->sun_path) == 0)
-			strlcpy (buffer, "-", buflen);
-		else
-			strlcpy (buffer, sun->sun_path, buflen);
+		strncpy (buffer, (sun && *sun->sun_path)?
+			sun->sun_path: "-", buflen-1);
 		break;
-
 	case AF_INET:
 		sin = (struct sockaddr_in *)ss;
-		snprintf(buffer, buflen, "%s:%d", inet_ntoa(sin->sin_addr),
-		    ntohs(sin->sin_port));
+		snprintf (buffer, buflen, "%s:%d", inet_ntoa (sin->sin_addr),
+		    ntohs (sin->sin_port));
 		break;
-
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)ss;
 		if (inet_ntop (AF_INET6, &sin6->sin6_addr, buffer2,
 		    sizeof (buffer2)) != NULL)
 			snprintf (buffer, buflen, "%s.%d", buffer2,
 			    ntohs (sin6->sin6_port));
-		else
-			strlcpy (buffer, "-", sizeof(buffer));
+		else strcpy (buffer, "-");
 		break;
-
 	default:
-		strlcpy (buffer, "", buflen);
+		*buffer = 0;
 		break;
 	}
 }
@@ -2352,13 +2729,13 @@ static RList *r_debug_desc_native_list (int pid) {
 	mib[2] = KERN_PROC_FILEDESC;
 	mib[3] = pid;
 
-	if (sysctl(mib, 4, NULL, &len, NULL, 0) != 0)
+	if (sysctl (mib, 4, NULL, &len, NULL, 0) != 0)
 		return NULL;
 	len = len * 4 / 3;
 	buf = malloc(len);
 	if (buf == NULL)
 		return (NULL);
-	if (sysctl(mib, 4, buf, &len, NULL, 0) != 0) {
+	if (sysctl (mib, 4, buf, &len, NULL, 0) != 0) {
 		free (buf);
 		return NULL;
 	}
@@ -2386,7 +2763,7 @@ static RList *r_debug_desc_native_list (int pid) {
 							addr_to_string (&kve->kf_sa_peer, path, sizeof (path));
 					} else {
 						addr_to_string (&kve->kf_sa_local, path, sizeof (path));
-						strlcat (path, " ", sizeof (path));
+						strcat (path, " ");
 						addr_to_string (&kve->kf_sa_peer, path + strlen (path),
 								sizeof (path));
 					}
@@ -2518,6 +2895,7 @@ struct r_debug_desc_plugin_t r_debug_desc_plugin_native = {
 
 struct r_debug_plugin_t r_debug_plugin_native = {
 	.name = "native",
+	.license = "LGPL3",
 #if __i386__
 	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_X86,
@@ -2564,6 +2942,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.map_get = r_debug_native_map_get,
 	.map_protect = r_debug_native_map_protect,
 	.breakpoint = r_debug_native_bp,
+	.drx = r_debug_native_drx,
 };
 
 #ifndef CORELIB

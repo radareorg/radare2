@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
+
 
 #ifndef _INCLUDE_R_CORE_H_
 #define _INCLUDE_R_CORE_H_
@@ -25,6 +26,7 @@
 #include "r_bin.h"
 #include "r_hash.h"
 #include "r_socket.h"
+#include "r_util.h"
 #include "r_crypto.h"
 
 #ifdef __cplusplus
@@ -34,8 +36,8 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_core);
 
 #define R_CORE_CMD_EXIT -2
-#define R_CORE_BLOCKSIZE 64
-#define R_CORE_BLOCKSIZE_MAX 0x40000 /* 256KB */
+#define R_CORE_BLOCKSIZE 0x100
+#define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
 #define R_CORE_ANAL_GRAPHLINES 0x1
 #define R_CORE_ANAL_GRAPHBODY  0x2
@@ -53,6 +55,8 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_RAP_REPLY  0x80
 
 #define RTR_MAX_HOSTS 255
+
+#define R_CORE_CMD_DEPTH 10
 
 typedef struct r_core_rtr_host_t {
 	int proto;
@@ -77,7 +81,7 @@ typedef struct r_core_file_t {
 	int rwx;
 	int dbg;
 	RIODesc *fd;
-	RBinObject *obj;
+	RBinBind binb;
 } RCoreFile;
 
 #define R_CORE_ASMSTEPS 128
@@ -96,15 +100,13 @@ typedef struct r_core_t {
 	ut8 *oobi; /* out of band input ; used for multiline or file input */
 	int ffio;
 	int oobi_len;
-	ut8 *yank_buf;
-	int yank_len;
+	RBuffer *yank_buf;
 	ut64 yank_off;
 	int tmpseek;
 	boolt vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
-	RPair *kv;
 	RIO *io;
 	RCoreFile *file;
 	RList *files;
@@ -141,6 +143,10 @@ typedef struct r_core_t {
 	int utf8;
 	int vseek;
 	RList *watchers;
+	RList *scriptstack;
+	int cmd_depth;
+	ut8 switch_file_view;
+	Sdb *sdb;
 } RCore;
 
 typedef struct r_core_cmpwatch_t {
@@ -205,8 +211,10 @@ R_API void r_core_visual_colors(RCore *core);
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm);
+R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd);
 R_API void r_core_file_free(RCoreFile *cf);
 R_API struct r_core_file_t *r_core_file_open(RCore *core, const char *file, int mode, ut64 loadaddr);
+R_API struct r_core_file_t *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr);
 R_API struct r_core_file_t *r_core_file_get_fd(RCore *core, int fd);
 R_API int r_core_file_close(RCore *core, RCoreFile *fh);
 R_API int r_core_file_close_fd(RCore *core, int fd);
@@ -215,10 +223,19 @@ R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
 
+
+#define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
-R_API void r_core_yank_set (RCore *core, const char *str);
+R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
+R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
 R_API int r_core_yank_to(RCore *core, const char *arg);
+R_API int r_core_yank_dump (RCore *core, ut64 pos);
+R_API int r_core_yank_hexdump (RCore *core, ut64 pos);
+R_API int r_core_yank_cat (RCore *core, ut64 pos);
+R_API int r_core_yank_hud_file (RCore *core, const char *input);
+R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir);
+R_API int r_core_yank_file (RCore *core, const char *input);
 
 R_API int r_core_loadlibs(RCore *core);
 // FIXME: change (void *user) -> (RCore *core)
@@ -233,6 +250,7 @@ R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
 /* anal.c */
+R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);
 R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
@@ -253,6 +271,7 @@ typedef struct r_core_asm_hit {
 	char *code;
 	int len;
 	ut64 addr;
+	ut8 valid;
 } RCoreAsmHit;
 
 R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args);
@@ -263,12 +282,22 @@ R_API void r_core_asm_hit_free(void *_hit);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
+R_API RList *r_core_asm_back_disassemble_instr (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
+R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes);
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len);
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
+R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
 
-R_API int r_core_bin_load(RCore *core, const char *file);
+R_API void r_core_bin_bind(RCore *core);
+R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
+R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
+R_API int r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_hash_load(RCore *core, const char *file);
+
+// XXX - this is kinda hacky, maybe there should be a way to
+// refresh the bin environment without specific calls?
+R_API int r_core_bin_refresh_strings(RCore *core);
 
 /* gdiff.c */
 R_API int r_core_gdiff(RCore *core1, RCore *core2);
@@ -330,7 +359,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_visual_define (RCore *core);
 R_API int r_core_visual_trackflags (RCore *core);
 R_API int r_core_visual_comments (RCore *core);
-R_API void r_core_visual_prompt (RCore *core);
+R_API int r_core_visual_prompt (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
@@ -360,6 +389,7 @@ R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
 
+
 /* anal stats */
 
 typedef struct {
@@ -377,6 +407,10 @@ typedef struct {
 
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
+R_API void r_core_syscmd_ls(const char *input);
+
+/* PLUGINS */
+extern struct r_cmd_plugin_t r_core_plugin_java;
 
 #endif
 

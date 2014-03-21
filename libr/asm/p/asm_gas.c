@@ -14,20 +14,21 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		"gas /dev/stdin -o /dev/stdout <<__\n"
 		"BITS %i\nORG 0x%"PFMT64x"\n%s\n__",
 		a->bits, a->pc, buf);
-	out = (ut8 *)r_sys_cmd_str(cmd, "", &len);
+	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
 	if (out) {
-		memcpy(op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
-		free(out);
+		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
+		free (out);
 	}
-	op->inst_len = len;
+	op->size = len;
 	return len;
 }
 
-RAsmPlugin r_asm_plugin_x86_nasm = {
+RAsmPlugin r_asm_plugin_x86_gas = {
 	.name = "gas",
-	.desc = "GNU Assembler plugin",
+	.license = "LGPL3",
+	.desc = "GNU Assembler (gas)",
 	.arch = "x86", // XXX
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL, /*&disassemble,*/
@@ -37,6 +38,6 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_gas
+	.data = &r_asm_plugin_x86_gas
 };
 #endif

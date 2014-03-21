@@ -97,7 +97,7 @@ static const struct {
 };
 
 #define entry_is_free(x) (!x || !x->data)
-#define entry_is_deleted(x) (x->data==&deleted_data)
+#define entry_is_deleted(x) x->data==&deleted_data
 #define entry_is_present(x) (x->data && x->data != &deleted_data)
 
 /**

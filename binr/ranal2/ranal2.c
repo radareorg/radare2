@@ -20,7 +20,7 @@ static char *stackop2str(int type) {
 	switch (type) {
 		case R_ANAL_STACK_NULL:     return strdup ("null");
 		case R_ANAL_STACK_NOP:      return strdup ("nop");
-		case R_ANAL_STACK_INCSTACK: return strdup ("incstack");
+		//case R_ANAL_STACK_INCSTACK: return strdup ("incstack");
 		case R_ANAL_STACK_GET:      return strdup ("get");
 		case R_ANAL_STACK_SET:      return strdup ("set");
 	}
@@ -77,10 +77,10 @@ static int analyze(RAnal *anal, RAnalOp *op, ut64 offset, ut8* buf, int len) {
 			printf ("jump:     0x%08"PFMT64x"\n", op->jump);
 		if (op->fail != -1LL)
 			printf ("fail:     0x%08"PFMT64x"\n", op->fail);
-		if (op->ref != -1LL)
-			printf ("ref:      0x%08"PFMT64x"\n", op->ref);
-		if (op->value != -1LL)
-			printf ("value:    0x%08"PFMT64x"\n", op->value);
+		//if (op->ref != -1LL)
+		//	printf ("ref:      0x%08"PFMT64x"\n", op->ref);
+		if (op->val != -1LL)
+			printf ("value:    0x%08"PFMT64x"\n", op->val);
 		printf ("stackop:  %s\n", stackop);
 		printf ("stackptr: %"PFMT64d"\n", op->stackptr);
 		printf ("decode str: %s\n", r_anal_op_to_string (anal, op));

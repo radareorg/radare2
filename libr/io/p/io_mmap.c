@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
 
-static int __plugin_open(RIO *io, const char *file) {
-	return (!memcmp (file, "mmap://", 7));
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
+	return (!strncmp (file, "mmap://", 7));
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -41,6 +41,7 @@ static int __close(RIODesc *fd) {
 struct r_io_plugin_t r_io_plugin_mmap = {
 	.name = "mmap",
         .desc = "open file using mmap://",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

@@ -60,9 +60,9 @@ static ut64 ewf__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (ut64)-1;
 }
 
-static int ewf__plugin_open(RIO *io, const char *pathname) {
-	if ((!memcmp (pathname, "ewf://", 6))
-	||  (!memcmp (pathname, "els://", 6)))
+static int ewf__plugin_open(RIO *io, const char *pathname, ut8 many) {
+	if ((!strncmp (pathname, "ewf://", 6))
+	||  (!strncmp (pathname, "els://", 6)))
 		return R_TRUE;
 	return R_FALSE;
 }
@@ -86,7 +86,7 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	uint8_t format;
 	int i;
 
-	if (!memcmp (pathname, "els://", 6)) {
+	if (!strncmp (pathname, "els://", 6)) {
 		FILE *fd = r_sandbox_fopen (pathname+6, "r");
 		ut64 len;
 		char *buf;
@@ -156,10 +156,11 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	return r_io_desc_new (&r_io_plugin_shm, rewf->fd, pathname, rw, mode, rewf);
 }
 
-struct r_io_plugin_t r_io_plugin_ewf = {
+RIOPlugin r_io_plugin_ewf = {
         //void *plugin;
 	.name = "ewf",
         .desc = "Forensic file formats (Encase, ..) (ewf://file, els://file)",
+	.license = "LGPL3",
         .open = ewf__open,
         .close = ewf__close,
 	.read = ewf__read,

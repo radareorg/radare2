@@ -4,11 +4,6 @@
 
 #include <r_cons.h>
 
-// TODO: move to r_num_round
-static inline int cast(double d) {
-	return (int)d + ((((int)((d - (int)d)*10))>5)? 1: 0);
-}
-
 static int gs (int rgb) {
 	return 232 + (double)rgb/(255/24.1);
 }

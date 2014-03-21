@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include <r_userconf.h>
 
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
+#include <r_util.h>
 
 #if __WINDOWS__
 
@@ -45,10 +46,10 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 	return w32dbg_write_at (fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file) {
-	if (!memcmp (file, "attach://", 9))
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
+	if (!strncmp (file, "attach://", 9))
 		return R_TRUE;
-	return (!memcmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
+	return (!strncmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
 }
 
 static int __attach (RIOW32Dbg *dbg) {
@@ -60,7 +61,8 @@ static int __attach (RIOW32Dbg *dbg) {
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
-	if (__plugin_open (io, file)) {
+	if (__plugin_open (io, file, 0)) {
+		char *pidpath;
 		RIOW32Dbg *dbg = R_NEW (RIOW32Dbg);
 		if (dbg == NULL)
 			return NULL;
@@ -69,7 +71,9 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			free (dbg);
 			return NULL;
 		}
-		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1, file, R_TRUE, 0, dbg);
+		pidpath = r_sys_pid_to_path (dbg->pid);
+		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1,
+			pidpath, R_TRUE, 0, dbg);
 	}
 	return NULL;
 }
@@ -104,10 +108,11 @@ static int __init(struct r_io_t *io) {
 }
 
 // TODO: rename w32dbg to io_w32dbg .. err io.w32dbg ??
-struct r_io_plugin_t r_io_plugin_w32dbg = {
+RIOPlugin r_io_plugin_w32dbg = {
         //void *plugin;
 	.name = "io_w32dbg",
         .desc = "w32dbg io",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

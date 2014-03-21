@@ -1,5 +1,5 @@
 OBJ_TAR=fs_tar.o
-EXTRA=../p/grub/libgrubfs.a
+EXTRA=$(GRUB)
 CFLAGS+=-Igrub/include
 
 STATIC_OBJ+=${OBJ_TAR}

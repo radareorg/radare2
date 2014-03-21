@@ -1,8 +1,7 @@
-.Em
 .TH RARUN2 1
 .SH NAME
 rarun2 \- radare2 utility to run programs in exotic environments
-.Dd Apr 2, 2013
+.Dd Nov 11, 2013
 .Sh SYNOPSIS
 .Nm rarun2
 .Op [script.rr2]
@@ -57,7 +56,7 @@ Sample rarun2 script
 .Pp
 Connecting a program to a socket
 .Pp
-  $ nc -l 9999
+  $ nc \-l 9999
   $ rarun2 program=/bin/ls connect=localhost:9999
 .Pp
 Debugging a program redirecting io to another terminal
@@ -66,7 +65,7 @@ Debugging a program redirecting io to another terminal
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run r2
-  $ r2 -d rarun2 program=/bin/ls stdio=/dev/ttys010
+  $ r2 \-d rarun2 program=/bin/ls stdio=/dev/ttys010
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,
@@ -78,4 +77,4 @@ Debugging a program redirecting io to another terminal
 .Xr rasm2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <pancake@nopcode.org>
+Written by pancake <pancake@nopcode.org>

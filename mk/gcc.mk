@@ -26,7 +26,7 @@ ARCH=$(shell uname -m)
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
 else
-LDFLAGS_LIB=-shared
+LDFLAGS_LIB=${LDFLAGS} -shared
 #ifneq (${NAME},)
 #LDFLAGS_LIB+=-Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}
 #endif

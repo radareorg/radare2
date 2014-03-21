@@ -9,13 +9,12 @@ static int cmd_meta(void *data, const char *input) {
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
 	RAnalFunction *f;
-	RListIter *iter;
 	char file[1024];
 
 	switch (*input) {
 	case 'j':
 	case '*':
-		r_meta_list (core->anal->meta, R_META_TYPE_ANY, *input);
+		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
 		break;
 	case 'l':
 		// XXX: this should be moved to CL?
@@ -29,7 +28,7 @@ static int cmd_meta(void *data, const char *input) {
 				if (input[1]==' ')
 					offset = r_num_math (core->num, input+2);
 				else offset = core->offset;
-				sl = r_bin_meta_get_source_line (core->bin, offset);
+				sl = r_bin_addr2text (core->bin, offset);
 				if (sl) {
 					r_cons_printf ("%s\n", sl);
 					free (sl);
@@ -41,9 +40,9 @@ static int cmd_meta(void *data, const char *input) {
 			f = strdup (input +2);
 			p = strchr (f, ':');
 			if (p) {
-				*p=0;
+				*p = 0;
 				num = atoi (p+1);
-				line = r_file_slurp_line (input+2, num, 0);
+				line = r_file_slurp_line (f, num, 0);
 				if (!line) {
 					const char *dirsrc = r_config_get (core->config, "dir.source");
 					if (dirsrc && *dirsrc) {
@@ -51,10 +50,26 @@ static int cmd_meta(void *data, const char *input) {
 						line = r_file_slurp_line (f, num, 0);
 					}
 					if (!line) {
-						eprintf ("Cannot slurp file\n");
+						eprintf ("Cannot slurp file '%s'\n", f);
 						return R_FALSE;
 					}
 				}
+// filter_line
+char *a;
+for (a=line; *a; a++) {
+	switch (*a) {
+	case '%':
+	case '(':
+	case ')':
+	case '~':
+	case '|':
+	case '#':
+	case ';':
+	case '"':
+		*a = '_';
+		break;
+	}
+}
 				p = strchr (p+1, ' ');
 				if (p) {
 					snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
@@ -63,14 +78,15 @@ static int cmd_meta(void *data, const char *input) {
 					snprintf (buf, sizeof (buf), "\"CC %s:%d %s\"",
 						f, num, line);
 				}
+eprintf ("-- %s\n", buf);
 				r_core_cmd0 (core, buf);
 				free (line);
 				free (f);
-			}
+			} else eprintf ("Usage: Cl [file:line] [address]\n");
 		}
 		break;
 	case 'L': // debug information of current offset
-		ret = r_bin_meta_get_line (core->bin, core->offset, file,
+		ret = r_bin_addr2line (core->bin, core->offset, file,
 			sizeof (file)-1, &line);
 		if (ret) {
 			r_cons_printf ("file %s\nline %d\n", file, line);
@@ -101,7 +117,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (input[2]=='-') {
 				if (input[3]) {
 					addr = r_num_math (core->num, input+3);
-					r_meta_del (core->anal->meta,
+					r_meta_del (core->anal,
 						R_META_TYPE_COMMENT,
 						addr, 1, NULL);
 				} else eprintf ("Usage: CCa-[address]\n");
@@ -111,7 +127,7 @@ static int cmd_meta(void *data, const char *input) {
 			addr = r_num_math (core->num, s);
 			// Comment at
 			if (p) {
-				r_meta_add (core->anal->meta,
+				r_meta_add (core->anal,
 					R_META_TYPE_COMMENT,
 					addr, addr+1, p);
 			} else eprintf ("Usage: CCa [address] [comment]\n");
@@ -130,37 +146,40 @@ static int cmd_meta(void *data, const char *input) {
 		case '-':
 			switch (input[2]) {
 			case '*':
-				core->num->value = r_meta_del (core->anal->meta,
+				core->num->value = r_meta_del (core->anal,
 					input[0], 0, UT64_MAX, NULL);
 				break;
 			case ' ':
 				addr = r_num_math (core->num, input+3);
 			default:
-				core->num->value = r_meta_del (core->anal->meta,
+				core->num->value = r_meta_del (core->anal,
 					input[0], addr, 1, NULL);
 				break;
 			}
 			break;
 		case '*':
-			r_meta_list (core->anal->meta, input[0], 1);
+			r_meta_list (core->anal, input[0], 1);
 			break;
 		case '!':
 			{
 				char *out, *comment = r_meta_get_string (
-					core->anal->meta, R_META_TYPE_COMMENT, addr);
+					core->anal, R_META_TYPE_COMMENT, addr);
 				out = r_core_editor (core, comment);
-				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
-				r_meta_set_string (core->anal->meta,
-					R_META_TYPE_COMMENT, addr, out);
-				free (out);
+				if (out) {
+					//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+					r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+					//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+					r_meta_set_string (core->anal,
+						R_META_TYPE_COMMENT, addr, out);
+					free (out);
+				}
 				free (comment);
 			}
 			break;
-		default: {
+		case ' ':
+		case '\0':
 			if (type!='z' && !input[1]) {
-				r_meta_list (core->anal->meta, input[0], 0);
+				r_meta_list (core->anal, input[0], 0);
 				break;
 			}
 			t = strdup (input+2);
@@ -188,18 +207,24 @@ static int cmd_meta(void *data, const char *input) {
 						fi = r_flag_get_i (core->flags, addr);
 						if (fi) strncpy (name, fi->name, sizeof (name)-1);
 					}
+				} else if (n<1) {
+					eprintf ("Invalid length %d\n", n);
+					return R_FALSE;
 				}
 			}
 			if (!n) n++;
 			addr_end = addr + n;
-			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
+			if (!r_meta_add (core->anal, type, addr, addr_end, name))
 				free (t);
 			//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
-			}
+			break;
+		default:
+			eprintf ("Missing space after CC\n");
 			break;
 		}
 		break;
 	case 'v':
+#if USE_VARSUBS
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("Usage: Cv[-*][ off reg name] \n");
@@ -244,8 +269,8 @@ static int cmd_meta(void *data, const char *input) {
 					if (pattern && varsub)
 					for (i = 0; i < R_ANAL_VARSUBS; i++)
 						if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
-							strncpy (f->varsubs[i].pat, pattern, 1023);
-							strncpy (f->varsubs[i].sub, varsub, 1023);
+							strncpy (f->varsubs[i].pat, pattern, sizeof (f->varsubs[i].pat)-1);
+							strncpy (f->varsubs[i].sub, varsub, sizeof (f->varsubs[i].sub)-1);
 							break;
 						}
 				} else eprintf ("Error: Function not found\n");
@@ -254,28 +279,31 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		break;
 		}
+#else
+		eprintf ("TODO: varsubs has been disabled because it needs to be sdbized\n");
+#endif
 	case '-':
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
-			r_meta_del (core->anal->meta, R_META_TYPE_ANY, core->offset, i, "");
-		} else r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
+			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i, "");
+		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '?':
 		r_cons_strcat (
-		"Usage: C[-LCvsdfm?] [...]\n"
-		" C*                     # List meta info in r2 commands\n"
-		" C- [len] [@][ addr]    # delete metadata at given address range\n"
-		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
-		" Cl  file:line [addr]   # add comment with line information\n"
-		" CC[-] [comment-text]   # add/remove comment. Use CC! to edit with $EDITOR\n"
-		" CCa[-at]|[at] [text]   # add/remove comment at given address\n"
-		" Cv[-] offset reg name  # add var substitution\n"
-		" Cs[-] [size] [[addr]]  # add string\n"
-		" Ch[-] [size]           # hide data\n"
-		" Cd[-] [size]           # hexdump data\n"
-		" Cf[-] [sz] [fmt..]     # format memory (see pf?)\n"
-		" Cm[-] [sz] [fmt..]     # magic parse (see pm?)\n");
+		"|Usage: C[-LCvsdfm?] [...]\n"
+		"| C*                              List meta info in r2 commands\n"
+		"| C- [len] [@][ addr]             delete metadata at given address range\n"
+		"| CL[-] [addr|file:line [addr] ]  show 'code line' information (bininfo)\n"
+		"| Cl  file:line [addr]            add comment with line information\n"
+		"| CC[-] [comment-text]    add/remove comment. Use CC! to edit with $EDITOR\n"
+		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
+		"| Cv[-] offset reg name   add var substitution\n"
+		"| Cs[-] [size] [[addr]]   add string\n"
+		"| Ch[-] [size] [@addr]    hide data\n"
+		"| Cd[-] [size]            hexdump data\n"
+		"| Cf[-] [sz] [fmt..]      format memory (see pf?)\n"
+		"| Cm[-] [sz] [fmt..]      magic parse (see pm?)\n");
 		break;
 	case 'F':
 		f = r_anal_fcn_find (core->anal, core->offset,

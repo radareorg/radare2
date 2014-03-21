@@ -17,9 +17,11 @@ struct Foo {
 	struct Cow c;
 	int d;
 };
+/*
+int main(int argc, char **argv);
 struct Foo foot = {0};
 int boo = 3;
-
 int main(int argc, char **argv) {
 	puts ("Hello World\n");
 }
+*/

@@ -74,8 +74,8 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int shm__plugin_open(RIO *io, const char *pathname) {
-	return (!memcmp (pathname, "shm://", 6));
+static int shm__plugin_open(RIO *io, const char *pathname, ut8 many) {
+	return (!strncmp (pathname, "shm://", 6));
 }
 
 static inline int getshmid (const char *str) {
@@ -87,7 +87,7 @@ static inline int getshmfd (RIOShm *shm) {
 }
 
 static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (!memcmp (pathname, "shm://", 6)) {
+	if (!strncmp (pathname, "shm://", 6)) {
 		RIOShm *shm = R_NEW (RIOShm);
 		const char *ptr = pathname+6;
 		shm->id = getshmid (ptr);
@@ -108,10 +108,10 @@ static int shm__init(RIO *io) {
 	return R_TRUE;
 }
 
-struct r_io_plugin_t r_io_plugin_shm = {
-        //void *plugin;
+RIOPlugin r_io_plugin_shm = {
 	.name = "shm",
         .desc = "shared memory resources (shm://key)",
+	.license = "LGPL3",
         .open = shm__open,
         .close = shm__close,
 	.read = shm__read,

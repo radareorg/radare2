@@ -32,12 +32,12 @@ static int check(RBin *bin) {
 }
 
 static int destroy(RBin *bin) {
-	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
+	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)bin->cur->xtr_obj);
 	return R_TRUE;
 }
 
 static int load(RBin *bin) {
-	return (bin->bin_obj = r_bin_fatmach0_new (bin->file))?
+	return (bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file))?
 		R_TRUE: R_FALSE;
 }
 
@@ -48,14 +48,14 @@ static int size(RBin *bin) {
 
 static int extract(RBin *bin, int idx) {
 	int narch;
-	struct r_bin_fatmach0_obj_t *fb = bin->bin_obj;
+	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct r_bin_fatmach0_arch_t *arch =
 		r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) return 0;
-	bin->cur.file = strdup (bin->file);
-	bin->cur.buf = arch->b;
-	bin->cur.size = arch->size;
-	bin->cur.offset = arch->offset;
+	bin->cur->file = strdup (bin->file);
+	bin->cur->buf = arch->b;
+	bin->cur->size = arch->size;
+	bin->cur->offset = arch->offset;
 	free (arch);
 	return narch;
 }
@@ -63,6 +63,7 @@ static int extract(RBin *bin, int idx) {
 struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.name = "fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.check = &check,

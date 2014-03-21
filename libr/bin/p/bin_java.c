@@ -1,44 +1,114 @@
-
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include "../../shlr/java/class.h"
+#undef R_API
+#define R_API static
+#include "../../shlr/java/class.c"
+#undef R_API
+#define R_API 
 
-static int load(RBinArch *arch) {
-	return ((arch->bin_obj = r_bin_java_new_buf (arch->buf)))? 1: 0;
-}
+#define IFDBG  if(0)
 
-static int destroy(RBinArch *arch) {
-	r_bin_java_free ((struct r_bin_java_obj_t*)arch->bin_obj);
-	return R_TRUE;
-}
+static Sdb *DB = NULL;
 
-static RList* entries(RBinArch *arch) {
-	return r_bin_java_get_entrypoints (arch->bin_obj);
-}
+static void add_bin_obj_to_sdb(RBinJavaObj *bin);
+static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
-static ut64 baddr(RBinArch *arch) {
+static  int init(void *user) {
+	IFDBG eprintf ("Calling plugin init = %d.\n", DB?1:0);
+	if (!DB) {
+		IFDBG eprintf ("plugin DB beeing initted.\n");
+		DB = sdb_new ("bin.java", NULL, 0);
+	} else {
+		IFDBG eprintf ("plugin DB already initted.\n");
+	}
 	return 0;
 }
 
-static RList* classes(RBinArch *arch) {
-	RList *ret;
-	ret = r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->bin_obj);
-	return ret;
+static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
+	int result = R_FALSE;
+	char *addr, value[1024] = {0};
+	addr = sdb_itoa ((ut64)(size_t)bin_obj,  value, 16);
+	if (key && bin_obj && DB) {
+		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, addr);
+		sdb_set (DB, key, addr, 0);
+		result = R_TRUE;
+	}
+	return result;
 }
 
-static RList* symbols(RBinArch *arch) {
-	return r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->bin_obj);
+static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
+	char * jvcname = NULL;
+	if (bin) {
+		jvcname = r_bin_java_build_obj_key (bin);
+		add_sdb_bin_obj (jvcname, bin);
+		free (jvcname);
+	}
 }
 
-static RList* strings(RBinArch *arch) {
-	return r_bin_java_get_strings((struct r_bin_java_obj_t*)arch->bin_obj);
+static int load(RBinFile *arch) {
+	struct r_bin_java_obj_t* bin_obj = NULL;
+	int result = R_FALSE;
+	bin_obj = r_bin_java_new_buf (arch->buf, arch->o->loadaddr, arch->o->kv);
+	if (bin_obj) {
+		if (arch->o->kv == NULL) arch->o->kv = bin_obj->kv;
+		arch->o->bin_obj = bin_obj;
+		bin_obj->AllJavaBinObjs = DB;
+		// XXX - /\ this is a hack, but (one way but) necessary to get access to
+		// the object addrs from anal. If only global variables are used,
+		// they get "lost" somehow after they are initialized and go out of
+		// scope.
+		//
+		// There are several points of indirection, but here is the gist:
+		//	  1) RAnal->(through RBinBind) RBin->RBinJavaObj->DB
+		//
+		// The purpose is to ensure that information about a give class file
+		// can be grabbed at any time from RAnal.  This was tried with global
+		// variables, but failed when attempting to access the DB
+		// in the class.c scope.  Once DB  was moved here, it is initialized
+		// once here and assigned to each of the other RBinJavaObjs.
+		//
+		// Now, the RAnal component of radare can get to each of the
+		// RBinJavaObjs for analysing functions and dependencies using an Sdb.
+		add_bin_obj_to_sdb (bin_obj);
+		if (arch->file)
+			bin_obj->file = strdup (arch->file);
+		result = R_TRUE;
+	}
+	return result;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
+	r_bin_java_free ((struct r_bin_java_obj_t*)arch->o->bin_obj);
+	sdb_free (DB);
+	DB = NULL;
+	return R_TRUE;
+}
+
+static RList* entries(RBinFile *arch) {
+	return r_bin_java_get_entrypoints (arch->o->bin_obj);
+}
+
+static ut64 baddr(RBinFile *arch) {
+	return 0;
+}
+
+static RList* classes(RBinFile *arch) {
+	return r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->o->bin_obj);
+}
+
+static RList* symbols(RBinFile *arch) {
+	return r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->o->bin_obj);
+}
+
+static RList* strings(RBinFile *arch) {
+	return r_bin_java_get_strings((struct r_bin_java_obj_t*)arch->o->bin_obj);
+}
+
+static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *version;
 
@@ -49,7 +119,7 @@ static RBinInfo* info(RBinArch *arch) {
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS-1);
-	version = r_bin_java_get_version (arch->bin_obj);
+	version = r_bin_java_get_version (arch->o->bin_obj);
 	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS-1);
 	free (version);
 	ret->has_va = 0;
@@ -64,28 +134,20 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int off, ret = R_FALSE;
+	int version = 0;
 
 	if (arch && arch->buf && arch->buf->buf && arch->buf->length>10)
 	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
-		ut16 major = (arch->buf->buf[8]<<8) | arch->buf->buf[7];
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
+		version = arch->buf->buf[6] | (arch->buf->buf[7] <<8);
+		if (version <1024) // IT's A MACH0!
+			return R_FALSE;
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-		if (major>=45 && major<=55)
-			ret = R_TRUE;
-		// TODO: in case of failed trick attempt discard on known mach0 headers?
-#if 0
-		/* KNOWN MACH0 HEADERS TO DISCARD */
-		if (off > 0 && off+5 < arch->buf->length) {
-			const ut8 * pbuf = arch->buf->buf+off;
-			if (	!memcmp (pbuf, "\xce\xfa\xed\xfe", 4) ||
-				!memcmp (pbuf, "\xfe\xed\xfa\xce", 4) ||
-				!memcmp (pbuf, "\xfe\xed\xfa\xcf", 4) ||
-				!memcmp (pbuf, "\xcf\xfa\xed\xfe", 4))
-				ret = R_FALSE;
-		}
-#endif
+		//eprintf ("VERSION = %d\n", version);
+		// TODO: FIND __TEXT
+		ret = R_TRUE;
 	}
 	return ret;
 }
@@ -94,28 +156,16 @@ static int retdemangle(const char *str) {
 	return R_BIN_NM_JAVA;
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
-	RBinAddr *ret = NULL;
-	switch (sym) {
-	case R_BIN_SYM_ENTRY:
-		if (!(ret = R_NEW0 (RBinAddr)))
-			return NULL;
-		ret->offset = r_bin_java_get_entrypoint (arch->bin_obj);
-		break;
-	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW0 (RBinAddr)))
-			return NULL;
-		ret->offset = ret->rva = r_bin_java_get_main (arch->bin_obj);
-		break;
-	}
-	return ret;
+static RBinAddr* binsym(RBinFile *arch, int sym) {
+	return r_bin_java_get_entrypoint(arch->o->bin_obj, sym);
 }
 
-static RList* lines(RBinArch *arch) {
+static RList* lines(RBinFile *arch) {
 	int i;
-	char *file = strdup (arch->file);
+	char *file = arch->file ? strdup (arch->file) : strdup ("");
 	RList *list = r_list_new ();
-	RBinJavaObj *b = arch->bin_obj;
+
+	RBinJavaObj *b = arch->o->bin_obj;
 	file = r_str_replace (file, ".class", ".java", 0);
 	for (i=0; i<b->lines.count; i++) {
 		RBinDwarfRow *row = R_NEW (RBinDwarfRow);
@@ -126,22 +176,29 @@ static RList* lines(RBinArch *arch) {
 	return list;
 }
 
-static RList* sections(RBinArch *arch) {
-	return r_bin_java_get_sections (arch->bin_obj);
+static RList* sections(RBinFile *arch) {
+	return r_bin_java_get_sections (arch->o->bin_obj);
 }
 
-static RList* fields(RBinArch *arch) {
-	return r_bin_java_get_fields (arch->bin_obj);
+static RList* fields(RBinFile *arch) {
+	return r_bin_java_get_fields (arch->o->bin_obj);
 }
-struct r_bin_plugin_t r_bin_plugin_java = {
+
+static RList* libs(RBinFile *arch) {
+	return r_bin_java_get_lib_names (arch->o->bin_obj);
+}
+
+RBinPlugin r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
-	.init = NULL,
+	.license = "LGPL3",
+	.init = init,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = sections,
@@ -149,14 +206,16 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = fields,
-	.libs = NULL,
+	.fields = NULL, //fields,
+	.libs = libs,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.lines = &lines,
 	.write = NULL,
 	.classes = classes,
-	.demangle_type = retdemangle
+	.demangle_type = retdemangle,
+	.minstrlen = 3,
+	.user = NULL
 };
 
 #ifndef CORELIB

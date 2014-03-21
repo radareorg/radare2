@@ -4,9 +4,6 @@ STATIC_OBJ+=${OBJ_M68K}
 TARGET_M68K=anal_m68k.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_M68K}
-#LDFLAGS+=-L../../lib -lr_lib
-#LDFLAGS+=-L../../syscall -lr_syscall
-#LDFLAGS+=-L../../diff -lr_diff
 
 ${TARGET_M68K}: ${OBJ_M68K}
 	${CC} $(call libname,anal_m68k) ${LDFLAGS} ${CFLAGS} -o anal_m68k.${EXT_SO} ${OBJ_M68K}

@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <list.h>
+
 R_LIB_VERSION_HEADER(r_reg);
 
 enum {
@@ -23,12 +24,40 @@ enum {
 	R_REG_NAME_SP, // stack pointer
 	R_REG_NAME_SR, // status register
 	R_REG_NAME_BP, // base pointer
+	/* args */
 	R_REG_NAME_A0, // arguments
 	R_REG_NAME_A1,
 	R_REG_NAME_A2,
 	R_REG_NAME_A3,
+	/* flags */
+	R_REG_NAME_ZF,
+	R_REG_NAME_SF,
+	R_REG_NAME_CF,
+	R_REG_NAME_OF,
 	R_REG_NAME_LAST,
 };
+
+// TODO: use enum here?
+#define R_REG_COND_EQ 0
+#define R_REG_COND_NE 1
+#define R_REG_COND_CF 2
+#define R_REG_COND_CARRY 2
+#define R_REG_COND_NEG 3
+#define R_REG_COND_NEGATIVE 3
+#define R_REG_COND_OF 4
+#define R_REG_COND_OVERFLOW 4
+// unsigned
+#define R_REG_COND_HI 5
+#define R_REG_COND_HE 6
+#define R_REG_COND_LO 7
+#define R_REG_COND_LOE 8
+// signed
+#define R_REG_COND_GE 9
+#define R_REG_COND_GT 10
+#define R_REG_COND_LT 11
+#define R_REG_COND_LE 12
+#define R_REG_COND_LAST 13
+
 
 typedef struct r_reg_item_t {
 	char *name;
@@ -58,6 +87,15 @@ typedef struct r_reg_t {
 	int iters;
 } RReg;
 
+typedef struct r_reg_flags_t {
+	int s; // sign, negative number (msb)
+	int z; // zero
+	int a; // half-carry adjust (if carry happens at nibble level)
+	int c; // carry
+	int o; // overflow
+	int p; // parity (lsb)
+} RRegFlags;
+
 
 #ifdef R_API
 R_API void r_reg_free(RReg *reg);
@@ -67,6 +105,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *profile);
 R_API int r_reg_set_profile(RReg *reg, const char *profile);
 
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
+R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
@@ -75,6 +114,12 @@ R_API RList *r_reg_get_list(RReg *reg, int type);
 /* XXX: dupped ?? */
 R_API int r_reg_type_by_name(const char *str);
 R_API int r_reg_get_name_idx(const char *type);
+
+R_API RRegItem* r_reg_cond_get (RReg *reg, const char *name);
+R_API int r_reg_cond_get_value (RReg *r, const char *name);
+R_API int r_reg_cond_bits (RReg *r, int type, RRegFlags *f);
+R_API RRegFlags *r_reg_cond_retrieve (RReg *r, RRegFlags *);
+R_API int r_reg_cond (RReg *r, int type);
 
 /* value */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
@@ -96,6 +141,8 @@ R_API void r_reg_arena_swap(RReg *reg, int copy);
 R_API int r_reg_arena_push(RReg *reg);
 R_API void r_reg_arena_pop(RReg *reg);
 R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item);
+R_API const char *r_reg_cond_to_string (int n);
+R_API int r_reg_cond_from_string(const char *str);
 #endif
 
 #endif

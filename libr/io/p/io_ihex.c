@@ -94,8 +94,8 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname) {
-	return (!memcmp (pathname, "ihex://", 7));
+static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
+	return (!strncmp (pathname, "ihex://", 7));
 }
 
 #if 0
@@ -109,7 +109,7 @@ static int __plugin_open(RIO *io, const char *pathname) {
   1 Byte count
   2 byte Address
   1 byte Record type (00 data 01 eof)
-  N byets Data
+  N bytes Data
   1 byte Checksum (sum 00)
 #endif
 
@@ -157,6 +157,13 @@ static int ihex2bin(ut8 *mem, char *str) {
 			break;
 		case 1: // EOF
 			ptr = NULL;
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			ptr = strchr(ptr + 1, ':');
+			break;
 		}
 	} while (ptr);
 
@@ -167,7 +174,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int ret;
 	RIOMalloc *mal;
 	char *str;
-	if (__plugin_open (io, pathname)) {
+	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname+7, NULL);
 		if (!str) return NULL;
 		mal = R_NEW (RIOMalloc);
@@ -195,6 +202,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_ihex = {
 	.name = "ihex",
         .desc = "Intel HEX file (ihex://eeproms.hex)",
+	.license = "LGPL",
         .open = __open,
         .close = __close,
 	.read = __read,

@@ -174,6 +174,7 @@ typedef struct r_debug_desc_plugin_t {
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_plugin_t {
 	const char *name;
+	const char *license;
 	//const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
 	ut64 arch;
@@ -208,6 +209,7 @@ typedef struct r_debug_plugin_t {
 	int (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
 	int (*init)(RDebug *dbg);
+	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g);
 	RDebugDescPlugin desc;
 	// TODO: use RList here
 	struct list_head list;
@@ -330,6 +332,10 @@ R_API void r_debug_trace_free (RDebug *dbg);
 R_API int r_debug_trace_tag (RDebug *dbg, int tag);
 R_API int r_debug_child_fork (RDebug *dbg);
 R_API int r_debug_child_clone (RDebug *dbg);
+
+R_API void r_debug_drx_list (RDebug *dbg);
+R_API int r_debug_drx_set (RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g);
+R_API int r_debug_drx_unset (RDebug *dbg, int idx);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

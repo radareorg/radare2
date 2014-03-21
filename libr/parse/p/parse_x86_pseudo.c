@@ -38,10 +38,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "je",   "je 1"},
 		{ "push", "push 1"},
 		{ "pop",  "pop 1"},
-		{ "ret",  "ret"},
 		{ NULL }
 	};
 
+	if (argc>2 && !strcmp (argv[0], "xor")) {
+		if (!strcmp (argv[1], argv[2])) {
+			argv[0] = "mov";
+			argv[2] = "0";
+		}
+	}
 	for (i=0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
@@ -158,9 +163,10 @@ static inline int issegoff (const char *w) {
 
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+	strncpy (str, data, len);
+#if USE_VARSUBS
 	int i;
 	char *ptr, *ptr2;
-	strncpy (str, data, len);
 	for (i = 0; i < R_ANAL_VARSUBS; i++)
 		if (f->varsubs[i].pat[0] != '\0' && \
 			f->varsubs[i].sub[0] != '\0' && \
@@ -171,6 +177,9 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 					f->varsubs[i].sub, ptr2);
 		}
 	return R_TRUE;
+#else
+	return R_FALSE;
+#endif
 }
 
 struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {

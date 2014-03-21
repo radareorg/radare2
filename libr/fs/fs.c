@@ -4,7 +4,7 @@
 #include "../config.h"
 #include "types.h"
 #include <errno.h>
-#include "p/grub/include/grub/msdos_partition.h"
+#include "../../shlr/grub/include/grub/msdos_partition.h"
 
 R_LIB_VERSION(r_fs);
 
@@ -389,7 +389,7 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 }
 
 // TODO: move into grubfs
-#include "p/grub/include/grubfs.h"
+#include "../../shlr/grub/include/grubfs.h"
 RList *list = NULL;
 static int parhook (struct grub_disk *disk, struct grub_partition *par, void *closure) {
 	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);
@@ -496,7 +496,7 @@ R_API char *r_fs_name (RFS *fs, ut64 offset) {
 
 	for (i=0; fstypes[i].name; i++) {
 		RFSType *f = &fstypes[i];
-		len = R_MIN (f->buflen, sizeof (buf));
+		len = R_MIN (f->buflen, sizeof (buf)-1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
 			ret = R_TRUE;
@@ -606,17 +606,23 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				eprintf ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
+			char *s;
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
 			if (input[0] == '/') {
-				if (root)
-					strncpy (str, root, sizeof (str)-1);
-				else str[0] = 0;
-			} else strncpy (str, path, sizeof (str)-1);
-			strcat (str, "/");
-			strcat (str, input);
-			file = r_fs_open (fs, str);
+				s = malloc (strlen (root) + strlen (input) + 2);
+				if (!s) goto beach;
+				if (root) strcpy (s, root);
+				else *s = 0;
+			} else {
+				s = malloc (strlen (path) + strlen (input) + 2);
+				if (!s) goto beach;
+				strcpy (s, path);
+			}
+			strcat (s, "/");
+			strcat (s, input);
+			file = r_fs_open (fs, s);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				r_file_dump (input, file->data, file->size);
@@ -625,9 +631,10 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			} else {
 				input -= 2; //OMFG!!!! O_O
 				memcpy (input, "./", 2);
-				if (!r_fs_dir_dump (fs, str, input))
+				if (!r_fs_dir_dump (fs, s, input))
 					printf ("Cannot open file\n");
 			}
+			free (s);
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
 			eprintf (
 			"Commands:\n"
@@ -642,6 +649,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			);
 		} else eprintf ("Unknown command %s\n", buf);
 	}
+beach:
 	clearerr (stdin);
 	printf ("\n");
 	return R_TRUE;

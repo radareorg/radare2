@@ -54,12 +54,9 @@ static int cmd_help(void *data, const char *input) {
 	case 'y':
 		for (input++; input[0]==' '; input++);
 		if (*input) {
-			free (core->yank_buf);
-			core->yank_buf = (ut8*)strdup (input);
-			core->yank_len = strlen ((const char*)core->yank_buf);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, input, strlen (input)+1);
 		} else {
-			r_cons_memcat ((const char *)core->yank_buf, core->yank_len);
-			r_cons_newline ();
+			r_core_yank_cat (core, r_num_math (core->num, input+1));
 		}
 		break;
 	case 'F':
@@ -118,6 +115,14 @@ static int cmd_help(void *data, const char *input) {
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
 		switch (input[1]) {
+		case '?':
+			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+				"| No argument shows $? value\n"
+				"|?vi will show in decimal instead of hex\n");
+			break;
+		case '\0':
+			r_cons_printf ("%d\n", core->num->value);
+			break;
 		case 'i':
 			if (n>>32) r_cons_printf ("%"PFMT64d"\n", (st64)n);
 			else r_cons_printf ("%d\n", (st32)n);
@@ -155,59 +160,62 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '@':
 		r_cons_printf (
-		"Usage: ... @[(f|s|b)]:] [@iter] expr[!size] [~grep]\n"
-		"Pipes:\n"
-		"  x > foo       pipe output of 'x' command to 'foo' file\n"
-		"  x >> foo      concatenate output of 'x' in 'foo' file\n"
-		"  x | less      pipe output of 'x' command to less program\n"
-		"Command evaluation:\n"
-		"  `pdi~push:0[0]`  replace output of command inside the line\n"
-		"  .!rabin2 -ri $FILE  load imports by running rabin2\n"
-		"  .:8080        expect commands at tcp port 8080\n"
-		"Special suffixes to temporary set the contents of block:\n"
-		"  @f:/bin/ls    from file contents\n"
-		"  @s:hello      from given string\n"
-		"  @b:909192     from hex pairs string\n"
-		"Temporary seeks:\n"
-		"  @ 0x1024      seek to 0x1024 offset\n"
-		"  @ sym.main+3  seek to the evaluated math expressions\n"
-		"  @ 32!128      blocksize = 128, offset = 32\n"
-		"Repeaters:\n"
-		"  @@=1 2 3      repeat previous command at offsets 1, 2 and 3\n"
-		"  @@ hit*       repeat command for all flags matching 'hit*' glob\n"
+		"|Usage: ... @[(f|s|b)]:] [@iter] expr[!size] [~grep]\n"
+		"|Pipes:\n"
+		"|  x > foo       pipe output of 'x' command to 'foo' file\n"
+		"|  x >> foo      concatenate output of 'x' in 'foo' file\n"
+		"|  x | less      pipe output of 'x' command to less program\n"
+		"|Command evaluation:\n"
+		"|  `pdi~push:0[0]`  replace output of command inside the line\n"
+		"|  .!rabin2 -ri $FILE  load imports by running rabin2\n"
+		"|  .:8080        expect commands at tcp port 8080\n"
+		"|Special suffixes to temporary set the contents of block:\n"
+		"|  @f:/bin/ls    from file contents\n"
+		"|  @s:hello      from given string\n"
+		"|  @b:909192     from hex pairs string\n"
+		"|Temporary seeks:\n"
+		"|  @ 0x1024      seek to 0x1024 offset\n"
+		"|  @ sym.main+3  seek to the evaluated math expressions\n"
+		"|  @ 32!128      blocksize = 128, offset = 32\n"
+		"|Repeaters:\n"
+		"|  @@=1 2 3      repeat previous command at offsets 1, 2 and 3\n"
+		"|  @@ hit*       repeat command for all flags matching 'hit*' glob\n"
 		// TODO: documentate @@ glob1 glob2 glob3
-		"Internal grep:\n"
-		"  ~?            count lines\n"
-		"  ~mov          grep lines matching 'mov'\n"
-		"  ~!mov         grep lines not matching 'mov'\n"
-		"  ~mov[0]       get first column of lines matching 'mov'\n"
-		"  ~mov:3[0]     get 1st column from the 4th line matching 'mov'\n"
+		"|Internal grep:\n"
+		"|  ~?            count lines\n"
+		"|  ~mov          grep lines matching 'mov'\n"
+		"|  ~!mov         grep lines not matching 'mov'\n"
+		"|  ~mov[0]       get first column of lines matching 'mov'\n"
+		"|  ~mov:3[0]     get 1st column from the 4th line matching 'mov'\n"
+		"|Misc:\n"
+		"|  0             go to begining of file\n"
+		"|  0x33          go to 0x33'\n"
 		);
 		return 0;
 	case '$':
 		r_cons_printf (
-		"RNum $variables usable in math expressions:\n"
-		" $$     here (current virtual seek)\n"
-		" $o     here (current disk io offset)\n"
-		" $s     file size\n"
-		" $b     block size\n"
-		" $w     get word size, 4 if asm.bits=32, 8 if 64, ...\n"
-		" $c,$r  get width and height of terminal\n"
-		" $S     section offset\n"
-		" $SS    section size\n"
-		" $j     jump address (e.g. jmp 0x10, jz 0x10 => 0x10)\n"
-		" $f     jump fail address (e.g. jz 0x10 => next instruction)\n"
-		" $I     number of instructions of current function\n"
-		" $F     current function size \n"
-		" $Jn    get nth jump of function\n"
-		" $Cn    get nth call of function\n"
-		" $Dn    get nth data reference in function\n"
-		" $Xn    get nth xref of function\n"
-		" $m     opcode memory reference (e.g. mov eax,[0x10] => 0x10)\n"
-		" $l     opcode length\n"
-		" $e     1 if end of block, else 0\n"
-		" ${ev}  get value of eval config variable # TODO: use ?k too\n"
-		" $?     last comparision value\n"
+		"|RNum $variables usable in math expressions:\n"
+		"| $$     here (current virtual seek)\n"
+		"| $o     here (current disk io offset)\n"
+		"| $s     file size\n"
+		"| $b     block size\n"
+		"| $w     get word size, 4 if asm.bits=32, 8 if 64, ...\n"
+		"| $c,$r  get width and height of terminal\n"
+		"| $S     section offset\n"
+		"| $SS    section size\n"
+		"| $j     jump address (e.g. jmp 0x10, jz 0x10 => 0x10)\n"
+		"| $f     jump fail address (e.g. jz 0x10 => next instruction)\n"
+		"| $I     number of instructions of current function\n"
+		"| $F     current function size \n"
+		"| $Jn    get nth jump of function\n"
+		"| $Cn    get nth call of function\n"
+		"| $Dn    get nth data reference in function\n"
+		"| $Xn    get nth xref of function\n"
+		"| $m     opcode memory reference (e.g. mov eax,[0x10] => 0x10)\n"
+		"| $l     opcode length\n"
+		"| $e     1 if end of block, else 0\n"
+		"| ${ev}  get value of eval config variable # TODO: use ?k too\n"
+		"| $?     last comparision value\n"
 		);
 		return R_TRUE;
 	case 'V':
@@ -291,53 +299,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%s\n", s->name);
 		} break;
 	case '_': // hud input
-		free (core->yank_buf);
-		for (input++; *input==' '; input++);
-		core->yank_buf = (ut8*)r_cons_hud_file (input);
-		core->yank_len = core->yank_buf? strlen (
-			(const char *)core->yank_buf): 0;
-		break;
-	case 'k': // key=value utility
-		switch (input[1]) {
-		case ' ':
-			p = strchr (input+1, '='); 
-			if (p) {
-				// set
-				*p = 0;
-				r_pair_set (core->kv, input+2, p+1);
-			} else {
-				// get
-				p = r_pair_get (core->kv, input+2);
-				if (p) {
-					r_cons_printf ("%s\n", p);
-					free (p);
-				}
-			}
-			break;
-		case 's':
-			r_pair_save (core->kv, input+3);
-			break;
-		case 'l':
-			r_pair_load (core->kv, input+3);
-			break;
-		case '\0':
-			{ RListIter *iter;
-			RPairItem *kv;
-			RList *list = r_pair_list (core->kv, NULL);
-			r_list_foreach (list, iter, kv) {
-				r_cons_printf ("%s=%s\n", kv->k, kv->v);
-			}
-			}
-			break;
-		case '?':
-			eprintf ("Usage: ?k [key[=value]]\n"
-				" ?k foo=bar   # set value\n"
-				" ?k foo       # show value\n"
-				" ?k           # list keys\n"
-				" ?kl ha.sdb   # load keyvalue from ha.sdb\n"
-				" ?ks ha.sdb   # save keyvalue to ha.sdb\n");
-			break;
-		}
+		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // input num
 		if (!r_config_get_i (core->config, "scr.interactive")) {
@@ -352,10 +314,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_message (input+2);
 			break;
 		case 'p': {
-			char *p = r_cons_hud_path (input+2, 0);
-			core->yank_buf = (ut8*)p;
-			core->yank_len = p? strlen (p): 0;
-			core->num->value = (p != NULL);
+			core->num->value = r_core_yank_hud_path (core, input+2, 0) == R_TRUE;
 			} break;
 		case 'k':
 			r_cons_any_key ();
@@ -378,9 +337,7 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("%s: ", input);
 			fgets (foo, sizeof (foo)-1, stdin);
 			foo[strlen (foo)-1] = 0;
-			free (core->yank_buf);
-			core->yank_buf = (ut8 *)strdup (foo);
-			core->yank_len = strlen (foo);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen(foo)+1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;
@@ -406,43 +363,42 @@ static int cmd_help(void *data, const char *input) {
 				break;	
 			}
 			r_cons_printf (
-			"Usage: ?[?[?]] expression\n"
-			" ? eip-0x804800    show hex and dec result for this math expr\n"
-			" ?= eip-0x804800   same as above without user feedback\n"
-			" ??                show value of operation\n"
-			" ?? [cmd]          ? == 0 run command when math matches\n"
-			" ?_ hudfile        load hud menu with given file\n"
-			" ?b [num]          show binary value of number\n"
-			" ?B [elem]         show range boundaries like 'e?search.in\n"
-			" ?d opcode         describe opcode for asm.arch\n"
-			" ?e string         echo string\n"
-			" ?f [num] [str]    map each bit of the number as flag string index\n"
-			" ?h [str]          calculate hash for given string\n"
-			" ?iy prompt        yesno input prompt\n"
-			" ?i[ynmkp] arg     prompt for number or Yes,No,Msg,Key,Path and store in $$?\n"
-			" ?in prompt        yesno input prompt\n"
-			" ?im message       show message centered in screen\n"
-			" ?ik               press any key input dialog\n"
-			" ?k k[=v]          key-value temporal storage for the user\n"
-			" ?l str            returns the length of string (0 if null)\n"
-			" ?o num            get octal value\n"
-			" ?p vaddr          get physical address for given virtual address\n"
-			" ?P paddr          get virtual address for given physical one\n"
-			" ?r [from] [to]    generate random number between from-to\n"
-			" ?s from to step   sequence of numbers from to by steps\n"
-			" ?S addr           return section name of given address\n"
-			" ?t cmd            returns the time to run a command\n"
-			" ?u num            get value in human units (KB, MB, GB, TB)\n"
-			" ?v eip-0x804800   show hex value of math expr\n"
-			" ?vi rsp-rbp       show decimal value of math expr\n"
-			" ?V                show library version of r_core\n"
-			" ?x num|0xnum|str  returns the hexpair of number or string\n"
-			" ?X num|expr       returns the hexadecimal value numeric expr\n"
-			" ?y [str]          show contents of yank buffer, or set with string\n"
-			" ?! [cmd]          ? != 0\n"
-			" ?+ [cmd]          ? > 0\n"
-			" ?- [cmd]          ? < 0\n"
-			" ???               show this help\n");
+			"|Usage: ?[?[?]] expression\n"
+			"| ? eip-0x804800    show hex and dec result for this math expr\n"
+			"| ?= eip-0x804800   same as above without user feedback\n"
+			"| ??                show value of operation\n"
+			"| ?? [cmd]          ? == 0 run command when math matches\n"
+			"| ?_ hudfile        load hud menu with given file\n"
+			"| ?b [num]          show binary value of number\n"
+			"| ?B [elem]         show range boundaries like 'e?search.in\n"
+			"| ?d opcode         describe opcode for asm.arch\n"
+			"| ?e string         echo string\n"
+			"| ?f [num] [str]    map each bit of the number as flag string index\n"
+			"| ?h [str]          calculate hash for given string\n"
+			"| ?iy prompt        yesno input prompt\n"
+			"| ?i[ynmkp] arg     prompt for number or Yes,No,Msg,Key,Path and store in $$?\n"
+			"| ?in prompt        yesno input prompt\n"
+			"| ?im message       show message centered in screen\n"
+			"| ?ik               press any key input dialog\n"
+			"| ?l str            returns the length of string (0 if null)\n"
+			"| ?o num            get octal value\n"
+			"| ?p vaddr          get physical address for given virtual address\n"
+			"| ?P paddr          get virtual address for given physical one\n"
+			"| ?r [from] [to]    generate random number between from-to\n"
+			"| ?s from to step   sequence of numbers from to by steps\n"
+			"| ?S addr           return section name of given address\n"
+			"| ?t cmd            returns the time to run a command\n"
+			"| ?u num            get value in human units (KB, MB, GB, TB)\n"
+			"| ?v eip-0x804800   show hex value of math expr\n"
+			"| ?vi rsp-rbp       show decimal value of math expr\n"
+			"| ?V                show library version of r_core\n"
+			"| ?x num|0xnum|str  returns the hexpair of number or string\n"
+			"| ?X num|expr       returns the hexadecimal value numeric expr\n"
+			"| ?y [str]          show contents of yank buffer, or set with string\n"
+			"| ?! [cmd]          ? != 0\n"
+			"| ?+ [cmd]          ? > 0\n"
+			"| ?- [cmd]          ? < 0\n"
+			"| ???               show this help\n");
 			return 0;
 		} else
 		if (input[1]) {
@@ -453,41 +409,44 @@ static int cmd_help(void *data, const char *input) {
 	case '\0':
 	default:
 		r_cons_printf (
-		"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-		"Append '?' to any char command to get detailed help\n"
-		"Prefix with number to repeat command N times (f.ex: 3x)\n"
-		" $alias=value          alias commands (simple macros)\n"
-		" (macro arg0 arg1)     manage scripting macros\n"
-		" .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file (see -?)\n"
-		" = [cmd]               run this command via rap://\n"
-		" /[xmp/]               search for bytes, regexps, patterns, ..\n"
-		" ![cmd]                run given command as in system(3)\n"
-		" #[algo] [len]         calculate hash checksum of current block\n"
-		" a                     perform analysis of code\n"
-		" b [bsz]               get or change block size\n"
-		" c[dqxXfg] [arg]       compare block with given data\n"
-		" C[Cf..]               code metadata management\n"
-		" d[hrscb]              debugger commands\n"
-		" e [a[=b]]             list/get/set config evaluable vars\n"
-		" f [name][sz][at]      set flag at current address\n"
-		" g[wcilper] [arg]      go compile shellcodes with r_egg\n"
-		" i[acdeiIosSz] [file]  get info about opened file\n"
-		" l[-num][ num| msg]    log utility\n"
-		" m[lyogfdps]           mountpoints commands\n"
-		" o [file] (addr)       open file at optional address\n"
-		" p[?] [len]            print current block with format and length\n"
-		" P[osi?]               project management utilities\n"
-		" q [ret]               quit program with a return value\n"
-		" r[+- ][len]           resize file\n"
-		" s [addr]              seek to address\n"
-		" S?[size] [vaddr]      io section manipulation information\n"
-		" V[vcmds]              enter visual mode (vcmds=visualvisual  keystrokes)\n"
-		" w[mode] [arg]         multiple write operations\n"
-		" x [len]               alias for 'px' (print hexadecimal)\n"
-		" y [len] [off]         yank/paste bytes from/to memory\n"
-		" ?[??] [expr]          help or evaluate math expression\n"
-		" ?$?                   show available '$' variables\n"
-		" ?@?                   show help for '@' and '~' suffix\n"
+		"|Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
+		"|Append '?' to any char command to get detailed help\n"
+		"|Prefix with number to repeat command N times (f.ex: 3x)\n"
+		"| %%var=value            alias for 'env' command\n"
+		"| *off[=[0x]value]      pointer read/write data/values (see ?v, wx, wv)\n"
+		"| $alias=value          alias commands (simple macros)\n"
+		"| (macro arg0 arg1)     manage scripting macros\n"
+		"| .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file (see -?)\n"
+		"| = [cmd]               run this command via rap://\n"
+		"| /[xmp/]               search for bytes, regexps, patterns, ..\n"
+		"| ![cmd]                run given command as in system(3)\n"
+		"| #[algo] [len]         calculate hash checksum of current block\n"
+		"| a                     perform analysis of code\n"
+		"| b [bsz]               get or change block size\n"
+		"| c[dqxXfg] [arg]       compare block with given data\n"
+		"| C[Cf..]               code metadata management\n"
+		"| d[hrscb]              debugger commands\n"
+		"| e [a[=b]]             list/get/set config evaluable vars\n"
+		"| f [name][sz][at]      set flag at current address\n"
+		"| g[wcilper] [arg]      go compile shellcodes with r_egg\n"
+		"| i[acdeiIosSz] [file]  get info about opened file\n"
+		"| l[-num][ num| msg]    log utility\n"
+		"| m[lyogfdps]           mountpoints commands\n"
+		"| o [file] (addr)       open file at optional address\n"
+		"| p[?] [len]            print current block with format and length\n"
+		"| P[osi?]               project management utilities\n"
+		"| q [ret]               quit program with a return value\n"
+		"| r[+- ][len]           resize file\n"
+		"| s [addr]              seek to address (also for '0x', '0x1' == 's 0x1')\n"
+		"| S?[size] [vaddr]      io section manipulation information\n"
+		"| t[-odfsl] [arg]       cparse types management\n"
+		"| V[vcmds]              enter visual mode (vcmds=visualvisual  keystrokes)\n"
+		"| w[mode] [arg]         multiple write operations\n"
+		"| x [len]               alias for 'px' (print hexadecimal)\n"
+		"| y [len] [off]         yank/paste bytes from/to memory\n"
+		"| ?[??] [expr]          help or evaluate math expression\n"
+		"| ?$?                   show available '$' variables\n"
+		"| ?@?                   misc help for '@' (seek), '~' (grep) (see ~?""?)\n"
 		);
 		break;
 	}

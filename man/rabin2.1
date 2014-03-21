@@ -1,12 +1,11 @@
-.Em
 .TH RABIN2 1
 .SH NAME
 rabin2 \- Binary program info extractor
-.Dd Apr 2, 2013
+.Dd Nov 11, 2013
 .Pp
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl ACeisSMzIHlRrLxvVh
+.Op Fl ACeigsSMzIHlRrLxvVh
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -37,6 +36,8 @@ List classes
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
+.It Fl g
+Same as \-SMRevsiz (Show all possible information). See \-r
 .It Fl i
 Show imports (symbols imported from libraries)
 .It Fl s
@@ -108,5 +109,4 @@ Load symbols and imports from radare
 .Xr rarun2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <pancake@nopcode.org>,
-nibble <nibble@develsec.org>
+Written by pancake <pancake@nopcode.org>.

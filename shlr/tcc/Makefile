@@ -2,9 +2,14 @@ include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
+CFLAGS+=-I../../libr/include
 CFLAGS+=-fPIC -Wall
-LDFLAGS=-shared
+LDFLAGS+=-shared
+ifeq ($(OSNAME),darwin)
 SOEXT?=dylib
+else
+SOEXT?=so
+endif
 LIBNAME=libr_tcc.${SOEXT}
 
 all: ${LIBNAME} libr_tcc.a

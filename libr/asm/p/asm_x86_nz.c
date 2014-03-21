@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2013 - pancake */
+/* Copyright (C) 2008-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +39,7 @@ static ut8 getshop(const char *s) {
 		return 0;
 	for (i=0; i<strlen (ops); i+=4)
 		if (!memcmp (s, ops+i, 3))
-			return (ut8)ops[3];
+			return (ut8)ops[i+3];
 	return 0;
 }
 
@@ -327,7 +327,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (p) {
 					*p = 0;
 					ut32 n = getnum (a, p+1);
-					ut8 *ptr = &n;
+					ut8 *ptr = (ut8*)&n;
 					arg1 = getreg (arg2+1);
 					data[l++] = 0x3b;
 					if (arg1 == 4) { // esp
@@ -806,9 +806,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = ptr[3];
 				return l;
 			}
-#if 0
-			if (a->bits==64) {
-eprintf ("--> \n");
+			// mov rax, 33
+			if (a->bits==64 && *arg == 'r' && !argk) {
 				if (isnum (a, arg2)) {
 					data[l++] = 0x48;
 					data[l++] = 0xc7;
@@ -824,11 +823,12 @@ eprintf ("--> \n");
 				data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
 				return l;
 			}
-#endif
 
 			if (isnum (a, arg2)) {
 				if (delta) {
 					int n = getnum (a, delta);
+					if (*arg != 'r' && a->bits==64)
+						data[l++] = 0x67;
 					data[l++] = 0xc7;
 					if (1||n>127 || n<-127) { // XXX
 						int reg = getreg (arg);
@@ -920,11 +920,11 @@ eprintf ("--> \n");
 					return -1;
 				}
 			} else {
-				st64 dst = getnum (a, arg) - offset;
+				st64 dst = getnum (a, arg); // - offset;
 				ut32 addr = dst;
 				ut8 *ptr = (ut8 *)&addr;
 
-				if (dst+offset == 0 && *arg != '0') {
+				if (dst == 0 && *arg != '0') {
 					data[l++] = '\xff';
 					data[l] = getreg (arg) | 0xe0;
 					if (data[l] != 0xff)
@@ -942,7 +942,7 @@ eprintf ("--> \n");
 				if (dst>-0x80 && dst<0x7f) {
 					/* relative byte address */
 					data[l++] = 0xeb;
-					data[l++] = (char)(addr-offset-2);
+					data[l++] = (char)(dst-2);
 					return l;
 				} else {
 					/* absolute address */
@@ -1019,9 +1019,10 @@ eprintf ("--> \n");
 
 RAsmPlugin r_asm_plugin_x86_nz = {
 	.name = "x86.nz",
-	.desc = "x86 assembler with non-zeros",
+	.desc = "x86 handmade assembler",
+	.license = "LGPL3",
 	.arch = "x86",
-	.bits = (int[]){ 32, 64, 0 },
+	.bits = 32|64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,

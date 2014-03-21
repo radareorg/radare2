@@ -1,0 +1,27 @@
+exe rabin2 : rabin2.c :
+    <define>LIBDIR=""
+    <library>../../libr/core
+    <library>../../libr/util
+    <library>../../libr/anal
+    <library>../../libr/asm
+    <library>../../libr/syscall
+    <library>../../libr/search
+    <library>../../libr/cmd
+    <library>../../libr/io
+    <library>../../libr/asm
+    <library>../../libr/bin
+    <library>../../libr/flags
+    <library>../../libr/db
+    <library>../../libr/cons
+    <library>../../libr/parse
+    <library>../../libr/fs
+    <library>../../libr/config
+    <library>../../libr/diff
+    <library>../../libr/magic
+    <library>../../libr/debug
+    <library>../../libr/bp
+    <library>../../libr/reg
+    <library>../../libr/hash
+    <library>../../libr/crypto
+    <library>../../libr/egg
+    <include>../../libr/include ;

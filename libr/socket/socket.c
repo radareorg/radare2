@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2006-2013 - pancake */
+/* radare - LGPL - Copyright 2006-2014 - pancake */
 
 #include <errno.h>
 #include <r_types.h>
+#include <r_util.h>
 #include <r_socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -101,12 +102,12 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
+	s->fd = -1;
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
 		s->bio = NULL;
-		s->fd = -1;
 		if (!SSL_library_init ()) {
 			r_socket_free (s);
 			return NULL;
@@ -218,7 +219,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		}
 		freeaddrinfo (res);
 		if (rp == NULL) {
-			eprintf ("Could not resolve address\n");
+			eprintf ("Could not resolve address '%s'\n", host);
 			return R_FALSE;
 		}
 	}
@@ -280,23 +281,31 @@ R_API int r_socket_port_by_name(const char *name) {
 	struct servent *p = getservbyname (name, "tcp");
 	if (p && p->s_port)
 		return ntohs (p->s_port);
-	return atoi (name);
+	return r_num_get (NULL, name);
 }
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	struct linger linger = { 0 };
-
+	if (r_sandbox_enable (0))
+		return R_FALSE;
+#if __WINDOWS__
+	WSADATA wsadata;
+	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
+		eprintf ("Error creating socket.");
+		return R_FALSE;
+	}
+#endif
 	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
 		return R_FALSE;
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
-	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (const char *)&linger, sizeof (linger));
+	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
 	{ // fix close after write bug //
 	int x = 1500;
-	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (const char *)&x, sizeof (int));
+	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));
 	}
-	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof optval);
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
@@ -476,7 +485,7 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		if (ret<1) break;
 		if (ret == len)
 			return len;
-		usleep (100); // take breath, wtf
+		r_sys_usleep (100); // take breath, wtf
 		delta += ret;
 		len -= ret;
 	}

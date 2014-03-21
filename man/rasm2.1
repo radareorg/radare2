@@ -1,13 +1,13 @@
-.Em
 .TH "RASM2" "1" "" ""
 .SH "NAME"
 rasm2 \- radare2 assembler and disassembler tool
-.Dd Jun 25, 2013
+.Dd Nov 11, 2013
 .Sh SYNOPSIS
 .Nm rasm2
 .Op Fl dDfBCLevw
 .Op Fl F Ar in:out
 .Op Fl o Ar offset
+.Op Fl O Ar ofile
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -16,7 +16,7 @@ rasm2 \- radare2 assembler and disassembler tool
 .Op Fl l Ar int
 .Op ARG
 .Sh DESCRIPTION
-This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the -L flag.
+This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
 .Pp
 .Bl -tag -width Fl
 .It Fl a Ar arch
@@ -26,7 +26,7 @@ Set architecture bits
 .It Fl B
 Binary input/output (\-l is mandatory for binary input)
 .It Fl c Ar cpu
-Select specific CPU (depends on -a arch)
+Select specific CPU (depends on \-a arch)
 .It Fl C
 Output in C format
 .It Fl d
@@ -44,11 +44,13 @@ Show usage help message.
 .It Fl l Ar int
 Input/Output length
 .It Fl i Ar int
-Ignore/skip N bytes from the begining of the input buffer
+Ignore/skip N bytes from the beginning of the input buffer
 .It Fl L
 List supported asm plugins
 .It Fl o Ar offset
 Offset of the opcode to assemble (default is 0)
+.It Fl O Ar ofile
+output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl s Ar syntax
 Select syntax output (intel, att)
 .It Fl w
@@ -60,7 +62,7 @@ Assemble opcode:
 .Pp
   $ rasm2 \-a x86 \-b 32 'mov eax, 33'
 .Pp
-Disassemble opcode: 
+Disassemble opcode:
 .Pp
   $ rasm2 \-d 90
 .Sh SEE ALSO
@@ -75,5 +77,4 @@ Disassemble opcode:
 .Xr rax2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <pancake@nopcode.org>,
-nibble <nibble@develsec.org>
+pancake <pancake@nopcode.org>

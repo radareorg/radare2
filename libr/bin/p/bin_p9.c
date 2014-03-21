@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare2 - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,29 +6,29 @@
 #include <r_bin.h>
 #include "../format/p9/p9bin.h"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 		return (r_bin_p9_get_arch (arch->buf->buf, NULL, NULL));
 	return R_FALSE;
 }
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	return check(arch);
 }
 
-static int destroy (RBinArch *arch) {
+static int destroy (RBinFile *arch) {
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0x1000000; // XXX
 }
 
-static RBinAddr* binsym(RBinArch *arch, int type) {
+static RBinAddr* binsym(RBinFile *arch, int type) {
 	return NULL; // TODO
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 
@@ -43,7 +43,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	ut64 textsize, datasize, symssize, spszsize, pcszsize;
@@ -120,20 +120,20 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	// TODO: parse symbol table
 	return NULL;
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	const char *archstr;
 	RBinInfo *ret = NULL;
 	int big_endian = 0;
@@ -162,7 +162,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int size(RBinArch *arch) {
+static int size(RBinFile *arch) {
 	ut64 text, data, syms, spsz;
 	int big_endian;
 	if (!arch->o->info)
@@ -200,6 +200,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
@@ -207,6 +208,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -217,7 +219,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

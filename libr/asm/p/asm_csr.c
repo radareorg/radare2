@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2014 - nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -30,14 +30,15 @@ static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 }
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	arch_csr_disasm (op->buf_asm, buf, a->pc);
-	return (op->inst_len=2);
+	return (op->size=2);
 }
 
 RAsmPlugin r_asm_plugin_csr = {
 	.name = "csr",
 	.arch = "csr",
-	.bits = (int[]){ 16, 0 },
-	.desc = "CSR disassembly plugin",
+	.license = "PD",
+	.bits = 16,
+	.desc = "Cambridge Silicon Radio (CSR)",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

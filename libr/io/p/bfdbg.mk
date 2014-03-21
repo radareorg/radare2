@@ -7,13 +7,11 @@ ALL_TARGETS+=${TARGET_BFDBG}
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../cons/libr_cons.a
 LINKFLAGS+=../../util/libr_util.a
-LINKFLAGS+=../../lib/libr_lib.a
 LINKFLAGS+=../../io/libr_io.a
 else
-LINKFLAGS+=-L../../lib -lr_lib
 LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L../../cons -lr_cons
-LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io 
+LINKFLAGS+=-L.. -L../../lib -lr_io 
 endif
 
 ${TARGET_BFDBG}: ${OBJ_BFDBG}

@@ -13,7 +13,8 @@ include ${STATIC_DEBUG_PLUGINS}
 
 STATIC_OBJS=$(subst ..,p/..,$(subst debug_,p/debug_,$(STATIC_OBJ)))
 
-OBJS=signal.o map.o trace.o arg.o debug.o plugin.o pid.o reg.o desc.o ${STATIC_OBJS}
+OBJS=signal.o map.o trace.o arg.o debug.o plugin.o
+OBJS+=pid.o reg.o desc.o ${STATIC_OBJS}
 
 plugins:
 	cd p && ${MAKE} all

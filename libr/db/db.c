@@ -65,8 +65,8 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 			block->data[0] = b;
 			block->data[1] = NULL;
 		} else {
-			for(len=0;block->data[len];len++);
-			block->data = realloc(block->data, sizeof(void *)*(len+1));
+			for (len=0; block->data[len]; len++);
+			block->data = realloc (block->data, sizeof (void *)*(len+2));
 			block->data[len] = b;
 			block->data[len+1] = NULL;
 		}

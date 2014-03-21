@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include "r_util.h"
 #define R_NUM_USE_CALC 1
@@ -128,7 +128,8 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else
 	if (str[0]=='0' && str[1]=='x') {
-		sscanf (str, "0x%"PFMT64x, &ret);
+		ret = strtoull (str+2, NULL, 16);
+		//sscanf (str+2, "%"PFMT64x, &ret);
 	} else {
 		lch = str[len>0?len-1:0];
 		if (*str=='0' && lch != 'b' && lch != 'h')
@@ -160,7 +161,8 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ret *= 1024*1024*1024;
 			break;
 		default:
-			sscanf (str, "%"PFMT64d, &ret);
+			//sscanf (str, "%"PFMT64d, &ret);
+			ret = strtoull (str, NULL, 10);
 			break;
 		}
 	}
@@ -288,7 +290,7 @@ R_API double r_num_get_float(struct r_num_t *num, const char *str) {
 R_API int r_num_to_bits (char *out, ut64 num) {
 	int size = 64, i;
 
-	if (num&0xff00000000) size = 64;
+	if (num>>32) size = 64;
 	else if (num&0xff000000) size = 32;
 	else if (num&0xff0000) size = 24;
 	else if (num&0xff00) size = 16;

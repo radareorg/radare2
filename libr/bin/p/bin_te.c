@@ -7,35 +7,35 @@
 #include "te/te_specs.h"
 #include "te/te.h"
 
-static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = r_bin_te_new_buf (arch->buf)))
+static int load(RBinFile *arch) {
+	if(!(arch->o->bin_obj = r_bin_te_new_buf (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
-	r_bin_te_free ((struct r_bin_te_obj_t*)arch->bin_obj);
+static int destroy(RBinFile *arch) {
+	r_bin_te_free ((struct r_bin_te_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
-	return r_bin_te_get_image_base (arch->bin_obj);
+static ut64 baddr(RBinFile *arch) {
+	return r_bin_te_get_image_base (arch->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinArch *arch, int type) {
+static RBinAddr* binsym(RBinFile *arch, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
 		if (!(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = r_bin_te_get_main_offset (arch->bin_obj);
+		ret->offset = ret->rva = r_bin_te_get_main_offset (arch->o->bin_obj);
 		break;
 	}
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_te_addr_t *entry = NULL;
@@ -43,7 +43,7 @@ static RList* entries(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(entry = r_bin_te_get_entrypoint (arch->bin_obj)))
+	if (!(entry = r_bin_te_get_entrypoint (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->offset = entry->offset;
@@ -54,7 +54,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_te_section_t *sections = NULL;
@@ -63,12 +63,17 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = r_bin_te_get_sections(arch->bin_obj)))
+	if (!(sections = r_bin_te_get_sections(arch->o->bin_obj)))
 		return NULL;
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
-		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		if (sections[i].name[sizeof (sections[i].name)-1]) {
+			memcpy (ptr->name, sections[i].name,
+				sizeof (sections[i].name));
+			ptr->name[sizeof (sections[i].name)] = 0;
+		} else strncpy (ptr->name, (char*)sections[i].name,
+			R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->offset = sections[i].offset;
@@ -92,7 +97,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
@@ -100,46 +105,48 @@ static RBinInfo* info(RBinArch *arch) {
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->bclass, "TE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rclass, "te", R_BIN_SIZEOF_STRINGS);
-	if ((str = r_bin_te_get_os (arch->bin_obj))) {
+	if ((str = r_bin_te_get_os (arch->o->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = r_bin_te_get_arch (arch->bin_obj))) {
+	if ((str = r_bin_te_get_arch (arch->o->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = r_bin_te_get_machine (arch->bin_obj))) {
+	if ((str = r_bin_te_get_machine (arch->o->bin_obj))) {
 		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = r_bin_te_get_subsystem (arch->bin_obj))) {
+	if ((str = r_bin_te_get_subsystem (arch->o->bin_obj))) {
 		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
 	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
-	ret->bits = r_bin_te_get_bits (arch->bin_obj);
+	ret->bits = r_bin_te_get_bits (arch->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\x56\x5a", 2))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-struct r_bin_plugin_t r_bin_plugin_te = {
+RBinPlugin r_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin", // Terse Executable format
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -150,7 +157,7 @@ struct r_bin_plugin_t r_bin_plugin_te = {
 	.fields = NULL,
 	.libs = NULL, // TE doesn't have imports data directory
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.minstrlen = 4,
 	.create = NULL,

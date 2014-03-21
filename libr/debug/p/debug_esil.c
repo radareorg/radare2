@@ -32,8 +32,8 @@ memset (buf, 0, sizeof (buf));
 eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
 	oplen = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 	if (oplen>0) {
-		if (op.esil) {
-			eprintf ("ESIL: %s\n", op.esil);
+		if (*R_STRBUF_SAFEGET (&op.esil)) {
+			eprintf ("ESIL: %s\n", R_STRBUF_SAFEGET (&op.esil));
 		}
 	}
 	eprintf ("TODO: ESIL STEP\n");
@@ -115,8 +115,9 @@ static int r_debug_esil_stop(RDebug *dbg) {
 	return R_TRUE;
 }
 
-struct r_debug_plugin_t r_debug_plugin_esil = {
+RDebugPlugin r_debug_plugin_esil = {
 	.name = "esil",
+	.license = "LGPL3",
 	/* TODO: Add support for more architectures here */
 	.arch = R_ASM_ARCH_BF,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,53 +6,57 @@
 #include <r_bin.h>
 #include "../../fs/types.h"
 
-static int check(RBinArch *arch);
+static int check(RBinFile *arch);
 
-static char *fsname(RBinArch *arch) {
+static char *fsname(RBinFile *arch) {
 	ut8 buf[1024];
 	int i, j, len, ret = R_FALSE;
 
 	for (i=0; fstypes[i].name; i++) {
 		RFSType *f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf));
+		memset (buf, 0, sizeof (buf));
 		r_buf_read_at (arch->buf, f->bufoff, buf, len);
-		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
-			ret = R_TRUE;
-			len = R_MIN (f->bytelen, sizeof (buf));
-			r_buf_read_at (arch->buf, f->byteoff, buf, len);
-			for (j=0; j<f->bytelen; j++) {
-				if (buf[j] != f->byte) {
-					ret = R_FALSE;
-					break;
+		if ((f->buflen>0) && (len>=f->buflen)) {
+			int min = R_MIN (f->buflen, sizeof (buf));
+			if (!memcmp (buf, f->buf, min)) {
+				ret = R_TRUE;
+				len = R_MIN (f->bytelen, sizeof (buf));
+				r_buf_read_at (arch->buf, f->byteoff, buf, len);
+				for (j=0; j<f->bytelen; j++) {
+					if (buf[j] != f->byte) {
+						ret = R_FALSE;
+						break;
+					}
 				}
+				if (ret) return strdup (f->name);
 			}
-			if (ret) return strdup (f->name);
 		}
 	}
 	return NULL;
 }
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (check (arch))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-static int destroy(RBinArch *arch) {
-	//r_bin_fs_free ((struct r_bin_fs_obj_t*)arch->bin_obj);
+static int destroy(RBinFile *arch) {
+	//r_bin_fs_free ((struct r_bin_fs_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinArch *arch) {
+static RList *strings(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *p;
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW (RBinInfo)))
@@ -77,7 +81,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	char *p;
 	int ret;
 
@@ -87,15 +91,17 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_fs = {
+RBinPlugin r_bin_plugin_fs = {
 	.name = "fs",
 	.desc = "filesystem bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = NULL,
 	.sections = NULL,
@@ -106,7 +112,7 @@ struct r_bin_plugin_t r_bin_plugin_fs = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.demangle_type = NULL
 };

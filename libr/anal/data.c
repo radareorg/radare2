@@ -12,10 +12,15 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	for (i=0; i<size; i++) {
 		if (!buf[i] && i>MINLEN) {
 			*len = i;
-			return 1;
+			return i?1:0;
 		}
-		if (buf[i]==10||buf[i]==13)
+		if (buf[i]<32 || buf[i]>127) {
+			// not ascii text
+			return 0;
+		}
+		if (buf[i]==10||buf[i]==13||buf[i]==9) {
 			continue;
+		}
 		if (!IS_PRINTABLE (buf[i])) {
 			*len = i;
 			return 0;
@@ -36,14 +41,25 @@ static int is_null (const ut8 *buf, int size) {
 }
 
 static int is_invalid (const ut8 *buf, int size) {
+	if (size<1) return 1;
+	if (size>8) size = 8;
 	return (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size))? 1: 0;
 }
 
 static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
+	ut64 n;
 	ut8 buf2[32];
 	int ret;
-	ut64 n = r_mem_get_num (buf, size, endian);
+	if (size > sizeof (buf2))
+		size = sizeof (buf2);
+	n = r_mem_get_num (buf, size, endian);
 	if (!n) return 1; // null pointer
+
+	// optimization to ignore very low and very high pointers
+	// this makes disasm 5x faster, but can result in some false positives
+	if (n<0x1000) return 0; // probably wrong
+	if (n>0xffffffffffffLL) return 0; // probably wrong
+
 	ret = iob->read_at (iob->io, n, buf2, size);
 	if (ret != size) return 0;
 	return is_invalid (buf2, size)? 0: n;
@@ -52,7 +68,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 static int is_bin(const ut8 *buf) {
 	// TODO: add more
 	if((!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-	|| (!memcmp (buf, "\x7f""ELF", 4))
+	|| (!memcmp (buf, "\x7e""ELF", 4))
 	|| (!memcmp (buf, "MZ", 2)))
 		return 1;
 	return 0;
@@ -62,8 +78,7 @@ static int is_bin(const ut8 *buf) {
 
 // XXX: optimize by removing all strlens here
 R_API char *r_anal_data_to_string (RAnalData *d) {
-	int i, idx;
-	int mallocsz = 256;
+	int i, idx, mallocsz = 256;
 	ut32 n32 = (ut32)d->ptr;
 	char *line = malloc (mallocsz);
 	snprintf (line, mallocsz, "0x%08"PFMT64x"  ", d->addr);
@@ -117,7 +132,7 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 		len = strlen (p);
 	if (type == R_ANAL_DATA_TYPE_WIDE_STRING) {
 		/* TODO: add support for wide strings */
-		eprintf ("r_anal_data_new_string: wide string not supported yet\n");
+		//eprintf ("r_anal_data_new_string: wide string not supported yet\n");
 	} else {
 		ad->str = malloc (len+1);
 		memcpy (ad->str, p, len);
@@ -133,8 +148,8 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
 	RAnalData *ad = R_NEW0 (RAnalData);
 	ad->buf = (ut8*) &(ad->sbuf);
-	if (buf) memcpy (ad->buf, buf, 8);
-	else memset (ad->buf, 0, 8);
+	memset (ad->buf, 0, 8);
+	if (buf) memcpy (ad->buf, buf, R_MIN(8, len));
 	ad->addr = addr;
 	ad->type = type;
 	ad->str = NULL;
@@ -182,7 +197,7 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 	int i, j;
 	RAnalData *data;
 	int word = anal->bits /8;
-	for (i = j = 0; i<len ; j++ ) {
+	for (i = j = 0; i<len; j++) {
 		data = r_anal_data (anal, addr+i, buf+i, len-i);
 		switch (data->type) {
 		case R_ANAL_DATA_TYPE_INVALID:

@@ -30,7 +30,7 @@ static ut32 lo_dword(ut64 Q) {
 int GetSingleMSILInstr(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILOPCODE_STRUCT *ilop) {
 	u8 *pCurInstr = (u8 *) pMemory;
 	DISASMSIL_OFFSET Base = CodeBase;
-	ut32 CurInstr;
+	ut32 CurInstr = 0;
 	ut32 Token;
 	u8 bBuf = 0;
 	ut16 wBuf = 0;
@@ -140,7 +140,7 @@ int GetSingleMSILInstr(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET Code
 	//
 	demsil_get(pCurInstr, CurInstr, u8);
 
-	if (CurInstr >= 0x00 && CurInstr <= 0xE0)
+	if (CurInstr <= 0xE0)
 		goto getinstr;
 
 	//
@@ -190,7 +190,8 @@ getinstr:
 	// Check if it's a one-byte instr
 	//
 
-	if (CurInstr >= 0x00 && CurInstr <= 0xE0) {
+	//if (CurInstr >= 0x00 && CurInstr <= 0xE0) {
+	if (CurInstr <= 0xE0) {
 		pCurInstr += 1;
 
 		switch (CurInstr) {
@@ -1077,33 +1078,35 @@ getinstr:
 		}
 	}
 
-	ilop->Size = (ut32) (((unsigned long*) pCurInstr) - ((unsigned long*) pMemory));
+	ilop->Size = (ut32) (pCurInstr-pMemory);
 	
-	return 1;
+	return ilop->Size;
 }
 
 int DisasMSIL(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILOPCODE_STRUCT *iloparray, ut32 nOpcodeStructs, ut32 *nDisassembledInstr) {
 	const u8 *pCurMem = pMemory;
 	ut32 x, RemSize = MemorySize;
 	DISASMSIL_OFFSET CurBase = CodeBase;
+	int sz = 0;
 
 	if (MemorySize == 0 || nOpcodeStructs == 0 || iloparray == NULL) 
 		return 0;
 	if (nDisassembledInstr) *nDisassembledInstr = 0;
 
 	for (x = 0; x < nOpcodeStructs; x++) {
-		if (!GetSingleMSILInstr(pCurMem, RemSize, CurBase, &iloparray[x])) {
+		int ret = GetSingleMSILInstr(pCurMem, RemSize, CurBase, &iloparray[x]);
+		if (!ret) {
 			if (x == 0) return 0;
 			break;
 		}
-
+		sz += ret;
 		pCurMem += iloparray[x].Size;
 		CurBase += iloparray[x].Size;
 		RemSize -= iloparray[x].Size;
-
 		if (nDisassembledInstr)
 			*nDisassembledInstr = x + 1;
+		break;
 	}
 
-	return 1;
+	return sz;
 }

@@ -23,10 +23,12 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (!strncmp (buf_asm, "inv", 3)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else
-	if (!strncmp (buf_asm, "inc", 3)) {
+	if ((!strncmp (buf_asm, "inc", 3)) ||
+		(!strncmp (buf_asm, "add", 3))) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 	} else
-	if (!strncmp (buf_asm, "dec", 3)) {
+	if ((!strncmp (buf_asm, "dec", 3)) ||
+		(!strncmp (buf_asm, "sub", 3))) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else
 	if (!strncmp (buf_asm+1, "call", 4)) {
@@ -45,7 +47,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->jump = o.addr;
 		op->fail = addr+o.length;
 	}
-	return op->length = o.length;
+	return op->size = o.length;
 }
 
 struct r_anal_plugin_t r_anal_plugin_8051 = {
@@ -53,6 +55,7 @@ struct r_anal_plugin_t r_anal_plugin_8051 = {
 	.arch = R_SYS_ARCH_8051,
 	.bits = 16,
 	.desc = "8051 CPU code analysis plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.op = &i8051_op,

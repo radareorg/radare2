@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
@@ -10,14 +9,16 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *buf_cp, *b;
-	int i;
+	int i = 0;
 
 	if (!(b = buf_cp = malloc (len+1)))
 		return 0;
 	memcpy (buf_cp, buf, len);
 	buf_cp[len] = 0;
 
-	for (i=0; b[0]&&b[1] && b[0] == b[1] && i<len; b++, i++);
+	for (i=0; b[0]&&b[1] && (b[0]==b[1]) && i<len; b++, i++)
+		if (b[0] == -1)
+			break;
 	b[1] = '\0';
 
 	switch (*buf) {
@@ -66,7 +67,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (i<1) i=1; else i++;
 
 	free (buf_cp);
-	op->inst_len = i;
+	op->size = i;
 	return i;
 }
 
@@ -157,8 +158,9 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
-	.bits = (int[]){32,0},
-	.desc = "Brainfuck disassembly plugin",
+	.license = "LGPL3",
+	.bits = 32,
+	.desc = "Brainfuck",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.9.5git
+VERSION 0.9.8.git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -19,6 +19,22 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 }{
 	USE_LIB_MAGIC = 0 ;
 	LIBMAGIC = -lr_magic ;
+}
+
+CHKLIB z
+CHKLIB zip
+ARG_WITH USE_ZIP syszip force to use system's libzip and zlib ;
+IFAND HAVE_LIB_Z USE_ZIP {
+	IF HAVE_LIB_ZIP {
+		USE_LIB_ZIP = 1 ;
+		LIBZIP = -lz -lzip ;
+	}{
+		USE_LIB_ZIP = 0 ;
+		LIBZIP = -lrz ; (( static linking to shlr/zip ))
+	}
+}{
+	USE_LIB_ZIP = 0 ;
+	LIBZIP = -lrz ; (( static linking to shlr/zip ))
 }
 
 CHKLIB ewf
@@ -111,7 +127,7 @@ IFEQ LIBVERSION xxx ; {
 }
 
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL
-	VERSION USE_LIB_MAGIC DEBUGGER CC USERCC
+	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC
 	USEROSTYPE LIL_ENDIAN LIBVERSION ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
@@ -131,15 +147,12 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_socket.pc
 	pkgcfg/r_debug.pc
 	pkgcfg/r_reg.pc
-	pkgcfg/r_cmd.pc
 	pkgcfg/r_config.pc
 	pkgcfg/r_flags.pc
 	pkgcfg/r_syscall.pc
-	pkgcfg/r_sign.pc
 	pkgcfg/r_util.pc
 	pkgcfg/r_search.pc
 	pkgcfg/r_bp.pc
-	pkgcfg/r_lib.pc
 	pkgcfg/r_parse.pc
 	pkgcfg/r_fs.pc
 ;

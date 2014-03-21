@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -46,10 +46,18 @@ R_API RAnal *r_anal_new() {
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
-	memset (anal, 0, sizeof (RAnal));
+	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
-	anal->sdb_xrefs = NULL;
-	anal->sdb_types = sdb_new (NULL, 0);
+	anal->sdb = sdb_new (NULL, NULL, 0);
+	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
+	anal->sdb_hints = sdb_ns (anal->sdb, "hints");
+	anal->sdb_vars = sdb_ns (anal->sdb, "vars");
+	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs");
+	anal->sdb_args = sdb_ns (anal->sdb, "args");
+	anal->sdb_ret = sdb_ns (anal->sdb, "ret");
+	anal->sdb_locals = sdb_ns (anal->sdb, "locals");
+	anal->sdb_types = sdb_ns (anal->sdb, "types");
+	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;
@@ -57,7 +65,6 @@ R_API RAnal *r_anal_new() {
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->split = R_TRUE; // used from core
 	anal->queued = NULL;
-	anal->meta = r_meta_new ();
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
 	anal->reg = r_reg_new ();
@@ -66,7 +73,6 @@ R_API RAnal *r_anal_new() {
 #if USE_NEW_FCN_STORE
 	anal->fcnstore = r_listrange_new ();
 #endif
-	anal->hints = r_list_new ();
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
@@ -85,20 +91,27 @@ R_API RAnal *r_anal_new() {
 	return anal;
 }
 
-R_API void r_anal_free(RAnal *anal) {
-	if (!anal) return;
+R_API void r_anal_free(RAnal *a) {
+	if (!a) return;
 	/* TODO: Free anals here */
-	anal->fcns->free = r_anal_fcn_free;
-	r_list_free (anal->fcns);
+	free (a->cpu);
+	a->cpu = NULL;
+	a->fcns->free = r_anal_fcn_free;
+	r_list_free (a->fcns);
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
-	r_list_free (anal->refs);
-	r_list_free (anal->types);
-	r_list_free (anal->meta->data);
-	r_reg_free(anal->reg);
-	r_syscall_free(anal->syscall);
-	r_anal_op_free(anal->queued);
+	r_list_free (a->refs);
+	r_list_free (a->types);
+	r_reg_free(a->reg);
+	r_syscall_free (a->syscall);
+	r_anal_op_free (a->queued);
+
+	sdb_free (a->sdb_vars);
+	sdb_free (a->sdb_refs);
+	sdb_free (a->sdb_args);
+	sdb_free (a->sdb_hints);
+	sdb_free (a->sdb_locals);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
-	free (anal);
+	free (a);
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
@@ -117,7 +130,7 @@ R_API int r_anal_list(RAnal *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
-		printf ("anal %-10s %s\n", h->name, h->desc);
+		anal->printf ("anal %-10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
@@ -152,6 +165,11 @@ R_API int r_anal_set_bits(RAnal *anal, int bits) {
 		return R_TRUE;
 	}
 	return R_FALSE;
+}
+
+R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
+	free (anal->cpu);
+	anal->cpu = cpu ? strdup (cpu) : NULL;
 }
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
@@ -227,9 +245,9 @@ R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
 
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
-	char *buf;
+	ut8 *buf;
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	buf = malloc (strlen (str));
+	buf = malloc (strlen (str)+1);
 	len = r_hex_str2bin (str, buf);
 	r_anal_op (anal, op, addr, buf, len);
 	return op;

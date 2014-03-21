@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
 #include <stdio.h>
 
-R_LIB_VERSION(r_io);
+R_LIB_VERSION (r_io);
 
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
@@ -24,12 +24,12 @@ R_API RIO *r_io_new() {
 	io->plugin = NULL;
 	io->raised = -1;
 	io->off = 0;
-	r_io_cache_init (io);
 	r_io_map_init (io);
-	r_io_section_init (io);
-	r_io_plugin_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
+	r_io_cache_init (io);
+	r_io_plugin_init (io);
+	r_io_section_init (io);
 	return io;
 }
 
@@ -43,7 +43,7 @@ R_API int r_io_is_listener(RIO *io) {
 	return R_FALSE;
 }
 
-R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
+R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW (RBuffer);
 	b->buf = malloc (len);
 	len = r_io_read_at (io, addr, b->buf, len);
@@ -51,17 +51,26 @@ R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
 	return b;
 }
 
-R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
-	return r_io_write_at(io, b->base, b->buf, b->length);
+R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
+	return r_io_write_at (io, b->base, b->buf, b->length);
 }
 
 R_API RIO *r_io_free(RIO *io) {
+	struct list_head *pos, *n;
 	if (!io) return NULL;
 	/* TODO: properly free inner nfo */
 	/* TODO: memory leaks */
+	list_for_each_safe (pos, n, &io->io_list) {
+		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
+		R_FREE (il->plugin);
+		list_del (pos);
+		R_FREE (il);
+	}
 	r_list_free (io->sections);
 	r_list_free (io->maps);
+	r_list_free (io->undo.w_list);
 	r_cache_free (io->buffer);
+	r_list_free (io->cache);
 	r_io_desc_fini (io);
 	free (io);
 	return NULL;
@@ -94,7 +103,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	RIODesc *desc = NULL;
 	char *uri = strdup (_uri);
 	for (;;) {
-		plugin = r_io_plugin_resolve (io, uri);
+		plugin = r_io_plugin_resolve (io, uri, 0);
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
@@ -107,8 +116,9 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				r_io_desc_add (io, desc);
 				if (desc->fd != -1)
 					r_io_plugin_open (io, desc->fd, plugin);
-				if (desc != io->fd)
-					iop = plugin;
+				if (desc != io->fd) {
+					r_io_set_fd (io, desc);
+				}
 			}
 		}
 		break;
@@ -118,8 +128,43 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	return desc;
 }
 
+static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, int mode) {
+	RIOPlugin *plugin, *iop = NULL;
+	RList *list_fds = NULL;
+	RListIter *iter;
+	RIODesc *desc;
+	char *uri = strdup (_uri);
+	for (;;) {
+		// resolve
+		plugin = r_io_plugin_resolve (io, uri, 1);
+		if (plugin && plugin->open_many) {
+			// open
+			list_fds = plugin->open_many (io, uri, flags, mode);
+			if (io->redirect) {
+				free (uri);
+				uri = strdup (io->redirect);
+				r_io_redirect (io, NULL);
+				continue;
+			}
+		}
+		break;
+	}
+
+	if (!list_fds) return NULL;
+
+	r_list_foreach (list_fds, iter, desc) {
+		if (desc) r_io_desc_add (io, desc);
+	}
+
+	io->plugin = iop;
+	free (uri);
+	return list_fds;
+}
+
 static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
 	int fd;
+	if (r_file_is_directory (file))
+		return -1;
 #if __WINDOWS__
 	if (flags & R_IO_WRITE) {
 		fd = r_sandbox_open (file, O_BINARY | 1, 0);
@@ -154,6 +199,23 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	return desc;
 }
 
+R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
+	RIODesc *desc;
+	RListIter *desc_iter = NULL;
+	int fd;
+	RList *list_fds = __getioplugin_many (io, file, flags, mode);
+
+	if (!list_fds) return NULL;
+	if (io->redirect) return NULL;
+
+	r_list_foreach (list_fds, desc_iter, desc) {
+		fd = -1;
+		if (desc) fd = desc->fd;
+		if (fd >= 0) r_io_desc_add (io, desc);
+	}
+	return list_fds;
+}
+
 R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 	if (fd != NULL) {
 		io->fd = fd;
@@ -164,7 +226,7 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 }
 
 R_API int r_io_set_fdn(RIO *io, int fd) {
-	if (fd != -1 && io->fd != NULL && fd != io->fd->fd) {
+	if (fd != -1 && io->fd && fd != io->fd->fd) {
 		RIODesc *desc = r_io_desc_get (io, fd);
 		if (!desc)
 			return R_FALSE;
@@ -178,8 +240,8 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, io->off, buf, len);
-	if (io->plugin && io->plugin->read)
-		return io->plugin->read (io, io->fd, buf, len);
+	if (io->fd->plugin && io->fd->plugin->read)
+		return io->fd->plugin->read (io, io->fd, buf, len);
 	return read (io->fd->fd, buf, len);
 }
 
@@ -338,6 +400,8 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 	}
 	if (ret == -1)
 		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
+	else
+		io->off += ret;
 	if (data)
 		free (data);
 	return ret;
@@ -403,6 +467,11 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	return ret;
 }
 
+R_API ut64 r_io_fd_size(RIO *io, int fd){
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return r_io_desc_size (io, desc);
+}
+
 R_API ut64 r_io_size(RIO *io) {
 	int iova;
 	ut64 size, here;
@@ -449,6 +518,8 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->init = R_TRUE;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
+	bnd->size = r_io_size;
+	bnd->seek = r_io_seek;
 	return R_TRUE;
 }
 
@@ -492,3 +563,8 @@ R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 		return r_sys_mkdir (file);
 	return r_sandbox_creat (file, mode)? R_FALSE: R_TRUE;
 }
+
+R_API void r_io_sort_maps (RIO *io) {
+	r_list_sort (io->maps, (RListComparator) r_io_map_sort);
+}
+

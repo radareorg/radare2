@@ -475,9 +475,8 @@ static const struct arc_operand arc_operands_a4[] =
  '\21' SIMD_I_UU16         high order 8 of 16 bit unsigned
  '\22' SIMD_I_UL16         low order 8 of 16 bit unsigned
  '\23' SIMD_DISCARDED      value not used
- '\24' SIMD_I_S15          simd 15 bit signed field 
+ '\24' SIMD_I_S15          simd 15 bit signed field
  '\25' SIMD_I_ZR           zero constant value field
-   
 
 
    Fields are:
@@ -926,7 +925,7 @@ insert_u8  (arc_insn insn, long * insn2 ATTRIBUTE_UNUSED,
 /* Insert a signed twelve bit number into a 64 bit instruction.
  * insn is top 32 bits of instruction and gets the least significant six
  * bits in the C operand position.  The most significant six bits go to the
- * bottom of ex.  
+ * bottom of ex.
  * insn    Top half of instruction.
  * ex      Bottom half of instruction.
  * operand unused.
@@ -958,7 +957,7 @@ insert_s12  (arc_insn insn,  long *ex,
 /* Insert an unsigned sixteen bit number into a 64 bit instruction.
  * insn is top 32 bits of instruction and gets the least significant six
  * bits in the C operand position.  The most significant six bits go to the
- * bottom of ex.  
+ * bottom of ex.
  * insn    Top half of instruction.
  * ex      Bottom half of instruction.
  * operand unused.
@@ -990,7 +989,7 @@ insert_u16  (arc_insn insn, long *ex,
 /* Insert upper half of unsigned sixteen bit number into a 64 bit instruction.
  * insn is top 32 bits of instruction and gets the least significant six
  * bits in the C operand position.  The most significant six bits go to the
- * bottom of ex.  
+ * bottom of ex.
  * insn    Top half of instruction.
  * ex      Bottom half of instruction.
  * operand unused.
@@ -1015,11 +1014,11 @@ insert_uu16  (arc_insn insn, long *ex,
       *ex |= msb8;
   return insn;
 }
-/* Insert lower eight bits of unsigned sixteen bit number into a 64 bit 
+/* Insert lower eight bits of unsigned sixteen bit number into a 64 bit
  * instruction.
  * insn is top 32 bits of instruction and gets the least significant six
  * bits in the C operand position.  The most significant six bits go to the
- * bottom of ex.  
+ * bottom of ex.
  * insn    Top half of instruction.
  * ex      Bottom half of instruction.
  * operand unused.
@@ -1074,7 +1073,7 @@ insert_s15  (arc_insn insn, long *ex,
 /* Discarded field.
  * insn is top 32 bits of instruction and gets the least significant six
  * bits in the C operand position.  The most significant six bits go to the
- * bottom of ex.  
+ * bottom of ex.
  * insn    Top half of instruction.
  * insn2   Bottom half of instruction.
  * operand unused.
@@ -4854,67 +4853,67 @@ get_ext_suffix (char *s, char field)
 
   ctype = 0;
   switch(field){
-  case 'e' : 
+  case 'e' :
       ctype = arc_mach_a4 ? CACHEBYPASS5 : 0;
       break;
-  case 'f' : 
+  case 'f' :
       ctype = arc_mach_a4 ? FLAG : FLAG_AC;
       break;
-  case 'j' : 
+  case 'j' :
       ctype = arc_mach_a4 ? JUMPFLAGS : 0;
       break;
-  case 'p' : 
+  case 'p' :
       ctype = arc_mach_a4 ? 0 : ADDRESS9_AC;
       break;
-  case 'q' : 
+  case 'q' :
       ctype = arc_mach_a4 ? COND : COND_AC;
       break;
-  case 't' : 
+  case 't' :
       ctype = arc_mach_a4 ? 0 : SIZE7_AC;
       break;
-  case 'v' : 
+  case 'v' :
       ctype = arc_mach_a4 ? ADDRESS24 : CACHEBYPASS11_AC;
       break;
-  case 'w' : 
+  case 'w' :
       ctype = arc_mach_a4 ? ADDRESS3 : ADDRESS3_AC;
       break;
-  case 'x' : 
+  case 'x' :
       ctype = arc_mach_a4 ? SIGN0 : SIGN6_AC;
       break;
-  case 'y' : 
+  case 'y' :
       ctype = arc_mach_a4 ? SIZE22 : 0;
       break;
-  case 'z' : 
+  case 'z' :
       ctype = arc_mach_a4 ? SIZE1 : SIZE1_AC;
       break;
-  case 'D' : 
+  case 'D' :
       ctype = arc_mach_a4 ? CACHEBYPASS26 : CACHEBYPASS5_AC;
       break;
-  case 'E' : 
+  case 'E' :
       ctype = arc_mach_a4 ? CACHEBYPASS14 : 0;
       break;
-  case 'P' : 
+  case 'P' :
       ctype = arc_mach_a4 ? 0 : ADDRESS22_AC;
       break;
-  case 'T' : 
+  case 'T' :
       ctype = arc_mach_a4 ? 0 : SIZE17_AC;
       break;
-  case 'V' : 
+  case 'V' :
       ctype = arc_mach_a4 ? 0 : CACHEBYPASS15_AC;
       break;
-  case 'W' : 
+  case 'W' :
       ctype = arc_mach_a4 ? ADDRESS12 : 0;
       break;
-  case 'X' : 
+  case 'X' :
       ctype = arc_mach_a4 ? SIGN9 : SIGN16_AC;
       break;
-  case 'Z' : 
+  case 'Z' :
       ctype = arc_mach_a4 ? SIZE10 : 0;
       break;
-  case '&' : 
+  case '&' :
       ctype = arc_mach_a4 ? 0 : ADDRESS22S_AC;
       break;
-  default : 
+  default :
       ctype = arc_mach_a4 ? COND : COND_AC;
       break;
       } /* end switch(field) */

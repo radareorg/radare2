@@ -461,7 +461,12 @@ rd_factor (const char **p, int *valid, int level, int *check, int print_errors)
       else if (**p == '/')
 	{
 	  (*p)++;
-	  result /= rd_value (p, valid, level, check, print_errors);
+      int value = rd_value (p, valid, level, check, print_errors);
+      if (value == 0){ 
+        printerr (1, "division by zero\n");
+        return -1;
+      }
+      result /= value;
 	}
       *p = delspc (*p);
     }

@@ -1,0 +1,5 @@
+lib r_tcc :
+    libtcc.c
+    tccgen.c
+    tccpp.c
+;

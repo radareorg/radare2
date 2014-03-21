@@ -10,7 +10,7 @@ all: ${ALL_TARGETS} ;
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=x86_im.mk x86_udis.mk x86_simple.mk ppc.mk arm.mk avr.mk csr.mk dalvik.mk sh.mk
+ARCHS=x86_udis.mk ppc.mk arm.mk avr.mk csr.mk dalvik.mk sh.mk ebc.mk gb.mk malbolge.mk ws.mk h8300.mk
 include $(ARCHS)
 
 clean:

@@ -15,7 +15,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	if (timeout>0)
 		r_socket_block_time (hr->s, 1, timeout);
 	for (;;) {
-		memset (buf, sizeof (buf), 0);
+		memset (buf, 0, sizeof (buf));
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
 		yy = r_socket_ready (hr->s, 0, 20);
 //		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);

@@ -70,19 +70,20 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	op->buf_asm[0]='\0';
-	op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
+	op->buf_asm[0] = '\0';
+	op->size = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->inst_len == -1)
+	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_sh = {
 	.name = "sh",
 	.arch = "sh",
-	.bits = (int[]){ 32, 0 },
-	.desc = "SH-4 disassembly plugin",
+	.license = "GPL3",
+	.bits = 32,
+	.desc = "SuperH-4 CPU",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

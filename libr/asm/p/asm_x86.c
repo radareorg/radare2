@@ -44,27 +44,34 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static ud_t d;
-	ud_init (&d);
-	ud_set_syntax (&d, (a->syntax==R_ASM_SYNTAX_ATT)?
-			UD_SYN_ATT: UD_SYN_INTEL);
+	int opsize;
+	static ud_t d = {0};
+	static int osyntax = 0;
+	if (!d.dis_mode)
+		ud_init (&d);
+	if (osyntax != a->syntax) {
+		ud_set_syntax (&d, (a->syntax==R_ASM_SYNTAX_ATT)?
+				UD_SYN_ATT: UD_SYN_INTEL);
+		osyntax = a->syntax;
+	}
 	ud_set_input_buffer (&d, (uint8_t*) buf, len);
 	ud_set_pc (&d, a->pc);
 	ud_set_mode (&d, a->bits);
-	op->inst_len = ud_disassemble (&d);
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&d));
-	if (!op->inst_len || strstr (op->buf_asm, "invalid"))
-		op->inst_len = -1;
-	if (op->inst_len<1)
-		op->inst_len = -1;
-	return op->inst_len;
+	opsize = ud_disassemble (&d);
+	strncpy (op->buf_asm, ud_insn_asm (&d), R_ASM_BUFSIZE-1);
+	op->buf_asm[R_ASM_BUFSIZE-1] = 0;
+	op->size = opsize;
+	if (opsize<1 || strstr (op->buf_asm, "invalid"))
+		opsize = -1;
+	return opsize;
 }
 
 RAsmPlugin r_asm_plugin_x86 = {
 	.name = "x86",
-	.desc = "udis86 disassembly plugin",
+	.desc = "udis86 x86-16,32,64",
 	.arch = "x86",
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.license = "BSD",
+	.bits = 16 | 32 | 64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

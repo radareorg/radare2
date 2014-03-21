@@ -82,9 +82,9 @@ R_API BfvmCPU *bfvm_free(BfvmCPU *c) {
 
 R_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
 	if (at >= c->base) at -= c->base;
-	if (at<0) at = c->circular? c->size-2: 0;
+	//if (at<0) at = c->circular? c->size-2: 0;
 	else if (at >= c->size) at = c->circular? 0: c->size-1;
-	if (at<0) return c->mem;
+	//if (at<0) return c->mem;
 	return c->mem+at;
 }
 
@@ -203,12 +203,12 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 		case ']':
 			if (bfvm_get (c) != 0) {
 				do {
-					c->eip--;
 					/* control underflow */
-					if (c->eip<0) {
+					if (c->eip < (c->eip-1)) {
 						c->eip = 0;
 						break;
 					}
+					c->eip--;
 				} while (bfvm_op (c)!='[');
 			}
 			break;

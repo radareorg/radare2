@@ -36,6 +36,14 @@ if [ -n "$1" ]; then
 	exit 0
 fi
 
+BITS=64
+foo "shl rdx, 5"
+foo "xor rdx, rdx"
+foo "inc rdx"
+
+BITS=32
+foo "shl edx, 5"
+foo "inc edx"
 # some may fail coz shorter length
 foo 'push cs'
 foo 'pop ds'

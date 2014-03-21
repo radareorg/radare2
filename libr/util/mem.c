@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include <r_util.h>
 #include <stdlib.h>
@@ -184,7 +184,9 @@ R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
 		dest[7] = buffer[0];
 		break;
 	default:
-		eprintf ("Invalid size: %d\n", size);
+		if (dest != orig)
+			memmove (dest, orig, size);
+		//eprintf ("Invalid endian copy of size: %d\n", size);
 	}
 }
 

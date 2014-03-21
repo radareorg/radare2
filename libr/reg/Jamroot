@@ -1,0 +1,3 @@
+OBJS = reg.c arena.c value.c cond.c ;
+
+lib r_reg : $(OBJS) : <include>../include <library>../util ;

@@ -1,5 +1,5 @@
 OBJ_EXT2=fs_ext2.o
-EXTRA=../p/grub/libgrubfs.a
+EXTRA=$(GRUB)
 CFLAGS+=-Igrub/include
 
 STATIC_OBJ+=${OBJ_EXT2}

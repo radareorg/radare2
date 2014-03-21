@@ -1,0 +1,7 @@
+exe ragg2 : ragg2.c :
+    <define>LIBDIR=""
+    <library>../../libr/bin
+    <library>../../libr/egg
+    <library>../../libr/util
+    <include>../../libr/include
+;

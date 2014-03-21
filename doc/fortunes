@@ -38,7 +38,7 @@ Assemble opcodes with the 'a' and 'A' keys in visual mode which are hooks for th
 Find expanded AES keys in memory with /a command
 Find wide-char strings with /w <string> command
 Enable ascii-art jump lines in disassembly with asm.lines. asm.linesout and asm.linestyle may interest you too
-Control the signal handlers of the child process with the '!signal' command
+Control the signal handlers of the child process with the 'dk' command
 Get a free shell with 'rasc -i x86.linux.binsh -X'
 Interpret your own radare scripts with '. <path-to-your-script>'. Similar to the bash source alias command.
 Most of commands accept an '?' as suffix. Use it to understand how they work :)
@@ -66,7 +66,6 @@ Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
 Enhace your graphs by increasing the size of the block and graph.depth eval variable
 Control the height of the terminal on serial consoles with e scr.height
 Use e file.id=true and e file.flag=true in your ~/.radarerc to get symbols, strings, .. when loading
-Disassemble unsupported architectures with external objdump defined in e asm.objdump. Use 'pd' command.
 Emulate the base address of a file with e file.baddr
 Dump the class header information with 'javasm -c <file.class>'. Plugind by radare if file.id=true
 Use gradare if you prefer simple frontend for gui users
@@ -171,3 +170,48 @@ That's embarrassing.
 Connection with license server failed.
 In soviet afghanistan radare debugs russia!
 In soviet afghanistan you debug radare!
+You should know that ptracing binaries younger than 18yo is illegal
+wow, my cat know radare2 hotkeys better than me!
+One does not simply write documentation
+Documentation is for weak people
+PEBCAK ERROR: Documentation not found.
+License server overloaded (ETOOMANYCASH)
+error: cannot yank negative sleep
+If you're not satisfied by our product, we'll be happy to refund you.
+Already up-to-date
+How about a nice game of chess?
+THE ONLY WINNING MOVE IS NOT TO PLAY.
+SHALL WE PLAY A GAME?
+sudo make me a pancake
+bitch
+I nodejs so hard my exams
+What a nodejs!
+Now featuring NoSQL!
+Kentucky Fried Children
+One does not simply write documentation
+We are bleeding edge here. Can't you feel the razors?
+There's a branch for that
+Everything up-to-date.
+Sharing your latest session in Facebook...
+This should be documented, since it's not that obvious
+It's working! Look at the door!
+This is an unacceptable milion year dungeon.
+The Hard ROP Cafe
+Please remove pregnant women, pregnant children and pregnant pets from the monitor
+Fill the bug. Fill it with love. With the creamy and hot sauce of love.
+If you need to escape from hell, 'e asm.arch = malbolge' might help you
+Wait a minute! I found a bug, self-fixing... OK
+Hold on, this should never happen!
+Well this is embarrasing...
+THIS IS NOT FUNNY
+This code was intentionally left blank, try 'e asm.arch = ws'
+This is a compressed PDF. Why the hell are you opening this in r2 ? SIGSEGV
+♥ --
+Can you stand on your head?
+I hope you segfault in hell
+May the segfault be with you
+I script in C, because fuck you
+EXPLICIT CONTENT
+bindings are mostly powered by tears
+In Soviet Russia, Radare have documentation
+Initial frame selected; you cannot go up.

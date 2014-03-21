@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -24,7 +24,7 @@ static char *r_line_nullstr = "";
 static inline int is_valid_char (unsigned char ch) {
 	if (ch>=32 && ch<=127) return R_TRUE;
 	switch (ch) {
-	case 0: // wat
+	//case 0: // wat
 	case 1: // ^a
 	case 4: // ^d
 	case 5: // ^e
@@ -65,14 +65,15 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	// TODO: add support for w32
 	int ret, len;
 	for (len = 0; len+2<slen; len++) {
+		s[len] = 0;
 		ret = read (0, s+len, 1);
 		if (ret==-1)
 			return 0;
 		if (s[len] < 28)
-			return 1;
+			return s[0]?1:0;
 		if (ret == 1) {
 			if (is_valid_char (s[len]))
-				return 1;
+				return s[0]?1:0;
 			if ((s[len] & 0xc0) != 0x80) continue;
 			if (len>0) break;
 		} else return 0;
@@ -237,13 +238,15 @@ R_API int r_line_hist_save(const char *file) {
 			*p = R_SYS_DIR[0];
 		}
 		fd = fopen (path, "w");
-		if (fd != NULL && I.history.data) {
-			for (i=0; i<I.history.index; i++) {
-				fputs (I.history.data[i], fd);
-				fputs ("\n", fd);
-			}
-			fclose (fd);
-			ret = R_TRUE;
+		if (fd != NULL) {
+			if (I.history.data) {
+				for (i=0; i<I.history.index; i++) {
+					fputs (I.history.data[i], fd);
+					fputs ("\n", fd);
+				}
+				fclose (fd);
+				ret = R_TRUE;
+			} else fclose (fd);
 		}
 	}
 	free (path);
@@ -302,7 +305,7 @@ R_API void r_line_autocomplete() {
 					min_common_len = j;
 				root = argv[i];
 			}
-			strcpy (p, root);
+			memmove (p, root, strlen (root)+1);
 			if (min_common_len<strlen (root))
 				p[min_common_len] = 0;
 			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
@@ -312,8 +315,7 @@ R_API void r_line_autocomplete() {
 	/* show options */
 	if (opt>1 && I.echo) {
 		const int sep = 3;
-		int col = 10;
-		int slen;
+		int slen, col = 10;
 		printf ("%s%s\n", I.prompt, I.buffer.data);
 		for (i=0; i<argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
@@ -351,13 +353,13 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch, i; /* grep completion */
-	char *tmp_ed_cmd, prev;
+	int ch, i=0; /* grep completion */
+	char *tmp_ed_cmd, prev = 0;
 
 	I.buffer.index = I.buffer.length = 0;
 	if (I.contents) {
-		// XXX. control overflow
-		strcpy (I.buffer.data, I.contents);
+		strncpy (I.buffer.data, I.contents, R_LINE_BUFSIZE-1);
+        I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	} else {
 		I.buffer.data[0] = '\0';
@@ -374,7 +376,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	r_cons_set_raw (1);
 
 	if (I.echo) {
-		r_cons_clear_line ();
+		r_cons_clear_line (0);
 		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
@@ -401,7 +403,9 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 (
 			(ut8*)buf, sizeof (buf));
-		if (utflen <1) return NULL;
+		if (utflen <1) {
+			return NULL;
+		}
 		buf[utflen] = 0;
 #else
 		ch = r_line_readchar ();
@@ -409,7 +413,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 		if (I.echo)
-			r_cons_clear_line();
+			r_cons_clear_line (0);
 		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
@@ -438,8 +442,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					I.buffer.length = strlen (tmp_ed_cmd);
 					if (I.buffer.length < R_LINE_BUFSIZE) {
 						I.buffer.index = I.buffer.length;
-						// XXX may overflow here
-						strcpy (I.buffer.data, tmp_ed_cmd);
+						strncpy (I.buffer.data, tmp_ed_cmd, R_LINE_BUFSIZE-1);
+						I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
 					} else I.buffer.length -= strlen (tmp_ed_cmd);
 					free (tmp_ed_cmd);
 				}
@@ -506,7 +510,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				for (; i&&I.buffer.data[i]!=' '; i--);
 				if (!i) for (; i>0&&I.buffer.data[i]==' '; i--);
 				if (i>0) i++; else if (i<0) i=0;
-				strcpy (I.buffer.data+i, I.buffer.data+I.buffer.index);
+				//strcpy (I.buffer.data+i, I.buffer.data+I.buffer.index);
+				memmove (I.buffer.data+i, I.buffer.data+I.buffer.index, I.buffer.length-I.buffer.index+1);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = i;
 			}
@@ -697,8 +702,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 13:
 			if (gcomp && I.buffer.length>0) {
-				// XXX overflow
-				strcpy (I.buffer.data, gcomp_line);
+				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE-1);
+                I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
 				I.buffer.length = strlen (gcomp_line);
 			}
 			gcomp_idx = gcomp = 0;
@@ -720,10 +725,12 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				gcomp++;
 			if (I.buffer.index<I.buffer.length) {
 #if USE_UTF8
-				I.buffer.length += utflen;
-				for (i = I.buffer.length; i>I.buffer.index; i--)
-					I.buffer.data[i] = I.buffer.data[i-utflen];
-				memcpy (I.buffer.data+I.buffer.index, buf, utflen);
+				if ((I.buffer.length + utflen) < sizeof (I.buffer.data)) {
+					I.buffer.length += utflen;
+					for (i = I.buffer.length; i>I.buffer.index; i--)
+						I.buffer.data[i] = I.buffer.data[i-utflen];
+					memcpy (I.buffer.data+I.buffer.index, buf, utflen);
+				}
 #else
 				for (i = ++I.buffer.length; i>I.buffer.index; i--)
 					I.buffer.data[i] = I.buffer.data[i-1];
@@ -731,12 +738,10 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			} else {
 #if USE_UTF8
-				memcpy (I.buffer.data+I.buffer.length, buf, utflen);
-				I.buffer.length+=utflen;
-#if 0
-				if (I.buffer.length>(R_LINE_BUFSIZE-1))
-					I.buffer.length--;
-#endif
+				if ((I.buffer.length + utflen) < sizeof (I.buffer.data)) {
+					memcpy (I.buffer.data+I.buffer.length, buf, utflen);
+					I.buffer.length+=utflen;
+				}
 				I.buffer.data[I.buffer.length]='\0';
 #else
 				I.buffer.data[I.buffer.length]=buf[0];
@@ -772,7 +777,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				printf ("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
 			} else {
 				int chars = R_MAX (1, strlen (I.buffer.data)); // wtf?
-				int cols = R_MAX (1, columns - r_str_ansi_len (I.prompt)-2);
+				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt)-2);
 				/* print line */
 				printf ("\r%s", I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
@@ -781,8 +786,15 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				if (I.buffer.index>cols) {
 					printf ("< ");
 					i = I.buffer.index-cols;
-				} else i=0;
-				fwrite (I.buffer.data+i, 1, I.buffer.index, stdout);
+					if (i>sizeof (I.buffer.data)) {
+						i = sizeof(I.buffer.data)-1;
+						len = 1;
+					}
+				} else i = 0;
+				len = I.buffer.index;
+				if ((len+i)>I.buffer.length)
+					len = 1;
+				fwrite (I.buffer.data+i, 1, len, stdout);
 			}
 			fflush (stdout);
 		}

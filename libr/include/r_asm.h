@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #ifndef _INCLUDE_R_ASM_H_
 #define _INCLUDE_R_ASM_H_
@@ -57,7 +57,7 @@ enum {
 };
 
 typedef struct r_asm_op_t {
-	int inst_len; // rename to size or length
+	int size; // instruction size
 	int payload; // size of payload (opsize = (intstlen-payload))
 	// But this is pretty slow..so maybe we should add some accessors
 	ut8  buf[R_ASM_BUFSIZE];
@@ -95,7 +95,7 @@ typedef struct r_asm_t {
 	RBinBind binb;
 	RParse *ifilter;
 	RParse *ofilter;
-	RPair *pair;
+	Sdb *pair;
 	RSyscall *syscall;
 	RNum *num;
 } RAsm;
@@ -105,10 +105,10 @@ typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 typedef struct r_asm_plugin_t {
 	char *name;
 	char *arch;
+	char *cpus;
 	char *desc;
-// TODO: bits -> renamed to bitmask
-// use each bit to identify 4,8,16,32,64 bitsize it can be a mask, no need for pointers here
-	int *bits;
+	char *license;
+	int bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
@@ -126,6 +126,7 @@ R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API int r_asm_add(RAsm *a, RAsmPlugin *foo);
 R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
+R_API int r_asm_is_valid(RAsm *a, const char *name);
 R_API int r_asm_use(RAsm *a, const char *name);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
@@ -157,17 +158,21 @@ R_API int r_asm_op_get_size(RAsmOp *op);
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_mips;
+extern RAsmPlugin r_asm_plugin_mips_cs;
 extern RAsmPlugin r_asm_plugin_x86;
 extern RAsmPlugin r_asm_plugin_x86_as;
 extern RAsmPlugin r_asm_plugin_x86_nz;
 extern RAsmPlugin r_asm_plugin_x86_olly;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
+extern RAsmPlugin r_asm_plugin_x86_cs;
 extern RAsmPlugin r_asm_plugin_arm;
+extern RAsmPlugin r_asm_plugin_arm_cs;
 extern RAsmPlugin r_asm_plugin_armthumb;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_csr;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_ppc;
+extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_sparc;
 extern RAsmPlugin r_asm_plugin_psosvm;
 extern RAsmPlugin r_asm_plugin_avr;
@@ -181,7 +186,15 @@ extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_rar;
 extern RAsmPlugin r_asm_plugin_dcpu16;
 extern RAsmPlugin r_asm_plugin_8051;
-extern RAsmPlugin r_asm_plugin_c55plus;
+extern RAsmPlugin r_asm_plugin_tms320;
+extern RAsmPlugin r_asm_plugin_gb;
+extern RAsmPlugin r_asm_plugin_snes;
+extern RAsmPlugin r_asm_plugin_ebc;
+extern RAsmPlugin r_asm_plugin_nios2;
+extern RAsmPlugin r_asm_plugin_malbolge;
+extern RAsmPlugin r_asm_plugin_ws;
+extern RAsmPlugin r_asm_plugin_6502;
+extern RAsmPlugin r_asm_plugin_h8300;
 #endif
 
 #ifdef __cplusplus

@@ -8,7 +8,7 @@ R_API void r_cons_grep_help() {
 "Usage: [command]~[modifier][word,word][[column][:line]\n"
 " modifiers\n"
 "   &  all words must match to grep the line\n"
-"   ^  words must be placed at the begining of line\n"
+"   ^  words must be placed at the beginning of line\n"
 "   !  negate grep\n"
 "   ?  count number of matching lines\n"
 " examples:\n"
@@ -32,22 +32,30 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.neg = 0;
 	cons->grep.amp = 0;
 	cons->grep.end = 0;
+	cons->grep.less = 0;
+	cons->grep.line = -1;
 	cons->grep.begin = 0;
+	cons->grep.counter = 0;
 	cons->grep.nstrings = 0;
 	cons->grep.tokenfrom = 0;
 	cons->grep.tokento = ST32_MAX;
-	cons->grep.line = -1;
-	cons->grep.counter = cons->grep.neg = 0;
 
 	while (*str) {
 		switch (*str) {
+		case '.':
+			if (str[1]=='.') {
+				cons->grep.less = 1;
+				return;
+			}
+			str++;
+			break;
 		case '&': str++; cons->grep.amp = 1; break;
 		case '^': str++; cons->grep.begin = 1;  break;
 		case '!': str++; cons->grep.neg = 1; break;
 		case '?': str++; cons->grep.counter = 1;
 			if (*str=='?') {
 				r_cons_grep_help ();
-				str = "THIS\x01IS\x02A\x03HACK\x04:D";
+				return;
 			}
 			break;
 		default: goto while_end;
@@ -122,6 +130,17 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
+	if (cons->grep.less) {
+		cons->grep.less = 0;
+		r_cons_less (buf);
+		buf[0] = 0;
+		cons->buffer_len = 0;
+		if (cons->buffer)
+			cons->buffer[0] = 0;
+		free (cons->buffer);
+		cons->buffer = NULL;
+		return 0;
+	}
 	if (!cons->buffer) {
 		cons->buffer_len = len+20;
 		cons->buffer = malloc (cons->buffer_len);
@@ -195,9 +214,11 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			if (cons->grep.begin)
 				hit = (p == in)? 1: 0;
 			else hit = !cons->grep.neg;
-			// TODO: optimize this strlen
-			if (cons->grep.end && (strlen (cons->grep.strings[i]) != strlen (p)))
-				hit = 0;
+			if (cons->grep.end){
+                for (j=0; cons->grep.strings[i][j] && p[j]; j++);
+                if (!(cons->grep.strings[i][j] || p[j]))
+                    hit = 0;
+            }
 			if (!cons->grep.amp)
 				break;
 		}
@@ -222,7 +243,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 						outlen += toklen+1;
 					}
 				} else {
-					if (strlen (out) == 0) {
+					if (!(*out)) {
 						free (in);
 						free (out);
 						return -1;

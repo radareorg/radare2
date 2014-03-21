@@ -14,7 +14,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 
 	if (op == NULL)
 		return 2;
-	op->length = 2;
+	op->size = 2;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else
@@ -24,12 +24,23 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (buf[1]>=0x18 && buf[1]<=0x1b) { // hacky
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else
-	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
+	//if (((buf[1] & 0x94) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
+	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
 		op->fail = (op->addr)+4;
-		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
-		op->jump = *k*2;
+// override even if len<4 wtf
+		len = 4;
+		if (len>3) {
+			memcpy (kbuf, buf+2, 2);
+			op->size = 4;
+			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
+			op->jump = *k*2;
+		} else {
+			op->size = 0;
+			return -1;
+			return op->size;
+		}
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	} else
 	if ((buf[1] & 0xf0) == 0xd0) {
@@ -67,14 +78,15 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->eob = R_TRUE;
 		//op->stackptr =
 	} else op->type = R_ANAL_OP_TYPE_UNK;
-	return op->length;
+	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_avr = {
+RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_AVR,
-	.bits = 8|32,
+	.bits = 16|32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &avr_op,
@@ -87,7 +99,7 @@ struct r_anal_plugin_t r_anal_plugin_avr = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_avr
 };

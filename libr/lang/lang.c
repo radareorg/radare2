@@ -6,6 +6,7 @@
 R_LIB_VERSION(r_lang);
 
 #include "p/vala.c" // hardcoded
+#include "p/c.c" // hardcoded
 
 
 RLang *__lang = NULL;
@@ -13,7 +14,6 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 	if (p && p->fini)
 		p->fini (__lang);
 }
-
 
 R_API RLang *r_lang_new() {
 	RLang *lang = R_NEW (RLang);
@@ -23,6 +23,7 @@ R_API RLang *r_lang_new() {
 		lang->langs->free = (RListFree)r_lang_plugin_free;
 		lang->defs = r_list_new ();
 		lang->defs->free = (RListFree)r_lang_def_free;
+		r_lang_add (lang, &r_lang_plugin_c);
 		r_lang_add (lang, &r_lang_plugin_vala);
 	}
 	return lang;
@@ -51,7 +52,7 @@ R_API int r_lang_define(RLang *lang, const char *type, const char *name, void *v
 	RLangDef *def;
 	RListIter *iter;
 	r_list_foreach (lang->defs, iter, def) {
-		if (!strcmp (name, def->name)) {
+		if (!strcasecmp (name, def->name)) {
 			def->value = value;
 			return  R_TRUE;
 		}
@@ -79,7 +80,7 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 		RListIter *iter;
 		/* No _safe loop necessary because we return immediately after the delete. */
 		r_list_foreach (lang->defs, iter, def) {
-			if (!strcmp (name, def->name)) {
+			if (!strcasecmp (name, def->name)) {
 				r_list_delete (lang->defs, iter);
 				break;
 			}
@@ -118,7 +119,7 @@ R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
 	const char *p = r_str_lchr (ext, '.');
 	if (p) ext = p+1;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcmp (h->ext, ext))
+		if (!strcasecmp (h->ext, ext))
 			return h;
 	}
 	return NULL;
@@ -128,7 +129,7 @@ R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcmp (h->name, name))
+		if (!strcasecmp (h->name, name))
 			return h;
 	}
 	return NULL;

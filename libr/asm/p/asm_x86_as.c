@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 pancake */
+/* radare - LGPL - Copyright 2011-2014 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -57,16 +57,17 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	free (ipath);
 	free (opath);
 
-	op->inst_len = len;
+	op->size = len;
 	return len;
 }
 
 RAsmPlugin r_asm_plugin_x86_as = {
 	.name = "x86.as",
-	.desc = "X86 assembler plugin using 'as' program",
+	.desc = "Intel X86 GNU Assembler",
 	.arch = "x86",
+	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,

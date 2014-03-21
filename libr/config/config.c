@@ -19,9 +19,19 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	return node;
 }
 
+R_API void r_config_node_free (void *n) {
+	RConfigNode *node = (RConfigNode*)n;
+	if (!node) return;
+	free (node->name);
+	free (node->desc);
+	free (node->value);
+	free (node);
+}
+
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	RConfigNode *node;
 	RListIter *iter;
+	const char *sfx = "";
 	const char *pfx = "";
 	int len = 0;
 
@@ -31,12 +41,13 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	}
 	switch (rad) {
 	case 1:
-		pfx = "e ";
+		pfx = "\"e ";
+		sfx = "\"";
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len))))
-				cfg->printf ("%s%s = %s\n", pfx,
-					node->name, node->value);
+				cfg->printf ("%s%s = %s%s\n", pfx,
+					node->name, node->value, sfx);
 		}
 		break;
 	case 2:
@@ -306,7 +317,7 @@ R_API RConfig *r_config_new(void *user) {
 	if (cfg) {
 		cfg->ht = r_hashtable_new ();
 		cfg->nodes = r_list_new ();
-		cfg->nodes->free = free;
+		cfg->nodes->free = r_config_node_free;
 		cfg->user = user;
 		cfg->num = NULL;
 		cfg->n_nodes = 0;
@@ -318,6 +329,7 @@ R_API RConfig *r_config_new(void *user) {
 
 R_API int r_config_free(RConfig *cfg) {
 	if (!cfg) return 0;
+	cfg->nodes->free = r_config_node_free; // damn
 	r_list_free (cfg->nodes);
 	r_hashtable_free (cfg->ht);
 	free (cfg);

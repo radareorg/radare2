@@ -275,6 +275,7 @@ static int assemble(RParse *p, char *data, char *str) {
 }
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+#if USE_VARSUBS
 	char *ptr, *ptr2;
 	int i;
 
@@ -287,6 +288,10 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
 		}
 	return R_TRUE;
+#else
+	strncpy (str, data, len);
+	return R_FALSE;
+#endif
 }
 
 struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo = {

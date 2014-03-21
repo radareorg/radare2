@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2014 pancake */
 
 #include <r_debug.h>
 #include "../config.h"
@@ -53,7 +53,8 @@ R_API int r_debug_plugin_list(RDebug *dbg) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &dbg->plugins) {
 		RDebugPlugin *h = list_entry(pos, RDebugPlugin, list);
-		eprintf ("dbg %d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
+		eprintf ("dbg %d %s %s (%s)\n", count,
+			h->name, ((h==dbg->h)?"*":""), h->license);
 		count++;
 	}
 	return R_FALSE;

@@ -39,7 +39,10 @@ typedef struct _SHA512_CTX {
 } R_SHA512_CTX;
 typedef R_SHA512_CTX R_SHA384_CTX;
 
-typedef struct r_hash_t {
+/* Fix names conflict with ruby bindings */
+#define RHash struct r_hash_t
+
+struct r_hash_t {
 	R_MD5_CTX md5;
 	R_SHA_CTX sha1;
 	R_SHA256_CTX sha256;
@@ -47,7 +50,13 @@ typedef struct r_hash_t {
 	R_SHA512_CTX sha512;
 	int rst;
 	ut8 digest[128];
-} RHash;
+};
+
+typedef struct r_hash_seed_t {
+	int prefix;
+	ut8 *buf;
+	int len;
+} RHashSeed;
 
 #define R_HASH_SIZE_CRC16 2
 #define R_HASH_SIZE_CRC32 4
@@ -86,19 +95,19 @@ R_API RHash *r_hash_new(int rst, int flags);
 R_API void r_hash_free(RHash *ctx);
 
 /* methods */
-R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, ut32 len);
+R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, int len);
 
 /* static methods */
 R_API const char *r_hash_name(ut64 bit);
 R_API ut64 r_hash_name_to_bits(const char *name);
 R_API int r_hash_size(int bit);
-R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, ut32 len);
+R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, int len);
 
 /* checksums */
 /* XXX : crc16 should use 0 as arg0 by default */
@@ -122,6 +131,7 @@ R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
 /* lifecycle */
 R_API void r_hash_do_begin(RHash *ctx, int flags);
 R_API void r_hash_do_end(RHash *ctx, int flags);
+R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed);
 #endif
 
 #ifdef __cplusplus

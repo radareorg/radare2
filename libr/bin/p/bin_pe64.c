@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #define R_BIN_PE64 1
 #include "bin_pe.c"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int idx, ret = R_FALSE;
 	if (!arch || !arch->buf || !arch->buf->buf)
 		return R_FALSE;
@@ -19,12 +19,14 @@ static int check(RBinArch *arch) {
 struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
@@ -35,8 +37,9 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
+	.get_vaddr = &get_vaddr,
 };
 
 #ifndef CORELIB

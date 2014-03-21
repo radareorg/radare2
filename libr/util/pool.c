@@ -33,8 +33,10 @@ R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount) {
 		mp->npool = -1;
 		mp->ncount = mp->poolsize; // force init
 		mp->nodes = (ut8**) malloc (sizeof (void*) * mp->poolcount);
-		if (mp->nodes == NULL)
+		if (mp->nodes == NULL) {
+			R_FREE (mp);
 			return NULL;
+		}
 	}
 	return mp;
 }

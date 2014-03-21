@@ -27,38 +27,45 @@
 #define UD_DECODE_H
 
 #include "types.h"
+#include "udint.h"
 #include "itab.h"
 
 #define MAX_INSN_LENGTH 15
 
 /* itab prefix bits */
 #define P_none          ( 0 )
-#define P_cast          ( 1 << 0 )
-#define P_CAST(n)       ( ( n >> 0 ) & 1 )
-#define P_rexb          ( 1 << 1 )
-#define P_REXB(n)       ( ( n >> 1 ) & 1 )
-#define P_inv64         ( 1 << 4 )
-#define P_INV64(n)      ( ( n >> 4 ) & 1 )
+
+#define P_inv64         ( 1 << 0 )
+#define P_INV64(n)      ( ( n >> 0 ) & 1 )
+#define P_def64         ( 1 << 1 )
+#define P_DEF64(n)      ( ( n >> 1 ) & 1 )
+
+#define P_oso           ( 1 << 2 )
+#define P_OSO(n)        ( ( n >> 2 ) & 1 )
+#define P_aso           ( 1 << 3 )
+#define P_ASO(n)        ( ( n >> 3 ) & 1 )
+
+#define P_rexb          ( 1 << 4 )
+#define P_REXB(n)       ( ( n >> 4 ) & 1 )
 #define P_rexw          ( 1 << 5 )
 #define P_REXW(n)       ( ( n >> 5 ) & 1 )
-#define P_def64         ( 1 << 7 )
-#define P_DEF64(n)      ( ( n >> 7 ) & 1 )
-#define P_rexr          ( 1 << 8 )
-#define P_REXR(n)       ( ( n >> 8 ) & 1 )
-#define P_oso           ( 1 << 9 )
-#define P_OSO(n)        ( ( n >> 9 ) & 1 )
-#define P_aso           ( 1 << 10 )
-#define P_ASO(n)        ( ( n >> 10 ) & 1 )
-#define P_rexx          ( 1 << 11 )
-#define P_REXX(n)       ( ( n >> 11 ) & 1 )
-#define P_ImpAddr       ( 1 << 12 )
-#define P_IMPADDR(n)    ( ( n >> 12 ) & 1 )
-#define P_seg           ( 1 << 13 )
-#define P_SEG(n)        ( ( n >> 13 ) & 1 )
-#define P_str           ( 1 << 14 )
-#define P_STR(n)        ( ( n >> 14 ) & 1 )
-#define P_strz          ( 1 << 15 )
-#define P_STR_ZF(n)     ( ( n >> 15 ) & 1 )
+#define P_rexr          ( 1 << 6 )
+#define P_REXR(n)       ( ( n >> 6 ) & 1 )
+#define P_rexx          ( 1 << 7 )
+#define P_REXX(n)       ( ( n >> 7 ) & 1 )
+
+#define P_seg           ( 1 << 8 )
+#define P_SEG(n)        ( ( n >> 8 ) & 1 )
+
+#define P_vexl          ( 1 << 9 )
+#define P_VEXL(n)       ( ( n >> 9 ) & 1 )
+#define P_vexw          ( 1 << 10 )
+#define P_VEXW(n)       ( ( n >> 10 ) & 1 )
+
+#define P_str           ( 1 << 11 )
+#define P_STR(n)        ( ( n >> 11 ) & 1 )
+#define P_strz          ( 1 << 12 )
+#define P_STR_ZF(n)     ( ( n >> 12 ) & 1 )
 
 /* operand type constants -- order is important! */
 
@@ -86,7 +93,8 @@ enum ud_operand_code {
     OP_I1,     OP_I3,     OP_sI,
 
     OP_V,      OP_W,      OP_Q,       OP_P, 
-    OP_U,      OP_N,      OP_MU,
+    OP_U,      OP_N,      OP_MU,      OP_H,
+    OP_L,
 
     OP_R,      OP_C,      OP_D,       
 
@@ -94,57 +102,58 @@ enum ud_operand_code {
 } UD_ATTR_PACKED;
 
 
-/* operand size constants */
+/*
+ * Operand size constants
+ *
+ *  Symbolic constants for various operand sizes. Some of these constants
+ *  are given a value equal to the width of the data (SZ_B == 8), such
+ *  that they maybe used interchangeably in the internals. Modifying them
+ *  will most certainly break things!
+ */
+typedef uint16_t ud_operand_size_t;
 
-enum ud_operand_size {
-    SZ_NA  = 0,
-    SZ_Z   = 1,
-    SZ_V   = 2,
-    SZ_RDQ = 7,
+#define SZ_NA  0
+#define SZ_Z   1
+#define SZ_V   2
+#define SZ_Y   3
+#define SZ_X   4
+#define SZ_RDQ 7
+#define SZ_B   8
+#define SZ_W   16
+#define SZ_D   32
+#define SZ_Q   64
+#define SZ_T   80
+#define SZ_O   12
+#define SZ_DQ  128 /* double quad */
+#define SZ_QQ  256 /* quad quad */
 
-    /* the following values are used as is,
-     * and thus hard-coded. changing them 
-     * will break internals 
-     */
-    SZ_B   = 8,
-    SZ_W   = 16,
-    SZ_D   = 32,
-    SZ_Q   = 64,
-    SZ_T   = 80,
-    SZ_O   = 128,
-
-    SZ_Y   = 17,
-
-    /*
-     * complex size types, that encode sizes for operands
-     * of type MR (memory or register), for internal use
-     * only. Id space 256 and above.
-     */
-    SZ_BD  = (SZ_B << 8) | SZ_D,
-    SZ_BV  = (SZ_B << 8) | SZ_V,
-    SZ_WD  = (SZ_W << 8) | SZ_D,
-    SZ_WV  = (SZ_W << 8) | SZ_V,
-    SZ_WY  = (SZ_W << 8) | SZ_Y,
-    SZ_DY  = (SZ_D << 8) | SZ_Y,
-    SZ_WO  = (SZ_W << 8) | SZ_O,
-    SZ_DO  = (SZ_D << 8) | SZ_O,
-    SZ_QO  = (SZ_Q << 8) | SZ_O,
-
-} UD_ATTR_PACKED;
+/*
+ * Complex size types; that encode sizes for operands of type MR (memory or
+ * register); for internal use only. Id space above 256.
+ */
+#define SZ_BD  ((SZ_B << 8) | SZ_D)
+#define SZ_BV  ((SZ_B << 8) | SZ_V)
+#define SZ_WD  ((SZ_W << 8) | SZ_D)
+#define SZ_WV  ((SZ_W << 8) | SZ_V)
+#define SZ_WY  ((SZ_W << 8) | SZ_Y)
+#define SZ_DY  ((SZ_D << 8) | SZ_Y)
+#define SZ_WO  ((SZ_W << 8) | SZ_O)
+#define SZ_DO  ((SZ_D << 8) | SZ_O)
+#define SZ_QO  ((SZ_Q << 8) | SZ_O)
 
 
 /* resolve complex size type.
  */
-static inline enum ud_operand_size
-Mx_mem_size(enum ud_operand_size size)
+static UD_INLINE ud_operand_size_t
+Mx_mem_size(ud_operand_size_t size)
 {
-    return (size >> 8) & 0xff;
+  return (size >> 8) & 0xff;
 }
 
-static inline enum ud_operand_size
-Mx_reg_size(enum ud_operand_size size)
+static UD_INLINE ud_operand_size_t
+Mx_reg_size(ud_operand_size_t size)
 {
-    return size & 0xff;
+  return size & 0xff;
 }
 
 /* A single operand of an entry in the instruction table. 
@@ -153,7 +162,7 @@ Mx_reg_size(enum ud_operand_size size)
 struct ud_itab_entry_operand 
 {
   enum ud_operand_code type;
-  enum ud_operand_size size;
+  ud_operand_size_t    size;
 };
 
 
@@ -166,7 +175,13 @@ struct ud_itab_entry
   struct ud_itab_entry_operand  operand1;
   struct ud_itab_entry_operand  operand2;
   struct ud_itab_entry_operand  operand3;
+  struct ud_itab_entry_operand  operand4;
+  uint8_t                       operand1_access;
+  uint8_t                       operand2_access;
   uint32_t                      prefix;
+  struct ud_eflags              eflags;
+  enum ud_type                  implicit_register_uses[32];
+  enum ud_type                  implicit_register_defs[32];
 };
 
 struct ud_lookup_table_list_entry {
@@ -175,14 +190,6 @@ struct ud_lookup_table_list_entry {
     const char *meta;
 };
      
-
-
-static inline int
-ud_opcode_field_sext(uint8_t primary_opcode)
-{
-  return (primary_opcode & 0x02) != 0;
-}
-
 extern struct ud_itab_entry ud_itab[];
 extern struct ud_lookup_table_list_entry ud_lookup_table_list[];
 

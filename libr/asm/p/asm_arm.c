@@ -115,14 +115,14 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static char *oldcpu = NULL;
 	static int oldcpucode = 0;
-	int cpucode = 0;
+	int opsize, cpucode = 0;
 	struct disassemble_info obj;
 	char *options = (a->bits==16)? "force-thumb": "no-force-thumb";
 
 	if (len<2) return -1;
 	memset (bytes, 0, sizeof (buf));
 	memcpy (bytes, buf, len<4?len:4);
-	if (len<(a->bits/8)) return -1;
+	if (a->bits<64 && len<(a->bits/8)) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 
@@ -130,18 +130,18 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	memset (&obj,'\0', sizeof (struct disassemble_info));
 	arm_mode = a->bits;
 
-cpucode = oldcpucode;
-/* select cpu */
-if (a->cpu) {
-	if (oldcpu != a->cpu) {
-		cpucode = atoi (a->cpu);
-		if (!strcmp ("v5j", a->cpu)) 
-			cpucode = 9;
+	cpucode = oldcpucode;
+	/* select cpu */
+	if (a->cpu) {
+		if (oldcpu != a->cpu) {
+			cpucode = atoi (a->cpu);
+			if (!strcmp ("v5j", a->cpu)) 
+				cpucode = 9;
+		}
 	}
-}
-obj.arch = 0;
-obj.mach = cpucode;
-oldcpucode = cpucode;
+	obj.arch = 0;
+	obj.mach = cpucode;
+	oldcpucode = cpucode;
 
 	obj.buffer = bytes;
 	obj.read_memory_func = &arm_buffer_read_memory;
@@ -159,16 +159,19 @@ oldcpucode = cpucode;
 		obj.disassembler_options = NULL;
 		/* is endianness ignored on 64bits? */
 		//r_mem_copyendian (bytes, buf, 4, !a->big_endian);
-		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
+		op->size = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
 		obj.disassembler_options = options;
-		op->inst_len = obj.endian?
+		op->size = obj.endian?
 			print_insn_little_arm ((bfd_vma)Offset, &obj):
 			print_insn_big_arm ((bfd_vma)Offset, &obj);
 	}
-	if (op->inst_len == -1)
+	opsize = op->size;
+	if (op->size == -1) {
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len;
+		op->size = 4;
+	}
+	return opsize;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
@@ -186,12 +189,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
-	.bits = (int[]){ 16, 32, 64, 0 },
-	.desc = "ARM disassembly plugin",
+	.bits = 16|32|64,
+	.desc = "Acorn RISC Machine CPU",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble,
+	.license = "GPL3"
 };
 
 #ifndef CORELIB

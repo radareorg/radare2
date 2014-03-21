@@ -1,6 +1,7 @@
 /* pancake // nopcode.org 2010-2013 -- emit module for rcc */
 
 #include <r_egg.h>
+#include <r_types.h>
 
 /* hardcoded */
 #define attsyntax 0
@@ -12,8 +13,10 @@
 # define R_SP "rsp"
 # define R_BP "rbp"
 # define R_AX "rax"
-# define R_GP { "rax", "rbx", "rsi", "rdx" }
+# define R_GP { "rax", "rdi", "rsi", "rdx" }
 # define R_NGP 4
+# define SYSCALL_ATT "syscall"
+# define SYSCALL_INTEL "syscall"
 #else
 # define EMIT_NAME emit_x86
 # define R_ARCH "x86"
@@ -23,23 +26,25 @@
 # define R_AX "eax"
 # define R_GP { "eax", "ebx", "ecx", "edx" }
 # define R_NGP 4
+# define SYSCALL_ATT "int $0x80"
+# define SYSCALL_INTEL "int 0x80"
 #endif
 
 static char *regs[] = R_GP;
 
 static void emit_init (REgg *egg) {
 // TODO: add 'andb rsp, 0xf0'
-	if (attsyntax) r_egg_printf (egg, "mov %esp, %ebp\n");
-	else r_egg_printf (egg, "mov ebp, esp\n");
+	if (attsyntax) r_egg_printf (egg, "mov %%"R_SP", %%"R_BP"\n");
+	else r_egg_printf (egg, "mov "R_BP", "R_SP"\n");
 }
 
 static char *emit_syscall (REgg *egg, int nargs) {
 	char p[512];
 	if (attsyntax) 
-		return strdup (": mov $`.arg`, %"R_AX"\n: int $0x80\n");
+		return strdup (": mov $`.arg`, %"R_AX"\n: "SYSCALL_ATT"\n");
 	switch (egg->os) {
 	case R_EGG_OS_LINUX:
-		strcpy (p, "\n : mov eax, `.arg`\n : int 0x80\n");
+		strcpy (p, "\n : mov "R_AX", `.arg`\n : "SYSCALL_INTEL "\n");
 		break;
 	case R_EGG_OS_OSX:
 	case R_EGG_OS_MACOS:
@@ -130,26 +135,32 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	memcpy (s, str, len);
 	memset (s+len, 0, 4);
 
+	/* XXX: Hack: Adjust offset in R_BP correctly for 64b addresses */
+#define BPOFF R_SZ-4
+#define M32(x) (unsigned int)((x) & 0xffffffff)
+	/* XXX: Assumes sizeof(ut32) == 4 */
 	for (i=4; i<=oj; i+=4) {
-		/* XXX endian and 32/64bit issues */
-		int *n = (int *)(s+i-4);
-		p = r_egg_mkvar (egg, str2, dstvar, i);
-		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", *n, p);
-		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
+		/* XXX endian issues (non-portable asm) */
+		ut32 *n = (ut32 *)(s+i-4);
+		p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
+		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", M32(*n), p);
+		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, M32(*n));
 		j -= 4;
 	}
+#undef M32
 	/* zero */
-	p = r_egg_mkvar (egg, str2, dstvar, i);
+	p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 	if (attsyntax) r_egg_printf (egg, "  movl $0, %s\n", p);
 	else r_egg_printf (egg, "  mov %s, 0\n", p);
 
 	/* store pointer */
-	p = r_egg_mkvar (egg, str2, dstvar, j+4);
+	p = r_egg_mkvar (egg, str2, dstvar, j+4+BPOFF);
 	if (attsyntax) r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
 	else r_egg_printf (egg, "  lea "R_AX", %s\n", p);
 	p = r_egg_mkvar (egg, str2, dstvar, 0);
 	if (attsyntax) r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
 	else r_egg_printf (egg, "  mov %s, "R_AX"\n", p);
+#undef BPOFF
 #if 0
 	char *p, str2[64];
 	int i, oj = j;

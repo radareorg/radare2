@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static int preludecnt = 0;
 static int searchflags = 0;
@@ -54,7 +54,7 @@ R_API int r_core_search_preludes(RCore *core) {
 	ut64 to = core->offset+0xffffff; // hacky!
 	// TODO: this is x86 only
 	if (prelude && *prelude) {
-		ut8 *kw = malloc (strlen (prelude));
+		ut8 *kw = malloc (strlen (prelude)+1);
 		int kwlen = r_hex_str2bin (prelude, kw);
 		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 		free (kw);
@@ -135,6 +135,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
+
 static int c = 0;
 static inline void print_search_progress(ut64 at, ut64 to, int n) {
 	if ((++c%64))
@@ -208,21 +209,129 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 	}
 }
 
+// TODO: handle more than one?
+static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf, int idx) {
+	int i;
+	int K = 32;
+	RAnalOp aop;
+	//ut8 buf[132];
+	ut64 base = addr - K;
+
+	K = R_MIN (idx, K);
+	buf += idx;
+	buf -= K;
+
+	//r_io_read_at (core->io, base, buf, sizeof (buf));
+///	r_core_read_at (core, base, buf, sizeof (buf));
+	for (i=0; i<16; i++) {
+		if (r_anal_op (core->anal, &aop, base+K-i, buf+K-i, 32-i)) {
+			if (aop.size<1) break;
+			if (i == aop.size) {
+				switch (aop.type) {
+				case R_ANAL_OP_TYPE_ILL:
+				case R_ANAL_OP_TYPE_TRAP:
+				case R_ANAL_OP_TYPE_RET:
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_CJMP:
+				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_JMP:
+				case R_ANAL_OP_TYPE_CALL:
+					return UT64_MAX;
+				}
+				return addr-i;
+			}
+		}
+	}
+	return UT64_MAX;
+}
+
+static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep) {
+	int ret, roplen, i, delta = to-from, end = 0;
+	ut64 prev, ropat;
+	RAsmOp asmop;
+	RAnalOp aop;
+	ut8 *buf;
+
+	if (delta<1) delta = from-to;
+	if (delta<1) return R_FALSE;
+	while (*grep==' ') grep++;
+	buf = malloc (delta);
+
+	for (i=0; i<delta; i++) {
+		if (i>=end) {
+			r_core_read_at (core, from+i, buf+i, R_MIN (delta, 4096));
+			end = i+2048;
+		}
+		if ((delta-i)<16)
+			break;
+		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i)>0) {
+			r_asm_set_pc (core->assembler, from+i);
+			ret = r_asm_disassemble (core->assembler,
+				&asmop, buf+i, delta-i);
+			if (ret>0)
+			switch (aop.type) {
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_UJMP:
+				prev = findprevopsz (core, from+i, buf, i);
+				if (prev != UT64_MAX) {
+					int j = i- (from+i-prev);
+					ut64 prev2 = findprevopsz (core, prev, buf, j);
+					if (prev2 != UT64_MAX) {
+						ropat = prev2;
+					} else ropat = prev;
+				} else ropat = from+i; 
+				roplen = from - ropat + i + aop.size;
+				if (grep && *grep) {
+					char *tmp, *s, cmd[32];
+					int show_match = 0;
+
+					snprintf (cmd, sizeof (cmd),
+						"pD %d @ 0x%"PFMT64x,
+						roplen, ropat);
+					// backup cons buffer
+					tmp = strdup (r_cons_singleton ()->buffer);
+					s = r_core_cmd_str (core, cmd);
+					if (strstr (s, grep)) show_match = 1;
+					// restore cons buffer
+					r_cons_strcat (tmp);
+					free (tmp);
+					if (show_match) {
+						r_cons_printf ("0x%08"PFMT64x"  %s\n",
+							from+i, asmop.buf_asm);
+						r_cons_printf ("%s\n", s);
+					}
+					free (s);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"  %s\n",
+						from+i, asmop.buf_asm);
+					r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
+						roplen, ropat);
+				}
+				break;
+			}
+		}
+	}
+	return R_TRUE;
+}
+
 static int cmd_search(void *data, const char *input) {
 	int i, len, ret, dosearch = R_FALSE;
 	RCore *core = (RCore *)data;
 	int aes_search = R_FALSE;
 	int ignorecase = R_FALSE;
 	int inverse = R_FALSE;
-	ut64 at, from, to;
+	ut64 at, from = 0, to = 0;
 	const char *mode;
-	char *inp;
+	char *inp, bckwrds = R_FALSE, do_bckwrd_srch = R_FALSE;
 	ut64 n64, __from, __to;
 	ut32 n32;
 	ut16 n16;
+	ut8 n8;
 	ut8 *buf;
 
-c = 0;
+	c = 0;
 	__from = r_config_get_i (core->config, "search.from");
 	__to = r_config_get_i (core->config, "search.to");
 
@@ -232,10 +341,17 @@ c = 0;
 
 	if (__from != UT64_MAX) from = __from;
 	if (__to != UT64_MAX) to = __to;
+	/*
+	  this introduces a bug until we implement backwards search
+	  for all search types
 	if (__to < __from) {
 		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
 		return R_FALSE;
 	}
+	since the backward search will be implemented soon I'm not gonna stick 
+	checks for every case in switch // jjdredd
+	remove when everything is done
+	*/
 
 	core->search->align = r_config_get_i (core->config, "search.align");
 	searchflags = r_config_get_i (core->config, "search.flags");
@@ -253,6 +369,14 @@ c = 0;
 	if (from == 0LL) from = core->offset;
 	if (to == 0LL) to = UT32_MAX; // XXX?
 
+	/* we don't really care what's bigger bc there's a flag for backward search
+	   from now on 'from' and 'to' represent only the search boundaries, not 
+	   search direction */ 
+	__from = R_MIN(from, to);
+	to = R_MAX(from, to);
+	from = __from;
+	core->search->bckwrds = R_FALSE;
+
 	reread:
 	switch (*input) {
 	case '!':
@@ -260,6 +384,33 @@ c = 0;
 		inverse = R_TRUE;
 		goto reread;
 		break;
+	case 'b':
+		if (*(++input) == '?'){
+			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
+			return R_TRUE;
+		}
+		core->search->bckwrds = bckwrds = do_bckwrd_srch = R_TRUE;
+		/* if backward search and __to wasn't specified 
+		   search from the beginning */
+		if ((unsigned int)to ==  UT32_MAX){
+			to = from;
+			from = 0;
+		}
+		goto reread;
+		break;
+	case 'P':
+		 {
+		// print the offset of the Previous opcode
+		ut8 buf[64];
+		ut64 off = core->offset;
+		r_core_read_at (core, off-16, buf, 32);
+		off = findprevopsz (core, off, buf, 16);
+		r_cons_printf ("0x%08llx\n", off);
+		 }
+		break;
+	case 'R':
+		r_core_search_rop (core, from, to, 0, input+1);
+		return R_TRUE;
 	case 'r':
 		if (input[1]==' ')
 			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
@@ -317,21 +468,32 @@ c = 0;
 			r_config_get_i (core->config, "search.distance"));
 		switch (input[1]) {
 		case '?':
-			eprintf ("Usage: /v[2|4|8] [value]\n");
+			eprintf ("Usage: /v[1|2|4|8] [value]   # obeys cfg.bigendian\n");
 			return R_TRUE;
 		case '8':
 			n64 = r_num_math (core->num, input+2);
+			r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
+				8, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
 			break;
+		case '1':
+			n8 = (ut8)r_num_math (core->num, input+2);
+			r_search_kw_add (core->search,
+				r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
+			break;
 		case '2':
 			n16 = (ut16)r_num_math (core->num, input+2);
+			r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
+				2, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
 			break;
 		default: // default size
 		case '4':
-			n32 = (ut32)r_num_math (core->num, input+1);
+			n32 = (ut32)r_num_math (core->num, input+2);
+			r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
+				4, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 			break;
@@ -369,7 +531,7 @@ c = 0;
 		if (ignorecase)
 			for (i=1; inp[i]; i++)
 				inp[i] = tolower (inp[i]);
-		len = r_str_escape (inp);
+		len = r_str_unescape (inp);
 		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
 		for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
 		eprintf ("\n");
@@ -486,36 +648,38 @@ c = 0;
 		break;
 	default:
 		r_cons_printf (
-		"Usage: /[amx/] [arg]\n"
-		" / foo\\x00       ; search for string 'foo\\0'\n"
-		" /w foo          ; search for wide string 'f\\0o\\0o\\0'\n"
-		" /! ff           ; search for first occurrence not matching\n"
-		" /i foo          ; search for string 'foo' ignoring case\n"
-		" /e /E.F/i       ; match regular expression\n"
-		" /x ff0033       ; search for hex string\n"
-		" /x ff..33       ; search for hex string ignoring some nibbles\n"
-		" /x ff43 ffd0    ; search for hexpair with mask\n"
-		" /d 101112       ; search for a deltified sequence of bytes\n"
-		" /!x 00          ; inverse hexa search (find first byte != 0x00)\n"
-		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
-		" /a jmp eax      ; assemble opcode and search its bytes\n"
-		" /A              ; search for AES expanded keys\n"
-		" /r sym.printf   ; analyze opcode reference an offset\n"
-		" /m magicfile    ; search for matching magic file (use blocksize)\n"
-		" /p patternsize  ; search for pattern of given size\n"
-		" /z min max      ; search for strings of given size\n"
-		" /v[?248] num    ; look for a asm.bigendian 32bit value\n"
-		" //              ; repeat last search\n"
-		" ./ hello        ; search 'hello string' and import flags\n"
-		"Configuration:\n"
-		" e cmd.hit = x         ; command to execute on every search hit\n"
-		" e search.distance = 0 ; search string distance\n"
-		" e search.in = [foo]   ; boundaries to raw, block, file, section)\n"
-		" e search.align = 4    ; only catch aligned search hits\n"
-		" e search.from = 0     ; start address\n"
-		" e search.to = 0       ; end address\n"
-		" e search.asmstr = 0   ; search string instead of assembly\n"
-		" e search.flags = true ; if enabled store flags on keyword hits\n");
+		"|Usage: /[amx/] [arg]\n"
+		"| / foo\\x00       search for string 'foo\\0'\n"
+		"| /w foo          search for wide string 'f\\0o\\0o\\0'\n"
+		"| /! ff           search for first occurrence not matching\n"
+		"| /i foo          search for string 'foo' ignoring case\n"
+		"| /e /E.F/i       match regular expression\n"
+		"| /x ff0033       search for hex string\n"
+		"| /x ff..33       search for hex string ignoring some nibbles\n"
+		"| /x ff43 ffd0    search for hexpair with mask\n"
+		"| /d 101112       search for a deltified sequence of bytes\n"
+		"| /!x 00          inverse hexa search (find first byte != 0x00)\n"
+		"| /c jmp [esp]    search for asm code (see search.asmstr)\n"
+		"| /a jmp eax      assemble opcode and search its bytes\n"
+		"| /A              search for AES expanded keys\n"
+		"| /r sym.printf   analyze opcode reference an offset\n"
+		"| /R              search for ROP gadgets\n"
+		"| /P              show offset of previous instruction\n"
+		"| /m magicfile    search for matching magic file (use blocksize)\n"
+		"| /p patternsize  search for pattern of given size\n"
+		"| /z min max      search for strings of given size\n"
+		"| /v[?248] num    look for a asm.bigendian 32bit value\n"
+		"| //              repeat last search\n"
+		"| /b              search backwards\n"
+		"|Configuration:\n"
+		"| e cmd.hit = x         ; command to execute on every search hit\n"
+		"| e search.distance = 0 ; search string distance\n"
+		"| e search.in = [foo]   ; boundaries to raw, block, file, section)\n"
+		"| e search.align = 4    ; only catch aligned search hits\n"
+		"| e search.from = 0     ; start address\n"
+		"| e search.to = 0       ; end address\n"
+		"| e search.asmstr = 0   ; search string instead of assembly\n"
+		"| e search.flags = true ; if enabled store flags on keyword hits\n");
 		break;
 	}
 	searchhits = 0;
@@ -543,7 +707,15 @@ c = 0;
 			cmdhit = r_config_get (core->config, "cmd.hit");
 			r_cons_break (NULL, NULL);
 			// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
-			for (at = from; at < to; at += core->blocksize) {
+			if (bckwrds){
+				if (to < from + core->blocksize){
+					at = from;
+					do_bckwrd_srch = R_FALSE;
+				}else at = to - core->blocksize;
+			}else at = from;
+			 /* bckwrds = false -> normal search -> must be at < to
+				bckwrds search -> check later */ 
+			for (; ( !bckwrds && at < to ) ||  bckwrds ;) {
 				print_search_progress (at, to, searchhits);
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("\n\n");
@@ -575,11 +747,19 @@ c = 0;
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
+				if (bckwrds){
+					if (!do_bckwrd_srch) break;
+					if (at > from + core->blocksize) at -= core->blocksize;
+					else{
+						do_bckwrd_srch = R_FALSE;
+						at = from;
+					}
+				}else at += core->blocksize;
 			}
 			print_search_progress (at, to, searchhits);
 			r_cons_break_end ();
 			free (buf);
-			//r_cons_clear_line ();
+			r_cons_clear_line (1);
 			if (searchflags && searchcount>0) {
 				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 					searchhits,

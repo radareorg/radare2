@@ -35,7 +35,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	RListIter *iter;
 	r_list_foreach (f->flags, iter, item) {
 		RList *list = r_hashtable64_lookup (f->ht_name, item->namehash);
-		r_list_free (list);
+		// XXX r_list_free (list);
 		list = r_hashtable64_lookup (f->ht_off, item->offset);
 		// XXX: segfault sometimes wtf -- r_list_free (list);
 	}
@@ -72,8 +72,12 @@ R_API void r_flag_list(RFlag *f, int rad) {
 			continue;
 		if (rad) {
 			if (fs == -1 || flag->space != fs) {
+				const char *flagspace;
 				fs = flag->space;
-				r_cons_printf ("fs %s\n", r_flag_space_get_i (f, fs));
+				flagspace = r_flag_space_get_i (f, fs);
+				if (!flagspace || !*flagspace)
+					flagspace = "*";
+				r_cons_printf ("fs %s\n", flagspace);
 			}
 			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
 				flag->name, flag->size, flag->offset,
@@ -94,6 +98,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 
 
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
+// TODO: this is buggy, do not use, must rewrite in sdb
 	RFlagItem *oitem = NULL;
 	RFlagItem *item = NULL;
 	RList *list = r_hashtable64_lookup (f->ht_off, off);
@@ -261,10 +266,12 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
 		if (r_list_empty (list)) {
-			r_list_free (list);
+			//r_list_free (list);
 			r_hashtable64_remove (f->ht_name, hash);
+		} else {
+			r_hashtable64_remove (f->ht_name, hash);
+			r_list_delete_data (list, item);
 		}
-		r_list_delete_data (list, item);
 		if (!r_flag_item_set_name (item, name)) {
 			r_list_append (list, item);
 			return R_FALSE;
@@ -390,6 +397,15 @@ R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to) {
 		}
 	}
 	return n;
+}
+
+R_API int r_flag_move (RFlag *f, ut64 at, ut64 to) {
+	RFlagItem *item = r_flag_get_i (f, at);
+	if (item) {
+		r_flag_set (f, item->name, to, item->size, 0);
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
 #ifdef MYTEST

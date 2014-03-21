@@ -68,7 +68,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 				if (item) {
 					snprintf (buf, sizeof (buf), "0x%"PFMT64x, r_reg_get_value (anal->reg, item));
 					strcat (str, buf); // XXX: do not use strcat
-				} else eprintf ("Unknown reg '%s'\n", reg);
+				} //else eprintf ("Unknown reg '%s'\n", reg);
 				if (i<si->args-1)
 					strcat (str, ","); // XXX: do not use strcat
 			}

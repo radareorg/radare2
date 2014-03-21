@@ -2,7 +2,7 @@ include ../../config.mk
 
 CFLAGS+=-Wall -g -ggdb
 BIN=a.out
-OBJ=rangstr.o json.o js0n.o api.o main.o
+OBJ=rangstr.o path.o js0n.o api.o main.o
 OBJ+=../libsdb.a
 
 all: ${BIN}

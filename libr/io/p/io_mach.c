@@ -126,12 +126,13 @@ int prot = VM_PROT_READ | VM_PROT_EXECUTE;
 	return len;
 }
 
-static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return mach_write_at ((RIOMach*)fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file) {
-	return (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7));
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
+	return (!strncmp (file, "attach://", 9) \
+		|| !strncmp (file, "mach://", 7));
 }
 
 //static task_t inferior_task = 0;
@@ -181,11 +182,13 @@ static int debug_attach(int pid) {
         return task;
 }
 
-static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIODesc *ret = NULL;
 	RIOMach *riom;
+	char *pidpath;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file))
+	if (!__plugin_open (io, file, 0))
 		return NULL;
  	pid = atoi (file+(file[0]=='a'?9:7));
 	if (pid<1)
@@ -209,10 +212,14 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	riom = R_NEW (RIOMach);
 	riom->pid = pid;
 	riom->task = task;
-	return r_io_desc_new (&r_io_plugin_mach, riom->pid, file, 1, mode, riom);
+	pidpath = r_sys_pid_to_path (pid);
+	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
+		pidpath, 1, mode, riom);
+	free (pidpath);
+	return ret;
 }
 
-static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
@@ -222,11 +229,16 @@ static int __close(RIODesc *fd) {
 	return ptrace (PT_DETACH, pid, 0, 0);
 }
 
-static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
+static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOMach *riom = (RIOMach*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {
+		if (!cmd[3]) {
+			int pid = RIOMACH_PID (fd->data);
+			eprintf ("%d\n", pid);
+			return 0;
+		}
 		int pid = atoi (cmd+4);
 		if (pid != 0) {
 			task_t task = pid_to_task (pid);
@@ -236,19 +248,18 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 				riom->task = task;
 				return 0;
 			}
-			eprintf ("io_mach_system: Invalid pid\n");
-			return 1;
 		}
-		eprintf ("io_mach_system: Invalid pid\n");
+		eprintf ("io_mach_system: Invalid pid %d\n", pid);
 		return 1;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
+	return 1;
 }
 
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
-struct r_io_plugin_t r_io_plugin_mach = {
+RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
         .desc = "mach debugger io plugin (mach://pid)",
+	.license = "LGPL",
         .open = __open,
         .close = __close,
 	.read = __read,
@@ -260,9 +271,10 @@ struct r_io_plugin_t r_io_plugin_mach = {
 };
 
 #else
-struct r_io_plugin_t r_io_plugin_mach = {
+RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
-        .desc = "mach debug io (unsupported in this platform)"
+        .desc = "mach debug io (unsupported in this platform)",
+	.license = "LGPL"
 };
 #endif
 

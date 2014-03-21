@@ -51,7 +51,11 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->xrefs);
 	r_list_free (fcn->vars);
 	r_list_free (fcn->locs);
+#if 0
+	// XXX: some shared basic blocks make it crash. 
+	// TODO: fix it with sdb
 	r_list_free (fcn->bbs);
+#endif
 	r_list_free (fcn->locals);
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
@@ -66,7 +70,7 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 	ref->at = at; // from
 	ref->addr = addr; // to
 	ref->type = type;
-	r_anal_xrefs_set (anal, type=='d'?"data":"code", addr, at);
+	r_anal_xrefs_set (anal, type=='s'?"string":type=='d'?"data":"code", addr, at);
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
 	return R_TRUE;
@@ -89,9 +93,8 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 
 R_API int r_anal_fcn_local_add (RAnal *anal, RAnalFunction *fcn, ut64 addr, const char *name) {
 	RAnalFcnLocal *l = R_NEW0 (RAnalFcnLocal);
-	if (!fcn || !anal) {
+	if (!fcn || !anal)
 		return R_FALSE;
-	}
 	l->addr = addr;
 	l->name = strdup (name);
 	// TODO: do not allow duplicate locals!
@@ -170,7 +173,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	if (bbget (fcn, addr)) 
 		return R_ANAL_RET_ERROR; // MUST BE DUP
-	bb = R_NEW0 (RAnalBlock);
+	bb = r_anal_bb_new();
 	bb->addr = addr;
 	bb->size = 0;
 	bb->jump = UT64_MAX;
@@ -217,11 +220,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
 			if (op.ptr > 0) {
-				varname = r_str_dup_printf ("arg_%x", op.ptr);
+				varname = r_str_newf ("arg_%x", op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -op.ptr);
+				varname = r_str_newf ("local_%x", -op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
@@ -230,22 +233,23 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_GET:
 			if (op.ptr > 0) {
-				varname = r_str_dup_printf ("arg_%x", op.ptr);
+				varname = r_str_newf ("arg_%x", op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -op.ptr);
+				varname = r_str_newf ("local_%x", -op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
 			break;
 		}
-		if (op.ptr && op.ptr != UT64_MAX) {
+		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf //
-			if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
+			//if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
+			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd')) {
 				r_anal_op_fini (&op);
-				FITFCNSZ();
+				FITFCNSZ ();
 				return R_ANAL_RET_ERROR;
 			}
 		}
@@ -278,9 +282,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 					return R_ANAL_RET_END;	
 				}
 			}
+			break;
 			//
-			FITFCNSZ();
-			return R_ANAL_RET_END;
+			//FITFCNSZ();
+			//return R_ANAL_RET_END;
 /// DO not follow jmps.. this is probably a bug ... 
 #if 0
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
@@ -328,11 +333,17 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	if (fcn->addr == UT64_MAX)
-		fcn->addr = addr;
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
-		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
+			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
+	
+	if (fcn->addr == UT64_MAX) fcn->addr = addr;
+
+	if (anal->cur && anal->cur->fcn){
+		int result = anal->cur->fcn(anal, fcn, addr, buf, len, reftype);
+		if (anal->cur->custom_fn_anal) return result;
+	}
+	
 	//if (len>16)
 	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
 	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
@@ -340,18 +351,14 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
-	// avoid dups
-
-	RAnalFunction *f = r_anal_fcn_find (anal, fcn->addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *f = r_anal_fcn_find (anal, fcn->addr,
+		R_ANAL_FCN_TYPE_ROOT);
 	if (f) return R_FALSE;
-//eprintf ("ADDDD 0x%llx\n", fcn->addr);
 #if USE_NEW_FCN_STORE
 	r_listrange_add (anal->fcnstore, fcn);
 	// HUH? store it here .. for backweird compatibility
-	r_list_append (anal->fcns, fcn);
-#else
-	r_list_append (anal->fcns, fcn);
 #endif
+	r_list_append (anal->fcns, fcn);
 	return R_TRUE;
 }
 
@@ -380,7 +387,8 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_fcn_find (anal, addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn, *f = r_anal_fcn_find (anal, addr,
+		R_ANAL_FCN_TYPE_ROOT);
 #if USE_NEW_FCN_STORE
 #warning TODO: r_anal_fcn_del_locs not implemented for newstore
 #endif
@@ -511,7 +519,7 @@ R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 			return R_ANAL_RET_DUP;
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
 			r_list_append (fcn->bbs, bb);
-			bb->addr = addr;
+			bb->addr = addr+bbi->size;
 			bb->size = bbi->addr + bbi->size - addr;
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;

@@ -269,7 +269,10 @@ subtype_identified:
 		}
 
 		if (mime == R_MAGIC_MIME_ENCODING)
-			file_printf(ms, "binary");
+		    if (file_printf(ms, "binary") == -1){
+                rv = 1;
+                goto done;
+            }
 	} else {
 		if (file_printf(ms, code) == -1)
 			goto done;

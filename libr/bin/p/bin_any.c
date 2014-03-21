@@ -5,29 +5,31 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0LL;
 }
 
 struct r_bin_plugin_t r_bin_plugin_any = {
 	.name = "any",
 	.desc = "Dummy format r_bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
 	.check = NULL,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = NULL,
 	.sections = NULL,
@@ -38,9 +40,10 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.create = NULL,
 	.write = NULL,
+	.minstrlen = 0,
 };
 
 #ifndef CORELIB

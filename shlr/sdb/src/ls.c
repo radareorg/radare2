@@ -1,23 +1,24 @@
-/* sdb - LGPLv3 - Copyright 2007-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2007-2014 - pancake */
 
 #include <string.h>
 #include "ls.h"
 
-R_API SdbList *ls_new() {
+SDB_API SdbList *ls_new() {
 	SdbList *list = R_NEW (SdbList);
+	if (!list)
+		return NULL;
 	list->head = NULL;
 	list->tail = NULL;
-	list->free = NULL;
+	list->free = free; // HACK
 	list->length = 0;
 	return list;
 }
 
-R_API void ls_delete (SdbList *list, SdbListIter *iter) {
+SDB_API void ls_del (SdbList *list, SdbListIter *iter) {
 	if (iter==NULL) {
-		printf ("ls_delete: null iter?\n");
+		fprintf (stderr, "ls_del: null iter?\n");
 		return;
 	}
-	list->free = free; // XXX HACK
 	ls_split_iter (list, iter);
 	if (list->free && iter->data) {
 		list->free (iter->data);
@@ -27,64 +28,64 @@ R_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	list->length--;
 }
 
-R_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
+SDB_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
 	if (list->head == iter) list->head = iter->n;
 	if (list->tail == iter) list->tail = iter->p;
 	if (iter->p) iter->p->n = iter->n;
 	if (iter->n) iter->n->p = iter->p;
 }
 
-R_API void ls_destroy (SdbList *list) {
+SDB_API void ls_destroy (SdbList *list) {
 	SdbListIter *it;
 	if (list) {
 		it = list->head;
 		while (it) {
 			SdbListIter *next = it->n;
-			ls_delete (list, it);
+			ls_del (list, it);
 			it = next;
-		//	free (it);
 		}
 		list->head = list->tail = NULL;
 		list->length = 0;
 	}
-	//free (list);
 }
 
-R_API void ls_free (SdbList *list) {
+SDB_API void ls_free (SdbList *list) {
 	if (!list) return;
-	list->free = NULL;
 	ls_destroy (list);
+	list->free = NULL;
 	free (list);
 }
 
-// XXX: Too slow?
-R_API SdbListIter *ls_append(SdbList *list, void *data) {
-	SdbListIter *new = NULL;
-	if (data) {
-		new = R_NEW (SdbListIter);
-		if (list->tail)
-			list->tail->n = new;
-		new->data = data;
-		new->p = list->tail;
-		new->n = NULL;
-		list->tail = new;
-		if (list->head == NULL)
-			list->head = new;
-		list->length++;
-	}
-	return new;
+SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
+	SdbListIter *it;
+	if (!list)
+		return NULL;
+	it = R_NEW (SdbListIter);
+	if (!it)
+		return NULL;
+	if (list->tail)
+		list->tail->n = it;
+	it->data = data;
+	it->p = list->tail;
+	it->n = NULL;
+	list->tail = it;
+	if (list->head == NULL)
+		list->head = it;
+	list->length++;
+	return it;
 }
 
-R_API SdbListIter *ls_prepend(SdbList *list, void *data) {
-	SdbListIter *new = R_NEW (SdbListIter);
+SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
+	SdbListIter *it = R_NEW (SdbListIter);
+	if (!it) return NULL;
 	if (list->head)
-		list->head->p = new;
-	new->data = data;
-	new->n = list->head;
-	new->p = NULL;
-	list->head = new;
+		list->head->p = it;
+	it->data = data;
+	it->n = list->head;
+	it->p = NULL;
+	list->head = it;
 	if (list->tail == NULL)
-		list->tail = new;
+		list->tail = it;
 	list->length++;
-	return new;
+	return it;
 }

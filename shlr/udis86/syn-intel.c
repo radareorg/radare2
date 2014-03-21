@@ -41,11 +41,13 @@ opr_cast(struct ud* u, struct ud_operand* op)
     ud_asmprintf(u, "far "); 
   }
   switch(op->size) {
-  case  8: ud_asmprintf(u, "byte " ); break;
-  case 16: ud_asmprintf(u, "word " ); break;
-  case 32: ud_asmprintf(u, "dword "); break;
-  case 64: ud_asmprintf(u, "qword "); break;
-  case 80: ud_asmprintf(u, "tword "); break;
+  case  8:  ud_asmprintf(u, "byte " ); break;
+  case 16:  ud_asmprintf(u, "word " ); break;
+  case 32:  ud_asmprintf(u, "dword "); break;
+  case 64:  ud_asmprintf(u, "qword "); break;
+  case 80:  ud_asmprintf(u, "tword "); break;
+  case 128: ud_asmprintf(u, "oword "); break;
+  case 256: ud_asmprintf(u, "yword "); break;
   default: break;
   }
 }
@@ -92,7 +94,7 @@ static void gen_operand(struct ud* u, struct ud_operand* op, int syn_cast)
 
 
   case UD_OP_JIMM:
-    ud_syn_print_addr(u, ud_syn_rel_target(u, op, u->dis_mode!=64? 1:0));
+    ud_syn_print_addr(u, ud_syn_rel_target(u, op));
     break;
 
   case UD_OP_PTR:
@@ -169,8 +171,7 @@ ud_translate_intel(struct ud* u)
       if (u->operand[1].type == UD_OP_IMM   ||
           u->operand[1].type == UD_OP_CONST ||
           u->operand[1].type == UD_NONE     ||
-          (u->operand[0].size != u->operand[1].size && 
-           u->operand[1].type != UD_OP_REG)) {
+          (u->operand[0].size != u->operand[1].size)) {
           cast = 1;
       } else if (u->operand[1].type == UD_OP_REG &&
                  u->operand[1].base == UD_R_CL) {
@@ -203,8 +204,18 @@ ud_translate_intel(struct ud* u)
   }
 
   if (u->operand[2].type != UD_NONE) {
+    int cast = 0;
     ud_asmprintf(u, ", ");
-    gen_operand(u, &u->operand[2], 0);
+    if (u->operand[2].type == UD_OP_MEM &&
+        u->operand[2].size != u->operand[1].size) {
+      cast = 1;
+    }
+    gen_operand(u, &u->operand[2], cast);
+  }
+
+  if (u->operand[3].type != UD_NONE) {
+    ud_asmprintf(u, ", ");
+    gen_operand(u, &u->operand[3], 0);
   }
 }
 

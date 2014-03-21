@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
 #include <list.h>
 
-R_LIB_VERSION(r_reg);
+R_LIB_VERSION (r_reg);
 
 static const char *types[R_REG_TYPE_LAST+1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
@@ -25,10 +25,17 @@ static void r_reg_item_free(RRegItem *item) {
 R_API int r_reg_get_name_idx(const char *type) {
 	if (type)
 	switch (*type | (type[1]<<8)) {
+	/* flags */
+	case 'z'+('f'<<8): return R_REG_NAME_ZF;
+	case 's'+('f'<<8): return R_REG_NAME_SF;
+	case 'c'+('f'<<8): return R_REG_NAME_CF;
+	case 'o'+('f'<<8): return R_REG_NAME_OF;
+	/* gpr */
 	case 'p'+('c'<<8): return R_REG_NAME_PC;
 	case 's'+('r'<<8): return R_REG_NAME_SR;
 	case 's'+('p'<<8): return R_REG_NAME_SP;
 	case 'b'+('p'<<8): return R_REG_NAME_BP;
+	/* args */
 	case 'a'+('0'<<8): return R_REG_NAME_A0;
 	case 'a'+('1'<<8): return R_REG_NAME_A1;
 	case 'a'+('2'<<8): return R_REG_NAME_A2;
@@ -103,7 +110,7 @@ R_API int r_reg_type_by_name(const char *str) {
 	if (!strcmp (str, "all"))
 		return R_REG_TYPE_ALL;
 	eprintf ("Unknown register type: '%s'\n", str);
-	return R_REG_TYPE_LAST;
+	return -1;
 }
 
 /* TODO: make this parser better and cleaner */
@@ -112,6 +119,10 @@ static int r_reg_set_word(RRegItem *item, int idx, char *word) {
 	switch (idx) {
 	case 0:
 		item->type = r_reg_type_by_name (word);
+		if (item->type == -1) {
+			eprintf ("Invalid reg type\n");
+			ret = R_FALSE;
+		}
 		break;
 	case 1:
 		item->name = strdup (word);
@@ -234,6 +245,10 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	return ret;
 }
 
+R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
+	return r_reg_set_value (reg, r_reg_get (reg, name, -1), val);
+}
+
 R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 	return r_reg_get_value (reg, r_reg_get (reg, name, -1));
 }
@@ -254,7 +269,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 
 	for (; i<e; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			if (!strcmp (r->name, name))
+			if (r->name && !strcmp (r->name, name))
 				return r;
 		}
 	}

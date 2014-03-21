@@ -1,0 +1,5 @@
+exe r2agent : r2agent.c :
+    <library>../../libr/util
+    <library>../../libr/cons
+    <library>../../libr/socket
+    <include>../../libr/include ;

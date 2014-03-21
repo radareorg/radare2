@@ -1,0 +1,28 @@
+FS_OBJS = fs.c file.c ;
+
+FS_OBJS += p/fs_cpio.c
+p/fs_ext2.c
+p/fs_fat.c
+p/fs_fb.c
+p/fs_hfs.c
+p/fs_hfsplus.c
+p/fs_iso9660.c
+p/fs_jfs.c
+p/fs_minix.c
+p/fs_ntfs.c
+p/fs_posix.c
+p/fs_reiserfs.c
+p/fs_sfs.c
+p/fs_tar.c
+p/fs_udf.c
+p/fs_ufs.c
+p/fs_ufs2.c
+p/fs_xfs.c
+;
+
+lib r_fs : $(FS_OBJS) :
+    <include>../include
+    <library>../util
+    <include>../../shlr/grub/include
+    <library>../../shlr/grub
+;

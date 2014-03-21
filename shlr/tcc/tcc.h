@@ -21,6 +21,7 @@
 #ifndef _TCC_H
 #define _TCC_H
 
+#include "r_types.h"
 #define _GNU_SOURCE
 #include "config.h"
 
@@ -96,7 +97,10 @@ typedef unsigned long long int uint64_t;
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN 8
 #define PTR_SIZE 4
+
+#if !defined (__HAIKU__)
 typedef uint64_t addr_t;
+#endif
 
 /* parser debug */
 /* #define PARSE_DEBUG */
@@ -165,7 +169,7 @@ typedef uint64_t addr_t;
 
 #define INCLUDE_STACK_SIZE  32
 #define IFDEF_STACK_SIZE    64
-#define VSTACK_SIZE         256
+#define VSTACK_SIZE         1024
 #define STRING_MAX_SIZE     1024
 #define PACK_STACK_SIZE     8
 
@@ -957,7 +961,7 @@ ST_DATA Sym *local_stack;
 ST_DATA Sym *local_label_stack;
 ST_DATA Sym *global_label_stack;
 ST_DATA Sym *define_stack;
-ST_DATA CType char_pointer_type, func_old_type, int_type, size_type;
+ST_DATA CType char_pointer_type, func_old_type, int_type, llong_type, size_type;
 ST_DATA SValue __vstack[1+/*to make bcheck happy*/ VSTACK_SIZE], *vtop;
 #define vstack  (__vstack + 1)
 ST_DATA int rsym, anon_sym, ind, loc;
@@ -1005,7 +1009,7 @@ ST_FUNC void unary(void);
 ST_FUNC void expr_prod(void);
 ST_FUNC void expr_sum(void);
 ST_FUNC void gexpr(void);
-ST_FUNC int expr_const(void);
+ST_FUNC long long expr_const(void);
 ST_FUNC void gen_inline_functions(void);
 ST_FUNC void decl(int l);
 #if defined TCC_TARGET_X86_64 && !defined TCC_TARGET_PE

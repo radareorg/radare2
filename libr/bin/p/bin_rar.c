@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,26 +7,26 @@
 
 #define RARVMHDR "\x52\x61\x72\x21\x1a\x07\x00\xf9\x4e\x73\x00\x00\x0e\x00\x00\x00"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 		if (!memcmp (arch->buf->buf, RARVMHDR, 16))
 			return R_TRUE;
 	return R_FALSE;
 }
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	return check (arch);
 }
 
-static int destroy (RBinArch *arch) {
+static int destroy (RBinFile *arch) {
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList* ret = r_list_new ();;
 	RBinAddr *ptr = NULL;
 	if (!ret) return NULL;
@@ -40,7 +40,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 
@@ -75,19 +75,19 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	const char *archstr;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	int bits = 32;
@@ -118,7 +118,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int size(RBinArch *arch) {
+static int size(RBinFile *arch) {
 	// TODO: walk rar structures and guess size here...
 	return 0x9a+128; // XXX
 }
@@ -129,9 +129,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-struct r_bin_plugin_t r_bin_plugin_rar = {
+RBinPlugin r_bin_plugin_rar = {
 	.name = "rar",
 	.desc = "rarvm bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
@@ -139,6 +140,7 @@ struct r_bin_plugin_t r_bin_plugin_rar = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
@@ -148,7 +150,7 @@ struct r_bin_plugin_t r_bin_plugin_rar = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

@@ -30,14 +30,14 @@
 # include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#ifdef HAVE_ASSERT_H
+#if defined(UD_DEBUG) && HAVE_ASSERT_H
 # include <assert.h>
 # define UD_ASSERT(_x) assert(_x)
 #else
 # define UD_ASSERT(_x)
 #endif /* !HAVE_ASSERT_H */
 
-#ifdef LOGERR
+#if defined(UD_DEBUG)
   #define UDERR(u, msg) \
     do { \
       (u)->error = 1; \
@@ -64,6 +64,12 @@
     return (u)->error; \
   } while (0)
 
+#ifndef __UD_STANDALONE__
+# define UD_NON_STANDALONE(x) x
+#else
+# define UD_NON_STANDALONE(x)
+#endif
+
 /* printf formatting int64 specifier */
 #ifdef FMT64
 # undef FMT64
@@ -78,6 +84,14 @@
 # else 
 #  define FMT64 "ll"
 # endif /* !x64 */
+#endif
+
+/* define an inline macro */
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+# define UD_INLINE __inline /* MS Visual Studio requires __inline
+                               instead of inline for C code */
+#else
+# define UD_INLINE inline
 #endif
 
 #endif /* _UDINT_H_ */

@@ -95,7 +95,7 @@ gen_operand(struct ud* u, struct ud_operand* op)
     break;
 
   case UD_OP_JIMM:
-    ud_syn_print_addr(u, ud_syn_rel_target(u, op, u->dis_mode!=64? 1: 0));
+    ud_syn_print_addr(u, ud_syn_rel_target(u, op));
     break;
 
   case UD_OP_PTR:
@@ -192,12 +192,13 @@ ud_translate_att(struct ud *u)
     ud_asmprintf(u, "%s", ud_lookup_mnemonic(u->mnemonic));
   }
 
-  if (size == 8)
-  ud_asmprintf(u, "b");
-  else if (size == 16)
-  ud_asmprintf(u, "w");
-  else if (size == 64)
-  ud_asmprintf(u, "q");
+  if (size == 8) {
+    ud_asmprintf(u, "b");
+  } else if (size == 16) {
+    ud_asmprintf(u, "w");
+  } else if (size == 64) {
+    ud_asmprintf(u, "q");
+  }
 
   if (star) {
     ud_asmprintf(u, " *");
@@ -205,18 +206,21 @@ ud_translate_att(struct ud *u)
     ud_asmprintf(u, " ");
   }
 
+  if (u->operand[3].type != UD_NONE) {
+    gen_operand(u, &u->operand[3]);
+    ud_asmprintf(u, ", ");
+  }
   if (u->operand[2].type != UD_NONE) {
-  gen_operand(u, &u->operand[2]);
-  ud_asmprintf(u, ", ");
+    gen_operand(u, &u->operand[2]);
+    ud_asmprintf(u, ", ");
   }
-
   if (u->operand[1].type != UD_NONE) {
-  gen_operand(u, &u->operand[1]);
-  ud_asmprintf(u, ", ");
+    gen_operand(u, &u->operand[1]);
+    ud_asmprintf(u, ", ");
   }
-
-  if (u->operand[0].type != UD_NONE)
-  gen_operand(u, &u->operand[0]);
+  if (u->operand[0].type != UD_NONE) {
+    gen_operand(u, &u->operand[0]);
+  }
 }
 
 /*

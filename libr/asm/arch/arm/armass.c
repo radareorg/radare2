@@ -33,6 +33,7 @@ enum {
 	TYPE_IMM = 8,
 	TYPE_MEM = 9,
 	TYPE_BKP = 10,
+	TYPE_SWP = 11,
 };
 
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
@@ -88,6 +89,7 @@ static ArmOp ops[] = {
 	{ "bic", 0x0, TYPE_ARI },
 
 	{ "cmp", 0x4001, TYPE_TST },
+	{ "swp", 0xe1, TYPE_SWP },
 	{ "cmn", 0x0, TYPE_TST },
 	{ "teq", 0x0, TYPE_TST },
 	{ "tst", 0xe1, TYPE_TST },
@@ -538,10 +540,26 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	return 1;
 }
 
+static int findyz(int x, int *y, int *z) {
+        int i, j;
+        for (i=0;i<0xff; i++) {
+                for (j=0;j<0xf;j++) {
+                        int v = i<<j;
+                        if (v>x) continue;
+                        if (v==x) {
+                                *y = i;
+                                *z = 16-(j/2);
+                                return 1;
+                        }
+                }
+        }
+        return 0;
+}
+
 static int arm_assemble(ArmOpcode *ao, const char *str) {
 	int i, j, ret, reg, a, b;
 	for (i=0; ops[i].name; i++) {
-		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
+		if (!memcmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
 			if (ao->a[0] || ops[i].type == TYPE_BKP)
@@ -580,10 +598,14 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 			case TYPE_BRA:
 				if ((ret = getreg (ao->a[0])) == -1) {
 					// TODO: control if branch out of range
-					ret = (getnum(ao->a[0])-ao->off-8)/4;
+					ret = (getnum(ao->a[0])-(int)ao->off-8)/4;
+					if (ret >= 0x00800000 || ret < (int)0xff800000) {
+						printf("Branch into out of range\n");
+						return 0;
+					}
+					ao->o |= ((ret>>16)&0xff)<<8;
 					ao->o |= ((ret>>8)&0xff)<<16;
 					ao->o |= ((ret)&0xff)<<24;
-					if (ret<0) ao->o |= (0xff<<8); // MAKE IT NEGATIVE!
 				} else {
 					printf("This branch does not accept reg as arg\n");
 					return 0;
@@ -630,7 +652,17 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				if (ao->a[3])
 					ao->o |= getshift (ao->a[3]);
 				break;
+			case TYPE_SWP:
+				ao->o = 0xe1;
+				ao->o |= (getreg(ao->a[0])<<4)<<16;
+				ao->o |= (0x90+getreg(ao->a[1]))<<24;
+				ao->o |= (getreg(ao->a[2]+1))<<8;
+				if (0xff==((ao->o>>16)&0xff))
+					return 0;
+				break;
 			case TYPE_MOV:
+				if (!strcmp (ao->op, "movs"))
+					ao->o = 0xb0e1;
 				ao->o |= getreg (ao->a[0])<<20;
 				ret = getreg (ao->a[1]);
 				if (ret!=-1) ao->o |= ret<<24;
@@ -640,15 +672,22 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				a = getreg (ao->a[0]);
 				b = getreg (ao->a[1]);
 				if (b == -1) {
+					int y, z;
 					b = getnum (ao->a[1]);
-					if (b<0|| b>255) {
-						eprintf ("Parameter out of range (0-255)\n");
+					if (b>=0 && b<=0xff) {
+						ao->o = 0x50e3;
+						// TODO: if (b>255) -> automatic multiplier
+						ao->o |= (a<<8);
+						ao->o |= ((b&0xff)<<24);
+					} else
+					if (findyz (b, &y, &z)) {
+						ao->o = 0x50e3;
+						ao->o |= (y<<24);
+						ao->o |= (z<<16);
+					} else {
+						eprintf ("Parameter %d out of range (0-255)\n", (int)b);
 						return 0;
 					}
-					ao->o = 0x50e3;
-					// TODO: if (b>255) -> automatic multiplier
-					ao->o |= (a<<8);
-					ao->o |= ((b&0xff)<<24);
 				} else {
 					ao->o |= (a<<8);
 					ao->o |= (b<<24);

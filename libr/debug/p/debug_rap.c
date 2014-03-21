@@ -51,7 +51,7 @@ static int r_debug_rap_detach(int pid) {
 
 static char *r_debug_rap_reg_profile(RDebug *dbg) {
 	char *out, *tf = r_file_temp ("/tmp/rap.XXXXXX");
-	int fd = r_cons_pipe_open (tf, 0);
+	int fd = r_cons_pipe_open (tf, 1, 0);
 	r_io_system (dbg->iob.io, "drp");
 	r_cons_pipe_close (fd);
 	out = r_file_slurp (tf, NULL);
@@ -64,8 +64,9 @@ static int r_debug_rap_breakpoint (void *user, int type, ut64 addr, int hw, int 
 	return R_FALSE;
 }
 
-struct r_debug_plugin_t r_debug_plugin_rap = {
+RDebugPlugin r_debug_plugin_rap = {
 	.name = "rap",
+	.license = "LGPL3",
 	/* TODO: Add support for more architectures here */
 	.arch = 0xff,
 	.bits = R_SYS_BITS_32,

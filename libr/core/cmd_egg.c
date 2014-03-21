@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (input[1]!=' ') {
@@ -126,10 +126,12 @@ static int cmd_egg(void *data, const char *input) {
 					free (o);
 				}
 			}
+			free (oa);
 			break;
 		case '\0':
 			// list
-			r_pair_list (egg->pair,NULL);
+			// r_pair_list (egg->pair,NULL);
+eprintf ("TODO: list options\n");
 			eprintf ("list options\n");
 			break;
 		default:
@@ -138,18 +140,18 @@ static int cmd_egg(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		eprintf ("Usage: g[wcilper] [arg]\n"
-			" g foo.r        : compile r_egg source file\n"
-			" gw             : compile and write\n"
-			" gc cmd=/bin/ls : set config option for shellcodes and encoders\n"
-			" gc             : list all config options\n"
-			" gl             : list plugins (shellcodes, encoders)\n"
-			" gs name args   : compile syscall name(args)\n"
-			" gi exec        : compile shellcode. like ragg2 -i\n"
-			" gp padding     : define padding for command\n"
-			" ge xor         : specify an encoder\n"
-			" gr             : reset r_egg\n"
-			"EVAL VARS: asm.arch, asm.bits, asm.os\n"
+		eprintf ("|Usage: g[wcilper] [arg]\n"
+			"| g foo.r        : compile r_egg source file\n"
+			"| gw             : compile and write\n"
+			"| gc cmd=/bin/ls : set config option for shellcodes and encoders\n"
+			"| gc             : list all config options\n"
+			"| gl             : list plugins (shellcodes, encoders)\n"
+			"| gs name args   : compile syscall name(args)\n"
+			"| gi exec        : compile shellcode. like ragg2 -i\n"
+			"| gp padding     : define padding for command\n"
+			"| ge xor         : specify an encoder\n"
+			"| gr             : reset r_egg\n"
+			"|EVAL VARS: asm.arch, asm.bits, asm.os\n"
 		);
 		break;
 	}

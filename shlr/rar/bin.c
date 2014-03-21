@@ -60,12 +60,12 @@ typedef struct rar_block_archive_t {
 	unsigned char rarversion; // datetime
 	unsigned char packmethod;
 #if 0
-	0×30 – storing
-	0×31 – fastest compression
-	0×32 – fast compression
-	0×33 – normal compression
-	0×34 – good compression
-	0×35 – best compression
+	0x30 - storing
+	0x31 - fastest compression
+	0x32 - fast compression
+	0x33 - normal compression
+	0x34 - good compression
+	0x35 - best compression
 #endif
 	unsigned short filenamesize;
 	unsigned int file_attr;
@@ -99,19 +99,19 @@ struct filehdr {
 };
 #if 0
 HIGH_PACK_SIZE  High 4 bytes of 64 bit value of compressed file size.
-4 bytes         Optional value, presents only if bit 0×100 in HEAD_FLAGS
+4 bytes         Optional value, presents only if bit 0x100 in HEAD_FLAGS
 is set.
 
 HIGH_UNP_SIZE   High 4 bytes of 64 bit value of uncompressed file size.
-4 bytes         Optional value, presents only if bit 0×100 in HEAD_FLAGS
+4 bytes         Optional value, presents only if bit 0x100 in HEAD_FLAGS
 is set.
 
-FILE_NAME       File name – string of NAME_SIZE bytes size
+FILE_NAME       File name - string of NAME_SIZE bytes size
 
-SALT            present if (HEAD_FLAGS & 0×400) != 0
+SALT            present if (HEAD_FLAGS & 0x400) != 0
 8 bytes
 
-EXT_TIME        present if (HEAD_FLAGS & 0×1000) != 0
+EXT_TIME        present if (HEAD_FLAGS & 0x1000) != 0
 variable size
 #endif
 
@@ -131,8 +131,8 @@ HEAD_CRC       2 bytes     CRC of total block or block part
 HEAD_TYPE      1 byte      Block type
 HEAD_FLAGS     2 bytes     Block flags
 HEAD_SIZE      2 bytes     Block size
-ADD_SIZE       4 bytes     Optional field – added block size
-Field ADD_SIZE present only if (HEAD_FLAGS & 0×8000) != 0
+ADD_SIZE       4 bytes     Optional field - added block size
+Field ADD_SIZE present only if (HEAD_FLAGS & 0x8000) != 0
 #endif
 struct filehdr *fhdr;
 	RarBlockArchive *rba;
@@ -151,7 +151,7 @@ struct filehdr *fhdr;
 #endif
 	 switch (rb->type) {
 	 case 0x72:
-		 //sequence: 0×52 0×61 0×72 0×21 0x1a 0×07 0×00
+		 //sequence: 0x52 0x61 0x72 0x21 0x1a 0x07 0x00
 		 eprintf ("   + marker block\n");
 		 break;
 	 case 0x73:
@@ -184,24 +184,24 @@ printf ("SZ %x %x %x\n", fhdr->PackSize, fhdr->UnpSize , fhdr->FileCRC);
 		if (rb->flags & 0x200) {
 			printf ("utf8\n");
 		}
-		//sequence: 0×52 0×61 0×72 0×21 0x1a 0×07 0×00
+		//sequence: 0x52 0x61 0x72 0x21 0x1a 0x07 0x00
 #if 0
 HEAD_FLAGS      Bit flags:
 2 bytes
-0×0001  – Volume attribute (archive volume)
-0×0002  – Archive comment present
+0x0001  - Volume attribute (archive volume)
+0x0002  - Archive comment present
 RAR 3.x uses the separate comment block
 and does not set this flag.
 
-0×0004  – Archive lock attribute
-0×0008  – Solid attribute (solid archive)
-0×0010  – New volume naming scheme (‘volname.partN.rar’)
-0×0020  – Authenticity information present
+0x0004  - Archive lock attribute
+0x0008  - Solid attribute (solid archive)
+0x0010  - New volume naming scheme (‘volname.partN.rar’)
+0x0020  - Authenticity information present
 RAR 3.x does not set this flag.
 
-0×0040  – Recovery record present
-0×0080  – Block headers are encrypted
-0×0100  – First volume (set only by RAR 3.0 and later)
+0x0040  - Recovery record present
+0x0080  - Block headers are encrypted
+0x0100  - First volume (set only by RAR 3.0 and later)
 #endif
 		break;
 	case 0x74:
@@ -221,14 +221,14 @@ return 32;
 		break;
 	}
 #if 0
-HEAD_TYPE=0×72          marker block
-HEAD_TYPE=0×73          archive header
-HEAD_TYPE=0×74          file header
-HEAD_TYPE=0×75          old style comment header
-HEAD_TYPE=0×76          old style authenticity information
-HEAD_TYPE=0×77          old style subblock
-HEAD_TYPE=0×78          old style recovery record
-HEAD_TYPE=0×79          old style authenticity information
+HEAD_TYPE=0x72          marker block
+HEAD_TYPE=0x73          archive header
+HEAD_TYPE=0x74          file header
+HEAD_TYPE=0x75          old style comment header
+HEAD_TYPE=0x76          old style authenticity information
+HEAD_TYPE=0x77          old style subblock
+HEAD_TYPE=0x78          old style recovery record
+HEAD_TYPE=0x79          old style authenticity information
 HEAD_TYPE=0x7a          subblock
 #endif
 	if (rb->flags & 0x8000) {

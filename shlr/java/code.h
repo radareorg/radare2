@@ -4,23 +4,23 @@
 #include <r_types.h>
 #include "class.h"
 
-struct java_op {
-	char *name;
+typedef struct java_op {
+	const char *name;
 	unsigned char byte;
 	int size;
-};
+	ut64 op_type;
+} JavaOp;
 
-extern struct java_op java_ops[];
-
-
-int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen);
-//int r_java_disasm(const ut8 *bytes, char *output, int len);
-unsigned short read_short(FILE *fd);
-void javasm_init ();
-int java_classdump(const char *file, int verbose);
-
-R_API int r_java_disasm(ut64 addr, const ut8 *bytes, char *output, int len);
+#ifndef R_IPI
+#define R_IPI
+#endif
+R_IPI struct java_op JAVA_OPS[];
+R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen);
+R_IPI unsigned short read_short(FILE *fd);
+R_IPI int java_classdump(const char *file, int verbose);
+R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, char *output, int len);
 R_API int r_java_assemble(ut8 *bytes, const char *string);
-R_API void r_java_setcp(void *cp, int n);
+//R_API void r_java_set_obj(RBinJavaObj *obj);
+R_API void r_java_new_method ();
 
 #endif

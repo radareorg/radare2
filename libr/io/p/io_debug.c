@@ -1,9 +1,14 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
+
+static void my_io_redirect (RIO *io, const char *file) {
+	free (io->redirect);
+	io->redirect = file? strdup (file): NULL;
+}
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || \
 	__NetBSD__ || __KFBSD__ || __OpenBSD__
@@ -256,15 +261,15 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 }
 #endif
 
-static int __plugin_open(RIO *io, const char *file) {
-	if (!memcmp (file, "dbg://", 6) && file[6])
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
+	if (!strncmp (file, "dbg://", 6) && file[6])
 		return R_TRUE;
 	return R_FALSE;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
-	if (__plugin_open (io, file)) {
+	if (__plugin_open (io, file,  0)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
 			pid = fork_and_ptraceme (io->bits, file+6);
@@ -278,22 +283,22 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);
 #endif
-			r_io_redirect (io, uri);
-			return NULL;
+			my_io_redirect (io, uri);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			r_io_redirect (io, uri);
-			return NULL;
+			my_io_redirect (io, uri);
 		}
+		return NULL;
 	}
-	r_io_redirect (io, NULL);
+	my_io_redirect (io, NULL);
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_debug = {
+RIOPlugin r_io_plugin_debug = {
         //void *plugin;
 	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
+	.license = "LGPL3",
         .open = __open,
         .plugin_open = __plugin_open,
 	.lseek = NULL,

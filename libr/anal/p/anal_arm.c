@@ -7,7 +7,7 @@
 #include <r_anal.h>
 
 /* DEPRECATE ?? */
-#include "arm/arm.h"
+#include "arm.h"
 #include "../asm/arch/arm/arm.h"
 #include "../asm/arch/arm/winedbg/be_arm.h"
 
@@ -41,7 +41,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	arm_set_thumb(arminsn, R_TRUE);
 	arm_set_input_buffer(arminsn, data);
 	arm_set_pc(arminsn, addr);
-	op->length = arm_disasm_one_insn(arminsn);
+	op->size = arm_disasm_one_insn(arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
 	arm_free(arminsn);
@@ -49,76 +49,79 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
 	/* CMP */
-	if (((ins & B(B1110,0,0,0)) == B(B0010,0,0,0) )
-                && (1 == (ins & B(1,B1000,0,0)) >> 11)) { // dp3
+	if (((ins & B4(B1110,0,0,0)) == B4(B0010,0,0,0) )
+                && (1 == (ins & B4(1,B1000,0,0)) >> 11)) { // dp3
 		op->type = R_ANAL_OP_TYPE_CMP;
-		return op->length;
+		return op->size;
 	}
-        if ( (ins & B(B1111,B1100,0,0)) == B(B0100,0,0,0) ) {
-                op_code = (ins & B(0,B0011,B1100,0)) >> 6;
+        if ( (ins & B4(B1111,B1100,0,0)) == B4(B0100,0,0,0) ) {
+                op_code = (ins & B4(0,B0011,B1100,0)) >> 6;
                 if (op_code == 8 || op_code == 10) { // dp5
 			op->type = R_ANAL_OP_TYPE_CMP;
-			return op->length;
+			return op->size;
 		}
 	}
-        if ( (ins & B(B1111,B1100,0,0)) == B(B0100,B0100,0,0) ) {
-                op_code = (ins & B(0,B0011,0,0)) >> 8; // dp8
+        if ( (ins & B4(B1111,B1100,0,0)) == B4(B0100,B0100,0,0) ) {
+                op_code = (ins & B4(0,B0011,0,0)) >> 8; // dp8
 		if (op_code== 1) {
 			op->type = R_ANAL_OP_TYPE_CMP;
-			return op->length;
+			return op->size;
 		}
 	}
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		op->type = R_ANAL_OP_TYPE_NOP;
-        } else if (((op_code = ((ins & B(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
+        } else if (((op_code = ((ins & B4(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
 		if (op_code%2)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		else op->type = R_ANAL_OP_TYPE_STORE;
-        } else if ( (ins & B(B1111,0,0,0)) == B(B0101,0,0,0) ) {
-                op_code = (ins & B(0,B1110,0,0)) >> 9;
+        } else if ( (ins & B4(B1111,0,0,0)) == B4(B0101,0,0,0) ) {
+                op_code = (ins & B4(0,B1110,0,0)) >> 9;
 		if (op_code%2)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		else op->type = R_ANAL_OP_TYPE_STORE;
-	} else if ( (ins & B(B1111,0,0,0)) == B(B1101,0,0,0) ) {
+	} else if ( (ins & B4(B1111,0,0,0)) == B4(B1101,0,0,0) ) {
 		// BNE..
-		int delta = (ins & B(0,0,B1111,B1111));
+		int delta = (ins & B4(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
-        } else if ( (ins & B(B1111,B1000,0,0)) == B(B1110,0,0,0) ) {
+        } else if ( (ins & B4(B1111,B1000,0,0)) == B4(B1110,0,0,0) ) {
 		// B
-		int delta = (ins & B(0,0,B1111,B1111));
+		int delta = (ins & B4(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
 		op->eob = 1;
-        } else if ( (ins & B(B1111,B1111,0,0)) == B(B0100,B0111,0,0) ) {
+        } else if ( (ins & B4(B1111,B1111,B1000,0)) == B4(B0100,B0111,B1000,0) ) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UCALL;
-		op->jump = addr+4+(ut32)((ins & B(0,0,B0111,B1000)) >> 3);
 		op->fail = addr+4;
-        } else if ( (ins & B(B1111,B1000,0,0)) == B(B1111,0,0,0) ) {
+        } else if ( (ins & B4(B1111,B1111,B1000,0)) == B4(B0100,B0111,0,0) ) {
+		// BX
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->fail = addr+4;
+        } else if ( (ins & B4(B1111,B1000,0,0)) == B4(B1111,0,0,0) ) {
 		// BL The long branch with link, it's in 2 instructions:
 		// prefix: 11110[offset]
 		// suffix: 11111[offset] (11101[offset] for blx)
 		ut16 nextins = (ins32 & 0xFFFF0000) >> 16;
-		ut32 high = (ins & B(0, B0111, B1111, B1111)) << 12;
-		if (ins & B(0, B0100, 0, 0)) {
-			high |= B(B1111, B1000, 0, 0) << 16;
+		ut32 high = (ins & B4(0, B0111, B1111, B1111)) << 12;
+		if (ins & B4(0, B0100, 0, 0)) {
+			high |= B4(B1111, B1000, 0, 0) << 16;
 		}
-		int delta = high + ((nextins & B(0, B0111, B1111, B1111))*2);
+		int delta = high + ((nextins & B4(0, B0111, B1111, B1111))*2);
 		op->jump = (int)(addr+4+(delta));
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->fail = addr+4;
-        } else if ( (ins & B(B1111,B1111,0,0)) == B(B1011,B1110,0,0) ) {
+        } else if ( (ins & B4(B1111,B1111,0,0)) == B4(B1011,B1110,0,0) ) {
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->val = (ut64)(ins>>8);
-        } else if ( (ins & B(B1111,B1111,0,0)) == B(B1101,B1111,0,0)) {
+        } else if ( (ins & B4(B1111,B1111,0,0)) == B4(B1101,B1111,0,0)) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut64)(ins>>8);
 	}
-	return op->length;
+	return op->size;
 }
 
 #if 0
@@ -181,7 +184,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 #endif
 	if (anal->bits==16)
 		return op_thumb (anal, op, addr, data, len);
-	op->length = 4;
+	op->size = 4;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
 		codeA[0], codeA[1], codeA[2], codeA[3]);
@@ -293,6 +296,9 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 	}
 
+	if (IS_LOAD (code[i])) {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+	}
 	if  (
 (( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
 ) && ((code[i]&0xffffff00) == 0xe12fff00))
@@ -342,7 +348,7 @@ if (
 	//op->jump = arminsn->jmp;
 	//op->fail = arminsn->fail;
 	arm_free(arminsn);
-	return op->length;
+	return op->size;
 }
 
 
@@ -358,7 +364,7 @@ static ut64 getaddr (ut64 addr, const ut8 *d) {
 static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
 	memset (op, 0, sizeof (RAnalOp));
 	if (d[3]==0) return -1; // invalid
-	op->length = 4;
+	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	if (d[0]==0xc0 && d[3]==0xd6) {
 		// defaults to x30 reg. but can be different
@@ -378,8 +384,6 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 		break;
 	case 0x91: // mov
 	case 0x52: // mov
-		op->type = R_ANAL_OP_TYPE_MOV;
-		break;
 	case 0x94: // bl A
 	case 0x97: // bl A
 		op->type = R_ANAL_OP_TYPE_CALL;
@@ -398,7 +402,7 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 		op->fail = addr+4;
 		break;
 	}
-	return op->length;
+	return op->size;
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
@@ -444,6 +448,7 @@ static int set_reg_profile(RAnal *anal) {
 struct r_anal_plugin_t r_anal_plugin_arm = {
 	.name = "arm",
 	.arch = R_SYS_ARCH_ARM,
+	.license = "LGPL3",
 	.bits = 32 | 64,
 	.desc = "ARM code analysis plugin",
 	.init = NULL,

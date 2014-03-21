@@ -1,0 +1,26 @@
+DBG_OBJS = signal.c map.c trace.c arg.c debug.c plugin.c ;
+DBG_OBJS += pid.c reg.c desc.c ;
+
+DBG_OBJS +=
+  p/debug_bf.c
+  p/debug_esil.c
+  p/debug_gdb.c
+  p/debug_native.c
+  p/debug_rap.c
+;
+
+lib r_debug : $(DBG_OBJS) :
+    <include>../include
+    <include>p/libgdbwrap/include/
+    <define>CORELIB
+    <library>../util
+    <library>../anal
+    <library>../bp
+    <library>../parse
+    <library>../cons
+    <library>../lib
+    <library>../reg
+    <library>../db
+    <library>../io
+    <library>../../shlr/sdb
+;
