@@ -240,8 +240,8 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, io->off, buf, len);
-	if (io->plugin && io->plugin->read)
-		return io->plugin->read (io, io->fd, buf, len);
+	if (io->fd->plugin && io->fd->plugin->read)
+		return io->fd->plugin->read (io, io->fd, buf, len);
 	return read (io->fd->fd, buf, len);
 }
 

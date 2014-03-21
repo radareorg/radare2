@@ -252,20 +252,24 @@ static int cmd_yank(void *data, const char *input) {
 	case 't':
 		r_core_yank_to (core, input+1);
 		break;
+	case 'f':
+		r_core_yank_file (core, input+1);
+		break;
 	case '\0':
 		r_core_yank_dump (core, r_num_math (core->num, input+1));
 		break;
 	default:
 		r_cons_printf (
 		"|Usage: y[ptxy] [len] [[@]addr]\n"
-		"| y             show yank buffer information (srcoff len bytes)\n"
-		"| y 16          copy 16 bytes into clipboard\n"
-		"| y 16 0x200    copy 16 bytes into clipboard from 0x200\n"
-		"| y 16 @ 0x200  copy 16 bytes into clipboard from 0x200\n"
-		"| yp            print contents of clipboard\n"
-		"| yx            print contents of clipboard in hexadecimal\n"
-		"| yt 64 0x200   copy 64 bytes from current seek to 0x200\n"
-		"| yy 0x3344     paste clipboard\n");
+		"| y                show yank buffer information (srcoff len bytes)\n"
+		"| y 16             copy 16 bytes into clipboard\n"
+		"| y 16 0x200       copy 16 bytes into clipboard from 0x200\n"
+		"| y 16 @ 0x200     copy 16 bytes into clipboard from 0x200\n"
+		"| yp               print contents of clipboard\n"
+		"| yx               print contents of clipboard in hexadecimal\n"
+		"| yt 64 0x200      copy 64 bytes from current seek to 0x200\n"
+		"| yf 64 0x200 file copy 64 bytes from 0x200 from file (opens w/ io)\n"
+		"| yy 0x3344        paste clipboard\n");
 		break;
 	}
 	return R_TRUE;

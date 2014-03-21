@@ -54,7 +54,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'y':
 		for (input++; input[0]==' '; input++);
 		if (*input) {
-			r_core_yank_set_str (core, -1, input, strlen (input)+1);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, input, strlen (input)+1);
 		} else {
 			r_core_yank_cat (core, r_num_math (core->num, input+1));
 		}
@@ -337,7 +337,7 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("%s: ", input);
 			fgets (foo, sizeof (foo)-1, stdin);
 			foo[strlen (foo)-1] = 0;
-			r_core_yank_set_str (core, -1, foo, strlen(foo)+1);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen(foo)+1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;

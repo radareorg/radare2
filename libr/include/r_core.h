@@ -223,9 +223,11 @@ R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
 
+
+#define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
-R_API int r_core_yank_set (RCore *core, ut64 addr, const char *buf, ut32 len);  // set yank buffer bytes
+R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
 R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
 R_API int r_core_yank_to(RCore *core, const char *arg);
 R_API int r_core_yank_dump (RCore *core, ut64 pos);
@@ -233,6 +235,7 @@ R_API int r_core_yank_hexdump (RCore *core, ut64 pos);
 R_API int r_core_yank_cat (RCore *core, ut64 pos);
 R_API int r_core_yank_hud_file (RCore *core, const char *input);
 R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir);
+R_API int r_core_yank_file (RCore *core, const char *input);
 
 R_API int r_core_loadlibs(RCore *core);
 // FIXME: change (void *user) -> (RCore *core)
