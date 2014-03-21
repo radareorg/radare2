@@ -303,8 +303,7 @@ void vpush(CType *type)
 /* push integer constant */
 ST_FUNC void vpushi(int v)
 {
-    CValue cval;
-    cval.i = v;
+    CValue cval = { .i = v };
     vsetc(&int_type, VT_CONST, &cval);
 }
 
@@ -400,6 +399,7 @@ static int pointed_size(CType *type)
     return type_size(pointed_type(type), &align);
 }
 
+#if 0
 static inline int is_null_pointer(SValue *p)
 {
     if ((p->r & (VT_VALMASK | VT_LVAL | VT_SYM)) != VT_CONST)
@@ -408,6 +408,7 @@ static inline int is_null_pointer(SValue *p)
         ((p->type.t & VT_BTYPE) == VT_LLONG && p->c.ll == 0) ||
 	((p->type.t & VT_BTYPE) == VT_PTR && p->c.ptr == 0);
 }
+#endif
 
 static inline int is_integer_btype(int bt)
 {

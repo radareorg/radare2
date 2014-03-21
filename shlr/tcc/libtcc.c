@@ -815,6 +815,7 @@ typedef struct FlagDef {
     const char *name;
 } FlagDef;
 
+#if 0
 static const FlagDef warning_defs[] = {
     { offsetof(TCCState, warn_unsupported), 0, "unsupported" },
     { offsetof(TCCState, warn_write_strings), 0, "write-strings" },
@@ -822,6 +823,7 @@ static const FlagDef warning_defs[] = {
     { offsetof(TCCState, warn_implicit_function_declaration), WD_ALL,
       "implicit-function-declaration" },
 };
+#endif
 
 ST_FUNC int set_flag(TCCState *s, const FlagDef *flags, int nb_flags,
                     const char *name, int value)
@@ -847,12 +849,14 @@ ST_FUNC int set_flag(TCCState *s, const FlagDef *flags, int nb_flags,
     return 0;
 }
 
+#if 0
 static const FlagDef flag_defs[] = {
     { offsetof(TCCState, char_is_unsigned), 0, "unsigned-char" },
     { offsetof(TCCState, char_is_unsigned), FD_INVERT, "signed-char" },
     { offsetof(TCCState, nocommon), FD_INVERT, "common" },
     { offsetof(TCCState, leading_underscore), 0, "leading-underscore" },
 };
+#endif
 
 PUB_FUNC void tcc_set_callback (TCCState *s, void (*cb)(const char *,char**), char **p) {
 	tcc_cb = cb;

@@ -22,6 +22,7 @@
 #define R_IPI
 
 #define DO_THE_DBG 0
+#undef IFDBG
 #define IFDBG if (DO_THE_DBG)
 
 typedef int (*RCMDJavaCmdHandler) (RCore *core, const char *cmd);
