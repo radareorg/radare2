@@ -25,7 +25,7 @@ R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 	//free (core->yank_buf);
 	if (buf && len) {
 		r_buf_set_bytes (core->yank_buf, buf, len);
-		core->yank_buff->base = addr;
+		core->yank_buf->base = addr;
 		return R_TRUE;
 	}
 	return R_FALSE;

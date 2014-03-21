@@ -507,7 +507,6 @@ R_API int r_core_init(RCore *core) {
 	core->reflines = NULL;
 	core->reflines2 = NULL;
 	core->yank_buf = r_buf_new();
-	core->yank_off = 0LL;
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;
