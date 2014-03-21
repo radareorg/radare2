@@ -84,8 +84,10 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut16 v16;
 	ut8 v8, *src;
 
-	if (!item)
+	if (!item) {
+		eprintf ("r_reg_set_value: item is NULL\n");
 		return R_FALSE;
+	}
 	switch (item->size) {
 	case 64: v64 = (ut64)value; src = (ut8*)&v64; break;
 	case 32: v32 = (ut32)value; src = (ut8*)&v32; break;
@@ -108,11 +110,12 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return R_FALSE;
 	}
-	if (reg->regset[item->type].arena->size-item->offset-item->size>=0) {
+	if (reg->regset[item->type].arena->size-BITS2BYTES (item->offset)-item->size>=0) {
 		r_mem_copybits (reg->regset[item->type].arena->bytes+
 				BITS2BYTES (item->offset), src, item->size);
 		return R_TRUE;
 	}
+	eprintf ("r_reg_set_value: Cannot set %s to 0x%"PFMT64x"\n", item->name, value);
 	return R_FALSE;
 }
 
