@@ -502,20 +502,33 @@ static int cmd_search(void *data, const char *input) {
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;
-	case 'w': /* search wide string */
-		if (input[1]==' ') {
-			int len = strlen (input+2);
+	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
+		if (input[1]==' ' || (input[1]=='i' && input[2]==' ')) {
+			int strstart, len;
 			const char *p2;
-			char *p, *str = malloc ((len+1)*2);
-			for (p2=input+2, p=str; *p2; p+=2, p2++) {
-				p[0] = *p2;
+			char *p, *str;
+			if (input[1]=='i') {
+				strstart = 3; ignorecase = R_TRUE;
+			}
+			else {
+				strstart = 2; ignorecase = R_FALSE;
+			}
+			len = strlen(input+strstart);
+			str = malloc ((len+1)*2);
+			for (p2=input+strstart, p=str; *p2; p+=2, p2++) {
+				if (ignorecase)
+					p[0] = tolower(*p2);
+				else
+					p[0] = *p2;
 				p[1] = 0;
 			}
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
 			r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-			r_search_kw_add (core->search,
-				r_search_keyword_new ((const ut8*)str, len*2, NULL, 0, NULL));
+			RSearchKeyword *skw;
+			skw = r_search_keyword_new ((const ut8*)str, len*2, NULL, 0, NULL);
+			skw->icase = ignorecase;
+			r_search_kw_add (core->search, skw);
 			r_search_begin (core->search);
 			dosearch = R_TRUE;
 		}
@@ -651,6 +664,7 @@ static int cmd_search(void *data, const char *input) {
 		"|Usage: /[amx/] [arg]\n"
 		"| / foo\\x00       search for string 'foo\\0'\n"
 		"| /w foo          search for wide string 'f\\0o\\0o\\0'\n"
+		"| /wi foo         search for wide string ignoring case 'f\\0o\\0o\\0'\n"
 		"| /! ff           search for first occurrence not matching\n"
 		"| /i foo          search for string 'foo' ignoring case\n"
 		"| /e /E.F/i       match regular expression\n"
