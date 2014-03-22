@@ -252,7 +252,8 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_to (core, input+1);
 		break;
 	case 'f':
-		r_core_yank_file (core, input+1);
+		if (*(input+1) == ' ' ) r_core_yank_file_ex (core, input+1);
+		else if (*(input+1) == 'a' ) r_core_yank_file_all (core, input+2);
 		break;
 	case '\0':
 		r_core_yank_dump (core, r_num_math (core->num, input+1));
@@ -267,7 +268,8 @@ static int cmd_yank(void *data, const char *input) {
 		"| yp               print contents of clipboard\n"
 		"| yx               print contents of clipboard in hexadecimal\n"
 		"| yt 64 0x200      copy 64 bytes from current seek to 0x200\n"
-		"| yf 64 0x200 file copy 64 bytes from 0x200 from file (opens w/ io)\n"
+		"| yf 64 0x200 file copy 64 bytes from 0x200 from file (opens w/ io), use -1 for all bytes\n"
+		"| yfa file copy    copy all bytes from from file (opens w/ io)\n"
 		"| yy 0x3344        paste clipboard\n");
 		break;
 	}
