@@ -6,6 +6,7 @@
 #include <r_core.h>
 #include <r_cons.h>
 #include <string.h>
+#include <r_anal.h>
 
 #undef R_API
 #define R_API static
@@ -24,6 +25,13 @@
 #define DO_THE_DBG 0
 #undef IFDBG
 #define IFDBG if (DO_THE_DBG)
+
+
+typedef struct found_idx_t {
+	ut16 idx;
+	ut64 addr;
+	const RBinJavaCPTypeObj *obj;
+} RCmdJavaCPResult;
 
 typedef int (*RCMDJavaCmdHandler) (RCore *core, const char *cmd);
 
@@ -77,6 +85,7 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd);
 static int r_cmd_java_handle_field_info (RCore *core, const char *cmd);
 static int r_cmd_java_handle_method_info (RCore *core, const char *cmd);
 
+static int r_cmd_java_handle_find_ref_const (RCore *core, const char *cmd);
 
 #define SET_ACC_FLAGS "set_flags"
 #define SET_ACC_FLAGS_ARGS "[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
@@ -133,6 +142,11 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd);
 #define HELP_LEN 4
 #define HELP_ARG_CNT 0
 
+#define FIND_REF_CONST "find_ref_cp"
+#define FIND_REF_CONST_ARGS "[ <a> | <idx>]"
+#define FIND_REF_CONST_DESC "find references to constant CP Object in code: a = all references, idx = specific reference"
+#define FIND_REF_CONST_LEN 11
+#define FIND_REF_CONST_ARG_CNT 2
 
 typedef struct r_cmd_java_cms_t {
 	const char *name;
@@ -154,6 +168,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{FLAGS_STR, FLAGS_STR_ARGS, FLAGS_STR_DESC, FLAGS_STR_ARG_CNT, FLAGS_STR_LEN, r_cmd_java_handle_flags_str},
 	{METHOD_INFO, METHOD_INFO_ARGS, METHOD_INFO_DESC, METHOD_INFO_ARG_CNT, METHOD_INFO_LEN, r_cmd_java_handle_method_info},
 	{FIELD_INFO, FIELD_INFO_ARGS, FIELD_INFO_DESC, FIELD_INFO_ARG_CNT, FIELD_INFO_LEN, r_cmd_java_handle_field_info},
+	{FIND_REF_CONST, FIND_REF_CONST_ARGS, FIND_REF_CONST_DESC, FIND_REF_CONST_ARG_CNT, FIND_REF_CONST_LEN, r_cmd_java_handle_find_ref_const},
 };
 
 enum {
@@ -166,7 +181,8 @@ enum {
 	FLAGS_STR_IDX = 6,
 	METHOD_INFO_IDX = 7,
 	FIELD_INFO_IDX = 8,
-	END_CMDS = 9,
+	FIND_REF_CONST_IDX = 9,
+	END_CMDS = 10,
 };
 
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len) {
@@ -236,6 +252,82 @@ static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 	return R_FALSE;
 }
 
+static int r_cmd_java_check_op_idx (const ut8 *op_bytes, ut16 idx) {
+	return R_BIN_JAVA_USHORT (op_bytes, 0) == idx;
+}
+
+static int r_cmd_java_handle_find_ref_const (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RAnalFunction *fcn = NULL;
+	RAnalBlock *bb = NULL;
+	RListIter *bb_iter, *fn_iter, *iter;
+	RCmdJavaCPResult *cp_res = NULL;
+	ut16 idx = -1;
+	RList *find_list = r_list_new ();
+	const char *p;
+
+	if (*cmd == ' ') p = r_cmd_java_consumetok (cmd, ' ', -1);
+	find_list->free = free;
+
+	if (*(p) == 'a') idx = -1;
+	else idx = r_cmd_java_get_input_num_value (core, p);
+
+	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
+
+	if (!obj) {
+		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		return R_TRUE;
+	} else if (!cmd || !*cmd) {
+		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+		r_cmd_java_print_cmd_help (JAVA_CMDS+FIND_REF_CONST_IDX);
+		return R_TRUE;
+	} else if (idx == 0) {
+		eprintf ("[-] r_cmd_java: invalid CP Obj Index Supplied.\n");
+		return R_TRUE;
+	// not idx is set in previous operation
+	}
+
+	// XXX - this will break once RAnal moves to sdb
+	r_list_foreach (anal->fcns, fn_iter, fcn) {
+		r_list_foreach (fcn->bbs, bb_iter, bb) {
+			char op = bb->op_bytes[0];
+			cp_res = NULL;
+			switch (op) {
+				case 0x12:
+					cp_res = (idx == (ut16) -1) || (bb->op_bytes[1] == idx) ?
+								R_NEW0(RCmdJavaCPResult) : NULL;
+					cp_res->idx = bb->op_bytes[1];
+					break;
+				case 0x13:
+				case 0x14:
+					cp_res = (idx == (ut16) -1) || (R_BIN_JAVA_USHORT (bb->op_bytes, 1) == idx) ?
+								R_NEW0(RCmdJavaCPResult) : NULL;
+					cp_res->idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
+					break;
+			}
+
+			if (cp_res) {
+				cp_res->addr = bb->addr;
+				cp_res->obj = r_bin_java_get_item_from_cp (obj, cp_res->idx);
+				r_list_append (find_list, cp_res);
+			}
+		}
+	}
+	if (idx == (ut16) -1) {
+		r_list_foreach (find_list, iter, cp_res) {
+			const char *t = ((RBinJavaCPTypeMetas *) cp_res->obj->metas->type_info)->name;
+			r_cons_printf ("@0x%"PFMT64x" idx = %d Type = %s\n", cp_res->addr, cp_res->idx, t);
+		}
+
+	} else {
+		r_list_foreach (find_list, iter, cp_res) {
+			r_cons_printf ("@0x%"PFMT64x"\n", cp_res->addr);
+		}
+	}
+	r_list_free (find_list);
+	return R_TRUE;
+}
 
 static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
@@ -265,7 +357,6 @@ static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 	r_cmd_java_print_cmd_help (JAVA_CMDS+FIELD_INFO_IDX);
 	return R_FALSE;
 }
-
 
 static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
@@ -306,7 +397,7 @@ static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 	IFDBG r_cons_printf ("Ctype: %d (%c) RBinJavaObj points to: %p and the idx is (%s): %d\n", c_type, c_type, obj, cmd+2, idx);
 	int res = R_FALSE;
-	if (idx && obj) {
+	if (idx > 0 && obj) {
 		switch (c_type) {
 			case 't': return r_cmd_java_resolve_cp_type (obj, idx);
 			case 'c': return r_cmd_java_resolve_cp_idx (obj, idx);
@@ -315,6 +406,12 @@ static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 			case 's': return r_cmd_java_resolve_cp_summary (obj, idx);
 			case 'k': return r_cmd_java_resolve_cp_to_key (obj, idx);
 		}
+	} else if (obj && c_type == 'a') {
+		for (idx = 1; idx <=obj->cp_count; idx++) {
+			r_cons_printf ("CP_OBJ Type %d = ", idx);
+			r_cmd_java_resolve_cp_type (obj, idx);
+		}
+		res = R_TRUE;
 	} else {
 		if (!obj) {
 			eprintf ("[-] r_cmd_java: no valid java bins found.\n");

@@ -4,7 +4,7 @@
 #include "r_print.h"
 #include "r_io.h"
 
-#define DO_THE_DBG 1
+#define DO_THE_DBG 0
 #define IFDBG if (DO_THE_DBG)
 
 /*
