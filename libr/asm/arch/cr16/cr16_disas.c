@@ -1125,12 +1125,16 @@ int cr16_decode_biti(const ut8 *instr, struct cr16_cmd *cmd)
 		return -1;
 	}
 
+	reg = cr16_get_dstreg(c);
+	position = cr16_get_srcreg(c);
+
+	if (!(reg & 0x6)) {
+		return -1;
+	}
+
 	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "%s%c",
 			ops_biti[(c >> 6) & 0x3],
 			cr16_get_opcode_i(c) ? 'w' : 'b');
-
-	reg = cr16_get_dstreg(c);
-	position = cr16_get_srcreg(c);
 
 	switch (((c >> 13) & 0x2) | (c & 0x1)) {
 	case 0x0:
