@@ -391,14 +391,19 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 // TODO: move into grubfs
 #include "../../shlr/grub/include/grubfs.h"
 RList *list = NULL;
+
+#ifndef DISABLE_GRUB
 static int parhook (struct grub_disk *disk, struct grub_partition *par, void *closure) {
 	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);
 	p->type = par->msdostype;
 	r_list_append (list, p);
 	return 0;
 }
+#endif
 
 static RFSPartitionType partitions[] = {
+#ifndef DISABLE_GRUB
+#if 0
 	{ "msdos", &grub_msdos_partition_map },
 	{ "apple", &grub_apple_partition_map },
 	{ "sun", &grub_sun_partition_map },
@@ -406,6 +411,8 @@ static RFSPartitionType partitions[] = {
 	{ "amiga", &grub_amiga_partition_map },
 	{ "bsdlabel", &grub_bsdlabel_partition_map },
 	{ "gpt", &grub_gpt_partition_map },
+#endif
+#endif
 // XXX: In BURG all bsd partition map are in bsdlabel
 	//{ "openbsdlabel", &grub_openbsd_partition_map },
 	//{ "netbsdlabel", &grub_netbsd_partition_map },
@@ -435,9 +442,11 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	if (gpm) {
 		list = r_list_new ();
 		list->free = (RListFree)r_fs_partition_free;
+#ifndef DISABLE_GRUB
 		grubfs_bind_io (NULL, 0);
 		struct grub_disk *disk = grubfs_disk (&fs->iob);
 		gpm->iterate (disk, parhook, 0);
+#endif
 		return list;
 	}
 	if (ptype && *ptype)

@@ -5,7 +5,7 @@ CFLAGS+=-DCORELIB -Iarch/include -Iarch
 SHLR=../../shlr/
 
 include ../config.mk
-CFLAGS+=-Ip/grub/include
+CFLAGS+=-I$(SHLR)/grub/include
 LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 
 EXTRA_TARGETS=plugins
