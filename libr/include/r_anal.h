@@ -392,9 +392,11 @@ typedef enum {
 	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
 	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
 	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
+	R_ANAL_OP_TYPE_UCJMP = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UJMP, /* conditional unknown jump */
 	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
 	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
 	R_ANAL_OP_TYPE_CCALL = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL, /* conditional call to subroutine */
+	R_ANAL_OP_TYPE_UCCALL= R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UCALL, /* conditional unknown call */
 	R_ANAL_OP_TYPE_RET   = 5, /* returns from subroutine */
 	R_ANAL_OP_TYPE_CRET  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_RET, /* conditional return from subroutine */
 	R_ANAL_OP_TYPE_ILL   = 6,  /* illegal instruction // trap */
@@ -406,29 +408,30 @@ typedef enum {
 	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
 	R_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
 	R_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
-	R_ANAL_OP_TYPE_CMP   = 15,  /* copmpare something */
-	R_ANAL_OP_TYPE_ADD   = 16,
-	R_ANAL_OP_TYPE_SUB   = 17,
-	R_ANAL_OP_TYPE_IO    = 18,
-	R_ANAL_OP_TYPE_MUL   = 19,
-	R_ANAL_OP_TYPE_DIV   = 20,
-	R_ANAL_OP_TYPE_SHR   = 21,
-	R_ANAL_OP_TYPE_SHL   = 22,
-	R_ANAL_OP_TYPE_SAL   = 23,
-	R_ANAL_OP_TYPE_SAR   = 24,
-	R_ANAL_OP_TYPE_OR    = 25,
-	R_ANAL_OP_TYPE_AND   = 26,
-	R_ANAL_OP_TYPE_XOR   = 27,
-	R_ANAL_OP_TYPE_NOT   = 28,
-	R_ANAL_OP_TYPE_STORE = 29,  /* store from register to memory */
-	R_ANAL_OP_TYPE_LOAD  = 30,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 31,
-	R_ANAL_OP_TYPE_LEAVE = 32,
-	R_ANAL_OP_TYPE_ROR   = 33,
-	R_ANAL_OP_TYPE_ROL   = 34,
-	R_ANAL_OP_TYPE_XCHG  = 35,
-	R_ANAL_OP_TYPE_MOD   = 36,
-	R_ANAL_OP_TYPE_SWITCH = 37,
+	R_ANAL_OP_TYPE_CMP   = 15,  /* compare something */
+	R_ANAL_OP_TYPE_ACMP  = 16,  /* compare via and */
+	R_ANAL_OP_TYPE_ADD   = 17,
+	R_ANAL_OP_TYPE_SUB   = 18,
+	R_ANAL_OP_TYPE_IO    = 19,
+	R_ANAL_OP_TYPE_MUL   = 20,
+	R_ANAL_OP_TYPE_DIV   = 21,
+	R_ANAL_OP_TYPE_SHR   = 22,
+	R_ANAL_OP_TYPE_SHL   = 23,
+	R_ANAL_OP_TYPE_SAL   = 24,
+	R_ANAL_OP_TYPE_SAR   = 25,
+	R_ANAL_OP_TYPE_OR    = 26,
+	R_ANAL_OP_TYPE_AND   = 27,
+	R_ANAL_OP_TYPE_XOR   = 28,
+	R_ANAL_OP_TYPE_NOT   = 29,
+	R_ANAL_OP_TYPE_STORE = 30,  /* store from register to memory */
+	R_ANAL_OP_TYPE_LOAD  = 31,  /* load from memory to register */
+	R_ANAL_OP_TYPE_LEA   = 32,
+	R_ANAL_OP_TYPE_LEAVE = 33,
+	R_ANAL_OP_TYPE_ROR   = 34,
+	R_ANAL_OP_TYPE_ROL   = 35,
+	R_ANAL_OP_TYPE_XCHG  = 36,
+	R_ANAL_OP_TYPE_MOD   = 37,
+	R_ANAL_OP_TYPE_SWITCH = 38,
 } _RAnalOp;
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -738,6 +741,17 @@ typedef struct r_anal_state_type_t {
 
 	void *user_state;
 } RAnalState;
+
+typedef struct r_anal_cycle_frame_t {
+	ut64 naddr;			//next addr
+	RList *hooks;
+	struct r_anal_cycle_frame_t *prev;
+} RAnalCycleFrame;
+
+typedef struct r_anal_cycle_hook_t {	//rename ?
+	ut64 addr;
+	int cycles;
+} RAnalCycleHook;
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
@@ -1088,6 +1102,10 @@ R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp * swop);
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value);
+
+/* cycles.c */
+R_API RAnalCycleFrame* r_anal_cycle_frame_new ();
+R_API void r_anal_cycle_frame_free (RAnalCycleFrame *cf);
 
 /* 
  * RAnalState maintains state during analysis.
