@@ -18,5 +18,6 @@ fi
 if [ -f config-user.mk ]; then
 	${MAKE} mrproper > /dev/null 2>&1
 fi
-./configure --prefix=/usr --with-nonpic --without-pic && \
+./configure-plugins
+./configure --prefix=/usr --without-ewf --with-nonpic --without-pic && \
 ${MAKE} -j 4
