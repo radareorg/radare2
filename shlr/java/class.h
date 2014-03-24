@@ -20,7 +20,7 @@
 #define R_BIN_JAVA_UINT(x,y) ((ut32)(((x[y]&0xff)<<24)|((x[y+1]&0xff)<<16)|((x[y+2]&0xff)<<8)|(x[y+3]&0xff)))
 #define R_BIN_JAVA_FLOAT(x,y) ((float)R_BIN_JAVA_UINT(x,y))
 
-#define RBIN_JAVA_LONG(x,y) ( ((ut64) R_BIN_JAVA_UINT (x, y) << 32) | ((ut64)R_BIN_JAVA_UINT (x, y+4) & 0xffffffff))
+#define R_BIN_JAVA_LONG(x,y) ( ((ut64) R_BIN_JAVA_UINT (x, y) << 32) | ((ut64)R_BIN_JAVA_UINT (x, y+4) & 0xffffffff))
 //#define R_BIN_JAVA_DOUBLE(x,y) ((double)RBIN_JAVA_LONG(x,y))
 //#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
 
@@ -986,5 +986,16 @@ R_API char * r_bin_java_get_field_name ( RBinJavaObj *bin_obj, ut32 idx);
 R_API int r_bin_java_print_field_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
 R_API ut32 r_bin_java_get_field_count ( RBinJavaObj *bin_obj);
 R_API RList * r_bin_java_get_field_num_name ( RBinJavaObj *bin_obj);
+
+R_API RList * r_bin_java_find_cp_const_by_val ( RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len, const char t);
+R_API char r_bin_java_resolve_cp_idx_tag(RBinJavaObj *BIN_OBJ, int idx);
+
+R_API int r_bin_java_integer_cp_set(RBinJavaObj *bin, ut16 idx, ut32 val );
+R_API int r_bin_java_float_cp_set(RBinJavaObj *bin, ut16 idx, float val );
+R_API int r_bin_java_long_cp_set(RBinJavaObj *bin, ut16 idx, ut64 val );
+R_API int r_bin_java_double_cp_set(RBinJavaObj *bin, ut16 idx, ut32 val );
+R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, ut32 len);
+R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
+
 
 #endif

@@ -85,90 +85,106 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd);
 static int r_cmd_java_handle_field_info (RCore *core, const char *cmd);
 static int r_cmd_java_handle_method_info (RCore *core, const char *cmd);
 
-static int r_cmd_java_handle_find_ref_const (RCore *core, const char *cmd);
+static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd);
 
-#define SET_ACC_FLAGS "set_flags"
-#define SET_ACC_FLAGS_ARGS "[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
-#define SET_ACC_FLAGS_DESC "set the access flags attributes for a field or method"
-#define SET_ACC_FLAGS_LEN 9
-#define SET_ACC_FLAGS_ARG_CNT 2
+static RList * r_cmd_java_handle_find_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd);
+static RList * r_cmd_java_handle_find_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd);
+static RList * r_cmd_java_handle_find_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd);
+static RList * r_cmd_java_handle_find_cp_value_int (RCore *core, RBinJavaObj *obj, const char *cmd);
+static RList * r_cmd_java_handle_find_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd);
 
-#define PROTOTYPES "prototypes"
-#define PROTOTYPES_ARGS "< a | i | c | m | f>"
-#define PROTOTYPES_DESC "print prototypes for all bins, imports only, class, methods, and fields, methods only, or fields only"
-#define PROTOTYPES_LEN 10
-#define PROTOTYPES_ARG_CNT 1
+static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd);
 
-#define RESOLVE_CP "resolve_cp"
-#define RESOLVE_CP_ARGS "< <t | e | c | a> idx>"
-#define RESOLVE_CP_DESC "resolve and print cp type or value @ idx. a = address, t = type, c = get value, e = base64 enode the result"
-#define RESOLVE_CP_LEN 10
-#define RESOLVE_CP_ARG_CNT 2
+static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr);
+static int r_cmd_java_handle_replace_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int r_cmd_java_handle_replace_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int r_cmd_java_handle_replace_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int r_cmd_java_handle_replace_cp_value_int (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd);
 
-#define CALC_FLAGS "calc_flags"
-#define CALC_FLAGS_ARGS "[ <l <[c|f|m]>> | <c [public,private,static...]>  | <f [public,private,static...]> | <m c [public,private,static...]>]"
-#define CALC_FLAGS_DESC "output a value for the given access flags: l = list all flags, c = class, f = field, m = method"
-#define CALC_FLAGS_LEN 10
-#define CALC_FLAGS_ARG_CNT 2
-
-#define FLAGS_STR_AT "flags_str_at"
-#define FLAGS_STR_AT_ARGS "[<c | f | m> <addr>]"
-#define FLAGS_STR_AT_DESC "output a string value for the given access flags @ addr: c = class, f = field, m = method"
-#define FLAGS_STR_AT_LEN 11
-#define FLAGS_STR_AT_ARG_CNT 2
-
-#define FLAGS_STR "flags_str"
-#define FLAGS_STR_ARGS "[<c | f | m> <acc_flags_value>]"
-#define FLAGS_STR_DESC "output a string value for the given access flags number: c = class, f = field, m = method"
-#define FLAGS_STR_LEN 9
-#define FLAGS_STR_ARG_CNT 2
-
-#define METHOD_INFO "m_info"
-#define METHOD_INFO_ARGS "[<[ p | c | <s idx> | <n idx>>]"
-#define METHOD_INFO_DESC "output method information at index : c = dump methods and ord , s = dump of all meta-data, n = method"
-#define METHOD_INFO_LEN 6
-#define METHOD_INFO_ARG_CNT 2
-
-
-#define FIELD_INFO "f_info"
-#define FIELD_INFO_ARGS "[<[p |c | <s idx> | <n idx>>]"
-#define FIELD_INFO_DESC "output method information at index : c = dump field and ord , s = dump of all meta-data, n = method"
-#define FIELD_INFO_LEN 6
-#define FIELD_INFO_ARG_CNT 2
-
-#define HELP "help"
-#define HELP_DESC "displays this message"
-#define HELP_ARGS "NONE"
-#define HELP_LEN 4
-#define HELP_ARG_CNT 0
-
-#define FIND_REF_CONST "find_ref_cp"
-#define FIND_REF_CONST_ARGS "[ <a> | <idx>]"
-#define FIND_REF_CONST_DESC "find references to constant CP Object in code: a = all references, idx = specific reference"
-#define FIND_REF_CONST_LEN 11
-#define FIND_REF_CONST_ARG_CNT 2
 
 typedef struct r_cmd_java_cms_t {
 	const char *name;
 	const char *args;
 	const char *desc;
-	const ut32 arg_cnt;
 	const ut32 name_len;
 	RCMDJavaCmdHandler handler;
 } RCmdJavaCmd;
 
+#define SET_ACC_FLAGS "set_flags"
+#define SET_ACC_FLAGS_ARGS "[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
+#define SET_ACC_FLAGS_DESC "set the access flags attributes for a field or method"
+#define SET_ACC_FLAGS_LEN 9
+
+#define PROTOTYPES "prototypes"
+#define PROTOTYPES_ARGS "< a | i | c | m | f>"
+#define PROTOTYPES_DESC "print prototypes for all bins, imports only, class, methods, and fields, methods only, or fields only"
+#define PROTOTYPES_LEN 10
+
+#define RESOLVE_CP "resolve_cp"
+#define RESOLVE_CP_ARGS "< <t | e | c | a> idx>"
+#define RESOLVE_CP_DESC "resolve and print cp type or value @ idx. a = address, t = type, c = get value, e = base64 enode the result"
+#define RESOLVE_CP_LEN 10
+
+#define CALC_FLAGS "calc_flags"
+#define CALC_FLAGS_ARGS "[ <l <[c|f|m]>> | <c [public,private,static...]>  | <f [public,private,static...]> | <m c [public,private,static...]>]"
+#define CALC_FLAGS_DESC "output a value for the given access flags: l = list all flags, c = class, f = field, m = method"
+#define CALC_FLAGS_LEN 10
+
+#define FLAGS_STR_AT "flags_str_at"
+#define FLAGS_STR_AT_ARGS "[<c | f | m> <addr>]"
+#define FLAGS_STR_AT_DESC "output a string value for the given access flags @ addr: c = class, f = field, m = method"
+#define FLAGS_STR_AT_LEN 11
+
+#define FLAGS_STR "flags_str"
+#define FLAGS_STR_ARGS "[<c | f | m> <acc_flags_value>]"
+#define FLAGS_STR_DESC "output a string value for the given access flags number: c = class, f = field, m = method"
+#define FLAGS_STR_LEN 9
+
+#define METHOD_INFO "m_info"
+#define METHOD_INFO_ARGS "[<[ p | c | <s idx> | <n idx>>]"
+#define METHOD_INFO_DESC "output method information at index : c = dump methods and ord , s = dump of all meta-data, n = method"
+#define METHOD_INFO_LEN 6
+
+#define FIELD_INFO "f_info"
+#define FIELD_INFO_ARGS "[<[p |c | <s idx> | <n idx>>]"
+#define FIELD_INFO_DESC "output method information at index : c = dump field and ord , s = dump of all meta-data, n = method"
+#define FIELD_INFO_LEN 6
+
+#define HELP "help"
+#define HELP_DESC "displays this message"
+#define HELP_ARGS "NONE"
+#define HELP_LEN 4
+
+#define FIND_CP_CONST "find_cp_const"
+#define FIND_CP_CONST_ARGS "[ <a> | <idx>]"
+#define FIND_CP_CONST_DESC "find references to constant CP Object in code: a = all references, idx = specific reference"
+#define FIND_CP_CONST_LEN 13
+
+#define FIND_CP_VALUE "find_cp_value"
+#define FIND_CP_VALUE_ARGS "[ <s | i | l | f | d > <value> ]"
+#define FIND_CP_VALUE_DESC "find references to CP constants by value"
+#define FIND_CP_VALUE_LEN 13
+
+#define REPLACE_CP_VALUE "replace_cp_value"
+#define REPLACE_CP_VALUE_ARGS "[ <idx> <value> ]"
+#define REPLACE_CP_VALUE_DESC "replace CP constants with value if the no resizing is required"
+#define REPLACE_CP_VALUE_LEN 16
 
 static RCmdJavaCmd JAVA_CMDS[] = {
-	{HELP, HELP_ARGS, HELP_DESC, HELP_ARG_CNT, HELP_LEN, r_cmd_java_handle_help},
-	{SET_ACC_FLAGS, SET_ACC_FLAGS_ARGS, SET_ACC_FLAGS_DESC, SET_ACC_FLAGS_ARG_CNT, SET_ACC_FLAGS_LEN, r_cmd_java_handle_set_flags},
-	{PROTOTYPES, PROTOTYPES_ARGS, PROTOTYPES_DESC, PROTOTYPES_ARG_CNT, PROTOTYPES_LEN, r_cmd_java_handle_prototypes},
-	{RESOLVE_CP, RESOLVE_CP_ARGS, RESOLVE_CP_DESC, RESOLVE_CP_ARG_CNT, RESOLVE_CP_LEN, r_cmd_java_handle_resolve_cp},
-	{CALC_FLAGS, CALC_FLAGS_ARGS, CALC_FLAGS_DESC, CALC_FLAGS_ARG_CNT, CALC_FLAGS_LEN, r_cmd_java_handle_calc_flags},
-	{FLAGS_STR_AT, FLAGS_STR_AT_ARGS, FLAGS_STR_AT_DESC, FLAGS_STR_AT_ARG_CNT, FLAGS_STR_AT_LEN, r_cmd_java_handle_flags_str_at},
-	{FLAGS_STR, FLAGS_STR_ARGS, FLAGS_STR_DESC, FLAGS_STR_ARG_CNT, FLAGS_STR_LEN, r_cmd_java_handle_flags_str},
-	{METHOD_INFO, METHOD_INFO_ARGS, METHOD_INFO_DESC, METHOD_INFO_ARG_CNT, METHOD_INFO_LEN, r_cmd_java_handle_method_info},
-	{FIELD_INFO, FIELD_INFO_ARGS, FIELD_INFO_DESC, FIELD_INFO_ARG_CNT, FIELD_INFO_LEN, r_cmd_java_handle_field_info},
-	{FIND_REF_CONST, FIND_REF_CONST_ARGS, FIND_REF_CONST_DESC, FIND_REF_CONST_ARG_CNT, FIND_REF_CONST_LEN, r_cmd_java_handle_find_ref_const},
+	{HELP, HELP_ARGS, HELP_DESC, HELP_LEN, r_cmd_java_handle_help},
+	{SET_ACC_FLAGS, SET_ACC_FLAGS_ARGS, SET_ACC_FLAGS_DESC, SET_ACC_FLAGS_LEN, r_cmd_java_handle_set_flags},
+	{PROTOTYPES, PROTOTYPES_ARGS, PROTOTYPES_DESC, PROTOTYPES_LEN, r_cmd_java_handle_prototypes},
+	{RESOLVE_CP, RESOLVE_CP_ARGS, RESOLVE_CP_DESC, RESOLVE_CP_LEN, r_cmd_java_handle_resolve_cp},
+	{CALC_FLAGS, CALC_FLAGS_ARGS, CALC_FLAGS_DESC, CALC_FLAGS_LEN, r_cmd_java_handle_calc_flags},
+	{FLAGS_STR_AT, FLAGS_STR_AT_ARGS, FLAGS_STR_AT_DESC, FLAGS_STR_AT_LEN, r_cmd_java_handle_flags_str_at},
+	{FLAGS_STR, FLAGS_STR_ARGS, FLAGS_STR_DESC, FLAGS_STR_LEN, r_cmd_java_handle_flags_str},
+	{METHOD_INFO, METHOD_INFO_ARGS, METHOD_INFO_DESC, METHOD_INFO_LEN, r_cmd_java_handle_method_info},
+	{FIELD_INFO, FIELD_INFO_ARGS, FIELD_INFO_DESC, FIELD_INFO_LEN, r_cmd_java_handle_field_info},
+	{FIND_CP_CONST, FIND_CP_CONST_ARGS, FIND_CP_CONST_DESC, FIND_CP_CONST_LEN, r_cmd_java_handle_find_cp_const},
+	{FIND_CP_VALUE, FIND_CP_VALUE_ARGS, FIND_CP_VALUE_DESC, FIND_CP_VALUE_LEN, r_cmd_java_handle_find_cp_value},
+	{REPLACE_CP_VALUE, REPLACE_CP_VALUE_ARGS, REPLACE_CP_VALUE_DESC, REPLACE_CP_VALUE_LEN, r_cmd_java_handle_replace_cp_value},
 };
 
 enum {
@@ -181,8 +197,10 @@ enum {
 	FLAGS_STR_IDX = 6,
 	METHOD_INFO_IDX = 7,
 	FIELD_INFO_IDX = 8,
-	FIND_REF_CONST_IDX = 9,
-	END_CMDS = 10,
+	FIND_CP_CONST_IDX = 9,
+	FIND_CP_VALUE_IDX = 10,
+	REPLACE_CP_VALUE_IDX = 11,
+	END_CMDS = 12,
 };
 
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len) {
@@ -256,7 +274,165 @@ static int r_cmd_java_check_op_idx (const ut8 *op_bytes, ut16 idx) {
 	return R_BIN_JAVA_USHORT (op_bytes, 0) == idx;
 }
 
-static int r_cmd_java_handle_find_ref_const (RCore *core, const char *cmd) {
+static RList * r_cmd_java_handle_find_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd) {
+	double value = cmd && *cmd ? strtod (cmd, NULL) : 0.0;
+	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0') ) return r_list_new();
+	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 8, R_BIN_JAVA_CP_DOUBLE);
+}
+static RList * r_cmd_java_handle_find_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd) {
+	float value = cmd && *cmd ? atof (cmd) : 0.0;
+	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0') ) return r_list_new();
+	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 4, R_BIN_JAVA_CP_FLOAT);
+}
+static RList * r_cmd_java_handle_find_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd) {
+	ut64 value = r_cmd_java_get_input_num_value (core, cmd);
+	if ( !r_cmd_java_is_valid_input_num_value (core, cmd) ) return r_list_new ();
+	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 8, R_BIN_JAVA_CP_LONG);
+}
+static RList * r_cmd_java_handle_find_cp_value_int (RCore *core, RBinJavaObj *obj, const char *cmd) {
+	ut32 value = (ut32) r_cmd_java_get_input_num_value (core, cmd);
+	if ( !r_cmd_java_is_valid_input_num_value (core, cmd) ) return r_list_new ();
+	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 4, R_BIN_JAVA_CP_INTEGER);
+}
+static RList * r_cmd_java_handle_find_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd) {
+	if (!cmd) return r_list_new();
+	IFDBG r_cons_printf ("Looking for str: %s (%d)\n", cmd, strlen (cmd));
+	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) cmd, strlen (cmd), R_BIN_JAVA_CP_UTF8);
+}
+
+static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RList *find_list = NULL;
+	RListIter *iter;
+	ut32 *idx;
+	const char *name = NULL;
+	const char *p = cmd;
+	char f_type = 0;
+	IFDBG r_cons_printf ("Function call made: %s\n", p);
+	if (p && *p) {
+		p = r_cmd_java_consumetok (cmd, ' ', -1);
+		f_type = *p;
+		p+=2;
+	}
+	IFDBG r_cons_printf ("Function call made: %s\n", p);
+	switch (f_type) {
+		case 's': find_list = r_cmd_java_handle_find_cp_value_str (core, obj, p); break;
+		case 'i': find_list = r_cmd_java_handle_find_cp_value_int (core, obj, r_cmd_java_consumetok (p, ' ', -1)); break;
+		case 'l': find_list = r_cmd_java_handle_find_cp_value_long (core, obj, r_cmd_java_consumetok (p, ' ', -1)); break;
+		case 'f': find_list = r_cmd_java_handle_find_cp_value_float (core, obj, r_cmd_java_consumetok (p, ' ', -1)); break;
+		case 'd': find_list = r_cmd_java_handle_find_cp_value_double (core, obj, r_cmd_java_consumetok (p, ' ', -1)); break;
+		default:
+			eprintf ("[-] r_cmd_java: invalid java type to search for.\n");
+			return R_TRUE;
+	}
+
+	r_list_foreach (find_list, iter, idx) {
+		ut64 addr = r_bin_java_resolve_cp_idx_address (obj, (ut16) *idx);
+		r_cons_printf ("Offset: 0x%"PFMT64x" idx: %d\n", addr, *idx);
+	}
+	r_list_free (find_list);
+}
+
+static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr) {
+	int res = R_FALSE;	
+	ut32 sz = 0;
+	ut8 * bytes = r_bin_java_cp_get_bytes (obj, idx, &sz);
+	if (bytes) {
+		res = r_core_write_at(core, addr, (const ut8 *)&bytes, sz);
+	}
+	return res;
+}
+
+
+static int r_cmd_java_handle_replace_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+	float value = cmd && *cmd ? atof (cmd) : 0.0;
+	int res = R_FALSE;
+	if (r_bin_java_float_cp_set (obj, idx, value)) {
+		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
+	}
+	return res;
+}
+
+static int r_cmd_java_handle_replace_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+	double value = cmd && *cmd ? strtod (cmd, NULL) : 0.0;
+	int res = R_FALSE;
+	if (r_bin_java_double_cp_set (obj, idx, value)) {
+		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
+	}
+	return res;
+}
+
+static int r_cmd_java_handle_replace_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+	ut64 value = r_cmd_java_get_input_num_value (core, cmd);
+	int res = R_FALSE;
+	if (r_bin_java_long_cp_set (obj, idx, value)) {
+		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
+	}
+	return res;
+}
+
+static int r_cmd_java_handle_replace_cp_value_int (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+	ut32 value = (ut32) r_cmd_java_get_input_num_value (core, cmd);
+	int res = R_FALSE;
+	if (r_bin_java_integer_cp_set (obj, idx, value)) {
+		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
+	}
+	return res;
+}
+static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+	int res = R_FALSE;
+	ut32 len = strlen (cmd);
+	if (len > 0 && r_bin_java_utf8_cp_set (obj, idx, (const ut8 *)cmd, len)) {
+		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
+	}
+	return res;
+}
+
+static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	ut16 idx = -1;
+	ut64 addr = 0;
+	const char *p = cmd;
+	char cp_type = 0;
+	IFDBG r_cons_printf ("Function call made: %s\n", p);
+	if (p && *p) {
+		p = r_cmd_java_consumetok (cmd, ' ', -1);
+		if (r_cmd_java_is_valid_input_num_value (core, p)) {
+			idx = r_cmd_java_get_input_num_value (core, p);
+			p = r_cmd_java_strtok (p, ' ', strlen(p));
+		}
+	}
+
+	if (idx == (ut16) -1 ) {
+		// FAIL
+	} else if (!obj) {
+		// FAIL
+	} else if (!*p) {
+		// FAIL 
+	}
+
+	cp_type = r_bin_java_resolve_cp_idx_tag(obj, idx);
+	addr = r_bin_java_resolve_cp_idx_address (obj, idx);
+
+	IFDBG r_cons_printf ("Function call made: %s\n", p);
+	
+
+	switch (cp_type) {
+		case R_BIN_JAVA_CP_UTF8: return r_cmd_java_handle_replace_cp_value_str (core, obj, p, idx, addr);
+		case R_BIN_JAVA_CP_INTEGER: return r_cmd_java_handle_replace_cp_value_int (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
+		case R_BIN_JAVA_CP_LONG: return r_cmd_java_handle_replace_cp_value_long (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
+		case R_BIN_JAVA_CP_FLOAT: return r_cmd_java_handle_replace_cp_value_float (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
+		case R_BIN_JAVA_CP_DOUBLE: return r_cmd_java_handle_replace_cp_value_double (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
+		default:
+			eprintf ("[-] r_cmd_java: invalid java type to search for.\n");
+			return R_TRUE;
+	}
+}
+
+
+static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
 	RAnalFunction *fcn = NULL;
@@ -280,7 +456,7 @@ static int r_cmd_java_handle_find_ref_const (RCore *core, const char *cmd) {
 		return R_TRUE;
 	} else if (!cmd || !*cmd) {
 		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
-		r_cmd_java_print_cmd_help (JAVA_CMDS+FIND_REF_CONST_IDX);
+		r_cmd_java_print_cmd_help (JAVA_CMDS+FIND_CP_CONST_IDX);
 		return R_TRUE;
 	} else if (idx == 0) {
 		eprintf ("[-] r_cmd_java: invalid CP Obj Index Supplied.\n");
