@@ -816,8 +816,6 @@ static int cr16_decode_bcond01i(const ut8 *instr, struct cr16_cmd *cmd)
 		snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "%s%c",
 				"bne1", cr16_get_opcode_i(c) ? 'w' : 'b');
 		break;
-	default:
-		return -1;
 	}
 
 	snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "%s,0x%x",
