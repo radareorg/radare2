@@ -2,7 +2,7 @@
 
 #include <r_debug.h>
 
-#define DB dbg->signals
+#define DB dbg->sgnls
 
 // TODO: this must be done by the debugger plugin
 static struct {

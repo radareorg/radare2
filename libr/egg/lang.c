@@ -197,7 +197,7 @@ static char *get_end_frame_label(REgg *egg) {
 #endif
 
 static void rcc_pusharg(REgg *egg, char *str) {
-	REggEmit *e = egg->emit;
+	REggEmit *e = egg->remit;
 	char buf[64], *p = r_egg_mkvar (egg, buf, str, 0);
 	if (!p) return;
 	// TODO: free (ctxpush[context]);
@@ -209,7 +209,7 @@ static void rcc_pusharg(REgg *egg, char *str) {
 }
 
 static void rcc_element(REgg *egg, char *str) {
-	REggEmit *e = egg->emit;
+	REggEmit *e = egg->remit;
 	char *p = strrchr (str, ',');
 	int num, num2;
 
@@ -270,7 +270,7 @@ static void rcc_element(REgg *egg, char *str) {
 static void rcc_pushstr(REgg *egg, char *str, int filter) {
         int dotrim = 1;
         int i, j, len;
-	REggEmit *e = egg->emit;
+	REggEmit *e = egg->remit;
 
         e->comment (egg, "encode %s string (%s) (%s)",
                 filter? "filtered": "unfiltered", str, callname);
@@ -316,7 +316,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		str++;
 	} else varxs = 0;
 	if (str[0]=='.') {
-		REggEmit *e = egg->emit;
+		REggEmit *e = egg->remit;
 		ret = out;
 		idx = atoi (str+4) + delta + e->size;
 		if (!memcmp (str+1, "ret", 3)) {
@@ -376,7 +376,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 
 static void rcc_fun(REgg *egg, const char *str) {
 	char *ptr, *ptr2;
-	REggEmit *e = egg->emit;
+	REggEmit *e = egg->remit;
 	str = skipspaces (str);
 	if (CTX) {
 		ptr = strchr (str, '=');
@@ -390,7 +390,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 		} else {
 			str = skipspaces (str);
 			rcc_set_callname (skipspaces (str));
-			egg->emit->comment (egg, "rcc_fun %d (%s)",
+			egg->remit->comment (egg, "rcc_fun %d (%s)",
 				CTX, callname);
 		}
 	} else {
@@ -502,7 +502,7 @@ static void set_nested(REgg *egg, const char *s) {
 }
 
 static void rcc_context(REgg *egg, int delta) {
-	REggEmit *emit = egg->emit;
+	REggEmit *emit = egg->remit;
 	char str[64];
 
 	nestedi[CTX-1]++;
@@ -617,7 +617,7 @@ eprintf ("STACKTRAF %d\n", stackframe);
 			/* register */
 			if (dstval != NULL && dstvar != NULL) {
 				dstval[ndstval]='\0';
-				egg->emit->comment (egg, "data (%s)(%s)size=(%d)\n",
+				egg->remit->comment (egg, "data (%s)(%s)size=(%d)\n",
 					dstvar, dstval, stackframe);
 				r_egg_printf (egg, ".data\n");
 				for (str=dstval; is_space (*str); str++);
@@ -687,7 +687,7 @@ static int parseinlinechar(REgg *egg, char c) {
 /* TODO: split this function into several ones..quite long fun */
 static void rcc_next(REgg *egg) {
 	const char *ocn;
-	REggEmit *e = egg->emit;
+	REggEmit *e = egg->remit;
 	char *str, *p, *ptr, buf[64];
 	int i;
 
@@ -875,7 +875,7 @@ if (mode != NAKED) {
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
-	REggEmit *e = egg->emit;
+	REggEmit *e = egg->remit;
 	char *ptr, str[64];
 	if (c=='\n') {
 		line++;

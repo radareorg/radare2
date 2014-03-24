@@ -38,7 +38,7 @@ typedef struct r_egg_t {
 	Sdb *db;
 	RList *plugins;
 	RList *patches; // <RBuffer>
-	struct r_egg_emit_t *emit;
+	struct r_egg_emit_t *remit;
 	int arch;
 	int endian;
 	int bits;

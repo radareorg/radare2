@@ -1,7 +1,7 @@
 #include "ls.h"
 #include "types.h"
 
-void (*HtKvFreeFunc)(void *);
+typedef void (*HtKvFreeFunc)(void *);
 
 /** ht **/
 typedef struct ht_entry_t {

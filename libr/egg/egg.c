@@ -20,7 +20,7 @@ R_API REgg *r_egg_new () {
 	egg->src = r_buf_new ();
 	egg->buf = r_buf_new ();
 	egg->bin = r_buf_new ();
-	egg->emit = &emit_x86;
+	egg->remit = &emit_x86;
 	egg->syscall = r_syscall_new ();
 	egg->rasm = r_asm_new ();
 	egg->bits = 0;
@@ -83,7 +83,7 @@ R_API void r_egg_reset (REgg *egg) {
 }
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
-	egg->emit = NULL;
+	egg->remit = NULL;
 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
 //eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
@@ -93,12 +93,12 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		switch (bits) {
 		case 32:
 			r_syscall_setup (egg->syscall, arch, os, bits);
-			egg->emit = &emit_x86;
+			egg->remit = &emit_x86;
 			egg->bits = bits;
 			break;
 		case 64:
 			r_syscall_setup (egg->syscall, arch, os, bits);
-			egg->emit = &emit_x64;
+			egg->remit = &emit_x64;
 			egg->bits = bits;
 			break;
 		}
@@ -109,7 +109,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		case 16:
 		case 32:
 			r_syscall_setup (egg->syscall, arch, os, bits);
-			egg->emit = &emit_arm;
+			egg->remit = &emit_arm;
 			egg->bits = bits;
 			egg->endian = endian;
 			break;
@@ -117,7 +117,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 	} else
 	if (!strcmp (arch, "trace")) {
 		//r_syscall_setup (egg->syscall, arch, os, bits);
-		egg->emit = &emit_trace;
+		egg->remit = &emit_trace;
 		egg->bits = bits;
 		egg->endian = endian;
 	}
@@ -159,9 +159,9 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
 	RSyscallItem *item = r_syscall_get (egg->syscall,
 		r_syscall_get_num (egg->syscall, arg), -1);
 	if (!strcmp (arg, "close")) {
-		//egg->emit->syscall_args ();
+		//egg->remit->syscall_args ();
 	}
-	egg->emit->syscall (egg, item->num);
+	egg->remit->syscall (egg, item->num);
 }
 
 R_API void r_egg_alloc(REgg *egg, int n) {
@@ -208,7 +208,7 @@ R_API int r_egg_assemble(REgg *egg) {
 	RAsmCode *asmcode = NULL;
 	char *code = NULL;
 	int ret = R_FALSE;
-	if (egg->emit == &emit_x86 || egg->emit == &emit_x64) {
+	if (egg->remit == &emit_x86 || egg->remit == &emit_x64) {
 		r_asm_use (egg->rasm, "x86.nz");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, 0);
@@ -222,7 +222,7 @@ R_API int r_egg_assemble(REgg *egg) {
 			// LEAK r_asm_code_free (asmcode);
 		} else eprintf ("fail assembling\n");
 	} else
-	if (egg->emit == &emit_arm) {
+	if (egg->remit == &emit_arm) {
 		r_asm_use (egg->rasm, "arm");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian); // XXX
@@ -243,14 +243,14 @@ R_API int r_egg_assemble(REgg *egg) {
 
 R_API int r_egg_compile(REgg *egg) {
 	const char *b = (const char *)egg->src->buf;
-	if (!b || !egg->emit)
+	if (!b || !egg->remit)
 		return R_FALSE;
 	// only emit begin if code is found
 #if 0
 	if (*b)
-	if (egg->emit) {
-		if (egg->emit->init)
-			egg->emit->init (egg);
+	if (egg->remit) {
+		if (egg->remit->init)
+			egg->remit->init (egg);
 	}
 #endif
 	for (; *b; b++) {

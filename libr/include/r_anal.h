@@ -432,7 +432,7 @@ enum {
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */
-enum {
+typedef enum {
 	R_ANAL_COND_EQ = 0,
 	R_ANAL_COND_NE,
 	R_ANAL_COND_GE,
@@ -443,7 +443,7 @@ enum {
 	R_ANAL_COND_NV,
 };
 
-enum {
+typedef enum {
 	R_ANAL_VAR_SCOPE_NULL   = 0,
 	R_ANAL_VAR_SCOPE_GLOBAL = 0x01,
 	R_ANAL_VAR_SCOPE_LOCAL  = 0x02,
