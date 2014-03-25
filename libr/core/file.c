@@ -303,62 +303,26 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 }
 
 R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, ut64 loadaddr) {
-	const char  *loadmethod = r_config_get (core->config, "file.loadmethod");
-	RIOMap *map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
+	const char *loadmethod = r_config_get (core->config, "file.loadmethod");
 	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
-
-// XXX: wtf. that should be always true, so the rest is useless
-	if (map) return map;
-
-	r_io_sort_maps (core->io);
-
-	if (!map && !strcmp (loadmethod, "overwrite")) {
-		/*ut64 total_buf_size = 0, idx = 0;
-		ut64 addr = loadaddr, endaddr = loadaddr + fh->size;
-		ut8 *buffer = NULL;
-		RHashTable64 ht = NULL;
-		RListIter *iter, *t_iter;
-		// XXX - this will take some work, walk all maps in the range of
-		// the current RCoreFile
-		// XXX - this does not handle if from > to.
-		// 2) Create a new mapping of total size of fh or all fd enumerate (which ever is greater)
-		// 3) copy old fds into map, close all old fds, map new 
-		RList * maps = r_io_get_maps_in_range (addr, endaddr);
-		// 1) Count bytes, enumerate fds (if more than one, we will just fail)
-		r_list_foreach (maps, iter, map) {
-			ut64 bytes = (map->from < map->to)? map->from - map->to: -map->from - map->to;
-			total_buf_size += bytes;
-		}
-		total_buf_size = total_buf_size > fh->size ? total_buf_size : fh->size;
-
-		// Allocate buffer and copy bytes;
-		buffer = malloc(total_buf_size);
-		r_list_foreach (maps, iter, map) {
-			ut64 bytes = (map->from < map->to)? map->from - map->to: -map->from - map->to;
-			r_core_read_at (core, loadaddr+offset, buffer+offset, bytes);
-			offset += bytes;
-		}
-
-		ht = r_hashtable64_new();
-		ht->free = free;
-
-		r_list_foreach_safe (maps, iter, map) {
-
-			r_core_read_at (core, loadaddr+offset, buffer+offset, bytes);
-			offset += bytes;
-		}
-		*/
-	} else if (!map && !strcmp (loadmethod, "append")) {
-		ut64 load_align = r_config_get_i (core->config, "file.loadalign");
+	ut64 load_align = r_config_get_i (core->config, "file.loadalign");
+	RIOMap *map = NULL;
+	if (!strcmp (loadmethod, "overwrite"))
+		map = r_io_map_new (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
+	if (!strcmp (loadmethod, "fail"))
+		map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
+	if (!strcmp (loadmethod, "append"))
 		map = r_io_map_add_next_available (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size, load_align);
-		if (map && !strcmp (suppress_warning, "false") ){
-			eprintf ("Unable to load specified file at current mapping: 0x%08"PFMT64x",", loadaddr);
-			eprintf (" but loading at 0x%08"PFMT64x".\n", map->from);
+	if (!strcmp (suppress_warning, "false")) {
+		if (!map)
+			eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x"\n", loadaddr);
+		else {
+			if (map->from != loadaddr)
+				eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x",\n"
+					 "but loaded to 0x%08"PFMT64x"\n", loadaddr, map->from);
 		}
 	}
-	// implicit "fail" here
-	if (!map && !strcmp (suppress_warning, "false"))
-		eprintf ("Unable to load specified file at current mapping: 0x%08"PFMT64x"\n", loadaddr);
+	r_io_sort_maps (core->io);				//necessary ???
 	return map;
 }
 
