@@ -9,21 +9,22 @@ cd `dirname $PWD/$0` ; cd ..
 
 # update
 if [ -d .git ]; then
-	echo "WARNING: Updating from remote repository"
-	git pull
+    echo "WARNING: Updating from remote repository"
+    echo git pull
 fi
 
-[ "`id -u`" = 0 ] || SUDO=sudo
-[ -n "${NOSUDO}" ] && SUDO=
 
-if [ "${HARDEN}" = 1 ] 
+# skip su or sudo
+[ -z "${SUDO}" ] && ./sys/build.sh $@ && exit
+
+if [ "${HARDEN}" = 1 ]
 then
-	./sys/build-harden.sh $@ && ${SUDO} ${MAKE} symstall
-else 
-if [ -n "${NOSUDO}" ]
-then
-	  ./sys/build.sh $@ && /bin/su -c "make symstall"
+    ./sys/build-harden.sh $@ && ${SUDO} ${MAKE} symstall
 else
-	./sys/build.sh $@ && ${SUDO} ${MAKE} symstall
-fi
-fi
+if [ "${SUDO}" = 'su' ]
+then
+     ./sys/build.sh $@ && /bin/su -c "make symstall"
+else
+     ./sys/build.sh $@ && ${SUDO} ${MAKE} symstall
+fi 
+fi  
