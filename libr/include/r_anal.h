@@ -216,7 +216,7 @@ enum {
 
 typedef struct r_anal_cc_t {
 	int type;
-	int bits;
+	int bits; // 8, 16, 32, ...
 	int rel; // relative or absolute?
 	ut64 off; // offset of the call instruction (caller)
 	ut64 jump; // offset of the call instruction (caller)
@@ -432,7 +432,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_XCHG  = 36,
 	R_ANAL_OP_TYPE_MOD   = 37,
 	R_ANAL_OP_TYPE_SWITCH = 38,
-} _RAnalOp;
+} _RAnalOpType;
 
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {

@@ -12,6 +12,9 @@
 #error Old Capstone not supported
 #endif
 
+#define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
+#define INSOP(n) insn->detail->x86.operands[n]
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle;
 	cs_insn *insn;
@@ -21,6 +24,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret = cs_open (CS_ARCH_X86, mode, &handle);
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = 0;
+	r_strbuf_init (&op->esil);
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
@@ -28,11 +32,32 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		if (n<1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
+			int rs = a->bits/8;
+			const char *pc = (a->bits==16)?"ip":
+				(a->bits==32)?"eip":"rip";
+			const char *sp = (a->bits==16)?"sp":
+				(a->bits==32)?"esp":"rsp";
 			op->size = insn->size;
 			switch (insn->id) {
+			case X86_INS_FNOP:
+			case X86_INS_NOP:
+			case X86_INS_HLT:
+				op->type = R_ANAL_OP_TYPE_NOP;
+				if (a->decode)
+					esilprintf (op, "");
+				break;
+			case X86_INS_CLI:
+			case X86_INS_STI:
+			case X86_INS_CLC:
+			case X86_INS_STC:
+				break;
 			case X86_INS_MOV:
 			case X86_INS_MOVZX:
 			case X86_INS_MOVABS:
+			case X86_INS_MOVHPD:
+			case X86_INS_MOVHPS:
+			case X86_INS_MOVLPD:
+			case X86_INS_MOVLPS:
 			case X86_INS_MOVBE:
 			case X86_INS_MOVSB:
 			case X86_INS_MOVSD:
@@ -59,12 +84,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_LEA:
 				op->type = R_ANAL_OP_TYPE_LEA;
 				break;
+			case X86_INS_ENTER:
 			case X86_INS_PUSH:
 			case X86_INS_PUSHAW:
 			case X86_INS_PUSHAL:
 			case X86_INS_PUSHF:
 				op->type = R_ANAL_OP_TYPE_PUSH;
 				break;
+			case X86_INS_LEAVE:
 			case X86_INS_POP:
 			case X86_INS_POPAW:
 			case X86_INS_POPAL:
@@ -79,6 +106,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_IRETQ:
 			case X86_INS_SYSRET:
 				op->type = R_ANAL_OP_TYPE_RET;
+				if (a->decode)
+					esilprintf (op, "%s=%d[%s],%s+=%d",
+						pc, sp, sp, rs);
 				break;
 			case X86_INS_INT1:
 			case X86_INS_INT3:
@@ -88,6 +118,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_VMMCALL:
 			case X86_INS_SYSCALL:
 				op->type = R_ANAL_OP_TYPE_TRAP;
+				if (a->decode)
+					esilprintf (op, "$%d", (int)INSOP(0).imm);
 				break;
 			case X86_INS_JL:
 			case X86_INS_JLE:
@@ -108,16 +140,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_JG:
 			case X86_INS_JGE:
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = insn->detail->x86.operands[0].imm;
+				op->jump = INSOP(0).imm;
 				op->fail = addr+op->size;
+				if (a->decode) {
+					if (INSOP(0).type==X86_OP_IMM) {
+// TODO
+					}
+				}
 				break;
 			case X86_INS_CALL:
 			case X86_INS_LCALL:
-				if (insn->detail->x86.operands[0].type==X86_OP_IMM) {
+				if (INSOP(0).type==X86_OP_IMM) {
 					op->type = R_ANAL_OP_TYPE_CALL;
 					// TODO: what if UCALL?
 					// TODO: use imm_size
-					op->jump = insn->detail->x86.operands[0].imm;
+					op->jump = INSOP(0).imm;
 					op->fail = addr+op->size;
 				} else {
 					op->type = R_ANAL_OP_TYPE_UCALL;
@@ -126,11 +163,47 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_JMP:
 			case X86_INS_LJMP:
 				// TODO: what if UJMP?
-				op->jump = insn->detail->x86.operands[0].imm;
+				op->jump = INSOP(0).imm;
 				op->type = R_ANAL_OP_TYPE_JMP;
+				if (a->decode) {
+					ut64 dst = INSOP(0).imm;
+					esilprintf (op, "%s=0x%"PFMT64x, pc, dst);
+				}
 				break;
+			case X86_INS_IN:
+			case X86_INS_INSW:
+			case X86_INS_INSD:
+			case X86_INS_INSB:
+			case X86_INS_OUT:
+			case X86_INS_OUTSB:
+			case X86_INS_OUTSD:
+			case X86_INS_OUTSW:
+				op->type = R_ANAL_OP_TYPE_IO;
+				break;
+			case X86_INS_VXORPD:
+			case X86_INS_VXORPS:
+			case X86_INS_VPXORD:
+			case X86_INS_VPXORQ:
+			case X86_INS_VPXOR:
+			case X86_INS_KXORW:
+			case X86_INS_PXOR:
 			case X86_INS_XOR:
 				op->type = R_ANAL_OP_TYPE_XOR;
+				break;
+			case X86_INS_OR:
+				op->type = R_ANAL_OP_TYPE_OR;
+				break;
+			case X86_INS_SUB:
+			case X86_INS_DEC:
+			case X86_INS_PSUBB:
+			case X86_INS_PSUBW:
+			case X86_INS_PSUBD:
+			case X86_INS_PSUBQ:
+			case X86_INS_PSUBSB:
+			case X86_INS_PSUBSW:
+			case X86_INS_PSUBUSB:
+			case X86_INS_PSUBUSW:
+				op->type = R_ANAL_OP_TYPE_SUB;
 				break;
 			case X86_INS_AND:
 			case X86_INS_ANDN:
@@ -140,6 +213,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_ANDNPS:
 				op->type = R_ANAL_OP_TYPE_AND;
 				break;
+			case X86_INS_DIV:
+				op->type = R_ANAL_OP_TYPE_DIV;
+				break;
+			case X86_INS_MUL:
+				op->type = R_ANAL_OP_TYPE_MUL;
+				break;
+			case X86_INS_INC:
 			case X86_INS_ADD:
 			case X86_INS_FADD:
 			case X86_INS_ADDPD:
