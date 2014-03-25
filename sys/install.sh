@@ -16,8 +16,14 @@ fi
 [ "`id -u`" = 0 ] || SUDO=sudo
 [ -n "${NOSUDO}" ] && SUDO=
 
-if [ "${HARDEN}" = 1 ]; then
+if [ "${HARDEN}" = 1 ] 
+then
 	./sys/build-harden.sh $@ && ${SUDO} ${MAKE} symstall
+else 
+if [ -n "${NOSUDO}" ]
+then
+	  ./sys/build.sh $@ && /bin/su -c "make symstall"
 else
 	./sys/build.sh $@ && ${SUDO} ${MAKE} symstall
+fi
 fi
