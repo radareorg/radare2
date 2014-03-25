@@ -950,6 +950,35 @@ static int cmd_anal(void *data, const char *input) {
 			eprintf ("Interrupted\n");
 		r_cons_break_end();
 		break;
+	case 'c':
+		{
+			int ccl = r_num_math (core->num, &input[2]);					//get cycles to look for
+			int cr = r_config_get_i (core->config, "asm.cmtright");				//make stuff look nice
+			int fun = r_config_get_i (core->config, "asm.functions");
+			int li = r_config_get_i (core->config, "asm.lines");
+			int xr = r_config_get_i (core->config, "asm.xrefs");
+			r_config_set_i (core->config, "asm.cmtright", R_TRUE);
+			r_config_set_i (core->config, "asm.functions", R_FALSE);
+			r_config_set_i (core->config, "asm.lines", R_FALSE);
+			r_config_set_i (core->config, "asm.xrefs", R_FALSE);
+			RList *hooks ;
+			RListIter *iter;
+			RAnalCycleHook *hook;
+			r_cons_break (NULL, NULL);
+			hooks = r_core_anal_cycles (core, ccl);						//analyse
+			r_cons_break_end ();
+			r_cons_clear_line (1);
+			r_list_foreach (hooks, iter, hook) {
+				r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), r_core_disassemble_instr (core, hook->addr, 1));
+				r_cons_flush ();
+			}
+			r_list_free (hooks);
+			r_config_set_i (core->config, "asm.cmtright", cr);				//reset settings
+			r_config_set_i (core->config, "asm.functions", fun);
+			r_config_set_i (core->config, "asm.lines", li);
+			r_config_set_i (core->config, "asm.xrefs", xr);
+		}
+		break;
 	case 'p':
 		if (input[1]=='?') {
 			// TODO: accept parameters for ranges
