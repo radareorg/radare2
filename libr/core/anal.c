@@ -993,12 +993,13 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i))
 					continue;
 				if (op.type == R_ANAL_OP_TYPE_JMP || op.type == R_ANAL_OP_TYPE_CJMP ||
-					op.type == R_ANAL_OP_TYPE_CALL) {
+					op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_CCALL) {
 					if (op.jump != -1 &&
 						r_core_anal_followptr (core, at+i, op.jump, ref, R_TRUE, 0)) {
 						count ++;
 					}
-				} else if (op.type == R_ANAL_OP_TYPE_UJMP || op.type == R_ANAL_OP_TYPE_UCALL) {
+				} else if (op.type == R_ANAL_OP_TYPE_UJMP || op.type == R_ANAL_OP_TYPE_UCALL ||
+					op.type == R_ANAL_OP_TYPE_UCJMP || op.type == R_ANAL_OP_TYPE_UCCALL) {
 					if (op.ptr != -1 &&
 						r_core_anal_followptr (core, at+i, op.ptr, ref, R_TRUE, 1)) {
 						count ++;
@@ -1243,3 +1244,165 @@ TODO: sdbize
 R_API void r_core_anal_stats_free (RCoreAnalStats *s) {
 	free (s);
 }
+
+R_API RList* r_core_anal_cycles (RCore *core, int ccl)
+{
+	ut64 addr = core->offset;
+	RAnalOp *op = NULL;
+	RAnalCycleFrame *prev = NULL, *cf = r_anal_cycle_frame_new ();
+	RAnalCycleHook *ch;
+	RList *hooks = r_list_new ();
+	while (cf && !core->cons->breaked) {
+		if ((ccl > 0) && (op = r_core_anal_op (core, addr)) && (op->cycles)) {
+			r_cons_clear_line (1);
+			eprintf ("%i -- ", ccl);
+			addr += op->size;
+			switch (op->type) {
+				case R_ANAL_OP_TYPE_JMP:
+					addr = op->jump;
+					ccl -= op->cycles;
+					eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", op->addr, addr);
+					break;
+				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_UCALL:
+					ch = R_NEW0 (RAnalCycleHook);
+					ch->addr = op->addr;
+					eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
+					ch->cycles = ccl;
+					r_list_append (hooks, ch);
+					ch = NULL;
+					while (!ch && cf) {
+						ch = r_list_pop (cf->hooks);
+						if (ch) {
+							addr = ch->addr;
+							ccl = ch->cycles;
+							free (ch);
+						} else {
+							r_anal_cycle_frame_free (cf);
+							cf = prev;
+							if (cf)
+								prev = cf->prev;
+						}
+					}
+					break;
+				case R_ANAL_OP_TYPE_CJMP:
+					ch = R_NEW0 (RAnalCycleHook);
+					ch->addr = addr;
+					ch->cycles = ccl - op->failcycles;
+					r_list_push (cf->hooks, ch);
+					ch = NULL;
+					addr = op->jump;
+					eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", op->addr, addr);
+					break;
+				case R_ANAL_OP_TYPE_UCJMP:
+				case R_ANAL_OP_TYPE_UCCALL:
+					ch = R_NEW0 (RAnalCycleHook);
+					ch->addr = op->addr;
+					ch->cycles = ccl;
+					r_list_append (hooks, ch);
+					ch = NULL;
+					ccl -= op->failcycles;
+					eprintf ("0x%08"PFMT64x" > ?\r");
+					break;
+				case R_ANAL_OP_TYPE_CCALL:
+					ch = R_NEW0 (RAnalCycleHook);
+					ch->addr = addr;
+					ch->cycles = ccl - op->failcycles;
+					r_list_push (cf->hooks, ch);
+					ch = NULL;
+				case R_ANAL_OP_TYPE_CALL:
+					if (op->addr !=  op->jump) {			//no selfies
+						cf->naddr = addr;
+						prev = cf;
+						cf = r_anal_cycle_frame_new ();
+						cf->prev = prev;
+					}
+					ccl -= op->cycles;
+					addr = op->jump;
+					eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", op->addr, addr);
+					break;
+				case R_ANAL_OP_TYPE_RET:
+					ch = R_NEW0 (RAnalCycleHook);
+					if (prev) {
+						ch->addr = prev->naddr;
+						ccl -= op->cycles;
+						ch->cycles = ccl;
+						r_list_push (prev->hooks, ch);
+						eprintf ("0x%08"PFMT64x" < 0x%08"PFMT64x"\r", prev->naddr, op->addr);
+					} else {
+						ch->addr = op->addr;
+						ch->cycles = ccl;
+						r_list_append (hooks, ch);
+						eprintf ("? < 0x%08"PFMT64x"\r", op->addr);
+					}
+					ch = NULL;
+					while (!ch && cf) {
+						ch = r_list_pop (cf->hooks);
+						if (ch) {
+							addr = ch->addr;
+							ccl = ch->cycles;
+							free (ch);
+						} else {
+							r_anal_cycle_frame_free (cf);
+							cf = prev;
+							if (cf)
+								prev = cf->prev;
+						}
+					}
+					break;
+				case R_ANAL_OP_TYPE_CRET:
+					ch = R_NEW0 (RAnalCycleHook);
+					if (prev) {
+						ch->addr = prev->naddr;
+						ch->cycles = ccl - op->cycles;
+						r_list_push (prev->hooks, ch);
+						eprintf ("0x%08"PFMT64x" < 0x%08"PFMT64x"\r", prev->naddr, op->addr);
+					} else {
+						ch->addr = op->addr;
+						ch->cycles = ccl - op->cycles;
+						r_list_append (hooks, ch);
+						eprintf ("? < 0x%08"PFMT64x"\r", op->addr);
+					}
+					ccl -= op->failcycles;
+					break;
+				default:
+					ccl -= op->cycles;
+					eprintf ("0x%08"PFMT64x"\r", op->addr);
+					break;
+			}
+			r_anal_op_free (op);
+		} else {
+			ch = R_NEW0 (RAnalCycleHook);
+			ch->addr = addr;
+			ch->cycles = ccl;
+			r_list_append (hooks, ch);
+			ch = NULL;
+			while (!ch && cf) {
+				ch = r_list_pop (cf->hooks);
+				if (ch) {
+					addr = ch->addr;
+					ccl = ch->cycles;
+					free (ch);
+				} else {
+					r_anal_cycle_frame_free (cf);
+					cf = prev;
+					if (cf)
+						prev = cf->prev;
+				}
+			}
+		}
+	}
+	if (core->cons->breaked) {
+		while (cf) {
+			ch = r_list_pop (cf->hooks);
+			while (ch) {
+				free (ch);
+				ch = r_list_pop (cf->hooks);
+			}
+			prev = cf->prev;
+			r_anal_cycle_frame_free (cf);
+			cf = prev;
+		}
+	}
+	return hooks;
+};
