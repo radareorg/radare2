@@ -6,7 +6,6 @@
 #define USE_VARSUBS 0
 
 #include <r_types.h>
-#include <list.h>
 #include <r_db.h>
 #include <r_io.h>
 #include <r_reg.h>
@@ -552,7 +551,8 @@ typedef struct r_anal_t {
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
-	struct list_head anals; // TODO: Reimplement with RList
+	//struct list_head anals; // TODO: Reimplement with RList
+	RList *plugins;
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api 
@@ -880,7 +880,8 @@ R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
 R_API RAnal *r_anal_new();
 R_API void r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
-R_API int r_anal_add(RAnal *anal, struct r_anal_plugin_t *foo);
+R_API void r_anal_plugin_free (RAnalPlugin *p);
+R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
 R_API int r_anal_list(RAnal *anal);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_reg_profile(RAnal *anal);

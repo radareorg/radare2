@@ -77,7 +77,8 @@ R_API RAnal *r_anal_new() {
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
 	r_anal_set_big_endian (anal, R_FALSE);
-	INIT_LIST_HEAD (&anal->anals); // TODO: use RList here
+	anal->plugins = r_list_new ();
+	anal->plugins->free = r_anal_plugin_free;
 	for (i=0; anal_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RAnalPlugin);
 		memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));
@@ -91,11 +92,18 @@ R_API RAnal *r_anal_new() {
 	return anal;
 }
 
+R_API void r_anal_plugin_free (RAnalPlugin *p) {
+	if (p && p->fini) {
+		p->fini (p);
+	}
+}
+
 R_API void r_anal_free(RAnal *a) {
 	if (!a) return;
 	/* TODO: Free anals here */
 	free (a->cpu);
 	a->cpu = NULL;
+	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
@@ -121,24 +129,24 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init)
 		foo->init (anal->user);
-	list_add_tail (&(foo->list), &(anal->anals));
+	r_list_append (anal->plugins, foo);
 	return R_TRUE;
 }
 
 // TODO: Must be deprecated
 R_API int r_anal_list(RAnal *anal) {
-	struct list_head *pos;
-	list_for_each_prev(pos, &anal->anals) {
-		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
+	RAnalPlugin *h;
+	RListIter *it;
+	r_list_foreach (anal->plugins, it, h) {
 		anal->printf ("anal %-10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
 
 R_API int r_anal_use(RAnal *anal, const char *name) {
-	struct list_head *pos;
-	list_for_each (pos, &anal->anals) { // XXX: must be _prevmust be _prev
-		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
+	RListIter *it;
+	RAnalPlugin *h;
+	r_list_foreach (anal->plugins, it, h) {
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);

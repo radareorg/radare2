@@ -160,11 +160,15 @@ static int cmd_type(void *data, const char *input) {
 			} else addr = core->offset;
 			snprintf (key, sizeof (key), "link.%"PFMT64x, addr);
 			type = sdb_const_get (core->anal->sdb_types, key, 0);
-			fmt = r_anal_type_format (core->anal, type);
-			if (fmt) {
-				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, addr);
-				free (fmt);
-			}// else eprintf ("Cannot find '%s' type\n", input+1);
+			if (type) {
+				fmt = r_anal_type_format (core->anal, type);
+				r_cons_printf ("struct %s {\n", type);
+				if (fmt) {
+					r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, addr);
+					free (fmt);
+				}// else eprintf ("Cannot find '%s' type\n", input+1);
+				r_cons_printf ("}\n");
+			}
 		 }
 		break;
 	case '?':

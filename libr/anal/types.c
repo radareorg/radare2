@@ -80,11 +80,11 @@ R_API int r_anal_type_frame_del (RAnal *anal, ut64 addr, const char *name) {
 	return R_TRUE;
 }
 
-R_API int r_anal_type_link (RAnal *anal, const char *val, ut64 addr) {
-	char var[128];
-	if (sdb_const_get (anal->sdb_types, val, 0)) {
-		sprintf (var, "link.%08"PFMT64x, addr);
-		sdb_set (anal->sdb_types, var, val, 0);
+R_API int r_anal_type_link (RAnal *anal, const char *type, ut64 addr) {
+	char laddr[128];
+	if (sdb_const_get (anal->sdb_types, type, 0)) {
+		snprintf (laddr, sizeof (laddr)-1, "link.%08"PFMT64x, addr);
+		sdb_set (anal->sdb_types, laddr, type, 0);
 		return R_TRUE;
 	} 
 	// eprintf ("Cannot find type\n");
