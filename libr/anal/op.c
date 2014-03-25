@@ -146,9 +146,11 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_JMP   : return "jmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
 	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
+	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_CALL  : return "call";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
 	case R_ANAL_OP_TYPE_CCALL : return "ccall";
+	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_REP   : return "rep";
 	case R_ANAL_OP_TYPE_RET   : return "ret";
 	case R_ANAL_OP_TYPE_CRET  : return "cret";
@@ -162,6 +164,7 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_PUSH  : return "push";
 	case R_ANAL_OP_TYPE_POP   : return "pop";
 	case R_ANAL_OP_TYPE_CMP   : return "cmp";
+	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
 	case R_ANAL_OP_TYPE_ADD   : return "add";
 	case R_ANAL_OP_TYPE_SUB   : return "sub";
 	case R_ANAL_OP_TYPE_MUL   : return "mul";
@@ -176,10 +179,10 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_LOAD  : return "load";
 	case R_ANAL_OP_TYPE_LEA   : return "lea";
 	case R_ANAL_OP_TYPE_LEAVE : return "leave";
-	case R_ANAL_OP_TYPE_ROR : return "ror";
-	case R_ANAL_OP_TYPE_ROL : return "rol";
-	case R_ANAL_OP_TYPE_XCHG : return "xchg";
-	case R_ANAL_OP_TYPE_MOD : return "mod";
+	case R_ANAL_OP_TYPE_ROR   : return "ror";
+	case R_ANAL_OP_TYPE_ROL   : return "rol";
+	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
+	case R_ANAL_OP_TYPE_MOD   : return "mod";
 	case R_ANAL_OP_TYPE_SWITCH : return "switch";
 	}
 	return "undefined";
