@@ -206,12 +206,15 @@ static void handle_add_show_color ( RCore *core, RDisasmState *ds) {
 			r_cons_strcat (ds->color_jmp);
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
 			r_cons_strcat (ds->color_cjmp);
 			break;
 		case R_ANAL_OP_TYPE_CMP:
+		case R_ANAL_OP_TYPE_ACMP:
 			r_cons_strcat (ds->color_cmp);
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_CCALL:
 			r_cons_strcat (ds->color_call);
