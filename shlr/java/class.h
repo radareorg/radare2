@@ -998,4 +998,6 @@ R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, 
 R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
 
 
+R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
+
 #endif
