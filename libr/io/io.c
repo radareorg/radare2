@@ -6,6 +6,8 @@
 
 R_LIB_VERSION (r_io);
 
+
+static int r_io_insert_adapted(RIO *io, ut64 offset, ut64 size);
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
 
@@ -341,8 +343,54 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 R_API int r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin && io->plugin->resize)
 		return io->plugin->resize (io, io->fd, newsize);
+	else if (io->plugin) return R_FALSE;
 	else ftruncate (io->fd->fd, newsize);
-	return R_FALSE;
+	return R_TRUE;
+}
+
+R_API int r_io_extend(RIO *io, ut64 size) {
+	ut64 curr_off = io->off;
+	ut64 cur_size = r_io_size (io);
+	ut8 *buffer = NULL;
+
+	if (!size) return R_FALSE;
+
+	if (io->plugin && io->plugin->extend)
+		return io->plugin->extend (io, io->fd, size);	
+	
+	if (!r_io_resize (io, size+cur_size)) return R_FALSE;
+	
+	buffer = malloc (cur_size-size);
+
+	// shift the bytes over by size
+	r_io_seek (io, curr_off, R_IO_SEEK_SET);
+	r_io_read (io, buffer, cur_size-size);
+	
+	// move/write the bytes
+	r_io_seek (io, curr_off+size, R_IO_SEEK_SET);
+	r_io_write (io, buffer, cur_size-size);
+
+	// zero out new bytes
+	if (cur_size < size) {
+		free (buffer);
+		buffer = malloc (size);
+	}
+	memset (buffer, 0, size);
+	r_io_seek (io, curr_off, R_IO_SEEK_SET);
+	r_io_write (io, buffer, size);
+
+	// reset the cursor
+	r_io_seek (io, curr_off, R_IO_SEEK_SET);
+	free (buffer);
+	return R_TRUE;
+}
+
+R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
+
+	if (!size) return R_FALSE;
+	r_io_seek (io, addr, R_IO_SEEK_SET);
+		
+	return 	r_io_extend (io, size);
 }
 
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {

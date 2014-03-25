@@ -219,6 +219,7 @@ R_API int r_core_file_close(RCore *core, RCoreFile *fh);
 R_API int r_core_file_close_fd(RCore *core, int fd);
 R_API int r_core_file_list(RCore *core);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
+R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
 

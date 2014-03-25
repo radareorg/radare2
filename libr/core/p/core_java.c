@@ -332,6 +332,7 @@ static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
 		r_cons_printf ("Offset: 0x%"PFMT64x" idx: %d\n", addr, *idx);
 	}
 	r_list_free (find_list);
+	return R_TRUE;
 }
 
 static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr) {
@@ -339,7 +340,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 	ut32 sz = 0;
 	ut8 * bytes = r_bin_java_cp_get_bytes (obj, idx, &sz);
 	if (bytes) {
-		res = r_core_write_at(core, addr, (const ut8 *)&bytes, sz);
+		res = r_core_write_at(core, addr, (const ut8 *)bytes, sz);
 	}
 	return res;
 }
@@ -382,7 +383,14 @@ static int r_cmd_java_handle_replace_cp_value_int (RCore *core, RBinJavaObj *obj
 }
 static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	int res = R_FALSE;
-	ut32 len = strlen (cmd);
+	ut32 len = cmd && *cmd ? strlen (cmd) : 0;
+
+	if (cmd && *cmd == '"') {
+		cmd++;
+		len = cmd && *cmd ? strlen (cmd) : 0;
+	}
+
+
 	if (len > 0 && r_bin_java_utf8_cp_set (obj, idx, (const ut8 *)cmd, len)) {
 		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
 	}
@@ -420,7 +428,7 @@ static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
 	
 
 	switch (cp_type) {
-		case R_BIN_JAVA_CP_UTF8: return r_cmd_java_handle_replace_cp_value_str (core, obj, p, idx, addr);
+		case R_BIN_JAVA_CP_UTF8: return r_cmd_java_handle_replace_cp_value_str (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
 		case R_BIN_JAVA_CP_INTEGER: return r_cmd_java_handle_replace_cp_value_int (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
 		case R_BIN_JAVA_CP_LONG: return r_cmd_java_handle_replace_cp_value_long (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
 		case R_BIN_JAVA_CP_FLOAT: return r_cmd_java_handle_replace_cp_value_float (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);

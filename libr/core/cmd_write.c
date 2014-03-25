@@ -26,6 +26,92 @@ static int cmd_write(void *data, const char *input) {
 		}
 		}
 		break;
+	case 'e':
+		{
+		ut64 addr = 0, len = 0;
+		ut8* bytes = NULL;
+		int cmd_suc = R_FALSE;
+
+		switch (input[1]) {
+			case 'n':
+				if (input[2] == ' ') {
+					len = *input ? r_num_math (core->num, input+3) : 0;
+					if (len > 0){
+						ut64 cur_off = core->offset;
+						cmd_suc = r_core_extend_at (core, core->offset, len);
+						core->offset = cur_off;
+						r_core_block_read (core, 0);						
+					}
+				}
+				break;
+			case 'N':
+				if (input[2] == ' ') {
+					addr = r_num_math (core->num, input+3);
+					input += 3;
+					while (*input && *input != ' ') input++;
+					input++;
+					len = *input ? r_num_math (core->num, input) : 0;
+					if (len > 0){
+						ut64 cur_off = core->offset;
+						cmd_suc = r_core_extend_at (core, addr, len);
+						//cmd_suc = r_core_seek (core, cur_off, 1);
+						core->offset = addr;
+						r_core_block_read (core, 0);
+					}
+				}
+				break;
+			case 'x':
+				if (input[2] == ' ') {
+					input+=2;
+					len = *input ? strlen (input) : 0;
+					bytes = len > 1? malloc (len+1) : NULL;
+					len = bytes ? r_hex_str2bin (input, bytes) : 0;
+					if (len > 0) {
+						ut64 cur_off = core->offset;
+						cmd_suc = r_core_extend_at (core, cur_off, len);
+						if (cmd_suc) {
+							r_core_write_at (core, cur_off, bytes, len);
+						}
+						core->offset = cur_off;
+						r_core_block_read (core, 0);
+					}
+				}
+				break;
+			case 'X':
+				if (input[2] == ' ') {
+					addr = r_num_math (core->num, input+3);
+					input += 3;
+					while (*input && *input != ' ') input++;
+					input++;
+					len = *input ? strlen (input) : 0;
+					bytes = len > 1? malloc (len+1) : NULL;
+					len = bytes ? r_hex_str2bin (input, bytes) : 0;
+					if (len > 0) {
+						ut64 cur_off = core->offset;
+						cmd_suc = r_core_extend_at (core, addr, len);
+						if (cmd_suc) {
+							r_core_write_at (core, addr, bytes, len);
+						}
+						core->offset = addr;
+						r_core_block_read (core, 0);
+					}
+				}
+				break;
+			case '?':
+			default: 
+				cmd_suc = R_FALSE;
+		}
+
+		if (cmd_suc == R_FALSE) {
+			r_cons_printf ("|Usage: write extend\n"
+			"wen <num>               insert num null bytes at current offset\n"
+			"wex <hex_bytes>         insert bytes at current offset\n"
+			"weN <addr> <len>        insert bytes at address\n"
+			"weX <addr> <hex_bytes>  insert bytes at address\n"
+			);
+		}
+		break;
+		}
 	case 'p':
 		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
 			const char *tmpfile = ".tmp";

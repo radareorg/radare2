@@ -34,6 +34,26 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 }
 
+
+static int __resize(RIO *io, RIODesc *fd, ut64 count) {
+	ut8 * new_buf = NULL;
+	if (fd == NULL || fd->data == NULL || count == 0)
+		return -1;
+	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd))
+		return -1;
+
+	new_buf = malloc (count);
+	memcpy (new_buf, RIOMALLOC_BUF (fd), count);
+	if (count > RIOMALLOC_SZ (fd) )
+		memset (new_buf+RIOMALLOC_SZ (fd), 0, count-RIOMALLOC_SZ (fd));
+
+	free (RIOMALLOC_BUF (fd));
+	RIOMALLOC_BUF (fd) = new_buf;
+	RIOMALLOC_SZ (fd) = count;
+	
+	return count;
+}
+
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	if (fd == NULL || fd->data == NULL)
@@ -131,6 +151,7 @@ struct r_io_plugin_t r_io_plugin_malloc = {
 	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
+	.resize = __resize,
 };
 
 #ifndef CORELIB

@@ -249,6 +249,20 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
+R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
+	int ret;
+	if (!core->io || !core->file || size<1)
+		return R_FALSE;
+	ret = r_io_set_fd (core->io, core->file->fd);
+	if (ret != -1) {
+		ret = r_io_extend_at (core->io, addr, size);
+		if (addr >= core->offset && addr <= core->offset+core->blocksize)
+			r_core_block_read (core, 0);
+	}
+	core->file->size = r_io_size (core->io);
+	return (ret==-1)? R_FALSE: R_TRUE;
+}
+
 static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RListIter *iter;
 	RCoreFile *file = NULL;

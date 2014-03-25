@@ -5511,8 +5511,8 @@ R_API int r_bin_java_double_cp_set(RBinJavaObj *bin, ut16 idx, ut32 val){
 
 R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, ut32 len){
 	RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
-	ut8 bytes[8] = {0};
-
+	
+	eprintf ("Writing %d bytes (%s)\n", len, buffer);
 	//r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_INTEGER);
 	if (cp_obj->tag != R_BIN_JAVA_CP_UTF8) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
@@ -5526,10 +5526,10 @@ R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, 
 		}
 	}
 	
-	memcpy (&cp_obj->info.cp_utf8.bytes, bytes, cp_obj->info.cp_utf8.length);
+	memcpy (cp_obj->info.cp_utf8.bytes, buffer, cp_obj->info.cp_utf8.length);
 
 	if (cp_obj->info.cp_utf8.length > len) {
-		memset (&cp_obj->info.cp_utf8.bytes+len, 0, cp_obj->info.cp_utf8.length-len);
+		memset (cp_obj->info.cp_utf8.bytes+len, 0, cp_obj->info.cp_utf8.length-len);
 	}		
 	return R_TRUE;
 }
@@ -5537,7 +5537,7 @@ R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, 
 static ut8 * r_bin_java_cp_get_4bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
 	ut8 *buffer = malloc (5);
 	buffer[0] = cp_obj->tag;
-	memcpy (buffer, cp_obj->info.cp_integer.bytes.raw, 4);
+	memcpy (buffer+1, cp_obj->info.cp_integer.bytes.raw, 4);
 	*out_sz = 5;
 	return buffer;
 }
@@ -5545,16 +5545,20 @@ static ut8 * r_bin_java_cp_get_4bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
 static ut8 * r_bin_java_cp_get_8bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
 	ut8 *buffer = malloc (9);
 	buffer[0] = cp_obj->tag;
-	memcpy (buffer, cp_obj->info.cp_long.bytes.raw, 4);
+	memcpy (buffer+1, cp_obj->info.cp_long.bytes.raw, 4);
 	*out_sz = 9;
 	return buffer;
 }
 
 static ut8 * r_bin_java_cp_get_utf8(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
-	ut8 *buffer = malloc (1 + cp_obj->info.cp_utf8.length);
+	ut8 *buffer = NULL;//NULL
+	ut16 sz = R_BIN_JAVA_USHORT ( ((ut8 *)(ut16*)&cp_obj->info.cp_utf8.length), 0);
+	*out_sz = 3 + cp_obj->info.cp_utf8.length; // tag + sz + bytes 
+	buffer = malloc (*out_sz);
 	buffer[0] = cp_obj->tag;
-	memcpy (buffer, cp_obj->info.cp_utf8.bytes, cp_obj->info.cp_utf8.length);
-	*out_sz = 1 + cp_obj->info.cp_utf8.length;
+	memcpy (buffer+1, (const char *) &sz, 2 );
+	memcpy (buffer+3, cp_obj->info.cp_utf8.bytes, *out_sz-1);
+	//*out_sz = 1 + cp_obj->info.cp_utf8.length;
 	return buffer;
 }
 
