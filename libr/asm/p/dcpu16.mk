@@ -1,6 +1,6 @@
 OBJ_DCPU16=asm_dcpu16.o
-OBJ_DCPU16+=../arch/dcpu16/asm.o
-OBJ_DCPU16+=../arch/dcpu16/dis.o
+#OBJ_DCPU16+=../arch/dcpu16/asm.o
+#OBJ_DCPU16+=../arch/dcpu16/dis.o
 
 STATIC_OBJ+=${OBJ_DCPU16}
 TARGET_DCPU16=asm_dcpu16.${EXT_SO}

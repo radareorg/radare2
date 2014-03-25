@@ -28,7 +28,7 @@ int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
 	next_ins_pos = 0;
 
 	// decode instruction
-	ins_decoded = decode(0, &next_ins_pos);
+	ins_decoded = c55plus_decode(0, &next_ins_pos);
 	dasm->length = next_ins_pos;
 	if (!ins_decoded) {
 		return 0;

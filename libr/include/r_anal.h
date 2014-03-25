@@ -385,7 +385,7 @@ enum {
 };
 
 // XXX: this definition is plain wrong. use enum or empower bits
-enum {
+typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000,
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
 	R_ANAL_OP_TYPE_NULL  = 0,
@@ -429,7 +429,7 @@ enum {
 	R_ANAL_OP_TYPE_XCHG  = 35,
 	R_ANAL_OP_TYPE_MOD   = 36,
 	R_ANAL_OP_TYPE_SWITCH = 37,
-};
+} _RAnalOp;
 
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {
@@ -441,7 +441,7 @@ typedef enum {
 	R_ANAL_COND_LT,
 	R_ANAL_COND_AL,
 	R_ANAL_COND_NV,
-};
+} _RAnalCond;
 
 typedef enum {
 	R_ANAL_VAR_SCOPE_NULL   = 0,

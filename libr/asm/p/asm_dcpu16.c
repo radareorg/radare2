@@ -8,6 +8,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include "../arch/dcpu16/dcpu16.h"
+#include "../arch/dcpu16/dis.c"
+#include "../arch/dcpu16/asm.c"
 
 // ut64 for length here is overkill!
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

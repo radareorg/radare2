@@ -506,7 +506,7 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 	return ins_res;
 }
 
-st8 *decode(ut32 ins_pos, ut32 *next_ins_pos)
+st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
 {
 	ut8 opcode, two_ins = 0;
 	ut32 next_ins1_pos, next_ins2_pos;

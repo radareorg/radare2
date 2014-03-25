@@ -4,7 +4,7 @@ OBJ_TMS320+=../arch/tms320/tms320_dasm.o
 # looks ugly as radare2 build system is terrible
 
 OBJ_TMS320+=../arch/tms320/c55x_plus/c55plus.o \
-	    ../arch/tms320/c55x_plus/decode.o \
+	    ../arch/tms320/c55x_plus/c55plus_decode.o \
 	    ../arch/tms320/c55x_plus/decode_funcs.o \
 	    ../arch/tms320/c55x_plus/hashtable.o \
 	    ../arch/tms320/c55x_plus/hashvector.o \

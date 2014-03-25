@@ -64,7 +64,7 @@ static int valPrint(char *out, ut8 type, ut16 value) {
 	if (type <= 0x1d) return sprintf(out, "%s", regs[type - 0x18 + 0x08]);
 	if (type == 0x1e) return sprintf(out, "[%#hx]", value);
 	if (type == 0x1f) return sprintf(out, "%#hx", value);
-	return sprintf(out, "%#hx", type - 0x20);
+	return sprintf(out, "%#hx", (short)(type - 0x20));
 }
 
 static int instrPrint(char *out, const op* o) {
@@ -119,7 +119,7 @@ static int instrGetCycles(const op* o) {
 int dcpu16_disasm(char *out, const ut16* inp, int len, int *cost) {
 	op o;
 	int delta = instrGet (inp[0], &o, inp[1], inp[2]);
-	if (cost) *cost = instrGetCycles(&o) + (o.b.opcode >= 0xc)?1:0;
+	if (cost) *cost = instrGetCycles(&o) + ((o.b.opcode >= 0xc)?1:0);
 	instrPrint (out, &o);
 	//ind = (o.b.opcode >= 0xC);
 	return delta<<1;
