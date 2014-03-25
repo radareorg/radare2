@@ -10,7 +10,7 @@ cd `dirname $PWD/$0` ; cd ..
 # update
 if [ -d .git ]; then
     echo "WARNING: Updating from remote repository"
-    echo git pull
+    git pull
 fi
 
 
