@@ -444,7 +444,7 @@ typedef enum {
 	R_ANAL_COND_LT,
 	R_ANAL_COND_AL,
 	R_ANAL_COND_NV,
-};
+} _RAnalCond;
 
 typedef enum {
 	R_ANAL_VAR_SCOPE_NULL   = 0,
