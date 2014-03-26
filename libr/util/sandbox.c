@@ -6,12 +6,35 @@
 static int enabled = 0;
 static int disabled = 0;
 
+/**
+ * This function verifies that the given path is allowed. Paths are allowed only if they don't
+ * contain .. components (which would indicate directory traversal) and they are relative.
+ * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
+ * paths are ok.
+ */
 R_API int r_sandbox_check_path (const char *path) {
 	char ch;
+	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	if (!memcmp (path, R2_WWWROOT, strlen (R2_WWWROOT)))
-		return R_TRUE;
-	if (strstr (path, "../")) return 0;
+
+	if (!path) return 0;
+
+	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
+	size_t root_len = strlen (R2_WWWROOT);
+	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
+			R2_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
+		path += strlen (R2_WWWROOT);
+		while (*path == '/') path++;
+	}
+
+	// Properly check for directrory traversal using "..". First, does it start with a .. part?
+        if (path[0]=='.' && path[1]=='.' && (path[2]=='\0' || path[2]=='/')) return 0;
+
+	// Or does it have .. in some other position?
+	for (p = strstr(path, "/.."); p; p = strstr(p, "/.."))
+		if (p[3] == '\0' || p[3] == '/') return 0;
+
+	// Absolute paths are forbidden.
 	if (*path == '/') return 0;
 #if __UNIX__
 	if (readlink (path, &ch, 1) != -1) return 0;
