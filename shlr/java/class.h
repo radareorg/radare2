@@ -669,8 +669,10 @@ typedef struct r_bin_java_classfile_t {
 typedef struct r_bin_java_classfile2_t {
 	ut16 access_flags;
 	char *flags_str;
+	char *this_class_name;
 	ut16 this_class;
 	ut16 super_class;
+	ut16 cf2_size;
 	RBinJavaField *this_class_entrypoint;
 	RBinJavaAttrInfo *this_class_entrypoint_code_attr;
 } RBinJavaClass2;
@@ -683,21 +685,22 @@ typedef struct r_bin_java_lines_t {
 
 typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
-	RBinJavaClass2* cf2;
+	RBinJavaClass2 cf2;
 
-	ut32 cp_offset, cp_size, cp_count;
-	ut32 fields_offset, fields_size, fields_count;
-	ut32 interfaces_offset, interfaces_size, interfaces_count;
-	ut32 methods_offset, methods_size, methods_count;
-	ut32 classes_offset, classes_size, classes_count;
-	ut32 attributes_offset, attributes_size, attributes_count;
+	ut64 cp_offset, fields_offset, interfaces_offset;
+	ut64 classes_offset, methods_offset, attrs_offset;
+	ut32 cp_size, cp_count;
+	ut32 fields_size, fields_count;
+	ut32 interfaces_size, interfaces_count;
+	ut32 methods_size, methods_count;
+	ut32 classes_size, classes_count;
+	ut32 attrs_size, attrs_count;
 
 	ut64 loadaddr; // load address that is used to calc actual offset
 				// when multiple bins are loaded at once
 	int size;
 	char* file;
 	RBinJavaLines lines;
-	struct r_buf_t* b;
 
 	// These state variables are used for parsing the appropriate number of bytes
 	// when readin uoffset, ustack, ulocalvar values
@@ -730,7 +733,7 @@ typedef struct r_bin_java_obj_t {
 	RList* methods_list;
 	RList* cp_list;
 	RList* interfaces_list;
-	RList* attributes;
+	RList* attrs_list;
 
 	RList* functions;
 	RList* disassembly;
@@ -856,7 +859,7 @@ typedef struct java_const_value_t {
 	} value;
 } ConstJavaValue;
 
-R_API ut8* r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 offset, ut64 sz);
+R_API ut8* r_bin_java_get_attr_buf(RBinJavaObj *bin,  ut64 sz, const ut64 offset, const ut8 *buf, const ut64 len);
 R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
 R_API char* r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx);
 R_API ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx);
@@ -999,5 +1002,6 @@ R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
 
 
 R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
+R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 len);
 
 #endif
