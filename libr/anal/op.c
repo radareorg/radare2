@@ -60,7 +60,7 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	r_strbuf_init (&nop->esil);
 	r_strbuf_set (&nop->esil, r_strbuf_get (&op->esil));
 	return nop;
-}}
+}
 
 // TODO: return RAnalException *
 R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
