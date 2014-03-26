@@ -337,7 +337,7 @@ R_API int r_name_check(const char *name);
 R_API int r_name_filter(char *name, int len);
 
 R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
-R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
+R_API int r_base64_decode(ut8 *bout, const char *bin, int len);
 
 /* strings */
 static inline void r_str_rmch (char *s, char ch) {

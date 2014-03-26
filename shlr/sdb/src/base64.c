@@ -14,7 +14,7 @@ static void b64_encode(const ut8 in[3], char out[4], int len) {
 	if (len<1) return;
 	out[0] = cb64[ in[0] >> 2 ];
 	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((len>1)?((in[1] & 0xf0) >> 4):0) ];
-	out[2] = (len > 1 ? cb64[ ((in[1] & 0x0f) << 2) | ((in[2] & 0xc0) >> 6) ] : '=');
+	out[2] = (len > 1 ? cb64[ ((in[1] & 0x0f) << 2) | (len > 2 ? ((in[2] & 0xc0) >> 6) : 0) ] : '=');
 	out[3] = (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
 }
 
@@ -38,31 +38,28 @@ static int b64_decode(const char in[4], ut8 out[3]) {
 SDB_API void sdb_encode_raw(char *bout, const ut8 *bin, int len) {
 	int in, out;
 	for (in=out=0; in<len; in+=3,out+=4)
-		b64_encode (bin+in, bout+out, len-in>3?3:len-in);
+		b64_encode (bin+in, bout+out,
+			(len-in)>3?3:(len-in));
 	bout[out] = 0;
 }
 
 SDB_API int sdb_decode_raw(ut8 *bout, const char *bin, int len) {
 	int in, out, ret;
-	for (in=out=0; in<len-1;in+=4) {
+	for (in=out=0; in<len; in+=4) {
 		if ((ret = b64_decode (bin+in, bout+out))<1)
 			break;
-		out += 3;
+		out += ret;
 	}
-	if (out>0)
-		bout[out-1] = 0;
-	return (in != out);
+	return (in != out)? out: 0;
 }
 
 SDB_API char *sdb_encode(const ut8 *bin, int len) {
 	char *out;
-	if (!bin || len<1)
-		len = strlen ((const char *)bin)+1;
-	if (len==0)
-		return strdup ("");
+	if (!bin) return NULL;
+	if (len<1) len = strlen ((const char *)bin);
+	if (len==0) return strdup ("");
 	out = malloc (8+(len*2));
-	if (!out)
-		return NULL;
+	if (!out) return NULL;
 	memset (out, 0, (len*2)+8);
 	sdb_encode_raw (out, bin, len);
 	return out;
@@ -82,6 +79,7 @@ SDB_API ut8 *sdb_decode (const char *in, int *len) {
 		free (out);
 		return NULL;
 	}
+	out[olen] = 0;
 	if (len)
 		*len = olen;
 	return out;
