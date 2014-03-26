@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -9,7 +9,8 @@ R_LIB_VERSION(r_lang);
 #include "p/c.c" // hardcoded
 
 
-RLang *__lang = NULL;
+static RLang *__lang = NULL;
+
 R_API void r_lang_plugin_free (RLangPlugin *p) {
 	if (p && p->fini)
 		p->fini (__lang);

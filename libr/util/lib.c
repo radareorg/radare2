@@ -133,8 +133,10 @@ R_API int r_lib_dl_check_filename(const char *file) {
 
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
-	if (h && h->constructor)
+	if (h && h->constructor) {
+		IFDBG eprintf ("PLUGIN HANDLER %p %p\n", h, h->constructor);
 		return h->constructor (plugin, h->user, symbol->data);
+	} else IFDBG eprintf ("Cannot find plugin constructor\n");
 	return R_FAIL;
 }
 
@@ -219,8 +221,10 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return R_FAIL;
 	}
 
+	// TODO: Use Sdb here. just a single line
 	r_list_foreach (lib->plugins, iter, p) {
 		if (samefile (file, p->file)) {
+			IFDBG eprintf ("Dupped\n");
 			r_lib_dl_close (handler);
 			return R_FAIL;
 		}

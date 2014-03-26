@@ -486,7 +486,6 @@ R_API int r_core_init(RCore *core) {
 	core->print->offname = r_core_print_offname;
 	core->print->printf = (void *)r_cons_printf;
 	core->print->write = (void *)r_cons_memcat;
-	core->print->user = core;
 	core->print->disasm = __disasm;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;

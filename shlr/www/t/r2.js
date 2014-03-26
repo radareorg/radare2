@@ -1,4 +1,4 @@
-/* radare2 Copyleft 2013 pancake */
+/* radare2 Copyleft 2013-2014 pancake */
 
 var r2 = {};
 
@@ -58,12 +58,12 @@ r2.get_disasm = function (offset, length, cb) {
   r2.cmd ("pD "+length+"@"+offset, cb);
 }
 
-r2.config_set = function (fn) {
-  // TODO
+r2.config_set = function (k, v, fn) {
+  r2.cmd ("e "+k+"="+v, fn);
 }
 
-r2.config_get = function (fn) {
-  // TODO
+r2.config_get = function (k, fn) {
+  r2.cmd ("e "+k, fn);
 }
 
 r2.set_flag_space = function (ns, fn) {
@@ -138,6 +138,12 @@ r2.cmds = function (cmds, cb) {
 }
 
 r2.cmd = function (c, cb) {
+  if (r2cmd) {
+    // TODO: use setTimeout for async?
+    if (cb)
+      return cb (r2cmd (c));
+    return r2cmd (c);
+  } else
   Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '', function (x) {
     if (cb) cb (x);
   });
