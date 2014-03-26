@@ -19,9 +19,7 @@ R_API RDatabase *r_db_new() {
 }
 
 R_API RDatabaseBlock *r_db_block_new() {
-	RDatabaseBlock *ptr = R_NEW (RDatabaseBlock);
-	ptr->data = NULL;
-	memset (&ptr->childs, '\0', sizeof (ptr->childs));
+	RDatabaseBlock *ptr = R_NEW0 (RDatabaseBlock);
 	return ptr;
 }
 
