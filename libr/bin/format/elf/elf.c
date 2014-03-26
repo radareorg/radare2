@@ -1065,6 +1065,8 @@ if (
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
+			free(sym);
+			sym = NULL;
 			{
 			ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
 			if (!p) {
