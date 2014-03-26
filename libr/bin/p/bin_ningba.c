@@ -34,13 +34,12 @@ static RList* entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 
-	if (arch && arch->buf != NULL) {
+	if (arch && arch->buf) {
 		if (!ret)
 			return NULL;
 		ret->free = free;
-		if (!(ptr = R_NEW (RBinAddr)))
+		if (!(ptr = R_NEW0 (RBinAddr)))
 			return ret;
-		memset (ptr, '\0', sizeof (RBinAddr));
 		ptr->offset = ptr->rva = 0x0;
 		r_list_append (ret, ptr);
 	}
@@ -49,7 +48,7 @@ static RList* entries(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	ut8 rom_info[16];
-	RBinInfo *ret = R_NEW (RBinInfo);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 
 	if (!ret)
 		return NULL;
@@ -59,7 +58,6 @@ static RBinInfo* info(RBinFile *arch) {
 		return NULL;
 	}
 
-	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = NULL;
 	r_buf_read_at (arch->buf, 0xa0, rom_info, 16);
 	strncpy (ret->file, rom_info, 12);
