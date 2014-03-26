@@ -4,19 +4,15 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_op_new() {
-	RAnalOp *op = R_NEW (RAnalOp);
+R_API RAnalOp *r_anal_op_new () {
+	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (op) {
-		memset (op, 0, sizeof (RAnalOp));
-		op->mnemonic = NULL;
 		op->addr = -1;
 		op->jump = -1;
 		op->fail = -1;
 		op->ptr = -1;
 		op->val = -1;
 		r_strbuf_init (&op->esil);
-		op->next = NULL;
-		op->switch_op = NULL;
 	}
 	return op;
 }
@@ -32,14 +28,8 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
 	r_anal_value_free (op->dst);
-	if (op->switch_op) r_anal_switch_op_free(op->switch_op);
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->src[2] = NULL;
-	op->dst = NULL;
+	r_anal_switch_op_free (op->switch_op);
 	free (op->mnemonic);
-	op->mnemonic = NULL;
-	//op->src[0] = op->src[1] = op->src[2] = op->dst = NULL;
 	memset (op, 0, sizeof (RAnalOp));
 }
 
@@ -51,8 +41,8 @@ R_API void r_anal_op_free(void *_op) {
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ret = R_FALSE;
-	memset (op, 0, sizeof (RAnalOp));
-	if (len>0 && anal && op && anal->cur && anal->cur->op) {
+	if (len>0 && anal && memset (op, 0, sizeof (RAnalOp)) &&
+		anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret<1) op->type = R_ANAL_OP_TYPE_ILL;
 	}
@@ -61,7 +51,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	RAnalOp *nop = R_NEW (RAnalOp);
-	memcpy (nop, op, sizeof (RAnalOp));
+	*nop = *op;
 	nop->mnemonic = strdup (op->mnemonic);
 	nop->src[0] = r_anal_value_copy (op->src[0]);
 	nop->src[1] = r_anal_value_copy (op->src[1]);

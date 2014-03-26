@@ -2,10 +2,8 @@
 
 #include <r_anal.h>
 
-R_API RAnalValue *r_anal_value_new() {
-	RAnalValue *cond = R_NEW (RAnalValue);
-	memset (cond, 0, sizeof (RAnalValue));
-	return cond;
+R_API RAnalValue *r_anal_value_new() {			//makro for this ?
+	return R_NEW0 (RAnalValue);
 }
 
 R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
@@ -57,11 +55,10 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
 		} else eprintf ("No IO binded to r_anal\n");
 	} else {
-		RRegItem *item = val->reg;
-		if (item)
-			r_reg_set_value (anal->reg, item, num);
+		if (val->reg)
+			r_reg_set_value (anal->reg, val->reg, num);
 	}
-	return R_FALSE;
+	return R_FALSE;							//is this necessary
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {

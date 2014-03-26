@@ -6,19 +6,14 @@
 #include <r_list.h>
 
 R_API RAnalVar *r_anal_var_new() {
-	RAnalVar *var = R_NEW (RAnalVar);
-	if (var) {
-		memset (var, 0, sizeof (RAnalVar));
+	RAnalVar *var = R_NEW0 (RAnalVar);
+	if (var)
 		var->accesses = r_anal_var_access_list_new ();
-	}
 	return var;
 }
 
-R_API RAnalVarAccess *r_anal_var_access_new() {
-	RAnalVarAccess *access = R_NEW (RAnalVarAccess);
-	if (access)
-		memset (access, 0, sizeof (RAnalVarAccess));
-	return access;
+R_API RAnalVarAccess *r_anal_var_access_new() {			//Makro or inline
+	return R_NEW0 (RAnalVarAccess);
 }
 
 R_API RList *r_anal_var_list_new() {
