@@ -18,7 +18,6 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '+':
 		perms = R_IO_READ|R_IO_WRITE;
-		input++;
 	case 'n':
 		// like in r2 -n
 		isn = 1;
