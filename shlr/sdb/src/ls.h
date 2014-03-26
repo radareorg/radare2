@@ -40,7 +40,7 @@ SDB_API int ls_length(SdbList *list);
 SDB_API void ls_add_sorted(SdbList *list, void *data, SdbListComparator cmp);
 SDB_API void ls_sort(SdbList *list, SdbListComparator cmp);
 
-SDB_API void ls_del (SdbList *list, SdbListIter *iter);
+SDB_API void ls_delete (SdbList *list, SdbListIter *iter);
 SDB_API void ls_iter_init (SdbListIter *iter, SdbList *list);
 SDB_API void ls_destroy (SdbList *list);
 SDB_API void ls_free (SdbList *list);
@@ -49,7 +49,6 @@ SDB_API void ls_unlink (SdbList *list, void *ptr);
 SDB_API void ls_split (SdbList *list, void *ptr);
 SDB_API void ls_split_iter (SdbList *list, SdbListIter *iter);
 SDB_API void *ls_get_n (SdbList *list, int n);
-SDB_API int ls_del_n (SdbList *list, int n);
 SDB_API void *ls_get_top (SdbList *list);
 #define ls_push(x,y) ls_append(x,y)
 SDB_API void *ls_pop (SdbList *list);

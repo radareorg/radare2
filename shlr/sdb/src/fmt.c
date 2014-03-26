@@ -2,6 +2,7 @@
 
 #include "sdb.h"
 
+// TODO: Add 'a' format for array of pointers null terminated??
 // XXX SLOW CONCAT
 #define concat(x) if (x) { \
 	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
@@ -51,7 +52,7 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 	char *next, *str, *ptr, *word, *e_str;
 	str = ptr = strdup (_str);
 	for (; *fmt; fmt++) {
-		word = sdb_array_string (ptr, &next);
+		word = sdb_anext (ptr, &next);
 		if (!word || !*word)
 			break;
 		n = 4; // ALIGN

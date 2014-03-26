@@ -3,21 +3,16 @@
 #include "sdb.h"
 #include "types.h"
 
+// check if key exists and if it's a number.. rename?
 SDB_API int sdb_num_exists (Sdb *s, const char *key) {
 	const char *o = sdb_const_get (s, key, NULL);
 	return o? (*o>='0' && *o<='9'): 0;
 }
 
 SDB_API ut64 sdb_num_get(Sdb *s, const char *key, ut32 *cas) {
-	ut64 n;
-	char *p;
 	const char *v = sdb_const_get (s, key, cas);
 	if (!v || *v=='-') return 0LL;
-	n = (!strncmp (v, "0x", 2))?
-		strtoull (v+2, &p, 16):
-		strtoull (v, &p, 10);
-	if (!p) return 0LL;
-	return n;
+	return sdb_atoi (v);
 }
 
 SDB_API int sdb_num_set(Sdb *s, const char *key, ut64 v, ut32 cas) {

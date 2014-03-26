@@ -40,7 +40,7 @@ static int meta_inrange_add (RAnal *a, ut64 addr, int size) {
 	base2 = META_RANGE_BASE (addr+size);
 	for (; base<base2; base += META_RANGE_SIZE) {
 		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
-		if (sdb_array_add_num (DB, key, -1, addr, 0))
+		if (sdb_array_add_num (DB, key, addr, 0))
 			set = 1;
 	}
 	return set;
@@ -55,7 +55,7 @@ static int meta_inrange_del (RAnal *a, ut64 addr, int size) {
 // TODO: optimize this thing?
 	for (; base<base2; base += META_RANGE_SIZE) {
 		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
-		if (sdb_array_del_num (DB, key, addr, 0))
+		if (sdb_array_delete_num (DB, key, addr, 0))
 			set = 1;
 	}
 	//sdb_array_del (DB);
@@ -68,7 +68,7 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	int ret;
 	ut64 size;
 	snprintf (key, sizeof (key)-1, "meta.%c", type);
-	sdb_array_add_num (DB, key, -1, addr, 0);
+	sdb_array_add_num (DB, key, addr, 0);
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	size = sdb_array_get_num (DB, key, 0, 0);
 	if (!size) {
@@ -109,7 +109,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 			snprintf (key, sizeof (key)-1, "meta.%c", type);
 			dtr = sdb_get (DB, key, 0);
 			for (p = dtr; p; p = next) {
-				s = sdb_array_string (p, &next);
+				s = sdb_anext (p, &next);
 				snprintf (key, sizeof (key)-1,
 					"meta.%c.0x%"PFMT64x,
 					type, sdb_atoi (s));
@@ -169,11 +169,11 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	/* set type index */
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, from);
 	snprintf (val, sizeof (val)-1, "%c", type);
-	sdb_array_add (DB, key, -1, val, 0);
+	sdb_array_add (DB, key, val, 0);
 
 	/* set type index */
 	snprintf (key, sizeof (key)-1, "meta.%c", type);
-	sdb_array_add_num (DB, key, -1, from, 0);
+	sdb_array_add_num (DB, key, from, 0);
 
 	return R_TRUE;
 }

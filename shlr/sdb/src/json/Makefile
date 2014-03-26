@@ -1,5 +1,9 @@
 include ../../config.mk
 
+HASOVR=$(shell clang -Wno-initializer-overrides -E -</dev/null 2>&1| grep unknown)
+ifeq ($(HASOVR),)
+CFLAGS+=-Wno-initializer-overrides
+endif
 CFLAGS+=-Wall -g -ggdb
 BIN=a.out
 OBJ=rangstr.o path.o js0n.o api.o main.o

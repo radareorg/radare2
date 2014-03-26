@@ -14,9 +14,9 @@ SDB_API SdbList *ls_new() {
 	return list;
 }
 
-SDB_API void ls_del (SdbList *list, SdbListIter *iter) {
+SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	if (iter==NULL) {
-		fprintf (stderr, "ls_del: null iter?\n");
+		fprintf (stderr, "ls_delete: null iter?\n");
 		return;
 	}
 	ls_split_iter (list, iter);
@@ -41,7 +41,7 @@ SDB_API void ls_destroy (SdbList *list) {
 		it = list->head;
 		while (it) {
 			SdbListIter *next = it->n;
-			ls_del (list, it);
+			ls_delete (list, it);
 			it = next;
 		}
 		list->head = list->tail = NULL;

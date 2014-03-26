@@ -1,4 +1,4 @@
-/* Public domain. */
+/* Public domain - author D. J. Bernstein, modified by pancake - 2014 */
 
 #include <sys/types.h>
 #include <sys/stat.h>

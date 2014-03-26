@@ -3,6 +3,7 @@
 #include "sdb.h"
 #include <sys/time.h>
 
+// XXX deprecate or wtf? who uses this??
 SDB_API int sdb_check_value(const char *s) {
 	if (!s || *s=='$')
 		return 0;
@@ -64,11 +65,58 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 
 SDB_API ut64 sdb_atoi(const char *s) {
 	char *p;
+	ut64 ret;
 	if (!s || *s=='-')
 		return 0LL;
-	if (!strncmp (s, "0x", 2))
-		return strtoull (s+2, &p, 16);
-	return strtoull (s, &p, 10);
+	ret = !strncmp (s, "0x", 2)?
+		strtoull (s+2, &p, 16):
+		strtoull (s, &p, 10);
+	if (!p) return 0LL;
+	return ret;
+}
+
+// NOTE: Reuses memory. probably not bindings friendly..
+SDB_API char *sdb_array_compact(char *p) {
+	char *e;
+	// remove empty elements
+	while (*p) {
+		if (!strncmp (p, ",,", 2)) {
+			p++;
+			for (e=p+1; *e==','; e++) {};
+			memmove (p, e, strlen (e)+1);
+		} else p++;
+	}
+	return p;
+}
+
+// NOTE: Reuses memory. probably not bindings friendly..
+SDB_API char *sdb_aslice(char *out, int from, int to) {
+	int len, idx = 0;
+	char *str = NULL;
+	char *end = NULL;
+	char *p = out;
+	if (from>=to)
+		return NULL;
+	while (*p) {
+		if (idx == from)
+			if (!str) str = p;
+		if (idx == to) {
+			end = p;
+			break;
+		}
+		if (*p == ',')
+			idx++;
+		p++;
+	}
+	if (str) {
+		if (!end)
+			end = str + strlen (str);
+		len = (size_t)(end-str);
+		memcpy (out, str, len);
+		out[len] = 0;
+		return out;
+	}
+	return NULL;
 }
 
 // TODO: find better name for it
@@ -83,6 +131,13 @@ SDB_API int sdb_alen(const char *str) {
 	}
 	if (*p) len++;
 	return len;
+}
+
+SDB_API char *sdb_anext(char *str, char **next) {
+	char *nxt, *p = strchr (str, SDB_RS);
+	if (p) { *p = 0; nxt = p+1; } else nxt = NULL;
+	if (next) *next = nxt;
+	return str;
 }
 
 SDB_API ut64 sdb_now () {

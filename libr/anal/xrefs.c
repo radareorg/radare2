@@ -22,16 +22,16 @@ R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 R_API RList *r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to) {
 	char key[32];
 	snprintf (key, sizeof (key), "ref.%s.0x%"PFMT64x, type, from);
-	sdb_array_add_num (DB, key, -1, to, 0);
+	sdb_array_add_num (DB, key, to, 0);
 	snprintf (key, sizeof (key), "xref.%s.0x%"PFMT64x, type, to);
-	sdb_array_add_num (DB, key, -1, from, 0);
+	sdb_array_add_num (DB, key, from, 0);
 	return NULL;
 }
 
 R_API RList *r_anal_xrefs_deln (RAnal *anal, const char *type, ut64 from, ut64 to) {
 	char key[32];
 	snprintf (key, sizeof (key), "%s.0x%"PFMT64x, type, from);
-	sdb_array_del_num (DB, key, to, 0);
+	sdb_array_delete_num (DB, key, to, 0);
 	return NULL;
 }
 
@@ -42,7 +42,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const c
 	str = sdb_get (DB, key, 0);
 	if (!str) return R_FALSE;
 	for (ptr=str; ; ptr = next) {
-		s = sdb_array_string (ptr, &next);
+		s = sdb_anext (ptr, &next);
 		if (!(ref = r_anal_ref_new ()))
 			return R_FALSE;
 		ref->addr = addr;

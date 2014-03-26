@@ -24,7 +24,7 @@ SDB_API void sdb_ns_free(Sdb *s) {
 		sdb_free (ns->sdb);
 		free (ns->name);
 		ns->name = NULL;
-		ls_del (s->ns, it); // free (it)
+		ls_delete (s->ns, it); // free (it)
 		it = &next;
 	}
 }

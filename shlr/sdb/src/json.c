@@ -44,6 +44,7 @@ SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return 0;
 }
 
+// JSON only supports base16 numbers
 SDB_API int sdb_json_num_set (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
 	char *_str, str[64];
 	_str = sdb_itoa (v, str, 10);
@@ -147,6 +148,7 @@ SDB_API char *sdb_json_indent(const char *s) {
 	return O;
 }
 
+// TODO: move to utils?
 SDB_API char *sdb_json_unindent(const char *s) {
 	int instr = 0;
 	int len = strlen (s);

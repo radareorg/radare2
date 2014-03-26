@@ -78,7 +78,7 @@ static int cmd_seek(void *data, const char *input) {
 				char *str, *next, *cur = list;
 				if (list) {
 					for (;;) {
-						cur = sdb_array_string (cur, &next);
+						cur = sdb_anext (cur, &next);
 						addr = sdb_atoi (cur);
 						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
 						val = sdb_const_get (core->anal->sdb_meta, key, 0);

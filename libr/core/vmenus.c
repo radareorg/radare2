@@ -282,7 +282,7 @@ R_API int r_core_visual_comments (RCore *core) {
 				char *str, *next, *cur = list;
 				if (list) {
 					for (i=0; ;i++) {
-						cur = sdb_array_string (cur, &next);
+						cur = sdb_anext (cur, &next);
 						addr = sdb_atoi (cur);
 						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
 						val = sdb_const_get (DB, key, 0);

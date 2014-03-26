@@ -1,7 +1,7 @@
 DESTDIR?=
 PREFIX?=/usr
 
-SDBVER=0.8.0.rc3
+SDBVER=0.9.0.rc3
 
 INSTALL?=install
 
@@ -26,7 +26,9 @@ CFLAGS_STD?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700
 CFLAGS+=${CFLAGS_STD}
 
 # Hack to fix clang warnings
+ifeq ($(CC),cc)
 CFLAGS+=$(shell gcc -v 2>&1 | grep -q LLVM && echo '-Wno-initializer-overrides')
+endif
 CFLAGS+=-Wall
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0

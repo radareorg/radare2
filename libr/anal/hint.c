@@ -24,7 +24,7 @@ static void setHint (RAnal *a, const char *type, ut64 addr, const char *s, ut64 
 	int idx;
 	char key[128], val[128], *nval = NULL;
 	setf (key, "hint.0x%"PFMT64x, addr);
-	idx = sdb_array_get_idx (DB, key, type, 0);
+	idx = sdb_array_indexof (DB, key, type, 0);
 	if (s) nval = sdb_encode ((const ut8*)s, 0);
 	else nval = sdb_itoa (ptr, val, 16);
 	if (idx != -1) {
@@ -84,7 +84,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	char *s = strdup (str);
 	hint->addr = addr;
 	for (r = s; ; r = nxt) {
-		r = sdb_array_string (r, &nxt);
+		r = sdb_anext (r, &nxt);
 		if (token) {
 			switch (token) {
 			case 'j': hint->jump = sdb_atoi (r); break;

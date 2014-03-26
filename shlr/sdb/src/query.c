@@ -30,7 +30,7 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
         return ret;
 }
 
-#define out_concat(x) if (x) { \
+#define out_concat(x) if (x&&*x) { \
 	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
 	if (out) { char *o = realloc (out, size); \
 		if (o) { strcat (o, "\n"); strcat (o, x); out = o; } \
@@ -66,6 +66,24 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
+static void walk_namespace (char **_out, char *root, char *p, SdbNs *ns) {
+	SdbListIter *it;
+	char *out = *_out;
+	SdbNs *n;
+	if (!root) out_concat (ns->name);
+	// TODO: check overflow if ((size_t)(p-root) > 1000)
+	if (ns->sdb) {
+		ls_foreach (ns->sdb->ns, it, n) {
+			p[0] = '/';
+			strcpy (p+1, n->name);
+			out_concat (root);
+			*_out = out;
+			walk_namespace (_out, root,
+				root+strlen (root), n);
+		}
+	}
+}
+
 SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
 	char *eq, *tmp, *json, *next, *quot, *arroba, *out = NULL;
@@ -81,6 +99,7 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 		cmd = buf;
 		buf = NULL;
 	}
+	next = NULL;
 repeat:
 	s = r;
 	eq = NULL;
@@ -89,6 +108,7 @@ repeat:
 	encode = 0;
 	is_ref = 0;
 	p = cmd;
+	if (next) *next = ';';
 	if (*p=='%') {
 		encode = 1;
 		cmd++;
@@ -98,10 +118,16 @@ repeat:
 	if (eq) {
 		*eq++ = 0;
 		if (*eq=='$') {
+			next = strchr (eq+1, ';');
+			if (next)*next = 0;
 			val = sdb_const_get (s, eq+1, 0);
+			if (next)*next = ';';
 			is_ref = 1; // protect readonly buffer from being processed
 		} else val = eq;
 	} else val = NULL;
+	if (!is_ref) {
+		next = strchr (val?val:cmd, ';'); //val?val:cmd, ';');
+	}
 	//if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
 		val++;
@@ -129,7 +155,6 @@ next_quote:
 		next = strchr (quot, ';');
 	} else {
 		quot = NULL;
-		next = strchr (val?val:cmd, ';');
 	}
 	if (next) *next = 0;
 	arroba = strchr (cmd, '/');
@@ -147,19 +172,34 @@ next_quote:
 		if (arroba)
 			goto next_arroba;
 	}
-	if (!strcmp (cmd, "**")) {
-		SdbListIter *it;
-		SdbNs *ns;
-		// list namespaces
-		ls_foreach (s->ns, it, ns) {
-			out_concat (ns->name);
+	if (*cmd=='*') {
+		if (!strcmp (cmd, "***")) {
+			SdbListIter *it;
+			SdbNs *ns;
+			char root[1024]; // XXX overlfow. 
+			// limit namespace length? stupid limit
+			ls_foreach (s->ns, it, ns) {
+				strcpy (root, ns->name);
+				out_concat (root);
+				walk_namespace (&out, root,
+					root+strlen(root), ns);
+			}
+			return out;
 		}
-		return out;
-	}
-	if (!strcmp (cmd, "*")) {
-		ForeachListUser user = { &out, encode };
-		sdb_foreach (s, foreach_list_cb, &user);
-		return out;
+		if (!strcmp (cmd, "**")) {
+			SdbListIter *it;
+			SdbNs *ns;
+			// list namespaces
+			ls_foreach (s->ns, it, ns) {
+				out_concat (ns->name);
+			}
+			return out;
+		}
+		if (!strcmp (cmd, "*")) {
+			ForeachListUser user = { &out, encode };
+			sdb_foreach (s, foreach_list_cb, &user);
+			return out;
+		}
 	}
 	json = strchr (cmd, ':');
 	if (*cmd == '[') {
@@ -171,8 +211,11 @@ next_quote:
 		*tp++ = 0;
 		p = (const char *)tp;
 	} else p = cmd;
-	if (*cmd=='$')
+
+// USELESS
+	if (*cmd=='$') {
 		cmd = sdb_const_get (s, cmd+1, 0);
+	}
 	// cmd = val
 	// cmd is key and val is value
 	if (*cmd == '.') {
@@ -190,8 +233,12 @@ next_quote:
 		*buf = 0;
 		if (val) {
 			if (sdb_isnum (val)) {
-				d = sdb_atoi (val);
-				if (*cmd=='+')
+				int op = *cmd;
+				if (*val=='-') {
+					op = '-';
+					d = sdb_atoi (val+1);
+				} else d = sdb_atoi (val);
+				if (op=='+')
 					sdb_num_inc (s, cmd+1, d, 0);
 				else
 					sdb_num_dec (s, cmd+1, d, 0);
@@ -201,6 +248,7 @@ next_quote:
 		} else {
 			int base = sdb_num_base (sdb_const_get (s, cmd+1, 0));
 			if (json) {
+				base = 10; // NOTE: json is base10 only
 				*json = 0;
 				if (*cmd=='+') n = sdb_json_num_inc (s, cmd+1, json+1, d, 0);
 				else n = sdb_json_num_dec (s, cmd+1, json+1, d, 0);
@@ -209,7 +257,7 @@ next_quote:
 				if (*cmd=='+') n = sdb_num_inc (s, cmd+1, d, 0);
 				else n = sdb_num_dec (s, cmd+1, d, 0);
 			}
-			// TODO: keep base here
+			// keep base
 			if (base==16) {
 				w = snprintf (buf, len-1, "0x%"ULLFMT"x", n);
 				if (w<0 || (size_t)w>len) {
@@ -228,8 +276,8 @@ next_quote:
 	} else if (*cmd == '[') {
 		// [?] - count elements of array
 		if (cmd[1]=='?') {
-			// if (!eq) { ...
-			alength = sdb_array_len (s, p);
+			// if (!eq) ...
+			alength = sdb_array_length (s, p);
 			w = snprintf (buf, len, "%d", alength);
 			if (w<0 || (size_t)w>len) {
 				buf = malloc (32);
@@ -239,19 +287,35 @@ next_quote:
 			out_concat (buf);
 		} else
 		if (cmd[1]=='+'||cmd[1]=='-') {
+			if (cmd[1] == cmd[2]) {
+				// stack
+#if 0
+				[++]foo=33 # push
+				[++]foo    # <invalid>
+				[--]foo    # pop
+				[--]foo=b  # <invalid>
+#endif
+				if (eq) {
+					sdb_array_push (s, p, val, 0);
+				} else {
+					char *ret = sdb_array_pop (s, p, 0);
+					out_concat (ret);
+					free (ret);
+				}
+			} else
 			// [+]foo        remove first element */
-			// [+]foo=bar    PUSH */
+			// [+]foo=bar    ADD */
 			// [-]foo        POP */
-			// [-]foo=xx     POP  (=xx ignored) */
+			// [-]foo=xx     REMOVE (=xx ignored) */
 			if (!cmd[2] || cmd[2] ==']') {
 				// insert
 				if (eq) {
 					if (cmd[1]=='+') {
 						// [+]K=1
-						sdb_array_add (s, p, -1, val, 0);
+						sdb_array_add (s, p, val, 0);
 					} else {
 						// [-]K= = remove first element
-						sdb_array_del_str (s, p, val, 0);
+						sdb_array_remove (s, p, val, 0);
 					}
 					//return NULL;
 				} else {
@@ -262,13 +326,13 @@ next_quote:
 						ret = sdb_array_get (s, p, 0, 0);
 						out_concat (ret);
 						// (+)foo :: remove first element
-						sdb_array_del (s, p, 0, 0);
+						sdb_array_delete (s, p, 0, 0);
 					} else {
 						// [-]K = remove last element
 						ret = sdb_array_get (s, p, -1, 0);
 						out_concat (ret);
 						// (-)foo :: remove last element
-						sdb_array_del (s, p, -1, 0);
+						sdb_array_delete (s, p, -1, 0);
 					}
 					free (ret);
 				}
@@ -289,16 +353,16 @@ next_quote:
 							}
 							ok = 0;
 							out_concat (tmp);
-							sdb_array_del (s, p, -i, 0);
+							sdb_array_delete (s, p, -i, 0);
 							free (tmp);
 						} else goto fail;
 					} else {
 						if (encode)
 							val = sdb_encode ((const ut8*)val, 0);
 						ok = cmd[1]? ((cmd[1]=='+')?
-							sdb_array_ins (s, p, i, val, 0):
+							sdb_array_insert (s, p, i, val, 0):
 							sdb_array_set (s, p, i, val, 0)
-							): sdb_array_del (s, p, i, 0);
+							): sdb_array_delete (s, p, i, 0);
 						if (encode) {
 							free ((void*)val);
 							val = NULL;
@@ -310,7 +374,7 @@ next_quote:
 					if (i==0) {
 						/* [-b]foo */
 						if (cmd[1]=='-') {
-							sdb_array_del_str (s, p, cmd+2, 0);
+							sdb_array_remove (s, p, cmd+2, 0);
 						} else {
 							fprintf (stderr, "TODO: [b]foo -> get index of b key inside foo array\n");
 						//	sdb_array_dels (s, p, cmd+1, 0);
@@ -321,7 +385,7 @@ next_quote:
 						char *tmp = sdb_array_get (s, p, -i, NULL);
 						out_concat (tmp);
 						free (tmp);
-						sdb_array_del (s, p, -i, 0);
+						sdb_array_delete (s, p, -i, 0);
 					} else {
 						/* [+3]foo */
 						char *tmp = sdb_array_get (s, p, i, NULL);
@@ -366,8 +430,12 @@ next_quote:
 				} else {
 					if (!sval) goto fail;
 					wl = strlen (sval);
-					if (wl>len) {
+					if (!buf || wl>len) {
 						buf = malloc (wl+2);
+						if (!buf) {
+							printf ("CANNOT MALLOC\n");
+							return NULL;
+						}
 						bufset = 1;
 					}
 					for (i=0; sval[i]; i++) {

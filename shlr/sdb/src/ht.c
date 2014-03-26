@@ -222,11 +222,11 @@ int ht_insert(SdbHash *ht, ut32 hash, void *data, SdbListIter *iter) {
 	return 0;
 }
 
-void ht_del_entry(SdbHash *ht, SdbHashEntry *entry) {
+void ht_delete_entry(SdbHash *ht, SdbHashEntry *entry) {
 	if (!entry)
 		return;
 	if (!rehash && entry->iter) {
-		ls_del (ht->list, entry->iter);
+		ls_delete (ht->list, entry->iter);
 		entry->iter = NULL;
 	}
 	entry->data = (void *) &deleted_data;
