@@ -81,7 +81,7 @@ R_API RAnal *r_anal_new() {
 	anal->plugins->free = r_anal_plugin_free;
 	for (i=0; anal_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RAnalPlugin);
-		memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));
+		*static_plugin = *anal_static_plugins[i];
 		r_anal_add (anal, static_plugin);
 	}
 /*
@@ -113,11 +113,15 @@ R_API void r_anal_free(RAnal *a) {
 	r_syscall_free (a->syscall);
 	r_anal_op_free (a->queued);
 
+	sdb_free (a->sdb_meta);
 	sdb_free (a->sdb_vars);
+	sdb_free (a->sdb_xrefs);
 	sdb_free (a->sdb_refs);
 	sdb_free (a->sdb_args);
 	sdb_free (a->sdb_hints);
 	sdb_free (a->sdb_locals);
+	sdb_free (a->sdb_types);
+	sdb_free (a->sdb);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	free (a);
 }
