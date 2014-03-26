@@ -17,13 +17,14 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	struct cr16_cmd cmd;
 
 	memset(&cmd, 0, sizeof (cmd));
-	ret = cr16_decode_command(buf, &cmd);
+	memset(op, 0, sizeof (RAnalOp));
+
+	ret = op->size = cr16_decode_command(buf, &cmd);
 
 	if (ret <= 0) {
 		return ret;
 	}
 
-	memset(op, 0, sizeof (RAnalOp));
 
 	op->addr = addr;
 	op->jump = op->fail = -1;
@@ -87,6 +88,10 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	case CR16_TYPE_JAL:
 	case CR16_TYPE_JUMP:
 	case CR16_TYPE_JUMP_UNK:
+		if (cmd.reladdr) {
+			op->jump = addr + cmd.reladdr;
+			op->fail = addr + 2;
+		}
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case CR16_TYPE_RETX:

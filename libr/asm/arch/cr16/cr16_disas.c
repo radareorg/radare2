@@ -73,8 +73,14 @@ static const char *ld_sw[] = {
 
 static const char *dedicated_regs[] = {
 	[0x1]		= "psr",
-	[0x3]		= "intbase",
+	[0x3]		= "intbaseh",
+	[0x4]		= "intbasel",
+	[0x5]		= "cfg",
+	[0x7]		= "dsr",
+	[0x9]		= "dcr",
 	[0xB]		= "isp",
+	[0xD]		= "carl",
+	[0xE]		= "carh",
 };
 
 static const char *ops_biti[] = {
@@ -768,12 +774,12 @@ static int cr16_decode_jmp(const ut8 *instr, struct cr16_cmd *cmd)
 					cr16_regs_names[cr16_get_srcreg(c) + 1],
 					cr16_regs_names[cr16_get_srcreg(c)]);
 		}
-		cmd->type = CR16_TYPE_JUMP_UNK;
 		break;
 	default:
 		return -1;
 	}
 
+	cmd->type = CR16_TYPE_JUMP_UNK;
 	return ret;
 }
 
@@ -801,6 +807,13 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd)
 			ret = 4;
 			snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1,
 					"0x%08x", disp32);
+
+			if (disp32 & 0x10000) {
+				disp32 |= 0xFFFE0000;
+				cmd->reladdr = (st32)disp32;
+			} else {
+				cmd->reladdr = disp32;
+			}
 		} else {
 			if (cr16_get_opcode_i(c)) {
 				ret = 4;
@@ -823,10 +836,10 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd)
 					cmd->reladdr = disp;
 				}
 
-				cmd->reladdr = disp;
 				snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "0x%04x", disp);
 			}
 		}
+		cmd->type = CR16_TYPE_JUMP;
 	} else {
 		snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "b%s",
 				cr16_conds[cr16_get_cond(c)]);
@@ -961,10 +974,6 @@ static int cr16_decode_bal(const ut8 *instr, struct cr16_cmd *cmd)
 	ut32 disp32;
 
 	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
-
-	if (c & 0x0010)
-		return -1;
-
 	r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
 
 	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "bal");
