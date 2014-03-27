@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_DEBUG_H_
-#define _INCLUDE_R_DEBUG_H_
+#ifndef R_DEBUG_H
+#define R_DEBUG_H
 
 #include <r_types.h>
 #include <r_anal.h>

@@ -159,16 +159,17 @@ SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	char *v10 = sdb_itoa (val, valstr10, 10);
 	char *v16 = sdb_itoa (val, valstr16, 16);
 	// TODO: optimize
-	if (sdb_array_contains (s, key, v10))
+	// TODO: check cas vs mycas
+	if (sdb_array_contains (s, key, v10, NULL))
 		return 0;
-	if (sdb_array_contains (s, key, v16))
+	if (sdb_array_contains (s, key, v16, NULL))
 		return 0;
 	return sdb_array_add (s, key, v16, cas); // TODO: v10 or v16
 }
 
 // XXX: index should be supressed here? if its a set we shouldnt change the index
 SDB_API int sdb_array_add(Sdb *s, const char *key, const char *val, ut32 cas) {
-	if (sdb_array_contains (s, key, val))
+	if (sdb_array_contains (s, key, val, NULL))
 		return 0;
 	return sdb_array_set (s, key, -1, val, cas);
 }
@@ -296,15 +297,15 @@ SDB_API int sdb_array_delete(Sdb *s, const char *key, int idx, ut32 cas) {
 }
 
 // XXX Doesnt works if numbers are stored in different base
-SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 num) {
+SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 num, ut32 *cas) {
 	char val[64];
 	char *nval = sdb_itoa (num, val, SDB_NUM_BASE);
-	return sdb_array_contains (s, key, nval);
+	return sdb_array_contains (s, key, nval, cas);
 }
 
-SDB_API int sdb_array_contains(Sdb *s, const char *key, const char *val) {
+SDB_API int sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *cas) {
 	int found = 0;
-	char *list = sdb_get (s, key, 0);
+	char *list = sdb_get (s, key, cas);
 	char *next, *ptr = list;
 	if (list && *list) {
 		do {

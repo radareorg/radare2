@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_SOCKET_H_
-#define _INCLUDE_SOCKET_H_
+#ifndef R_SOCKET_H
+#define R_SOCKET_H
 
 #include "r_types.h"
 

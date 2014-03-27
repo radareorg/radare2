@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_LS_H_
-#define _INCLUDE_LS_H_
+#ifndef LS_H
+#define LS_H
 
 #include <stdio.h>
 #include "types.h"

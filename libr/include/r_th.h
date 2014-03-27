@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_TH_H_
-#define _INCLUDE_R_TH_H_
+#ifndef R_TH_H
+#define R_TH_H
 
 #include "r_types.h"
 

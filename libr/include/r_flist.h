@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2010 nibble <.ds@gmail.com> */
 
-#ifndef _INCLUDE_R_FLIST_H_
-#define _INCLUDE_R_FLIST_H_
+#ifndef R_FLIST_H
+#define R_FLIST_H
 
 #ifdef __cplusplus
 extern "C" {

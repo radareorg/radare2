@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_CONS_R_
-#define _INCLUDE_CONS_R_
+#ifndef R_CONS_H
+#define R_CONS_H
 
 #define HAVE_DIETLINE 1
 

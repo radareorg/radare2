@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_SDB_H_
-#define _INCLUDE_SDB_H_
+#ifndef SDB_H
+#define SDB_H
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -161,8 +161,8 @@ void sdb_ns_sync (Sdb* s);
 int sdb_ns_set (Sdb *s, const char *name, Sdb *r);
 
 // array
-int sdb_array_contains (Sdb* s, const char *key, const char *val);
-SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 val);
+int sdb_array_contains (Sdb* s, const char *key, const char *val, ut32 *cas);
+SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
 int sdb_array_add (Sdb* s, const char *key, const char *val, ut32 cas);
 int sdb_array_add_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 int sdb_array_set (Sdb* s, const char *key, int idx, const char *val, ut32 cas);

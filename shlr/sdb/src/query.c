@@ -470,9 +470,6 @@ next_quote:
 				free ((void*)val);
 				val = NULL;
 			}
-			if (!ok) {
-				goto fail;
-			}
 		} else {
 			// 0 1 kvpath?jspath
 			// 0 0 kvpath

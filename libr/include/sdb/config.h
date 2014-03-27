@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_CONFIG_H
-#define _INCLUDE_CONFIG_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #define SDB_KEYSIZE 32
 

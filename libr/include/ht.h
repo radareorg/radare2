@@ -1,3 +1,6 @@
+#ifndef R_HT_H
+#define R_HT_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,4 +50,5 @@ R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
 
 #ifdef __cplusplus
 }
+#endif
 #endif

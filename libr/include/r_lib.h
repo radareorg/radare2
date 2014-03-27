@@ -1,5 +1,5 @@
-#ifndef _LIB_R_LIB_H_
-#define _LIB_R_LIB_H_
+#ifndef R_LIB_H
+#define R_LIB_H
 
 // TODO: rename type from int to 4 byte string
 // TODO: use 4 chars to idnetify plugin type

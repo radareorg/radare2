@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_PRINT_R_
-#define _INCLUDE_PRINT_R_
+#ifndef R_PRINT_H
+#define R_PRINT_H
 
 #include "r_types.h"
 #include "r_util.h"

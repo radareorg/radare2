@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_LIBR_BP_H_
-#define _INCLUDE_LIBR_BP_H_
+#ifndef R_BP_H
+#define R_BP_H
 
 #include <r_types.h>
 #include <r_io.h>

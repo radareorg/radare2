@@ -1,5 +1,5 @@
-#ifndef _LIB_R_IO_H_
-#define _LIB_R_IO_H_
+#ifndef R_IO_H
+#define R_IO_H
 
 #include <r_types.h>
 #include <r_util.h>

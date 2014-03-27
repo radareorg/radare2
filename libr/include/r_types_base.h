@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_TYPES_BASE_H_
-#define _INCLUDE_R_TYPES_BASE_H_
+#ifndef R_TYPES_BASE_H
+#define R_TYPES_BASE_H
 
 #include <ctype.h>
 

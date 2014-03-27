@@ -156,7 +156,7 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 	return s->db.map+pos;
 }
 
-SDB_API char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
+SDB_API char *sdb_get (Sdb* s, const char *key, /*OUT*/ut32 *cas) {
 	ut32 hash, pos, len, keylen;
 	ut64 now = 0LL;
 	SdbKv *kv;

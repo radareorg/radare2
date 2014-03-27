@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_REG_H_
-#define _INCLUDE_R_REG_H_
+#ifndef R_REG_H
+#define R_REG_H
 
 #include <r_types.h>
 #include <r_util.h>

@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_DIFF_H_
-#define _INCLUDE_DIFF_H_
+#ifndef R_DIFF_H
+#define R_DIFF_H
 
 #include <r_types.h>
 #include <r_util.h>

@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_CONFIG_H_
-#define _INCLUDE_R_CONFIG_H_
+#ifndef R_CONFIG_H
+#define R_CONFIG_H
 
 #include "r_types.h"
 #include "r_util.h"

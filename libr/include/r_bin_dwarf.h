@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_BIN_DWARF_H_
-#define _INCLUDE_BIN_DWARF_H_
+#ifndef R_BIN_DWARF_H
+#define R_BIN_DWARF_H
 
 #ifdef __cplusplus
 extern "C" {

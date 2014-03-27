@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_CMD_H_
-#define _INCLUDE_R_CMD_H_
+#ifndef R_CMD_H
+#define R_CMD_H
 
 #include <r_types.h>
 #include <r_util.h>

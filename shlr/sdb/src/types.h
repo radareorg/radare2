@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_TYPES_H_
-#define _INCLUDE_TYPES_H_
+#ifndef TYPES_H
+#define TYPES_H
 
 #include <sys/types.h>
 #include <stdlib.h>

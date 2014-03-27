@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_TYPES_H_
-#define _INCLUDE_R_TYPES_H_
+#ifndef R_TYPES_H
+#define R_TYPES_H
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */

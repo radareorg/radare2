@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_DB_R_
-#define _INCLUDE_DB_R_
+#ifndef R_DB_H
+#define R_DB_H
 
 #include "r_types.h"
 #include "r_util.h"
