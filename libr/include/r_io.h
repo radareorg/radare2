@@ -195,7 +195,7 @@ typedef struct r_io_cache_t {
 // XXX: HACK this must be io->desc_new() maybe?
 #define RETURN_IO_DESC_NEW(fplugin,ffd,fname,fflags,mode,fdata) { \
 	if (!fname) return NULL; \
-	RIODesc *desc = R_NEW (RIODesc); \
+	RIODesc *desc = R_NEW0 (RIODesc); \
 	if (desc != NULL) { \
 		desc->state = R_IO_DESC_TYPE_OPENED; \
 		desc->name = fname? strdup (fname): NULL; \

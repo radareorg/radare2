@@ -124,8 +124,8 @@ typedef struct r_cmd_java_cms_t {
 #define PROTOTYPES_LEN 10
 
 #define RESOLVE_CP "resolve_cp"
-#define RESOLVE_CP_ARGS "< <t | e | c | a> idx>"
-#define RESOLVE_CP_DESC "resolve and print cp type or value @ idx. a = address, t = type, c = get value, e = base64 enode the result"
+#define RESOLVE_CP_ARGS "< <s | t | e | c | a | d | g > idx>"
+#define RESOLVE_CP_DESC "resolve and print cp type or value @ idx. d = dump all,  g = summarize all, s = summary, a = address, t = type, c = get value, e = base64 enode the result"
 #define RESOLVE_CP_LEN 10
 
 #define CALC_FLAGS "calc_flags"
@@ -345,12 +345,14 @@ static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
 
 static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 * buf, const ut64 len) {
 	int res = R_FALSE;	
+	ut64 c_file_sz = r_io_size (core->io);
 	ut32 n_sz = 0, c_sz = r_bin_java_cp_get_size (obj, idx);
 
 	ut8 * bytes = r_bin_java_cp_get_bytes (obj, idx, &n_sz, buf, len);
 	
 	if (n_sz < c_sz) {
-		r_core_shift_block (core, addr, 0, (int)n_sz - (int)c_sz);
+		r_core_shift_block (core, addr+c_sz, 0, (int)n_sz - (int)c_sz);
+		r_io_resize(core->io, c_file_sz + (int) n_sz - (int) c_sz);
 	} else if (n_sz > c_sz) {
 		r_core_extend_at(core, addr,  (int)n_sz - (int)c_sz);
 	}
@@ -631,10 +633,17 @@ static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 			case 's': return r_cmd_java_resolve_cp_summary (obj, idx);
 			case 'k': return r_cmd_java_resolve_cp_to_key (obj, idx);
 		}
-	} else if (obj && c_type == 'a') {
+	} else if (obj && c_type == 'g') {
 		for (idx = 1; idx <=obj->cp_count; idx++) {
-			r_cons_printf ("CP_OBJ Type %d = ", idx);
-			r_cmd_java_resolve_cp_type (obj, idx);
+			ut64 addr = r_bin_java_resolve_cp_idx_address (obj, idx) ;
+			char * str = r_bin_java_resolve_cp_idx_type (obj, idx);
+			r_cons_printf ("CP_OBJ Type %d =  %s @ 0x%"PFMT64x"\n", idx, str, addr);
+			free (str);
+		}
+		res = R_TRUE;
+	} else if (obj && c_type == 'd') {
+		for (idx = 1; idx <=obj->cp_count; idx++) {
+			r_cmd_java_resolve_cp_summary (obj, idx);
 		}
 		res = R_TRUE;
 	} else {
