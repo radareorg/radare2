@@ -263,6 +263,57 @@ R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
+R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, int64_t dist) {
+	// bstart - block start, fstart file start
+	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0, cur_offset = core->offset;
+	ut8 * shift_buf = NULL;
+	int res = R_FALSE;
+
+	if (b_size == 0 || b_size == (ut64) -1) {
+		res = r_io_set_fd (core->io, core->file->fd);
+		file_sz = r_io_size (core->io);
+		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
+		fstart = file_sz - fend; 
+		b_size = fend > bstart ? fend - bstart: 0;
+	}
+
+
+	if (!core->io || !core->file || b_size<1)
+		return R_FALSE;
+	
+	
+	// XXX handling basic cases atm
+	shift_buf = malloc (b_size);
+	memset (shift_buf, 0, b_size);
+
+	// cases 
+	// addr + b_size + dist > file_end
+	//if ( (addr+b_size) + dist > file_end ) {
+	//	res = R_FALSE;
+	//}
+	// addr + b_size + dist < file_start (should work since dist is signed)
+	//else if ( (addr+b_size) + dist < 0 ) {
+	//	res = R_FALSE;
+	//}
+	// addr + dist < file_start
+	if ( addr + dist < fstart ) {
+		res = R_FALSE;
+	}
+	// addr + dist > file_end
+	else if ( (addr) + dist > fend) {
+		res = R_FALSE;
+	} else {
+		res = r_io_set_fd (core->io, core->file->fd);
+		r_io_read_at (core->io, addr, shift_buf, b_size);
+		r_io_write_at (core->io, addr+dist, shift_buf, b_size);
+		res = R_TRUE;
+	}
+
+	r_core_seek (core, addr, 1);
+	return res;
+}
+
 static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RListIter *iter;
 	RCoreFile *file = NULL;

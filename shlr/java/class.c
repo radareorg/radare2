@@ -40,9 +40,9 @@ static int r_bin_java_new_bin (RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const u
 static int extract_type_value (char *arg_str, char **output);
 
 static int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj* cp_obj, ut8 tag);
-static ut8 * r_bin_java_cp_get_4bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz);
-static ut8 * r_bin_java_cp_get_8bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz);
-static ut8 * r_bin_java_cp_get_utf8(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz);
+static ut8 * r_bin_java_cp_get_4bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz, const ut8 * buf, const ut64 len);
+static ut8 * r_bin_java_cp_get_8bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz, const ut8 * buf, const ut64 len);
+static ut8 * r_bin_java_cp_get_utf8(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz, const ut8 * buf, const ut64 len);
 
 
 static RBinJavaCPTypeObj* r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
@@ -5581,49 +5581,94 @@ R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, 
 	return R_TRUE;
 }
 
-static ut8 * r_bin_java_cp_get_4bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
+static ut8 * r_bin_java_cp_get_4bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz, const ut8 *buf, const ut64 len){
 	ut8 *buffer = malloc (5);
+	ut8 bytes[4] = {0};
+	ut32 val = 0;
+
+	if (len < 4) {
+		*out_sz = 0;
+		free (buffer);
+		return NULL;
+	}
+
 	buffer[0] = cp_obj->tag;
-	memcpy (buffer+1, cp_obj->info.cp_integer.bytes.raw, 4);
+	val = R_BIN_JAVA_UINT (buf, 0);
+	memcpy (buffer+1, (const char *) &val, 4);
+
 	*out_sz = 5;
 	return buffer;
 }
 
-static ut8 * r_bin_java_cp_get_8bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
+static ut8 * r_bin_java_cp_get_8bytes(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz, const ut8 *buf, const ut64 len){
 	ut8 *buffer = malloc (9);
+	ut8 bytes[4] = {0};
+	ut32 val = 0;
+
+	if (len < 8) {
+		*out_sz = 0;
+		free (buffer);
+		return NULL;
+	}
+
 	buffer[0] = cp_obj->tag;
-	memcpy (buffer+1, cp_obj->info.cp_long.bytes.raw, 4);
+	val = r_bin_java_raw_to_long (buf, 0);
+	memcpy (buffer+1, (const char *) &val, 8);
 	*out_sz = 9;
 	return buffer;
 }
 
-static ut8 * r_bin_java_cp_get_utf8(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz){
+static ut8 * r_bin_java_cp_get_utf8(RBinJavaCPTypeObj* cp_obj, ut32 *out_sz, const ut8 *buf, const ut64 len){
 	ut8 *buffer = NULL;//NULL
-	ut16 sz = R_BIN_JAVA_USHORT ( ((ut8 *)(ut16*)&cp_obj->info.cp_utf8.length), 0);
-	*out_sz = 3 + cp_obj->info.cp_utf8.length; // tag + sz + bytes 
+	ut16 sz = 0;
+	ut16 t = (ut16) len;
+
+	if (len > (ut16) -1) {
+		*out_sz = 0;
+		free (buffer);
+		return NULL;	
+	}
+	sz = R_BIN_JAVA_USHORT ( ((ut8 *)(ut16*)&t), 0);
+	*out_sz = 3 + t; // tag + sz + bytes 
 	buffer = malloc (*out_sz);
 	buffer[0] = cp_obj->tag;
 	memcpy (buffer+1, (const char *) &sz, 2 );
-	memcpy (buffer+3, cp_obj->info.cp_utf8.bytes, *out_sz-1);
+	memcpy (buffer+3, buf, *out_sz-1);
 	//*out_sz = 1 + cp_obj->info.cp_utf8.length;
 	return buffer;
 }
 
-R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz){
+R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz, const ut8 *buf, const ut64 len){
 	RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
 	*out_sz = 0;
 	switch (cp_obj->tag) {
 		case R_BIN_JAVA_CP_INTEGER:
 		case R_BIN_JAVA_CP_FLOAT:
-			return r_bin_java_cp_get_4bytes (cp_obj, out_sz);
+			return r_bin_java_cp_get_4bytes (cp_obj, out_sz, buf, len);
 		case R_BIN_JAVA_CP_LONG:
 		case R_BIN_JAVA_CP_DOUBLE:
-			return r_bin_java_cp_get_8bytes (cp_obj, out_sz);
+			return r_bin_java_cp_get_8bytes (cp_obj, out_sz, buf, len);
 		case R_BIN_JAVA_CP_UTF8:
-			return r_bin_java_cp_get_utf8 (cp_obj, out_sz);
+			return r_bin_java_cp_get_utf8 (cp_obj, out_sz, buf, len);
 	}
 
 	return NULL;
+}
+
+R_API ut32 r_bin_java_cp_get_size(RBinJavaObj *bin, ut16 idx){
+	RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
+	switch (cp_obj->tag) {
+		case R_BIN_JAVA_CP_INTEGER:
+		case R_BIN_JAVA_CP_FLOAT:
+			return 1 + 4;
+		case R_BIN_JAVA_CP_LONG:
+		case R_BIN_JAVA_CP_DOUBLE:
+			return 1 + 8;
+		case R_BIN_JAVA_CP_UTF8:
+			return 1 + 2 + cp_obj->info.cp_utf8.length;
+	}
+
+	return 0;
 }
 
 

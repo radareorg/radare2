@@ -28,9 +28,11 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'e':
 		{
-		ut64 addr = 0, len = 0;
+		ut64 addr = 0, len = 0, b_size = 0;
+		int64_t dist = 0;
 		ut8* bytes = NULL;
 		int cmd_suc = R_FALSE;
+		char *input_shadow = NULL, *p = NULL;
 
 		switch (input[1]) {
 			case 'n':
@@ -97,10 +99,37 @@ static int cmd_write(void *data, const char *input) {
 					}
 				}
 				break;
+			case 's':
+				input +=  3;
+				while (*input && *input == ' ') input++;
+				len = strlen (input);
+				input_shadow = len > 0? malloc (len+1): 0;
+				
+				// since the distance can be negative, 
+				// the r_num_math will perform an unwanted operation
+				// the solution is to tokenize the string :/
+				if (input_shadow) {
+					strncpy (input_shadow, input, len+1);
+					p = strtok (input_shadow, " ");
+					addr = p && *p ? r_num_math (core->num, p) : 0;
+					
+					p = strtok (NULL, " ");
+					dist = p && *p ? r_num_math (core->num, p) : 0;
+					
+					p = strtok (NULL, " ");
+					b_size = p && *p ? r_num_math (core->num, p) : 0;
+					if (dist != 0){
+						r_core_shift_block (core, addr, b_size, dist);
+						r_core_seek (core, addr, 1);
+						cmd_suc = R_TRUE;
+					}				
+				}
+				break;
 			case '?':
 			default: 
 				cmd_suc = R_FALSE;
 		}
+
 
 		if (cmd_suc == R_FALSE) {
 			r_cons_printf ("|Usage: write extend\n"
@@ -108,10 +137,11 @@ static int cmd_write(void *data, const char *input) {
 			"wex <hex_bytes>         insert bytes at current offset\n"
 			"weN <addr> <len>        insert bytes at address\n"
 			"weX <addr> <hex_bytes>  insert bytes at address\n"
+			"wes <addr>  <dist> <block_size>   shift a blocksize left or write in the editor\n"
 			);
 		}
-		break;
 		}
+		break;
 	case 'p':
 		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
 			const char *tmpfile = ".tmp";

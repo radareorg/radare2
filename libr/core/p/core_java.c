@@ -95,7 +95,7 @@ static RList * r_cmd_java_handle_find_cp_value_str (RCore *core, RBinJavaObj *ob
 
 static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd);
 
-static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr);
+static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8* buf, const ut64 len);
 static int r_cmd_java_handle_replace_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
 static int r_cmd_java_handle_replace_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
 static int r_cmd_java_handle_replace_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
@@ -103,6 +103,7 @@ static int r_cmd_java_handle_replace_cp_value_int (RCore *core, RBinJavaObj *obj
 static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
 static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd);
 
+static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd);
 
 typedef struct r_cmd_java_cms_t {
 	const char *name;
@@ -172,6 +173,11 @@ typedef struct r_cmd_java_cms_t {
 #define REPLACE_CP_VALUE_DESC "replace CP constants with value if the no resizing is required"
 #define REPLACE_CP_VALUE_LEN 16
 
+#define RELOAD_BIN "reload_bin"
+#define RELOAD_BIN_ARGS " addr [size]"
+#define RELOAD_BIN_DESC "reload and reanalyze the Java class file starting at address"
+#define RELOAD_BIN_LEN 10
+
 static RCmdJavaCmd JAVA_CMDS[] = {
 	{HELP, HELP_ARGS, HELP_DESC, HELP_LEN, r_cmd_java_handle_help},
 	{SET_ACC_FLAGS, SET_ACC_FLAGS_ARGS, SET_ACC_FLAGS_DESC, SET_ACC_FLAGS_LEN, r_cmd_java_handle_set_flags},
@@ -185,6 +191,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{FIND_CP_CONST, FIND_CP_CONST_ARGS, FIND_CP_CONST_DESC, FIND_CP_CONST_LEN, r_cmd_java_handle_find_cp_const},
 	{FIND_CP_VALUE, FIND_CP_VALUE_ARGS, FIND_CP_VALUE_DESC, FIND_CP_VALUE_LEN, r_cmd_java_handle_find_cp_value},
 	{REPLACE_CP_VALUE, REPLACE_CP_VALUE_ARGS, REPLACE_CP_VALUE_DESC, REPLACE_CP_VALUE_LEN, r_cmd_java_handle_replace_cp_value},
+	{RELOAD_BIN, RELOAD_BIN_ARGS, RELOAD_BIN_DESC, RELOAD_BIN_LEN, r_cmd_java_handle_reload_bin},
 };
 
 enum {
@@ -200,7 +207,8 @@ enum {
 	FIND_CP_CONST_IDX = 9,
 	FIND_CP_VALUE_IDX = 10,
 	REPLACE_CP_VALUE_IDX = 11,
-	END_CMDS = 12,
+	RELOAD_BIN_IDX = 12,
+	END_CMDS = 13,
 };
 
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len) {
@@ -335,12 +343,22 @@ static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
 	return R_TRUE;
 }
 
-static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr) {
+static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 * buf, const ut64 len) {
 	int res = R_FALSE;	
-	ut32 sz = 0;
-	ut8 * bytes = r_bin_java_cp_get_bytes (obj, idx, &sz);
-	if (bytes) {
-		res = r_core_write_at(core, addr, (const ut8 *)bytes, sz);
+	ut32 n_sz = 0, c_sz = r_bin_java_cp_get_size (obj, idx);
+
+	ut8 * bytes = r_bin_java_cp_get_bytes (obj, idx, &n_sz, buf, len);
+	
+	if (n_sz < c_sz) {
+		r_core_shift_block (core, addr, 0, (int)n_sz - (int)c_sz);
+	} else if (n_sz > c_sz) {
+		r_core_extend_at(core, addr,  (int)n_sz - (int)c_sz);
+	}
+
+	if (n_sz > 0 && bytes) {
+		res = r_core_write_at(core, addr, (const ut8 *)bytes, n_sz);
+		r_core_seek (core, addr, 1);
+
 	}
 	return res;
 }
@@ -349,36 +367,28 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 static int r_cmd_java_handle_replace_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	float value = cmd && *cmd ? atof (cmd) : 0.0;
 	int res = R_FALSE;
-	if (r_bin_java_float_cp_set (obj, idx, value)) {
-		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
-	}
+	res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) &value, 4);
 	return res;
 }
 
 static int r_cmd_java_handle_replace_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	double value = cmd && *cmd ? strtod (cmd, NULL) : 0.0;
 	int res = R_FALSE;
-	if (r_bin_java_double_cp_set (obj, idx, value)) {
-		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
-	}
+	res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) &value, 8);
 	return res;
 }
 
 static int r_cmd_java_handle_replace_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	ut64 value = r_cmd_java_get_input_num_value (core, cmd);
 	int res = R_FALSE;
-	if (r_bin_java_long_cp_set (obj, idx, value)) {
-		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
-	}
+	res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) &value, 8);
 	return res;
 }
 
 static int r_cmd_java_handle_replace_cp_value_int (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	ut32 value = (ut32) r_cmd_java_get_input_num_value (core, cmd);
 	int res = R_FALSE;
-	if (r_bin_java_integer_cp_set (obj, idx, value)) {
-		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
-	}
+	res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) &value, 4);
 	return res;
 }
 static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
@@ -389,11 +399,7 @@ static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj
 		cmd++;
 		len = cmd && *cmd ? strlen (cmd) : 0;
 	}
-
-
-	if (len > 0 && r_bin_java_utf8_cp_set (obj, idx, (const ut8 *)cmd, len)) {
-		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr);
-	}
+	res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) cmd, len);
 	return res;
 }
 
@@ -439,6 +445,41 @@ static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
 	}
 }
 
+static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	char *p = cmd;
+	ut64 cur_offset = core->offset, addr = 0;
+	ut64 buf_size = 0;
+	ut8 * buf = NULL;
+	int res = R_FALSE;
+	
+	if (*cmd == ' ') p = r_cmd_java_consumetok (p, ' ', -1);
+	
+	if (!*cmd) {
+		return R_TRUE;
+	}
+
+
+	addr = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
+	if (*cmd == ' ') p = r_cmd_java_consumetok (p, ' ', -1);
+	buf_size = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
+
+	// XXX this may cause problems cause the file we are looking at may not be the bin we want.
+	// lets pretend it is for now
+	if (buf_size == 0) {
+		res = r_io_set_fd (core->io, core->file->fd);
+		buf_size = r_io_size (core->io);
+		buf = malloc (buf_size);
+		memset (buf, 0, buf_size);
+		r_io_read_at (core->io, addr, buf, buf_size);
+	}
+	if (buf && obj) {
+		res = r_bin_java_load_bin (obj, buf, buf_size);
+	}
+	free (buf);
+	return res;
+}
 
 static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);

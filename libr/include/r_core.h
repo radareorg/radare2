@@ -200,6 +200,7 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core, int next);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
+R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, int64_t dist);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);

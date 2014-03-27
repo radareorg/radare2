@@ -998,10 +998,16 @@ R_API int r_bin_java_float_cp_set(RBinJavaObj *bin, ut16 idx, float val );
 R_API int r_bin_java_long_cp_set(RBinJavaObj *bin, ut16 idx, ut64 val );
 R_API int r_bin_java_double_cp_set(RBinJavaObj *bin, ut16 idx, ut32 val );
 R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, ut32 len);
-R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
-
+R_API ut8 * r_bin_java_cp_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz, const ut8 *buf, const ut64 len);
+R_API ut32 r_bin_java_cp_get_size(RBinJavaObj *bin, ut16 idx);
 
 R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
+R_API ut64 r_bin_java_parse_interfaces (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
+R_API ut64 r_bin_java_parse_fields (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
+R_API ut64 r_bin_java_parse_methods (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
+R_API ut64 r_bin_java_parse_attrs (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
 R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 len);
+
+
 
 #endif
