@@ -1,5 +1,5 @@
-#ifndef CR16_DISASM_H
-#define CR16_DISASM_H
+#ifndef R2_CR16_DISASM_H
+#define R2_CR16_DISASM_H
 
 #define CR16_INSTR_MAXLEN	24
 #define STOR_LOAD_MASK		0x181F

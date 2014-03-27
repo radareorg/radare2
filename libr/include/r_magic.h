@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
-#ifndef R_MAGIC_H
-#define R_MAGIC_H
+#ifndef R2_MAGIC_H
+#define R2_MAGIC_H
 
 #include <r_types.h>
 

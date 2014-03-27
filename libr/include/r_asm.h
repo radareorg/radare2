@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
-#ifndef R_ASM_H
-#define R_ASM_H
+#ifndef R2_ASM_H
+#define R2_ASM_H
 
 #include <r_types.h>
 #include <r_bin.h> // only for binding, no hard dep required

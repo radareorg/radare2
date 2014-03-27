@@ -1,5 +1,5 @@
-#ifndef R_FLAGS_H
-#define R_FLAGS_H
+#ifndef R2_FLAGS_H
+#define R2_FLAGS_H
 
 #define USE_BTREE 0
 /* FUCK YEAH */

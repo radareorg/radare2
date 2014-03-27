@@ -1,5 +1,5 @@
-#ifndef R_EGG_H
-#define R_EGG_H
+#ifndef R2_EGG_H
+#define R2_EGG_H
 
 #include <r_db.h>
 #include <r_asm.h>

@@ -1,8 +1,8 @@
 /* radare - Apache 2.0 - Copyright 2013 - Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 #include <r_anal.h>
 
-#ifndef R_ANAL_EX_H
-#define R_ANAL_EX_H
+#ifndef R2_ANAL_EX_H
+#define R2_ANAL_EX_H
 
 enum {
 	R_ANAL_EX_FMT_EXEC,

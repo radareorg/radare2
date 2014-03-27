@@ -1,5 +1,5 @@
-#ifndef R_IO_H
-#define R_IO_H
+#ifndef R2_IO_H
+#define R2_IO_H
 
 #include <r_types.h>
 #include <r_util.h>

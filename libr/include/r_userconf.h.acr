@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_R_CONFIGURE_H_
-#define _INCLUDE_R_CONFIGURE_H_
+#ifndef R2_CONFIGURE_H
+#define R2_CONFIGURE_H
 
 #ifdef LIL_ENDIAN
 #undef LIL_ENDIAN

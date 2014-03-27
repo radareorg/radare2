@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
 
-#ifndef R_BIN_H
-#define R_BIN_H
+#ifndef R2_BIN_H
+#define R2_BIN_H
 
 #include <r_util.h>
 #include <r_types.h>

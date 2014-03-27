@@ -1,5 +1,5 @@
-#ifndef R_SIGN_H
-#define R_SIGN_H
+#ifndef R2_SIGN_H
+#define R2_SIGN_H
 
 #include <r_types.h>
 #include <r_anal.h>

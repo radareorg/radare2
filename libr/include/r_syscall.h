@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
-#ifndef R_SYSCALL_H
-#define R_SYSCALL_H
+#ifndef R2_SYSCALL_H
+#define R2_SYSCALL_H
 
 #ifdef __cplusplus
 extern "C" {

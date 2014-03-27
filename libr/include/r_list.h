@@ -1,5 +1,5 @@
-#ifndef R_LIST_H
-#define R_LIST_H
+#ifndef R2_LIST_H
+#define R2_LIST_H
 
 #include <r_types.h>
 #include <r_flist.h>

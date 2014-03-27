@@ -1,5 +1,5 @@
-#ifndef R_CRYPTO_H
-#define R_CRYPTO_H
+#ifndef R2_CRYPTO_H
+#define R2_CRYPTO_H
 
 #include <list.h>
 #include <r_types.h>

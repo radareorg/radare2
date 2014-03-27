@@ -1,5 +1,5 @@
-#ifndef R_LANG_H
-#define R_LANG_H
+#ifndef R2_LANG_H
+#define R2_LANG_H
 
 #include <r_types.h>
 #include <r_list.h>

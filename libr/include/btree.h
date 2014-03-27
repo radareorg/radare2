@@ -1,5 +1,5 @@
-#ifndef R_BTREE_H
-#define R_BTREE_H
+#ifndef R2_BTREE_H
+#define R2_BTREE_H
 
 #include "r_types.h"
 

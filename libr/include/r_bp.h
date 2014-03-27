@@ -1,5 +1,5 @@
-#ifndef R_BP_H
-#define R_BP_H
+#ifndef R2_BP_H
+#define R2_BP_H
 
 #include <r_types.h>
 #include <r_io.h>

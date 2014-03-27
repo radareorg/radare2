@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - nibble, pancake, xvilka */
 
-#ifndef R_ANAL_H
-#define R_ANAL_H
+#ifndef R2_ANAL_H
+#define R2_ANAL_H
 
 #define USE_VARSUBS 0
 

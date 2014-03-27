@@ -1,5 +1,5 @@
-#ifndef R_HT_H
-#define R_HT_H
+#ifndef R2_HT_H
+#define R2_HT_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
-#ifndef R_PARSE_H
-#define R_PARSE_H
+#ifndef R2_PARSE_H
+#define R2_PARSE_H
 
 #include <r_types.h>
 #include <r_flags.h>

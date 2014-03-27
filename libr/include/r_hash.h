@@ -1,5 +1,5 @@
-#ifndef R_HASH_H
-#define R_HASH_H
+#ifndef R2_HASH_H
+#define R2_HASH_H
 
 #include "r_types.h"
 

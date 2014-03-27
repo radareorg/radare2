@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 /* sliced list */
 
-#ifndef R_SLIST_H
-#define R_SLIST_H
+#ifndef R2_SLIST_H
+#define R2_SLIST_H
 
 #ifdef __cplusplus
 extern "C" {

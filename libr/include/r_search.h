@@ -1,5 +1,5 @@
-#ifndef R_SEARCH_H
-#define R_SEARCH_H
+#ifndef R2_SEARCH_H
+#define R2_SEARCH_H
 
 #include <r_types.h>
 #include <r_util.h>
