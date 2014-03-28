@@ -30,6 +30,7 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
         return ret;
 }
 
+// TODO: Reimplement as a function with optimized concat
 #define out_concat(x) if (x&&*x) { \
 	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
 	if (out) { char *o = realloc (out, size); \
@@ -66,20 +67,25 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-static void walk_namespace (char **_out, char *root, char *p, SdbNs *ns) {
+static void walk_namespace (char **_out, char *root, int left, char *p, SdbNs *ns) {
+	int len;
 	SdbListIter *it;
 	char *out = *_out;
 	SdbNs *n;
-	if (!root) out_concat (ns->name);
-	// TODO: check overflow if ((size_t)(p-root) > 1000)
+	char *roote = root + strlen (root);
 	if (ns->sdb) {
 		ls_foreach (ns->sdb->ns, it, n) {
+			len = strlen (n->name);
 			p[0] = '/';
-			strcpy (p+1, n->name);
+			if (len+2<left) {
+				memcpy (p+1, n->name, len+1);
+				left -= len+2;
+			}
 			out_concat (root);
 			*_out = out;
-			walk_namespace (_out, root,
-				root+strlen (root), n);
+			walk_namespace (_out, root, left,
+				roote+len+1, n);
+			out = *_out;
 		}
 	}
 }
@@ -174,22 +180,24 @@ next_quote:
 	}
 	if (*cmd=='*') {
 		if (!strcmp (cmd, "***")) {
+			char root[1024]; // limit namespace length?
 			SdbListIter *it;
 			SdbNs *ns;
-			char root[1024]; // XXX overlfow. 
-			// limit namespace length? stupid limit
 			ls_foreach (s->ns, it, ns) {
-				strcpy (root, ns->name);
-				out_concat (root);
-				walk_namespace (&out, root,
-					root+strlen(root), ns);
+				int len = strlen (ns->name);
+				if (len<sizeof (root)) {
+					memcpy (root, ns->name, len+1);
+					out_concat (root);
+					walk_namespace (&out, root,
+						sizeof (root)-len,
+						root+len, ns);
+				} else eprintf ("TODO: Namespace too long\n");
 			}
 			return out;
 		}
 		if (!strcmp (cmd, "**")) {
 			SdbListIter *it;
 			SdbNs *ns;
-			// list namespaces
 			ls_foreach (s->ns, it, ns) {
 				out_concat (ns->name);
 			}
@@ -358,7 +366,7 @@ next_quote:
 						} else goto fail;
 					} else {
 						if (encode)
-							val = sdb_encode ((const ut8*)val, 0);
+							val = sdb_encode ((const ut8*)val, -1);
 						ok = cmd[1]? ((cmd[1]=='+')?
 							sdb_array_insert (s, p, i, val, 0):
 							sdb_array_set (s, p, i, val, 0)
@@ -399,7 +407,7 @@ next_quote:
 				/* [3]foo=bla */
 				char *sval = (char*)val;
 				if (encode) {
-					sval = sdb_encode ((const ut8*)val, 0);
+					sval = sdb_encode ((const ut8*)val, -1);
 				}
 				if (cmd[1]) {
 					int idx = atoi (cmd+1);
@@ -460,7 +468,7 @@ next_quote:
 			// 1 0 kvpath=value
 			// 1 1 kvpath:jspath=value
 			if (encode)
-				val = sdb_encode ((const ut8*)val, 0);
+				val = sdb_encode ((const ut8*)val, -1);
 			if (json>eq) json = NULL;
 			if (json) {
 				*json++ = 0;

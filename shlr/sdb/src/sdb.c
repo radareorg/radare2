@@ -91,10 +91,13 @@ SDB_API void sdb_file (Sdb* s, const char *dir) {
 
 static void sdb_fini(Sdb* s, int donull) {
 	if (!s) return;
+	sdb_ns_free (s);
 	sdb_hook_free (s);
 	cdb_free (&s->db);
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
+	free (s->name);
+	free (s->path);
 	ls_free (s->ns);
 	ht_free (s->ht);
 	if (s->fd != -1) {

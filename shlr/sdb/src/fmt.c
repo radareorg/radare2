@@ -32,7 +32,7 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 			n = 8;
 			break;
 		case 's':
-			e_str = sdb_encode ((const ut8*)*((char**)(p+len)), 0);
+			e_str = sdb_encode ((const ut8*)*((char**)(p+len)), -1);
 			concat (e_str);
 			free (e_str);
 			break;

@@ -21,7 +21,7 @@ typedef struct ls_t {
 typedef int (*SdbListComparator)(void *a, void *b);
 
 #define ls_foreach(list, it, pos) \
-	if(list)for (it = list->head; it && (pos = it->data); it = it->n)
+	if(list) for (it = list->head; it && (pos = it->data); it = it->n)
 #define ls_foreach_prev(list, it, pos) \
 	if(list)for (it = list->tail; it && (pos = it->data); it = it->p)
 #define ls_iterator(x) (x)?(x)->head:NULL

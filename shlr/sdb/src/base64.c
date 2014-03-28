@@ -56,7 +56,7 @@ SDB_API int sdb_decode_raw(ut8 *bout, const char *bin, int len) {
 SDB_API char *sdb_encode(const ut8 *bin, int len) {
 	char *out;
 	if (!bin) return NULL;
-	if (len<1) len = strlen ((const char *)bin);
+	if (len<0) len = strlen ((const char *)bin);
 	if (len==0) return strdup ("");
 	out = malloc (8+(len*2));
 	if (!out) return NULL;
