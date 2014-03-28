@@ -42,21 +42,22 @@ static int cmd_write(void *data, const char *input) {
 						ut64 cur_off = core->offset;
 						cmd_suc = r_core_extend_at (core, core->offset, len);
 						core->offset = cur_off;
-						r_core_block_read (core, 0);						
+						r_core_block_read (core, 0);
 					}
 				}
 				break;
 			case 'N':
 				if (input[2] == ' ') {
-					addr = r_num_math (core->num, input+3);
 					input += 3;
+					while (*input && *input == ' ') input++;
+					addr = r_num_math (core->num, input);
 					while (*input && *input != ' ') input++;
 					input++;
 					len = *input ? r_num_math (core->num, input) : 0;
 					if (len > 0){
-						//ut64 cur_off = core->offset;
-						//cmd_suc = r_core_extend_at (core, addr, len);
-						//cmd_suc = r_core_seek (core, cur_off, 1);
+						ut64 cur_off = core->offset;
+						cmd_suc = r_core_extend_at (core, addr, len);
+						cmd_suc = r_core_seek (core, cur_off, 1);
 						core->offset = addr;
 						r_core_block_read (core, 0);
 					}
@@ -104,29 +105,30 @@ static int cmd_write(void *data, const char *input) {
 				while (*input && *input == ' ') input++;
 				len = strlen (input);
 				input_shadow = len > 0? malloc (len+1): 0;
-				
-				// since the distance can be negative, 
+
+				// since the distance can be negative,
 				// the r_num_math will perform an unwanted operation
 				// the solution is to tokenize the string :/
 				if (input_shadow) {
 					strncpy (input_shadow, input, len+1);
 					p = strtok (input_shadow, " ");
 					addr = p && *p ? r_num_math (core->num, p) : 0;
-					
+
 					p = strtok (NULL, " ");
 					dist = p && *p ? r_num_math (core->num, p) : 0;
-					
+
 					p = strtok (NULL, " ");
 					b_size = p && *p ? r_num_math (core->num, p) : 0;
 					if (dist != 0){
 						r_core_shift_block (core, addr, b_size, dist);
 						r_core_seek (core, addr, 1);
 						cmd_suc = R_TRUE;
-					}				
+					}
 				}
+				free (input_shadow);
 				break;
 			case '?':
-			default: 
+			default:
 				cmd_suc = R_FALSE;
 		}
 

@@ -274,20 +274,20 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 		file_sz = r_io_size (core->io);
 		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
-		fstart = file_sz - fend; 
+		fstart = file_sz - fend;
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
 
 
 	if (!core->io || !core->file || b_size<1)
 		return R_FALSE;
-	
-	
+
+
 	// XXX handling basic cases atm
 	shift_buf = malloc (b_size);
 	memset (shift_buf, 0, b_size);
 
-	// cases 
+	// cases
 	// addr + b_size + dist > file_end
 	//if ( (addr+b_size) + dist > file_end ) {
 	//	res = R_FALSE;
@@ -311,6 +311,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 
 	r_core_seek (core, addr, 1);
+	free (shift_buf);
 	return res;
 }
 

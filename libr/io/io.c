@@ -184,7 +184,7 @@ static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
 	int fd;
-	if (io->redirect) 
+	if (io->redirect)
 		return NULL;
 	if (desc) {
 		fd = desc->fd;
@@ -251,7 +251,7 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
 	if (io==NULL || io->fd == NULL)
 		return -1;
-	/* IGNORE check section permissions 
+	/* IGNORE check section permissions
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
 	 */
@@ -356,20 +356,17 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	if (!size) return R_FALSE;
 
 	if (io->plugin && io->plugin->extend)
-		return io->plugin->extend (io, io->fd, size);	
-	
-	if (!r_io_resize (io, size+cur_size)) return R_FALSE;
-	
-	buffer = malloc (cur_size-size);
+		return io->plugin->extend (io, io->fd, size);
 
+	if (!r_io_resize (io, size+cur_size)) return R_FALSE;
+
+	buffer = malloc (cur_size-size);
 	// shift the bytes over by size
 	r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	r_io_read (io, buffer, cur_size-size);
-	
 	// move/write the bytes
 	r_io_seek (io, curr_off+size, R_IO_SEEK_SET);
 	r_io_write (io, buffer, cur_size-size);
-
 	// zero out new bytes
 	if (cur_size < size) {
 		free (buffer);
@@ -378,7 +375,6 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	memset (buffer, 0, size);
 	r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	r_io_write (io, buffer, size);
-
 	// reset the cursor
 	r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	free (buffer);
@@ -389,7 +385,6 @@ R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
 
 	if (!size) return R_FALSE;
 	r_io_seek (io, addr, R_IO_SEEK_SET);
-		
 	return 	r_io_extend (io, size);
 }
 
@@ -436,7 +431,7 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 				io->write_mask_buf[i%io->write_mask_len];
 		buf = data;
 	}
-	
+
 	r_io_map_select (io, io->off);
 
 	if (io->plugin) {
@@ -503,7 +498,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		// XXX can be problematic on w32..so no 64 bit offset?
 		else ret = (ut64)lseek (io->fd->fd, offset, posix_whence);
 		if (ret != UT64_MAX) {
-			if (whence == R_IO_SEEK_SET) 
+			if (whence == R_IO_SEEK_SET)
 				io->off = offset; // FIX linux-arm-32-bs at 0x10000
 			else io->off = ret;
 			// XXX this can be tricky.. better not to use this .. must be deprecated

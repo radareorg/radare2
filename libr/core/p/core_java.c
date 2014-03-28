@@ -344,23 +344,21 @@ static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
 }
 
 static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 * buf, const ut64 len) {
-	int res = R_FALSE;	
+	int res = R_FALSE;
 	ut64 c_file_sz = r_io_size (core->io);
 	ut32 n_sz = 0, c_sz = r_bin_java_cp_get_size (obj, idx);
 
 	ut8 * bytes = r_bin_java_cp_get_bytes (obj, idx, &n_sz, buf, len);
-	
+
 	if (n_sz < c_sz) {
-		r_core_shift_block (core, addr+c_sz, 0, (int)n_sz - (int)c_sz);
+		res = r_core_shift_block (core, addr+c_sz, 0, (int)n_sz - (int)c_sz) &&
 		r_io_resize(core->io, c_file_sz + (int) n_sz - (int) c_sz);
 	} else if (n_sz > c_sz) {
-		r_core_extend_at(core, addr,  (int)n_sz - (int)c_sz);
+		res = r_core_extend_at(core, addr,  (int)n_sz - (int)c_sz);
 	}
 
 	if (n_sz > 0 && bytes) {
-		res = r_core_write_at(core, addr, (const ut8 *)bytes, n_sz);
-		r_core_seek (core, addr, 1);
-
+		res = r_core_write_at(core, addr, (const ut8 *)bytes, n_sz) && r_core_seek (core, addr, 1);
 	}
 	return res;
 }
@@ -397,11 +395,12 @@ static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj
 	int res = R_FALSE;
 	ut32 len = cmd && *cmd ? strlen (cmd) : 0;
 
-	if (cmd && *cmd == '"') {
+	if (len > 0 && cmd && *cmd == '"') {
 		cmd++;
 		len = cmd && *cmd ? strlen (cmd) : 0;
 	}
-	res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) cmd, len);
+	if (cmd && len > 0)
+		res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) cmd, len);
 	return res;
 }
 
@@ -426,14 +425,14 @@ static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
 	} else if (!obj) {
 		// FAIL
 	} else if (!*p) {
-		// FAIL 
+		// FAIL
 	}
 
 	cp_type = r_bin_java_resolve_cp_idx_tag(obj, idx);
 	addr = r_bin_java_resolve_cp_idx_address (obj, idx);
 
 	IFDBG r_cons_printf ("Function call made: %s\n", p);
-	
+
 
 	switch (cp_type) {
 		case R_BIN_JAVA_CP_UTF8: return r_cmd_java_handle_replace_cp_value_str (core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
@@ -455,9 +454,9 @@ static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
 	ut64 buf_size = 0;
 	ut8 * buf = NULL;
 	int res = R_FALSE;
-	
+
 	if (*cmd == ' ') p = r_cmd_java_consumetok (p, ' ', -1);
-	
+
 	if (!*cmd) {
 		return R_TRUE;
 	}
@@ -491,13 +490,12 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	RListIter *bb_iter, *fn_iter, *iter;
 	RCmdJavaCPResult *cp_res = NULL;
 	ut16 idx = -1;
-	RList *find_list = r_list_new ();
+	RList *find_list;
 	const char *p;
 
-	if (*cmd == ' ') p = r_cmd_java_consumetok (cmd, ' ', -1);
-	find_list->free = free;
+	if (cmd && *cmd == ' ') p = r_cmd_java_consumetok (cmd, ' ', -1);
 
-	if (*(p) == 'a') idx = -1;
+	if (p && *p == 'a') idx = -1;
 	else idx = r_cmd_java_get_input_num_value (core, p);
 
 	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
@@ -514,7 +512,8 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 		return R_TRUE;
 	// not idx is set in previous operation
 	}
-
+	find_list = r_list_new ();
+	find_list->free = free;
 	// XXX - this will break once RAnal moves to sdb
 	r_list_foreach (anal->fcns, fn_iter, fcn) {
 		r_list_foreach (fcn->bbs, bb_iter, bb) {
@@ -524,13 +523,13 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 				case 0x12:
 					cp_res = (idx == (ut16) -1) || (bb->op_bytes[1] == idx) ?
 								R_NEW0(RCmdJavaCPResult) : NULL;
-					cp_res->idx = bb->op_bytes[1];
+					if (cp_res) cp_res->idx = bb->op_bytes[1];
 					break;
 				case 0x13:
 				case 0x14:
 					cp_res = (idx == (ut16) -1) || (R_BIN_JAVA_USHORT (bb->op_bytes, 1) == idx) ?
 								R_NEW0(RCmdJavaCPResult) : NULL;
-					cp_res->idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
+					if (cp_res) cp_res->idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
 					break;
 			}
 
