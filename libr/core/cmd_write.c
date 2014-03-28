@@ -29,7 +29,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'e':
 		{
 		ut64 addr = 0, len = 0, b_size = 0;
-		int64_t dist = 0;
+		st64 dist = 0;
 		ut8* bytes = NULL;
 		int cmd_suc = R_FALSE;
 		char *input_shadow = NULL, *p = NULL;
