@@ -263,7 +263,7 @@ R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
-R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, int64_t dist) {
+R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// bstart - block start, fstart file start
 	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0, cur_offset = core->offset;
 	ut8 * shift_buf = NULL;

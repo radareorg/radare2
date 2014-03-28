@@ -54,8 +54,8 @@ static int cmd_write(void *data, const char *input) {
 					input++;
 					len = *input ? r_num_math (core->num, input) : 0;
 					if (len > 0){
-						ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, addr, len);
+						//ut64 cur_off = core->offset;
+						//cmd_suc = r_core_extend_at (core, addr, len);
 						//cmd_suc = r_core_seek (core, cur_off, 1);
 						core->offset = addr;
 						r_core_block_read (core, 0);
@@ -89,7 +89,7 @@ static int cmd_write(void *data, const char *input) {
 					bytes = len > 1? malloc (len+1) : NULL;
 					len = bytes ? r_hex_str2bin (input, bytes) : 0;
 					if (len > 0) {
-						ut64 cur_off = core->offset;
+						//ut64 cur_off = core->offset;
 						cmd_suc = r_core_extend_at (core, addr, len);
 						if (cmd_suc) {
 							r_core_write_at (core, addr, bytes, len);

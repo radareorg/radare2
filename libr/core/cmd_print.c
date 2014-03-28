@@ -1469,7 +1469,7 @@ static int cmd_print(void *data, const char *input) {
 		memset (buf, 0, malen);
 		switch (input[1]) {
 		case 'd':
-			if (r_base64_decode (buf, core->block, len))
+			if (r_base64_decode (buf, (const char *)core->block, len))
 				r_cons_printf ("%s\n", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
