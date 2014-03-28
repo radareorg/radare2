@@ -5,8 +5,6 @@ case "$1" in
 	;;
 *)
 	[ plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
-	[ ! -e plugins.cfg ] && ./configure-plugins $@
-	[ -e r2-bindings/configure-langs ] && \
-		r2-bindings/configure-langs $@
+	./configure-plugins $@
 	;;
 esac
