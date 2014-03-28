@@ -243,8 +243,9 @@ R_API int r_egg_assemble(REgg *egg) {
 
 R_API int r_egg_compile(REgg *egg) {
 	const char *b = (const char *)egg->src->buf;
-	if (!b || !egg->remit)
-		return R_FALSE;
+	if (!b || !egg->remit) {
+		return R_TRUE;
+	}
 	// only emit begin if code is found
 #if 0
 	if (*b)

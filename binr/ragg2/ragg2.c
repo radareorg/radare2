@@ -266,18 +266,19 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
-	if (shellcode) {
-		if (!r_egg_shellcode (egg, shellcode)) {
-			eprintf ("Unknown shellcode '%s'\n", shellcode);
-			return 1;
-		}
-	}
 	if (contents) {
 		int l;
 		char *buf = r_file_slurp (contents, &l);
 		if (buf && l>0) {
 			r_egg_raw (egg, (const ut8*)buf, l);
 		} else eprintf ("Error loading '%s'\n", contents);
+		free (buf);
+	}
+	if (shellcode) {
+		if (!r_egg_shellcode (egg, shellcode)) {
+			eprintf ("Unknown shellcode '%s'\n", shellcode);
+			return 1;
+		}
 	}
 	if (bytes) {
 		ut8 *b = malloc (strlen (bytes)+1);

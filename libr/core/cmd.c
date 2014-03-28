@@ -471,6 +471,8 @@ static int cmd_kuery(void *data, const char *input) {
 	case 's':
 		if (core->http_up)
 			return R_FALSE;
+		if (!r_config_get_i (core->config, "scr.interactive"))
+			return R_FALSE;
 		if (input[1]==' ') {
 			char *n = n, *o, *p = strdup (input+2);
 			// TODO: slash split here? or inside sdb_ns ?

@@ -241,7 +241,7 @@ if [ "$D" ]; then
 	ls -l $F.text
 fi
 [ -z "$O" ] && O=$F.bin
-ragg2 -C $F.text -F -o $O || fail
+ragg2 -b $B -C $F.text -F -o $O || fail
 echo $O
 rmtemps
 exit 0
