@@ -2148,10 +2148,14 @@ R_API ut8* r_bin_java_get_attr_buf(RBinJavaObj *bin,  ut64 sz, const ut64 offset
 }
 
 static RBinJavaAttrInfo* r_bin_java_default_attr_new(ut8* buffer, ut64 sz, ut64 buf_offset) {
+	// NOTE: this function receives the buffer offset in the original buffer,
+	// but the buffer is already point to that particular offset.
+	// XXX - all the code that relies on this function should probably be modified
+	// so that the original buffer pointer is passed in and then the buffer+buf_offset
+	// points to the correct location.
 	RBinJavaAttrInfo *attr = (RBinJavaAttrInfo *) malloc (sizeof (RBinJavaAttrInfo));
 	RBinJavaAttrMetas *type_info = NULL;
 	ut64 offset = 0;
-	const char * a_buf = buffer + buf_offset;
 	// read the offset now, before we make modifications or read from the buffer
 
 	memset (attr, 0, sizeof (RBinJavaAttrInfo));
@@ -2164,7 +2168,7 @@ static RBinJavaAttrInfo* r_bin_java_default_attr_new(ut8* buffer, ut64 sz, ut64 
 	attr->file_offset = buf_offset;
 	attr->name_idx = R_BIN_JAVA_USHORT (buffer, 0);
 	attr->length = R_BIN_JAVA_UINT (buffer, 2);
-	attr->size = R_BIN_JAVA_UINT (a_buf, 2) + 6;
+	attr->size = R_BIN_JAVA_UINT (buffer, 2) + 6;
 	attr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, attr->name_idx);
 	if(attr->name == NULL) {
 		// Something bad has happened
