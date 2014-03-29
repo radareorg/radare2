@@ -185,7 +185,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 		ret = r_anal_op (core->anal, &op, core->offset+idx, buf + idx, len-idx);
 		if (ret<1) {
 			eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
-					core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
+					core->offset+idx, buf[idx],
+					buf[idx+1], buf[idx+2]);
 			break;
 		}
 		size = (hint&&hint->size)? hint->size: op.size;
@@ -262,7 +263,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 			r_cons_printf ("family: %d\n", op.family);
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
-		free (hint);
+		//free (hint);
+		r_anal_hint_free (hint);
 		if (((idx+ret)<len) && (!nops||(i+1)<nops))
 			r_cons_printf (",");
 	}
@@ -388,7 +390,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		ut64 addr = core->offset;
 		if (input[2]==' ')
 			addr = r_num_math (core->num, input+2);
-		RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *fcn = r_anal_fcn_find (core->anal,
+			addr, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
 		}
 		break;

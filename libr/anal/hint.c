@@ -31,8 +31,8 @@ static void setHint (RAnal *a, const char *type, ut64 addr, const char *s, ut64 
 		if (!s) nval = sdb_itoa (ptr, val, 16);
 		sdb_array_set (DB, key, idx+1, nval, 0);
 	} else {
-		sdb_array_push (DB, key, type, 0);
 		sdb_array_push (DB, key, nval, 0);
+		sdb_array_push (DB, key, type, 0);
 	}
 	if (s) free (nval);
 }

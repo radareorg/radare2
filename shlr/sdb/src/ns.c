@@ -22,6 +22,8 @@ SDB_API void sdb_ns_free(Sdb *s) {
 		next.n = it->n;
 		sdb_ns_free (ns->sdb);
 		sdb_free (ns->sdb);
+		ns->sdb = NULL;
+
 		free (ns->name);
 		ns->name = NULL;
 		ls_delete (s->ns, it); // free (it)

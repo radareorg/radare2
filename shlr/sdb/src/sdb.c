@@ -91,11 +91,11 @@ SDB_API void sdb_file (Sdb* s, const char *dir) {
 
 static void sdb_fini(Sdb* s, int donull) {
 	if (!s) return;
-	sdb_ns_free (s);
 	sdb_hook_free (s);
 	cdb_free (&s->db);
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
+	sdb_ns_free (s);
 	free (s->name);
 	free (s->path);
 	ls_free (s->ns);
@@ -107,19 +107,15 @@ static void sdb_fini(Sdb* s, int donull) {
 	free (s->ndump);
 	free (s->dir);
 	free (s->tmpkv.value);
-
-	if (donull) {
-		s->ns = NULL;
-		s->ht = NULL;
-		s->dir = NULL;
-		s->ndump = NULL;
-		s->tmpkv.value = NULL;
-	}
+	if (donull)
+		memset (s, 0, sizeof (Sdb));
 }
 
 SDB_API void sdb_free (Sdb* s) {
-	sdb_fini (s, 0);
-	free (s);
+	if (s && s->ht) {
+		sdb_fini (s, 1);
+		free (s);
+	}
 }
 
 SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
