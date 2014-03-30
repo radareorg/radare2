@@ -38,7 +38,7 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
-		if (map->from == addr)
+		if ((map->from <= addr) && (addr < map->to))
 			return map;
 	}
 	return NULL;
