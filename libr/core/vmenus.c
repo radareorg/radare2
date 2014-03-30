@@ -277,7 +277,7 @@ R_API int r_core_visual_comments (RCore *core) {
 #define DB core->anal->sdb_meta
 				ut64 addr;
 				char key[128];
-				const char *val, *comma;
+				const char *val, *comma = NULL;
 				char *list = sdb_get (DB, "meta.C", 0);
 				char *str, *next, *cur = list;
 				if (list) {
@@ -286,7 +286,8 @@ R_API int r_core_visual_comments (RCore *core) {
 						addr = sdb_atoi (cur);
 						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
 						val = sdb_const_get (DB, key, 0);
-						comma = strchr (val, ',');
+						if (val)
+							comma = strchr (val, ',');
 						if (comma) {
 							str = (char *)sdb_decode (comma+1, 0);
 							if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
