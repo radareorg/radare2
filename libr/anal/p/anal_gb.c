@@ -138,19 +138,19 @@ static inline void gb_anal_id (RAnal *anal, RAnalOp *op, const ut8 data)				//in
 		op->dst->memref = 1;
 		op->dst->reg = r_reg_get (anal->reg, "hl", R_REG_TYPE_GPR);
 		if (op->type == R_ANAL_OP_TYPE_ADD)
-			r_strbuf_set (&op->esil, "1[hl]++");
-		else	r_strbuf_set (&op->esil, "1[hl]--");
+			r_strbuf_set (&op->esil, "1[hl]++,N=0");
+		else	r_strbuf_set (&op->esil, "1[hl]--,N=1");
 	} else {
-		if (data & 0x3) {
+		if ((data & 3) == 3) {
 			op->dst->reg = r_reg_get (anal->reg, regs_16[data>>4], R_REG_TYPE_GPR);
 			if (op->type == R_ANAL_OP_TYPE_ADD)
-				r_strbuf_setf (&op->esil, "%s++", regs_16[data>>4]);
-			else	r_strbuf_setf (&op->esil, "%s--", regs_16[data>>4]);
+				r_strbuf_setf (&op->esil, "%s++,N=0", regs_16[data>>4]);
+			else	r_strbuf_setf (&op->esil, "%s--,N=1", regs_16[data>>4]);
 		} else {
 			op->dst->reg = r_reg_get (anal->reg, regs_x[(data>>2) - 1], R_REG_TYPE_GPR);
 			if (op->type == R_ANAL_OP_TYPE_ADD)
-				r_strbuf_setf (&op->esil, "%s++", regs_x[(data>>2) - 1]);
-			else	r_strbuf_setf (&op->esil, "%s--", regs_x[(data>>2) - 1]);
+				r_strbuf_setf (&op->esil, "%s++,N=0", regs_x[(data>>2) - 1]);
+			else	r_strbuf_setf (&op->esil, "%s--,N=1", regs_x[(data>>2) - 1]);
 		}
 	}
 }
@@ -185,9 +185,9 @@ static void gb_anal_mov_imm (RReg *reg, RAnalOp *op, const ut8 *data)
 		op->src[0]->imm = GB_SOFTCAST (data[1], data[2]);
 		r_strbuf_setf (&op->esil, "%s=0x%04x", regs_16[data[0]>>4], op->src[0]->imm);
 	} else {
-		op->dst->reg = r_reg_get (reg, regs_8[data[0] & 7], R_REG_TYPE_GPR);
+		op->dst->reg = r_reg_get (reg, regs_8[data[0]>>3], R_REG_TYPE_GPR);
 		op->src[0]->imm = data[1];
-		r_strbuf_setf (&op->esil, "%s=0x%02x", regs_8[data[0] & 7], op->src[0]->imm);
+		r_strbuf_setf (&op->esil, "%s=0x%02x", regs_8[data[0]>>3], op->src[0]->imm);
 	}
 	op->src[0]->absolute = R_TRUE;
 	op->val = op->src[0]->imm;
