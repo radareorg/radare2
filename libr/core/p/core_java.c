@@ -104,6 +104,11 @@ static int r_cmd_java_handle_replace_cp_value_str (RCore *core, RBinJavaObj *obj
 static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd);
 
 static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *cmd);
+static char * r_cmd_replace_name_def (const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len);
+static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len);
+static int r_cmd_is_object_descriptor (const char *name, ut32 name_len);
+static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match_me);
+static const char * r_cmd_get_next_classname_str (const char * str, const char *match_me);
 
 static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd);
 
@@ -220,6 +225,44 @@ enum {
 	END_CMDS = 14,
 };
 
+static ut8 r_cmd_java_obj_ref (const char *name, const char *class_name, ut32 len) {
+	if (!name || !class_name) return R_FALSE;
+	else if (strncmp (class_name, name, len)) return R_FALSE;
+	else if ( *(name-1) == 'L' && *(name+len) == ';') return R_TRUE;
+	else if ( !strncmp (class_name, name, len) && *(name+len) == 0) return R_TRUE;
+	return R_FALSE;
+}
+
+static const char * r_cmd_get_next_classname_str (const char * str, const char *match_me) {
+	const char *result = NULL;
+	ut32 len = match_me && *match_me ? strlen (match_me) : 0;
+
+	if (len == 0) return NULL;
+	result = str;
+	while ( result ) {
+		result = strstr (result, match_me);
+		if (result ) break;
+	}
+	return result;
+}
+
+static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match_me) {
+	const char *result = NULL;
+	ut32 len = match_me && *match_me ? strlen (match_me) : 0;
+	ut32 occ = 0;
+
+	if (len == 0) return NULL;
+	result = str;
+	while ( result ) {
+		result = strstr (result, match_me);
+		if (result) {
+			result++;
+			occ++;
+		}
+	}
+	return occ;
+}
+
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
@@ -323,7 +366,6 @@ static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
 	RList *find_list = NULL;
 	RListIter *iter;
 	ut32 *idx;
-	const char *name = NULL;
 	const char *p = cmd;
 	char f_type = 0;
 	IFDBG r_cons_printf ("Function call made: %s\n", p);
@@ -381,12 +423,12 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 		res = r_io_set_fd (core->io, core->file->fd);
 		c_file_sz = r_io_size (core->io);
 		bytes = malloc (c_file_sz);
-		memset (buf, 0, c_file_sz);
-		r_io_read_at (core->io, obj->loadaddr, buf, c_file_sz);
+		memset (bytes, 0, c_file_sz);
+		r_io_read_at (core->io, obj->loadaddr, bytes, c_file_sz);
 	}
 
 	if (bytes && obj) {
-		res = r_bin_java_load_bin (obj, buf, c_file_sz);
+		res = r_bin_java_load_bin (obj, bytes, c_file_sz);
 	}
 	free (bytes);
 	return res;
@@ -474,6 +516,86 @@ static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
 	}
 }
 
+
+static char * r_cmd_replace_name_def (const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
+	const char * fmt = "L%s;";
+	char *s_new_ref = s_new && replace_len > 0 ? malloc (3 + replace_len) : NULL;
+	char *s_old_ref = s_old && match_len > 0 ? malloc (3 + match_len) : NULL;
+	char *result = NULL;
+	*res_len = 0;
+	if (s_new_ref && s_old_ref) {
+		snprintf (s_new_ref, replace_len+3, fmt, s_new);
+		snprintf (s_old_ref, match_len+3, fmt, s_old);
+		result = r_cmd_replace_name (s_new_ref, replace_len+2, s_old_ref, match_len+2, buffer, buf_len, res_len);
+	}
+	free (s_new_ref);
+	free (s_old_ref);
+	return result;
+}
+
+static int r_cmd_is_object_descriptor (const char *name, ut32 name_len) {
+
+	int found_L = R_FALSE, found_Semi = R_FALSE;
+	ut32 idx = 0, L_pos, Semi_pos;
+	const char *p_name = name;
+
+	for (idx = 0, L_pos = 0; idx < name_len; idx++,p_name++) {
+		if (*p_name == 'L') {
+			found_L = R_TRUE;
+			L_pos = idx;
+			break;
+		}
+	}
+
+	for (idx = 0, L_pos = 0; idx < name_len; idx++,p_name++) {
+		if (*p_name == ';') {
+			found_Semi = R_TRUE;
+			Semi_pos = idx;
+			break;
+		}
+	}
+
+	return R_TRUE ? found_L == found_Semi && found_L == R_TRUE && L_pos < Semi_pos : R_FALSE;
+}
+
+static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
+	ut32 num_occurences = 0, i = 0;
+	char * result = NULL, *p_result;
+
+	num_occurences = r_cmd_get_num_classname_str_occ (buffer, s_old);
+	*res_len = 0;
+	if (num_occurences > 0 && replace_len > 0 && s_old) {
+		ut32 consumed = 0;
+		char * next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
+		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
+		result = malloc (num_occurences*replace_len + buf_len);
+		memset (result, 0, num_occurences*replace_len + buf_len);
+		p_result = result;
+		while (next && consumed < buf_len) {
+			// replace up to next
+			IFDBG r_cons_printf ("next: \"%s\", len to: %d\n", next, next-buffer );
+			for (; buffer + consumed < next  && consumed < buf_len; consumed++, p_result++) {
+				*p_result = *(buffer + consumed);
+				(*res_len)++;
+			}
+
+			for (i=0; i < replace_len; i++,  p_result++){
+				*p_result = *(s_new + i);
+				(*res_len)++;
+			}
+			consumed += match_len;
+			next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
+		}
+		IFDBG r_cons_printf ("Found last occurrence of: \"%s\", remaining: %s\n", s_old, buffer+consumed);
+		IFDBG r_cons_printf ("result is: \"%s\"\n", result);
+		for (; consumed < buf_len; consumed++, p_result++, (*res_len)++)
+			*p_result = *(buffer+consumed);
+		IFDBG r_cons_printf ("Old: %s\nNew: %s\n", buffer, result);
+	}
+	return result;
+}
+
+
 static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
@@ -482,6 +604,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 	ut64 addr = 0;
 	ut32 cmd_sz = cmd && *cmd ? strlen (cmd) : 0;
 	const char *p = cmd;
+
 	char *class_name = NULL, *new_class_name = NULL;
 	ut32 class_name_len = 0, new_class_name_len = 0;
 	char cp_type = 0;
@@ -496,12 +619,14 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 			class_name = malloc (class_name_len);
 			memset (class_name, 0, class_name_len);
 			memcpy (class_name, p, class_name_len-1);
-			cmd_sz = class_name_len - 1 < cmd_sz ? cmd_sz - class_name_len - 1 : 0;
+			cmd_sz = class_name_len - 1 < cmd_sz ? cmd_sz - class_name_len : 0;
 		}
 
 		if (class_name && cmd_sz > 0) {
 			p = r_cmd_java_consumetok (end+1, ' ', cmd_sz);
 			end = p && *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
+
+			if (!end && p && *p) end = p + cmd_sz;
 
 			if (p && end && p != end) {
 				new_class_name_len = end - p + 1;
@@ -515,11 +640,13 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 
 	if (!class_name || !new_class_name ) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS+REPLACE_CLASS_NAME_IDX);
+		free (class_name);
+		free (new_class_name);
 		return R_TRUE;
 	} else if (!obj) {
 		eprintf ("The current binary is not a Java Bin Object.\n");
-		return R_TRUE;
-	} else if (1) {
+		free (class_name);
+		free (new_class_name);
 		return R_TRUE;
 	}
 	for (idx = 1; idx <=obj->cp_count; idx++) {
@@ -529,42 +656,25 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 			ut32 num_occurences = 0;
 			ut64 addr = cp_obj->file_offset + cp_obj->loadaddr;
 			ut32 buffer_sz = 0;
-			ut8 * buffer = r_bin_java_cp_idx_get_bytes (obj, idx, &buffer_sz);
+			ut8 * buffer = r_bin_java_cp_get_idx_bytes (obj, idx, &buffer_sz);
 			ut16 len = R_BIN_JAVA_USHORT ( buffer, 1);
-			char * result = len >= class_name_len-1 ? strstr (class_name, (const char *) buffer+3) : NULL;
+			char *name = buffer + 3;
 
-			while (result) {
-				num_occurences++;
-				result = strstr (class_name, result);
-			}
+			num_occurences = r_cmd_get_num_classname_str_occ (name, class_name);
 
 			if (num_occurences > 0) {
 				// perform inplace replacement
-				char *next = buffer+3;
-				char *new_str = malloc (len + new_class_name_len * num_occurences + 10),
-					*p_new_str = new_str,
-					*p_new_cn = new_class_name;
+				ut32 res_len = 0;
+				char * result = NULL;
 
-				memset (new_str, 0, len + new_class_name_len);
-
-				result = strstr (class_name, (const char *) next);
-				while (result && len > 0) {
-					// copy data up to string to replace
-					for (; next < result; len--,next++,p_new_str++) *p_new_str = *next;
-					// replace string
-					for (; *p_new_cn; p_new_cn++,p_new_str++) *p_new_str = *p_new_cn;
-					// decrement len, increment next
-					len -= class_name_len-1;
-					next = next+class_name_len-1;
-					// check for a new result
-					result = strstr (class_name, (const char *) next);
+				if ( r_cmd_is_object_descriptor (name, len) == R_TRUE) {
+					result = r_cmd_replace_name_def (new_class_name, new_class_name_len-1, class_name, class_name_len-1, name, len, &res_len);
+				} else {
+					result = r_cmd_replace_name (new_class_name, new_class_name_len-1, class_name, class_name_len-1, name, len, &res_len);
 				}
-				// fill in the remaining content
-				for (; *next && len > 0; len--,next++,p_new_str++) *p_new_str = *next;
-				len = p_new_str - new_str;
-				// write out all the data
-				res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *) cmd, len);
-				free (new_str);
+				if (result)
+					res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, result, res_len);
+				free (result);
 			}
 
 			free (buffer);

@@ -908,8 +908,8 @@ R_API ut64 r_bin_java_get_method_code_size(RBinJavaField *fm_type);
 R_API ut64 r_bin_java_get_class_entrypoint(RBinJavaObj* bin);
 
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(ut16 name_and_typeidx);
-R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type(ut16 name_idx, ut16 descriptor_idx);
-R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(ut16 name_idx, ut16 descriptor_idx);
+R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
+R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
 
 R_API RBinClass* r_bin_java_allocate_r_bin_class();
 R_API RList *r_bin_java_get_classes(RBinJavaObj *bin);
