@@ -712,7 +712,10 @@ R_API void r_core_anal_fcn_local_list(RCore *core, RAnalFunction *fcn, int rad) 
 			r_core_anal_fcn_local_list (core, f, rad);
 		}
 	} else
-	if (fcn && fcn->locals) {
+	if (fcn) {
+eprintf ("TODO: sdbize\n");
+#if 0
+ && fcn->locals) {
 		RAnalFcnLocal *loc;
 		RListIter *iter;
 		r_list_foreach (fcn->locals, iter, loc) {
@@ -728,6 +731,7 @@ R_API void r_core_anal_fcn_local_list(RCore *core, RAnalFunction *fcn, int rad) 
 				}
 			}
 		}
+#endif
 	}
 }
 

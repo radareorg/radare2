@@ -732,6 +732,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		//ds->pre = "  ";
 		if (f) {
+eprintf ("TODO: list from anal->sdb_fcns/fcn.0x%%x.locals|args\n");
+#if 0
 			if (f->locals != NULL) {
 				RAnalFcnLocal *f_loc;
 				RListIter *l_iter;
@@ -758,6 +760,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 					}
 				}
 			}
+#endif
 			if (f->addr == ds->at) {
 				char *sign = r_anal_fcn_to_string (core->anal, f);
 				if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -1290,6 +1293,8 @@ static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction
 	RAnalFcnLocal *l;
 	RListIter *iter;
 	ut8 have_local = 0;
+eprintf ("TODO: sdbize locals\n");
+#if 0
 	r_list_foreach (f->locals, iter, l) {
 		if (ds->analop.jump == l->addr) {
 			if ((cf != NULL) && (f->addr == cf->addr)) {
@@ -1316,6 +1321,7 @@ static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction
 			break;
 		}
 	}
+#endif
 	return have_local;
 }
 
@@ -1331,9 +1337,11 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 			f = r_anal_fcn_find (core->anal,
 				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 			if (f && !strstr (ds->opstr, f->name)) {
+#if 0
 				if (f->locals != NULL) {
 					have_local = handle_print_fcn_locals (core, ds, f, cf);
 				}
+#endif
 				if (!have_local) {
 					if (ds->show_color)
 						r_cons_strcat (ds->color_fname);

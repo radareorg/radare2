@@ -437,6 +437,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		showcursor (core, R_FALSE);
 		r_cons_set_raw (R_TRUE);
 		break;
+	case '!':
+		r_cons_2048();
+		break;
 	case 'o':
 		visual_offset (core);
 		break;

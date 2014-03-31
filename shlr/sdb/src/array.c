@@ -337,6 +337,12 @@ SDB_API int sdb_array_length(Sdb *s, const char *key) {
 	return ret;
 }
 
+SDB_API int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas) {
+	char buf[128];
+	char *n = sdb_itoa (num, buf, SDB_NUM_BASE);
+	return sdb_array_push (s, key, n, cas);
+}
+
 SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 	ut32 kas = cas;
 	const char *str = sdb_const_get (s, key, &kas);
@@ -369,6 +375,14 @@ SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 		sdb_set (s, key, val, cas);
 	}
 	return 1;
+}
+
+SDB_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas) {
+	ut64 ret;
+	char *a = sdb_array_pop (s, key, cas);
+	ret = sdb_atoi (a);
+	free (a);
+	return ret;
 }
 
 SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {

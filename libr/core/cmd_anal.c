@@ -582,6 +582,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		"| afn name [addr]           ; Rename name for function at address (change flag too)\n"
 		"| afr[cCd-] src dst         ; Add/Remove code/Call/data/string reference\n"
 		"| afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
+		"| afv[?] [idx] [type] [name]; Add local var on current function\n"
+		"| afa[?] [idx] [type] [name]; Add function argument\n"
 		"| af[aAv][?] [arg]          ; Manipulate args, fastargs and variables in function\n"
 		"| afc @ [addr]              ; Calculate the Cyclomatic Complexity (starting at addr)\n"
 		"| af*                       ; Output radare commands\n");

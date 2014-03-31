@@ -49,13 +49,14 @@ R_API RAnal *r_anal_new() {
 	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);
+	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns");
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints");
-	anal->sdb_vars = sdb_ns (anal->sdb, "vars");
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs");
-	anal->sdb_args = sdb_ns (anal->sdb, "args");
-	anal->sdb_ret = sdb_ns (anal->sdb, "ret");
-	anal->sdb_locals = sdb_ns (anal->sdb, "locals");
+	//anal->sdb_vars = sdb_ns (anal->sdb, "vars");
+	//anal->sdb_args = sdb_ns (anal->sdb, "args");
+	//anal->sdb_ret = sdb_ns (anal->sdb, "ret");
+	//anal->sdb_locals = sdb_ns (anal->sdb, "locals");
 	anal->sdb_types = sdb_ns (anal->sdb, "types");
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
@@ -119,7 +120,7 @@ R_API void r_anal_free(RAnal *a) {
 	sdb_free (a->sdb_refs);
 	sdb_free (a->sdb_args);
 	sdb_free (a->sdb_hints);
-	sdb_free (a->sdb_locals);
+	//sdb_free (a->sdb_locals);
 	sdb_free (a->sdb_types);
 	sdb_free (a->sdb);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)

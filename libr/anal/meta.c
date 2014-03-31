@@ -76,7 +76,7 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 		meta_inrange_add (a, addr, size);
 		ret = R_TRUE;
 	} else ret = R_FALSE;
-	e_str = sdb_encode ((const void*)s, 0);
+	e_str = sdb_encode ((const void*)s, -1);
 	snprintf (val, sizeof (val)-1, "%d,%s", (int)size, e_str);
 	sdb_set (DB, key, val, 0);
 	free ((void*)e_str);
@@ -160,7 +160,7 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	if (from == to)
 		to = from+1;
 	/* set entry */
-	e_str = sdb_encode ((const void*)str, 0);
+	e_str = sdb_encode ((const void*)str, -1);
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, from);
 	snprintf (val, sizeof (val)-1, "%d,%s", (int)(to-from), e_str);
 	sdb_set (DB, key, val, 0);

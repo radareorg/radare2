@@ -5,6 +5,7 @@
 #include <r_list.h>
 
 #define FCN_DEPTH 32
+#define DB a->sdb_fcns
 
 R_API RAnalFunction *r_anal_fcn_new() {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
@@ -30,7 +31,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->diff = r_anal_diff_new ();
 	fcn->args = NULL;
 	fcn->locs = NULL;
-	fcn->locals = NULL;
+	//fcn->locals = NULL;
 	return fcn;
 }
 
@@ -55,28 +56,36 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	// XXX: some shared basic blocks make it crash. 
 	// TODO: fix it with sdb
 	r_list_free (fcn->bbs);
+	//r_list_free (fcn->locals);
 #endif
-	r_list_free (fcn->locals);
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	free (fcn->args);
 	free (fcn);
 }
 
-R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
+R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
-	if (!fcn || !anal || !(ref = r_anal_ref_new ()))
+	if (!fcn || !a|| !(ref = r_anal_ref_new ()))
 		return R_FALSE;
+	r_anal_xrefs_set (a, type=='s'?"string":type=='d'?"data":"code", addr, at);
+#if FCN_OLD
 	ref->at = at; // from
 	ref->addr = addr; // to
 	ref->type = type;
-	r_anal_xrefs_set (anal, type=='s'?"string":type=='d'?"data":"code", addr, at);
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
+#endif
+#if FCN_SDB
+	char key[1024], val[1024];
+	snprintf (key, sizeof (key)-1, "fcn.0x%08"PFMT64x".xrefs", fcn->addr);
+	sdb_array_add_num (DB, key, at, 0);
+#endif
 	return R_TRUE;
 }
 
-R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
+R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
+#if FCN_OLD
 	RAnalRef *ref;
 	RListIter *iter;
 	/* No need for _safe loop coz we return immediately after the delete. */
@@ -88,23 +97,51 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 				return R_TRUE;
 		}
 	}
+#endif
+#if FCN_SDB
+	//sdb_array_delete_num (DB, key, at, 0);
+#endif
 	return R_FALSE;
 }
 
-R_API int r_anal_fcn_local_add (RAnal *anal, RAnalFunction *fcn, ut64 addr, const char *name) {
-	RAnalFcnLocal *l = R_NEW0 (RAnalFcnLocal);
-	if (!fcn || !anal)
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char *kind, ut32 index, const char *name, const char *type) {
+#if FCN_SDB
+#if 0
+  fcn.0x80480.locals=8,16,24
+  fcn.0x80480.locals.8=name,type
+#endif
+	char key[1024], val[1024], *e;
+#define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
+#define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
+	//snprintf (key, sizeof (key)-1, "fcn.0x%08"PFMT64x, fcn->addr);
+	//if (sdb_exists (DB, key)) {
+
+	if (EXISTS("fcn.0x%08"PFMT64x, fna)) {
+		SETKEY("fcn.0x%08"PFMT64x".%s", fna, kind);
+		//snprintf (key, sizeof (key)-1,
+		//	"fcn.0x%08"PFMT64x".locals", fcn->addr);
+		if (sdb_array_contains_num (DB, key, index, 0))
+			return R_FALSE;
+		e = sdb_encode (name, -1);
+		if (e) {
+			sdb_array_push (DB, key, e, 0);
+			sdb_array_push_num (DB, key, index, 0);
+			free (e);
+		} else {
+			eprintf ("Cannot encode string\n");
+		}
+	} else {
+		eprintf ("r_anal_fcn_local_add: cannot find function.\n");
 		return R_FALSE;
-	l->addr = addr;
-	l->name = strdup (name);
-	// TODO: do not allow duplicate locals!
-	if (!fcn->locals)
-		fcn->locals = r_list_new();
-	r_list_append (fcn->locals, l);
+	}
+#endif
 	return R_TRUE;
 }
 
-R_API int r_anal_fcn_local_del_name (RAnal *anal, RAnalFunction *fcn, const char *name) {
+#if 0
+// DEPRECATED
+R_API int r_anal_fcn_var_del_byname (RAnal *anal, ut64 fna, const char *name) {
+#if FCN_OLD
 	RAnalFcnLocal *l;
 	RListIter *iter;
 	/* No need for _safe loop coz we return immediately after the delete. */
@@ -114,19 +151,24 @@ R_API int r_anal_fcn_local_del_name (RAnal *anal, RAnalFunction *fcn, const char
 			return R_TRUE;
 		}
 	}
+#endif
+#if FCN_SDB
+#endif
 	return R_FALSE;
 }
+#endif
 
-R_API int r_anal_fcn_local_del_addr (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	RAnalFcnLocal *l;
-	RListIter *iter;
-	/* No need for _safe loop coz we return immediately after the delete. */
-	r_list_foreach (fcn->locals, iter, l) {
-		if (addr == 0UL || addr == l->addr) {
-			r_list_delete (fcn->locals, iter);
-			return R_TRUE;
-		}
+R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char *kind, ut32 index) {
+#if FCN_SDB
+	char key[128], val[128], *v;
+	SETKEY("fcn.0x%08"PFMT64x".%s", fna, kind);
+	v = sdb_itoa (val, index, 10);
+	int idx = sdb_array_indexof (DB, key, v,0);
+	if (idx != -1) {
+		SETKEY("fcn.0x%08"PFMT64x".%s.%d", fna, kind, index);
+		sdb_unset (DB, key, 0);
 	}
+#endif
 	return R_FALSE;
 }
 
@@ -362,9 +404,9 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	return R_TRUE;
 }
 
-R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
+R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
 	int append = 0;
-	RAnalFunction *fcn = r_anal_fcn_find (anal, addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn = r_anal_fcn_find (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (fcn == NULL) {
 		if (!(fcn = r_anal_fcn_new ()))
 			return R_FALSE;
@@ -382,7 +424,12 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 		if (diff->name)
 			fcn->diff->name = strdup (diff->name);
 	}
-	return append? r_anal_fcn_insert (anal, fcn): R_TRUE;
+#if FCN_SDB
+	char key[128];
+	SETKEY ("fcn.0x%08"PFMT64x, addr);
+	sdb_set (DB, key, "TODO", 0); // TODO: add more info here
+#endif
+	return append? r_anal_fcn_insert (a, fcn): R_TRUE;
 }
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {

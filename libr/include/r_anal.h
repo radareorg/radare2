@@ -3,6 +3,8 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
+#define FCN_SDB 1
+#define FCN_OLD 1
 #define USE_VARSUBS 0
 
 #include <r_types.h>
@@ -286,8 +288,9 @@ typedef struct r_anal_locals_t {
 } RAnalLocals;
 
 typedef struct r_anal_fcn_local_t {
-	ut64 addr;
+	ut64 index;
 	char* name;
+	char* type;
 } RAnalFcnLocal;
 
 typedef struct r_anal_attr_t RAnalAttr;
@@ -329,7 +332,7 @@ typedef struct r_anal_type_function_t {
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
-	RList *locals; // list of local labels
+	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
 	RList *vars;
 	RList *refs;
@@ -560,12 +563,16 @@ typedef struct r_anal_t {
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 //moved from RAnalFcn
 	Sdb *sdb; // root
-	Sdb *sdb_vars;
 	Sdb *sdb_refs;
-	Sdb *sdb_args;
-	Sdb *sdb_locals;
-	Sdb *sdb_ret;
-	Sdb *sdb_hints;
+	Sdb *sdb_fcns;
+#define DEPRECATE 1
+#if DEPRECATE
+	Sdb *sdb_args;  //
+	Sdb *sdb_vars; // globals?
+	//Sdb *sdb_locals;
+	// Sdb *sdb_ret;   // UNUSED
+#endif
+	Sdb *sdb_hints; // OK
 	//RList *hints; // XXX use better data structure here (slist?)
 } RAnal;
 
@@ -673,9 +680,10 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
+// generic for args and locals
 typedef struct r_anal_var_t {
 	char *name;		/* name of the variable */
-	char *type;
+	char *type; // arg or local
 	ut64 addr;		// not used correctly?
 	ut64 eaddr;		// not used correctly?
 	int delta;		/* delta offset inside stack frame */
@@ -930,9 +938,31 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
-R_API int r_anal_fcn_local_add(RAnal *anal, RAnalFunction *fcn, ut64 addr, const char *name);
+
+/* locals */
+#if 0
+R_API int r_anal_fcn_local_add(RAnal *anal, RAnalFunction *fcn, int index, const char *name, const char *type);
 R_API int r_anal_fcn_local_del_name(RAnal *anal, RAnalFunction *fcn, const char *name);
-R_API int r_anal_fcn_local_del_addr(RAnal *anal, RAnalFunction *fcn, ut64 addr);
+R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index);
+#endif
+
+#define R_ANAL_FCN_VARKIND_LOCAL "locals"
+#define R_ANAL_FCN_VARKIND_ARG "args"
+
+#define r_anal_fcn_local_add(x,y,z,n,t) r_anal_fcn_var_add(x, y->addr, z,\
+	R_ANAL_FCN_VARKIND_LOCAL, n, t)
+#define r_anal_fcn_local_del_index(x,y,z) r_anal_fcn_var_del_byindex(x, y,\
+	R_ANAL_FCN_VARKIND_LOCAL, z)
+#define r_anal_fcn_local_del_name(x,y,z) error
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char *kind,
+	ut32 idx, const char *name, const char *type);
+R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char *kind,
+	ut32 idx);
+/* args */
+
+/* vars // globals. not here  */
+
+
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb);
