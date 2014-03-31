@@ -289,7 +289,39 @@ static RList * r_bin_java_find_cp_const_by_val_utf8 (RBinJavaObj *bin_obj, const
 
 
 
+static ut8  char_needs_hexing ( ut8 b) {
+	if (b <= 0x31) return 1;
+	switch (b) {
+		case 0x7f:
+		case 0x81:
+		case 0x8F:
+		case 0x90:
+		case 0x9D:
+		case 0xA0:
+		case 0xAD:
+			return 1;
+	}
+	return 0;
+}
 
+static char * convert_string (const char * bytes, ut32 len ) {
+	ut32 idx = 0, pos = 0;
+	char *cpy_buffer = malloc (4*len) + 1;
+
+	// 4x is the increase from byte to \xHH where HH represents hexed byte
+	memset (cpy_buffer, 0, len*4+1);
+	while (idx < len) {
+		if (char_needs_hexing (bytes[idx])) {
+			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
+			pos += 4;
+		} else {
+			cpy_buffer[pos] = bytes[idx];
+			pos++;
+		}
+		idx ++;
+	}
+	return cpy_buffer;
+}
 
 
 // taken from LLVM Code Byte Swap
@@ -6790,18 +6822,19 @@ R_API char * r_bin_java_print_name_and_type_cp_stringify(RBinJavaCPTypeObj* obj)
 	return value;
 }
 
+
+
 static void r_bin_java_print_utf8_cp_summary(RBinJavaCPTypeObj* obj) {
 	if(obj == NULL) {
 		eprintf ("Attempting to print an invalid RBinJavaCPTypeObj*  Utf8.\n");
 		return;
 	}
-
+	char *str = convert_string (obj->info.cp_utf8.bytes, obj->info.cp_utf8.length);
 	eprintf ("UTF8 ConstantPool Type (%d) ", obj->metas->ord);
 	eprintf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	eprintf ("	length = %d\n", obj->info.cp_utf8.length);
-	// XXX - TODO UTF8 Interpretation
-	eprintf ("	strlen(%lu) utf8 = %s\n", strlen ( (const char *) obj->info.cp_utf8.bytes) ,(char *) obj->info.cp_utf8.bytes);
-
+	eprintf ("	utf8 = %s\n", str);
+	free (str);
 }
 
 R_API char * r_bin_java_print_utf8_cp_stringify(RBinJavaCPTypeObj* obj) {

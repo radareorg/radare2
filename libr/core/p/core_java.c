@@ -110,6 +110,7 @@ static int r_cmd_is_object_descriptor (const char *name, ut32 name_len);
 static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match_me);
 static const char * r_cmd_get_next_classname_str (const char * str, const char *match_me);
 
+static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd);
 static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd);
 
 typedef struct r_cmd_java_cms_t {
@@ -190,6 +191,13 @@ typedef struct r_cmd_java_cms_t {
 #define RELOAD_BIN_DESC "reload and reanalyze the Java class file starting at address"
 #define RELOAD_BIN_LEN 10
 
+#define SUMMARY_INFO "summary"
+#define SUMMARY_INFO_ARGS "NONE"
+#define SUMMARY_INFO_DESC "print summary information for the current java class file"
+#define SUMMARY_INFO_LEN 7
+
+
+
 static RCmdJavaCmd JAVA_CMDS[] = {
 	{HELP, HELP_ARGS, HELP_DESC, HELP_LEN, r_cmd_java_handle_help},
 	{SET_ACC_FLAGS, SET_ACC_FLAGS_ARGS, SET_ACC_FLAGS_DESC, SET_ACC_FLAGS_LEN, r_cmd_java_handle_set_flags},
@@ -205,6 +213,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{REPLACE_CP_VALUE, REPLACE_CP_VALUE_ARGS, REPLACE_CP_VALUE_DESC, REPLACE_CP_VALUE_LEN, r_cmd_java_handle_replace_cp_value},
 	{REPLACE_CLASS_NAME, REPLACE_CLASS_NAME_ARGS, REPLACE_CLASS_NAME_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_replace_classname_value},
 	{RELOAD_BIN, RELOAD_BIN_ARGS, RELOAD_BIN_DESC, RELOAD_BIN_LEN, r_cmd_java_handle_reload_bin},
+	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_summary_info},
 };
 
 enum {
@@ -222,7 +231,8 @@ enum {
 	REPLACE_CP_VALUE_IDX = 11,
 	REPLACE_CLASS_NAME_IDX = 12,
 	RELOAD_BIN_IDX = 13,
-	END_CMDS = 14,
+	SUMMARY_INFO_IDX = 14,
+	END_CMDS = 15,
 };
 
 static ut8 r_cmd_java_obj_ref (const char *name, const char *class_name, ut32 len) {
@@ -328,6 +338,27 @@ static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 		case 'a': return r_cmd_java_print_all_definitions (anal);
 	}
 	return R_FALSE;
+}
+
+static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
+
+	if (!obj) {
+		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		return R_TRUE;
+	}
+
+	r_cons_printf ("Summary for %s:\n", obj->file);
+	r_cons_printf ("\tSize 0x%"PFMT64x":\n", obj->size);
+	r_cons_printf ("\tConstants (size: 0x%"PFMT64x")Count: %d:\n", obj->cp_size, obj->cp_count);
+	r_cons_printf ("\tMethods (size: 0x%"PFMT64x")Count: %d:\n", obj->methods_size, obj->methods_count);
+	r_cons_printf ("\tFields (size: 0x%"PFMT64x")Count: %d:\n", obj->fields_size, obj->fields_count);
+	r_cons_printf ("\tAttributes (size: 0x%"PFMT64x")Count: %d:\n", obj->attrs_size, obj->attrs_count);
+	r_cons_printf ("\tInterfaces (size: 0x%"PFMT64x")Count: %d:\n", obj->interfaces_size, obj->interfaces_count);
+
+	return R_TRUE;
 }
 
 static int r_cmd_java_check_op_idx (const ut8 *op_bytes, ut16 idx) {
