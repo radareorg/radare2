@@ -19,7 +19,7 @@
 #undef IFDBG
 #endif
 
-#define DO_THE_DBG 0
+#define DO_THE_DBG 1
 #define IFDBG  if(DO_THE_DBG)
 #define IFINT  if(0)
 
@@ -306,10 +306,12 @@ static ut8  char_needs_hexing ( ut8 b) {
 
 static char * convert_string (const char * bytes, ut32 len ) {
 	ut32 idx = 0, pos = 0;
-	char *cpy_buffer = malloc (4*len) + 1;
+	ut32 str_sz = 4*len+1;
+	char *cpy_buffer = len > 0 ? malloc (str_sz): NULL;
 
+	if (!cpy_buffer) return cpy_buffer;
 	// 4x is the increase from byte to \xHH where HH represents hexed byte
-	memset (cpy_buffer, 0, len*4+1);
+	memset (cpy_buffer, 0, str_sz);
 	while (idx < len) {
 		if (char_needs_hexing (bytes[idx])) {
 			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
