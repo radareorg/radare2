@@ -63,13 +63,17 @@ R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) 
 
 }
 
+#if UNUSED
+// Define local vars using ctypes! this is code reuse!
+// ctypes must store get/set access?
+// where's the scope?
 R_API int r_anal_type_frame (RAnal *anal, ut64 addr, const char *type, const char *name, int off, int size) {
 	Sdb *DB = anal->sdb_types;
 	// TODO: check if type already exists and return false
 	sdb_queryf (DB, "frame.%08"PFMT64x".%s=%s,%d,%d",
 		addr, name, type, off, size);
 	sdb_queryf (DB,
-		"()frame.%08"PFMT64x"=%s", addr, name);
+		"frame.%08"PFMT64x"=%s", addr, name);
 	return R_TRUE;
 	
 }
@@ -79,6 +83,7 @@ R_API int r_anal_type_frame_del (RAnal *anal, ut64 addr, const char *name) {
 	//"frame.%08"PFMT64x".%s=", addr, name
 	return R_TRUE;
 }
+#endif
 
 R_API int r_anal_type_link (RAnal *anal, const char *type, ut64 addr) {
 	char laddr[128];

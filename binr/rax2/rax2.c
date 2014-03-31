@@ -97,7 +97,7 @@ static int rax (char *str, int len, int last) {
 			case 'n': flags ^=512; break;
 			case 'u': flags ^=1024;break;
 			case 't': flags ^=2048;break;
-			case 'v': blob_version ("rax2"); break;
+			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
 				out_mode = (flags^32)? '0': 'I';
