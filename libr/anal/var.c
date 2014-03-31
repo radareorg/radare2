@@ -1,9 +1,59 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2014 - pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_cons.h>
 #include <r_list.h>
+
+// Use sdb_vars ?
+#define DB a->sdb_fcns
+
+#define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
+#define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
+// DUPPED FUNCTIONALITY
+// kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 index, const char *name, const char *type) {
+#if FCN_SDB
+#if 0
+  fcn.0x80480.locals=8,16,24
+  fcn.0x80480.locals.8=name,type
+#endif
+	char key[1024], val[1024], *e;
+	if (EXISTS("fcn.0x%08"PFMT64x, fna)) {
+		SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
+		if (sdb_array_contains_num (DB, key, index, 0))
+			return R_FALSE;
+		e = sdb_encode (name, -1);
+		if (e) {
+			sdb_array_push (DB, key, e, 0);
+			sdb_array_push_num (DB, key, index, 0);
+			free (e);
+		} else {
+			eprintf ("Cannot encode string\n");
+		}
+	} else {
+		eprintf ("r_anal_fcn_local_add: cannot find function.\n");
+		return R_FALSE;
+	}
+#endif
+	return R_TRUE;
+}
+
+R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int scope, ut32 index) {
+	char key[128], val[128], *v;
+	SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
+	v = sdb_itoa (val, index, 10);
+	int idx = sdb_array_indexof (DB, key, v,0);
+	if (idx != -1) {
+		sdb_array_delete (DB, key, idx, 0);
+		SETKEY("fcn.0x%08"PFMT64x".%c.%d", fna, kind, index);
+		sdb_unset (DB, key, 0);
+	}
+	return R_FALSE;
+}
+
+// ---------------
+// TODO: limit recursivity
 
 R_API RAnalVar *r_anal_var_new() {
 	RAnalVar *var = R_NEW0 (RAnalVar);
@@ -59,6 +109,7 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, 
 	r_list_foreach (fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta)
 			return r_anal_var_access_add (anal, vari, from, set);
+// TODO r_anal_fcn_var_add
 	if (!(var = r_anal_var_new ()))
 		return R_FALSE;
 	if (name)
@@ -92,11 +143,11 @@ R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int s
 	RAnalVar *vari;
 	RListIter *iter;
 
-    r_list_foreach (fcn->vars, iter, vari)
-        if ((scope==-1||vari->scope == scope) && vari->delta == delta)
-            return vari;
+	r_list_foreach (fcn->vars, iter, vari)
+	if ((scope==-1||vari->scope == scope) && vari->delta == delta)
+		return vari;
 
-    return NULL;
+	return NULL;
 }
 
 R_API const char *r_anal_var_scope_to_str (RAnal *anal, int scope) {

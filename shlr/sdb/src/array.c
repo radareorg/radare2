@@ -214,7 +214,7 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val, ut3
 	return ret;
 }
 
-SDB_API int sdb_array_delete_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
+SDB_API int sdb_array_remove_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	const char *n, *p, *str = sdb_const_get (s, key, 0);
 	int idx = 0;
 	ut64 num;
@@ -251,8 +251,8 @@ SDB_API int sdb_array_remove(Sdb *s, const char *key, const char *val, ut32 cas)
 	const char *str = sdb_const_get (s, key, 0);
 	const char *n, *p = str;
 	int idx;
+	if (p)
 	for (idx=0; ; idx++) {
-		if (!p) break;
 		if (!astrcmp (p, val))
 			return sdb_array_delete (s, key, idx, cas);
 		n = strchr (p, SDB_RS);

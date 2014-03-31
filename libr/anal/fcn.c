@@ -6,6 +6,8 @@
 
 #define FCN_DEPTH 32
 #define DB a->sdb_fcns
+#define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
+#define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
 
 R_API RAnalFunction *r_anal_fcn_new() {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
@@ -68,7 +70,9 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	RAnalRef *ref;
 	if (!fcn || !a|| !(ref = r_anal_ref_new ()))
 		return R_FALSE;
+	// set global reference
 	r_anal_xrefs_set (a, type=='s'?"string":type=='d'?"data":"code", addr, at);
+	// set per-function reference
 #if FCN_OLD
 	ref->at = at; // from
 	ref->addr = addr; // to
@@ -78,7 +82,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 #endif
 #if FCN_SDB
 	char key[1024], val[1024];
-	snprintf (key, sizeof (key)-1, "fcn.0x%08"PFMT64x".xrefs", fcn->addr);
+	SETKEY ("fcn.0x%08"PFMT64x".xrefs", fcn->addr);
 	sdb_array_add_num (DB, key, at, 0);
 #endif
 	return R_TRUE;
@@ -103,76 +107,6 @@ R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 #endif
 	return R_FALSE;
 }
-
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char *kind, ut32 index, const char *name, const char *type) {
-#if FCN_SDB
-#if 0
-  fcn.0x80480.locals=8,16,24
-  fcn.0x80480.locals.8=name,type
-#endif
-	char key[1024], val[1024], *e;
-#define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
-#define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
-	//snprintf (key, sizeof (key)-1, "fcn.0x%08"PFMT64x, fcn->addr);
-	//if (sdb_exists (DB, key)) {
-
-	if (EXISTS("fcn.0x%08"PFMT64x, fna)) {
-		SETKEY("fcn.0x%08"PFMT64x".%s", fna, kind);
-		//snprintf (key, sizeof (key)-1,
-		//	"fcn.0x%08"PFMT64x".locals", fcn->addr);
-		if (sdb_array_contains_num (DB, key, index, 0))
-			return R_FALSE;
-		e = sdb_encode (name, -1);
-		if (e) {
-			sdb_array_push (DB, key, e, 0);
-			sdb_array_push_num (DB, key, index, 0);
-			free (e);
-		} else {
-			eprintf ("Cannot encode string\n");
-		}
-	} else {
-		eprintf ("r_anal_fcn_local_add: cannot find function.\n");
-		return R_FALSE;
-	}
-#endif
-	return R_TRUE;
-}
-
-#if 0
-// DEPRECATED
-R_API int r_anal_fcn_var_del_byname (RAnal *anal, ut64 fna, const char *name) {
-#if FCN_OLD
-	RAnalFcnLocal *l;
-	RListIter *iter;
-	/* No need for _safe loop coz we return immediately after the delete. */
-	r_list_foreach (fcn->locals, iter, l) {
-		if (!strcmp(l->name, name)) {
-			r_list_delete (fcn->locals, iter);
-			return R_TRUE;
-		}
-	}
-#endif
-#if FCN_SDB
-#endif
-	return R_FALSE;
-}
-#endif
-
-R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char *kind, ut32 index) {
-#if FCN_SDB
-	char key[128], val[128], *v;
-	SETKEY("fcn.0x%08"PFMT64x".%s", fna, kind);
-	v = sdb_itoa (val, index, 10);
-	int idx = sdb_array_indexof (DB, key, v,0);
-	if (idx != -1) {
-		SETKEY("fcn.0x%08"PFMT64x".%s.%d", fna, kind, index);
-		sdb_unset (DB, key, 0);
-	}
-#endif
-	return R_FALSE;
-}
-
-// TODO: limit recursivity
 
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
@@ -450,27 +384,27 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
+R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	if (addr == UT64_MAX) {
 #if USE_NEW_FCN_STORE
-		r_listrange_free (anal->fcnstore);
-		anal->fcnstore = r_listrange_new ();
+		r_listrange_free (a->fcnstore);
+		a->fcnstore = r_listrange_new ();
 #else
-		r_list_free (anal->fcns);
-		if (!(anal->fcns = r_anal_fcn_list_new ()))
+		r_list_free (a->fcns);
+		if (!(a->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
 #endif
 	} else {
 #if USE_NEW_FCN_STORE
 		// XXX: must only get the function if starting at 0?
-		RAnalFunction *f = r_listrange_find_in_range (anal->fcnstore, addr);
-		if (f) r_listrange_del (anal->fcnstore, f);
+		RAnalFunction *f = r_listrange_find_in_range (a->fcnstore, addr);
+		if (f) r_listrange_del (a->fcnstore, f);
 #else
 		RAnalFunction *fcni;
 		RListIter *iter, *iter_tmp;
-		r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcni) {
+		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
 			if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
-				r_list_delete (anal->fcns, iter);
+				r_list_delete (a->fcns, iter);
 			}
 		}
 #endif

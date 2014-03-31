@@ -946,18 +946,19 @@ R_API int r_anal_fcn_local_del_name(RAnal *anal, RAnalFunction *fcn, const char 
 R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index);
 #endif
 
-#define R_ANAL_FCN_VARKIND_LOCAL "locals"
-#define R_ANAL_FCN_VARKIND_ARG "args"
+#define R_ANAL_FCN_VARKIND_LOCAL 'v'
+#define R_ANAL_FCN_VARKIND_ARG 'a'
+#define R_ANAL_FCN_VARKIND_FASTARG 'A'
 
 #define r_anal_fcn_local_add(x,y,z,n,t) r_anal_fcn_var_add(x, y->addr, z,\
 	R_ANAL_FCN_VARKIND_LOCAL, n, t)
 #define r_anal_fcn_local_del_index(x,y,z) r_anal_fcn_var_del_byindex(x, y,\
 	R_ANAL_FCN_VARKIND_LOCAL, z)
 #define r_anal_fcn_local_del_name(x,y,z) error
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char *kind,
-	ut32 idx, const char *name, const char *type);
-R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char *kind,
-	ut32 idx);
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind,
+	int scope, ut32 idx, const char *name, const char *type);
+R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
+	int scope, ut32 idx);
 /* args */
 
 /* vars // globals. not here  */

@@ -30,7 +30,7 @@ R_API void r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to) 
 R_API void r_anal_xrefs_deln (RAnal *anal, const char *type, ut64 from, ut64 to) {
 	char key[32];
 	snprintf (key, sizeof (key), "%s.0x%"PFMT64x, type, from);
-	sdb_array_delete_num (DB, key, to, 0);
+	sdb_array_remove_num (DB, key, to, 0);
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const char *type, ut64 addr) {

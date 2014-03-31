@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_list.h>
 
+// XXX this .c wraps a reversed xrefs.c api.. this is dupping code. we must merge apis!
 // NOTE: This file uses the xrefs api which is sdb based
 R_API RAnalRef *r_anal_ref_new() {
 	RAnalRef *ref = R_NEW (RAnalRef);

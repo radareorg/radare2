@@ -15,12 +15,28 @@ INTERNAL void twok_init() {
 }
 
 INTERNAL void twok_add() {
-	int i, j;
+	int i, j, min = 1;
+	int holes = 0;
+	for (i=0;i<4;i++) {
+		for (j=0;j<4;j++) {
+			if (twok_buf[i][j] > 1) {
+				min = 2;
+				break;
+			}
+		}
+	}
+	for (i=0;i<4;i++)
+		for (j=0;j<4;j++)
+			if (!twok_buf[i][j]) {
+				holes = 1;
+				break;
+			 }
+	if (holes)
 	for (;;) {
 		i = r_num_rand (4);
 		j = r_num_rand (4);
 		if (!twok_buf[i][j]) {
-			twok_buf[i][j] = 1;
+			twok_buf[i][j] = r_num_rand (min)+1;
 			break;
 		}
 	}
@@ -32,15 +48,23 @@ INTERNAL int twok_fin() {
 		for (j=0;j<4;j++)
 			if (!twok_buf[i][j])
 				return 1;
+	for (i=0;i<4;i++)
+		for (j=0;j<3;j++)
+			if (twok_buf[i][j] == twok_buf[i][j+1])
+				return 1;
+	for (i=0;i<3;i++)
+		for (j=0;j<4;j++)
+			if (twok_buf[i][j] == twok_buf[i+1][j])
+				return 1;
 	return 0;
 }
 
 INTERNAL void twok_move(int d) {
 	int i, j, k;
-if (d=='a') {
-	twok_add ();
-} else
-for (k=0;k<4;k++) {
+	if (d=='a') {
+		twok_add ();
+	} else
+	for (k=0;k<4;k++) {
 	switch (d) {
 	case 'h': // left
 		// for each row
@@ -105,8 +129,7 @@ for (k=0;k<4;k++) {
 			}
 		}
 		break;
-	}
-}
+	}}
 }
 
 INTERNAL void twok_print() {
@@ -172,6 +195,10 @@ R_API void r_cons_2048() {
 		twok_move (ch);
 		twok_add ();
 	}
+	r_cons_clear00();
+	r_cons_printf ("[r2048] score: %d\n", twok_score ());
+	r_cons_flush ();
+	twok_print();
 	r_cons_printf ("\n  [r2048.score] %d\n", twok_score ());
 	r_cons_any_key ();
 	r_cons_set_raw (0);

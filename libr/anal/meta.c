@@ -55,7 +55,7 @@ static int meta_inrange_del (RAnal *a, ut64 addr, int size) {
 // TODO: optimize this thing?
 	for (; base<base2; base += META_RANGE_SIZE) {
 		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
-		if (sdb_array_delete_num (DB, key, addr, 0))
+		if (sdb_array_remove_num (DB, key, addr, 0))
 			set = 1;
 	}
 	//sdb_array_del (DB);

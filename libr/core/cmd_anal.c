@@ -2,15 +2,21 @@
 
 #if 1
 /* TODO: Move into cmd_anal() */
-static void var_help() {
-	eprintf ("Try afv?\n"
-	" afv 12 int buffer[3]\n"
-	" afv 12 byte buffer[1024]\n"
-	"Try af[aAv][gs] [delta] [[addr]]\n"
-	" afag 0  = arg0 get\n"
-	" afvs 12 = var12 set\n"
-	"a = arg, A = fastarg, v = var\n"
-	"TODO: [[addr]] is not yet implemented. use @\n");
+static void var_help(char ch) {
+	const char *kind = (ch=='v')?"locals":"args";
+if (ch) {
+	eprintf ("|Usage: af%c [idx] [type] [name]\n", ch);
+	eprintf ("| af%c                        ; list function %s\n", ch, kind);
+	eprintf ("| af%c 12 int buffer[3]       ; add %s at index, type and name\n", ch);
+	eprintf ("| af%c-12                     ; delete %s at index 12\n", ch, kind);
+	eprintf ("| af%cs [index] ([offset])    ; register 'set' action\n", ch);
+	eprintf ("| af%cg [index] ([offset])    ; register 'get' action\n", ch);
+	eprintf ("|See also: afa? afv? -- add arguments and locals\n");
+} else {
+eprintf ("See afv? and afa?\n");
+}
+
+// TODO: fastrg == 'A'
 }
 
 static int var_cmd(RCore *core, const char *str) {
@@ -27,7 +33,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_anal_var_list_show (core->anal, fcn, core->offset);
 		break;
 	case '?':
-		var_help ();
+		var_help (0);
 		break;
 	case 'v': // frame variable
 	case 'a': // stack arg
@@ -45,7 +51,7 @@ static int var_cmd(RCore *core, const char *str) {
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0': r_anal_var_list (core->anal, fcn, 0, 0); return 0;
-		case '?': var_help(); return 0;
+		case '?': var_help(*str); return 0;
 		case '.': r_anal_var_list (core->anal, fcn, core->offset, 0); return 0;
 		case 's':
 		case 'g':
@@ -65,7 +71,7 @@ static int var_cmd(RCore *core, const char *str) {
 		delta = atoi (str);
 		p = strchr (str, ' ');
 		if (p==NULL) {
-			var_help ();
+			var_help (*str);
 			break;
 		}
 		// TODO: Improve parsing error handling
@@ -83,10 +89,10 @@ static int var_cmd(RCore *core, const char *str) {
 				//r_anal_str_to_type (core->anal, p)
 				NULL
 				, p2, p3? atoi (p3): 0);
-		} else var_help ();
+		} else var_help (*str);
 		break;
 	default:
-		var_help ();
+		var_help (*str);
 		break;
 	}
 	free (ostr);
@@ -507,6 +513,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '\0':
 		case ' ':
+// TODO: sdbize!
 			// list xrefs from current address
 			{
 				ut64 addr = input[2]?  r_num_math (core->num, input+2): core->offset;
