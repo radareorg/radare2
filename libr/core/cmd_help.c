@@ -234,7 +234,13 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'x':
 		for (input++; input[0]==' '; input++);
-		if (!memcmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
+		if (*input=='-') {
+			ut8 *out = malloc (strlen (input));
+			int len = r_hex_str2bin (input+1, out);
+			out[len] = 0;
+			r_cons_printf ("%s\n", (const char*)out);
+			free (out);
+		} else if (!memcmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;
 			for (i=0; i<bits; i++)
@@ -392,7 +398,7 @@ static int cmd_help(void *data, const char *input) {
 			"| ?v eip-0x804800   show hex value of math expr\n"
 			"| ?vi rsp-rbp       show decimal value of math expr\n"
 			"| ?V                show library version of r_core\n"
-			"| ?x num|0xnum|str  returns the hexpair of number or string\n"
+			"| ?x num|str|-hexst returns the hexpair of number or string\n"
 			"| ?X num|expr       returns the hexadecimal value numeric expr\n"
 			"| ?y [str]          show contents of yank buffer, or set with string\n"
 			"| ?! [cmd]          ? != 0\n"

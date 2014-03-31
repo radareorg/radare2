@@ -7,7 +7,7 @@ static void var_help(char ch) {
 if (ch) {
 	eprintf ("|Usage: af%c [idx] [type] [name]\n", ch);
 	eprintf ("| af%c                        ; list function %s\n", ch, kind);
-	eprintf ("| af%c 12 int buffer[3]       ; add %s at index, type and name\n", ch);
+	eprintf ("| af%c 12 int buffer[3]       ; add %s at index, type and name\n", ch, kind);
 	eprintf ("| af%c-12                     ; delete %s at index 12\n", ch, kind);
 	eprintf ("| af%cs [index] ([offset])    ; register 'set' action\n", ch);
 	eprintf ("| af%cg [index] ([offset])    ; register 'get' action\n", ch);
