@@ -63,7 +63,7 @@ R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) 
 
 }
 
-#if UNUSED
+#if UNUSED_CODE
 // Define local vars using ctypes! this is code reuse!
 // ctypes must store get/set access?
 // where's the scope?

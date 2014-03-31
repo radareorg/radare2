@@ -732,7 +732,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		//ds->pre = "  ";
 		if (f) {
-eprintf ("TODO: list from anal->sdb_fcns/fcn.0x%%x.locals|args\n");
+#warning TODO list from anal->sdb_fcns/fcn.0x%%x.locals|args
+
 #if 0
 			if (f->locals != NULL) {
 				RAnalFcnLocal *f_loc;

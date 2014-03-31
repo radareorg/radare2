@@ -4,6 +4,7 @@
 #define ut8 unsigned char
 static ut8 twok_buf[4][4];
 static int score =0;
+static int moves =0;
 #define INTERNAL static
 
 INTERNAL void twok_init() {
@@ -61,6 +62,7 @@ INTERNAL int twok_fin() {
 
 INTERNAL void twok_move(int d) {
 	int i, j, k;
+moves++;
 	if (d=='a') {
 		twok_add ();
 	} else
@@ -158,10 +160,6 @@ INTERNAL void twok_print() {
 			twok_buf[i][2], twok_buf[i][3]);
 }
 
-INTERNAL int twok_score () {
-	return score;
-}
-
 #if 0
 int main() {
 	char buf[128];
@@ -187,7 +185,8 @@ R_API void r_cons_2048() {
 		twok_add ();
 	while (twok_fin()) {
 		r_cons_clear00();
-		r_cons_printf ("[r2048] score: %d\n", twok_score ());
+		r_cons_printf ("[r2048] score: %d   moves: %d\n",
+			score, moves);
 		r_cons_flush ();
 		twok_print();
 		ch = r_cons_readchar ();
@@ -196,10 +195,10 @@ R_API void r_cons_2048() {
 		twok_add ();
 	}
 	r_cons_clear00();
-	r_cons_printf ("[r2048] score: %d\n", twok_score ());
+	r_cons_printf ("[r2048] score: %d\n", score );
 	r_cons_flush ();
 	twok_print();
-	r_cons_printf ("\n  [r2048.score] %d\n", twok_score ());
+	r_cons_printf ("\n  [r2048.score] %d\n", score );
 	r_cons_any_key ();
 	r_cons_set_raw (0);
 }

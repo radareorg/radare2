@@ -713,7 +713,7 @@ R_API void r_core_anal_fcn_local_list(RCore *core, RAnalFunction *fcn, int rad) 
 		}
 	} else
 	if (fcn) {
-eprintf ("TODO: sdbize\n");
+//eprintf ("TODO: sdbize\n");
 #if 0
  && fcn->locals) {
 		RAnalFcnLocal *loc;
@@ -1306,7 +1306,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 					r_list_append (hooks, ch);
 					ch = NULL;
 					ccl -= op->failcycles;
-					eprintf ("0x%08"PFMT64x" > ?\r");
+					eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
 					break;
 				case R_ANAL_OP_TYPE_CCALL:
 					ch = R_NEW0 (RAnalCycleHook);
