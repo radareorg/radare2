@@ -1739,7 +1739,7 @@ static RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 of
 	IFDBG eprintf ("Parsing %s(%s)", field->name, field->descriptor);
 	if (field->attr_count > 0) {
 		for (i=0; i< field->attr_count && offset+adv<len; i++) {
-			attr = r_bin_java_read_next_attr(bin, offset+adv, buf, len);
+			attr = r_bin_java_read_next_attr(bin, offset+adv, buffer, len);
 			if ((r_bin_java_get_attr_type_by_name(attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
 				// This is necessary for determing the appropriate number of bytes when readin
 				// uoffset, ustack, ulocalvar values
@@ -2287,6 +2287,7 @@ static RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, ut6
 		// figure the appropriate Attributes Meta,
 		// get the meta
 		// call its from buffer
+		if (!name) name = strdup ("unknown");
 		type_info = r_bin_java_get_attr_type_by_name (name);
 		free (name);
 		IFDBG eprintf ("Typeinfo: %s\n", type_info->name);
