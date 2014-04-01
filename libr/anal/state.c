@@ -6,7 +6,13 @@
 #include <r_io.h>
 #include "../config.h"
 
-#define IFDBG if(0)
+#ifdef IFDBG
+#undef IFDBG
+#endif
+
+#define DO_THE_DBG 0
+#define IFDBG  if(DO_THE_DBG)
+#define IFINT  if(0)
 
 R_API RAnalState * r_anal_state_new (ut64 start, ut8* buffer, ut64 len) {
 	RAnalState *state = R_NEW0 (RAnalState);

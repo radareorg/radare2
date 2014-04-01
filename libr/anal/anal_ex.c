@@ -7,7 +7,13 @@
 #include <r_io.h>
 #include "../config.h"
 
-#define IFDBG if(0)
+#ifdef IFDBG
+#undef IFDBG
+#endif
+
+#define DO_THE_DBG 0
+#define IFDBG  if(DO_THE_DBG)
+#define IFINT  if(0)
 
 
 static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalState *state, ut64 addr);

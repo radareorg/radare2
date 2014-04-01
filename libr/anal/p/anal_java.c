@@ -24,7 +24,12 @@
 #undef R_IPI
 #define R_IPI
 
-#define IFDBG  if(0)
+#ifdef IFDBG
+#undef IFDBG
+#endif
+
+#define DO_THE_DBG 0
+#define IFDBG  if(DO_THE_DBG)
 #define IFINT  if(0)
 
 struct r_anal_java_access_t;
@@ -482,7 +487,9 @@ static int java_print_ssa_fcn (RAnal *anal, char *addrs) {
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length  ) {
 
 	char gen_name[1025];
-
+	RListIter *bb_iter;
+	RAnalBlock *bb;
+	ut64 actual_size = 0;
 	RAnalState *state = NULL;
 	int result = R_ANAL_RET_ERROR;
 	RAnalJavaLinearSweep *nodes;
@@ -505,14 +512,23 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	state->user_state = nodes;
 
 	result = analyze_method (anal, fcn, state);
+	r_list_foreach (fcn->bbs, bb_iter, bb) {
+		actual_size += bb->size;
+	}
+
 	fcn->size = state->bytes_consumed;
+
 	result = state->anal_ret_val;
 
 	r_list_free (nodes->cfg_node_addrs);
 	free (nodes);
 	r_anal_state_free (state);
 	IFDBG eprintf ("Completed analysing code from buffer, name: %s, desc: %s\n", fcn->name, fcn->dsc);
-
+	if (fcn->size != code_length) {
+		r_cons_printf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%"PFMT64x"\n", fcn->name, code_length, fcn->size);
+		r_cons_printf ("Deadcode detected, setting code length too: 0x%"PFMT64x"\n", code_length);
+		fcn->size = code_length;
+	}
 	return result;
 }
 
@@ -729,7 +745,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 		for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
 			//ut32 value = (ut32)(UINT (data, pos));
-			ut32 offset = (ut32)(R_BIN_JAVA_UINT (data, pos));
+			int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
 			IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
 			caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
 			caseop->bb_ref_to = addr+offset;
@@ -772,11 +788,11 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	}
 
 	if ( op->type == R_ANAL_OP_TYPE_CJMP ) {
-		op->jump = addr + (int)(short)(USHORT (data, 1));
+		op->jump = addr + (short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	} else if ( op->type  == R_ANAL_OP_TYPE_JMP ) {
-		op->jump = addr + (int)(short)(USHORT (data, 1));
+		op->jump = addr + (short)(USHORT (data, 1));
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
 	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
 		//op->jump = addr + (int)(short)(USHORT (data, 1));

@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2014 - pancake */
 
+#include "r_anal.h"
 #include "r_cons.h"
 #include "r_print.h"
 #include "r_util.h"
@@ -801,4 +802,170 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles)
 			r_print_2bpp_row(p, buf + 2*i + r*16);
 		p->printf(Color_RESET"\n");
 	}
+}
+
+R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
+
+	switch (anal_type) {
+		case R_ANAL_OP_TYPE_NOP:
+			return p->cons->pal.nop;
+		case R_ANAL_OP_TYPE_ADD:
+		case R_ANAL_OP_TYPE_SUB:
+		case R_ANAL_OP_TYPE_MUL:
+		case R_ANAL_OP_TYPE_DIV:
+			return p->cons->pal.math;
+		case R_ANAL_OP_TYPE_AND:
+		case R_ANAL_OP_TYPE_OR:
+		case R_ANAL_OP_TYPE_XOR:
+		case R_ANAL_OP_TYPE_NOT:
+		case R_ANAL_OP_TYPE_SHL:
+		case R_ANAL_OP_TYPE_SHR:
+		case R_ANAL_OP_TYPE_ROL:
+		case R_ANAL_OP_TYPE_ROR:
+			return p->cons->pal.bin;
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_UJMP:
+			return p->cons->pal.jmp;
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
+			return p->cons->pal.cjmp;
+		case R_ANAL_OP_TYPE_CMP:
+		case R_ANAL_OP_TYPE_ACMP:
+			return p->cons->pal.cmp;
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_CCALL:
+			return p->cons->pal.call;
+		case R_ANAL_OP_TYPE_SWI:
+			return p->cons->pal.swi;
+		case R_ANAL_OP_TYPE_ILL:
+		case R_ANAL_OP_TYPE_TRAP:
+			return p->cons->pal.trap;
+		case R_ANAL_OP_TYPE_CRET:
+		case R_ANAL_OP_TYPE_RET:
+			return p->cons->pal.ret;
+		case R_ANAL_OP_TYPE_PUSH:
+		case R_ANAL_OP_TYPE_UPUSH:
+		case R_ANAL_OP_TYPE_LOAD:
+			return p->cons->pal.push;
+		case R_ANAL_OP_TYPE_POP:
+		case R_ANAL_OP_TYPE_STORE:
+			return p->cons->pal.pop;
+		case R_ANAL_OP_TYPE_NULL:
+			return p->cons->pal.other;
+		case R_ANAL_OP_TYPE_UNK:
+		default:
+			return p->cons->pal.invalid;
+	}
+}
+
+
+static char * realloc_color_buffer (char *buf, ut32 *size, ut32 add_to) {
+	char *t_o = buf;
+	buf = malloc (*size+add_to);
+	memcpy (buf, t_o, *size);
+	*size += add_to;
+	free (t_o);
+	return buf;
+}
+
+
+R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num) {
+	int i, j, k, is_mod, is_arg = 0;
+	ut32 c_reset = strlen (Color_RESET);
+	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
+	ut32 opcode_sz = strlen (p)*10 + 1, bytes_consumed;
+	char *o;
+
+	if (is_jmp)
+		return strdup (p);
+
+	o = malloc (opcode_sz);
+
+	for (i=j=0; p[i]; i++,j++) {
+		/* colorize numbers */
+		if (j+100 >= opcode_sz) {
+			o = realloc_color_buffer (o, &opcode_sz, 100);
+		}
+		switch (p[i]) {
+		case 0x1b:
+			/* skip until 'm' */
+			for (++i;p[i] && p[i]!='m'; i++)
+				o[j] = p[i];
+			continue;
+		case '+':
+		case '-':
+		case '/':
+		case '>':
+		case '<':
+		case '(':
+		case ')':
+		case '*':
+		case '%':
+		case ']':
+		case '[':
+		case ',':
+			if (is_arg) {
+				if (c_reset+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, c_reset+100);
+				strcpy (o+j, Color_RESET);
+				j += strlen (Color_RESET);
+				o[j++] = p[i];
+				if (p[i]=='$' || ((p[i] > '0') && (p[i] < '9'))) {
+					ut32 num_len = strlen (num);
+					if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100);
+					strcpy (o+j, num);
+					j += strlen (num)-1;
+				} else {
+					ut32 reg_len = strlen (reg);
+					if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100);
+					strcpy (o+j, reg);
+					j += strlen (reg)-1;
+				}
+				continue;
+			}
+			break;
+		case ' ':
+			is_arg = 1;
+			// find if next ',' before ' ' is found
+			is_mod = 0;
+			for (k = i+1; p[k]; k++) {
+				if (p[k]==' ')
+					break;
+				if (p[k]==',') {
+					is_mod = 1;
+					break;
+				}
+			}
+			if (!p[k]) is_mod = 1;
+			if (!is_jmp && is_mod) {
+				// COLOR FOR REGISTER
+				ut32 reg_len = strlen (reg);
+				if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100);
+				strcpy (o+j, reg);
+				j += strlen (reg);
+			}
+			break;
+		case '0':
+			if (!is_jmp && p[i+1]== 'x') {
+				ut32 num_len = strlen (num);
+				if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100);
+				strcpy (o+j, num);
+				j += strlen (num);
+			}
+			break;
+		}
+		o[j] = p[i];
+	}
+	// decolorize at the end
+	if (j+20 >= opcode_sz) {
+		char *t_o = o;
+		o = malloc (opcode_sz+21);
+		memcpy (o, t_o, opcode_sz);
+		opcode_sz += 21;
+		free (t_o);
+	}
+	strcpy (o+j, Color_RESET);
+	//strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
+	return o;
 }

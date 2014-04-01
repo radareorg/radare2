@@ -24,8 +24,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			//eprintf("Handling: %s disasm.\n", b->cur.file);
 		}
 	}
-	return op->size = r_java_disasm (obj, a->pc, buf,
+
+	op->size = r_java_disasm (obj, a->pc, buf,
 		op->buf_asm, sizeof (op->buf_asm));
+	a->pc += op->size;
+	return  op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {

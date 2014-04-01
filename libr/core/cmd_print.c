@@ -436,6 +436,9 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 }
 
 static int cmd_print(void *data, const char *input) {
+	RAsmOp asmop = {0};
+	RAnalOp analop = {0};
+
 	RCore *core = (RCore *)data;
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;
@@ -845,6 +848,10 @@ static int cmd_print(void *data, const char *input) {
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		segoff = r_config_get_i (core->config, "asm.segoff");
 		old_bits = r_config_get_i (core->config, "asm.bits");
+		int show_color = r_config_get_i (core->config, "scr.color");
+		int colorop = r_config_get_i (core->config, "scr.colorops");
+
+
 		// XXX - this is necessay b/c radare will automatically
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
 
@@ -902,23 +909,33 @@ static int cmd_print(void *data, const char *input) {
 
 				if (bwdhits) {
 					int result = 0;
-					RAsmOp asmop;
-					memset(&asmop, 0, sizeof (RAnalOp));
 					buf = malloc (1024);
 
 					r_list_foreach (bwdhits, iter, hit) {
 						r_core_read_at (core, hit->addr, buf, hit->len);
 						result = r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+						r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 						if (result<1) {
 							const char *owallawalla = "????";
 							char *hex_str = r_hex_bin2strdup (buf, hit->len);
 							if (hex_str == NULL) hex_str = (char *)owallawalla;
+							if (show_color & colorop) r_cons_strcat (r_print_color_op_type (core->print, analop.type));
 							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  hit->addr, hex_str);
+							if (show_color & colorop) r_cons_strcat (Color_RESET);
 							if (hex_str && hex_str != owallawalla) free(hex_str);
+						} else if (show_color & colorop) {
+							char *buf_asm =  r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
+							char *buf_hex =  r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
+							const char * otype = r_print_color_op_type (core->print, analop.type);
+							r_cons_printf ("0x%08"PFMT64x" %s%16s  %s%s\n",
+								hit->addr, otype,buf_hex, buf_asm, Color_RESET);
+							free (buf_asm);
+							free (buf_hex);
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
 								hit->addr, asmop.buf_hex, asmop.buf_asm);
 						}
+						r_anal_op_fini (&analop);
 					}
 
 					r_list_free (bwdhits);
@@ -929,7 +946,6 @@ static int cmd_print(void *data, const char *input) {
 				}
 				pd_result = 0;
 			} else {
-				RAsmOp asmop;
 				ut8 *buf = core->block;
 
 				// init larger block
@@ -942,31 +958,49 @@ static int cmd_print(void *data, const char *input) {
 				}
 
 				if (buf) {
+					ut64 old_pc = core->assembler->pc;
 					ut8 go_by_instr = input[0] == 'd';
 					ut32 pdn_offset = 0;
 					ut64 instr_cnt = 0;
 
 					int dresult = 0;
-
+					core->assembler->pc = core->offset;
+					if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+						core->anal->cur->reset_counter (core->anal, core->offset);
+					}
 					for (pdn_offset=0; pdn_offset < use_blocksize; ) {
 						dresult = r_asm_disassemble (core->assembler, &asmop, buf+pdn_offset, use_blocksize-pdn_offset);
+						r_anal_op (core->anal, &analop, core->offset+pdn_offset, asmop.buf, asmop.size);
 						if (dresult<1) {
 							const char *owallawalla = "????";
 							char *hex_str = r_hex_bin2strdup (buf+pdn_offset, 1);
 							if (hex_str == NULL) hex_str = (char*)owallawalla;
+							if (show_color & colorop) r_cons_strcat (r_print_color_op_type (core->print, analop.type));
 							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  core->offset+pdn_offset, hex_str);
+							if (show_color & colorop) r_cons_strcat (Color_RESET);
 							pdn_offset += 1;
 							instr_cnt += asmop.size;
 							if (hex_str && hex_str != owallawalla) free (hex_str);
 
+						} else if (show_color & colorop) {
+							char *buf_asm =  r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
+							char *buf_hex =  r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
+							const char * otype = r_print_color_op_type (core->print, analop.type);
+							r_cons_printf ("0x%08"PFMT64x" %16s %s%s%s\n",
+								core->offset+pdn_offset, buf_hex, otype, buf_asm, Color_RESET);
+							pdn_offset += (go_by_instr? asmop.size: 1);
+							free (buf_asm);
+							free (buf_hex);
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
 								core->offset+pdn_offset, asmop.buf_hex, asmop.buf_asm);
 							pdn_offset += (go_by_instr? asmop.size: 1);
 						}
+						r_anal_op_fini (&analop);
 					}
 					if (buf != core->block) free (buf);
 					pd_result = R_TRUE;
+					core->assembler->pc = old_pc;
 				}
 			}
 			break;
@@ -1124,7 +1158,7 @@ static int cmd_print(void *data, const char *input) {
 			RListIter *iter;
 			RCoreAsmHit *hit;
 			ut8 *block = NULL;
-	
+
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
 				l = -l;

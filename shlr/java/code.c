@@ -47,9 +47,9 @@ static int enter_switch_op (ut64 addr, const ut8 * bytes, char *output, int outl
 	init_switch_op ();
 	IN_SWITCH_OP = 1;
 	SWITCH_OP.addr = addr;
-	SWITCH_OP.def_jmp = (ut32)(UINT (bytes, sz));
-	SWITCH_OP.min_val = (ut32)(UINT (bytes, sz + 4));
-	SWITCH_OP.max_val = (ut32)(UINT (bytes, sz + 8));
+	SWITCH_OP.def_jmp = (int)(UINT (bytes, sz));
+	SWITCH_OP.min_val = (int)(UINT (bytes, sz + 4));
+	SWITCH_OP.max_val = (int)(UINT (bytes, sz + 8));
 	sz += 12;
 	snprintf (output, outlen, "%s default: 0x%04"PFMT64x, JAVA_OPS[idx].name,
 		SWITCH_OP.def_jmp+SWITCH_OP.addr);
@@ -63,8 +63,8 @@ static int update_bytes_consumed (int sz) {
 
 static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen ) {
 	int sz = 4;
-	ut32 jmp = (ut32)(UINT (bytes, 0)) + SWITCH_OP.addr;
-	ut32 ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
+	ut32 jmp = (int)(UINT (bytes, 0)) + SWITCH_OP.addr;
+	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
 	snprintf(output, outlen, "case %d: goto 0x%04x", ccase, jmp);
 	SWITCH_OP.cur_val++;
 
@@ -163,7 +163,7 @@ R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		case 0xa7: // goto
 		case 0xa8: // jsr
 			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name,
-				addr+(int)(short)USHORT (bytes, 1));
+				(addr+(short)USHORT (bytes, 1)));
 			output[outlen-1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
 		// XXX - Figure out what constitutes the [<high>] value

@@ -92,6 +92,8 @@ R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
 R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
+R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num);
+R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type);
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);
 R_API int r_print_pack7bit(const char *src, char *dest);

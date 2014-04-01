@@ -126,17 +126,14 @@ typedef struct r_disam_options_t {
 	int len;
 
 	int counter;
-
 } RDisasmState;
 
 static void handle_reflines_init (RCore *core, RDisasmState *ds);
-static void handle_add_show_color ( RCore *core, RDisasmState *ds);
 static RDisasmState * handle_init_ds (RCore * core);
 static void handle_set_pre (RDisasmState *ds, const char * str);
 static void handle_build_op_str (RCore *core, RDisasmState *ds);
 static char *filter_refline2(RCore *core, const char *str);
 static char *filter_refline(RCore *core, const char *str);
-static void colorize_opcode (char *p, const char *reg, const char *num);
 static void handle_show_xrefs (RCore *core, RDisasmState *ds);
 static void handle_atabs_option(RCore *core, RDisasmState *ds);
 static void handle_show_functions (RCore *core, RDisasmState *ds);
@@ -179,81 +176,34 @@ static int cmpaddr (void *_a, void *_b) {
 	return (a->addr > b->addr);
 }
 
-static void handle_add_show_color ( RCore *core, RDisasmState *ds) {
-	if (ds->show_color) {
-		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_NOP:
-			r_cons_strcat (ds->color_nop);
-			break;
-		case R_ANAL_OP_TYPE_ADD:
-		case R_ANAL_OP_TYPE_SUB:
-		case R_ANAL_OP_TYPE_MUL:
-		case R_ANAL_OP_TYPE_DIV:
-			r_cons_strcat (ds->color_math);
-			break;
-		case R_ANAL_OP_TYPE_AND:
-		case R_ANAL_OP_TYPE_OR:
-		case R_ANAL_OP_TYPE_XOR:
-		case R_ANAL_OP_TYPE_NOT:
-		case R_ANAL_OP_TYPE_SHL:
-		case R_ANAL_OP_TYPE_SHR:
-		case R_ANAL_OP_TYPE_ROL:
-		case R_ANAL_OP_TYPE_ROR:
-			r_cons_strcat (ds->color_bin);
-			break;
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-			r_cons_strcat (ds->color_jmp);
-			break;
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_UCJMP:
-			r_cons_strcat (ds->color_cjmp);
-			break;
-		case R_ANAL_OP_TYPE_CMP:
-		case R_ANAL_OP_TYPE_ACMP:
-			r_cons_strcat (ds->color_cmp);
-			break;
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_UCCALL:
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_CCALL:
-			r_cons_strcat (ds->color_call);
-			break;
-		case R_ANAL_OP_TYPE_SWI:
-			r_cons_strcat (ds->color_swi);
-			break;
-		case R_ANAL_OP_TYPE_ILL:
-		case R_ANAL_OP_TYPE_TRAP:
-			r_cons_strcat (ds->color_trap);
-			break;
-		case R_ANAL_OP_TYPE_CRET:
-		case R_ANAL_OP_TYPE_RET:
-			r_cons_strcat (ds->color_ret);
-			break;
-		case R_ANAL_OP_TYPE_PUSH:
-		case R_ANAL_OP_TYPE_UPUSH:
-		case R_ANAL_OP_TYPE_LOAD:
-			r_cons_strcat (ds->color_push);
-			break;
-		case R_ANAL_OP_TYPE_POP:
-		case R_ANAL_OP_TYPE_STORE:
-			r_cons_strcat (ds->color_pop);
-			break;
-		case R_ANAL_OP_TYPE_NULL:
-			r_cons_strcat (ds->color_other);
-			break;
-		case R_ANAL_OP_TYPE_UNK:
-			r_cons_strcat (ds->color_invalid);
-			break;
-		}
-	}
-}
 
 static RDisasmState * handle_init_ds (RCore * core) {
 	RDisasmState * ds = R_NEW0(RDisasmState);
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
-
+	ds->color_comment = P(comment): Color_CYAN;
+	ds->color_fname = P(fname): Color_RED;
+	ds->color_floc = P(floc): Color_MAGENTA;
+	ds->color_fline = P(fline): Color_CYAN;
+	ds->color_flow = P(flow): Color_CYAN;
+	ds->color_flag = P(flag): Color_CYAN;
+	ds->color_label = P(label): Color_CYAN;
+	ds->color_other = P(other): Color_WHITE;
+	ds->color_nop = P(nop): Color_BLUE;
+	ds->color_bin = P(bin): Color_YELLOW;
+	ds->color_math = P(math): Color_YELLOW;
+	ds->color_jmp = P(jmp): Color_GREEN;
+	ds->color_cjmp = P(cjmp): Color_GREEN;
+	ds->color_call = P(call): Color_BGREEN;
+	ds->color_cmp = P(cmp): Color_MAGENTA;
+	ds->color_swi = P(swi): Color_MAGENTA;
+	ds->color_trap = P(trap): Color_BRED;
+	ds->color_ret = P(ret): Color_RED;
+	ds->color_push = P(push): Color_YELLOW;
+	ds->color_pop = P(pop): Color_BYELLOW;
+	ds->color_reg = P(reg): Color_YELLOW;
+	ds->color_num = P(num): Color_YELLOW;
+	ds->color_invalid = P(invalid): Color_BRED;
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->colorop = r_config_get_i (core->config, "scr.colorops");
@@ -297,29 +247,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
-	ds->color_comment = P(comment): Color_CYAN;
-	ds->color_fname = P(fname): Color_RED;
-	ds->color_floc = P(floc): Color_MAGENTA;
-	ds->color_fline = P(fline): Color_CYAN;
-	ds->color_flow = P(flow): Color_CYAN;
-	ds->color_flag = P(flag): Color_CYAN;
-	ds->color_label = P(label): Color_CYAN;
-	ds->color_other = P(other): Color_WHITE;
-	ds->color_nop = P(nop): Color_BLUE;
-	ds->color_bin = P(bin): Color_YELLOW;
-	ds->color_math = P(math): Color_YELLOW;
-	ds->color_jmp = P(jmp): Color_GREEN;
-	ds->color_cjmp = P(cjmp): Color_GREEN;
-	ds->color_call = P(call): Color_BGREEN;
-	ds->color_cmp = P(cmp): Color_MAGENTA;
-	ds->color_swi = P(swi): Color_MAGENTA;
-	ds->color_trap = P(trap): Color_BRED;
-	ds->color_ret = P(ret): Color_RED;
-	ds->color_push = P(push): Color_YELLOW;
-	ds->color_pop = P(pop): Color_BYELLOW;
-	ds->color_reg = P(reg): Color_YELLOW;
-	ds->color_num = P(num): Color_YELLOW;
-	ds->color_invalid = P(invalid): Color_BRED;
+
 
 	if (r_config_get_i (core->config, "asm.linesstyle"))
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_STYLE;
@@ -402,11 +330,19 @@ static void handle_set_pre (RDisasmState *ds, const char * str) {
 }
 
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
+	char *asm_str = NULL;
+
+	if (ds->show_color && ds->colorop) {
+		r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
+		asm_str = r_print_colorize_opcode (ds->asmop.buf_asm, ds->color_reg, ds->color_num);
+	} else
+		asm_str = strdup (ds->asmop.buf_asm);
+
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 		// TODO: Use data from code analysis..not raw ds->analop here
 		// if we want to get more information
-		ds->opstr = tmpopstr? tmpopstr: strdup (ds->asmop.buf_asm);
+		ds->opstr = tmpopstr? tmpopstr: strdup (asm_str);
 	}
 	if (ds->hint && ds->hint->opcode) {
 		free (ds->opstr);
@@ -428,14 +364,14 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 			}
 		}
 		r_parse_filter (core->parser, core->flags,
-			ds->opstr? ds->opstr: ds->asmop.buf_asm, ds->str, sizeof (ds->str));
+			ds->opstr? ds->opstr: asm_str, ds->str, sizeof (ds->str));
 		core->parser->flagspace = ofs;
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 		core->parser->flagspace = ofs; // ???
 	} else {
 		if (!ds->opstr)
-			ds->opstr = strdup (ds->asmop.buf_asm);
+			ds->opstr = strdup (asm_str);
 	}
 	if (ds->varsub) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal,
@@ -459,6 +395,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 			ds->opstr = p;
 		}
 	}
+	free (asm_str);
 }
 
 R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
@@ -562,81 +499,6 @@ static char *filter_refline(RCore *core, const char *str) {
 	return p;
 }
 #endif
-
-static void colorize_opcode (char *p, const char *reg, const char *num) {
-	int i, j, k, is_mod, is_arg = 0;
-	int is_jmp = (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
-	char *o;
-	if (is_jmp)
-		return;
-	o = malloc (1024);
-	for (i=j=0; p[i]; i++,j++) {
-		/* colorize numbers */
-		switch (p[i]) {
-		case 0x1b:
-			/* skip until 'm' */
-			for (++i;p[i] && p[i]!='m'; i++)
-				o[j] = p[i];
-			continue;
-		case '+':
-		case '-':
-		case '/':
-		case '>':
-		case '<':
-		case '(':
-		case ')':
-		case '*':
-		case '%':
-		case ']':
-		case '[':
-		case ',':
-			if (is_arg) {
-				strcpy (o+j, Color_RESET);
-				j += strlen (Color_RESET);
-				o[j++] = p[i];
-				if (p[i]=='$' || ((p[i] > '0') && (p[i] < '9'))) {
-					strcpy (o+j, num);
-					j += strlen (num)-1;
-				} else {
-					strcpy (o+j, reg);
-					j += strlen (reg)-1;
-				}
-				continue;
-			}
-			break;
-		case ' ':
-			is_arg = 1;
-			// find if next ',' before ' ' is found
-			is_mod = 0;
-			for (k = i+1; p[k]; k++) {
-				if (p[k]==' ')
-					break;
-				if (p[k]==',') {
-					is_mod = 1;
-					break;
-				}
-			}
-			if (!p[k]) is_mod = 1;
-			if (!is_jmp && is_mod) {
-				// COLOR FOR REGISTER
-				strcpy (o+j, reg);
-				j += strlen (reg);
-			}
-			break;
-		case '0':
-			if (!is_jmp && p[i+1]== 'x') {
-				strcpy (o+j, num);
-				j += strlen (num);
-			}
-			break;
-		}
-		o[j] = p[i];
-	}
-	// decolorize at the end
-	strcpy (o+j, Color_RESET);
-	strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
-	free (o);
-}
 
 static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	// Show xrefs
@@ -1065,11 +927,6 @@ static void handle_print_trace (RCore *core, RDisasmState *ds) {
 		RDebugTracepoint *tp = r_debug_trace_get (core->dbg, ds->at);
 		r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 	}
-}
-
-static void handle_colorize_opcode (RCore *core, RDisasmState *ds) {
-	if (ds->show_color && ds->colorop)
-		colorize_opcode (ds->asmop.buf_asm, ds->color_reg, ds->color_num);
 }
 
 static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
@@ -1682,7 +1539,7 @@ toro:
 			goto retry;
 		}
 		handle_atabs_option (core, ds);
-		handle_colorize_opcode (core, ds);
+		//handle_colorize_opcode (core, ds);
 		// TODO: store previous oplen in core->dec
 		if (core->inc == 0)
 			core->inc = ds->oplen;
@@ -1721,7 +1578,6 @@ toro:
 		handle_print_show_cursor (core, ds);
 		handle_print_show_bytes (core, ds);
 		handle_print_lines_right (core, ds);
-		handle_add_show_color (core, ds);
 		handle_build_op_str (core, ds);
 		handle_print_opstr (core, ds);
 		handle_print_fcn_name (core, ds);
@@ -2039,7 +1895,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_show_comments_right (core, ds);
 			ret = perform_disassembly (core, ds, buf+idx, len - bb_size_consumed);
 			handle_atabs_option (core, ds);
-			handle_colorize_opcode (core, ds);
+			//handle_colorize_opcode (core, ds);
 			// TODO: store previous oplen in core->dec
 			if (core->inc == 0) core->inc = ds->oplen;
 
@@ -2076,7 +1932,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_show_cursor (core, ds);
 			handle_print_show_bytes (core, ds);
 			handle_print_lines_right (core, ds);
-			handle_add_show_color (core, ds);
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
 			handle_print_fcn_name (core, ds);

@@ -19,7 +19,7 @@
 #undef IFDBG
 #endif
 
-#define DO_THE_DBG 1
+#define DO_THE_DBG 0
 #define IFDBG  if(DO_THE_DBG)
 #define IFINT  if(0)
 
@@ -290,7 +290,7 @@ static RList * r_bin_java_find_cp_const_by_val_utf8 (RBinJavaObj *bin_obj, const
 
 
 static ut8  char_needs_hexing ( ut8 b) {
-	if (b <= 0x31) return 1;
+	if (b < 0x20) return 1;
 	switch (b) {
 		case 0x7f:
 		case 0x81:
@@ -2029,19 +2029,13 @@ R_API char* r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx) {
 
 	item = (RBinJavaCPTypeObj *) r_list_get_n (cp_list, idx);
 	if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
-		ut32 len = item->info.cp_utf8.length+1;
-		value = malloc (len);
-		memcpy (value, item->info.cp_utf8.bytes, len-1);
-		value[len-1] = 0;
+		value = convert_string (item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 	}
 
 	if (value == NULL) {
 		r_list_foreach (cp_list, iter, item ) {
 			if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
-				ut32 len = item->info.cp_utf8.length+1;
-				value = malloc (len);
-				memcpy (value, item->info.cp_utf8.bytes, len-1);
-				value[len-1] = 0;
+				value = convert_string (item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 				break;
 			}
 		}
@@ -2470,7 +2464,6 @@ R_API ut64 r_bin_java_parse_attrs (RBinJavaObj *bin, const ut64 offset, const ut
 	bin->attrs_list = r_list_new ();
 	bin->attrs_offset = offset;
 	bin->attrs_count = R_BIN_JAVA_USHORT (a_buf,adv);
-	
 	adv += 2;
 
 	if (bin->attrs_count > 0) {
@@ -8570,9 +8563,12 @@ R_API char * r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name
 
 
 	} else if (strcmp (cp_name, "Utf8") == 0) {
-		str = malloc (item->info.cp_utf8.length+3);
-		if (str) {
-			snprintf (str, item->info.cp_utf8.length+3, "\"%s\"", item->info.cp_utf8.bytes);
+		char *tmp_str = convert_string (item->info.cp_utf8.bytes, item->info.cp_utf8.length);
+		ut32 tmp_str_len = tmp_str ? strlen (tmp_str) + 4 : 0;
+
+		if (tmp_str) {
+			str = malloc (tmp_str_len + 4);
+			snprintf (str, tmp_str_len + 4, "\"%s\"", tmp_str);
 		}
 	} else if (strcmp (cp_name, "Long") == 0) {
 		str = malloc (34);
