@@ -525,8 +525,8 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	r_anal_state_free (state);
 	IFDBG eprintf ("Completed analysing code from buffer, name: %s, desc: %s\n", fcn->name, fcn->dsc);
 	if (fcn->size != code_length) {
-		r_cons_printf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%"PFMT64x"\n", fcn->name, code_length, fcn->size);
-		r_cons_printf ("Deadcode detected, setting code length too: 0x%"PFMT64x"\n", code_length);
+		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%"PFMT64x"\n", fcn->name, code_length, fcn->size);
+		eprintf ("Deadcode detected, setting code length too: 0x%"PFMT64x"\n", code_length);
 		fcn->size = code_length;
 	}
 	return result;
