@@ -59,6 +59,9 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 		if (ns->hash == hash) {
 			// implicit?
 			//sdb_free (ns->sdb);
+			r->refs++; // sdb_ref / sdb_unref //
+			if (ns->sdb != r)
+				sdb_free (ns->sdb);
 			ns->sdb = r;
 			return 1;
 		}

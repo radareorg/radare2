@@ -17,7 +17,8 @@ SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
 MODS=sdb udis86 java tcc zip grub
-URL=git://github.com/radare/sdb
+SDB_URL=git://github.com/radare/sdb
+#SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
@@ -58,7 +59,7 @@ libgdbr:
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
-	git clone ${URL} sdb.vc
+	git clone ${SDB_URL} sdb.vc
 	mkdir -p sdb
 	cp -rf ${SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb

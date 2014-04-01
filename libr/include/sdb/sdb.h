@@ -47,6 +47,7 @@ typedef struct sdb_t {
 	char *path;
 	char *name;
 	int fd;
+	int refs; // reference counter
 	int lock;
 	struct cdb db;
 	struct cdb_make m;

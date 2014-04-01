@@ -110,24 +110,11 @@ R_API void r_anal_free(RAnal *a) {
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
 	r_list_free (a->refs);
 	r_list_free (a->types);
-	r_reg_free(a->reg);
+	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
 	a->sdb = NULL;
-
-// DBLFREEd coz freed from core.. this must be fixed somehow..
-// sdb_ns api should support refcounting, pointer invalidation or 
-#if 0
-	//r_syscall_free (a->syscall);
-	sdb_free (a->sdb_meta);
-	sdb_free (a->sdb_vars);
-	sdb_free (a->sdb_xrefs);
-	sdb_free (a->sdb_refs);
-	sdb_free (a->sdb_args);
-	sdb_free (a->sdb_hints);
-	//sdb_free (a->sdb_locals);
-	sdb_free (a->sdb_types);
-	sdb_free (a->sdb);
-#endif
+	r_syscall_free (a->syscall);
+	sdb_ns_free (a->sdb);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	free (a);
 }

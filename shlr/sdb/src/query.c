@@ -96,17 +96,13 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 	const char *p, *q, *val = NULL;
 	Sdb *s = r;
 	ut64 n;
-	if (!s) return NULL;
-	if (cmd == NULL) {
-		if (!buf)
-			return NULL;
-		cmd = buf;
-	} else {
+	if (!s || (!cmd && !buf)) return NULL;
+	if (cmd) {
 		if (len<1 || !buf) {
 			bufset = 1;
 			buf = malloc ((len=64));
 		}
-	}
+	} else cmd = buf;
 	// if cmd is null, we take buf as cmd
 	next = NULL;
 repeat:
@@ -128,9 +124,9 @@ repeat:
 		*eq++ = 0;
 		if (*eq=='$') {
 			next = strchr (eq+1, ';');
-			if (next)*next = 0;
+			if (next) *next = 0;
 			val = sdb_const_get (s, eq+1, 0);
-			if (next)*next = ';';
+			if (next) *next = ';';
 			is_ref = 1; // protect readonly buffer from being processed
 		} else val = eq;
 	} else val = NULL;
@@ -273,12 +269,14 @@ next_quote:
 				w = snprintf (buf, len-1, "0x%"ULLFMT"x", n);
 				if (w<0 || (size_t)w>len) {
 					buf = malloc (0xff);
+					bufset = 1;
 					snprintf (buf, 0xff, "0x%"ULLFMT"x", n);
 				}
 			} else {
 				w = snprintf (buf, len-1, "%"ULLFMT"d", n);
 				if (w<0 || (size_t)w>len) {
 					buf = malloc (0xff);
+					bufset = 1;
 					snprintf (buf, 0xff, "%"ULLFMT"d", n);
 				}
 			}

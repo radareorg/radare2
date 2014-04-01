@@ -183,7 +183,10 @@ SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 	if (s->len+y>s->blen) {\
 		s->blen *= 2;\
 		x = realloc (s->buf, s->blen);\
-		if (!x) return NULL;\
+		if (!x) { \
+			va_end (ap); \
+			return NULL;\
+		}\
 		s->buf = x;\
 	}
 	if (!s) return NULL;

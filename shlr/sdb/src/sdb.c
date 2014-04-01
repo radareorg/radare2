@@ -27,6 +27,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
         struct stat st = {0};
 	Sdb* s = R_NEW (Sdb);
 	if (!s) return NULL;
+	s->refs = 1;
 	if (name && *name) {
 		if (path && *path) {
 			int plen = strlen (path);
@@ -98,6 +99,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
 	sdb_ns_free (s);
+	s->refs = 0;
 	free (s->name);
 	free (s->path);
 	ls_free (s->ns);
@@ -115,8 +117,13 @@ static void sdb_fini(Sdb* s, int donull) {
 
 SDB_API void sdb_free (Sdb* s) {
 	if (s && s->ht) {
-		sdb_fini (s, 1);
-		free (s);
+		if (s->refs>0)
+			s->refs--;
+		if (!s->refs) {
+			sdb_fini (s, 1);
+			s->ht = NULL;
+			free (s);
+		}
 	}
 }
 
@@ -429,7 +436,7 @@ SDB_API SdbKv *sdb_dump_next (Sdb* s) {
 }
 
 SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
-	ut32 vlen, klen;
+	ut32 vlen = 0, klen = 0;
 	if (s->fd==-1)
 		return 0;
 	if (!cdb_getkvlen (s->fd, &klen, &vlen))
@@ -450,7 +457,7 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 	}
 	if (value) {
 		*value = 0;
-		if (vlen>0) {
+		if (vlen>0 && vlen<0xffffff) {
 			*value = malloc (vlen+10);
 			if (!*value) {
 				if (key) {
