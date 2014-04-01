@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_cmd);
+//R_LIB_VERSION_HEADER (r_cmd);
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
@@ -76,26 +76,28 @@ typedef struct r_cmd_t {
 	RCmdAlias aliases;
 } RCmd;
 
-typedef struct r_cmd_plugin_t {
-	char *name;
-	char *desc;
+typedef struct r_core_plugin_t {
+	const char *name;
+	const char *desc;
+	const char *license;
 	RCmdCallback call;
-} RCmdPlugin;
+} RCorePlugin;
 
 #ifdef R_API
+R_API int r_core_plugin_init(RCmd *cmd);
+R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
+R_API int r_core_plugin_check(RCmd *cmd, const char *a0);
+
+/* review api */
 R_API RCmd *r_cmd_new();
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_set_data(RCmd *cmd, void *data);
 R_API int r_cmd_add(RCmd *cmd, const char *command, const char *desc, r_cmd_callback(callback));
 R_API int r_cmd_add_long(RCmd *cmd, const char *longcmd, const char *shortcmd, const char *desc);
-R_API int r_cmd_del(RCmd *cmd, const char *command);
+R_API int r_core_del(RCmd *cmd, const char *command);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API int r_cmd_call_long(RCmd *cmd, const char *input);
 R_API char **r_cmd_args(RCmd *cmd, int *argc);
-
-R_API int r_cmd_plugin_init(RCmd *cmd);
-R_API int r_cmd_plugin_add(RCmd *cmd, RCmdPlugin *plugin);
-R_API int r_cmd_plugin_check(RCmd *cmd, const char *a0);
 
 /* r_cmd_macro */
 R_API void r_cmd_macro_init(RCmdMacro *mac);

@@ -8,23 +8,19 @@
 #include <r_list.h>
 #include <stdio.h>
 
-static struct r_cmd_plugin_t *cmd_static_plugins[] = 
-	{ R_CORE_STATIC_PLUGINS };
+static RCorePlugin *cmd_static_plugins[] = { R_CORE_STATIC_PLUGINS };
 
-R_API int r_cmd_plugin_add(struct r_cmd_t *cmd, struct r_cmd_plugin_t *plugin) {
+R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	r_list_append (cmd->plist, plugin);
 	return R_TRUE;
 }
 
-R_API int r_cmd_plugin_init(struct r_cmd_t *cmd) {
+R_API int r_core_plugin_init(RCmd *cmd) {
 	int i;
-	RCmdPlugin *static_plugin;
-
-	cmd->plist = r_list_newf (free);
+	RCorePlugin *static_plugin;
+	cmd->plist = r_list_newf (NULL);
 	for (i=0; cmd_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RCmdPlugin);
-		memcpy (static_plugin, cmd_static_plugins[i], sizeof (RCmdPlugin));
-		if (!r_cmd_plugin_add (cmd, static_plugin)) {
+		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
 			eprintf ("Error loading cmd plugin\n");
 			return R_FALSE;
 		}
@@ -32,10 +28,9 @@ R_API int r_cmd_plugin_init(struct r_cmd_t *cmd) {
 	return R_TRUE;
 }
 
-R_API int r_cmd_plugin_check(struct r_cmd_t *cmd, const char *a0) {
+R_API int r_core_plugin_check(RCmd *cmd, const char *a0) {
 	RListIter *iter;
-	RCmdPlugin *cp;
-
+	RCorePlugin *cp;
 	r_list_foreach (cmd->plist, iter, cp) {
 		if (cp->call (NULL, a0))
 			return R_TRUE;

@@ -24,7 +24,6 @@ static int verify_version(int show) {
 		const char *name;
 		vc callback;
 	} vcs[] = {
-		{ "r_cmd", &r_cmd_version },
 		{ "r_anal", &r_anal_version },
 		{ "r_lib", &r_lib_version },
 		{ "r_egg", &r_egg_version },

@@ -21,7 +21,7 @@ R_API RCmd *r_cmd_new () {
 			cmd->cmds[i] = NULL;
 		cmd->nullcallback = cmd->data = NULL;
 	}
-	r_cmd_plugin_init (cmd);
+	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
 	return cmd;
@@ -157,7 +157,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
 	RListIter *iter;
-	RCmdPlugin *cp;
+	RCorePlugin *cp;
 	if (!input || !*input) {
 		if (cmd->nullcallback != NULL)
 			ret = cmd->nullcallback (cmd->data);

@@ -1470,9 +1470,10 @@ static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 
 
 // PLUGIN Definition Info
-struct r_cmd_plugin_t r_core_plugin_java = {
+RCorePlugin r_core_plugin_java = {
 	.name = "java",
 	.desc = "Suite of java commands, java help for more info",
+	.license = "Apache",
 	.call = r_cmd_java_call,
 };
 

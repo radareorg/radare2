@@ -14,8 +14,8 @@ static int __lib_##x##_dt(RLibPlugin *pl, void *p, void *u) { return R_TRUE; }
 // XXX api consistency issues
 #define r_io_add r_io_plugin_add
 CB (io, io)
-#define r_cmd_add r_cmd_plugin_add
-CB (cmd, rcmd)
+#define r_core_add r_core_plugin_add
+CB (core, rcmd)
 #define r_debug_add r_debug_plugin_add
 CB (debug, dbg)
 #define r_bp_add r_bp_plugin_add
@@ -27,11 +27,11 @@ CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
 
-R_API int r_core_loadlibs_init(struct r_core_t *core) {
+R_API int r_core_loadlibs_init(RCore *core) {
 #define DF(x,y,z) r_lib_add_handler(core->lib, R_LIB_TYPE_##x,y,&__lib_##z##_cb, &__lib_##z##_dt, core);
 
 	DF(IO,"io plugins",io);
-	DF(CMD,"cmd plugins",cmd);
+	DF(CORE,"core plugins",core);
 	DF(DBG,"debugger plugins",debug);
 	DF(BP,"debugger breakpoint plugins",bp);
 	DF(LANG,"language plugins",lang);

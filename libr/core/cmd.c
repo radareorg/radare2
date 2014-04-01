@@ -1557,7 +1557,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	/* list r_cmd plugins */
 	if (!strcmp (cstr, ":")) {
 		RListIter *iter;
-		RCmdPlugin *cp;
+		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
 			r_cons_printf ("%s: %s\n", cp->name, cp->desc);
 		}

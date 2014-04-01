@@ -412,7 +412,7 @@ R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_syscmd_ls(const char *input);
 
 /* PLUGINS */
-extern struct r_cmd_plugin_t r_core_plugin_java;
+extern RCorePlugin r_core_plugin_java;
 
 #endif
 
