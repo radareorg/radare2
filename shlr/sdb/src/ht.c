@@ -93,19 +93,21 @@ static const struct {
  * modified by the user.
  */
 SdbHashEntry* ht_search(SdbHash *ht, ut32 hash) {
-	ut32 double_hash, hash_address = hash % ht->size;
-	if (ht && ht->entries)
-	do {
-		SdbHashEntry *entry = ht->table + hash_address;
-		if (entry_is_free (entry))
-			return NULL;
-		if (entry_is_present (entry) && entry->hash == hash)
-			return entry;
-		double_hash = hash % ht->rehash;
-		if (double_hash == 0)
-			double_hash = 1;
-		hash_address = (hash_address + double_hash) % ht->size;
-	} while (hash_address != hash % ht->size);
+	ut32 double_hash, hash_address;
+	if (ht && ht->entries) {
+		hash_address = hash % ht->size;
+		do {
+			SdbHashEntry *entry = ht->table + hash_address;
+			if (entry_is_free (entry))
+				return NULL;
+			if (entry_is_present (entry) && entry->hash == hash)
+				return entry;
+			double_hash = hash % ht->rehash;
+			if (double_hash == 0)
+				double_hash = 1;
+			hash_address = (hash_address + double_hash) % ht->size;
+		} while (hash_address != hash % ht->size);
+	}
 	return NULL;
 }
 

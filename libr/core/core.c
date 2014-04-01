@@ -467,6 +467,7 @@ static int __disasm(void *_core, ut64 addr) {
 }
 
 static void update_sdb(RCore *core) {
+	// TODO: Use refcounting for Sdb! to avoid dblfrees and so
 	// TODO: sdb_hook should work across namespaces?
 	// HOOK!
 	sdb_ns_set (core->sdb, "anal", core->anal->sdb);
@@ -606,6 +607,7 @@ R_API int r_core_init(RCore *core) {
 R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
+	update_sdb (c);
 	r_io_free (c->io);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?

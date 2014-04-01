@@ -27,6 +27,7 @@ R_API RSyscall* r_syscall_new() {
 
 R_API void r_syscall_free(RSyscall *s) {
 	sdb_free (s->db);
+	memset (s, 0, sizeof (RSyscall));
 	free (s);
 }
 

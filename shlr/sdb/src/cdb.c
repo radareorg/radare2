@@ -92,6 +92,7 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
 	ut32 pos;
 	int m;
 
+	c->hslots = 0;
 	if (!c->loop) {
 		if (!cdb_read (c, buf, 8, (u << 3) & 2047))
 			return -1;

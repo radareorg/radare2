@@ -38,14 +38,16 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 		} else s->dir = strdup (name);
 		if (lock && !sdb_lock (sdb_lockfile (s->dir)))
 			goto fail;
-		if (stat (s->dir, &st)!=-1)
-			if ((S_IFREG & st.st_mode)!=S_IFREG)
-				goto fail;
 		s->fd = open (s->dir, O_RDONLY|O_BINARY);
-		// if (s->fd == -1) // must fail if we cant open for write in sync
-		if (s->fd != -1)
+		if (s->fd != -1) {
+			if (fstat (s->fd, &st) != -1)
+				if ((S_IFREG & st.st_mode)!=S_IFREG)
+					goto fail;
 			s->last = st.st_mtime;
-		else s->last = sdb_now ();
+		} else {
+			s->last = sdb_now ();
+			// TODO: must fail if we cant open for write in sync
+		}
 		s->name = strdup (name);
 		s->path = path? strdup (path): NULL;
 	} else {
@@ -189,7 +191,7 @@ SDB_API char *sdb_get (Sdb* s, const char *key, /*OUT*/ut32 *cas) {
 	cdb_findstart (&s->db);
 	if (!cdb_findnext (&s->db, hash, key, keylen))
 		return NULL;
-	if (!(len = cdb_datalen (&s->db)))
+	if ((len = cdb_datalen (&s->db))<1)
 		return NULL;
 	if (!(buf = malloc (len+1))) // XXX too many mallocs
 		return NULL;
@@ -450,6 +452,13 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 		*value = 0;
 		if (vlen>0) {
 			*value = malloc (vlen+10);
+			if (!*value) {
+				if (key) {
+					free (*key);
+					*key = NULL;
+				}
+				return 0;
+			}
 			if (getbytes (s, *value, vlen)==-1) {
 				if (key) {
 					free (*key);
@@ -462,7 +471,7 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 			(*value)[vlen] = 0;
 		}
 	}
-	s->pos += 4; // XXX no
+	s->pos += 4; // XXX no.
 	return 1;
 }
 
@@ -496,9 +505,8 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire) {
 		return 0;
 	pos = cdb_datapos (&s->db);
 	len = cdb_datalen (&s->db);
-	if (len == UT32_MAX || !len) {
+	if (len <1 || len == UT32_MAX)
 		return 0;
-	}
 	if (!(buf = malloc (len+1)))
 		return 0;
 	cdb_read (&s->db, buf, len, pos);

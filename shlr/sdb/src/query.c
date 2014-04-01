@@ -97,23 +97,26 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 	Sdb *s = r;
 	ut64 n;
 	if (!s) return NULL;
-	if (!len || !buf) {
-		bufset = 1;
-		buf = malloc ((len=64));
-	}
 	if (cmd == NULL) {
+		if (!buf)
+			return NULL;
 		cmd = buf;
-		buf = NULL;
+	} else {
+		if (len<1 || !buf) {
+			bufset = 1;
+			buf = malloc ((len=64));
+		}
 	}
+	// if cmd is null, we take buf as cmd
 	next = NULL;
 repeat:
 	s = r;
+	p = cmd;
 	eq = NULL;
-	quot = NULL;
-	json = NULL;
 	encode = 0;
 	is_ref = 0;
-	p = cmd;
+	quot = NULL;
+	json = NULL;
 	if (next) *next = ';';
 	if (*p=='%') {
 		encode = 1;
@@ -286,11 +289,16 @@ next_quote:
 		if (cmd[1]=='?') {
 			// if (!eq) ...
 			alength = sdb_array_length (s, p);
+			if (!buf) {
+				buf = malloc (len+1);
+				bufset = 1;
+			}
 			w = snprintf (buf, len, "%d", alength);
 			if (w<0 || (size_t)w>len) {
-				buf = malloc (32);
-				snprintf (buf, 31, "%d", alength);
+				free (buf);
+				buf = malloc (64);
 				bufset = 1;
+				snprintf (buf, 63, "%d", alength);
 			}
 			out_concat (buf);
 		} else

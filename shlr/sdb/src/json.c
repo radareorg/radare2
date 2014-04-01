@@ -186,9 +186,12 @@ SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 		if (!x) return NULL;\
 		s->buf = x;\
 	}
+	if (!s) return NULL;
 	if (!s->buf) {
 		s->blen = 1024;
 		s->buf = malloc (s->blen);
+		if (!s->buf)
+			return NULL;
 		*s->buf = 0;
 	}
 	if (!fmt || !*fmt) return s->buf;
