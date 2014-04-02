@@ -227,7 +227,8 @@ typedef struct r_bin_symbol_t {
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
 	char visibility_str[R_BIN_SIZEOF_STRINGS];
-	const char *classname;
+	char classname[R_BIN_SIZEOF_STRINGS];
+	char descriptor[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
 	ut64 size;
@@ -239,6 +240,8 @@ typedef struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
+	char classname[R_BIN_SIZEOF_STRINGS];
+	char descriptor[R_BIN_SIZEOF_STRINGS];
 	ut64 ordinal;
 	ut32 visibility;
 } RBinImport;

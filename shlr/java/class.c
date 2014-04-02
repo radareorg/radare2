@@ -598,7 +598,7 @@ static void r_bin_java_reset_bin_info (RBinJavaObj *bin) {
 	bin->attrs_size = 0;
 	bin->attrs_count = 0;
 	bin->size = 0;
-	
+
 	free (bin->cf2.flags_str);
 	free (bin->cf2.this_class_name);
 	bin->cf2.flags_str = NULL;
@@ -621,6 +621,8 @@ static void r_bin_java_reset_bin_info (RBinJavaObj *bin) {
 	bin->main_code_attr = NULL;
 	bin->entrypoint = NULL;
 	bin->entrypoint_code_attr = NULL;
+
+	r_list_free (bin->imports_list);
 
 	r_bin_java_fields_list_free (bin);
 	r_bin_java_methods_list_free (bin);
@@ -2533,8 +2535,6 @@ static int r_bin_java_new_bin (RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const u
 	bin->lines.count = 0;
 	bin->loadaddr = loadaddr;
 	r_bin_java_get_java_null_cp ();
-	bin->cp_list = bin->interfaces_list = NULL;
-	bin->attrs_list = NULL;
 	bin->id = r_num_rand (UT32_MAX);
 	bin->kv = kv ? kv : sdb_new(NULL, NULL, 0);
 	bin->AllJavaBinObjs = NULL;
@@ -2545,7 +2545,9 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 	ut64 adv = 0;
 	R_BIN_JAVA_GLOBAL_BIN = bin;
 	if (!bin) return R_FALSE;
+
 	r_bin_java_reset_bin_info (bin);
+
 	memcpy ((ut8* ) &bin->cf, buf, 10);
 	if (memcmp (bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
 		eprintf ("r_bin_java_new_bin: Invalid header (%02x %02x %02x %02x)\n",
@@ -2572,6 +2574,8 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 	adv += r_bin_java_parse_methods (bin, adv, buf, buf_sz);
 	adv += r_bin_java_parse_attrs (bin, adv, buf, buf_sz);
 
+	// imports require accessing a the specific method
+	bin->imports_list = r_list_newf (free);
 	//add_cp_objs_to_sdb(bin);
 	//add_method_infos_to_sdb(bin);
 	//add_field_infos_to_sdb(bin);
@@ -2783,9 +2787,9 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		}
 		strncpy (sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		if (fm_type->class_name) {
-			sym->classname = strdup (fm_type->class_name);
+			strncpy (sym->classname, fm_type->class_name, R_BIN_SIZEOF_STRINGS);
 		} else {
-			sym->classname = NULL;//strdup ("NONE");
+			strncpy (sym->classname, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
 		}
 
 		sym->ordinal = fm_type->metas->ord;
@@ -2821,9 +2825,9 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_method_meta(RBinJavaField *f
 		strncpy (sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 
 		if (fm_type->class_name) {
-			sym->classname = strdup (fm_type->class_name);
+			strncpy (sym->bind, fm_type->class_name, R_BIN_SIZEOF_STRINGS);
 		} else {
-			sym->classname = NULL;//strdup ("NONE");
+			strncpy (sym->bind, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
 		}
 
 		sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
@@ -2868,7 +2872,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 			type_name = NULL;
 		}
 		if (class_name)
-			sym->classname = class_name;
+			strncpy (sym->classname, class_name, R_BIN_SIZEOF_STRINGS);
 
 		sym->offset = obj->file_offset + baddr;
 		sym->rva = obj->file_offset + baddr;
@@ -3135,6 +3139,35 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
 
 
 
+R_API void r_bin_add_import_from_anal (RBinJavaObj * bin, ut16 class_idx, ut16 name_type_idx, const char * type) {
+	RBinImport * import = R_NEW0(RBinImport);
+	char *class_name = r_bin_java_get_name_from_bin_cp_list (bin, class_idx);
+	char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, name_type_idx);
+	char *descriptor = r_bin_java_get_item_desc_from_bin_cp_list (bin, name_type_idx);
+
+	strncpy (import->classname, class_name, R_BIN_SIZEOF_STRINGS);
+	strncpy (import->name, name, R_BIN_SIZEOF_STRINGS);
+	strncpy (import->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+	strncpy (import->type, type, R_BIN_SIZEOF_STRINGS);
+	strncpy (import->descriptor, descriptor, R_BIN_SIZEOF_STRINGS);
+	r_list_append (bin->imports_list, import);
+}
+
+
+RList* r_bin_java_get_imports(RBinJavaObj* bin) {
+	RList *ret = r_list_new ();
+	RBinImport *import = NULL;
+	RListIter *iter;
+
+	ret->free = free;
+	r_list_foreach (bin->imports_list, iter, import) {
+		RBinImport *n_import = R_NEW0(RBinImport);
+		memcpy (n_import, import, sizeof (RBinImport));
+		r_list_append (ret, n_import);
+	}
+	return ret;
+}
+
 RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
 	RList *symbols = r_list_new ();
@@ -3190,7 +3223,7 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	//}
 
 	free (bin_obj_key);
-
+	r_list_free (bin->imports_list);
 	// XXX - Need to remove all keys belonging to this class from
 	// the share meta information sdb.
 	// TODO e.g. iterate over bin->kv and delete all obj, func, etc. keys

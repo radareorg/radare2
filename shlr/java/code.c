@@ -17,7 +17,8 @@
 #define IFDBG if(0)
 
 static void init_switch_op ();
-static int enter_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen );
+static int enter_switch_op (ut64 addr, const ut8 * bytes);
+static int update_switch_op (ut64 addr, const ut8 * bytes);
 static int update_bytes_consumed (int sz);
 static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen );
 
@@ -38,7 +39,7 @@ static void init_switch_op () {
 	memset (&SWITCH_OP, 0, sizeof(SWITCH_OP));
 }
 
-static int enter_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen ) {
+static int enter_switch_op (ut64 addr, const ut8 * bytes ) {
 	ut8 idx = bytes[0];
 	IN_SWITCH_OP = 1;
 	ut8 sz = (BYTES_CONSUMED+1) % 4 ? 1 + 4 - (BYTES_CONSUMED+1) % 4: 1; // + (BYTES_CONSUMED+1)  % 4;
@@ -51,9 +52,7 @@ static int enter_switch_op (ut64 addr, const ut8 * bytes, char *output, int outl
 	SWITCH_OP.min_val = (int)(UINT (bytes, sz + 4));
 	SWITCH_OP.max_val = (int)(UINT (bytes, sz + 8));
 	sz += 12;
-	snprintf (output, outlen, "%s default: 0x%04"PFMT64x, JAVA_OPS[idx].name,
-		SWITCH_OP.def_jmp+SWITCH_OP.addr);
-	return update_bytes_consumed(sz);
+	return sz;
 }
 
 static int update_bytes_consumed (int sz) {
@@ -61,22 +60,27 @@ static int update_bytes_consumed (int sz) {
 	return sz;
 }
 
+static int update_switch_op (ut64 addr, const ut8 * bytes) {
+	int sz = 4;
+	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
+	SWITCH_OP.cur_val++;
+	if ( ccase+1 > SWITCH_OP.max_val) IN_SWITCH_OP = 0;
+	return update_bytes_consumed(sz);
+}
+
 static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen ) {
 	int sz = 4;
 	ut32 jmp = (int)(UINT (bytes, 0)) + SWITCH_OP.addr;
 	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
 	snprintf(output, outlen, "case %d: goto 0x%04x", ccase, jmp);
-	SWITCH_OP.cur_val++;
 
-	if ( ccase+1 > SWITCH_OP.max_val) IN_SWITCH_OP = 0;
-
+	update_switch_op (addr, bytes);
 	return update_bytes_consumed(sz);
 }
 
-
 R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
-
+	int sz = 0;
 	ut32 val_one = 0,
 		val_two = 0;
 
@@ -169,7 +173,10 @@ R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		// XXX - Figure out what constitutes the [<high>] value
 		case 0xab: // tableswitch
 		case 0xaa: // tableswitch
-			return enter_switch_op (addr, bytes, output, outlen);
+			sz = enter_switch_op (addr, bytes);
+			snprintf (output, outlen, "%s default: 0x%04"PFMT64x, JAVA_OPS[idx].name,
+				SWITCH_OP.def_jmp+SWITCH_OP.addr);
+			return update_bytes_consumed (sz);
 		case 0xb6: // invokevirtual
 		case 0xb7: // invokespecial
 		case 0xb8: // invokestatic

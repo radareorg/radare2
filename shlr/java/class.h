@@ -734,6 +734,7 @@ typedef struct r_bin_java_obj_t {
 	RList* cp_list;
 	RList* interfaces_list;
 	RList* attrs_list;
+	RList* imports_list;
 
 	RList* functions;
 	RList* disassembly;
@@ -1008,6 +1009,7 @@ R_API ut64 r_bin_java_parse_fields (RBinJavaObj *bin, const ut64 offset, const u
 R_API ut64 r_bin_java_parse_methods (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
 R_API ut64 r_bin_java_parse_attrs (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
 R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 len);
+R_API void r_bin_add_import_from_anal (RBinJavaObj * bin, ut16 class_idx, ut16 name_type_idx, const char * type);
 
 
 

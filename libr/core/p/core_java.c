@@ -112,6 +112,7 @@ static const char * r_cmd_get_next_classname_str (const char * str, const char *
 
 static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd);
 static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd);
+static int r_cmd_java_handle_list_code_references (RCore *core, const char *cmd);
 
 typedef struct r_cmd_java_cms_t {
 	const char *name;
@@ -196,6 +197,11 @@ typedef struct r_cmd_java_cms_t {
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
 #define SUMMARY_INFO_LEN 7
 
+#define LIST_CODE_REFS "lcr"
+#define LIST_CODE_REFS_ARGS "NONE"
+#define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
+#define LIST_CODE_REFS_LEN 3
+
 
 
 static RCmdJavaCmd JAVA_CMDS[] = {
@@ -214,6 +220,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{REPLACE_CLASS_NAME, REPLACE_CLASS_NAME_ARGS, REPLACE_CLASS_NAME_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_replace_classname_value},
 	{RELOAD_BIN, RELOAD_BIN_ARGS, RELOAD_BIN_DESC, RELOAD_BIN_LEN, r_cmd_java_handle_reload_bin},
 	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_summary_info},
+	{LIST_CODE_REFS, LIST_CODE_REFS_ARGS, LIST_CODE_REFS_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_list_code_references},
 };
 
 enum {
@@ -232,7 +239,8 @@ enum {
 	REPLACE_CLASS_NAME_IDX = 12,
 	RELOAD_BIN_IDX = 13,
 	SUMMARY_INFO_IDX = 14,
-	END_CMDS = 15,
+	LIST_CODE_REFS_IDX = 15,
+	END_CMDS = 16,
 };
 
 static ut8 r_cmd_java_obj_ref (const char *name, const char *class_name, ut32 len) {
@@ -1076,6 +1084,7 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd) {
 	return res;
 }
 
+
 static char r_cmd_java_is_valid_java_mcf (char b) {
 	char c = 0;
 	switch (b) {
@@ -1465,6 +1474,96 @@ static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 	}
 	free (res);
+	return R_TRUE;
+}
+
+static int r_cmd_java_handle_list_code_references (RCore *core, const char *input) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RAnalBlock *bb = NULL;
+	RAnalFunction *fcn = NULL;
+	RListIter *bb_iter = NULL, *fcn_iter = NULL;
+
+	if (!bin) return R_FALSE;
+
+	const char *fmt = "0x%"PFMT64x" %s type: %s class: %s name: %s desc: %s\n";
+
+	r_list_foreach (anal->fcns, fcn_iter, fcn) {
+		r_list_foreach (fcn->bbs, bb_iter, bb) {
+			const char *operation = NULL, *type = NULL;
+			ut64 addr = -1;
+			ut16 class_idx = -1, name_and_type_idx = -1;
+			char *class_name = NULL, name = NULL, descriptor = NULL;
+			// if bb_type is a call
+			if (bb->type2 &  R_ANAL_EX_CODEOP_CALL == R_ANAL_EX_CODEOP_CALL) {
+				ut8 op_byte = bb->op_bytes[0];
+				// look at the bytes determine if it belongs to this class
+				switch (op_byte) {
+					case 0xb6: // invokevirtual
+						operation = "call virtual";
+						type = "function";
+						addr = bb->addr;
+						break;
+					case 0xb7: // invokespecial
+						operation = "call special";
+						type = "function";
+						addr = bb->addr;
+						break;
+					case 0xb8: // invokestatic
+						operation = "call static";
+						type = "function";
+						addr = bb->addr;
+						break;
+					case 0xb9: // invokeinterface
+						operation = "call special";
+						type = "function";
+						addr = bb->addr;
+						break;
+					case 0xba: // invokedynamic
+						operation = "call special";
+						type = "function";
+						addr = bb->addr;
+						break;
+					default:
+						operation = NULL;
+						addr = -1;
+						break;
+				}
+
+
+			} else if (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_STATIC == R_ANAL_EX_LDST_LOAD_GET_STATIC) {
+				operation = "read static";
+				type = "field";
+				addr = bb->addr;
+			} else if (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_FIELD  == R_ANAL_EX_LDST_LOAD_GET_FIELD) {
+				operation = "read dynamic";
+				type = "field";
+				addr = bb->addr;
+			} else if (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_STATIC == R_ANAL_EX_LDST_STORE_PUT_STATIC) {
+				operation = "write static";
+				type = "field";
+				addr = bb->addr;
+			} else if (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_FIELD  == R_ANAL_EX_LDST_STORE_PUT_FIELD) {
+				operation = "write dynamic";
+				type = "field";
+				addr = bb->addr;
+			}
+
+			if (operation && addr != -1) {
+				class_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
+				name_and_type_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 3);
+				r_bin_add_import_from_anal (bin, class_idx, name_and_type_idx, type);
+				class_name = r_bin_java_get_name_from_bin_cp_list (bin, class_idx);
+				name = r_bin_java_get_item_name_from_bin_cp_list (bin, name_and_type_idx);
+				descriptor = r_bin_java_get_item_desc_from_bin_cp_list (bin, name_and_type_idx);
+				r_cons_printf (fmt, addr, operation, type, class_name, name, descriptor);
+				free (class_name);
+				free (name);
+				free (descriptor);
+			}
+		}
+
+	}
 	return R_TRUE;
 }
 

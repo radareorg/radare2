@@ -20,7 +20,7 @@
 #include "../../../shlr/java/class.c"
 //#include "../../../shlr/java/ssa_java.h"
 #undef R_API
-#define R_API 
+#define R_API
 #undef R_IPI
 #define R_IPI
 
@@ -482,7 +482,6 @@ static int java_print_ssa_fcn (RAnal *anal, char *addrs) {
 	}*/
 	return 0;
 }
-
 
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length  ) {
 
