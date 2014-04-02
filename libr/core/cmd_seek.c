@@ -80,19 +80,21 @@ static int cmd_seek(void *data, const char *input) {
 					for (;;) {
 						cur = sdb_anext (cur, &next);
 						addr = sdb_atoi (cur);
-						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
+						snprintf (key, sizeof (key)-1, "meta.C.0x%"PFMT64x, addr);
 						val = sdb_const_get (core->anal->sdb_meta, key, 0);
-						comma = strchr (val, ',');
-						if (comma) {
-							str = (char *)sdb_decode (comma+1, 0);
-							if (strstr (str, input+2)) {
-								r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, str);
-								count++;
-								cb.addr = addr;
-								free (cb.str);
-								cb.str = str;
-							} else free (str);
-						}
+						if (val) {
+							comma = strchr (val, ',');
+							if (comma) {
+								str = (char *)sdb_decode (comma+1, 0);
+								if (strstr (str, input+2)) {
+									r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, str);
+									count++;
+									cb.addr = addr;
+									free (cb.str);
+									cb.str = str;
+								} else free (str);
+							}
+						} else eprintf ("sdb_const_get key not found '%s'\n", key);
 						if (!next)
 							break;
 						cur = next;
