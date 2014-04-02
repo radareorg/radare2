@@ -4,6 +4,10 @@
 #include "r_print.h"
 #include "r_io.h"
 
+#ifdef IFDBG
+#undef IFDBG
+#endif
+
 #define DO_THE_DBG 0
 #define IFDBG if (DO_THE_DBG)
 
@@ -68,8 +72,8 @@ static int perform_mapped_file_yank (RCore *core, ut64 offset, ut64 len, const c
 	// if len is -1 then we yank in everything
 	if (len == -1) len = yank_file_sz;
 
-	IFDBG eprintf ("yankfd: %p, fd = %d\n", yankfd,
-		       (yankfd ? yankfd->fd : -1));
+	IFDBG eprintf ("yankfd: %p, yank->fd = %d, fd=%d\n", yankfd,
+		       (yankfd ? yankfd->fd : -1), fd);
 	// this wont happen if the file failed to open or the file failed to
 	// map into the IO layer
 	if (yankfd) {
@@ -93,13 +97,13 @@ static int perform_mapped_file_yank (RCore *core, ut64 offset, ut64 len, const c
 			IFDBG eprintf (
 				"Reading %"PFMT64d " bytes from file: %s\n",
 				actual_len, filename);
-			IFDBG {
+			/*IFDBG {
 				int i = 0;
 				eprintf ("Read these bytes from file: \n");
 				for (i = 0; i < actual_len; i++)
 					eprintf ("%02x", buf[i]);
 				eprintf ("\n");
-			}
+			}*/
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = R_TRUE;
 		} else if (res != addr) {
@@ -117,7 +121,11 @@ static int perform_mapped_file_yank (RCore *core, ut64 offset, ut64 len, const c
 		r_io_close (core->io, yankfd);
 		free (buf);
 	}
-	if (fd != -1) r_io_raise (core->io, fd);
+	if (fd != -1) {
+		r_io_raise (core->io, fd);
+		core->switch_file_view = 1;
+		r_core_block_read (core, 0);
+	}
 	return res;
 }
 

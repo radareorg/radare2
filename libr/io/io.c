@@ -228,7 +228,7 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 }
 
 R_API int r_io_set_fdn(RIO *io, int fd) {
-	if (fd != -1 && io->fd && fd != io->fd->fd) {
+	if (fd != -1 && !(io->fd && fd == io->fd->fd)) {
 		RIODesc *desc = r_io_desc_get (io, fd);
 		if (!desc)
 			return R_FALSE;
@@ -242,8 +242,9 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, io->off, buf, len);
-	if (io->fd->plugin && io->fd->plugin->read)
+	if (io->io->fd && fd->plugin && io->fd->plugin->read)
 		return io->fd->plugin->read (io, io->fd, buf, len);
+	else if (!io->fd) eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n")
 	return read (io->fd->fd, buf, len);
 }
 
