@@ -17,8 +17,9 @@ SDB_API void sdb_ns_free(Sdb *s) {
 	SdbListIter next;
 	SdbListIter *it;
 	SdbNs *ns;
-	// TODO: Implement and use ls_foreach_safe
+	if (s)
 	ls_foreach (s->ns, it, ns) {
+	// TODO: Implement and use ls_foreach_safe
 		next.n = it->n;
 		sdb_ns_free (ns->sdb);
 		sdb_free (ns->sdb);
