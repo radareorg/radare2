@@ -108,7 +108,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_RET;
 				if (a->decode)
 					esilprintf (op, "%s=%d[%s],%s+=%d",
-						pc, sp, sp, rs);
+						pc, rs, sp, sp, rs);
 				break;
 			case X86_INS_INT1:
 			case X86_INS_INT3:
