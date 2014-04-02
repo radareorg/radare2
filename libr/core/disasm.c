@@ -156,6 +156,7 @@ static void handle_print_opstr (RCore *core, RDisasmState *ds);
 static void handle_print_color_reset (RCore *core, RDisasmState *ds);
 static int handle_print_middle (RCore *core, RDisasmState *ds, int ret );
 static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf);
+static void handle_print_import_name (RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds);
 static void handle_print_core_vmode (RCore *core, RDisasmState *ds);
 static void handle_print_cc_update (RCore *core, RDisasmState *ds);
@@ -1183,6 +1184,28 @@ eprintf ("TODO: sdbize locals\n");
 	return have_local;
 }
 
+static void handle_print_import_name (RCore * core, RDisasmState *ds) {
+	RListIter *iter = NULL;
+	RBinReloc *rel = NULL;
+	switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CALL:
+			if (core->bin->cur->o->imports && core->bin->cur->o->relocs) {
+				r_list_foreach(core->bin->cur->o->relocs, iter, rel) {
+					if ((rel->rva == ds->analop.jump) &&
+						(rel->import != NULL)) {
+						if (ds->show_color)
+							r_cons_strcat (ds->color_fname);
+						// TODO: handle somehow ordinals import
+						r_cons_printf (" ; (imp.%s)", rel->import->name);
+						handle_print_color_reset (core, ds);
+					}
+				}
+			}
+	}
+}
+
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 	RAnalFunction *f, *cf;
 	int have_local = 0;
@@ -1204,7 +1227,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 					if (ds->show_color)
 						r_cons_strcat (ds->color_fname);
 					r_cons_printf (" ; (%s)", f->name);
-					handle_print_color_reset(core, ds);
+					handle_print_color_reset (core, ds);
 				}
 			}
 			break;
@@ -1935,6 +1958,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
 			handle_print_fcn_name (core, ds);
+			handle_print_import_name (core, ds);
 			handle_print_color_reset (core, ds);
 			handle_print_dwarf (core, ds);
 			ret = handle_print_middle (core, ds, ret );
