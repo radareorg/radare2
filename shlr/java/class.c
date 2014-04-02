@@ -1881,7 +1881,7 @@ static RBinJavaInterfaceInfo* r_bin_java_read_next_interface_item(RBinJavaObj *b
 	const ut8 * if_buf = buf + offset;
 
 	memcpy (idx, if_buf, 2);
-	interface_obj = r_bin_java_interface_new (bin, if_buf+2, 2);
+	interface_obj = r_bin_java_interface_new (bin, if_buf, len-offset);
 	if (interface_obj)
 		interface_obj->file_offset = offset;
 	return interface_obj;
@@ -4423,7 +4423,7 @@ static ut64 r_bin_java_synthetic_attr_calc_size(RBinJavaAttrInfo* attr) {
 R_API RBinJavaInterfaceInfo* r_bin_java_interface_new (RBinJavaObj *bin, const ut8 *buffer, ut64 sz) {
 	RBinJavaInterfaceInfo *interface_obj = NULL;
 
-	interface_obj = (RBinJavaInterfaceInfo *) malloc (sizeof (RBinJavaInterfaceInfo));
+	interface_obj = R_NEW0(RBinJavaInterfaceInfo);
 
 	IFDBG eprintf("Parsing RBinJavaInterfaceInfo\n");
 	if(interface_obj == NULL) {
@@ -4431,7 +4431,6 @@ R_API RBinJavaInterfaceInfo* r_bin_java_interface_new (RBinJavaObj *bin, const u
 		return interface_obj;
 	}
 
-	memset (interface_obj, 0, sizeof (RBinJavaInterfaceInfo));
 	if (buffer) {
 		interface_obj->class_info_idx = R_BIN_JAVA_USHORT (buffer, 0);
 		interface_obj->cp_class = r_bin_java_get_item_from_bin_cp_list (bin, interface_obj->class_info_idx);
@@ -4441,7 +4440,7 @@ R_API RBinJavaInterfaceInfo* r_bin_java_interface_new (RBinJavaObj *bin, const u
 			interface_obj->name = r_str_dup (NULL, "NULL");
 		}
 	}else{
-		interface_obj->class_info_idx = 0xffff;
+		interface_obj->class_info_idx = 0;
 		interface_obj->name = r_str_dup (NULL, "NULL");
 	}
 	return interface_obj;
@@ -7365,7 +7364,8 @@ static RBinJavaElementValue* r_bin_java_element_value_new (ut8* buffer, ut64 sz,
 		return element_value;
 	}
 
-	memset (element_value, 0, sizeof (RBinJavaElementValue));
+	element_value = R_NEW0 (RBinJavaElementValue);
+	element_value->metas = R_NEW0 (RBinJavaMetaInfo);
 	element_value->file_offset = buf_offset;
 	element_value->tag = buffer[offset];
 	element_value->size += 1;
