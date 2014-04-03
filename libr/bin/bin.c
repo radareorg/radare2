@@ -112,6 +112,8 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 #define ROW (4|2)
 	if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) && s->size>0 )
 		return 1;
+	if (strstr (s->name, "_const")) // Rust
+		return 1;
 	return 0;
 }
 

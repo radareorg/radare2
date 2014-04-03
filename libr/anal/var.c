@@ -12,7 +12,21 @@
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x, ##y);
 // DUPPED FUNCTIONALITY
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 index, const char *name, const char *type) {
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 index, const char *type, const char *name) {
+}
+
+R_API int r_anal_var_add (RAnal *a, ut64 addr, const char kind, int scope, ut32 index, const char *type, const char *name) {
+	char key[128];
+	if (scope>0) {
+		// local
+		snprintf (key, "var.0x%"PFMT64x".%d.%d");
+	} else {
+		// global
+		snprintf (key, "var.0x%"PFMT64x, addr);
+	}
+	sdb_array_add (DB, key, val, 0);
+}
+
 #if FCN_SDB
 #if 0
   fcn.0x80480.locals=8,16,24
@@ -55,6 +69,13 @@ R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int s
 // ---------------
 // TODO: limit recursivity
 
+#define RAnalVarAPI(x) r_anal_var_##x
+R_API void RAnalVarAPI(set)() {
+	// set new api
+	
+}
+
+#if 0
 R_API RAnalVar *r_anal_var_new() {
 	RAnalVar *var = R_NEW0 (RAnalVar);
 	if (var)
@@ -93,6 +114,7 @@ R_API void r_anal_var_free(void *var) {
 R_API void r_anal_var_access_free(void *access) {
 	free (access);
 }
+#endif
 
 static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 	return (a->delta - b->delta);
@@ -102,6 +124,7 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope, RAnalType *type, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
+#if 
 	if (!fcn) {
 		return R_FALSE;
 	}
