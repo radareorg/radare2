@@ -3154,7 +3154,7 @@ R_API void r_bin_add_import_from_anal (RBinJavaObj * bin, ut16 class_idx, ut16 n
 }
 
 
-RList* r_bin_java_get_imports(RBinJavaObj* bin) {
+R_API RList* r_bin_java_get_imports(RBinJavaObj* bin) {
 	RList *ret = r_list_new ();
 	RBinImport *import = NULL;
 	RListIter *iter;
@@ -3168,7 +3168,7 @@ RList* r_bin_java_get_imports(RBinJavaObj* bin) {
 	return ret;
 }
 
-RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
+R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
 	RList *symbols = r_list_new ();
 	RBinSymbol *sym;

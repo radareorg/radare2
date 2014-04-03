@@ -16,4 +16,4 @@ include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 
 clean::
-	rm -f $(BIN).$(EXT_SO)
+	rm -f $(BIN).$(EXT_SO) $(BIN).o

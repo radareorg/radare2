@@ -40,14 +40,31 @@ static void syncronize(int sig UNUSED) {
 }
 #endif
 
-static int sdb_dump (const char *db, int qf) {
+static int sdb_dump (const char *db, int json) {
 	char *k, *v;
+	const char *comma = "";
 	Sdb *s = sdb_new (NULL, db, 0);
 	if (!s) return 1;
 	sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 	sdb_dump_begin (s);
+	if (json)
+		printf ("{");
 	while (sdb_dump_dupnext (s, &k, &v)) {
-		printf ("%s=%s\n", k, v);
+		if (json) {
+			if (!strcmp (v, "true") || !strcmp (v, "false")) {
+				printf ("%s\"%s\":%s", comma, k, v);
+			} else
+			if (sdb_isnum (v)) {
+				printf ("%s\"%s\":%llu", comma, k, sdb_atoi (v));
+			} else
+			if (*v=='{' || *v=='[') {
+				printf ("%s\"%s\":%s", comma, k, v);
+			} else
+				printf ("%s\"%s\":\"%s\"", comma, k, v);
+			comma = ",";
+		} else {
+			printf ("%s=%s\n", k, v);
+		}
 #if 0
 		if (qf && strchr (v, SDB_RS)) {
 			for (p=v; *p; p++)
@@ -61,6 +78,8 @@ static int sdb_dump (const char *db, int qf) {
 		free (k);
 		free (v);
 	}
+	if (json)
+		printf ("}\n");
 	sdb_free (s);
 	return 0;
 }
@@ -85,7 +104,8 @@ static int createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-hv|-d A B] [-|db] []|[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
+	printf ("usage: sdb [-hjv|-d A B] [-|db] "
+		"[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
 	exit (o);
 }
 
@@ -136,6 +156,12 @@ int main(int argc, const char **argv) {
 	} else
 	if (!strcmp (argv[1], "-v")) showversion ();
 	if (!strcmp (argv[1], "-h")) showusage (0);
+	if (!strcmp (argv[1], "-j")) {
+		if (argc>2)
+			return sdb_dump (argv[2], 1);
+		printf ("Missing database filename after -j\n");
+		return 1;
+	}
 	if (!strcmp (argv[1], "-")) {
 		argv[1] = "";
 		if (argc == 2) {
@@ -149,9 +175,7 @@ int main(int argc, const char **argv) {
 	signal (SIGINT, terminate);
 	signal (SIGHUP, syncronize);
 #endif
-	if (!strcmp (argv[2], "[]")) {
-		return sdb_dump (argv[1], 1);
-	} if (!strcmp (argv[2], "="))
+	if (!strcmp (argv[2], "="))
 		return createdb (argv[1]);
 	else if (!strcmp (argv[2], "-")) {
 		if ((s = sdb_new (NULL, argv[1], 0))) {
