@@ -3290,7 +3290,9 @@ static void r_bin_java_constant_pool_list_free (RBinJavaObj* bin) {
 	RBinJavaCPTypeObj *obj = NULL;
 	if (bin->cp_list) {
 		r_list_foreach (bin->cp_list, iter, obj) {
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+
+			if (obj != &R_BIN_JAVA_NULL_TYPE)
+				((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
 			iter->data = NULL;
 		}
 		r_list_free (bin->cp_list);

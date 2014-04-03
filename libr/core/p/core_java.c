@@ -712,8 +712,10 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 				} else {
 					result = r_cmd_replace_name (new_class_name, new_class_name_len-1, class_name, class_name_len-1, name, len, &res_len);
 				}
-				if (result)
+				if (result) {
 					res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, result, res_len);
+					idx = 1;
+				}
 				free (result);
 			}
 
@@ -1478,7 +1480,7 @@ static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 	return R_TRUE;
 }
 static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx) {
-	char *class_name = NULL, *name = NULL, *descriptor = NULL, *full_bird;
+	char *class_name = NULL, *name = NULL, *descriptor = NULL, *full_bird = NULL;
 	ut32 len = 0;
 	RBinJavaCPTypeObj * obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
 	const char *type = NULL;
@@ -1508,7 +1510,7 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 
 	} else if (obj->tag == R_BIN_JAVA_CP_FIELDREF) {
 		type = "FIELD";
-		snprintf (full_bird, len+100, "%s %s.%s %s", descriptor, class_name, name);
+		snprintf (full_bird, len+100, "%s %s.%s", descriptor, class_name, name);
 	}
 
 	if (full_bird)
@@ -1567,12 +1569,12 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 						addr = bb->addr;
 						break;
 					case 0xb9: // invokeinterface
-						operation = "call special";
+						operation = "call interface";
 						type = "FUNCTION";
 						addr = bb->addr;
 						break;
 					case 0xba: // invokedynamic
-						operation = "call special";
+						operation = "call dynamic";
 						type = "FUNCTION";
 						addr = bb->addr;
 						break;
