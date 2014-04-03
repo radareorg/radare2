@@ -20,8 +20,10 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva);
+static void delete_bin_items (RBinObject *o);
 static void set_bin_items(RBin *bin, RBinPlugin *cp);
 static void r_bin_free_bin_files (RBin *bin);
+static void r_bin_file_free_it (RBinFile *a);
 static void r_bin_file_free (RBinFile *a);
 static void r_bin_free_items(RBin *bin);
 static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr);
@@ -174,6 +176,55 @@ R_API int r_bin_load_languages(RBin *bin) {
 	return R_BIN_NM_NONE;
 }
 
+R_API void update_bin_items(RBin *bin, RBinPlugin *cp) {
+	delete_bin_items (bin->cur->o);
+	set_bin_items (bin, cp);
+}
+
+static void delete_bin_items (RBinObject *o) {
+
+	r_list_free (o->entries);
+	r_list_free (o->fields);
+	r_list_free (o->imports);
+	r_list_free (o->libs);
+	r_list_free (o->relocs);
+	r_list_free (o->sections);
+	r_list_free (o->strings);
+	r_list_free (o->symbols);
+	r_list_free (o->classes);
+	r_list_free (o->lines);
+
+	free (o->info);
+	//free (o->binsym);
+
+	o->baddr = 0;
+	o->boffset = 0;
+	o->size = 0;
+	//o->binsym = NULL;
+
+	if (o->binsym != NULL) {
+		ut32 i = 0;
+		for (i=0; i<R_BIN_SYM_LAST; i++){
+			free (o->binsym[i]);
+			o->binsym[i] = NULL;
+		}
+		free (o->binsym);//, 0, sizeof (o->binsym));
+		//o->binsym = NULL;
+	}
+	o->entries = NULL;
+	o->fields = NULL;
+	o->imports = NULL;
+	o->info = NULL;
+	o->libs = NULL;
+	o->relocs = NULL;
+	o->sections = NULL;
+	o->strings = NULL;
+	o->symbols = NULL;
+	o->classes = NULL;
+	o->lines = NULL;
+	o->lang = 0;
+}
+
 static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 	RBinFile *a = bin->cur;
 	RBinObject *o = a->o;
@@ -296,7 +347,8 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 	RListIter *it;
 	RBinPlugin *plugin, *cp;
 	RBinFile *a = bin->cur = R_NEW0 (RBinFile);
-	RBinObject *o = a->o = R_NEW0 (RBinObject);
+	RBinObject *o = R_NEW0 (RBinObject);
+	a->o = o;
 
 	bin->cur->file = strdup (bin->file);
 	a->buf = r_buf_mmap (bin->cur->file, 0);
@@ -356,23 +408,8 @@ static void r_bin_free_bin_files (RBin *bin) {
 static void r_bin_file_free (RBinFile *a) {
 	int i;
 	RBinObject *o = a->o;
-	RBINLISTFREE (o->entries);
-	RBINLISTFREE (o->fields);
-	RBINLISTFREE (o->imports);
-	RBINLISTFREE (o->libs);
-	RBINLISTFREE (o->relocs);
-	RBINLISTFREE (o->sections);
-	RBINLISTFREE (o->strings);
-	RBINLISTFREE (o->symbols);
-	RBINLISTFREE (o->classes);
-	free (o->info);
-	o->info = NULL;
+	delete_bin_items (o);
 
-	if (o->binsym != NULL)
-		for (i=0; i<R_BIN_SYM_LAST; i++){
-			free (o->binsym[i]);
-			o->binsym[i] = NULL;
-		}
 	if (a->curplugin && a->curplugin->destroy)
 		a->curplugin->destroy (a);
 	else if (a->buf)
@@ -416,7 +453,7 @@ static void r_bin_free_items(RBin *bin) {
 
 	free (a->file);
 	memset (a, 0, sizeof(RBinFile));
-	free (a);
+	free (o);
 }
 
 static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
@@ -673,8 +710,7 @@ R_API RBin* r_bin_new() {
 	bin->minstrlen = -2;
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->o = R_NEW0 (RBinObject);
-	bin->binfiles = r_list_new();
-	bin->binfiles->free = (RListFree)r_bin_file_free;
+	bin->binfiles = r_list_newf(r_bin_file_free);
 	for (i=0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
 	}

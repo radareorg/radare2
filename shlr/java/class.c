@@ -280,7 +280,7 @@ static ut64 r_bin_java_invokedynamic_cp_calc_size(RBinJavaCPTypeObj* obj);
 
 static RBinJavaStackMapFrame* r_bin_java_default_stack_frame();
 
-static RBinSymbol* r_bin_java_allocate_symbol();
+
 static RList * r_bin_java_find_cp_const_by_val_float (RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);
 static RList * r_bin_java_find_cp_const_by_val_double (RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);
 static RList * r_bin_java_find_cp_const_by_val_int (RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);
@@ -352,7 +352,7 @@ static ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
 // XXX - this is a global variable used while parsing the class file
 // if multi-threaded class parsing is enabled, this variable needs to
 // be guarded with a lock.
-static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
+static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;	
 
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6},
@@ -2235,18 +2235,16 @@ static RBinJavaAttrInfo* r_bin_java_default_attr_new(ut8* buffer, ut64 sz, ut64 
 	// XXX - all the code that relies on this function should probably be modified
 	// so that the original buffer pointer is passed in and then the buffer+buf_offset
 	// points to the correct location.
-	RBinJavaAttrInfo *attr = (RBinJavaAttrInfo *) malloc (sizeof (RBinJavaAttrInfo));
+	RBinJavaAttrInfo *attr = R_NEW0 (RBinJavaAttrInfo);
 	RBinJavaAttrMetas *type_info = NULL;
 	ut64 offset = 0;
 	// read the offset now, before we make modifications or read from the buffer
 
-	memset (attr, 0, sizeof (RBinJavaAttrInfo));
-	attr->metas = (RBinJavaMetaInfo *)malloc (sizeof (RBinJavaMetaInfo));
+	attr->metas = R_NEW0 (RBinJavaMetaInfo);
 	if (attr->metas == NULL) {
 		free (attr);
 		return NULL;
 	}
-	memset (attr->metas, 0, sizeof (RBinJavaMetaInfo));
 	attr->file_offset = buf_offset;
 	attr->name_idx = R_BIN_JAVA_USHORT (buffer, 0);
 	attr->length = R_BIN_JAVA_UINT (buffer, 2);
@@ -2385,6 +2383,8 @@ R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const 
 				bin->cp_idx++;
 				r_list_append (bin->cp_list, &R_BIN_JAVA_NULL_TYPE);
 			}
+
+
 			IFDBG ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
 			adv += ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->calc_size (obj);
 		} else {
@@ -2392,6 +2392,8 @@ R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const 
 			break;
 		}
 	}
+	// Update the imports
+	r_bin_java_set_imports (bin);
 	bin->cp_size = adv;
 	return bin->cp_size;
 }
@@ -2574,8 +2576,6 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 	adv += r_bin_java_parse_methods (bin, adv, buf, buf_sz);
 	adv += r_bin_java_parse_attrs (bin, adv, buf, buf_sz);
 
-	// imports require accessing a the specific method
-	bin->imports_list = r_list_newf (free);
 	//add_cp_objs_to_sdb(bin);
 	//add_method_infos_to_sdb(bin);
 	//add_field_infos_to_sdb(bin);
@@ -2691,12 +2691,6 @@ R_API ut64 r_bin_java_get_class_entrypoint(RBinJavaObj* bin) {
 	return 0;
 }
 
-R_API RBinSymbol* r_bin_java_allocate_symbol() {
-	RBinSymbol* t = (RBinSymbol *) malloc (sizeof (RBinSymbol));
-	if (t) memset (t, 0, sizeof (RBinSymbol));
-	return t;
-}
-
 R_API ut64 r_bin_java_get_method_code_size(RBinJavaField *fm_type) {
 	RListIter *attr_iter=NULL, *attr_iter_tmp=NULL;
 	RBinJavaAttrInfo *attr = NULL;
@@ -2758,7 +2752,7 @@ R_API RBinField* r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_ty
 }
 
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type, ut64 baddr) {
-	RBinSymbol *sym = r_bin_java_allocate_symbol ();
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (fm_type == NULL || fm_type->field_ref_cp_obj == NULL || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
 		free (sym);
 		sym = NULL;
@@ -2802,7 +2796,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 }
 
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_method_meta(RBinJavaField *fm_type, ut64 baddr) {
-	RBinSymbol *sym = r_bin_java_allocate_symbol ();
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (fm_type == NULL || fm_type->field_ref_cp_obj == NULL || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
 		free (sym);
 		sym = NULL;
@@ -2842,7 +2836,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_method_meta(RBinJavaField *f
 	return sym;
 }
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr) {
-	RBinSymbol *sym = r_bin_java_allocate_symbol ();
+	RBinSymbol *sym = R_NEW0(RBinSymbol);
 	char *class_name, *name, *type_name;
 
 	if (obj == NULL || (obj->tag != R_BIN_JAVA_CP_METHODREF &&
@@ -2891,11 +2885,11 @@ R_API RBinSection* r_bin_java_allocate_section() {
 
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 	RBinSection* section = NULL;
-	RList *sections = r_list_new ();
+	RList *sections = r_list_newf(free);
 	ut64 baddr = bin->loadaddr;
 
 	if (bin->cp_count > 0) {
-		section = r_bin_java_allocate_section ();
+		section = R_NEW0 (RBinSection);
 		if(section) {
 			strcpy (section->name, "constant_pool");
 			section->size = bin->cp_size;
@@ -2906,7 +2900,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		section = NULL;
 	}
 	if (bin->fields_count > 0) {
-		section = r_bin_java_allocate_section ();
+		section = R_NEW0 (RBinSection);
 		if(section) {
 			strcpy (section->name, "fields");
 			section->size = bin->fields_size;
@@ -2917,7 +2911,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		section = NULL;
 	}
 	if (bin->methods_count > 0) {
-		section = r_bin_java_allocate_section ();
+		section = R_NEW0 (RBinSection);
 		if(section) {
 			strcpy (section->name, "methods");
 			section->size = bin->methods_size;
@@ -2928,7 +2922,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		section = NULL;
 	}
 	if (bin->interfaces_count > 0) {
-		section = r_bin_java_allocate_section ();
+		section = R_NEW0 (RBinSection);
 		if(section) {
 			strcpy (section->name, "interfaces");
 			section->size = bin->interfaces_size;
@@ -2940,7 +2934,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 
 	}
 	if (bin->attrs_count > 0) {
-		section = r_bin_java_allocate_section ();
+		section = R_NEW0 (RBinSection);
 		if(section) {
 			strcpy (section->name, "attributes");
 			section->size = bin->attrs_size;
@@ -3031,7 +3025,7 @@ R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin) {
 }
 
 R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin) {
-	RList *lib_names = r_list_new();
+	RList *lib_names = r_list_newf(free);
 	RListIter *iter;
 	RBinJavaCPTypeObj *cp_obj = NULL;
 
@@ -3139,27 +3133,49 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
 
 
 
-R_API void r_bin_add_import_from_anal (RBinJavaObj * bin, ut16 class_idx, ut16 name_type_idx, const char * type) {
+R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *obj, const char * type) {
 	RBinImport * import = R_NEW0(RBinImport);
-	char *class_name = r_bin_java_get_name_from_bin_cp_list (bin, class_idx);
-	char *name = r_bin_java_get_name_from_bin_cp_list (bin, name_type_idx);
-	char *descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, name_type_idx);
+	char *class_name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.class_idx);
+	char *name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
+	char *descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 
 	strncpy (import->classname, class_name, R_BIN_SIZEOF_STRINGS);
 	strncpy (import->name, name, R_BIN_SIZEOF_STRINGS);
 	strncpy (import->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (import->type, type, R_BIN_SIZEOF_STRINGS);
 	strncpy (import->descriptor, descriptor, R_BIN_SIZEOF_STRINGS);
+	import->ordinal = obj->idx;
 	r_list_append (bin->imports_list, import);
+
+	free (class_name);
+	free (name);
+	free (descriptor);
 }
 
+R_API void r_bin_java_set_imports(RBinJavaObj* bin) {
+	RListIter *iter = NULL;
+	RBinJavaCPTypeObj *obj = NULL;
+	r_list_free (bin->imports_list);
+	bin->imports_list = r_list_newf (free);
+	r_list_foreach (bin->cp_list, iter, obj) {
+		const char *type  = NULL;
+		switch (obj->tag) {
+			case R_BIN_JAVA_CP_METHODREF: type = "METHOD"; break;
+			case R_BIN_JAVA_CP_INTERFACEMETHOD_REF: type = "FIELD"; break;
+			case R_BIN_JAVA_CP_FIELDREF: type = "INTERFACE_METHOD"; break;
+			default: type = NULL; break;
+		}
+		if (type) {
+			r_bin_add_import (bin, obj, type);
+		}
+	}
+}
 
 R_API RList* r_bin_java_get_imports(RBinJavaObj* bin) {
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf (free);
 	RBinImport *import = NULL;
 	RListIter *iter;
 
-	ret->free = free;
 	r_list_foreach (bin->imports_list, iter, import) {
 		RBinImport *n_import = R_NEW0(RBinImport);
 		memcpy (n_import, import, sizeof (RBinImport));
@@ -3170,7 +3186,7 @@ R_API RList* r_bin_java_get_imports(RBinJavaObj* bin) {
 
 R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
-	RList *symbols = r_list_new ();
+	RList *symbols = r_list_newf (free);
 	RBinSymbol *sym;
 	RBinJavaField *fm_type;
 
@@ -3192,7 +3208,7 @@ R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 }
 
 R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
-	RList *strings = r_list_new ();
+	RList *strings = r_list_newf (free);
 	RBinString *str = NULL;
 
 	RListIter *iter = NULL, *iter_tmp=NULL;
@@ -3204,7 +3220,9 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 				str->offset = cp_obj->file_offset + bin->loadaddr;
 				str->ordinal = cp_obj->metas->ord;
 				str->size = cp_obj->info.cp_utf8.length;
-				strncpy ((char *) str->string, (const char *) cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
+				str->string[0] = 0;
+				if (str->size > 0)
+					strncpy ((char *) str->string, (const char *) cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
 				r_list_append (strings, (void *) str);
 			}
 		}
@@ -3237,6 +3255,7 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	r_bin_java_methods_list_free (bin);
 	// free up interfaces list
 	r_bin_java_interfaces_list_free (bin);
+	r_bin_java_free_attribute_list (bin->attrs_list);
 	// TODO: XXX if a class list of all inner classes
 	// are formed then this will need to be updated
 	free (bin->cf2.flags_str);
@@ -3310,6 +3329,8 @@ static void r_bin_java_methods_list_free (RBinJavaObj* bin) {
 			free (method->descriptor);
 			free (method->name);
 			free (method->flags_str);
+			free (method->class_name);
+			free (method->metas);
 
 			if (method->attributes) {
 				r_bin_java_free_attribute_list (method->attributes);
@@ -3348,6 +3369,8 @@ static void r_bin_java_fields_list_free (RBinJavaObj* bin) {
 			free (field->descriptor);
 			free (field->name);
 			free (field->flags_str);
+			free (field->class_name);
+			free (field->metas);
 
 			if (field->attributes) {
 				r_bin_java_free_attribute_list (field->attributes);
@@ -3355,7 +3378,7 @@ static void r_bin_java_fields_list_free (RBinJavaObj* bin) {
 			field->attributes = NULL;
 			free (field);
 			iter->data = NULL;
-			
+
 		}
 		r_list_free (bin->fields_list);
 	}
@@ -3477,30 +3500,17 @@ static void r_bin_java_code_attr_free (RBinJavaAttrInfo *attr) {
 	RBinJavaExceptionEntry *exc_entry = NULL;
 	RBinJavaAttrInfo *_attr;
 	RListIter *iter = NULL, *iter_tmp = NULL;
+	//eprintf ("Calling code attr free");
 	if (attr && attr->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
-		free (attr->name);
-		free (attr->metas);
+		free (attr->info.code_attr.code);
 		r_bin_java_stack_frame_free (attr->info.code_attr.implicit_frame);
-
-		if(attr->info.code_attr.exception_table) {
-			// Delete the attr entries
-			r_list_foreach_safe (attr->info.code_attr.exception_table, iter, iter_tmp, exc_entry) {
-				free (exc_entry);
-				//r_list_delete (attr->info.code_attr.exception_table, iter);
-			}
-			r_list_free (attr->info.code_attr.exception_table);
-		}
+		r_list_free (attr->info.code_attr.exception_table);
+		r_bin_java_free_attribute_list (attr->info.code_attr.attributes);
 		attr->info.code_attr.exception_table = NULL;
 		// Delete the exception_table entries
-		if(attr->info.code_attr.attributes) {
-			r_list_foreach_safe (attr->info.code_attr.attributes, iter, iter_tmp, _attr) {
-				if(_attr->metas->type_info)
-					((RBinJavaAttrMetas *) _attr->metas->type_info)->allocs->delete_obj (_attr);
-				//r_list_delete (attr->info.code_attr.attributes, iter);
-			}
-			r_list_free (attr->info.code_attr.attributes);
-		}
 		attr->info.code_attr.attributes = NULL;
+		free (attr->name);
+		free (attr->metas);
 		free (attr);
 	}
 }
@@ -3573,18 +3583,7 @@ static void r_bin_java_stack_map_table_attr_free (RBinJavaAttrInfo* attr) {
 	if (attr && attr->type == R_BIN_JAVA_ATTR_TYPE_STACK_MAP_TABLE_ATTR) {
 		free (attr->name);
 		free (attr->metas);
-
-		ptrList = attr->info.stack_map_table_attr.stack_map_frame_entries;
-		if(ptrList) {
-			r_list_foreach_safe (ptrList, iter, iter_tmp, frame) {
-				if (frame)
-					r_bin_java_stack_frame_free (frame);
-				//r_list_delete (ptrList, iter);
-			}
-			r_list_free (ptrList);
-		}
-
-		ptrList = NULL;
+		r_list_free (attr->info.stack_map_table_attr.stack_map_frame_entries);
 		attr->info.stack_map_table_attr.stack_map_frame_entries = NULL;
 		free (attr);
 	}
@@ -3594,36 +3593,21 @@ static void r_bin_java_stack_frame_free (RBinJavaStackMapFrame* obj) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RList* ptrList = NULL;
 	RBinJavaVerificationObj *ver_obj = NULL;
-
+	//eprintf ("Freeing stack frame object\n");
+	//r_bin_java_print_stack_map_frame_summary (obj);
 	if (obj) {
-		ptrList = obj->local_items;
+		r_list_free (obj->local_items);
+		obj->local_items = NULL;
 		free (obj->metas);
 		obj->metas = NULL;
-
-		if(ptrList) {
-			r_list_foreach_safe (ptrList, iter, iter_tmp, ver_obj) {
-				r_bin_java_verification_info_free (ver_obj);
-				//r_list_delete (ptrList, iter);
-			}
-			r_list_free (ptrList);
-		}
-		obj->local_items = NULL;
-
-		ptrList = obj->stack_items;
-		if(ptrList) {
-			r_list_foreach_safe (ptrList, iter, iter_tmp, ver_obj) {
-				r_bin_java_verification_info_free (ver_obj);
-				//r_list_delete (ptrList, iter);
-			}
-			r_list_free (ptrList);
-		}
+		r_list_free ( obj->stack_items);
 		obj->stack_items = NULL;
-		ptrList = NULL;
 		free (obj);
 	}
 }
 
 static void r_bin_java_verification_info_free (RBinJavaVerificationObj* obj) {
+	//eprintf ("Freeing verification object\n");
 	if(obj) {
 		free (obj->name);
 		free (obj);
@@ -3747,7 +3731,7 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 	attr->info.code_attr.exception_table_length =  R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 
-	attr->info.code_attr.exception_table = r_list_new ();
+	attr->info.code_attr.exception_table = r_list_newf (free);
 
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		cur_location = buf_offset+offset;
@@ -3781,7 +3765,7 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 
 	//IFDBG eprintf ("	  code Attributes_count: %d\n", attr->info.code_attr.attributes_count);
 
-	attr->info.code_attr.attributes = r_list_new ();
+	attr->info.code_attr.attributes = r_list_newf (r_bin_java_free_attribute_list);
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
 			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, sz-offset, buf_offset+offset);
@@ -3793,10 +3777,11 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 
 			if (_attr && _attr->type == R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR) {
 				IFDBG eprintf ("Parsed the LocalVariableTable, preparing the implicit mthod frame.\n");
-				IFDBG r_bin_java_print_attr_summary(_attr);
+				//r_bin_java_print_attr_summary(_attr);
 				attr->info.code_attr.implicit_frame = r_bin_java_build_stack_frame_from_local_variable_table (R_BIN_JAVA_GLOBAL_BIN, _attr);
 				attr->info.code_attr.implicit_frame->file_offset = buf_offset;
 				IFDBG r_bin_java_print_stack_map_frame_summary(attr->info.code_attr.implicit_frame);
+				r_list_append (attr->info.code_attr.attributes, attr->info.code_attr.implicit_frame);
 			}
 
 		}
@@ -3804,6 +3789,7 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 	if (attr->info.code_attr.implicit_frame == NULL) {
 		// build a default implicit_frame
 		attr->info.code_attr.implicit_frame = r_bin_java_default_stack_frame ();
+		r_list_append (attr->info.code_attr.attributes, _attr);
 	}
 
 	attr->size = offset;
@@ -4506,21 +4492,14 @@ R_API RBinJavaVerificationObj* r_bin_java_verification_info_from_type(RBinJavaOb
 
 R_API RBinJavaVerificationObj* r_bin_java_read_from_buffer_verification_info_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
-	RBinJavaVerificationObj *stack_element = (RBinJavaVerificationObj *) malloc (sizeof (RBinJavaVerificationObj));
+	RBinJavaVerificationObj *stack_element = R_NEW0(RBinJavaVerificationObj);
 
 	if (stack_element == NULL) {
 		// eprintf error here
 		return stack_element;
 	}
 
-	memset (stack_element, 0, sizeof (RBinJavaVerificationObj));
 	stack_element->file_offset = buf_offset;
-
-	/*if (sz == 0) {
-		eprintf ("rbin_java_read_next_verification_info: Failed to read bytes for tag.\n");
-		//r_bin_java_verification_info_free (stack_element);
-		//return NULL;
-	}*/
 
 	stack_element->tag = buffer[offset];
 	offset += 1;
@@ -4721,8 +4700,8 @@ static RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 
 	stack_frame->metas->type_info = (void *)  r_bin_java_determine_stack_frame_type (stack_frame->tag);
 	stack_frame->type = ((RBinJavaStackMapFrameMetas *) stack_frame->metas->type_info)->type;
 
-	stack_frame->local_items = r_list_new ();
-	stack_frame->stack_items = r_list_new ();
+	stack_frame->local_items = r_list_newf (r_bin_java_verification_info_free);
+	stack_frame->stack_items = r_list_newf (r_bin_java_verification_info_free);
 	stack_frame->file_offset = buf_offset;
 	stack_frame->p_stack_frame = p_frame;
 	if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_SAME) {
@@ -4924,22 +4903,20 @@ static ut16 r_bin_java_find_cp_class_ref_from_name_idx (RBinJavaObj *bin, ut16 n
 }
 
 static RBinJavaStackMapFrame* r_bin_java_default_stack_frame() {
-	RBinJavaStackMapFrame* stack_frame = (RBinJavaStackMapFrame *) malloc (sizeof (RBinJavaStackMapFrame));
+	RBinJavaStackMapFrame* stack_frame = R_NEW0 (RBinJavaStackMapFrame);
 	if(stack_frame == NULL)
 		return stack_frame;
 
-	memset (stack_frame, 0, sizeof (RBinJavaStackMapFrame));
-	stack_frame->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
+	stack_frame->metas = R_NEW0(RBinJavaMetaInfo);
 	if(stack_frame->metas == NULL) {
 		free (stack_frame);
 		return NULL;
 	}
-	memset (stack_frame->metas, 0, sizeof (RBinJavaMetaInfo));
 
 	stack_frame->metas->type_info = (void *)  &R_BIN_JAVA_STACK_MAP_FRAME_METAS[R_BIN_JAVA_STACK_FRAME_IMPLICIT];
 	stack_frame->type = ((RBinJavaStackMapFrameMetas *) stack_frame->metas->type_info)->type;
-	stack_frame->local_items = r_list_new ();
-	stack_frame->stack_items = r_list_new ();
+	stack_frame->local_items = r_list_newf (r_bin_java_verification_info_free);
+	stack_frame->stack_items = r_list_newf (r_bin_java_verification_info_free);
 	stack_frame->number_of_stack_items = 0;
 	stack_frame->number_of_locals = 0;
 	return stack_frame;
@@ -5047,7 +5024,7 @@ static RBinJavaAttrInfo* r_bin_java_stack_map_table_attr_new (ut8* buffer, ut64 
 		return attr;
 	}
 
-	attr->info.stack_map_table_attr.stack_map_frame_entries = r_list_new ();
+	attr->info.stack_map_table_attr.stack_map_frame_entries = r_list_newf (r_bin_java_stack_map_table_attr_free);
 	//IFDBG r_bin_java_print_source_code_file_attr_summary(attr);
 	// Current spec does not call for variable sizes.
 
@@ -5842,6 +5819,7 @@ static void r_bin_java_default_free (RBinJavaCPTypeObj *obj) {
 
 static void r_bin_java_utf8_info_free (RBinJavaCPTypeObj *obj) {
 	if(obj) {
+		free (obj->name);
 		free (obj->metas);
 		free (obj->info.cp_utf8.bytes);
 		free (obj);

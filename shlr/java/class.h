@@ -1009,8 +1009,8 @@ R_API ut64 r_bin_java_parse_fields (RBinJavaObj *bin, const ut64 offset, const u
 R_API ut64 r_bin_java_parse_methods (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
 R_API ut64 r_bin_java_parse_attrs (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
 R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 len);
-R_API void r_bin_add_import_from_anal (RBinJavaObj * bin, ut16 class_idx, ut16 name_type_idx, const char * type);
-
-
+R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *cp_obj, const char * type);
+R_API void r_bin_java_set_imports(RBinJavaObj* bin);
+R_API RList* r_bin_java_get_imports(RBinJavaObj* bin);
 
 #endif

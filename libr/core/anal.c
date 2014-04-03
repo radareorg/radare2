@@ -203,7 +203,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					bbi->fail != -1 ? "green" : "blue");
 			r_cons_flush ();
 		}
-		if (bbi->fail != -1) {
+		if (	bbi->fail != -1) {
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
@@ -212,6 +212,31 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 			r_cons_flush ();
 		}
+		if (bbi->switch_op) {
+			RAnalCaseOp *caseop;
+			RListIter *iter;
+			RList *jmp_list = NULL;
+			if (is_html) {
+				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
+						bbi->addr, bbi->fail);
+			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
+			r_cons_flush ();
+
+			r_list_foreach (bbi->switch_op->cases, iter, caseop) {
+				if (caseop) {
+					if (is_html) {
+						r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+						"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
+						caseop->addr, caseop->addr);
+				} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+					"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
+					r_cons_flush ();
+				}
+			}
+		}
+
 		if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
 				const char *difftype = bbi->diff? (\

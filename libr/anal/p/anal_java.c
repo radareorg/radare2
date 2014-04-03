@@ -241,8 +241,10 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
+					bb->jump = bb->jumpbb->addr;
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
+					bb->jump = bb->jumpbb->addr;
 				}
 
 				if (state->done == 1) {
@@ -262,8 +264,10 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
+					bb->jump = bb->jumpbb->addr;
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
+					bb->jump = bb->jumpbb->addr;
 				}
 
 				if (state->done == 1) {
@@ -276,8 +280,10 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
 					if (jmp_list)
 						bb->failbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
+					bb->fail = bb->failbb->addr;
 				} else {
 					bb->failbb = r_anal_state_search_bb (state, bb->fail);
+					bb->fail = bb->failbb->addr;
 				}
 
 				IFDBG eprintf (" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);

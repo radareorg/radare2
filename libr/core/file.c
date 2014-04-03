@@ -490,7 +490,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		cf->filename = NULL;
 		cf->uri = NULL;
 // XXX avoid segfault
-//		free (cf);
+		free (cf);
 	}
 	cf = NULL;
 }

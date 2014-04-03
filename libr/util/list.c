@@ -120,7 +120,7 @@ R_API void r_list_delete (RList *list, RListIter *iter) {
 }
 
 R_API RList *r_list_new() {
-	RList *list = R_NEW (RList);
+	RList *list = R_NEW0(RList);
 	r_list_init (list);
 	return list;
 }

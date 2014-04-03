@@ -469,6 +469,14 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 
 	if (bytes && obj) {
 		res = r_bin_java_load_bin (obj, bytes, c_file_sz);
+		if (res) {
+			RBinPlugin *cp;
+			RListIter *iter;
+			r_list_foreach (core->bin->plugins, iter, cp) {
+				if (!strncmp ("java", cp->name, 4)) break;
+			}
+			if (cp) r_bin_update_items (core->bin, cp);
+		}
 	}
 	free (bytes);
 	return res;
@@ -1512,9 +1520,6 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 		type = "FIELD";
 		snprintf (full_bird, len+100, "%s %s.%s", descriptor, class_name, name);
 	}
-
-	if (full_bird)
-		r_bin_add_import_from_anal (bin, obj->info.cp_method.class_idx, obj->info.cp_method.name_and_type_idx, type);
 
 	free (class_name);
 	free (name);
