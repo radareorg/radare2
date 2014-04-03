@@ -103,12 +103,15 @@ static int main_help(int line) {
 		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
 		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc\n"
 		" file     ${filename}.r2\n"
+		"Plugins:\n"
+		" plugins  "R2_PREFIX"/lib/radare2/last\n"
+		" user     ~/.config/radare2/plugins\n"
+		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
 		"Environment:\n"
-		" RHOMEDIR     ~/.config/radare2\n"
-		" RCFILE       ~/.radare2rc (user preferences, batch script)\n"
+		" RHOMEDIR     ~/.config/radare2\n" // TODO: rename to RHOME R2HOME?
+		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
-		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		);
 	return 0;
@@ -262,31 +265,31 @@ int main(int argc, char **argv, char **envp) {
 		case 'n': run_anal = 0; break;
 		case 'N': run_rc = 0; break;
 		case 'p':
-			if (*optarg == '-') {
-				char *path, repath[128];
-				snprintf (repath, sizeof (repath),
-					R2_HOMEDIR"/projects/%s.d", optarg+1);
-				path = r_str_home (repath);
-				if (r_file_exists (path)) {
-					if (r_file_rmrf (path) == R_FALSE) {
-                        eprintf ("Unable to recursively remove %s\n", path);
-                        free (path);
-                        return 1;
-                    }
-					path [strlen (path)-2] = 0;
-					if (r_file_rm (path) == R_FALSE) {
-                        eprintf ("Unable to remove %s\n", path);
-                        free (path);
-                        return 1;
-                    }
-					free (path);
-					return 0;
-				} 
-				eprintf ("Can't find project '%s'\n", optarg+1);
-				return 1;
-			} else r_config_set (r.config, "file.project", optarg);
-			break;
-        case 'P': patchfile = optarg; break;
+			  if (*optarg == '-') {
+				  char *path, repath[128];
+				  snprintf (repath, sizeof (repath),
+					  R2_HOMEDIR"/projects/%s.d", optarg+1);
+				  path = r_str_home (repath);
+				  if (r_file_exists (path)) {
+					  if (r_file_rmrf (path) == R_FALSE) {
+						  eprintf ("Unable to recursively remove %s\n", path);
+						  free (path);
+						  return 1;
+					  }
+					  path [strlen (path)-2] = 0;
+					  if (r_file_rm (path) == R_FALSE) {
+						  eprintf ("Unable to remove %s\n", path);
+						  free (path);
+						  return 1;
+					  }
+					  free (path);
+					  return 0;
+				  } 
+				  eprintf ("Can't find project '%s'\n", optarg+1);
+				  return 1;
+			  } else r_config_set (r.config, "file.project", optarg);
+			  break;
+		case 'P': patchfile = optarg; break;
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");

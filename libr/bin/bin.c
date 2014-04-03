@@ -195,21 +195,15 @@ static void delete_bin_items (RBinObject *o) {
 	r_list_free (o->lines);
 
 	free (o->info);
-	//free (o->binsym);
 
 	o->baddr = 0;
 	o->boffset = 0;
 	o->size = 0;
-	//o->binsym = NULL;
 
-	if (o->binsym != NULL) {
-		ut32 i = 0;
-		for (i=0; i<R_BIN_SYM_LAST; i++){
-			free (o->binsym[i]);
-			o->binsym[i] = NULL;
-		}
-		free (o->binsym);//, 0, sizeof (o->binsym));
-		//o->binsym = NULL;
+	ut32 i = 0;
+	for (i=0; i<R_BIN_SYM_LAST; i++){
+		free (o->binsym[i]);
+		o->binsym[i] = NULL;
 	}
 	o->entries = NULL;
 	o->fields = NULL;
@@ -441,12 +435,10 @@ static void r_bin_free_items(RBin *bin) {
 	RBINLISTFREE (o->classes);
 	free (o->info);
 	o->info = NULL;
-
-	if (o->binsym)
-		for (i=0; i<R_BIN_SYM_LAST; i++){
-			free (o->binsym[i]);
-			o->binsym[i] = NULL;
-		}
+	for (i=0; i<R_BIN_SYM_LAST; i++){
+		free (o->binsym[i]);
+		o->binsym[i] = NULL;
+	}
 	if (a->curplugin && a->curplugin->destroy)
 		a->curplugin->destroy (a);
 	else free (a->buf);

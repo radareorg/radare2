@@ -8,8 +8,8 @@
 // Use sdb_vars ?
 #define DB a->sdb_fcns
 
-#define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
-#define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
+#define EXISTS(x,y...) snprintf (key, sizeof (key)-1, x, ##y), sdb_exists(DB,key)
+#define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x, ##y);
 // DUPPED FUNCTIONALITY
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
 R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 index, const char *name, const char *type) {
