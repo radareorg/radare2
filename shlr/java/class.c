@@ -3142,8 +3142,8 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
 R_API void r_bin_add_import_from_anal (RBinJavaObj * bin, ut16 class_idx, ut16 name_type_idx, const char * type) {
 	RBinImport * import = R_NEW0(RBinImport);
 	char *class_name = r_bin_java_get_name_from_bin_cp_list (bin, class_idx);
-	char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, name_type_idx);
-	char *descriptor = r_bin_java_get_item_desc_from_bin_cp_list (bin, name_type_idx);
+	char *name = r_bin_java_get_name_from_bin_cp_list (bin, name_type_idx);
+	char *descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, name_type_idx);
 
 	strncpy (import->classname, class_name, R_BIN_SIZEOF_STRINGS);
 	strncpy (import->name, name, R_BIN_SIZEOF_STRINGS);
