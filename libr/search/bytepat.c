@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2013 - esteve, pancake */
+/* radare - LGPL - Copyright 2006-2014 - esteve, pancake */
 
 #include "r_search.h"
 
@@ -45,7 +45,7 @@ static void add_fi (fnditem* n, unsigned char* blk, int patlen) {
 
 static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 	fnditem* p;
-	for (p=n;p->next!=NULL; p=p->next)
+	for (p=n; p->next!=NULL; p=p->next)
 		if (!memcmp (blk, p->str, patlen))
 			return R_TRUE;
 	return R_FALSE;
@@ -53,36 +53,47 @@ static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 
 R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 	ut8 block[BSIZE+MAX_PATLEN], sblk[MAX_PATLEN+1];
-	int nr,i, moar=0, pcnt, cnt=0, k=0;
+	ut64 addr, bact, bytes, intaddr, rb, bproc = 0;
+	int nr,i, moar=0, pcnt, cnt = 0, k = 0;
 	int patlen = s->pattern_size;
 	fnditem* root;
-	ut64 addr, bact, bytes, intaddr, rb, bproc = 0;
 
+eprintf ("Searching patterns between 0x%llx and 0x%llx\n", from, to);
 	if (patlen < 1 || patlen > MAX_PATLEN) {
 		eprintf ("Invalid pattern length (must be > 1 and < %d)\n", MAX_PATLEN);
 		return R_FALSE;
 	}
 	bact = from;
 	bytes = to;
-	bytes += bact;
+	//bytes += bact;
 	root = init_fi ();
 	pcnt = -1;
 
+// bact = from
+// bytes = to
+// bproc = from2
 	while (bact < bytes) {
 		addr = bact;
+
 		bproc = bact + patlen ;
 //		read ( fd, sblk, patlen );
 //XXX bytepattern should be used with a read callback
 	//XXX	radare_read_at(bact, sblk, patlen);
-		sblk[patlen]=0;
+		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);
+		sblk[patlen] = 0; // XXX
 
 		intaddr = bact;
 		cnt = 0;
 		while (bproc < bytes) {
+			// TODO: handle ^C here
 			nr = ((bytes-bproc) < BSIZE)?(bytes-bproc):BSIZE;
 			nr += (patlen - (nr % patlen)); // tamany de bloc llegit multiple superior de tamany busqueda
-			//rb = nr;
-			rb = s->iob.read_at (s->iob.io, addr, block, nr);
+			rb = s->iob.read_at (s->iob.io, bproc, block, nr);
+			if (rb<1) {
+				bproc +=nr;
+				break;
+			}
+			nr = rb;
 			addr += nr;
 			moar = 0;
 			for (i=0; i<nr; i++) {
@@ -104,7 +115,7 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 				eprintf ("\ncount: %d: %d\n", pcnt, moar+1);
 			bproc += rb;
 		}
-		bact += (moar>0)?patlen:1;
+		bact += (moar>0)? patlen: 1;
 	}
 	eprintf ("\n");
 	fini_fi (root);
