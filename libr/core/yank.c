@@ -73,7 +73,7 @@ static int perform_mapped_file_yank (RCore *core, ut64 offset, ut64 len, const c
 	if (len == -1) len = yank_file_sz;
 
 	IFDBG eprintf ("yankfd: %p, yank->fd = %d, fd=%d\n", yankfd,
-		       (yankfd ? yankfd->fd : -1), fd);
+		       (int)(yankfd ? yankfd->fd : -1), (int)fd);
 	// this wont happen if the file failed to open or the file failed to
 	// map into the IO layer
 	if (yankfd) {

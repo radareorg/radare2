@@ -331,6 +331,7 @@ static int cmd_cmp(void *data, const char *input) {
 			eprintf ("Cannot init diff core\n");
 			return R_FALSE;
 		}
+		r_core_loadlibs (core2, R_CORE_LOADLIBS_ALL, NULL);
 		core2->io->va = core->io->va;
 		core2->anal->split = core->anal->split;
 		if (!r_core_file_open (core2, file2, 0, 0LL)) {

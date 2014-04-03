@@ -27,33 +27,35 @@ CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
 
-R_API int r_core_loadlibs_init(RCore *core) {
+R_API void r_core_loadlibs_init(RCore *core) {
 #define DF(x,y,z) r_lib_add_handler(core->lib, R_LIB_TYPE_##x,y,&__lib_##z##_cb, &__lib_##z##_dt, core);
-
-	DF(IO,"io plugins",io);
-	DF(CORE,"core plugins",core);
-	DF(DBG,"debugger plugins",debug);
-	DF(BP,"debugger breakpoint plugins",bp);
-	DF(LANG,"language plugins",lang);
-	DF(ANAL,"analysis plugins",anal);
-	DF(ASM,"(dis)assembler plugins",asm);
-	DF(PARSE,"parsing plugins",parse);
-	DF(BIN,"bin plugins",bin);
-	DF(EGG,"egg plugins",egg);
-	
-	return R_TRUE;
+	core->lib = r_lib_new ("radare_plugin");
+	DF (IO, "io plugins", io);
+	DF (CORE, "core plugins", core);
+	DF (DBG, "debugger plugins", debug);
+	DF (BP, "debugger breakpoint plugins", bp);
+	DF (LANG, "language plugins", lang);
+	DF (ANAL, "analysis plugins", anal);
+	DF (ASM, "(dis)assembler plugins", asm);
+	DF (PARSE, "parsing plugins", parse);
+	DF (BIN, "bin plugins", bin);
+	DF (EGG, "egg plugins", egg);
 }
 
-R_API int r_core_loadlibs(struct r_core_t *core) {
+R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	/* TODO: all those default plugin paths should be defined in r_lib */
-	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
-	core->lib = r_lib_new ("radare_plugin");
-	r_core_loadlibs_init (core);
-	r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
-	r_lib_opendir (core->lib, getenv (R_LIB_ENV));
-	// !!!! // r_lib_opendir (core->lib, ".");
-	r_lib_opendir (core->lib, homeplugindir);
-	r_lib_opendir (core->lib, R2_LIBDIR"/radare2/"R2_VERSION);
-	free (homeplugindir);
+	if (!where) where = -1;
+	if (path) r_lib_opendir (core->lib, path);
+	if (where & R_CORE_LOADLIBS_CONFIG)
+		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
+	if (where & R_CORE_LOADLIBS_ENV)
+		r_lib_opendir (core->lib, getenv (R_LIB_ENV));
+	if (where & R_CORE_LOADLIBS_HOME) {
+		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
+		r_lib_opendir (core->lib, homeplugindir);
+		free (homeplugindir);
+	}
+	if (where & R_CORE_LOADLIBS_SYSTEM)
+		r_lib_opendir (core->lib, R2_LIBDIR"/radare2/"R2_VERSION);
 	return R_TRUE;
 }

@@ -238,7 +238,14 @@ R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir);
 R_API int r_core_yank_file_ex (RCore *core, const char *input);
 R_API int r_core_yank_file_all (RCore *core, const char *input);
 
-R_API int r_core_loadlibs(RCore *core);
+#define R_CORE_LOADLIBS_ENV 1
+#define R_CORE_LOADLIBS_HOME 2
+#define R_CORE_LOADLIBS_SYSTEM 4
+#define R_CORE_LOADLIBS_CONFIG 8
+#define R_CORE_LOADLIBS_ALL -1
+
+R_API void r_core_loadlibs_init(RCore *core);
+R_API int r_core_loadlibs(RCore *core, int where, const char *path);
 // FIXME: change (void *user) -> (RCore *core)
 R_API int r_core_cmd_buffer(void *user, const char *buf);
 R_API int r_core_cmdf(void *user, const char *fmt, ...);

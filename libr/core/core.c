@@ -587,8 +587,8 @@ R_API int r_core_init(RCore *core) {
 
 	r_core_config_init (core);
 
-	/* load plugins */
-	r_core_loadlibs (core);
+	r_core_loadlibs_init (core);
+	//r_core_loadlibs (core);
 
 	// TODO: get arch from r_bin or from native arch
 	r_asm_use (core->assembler, R_SYS_ARCH);

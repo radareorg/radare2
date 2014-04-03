@@ -221,6 +221,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	r_core_init (&r);
+	r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vV:S"
 #if USE_THREADS
 "t"
