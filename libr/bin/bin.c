@@ -176,7 +176,7 @@ R_API int r_bin_load_languages(RBin *bin) {
 	return R_BIN_NM_NONE;
 }
 
-R_API void update_bin_items(RBin *bin, RBinPlugin *cp) {
+R_API void r_bin_update_items(RBin *bin, RBinPlugin *cp) {
 	delete_bin_items (bin->cur->o);
 	set_bin_items (bin, cp);
 }
