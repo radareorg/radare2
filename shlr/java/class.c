@@ -628,6 +628,13 @@ static void r_bin_java_reset_bin_info (RBinJavaObj *bin) {
 	r_list_free (bin->attrs_list);
   	r_list_free (bin->cp_list);
   	r_list_free (bin->interfaces_list);
+
+	bin->imports_list = NULL;
+	bin->methods_list = NULL;
+	bin->fields_list = NULL;
+	bin->attrs_list = NULL;
+	bin->cp_list = NULL;
+	bin->interfaces_list = NULL;
   	bin->attrs_list = NULL;
 }
 
@@ -3420,13 +3427,13 @@ static void r_bin_java_code_attr_free (RBinJavaAttrInfo *attr) {
 		// XXX - Intentional memory leak here.  When one of the
 		// Code attributes is parsed, the code (the r_bin_java)
 		// is not properly parsing the class file
+		r_bin_java_stack_frame_free (attr->info.code_attr.implicit_frame);
 		r_list_free (attr->info.code_attr.attributes);
 		free (attr->info.code_attr.code);
 		r_list_free (attr->info.code_attr.exception_table);
 		free (attr->name);
 		free (attr->metas);
 		free (attr);
-		r_bin_java_stack_frame_free (attr->info.code_attr.implicit_frame);
 	}
 }
 
@@ -5581,27 +5588,26 @@ static ut8 * r_bin_java_cp_get_8bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, con
 }
 
 static ut8 * r_bin_java_cp_get_utf8(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len){
-	ut8 *buffer = NULL;//NULL
+	ut8 *buffer = NULL;
 	ut16 sz = 0;
 	ut16 t = (ut16) len;
 
-	if (len > (ut16) -1) {
+	if (len > 0 && len > (ut16) -1) {
 		*out_sz = 0;
-		free (buffer);
 		return NULL;
 	}
 	sz = R_BIN_JAVA_USHORT ( ((ut8 *)(ut16*)&t), 0);
 	*out_sz = 3 + t; // tag + sz + bytes
-	buffer = malloc (*out_sz);
+	buffer = malloc (*out_sz+1);
 	buffer[0] = tag;
 	memcpy (buffer+1, (const char *) &sz, 2 );
-	memcpy (buffer+3, buf, *out_sz-1);
-	//*out_sz = 1 + cp_obj->info.cp_utf8.length;
+	memcpy (buffer+3, buf, *out_sz-3);
 	return buffer;
 }
 
 R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz){
 	RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
+
 	*out_sz = 0;
 	if (!cp_obj) return NULL;
 
@@ -5613,6 +5619,8 @@ R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz
 		case R_BIN_JAVA_CP_DOUBLE:
 			return r_bin_java_cp_get_4bytes (cp_obj->tag, out_sz, cp_obj->info.cp_long.bytes.raw, 9);
 		case R_BIN_JAVA_CP_UTF8:
+			//eprintf ("Getting idx: %d = %p (3+0x%"PFMT64x")\n", idx, cp_obj, cp_obj->info.cp_utf8.length);
+			if (cp_obj->info.cp_utf8.length == 0) return NULL;
 			return r_bin_java_cp_get_utf8 (cp_obj->tag, out_sz, cp_obj->info.cp_utf8.bytes, cp_obj->info.cp_utf8.length);
 	}
 	return NULL;
