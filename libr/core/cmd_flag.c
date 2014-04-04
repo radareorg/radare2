@@ -147,7 +147,7 @@ static int cmd_flag(void *data, const char *input) {
 				if (fcn) {
 					if (*name=='-') {
 						//r_anal_fcn_local_del_name (core->anal, fcn, name+1);
-						r_anal_fcn_var_del_byindex (core->anal, fcn->addr,
+						r_anal_fcn_var_del_bydelta (core->anal, fcn->addr,
 							0, R_ANAL_FCN_VARKIND_LOCAL, r_num_math (NULL, name+1));
 					} else {
 						r_anal_fcn_var_add (core->anal, fcn->addr,

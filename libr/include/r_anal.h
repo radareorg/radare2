@@ -117,6 +117,8 @@ enum {
  */
 typedef struct r_anal_type_var_t {
 	char *name;
+	int index;
+	int scope;
 	ut16 type; // contain (type || signedness || modifier)
 	ut8 size;
 	union {
@@ -1000,16 +1002,22 @@ R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr);
 R_API RList *r_anal_ref_get(RAnal *anal, ut64 addr);
 
 /* var.c */
+R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
+R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int index, int xs_type, ut64 xs_addr);
+
 R_API RAnalVar *r_anal_var_new();
 R_API RAnalVarAccess *r_anal_var_access_new();
 R_API RList *r_anal_var_list_new();
 R_API RList *r_anal_var_access_list_new();
-R_API void r_anal_var_free(void *var);
+R_API void r_anal_var_free(RAnalVar *var);
 R_API void r_anal_var_access_free(void *access);
-R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
-		RAnalType *type, const char *name, int set);
+//R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
+//		RAnalType *type, const char *name, int set);
+R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char *kind, int scope, int delta);
+R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
-R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
+//R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
+R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, const char *kind, int scope, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);

@@ -57,9 +57,18 @@ static int var_cmd(RCore *core, const char *str) {
 		case 'g':
 			if (str[2]!='\0') {
 				if (fcn != NULL) {
-					RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
-					if (var != NULL)
-						return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
+					int rw = 0; // 0 = read, 1 = write
+					char kind = 'v';
+					RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
+						kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
+					if (var != NULL) {
+						int scope = (str[1]=='g')?0: 1;
+						r_anal_var_access (core->anal, fcn->addr, kind,
+							scope, atoi (str+2), rw, core->offset);
+						//return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
+						r_anal_var_free (var);
+						return R_TRUE;
+					}
 					eprintf ("Can not find variable in: '%s'\n", str);
 				} else eprintf ("Unknown variable in: '%s'\n", str);
 				return R_FALSE;

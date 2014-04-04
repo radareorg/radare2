@@ -25,7 +25,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->attr = NULL;
 	fcn->addr = -1;
 	fcn->bits = 0;
-	fcn->vars = r_anal_var_list_new ();
+	//fcn->vars = r_anal_var_list_new ();
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();
 	fcn->bbs = r_anal_bb_list_new ();

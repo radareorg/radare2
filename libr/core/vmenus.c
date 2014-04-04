@@ -921,9 +921,8 @@ eprintf ("TODO: support for arrays\n");
 				{
 					char *s = r_anal_type_to_str (anal, v->type);
 					if (!s) s = strdup ("<unk>");
-					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d\n",
-						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
-						s, v->name, v->delta);
+					r_cons_printf ("0x%08llx - 0x%08llx scope=%d type=%s name=%s delta=%d\n",
+						v->addr, v->eaddr, v->scope, s, v->name, v->delta);
 					free (s);
 				}
 				r_list_foreach (v->accesses, iter2, x) {
