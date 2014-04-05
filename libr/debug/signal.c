@@ -76,7 +76,7 @@ static int siglistcb (void *p, const char *k, const char *v) {
 			r_cons_newline ();
 		} else r_cons_printf ("%s %s\n", k, v);
 	}
-	return 0;
+	return 1;
 }
 
 R_API void r_debug_signal_list(RDebug *dbg) {

@@ -31,7 +31,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		break;
 	default:
 		eprintf ("Invalid var kind\n");
-		return 0;
+		return R_FALSE;
 	}
 	if (scope>0) {
 		// local
@@ -54,6 +54,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		snprintf (key, "var.0x%"PFMT64x, addr);
 	}
 	sdb_array_add (DB, key, val, 0);
+	return R_TRUE;
 }
 
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char *kind, int scope, int delta) {
@@ -63,6 +64,7 @@ R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char *kind, int scop
 		// TODO
 	}
 	r_anal_var_access_clear (a, var_addr, scope, delta);
+	return R_TRUE;
 }
 
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, const char *kind, int scope, int delta) {

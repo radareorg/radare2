@@ -52,7 +52,7 @@ static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 }
 
 R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
-	ut8 block[BSIZE+MAX_PATLEN], sblk[MAX_PATLEN+1];
+	ut8 block[BSIZE+MAX_PATLEN], sblk[BSIZE+MAX_PATLEN+1];
 	ut64 addr, bact, bytes, intaddr, rb, bproc = 0;
 	int nr,i, moar=0, pcnt, cnt = 0, k = 0;
 	int patlen = s->pattern_size;
@@ -78,6 +78,7 @@ eprintf ("Searching patterns between 0x%llx and 0x%llx\n", from, to);
 		bproc = bact + patlen ;
 //		read ( fd, sblk, patlen );
 //XXX bytepattern should be used with a read callback
+		nr = ((bytes-bproc) < BSIZE)?(bytes-bproc):BSIZE;
 	//XXX	radare_read_at(bact, sblk, patlen);
 		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);
 		sblk[patlen] = 0; // XXX
