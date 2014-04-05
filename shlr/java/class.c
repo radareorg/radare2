@@ -3157,6 +3157,9 @@ R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *obj, const ch
 	char *name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 	char *descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 
+	class_name = class_name ? class_name : strdup ("INVALID CLASS NAME INDEX");
+	name = name ? name : strdup ("INVALID NAME INDEX");
+	descriptor = descriptor ? descriptor : strdup ("INVALID DESCRIPTOR INDEX");
 	strncpy (import->classname, class_name, R_BIN_SIZEOF_STRINGS);
 	strncpy (import->name, name, R_BIN_SIZEOF_STRINGS);
 	strncpy (import->bind, "NONE", R_BIN_SIZEOF_STRINGS);
