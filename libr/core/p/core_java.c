@@ -1663,6 +1663,15 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 				operation = "write dynamic";
 				type = "FIELD";
 				addr = bb->addr;
+			} else if (bb->op_bytes[0] == 0x12) {
+				addr = bb->addr;
+				full_bird = r_bin_java_resolve_without_space(bin, bb->op_bytes[1]);
+				operation = "read constant";
+				type = r_bin_java_resolve_cp_idx_type (bin, bb->op_bytes[1]);
+				r_cons_printf (fmt, addr, operation, type, full_bird);
+				free (full_bird);
+				free (type);
+				operation = NULL;
 			}
 
 			if (operation) {
