@@ -468,10 +468,18 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 		r_io_resize(core->io, c_file_sz + (int) n_sz - (int) c_sz);
 	} else if (n_sz > c_sz) {
 		res = r_core_extend_at(core, addr,  (int)n_sz - (int)c_sz);
+	} else {
+		eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to resize the file correctly aborting.\n");
+		return res;
 	}
 
 	if (n_sz > 0 && bytes) {
 		res = r_core_write_at(core, addr, (const ut8 *)bytes, n_sz) && r_core_seek (core, addr, 1);
+	}
+
+	if (res == R_FALSE) {
+		eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to write the bytes to the file correctly aborting.\n");
+		return res;
 	}
 
 	free (bytes);
@@ -486,8 +494,9 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 
 		if (bin_buffer) {
 			memset (bin_buffer, 0, n_file_sz);
-			res = r_io_read_at (core->io, obj->loadaddr, bin_buffer, n_file_sz);
+			res = n_file_sz == r_io_read_at (core->io, obj->loadaddr, bin_buffer, n_file_sz) ? R_TRUE : R_FALSE;
 			if (res == R_TRUE) res = r_cmd_java_reload_bin_from_buf (core, obj, bin_buffer, n_file_sz);
+			else eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to read the file in aborted, bin reload.\n");
 		}
 		free (bin_buffer);
 	}
@@ -729,10 +738,6 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 		ut8 * buffer = NULL;
 		ut32 buffer_sz = 0;
 		ut16 len = 0;
-		eprintf ("Handling %d", idx);
-		if (cp_obj)eprintf(") cp_object (0x%02x) %s.\n", cp_obj->tag, cp_obj->name);
-		else eprintf(") cp_object is NULL\n");
-		if (cp_obj->tag == R_BIN_JAVA_CP_UTF8) ("Handling %d", idx); 
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8 &&
 			cp_obj->info.cp_utf8.length && cp_obj->info.cp_utf8.length >= class_name_len) {
 			ut32 num_occurences = 0;
@@ -745,7 +750,6 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 			memcpy (name, buffer+3, len);
 			name[len] = 0;
 
-			eprintf ("name: %s\n", name);
 			num_occurences = r_cmd_get_num_classname_str_occ (name, class_name);
 
 			if (num_occurences > 0) {
@@ -760,6 +764,9 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 				}
 				if (result) {
 					res = r_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, result, res_len);
+					if  (res == R_FALSE) {
+						eprintf ("r_cmd_java: Failed to write bytes or reload the binary.  Aborting before the binary is ruined.\n");
+					}
 				}
 				free (result);
 			}
