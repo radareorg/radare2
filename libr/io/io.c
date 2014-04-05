@@ -244,7 +244,10 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 		return r_io_buffer_read (io, io->off, buf, len);
 	if (io->fd && io->fd->plugin && io->fd->plugin->read)
 		return io->fd->plugin->read (io, io->fd, buf, len);
-	else if (!io->fd) eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
+	else if (!io->fd) {
+		eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
+		return 0;
+	}
 	return read (io->fd->fd, buf, len);
 }
 

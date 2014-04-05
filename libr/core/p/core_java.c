@@ -667,11 +667,15 @@ static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const cha
 
 static int r_cmd_java_get_class_names_from_input (const char *input, char **class_name, ut32 *class_name_len, char **new_class_name, ut32 *new_class_name_len) {
 	const char *p = input;
-	*new_class_name = *class_name_len = 0;
+
 	ut32 cmd_sz = input && *input ? strlen (input) : 0;
 	int res = R_FALSE;
-	if (class_name && *class_name) return res;
-	if (new_class_name && *new_class_name) return res;
+
+	if (!class_name || *class_name) return res;
+	else if (!new_class_name || *new_class_name) return res;
+	else if (!new_class_name_len || !class_name_len) return res;
+
+	*new_class_name = *class_name_len = 0;
 
 	if (p && *p && cmd_sz > 1) {
 		const char *end = p;
@@ -1554,14 +1558,14 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 		memset (full_bird, 0, len+100);
 	}
 
-	if (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF ||
-		obj->tag == R_BIN_JAVA_CP_METHODREF) {
+	if (full_bird && (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF ||
+		obj->tag == R_BIN_JAVA_CP_METHODREF)) {
 		if (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF) type = "INTERFACE";
 		else type = "FUNCTION";
 
 		snprintf (full_bird, len+100, "%s.%s %s", class_name, name, descriptor);
 
-	} else if (obj->tag == R_BIN_JAVA_CP_FIELDREF) {
+	} else if (full_bird && obj->tag == R_BIN_JAVA_CP_FIELDREF) {
 		type = "FIELD";
 		snprintf (full_bird, len+100, "%s %s.%s", descriptor, class_name, name);
 	}

@@ -1492,7 +1492,7 @@ R_IPI int sdb_iterate_build_list(void *user, const char *k, const char *v) {
 	RList *bin_objs_list = (RList *)  user;
 	size_t value = (size_t) sdb_atoi (v);
 	RBinJavaObj *bin_obj = NULL;
-	IFDBG eprintf("Found %s == %%"PFMT64x" bin_objs db\n", k, (ut64)value);
+	IFDBG eprintf("Found %s == %"PFMT64x" bin_objs db\n", k, (ut64)value);
 
 	if (value !=0 && value != (size_t)-1) {
 		bin_obj = (RBinJavaObj *) value;
@@ -1700,7 +1700,7 @@ static RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 o
 				bin->ustack_sz = 2;// (attr->info.code_attr.max_stack > 65535) ? 4 : 2;
 				bin->ulocalvar_sz = 2;//(attr->info.code_attr.max_locals > 65535) ? 4 : 2;
 			}
-			IFDBG eprintf ("Parsing @ 0x%%"PFMT64x" (%s) = 0x%%"PFMT64x" bytes\n", attr->file_offset, attr->name, attr->size);
+			IFDBG eprintf ("Parsing @ 0x%"PFMT64x" (%s) = 0x%"PFMT64x" bytes\n", attr->file_offset, attr->name, attr->size);
 			r_list_append (method->attributes, attr);
 			adv += attr->size;
 			if (adv + offset >= len) {
@@ -1711,7 +1711,7 @@ static RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 o
 	}
 	method->size = adv;
 	// reset after parsing the method attributes
-	IFDBG eprintf ("Parsing @ 0x%%"PFMT64x" %s(%s) = 0x%%"PFMT64x" bytes\n", method->file_offset, method->name, method->descriptor, method->size);
+	IFDBG eprintf ("Parsing @ 0x%"PFMT64x" %s(%s) = 0x%"PFMT64x" bytes\n", method->file_offset, method->name, method->descriptor, method->size);
 	return method;
 
 }
@@ -2367,7 +2367,7 @@ static ut64 r_bin_java_read_class_file2(RBinJavaObj *bin, const ut64 offset, con
 	const ut8* cf2_buf = obuf + offset;
 	RBinJavaCPTypeObj *this_class_cp_obj = NULL;
 
-	IFDBG eprintf ("\n0x%%"PFMT64x" Offset before reading the cf2 structure\n", offset);
+	IFDBG eprintf ("\n0x%"PFMT64x" Offset before reading the cf2 structure\n", offset);
 	/*
 	Reading the following fields:
 		ut16 access_flags;
@@ -2481,7 +2481,7 @@ R_API ut64 r_bin_java_parse_fields (RBinJavaObj *bin, const ut64 offset, const u
 	bin->fields_count = R_BIN_JAVA_USHORT (fm_buf, 0);
 	adv += 2;
 
-	IFDBG eprintf ("Fields count: %d 0x%%"PFMT64x"\n", bin->fields_count, bin->fields_offset);
+	IFDBG eprintf ("Fields count: %d 0x%"PFMT64x"\n", bin->fields_count, bin->fields_offset);
 
 	if (bin->fields_count > 0) {
 		for (i = 0; i < bin->fields_count; i++, bin->field_idx++) {
@@ -2548,7 +2548,7 @@ R_API ut64 r_bin_java_parse_methods (RBinJavaObj *bin, const ut64 offset, const 
 	bin->methods_count = R_BIN_JAVA_USHORT (fm_buf, 0);
 	adv += 2;
 
-	IFDBG eprintf ("Methods count: %d 0x%%"PFMT64x"\n", bin->methods_count, bin->methods_offset);
+	IFDBG eprintf ("Methods count: %d 0x%"PFMT64x"\n", bin->methods_count, bin->methods_offset);
 
 	bin->main = NULL;
 	bin->entrypoint = NULL;
@@ -2632,7 +2632,7 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 		return R_TRUE;
 	}
 	IFDBG eprintf ("This class: %d %s\n", bin->cf2.this_class, bin->cf2.this_class_name);
-	IFDBG eprintf ("0x%%"PFMT64x" Access flags: 0x%04x\n", adv, bin->cf2.access_flags);
+	IFDBG eprintf ("0x%"PFMT64x" Access flags: 0x%04x\n", adv, bin->cf2.access_flags);
 
 	adv += r_bin_java_parse_interfaces (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
@@ -3237,11 +3237,11 @@ R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *obj, const ch
 	class_name = class_name ? class_name : strdup ("INVALID CLASS NAME INDEX");
 	name = name ? name : strdup ("INVALID NAME INDEX");
 	descriptor = descriptor ? descriptor : strdup ("INVALID DESCRIPTOR INDEX");
-	strncpy (import->classname, class_name, R_BIN_SIZEOF_STRINGS);
-	strncpy (import->name, name, R_BIN_SIZEOF_STRINGS);
-	strncpy (import->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (import->type, type, R_BIN_SIZEOF_STRINGS);
-	strncpy (import->descriptor, descriptor, R_BIN_SIZEOF_STRINGS);
+	snprintf (import->classname, R_BIN_SIZEOF_STRINGS, "%s", class_name);
+	snprintf (import->name, R_BIN_SIZEOF_STRINGS, "%s", name);
+	snprintf (import->bind, R_BIN_SIZEOF_STRINGS, "%s", "NONE");
+	snprintf (import->type, R_BIN_SIZEOF_STRINGS, "%s", type);
+	snprintf (import->descriptor, R_BIN_SIZEOF_STRINGS, "%s", descriptor);
 	import->ordinal = obj->idx;
 	r_list_append (bin->imports_list, import);
 
@@ -3750,7 +3750,7 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 				break;
 			}
 
-			IFDBG eprintf ("Parsing @ 0x%%"PFMT64x" (%s) = 0x%%"PFMT64x" bytes, %p\n", _attr->file_offset, _attr->name, _attr->size);
+			IFDBG eprintf ("Parsing @ 0x%"PFMT64x" (%s) = 0x%"PFMT64x" bytes, %p\n", _attr->file_offset, _attr->name, _attr->size, _attr);
 			offset += _attr->size;
 			r_list_append (attr->info.code_attr.attributes, _attr);
 			if (_attr->type == R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR) {
@@ -5707,7 +5707,7 @@ R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz
 		case R_BIN_JAVA_CP_DOUBLE:
 			return r_bin_java_cp_get_4bytes (cp_obj->tag, out_sz, cp_obj->info.cp_long.bytes.raw, 9);
 		case R_BIN_JAVA_CP_UTF8:
-			//eprintf ("Getting idx: %d = %p (3+0x%%"PFMT64x")\n", idx, cp_obj, cp_obj->info.cp_utf8.length);
+			//eprintf ("Getting idx: %d = %p (3+0x%"PFMT64x")\n", idx, cp_obj, cp_obj->info.cp_utf8.length);
 			if (cp_obj->info.cp_utf8.length == 0) return NULL;
 			return r_bin_java_cp_get_utf8 (cp_obj->tag, out_sz, cp_obj->info.cp_utf8.bytes, cp_obj->info.cp_utf8.length);
 	}
@@ -8480,6 +8480,7 @@ R_API char * r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name
 			str = malloc (tmp_str_len + 4);
 			snprintf (str, tmp_str_len + 4, "\"%s\"", tmp_str);
 		}
+		free (tmp_str);
 	} else if (strcmp (cp_name, "Long") == 0) {
 		str = malloc (34);
 		if (str) {
