@@ -152,6 +152,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				r_hash_do_end (ctx, i);
 				if (iterations>0)
 					r_hash_do_spice (ctx, i, iterations, _s);
+				if (!*r_hash_name (i))
+					continue;
 				if (!quiet)
 					printf ("%s: ", file);
 				do_hash_print (ctx, i, dlen, rad, ule);
