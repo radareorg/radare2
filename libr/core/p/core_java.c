@@ -277,7 +277,7 @@ static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match
 		result = strstr (result, match_me);
 		if (result) {
 			eprintf ("result: %s\n", result);
-			result++;
+			result+=len;
 			occ++;
 		}
 	}
@@ -729,6 +729,10 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 		ut8 * buffer = NULL;
 		ut32 buffer_sz = 0;
 		ut16 len = 0;
+		eprintf ("Handling %d", idx);
+		if (cp_obj)eprintf(") cp_object (0x%02x) %s.\n", cp_obj->tag, cp_obj->name);
+		else eprintf(") cp_object is NULL\n");
+		if (cp_obj->tag == R_BIN_JAVA_CP_UTF8) ("Handling %d", idx); 
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8 &&
 			cp_obj->info.cp_utf8.length && cp_obj->info.cp_utf8.length >= class_name_len) {
 			ut32 num_occurences = 0;
@@ -736,9 +740,11 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 			buffer = r_bin_java_cp_get_idx_bytes (obj, idx, &buffer_sz);
 
 			if (!buffer) continue;
-
-			name = buffer + 3;
 			len = R_BIN_JAVA_USHORT ( buffer, 1);
+			name = malloc (len+3);
+			memcpy (name, buffer+3, len);
+			name[len] = 0;
+
 			eprintf ("name: %s\n", name);
 			num_occurences = r_cmd_get_num_classname_str_occ (name, class_name);
 
@@ -759,6 +765,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 			}
 
 			free (buffer);
+			free (name);
 		}
 
 	}
