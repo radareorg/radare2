@@ -116,6 +116,8 @@ static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd);
 static int r_cmd_java_handle_list_code_references (RCore *core, const char *cmd);
 static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx);
 
+static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input);
+
 typedef struct r_cmd_java_cms_t {
 	const char *name;
 	const char *args;
@@ -200,9 +202,14 @@ typedef struct r_cmd_java_cms_t {
 #define SUMMARY_INFO_LEN 7
 
 #define LIST_CODE_REFS "lcr"
-#define LIST_CODE_REFS_ARGS "NONE"
+#define LIST_CODE_REFS_ARGS "NONE | <addr>"
 #define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
 #define LIST_CODE_REFS_LEN 3
+
+#define PRINT_EXC "exc"
+#define PRINT_EXC_ARGS "NONE | <addr>"
+#define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
+#define PRINT_EXC_LEN 3
 
 
 
@@ -223,6 +230,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{RELOAD_BIN, RELOAD_BIN_ARGS, RELOAD_BIN_DESC, RELOAD_BIN_LEN, r_cmd_java_handle_reload_bin},
 	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_summary_info},
 	{LIST_CODE_REFS, LIST_CODE_REFS_ARGS, LIST_CODE_REFS_DESC, LIST_CODE_REFS_LEN, r_cmd_java_handle_list_code_references},
+	{PRINT_EXC, PRINT_EXC_ARGS, PRINT_EXC_DESC, PRINT_EXC_LEN, r_cmd_java_handle_print_exceptions},
 };
 
 enum {
@@ -242,7 +250,8 @@ enum {
 	RELOAD_BIN_IDX = 13,
 	SUMMARY_INFO_IDX = 14,
 	LIST_CODE_REFS_IDX = 15,
-	END_CMDS = 16,
+	PRINT_EXC_IDX = 16,
+	END_CMDS = 17,
 };
 
 static ut8 r_cmd_java_obj_ref (const char *name, const char *class_name, ut32 len) {
@@ -1669,6 +1678,63 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 	return R_TRUE;
 }
 
+/*
+
+typedef struct r_bin_java_attr_exception_table_entry_t {
+	ut64 file_offset;
+	ut16 start_pc;
+	ut16 end_pc;
+	ut16 handler_pc;
+	ut16 catch_type;
+	ut64 size;
+} RBinJavaExceptionEntry;
+
+*/
+
+static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RListIter *exc_iter = NULL, *methods_iter=NULL;
+	RBinJavaField *method;
+	ut64 func_addr = -1;
+	RBinJavaExceptionEntry *exc_entry;
+
+	const char *p = r_cmd_java_consumetok (input, ' ', -1);
+	func_addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
+
+	if (!bin) return R_FALSE;
+
+	const char *fmt = "0x%"PFMT64x" %s type: %s info: %s\n";
+
+
+	r_list_foreach (bin->methods_list, methods_iter, method) {
+		ut64 start = r_bin_java_get_method_start(bin, method),
+			end = r_bin_java_get_method_end(bin, method);
+		ut8 do_this_one = start <= func_addr && func_addr <= end;	RList * exc_table = NULL;
+		do_this_one = func_addr == -1 ? 1 : do_this_one;
+		if (!do_this_one) continue;
+		exc_table = r_bin_java_get_method_exception_table_with_addr (bin, start);
+
+		if (r_list_length (exc_table) == 0){
+			r_cons_printf (" Exception table for %s @ 0x%"PFMT64x":\n", method->name, start);
+			r_cons_printf ("\t[ NONE ]\n");
+		}
+		else{
+			r_cons_printf (" Exception table for %s (%d entries) @ 0x%"PFMT64x":\n", method->name,
+				r_list_length (exc_table) , start);
+		}
+		r_list_foreach (exc_table, exc_iter, exc_entry) {
+			char *class_info = r_bin_java_resolve_without_space (bin, exc_entry->catch_type);
+			r_cons_printf ("\tCatch Type: %d, %s @ 0x%"PFMT64x"\n", exc_entry->catch_type, class_info, exc_entry->file_offset+6);
+			r_cons_printf ("\t\tStart PC: (0x%"PFMT64x") 0x%"PFMT64x" @ 0x%"PFMT64x"\n", exc_entry->start_pc, exc_entry->start_pc+start, exc_entry->file_offset);
+			r_cons_printf ("\t\tEnd PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n", exc_entry->end_pc, exc_entry->end_pc+start, exc_entry->file_offset + 2);
+			r_cons_printf ("\t\tHandler PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n", exc_entry->handler_pc, exc_entry->handler_pc+start, exc_entry->file_offset+4);
+			free (class_info);
+		}
+	}
+
+	return R_TRUE;
+}
 
 // PLUGIN Definition Info
 RCorePlugin r_core_plugin_java = {

@@ -919,6 +919,7 @@ R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
 R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, const char* method_name);
 
 R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin, ut64 addr);
+R_API RList * r_bin_java_get_method_exception_table_with_addr(RBinJavaObj *bin, ut64 addr);
 
 R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
 R_API const RBinJavaObj* r_bin_java_get_bin_obj(const char *name);
@@ -1012,5 +1013,8 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 len);
 R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *cp_obj, const char * type);
 R_API void r_bin_java_set_imports(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_imports(RBinJavaObj* bin);
+
+R_API ut64 r_bin_java_get_method_start(RBinJavaObj *bin, RBinJavaField *method);
+R_API ut64 r_bin_java_get_method_end(RBinJavaObj *bin, RBinJavaField *method);
 
 #endif
