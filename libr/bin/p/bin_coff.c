@@ -114,6 +114,24 @@ static RList *symbols(RBinFile *arch)
 		strncpy (ptr->forwarder, "NONE",
 				R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "", R_BIN_SIZEOF_STRINGS);
+		switch (obj->symbols[i].type) {
+		case IMAGE_SYM_TYPE_NULL:   strcpy (ptr->type, "NULL"); break;
+		case IMAGE_SYM_TYPE_VOID:   strcpy (ptr->type, "VOID"); break;
+		case IMAGE_SYM_TYPE_CHAR:   strcpy (ptr->type, "CHAR"); break;
+		case IMAGE_SYM_TYPE_SHORT:  strcpy (ptr->type, "SHORT");break;
+		case IMAGE_SYM_TYPE_INT:    strcpy (ptr->type, "INT");  break;
+		case IMAGE_SYM_TYPE_LONG:   strcpy (ptr->type, "LONG"); break;
+		case IMAGE_SYM_TYPE_FLOAT:  strcpy (ptr->type, "FLOAT");break;
+		case IMAGE_SYM_TYPE_DOUBLE: strcpy (ptr->type,"DOUBLE");break;
+		case IMAGE_SYM_TYPE_STRUCT: strcpy (ptr->type,"STRUCT");break;
+		case IMAGE_SYM_TYPE_UNION:  strcpy (ptr->type, "UNION");break;
+		case IMAGE_SYM_TYPE_ENUM:   strcpy (ptr->type, "ENUM"); break;
+		case IMAGE_SYM_TYPE_MOE:    strcpy (ptr->type, "MOE");  break;
+		case IMAGE_SYM_TYPE_BYTE:   strcpy (ptr->type, "BYTE"); break;
+		case IMAGE_SYM_TYPE_WORD:   strcpy (ptr->type, "WORD"); break;
+		case IMAGE_SYM_TYPE_UINT:   strcpy (ptr->type, "UINT"); break;
+		case IMAGE_SYM_TYPE_DWORD:  strcpy (ptr->type, "DWORD");break;
+		}
 		strncpy (ptr->type, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = obj->symbols[i].value;
 		ptr->offset = obj->symbols[i].value;
@@ -128,23 +146,19 @@ static RList *symbols(RBinFile *arch)
 	return ret;
 }
 
-static RList *imports(RBinFile *arch)
-{
+static RList *imports(RBinFile *arch) {
 	return NULL;
 }
 
-static RList *libs(RBinFile *arch)
-{
+static RList *libs(RBinFile *arch) {
 	return NULL;
 }
 
-static RList *relocs(RBinFile *arch)
-{
+static RList *relocs(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch)
-{
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0(RBinInfo);
 	ret->has_va = 1;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
