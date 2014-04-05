@@ -601,8 +601,8 @@ static void r_bin_java_reset_bin_info (RBinJavaObj *bin) {
 
 	free (bin->cf2.flags_str);
 	free (bin->cf2.this_class_name);
-	bin->cf2.flags_str = NULL;
-	bin->cf2.this_class_name = NULL;
+	bin->cf2.flags_str = strdup ("unknown");
+	bin->cf2.this_class_name = strdup ("unknown");
 
 	bin->ulocalvar_sz = 0;
 	bin->ustack_sz = 0;
@@ -629,13 +629,12 @@ static void r_bin_java_reset_bin_info (RBinJavaObj *bin) {
   	r_list_free (bin->cp_list);
   	r_list_free (bin->interfaces_list);
 
-	bin->imports_list = NULL;
-	bin->methods_list = NULL;
-	bin->fields_list = NULL;
-	bin->attrs_list = NULL;
-	bin->cp_list = NULL;
-	bin->interfaces_list = NULL;
-  	bin->attrs_list = NULL;
+	bin->imports_list = r_list_newf(free);
+	bin->methods_list = r_list_newf (r_bin_java_fmtype_free);
+	bin->fields_list = r_list_newf (r_bin_java_fmtype_free);
+	bin->attrs_list = r_list_newf (r_bin_java_attribute_free);
+	bin->cp_list = r_list_newf (r_bin_java_constant_pool);
+	bin->interfaces_list = r_list_newf (r_bin_java_interface_free);
 }
 
 R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin) {
@@ -1689,6 +1688,10 @@ static RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 o
 		RBinJavaAttrInfo* attr = NULL;
 		for (i=0; i<method->attr_count; i++) {
 			attr = r_bin_java_read_next_attr (bin, adv+offset, buf, len);
+			if (!attr) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Method Attribute: %d.\n", i);
+				break;
+			}
 			if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
 				// This is necessary for determing the appropriate number of bytes when readin
 				// uoffset, ustack, ulocalvar values
@@ -1700,6 +1703,10 @@ static RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 o
 			IFDBG eprintf ("Parsing @ 0x%"PFMT64x" (%s) = 0x%"PFMT64x" bytes\n", attr->file_offset, attr->name, attr->size);
 			r_list_append (method->attributes, attr);
 			adv += attr->size;
+			if (adv + offset >= len) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Method Attribute: %d.\n", i);
+				break;
+			}
 		}
 	}
 	method->size = adv;
@@ -1782,6 +1789,10 @@ static RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 of
 	if (field->attr_count > 0) {
 		for (i=0; i< field->attr_count && offset+adv<len; i++) {
 			attr = r_bin_java_read_next_attr(bin, offset+adv, buffer, len);
+			if (!attr) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
+				break;
+			}
 			if ((r_bin_java_get_attr_type_by_name(attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
 				// This is necessary for determing the appropriate number of bytes when readin
 				// uoffset, ustack, ulocalvar values
@@ -1792,6 +1803,10 @@ static RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 of
 			}
 			r_list_append (field->attributes, attr);
 			adv += attr->size;
+			if (adv + offset >= len) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
+				break;
+			}
 		}
 	}
 	field->size = adv;
@@ -2291,7 +2306,11 @@ static RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 
 	ut8* buffer = NULL;
 	const ut8* a_buf = offset + buf;
 	ut8 attr_idx_len = 6;
-
+	if (offset > len) {
+		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute len "
+			"(0x"PFMT64x") < offset (0x"PFMT64x").\n", len, offset);
+		return attr;
+	}
 	// ut16 attr_idx, ut32 length of attr.
 	sz = R_BIN_JAVA_UINT (a_buf, 2) + attr_idx_len; //r_bin_java_read_int (bin, buf_offset+2) + attr_idx_len;
 	// when reading the attr bytes, need to also
@@ -2396,6 +2415,10 @@ R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const 
 
 			IFDBG ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
 			adv += ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->calc_size (obj);
+			if (offset + adv > len) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Constant Pool Object: %d.\n", ord);
+				break;
+			}
 		} else {
 			IFDBG eprintf ("Failed to read ConstantPoolItem %d\n", bin->cp_idx);
 			break;
@@ -2429,6 +2452,10 @@ R_API ut64 r_bin_java_parse_interfaces (RBinJavaObj *bin, const ut64 offset, con
 			if (interfaces_obj) {
 				r_list_append (bin->interfaces_list, interfaces_obj);
 				adv += interfaces_obj->size;
+				if (offset + adv > len) {
+					eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Interface: %d.\n", i);
+					break;
+				}
 			} else
 				break;
 		}
@@ -2458,6 +2485,10 @@ R_API ut64 r_bin_java_parse_fields (RBinJavaObj *bin, const ut64 offset, const u
 				adv += field->size;
 				r_list_append (bin->fields_list, field);
 				IFDBG r_bin_java_print_field_summary(field);
+				if (adv + offset > len) {
+					eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field: %d.\n", i);
+					break;
+				}
 			}else{
 				IFDBG eprintf ("Failed to read Field %d\n", i);
 			}
@@ -2482,9 +2513,16 @@ R_API ut64 r_bin_java_parse_attrs (RBinJavaObj *bin, const ut64 offset, const ut
 	if (bin->attrs_count > 0) {
 		for ( i=0; i<bin->attrs_count; i++,bin->attr_idx++) {
 			RBinJavaAttrInfo* attr = r_bin_java_read_next_attr (bin, adv+offset, buf, len);
-			if (attr){
-				r_list_append (bin->attrs_list, attr);
-				adv += attr->size;
+			if (!attr) {
+				//eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attribute: %d.\n", i);
+				break;
+			}
+
+			r_list_append (bin->attrs_list, attr);
+			adv += attr->size;
+			if (adv + offset >= len) {
+				//eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attribute: %d.\n", i);
+				break;
 			}
 		}
 	}
@@ -2534,6 +2572,10 @@ R_API ut64 r_bin_java_parse_methods (RBinJavaObj *bin, const ut64 offset, const 
 				bin->cf2.this_class_entrypoint_code_attr = r_bin_java_get_attr_from_field (method, R_BIN_JAVA_ATTR_TYPE_CODE_ATTR, 0);
 
 			}
+			if (adv + offset > len) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Method: %d.\n", i);
+				break;
+			}
 			IFDBG r_bin_java_print_field_summary(method);
 		}
 	}
@@ -2575,15 +2617,42 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 	adv += 8;
 	// -2 so that the cp_count will be parsed
 	adv += r_bin_java_parse_cp_pool (bin, adv, buf, buf_sz);
+	if (adv > buf_sz) {
+		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Constant Pool.\n");
+		return R_TRUE;
+	}
 	adv += r_bin_java_read_class_file2 (bin, adv, buf, buf_sz);
-
+	if (adv > buf_sz) {
+		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after class file info.\n");
+		return R_TRUE;
+	}
 	IFDBG eprintf ("This class: %d %s\n", bin->cf2.this_class, bin->cf2.this_class_name);
 	IFDBG eprintf ("0x%"PFMT64x" Access flags: 0x%04x\n", adv, bin->cf2.access_flags);
 
 	adv += r_bin_java_parse_interfaces (bin, adv, buf, buf_sz);
+	if (adv > buf_sz) {
+		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Interfaces.\n");
+		return R_TRUE;
+	}
+
 	adv += r_bin_java_parse_fields (bin, adv, buf, buf_sz);
+	if (adv > buf_sz) {
+		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Fields.\n");
+		return R_TRUE;
+	}
+
 	adv += r_bin_java_parse_methods (bin, adv, buf, buf_sz);
+	if (adv > buf_sz) {
+		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Methods.\n");
+		return R_TRUE;
+	}
+
 	adv += r_bin_java_parse_attrs (bin, adv, buf, buf_sz);
+	//if (adv > buf_sz) {
+	//	eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attributes.\n");
+	//	return R_TRUE;
+	//}
+
 
 	//add_cp_objs_to_sdb(bin);
 	//add_method_infos_to_sdb(bin);
@@ -3671,14 +3740,15 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
 			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, sz-offset, buf_offset+offset);
-			IFDBG eprintf ("Parsing @ 0x%"PFMT64x" (%s) = 0x%"PFMT64x" bytes, %p\n", _attr->file_offset, _attr->name, _attr->size);
-			IFDBG ((RBinJavaAttrMetas *) attr->metas->type_info)->allocs->print_summary (attr);
-			if (_attr) {
-				offset += _attr->size;
-				r_list_append (attr->info.code_attr.attributes, _attr);
+			if (!_attr) {
+				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Method's Code Attribute: %d.\n", k);
+				break;
 			}
 
-			if (_attr && _attr->type == R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR) {
+			IFDBG eprintf ("Parsing @ 0x%"PFMT64x" (%s) = 0x%"PFMT64x" bytes, %p\n", _attr->file_offset, _attr->name, _attr->size);
+			offset += _attr->size;
+			r_list_append (attr->info.code_attr.attributes, _attr);
+			if (_attr->type == R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR) {
 				IFDBG eprintf ("Parsed the LocalVariableTable, preparing the implicit mthod frame.\n");
 				//r_bin_java_print_attr_summary(_attr);
 				attr->info.code_attr.implicit_frame = r_bin_java_build_stack_frame_from_local_variable_table (R_BIN_JAVA_GLOBAL_BIN, _attr);
@@ -3686,6 +3756,11 @@ static RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 bu
 				IFDBG r_bin_java_print_stack_map_frame_summary(attr->info.code_attr.implicit_frame);
 				//r_list_append (attr->info.code_attr.attributes, attr->info.code_attr.implicit_frame);
 			}
+			//if (offset > sz) {
+			//	eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attribute: %d.\n", k);
+			//	break;
+			//}
+
 
 		}
 	}
