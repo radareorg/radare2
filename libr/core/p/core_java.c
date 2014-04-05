@@ -285,7 +285,7 @@ static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match
 	while ( result && *result && (result - str < len)) {
 		result = strstr (result, match_me);
 		if (result) {
-			eprintf ("result: %s\n", result);
+			IFDBG eprintf ("result: %s\n", result);
 			result+=len;
 			occ++;
 		}
@@ -752,7 +752,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 		ut32 buffer_sz = 0;
 		ut16 len = 0;
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8 &&
-			cp_obj->info.cp_utf8.length && cp_obj->info.cp_utf8.length >= class_name_len) {
+			cp_obj->info.cp_utf8.length && cp_obj->info.cp_utf8.length >= class_name_len-1) {
 			ut32 num_occurences = 0;
 			ut64 addr = cp_obj->file_offset + cp_obj->loadaddr;
 			buffer = r_bin_java_cp_get_idx_bytes (obj, idx, &buffer_sz);
