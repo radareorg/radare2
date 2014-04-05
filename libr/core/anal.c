@@ -773,7 +773,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
 				continue;
 			bbs = r_list_length (fcn->bbs);
-			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %3d  %s\n",
+			r_cons_printf ("0x%08"PFMT64x"  %"PFMT64d"  %d  %s\n",
 				(ut64)fcn->addr, (ut64)fcn->size,
 				(int)bbs, fcn->name? fcn->name: "");
 		}

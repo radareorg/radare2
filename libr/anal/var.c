@@ -69,7 +69,7 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, const char *kind, int scope
 	RAnalVar *av = R_NEW0 (RAnalVar);
 	av->addr = addr;
 	av->scope = scope;
-	av->delta = index;
+	av->delta = delta;
 	// TODO:
 	// get name from sdb
 	// get size from sdb
