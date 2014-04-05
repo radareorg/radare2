@@ -326,6 +326,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
+		    (!memcmp (line->buffer.data, "bf ", 3)) ||
 		    (!memcmp (line->buffer.data, "ag ", 3)) ||
 		    (!memcmp (line->buffer.data, "afi ", 4)) ||
 		    (!memcmp (line->buffer.data, "afb ", 4)) ||

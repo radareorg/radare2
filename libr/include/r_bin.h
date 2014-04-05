@@ -55,10 +55,10 @@ enum {
 };
 
 enum {
-	R_BIN_RELOC_8,
-	R_BIN_RELOC_16,
-	R_BIN_RELOC_32,
-	R_BIN_RELOC_64
+	R_BIN_RELOC_8 = 8,
+	R_BIN_RELOC_16 = 16,
+	R_BIN_RELOC_32 = 32,
+	R_BIN_RELOC_64 = 64
 };
 
 typedef struct r_bin_addr_t {
