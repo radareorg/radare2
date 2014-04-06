@@ -7,17 +7,22 @@
 #include <r_anal.h>
 
 static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+
+	int sz=2;
+	// TODO: get the real opcode size
+
 	if (op == NULL)
-		return 4;
-	op->size = 4;
+		return sz;
+
+	memset (op, '\0', sizeof (RAnalOp));
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->nopcode = 1;
+	op->size = sz;
+
+
 	switch(b[0] &0xf0) {
-	case 0xb0:
+	case 0xB0:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		break;
-	case 0x50:
-		// TODO:
-		op->type = R_ANAL_OP_TYPE_ADD;
-		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case 0xe0:
 		// TODO:
@@ -28,22 +33,118 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case 0x60: {
+
 		int off = 0;
-		ut8 *boff = (ut8*)&off;
-		op->type = R_ANAL_OP_TYPE_CALL;
-		off = b[1] | (b[2]<<8) | (b[3]<<16);
-		if ((b[1]&0x80) == 0xf0) // negative offset
-			*boff=0xff;
-		op->jump += off;
-		op->fail = addr + 4;
+		if (op->size == 2)
+			off = b[1];
+		if (op->size == 4)
+			off = (b[2]<<8) | b[3] ;
+		if (op->size == 6)
+			off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
+
+                op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + op->size + off;
+		op->fail = addr + op->size;
+		op->eob = 1;
 		} break;
 	case 0x30:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
-	default:
-		op->type = R_ANAL_OP_TYPE_UNK;
+	}
+
+	switch(b[0]) {
+	case 0x4e:
+		if (b[1]==0x75){
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->eob = 1;
+			break;
+		}
+		if (b[1]==0x71){
+			op->type = R_ANAL_OP_TYPE_NOP;
+			break;
+		}
+		if (b[1]==0xF8 || b[1]==0xF9 || b[1]==0xB8 || b[1]==0xB9){
+			op->type = R_ANAL_OP_TYPE_JMP;
+			//op->type = R_ANAL_OP_TYPE_CALL;
+
+			int off = 0;
+			if (op->size == 4)
+				off = (b[2]<<8) | b[3] ;
+			if (op->size == 6)
+				off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
+
+			op->jump += off;
+			op->fail = addr + op->size;
+			op->eob = 1;
+			break;
+		}
+
+	case 0x04:
+	case 0x53:
+	case 0x90:
+	case 0x93:
+	case 0x9D:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+
+	case 0x06:
+	case 0x50:
+	case 0x52:
+	case 0x54:
+	case 0x58:
+	case 0xD1:
+	case 0xD3:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+
+	case 0x0c:
+	case 0xB0:
+	case 0xB8:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+
+	case 0x41:
+	case 0x43:
+	case 0x45:
+	case 0x47:
+	case 0x4D:
+		op->type = R_ANAL_OP_TYPE_LEA;
+		break;
+
+	case 0x02:
+	case 0xC0:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+
+	case 0x03:
+	case 0x10:
+	case 0x12:
+	case 0x15:
+	case 0x17:
+	case 0x18:
+	case 0x19:
+	case 0x1B:
+	case 0x1D:
+	case 0x20:
+	case 0x22:
+	case 0x26:
+	case 0x28:
+	case 0x2B:
+	case 0x2D:
+	case 0x30:
+	case 0x35:
+	case 0x38:
+	case 0x3B:
+	case 0x3C:
+	case 0x3D:
+	case 0x70:
+	case 0x72:
+	case 0x74:
+	case 0x7C:
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	}
+
 	return op->size;
 }
 
