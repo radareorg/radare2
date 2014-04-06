@@ -573,10 +573,14 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					continue;
 				} else if (!strncmp (ptr, ".equ ", 5)) {
 					ptr2 = strchr (ptr+5, ',');
+					if (!ptr2)
+						ptr2 = strchr (ptr+5, '=');
+					if (!ptr2)
+						ptr2 = strchr (ptr+5, ' ');
 					if (ptr2) {
 						*ptr2 = '\0';
 						r_asm_code_set_equ (acode, ptr+5, ptr2+1);
-					} else eprintf ("TODO: undef equ\n");
+					} else eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
 				} else if (!strncmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr+5);
 					off = a->pc;
