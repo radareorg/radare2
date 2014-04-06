@@ -4,18 +4,18 @@ static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '?':
-		r_cons_printf (
-		" S               ; list sections\n"
-		" S.              ; show current section name\n"
-		" S?              ; show this help message\n"
-		" S*              ; list sections (in radare commands)\n"
-		" S=              ; list sections (in nice ascii-art bars)\n"
-		" Sa[-] [arch] [bits] [[off]] ; Specify arch and bits for given section\n"
-		" Sd [file]       ; dump current section to a file (see dmd)\n"
-		" Sl [file]       ; load contents of file into current section (see dml)\n"
-		" Sr [name]       ; rename section on current seek\n"
-		" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
-		" S-[id|0xoff|*]  ; remove this section definition\n");
+		r_cons_printf ("|Usage: S[?-.*=adlr] [...]\n"
+		"| S               ; list sections\n"
+		"| S.              ; show current section name\n"
+		"| S?              ; show this help message\n"
+		"| S*              ; list sections (in radare commands)\n"
+		"| S=              ; list sections (in nice ascii-art bars)\n"
+		"| Sa[-] [arch] [bits] [[off]] ; Specify arch and bits for given section\n"
+		"| Sd [file]       ; dump current section to a file (see dmd)\n"
+		"| Sl [file]       ; load contents of file into current section (see dml)\n"
+		"| Sr [name]       ; rename section on current seek\n"
+		"| S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
+		"| S-[id|0xoff|*]  ; remove this section definition\n");
 		break;
 	case 'a':
 		switch (input[1]) {
