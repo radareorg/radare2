@@ -370,6 +370,7 @@ extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;
 extern RIOPlugin r_io_plugin_ihex;
 extern RIOPlugin r_io_plugin_self;
+extern RIOPlugin r_io_plugin_edb;
 #endif
 
 #ifdef __cplusplus
