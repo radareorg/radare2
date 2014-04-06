@@ -106,7 +106,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	ut64 off;
 	int x86 = (p&&p->cur&&p->cur->name)?
 		(strstr (p->cur->name, "x86")? 1: 0): 0;
-
+	if (!data) return 0;
 	ptr2 = NULL;
 	while ((ptr = strstr (ptr, "0x"))) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);

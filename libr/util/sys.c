@@ -80,21 +80,20 @@ R_API int r_sys_truncate(const char *file, int sz) {
 }
 
 R_API RList *r_sys_dir(const char *path) {
+	RList *list = NULL;
 	struct dirent *entry;
 	DIR *dir = r_sandbox_opendir (path);
 	if (dir) {
-		RList *list = r_list_new ();
+		list = r_list_new ();
 		if (list) {
 			list->free = free;
 			while ((entry = readdir (dir))) {
 				r_list_append (list, strdup (entry->d_name));
 			}
-			closedir (dir);
-			return list;
 		}
+		closedir (dir);
 	}
-	closedir (dir);
-	return NULL;
+	return list;
 }
 
 R_API char *r_sys_cmd_strf(const char *fmt, ...) {

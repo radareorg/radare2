@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2012-2014 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -49,10 +49,10 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
 struct r_anal_plugin_t r_anal_plugin_m68k = {
 	.name = "m68k",
-	.desc = "brainfuck code analysis plugin",
+	.desc = "Motorola 68000",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_BF,
-	.bits = 32,
+	.arch = R_SYS_ARCH_M68K,
+	.bits = 16|32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &m68k_op,
