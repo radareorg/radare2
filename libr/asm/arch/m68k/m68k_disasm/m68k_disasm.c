@@ -139,7 +139,7 @@ static void opcode_pflush (dis_buffer_t *, u_short, u_short);
 
 typedef void dis_func_t (dis_buffer_t *, u_short);
 
-dis_func_t *const opcode_map[16] = {
+static dis_func_t *const opcode_map[16] = {
   opcode_bitmanip, opcode_move, opcode_move, opcode_move,
   opcode_misc, opcode_0101, opcode_branch, opcode_move,
   opcode_1000, opcode_addsub, opcode_1010, opcode_1011,
@@ -178,20 +178,16 @@ static const char *const fpcregs[3] = {
   "fpiar", "fpsr", "fpcr"
 };
 
-
 static char asm_buffer[256];
 static char info_buffer[256];
 static int db_radix = 16;
 
-
-static u_short read16(short *p)
-{
+static inline u_short read16(short *p) {
   return ((u_short)*(u_char *)p)<<8 | (u_short)*((u_char *)p+1);
 }
 
 
-static u_long read32(short *p)
-{
+static inline u_long read32(short *p) {
   return ((u_long)*(u_char *)p)<<24 | ((u_long)*((u_char *)p+1))<<16 |
          ((u_long)*((u_char *)p+2))<<8 | (u_long)*((u_char *)p+3);
 }
