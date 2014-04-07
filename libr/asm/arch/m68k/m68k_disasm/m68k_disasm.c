@@ -146,35 +146,35 @@ dis_func_t *const opcode_map[16] = {
   opcode_1100, opcode_addsub, opcode_1110, opcode_coproc
 };
 
-const char *const cc_table[16] = {
+static const char *const cc_table[16] = {
   "t", "f", "hi", "ls",
   "cc", "cs", "ne", "eq",
   "vc", "vs", "pl", "mi",
   "ge", "lt", "gt", "le"
 };
 
-const char *const fpcc_table[32] = {
+static const char *const fpcc_table[32] = {
   "f", "eq", "ogt", "oge", "olt", "ole", "ogl", "or",
   "un", "ueq", "ugt", "uge", "ult", "ule", "ne", "t",
   "sf", "seq", "gt", "ge", "lt", "le", "gl", "gle",
   "ngle", "ngl", "nle", "nlt", "nge", "ngt", "sne", "st"
 };
 
-const char *const mmcc_table[16] = {
+static const char *const mmcc_table[16] = {
   "bs", "bc", "ls", "lc", "ss", "sc", "as", "ac",
   "ws", "wc", "is", "ic", "gs", "gc", "cs", "cc"
 };
 
-const char *const aregs[8] = {
+static const char *const aregs[8] = {
   "a0","a1","a2","a3","a4","a5","a6","sp"
 };
-const char *const dregs[8] = {
+static const char *const dregs[8] = {
   "d0","d1","d2","d3","d4","d5","d6","d7"
 };
-const char *const fpregs[8] = {
+static const char *const fpregs[8] = {
   "fp0","fp1","fp2","fp3","fp4","fp5","fp6","fp7"
 };
-const char *const fpcregs[3] = {
+static const char *const fpcregs[3] = {
   "fpiar", "fpsr", "fpcr"
 };
 
