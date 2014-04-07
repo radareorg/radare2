@@ -31,7 +31,6 @@ static int instlen(const ut8 *buf, int len) {
 
 static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	int sz = 2;
-	// TODO: get the real opcode size
 
 	if (op == NULL)
 		return sz;
@@ -57,14 +56,13 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		break;
 	case 0x60: {
 			   int off = 0;
-			   if (op->size == 2)
-				   off = b[1];
-			   if (op->size == 4)
+			   off = b[1];
+			   if (off==0)
 				   off = (b[2]<<8) | b[3] ;
-			   if (op->size == 6)
+			   else if (off==0xff)
 				   off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
 			   op->type = R_ANAL_OP_TYPE_CJMP;
-			   op->jump = addr + op->size + off;
+			   op->jump = addr + 2 + off;
 			   op->fail = addr + op->size;
 			   op->eob = 1;
 		   } break;
