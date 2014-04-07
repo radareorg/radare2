@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -441,7 +441,7 @@ static RList* classes (RBinFile *arch) {
 	RList *ret = NULL;
 	RBinClass *class;
 	int i, len;
-	char *name;
+	char *name = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -477,7 +477,6 @@ static RList* classes (RBinFile *arch) {
 		dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
 		dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
 		dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
-		free (name);
 }
 	}
 	free (name);
