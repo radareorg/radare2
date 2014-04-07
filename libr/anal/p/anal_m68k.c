@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake */
+/* radare - LGPL - Copyright 2012-2014 - pancake, pof */
 
 #include <string.h>
 #include <r_types.h>
@@ -6,9 +6,31 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+#define R_IPI static
+#include "../../asm/arch/m68k/m68k_disasm/m68k_disasm.c"
 
-	int sz=2;
+static int instlen(const ut8 *buf, int len) {
+	m68k_word bof[8] = {0};
+	char opcode[256], operands[256];
+	const unsigned char *buf2;
+	static struct DisasmPara_68k dp;
+	/* initialize DisasmPara */
+	*operands = *opcode = 0;
+	memcpy (bof, buf, R_MIN(len, sizeof(bof)));
+	dp.opcode = opcode;
+	dp.operands = operands;
+	dp.iaddr = 0LL;
+	dp.instr = bof;
+	buf2 = (const ut8*)M68k_Disassemble (&dp);
+	if (!buf2) {
+		// invalid instruction
+		return 2;
+	}
+	return (buf2-(const ut8*)bof);
+}
+
+static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+	int sz = 2;
 	// TODO: get the real opcode size
 
 	if (op == NULL)
@@ -17,8 +39,9 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->nopcode = 1;
+	sz = instlen (b, len);
 	op->size = sz;
-
+// TODO: Use disasm string to detect type?
 
 	switch(b[0] &0xf0) {
 	case 0xB0:
@@ -33,23 +56,21 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case 0x60: {
-
-		int off = 0;
-		if (op->size == 2)
-			off = b[1];
-		if (op->size == 4)
-			off = (b[2]<<8) | b[3] ;
-		if (op->size == 6)
-			off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
-
-                op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + op->size + off;
-		op->fail = addr + op->size;
-		op->eob = 1;
-		} break;
+			   int off = 0;
+			   if (op->size == 2)
+				   off = b[1];
+			   if (op->size == 4)
+				   off = (b[2]<<8) | b[3] ;
+			   if (op->size == 6)
+				   off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
+			   op->type = R_ANAL_OP_TYPE_CJMP;
+			   op->jump = addr + op->size + off;
+			   op->fail = addr + op->size;
+			   op->eob = 1;
+		   } break;
 	case 0x30:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		break;
+		  op->type = R_ANAL_OP_TYPE_MOV;
+		  break;
 	}
 
 	switch(b[0]) {
@@ -78,7 +99,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			op->eob = 1;
 			break;
 		}
-
+		break;
 	case 0x04:
 	case 0x53:
 	case 0x90:

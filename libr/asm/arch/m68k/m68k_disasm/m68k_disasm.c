@@ -72,63 +72,67 @@
  *       Christian E. Hopps.
  */
 
+#ifndef R_IPI
+#define R_IPI
+#endif
+
 #define M68K_DISASM_C
 #include <stdio.h>
 #include <string.h>
 #include "m68k_disasm.h"
 
-void get_modregstr (dis_buffer_t *, int, int, int, int);
-void get_immed (dis_buffer_t *, int);
-void get_fpustdGEN (dis_buffer_t *, u_short, const char *);
-void addstr (dis_buffer_t *, const char *s);
-void prints (dis_buffer_t *, int, int);
-void printu (dis_buffer_t *, u_int, int);
-void prints_wb (dis_buffer_t *, int, int, int);
-void printu_wb (dis_buffer_t *, u_int, int, int);
-void prints_bf (dis_buffer_t *, int, int, int);
-void printu_bf (dis_buffer_t *, u_int, int, int);
-void iaddstr (dis_buffer_t *, const char *s);
-void iprints (dis_buffer_t *, int, int);
-void iprintu (dis_buffer_t *, u_int, int);
-void iprints_wb (dis_buffer_t *, int, int, int);
-void iprintu_wb (dis_buffer_t *, u_int, int, int);
-void make_cond (dis_buffer_t *, int , char *);
-void print_fcond (dis_buffer_t *, char);
-void print_mcond (dis_buffer_t *, char);
-void print_disp (dis_buffer_t *, int, int, int, int);
+static void get_modregstr (dis_buffer_t *, int, int, int, int);
+static void get_immed (dis_buffer_t *, int);
+static void get_fpustdGEN (dis_buffer_t *, u_short, const char *);
+static void addstr (dis_buffer_t *, const char *s);
+static void prints (dis_buffer_t *, int, int);
+static void printu (dis_buffer_t *, u_int, int);
+static void prints_wb (dis_buffer_t *, int, int, int);
+static void printu_wb (dis_buffer_t *, u_int, int, int);
+static void prints_bf (dis_buffer_t *, int, int, int);
+static void printu_bf (dis_buffer_t *, u_int, int, int);
+static void iaddstr (dis_buffer_t *, const char *s);
+static void iprints (dis_buffer_t *, int, int);
+static void iprintu (dis_buffer_t *, u_int, int);
+static void iprints_wb (dis_buffer_t *, int, int, int);
+static void iprintu_wb (dis_buffer_t *, u_int, int, int);
+static void make_cond (dis_buffer_t *, int , char *);
+static void print_fcond (dis_buffer_t *, char);
+static void print_mcond (dis_buffer_t *, char);
+static void print_disp (dis_buffer_t *, int, int, int, int);
 static void print_addr (dis_buffer_t *, u_long);
-void print_reglist (dis_buffer_t *, int, u_short);
-void print_freglist (dis_buffer_t *, int, u_short, int);
-void print_fcode (dis_buffer_t *, u_short);
-void print_AxAyPredec(dis_buffer_t *, u_short);
-void print_DxDy(dis_buffer_t *, u_short);
-void print_RnPlus(dis_buffer_t *, u_short, int, int, int);
+static void print_reglist (dis_buffer_t *, int, u_short);
+static void print_freglist (dis_buffer_t *, int, u_short, int);
+static void print_fcode (dis_buffer_t *, u_short);
+static void print_AxAyPredec(dis_buffer_t *, u_short);
+static void print_DxDy(dis_buffer_t *, u_short);
+static void print_RnPlus(dis_buffer_t *, u_short, int, int, int);
 
 /* groups */
-void opcode_bitmanip (dis_buffer_t *, u_short);
-void opcode_move (dis_buffer_t *, u_short);
-void opcode_misc (dis_buffer_t *, u_short);
-void opcode_branch (dis_buffer_t *, u_short);
-void opcode_coproc (dis_buffer_t *, u_short);
-void opcode_0101 (dis_buffer_t *, u_short);
-void opcode_1000 (dis_buffer_t *, u_short);
-void opcode_addsub (dis_buffer_t *, u_short);
-void opcode_1010 (dis_buffer_t *, u_short);
-void opcode_1011 (dis_buffer_t *, u_short);
-void opcode_1100 (dis_buffer_t *, u_short);
-void opcode_1110 (dis_buffer_t *, u_short);
-void opcode_fpu (dis_buffer_t *, u_short);
-void opcode_mmu (dis_buffer_t *, u_short);
-void opcode_mmu040 (dis_buffer_t *, u_short);
-void opcode_move16 (dis_buffer_t *, u_short);
+static void opcode_bitmanip (dis_buffer_t *, u_short);
+static void opcode_move (dis_buffer_t *, u_short);
+static void opcode_misc (dis_buffer_t *, u_short);
+static void opcode_branch (dis_buffer_t *, u_short);
+static void opcode_coproc (dis_buffer_t *, u_short);
+static void opcode_0101 (dis_buffer_t *, u_short);
+static void opcode_1000 (dis_buffer_t *, u_short);
+static void opcode_addsub (dis_buffer_t *, u_short);
+static void opcode_1010 (dis_buffer_t *, u_short);
+static void opcode_1011 (dis_buffer_t *, u_short);
+static void opcode_1100 (dis_buffer_t *, u_short);
+static void opcode_1110 (dis_buffer_t *, u_short);
+static void opcode_fpu (dis_buffer_t *, u_short);
+static void opcode_mmu (dis_buffer_t *, u_short);
+static void opcode_mmu040 (dis_buffer_t *, u_short);
+static void opcode_move16 (dis_buffer_t *, u_short);
 
 /* subs of groups */
-void opcode_movec (dis_buffer_t *, u_short);
-void opcode_divmul (dis_buffer_t *, u_short);
-void opcode_movem (dis_buffer_t *, u_short);
-void opcode_fmove_ext (dis_buffer_t *, u_short, u_short);
-void opcode_pmove (dis_buffer_t *, u_short, u_short);
-void opcode_pflush (dis_buffer_t *, u_short, u_short);
+static void opcode_movec (dis_buffer_t *, u_short);
+static void opcode_divmul (dis_buffer_t *, u_short);
+static void opcode_movem (dis_buffer_t *, u_short);
+static void opcode_fmove_ext (dis_buffer_t *, u_short, u_short);
+static void opcode_pmove (dis_buffer_t *, u_short, u_short);
+static void opcode_pflush (dis_buffer_t *, u_short, u_short);
 
 #define addchar(ch) (*dbuf->casm++ = ch)
 #define iaddchar(ch) (*dbuf->cinfo++ = ch)
@@ -193,7 +197,7 @@ static u_long read32(short *p)
 }
 
 
-m68k_word *M68k_Disassemble(struct DisasmPara_68k *dp)
+R_IPI m68k_word *M68k_Disassemble(struct DisasmPara_68k *dp)
 /* Disassemble M68k instruction and return a pointer to the next */
 /* instruction, or NULL if an error occured. */
 {
@@ -248,7 +252,7 @@ m68k_word *M68k_Disassemble(struct DisasmPara_68k *dp)
 /*
  * Bit manipulation/MOVEP/Immediate.
  */
-void opcode_bitmanip(dis_buffer_t *dbuf, u_short opc)
+static void opcode_bitmanip(dis_buffer_t *dbuf, u_short opc)
 {
   char *tmp;
   u_short ext;
@@ -554,7 +558,7 @@ void opcode_bitmanip(dis_buffer_t *dbuf, u_short opc)
  * move byte/word/long and q
  * 00xx (01==.b 10==.l 11==.w) and 0111(Q)
  */
-void opcode_move(dis_buffer_t *dbuf, u_short opc)
+static void opcode_move(dis_buffer_t *dbuf, u_short opc)
 {
   int sz, lused;
 
@@ -600,7 +604,7 @@ void opcode_move(dis_buffer_t *dbuf, u_short opc)
 /*
  * misc opcodes.
  */
-void opcode_misc(dis_buffer_t *dbuf, u_short opc)
+static void opcode_misc(dis_buffer_t *dbuf, u_short opc)
 {
   char *tmp;
   int sz;
@@ -824,7 +828,7 @@ void opcode_misc(dis_buffer_t *dbuf, u_short opc)
 /*
  * ADDQ/SUBQ/Scc/DBcc/TRAPcc
  */
-void opcode_0101(dis_buffer_t *dbuf, u_short opc)
+static void opcode_0101(dis_buffer_t *dbuf, u_short opc)
 {
   int data;
 
@@ -890,7 +894,7 @@ void opcode_0101(dis_buffer_t *dbuf, u_short opc)
 /*
  * Bcc/BSR/BRA
  */
-void opcode_branch(dis_buffer_t *dbuf, u_short opc)
+static void opcode_branch(dis_buffer_t *dbuf, u_short opc)
 {
   int disp;
 
@@ -928,7 +932,7 @@ void opcode_branch(dis_buffer_t *dbuf, u_short opc)
 /*
  * ADD/ADDA/ADDX/SUB/SUBA/SUBX
  */
-void opcode_addsub(dis_buffer_t *dbuf, u_short opc)
+static void opcode_addsub(dis_buffer_t *dbuf, u_short opc)
 {
   int sz, ch, amode;
   
@@ -1000,7 +1004,7 @@ void opcode_addsub(dis_buffer_t *dbuf, u_short opc)
 /*
  * Shift/Rotate/Bit Field
  */
-void opcode_1110(dis_buffer_t *dbuf, u_short opc)
+static void opcode_1110(dis_buffer_t *dbuf, u_short opc)
 {
   char *tmp;
   u_short ext;
@@ -1144,7 +1148,7 @@ void opcode_1110(dis_buffer_t *dbuf, u_short opc)
 /*
  * CMP/CMPA/EOR
  */
-void opcode_1011(dis_buffer_t *dbuf, u_short opc)
+static void opcode_1011(dis_buffer_t *dbuf, u_short opc)
 {
   int sz;
   
@@ -1221,7 +1225,7 @@ void opcode_1011(dis_buffer_t *dbuf, u_short opc)
 /*
  * OR/DIV/SBCD
  */
-void opcode_1000(dis_buffer_t *dbuf, u_short opc)
+static void opcode_1000(dis_buffer_t *dbuf, u_short opc)
 {
   int sz;
   
@@ -1294,7 +1298,7 @@ void opcode_1000(dis_buffer_t *dbuf, u_short opc)
 /*
  * AND/MUL/ABCD/EXG (1100)
  */
-void opcode_1100(dis_buffer_t *dbuf, u_short opc)
+static void opcode_1100(dis_buffer_t *dbuf, u_short opc)
 {
   int sz;
   
@@ -1363,7 +1367,7 @@ void opcode_1100(dis_buffer_t *dbuf, u_short opc)
 /*
  * Coprocessor instruction
  */
-void opcode_coproc(dis_buffer_t *dbuf, u_short opc)
+static void opcode_coproc(dis_buffer_t *dbuf, u_short opc)
 {
   switch (BITFIELD(read16(dbuf->val),11,9)) {
   case 1:
@@ -1404,14 +1408,14 @@ void opcode_coproc(dis_buffer_t *dbuf, u_short opc)
 /*
  * Resvd
  */
-void opcode_1010(dis_buffer_t *dbuf, u_short opc)
+static void opcode_1010(dis_buffer_t *dbuf, u_short opc)
 {
   addstr(dbuf, "linea");
   dbuf->used++;
 }
 
 
-void opcode_fpu(dis_buffer_t *dbuf, u_short opc)
+static void opcode_fpu(dis_buffer_t *dbuf, u_short opc)
 {
   u_short ext;
   int type, opmode;
@@ -1630,7 +1634,7 @@ void opcode_fpu(dis_buffer_t *dbuf, u_short opc)
 /*
  * XXX - This screws up on:  fmovem  a0@(312),fpcr/fpsr/fpi
  */
-void opcode_fmove_ext(dis_buffer_t *dbuf, u_short opc, u_short ext)
+static void opcode_fmove_ext(dis_buffer_t *dbuf, u_short opc, u_short ext)
 {
   int sz;
 
@@ -1732,7 +1736,7 @@ void opcode_fmove_ext(dis_buffer_t *dbuf, u_short opc, u_short ext)
 }
 
 
-void opcode_mmu(dis_buffer_t *dbuf, u_short opc)
+static void opcode_mmu(dis_buffer_t *dbuf, u_short opc)
 {
   u_short ext;
   int type;
@@ -1841,7 +1845,7 @@ void opcode_mmu(dis_buffer_t *dbuf, u_short opc)
 }
 
 
-void opcode_pflush(dis_buffer_t *dbuf, u_short opc, u_short ext)
+static void opcode_pflush(dis_buffer_t *dbuf, u_short opc, u_short ext)
 {
   u_short mode, mask, fc;
   
@@ -1903,7 +1907,7 @@ void opcode_pflush(dis_buffer_t *dbuf, u_short opc, u_short ext)
 }
 
 
-void opcode_pmove(dis_buffer_t *dbuf, u_short opc, u_short ext)
+static void opcode_pmove(dis_buffer_t *dbuf, u_short opc, u_short ext)
 {
   const char *reg;
   int rtom, sz, preg;
@@ -2015,7 +2019,7 @@ void opcode_pmove(dis_buffer_t *dbuf, u_short opc, u_short ext)
 }
 
 
-void print_fcode(dis_buffer_t *dbuf, u_short fc)
+static void print_fcode(dis_buffer_t *dbuf, u_short fc)
 {
   if (ISBITSET(fc, 4)) {
     addchar('#');   /* ??? */
@@ -2030,7 +2034,7 @@ void print_fcode(dis_buffer_t *dbuf, u_short fc)
 }
 
 
-void opcode_mmu040(dis_buffer_t *dbuf, u_short opc)
+static void opcode_mmu040(dis_buffer_t *dbuf, u_short opc)
 {
   if (ISBITSET(opc, 8)) {
     if (ISBITSET(opc, 6)) {
@@ -2106,7 +2110,7 @@ void opcode_mmu040(dis_buffer_t *dbuf, u_short opc)
  * disassemble long format (64b) divs/muls divu/mulu opcode.
  * Note: opcode's dbuf->used already accounted for.
  */
-void opcode_divmul(dis_buffer_t *dbuf, u_short opc)
+static void opcode_divmul(dis_buffer_t *dbuf, u_short opc)
 {
   u_short ext;
   int iq, hr;
@@ -2148,7 +2152,7 @@ void opcode_divmul(dis_buffer_t *dbuf, u_short opc)
 }
 
 
-void print_reglist(dis_buffer_t *dbuf, int mod, u_short rl)
+static void print_reglist(dis_buffer_t *dbuf, int mod, u_short rl)
 {
   const char *const regs[16] = {
     "d0","d1","d2","d3","d4","d5","d6","d7",
@@ -2191,7 +2195,7 @@ void print_reglist(dis_buffer_t *dbuf, int mod, u_short rl)
 }
 
 
-void print_freglist(dis_buffer_t *dbuf, int mod, u_short rl, int cntl)
+static void print_freglist(dis_buffer_t *dbuf, int mod, u_short rl, int cntl)
 {
   const char *const * regs;
   int bit, list, upper;
@@ -2240,7 +2244,7 @@ void print_freglist(dis_buffer_t *dbuf, int mod, u_short rl, int cntl)
 /*
  * disassemble movem opcode.
  */
-void opcode_movem(dis_buffer_t *dbuf, u_short opc)
+static void opcode_movem(dis_buffer_t *dbuf, u_short opc)
 {
   u_short rl;
   
@@ -2266,7 +2270,7 @@ void opcode_movem(dis_buffer_t *dbuf, u_short opc)
 /*
  * disassemble movec opcode.
  */
-void opcode_movec(dis_buffer_t *dbuf, u_short opc)
+static void opcode_movec(dis_buffer_t *dbuf, u_short opc)
 {
   char *tmp;
   u_short ext;
@@ -2367,7 +2371,7 @@ void opcode_movec(dis_buffer_t *dbuf, u_short opc)
 /*
  * disassemble move16 opcode.
  */
-void opcode_move16(dis_buffer_t *dbuf, u_short opc)
+static void opcode_move16(dis_buffer_t *dbuf, u_short opc)
 {
   addstr(dbuf, "move16\t");
 
@@ -2406,7 +2410,7 @@ void opcode_move16(dis_buffer_t *dbuf, u_short opc)
 /*
  * copy const string 's' into ``dbuf''->casm
  */
-void addstr(dis_buffer_t *dbuf, const char *s)
+static void addstr(dis_buffer_t *dbuf, const char *s)
 {
   if (s)
   while ((*dbuf->casm++ = *s++))
@@ -2418,7 +2422,7 @@ void addstr(dis_buffer_t *dbuf, const char *s)
 /*
  * copy const string 's' into ``dbuf''->cinfo
  */
-void iaddstr(dis_buffer_t *dbuf, const char *s)
+static void iaddstr(dis_buffer_t *dbuf, const char *s)
 {
   while ((*dbuf->cinfo++ = *s++))
     ;
@@ -2426,7 +2430,7 @@ void iaddstr(dis_buffer_t *dbuf, const char *s)
 }
 
 
-void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int dd)
+static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int dd)
 {
   u_char scale, idx;
   const short *nval;
@@ -2630,7 +2634,7 @@ void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int dd)
 
   
 /* mit syntax makes for spaghetti parses */
-void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int dd)
+static void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int dd)
 {
   u_char scale, idx;
   const short *nval;
@@ -2864,7 +2868,7 @@ void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int dd)
  * GETMOD_BEFORE or GETMOD_AFTER), disassemble and write into ``dbuf''
  * the mod|reg pair.
  */
-void get_modregstr(dis_buffer_t *dbuf, int bit, int mod, int sz, int dispdisp)
+static void get_modregstr(dis_buffer_t *dbuf, int bit, int mod, int sz, int dispdisp)
 {
   if (dbuf->mit) 
     get_modregstr_mit(dbuf,bit,mod,sz,dispdisp);
@@ -2878,7 +2882,7 @@ void get_modregstr(dis_buffer_t *dbuf, int bit, int mod, int sz, int dispdisp)
  * and the ``base'' string of the opcode, append the full
  * opcode name including condition found at ``bit''.
  */
-void make_cond(dis_buffer_t *dbuf, int bit, char *base)
+static void make_cond(dis_buffer_t *dbuf, int bit, char *base)
 {
   int cc;
   const char *ccs;
@@ -2891,13 +2895,13 @@ void make_cond(dis_buffer_t *dbuf, int bit, char *base)
 }
 
 
-void print_fcond(dis_buffer_t *dbuf, char cp)
+static void print_fcond(dis_buffer_t *dbuf, char cp)
 {
   addstr(dbuf,fpcc_table[cp&31]);   /* XXX - not 63 ?*/
 }
 
 
-void print_mcond(dis_buffer_t *dbuf, char cp)
+static void print_mcond(dis_buffer_t *dbuf, char cp)
 {
   addstr(dbuf,mmcc_table[cp&15]);
 }
@@ -2909,7 +2913,7 @@ void print_mcond(dis_buffer_t *dbuf, char cp)
  * hash (``#'') sign and the value.  Increment the ``dbuf''->used
  * field accordingly.
  */
-void get_immed(dis_buffer_t *dbuf, int sz)
+static void get_immed(dis_buffer_t *dbuf, int sz)
 {
   addchar('#');
   switch (sz) {
@@ -2930,7 +2934,7 @@ void get_immed(dis_buffer_t *dbuf, int sz)
 }
 
 
-void get_fpustdGEN(dis_buffer_t *dbuf, u_short ext, const char *name)
+static void get_fpustdGEN(dis_buffer_t *dbuf, u_short ext, const char *name)
 {
   int sz;
   
@@ -3015,7 +3019,7 @@ void get_fpustdGEN(dis_buffer_t *dbuf, u_short ext, const char *name)
  * register number 0-7 (a0-a7), or -1 (pc). Thus possible extra info
  * could be output to the ``dbuf''->info buffer.
  */
-void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
+static void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
 {
   char *symname;
   u_long nv = 0;
@@ -3084,7 +3088,7 @@ static void print_addr(dis_buffer_t *dbuf, u_long addr)
 }
 
 
-void prints(dis_buffer_t *dbuf, int val, int sz)
+static void prints(dis_buffer_t *dbuf, int val, int sz)
 {
   if (val == 0) {
     dbuf->casm[0] = '0';
@@ -3100,7 +3104,7 @@ void prints(dis_buffer_t *dbuf, int val, int sz)
 }
 
 
-void iprints(dis_buffer_t *dbuf, int val, int sz)
+static void iprints(dis_buffer_t *dbuf, int val, int sz)
 {
   if (val == 0) {
     dbuf->cinfo[0] = '0';
@@ -3116,7 +3120,7 @@ void iprints(dis_buffer_t *dbuf, int val, int sz)
 }
 
 
-void printu(dis_buffer_t *dbuf, u_int val, int sz)
+static void printu(dis_buffer_t *dbuf, u_int val, int sz)
 {
   if (val == 0) {
     dbuf->casm[0] = '0';
@@ -3131,7 +3135,7 @@ void printu(dis_buffer_t *dbuf, u_int val, int sz)
 }
 
 
-void iprintu(dis_buffer_t *dbuf, u_int val, int sz)
+static void iprintu(dis_buffer_t *dbuf, u_int val, int sz)
 {
   if (val == 0) {
     dbuf->cinfo[0] = '0';
@@ -3146,7 +3150,7 @@ void iprintu(dis_buffer_t *dbuf, u_int val, int sz)
 }
 
 
-void printu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
+static void printu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
 {
   static char buf[sizeof(long) * NBBY / 3 + 2];
   char *p, ch;
@@ -3171,7 +3175,7 @@ void printu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
 }
 
 
-void prints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
+static void prints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
 {
   if (val < 0) {
     addchar('-');
@@ -3181,7 +3185,7 @@ void prints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
 }
 
 
-void iprintu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
+static void iprintu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
 {
   static char buf[sizeof(long) * NBBY / 3 + 2];
   char *p, ch;
@@ -3206,7 +3210,7 @@ void iprintu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
 }
 
 
-void iprints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
+static void iprints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
 {
   if (val < 0) {
     iaddchar('-');
@@ -3216,7 +3220,7 @@ void iprints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
 }
 
 
-void prints_bf(dis_buffer_t *dbuf, int val, int sb, int eb)
+static void prints_bf(dis_buffer_t *dbuf, int val, int sb, int eb)
 {
   if (ISBITSET(val,sb)) 
     val = (~0 & ~BITFIELD(~0, sb, eb)) | BITFIELD(val, sb, eb);
@@ -3227,14 +3231,14 @@ void prints_bf(dis_buffer_t *dbuf, int val, int sb, int eb)
 }
 
 
-void printu_bf(dis_buffer_t *dbuf, u_int val, int sb, int eb)
+static void printu_bf(dis_buffer_t *dbuf, u_int val, int sb, int eb)
 {
   printu(dbuf,BITFIELD(val,sb,eb),SIZE_LONG);
 } 
 
 
 /* prints -(Ax),-(Ay) (phx)*/
-void print_AxAyPredec(dis_buffer_t *dbuf, u_short opc)
+static void print_AxAyPredec(dis_buffer_t *dbuf, u_short opc)
 {
   if (dbuf->mit) {
     PRINT_AREG(dbuf,BITFIELD(opc,2,0));
@@ -3253,7 +3257,7 @@ void print_AxAyPredec(dis_buffer_t *dbuf, u_short opc)
 
 
 /* prints Dx,Dy (phx)*/
-void print_DxDy(dis_buffer_t *dbuf, u_short opc)
+static void print_DxDy(dis_buffer_t *dbuf, u_short opc)
 {
   PRINT_DREG(dbuf,BITFIELD(opc,2,0));
   addchar(',');
@@ -3262,7 +3266,7 @@ void print_DxDy(dis_buffer_t *dbuf, u_short opc)
 
 
 /* prints (Rn) or (Rn)+  (phx)*/
-void print_RnPlus(dis_buffer_t *dbuf, u_short opc, int An, int sb, int inc)
+static void print_RnPlus(dis_buffer_t *dbuf, u_short opc, int An, int sb, int inc)
 {
   if (dbuf->mit) {
     if (An)
