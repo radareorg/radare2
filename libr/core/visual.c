@@ -71,9 +71,10 @@ static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 
 static void visual_help() {
 	r_cons_clear00 ();
-	r_cons_printf (
-		"Visual mode help:\n"
+	r_cons_less_str (
+	"Visual mode help:\n"
 	" ?        show this help or manpage in cursor mode\n"
+	" !        run r2048 game\n"
 	" _        enter the hud\n"
 	" .        seek to program counter\n"
 	" /        in cursor mode search in current block\n"
@@ -107,9 +108,13 @@ static void visual_help() {
 	" yY       copy and paste selection\n"
 	" z        toggle zoom mode\n"
 	" Enter    follow address of jump/call\n"
+	"Function Keys: (See 'e key.'), defaults to:\n"
+	"  F2      toggle breakpoint\n"
+	"  F7      single step\n"
+	"  F8      step over\n"
+	"  F9      continue\n"
 	);
 	r_cons_flush ();
-	r_cons_any_key ();
 	r_cons_clear00 ();
 }
 
