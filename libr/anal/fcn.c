@@ -230,6 +230,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			}
 		}
 		switch (op.type) {
+		case R_ANAL_OP_TYPE_NOP:
+			if ((addr+idx-oplen) == fcn->addr) {
+				fcn->addr = bb->addr = addr + idx;
+				continue;
+			}
+			break;
 		case R_ANAL_OP_TYPE_JMP:
 #if 1
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
@@ -290,10 +296,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE)) {
 				r_anal_op_fini (&op);
 				//fcn->size = bbsum (fcn);
-				FITFCNSZ();
+				FITFCNSZ ();
 				return R_ANAL_RET_ERROR;
 			}
 			break;
+		//case R_ANAL_OP_TYPE_HLT:
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
