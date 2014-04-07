@@ -1,4 +1,4 @@
-#!/usr/bin/r2 -i
+#!/usr/bin/r2 - -i
 # Usage:
 #   r2 -qi all68k - > all68k.txt
 #

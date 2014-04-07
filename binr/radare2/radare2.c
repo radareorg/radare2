@@ -174,11 +174,12 @@ int main(int argc, char **argv, char **envp) {
 	int do_connect = 0;
 	int fullfile = 0;
 	int has_project = R_FALSE;
+	int prefile = 0;
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
  	int ret, i, c, perms = R_IO_READ;
-    int sandbox = 0;
+	int sandbox = 0;
 	ut64 baddr = 0;
 	ut64 seek = UT64_MAX;
 	char *pfile = NULL, *file = NULL;
@@ -225,6 +226,15 @@ int main(int argc, char **argv, char **envp) {
 	}
 	r_core_init (&r);
 	r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
+
+	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
+	if (argc>1 && !strcmp (argv[1], "-")) {
+		argv[1] = argv[0];
+		prefile = 1;
+		argc--;
+		argv++;
+	} else prefile = 0;
+
 	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vV:S"
 #if USE_THREADS
 "t"
@@ -253,7 +263,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'e': r_config_eval (r.config, optarg); 
 			  r_list_append (evals, optarg); break;
 		case 'f': fullfile = 1; break;
-        case 'h': help++; break;
+		case 'h': help++; break;
 		case 'i':
 			if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
 				cmdfile[cmdfilei++] = optarg;
@@ -313,6 +323,13 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (help>1) return main_help (2);
 	else if (help) return main_help (0);
+
+	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
+	if (prefile) {
+		optind = 1;
+		argc = 2;
+		argv[1] = "-";
+	}
 
 	//cverify_version (0);
 	if (do_connect) {
