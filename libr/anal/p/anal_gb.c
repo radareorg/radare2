@@ -291,7 +291,7 @@ static inline void gb_anal_pp (RReg *reg, RAnalOp *op, const ut8 data)		//push ,
 {
 	RAnalValue *val = r_anal_value_new ();
 	val->reg = r_reg_get (reg, regs_16_alt[(data>>4) - 12], R_REG_TYPE_GPR);
-	if (data & 4) {
+	if ((data & 0xf) == 1) {
 		op->dst = val;
 		r_strbuf_setf (&op->esil, "sp=sp+2,%s=2[sp]", regs_16_alt[(data>>4) - 12]);		//pop
 	} else {
@@ -1063,6 +1063,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 			}
 			op->eob = 1;
+			gb_anal_cond (anal->reg, op, data[0]);
 			gb_anal_esil_cjmp (op, data[0]);
 			op->cycles = 16;
 			op->failcycles = 12;

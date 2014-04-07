@@ -343,6 +343,7 @@ extern RDebugPlugin r_debug_plugin_esil;
 extern RDebugPlugin r_debug_plugin_rap;
 extern RDebugPlugin r_debug_plugin_gdb;
 extern RDebugPlugin r_debug_plugin_bf;
+extern RDebugPlugin r_debug_plugin_edb;
 
 #endif
 
