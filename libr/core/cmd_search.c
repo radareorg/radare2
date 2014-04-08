@@ -259,7 +259,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	for (i=0; i<delta; i++) {
 		if (i>=end) {
-			r_core_read_at (core, from+i, buf+i, R_MIN (delta, 4096));
+			r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
 			end = i+2048;
 		}
 		if ((delta-i)<16)
