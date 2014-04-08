@@ -501,7 +501,7 @@ typedef struct r_bin_java_fm_t {
 	ut16 descriptor_idx;
 
 	RBinJavaCPTypeObj *field_ref_cp_obj;
-
+	ut64 attr_offset;
 	ut16 attr_count;
 	RList *attributes;
 	ut64 method_number;
@@ -908,7 +908,7 @@ R_API ut64 r_bin_java_get_method_code_offset(RBinJavaField *fm_type);
 R_API ut64 r_bin_java_get_method_code_size(RBinJavaField *fm_type);
 R_API ut64 r_bin_java_get_class_entrypoint(RBinJavaObj* bin);
 
-R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(ut16 name_and_typeidx);
+R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(RBinJavaObj *bin, ut16 name_and_typeidx);
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
 
@@ -1016,5 +1016,9 @@ R_API RList* r_bin_java_get_imports(RBinJavaObj* bin);
 
 R_API ut64 r_bin_java_get_method_start(RBinJavaObj *bin, RBinJavaField *method);
 R_API ut64 r_bin_java_get_method_end(RBinJavaObj *bin, RBinJavaField *method);
+
+R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
+R_API ut8 * r_bin_java_cp_append_method_ref (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
+R_API ut8 * r_bin_java_cp_append_field_ref (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
 
 #endif
