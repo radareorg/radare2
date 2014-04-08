@@ -354,7 +354,7 @@ R_API int r_io_resize(RIO *io, ut64 newsize) {
 
 R_API int r_io_extend(RIO *io, ut64 size) {
 	ut64 curr_off = io->off;
-	ut64 cur_size = r_io_size (io);
+	ut64 cur_size = r_io_size (io), tmp_size = cur_size-size;
 	ut8 *buffer = NULL;
 
 	if (!size) return R_FALSE;
@@ -364,13 +364,17 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 
 	if (!r_io_resize (io, size+cur_size)) return R_FALSE;
 
-	buffer = malloc (cur_size-size);
+	if (cur_size < size) {
+		tmp_size = size - cur_size;
+	}
+
+	buffer = malloc (tmp_size);
 	// shift the bytes over by size
 	r_io_seek (io, curr_off, R_IO_SEEK_SET);
-	r_io_read (io, buffer, cur_size-size);
+	r_io_read (io, buffer, tmp_size);
 	// move/write the bytes
 	r_io_seek (io, curr_off+size, R_IO_SEEK_SET);
-	r_io_write (io, buffer, cur_size-size);
+	r_io_write (io, buffer, tmp_size);
 	// zero out new bytes
 	if (cur_size < size) {
 		free (buffer);

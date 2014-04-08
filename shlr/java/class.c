@@ -3005,13 +3005,6 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 	return sym;
 }
 
-R_API RBinSection* r_bin_java_allocate_section() {
-	RBinSection* section = (RBinSection *) malloc (sizeof (RBinSection));
-	if(section)
-		memset (section, 0, sizeof (RBinSection));
-	return section;
-}
-
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 	RBinSection* section = NULL;
 	RList *sections = r_list_newf(free);
@@ -3031,13 +3024,13 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		section = NULL;
 	}
 	if (bin->fields_count > 0) {
-		if(section) {
-			strcpy (section->name, "fields");
-			section->size = bin->fields_size;
-			section->offset = bin->fields_offset + baddr;
-			section->srwx = 0;
-			r_list_append (sections, section);
-		}
+		section = R_NEW0 (RBinSection);
+		strcpy (section->name, "fields");
+		section->size = bin->fields_size;
+		section->offset = bin->fields_offset + baddr;
+		section->srwx = 0;
+		r_list_append (sections, section);
+
 		section = NULL;
 		r_list_foreach (bin->fields_list, iter, fm_type) {
 			if (fm_type->attr_offset == 0) continue;
@@ -3051,13 +3044,11 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 	}
 	if (bin->methods_count > 0) {
 		section = R_NEW0 (RBinSection);
-		if(section) {
-			strcpy (section->name, "methods");
-			section->size = bin->methods_size;
-			section->offset = bin->methods_offset + baddr;
-			section->srwx = 0;
-			r_list_append (sections, section);
-		}
+		strcpy (section->name, "methods");
+		section->size = bin->methods_size;
+		section->offset = bin->methods_offset + baddr;
+		section->srwx = 0;
+		r_list_append (sections, section);
 		section = NULL;
 		r_list_foreach (bin->methods_list, iter, fm_type) {
 			if (fm_type->attr_offset == 0) continue;
