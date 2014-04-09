@@ -408,7 +408,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		stride = p->stride;
 	}
 	if (step<1) step = 1;
-
+	if (inc<1)
+		inc = 1;
 	switch (base) {
 	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%03d"; pre = " "; break;
@@ -417,8 +418,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	// TODO: Use base to change %03o and so on
-
-		
 	if ((base<32) && use_header) {
 		ut32 opad = (ut32)(addr >> 32);
 		{ // XXX: use r_print_addr_header
