@@ -1189,7 +1189,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				const int bs = core->blocksize;
 				// XXX: issue with small blocks
-				if (*input == 'D') {
+				if (*input == 'D' && l>0) {
 					block = malloc (l);
 					if (l>core->blocksize) {
 						r_core_read_at (core, addr, block, l); //core->blocksize);

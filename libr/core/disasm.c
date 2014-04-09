@@ -1592,7 +1592,7 @@ toro:
 		handle_print_trace (core, ds);
 		handle_print_cycles (core, ds);
 		handle_print_stackptr (core, ds);
-		ret = handle_print_meta_infos (core, ds, buf,len, idx);
+		ret = handle_print_meta_infos (core, ds, buf, len, idx);
 		if (ds->mi_found) {
 			ds->mi_found = 0;
 			continue;
@@ -1606,7 +1606,7 @@ toro:
 		handle_print_fcn_name (core, ds);
 		handle_print_color_reset (core, ds);
 		handle_print_dwarf (core, ds);
-		ret = handle_print_middle (core, ds, ret );
+		ret = handle_print_middle (core, ds, ret);
 		handle_print_asmop_payload (core, ds);
 		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 			RAsmOp ao; /* disassemble for the vm .. */
@@ -1856,7 +1856,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal->cur && core->anal->cur->reset_counter) {
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 
