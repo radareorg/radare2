@@ -1042,6 +1042,7 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	oeax	.64	120	0\n"
 	"gpr	rip	.64	128	0\n"
 	"seg	cs	.64	136	0\n"
+	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	cf	.1	.1152	0	carry\n"
 	"gpr	pf	.1	.1154	0	parity\n"
