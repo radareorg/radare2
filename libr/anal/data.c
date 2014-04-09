@@ -164,14 +164,15 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 }
 
 R_API void r_anal_data_free (RAnalData *d) {
-	if (d->buf != (ut8*)&(d->sbuf))
-		free (d->buf);
-	free (d->str);
-	free (d);
+	if (d){
+		if (d->buf != (ut8*)&(d->sbuf))) free (d->buf);
+		free (d->str);
+		free (d);
+	}
 }
 
 R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) {
-	ut64 dst;
+	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
 	int endi = !anal->big_endian;

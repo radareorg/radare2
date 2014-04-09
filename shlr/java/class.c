@@ -1602,7 +1602,7 @@ R_IPI double r_bin_java_raw_to_double(const ut8* raw, ut64 offset) {
 			(bits & 0xfffffffffffffLL) << 1 :
 			(bits & 0xfffffffffffffLL) | 0x10000000000000LL;
 	double res = 0.0;
-	IFDBG eprintf ("Convert Long to Double: %08%"PFMT64x"\n", bits);
+	IFDBG eprintf ("Convert Long to Double: %08"PFMT64x"\n", bits);
 	if (0x7ff0000000000000LL == bits) {
 		res = INFINITY;
 	}else if (0xfff0000000000000LL == bits) {
@@ -2930,27 +2930,26 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	if (sym) {
 		//ut32 new_name_len = strlen (fm_type->name) + strlen ("_meta") + 1;
 		//char *new_name = malloc (new_name_len);
-		snprintf (sym->name, R_BIN_SIZEOF_STRINGS, "mmeta_%s", fm_type->name);
+		snprintf (sym->name, R_BIN_SIZEOF_STRINGS, "meta_%s", fm_type->name);
 		//strncpy (sym->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
 		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD)
-			strncpy (sym->type, "FUNC_META", R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->type, R_BIN_SIZEOF_STRINGS, "%s", "FUNC_META");
 		else
-			strncpy (sym->type, "FIELD_META", R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->type, R_BIN_SIZEOF_STRINGS, "%s", "FIELD_META");
 
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			strncpy (sym->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->bind, R_BIN_SIZEOF_STRINGS, "%s", "LOCAL");
 		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			strncpy (sym->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->bind, R_BIN_SIZEOF_STRINGS, "%s", "LOCAL");
 		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			strncpy (sym->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->bind, R_BIN_SIZEOF_STRINGS, "%s", "GLOBAL");
 		}
-		strncpy (sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-
+		snprintf (sym->forwarder, R_BIN_SIZEOF_STRINGS, "%s", "NONE");
 		if (fm_type->class_name) {
-			strncpy (sym->bind, fm_type->class_name, R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->classname, R_BIN_SIZEOF_STRINGS, "%s", fm_type->class_name);
 		} else {
-			strncpy (sym->bind, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
+			snprintf (sym->classname, R_BIN_SIZEOF_STRINGS, "%s", "UNKNOWN");
 		}
 
 		sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
@@ -5780,6 +5779,7 @@ R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 ta
 			bytes = tbuf;
 		}
 	}
+	free (fnt_bytes);
 	return bytes;
 }
 
@@ -5866,8 +5866,6 @@ static ut8 * r_bin_java_cp_get_classref (RBinJavaObj *bin, ut32 *out_sz, const c
 			use_name_idx = r_list_get_n (results, 0);
 		}
 		r_list_free (results);
-	} else if (name_idx != (ut16) -1 && name_idx != 0) {
-		use_name_idx = name_idx;
 	} else if (name_idx != (ut16) -1 && name_idx != 0) {
 		use_name_idx = name_idx;
 	}
@@ -6922,7 +6920,7 @@ static void r_bin_java_print_long_cp_summary(RBinJavaCPTypeObj* obj) {
 	eprintf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	eprintf ("	High-bytes = %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]);
 	eprintf ("	Low-bytes = %02x %02x %02x %02x\n", b[4], b[5], b[6], b[7]);
-	eprintf ("	long = %08%"PFMT64x"\n", r_bin_java_raw_to_long(obj->info.cp_long.bytes.raw, 0));
+	eprintf ("	long = %08"PFMT64x"\n", r_bin_java_raw_to_long(obj->info.cp_long.bytes.raw, 0));
 }
 
 R_API char * r_bin_java_print_long_cp_stringify(RBinJavaCPTypeObj* obj) {
