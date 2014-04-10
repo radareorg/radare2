@@ -230,12 +230,22 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	case '?':
 		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
 		"  pc     C\n"
+		"  pcw    C words (4 byte)\n"
+		"  pcd    C dwords (8 byte)\n"
+		"  pca    Assembly\n"
 		"  pcs    string\n"
 		"  pcj    json\n"
 		"  pcJ    javascript\n"
-		"  pcp    python\n"
-		"  pcw    words (4 byte)\n"
-		"  pcd    dwords (8 byte)\n");
+		"  pcp    python\n");
+		break;
+	case 'a':
+		p->printf ("shellcode:");
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%8)) p->printf ("\n.byte ");
+			else p->printf (", ");
+			p->printf ("0x%02x", buf[i]);
+		}
+		p->printf ("\n.equ shellcode_len, %d\n", len);
 		break;
 	case 's':
 		p->printf ("\"");
