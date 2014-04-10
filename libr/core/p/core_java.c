@@ -117,6 +117,8 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *cmd)
 static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx);
 
 static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input);
+static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input);
+static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char *input);
 
 typedef struct r_cmd_java_cms_t {
 	const char *name;
@@ -211,6 +213,15 @@ typedef struct r_cmd_java_cms_t {
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
 #define PRINT_EXC_LEN 3
 
+#define YARA_CODE_REFS "yc_w_refs"
+#define YARA_CODE_REFS_ARGS "[name] [start] [count]"
+#define YARA_CODE_REFS_DESC "yara code bytes extraction with a name starting at <start> to <count>"
+#define YARA_CODE_REFS_LEN 9
+
+#define INSERT_MREF "i_mref"
+#define INSERT_MREF_ARGS "<classname> <name> <descriptor in form of (Lpref;)Lref;"
+#define INSERT_MREF_DESC "append a method reference CP object to the end of the CP object array (creates all requisite objects)"
+#define INSERT_MREF_LEN 6
 
 
 static RCmdJavaCmd JAVA_CMDS[] = {
@@ -231,6 +242,8 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_summary_info},
 	{LIST_CODE_REFS, LIST_CODE_REFS_ARGS, LIST_CODE_REFS_DESC, LIST_CODE_REFS_LEN, r_cmd_java_handle_list_code_references},
 	{PRINT_EXC, PRINT_EXC_ARGS, PRINT_EXC_DESC, PRINT_EXC_LEN, r_cmd_java_handle_print_exceptions},
+	{YARA_CODE_REFS, YARA_CODE_REFS_ARGS, YARA_CODE_REFS_DESC, YARA_CODE_REFS_LEN, r_cmd_java_handle_yara_code_extraction_refs},
+	{INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, r_cmd_java_handle_insert_method_ref},
 };
 
 enum {
@@ -251,7 +264,9 @@ enum {
 	SUMMARY_INFO_IDX = 14,
 	LIST_CODE_REFS_IDX = 15,
 	PRINT_EXC_IDX = 16,
-	END_CMDS = 17,
+	YARA_CODE_REFS_IDX = 17,
+	INSERT_MREF_IDX = 18,
+	END_CMDS = 19,
 };
 
 static ut8 r_cmd_java_obj_ref (const char *name, const char *class_name, ut32 len) {
@@ -1690,18 +1705,112 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 	return R_TRUE;
 }
 
-/*
+static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char *input) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
+	char *name = NULL;
+	ut64 addr = -1, count = -1;
+	int res = R_FALSE;
 
-typedef struct r_bin_java_attr_exception_table_entry_t {
-	ut64 file_offset;
-	ut16 start_pc;
-	ut16 end_pc;
-	ut16 handler_pc;
-	ut16 catch_type;
-	ut64 size;
-} RBinJavaExceptionEntry;
+	if (!bin) return res;
 
-*/
+	if (!p) return res;
+
+	n = *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
+	name = n && p && p != n ? malloc (n-p+2) : NULL;
+
+	if (!name) return res;
+
+	memset (name, 0, n-p);
+	memcpy (name, p, n-p);
+
+	p = r_cmd_java_strtok (p, ' ', -1);
+	addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
+
+	p = r_cmd_java_strtok (p, ' ', -1);
+	count = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
+
+	if (name && count != (ut64) -1 && addr != (ut64) -1) {
+		// find function at addr
+
+		// find the start basic block
+
+		// read the bytes
+
+		// hexlify the bytes
+
+		// set the name = bytes
+
+		// print t
+	}
+
+	free (name);
+	return res;
+
+}
+
+static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
+	char  *classname=NULL, *name = NULL, *descriptor = NULL;
+	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
+	ut64 addr = -1, count = -1;
+	int res = R_FALSE;
+
+	if (!bin) return res;
+
+	if (!p) return res;
+
+	n = *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
+	classname = n && p && p != n ? malloc (n-p+1) : NULL;
+	cn_sz = n-p +1;
+	if (!classname) return res;
+
+	snprintf (classname, cn_sz, "%s", p);
+	//memset (classname, 0, cn_sz);
+	//memcpy (classname, p, n-p);
+	p = n+1;
+	n = *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
+	name = n && p && p != n ? malloc (n-p+1) : NULL;
+	n_sz = n-p +1;
+	if (!name) {
+		free (classname);
+		return res;
+	}
+	snprintf (name, n_sz, "%s", p);
+	//memset (name, 0, n_sz);
+	//memcpy (name, p, n-p);
+
+	p = n+1;
+	n = *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
+	if (n) {
+		descriptor = n && p && p != n ? malloc (n-p+1) : NULL;
+		d_sz = n-p +1;
+	}
+	else if (p && *p) {
+		d_sz = strlen (p) + 1;
+		descriptor = d_sz > 1 ? malloc (d_sz) : NULL;
+	}
+
+	if (!descriptor) {
+		free (classname);
+		free (name);
+		return res;
+	}
+	snprintf (descriptor, d_sz, "%s", p);
+	//memset (descriptor, 0, d_sz);
+	//memcpy (descriptor, p, n-p);
+
+	r_cons_printf ("Would be adding class name:%s, name: %s, descriptor: %s\n", classname, name, descriptor);
+	free (classname);
+	free (name);
+	free (descriptor);
+	res = R_TRUE;
+	return res;
+
+}
 
 static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
@@ -1711,7 +1820,7 @@ static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
 	ut64 func_addr = -1;
 	RBinJavaExceptionEntry *exc_entry;
 
-	const char *p = r_cmd_java_consumetok (input, ' ', -1);
+	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL;
 	func_addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
 
 	if (!bin) return R_FALSE;
