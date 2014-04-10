@@ -228,6 +228,7 @@ next_quote:
 // USELESS
 	if (*cmd=='$') {
 		cmd = sdb_const_get (s, cmd+1, 0);
+		if (!cmd) cmd = "";
 	}
 	// cmd = val
 	// cmd is key and val is value
