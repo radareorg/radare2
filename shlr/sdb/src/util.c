@@ -7,6 +7,7 @@
 SDB_API int sdb_check_value(const char *s) {
 	if (!s || *s=='$')
 		return 0;
+	// TODO: check value length
 #if 0
 	for (; *s; s++) {
 		switch (*s) {
@@ -22,21 +23,24 @@ SDB_API int sdb_check_key(const char *s) {
 	const char *special_chars = "\"+-=[]:$;";
 	if (!s || !*s)
 		return 0;
+	if (strlen (s)>=SDB_KSZ)
+		return 0;
 	for (; *s; s++)
 		if (strchr (special_chars, *s))
 			return 0;
 	return 1;
 }
 
-// assert sdb_hash("hi", 2) == sdb_hash("hi", 0)
 SDB_API ut32 sdb_hash(const char *s, int len) {
 	ut32 h = CDB_HASHSTART;
-	if (len<1) {
-		while (*s)
-			h = (h+(h<<5))^*s++;
-	} else {
-		while (len--)
-			h = (h+(h<<5))^*s++;
+	if (s) {
+		if (len<0) {
+			while (*s)
+				h = (h+(h<<5))^*s++;
+		} else {
+			while (len--)
+				h = (h+(h<<5))^*s++;
+		}
 	}
 	return h;
 }

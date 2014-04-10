@@ -372,6 +372,7 @@ static int check_sparse (const ut8 *p, int len, int ch) {
 
 // XXX: step is borken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
+        PrintfCallback printfmt = (PrintfCallback) printf;
 	int i, j, k, inc = 16;
 	int sparse_char = 0;
 	int stride = 0;
@@ -383,7 +384,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *fmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
-        PrintfCallback printfmt = (PrintfCallback) printf;
 
 	if (p) {
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
@@ -473,22 +473,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				continue;
 			}
 			if (base==32) {
-				ut32 n;
-				memcpy (&n, buf+j, sizeof (n));
+				ut32 n = 0;
+				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
 				r_print_cursor (p, j, 1);
 				printfmt ("0x%08x ", n);
 				r_print_cursor (p, j, 0);
 				j += 3;
 			} else
 			if (base==64) {
-				ut32 a, b;
+				ut64 x = 0LL;
 				/* Prevent reading outside of buf. Necessary as inc is not
 				 * a multiple of 4 for base == 64. */
-				// size_t l = sizeof (n); if (j + l > len) l = len - j;
-				memcpy (&a, buf+j, 4);
-				memcpy (&b, buf+j+4, 4);
+				r_mem_copyendian ((ut8*)&x, buf+j, sizeof (x), !p->big_endian);
 				r_print_cursor (p, j, 1);
-				printfmt ("0x%08x%08x  ", b, a); //n<<32, n&0xffffff);
+				printfmt ("0x%016"PFMT64x"  ", x);
 				r_print_cursor (p, j, 0);
 				j += 7;
 			} else {
@@ -875,8 +873,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 	int i, j, k, is_mod, is_arg = 0;
 	ut32 c_reset = strlen (Color_RESET);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
-	ut32 opcode_sz = p && *p ? strlen (p)*10 + 1 : 0,
-		bytes_consumed = 0;
+	ut32 opcode_sz = p && *p ? strlen (p)*10 + 1 : 0;
 	char *o;
 
 	if (!p || !*p) return NULL;

@@ -44,11 +44,40 @@ SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return 0;
 }
 
+static int findkey(Rangstr *rs) {
+	int i;
+	for (i = rs->f ; i>0; i--) {
+		if (rs->p[i] == '"') {
+			for (--i;i>0; i--) {
+				if (rs->p[i] == '"')
+					return i;
+			}
+		}
+	}
+	return -1;
+}
+
+static int isstring(const char *s) {
+	if (!strcmp (s, "true"))
+		return 0;
+	if (!strcmp (s, "false"))
+		return 0;
+	for (;*s;s++) {
+		if (*s<'0' || *s>'9')
+			return 1;
+	}
+	return 0;
+}
+
 // JSON only supports base16 numbers
 SDB_API int sdb_json_num_set (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
 	char *_str, str[64];
 	_str = sdb_itoa (v, str, 10);
 	return sdb_json_set (s, k, p, _str, cas);
+}
+
+SDB_API int sdb_json_unset (Sdb *s, const char *k, const char *p, ut32 cas) {
+	return sdb_json_set (s, k, p, NULL, cas);
 }
 
 SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
@@ -59,40 +88,111 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	Rangstr rs;
 	ut32 c;
 	char *js = sdb_get (s, k, &c);
-	if (!js) return 0;
+	if (!js) {
+		char *b = malloc (strlen(k)+strlen (v)+8);
+		if (b) {
+			int is_str = isstring (v);
+			const char *q = is_str?"\"":"";
+			sprintf (b, "{\"%s\":%s%s%s}", p, q,v, q);
+			sdb_set (s, k, b, cas);
+			free (b);
+			free (js);
+			return 1;
+		}
+		return 0;
+	}
 	if (cas && c != cas) {
 		free (js);
 		return 0;
 	}
 	rs = json_get (js, p);
 	if (!rs.p) {
+		char *b = malloc (strlen (js)+strlen(k)+strlen (v)+5);
+		if (b) {
+			int is_str = isstring (v);
+			const char *q = is_str?"\"":"";
+			const char *e = ""; // XX: or comma
+			if (js[0] && js[1] != '}') {
+				e = ",";
+			}
+			sprintf (b, "{\"%s\":%s%s%s%s", p, q,v, q, e);
+			// TODO: verify ending }
+			strcat (b, js+1);
+			sdb_set (s, k, b, cas);
+			free (b);
+			free (js);
+			return 1;
+		}
+// invalid json?
 		free (js);
 		return 0;
-	}
+	} 
 #define WLEN(x) (int)(size_t)(end[x]-beg[x])
 
 	beg[0] = js;
 	end[0] = rs.p + rs.f;
 	len[0] = WLEN (0);
 
-	beg[1] = v;
-	end[1] = v + strlen (v);
-	len[1] = WLEN (1);
+	if (*v) {
+		beg[1] = v;
+		end[1] = v + strlen (v);
+		len[1] = WLEN (1);
+	}
 
 	beg[2] = rs.p + rs.t;
 	end[2] = js + strlen (js);
 	len[2] = WLEN (2);
 
 	// TODO: accelerate with small buffer in stack for small jsons
-	str = malloc (len[0]+len[1]+len[2]+1);
-	idx = len[0];
-	memcpy (str, beg[0], idx);
-	l = len[1];
-	memcpy (str+idx, beg[1], l);
-	idx += len[1];
-	l = len[2];
-	memcpy (str+idx, beg[2], l);
-	str[idx+l] = 0;
+	if (*v) {
+		int is_str = isstring (v);
+		str = malloc (len[0]+len[1]+len[2]+1);
+		idx = len[0];
+		memcpy (str, beg[0], idx);
+		if (is_str) {
+			if (beg[2][0]!='"') {
+				str[idx]='"';
+				idx++;
+			}
+		} else {
+			if (beg[2][0]=='"') {
+				idx--;
+			}
+		}
+
+		l = len[1];
+		memcpy (str+idx, beg[1], l);
+		idx += len[1];
+		if (is_str) {
+			// TODO: add quotes
+			if (beg[2][0]!='"') {
+				str[idx]='"';
+				idx++;
+			}
+		} else {
+			if (beg[2][0]=='"') {
+				beg[2]++;
+			}
+		}
+		l = len[2];
+		memcpy (str+idx, beg[2], l);
+		str[idx+l] = 0;
+	} else {
+		// DELETE KEY
+		rs.f -= 2;
+		int kidx = findkey (&rs);
+		len[0] = R_MAX(1, kidx-1);
+		if (kidx==1){
+			if (beg[2][0]=='"')
+				beg[2]++;
+			beg[2]++;
+		}
+		str = malloc (len[0]+len[2]+1);
+		memcpy (str, beg[0], len[0]);
+		if (!*beg[2])
+			beg[2]--;
+		memcpy (str+len[0], beg[2], len[2]+1);
+	}
 
 	sdb_set (s, k, str, cas);
 	free (str);

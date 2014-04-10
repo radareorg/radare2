@@ -104,7 +104,6 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
 		u = ((u>>8)%c->hslots)<<3;
 		c->kpos = c->hpos + u;
 	}
-
 	while (c->loop < c->hslots) {
 		if (!cdb_read (c, buf, 8, c->kpos))
 			return 0;

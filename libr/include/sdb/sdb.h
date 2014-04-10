@@ -33,6 +33,7 @@ extern "C" {
 #define SDB_OPTION_NOSTAMP 2
 #define SDB_OPTION_FS 4
 
+// This size implies trailing zero terminator, this is 254 chars + 0
 #define SDB_KSZ 0xff
 
 typedef struct sdb_kv {

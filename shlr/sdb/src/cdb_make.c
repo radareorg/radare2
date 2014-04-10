@@ -66,23 +66,23 @@ int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 }
 
 static int pack_kvlen(ut8 *buf, ut32 klen, ut32 vlen) {
-	if (klen>=0xff) return 0;
-	if (vlen>=0xffffff) return 0;
+	if (klen>0xff) return 0; // 0xff = 254 chars+trailing zero
+	if (vlen>0xffffff) return 0;
 	buf[0] = (ut8)klen;
-	buf[1] = (ut8)((vlen    ) & 255);
-	buf[2] = (ut8)((vlen>>8 ) & 255);
-	buf[3] = (ut8)((vlen>>16) & 255);
+	buf[1] = (ut8)((vlen    ) & 0xff);
+	buf[2] = (ut8)((vlen>>8 ) & 0xff);
+	buf[3] = (ut8)((vlen>>16) & 0xff);
 	return 1;
 }
 
-int cdb_make_addbegin(struct cdb_make *c,unsigned int keylen,unsigned int datalen) {
+int cdb_make_addbegin(struct cdb_make *c, unsigned int keylen, unsigned int datalen) {
 	ut8 buf[KVLSZ];
 	if (!pack_kvlen (buf, keylen, datalen))
 		return 0;
 	return buffer_putalign (&c->b, (const char *)buf, KVLSZ);
 }
 
-int cdb_make_add(struct cdb_make *c,const char *key,unsigned int keylen,const char *data,unsigned int datalen) {
+int cdb_make_add(struct cdb_make *c, const char *key, unsigned int keylen, const char *data, unsigned int datalen) {
 	if (!cdb_make_addbegin (c, keylen, datalen)) return 0;
 	if (!buffer_putalign (&c->b, key, keylen)) return 0;
 	if (!buffer_putalign (&c->b, data, datalen)) return 0;
