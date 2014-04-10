@@ -29,6 +29,7 @@ R_API RPrint *r_print_new() {
 	p->user = NULL;
 	r_io_bind_init (p->iob);
 	p->user = NULL;
+	p->pairs = R_TRUE;
 	p->disasm = NULL;
 	p->printf = printf;
 	p->oprintf = nullprinter;
@@ -381,6 +382,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_header = 1;
 	int use_offset = 1;
 	int use_segoff = 0;
+	int pairs = p->pairs;
 	const char *fmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
@@ -424,7 +426,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			delta = strlen (soff) - 10;
 			for (i=0; i<delta; i++)
-				printfmt (i+1==delta?" ":" ");
+				printfmt (" ");
+				//printfmt (i+1==delta?" ":" "); // NOP WTF
 		}
 		printfmt (col==1?"|":" ");
 		opad >>= 4;
@@ -433,7 +436,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		for (i=0; i<inc; i++) {
 			printfmt (pre);
 			printfmt (" %c", hex[(i+k)%16]);
-			if (i&1)
+			if (i&1 || !pairs)
 				printfmt (col!=1?" ":((i+1)<inc)?" ":"|");
 		}
 		printfmt ((col==2)? "|": " ");
@@ -491,7 +494,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				j += 7;
 			} else {
 				r_print_byte (p, fmt, j, buf[j]);
-				if (j%2) {
+				if (j%2 || !pairs) {
 					if (col==1) {
 						if (j+1<inc+i)
 							printfmt (" ");

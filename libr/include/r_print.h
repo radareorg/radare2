@@ -51,6 +51,7 @@ typedef struct r_print_t {
 	int col;
 	int stride;
 	int bytespace;
+	int pairs;
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RStrHT *formats;

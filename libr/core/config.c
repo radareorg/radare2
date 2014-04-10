@@ -7,6 +7,40 @@
 #define SETPREF(x,y,z) r_config_set(cfg,x,y)->desc = strdup(z);
 #define SETCB(w,x,y,z) r_config_set_cb(cfg,w,x,y)->desc = strdup(z);
 
+// copypasta from binr/rasm2/rasm2.c
+static void rasm2_list(RAsm *a, const char *arch) {
+	int i;
+	char bits[32];
+	RAsmPlugin *h;
+	RListIter *iter;
+	r_list_foreach (a->plugins, iter, h) {
+		if (arch && *arch) {
+			if (h->cpus && !strcmp (arch, h->name)) {
+				char *c = strdup (h->cpus);
+				int n = r_str_split (c, ',');
+				for (i=0;i<n;i++)
+					r_cons_printf ("%s\n",
+						r_str_word_get0 (c, i));
+				free (c);
+				break;
+			}
+		} else {
+			bits[0] = 0;
+			if (h->bits&8) strcat (bits, "8 ");
+			if (h->bits&16) strcat (bits, "16 ");
+			if (h->bits&32) strcat (bits, "32 ");
+			if (h->bits&64) strcat (bits, "64 ");
+			const char *feat = "--";
+			if (h->assemble && h->disassemble)  feat = "ad";
+			if (h->assemble && !h->disassemble) feat = "a_";
+			if (!h->assemble && h->disassemble) feat = "_d";
+			r_cons_printf ("%s  %-9s  %-11s %-7s %s\n", feat, bits,
+				h->name,
+				h->license?h->license:"unknown", h->desc);
+		}
+	}
+}
+
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 	if (!strcmp (asmarch, "x86"))
 		r_config_set (cfg, "asm.segoff", (asmbits==16)?"true":"false");
@@ -121,6 +155,11 @@ static int cb_asmarch(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = core->config? r_config_get (core->config, "asm.os"): NULL;
+
+	if (!strcmp (node->value, "?")) {
+		rasm2_list (core->assembler, NULL);
+		return 0;
+	}
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
@@ -184,6 +223,11 @@ static int cb_asmbits(void *user, void *data) {
 static int cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	if (!strcmp (node->value, "?")) {
+		rasm2_list (core->assembler,
+			r_config_get (core->config, "asm.arch"));
+		return 0;
+	}
 	r_asm_set_cpu (core->assembler, node->value);
 	return R_TRUE;
 }
@@ -328,6 +372,13 @@ static int cb_fixcolumns(void *user, void *data) {
 static int cb_rows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->force_rows = node->i_value;
+	return R_TRUE;
+}
+
+static int cb_hexpairs(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->print->pairs = node->i_value;
 	return R_TRUE;
 }
 
@@ -737,6 +788,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("fs.view", "normal", &cb_fsview, "Set visibility options for filesystems");
 
 	/* hexdump */
+	SETCB("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETICB("hex.cols", 16, &cb_hexcols, "Configure the number of columns in hexdump");
 	SETICB("hex.stride", 0, &cb_hexstride, "Define the line stride in hexdump (default is 0)");
 
