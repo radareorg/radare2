@@ -10,7 +10,8 @@
 static RSocket *s = NULL;
 static const char *listenport = NULL;
 
-static void http_break (void *u) {
+#define http_break r_core_rtr_http_stop
+R_API int r_core_rtr_http_stop(RCore *u) {
 	RSocket* sock;
 	const char *port;
 	const int timeout = 1; // 1 second
@@ -23,6 +24,7 @@ static void http_break (void *u) {
 	}
 	r_socket_free (s);
 	s = NULL;
+	return 0;
 }
 
 #if 0

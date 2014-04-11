@@ -156,7 +156,7 @@ static int cb_asmarch(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = core->config? r_config_get (core->config, "asm.os"): NULL;
 
-	if (!strcmp (node->value, "?")) {
+	if (*node->value=='?') {
 		rasm2_list (core->assembler, NULL);
 		return 0;
 	}
@@ -223,7 +223,7 @@ static int cb_asmbits(void *user, void *data) {
 static int cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value=='?') {
 		rasm2_list (core->assembler,
 			r_config_get (core->config, "asm.arch"));
 		return 0;
@@ -271,11 +271,14 @@ static int cb_asmprofile(void *user, void *data) {
 static int cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (!strcmp (node->value, "intel"))
+	if (*node->value == '?') {
+		r_cons_printf ("att\nintel\n");
+		return R_FALSE;
+	} else if (!strcmp (node->value, "intel")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-	else if (!strcmp (node->value, "att"))
+	} else if (!strcmp (node->value, "att")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_ATT);
-	else return R_FALSE;
+	} else return R_FALSE;
 	return R_TRUE;
 }
 
@@ -386,7 +389,7 @@ static int cb_fsview(void *user, void *data) {
 	int type = R_FS_VIEW_NORMAL;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		eprintf ("Values: all|deleted|special\n");
 		return R_FALSE;
 	}
