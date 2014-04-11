@@ -14,7 +14,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_egg);
 
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
-#define R_EGG_INCDIR_PATH R2_PREFIX"/lib/radare2/"R2_VERSION"/egg"
+#define R_EGG_INCDIR_PATH R2_PREFIX "/lib/radare2/" R2_VERSION "/egg"
 
 // rename to REggShellcode
 #define R_EGG_PLUGIN_SHELLCODE 0

@@ -100,9 +100,9 @@ extern "C" {
 #define R_LIB_VERSION_HEADER(x) \
 const char *x##_version();
 #define R_LIB_VERSION(x) \
-const char *x##_version() { return ""GIT_TAP; }
+const char *x##_version () { return "" GIT_TAP; }
 
-#define TODO(x) eprintf(__FUNCTION__"  "x)
+#define TODO(x) eprintf(__FUNCTION__"  " x)
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS

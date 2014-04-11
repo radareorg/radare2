@@ -15,7 +15,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_asm);
 
-#define R_ASM_OPCODES_PATH R2_LIBDIR"/radare2/"R2_VERSION"/opcodes"
+#define R_ASM_OPCODES_PATH R2_LIBDIR "/radare2/" R2_VERSION "/opcodes"
 // XXX too big!
 #define R_ASM_BUFSIZE 1024
 
