@@ -412,7 +412,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		inc = 1;
 	switch (base) {
 	case 8: fmt = "%03o"; pre = " "; break;
-	case 10: fmt = "%03d"; pre = " "; break;
+	case 10: fmt = "%3d"; pre = " "; break;
 	case 32: fmt = "0x%08x "; pre = " "; break;
 	case 64: fmt = "0x%016x "; pre = " "; break;
 	}

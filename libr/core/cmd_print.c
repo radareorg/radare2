@@ -1365,6 +1365,11 @@ static int cmd_print(void *data, const char *input) {
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
 			break;
+
+		case 'd':
+			r_print_hexdump (core->print, core->offset,
+				core->block, len, 10, 4);
+			break;
 		case 'w':
 			r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
 			break;

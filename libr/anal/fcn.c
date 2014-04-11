@@ -345,10 +345,10 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 #if 0
 	// override bits, size, 
 	fcn.<offset>=name,size,type
-	fcn.<offset>.bbs
+fcn.<offset>.bbs
 	fcn.name.<name>=<offset>
 #endif
-	sdb_set (DB, "fcn.0x080", "
+	sdb_set (DB, "fcn.0x080", "", 0);
 #endif
 	r_list_append (anal->fcns, fcn);
 	return R_TRUE;
