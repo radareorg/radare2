@@ -9,6 +9,9 @@
                                   --pancake
 </pre>
 
+[![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2/)
+[![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416)
+
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
