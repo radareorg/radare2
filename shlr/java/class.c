@@ -23,7 +23,7 @@
 #define IFDBG  if(DO_THE_DBG)
 #define IFINT  if(0)
 
-
+static char * r_bin_java_unmangle_method (const char *flags, const char *name, const char *params, const char *r_value);
 static int r_bin_java_is_fm_type_private ( RBinJavaField *fm_type);
 static int r_bin_java_is_fm_type_protected ( RBinJavaField *fm_type);
 static ut32 r_bin_java_swap_uint(ut32 x);
@@ -710,6 +710,112 @@ R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin) {
 	return the_list;
 }
 
+static char * r_bin_java_unmangle_method (const char *flags, const char *name, const char *params, const char *r_value) {
+	RList *the_list = params ? r_bin_java_extract_type_values (params) : r_list_new ();
+	RListIter *iter = NULL;
+	// second case removes leading space if no flags are given
+	const char *fmt = flags ? "%s %s %s (%s)" : "%s%s %s (%s)";
+	char *str = NULL, *f_val_str = NULL, *r_val_str = NULL, *prototype = NULL, *p_val_str = NULL;
+	ut32 params_idx = 0, param_idx = 0, params_len = 0, prototype_len = 0;
+
+	ut32 r_val_len = extract_type_value (r_value, &r_val_str);
+	if (!r_val_str) r_val_str =  strdup ("UNKNOWN");
+	f_val_str = flags ? strdup(flags) : strdup ("");
+
+	r_list_foreach (the_list, iter, str) {
+		params_idx++;
+		if (params_idx > 0) params_len += (strlen(str) + 2); // comma + space
+		else params_len += strlen(str);
+	}
+
+	if (params_len > 0) {
+		ut32 offset = 0;
+		params_len += 1;
+		p_val_str = malloc (params_len);
+		params_idx = 0;
+		r_list_foreach (the_list, iter, str) {
+			if (offset != 0) {
+				offset += snprintf (p_val_str+offset, params_len - offset, ", %s", str);
+			} else {
+				offset += snprintf (p_val_str+offset, params_len - offset, "%s", str);
+			}
+		}
+	} else {
+		p_val_str = strdup ("");
+	}
+
+
+	prototype_len += (*f_val_str ? strlen(flags) + 1 : 0); // space vs no space
+	prototype_len += strlen(name) + 1; // name + space
+	prototype_len += strlen(r_val_str) + 1; // r_value + space
+	prototype_len += strlen (p_val_str) + 3; // space + l_paren + params + r_paren
+	prototype_len += 1; // null
+	prototype = malloc(prototype_len);
+	/// TODO enable this function and start using it to demangle strings
+	snprintf (prototype, prototype_len, fmt, f_val_str, r_val_str, name, p_val_str);
+	free (f_val_str);
+	free (r_val_str);
+	free  (p_val_str);
+	r_list_free (the_list);
+	return prototype;
+}
+
+R_API char * r_bin_java_unmangle_without_flags (const char *name, const char *descriptor) {
+	return r_bin_java_unmangle (NULL, name, descriptor);
+}
+
+R_API char * r_bin_java_unmangle (const char *flags, const char *name, const char *descriptor) {
+	ut32 l_paren_pos = -1, r_paren_pos = -1, r_value_pos = -1;
+	char *result = NULL;
+	ut32 desc_len = descriptor && *descriptor ? strlen (descriptor) : 0,
+		 name_len = name && *name ? strlen (name) : 0,
+		 flags_len = flags && *flags ? strlen (flags) : 0,
+		 i = 0;
+
+	if (desc_len == 0 || name == 0) return NULL;
+
+	for (i = 0; i < desc_len; i++) {
+		if (descriptor[i] == '(') l_paren_pos = i;
+		else if (l_paren_pos != (ut32)-1 && descriptor[i] == ')') {
+			r_paren_pos = i;
+			break;
+		}
+	}
+	// handle field case;
+	if (l_paren_pos == (ut32) -1 && r_paren_pos == (ut32) -1) {
+		char *unmangle_field_desc = NULL;
+		ut32 len = extract_type_value (descriptor, &unmangle_field_desc);
+		if (len == 0) {
+			eprintf ("Warning: attempting to unmangle invalid type descriptor.\n");
+			free (unmangle_field_desc);
+			return result;
+		}
+		if (flags_len > 0) {
+			len += (flags_len + name_len + 5); // space and null
+			result = malloc (len);
+			snprintf (result, len, "%s %s %s", flags, name, unmangle_field_desc);
+		} else {
+			len += (name_len + 5); // space and null
+			result = malloc (len);
+			snprintf (result, len, "%s %s", name, unmangle_field_desc);
+		}
+		free (unmangle_field_desc);
+	} else if (l_paren_pos != (ut32) -1 &&
+		r_paren_pos != (ut32) -1 &&
+		l_paren_pos < r_paren_pos) {
+		// params_len account for l_paren + 1 and null
+		ut32 params_len = r_paren_pos - (l_paren_pos+1) != 0 ? r_paren_pos - (l_paren_pos + 1) + 1 : 0;
+		char *params = params_len ? malloc (params_len) : NULL,
+			 *rvalue = descriptor+r_paren_pos+1;
+
+		if (params)
+			snprintf (params, params_len, "%s", descriptor+l_paren_pos+1);
+
+		result = r_bin_java_unmangle_method (flags, name, params, rvalue);
+		free (params);
+	}
+	return result;
+}
 
 R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin) {
 	RBinJavaField *fm_type = NULL;
@@ -1917,8 +2023,10 @@ static RBinJavaInterfaceInfo* r_bin_java_read_next_interface_item(RBinJavaObj *b
 
 	memcpy (idx, if_buf, 2);
 	interface_obj = r_bin_java_interface_new (bin, if_buf, len-offset);
-	if (interface_obj)
+	if (interface_obj) {
 		interface_obj->file_offset = offset;
+
+	}
 	return interface_obj;
 }
 
@@ -4474,9 +4582,11 @@ R_API RBinJavaInterfaceInfo* r_bin_java_interface_new (RBinJavaObj *bin, const u
 		}else{
 			interface_obj->name = r_str_dup (NULL, "NULL");
 		}
+		interface_obj->size = 2;
 	}else{
 		interface_obj->class_info_idx = 0;
 		interface_obj->name = r_str_dup (NULL, "NULL");
+
 	}
 	return interface_obj;
 

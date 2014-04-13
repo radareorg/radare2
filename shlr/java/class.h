@@ -1020,5 +1020,7 @@ R_API ut64 r_bin_java_get_method_end(RBinJavaObj *bin, RBinJavaField *method);
 R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
 R_API ut8 * r_bin_java_cp_append_method_ref (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
 R_API ut8 * r_bin_java_cp_append_field_ref (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
+R_API char * r_bin_java_unmangle_without_flags (const char *name, const char *descriptor);
+R_API char * r_bin_java_unmangle (const char *flags, const char *name, const char *descriptor);
 
 #endif
