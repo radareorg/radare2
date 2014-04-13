@@ -110,7 +110,8 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return R_FALSE;
 	}
-	if (reg->regset[item->type].arena->size-BITS2BYTES (item->offset)-item->size>=0) {
+	if (reg->regset[item->type].arena->size
+	    - BITS2BYTES (item->offset) - BITS2BYTES(item->size)>=0) {
 		r_mem_copybits (reg->regset[item->type].arena->bytes+
 				BITS2BYTES (item->offset), src, item->size);
 		return R_TRUE;
