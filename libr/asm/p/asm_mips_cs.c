@@ -18,7 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
-	memset (op, sizeof (RAsmOp), 0);
+	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	ret = cs_open (CS_ARCH_MIPS, mode, &handle);
 	if (ret) goto fin;
