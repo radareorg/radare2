@@ -616,7 +616,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 	int i;
 	char *sign;
 	RAnalVar *arg, *ret;
-	if (fs->type != R_ANAL_FCN_TYPE_FCN || fs->type != R_ANAL_FCN_TYPE_SYM)
+	if (fs->type != R_ANAL_FCN_TYPE_FCN && fs->type != R_ANAL_FCN_TYPE_SYM)
 		return NULL;
 	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
 	sign = ret? r_str_newf ("%s %s (", ret->name, fs->name):
