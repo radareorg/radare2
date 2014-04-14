@@ -1578,6 +1578,11 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 	const char *type = NULL;
 	char * prototype = NULL;
 
+	if (idx == 0) {
+		prototype = strdup ("NULL");
+		return prototype;
+	}
+
 	if (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF ||
 		obj->tag == R_BIN_JAVA_CP_METHODREF ||
 		obj->tag == R_BIN_JAVA_CP_FIELDREF) {
@@ -1595,25 +1600,6 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 		snprintf (fullname, fn_len, "%s.%s", class_name, name);
 	}
 	if (fullname) prototype = r_bin_java_unmangle_without_flags (fullname, descriptor);
-
-	len = strlen (prototype);
-	/*if (len > 0 && prototype){
-		full_bird = malloc (len + 100);
-		memset (full_bird, 0, len+100);
-	}*/
-
-	if (full_bird && (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF ||
-		obj->tag == R_BIN_JAVA_CP_METHODREF)) {
-		if (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF) type = "INTERFACE";
-		else type = "FUNCTION";
-
-		snprintf (full_bird, len+100, "%s", prototype);
-
-	} else if (full_bird && obj->tag == R_BIN_JAVA_CP_FIELDREF) {
-		type = "FIELD";
-		//snprintf (full_bird, len+100, "%s", prototype);
-	}
-	//free (prototype);
 	free (class_name);
 	free (name);
 	free (descriptor);
@@ -1641,7 +1627,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 		return R_TRUE;
 	}
 
-	const char *fmt = "addr:0x%"PFMT64x" op:\"%s\" type:\"%s\" info:\"%s\"\n";
+	const char *fmt = "addr:0x%"PFMT64x" method_name:\"%s\", op:\"%s\" type:\"%s\" info:\"%s\"\n";
 
 
 	r_list_foreach (anal->fcns, fcn_iter, fcn) {
@@ -1653,7 +1639,18 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 			ut16 cp_ref_idx = -1;
 			char *full_bird = NULL;
 			// if bb_type is a call
-			if ( (bb->type2 &  R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
+			if (bb->op_bytes[0] == 0x01) continue;
+			if (bb->op_bytes[0] == 0x12) {
+				// loading a constant
+				addr = bb->addr;
+				full_bird = r_bin_java_resolve_without_space(bin, bb->op_bytes[1]);
+				operation = "read constant";
+				type = r_bin_java_resolve_cp_idx_type (bin, bb->op_bytes[1]);
+				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
+				free (full_bird);
+				free (type);
+				operation = NULL;
+			} else if ( (bb->type2 &  R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
 				ut8 op_byte = bb->op_bytes[0];
 				// look at the bytes determine if it belongs to this class
 				switch (op_byte) {
@@ -1687,7 +1684,6 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 						addr = -1;
 						break;
 				}
-
 			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_STATIC) == R_ANAL_EX_LDST_LOAD_GET_STATIC) {
 				operation = "read static";
 				type = "FIELD";
@@ -1704,22 +1700,16 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 				operation = "write dynamic";
 				type = "FIELD";
 				addr = bb->addr;
-			} else if (bb->op_bytes[0] == 0x12) {
-				// loading a constant
-				addr = bb->addr;
-				full_bird = r_bin_java_resolve_without_space(bin, bb->op_bytes[1]);
-				operation = "read constant";
-				type = r_bin_java_resolve_cp_idx_type (bin, bb->op_bytes[1]);
-				r_cons_printf (fmt, addr, operation, type, full_bird);
-				free (full_bird);
-				free (type);
-				operation = NULL;
 			}
 
 			if (operation) {
 				cp_ref_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
 				full_bird = r_cmd_java_get_descriptor (core, bin, cp_ref_idx);
-				r_cons_printf (fmt, addr, operation, type, full_bird);
+				if (!full_bird) {
+					eprintf ("Error identifying reference @ 0x%"PFMT64x"\n", bb->addr);
+					full_bird = strdup ("ANALYSIS_ERROR");
+				}
+				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
 				free (full_bird);
 			}
 

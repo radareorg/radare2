@@ -793,11 +793,11 @@ R_API char * r_bin_java_unmangle (const char *flags, const char *name, const cha
 		if (flags_len > 0) {
 			len += (flags_len + name_len + 5); // space and null
 			result = malloc (len);
-			snprintf (result, len, "%s %s %s", flags, name, unmangle_field_desc);
+			snprintf (result, len, "%s %s %s", flags, unmangle_field_desc, name);
 		} else {
 			len += (name_len + 5); // space and null
 			result = malloc (len);
-			snprintf (result, len, "%s %s", name, unmangle_field_desc);
+			snprintf (result, len, "%s %s", unmangle_field_desc, name);
 		}
 		free (unmangle_field_desc);
 	} else if (l_paren_pos != (ut32) -1 &&
@@ -833,68 +833,12 @@ R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin) {
 }
 
 R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type) {
-	RList *the_list = NULL;
-	RListIter *iter = NULL;
-	char *str = NULL, *r_value = NULL, *prototype = NULL;
-	ut32 list_length = 0;
-	ut32 prototype_len = 0, idx = 0, bytes_written = 0;
-
-	prototype_len += strlen(fm_type->flags_str) + 1;
-	prototype_len += strlen(fm_type->name) + 1;
-
-	the_list = r_bin_java_extract_type_values (fm_type->descriptor);
-	r_list_foreach (the_list, iter, str) {
-		prototype_len += strlen(str);
-		if (str && *str != '(' && *str != ')') {
-			prototype_len += strlen(str) + 2; // for ", "
-		}
-		//if (str && *str == ')') break;
-	}
-
-	list_length = r_list_length(the_list);
-	r_value = r_list_get_n( the_list, list_length-1);
-	prototype = malloc(prototype_len + 2);
-
-	bytes_written = snprintf(prototype, prototype_len, "%s %s %s", fm_type->flags_str, r_value, fm_type->name );
-
-
-	for (idx = 0; list_length > 0 && idx < list_length-1; idx++) {
-
-		ut8 *tstr = r_list_get_n( the_list, idx),
-			*nstr = r_list_get_n( the_list, idx+1);
-
-		if (tstr) {
-			bytes_written += snprintf(prototype+bytes_written, prototype_len-bytes_written, "%s", tstr );
-			if (*tstr == '(' ) {}
-			else if ( *nstr == ')' ) { }
-			else if ( *tstr == ')' ) { }
-			else {
-				bytes_written += snprintf(prototype+bytes_written, prototype_len-bytes_written, ", " );
-			}
-		}
-	}
-	r_list_free (the_list);
+	char * prototype = r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
 	return prototype;
 }
 
 R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type) {
-	char *prototype = NULL, *desc = NULL;
-	ut32 prototype_len = 0;
-
-	extract_type_value (fm_type->descriptor, &desc);
-
-	prototype_len += strlen(fm_type->flags_str) + 1;
-	prototype_len += strlen(fm_type->name) + 1;
-	prototype_len += strlen(desc) + 1;
-
-	prototype = malloc(prototype_len + 1);
-	//eprintf ("Field descriptor: %s\n", fm_type->descriptor);
-	if (desc) {
-		snprintf(prototype, prototype_len, "%s %s %s", fm_type->flags_str,
-					desc, fm_type->name );
-	} else {
-		snprintf(prototype, prototype_len, "%s UNKNOWN %s", fm_type->flags_str, fm_type->name );
-	}
+	char * prototype = r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
 	return prototype;
 }
 
