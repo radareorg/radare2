@@ -932,6 +932,12 @@ R_API int r_core_config_init(RCore *core) {
 		r_config_desc (cfg, buf, buf+10);
 	}
 
+    /* yara */
+	SETPREF("yara.rules", "/home/jvoisin/yara.rules", "Path to your yara rules");
+	SETI("yara.offset", 1, "Show offsets for matching rules");
+	SETI("yara.timeout", 0, "Abort yara scanning after a number of seconds");
+	SETI("yara.fast_scan", 0, "Speeds up scanning by searching only for the first occurrence of each pattern.");
+
 	/* zoom */
 	SETCB("zoom.byte", "h", &cb_zoombyte, "Zoom callback to calculate each byte (See pz? for help)");
 	SETI("zoom.from", 0, "Zoom start address");
