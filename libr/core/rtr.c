@@ -17,9 +17,11 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	const int timeout = 1; // 1 second
 	RCore *core = (RCore*)u;
 	if (((size_t)u)>0xff) {
-		port = listenport? listenport: r_config_get (core->config, "http.port");
+		port = listenport? listenport: r_config_get (
+			core->config, "http.port");
 		sock = r_socket_new (0);
-		r_socket_connect (sock, "localhost", port, R_SOCKET_PROTO_TCP, timeout);
+		(void)r_socket_connect (sock, "localhost",
+			port, R_SOCKET_PROTO_TCP, timeout);
 		r_socket_free (sock);
 	}
 	r_socket_free (s);

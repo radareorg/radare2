@@ -109,3 +109,56 @@ SDB_API int sdb_fmt_init (void *p, const char *fmt) {
 	if (p) memset (p, 0, len);
 	return len;
 }
+
+static const char *sdb_anext2(const char *str, const char **next) {
+	char *nxt, *p = strchr (str, SDB_RS);
+	if (p) { nxt = p+1; } else nxt = NULL;
+	if (next) *next = nxt;
+	return str;
+}
+
+// TODO: move this into fmt?
+SDB_API ut64* sdb_fmt_array_num(const char *list) {
+	ut64 *retp, *ret = NULL;
+	const char *next, *ptr = list;
+	if (list && *list) {
+		int len = sdb_alen (list);
+		retp = ret = (ut64*) malloc (sizeof(ut64)*(len+1));
+		if (!ret)
+			return NULL;
+		*retp++ = len;
+		do {
+			const char *str = sdb_anext2 (ptr, &next);
+			ut64 n = sdb_atoi (str);
+			*retp++ = n;
+			ptr = next;
+		} while (next);
+	}
+	return ret;
+}
+
+SDB_API char** sdb_fmt_array(const char *list) {
+	char **retp, **ret = NULL;
+	const char *next, *ptr = list;
+	char *_s;
+	if (list && *list) {
+		int len = sdb_alen (list);
+		retp = ret = (char**) malloc (2*strlen (list) +
+			((len+1)*sizeof(char*)));
+		_s = (char*)ret + ((len+1)*sizeof(char*));
+		if (!ret) {
+			return NULL;
+		}
+		do {
+			const char *str = sdb_anext2 (ptr, &next);
+			int slen = next?(next-str)-1:strlen (str)+1;
+			memcpy (_s, str, slen);
+			_s[slen]=0;
+			*retp++ = _s;
+			_s += slen+1;
+			ptr = next;
+		} while (next);
+		*retp = NULL;
+	}
+	return ret;
+}

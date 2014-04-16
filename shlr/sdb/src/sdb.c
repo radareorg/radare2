@@ -37,8 +37,16 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 			s->dir[plen] = '/';
 			memcpy (s->dir+plen+1, name, nlen+1);
 		} else s->dir = strdup (name);
-		if (lock && !sdb_lock (sdb_lockfile (s->dir)))
-			goto fail;
+		switch (lock) {
+		case 1:
+			if (!sdb_lock (sdb_lockfile (s->dir)))
+				goto fail;
+			break;
+		case 2:
+			if (!sdb_lock_wait (sdb_lockfile (s->dir)))
+				goto fail;
+			break;
+		}
 		s->fd = open (s->dir, O_RDONLY|O_BINARY);
 		if (s->fd != -1) {
 			if (fstat (s->fd, &st) != -1)
@@ -490,7 +498,7 @@ static inline ut64 parse_expire (ut64 e) {
 	return e;
 }
 
-SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire) {
+SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 	char *buf;
 	ut32 hash, pos, len;
 	SdbKv *kv;
@@ -502,8 +510,10 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire) {
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {
 		if (*kv->value) {
-			kv->expire = parse_expire (expire);
-			return 1;
+			if (!cas || cas == kv->cas) {
+				kv->expire = parse_expire (expire);
+				return 1;
+			} else return 0;
 		}
 		return 0;
 	}
@@ -520,17 +530,19 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire) {
 		return 0;
 	cdb_read (&s->db, buf, len, pos);
 	buf[len] = 0;
-	sdb_set (s, key, buf, 0); // TODO use cas here?
+	sdb_set (s, key, buf, cas);
 	free (buf);
-	return sdb_expire_set (s, key, expire); // recursive
+	return sdb_expire_set (s, key, expire, cas); // recursive
 }
 
-SDB_API ut64 sdb_expire_get(Sdb* s, const char *key) {
+SDB_API ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas) {
 	SdbKv *kv;
 	ut32 hash = sdb_hash (key, -1);
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
-	if (kv && *kv->value)
+	if (kv && *kv->value) {
+		if (cas) *cas = kv->cas;
 		return kv->expire;
+	}
 	return 0LL;
 }
 
@@ -605,7 +617,15 @@ SDB_API void sdb_config(Sdb *s, int options) {
 }
 
 SDB_API void sdb_unlink (Sdb* s) {
+	// nullify Sdb
 	sdb_fini (s, 1);
-	if (s->dir && *(s->dir))
-		unlink (s->dir);
+	// remove from disk
+	sdb_disk_unlink (s);
+}
+
+SDB_API void sdb_drain(Sdb *s, Sdb *f) {
+	f->refs = s->refs;
+	sdb_fini (s, 1);
+	*s = *f;
+	free (f);
 }

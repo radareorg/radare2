@@ -25,31 +25,34 @@ SDB_API const char *sdb_lockfile(const char *f) {
 #define os_getpid() getpid()
 
 SDB_API int sdb_lock(const char *s) {
-	int ret;
-	char pidstr[64];
+	int fd;
+	char *pid, pidstr[64];
 	if (!s) return 0;
-	ret = open (s, O_CREAT | O_TRUNC | O_WRONLY | O_EXCL, 0644);
-	char *pid = sdb_itoa (getpid(), pidstr, 10);
-	if (ret==-1)
+	fd = open (s, O_CREAT | O_TRUNC | O_WRONLY | O_EXCL, 0644);
+	if (fd==-1)
 		return 0;
+	pid = sdb_itoa (getpid(), pidstr, 10);
 	if (pid) {
-		write (1, pid, strlen (pid));
-		write (1, "\n", 1);
+		write (fd, pid, strlen (pid));
+		write (fd, "\n", 1);
 	}
-	close (ret);
+	close (fd);
 	return 1;
 }
 
-SDB_API void sdb_lock_wait(const char *s UNUSED) {
+SDB_API int sdb_lock_wait(const char *s) {
 	// TODO use flock() here
+	// wait forever here?
  	while (!sdb_lock (s)) {
+		// TODO: if waiting too much return 0
 #if WINDOWS
 	 	Sleep (500); // hack
 #else
 	// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);
-	// 	usleep (100); // hack
+	 	sleep (1); // hack
 #endif
  	}
+	return 1;
 }
 
 SDB_API void sdb_unlock(const char *s) {

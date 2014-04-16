@@ -79,6 +79,7 @@ void sdb_free (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb* s);
 void sdb_setup (Sdb* s, int options);
+void sdb_drain (Sdb*, Sdb*);
 
 int sdb_query (Sdb* s, const char *cmd);
 int sdb_queryf (Sdb* s, const char *fmt, ...);
@@ -125,10 +126,12 @@ ut64 sdb_num_dec (Sdb* s, const char *key, ut64 n, ut32 cas);
 int sdb_lock(const char *s);
 const char *sdb_lockfile(const char *f);
 void sdb_unlock(const char *s);
+SDB_API void sdb_unlink (Sdb* s);
+SDB_API int sdb_lock_wait(const char *s UNUSED);
 
 /* expiration */
-int sdb_expire_set(Sdb* s, const char *key, ut64 expire);
-ut64 sdb_expire_get(Sdb* s, const char *key);
+int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas);
+ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
 ut64 sdb_now (void);
 ut64 sdb_unow (void);
 ut32 sdb_hash (const char *key, int klen);
@@ -217,6 +220,8 @@ int sdb_fmt_init (void *p, const char *fmt);
 void sdb_fmt_free (void *p, const char *fmt);
 int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);
 char *sdb_fmt_tostr(void *stru, const char *fmt);
+SDB_API char** sdb_fmt_array(const char *list);
+SDB_API ut64* sdb_fmt_array_num(const char *list);
 
 // raw array helpers
 char *sdb_array_compact(char *p);

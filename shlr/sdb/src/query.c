@@ -170,6 +170,8 @@ next_quote:
 		if (!s) {
 			eprintf ("Cant find namespace %s\n", cmd);
 			free (out);
+			if (bufset)
+				free (buf);
 			return NULL;
 		}
 		cmd = arroba+1;

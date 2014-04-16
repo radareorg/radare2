@@ -10,6 +10,10 @@ It is distributed as a standalone binary and a library.
 There's also the sdbtypes: a vala library that implements
 several data structures on top of an sdb or a memcache instance.
 
+[![Build Status](http://ci.rada.re/buildStatus/icon?job=sdb)](http://ci.rada.re/job/sdb/)
+
+[![Build Status](https://scan.coverity.com/projects/1651/badge.svg)](https://scan.coverity.com/projects/1651)
+
 Author
 ------
 pancake <pancake@nopcode.org>
@@ -88,27 +92,3 @@ Using the commandline without any disk database:
 Remove the database
 
 	$ rm -f d
-
-Backups
--------
-To make a backup of a database to move it between different boxes use the textual format:
-
-	$ sdb my.db | xz > my.xz
-	$ du -hs my.*
-	my.db        3.9M
-	my.xz        5K
-
-Using ascii+xz is the best option for storing compressed sdb databases:
-
-	$ gzip < my.db | wc -c
-	  110768
-	$ xz -9 < my.db | wc -c
-	  37480
-	$ sdb my.db | xz -9 | wc -c
-	  5620
-	$ sdb my.db | lzma -9 | wc -c
-	  5575
-
-To import the database:
-
-	$ xz -d < my.xz | sdb my.db =

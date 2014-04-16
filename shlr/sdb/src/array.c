@@ -358,6 +358,7 @@ SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 		newval[val_len] = SDB_RS;
 		memcpy (newval+val_len+1, str, str_len);
 		newval[str_len+val_len+1] = 0;
+		// TODO: optimize this because we already have allocated and strlened everything
 		sdb_set (s, key, newval, cas);
 		free (newval);
 #else
@@ -387,7 +388,7 @@ SDB_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas) {
 
 SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 	ut32 kas;
-	char *ret, *end, *str = sdb_get (s, key, &kas);
+	char *end, *str = sdb_get (s, key, &kas);
 	if (!str || !*str) {
 		free (str);
 		return NULL;
@@ -398,19 +399,19 @@ SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 	end = strchr (str, SDB_RS);
 	if (end) {
 		*end = 0;
-		ret = strdup (str);
 		sdb_set (s, key, end+1, 0);
 	} else {
-		ret = strdup (str);
 		sdb_unset (s, key, 0);
 	}
+	return str;
 #else
 	for (end = str+strlen(str)-1;
 		end>str && *end!=SDB_RS; end--);
 	if (*end==SDB_RS) *end++ = 0;
 	ret = strdup (end);
 	sdb_set (s, key, str, 0);
-#endif
 	free (str);
 	return ret;
+#endif
 }
+
