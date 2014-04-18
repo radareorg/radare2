@@ -309,7 +309,7 @@ eprintf ("STACK POINTER %d\n", curstack);
 			break;
 		}
 		dungeon:
-		{/*trick*/int/*label*/x/*parsing*/=/*fix*/0;}
+		{/*trick*/int/*label*/x/*parsing*/=/*fix*/0;x = !x;}
 	}
 	eprintf (";;; COMMIT (%s) (%s)\n", op, str);
 	esil_commit (c, op);

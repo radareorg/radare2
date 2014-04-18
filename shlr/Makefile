@@ -120,12 +120,16 @@ uninstall deinstall:
 ifeq ($(CS_TAR),)
 capstone:
 	$(MAKE) capstone-sync
-	$(MAKE) -j$(MAKE_JOBS) capstone-build
+	#$(MAKE) -j$(MAKE_JOBS) capstone-build
 
 capstone-build: capstone
-	#cd capstone && CFLAGS="-Dmips=mips" $(CFLAGS) 
+	cd capstone && CFLAGS="-Dmips=mips" $(CFLAGS) 
 	cd capstone && $(CFLAGS) \
-		$(MAKE) -j$(MAKE_JOBS) libcapstone.a AR_EXT=a CC="$(CC)" 
+		$(MAKE) -j$(MAKE_JOBS) libcapstone.a \
+			AR_EXT=a \
+			CC="$(CC)" \
+			AR="$(AR)" \
+			RANLIB="$(RANLIB)"
 
 capstone-sync:
 	if [ -d capstone ]; then \
@@ -139,9 +143,14 @@ capstone-sync:
 else
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
-		$(MAKE) -j$(MAKE_JOBS) CC="$(CC)" AR_EXT=a libcapstone.a
+		$(MAKE) -j$(MAKE_JOBS) CC="$(CC)" AR_EXT=a \
+		RANLIB="$(RANLIB)" AR="$(AR)" \
+		libcapstone.a 
 
 capstone-sync: capstone
+
+capstone-clean:
+	cd capstone ; $(MAKE) clean
 
 capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz

@@ -6,7 +6,8 @@ RANLIB=i386-mingw32-ranlib
 OSTYPE=windows
 ONELIB=0
 LINK=-shared
-CC_AR=i386-mingw32-ar -r ${LIBAR}
+AR=i386-mingw32-ar
+CC_AR=$(AR) -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

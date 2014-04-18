@@ -36,7 +36,7 @@ deinstall uninstall:
 	-rm -f ${BFX}/r2
 
 clean:
-	@for a in ${BINS} ; do (cd $$a && ${MAKE} clean); done
+	@for a in preload ${BINS} ; do (cd $$a && ${MAKE} clean); done
 
 mrproper:
-	@for a in ${BINS} ; do (cd $$a && ${MAKE} mrproper); done
+	@for a in preload ${BINS} ; do (cd $$a && ${MAKE} mrproper); done

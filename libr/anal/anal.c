@@ -79,7 +79,7 @@ R_API RAnal *r_anal_new() {
 	r_anal_set_bits (anal, 32);
 	r_anal_set_big_endian (anal, R_FALSE);
 	anal->plugins = r_list_new ();
-	anal->plugins->free = r_anal_plugin_free;
+	anal->plugins->free = (RListFree) r_anal_plugin_free;
 	for (i=0; anal_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RAnalPlugin);
 		*static_plugin = *anal_static_plugins[i];
