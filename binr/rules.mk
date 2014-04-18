@@ -29,13 +29,18 @@ endif
 endif
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${LINK}
+
+REAL_LDFLAGS=$(subst -shared,,$(LDFLAGS))
+
 ifeq ($(ISLIB),1)
 BEXE=$(BIN).$(EXT_SO)
-LDFLAGS+=-shared
+REAL_LDFLAGS+=-shared
 endif
 #--------------------#
 # Rules for programs #
 #--------------------#
+
+# For some reason w32 builds contain -shared in LDFLAGS. boo!
 
 ifneq ($(BIN)$(BINS),)
 
@@ -45,13 +50,13 @@ ${BINS}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo CC $@
 endif
-	${CC} ${CFLAGS} $@.c ${LDFLAGS} ${OBJS} -o $@
+	${CC} ${CFLAGS} $@.c ${REAL_LDFLAGS} ${OBJS} -o $@
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifneq ($(SILENT),)
 	@echo LD $@
 endif
-	${CC} $+ -L.. -o $@ ${LDFLAGS}
+	${CC} $+ -L.. -o $@ $(REAL_LDFLAGS)
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile
