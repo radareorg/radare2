@@ -22,8 +22,8 @@ static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva);
 static void delete_bin_items (RBinObject *o);
 static void set_bin_items(RBin *bin, RBinPlugin *cp);
-static void r_bin_free_bin_files (RBin *bin);
-static void r_bin_file_free_it (RBinFile *a);
+//static void r_bin_free_bin_files (RBin *bin);
+//static void r_bin_file_free_it (RBinFile *a);
 static void r_bin_file_free (RBinFile *a);
 static void r_bin_free_items(RBin *bin);
 static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr);
@@ -309,7 +309,6 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 		bin->cur->curxtr->load (bin);
 
 	a = bin->cur;
-	//int minlen = bin->minstrlen;
 	a->curplugin = NULL;
 
 	r_list_foreach (bin->plugins, it, plugin) {
@@ -402,7 +401,6 @@ static void r_bin_free_bin_files (RBin *bin) {
 #endif
 
 static void r_bin_file_free (RBinFile *a) {
-	int i;
 	RBinObject *o = a->o;
 	delete_bin_items (o);
 
@@ -413,10 +411,6 @@ static void r_bin_file_free (RBinFile *a) {
 
 	free (a->file);
 	memset (a, 0, sizeof (RBinFile));
-	//free (a);
-
-	//bin->cur = r_list_get_n (bin->binfiles, 0);
-	//if (bin->cur) r_bin_bind (bin, bin->cur);
 }
 
 // XXX - This is called on everytime a new bin created
@@ -705,7 +699,7 @@ R_API RBin* r_bin_new() {
 	bin->minstrlen = -2;
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->o = R_NEW0 (RBinObject);
-	bin->binfiles = r_list_newf(r_bin_file_free);
+	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	for (i=0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
 	}
@@ -772,7 +766,7 @@ R_API int r_bin_select_idx(RBin *bin, int idx) {
 
 R_API void r_bin_list_archs(RBin *bin) {
 	int i;
-	for (i = 0; i < bin->narch; i++)
+	for (i = 0; i < bin->narch; i++) {
 		if (r_bin_select_idx (bin, i)) {
 			RBinInfo *info = bin->cur->o->info;
 			bin->printf ("%03i 0x%08"PFMT64x" %d %s_%i %s %s\n", i,
@@ -780,6 +774,7 @@ R_API void r_bin_list_archs(RBin *bin) {
 				info->bits, info->machine, bin->cur->file);
 		} else bin->printf ("%03i 0x%08"PFMT64x" %d unknown_0\n", i,
 				bin->cur->offset, bin->cur->size);
+	}
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
