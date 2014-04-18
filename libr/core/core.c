@@ -557,6 +557,7 @@ R_API int r_core_init(RCore *core) {
 	core->parser->anal = core->anal;
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
+	core->bin->printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	core->io->user = (void *)core;

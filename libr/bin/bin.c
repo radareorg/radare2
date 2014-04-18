@@ -699,6 +699,7 @@ R_API RBin* r_bin_new() {
 	RBinXtrPlugin *static_xtr_plugin;
 	RBin *bin = R_NEW0 (RBin);
 	if (!bin) return NULL;
+	bin->printf = (PrintfCallback)printf;
 	bin->plugins = r_list_new();
 	bin->plugins->free = free;
 	bin->minstrlen = -2;
@@ -774,10 +775,10 @@ R_API void r_bin_list_archs(RBin *bin) {
 	for (i = 0; i < bin->narch; i++)
 		if (r_bin_select_idx (bin, i)) {
 			RBinInfo *info = bin->cur->o->info;
-			printf ("%03i 0x%08"PFMT64x" %d %s_%i %s %s\n", i,
+			bin->printf ("%03i 0x%08"PFMT64x" %d %s_%i %s %s\n", i,
 				bin->cur->offset, bin->cur->size, info->arch,
 				info->bits, info->machine, bin->cur->file);
-		} else eprintf ("%03i 0x%08"PFMT64x" %d unknown_0\n", i,
+		} else bin->printf ("%03i 0x%08"PFMT64x" %d unknown_0\n", i,
 				bin->cur->offset, bin->cur->size);
 }
 

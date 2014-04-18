@@ -144,6 +144,7 @@ typedef struct r_bin_t {
 	RList *plugins;
 	RList *binxtrs;
 	RList *binfiles;
+	PrintfCallback printf;
 } RBin;
 
 typedef struct r_bin_xtr_plugin_t {
