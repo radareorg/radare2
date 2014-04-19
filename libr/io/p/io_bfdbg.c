@@ -149,7 +149,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int rlen;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
-		RIOBfdbg *mal = R_NEW (RIOBfdbg);
+		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
 		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);
 		mal->bfvm = bfvm_new (&iob);
@@ -174,12 +174,12 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_bfdbg = {
 	.name = "bfdbg",
-        .desc = "BrainFuck Debugger (bfdbg://path/to/file)",
+	.desc = "BrainFuck Debugger (bfdbg://path/to/file)",
 	.license = "LGPL3",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 };
