@@ -1082,7 +1082,7 @@ reaccept:
 							free (ptr);
 							ptr = NULL; // potential use after free if i == 0
 							if (i>0) {
-								ptr = (ut8 *) malloc (i+5);
+								ptr = (ut8 *) malloc (i+6);
 								fread (ptr+5, i, 1, fd);
 								ptr[i+5]='\0';
 							}
