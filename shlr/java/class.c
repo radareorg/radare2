@@ -721,11 +721,11 @@ static char * r_bin_java_unmangle_method (const char *flags, const char *name, c
 	ut32 r_val_len = extract_type_value (r_value, &r_val_str);
 	if (!r_val_str) r_val_str =  strdup ("UNKNOWN");
 	f_val_str = flags ? strdup(flags) : strdup ("");
-
+	params_idx = 0;
 	r_list_foreach (the_list, iter, str) {
-		params_idx++;
 		if (params_idx > 0) params_len += (strlen(str) + 2); // comma + space
 		else params_len += strlen(str);
+		params_idx++;
 	}
 
 	if (params_len > 0) {
@@ -745,7 +745,7 @@ static char * r_bin_java_unmangle_method (const char *flags, const char *name, c
 	}
 
 
-	prototype_len += (*f_val_str ? strlen(flags) + 1 : 0); // space vs no space
+	prototype_len += (f_val_str && *f_val_str ? strlen(flags) + 1 : 0); // space vs no space
 	prototype_len += strlen(name) + 1; // name + space
 	prototype_len += strlen(r_val_str) + 1; // r_value + space
 	prototype_len += strlen (p_val_str) + 3; // space + l_paren + params + r_paren

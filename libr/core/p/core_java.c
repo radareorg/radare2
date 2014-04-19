@@ -1603,13 +1603,14 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 	free (class_name);
 	free (name);
 	free (descriptor);
+	free (fullname);
 	return prototype;
 }
 
 
 static int r_cmd_java_handle_list_code_references (RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
-	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RBinJavaObj *bin = anal ? (RBinJavaObj *) r_cmd_java_get_bin_obj (anal) : NULL;
 	RAnalBlock *bb = NULL;
 	RAnalFunction *fcn = NULL;
 	RListIter *bb_iter = NULL, *fcn_iter = NULL;
@@ -1721,7 +1722,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 
 static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
-	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RBinJavaObj *bin = anal ? (RBinJavaObj *) r_cmd_java_get_bin_obj (anal) : NULL;
 	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char *name = NULL;
 	ut64 addr = -1, count = -1;
@@ -1770,7 +1771,7 @@ static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char 
 
 static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
-	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	RBinJavaObj *bin = anal ? (RBinJavaObj *) r_cmd_java_get_bin_obj (anal) : NULL;
 	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char  *classname=NULL, *name = NULL, *descriptor = NULL;
 	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
