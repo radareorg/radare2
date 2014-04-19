@@ -993,7 +993,7 @@ reaccept:
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, !LE);
 				if (i>0 && i<RMT_MAX) {
-					if ((cmd=malloc (i))) {
+					if ((cmd=malloc (i+1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
 						eprintf ("len: %d cmd: '%s'\n",
@@ -1007,7 +1007,7 @@ reaccept:
 					cmd_len = strlen (cmd_output) + 1;
 				} else {
 					cmd_output = strdup ("");
-					cmd_len = 0; 
+					cmd_len = 0;
 				}
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
