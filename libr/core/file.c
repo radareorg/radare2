@@ -248,12 +248,13 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	} else if (r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE)) { // --->
 		// HEXEDITOR
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
-			RBinObject *o = r->bin->cur->o;
+			RBinObject *o = NULL;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
 				r->assembler->cur->arch, r->assembler->bits);
 			eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
 			for (i=0; i<r->bin->narch; i++) {
 				r_bin_select_idx (r->bin, i); // -->
+				o = r->bin->cur->o;
 				if (o->info) {
 					eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n",
 							o->info->arch,

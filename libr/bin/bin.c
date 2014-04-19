@@ -19,6 +19,7 @@ R_LIB_VERSION(r_bin);
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 
+static int r_bin_use_arch_from_plugin (RBin *bin);
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva);
 static void delete_bin_items (RBinObject *o);
 static void set_bin_items(RBin *bin, RBinPlugin *cp);
@@ -251,8 +252,7 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy) {
 	ut8* buf_bytes;
 	ut64 start, end,
-		 sz = -1,
-		 offset = 0;
+		 sz = -1;
 
 	RListIter *it;
 	RBinXtrPlugin *xtr;
@@ -265,7 +265,6 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	buf_bytes = NULL;
 	end = desc->plugin->lseek (io, desc, 0, SEEK_END);
 	start = desc->plugin->lseek (io, desc, 0, SEEK_SET);
-	offset = 0;
 
 	if (end == UT64_MAX || start == UT64_MAX)
 		return R_FALSE;
@@ -340,15 +339,23 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 R_API int r_bin_init_items(RBin *bin, int dummy) {
 	int minlen = bin->minstrlen;
 	RListIter *it;
-	RBinPlugin *plugin, *cp;
-	RBinFile *a = bin->cur = R_NEW0 (RBinFile);
-	RBinObject *o = R_NEW0 (RBinObject);
-	a->o = o;
+	RBinPlugin *plugin, *cp = NULL;
+	RBinFile *a = NULL;
+	RBinObject *o = NULL;
 
-	bin->cur->file = strdup (bin->file);
-	a->buf = r_buf_mmap (bin->cur->file, 0);
-	a->size = a->buf ? a->buf->length: 0;
-	a->curplugin = NULL;
+	if (!bin->cur) {
+		// XXX - dont remember if i need to set this in case of a failed load.
+		/*
+		bin->cur = R_NEW0 (RBinFile);
+		bin->cur->o = R_NEW0 (RBinObject);
+		bin->cur->file = strdup (bin->file);
+		*/
+		return R_FALSE;
+	}
+
+	a = bin->cur;
+	o = a->o;
+	cp = a->curplugin = NULL;
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
@@ -366,8 +373,10 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 	if (!cp || !cp->load || !cp->load (a)) {
 		// already freed in format/pe/pe.c:r_bin_pe_free()
 		// r_buf_free (a->buf);
-		//a->buf = r_buf_mmap (bin->cur->file, 0);
-		//a->size = a->buf? a->buf->length: 0;
+		if (!a->buf){
+			a->buf = r_buf_mmap (bin->cur->file, 0);
+			a->size = a->buf ? a->buf->length: 0;
+		}
 		o->strings = get_strings (a, minlen);
 		return R_FALSE;
 	}
@@ -442,6 +451,7 @@ static void r_bin_free_items(RBin *bin) {
 	free (a->file);
 	memset (a, 0, sizeof(RBinFile));
 	free (o);
+	bin->cur = NULL;
 }
 
 static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
@@ -557,9 +567,8 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	bin->narch = r_bin_extract (bin, 0);
 	if (bin->narch == 0)
 		return R_FALSE;
-	/* FIXME: temporary hack to fix malloc:// */
-	if (bin->cur->buf == NULL)
-		return R_FALSE;
+	// XXX necessary because ?.  Regressions fail without this check
+	if (bin->cur->buf == NULL) return R_FALSE;
 	res = r_bin_init_items (bin, dummy);
 
 	bin->cur->o->referenced += 1;
@@ -716,12 +725,25 @@ R_API RBin* r_bin_new() {
 
 /* arch and bits are implicit in the plugin name, do we really need
  * to overwrite bin->cur->info? */
+static int r_bin_use_arch_from_plugin (RBin *bin) {
+	RBinPlugin *cp = NULL;
+	int res = R_TRUE;
+	if (!bin || !bin->cur || !bin->cur->o || !bin->cur->curplugin) return R_FALSE;
+	cp = bin->cur->curplugin;
+
+	if (cp->info) bin->cur->o->info = cp->info (bin->cur);
+	else res = r_bin_use_arch(bin, "TEMP_FAIL", 32, cp->name);
+	return res;
+}
+
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	RBinObject *o = bin->cur->o;
 	RListIter *it;
 	RBinPlugin *plugin;
 
 	if (!o->info) o->info = R_NEW0 (RBinInfo);
+	else memset (o->info, 0, sizeof (RBinInfo));
+
 	strncpy (o->info->arch, arch, R_BIN_SIZEOF_STRINGS);
 	o->info->bits = bits;
 
@@ -735,6 +757,9 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 }
 
 // DUPDUPDUP
+// XXX - whats the purpose of this function, and can it be refactored out or
+// combined with the r_bin_load functions.   Or do we need a separate loader
+// for binaries that carry multi-architecture?
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
 	RBinInfo *info;
@@ -754,7 +779,15 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 
 R_API int r_bin_select_idx(RBin *bin, int idx) {
 	if (bin && bin->cur) {
+
+		ut64 baseaddr = bin->cur->o->baddr,
+			 loadaddr = bin->cur->o->loadaddr;
+
+		int rawstr = bin->cur->rawstr;
+		// XXX - this is a messy process, and it needs to be fixed
+		// free the current bin, and then init the bin for reload
 		r_bin_free_items (bin);
+		r_bin_init (bin, rawstr, baseaddr, loadaddr);
 		if (bin->cur->curxtr && bin->cur->curxtr->extract) {
 			if (r_bin_extract (bin, idx))
 				return r_bin_init_items (bin, R_FALSE);
