@@ -156,6 +156,7 @@ R_API int r_regex_match (const char *pattern, const char *flags, const char *tex
 
 R_API RRegex *r_regex_new (const char *pattern, const char *flags) {
 	RRegex rx, *r;
+	memset(&rx, sizeof(RRegex), 0);
 	if (r_regex_comp (&rx, pattern, r_regex_flags (flags)))
 		return NULL;
 	r = malloc (sizeof (RRegex));
