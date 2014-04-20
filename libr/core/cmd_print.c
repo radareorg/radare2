@@ -1,17 +1,6 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 //#include <r_anal_ex.h>
 
-static int is_valid_input_num_value(RCore *core, char *input_value){
-	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
-	return !(value == 0 && input_value && *input_value == '0');
-}
-
-static ut64 get_input_num_value(RCore *core, char *input_value){
-
-	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
-	return value;
-}
-
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
@@ -76,19 +65,19 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 	if (input_one && input_two && input_three) {
 		// <size> <arch> <bits>
-		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
+		*blocksize = r_num_is_valid_input (core->num, input_one) ? r_num_get_input_value (core->num, input_one): 0;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
-		*bits = get_input_num_value (core, input_three);
+		*bits = r_num_get_input_value (core->num, input_three);
 		result = R_TRUE;
 
 	} else if (input_one && input_two) {
 
-		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
+		*blocksize = r_num_is_valid_input (core->num, input_one) ? r_num_get_input_value (core->num, input_one): 0;
 
-		if (!is_valid_input_num_value(core, input_one) ) {
+		if (!r_num_is_valid_input (core->num, input_one) ) {
 			// input_one can only be one other thing
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
-			*bits = is_valid_input_num_value(core, input_two) ? get_input_num_value (core, input_two): -1;
+			*bits = r_num_is_valid_input (core->num, input_two) ? r_num_get_input_value (core->num, input_two): -1;
 		} else {
 			if (r_str_contains_macro (input_two) ){
 				r_str_truncate_cmd (input_two);
@@ -98,8 +87,8 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 		result = R_TRUE;
 	} else if (input_one) {
-		*blocksize = is_valid_input_num_value (core, input_one) ? get_input_num_value (core, input_one): 0;
-		if (!is_valid_input_num_value (core, input_one) ) {
+		*blocksize = r_num_is_valid_input (core->num, input_one) ? r_num_get_input_value (core->num, input_one): 0;
+		if (!r_num_is_valid_input (core->num, input_one) ) {
 			// input_one can only be one other thing
 			if (r_str_contains_macro (input_one))
 				r_str_truncate_cmd (input_one);

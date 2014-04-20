@@ -378,3 +378,13 @@ fail:
 	free (s);
 	return res;
 }
+
+R_API int r_num_is_valid_input(RNum *num, const char *input_value){
+	ut64 value = input_value ? r_num_math (num, input_value) : 0;
+	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
+}
+
+R_API ut64 r_num_get_input_value(RNum *num, const char *input_value){
+	ut64 value = input_value ? r_num_math (num, input_value) : 0;
+	return value;
+}
