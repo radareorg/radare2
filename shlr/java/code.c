@@ -33,7 +33,7 @@ typedef struct current_table_switch_t {
 } CurrentTableSwitch;
 
 static CurrentTableSwitch SWITCH_OP;
-volatile ut64 BYTES_CONSUMED = 0;
+static volatile ut64 BYTES_CONSUMED = 0;
 //static RBinJavaObj *BIN_OBJ = NULL;
 
 static void init_switch_op () {
