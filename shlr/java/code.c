@@ -14,7 +14,8 @@
 
 #define V if (verbose)
 
-#define IFDBG if(0)
+#define DO_THE_DBG 0
+#define IFDBG if(DO_THE_DBG)
 
 static void init_switch_op ();
 static int enter_switch_op (ut64 addr, const ut8 * bytes);
@@ -32,7 +33,7 @@ typedef struct current_table_switch_t {
 } CurrentTableSwitch;
 
 static CurrentTableSwitch SWITCH_OP;
-static ut64 BYTES_CONSUMED = 0;
+volatile ut64 BYTES_CONSUMED = 0;
 //static RBinJavaObj *BIN_OBJ = NULL;
 
 static void init_switch_op () {
@@ -41,10 +42,9 @@ static void init_switch_op () {
 
 static int enter_switch_op (ut64 addr, const ut8 * bytes ) {
 	ut8 idx = bytes[0];
-	IN_SWITCH_OP = 1;
 	ut8 sz = (BYTES_CONSUMED+1) % 4 ? 1 + 4 - (BYTES_CONSUMED+1) % 4: 1; // + (BYTES_CONSUMED+1)  % 4;
 	ut8 sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
-	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04x\n", sz2, sz);
+	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04x, BYTES_CONSUMED%%4 = 0x%04x\n", sz2, BYTES_CONSUMED, sz);
 	init_switch_op ();
 	IN_SWITCH_OP = 1;
 	SWITCH_OP.addr = addr;
@@ -65,6 +65,7 @@ static int update_switch_op (ut64 addr, const ut8 * bytes) {
 	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
 	SWITCH_OP.cur_val++;
 	if ( ccase+1 > SWITCH_OP.max_val) IN_SWITCH_OP = 0;
+	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04x\n", addr, BYTES_CONSUMED);
 	return update_bytes_consumed(sz);
 }
 
@@ -91,8 +92,8 @@ R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	}
 
 	IFDBG {
-		eprintf ("Handling the following opcode %s expects: %d bytes\n",
-			JAVA_OPS[idx].name, JAVA_OPS[idx].size);
+		eprintf ("Handling the following opcode %s expects: %d bytes, BYTES_CONSUMED: 0x%04x\n",
+			JAVA_OPS[idx].name, JAVA_OPS[idx].size, BYTES_CONSUMED);
 	}
 	switch (op_byte) {
 
@@ -226,6 +227,7 @@ R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 }
 
 R_API void r_java_new_method () {
+	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04x.\n", BYTES_CONSUMED);
 	IN_SWITCH_OP = 0;
 	init_switch_op ();
 	BYTES_CONSUMED = 0;
