@@ -77,15 +77,15 @@ typedef struct r_bin_hash_t {
 } RBinHash;
 
 typedef struct r_bin_info_t {
-	char file[R_BIN_SIZEOF_STRINGS];
-	char type[R_BIN_SIZEOF_STRINGS];
-	char bclass[R_BIN_SIZEOF_STRINGS];
-	char rclass[R_BIN_SIZEOF_STRINGS];
-	char arch[R_BIN_SIZEOF_STRINGS];
-	char machine[R_BIN_SIZEOF_STRINGS];
-	char os[R_BIN_SIZEOF_STRINGS];
-	char subsystem[R_BIN_SIZEOF_STRINGS];
-	char rpath[R_BIN_SIZEOF_STRINGS];
+	char file[R_BIN_SIZEOF_STRINGS+1];
+	char type[R_BIN_SIZEOF_STRINGS+1];
+	char bclass[R_BIN_SIZEOF_STRINGS+1];
+	char rclass[R_BIN_SIZEOF_STRINGS+1];
+	char arch[R_BIN_SIZEOF_STRINGS+1];
+	char machine[R_BIN_SIZEOF_STRINGS+1];
+	char os[R_BIN_SIZEOF_STRINGS+1];
+	char subsystem[R_BIN_SIZEOF_STRINGS+1];
+	char rpath[R_BIN_SIZEOF_STRINGS+1];
 	const char *lang;
 	int bits;
 	int has_va;
@@ -195,7 +195,7 @@ typedef struct r_bin_plugin_t {
 } RBinPlugin;
 
 typedef struct r_bin_section_t {
-	char name[R_BIN_SIZEOF_STRINGS];
+	char name[R_BIN_SIZEOF_STRINGS+1];
 	ut64 size;
 	ut64 vsize;
 	ut64 rva;
@@ -223,13 +223,13 @@ typedef struct r_bin_class_t {
 // bin.sections.get_by_name(SectionName, ".text");
 
 typedef struct r_bin_symbol_t {
-	char name[R_BIN_SIZEOF_STRINGS];
-	char forwarder[R_BIN_SIZEOF_STRINGS];
-	char bind[R_BIN_SIZEOF_STRINGS];
-	char type[R_BIN_SIZEOF_STRINGS];
-	char visibility_str[R_BIN_SIZEOF_STRINGS];
-	char classname[R_BIN_SIZEOF_STRINGS];
-	char descriptor[R_BIN_SIZEOF_STRINGS];
+	char name[R_BIN_SIZEOF_STRINGS+1];
+	char forwarder[R_BIN_SIZEOF_STRINGS+1];
+	char bind[R_BIN_SIZEOF_STRINGS+1];
+	char type[R_BIN_SIZEOF_STRINGS+1];
+	char visibility_str[R_BIN_SIZEOF_STRINGS+1];
+	char classname[R_BIN_SIZEOF_STRINGS+1];
+	char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 rva;
 	ut64 offset;
 	ut64 size;
@@ -238,11 +238,11 @@ typedef struct r_bin_symbol_t {
 } RBinSymbol;
 
 typedef struct r_bin_import_t {
-	char name[R_BIN_SIZEOF_STRINGS];
-	char bind[R_BIN_SIZEOF_STRINGS];
-	char type[R_BIN_SIZEOF_STRINGS];
-	char classname[R_BIN_SIZEOF_STRINGS];
-	char descriptor[R_BIN_SIZEOF_STRINGS];
+	char name[R_BIN_SIZEOF_STRINGS+1];
+	char bind[R_BIN_SIZEOF_STRINGS+1];
+	char type[R_BIN_SIZEOF_STRINGS+1];
+	char classname[R_BIN_SIZEOF_STRINGS+1];
+	char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 ordinal;
 	ut32 visibility;
 } RBinImport;
@@ -259,7 +259,7 @@ typedef struct r_bin_reloc_t {
 
 typedef struct r_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
-	char string[R_BIN_SIZEOF_STRINGS];
+	char string[R_BIN_SIZEOF_STRINGS+1];
 	ut64 rva;
 	ut64 offset;
 	ut64 ordinal;
@@ -269,7 +269,7 @@ typedef struct r_bin_string_t {
 } RBinString;
 
 typedef struct r_bin_field_t {
-	char name[R_BIN_SIZEOF_STRINGS];
+	char name[R_BIN_SIZEOF_STRINGS+1];
 	ut64 rva;
 	ut64 offset;
 	ut32 visibility;
