@@ -616,7 +616,7 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 							import->size, import->name);
 				r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);*/
-			} else if (import->classname) {
+			} else if (import->classname[0] != 0) {
 				r_cons_printf ("ordinal=%03"PFMT64d" plt=0x%08"PFMT64x" bind=%s type=%s classname=%s name=%s descriptor=%s\n",
 					import->ordinal, addr,
 					import->bind, import->type, import->classname, import->name, import->descriptor);
@@ -671,7 +671,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 			name = strdup (symbol->name);
-			cname = symbol->classname ? strdup(symbol->classname) : NULL;
+			cname = (symbol->classname[0] != 0) ? strdup(symbol->classname) : NULL;
 			// XXX - may want a configuration variable here for class and name lengths.
 			// XXX - need something to handle overloaded symbols (e.g. methods)
 			// void add (int i, int j);
