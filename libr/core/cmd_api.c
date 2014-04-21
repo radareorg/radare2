@@ -354,7 +354,7 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	RCmdMacroItem *m;
 	char *name = strdup (_name);
 	char *ptr = strchr (name, ')');
-	if (ptr) *ptr='\0';
+	if (ptr) *ptr = '\0';
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (m->name, name)) {
 			r_list_delete (mac->macros, iter);

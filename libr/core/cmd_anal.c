@@ -1,5 +1,23 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+static void find_refs(RCore *core, const char *glob) {
+	char cmd[128];
+	ut64 curseek = core->offset;
+	while (*glob==' ') glob++;
+	if (!glob || !*glob)
+		glob = "str.";
+	if (*glob == '?') {
+		eprintf ("Usage: arf [flag-str-filter]\n");
+		return;
+	}
+	eprintf ("Finding references of flags matching '%s'...\n", glob);
+	snprintf (cmd, sizeof (cmd)-1, ".(findstref) @@= `f~%s[0]`", glob);
+	r_core_cmd0 (core, "(findstref,f here=$$,s entry0,/r here,f-here)");
+	r_core_cmd0 (core, cmd);
+	r_core_cmd0 (core, "(-findstref)");
+	r_core_seek (core, curseek, 1);
+}
+
 #if 1
 /* TODO: Move into cmd_anal() */
 static void var_help(char ch) {
@@ -926,6 +944,9 @@ static int cmd_anal(void *data, const char *input) {
 		case '*':
 			r_core_anal_ref_list (core, input[1]);
 			break;
+		case 'f':
+			find_refs (core, input+2);
+			break;
 		case 'C':
 		case 'c':
 		case 'd':
@@ -952,11 +973,12 @@ static int cmd_anal(void *data, const char *input) {
 		case '?':
 			r_cons_printf (
 			"|Usage: ar[?d-l*]   # see also 'afr?'\n"
-			"| ar addr [at]    Add code ref pointing to addr (at is curseek)\n"
+			"| ar addr [at]    Add code ref pointing to addr (from curseek)\n"
 			"| arc addr [at]   Add code jmp ref // unused?\n"
 			"| arC addr [at]   Add code call ref\n"
 			"| ard addr [at]   Add data ref\n"
 			"| arj             List refs in json format\n"
+			"| arf [flg-glob]  Find data/code references of flags\n"
 			"| ar- [at]        Clean all refs (or refs from addr)\n"
 			"| ar              List refs\n"
 			"| ark [query]     Perform sdb query\n"
