@@ -215,6 +215,7 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 	int word = a->bits /8;
 	for (i = j = 0; i<len; j++) {
 		data = r_anal_data (a, addr+i, buf+i, len-i);
+		if (data == NULL) continue;
 		switch (data->type) {
 		case R_ANAL_DATA_TYPE_INVALID:
 			inv++;
