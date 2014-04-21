@@ -444,6 +444,23 @@ static RList* fields(RBinFile *arch) {
 	return ret;
 }
 
+static int size(RBinFile *arch) {
+	ut64 off = 0;
+	ut64 len = 0;
+	if (!arch->o->sections) {
+		RListIter *iter;
+		RBinSection *section;
+		arch->o->sections = sections (arch);
+		r_list_foreach (arch->o->sections, iter, section) {
+			if (section->offset > off) {
+				off = section->offset;
+				len = section->size;
+			}
+		}
+	}
+	return off+len;
+}
+
 #if !R_BIN_ELF64
 static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
@@ -544,22 +561,6 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static int size(RBinFile *arch) {
-	ut64 off = 0;
-	ut64 len = 0;
-	if (!arch->o->sections) {
-		RListIter *iter;
-		RBinSection *section;
-		arch->o->sections = sections (arch);
-		r_list_foreach (arch->o->sections, iter, section) {
-			if (section->offset > off) {
-				off = section->offset;
-				len = section->size;
-			}
-		}
-	}
-	return off+len;
-}
 
 static ut64 get_elf_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
