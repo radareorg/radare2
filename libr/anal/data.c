@@ -150,9 +150,10 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 	int l = R_MIN (len, 8);
 	ad->buf = (ut8*) &(ad->sbuf);
 	memset (ad->buf, 0, 8);
-	if (l<1)
-		free (ad);
+	if (l<1) {
+		r_anal_data_free (ad);
 		return NULL;
+	}
 	if (buf) {
 		memcpy (ad->buf, buf, l);
 	}
@@ -165,9 +166,9 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 }
 
 R_API void r_anal_data_free (RAnalData *d) {
-	if (d){
+	if (d) {
 		if (d->buf != (ut8*)&(d->sbuf)) free (d->buf);
-		free (d->str);
+		if (d->str != NULL) free (d->str);
 		free (d);
 	}
 }
