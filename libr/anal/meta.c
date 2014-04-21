@@ -138,7 +138,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 }
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
-	r_meta_del (a, R_META_TYPE_ANY, from, (to-from), NULL);
+	return r_meta_del (a, R_META_TYPE_ANY, from, (to-from), NULL);
 }
 
 R_API void r_meta_item_free(void *_item) {
