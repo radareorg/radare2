@@ -814,7 +814,11 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI("http.maxsize", 0, "Define maximum file size to upload");
 	SETPREF("http.public", "false", "Set to true to listen on 0.0.0.0");
-	SETPREF("http.root", R2_WWWROOT, "Http root directory");
+#if __WINDOWS__
+	SETPREF("http.root", "www", "Http root directory");
+#else
+	SETPREF("http.root", R2_WWWROOT, "HTTP root directory");
+#endif
 	SETPREF("http.port", "9090", "Port to listen for http connections");
 	SETPREF("http.sandbox", "false", "Sandbox the http");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds if no data sent");

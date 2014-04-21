@@ -127,6 +127,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			}
 		}
 		if (!rs->method || !rs->path) {
+			eprintf ("Invalid http headers received from client\n");
 			r_socket_http_close (rs);
 			continue;
 		}
@@ -205,6 +206,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 				char *path;
 				path = r_file_root (root, rs->path);
 
+				// FD IS OK HERE
 				if (rs->path [strlen (rs->path)-1] == '/') {
 					path = r_str_concat (path, "index.html");
 					//rs->path = r_str_concat (rs->path, "index.html");

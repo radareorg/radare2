@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2014 - pancake */
 
 #include <r_socket.h>
 
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
-	char buf[1024], *p, *q;
+	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
 	hr->s = r_socket_accept (s);
 	if (!hr->s) {
@@ -19,8 +19,9 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
 		yy = r_socket_ready (hr->s, 0, 20);
 //		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
-		if (!yy || (!xx && !pxx))
+		if (!yy || (!xx && !pxx)) {
 			break;
+		}
 		pxx = xx;
 		
 		if (first==0) {
@@ -68,8 +69,9 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 		"UNKNOWN";
 	if (len<1) len = out? strlen (out): 0;
 	if (!headers) headers = "";
-	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n%s"
-		"Connection: close\nContent-Length: %d\n\n", code, strcode, headers, len);
+	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
+		"Connection: close\r\nContent-Length: %d\r\n\r\n",
+		code, strcode, headers, len);
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
 }
 
@@ -127,7 +129,8 @@ int main() {
 		if (!rs) continue;
 		if (!strcmp (rs->method, "GET")) {
 			r_socket_http_response (rs, 200,
-	"<html><body><form method=post action=/><input name=a /><input type=button></form></body>");
+			"<html><body><form method=post action=/>"
+			"<input name=a /><input type=button></form></body>");
 		} else 
 		if (!strcmp (rs->method, "POST")) {
 			char *buf = malloc (rs->data_length+ 50);

@@ -18,20 +18,14 @@ R_LIB_VERSION(r_socket);
 #if EMSCRIPTEN
 /* no network */
 R_API RSocket *r_socket_new (int is_ssl) { return NULL; }
-#else
-#if __UNIX__
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <poll.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/socket.h>
 #endif
 
-#ifdef __WINDOWS__
-#include <ws2tcpip.h>
+#if 0
+winsock api notes
+=================
+close: closes the socket without flushing the data
+WSACleanup: closes all network connections
 #endif
-
 #define BUFFER_SIZE 4096
 
 #if __UNIX__
@@ -246,13 +240,10 @@ R_API int r_socket_close (RSocket *s) {
 	int ret = R_FALSE;
 	if (!s) return R_FALSE;
 	if (s->fd != -1) {
-#if __WINDOWS__
-		WSACleanup ();
-		ret = closesocket (s->fd);
-#else
+#if __UNIX__
 		shutdown (s->fd, SHUT_RDWR);
-		ret = close (s->fd);
 #endif
+		ret = close (s->fd);
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -298,14 +289,16 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #endif
 	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
 		return R_FALSE;
+#if __UNIX__
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
 	{ // fix close after write bug //
-	int x = 1500;
+	int x = 1500; // FORCE MTU
 	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));
 	}
 	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof optval);
+#endif
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
@@ -315,6 +308,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	s->sa.sin_port = htons (s->port); // TODO honor etc/services
 
 	if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof(s->sa)) < 0) {
+		r_sys_perror ("bind");
 		close (s->fd);
 		return R_FALSE;
 	}
@@ -355,6 +349,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	//signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == -1) {
+		r_sys_perror("accept");
 		free (sock);
 		return NULL;
 	}
@@ -392,6 +387,8 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 			(flags | O_NONBLOCK));
 	}
 #elif __WINDOWS__
+	// HACK: nonblocking io on w32 behaves strange
+	return R_TRUE;
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0) {
@@ -422,8 +419,10 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	fds[0].fd = s->fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-	return poll((struct pollfd *)&fds, 1, usecs);
+	return poll ((struct pollfd *)&fds, 1, usecs);
 #elif __WINDOWS__
+	return 1;
+#if XXX_THIS_IS_NOT_WORKING_WELL
 	fd_set rfds;
 	struct timeval tv;
 	if (s->fd==-1)
@@ -435,6 +434,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	if (select (s->fd+1, &rfds, NULL, NULL, &tv) == -1)
 		return -1;
 	return FD_ISSET (0, &rfds);
+#endif
 #else
 	return R_TRUE; /* always ready if unknown */
 #endif
@@ -473,14 +473,16 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		int b = 1500; //65536; // Use MTU 1500?
 		if (b>len) b = len;
 #if HAVE_LIB_SSL
-		if (s->is_ssl)
+		if (s->is_ssl) {
 			if (s->bio)
 				ret = BIO_write (s->bio, buf+delta, b);
 			else
 				ret = SSL_write (s->sfd, buf+delta, b);
-		else
+		} else
 #endif
+		{
 			ret = send (s->fd, buf+delta, b, 0);
+		}
 		//if (ret == 0) return -1;
 		if (ret<1) break;
 		if (ret == len)
@@ -504,7 +506,7 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 	if (s->fd >= 0) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
-		r_socket_write (s, buf, strlen(buf));
+		r_socket_write (s, buf, strlen (buf));
 		va_end (ap);
 	}
 }
@@ -512,15 +514,22 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 	if (!s) return -1;
 #if HAVE_LIB_SSL
-	if (s->is_ssl)
+	if (s->is_ssl) {
 		if (s->bio)
 			return BIO_read (s->bio, buf, len);
-		else
-			return SSL_read (s->sfd, buf, len);
-	else
+		return SSL_read (s->sfd, buf, len);
+	}
 #endif
 #if __WINDOWS__
-	return recv (s->fd, (void *)buf, len, 0);
+rep:
+	{
+	int ret = recv (s->fd, (void *)buf, len, 0);
+	if (ret != len)
+		return 0;
+	//r_sys_perror ("recv");
+	if (ret == -1) goto rep;
+	return ret;
+	}
 #else
 	return read (s->fd, buf, len);
 #endif
@@ -569,4 +578,3 @@ R_API RSocket *r_socket_new_from_fd (int fd) {
 	s->fd = fd;
 	return s;
 }
-#endif

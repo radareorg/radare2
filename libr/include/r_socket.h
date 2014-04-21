@@ -11,10 +11,20 @@ R_LIB_VERSION_HEADER(r_socket);
 
 #if __UNIX__
 #include <netinet/in.h>
+#include <sys/un.h>
+#include <poll.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
 #endif
+
 #if HAVE_LIB_SSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#endif
+
+#if __WINDOWS__
+#include <ws2tcpip.h>
 #endif
 
 typedef struct r_socket_t {

@@ -48,6 +48,8 @@ w32dist:
 	for a in `find libr | grep -e dll$$`; do cp $$a w32dist ; done
 	for a in `find binr | grep -e exe$$`; do cp $$a w32dist ; done
 	rm -f w32dist/plugin.dll
+	mkdir -p w32dist/www
+	cp -rf shlr/www/* w32dist/www
 	mkdir -p w32dist/radare2/${VERSION}/magic
 	cp -f libr/magic/d/default/* w32dist/radare2/${VERSION}/magic
 	mkdir -p w32dist/radare2/${VERSION}/syscall
