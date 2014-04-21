@@ -235,7 +235,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'x':
 		for (input++; input[0]==' '; input++);
 		if (*input=='-') {
-			ut8 *out = malloc (strlen (input));
+			ut8 *out = malloc (strlen (input)+1);
 			int len = r_hex_str2bin (input+1, out);
 			out[len] = 0;
 			r_cons_printf ("%s\n", (const char*)out);
