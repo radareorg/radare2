@@ -283,6 +283,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	bin->cur->file = strdup (desc->name);
 	bin->cur->buf = r_buf_new ();
 	bin->cur->rawstr = 0;
+	bin->cur->sdb_addrinfo = sdb_new (NULL, NULL, 0);
 	bin->file = desc->name;
 
 	if (bin->cur->buf)
@@ -468,6 +469,7 @@ static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
 	bin->cur->o = R_NEW0 (RBinObject);
 	bin->cur->o->loadaddr = loadaddr;
 	bin->cur->o->baddr = baseaddr;
+	bin->cur->sdb_addrinfo = sdb_new (NULL, NULL, 0);
 
 	bin->cur->curxtr = NULL;
 	r_list_foreach (bin->binxtrs, it, xtr) {
@@ -529,6 +531,10 @@ R_API void* r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
 	bin->file = NULL;
 	//r_bin_free_bin_files (bin);
+	if (bin->cur->sdb_addrinfo) {
+		sdb_free (bin->cur->sdb_addrinfo);
+		bin->cur->sdb_addrinfo = 0;
+	}
 	r_list_free (bin->binfiles);
 	if (bin->cur && bin->cur->curxtr && bin->cur->curxtr->destroy)
 		bin->cur->curxtr->destroy (bin);
@@ -708,6 +714,7 @@ R_API RBin* r_bin_new() {
 	bin->minstrlen = -2;
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->o = R_NEW0 (RBinObject);
+	bin->cur->sdb_addrinfo = sdb_new (NULL, NULL, 0);
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	for (i=0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
