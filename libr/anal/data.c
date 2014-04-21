@@ -141,7 +141,7 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 		memcpy (ad->buf, ad->str, len+1);
 		ad->len = len+1; // string length + \x00
 	}
-	ad->ptr = 0L; 
+	ad->ptr = 0L;
 	return ad;
 }
 
@@ -151,6 +151,7 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 	ad->buf = (ut8*) &(ad->sbuf);
 	memset (ad->buf, 0, 8);
 	if (l<1)
+		free (ad);
 		return NULL;
 	if (buf) {
 		memcpy (ad->buf, buf, l);
