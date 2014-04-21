@@ -799,14 +799,24 @@ R_API int r_bin_select_idx(RBin *bin, int idx) {
 
 R_API void r_bin_list_archs(RBin *bin) {
 	int i;
+	RBinInfo *info = bin->cur->o->info;
 	for (i = 0; i < bin->narch; i++) {
-		if (r_bin_select_idx (bin, i)) {
-			RBinInfo *info = bin->cur->o->info;
-			/*bin->*/printf ("%03i 0x%08"PFMT64x" %d %s_%i %s %s\n", i,
+		int many = r_bin_select_idx (bin, i);
+		if (many) {
+			info = bin->cur->o->info;
+			printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i,
 				bin->cur->offset, bin->cur->size, info->arch,
-				info->bits, info->machine, bin->cur->file);
-		} else /*bin->*/printf ("%03i 0x%08"PFMT64x" %d unknown_0\n", i,
-				bin->cur->offset, bin->cur->size);
+				info->bits, info->machine);
+		} else {
+			if (info) {
+				printf ("%03i 0x%08"PFMT64x" %d %s_%d\n", i,
+					bin->cur->offset, bin->cur->size,
+				       info->arch, info->bits);
+			} else {
+				printf ("%03i 0x%08"PFMT64x" %d unk_0\n", i,
+					bin->cur->offset, bin->cur->size);
+			}
+		}
 	}
 }
 
