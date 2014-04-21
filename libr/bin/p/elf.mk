@@ -3,6 +3,7 @@ OBJ_ELF+=../format/elf/elf.o ../format/elf/elf_write.o
 
 STATIC_OBJ+=${OBJ_ELF}
 TARGET_ELF=bin_elf.${EXT_SO}
+LDFLAGS+=-lr_db -L../../db
 
 ALL_TARGETS+=${TARGET_ELF}
 
