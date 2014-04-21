@@ -240,7 +240,7 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 			free (str);
 			return NULL;
 		}
-		lines = line;
+		lines = line - 1;
 		for (i=0; str[i]&&lines; i++)
 			if (str[i]=='\n')
 				lines--;
