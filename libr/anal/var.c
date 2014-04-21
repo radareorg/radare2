@@ -208,6 +208,7 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 		SETKEY("fcn.0x%08"PFMT64x".%c.%d", fna, kind, delta);
 		sdb_unset (DB, key, 0);
 	}
+	free (v);
 	return R_FALSE;
 }
 
