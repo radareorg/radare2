@@ -217,7 +217,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
-	ds->show_dwarf = 0; // r_config_get_i (core->config, "asm.dwarf");
+	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	ds->show_linescall = r_config_get_i (core->config, "asm.linescall");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
@@ -1313,22 +1313,15 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 		if (len<30) len = 30-len;
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
-				while (len--)
-					r_cons_strcat (" ");
-
 				handle_set_pre (ds, "  ");
 				if (ds->show_color)
 					r_cons_printf ("%s  ; %s"Color_RESET"%s",
-							ds->pal_comment, ds->l, ds->pre);
+							ds->pal_comment, ds->sl, ds->pre);
 				else r_cons_printf ("  ; %s\n%s", ds->sl, ds->pre);
 				free (ds->osl);
 				ds->osl = ds->sl;
 				ds->sl = NULL;
 			}
-		} else {
-			eprintf ("Warning: Forced asm.dwarf=false because of error\n");
-			ds->show_dwarf = R_FALSE;
-			r_config_set (core->config, "asm.dwarf", "false");
 		}
 	}
 }

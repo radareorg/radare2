@@ -133,6 +133,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
 	Sdb *db;
+	Sdb *sdb_addrinfo;
 } RBinFile;
 
 typedef struct r_bin_t {

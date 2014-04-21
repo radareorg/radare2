@@ -5,17 +5,30 @@
 
 // TODO: use proper dwarf api here.. or deprecate
 static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
-	char *p, *out = r_sys_cmd_strf ("addr2line -e '%s' 0x%08"PFMT64x"", arch->file, addr);
-	if (out == NULL || *out=='?')
-		return R_FALSE;
-	p = strchr (out, ':');
-	if (p) {
-		*p = '\0';
-		if (line)
-			*line = atoi (p+1);
-		strncpy (file, out, len);
-	} else return R_FALSE;
-	return R_TRUE;
+	char *ret;
+	char *p;
+	char *offset_ptr;
+	char offset[64];
+
+	if (arch->sdb_addrinfo) {
+		offset_ptr = sdb_itoa (addr, offset, 16);
+		ret = sdb_get (arch->sdb_addrinfo, offset_ptr, 0);
+
+		if (!ret) {
+			return R_FALSE;
+		}
+
+		p = strchr(ret, ':');
+		if (p) {
+			*p = '\0';
+			strncpy(file, ret, len);
+			*line = atoi(p + 1);
+			return R_TRUE;
+		} else {
+			return R_FALSE;
+		}
+	}
+	return R_FALSE;
 }
 
 #if !R_BIN_ELF64

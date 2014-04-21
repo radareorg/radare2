@@ -7,7 +7,7 @@ R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line) 
 	RBinObject *o = bin->cur->o;
 	RBinPlugin *cp = bin->cur->curplugin;
 	if (cp && cp->dbginfo) {
-		if (addr >= o->baddr && addr < (o->baddr+bin->cur->size))
+		if (addr >= o->baddr && addr < (o->baddr+bin->cur->o->size))
 			if (cp->dbginfo->get_line)
 				return cp->dbginfo->get_line (bin->cur,
 					addr, file, len, line);
@@ -18,10 +18,17 @@ R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line) 
 R_API char *r_bin_addr2text(RBin *bin, ut64 addr) {
 	char file[1024];
 	int line;
-	char *out = NULL;
-	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line))
+	char *out = NULL, *out2;
+
+	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line)) {
 		out = r_file_slurp_line (file, line, 0);
-	return out;
+		out2 = malloc((strlen(file) + 64 + strlen(out))*sizeof(char));
+		snprintf(out2, strlen(file) + 63 + strlen(out), "%s:%d %s", file, line, out);
+
+		free (out);
+		return out2;
+	}
+	return 0;
 }
 
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {

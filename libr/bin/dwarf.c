@@ -282,6 +282,21 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (const ut8 *buf,
 	return buf;
 }
 
+static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line)
+{
+	char fileline[128];
+	char offset[64];
+	char *offset_ptr;
+
+	if (!s)
+		return;
+
+	snprintf (fileline, sizeof(fileline) - 1, "%s:%lld", file, line);
+	offset_ptr = sdb_itoa (addr, offset, 16);
+	sdb_add (s, offset_ptr, fileline, 0);
+	sdb_add (s, fileline, offset_ptr, 0);
+}
+
 static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 		size_t len, const RBinDwarfLNPHeader *hdr,
 		RBinDwarfSMRegisters *regs, RList *list, FILE *f)
@@ -305,14 +320,10 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 	case DW_LNE_end_sequence:
 		regs->end_sequence = DWARF_TRUE;
 
-#if 0
-		if (list) {
-			RBinDwarfRow *row = R_NEW (RBinDwarfRow);
-			r_bin_dwarf_line_new (row, regs->address,
-					hdr->file_names[0].name, regs->line);
-			r_list_append (list, row);
+		if (a && a->cur && a->cur->sdb_addrinfo) {
+			add_sdb_addrline(a->cur->sdb_addrinfo, regs->address,
+					hdr->file_names[regs->file - 1].name, regs->line);
 		}
-#endif
 
 		if (f) {
 			fprintf(f, "End of Sequence\n");
@@ -361,7 +372,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 }
 
 static const ut8* r_bin_dwarf_parse_spec_opcode(
-		const ut8 *obuf, size_t len,
+		RBin *a, const ut8 *obuf, size_t len,
 		const RBinDwarfLNPHeader *hdr,
 		RBinDwarfSMRegisters *regs,
 		ut8 opcode, RList *list, FILE *f)
@@ -383,10 +394,10 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	}
 
 	if (list) {
-		RBinDwarfRow *row = R_NEW (RBinDwarfRow);
-		r_bin_dwarf_line_new (row, regs->address,
-			hdr->file_names[0].name, regs->line);
-		r_list_append (list, row);
+		if (a && a->cur && a->cur->sdb_addrinfo) {
+			add_sdb_addrline(a->cur->sdb_addrinfo, regs->address,
+				hdr->file_names[regs->file - 1].name, regs->line);
+		}
 	}
 
 	regs->basic_block = DWARF_FALSE;
@@ -397,7 +408,8 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	return buf;
 }
 
-static const ut8* r_bin_dwarf_parse_std_opcode(const ut8 *obuf, size_t len,
+static const ut8* r_bin_dwarf_parse_std_opcode(
+		RBin *a, const ut8 *obuf, size_t len,
 		const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs,
 		ut8 opcode, RList *list, FILE *f)
 {
@@ -413,14 +425,11 @@ static const ut8* r_bin_dwarf_parse_std_opcode(const ut8 *obuf, size_t len,
 		if (f) {
 			fprintf(f, "Copy\n");
 		}
-#if 0
-		if (list) {
-			RBinDwarfRow *row = R_NEW (RBinDwarfRow);
-			r_bin_dwarf_line_new (row, regs->address,
-					hdr->file_names[0].name, regs->line);
-			r_list_append (list, row);
+
+		if (a && a->cur && a->cur->sdb_addrinfo) {
+			add_sdb_addrline(a->cur->sdb_addrinfo, regs->address,
+				hdr->file_names[regs->file - 1].name, regs->line);
 		}
-#endif
 		regs->basic_block = DWARF_FALSE;
 		break;
 	case DW_LNS_advance_pc:
@@ -526,9 +535,9 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 			if (ext_opcode == DW_LNE_end_sequence)
 				break;
 		} else if (opcode >= hdr->opcode_base) {
-			buf = r_bin_dwarf_parse_spec_opcode(buf, len, hdr, regs, opcode, list, f);
+			buf = r_bin_dwarf_parse_spec_opcode(a, buf, len, hdr, regs, opcode, list, f);
 		} else {
-			buf = r_bin_dwarf_parse_std_opcode(buf, len, hdr, regs, opcode, list, f);
+			buf = r_bin_dwarf_parse_std_opcode(a, buf, len, hdr, regs, opcode, list, f);
 		}
 	}
 
@@ -768,7 +777,6 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 	size_t i, j;
 	ut64 attr_name, attr_form;
 
-eprintf ("F = %p\n", f);
 	if (!f) return;
 	for (i = 0; i < da->length; i++) {
 		fprintf(f, "Abbreviation Code %lld ", da->decls[i].code);

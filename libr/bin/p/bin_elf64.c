@@ -113,6 +113,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
+	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
 	.dbginfo = &r_bin_dbginfo_elf64,
