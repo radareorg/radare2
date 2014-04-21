@@ -709,7 +709,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* bin */
 	SETI("bin.baddr", 0, "Set base address for loading binaries ('o')");
-	SETPREF("bin.dwarf", "false", "Load dwarf information on startup if available");
+	SETPREF("bin.dwarf", "true", "Load dwarf information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETPREF("bin.rawstr", "false", "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
