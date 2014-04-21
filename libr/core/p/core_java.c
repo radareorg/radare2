@@ -858,7 +858,7 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	RCmdJavaCPResult *cp_res = NULL;
 	ut16 idx = -1;
 	RList *find_list;
-	const char *p;
+	char *p = NULL;
 
 	if (cmd && *cmd == ' ') p = r_cmd_java_consumetok (cmd, ' ', -1);
 
