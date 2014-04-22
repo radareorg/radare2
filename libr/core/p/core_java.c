@@ -434,6 +434,10 @@ static int r_cmd_java_handle_find_cp_value (RCore *core, const char *cmd) {
 	ut32 *idx;
 	const char *p = cmd;
 	char f_type = 0;
+	if (!obj) {
+		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		return R_TRUE;
+	}
 	IFDBG r_cons_printf ("Function call made: %s\n", p);
 	if (p && *p) {
 		p = r_cmd_java_consumetok (cmd, ' ', -1);
@@ -933,6 +937,7 @@ static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 	} else if (!cmd || !*cmd) {
 		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+FIELD_INFO_IDX);
+		return R_TRUE;
 	}
 
 	if (*(cmd) == 's' || *(cmd) == 'n') {

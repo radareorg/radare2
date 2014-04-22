@@ -9,9 +9,10 @@ static void flagbars(RCore *core) {
 		total += flag->offset;
 	}
 	r_list_foreach (core->flags->flags, iter, flag) {
+		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
 		r_cons_printf ("%10s", flag->name);
 		r_print_progressbar (core->print,
-			(flag->offset*100)/total, cols);
+			(pbar_val*100)/total, cols);
 		r_cons_newline ();
 	}
 }

@@ -216,7 +216,7 @@ static int cb_asmbits(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
-	__setsegoff (core->config, asmarch, core->anal->bits);
+	if (core->anal) __setsegoff (core->config, asmarch, core->anal->bits);
 	return ret;
 }
 
@@ -294,7 +294,7 @@ static int cb_bigendian(void *user, void *data) {
 static int cb_cfgdatefmt(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	strncpy (core->print->datefmt, node->value, 32);
+	snprintf (core->print->datefmt, 32, "%s", node->value);
 	return R_TRUE;
 }
 
@@ -313,7 +313,7 @@ static int cb_cfgdebug(void *user, void *data) {
 			r_debug_select (core->dbg, core->file->fd->fd,
 					core->file->fd->fd);
 		}
-	} else r_debug_use (core->dbg, NULL);
+	} else if (core->dbg) r_debug_use (core->dbg, NULL);
 	return R_TRUE;
 }
 

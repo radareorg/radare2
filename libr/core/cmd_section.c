@@ -92,7 +92,7 @@ static int cmd_section(void *data, const char *input) {
 				ut8 *buf = malloc (s->size);
 				r_io_read_at (core->io, s->offset, buf, s->size);
 				if (input[1]==' ' && input[2]) {
-					strncpy (file, input+2, sizeof (file));
+					snprintf (file, sizeof (file), "%s", input+2);
 				} else snprintf (file, sizeof (file), "0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					s->vaddr, s->vaddr+s->size, r_str_rwx_i (s->rwx));
 				if (!r_file_dump (file, buf, s->size)) {

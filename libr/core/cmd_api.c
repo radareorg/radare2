@@ -15,12 +15,12 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 R_API RCmd *r_cmd_new () {
 	int i;
 	RCmd *cmd = R_NEW (RCmd);
-	if (cmd) {
-		cmd->lcmds = r_list_new ();
-		for (i=0;i<NCMDS;i++)
-			cmd->cmds[i] = NULL;
-		cmd->nullcallback = cmd->data = NULL;
-	}
+	if (!cmd) return cmd;
+
+	cmd->lcmds = r_list_new ();
+	for (i=0;i<NCMDS;i++)
+		cmd->cmds[i] = NULL;
+	cmd->nullcallback = cmd->data = NULL;
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);

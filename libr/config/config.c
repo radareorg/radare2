@@ -122,7 +122,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node;
 	char *ov = NULL;
 	ut64 oi;
-	if (strnull (name))
+	if (!cfg || strnull (name))
 		return NULL;
 	node = r_config_node_get (cfg, name);
 	// TODO: store old value somewhere..

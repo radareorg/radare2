@@ -1095,10 +1095,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			if (!tick || (tick && tick > ptr)) {
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
-int value = core->num->value;
+				int value = core->num->value;
 				if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
 				else r_io_system (core->io, ptr+1);
-core->num->value = value;
+				core->num->value = value;
 				return 0;
 			}
 		}

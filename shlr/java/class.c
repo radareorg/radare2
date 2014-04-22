@@ -745,7 +745,7 @@ static char * r_bin_java_unmangle_method (const char *flags, const char *name, c
 	}
 
 
-	prototype_len += (f_val_str && *f_val_str ? strlen(flags) + 1 : 0); // space vs no space
+	prototype_len += (*f_val_str ? strlen(flags) + 1 : 0); // space vs no space
 	prototype_len += strlen(name) + 1; // name + space
 	prototype_len += strlen(r_val_str) + 1; // r_value + space
 	prototype_len += strlen (p_val_str) + 3; // space + l_paren + params + r_paren
@@ -3218,6 +3218,7 @@ R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin) {
 	RList *lib_names = r_list_newf(free);
 	RListIter *iter;
 	RBinJavaCPTypeObj *cp_obj = NULL;
+	if (!bin) return lib_names;
 
 	r_list_foreach (bin->cp_list, iter, cp_obj) {
 		if (cp_obj &&

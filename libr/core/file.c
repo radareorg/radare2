@@ -285,7 +285,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	}
 	//r->file->binfile = r->bin->cur;//r_bin_get_object (r->bin);
 	if (baddr) r_bin_set_baddr(r->bin, baddr);
-	if (r->file && r->bin->cur) r->bin->cur->fd = r->file->fd->fd;
+	if (r->file && r->bin && r->bin->cur) r->bin->cur->fd = r->file->fd->fd;
 	if (r->bin) r_core_bin_bind (r);
 
 	r_config_set_i (r->config, "io.va",
@@ -499,7 +499,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	int ret = (fh&&r)? r_io_close (r->io, fh->fd): 0;
 	// TODO: free fh->obj
-	r_list_delete_data (r->files, fh);
+	if (fh) r_list_delete_data (r->files, fh);
 	return ret;
 }
 

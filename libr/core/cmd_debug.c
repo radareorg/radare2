@@ -281,7 +281,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				}
 				r_io_read_at (core->io, map->addr, buf, map->size);
 				if (input[1]==' ' && input[2]) {
-					strncpy (file, input+2, sizeof (file));
+					snprintf (file, sizeof (file), "%s", input+2);
 				} else snprintf (file, sizeof (file),
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					map->addr, map->addr_end, r_str_rwx_i (map->perm));
@@ -821,7 +821,7 @@ static void r_core_debug_trace_calls (RCore *core) {
 
 static void r_core_debug_kill (RCore *core, const char *input) {
 	if (!input || *input=='?') {
-		if (input[1]) {
+		if (input && input[1]) {
 			const char *signame, *arg = input+1;
 			int signum = atoi (arg);
 			if (signum>0) {

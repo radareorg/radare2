@@ -25,7 +25,7 @@ R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd
 		cmpw->addr = addr;
 	}
 	cmpw->size = size;
-	strncpy (cmpw->cmd, cmd, sizeof (cmpw->cmd));
+	snprintf (cmpw->cmd, sizeof (cmpw->cmd), "%s", cmd);
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
 	r_io_read_at (core->io, addr, cmpw->ndata, size);
