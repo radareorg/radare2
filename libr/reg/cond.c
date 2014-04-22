@@ -48,10 +48,11 @@ R_API const char *r_reg_cond_to_string(int n) {
 		"eq", "ne", "cf", "neg", "of", "hi", "he",
 		"lo", "loe", "ge", "gt", "lt", "le"
 	};
-	if (n<0||n>(sizeof(cs)/sizeof(*cs)))
+	if (n < 0 || (n > (sizeof(cs)/sizeof(*cs)) - 1))
 		return NULL;
 	return cs[n];
 }
+
 R_API int r_reg_cond_from_string(const char *str) {
 	if (!strcmp (str, "eq")) return R_REG_COND_EQ;
 	if (!strcmp (str, "ne")) return R_REG_COND_NE;
