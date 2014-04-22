@@ -858,9 +858,8 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	RCmdJavaCPResult *cp_res = NULL;
 	ut16 idx = -1;
 	RList *find_list;
-	const char *p;
-
-	if (cmd && *cmd == ' ') p = r_cmd_java_consumetok (cmd, ' ', -1);
+	const char *p = (cmd && *cmd == ' ')?
+		r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 
 	if (p && *p == 'a') idx = -1;
 	else idx = r_cmd_java_get_input_num_value (core, p);
