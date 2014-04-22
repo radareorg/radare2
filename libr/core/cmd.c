@@ -589,9 +589,12 @@ static int cmd_resize(void *data, const char *input) {
 			newsize = oldsize + delta;
 			break;
 		case '\0':
+			r_cons_printf ("%"PFMT64d"\n", oldsize);
+			break;
 		case '?':
 			r_cons_printf (
 				"|Usage: r[+-][ size]\n"
+				"| r         display file size\n"
 				"| r size    expand or truncate file to given size\n"
 				"| r-num     remove num bytes, move following data down\n"
 				"| r+num     insert num bytes, move following data up\n"
