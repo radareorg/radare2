@@ -44,7 +44,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		ptr = strchr (arg, ' ');
 		if (ptr) {
 		// TODO. matching must be done by sym/flag/function name
-		//	sig->addr = 
+		//	sig->addr =
 		}
 		sig->s_func++;
 		r_list_append (sig->items, si);
@@ -52,7 +52,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 	case R_SIGN_HEAD: // function prefix (push ebp..)
 	case R_SIGN_BYTE: // function mask
 		if (!(data = r_anal_strmask (anal, arg))) {
-			free (si);
+			r_sign_item_free (si);
 			break;
 		}
 		len = strlen (data)+4; // \xf0
@@ -60,16 +60,12 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		si->mask = (ut8 *)malloc (R_MAX (len, 4));
 		if (si->bytes == NULL || si->mask == NULL) {
 			eprintf ("Cannot malloc\n");
-			free (si->mask);
-			free (si->bytes);
-			free (si);
+			r_sign_item_free (si);
 			break;
 		}
 		si->size = r_hex_str2binmask (data, si->bytes, si->mask);
 		if (si->size<1) {
-			free (si->bytes);
-			free (si->mask);
-			free (si);
+			r_sign_item_free (si);
 		} else {
 			r_list_append (sig->items, si);
 			if (type==R_SIGN_HEAD)
@@ -82,6 +78,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 	default:
 	case R_SIGN_ANAL:
 		eprintf ("r_sign_add: TODO. unsupported signature type %d\n", type);
+		r_sign_item_free (si);
 		break;
 	}
 	return ret;
@@ -123,10 +120,12 @@ R_API RSign *r_sign_free(RSign *sig) {
 }
 
 R_API void r_sign_item_free(void *_item) {
-	RSignItem *item = _item;
-	free (item->bytes);
-	free (item->mask);
-	free (item);
+	if (_item) {
+		RSignItem *item = _item;
+		if (item->bytes) free (item->bytes);
+		if (item->mask) free (item->mask);
+		free (item);
+	}
 }
 
 
