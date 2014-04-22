@@ -90,22 +90,24 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			return R_FALSE;
 		}
 	}
-	if (searchshow) {
+	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i;
-		ut8 buf[64];
-		char str[128], *p;
+		ut32 buf_sz = kw->keyword_length;
+		ut8 *buf = malloc (buf_sz);
+		char *str = NULL, *p = NULL;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
-			len = sizeof (str);
-			r_core_read_at (core, addr, (ut8*)str+1, len-2);
+			str = malloc (kw->keyword_length + 20);
+			r_core_read_at (core, addr, (ut8*)str+1, kw->keyword_length);
 			*str = '"';
-			r_str_filter_zeroline (str, len);
-			strcpy (str+strlen (str), "\"");
+			r_str_filter_zeroline (str, kw->keyword_length+1);
+			strcpy (str+kw->keyword_length+1, "\"");
 			break;
 		default:
-			len = kw->keyword_length + 8; // 8 byte context
-			if (len>=sizeof (str)) len = sizeof (str)-1;
-			r_core_read_at (core, addr, buf, sizeof (buf));
+			len = kw->keyword_length; // 8 byte context
+			str = malloc (len);
+			memset (str, 0, len);
+			r_core_read_at (core, addr, buf, kw->keyword_length);
 			for (i=0, p=str; i<len; i++) {
 				sprintf (p, "%02x", buf[i]);
 				p += 2;
@@ -115,6 +117,9 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 		r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
 			addr, searchprefix, kw->kwidx, kw->count, str);
+
+		free (buf);
+		free (str);
 	} else {
 		if (searchflags)
 			r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);

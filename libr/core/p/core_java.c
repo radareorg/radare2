@@ -815,7 +815,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
-	char *p = cmd;
+	const char *p = cmd;
 	ut64 cur_offset = core->offset, addr = 0;
 	ut64 buf_size = 0;
 	ut8 * buf = NULL;
