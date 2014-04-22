@@ -360,7 +360,7 @@ R_API void r_core_rtr_list(RCore *core) {
 				rtr_host[i].port, rtr_host[i].file);
 	}
 }
-		
+
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	char *port, input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
 	int proto, i, timeout, ret;
@@ -664,7 +664,7 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 }
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
-	unsigned char buf[4096];
+	unsigned char buf[4097];
 	RSocket *ch, *s;
 	int i, ret;
 	char *str;
@@ -680,14 +680,14 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		r_socket_free (s);
 		return R_FALSE;
 	}
-	
+
 	eprintf ("Listening for commands on port %s\n", port);
 	listenport = port;
 	for (;;) {
 		r_cons_break (http_break, core);
 		ch = r_socket_accept (s);
 		buf[0] = 0;
-		ret = r_socket_read (ch, buf, sizeof (buf));
+		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
 		if (ret>0) {
 			buf[ret] = 0;
 			for (i=0; buf[i]; i++)
@@ -699,7 +699,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 			str = r_core_cmd_str (core, (const char *)buf);
 			if (str &&*str)  {
 			r_socket_write (ch, str, strlen (str));
-			} else 
+			} else
 			r_socket_write (ch, "\n", 1);
 			free (str);
 		}
