@@ -203,7 +203,6 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 	SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
 	v = sdb_itoa (val, delta, 10);
 	int idx = sdb_array_indexof (DB, key, v, 0);
-	free (v);
 	if (idx != -1) {
 		sdb_array_delete (DB, key, idx, 0);
 		SETKEY("fcn.0x%08"PFMT64x".%c.%d", fna, kind, delta);
