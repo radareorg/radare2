@@ -18,10 +18,12 @@ R_API void r_cons_grep_help() {
 	);
 }
 
+#define R_CONS_GREP_BUFSIZE 4096
+
 R_API void r_cons_grep(const char *str) {
 	int wlen, len;
 	RCons *cons;
-	char buf[4096];
+	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptr, *optr, *ptr2, *ptr3;
 
 	if (!str || !*str)
@@ -63,6 +65,10 @@ R_API void r_cons_grep(const char *str) {
 	} while_end:
 
 	len = strlen (str)-1;
+	if (len > R_CONS_GREP_BUFSIZE - 1) {
+		eprintf("r_cons_grep: too long!\n");
+		return;
+	}
 	if (len>0 && str[len] == '?') {
 		cons->grep.counter = 1;
 		strncpy (buf, str, R_MIN (len, sizeof (buf)-1));
