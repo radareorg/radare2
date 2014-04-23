@@ -175,6 +175,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 				tmp = ret;
 			}
 		}
+		r_list_free (files);
 	} else eprintf ("No files found\n");
 	if (!ret) {
 		free (tmp);
