@@ -75,6 +75,7 @@ static char *getstr(const char *src) {
 			return ret;
 		} else {
 			eprintf ("Invalid hexpair string\n");
+			free (ret);
 			return NULL;
 		}
 	}
