@@ -15,10 +15,7 @@ SDB_API SdbList *ls_new() {
 }
 
 SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
-	if (iter==NULL) {
-		fprintf (stderr, "ls_delete: null iter?\n");
-		return;
-	}
+	if (!list || !iter) return;
 	ls_split_iter (list, iter);
 	if (list->free && iter->data) {
 		list->free (iter->data);
@@ -29,6 +26,7 @@ SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
 }
 
 SDB_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
+	if (!list || !iter) return;
 	if (list->head == iter) list->head = iter->n;
 	if (list->tail == iter) list->tail = iter->p;
 	if (iter->p) iter->p->n = iter->n;
@@ -37,16 +35,15 @@ SDB_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
 
 SDB_API void ls_destroy (SdbList *list) {
 	SdbListIter *it;
-	if (list) {
-		it = list->head;
-		while (it) {
-			SdbListIter *next = it->n;
-			ls_delete (list, it);
-			it = next;
-		}
-		list->head = list->tail = NULL;
-		list->length = 0;
+	if (!list) return;
+	it = list->head;
+	while (it) {
+		SdbListIter *next = it->n;
+		ls_delete (list, it);
+		it = next;
 	}
+	list->head = list->tail = NULL;
+	list->length = 0;
 }
 
 SDB_API void ls_free (SdbList *list) {

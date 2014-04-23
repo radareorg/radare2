@@ -12,7 +12,7 @@ typedef struct ls_iter_t {
 } SdbListIter;
 
 typedef struct ls_t {
-	unsigned int length;
+	size_t length;
 	struct ls_iter_t *head;
 	struct ls_iter_t *tail;
 	SdbListFree free;
@@ -21,9 +21,9 @@ typedef struct ls_t {
 typedef int (*SdbListComparator)(void *a, void *b);
 
 #define ls_foreach(list, it, pos) \
-	if(list) for (it = list->head; it && (pos = it->data); it = it->n)
+	if((list)) for (it = (list)->head; it && (pos = it->data); it = it->n)
 #define ls_foreach_prev(list, it, pos) \
-	if(list)for (it = list->tail; it && (pos = it->data); it = it->p)
+	if((list))for (it = list->tail; it && (pos = it->data); it = it->p)
 #define ls_iterator(x) (x)?(x)->head:NULL
 #define ls_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
 #define ls_head(x) x->head

@@ -75,7 +75,7 @@ typedef struct sdb_ns_t {
 #define sdb_new0() sdb_new(NULL,NULL,0)
 Sdb* sdb_new (const char *path, const char *file, int lock);
 void sdb_config (Sdb *s, int options);
-void sdb_free (Sdb* s);
+int sdb_free (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb* s);
 void sdb_setup (Sdb* s, int options);
@@ -135,7 +135,7 @@ ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
 ut64 sdb_now (void);
 ut64 sdb_unow (void);
 ut32 sdb_hash (const char *key, int klen);
-#define sdb_hashstr(x) sdb_hash(x,strlen(x))
+#define sdb_hashstr(x) sdb_hash(x,-1)
 
 /* json api */
 char *sdb_json_get (Sdb* s, const char *key, const char *p, ut32 *cas);
@@ -164,6 +164,7 @@ void sdb_ns_free (Sdb* s);
 void sdb_ns_lock(Sdb *s, int lock, int depth);
 void sdb_ns_sync (Sdb* s);
 int sdb_ns_set (Sdb *s, const char *name, Sdb *r);
+int sdb_ns_unset (Sdb *s, const char *name);
 
 // array
 int sdb_array_contains (Sdb* s, const char *key, const char *val, ut32 *cas);

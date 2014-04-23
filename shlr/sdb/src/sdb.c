@@ -28,6 +28,8 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	Sdb* s = R_NEW (Sdb);
 	if (!s) return NULL;
 	s->refs = 1;
+	if (path && !*path)
+		path = NULL;
 	if (name && *name) {
 		if (path && *path) {
 			int plen = strlen (path);
@@ -36,7 +38,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 			memcpy (s->dir, path, plen);
 			s->dir[plen] = '/';
 			memcpy (s->dir+plen+1, name, nlen+1);
-		} else s->dir = strdup (name);
+		}
 		switch (lock) {
 		case 1:
 			if (!sdb_lock (sdb_lockfile (s->dir)))
@@ -47,7 +49,10 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 				goto fail;
 			break;
 		}
-		s->fd = open (s->dir, O_RDONLY|O_BINARY);
+		s->dir = (name&&*name)? strdup (name): NULL;
+		if (s->dir) 
+			s->fd = open (s->dir, O_RDONLY|O_BINARY);
+		else s->fd = -1;
 		if (s->fd != -1) {
 			if (fstat (s->fd, &st) != -1)
 				if ((S_IFREG & st.st_mode)!=S_IFREG)
@@ -70,6 +75,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL
+	s->ns->free = NULL;
 	s->ns_lock = 0;
 	if (!s->ns) goto fail;
 	s->hooks = NULL;
@@ -123,7 +129,7 @@ static void sdb_fini(Sdb* s, int donull) {
 		memset (s, 0, sizeof (Sdb));
 }
 
-SDB_API void sdb_free (Sdb* s) {
+SDB_API int sdb_free (Sdb* s) {
 	if (s && s->ht) {
 		if (s->refs>0)
 			s->refs--;
@@ -131,8 +137,10 @@ SDB_API void sdb_free (Sdb* s) {
 			sdb_fini (s, 1);
 			s->ht = NULL;
 			free (s);
+			return 1;
 		}
 	}
+	return 0;
 }
 
 SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
@@ -142,7 +150,7 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 	if (cas) *cas = 0;
 	if (!s||!key) return NULL;
 	keylen = strlen (key)+1;
-	hash = sdb_hash (key, -1); //keylen-1);
+	hash = sdb_hash (key, keylen-1);
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {
@@ -248,8 +256,8 @@ SDB_API int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas) {
 SDB_API int sdb_exists (Sdb* s, const char *key) {
 	char ch;
 	SdbKv *kv;
-	int klen = strlen (key);
-	ut32 pos, hash = sdb_hash (key, klen);
+	int klen = strlen (key)+1;
+	ut32 pos, hash = sdb_hash (key, klen-1);
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) return (*kv->value)? 1: 0;
 	if (s->fd == -1)
@@ -520,7 +528,7 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 	if (s->fd == -1)
 		return 0;
 	cdb_findstart (&s->db);
-	if (!cdb_findnext (&s->db, hash, key, strlen (key)))
+	if (!cdb_findnext (&s->db, hash, key, strlen (key)+1))
 		return 0;
 	pos = cdb_datapos (&s->db);
 	len = cdb_datalen (&s->db);
