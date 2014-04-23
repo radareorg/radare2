@@ -1269,7 +1269,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	RListIter *iter;
 	RBinSection *section;
 
-	if (a->cur->o->sections) {
+	if (a && a->cur && a->cur->o && a->cur->o->sections) {
 		r_list_foreach (a->cur->o->sections, iter, section) {
 			if (strstr (section->name, sn))
 				return section;

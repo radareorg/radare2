@@ -480,7 +480,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			printf ("]");
-		} else r_bin_list_archs (bin);
+		} else r_bin_list_archs (bin, 1);
 		free (arch_name);
 	}
 

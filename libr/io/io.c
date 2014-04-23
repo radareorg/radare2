@@ -547,9 +547,10 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 
 // TODO: remove int fd here???
 R_API int r_io_close(RIO *io, RIODesc *fd) {
-	if (io == NULL || fd == NULL)
+	int nfd;
+	if (!io || !fd)
 		return -1;
-	int nfd = fd->fd;
+	nfd = fd->fd;
 	if (r_io_set_fd (io, fd)) {
 		RIODesc *desc = r_io_desc_get (io, fd->fd);
 		if (desc) {

@@ -288,8 +288,10 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	if (r->file && r->bin && r->bin->cur) r->bin->cur->fd = r->file->fd->fd;
 	if (r->bin) r_core_bin_bind (r);
 
-	r_config_set_i (r->config, "io.va",
-		(r->bin->cur->o->info)? r->bin->cur->o->info->has_va: 0);
+	if (r->bin && r->bin->cur && r->bin->cur->o) {
+		r_config_set_i (r->config, "io.va",
+			(r->bin->cur->o->info)? r->bin->cur->o->info->has_va: 0);
+	}
 	offset = r_bin_get_offset (r->bin);
 	// XXX - should this be offset, base address, or base address + offset. (referring to the last argument) 
 	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, r_bin_get_baddr(r->bin));

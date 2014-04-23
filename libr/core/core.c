@@ -475,12 +475,16 @@ static void update_sdb(RCore *core) {
 	// TODO: Use refcounting for Sdb! to avoid dblfrees and so
 	// TODO: sdb_hook should work across namespaces?
 	// HOOK!
-	sdb_ns_set (sdb_ns(DB, "debug"), "signals", core->dbg->sgnls);
+	sdb_ns_set (DB, "bin", core->bin->sdb);
 	sdb_ns_set (DB, "anal", core->anal->sdb);
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	if (core->assembler && core->assembler->syscall)
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
+	 {
+		Sdb *d = sdb_ns (DB, "debug");
+		sdb_ns_set (d, "signals", core->dbg->sgnls);
+	 }
 }
 
 R_API int r_core_init(RCore *core) {

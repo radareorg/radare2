@@ -121,18 +121,18 @@ typedef struct r_bin_object_t {
 // XXX: this is a copy of RBinObject
 // TODO: rename RBinFile to RBinFile
 typedef struct r_bin_file_t {
-	RBuffer *buf;
 	char *file;
+	int fd;
 	int size;
 	int rawstr;
+	RBuffer *buf;
 	ut64 offset;
 	RBinObject *o;
 	void *xtr_obj;
 	ut64 loadaddr;
-	ut64 fd;
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
-	Sdb *db;
+	Sdb *sdb;
 	Sdb *sdb_addrinfo;
 } RBinFile;
 
@@ -142,9 +142,10 @@ typedef struct r_bin_t {
 	int narch;
 	void *user;
 	int minstrlen;
-	RList *plugins;
-	RList *binxtrs;
-	RList *binfiles;
+	Sdb *sdb;
+	RList/*<RBinPlugin>*/ *plugins;
+	RList/*<RBinXtrPlugin>*/ *binxtrs;
+	RList/*<RBinFile>*/ *binfiles;
 	PrintfCallback printf;
 } RBin;
 
@@ -354,7 +355,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, int idx);
-R_API void r_bin_list_archs(RBin *bin);
+R_API void r_bin_list_archs(RBin *bin, int mode);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 R_API ut64 r_bin_get_offset (RBin *bin);

@@ -70,11 +70,12 @@ R_API RDebug *r_debug_new(int hard) {
 	return dbg;
 }
 
-R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
+R_API struct r_debug_t *r_debug_free(RDebug *dbg) {
 	if (!dbg) return NULL;
 	// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 	//r_bp_free(&dbg->bp);
 	//r_reg_free(&dbg->reg);
+	sdb_free (dbg->sgnls);
 	//r_debug_plugin_free();
 	r_debug_trace_free (dbg);
 	r_graph_free (dbg->graph);
