@@ -81,6 +81,8 @@ typedef struct r_core_file_t {
 	int dbg;
 	RIODesc *fd;
 	RBinBind binb;
+	const struct r_core_t *core;
+	ut8 alive;
 } RCoreFile;
 
 #define R_CORE_ASMSTEPS 128
@@ -211,6 +213,8 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm);
 R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd);
+R_API RCoreFile * r_core_file_set_by_fd(RCore *core, int fd);
+R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
 R_API struct r_core_file_t *r_core_file_open(RCore *core, const char *file, int mode, ut64 loadaddr);
 R_API struct r_core_file_t *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr);

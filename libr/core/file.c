@@ -14,6 +14,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *path;
 	ut64 ofrom, addr = 0; // XXX ? check file->map ?
 	RCoreFile *file, *ofile = core->file;
+	char *ofilepath = ofile ? ofile->uri : NULL;
 	int newpid, ret = R_FALSE;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
@@ -32,8 +33,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	// HACK: move last mapped address to higher place
 	ofrom = ofile->map->from;
 	ofile->map->from = UT64_MAX;
-
-	// r_core_file_close (core, ofile);
+	// closing the file to make sure there are no collisions
+	// when the new memory maps are created.
+	//r_core_file_close (core, ofile);
 	file = r_core_file_open (core, path, perm, addr);
 	if (file) {
 		eprintf ("File %s reopened in %s mode\n", path,
@@ -41,12 +43,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		ret = R_TRUE;
 		// close old file
 		r_core_file_close (core, ofile);
-		r_io_set_fdn (core->io, file->fd->fd);
 		core->file = file;
+		r_io_raise (core->io, file->fd->fd);
+		core->switch_file_view = 1;
+		r_core_block_read (core, 0);
+
 	} else {
+		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
+			     " attempting to open read-only.\n", path, perm);
 		// lower it down back
+		//ofile = r_core_file_open (core, path, R_IO_READ, addr);
 		ofile->map->from = ofrom;
-		eprintf ("r_core_file_reopen: Cannot reopen file.\n");
+		//if (!ofile) 
+		//eprintf ("r_core_file_reopen: Cannot reopen file: %s.\n", path);
 		core->file = ofile; // XXX: not necessary?
 	}
 	// TODO: in debugger must select new PID
@@ -55,7 +64,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			newpid = core->file->fd->fd;
 		r_debug_select (core->dbg, newpid, newpid);
 	}
-	r_core_block_read (core, 1);
+
+	// This is done to ensure that the file is correctly 
+	// loaded into the view
 	free (path);
 	return ret;
 }
@@ -353,11 +364,12 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 
 	r_list_foreach (list_fds, fd_iter, fd) {
 		fh = R_NEW0 (RCoreFile);
-
 		if (!fh) {
 			eprintf ("file.c:r_core_many failed to allocate new RCoreFile.\n");
 			break;
 		}
+		fh->alive = 1;
+		fh->core = r;
 		fh->uri = strdup (file);
 		fh->fd = fd;
 		fh->size = r_io_desc_size (r->io, fd);
@@ -436,6 +448,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		//r_io_close (r->io, fd);
 		return NULL;
 	}
+	fh->alive = 1;
+	fh->core = r;
 	fh->uri = strdup (file);
 	fh->fd = fd;
 	fh->size = r_io_desc_size (r->io, fd);
@@ -479,29 +493,60 @@ R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd){
 	}
 	return cf;
 }
+R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
+	if (!core || !core->files || !cf) return R_FALSE;
+	return r_list_delete_data (core->files, cf);
+}
+
 
 R_API void r_core_file_free(RCoreFile *cf) {
-	if (cf) {
+	int res = r_core_files_free (cf->core, cf);
+	if (!res && cf && cf->alive) {
 		// double free libr/io/io.c:70 performs free
-		//if (cf->map) free(cf->map);
-		free (cf->filename);
-		free (cf->uri);
-// XXX: already done by someone else :)
-		r_io_desc_free (cf->fd);
+		cf->alive = 0;
+		const RIO *io = cf->fd ? cf->fd->io : NULL;
+
+		if (io && cf->map) r_io_map_del_at (io, cf->map->from);
+		if (io) r_io_close (io, cf->fd);
 		cf->fd = NULL;
 		cf->map = NULL;
+
 		cf->filename = NULL;
+		free (cf->filename);
+		free (cf->uri);
+		r_bin_deref_binfile (&cf->binb);
 		cf->uri = NULL;
-// XXX avoid segfault
+		memset (cf, 0, sizeof (RCoreFile));
 		free (cf);
 	}
 	cf = NULL;
 }
 
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
-	int ret = (fh&&r)? r_io_close (r->io, fh->fd): 0;
-	// TODO: free fh->obj
-	if (fh) r_list_delete_data (r->files, fh);
+
+	// XXX -these checks are intended to *try* and catch
+	// stale objects.  Unfortunately, if the file handle
+	// (fh) is stale and freed, and there is more than 1
+	// fh in the r->files list, we are hosed. (design flaw)
+	// TODO maybe using sdb to keep track of the allocated and
+	// deallocated files might be a good solutions
+	if (!r) return R_FALSE;
+	else if (r_list_length (r->files) == 0) return R_FALSE;
+	else if (!fh || !fh->fd) return R_FALSE;
+
+	r_io_raise (r->io, fh->fd->fd);
+	r_core_file_set_by_fd (r, r->io->raised);
+	r_core_bin_set_by_fd (r, r->io->raised);
+	int ret = r_list_delete_data (r->files, fh);
+	if (ret) {
+		r->file = NULL;
+		if (r_list_length (r->files) > 0) {
+			r->file = (RCoreFile *) r_list_get_n (r->files, 0);
+			r_io_raise (r->io, r->file->fd->fd);
+			r->switch_file_view = 1;
+			r_core_block_read (r, 0);
+		}
+	}
 	return ret;
 }
 
@@ -536,9 +581,7 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 	RListIter *iter;
 	r_list_foreach (core->files, iter, file) {
 		if (file->fd->fd == fd) {
-			r_io_close (core->io, file->fd);
-			r_list_delete (core->files, iter);
-			//r_io_raise (core->io, fd);
+			r_core_file_close (core, file);
 #if 0
 			if (r_list_empty (core->files))
 				core->file = NULL;

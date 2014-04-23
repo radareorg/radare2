@@ -65,6 +65,7 @@ typedef struct r_io_desc_t {
 	char *name;
 	void *data;
 	struct r_io_plugin_t *plugin;
+	const struct r_io_t *io;
 } RIODesc;
 
 typedef struct {

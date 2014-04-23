@@ -185,7 +185,7 @@ R_API void r_bin_update_items(RBin *bin, RBinPlugin *cp) {
 }
 
 static void delete_bin_items (RBinObject *o) {
-
+	if (!o) return;
 	r_list_free (o->entries);
 	r_list_free (o->fields);
 	r_list_free (o->imports);
@@ -412,6 +412,29 @@ static void r_bin_free_bin_files (RBin *bin) {
 }
 #endif
 
+R_API void r_bin_deref_binfile (RBinBind * binb) {
+	RBin *bin = binb ? binb->bin : NULL;
+	RBinFile *a = bin ? bin->cur : NULL;
+	RBinObject *o = a ? a->o : NULL;
+	int res = R_FALSE;
+
+	if (a && !o) {
+		r_bin_file_free (a);
+		res = R_TRUE;
+	} else if (a && o->referenced-1 < 1) {
+		r_bin_file_free (a);
+		res = R_TRUE;
+	// not thread safe
+	} else if (o) o->referenced--;
+	// it is possible for a file not
+	// to be bound to RBin and RBinFiles
+	// XXX - is this an ok assumption?
+	if (bin) bin->cur = NULL;
+	return res;
+
+}
+
+
 static void r_bin_file_free (RBinFile *a) {
 	RBinObject *o = a->o;
 	delete_bin_items (o);
@@ -537,6 +560,10 @@ R_API void* r_bin_free(RBin *bin) {
 	//r_bin_free_bin_files (bin);
 	sdb_free (bin->sdb);
 	// TODO: unset related sdb namespaces
+	if (bin->cur && bin->cur->sdb_addrinfo) {
+		sdb_free (bin->cur->sdb_addrinfo);
+		bin->cur->sdb_addrinfo = 0;
+	}
 	r_list_free (bin->binfiles);
 	if (bin->cur && bin->cur->curxtr && bin->cur->curxtr->destroy)
 		bin->cur->curxtr->destroy (bin);

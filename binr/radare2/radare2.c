@@ -648,7 +648,10 @@ int main(int argc, char **argv, char **envp) {
 
 	/* capture return value */
 	ret = r.num->value;
-	r_core_file_close (&r, fh);
+	// not really needed, cause r_core_fini will close the file
+	// and this fh may be come stale during the command
+	// exectution.
+	//r_core_file_close (&r, fh);
 	r_core_fini (&r);
 	r_cons_set_raw (0);
 	free (file);

@@ -329,7 +329,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	return file;
 }
 
-static RCoreFile * r_core_file_set_by_fd(RCore *core, int fd) {
+R_API RCoreFile * r_core_file_set_by_fd(RCore *core, int fd) {
 	RListIter *iter;
 	RCoreFile *file = NULL;
 

@@ -58,6 +58,11 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 
 R_API void r_io_desc_free(RIODesc *desc) {
 	if (!desc) return;
+	if (desc->io) {
+		const RIO * io = desc->io;
+		desc->io = NULL;
+		r_io_close (io, desc);
+	}
 	if (desc->plugin && desc->plugin->close)
 		desc->plugin->close (desc);
 	if (desc->name) {
@@ -69,8 +74,10 @@ R_API void r_io_desc_free(RIODesc *desc) {
 
 R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
 	RIODesc *foo = r_io_desc_get (io, desc->fd);
-	if (!foo)
+	if (!foo){
+		desc->io = io;
 		r_list_append (io->desc, desc);
+	}
 	return foo? 1: 0;
 }
 
@@ -91,7 +98,7 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
 	r_list_foreach (io->desc, iter, d) {
-		if (d->fd == fd)
+		if (d && d->fd == fd)
 			return d;
 	}
 	return NULL;
