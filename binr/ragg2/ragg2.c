@@ -56,6 +56,7 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 	RBuffer *b;
 	if (!r_bin_use_arch (bin, arch, bits, format)) {
 		eprintf ("Cannot set arch\n");
+		r_bin_free (bin);
 		return 1;
 	}
 	b = r_bin_create (bin, code, codelen, NULL, 0); //data, datalen);
