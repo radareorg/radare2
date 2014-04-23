@@ -143,7 +143,6 @@ static void parseline (char *b) {
 			r_sys_setenv (e, v);
 		}
 	}
-	free (e);
 }
 
 #if __UNIX__
