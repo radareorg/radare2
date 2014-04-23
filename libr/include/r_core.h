@@ -208,12 +208,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
 R_API void r_core_visual_colors(RCore *core);
+R_API int r_core_sync_view_by_fd (RCore *core, ut64 fd);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm);
-R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd);
-R_API RCoreFile * r_core_file_set_by_fd(RCore *core, int fd);
+R_API RCoreFile * r_core_file_find_by_fd(RCore* core, ut64 fd);
+R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name);
+R_API int r_core_file_set_by_fd(RCore *core, ut64 fd);
+R_API int r_core_file_set_by_name(RCore *core, const char * name);
+R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf);
+R_API int r_core_setup_debugger (RCore *r, const char *debugbackend);
+
 R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
 R_API struct r_core_file_t *r_core_file_open(RCore *core, const char *file, int mode, ut64 loadaddr);
@@ -226,7 +232,9 @@ R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
-
+R_API int r_core_set_file_by_fd (RCore * core, ut64 bin_fd);
+R_API int r_core_set_file_by_name (RBin * bin, const char * name);
+R_API RBinFile * r_core_bin_cur (RCore *core);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
@@ -303,7 +311,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
 
 R_API void r_core_bin_bind(RCore *core);
-R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
+R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
+R_API int r_core_bin_set_by_name (RCore *core, const char *name);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_hash_load(RCore *core, const char *file);

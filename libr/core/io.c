@@ -2,6 +2,50 @@
 
 #include "r_core.h"
 
+R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
+	int pid, *p = NULL;
+	ut8 is_gdb = (strcmp (debugbackend, "gdb") == 0);
+
+	RIODesc * fd = r->file ? r->file->fd : NULL;
+	p = fd ? fd->data : NULL;
+	r_config_set_i (r->config, "cfg.debug", 1);
+	if (!p) {
+		eprintf ("Invalid debug io\n");
+		return R_FALSE;
+	}
+
+	pid = *p; // 1st element in debugger's struct must be int
+	r_config_set (r->config, "io.ffio", "true");
+	if (is_gdb) r_core_cmd (r, "dh gdb", 0);
+	else r_core_cmdf (r, "dh %s", debugbackend);
+	r_core_cmdf (r, "dpa %d", pid);
+	r_core_cmdf (r, "dp=%d", pid);
+	r_core_cmd (r, ".dr*", 0);
+	/* honor dbg.bep */
+	{
+		const char *bep = r_config_get (r->config, "dbg.bep");
+		if (bep) {
+			if (!strcmp (bep, "loader")) {
+				/* do nothing here */
+			} else if (!strcmp (bep, "entry"))
+				r_core_cmd (r, "dcu entry0", 0);
+		    else
+                r_core_cmdf (r, "dcu %s", bep);
+		}
+	}
+	r_core_cmd (r, "sr pc", 0);
+	r_config_set (r->config, "cmd.prompt", ".dr*");
+	r_config_set (r->config, "cmd.vprompt", ".dr*");
+}
+
+R_API int r_core_sync_view_by_fd (RCore *core, ut64 fd) {
+	int res = r_core_file_set_by_fd (core, fd);
+	return res;
+}
+R_API int r_core_sync_view_by_file (RCore *core, RCoreFile *cf) {
+	int res = r_core_file_set_by_file (core, cf);
+	return res;
+}
 
 R_API int r_core_seek_base (RCore *core, const char *hex) {
 	int i;
@@ -329,19 +373,6 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	return file;
 }
 
-R_API RCoreFile * r_core_file_set_by_fd(RCore *core, int fd) {
-	RListIter *iter;
-	RCoreFile *file = NULL;
-
-	r_list_foreach (core->files, iter, file) {
-		if (file && file->fd && file->fd->fd == fd){
-		    core->file = file;
-			break;
-		}
-	}
-	return file;
-}
-
 R_API int r_core_block_read(RCore *core, int next) {
 	ut64 off;
 	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
@@ -350,9 +381,7 @@ R_API int r_core_block_read(RCore *core, int next) {
 	}
 	r_io_set_fdn (core->io, core->io->raised);
 	if (core->switch_file_view) {
-		r_core_file_set_by_fd (core, core->io->raised);
-		r_core_bin_set_by_fd (core, core->io->raised);
-		core->offset = core->file && core->file->map ? core->file->map->from : 0;
+		r_core_sync_view_by_fd (core, core->io->raised);
 		core->switch_file_view = 0;
 	}
 

@@ -488,35 +488,8 @@ int main(int argc, char **argv, char **envp) {
 
 	debug = r.file && r.file->fd && r.file->fd->plugin && \
 		r.file->fd->plugin->debug != NULL;
-	r_config_set_i (r.config, "cfg.debug", debug);
 	if (debug) {
-		int pid, *p = r.file->fd->data;
-		if (!p) {
-			eprintf ("Invalid debug io\n");
-			return 1;
-		}
-		pid = *p; // 1st element in debugger's struct must be int
-		r_config_set (r.config, "io.ffio", "true");
-		if (is_gdb) r_core_cmd (&r, "dh gdb", 0);
-		else r_core_cmdf (&r, "dh %s", debugbackend);
-		r_core_cmdf (&r, "dpa %d", pid);
-		r_core_cmdf (&r, "dp=%d", pid);
-		r_core_cmd (&r, ".dr*", 0);
-		/* honor dbg.bep */
-		{
-			const char *bep = r_config_get (r.config, "dbg.bep");
-			if (bep) {
-				if (!strcmp (bep, "loader")) {
-					/* do nothing here */
-				} else if (!strcmp (bep, "entry"))
-					r_core_cmd (&r, "dcu entry0", 0);
-			    else
-                    r_core_cmdf (&r, "dcu %s", bep);
-			}
-		}
-		r_core_cmd (&r, "sr pc", 0);
-		r_config_set (r.config, "cmd.prompt", ".dr*");
-		r_config_set (r.config, "cmd.vprompt", ".dr*");
+		r_core_setup_debugger (&r, debugbackend);
 	}
 
 	if (!debug && r_flag_get (r.flags, "entry0"))

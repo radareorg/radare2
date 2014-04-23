@@ -6,6 +6,8 @@
 
 R_LIB_VERSION (r_io);
 
+#define DO_THE_IO_DBG 0
+#define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
 static int r_io_insert_adapted(RIO *io, ut64 offset, ut64 size);
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
@@ -184,20 +186,31 @@ static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
 	int fd;
+	IO_IFDBG {
+		if (desc && desc->plugin)
+			eprintf ("Opened file: %s with %s\n", file, desc->plugin->name);
+	}
 	if (io->redirect)
 		return NULL;
 	if (desc) {
 		fd = desc->fd;
 	} else {
 		fd = __io_posix_open (io, file, flags, mode);
-		if (fd>=0)
+		if (fd>=0){
 			desc = r_io_desc_new (io->plugin,
 				fd, file, flags, mode, NULL);
+			IO_IFDBG {
+				if (desc)
+					eprintf ("Opened file: %s locallly\n", file);
+			}
+		}
+
 	}
 	if (fd >= 0) {
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
-	}
+	} else 	eprintf ("Unable to open file: %s\n", file);
+
 	return desc;
 }
 
@@ -227,28 +240,47 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 	return R_FALSE;
 }
 
+static int r_io_update_desc (RIO *io, int fd) {
+	RIODesc *desc = r_io_desc_get (io, fd);
+	if (!desc)
+		return R_FALSE;
+	io->fd = desc;
+	io->plugin = desc->plugin;
+	return R_TRUE;
+}
+
 R_API int r_io_set_fdn(RIO *io, int fd) {
-	if (fd != -1 && !(io->fd && fd == io->fd->fd)) {
-		RIODesc *desc = r_io_desc_get (io, fd);
-		if (!desc)
-			return R_FALSE;
-		io->fd = desc;
-		io->plugin = desc->plugin;
-		return R_TRUE;
-	}
+	if (fd != -1 && !(io->fd && fd == io->fd->fd))
+		return r_io_update_desc (io, fd);
+	else if (!io->fd && fd != -1)
+		return r_io_update_desc (io, fd);
 	return R_FALSE;
 }
 
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
-	if (io->buffer_enabled)
-		return r_io_buffer_read (io, io->off, buf, len);
-	if (io->fd && io->fd->plugin && io->fd->plugin->read)
-		return io->fd->plugin->read (io, io->fd, buf, len);
+	int bytes_read = 0;
+	const char *read_from = NULL;
+	if (io->buffer_enabled){
+		read_from = "buffer";
+		bytes_read = r_io_buffer_read (io, io->off, buf, len);
+	}
+	if (io->fd && io->fd->plugin && io->fd->plugin->read){
+		read_from = io->fd->plugin->name;
+		bytes_read = io->fd->plugin->read (io, io->fd, buf, len);
+	}
 	else if (!io->fd) {
 		eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
-		return 0;
+		read_from = "FAILED";
+		bytes_read = 0;
+	} else {
+		read_from = "File";
+		bytes_read = read (io->fd->fd, buf, len);
 	}
-	return read (io->fd->fd, buf, len);
+	IO_IFDBG {
+		if (io->fd) eprintf ("Data source: %s\n", io->fd->name);
+		eprintf ("Asked for %d bytes, provided %d from %s\n", len, bytes_read, read_from);
+	}
+	return bytes_read;
 }
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
@@ -545,12 +577,10 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 	return ret;
 }
 
-// TODO: remove int fd here???
 R_API int r_io_close(RIO *io, RIODesc *fd) {
-	int nfd;
-	if (!io || !fd)
+	if (io == NULL || fd == NULL)
 		return -1;
-	nfd = fd->fd;
+	int nfd = fd->fd;
 	if (r_io_set_fd (io, fd)) {
 		RIODesc *desc = r_io_desc_get (io, fd->fd);
 		if (desc) {

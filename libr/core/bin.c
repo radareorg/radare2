@@ -2,18 +2,21 @@
 
 #include <r_core.h>
 
-R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
-	RListIter *iter;
-	RBinFile *bf = NULL;
-
-	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf && bf->fd == bin_fd) {
-			core->bin->cur = bf;
-			break;
-		}
-		bf = NULL;
+// XXX - this may lead to conflicts with set by name
+R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
+	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
+		r_core_bin_bind (core);
+		return R_TRUE;
 	}
-	if (bf) r_core_bin_bind (core);
+	return R_FALSE;
+}
+
+R_API int r_core_bin_set_by_name (RCore *core, const char * name) {
+	if (r_bin_file_set_cur_by_name (core->bin, name)) {
+		r_core_bin_bind (core);
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
 R_API void r_core_bin_bind (RCore *core) {
@@ -27,6 +30,10 @@ R_API int r_core_bin_refresh_strings(RCore *r) {
 	return r_bin_reset_strings (r->bin) ? R_TRUE: R_FALSE;
 }
 
+R_API RBinFile * r_core_bin_cur (RCore *core) {
+	return r_bin_cur (core->bin);
+}
+
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 #define MINSTR 4
 	char *p, *q, str[R_FLAG_NAME_SIZE];
@@ -36,29 +43,33 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	RListIter *iter;
 	RList *list;
 	int i = 0;
+	RBin *bin = r->bin;
+	RBinFile * binfile = r_core_bin_cur (r);
+
+	if (!binfile) return R_FALSE;
 	minstr = r_config_get_i (r->config, "bin.minstr");
 	rawstr = r_config_get_i (r->config, "bin.rawstr");
-	r->bin->cur->rawstr = rawstr;
+	binfile->rawstr = rawstr;
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
-	if (!r->bin->cur->curplugin) return 0;
-	if (!r->bin->cur->curplugin->info) {
+	if (!binfile->curplugin) return 0;
+	if (!binfile->curplugin->info) {
 		if (!rawstr) {
 			eprintf ("WARN: Use '-e bin.rawstr=true' or 'rabin2 -zz'"
 				" to find strings on unknown file types\n");
 			return R_FALSE;
 		}
 	}
-	//if (r->bin->minstrlen == 0 && minstr>0) r->bin->minstrlen = minstr;
-	//else if (r->bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
-	if (r->bin->minstrlen==0) {
-		r->bin->minstrlen = r->bin->cur->curplugin->minstrlen;
-		if (r->bin->minstrlen==0)
-			r->bin->minstrlen = MINSTR;
+	//if (bin->minstrlen == 0 && minstr>0) bin->minstrlen = minstr;
+	//else if (bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", bin->minstrlen);
+	if (bin->minstrlen==0) {
+		bin->minstrlen = binfile->curplugin->minstrlen;
+		if (bin->minstrlen==0)
+			bin->minstrlen = MINSTR;
 	}
-	if (minstr>0 || r->bin->minstrlen <=0) {
-		r->bin->minstrlen = R_MIN (minstr, MINSTR);
+	if (minstr>0 || bin->minstrlen <=0) {
+		bin->minstrlen = R_MIN (minstr, MINSTR);
 		//return R_FALSE;
 	}
 
@@ -66,13 +77,13 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if (rawstr) {
 		// TODO: search in whole file, ignoring sections
 	}
-	if ((list = r_bin_get_strings (r->bin)) == NULL)
+	if ((list = r_bin_get_strings (bin)) == NULL)
 		return R_FALSE;
 
 	if ((mode & R_CORE_BIN_JSON)) {
 		r_cons_printf ("[");
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, string->rva,
+			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->rva,
 				string->offset): string->offset;
 			q = strdup (string->string);
 			//r_name_filter (str, 128);
@@ -89,7 +100,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, string->rva,
+			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->rva,
 				string->offset): string->offset;
 			r_cons_printf ("%"PFMT64d" %d %d %s\n", 
 				addr, string->size, string->length, string->string);
@@ -119,7 +130,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	} else {
 		if (mode) r_cons_printf ("fs strings\n"); //: "[strings]\n");
 		r_list_foreach (list, iter, string) {
-			section = r_bin_get_section_at (r->bin, string->offset, 0);
+			section = r_bin_get_section_at (bin, string->offset, 0);
 			int size = (string->type == 'W')? string->size*2: string->size;
 // XXX string ->size is length! not size!!
 			if (mode) {
@@ -146,6 +157,7 @@ static int bin_info (RCore *r, int mode) {
 	int i, j;
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
+	RBinFile *binfile = r_core_bin_cur (r);
 	if (!info) return R_FALSE;
 
 	if (mode & R_CORE_BIN_JSON) {
@@ -266,8 +278,8 @@ static int bin_info (RCore *r, int mode) {
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (R_TRUE, hash);
 				len = r_hash_calculate (rh, hash, (const ut8*)
-					r->bin->cur->buf->buf+h->from, h->to);
-				//ut8 *p = r->bin->cur->buf+h->addr;
+					binfile->buf->buf+h->from, h->to);
+				//ut8 *p = binfile->buf+h->addr;
 				if (len<1) eprintf ("Invaild wtf\n");
 				r_hash_free (rh);
 
@@ -285,11 +297,12 @@ static int bin_dwarf (RCore *core, int mode) {
 	RBinDwarfRow *row;
 	RListIter *iter;
 	RList *list = NULL;
+	RBinFile *binfile = r_core_bin_cur (core);
 
-	if (!core->bin) return R_FALSE;
+	if (!binfile) return R_FALSE;
 
-	if (core->bin && core->bin->cur->curplugin && core->bin->cur->curplugin->lines) {
-		list = core->bin->cur->curplugin->lines (core->bin->cur);
+	if (binfile->curplugin && binfile->curplugin->lines) {
+		list = binfile->curplugin->lines (core->bin->cur);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
 		if (r_config_get_i (core->config, "bin.dwarf")) {
@@ -919,15 +932,17 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	RListIter *iter;
 	RBinField *field;
 	int i = 0;
-	ut64 size = r->bin->cur->size;
+	RBin *bin = r->bin;
+	RBinFile *binfile = r_core_bin_cur (r);
+	ut64 size = binfile ? binfile->size : UT64_MAX;
 
-	if ((fields = r_bin_get_fields (r->bin)) == NULL)
+	if ((fields = r_bin_get_fields (bin)) == NULL)
 		return R_FALSE;
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (fields, iter, field) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, field->offset,
+			ut64 addr = va? r_bin_get_vaddr (bin, baddr, field->offset,
 				field->rva): field->offset;
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"offset\":%"PFMT64d"}",
@@ -944,7 +959,7 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 		else r_cons_printf ("[Header fields]\n");
 
 		r_list_foreach (fields, iter, field) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, field->offset,
+			ut64 addr = va? r_bin_get_vaddr (bin, baddr, field->offset,
 				field->rva): field->offset;
 			if (mode) {
 				r_name_filter (field->name, sizeof (field->name));

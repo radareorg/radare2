@@ -29,6 +29,7 @@ static void r_bin_file_free (RBinFile *a);
 static void r_bin_free_items(RBin *bin);
 static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr);
 
+
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
 	char str[R_BIN_SIZEOF_STRINGS];
 	int i, matches = 0, ctr = 0;
@@ -122,14 +123,20 @@ static RList* get_strings(RBinFile *a, int min) {
 	int count = 0;
 	RListIter *iter;
 	RBinSection *section;
+	RBinObject *o = a ? a->o : NULL;
+
 	RList *ret = r_list_new ();
 	if (!ret) {
 		eprintf ("Error allocating array\n");
 		return NULL;
+	} else if (!o) {
+		eprintf ("Error bin object unitialized\n");
+		return ret;
 	}
 	ret->free = free;
-	if (a->o->sections && !a->rawstr) {
-		r_list_foreach (a->o->sections, iter, section) {
+
+	if (o->sections && !a->rawstr) {
+		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				count++;
 				get_strings_range (a, ret, min,
@@ -138,7 +145,7 @@ static RList* get_strings(RBinFile *a, int min) {
 					section->rva);
 			}
 		}
-		if (r_list_empty (a->o->sections)) {
+		if (r_list_empty (o->sections)) {
 			int i, next = 0, from = 0, funn = 0, to = 0;
 			ut8 *buf = a->buf->buf;
 			for (i=0; i<a->buf->length; i++) {
@@ -180,8 +187,11 @@ R_API int r_bin_load_languages(RBin *bin) {
 }
 
 R_API void r_bin_update_items(RBin *bin, RBinPlugin *cp) {
-	delete_bin_items (bin->cur->o);
-	set_bin_items (bin, cp);
+	RBinFile *binfile = bin->cur;
+	if (binfile) {
+		delete_bin_items (binfile->o);
+		set_bin_items (bin, cp);
+	}
 }
 
 static void delete_bin_items (RBinObject *o) {
@@ -257,8 +267,10 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	RBinXtrPlugin *xtr;
 	RBinPlugin *any, *plugin;
 	ut64 start, end, sz = UT64_MAX;
+	RBinFile *binfile = NULL;
+	RBinObject *o = NULL;
 
-	if (!io || !io->plugin || !io->plugin->read || !io->plugin->lseek)
+	if (!desc || !desc->plugin || !desc->plugin->read || !desc->plugin->lseek)
 		return R_FALSE;
 
 	buf_bytes = NULL;
@@ -278,38 +290,39 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 		return R_FALSE;
 	}
 
-	bin->cur = R_NEW0 (RBinFile);
-	bin->cur->file = strdup (desc->name);
-	bin->cur->buf = r_buf_new ();
-	bin->cur->rawstr = 0;
+	binfile = R_NEW0 (RBinFile);
+	bin->cur = binfile;
+	binfile->file = strdup (desc->name);
+	binfile->buf = r_buf_new ();
+	binfile->rawstr = 0;
 	snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", desc->fd);
-	bin->cur->sdb = sdb_ns (bin->sdb, fdkey);
-	bin->cur->sdb_addrinfo = sdb_ns (bin->cur->sdb, "addrinfo");
+	binfile->sdb = sdb_ns (bin->sdb, fdkey);
+	binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo");
 	bin->file = desc->name;
 
-	if (bin->cur->buf)
-		r_buf_set_bytes (bin->cur->buf, buf_bytes, sz);
+	if (binfile->buf)
+		r_buf_set_bytes (binfile->buf, buf_bytes, sz);
 	free (buf_bytes);
 
 	// Here is the pertinent code from r_bin_init
 	// we can't call r_bin_init, because it will
 	// deref all work done previously by IO Plugin.
-	bin->cur->o = R_NEW0 (RBinObject);
+	o = binfile->o = R_NEW0 (RBinObject);
 
 	// XXX - probably not the best mechanism but its better
-	bin->cur->o->loadaddr = loadaddr;
-	bin->cur->o->baddr = baseaddr;
+	o->loadaddr = loadaddr;
+	o->baddr = baseaddr;
 
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check (bin)) {
-			bin->cur->curxtr = xtr;
+			binfile->curxtr = xtr;
 			break;
 		}
 	}
-	if (bin->cur->curxtr && bin->cur->curxtr->load)
-		bin->cur->curxtr->load (bin);
+	if (binfile->curxtr && binfile->curxtr->load)
+		binfile->curxtr->load (bin);
 
-	a = bin->cur;
+	a = binfile;
 	a->curplugin = NULL;
 
 	r_list_foreach (bin->plugins, it, plugin) {
@@ -333,8 +346,8 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 		set_bin_items (bin, a->curplugin);
 	}
 
-	bin->cur->o->referenced ++;
-	r_list_append (bin->binfiles, bin->cur);
+	o->referenced ++;
+	r_list_append (bin->binfiles, binfile);
 	return R_TRUE;
 }
 
@@ -342,45 +355,44 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 	int minlen = bin->minstrlen;
 	RListIter *it;
 	RBinPlugin *plugin, *cp = NULL;
-	RBinFile *a = NULL;
-	RBinObject *o = NULL;
+	RBinFile *binfile = bin->cur;
+	RBinObject *o = binfile ? binfile->o : NULL;
 
-	if (!bin->cur) {
+	if (!binfile) {
 		// XXX - dont remember if i need to set this in case of a failed load.
 		/*
 		bin->cur = R_NEW0 (RBinFile);
-		bin->cur->o = R_NEW0 (RBinObject);
-		bin->cur->file = strdup (bin->file);
+		binfile->o = R_NEW0 (RBinObject);
+		binfile->file = strdup (bin->file);
 		*/
 		return R_FALSE;
 	}
 
-	a = bin->cur;
-	o = a->o;
-	cp = a->curplugin = NULL;
+	o = binfile->o;
+	cp = binfile->curplugin = NULL;
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
-			(!dummy && (plugin->check && plugin->check (a)))) {
-			a->curplugin = plugin;
+			(!dummy && (plugin->check && plugin->check (binfile)))) {
+			binfile->curplugin = plugin;
 			break;
 		}
 	}
-	cp = a->curplugin;
+	cp = binfile->curplugin;
 	if (minlen<=0) {
 		if (cp && cp->minstrlen)
 			bin->minstrlen = cp->minstrlen;
 		else bin->minstrlen = -minlen;
 	}
-	if (!cp || !cp->load || !cp->load (a)) {
+	if (!cp || !cp->load || !cp->load (binfile)) {
 		// already freed in format/pe/pe.c:r_bin_pe_free()
-		// r_buf_free (a->buf);
-		if (!a->buf){
-			a->buf = r_buf_mmap (bin->cur->file, 0);
-			a->fd = a->buf->mmap->fd;
-			a->size = a->buf ? a->buf->length: 0;
+		// r_buf_free (binfile->buf);
+		if (!binfile->buf){
+			binfile->buf = r_buf_mmap (binfile->file, 0);
+			binfile->fd = binfile->buf->mmap->fd;
+			binfile->size = binfile->buf ? binfile->buf->length: 0;
 		}
-		o->strings = get_strings (a, minlen);
+		o->strings = get_strings (binfile, minlen);
 		return R_FALSE;
 	}
 	set_bin_items (bin, cp);
@@ -412,12 +424,16 @@ static void r_bin_free_bin_files (RBin *bin) {
 }
 #endif
 
-R_API void r_bin_deref_binfile (RBinBind * binb) {
+
+R_API int r_bin_file_deref_by_bind (RBinBind * binb) {
 	RBin *bin = binb ? binb->bin : NULL;
 	RBinFile *a = bin ? bin->cur : NULL;
+	return r_bin_file_deref (bin, a);
+}
+
+R_API int r_bin_file_deref (RBin *bin, RBinFile * a) {
 	RBinObject *o = a ? a->o : NULL;
 	int res = R_FALSE;
-
 	if (a && !o) {
 		r_bin_file_free (a);
 		res = R_TRUE;
@@ -431,9 +447,24 @@ R_API void r_bin_deref_binfile (RBinBind * binb) {
 	// XXX - is this an ok assumption?
 	if (bin) bin->cur = NULL;
 	return res;
-
 }
 
+R_API int r_bin_file_ref_by_bind (RBinBind * binb) {
+	RBin *bin = binb ? binb->bin : NULL;
+	RBinFile *a = bin ? bin->cur : NULL;
+	return r_bin_file_ref (bin, a);
+}
+
+R_API int r_bin_file_ref (RBin *bin, RBinFile * a) {
+	RBinObject *o = a ? a->o : NULL;
+	int res = R_FALSE;
+	if (!a) return R_FALSE;
+	if (o) {
+		o->referenced--;
+		res = R_TRUE;
+	}
+	return res;
+}
 
 static void r_bin_file_free (RBinFile *a) {
 	RBinObject *o = a->o;
@@ -483,42 +514,47 @@ static void r_bin_free_items(RBin *bin) {
 static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
+	RBinFile *binfile = bin->cur;
+	RBinObject *o = binfile? binfile->o : NULL;
 
-	if (bin->cur && bin->cur->o) {
-		if (!bin->cur->o->referenced)
-			r_bin_free_items (bin);
+	// XXX - this is probably incorrect if multiple files will be loaded
+	if (binfile && binfile->o) {
+		//if (!o->referenced)
+		//r_bin_free_items (bin);
+		r_bin_file_free (binfile);
 	}
 
-	bin->cur = R_NEW0 (RBinFile);
-	bin->cur->file = strdup (bin->file);
-	bin->cur->o = R_NEW0 (RBinObject);
-	bin->cur->o->loadaddr = loadaddr;
-	bin->cur->o->baddr = baseaddr;
+	binfile = bin->cur = R_NEW0 (RBinFile);
+	binfile->file = strdup (bin->file);
+	o = binfile->o = R_NEW0 (RBinObject);
+	o->loadaddr = loadaddr;
+	o->baddr = baseaddr;
 
-	bin->cur->curxtr = NULL;
+	binfile->curxtr = NULL;
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check (bin)) {
-			bin->cur->curxtr = xtr;
+			binfile->curxtr = xtr;
 			break;
 		}
 	}
-	if (bin->cur->curxtr && bin->cur->curxtr->load)
-		bin->cur->curxtr->load (bin);
-	bin->cur->rawstr = rawstr;
+	if (binfile->curxtr && binfile->curxtr->load)
+		binfile->curxtr->load (bin);
+	binfile->rawstr = rawstr;
 }
 
-static int r_bin_extract(RBin *bin, int idx) {
-	if (!bin || !bin->cur)
+static int r_bin_load_file_data(RBin *bin, int idx) {
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	if (!binfile)
 		return R_FALSE;
-	if (bin->cur->curxtr && bin->cur->curxtr->extract)
-		return bin->cur->curxtr->extract (bin, idx);
-	if (!bin->file)
-		return R_FALSE;
-	bin->cur->file = strdup (bin->file);
-	bin->cur->buf = r_buf_mmap (bin->file, 0);
-	if (bin->cur->buf && bin->cur->buf->mmap)
-		bin->cur->fd = bin->cur->buf->mmap->fd;
-	else bin->cur->fd = r_num_rand (100);
+	if (binfile->curxtr && binfile->curxtr->extract)
+		return binfile->curxtr->extract (bin, idx);
+	//if (!binfile)
+	//	return R_FALSE;
+	binfile->file = strdup (bin->file);
+	binfile->buf = r_buf_mmap (bin->file, 0);
+	if (binfile->buf && binfile->buf->mmap)
+		binfile->fd = binfile->buf->mmap->fd;
+	else binfile->fd = r_num_rand (100);
 	return R_TRUE;
 }
 
@@ -555,18 +591,19 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 }
 
 R_API void* r_bin_free(RBin *bin) {
+	RBinFile *binfile = bin ? bin->cur : NULL;
 	if (!bin) return NULL;
 	bin->file = NULL;
 	//r_bin_free_bin_files (bin);
 	sdb_free (bin->sdb);
 	// TODO: unset related sdb namespaces
-	if (bin->cur && bin->cur->sdb_addrinfo) {
-		sdb_free (bin->cur->sdb_addrinfo);
-		bin->cur->sdb_addrinfo = 0;
+	if (binfile && binfile->sdb_addrinfo) {
+		sdb_free (binfile->sdb_addrinfo);
+		binfile->sdb_addrinfo = 0;
 	}
 	r_list_free (bin->binfiles);
-	if (bin->cur && bin->cur->curxtr && bin->cur->curxtr->destroy)
-		bin->cur->curxtr->destroy (bin);
+	if (bin->cur && binfile->curxtr && binfile->curxtr->destroy)
+		binfile->curxtr->destroy (bin);
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->plugins);
 	free (bin);
@@ -591,113 +628,141 @@ R_API int r_bin_list(RBin *bin) {
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int dummy) {
 	int res = 0;
 	char fdkey[128];
+	RBinFile *binfile = bin ? bin->cur : NULL;
 
 	if (!bin || !file)
 		return R_FALSE;
 
 	bin->file = r_file_abspath (file);
-	if (!bin->cur) bin->cur = R_NEW0 (RBinFile);
+	if (!binfile) binfile = bin->cur = R_NEW0 (RBinFile);
 
-	r_bin_init (bin, bin->cur->rawstr, baseaddr, loadaddr);
-
-	bin->narch = r_bin_extract (bin, 0);
+	r_bin_init (bin, binfile->rawstr, baseaddr, loadaddr);
+	bin->narch = r_bin_load_file_data (bin, 0);
+	// bin->cur can be changed
+	binfile = bin->cur;
 	if (bin->narch == 0)
 		return R_FALSE;
 	// XXX necessary because ?.  Regressions fail without this check
-	if (bin->cur->buf == NULL) return R_FALSE;
+	if (binfile->buf == NULL) return R_FALSE;
 	res = r_bin_init_items (bin, dummy);
-	bin->cur->o->referenced += 1;
 
-	snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", bin->cur->fd);
-	bin->cur->sdb = sdb_ns (bin->sdb, fdkey);
-	bin->cur->sdb_addrinfo = sdb_ns (bin->cur->sdb, "addrinfo");
+	if (binfile && binfile->o) binfile->o->referenced += 1;
+
+	snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", binfile->fd);
+	binfile->sdb = sdb_ns (bin->sdb, fdkey);
+	binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo");
 	// ----XXXX----XXXX---XXXX----
 	// XXX: this function destroys all contents of RBinFile.. which is very bad.
 	// we need a way to list all archs without destroying the data inside
 	// ----XXXX----XXXX---XXXX----
 	//  r_bin_list_archs (bin, 0);
 	// the following line is just a hack for testing
-	sdb_set (bin->cur->sdb, "archs", "0:0:x86:32", 0);
+	sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0);
 	r_list_append (bin->binfiles, bin->cur);
 	return res;
 }
 
 R_API ut64 r_bin_get_baddr(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->baddr;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return binfile->o->baddr;
 	return 0LL;
 }
 
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
-	if (bin && bin->cur && bin->cur->o) {
-		bin->cur->o->baddr = baddr;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o) {
+		o->baddr = baddr;
 		// XXX - update all the infos?
 	}
 }
 
 R_API ut64 r_bin_get_boffset(RBin *bin) {
-	return bin->cur->o->boffset;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->boffset;
+	return UT64_MAX;
 }
 
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym) {
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
 	if (sym<0 || sym>=R_BIN_SYM_LAST)
 		return NULL;
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->binsym[sym];
+	if (o)
+		return o->binsym[sym];
 	return NULL;
 }
 
 // XXX: those accessors are redundant
 R_API RList* r_bin_get_entries(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->entries;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->entries;
 	return NULL;
 }
 
 R_API RList* r_bin_get_fields(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->fields;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->fields;
 	return NULL;
 }
 
 R_API RList* r_bin_get_imports(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->imports;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->imports;
 	return NULL;
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
-	if (!bin || !bin->cur || !bin->cur->buf)
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (!o)
 		return NULL;
-	return bin->cur->o->info;
+	return o->info;
 }
 
 R_API RList* r_bin_get_libs(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->libs;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->libs;
 	return NULL;
 }
 
 R_API RList* r_bin_get_relocs(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->relocs;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->relocs;
 	return NULL;
 }
 
 R_API RList* r_bin_get_sections(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->sections;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->sections;
 	return NULL;
 }
 
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
-	RBinObject *o;
 	RBinSection *section;
 	RListIter *iter;
 	ut64 from, to;
 
-	if (bin && bin->cur && bin->cur->o && bin->cur->o->sections) {
-		o = bin->cur->o;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o) {
+		o = binfile->o;
 		r_list_foreach (o->sections, iter, section) {
 			from = va ? o->baddr+section->rva : section->offset;
 			to = va ? o->baddr+section->rva+section->vsize :
@@ -710,12 +775,12 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 }
 
 R_API RList* r_bin_reset_strings(RBin *bin) {
-	RBinFile *a = bin->cur;
-	RBinObject *o = a->o;
+	RBinFile *a = bin ? bin->cur : NULL;
+	RBinObject *o = a ? a->o : NULL;
 	if (!o) return NULL;
 	if (o->strings) {
 		r_list_destroy (o->strings);
-		bin->cur->o->strings = NULL;
+		o->strings = NULL;
 	}
 
 	if (bin->minstrlen <= 0)
@@ -728,46 +793,68 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 }
 
 R_API RList* r_bin_get_strings(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->strings;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->strings;
 	return NULL;
 }
 
 R_API RList* r_bin_get_symbols(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->symbols;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->symbols;
 	return NULL;
 }
 
 R_API int r_bin_is_big_endian (RBin *bin) {
-	if (bin && bin->cur && bin->cur->o && bin->cur->o->info)
-		return bin->cur->o->info->big_endian;
-	return NULL;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->info->big_endian;
+	return R_FALSE;
 }
 
 R_API int r_bin_is_stripped (RBin *bin) {
-	if (bin && bin->cur && bin->cur->o && bin->cur->o->info)
-		return R_BIN_DBG_STRIPPED (bin->cur->o->info->dbg_info);
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return R_BIN_DBG_STRIPPED (o->info->dbg_info);
 	return 1;
 }
 
 R_API int r_bin_is_static (RBin *bin) {
-	if (r_list_length (bin->cur->o->libs)>0)
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o && r_list_length (o->libs)>0)
 		return R_FALSE;
-	return R_BIN_DBG_STATIC (bin->cur->o->info->dbg_info);
+	return R_BIN_DBG_STATIC (o->info->dbg_info);
 }
 
 // TODO: Integrate with r_bin_dbg */
 R_API int r_bin_has_dbg_linenums (RBin *bin) {
-	return R_BIN_DBG_LINENUMS (bin->cur->o->info->dbg_info);
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return R_BIN_DBG_LINENUMS (o->info->dbg_info);
+	return R_FALSE;
 }
 
 R_API int r_bin_has_dbg_syms (RBin *bin) {
-	return R_BIN_DBG_SYMS (bin->cur->o->info->dbg_info);
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return R_BIN_DBG_SYMS (o->info->dbg_info);
+	return R_FALSE;
 }
 
 R_API int r_bin_has_dbg_relocs (RBin *bin) {
-	return R_BIN_DBG_RELOCS (bin->cur->o->info->dbg_info);
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+	return R_BIN_DBG_RELOCS (o->info->dbg_info);
+	return R_FALSE;
 }
 
 R_API RBin* r_bin_new() {
@@ -780,13 +867,13 @@ R_API RBin* r_bin_new() {
 	bin->plugins = r_list_new();
 	bin->plugins->free = free;
 	bin->minstrlen = -2;
-	bin->cur = R_NEW0 (RBinFile);
-	bin->cur->o = NULL;
+	bin->cur = NULL;//R_NEW0 (RBinFile);
+	//binfile->o = NULL;
 #if 0
 R_NEW0 (RBinObject);
-	snprintf (fdkey, sizeof (fdkey)-1, "fd.%d", bin->cur->fd);
-	bin->cur->sdb = sdb_ns (bin->sdb, fdkey);
-	bin->cur->sdb_addrinfo = sdb_ns (bin->cur->sdb, "addrinfo");
+	snprintf (fdkey, sizeof (fdkey)-1, "fd.%d", binfile->fd);
+	binfile->sdb = sdb_ns (bin->sdb, fdkey);
+	binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo");
 #endif
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	for (i=0; bin_static_plugins[i]; i++) {
@@ -804,24 +891,26 @@ R_NEW0 (RBinObject);
 
 #if 0
 /* arch and bits are implicit in the plugin name, do we really need
- * to overwrite bin->cur->info? */
+ * to overwrite binfile->info? */
 static int r_bin_use_arch_from_plugin (RBin *bin) {
 	RBinPlugin *cp = NULL;
 	int res = R_TRUE;
-	if (!bin || !bin->cur || !bin->cur->o || !bin->cur->curplugin) return R_FALSE;
-	cp = bin->cur->curplugin;
+	if (!bin || !bin->cur || !binfile->o || !binfile->curplugin) return R_FALSE;
+	cp = binfile->curplugin;
 
-	if (cp->info) bin->cur->o->info = cp->info (bin->cur);
+	if (cp->info) o->info = cp->info (bin->cur);
 	else res = r_bin_use_arch(bin, "TEMP_FAIL", 32, cp->name);
 	return res;
 }
 #endif
 
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
-	RBinObject *o = bin->cur->o;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
 	RListIter *it;
 	RBinPlugin *plugin;
 
+	if (!o) return R_FALSE;
 	if (!o->info) o->info = R_NEW0 (RBinInfo);
 	else memset (o->info, 0, sizeof (RBinInfo));
 
@@ -830,7 +919,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (name, plugin->name)) {
-			bin->cur->curplugin = plugin;
+			binfile->curplugin = plugin;
 			return R_TRUE;
 		}
 	}
@@ -844,11 +933,15 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
 	RBinInfo *info;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+
+	if (!o) return R_FALSE;
 	//if (bin->narch >1) // fix double load when no multiarch bin is loaded
 	for (i=0; i<bin->narch; i++) {
 		r_bin_select_idx (bin, i);
-		info = bin->cur->o->info;
-		if (!info || !bin->cur->file ||
+		info = o->info;
+		if (!info || !binfile->file ||
 			(arch && !strstr (info->arch, arch)) ||
 			(bits && bits != info->bits) ||
 			(name && !strstr (info->file, name)))
@@ -859,21 +952,23 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 }
 
 R_API int r_bin_select_idx(RBin *bin, int idx) {
-	if (bin && bin->cur) {
-		ut64 baseaddr = bin->cur->o->baddr,
-			 loadaddr = bin->cur->o->loadaddr;
-		int rawstr = bin->cur->rawstr;
-		// XXX - this is a messy process, and it needs to be fixed
-		// free the current bin, and then init the bin for reload
-		r_bin_free_items (bin);
-		r_bin_init (bin, rawstr, baseaddr, loadaddr);
-		if (bin->cur->curxtr && bin->cur->curxtr->extract) {
-			if (r_bin_extract (bin, idx))
-				return r_bin_init_items (bin, R_FALSE);
-		}
-		return r_bin_init_items (bin, R_FALSE);
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+
+	if (!o) return R_FALSE;
+
+	ut64 baseaddr = o->baddr,
+		 loadaddr = o->loadaddr;
+	int rawstr = binfile->rawstr;
+	// XXX - this is a messy process, and it needs to be fixed
+	// free the current bin, and then init the bin for reload
+	r_bin_free_items (bin);
+	r_bin_init (bin, rawstr, baseaddr, loadaddr);
+	if (binfile->curxtr && binfile->curxtr->extract) {
+		if (r_bin_load_file_data (bin, idx))
+			return r_bin_init_items (bin, R_FALSE);
 	}
-	return R_FALSE;
+	return r_bin_init_items (bin, R_FALSE);
 }
 
 R_API void r_bin_list_archs(RBin *bin, int mode) {
@@ -881,8 +976,13 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 #define KEY "archs"
 	int i;
 	char archline[128];
-	RBinInfo *info = bin->cur->o->info;
-	Sdb *DB = bin->cur->sdb;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+
+	if (!o) return ;
+
+	RBinInfo *info = o->info;
+	Sdb *DB = binfile->sdb;
 	if (!DB) {
 		eprintf ("Cannot find SDB!\n");
 		return;
@@ -891,15 +991,15 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	for (i = 0; i < bin->narch; i++) {
 		int many = r_bin_select_idx (bin, i);
 		if (many) {
-			info = bin->cur->o->info;
+			info = o->info;
 			if (mode)
 				printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i,
-					bin->cur->offset, bin->cur->size, info->arch,
+					binfile->offset, binfile->size, info->arch,
 					info->bits, info->machine);
 			snprintf (archline, sizeof (archline)-1,
 				"0x%08"PFMT64x":%d:%s:%d:%s",
-				 bin->cur->offset,
-				 bin->cur->size,
+				 binfile->offset,
+				 binfile->size,
 				 info->arch,
 				 info->bits,
 				 info->machine);
@@ -909,22 +1009,22 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			if (info) {
 				if (mode)
 					printf ("%03i 0x%08"PFMT64x" %d %s_%d\n", i,
-						bin->cur->offset, bin->cur->size,
+						binfile->offset, binfile->size,
 						info->arch, info->bits);
 				snprintf (archline, sizeof (archline),
 					"0x%08"PFMT64x":%d:%s:%d",
-					 bin->cur->offset,
-					 bin->cur->size,
+					 binfile->offset,
+					 binfile->size,
 					 info->arch,
 					 info->bits);
 			} else {
 				if (mode)
 					printf ("%03i 0x%08"PFMT64x" %d unk_0\n", i,
-						bin->cur->offset, bin->cur->size);
+						binfile->offset, binfile->size);
 				snprintf (archline, sizeof (archline),
 					"0x%08"PFMT64x":%d:%s:%d",
-					 bin->cur->offset,
-					 bin->cur->size,
+					 binfile->offset,
+					 binfile->size,
 					 "unk", 0);
 			}
 			sdb_array_push (DB, KEY, archline, 0);
@@ -967,8 +1067,10 @@ R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 
 }
 
 R_API RBinObject *r_bin_get_object(RBin *bin) {
-	bin->cur->o->referenced = R_TRUE;
-	return bin->cur->o;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o) o->referenced++;
+	return o;
 }
 
 R_API void r_bin_object_free(RBinObject *obj) {
@@ -976,14 +1078,22 @@ R_API void r_bin_object_free(RBinObject *obj) {
 }
 
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
-	if (bin && bin->cur && bin->cur->o)
-		return bin->cur->o->classes;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o)
+		return o->classes;
 	return NULL;
 }
 
 R_API RBinClass *r_bin_class_new (RBin *bin, const char *name, const char *super, int view) {
-	RList *list = bin->cur->o->classes;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	RList *list = NULL;
 	RBinClass *c;
+	if (!o)
+		return NULL;
+
+	list = o->classes;
 	if (!name) return NULL;
 	c = r_bin_class_get (bin, name);
 	if (c) {
@@ -1002,15 +1112,20 @@ R_API RBinClass *r_bin_class_new (RBin *bin, const char *name, const char *super
 	c->fields = r_list_new ();
 	c->visibility = view;
 	if (!list)
-		list = bin->cur->o->classes = r_list_new ();
+		list = o->classes = r_list_new ();
 	r_list_append (list, c);
 	return c;
 }
 
 R_API RBinClass *r_bin_class_get (RBin *bin, const char *name) {
-	RList *list = bin->cur->o->classes;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	RList *list = NULL;
 	RListIter *iter;
 	RBinClass *c;
+	
+	if (!o) return NULL;
+	list = o->classes;
 	r_list_foreach (list, iter, c) {
 		if (!strcmp (c->name, name))
 			return c;
@@ -1036,12 +1151,18 @@ R_API void r_bin_class_add_field (RBin *bin, const char *classname, const char *
 }
 
 R_API ut64 r_bin_get_offset (RBin *bin) {
-	return bin->cur->offset;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	if (binfile) return binfile->offset;
+	return UT64_MAX;
 }
 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	ut32 delta;
-	RBinPlugin *cp = bin->cur->curplugin;
+	RBinPlugin *cp = NULL;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+
+	if (!binfile) return UT64_MAX;
+	cp = binfile->curplugin;
 	if (cp && cp->get_vaddr)
 		return cp->get_vaddr (bin->cur, baddr, paddr, vaddr);
 	if (!baddr) return vaddr;
@@ -1050,5 +1171,57 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 }
 
 R_API ut64 r_bin_get_size (RBin *bin) {
-	return bin->cur->o->size;
+	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinObject *o = binfile ? binfile->o : NULL;
+	if (o) return o->size;
+	return UT64_MAX;
+}
+
+R_API RBinFile * r_bin_file_find_by_fd (RBin *bin, ut64 bin_fd) {
+	RListIter *iter;
+	RBinFile *bf = NULL;
+
+	if (!bin) return bf;
+	r_list_foreach (bin->binfiles, iter, bf) {
+		if (bf && bf->fd == bin_fd) break;
+		bf = NULL;
+	}
+	return bf;
+}
+
+R_API RBinFile * r_bin_file_find_by_name (RBin * bin, const char * name) {
+	RListIter *iter;
+	RBinFile *bf = NULL;
+
+	if (!bin) return bf;
+	r_list_foreach (bin->binfiles, iter, bf) {
+		if (bf && bf->file && !strcmp (bf->file, name)) break;
+		bf = NULL;
+	}
+	return bf;
+}
+
+R_API int r_bin_file_set_cur_by_fd (RBin * bin, ut64 bin_fd) {
+	RBinFile *bf = r_bin_file_find_by_fd (bin, bin_fd);
+
+	if (bf) {
+		bin->cur = bf;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+R_API int r_bin_file_set_cur_by_name (RBin * bin, const char * name) {
+	RBinFile *bf = r_bin_file_find_by_name (bin, name);
+
+	if (bf) {
+		bin->cur = bf;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+R_API RBinFile * r_bin_cur (RBin *bin) {
+	if (bin) return bin->cur;
+	return NULL;
 }

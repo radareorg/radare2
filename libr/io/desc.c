@@ -69,7 +69,8 @@ R_API void r_io_desc_free(RIODesc *desc) {
 		free (desc->name);
 		desc->name = NULL;
 	}
-//	free (desc); double free orw at
+	memset (desc, 0, sizeof (RIODesc));
+	//	free (desc); double free orw at
 }
 
 R_API int r_io_desc_add(RIO *io, RIODesc *desc) {

@@ -79,6 +79,20 @@ R_API int r_io_map_del(RIO *io, int fd) {
 	return R_FALSE;
 }
 
+R_API int r_io_map_del_all(RIO *io, int fd) {
+	RIOMap *map;
+	RListIter *iter;
+	ut8 deleted = R_FALSE;
+	r_list_foreach (io->maps, iter, map) {
+		if (fd==-1 || map->fd==fd) {
+			r_list_delete (io->maps, iter);
+			deleted = R_TRUE;
+		}
+	}
+	return deleted;
+}
+
+
 R_API ut64 r_io_map_next(RIO *io, ut64 addr) {
 	ut64 next = 0;
 	RIOMap *map;
@@ -110,12 +124,15 @@ R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta
 		 end_addr = next_addr + size;
 	r_list_foreach (io->maps, iter, map) {
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
-		if ((map->from <= next_addr && next_addr < map->to) ||
-			(map->from <= end_addr  && end_addr < map->to) ) {
+		// adding the check for the map's fd to see if this removes contention for 
+		// memory mapping with multiple files.
+
+		if ( map->fd == fd && ((map->from <= next_addr && next_addr < map->to) ||
+			(map->from <= end_addr  && end_addr < map->to)) ) {
 			//return r_io_map_add(io, fd, flags, delta, map->to, size);
 			next_addr = map->to + (load_align - (map->to % load_align));
 			return r_io_map_add_next_available(io, fd, flags, delta, next_addr, size, load_align);
-		}
+		} else break;
 	}
 	return r_io_map_new (io, fd, flags, delta, next_addr, size);
 }
@@ -126,30 +143,15 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 	ut64 end_addr = addr + size;
 	r_list_foreach (io->maps, iter, map) {
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000000
-		if ((map->from <= addr && addr < map->to) ||
-			(map->from <= end_addr  && end_addr < map->to) )
+		// keeping (fd, to, from) tuples as separate maps
+		if ( map->fd == fd && ((map->from <= addr && addr < map->to) ||
+			(map->from <= end_addr  && end_addr < map->to)) )
 			//return r_io_map_add(io, fd, flags, delta, map->to, size);
 			return NULL;
 	}
 	return r_io_map_new (io, fd, flags, delta, addr, size);
 }
 
-R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 addr) {
-	RIOMap *im = NULL, *map = NULL;
-	RListIter *iter;
-
-	if (io && io->fd && io->fd->fd) {
-		r_list_foreach (io->maps, iter, im) {
-			if (map->fd == io->fd->fd) {
-				map = im;
-				break;
-			}
-		}
-		if (im)
-			return r_io_seek (io, addr, R_IO_SEEK_SET);
-	}
-	return -1;
-}
 
 R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 	int done = 0;
@@ -190,5 +192,36 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 		r_io_seek (io, off, R_IO_SEEK_SET);
 	else r_io_seek (io, paddr, R_IO_SEEK_SET);
 	r_io_set_fdn (io, fd);
+	return paddr;
+}
+
+R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
+	int done = 0;
+	ut64 paddr = off;
+	RIOMap *im = NULL;
+	RListIter *iter;
+	ut64 prevfrom = 0LL;
+	r_list_foreach (io->maps, iter, im) {
+		if (im->fd != fd) continue;
+
+		if (off>=im->from) {
+			prevfrom = im->from;
+		}
+		if (off >= im->from && off < im->to) {
+			paddr = off - im->from + im->delta; //-im->from;
+			done = 1;
+		}
+	}
+	if (done == 0) {
+		r_io_seek (io, -1, R_IO_SEEK_SET);
+		return paddr;
+	}
+	if (fd == -1) {
+		r_io_seek (io, off, R_IO_SEEK_SET);
+		return off;
+	}
+	if (io->debug) /* HACK */
+		r_io_seek (io, off, R_IO_SEEK_SET);
+	else r_io_seek (io, paddr, R_IO_SEEK_SET);
 	return paddr;
 }
