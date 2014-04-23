@@ -295,7 +295,7 @@ static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match
 	ut32 len = match_me && *match_me ? strlen (match_me) : 0;
 	ut32 occ = 0;
 
-	if (len == 0 || !str || !*str ) return NULL;
+	if (len == 0 || !str || !*str ) return 0;
 	result = str;
 	while ( result && *result && (result - str < len)) {
 		result = strstr (result, match_me);
@@ -706,7 +706,7 @@ static int r_cmd_java_get_class_names_from_input (const char *input, char **clas
 	else if (!new_class_name || *new_class_name) return res;
 	else if (!new_class_name_len || !class_name_len) return res;
 
-	*new_class_name = *class_name_len = 0;
+	*new_class_name = *class_name_len = NULL;
 
 	if (p && *p && cmd_sz > 1) {
 		const char *end = p;
@@ -1639,7 +1639,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 		ut8 do_this_one = func_addr == -1  || (fcn->addr <= func_addr && func_addr <= fcn->addr + fcn->size);
 		if (!do_this_one) continue;
 		r_list_foreach (fcn->bbs, bb_iter, bb) {
-			const char *operation = NULL, *type = NULL;
+			char *operation = NULL, *type = NULL;
 			ut64 addr = -1;
 			ut16 cp_ref_idx = -1;
 			char *full_bird = NULL;
@@ -1649,39 +1649,40 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 				// loading a constant
 				addr = bb->addr;
 				full_bird = r_bin_java_resolve_without_space(bin, bb->op_bytes[1]);
-				operation = "read constant";
+				operation = strdup ("read constant");
 				type = r_bin_java_resolve_cp_idx_type (bin, bb->op_bytes[1]);
 				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
 				free (full_bird);
 				free (type);
-				operation = NULL;
+				free (operation);
+				full_bird = type = operation = NULL;
 			} else if ( (bb->type2 &  R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
 				ut8 op_byte = bb->op_bytes[0];
 				// look at the bytes determine if it belongs to this class
 				switch (op_byte) {
 					case 0xb6: // invokevirtual
-						operation = "call virtual";
-						type = "FUNCTION";
+						operation = strdup ("call virtual");
+						type = strdup ("FUNCTION");
 						addr = bb->addr;
 						break;
 					case 0xb7: // invokespecial
-						operation = "call special";
-						type = "FUNCTION";
+						operation = strdup ("call special");
+						type = strdup ("FUNCTION");
 						addr = bb->addr;
 						break;
 					case 0xb8: // invokestatic
-						operation = "call static";
-						type = "FUNCTION";
+						operation = strdup ("call static");
+						type = strdup ("FUNCTION");
 						addr = bb->addr;
 						break;
 					case 0xb9: // invokeinterface
-						operation = "call interface";
-						type = "FUNCTION";
+						operation = strdup ("call interface");
+						type = strdup ("FUNCTION");
 						addr = bb->addr;
 						break;
 					case 0xba: // invokedynamic
-						operation = "call dynamic";
-						type = "FUNCTION";
+						operation = strdup ("call dynamic");
+						type = strdup ("FUNCTION");
 						addr = bb->addr;
 						break;
 					default:
@@ -1690,20 +1691,20 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 						break;
 				}
 			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_STATIC) == R_ANAL_EX_LDST_LOAD_GET_STATIC) {
-				operation = "read static";
-				type = "FIELD";
+				operation = strdup ("read static");
+				type = strdup ("FIELD");
 				addr = bb->addr;
 			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_FIELD)  == R_ANAL_EX_LDST_LOAD_GET_FIELD) {
-				operation = "read dynamic";
-				type = "FIELD";
+				operation = strdup ("read dynamic");
+				type = strdup ("FIELD");
 				addr = bb->addr;
 			} else if ( (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_STATIC) == R_ANAL_EX_LDST_STORE_PUT_STATIC) {
-				operation = "write static";
-				type = "FIELD";
+				operation = strdup ("write static");
+				type = strdup ("FIELD");
 				addr = bb->addr;
 			} else if ( (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_FIELD)  == R_ANAL_EX_LDST_STORE_PUT_FIELD) {
-				operation = "write dynamic";
-				type = "FIELD";
+				operation = strdup ("write dynamic");
+				type = strdup ("FIELD");
 				addr = bb->addr;
 			}
 
@@ -1715,8 +1716,11 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 					full_bird = strdup ("ANALYSIS_ERROR");
 				}
 				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
-				free (full_bird);
 			}
+			free (full_bird);
+			free (type);
+			free (operation);
+
 
 		}
 
