@@ -241,7 +241,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
 	ds->show_comment_right = 0;
-	ds->pre = strdup("  ");
+	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
 	ds->lastfail = 0;

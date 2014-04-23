@@ -104,14 +104,40 @@ eprintf ("-- %s\n", buf);
 	case 'z': /* string */
 		{
 			r_core_read_at (core, addr, (ut8*)name, sizeof (name));
-			name[sizeof(name)-1] = 0;
+			name[sizeof (name)-1] = 0;
 			n = strlen (name);
 			eprintf ("%d\n", n);
 		}
 	case 'C': /* comment */
+		if (input[1] == '+') {
+			char *text, *newcomment = input+2;
+			while (*newcomment==' ') newcomment++;
+			char *comment = r_meta_get_string (
+				core->anal, R_META_TYPE_COMMENT, addr);
+			if (comment) {
+				text = malloc (strlen (comment)+strlen (newcomment)+2);
+				strcpy (text, comment);
+				strcat (text, "\n");
+				strcat (text, newcomment);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+					addr, text);
+				free (text);
+			} else {
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+					addr, newcomment);
+			}
+			return R_TRUE;
+		} else
 		if (input[1] == 'a') {
-			char *s = strdup (input+3);
-			char *p = strchr (s, ' ');
+			char *s, *p;
+			s = strchr (input, ' ');
+			if (s) {
+				s = strdup (s+1);
+			} else {
+				eprintf ("Usage\n");
+				return R_FALSE;
+			}
+			p = strchr (s, ' ');
 			if (p) *p++ = 0;
 			ut64 addr;
 			if (input[2]=='-') {
@@ -127,9 +153,30 @@ eprintf ("-- %s\n", buf);
 			addr = r_num_math (core->num, s);
 			// Comment at
 			if (p) {
-				r_meta_add (core->anal,
-					R_META_TYPE_COMMENT,
-					addr, addr+1, p);
+				if (input[2]=='+') {
+					char *text = p;
+					char *comment = r_meta_get_string (
+						core->anal, R_META_TYPE_COMMENT,
+					     addr);
+					if (comment) {
+						text = malloc (strlen (comment) + strlen (p)+2);
+						strcpy (text, comment);
+						strcat (text, "\n");
+						strcat (text, p);
+						r_meta_add (core->anal,
+							R_META_TYPE_COMMENT,
+							   addr, addr+1, text);
+						free (text);
+					} else {
+						r_meta_add (core->anal,
+							R_META_TYPE_COMMENT,
+							addr, addr+1, p);
+					}
+				} else {
+					r_meta_add (core->anal,
+						R_META_TYPE_COMMENT,
+						addr, addr+1, p);
+				}
 			} else eprintf ("Usage: CCa [address] [comment]\n");
 			free (s);
 			return R_TRUE;
