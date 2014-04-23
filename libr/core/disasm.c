@@ -436,7 +436,17 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 
 // this is another random hack for reflines.. crappy stuff
 static char *filter_refline2(RCore *core, const char *str) {
-	char *s = strdup (str);
+	char *p, *s = strdup (str);
+	for (p=s; *p; p++) {
+		switch (*p) {
+		case '`': *p = '|'; break;
+		case '-':
+		case '>':
+		case '<':
+		case '=':
+			  *p = ' '; break;
+		}
+	}
 // XXX fix this? or just deprecate this function?
 #if 0
 	char *p; 
