@@ -34,7 +34,7 @@ static RBuffer *build (REgg *egg) {
 		}
 	}
 	buf = r_buf_new ();
-	sc = r_buf_new (); 
+	sc = r_buf_new ();
 
 	// TODO: alphanumeric? :D
 	// This is the x86-32/64 xor encoder
@@ -45,7 +45,7 @@ static RBuffer *build (REgg *egg) {
 			"\xe8\xff\xff\xff\xff" // call $$+4
 			"\xc1" // ffc1 = inc ecx
 			"\x5e" // pop esi
-			"\x48\x83\xc6\x0d" // add rsi, xx ... 64bit 
+			"\x48\x83\xc6\x0d" // add rsi, xx ... 64bit
 			// loop0:
 			"\x30\x1e" // xor [esi], bl
 			"\x48\xff\xc6" // inc rsi
@@ -61,14 +61,14 @@ static RBuffer *build (REgg *egg) {
 		r_buf_set_bytes (buf, aux, 6);
 
 		r_buf_append_bytes (buf, stub, STUBLEN);
-		
+
 		for (i = 0; i<sc->length; i++) {
 //			 eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 			sc->buf[i]^=nkey;
 		}
 		r_buf_append_buf (buf, sc);
-		r_buf_free (sc);
 	}
+	r_buf_free (sc);
 	return buf;
 }
 
