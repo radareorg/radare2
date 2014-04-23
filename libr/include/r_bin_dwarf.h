@@ -715,7 +715,7 @@ typedef struct {
 
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
-R_API int r_bin_dwarf_parse_info_raw(RBinDwarfDebugAbbrev *da,
+R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
 		const ut8 *debug_str, size_t debug_str_len);
 
