@@ -493,7 +493,9 @@ static int r_bin_extract(RBin *bin, int idx) {
 		return R_FALSE;
 	bin->cur->file = strdup (bin->file);
 	bin->cur->buf = r_buf_mmap (bin->file, 0);
-	bin->cur->fd = bin->cur->buf->mmap->fd;
+	if (bin->cur->buf && bin->cur->buf->mmap)
+		bin->cur->fd = bin->cur->buf->mmap->fd;
+	else bin->cur->fd = r_num_rand (100);
 	return R_TRUE;
 }
 
