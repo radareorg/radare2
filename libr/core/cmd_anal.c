@@ -502,6 +502,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					free (fcn->name);
 					fcn->name = strdup (name);
 				} else eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
+				free (name);
 			} else eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 		}
 		break;
@@ -534,6 +535,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 				}
 			} else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
+			if (name) {
+				free (name);
+			}
 		}
 		break;
 	case 'r':
