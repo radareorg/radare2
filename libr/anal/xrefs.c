@@ -12,6 +12,7 @@ R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	DB = sdb_new (path, "xrefs", 0);
 	sdb_ns_set (anal->sdb, "xrefs", DB);
 	sdb_array_set (DB, "types", -1, "code,data", 0);
+	free (path);
 	free (db);
 }
 
