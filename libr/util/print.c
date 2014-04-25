@@ -392,12 +392,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_header = 1;
 	int use_offset = 1;
 	int use_segoff = 0;
-	int pairs = p->pairs;
+	int pairs = 0;
 	const char *fmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
 
 	if (p) {
+		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
