@@ -29,7 +29,7 @@ R_LIB_VERSION(r_lib);
 
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", //"bininfo", 
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", //"bininfo",
 	"bp", "syscall", "fastcall", "crypto", "cmd", "egg", NULL
 };
 
@@ -213,11 +213,12 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		IFDBG eprintf ("Cannot open library: '%s'\n", file);
 		return R_FAIL;
 	}
-	
+
 	stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
 	if (stru == NULL) {
 		IFDBG eprintf ("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
+		r_lib_dl_close (handler);
 		return R_FAIL;
 	}
 
@@ -236,7 +237,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	p->file = strdup (file);
 	p->dl_handler = handler;
 	p->handler = r_lib_get_handler (lib, p->type);
-	
+
 	ret = r_lib_run_handler (lib, p, stru);
 	if (ret == R_FAIL) {
 		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
