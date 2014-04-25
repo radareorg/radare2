@@ -345,7 +345,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		r_hex_bin2str (op->buf, ret, op->buf_hex);
 		op->size = ret;
 		op->buf_hex[ret*2] = 0;
-		strncpy (op->buf_asm, b, R_ASM_BUFSIZE);
+		strncpy (op->buf_asm, b, R_ASM_BUFSIZE-1);
 	}
 	free (b);
 	return ret;
