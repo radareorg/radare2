@@ -103,7 +103,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (ret>0) {
 				da = ret;
 				db = 0;
-				l = c->size;
+				l = c->size-da;
 			} else if (ret<0) {
 				da = 0;
 				db = -ret;
