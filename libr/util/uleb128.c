@@ -23,8 +23,13 @@ R_API const ut8 *r_leb128 (const ut8 *data, st64 *v) {
 		s += 7;
 		if (!(c & 0x80)) break;
 	}
+	/* FIXME: More proper sum calculation */
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
-		sum |= -(1 << s);
+		if (sum > 31) {
+			sum |= -(1 << s);
+		} else {
+			eprintf ("r_len128(): s is too big (>31) - undefined behaviour!\n");
+		}
 	}
 	if (v) *v = sum;
 	return data;
