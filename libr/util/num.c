@@ -302,7 +302,7 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 		for (i=0; i<size; i++) {
 			char bit = ((num>>(size-i-1))&1)? '1': '0';
 			if (hasbit || bit=='1') {
-				out[pos++] = bit;//size-1-i] = bit; 
+				out[pos++] = bit;//size-1-i] = bit;
 			}
 			if (!hasbit && bit=='1') {
 				hasbit=1;
@@ -319,7 +319,7 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
 	if (sectorsize<1) sectorsize = 512;
-	return cylinder * head * sector * sectorsize;
+	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
 }
 
 R_API int r_num_conditional(RNum *num, const char *str) {
