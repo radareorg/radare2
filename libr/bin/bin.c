@@ -828,8 +828,8 @@ R_API int r_bin_is_static (RBin *bin) {
 	RBinFile *binfile = bin ? bin->cur : NULL;
 	RBinObject *o = binfile ? binfile->o : NULL;
 	if (o && r_list_length (o->libs)>0)
-		return R_FALSE;
-	return R_BIN_DBG_STATIC (o->info->dbg_info);
+		return R_BIN_DBG_STATIC (o->info->dbg_info);
+	return R_FALSE;
 }
 
 // TODO: Integrate with r_bin_dbg */

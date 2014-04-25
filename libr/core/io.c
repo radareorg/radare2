@@ -36,6 +36,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 	r_core_cmd (r, "sr pc", 0);
 	r_config_set (r->config, "cmd.prompt", ".dr*");
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
+	return R_TRUE;
 }
 
 R_API int r_core_sync_view_by_fd (RCore *core, ut64 fd) {

@@ -46,9 +46,10 @@ static void ns_free(Sdb *s, SdbList *list) {
 				s->ns->free = NULL;
 			ls_delete (s->ns, it); // free (it)
 			deleted = 1;
-			if (ns->sdb && ns->sdb->ns)
-			ons = ns->sdb->ns;
-			ns->sdb->ns = NULL;
+			if (ns->sdb && ns->sdb->ns){
+				ons = ns->sdb->ns;
+				ns->sdb->ns = NULL;
+			}
 			if (sdb_free (ns->sdb)) {
 				ns->sdb = NULL;
 				free (ns->name);
@@ -93,10 +94,10 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	// TODO: generate path
 	if (!ns->sdb) {
 		free (ns->name);
+		free (ns->sdb->path);
 		free (ns);
 		ns = NULL;
 	}
-	free (ns->sdb->path);
 	if (dir && *dir)
 		ns->sdb->path = strdup (dir);
 	free (ns->sdb->name);

@@ -32,6 +32,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	}
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
+		free (ofilepath);
+		free (obinfilepath);
 		return R_FALSE;
 	}
 	newpid = odesc ? odesc->fd : -1;
