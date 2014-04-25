@@ -4,8 +4,8 @@
 /*
    Reference Chapter 6:
    "The C++ Programming Language", Special Edition.
-   Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000) 
-    ISBN: 0201700735 
+   Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000)
+    ISBN: 0201700735
  */
 
 #include <r_types.h>
@@ -105,8 +105,9 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		r_str_chop (nc->string_value);
 		v = Nset (r_num_get (num, nc->string_value));
 		get_token (num, nc);
-		if (nc->curr_tok  == RNCASSIGN) 
+		if (nc->curr_tok  == RNCASSIGN) {
 			v = expr (num, nc, 1);
+		}
 		if (nc->curr_tok == RNCINC) Naddi (v, 1);
 		if (nc->curr_tok == RNCDEC) Nsubi (v, 1);
 		return v;
@@ -120,9 +121,9 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCMINUS: return Nsub (v, prim (num, nc, 1));
 	case RNCLEFTP:
 		v = expr (num, nc, 1);
-		if (nc->curr_tok == RNCRIGHTP)
+		if (nc->curr_tok == RNCRIGHTP) {
 			get_token (num, nc);
-		else error (num, nc, " ')' expected");
+		} else error (num, nc, " ')' expected");
 	case RNCEND:
 	case RNCXOR:
 	case RNCAND:
@@ -181,8 +182,9 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 			cin_putback (num, nc, c);
 			break;
 		}
-		if (i<R_NUMCALC_STRSZ)
+		if (i<R_NUMCALC_STRSZ) {
 			str[i++] = c;
+		}
 	}
 	str[i] = 0;
 	*n = Nset (r_num_get (num, str));
@@ -260,11 +262,13 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			return 1;
 		}
 		return nc->curr_tok = RNCNUMBER;
-	default:
+
 #define isvalidchar(x) \
 	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
 	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || x=='/' || (x>='0'&&x<='9'))
-{
+
+	default:
+		{
 			int i = 0;
 			nc->string_value[i++] = ch;
 			if (ch == '[') {
@@ -289,8 +293,11 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			cin_putback (num, nc, ch);
 			return nc->curr_tok = RNCNAME;
 		}
+/*
+ * Unreacheable code:
 		error (num, nc, "bad token");
 		return nc->curr_tok = RNCPRINT;
+*/
 	}
 }
 
