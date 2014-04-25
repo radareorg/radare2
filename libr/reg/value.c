@@ -106,7 +106,7 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			buf[0] = (buf[0] & mask) | 0;
 		}
 		return R_TRUE;
-	default: 
+	default:
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return R_FALSE;
 	}

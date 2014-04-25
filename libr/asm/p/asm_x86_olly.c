@@ -36,7 +36,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
 	}
 	op->size = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, op->buf_err));
 	if (op->size > 0)
-		memcpy (op->buf, asm_obj.code, R_MIN(op->size, R_ASM_BUFSIZE));
+		memcpy (op->buf, asm_obj.code, R_MIN(op->size, (R_ASM_BUFSIZE-1)));
 	return op->size;
 }
 
