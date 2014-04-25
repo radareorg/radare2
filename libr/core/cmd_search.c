@@ -120,7 +120,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 		free (buf);
 		free (str);
-	} else {
+	} else if (kw) {
 		if (searchflags)
 			r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 		else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,

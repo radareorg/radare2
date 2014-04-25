@@ -1300,17 +1300,17 @@ samesets(struct re_guts *g, int c1, int c2)
 static void
 categorize(struct parse *p, struct re_guts *g)
 {
-	cat_t *cats = g->categories;
+	cat_t *cats = g? g->categories : NULL;
 	unsigned int c;
 	unsigned int c2;
 	cat_t cat;
 
 	/* avoid making error situations worse */
-	if (p->error != 0)
+	if (!p || p->error != 0 || !cats )
 		return;
 
 	for (c = CHAR_MIN; c <= CHAR_MAX; c++)
-		if (cats[c] == 0 && isinsets(g, c)) {
+		if ( *(cats+c) && isinsets(g, c)) {
 			cat = g->ncategories++;
 			cats[c] = cat;
 			for (c2 = c+1; c2 <= CHAR_MAX; c2++)

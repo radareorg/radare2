@@ -485,7 +485,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else printfmt (j%2?"   ":"  ");
 				continue;
 			}
-			if (base==32) {
+			if (p && base==32) {
 				ut32 n = 0;
 				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
 				r_print_cursor (p, j, 1);
@@ -493,7 +493,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				r_print_cursor (p, j, 0);
 				j += 3;
 			} else
-			if (base==64) {
+			if (p && base==64) {
 				ut64 x = 0LL;
 				/* Prevent reading outside of buf. Necessary as inc is not
 				 * a multiple of 4 for base == 64. */

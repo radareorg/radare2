@@ -18,9 +18,11 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *path;
 	ut64 ofrom, baddr = 0; // XXX ? check file->map ?
-	RCoreFile *file = NULL, *ofile = core->file;
+	RCoreFile *file = NULL,
+			  *ofile = core->file;
+
 	RBinFile *bf = ofile && ofile->fd ? r_bin_file_find_by_fd (core->bin, ofile->fd->fd) : NULL;
-	RIODesc *odesc = ofile->fd ? ofile->fd : NULL;
+	RIODesc *odesc = ofile ? ofile->fd : NULL;
 	char *ofilepath = ofile ? strdup(ofile->uri) : NULL,
 		 *obinfilepath = bf ? strdup(bf->file) : NULL;
 	int newpid, ret = R_FALSE;
@@ -53,6 +55,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	file = r_core_file_open (core, path, perm, baddr);
 	if (file) {
 		r_core_file_close (core, ofile);
+		r_core_file_set_by_file (core, file);
 		ofile = NULL;
 		odesc = NULL;
 		eprintf ("File %s reopened in %s mode\n", path,
@@ -71,15 +74,13 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		}*/
 		// close old file
 		core->file = file;
-	} else {
+	} else if (ofile){
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
 			     " attempting to open read-only.\n", path, perm);
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_IO_READ, addr);
+		r_core_file_set_by_file (core, ofile);
 		ofile->map->from = ofrom;
-		//if (!ofile) 
-		//eprintf ("r_core_file_reopen: Cannot reopen file: %s.\n", path);
-		core->file = ofile; // XXX: not necessary?
 	}
 	// TODO: in debugger must select new PID
 	if (r_config_get_i (core->config, "cfg.debug")) {
@@ -90,8 +91,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		r_core_setup_debugger (core, "native");
 	}
 
-	if (core->file->fd) {
-		r_io_raise (core->io, file->fd->fd);
+	if (core->file) {
+		RCoreFile * cf = core->file;
+		r_io_raise (core->io, cf->fd);
 		core->switch_file_view = 1;
 		r_core_block_read (core, 0);
 	}
@@ -380,7 +382,8 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	binobj = r_bin_get_object (r->bin);
 	binfile = r_core_bin_cur (r);
 	//r_bin_set_baddr(r->bin, r_config_get_i (r->config, "bin.baddr"));
-	if (r->file && binfile) binfile->fd = desc->fd;
+	if (r->file && binfile && desc) binfile->fd = desc->fd;
+	else eprintf ("Error: No file descriptor defined for current file: %s\n", filenameuri);
 	if (r->bin) r_core_bin_bind (r);
 
 

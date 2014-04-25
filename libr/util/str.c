@@ -910,7 +910,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 	int argc = 0;
 	int escape = 0;
 	int quote = 0;
-	char **argv, *optr, *ptr, *str = strdup (_str);
+	char **argv = NULL, *optr = NULL, *ptr = NULL, *str = strdup (_str);
 
 	if (!str) return NULL;
 	argv = (char **)malloc (MAXARG*sizeof(char*));
@@ -958,9 +958,9 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 	argv[argc] = NULL;
 	if (_argc)
 		*_argc = argc;
-	if (str) free (str);
-	if (ptr) free (ptr);
-	if (optr) free (optr);
+
+	free (str);
+	free (ptr);
 	return argv;
 }
 
