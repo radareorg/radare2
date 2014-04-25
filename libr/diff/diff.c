@@ -199,8 +199,11 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
 		return R_FALSE;
 	for(i = 0; i <= la; i++)
-		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL)
+		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
+			while (i--)
+				free (m[i]);
 			return R_FALSE;
+		}
 
 	for (i = 0; i <= la; i++)
 		m[i][0] = i;
