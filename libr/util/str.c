@@ -1204,7 +1204,9 @@ R_API int r_print_format_length (const char *fmt) {
 		arg = orig;
 		idx = 0;
 	}
-//	free((void *)&args);
+	if (args) {
+		free (args);
+	}
 	return i;
 }
 
