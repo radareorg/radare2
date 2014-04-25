@@ -218,7 +218,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			n = r_socket_read (rap_fd, (ut8 *)&buf, 4);
 			if (n<1) break;
 			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
-			i -= n; 
+			i -= n;
 		}
 #endif
 	} else {

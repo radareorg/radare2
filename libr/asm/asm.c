@@ -26,7 +26,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 		input++;
 	len = r_str_unescape (input)+zero;
 	r_hex_bin2str ((ut8*)input, len, op->buf_hex);
-	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE);
+	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE-1);
 	return len;
 }
 
@@ -367,7 +367,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	r_hex_bin2str (buf, len, acode->buf_hex);
 	if (!(acode->buf_asm = malloc (4)))
 		return r_asm_code_free (acode);
-	
+
 	for (idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx+=ret) {
 		r_asm_set_pc (a, a->pc + ret);
 		ret = r_asm_disassemble (a, &op, buf+idx, len-idx);
@@ -476,7 +476,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
-		(ptr = strchr (tokens[ctr], ';')) || 
+		(ptr = strchr (tokens[ctr], ';')) ||
 		(ptr = strchr (tokens[ctr], '\n')) ||
 		(ptr = strchr (tokens[ctr], '\r'));
 		tokens[++ctr] = ptr+1) {
@@ -495,7 +495,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 				i <= ctr; i++, idx += ret) {
 			memset (buf_token, 0, R_ASM_BUFSIZE);
-			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
+			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE-1);
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
 			ptr = strchr (ptr_start, '#'); /* Comments */
@@ -521,12 +521,12 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			}
 			if (*ptr_start == '\0') {
 				ret = 0;
-				continue;	
+				continue;
 			} else if (*ptr_start == '.') { /* pseudo */
 				ptr = ptr_start;
-				if (!strncmp (ptr, ".intel_syntax", 13)) 
+				if (!strncmp (ptr, ".intel_syntax", 13))
 					a->syntax = R_ASM_SYNTAX_INTEL;
-				else if (!strncmp (ptr, ".att_syntax", 10)) 
+				else if (!strncmp (ptr, ".att_syntax", 10))
 					a->syntax = R_ASM_SYNTAX_ATT;
 				else if (!strncmp (ptr, ".string ", 8)) {
 					r_str_chop (ptr+8);
