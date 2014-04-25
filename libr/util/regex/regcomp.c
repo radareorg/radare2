@@ -1301,8 +1301,8 @@ static void
 categorize(struct parse *p, struct re_guts *g)
 {
 	cat_t *cats = g->categories;
-	int c;
-	int c2;
+	unsigned int c;
+	unsigned int c2;
 	cat_t cat;
 
 	/* avoid making error situations worse */
