@@ -39,7 +39,7 @@ static int __has_debug = 0;
 
 /* XXX: Rename this helper function */
 R_API const char *r_lib_types_get(int idx) {
-	if (idx<0||idx>R_LIB_TYPE_LAST)
+	if (idx < 0 || idx > R_LIB_TYPE_LAST-1)
 		return "unk";
 	return r_lib_types[idx];
 }
