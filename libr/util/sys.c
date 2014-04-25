@@ -279,7 +279,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) *len = 0;
-	if (pipe (sh_in)) 
+	if (pipe (sh_in))
 		return R_FALSE;
 	if (output) {
 		if (pipe (sh_out)) {
@@ -303,7 +303,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		dup2 (sh_in[0], 0); close (sh_in[0]); close (sh_in[1]);
 		if (output) { dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]); }
 		if (sterr) dup2 (sh_err[1], 2); else close (2);
-		close (sh_err[0]); close (sh_err[1]); 
+		close (sh_err[0]); close (sh_err[1]);
 		exit (r_sandbox_system (cmd, 0));
 	default:
 		outputptr = strdup ("");
@@ -330,7 +330,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			FD_ZERO (&wfds);
 			if (output)
 				FD_SET (sh_out[0], &rfds);
-			if (sterr) 
+			if (sterr)
 				FD_SET (sh_err[0], &rfds);
 			if (inputptr && *inputptr)
 				FD_SET (sh_in[1], &wfds);
@@ -340,6 +340,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				break;
 			if (output && FD_ISSET (sh_out[0], &rfds)) {
 				if ((bytes = read (sh_out[0], buffer, sizeof (buffer)-1)) == 0) break;
+				buffer[sizeof(buffer) - 1] = '\0';
 				if (len) *len += bytes;
 				outputptr = r_str_concat (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
@@ -470,15 +471,15 @@ R_API int r_sys_rmkdir(const char *dir) {
 	return ret;
 }
 
-R_API void r_sys_perror(const char *fun) { 
+R_API void r_sys_perror(const char *fun) {
 #if __UNIX__
 	perror (fun);
 #elif __WINDOWS__
 	char *lpMsgBuf;
 	LPVOID lpDisplayBuf;
-	DWORD dw = GetLastError (); 
+	DWORD dw = GetLastError ();
 
-	FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+	FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER |
 			FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
@@ -487,9 +488,9 @@ R_API void r_sys_perror(const char *fun) {
 			(LPTSTR) &lpMsgBuf,
 			0, NULL );
 
-	lpDisplayBuf = (LPVOID)LocalAlloc (LMEM_ZEROINIT, 
+	lpDisplayBuf = (LPVOID)LocalAlloc (LMEM_ZEROINIT,
 			(lstrlen ((LPCTSTR)lpMsgBuf)+
-			lstrlen ((LPCTSTR)fun)+40)*sizeof (TCHAR)); 
+			lstrlen ((LPCTSTR)fun)+40)*sizeof (TCHAR));
 	eprintf ("%s: %s\n", fun, lpMsgBuf);
 
 	LocalFree (lpMsgBuf);
