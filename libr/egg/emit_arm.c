@@ -28,7 +28,7 @@ static char *emit_syscall (REgg *egg, int num) {
 
 static void emit_frame (REgg *egg, int sz) {
 	r_egg_printf (egg, "  push {fp,lr}\n");
-	if (sz>0) r_egg_printf (egg, 
+	if (sz>0) r_egg_printf (egg,
 		//"  mov "R_BP", "R_SP"\n"
 		"  add fp, sp, $4\n" // size of arguments
 		"  sub sp, $%d\n", sz); // size of stackframe 8, 16, ..
@@ -108,7 +108,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 	case 0:
 		if (strchr (str, ',')) {
 			//r_egg_printf (egg, ".  str r0, [%s]\n", str);
-			strncpy (lastargs[num-1], str, sizeof(lastargs[0]));
+			strncpy (lastargs[num-1], str, sizeof(lastargs[0])-1);
 		} else {
 			if (!atoi (str)) eprintf ("WARNING: probably a bug?\n");
 			r_egg_printf (egg, "  mov r0, $%s\n", str);
@@ -141,7 +141,7 @@ static void emit_get_while_end (REgg *egg, char *str, const char *ctxpush, const
 }
 
 static void emit_while_end (REgg *egg, const char *labelback) {
-	r_egg_printf (egg, 
+	r_egg_printf (egg,
 		"  pop "R_AX"\n"
 		"  cmp "R_AX", "R_AX"\n" // XXX MUST SUPPORT != 0 COMPARE HERE
 		"  beq %s\n", labelback);
@@ -226,7 +226,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	if (eq == NULL) eq = R_AX;
 	if (p == NULL) p = R_AX;
 #if 0
-	// TODO: 
+	// TODO:
 	eprintf ("TYPE = %c\n", type);
 	eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
 	eprintf ("  %s %s, [%s]\n", op, p, eq);
