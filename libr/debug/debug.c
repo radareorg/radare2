@@ -158,8 +158,10 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		rsp = r_reg_get_value (dbg->reg, risp);
 
 		backup = malloc (len);
-		if (backup == NULL)
+		if (backup == NULL) {
+			free (orig);
 			return 0LL;
+		}
 		dbg->iob.read_at (dbg->iob.io, rpc, backup, len);
 		dbg->iob.read_at (dbg->iob.io, rsp, stackbackup, len);
 
