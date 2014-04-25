@@ -53,7 +53,7 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 
 static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
 	int len = r_hex_str2bin (input, op->buf);
-	strncpy (op->buf_hex, r_str_trim (input), R_ASM_BUFSIZE);
+	strncpy (op->buf_hex, r_str_trim (input), R_ASM_BUFSIZE-1);
 	return len;
 }
 
