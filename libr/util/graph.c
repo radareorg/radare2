@@ -43,12 +43,12 @@ static void walk_children (RGraph *t, RGraphNode *tn, int level) {
 		// do not repeat pushed nodes
 		return;
 	}
-	for (i=0; i<level; i++) 
+	for (i=0; i<level; i++)
 		t->printf ("   ");
 	t->printf (" 0x%08"PFMT64x" refs %d\n",
 			tn->addr, tn->refs);
 	r_list_foreach (tn->parents, iter, n) {
-		for (i=0; i<level; i++) 
+		for (i=0; i<level; i++)
 			t->printf ("   ");
 		t->printf (" |_ 0x%08"PFMT64x"\n", n->addr);
 	}
@@ -57,7 +57,7 @@ static void walk_children (RGraph *t, RGraphNode *tn, int level) {
 		walk_children (t, n, level+1);
 	}
 	r_list_pop (t->path);
-} 
+}
 
 R_API void r_graph_traverse(RGraph *t) {
 	RListIter *iter;
@@ -150,11 +150,14 @@ R_API void r_graph_push (RGraph *t, ut64 addr, void *data) {
 	}
 	if (!t->cur)
 		t->cur = r_list_contains (t->nodes, n);
-	c = t->cur->data;
-	if (!r_list_contains (c->children, n))
-		r_list_append (c->children, n);
-	if (c->addr && !r_list_contains (n->parents, c))
-		r_list_append (n->parents, c);
+	if (t->cur) {
+		c = t->cur->data;
+		if (!r_list_contains (c->children, n))
+			r_list_append (c->children, n);
+		if (c->addr && !r_list_contains (n->parents, c))
+			r_list_append (n->parents, c);
+
+	}
 	t->cur = r_list_append (t->path, n);
 }
 
