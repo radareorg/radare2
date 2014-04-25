@@ -496,6 +496,7 @@ static int cmd_write(void *data, const char *input) {
 				WSEEK (core, core->blocksize);
 				r_core_block_read (core, 0);
 			} else eprintf ("Wrong argument\n");
+			free (buf);
 		} else eprintf ("Cannot malloc %d\n", len+1);
 		}
 		break;
