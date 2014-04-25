@@ -32,7 +32,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex
 	ut8 *bm = NULL;
 	if (!kw) return NULL;
 	if (bmhex != NULL) {
-		bm = malloc (strlen (bmhex));
+		bm = malloc (strlen (bmhex)+1);
 		if (bm != NULL) {
 			bmlen = r_hex_str2bin (bmhex, (ut8*)bm);
 			if (bmlen<1) {
