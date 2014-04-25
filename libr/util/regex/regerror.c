@@ -90,7 +90,7 @@ r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
 		for (r = rerrs; r->code != 0; r++)
 			if (r->code == target)
 				break;
-	
+
 		if (errcode&R_REGEX_ITOA) {
 			if (r->code != 0) {
 				(void) STRLCPY(convbuf, r->name, sizeof (convbuf)-1);
@@ -102,8 +102,9 @@ r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
 	}
 
 	len = strlen(s) + 1;
-	if (errbuf_size > 0)
+	if (errbuf_size > 0) {
 		STRLCPY(errbuf, s, errbuf_size);
+	}
 
 	return(len);
 }
