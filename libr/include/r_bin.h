@@ -355,6 +355,7 @@ R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
+R_API RBinFile * r_bin_cur (RBin *bin);
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
