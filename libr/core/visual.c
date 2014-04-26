@@ -392,8 +392,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_cons_enable_mouse (R_TRUE);
 			RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
 			if (op) {
-				if (op->type == R_ANAL_OP_TYPE_JMP	|| 
-						op->type == R_ANAL_OP_TYPE_CJMP || 
+				if (op->type == R_ANAL_OP_TYPE_JMP	||
+						op->type == R_ANAL_OP_TYPE_CJMP ||
 						op->type == R_ANAL_OP_TYPE_CALL) {
 						r_io_sundo_push (core->io, offset);
 						r_core_visual_seek_animation(core, op->jump);
@@ -516,7 +516,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (ch=='I') {
 			strcpy (buf, "wow ");
 			r_line_set_prompt ("insert hexpair block: ");
-			if (r_cons_fgets (buf+4, sizeof (buf)-3, 0, NULL) <0)
+			if (r_cons_fgets (buf+4, sizeof (buf)-5, 0, NULL) <0)
 				buf[0]='\0';
 			char *p = strdup (buf);
 			int cur = core->print->cur;
