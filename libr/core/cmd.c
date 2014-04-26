@@ -1721,7 +1721,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	if (r_sandbox_enable (0))
 		return r_core_cmd_str (core, cmd);
 	r_cons_reset ();
-	if (r_file_mkstemp ("cmd", &tmp)) {
+	if (r_file_mkstemp ("cmd", &tmp) != -1) {
 		char *_cmd = strdup (cmd);
 		int pipefd = r_cons_pipe_open (tmp, 1, 0);
 		r_sandbox_disable (0);
