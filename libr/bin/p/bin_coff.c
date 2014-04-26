@@ -7,31 +7,26 @@
 
 #include "coff/coff.h"
 
-static int load(RBinFile *arch)
-{
+static int load(RBinFile *arch) {
 	if (!(arch->o->bin_obj = r_bin_coff_new_buf(arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int destroy(RBinFile *arch)
-{
+static int destroy(RBinFile *arch) {
 	r_bin_coff_free((struct r_bin_coff_obj*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinFile *arch)
-{
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static RBinAddr *binsym(RBinFile *arch, int sym)
-{
+static RBinAddr *binsym(RBinFile *arch, int sym) {
 	return NULL;
 }
 
-static RList *entries(RBinFile *arch)
-{
+static RList *entries(RBinFile *arch) {
 	size_t i;
 	RList *ret;
 	RBinAddr *ptr = NULL;

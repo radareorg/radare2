@@ -147,6 +147,102 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return R_TRUE;
 }
 
+typedef struct {
+	ut64 shortname;
+	ut32 value;
+	ut16 secnum;
+	ut16 symtype;
+	ut8 symclass;
+	ut8 numaux;
+} SymbolRecord;
+
+static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_export_t *exports, int sz) {
+	ut64 baddr = (ut64)bin->nt_headers->optional_header.ImageBase;
+	ut64 off = bin->nt_headers->file_header.PointerToSymbolTable;
+	ut64 num = bin->nt_headers->file_header.NumberOfSymbols;
+	const int srsz = 18; // symbol record size
+	struct r_bin_pe_section_t* sections;
+	struct r_bin_pe_export_t* exp;
+	int bufsz = num * srsz;
+	int I, i, shsz = bufsz;
+	SymbolRecord *sr;
+	ut64 text_off = 0LL;
+	ut64 text_rva = 0LL;
+	ut64 text = 0LL;
+	int textn = 0;
+	int exports_sz;
+	int symctr = 0;
+	char *buf = malloc (bufsz);
+
+	if (!buf)
+		return 0;
+	exports_sz = sizeof (struct r_bin_pe_export_t)*num;
+	if (exports) {
+		int osz = sz;
+		exports[sz].last = 0;
+		sz += exports_sz;
+		exports = realloc (exports, sz);
+		if (!exports)
+			return 0;
+		exp = ((const ut8*)exports) + osz;
+	} else {
+		sz = exports_sz;
+		exports = malloc (sz);
+		exp = exports;
+	}
+
+	sections = PE_(r_bin_pe_get_sections)(bin);
+	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
+		if (!strcmp (sections[i].name, ".text")) {
+			text_rva = sections[i].rva; // + baddr;
+			text_off = sections[i].offset;
+			textn = i +1;
+		}
+	}
+#undef D
+#define D if (0)
+	text = text_rva; // text_off // TODO: io.va
+	symctr = 0;
+	if (r_buf_read_at (bin->b, off, buf, bufsz)) {
+		for (I=0; I<shsz; I += srsz) {
+			sr = buf+I;
+			//eprintf ("SECNUM %d\n", sr->secnum);
+			if (sr->secnum == textn) {
+				if (sr->symtype == 32) {
+					char shortname[9];
+					memcpy (shortname, &sr->shortname, 8);
+					shortname[8] = 0;
+					if (*shortname) {
+						D printf ("0x%08"PFMT64x"  %s\n", text + sr->value, shortname);
+						strncpy (exp[symctr].name, shortname, PE_NAME_LENGTH-1);
+					} else {
+						char *longname, name[128];
+						ut32 *idx = buf+I+4;
+						if (r_buf_read_at (bin->b, off+ *idx+shsz, name, 128)) {
+							longname = name;
+							D printf ("0x%08x  %s\n", text + sr->value, longname);
+							strncpy (exp[symctr].name, longname, PE_NAME_LENGTH-1);
+						} else {
+							D printf ("0x%08x  unk_%d\n", text + sr->value, I/srsz);
+							sprintf (exp[symctr].name, "unk_%d", symctr);
+						}
+					}
+					exp[symctr].name[PE_NAME_LENGTH] = 0;
+					exp[symctr].rva = text_rva+sr->value;
+					exp[symctr].offset = text_off+sr->value;
+					exp[symctr].ordinal = symctr;
+					exp[symctr].forwarder[0] = 0;
+					exp[symctr].last = 0;
+					symctr ++;
+				}
+			}
+		} // for
+	} // if read ok
+	exp[symctr].last = 1;
+	free (buf);
+	return exports;
+}
+
 static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	int sections_size = sizeof (PE_(image_section_header)) *
 		bin->nt_headers->file_header.NumberOfSections;
@@ -164,6 +260,43 @@ static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf ("Error: read (import directory)\n");
 		return R_FALSE;
 	}
+#if 0
+Each symbol table entry includes a name, storage class, type, value and section number. Short names (8 characters or fewer) are stored directly in the symbol table; longer names are stored as an offset into the string table at the end of the COFF object.
+
+================================================================
+COFF SYMBOL TABLE RECORDS (18 BYTES)
+================================================================
+record
+offset
+
+struct symrec {
+	union {
+		char string[8]; // short name
+		struct {
+			ut32 seros;
+			ut32 stridx;
+		} stridx;
+	} name;
+	ut32 value;
+	ut16 secnum;
+	ut16 symtype;
+	ut8 symclass;
+	ut8 numaux;
+}
+       -------------------------------------------------------
+   0  |                  8-char symbol name                   |
+      |          or 32-bit zeroes followed by 32-bit          |
+      |                 index into string table               |
+       -------------------------------------------------------
+   8  |                     symbol value                      |
+       -------------------------------------------------------
+  0Ch |       section number      |         symbol type       |
+       -------------------------------------------------------
+  10h |  sym class  |   num aux   |
+       ---------------------------
+  12h
+
+#endif
 	return R_TRUE;
 }
 
@@ -209,9 +342,10 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *data_dir_export = \
-		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
-	PE_DWord export_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_export->VirtualAddress);
-
+		&bin->nt_headers->optional_header.DataDirectory \
+		[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	PE_DWord export_dir_offset = PE_(r_bin_pe_rva_to_offset)
+		(bin, data_dir_export->VirtualAddress);
 #if 0
 	// STAB PARSER
 	int i;
@@ -267,14 +401,34 @@ n = 0;
 i = 0;
 #define getstring(x) (x<stabst_sz)?stabst+x:"???"
 		while (i<stab_sz) {
-printf ("%d vs %d\n", i, stab_sz);
-if (si->n_strx>0) {
-	printf ("%d stridx = 0x%x\n", n, si->n_strx);
-	printf ("%d string = %s\n", n, getstring (si->n_strx));
-	printf ("%d type   = 0x%x\n", n, si->n_type);
-	printf ("%d value  = 0x%llx\n", n, (ut64)si->n_value);
+	//		printf ("%d vs %d\n", i, stab_sz);
+			if (si->n_strx>0) {
+switch (si->n_type) {
+	case 0x80: // LSYM
+		if (si->n_desc>0 && si->n_value) {
+			eprintf ("MAIN SYMBOL %d %d %d %s\n", 
+				si->n_strx,
+				si->n_desc,
+				si->n_value,
+				getstring (si->n_strx+si->n_desc));
+		}
+		break;
 }
-			i += 12; //sizeof (struct stab_item);
+if (si->n_type == 0x64) {
+printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
+				getstring (si->n_strx) 
+);
+} 
+#if 1
+				printf ("%d stridx = 0x%x\n", n, si->n_strx);
+				printf ("%d string = %s\n", n, getstring (si->n_strx));
+				printf ("%d desc   = %d (%s)\n", n, si->n_desc, getstring (si->n_desc));
+				printf ("%d type   = 0x%x\n", n, si->n_type);
+				printf ("%d value  = 0x%llx\n", n, (ut64)si->n_value);
+#endif
+			} 
+			//i += 12; //sizeof (struct stab_item);
+			i += sizeof (struct stab_item);
 			si = stab + i;
 			n++;
 		}
@@ -290,7 +444,7 @@ if (si->n_strx>0) {
 #endif
 
 	if (export_dir_offset == 0) {
-//		eprintf ("Warning: Cannot find the offset of the export directory\n");
+		eprintf ("Warning: Cannot find the offset of the export directory\n");
 		return R_FALSE;
 	}
 	//sdb_setn (DB, "hdr.exports_directory", export_dir_offset);
@@ -385,61 +539,67 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	PE_VWord export_dir_rva = data_dir_export->VirtualAddress;
 	int i, export_dir_size = data_dir_export->Size;
+	int exports_sz = 0;
 
-	if (!bin->export_directory)
-		return NULL;
-	if (!(exports = malloc((bin->export_directory->NumberOfNames + 1) * sizeof(struct r_bin_pe_export_t))))
-		return NULL;
-	if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->Name),
+	if (bin->export_directory) {
+		exports_sz = (bin->export_directory->NumberOfNames + 1) * sizeof(struct r_bin_pe_export_t);
+		if (!(exports = malloc (exports_sz)))
+			return NULL;
+		if (r_buf_read_at (bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->Name),
 				(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-		eprintf("Error: read (dll name)\n");
-		return NULL;
-	}
-	functions_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfFunctions);
-	names_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfNames);
-	ordinals_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
-	for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
-		if (r_buf_read_at(bin->b, names_offset + i * sizeof(PE_VWord), (ut8*)&name_rva, sizeof(PE_VWord)) == -1) {
-			eprintf ("Error: read (name rva)\n");
+			eprintf ("Error: read (dll name)\n");
 			return NULL;
 		}
-		if (r_buf_read_at(bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal, sizeof(PE_Word)) == -1) {
-			eprintf ("Error: read (function ordinal)\n");
-			return NULL;
-		}
-		if (r_buf_read_at (bin->b, functions_offset + function_ordinal * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
-			eprintf ("Error: read (function rva)\n");
-			return NULL;
-		}
-		name_offset = PE_(r_bin_pe_rva_to_offset)(bin, name_rva);
-		if (name_offset) {
-			if (r_buf_read_at(bin->b, name_offset, (ut8*)function_name, PE_NAME_LENGTH) == -1) {
-				eprintf("Error: read (function name)\n");
+		functions_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfFunctions);
+		names_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfNames);
+		ordinals_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
+		for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
+			if (r_buf_read_at (bin->b, names_offset + i * sizeof (PE_VWord), (ut8*)&name_rva,
+					sizeof (PE_VWord)) == -1) {
+				eprintf ("Error: read (name rva)\n");
 				return NULL;
 			}
-		} else {
-			snprintf(function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
-		}
-		snprintf(export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
-		if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
-			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, function_rva), (ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
-				eprintf("Error: read (magic)\n");
+			if (r_buf_read_at (bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal,
+					sizeof (PE_Word)) == -1) {
+				eprintf ("Error: read (function ordinal)\n");
 				return NULL;
 			}
-		} else {
-			snprintf(forwarder_name, PE_NAME_LENGTH, "NONE");
+			if (r_buf_read_at (bin->b, functions_offset + function_ordinal * sizeof(PE_VWord),
+					(ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
+				eprintf ("Error: read (function rva)\n");
+				return NULL;
+			}
+			name_offset = PE_(r_bin_pe_rva_to_offset)(bin, name_rva);
+			if (name_offset) {
+				if (r_buf_read_at(bin->b, name_offset, (ut8*)function_name, PE_NAME_LENGTH) == -1) {
+					eprintf("Error: read (function name)\n");
+					return NULL;
+				}
+			} else {
+				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
+			}
+			snprintf(export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
+			if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
+				if (r_buf_read_at (bin->b, PE_(r_bin_pe_rva_to_offset)(bin, function_rva),
+						(ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
+					eprintf ("Error: read (magic)\n");
+					return NULL;
+				}
+			} else {
+				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
+			}
+			exports[i].rva = function_rva;
+			exports[i].offset = PE_(r_bin_pe_rva_to_offset)(bin, function_rva);
+			exports[i].ordinal = function_ordinal;
+			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
+			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
+			memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
+			exports[i].name[PE_NAME_LENGTH] = '\0';
+			exports[i].last = 0;
 		}
-		exports[i].rva = function_rva;
-		exports[i].offset = PE_(r_bin_pe_rva_to_offset)(bin, function_rva);
-		exports[i].ordinal = function_ordinal;
-		memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
-		exports[i].forwarder[PE_NAME_LENGTH] = '\0';
-		memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
-		exports[i].name[PE_NAME_LENGTH] = '\0';
-		exports[i].last = 0;
+		exports[i].last = 1;
 	}
-	exports[i].last = 1;
-	return exports;
+	return parse_symbol_table (bin, exports, exports_sz);
 }
 
 int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
