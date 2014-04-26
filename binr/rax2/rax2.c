@@ -239,7 +239,7 @@ static int use_stdin () {
 		int n = read (0, buf+l, sizeof (buf)-l);
 		if (n<1) break;
 		l+= n;
-		if (buf[l]==0) {
+		if (buf[l-1]==0) {
 			l--;
 			continue;
 		}
