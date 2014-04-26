@@ -25,7 +25,7 @@ R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 		return buf;
 	}
 
-	if (type<0 || type>R_REG_TYPE_LAST)
+	if (type < 0 || type > (R_REG_TYPE_LAST-1))
 		return NULL;
 	sz = reg->regset[type].arena->size;
 	if (size)
