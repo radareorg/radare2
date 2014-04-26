@@ -65,7 +65,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 			}
 		}
 	} else {
-		if (type>=0 && type<=R_REG_TYPE_LAST) {
+		if (type >= 0 && type <= (R_REG_TYPE_LAST-1)) {
 			regset = &reg->regset[type];
 			arena = regset->arena;
 			if (len<1) return R_FALSE;
