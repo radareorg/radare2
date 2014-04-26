@@ -761,7 +761,7 @@ R_API RBinJavaObj* r_bin_java_new_buf(struct r_buf_t* buf, ut64 baddr, Sdb * kv)
 // Stuff used to manage Java Class File Constant Information
 typedef struct r_bin_java_object_allocs_t {
 	RBinJavaCPTypeObj *(*new_obj) (RBinJavaObj *bin, ut8* buffer, ut64 offset) ;
-	void (*delete_obj) (RBinJavaCPTypeObj *obj);
+	void (*delete_obj) (void /*RBinJavaCPTypeObj*/ *obj);
 	void (*print_summary) (RBinJavaCPTypeObj *obj);
 	ut64 (*calc_size) (RBinJavaCPTypeObj *obj);
 	char* (*stringify_obj) (RBinJavaCPTypeObj *obj);
@@ -770,26 +770,26 @@ typedef struct r_bin_java_object_allocs_t {
 typedef struct r_bin_java_attr_allocs_t {
 	//void (*new_obj) (RBinJavaObj *bin, RBinJavaAttrInfo *obj, ut64 offset) ;
 	RBinJavaAttrInfo* (*new_obj)(ut8* buffer, ut64 sz, ut64 buf_offset);
-	void (*delete_obj) (RBinJavaAttrInfo *obj);
+	void (*delete_obj) (void /*RBinJavaAttrInfo*/ *obj);
 	void (*print_summary) (RBinJavaAttrInfo *obj);
 	ut64 (*calc_size)(RBinJavaAttrInfo *obj);
 } RBinJavaAttrInfoObjectAllocs;
 
 typedef struct r_bin_java_ver_allocs_t {
 	void (*new_obj) (RBinJavaObj *bin, ut32 code_length, ut64 offset) ;
-	void (*delete_obj) (RBinJavaAttrInfo *obj);
+	void (*delete_obj) (void /*RBinJavaAttrInfo*/ *obj);
 	void (*print_summary) (RBinJavaAttrInfo *obj);
 } RBinJavaVerInfoObjectAllocs;
 
 typedef struct r_bin_java_stack_frame_allocs_t {
 	RBinJavaStackMapFrame* (*new_obj) (RBinJavaObj *bin, ut64 offset) ;
-	void (*delete_obj) (RBinJavaStackMapFrame *obj);
+	void (*delete_obj) (void /* RBinJavaStackMapFrame*/ *obj);
 	void (*print_summary) (RBinJavaStackMapFrame *obj);
 } RBinJavaStackMapFrameObjectAllocs;
 
 typedef struct {
 	RBinJavaElementValue* (*new_obj) (RBinJavaObj *bin, ut64 offset) ;
-	void (*delete_obj) (RBinJavaElementValue *obj);
+	void (*delete_obj) (void /*RBinJavaElementValue*/ *obj);
 	void (*print_summary) (RBinJavaElementValue *obj);
 } RBinJavaElementValueObjectAllocs;
 
@@ -930,7 +930,7 @@ R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj);
 R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin_obj);
 R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin);
 
-R_API RList * r_bin_java_extract_type_values( char *arg_str);
+R_API RList * r_bin_java_extract_type_values(const char *arg_str);
 R_API int r_bin_java_extract_reference_name(const char * input_str, char ** ref_str, ut8 array_cnt);
 R_API RList * r_bin_java_extract_all_bin_type_values( RBinJavaObj * bin_obj);
 
