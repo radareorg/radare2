@@ -967,6 +967,7 @@ static int cmd_anal(void *data, const char *input) {
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 				break;
 			default:
+				free (ptr);
 				return R_FALSE;
 			}
 			r_anal_ref_add (core->anal, addr, at, input[1]);
