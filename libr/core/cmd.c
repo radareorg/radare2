@@ -1558,9 +1558,11 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		core->lastcmd = strdup (cstr);
 	}
 	/* list r_cmd plugins */
-	if (!strcmp (cstr, ":")) {
+	if (cstr[0]==':') {
 		RListIter *iter;
 		RCorePlugin *cp;
+		if (cstr[1])
+			return r_core_cmd0 (core, cstr+1);
 		r_list_foreach (core->rcmd->plist, iter, cp) {
 			r_cons_printf ("%s: %s\n", cp->name, cp->desc);
 		}

@@ -11,6 +11,9 @@
 static RCorePlugin *cmd_static_plugins[] = { R_CORE_STATIC_PLUGINS };
 
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
+	if (plugin->init)
+		if (!plugin->init (cmd, NULL))
+			return R_FALSE;
 	r_list_append (cmd->plist, plugin);
 	return R_TRUE;
 }

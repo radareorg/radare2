@@ -81,6 +81,7 @@ typedef struct r_core_plugin_t {
 	const char *desc;
 	const char *license;
 	RCmdCallback call;
+	RCmdCallback init;
 } RCorePlugin;
 
 #ifdef R_API
