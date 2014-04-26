@@ -321,19 +321,19 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
-			set_action (ACTION_IMPORTS); 
-			set_action (ACTION_SYMBOLS); 
-			set_action (ACTION_SECTIONS); 
-			set_action (ACTION_STRINGS); 
-			set_action (ACTION_SIZE); 
-			set_action (ACTION_INFO); 
-			set_action (ACTION_FIELDS); 
-			set_action (ACTION_DWARF); 
-			set_action (ACTION_ENTRIES); 
-			set_action (ACTION_MAIN); 
-			set_action (ACTION_LIBS); 
-			set_action (ACTION_RELOCS); 
-			set_action (ACTION_EXTRACT); 
+			set_action (ACTION_IMPORTS);
+			set_action (ACTION_SYMBOLS);
+			set_action (ACTION_SECTIONS);
+			set_action (ACTION_STRINGS);
+			set_action (ACTION_SIZE);
+			set_action (ACTION_INFO);
+			set_action (ACTION_FIELDS);
+			set_action (ACTION_DWARF);
+			set_action (ACTION_ENTRIES);
+			set_action (ACTION_MAIN);
+			set_action (ACTION_LIBS);
+			set_action (ACTION_RELOCS);
+			set_action (ACTION_EXTRACT);
 			break;
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
@@ -357,12 +357,12 @@ int main(int argc, char **argv) {
 		case 'i': set_action (ACTION_IMPORTS); break;
 		case 's': set_action (ACTION_SYMBOLS); break;
 		case 'S': set_action (ACTION_SECTIONS); break;
-		case 'z': 
+		case 'z':
 			if (is_active (ACTION_STRINGS)) {
 				r_config_set_i (core.config, "bin.rawstr", R_TRUE);
 				core.bin->cur->rawstr = R_TRUE;
 			}
-			set_action (ACTION_STRINGS); 
+			set_action (ACTION_STRINGS);
 			break;
 		case 'Z': set_action (ACTION_SIZE); break;
 		case 'I': set_action (ACTION_INFO); break;
@@ -437,7 +437,7 @@ int main(int argc, char **argv) {
 			data = NULL;
 			datalen = 0;
 		}
-		code = malloc (strlen (p));
+		code = malloc (strlen (p)+1);
 		codelen = r_hex_str2bin (p, code);
 		if (!arch) arch = "x86";
 		if (!bits) bits = 32;

@@ -87,7 +87,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount=0; tokcount<sizeof (tokens); tokcount++) {
+	for (tokcount=0; tokcount<sizeof (tokens)-1; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ",");
 		if (tok == NULL)
 			break;
@@ -118,7 +118,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						tidx = idx;
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_destroy (hits);
-						hits = NULL;
+						if (hits) free (hits);
 						goto beach;
 					}
 					hit->addr = at+tidx;

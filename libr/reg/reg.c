@@ -277,7 +277,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
-	if (type<0 || type>R_REG_TYPE_LAST)
+	if (type < 0 || type > (R_REG_TYPE_LAST-1))
 		return NULL;
 	return reg->regset[type].regs;
 }

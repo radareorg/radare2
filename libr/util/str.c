@@ -1180,6 +1180,7 @@ R_API int r_print_format_length (const char *fmt) {
 				break;
 			case '?': // help
 				idx--;
+				if (args) free (args);
 				return 0;
 			}
 			switch (tmp) {

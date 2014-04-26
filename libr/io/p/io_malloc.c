@@ -50,7 +50,7 @@ static int __resize(RIO *io, RIODesc *fd, ut64 count) {
 	free (RIOMALLOC_BUF (fd));
 	RIOMALLOC_BUF (fd) = new_buf;
 	RIOMALLOC_SZ (fd) = count;
-	
+
 	return count;
 }
 
