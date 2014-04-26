@@ -250,7 +250,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		op = RMT_CMD;
 	buf[0] = op;
 	i = strlen (command)+1;
-	if (i>RMT_MAX) {
+	if (i>RMT_MAX-5) {
 		eprintf ("Command too long\n");
 		return -1;
 	}
