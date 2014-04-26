@@ -10,23 +10,22 @@
 #undef R_IPI
 #define R_IPI static
 
-void (*r_yr_initialize)(void) = NULL;
-int (*r_yr_compiler_add_file)(
+static void (*r_yr_initialize)(void) = NULL;
+static int (*r_yr_compiler_add_file)(
     YR_COMPILER* compiler,
     FILE* rules_file,
     const char* namespace_);
-void (*r_yr_finalize)(void);
-int (*r_yr_compiler_create)( YR_COMPILER** compiler);
-void (*r_yr_compiler_destroy)( YR_COMPILER* compiler);
+static void (*r_yr_finalize)(void);
+static int (*r_yr_compiler_create)( YR_COMPILER** compiler);
+static void (*r_yr_compiler_destroy)( YR_COMPILER* compiler);
 
-int (*r_yr_compiler_push_file_name)(
+static int (*r_yr_compiler_push_file_name)(
     YR_COMPILER* compiler,
     const char* file_name);
-int (*r_yr_compiler_get_rules)(
+static int (*r_yr_compiler_get_rules)(
     YR_COMPILER* compiler,
     YR_RULES** rules);
-
-int (*r_yr_rules_scan_mem)(
+static int (*r_yr_rules_scan_mem)(
     YR_RULES* rules,
     uint8_t* buffer,
     size_t buffer_size,
@@ -34,7 +33,7 @@ int (*r_yr_rules_scan_mem)(
     void* user_data,
     int fast_scan_mode,
     int timeout) = NULL;
-int (*r_yr_get_tidx)(void);
+static int (*r_yr_get_tidx)(void);
 
 
 /* ---- */ 
