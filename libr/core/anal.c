@@ -101,14 +101,14 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
 					cmdstr = realloc (cmdstr, idx + strlen (filestr) + (is_html?7:3));
-                    memcpy(cmdstr + idx, filestr, strlen (filestr));
+					memcpy (cmdstr + idx, filestr, strlen (filestr));
 					idx += strlen (filestr);
-                    if (is_json)
-                        memcpy(cmdstr + idx, "\\n", 2);
-                    else if (is_html)
-                        memcpy(cmdstr + idx, "<br />", 6);
-                    else
-                        memcpy(cmdstr + idx, "\\l", 2);
+					if (is_json)
+						memcpy(cmdstr + idx, "\\n", 2);
+					else if (is_html)
+						memcpy(cmdstr + idx, "<br />", 6);
+					else
+						memcpy(cmdstr + idx, "\\l", 2);
 					cmdstr[idx + (is_html?7:3)] = 0;
 					free (filestr);
 				}
@@ -203,9 +203,9 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		if (is_keva) {
 			char key[128];
 			char val[128];
+			sdb_array_push_num (DB, "bbs", bbi->addr, 0);
 			snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".size", bbi->addr);
 			sdb_num_set (DB, key, bbi->size, 0); // bb.<addr>.size=<num>
-			sdb_array_push_num (DB, "bbs", bbi->addr, 0);
 		} else
 		if (is_json) {
 			if (count>1)
