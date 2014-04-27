@@ -254,9 +254,13 @@ static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
 
 static int r_bin_coff_init(struct r_bin_coff_obj *obj, struct r_buf_t *buf)
 {
-	obj->b = buf;
 	obj->size = buf->length;
-
+	obj->b = r_buf_new ();
+	obj->size = buf->length;
+	if (!r_buf_set_bytes (obj->b, buf->buf, obj->size)){
+		r_buf_free (obj->b);
+		return R_FALSE;
+	}
 	r_bin_coff_init_hdr(obj);
 	r_bin_coff_init_opt_hdr(obj);
 

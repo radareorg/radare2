@@ -4,6 +4,8 @@ static void r_core_file_info (RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
 	RBinInfo *info = r_bin_get_info (core->bin);
+	RBinFile *binfile = r_core_bin_cur (core);
+	RCoreFile *cf = core->file;
 	if (mode == R_CORE_BIN_JSON)
 		r_cons_printf ("{");
 	if (mode == R_CORE_BIN_RADARE)
@@ -36,38 +38,38 @@ static void r_core_file_info (RCore *core, int mode) {
 			, info->big_endian? "big": "little");
 			break;
 		}
-	} else fn = core->file->filename;
-	if (mode == R_CORE_BIN_JSON) {
+	} else fn = cf ? cf->filename : NULL;
+	if (cf && mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-		r_cons_printf (",\"fd\":%d", core->file->fd->fd);
-		r_cons_printf (",\"size\":%d", core->file->size);
+		r_cons_printf (",\"fd\":%d", cf->fd->fd);
+		r_cons_printf (",\"size\":%d", cf->size);
 		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
-			core->file->rwx | dbg));
+			cf->rwx | dbg));
 		r_cons_printf (",\"block\":%d", core->blocksize);
-		r_cons_printf (",\"uri\":\"%s\"", core->file->uri);
-		if (core->bin->cur->curxtr)
+		r_cons_printf (",\"uri\":\"%s\"", cf->uri);
+		if (binfile->curxtr)
 			r_cons_printf (",\"packet\":\"%s\"",
-				core->bin->cur->curxtr->name);
-		if (core->bin->cur->curxtr)
+				binfile->curxtr->name);
+		if (binfile->curxtr)
 			r_cons_printf (",\"format\":\"%s\"",
-				core->bin->cur->curplugin->name);
+				binfile->curplugin->name);
 		r_cons_printf ("}");
-	} else {
+	} else if (cf) {
 		//r_cons_printf ("# Core file info\n");
 		r_cons_printf ("file\t%s\n", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-		r_cons_printf ("fd\t%d\n", core->file->fd->fd);
-		r_cons_printf ("size\t0x%x\n", core->file->size);
-		r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
+		r_cons_printf ("fd\t%d\n", cf->fd->fd);
+		r_cons_printf ("size\t0x%x\n", cf->size);
+		r_cons_printf ("mode\t%s\n", r_str_rwx_i (cf->rwx | dbg));
 		r_cons_printf ("block\t0x%x\n", core->blocksize);
-		r_cons_printf ("uri\t%s\n", core->file->uri);
-		if (core->bin->cur->curxtr)
+		r_cons_printf ("uri\t%s\n", cf->uri);
+		if (binfile && binfile->curxtr)
 			r_cons_printf ("packet\t%s\n",
-				core->bin->cur->curxtr->name);
-		if (core->bin->cur->curxtr)
+				binfile->curxtr->name);
+		if (binfile && binfile->curxtr)
 			r_cons_printf ("format\t%s\n",
-				core->bin->cur->curplugin->name);
+				binfile->curplugin->name);
 	}
 }
 
@@ -89,6 +91,9 @@ static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int newline = r_config_get_i (core->config, "scr.interactive");
 	ut64 offset = r_bin_get_offset (core->bin);
+	RBinObject *o = r_bin_cur_object (core->bin);
+	RCoreFile *cf = core->file;
+
 	int va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
@@ -121,18 +126,18 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'k':
-			db = core->bin->cur->o->kv;
+			db = o ? o->kv : NULL;
 			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
 			case 'v':
-				sdb_query (db, input+3);
+				if (db) sdb_query (db, input+3);
 				break;
 			case '.':
 			case ' ':
-				sdb_query (db, input+2);
+				if (db) sdb_query (db, input+2);
 				break;
 			case '\0':
-				sdb_list (db);
+				if (db) sdb_list (db);
 				break;
 			case '?':
 			default:
@@ -140,7 +145,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'o': r_core_bin_load (core, input[1]==' '?
-				input+2: core->file->filename,
+				input+2: cf->filename,
 				r_config_get_i (core->config, "bin.baddr"));
 			break;
 	#define RBININFO(n,x) \

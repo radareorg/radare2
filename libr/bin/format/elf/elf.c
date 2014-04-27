@@ -1142,9 +1142,9 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
 		return Elf_(r_bin_elf_free) (bin);
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size))
+	if (!r_buf_set_bytes (bin->b, buf, bin->size)){
 		return Elf_(r_bin_elf_free) (bin);
-	free (buf);
+	}
 	if (!Elf_(r_bin_elf_init) (bin))
 		return Elf_(r_bin_elf_free) (bin);
 	return bin;
@@ -1152,8 +1152,10 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
-	bin->b = buf;
+	bin->b = r_buf_new ();
 	bin->size = buf->length;
+	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length))
+		return Elf_(r_bin_elf_free) (bin);
 	if (!Elf_(r_bin_elf_init) (bin))
 		return Elf_(r_bin_elf_free) (bin);
 	return bin;

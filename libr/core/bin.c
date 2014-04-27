@@ -3,9 +3,12 @@
 #include <r_core.h>
 
 // XXX - this may lead to conflicts with set by name
+static int r_core_bind_asm (RCore *core, RBinFile *binfile);
+
+
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
-		r_core_bin_bind (core);
+		r_core_bin_bind (core, r_core_bin_cur(core));
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -13,17 +16,38 @@ R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 
 R_API int r_core_bin_set_by_name (RCore *core, const char * name) {
 	if (r_bin_file_set_cur_by_name (core->bin, name)) {
-		r_core_bin_bind (core);
+		r_core_bin_bind (core, r_core_bin_cur (core));
 		return R_TRUE;
 	}
 	return R_FALSE;
 }
 
-R_API void r_core_bin_bind (RCore *core) {
-	if (!core->bin) return;
+R_API int r_core_bin_bind (RCore *core, RBinFile *binfile) {
+	if (!core->bin) return R_FALSE;
+	if (!binfile) {
+		// Find first available binfile
+		ut32 fd = r_core_file_cur_fd (core);
+		binfile = fd != (ut32) -1 ?  r_bin_file_find_by_fd (core->bin, fd) : NULL;
+		if (!binfile) return R_FALSE;
+	}
+	r_bin_file_set_cur_binfile (core->bin, binfile);
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->file->binb));
+	// r_bin_select should be called to get the correct bin_field
+	//r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
+	return r_core_bind_asm (core, binfile);
+}
+
+static int r_core_bind_asm (RCore *core, RBinFile *binfile) {
+	if (binfile && binfile->curplugin &&
+		r_asm_is_valid (core->assembler, binfile->curplugin->name) ) {
+		r_asm_use (core->assembler, binfile->curplugin->name);
+		// XXX - do i need to set the arch and bits here?
+		// TODO - check bin arch and bin bits and select if they are not set
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
@@ -31,7 +55,12 @@ R_API int r_core_bin_refresh_strings(RCore *r) {
 }
 
 R_API RBinFile * r_core_bin_cur (RCore *core) {
-	return r_bin_cur (core->bin);
+	RBinFile *binfile = r_bin_cur (core->bin);
+	if (binfile) {
+		// XXX - is this necessary?
+		r_core_bin_bind (core, binfile);
+	}
+	return binfile;
 }
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
@@ -612,7 +641,6 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 		else r_cons_printf ("[Imports]\n");
 
 		r_list_foreach (imports, iter, import) {
-			char *extras = NULL;
 			if (name && strcmp (import->name, name))
 				continue;
 			addr = impaddr (r->bin, va, baddr, import->name);

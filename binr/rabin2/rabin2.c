@@ -92,7 +92,7 @@ static int rabin_extract(int all) {
 			const char *arch;
 			int bits;
 
-			r_bin_select_idx (bin, i);
+			r_bin_select_idx (bin, bin->file, i);
 			if (bin->cur->o->info == NULL) {
 				arch = "unknown";
 				bits = 0;
@@ -301,6 +301,9 @@ int main(int argc, char **argv) {
 	const char *op = NULL;
 	RCoreBinFilter filter;
 	RCore core;
+	RCoreFile *cf = NULL;
+	int xtr_idx = 0; // load all files if extraction is necessary.
+	int fd = -1;
 
 	r_core_init (&core);
 	bin = core.bin;
@@ -457,11 +460,17 @@ int main(int argc, char **argv) {
 		r_bin_free (bin);
 		return 0;
 	}
-
-	if (!r_bin_load (bin, file, 0, 0, R_FALSE) && \
-		!r_bin_load (bin, file, 0, 0, R_TRUE)) {
-		eprintf ("r_bin: Cannot open '%s'\n", file);
+	cf = r_core_file_open(&core, file, R_IO_READ, 0);
+	fd = cf ? r_core_file_cur_fd (&core) : -1;
+	if (!cf || fd == -1) {
+		eprintf ("r_core: Cannot open '%s'\n", file);
 		return 1;
+	}
+	if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, R_FALSE) ){
+		if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, R_TRUE)) {
+			eprintf ("r_bin: Cannot open '%s'\n", file);
+			return 1;
+		}
 	}
 
 	// XXX: TODO move this to libr/core/bin.c
@@ -471,7 +480,8 @@ int main(int argc, char **argv) {
 			int i;
 			printf ("[");
 			for (i = 0; i < bin->narch; i++) {
-				if (r_bin_select_idx (bin, i)) {
+				if (r_bin_select_idx (bin, bin->file, i)) {
+					RBinObject *o = r_bin_cur_object (bin);
 					RBinInfo *info = bin->cur->o->info;
 					printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
 						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",

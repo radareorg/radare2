@@ -2,26 +2,28 @@
 
 #include <r_bin.h>
 
-R_API int r_bin_lang_cxx(RBin *bin) {
+R_API int r_bin_lang_cxx(RBinFile *binfile) {
+	RBinObject *o = binfile ? binfile->o : NULL;
+	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
 	int hascxx = R_FALSE;
 	const char *lib;
 
-	if (!bin || !bin->cur->o || !bin->cur->o->info)
+	if (!info)
 		return R_FALSE;
-	r_list_foreach (bin->cur->o->libs, iter, lib) {
+	r_list_foreach (o->libs, iter, lib) {
 		if (strstr (lib, "stdc++")) {
 			hascxx = R_TRUE;
-			bin->cur->o->info->lang = "cxx";
+			info->lang = "cxx";
 			break;
 		}
 	}
 	if (!hascxx)
-	r_list_foreach (bin->cur->o->symbols, iter, sym) {
+	r_list_foreach (o->symbols, iter, sym) {
 		if (!strncmp (sym->name, "__Z", 3)) {
 			hascxx = R_TRUE;
-			bin->cur->o->info->lang = "cxx";
+			info->lang = "cxx";
 			break;
 		}
 	}

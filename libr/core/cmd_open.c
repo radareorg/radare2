@@ -54,6 +54,24 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_core_block_read (core, 0);
 		break;
+	case 'b':
+		ptr = strchr (input+(isn?2:1), ' ');
+		if (!ptr) {
+			r_core_file_binlist (core);
+			break;
+		} else if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
+			*ptr = '\0';
+			addr = r_num_math (core->num, ptr+1);
+		} else {
+			num = atoi (ptr? ptr: input+1);
+			addr = 0LL;
+		}
+		if (num<=0) {
+
+		} else {
+			r_core_file_bin_raise (core, num);
+		}
+		break;
 	case '-':
 		if (!r_core_file_close_fd (core, atoi (input+1)))
 			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
@@ -169,6 +187,8 @@ static int cmd_open(void *data, const char *input) {
 		"| o+/bin/ls          open /bin/ls file in read-write mode\n"
 		"| o /bin/ls 0x4000   map file at 0x4000\n"
 		"| on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
+		"| ob                 list open binary files bascked by fd\n"
+		"| ob 4               priorize io and fd on 4 (bring to binfile to front)\n"
 		"| om[?]              create, list, remove IO maps\n");
 		break;
 	}

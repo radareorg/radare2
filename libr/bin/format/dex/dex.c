@@ -13,8 +13,12 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	struct r_bin_dex_obj_t *bin = R_NEW0 (struct r_bin_dex_obj_t);;
 	if (!bin) return NULL;
-	bin->b = buf;
 	bin->size = buf->length;
+	bin->b = r_buf_new ();
+	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
+		r_buf_free (bin->b);
+		return NULL;
+	}
 	// XXX: use r_buf_getc()
 	// XXX: this is not endian safe
 	/* header */

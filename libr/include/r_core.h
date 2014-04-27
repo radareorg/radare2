@@ -225,10 +225,12 @@ R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
 R_API struct r_core_file_t *r_core_file_open(RCore *core, const char *file, int mode, ut64 loadaddr);
 R_API struct r_core_file_t *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr);
-R_API struct r_core_file_t *r_core_file_get_fd(RCore *core, int fd);
+R_API struct r_core_file_t *r_core_file_get_by_fd(RCore *core, int fd);
 R_API int r_core_file_close(RCore *core, RCoreFile *fh);
 R_API int r_core_file_close_fd(RCore *core, int fd);
 R_API int r_core_file_list(RCore *core);
+R_API int r_core_file_binlist(RCore *core);
+R_API int r_core_file_bin_raise(RCore *core, ut32 num);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
@@ -236,6 +238,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op);
 R_API int r_core_set_file_by_fd (RCore * core, ut64 bin_fd);
 R_API int r_core_set_file_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_core_bin_cur (RCore *core);
+R_API ut32 r_core_file_cur_fd (RCore *core);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
@@ -310,8 +313,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len);
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
-
-R_API void r_core_bin_bind(RCore *core);
+R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx);
+R_API int r_core_bin_bind(RCore *core, RBinFile *bf);
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
 R_API int r_core_bin_set_by_name (RCore *core, const char *name);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);

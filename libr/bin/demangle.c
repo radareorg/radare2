@@ -83,7 +83,7 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 	return out;
 }
 
-R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
+R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	char *ret = NULL;
 	char *clas = NULL;
 	char *name = NULL;
@@ -94,13 +94,13 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 	if (!strncmp (sym, "_OBJC_Class_", 12)) {
 		ret = malloc (10+strlen (sym));
 		sprintf (ret, "class %s", sym+12);
-		if (bin) r_bin_class_new (bin, sym+12, NULL, R_BIN_CLASS_PUBLIC);
+		if (binfile) r_bin_class_new (binfile, sym+12, NULL, R_BIN_CLASS_PUBLIC);
 		return ret;
 	} else
 	if (!strncmp (sym, "_OBJC_CLASS_$_", 14)) {
 		ret = malloc (10+strlen (sym));
 		sprintf (ret, "class %s", sym+14);
-		if (bin) r_bin_class_new (bin, sym+14, NULL, R_BIN_CLASS_PUBLIC);
+		if (binfile) r_bin_class_new (binfile, sym+14, NULL, R_BIN_CLASS_PUBLIC);
 		return ret;
 	} else
 	/* fields */
@@ -113,7 +113,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			*p = 0;
 			name = p+1;
 		} else name = NULL;
-		if (bin) r_bin_class_add_field (bin, clas, name);
+		if (binfile) r_bin_class_add_field (binfile, clas, name);
 	} else
 	/* methods */
 	if (sym[1] == '[') { // apple style
@@ -172,7 +172,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			ret = malloc (strlen (type)+strlen (name)+
 				strlen(clas)+strlen(args)+15);
 			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
-			if (bin) r_bin_class_add_method (bin, clas, name, nargs);
+			if (binfile) r_bin_class_add_method (binfile, clas, name, nargs);
 		}
 		if (name) free (name);
 		name = NULL;
@@ -188,10 +188,11 @@ R_API int r_bin_demangle_type (const char *str) {
 	return R_BIN_NM_CXX;
 }
 
-R_API char *r_bin_demangle (RBin *bin, const char *str) {
+R_API char *r_bin_demangle (RBinFile *binfile, const char *str) {
 	int type;
-	if (bin && bin->cur->curplugin && bin->cur->curplugin->demangle_type)
-		type = bin->cur->curplugin->demangle_type (str);
+	RBinPlugin *plugin = binfile ? binfile->curplugin : NULL;
+	if (plugin && plugin->demangle_type)
+		type = plugin->demangle_type (str);
 	else type = r_bin_demangle_type (str);
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
