@@ -758,6 +758,9 @@ static int cmd_anal(void *data, const char *input) {
 		case 'j':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_JSON);
 			break;
+		case 'k':
+			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_KEYVALUE);
+			break;
 		case 'l':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHLINES);
 			break;
@@ -799,6 +802,7 @@ static int cmd_anal(void *data, const char *input) {
 			"|Usage: ag[?f]\n"
 			"| ag [addr]       ; Output graphviz code (bb at addr and children)\n"
 			"| agj [addr]      ; Idem, but in JSON format\n"
+			"| agk [addr]      ; Idem, but in SDB key-value format\n"
 			"| aga [addr]      ; Idem, but only addresses\n"
 			"| agc [addr]      ; Output graphviz call graph of function\n"
 			"| agd [fcn name]  ; Output graphviz code of diffed function\n"

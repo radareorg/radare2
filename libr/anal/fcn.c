@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -8,6 +8,18 @@
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
+
+R_API const char *r_anal_fcn_type_tostring(int type) {
+	switch (type) {
+	case R_ANAL_FCN_TYPE_NULL: return "null";
+	case R_ANAL_FCN_TYPE_FCN: return "fcn";
+	case R_ANAL_FCN_TYPE_LOC: return "loc";
+	case R_ANAL_FCN_TYPE_SYM: return "sym";
+	case R_ANAL_FCN_TYPE_IMP: return "imp";
+	case R_ANAL_FCN_TYPE_ROOT: return "root";
+	}
+	return "unk";
+}
 
 R_API RAnalFunction *r_anal_fcn_new() {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);

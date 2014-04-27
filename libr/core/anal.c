@@ -155,13 +155,36 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
         int is_html = r_cons_singleton ()->is_html;
         int is_json = opts & R_CORE_ANAL_JSON;
+        int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	int left = 300;
 	int count = 0;
 	int top = 0;
 	char *str;
+	Sdb *DB = NULL;
 
+	if (is_keva) {
+		char ns[64];
+		DB = sdb_ns (core->anal->sdb, "graph");
+		snprintf (ns, sizeof (ns), "fcn.0x%08"PFMT64x, fcn->addr);
+		DB = sdb_ns (DB, ns);
+	}
+
+#define fmt(x,y...) snprintf (x,sizeof(x),##y)
+	if (is_keva) {
+		char *ename = sdb_encode ((const ut8*)fcn->name, -1);
+		sdb_set (DB, "name", fcn->name, 0);
+		sdb_set (DB, "ename", ename, 0);
+		free (ename);
+		if (fcn->nargs>0)
+			sdb_num_set (DB, "nargs", fcn->nargs, 0);
+		sdb_num_set (DB, "size", fcn->size, 0);
+		if (fcn->stack>0)
+			sdb_num_set (DB, "stack", fcn->stack, 0);
+		sdb_set (DB, "pos", "0,0", 0); // needs to run layout
+		sdb_set (DB, "type", r_anal_fcn_type_tostring (fcn->type), 0);
+	} else
 	if (is_json) {
 		// TODO: show vars, refs and xrefs
 		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
@@ -177,11 +200,18 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	}
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		count ++;
+		if (is_keva) {
+			char key[128];
+			char val[128];
+			snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".size", bbi->addr);
+			sdb_num_set (DB, key, bbi->size, 0); // bb.<addr>.size=<num>
+			sdb_array_push_num (DB, "bbs", bbi->addr, 0);
+		} else
 		if (is_json) {
 			if (count>1)
 				r_cons_printf (",");
 			r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%"PFMT64d, bbi->addr, bbi->size);
-			if (bbi->jump != -1)
+			if (bbi->jump != UT64_MAX)
 				r_cons_printf (",\"jump\":%"PFMT64d, bbi->jump);
 			if (bbi->fail != -1)
 				r_cons_printf (",\"fail\":%"PFMT64d, bbi->fail);
@@ -193,7 +223,22 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			r_cons_printf ("}");
 			continue;
 		}
-		if (bbi->jump != -1) {
+		if (bbi->jump != UT64_MAX) {
+			if (is_keva) {
+				char key[128];
+				char val[128];
+				snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".to", bbi->addr);
+				if (bbi->fail != UT64_MAX) {
+					fmt (val, "0x%08"PFMT64x, bbi->jump);
+				} else {
+					fmt (val, "0x%08"PFMT64x ",0x%08"PFMT64x, bbi->jump, bbi->fail);
+				}
+				// bb.<addr>.to=<jump>,<fail>
+				sdb_set (DB, key, val, 0);
+			} else
+			if (is_json) {
+				// do nothing here
+			} else
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
@@ -203,7 +248,10 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					bbi->fail != -1 ? "green" : "blue");
 			r_cons_flush ();
 		}
-		if (	bbi->fail != -1) {
+		if (bbi->fail != -1) {
+			if (is_keva) {
+				// already done in the previous block
+			} else
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
@@ -215,7 +263,9 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		if (bbi->switch_op) {
 			RAnalCaseOp *caseop;
 			RListIter *iter;
-			RList *jmp_list = NULL;
+			if (is_keva) {
+				// Nothing to do here
+			} else
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
@@ -226,12 +276,20 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 			r_list_foreach (bbi->switch_op->cases, iter, caseop) {
 				if (caseop) {
+					if (is_keva) {
+						char key[128];
+						fmt (key, "bb.0x%08"PFMT64x".switch.%"PFMT64d,
+							bbi->addr, caseop->value);
+						sdb_num_set (DB, key, caseop->jump, 0);
+						fmt (key, "bb.0x%08"PFMT64x".switch", bbi->addr);
+						sdb_array_add_num (DB, key, caseop->value, 0);
+					} else
 					if (is_html) {
 						r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
-						"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-						caseop->addr, caseop->addr);
-				} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
-					"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
+							"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
+							caseop->addr, caseop->jump);
+					} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+						"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
 					r_cons_flush ();
 				}
 			}
@@ -242,15 +300,34 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				const char *difftype = bbi->diff? (\
 					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
 					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "black";
-				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
-					" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-					fcn->addr, bbi->addr, 
-					difftype, str,
-					fcn->name, bbi->addr);
+				const char *diffname = bbi->diff? (\
+					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "match":
+					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "unmatch": "new"): "unk";
+				if (is_keva) {
+					sdb_set (DB, "diff", diffname, 0);
+					sdb_set (DB, "label", str, 0);
+				} else if (is_json) {
+					// nothing
+				} else {
+					r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
+						" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
+						fcn->addr, bbi->addr, 
+						difftype, str,
+						fcn->name, bbi->addr);
+				}
 			} else {
+				if (is_keva) {
+					// nothing
+					//sdb_set (DB, "");
+				} else
+				if (is_json) {
+					// nothing
+				} else
 				if (is_html) {
-					r_cons_printf ("<p class=\"block draggable\" style=\"top: %dpx; left: %dpx; width: 400px;\" id=\"_0x%08"PFMT64x"\">\n"
-						"%s</p>\n", top, left, bbi->addr, str);
+					r_cons_printf ("<p class=\"block draggable\" style=\""
+						"top: %dpx; left: %dpx; width: 400px;\" id=\""
+						"_0x%08"PFMT64x"\">\n%s</p>\n",
+						top, left, bbi->addr, str);
 					left = left? 0: 600;
 					if (!left) top += 250;
 				} else
@@ -919,6 +996,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	const char *font = r_config_get (core->config, "graph.font");
         int is_html = r_cons_singleton ()->is_html;
         int is_json = opts & R_CORE_ANAL_JSON;
+        int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int reflines, bytes, dwarf;
 	RAnalFunction *fcni;
 	RListIter *iter;
@@ -934,11 +1012,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
-	if (!is_html && !is_json)
-	r_cons_printf ("digraph code {\n"
-		"\tgraph [bgcolor=white];\n"
-		"\tnode [color=lightgray, style=filled shape=box"
-		" fontname=\"%s\" fontsize=\"8\"];\n", font);
+	if (!is_html && !is_json && !is_keva)
+		r_cons_printf ("digraph code {\n"
+			"\tgraph [bgcolor=white];\n"
+			"\tnode [color=lightgray, style=filled shape=box"
+			" fontname=\"%s\" fontsize=\"8\"];\n", font);
 	if (is_json)
 		r_cons_printf ("[");
 	r_cons_flush ();
@@ -951,7 +1029,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			if (addr != 0) break;
 		}
 	}
-	if (!is_html && !is_json) r_cons_printf ("}\n");
+	if (!is_keva && !is_html && !is_json) r_cons_printf ("}\n");
 	if (is_json)
 		r_cons_printf ("]\n");
 	r_cons_flush ();
