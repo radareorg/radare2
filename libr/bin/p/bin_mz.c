@@ -44,7 +44,7 @@ struct EXE_RELOC {
 
 
 static int load(RBinFile *arch) {
-	// parse stuff 
+	// parse stuff
 	return R_TRUE;
 }
 
@@ -76,7 +76,7 @@ static RList* entries(RBinFile *arch) {
 		ptr->rva = off;
 		r_list_append (ret, ptr);
 	}
-	
+
 	return ret;
 }
 
@@ -84,7 +84,7 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
-	
+
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free; // r_bin-section_free
@@ -98,6 +98,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->srwx = r_str_rwx ("rwx");
 	if (ptr->size <1) {
 		eprintf ("Invalid section size\n");
+		free (ptr);
 	} else r_list_append (ret, ptr);
 #if 0
 	//--
