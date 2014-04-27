@@ -644,6 +644,26 @@ static int cb_binminstr(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_searchin(void *user, void *data) {
+ 	RCore *core = (RCore*) user;
+ 	RConfigNode *node = (RConfigNode*) data;
+ 	if (*node->value == '?') {
+ 		r_cons_printf ("raw\nblock\nfile\nsection\n");
+ 		return R_FALSE;
+ 	}
+ 	return R_TRUE;
+}
+
+static int cb_fileloadmethod(void *user, void *data) {
+ 	RCore *core = (RCore*) user;
+ 	RConfigNode *node = (RConfigNode*) data;
+ 	if (*node->value == '?') {
+ 		r_cons_printf ("fail\noverwrite\nappend\n");
+ 		return R_FALSE;
+ 	}
+ 	return R_TRUE;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -660,6 +680,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
+	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
+	SETCB("file.loadmethod", "fail", &cb_searchin, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
