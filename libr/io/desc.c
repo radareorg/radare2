@@ -59,7 +59,7 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 R_API void r_io_desc_free(RIODesc *desc) {
 	if (!desc) return;
 	if (desc->io) {
-		const RIO * io = desc->io;
+		RIO* io = (RIO*)desc->io;
 		desc->io = NULL;
 		r_io_close (io, desc);
 	}

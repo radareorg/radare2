@@ -8,8 +8,10 @@
 #include <string.h>
 #include <r_anal.h>
 
+#undef UNUSED
+
 #undef R_API
-#define R_API static
+#define R_API static inline
 #undef R_IPI
 #define R_IPI static
 
@@ -396,9 +398,11 @@ static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd) {
 	return R_TRUE;
 }
 
+#if UNUSED
 static int r_cmd_java_check_op_idx (const ut8 *op_bytes, ut16 idx) {
 	return R_BIN_JAVA_USHORT (op_bytes, 0) == idx;
 }
+#endif
 
 static RList * r_cmd_java_handle_find_cp_value_double (RCore *core, RBinJavaObj *obj, const char *cmd) {
 	double value = cmd && *cmd ? strtod (cmd, NULL) : 0.0;
@@ -1514,6 +1518,7 @@ static int r_cmd_java_print_field_num_name (RBinJavaObj *obj) {
 	}
 	return R_TRUE;
 }
+
 static int r_cmd_java_print_method_num_name (RBinJavaObj *obj) {
 	RList * the_list = r_bin_java_get_method_num_name (obj);
 	char * str;
@@ -1523,6 +1528,7 @@ static int r_cmd_java_print_method_num_name (RBinJavaObj *obj) {
 	}
 	return R_TRUE;
 }
+
 static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx) {
 	int res = r_bin_java_print_field_idx_summary (obj, idx);
 	if (res == R_FALSE) {
@@ -1531,12 +1537,15 @@ static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx) {
 	}
 	return res;
 }
+
+#if UNUSED
 static int r_cmd_java_print_field_count (RBinJavaObj *obj) {
 	ut32 res = r_bin_java_get_field_count (obj);
 	r_cons_printf ("%d\n", res);
 	r_cons_flush();
 	return R_TRUE;
 }
+#endif
 
 static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx) {
 	char * res = r_bin_java_get_field_name (obj, idx);
@@ -1610,7 +1619,6 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 	free (fullname);
 	return prototype;
 }
-
 
 static int r_cmd_java_handle_list_code_references (RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);

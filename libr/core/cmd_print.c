@@ -407,7 +407,7 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 				r_cons_printf ("%16s  ", asmop.buf_hex);
 			if (decode || esil) {
 				RAnalOp analop = {0};
-				char *tmpopstr, *opstr;
+				char *tmpopstr, *opstr = NULL;
 				r_anal_op (core->anal, &analop, core->offset+i,
 					buf+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);

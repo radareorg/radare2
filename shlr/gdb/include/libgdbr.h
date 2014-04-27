@@ -111,7 +111,7 @@ int gdbr_read_registers(libgdbr_t* instance);
 int gdbr_write_bin_registers(libgdbr_t* instance, char* registers);
 int gdbr_write_registers(libgdbr_t* instance, char* registers);
 int gdbr_read_memory(libgdbr_t* instance, uint64_t address, uint64_t len);
-int gdbr_write_memory(libgdbr_t* instance, uint64_t address, char* data, uint64_t len);
+int gdbr_write_memory(libgdbr_t* instance, uint64_t address, const uint8_t* data, uint64_t len);
 int gdbr_send_command(libgdbr_t* instance, char* command);
 int test_command(libgdbr_t* instance, char* command);
 

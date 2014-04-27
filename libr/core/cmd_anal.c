@@ -534,9 +534,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						// TODO: check if destination is outside the function boundaries
 					}
 				}
+			} else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
+			if (name) {
+				free (name);
 			}
-				else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
-			free (name);
 		}
 		break;
 	case 'r':

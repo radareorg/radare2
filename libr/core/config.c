@@ -645,7 +645,6 @@ static int cb_binminstr(void *user, void *data) {
 }
 
 static int cb_searchin(void *user, void *data) {
- 	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
  	if (*node->value == '?') {
  		r_cons_printf ("raw\nblock\nfile\nsection\n");
@@ -655,7 +654,6 @@ static int cb_searchin(void *user, void *data) {
 }
 
 static int cb_fileloadmethod(void *user, void *data) {
- 	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
  	if (*node->value == '?') {
  		r_cons_printf ("fail\noverwrite\nappend\n");
@@ -680,8 +678,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
-	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
-	SETCB("file.loadmethod", "fail", &cb_searchin, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
@@ -910,7 +906,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("search.distance", 0, "Search string distance");
 	SETPREF("search.flags", "true", "If enabled all search results are flagged, else just printed r2 commands");
 	SETI("search.from", -1, "Search start address");
-	SETPREF("search.in", "file", "Specify search boundaries (raw, block, file, section)");
+	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
 	SETI("search.kwidx", 0, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETPREF("search.show", "true", "Show search results while found (disable if lot of hits)");
@@ -933,7 +929,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("file.project", "", "Name of current project");
 	SETPREF("file.sha1", "", "sha1 hash of current file");
 	SETPREF("file.type", "", "Type of current file");
-	SETPREF("file.loadmethod", "fail", "What to do when load addresses overlap: fail, overwrite, or append (next available)");
+	SETCB("file.loadmethod", "fail", &cb_fileloadmethod, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
 	SETI("file.loadalign", 1024, "Alignment of load addresses");
 	SETPREF("file.nowarn", "true", "Suppress file loading warning messages if true");
 	SETPREF("file.location", "", "Is the file 'local', 'remote', or 'memory'");

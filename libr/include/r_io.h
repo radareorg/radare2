@@ -280,6 +280,7 @@ R_API void r_io_map_init(RIO *io);
 R_API ut64 r_io_map_next(RIO *io, ut64 addr);
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size);
 R_API int r_io_map_del_at(RIO *io, ut64 addr);
+R_API RIOMap *r_io_map_get(RIO *io, ut64 addr);
 R_API RIOMap *r_io_map_get_global(RIO *io, ut64 addr);
 R_API RIOMap *r_io_map_get_local(RIO *io, ut64 addr, int fd);
 R_API int r_io_map_del(RIO *io, int fd);

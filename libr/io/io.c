@@ -9,10 +9,6 @@ R_LIB_VERSION (r_io);
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
-static int r_io_insert_adapted(RIO *io, ut64 offset, ut64 size);
-// TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
-//  --- check for EXEC perms in section (use cached read to accelerate)
-
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;

@@ -39,17 +39,19 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 }
 
 
-static int debug_gdb_write_at(ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 	ut32 size_max = 500;
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
 	ut32 x;
 	if (sz < 1 || addr >= UT64_MAX) return -1;
 	for (x = 0; x < packets; x++) {
-		gdbr_write_memory(desc, addr + x * size_max, (buf + x * size_max), size_max);
+		gdbr_write_memory (desc, addr + x * size_max,
+			(const uint8_t*)(buf + x * size_max), size_max);
 	}
 	if (last) {
-		gdbr_write_memory(desc, addr + x * size_max, (buf + x * size_max), last);
+		gdbr_write_memory (desc, addr + x * size_max,
+			(buf + x * size_max), last);
 	}
 
 	return sz;
