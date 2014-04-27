@@ -350,8 +350,10 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size)))
 		return r_bin_te_free(bin);
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size))
+	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
+		free (buf);
 		return r_bin_te_free(bin);
+	}
 	free (buf);
 	if (!r_bin_te_init(bin))
 		return r_bin_te_free(bin);
