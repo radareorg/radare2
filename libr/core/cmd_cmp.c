@@ -28,8 +28,6 @@ R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd
 	snprintf (cmpw->cmd, sizeof (cmpw->cmd), "%s", cmd);
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
-    if (cmpw->ndata == NULL)
-        return R_FALSE;
 	r_io_read_at (core->io, addr, cmpw->ndata, size);
 	r_list_append (core->watchers, cmpw);
 	return R_TRUE;
@@ -82,8 +80,6 @@ R_API int r_core_cmpwatch_update (RCore *core, ut64 addr) {
 		free (w->odata);
 		w->odata = w->ndata;
 		w->ndata = malloc (w->size);
-        if (w->ndata == NULL)
-            return R_FALSE;
 		r_io_read_at (core->io, w->addr, w->ndata, w->size);
 	}
 	return !r_list_empty (core->watchers);
@@ -112,13 +108,7 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	if (len<1)
 		return R_FALSE;
 	f = malloc (len);
-    if (f == NULL)
-        return R_FALSE;
 	d = malloc (len);
-    if (d == NULL) {
-        free (f);
-        return R_FALSE;
-    }
 	r_io_read_at (core->io, of, f, len);
 	r_io_read_at (core->io, od, d, len);
 	int headers = B_IS_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
@@ -143,8 +133,6 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	int i, eq = 0;
-    if (len < 0)
-        return 0;
 	for (i=0; i<len; i++) {
 		if (f[i]==d[i]) {
 			eq++;
@@ -246,8 +234,6 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 		buf = (ut8*)malloc (strlen (input+2)+1);
-        if (buf == NULL)
-            return R_FALSE;
 		ret = r_hex_str2bin (input+2, buf);
 		if (ret<1) eprintf ("Cannot parse hexpair\n");
 		else val = radare_compare (core, core->block, buf, ret);
@@ -255,11 +241,8 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'X':
 		buf = malloc (core->blocksize);
-        if (buf == NULL)
-            return R_FALSE;
 		ret = r_io_read_at (core->io, r_num_math (core->num, input+1),
 			buf, core->blocksize);
-		if (ret<1) eprintf ("Cannot read hexdump\n");
 		val = radare_compare (core, core->block, buf, ret);
 		free (buf);
 		break;
@@ -274,8 +257,6 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 		buf = (ut8 *)malloc (core->blocksize);
-        if (buf == NULL)
-            return R_FALSE;
 		fread (buf, 1, core->blocksize, fd);
 		fclose (fd);
 		val = radare_compare (core, core->block, buf, core->blocksize);
@@ -319,8 +300,7 @@ static int cmd_cmp(void *data, const char *input) {
 		int col = core->cons->columns>123;
 		ut8 *b = malloc (core->blocksize);
 		ut64 addr = r_num_math (core->num, input+2);
-        if (b == NULL)
-            return R_FALSE;
+		if (!b) return 0;
 		memset (b, 0xff, core->blocksize);
 		r_core_read_at (core, addr, b, core->blocksize);
 		r_print_hexdiff (core->print, core->offset, core->block,

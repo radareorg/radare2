@@ -17,12 +17,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int len = 0;
 
 	ifd = r_file_mkstemp ("r_as", &ipath);
-	if (ifd == -1)
-		return -1;
-		
 	ofd = r_file_mkstemp ("r_as", &opath);
-	if (ofd == -1)
-		return -1;
 
 	syntaxstr = ".intel_syntax noprefix\n"; // if intel syntax
 	len = snprintf (asm_buf, sizeof (asm_buf),

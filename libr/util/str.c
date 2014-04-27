@@ -915,7 +915,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 	if (!str) return NULL;
 	argv = (char **)malloc (MAXARG*sizeof(char*));
 	optr = ptr = (char *)r_str_chop_ro (str);
-	for (; *ptr && argc < (MAXARG - 2); ptr++) {
+	for (; *ptr && argc<MAXARG; ptr++) {
 		switch (*ptr) {
 		case '\'':
 		case '"':
@@ -925,7 +925,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 			} else {
 				if (quote) {
 					*ptr = '\0';
-					argv[argc++] = strdup (optr);
+					argv[argc++] = optr;
 					optr = ptr+1;
 					quote = 0;
 				} else {
@@ -941,7 +941,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 			if (!escape && !quote) {
 				*ptr = '\0';
 				if (*optr) {
-					argv[argc++] = strdup (optr);
+					argv[argc++] = optr;
 					optr = ptr+1;
 				}
 			}
@@ -951,22 +951,22 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 			break;
 		}
 	}
-	if (*optr)
-		argv[argc++] = strdup (optr);
+	if (*optr) {
+		argv[argc++] = optr;
+		optr = ptr+1;
+	}
 	argv[argc] = NULL;
 	if (_argc)
 		*_argc = argc;
 
 	free (str);
+	free (ptr);
 	return argv;
 }
 
 R_API void r_str_argv_free(char **argv) {
 	// TODO: free the internal food or just the first element
 //	free (argv[0]); // MEMORY LEAK
-	int argc = 0;
-	while (argv[argc])
-		free (argv[argc++]);
 	free (argv);
 }
 
