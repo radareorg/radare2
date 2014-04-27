@@ -275,7 +275,7 @@ static int check(RBinFile *arch) {
 	idx = (arch->buf->buf[0x3c]|(arch->buf->buf[0x3d]<<8));
 	if (arch->buf->length>idx)
 		if (!memcmp (arch->buf->buf, "\x4d\x5a", 2) &&
-			!memcmp (arch->buf->buf+idx, "\x50\x45", 2) && 
+			!memcmp (arch->buf->buf+idx, "\x50\x45", 2) &&
 			!memcmp (arch->buf->buf+idx+0x18, "\x0b\x01", 2))
 			ret = R_TRUE;
 	return ret;

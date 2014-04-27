@@ -12,7 +12,7 @@ ut64 PE_(r_bin_pe_get_main_offset)(struct PE_(r_bin_pe_obj_t) *bin) {
 	ut64 addr = 0;
 	ut8 buf[512];
 
-	// option2: /x 8bff558bec83ec20         
+	// option2: /x 8bff558bec83ec20
 	if (r_buf_read_at (bin->b, entry->offset, buf, sizeof (buf)) == -1) {
 		eprintf ("Error: Cannot read entry at 0x%08"PFMT64x"\n", entry->offset);
 	} else {
@@ -364,7 +364,7 @@ static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		if (!strcmp (sections[i].name, ".stabst")) {
 			stabst_sz = sections[i].size;
 			eprintf ("Stab String Table found\n");
-			stabst = malloc (sections[i].size); 
+			stabst = malloc (sections[i].size);
 			r_buf_read_at (bin->b, sections[i].offset, stabst, stabst_sz);
 		}
 	}
@@ -406,7 +406,7 @@ i = 0;
 switch (si->n_type) {
 	case 0x80: // LSYM
 		if (si->n_desc>0 && si->n_value) {
-			eprintf ("MAIN SYMBOL %d %d %d %s\n", 
+			eprintf ("MAIN SYMBOL %d %d %d %s\n",
 				si->n_strx,
 				si->n_desc,
 				si->n_value,
@@ -416,9 +416,9 @@ switch (si->n_type) {
 }
 if (si->n_type == 0x64) {
 printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
-				getstring (si->n_strx) 
+				getstring (si->n_strx)
 );
-} 
+}
 #if 1
 				printf ("%d stridx = 0x%x\n", n, si->n_strx);
 				printf ("%d string = %s\n", n, getstring (si->n_strx));
@@ -426,13 +426,13 @@ printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
 				printf ("%d type   = 0x%x\n", n, si->n_type);
 				printf ("%d value  = 0x%llx\n", n, (ut64)si->n_value);
 #endif
-			} 
+			}
 			//i += 12; //sizeof (struct stab_item);
 			i += sizeof (struct stab_item);
 			si = stab + i;
 			n++;
 		}
-		
+
 		// TODO  : iterate over all stab elements
 	} else {
 		// you failed //
@@ -616,7 +616,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int i, nimp = 0;
-	
+
 	if (bin->import_directory)
 	for (i = 0; i < import_dirs_count; i++) {
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
@@ -656,7 +656,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int mallocsz, i, j = 0;
-	
+
 	/* NOTE: import_dirs and delay_import_dirs can be -1 */
 	mallocsz = (import_dirs_count + delay_import_dirs_count + 3) * sizeof (struct r_bin_pe_lib_t);
 	libs = malloc (mallocsz);
@@ -979,11 +979,13 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
 	struct PE_(r_bin_pe_obj_t) *bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	if (!bin) return NULL;
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
+	if (!(buf = (ut8*)r_file_slurp(file, &bin->size)))
 		return PE_(r_bin_pe_free)(bin);
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size))
+	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
+		free (buf);
 		return PE_(r_bin_pe_free)(bin);
+	}
 	free (buf);
 	if (!PE_(r_bin_pe_init)(bin))
 		return PE_(r_bin_pe_free)(bin);
