@@ -308,7 +308,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				pbody[lidx]='\0';
 		}
 		strncpy (macro->code, pbody, macro->codelen);
-		macro->code[macro->codelen] = 0;
+		macro->code[macro->codelen-1] = 0;
 		//strcat (macro->code, ",");
 #if 0
 	} else {
