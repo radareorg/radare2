@@ -163,7 +163,7 @@ static int cmd_alias(void *data, const char *input) {
 			if (*p) r_cmd_alias_set (core->rcmd, buf, p);
 			else r_cmd_alias_del (core->rcmd, buf);
 		}
-	} else 
+	} else
 	if (buf[1]=='*') {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
@@ -215,7 +215,7 @@ static int cmd_rap(void *data, const char *input) {
 	switch (*input) {
 	case '\0': r_core_rtr_list (core); break;
 	case 'h': r_core_rtr_http (core, 0, input+1); break;
-	case 'H': 
+	case 'H':
 		  while (input[1]==' ') input++;
 		  r_core_rtr_http (core, 1, input+1); break;
 	case '?': r_core_rtr_help (core); break;
@@ -699,7 +699,7 @@ static int cmd_eval(void *data, const char *input) {
 				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
 					R2_VERSION"/cons/%s", input+3);
 				if (!r_core_cmd_file (core, home))
-					if (!r_core_cmd_file (core, path)) 
+					if (!r_core_cmd_file (core, path))
 						if (!r_core_cmd_file (core, input+3))
 							eprintf ("ecf: cannot open colorscheme profile\n");
 				free (home);
@@ -834,7 +834,7 @@ static int cmd_system(void *data, const char *input) {
 	ut64 n;
 	int ret = 0;
 	switch (*input) {
-	case '!': 
+	case '!':
 		if (input[1]) {
 			int olen;
 			char *out = NULL;
@@ -960,7 +960,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			cmd++;
 		// do not repeat null cmd
 		if (!*cmd) goto beach;
-	} 
+	}
 	if (rep<1) rep = 1;
 	while (rep-- && *cmd) {
 		ret = r_core_cmd_subst_i (core, cmd);
@@ -1644,8 +1644,10 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 	if (!odata) return R_FALSE;
 	if (!r_core_cmd_lines (core, odata)) {
 		eprintf ("Failed to run script '%s'\n", file);
+		free (odata);
 		return R_FALSE;
 	}
+	free (odata);
 	return R_TRUE;
 }
 
