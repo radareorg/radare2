@@ -87,7 +87,7 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 		if (rad) {
 			eprintf ("entropy: %10f\n", e);
 		} else {
-			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %10f: ", 
+			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %10f: ",
 					from, to, e);
 			r_print_progressbar (NULL, 12.5 * e, 60);
 			printf ("\n");
