@@ -1,7 +1,7 @@
 OBJ_CR16=anal_cr16.o
 
 STATIC_OBJ+=${OBJ_CR16}
-OBJ_CR16+=../../../../../../../../../../../../../../../../../../../../${LTOP}/asm/arch/cr16/cr16_disas.o
+OBJ_CR16+=../../../../../../../../../../../${LTOP}/asm/arch/cr16/cr16_disas.o
 TARGET_CR16=anal_cr16.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_CR16}
