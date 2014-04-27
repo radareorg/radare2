@@ -63,8 +63,10 @@ static RList* sections(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = r_bin_te_get_sections(arch->o->bin_obj)))
+	if (!(sections = r_bin_te_get_sections(arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
