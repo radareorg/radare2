@@ -16,7 +16,12 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 
 	ifd = r_file_mkstemp ("r_nasm", &ipath);
+	if (ifd == -1)
+		return -1;
+		
 	ofd = r_file_mkstemp ("r_nasm", &opath);
+	if (ofd == -1)
+		return -1;
 
 	len = snprintf (asm_buf, sizeof (asm_buf),
 			"BITS %i\nORG 0x%"PFMT64x"\n%s", a->bits, a->pc, buf);
