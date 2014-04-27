@@ -78,6 +78,7 @@ static int cmd_write(void *data, const char *input) {
 						core->offset = cur_off;
 						r_core_block_read (core, 0);
 					}
+					free (bytes);
 				}
 				break;
 			case 'X':
@@ -98,6 +99,7 @@ static int cmd_write(void *data, const char *input) {
 						core->offset = addr;
 						r_core_block_read (core, 0);
 					}
+					free (bytes);
 				}
 				break;
 			case 's':
