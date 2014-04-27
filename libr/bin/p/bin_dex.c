@@ -400,7 +400,7 @@ dprintf ("----> %d\n", bin->methods[i].name_id);
 			dprintf ("string index out of range\n");
 			break;
 		}
-		snprintf (ptr->name, sizeof (ptr->name), "import.%s.%s", 
+		snprintf (ptr->name, sizeof (ptr->name), "import.%s.%s",
 				classname, methodname);
 		ptr->ordinal = i+1;
 		ptr->size = 0;

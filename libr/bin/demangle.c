@@ -142,7 +142,8 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			return NULL;
 		}
 		*args = 0;
-		name = strdup (args+2); // memleak :D
+		name = strdup (args+2);
+		if (args) free (args);
 		args = NULL;
 		for (i=0; name[i]; i++) {
 			if (name[i]=='_') {
@@ -173,6 +174,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
 			if (bin) r_bin_class_add_method (bin, clas, name, nargs);
 		}
+		if (name) free (name);
 		name = NULL;
 	}
 	free (clas);
