@@ -142,7 +142,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->rva = 0;
 			ptr->srwx = 7;
 			r_list_append (ret, ptr);
-		} 
+		}
 	}
 	return ret;
 }
@@ -383,29 +383,41 @@ static RBinInfo* info(RBinFile *arch) {
 		strncpy (ret->rpath, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	} else strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if (!(str = Elf_(r_bin_elf_get_file_type) (arch->o->bin_obj)))
+	if (!(str = Elf_(r_bin_elf_get_file_type) (arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	free (str);
-	if (!(str = Elf_(r_bin_elf_get_elf_class) (arch->o->bin_obj)))
+	if (!(str = Elf_(r_bin_elf_get_elf_class) (arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->o->bin_obj)))
+	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->o->bin_obj)))
+	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if (!(str = Elf_(r_bin_elf_get_machine_name) (arch->o->bin_obj)))
+	if (!(str = Elf_(r_bin_elf_get_machine_name) (arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if (!(str = Elf_(r_bin_elf_get_arch) (arch->o->bin_obj)))
+	if (!(str = Elf_(r_bin_elf_get_arch) (arch->o->bin_obj))) {
+		free (ret);
 		return NULL;
+	}
 	strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
 	strncpy (ret->rclass, "elf", R_BIN_SIZEOF_STRINGS);
@@ -426,7 +438,7 @@ static RList* fields(RBinFile *arch) {
 	RBinField *ptr = NULL;
 	struct r_bin_elf_field_t *field = NULL;
 	int i;
-	
+
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
