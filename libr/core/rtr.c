@@ -557,15 +557,15 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 		free (r_line_singleton ()->prompt);
 		r_line_singleton ()->prompt = strdup (prompt);
 		if ((r_cons_fgets (buf, sizeof (buf), 0, NULL))) {
-			if (*buf == 'q')
+			if (!*buf || *buf == 'q')
 				break;
-			else if (*buf == 'V') {
+			if (*buf == 'V') {
 				eprintf ("Visual mode not supported\n");
 				continue;
 			}
 			r_core_rtr_cmd (core, buf);
 			r_cons_flush ();
-		}
+		} else break;
 	}
 }
 
