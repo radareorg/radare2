@@ -267,9 +267,10 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		eprintf ("Unexpected system reply\n");
 		return -1;
 	}
-	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
-	if (i == -1)
+	if (i == -1) {
 		return -1;
+	}
+	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
 	ret = 0;
 	ptr = (char *)malloc (i+1);
 	if (ptr) {
