@@ -51,6 +51,7 @@ static int r_cmd_yara_help();
 static int r_cmd_yara_init();
 static int r_cmd_yara_process(const RCore* core, const char* input);
 static int r_cmd_yara_scan(const RCore* core);
+static int r_cmd_yara_load_default_rules ();
 
 static int callback (int message, YR_RULE* rule, void* data) {
     (void)data; // avoid Unused parameter warning
@@ -118,7 +119,7 @@ static int r_cmd_yara_add(const char* rules_path) {
 
 	rules_file = r_sandbox_fopen (rules_path, "r");
 	if (!rules_file) {
-		eprintf ("Unable to open the rules file\n");
+		eprintf ("Unable to open %s\n", rules_path);
 		return R_FALSE;
 	}
 
@@ -133,6 +134,8 @@ static int r_cmd_yara_add(const char* rules_path) {
 		r_cmd_yara_clear (); // The compiler is screwed :|
 		return R_FALSE;
 	}
+
+	eprintf ("%s added\n", rules_path);
 
 	return R_TRUE;
 }
@@ -160,16 +163,38 @@ static int r_cmd_yara_process(const RCore* core, const char* input) {
 static int r_cmd_yara_call(void *user, const char *input) {
 	const RCore* core = (RCore*) user;
 	if (strncmp (input, "yara", 4))
-        return R_FALSE;
-    else if (strncmp (input, "yara ", 5))
-        return r_cmd_yara_help ();
-    const char *args = input+4;
-    if (!r_yr_initialize)
-        if (!r_cmd_yara_init ())
-            return R_TRUE;
-    if (*args)
-        args++;
-    return r_cmd_yara_process (core, args);
+		return R_FALSE;
+	else if (strncmp (input, "yara ", 5))
+		return r_cmd_yara_help ();
+	const char *args = input+4;
+	if (r_yr_initialize == NULL)
+		if (!r_cmd_yara_init ())
+			return R_TRUE;
+	if (*args)
+		args++;
+	r_cmd_yara_process (core, args);
+
+	return R_TRUE;
+}
+
+static int r_cmd_yara_load_default_rules() {
+#define YARA_PREFIX R2_PREFIX"/share/radare2/"R2_VERSION"/yara/"
+	struct dirent *f;
+	char complete_path[128];
+	DIR* dir = r_sandbox_opendir (YARA_PREFIX);
+
+	if (dir == NULL)
+		return R_FALSE;
+
+	while ((f = readdir(dir)) != NULL) {
+		if (f->d_name[0] == '.') // skip '.' and '..'
+			continue;
+		snprintf (complete_path, sizeof(complete_path), YARA_PREFIX "%s", f->d_name);
+		r_cmd_yara_add (complete_path);
+	}
+
+	closedir (dir);
+	return R_TRUE;
 }
 
 static int r_cmd_yara_init() {
@@ -212,6 +237,8 @@ static int r_cmd_yara_init() {
 		r_yr_finalize ();
 		return R_FALSE;
 	}
+
+	r_cmd_yara_load_default_rules ();
 
 	return R_TRUE;
 }

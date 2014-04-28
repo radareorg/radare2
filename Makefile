@@ -105,6 +105,7 @@ install: install-doc install-man install-www
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
 	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
+	cp -f shlr/yara/packers.rules ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/packers.rules
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
@@ -139,6 +140,8 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd $(DESTDIR)/$(PREFIX)/share/radare2/ ; rm -f last ; ln -fs $(VERSION) last
 	ln -fs ${PWD}/doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
 	ln -fs ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
+	mkdir -p ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/
+	ln -fs ${PWD}/shlr/yara/packers.rules ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/packers.rules
 	sys/ldconfig.sh
 
 deinstall uninstall:
