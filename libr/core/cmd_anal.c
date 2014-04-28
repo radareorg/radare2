@@ -63,14 +63,21 @@ static int var_cmd(RCore *core, const char *str) {
 		case 'A': scope = R_ANAL_VAR_SCOPE_ARGREG|R_ANAL_VAR_DIR_IN; break;
 		default:
 			eprintf ("Unknown type\n");
+			free (ostr);
 			return 0;
 		}
 
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
-		case '\0': r_anal_var_list (core->anal, fcn, 0, 0); return 0;
-		case '?': var_help(*str); return 0;
-		case '.': r_anal_var_list (core->anal, fcn, core->offset, 0); return 0;
+		case '\0':
+			r_anal_var_list (core->anal, fcn, 0, 0);
+			goto end;
+		case '?':
+			var_help(*str);
+			goto end;
+		case '.':
+			r_anal_var_list (core->anal, fcn, core->offset, 0);
+			goto end;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
@@ -85,10 +92,11 @@ static int var_cmd(RCore *core, const char *str) {
 							scope, atoi (str+2), rw, core->offset);
 						//return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
 						r_anal_var_free (var);
-						return R_TRUE;
+						goto end;
 					}
 					eprintf ("Can not find variable in: '%s'\n", str);
 				} else eprintf ("Unknown variable in: '%s'\n", str);
+				free (ostr);
 				return R_FALSE;
 			} else eprintf ("Missing argument\n");
 			break;
@@ -122,8 +130,9 @@ static int var_cmd(RCore *core, const char *str) {
 		var_help (*str);
 		break;
 	}
+end:
 	free (ostr);
-	return 0;
+	return R_TRUE;
 }
 #endif
 
