@@ -105,6 +105,7 @@ install: install-doc install-man install-www
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
 	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
+	mkdir -p ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/
 	cp -f shlr/yara/packers.rules ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/packers.rules
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
