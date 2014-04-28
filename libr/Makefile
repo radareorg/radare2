@@ -3,9 +3,9 @@ include config.mk
 include ../mk/${COMPILER}.mk
 
 PREFIX?=${PWD}/../prefix
-PFX=${DESTDIR}/${PREFIX}
-LFX=${DESTDIR}/${LIBDIR}
-IFX=${DESTDIR}/${INCLUDEDIR}
+PFX=${DESTDIR}${PREFIX}
+LFX=${DESTDIR}${LIBDIR}
+IFX=${DESTDIR}${INCLUDEDIR}
 PWD=$(shell pwd)
 
 LIBS0=util hash
@@ -121,7 +121,7 @@ install: install-includes install-pkgconfig
 	${INSTALL_DATA} $$a ${LFX}/radare2/${VERSION} ; done
 	cd ${LFX}/radare2 ; ln -fs ${VERSION} last
 
-#@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
+#@echo "lang/p/radare.* ${DESTDIR}${PFX}/${LIBDIR}/radare2/${VERSION}"
 #${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
 
 deinstall uninstall:

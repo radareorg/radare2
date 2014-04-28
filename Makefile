@@ -3,7 +3,7 @@ include global.mk
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
-DLIBDIR=$(DESTDIR)/$(LIBDIR)
+DLIBDIR=$(DESTDIR)$(LIBDIR)
 R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
@@ -62,7 +62,7 @@ w32dist:
 	#mkdir -p w32dist/include/libr/sflib
 	cp -f doc/fortunes w32dist/share/doc/radare2
 	mv w32dist radare2-w32-${VERSION}
-	rm -f radare2-w32-${VERSION}.zip 
+	rm -f radare2-w32-${VERSION}.zip
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
 clean:
@@ -111,17 +111,17 @@ install: install-doc install-man install-www
 	sys/ldconfig.sh
 
 install-www:
-	rm -rf ${DESTDIR}/${WWWROOT}
+	rm -rf ${DESTDIR}${WWWROOT}
 	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
-	mkdir -p ${DESTDIR}/${WWWROOT}
-	cp -rf shlr/www/* ${DESTDIR}/${WWWROOT}
+	mkdir -p ${DESTDIR}${WWWROOT}
+	cp -rf shlr/www/* ${DESTDIR}${WWWROOT}
 
 symstall-www:
-	rm -rf ${DESTDIR}/${WWWROOT}
+	rm -rf ${DESTDIR}${WWWROOT}
 	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
-	mkdir -p ${DESTDIR}/${WWWROOT}
-	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
-		ln -fs $$a ${DESTDIR}/${DATADIR}/radare2/${VERSION}/www ; done
+	mkdir -p ${DESTDIR}${WWWROOT}
+	cd ${DESTDIR}${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
+		ln -fs $$a ${DESTDIR}${DATADIR}/radare2/${VERSION}/www ; done
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
@@ -137,8 +137,8 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 		${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
-	cd $(DESTDIR)/$(PREFIX)/lib/radare2/ ; rm -f last ; ln -fs $(VERSION) last
-	cd $(DESTDIR)/$(PREFIX)/share/radare2/ ; rm -f last ; ln -fs $(VERSION) last
+	cd $(DESTDIR)$(PREFIX)/lib/radare2/ ; rm -f last ; ln -fs $(VERSION) last
+	cd $(DESTDIR)$(PREFIX)/share/radare2/ ; rm -f last ; ln -fs $(VERSION) last
 	ln -fs ${PWD}/doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
 	ln -fs ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	mkdir -p ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/
@@ -155,26 +155,26 @@ deinstall uninstall:
 	@echo
 
 purge-doc:
-	rm -rf ${DESTDIR}/${PREFIX}/share/doc/radare2
+	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
 	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
 	rm -f ${MDR}/man1/r2.1
 
 purge-dev:
-	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a
-	rm -rf ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
-	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
-	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
+	rm -rf ${DESTDIR}${LIBDIR}/libr_*.a
+	rm -rf ${DESTDIR}${LIBDIR}/pkgconfig/r_*.pc
+	rm -rf ${DESTDIR}${INCLUDEDIR}/libr
+	rm -f ${DESTDIR}${LIBDIR}/radare2/${VERSION}/-*
 	# XXX: this must be in purge-sym ?
-	-for a in ${R2BINS} ; do ${STRIP} -s ${DESTDIR}/${BINDIR}/$$a 2> /dev/null ; done
-	-for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do ${STRIP} -s $$a ; done
+	-for a in ${R2BINS} ; do ${STRIP} -s ${DESTDIR}${BINDIR}/$$a 2> /dev/null ; done
+	-for a in ${DESTDIR}${LIBDIR}/libr_*.so ; do ${STRIP} -s $$a ; done
 
 purge: purge-doc purge-dev
-	for a in ${R2BINS} ; do rm -f ${DESTDIR}/${BINDIR}/$$a ; done
-	rm -f ${DESTDIR}/${BINDIR}/ragg2-cc
-	rm -f ${DESTDIR}/${BINDIR}/r2
-	rm -f ${DESTDIR}/${LIBDIR}/libr_*
-	rm -rf ${DESTDIR}/${LIBDIR}/radare2
-	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
+	for a in ${R2BINS} ; do rm -f ${DESTDIR}${BINDIR}/$$a ; done
+	rm -f ${DESTDIR}${BINDIR}/ragg2-cc
+	rm -f ${DESTDIR}${BINDIR}/r2
+	rm -f ${DESTDIR}${LIBDIR}/libr_*
+	rm -rf ${DESTDIR}${LIBDIR}/radare2
+	rm -rf ${DESTDIR}${INCLUDEDIR}/libr
 
 dist:
 	-[ configure -nt config-user.mk ] && ./configure --prefix=${PREFIX}
