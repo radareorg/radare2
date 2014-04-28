@@ -659,6 +659,9 @@ static int cmd_eval(void *data, const char *input) {
 		return R_TRUE;
 	case 'x': // exit
 		return cmd_quit (data, "");
+	case 'j':
+		r_config_list (core->config, NULL, 'j');
+		break;
 	case '\0':
 		r_config_list (core->config, NULL, 0);
 		break;

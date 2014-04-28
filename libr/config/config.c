@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2013 - pancake */
+/* radare - LGPL - Copyright 2006-2014 - pancake */
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
@@ -57,6 +57,25 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 					cfg->printf ("%20s: %s\n", node->name,
 						node->desc?node->desc:"");
 		}
+		break;
+	case 'j':
+		cfg->printf ("{");
+		r_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp (str, node->name, len))))
+				if (!str || !strncmp (str, node->name, len)) {
+					const char *val = node->value;
+					if (node->flags & CN_BOOL || node->flags & CN_INT || node->flags & CN_OFFT) {
+						if (!val) val = "0";
+						cfg->printf ("\"%s\":%s",
+							node->name, val);
+					} else 
+						cfg->printf ("\"%s\":\"%s\"",
+							node->name, val);
+					if (iter->n)
+						cfg->printf (",");
+				}
+		}
+		cfg->printf ("}\n");
 		break;
 	}
 }

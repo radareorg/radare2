@@ -24,7 +24,7 @@ R_API const ut8 *r_leb128 (const ut8 *data, st64 *v) {
 		if (!(c & 0x80)) break;
 	}
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
-			sum |= -((st64)1 << s);
+		sum |= -((st64)1 << s);
 	}
 	if (v) *v = sum;
 	return data;

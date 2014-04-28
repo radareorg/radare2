@@ -25,12 +25,12 @@ static void rasm2_list(RAsm *a, const char *arch) {
 				break;
 			}
 		} else {
+			const char *feat = "--";
 			bits[0] = 0;
 			if (h->bits&8) strcat (bits, "8 ");
 			if (h->bits&16) strcat (bits, "16 ");
 			if (h->bits&32) strcat (bits, "32 ");
 			if (h->bits&64) strcat (bits, "64 ");
-			const char *feat = "--";
 			if (h->assemble && h->disassemble)  feat = "ad";
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
@@ -566,7 +566,6 @@ static int cb_segoff(void *user, void *data) {
 	return R_TRUE;
 }
 
-
 static int cb_stopthreads(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -899,7 +898,6 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETCB("scr.utf8", "false", &cb_utf8, "Show UTF-8 characters instead of ANSI");
 #endif
-
 	/* search */
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.count", 0, "Start index number at search hits");
@@ -955,7 +953,7 @@ R_API int r_core_config_init(RCore *core) {
 		r_config_desc (cfg, buf, buf+10);
 	}
 
-    /* yara */
+	/* yara */
 	SETPREF("yara.rules", "/home/jvoisin/yara.rules", "Path to your yara rules");
 	SETI("yara.offset", 1, "Show offsets for matching rules");
 	SETI("yara.timeout", 0, "Abort yara scanning after a number of seconds");

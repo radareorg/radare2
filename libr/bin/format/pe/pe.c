@@ -444,7 +444,8 @@ printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
 #endif
 
 	if (export_dir_offset == 0) {
-		eprintf ("Warning: Cannot find the offset of the export directory\n");
+		// This export-dir-offset should only appear in DLL files
+		//eprintf ("Warning: Cannot find the offset of the export directory\n");
 		return R_FALSE;
 	}
 	//sdb_setn (DB, "hdr.exports_directory", export_dir_offset);
