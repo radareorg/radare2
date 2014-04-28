@@ -174,8 +174,6 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
 			if (binfile) r_bin_class_add_method (binfile, clas, name, nargs);
 		}
-		if (name) free (name);
-		name = NULL;
 	}
 	free (clas);
 	free (args);
