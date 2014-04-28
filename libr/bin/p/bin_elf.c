@@ -371,6 +371,20 @@ static RList* relocs(RBinFile *arch) {
 	return ret;
 }
 
+static int has_canary(RBinFile *arch) {
+    RList* symbols_list = symbols (arch);
+	RListIter *iter;
+	RBinSymbol *symbol;
+    r_list_foreach (symbols_list, iter, symbol) {
+        if (!strcmp(symbol->name, "imp.__stack_chk_fail") ) {
+            r_list_free (symbols_list);
+            return 1;
+        }
+    }
+    r_list_free (symbols_list);
+    return 0;
+}
+
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *str;
@@ -389,6 +403,7 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 	strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
+	ret->has_canary = has_canary(arch);
 	free (str);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (arch->o->bin_obj))) {
 		free (ret);
