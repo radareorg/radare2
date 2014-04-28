@@ -82,12 +82,14 @@ typedef struct r_core_plugin_t {
 	const char *license;
 	RCmdCallback call;
 	RCmdCallback init;
+	RCmdCallback deinit;
 } RCorePlugin;
 
 #ifdef R_API
 R_API int r_core_plugin_init(RCmd *cmd);
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API int r_core_plugin_check(RCmd *cmd, const char *a0);
+R_API int r_core_plugin_deinit(RCmd *cmd);
 
 /* review api */
 R_API RCmd *r_cmd_new();

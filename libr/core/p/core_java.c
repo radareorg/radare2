@@ -670,7 +670,7 @@ static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const cha
 	*res_len = 0;
 	if (num_occurences > 0 && replace_len > 0 && s_old) {
 		ut32 consumed = 0;
-		char * next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
+		const char * next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
 		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
 		result = malloc (num_occurences*replace_len + buf_len);
 		memset (result, 0, num_occurences*replace_len + buf_len);
@@ -710,7 +710,8 @@ static int r_cmd_java_get_class_names_from_input (const char *input, char **clas
 	else if (!new_class_name || *new_class_name) return res;
 	else if (!new_class_name_len || !class_name_len) return res;
 
-	*new_class_name = *class_name_len = NULL;
+	*new_class_name = NULL;
+	*class_name_len = 0;
 
 	if (p && *p && cmd_sz > 1) {
 		const char *end = p;
@@ -1901,6 +1902,8 @@ RCorePlugin r_core_plugin_java = {
 	.desc = "Suite of java commands, java help for more info",
 	.license = "Apache",
 	.call = r_cmd_java_call,
+	.deinit = NULL,
+	.init = NULL,
 };
 
 #ifndef CORELIB

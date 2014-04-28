@@ -31,6 +31,8 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	int i;
 	if (!cmd) return NULL;
 	r_cmd_alias_free (cmd);
+	// dinitialize plugin commands
+	r_core_plugin_deinit(cmd);
 	r_list_free (cmd->plist);
 	r_list_free (cmd->lcmds);
 	for (i=0;i<NCMDS;i++)
