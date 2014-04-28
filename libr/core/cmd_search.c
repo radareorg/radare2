@@ -614,6 +614,7 @@ static int cmd_search(void *data, const char *input) {
 				r_search_kw_add (core->search,
 						r_search_keyword_new_hexmask (input+2, NULL));
 			}
+            free (p);
 		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
