@@ -10,6 +10,8 @@
 
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
+static tms320_dasm_t engine = { };
+
 typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
 int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
@@ -42,11 +44,23 @@ int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len)
 	return aop(anal, op, addr, buf, len);
 }
 
+static int tms320_init(void * unused)
+{
+	return tms320_dasm_init(&engine);
+}
+
+static int tms320_fini(void * unused)
+{
+	return tms320_dasm_fini(&engine);
+}
+
 struct r_anal_plugin_t r_anal_plugin_tms320 = {
 	.name = "tms320",
 	.arch = R_SYS_ARCH_TMS320,
 	.bits = 32,
 	.desc = "TMS320 DSP family code analisys plugin",
+	.init = tms320_init,
+	.fini = tms320_fini,
 	.license = "LGPLv3",
 	.op = &tms320_op,
 };
