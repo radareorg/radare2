@@ -843,5 +843,3 @@ R_API ut32 r_core_file_cur_fd (RCore *core) {
 	}
 	return (ut32)-1;
 }
-
-

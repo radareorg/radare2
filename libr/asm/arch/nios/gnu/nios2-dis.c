@@ -26,6 +26,7 @@
 #include "libiberty.h"
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 /* No symbol table is available when this code runs out in an embedded
    system as when it is used for disassembler support in a monitor.  */

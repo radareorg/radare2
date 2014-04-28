@@ -22,7 +22,7 @@ static int disassemble(RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
 	memcpy (bof, buf, R_MIN(len, sizeof(bof)));
 	dp.opcode = opcode;
 	dp.operands = operands;
-	dp.iaddr = iaddr;
+	dp.iaddr = (m68k_word *) iaddr;
 	dp.instr = bof;
 	buf2 = (const ut8*)M68k_Disassemble (&dp);
 	if (!buf2) {

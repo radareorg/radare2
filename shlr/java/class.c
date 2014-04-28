@@ -296,6 +296,7 @@ static ut8 * r_bin_java_cp_get_fm_ref (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, 
 static ut8 * r_bin_java_cp_get_2_ut16 (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, ut16 ut16_one, ut16 ut16_two );
 static ut8 * r_bin_java_cp_get_name_type (RBinJavaObj *bin, ut32 *out_sz, ut16 name_idx, ut16 type_idx );
 
+
 static ut8  char_needs_hexing ( ut8 b) {
 	if (b < 0x20) return 1;
 	switch (b) {
@@ -5823,12 +5824,14 @@ static ut8 * r_bin_java_cp_append_classref_and_name (RBinJavaObj *bin, ut32 *out
 }
 
 R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx ) {
-	ut8* bytes = NULL, fnt_bytes = NULL;
+	ut8 *bytes = NULL, *fnt_bytes = NULL;
 	RBinJavaCPTypeObj *ref_cp_obj = NULL;
 	ut16 fnt_idx = 0, cref_idx = 0;
 	ut32 fnt_len = 0;
 
-	ref_cp_obj = r_bin_java_find_cp_class_ref_from_name_idx (bin, cn_idx);
+	ut16 ref_cp_obj_idx = r_bin_java_find_cp_class_ref_from_name_idx (bin, cn_idx);
+	if (!ref_cp_obj_idx) return NULL;
+	ref_cp_obj  = r_bin_java_get_item_from_bin_cp_list (bin, r_bin_java_find_cp_ref_info);
 	if (ref_cp_obj) cref_idx = ref_cp_obj->idx;
 
 	ref_cp_obj = r_bin_java_find_cp_name_and_type_info (bin, fn_idx, ft_idx);

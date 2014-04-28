@@ -17,7 +17,7 @@ enum {
 	WS_OP_IO
 };
 
-static int get_ws_pref_optype(ut8 *buf, int len)
+static int get_ws_pref_optype(const ut8 *buf, int len)
 {
 	if(len) {
 		switch(buf[0]) {
@@ -34,7 +34,7 @@ static int get_ws_pref_optype(ut8 *buf, int len)
 	return WS_OP_UNK;
 }
 
-static int get_ws_suf_optype(ut8 *buf, int len)
+static int get_ws_suf_optype(const ut8 *buf, int len)
 {
 	if(len) {
 		switch(buf[0]) {
@@ -51,9 +51,9 @@ static int get_ws_suf_optype(ut8 *buf, int len)
 	return WS_OP_UNK;
 }
 
-WS_API int get_ws_optype(ut8 *buf, int len)
+WS_API int get_ws_optype(const ut8 *buf, int len)
 {
-	ut8 *ptr;
+	const ut8 *ptr;
 	if(get_ws_pref_optype(buf, len) == WS_OP_PREF) {
 		ptr = buf+1;
 		while(get_ws_suf_optype(ptr, len - ( ptr - buf )) == WS_OP_NOP)
@@ -63,9 +63,9 @@ WS_API int get_ws_optype(ut8 *buf, int len)
 	return get_ws_pref_optype(buf, len);
 }
 
-WS_API ut8 *get_ws_next_token(ut8 *buf, int len)
+WS_API const ut8 *get_ws_next_token(const ut8 *buf, int len)
 {
-	ut8 *ret;
+	const ut8 *ret;
 	ret = buf;
 	while(len - (ret - buf)) {
 		switch(*ret) {
@@ -79,10 +79,10 @@ WS_API ut8 *get_ws_next_token(ut8 *buf, int len)
 	return NULL;
 }
 
-static st32 get_ws_val(ut8 *buf, int len)
+static st32 get_ws_val(const ut8 *buf, int len)
 {
 	ut8 sig;
-	ut8 *tok;
+	const ut8 *tok;
 	int i, ret;
 	ret = 0;
 	tok = get_ws_next_token(buf, len);
@@ -105,9 +105,9 @@ static st32 get_ws_val(ut8 *buf, int len)
 	return ret;
 }
 
-WS_API int test_ws_token_exist(ut8 *buf, ut8 token, int len)
+WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len)
 {
-	ut8 *ptr;
+	const ut8 *ptr;
 	ptr = get_ws_next_token(buf, len);
 	while(ptr && *ptr!=token) {
 		len = len - (ptr - buf);
@@ -118,9 +118,9 @@ WS_API int test_ws_token_exist(ut8 *buf, ut8 token, int len)
 	return -1;
 }
 
-WS_API int wsdis(RAsmOp *op, ut8 *buf, int len)
+WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len)
 {
-	ut8 *ptr;
+	const ut8 *ptr;
 	ptr = buf;
 	switch(get_ws_optype(buf, len)) {
 		case WS_OP_UNK:

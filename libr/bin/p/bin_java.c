@@ -10,7 +10,7 @@
 #undef R_API
 #define R_API 
 
-#define IFDBG  if(0)
+#define IFDBG_BIN_JAVA  if(0)
 
 static Sdb *DB = NULL;
 
@@ -18,12 +18,12 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
 static  int init(void *user) {
-	IFDBG eprintf ("Calling plugin init = %d.\n", DB?1:0);
+	IFDBG_BIN_JAVA eprintf ("Calling plugin init = %d.\n", DB?1:0);
 	if (!DB) {
-		IFDBG eprintf ("plugin DB beeing initted.\n");
+		IFDBG_BIN_JAVA eprintf ("plugin DB beeing initted.\n");
 		DB = sdb_new ("bin.java", NULL, 0);
 	} else {
-		IFDBG eprintf ("plugin DB already initted.\n");
+		IFDBG_BIN_JAVA eprintf ("plugin DB already initted.\n");
 	}
 	return 0;
 }
@@ -33,7 +33,7 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	char *addr, value[1024] = {0};
 	addr = sdb_itoa ((ut64)(size_t)bin_obj,  value, 16);
 	if (key && bin_obj && DB) {
-		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, addr);
+		IFDBG_BIN_JAVA eprintf ("Adding %s:%s to the bin_objs db\n", key, addr);
 		sdb_set (DB, key, addr, 0);
 		result = R_TRUE;
 	}

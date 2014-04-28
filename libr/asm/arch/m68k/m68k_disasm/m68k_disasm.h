@@ -187,7 +187,7 @@ typedef unsigned short m68k_word;  /* pointer to 16-bit instruction word */
 
 #define TRAP_MASK ENCW(1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0)
 #define TRAP_INST ENCW(0,1,0,0, 1,1,1,0, 0,1,0,0, 0,0,0,0)
-                                                    
+
 #define DIVSL_MASK  ENCW(1,1,1,1, 1,1,1,1, 1,1,0,0, 0,0,0,0)
 #define DIVUL_MASK  ENCW(1,1,1,1, 1,1,1,1, 1,1,0,0, 0,0,0,0)
 #define JMP_MASK  ENCW(1,1,1,1, 1,1,1,1, 1,1,0,0, 0,0,0,0)

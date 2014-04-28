@@ -184,7 +184,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exports = realloc (exports, sz);
 		if (!exports)
 			return 0;
-		exp = ((const ut8*)exports) + osz;
+		exp =  (struct r_bin_pe_export_t*) (((const ut8*)exports) + osz);
 	} else {
 		sz = exports_sz;
 		exports = malloc (sz);
@@ -205,7 +205,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	symctr = 0;
 	if (r_buf_read_at (bin->b, off, buf, bufsz)) {
 		for (I=0; I<shsz; I += srsz) {
-			sr = buf+I;
+			sr = (SymbolRecord *) (buf+I);
 			//eprintf ("SECNUM %d\n", sr->secnum);
 			if (sr->secnum == textn) {
 				if (sr->symtype == 32) {
@@ -217,13 +217,13 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 						strncpy (exp[symctr].name, shortname, PE_NAME_LENGTH-1);
 					} else {
 						char *longname, name[128];
-						ut32 *idx = buf+I+4;
+						ut32 *idx = (ut32 *) (buf+I+4)	;
 						if (r_buf_read_at (bin->b, off+ *idx+shsz, name, 128)) {
 							longname = name;
-							D printf ("0x%08x  %s\n", text + sr->value, longname);
+							D printf ("0x%08"PFMT64x"  %s\n", text + sr->value, longname);
 							strncpy (exp[symctr].name, longname, PE_NAME_LENGTH-1);
 						} else {
-							D printf ("0x%08x  unk_%d\n", text + sr->value, I/srsz);
+							D printf ("0x%08"PFMT64x"  unk_%d\n", text + sr->value, I/srsz);
 							sprintf (exp[symctr].name, "unk_%d", symctr);
 						}
 					}
@@ -996,7 +996,6 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf) {
 	struct PE_(r_bin_pe_obj_t) *bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	if (!bin) return NULL;
-	bin->size = buf->length;
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){

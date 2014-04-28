@@ -451,7 +451,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 	return result;
 }
 
-static int java_print_ssa_fcn (RAnal *anal, char *addrs) {
+static int java_print_ssa_fcn (RAnal *anal, const char *addrs) {
 	ut64 addr = addrs ? strtoul (addrs, NULL, 16): 0;
 	RList *fcns = anal->fcns, *bb_ssa = NULL;
 	RAnalFunction *fcn = NULL, *found_fcn = NULL;

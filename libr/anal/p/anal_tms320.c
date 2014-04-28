@@ -10,7 +10,7 @@
 
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
-typedef int (* anal_op_t)(RAnal *, RAnalOp *, ut64, ut8 *, int);
+typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
 int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
@@ -30,7 +30,7 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 
 int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len)
 {
-	anal_op_t aop = tms320_c55x_op;
+	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
 	if (anal->cpu && strcasecmp(anal->cpu, "c54x") == 0)
 		aop = tms320_c54x_op;

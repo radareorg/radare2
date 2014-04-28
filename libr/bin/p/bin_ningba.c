@@ -60,8 +60,8 @@ static RBinInfo* info(RBinFile *arch) {
 
 	ret->lang = NULL;
 	r_buf_read_at (arch->buf, 0xa0, rom_info, 16);
-	strncpy (ret->file, rom_info, 12);
-	strncpy (ret->type, &rom_info[12], 4);
+	strncpy (ret->file, (char *) rom_info, 12);
+	strncpy (ret->type, (char *) &rom_info[12], 4);
 	strncpy (ret->machine, "Gameboy Advanced", sizeof (ret->machine)-1);
 	strncpy (ret->os, "any", sizeof (ret->os)-1);
 	strcpy (ret->arch, "arm");
