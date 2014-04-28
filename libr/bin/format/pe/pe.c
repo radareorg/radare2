@@ -600,7 +600,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		exports[i].last = 1;
 	}
-	return parse_symbol_table (bin, exports, exports_sz);
+	return parse_symbol_table (bin, exports, exports_sz - 1);
 }
 
 int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
