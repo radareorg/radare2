@@ -238,7 +238,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			free (node->value);
 		}
 		if (node->flags & CN_BOOL) {
-			node->value = strdup (i? "true": "false");
+			node->value = strdup (r_str_bool(i));
 		} else {
 			snprintf (buf, sizeof (buf)-1, "%"PFMT64d, i);
 			node->value = strdup (buf);
