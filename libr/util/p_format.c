@@ -60,7 +60,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	int (*oldprintf)(const char *str, ...);
 	const char *argend = fmt+strlen (fmt);
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
-	char *args, *bracket, tmp, last = 0;
+	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = fmt;
 	int viewflags = 0;
 	char namefmt[8];

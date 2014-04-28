@@ -44,7 +44,7 @@ static int timeout = 0;
 
 static int r_cmd_yara_call(void *user, const char *input);
 static int r_cmd_yara_init(void *user, const char *input);
-static int r_cmd_yara_process(const RCore* core, const char* input);
+static int r_cmd_yara_process(RCore* core, const char* input);
 static int callback(int message, YR_RULE* rule, void* data);
 
 static int callback (int message, YR_RULE* rule, void* data) {
@@ -68,7 +68,7 @@ static int callback (int message, YR_RULE* rule, void* data) {
 	return CALLBACK_CONTINUE;
 }
 
-static int r_cmd_yara_process(const RCore* core, const char* input) {
+static int r_cmd_yara_process(RCore* core, const char* input) {
 	YR_RULES* rules;
 	YR_COMPILER* compiler;
 	FILE* rules_file;
@@ -145,7 +145,7 @@ static int r_cmd_yara_process(const RCore* core, const char* input) {
 }
 
 static int r_cmd_yara_call(void *user, const char *input) {
-	const RCore* core = (RCore*) user;
+	RCore* core = (RCore*) user;
 	if (!strncmp (input, "yara", 4)) {
 		const char *args = input+4;
 		if (!r_yr_initialize)
@@ -159,7 +159,6 @@ static int r_cmd_yara_call(void *user, const char *input) {
 }
 
 static int r_cmd_yara_init(void *user, const char *input) {
-	const RCore* core = (RCore*) user;
 	void *libyara = r_lib_dl_open ("libyara."R_LIB_EXT);
 	if (!libyara) {
 		eprintf ("Cannot find libyara\n");

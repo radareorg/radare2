@@ -62,7 +62,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("task_for_pid failed\n");
 		return NULL;
 	}
-	macosx_debug_regions (task, (void*)(size_t)1, 1000);
+	macosx_debug_regions (task, (size_t)1, 1000);
 	io->va = R_TRUE; // nop
 	return r_io_desc_new (&r_io_plugin_self,
 		pid, file, rw, mode, NULL);
@@ -241,7 +241,8 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 
 			}
 			if (kret != KERN_SUCCESS) {
-				fprintf (stderr,"mach_vm_region failed for address %p - Error: %x\n", address,(kret));
+				fprintf (stderr,"mach_vm_region failed for address %p - Error: %x\n",
+					(void*)(size_t)address, kret);
 				size = 0;
 				if (address >= 0x4000000) return;
 				print = done = 1;
@@ -275,8 +276,8 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
 			/* End Quick hack */
 			printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
-				(prev_address),
-			       (prev_address + prev_size),
+				(void*)(size_t)(prev_address),
+			       (void*)(size_t)(prev_address + prev_size),
 			       print_size,
 			       print_size_unit,
 			       prev_info.protection,

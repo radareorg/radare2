@@ -958,6 +958,8 @@ R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index
 #define r_anal_fcn_local_del_index(x,y,z) r_anal_fcn_var_del_byindex(x, y,\
 	R_ANAL_FCN_VARKIND_LOCAL, z)
 #define r_anal_fcn_local_del_name(x,y,z) error
+
+R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
 R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind,
 	int scope, ut32 idx, const char *name, const char *type);
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,

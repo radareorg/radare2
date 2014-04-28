@@ -110,7 +110,7 @@ eprintf ("-- %s\n", buf);
 		}
 	case 'C': /* comment */
 		if (input[1] == '+') {
-			char *text, *newcomment = input+2;
+			const char *text, *newcomment = input+2;
 			while (*newcomment==' ') newcomment++;
 			char *comment = r_meta_get_string (
 				core->anal, R_META_TYPE_COMMENT, addr);

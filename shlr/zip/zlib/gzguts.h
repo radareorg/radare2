@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "zlib.h"
 #include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <fcntl.h>

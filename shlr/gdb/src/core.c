@@ -232,12 +232,13 @@ int gdbr_read_memory(libgdbr_t* g, uint64_t address, uint64_t len) {
 	return -1;
 }
 
-int gdbr_write_memory(libgdbr_t* g, uint64_t address, char* data, uint64_t len) {
+int gdbr_write_memory(libgdbr_t* g, uint64_t address, const uint8_t* data, uint64_t len) {
 	char command[255] = {};
 	int command_len = snprintf(command, 255, "%s%016"PFMT64x",%"PFMT64d":", CMD_WRITEMEM, address, len);
-	char* tmp = calloc(command_len + (len * 2), sizeof(char));
+	char* tmp = calloc(command_len + (len * 2), sizeof(ut8));
 	memcpy (tmp, command, command_len);
-	pack_hex (data, len, (tmp + command_len));
+	// XXX: we should 
+	pack_hex ((char*)data, len, (tmp + command_len));
 	send_command (g, tmp);
 	free (tmp);
 
