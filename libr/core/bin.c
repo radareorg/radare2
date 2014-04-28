@@ -169,6 +169,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"os\":\"%s\","
 			"\"lang\":\"%s\","
 			"\"pic\":%s,"
+			"\"canary\":%s,"
 			"\"va\":%s,"
 			"\"bits\":%d,"
 			"\"stripped\":%s,"
@@ -184,6 +185,7 @@ static int bin_info (RCore *r, int mode) {
 			info->os,
 			info->lang?info->lang:"",
 			info->has_pi? "true": "false",
+			info->has_canary? "true": "false",
 			info->has_va? "true": "false",
 			info->bits,
 			r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
@@ -243,6 +245,7 @@ static int bin_info (RCore *r, int mode) {
 			r_cons_printf ("file\t%s\n"
 					"type\t%s\n"
 					"pic\t%s\n"
+					"canary\t%s\n"
 					"has_va\t%s\n"
 					"root\t%s\n"
 					"class\t%s\n"
@@ -261,6 +264,7 @@ static int bin_info (RCore *r, int mode) {
 					"rpath\t%s\n",
 					info->file, info->type,
 					r_str_bool (info->has_pi),
+					r_str_bool (info->has_canary),
 					r_str_bool (info->has_va),
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,
