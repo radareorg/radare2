@@ -859,6 +859,7 @@ static int cmd_print(void *data, const char *input) {
 		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
 			eprintf ("This block size is too big (%"PFMT64d"<%"PFMT64d"). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
 				(ut64)core->blocksize_max, (ut64)use_blocksize, input[0], (ut64) use_blocksize);
+			free (new_arch);
 			return R_FALSE;
 		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
 			bw_disassemble = R_TRUE;
