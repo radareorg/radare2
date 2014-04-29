@@ -1013,6 +1013,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'c':
 		{
+			char *instr_tmp = NULL;
 			int ccl = r_num_math (core->num, &input[2]);					//get cycles to look for
 			int cr = r_config_get_i (core->config, "asm.cmtright");				//make stuff look nice
 			int fun = r_config_get_i (core->config, "asm.functions");
@@ -1030,8 +1031,10 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_break_end ();
 			r_cons_clear_line (1);
 			r_list_foreach (hooks, iter, hook) {
-				r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), r_core_disassemble_instr (core, hook->addr, 1));
+				instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
+				r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
 				r_cons_flush ();
+				free (instr_tmp);
 			}
 			r_list_free (hooks);
 			r_config_set_i (core->config, "asm.cmtright", cr);				//reset settings

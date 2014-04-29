@@ -80,7 +80,7 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 			len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm);
 			if (len<0)
 				len = -len+1;
-			if (len>0) 
+			if (len>0)
 				ks = r_search_keyword_new (kw, R_ABS (len), bm, len, data);
 		}
 		free (kw);
