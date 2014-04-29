@@ -101,6 +101,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 		if (!nxt)
 			break;
 	}
+	free (s);
 	return hint;
 }
 
@@ -111,7 +112,9 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 
 	setf (key, "hint.0x%"PFMT64x, addr);
 	s = sdb_const_get (DB, key, 0);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	hint = r_anal_hint_from_string (a, addr, s);
 	free (s);
 	return hint;
