@@ -30,9 +30,12 @@ R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 static inline const char *condstring(RAnalCond *cond) {
 	const char *condstr_single[] = { "!", "", "0<", "0<=", "0>", "0>=" };
 	const char *condstr[] = { "==", "!=", ">=", ">", "<=", "<" };
-	if (cond)
-	return (cond->arg[1])?condstr [cond->type%sizeof (condstr)]:
-		condstr_single [cond->type%sizeof (condstr_single)];
+	if (cond) {
+		if (cond->arg[1])
+			return condstr[cond->type % 6];
+		else
+			return condstr_single[cond->type % 6];
+	}
 	return "";
 }
 
