@@ -514,7 +514,10 @@ static int cmd_kuery(void *data, const char *input) {
 		inp [(size_t)(sp-input)] = 0;
 		s = sdb_ns (core->sdb, inp+1);
 		out = sdb_querys (s, NULL, 0, sp+1);
-		if (out) r_cons_printf ("%s\n", out);
+		if (out) {
+			r_cons_printf ("%s\n", out);
+			free (out);
+		}
 		free (inp);
 		return 0;
 	}
