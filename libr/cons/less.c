@@ -65,6 +65,7 @@ R_API void r_cons_less_str(const char *str) {
 		}
 	}
 	free (lines);
+	free (p);
 	r_cons_set_raw (R_FALSE);
 	r_cons_show_cursor (R_TRUE);
 }
