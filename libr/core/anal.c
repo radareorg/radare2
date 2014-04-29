@@ -67,6 +67,7 @@ r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->addr)
 		r_cons_newline ();
 	}
 	hls->count++;
+	free (hint);
 	return 1;
 }
 
