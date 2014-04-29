@@ -115,7 +115,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	edges = NULL;
 	i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		nodes[i].text = r_core_cmd_strf (core, "pI %d", bb->size);
+		nodes[i].text = r_core_cmd_strf (core,
+			"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		nodes[i].addr = bb->addr;
 		nodes[i].x = 10;
 		nodes[i].y = 3;
