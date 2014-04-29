@@ -69,6 +69,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 	prj = r_core_project_file (core, file);
 	if (r_file_is_directory (prj)) {
 		eprintf ("Error: Target is a directory\n");
+		free (prj);
 		return R_FALSE;
 	}
 	r_core_project_init (core);
