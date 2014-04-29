@@ -487,13 +487,14 @@ st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
 		}
 		*next_ins_pos = next_ins1_pos + next_ins2_pos + 1;
 		if(*next_ins_pos != two_ins) {
-			ins_res = strcat_dup(ins_res, " P-tag problem", 1);
+			//ins_res = strcat_dup(ins_res, " P-tag problem", 1);
 			err_code = -1;
 			return NULL;
 		}
 	} else {
 		ins_res = do_decode(0, ins_pos, two_ins, &next_ins1_pos, &hash_code, &err_code);
-		if(err_code < 0) {
+		if (err_code < 0) {
+			if (ins_res) free (ins_res);
 			return NULL;
 		}
 		*next_ins_pos = next_ins1_pos;
