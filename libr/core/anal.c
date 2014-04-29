@@ -123,8 +123,10 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
-		if (!(str = malloc (strlen (cmdstr)*2)))
+		if (!(str = malloc (strlen (cmdstr)*2))) {
+			free (cmdstr);
 			return NULL;
+		}
 		for (i=j=0; cmdstr[i]; i++,j++) {
 			switch (cmdstr[i]) {
 			case 0x1b:
