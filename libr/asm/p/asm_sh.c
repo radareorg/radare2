@@ -42,9 +42,10 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	int ret;
 	if (buf_global == NULL)
 		return 0;
-	va_start (ap, format);
 	tmp = malloc (strlen (format)+strlen (buf_global)+2);
-	if (!tmp) return 0;
+	if (!tmp)
+		return 0;
+	va_start (ap, format);
 	sprintf (tmp, "%s%s", buf_global, format);
 	ret = vsprintf (buf_global, tmp, ap);
 	va_end (ap);
