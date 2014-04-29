@@ -242,7 +242,7 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	}
 	// s (zip_source) is freed when the archive is closed, i think - dso
 	zip_close (zipArch);
-	//if (res) zip_source_free (s);
+	if (s) zip_source_free (s);
 	return res;
 }
 
@@ -450,7 +450,7 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 static int r_io_zip_truncate_buf(RIOZipFileObj *zfo, int size) {
 	if (zfo->b->length < size)
 		return r_io_zip_realloc_buf(zfo, size - zfo->b->length);
-	
+
 	if (size > 0){
 		ut8 *buf = malloc (size);
 		memcpy(buf, zfo->b->buf, size);
@@ -610,10 +610,6 @@ static int r_io_zip_plugin_open(RIO *io, const char *file, ut8 many) {
 	if (many) return (io && file) && (r_io_zip_check_uri_many (file));
 	return (io && file) && (r_io_zip_check_uri (file));
 }
-
-
-
-
 
 RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
