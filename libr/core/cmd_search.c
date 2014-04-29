@@ -536,6 +536,7 @@ static int cmd_search(void *data, const char *input) {
 			r_search_kw_add (core->search, skw);
 			r_search_begin (core->search);
 			dosearch = R_TRUE;
+			free (str);
 		}
 		break;
 	case 'i':
