@@ -212,7 +212,7 @@ R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	}
 	switch (op.operand) {
 	case NONE: strcpy (out, op.name); break;
-	case ARG: 
+	case ARG:
 		   if (!strncmp (op.arg, "#imm", 4))
 			   snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);
 		   else snprintf (out, len, "%s %s", op.name, op.arg);
@@ -235,7 +235,9 @@ R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 			free (tmp2);
 		} else eprintf ("do8051disasm: Internal bug\n");
 	} else {
+		tmp = out;
 		out = strdup_filter (out, (const ut8*)op.buf);
+		free (tmp);
 	}
 	return out;
 }
