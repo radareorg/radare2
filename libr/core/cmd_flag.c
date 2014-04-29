@@ -306,6 +306,8 @@ static int cmd_flag(void *data, const char *input) {
 			switch (input[1]) {
 			case '?':
 				eprintf ("Usage: fd [offset|flag|expression]\n");
+				if (str)
+					free (str);
 				return R_FALSE;
 			case '\0':
 				addr = core->offset;
