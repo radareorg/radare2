@@ -10,10 +10,13 @@
 #include "../arch/8051/8051.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	char *tmp = NULL;
+
 	Op8051 o = do8051struct (buf, len);
 	*op->buf_asm = 0;
 	if (!o.name) return 0; // invalid instruction
-	do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
+	tmp = do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
+	free (tmp);
 	return (op->size = o.length);
 }
 
