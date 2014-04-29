@@ -7,12 +7,14 @@
 #include "utils.h"
 
 st8 *get_tc2_tc1(ut32 ins_bits) {
-	st8 *res = NULL;
+	st8 *res = "TC1";
 	if (ins_bits) {
-		if (ins_bits != 1)
-			fprintf(stderr, "Invalid instruction TC2 or TC1 (%d)\n", ins_bits); return NULL;
+		if (ins_bits != 1) {
+			fprintf(stderr, "Invalid instruction TC2 or TC1 (%d)\n", ins_bits);
+			return NULL;
+		}
 		res = "TC2";
-	} else res = "TC1";
+	}
 	return strdup (res);
 }
 
