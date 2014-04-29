@@ -214,8 +214,10 @@ R_API const char *r_meta_type_to_string(int type) {
 static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 	char *pstr, *str = r_str_escape (d->str);
 	if (str) {
-		if (d->type=='s' && !*str)
+		if (d->type=='s' && !*str) {
+			free (str);
 			return;
+		}
 		if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
