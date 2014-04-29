@@ -174,6 +174,7 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*check)(RBin *bin);
+	int (*check_bytes)(const ut8 *bytes, ut64 sz);
 	RBinXtrData * (*extract_from_bytes)(const ut8 *buf, ut64 size, int idx);
 	RList * (*extractall_from_bytes)(const ut8 *buf, ut64 size);
 	RBinXtrData * (*extract)(RBin *bin, int idx);
@@ -326,6 +327,8 @@ typedef struct r_bin_bind_t {
 #define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
 
 /* bin.c */
+// XXX - delete r_bin_load after June 2014 if no issues arise
+//R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
@@ -335,7 +338,6 @@ R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
 R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);
 R_API int r_bin_list(RBin *bin);
-R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);

@@ -9,6 +9,7 @@ R_LIB_VERSION (r_io);
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
+static RIO * MASTER_IO = NULL;
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
@@ -30,8 +31,58 @@ R_API RIO *r_io_new() {
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	r_io_section_init (io);
+	MASTER_IO = io;
 	return io;
 }
+
+R_API RIO * r_io_master_get () {
+	return MASTER_IO;
+}
+
+R_API RIODesc * r_io_master_desc_get (int fd) {
+	return r_io_desc_get(MASTER_IO, fd);
+}
+
+R_API RIODesc * r_io_master_open (const char *file, int flags, int mode) {
+	return r_io_open(MASTER_IO, file, flags, mode);
+}
+
+R_API ut64 r_io_master_size (RIODesc * desc) {
+	ut64 start, end;
+	ut64 off = MASTER_IO->off;
+
+	if (!desc || !desc->plugin || !desc->plugin->read || !desc->plugin->lseek)
+		return UT64_MAX;
+
+	end = desc->plugin->lseek (MASTER_IO, desc, 0, SEEK_END);
+	start = desc->plugin->lseek (MASTER_IO, desc, 0, SEEK_SET);
+	MASTER_IO->off = off;
+
+	if (end == UT64_MAX || start == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	return end - start;
+}
+
+R_API ut8 * r_io_master_read (RIODesc * desc, ut64 *out_sz) {
+	ut8 *buf_bytes = NULL;
+	ut64 off = MASTER_IO->off;
+	*out_sz = r_io_master_size (desc);
+
+	if (*out_sz == UT64_MAX) return buf_bytes;
+
+	buf_bytes = malloc (*out_sz);
+
+	if (!buf_bytes || !desc->plugin->read (MASTER_IO, desc, buf_bytes, *out_sz)) {
+		free (buf_bytes);
+		MASTER_IO->off = off;
+		return R_FALSE;
+	}
+	MASTER_IO->off = off;
+	return buf_bytes;
+}
+
 
 R_API void r_io_raise(RIO *io, int fd) {
 	io->raised = fd;
@@ -99,7 +150,7 @@ R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, i
 }
 
 static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int mode) {
-	RIOPlugin *plugin, *iop = NULL;
+	RIOPlugin *plugin;
 	RIODesc *desc = NULL;
 	char *uri = strdup (_uri);
 	for (;;) {
@@ -112,7 +163,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				r_io_redirect (io, NULL);
 				continue;
 			}
-			if (desc != NULL) {
+			if (desc) {
 				r_io_desc_add (io, desc);
 				if (desc->fd != -1)
 					r_io_plugin_open (io, desc->fd, plugin);
@@ -123,7 +174,19 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 		}
 		break;
 	}
-	io->plugin = iop;
+	if (!desc) {
+		plugin = r_io_plugin_get_default (io, uri, 0);
+		desc = plugin ? plugin->open (io, uri, flags, mode) : NULL;
+		if (desc) {
+			r_io_desc_add (io, desc);
+			if (desc->fd != -1)
+				r_io_plugin_open (io, desc->fd, plugin);
+			if (desc != io->fd) {
+				r_io_set_fd (io, desc);
+			}
+		}
+	}
+	io->plugin = NULL;
 	free (uri);
 	return desc;
 }
@@ -181,14 +244,13 @@ static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
 
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
-	int fd;
 	IO_IFDBG {
 		if (desc && desc->plugin)
 			eprintf ("Opened file: %s with %s\n", file, desc->plugin->name);
 	}
 	if (io->redirect)
 		return NULL;
-	if (desc) {
+	/*if (desc) {
 		fd = desc->fd;
 	} else {
 		fd = __io_posix_open (io, file, flags, mode);
@@ -201,8 +263,8 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 			}
 		}
 
-	}
-	if (fd >= 0) {
+	}*/
+	if (desc) {
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
 	} else 	eprintf ("Unable to open file: %s\n", file);

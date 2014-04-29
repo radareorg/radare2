@@ -236,8 +236,15 @@ R_API int r_io_is_listener(RIO *io);
 // TODO: _del ??
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many);
 R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
+R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many);
 
 /* io/io.c */
+R_API RIO * r_io_master_get ();
+R_API RIODesc * r_io_master_desc_get (int fd);
+R_API RIODesc * r_io_master_open (const char *file, int flags, int mode);
+R_API ut64 r_io_master_size (RIODesc * desc);
+R_API ut8 * r_io_master_read (RIODesc * desc, ut64 *out_sz);
+
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode);
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
@@ -373,6 +380,7 @@ extern RIOPlugin r_io_plugin_w32;
 extern RIOPlugin r_io_plugin_ewf;
 extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;
+extern RIOPlugin r_io_plugin_default;
 extern RIOPlugin r_io_plugin_ihex;
 extern RIOPlugin r_io_plugin_self;
 #endif

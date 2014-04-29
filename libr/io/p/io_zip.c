@@ -412,7 +412,7 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RIOZipFileObj *zfo;
 	ut64 seek_val = 0;
 
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 
 	zfo = fd->data;
@@ -439,7 +439,7 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOZipFileObj *zfo = NULL;
-	if (fd == NULL || fd->data == NULL || buf == NULL)
+	if (!fd || !fd->data || !buf)
 		return -1;
 	zfo = fd->data;
 	if (zfo->b->length < io->off)
@@ -450,7 +450,7 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 static int r_io_zip_truncate_buf(RIOZipFileObj *zfo, int size) {
 	if (zfo->b->length < size)
 		return r_io_zip_realloc_buf(zfo, size - zfo->b->length);
-	
+
 	if (size > 0){
 		ut8 *buf = malloc (size);
 		memcpy(buf, zfo->b->buf, size);
@@ -484,7 +484,7 @@ static int r_io_zip_resize(RIO *io, RIODesc *fd, ut64 size) {
 	RIOZipFileObj *zfo;
 	int res = R_FALSE;
 	ut64 cur_off = io->off;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	zfo = fd->data;
 	res = r_io_zip_truncate_buf(zfo, size);
@@ -501,7 +501,7 @@ static int r_io_zip_resize(RIO *io, RIODesc *fd, ut64 size) {
 static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOZipFileObj *zfo;
 	int ret = 0;
-	if (fd == NULL || fd->data == NULL || buf == NULL)
+	if (!(fd->flags & 2) || !fd || !fd->data || !buf)
 		return -1;
 	zfo = fd->data;
 	if (zfo->b->cur + count >= zfo->b->length)
@@ -521,7 +521,7 @@ static int r_io_zip_close(RIODesc *fd) {
 	RIOZipFileObj *zfo = NULL;
 	//eprintf("Am I called 2x?\n");
 	// this api will be called multiple times :/
-	if (fd == NULL || fd->data)
+	if (!fd || !fd->data)
 		return -1;
 	zfo = fd->data;
 	r_io_zip_free_zipfileobj (zfo);

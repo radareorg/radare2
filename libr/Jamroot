@@ -18,6 +18,7 @@ build-project syscall ;
 build-project flags ;
 build-project crypto ;
 build-project io ;
+build-project bin ;
 build-project lang ;
 build-project cmd ;
 build-project anal ;
