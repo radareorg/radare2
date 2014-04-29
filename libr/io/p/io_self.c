@@ -19,7 +19,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max);
 #endif
 
 #define PERM_READ 4
-#define PERM_WRITE 2 
+#define PERM_WRITE 2
 #define PERM_EXEC 1
 
 typedef struct {
@@ -54,10 +54,11 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int pid = getpid ();
 	self_sections_count = 0;
+
 #if __APPLE__
 	mach_port_t	task;
 	kern_return_t	rc;
-	rc = task_for_pid (mach_task_self(),pid, &task);	
+	rc = task_for_pid (mach_task_self(),pid, &task);
 	if (rc) {
 		eprintf ("task_for_pid failed\n");
 		return NULL;
@@ -66,6 +67,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	io->va = R_TRUE; // nop
 	return r_io_desc_new (&r_io_plugin_self,
 		pid, file, rw, mode, NULL);
+
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -74,7 +76,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
-	if (!fd) 
+	if (!fd)
 		return NULL;
 
 	while (!feof (fd)) {
@@ -110,6 +112,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (!pos_c)
 			continue;
 	}
+	fclose (fd);
 	return r_io_desc_new (&r_io_plugin_self,
 		pid, file, rw, mode, NULL);
 #else
