@@ -31,7 +31,8 @@ static int __waitpid(int pid) {
 }
 
 static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
-	lseek (fdn, addr, 0);
+	if (lseek (fdn, addr, 0) < 0)
+		return -1;
 	return read (fdn, buf, sz);
 }
 
