@@ -569,10 +569,11 @@ static int cmd_search(void *data, const char *input) {
 		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
+		free (inp);
 		break;
 	case 'e': /* match regexp */
 		{
-		char *inp = strdup (input+2);
+		inp = strdup (input+2);
 		char *res = (char *)r_str_lchr (inp+1, inp[0]);
 		char *opt = NULL;
 		if (res > inp) {
