@@ -612,7 +612,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_cmd0 (core, "=H");
 		break;
 	case 'V':
-		r_core_cmd0 (core, "agv $$");
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "agv $$");
+		} else r_core_visual_graph (core, NULL);
 		break;
 	case 'v':
 		r_core_visual_anal (core);

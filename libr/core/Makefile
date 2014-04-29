@@ -6,7 +6,7 @@ DEPS=r_config r_cons r_io r_util r_flags r_asm r_db
 DEPS+=r_debug r_hash r_bin r_lang r_io r_anal r_parse r_bp r_egg
 DEPS+=r_reg r_search r_syscall r_diff r_socket r_fs r_magic
 
-OBJS=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o
+OBJS=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o graph.o
 OBJS+=hack.o vasm.o patch.o bin.o log.o syscmd.o rtr.o cmd_api.o
 OBJS+=anal.o project.o gdiff.o asm.o vmenus.o disasm.o plugin.o
 

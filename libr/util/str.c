@@ -1292,3 +1292,20 @@ R_API const char *r_str_closer_chr (const char *b, const char *s) {
 	}
 	return NULL;
 }
+
+R_API int r_str_bounds(const char *str, int *h) {
+	int W = 0, H = 0;
+	int cw = 0;
+	while (*str) {
+		if (*str=='\n') {
+			H++;
+			if (cw>W)
+				W = cw;
+			cw = 0;
+		}
+		str++;
+		cw++;
+	}
+	if (h) *h = H;
+	return W;
+}

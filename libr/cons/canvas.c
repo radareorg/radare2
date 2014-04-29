@@ -2,6 +2,9 @@
 
 #include <r_cons.h>
 
+#define W(y) r_cons_canvas_write(c,y)
+#define G(x,y) r_cons_canvas_gotoxy(c,x,y)
+
 R_API void r_cons_canvas_free (RConsCanvas *c) {
 	free (c->b);
 	free (c);
@@ -128,45 +131,41 @@ R_API void r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
 	int i;
+	int roundcorners = 0;
 	char *row = malloc (w+1);
-	row[0] = '+';
+	char corner = '=';
+
+	row[0] = roundcorners?'.':corner;
 	memset (row+1, '-', w-2);
-	row[w-1] = '+';
+	row[w-1] = roundcorners?'.':corner;
 	row[w] = 0;
-	r_cons_canvas_gotoxy (c, x, y);
-	r_cons_canvas_write (c, row);
-	r_cons_canvas_gotoxy (c, x, y+h-1);
-	r_cons_canvas_write (c, row);
+	G(x, y);
+	W(row);
+	G(x, y+h-1);
+	row[0] = roundcorners?'\'':corner;
+	row[w-1] = roundcorners?'\'':corner;
+	W(row);
 
 	for (i=1;i<h-1;i++) {
-		r_cons_canvas_gotoxy (c, x, y+i);
-		r_cons_canvas_write (c, "|");
-		r_cons_canvas_gotoxy (c, x+w-1, y+i);
-		r_cons_canvas_write (c, "|");
+		G(x, y+i);
+		W("|");
+		G(x+w-1, y+i);
+		W("|");
 	}
 }
 
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {
 	int i;
 	char *row = malloc (w+1);
-	memset (row, '-', w-2);
-	row[w-1] = '+';
+	memset (row, ch, w);
 	row[w] = 0;
-	r_cons_canvas_gotoxy (c, x, y);
-	r_cons_canvas_write (c, row);
-	r_cons_canvas_gotoxy (c, x, y+h-1);
-	r_cons_canvas_write (c, row);
 
-	for (i=1;i<h-1;i++) {
-		r_cons_canvas_gotoxy (c, x, y+i);
-		r_cons_canvas_write (c, "|");
-		r_cons_canvas_gotoxy (c, x+w-1, y+i);
-		r_cons_canvas_write (c, "|");
+	for (i=0;i<h;i++) {
+		G(x, y+i);
+		W(row);
 	}
 }
 
-#define W(y) r_cons_canvas_write(c,y)
-#define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	switch (style) {
@@ -225,7 +224,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 				int rl = R_ABS (x-x2)/2;
 				int rl2 = R_ABS (x-x2)-rl+1;
 				int vl = (R_ABS(y-y2))+1;
-if (y+1==y2)
+				if (y+1==y2)
 					vl--;
 
 				for (i=0;i<vl; i++) {
