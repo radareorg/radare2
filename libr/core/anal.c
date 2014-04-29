@@ -47,7 +47,7 @@ r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->addr)
 		HINTCMD (opcode, "ahp %s");
 		break;
 	case 'j':
-		r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d, 
+		r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d,
 			hls->count>0?",":"", hint->addr, hint->addr+hint->size);
 		if (hint->arch) r_cons_printf (",\"arch\":\"%s\"", hint->arch); // XXX: arch must not contain strange chars
 		if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
@@ -311,7 +311,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				} else {
 					r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
 						" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-						fcn->addr, bbi->addr, 
+						fcn->addr, bbi->addr,
 						difftype, str,
 						fcn->name, bbi->addr);
 				}
@@ -333,7 +333,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				} else
 				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
 					"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
-					fcn->addr, bbi->addr, 
+					fcn->addr, bbi->addr,
 					fcn->name, bbi->addr,
 					bbi->traced?"yellow":"lightgray", str);
 			}
@@ -380,7 +380,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			buflen = ANALBS; //core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
-			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
+			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
 //eprintf ("Pos %d\n", bblen);
 			if (bblen == R_ANAL_RET_ERROR ||
 				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
@@ -538,7 +538,7 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 				eprintf ("Oops. Negative function size at 0x%08"PFMT64x" (%d)\n",
 					at, fcnlen);
 				continue;
-			}	
+			}
 		}
 // HACK
 		//r_anal_fcn_insert (core->anal, fcn);
@@ -1093,8 +1093,8 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			ret = r_io_read_at (core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize)
 				break;
-			for (i = bckwrds ? (core->blocksize-OPSZ - 1) : 0; 
-			     (!bckwrds && i < core->blocksize-OPSZ) || (bckwrds && i > 0); 
+			for (i = bckwrds ? (core->blocksize-OPSZ - 1) : 0;
+			     (!bckwrds && i < core->blocksize-OPSZ) || (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
 				r_anal_op_fini (&op);
 				if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i))
@@ -1264,7 +1264,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		d = r_anal_data (core->anal, addr+i, buf+i, len-i);
 		str = r_anal_data_to_string (d);
 		r_cons_printf ("%s\n", str);
-	
+
 		switch (d->type) {
 		case R_ANAL_DATA_TYPE_POINTER:
 			r_cons_printf ("`- ");
@@ -1477,7 +1477,6 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 					eprintf ("0x%08"PFMT64x"\r", op->addr);
 					break;
 			}
-			r_anal_op_free (op);
 		} else {
 			ch = R_NEW0 (RAnalCycleHook);
 			ch->addr = addr;
@@ -1498,6 +1497,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 				}
 			}
 		}
+		if (op) r_anal_op_free (op);
 	}
 	if (core->cons->breaked) {
 		while (cf) {
