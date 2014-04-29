@@ -161,8 +161,10 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 's':
-		if (core->http_up)
+		if (core->http_up) {
 			return R_FALSE;
+			free (oinput);
+		}
 		input++;
 		if (input[0]==' ')
 			input++;
