@@ -558,6 +558,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			if (r_buf_read_at (bin->b, names_offset + i * sizeof (PE_VWord), (ut8*)&name_rva,
 					sizeof (PE_VWord)) == -1) {
 				eprintf ("Error: read (name rva)\n");
+				free (exports);
 				return NULL;
 			}
 			if (r_buf_read_at (bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal,
