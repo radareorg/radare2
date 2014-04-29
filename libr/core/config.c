@@ -930,6 +930,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("file.type", "", "Type of current file");
 	SETCB("file.loadmethod", "fail", &cb_fileloadmethod, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
 	SETI("file.loadalign", 1024, "Alignment of load addresses");
+	SETI("file.openmany", 1, "How many files to open at once.");
 	SETPREF("file.nowarn", "true", "Suppress file loading warning messages if true");
 	SETPREF("file.location", "", "Is the file 'local', 'remote', or 'memory'");
 	/* magic */

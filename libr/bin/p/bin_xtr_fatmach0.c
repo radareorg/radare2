@@ -37,6 +37,33 @@ static int check(RBin *bin) {
 	return ret;
 }
 
+static int check_bytes(const ut8* bytes, ut64 sz) {
+	const ut8 *h;
+	ut8 buf[4];
+	int off, ret = R_FALSE;
+
+	if (!bytes || sz < 0x300) {
+		return R_FALSE;
+	}
+	memcpy (&off, bytes+4*sizeof (int), sizeof (int));
+	r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+
+	h = bytes;
+	if (sz>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
+		memcpy (&off, h+4*sizeof (int), sizeof (int));
+		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		if (off > 0 && off < sz) {
+			memcpy (buf, h+off, 4);
+			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
+				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
+				!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+				ret = R_TRUE;
+		}
+	}
+	return ret;
+}
+
 // TODO: destroy must be void?
 static int destroy(RBin *bin) {
 	return free_xtr (bin->cur->xtr_obj);
@@ -106,13 +133,12 @@ static RList * extractall(RBin *bin) {
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
-	do {
-		i++;
-		r_list_append (res, data);
+	r_list_append (res, data);
+	for (i=1; data && i < narch; i++) {
 		data = NULL;
 		data = extract (bin, i);
-
-	} while (data && i < narch);
+		r_list_append (res, data);
+	}
 
 	return res;
 }
@@ -128,13 +154,12 @@ static RList * oneshotall(const ut8 *buf, ut64 size) {
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
-	do {
-		i++;
-		r_list_append (res, data);
+	r_list_append (res, data);
+	for (i=1; data && i < narch; i++) {
 		data = NULL;
 		data = oneshot (buf, size, i);
-
-	} while (data && i < narch);
+		r_list_append (res, data);
+	}
 
 	return res;
 }
@@ -153,6 +178,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
+	.check_bytes = &check_bytes,
 };
 
 #ifndef CORELIB

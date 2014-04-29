@@ -6,7 +6,9 @@
 
 static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
-static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri);
+// After June 2014, if no problems delete r_core_file_do_load_for_hex
+//static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri);
+static void r_core_file_init_list_archs (RCore *r, RBinFile *binfile);
 
 R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 	if (newsize==0 && core->file)
@@ -227,7 +229,8 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 
 // XXX - need to handle index selection during debugging
 static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri) {
-	RIODesc *desc = r->file && r->file->fd ? r->file->fd : NULL;
+	RCoreFile *cf = r_core_file_cur (r);
+	RIODesc *desc = cf ? cf->fd : NULL;
 	RBinFile *binfile = NULL;
 	RBinObject *binobj = NULL;
 	ut64 baseaddr = 0;
@@ -236,7 +239,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	int treat_as_rawstr = R_FALSE;
 
 	if (!desc) return R_FALSE;
-	if (r->file && desc) {
+	if (cf && desc) {
 		int newpid = desc->fd;
 		r_debug_select (r->dbg, newpid, newpid);
 	}
@@ -274,8 +277,35 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 
 }
 
+static void r_core_file_init_list_archs (RCore *r, RBinFile *binfile) {
+	if (binfile &&
+		binfile->narch > 1 &&
+		r_config_get_i (r->config, "scr.prompt")) {
+
+		int narch = binfile->narch;
+		int i = 0;
+		eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
+					r->assembler->cur->arch, r->assembler->bits);
+		eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
+
+		for (i=0; i<narch; i++) {
+			RBinFile *lbinfile = r_bin_file_find_by_name_n (r->bin, binfile->file, i);
+			RBinObject *lbinobj = lbinfile ? lbinfile->o : NULL;
+			if (lbinobj && lbinobj->info) {
+				eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n",
+						lbinobj->info->arch,
+						lbinobj->info->bits,
+						binfile->file,
+						lbinobj->boffset);
+			} else
+				eprintf ("No extract info found for index: %d.\n", i);
+		}
+	}
+}
+
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr) {
-	RIODesc *desc = r->file && r->file->fd ? r->file->fd : NULL;
+	RCoreFile *cf = r_core_file_cur (r);
+	RIODesc *desc = cf ? cf->fd : NULL;
 	RBinFile *binfile = NULL;
 	RBinObject *binobj = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
@@ -283,8 +313,8 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 	if (!desc) return R_FALSE;
 	r_io_set_fd (r->io, desc);
-	if ( !r_bin_io_load (r->bin, r->io, desc, baseaddr, loadaddr, xtr_idx)) {
-		eprintf ("Failed to load the bin with an IO Plugin.\n");
+	if ( !r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
+		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return R_FALSE;
 	}
 
@@ -310,14 +340,16 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 	if (binobj && binobj->info && binobj->info->bits) {
 		r_config_set_i (r->config, "asm.bits", binobj->info->bits);
-		//r->file->binfile = r->bin->cur;
+		//cf->binfile = r->bin->cur;
 	}
-	if (binobj) binobj->baddr = baseaddr;
+
+
 
 	return R_TRUE;
 }
 
-
+#if 0 
+// XXX - remove this code after June 2014, because current code setup is sufficient
 static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri) {
 	// HEXEDITOR
 	RBinFile * binfile = NULL;
@@ -373,27 +405,29 @@ static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, con
 
 	return R_TRUE;
 }
+#endif
 
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	int va = r->io->va || r->io->debug;
 	ut64 loadaddr = 0;
+	RCoreFile *cf = r_core_file_cur (r);
 	RBinFile *binfile = NULL;
 	RBinObject * binobj = NULL;
-	RIODesc *desc = r->file && r->file->fd ? r->file->fd : NULL;
+	RIODesc *desc = cf ? cf->fd : NULL;
 
 	int is_io_load = desc && desc->plugin;
 
-	if ( (filenameuri == NULL || !*filenameuri) && r->file)
-		filenameuri = r->file->filename;
-	else if (r->file && strcmp (filenameuri, r->file->filename) ) {
+	if ( (filenameuri == NULL || !*filenameuri) && cf)
+		filenameuri = cf->filename;
+	else if (cf && strcmp (filenameuri, cf->filename) ) {
 		// XXX - this needs to be handled appropriately
-		// if the r->file does not match the filenameuri then
+		// if the cf does not match the filenameuri then
 		// either that RCoreFIle * needs to be loaded or a
 		// new RCoreFile * should be opened.
 		if (!strcmp (suppress_warning, "false"))
 			eprintf ("Error: The filenameuri %s is not the same as the current RCoreFile: %s\n",
-			    filenameuri, r->file->filename);
+			    filenameuri, cf->filename);
 	}
 
 	if (!filenameuri) {
@@ -401,8 +435,8 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		return R_FALSE;
 	}
 
-	if (r->file && r->file->map) {
-		loadaddr = r->file->map->from;
+	if (cf && cf->map) {
+		loadaddr = cf->map->from;
 	}
 
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
@@ -414,19 +448,19 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		} else {
 			r_core_file_do_load_for_io_plugin (r, baddr, loadaddr);
 		}
-	} else if ( !r_core_file_do_load_for_hex (r, baddr, loadaddr, filenameuri) ) { // --->
-		return R_FALSE;
-	}
+	} //else if ( !r_core_file_do_load_for_hex (r, baddr, loadaddr, filenameuri) ) { // --->
+	//	return R_FALSE;
+	//}
 
 	binobj = r_bin_get_object (r->bin);
 	binfile = r_core_bin_cur (r);
 	//r_bin_set_baddr(r->bin, r_config_get_i (r->config, "bin.baddr"));
-	if (r->file && binfile && desc) binfile->fd = desc->fd;
-	else eprintf ("Error: No file descriptor defined for current file: %s\n", filenameuri);
+	if (cf && binfile && desc) binfile->fd = desc->fd;
+	//else eprintf ("Error: No file descriptor defined for current bin file: %s\n", filenameuri);
 	if (r->bin) r_core_bin_bind (r, r_core_bin_cur (r));
 
 
-	if (!r->file) {
+	if (!cf) {
 		if (binobj && binobj->info && binobj->info->bits) {
 			r_config_set_i (r->config, "asm.bits", binobj->info->bits);
 		}
@@ -475,12 +509,15 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr) {
 	RList *list_fds = NULL;
-	list_fds = r_io_open_many (r->io, file, mode, 0644);
 	RCoreFile *fh, *top_file = NULL;
 	RIODesc *fd;
-	RListIter *fd_iter;
+	RListIter *fd_iter, *iter2;
 	ut64 current_loadaddr = loadaddr;
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
+
+
+	list_fds = r_io_open_many (r->io, file, mode, 0644);
 
 	const char *cp = NULL;
 	char *loadmethod = NULL;
@@ -494,7 +531,16 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	if (cp) loadmethod = strdup (cp);
 	r_config_set (r->config, "file.loadmethod", "append");
 
-	r_list_foreach (list_fds, fd_iter, fd) {
+	r_list_foreach_safe (list_fds, fd_iter, iter2, fd) {
+		opened_count++;
+		if (opened_count > openmany) {
+			// XXX - Open Many should limit the number of files
+			// loaded in io plugin area this needs to be more premptive
+			// like down in the io plugin layer.
+			// start closing down descriptors
+			r_list_delete (list_fds, fd_iter);
+			continue;
+		}
 		fh = R_NEW0 (RCoreFile);
 		if (!fh) {
 			eprintf ("file.c:r_core_many failed to allocate new RCoreFile.\n");
@@ -549,6 +595,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	RCoreFile *fh;
 	RIODesc *fd;
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	const int openmany = r_config_get_i (r->config, "file.openmany");
 
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
@@ -556,7 +603,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open (r->io, file, mode, 0644);
-	if (fd == NULL) {
+	if (fd == NULL && openmany > 2) {
 		// XXX - make this an actual option somewhere?
 		fh = r_core_file_open_many (r, file, mode, loadaddr);
 		if (fh) return fh;
@@ -758,9 +805,10 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	ut8 *buf = NULL;
 	RHash *ctx;
 	ut64 limit;
+	RCoreFile *cf = r_core_file_cur (r);
 
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
-	if (r->file->size > limit)
+	if (cf->size > limit)
 		return R_FALSE;
 	buf = (ut8*)r_file_slurp (file, &buf_len);
 	if (buf==NULL)
@@ -842,4 +890,9 @@ R_API ut32 r_core_file_cur_fd (RCore *core) {
 		return desc->fd;
 	}
 	return (ut32)-1;
+}
+
+R_API RCoreFile * r_core_file_cur (RCore *r) {
+	// Add any locks here
+	return r->file;
 }
