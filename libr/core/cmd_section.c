@@ -144,6 +144,8 @@ static int cmd_section(void *data, const char *input) {
 		} else
 		if (input[1] == '0' && input[2]=='x') {
 			RIOSection *s = r_io_section_get (core->io, r_num_get (NULL, input+1));
+			if (!s)
+				return 0;
 			// use offset
 			r_io_section_rm (core->io, s->id);
 		} else {
