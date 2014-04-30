@@ -118,5 +118,6 @@ int rarvm_assemble (Bitbuf *b, const char *c) {
 			if (!assemble_arg (b, arg1))
 				return 0;
 	}
+	free (str);
 	return b->bits;
 }
