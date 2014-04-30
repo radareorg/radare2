@@ -10,8 +10,7 @@ PWD=$(shell pwd)
 
 LIBS0=util hash
 LIBS1=reg cons db magic diff bp search config socket
-LIBS2=syscall lang io crypto flags
-LIBS25=bin
+LIBS2=syscall lang io crypto flags bin
 LIBS3=fs anal
 LIBS4=parse
 LIBS5=asm debug
@@ -19,14 +18,13 @@ LIBS6=egg
 #LIBS6+=print
 LIBS7=core
 
-LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS25) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
+LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
 .PHONY: $(LIBS)
 
 all:
 	${MAKE} $(LIBS0)
 	${MAKE} $(LIBS1)
 	${MAKE} $(LIBS2)
-	${MAKE} $(LIBS25)
 	${MAKE} $(LIBS3)
 	${MAKE} $(LIBS4)
 	${MAKE} $(LIBS5)

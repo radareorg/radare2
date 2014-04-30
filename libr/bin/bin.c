@@ -309,37 +309,37 @@ static void set_bin_items(RBinFile *binfile, RBinPlugin *cp) {
 
 // XXX - this is a rather hacky way to do things, there may need to be a better way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
-	RIODesc *desc = fd == -1 ? r_io_master_open (file, O_RDONLY, 0644) : r_io_master_desc_get (fd);
+	RIOBind *iob = &(bin->iob);
+	RIO *io = iob ? iob->get_io(&iob) : NULL;
+	RIODesc *desc = NULL;
+	if (!io) return R_FALSE;
+
+	desc = fd == -1 ? iob->desc_open (io, file, O_RDONLY, 0644) : iob->desc_get_by_fd (io, fd);
 	if (!desc) return R_FALSE;
-	return r_bin_io_load(bin, r_io_master_get(), desc, baseaddr, loadaddr, xtr_idx);
-	//return R_FALSE;
+	return r_bin_load_io(bin, desc, baseaddr, loadaddr, xtr_idx);
 }
 
-R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
+R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
+	RIOBind *iob = &(bin->iob);
+	RIO *io = iob ? iob->get_io(iob) : NULL;
 	RListIter *it;
 	ut8* buf_bytes;
 	RBinXtrPlugin *xtr;
-	ut64 start, end, sz = UT64_MAX;
+	ut64 len_bytes, sz = UT64_MAX;
 	RBinFile *binfile = NULL;
 	int rawstr = 0;
 
-	if (!desc || !desc->plugin || !desc->plugin->read || !desc->plugin->lseek)
-		return R_FALSE;
+	if (!io) return R_FALSE;
 
 	buf_bytes = NULL;
-	end = desc->plugin->lseek (io, desc, 0, SEEK_END);
-	start = desc->plugin->lseek (io, desc, 0, SEEK_SET);
 
-	if (end == UT64_MAX || start == UT64_MAX)
+	sz = iob->desc_size (io, desc);
+	if (sz == UT64_MAX || sz>(64*1024*1024)) // too big, probably wrong
 		return R_FALSE;
 
-	sz = end - start;
-	if (sz>(64*1024*1024)) // too big, probably wrong
-		return R_FALSE;
 
-	buf_bytes = malloc (sz);
-
-	if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, sz)) {
+	buf_bytes = iob->desc_read (io, desc, &len_bytes);
+	if (!buf_bytes) {
 		free (buf_bytes);
 		return R_FALSE;
 	}

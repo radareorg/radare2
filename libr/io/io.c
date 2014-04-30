@@ -9,6 +9,9 @@ R_LIB_VERSION (r_io);
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
+static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz);
+static RIO * r_io_bind_get_io(RIOBind *bnd);
+
 static RIO * MASTER_IO = NULL;
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
@@ -31,57 +34,9 @@ R_API RIO *r_io_new() {
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	r_io_section_init (io);
-	MASTER_IO = io;
 	return io;
 }
 
-R_API RIO * r_io_master_get () {
-	return MASTER_IO;
-}
-
-R_API RIODesc * r_io_master_desc_get (int fd) {
-	return r_io_desc_get(MASTER_IO, fd);
-}
-
-R_API RIODesc * r_io_master_open (const char *file, int flags, int mode) {
-	return r_io_open(MASTER_IO, file, flags, mode);
-}
-
-R_API ut64 r_io_master_size (RIODesc * desc) {
-	ut64 start, end;
-	ut64 off = MASTER_IO->off;
-
-	if (!desc || !desc->plugin || !desc->plugin->read || !desc->plugin->lseek)
-		return UT64_MAX;
-
-	end = desc->plugin->lseek (MASTER_IO, desc, 0, SEEK_END);
-	start = desc->plugin->lseek (MASTER_IO, desc, 0, SEEK_SET);
-	MASTER_IO->off = off;
-
-	if (end == UT64_MAX || start == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	return end - start;
-}
-
-R_API ut8 * r_io_master_read (RIODesc * desc, ut64 *out_sz) {
-	ut8 *buf_bytes = NULL;
-	ut64 off = MASTER_IO->off;
-	*out_sz = r_io_master_size (desc);
-
-	if (*out_sz == UT64_MAX) return buf_bytes;
-
-	buf_bytes = malloc (*out_sz);
-
-	if (!buf_bytes || !desc->plugin->read (MASTER_IO, desc, buf_bytes, *out_sz)) {
-		free (buf_bytes);
-		MASTER_IO->off = off;
-		return R_FALSE;
-	}
-	MASTER_IO->off = off;
-	return buf_bytes;
-}
 
 
 R_API void r_io_raise(RIO *io, int fd) {
@@ -653,13 +608,27 @@ R_API int r_io_close(RIO *io, RIODesc *fd) {
 	return close (nfd);
 }
 
+ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {
+	RIOPlugin *plugin = desc ? desc->plugin : NULL;
+	if (!plugin) return UT64_MAX;
+	return plugin->lseek (io, desc, 0, SEEK_SET);
+}
+
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->io = io;
 	bnd->init = R_TRUE;
+	bnd->get_io = r_io_bind_get_io;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
 	bnd->size = r_io_size;
 	bnd->seek = r_io_seek;
+
+	bnd->desc_open = r_io_open;
+	bnd->desc_close = r_io_close;
+	bnd->desc_read = r_io_desc_read;
+	bnd->desc_size = r_io_desc_size;
+	bnd->desc_seek = r_io_desc_seek;
+	bnd->desc_get_by_fd = r_io_desc_get;
 	return R_TRUE;
 }
 
@@ -708,3 +677,26 @@ R_API void r_io_sort_maps (RIO *io) {
 	r_list_sort (io->maps, (RListComparator) r_io_map_sort);
 }
 
+static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
+	ut8 *buf_bytes = NULL;
+	ut64 off = io->off;
+	RIOPlugin *plugin = desc ? desc->plugin : NULL;
+
+	*out_sz = r_io_desc_size (io, desc);
+
+	if (*out_sz == UT64_MAX) return buf_bytes;
+
+	buf_bytes = malloc (*out_sz);
+
+	if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, *out_sz)) {
+		free (buf_bytes);
+		io->off = off;
+		return R_FALSE;
+	}
+	io->off = off;
+	return buf_bytes;
+}
+
+static RIO * r_io_bind_get_io(RIOBind *bnd) {
+	return bnd ? bnd->io : NULL;
+}

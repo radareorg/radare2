@@ -151,6 +151,7 @@ typedef struct r_bin_t {
 	RList/*<RBinFile>*/ *binfiles;
 	PrintfCallback printf;
 	int loadany;
+	RIOBind iob;
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);

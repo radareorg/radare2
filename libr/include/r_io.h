@@ -169,21 +169,37 @@ typedef struct r_io_list_t {
 } RIOList;
 
 /* TODO: find better name... RIOSetFd_Callback? ..Func? .. too camels here */
+typedef RIO * (*RIOGetIO) (struct r_io_bind_t *iob);
 typedef int (*RIOSetFd)(RIO *io, int fd);
 typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int size);
 typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int size);
 typedef ut64 (*RIOSize)(RIO *io);
 typedef ut64 (*RIOSeek)(RIO *io, ut64 offset, int whence);
 
+typedef RIODesc* (*RIODescGetFD)(RIO *io, int fd);
+typedef RIODesc* (*RIODescOpen)(RIO *io, const char *file, int flags, int mode);
+typedef int (*RIODescClose)(RIO *io, RIODesc *);
+typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
+typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset, int whence);
+typedef ut64 (*RIODescSize)(RIO *io, RIODesc *desc);
+
 /* compile time dependency */
 typedef struct r_io_bind_t {
 	int init;
 	RIO *io;
+	RIOGetIO get_io;
 	RIOSetFd set_fd; // XXX : this is conceptually broken with the new RIODesc foo
 	RIOReadAt read_at;
 	RIOWriteAt write_at;
 	RIOSize size;
 	RIOSeek seek;
+
+	RIODescOpen desc_open;
+	RIODescClose desc_close;
+	RIODescRead desc_read;
+	RIODescSize desc_size;
+	RIODescSeek desc_seek;
+	RIODescGetFD desc_get_by_fd;
 } RIOBind;
 
 typedef struct r_io_cache_t {
@@ -239,12 +255,6 @@ R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many);
 
 /* io/io.c */
-R_API RIO * r_io_master_get ();
-R_API RIODesc * r_io_master_desc_get (int fd);
-R_API RIODesc * r_io_master_open (const char *file, int flags, int mode);
-R_API ut64 r_io_master_size (RIODesc * desc);
-R_API ut8 * r_io_master_read (RIODesc * desc, ut64 *out_sz);
-
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode);
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
