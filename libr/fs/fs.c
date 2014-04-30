@@ -90,6 +90,7 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 			else if (len > lenstr && root->path[lenstr] == '/')
 				continue;
 			eprintf ("r_fs_mount: Invalid mount point\n");
+			free (str);
 			return NULL;
 		}
 	}
@@ -97,12 +98,14 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 	if (file) {
 		r_fs_close (fs, file);
 		eprintf ("r_fs_mount: Invalid mount point\n");
+		free (str);
 		return NULL;
 	} else {
 		list = r_fs_dir (fs, str);
 		if (!r_list_empty (list)) {
 			//XXX: list need free ??
 			eprintf ("r_fs_mount: Invalid mount point\n");
+			free (str);
 			return NULL;
 		}
 	}
