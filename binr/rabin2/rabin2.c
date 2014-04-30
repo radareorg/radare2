@@ -188,9 +188,12 @@ static int rabin_dump_sections(char *scnname) {
 
 	r_list_foreach (sections, iter, section) {
 		if (!strcmp (scnname, section->name)) {
-			if (!(buf = malloc (section->size)) ||
-					!(ret = malloc (section->size*2+1)))
+			if (!(buf = malloc (section->size)))
 				return R_FALSE;
+			if (!(ret = malloc (section->size*2+1))) {
+				free (buf);
+				return R_FALSE;
+			}
 			r_buf_read_at (bin->cur->buf, section->offset, buf, section->size);
 			if (output) {
 				r_file_dump (output, buf, section->size);
