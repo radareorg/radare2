@@ -1250,6 +1250,9 @@ static int cmd_debug(void *data, const char *input) {
 		else r_debug_plugin_list (core->dbg);
 		break;
 	case 'i':
+		eprintf ("TODO: info\n");
+		break;
+	case 'x':
 		switch (input[1]) {
 		case 'a':
 			{
@@ -1287,10 +1290,10 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		default:
 			r_cons_printf ("|Usage: di[asr] [arg| ...]\n"
-			"| di 9090                           ; inject two x86 nops\n"
+			"| dx 9090                           ; inject two x86 nops\n"
 			"| \"dia mov eax,6;mov ebx,0;int 0x80\"  ; inject and restore state\n"
-			"| dir 9090                          ; inject and restore state\n"
-			"| dis write 1, 0x8048, 12           ; syscall injection (see gs)\n");
+			"| dxr 9090                          ; inject and restore state\n"
+			"| dxs write 1, 0x8048, 12           ; syscall injection (see gs)\n");
 			break;
 		}
 		break;
@@ -1319,7 +1322,8 @@ static int cmd_debug(void *data, const char *input) {
 		"| ds[ol] N       step, over, source line\n"
 		"| do             open process (reload, alias for 'oo')\n"
 		"| dk [sig][=act] list, send, get, set, signal handlers of child\n"
-		"| di[s] [arg..]  inject code on running process and execute it (See gs)\n"
+		"| di             show debugger backend information (See dh)\n"
+		"| dx[rs] [arg..] inject code on running process and execute it (See gs)\n"
 		"| dp[=*?t][pid]  list, attach to process or thread id\n"
 		"| dc[?]          continue execution. dc? for more\n"
 		"| dr[?]          cpu registers, dr? for extended help\n"
