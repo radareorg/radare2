@@ -15,7 +15,7 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 	RCorePlugin *plugin;
 	r_list_foreach (cmd->plist, iter, plugin) {
 		if (plugin && plugin->deinit) {
-			plugin->deinit (NULL, NULL);
+			plugin->deinit (cmd, NULL);
 		}
 	}
 	return R_TRUE;
