@@ -25,6 +25,16 @@ static int check(RBin *bin) {
 	return ret;
 }
 
+static int check_bytes(const ut8* bytes, ut64 sz) {
+	int ret = R_FALSE;
+
+	if (!bytes || sz < 4) return R_FALSE;
+	if (!memcmp (bytes, "\x64\x79\x6c\x64", 4))
+		ret = R_TRUE;
+
+	return ret;
+}
+
 // TODO: destroy must be void?
 static int destroy(RBin *bin) {
 	return free_xtr (bin->cur->xtr_obj);
@@ -49,14 +59,14 @@ static RList * extractall(RBin *bin) {
 
 	// XXX - how do we validate a valid nlib?
 	nlib = data->file_count;
+
 	result = r_list_newf (r_bin_xtrdata_free);
-	do {
-		i++;
-		r_list_append (result, data);
+	r_list_append (result, data);
+	for (i=1; data && i < nlib; i++) {
 		data = NULL;
 		data = extract (bin, i);
-
-	} while (data && i < nlib);
+		r_list_append (result, data);
+	}
 
 	return result;
 }
@@ -76,7 +86,6 @@ static RBinXtrData * extract(RBin *bin, int idx) {
 }
 
 static RBinXtrData * oneshot(const ut8* buf, ut64 size, int idx) {
-	int narch;
 	RBinXtrData * res = NULL;
 	void *xtr_obj = r_bin_dyldcache_from_bytes_new (buf, size);
 	struct r_bin_dyldcache_lib_t *lib;
@@ -96,25 +105,24 @@ static RBinXtrData * oneshot(const ut8* buf, ut64 size, int idx) {
 }
 
 static RList * oneshotall(const ut8* buf, ut64 size) {
-	RList *result = NULL;
+	RList *res = NULL;
 	int nlib, i=1;
 	RBinXtrData *data = NULL;
 
 	data = oneshot (buf, size, i);
-	if (!data) return result;
+	if (!data) return res;
 
 	// XXX - how do we validate a valid nlib?
 	nlib = data->file_count;
-	result = r_list_newf (r_bin_xtrdata_free);
-	do {
-		i++;
-		r_list_append (result, data);
+	res = r_list_newf (r_bin_xtrdata_free);
+	r_list_append (res, data);
+	for (i=1; data && i < nlib; i++) {
 		data = NULL;
 		data = oneshot (buf, size, i);
+		r_list_append (res, data);
+	}
 
-	} while (data && i < nlib);
-
-	return result;
+	return res;
 }
 
 struct r_bin_xtr_plugin_t r_bin_xtr_plugin_dyldcache = {
@@ -131,6 +139,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_dyldcache = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
+	.check_bytes = &check_bytes,
 };
 
 #ifndef CORELIB

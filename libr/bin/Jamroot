@@ -54,9 +54,10 @@ lib r_bin : $(OBJS) :
     <include>../include
     <include>mangling
     <define>CORELIB
-    <library>../util 
+    <library>../util
     <library>../lib
     <library>../db
     <library>../../shlr/sdb
+    <library>../io
     $(EXTRA)
 ;
