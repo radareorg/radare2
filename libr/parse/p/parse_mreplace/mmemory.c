@@ -80,16 +80,12 @@ memChunk *memString(char *string){
 void memCopy(memChunk *dest,memChunk *source){
 	long nbytes;
 	memCheckState();
-	if(!source->address) return;
-	if(!dest->address){
-		dest=memString(source->address);
-	}else{
-		nbytes=dest->size > source->size ? source->size : dest->size;
-		#if DEBUG3
-		printf("Copying %d bytes to dest (size %d)\n",nbytes,dest->address,dest->size);
-		#endif
-		memcpy(dest->address,source->address,nbytes);
-	}
+	if ((!source->address) || (!dest->address)) return;
+	nbytes=dest->size > source->size ? source->size : dest->size;
+	#if DEBUG3
+	printf("Copying %d bytes to dest (size %d)\n",nbytes,dest->address,dest->size);
+	#endif
+	memcpy(dest->address,source->address,nbytes);
 }
 
 void memStrCat(memChunk *dest,char *string){
