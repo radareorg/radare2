@@ -173,19 +173,22 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->flags |= CN_INT;
 			}
 		}
-	} else {
+	} else { // Create a new RConfigNode
 		oi = UT64_MAX;
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
-			if (node && value && (!strcmp (value, "true")||!strcmp (value, "false"))) {
-				node->flags |= CN_BOOL;
-				node->i_value = (!strcmp (value, "true"))? 1: 0;
-			}
-			if (cfg->ht) {
-				r_hashtable_insert (cfg->ht, node->hash, node);
-				r_list_append (cfg->nodes, node);
-				cfg->n_nodes++;
-			}
+			if (node) {
+				if (value && (!strcmp (value, "true") || !strcmp (value, "false"))) {
+					node->flags |= CN_BOOL;
+					node->i_value = (!strcmp (value, "true"))? 1: 0;
+				}
+				if (cfg->ht) {
+					r_hashtable_insert (cfg->ht, node->hash, node);
+					r_list_append (cfg->nodes, node);
+					cfg->n_nodes++;
+				}
+			} else
+				eprintf ("r_config_set: unable to create a new RConfigNode\n");
 		} else eprintf ("r_config_set: variable '%s' not found\n", name);
 	}
 
@@ -276,10 +279,10 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
 	char *ptr, *a, *b, name[1024];
-	int len;
+	unsigned int len;
 	if (!str || !cfg) return R_FALSE;
 	len = strlen (str)+1;
-	if (len >=sizeof (name))
+	if (len >= sizeof (name))
 		return R_FALSE;
 	memcpy (name, str, len);
 	str = r_str_chop (name);
