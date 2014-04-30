@@ -40,7 +40,7 @@ static void emit_init (REgg *egg) {
 
 static char *emit_syscall (REgg *egg, int nargs) {
 	char p[512];
-	if (attsyntax) 
+	if (attsyntax)
 		return strdup (": mov $`.arg`, %"R_AX"\n: "SYSCALL_ATT"\n");
 	switch (egg->os) {
 	case R_EGG_OS_LINUX:
@@ -72,11 +72,11 @@ static void emit_frame (REgg *egg, int sz) {
 	if (sz<1)
 		return;
 	if (attsyntax)
-		r_egg_printf (egg, 
+		r_egg_printf (egg,
 		"  push %%"R_BP"\n"
 		"  mov %%"R_SP", %%"R_BP"\n"
 		"  sub $%d, %%"R_SP"\n", sz);
-	else r_egg_printf (egg, 
+	else r_egg_printf (egg,
 		"  push "R_BP"\n"
 		"  mov "R_BP", "R_SP"\n"
 		"  sub "R_SP", %d\n", sz);
@@ -342,6 +342,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		r_egg_printf (egg, "  cmp "R_AX", %s\n", p);
 	}
 	// if (context>0)
+	free (p);
 	r_egg_printf (egg, "  %s %s\n", op, dst);
 }
 
@@ -396,7 +397,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	} else {
 		if (eq == NULL) eq = R_AX;
 		if (p == NULL) p = R_AX;
-	// TODO: 
+	// TODO:
 #if 0
 		eprintf ("TYPE = %c\n", type);
 		eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
