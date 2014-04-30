@@ -10,6 +10,7 @@ R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW0 (RSearch);
 	if (!s) return NULL;
 	if (!r_search_set_mode (s, mode)) {
+		free (s);
 		eprintf ("Cannot init search for mode %d\n", mode);
 		return R_FALSE;
 	}
