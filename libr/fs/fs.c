@@ -296,20 +296,16 @@ static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *li
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, ".."))
 			continue;
+
+		found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+		if (!found) break;
+		strcpy (found, name);
+		strcat (found, "/");
+		strcat (found, item->name);
+
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
-			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
-			if (!found) break;
-			strcpy (found, name);
-			strcat (found, "/");
-			strcat (found, item->name);
 			r_fs_find_off_aux (fs, found, offset, list);
-			free (found);
 		} else {
-			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
-			if (!found) break;
-			strcpy (found, name);
-			strcat (found, "/");
-			strcat (found, item->name);
 			file = r_fs_open (fs, found);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
@@ -319,6 +315,7 @@ static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *li
 				r_fs_close (fs, file);
 			}
 		}
+		free (found);
 	}
 }
 
