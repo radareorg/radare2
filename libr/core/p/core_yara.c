@@ -56,7 +56,7 @@ static int r_cmd_yara_load_default_rules ();
 static int callback (int message, YR_RULE* rule, void* data) {
     (void)data; // avoid Unused parameter warning
     if (message == CALLBACK_MSG_RULE_MATCHING)
-        eprintf ("%s\n", rule->identifier);
+        r_cons_printf ("%s\n", rule->identifier);
     return CALLBACK_CONTINUE;
 }
 
@@ -108,7 +108,7 @@ static int r_cmd_yara_list () {
 
 	rule = rules->rules_list_head;
 	while (!RULE_IS_NULL(rule)) {
-		eprintf ("%s\n", rule->identifier);
+		r_cons_printf ("%s\n", rule->identifier);
 		++rule;
 	}
 	r_yr_rules_destroy (rules);
@@ -153,18 +153,18 @@ static int r_cmd_yara_add(const char* rules_path) {
 		return R_FALSE;
 	}
 
-	eprintf ("%s added\n", rules_path);
+	r_cons_printf ("%s added\n", rules_path);
 
 	return R_TRUE;
 }
 
 static int r_cmd_yara_help() {
-    eprintf ("Yara plugin\n");
-    eprintf ("| add [path] : add yara rules\n");
-    eprintf ("| clear      : clear all rules\n");
-    eprintf ("| help       : show this help\n");
-    eprintf ("| list       : list all rules\n");
-    eprintf ("| scan       : scan the current file\n");
+    r_cons_printf ("Yara plugin\n"
+		"| add [path] : add yara rules\n"
+		"| clear      : clear all rules\n"
+		"| help       : show this help\n"
+		"| list       : list all rules\n"
+		"| scan       : scan the current file\n");
     return R_TRUE;
 }
 
