@@ -124,31 +124,31 @@ static int parse(RParse *p, const char *data, char *str) {
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr==' '; ptr++);
-			strcpy (w0, buf);
-			strcpy (w1, ptr);
+			strncpy (w0, buf, WSZ - 1);
+			strncpy (w1, ptr, WSZ - 1);
 
 			optr=ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr==' '; ptr++);
-				strcpy (w1, optr);
-				strcpy (w2, ptr);
+				strncpy (w1, optr, WSZ - 1);
+				strncpy (w2, ptr, WSZ - 1);
 				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr==' '; ptr++);
-					strcpy (w2, optr);
-					strcpy (w3, ptr);
+					strncpy (w2, optr, WSZ - 1);
+					strncpy (w3, ptr, WSZ - 1);
 					optr=ptr;
 // bonus
 					ptr = strchr (ptr, ',');
 					if (ptr) {
 						*ptr = '\0';
 						for (++ptr; *ptr==' '; ptr++);
-						strcpy (w3, optr);
-						strcpy (w4, ptr);
+						strncpy (w3, optr, WSZ - 1);
+						strncpy (w4, ptr, WSZ - 1);
 					}
 				}
 			}
