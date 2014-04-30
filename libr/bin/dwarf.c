@@ -198,7 +198,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	size_t count;
 	const ut8 *tmp_buf = NULL;
 
-	if (!hdr || !bf || !buf || !f) return NULL;
+	if (!hdr || !bf || !buf) return NULL;
 
 	hdr->unit_length.part1 = READ (buf, ut32);
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
@@ -357,7 +357,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 	opcode = *buf++;
 
-	if (!binfile || !obuf || !hdr || !regs || !f) return NULL;
+	if (!binfile || !obuf || !hdr || !regs) return NULL;
 
 	if (f) {
 		fprintf(f, "Extended opcode %d: ", opcode);
@@ -474,7 +474,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	ut16 operand;
 	RBinFile *binfile = a ? a->cur : NULL;
 
-	if (!binfile || !hdr || !regs || !obuf || !f) return NULL;
+	if (!binfile || !hdr || !regs || !obuf) return NULL;
 
 	switch (opcode) {
 	case DW_LNS_copy:
@@ -618,13 +618,18 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	RBinDwarfSMRegisters regs;
 	RBinFile *binfile = a ? a->cur : NULL;
 
-	if (!binfile || !f || !obuf) return R_FALSE;
+	if (!binfile || !obuf) return R_FALSE;
 
 	buf = obuf;
 	buf_end = obuf + len;
 	while (buf < buf_end) {
 		buf_tmp = buf;
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, &hdr, f);
+
+		if (!buf) {
+			return R_FALSE;
+		}
+
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 		r_bin_dwarf_parse_opcodes (a, buf, 4 + hdr.unit_length.part1,
 				&hdr, &regs, f);
@@ -1275,6 +1280,11 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 
 		buf = r_bin_dwarf_parse_comp_unit(s, buf, &inf->comp_units[curr_unit],
 				da, offset, debug_str, debug_str_len);
+
+		if (!buf) {
+			r_bin_dwarf_free_debug_info (inf);
+			return R_FALSE;
+		}
 
 		curr_unit++;
 	}
