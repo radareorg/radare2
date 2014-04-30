@@ -182,8 +182,10 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
 #endif
-	if (anal->bits==16)
+	if (anal->bits==16) {
+		arm_free(arminsn);
 		return op_thumb (anal, op, addr, data, len);
+	}
 	op->size = 4;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
