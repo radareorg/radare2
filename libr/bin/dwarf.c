@@ -1195,6 +1195,10 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 
 		buf = r_uleb128 (buf, &abbr_code);
 
+		if (abbr_code > da->length) {
+			return NULL;
+		}
+
 		r_bin_dwarf_init_die (&cu->dies[cu->length]);
 
 		if (!abbr_code) {
