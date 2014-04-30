@@ -1029,6 +1029,8 @@ if (
 				if (sym[k].st_name > strtab_section->sh_size) {
 					perror ("index out of strtab range\n");
                     free (ret);
+					free (sym);
+					free (strtab);
 					return NULL;
 				}
 				len = __strnlen (&strtab[sym[k].st_name], ELF_STRING_LENGTH-1);
