@@ -141,6 +141,7 @@ extract_fields (aarch64_insn code, aarch64_insn mask, ...)
       value <<= field->width;
       value |= extract_field (kind, code, mask);
     }
+  va_end (va);
   return value;
 }
 
