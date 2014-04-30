@@ -218,7 +218,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	va_end (ap);
 	fflush (stderr);
 	r_cons_set_raw (1);
-	read (0, &key, 1);
+	(void)read (0, &key, 1);
 	write (2, "\n", 1);
 	if (key == 'Y')
 		key = 'y';
