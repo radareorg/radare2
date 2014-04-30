@@ -263,6 +263,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 #ifndef R_BIN_MACH064
 	if (bin->cur->o->info->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
+		free (buf);
 		return NULL;
 	}
 #endif
