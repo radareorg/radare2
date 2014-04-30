@@ -99,15 +99,16 @@ static int parse(RParse *p, const char *data, char *str) {
 	char w4[WSZ];
 	char *buf, *ptr, *optr;
 
+	if (!strcmp (data, "jr ra")) {
+		strcpy (str, "ret");
+		return R_TRUE;
+	}
+
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;
 	memcpy (buf, data, len+1);
 
-	if (!strcmp (data, "jr ra")) {
-		strcpy (str, "ret");
-		return R_TRUE;
-	}
 	r_str_replace_char (buf, '(', ',');
 	r_str_replace_char (buf, ')', ' ');
 	r_str_chop (buf);
