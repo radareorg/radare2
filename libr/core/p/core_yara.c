@@ -38,7 +38,6 @@ static int (*r_yr_rules_scan_mem)(
     void* user_data,
     int fast_scan_mode,
     int timeout) = NULL;
-static int (*r_yr_get_tidx)(void);
 
 
 /* ---- */ 
@@ -245,7 +244,6 @@ static int r_cmd_yara_init() {
 	LOADSYM (yr_compiler_get_rules);
 	LOADSYM (yr_compiler_push_file_name);
 	LOADSYM (yr_finalize);
-	LOADSYM (yr_get_tidx);
 	LOADSYM (yr_rules_scan_mem);
 	LOADSYM (yr_rules_destroy);
 
@@ -264,12 +262,22 @@ static int r_cmd_yara_init() {
 	return R_TRUE;
 }
 
+static int r_cmd_yara_deinit(){
+	if (r_yr_initialize != NULL) {
+		r_yr_compiler_destroy(compiler);
+		r_yr_finalize();
+		r_yr_initialize = NULL;
+	}
+	return R_TRUE;
+}
+
 RCorePlugin r_core_plugin_yara = {
 	.name = "yara",
 	.desc = "YARA integration",
 	.license = "LGPL",
 	.call = r_cmd_yara_call,
-	.init = NULL // init is performed in call if needed
+	.init = NULL, // init is performed in call if needed
+	.deinit = r_cmd_yara_deinit
 };
 
 #ifndef CORELIB
