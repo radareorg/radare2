@@ -601,6 +601,7 @@ static int cmd_write(void *data, const char *input) {
 						"Usage: 'woe from-to step'\n");
 					else r_cons_printf (
 						"Usage: 'wo%c 00 11 22'\n", input[1]);
+					free (ostr);
 					return 0;
 				}
 			case '2':
