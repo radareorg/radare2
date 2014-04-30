@@ -259,9 +259,12 @@ int main(int argc, char **argv) {
 	}
 	do_hash_seed (seed);
 	if (hashstr && !strcmp (hashstr, "-")) {
+		int res = 0;
 		hashstr = malloc(1024);
-		fread ((void*)hashstr, 1, 1023, stdin);
-		hashstr[1023] = 0;
+		if (!hashstr)
+			return 1;
+		res = fread ((void*)hashstr, 1, 1023, stdin);
+		hashstr[res] = '\0';
 	}
 	if (hashstr) {
 		char *str = (char *)hashstr;
