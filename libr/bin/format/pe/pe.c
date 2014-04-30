@@ -241,6 +241,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		} // for
 	} // if read ok
 	exp[symctr].last = 1;
+	free (sections);
 	free (buf);
 	return exports;
 }
