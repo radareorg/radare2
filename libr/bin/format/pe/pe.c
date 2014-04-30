@@ -182,8 +182,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exports[sz].last = 0;
 		sz += exports_sz;
 		exports = realloc (exports, sz);
-		if (!exports)
+		if (!exports) {
+			free (buf);
 			return 0;
+		}
 		exp =  (struct r_bin_pe_export_t*) (((const ut8*)exports) + osz);
 	} else {
 		sz = exports_sz;
