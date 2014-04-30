@@ -262,8 +262,10 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 		strcat (str, "/");
 		strcat (str, file->name);
 		npath = malloc (strlen (path) + strlen (file->name) + 2);
-		if (!npath)
+		if (!npath) {
+			free (str);
 			return R_FALSE;
+		}
 		strcpy (npath, path);
 		strcat (npath, "/");
 		strcat (npath, file->name);
