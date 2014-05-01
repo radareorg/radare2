@@ -757,7 +757,6 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				free (strtab);
 				return NULL;
 			}
-			free (strtab);
 		}
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
