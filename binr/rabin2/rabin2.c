@@ -235,14 +235,18 @@ static int rabin_do_operation(const char *op) {
 			if (ptr2) {
 				if (!rabin_dump_symbols (r_num_math (NULL, ptr2)))
 					return R_FALSE;
-			} else if (!rabin_dump_symbols (0))
-					return R_FALSE;
+			} else if (!rabin_dump_symbols (0)) {
+				free (arg);
+				return R_FALSE;
+			}
 			break;
 		case 'S':
 			if (!ptr2)
 				goto _rabin_do_operation_error;
-			if (!rabin_dump_sections (ptr2))
+			if (!rabin_dump_sections (ptr2)) {
+				free (arg);
 				return R_FALSE;
+			}
 			break;
 		default:
 			goto _rabin_do_operation_error;
