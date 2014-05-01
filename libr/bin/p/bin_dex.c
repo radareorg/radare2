@@ -163,7 +163,10 @@ static RList* strings (RBinFile *arch) {
 			ptr->size = len;
 			ptr->ordinal = i+1;
 			r_list_append (ret, ptr);
-		} //else dprintf ("dex_read_uleb128: invalid read\n");
+		} else {
+			dprintf ("dex_read_uleb128: invalid read\n");
+			free (ptr);
+		}
 	}
 	return ret;
 }
