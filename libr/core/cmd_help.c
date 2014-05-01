@@ -28,9 +28,23 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'b':
-		n = r_num_get (core->num, input+1);
-		r_num_to_bits (out, n);
-		r_cons_printf ("%sb\n", out);
+		if (input[1] == '6' && input[2] == '4') {
+			//b64 decoding takes at most strlen(str) * 4
+			const int buflen = (strlen (input+3) * 4) + 1;
+			unsigned char* buf = calloc (buflen, sizeof(char));
+			if (!buf)
+				return R_FALSE;
+			if (input[3] == '-')
+				r_base64_decode (buf, input+5, strlen (input+5));
+			else
+				r_base64_encode (buf, input+4, strlen (input+4));
+			r_cons_printf ("%s\n", buf);
+			free (buf);
+		} else {
+			n = r_num_get (core->num, input+1);
+			r_num_to_bits (out, n);
+			r_cons_printf ("%sb\n", out);
+		}
 		break;
 	case 'B':
 		k = r_str_chop_ro (input+1);
@@ -376,6 +390,7 @@ static int cmd_help(void *data, const char *input) {
 			"| ?? [cmd]          ? == 0 run command when math matches\n"
 			"| ?_ hudfile        load hud menu with given file\n"
 			"| ?b [num]          show binary value of number\n"
+			"| ?b64[-] [str]     encode/decode in base64\n"
 			"| ?B [elem]         show range boundaries like 'e?search.in\n"
 			"| ?d opcode         describe opcode for asm.arch\n"
 			"| ?e string         echo string\n"
