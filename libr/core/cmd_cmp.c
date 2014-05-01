@@ -276,9 +276,12 @@ static int cmd_cmp(void *data, const char *input) {
 		buf = (ut8 *)malloc (core->blocksize);
         if (buf == NULL)
             return R_FALSE;
-		fread (buf, 1, core->blocksize, fd);
+		ret = fread (buf, 1, core->blocksize, fd);
 		fclose (fd);
-		val = radare_compare (core, core->block, buf, core->blocksize);
+		if (ret < 1)
+			eprintf ("Cannot read file %s\n", input + 2);
+		else
+			val = radare_compare (core, core->block, buf, core->blocksize);
 		free (buf);
 		break;
 	case 'd':
