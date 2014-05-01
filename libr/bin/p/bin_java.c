@@ -161,13 +161,14 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 }
 
 static RList* lines(RBinFile *arch) {
-	int i;
 	char *file = arch->file ? strdup (arch->file) : strdup ("");
 	RList *list = r_list_newf (free);
-
-	RBinJavaObj *b = arch->o->bin_obj;
 	file = r_str_replace (file, ".class", ".java", 0);
-	/*for (i=0; i<b->lines.count; i++) {
+
+	/*
+	int i;
+	RBinJavaObj *b = arch->o->bin_obj;
+	for (i=0; i<b->lines.count; i++) {
 		RBinDwarfRow *row = R_NEW0(RBinDwarfRow);
 		r_bin_dwarf_line_new (row, b->lines.addr[i], file, b->lines.line[i]);
 		r_list_append (list, row);
@@ -210,7 +211,7 @@ RBinPlugin r_bin_plugin_java = {
 	.imports = &imports,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL, //fields,
+	.fields = fields,
 	.libs = libs,
 	.relocs = NULL,
 	.dbginfo = NULL,
