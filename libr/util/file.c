@@ -13,6 +13,30 @@
 #include <sys/mman.h>
 #endif
 
+R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
+	int fd;
+	if (r_file_is_directory (filename))
+		return R_FALSE;
+
+	if (r_file_exists (filename) && !r_file_is_regular (filename))
+		return R_FALSE;
+	else if (!r_file_exists (filename)){
+		FILE *ffd = r_sandbox_fopen (filename, "wb");
+		if (ffd == NULL) {
+			eprintf ("Cannot open '%s' for writing\n", filename);
+			return R_FALSE;
+		}
+		fclose (ffd);
+	}
+
+	fd = r_sandbox_open (filename, O_RDWR|O_SYNC, 0644);
+	if (!fd || fd == -1) return R_FALSE;
+
+	ftruncate (fd, newsize);
+	close (fd);
+	return R_TRUE;
+}
+
 R_API const char *r_file_basename (const char *path) {
 	const char *ptr = strrchr (path, '/');
 	if (ptr) path = ptr + 1;
@@ -406,11 +430,72 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	return 0;
 }
 
+#if __UNIX__
+static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
+	ut8 empty = m->len == 0;
+	m->buf = mmap (NULL, (empty?1024:m->len) ,
+		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
+		MAP_SHARED, fd, (off_t)m->base);
+	if (m->buf == MAP_FAILED) {
+		free (m);
+		m = NULL;
+	}
+	return m;
+}
+#elif __WINDOWS__
+static RMmap *r_file_mmap_windows (RMmap *m) {
+	m->fh = CreateFile (file, m->rw?GENERIC_WRITE:GENERIC_READ,
+		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	if (m->fh == INVALID_HANDLE_VALUE) {
+		r_sys_perror ("CreateFile");
+		free (m);
+		return NULL;
+	}
+	m->fm = CreateFileMapping (m->fh, NULL,
+		m->rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+	if (m->fm == NULL) {
+		CloseHandle (m->fh);
+		free (m);
+		return NULL;
+	}
+	if (m->fm != INVALID_HANDLE_VALUE) {
+		m->buf = MapViewOfFile (m->fm, m->rw?
+			FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ,
+			UT32_HI (m->base), UT32_LO (m->base), 0);
+	} else {
+		CloseHandle (m->fh);
+		free (m);
+		m = NULL;
+	}
+	return m;
+}
+#else
+static RMmap *r_file_mmap_other (RMmap *m) {
+	ut8 empty = m->len == 0;
+	m->buf = malloc ((empty?1024:m->len));
+	if (!empty && m->buf) {
+		lseek (m->fd, (off_t)0, SEEK_SET);
+		read (m->fd, m->buf, m->len);
+	} else {
+		free (m);
+		m = NULL;
+	}
+	return m;
+}
+#endif
+
+
 // TODO: add rwx support?
 R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
-	RMmap *m;
-	int fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
-	if (fd == -1) return NULL;
+	RMmap *m = NULL;
+	int fd = -1;
+	if (!rw && !r_file_exists (file)) return m;
+	fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
+	if (fd == -1 && !rw) {
+		eprintf ("r_file_mmap: file does not exis.\n");
+		//m->buf = malloc (m->len);
+		return m;
+	}
 	m = R_NEW (RMmap);
 	if (!m) {
 		close (fd);
@@ -419,60 +504,34 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 	m->base = base;
 	m->rw = rw;
 	m->fd = fd;
-	m->len = lseek (fd, (off_t)0, SEEK_END);
+	m->len = fd != -1? lseek (fd, (off_t)0, SEEK_END) : 0;
+
+	if (m->fd == -1) {
+		return m;
+	}
+
 	if (m->len == (off_t)-1) {
 		close (fd);
 		R_FREE (m);
 		return NULL;
 	}
 #if __UNIX__
-	m->buf = mmap (NULL, m->len,
-		rw?PROT_READ|PROT_WRITE:PROT_READ,
-		MAP_SHARED, fd, (off_t)base);
-	if (m->buf == MAP_FAILED) {
-		free (m);
-		m = NULL;
-	}
+	return r_file_mmap_unix (m, fd);
 #elif __WINDOWS__
 	close (fd);
-	m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
-		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
-	if (m->fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("CreateFile");
-		free (m);
-		return NULL;
-	}
-	m->fm = CreateFileMapping (m->fh, NULL,
-		rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
-	if (m->fm == NULL) {
-		CloseHandle (m->fh);
-		free (m);
-		return NULL;
-	}
-	if (m->fm != INVALID_HANDLE_VALUE) {
-		m->buf = MapViewOfFile (m->fm, rw?
-			FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ,
-			UT32_HI (base), UT32_LO (base), 0);
-	} else {
-		CloseHandle (m->fh);
-		free (m);
-		m = NULL;
-	}
+	m->fd = -1;
+	return r_file_mmap_windows (m);
 #else
-	m->buf = malloc (m->len);
-	if (m->buf) {
-		lseek (fd, (off_t)0, SEEK_SET);
-		read (fd, m->buf, m->len);
-	} else {
-		free (m);
-		m = NULL;
-	}
+	return r_file_mmap_other (m);
 #endif
-	return m;
 }
 
 R_API void r_file_mmap_free (RMmap *m) {
 	if (!m) return;
+	if (m->fd == -1) {
+		free (m);
+		return;
+	}
 #if __UNIX__
 	munmap (m->buf, m->len);
 #elif __WINDOWS__
