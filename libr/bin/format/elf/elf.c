@@ -980,6 +980,8 @@ if (
 
 			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
 				eprintf ("malloc (syms)");
+				free (ret);
+				free (strtab);
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
