@@ -965,7 +965,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 		MI.type = *infos;
 		MI.from = ds->at;
 		MI.to = ds->at + MI.size;
-		str = strchr (metas, ',');
+		str = metas ? strchr (metas, ',') : NULL;
 		if (str) {
 			MI.str = (char*)sdb_decode (str+1, 0);
 		} else MI.str = NULL;
