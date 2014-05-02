@@ -371,7 +371,9 @@ int main(int argc, char **argv) {
 		case 'z':
 			if (is_active (ACTION_STRINGS)) {
 				r_config_set_i (core.config, "bin.rawstr", R_TRUE);
-				core.bin->cur->rawstr = R_TRUE;
+				if (core.bin->cur) {
+					core.bin->cur->rawstr = R_TRUE;
+				}
 			}
 			set_action (ACTION_STRINGS);
 			break;
