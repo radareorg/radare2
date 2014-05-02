@@ -117,7 +117,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (tokcount == 1)
 						tidx = idx;
 					if (!(hit = r_core_asm_hit_new ())) {
-						r_list_destroy (hits);
+						r_list_purge (hits);
 						if (hits) free (hits);
 						goto beach;
 					}
@@ -363,13 +363,13 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
 	if (hits == NULL || buf == NULL ){
-		if (hits) r_list_destroy (hits);
+		if (hits) r_list_purge (hits);
 		if (buf) free (buf); 
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
-		if (hits) r_list_destroy (hits);
+		if (hits) r_list_purge (hits);
 		if (buf) free (buf); 
 		return NULL;
 	}
@@ -423,13 +423,13 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
 	if (hits == NULL || buf == NULL ){
-		if (hits) r_list_destroy (hits);
+		if (hits) r_list_purge (hits);
 		if (buf) free (buf); 
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, addr-(len+extra_padding), buf, len+extra_padding) != len+extra_padding) {
-		r_list_destroy (hits);
+		r_list_purge (hits);
 		free (buf);
 		return NULL;
 	}
@@ -485,13 +485,13 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 	buf = malloc (len + extra_padding);
 
 	if (hits == NULL || buf == NULL ){
-		if (hits) r_list_destroy (hits);
+		if (hits) r_list_purge (hits);
 		if (buf) free (buf); 
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, (addr + extra_padding)-len, buf, len+extra_padding) != len+extra_padding) {
-		r_list_destroy (hits);
+		r_list_purge (hits);
 		free (buf);
 		return NULL;			
 	}

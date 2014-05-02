@@ -25,7 +25,7 @@ R_API void r_mixed_free (RMixed *m) {
 			m->keys[i] = NULL;
 		}
 	}
-	r_list_destroy (m->list);
+	r_list_purge (m->list);
 	free (m);
 }
 

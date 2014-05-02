@@ -15,7 +15,7 @@ R_API RDebugTrace *r_debug_trace_new () {
 R_API void r_debug_trace_free (RDebug *dbg) {
 	if (dbg->trace == NULL)
 		return;
-	r_list_destroy (dbg->trace->traces);
+	r_list_purge (dbg->trace->traces);
 	free (dbg->trace->traces);
 	free (dbg->trace);
 	dbg->trace = NULL;
@@ -120,7 +120,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 
 R_API void r_debug_trace_reset (RDebug *dbg) {
 	RDebugTrace *t = dbg->trace;
-	r_list_destroy (t->traces);
+	r_list_purge (t->traces);
 	t->traces = r_list_new ();
 	t->traces->free = free;
 }

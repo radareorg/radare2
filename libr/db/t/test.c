@@ -41,7 +41,7 @@ void test_pair () {
 	r_list_foreach (list, iter, o) {
 		printf ("   %s = %s\n", o->k, o->v);
 	}
-	r_list_destroy (list);
+	r_list_purge (list);
 	}
 	r_pair_sync (p);
 }

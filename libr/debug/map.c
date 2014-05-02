@@ -134,7 +134,7 @@ R_API RList *r_debug_map_list_new() {
 	return list;
 }
 
-/* XXX Use r_list_destroy? FIXME: use correct maps->free function */
+/* XXX Use r_list_purge? FIXME: use correct maps->free function */
 R_API void r_debug_map_list_free(RList *maps) {
 	RListIter *iter;
 	RDebugMap *map;

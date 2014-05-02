@@ -633,7 +633,7 @@ static int cmd_search(void *data, const char *input) {
 					searchprefix, count, hit->addr, hit->len, hit->code);
 				count++;
 			}
-			r_list_destroy (hits);
+			r_list_purge (hits);
 		}
 		dosearch = 0;
 		}

@@ -678,7 +678,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
 				i++, frame->addr, frame->size);
 		}
-		r_list_destroy (list);
+		r_list_purge (list);
 		break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;

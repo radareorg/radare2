@@ -78,7 +78,7 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 						(p->perm & R_IO_WRITE)?'w':'-',
 						p->type, p->path);
 			}
-			r_list_destroy (list);
+			r_list_purge (list);
 			free (list);
 		}
 	}

@@ -900,7 +900,7 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	if (!a || !o) return NULL;
 	if (o->strings) {
-		r_list_destroy (o->strings);
+		r_list_purge (o->strings);
 		o->strings = NULL;
 	}
 

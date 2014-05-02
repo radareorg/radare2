@@ -139,7 +139,7 @@ static int cmd_mount(void *data, const char *_input) {
 					r_str_chop_path (ptr);
 					printf ("%s\n", ptr);
 				}
-				//XXX: r_list_destroy (list);
+				//XXX: r_list_purge (list);
 			} else eprintf ("Unknown store path\n");
 			break;
 		case 'o':
@@ -155,7 +155,7 @@ static int cmd_mount(void *data, const char *_input) {
 					r_str_chop_path (ptr);
 					printf ("%s\n", ptr);
 				}
-				//XXX: r_list_destroy (list);
+				//XXX: r_list_purge (list);
 			} else eprintf ("Unknown store path\n");
 			break;
 		}

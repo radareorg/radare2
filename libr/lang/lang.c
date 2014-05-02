@@ -86,7 +86,7 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 				break;
 			}
 		}
-	} else r_list_destroy (lang->defs);
+	} else r_list_purge (lang->defs);
 }
 
 R_API int r_lang_setup(RLang *lang) {

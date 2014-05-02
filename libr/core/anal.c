@@ -690,7 +690,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	RListIter *iter, *iter_tmp;
 
 	if (addr == 0) {
-		r_list_destroy (core->anal->fcns);
+		r_list_purge (core->anal->fcns);
 		if (!(core->anal->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
 	} else {

@@ -673,7 +673,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	str = strdup (sig);
 
 	// TODO : implement parser
-	//r_list_destroy (fs->vars);
+	//r_list_purge (fs->vars);
 	//set: fs->vars = r_list_new ();
 	//set: fs->name
 	eprintf ("ORIG=(%s)\n", sig);

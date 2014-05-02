@@ -22,7 +22,7 @@ R_API RRange *r_range_new() {
 }
 
 R_API RRange *r_range_free(RRange *r) {
-	r_list_destroy (r->ranges);
+	r_list_purge (r->ranges);
 	free (r);
 	return NULL;
 }

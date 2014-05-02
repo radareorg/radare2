@@ -17,12 +17,14 @@ void r_list_iter_free (RListIter *list) {
 RListIter *r_list_iter_get_next(RListIter *list) {
 	return list->n;
 }
+
 void *r_list_iter_get_data(RListIter *list) {
 	if (list == NULL) return NULL;
 	return list->data;
 }
 
-RListIter *r_list_append(RList *list, void *data);
+//RListIter *r_list_append(RList *list, void *data);
+
 RListIter *r_list_iterator (RList *list) {
 	return list? list->head: NULL;
 }
@@ -56,6 +58,53 @@ R_API int r_list_length(RList *list) {
 	return count;
 }
 
+
+
+/* remove all elements of a list */
+R_API void r_list_purge (RList *list) {
+	RListIter *it;
+	if (list) {
+		it = list->head;
+		while (it) {
+			RListIter *next = it->n;
+			r_list_delete (list, it);
+			it = next;
+		//	free (it);
+		}
+		list->head = list->tail = NULL;
+	}
+	//free (list);
+}
+
+
+R_API void r_list_free (RList *list) {
+	if (list) {
+		r_list_purge (list);
+		free (list);
+	}
+}
+
+
+// XXX r_list_delete_data == r_list_unlink !!!! this is conceptually wrong
+R_API boolt r_list_delete_data (RList *list, void *ptr) {
+	void *p;
+	RListIter *iter;
+	r_list_foreach (list, iter, p) {
+		if (ptr == p) {
+			r_list_delete (list, iter);
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
+R_API void r_list_delete (RList *list, RListIter *iter) {
+	r_list_split_iter (list, iter);
+	if (list->free && iter->data)
+		list->free (iter->data);
+	iter->data = NULL;
+	free (iter);
+}
 R_API void r_list_unlink (RList *list, void *ptr) {
 	RListIter *iter = r_list_iterator (list);
 	while (iter) {
@@ -67,6 +116,8 @@ R_API void r_list_unlink (RList *list, void *ptr) {
 		iter = iter->n;
 	}
 }
+
+
 
 R_API void r_list_split (RList *list, void *ptr) {
 	RListIter *iter = r_list_iterator (list);
@@ -98,26 +149,6 @@ R_API void r_list_join (RList *list1, RList *list2) {
 	}
 }
 
-// XXX r_list_delete_data == r_list_unlink !!!! this is conceptually wrong
-R_API boolt r_list_delete_data (RList *list, void *ptr) {
-	void *p;
-	RListIter *iter;
-	r_list_foreach (list, iter, p) {
-		if (ptr == p) {
-			r_list_delete (list, iter);
-			return R_TRUE;
-		}
-	}
-	return R_FALSE;
-}
-
-R_API void r_list_delete (RList *list, RListIter *iter) {
-	r_list_split_iter (list, iter);
-	if (list->free && iter->data)
-		list->free (iter->data);
-	iter->data = NULL;
-	free (iter);
-}
 
 R_API RList *r_list_new() {
 	RList *list = R_NEW0(RList);
@@ -131,45 +162,6 @@ R_API RList *r_list_newf(RListFree f) {
 	return l;
 }
 
-/* remove all elements of a list */
-R_API void r_list_purge (RList *list) {
-	RListIter *it;
-	if (list) {
-		it = list->head;
-		while (it) {
-			RListIter *next = it->n;
-			r_list_delete (list, it);
-			it = next;
-		//	free (it);
-		}
-		list->head = list->tail = NULL;
-	}
-	//free (list);
-}
-
-// same as purge.. but without a correct name.. need refactoring
-// TODO: rename to r_list_purge() or find a better name
-R_API void r_list_destroy (RList *list) {
-	RListIter *it;
-	if (list) {
-		it = list->head;
-		while (it) {
-			RListIter *next = it->n;
-			r_list_delete (list, it);
-			it = next;
-		//	free (it);
-		}
-		list->head = list->tail = NULL;
-	}
-	//free (list);
-}
-
-R_API void r_list_free (RList *list) {
-	if (list) {
-		r_list_destroy (list);
-		free (list);
-	}
-}
 
 R_API RListIter *r_list_item_new (void *data) {
 	RListIter *new = R_NEW (RListIter);

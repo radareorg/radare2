@@ -375,7 +375,7 @@ static int bin_dwarf (RCore *core, int mode) {
 		}
         }
 	r_cons_break_end ();
-        r_list_destroy (list);
+        r_list_purge (list);
 	return R_TRUE;
 }
 

@@ -289,7 +289,7 @@ static int autocomplete(RLine *line) {
 					}
 				}
 				r_list_free (list);
-				// XXX LEAK r_list_destroy (list);
+				// XXX LEAK r_list_purge (list);
 			} else eprintf ("\nInvalid directory\n");
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;

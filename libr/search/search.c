@@ -276,7 +276,7 @@ R_API void r_search_kw_reset(RSearch *s) {
 }
 
 R_API void r_search_reset(RSearch *s, int mode) {
-	r_list_destroy (s->hits);
+	r_list_purge (s->hits);
 	s->nhits = 0;
 	s->hits = r_list_new ();
 	s->hits->free = free;
