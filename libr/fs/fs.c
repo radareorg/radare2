@@ -381,8 +381,10 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 			if (file) root->p->read (file, 0, file->size); //file->data
 			else eprintf ("r_fs_slurp: cannot open file\n");
 		} else {
-			if (root->p->slurp)
+			if (root->p->slurp) {
+				free (roots);
 				return root->p->slurp (root, path);
+			}
 			eprintf ("r_fs_slurp: null root->p->slurp\n");
 		}
 	}
