@@ -223,6 +223,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 #endif
 	} else {
 		r_socket_free (rap_fd);
+		free (rior);
 		return NULL;
 	}
 	//r_socket_free (rap_fd);
