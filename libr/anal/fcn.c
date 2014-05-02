@@ -592,7 +592,7 @@ R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb) {
 				}
 			}
 #endif
-			//r_list_unlink (bb->ops, opi);
+			//r_list_delete_data (bb->ops, opi);
 			r_list_append (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}

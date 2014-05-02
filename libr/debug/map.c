@@ -123,7 +123,7 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 }
 
 R_API void r_debug_map_free(RDebugMap *map) {
-	//r_list_unlink (dbg->maps_user, map);
+	//r_list_delete_data (dbg->maps_user, map);
 	free (map->name);
 	free (map);
 }

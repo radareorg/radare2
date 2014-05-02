@@ -407,7 +407,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	free (buf);
 	return R_TRUE;
 error:
-	r_list_unlink (fcn->bbs, bb);
+	r_list_delete_data (fcn->bbs, bb);
 	r_anal_bb_free (bb);
 	free (buf);
 	return R_FALSE;
@@ -667,7 +667,7 @@ error:
 			r_anal_fcn_insert (core->anal, fcn);
 #if 0
 			// unlink from list to avoid double free later when we call r_anal_free()
-			r_list_unlink (core->anal->fcns, fcn);
+			r_list_delete_data (core->anal->fcns, fcn);
 			if (core->anal->fcns->free == NULL)
 				r_anal_fcn_free (fcn);
 #endif

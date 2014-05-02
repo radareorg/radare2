@@ -49,13 +49,11 @@ typedef struct r_oflist_t {
 #define r_list_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
 #define r_list_head(x) x->head
 #define r_list_tail(x) x->tail
-#define r_list_unref(x) x
 
 #define r_list_iter_get(x) x->data; x=x->n
 #define r_list_iter_next(x) (x?1:0)
 
 #define r_list_iter_cur(x) x->p
-#define r_list_iter_unref(x) x
 #define r_list_iter_free(x) x
 #endif
 R_API RList *r_list_new();
@@ -77,7 +75,6 @@ R_API void r_list_iter_init (RListIter *iter, RList *list);
 R_API void r_list_purge (RList *list);
 R_API void r_list_free (RList *list);
 R_API RListIter *r_list_item_new (void *data);
-R_API void r_list_unlink (RList *list, void *ptr);
 R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
 R_API void r_list_join (RList *list1, RList *list2);
