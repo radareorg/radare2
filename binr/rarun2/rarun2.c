@@ -34,7 +34,8 @@ static int _timeout = 0;
 
 static char *getstr(const char *src) {
 	int len;
-	char *ret;
+	char *ret = NULL;
+
 	switch (*src) {
 	case '\'':
 		ret = strdup (src+1);
@@ -61,6 +62,7 @@ static char *getstr(const char *src) {
 					return ret;
 				} else eprintf ("Missing \"\n");
 			}
+			free (ret);
 		}
 		return NULL;
 	case '@':
