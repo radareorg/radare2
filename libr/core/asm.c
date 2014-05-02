@@ -93,7 +93,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
-	tokens[tokcount] = NULL;
+	tokens[tokcount-1] = NULL;
 	r_cons_break (NULL, NULL);
 	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
 		if (r_cons_singleton ()->breaked)
@@ -210,7 +210,7 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 			//iter->data = NULL;
 			to_check_hit = NULL;
 			result ++;
-		} 
+		}
 	}
 	return result;
 }
@@ -219,7 +219,7 @@ static RCoreAsmHit * find_addr(RList *hits, ut64 addr) {
 	// Find an address in the list of hits
 	RListIter *addr_iter = NULL;
 	RCoreAsmHit dummy_value;
-	dummy_value.addr = addr; 
+	dummy_value.addr = addr;
 	addr_iter = r_list_find (hits, &dummy_value, ((RListComparator)rcoreasm_address_comparator));
 	return r_list_iter_get_data(addr_iter);
 }
@@ -230,8 +230,8 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 	ut64 temp_instr_len = 0,
 		temp_instr_addr = current_instr_addr,
 		tmp_current_buf_pos = current_buf_pos,
-        start = 0,  end = 0, 
-		start_range = current_instr_addr, 
+        start = 0,  end = 0,
+		start_range = current_instr_addr,
 		end_range = end_addr;
 
     RAsmOp op;
@@ -275,7 +275,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 		}
 
 		temp_instr_addr += temp_instr_len;
-		tmp_current_buf_pos += temp_instr_len; 
+		tmp_current_buf_pos += temp_instr_len;
 	}
 	return temp_instr_addr;
 }
@@ -335,8 +335,8 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 		else if ( start <= start_range )
 			result = R_TRUE;
 		else if ( start_range < end)
-			result = R_TRUE; 
-	} 
+			result = R_TRUE;
+	}
 	return result;
 }
 
@@ -353,10 +353,10 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RCoreAsmHit dummy_value;
 	RAsmOp op;
 	ut8 *buf = (ut8 *)malloc (len);
-	ut64 instrlen = 0, 
+	ut64 instrlen = 0,
 		 at = 0;
 
-	ut32 
+	ut32
 	 	 idx = 0,
 	 	 hit_count = 0;
 
@@ -364,13 +364,13 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 
 	if (hits == NULL || buf == NULL ){
 		if (hits) r_list_purge (hits);
-		if (buf) free (buf); 
+		if (buf) free (buf);
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
 		if (hits) r_list_purge (hits);
-		if (buf) free (buf); 
+		if (buf) free (buf);
 		return NULL;
 	}
 
@@ -380,14 +380,14 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		at = addr - idx; hit_count = 0;
 		// XXX - buf here. at may be greater than addr if near boundary.
 
-		for (current_buf_pos = len - idx, hit_count = 0; 
-			current_buf_pos < len && hit_count <= n; 
+		for (current_buf_pos = len - idx, hit_count = 0;
+			current_buf_pos < len && hit_count <= n;
 			current_buf_pos += instrlen, at += instrlen, hit_count++) {
 			r_asm_set_pc (core->assembler, at);
 			//XXX HACK We need another way to detect invalid disasm!!
 			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid")) {
 				break;
-			} 
+			}
 		}
 		if (hit_count >= n) break;
 	}
@@ -416,7 +416,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	RAsmOp op;
 	ut8 *buf = (ut8 *)malloc (len + extra_padding);
 	int current_instr_len = 0;
-	ut64 current_instr_addr = addr, 
+	ut64 current_instr_addr = addr,
 		 current_buf_pos = len - 1,
 		 hit_count = 0;
 
@@ -424,7 +424,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 
 	if (hits == NULL || buf == NULL ){
 		if (hits) r_list_purge (hits);
-		if (buf) free (buf); 
+		if (buf) free (buf);
 		return NULL;
 	}
 
@@ -444,7 +444,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		if (r_cons_singleton ()->breaked) break;
 		// reset assembler
 		r_asm_set_pc (core->assembler, current_instr_addr);
-		current_instr_len = len - current_buf_pos + extra_padding ;		
+		current_instr_len = len - current_buf_pos + extra_padding;
 		IFDBG eprintf("current_buf_pos: 0x%"PFMT64x", current_instr_len: %d\n", current_buf_pos, current_instr_len);
 		current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
 		hit = r_core_asm_hit_new ();
@@ -475,7 +475,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		next_buf_pos = len;
 
 	RCoreAsmHit dummy_value;
-	ut32 hit_count = 0; 
+	ut32 hit_count = 0;
 
 	if (disassmble_each_addr){
 		return r_core_asm_back_disassemble_all(core, addr, len, max_hit_count, extra_padding+1);
@@ -486,28 +486,28 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 
 	if (hits == NULL || buf == NULL ){
 		if (hits) r_list_purge (hits);
-		if (buf) free (buf); 
+		if (buf) free (buf);
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, (addr + extra_padding)-len, buf, len+extra_padding) != len+extra_padding) {
 		r_list_purge (hits);
 		free (buf);
-		return NULL;			
+		return NULL;
 	}
 
 	//
-	// XXX - This is a heavy handed approach without a 
+	// XXX - This is a heavy handed approach without a
 	// 		an appropriate btree or hash table for storing
 	//	 hits, because are using:
 	//			1) Sorted RList with many inserts and searches
-	//			2) Pruning hits to find the most optimal disassembly 
+	//			2) Pruning hits to find the most optimal disassembly
 
-	// greedy approach 
+	// greedy approach
 	// 1) Consume previous bytes
 	// 1a) Instruction is invalid (incr current_instr_addr)
-	// 1b) Disasm is perfect 
-	// 1c) Disasm is underlap (disasm(current_instr_addr, next_instr_addr - current_instr_addr) short some bytes) 
+	// 1b) Disasm is perfect
+	// 1c) Disasm is underlap (disasm(current_instr_addr, next_instr_addr - current_instr_addr) short some bytes)
 	// 1d) Disasm is overlap (disasm(current_instr_addr, next_instr_addr - current_instr_addr) over some bytes)
 
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
@@ -516,7 +516,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 	current_buf_pos = len - extra_padding - 1;
 	next_buf_pos = len + extra_padding - 1;
 	current_instr_addr = addr-1;
-	do {	
+	do {
 		if (r_cons_singleton ()->breaked) break;
 		// reset assembler
 		r_asm_set_pc (core->assembler, current_instr_addr);
@@ -531,7 +531,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			ut8 *hex_str = (ut8*)r_hex_bin2strdup(buf+current_buf_pos, byte_cnt);
 			eprintf("==== current_instr_bytes: %s ",hex_str);
 
-			if (current_instr_len > 0) 
+			if (current_instr_len > 0)
 				eprintf("op.buf_asm: %s\n", op.buf_asm);
 			else
 				eprintf("op.buf_asm: <invalid>\n");
@@ -550,7 +550,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
             // i think this may be the only case where an invalid instruction will be
             // added because handle_forward_disassemble and handle_disassembly_overlap
             // are only called in cases where a valid instruction has been found.
-            // and they are lazy, since they purge the hit list 
+            // and they are lazy, since they purge the hit list
             ut32 purge_results = 0;
 			ut8 is_valid = R_TRUE;
 			IFDBG eprintf(" handling underlap case: current_instr_addr: 0x%"PFMT64x".\n", current_instr_addr);
@@ -561,8 +561,8 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			}
 			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
 			//handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr/*end_addr*/);
-			hit_count ++;	
-			next_buf_pos = current_buf_pos;  
+			hit_count ++;
+			next_buf_pos = current_buf_pos;
 			last_num_invalid = 0;
 		// disassembly underlap
 		} else if (current_buf_pos + current_instr_len < next_buf_pos) {
@@ -593,8 +593,8 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		current_instr_addr -= 1;
 		current_buf_pos -= 1;
 
-		if ( hit_count >= max_hit_count && 
-			 (last_num_invalid >= max_invalid_b4_exit || last_num_invalid == 0))  
+		if ( hit_count >= max_hit_count &&
+			 (last_num_invalid >= max_invalid_b4_exit || last_num_invalid == 0))
 			break;
 	} while ( ((int) current_buf_pos  >= 0) && (int)(len - current_buf_pos) >= 0 );
 
