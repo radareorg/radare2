@@ -1,5 +1,27 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+static void filter_line(char *line) {
+	char *a;
+
+	if (!line)
+		return;
+
+	for (a=line; *a; a++) {
+		switch (*a) {
+			case '%':
+			case '(':
+			case ')':
+			case '~':
+			case '|':
+			case '#':
+			case ';':
+			case '"':
+				*a = '_';
+				break;
+		}
+	}
+}
+
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -55,22 +77,9 @@ static int cmd_meta(void *data, const char *input) {
 						return R_FALSE;
 					}
 				}
-// filter_line
-char *a;
-for (a=line; *a; a++) {
-	switch (*a) {
-	case '%':
-	case '(':
-	case ')':
-	case '~':
-	case '|':
-	case '#':
-	case ';':
-	case '"':
-		*a = '_';
-		break;
-	}
-}
+
+				filter_line (line);
+
 				p = strchr (p+1, ' ');
 				if (p) {
 					snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
