@@ -1465,18 +1465,18 @@ static RDebugPid *darwin_get_pid(int pid) {
 	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
 		eprintf ("sysctl() error on getting argmax\n");
 		return NULL;
-	}   
+	}
 #endif
 	/* Allocate space for the arguments. */
 	procargs = (char *)malloc (argmax);
 	if (procargs == NULL) {
 		eprintf ("getcmdargs(): insufficient memory for procargs %d\n", (int)(size_t)argmax);
 		return NULL;
-	}   
+	}
 
-	/*  
+	/*
 	 * Make a sysctl() call to get the raw argument space of the process.
-	 */  
+	 */
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROCARGS2;
 	mib[2] = pid;
@@ -1488,11 +1488,11 @@ static RDebugPid *darwin_get_pid(int pid) {
 			//eprintf("EINVAL returned fetching argument space\n");
 			free (procargs);
 			return NULL;
-		}   
+		}
 		eprintf ("sysctl(): unspecified sysctl error - %i\n", errno);
 		free (procargs);
 		return NULL;
-	}   
+	}
 
 	// copy the number of argument to nargs
 	memcpy (&nargs, procargs, sizeof(nargs));
@@ -1502,7 +1502,7 @@ static RDebugPid *darwin_get_pid(int pid) {
 		eprintf ("getcmdargs(): argument length mismatch");
 		free (procargs);
 		return NULL;
-	}   
+	}
 
 	//TODO: save the environment variables to envlist as well
 	// Skip over the exec_path and '\0' characters.
@@ -1517,10 +1517,10 @@ static RDebugPid *darwin_get_pid(int pid) {
 	}
 	/* Iterate through the '\0'-terminated strings and add each string
 	 * to the Python List arglist as a Python string.
-	 * Stop when nargs strings have been extracted.  That should be all 
+	 * Stop when nargs strings have been extracted.  That should be all
 	 * the arguments.  The rest of the strings will be environment
 	 * strings for the command.
-	 */  
+	 */
 	curr_arg = iter_args;
 	start_args = iter_args; //reset start position to beginning of cmdline
 	foo = 1;
@@ -1541,15 +1541,15 @@ static RDebugPid *darwin_get_pid(int pid) {
 			/* Fetch next argument */
 			curr_arg = iter_args;
 			nargs--;
-		}   
-	}   
+		}
+	}
 
 #if 1
-	/*  
+	/*
 	 * curr_arg position should be further than the start of the argspace
 	 * and number of arguments should be 0 after iterating above. Otherwise
 	 * we had an empty argument space or a missing terminating \0 etc.
-	 */  
+	 */
 	if (curr_arg == start_args || nargs > 0) {
 		psname[0] = 0;
 //		eprintf ("getcmdargs(): argument parsing failed");
@@ -1629,7 +1629,7 @@ static RList *r_debug_native_pids(int pid) {
 		}
 		closedir (dh);
 	} else
-	for (i=2; i<MAXPID; i++) {
+	for (i = 2; i < MAXPID; i++) {
 		if (!r_sandbox_kill (i, 0)) {
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
@@ -1656,7 +1656,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 #if __WINDOWS__
 	return w32_thread_list (pid, list);
 #elif __APPLE__
-#if __arm__                 
+#if __arm__
 	#define OSX_PC state.__pc
 #elif __POWERPC__
 	#define OSX_PC state.srr0
@@ -1669,19 +1669,19 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 #undef OSX_PC
 #define OSX_PC state.x32[REG_PC]
 #endif
-        int i, tid; //, err;
+    int i, tid; //, err;
 	//unsigned int gp_count;
 	static thread_array_t inferior_threads = NULL;
 	static unsigned int inferior_thread_count = 0;
-        R_DEBUG_REG_T state;
+    R_DEBUG_REG_T state;
 
-        if (task_threads (pid_to_task (pid), &inferior_threads,
-			&inferior_thread_count) != KERN_SUCCESS) {
-                eprintf ("Failed to get list of task's threads.\n");
-                return list;
-        }
-        for (i = 0; i < inferior_thread_count; i++) {
-                tid = inferior_threads[i];
+	if (task_threads (pid_to_task (pid), &inferior_threads,
+		&inferior_thread_count) != KERN_SUCCESS) {
+		eprintf ("Failed to get list of task's threads.\n");
+		return list;
+    }
+    for (i = 0; i < inferior_thread_count; i++) {
+		tid = inferior_threads[i];
 /*
 		XXX overflow here
         	gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
@@ -1692,16 +1692,18 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
                 }
 */
 		r_list_append (list, r_debug_pid_new ("???", tid, 's', OSX_PC));
-        }
+    }
 #elif __linux__
 	int i, fd, thid = 0;
 	char *ptr, cmdline[1024];
 
-	if (!pid)
+	if (!pid) {
+		r_list_free (list);
 		return NULL;
+	}
 	r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
 	/* list parents */
-	
+
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 	//while ((de = readdir (dh))) {
 	snprintf (cmdline, sizeof (cmdline), "/proc/%d/task", pid);
@@ -1778,7 +1780,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	return size;
 // XXX this must be defined somewhere else
 #elif __APPLE__
-	int ret; 
+	int ret;
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
@@ -1967,7 +1969,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		return R_FALSE;
 #endif
 #elif __APPLE__
-		int ret; 
+		int ret;
 		thread_array_t inferior_threads = NULL;
 		unsigned int inferior_thread_count = 0;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
@@ -2049,7 +2051,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
 #elif __APPLE__
-		int ret; 
+		int ret;
 		thread_array_t inferior_threads = NULL;
 		unsigned int inferior_thread_count = 0;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
@@ -2338,7 +2340,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #if __KFBSD__
 	int ign;
 	char unkstr[128];
-#endif 
+#endif
 #if __APPLE__
 	list = darwin_dbg_maps (dbg);
 #elif __WINDOWS__
@@ -2432,7 +2434,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		mr->perms = 0;
 		if(!strcmp(path, "[stack]") || !strcmp(path, "[vdso]"))
 			mr->flags = FLAG_NOPERM;
-		else 
+		else
 			mr->flags = 0;
 
 		for(i = 0; perms[i] && i < 4; i++) {
