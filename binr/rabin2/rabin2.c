@@ -140,6 +140,7 @@ static int rabin_extract(int all) {
 			} else printf ("%s created (%i)\n", outfile, bin->cur->size);
 		}
 	}
+	free (path);
 	return R_TRUE;
 }
 
