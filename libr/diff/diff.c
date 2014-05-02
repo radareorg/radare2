@@ -49,7 +49,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 			if (hit>0) {
 				struct r_diff_op_t o = {
 					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = hit,
-					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit 
+					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit
 				};
 				d->callback (d, d->user, &o);
 				hit = 0;
@@ -59,7 +59,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	if (hit>0) {
 		struct r_diff_op_t o = {
 			.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = hit,
-			.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit 
+			.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit
 		};
 		d->callback (d, d->user, &o);
 		hit = 0;
@@ -67,7 +67,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	return 0;
 }
 
-// XXX: temporary files are 
+// XXX: temporary files are
 R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	char *ptr, *str, buf[64], oop = 0;
 	int ret, atl, btl, hit;
@@ -170,8 +170,10 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 			.a_off = ooa, .a_buf = at, .a_len = atl,
 			.b_off = oob, .b_buf = bt, .b_len = btl
 		};
-		if (!d->callback (d, d->user, &o))
+		if (!d->callback (d, d->user, &o)) {
+			fclose (fd);
 			return 0;
+		}
 		atl = btl = 0;
 		hit = 0;
 	}
@@ -219,7 +221,7 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
 		}
 	}
-	
+
 	if (distance != NULL)
 		*distance = m[la][lb];
 	if (similarity != NULL) {
