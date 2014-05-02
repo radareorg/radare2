@@ -128,13 +128,16 @@ static int rax (char *str, int len, int last) {
 	}
 	if (flags & 256) { // -k
 		int n = ((strlen (str))>>1)+1;
-		char *s;
+		char *s = NULL;
 		ut32 *m;
 		buf = (ut8*) malloc (n);
+		if (!buf) {
+			return R_FALSE;
+		}
 		m = (ut32 *) buf;
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8*)buf);
-		if (n<1 || !memcmp (str, "0x", 2)) {
+		if (n < 1 || !memcmp (str, "0x", 2)) {
 			ut64 q = r_num_math (num, str);
 			s = r_print_randomart ((ut8*)&q, sizeof (q), q);
 			printf ("%s\n", s);
@@ -144,6 +147,7 @@ static int rax (char *str, int len, int last) {
 			printf ("%s\n", s);
 			free (s);
 		}
+		free (m);
 		return R_TRUE;
 	}
 	if (flags & 1) { // -s
