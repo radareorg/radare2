@@ -1140,21 +1140,22 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 }
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
-	struct Elf_(r_bin_elf_obj_t) *bin;
 	ut8 *buf;
-// TODO: use R_NEW0 here
-	if (!(bin = malloc (sizeof (struct Elf_(r_bin_elf_obj_t)))))
-		return NULL;
+	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
+
+	if (!bin) return NULL;
 	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
 		return Elf_(r_bin_elf_free) (bin);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf, bin->size)){
+		free (buf);
 		return Elf_(r_bin_elf_free) (bin);
 	}
-	if (!Elf_(r_bin_elf_init) (bin))
+	if (!Elf_(r_bin_elf_init) (bin)) {
 		return Elf_(r_bin_elf_free) (bin);
+	}
 	return bin;
 }
 
