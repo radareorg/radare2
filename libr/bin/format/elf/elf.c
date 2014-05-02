@@ -715,6 +715,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	Elf_(Rela) *rel = NULL;
 	ut64 got_addr, got_offset;
 	char *strtab = NULL, rel_fmt[] = "2i";
+	char *tmp_ptr =  NULL;
 	int i, j, nrel, tsize, nsym;
 
 	if (!bin->shdr || !bin->strtab)
