@@ -501,9 +501,10 @@ static int r_io_zip_resize(RIO *io, RIODesc *fd, ut64 size) {
 static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOZipFileObj *zfo;
 	int ret = 0;
-	if (!(fd->flags & 2) || !fd || !fd->data || !buf)
+	if ( !fd || !fd->data || !buf)
 		return -1;
 	zfo = fd->data;
+	if ( !(zfo->flags & R_IO_WRITE)) return -1;
 	if (zfo->b->cur + count >= zfo->b->length)
 		r_io_zip_realloc_buf (zfo, count);
 

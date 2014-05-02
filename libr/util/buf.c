@@ -1,7 +1,8 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
+#include <r_types.h>
+#include <r_util.h>
+#include <r_io.h>
 
 #if 0
 /* TODO: the basic object lifecycle must be simplified */
@@ -26,7 +27,8 @@ R_API RBuffer *r_buf_new() {
 	return b;
 }
 
-R_API RBuffer *r_buf_mmap (const char *file, int rw) {
+R_API RBuffer *r_buf_mmap (const char *file, int flags) {
+	int rw = flags&R_IO_WRITE ? R_TRUE : R_FALSE;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
 	b->mmap = r_file_mmap (file, rw, 0);
