@@ -663,6 +663,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 beach:
 	clearerr (stdin);
 	printf ("\n");
+	if (list) r_list_free (list);
 	return R_TRUE;
 }
 
