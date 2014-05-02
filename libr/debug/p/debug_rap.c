@@ -15,7 +15,7 @@ static int r_debug_rap_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static int r_debug_rap_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	return R_FALSE; // XXX Error check	
+	return R_FALSE; // XXX Error check
 }
 
 static int r_debug_rap_continue(RDebug *dbg, int pid, int tid, int sig) {
@@ -32,7 +32,6 @@ static int r_debug_rap_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->fd;
 	if (d && d->plugin && d->plugin->name) {
-		
 		if (!strcmp ("rap", d->plugin->name)) {
 			eprintf ("SUCCESS: rap attach with inferior rap rio worked\n");
 		} else {
@@ -56,6 +55,7 @@ static char *r_debug_rap_reg_profile(RDebug *dbg) {
 	r_cons_pipe_close (fd);
 	out = r_file_slurp (tf, NULL);
 	r_file_rm (tf);
+	free (tf);
 	return out;
 }
 
