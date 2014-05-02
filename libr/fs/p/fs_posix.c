@@ -52,6 +52,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 		}
 		r_list_append (list, fsf);
 	}
+	closedir (dir);
 	return list;
 }
 
