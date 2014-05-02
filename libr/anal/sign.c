@@ -73,7 +73,6 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 			else if (type==R_SIGN_BYTE)
 				sig->s_byte++;
 		}
-		free (data);
 		break;
 	default:
 	case R_SIGN_ANAL:
@@ -81,6 +80,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		r_sign_item_free (si);
 		break;
 	}
+	if (data) free (data);
 	return ret;
 }
 
