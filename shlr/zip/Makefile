@@ -1,6 +1,7 @@
 include ../../config-user.mk
 include ../../libr/config.mk
 include ../../mk/${COMPILER}.mk
+MAKE_JOBS?=1
 
 ifeq ($(USE_LIB_ZIP),1)
 all:
@@ -14,10 +15,10 @@ librz.a: zip/libr_zip.a
 	${CC_AR} librz.a zlib/*.o zip/*.o
 
 zip/libr_zip.a: zlib/libr_z.a
-	${MAKE} -C zip
+	${MAKE} -j$(MAKE_JOBS) -C zip
 
 zlib/libr_z.a:
-	${MAKE} -C zlib
+	${MAKE} -j$(MAKE_JOBS) -C zlib
 
 clean:
 	${MAKE} -C zlib clean

@@ -781,7 +781,7 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
             {
               grub_fshelp_node_t entry_item;
               struct grub_reiserfs_key entry_key;
-              enum grub_reiserfs_item_type entry_type;
+	      enum grub_fshelp_filetype entry_type;
               char *entry_name;
 
               entry_name = (((char *) directory_headers)

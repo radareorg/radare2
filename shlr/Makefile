@@ -25,7 +25,7 @@ SDB_CONFIG=${PWD}/sdb-config.mk
 all: sdb/sdb libgdbr capstone-build
 	@for a in ${MODS} ; do \
 		echo ${MAKE} -C $$a ; \
-		${MAKE} -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
+		${MAKE} -j$(MAKE_JOBS) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 clean mrproper:
@@ -40,11 +40,11 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; ${MAKE} clean
 	cd sdb ; \
 		${MAKE} clean && \
-		${MAKE} CC=${HOST_CC} CFLAGS="${HOST_CFLAGS} -g" && \
+		${MAKE} -j$(MAKE_JOBS) CC=${HOST_CC} CFLAGS="${HOST_CFLAGS} -g" && \
 		cp -f src/sdb src/.sdb
-	cd sdb ; ${MAKE} clean
+	cd sdb ; ${MAKE} -j$(MAKE_JOBS) clean
 	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
+	cd sdb/src ; ${MAKE} -j$(MAKE_JOBS) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 	cp -f sdb/src/.sdb sdb/sdb
