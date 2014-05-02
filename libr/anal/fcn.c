@@ -631,10 +631,10 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 	if (fs->type != R_ANAL_FCN_TYPE_FCN || fs->type != R_ANAL_FCN_TYPE_SYM)
 		return NULL;
 	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
-	sign = ret? r_str_newf ("%s %s (", ret->name, fs->name):
+	sign = ret ? r_str_newf ("%s %s (", ret->name, fs->name):
 		r_str_newf ("void %s (", fs->name);
 	/* FIXME: Use RAnalType instead */
-	for (i=0; ; i++) {
+	for (i = 0; ; i++) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
 				R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_SCOPE_ARGREG)))
 			break;
@@ -643,7 +643,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 		if (arg->type->type == R_ANAL_TYPE_ARRAY)
 			sign = r_str_concatf (sign, i?", %s %s:%02x[%d]":"%s %s:%02x[%d]",
 				arg->type, arg->name, arg->delta, arg->type->custom.a->count);
-		else 
+		else
 #endif
 		sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
 			arg->type, arg->name, arg->delta);
@@ -716,8 +716,8 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 		arg++;
 	}
 	// r_anal_fcn_set_var (fs, 0, R_ANAL_VAR_DIR_OUT, );
-	free (str);
 */
+	free (str);
 	return R_TRUE;
 
 	//parsefail:
