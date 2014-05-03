@@ -80,7 +80,8 @@ printf ("n=%d (%s)\n", n, a);
 }
 
 int rarvm_assemble (Bitbuf *b, const char *c) {
-	char *arg0, *arg1;
+	char* arg0 = NULL;
+	char* arg1 = NULL;
 	int opnum;
 	char *p, *str = strdup (skipspaces (c));
 	p = strchr (str, ' ');
@@ -111,12 +112,13 @@ int rarvm_assemble (Bitbuf *b, const char *c) {
 
 	if (opcodes[opnum].flags & 1) {
 		SKIPSPACES (arg0);
-		SKIPSPACES (arg1);
 		if (!assemble_arg (b, arg0))
 			return 0;
-		if (opcodes[opnum].flags & 2)
+		if (opcodes[opnum].flags & 2) {
+			SKIPSPACES (arg1);
 			if (!assemble_arg (b, arg1))
 				return 0;
+		}
 	}
 	free (str);
 	return b->bits;
