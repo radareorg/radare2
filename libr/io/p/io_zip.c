@@ -381,6 +381,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			r_list_free (files);
 		}
 		eprintf ("\n");
+		free (zip_uri);
 		return res;
 	}
 	//eprintf("After parsing the given uri: %s\n", file);
