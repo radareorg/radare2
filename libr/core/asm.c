@@ -374,7 +374,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
 		if (hits) {
 			r_list_purge (hits);
-			free (hits)
+			free (hits);
 		}
 		if (buf) free (buf);
 		return NULL;
