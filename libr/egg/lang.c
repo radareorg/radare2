@@ -134,12 +134,15 @@ static char *find_include(const char *prefix, const char *file) {
 }
 
 R_API void r_egg_lang_include_path (REgg *egg, const char *path) {
+	char *tmp_ptr = NULL;
 	char *env = r_sys_getenv (R_EGG_INCDIR_ENV);
 	if (!env || !*env) {
 		r_egg_lang_include_init (egg);
 		env = r_sys_getenv (R_EGG_INCDIR_ENV);
+		tmp_ptr = env;
 	}
 	env = r_str_concatf (NULL, "%s:%s", path, env);
+	if (tmp_ptr) free (tmp_ptr);
 	r_sys_setenv (R_EGG_INCDIR_ENV, env);
 	free (env);
 }
@@ -254,7 +257,7 @@ static void rcc_element(REgg *egg, char *str) {
 			p = strchr (str, ',');
 			if (p) {
 				*p='\0';
-				num2 = atoi (p+1); 
+				num2 = atoi (p+1);
 			} else num2 = 0;
 			num = atoi (str) + num2;
 			stackframe = num;
@@ -729,7 +732,7 @@ static void rcc_next(REgg *egg) {
 			if (nargs != 1) {
 				eprintf ("Invalid number of arguments for goto()\n");
 				return;
-			} 
+			}
 			e->jmp (egg, ctxpush[CTX], 0);
 			rcc_reset_callname ();
 			return;
@@ -888,7 +891,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			oc = c;
 			return 0;
 		}
-		skipline = 0; 
+		skipline = 0;
 	}
 	if (mode == DATA)
 		return parsedatachar (egg, c);
