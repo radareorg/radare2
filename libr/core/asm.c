@@ -489,13 +489,17 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 	buf = malloc (len + extra_padding);
 
 	if (hits == NULL || buf == NULL ){
-		if (hits) r_list_purge (hits);
+		if (hits) {
+			r_list_purge (hits);
+			free (hits);
+		}
 		if (buf) free (buf);
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, (addr + extra_padding)-len, buf, len+extra_padding) != len+extra_padding) {
 		r_list_purge (hits);
+		free (hits);
 		free (buf);
 		return NULL;
 	}
