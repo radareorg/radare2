@@ -119,6 +119,7 @@ static char *find_include(const char *prefix, const char *file) {
 				if (r_file_exists (filepath)) {
 					free (env);
 					free (pfx);
+					free (ret);
 					return filepath;
 				}
 				free (filepath);
