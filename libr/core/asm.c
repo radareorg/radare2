@@ -423,13 +423,17 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
 	if (hits == NULL || buf == NULL ){
-		if (hits) r_list_purge (hits);
+		if (hits) {
+			r_list_purge (hits);
+			free (hits);
+		}
 		if (buf) free (buf);
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, addr-(len+extra_padding), buf, len+extra_padding) != len+extra_padding) {
 		r_list_purge (hits);
+		free (hits);
 		free (buf);
 		return NULL;
 	}
