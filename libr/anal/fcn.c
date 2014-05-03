@@ -67,7 +67,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->vars);
 	r_list_free (fcn->locs);
 #if 0
-	// XXX: some shared basic blocks make it crash. 
+	// XXX: some shared basic blocks make it crash.
 	// TODO: fix it with sdb
 	r_list_free (fcn->bbs);
 	//r_list_free (fcn->locals);
@@ -159,7 +159,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	RAnalBlock *bbg = NULL;
 	if (depth<1)
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
-	if (bbget (fcn, addr)) 
+	if (bbget (fcn, addr))
 		return R_ANAL_RET_ERROR; // MUST BE DUP
 	bb = r_anal_bb_new();
 	bb->addr = addr;
@@ -273,14 +273,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				}
 				if (op.jump > addr+512) {
 					FITFCNSZ();
-					return R_ANAL_RET_END;	
+					return R_ANAL_RET_END;
 				}
 			}
 			break;
 			//
 			//FITFCNSZ();
 			//return R_ANAL_RET_END;
-/// DO not follow jmps.. this is probably a bug ... 
+/// DO not follow jmps.. this is probably a bug ...
 #if 0
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
 			FITFCNSZ();
@@ -331,14 +331,14 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
-	
+
 	if (fcn->addr == UT64_MAX) fcn->addr = addr;
 
 	if (anal->cur && anal->cur->fcn){
 		int result = anal->cur->fcn(anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
-	
+
 	//if (len>16)
 	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
 	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
@@ -355,7 +355,7 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 #endif
 #if ANAL_FCN_SDB
 #if 0
-	// override bits, size, 
+	// override bits, size,
 	fcn.<offset>=name,size,type
 fcn.<offset>.bbs
 	fcn.name.<name>=<offset>
@@ -458,7 +458,7 @@ R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn->type & type)) {
-			if (addr == fcn->addr || (ret == NULL && 
+			if (addr == fcn->addr || (ret == NULL &&
 			   ((addr > fcn->addr) && (addr < fcn->addr+fcn->size))))
 				ret = fcn;
 		}

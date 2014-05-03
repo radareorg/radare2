@@ -145,21 +145,28 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 		p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", M32(*n), p);
 		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, M32(*n));
+		free (p);
 		j -= 4;
 	}
 #undef M32
+
 	/* zero */
 	p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 	if (attsyntax) r_egg_printf (egg, "  movl $0, %s\n", p);
 	else r_egg_printf (egg, "  mov %s, 0\n", p);
+	free (p);
 
 	/* store pointer */
 	p = r_egg_mkvar (egg, str2, dstvar, j+4+BPOFF);
 	if (attsyntax) r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
 	else r_egg_printf (egg, "  lea "R_AX", %s\n", p);
+	free (p);
+
 	p = r_egg_mkvar (egg, str2, dstvar, 0);
 	if (attsyntax) r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
 	else r_egg_printf (egg, "  mov %s, "R_AX"\n", p);
+	free (p);
+
 #undef BPOFF
 #if 0
 	char *p, str2[64];
