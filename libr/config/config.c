@@ -68,7 +68,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 						if (!val) val = "0";
 						cfg->printf ("\"%s\":%s",
 							node->name, val);
-					} else 
+					} else
 						cfg->printf ("\"%s\":\"%s\"",
 							node->name, val);
 					if (iter->n)
@@ -198,7 +198,8 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			if (oi != UT64_MAX)
 				node->i_value = oi;
 			free (node->value);
-			node->value = strdup (ov? ov: "");
+			node->value = strdup (ov ? ov : "");
+			free (ov);
 			return NULL;
 		}
 	}
