@@ -878,6 +878,7 @@ if (mode != NAKED) {
 			}
 		}
 	}
+	if (str) free (str);
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
