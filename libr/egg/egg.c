@@ -11,7 +11,7 @@ extern REggEmit emit_x64;
 extern REggEmit emit_arm;
 extern REggEmit emit_trace;
 
-static REggPlugin *egg_static_plugins[] = 
+static REggPlugin *egg_static_plugins[] =
 	{ R_EGG_STATIC_PLUGINS };
 
 R_API REgg *r_egg_new () {
@@ -186,6 +186,7 @@ R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
 	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
 	r_buf_append_bytes (egg->buf, (const ut8*)"\n", 1);
+	free (out);
 	return R_TRUE;
 }
 
@@ -217,7 +218,7 @@ R_API int r_egg_assemble(REgg *egg) {
 		code = r_buf_to_string (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {
-			if (asmcode->len > 0) 
+			if (asmcode->len > 0)
 				r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
 			// LEAK r_asm_code_free (asmcode);
 		} else eprintf ("fail assembling\n");
@@ -329,7 +330,7 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 			free (o);
 			return R_FALSE;
 		}
-		
+
 		xx = malloc (n);
 		if (!xx) {
 			free (o);
