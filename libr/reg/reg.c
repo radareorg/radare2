@@ -88,7 +88,10 @@ R_API RReg *r_reg_new() {
 		reg->name[i] = NULL;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = r_reg_arena_new (0);
-		if (!arena) return NULL;
+		if (!arena) {
+			free (reg);
+			return NULL;
+		}
 		reg->regset[i].pool = r_list_newf ((RListFree)r_reg_arena_free);
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 		reg->regset[i].arena = arena;
