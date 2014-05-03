@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble, dso */
 
 // TODO: dlopen library and show address
 
@@ -317,6 +317,7 @@ static void set_bin_items(RBinFile *binfile, RBinPlugin *cp) {
 
 // XXX - this is a rather hacky way to do things, there may need to be a better way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
+// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr, xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob ? iob->get_io(iob) : NULL;
 	RIODesc *desc = NULL;
@@ -333,9 +334,12 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadadd
 	RIODesc *desc = NULL;
 	if (!io) return R_FALSE;
 
-	desc = fd == -1 ? iob->desc_open (io, file, O_RDONLY, 0644) : iob->desc_get_by_fd (io, fd);
+	desc = fd == -1 ?
+		iob->desc_open (io, file, O_RDONLY, 0644) :
+		iob->desc_get_by_fd (io, fd);
 	if (!desc) return R_FALSE;
-	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, fileoffset, name);
+	return r_bin_load_io_at_offset_as (bin, desc, baseaddr,
+		loadaddr, xtr_idx, fileoffset, name);
 }
 
 R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
@@ -359,8 +363,6 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 	sz = iob->desc_size (io, desc);
 	if (sz == UT64_MAX || sz>(64*1024*1024)) // too big, probably wrong
 		return R_FALSE;
-
-
 
 	buf_bytes = iob->desc_read (io, desc, &len_bytes);
 	if (!buf_bytes || offset >= sz) {

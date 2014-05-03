@@ -38,4 +38,4 @@ ${MAKE} mrproper > /dev/null 2>&1
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed"
 rm -f plugins.cfg
 ./configure ${CFGARG} --prefix=${PREFIX} || exit 1
-exec ${MAKE} -s -j ${MAKE_JOBS}
+exec ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS}
