@@ -363,13 +363,19 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
 	if (hits == NULL || buf == NULL ){
-		if (hits) r_list_purge (hits);
+		if (hits) {
+			r_list_purge (hits);
+			free (hits);
+		}
 		if (buf) free (buf);
 		return NULL;
 	}
 
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
-		if (hits) r_list_purge (hits);
+		if (hits) {
+			r_list_purge (hits);
+			free (hits)
+		}
 		if (buf) free (buf);
 		return NULL;
 	}
