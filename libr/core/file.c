@@ -107,7 +107,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			eprintf ("Error: Unable to switch the view to file: %s\n", name);
 		}
 	}
-	// This is done to ensure that the file is correctly 
+	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free (obinfilepath);
 	free (ofilepath);
@@ -151,6 +151,7 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 		if (f) {
 			r_file_rm (f);
 			r_sys_setenv ("BLOCK", NULL);
+			free (f);
 		}
 	}
 	r_sys_setenv ("BYTES", NULL);
@@ -348,7 +349,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	return R_TRUE;
 }
 
-#if 0 
+#if 0
 // XXX - remove this code after June 2014, because current code setup is sufficient
 static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri) {
 	// HEXEDITOR
