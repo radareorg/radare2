@@ -155,13 +155,15 @@ static int cmd_write(void *data, const char *input) {
 				r_file_dump (tmpfile, (ut8*)out, strlen (out));
 				r_core_patch (core, tmpfile);
 				r_file_rm (tmpfile);
+				free (out);
 			}
-		} else
-		if (input[1]==' ' && input[2]) {
-			r_core_patch (core, input+2);
 		} else {
-			eprintf ("Usage: wp [-|r2patch-file]\n"
+			if (input[1]==' ' && input[2]) {
+				r_core_patch (core, input+2);
+			} else {
+				eprintf ("Usage: wp [-|r2patch-file]\n"
 			         "TODO: rapatch format documentation here\n");
+			}
 		}
 		break;
 	case 'u':
