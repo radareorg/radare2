@@ -761,6 +761,8 @@ static int cmd_anal(void *data, const char *input) {
 						r_cons_printf ("-> 0x%08"PFMT64x"\n", bb->addr);
 					}
 				}
+				r_list_purge (list);
+				free (list);
 			}
 			}
 			break;
