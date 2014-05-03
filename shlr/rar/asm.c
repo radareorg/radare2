@@ -21,8 +21,11 @@ memri 01 10 r3 11 x32
 imm   0011 x32
 */
 static int assemble_arg(Bitbuf *b, char *a) {
-printf ("A = (%s)\n", a);
-	int r = getreg (a);
+	printf ("A = (%s)\n", a);
+	int r;
+	if (!a)
+		return 1;
+	r = getreg (a);
 	if (r != -1) {
 		bitadd (b, 1, 1);
 		bitadd (b, r, 3);
