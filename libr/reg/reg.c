@@ -165,7 +165,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	if (!str||!reg)
 		return R_FALSE;
-	// XXX double free 
+	// XXX double free
 	free (reg->reg_profile_str);
 	reg->reg_profile_str = strdup (str);
 	memset (buf, 0, sizeof (buf));
@@ -240,7 +240,10 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 			free (file);
 		}
 	}
-	if (str) ret = r_reg_set_profile_string (reg, str);
+	if (str) {
+		ret = r_reg_set_profile_string (reg, str);
+		free (str);
+	}
 	else eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
 	return ret;
 }
