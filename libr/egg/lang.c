@@ -213,6 +213,7 @@ static void rcc_pusharg(REgg *egg, char *str) {
 	if (pushargs)
 		e->push_arg (egg, varxs, nargs, p);
 	//ctxpush[context+nbrackets] = strdup(str); // use nargs??? (in callname)
+	free (p);
 }
 
 static void rcc_element(REgg *egg, char *str) {
