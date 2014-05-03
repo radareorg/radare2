@@ -2537,6 +2537,8 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
 		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 8) != 8) {
 			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
+			r_list_purge (list);
+			free (list);
 			return R_FALSE;
 		}
 		RDebugFrame *frame = R_NEW (RDebugFrame);
