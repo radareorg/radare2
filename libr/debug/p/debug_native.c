@@ -333,7 +333,7 @@ static int r_debug_native_step(RDebug *dbg) {
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
 #endif
-#elif __BSD__ 
+#elif __BSD__
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
 	if (ret != 0) {
 		perror ("native-singlestep");
@@ -1597,8 +1597,11 @@ static RList *r_debug_native_pids(int pid) {
 		DIR *dh;
 		struct dirent *de;
 		dh = opendir ("/proc");
-		if (dh == NULL)
+		if (dh == NULL) {
+			r_list_purge (list);
+			free (list);
 			return NULL;
+		}
 		//for (i=2; i<39999; i++) {
 		while ((de = readdir (dh))) {
 			i = atoi (de->d_name); if (!i) continue;
