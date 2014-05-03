@@ -75,6 +75,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 		char str[32], *p = r_egg_mkvar (egg, str, dstvar, 0);
 		//r_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
 		r_egg_printf (egg, "  str r0, [%s]\n", p);
+		free (p);
 	}
 }
 
