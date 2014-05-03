@@ -1075,43 +1075,41 @@ st8 *get_opers(ut8 oper_byte)
       res = strdup("!TC1 ^ !TC2");
       break;
 
-    default:
-      oper_type = oper_byte >> 5;
-      if (oper_type != 6 ) {
-
-        reg_name = get_reg_name_4(oper_byte & 0x1F);
-        switch (oper_type)
-        {
-		case 1u:
+	default:
+		oper_type = oper_byte >> 5;
+		if (oper_type != 6 ) {
+			reg_name = get_reg_name_4(oper_byte & 0x1F);
+		    switch (oper_type)
+	        {
+			case 1u:
+				res = strcat_dup(reg_name, " != #0", 1);
+				break;
+			case 0u:
+				res = strcat_dup(reg_name, " == #0", 1);
+				break;
+			case 2u:
+				res =  strcat_dup(reg_name, " < #0", 1);
+				break;
+			case 3u:
+				res =  strcat_dup(reg_name, " >= #0", 1);
+				break;
+			case 4u:
+				res =  strcat_dup(reg_name, " > #0", 1);
+				break;
+			case 5u:
+				res =  strcat_dup(reg_name, " <= #0", 1);
+			}
+			free (reg_name);
+			return res;
+		}
+		reg_name = get_reg_name_1((oper_byte & 0xF) + 128);
+		oper_type = (oper_byte >> 4) - 12;
+		if (oper_type) {
+			if ( oper_type != 1 ) {
+				free (reg_name);
+				return NULL;
+			}
 			res = strcat_dup(reg_name, " != #0", 1);
-			break;
-		case 0u:
-			res = strcat_dup(reg_name, " == #0", 1);
-			break;
-		case 2u:
-			res =  strcat_dup(reg_name, " < #0", 1);
-			break;
-		case 3u:
-			res =  strcat_dup(reg_name, " >= #0", 1);
-			break;
-		case 4u:
-			res =  strcat_dup(reg_name, " > #0", 1);
-			break;
-		case 5u:
-			res =  strcat_dup(reg_name, " <= #0", 1);
-        }
-
-        return res;
-      }
-
-      reg_name = get_reg_name_1((oper_byte & 0xF) + 128);
-      oper_type = (oper_byte >> 4) - 12;
-      if(oper_type) {
-        if ( oper_type != 1 )
-          return NULL;
-
-        res = strcat_dup(reg_name, " != #0", 1);
-
 		} else {
 			res = strcat_dup(reg_name, " == #0", 1);
 		}
