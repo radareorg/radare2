@@ -186,6 +186,7 @@ static int cmd_alias(void *data, const char *input) {
 		if (v) {
 			if (describe) {
 				r_cons_printf ("%s\n", v);
+				free (describe);
 				return 1;
 			}
 			if (q) {
