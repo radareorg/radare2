@@ -94,7 +94,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		//p = getptr (c, &left);
 		slen = R_MIN (left, strlen (line));
 		suffixline (p+slen, left);
-		memcpy (p, line, strlen (s));
+		memcpy (p, line, slen);
 		if (!n) break;
 		s = n;
 		r_cons_canvas_gotoxy (c, c->x, c->y+1);
@@ -179,7 +179,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 			int i;
 			int min = R_MIN (y,y2)+1;
 			int max = R_MAX (y,y2);
-			for (i=min;i<max;i++) {
+			for (i=min; i<max; i++) {
 				G (x,i);
 				W ("|");
 			}
