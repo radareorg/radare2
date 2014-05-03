@@ -410,7 +410,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			off = r_debug_reg_get (core->dbg, str+1);
 	//		r = r_reg_get (core->dbg->reg, str+1, 0);
 	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
-			r_cons_printf ("0x%08"PFMT64x"\n", off); 
+			r_cons_printf ("0x%08"PFMT64x"\n", off);
 			//r_reg_get_value (core->dbg->reg, r));
 		} else
 		r_cons_printf ("|Usage: dr[*] [type] [size] - get/set registers\n"
@@ -1264,6 +1264,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_execute (core->dbg, acode->buf, acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
 				r_asm_code_free (acode);
+				free (acode);
 			}
 			}
 			break;
