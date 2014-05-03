@@ -62,6 +62,7 @@ static int step_until_eof(RCore *core) {
 static int step_line(RCore *core, int times) {
 	char file[512], file2[512];
 	int find_meta, line = -1, line2 = -1;
+	char *tmp_ptr = NULL;
 	ut64 off = r_debug_reg_get (core->dbg, "pc");
 	if (off == 0LL) {
 		eprintf ("Cannot 'drn pc'\n");
@@ -91,8 +92,12 @@ static int step_line(RCore *core, int times) {
 			return R_FALSE;
 		}
 	} while (!strcmp (file, file2) && line == line2);
+
 	eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file2, line2);
-	eprintf ("--> %s\n", r_file_slurp_line (file2, line2, 0));
+	tmp_ptr = r_file_slurp_line (file2, line2, 0);
+	eprintf ("--> %s\n", tmp_ptr);
+	free (tmp_ptr);
+
 	return R_TRUE;
 }
 
