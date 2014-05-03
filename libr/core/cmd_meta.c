@@ -51,6 +51,7 @@ static int cmd_meta(void *data, const char *input) {
 					}
 					if (!line) {
 						eprintf ("Cannot slurp file '%s'\n", f);
+						free (p);
 						return R_FALSE;
 					}
 				}
