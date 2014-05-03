@@ -102,7 +102,10 @@ static char *find_include(const char *prefix, const char *file) {
 		pfx = out? out: strdup ("");
 	} else {
 		pfx = strdup (prefix);
-		if (!pfx) return NULL;
+		if (!pfx) {
+			free (env);
+			return NULL;
+		}
 	}
 
 	if (env) {
