@@ -129,7 +129,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 's': return core->file->size;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			s = r_io_section_get (core->io, 
+			s = r_io_section_get (core->io,
 				r_io_section_vaddr_to_offset (core->io,
 				core->offset));
 			return s? (str[2]=='S'? s->size: s->offset): 0;
@@ -176,16 +176,16 @@ static const char *radare_argv[] = {
 	"ec","ecs",
 	"S",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
-	"!", "!!", 
-	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", 
+	"!", "!!",
+	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!perl", "#!vala",
 	"V",
-	"aa", "ab", "af", "ar", "ag", "at", "a?", 
-	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*", 
+	"aa", "ab", "af", "ar", "ag", "at", "a?",
+	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!", "e?", "env ",
 	"i", "ii", "iI", "is", "iS", "iz",
-	"q", 
+	"q",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"o", "o-", "x", "wf", "wF", "wt", "wp",
@@ -247,7 +247,7 @@ static int autocomplete(RLine *line) {
 			int n = 0, i = 0;
 			RList *list;
 			int sdelta = (line->buffer.data[1]==' ')? 2:
-				(line->buffer.data[2]==' ')? 3: 
+				(line->buffer.data[2]==' ')? 3:
 				(line->buffer.data[3]==' ')? 4: 5;
 			path = line->buffer.data[sdelta]?
 				strdup (line->buffer.data+sdelta):
@@ -288,13 +288,13 @@ static int autocomplete(RLine *line) {
 						}
 					}
 				}
-				r_list_free (list);
-				// XXX LEAK r_list_purge (list);
+				r_list_purge (list);
+				free (list);
 			} else eprintf ("\nInvalid directory\n");
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-			//free (path);
+			free (path);
 		} else
 		if((!memcmp (line->buffer.data, ".(", 2))  ||
 		   (!memcmp (line->buffer.data, "(-", 2))) {
@@ -424,7 +424,7 @@ static int autocomplete(RLine *line) {
 R_API int r_core_fgets(char *buf, int len) {
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
-	RLine *rli = r_line_singleton (); 
+	RLine *rli = r_line_singleton ();
 	buf[0]='\0';
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
@@ -874,7 +874,7 @@ reaccept:
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				ptr = malloc (cmd);
-				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX) 
+				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
 				if (ptr == NULL) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
@@ -1114,7 +1114,7 @@ reaccept:
 
 				if (!ptr) ptr = (ut8 *) malloc (5); // malloc for 5 byets? c'mon!
 				if (!ptr) return R_FALSE;
-				
+
 				// send
 				ptr[0] = (RMT_SYSTEM | RMT_REPLY);
 				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, !LE);
