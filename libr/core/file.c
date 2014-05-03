@@ -8,7 +8,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
 // After June 2014, if no problems delete r_core_file_do_load_for_hex
 //static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri);
-static void r_core_file_init_list_archs (RCore *r, RBinFile *binfile);
+
 
 R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 	if (newsize==0 && core->file)
@@ -278,32 +278,6 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 
 }
 
-static void r_core_file_init_list_archs (RCore *r, RBinFile *binfile) {
-	if (binfile &&
-		binfile->narch > 1 &&
-		r_config_get_i (r->config, "scr.prompt")) {
-
-		int narch = binfile->narch;
-		int i = 0;
-		eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
-					r->assembler->cur->arch, r->assembler->bits);
-		eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
-
-		for (i=0; i<narch; i++) {
-			RBinFile *lbinfile = r_bin_file_find_by_name_n (r->bin, binfile->file, i);
-			RBinObject *lbinobj = lbinfile ? lbinfile->o : NULL;
-			if (lbinobj && lbinobj->info) {
-				eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n",
-						lbinobj->info->arch,
-						lbinobj->info->bits,
-						binfile->file,
-						lbinobj->boffset);
-			} else
-				eprintf ("No extract info found for index: %d.\n", i);
-		}
-	}
-}
-
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->fd : NULL;
@@ -323,7 +297,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	binfile = r_core_bin_cur (r);
 	if (binfile) {
 		// r_bin_select should be called to get the correct binfile
-		//r_bin_file_object_find_by_arch_bits (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
+		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, binfile->file);
 		r_core_bin_bind (r, binfile);
 	}
 
