@@ -294,7 +294,8 @@ static int autocomplete(RLine *line) {
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-			free (path);
+			if (path) free (path);
+			if (p) free (p);
 		} else
 		if((!memcmp (line->buffer.data, ".(", 2))  ||
 		   (!memcmp (line->buffer.data, "(-", 2))) {
