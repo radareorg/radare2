@@ -336,7 +336,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		if (!memcmp (str+1, "arg", 3)) {
 			if (str[4]) {
 				if (stackframe == 0) {
-					e->get_var (egg, 1, out, 4); //idx-4); 
+					e->get_var (egg, 1, out, 4); //idx-4);
 				} else {
 					e->get_var (egg, 2, out, idx+4);
 				}
@@ -879,7 +879,7 @@ if (mode != NAKED) {
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	REggEmit *e = egg->remit;
-	char *ptr, str[64];
+	char *ptr, str[64], *tmp_ptr = NULL;
 	if (c=='\n') {
 		line++;
 		elem_n = 0;
@@ -904,7 +904,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				if (c == '`') {
 					elem[elem_n] = 0;
 					elem_n = 0;
-					r_egg_printf (egg, "%s", r_egg_mkvar (egg, str, elem, 0));
+					tmp_ptr = r_egg_mkvar (egg, str, elem, 0);
+					r_egg_printf (egg, "%s", tmp_ptr);
+					free (tmp_ptr);
 					quotelinevar = 0;
 				} else elem[elem_n++] = c;
 			} else {
