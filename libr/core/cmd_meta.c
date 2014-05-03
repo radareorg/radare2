@@ -360,5 +360,6 @@ eprintf ("-- %s\n", buf);
 		else eprintf ("Cannot find function here\n");
 		break;
 	}
+	free (t);
 	return R_TRUE;
 }
