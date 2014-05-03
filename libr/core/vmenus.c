@@ -311,7 +311,7 @@ R_API int r_core_visual_comments (RCore *core) {
 						cur = next;
 					}
 				}
-		
+
 		if (!found) {
 			option--;
 			if (option<0) break;
@@ -755,6 +755,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);
 							r_fs_umount (core->fs, root);
+							free (root);
 							return;
 						}
 					} else {
@@ -916,7 +917,7 @@ eprintf ("TODO: support for arrays\n");
 						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
 						r_anal_type_to_str (anal, v->type, ""),
 						v->name, v->delta, v->type->custom.a->count);
-				} else 
+				} else
 #endif
 				{
 					char *s = r_anal_type_to_str (anal, v->type);
@@ -1140,7 +1141,7 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'v': level = 1; break;
 		case 'j': option++; break;
 		case 'k': option = (option<=0)? 0: option-1; break;
-		case 'g': 
+		case 'g':
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;
 		case ' ':
