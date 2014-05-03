@@ -119,7 +119,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			for (p=q; *p; p++) if (*p=='"') *p = '\'';
 			r_cons_printf ("%s{\"offset\":%"PFMT64d
 				",\"length\":%d,\"size\":%d,"
-				"\"type\":\"%s\",\"string\":\"%s\"}", 
+				"\"type\":\"%s\",\"string\":\"%s\"}",
 				iter->p? ",": "", addr,
 				string->length, string->size,
 				string->type=='W'?"wide":"ascii", q);
@@ -131,7 +131,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (list, iter, string) {
 			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->rva,
 				string->offset): string->offset;
-			r_cons_printf ("%"PFMT64d" %d %d %s\n", 
+			r_cons_printf ("%"PFMT64d" %d %d %s\n",
 				addr, string->size, string->length, string->string);
 		}
 	} else
@@ -297,7 +297,7 @@ static int bin_info (RCore *r, int mode) {
 					r_str_bool (info->has_va),
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,
-					info->subsystem, info->big_endian? "big": "little", 
+					info->subsystem, info->big_endian? "big": "little",
 					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
 					r_str_bool (r_bin_is_static (r->bin)),
 					r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),
@@ -375,7 +375,8 @@ static int bin_dwarf (RCore *core, int mode) {
 		}
         }
 	r_cons_break_end ();
-        r_list_purge (list);
+	r_list_purge (list);
+	free (list);
 	return R_TRUE;
 }
 
@@ -429,7 +430,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->offset;
 			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
-			r_cons_printf ("0x%08"PFMT64x"\n", va?vaddr: paddr); 
+			r_cons_printf ("0x%08"PFMT64x"\n", va?vaddr: paddr);
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
@@ -437,7 +438,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 			ut64 paddr = entry->offset;
 			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
-			r_flag_set (r->flags, str, va? vaddr: paddr, 
+			r_flag_set (r->flags, str, va? vaddr: paddr,
 				r->blocksize, 0);
 		}
 		/* Seek to the last entry point */
