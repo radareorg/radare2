@@ -286,7 +286,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					if (prev2 != UT64_MAX) {
 						ropat = prev2;
 					} else ropat = prev;
-				} else ropat = from+i; 
+				} else ropat = from+i;
 				roplen = from - ropat + i + aop.size;
 				if (grep && *grep) {
 					char *tmp, *s, cmd[32];
@@ -353,7 +353,7 @@ static int cmd_search(void *data, const char *input) {
 		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
 		return R_FALSE;
 	}
-	since the backward search will be implemented soon I'm not gonna stick 
+	since the backward search will be implemented soon I'm not gonna stick
 	checks for every case in switch // jjdredd
 	remove when everything is done
 	*/
@@ -375,8 +375,8 @@ static int cmd_search(void *data, const char *input) {
 	if (to == 0LL) to = UT32_MAX; // XXX?
 
 	/* we don't really care what's bigger bc there's a flag for backward search
-	   from now on 'from' and 'to' represent only the search boundaries, not 
-	   search direction */ 
+	   from now on 'from' and 'to' represent only the search boundaries, not
+	   search direction */
 	__from = R_MIN(from, to);
 	to = R_MAX(from, to);
 	from = __from;
@@ -395,7 +395,7 @@ static int cmd_search(void *data, const char *input) {
 			return R_TRUE;
 		}
 		core->search->bckwrds = bckwrds = do_bckwrd_srch = R_TRUE;
-		/* if backward search and __to wasn't specified 
+		/* if backward search and __to wasn't specified
 		   search from the beginning */
 		if ((unsigned int)to ==  UT32_MAX){
 			to = from;
@@ -634,6 +634,7 @@ static int cmd_search(void *data, const char *input) {
 				count++;
 			}
 			r_list_purge (hits);
+			free (hits);
 		}
 		dosearch = 0;
 		}
@@ -736,7 +737,7 @@ static int cmd_search(void *data, const char *input) {
 				}else at = to - core->blocksize;
 			}else at = from;
 			 /* bckwrds = false -> normal search -> must be at < to
-				bckwrds search -> check later */ 
+				bckwrds search -> check later */
 			for (; ( !bckwrds && at < to ) ||  bckwrds ;) {
 				print_search_progress (at, to, searchhits);
 				if (r_cons_singleton ()->breaked) {
@@ -744,7 +745,7 @@ static int cmd_search(void *data, const char *input) {
 					break;
 				}
 				//ret = r_core_read_at (core, at, buf, core->blocksize);
-			//	ret = r_io_read_at (core->io, at, buf, core->blocksize); 
+			//	ret = r_io_read_at (core->io, at, buf, core->blocksize);
 				r_io_seek (core->io, at, R_IO_SEEK_SET);
 				ret = r_io_read (core->io, buf, core->blocksize);
 /*
