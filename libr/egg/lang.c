@@ -860,7 +860,10 @@ if (mode != NAKED) {
 					/* XXX this is a hack .. must be integrated with pusharg */
 					if (varxs=='&')
 						e->load_ptr (egg, eq);
-					eq = NULL;
+					if (eq) {
+						free (eq);
+						eq = NULL;
+					}
 					type = ' ';
 				} else type = '$';
 				vs = 'l'; // XXX: add support for != 'l' size
