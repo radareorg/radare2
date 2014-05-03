@@ -55,6 +55,7 @@ static int r_core_visual_hud(RCore *core) {
 	}
 	showcursor (core, R_FALSE);
 	r_cons_flush ();
+	free (homehud);
 	return (int)(size_t)p;
 }
 
@@ -1099,7 +1100,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[12] = 0; // chop cmdfmt
 	if (curset)
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d (0x%x:%d=%d)]> %s %s\n",
-				core->offset, core->blocksize, 
+				core->offset, core->blocksize,
 				cursor, ocursor, ocursor==-1?1:R_ABS (cursor-ocursor)+1,
 				bar, pos);
 	else
