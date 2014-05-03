@@ -3,7 +3,7 @@
  * Copyright (c) Ian F. Darwin 1986-1995.
  * Software written by Ian F. Darwin and others;
  * maintained 1995-present by Christos Zoulas and others.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -140,7 +140,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 			if (!ret) flush++;
 		}
 		if (flush) {
-			/* 
+			/*
 			 * main entry didn't match,
 			 * flush its continuations
 			 */
@@ -191,7 +191,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 			flush = !mget(ms, s, m, nbytes, cont_level);
 			if (flush && m->reln != '!')
 				continue;
-				
+
 			switch (flush ? 1 : magiccheck(ms, m)) {
 			case -1:
 				return -1;
@@ -292,7 +292,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	float vf;
 	double vd;
 	ut64 t = 0;
- 	char *buf;
+ 	char *buf = NULL;
 	union VALUETYPE *p = &ms->ms_value;
 
   	switch (m->type) {
@@ -621,7 +621,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_BESTRING16:
 	case FILE_LESTRING16: {
 		size_t len;
-		
+
 		/* Null terminate and eat *trailing* return */
 		p->s[sizeof(p->s) - 1] = '\0';
 		len = strlen(p->s);
@@ -775,7 +775,7 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 			}
 			if (lines)
 				last = (const char *)s + nbytes;
-			
+
 			ms->search.s = buf;
 			ms->search.s_len = last - buf;
 			ms->search.offset = offset;
@@ -788,10 +788,10 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 			const ut8 *esrc = s + nbytes;
 			char *dst = p->s;
 			char *edst = &p->s[sizeof(p->s) - 1];
-			
+
 			if (type == FILE_BESTRING16)
 				src++;
-			
+
 			/* check for pointer overflow */
 			if (src < s) {
 				file_magerror(ms, "invalid offset %zu in mcopy()",
@@ -1168,7 +1168,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	if (0L == flags) { /* normal string: do it fast */
 		while (len-- > 0)
 			if ((v = *b++ - *a++) != '\0')
-				break; 
+				break;
 	} else { /* combine the others */
 		while (len-- > 0) {
 			if ((flags & STRING_IGNORE_LOWERCASE) &&
@@ -1178,7 +1178,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 			} else if ((flags & STRING_IGNORE_UPPERCASE) && isupper(*a)) {
 				if ((v = toupper(*b++) - *a++) != '\0')
 					break;
-			} else if ((flags & STRING_COMPACT_BLANK) && isspace(*a)) { 
+			} else if ((flags & STRING_COMPACT_BLANK) && isspace(*a)) {
 				a++;
 				if (isspace(*b++)) {
 					while (isspace(*b))
