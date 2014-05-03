@@ -31,7 +31,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 
 R_LIB_VERSION(r_util);
 
-struct {const char* name; ut64 bit;} const static arch_bit_array[] = {
+static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"x86", R_SYS_ARCH_X86},
     {"arm", R_SYS_ARCH_ARM},
     {"ppc", R_SYS_ARCH_PPC},
