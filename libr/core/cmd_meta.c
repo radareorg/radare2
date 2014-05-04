@@ -156,7 +156,7 @@ static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i, n = 0, type = input[0];
 	ut64 addr = core->offset;
-	char *t, *p, name[256];
+	char *t = 0, *p, name[256];
 	ut64 addr_end = 0LL;
 	RAnalFunction *f;
 
@@ -485,6 +485,7 @@ eprintf ("-- %s\n", buf);
 		else eprintf ("Cannot find function here\n");
 		break;
 	}
-	free (t);
+	if (t)
+		free (t);
 	return R_TRUE;
 }
