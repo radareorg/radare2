@@ -172,8 +172,8 @@ static int ihex2bin(ut8 *mem, char *str) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int ret;
-	RIOMalloc *mal;
-	char *str;
+	RIOMalloc *mal = NULL;
+	char *str = NULL;
 	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname+7, NULL);
 		if (!str) return NULL;
@@ -193,6 +193,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		memset (mal->buf, 0xff, mal->size);
 		ret = ihex2bin (mal->buf, str);
 		if (ret) eprintf ("ihex: checksum issues?\n");
+		free (str);
 		return r_io_desc_new (&r_io_plugin_ihex,
 			mal->fd, pathname, rw, mode, mal);
 	}
