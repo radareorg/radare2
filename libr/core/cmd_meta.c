@@ -84,21 +84,58 @@ static int print_meta_fileline(RCore *core, const char *file_line) {
 	return 0;
 }
 
+static int print_addrinfo (void *user, const char *k, const char *v) {
+	ut64 offset;
+	char *colonpos, *subst;
+
+	offset = sdb_atoi (k);
+	if (!offset)
+		return R_TRUE;
+
+	subst = strdup (v);
+	colonpos = strchr (subst, '|');
+
+	if (colonpos)
+		*colonpos = ':';
+
+	printf ("Cl %s %s\n", k, subst);
+
+	free (subst);
+
+	return R_TRUE;
+}
+
 static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
 	int ret;
 	ut64 offset;
 	int remove = R_FALSE;
+	int all = R_FALSE;
 	const char *p = input;
 	char *colon, *space, *file_line;
 
 	if (*p == '?') {
-		eprintf ("Usage: CL[-] [addr|file:line]");
+		eprintf ("Usage: CL[-][*] [addr|file:line]");
 		return 0;
 	}
 
 	if (*p == '-') {
 		p++;
 		remove = R_TRUE;
+	}
+
+	if (*p == '*') {
+		p++;
+		all = R_TRUE;
+	}
+
+	if (all) {
+		if (remove) {
+			sdb_reset (core->bin->cur->sdb_addrinfo);
+		} else {
+			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+		}
+
+		return 0;
 	}
 
 	while (*p == ' ') {
@@ -467,7 +504,7 @@ eprintf ("-- %s\n", buf);
 		"|Usage: C[-LCvsdfm?] [...]\n"
 		"| C*                              List meta info in r2 commands\n"
 		"| C- [len] [@][ addr]             delete metadata at given address range\n"
-		"| CL[-] [addr|file:line [addr] ]  show 'code line' information (bininfo)\n"
+		"| CL[-][*] [addr|file:line]       show 'code line' information (bininfo)\n"
 		"| Cl  file:line [addr]            add comment with line information\n"
 		"| CC[-] [comment-text]    add/remove comment. Use CC! to edit with $EDITOR\n"
 		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
