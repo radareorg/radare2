@@ -106,7 +106,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 			case 2:
 				 {
 					char whites[16];
-					strcpy (whites, kwhites); 
+					strcpy (whites, kwhites);
 					if (delta) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
 						dbg->printf (Color_BWHITE);
 					if (item->flags) {

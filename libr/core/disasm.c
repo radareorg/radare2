@@ -170,13 +170,10 @@ static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx);
 
 
-
-
 static int cmpaddr (void *_a, void *_b) {
 	RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
 }
-
 
 static RDisasmState * handle_init_ds (RCore * core) {
 	RDisasmState * ds = R_NEW0(RDisasmState);
@@ -449,7 +446,7 @@ static char *filter_refline2(RCore *core, const char *str) {
 	}
 // XXX fix this? or just deprecate this function?
 #if 0
-	char *p; 
+	char *p;
 	char n = '|';
 	for (p=s; *p; p++) {
 		if (!strncmp (p, core->cons->vline[LINE_VERT],
@@ -592,10 +589,10 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
-	int q = core->print->cur_enabled && 
-		ds->cursor >= ds->index && 
+	int q = core->print->cur_enabled &&
+		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index+ds->asmop.size);
-	
+
 	void *p = r_bp_get (core->dbg->bp, ds->at);
 	r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
 }
@@ -884,7 +881,7 @@ static void handle_control_flow_comments (RCore * core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_lines_right (RCore *core, RDisasmState *ds){	
+static void handle_print_lines_right (RCore *core, RDisasmState *ds){
 	if (ds->linesright && ds->show_lines && ds->line) {
 		if (ds->show_color) {
 			r_cons_printf ("%s%s"Color_RESET, ds->color_flow, ds->line);
@@ -924,7 +921,7 @@ static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 
 static void handle_print_offset (RCore *core, RDisasmState *ds ) {
 	if (ds->show_offset)
-		r_print_offset (core->print, ds->at, (ds->at==ds->dest), 
+		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
 						ds->show_offseg);
 }
 
@@ -1035,6 +1032,10 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				ds->mi_found = 1;
 				break;
 			}
+		}
+		if (MI.str) {
+			free (MI.str);
+			MI.str = NULL;
 		}
 	}
 	return ret;
@@ -1414,7 +1415,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 		default:
 			eprintf ("unknown type '%c'\n", mi2->type);
 			break;
-		} 
+		}
 	} else {
 		mi2 = r_meta_find (core->anal, (ut64)ds->analop.ptr,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
@@ -1627,9 +1628,9 @@ toro:
 			handle_print_ptr (core, ds, len, idx);
 		}
 		handle_print_comments_right (core, ds);
-		if ( !(ds->show_comments && 
-			   ds->show_comment_right && 
-			   ds->comment)) 
+		if ( !(ds->show_comments &&
+			   ds->show_comment_right &&
+			   ds->comment))
 			r_cons_newline ();
 
 		if (ds->line) {
