@@ -187,6 +187,194 @@ static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
 }
 
 
+static void filter_line(char *line) {
+	char *a;
+
+	if (!line)
+		return;
+
+	for (a=line; *a; a++) {
+		switch (*a) {
+			case '%':
+			case '(':
+			case ')':
+			case '~':
+			case '|':
+			case '#':
+			case ';':
+			case '"':
+				*a = '_';
+				break;
+		}
+	}
+}
+
+static int remove_meta_offset(RCore *core, ut64 offset) {
+	int ret;
+	char aoffset[64], *aoffsetptr;
+
+	aoffsetptr = sdb_itoa (offset, aoffset, 16);
+
+	if (!aoffsetptr) {
+		eprintf ("Failed to convert %"PFMT64x" to a key", offset);
+		return -1;
+	}
+
+	ret = sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
+
+	return ret;
+}
+
+static int print_meta_offset(RCore *core, ut64 offset) {
+	int ret, line, line_old, i;
+	char file[1024];
+
+	ret = r_bin_addr2line (core->bin, offset, file, sizeof (file)-1, &line);
+
+	if (ret) {
+		r_cons_printf ("file %s\nline %d\n", file, line);
+		line_old = line;
+		if (line >= 2)
+			line -= 2;
+		for (i = 0; i<5; i++) {
+			char *row = r_file_slurp_line (file, line+i, 0);
+			r_cons_printf ("%c %.3x  %s\n", line+i == line_old ? '>' : ' ', line+i, row);
+			free (row);
+		}
+	} else {
+		eprintf ("Cannot find meta information at 0x%08"
+			PFMT64x"\n", offset);
+	}
+
+	return 0;
+}
+
+static int remove_meta_fileline(RCore *core, const char *file_line) {
+	int ret;
+
+	ret = sdb_unset (core->bin->cur->sdb_addrinfo, file_line, 0);
+
+	return ret;
+}
+
+static int print_meta_fileline(RCore *core, const char *file_line) {
+	char *meta_info;
+
+	meta_info = sdb_get (core->bin->cur->sdb_addrinfo, file_line, 0);
+
+	if (meta_info) {
+		printf ("Meta info %s\n", meta_info);
+	} else {
+		printf ("No meta info for %s found\n", file_line);
+	}
+
+	return 0;
+}
+
+static int print_addrinfo (void *user, const char *k, const char *v) {
+	ut64 offset;
+	char *colonpos, *subst;
+
+	offset = sdb_atoi (k);
+	if (!offset)
+		return R_TRUE;
+
+	subst = strdup (v);
+	colonpos = strchr (subst, '|');
+
+	if (colonpos)
+		*colonpos = ':';
+
+	printf ("Cl %s %s\n", k, subst);
+
+	free (subst);
+
+	return R_TRUE;
+}
+
+static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
+	int ret;
+	ut64 offset;
+	int remove = R_FALSE;
+	int all = R_FALSE;
+	const char *p = input;
+	char *colon, *space, *file_line;
+
+	if (*p == '?') {
+		eprintf ("Usage: CL[-][*] [addr|file:line]");
+		return 0;
+	}
+
+	if (*p == '-') {
+		p++;
+		remove = R_TRUE;
+	}
+
+	if (*p == '*') {
+		p++;
+		all = R_TRUE;
+	}
+
+	if (all) {
+		if (remove) {
+			sdb_reset (core->bin->cur->sdb_addrinfo);
+		} else {
+			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+		}
+
+		return 0;
+	}
+
+	while (*p == ' ') {
+		p++;
+	}
+
+	if (*p) {
+		ret = sscanf(p, "0x%"PFMT64x, &offset);
+		if (ret != 1) {
+			colon = strchr (p, ':');
+			if (colon) {
+				space = strchr (p, ' ');
+				if (space && space > colon) {
+					file_line = strndup (p, space - p);
+				} else if (!space) {
+					file_line = strdup (p);
+				} else {
+					return -1;
+				}
+
+				colon = strchr (file_line, ':');
+				if (colon) {
+					*colon = '|';
+				} else {
+					return -1;
+				}
+
+				if (!file_line)
+					return -1;
+
+				if (remove) {
+					remove_meta_fileline (core, file_line);
+				} else {
+					print_meta_fileline (core, file_line);
+				}
+
+				free (file_line);
+				return 0;
+			}
+			offset = core->offset;
+		}
+	}
+
+	if (remove) {
+		remove_meta_offset (core, offset);
+	} else {
+		print_meta_offset (core, offset);
+	}
+
+	return 0;
+}
+
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
