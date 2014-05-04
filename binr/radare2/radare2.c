@@ -485,7 +485,7 @@ int main(int argc, char **argv, char **envp) {
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 	if (asmos) r_config_set (r.config, "asm.os", asmos);
-
+	r_core_bin_update_arch_bits (&r);
 	debug = r.file && r.file->fd && r.file->fd->plugin && \
 		r.file->fd->plugin->debug != NULL;
 	if (debug) {

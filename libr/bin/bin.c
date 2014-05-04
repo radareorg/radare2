@@ -524,7 +524,7 @@ static int r_bin_file_new_from_xtr_data (RBin* bin, const char *filename, ut64 b
 	if (res) {
 		RBinFile *bf = r_bin_cur (bin);
 		RBinObject *o = r_bin_cur_object (bin);
-		o->loadaddr = baseaddr + loadaddr;
+		o->loadaddr = loadaddr;
 		o->boffset = data->offset;
 		o->size = data->size;
 		bf->narch = data->file_count;

@@ -315,7 +315,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len);
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
 R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx);
-R_API int r_core_bin_bind(RCore *core, RBinFile *bf);
+//R_API int r_core_bin_bind(RCore *core, RBinFile *bf);
+R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile);
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
 R_API int r_core_bin_set_by_name (RCore *core, const char *name);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
@@ -364,7 +365,8 @@ typedef struct r_core_bin_filter_t {
 } RCoreBinFilter;
 
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset);
-
+R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
+R_API int r_core_bin_update_arch_bits (RCore *r);
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);
 R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd);

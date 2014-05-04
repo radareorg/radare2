@@ -3,8 +3,8 @@
 #include <r_core.h>
 
 // XXX - this may lead to conflicts with set by name
-static int r_core_bind_asm (RCore *core, RBinFile *binfile);
-
+static int r_core_bin_bind (RCore *core, RBinFile *binfile);
+//static int r_core_bin_set_env (RCore *r, RBinFile *binfile);
 
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
@@ -22,7 +22,30 @@ R_API int r_core_bin_set_by_name (RCore *core, const char * name) {
 	return R_FALSE;
 }
 
+R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
+	RBinObject *binobj = binfile ? binfile->o: NULL;
+	RBinInfo *info = binobj ? binobj->info: NULL;
+	if (info) {
+		const char * arch = info->arch;
+		ut16 bits = info->bits;
+		ut64 baseaddr = binobj->baddr;
+		int va = info->has_va;
+		r_config_set_i (r->config, "io.va",
+			(binobj->info)? binobj->info->has_va: 0);
+		r_config_set_i (r->config, "bin.baddr", baseaddr);
+		r_config_set_i (r->config, "asm.bits", bits);
+		r_config_set (r->config, "asm.arch", arch);
+		r_asm_use (r->assembler, arch);
+		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, baseaddr);
+		r_core_bin_bind (r, binfile);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 R_API int r_core_bin_bind (RCore *core, RBinFile *binfile) {
+	RBinInfo *info = NULL;
+
 	if (!core->bin) return R_FALSE;
 	if (!binfile) {
 		// Find first available binfile
@@ -34,20 +57,7 @@ R_API int r_core_bin_bind (RCore *core, RBinFile *binfile) {
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->file->binb));
-	// r_bin_select should be called to get the correct bin_field
-	//r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
-	return r_core_bind_asm (core, binfile);
-}
-
-static int r_core_bind_asm (RCore *core, RBinFile *binfile) {
-	if (binfile && binfile->curplugin &&
-		r_asm_is_valid (core->assembler, binfile->curplugin->name) ) {
-		r_asm_use (core->assembler, binfile->curplugin->name);
-		// XXX - do i need to set the arch and bits here?
-		// TODO - check bin arch and bin bits and select if they are not set
-		return R_TRUE;
-	}
-	return R_FALSE;
+	return R_TRUE;
 }
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
@@ -56,10 +66,6 @@ R_API int r_core_bin_refresh_strings(RCore *r) {
 
 R_API RBinFile * r_core_bin_cur (RCore *core) {
 	RBinFile *binfile = r_bin_cur (core->bin);
-	if (binfile) {
-		// XXX - is this necessary?
-		r_core_bin_bind (core, binfile);
-	}
 	return binfile;
 }
 
@@ -437,6 +443,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->offset;
 			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
+			if (vaddr == 0) vaddr = entry->rva;
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
 			r_flag_set (r->flags, str, va? vaddr: paddr,
 				r->blocksize, 0);
@@ -986,6 +993,7 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		//XXX: Need more flags??
+		// this will be set even if the binary does not have an ehdr
 		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
 	} else {
 		if (mode) r_cons_printf ("fs header\n");
@@ -1147,4 +1155,32 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_SIZE))
 		ret &= bin_size (core, mode);
 	return ret;
+}
+
+R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits) {
+	RCoreFile *cf = r_core_file_cur (r);
+	RBinFile *binfile = r_core_bin_cur (r), *nbinfile = NULL;
+	name = !name && binfile ? binfile->file : name;
+	name = !name &&  cf ? cf->filename : name;
+	int res = r_asm_is_valid (r->assembler, arch) == R_TRUE;
+	nbinfile = res ?
+				r_bin_file_find_by_arch_bits (r->bin, arch, bits, name)
+				: NULL;
+
+	if (nbinfile && nbinfile != binfile) {
+		RBinObject *binobj = NULL;
+		r_core_bin_bind (r, nbinfile);
+		if (r_asm_is_valid (r->assembler, arch) ) {
+			return r_core_bin_set_env (r, nbinfile);
+		}
+	}
+	return res;
+}
+
+R_API int r_core_bin_update_arch_bits (RCore *r) {
+	RBinFile *binfile = r_core_bin_cur (r);
+	const char * arch = r->assembler->cur->arch;
+	ut16 bits = r->assembler->bits;
+	const char *name = binfile ? binfile->file : NULL;
+	return r_core_bin_set_arch_bits (r, name, arch, bits);
 }

@@ -893,6 +893,9 @@ struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0
 }
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin->entry) {
+		//return bin->entry - MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
+	}
 	return 0LL;
 }
 

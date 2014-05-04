@@ -233,7 +233,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->fd : NULL;
 	RBinFile *binfile = NULL;
-	RBinObject *binobj = NULL;
+	RBinPlugin *plugin;
 	ut64 baseaddr = 0;
 	int va = r->io->va || r->io->debug;
 	int xtr_idx = 0; // if 0, load all if xtr is used
@@ -248,43 +248,42 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
 		treat_as_rawstr ++;
-		if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr))
+		if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
 			return R_FALSE;
+		}
 	}
 
-	// TODO: R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name)
-	//char *arch = r_debug_get_arch (core->debug);
-	//ut16 bits = r_debug_get_bits (core->debug);
-	/*
-	if (!r_bin_select (core->bin, arch, bits, r->bin->file)) {
-		free (arch);
-		eprintf ("Unable to select the proper binary file for debugging");
-		return R_FALSE
+	binfile = r_bin_cur (r->bin);
+	r_core_bin_set_env (r, binfile);
+	plugin = binfile ? binfile->curplugin : NULL;
+	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
+		// set use of raw strings
+		r_config_set_i (r->config, "io.va", 0);
+		r_config_set (r->config, "bin.rawstr", "true");
+		// get bin.minstr
+		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+	} else if (binfile) {
+		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinInfo * info = obj ? obj->info : NULL;
+		if (plugin && strcmp (plugin->name, "any") && info) {
+			r_core_bin_set_arch_bits (r, desc->name, info->arch, info->bits);
+		}
 	}
-	*/
-	binfile = r_core_bin_cur (r);
-	if (binfile) r_core_bin_bind (r, binfile);
 
-	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, baseaddr);
-	binobj = r_bin_get_object (r->bin);
+	if (plugin && !strcmp (plugin->name, "dex")) {
+		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
+	}
 
-	//binfile = r_core_bin_cur (r);
-	r_config_set_i (r->config, "io.va",
-		(binobj->info)? binobj->info->has_va: 0);
-
-	r_config_set_i (r->config, "bin.baddr", baseaddr);
-	if (baseaddr > 0 && r_bin_get_baddr(r->bin) == 0) r_bin_set_baddr (r->bin, baseaddr);
+	if (r_config_get_i (r->config, "file.analyze")) r_core_cmd0 (r, "aa");
 	return R_TRUE;
-
 }
 
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->fd : NULL;
 	RBinFile *binfile = NULL;
-	RBinObject *binobj = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
-
+	RBinPlugin * plugin;
 
 	if (!desc) return R_FALSE;
 	r_io_set_fd (r->io, desc);
@@ -292,34 +291,31 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return R_FALSE;
 	}
-
-	binobj = r_bin_get_object (r->bin);
-	binfile = r_core_bin_cur (r);
-	if (binfile) {
-		// r_bin_select should be called to get the correct binfile
-		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, binfile->file);
-		r_core_bin_bind (r, binfile);
-	}
-
-
-	if ( binfile && binfile->curplugin &&
-			strncmp (binfile->curplugin->name, "any", 5)==0 ) {
+	binfile = r_bin_cur (r->bin);
+	r_core_bin_set_env (r, binfile);
+	plugin = binfile ? binfile->curplugin : NULL;
+	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
+		r_config_set_i (r->config, "io.va", 0);
 		r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-	} else {
-		// r_bin_select should be called to get the correct binfile
-		//r_bin_file_object_find_by_arch_bits (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
+	} else if (binfile) {
+		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinInfo * info = obj ? obj->info : NULL;
+		if (plugin && strcmp (plugin->name, "any") && info) {
+			r_core_bin_set_arch_bits (r, desc->name, info->arch, info->bits);
+		} else {
+			r_config_set_i (r->config, "io.va", 0);
+		}
 	}
 
-	if (binobj && binobj->info && binobj->info->bits) {
-		r_config_set_i (r->config, "asm.bits", binobj->info->bits);
-		//cf->binfile = r->bin->cur;
+	if (plugin && !strcmp (plugin->name, "dex")) {
+		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
 
-
-
+	if (r_config_get_i (r->config, "file.analyze"))
+		r_core_cmd0 (r, "aa");
 	return R_TRUE;
 }
 
@@ -384,12 +380,11 @@ static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, con
 
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	int va = r->io->va || r->io->debug;
 	ut64 loadaddr = 0;
 	RCoreFile *cf = r_core_file_cur (r);
 	RBinFile *binfile = NULL;
-	RBinObject * binobj = NULL;
 	RIODesc *desc = cf ? cf->fd : NULL;
+	RBinPlugin *plugin = NULL;
 
 	int is_io_load = desc && desc->plugin;
 
@@ -423,32 +418,27 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		} else {
 			r_core_file_do_load_for_io_plugin (r, baddr, loadaddr);
 		}
-	} //else if ( !r_core_file_do_load_for_hex (r, baddr, loadaddr, filenameuri) ) { // --->
-	//	return R_FALSE;
-	//}
+	}
 
-	binobj = r_bin_get_object (r->bin);
-	binfile = r_core_bin_cur (r);
-	//r_bin_set_baddr(r->bin, r_config_get_i (r->config, "bin.baddr"));
 	if (cf && binfile && desc) binfile->fd = desc->fd;
-	//else eprintf ("Error: No file descriptor defined for current bin file: %s\n", filenameuri);
-	if (r->bin) r_core_bin_bind (r, r_core_bin_cur (r));
-
-
-	if (!cf) {
-		if (binobj && binobj->info && binobj->info->bits) {
-			r_config_set_i (r->config, "asm.bits", binobj->info->bits);
+	binfile = r_bin_cur (r->bin);
+	r_core_bin_set_env (r, binfile);
+	plugin = binfile ? binfile->curplugin : NULL;
+	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
+		// set use of raw strings
+		r_config_set (r->config, "bin.rawstr", "true");
+		r_config_set_i (r->config, "io.va", 0);
+		// get bin.minstr
+		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+	} else if (binfile) {
+		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinInfo * info = obj ? obj->info : NULL;
+		if (plugin && strcmp (plugin->name, "any") && info) {
+			r_core_bin_set_arch_bits (r, desc->name, info->arch, info->bits);
 		}
-		return R_TRUE;
 	}
 
-	if (binobj) {
-		r_config_set_i (r->config, "io.va",
-			(binobj->info)? binobj->info->has_va: 0);
-	}
-	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, r_bin_get_baddr(r->bin));
-
-	if (binfile && binfile->curplugin && !strcmp (binfile->curplugin->name, "dex")) {
+	if (plugin && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
 
@@ -753,7 +743,7 @@ R_API int r_core_file_binlist(RCore *core) {
 		}
 	}
 	r_core_file_set_by_file (core, cur_cf);
-	r_core_bin_bind (core, cur_bf);
+	//r_core_bin_bind (core, cur_bf);
 	return count;
 }
 
@@ -852,7 +842,7 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 		if (desc) {
 			r_io_set_fdn (core->io, desc->fd);
 			r_core_bin_set_by_fd (core, desc->fd);
-			r_core_bin_bind (core, NULL);
+			//r_core_bin_bind (core, NULL);
 		}
 		return R_TRUE;
 	}

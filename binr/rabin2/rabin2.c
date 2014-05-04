@@ -88,26 +88,29 @@ static int rabin_extract(int all) {
 	int i = 0;
 
 	if (all) {
+		RBinObject *obj = NULL;
+		RBinInfo *info = NULL;
+		const char *arch, *filename = bin->file;
+		int bits;
 		for (i=0; i<bin->narch; i++) {
-			const char *arch;
-			int bits;
-
-			r_bin_select_idx (bin, bin->file, i);
-			if (bin->cur->o->info == NULL) {
+			r_bin_select_idx (bin, filename, i);
+			obj = r_bin_cur_object (bin);
+			info = obj ? obj->info : NULL;
+			if (info == NULL) {
 				arch = "unknown";
 				bits = 0;
 			//	eprintf ("No extract info found.\n");
 			//	continue;
 			} else {
-				arch = bin->cur->o->info->arch;
-				bits = bin->cur->o->info->bits;
+				arch = info->arch;
+				bits = info->bits;
 			}
-			path = strdup (bin->cur->file);
+			path = strdup (filename);
 			// XXX: Wrong for w32 (/)
 			if ((ptr = strrchr (path, '/'))) {
 				*ptr = '\0';
 				ptr++;
-			} else ptr = bin->cur->file;
+			} else ptr = path;
 /*
 			if (output)
 				snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
@@ -492,7 +495,7 @@ int main(int argc, char **argv) {
 			for (i = 0; i < bin->narch; i++) {
 				if (r_bin_select_idx (bin, bin->file, i)) {
 					RBinObject *o = r_bin_cur_object (bin);
-					RBinInfo *info = bin->cur->o->info;
+					RBinInfo *info = o ? o->info : NULL;
 					printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
 						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",
 						i?",":"",info->arch, info->bits,

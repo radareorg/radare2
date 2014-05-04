@@ -126,7 +126,7 @@ static RBinInfo* info(RBinFile *arch) {
 	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->machine, "Java VM", R_BIN_SIZEOF_STRINGS-1);
+	strncpy (ret->machine, "java", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->arch, "java", R_BIN_SIZEOF_STRINGS-1);
 	ret->bits = 32;
 	ret->big_endian = 0;
@@ -186,7 +186,7 @@ static RList* imports(RBinFile *arch) {
 }
 
 static RList* fields(RBinFile *arch) {
-	return r_bin_java_get_fields (arch->o->bin_obj);
+	return NULL;//r_bin_java_get_fields (arch->o->bin_obj);
 }
 
 static RList* libs(RBinFile *arch) {
