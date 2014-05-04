@@ -650,7 +650,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f)
 
 	if (!obuf) return R_FALSE;
 
-	length = *(ut32*)obuf
+	length = *(ut32*)obuf;
 
 	if (f) {
 		printf("parse_aranges\n");
