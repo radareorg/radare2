@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int n = 0, type = input[0];
 	ut64 addr = core->offset;
-	char *t, *p, name[256];
+	char *t = NULL, *p, name[256];
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
 	RAnalFunction *f;
