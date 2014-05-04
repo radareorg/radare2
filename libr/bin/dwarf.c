@@ -349,15 +349,16 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 	ut64 addr;
 	buf = obuf;
 	st64 op_len;
-	buf = r_leb128(buf, &op_len);
 	RBinFile *binfile = a ? a->cur : NULL;
 	RBinObject *o = binfile ? binfile->o : NULL;
 	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	const char *filename;
 
+	if (!binfile || !obuf || !hdr || !regs) return NULL;
+
 	opcode = *buf++;
 
-	if (!binfile || !obuf || !hdr || !regs) return NULL;
+	buf = r_leb128(buf, &op_len);
 
 	if (f) {
 		fprintf(f, "Extended opcode %d: ", opcode);
