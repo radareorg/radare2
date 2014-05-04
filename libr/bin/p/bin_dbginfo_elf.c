@@ -18,7 +18,7 @@ static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
 			return R_FALSE;
 		}
 
-		p = strchr(ret, ':');
+		p = strchr(ret, '|');
 		if (p) {
 			*p = '\0';
 			strncpy(file, ret, len);

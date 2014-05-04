@@ -119,6 +119,13 @@ static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
 					return -1;
 				}
 
+				colon = strchr (file_line, ':');
+				if (colon) {
+					*colon = '|';
+				} else {
+					return -1;
+				}
+
 				if (!file_line)
 					return -1;
 
