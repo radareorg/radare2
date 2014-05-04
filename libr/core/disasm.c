@@ -476,24 +476,19 @@ static char *filter_refline2(RCore *core, const char *str) {
 }
 
 static char *filter_refline(RCore *core, const char *str) {
-        char *p, *s = strdup (str);
-
-        p = s;
-        p = r_str_replace (strdup (p), "`",
-                core->cons->vline[LINE_VERT], 1); // "`" -> "|"
-        p = r_str_replace (strdup (p),
-                core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
-        p = r_str_replace (strdup (p),
-                core->cons->vline[LINE_HORIZ],
-                core->cons->vline[LINE_VERT], 1); // "=" -> "|"
-        p = strstr (s, core->cons->vline[ARROW_RIGHT]);
-        if (p)
-                p = r_str_replace (strdup (p), core->cons->vline[ARROW_RIGHT], " ", 0);
-
-        p = strstr (s, core->cons->vline[ARROW_LEFT]);
-        if (p)
-                p = r_str_replace (strdup (p), core->cons->vline[ARROW_LEFT], " ", 0);
-        return s;
+	char *p = strdup (str);
+	
+	p = r_str_replace (p, "`",
+		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
+	p = r_str_replace (p,
+		core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
+	p = r_str_replace (p,
+		core->cons->vline[LINE_HORIZ],
+	    	core->cons->vline[LINE_VERT], 1); // "=" -> "|"
+	p = r_str_replace (p, core->cons->vline[ARROW_RIGHT], " ", 0);
+	p = r_str_replace (p, core->cons->vline[ARROW_LEFT], " ", 0);
+	
+	return p;
 }
 #if 0
 static char *filter_refline(RCore *core, const char *str) {
