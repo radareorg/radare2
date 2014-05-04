@@ -641,13 +641,15 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f)
 {
-	ut32 length = *(ut32*)obuf;
+	ut32 length;
 	ut16 version;
 	ut32 debug_info_offset;
 	ut8 address_size, segment_size;
 	const ut8 *buf = obuf;
 
 	if (!obuf) return R_FALSE;
+
+	length = *(ut32*)obuf
 
 	if (f) {
 		printf("parse_aranges\n");
