@@ -326,7 +326,7 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	if (!s || !file)
 		return;
 
-	snprintf (fileline, sizeof(fileline) - 1, "%s:%lld", file, line);
+	snprintf (fileline, sizeof(fileline) - 1, "%s|%lld", file, line);
 	offset_ptr = sdb_itoa (addr, offset, 16);
 
 	if (!sdb_add (s, offset_ptr, fileline, 0)) {
