@@ -29,18 +29,15 @@ R_API char *r_cons_hud_string(const char *s) {
 	int i;
 	char *os, *ret, *o = strdup (s);
 	RList *fl = r_list_new ();
+	if (!fl)
+		return NULL;
 	fl->free = free;
 	for (os=o, i=0; o[i]; i++) {
 		if (o[i]=='\n') {
 			o[i] = 0;
-			if (!fl) {
-				r_list_free (fl);
-				free (o);
-				return NULL;
-			}
 			if (*os && *os != '#')
 				r_list_append (fl, strdup (os));
-			os = o+i+1;
+			os = o + i + 1;
 		}
 	}
 	ret = r_cons_hud (fl, NULL);
