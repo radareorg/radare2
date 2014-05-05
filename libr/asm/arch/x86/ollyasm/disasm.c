@@ -418,7 +418,7 @@ static void DecodeMR(int type) {
       da->indexed=1;
       j=sib & 0x07;
       if (mode>=DISASM_FILE) {
-        strcpy(s,regname[2][j]);
+        strncpy(s,regname[2][j], TEXTLEN - 1);
         seg=addr32[j].defseg;
       };
     };
