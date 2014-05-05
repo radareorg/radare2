@@ -14,7 +14,7 @@ R_API void r_cons_canvas_clear (RConsCanvas *c) {
 	int y;
 	memset (c->b, '\n', c->blen);
 	c->b[c->blen] = 0;
-	for (y = 0; y<c->h; y++) 
+	for (y = 0; y<c->h; y++)
 		c->b[ y * c->w ] = '\n';
 }
 
@@ -134,7 +134,10 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
-	char *b = realloc (c->b, (w+1)*h);
+	char *b = NULL;
+	if (w < 0) return R_FALSE;
+
+	b = realloc (c->b, (w+1)*h);
 	if (!b) return R_FALSE;
 	c->b = b;
 	c->w = w;
@@ -148,9 +151,12 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
 	int i;
 	int roundcorners = 0;
-	char *row = malloc (w+1);
+	char *row = NULL;
 	char corner = '=';
 
+	if (w < 0) return;
+
+	row = malloc (w+1);
 	row[0] = roundcorners?'.':corner;
 	memset (row+1, '-', w-2);
 	row[w-1] = roundcorners?'.':corner;
@@ -166,11 +172,16 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
 		if (G(x, y+i)) W("|");
 		if (G(x+w-1, y+i)) W("|");
 	}
+	free (row);
 }
 
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {
 	int i;
-	char *row = malloc (w+1);
+	char *row = NULL;
+
+	if (w < 0) return;
+
+	row = malloc (w+1);
 	memset (row, ch, w);
 	row[w] = 0;
 
@@ -178,6 +189,7 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 		if (G(x, y+i))
 			W(row);
 	}
+	free (row);
 }
 
 
