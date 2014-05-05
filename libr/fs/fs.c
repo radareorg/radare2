@@ -534,7 +534,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 	char *input;
 	RList *list;
 	RListIter *iter;
-	RFSFile *file;
+	RFSFile *file = NULL;
 
 	if (root && *root) {
 		strncpy (buf, root, sizeof (buf)-1);
