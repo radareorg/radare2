@@ -280,9 +280,27 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 }
 
 
-R_API void r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
-	if (r_list_append (list, data))
-		r_list_sort (list, cmp); // TODO: inefficient
+R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
+    RListIter *it, *new = NULL;
+    if (list && data && cmp) {
+        for (it = list->head; it && it->data && cmp (data, it->data)>0; it = it->n) ;
+        if (it) {
+            new = R_NEW (RListIter);
+            new->n = it;
+            new->p = it->p;
+            new->data = data;
+            new->n->p = new;
+            if (new->p == NULL)
+                list->head = new;
+            else
+                new->p->n = new;
+        } else {
+            r_list_append (list, data);
+        }
+        return new;
+    } else {
+        return NULL;
+    }
 }
 
 
