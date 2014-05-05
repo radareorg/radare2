@@ -86,33 +86,52 @@ static int print_addrinfo (void *user, const char *k, const char *v) {
 	ut64 offset;
 	char *colonpos, *subst;
 
-	offset = sdb_atoi (k);
+	offset = sdb_atoi (v);
 	if (!offset)
 		return R_TRUE;
 
-	subst = strdup (v);
+	subst = strdup (k);
 	colonpos = strchr (subst, '|');
 
 	if (colonpos)
 		*colonpos = ':';
 
-	printf ("Cl %s %s\n", k, subst);
+	printf ("CL %s %s\n", subst, v);
 
 	free (subst);
 
 	return R_TRUE;
 }
 
-static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
+static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
+	char aoffset[64], *aoffsetptr;
+
+	aoffsetptr = sdb_itoa (offset, aoffset, 16);
+
+	if (!aoffsetptr)
+		return -1;
+
+	if (!sdb_add (s, aoffsetptr, fileline, 0)) {
+		sdb_set (s, aoffsetptr, fileline, 0);
+	}
+
+	if (!sdb_add (s, fileline, aoffsetptr, 0)) {
+		sdb_set (s, fileline, aoffsetptr, 0);
+	}
+
+	return 0;
+}
+
+static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset;
 	int remove = R_FALSE;
 	int all = R_FALSE;
 	const char *p = input;
-	char *colon, *space, *file_line;
+	char *colon, *space, *file_line = 0;
 
 	if (*p == '?') {
-		eprintf ("Usage: CL[-][*] [addr|file:line]");
+		eprintf ("Usage: CL[-][*] [file:line] [addr]");
 		return 0;
 	}
 
@@ -151,6 +170,8 @@ static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
 				} else if (!space) {
 					file_line = strdup (p);
 				} else {
+					if (file_line)
+						free (file_line);
 					return -1;
 				}
 
@@ -158,6 +179,33 @@ static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
 				if (colon) {
 					*colon = '|';
 				} else {
+					if (file_line)
+						free (file_line);
+					return -1;
+				}
+
+				while (*p != ' ')
+					p++;
+
+				while (*p == ' ')
+					p++;
+
+				if (*p != '\0') {
+					ret = sscanf (p, "0x%"PFMT64x, &offset);
+
+					if (ret != 1) {
+						eprintf ("Failed to parse addr at %s\n", p);
+						if (file_line)
+							free (file_line);
+						return -1;
+					}
+
+					ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
+							file_line, offset);
+
+					if (file_line)
+						free (file_line);
+
 					return -1;
 				}
 
@@ -186,8 +234,6 @@ static int cmd_meta_lineinfo_show(RCore *core, const char *input) {
 	return 0;
 }
 
-
-// XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i, n = 0, type = input[0];
@@ -201,65 +247,8 @@ static int cmd_meta(void *data, const char *input) {
 	case '*':
 		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
 		break;
-	case 'l':
-		// XXX: this should be moved to CL?
-		if (input[2]=='a') {
-			ut64 offset;
-			input++;
-			if (input[1]=='?') {
-				eprintf ("Usage: cla [addr]\n");
-			} else {
-				char *sl;
-				if (input[1]==' ')
-					offset = r_num_math (core->num, input+2);
-				else offset = core->offset;
-				sl = r_bin_addr2text (core->bin, offset);
-				if (sl) {
-					r_cons_printf ("%s\n", sl);
-					free (sl);
-				}
-			}
-		} else {
-			int num;
-			char *f, *p, *line, buf[4096];
-			f = strdup (input +2);
-			p = strchr (f, ':');
-			if (p) {
-				*p = 0;
-				num = atoi (p+1);
-				line = r_file_slurp_line (f, num, 0);
-				if (!line) {
-					const char *dirsrc = r_config_get (core->config, "dir.source");
-					if (dirsrc && *dirsrc) {
-						f = r_str_concat (strdup (dirsrc), f);
-						line = r_file_slurp_line (f, num, 0);
-					}
-					if (!line) {
-						eprintf ("Cannot slurp file '%s'\n", f);
-						free (p);
-						return R_FALSE;
-					}
-				}
-
-				filter_line (line);
-
-				p = strchr (p+1, ' ');
-				if (p) {
-					snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
-						f, num, line, p+1);
-				} else {
-					snprintf (buf, sizeof (buf), "\"CC %s:%d %s\"",
-						f, num, line);
-				}
-				eprintf ("-- %s\n", buf);
-				r_core_cmd0 (core, buf);
-				free (line);
-				free (f);
-			} else eprintf ("Usage: Cl [file:line] [address]\n");
-		}
-		break;
-	case 'L': // debug information of current offset
-		cmd_meta_lineinfo_show (core, input + 1);
+	case 'L':
+		cmd_meta_lineinfo (core, input + 1);
 		break;
 		// XXX: use R_META_TYPE_XXX here
 	case 'z': /* string */
@@ -503,8 +492,7 @@ static int cmd_meta(void *data, const char *input) {
 			"|Usage: C[-LCvsdfm?] [...]\n"
 		"| C*                              List meta info in r2 commands\n"
 		"| C- [len] [@][ addr]             delete metadata at given address range\n"
-		"| CL[-][*] [addr|file:line]       show 'code line' information (bininfo)\n"
-		"| Cl  file:line [addr]            add comment with line information\n"
+		"| CL[-][*] [file:line] [addr]     show or add 'code line' information (bininfo)\n"
 		"| CC[-] [comment-text]    add/remove comment. Use CC! to edit with $EDITOR\n"
 		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
 		"| Cv[-] offset reg name   add var substitution\n"
