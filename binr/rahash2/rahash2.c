@@ -316,10 +316,12 @@ int main(int argc, char **argv) {
 		io = r_io_new ();
 		if (r_file_is_directory (argv[i])) {
 			eprintf ("rahash2: Cannot hash directories\n");
+			r_io_free (io);
 			return 1;
 		}
 		if (!r_io_open (io, argv[i], 0, 0)) {
 			eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+			r_io_free (io);
 			return 1;
 		}
 		ret |= do_hash (argv[i], algo, io, bsize, rad, ule);
