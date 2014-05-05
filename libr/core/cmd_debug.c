@@ -1269,7 +1269,6 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_execute (core->dbg, acode->buf, acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
 				r_asm_code_free (acode);
-				free (acode);
 			}
 			}
 			break;
