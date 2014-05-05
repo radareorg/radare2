@@ -3,11 +3,6 @@
 #include <r_socket.h>
 #include <string.h>
 #include <r_util.h>
-#include <r_cons.h>
-
-
-#define	RAP_BUF_FD	"/tmp/.out"
-#define	RAP_BUF_FD_ERR	"Cannot open tmp-fd\n"
 
 R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port) {
 	RSocketRapServer *rap_s;
@@ -29,7 +24,7 @@ R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname) {
 		return NULL;
 	if (strlen (pathname) < 11)
 		return NULL;
-	if (strncmp (pathname, "rap", 3));
+	if (strncmp (pathname, "rap", 3))
 		return NULL;
 	is_ssl = (pathname[3] == 's');
 	port = &pathname[7 + is_ssl];
@@ -49,29 +44,11 @@ R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certf
 }
 
 R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s) {
-	int ret = R_FALSE;
-	ut8 *flg, *size;
-	if (!rap_s || !rap_s->fd || !rap_s->open) {
+	if (!rap_s || !rap_s->fd) {
 		eprintf ("error: r_socket_rap_server_accept\n");
 		return R_FALSE;
 	}
-	if (!r_socket_accept (rap_s->fd))
-		return R_FALSE;
-	ret = r_socket_read_block (rap_s->fd, rap_s->buf, 3);
-	if (ret < 3)
-		return R_FALSE;
-	if (rap_s->buf[0] != RAP_RMT_OPEN)
-		return R_FALSE;
-	flg = &rap_s->buf[1];
-	size = &rap_s->buf[2];
-	ret = r_socket_read (rap_s->fd, &rap_s->buf[3], (int)*size);
-	if (ret != (int)*size)
-		return R_FALSE;
-	ret = rap_s->open (rap_s->user, (const char *)&rap_s->buf[3], (int)*flg, 0);
-	rap_s->buf[0] = (RAP_RMT_REPLY|RAP_RMT_OPEN);
-	r_socket_write (rap_s->fd, rap_s->buf, 1);
-	r_socket_flush (rap_s->fd);
-	return ret;
+	return r_socket_accept (rap_s->fd);
 }
 
 static inline int getEndian ()
@@ -86,12 +63,21 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s)
 {
 	int endian, i, pipe_fd, ret;
 	ut64 offset;
-	if (	!rap_s || !rap_s->fd || !r_socket_is_connected (rap_s->fd) ||
-		!(r_socket_read (rap_s->fd, rap_s->buf, 1) == 1))
+	char *ptr = NULL;
+	if (	!rap_s || !rap_s->fd || !r_socket_is_connected (rap_s->fd))
 		return R_FALSE;
+	r_socket_read_block (rap_s->fd, rap_s->buf, 1);
 	endian = getEndian();
 	ret = rap_s->buf[0];
 	switch (rap_s->buf[0]) {
+		case RAP_RMT_OPEN:
+			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 2);
+			r_socket_read_block (rap_s->fd, &rap_s->buf[3], (int)rap_s->buf[2]);
+			rap_s->open (rap_s->user, (const char *)&rap_s->buf[3], (int)rap_s->buf[1], 0);
+			rap_s->buf[0] = RAP_RMT_OPEN | RAP_RMT_REPLY;
+			r_socket_write (rap_s->fd, rap_s->buf, 5);
+			r_socket_flush (rap_s->fd);
+			break;
 		case RAP_RMT_READ:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
 			r_mem_copyendian ((ut8*)&i, &rap_s->buf[1], 4, !endian);
@@ -126,75 +112,33 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s)
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
 			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
-			rap_s->buf[i+5] = '\0';
-			fflush (stdout);
-			pipe_fd = r_cons_pipe_open (RAP_BUF_FD, 1, 0);
-			rap_s->system (rap_s->user, &rap_s->buf[5]);
-			r_cons_pipe_close (pipe_fd);
-			{
-				FILE *fd = r_sandbox_fopen (RAP_BUF_FD, "r");
-				char *out = NULL;
-				i = 0;
-				if (fd) {
-					fseek (fd, 0, SEEK_END);
-					i = ftell (fd);
-					fclose (fd);
-					out = r_file_slurp (RAP_BUF_FD, &i);
-					out = realloc (out, i + 5);
-				}
-				if (out) {
-					memmove (out+5, out, i);
-					out[0] = RAP_RMT_SYSTEM | RAP_RMT_REPLY;
-					r_mem_copyendian ((ut8 *)&out[1], (ut8 *)&i, 4, !endian);
-					r_socket_write (rap_s->fd, out, i + 5);
-					free (out);
-					out = NULL;
-				} else {
-					i = strlen (RAP_BUF_FD_ERR);
-					rap_s->buf[0] = RAP_RMT_SYSTEM | RAP_RMT_REPLY;
-					r_mem_copyendian (&rap_s->buf[1], (ut8 *)&i, 4, !endian);
-					strcpy (&rap_s->buf[5], RAP_BUF_FD_ERR);
-					r_socket_write (rap_s->fd, rap_s->buf, i + 5);
-				}
-				r_socket_flush (rap_s->fd);
-			}
+			ptr = rap_s->system (rap_s->user, &rap_s->buf[5]);
+			if (ptr)
+				i = strlen (ptr) + 1;
+			else	i = 0;
+			r_mem_copyendian (&rap_s->buf[1], (ut8 *)&i, 4, !endian);
+			rap_s->buf[0] = RAP_RMT_SYSTEM | RAP_RMT_REPLY;
+			r_socket_write (rap_s->fd, rap_s->buf, 5);
+			if (i)	r_socket_write (rap_s->fd, ptr, i);
+			r_socket_flush (rap_s->fd);
+			free (ptr);
+			ptr = NULL;
 			break;
 		case RAP_RMT_CMD:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-			r_mem_copyendian ((ut8*)&i, &rap_s->buf[1], 4, !endian);
+			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
-			rap_s->buf[i+5] = '\0';
-			fflush (stdout);
-			pipe_fd = r_cons_pipe_open (RAP_BUF_FD, 1, 0);
-			rap_s->cmd (rap_s->user, &rap_s->buf[5]);
-			r_cons_pipe_close (pipe_fd);
-			{
-				FILE *fd = r_sandbox_fopen (RAP_BUF_FD, "r");
-				char *out = NULL;
-				i = 0;
-				if (fd) {
-					fseek (fd, 0, SEEK_END);
-					i = ftell (fd);
-					fclose (fd);
-					out = r_file_slurp (RAP_BUF_FD, &i);
-					out = realloc (out, i + 5);
-				}
-				if (out) {
-					memmove (out+5, out, i);
-					out[0] = RAP_RMT_SYSTEM | RAP_RMT_REPLY;
-					r_mem_copyendian ((ut8 *)&out[1], (ut8 *)&i, 4, !endian);
-					r_socket_write (rap_s->fd, out, i + 5);
-					free (out);
-					out = NULL;
-				} else {
-					i = strlen (RAP_BUF_FD_ERR);
-					rap_s->buf[0] = RAP_RMT_CMD | RAP_RMT_REPLY;
-					r_mem_copyendian (&rap_s->buf[1], (ut8 *)&i, 4, !endian);
-					strcpy (&rap_s->buf[5], RAP_BUF_FD_ERR);
-					r_socket_write (rap_s->fd, rap_s->buf, i + 5);
-				}
-				r_socket_flush (rap_s->fd);
-			}
+			ptr = rap_s->cmd (rap_s->user, &rap_s->buf[5]);
+			if (ptr)
+				i = strlen (ptr) + 1;
+			else	i = 0;
+			r_mem_copyendian (&rap_s->buf[1], (ut8 *)&i, 4, !endian);
+			rap_s->buf[0] = RAP_RMT_CMD | RAP_RMT_REPLY;
+			r_socket_write (rap_s->fd, rap_s->buf, 5);
+			if (i)	r_socket_write (rap_s->fd, ptr, i);
+			r_socket_flush (rap_s->fd);
+			free (ptr);
+			ptr = NULL;
 			break;
 		case RAP_RMT_CLOSE:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
@@ -205,7 +149,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s)
 			r_socket_flush (rap_s->fd);
 			break;
 		default:
-			eprintf ("unknown command 0x%2hhx\n", rap_s->buf[0]);
+			eprintf ("unknown command 0x%02hhx\n", rap_s->buf[0]);
 			r_socket_close (rap_s->fd);
 			ret = -1;
 			break;
