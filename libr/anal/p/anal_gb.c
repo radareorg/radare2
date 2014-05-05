@@ -141,16 +141,16 @@ static inline void gb_anal_id (RAnal *anal, RAnalOp *op, const ut8 data)				//in
 			r_strbuf_set (&op->esil, "1[hl]++,N=0");
 		else	r_strbuf_set (&op->esil, "1[hl]--,N=1");
 	} else {
-		if ((data & 3) == 3) {
+		if (!(data & (1<<2))) {
 			op->dst->reg = r_reg_get (anal->reg, regs_16[data>>4], R_REG_TYPE_GPR);
 			if (op->type == R_ANAL_OP_TYPE_ADD)
 				r_strbuf_setf (&op->esil, "%s++,N=0", regs_16[data>>4]);
 			else	r_strbuf_setf (&op->esil, "%s--,N=1", regs_16[data>>4]);
 		} else {
-			op->dst->reg = r_reg_get (anal->reg, regs_x[(data>>2) - 1], R_REG_TYPE_GPR);
+			op->dst->reg = r_reg_get (anal->reg, regs_8[data>>3], R_REG_TYPE_GPR);
 			if (op->type == R_ANAL_OP_TYPE_ADD)
-				r_strbuf_setf (&op->esil, "%s++,N=0", regs_x[(data>>2) - 1]);
-			else	r_strbuf_setf (&op->esil, "%s--,N=1", regs_x[(data>>2) - 1]);
+				r_strbuf_setf (&op->esil, "%s++,N=0", regs_8[data>>3]);
+			else	r_strbuf_setf (&op->esil, "%s--,N=1", regs_8[data>>3]);
 		}
 	}
 }
@@ -291,7 +291,7 @@ static inline void gb_anal_pp (RReg *reg, RAnalOp *op, const ut8 data)		//push ,
 {
 	RAnalValue *val = r_anal_value_new ();
 	val->reg = r_reg_get (reg, regs_16_alt[(data>>4) - 12], R_REG_TYPE_GPR);
-	if (data & 4) {
+	if ((data & 0xf) == 1) {
 		op->dst = val;
 		r_strbuf_setf (&op->esil, "sp=sp+2,%s=2[sp]", regs_16_alt[(data>>4) - 12]);		//pop
 	} else {
@@ -1063,6 +1063,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 			}
 			op->eob = 1;
+			gb_anal_cond (anal->reg, op, data[0]);
 			gb_anal_esil_cjmp (op, data[0]);
 			op->cycles = 16;
 			op->failcycles = 12;
