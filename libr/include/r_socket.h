@@ -109,7 +109,7 @@ typedef int (*rap_server_open)(void *user, const char *file, int flg, int mode);
 typedef int (*rap_server_seek)(void *user, ut64 offset, int whence);
 typedef int (*rap_server_read)(void *user, ut8 *buf, int len);
 typedef int (*rap_server_write)(void *user, ut8 *buf, int len);
-typedef int (*rap_server_cmd)(void *user, const char *command);
+typedef char *(*rap_server_cmd)(void *user, const char *command);
 typedef int (*rap_server_close)(void *user, int fd);
 
 enum {
