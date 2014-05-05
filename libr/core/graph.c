@@ -87,6 +87,7 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 
 static int Edge_node(Edge *edges, int cur, int nth) {
 	int i;
+	if (edges)
 	for (i=0; edges[i].nth!=-1; i++) {
 		if (edges[i].nth == nth)
 			if (edges[i].from == cur)
@@ -97,6 +98,7 @@ static int Edge_node(Edge *edges, int cur, int nth) {
 
 static int Node_find(const Node* nodes, ut64 addr) {
 	int i;
+	if (nodes)
 	for (i=0; nodes[i].text; i++) {
 		if (nodes[i].addr == addr)
 			return i;
@@ -208,15 +210,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		// add edge from bb->addr to bb->jump / bb->fail
 		if (bb->jump != UT64_MAX) {
-			n_edges++;
-			edges = realloc(edges, sizeof (Edge)*(n_edges+1));
+			edges = realloc(edges, sizeof (Edge)*(i+1));
 			edges[i].nth = 0;
 			edges[i].from = Node_find (nodes, bb->addr);
 			edges[i].to = Node_find (nodes, bb->jump);
 			i++;
 			if (bb->fail != UT64_MAX) {
-				n_edges++;
-				edges = realloc(edges, sizeof (Edge)*(n_edges+1));
+				edges = realloc(edges, sizeof (Edge)*(i+1));
 				edges[i].nth = 1;
 				edges[i].from = Node_find (nodes, bb->addr);
 				edges[i].to = Node_find (nodes, bb->fail);
@@ -224,7 +224,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 			}
 		}
 	}
-	edges[i].nth = -1;
+	if (edges)
+		edges[i].nth = -1;
+	n_edges = i;
 
 	// hack to make layout happy
 	if (nodes)
