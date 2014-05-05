@@ -29,8 +29,10 @@ R_API char *r_cons_hud_string(const char *s) {
 	int i;
 	char *os, *ret, *o = strdup (s);
 	RList *fl = r_list_new ();
-	if (!fl)
+	if (!fl) {
+		free (o);
 		return NULL;
+	}
 	fl->free = free;
 	for (os=o, i=0; o[i]; i++) {
 		if (o[i]=='\n') {
