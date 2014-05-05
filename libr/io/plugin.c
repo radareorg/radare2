@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 volatile static RIOPlugin *DEFAULT = NULL;
-static RIOPlugin *io_static_plugins[] = 
+static RIOPlugin *io_static_plugins[] =
 	{ R_IO_STATIC_PLUGINS };
 
 
@@ -38,6 +38,7 @@ R_API int r_io_plugin_init(RIO *io) {
 		// memory leak here: static_plugin never freed
 		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
 		if (!strncmp (static_plugin->name, "default", 7)) {
+			if (DEFAULT) free (DEFAULT);
 			DEFAULT = static_plugin;
 			continue;
 		}
