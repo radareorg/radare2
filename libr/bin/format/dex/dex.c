@@ -17,6 +17,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
 		r_buf_free (bin->b);
+		free (bin);
 		return NULL;
 	}
 	// XXX: use r_buf_getc()

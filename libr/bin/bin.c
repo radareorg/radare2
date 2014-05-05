@@ -358,7 +358,7 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 	RBinFile *binfile = NULL;
 	int rawstr = 0;
 
-	if (!io) return R_FALSE;
+	if (!io || !desc) return R_FALSE;
 
 	buf_bytes = NULL;
 
@@ -377,7 +377,7 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
 			if (xtr->check && xtr->check_bytes (buf_bytes, sz)) {
-				if (xtr && (xtr->extractall_from_bytes || xtr->extract_from_bytes))
+				if (xtr && (xtr->extract_from_bytes || xtr->extract_from_bytes))
 					return r_bin_file_xtr_load_bytes (bin, xtr, desc->name, buf_bytes, sz, baseaddr, loadaddr, xtr_idx, desc->fd, rawstr);
 				xtr = NULL;
 			}
@@ -524,10 +524,12 @@ static int r_bin_file_new_from_xtr_data (RBin* bin, const char *filename, ut64 b
 	if (res) {
 		RBinFile *bf = r_bin_cur (bin);
 		RBinObject *o = r_bin_cur_object (bin);
-		o->loadaddr = loadaddr;
-		o->boffset = data->offset;
-		o->size = data->size;
-		bf->narch = data->file_count;
+		if (o) {
+			o->loadaddr = loadaddr;
+			o->boffset = data->offset;
+			o->size = data->size;
+		}
+		if (bf) bf->narch = data->file_count;
 	}
 	return res;
 }

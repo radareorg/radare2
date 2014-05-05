@@ -498,7 +498,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 	}
 	m = R_NEW (RMmap);
 	if (!m) {
-		close (fd);
+		if (fd != -1) close (fd);
 		return NULL;
 	}
 	m->base = base;

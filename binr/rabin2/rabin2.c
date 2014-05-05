@@ -393,7 +393,7 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			set_action (ACTION_OPERATION);
-			if (!strcmp (op, "help")) {
+			if (op && !strcmp (op, "help")) {
 				printf ("Operation string:\n"
 						"  Dump symbols: d/s/1024\n"
 						"  Dump section: d/S/.text\n"

@@ -55,8 +55,9 @@ static int cmd_open(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 'b':
+		/*
 		ptr = strchr (input+(isn?2:1), ' ');
-		if (!ptr) {
+		if (ptr) {
 			r_core_file_binlist (core);
 			break;
 		} else if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
@@ -71,6 +72,7 @@ static int cmd_open(void *data, const char *input) {
 		} else {
 			r_core_file_bin_raise (core, num);
 		}
+		*/
 		break;
 	case '-':
 		if (!r_core_file_close_fd (core, atoi (input+1)))
