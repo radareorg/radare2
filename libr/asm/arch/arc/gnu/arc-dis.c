@@ -421,7 +421,7 @@ write_instr_name_(struct arcDisState * state,
 		  int addrWriteBack,
 		  int directMem)
 {
-  strcpy (state->instrBuffer, instrName);
+  strncpy (state->instrBuffer, instrName, sizeof (state->instrBuffer));
   if (cond > 0)
     {
       const char *cc = 0;
