@@ -571,7 +571,6 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			if (list) {
 				r_list_foreach (list, iter, file)
 					printf ("%c %s\n", file->type, file->name);
-				r_list_free (list);
 			} else eprintf ("Unknown path: %s\n", path);
 		} else if (!strncmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
@@ -665,7 +664,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 beach:
 	clearerr (stdin);
 	printf ("\n");
-	if (list) r_list_free (list);
+	r_list_free (list);
 	return R_TRUE;
 }
 
