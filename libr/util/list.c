@@ -31,12 +31,6 @@ RListIter *r_list_push (RList *list, void *item) {
 	return r_list_append (list, item);
 }
 
-//TODO: remove this function
-void *r_list_get (RList *list) {
-	printf ("XXX: dynamic r_list_get is broken, use _get_next\n");
-	return NULL;
-}
-
 RListIter *r_list_get_next (RListIter *list) {
 	return list->n;
 }
