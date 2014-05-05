@@ -84,7 +84,7 @@ static int rabin_show_help(int v) {
 }
 
 static int rabin_extract(int all) {
-	char outfile[512], outpath[512], *path, *ptr;
+	char outfile[512], outpath[512], *ptr, *path = NULL;
 	int i = 0;
 
 	if (all) {
