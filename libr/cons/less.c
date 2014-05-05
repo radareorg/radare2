@@ -35,7 +35,7 @@ static int *splitlines (char *s, int *lines_count) {
 
 R_API void r_cons_less_str(const char *str) {
 	int lines_count;
-	int w, h, ch, to, ui = 1, from = 0;
+	int h, ch, to, ui = 1, from = 0;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
 	r_cons_set_raw (R_TRUE);
@@ -43,7 +43,7 @@ R_API void r_cons_less_str(const char *str) {
 	r_cons_reset ();
 	h = 0;
 	while (ui) {
-		w = r_cons_get_size (&h);
+		r_cons_get_size (&h);
 		to = R_MIN (lines_count, from+h);
 		if (from+3>lines_count)
 			from = lines_count-3;

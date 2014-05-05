@@ -92,17 +92,6 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
-static void suffixline (char *p, int len) {
-	int i;
-	char *l = p;
-	for (i=0; i<len; i++) {
-		if (p[i] != ' ')
-			l = p+1;
-	}
-	// XXX may be problematic
-	//	*l = '\n';
-}
-
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	int left, slen;
 	char *line, *n;
@@ -111,9 +100,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	for (;;) {
 		line = getrow (s, &n);
 		p = prefixline (c, &left);
-		//p = getptr (c, &left);
 		slen = R_MIN (left, strlen (line));
-		suffixline (p+slen, left);
 		memcpy (p, line, slen);
 		if (!n) break;
 		s = n;

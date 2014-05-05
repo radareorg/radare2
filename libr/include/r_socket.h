@@ -78,7 +78,7 @@ typedef struct r_socket_proc_t {
 	int pid;
 } RSocketProc;
 
-R_API RSocketProc *r_socket_proc_open(char *const argv[]);
+R_API RSocketProc *r_socket_proc_open(const char *argv[]);
 R_API int r_socket_proc_close(RSocketProc *sp);
 R_API int r_socket_proc_read (RSocketProc *sp, unsigned char *buf, int len);
 R_API int r_socket_proc_gets (RSocketProc *sp, char *buf, int size);
@@ -105,11 +105,11 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 R_API void r_socket_http_close (RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);
 
-typedef int (*rap_server_open)(void *user, char *file, int flg, int mode);
+typedef int (*rap_server_open)(void *user, const char *file, int flg, int mode);
 typedef int (*rap_server_seek)(void *user, ut64 offset, int whence);
 typedef int (*rap_server_read)(void *user, ut8 *buf, int len);
 typedef int (*rap_server_write)(void *user, ut8 *buf, int len);
-typedef int (*rap_server_cmd)(void *user, char *command);
+typedef int (*rap_server_cmd)(void *user, const char *command);
 typedef int (*rap_server_close)(void *user, int fd);
 
 enum {
@@ -139,9 +139,9 @@ typedef struct r_socket_rap_server_t {
 } RSocketRapServer;
 
 R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port);
-R_API RSocketRapServer *r_socket_rap_server_create (char *pathname);
+R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname);
 R_API void r_socket_rap_server_free (RSocketRapServer *rap_s);
-R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, char *certfile);
+R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile);
 R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s);
 R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s);
 

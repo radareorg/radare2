@@ -1,12 +1,15 @@
+/* radare - LGPL - Copyright 2014 - condret */
+
 #include <r_socket.h>
 #include <string.h>
+#include <r_util.h>
+#include <r_cons.h>
 
 
 #define	RAP_BUF_FD	"/tmp/.out"
 #define	RAP_BUF_FD_ERR	"Cannot open tmp-fd\n"
 
-R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port)
-{
+R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port) {
 	RSocketRapServer *rap_s;
 	if (!port)
 		return NULL;
@@ -19,9 +22,8 @@ R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port)
 	return NULL;
 }
 
-R_API RSocketRapServer *r_socket_rap_server_create (char *pathname)
-{
-	char *port = NULL;
+R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname) {
+	const char *port = NULL;
 	int is_ssl;
 	if (!pathname)
 		return NULL;
@@ -34,22 +36,19 @@ R_API RSocketRapServer *r_socket_rap_server_create (char *pathname)
 	return r_socket_rap_server_new (is_ssl, port);
 }
 
-R_API void r_socket_rap_server_free (RSocketRapServer *rap_s)
-{
+R_API void r_socket_rap_server_free (RSocketRapServer *rap_s) {
 	if (rap_s)
 		r_socket_free (rap_s->fd);
 	free (rap_s);
 }
 
-R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, char *certfile)
-{
+R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile) {
 	if (!rap_s || !rap_s->port)
 		return R_FALSE;
 	return r_socket_listen (rap_s->fd, rap_s->port, certfile);
 }
 
-R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s)
-{
+R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s) {
 	int ret = R_FALSE;
 	ut8 *flg, *size;
 	if (!rap_s || !rap_s->fd || !rap_s->open) {
@@ -68,7 +67,7 @@ R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s)
 	ret = r_socket_read (rap_s->fd, &rap_s->buf[3], (int)*size);
 	if (ret != (int)*size)
 		return R_FALSE;
-	ret = rap_s->open (rap_s->user, &rap_s->buf[3], (int)*flg, 0);
+	ret = rap_s->open (rap_s->user, (const char *)&rap_s->buf[3], (int)*flg, 0);
 	rap_s->buf[0] = (RAP_RMT_REPLY|RAP_RMT_OPEN);
 	r_socket_write (rap_s->fd, rap_s->buf, 1);
 	r_socket_flush (rap_s->fd);
