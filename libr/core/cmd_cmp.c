@@ -22,14 +22,18 @@ R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd
 	cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
 		cmpw = R_NEW (RCoreCmpWatcher);
+		if (!cmpw)
+			return R_FALSE;
 		cmpw->addr = addr;
 	}
 	cmpw->size = size;
 	snprintf (cmpw->cmd, sizeof (cmpw->cmd), "%s", cmd);
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
-    if (cmpw->ndata == NULL)
+    if (cmpw->ndata == NULL) {
+		free (cmpw);
         return R_FALSE;
+	}
 	r_io_read_at (core->io, addr, cmpw->ndata, size);
 	r_list_append (core->watchers, cmpw);
 	return R_TRUE;
