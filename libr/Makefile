@@ -9,8 +9,8 @@ IFX=${DESTDIR}/${INCLUDEDIR}
 PWD=$(shell pwd)
 
 LIBS0=util hash
-LIBS1=reg cons db magic diff bp search config socket
-LIBS2=syscall lang io crypto flags bin
+LIBS1=reg cons db magic diff bp search config
+LIBS2=syscall lang io crypto flags bin socket
 LIBS3=fs anal
 LIBS4=parse
 LIBS5=asm debug
