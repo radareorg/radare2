@@ -24,6 +24,8 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 		return NULL;
 	c = R_NEW0 (RConsCanvas);
 	if (!c) return NULL;
+	c->sx = 0;
+	c->sy = 0;
 	c->blen = (w+1)*h;
 	c->b = malloc (c->blen+1);
 	if (!c->b) {
@@ -37,11 +39,29 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 	return c;
 }
 
-R_API void r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
-	if (x<c->w && x>=0)
-		c->x = x;
-	if (y<c->h && y>=0)
-		c->y = y;
+R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
+	int ret = R_TRUE;
+	x += c->sx;
+	y += c->sy;
+	if (c->x >= c->w) {
+		c->x = c->w;
+		ret = R_FALSE;
+	}
+	if (c->y >= c->h) {
+		c->y = c->h;
+		ret = R_FALSE;
+	}
+	if (c->x <0) {
+		c->x = 0;
+		ret = R_FALSE;
+	}
+	if (c->y <0) {
+		c->y =0;
+		ret = R_FALSE;
+	}
+	if (x<c->w && x>=0) c->x = x;
+	if (y<c->h && y>=0) c->y = y;
+	return ret;
 }
 
 #if 0
@@ -97,7 +117,8 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		memcpy (p, line, slen);
 		if (!n) break;
 		s = n;
-		r_cons_canvas_gotoxy (c, c->x, c->y+1);
+		if (!G (c->x-c->sx, c->y+1-c->sy))
+			break;
 	}
 	free (str);
 }
@@ -125,8 +146,16 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 	free (o);
 }
 
-R_API void r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
-	// 
+R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
+	char *b = realloc (c->b, (w+1)*h);
+	if (!b) return R_FALSE;
+	c->b = b;
+	c->w = w;
+	c->h = h;
+	c->x = 0;
+	c->y = 0;
+	r_cons_canvas_clear (c);
+	return R_TRUE;
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
@@ -139,18 +168,16 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
 	memset (row+1, '-', w-2);
 	row[w-1] = roundcorners?'.':corner;
 	row[w] = 0;
-	G(x, y);
-	W(row);
-	G(x, y+h-1);
-	row[0] = roundcorners?'\'':corner;
-	row[w-1] = roundcorners?'\'':corner;
-	W(row);
+	if (G(x, y)) W(row);
+	if (G(x, y+h-1)) {
+		row[0] = roundcorners?'\'':corner;
+		row[w-1] = roundcorners?'\'':corner;
+		W(row);
+	}
 
 	for (i=1;i<h-1;i++) {
-		G(x, y+i);
-		W("|");
-		G(x+w-1, y+i);
-		W("|");
+		if (G(x, y+i)) W("|");
+		if (G(x+w-1, y+i)) W("|");
 	}
 }
 
@@ -161,8 +188,8 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 	row[w] = 0;
 
 	for (i=0;i<h;i++) {
-		G(x, y+i);
-		W(row);
+		if (G(x, y+i))
+			W(row);
 	}
 }
 
@@ -171,33 +198,33 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 	switch (style) {
 		// vertical arrow line
 	case 0: //
-		G (x, y);
-		W ("v");
-		G (x2, y2);
-		W ("V");
+		if (G (x, y))
+			W ("v");
+		if (G (x2, y2))
+			W ("V");
 		if (x==x2) {
 			int i;
 			int min = R_MIN (y,y2)+1;
 			int max = R_MAX (y,y2);
 			for (i=min; i<max; i++) {
-				G (x,i);
-				W ("|");
+				if (G (x,i))
+					W ("|");
 			}
 		} else {
 			// --
 			// TODO: find if there's any collision in this line
-			int hl = R_ABS(y-y2) / 2;
-			int hl2 = R_ABS(y-y2)-hl;
+			int hl = R_ABS (y-y2) / 2;
+			int hl2 = R_ABS (y-y2)-hl;
 			int i;
 			hl--;
 			if (y2 > (y+1)) {
 				for (i=0;i<hl;i++) {
-					G (x,y+i+1);
-					W ("|");
+					if (G (x,y+i+1))
+						W ("|");
 				}
 				for (i=0;i<hl2;i++) {
-					G (x2, y+hl+i+1);
-					W ("|");
+					if (G (x2, y+hl+i+1))
+						W ("|");
 				}
 				int w = R_ABS (x-x2);
 				char *row = malloc (w+2);

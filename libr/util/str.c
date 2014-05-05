@@ -1306,6 +1306,8 @@ R_API int r_str_bounds(const char *str, int *h) {
 		str++;
 		cw++;
 	}
+	if (*str == '\n') // skip last newline
+		H--;
 	if (h) *h = H;
 	return W;
 }

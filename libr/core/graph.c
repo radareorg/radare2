@@ -2,12 +2,15 @@
 
 #include <r_core.h>
 
+// TODO: handle mouse wheel
+
 typedef struct {
 	int x;
 	int y;
 	int w;
 	int h;
 	ut64 addr;
+	int depth;
 	const char *text;
 } Node;
 
@@ -45,8 +48,16 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 
 	n->w = r_str_bounds (n->text, &n->h);
 	n->w += 4;
-	n->h += 4;
-	n->w = R_MAX(18, n->w);
+	n->h += 3;
+	n->w = R_MAX (18, n->w);
+	{
+		int x = n->x + can->sx;
+		int y = n->y + n->h + can->sy;
+		if (x<0 || x> can->w)
+			return;
+		if (y<0 || y> can->h)
+			return;
+	}
 	if (cur) {
 		F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
@@ -55,12 +66,12 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 		snprintf (title, sizeof (title)-1,
 			"   0x%08"PFMT64x"   ", n->addr);
 	}
-	G (n->x+1, n->y+1);
-	W (title);
-	G (n->x+2, n->y+2);
-	W (n->text);
-	G (n->x+1, n->y+1);
-	W (title);
+	if (G (n->x+1, n->y+1))
+		W (title);
+	if (G (n->x+2, n->y+2))
+		W (n->text);
+	if (G (n->x+1, n->y+1))
+		W (title);
 	B (n->x, n->y, n->w, n->h);
 }
 
@@ -93,6 +104,69 @@ static int Node_find(const Node* nodes, ut64 addr) {
 	return -1;
 }
 
+
+static void Layout_depth2(Node *nodes, Edge *edges, int nth, int depth) {
+	int j, f;
+	if (!nodes || !nodes[nth].text)
+		return;
+	if (nodes[nth].depth != -1) {
+		nodes[nth].depth = depth;
+		return;
+	} else nodes[nth].depth = depth;
+	j = Edge_node (edges, nth, 0);
+	if (j!=-1)
+		Layout_depth2 (nodes, edges, j, depth+1);
+	f = Edge_node (edges, nth, 1);
+	if (f!=-1)
+		Layout_depth2 (nodes, edges, f, depth+1);
+	// TODO: support more than two destination points (switch tables?)
+}
+
+static void Layout_depth(Node *nodes, Edge *edges) {
+	int i, j, rh, nx;
+	int *rowheight = NULL;
+	int maxdepth = 0;
+	const int h_spacing = 12;
+	const int v_spacing = 4;
+
+	Layout_depth2 (nodes, edges, 0, 0);
+	
+	// identify max depth
+	for (i=0; nodes[i].text; i++) {
+		if (nodes[i].depth>maxdepth)
+			maxdepth = nodes[i].depth;
+	}
+	// identify row height
+	rowheight = malloc (sizeof (int)*maxdepth);
+	for (i=0; i<maxdepth; i++) {
+		rh = 0;
+		for (j=0; nodes[j].text; j++) {
+			if (nodes[j].depth == i)
+				if (nodes[j].h>rh)
+					rh = nodes[j].h;
+		}
+		rowheight[i] = rh;
+	}
+
+	// vertical align // depe
+	for (i=0; nodes[i].text; i++) {
+		nodes[i].y = 1;
+		for (j=0;j<nodes[i].depth;j++)
+			nodes[i].y += rowheight[j] + v_spacing;
+	}
+	// horitzontal align
+	for (i=0; i<maxdepth; i++) {
+		nx = (i%2)*10;
+		for (j=0; nodes[j].text; j++) {
+			if (nodes[j].depth == i) {
+				nodes[j].x = nx;
+				nx += nodes[j].w + h_spacing;
+			}
+		}
+	}
+	free (rowheight);
+}
+
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	RAnalFunction *fcn;
 	RConsCanvas *can;
@@ -100,6 +174,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	RAnalBlock *bb;
 	Node *nodes;
 	Edge *edges;
+	int cn, prevnode = curnode;
 	int w, h, i, n_nodes, n_edges;
 	char title[128];
 
@@ -118,6 +193,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		nodes[i].text = r_core_cmd_strf (core,
 			"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		nodes[i].addr = bb->addr;
+		nodes[i].depth = -1;
 		nodes[i].x = 10;
 		nodes[i].y = 3;
 		nodes[i].w = 0;
@@ -149,11 +225,17 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		}
 	}
 	edges[i].nth = -1;
+
+	// hack to make layout happy
+	if (nodes)
+	for (i=0;nodes[i].text;i++) {
+		Node_print (can, &nodes[i], i==curnode);
+	}
+	// run layout 
+	Layout_depth (nodes, edges);
 repeat:
-#if RESIZE_CANVAS
 	w = r_cons_get_size (&h);
-	can = r_cons_canvas_resize (w-1, h-1);
-#endif
+	r_cons_canvas_resize (can, w-1, h-1);
 	r_cons_canvas_clear (can);
 
 	if (edges)
@@ -169,7 +251,7 @@ repeat:
 		Node_print (can, &nodes[i], i==curnode);
 	}
 
-	G (0,0);
+	G (-can->sx, -can->sy);
 	snprintf (title, sizeof(title)-1, "[0x%08"PFMT64x"]> VV @ %s (nodes %d)",
 		fcn->addr, fcn->name, n_nodes);
 	W (title);
@@ -178,38 +260,66 @@ repeat:
 	r_cons_flush ();
 	int key = r_cons_readchar ();
 #define N nodes[curnode]
-	int prevnode = curnode;
+prevnode = curnode;
 	switch (key) {
 	case 9: curnode++;
 		if (!nodes[curnode].text)
 			curnode = 0;
 		break;
+	case '?':
+		r_cons_clear00();
+		r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+			" hjkl - move node\n"
+		" asdw - scroll canvas\n"
+		" tab  - select next node\n"
+		" TAB  - select previous node\n"
+		" t/f  - follow true/false edges\n"
+		" R    - relayout\n");
+		r_cons_flush();
+		r_cons_any_key();
+		break;
+	case 'R':
+	case 'r': Layout_depth (nodes, edges); break;
 	case 'j': N.y++; break;
 	case 'k': N.y--; break;
 	case 'h': N.x--; break;
 	case 'l': N.x++; break;
-	case 'J': N.y+=2; break;
-	case 'K': N.y-=2; break;
-	case 'H': N.x-=2; break;
-	case 'L': N.x+=2; break;
+	case 'J': N.y+=5; break;
+	case 'K': N.y-=5; break;
+	case 'H': N.x-=5; break;
+	case 'L': N.x+=5; break;
+	// scroll
+	case 'w': can->sy -= 1; break;
+	case 's': can->sy += 1; break;
+	case 'a': can->sx -= 1; break;
+	case 'd': can->sx += 1; break;
+		break;
 	case 'u': 
 		curnode = prevnode;
 		break;
 	case 't': 
-		curnode = Edge_node(edges, curnode, 0);
+		cn = Edge_node (edges, curnode, 0);
+		if (cn != -1)
+			curnode = cn;
 		// select jump node
 		break;
 	case 'f': 
-		curnode = Edge_node(edges, curnode, 1);
+		cn = Edge_node (edges, curnode, 1);
+		if (cn != -1)
+			curnode = cn;
 		// select false node
 		break;
-	case 'q': return R_TRUE;
+	case 'q': {
+			  free (nodes);
+			  free (edges);
+		return R_TRUE;
+		}
 	case 27: // ESC
 		if (r_cons_readchar () == 91) {
 			if (r_cons_readchar () == 90) {
 				if (curnode<1) {
 					int i;
-					for(i=0;nodes[i].text;i++){};
+					for(i=0; nodes[i].text;i++){};
 					curnode = i-1;
 				} else curnode--;
 			}

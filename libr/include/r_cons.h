@@ -99,6 +99,8 @@ typedef struct r_cons_canvas_t {
 	int y;
 	char *b;
 	int blen;
+	int sx; // scrollx
+	int sy; // scrolly
 } RConsCanvas;
 
 typedef struct r_cons_t {
@@ -247,13 +249,15 @@ enum {
 #ifdef R_API
 R_API RConsCanvas* r_cons_canvas_new (int w, int h);
 R_API void r_cons_canvas_free (RConsCanvas *c);
+R_API void r_cons_canvas_clear (RConsCanvas *c);
 R_API void r_cons_canvas_print(RConsCanvas *c);
 R_API char *r_cons_canvas_to_string(RConsCanvas *c);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
-R_API void r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
+R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h);
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style);
-R_API void r_cons_canvas_resize(RConsCanvas *c, int w, int h);
+R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
+R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace);
 
 R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
