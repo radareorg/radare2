@@ -47,8 +47,12 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 }
 
 RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
-	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
-	if (!mmo || !io)
+	RIOMMapFileObj *mmo = NULL;
+	if (!io)
+		return NULL;
+
+	mmo = R_NEW0 (RIOMMapFileObj);
+	if (!mmo)
 		return NULL;
 
 	mmo->filename = strdup (filename);
