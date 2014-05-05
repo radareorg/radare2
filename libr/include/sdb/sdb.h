@@ -90,6 +90,7 @@ int sdb_query_file(Sdb *s, const char* file);
 int sdb_exists (Sdb*, const char *key);
 int sdb_num_exists (Sdb*, const char *key);
 int sdb_unset (Sdb*, const char *key, ut32 cas);
+int sdb_unset_matching(Sdb *s, const char *k);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
 const char *sdb_const_get (Sdb*, const char *key, ut32 *cas);
 int sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
@@ -207,6 +208,7 @@ int sdb_check_value (const char *s);
 int sdb_check_key (const char *s);
 int sdb_isnum (const char *s);
 int sdb_num_base (const char *s);
+int sdb_match (const char *str, const char *glob);
 int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas);
 int sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
 

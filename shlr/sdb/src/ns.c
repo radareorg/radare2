@@ -25,9 +25,9 @@ static int in_list(SdbList *list, void *item) {
 }
 
 static void ns_free(Sdb *s, SdbList *list) {
+	SdbList *ons = NULL;
 	SdbListIter next;
 	SdbListIter *it;
-	SdbList *ons;
 	int deleted;
 	SdbNs *ns;
 	if (!list || !s) return;
@@ -46,17 +46,18 @@ static void ns_free(Sdb *s, SdbList *list) {
 				s->ns->free = NULL;
 			ls_delete (s->ns, it); // free (it)
 			deleted = 1;
-			if (ns->sdb && ns->sdb->ns){
-				ons = ns->sdb->ns;
+			if (ns->sdb) {
+				if (ns->sdb->ns)
+					ons = ns->sdb->ns;
 				ns->sdb->ns = NULL;
+				if (sdb_free (ns->sdb)) {
+					ns->sdb = NULL;
+					free (ns->name);
+					ns->name = NULL;
+				}
+				if (ns && ns->sdb)
+					ns->sdb->ns = ons;
 			}
-			if (sdb_free (ns->sdb)) {
-				ns->sdb = NULL;
-				free (ns->name);
-				ns->name = NULL;
-			}
-			if (ns && ns->sdb)
-				ns->sdb->ns = ons;
 		}
 		if (!deleted) {
 			s->ns->free = NULL;
@@ -92,17 +93,19 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	//ns->sdb = sdb_new (dir, ns->name, 0);
 	ns->sdb = sdb_new0 ();
 	// TODO: generate path
-	if (!ns->sdb) {
-		free (ns->name);
+	if (ns->sdb) {
 		free (ns->sdb->path);
+		ns->sdb->path = NULL;
+		if (*dir)
+			ns->sdb->path = strdup (dir);
+		free (ns->sdb->name);
+		if (name && *name)
+			ns->sdb->name = strdup (name);
+	} else {
+		free (ns->name);
 		free (ns);
 		ns = NULL;
 	}
-	if (dir && *dir)
-		ns->sdb->path = strdup (dir);
-	free (ns->sdb->name);
-	if (name && *name)
-		ns->sdb->name = strdup (name);
 	return ns;
 }
 

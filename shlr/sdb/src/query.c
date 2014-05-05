@@ -244,6 +244,9 @@ next_quote:
 			fprintf (stderr, "sdb: filesystem access disabled in config\n");
 		}
 	} else
+	if (*cmd == '~') {
+		sdb_unset_matching (s, cmd+1);
+	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;
 		*buf = 0;
