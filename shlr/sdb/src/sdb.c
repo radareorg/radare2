@@ -40,6 +40,9 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 			s->dir[plen] = '/';
 			memcpy (s->dir+plen+1, name, nlen+1);
 		}
+		else {
+		  s->dir = (name&&*name)? strdup (name): NULL;
+		}
 		switch (lock) {
 		case 1:
 			if (!sdb_lock (sdb_lockfile (s->dir)))
@@ -50,7 +53,6 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 				goto fail;
 			break;
 		}
-		s->dir = (name&&*name)? strdup (name): NULL;
 		if (s->dir) 
 			s->fd = open (s->dir, O_RDONLY|O_BINARY);
 		else s->fd = -1;

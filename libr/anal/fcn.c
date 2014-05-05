@@ -83,7 +83,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	if (!fcn || !a|| !(ref = r_anal_ref_new ()))
 		return R_FALSE;
 	// set global reference
-	r_anal_xrefs_set (a, type=='s'?"string":type=='d'?"data":"code", addr, at);
+	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference
 #if FCN_OLD
 	ref->at = at; // from
@@ -287,6 +287,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			return fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), depth-1);
 #endif
 		case R_ANAL_OP_TYPE_CJMP:
+			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
+						  R_ANAL_REF_TYPE_CODE)) {
+			  FITFCNSZ();
+			  r_anal_op_fini (&op);
+			  return R_ANAL_RET_ERROR;
+			}
+
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;

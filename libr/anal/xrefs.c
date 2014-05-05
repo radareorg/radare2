@@ -5,13 +5,45 @@
 
 #define DB anal->sdb_xrefs
 
+static void _r_anal_xref_create_sdb_key(char * const key, const size_t key_len,
+					char const * const kind,
+					const RAnalRefType type,
+					const ut64 addr);
+
+void _r_anal_xref_create_sdb_key(char * const key, const size_t key_len,
+				 char const * const kind,
+				 const RAnalRefType type,
+				 const ut64 addr)
+{
+  char const * _sdb_type = NULL;
+  switch(type)
+    {
+    case R_ANAL_REF_TYPE_NULL:
+      _sdb_type = "unknown";
+      break;
+    case R_ANAL_REF_TYPE_CODE:
+      _sdb_type = "code.jmp";
+      break;
+    case R_ANAL_REF_TYPE_CALL:
+      _sdb_type = "code.call";
+      break;
+    case R_ANAL_REF_TYPE_DATA:
+      _sdb_type = "data.mem";
+      break;
+    case R_ANAL_REF_TYPE_STRING:
+      _sdb_type = "data.string";
+      break;
+    }
+
+  snprintf(key, key_len, "%s.%s.0x%"PFMT64x, kind, _sdb_type, addr);
+}
+
 R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
-        char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d/xrefs", prjfile);
+        char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
 	path = r_str_home (db);
 	sdb_free (DB);
 	DB = sdb_new (path, "xrefs", 0);
 	sdb_ns_set (anal->sdb, "xrefs", DB);
-	sdb_array_set (DB, "types", -1, "code,data", 0);
 	free (path);
 	free (db);
 }
@@ -20,33 +52,37 @@ R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 	sdb_sync (anal->sdb_xrefs);
 }
 
-R_API void r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to) {
+R_API void r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
+			     ut64 from, ut64 to) {
 	char key[32];
-	snprintf (key, sizeof (key), "ref.%s.0x%"PFMT64x, type, from);
+	_r_anal_xref_create_sdb_key (key, sizeof (key), "ref", type, from);
 	sdb_array_add_num (DB, key, to, 0);
-	snprintf (key, sizeof (key), "xref.%s.0x%"PFMT64x, type, to);
+	_r_anal_xref_create_sdb_key (key, sizeof (key), "xref", type, to);
 	sdb_array_add_num (DB, key, from, 0);
 }
 
-R_API void r_anal_xrefs_deln (RAnal *anal, const char *type, ut64 from, ut64 to) {
+R_API void r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	char key[32];
-	snprintf (key, sizeof (key), "%s.0x%"PFMT64x, type, from);
+	_r_anal_xref_create_sdb_key (key, sizeof (key), "ref", type, from);
 	sdb_array_remove_num (DB, key, to, 0);
+	_r_anal_xref_create_sdb_key (key, sizeof (key), "xref", type, to);
+	sdb_array_remove_num (DB, key, from, 0);
 }
 
-R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const char *type, ut64 addr) {
+R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type,
+			     ut64 addr) {
 	char *next, *s, *str, *ptr, key[256];
 	RAnalRef *ref = NULL;
-	snprintf (key, sizeof (key), "%s.%s.0x%"PFMT64x, kind, type, addr);
+	_r_anal_xref_create_sdb_key(key, sizeof (key), kind, type, addr);
 	str = sdb_get (DB, key, 0);
 	if (!str) return R_FALSE;
 	for (ptr=str; ; ptr = next) {
 		s = sdb_anext (ptr, &next);
 		if (!(ref = r_anal_ref_new ()))
 			return R_FALSE;
-		ref->addr = addr;
-		ref->at = r_num_get (NULL, s);
-		ref->type = (!strcmp (type, "code"))?'C':'d'; // XXX
+		ref->addr = r_num_get (NULL, s);
+		ref->at = addr;
+		ref->type = type;
 		r_list_append (list, ref);
 		if (!next)
 			break;
@@ -55,11 +91,14 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const c
 	return R_TRUE;
 }
 
-R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr) {
+R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	RList *list = r_list_new ();
 	list->free = NULL; // XXX
-	r_anal_xrefs_from (anal, list, "ref", "code", addr);
-	r_anal_xrefs_from (anal, list, "ref", "data", addr);
+	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_NULL, to);
+	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CODE, to);
+	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CALL, to);
+	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_DATA, to);
+	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_STRING, to);
 	if (r_list_length (list)<1) {
 		r_list_free (list);
 		list = NULL;
@@ -69,7 +108,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr) {
 
 R_API void r_anal_xrefs_init (RAnal *anal) {
 	sdb_reset (DB);
-	sdb_array_set (DB, "types", -1, "code,data", 0);
+	sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
 }
 
 static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {

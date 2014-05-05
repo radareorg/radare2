@@ -519,9 +519,9 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 #if 0
 		r_list_foreach (core->anal->refs, iter, refi)
 #endif
-			if (refi->addr == ds->at) {
+			if (refi->at == ds->at) {
 				RAnalFunction *fun = r_anal_fcn_find (
-					core->anal, refi->at,
+					core->anal, refi->addr,
 					R_ANAL_FCN_TYPE_FCN |
 					R_ANAL_FCN_TYPE_ROOT);
 #if 1
@@ -535,19 +535,39 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 						&& f->addr==ds->at)?" ":core->cons->vline[LINE_VERT], ds->refline2);
 				}
 #endif
+
+				char const * _xref_type = "UNKNOWN";
+				switch(refi->type)
+				  {
+				  case R_ANAL_REF_TYPE_NULL:
+				    _xref_type = "UNKNOWN";
+				    break;
+				  case R_ANAL_REF_TYPE_CODE:
+				    _xref_type = "JMP";
+				    break;
+				  case R_ANAL_REF_TYPE_CALL:
+				    _xref_type = "CALL";
+				    break;
+				  case R_ANAL_REF_TYPE_DATA:
+				    _xref_type = "DATA";
+				    break;
+				  case R_ANAL_REF_TYPE_STRING:
+				    _xref_type = "STRING";
+				    break;
+				  }
+
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-						ds->pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
-						fun?fun->name:"unk");
+						       ds->pal_comment,
+						       _xref_type, refi->addr,
+						       fun?fun->name:"unk");
 				} else {
-					r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
-						refi->type=='c'?"CODE (JMP)":
-						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
-						fun?fun->name: "unk");
+				  r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
+						 _xref_type, refi->addr,
+						 fun?fun->name: "unk");
 				}
 			}
-		}
+			}
 			r_list_free (xrefs);
 		}
 	}
@@ -1217,7 +1237,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 	int have_local = 0;
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
-	//	case R_ANAL_OP_TYPE_CJMP:
+	        case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			cf = r_anal_fcn_find (core->anal, /* current function */
 				ds->at, R_ANAL_FCN_TYPE_NULL);

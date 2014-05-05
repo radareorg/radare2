@@ -28,15 +28,16 @@ R_API void r_anal_ref_free(void *ref) {
 
 // TODO: use sdb or hashmap for fucks sake
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
-	const char *types = type=='c'?"jmp":
-		type=='C'?"call": type=='s'?"string": "data";
-	r_anal_xrefs_set (anal, types, at, addr);
+	r_anal_xrefs_set (anal, type, at, addr);
 	return R_TRUE;
 }
 
 R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr) {
-	r_anal_xrefs_deln (anal, "code", at, addr);
-	r_anal_xrefs_deln (anal, "data", at, addr);
+	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_NULL, at, addr);
+	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CODE, at, addr);
+	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CALL, at, addr);
+	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_DATA, at, addr);
+	r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_STRING, at, addr);
 	return R_TRUE;
 }
 

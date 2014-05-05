@@ -477,9 +477,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 #define USE_NEW_REFS 1
 #if USE_NEW_REFS
 				r_list_foreach (fcni->xrefs, iter2, refi) {
-					const char *types = "code";
-					if (refi->type == 'd') types = "data";
-					r_anal_xrefs_set (core->anal, types, refi->addr, refi->at);
+				  r_anal_xrefs_set (core->anal, refi->type, refi->addr, refi->at);
 				}
 #else
 				/* If the xref is new, add it */
