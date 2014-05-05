@@ -569,8 +569,11 @@ static int r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, const char 
 
 static int r_bin_file_xtr_load (RBin *bin, RBinXtrPlugin *xtr, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	ut32 sz = 0;
+	int res = 0;
 	char *bytes = bin->file ? r_file_slurp (bin->file, (int*)&sz) : NULL;
-	return bytes && sz > 0 && r_bin_file_xtr_load_bytes (bin, xtr, bin->file, (ut8*)bytes, sz, baseaddr, loadaddr, idx, fd, rawstr);
+	res = (bytes && sz > 0 && r_bin_file_xtr_load_bytes (bin, xtr, bin->file, (ut8*)bytes, sz, baseaddr, loadaddr, idx, fd, rawstr));
+	free (bytes);
+	return res;
 }
 
 static RBinPlugin * r_bin_get_binplugin_by_binfile (RBin *bin, RBinFile *binfile) {
