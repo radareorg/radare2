@@ -982,7 +982,7 @@ ulong Disasm(const unsigned char *src,ulong srcsize,ulong srcip,
         };
         name[i]='\0'; }
       else {
-        strcpy(name,pd->name);
+        strncpy(name,pd->name, TEXTLEN - 1);
         for (i=0; name[i]!='\0'; i++) {
           if (name[i]==',') {          // Use main mnemonic
             name[i]='\0'; break;
