@@ -67,7 +67,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (size <= len) {
-		strcpy (op->buf_asm, dalvik_opcodes[i].name);
+		strncpy (op->buf_asm, dalvik_opcodes[i].name, sizeof (op->buf_asm) - 1);
 		size = dalvik_opcodes[i].len;
 		switch (dalvik_opcodes[i].fmt) {
 		case fmtop: break;
