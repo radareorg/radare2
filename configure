@@ -162,6 +162,7 @@ printf "
 Optional Features:
   --enable-cparse        build with cparse support 
   --disable-debugger     disable native debugger features 
+  --no-unused-warnings   hide compiler warnings about unused variables/parameters/functions
   --with-sysmagic        force to use system's magic 
   --with-syszip          force to use system's libzip and zlib 
   --without-ewf          disable EWF dependency 
@@ -272,6 +273,8 @@ echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-syszi
 	INFODIR="$value"; ;;
 --mandir)
 	MANDIR="$value"; ;;
+--no-unused-warnings)
+	CFLAGS="${CFLAGS} -Wunused-but-set-parameter -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable"; ;;
 
 "--enable-cparse") CPARSE="1"; ;;
 "--disable-debugger") DEBUGGER="0"; ;;
