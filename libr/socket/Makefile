@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_socket
-OBJS=socket.o proc.o http.o http_server.o
+OBJS=socket.o proc.o http.o http_server.o rap_server.o
 DEPS=r_util
 
 include deps.mk
