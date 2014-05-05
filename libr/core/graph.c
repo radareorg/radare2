@@ -132,7 +132,7 @@ static void Layout_depth(Node *nodes, Edge *edges) {
 	const int v_spacing = 4;
 
 	Layout_depth2 (nodes, edges, 0, 0);
-	
+
 	// identify max depth
 	for (i=0; nodes[i].text; i++) {
 		if (nodes[i].depth>maxdepth)
@@ -233,7 +233,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	for (i=0;nodes[i].text;i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}
-	// run layout 
+	// run layout
 	Layout_depth (nodes, edges);
 repeat:
 	w = r_cons_get_size (&h);
@@ -296,26 +296,27 @@ prevnode = curnode;
 	case 'a': can->sx -= 1; break;
 	case 'd': can->sx += 1; break;
 		break;
-	case 'u': 
+	case 'u':
 		curnode = prevnode;
 		break;
-	case 't': 
+	case 't':
 		cn = Edge_node (edges, curnode, 0);
 		if (cn != -1)
 			curnode = cn;
 		// select jump node
 		break;
-	case 'f': 
+	case 'f':
 		cn = Edge_node (edges, curnode, 1);
 		if (cn != -1)
 			curnode = cn;
 		// select false node
 		break;
 	case 'q': {
-			  free (nodes);
-			  free (edges);
+		free (nodes);
+		free (edges);
+		free (can);
 		return R_TRUE;
-		}
+	}
 	case 27: // ESC
 		if (r_cons_readchar () == 91) {
 			if (r_cons_readchar () == 90) {
