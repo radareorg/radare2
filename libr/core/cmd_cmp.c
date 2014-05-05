@@ -278,8 +278,10 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 		buf = (ut8 *)malloc (core->blocksize);
-        if (buf == NULL)
-            return R_FALSE;
+        if (buf == NULL) {
+			fclose (fd);
+			return R_FALSE;
+		}
 		ret = fread (buf, 1, core->blocksize, fd);
 		fclose (fd);
 		if (ret < 1)
