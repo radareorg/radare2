@@ -117,7 +117,7 @@ static void DecodeRG(int index,int datasize,int type) {
   else {
     da->error=DAE_INTERN; return; };
   if (mode>=DISASM_FILE) {
-    strcpy(name,regname[sizeindex][index]);
+    strncpy(name,regname[sizeindex][index], sizeof(name));
     if (lowercase) strlwr(name);
     if (type<PSEUDOOP)                 // Not a pseudooperand
       nresult+=sprintf(da->result+nresult,"%s",name);
