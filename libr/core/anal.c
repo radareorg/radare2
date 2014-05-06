@@ -1361,7 +1361,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 	RAnalCycleHook *ch;
 	RList *hooks = r_list_new ();
 	while (cf && !core->cons->breaked) {
-		if ((ccl > 0) && (op = r_core_anal_op (core, addr)) && (op->cycles)) {
+		if ((op = r_core_anal_op (core, addr)) && (op->cycles) && (ccl > 0)) {
 			r_cons_clear_line (1);
 			eprintf ("%i -- ", ccl);
 			addr += op->size;
@@ -1498,7 +1498,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 				}
 			}
 		}
-		if (op) r_anal_op_free (op);
+		r_anal_op_free (op);
 	}
 	if (core->cons->breaked) {
 		while (cf) {
