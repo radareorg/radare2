@@ -250,14 +250,6 @@ static int cmd_meta(void *data, const char *input) {
 	case 'L':
 		cmd_meta_lineinfo (core, input + 1);
 		break;
-		// XXX: use R_META_TYPE_XXX here
-	case 'z': /* string */
-		 {
-			r_core_read_at (core, addr, (ut8*)name, sizeof (name));
-			name[sizeof (name)-1] = 0;
-			n = strlen (name);
-			eprintf ("%d\n", n);
-		 }
 	case 'C': /* comment */
 		if (input[1] == '+') {
 			const char* newcomment = input+2;
