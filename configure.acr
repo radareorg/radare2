@@ -126,6 +126,13 @@ IFEQ LIBVERSION xxx ; {
 	LIBVERSION = $VERSION ;
 }
 
+ARG_DISABLE WARN_UNUSED warning-unused hide warnings of unused parameters/functions/variables ;
+IFNULL HOST_CC {
+	IFNOT WARN_UNUSED {
+		CFLAGS += -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function -Wunused-but-set-parameter ;
+	}
+}
+
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL
 	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC
 	USEROSTYPE LIL_ENDIAN LIBVERSION ;
