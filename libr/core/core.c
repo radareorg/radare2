@@ -974,6 +974,7 @@ reaccept:
 				ptr = (ut8 *)malloc (i+core->blocksize+5);
 				if (ptr==NULL) {
 					eprintf ("Cannot read %d bytes\n", i);
+					r_socket_close (c);
 					// TODO: reply error here
 					return -1;
 				} else {
