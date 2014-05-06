@@ -277,9 +277,22 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 
 
 			if (i) {
-				char *include_dir;
+				char *include_dir, *comp_dir;
+				char *allocated_id = NULL;
 				if (id_idx > 0) {
 					include_dir = sdb_array_get (s, "includedirs", id_idx - 1, 0);
+
+					if (include_dir && include_dir[0] != '/') {
+						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
+						if (comp_dir) {
+							allocated_id = malloc(strlen(comp_dir) +
+									strlen(include_dir) + 8);
+							snprintf(allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
+									"%s/%s/", comp_dir, include_dir);
+							printf( "%s\n", allocated_id);
+							include_dir = allocated_id;
+						}
+					}
 				} else {
 					include_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 					if (!include_dir)
@@ -291,6 +304,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 				hdr->file_names[count].name = malloc (sizeof(char) * namelen);
 				snprintf (hdr->file_names[count].name, namelen - 1, "%s/%s", include_dir, filename);
 				hdr->file_names[count].name[namelen - 1] = '\0';
+
+				if (allocated_id)
+					free (allocated_id);
 
 				hdr->file_names[count].id_idx = id_idx;
 				hdr->file_names[count].mod_time = mod_time;
