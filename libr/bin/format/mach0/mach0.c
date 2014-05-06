@@ -505,11 +505,16 @@ static int MACH0_(r_bin_mach0_parse_import_stub)(struct MACH0_(r_bin_mach0_obj_t
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
 				bin->sects[i].reserved2 > 0) {
 			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
+			if (nsyms > bin->size) {
+				eprintf ("mach0: Invalid symbol table size\n");
+			} else
 			for (j = 0; j < nsyms; j++) {
-				if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
-					continue;
-				if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j])
-					continue;
+				if (bin->sects)
+					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
+						continue;
+				if (bin->indirectsyms)
+					if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j])
+						continue;
 				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				symbol->offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
 				symbol->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
@@ -754,10 +759,15 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 					//ut8 sym_flags = imm;
 					while (*p++);
 					sym_ord = -1;
+					if (bin->symtab)
 					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-						int stridx = bin->symtab[bin->dysymtab.iundefsym + j].n_un.n_strx;
-						if (stridx < 0 || stridx >= bin->symstrlen)
-							continue;
+						int stridx = 0;
+						int iundefsym = bin->dysymtab.iundefsym;
+						if (iundefsym>=0 && iundefsym < bin->nsymtab) {
+							stridx = bin->symtab[iundefsym + j].n_un.n_strx;
+							if (stridx < 0 || stridx >= bin->symstrlen)
+								continue;
+						}
 						if (!strcmp((char *)bin->symstr + stridx, sym_name)) {
 							sym_ord = j;
 							break;
