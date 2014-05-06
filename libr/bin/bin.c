@@ -377,7 +377,7 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
 			if (xtr->check && xtr->check_bytes (buf_bytes, sz)) {
-				if (xtr && (xtr->extract_from_bytes || xtr->extract_from_bytes))
+				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes))
 					return r_bin_file_xtr_load_bytes (bin, xtr, desc->name, buf_bytes, sz, baseaddr, loadaddr, xtr_idx, desc->fd, rawstr);
 				xtr = NULL;
 			}
