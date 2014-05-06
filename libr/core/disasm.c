@@ -1343,7 +1343,7 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 				if (ds->show_color)
 					r_cons_printf ("%s  ; %s"Color_RESET"%s",
 							ds->pal_comment, ds->sl, ds->pre);
-				else r_cons_printf ("  ; %s\n%s", ds->sl, ds->pre);
+				else r_cons_printf ("  ; %s%s", ds->sl, ds->pre);
 				free (ds->osl);
 				ds->osl = ds->sl;
 				ds->sl = NULL;
