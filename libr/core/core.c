@@ -622,6 +622,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* TODO: it leaks as shit */
 	update_sdb (c);
 	r_io_free (c->io);
+	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
 	sdb_free (c->sdb);

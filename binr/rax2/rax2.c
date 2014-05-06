@@ -262,9 +262,12 @@ static int use_stdin () {
 int main (int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL);
-	if (argc == 1)
+	if (argc == 1) {
+		r_num_free (num);
 		return use_stdin ();
+	}
 	for (i=1; i<argc; i++)
 		rax (argv[i], 0, (i+1)==argc);
+	r_num_free (num);
 	return 0;
 }
