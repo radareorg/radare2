@@ -236,7 +236,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
-	if (input[1] == '+') {
+	if (input[1] == '+' || input[1] == ' ') {
 		const char* newcomment = input+2;
 		char *text;
 		while (*newcomment==' ') newcomment++;
@@ -307,6 +307,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		} else eprintf ("Usage: CCa [address] [comment]\n");
 		free (s);
 		return R_TRUE;
+	} else if (input[1] == '*') {
+		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
+	} else if (input[1] == '-') {
+		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1, NULL);
 	}
 
 	return R_TRUE;
