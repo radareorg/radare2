@@ -413,65 +413,6 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'v':
-#if USE_VARSUBS
-		switch (input[1]) {
-		case '?':
-			r_cons_printf ("Usage: Cv[-*][ off reg name] \n");
-			break;
-		case '-':
-			 {
-				ut64 offset;
-				if (input[2]==' ') {
-					offset = r_num_math (core->num, input+3);
-					if ((f = r_anal_fcn_find (core->anal, offset,
-								R_ANAL_FCN_TYPE_NULL)) != NULL)
-						memset (f->varsubs, 0, sizeof (f->varsubs));
-				} else if (input[2]=='*') {
-					r_list_foreach (core->anal->fcns, iter, f)
-					memset (f->varsubs, 0, sizeof (f->varsubs));
-				}
-			 }
-			break;
-		case '*':
-			r_list_foreach (core->anal->fcns, iter, f) {
-				for (i = 0; i < R_ANAL_VARSUBS; i++) {
-					if (f->varsubs[i].pat[0] != '\0')
-						r_cons_printf ("Cv 0x%08"PFMT64x" %s %s\n", f->addr, f->varsubs[i].pat, f->varsubs[i].sub);
-					else break;
-				}
-			}
-			break;
-		default:
-			 {
-				char *ptr = strdup (input+2);
-				const char *varsub = NULL;
-				const char *pattern = NULL;
-				ut64 offset = -1LL;
-				n = r_str_word_set0 (ptr);
-				if (n > 2) {
-					switch(n) {
-					case 3: varsub = r_str_word_get0 (ptr, 2);
-					case 2: pattern = r_str_word_get0 (ptr, 1);
-					case 1: offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-					}
-					if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
-						if (pattern && varsub)
-							for (i = 0; i < R_ANAL_VARSUBS; i++)
-								if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
-									strncpy (f->varsubs[i].pat, pattern, sizeof (f->varsubs[i].pat)-1);
-									strncpy (f->varsubs[i].sub, varsub, sizeof (f->varsubs[i].sub)-1);
-									break;
-								}
-					} else eprintf ("Error: Function not found\n");
-				}
-				free (ptr);
-			 }
-			break;
-		}
-#else
-		eprintf ("TODO: varsubs has been disabled because it needs to be sdbized\n");
-#endif
 	case '-':
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
@@ -487,7 +428,6 @@ static int cmd_meta(void *data, const char *input) {
 		"| CL[-][*] [file:line] [addr]     show or add 'code line' information (bininfo)\n"
 		"| CC[-] [comment-text]    add/remove comment. Use CC! to edit with $EDITOR\n"
 		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
-		"| Cv[-] offset reg name   add var substitution\n"
 		"| Cs[-] [size] [[addr]]   add string\n"
 		"| Ch[-] [size] [@addr]    hide data\n"
 		"| Cd[-] [size]            hexdump data\n"
