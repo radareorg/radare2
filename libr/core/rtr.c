@@ -618,12 +618,6 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 	r_mem_copyendian ((ut8*)&cmd_len, (ut8*)bufr+1, 4, endian);
-	if (i == 0)
-		return;
-	if (i < 0) {
-		eprintf ("Error: cmd length < 0\n");
-		return;
-	}
 	cmd_output = malloc (cmd_len);
 	if (!cmd_output) {
 		eprintf ("Error: Allocating cmd output\n");
