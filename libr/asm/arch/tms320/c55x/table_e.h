@@ -155,7 +155,7 @@
 				.i_list = NULL,
 				.m_list = (insn_mask_t []) { INSN_MASK(8,4,10),  LIST_END },
 				.f_list = (insn_flag_t []) { INSN_FLAG(0,E), INSN_FLAG(12,SS), INSN_FLAG(16,t), INSN_FLAG(20,dd), INSN_FLAG(22,SS),  LIST_END },
-				.syntax = INSN_SYNTAX(BCNT ACx, ACy,TCx, Tx),
+				.syntax = INSN_SYNTAX(BCNT ACx, ACy, TCx, Tx),
 			},
 			{
 				// SSDDnnnnDDSS11000001000E
