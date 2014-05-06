@@ -631,7 +631,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
-	free (c->num);
 	r_cmd_free (c->rcmd);
 	r_anal_free (c->anal);
 	r_asm_free (c->assembler);
