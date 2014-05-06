@@ -122,7 +122,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		return R_FALSE;
 	}
 	meta_inrange_del (a, addr, size);
-	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, addr);
+	snprintf (key, sizeof (key)-1, type==R_META_TYPE_COMMENT ? "meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
 	ptr = sdb_const_get (DB, key, 0);
 	if (ptr) {
 		for (i=0; ptr[i]; i++) {
