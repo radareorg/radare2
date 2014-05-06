@@ -382,7 +382,7 @@ const char * get_cond_str(ut8 key, char * str)
 	/* 000 FSSS ... 101 FSSS */
 	if ((key >> 4) <= 5) {
 		static const char * op[6] = { "==", "!=", "<", "<=", ">", ">=" };
-		sprintf(str, "%s %s #0", get_freg_str(key & 15, NULL), op[(key >> 4) & 7]);
+		sprintf(str, "%s %s 0", get_freg_str(key & 15, NULL), op[(key >> 4) & 7]);
 		return str;
 	}
 
@@ -460,7 +460,7 @@ const char * get_smem_str(ut8 key, char * str)
 #ifdef IDA_COMPATIBLE_MODE
 		sprintf(str, "*SP(#%Xh)", key >> 1);
 #else
-		sprintf(str, "@%Xh", key >> 1);
+		sprintf(str, "@0x%02X", key >> 1);
 #endif
 		return str;
 	}
@@ -468,14 +468,14 @@ const char * get_smem_str(ut8 key, char * str)
 	// indirect memory
 
 	switch (key) {
-	case 0x11: return "ABS16(#k16)";
-	case 0x31: return "*(#k23)";
-	case 0x51: return "port(#k16)";
+	case 0x11: return "ABS16(k16)";
+	case 0x31: return "*(k23)";
+	case 0x51: return "port(k16)";
 	case 0x71: return "*CDP";
 	case 0x91: return "*CDP+";
 	case 0xB1: return "*CDP-";
-	case 0xD1: return "*CDP(#K16)";
-	case 0xF1: return "*+CDP(#K16)";
+	case 0xD1: return "*CDP(K16)";
+	case 0xF1: return "*+CDP(K16)";
 	}
 
 	switch (key & 0x1F) {
@@ -494,35 +494,35 @@ const char * get_smem_str(ut8 key, char * str)
 		//	C54CM:0 => *ARn(T0)
 		//	C54CM:1 => *ARn(AR0)
 	case 0x0B: return "*ARn(T0)";
-	case 0x0D: return "*ARn(#K16)";
-	case 0x0F: return "*+ARn(#K16)";
+	case 0x0D: return "*ARn(K16)";
+	case 0x0F: return "*+ARn(K16)";
 		// TODO:
 		//	ARMS:0 => *(ARn + T1)
-		//	ARMS:1 => *ARn(short(#1))
+		//	ARMS:1 => *ARn(short(1))
 	case 0x13: return "*(ARn + T1)";
 		// TODO:
 		//	ARMS:0 => *(ARn - T1)
-		//	ARMS:1 => *ARn(short(#2))
+		//	ARMS:1 => *ARn(short(2))
 	case 0x15: return "*(ARn - T1)";
 		// TODO:
 		//	ARMS:0 => *ARn(T1)
-		//	ARMS:1 => *ARn(short(#3))
+		//	ARMS:1 => *ARn(short(3))
 	case 0x17: return "*ARn(T1)";
 		// TODO:
 		//	ARMS:0 => *+ARn
-		//	ARMS:1 => *ARn(short(#4))
+		//	ARMS:1 => *ARn(short(4))
 	case 0x19: return "*+ARn";
 		// TODO:
 		//	ARMS:0 => *-ARn
-		//	ARMS:1 => *ARn(short(#5))
+		//	ARMS:1 => *ARn(short(5))
 	case 0x1B: return "*-ARn";
 		// TODO:
 		//	ARMS:0 => *(ARn + T0B)
-		//	ARMS:1 => *ARn(short(#6))
+		//	ARMS:1 => *ARn(short(6))
 	case 0x1D: return "*(ARn + T0B)";
 		// TODO:
 		//	ARMS:0 => *(ARn - T0B)
-		//	ARMS:1 => *ARn(short(#7))
+		//	ARMS:1 => *ARn(short(7))
 	case 0x1F: return "*(ARn - T0B)";
 	}
 
@@ -628,40 +628,40 @@ void decode_constants(tms320_dasm_t * dasm)
 	// signed constant
 
 	if (field_valid(dasm, K8))
-		substitute(dasm->syntax, "K8", "#%2Xh", field_value(dasm, K8));
+		substitute(dasm->syntax, "K8", "0x%02X", field_value(dasm, K8));
 	if (field_valid(dasm, K16))
-		substitute(dasm->syntax, "K16", "#%Xh", be16(field_value(dasm, K16)));
+		substitute(dasm->syntax, "K16", "0x%04X", be16(field_value(dasm, K16)));
 
 	// unsigned constant
 
 	if (field_valid(dasm, k4))
-		substitute(dasm->syntax, "k4", "#%Xh", field_value(dasm, k4));
+		substitute(dasm->syntax, "k4", "0x%01X", field_value(dasm, k4));
 	if (field_valid(dasm, k5))
-		substitute(dasm->syntax, "k5", "#%Xh", field_value(dasm, k5));
+		substitute(dasm->syntax, "k5", "0x%02X", field_value(dasm, k5));
 	if (field_valid(dasm, k8))
-		substitute(dasm->syntax, "k8", "#%Xh", field_value(dasm, k8));
+		substitute(dasm->syntax, "k8", "0x%02X", field_value(dasm, k8));
 
 	if (field_valid(dasm, k12))
-		substitute(dasm->syntax, "k12", "#%Xh", be16(field_value(dasm, k12)));
+		substitute(dasm->syntax, "k12", "0x%03X", be16(field_value(dasm, k12)));
 	if (field_valid(dasm, k16))
-		substitute(dasm->syntax, "k16", "#%Xh", be16(field_value(dasm, k16)));
+		substitute(dasm->syntax, "k16", "0x%04X", be16(field_value(dasm, k16)));
 
 	if (field_valid(dasm, k4) && field_valid(dasm, k3))
-		substitute(dasm->syntax, "k7", "#%Xh", (field_value(dasm, k3) << 4) | field_value(dasm, k4));
+		substitute(dasm->syntax, "k7", "0x%02X", (field_value(dasm, k3) << 4) | field_value(dasm, k4));
 	if (field_valid(dasm, k4) && field_valid(dasm, k5))
-		substitute(dasm->syntax, "k9", "#%Xh", (field_value(dasm, k5) << 4) | field_value(dasm, k4));
+		substitute(dasm->syntax, "k9", "0x%03X", (field_value(dasm, k5) << 4) | field_value(dasm, k4));
 
 	// dasm address label
 
 	if (field_valid(dasm, D16))
-		substitute(dasm->syntax, "D16", "%Xh", be16(field_value(dasm, D16)));
+		substitute(dasm->syntax, "D16", "0x%04X", be16(field_value(dasm, D16)));
 
 	// immediate shift value
 
 	if (field_valid(dasm, SHFT))
-		substitute(dasm->syntax, "SHFT", "%Xh", field_value(dasm, SHFT));
+		substitute(dasm->syntax, "#SHFT", "0x%01Xh", field_value(dasm, SHFT));
 	if (field_valid(dasm, SHIFTW))
-		substitute(dasm->syntax, "SHIFTW", "%Xh", field_value(dasm, SHIFTW));
+		substitute(dasm->syntax, "#SHIFTW", "0x%02X", field_value(dasm, SHIFTW));
 }
 
 void decode_addresses(tms320_dasm_t * dasm)
@@ -669,30 +669,30 @@ void decode_addresses(tms320_dasm_t * dasm)
 	// program address label
 
 	if (field_valid(dasm, L7))
-		substitute(dasm->syntax, "L7", "%Xh", field_value(dasm, L7));
+		substitute(dasm->syntax, "L7", "0x%02X", field_value(dasm, L7));
 	if (field_valid(dasm, L8))
-		substitute(dasm->syntax, "L8", "%Xh", field_value(dasm, L8));
+		substitute(dasm->syntax, "L8", "0x%02X", field_value(dasm, L8));
 	if (field_valid(dasm, L16))
-		substitute(dasm->syntax, "L16", "%Xh", be16(field_value(dasm, L16)));
+		substitute(dasm->syntax, "L16", "0x%04X", be16(field_value(dasm, L16)));
 
 	// program address label
 
 	if (field_valid(dasm, l1) && field_valid(dasm, l3))
-		substitute(dasm->syntax, "l4", "%Xh", (field_value(dasm, l3) << 1) | field_value(dasm, l1));
+		substitute(dasm->syntax, "l4", "0x%01X", (field_value(dasm, l3) << 1) | field_value(dasm, l1));
 
 	// program memory address
 
 	if (field_valid(dasm, l7))
-		substitute(dasm->syntax, "pmad", "%Xh", field_value(dasm, l7));
+		substitute(dasm->syntax, "pmad", "0x%02X", field_value(dasm, l7));
 	if (field_valid(dasm, l16))
-		substitute(dasm->syntax, "pmad", "%Xh", be16(field_value(dasm, l16)));
+		substitute(dasm->syntax, "pmad", "0x%04X", be16(field_value(dasm, l16)));
 
 	// program or dasm address label
 
 	if (field_valid(dasm, P8))
-		substitute(dasm->syntax, "P8", "%Xh", field_value(dasm, P8));
+		substitute(dasm->syntax, "P8", "0x%02X", field_value(dasm, P8));
 	if (field_valid(dasm, P24))
-		substitute(dasm->syntax, "P24", "%Xh", be24(field_value(dasm, P24)));
+		substitute(dasm->syntax, "P24", "0x%06X", be24(field_value(dasm, P24)));
 }
 
 void decode_swap(tms320_dasm_t * dasm)
@@ -854,13 +854,13 @@ void decode_addressing_modes(tms320_dasm_t * dasm)
 
 		if (field_value(dasm, AAAAAAAI) & 1) {
 			if (strstr(tmp, "k16")) {
-				substitute(tmp, "k16", "%X", be16(*(ut16 *)(dasm->stream + dasm->length)));
+				substitute(tmp, "k16", "0x%04X", be16(*(ut16 *)(dasm->stream + dasm->length)));
 				dasm->length += 2;
 			} else if (strstr(tmp, "k23")) {
-				substitute(tmp, "k23", "%X", be24(*(ut32 *)(dasm->stream + dasm->length) & 0x7FFFFF));
+				substitute(tmp, "k23", "0x%06X", be24(*(ut32 *)(dasm->stream + dasm->length) & 0x7FFFFF));
 				dasm->length += 3;
 			} else if (strstr(tmp, "K16")) {
-				substitute(tmp, "K16", "%X", be16(*(ut16 *)(dasm->stream + dasm->length)));
+				substitute(tmp, "K16", "0x%04X", be16(*(ut16 *)(dasm->stream + dasm->length)));
 				dasm->length += 2;
 			}
 
