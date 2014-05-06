@@ -234,6 +234,84 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	return 0;
 }
 
+static int cmd_meta_comment(RCore *core, const char *input) {
+	ut64 addr = core->offset;
+	if (input[1] == '+') {
+		const char* newcomment = input+2;
+		char *text;
+		while (*newcomment==' ') newcomment++;
+		char *comment = r_meta_get_string (
+				core->anal, R_META_TYPE_COMMENT, addr);
+		if (comment) {
+			text = malloc (strlen (comment)+strlen (newcomment)+2);
+			strcpy (text, comment);
+			strcat (text, "\n");
+			strcat (text, newcomment);
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+					addr, text);
+			free (text);
+		} else {
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+					addr, newcomment);
+		}
+		return R_TRUE;
+	} else if (input[1] == 'a') {
+		char *s, *p;
+		s = strchr (input, ' ');
+		if (s) {
+			s = strdup (s+1);
+		} else {
+			eprintf ("Usage\n");
+			return R_FALSE;
+		}
+		p = strchr (s, ' ');
+		if (p) *p++ = 0;
+		ut64 addr;
+		if (input[2]=='-') {
+			if (input[3]) {
+				addr = r_num_math (core->num, input+3);
+				r_meta_del (core->anal,
+						R_META_TYPE_COMMENT,
+						addr, 1, NULL);
+			} else eprintf ("Usage: CCa-[address]\n");
+			free (s);
+			return R_TRUE;
+		}
+		addr = r_num_math (core->num, s);
+		// Comment at
+		if (p) {
+			if (input[2]=='+') {
+				char *text = p;
+				char *comment = r_meta_get_string (
+						core->anal, R_META_TYPE_COMMENT,
+						addr);
+				if (comment) {
+					text = malloc (strlen (comment) + strlen (p)+2);
+					strcpy (text, comment);
+					strcat (text, "\n");
+					strcat (text, p);
+					r_meta_add (core->anal,
+							R_META_TYPE_COMMENT,
+							addr, addr+1, text);
+					free (text);
+				} else {
+					r_meta_add (core->anal,
+							R_META_TYPE_COMMENT,
+							addr, addr+1, p);
+				}
+			} else {
+				r_meta_add (core->anal,
+						R_META_TYPE_COMMENT,
+						addr, addr+1, p);
+			}
+		} else eprintf ("Usage: CCa [address] [comment]\n");
+		free (s);
+		return R_TRUE;
+	}
+
+	return R_TRUE;
+}
+
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i, n = 0, type = input[0];
@@ -250,80 +328,9 @@ static int cmd_meta(void *data, const char *input) {
 	case 'L':
 		cmd_meta_lineinfo (core, input + 1);
 		break;
-	case 'C': /* comment */
-		if (input[1] == '+') {
-			const char* newcomment = input+2;
-			char *text;
-			while (*newcomment==' ') newcomment++;
-			char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_COMMENT, addr);
-			if (comment) {
-				text = malloc (strlen (comment)+strlen (newcomment)+2);
-				strcpy (text, comment);
-				strcat (text, "\n");
-				strcat (text, newcomment);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, text);
-				free (text);
-			} else {
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
-			}
-			return R_TRUE;
-		} else
-			if (input[1] == 'a') {
-				char *s, *p;
-				s = strchr (input, ' ');
-				if (s) {
-					s = strdup (s+1);
-				} else {
-					eprintf ("Usage\n");
-					return R_FALSE;
-				}
-				p = strchr (s, ' ');
-				if (p) *p++ = 0;
-				ut64 addr;
-				if (input[2]=='-') {
-					if (input[3]) {
-						addr = r_num_math (core->num, input+3);
-						r_meta_del (core->anal,
-							R_META_TYPE_COMMENT,
-							   addr, 1, NULL);
-					} else eprintf ("Usage: CCa-[address]\n");
-					free (s);
-					return R_TRUE;
-				}
-				addr = r_num_math (core->num, s);
-				// Comment at
-				if (p) {
-					if (input[2]=='+') {
-						char *text = p;
-						char *comment = r_meta_get_string (
-							core->anal, R_META_TYPE_COMMENT,
-						     addr);
-						if (comment) {
-							text = malloc (strlen (comment) + strlen (p)+2);
-							strcpy (text, comment);
-							strcat (text, "\n");
-							strcat (text, p);
-							r_meta_add (core->anal,
-								R_META_TYPE_COMMENT,
-								   addr, addr+1, text);
-							free (text);
-						} else {
-							r_meta_add (core->anal,
-								R_META_TYPE_COMMENT,
-								addr, addr+1, p);
-						}
-					} else {
-						r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
-							addr, addr+1, p);
-					}
-				} else eprintf ("Usage: CCa [address] [comment]\n");
-				free (s);
-				return R_TRUE;
-			}
+	case 'C':
+		cmd_meta_comment (core, input);
+		break;
 	case 'h': /* comment */
 	case 's': /* string */
 	case 'd': /* data */
