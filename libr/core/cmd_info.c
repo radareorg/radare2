@@ -48,12 +48,14 @@ static void r_core_file_info (RCore *core, int mode) {
 			cf->rwx | dbg));
 		r_cons_printf (",\"block\":%d", core->blocksize);
 		r_cons_printf (",\"uri\":\"%s\"", cf->uri);
-		if (binfile->curxtr)
-			r_cons_printf (",\"packet\":\"%s\"",
-				binfile->curxtr->name);
-		if (binfile->curxtr)
-			r_cons_printf (",\"format\":\"%s\"",
-				binfile->curplugin->name);
+		if (binfile) {
+			if (binfile->curxtr)
+				r_cons_printf (",\"packet\":\"%s\"",
+					binfile->curxtr->name);
+			if (binfile->curxtr)
+				r_cons_printf (",\"format\":\"%s\"",
+					binfile->curplugin->name);
+		}
 		r_cons_printf ("}");
 	} else if (cf) {
 		//r_cons_printf ("# Core file info\n");
