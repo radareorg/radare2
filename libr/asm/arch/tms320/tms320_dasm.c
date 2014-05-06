@@ -801,10 +801,14 @@ void decode_registers(tms320_dasm_t * dasm)
 		break;
 	case 0x11:	// SS   DD
 		if (field_value(dasm, SS) == field_value(dasm, DD)) {
-			substitute(dasm->syntax, "[ACx,] ACy", "AC%d", field_value(dasm, SS));
+			substitute(dasm->syntax, "[, ACy]", "");
+			substitute(dasm->syntax, "[ACx,] ACy", "ACy");
 		} else {
-			substitute(dasm->syntax, "[ACx,] ACy", "AC%d, AC%d", field_value(dasm, SS), field_value(dasm, DD));
+			substitute(dasm->syntax, "[, ACy]", ", ACy");
+			substitute(dasm->syntax, "[ACx,] ACy", "ACx, ACy");
 		}
+		substitute(dasm->syntax, "ACx", "AC%d", field_value(dasm, SS));
+		substitute(dasm->syntax, "ACy", "AC%d", field_value(dasm, DD));
 		break;
 	case 0x33:	// SSSS DDDD
 		substitute(dasm->syntax, "ACx", "AC%d", field_value(dasm, SS));
