@@ -312,12 +312,102 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return R_TRUE;
 }
 
+static int cmd_meta_hsdmf (RCore *core, const char *input) {
+	int n, type = input[0];
+	char *t = 0, *p, name[256];
+	ut64 addr_end = 0LL, addr = core->offset;
+
+	switch (input[1]) {
+	case '?':
+		eprintf ("See C?\n");
+		break;
+	case '-':
+		switch (input[2]) {
+			case '*':
+				core->num->value = r_meta_del (core->anal,
+						input[0], 0, UT64_MAX, NULL);
+				break;
+			case ' ':
+				addr = r_num_math (core->num, input+3);
+			default:
+				core->num->value = r_meta_del (core->anal,
+						input[0], addr, 1, NULL);
+				break;
+		}
+		break;
+	case '*':
+		r_meta_list (core->anal, input[0], 1);
+		break;
+	case '!':
+		{
+			char *out, *comment = r_meta_get_string (
+					core->anal, R_META_TYPE_COMMENT, addr);
+			out = r_core_editor (core, comment);
+			if (out) {
+				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				r_meta_set_string (core->anal,
+						R_META_TYPE_COMMENT, addr, out);
+				free (out);
+			}
+			free (comment);
+		}
+		break;
+	case ' ':
+	case '\0':
+		if (type!='z' && !input[1]) {
+			r_meta_list (core->anal, input[0], 0);
+			break;
+		}
+		t = strdup (input+2);
+		p = NULL;
+		n = 0;
+		strncpy (name, t, sizeof (name)-1);
+		if (*input != 'C') {
+			n = r_num_math (core->num, t);
+			if (!*t || n>0) {
+				RFlagItem *fi;
+				p = strchr (t, ' ');
+				if (p) {
+					*p = '\0';
+					strncpy (name, p+1, sizeof (name)-1);
+				} else
+					switch (type) {
+						case 'z':
+							type='s';
+						case 's':
+							// TODO: filter \n and so on :)
+							strncpy (name, t, sizeof (name)-1);
+							r_core_read_at (core, addr, (ut8*)name, sizeof (name));
+							break;
+						default:
+							fi = r_flag_get_i (core->flags, addr);
+							if (fi) strncpy (name, fi->name, sizeof (name)-1);
+					}
+			} else if (n<1) {
+				eprintf ("Invalid length %d\n", n);
+				return R_FALSE;
+			}
+		}
+		if (!n) n++;
+		addr_end = addr + n;
+		if (!r_meta_add (core->anal, type, addr, addr_end, name))
+			free (t);
+		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
+		break;
+	default:
+		eprintf ("Missing space after CC\n");
+		break;
+	}
+
+	return R_TRUE;
+}
+
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	int i, n = 0, type = input[0];
-	ut64 addr = core->offset;
-	char *t = 0, *p, name[256];
-	ut64 addr_end = 0LL;
+	int i;
+	char *t = 0;
 	RAnalFunction *f;
 
 	switch (*input) {
@@ -336,89 +426,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'd': /* data */
 	case 'm': /* magic */
 	case 'f': /* formatted */
-		switch (input[1]) {
-		case '?':
-			eprintf ("See C?\n");
-			break;
-		case '-':
-			switch (input[2]) {
-			case '*':
-				core->num->value = r_meta_del (core->anal,
-					input[0], 0, UT64_MAX, NULL);
-				break;
-			case ' ':
-				addr = r_num_math (core->num, input+3);
-			default:
-				core->num->value = r_meta_del (core->anal,
-					input[0], addr, 1, NULL);
-				break;
-			}
-			break;
-		case '*':
-			r_meta_list (core->anal, input[0], 1);
-			break;
-		case '!':
-			 {
-				char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
-				out = r_core_editor (core, comment);
-				if (out) {
-					//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-					r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-					//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
-					r_meta_set_string (core->anal,
-						R_META_TYPE_COMMENT, addr, out);
-					free (out);
-				}
-				free (comment);
-			 }
-			break;
-		case ' ':
-		case '\0':
-			if (type!='z' && !input[1]) {
-				r_meta_list (core->anal, input[0], 0);
-				break;
-			}
-			t = strdup (input+2);
-			p = NULL;
-			n = 0;
-			strncpy (name, t, sizeof (name)-1);
-			if (*input != 'C') {
-				n = r_num_math (core->num, t);
-				if (!*t || n>0) {
-					RFlagItem *fi;
-					p = strchr (t, ' ');
-					if (p) {
-						*p = '\0';
-						strncpy (name, p+1, sizeof (name)-1);
-					} else
-						switch (type) {
-						case 'z':
-							type='s';
-						case 's':
-							// TODO: filter \n and so on :)
-							strncpy (name, t, sizeof (name)-1);
-							r_core_read_at (core, addr, (ut8*)name, sizeof (name));
-							break;
-						default:
-							fi = r_flag_get_i (core->flags, addr);
-							if (fi) strncpy (name, fi->name, sizeof (name)-1);
-						}
-				} else if (n<1) {
-					eprintf ("Invalid length %d\n", n);
-					return R_FALSE;
-				}
-			}
-			if (!n) n++;
-			addr_end = addr + n;
-			if (!r_meta_add (core->anal, type, addr, addr_end, name))
-				free (t);
-			//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
-			break;
-		default:
-			eprintf ("Missing space after CC\n");
-			break;
-		}
+		cmd_meta_hsdmf (core, input);
 		break;
 	case '-':
 		if (input[1]!='*') {
