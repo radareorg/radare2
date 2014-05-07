@@ -537,6 +537,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 			// check load addr to make sure its still valid
 			loadaddr =  top_file->map->from;
 		}
+		r_bin_bind (r->bin, &(fh->binb));
 		r_list_append (r->files, fh);
 		r_core_bin_load (r, fh->filename, fh->map->from);
 	}
@@ -614,6 +615,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		return NULL;
 	}
 	// check load addr to make sure its still valid
+	r_bin_bind (r->bin, &(fh->binb));
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
 	r_config_set_i (r->config, "zoom.to", fh->map->from+fh->size);

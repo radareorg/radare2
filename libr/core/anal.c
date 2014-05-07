@@ -452,7 +452,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (core->anal->cur && core->anal->cur->analyze_fns) {
 		int result = R_ANAL_RET_ERROR;
-		r_bin_bind (core->bin, &(core->anal->binb));
 		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
 		// do this to prevent stale usage and catch others who are using it
 		//memset(&core->anal->binb, 0, sizeof(RBinBind));
