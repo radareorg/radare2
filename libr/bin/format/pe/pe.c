@@ -247,8 +247,14 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 }
 
 static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
-	int sections_size = sizeof (PE_(image_section_header)) *
-		bin->nt_headers->file_header.NumberOfSections;
+    int num_of_sections = bin->nt_headers->file_header.NumberOfSections;
+    int sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
+
+    if (num_of_sections == 0) {
+        //eprintf("Warning: number of sections in file = 0\n");
+        return R_TRUE;
+    }
+
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
 		return R_FALSE;
