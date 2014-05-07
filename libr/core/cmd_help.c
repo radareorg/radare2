@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -107,20 +107,27 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case ' ':
 		{
-			char unit[32];
+			char *asnum, unit[32];
 			ut32 n32, s, a;
 			float f;
+
 			n = r_num_math (core->num, input+1);
+			asnum  = r_num_as_string (NULL, n);
 			n32 = (ut32)n;
 			memcpy (&f, &n32, sizeof (f));
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
 			a = n & 0x0fff;
 			r_num_units (unit, n);
-			r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %s %04x:%04x ",
+			r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
+				" %s %04x:%04x ",
 				n, n, n, unit, s, a);
 			if (n>>32) r_cons_printf ("%"PFMT64d" ", (st64)n);
 			else r_cons_printf ("%d ", (st32)n);
+			if (asnum) {
+				r_cons_printf ("\"%s\" ", asnum);
+				free (asnum);
+			}
 			/* binary and floating point */
 			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
 			r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);

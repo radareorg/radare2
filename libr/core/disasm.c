@@ -158,6 +158,7 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret );
 static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf);
 static void handle_print_import_name (RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds);
+static void handle_print_as_string(RCore *core, RDisasmState *ds);
 static void handle_print_core_vmode (RCore *core, RDisasmState *ds);
 static void handle_print_cc_update (RCore *core, RDisasmState *ds);
 static void handle_print_dwarf (RCore *core, RDisasmState *ds);
@@ -1383,6 +1384,7 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 }
 
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
+handle_print_as_string (core, ds);
 	if (ds->analop.ptr != UT64_MAX && ds->analop.ptr) {
 		char msg[32];
 		int bsz = len - idx;
@@ -1442,6 +1444,14 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 		} else r_cons_printf (" ; 0x%08x [0x%"PFMT64x"]",
 				word8, ds->analop.ptr);
 	}
+}
+
+static void handle_print_as_string(RCore *core, RDisasmState *ds) {
+	char *str = r_num_as_string (NULL, ds->analop.ptr);
+	if (str) {
+		r_cons_printf (" ; \"%s\"", str);
+	}
+	free (str);
 }
 
 static void handle_print_refptr (RCore *core, RDisasmState *ds) {

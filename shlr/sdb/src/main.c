@@ -181,7 +181,7 @@ int main(int argc, const char **argv) {
 		if ((s = sdb_new (NULL, argv[1], 0))) {
 			sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 			for (;(line = stdin_gets ());) {
-				save = sdb_query (s, line);
+				save |= sdb_query (s, line);
 				free (line);
 			}
 		}
@@ -190,7 +190,7 @@ int main(int argc, const char **argv) {
 		if (!s) return 1;
 		sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 		for (i=2; i<argc; i++)
-			save = sdb_query (s, argv[i]);
+			save |= sdb_query (s, argv[i]);
 	}
 	terminate (0);
 	return 0;

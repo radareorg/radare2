@@ -31,17 +31,11 @@ SDB_API int sdb_check_key(const char *s) {
 	return 1;
 }
 
-SDB_API ut32 sdb_hash(const char *s, int len) {
+SDB_API ut32 sdb_hash(const char *s) {
 	ut32 h = CDB_HASHSTART;
-	if (s) {
-		if (len<0) {
-			while (*s)
-				h = (h+(h<<5))^*s++;
-		} else {
-			while (len--)
-				h = (h+(h<<5))^*s++;
-		}
-	}
+	if (s)
+		while (*s)
+			h = (h+(h<<5))^*s++;
 	return h;
 }
 

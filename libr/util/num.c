@@ -383,12 +383,35 @@ fail:
 	return res;
 }
 
-R_API int r_num_is_valid_input(RNum *num, const char *input_value){
+R_API int r_num_is_valid_input(RNum *num, const char *input_value) {
 	ut64 value = input_value ? r_num_math (num, input_value) : 0;
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
-R_API ut64 r_num_get_input_value(RNum *num, const char *input_value){
+R_API ut64 r_num_get_input_value(RNum *num, const char *input_value) {
 	ut64 value = input_value ? r_num_math (num, input_value) : 0;
 	return value;
+}
+
+R_API char* r_num_as_string(RNum *___, ut64 n) {
+	char str[10];
+	int stri, ret = 0;
+	int len = sizeof (ut64);
+	ut64 num = n;
+	str[stri=0] = 0;
+	while (len--) {
+		char ch = (num & 0xff);
+		if (ch>=27 && ch <127) {
+			str[stri++] = ch;
+			str[stri] = 0;
+		} else {
+			if (ch)
+				return NULL;
+		}
+		ret |= (num&0xff);
+		num >>= 8;
+	}
+	if (ret)
+		return strdup (str);
+	return NULL;
 }

@@ -245,6 +245,7 @@ next_quote:
 		}
 	} else
 	if (*cmd == '~') {
+		d = 1;
 		sdb_unset_matching (s, cmd+1);
 	} else
 	if (*cmd == '+' || *cmd == '-') {
@@ -550,7 +551,7 @@ SDB_API int sdb_query (Sdb *s, const char *cmd) {
 		if (out != buf)
 			free (out);
 	} 
-	return strchr (cmd, '=')? 1: 0;
+	return ((*cmd=='~')||strchr (cmd, '='))? 1: 0;
 }
 
 SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {

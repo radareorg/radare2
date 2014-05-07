@@ -260,6 +260,7 @@ R_API const char *r_num_calc_index (RNum *num, const char *p);
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
+R_API char* r_num_as_string(RNum *___, ut64 n);
 
 #define R_BUF_CUR -1
 R_API RBuffer *r_buf_new();

@@ -135,8 +135,7 @@ int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas);
 ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
 ut64 sdb_now (void);
 ut64 sdb_unow (void);
-ut32 sdb_hash (const char *key, int klen);
-#define sdb_hashstr(x) sdb_hash(x,-1)
+ut32 sdb_hash (const char *key);
 
 /* json api */
 char *sdb_json_get (Sdb* s, const char *key, const char *p, ut32 *cas);
