@@ -180,6 +180,8 @@ typedef struct {
 		def_field	(FDDD, 4);
 		def_field	(XSSS, 4);
 		def_field	(XDDD, 4);
+		def_field	(XACS, 4);
+		def_field	(XACD, 4);
 
 		def_field	(CCCCCCC, 7);
 		def_field	(AAAAAAAI, 8);
