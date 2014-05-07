@@ -530,7 +530,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	r_anal_state_free (state);
 	IFDBG eprintf ("Completed analysing code from buffer, name: %s, desc: %s\n", fcn->name, fcn->dsc);
 	if (fcn->size != code_length) {
-		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%"PFMT64x"\n", fcn->name, code_length, fcn->size);
+		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%x\n", fcn->name, code_length, fcn->size);
 		eprintf ("Deadcode detected, setting code length to: 0x%"PFMT64x"\n", code_length);
 		fcn->size = code_length;
 	}
@@ -604,7 +604,7 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	r_list_free (fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new ();
 
-	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);	
+	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn

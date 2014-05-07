@@ -14,7 +14,7 @@
 uint8_t cmd_checksum(const char* command) {
 	uint8_t sum = 0;
 	while (*command != '\0') {
-		sum += *command++;	
+		sum += *command++;
 	}
 	return sum;
 }
@@ -76,7 +76,7 @@ char hex2char(char* hex) {
 	return (char) result;
 }
 
-int unpack_hex(char* src, uint64_t len, char* dst) {
+int unpack_hex(char* src, ut64 len, char* dst) {
 	int i = 0;
 	while (i < (len / 2)) {
 		int val = hex2int(src[(i*2)]);
@@ -88,7 +88,7 @@ int unpack_hex(char* src, uint64_t len, char* dst) {
 	return len;
 }
 
-int pack_hex(char* src, uint64_t len, char* dst) {
+int pack_hex(char* src, ut64 len, char* dst) {
 	int i = 0;
 	int x = 0;
 	while (i < (len*2)) {
@@ -100,12 +100,12 @@ int pack_hex(char* src, uint64_t len, char* dst) {
 	return (len/2);
 }
 
-void hexdump(void* ptr, uint64_t len, uint64_t offset) {
+void hexdump(void* ptr, ut64 len, ut64 offset) {
 	unsigned char* data = (unsigned char*)ptr;
 	int x = 0;
 	char hex[49], *p;
 	char txt[17], *c;
-	uint64_t curr_offset;
+	ut64 curr_offset;
 	while (x < len) {
 		p = hex;
 		c = txt;

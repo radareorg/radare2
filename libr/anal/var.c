@@ -116,7 +116,7 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, int delta, cons
 		free (old_name);
 		SETKEY ("var.%s.%d", new_name, scope);
 		sdb_num_set (DB, key, var_addr, 0);
-		SETKEY ("var.0x%"PFMT64x".%d.%d", hash, scope, delta);
+		SETKEY ("var.0x%x.%d.%d", hash, scope, delta);
 		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 	} else { // global
 		SETKEY ("var.0x%"PFMT64x, var_addr);
@@ -127,7 +127,7 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, int delta, cons
 		free (old_name);
 		SETKEY ("var.%s.%d", new_name, scope);
 		sdb_num_set (DB, key, var_addr, 0);
-		SETKEY ("var.0x%"PFMT64x".%d.%d", hash, scope, delta);
+		SETKEY ("var.0x%x.%d.%d", hash, scope, delta);
 		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 	}
 	// var.sdb_hash(old_name)=var_addr.scope.delta

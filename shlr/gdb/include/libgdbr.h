@@ -14,6 +14,7 @@
 #endif
 
 #include "arch.h"
+#include "r_types_base.h"
 
 #define X86_64 ARCH_X86_64
 #define X86_32 ARCH_X86_32
@@ -110,8 +111,8 @@ int gdbr_read_registers(libgdbr_t* instance);
  */
 int gdbr_write_bin_registers(libgdbr_t* instance, char* registers);
 int gdbr_write_registers(libgdbr_t* instance, char* registers);
-int gdbr_read_memory(libgdbr_t* instance, uint64_t address, uint64_t len);
-int gdbr_write_memory(libgdbr_t* instance, uint64_t address, const uint8_t* data, uint64_t len);
+int gdbr_read_memory(libgdbr_t* instance, ut64 address, ut64 len);
+int gdbr_write_memory(libgdbr_t* instance, ut64 address, const uint8_t* data, ut64 len);
 int gdbr_send_command(libgdbr_t* instance, char* command);
 int test_command(libgdbr_t* instance, char* command);
 
@@ -122,7 +123,7 @@ int test_command(libgdbr_t* instance, char* command);
  * \param conditions TODO: examine how this condition string should look like
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_set_breakpoint(libgdbr_t* instance, uint64_t address, char* conditions);
-int gdbr_unset_breakpoint(libgdbr_t* instance, uint64_t address);
+int gdbr_set_breakpoint(libgdbr_t* instance, ut64 address, char* conditions);
+int gdbr_unset_breakpoint(libgdbr_t* instance, ut64 address);
 
 #endif
