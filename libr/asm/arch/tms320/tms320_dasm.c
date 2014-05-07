@@ -210,6 +210,14 @@ int run_f_list(tms320_dasm_t * dasm)
 			temp = get_bits(dasm->opcode64, flag->f, 4);
 			set_field_value(dasm, FDDD, temp);
 			break;
+		case TMS320_FLAG_XACS:
+			temp = get_bits(dasm->opcode64, flag->f, 4);
+			set_field_value(dasm, XACS, temp);
+			break;
+		case TMS320_FLAG_XACD:
+			temp = get_bits(dasm->opcode64, flag->f, 4);
+			set_field_value(dasm, XACD, temp);
+			break;
 
 		case TMS320_FLAG_SS:
 			temp = get_bits(dasm->opcode64, flag->f, 2);
@@ -785,6 +793,13 @@ void decode_registers(tms320_dasm_t * dasm)
 		substitute(dasm->syntax, "dst", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 		substitute(dasm->syntax, "TAx", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 	}
+
+	if (field_valid(dasm, XACS))
+		substitute(dasm->syntax, "XACsrc", "%s", get_xreg_str(field_value(dasm, XACS), NULL));
+
+	if (field_valid(dasm, XACD))
+		substitute(dasm->syntax, "XACdst", "%s", get_xreg_str(field_value(dasm, XACD), NULL));
+
 
 	// source and destination accumulator registers
 
