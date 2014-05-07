@@ -118,18 +118,7 @@ uninstall deinstall:
 
 
 ifeq ($(CS_TAR),)
-capstone:
-	$(MAKE) capstone-sync
-	#$(MAKE) -j$(MAKE_JOBS) capstone-build
-
-capstone-build: capstone
-	cd capstone && CFLAGS="-Dmips=mips" $(CFLAGS) 
-	cd capstone && $(CFLAGS) \
-		$(MAKE) -j$(MAKE_JOBS) libcapstone.a \
-			AR_EXT=a \
-			CC="$(CC)" \
-			AR="$(AR)" \
-			RANLIB="$(RANLIB)"
+capstone: capstone-sync
 
 capstone-sync:
 	if [ -d capstone ]; then \
@@ -138,14 +127,11 @@ capstone-sync:
 		git clone $(CS_URL) ; \
 	fi
 	cd capstone ; \
-		git co $(CS_BRA) ; \
+		git checkout $(CS_BRA) ; \
 		git reset --hard $(CS_TIP)
+
+.PHONY: capstone
 else
-capstone-build: capstone
-	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
-		$(MAKE) -j$(MAKE_JOBS) CC="$(CC)" AR_EXT=a \
-		RANLIB="$(RANLIB)" AR="$(AR)" \
-		libcapstone.a 
 
 capstone-sync: capstone
 
@@ -161,3 +147,10 @@ capstone: capstone-$(CS_VER).tar.gz
 capstone-$(CS_VER).tar.gz:
 	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
 endif
+
+capstone-build: capstone
+	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+		$(MAKE) -j$(MAKE_JOBS) CC="$(CC)" AR_EXT=a \
+		RANLIB="$(RANLIB)" AR="$(AR)" \
+		libcapstone.a 
+
