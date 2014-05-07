@@ -172,8 +172,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	int textn = 0;
 	int exports_sz;
 	int symctr = 0;
-	char *buf = malloc (bufsz);
-
+	char *buf;
+	if (bufsz<1 || bufsz>bin->size)
+		return 0;
+	buf = malloc (bufsz);
 	if (!buf)
 		return 0;
 	exports_sz = sizeof (struct r_bin_pe_export_t)*num;
@@ -670,6 +672,10 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	/* NOTE: import_dirs and delay_import_dirs can be -1 */
 	mallocsz = (import_dirs_count + delay_import_dirs_count + 3) * sizeof (struct r_bin_pe_lib_t);
+	if (mallocsz>bin->size) {
+		//eprintf ("pe: Invalid libsize\n");
+		return NULL;
+	}
 	libs = malloc (mallocsz);
 	if (!libs) {
 		perror ("malloc (libs)");
