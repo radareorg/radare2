@@ -306,7 +306,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	int i, idx, len, qi;
-	char *str, foo[32], *q, *ret;
+	char *str = NULL, foo[32], *q, *ret;
 
 	delta += stackfixed; // XXX can be problematic
 	if (_str == NULL)
@@ -361,7 +361,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str+4)));
 			else snprintf (out, 32, "%s", e->regs (egg, atoi (str+4)));
 		} else {
-			ret = str; /* TODO: show error, invalid var name? */
+			ret = strdup(str); /* TODO: show error, invalid var name? */
 			eprintf ("Something is really wrong\n");
 		}
 	} else if (*str=='"' || *str=='\'') {
