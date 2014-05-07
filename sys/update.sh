@@ -4,9 +4,7 @@
 cd `dirname $PWD/$0` ; cd ..
 
 # update
-if [ -d .hg ]; then
-	hg pull -u
-elif [ -d .git ]; then
+if [ -d .git ]; then
 	git pull
 fi
 
