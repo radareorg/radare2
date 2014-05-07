@@ -218,7 +218,7 @@ int gdbr_read_registers(libgdbr_t* g) {
 	return -1;
 }
 
-int gdbr_read_memory(libgdbr_t* g, uint64_t address, uint64_t len) {
+int gdbr_read_memory(libgdbr_t* g, ut64 address, ut64 len) {
 	char command[255] = {};
 	int ret = snprintf(command, 255, "%s%016"PFMT64x",%"PFMT64d, CMD_READMEM, address, len);
 	if (ret < 0) return ret;
@@ -232,7 +232,7 @@ int gdbr_read_memory(libgdbr_t* g, uint64_t address, uint64_t len) {
 	return -1;
 }
 
-int gdbr_write_memory(libgdbr_t* g, uint64_t address, const uint8_t* data, uint64_t len) {
+int gdbr_write_memory(libgdbr_t* g, ut64 address, const uint8_t* data, ut64 len) {
 	char command[255] = {};
 	int command_len = snprintf(command, 255, "%s%016"PFMT64x",%"PFMT64d":", CMD_WRITEMEM, address, len);
 	char* tmp = calloc(command_len + (len * 2), sizeof(ut8));
@@ -360,7 +360,7 @@ int send_vcont(libgdbr_t* g, char* command, int thread_id) {
 	return 0;
 }
 
-int gdbr_set_breakpoint(libgdbr_t* g, uint64_t address, char* conditions) {
+int gdbr_set_breakpoint(libgdbr_t* g, ut64 address, char* conditions) {
 	char tmp[255] = {};
 	int ret = snprintf (tmp, sizeof (tmp)-1, "%s,%llx,1", CMD_BP, address);
 	if (ret < 0) return ret;
@@ -372,7 +372,7 @@ int gdbr_set_breakpoint(libgdbr_t* g, uint64_t address, char* conditions) {
 	return 0;
 }
 
-int gdbr_unset_breakpoint(libgdbr_t* g, uint64_t address) {
+int gdbr_unset_breakpoint(libgdbr_t* g, ut64 address) {
 	char tmp[255];
 	int ret = snprintf(tmp, sizeof (tmp)-1, "%s,%llx,1", CMD_RBP, address);
 	if (ret < 0) return ret;
