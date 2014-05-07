@@ -168,7 +168,6 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 	return new;
 }
 
-
 R_API RListIter *r_list_prepend(RList *list, void *data) {
 	RListIter *new = R_NEW (RListIter);
 	if (list->head)

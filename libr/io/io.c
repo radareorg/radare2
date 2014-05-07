@@ -592,19 +592,19 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 R_API int r_io_close(RIO *io, RIODesc *fd) {
 	if (io == NULL || fd == NULL)
 		return -1;
-	int nfd = fd->fd;
 	if (r_io_set_fd (io, fd)) {
-		RIODesc *desc = r_io_desc_get (io, fd->fd);
+		int nfd = fd->fd;
+		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
-			r_io_map_del (io, fd->fd);
-			r_io_plugin_close (io, fd->fd, io->plugin);
+			r_io_map_del (io, nfd);
+			r_io_plugin_close (io, nfd, io->plugin);
 			if (io->plugin && io->plugin->close)
 				return io->plugin->close (desc);
 			r_io_desc_del (io, desc->fd);
 		}
 	}
 	io->fd = NULL; // unset current fd
-	return close (nfd);
+	return R_FALSE;
 }
 
 ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {

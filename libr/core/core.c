@@ -479,12 +479,14 @@ static void update_sdb(RCore *core) {
 	sdb_ns_set (DB, "anal", core->anal->sdb);
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
-	if (core->assembler && core->assembler->syscall)
+	if (core->assembler && core->assembler->syscall) {
+		core->assembler->syscall->db->refs++;
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
-	 {
+	}
+	{
 		Sdb *d = sdb_ns (DB, "debug");
 		sdb_ns_set (d, "signals", core->dbg->sgnls);
-	 }
+	}
 }
 
 R_API int r_core_init(RCore *core) {

@@ -22,14 +22,14 @@ LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
 .PHONY: $(LIBS)
 
 all:
-	${MAKE} -j$(MAKE_JOBS) $(LIBS0)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS1)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS2)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS3)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS4)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS5)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS6)
-	${MAKE} -j$(MAKE_JOBS) $(LIBS7)
+	${MAKE} $(LIBS0)
+	${MAKE} $(LIBS1)
+	${MAKE} $(LIBS2)
+	${MAKE} $(LIBS3)
+	${MAKE} $(LIBS4)
+	${MAKE} $(LIBS5)
+	${MAKE} $(LIBS6)
+	${MAKE} $(LIBS7)
 ifeq (${WITHNONPIC},1)
 	${MAKE} libr.a
 endif
@@ -58,7 +58,7 @@ gnu_libr.a: $(shell ls */libr_*.a 2>/dev/null)
 
 $(LIBS):
 	@echo "DIR $@"
-	@${MAKE} -j$(MAKE_JOBS) -C $@
+	@${MAKE} -C $@
 
 pkgcfg:
 	@for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
