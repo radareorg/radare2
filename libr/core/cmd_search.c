@@ -105,7 +105,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		default:
 			len = kw->keyword_length; // 8 byte context
-			str = malloc (len);
+			str = malloc ((len*2)+1);
 			memset (str, 0, len);
 			r_core_read_at (core, addr, buf, kw->keyword_length);
 			for (i=0, p=str; i<len; i++) {
