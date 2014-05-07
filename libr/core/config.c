@@ -350,6 +350,16 @@ static int cb_color(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_dbgbep(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		r_cons_printf ("loader\nentry\nconstructor\nmain\n");
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
 static int cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -766,7 +776,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* debug */
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
-	SETPREF("dbg.bep", "loader", "break on entrypoint (loader, entry, constructor, main)");
+	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
 	if (core->cons->rows>30) // HACKY
 		r_config_set_i (cfg, "dbg.follow", 64);
 	else r_config_set_i (cfg, "dbg.follow", 32);
