@@ -650,6 +650,8 @@ void decode_constants(tms320_dasm_t * dasm)
 		substitute(dasm->syntax, "k7", "0x%02X", (field_value(dasm, k3) << 4) | field_value(dasm, k4));
 	if (field_valid(dasm, k4) && field_valid(dasm, k5))
 		substitute(dasm->syntax, "k9", "0x%03X", (field_value(dasm, k5) << 4) | field_value(dasm, k4));
+	if (field_valid(dasm, k4) && field_valid(dasm, k8))
+		substitute(dasm->syntax, "k12", "0x%03X", (field_value(dasm, k8) << 4) | field_value(dasm, k4));
 
 	// dasm address label
 
