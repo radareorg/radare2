@@ -1,9 +1,11 @@
 -include config-user.mk
 include global.mk
 
+DESTDIR:=$(shell echo $(DESTDIR) | sed -e 's@/*$$@@')
+WWWROOT:=$(shell echo ${WWWROOT} | sed -e 's@^/*@@')
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
-DLIBDIR=$(DESTDIR)/$(LIBDIR)
+DLIBDIR=$(shell echo ${DESTDIR}/${LIBDIR} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
 R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
@@ -62,7 +64,7 @@ w32dist:
 	#mkdir -p w32dist/include/libr/sflib
 	cp -f doc/fortunes w32dist/share/doc/radare2
 	mv w32dist radare2-w32-${VERSION}
-	rm -f radare2-w32-${VERSION}.zip 
+	rm -f radare2-w32-${VERSION}.zip
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
 clean:
@@ -105,8 +107,8 @@ install: install-doc install-man install-www
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
 	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
-	mkdir -p ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/
-	cp -f shlr/yara/packers.rules ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/packers.rules
+	mkdir -p $(shell echo ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/ | sed -e 's@^/*@/@')
+	cp -f shlr/yara/packers.rules $(shell echo ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/packers.rules | sed -e 's@^/*@/@')
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 

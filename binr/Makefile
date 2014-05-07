@@ -1,13 +1,14 @@
 include ../global.mk
 include ../libr/config.mk
 
+DESTDIR:=$(shell echo $(DESTDIR) | sed -e 's@/*$$@@')
 BTOP=$(shell pwd)
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper preload
 
-PFX=${DESTDIR}/${PREFIX}
-BFX=${DESTDIR}/${BINDIR}
-LFX=${DESTDIR}/${LIBDIR}
+PFX=$(shell echo ${DESTDIR}/${PREFIX} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
+BFX=$(shell echo ${DESTDIR}/${BINDIR} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
+LFX=$(shell echo ${DESTDIR}/${LIBDIR} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
 
 BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 

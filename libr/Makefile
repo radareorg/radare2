@@ -2,11 +2,12 @@ include ../global.mk
 include config.mk
 include ../mk/${COMPILER}.mk
 
+DESTDIR:=$(shell echo $(DESTDIR) | sed -e 's@/*$$@@')
 PREFIX?=${PWD}/../prefix
-PFX=${DESTDIR}/${PREFIX}
-LFX=${DESTDIR}/${LIBDIR}
-IFX=${DESTDIR}/${INCLUDEDIR}
-PWD=$(shell pwd)
+PFX=$(shell echo ${DESTDIR}/${PREFIX} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
+LFX=$(shell echo ${DESTDIR}/${LIBDIR} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
+IFX=$(shell echo ${DESTDIR}/${INCLUDEDIR} | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
+PWD=$(shell pwd | sed -e 's@/*$$@@' | sed -e 's@^/*@/@')
 
 LIBS0=util hash
 LIBS1=reg cons db magic diff bp search config socket
