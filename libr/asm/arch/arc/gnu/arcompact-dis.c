@@ -527,6 +527,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  break;
 	}
     }
+  va_end (ap);
 
 
  DOCOMM: *bp = 0;
