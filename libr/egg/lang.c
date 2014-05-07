@@ -697,7 +697,7 @@ static int parseinlinechar(REgg *egg, char c) {
 static void rcc_next(REgg *egg) {
 	const char *ocn;
 	REggEmit *e = egg->remit;
-	char *str, *p, *ptr, buf[64];
+	char *str = NULL, *p, *ptr, buf[64];
 	int i;
 
 	if (setenviron) {
@@ -835,13 +835,13 @@ static void rcc_next(REgg *egg) {
 		}
 		/* store result of call */
 		if (dstvar) {
-if (mode != NAKED) {
-			*buf = 0;
-			str = r_egg_mkvar (egg, buf, dstvar, 0);
-			if (*buf == 0)
-				eprintf ("Cannot resolve variable '%s'\n", dstvar);
-			else e->get_result (egg, buf);
-}
+			if (mode != NAKED) {
+				*buf = 0;
+				str = r_egg_mkvar (egg, buf, dstvar, 0);
+				if (*buf == 0)
+					eprintf ("Cannot resolve variable '%s'\n", dstvar);
+				else e->get_result (egg, buf);
+			}
 			R_FREE (dstvar);
 		}
 		rcc_reset_callname ();
