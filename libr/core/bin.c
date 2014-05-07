@@ -3,12 +3,12 @@
 #include <r_core.h>
 
 // XXX - this may lead to conflicts with set by name
-static int r_core_bin_bind (RCore *core, RBinFile *binfile);
+static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 //static int r_core_bin_set_env (RCore *r, RBinFile *binfile);
 
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
-		r_core_bin_bind (core, r_core_bin_cur(core));
+		r_core_bin_set_cur (core, r_core_bin_cur(core));
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -16,7 +16,7 @@ R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 
 R_API int r_core_bin_set_by_name (RCore *core, const char * name) {
 	if (r_bin_file_set_cur_by_name (core->bin, name)) {
-		r_core_bin_bind (core, r_core_bin_cur (core));
+		r_core_bin_set_cur (core, r_core_bin_cur (core));
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -39,13 +39,13 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		r_config_set (r->config, "anal.cpu", arch);
 		r_asm_use (r->assembler, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, baseaddr);
-		r_core_bin_bind (r, binfile);
+		r_core_bin_set_cur (r, binfile);
 		return R_TRUE;
 	}
 	return R_FALSE;
 }
 
-R_API int r_core_bin_bind (RCore *core, RBinFile *binfile) {
+R_API int r_core_bin_set_cur (RCore *core, RBinFile *binfile) {
 	RBinInfo *info = NULL;
 
 	if (!core->bin) return R_FALSE;
@@ -56,9 +56,6 @@ R_API int r_core_bin_bind (RCore *core, RBinFile *binfile) {
 		if (!binfile) return R_FALSE;
 	}
 	r_bin_file_set_cur_binfile (core->bin, binfile);
-	r_bin_bind (core->bin, &(core->anal->binb));
-	r_bin_bind (core->bin, &(core->assembler->binb));
-	r_bin_bind (core->bin, &(core->file->binb));
 	return R_TRUE;
 }
 
@@ -1171,7 +1168,7 @@ R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arc
 
 	if (nbinfile && nbinfile != binfile) {
 		RBinObject *binobj = NULL;
-		r_core_bin_bind (r, nbinfile);
+		r_core_bin_set_cur (r, nbinfile);
 		if (r_asm_is_valid (r->assembler, arch) ) {
 			return r_core_bin_set_env (r, nbinfile);
 		}
