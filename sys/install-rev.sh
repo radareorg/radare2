@@ -11,10 +11,7 @@ gmake --help >/dev/null 2>&1
 
 # find root
 cd `dirname $PWD/$0` ; cd ..
-if [ -d .hg ]; then
-	echo hg up -C -r "${REV}"
-	hg up -C -r "${REV}"
-elif [ -d .git ]; then
+if [ -d .git ]; then
 	echo git checkout "${REV}"
 	git checkout "${REV}"
 fi
