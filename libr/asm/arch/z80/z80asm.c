@@ -1394,6 +1394,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      break;
 	    case Z80_SEEK:
 	      fprintf (stderr, "seek error\n");
+		  break;
 	    default:
 	      printerr (1, "command or comment expected (was %s)\n", ptr);
 	      return 0;
