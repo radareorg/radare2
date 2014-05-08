@@ -56,7 +56,7 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		ret = R_FALSE;
 	}
 	if (c->y <0) {
-		c->y =0;
+		c->y = 0;
 		ret = R_FALSE;
 	}
 	if (x<c->w && x>=0) c->x = x;
@@ -194,6 +194,7 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
+	int i, onscreen;
 	switch (style) {
 		// vertical arrow line
 	case 0: //
@@ -202,7 +203,6 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 		if (G (x2, y2))
 			W ("V");
 		if (x==x2) {
-			int i;
 			int min = R_MIN (y,y2)+1;
 			int max = R_MAX (y,y2);
 			for (i=min; i<max; i++) {
@@ -214,7 +214,6 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 			// TODO: find if there's any collision in this line
 			int hl = R_ABS (y-y2) / 2;
 			int hl2 = R_ABS (y-y2)-hl;
-			int i;
 			hl--;
 			if (y2 > (y+1)) {
 				for (i=0;i<hl;i++) {
@@ -234,16 +233,17 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 						memset (row+1, '-', w-2);
 					row[w-1] = '\'';
 					row[w] = 0;
-					G (x2,y+hl+1);
+					onscreen = G (x2,y+hl+1);
 				} else {
 					row[0] = '`';
 					if (w>1)
 						memset (row+1, '-', w-1);
 					row[w] = '.';
 					row[w+1] = 0;
-					G (x,y+1+hl);
+					onscreen = G (x,y+1+hl);
 				}
-				W (row);
+				if (onscreen)
+					W (row);
 			} else  {
 				int minx = R_MIN (x, x2);
 				//if (y >= y2) {
@@ -254,8 +254,8 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 					vl--;
 
 				for (i=0;i<vl; i++) {
-					G (minx+rl,y2+i);
-					W ("|");
+					if (G (minx+rl,y2+i))
+						W ("|");
 				}
 
 				int w = rl;
@@ -266,16 +266,17 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 						memset (row+1, '-', w-2);
 					row[w-1] = '.';
 					row[w] = 0;
-					G (x2,y2-1);
+					onscreen = G (x2,y2-1);
 				} else {
 					row[0] = '`';
 					if (w>2)
 						memset (row+1, '-', w-2);
 					row[w-1] = '\'';
 					row[w] = 0;
-					G (x+1,y+1);
+					onscreen = G (x+1,y+1);
 				}
-				W (row);
+				if (onscreen)
+					W (row);
 
 				w = rl2;
 				if (x>x2) {
