@@ -32,7 +32,7 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 	return NULL;
 }
 
-R_API ut64 *r_buf_size (RBuffer *b) {
+R_API ut64 r_buf_size (RBuffer *b) {
 	if (b && b->empty) return 0;
 	else if (b) return b->length;
 	return UT64_MAX;

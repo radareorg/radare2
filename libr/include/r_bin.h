@@ -113,6 +113,7 @@ typedef struct r_bin_object_t {
 	RList/*<RBinDwarfRow>*/ *lines;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
+	struct r_bin_plugin_t *plugin;
 	int referenced;
 	int lang;
 	Sdb *kv;
@@ -193,9 +194,11 @@ typedef struct r_bin_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*load)(RBinFile *arch);
+	int (*load_bytes)(RBinObject *o, const ut8 *buf, ut64 sz);
 	int (*size)(RBinFile *bin);
 	int (*destroy)(RBinFile *arch);
 	int (*check)(RBinFile *arch);
+	int (*check_bytes)(const ut8 *buf, ut64 length);
 	ut64 (*baddr)(RBinFile *arch);
 	ut64 (*boffset)(RBinFile *arch);
 	RBinAddr* (*binsym)(RBinFile *arch, int num);

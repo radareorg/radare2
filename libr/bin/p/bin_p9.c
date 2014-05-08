@@ -6,9 +6,20 @@
 #include <r_bin.h>
 #include "../format/p9/p9bin.h"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int check(RBinFile *arch) {
-	if (arch && arch->buf && arch->buf->buf)
-		return (r_bin_p9_get_arch (arch->buf->buf, NULL, NULL));
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
+	if (buf && length > 0)
+		return (r_bin_p9_get_arch (buf, NULL, NULL));
 	return R_FALSE;
 }
 
@@ -207,6 +218,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.size = &size,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,
