@@ -166,6 +166,13 @@ R_API struct r_bp_item_t *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int 
 	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, rwx);
 }
 
+R_API int r_bp_del_all(RBreakpoint *bp) {
+	if (r_list_empty (bp->bps))
+		return R_FALSE;
+	r_list_purge (bp->bps);
+	return R_TRUE;
+}
+
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;

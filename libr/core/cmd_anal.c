@@ -85,7 +85,7 @@ static int var_cmd(RCore *core, const char *str) {
 					int rw = 0; // 0 = read, 1 = write
 					char kind = 'v';
 					RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-						kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
+						&kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
 					if (var != NULL) {
 						int scope = (str[1]=='g')?0: 1;
 						r_anal_var_access (core->anal, fcn->addr, kind,
@@ -120,10 +120,9 @@ static int var_cmd(RCore *core, const char *str) {
 				p3=p3+1;
 			}
 			// p2 - name of variable
-			r_anal_var_add (core->anal, fcn, core->offset, delta, scope,
+			r_anal_var_add (core->anal, fcn->addr, core->offset, delta, scope,
 				//r_anal_str_to_type (core->anal, p)
-				NULL
-				, p2, p3? atoi (p3): 0);
+				NULL, p3? atoi (p3): 0, p2);
 		} else var_help (*str);
 		break;
 	default:
