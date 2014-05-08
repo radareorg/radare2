@@ -1,7 +1,9 @@
 /* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
 
-#include <r_bin.h>
 #include <r_types.h>
+#include <r_util.h>
+#include <r_lib.h>
+#include <r_bin.h>
 
 #include "elf_specs.h"
 
@@ -89,6 +91,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	int endian;
 	const char* file;
 	RBuffer *b;
+	Sdb *kv;
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);

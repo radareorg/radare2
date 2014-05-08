@@ -9,9 +9,36 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o) return NULL;
+	struct MACH0_(r_bin_mach0_obj_t) *bin = (struct MACH0_(r_bin_mach0_obj_t) *) o->bin_obj;
+	if (bin->kv) return bin->kv;
+	return NULL;
+}
+
+static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	void *res = NULL;
+	RBuffer *tbuf = NULL;
+	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	tbuf = r_buf_new();
+	r_buf_set_bytes (tbuf, buf, sz);
+	res = MACH0_(r_bin_mach0_new_buf) (tbuf);
+	r_buf_free (tbuf);
+	return res;
+}
+
 static int load(RBinFile *arch) {
-	if (!(arch->o->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+
+	if (!arch->o) return R_FALSE;
+ 	void *res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+
+	if (!arch->o || !res) {
+		MACH0_(r_bin_mach0_free) (res);
 		return R_FALSE;
+	}
+	arch->o->bin_obj = res;
 	struct MACH0_(r_bin_mach0_obj_t) *mo = arch->o->bin_obj;
 	arch->o->kv = mo->kv;
 	return R_TRUE;
@@ -29,15 +56,16 @@ static ut64 baddr(RBinFile *arch) {
 static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
+	RBinObject *obj = arch ? arch->o : NULL;
 	struct r_bin_mach0_addr_t *entry = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (arch->o->bin_obj)))
+	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (obj->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->offset = entry->offset;
+		ptr->offset = entry->offset + obj->boffset;
 		ptr->rva = entry->addr;
 		r_list_append (ret, ptr);
 	}
@@ -49,12 +77,13 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
+	RBinObject *obj = arch ? arch->o : NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = MACH0_(r_bin_mach0_get_sections) (arch->o->bin_obj)))
+	if (!(sections = MACH0_(r_bin_mach0_get_sections) (obj->bin_obj)))
 		return ret;
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
@@ -62,7 +91,7 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].size;
-		ptr->offset = sections[i].offset;
+		ptr->offset = sections[i].offset + obj->boffset;
 		ptr->rva = sections[i].addr;
 		if (ptr->rva == 0)
 			ptr->rva = ptr->offset;
@@ -78,10 +107,12 @@ static RList* symbols(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinSymbol *ptr = NULL;
 	int i;
+	RBinObject *obj = arch ? arch->o : NULL;
 
-	if (!ret) return NULL;
-	ret->free = free;
-	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (arch->o->bin_obj)))
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
+		return NULL;
+
+	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (obj->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
 		if (!symbols[i].name[0] || symbols[i].addr<100) continue;
@@ -95,7 +126,7 @@ static RList* symbols(RBinFile *arch) {
 			strncpy (ptr->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		ptr->rva = symbols[i].addr;
-		ptr->offset = symbols[i].offset;
+		ptr->offset = symbols[i].offset+obj->boffset;
 		ptr->size = symbols[i].size;
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
@@ -112,14 +143,15 @@ static RList* imports(RBinFile *arch) {
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 	int i;
+	RBinObject *obj = arch ? arch->o : NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
 		return NULL;
-	ret->free = free;
+
 	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		name = imports[i].name;
 		type = "FUNC";
@@ -154,8 +186,9 @@ static RList* relocs(RBinFile *arch) {
 	struct r_bin_mach0_reloc_t *relocs = NULL;
 	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->o->bin_obj;
 	int i;
+	RBinObject *obj = arch ? arch->o : NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
 		return NULL;
 	ret->free = free;
 	if (!(relocs = MACH0_(r_bin_mach0_get_relocs) (arch->o->bin_obj)))
@@ -184,10 +217,13 @@ static RList* libs(RBinFile *arch) {
 	int i;
 	char *ptr = NULL;
 	struct r_bin_mach0_lib_t *libs;
-	RList *ret = r_list_new ();
-	if (!ret) return NULL;
-	ret->free = free;
-	if ((libs = MACH0_(r_bin_mach0_get_libs) (arch->o->bin_obj))) {
+	RList *ret = NULL;
+	RBinObject *obj = arch ? arch->o : NULL;
+
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
+		return NULL;
+
+	if ((libs = MACH0_(r_bin_mach0_get_libs) (obj->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
 			ptr = strdup (libs[i].name);
 			r_list_append (ret, ptr);
@@ -460,7 +496,9 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
+	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,

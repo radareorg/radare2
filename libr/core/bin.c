@@ -30,7 +30,8 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		ut16 bits = info->bits;
 		ut64 baseaddr = binobj->baddr;
 		int va = info->has_va;
-		r_config_set_i (r->config, "io.va", (info)? info->has_va: 0);
+		r_config_set_i (r->config, "io.va",
+			(binobj->info)? binobj->info->has_va: 0);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "asm.arch", arch);
@@ -78,6 +79,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	int i = 0;
 	RBin *bin = r->bin;
 	RBinFile * binfile = r_core_bin_cur (r);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 
 	if (!binfile) return R_FALSE;
 	minstr = r_config_get_i (r->config, "bin.minstr");
@@ -86,8 +88,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
-	if (!binfile->curplugin) return 0;
-	if (!binfile->curplugin->info) {
+	if (!plugin) return 0;
+	if (!plugin->info) {
 		if (!rawstr) {
 			eprintf ("WARN: Use '-e bin.rawstr=true' or 'rabin2 -zz'"
 				" to find strings on unknown file types\n");
@@ -97,7 +99,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	//if (bin->minstrlen == 0 && minstr>0) bin->minstrlen = minstr;
 	//else if (bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", bin->minstrlen);
 	if (bin->minstrlen==0) {
-		bin->minstrlen = binfile->curplugin->minstrlen;
+		bin->minstrlen = plugin->minstrlen;
 		if (bin->minstrlen==0)
 			bin->minstrlen = MINSTR;
 	}
@@ -339,11 +341,11 @@ static int bin_dwarf (RCore *core, int mode) {
 	RListIter *iter;
 	RList *list = NULL;
 	RBinFile *binfile = r_core_bin_cur (core);
-
+	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
 	if (!binfile) return R_FALSE;
 
-	if (binfile->curplugin && binfile->curplugin->lines) {
-		list = binfile->curplugin->lines (core->bin->cur);
+	if (plugin && plugin->lines) {
+		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
 		if (r_config_get_i (core->config, "bin.dwarf")) {
@@ -864,6 +866,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		RBinInfo *info = r_bin_get_info (r->bin);
+		int fd = r_core_file_cur_fd(r);
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (sections, iter, section) {
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->offset,
@@ -875,14 +878,14 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 			r_flag_set (r->flags, str, addr, section->size, 0);
 			snprintf (str, R_FLAG_NAME_SIZE, "section_end.%s", section->name);
 			r_flag_set (r->flags, str, addr + section->size, 0, 0);
-			r_io_section_add (r->io, section->offset, addr, section->size,
-				section->vsize, section->srwx, section->name);
+			//r_io_section_add (r->io, section->offset, addr, section->size,
+			//	section->vsize, section->srwx, section->name, 0, fd);
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
 				if (!arch) arch = info->arch;
 				if (!bits) bits = info->bits;
-				r_io_section_set_archbits (r->io, addr, arch, bits);
+				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
 			snprintf (str, R_FLAG_NAME_SIZE, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
 					PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
@@ -902,7 +905,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 			secbase >>= 16;
 			secbase <<= 16;
 			secbase = baddr; // always override?
-			r_io_section_add (r->io, 0, secbase, size, size, 7, "ehdr");
+			r_io_section_add (r->io, 0, secbase, size, size, 7, "ehdr", 0, fd);
 		}
 	} else {
 		RBinInfo *info = r_bin_get_info (r->bin);
@@ -996,7 +999,8 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SET)) {
 		//XXX: Need more flags??
 		// this will be set even if the binary does not have an ehdr
-		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
+		int fd = r_core_file_cur_fd(r);
+		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", 0, fd);
 	} else {
 		if (mode) r_cons_printf ("fs header\n");
 		else r_cons_printf ("[Header fields]\n");
@@ -1161,16 +1165,18 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits) {
 	RCoreFile *cf = r_core_file_cur (r);
-	RBinFile *binfile = r_core_bin_cur (r), *nbinfile = NULL;
-	name = !name && binfile ? binfile->file : name;
+	RBinFile *nbinfile = NULL;
+	RBinObject *binobj = NULL;
+	int res = R_FALSE;
 	name = !name &&  cf ? cf->filename : name;
-	int res = r_asm_is_valid (r->assembler, arch) == R_TRUE;
-	nbinfile = res ?
-				r_bin_file_find_by_arch_bits (r->bin, arch, bits, name)
-				: NULL;
+	res = r_asm_is_valid (r->assembler, arch) == R_TRUE;
 
-	if (nbinfile && nbinfile != binfile) {
-		RBinObject *binobj = NULL;
+	// this check takes place to ensure we can make the change
+	nbinfile = res ? r_bin_file_find_by_arch_bits (r->bin, arch, bits, name) : NULL;
+	if (!nbinfile) return res;
+
+	res = r_bin_use_arch (r->bin, arch, bits, name);
+	if (res) {
 		r_core_bin_set_cur (r, nbinfile);
 		if (r_asm_is_valid (r->assembler, arch) ) {
 			return r_core_bin_set_env (r, nbinfile);

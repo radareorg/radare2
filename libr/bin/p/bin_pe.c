@@ -9,8 +9,34 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o) return NULL;
+	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
+	if (bin->kv) return bin->kv;
+	return NULL;
+}
+
+static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	void *res = NULL;
+	RBuffer *tbuf = NULL;
+
+	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	tbuf = r_buf_new();
+	r_buf_set_bytes (tbuf, buf, sz);
+	res = PE_(r_bin_pe_new_buf) (tbuf);
+	r_buf_free (tbuf);
+	return res;
+}
+
 static int load(RBinFile *arch) {
-	if(!(arch->o->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+
+	if (!arch->o) return R_FALSE;
+	void *res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+
+ 	arch->o->bin_obj = res;
+	if(!res)
 		return R_FALSE;
 	return R_TRUE;
 }
@@ -63,7 +89,7 @@ static RList* sections(RBinFile *arch) {
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
 	int i;
-	
+
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
@@ -420,7 +446,9 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
+	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,

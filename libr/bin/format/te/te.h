@@ -1,6 +1,10 @@
 /* radare - LGPL - Copyright 2013 xvilka */
 
-#include "r_types.h"
+#include <r_types.h>
+#include <r_types.h>
+#include <r_util.h>
+#include <r_lib.h>
+#include <r_bin.h>
 
 #ifndef _INCLUDE_R_BIN_TE_H_
 #define _INCLUDE_R_BIN_TE_H_
@@ -41,6 +45,7 @@ struct r_bin_te_obj_t {
 	int	endian;
     const char* file;
 	struct r_buf_t* b;
+	Sdb *kv;
 };
 
 char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin);

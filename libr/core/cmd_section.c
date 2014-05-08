@@ -169,7 +169,7 @@ static int cmd_section(void *data, const char *input) {
 			ut64 offset = 0LL;
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
-
+			int fd = r_core_file_cur_fd(core);
 			i = r_str_word_set0 (ptr);
 			switch (i) {
 			case 6: // get rwx
@@ -195,7 +195,7 @@ static int cmd_section(void *data, const char *input) {
 					r_list_length (core->io->sections));
 				name = vname;
 			}
-			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name);
+			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
 			free (ptr);
 			}
 			break;

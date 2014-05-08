@@ -6,6 +6,7 @@ static void r_core_file_info (RCore *core, int mode) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *binfile = r_core_bin_cur (core);
 	RCoreFile *cf = core->file;
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (mode == R_CORE_BIN_JSON)
 		r_cons_printf ("{");
 	if (mode == R_CORE_BIN_RADARE)
@@ -52,9 +53,9 @@ static void r_core_file_info (RCore *core, int mode) {
 			if (binfile->curxtr)
 				r_cons_printf (",\"packet\":\"%s\"",
 					binfile->curxtr->name);
-			if (binfile->curxtr)
+			if (plugin)
 				r_cons_printf (",\"format\":\"%s\"",
-					binfile->curplugin->name);
+					plugin->name);
 		}
 		r_cons_printf ("}");
 	} else if (cf) {
@@ -69,9 +70,9 @@ static void r_core_file_info (RCore *core, int mode) {
 		if (binfile && binfile->curxtr)
 			r_cons_printf ("packet\t%s\n",
 				binfile->curxtr->name);
-		if (binfile && binfile->curxtr)
+		if (plugin)
 			r_cons_printf ("format\t%s\n",
-				binfile->curplugin->name);
+				plugin->name);
 	}
 }
 

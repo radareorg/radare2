@@ -10,6 +10,17 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o) return NULL;
+	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
+	//if (bin->kv) return kv;
+	return NULL;
+}
+
+static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return NULL;
+}
+
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
@@ -27,8 +38,11 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static int load(RBinFile *arch) {
-	if (check (arch)) return R_TRUE;
-	return R_FALSE;
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	if (!arch->o) return R_FALSE;
+	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	return check_bytes (bytes, sz);
 }
 
 static int destroy(RBinFile *arch) {
@@ -224,7 +238,9 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
+	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,

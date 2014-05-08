@@ -3,8 +3,10 @@
 #ifndef COFF_H
 #define COFF_H
 
-#include <r_bin.h>
 #include <r_types.h>
+#include <r_util.h>
+#include <r_lib.h>
+#include <r_bin.h>
 
 #include "coff_specs.h"
 
@@ -39,6 +41,7 @@ struct r_bin_coff_obj {
 	struct r_buf_t *b;
 	size_t size;
 	ut8 endian;
+	Sdb *kv;
 };
 
 int coff_supported_arch(const ut8 *buf);

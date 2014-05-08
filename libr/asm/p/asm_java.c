@@ -17,10 +17,11 @@
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	//void *cp;
 	RBinJavaObj *obj = NULL;
-	RBin *b = a->binb.bin;
-	if (b->cur->curplugin) {
-		if (!strcmp (b->cur->curplugin->name, "java")) { // XXX slow
-			obj = b->cur->o->bin_obj; //o;
+	RBin *bin = a->binb.bin;
+	RBinPlugin *plugin = bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
+	if (plugin) {
+		if (!strcmp (plugin->name, "java")) { // XXX slow
+			obj = bin->cur->o->bin_obj; //o;
 			//eprintf("Handling: %s disasm.\n", b->cur.file);
 		}
 	}

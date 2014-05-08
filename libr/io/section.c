@@ -27,7 +27,7 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 	return NULL;
 }
 
-R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
+R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
 
@@ -48,6 +48,8 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 	s->vsize = vsize;
 	s->rwx = rwx;
 	s->arch = s->bits = 0;
+	s->bin_id = bin_id;
+	s->fd = fd;
 	if (!update) {
 		if (name) strncpy (s->name, name, sizeof (s->name)-4);
 		else *s->name = '\0';
@@ -303,4 +305,28 @@ R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits) {
 	if (!s || !s->bits || !s->arch) return NULL;
 	if (bits) *bits = s->bits;
 	return r_sys_arch_str (s->arch);
+}
+
+R_API RIOSection *r_io_section_getv_bin_id(RIO *io, ut64 vaddr, ut32 bin_id) {
+	RListIter *iter;
+	RIOSection *s;
+	r_list_foreach (io->sections, iter, s) {
+		if (s->bin_id != bin_id) continue;
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
+			return s;
+	}
+	return NULL;
+}
+
+R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id) {
+	RIOSection *s = r_io_section_getv_bin_id (io, addr, bin_id);
+	if (!s) return R_FALSE;
+	if (arch) {
+		s->arch = r_sys_arch_id (arch);
+		s->bits = bits;
+	} else {
+		s->arch = 0;
+		s->bits = 0;
+	}
+	return R_TRUE;
 }

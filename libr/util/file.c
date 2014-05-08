@@ -13,6 +13,14 @@
 #include <sys/mman.h>
 #endif
 
+R_API int r_what_os_am_i () {
+#if __UNIX__
+	return ON_NIX_OS;
+#elif __WINDOWS__
+	return ON_WINDOWS_OS;
+#endif
+}
+
 R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename))

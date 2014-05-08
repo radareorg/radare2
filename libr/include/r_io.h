@@ -56,6 +56,8 @@ typedef struct r_io_section_t {
 	/* */
 	int arch;
 	int bits;
+	ut32 bin_id;
+	int fd;
 } RIOSection;
 
 typedef struct r_io_desc_t {
@@ -184,6 +186,10 @@ typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
 typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset, int whence);
 typedef ut64 (*RIODescSize)(RIO *io, RIODesc *desc);
 
+typedef void (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
+typedef int (*RIOSectionSetArchBinID)(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
+typedef int (*RIOSectionSetArchBin)(RIO *io, ut64 addr, const char *arch, int bits);
+
 /* compile time dependency */
 typedef struct r_io_bind_t {
 	int init;
@@ -194,6 +200,10 @@ typedef struct r_io_bind_t {
 	RIOWriteAt write_at;
 	RIOSize size;
 	RIOSeek seek;
+
+	RIOSectionAdd section_add;
+	RIOSectionSetArchBin section_set_arch;
+	RIOSectionSetArchBinID section_set_arch_bin_id;
 
 	RIODescOpen desc_open;
 	RIODescClose desc_close;
@@ -315,7 +325,7 @@ R_API RList * r_io_get_maps_in_range (RIO *io, ut64 addr, ut64 endaddr);
 
 /* io/section.c */
 R_API void r_io_section_init(RIO *io);
-R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name);
+R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 R_API RIOSection *r_io_section_get_name(RIO *io, const char *name);
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx);
 R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr);
@@ -333,6 +343,7 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s);
 R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr);
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset);
 R_API ut64 r_io_section_next(RIO *io, ut64 o);
+R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
 
 /* undo api */
 // track seeks and writes

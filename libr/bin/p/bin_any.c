@@ -5,10 +5,6 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int load_bytes (RBinObject *o, ut8 *bytes, ut64 sz){
-	return R_TRUE;
-}
-
 static int load(RBinFile *arch) {
 	return R_TRUE;
 }
@@ -27,7 +23,9 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
+	.get_sdb = NULL,
 	.load = &load,
+	.load_bytes = NULL,
 	.destroy = &destroy,
 	.check = NULL,
 	.baddr = &baddr,

@@ -46,6 +46,19 @@ static char *fsname(const ut8* buf, ut64 length) {
 	return NULL;
 }
 
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o) return NULL;
+	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
+	//if (bin->kv) return kv;
+	return NULL;
+}
+
+static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	if (check_bytes (buf, sz))
+		return R_TRUE;
+	return R_FALSE;
+}
+
 static int load(RBinFile *arch) {
 	if (check (arch))
 		return R_TRUE;
@@ -119,7 +132,9 @@ RBinPlugin r_bin_plugin_fs = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
+	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,

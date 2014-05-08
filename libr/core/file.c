@@ -224,7 +224,13 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
-	result = r_core_bin_load (r, file, baseaddr);
+	RCoreFile *cf = r_core_file_cur (r);
+	RIODesc *desc = cf ? cf->fd : NULL;
+	RBinFile *bf = NULL;
+
+	if (desc) result = r_bin_reload (r->bin, desc, baseaddr);
+	bf = r_bin_cur (r->bin);
+	r_core_bin_set_env (r, bf);
 	return result;
 }
 
@@ -255,7 +261,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
-	plugin = binfile ? binfile->curplugin : NULL;
+	plugin = r_bin_file_cur_plugin (binfile);
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
 		r_config_set_i (r->config, "io.va", 0);
@@ -293,7 +299,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	}
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
-	plugin = binfile ? binfile->curplugin : NULL;
+	plugin = r_bin_file_cur_plugin (binfile);
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
 		r_config_set_i (r->config, "io.va", 0);
@@ -423,7 +429,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (cf && binfile && desc) binfile->fd = desc->fd;
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
-	plugin = binfile ? binfile->curplugin : NULL;
+	plugin = r_bin_file_cur_plugin (binfile);
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
 		r_config_set (r->config, "bin.rawstr", "true");
@@ -622,6 +628,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	return fh;
 }
 
+
 R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
 	if (!core || !core->files || !cf) return R_FALSE;
 	return r_list_delete_data (core->files, cf);
@@ -708,6 +715,7 @@ R_API int r_core_file_list(RCore *core) {
 	return count;
 }
 
+// XXX - needs to account for binfile index and bin object index
 R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx) {
 	RBin *bin = core->bin;
 	int v = binfile_idx > 1 ? binfile_idx : 1;
@@ -724,11 +732,10 @@ R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx) {
 
 R_API int r_core_file_binlist(RCore *core) {
 	int count = 0;
-	RCoreFile *f = NULL;
+	RCoreFile *f;
 	RListIter *iter;
-	RCoreFile *cur_cf = core->file;
-	//RBinFile *cur_bf = r_core_bin_cur (core);
-	RBinFile *binfile = NULL;
+	RCoreFile *cur_cf = core->file, *cf = NULL;
+	RBinFile *binfile = NULL; //, *cur_bf = r_core_bin_cur (core) ;
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
@@ -736,8 +743,8 @@ R_API int r_core_file_binlist(RCore *core) {
 
 	r_list_foreach (binfiles, iter, binfile) {
 		ut32 fd = binfile->fd;
-		f = r_core_file_get_by_fd (core, fd);
-		if (f && f->map) {
+		cf = r_core_file_get_by_fd (core, fd);
+		if (cf && cf->map) {
 			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
 				core->io->raised == f->fd->fd?'*':'-',
 				fd, f->uri, f->map->from,
@@ -853,9 +860,10 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 
 R_API ut32 r_core_file_cur_fd (RCore *core) {
 	RIODesc *desc = core->file ? core->file->fd : NULL;
-	if (desc)
+	if (desc) {
 		return desc->fd;
-	return UT32_MAX;
+	}
+	return (ut32)-1;
 }
 
 R_API RCoreFile * r_core_file_cur (RCore *r) {

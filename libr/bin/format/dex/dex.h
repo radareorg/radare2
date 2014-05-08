@@ -1,4 +1,8 @@
 #include <r_types.h>
+#include <r_types.h>
+#include <r_util.h>
+#include <r_lib.h>
+#include <r_bin.h>
 
 #define R_BIN_DEX_MAXSTR 256
 
@@ -87,6 +91,7 @@ typedef struct r_bin_dex_obj_t {
 	RList *imports_list;
 	ut64 code_from;
 	ut64 code_to;
+	Sdb *kv;
 } RBinDexObj;
 
 struct r_bin_dex_str_t {

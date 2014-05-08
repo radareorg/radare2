@@ -6,7 +6,6 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
-
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
@@ -192,7 +191,9 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
+	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,

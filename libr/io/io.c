@@ -628,6 +628,11 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->desc_size = r_io_desc_size;
 	bnd->desc_seek = r_io_desc_seek;
 	bnd->desc_get_by_fd = r_io_desc_get;
+
+	bnd->section_add = r_io_section_add;
+	bnd->section_set_arch = r_io_section_set_archbits;
+	bnd->section_set_arch_bin_id = r_io_section_set_archbits_bin_id;
+
 	return R_TRUE;
 }
 

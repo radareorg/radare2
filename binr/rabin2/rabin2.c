@@ -83,68 +83,91 @@ static int rabin_show_help(int v) {
 	return 1;
 }
 
-static int rabin_extract(int all) {
-	char outfile[512], outpath[512], *ptr, *path = NULL;
-	int i = 0;
+static int extract_binobj (RBinFile *bf, RBinObject *o, int idx ) {
+	ut64 boffset = o ? o->boffset : 0;
+	ut64 bin_size = o ? o->obj_size : 0;
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
+	RBinInfo *info = o ? o->info : NULL;
+	const char *arch = info ? info->arch : "unknown";
+	char bits = info ? info->bits : 0;
+	const char *filename = bf ? bf->file : NULL;
+	char *path = NULL, *outpath = NULL, *outfile = NULL, *ptr = NULL;
+	ut32 outfile_sz = 0, outpath_sz = 0;
+	int res = R_FALSE;
 
-	if (all) {
-		RBinObject *obj = NULL;
-		RBinInfo *info = NULL;
-		const char *arch, *filename = bin->file;
-		int bits;
-		for (i=0; i<bin->narch; i++) {
-			r_bin_select_idx (bin, filename, i);
-			obj = r_bin_cur_object (bin);
-			info = obj ? obj->info : NULL;
-			if (info == NULL) {
-				arch = "unknown";
-				bits = 0;
-			//	eprintf ("No extract info found.\n");
-			//	continue;
-			} else {
-				arch = info->arch;
-				bits = info->bits;
-			}
-			path = strdup (filename);
-			// XXX: Wrong for w32 (/)
-			if ((ptr = strrchr (path, '/'))) {
-				*ptr = '\0';
-				ptr++;
-			} else ptr = path;
-/*
-			if (output)
-				snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
-			else snprintf (outpath, sizeof (outpath), "./%s", path);
-*/
-			snprintf (outpath, sizeof (outpath), "%s.fat", ptr);
-			if (!r_sys_rmkdir (outpath)) {
-				eprintf ("Error creating dir structure\n");
-				return R_FALSE;
-			}
-			snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i.%d",
-					outpath, ptr, arch, bits, i);
-			if (!r_file_dump (outfile, bin->cur->buf->buf, bin->cur->size)) {
-				eprintf ("Error extracting %s\n", outfile);
-				return R_FALSE;
-			} else printf ("%s created (%i)\n", outfile, bin->cur->size);
-		}
-	} else { /* XXX: Use 'output' for filename? */
-		if (bin->cur->o->info == NULL) {
-			eprintf ("No extract info found.\n");
-		} else {
-			if ((ptr = strrchr (bin->cur->file, '/')))
-				ptr++;
-			else ptr = bin->cur->file;
-			snprintf (outfile, sizeof (outfile), "%s.%s_%i", ptr,
-					bin->cur->o->info->arch, bin->cur->o->info->bits);
-			if (!r_file_dump (outfile, bin->cur->buf->buf, bin->cur->size)) {
-				eprintf ("Error extracting %s\n", outfile);
-				return R_FALSE;
-			} else printf ("%s created (%i)\n", outfile, bin->cur->size);
-		}
+	if (!bf || !o || !filename ) return R_FALSE;
+
+	path = strdup (filename);
+
+	// XXX: Wrong for w32 (/)
+
+	if (r_what_os_am_i () == ON_NIX_OS && (ptr = strrchr (path, '/'))){
+		*ptr = '\0';
+		ptr++;
+	} else if ((ptr = strrchr (path, '\\'))) {
+		*ptr = '\0';
+		ptr++;
+	} else ptr = path;
+
+	outpath_sz = strlen (path) + 20;
+
+	if (outpath_sz)
+		outpath = malloc (outpath_sz);
+
+	if (outpath)
+		snprintf (outpath, outpath_sz, "%s.fat", ptr);
+
+	if (!outpath || !r_sys_rmkdir (outpath)) {
+		free (path);
+		free (outpath);
+		eprintf ("Error creating dir structure\n");
+		return R_FALSE;
 	}
+
+	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 3 + 10 + 10;
+	if (outfile_sz)
+		outfile = malloc (outfile_sz);
+
+	if (outfile)
+		snprintf (outfile, outfile_sz, "%s/%s.%s_%i.%d",
+			outpath, ptr, arch, bits, idx);
+
+	if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size)) {
+		eprintf ("Error extracting %s\n", outfile);
+		res = R_FALSE;
+	} else {
+		printf ("%s created (%i)\n", outfile, bin_size);
+		res = R_TRUE;
+	}
+
+	free (outfile);
+	free (outpath);
 	free (path);
-	return R_TRUE;
+	return res;
+}
+
+static int rabin_extract(int all) {
+	int res = R_FALSE;
+	RBinFile *bf = r_bin_cur (bin);
+	RBinObject *obj = NULL;
+	if (all) {
+		int idx = 0;
+
+		RListIter *iter = NULL;
+		if (!bf) return res;
+
+		r_list_foreach (bf->objs, iter, obj) {
+			if (!bf || !obj) return res;
+			res = extract_binobj (bf, obj, idx++);
+		}
+	} else {
+		obj = r_bin_cur_object (bin);
+		if (!bf || !obj) return res;
+		res = extract_binobj (bf, obj, 0);
+	}
+
+	return res;
 }
 
 static int rabin_dump_symbols(int len) {

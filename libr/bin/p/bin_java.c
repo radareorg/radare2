@@ -47,16 +47,43 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 	if (bin) {
 		jvcname = r_bin_java_build_obj_key (bin);
 		add_sdb_bin_obj (jvcname, bin);
+		bin->AllJavaBinObjs = DB;
 		free (jvcname);
 	}
 }
 
-static int load(RBinFile *arch) {
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o) return NULL;
+	struct r_bin_java_obj_t *bin = (struct r_bin_java_obj_t *) o->bin_obj;
+	if (bin->kv) return bin->kv;
+	return NULL;
+}
+
+static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	void *res = NULL;
+	RBuffer *tbuf = NULL;
 	struct r_bin_java_obj_t* bin_obj = NULL;
+	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	tbuf = r_buf_new();
+	r_buf_set_bytes (tbuf, buf, sz);
+	res = bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
+	add_bin_obj_to_sdb (bin_obj);
+	r_buf_free (tbuf);
+	return res;
+}
+
+static int load(RBinFile *arch) {
 	int result = R_FALSE;
-	bin_obj = r_bin_java_new_buf (arch->buf, arch->o->loadaddr, arch->o->kv);
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+ 	struct r_bin_java_obj_t* bin_obj = NULL;
+
+ 	if (!arch->o) return R_FALSE;
+
+	bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+
 	if (bin_obj) {
-		if (arch->o->kv == NULL) arch->o->kv = bin_obj->kv;
+		if (!arch->o->kv) arch->o->kv = bin_obj->kv;
 		arch->o->bin_obj = bin_obj;
 		bin_obj->AllJavaBinObjs = DB;
 		// XXX - /\ this is a hack, but (one way but) necessary to get access to
@@ -207,7 +234,9 @@ RBinPlugin r_bin_plugin_java = {
 	.license = "LGPL3",
 	.init = init,
 	.fini = NULL,
+	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,

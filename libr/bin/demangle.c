@@ -187,7 +187,7 @@ R_API int r_bin_demangle_type (const char *str) {
 
 R_API char *r_bin_demangle (RBinFile *binfile, const char *str) {
 	int type;
-	RBinPlugin *plugin = binfile ? binfile->curplugin : NULL;
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->demangle_type)
 		type = plugin->demangle_type (str);
 	else type = r_bin_demangle_type (str);

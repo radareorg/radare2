@@ -477,7 +477,10 @@ static int r_cmd_java_reload_bin_from_buf (RCore *core, RBinJavaObj *obj, ut8* b
 				break;
 			}
 		}
-		if (cp) r_bin_update_items (core->bin, cp);
+		// XXX - this API is no longer valid.
+		// need a function that will re-read bin bytes
+		// and parse the file
+		//if (cp) r_bin_update_items (core->bin, cp);
 	}
 	return res;
 }
@@ -1408,7 +1411,8 @@ static RList * r_cmd_java_get_bin_obj_list(RAnal *anal) {
 
 static RBinJavaObj * r_cmd_java_get_bin_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
-	ut8 is_java = (b && b->cur->curplugin && strcmp (b->cur->curplugin->name, "java") == 0) ? 1 : 0;
+	RBinPlugin *plugin = b->cur->o->plugin;
+	ut8 is_java = (plugin  && strcmp (plugin->name, "java") == 0) ? 1 : 0;
 	return is_java ? b->cur->o->bin_obj : NULL;
 }
 

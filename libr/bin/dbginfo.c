@@ -4,8 +4,10 @@
 #include <r_bin.h>
 
 R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line) {
-	RBinObject *o = bin->cur->o;
-	RBinPlugin *cp = bin->cur->curplugin;
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinObject *o = r_bin_cur_object (bin);
+	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
+
 	if (cp && cp->dbginfo) {
 		if (addr >= o->baddr && addr < (o->baddr+bin->cur->o->size))
 			if (cp->dbginfo->get_line)
