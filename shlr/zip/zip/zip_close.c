@@ -408,6 +408,8 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de, FILE *ft
 	return -1;
 
     offend = ftello(ft);
+	if (offend < 0)
+		return -1;
 
     if (fseeko(ft, offstart, SEEK_SET) < 0) {
 	_zip_error_set(&za->error, ZIP_ER_SEEK, errno);
