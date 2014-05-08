@@ -204,8 +204,8 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 
 R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	char *tmp, *tmp2, *eof, *out = NULL;
-	if (str && len>10) {
-		out = str;
+	if (str && len > 10) {
+		out = strcpy (str);
 	} else {
 		len = 32;
 		out = malloc (len);
