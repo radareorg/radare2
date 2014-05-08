@@ -31,13 +31,12 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
 			const int buflen = (strlen (input+3) * 4) + 1;
-			unsigned char* buf = calloc (buflen, sizeof(char));
+			ut8* buf = calloc (buflen, sizeof(char));
 			if (!buf)
 				return R_FALSE;
 			if (input[3] == '-')
 				r_base64_decode (buf, input+5, strlen (input+5));
-			else
-				r_base64_encode (buf, input+4, strlen (input+4));
+			else r_base64_encode (buf, (const ut8*)input+4, strlen (input+4));
 			r_cons_printf ("%s\n", buf);
 			free (buf);
 		} else {

@@ -235,7 +235,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
 	ut64 baseaddr = 0;
-	int va = r->io->va || r->io->debug;
+	//int va = r->io->va || r->io->debug;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	int treat_as_rawstr = R_FALSE;
 
@@ -622,7 +622,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	return fh;
 }
 
-
 R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
 	if (!core || !core->files || !cf) return R_FALSE;
 	return r_list_delete_data (core->files, cf);
@@ -725,10 +724,11 @@ R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx) {
 
 R_API int r_core_file_binlist(RCore *core) {
 	int count = 0;
-	RCoreFile *f;
+	RCoreFile *f = NULL;
 	RListIter *iter;
-	RCoreFile *cur_cf = core->file, *cf = NULL;
-	RBinFile *cur_bf = r_core_bin_cur (core), *binfile = NULL;
+	RCoreFile *cur_cf = core->file;
+	//RBinFile *cur_bf = r_core_bin_cur (core);
+	RBinFile *binfile = NULL;
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
@@ -736,8 +736,8 @@ R_API int r_core_file_binlist(RCore *core) {
 
 	r_list_foreach (binfiles, iter, binfile) {
 		ut32 fd = binfile->fd;
-		cf = r_core_file_get_by_fd (core, fd);
-		if (cf && cf->map) {
+		f = r_core_file_get_by_fd (core, fd);
+		if (f && f->map) {
 			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
 				core->io->raised == f->fd->fd?'*':'-',
 				fd, f->uri, f->map->from,
@@ -853,10 +853,9 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 
 R_API ut32 r_core_file_cur_fd (RCore *core) {
 	RIODesc *desc = core->file ? core->file->fd : NULL;
-	if (desc) {
+	if (desc)
 		return desc->fd;
-	}
-	return (ut32)-1;
+	return UT32_MAX;
 }
 
 R_API RCoreFile * r_core_file_cur (RCore *r) {

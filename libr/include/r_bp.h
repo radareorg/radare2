@@ -93,6 +93,7 @@ R_API RBreakpoint *r_bp_new();
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
+R_API int r_bp_del_all(RBreakpoint *bp);
 
 R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo);
 R_API int r_bp_use(RBreakpoint *bp, const char *name);

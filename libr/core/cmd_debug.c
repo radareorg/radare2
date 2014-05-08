@@ -688,7 +688,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
 	case '-':
-		r_bp_del (core->dbg->bp, r_num_math (core->num, input+2));
+		if (input[2] == '*') {
+			r_bp_del_all (core->dbg->bp);
+		} else r_bp_del (core->dbg->bp, r_num_math (core->num, input+2));
 		break;
 	case 'c':
 		addr = r_num_math (core->num, input+2);
