@@ -7,11 +7,22 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
 	ut8 lict[48];
-	if (!arch || !arch->buf)
+	if (!buf || length < (0x104+48))
 		return 0;
-	r_buf_read_at (arch->buf, 0x104, lict,48);
+	memcpy (lict, buf+0x104, 48);
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
 
@@ -211,6 +222,7 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,

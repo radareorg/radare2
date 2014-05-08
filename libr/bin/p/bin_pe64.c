@@ -3,15 +3,26 @@
 #define R_BIN_PE64 1
 #include "bin_pe.c"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
 	int idx, ret = R_FALSE;
-	if (!arch || !arch->buf || !arch->buf->buf)
+	if (!buf)
 		return R_FALSE;
-	idx = arch->buf->buf[0x3c]|(arch->buf->buf[0x3d]<<8);
-	if (arch->buf->length>=idx+0x20)
-		if (!memcmp (arch->buf->buf, "\x4d\x5a", 2) &&
-			!memcmp (arch->buf->buf+idx, "\x50\x45", 2) && 
-			!memcmp (arch->buf->buf+idx+0x18, "\x0b\x02", 2))
+	idx = buf[0x3c] | (buf[0x3d]<<8);
+	if (length >= idx+0x20)
+		if (!memcmp (buf, "\x4d\x5a", 2) &&
+			!memcmp (buf+idx, "\x50\x45", 2) && 
+			!memcmp (buf+idx+0x18, "\x0b\x02", 2))
 			ret = R_TRUE;
 	return ret;
 }
@@ -25,6 +36,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,

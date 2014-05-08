@@ -7,24 +7,34 @@
 #include "../../fs/types.h"
 
 static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
 
-static char *fsname(RBinFile *arch) {
-	ut8 buf[1024];
+//static char *fsname(RBinFile *arch) {
+static char *fsname(const ut8* buf, ut64 length) {
+	ut8 fs_lbuf[1024];
 	int i, j, len, ret = R_FALSE;
 
-	for (i=0; fstypes[i].name; i++) {
+	for (i=0; fstypes[i].name ; i++) {
 		RFSType *f = &fstypes[i];
-		len = R_MIN (f->buflen, sizeof (buf));
-		memset (buf, 0, sizeof (buf));
-		r_buf_read_at (arch->buf, f->bufoff, buf, len);
-		if ((f->buflen>0) && (len>=f->buflen)) {
-			int min = R_MIN (f->buflen, sizeof (buf));
-			if (!memcmp (buf, f->buf, min)) {
+
+		len = R_MIN (f->buflen, sizeof (fs_lbuf));
+		memset (fs_lbuf, 0, sizeof (fs_lbuf));
+
+		if (f->bufoff+len > length) break;
+		memcpy (fs_lbuf, buf+f->bufoff, len);
+
+		if (( f->buflen > 0) && (len >= f->buflen)) {
+			int min = R_MIN (f->buflen, sizeof (fs_lbuf));
+			if (!memcmp (fs_lbuf, f->buf, min)) {
+
 				ret = R_TRUE;
-				len = R_MIN (f->bytelen, sizeof (buf));
-				r_buf_read_at (arch->buf, f->byteoff, buf, len);
+				len = R_MIN (f->bytelen, sizeof (fs_lbuf));
+
+				if (f->byteoff+len > length) break;
+				memcpy (fs_lbuf, buf+f->byteoff, len);
+
 				for (j=0; j<f->bytelen; j++) {
-					if (buf[j] != f->byte) {
+					if (fs_lbuf[j] != f->byte) {
 						ret = R_FALSE;
 						break;
 					}
@@ -58,8 +68,14 @@ static RList *strings(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	char *p;
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW (RBinInfo)))
+
+	if (!arch || !bytes) 
+		return NULL;
+	else if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
 	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = NULL;
@@ -71,7 +87,7 @@ static RBinInfo* info(RBinFile *arch) {
 	strncpy (ret->os, "any", sizeof (ret->os)-1);
 	strncpy (ret->subsystem, "unknown", sizeof (ret->subsystem)-1);
 	strncpy (ret->machine, "any", sizeof (ret->machine)-1);
-	p = fsname (arch);
+	p = fsname (bytes, sz);
 	strncpy (ret->arch, p, sizeof (ret->arch)-1);
 	free (p);
 	ret->has_va = 0;
@@ -82,10 +98,16 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
 	char *p;
 	int ret;
 
-	p = fsname (arch);
+	p = fsname (buf, length);
 	ret = (p)? R_TRUE: R_FALSE;
 	free (p);
 	return ret;
@@ -100,6 +122,7 @@ RBinPlugin r_bin_plugin_fs = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = NULL,

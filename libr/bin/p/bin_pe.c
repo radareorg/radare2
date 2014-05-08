@@ -6,6 +6,9 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int load(RBinFile *arch) {
 	if(!(arch->o->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
 		return R_FALSE;
@@ -269,14 +272,21 @@ static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 #if !R_BIN_PE64
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
 	int idx, ret = R_FALSE;
-	if (!arch || !arch->buf || !arch->buf->buf)
+	if (!buf)
 		return R_FALSE;
-	idx = (arch->buf->buf[0x3c]|(arch->buf->buf[0x3d]<<8));
-	if (arch->buf->length>idx)
-		if (!memcmp (arch->buf->buf, "\x4d\x5a", 2) &&
-			!memcmp (arch->buf->buf+idx, "\x50\x45", 2) &&
-			!memcmp (arch->buf->buf+idx+0x18, "\x0b\x01", 2))
+	idx = (buf[0x3c] | (buf[0x3d]<<8));
+	if (length > idx)
+		if (!memcmp (buf, "\x4d\x5a", 2) &&
+			!memcmp (buf+idx, "\x50\x45", 2) &&
+			!memcmp (buf+idx+0x18, "\x0b\x01", 2))
 			ret = R_TRUE;
 	return ret;
 }
@@ -364,6 +374,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,

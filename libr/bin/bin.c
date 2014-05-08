@@ -617,12 +617,23 @@ static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
 	return any;
 }
 
+static RBinObject * r_bin_object_new(RBin *bin, RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr) {
+	RBinObject *o;
+	binfile->o = o = R_NEW0 (RBinObject);
+
+	o->plugin = plugin;
+	o->loadaddr = loadaddr;
+	o->baddr = baseaddr;
+	o->size = binfile->size;
+	return o;
+}
+
+
 static RBinFile * r_bin_file_new_as (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname) {
 	Sdb * sdb = bin->sdb;
 	RBinPlugin *plugin;
-	RBinFile *binfile = R_NEW0 (RBinFile);
 	RBinObject *o = NULL;
-
+	RBinFile *binfile = R_NEW0 (RBinFile);
 	binfile->file = strdup (file);
 	binfile->rawstr = rawstr;
 	binfile->fd = fd;
@@ -651,6 +662,7 @@ static RBinFile * r_bin_file_new_as (RBin *bin, const char *file, const ut8 * by
 		binfile->narch = 1;
 
 	binfile->o = o = R_NEW0 (RBinObject);
+	o->plugin = plugin;
 	o->loadaddr = loadaddr;
 	o->baddr = baseaddr;
 	o->size = binfile->size;

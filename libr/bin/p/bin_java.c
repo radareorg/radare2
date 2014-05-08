@@ -14,6 +14,8 @@
 
 static Sdb *DB = NULL;
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
@@ -135,18 +137,24 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
 	int off, ret = R_FALSE;
 	int version = 0;
 
-	if (arch && arch->buf && arch->buf->buf && arch->buf->length>10)
-	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
-		version = arch->buf->buf[6] | (arch->buf->buf[7] <<8);
+	if (buf && length>10)
+	if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+		memcpy (&off, buf+4*sizeof(int), sizeof(int));
+		version = buf[6] | (buf[7] <<8);
 		if (version <1024) // IT's A MACH0!
 			return R_FALSE;
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-		//eprintf ("VERSION = %d\n", version);
-		// TODO: FIND __TEXT
 		ret = R_TRUE;
 	}
 	return ret;
@@ -202,6 +210,7 @@ RBinPlugin r_bin_plugin_java = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = binsym,

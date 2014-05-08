@@ -30,8 +30,7 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		ut16 bits = info->bits;
 		ut64 baseaddr = binobj->baddr;
 		int va = info->has_va;
-		r_config_set_i (r->config, "io.va",
-			(binobj->info)? binobj->info->has_va: 0);
+		r_config_set_i (r->config, "io.va", (info)? info->has_va: 0);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "asm.arch", arch);
