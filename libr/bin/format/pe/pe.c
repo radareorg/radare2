@@ -13,6 +13,7 @@ ut64 PE_(r_bin_pe_get_main_offset)(struct PE_(r_bin_pe_obj_t) *bin) {
 	ut8 buf[512];
 
 	// option2: /x 8bff558bec83ec20
+	buf[367] = 0;
 	if (r_buf_read_at (bin->b, entry->offset, buf, sizeof (buf)) == -1) {
 		eprintf ("Error: Cannot read entry at 0x%08"PFMT64x"\n", entry->offset);
 	} else {
@@ -324,7 +325,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (import_dir_offset == 0 && delay_import_dir_offset == 0)
 		return R_FALSE;
 	if (import_dir_offset != 0) {
-		if (import_dir_size>0xffff) {
+		if (import_dir_size<1 || import_dir_size>0xffff) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n", import_dir_size);
 			import_dir_size = 0xffff;
 		}
@@ -672,7 +673,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	/* NOTE: import_dirs and delay_import_dirs can be -1 */
 	mallocsz = (import_dirs_count + delay_import_dirs_count + 3) * sizeof (struct r_bin_pe_lib_t);
-	if (mallocsz>bin->size) {
+	if (mallocsz<1 || mallocsz>bin->size) {
 		//eprintf ("pe: Invalid libsize\n");
 		return NULL;
 	}
