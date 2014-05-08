@@ -7,6 +7,7 @@
 #if __UNIX__
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netdb.h>
 #elif __WINDOWS__
 #include <windows.h>
