@@ -19,7 +19,6 @@ TAREXT=tar.gz
 CZ=gzip -f
 endif
 PWD=$(shell pwd)
-MAKE_JOBS?=1
 
 all: plugins.cfg
 	${MAKE} -C libr/util

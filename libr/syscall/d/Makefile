@@ -15,6 +15,7 @@ F+= windows-x86-32
 F+= windows-x86-64
 
 include $(TOP)/config-user.mk
+HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
@@ -22,7 +23,7 @@ SDBPATH=$(LTOP)/../shlr/sdb/
 SDB=$(SDBPATH)/sdb
 
 all: ${SDB}
-	@${MAKE} compile
+	@$(MAKE) compile
 
 compile: ${F_SDB}
 
@@ -39,11 +40,8 @@ clean:
 
 ${SDB}:
 	cp -rf $(SDBPATH)/src $(SDBPATH)/src-native
-	#cd $(LTOP)/db/sdb/src-native && ${MAKE} -j ${MAKE_JOBS} ARCH=xxx CC=gcc clean sdb
-	#${CFLAGS}'
-	# TODO use HOST_CC
 	cd $(SDBPATH)/src-native && CFLAGS="-w ${CPPFLAGS}" \
-		${MAKE} -j 1 ARCH=xxx CC=gcc clean sdb
+		$(MAKE) -j 1 ARCH=xxx CC=${HOST_CC} clean sdb
 	cp -f $(SDBPATH)/src-native/sdb $(SDBPATH)/sdb
 	rm -rf $(SDBPATH)/src-native
 
