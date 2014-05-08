@@ -1,7 +1,7 @@
 #!/bin/sh
 
 revision() {
-	echo `hg tip|head -n 1|cut -d : -f 2`
+	echo `git log | head -1 | cut -d " " -f 2`
 }
 
 cd `dirname $PWD/$0` ; cd ..
