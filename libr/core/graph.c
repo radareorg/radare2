@@ -106,7 +106,6 @@ static int Node_find(const Node* nodes, ut64 addr) {
 	return -1;
 }
 
-
 static void Layout_depth2(Node *nodes, Edge *edges, int nth, int depth) {
 	int j, f;
 	if (!nodes || !nodes[nth].text)
@@ -189,7 +188,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	can = r_cons_canvas_new (w-1, h-1);
 
 	nodes = malloc (sizeof(Node)*(r_list_length (fcn->bbs)+1));
-	edges = NULL;
 	i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		nodes[i].text = r_core_cmd_strf (core,
@@ -206,17 +204,18 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	n_nodes = i;
 
 	i = 0;
+	edges = NULL;
 	n_edges = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		// add edge from bb->addr to bb->jump / bb->fail
 		if (bb->jump != UT64_MAX) {
-			edges = realloc(edges, sizeof (Edge)*(i+1));
+			edges = realloc (edges, sizeof (Edge)*(i+2));
 			edges[i].nth = 0;
 			edges[i].from = Node_find (nodes, bb->addr);
 			edges[i].to = Node_find (nodes, bb->jump);
 			i++;
 			if (bb->fail != UT64_MAX) {
-				edges = realloc(edges, sizeof (Edge)*(i+1));
+				edges = realloc (edges, sizeof (Edge)*(i+2));
 				edges[i].nth = 1;
 				edges[i].from = Node_find (nodes, bb->addr);
 				edges[i].to = Node_find (nodes, bb->fail);
@@ -296,6 +295,10 @@ prevnode = curnode;
 	case 's': can->sy += 1; break;
 	case 'a': can->sx -= 1; break;
 	case 'd': can->sx += 1; break;
+	case 'W': can->sy -= 5; break;
+	case 'S': can->sy += 5; break;
+	case 'A': can->sx -= 5; break;
+	case 'D': can->sx += 5; break;
 		break;
 	case 'u':
 		curnode = prevnode;

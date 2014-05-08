@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# skip this thing. it slow downs the build too much
+exit 0
+
 [ -n "${NOSTRIP}" ] && exit 0
 
 [ -z "$2" ] && exit 0
