@@ -349,7 +349,7 @@ default:
 				if (anal->bits==16) {
 					// honor segment
 					op->jump = (addr&0xf0000) + oplen + \
-						(((addr&0xffff)+getval (&u.operand[0])&0xffff));
+						((((addr&0xffff)+getval (&u.operand[0]))&0xffff));
 				} else {
 					op->jump = addr + oplen + (int)getval (&u.operand[0]);
 				}

@@ -116,6 +116,6 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 		return NULL;
 	}
 	hint = r_anal_hint_from_string (a, addr, s);
-	free (s);
+	free ((void*)s);
 	return hint;
 }

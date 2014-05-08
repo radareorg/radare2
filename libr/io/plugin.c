@@ -38,7 +38,7 @@ R_API int r_io_plugin_init(RIO *io) {
 		// memory leak here: static_plugin never freed
 		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
 		if (!strncmp (static_plugin->name, "default", 7)) {
-			if (DEFAULT) free (DEFAULT);
+			if (DEFAULT) free ((void*)DEFAULT);
 			DEFAULT = static_plugin;
 			continue;
 		}

@@ -7,7 +7,7 @@
     - handle sync to synchronize all the data on disk.
     - actually listing only works in memory
     - array_add doesnt needs index, right?
-    - remove unused arguments from r_meta_find (where ???)
+    - remove unused arguments from r_meta_find (where ?)
     - implement r_meta_find
 #endif
 
