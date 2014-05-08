@@ -233,14 +233,20 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 						memset (row+1, '-', w-2);
 					row[w-1] = '\'';
 					row[w] = 0;
-					onscreen = G (x2,y+hl+1);
+					onscreen = G (x2+w,y+hl+1);
+					i = G (x2, y+hl+1);
+					if (!onscreen)
+						onscreen = i;
 				} else {
 					row[0] = '`';
 					if (w>1)
 						memset (row+1, '-', w-1);
 					row[w] = '.';
 					row[w+1] = 0;
-					onscreen = G (x,y+1+hl);
+					onscreen = G (x+w,y+1+hl);
+					i = G (x,y+1+hl);
+					if (!onscreen)
+						onscreen = i;
 				}
 				if (onscreen)
 					W (row);
@@ -279,20 +285,23 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 					W (row);
 
 				w = rl2;
+				free (row);
+				row = malloc (rl2+1);
 				if (x>x2) {
 					row[0] = '`';
 					memset (row+1, '-', w-2);
 					row[w-1] = '\'';
 					row[w] = 0;
-					G (x2+rl, y+1);
+					onscreen = G (x2+rl, y+1);
 				} else {
 					row[0] = '.';
 					memset (row+1, '-', w-2);
 					row[w-1] = '.';
 					row[w] = 0;
-					G (x+rl, y2-1);
+					onscreen = G (x+rl, y2-1);
 				}
-				W (row);
+				if (onscreen)
+					W (row);
 				free (row);
 			}
 			}

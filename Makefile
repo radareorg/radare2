@@ -23,9 +23,9 @@ MAKE_JOBS?=1
 
 all: plugins.cfg
 	${MAKE} -C libr/util
-	${MAKE} -j$(MAKE_JOBS) -C shlr
-	${MAKE} -j$(MAKE_JOBS) -C libr
-	${MAKE} -j$(MAKE_JOBS) -C binr
+	${MAKE} -C shlr
+	${MAKE} -C libr
+	${MAKE} -C binr
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
