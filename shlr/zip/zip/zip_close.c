@@ -531,6 +531,8 @@ write_cdir(struct zip *za, const struct zip_filelist *filelist, zip_uint64_t sur
     char buf[TORRENT_CRC_LEN+1];
     
     cd_start = ftello(out);
+	if (cd_start < 0)
+		return -1;
 
     if ((size=_zip_cdir_write(za, filelist, survivors, out)) < 0)
 	return -1;
