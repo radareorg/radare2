@@ -134,6 +134,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	if (*arg=='=') arg++; /* for <=, >=, ... */
 	p = r_egg_mkvar (egg, str, arg, 0);
 	r_egg_printf (egg, "%s (%s) => (%s)\n", op, p, dst);
+	free (p);
 }
 
 // XXX: sz must be char
@@ -156,12 +157,12 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	if (eq == NULL) eq = R_AX;
 	if (p == NULL) p = R_AX;
 #if 0
-	// TODO: 
+	// TODO:
 	eprintf ("TYPE = %c\n", type);
 	eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
 	eprintf ("  %s %s, [%s]\n", op, p, eq);
 #endif
-	if (type == '*') 
+	if (type == '*')
 		r_egg_printf (egg, "%s (%s, [%s])\n", op, p, eq);
 	else r_egg_printf (egg, "%s (%s, %s)\n", op, p, eq);
 }
