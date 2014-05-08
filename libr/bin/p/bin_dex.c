@@ -77,7 +77,7 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 
-	if (!buf && length > 8)
+	if (!buf || length > 8)
 		return R_FALSE;
 	// Non-extended opcode dex file
 	if (!memcmp (buf, "dex\n035\0", 8))
