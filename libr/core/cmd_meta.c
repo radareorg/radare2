@@ -411,7 +411,6 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i;
-	char *t = 0;
 	RAnalFunction *f;
 
 	switch (*input) {
@@ -460,7 +459,5 @@ static int cmd_meta(void *data, const char *input) {
 		else eprintf ("Cannot find function here\n");
 		break;
 	}
-	if (t)
-		free (t);
 	return R_TRUE;
 }
