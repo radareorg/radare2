@@ -82,7 +82,7 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	y = a->y+a->h;
 	x2 = b->x+xinc;
 	y2 = b->y;
-	L(x,y,x2,y2);
+	L (x,y,x2,y2);
 }
 
 static int Edge_node(Edge *edges, int cur, int nth) {
@@ -235,9 +235,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 	// run layout
 	Layout_depth (nodes, edges);
+	r_cons_clear00();
 repeat:
 	w = r_cons_get_size (&h);
-	r_cons_canvas_resize (can, w-1, h-1);
+	r_cons_canvas_resize (can, w, h);
 	r_cons_canvas_clear (can);
 
 	if (edges)
