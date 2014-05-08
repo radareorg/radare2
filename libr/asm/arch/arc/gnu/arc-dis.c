@@ -159,7 +159,7 @@ typedef enum
     }						\
   while (0)
 
-#define IS_SMALL(x)                 (((field##x) < 256) && ((field##x) > -257))
+#define IS_SMALL(x)                 (((field##x) < 10) && ((field##x) >= 0))
 #define IS_REG(x)                    (field##x##isReg)
 #define WRITE_FORMAT_LB_Rx_RB(x)     WRITE_FORMAT (x, "[","]","","")
 #define WRITE_FORMAT_x_COMMA_LB(x)   WRITE_FORMAT (x, "",", [","",", [")
