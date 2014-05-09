@@ -1099,7 +1099,8 @@ st8 *get_opers(ut8 oper_byte)
 			case 5u:
 				res =  strcat_dup(reg_name, " <= #0", 1);
 			}
-			free (reg_name);
+			// free (reg_name); Causes segfault
+			// TODO: still can leak
 			return res;
 		}
 		reg_name = get_reg_name_1((oper_byte & 0xF) + 128);
