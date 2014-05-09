@@ -1777,23 +1777,23 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		if (ds->hint && ds->hint->size)
 			ret = ds->hint->size;
 		if (ds->hint && ds->hint->opcode) {
-			if (ds->opstr) free (ds->opstr);
+			free (ds->opstr);
 			ds->opstr = strdup (ds->hint->opcode);
 		} else {
 			if (ds->use_esil) {
 				r_anal_op (core->anal, &ds->analop, ds->at, buf+i, core->blocksize-i);
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
-					if (ds->opstr) free (ds->opstr);
+					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 				}
 			} else
 			if (ds->decode) {
-				if (ds->opstr) free (ds->opstr);
+				free (ds->opstr);
 				r_anal_op (core->anal, &ds->analop, ds->at, buf+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
 			} else {
-				if (ds->opstr) free (ds->opstr);
+				free (ds->opstr);
 				ds->opstr = strdup (ds->asmop.buf_asm);
 			}
 		}
@@ -1928,7 +1928,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		len = bb->size;
 
 		if (len > cur_buf_sz) {
-			free(buf);
+			free (buf);
 			cur_buf_sz = len;
 			buf = malloc (cur_buf_sz);
 			ds->buf = buf;

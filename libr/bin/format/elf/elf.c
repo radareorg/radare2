@@ -734,7 +734,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			tmp_ptr = strtab;
 			if ((strtab = (char *)malloc (8+tsize)) == NULL) {
 				perror ("malloc (syms strtab)");
-				if (sym) free (sym);
+				free (sym);
 				return NULL;
 			} else {
 				if (tmp_ptr) free (tmp_ptr);
@@ -1035,7 +1035,7 @@ if (
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name > strtab_section->sh_size) {
 					perror ("index out of strtab range\n");
-                    free (ret);
+					free (ret);
 					free (sym);
 					free (strtab);
 					return NULL;

@@ -509,10 +509,9 @@ static void r_bin_file_free (void /*RBinFile*/ *bf_) {
 	if (a->curxtr && a->curxtr->destroy)
 		a->curxtr->free_xtr ((void *) (a->xtr_obj));
 
-	if (a->o) r_bin_object_free (a->o);
+	r_bin_object_free (a->o);
 	a->o = NULL;
-
-	if (a->buf) r_buf_free (a->buf);
+	r_buf_free (a->buf);
 	// TODO: unset related sdb namespaces
 	if (a && a->sdb_addrinfo) {
 		sdb_free (a->sdb_addrinfo);
@@ -542,7 +541,8 @@ static int r_bin_files_populate_from_xtrlist (RBin *bin, const char* filename, u
 	RBinXtrData *data = NULL;
 	int res = R_FALSE;
 	r_list_foreach (xtr_data_list, iter, data) {
-		res = r_bin_file_new_from_xtr_data  (bin, filename, baseaddr, loadaddr, data, fd, rawstr, xtrname);
+		res = r_bin_file_new_from_xtr_data  (bin, filename,
+			baseaddr, loadaddr, data, fd, rawstr, xtrname);
 		if (!res) break;
 	}
 	return res;
@@ -555,15 +555,17 @@ static int r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, const char 
 	int res = R_FALSE;
 	if (idx == 0 && xtr && xtr && bytes) {
 		RList *xtr_data_list = xtr->extractall_from_bytes (bytes, sz);
-		if (xtr_data_list){
-			res = r_bin_files_populate_from_xtrlist (bin, filename, baseaddr, loadaddr, xtr_data_list, fd, rawstr, xtr->name);
+		if (xtr_data_list) {
+			res = r_bin_files_populate_from_xtrlist (bin, filename,
+				baseaddr, loadaddr, xtr_data_list, fd, rawstr, xtr->name);
 		}
 		r_list_free (xtr_data_list);
 	} else if (xtr && xtr->extract_from_bytes) {
 		if (idx == 0) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bytes, sz, idx);
 		if (xtr_data){
-			res = r_bin_file_new_from_xtr_data (bin, filename, baseaddr, loadaddr, xtr_data, fd, rawstr, xtr->name);
+			res = r_bin_file_new_from_xtr_data (bin, filename,
+				baseaddr, loadaddr, xtr_data, fd, rawstr, xtr->name);
 		}
 		r_bin_xtrdata_free (xtr_data);
 	}

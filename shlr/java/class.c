@@ -705,7 +705,7 @@ R_API int r_bin_java_extract_reference_name (const char * input_str, char ** ref
 		consumed++;
 	}
 	str_pos = input_str+1;
-	if (*ref_str) free (*ref_str);
+	free (*ref_str);
 	str_len += len;
 	*ref_str = malloc (str_len+1);
 	new_str = *ref_str;
@@ -4492,7 +4492,7 @@ static int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj* cp_obj, ut8 tag) {
 		free (cp_obj->info.cp_utf8.bytes);
 		cp_obj->info.cp_utf8.bytes = NULL;
 		cp_obj->info.cp_utf8.length = 0;
-		if (cp_obj->name) free (cp_obj->name);
+		free (cp_obj->name);
 		cp_obj->name = NULL;
 		res = R_TRUE;
 	}

@@ -548,7 +548,7 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 // TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
 	int len;
-	if (ptr) free (ptr);
+	free (ptr);
 	if (!string) return NULL;
 	len = strlen (string)+1;
 	ptr = malloc (len+1);
