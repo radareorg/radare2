@@ -79,15 +79,20 @@ static RList* entries(RBinFile *arch)
 static RList* sections(RBinFile *arch){
 	ut8 bank;
 	int i;
-	RList *ret = r_list_new();
+	RList *ret;
+
+	if (!arch)
+		return NULL;
+
+	ret = r_list_new();
+	if (!ret )
+		return NULL;
 
 	r_buf_read_at (arch->buf, 0x148, &bank, 1);
 	bank = gb_get_rombanks(bank);
 	RBinSection *rombank[bank];
 
-	if (!ret ) return NULL;
-
-	if (!arch || !arch->buf) {
+	if (!arch->buf) {
 		free (ret);
 		return NULL;
 	}

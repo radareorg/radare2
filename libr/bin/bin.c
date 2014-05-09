@@ -86,6 +86,9 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	RBinString *ptr = NULL;
 	char type = 'A';
 
+	if (!arch)
+		return;
+
 	if (!arch->rawstr)
 		if (!arch->curplugin || !arch->curplugin->info)
 			return;
@@ -96,7 +99,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (min <= 0)
 		return;
 
-	if (arch && arch->buf && (!to || to > arch->buf->length))
+	if (arch->buf && (!to || to > arch->buf->length))
 		to = arch->buf->length;
 	if (to != 0 && (to<1 || to > 0xf00000)) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);

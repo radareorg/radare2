@@ -277,6 +277,7 @@ R_API int r_socket_port_by_name(const char *name) {
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
+	int ret;
 	struct linger linger = { 0 };
 	if (r_sandbox_enable (0))
 		return R_FALSE;
@@ -292,12 +293,18 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #if __UNIX__
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
-	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
+	ret = setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
+	if (ret < 0)
+		return R_FALSE;
 	{ // fix close after write bug //
 	int x = 1500; // FORCE MTU
-	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));
+	ret = setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));
+	if (ret < 0)
+		return R_FALSE;
 	}
-	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof optval);
+	ret = setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof optval);
+	if (ret < 0)
+		return R_FALSE;
 #endif
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
@@ -378,13 +385,18 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 }
 
 R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+	int ret;
 	if (!s) return R_FALSE;
 #if __UNIX__
 	{
 	int flags = fcntl (s->fd, F_GETFL, 0);
-	fcntl (s->fd, F_SETFL, block?
+	if (flags < 0)
+		return R_FALSE;
+	ret = fcntl (s->fd, F_SETFL, block?
 			(flags & ~O_NONBLOCK):
 			(flags | O_NONBLOCK));
+	if (ret < 0)
+		return R_FALSE;
 	}
 #elif __WINDOWS__
 	// HACK: nonblocking io on w32 behaves strange

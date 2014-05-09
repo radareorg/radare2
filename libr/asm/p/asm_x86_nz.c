@@ -550,7 +550,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					*delta++ = 0;
 					data[l++] = 0x8f;
 					data[l++] = 0x40 | getreg (arg);
-					data[l++] = delta? getnum (a, delta): 0;
+					data[l++] = getnum (a, delta);
 				} else {
 					int r = getreg (arg);
 					data[l++] = 0x8f;
@@ -796,7 +796,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					}
 				}
 				return l;
-				pfx = 0;
 			} //else pfx = 0xc0;
 
 			arg0 = getreg (arg); // hack to make is64 work

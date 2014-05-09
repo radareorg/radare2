@@ -957,8 +957,8 @@ static int cr16_decode_misc(const ut8 *instr, struct cr16_cmd *cmd)
 			strncpy(cmd->instr, "excp", CR16_INSTR_MAXLEN - 1);
 			snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1,
 					"0x%x", (c >> 1) & 0xF);
-			break;
 			cmd->type = CR16_TYPE_EXCP;
+			break;
 		default:
 			ret = -1;
 		}

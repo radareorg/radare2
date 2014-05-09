@@ -223,7 +223,7 @@ static void algolist() {
 }
 
 int main(int argc, char **argv) {
-	int i, ret, c, rad = 0, quit = 0, bsize = 0, numblocks = 0, ule = 0;
+	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	char *hashstr = NULL;
@@ -292,7 +292,6 @@ int main(int argc, char **argv) {
 				do_hash_internal (ctx, hashbit,
 					(const ut8*)str, strsz, rad, 1, ule);
 				r_hash_free (ctx);
-				quit = R_TRUE;
 			}
 		}
 		if (_s) {
@@ -301,8 +300,6 @@ int main(int argc, char **argv) {
 		}
 		return 0;
 	}
-	if (quit)
-		return 0;
 	if (optind>=argc)
 		return do_help (1);
 	if (numblocks) {
