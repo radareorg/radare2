@@ -380,7 +380,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	//free ((void *)_str);
 	free (str);
-	return ret;
+	return strdup (ret); // memleak or wtf
 }
 
 static void rcc_fun(REgg *egg, const char *str) {
@@ -755,6 +755,10 @@ static void rcc_next(REgg *egg) {
 		}
 		ocn = skipspaces (callname);
 		str = r_egg_mkvar (egg, buf, ocn, 0);
+		if (!str) {
+			eprintf ("Cannot mkvar\n");
+			return;
+		}
 		if (*ocn=='.')
 			e->call (egg, str, 1);
 		else
