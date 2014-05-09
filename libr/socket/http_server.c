@@ -83,6 +83,8 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 		char *ret;
 		const char *data, *token = (const char *)str+10;
 		const char *end = strchr (token, '\n');
+		if (!end)
+			return NULL;
 		data = strstr (end, "Content-Disposition: form-data; ");
 		if (data) {
 			data = strchr (data, '\n');
