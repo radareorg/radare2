@@ -217,6 +217,20 @@ static int is_dot_net(RBinFile *arch) {
 	return R_FALSE;
 }
 
+static int has_canary(RBinFile *arch) {
+    RList* imports_list = imports (arch);
+    RListIter *iter;
+    RBinImport *import;
+    r_list_foreach (imports_list, iter, import) {
+        if (!strcmp(import->name, "__security_init_cookie") ) {
+            r_list_free (imports_list);
+            return 1;
+        }
+    }
+    r_list_free (imports_list);
+    return 0;
+}
+
 static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -253,6 +267,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
+	ret->has_canary = has_canary (arch);
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= 0x01;
