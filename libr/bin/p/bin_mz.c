@@ -171,20 +171,23 @@ static int check(RBinFile *arch) {
 
 }
 
+/*
+	- MZ at offset 0
+	- no PE at offset stored at 0x3C
+*/
 static int check_bytes(const ut8 *buf, ut64 length) {
-
-	int idx, ret = R_TRUE;
-	const ut8 *b;
-	if (!buf && length >= 2)
+	int idx;
+	if (!buf)
 		return R_FALSE;
-	b = buf;
-	if (b[0]=='M' && b[1]=='Z' && length>0x3d) {
-		idx = (b[0x3c]|(b[0x3d]<<8));
-		if (length > idx)
-			if (!memcmp (b+idx, "\x50\x45", 2))
-				ret = R_FALSE;
-	} else ret = R_FALSE;
-	return ret;
+
+	if (length <= 0x3d || buf[0] != 'M' || buf[1] != 'Z')
+		return R_FALSE;
+
+	idx = (buf[0x3c] | (buf[0x3d] << 8));
+	if (length > idx && buf[idx] == 'P' && buf[idx+1] == 'E')
+		return R_FALSE;
+
+	return R_TRUE;
 }
 
 RBinPlugin r_bin_plugin_mz = {
