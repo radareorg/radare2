@@ -385,13 +385,18 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 }
 
 R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+	int ret;
 	if (!s) return R_FALSE;
 #if __UNIX__
 	{
 	int flags = fcntl (s->fd, F_GETFL, 0);
-	fcntl (s->fd, F_SETFL, block?
+	if (flags < 0)
+		return R_FALSE;
+	ret = fcntl (s->fd, F_SETFL, block?
 			(flags & ~O_NONBLOCK):
 			(flags | O_NONBLOCK));
+	if (ret < 0)
+		return R_FALSE;
 	}
 #elif __WINDOWS__
 	// HACK: nonblocking io on w32 behaves strange
