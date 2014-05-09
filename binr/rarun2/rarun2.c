@@ -167,21 +167,21 @@ static int runfile () {
 	}
 	if (_stdin) {
 		int f = open (_stdin, O_RDONLY);
-		if (!f)
+		if (f < 0)
 			return 1;
 		close (0);
 		dup2 (f, 0);
 	}
 	if (_stdout) {
 		int f = open (_stdout, O_WRONLY);
-		if (!f)
+		if (f < 0)
 			return 1;
 		close (1);
 		dup2 (f, 1);
 	}
 	if (_stderr) {
 		int f = open (_stderr, O_WRONLY);
-		if (!f)
+		if (f < 0)
 			return 1;
 		close (2);
 		dup2 (f, 2);
