@@ -6,9 +6,16 @@
 #include <r_bin.h>
 
 static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
 
 static int load(RBinFile *arch) {
 	if (check (arch))
+		return R_TRUE;
+	return R_FALSE;
+}
+
+static int load_bytes(RBinObject *o, ut8 *bytes, ut64 sz) {
+	if (check_bytes (bytes, sz))
 		return R_TRUE;
 	return R_FALSE;
 }
@@ -48,10 +55,17 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
 	int i, is_bf = 0;
-	if (arch->buf) {
-		int max = R_MIN (16, arch->buf->length);
-		const char *p = (const char *)arch->buf->buf;
+	if (buf && length > 0) {
+		int max = R_MIN (16, length);
+		const char *p = (const char *)buf;
 		is_bf = 1;
 		for (i=0; i<max; i++) {
 			switch (p[i]) {
@@ -99,6 +113,7 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = NULL,

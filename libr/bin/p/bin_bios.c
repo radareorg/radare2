@@ -6,6 +6,7 @@
 #include <r_bin.h>
 
 static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
 
 static int load(RBinFile *arch) {
 	if (check (arch))
@@ -50,10 +51,18 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int check(RBinFile *arch) {
-	if ((arch->buf) && (arch->buf->length > 0xffff)) {
-		const ut32 ep = arch->buf->length - 0x10000 + 0xfff0; /* F000:FFF0 address */
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
+	if ((buf) && (length > 0xffff)) {
+		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
 		/* Check if this a 'jmp' opcode */
-		if ((arch->buf->buf[ep] == 0xea) || (arch->buf->buf[ep] == 0xe9))
+		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9))
 			return 1;
 	}
 	return 0;
@@ -102,6 +111,7 @@ struct r_bin_plugin_t r_bin_plugin_bios = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = NULL,

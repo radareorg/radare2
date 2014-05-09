@@ -12,7 +12,7 @@
 
 #define BUFFER_SIZE 4096
 
-R_API struct r_socket_proc_t *r_socket_proc_open(const char *argv[]) {
+R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 #if __UNIX__
 	RSocketProc *sp = R_NEW (RSocketProc);
 #ifdef O_CLOEXEC

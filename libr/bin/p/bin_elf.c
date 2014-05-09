@@ -7,6 +7,9 @@
 #include <r_bin.h>
 #include "elf/elf.h"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int load(RBinFile *arch) {
 	if (!(arch->o->bin_obj = Elf_(r_bin_elf_new_buf) (arch->buf)))
 		return R_FALSE;
@@ -489,10 +492,17 @@ static int size(RBinFile *arch) {
 }
 
 #if !R_BIN_ELF64
+
 static int check(RBinFile *arch) {
-	if (arch && arch->buf && arch->buf->buf)
-	//if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x01", 5))
-	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46", 4) && arch->buf->buf[4] != 2)
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 4 &&
+		!memcmp (buf, "\x7F\x45\x4c\x46", 4) && buf[4] != 2)
 		return R_TRUE;
 	return R_FALSE;
 }
@@ -605,6 +615,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,

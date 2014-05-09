@@ -16,6 +16,9 @@
 #define dprintf if (0)eprintf
 #endif
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int load(RBinFile *arch) {
 	arch->o->bin_obj = r_bin_dex_new_buf (arch->buf);
 	return arch->o->bin_obj ? R_TRUE: R_FALSE;
@@ -66,22 +69,30 @@ static char *flagname (const char *class, const char *method) {
 }
 
 static int check(RBinFile *arch) {
-	if (!arch->buf || !arch->buf->buf)
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
+	if (!buf || length > 8)
 		return R_FALSE;
 	// Non-extended opcode dex file
-	if (!memcmp (arch->buf->buf, "dex\n035\0", 8))
+	if (!memcmp (buf, "dex\n035\0", 8))
 	        return R_TRUE;
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
-	if (!memcmp (arch->buf->buf, "dex\n036\0", 8))
+	if (!memcmp (buf, "dex\n036\0", 8))
 	        return R_TRUE;
 	// M3 (Nov-Dec 07)
-	if (!memcmp (arch->buf->buf, "dex\n009\0", 8))
+	if (!memcmp (buf, "dex\n009\0", 8))
 	        return R_TRUE;
 	// M5 (Feb-Mar 08)
-        if (!memcmp (arch->buf->buf, "dex\n009\0", 8))
+        if (!memcmp (buf, "dex\n009\0", 8))
 	        return R_TRUE;
 	// Default fall through, should still be a dex file
-	if (!memcmp (arch->buf->buf, "dex\n", 4))
+	if (!memcmp (buf, "dex\n", 4))
                 return R_TRUE;
 	return R_FALSE;
 }
@@ -597,6 +608,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.load = &load,
 	.destroy = NULL,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = NULL,

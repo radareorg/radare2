@@ -42,6 +42,8 @@ struct EXE_RELOC {
 	unsigned short segment;
 };
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
 
 static int load(RBinFile *arch) {
 	// parse stuff
@@ -163,14 +165,22 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
 	int idx, ret = R_TRUE;
 	const ut8 *b;
-	if (!arch || !arch->buf || !arch->buf->buf)
+	if (!buf && length >= 2)
 		return R_FALSE;
-	b = arch->buf->buf;
-	if (b[0]=='M' && b[1]=='Z' && arch->buf->length>0x3d) {
+	b = buf;
+	if (b[0]=='M' && b[1]=='Z' && length>0x3d) {
 		idx = (b[0x3c]|(b[0x3d]<<8));
-		if (arch->buf->length>idx)
+		if (length > idx)
 			if (!memcmp (b+idx, "\x50\x45", 2))
 				ret = R_FALSE;
 	} else ret = R_FALSE;
@@ -186,6 +196,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,

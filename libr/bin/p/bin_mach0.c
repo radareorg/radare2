@@ -6,6 +6,9 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int load(RBinFile *arch) {
 	if (!(arch->o->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
 		return R_FALSE;
@@ -233,9 +236,17 @@ static RBinInfo* info(RBinFile *arch) {
 
 #if !R_BIN_MACH064
 static int check(RBinFile *arch) {
-	if (arch && arch->buf && arch->buf->buf) {
-		if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
-			!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4))
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+
+	if (buf && length >= 4) {
+		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
 			return R_TRUE;
 	}
 	return R_FALSE;
@@ -452,6 +463,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,

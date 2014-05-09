@@ -7,6 +7,9 @@
 
 #include "coff/coff.h"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int load(RBinFile *arch) {
 	if (!(arch->o->bin_obj = r_bin_coff_new_buf(arch->buf)))
 		return R_FALSE;
@@ -218,10 +221,16 @@ static int size(RBinFile *arch)
 	return 0;
 }
 
-static int check(RBinFile *arch)
-{
-	if (arch && arch->buf && arch->buf->buf) {
-		if (coff_supported_arch(arch->buf->buf))
+static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 0) {
+		if (coff_supported_arch(buf))
 			return R_TRUE;
 	}
 	return R_FALSE;
@@ -236,6 +245,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = &binsym,

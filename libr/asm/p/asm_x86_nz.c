@@ -134,6 +134,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0xfe;
 		return l;
 	}
+	if (!strcmp (op, "rdtsc")) {
+		data[l++] = 0x0f;
+		data[l++] = 0x31;
+		return l;
+	}
  	arg = strchr (op, ' ');
 	if (arg) {
 		*arg = '\0';

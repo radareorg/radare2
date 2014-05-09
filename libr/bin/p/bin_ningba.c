@@ -7,11 +7,22 @@
 #include <string.h>
 #include "../format/nin/gba.h"
 
+static int check(RBinFile *arch);
+int check_bytes(const ut8 *buf, ut64 length);
+
 static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+int check_bytes(const ut8 *buf, ut64 length) {
+
 	ut8 lict[156];
-	if (!arch || !arch->buf)
+	if (!buf || length < 160)
 		return 0;
-	r_buf_read_at (arch->buf, 0x4, lict, 156);
+	memcpy (lict, buf+0x4, 156);
 	return (!memcmp (lict, lic_gba, 156))? 1: 0;
 }
 
@@ -81,6 +92,7 @@ struct r_bin_plugin_t r_bin_plugin_ningba = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.binsym = NULL,

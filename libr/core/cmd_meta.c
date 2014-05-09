@@ -165,24 +165,18 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			colon = strchr (p, ':');
 			if (colon) {
 				space = strchr (p, ' ');
-				if (space && space > colon) {
-					file_line = strndup (p, space - p);
-				} else if (!space) {
+				if (!space) {
 					file_line = strdup (p);
+				} else if (space > colon) {
+					file_line = strndup (p, space - p);
 				} else {
-					if (file_line)
-						free (file_line);
-					return -1;
+					goto error;
 				}
 
 				colon = strchr (file_line, ':');
-				if (colon) {
-					*colon = '|';
-				} else {
-					if (file_line)
-						free (file_line);
-					return -1;
-				}
+				if (!colon)
+					goto error;
+				*colon = '|';
 
 				while (*p != ' ')
 					p++;
@@ -195,18 +189,13 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 
 					if (ret != 1) {
 						eprintf ("Failed to parse addr at %s\n", p);
-						if (file_line)
-							free (file_line);
-						return -1;
+						goto error;
 					}
 
 					ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
 							file_line, offset);
 
-					if (file_line)
-						free (file_line);
-
-					return -1;
+					goto error;
 				}
 
 				if (!file_line)
@@ -232,6 +221,10 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	}
 
 	return 0;
+
+error:
+	free (file_line);
+	return -1;
 }
 
 static int cmd_meta_comment(RCore *core, const char *input) {
@@ -411,7 +404,6 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i;
-	char *t = 0;
 	RAnalFunction *f;
 
 	switch (*input) {
@@ -460,7 +452,5 @@ static int cmd_meta(void *data, const char *input) {
 		else eprintf ("Cannot find function here\n");
 		break;
 	}
-	if (t)
-		free (t);
 	return R_TRUE;
 }

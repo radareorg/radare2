@@ -7,9 +7,19 @@
 
 #define RARVMHDR "\x52\x61\x72\x21\x1a\x07\x00\xf9\x4e\x73\x00\x00\x0e\x00\x00\x00"
 
+static int check(RBinFile *arch);
+static int check_bytes(const ut8 *buf, ut64 length);
+
 static int check(RBinFile *arch) {
-	if (arch && arch->buf && arch->buf->buf)
-		if (!memcmp (arch->buf->buf, RARVMHDR, 16))
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
+}
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 16)
+		if (!memcmp (buf, RARVMHDR, 16))
 			return R_TRUE;
 	return R_FALSE;
 }
@@ -139,6 +149,7 @@ RBinPlugin r_bin_plugin_rar = {
 	.size = &size,
 	.destroy = &destroy,
 	.check = &check,
+	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = NULL,
 	.entries = &entries,

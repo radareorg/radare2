@@ -5,13 +5,15 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
+static int load_bytes (RBinObject *o, ut8 *bytes, ut64 sz){
+	return R_TRUE;
+}
+
 static int load(RBinFile *arch) {
 	return R_TRUE;
 }
 
 static int destroy(RBinFile *arch) {
-	r_buf_free (arch->buf);
-	arch->buf = NULL;
 	return R_TRUE;
 }
 

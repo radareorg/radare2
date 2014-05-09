@@ -204,6 +204,7 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
 			while (i--)
 				free (m[i]);
+			free (m);
 			return R_FALSE;
 		}
 

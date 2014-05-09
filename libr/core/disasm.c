@@ -1176,11 +1176,11 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret ){
 }
 
 static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf) {
-	RAnalFcnLocal *l;
-	RListIter *iter;
 	ut8 have_local = 0;
 eprintf ("TODO: sdbize locals\n");
 #if 0
+	RAnalFcnLocal *l;
+	RListIter *iter;
 	r_list_foreach (f->locals, iter, l) {
 		if (ds->analop.jump == l->addr) {
 			if ((cf != NULL) && (f->addr == cf->addr)) {
@@ -1800,7 +1800,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		if (ret<1) {
 			err = 1;
 			ret = 1;
-			r_cons_printf ("???\n");
+			r_cons_printf ("invalid\n");//???\n");
 		} else {
 			r_cons_printf ("%s\n", ds->opstr);
 			free (ds->opstr);

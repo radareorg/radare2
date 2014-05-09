@@ -408,6 +408,8 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de, FILE *ft
 	return -1;
 
     offend = ftello(ft);
+	if (offend < 0)
+		return -1;
 
     if (fseeko(ft, offstart, SEEK_SET) < 0) {
 	_zip_error_set(&za->error, ZIP_ER_SEEK, errno);
@@ -529,6 +531,8 @@ write_cdir(struct zip *za, const struct zip_filelist *filelist, zip_uint64_t sur
     char buf[TORRENT_CRC_LEN+1];
     
     cd_start = ftello(out);
+	if (cd_start < 0)
+		return -1;
 
     if ((size=_zip_cdir_write(za, filelist, survivors, out)) < 0)
 	return -1;

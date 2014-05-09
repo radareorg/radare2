@@ -78,7 +78,7 @@ typedef struct r_socket_proc_t {
 	int pid;
 } RSocketProc;
 
-R_API RSocketProc *r_socket_proc_open(const char *argv[]);
+R_API RSocketProc *r_socket_proc_open(char* const argv[]);
 R_API int r_socket_proc_close(RSocketProc *sp);
 R_API int r_socket_proc_read (RSocketProc *sp, unsigned char *buf, int len);
 R_API int r_socket_proc_gets (RSocketProc *sp, char *buf, int size);

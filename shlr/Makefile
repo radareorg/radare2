@@ -3,12 +3,11 @@ include ../mk/${COMPILER}.mk
 
 WGET?=wget
 CS_VER=2.1.2
-#CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
+CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_URL=https://github.com/aquynh/capstone.git
 CS_UPD=20140307
 CS_BRA=next
-CS_TIP=d43187d4f9838c6be2c61d0ca32283e6949b7676
-MAKE_JOBS?=1
+CS_TIP=c76d8d03ba32cd9ab81266a99011220009c720d6
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
@@ -24,27 +23,27 @@ SDB_CONFIG=${PWD}/sdb-config.mk
 
 all: sdb/sdb libgdbr capstone-build
 	@for a in ${MODS} ; do \
-		echo ${MAKE} -C $$a ; \
-		${MAKE} -j$(MAKE_JOBS) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
+		echo $(MAKE) -C $$a ; \
+		$(MAKE) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 clean mrproper:
 	-cd capstone && $(MAKE) clean
 	cd gdb && $(MAKE) clean
 	rm -f sdb/src/.sdb sdb/sdb
-	cd sdb && ${MAKE} clean
-	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
+	cd sdb && $(MAKE) clean
+	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
 
 $(SDBLIB) sdb/sdb:
-	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb ; ${MAKE} clean
+	cd sdb ; $(MAKE) src/sdb-version.h
+	cd sdb ; $(MAKE) clean
 	cd sdb ; \
-		${MAKE} clean && \
-		${MAKE} -j$(MAKE_JOBS) CC=${HOST_CC} CFLAGS="${HOST_CFLAGS} -g" && \
+		$(MAKE) clean && \
+		$(MAKE) CC=${HOST_CC} CFLAGS="${HOST_CFLAGS} -g" && \
 		cp -f src/sdb src/.sdb
-	cd sdb ; ${MAKE} -j$(MAKE_JOBS) clean
-	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb/src ; ${MAKE} -j$(MAKE_JOBS) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
+	cd sdb ; $(MAKE) clean
+	cd sdb ; $(MAKE) src/sdb-version.h
+	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 	cp -f sdb/src/.sdb sdb/sdb
@@ -65,7 +64,7 @@ sdb-sync sync-sdb:
 	rm -rf sdb.vc $I/sdb
 	mkdir -p $I/sdb
 	rm -f src/sdb-version.h
-	cd sdb ; ${MAKE} src/sdb-version.h
+	cd sdb ; $(MAKE) src/sdb-version.h
 	cp -f sdb/src/*.h $I/sdb
 	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache
@@ -76,13 +75,13 @@ sdb-sync sync-sdb:
 	git add sdb
 
 $(TCCLIB) libr_tcc/libr_tcc.a:
-	cd libr_tcc ; ${MAKE}
+	cd libr_tcc ; $(MAKE)
 
 udis-sync udis86-sync sync-udis sync-udis86:
-	cd udis86 ; ${MAKE} sync
+	cd udis86 ; $(MAKE) sync
 
 tcc-clean tccclean:
-	cd libr_tcc ; ${MAKE} clean
+	cd libr_tcc ; $(MAKE) clean
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
@@ -150,7 +149,7 @@ endif
 
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
-		$(MAKE) -j$(MAKE_JOBS) CC="$(CC)" AR_EXT=a \
+		$(MAKE) CC="$(CC)" AR_EXT=a \
 		RANLIB="$(RANLIB)" AR="$(AR)" \
 		libcapstone.a 
 

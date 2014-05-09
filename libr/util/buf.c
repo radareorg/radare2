@@ -27,6 +27,17 @@ R_API RBuffer *r_buf_new() {
 	return b;
 }
 
+R_API const ut8 *r_buf_buffer (RBuffer *b) {
+	if (b) return b->buf;
+	return NULL;
+}
+
+R_API ut64 r_buf_size (RBuffer *b) {
+	if (b && b->empty) return 0;
+	else if (b) return b->length;
+	return UT64_MAX;
+}
+
 R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	int rw = flags&R_IO_WRITE ? R_TRUE : R_FALSE;
 	RBuffer *b = r_buf_new ();

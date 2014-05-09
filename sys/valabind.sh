@@ -3,8 +3,8 @@
 # find root
 cd `dirname $PWD/$0`
 
-mkdir -p _work
-cd _work
+mkdir  _work
+cd _work || exit 1
 if [ -d valabind ]; then
 	cd valabind
 	git pull
