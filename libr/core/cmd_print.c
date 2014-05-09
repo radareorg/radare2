@@ -401,7 +401,7 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 			if (ret<1) ret = 1;
 			if (show_bytes)
 				r_cons_printf ("%14s%02x  ", "", buf[i]);
-			r_cons_printf ("%s\n", "???");
+			r_cons_printf ("%s\n", "invalid"); //???");
 		} else {
 			if (show_bytes)
 				r_cons_printf ("%16s  ", asmop.buf_hex);
