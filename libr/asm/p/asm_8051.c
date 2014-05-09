@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013 - pancake */
+/* radare2 - LGPL - Copyright 2013-2014 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>

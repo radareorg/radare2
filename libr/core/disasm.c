@@ -1800,7 +1800,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		if (ret<1) {
 			err = 1;
 			ret = 1;
-			r_cons_printf ("???\n");
+			r_cons_printf ("invalid\n");//???\n");
 		} else {
 			r_cons_printf ("%s\n", ds->opstr);
 			free (ds->opstr);
