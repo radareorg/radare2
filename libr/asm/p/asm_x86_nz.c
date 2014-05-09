@@ -796,7 +796,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					}
 				}
 				return l;
-				pfx = 0;
 			} //else pfx = 0xc0;
 
 			arg0 = getreg (arg); // hack to make is64 work
