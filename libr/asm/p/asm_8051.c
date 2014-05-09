@@ -16,7 +16,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	*op->buf_asm = 0;
 	if (!o.name) return 0; // invalid instruction
 	tmp = do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
-	free (tmp);
+	if (tmp) {
+		if (strlen(tmp) < sizeof (op->buf_asm)) {
+			strncpy (op->buf_asm, tmp, strlen (tmp));
+		} else {
+			eprintf ("8051 disassemble: too big opcode!\n");
+			free (tmp);
+			op->size = -1;
+			return -1;
+		}
+		free (tmp);
+	}
 	if (!*op->buf_asm) {
 		op->size = 1;
 		return -1;
