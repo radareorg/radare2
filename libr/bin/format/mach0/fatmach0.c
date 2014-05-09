@@ -72,8 +72,8 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin) {
 	if (!bin) return NULL;
-	if (bin->archs) free (bin->archs);
-	if (bin->b) r_buf_free (bin->b);
+	free (bin->archs);
+	r_buf_free (bin->b);
 	free (bin);
 	return NULL;
 }
@@ -97,8 +97,7 @@ struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_bytes_new(const ut8* buf, ut64 size) {
 	struct r_bin_fatmach0_obj_t *bin = R_NEW0 (struct r_bin_fatmach0_obj_t);
 	if (!bin) return NULL;
-	if (!buf)
-		return r_bin_fatmach0_free (bin);
+	if (!buf) return r_bin_fatmach0_free (bin);
 	bin->b = r_buf_new ();
 	bin->size = size;
 	if (!r_buf_set_bytes (bin->b, buf, size))

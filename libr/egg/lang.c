@@ -146,7 +146,7 @@ R_API void r_egg_lang_include_path (REgg *egg, const char *path) {
 		tmp_ptr = env;
 	}
 	env = r_str_concatf (NULL, "%s:%s", path, env);
-	if (tmp_ptr) free (tmp_ptr);
+	free (tmp_ptr);
 	r_sys_setenv (R_EGG_INCDIR_ENV, env);
 	free (env);
 }
@@ -379,7 +379,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
 	//free ((void *)_str);
-	if (str) free (str);
+	free (str);
 	return ret;
 }
 
@@ -884,7 +884,7 @@ static void rcc_next(REgg *egg) {
 			}
 		}
 	}
-	if (str) free (str);
+	free (str);
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
