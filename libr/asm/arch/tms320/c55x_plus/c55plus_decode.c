@@ -465,13 +465,13 @@ st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
 	if (two_ins) {
 		ins1 = do_decode(1, ins_pos, two_ins, &next_ins1_pos, &hash_code, &err_code);
 		if (err_code < 0) {
-			if (ins1) free (ins1);
+			free (ins1);
 			return NULL;
 		}
 		ins2 = do_decode(next_ins1_pos + 1, ins_pos, two_ins, &next_ins2_pos, NULL, &err_code);
 		if (err_code < 0) {
-			if (ins1) free (ins1);
-			if (ins2) free (ins2);
+			free (ins1);
+			free (ins2);
 			return NULL;
 		}
 		*next_ins_pos = next_ins2_pos;
@@ -494,7 +494,7 @@ st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
 	} else {
 		ins_res = do_decode(0, ins_pos, two_ins, &next_ins1_pos, &hash_code, &err_code);
 		if (err_code < 0) {
-			if (ins_res) free (ins_res);
+			free (ins_res);
 			return NULL;
 		}
 		*next_ins_pos = next_ins1_pos;

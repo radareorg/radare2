@@ -80,7 +80,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		r_sign_item_free (si);
 		break;
 	}
-	if (data) free (data);
+	free (data);
 	return ret;
 }
 
@@ -122,8 +122,8 @@ R_API RSign *r_sign_free(RSign *sig) {
 R_API void r_sign_item_free(void *_item) {
 	if (_item) {
 		RSignItem *item = _item;
-		if (item->bytes) free (item->bytes);
-		if (item->mask) free (item->mask);
+		free (item->bytes);
+		free (item->mask);
 		free (item);
 	}
 }

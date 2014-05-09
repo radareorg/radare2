@@ -217,6 +217,58 @@ static int is_dot_net(RBinFile *arch) {
 	return R_FALSE;
 }
 
+static int has_canary(RBinFile *arch) {
+    RList* imports_list = imports (arch);
+    RListIter *iter;
+    RBinImport *import;
+    r_list_foreach (imports_list, iter, import) {
+        if (!strcmp(import->name, "__security_init_cookie") ) {
+            r_list_free (imports_list);
+            return 1;
+        }
+    }
+    r_list_free (imports_list);
+    return 0;
+}
+
+static int has_aslr(const RBinFile* arch) {
+	const ut8 *buf;
+	unsigned int idx;
+	ut64 sz;
+	if (!arch)
+		return R_FALSE;
+
+	buf = r_buf_buffer (arch->buf);
+	if (!buf)
+		return R_FALSE;
+
+	sz = r_buf_size (arch->buf);
+	idx = (buf[0x3c] | (buf[0x3d]<<8));
+	if (sz < idx + 0x5E)
+		return R_FALSE;
+
+	return (*(ut8*)(buf + idx + 0x5E)) & 0x40;
+}
+
+static int has_nx(const RBinFile* arch) {
+	const ut8 *buf;
+	unsigned int idx;
+	ut64 sz;
+	if (!arch)
+		return R_FALSE;
+
+	buf = r_buf_buffer (arch->buf);
+	if (!buf)
+		return R_FALSE;
+
+	sz = r_buf_size (arch->buf);
+	idx = (buf[0x3c] | (buf[0x3d]<<8));
+	if (sz < idx + 0x5E)
+		return R_FALSE;
+
+	return (*(ut16*)(buf + idx + 0x5E)) & 0x100;
+}
+
 static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -253,6 +305,9 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
+	ret->has_canary = has_canary (arch);
+	ret->has_nx = has_nx (arch);
+	ret->has_pi = has_aslr (arch);
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= 0x01;
@@ -279,7 +334,8 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	int idx, ret = R_FALSE;
+	unsigned int idx;
+	int ret = R_FALSE;
 	if (!buf)
 		return R_FALSE;
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
