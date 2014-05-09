@@ -160,22 +160,29 @@ static void parseinput (char *s) {
 #endif
 
 static int runfile () {
+	int ret;
 	if (!_program && !_system) {
 		printf ("No program or system rule defined\n");
 		return 1;
 	}
 	if (_stdin) {
 		int f = open (_stdin, O_RDONLY);
+		if (!f)
+			return 1;
 		close (0);
 		dup2 (f, 0);
 	}
 	if (_stdout) {
 		int f = open (_stdout, O_WRONLY);
+		if (!f)
+			return 1;
 		close (1);
 		dup2 (f, 1);
 	}
 	if (_stderr) {
 		int f = open (_stderr, O_WRONLY);
+		if (!f)
+			return 1;
 		close (2);
 		dup2 (f, 2);
 	}
@@ -218,18 +225,38 @@ static int runfile () {
 			dup2 (child->fd, 2);
 		}
 	}
-	if (_chgdir) chdir (_chgdir);
-	if (_chroot) chdir (_chroot);
+	if (_chgdir) {
+		ret = chdir (_chgdir);
+		if (ret < 0)
+			return 1;
+	}
+	if (_chroot) {
+		ret = chdir (_chroot);
+		if (ret < 0)
+			return 1;
+	}
 #if __UNIX__
 	if (_chroot) {
-		if (chroot (".")) {
+		if (chroot (_chroot)) {
 			eprintf ("rarun2: cannot chroot\n");
 			return 1;
 		}
 	}
-	if (_setuid) setuid (atoi (_setuid));
-	if (_seteuid) seteuid (atoi (_seteuid));
-	if (_setgid) setgid (atoi (_setgid));
+	if (_setuid) {
+		ret = setuid (atoi (_setuid));
+		if (ret < 0)
+			return 1;
+	}
+	if (_seteuid) {
+		ret = seteuid (atoi (_seteuid));
+		if (ret < 0)
+			return 1;
+	}
+	if (_setgid) {
+		ret = setgid (atoi (_setgid));
+		if (ret < 0)
+			return 1;
+	}
 	if (_input) {
 		int f2[2];
 		pipe (f2);
