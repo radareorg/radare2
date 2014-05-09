@@ -11,6 +11,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	char buf_asm[64];
 	Op8051 o = do8051struct (buf, len);
 	if (!o.name) return 0; // invalid instruction
+	buf_asm[0] = 0;
 	do8051disasm (o, addr, buf_asm, sizeof (buf_asm));
 	if (buf_asm[0]=='p') {
 		op->type = buf_asm[1]=='u'?
@@ -31,7 +32,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		(!strncmp (buf_asm, "sub", 3))) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else
-	if (!strncmp (buf_asm+1, "call", 4)) {
+	if (*buf_asm && !strncmp (buf_asm+1, "call", 4)) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = o.addr;
 		op->fail = addr+o.length;
@@ -39,7 +40,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (!strncmp (buf_asm, "ret", 3)) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else
-	if (buf_asm[0]=='j' || buf_asm[1] == 'j') {
+	if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j')) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (o.operand == OFFSET)
 			op->jump = o.addr+addr+o.length;

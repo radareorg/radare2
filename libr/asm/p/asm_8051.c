@@ -17,6 +17,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!o.name) return 0; // invalid instruction
 	tmp = do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
 	free (tmp);
+	if (!*op->buf_asm) {
+		op->size = 1;
+		return -1;
+	}
 	return (op->size = o.length);
 }
 

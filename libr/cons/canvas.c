@@ -101,6 +101,13 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		line = getrow (s, &n);
 		p = prefixline (c, &left);
 		slen = R_MIN (left, strlen (line));
+		if (!G (c->x-c->sx+slen, c->y-c->sy)) {
+			// TODO : chop slen
+			slen = (c->w - (c->x-c->sx));
+			break;
+		}
+		if (!G (c->x-c->sx-slen, c->y-c->sy))
+			break;
 		memcpy (p, line, slen);
 		if (!n) break;
 		s = n;
@@ -192,7 +199,6 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 	free (row);
 }
 
-
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	int i, onscreen;
 	switch (style) {
@@ -270,20 +276,21 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 					row[0] = '.';
 					if (w>2)
 						memset (row+1, '-', w-2);
-					row[w-1] = '.';
+					if (w>0)
+						row[w-1] = '.';
 					row[w] = 0;
 					onscreen = G (x2,y2-1);
 				} else {
 					row[0] = '`';
 					if (w>2)
 						memset (row+1, '-', w-2);
-					row[w-1] = '\'';
+					if (w>0)
+						row[w-1] = '\'';
 					row[w] = 0;
 					onscreen = G (x+1,y+1);
 				}
 				if (onscreen)
 					W (row);
-
 				w = rl2;
 				free (row);
 				row = malloc (rl2+1);
