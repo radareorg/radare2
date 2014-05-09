@@ -3,11 +3,11 @@ include ../mk/${COMPILER}.mk
 
 WGET?=wget
 CS_VER=2.1.2
-CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
+#CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_URL=https://github.com/aquynh/capstone.git
 CS_UPD=20140307
 CS_BRA=next
-CS_TIP=c76d8d03ba32cd9ab81266a99011220009c720d6
+CS_TIP=d43187d4f9838c6be2c61d0ca32283e6949b7676
 MAKE_JOBS?=1
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
