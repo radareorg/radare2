@@ -532,7 +532,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 	char path[1024];
 	char str[2048];
 	char *input;
-	RList *list;
+	RList *list = NULL;
 	RListIter *iter;
 	RFSFile *file = NULL;
 
