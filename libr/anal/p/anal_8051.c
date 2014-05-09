@@ -19,7 +19,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	tmp = do8051disasm (o, addr, buf_asm, sizeof (buf_asm));
 	if (tmp) {
 		if (strlen (tmp) < sizeof (buf_asm)) {
-			strncpy (op->buf_asm, tmp, strlen (tmp));
+			strncpy (buf_asm, tmp, strlen (tmp));
 		} else {
 			eprintf ("8051 analysis: too big opcode!\n");
 			free (tmp);
