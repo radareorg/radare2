@@ -334,7 +334,7 @@ prevnode = curnode;
 		break;
 	default:
 		eprintf ("Key %d\n", key);
-		sleep (1);
+		//sleep (1);
 		break;
 	}
 	goto repeat;

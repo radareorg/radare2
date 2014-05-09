@@ -182,12 +182,16 @@ R_AII Op8051 do8051struct(const ut8 *buf, int len) {
 		else if (op==0x85) length = 3;
 		return _{ opstr, length, _ARG (argstr) };
 	}
-	return _{ "xxx", 0 }; // XXX
+	return _{ "xxx", 0, 0 }; // XXX
 }
 
 static char *strdup_filter (const char *str, const ut8 *buf) {
-	int i, j, len = strlen (str);
-	char *o = malloc (1+len*4);
+	char *o;
+	int i, j, len;
+	if (!str)
+		return NULL;
+	len = strlen (str);
+	o = malloc (1+len*4);
 	for (i=j=0; i<len; i++) {
 		if (str[i] == '$') {
 			int n = str[i+1];
@@ -204,14 +208,15 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 
 R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	char *tmp, *tmp2, *eof, *out = NULL;
-	if (str && len > 10) {
+	if (str && *str && len > 10) {
 		out = strdup (str);
 	} else {
-		len = 32;
+		len = 64;
 		out = malloc (len);
+		*out = 0;
 	}
 	switch (op.operand) {
-	case NONE: strcpy (out, op.name); break;
+	case NONE: strncpy (out, op.name, len-1); break;
 	case ARG:
 		   if (!strncmp (op.arg, "#imm", 4))
 			   snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);

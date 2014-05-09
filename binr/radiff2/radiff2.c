@@ -249,6 +249,8 @@ int main(int argc, char **argv) {
 
 	if (showcount)
 		printf ("%d\n", count);
+	free (bufa);
+	free (bufb);
 
 	return 0;
 }
