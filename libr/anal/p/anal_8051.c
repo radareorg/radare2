@@ -7,12 +7,27 @@
 #include <r_anal.h>
 #include "../../asm/arch/8051/8051.c"
 
+
+// TODO: Cleanup the code, remove unneeded data copies
+
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	char *tmp =  NULL;
 	char buf_asm[64];
 	Op8051 o = do8051struct (buf, len);
 	if (!o.name) return 0; // invalid instruction
 	buf_asm[0] = 0;
-	do8051disasm (o, addr, buf_asm, sizeof (buf_asm));
+	tmp = do8051disasm (o, addr, buf_asm, sizeof (buf_asm));
+	if (tmp) {
+		if (strlen (tmp) < sizeof (buf_asm)) {
+			strncpy (op->buf_asm, tmp, strlen (tmp));
+		} else {
+			eprintf ("8051 analysis: too big opcode!\n");
+			free (tmp);
+			op->size = -1;
+			return -1;
+		}
+		free (tmp);
+	}
 	if (buf_asm[0]=='p') {
 		op->type = buf_asm[1]=='u'?
 			R_ANAL_OP_TYPE_PUSH:
@@ -40,7 +55,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (!strncmp (buf_asm, "ret", 3)) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else
-	if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j')) {
+	/* CJNE, DJNZ, JC, JNC, JZ, JB, JNB, LJMP, SJMP */
+	if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j'))
+	{
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (o.operand == OFFSET)
 			op->jump = o.addr+addr+o.length;
