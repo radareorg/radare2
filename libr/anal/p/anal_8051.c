@@ -5,18 +5,18 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/8051/8051.c"
 
+#include <8051_disas.h>
 
 // TODO: Cleanup the code, remove unneeded data copies
 
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	char *tmp =  NULL;
 	char buf_asm[64];
-	Op8051 o = do8051struct (buf, len);
+	r_8051_op o = r_8051_decode (buf, len);
 	if (!o.name) return 0; // invalid instruction
 	buf_asm[0] = 0;
-	tmp = do8051disasm (o, addr, buf_asm, sizeof (buf_asm));
+	tmp = r_8051_disasm (o, addr, buf_asm, sizeof (buf_asm));
 	if (tmp) {
 		if (strlen (tmp) < sizeof (buf_asm)) {
 			strncpy (buf_asm, tmp, strlen (tmp));
