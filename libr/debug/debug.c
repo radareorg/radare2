@@ -237,9 +237,11 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 /* Returns PID */
 R_API int r_debug_wait(RDebug *dbg) {
 	int ret = 0;
+	if (!dbg)
+		return R_FALSE;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg && dbg->h && dbg->h->wait) {
+	if (dbg->h && dbg->h->wait) {
 		dbg->reason = R_DBG_REASON_UNKNOWN;
 		ret = dbg->h->wait (dbg, dbg->pid);
 		dbg->reason = ret;
@@ -367,9 +369,11 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = R_FALSE;
+	if (!dbg)
+		return R_FALSE;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg && dbg->h && dbg->h->cont) {
+	if (dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->signum = 0;
@@ -447,9 +451,11 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 // XXX: this function uses 'oeax' which is linux-i386-specific
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 	int reg, ret = R_FALSE;
+	if (!dbg)
+		return R_FALSE;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg && dbg->h) {
+	if (dbg->h) {
 		if (dbg->h->contsc) {
 			do {
 				ret = dbg->h->contsc (dbg, dbg->pid, sc);

@@ -58,9 +58,11 @@ static int r_debug_bf_step(RDebug *dbg) {
 
 static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	RIOBfdbg *o;
+	if (!dbg)
+		return R_FALSE;
 	if (!is_io_bf (dbg))
 		return 0;
-	if (!dbg || !(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
+	if (!(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
 		return 0;
 	o = dbg->iob.io->fd->data;
 	r.pc = o->bfvm->eip;
@@ -79,9 +81,11 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	RIOBfdbg *o;
+	if (!dbg)
+		return R_FALSE;
 	if (!is_io_bf (dbg))
 		return 0;
-	if (!dbg || !(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
+	if (!(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
 		return 0;
 	o = dbg->iob.io->fd->data;
 	memcpy (&r, buf, sizeof (r));
