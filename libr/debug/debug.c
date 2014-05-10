@@ -237,9 +237,11 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 /* Returns PID */
 R_API int r_debug_wait(RDebug *dbg) {
 	int ret = 0;
+	if (!dbg)
+		return R_FALSE;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg && dbg->h && dbg->h->wait) {
+	if (dbg->h && dbg->h->wait) {
 		dbg->reason = R_DBG_REASON_UNKNOWN;
 		ret = dbg->h->wait (dbg, dbg->pid);
 		dbg->reason = ret;
