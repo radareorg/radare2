@@ -1728,7 +1728,6 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 			if (fd == -1)
 				continue;
 			read (fd, cmdline, 1024);
-			close (fd);
 			cmdline[sizeof(cmdline)-1] = '\0';
 			ptr = strstr (cmdline, "Tgid:");
 			if (ptr) {
@@ -1740,6 +1739,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 				cmdline[sizeof (cmdline)-1] = '\0';
 				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 			}
+			close (fd);
 		}
 	}
 #else
