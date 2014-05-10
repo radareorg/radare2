@@ -367,9 +367,11 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = R_FALSE;
+	if (!dbg)
+		return R_FALSE;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg && dbg->h && dbg->h->cont) {
+	if (dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->signum = 0;
