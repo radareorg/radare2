@@ -86,11 +86,15 @@ static char *getstr(const char *src) {
 }
 
 static void parseline (char *b) {
+	int must_free = R_FALSE;
 	char *e = strchr (b, '=');
 	if (!e) return;
 	if (*b=='#') return;
 	*e++ = 0;
-	if (*e=='$') e = r_sys_getenv (e);
+	if (*e=='$') {
+		must_free = R_TRUE;
+		e = r_sys_getenv (e);
+	}
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _args[0] = _program = strdup (e);
 	else if (!strcmp (b, "system")) _system = strdup (e);
@@ -145,6 +149,8 @@ static void parseline (char *b) {
 			r_sys_setenv (e, v);
 		}
 	}
+	if (must_free == R_TRUE)
+		free (e);
 }
 
 #if __UNIX__
