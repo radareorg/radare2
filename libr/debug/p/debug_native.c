@@ -2657,9 +2657,9 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 		return R_FALSE;
 	}
 	if (sz<0) { // remove
-		drx_set (&regs, n, addr, -1, 0, 0);
+		drx_set (regs, n, addr, -1, 0, 0);
 	} else {
-		drx_set (&regs, n, addr, sz, rwx, g);
+		drx_set (regs, n, addr, sz, rwx, g);
 	}
 	r_reg_setv (R, "dr0", regs[0]);
 	r_reg_setv (R, "dr1", regs[1]);
