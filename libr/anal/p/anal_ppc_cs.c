@@ -11,6 +11,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int mode = (a->bits==64)? CS_MODE_64: 
 		(a->bits==32)? CS_MODE_32: 0;
 	int n, ret = cs_open (CS_ARCH_PPC, mode, &handle);
+	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = 0;
 	if (ret == CS_ERR_OK) {

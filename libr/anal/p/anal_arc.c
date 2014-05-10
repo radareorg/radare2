@@ -16,6 +16,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	lowbyte = anal->big_endian? 0: 1;
 	highbyte = anal->big_endian? 1: 0;
 
+	op->delay = 0;
 	if (((b[lowbyte]&0xf8) >0x38) && ((b[lowbyte]&0xf8) != 0x48)) {
 		op->size = 2;
 	} else {

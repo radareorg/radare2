@@ -14,6 +14,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	ret = cs_open (CS_ARCH_MIPS, mode, &handle);
+	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_ILL;
 	op->size = 4;
 	if (ret != CS_ERR_OK) goto fin;
