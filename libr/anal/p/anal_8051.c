@@ -28,10 +28,22 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		free (tmp);
 	}
-	if (buf_asm[0]=='p') {
-		op->type = buf_asm[1]=='u'?
-			R_ANAL_OP_TYPE_PUSH:
-			R_ANAL_OP_TYPE_POP;
+	if (!strncmp (buf_asm, "push", 4)) {
+		op->type = R_ANAL_OP_TYPE_UPUSH;
+		op->ptr = 0;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 1;
+	} else
+	if (!strncmp (buf_asm, "pop", 3)) {
+		op->type = R_ANAL_OP_TYPE_POP;
+		op->ptr = 0;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -1;
+	} else
+	if (!strncmp (buf_asm, "ret", 3)) {
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -2;
 	} else
 	if (!strncmp (buf_asm, "nop", 3)) {
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -47,15 +59,15 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		(!strncmp (buf_asm, "sub", 3))) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else
+	if (!strncmp (buf_asm, "mov", 3)) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else
 	if (*buf_asm && !strncmp (buf_asm+1, "call", 4)) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = o.addr;
 		op->fail = addr+o.length;
 	} else
-	if (!strncmp (buf_asm, "ret", 3)) {
-		op->type = R_ANAL_OP_TYPE_RET;
-	} else
-	/* CJNE, DJNZ, JC, JNC, JZ, JB, JNB, LJMP, SJMP */
+		/* CJNE, DJNZ, JC, JNC, JZ, JB, JNB, LJMP, SJMP */
 	if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j'))
 	{
 		op->type = R_ANAL_OP_TYPE_JMP;
