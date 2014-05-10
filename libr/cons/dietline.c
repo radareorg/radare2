@@ -357,15 +357,13 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	char *tmp_ed_cmd, prev = 0;
 
 	I.buffer.index = I.buffer.length = 0;
+	I.buffer.data[0] = '\0';
 	if (I.contents) {
 		strncpy (I.buffer.data, I.contents, R_LINE_BUFSIZE-1);
         I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
 		I.buffer.index = I.buffer.length = strlen (I.contents);
-	} else {
-		I.buffer.data[0] = '\0';
 	}
 	if (I.disable) {
-		I.buffer.data[0]='\0';
 		if (!fgets (I.buffer.data, R_LINE_BUFSIZE-1, stdin))
 			return NULL;
 		I.buffer.data[strlen (I.buffer.data)] = '\0';
@@ -816,5 +814,5 @@ _end:
 		r_line_hist_list ();
 		return r_line_nullstr;
 	}
-	return I.buffer.data? I.buffer.data : r_line_nullstr;
+	return I.buffer.data[0] != '\0'? I.buffer.data : r_line_nullstr;
 }
