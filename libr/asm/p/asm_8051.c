@@ -7,15 +7,16 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include "../arch/8051/8051.c"
+
+#include <8051_disas.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *tmp = NULL;
 
-	Op8051 o = do8051struct (buf, len);
+	r_8051_op o = r_8051_decode (buf, len);
 	*op->buf_asm = 0;
 	if (!o.name) return 0; // invalid instruction
-	tmp = do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
+	tmp = r_8051_disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
 	if (tmp) {
 		if (strlen(tmp) < sizeof (op->buf_asm)) {
 			strncpy (op->buf_asm, tmp, strlen (tmp));
