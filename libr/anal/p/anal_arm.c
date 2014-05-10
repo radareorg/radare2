@@ -41,6 +41,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	arm_set_thumb(arminsn, R_TRUE);
 	arm_set_input_buffer(arminsn, data);
 	arm_set_pc(arminsn, addr);
+	op->delay = 0;
 	op->size = arm_disasm_one_insn(arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;

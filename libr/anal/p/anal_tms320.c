@@ -33,6 +33,7 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 {
 	const char * str = engine.syntax;
 
+	op->delay = 0;
 	op->size = tms320_dasm(&engine, buf, len);
 	op->type = R_ANAL_OP_TYPE_NULL;
 

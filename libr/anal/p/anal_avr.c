@@ -15,6 +15,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (op == NULL)
 		return 2;
 	op->size = 2;
+	op->delay = 0;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else

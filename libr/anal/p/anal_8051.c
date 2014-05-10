@@ -13,6 +13,7 @@
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	char *tmp =  NULL;
 	char buf_asm[64];
+	op->delay = 0;
 	r_8051_op o = r_8051_decode (buf, len);
 	if (!o.name) return 0; // invalid instruction
 	buf_asm[0] = 0;
