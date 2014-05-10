@@ -154,6 +154,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	char *varname;
 	RAnalOp op = {0};
 	int oplen, idx = 0;
+	int delay_cnt, delay_idx, delay_done = 0;
 // add basic block
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
@@ -199,6 +200,26 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			fcn->ninstr++;
 			FITFCNSZ();
 		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks
+		}
+		if (delay_cnt>0) {
+			if (op.delay>0) {
+				return R_ANAL_RET_ERROR;
+			}
+			delay_cnt--;
+			if (delay_cnt==0) {
+				idx = delay_idx;
+				delay_done = 1;
+				break;
+			}
+		}
+		if (op.delay>0) {
+			if (!delay_done) {
+				delay_idx = idx - oplen;
+				delay_cnt = op.delay;
+				//break;
+			} else {
+				delay_idx, delay_cnt, delay_done = 0;
+			}
 		}
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
