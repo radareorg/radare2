@@ -105,6 +105,7 @@ int rarvm_assemble (Bitbuf *b, const char *c) {
 		bitadd (b, 1, 1);
 		bitadd (b, opnum+24, 5);
 	} else {
+		free (str);
 		fprintf (stderr, "Oops. unsupported opcode\n");
 		return 0;
 	}
