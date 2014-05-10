@@ -256,6 +256,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 				}
 				if (onscreen)
 					W (row);
+				free (row);
 			} else  {
 				int minx = R_MIN (x, x2);
 				//if (y >= y2) {
