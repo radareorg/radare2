@@ -39,35 +39,15 @@ RS1 RS0 Working Register Bank and Address
 
 #include <r_types.h>
 
-typedef struct op {
-	const char *name;
-	int length;
-	int operand;
-	ut32 addr;
-	const char *arg;
-	const ut8 *buf;
-} Op8051;
-
-enum {
-	NONE = 0,
-	ADDR11, // 8 bits from argument + 3 high bits from opcode
-	ADDR16, // A 16-bit address destination. Used by LCALL and LJMP
-	DIRECT, // An internal data RAM location (0-127) or SFR (128-255).
-	OFFSET, // same as direct?
-	ARG,    // register
-};
+#include <8051_disas.h>
 
 #undef _
-#define _ (Op8051)
+#define _ (r_8051_op)
 #define _ARG(x) ARG, 0, x, buf
 #define _ADDR11(x) ADDR11, ((x[1])+((x[0]>>5)<<8)), NULL, buf
 #define _ADDR16(x) ADDR16, ((x[1])<<8)+((x[2])), NULL, buf
 #define _OFFSET(x) OFFSET, ((x[1])), NULL, buf
 #define _DIRECT(x) DIRECT, (x[1]), NULL, x
-
-#ifndef R_AII
-#define R_AII static
-#endif
 
 static const char *arg[] = { "#immed", "#imm", "@r0", "@r1",
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7" };
@@ -94,7 +74,7 @@ static const char *ops[] = {
 	"+, a;mov"      // F.   F4 == CPL A
 };
 
-R_AII Op8051 do8051struct(const ut8 *buf, int len) {
+r_8051_op r_8051_decode(const ut8 *buf, int len) {
 	ut8 op = buf[0];
 	if (!op) return _{ "nop", 1, NONE, 0 };
 	if ((op&0xf)==1)
@@ -206,7 +186,7 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 	return o;
 }
 
-R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
+char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len) {
 	char *tmp, *tmp2, *eof, *out = NULL;
 	if (str && *str && len > 10) {
 		out = strdup (str);
@@ -247,19 +227,13 @@ R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	return out;
 }
 
-#if 0
-R_AII Op8051 do8051assemble(const char *str) {
-	return _{"TODO"};
-}
-#endif
-
 #if MAIN
 
 int main() {
 	char *str;
 	ut8 buf[3] = {0xb3, 0x11, 0x22};
-	Op8051 op = do8051struct (buf, sizeof (buf));
-	str = do8051disasm (op, 0, NULL, 0);
+	r_8051_ op = r_8051_decode (buf, sizeof (buf));
+	str = r_8051_disasm (op, 0, NULL, 0);
 	eprintf ("%s\n", str);
 	free (str);
 	return 0;
