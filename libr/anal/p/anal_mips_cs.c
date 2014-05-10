@@ -22,6 +22,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (n<1 || insn->size<1)
 		goto beach;
 	op->type = R_ANAL_OP_TYPE_NULL;
+    op->delay = 0;
 	opsize = op->size = insn->size;
 	switch (insn->id) {
 	case MIPS_INS_INVALID:
@@ -61,10 +62,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case MIPS_INS_JALR:
 		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->delay = 1;
 		break;
 	case MIPS_INS_JAL:
 	case MIPS_INS_JALRC:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->delay = 1;
 		break;
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -123,8 +126,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
 	case MIPS_INS_J:
-	case MIPS_INS_JR:
-	case MIPS_INS_JRC:
 	case MIPS_INS_B:
 	case MIPS_INS_BZ:
 	case MIPS_INS_BNE:
@@ -136,6 +137,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
 		op->type = R_ANAL_OP_TYPE_JMP;
+		op->delay = 1;
+		break;
+	case MIPS_INS_JR:
+	case MIPS_INS_JRC:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->delay = 1;
+        // register 32 is $ra, so jmp is a return
+        if (insn->detail->mips.operands[0].reg == 32) {
+            op->type = R_ANAL_OP_TYPE_RET;
+        }
 		break;
 	}
 	beach:
