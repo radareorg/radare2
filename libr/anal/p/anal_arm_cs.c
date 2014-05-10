@@ -30,21 +30,27 @@ void parse_insn_cond(cs_insn * insn, RAnalOp *op) {
         switch(arm->cc) {
         case ARM_CC_EQ:
             op->cond = R_ANAL_COND_EQ;
+            op->type |= R_ANAL_OP_TYPE_COND;
             break;
         case ARM_CC_NE:
             op->cond = R_ANAL_COND_NE;
+            op->type |= R_ANAL_OP_TYPE_COND;
             break;
         case ARM_CC_GE:
             op->cond = R_ANAL_COND_GE;
+            op->type |= R_ANAL_OP_TYPE_COND;
             break;
         case ARM_CC_LT:
             op->cond = R_ANAL_COND_LT;
+            op->type |= R_ANAL_OP_TYPE_COND;
             break;
         case ARM_CC_GT:
             op->cond = R_ANAL_COND_GT;
+            op->type |= R_ANAL_OP_TYPE_COND;
             break;
         case ARM_CC_LE:
             op->cond = R_ANAL_COND_LE;
+            op->type |= R_ANAL_OP_TYPE_COND;
             break;
         case ARM_CC_AL:
             op->cond = R_ANAL_COND_AL;
@@ -56,7 +62,7 @@ void parse_insn_cond(cs_insn * insn, RAnalOp *op) {
     op->fail = insn->address + 4;
 }
 
-static void parse_call_jump_dest(cs_insn* insn, RAnalOp* op) {
+static void parse_call_jump_dest(cs_insn* insn, RAnalOp* op, unsigned int isJump) {
     if(insn->detail) {
         cs_arm *arm = &(insn->detail->arm);
         if(arm->op_count == 1) {
@@ -67,7 +73,7 @@ static void parse_call_jump_dest(cs_insn* insn, RAnalOp* op) {
                     break;
                 case ARM_OP_REG:
                     /* BX LR and similar */
-                    op->type = (arm_op->reg == ARM_REG_LR) ? R_ANAL_OP_TYPE_RET : op->type;
+                    op->type = (arm_op->reg == ARM_REG_LR) ? R_ANAL_OP_TYPE_RET : (isJump ? R_ANAL_OP_TYPE_UJMP : R_ANAL_OP_TYPE_UCALL);
                     break;
                 default:
                     break;
@@ -100,9 +106,10 @@ static void parse_stack_op(cs_insn* insn, RAnalOp* op, unsigned isAdd) {
 static void parse_possible_pop_return(cs_insn* insn, RAnalOp* op) {
     if(insn->detail) {
         cs_arm * arm = &(insn->detail->arm);
-        int pos = op_get_arm_reg_pos(arm, ARM_REG_PC);
-        /* POP(r...,pc) and similar */
-        if(pos >= 0) {
+        int pos_pc = op_get_arm_reg_pos(arm, ARM_REG_PC);
+        int pos_lr = op_get_arm_reg_pos(arm, ARM_REG_LR);
+        /* POP(r...,pc), POP(r...,lr) and similar */
+        if(pos_pc >= 0 || pos_lr >= 0) {
             op->type = R_ANAL_OP_TYPE_RET;
         }
     }
@@ -113,21 +120,22 @@ static void parse_possible_implict_jump(cs_insn* insn, RAnalOp* op) {
         cs_arm * arm = &(insn->detail->arm);
         int pos = op_get_arm_reg_pos(arm, ARM_REG_PC);
         if(pos == 0 && arm->op_count == 2) {
-            // MOV/LDR PC, #ARM_OP_IMM
-            if(arm->operands[1].type == ARM_OP_IMM) {
+            cs_arm_op *op1 = &(arm->operands[1]);
+            op->type = R_ANAL_OP_TYPE_UJMP; // Definitely a JUMP 
+            op->eob = 1;
+            if(op1->type == ARM_OP_IMM) {
+                // MOV/LDR PC, #ARM_OP_IMM
                 op->jump = arm->operands[1].imm;
-                op->type == R_ANAL_OP_TYPE_JMP;
+                op->type = R_ANAL_OP_TYPE_JMP;
                 op->eob = 1;
-            } else if(arm->operands[1].type == ARM_OP_MEM) {
+            } else if(op1->type == ARM_OP_MEM) {
+                // TODO: MOV/LDR PC, [PC, #offset]
                 unsigned int base = arm->operands[1].mem.base;
                 if(base == ARM_REG_PC) {
-                    // TODO: MOV/LDR PC, [PC, #offset]
-                    //int offset = (arm->operands[1].mem.disp) * (arm->operands[1].mem.scale);
-                    op->type == R_ANAL_OP_TYPE_JMP;
-                    op->eob = 1;
+                    // int offset = (arm->operands[1].mem.disp) * (arm->operands[1].mem.scale);
                     // op->jump = *(op->ptr);
                 }
-            } else if(arm->operands[1].type == ARM_OP_REG && arm->operands[1].reg == ARM_REG_LR) {
+            } else if(op1->type == ARM_OP_REG && op1->reg == ARM_REG_LR) {
                 op->type = R_ANAL_OP_TYPE_RET;
             }
         }
@@ -173,7 +181,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
 			op->size = insn->size;
-            parse_insn_cond(insn, op);
             parse_memory_access(insn, op);
             switch (insn->id) {
 			case ARM_INS_ADD:
@@ -211,19 +218,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case ARM_INS_BL:
 			case ARM_INS_BLX:
 				op->type = R_ANAL_OP_TYPE_CALL;
-                parse_call_jump_dest(insn, op);
+                parse_call_jump_dest(insn, op, 0);
 				break;
 			case ARM_INS_B:
 			case ARM_INS_BX:
 			case ARM_INS_BXJ:
 				op->type = R_ANAL_OP_TYPE_JMP;
                 op->eob = 1;
-                parse_call_jump_dest(insn, op);
+                parse_call_jump_dest(insn, op, 1);
 				break;
             case ARM_INS_MOV:
                 op->type = R_ANAL_OP_TYPE_MOV;
                 parse_possible_implict_jump(insn, op);
+                break;
+            default:
+                break;
 			}
+            parse_insn_cond(insn, op);
 		}
         cs_free (insn, n);
 	}
