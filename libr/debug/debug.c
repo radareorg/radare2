@@ -451,9 +451,11 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 // XXX: this function uses 'oeax' which is linux-i386-specific
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 	int reg, ret = R_FALSE;
+	if (!dbg)
+		return R_FALSE;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg && dbg->h) {
+	if (dbg->h) {
 		if (dbg->h->contsc) {
 			do {
 				ret = dbg->h->contsc (dbg, dbg->pid, sc);
