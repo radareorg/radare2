@@ -241,7 +241,8 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	ut8 buf[RMT_MAX];
 	char *ptr;
-	int op, ret, i, j = 0;
+	int op, ret;
+	unsigned int i, j = 0;
 
 	// send
 	if (*command=='!') {
@@ -268,14 +269,13 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		eprintf ("Unexpected system reply\n");
 		return -1;
 	}
-	if (i == -1) {
-		return -1;
-	}
+
 	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
 	ret = 0;
 	ptr = (char *)malloc (i+1);
 	if (ptr) {
-		int ir, tr = 0;
+		int ir;
+		unsigned int tr = 0;
 		do {
 			ir = r_socket_read_block (s, (ut8*)ptr+tr, i-tr);
 			if (ir>0) tr += ir;
