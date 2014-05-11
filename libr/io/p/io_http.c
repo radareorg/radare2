@@ -26,14 +26,15 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
-	int sz = RIOHTTP_SZ (fd);
+	unsigned int sz;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
+	sz = RIOHTTP_SZ (fd);
 	if (io->off >= sz)
 		return -1;
-	if (io->off+count >= sz)
-		count = sz-io->off;
-	memcpy (buf, RIOHTTP_BUF (fd)+io->off, count);
+	if (io->off + count >= sz)
+		count = sz - io->off;
+	memcpy (buf, RIOHTTP_BUF (fd) + io->off, count);
 	return count;
 }
 
