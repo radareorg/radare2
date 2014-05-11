@@ -155,6 +155,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		mal->bfvm = bfvm_new (&iob);
 		out = r_file_slurp (pathname+8, &rlen);
 		if (!out || rlen < 1) {
+			free (mal);
 			free (out);
 			return NULL;
 		}
