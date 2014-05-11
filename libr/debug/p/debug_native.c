@@ -2832,7 +2832,7 @@ static RList *r_debug_desc_native_list (int pid) {
 			memcpy (file+len, de->d_name, len2+1);
 
 			memset (buf, 0, sizeof (buf));
-			readlink (file, buf, sizeof (buf));
+			readlink (file, buf, sizeof (buf) - 1);
 			type = perm = 0;
 			if (stat (file, &st) != -1) {
 				type  = st.st_mode & S_IFIFO  ? 'P':
