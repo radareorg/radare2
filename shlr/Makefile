@@ -3,11 +3,10 @@ include ../mk/${COMPILER}.mk
 
 WGET?=wget
 CS_VER=2.1.2
-CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
+#CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_URL=https://github.com/aquynh/capstone.git
-CS_UPD=20140307
 CS_BRA=next
-CS_TIP=c76d8d03ba32cd9ab81266a99011220009c720d6
+CS_TIP=d27b0155eff3824df3c53e7931c89e356eece970
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
@@ -89,7 +88,7 @@ HFILES+=elf.h libtcc.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
-.PHONY: sdb-sync sync-sdb sdbclean
+.PHONY: sdb-sync sync-sdb sdbclean capstone
 tcc-sync sync-tcc:
 	rm -rf _
 	git clone git://repo.or.cz/tinycc.git _
@@ -120,16 +119,17 @@ ifeq ($(CS_TAR),)
 capstone: capstone-sync
 
 capstone-sync:
-	if [ -d capstone ]; then \
+	if [ -d capstone/.git ]; then \
 		( cd capstone ; git pull ) ; \
+	elif [ -d capstone ]; then \
+		( echo 'WARNING: Deleting non-git version of capstone library'; rm -rf capstone; git clone $(CS_URL) ); \
 	else \
 		git clone $(CS_URL) ; \
 	fi
 	cd capstone ; \
-		git checkout $(CS_BRA) ; \
-		git reset --hard $(CS_TIP)
+	git checkout $(CS_BRA) ; \
+	git reset --hard $(CS_TIP) \
 
-.PHONY: capstone
 else
 
 capstone-sync: capstone
