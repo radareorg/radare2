@@ -1,7 +1,7 @@
 .TH RADIFF2 1
 .SH NAME
 radiff2 \- unified binary diffing utility
-.Dd Feb 18, 2014
+.Dd May 11, 2014
 .Pp
 .Sh SYNOPSIS
 .Nm radiff2
@@ -22,24 +22,24 @@ Select register size bits for given arch
 Count number of differences.
 .It Fl C
 Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentatge of most similar function in B file | file-b-address.
-.It Fl O
-Do code diffing with all bytes instead of just the fixed opcode bytes
-.It Fl t Ar 0\-100
-Choose matching threshold for binary code diffing
 .It Fl d
 Use delta diffing (slower).
 .It Fl g Ar sym
 Graph diff output of given symbol
+.It Fl h
+Show usage help message.
+.It Fl O
+Do code diffing with all bytes instead of just the fixed opcode bytes
+.It Fl p
+Use physical addressing (io.va=0)
 .It Fl r
 Output in radare commands as a binary patch.
 .It Fl s
 Calculate text distance from two files.
-.It Fl p
-Use physical addressing (io.va=0)
+.It Fl t Ar 0\-100
+Choose matching threshold for binary code diffing
 .It Fl v
 Show version information.
-.It Fl h
-Show usage help message.
 .El
 .Sh SEE ALSO
 .Pp
