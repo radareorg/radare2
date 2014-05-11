@@ -14,8 +14,8 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	char *tmp =  NULL;
 	char buf_asm[64];
 	r_8051_op o = r_8051_decode (buf, len);
+	memset(buf_asm, 0, sizeof (buf_asm));
 	if (!o.name) return 0; // invalid instruction
-	buf_asm[0] = 0;
 	tmp = r_8051_disasm (o, addr, buf_asm, sizeof (buf_asm));
 	if (tmp) {
 		if (strlen (tmp) < sizeof (buf_asm)) {
