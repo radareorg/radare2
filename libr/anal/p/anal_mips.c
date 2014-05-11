@@ -72,15 +72,17 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		case 9: // jalr
 			//eprintf ("%llx jalr\n", addr);
 			op->type = R_ANAL_OP_TYPE_UCALL;
+			op->delay = 1;
 			break;
 		case 8: // jr
 			//eprintf ("%llx jr\n", addr);
 			// TODO: check return value or gtfo
-			if (rs == 32) {
+			if (((b[0]&3)<<3) + (b[1]>>5) == 31) {
 				op->type = R_ANAL_OP_TYPE_RET;
 			} else {
 				op->type = R_ANAL_OP_TYPE_JMP;
 			}
+			op->delay = 1;
 			break;
 		case 12: // syscall
 			op->type = R_ANAL_OP_TYPE_SWI;
