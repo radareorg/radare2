@@ -370,8 +370,10 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command+1);
 	ret = send_command (g, command);
-	if (ret < 0)
+	if (ret < 0) {
+		free (command);
 		return ret;
+	}
 	read_packet (g);
 	free (command);
 	handle_G (g);
