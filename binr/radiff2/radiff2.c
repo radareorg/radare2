@@ -6,7 +6,6 @@
 enum {
 	MODE_DIFF,
 	MODE_DIST,
-	MODE_LOCS,
 	MODE_CODE,
 	MODE_GRAPH,
 	MODE_COLS
@@ -168,9 +167,6 @@ int main(int argc, char **argv) {
 		case 'x':
 			mode = MODE_COLS;
 			break;
-//		case 'l':
-//			mode = MODE_LOCS;
-//			break;
 		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
@@ -237,13 +233,6 @@ int main(int argc, char **argv) {
 		r_diff_buffers_distance (NULL, bufa, sza, bufb, szb, &count, &sim);
 		printf ("similarity: %.2f\n", sim);
 		printf ("distance: %d\n", count);
-		break;
-//	case MODE_LOCS:
-//		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
-//		break;
-	/* TODO: DEPRECATE */
-	case MODE_GRAPH:
-		eprintf ("TODO: Use ragdiff2\n");
 		break;
 	}
 
