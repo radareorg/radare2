@@ -65,7 +65,8 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
 	fd = RIOPTRACE_FD (desc);
 	if (fd != -1) {
-		lseek (fd, addr, SEEK_SET);
+		ret = lseek (fd, addr, SEEK_SET);
+		if (ret < 0) return -1;
 		ret = read (fd, buf, len);
 		// Workaround for the buggy Debian Wheeze's /proc/pid/mem
 		if (ret != -1) return ret;
