@@ -155,8 +155,11 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 R_API char *r_cons_hud_path(const char *path, int dir) {
 	char *tmp = NULL, *ret = NULL;
 	RList *files;
-	while (*path==' ') path++;
-	if (!path || !*path)
+	if (!path)
+		tmp = strdup ("./");
+	while (*path==' ')
+		path++;
+	if (!*path)
 		tmp = strdup ("./");
 	else tmp = strdup (path);
 	files = r_sys_dir (tmp);
