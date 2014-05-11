@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *tmp = NULL;
 
 	r_8051_op o = r_8051_decode (buf, len);
-	*op->buf_asm = 0;
+	memset(op->buf_asm, 0, sizeof (op->buf_asm));
 	if (!o.name) return 0; // invalid instruction
 	tmp = r_8051_disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
 	if (tmp) {
