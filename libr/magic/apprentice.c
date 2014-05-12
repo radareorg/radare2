@@ -1755,7 +1755,7 @@ static const char ext[] = ".mgc";
  * make a dbname
  */
 static char *mkdbname(const char *fn, int strip) {
-	char *buf;
+	char *buf = NULL;
 	int fnlen, extlen;
 	if (strip) {
 		const char *p;
@@ -1764,14 +1764,14 @@ static char *mkdbname(const char *fn, int strip) {
 	}
 	fnlen = strlen (fn);
 	extlen = strlen (ext);
-	buf = malloc (fnlen + extlen + 1);
-	memcpy (buf, fn, fnlen);
-	memcpy (buf+fnlen, ext, extlen);
-	buf[fnlen+extlen] = 0;
-
-	if (buf && strlen (buf) > MAXPATHLEN) {
-		free(buf);
+	if (fnlen + extlen + 1 > MAXPATHLEN) {
 		return NULL;
+	}
+	buf = malloc (fnlen + extlen + 1);
+	if (buf) {
+		memcpy (buf, fn, fnlen);
+		memcpy (buf+fnlen, ext, extlen);
+		buf[fnlen+extlen] = 0;
 	}
 	return buf;
 }
