@@ -598,9 +598,10 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					// TODO: handle quit? r == 0??
 					// quit, exits the macro. like a break
 					value = mac->num->value;
-					if (r <0)
+					if (r <0) {
 						free (str);
 						return r;
+					}
 				}
 				if (end) {
 					*end = '\n';
