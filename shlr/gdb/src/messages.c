@@ -6,51 +6,45 @@
 #include "utils.h"
 
 int handle_g(libgdbr_t* g) {
-	unpack_hex(g->data, g->data_len, g->data);
+	if (unpack_hex (g->data, g->data_len, g->data) < 0) {
+		return -1;
+	}
 	g->data_len = g->data_len / 2;
-	send_ack(g);
-	return 0;
+	return send_ack (g);
 }
 
 int handle_G(libgdbr_t* g) {
-	send_ack (g);
-	return 0;
+	return send_ack (g);
 }
 
 int handle_m(libgdbr_t* g) {
 	int len = strlen (g->data);
 	g->data_len = strlen (g->data) / 2;
 	unpack_hex (g->data, len, g->data);
-	send_ack (g);
-	return 0;
+	return send_ack (g);
 }
 
 int handle_cmd(libgdbr_t* g) {
 	unpack_hex (g->data, strlen (g->data), g->data);
 	g->data_len = strlen (g->data) / 2;
-	send_ack (g);
-	return 0;
+	return send_ack (g);
 }
 
 int handle_connect(libgdbr_t* g) {
-	// TODO handle the message correct and set all infos
-	// .... like packetsize, thread stuff and features.
-	send_ack (g);
-	return 0;
+	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
+	return send_ack (g);
 }
 
 int handle_cont(libgdbr_t* g) {
-	send_ack (g);
-	return 0;
+	// Possible answers here 'S,T,W,X,O,F'
+	return send_ack (g);
 }
 
 int handle_setbp(libgdbr_t* g) {
-	send_ack (g);
-	return 0;
+	return send_ack (g);
 }
 
-int handle_unsetbp(libgdbr_t* g) {
-	send_ack (g);
-	return 0;
+int handle_removebp(libgdbr_t* g) {
+	return send_ack (g);
 }
 

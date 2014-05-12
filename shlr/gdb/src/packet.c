@@ -17,35 +17,35 @@ void handle_escape(parsing_object_t* po) {
 void handle_chk(parsing_object_t* po) {
 	char checksum[3];
 	if (po->position >= po->length) return;
-	checksum[0] = get_next_token(po);
-	checksum[1] = get_next_token(po);
+	checksum[0] = get_next_token (po);
+	checksum[1] = get_next_token (po);
 	checksum[2] = '\0';
-	po->checksum = (uint8_t) strtol(checksum, NULL, 16);
+	po->checksum = (uint8_t) strtol (checksum, NULL, 16);
 }
 
 void handle_data(parsing_object_t* po) {
 	char token;
 	if (po->position >= po->length) return;
-	token = get_next_token(po);
+	token = get_next_token (po);
 	if (token == '#') {
 		po->end = po->position - 1; // subtract 2 cause of # itself and the incremented position after getNextToken
-		handle_chk(po);
+		handle_chk (po);
 	} else if (token == '{') {
-		handle_escape(po);
-	} else handle_data(po);
+		handle_escape (po);
+	} else handle_data (po);
 }
 
 void handle_packet(parsing_object_t* po) {
 	char token;
-	if(po->position >= po->length) return;
-	token = get_next_token(po);
+	if (po->position >= po->length) return;
+	token = get_next_token (po);
 	if (token == '$') {
 		po->start = po->position;
-		handle_data(po);
+		handle_data (po);
 	}
 	else if	(token == '+') {
 		po->acks++;
-		handle_packet(po);
+		handle_packet (po);
 	}
 }
 
@@ -55,12 +55,12 @@ void handle_packet(parsing_object_t* po) {
  */
 int unpack_data(char* dst, char* src, uint64_t len) {
 	int i = 0;
-	char last;
+	char last = 0;
 	int ret_len = 0;
 	char* p_dst = dst;
 	while ( i < len) {
 		if (src[i] == '*') {
-			if (++i >= len ) printf("Error\n");
+			if (++i >= len ) fprintf (stderr, "Runlength decoding error\n");
 			char size = src[i++];
 			uint8_t runlength = size - 29;
 			ret_len += runlength - 2;
@@ -97,8 +97,7 @@ int parse_packet(libgdbr_t* g, int data_offset) {
 
 int send_packet(libgdbr_t* g) {
 	if (!g) {
-		// TODO corect error handling here
-		printf("Initialize libgdbr_t first\n");
+		fprintf (stderr, "Initialize libgdbr_t first\n");
 		return -1;
 	}
 	return send (g->fd, g->send_buff, g->send_len, 0);

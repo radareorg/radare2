@@ -42,7 +42,7 @@ uint64_t unpack_uint64_co(char* buff, int len) {
 	uint64_t result = 0;
 	int i;
 	for (i = len - 2; i >= 0; i-=2) {
-		result |= unpack_uint64(&buff[i], 2);
+		result |= unpack_uint64 (&buff[i], 2);
 		if (i) result <<= 8;
 	}
 	return result;
@@ -70,18 +70,18 @@ int int2hex(int i) {
 }
 
 char hex2char(char* hex) {
-	uint8_t result = hex2int((int)hex[0]);
+	uint8_t result = hex2int ((int)hex[0]);
 	result <<= 4;
-	result |= hex2int(hex[1]);
+	result |= hex2int (hex[1]);
 	return (char) result;
 }
 
 int unpack_hex(char* src, ut64 len, char* dst) {
 	int i = 0;
 	while (i < (len / 2)) {
-		int val = hex2int(src[(i*2)]);
+		int val = hex2int (src[(i*2)]);
 		val <<= 4;
-		val |= hex2int(src[(i*2)+1]);
+		val |= hex2int (src[(i*2)+1]);
 		dst[i++] = val;
 	}
 	dst[i] = '\0';
@@ -93,8 +93,8 @@ int pack_hex(char* src, ut64 len, char* dst) {
 	int x = 0;
 	while (i < (len*2)) {
 		int val = (src[x] & 0xf0) >> 4;
-		dst[i++] = int2hex(val);
-		dst[i++] = int2hex(src[x++] & 0x0f);
+		dst[i++] = int2hex (val);
+		dst[i++] = int2hex (src[x++] & 0x0f);
 	}
 	dst[i] = '\0';
 	return (len/2);
@@ -112,7 +112,7 @@ void hexdump(void* ptr, ut64 len, ut64 offset) {
 		curr_offset = x+offset;
 
 		do {
-			p += sprintf(p, "%02hhx ", data[x]);
+			p += sprintf (p, "%02hhx ", data[x]);
 			*c++ = (data[x] >= 32 && data[x] <= 127) ? data[x] : '.';
 		} while (++x % 16 && x < len);
 
