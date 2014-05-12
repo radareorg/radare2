@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2007-2013 - pancake
+/* radare - Apache 2.0 - Copyright 2007-2014 - pancake
    class.h rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 
@@ -6,6 +6,8 @@
 #define _INCLUDE_JAVA_CLASS_H_
 
 #include <r_types.h>
+#undef U
+#define U(x) UNUSED_FUNCTION(x)
 #include <r_list.h>
 #include <r_bin.h>
 #include <sdb.h>
@@ -23,6 +25,7 @@
 #define R_BIN_JAVA_LONG(x,y) ( ((ut64) R_BIN_JAVA_UINT (x, y) << 32) | ((ut64)R_BIN_JAVA_UINT (x, y+4) & 0xffffffff))
 //#define R_BIN_JAVA_DOUBLE(x,y) ((double)RBIN_JAVA_LONG(x,y))
 //#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
+
 
 
 #define R_BIN_JAVA_DOUBLE(x,y) rbin_java_raw_to_double(x, y)
@@ -744,7 +747,8 @@ typedef struct r_bin_java_obj_t {
 	ut32 id;
 } RBinJavaObj;
 
-R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin);
+R_API RList * U(r_bin_java_get_interface_names)(RBinJavaObj * bin);
+R_API RBinJavaCPTypeObj* U(r_bin_java_get_item_from_cp)(RBinJavaObj *bin, int i);
 R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin);
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin);
 R_API RList* r_bin_java_get_fields(RBinJavaObj *bin);
@@ -940,69 +944,69 @@ R_API RList * r_bin_java_get_field_definitions(RBinJavaObj *bin);
 R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type);
 R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin);
 R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin);
-R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
+R_API RList * U(r_bin_java_get_method_offsets)(RBinJavaObj *bin);
 
-R_API ut16 r_bin_java_calculate_method_access_value(const char * access_flags_str);
-R_API ut16 r_bin_java_calculate_field_access_value(const char * access_flags_str);
-R_API ut16 r_bin_java_calculate_class_access_value(const char * access_flags_str);
+R_API ut16 U(r_bin_java_calculate_method_access_value)(const char * access_flags_str);
+R_API ut16 U(r_bin_java_calculate_field_access_value)(const char * access_flags_str);
+R_API ut16 U(r_bin_java_calculate_class_access_value)(const char * access_flags_str);
 
-R_API RList * retrieve_all_method_access_string_and_value();
-R_API RList * retrieve_all_field_access_string_and_value();
-R_API RList * retrieve_all_class_access_string_and_value();
+R_API RList * U(retrieve_all_method_access_string_and_value)();
+R_API RList * U(retrieve_all_field_access_string_and_value)();
+R_API RList * U(retrieve_all_class_access_string_and_value)();
 R_API char * retrieve_method_access_string(ut16 flags);
 R_API char * retrieve_field_access_string(ut16 flags);
 R_API char * retrieve_class_method_access_string(ut16 flags);
 
 
-R_API char * r_bin_java_resolve(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
-R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
-R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
-R_API char * r_bin_java_resolve_cp_idx_type(RBinJavaObj *BIN_OBJ, int idx);
-R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx);
-R_API ut64 r_bin_java_resolve_cp_idx_address(RBinJavaObj *BIN_OBJ, int idx);
-R_API char * r_bin_java_resolve_cp_idx_to_string(RBinJavaObj *BIN_OBJ, int idx);
-R_API int r_bin_java_resolve_cp_idx_print_summary(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * U(r_bin_java_resolve)(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
+R_API char * U(r_bin_java_resolve_with_space)(RBinJavaObj *obj, int idx);
+R_API char * U(r_bin_java_resolve_without_space)(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * U(r_bin_java_resolve_cp_idx_type)(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * U(r_bin_java_resolve_b64_encode)(RBinJavaObj *BIN_OBJ, ut16 idx);
+R_API ut64 U(r_bin_java_resolve_cp_idx_address)(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * U(r_bin_java_resolve_cp_idx_to_string)(RBinJavaObj *BIN_OBJ, int idx);
+R_API int U(r_bin_java_resolve_cp_idx_print_summary)(RBinJavaObj *BIN_OBJ, int idx);
 
-R_API struct java_const_value_t * r_bin_java_resolve_to_const_value(RBinJavaObj *BIN_OBJ, int idx);
-R_API void r_bin_java_free_const_value(struct java_const_value_t * cp_value);
+R_API struct java_const_value_t * U(r_bin_java_resolve_to_const_value)(RBinJavaObj *BIN_OBJ, int idx);
+R_API void U(r_bin_java_free_const_value)(struct java_const_value_t * cp_value);
 
 
-R_API char * r_bin_java_get_fcn_name ( RBinJavaField *fm_type);
-R_API RList * r_bin_java_get_args ( RBinJavaField *fm_type);
-R_API RList * r_bin_java_get_ret ( RBinJavaField *fm_type);
+R_API char * U(r_bin_java_get_fcn_name) ( RBinJavaField *fm_type);
+R_API RList * U(r_bin_java_get_args) ( RBinJavaField *fm_type);
+R_API RList * U(r_bin_java_get_ret) ( RBinJavaField *fm_type);
 
-R_API RList * r_bin_java_get_args_from_bin ( RBinJavaObj *bin_obj, ut64 addr);
-R_API RList * r_bin_java_get_ret_from_bin ( RBinJavaObj *bin_obj, ut64 addr);
-R_API char * r_bin_java_get_fcn_name_from_bin ( RBinJavaObj *bin_obj, ut64 addr);
-R_API int r_bin_java_is_method_static (RBinJavaObj *bin_obj, ut64 addr);
+R_API RList * U(r_bin_java_get_args_from_bin)(RBinJavaObj *bin_obj, ut64 addr);
+R_API RList * U(r_bin_java_get_ret_from_bin)(RBinJavaObj *bin_obj, ut64 addr);
+R_API char * U(r_bin_java_get_fcn_name_from_bin)( RBinJavaObj *bin_obj, ut64 addr);
+R_API int U(r_bin_java_is_method_static)(RBinJavaObj *bin_obj, ut64 addr);
 
 R_API ut8 r_bin_java_does_cp_idx_ref_method(RBinJavaObj *BIN_OBJ, int idx);
 R_API ut8 r_bin_java_does_cp_idx_ref_field(RBinJavaObj *BIN_OBJ, int idx);
-R_API int r_bin_java_is_method_protected ( RBinJavaObj *bin_obj, ut64 addr);
-R_API int r_bin_java_is_method_private ( RBinJavaObj *bin_obj, ut64 addr);
+R_API int U(r_bin_java_is_method_protected)(RBinJavaObj *bin_obj, ut64 addr);
+R_API int U(r_bin_java_is_method_private)(RBinJavaObj *bin_obj, ut64 addr);
 R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField *method);
 
-R_API char * r_bin_java_get_method_name ( RBinJavaObj *bin_obj, ut32 idx);
-R_API int r_bin_java_print_method_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
-R_API ut32 r_bin_java_get_method_count ( RBinJavaObj *bin_obj);
-R_API RList * r_bin_java_get_method_num_name ( RBinJavaObj *bin_obj);
+R_API char * U(r_bin_java_get_method_name)(RBinJavaObj *bin_obj, ut32 idx);
+R_API int U(r_bin_java_print_method_idx_summary) (RBinJavaObj *bin_obj, ut32 idx);
+R_API ut32 U(r_bin_java_get_method_count)(RBinJavaObj *bin_obj);
+R_API RList * U(r_bin_java_get_method_num_name) ( RBinJavaObj *bin_obj);
 
-R_API char * r_bin_java_get_field_name ( RBinJavaObj *bin_obj, ut32 idx);
-R_API int r_bin_java_print_field_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
-R_API ut32 r_bin_java_get_field_count ( RBinJavaObj *bin_obj);
-R_API RList * r_bin_java_get_field_num_name ( RBinJavaObj *bin_obj);
+R_API char * U(r_bin_java_get_field_name) ( RBinJavaObj *bin_obj, ut32 idx);
+R_API int U(r_bin_java_print_field_idx_summary) (RBinJavaObj *bin_obj, ut32 idx);
+R_API ut32 U(r_bin_java_get_field_count) (RBinJavaObj *bin_obj);
+R_API RList * U(r_bin_java_get_field_num_name) (RBinJavaObj *bin_obj);
 
-R_API RList * r_bin_java_find_cp_const_by_val ( RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len, const char t);
-R_API char r_bin_java_resolve_cp_idx_tag(RBinJavaObj *BIN_OBJ, int idx);
+R_API RList * U(r_bin_java_find_cp_const_by_val) ( RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len, const char t);
+R_API char U(r_bin_java_resolve_cp_idx_tag)(RBinJavaObj *BIN_OBJ, int idx);
 
-R_API int r_bin_java_integer_cp_set(RBinJavaObj *bin, ut16 idx, ut32 val );
-R_API int r_bin_java_float_cp_set(RBinJavaObj *bin, ut16 idx, float val );
-R_API int r_bin_java_long_cp_set(RBinJavaObj *bin, ut16 idx, ut64 val );
-R_API int r_bin_java_double_cp_set(RBinJavaObj *bin, ut16 idx, ut32 val );
-R_API int r_bin_java_utf8_cp_set(RBinJavaObj *bin, ut16 idx, const ut8* buffer, ut32 len);
-R_API ut8 * r_bin_java_cp_get_bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len);
-R_API ut8 * r_bin_java_cp_idx_get_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
-R_API ut32 r_bin_java_cp_get_size(RBinJavaObj *bin, ut16 idx);
+R_API int U(r_bin_java_integer_cp_set)(RBinJavaObj *bin, ut16 idx, ut32 val );
+R_API int U(r_bin_java_float_cp_set)(RBinJavaObj *bin, ut16 idx, float val );
+R_API int U(r_bin_java_long_cp_set)(RBinJavaObj *bin, ut16 idx, ut64 val );
+R_API int U(r_bin_java_double_cp_set)(RBinJavaObj *bin, ut16 idx, ut32 val );
+R_API int U(r_bin_java_utf8_cp_set)(RBinJavaObj *bin, ut16 idx, const ut8* buffer, ut32 len);
+R_API ut8 * U(r_bin_java_cp_get_bytes)(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len);
+R_API ut8 * U(r_bin_java_cp_idx_get_bytes)(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
+R_API ut32 U(r_bin_java_cp_get_size)(RBinJavaObj *bin, ut16 idx);
 
 R_API ut64 r_bin_java_parse_cp_pool (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
 R_API ut64 r_bin_java_parse_interfaces (RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len);
@@ -1014,13 +1018,13 @@ R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *cp_obj, const
 R_API void r_bin_java_set_imports(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_imports(RBinJavaObj* bin);
 
-R_API ut64 r_bin_java_get_method_start(RBinJavaObj *bin, RBinJavaField *method);
-R_API ut64 r_bin_java_get_method_end(RBinJavaObj *bin, RBinJavaField *method);
+R_API ut64 U(r_bin_java_get_method_start)(RBinJavaObj *bin, RBinJavaField *method);
+R_API ut64 U(r_bin_java_get_method_end)(RBinJavaObj *bin, RBinJavaField *method);
 
 R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
-R_API ut8 * r_bin_java_cp_append_method_ref (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
-R_API ut8 * r_bin_java_cp_append_field_ref (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
-R_API char * r_bin_java_unmangle_without_flags (const char *name, const char *descriptor);
+R_API ut8 * U(r_bin_java_cp_append_method_ref) (RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
+R_API ut8 * U(r_bin_java_cp_append_field_ref)(RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
+R_API char * U(r_bin_java_unmangle_without_flags) (const char *name, const char *descriptor);
 R_API char * r_bin_java_unmangle (const char *flags, const char *name, const char *descriptor);
 
 #endif

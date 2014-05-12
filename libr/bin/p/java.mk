@@ -3,6 +3,7 @@ OBJ_JAVA=bin_java.o
 #SHARED_JAVA=../../shlr/java/class.o
 #SHARED_JAVA+=../../shlr/java/code.o
 #SHARED_JAVA+=../../shlr/java/ops.o
+#CFLAGS+= -Wno-unused-function
 SHARED2_JAVA=$(addprefix ../,${SHARED_JAVA})
 
 STATIC_OBJ+=${OBJ_JAVA}

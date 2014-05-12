@@ -205,7 +205,6 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		count ++;
 		if (is_keva) {
 			char key[128];
-			char val[128];
 			sdb_array_push_num (DB, "bbs", bbi->addr, 0);
 			snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".size", bbi->addr);
 			sdb_num_set (DB, key, bbi->size, 0); // bb.<addr>.size=<num>

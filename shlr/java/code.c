@@ -41,7 +41,6 @@ static void init_switch_op () {
 }
 
 static int enter_switch_op (ut64 addr, const ut8 * bytes ) {
-	ut8 idx = bytes[0];
 	ut8 sz = (BYTES_CONSUMED+1) % 4 ? 1 + 4 - (BYTES_CONSUMED+1) % 4: 1; // + (BYTES_CONSUMED+1)  % 4;
 	ut8 sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
 	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04"PFMT64x", BYTES_CONSUMED%%4 = 0x%04x\n", sz2, BYTES_CONSUMED, sz);
@@ -233,7 +232,7 @@ R_API void r_java_new_method () {
 	BYTES_CONSUMED = 0;
 }
 
-R_API void r_java_set_obj(RBinJavaObj *obj) {
+R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
 	//BIN_OBJ = obj;
 }
