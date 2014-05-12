@@ -218,17 +218,18 @@ static int is_dot_net(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-    RList* imports_list = imports (arch);
-    RListIter *iter;
-    RBinImport *import;
-    r_list_foreach (imports_list, iter, import) {
-        if (!strcmp(import->name, "__security_init_cookie") ) {
-            r_list_free (imports_list);
-            return 1;
-        }
-    }
-    r_list_free (imports_list);
-    return 0;
+	RList* imports_list = imports (arch);
+	RListIter *iter;
+	RBinImport *import;
+	// TODO: use O(1) when imports sdbized
+	r_list_foreach (imports_list, iter, import) {
+		if (!strcmp (import->name, "__security_init_cookie") ) {
+			r_list_free (imports_list);
+			return 1;
+		}
+	}
+	r_list_free (imports_list);
+	return 0;
 }
 
 static int has_aslr(const RBinFile* arch) {
@@ -237,16 +238,12 @@ static int has_aslr(const RBinFile* arch) {
 	ut64 sz;
 	if (!arch)
 		return R_FALSE;
-
 	buf = r_buf_buffer (arch->buf);
-	if (!buf)
-		return R_FALSE;
-
+	if (!buf) return R_FALSE;
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
 		return R_FALSE;
-
 	return (*(ut8*)(buf + idx + 0x5E)) & 0x40;
 }
 

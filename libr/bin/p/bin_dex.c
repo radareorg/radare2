@@ -72,16 +72,15 @@ static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
-	if (!buf || length > 8)
+	if (!buf || length < 8)
 		return R_FALSE;
 	// Non-extended opcode dex file
-	if (!memcmp (buf, "dex\n035\0", 8))
+	if (!memcmp (buf, "dex\n035\0", 8)) {
 	        return R_TRUE;
+	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
 	if (!memcmp (buf, "dex\n036\0", 8))
 	        return R_TRUE;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - xvilka */
+/* radare - LGPL - Copyright 2013-2014 - xvilka */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,7 +11,7 @@ static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
 static int load(RBinFile *arch) {
-	if(!(arch->o->bin_obj = r_bin_te_new_buf (arch->buf)))
+	if (!(arch->o->bin_obj = r_bin_te_new_buf (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }

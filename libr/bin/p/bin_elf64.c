@@ -15,8 +15,8 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 5)
-	if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5))
-		return R_TRUE;
+		if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5))
+			return R_TRUE;
 	return R_FALSE;
 }
 

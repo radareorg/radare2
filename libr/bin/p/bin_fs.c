@@ -106,10 +106,7 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	char *p;
 	int ret;
-
-	if (!buf)
-		return R_FALSE;
-
+	if (!buf) return R_FALSE;
 	p = fsname (buf, length);
 	ret = (p)? R_TRUE: R_FALSE;
 	free (p);
