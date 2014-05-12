@@ -267,6 +267,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			);
 		} 
 		else if ( dbg->bits == R_SYS_BITS_64) {
+			return strdup (
 			"gpr	x0	.8	0	0\n"
 			"gpr	x1	.8	8	0\n"
 			"gpr	x2	.8	16	0\n"
@@ -335,6 +336,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	v31	.16	764	0\n"
 			"gpr	fpsr	.4	780	0\n"
 			"gpr	fpcr	.4	784	0\n"
+			);
 		}
 	case R_SYS_ARCH_SH:
 		return strdup (
