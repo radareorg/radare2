@@ -158,7 +158,7 @@ typedef struct {
 } SymbolRecord;
 
 static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_export_t *exports, int sz) {
-	ut64 baddr = (ut64)bin->nt_headers->optional_header.ImageBase;
+	//ut64 baddr = (ut64)bin->nt_headers->optional_header.ImageBase;
 	ut64 off = bin->nt_headers->file_header.PointerToSymbolTable;
 	ut64 num = bin->nt_headers->file_header.NumberOfSymbols;
 	const int srsz = 18; // symbol record size
@@ -198,7 +198,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 
 	sections = PE_(r_bin_pe_get_sections)(bin);
 	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
-		if (!strcmp (sections[i].name, ".text")) {
+		if (!strcmp ((char*)sections[i].name, ".text")) {
 			text_rva = sections[i].rva; // + baddr;
 			text_off = sections[i].offset;
 			textn = i +1;
@@ -208,7 +208,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 #define D if (0)
 	text = text_rva; // text_off // TODO: io.va
 	symctr = 0;
-	if (r_buf_read_at (bin->b, off, buf, bufsz)) {
+	if (r_buf_read_at (bin->b, off, (ut8*)buf, bufsz)) {
 		for (I=0; I<shsz; I += srsz) {
 			sr = (SymbolRecord *) (buf+I);
 			//eprintf ("SECNUM %d\n", sr->secnum);
@@ -219,17 +219,17 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 					shortname[8] = 0;
 					if (*shortname) {
 						D printf ("0x%08"PFMT64x"  %s\n", text + sr->value, shortname);
-						strncpy (exp[symctr].name, shortname, PE_NAME_LENGTH-1);
+						strncpy ((char*)exp[symctr].name, shortname, PE_NAME_LENGTH-1);
 					} else {
 						char *longname, name[128];
 						ut32 *idx = (ut32 *) (buf+I+4)	;
-						if (r_buf_read_at (bin->b, off+ *idx+shsz, name, 128)) {
+						if (r_buf_read_at (bin->b, off+ *idx+shsz, (ut8*)name, 128)) {
 							longname = name;
 							D printf ("0x%08"PFMT64x"  %s\n", text + sr->value, longname);
-							strncpy (exp[symctr].name, longname, PE_NAME_LENGTH-1);
+							strncpy ((char*)exp[symctr].name, longname, PE_NAME_LENGTH-1);
 						} else {
 							D printf ("0x%08"PFMT64x"  unk_%d\n", text + sr->value, I/srsz);
-							sprintf (exp[symctr].name, "unk_%d", symctr);
+							sprintf ((char*)exp[symctr].name, "unk_%d", symctr);
 						}
 					}
 					exp[symctr].name[PE_NAME_LENGTH] = 0;

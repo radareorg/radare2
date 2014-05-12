@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #undef R_API
-#define R_API static
+#define R_API static inline
 #include "../../shlr/java/class.c"
 #undef R_API
 #define R_API 

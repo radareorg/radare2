@@ -203,7 +203,7 @@ R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 			if (arg) {
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
-			}else {
+			} else {
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen-1] = 0;

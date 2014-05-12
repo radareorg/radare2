@@ -959,8 +959,8 @@ R_API char * retrieve_class_method_access_string(ut16 flags);
 
 
 R_API char * U(r_bin_java_resolve)(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
-R_API char * U(r_bin_java_resolve_with_space)(RBinJavaObj *obj, int idx);
-R_API char * U(r_bin_java_resolve_without_space)(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
+R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * U(r_bin_java_resolve_cp_idx_type)(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * U(r_bin_java_resolve_b64_encode)(RBinJavaObj *BIN_OBJ, ut16 idx);
 R_API ut64 U(r_bin_java_resolve_cp_idx_address)(RBinJavaObj *BIN_OBJ, int idx);
@@ -972,8 +972,8 @@ R_API void U(r_bin_java_free_const_value)(struct java_const_value_t * cp_value);
 
 
 R_API char * U(r_bin_java_get_fcn_name) ( RBinJavaField *fm_type);
-R_API RList * U(r_bin_java_get_args) ( RBinJavaField *fm_type);
-R_API RList * U(r_bin_java_get_ret) ( RBinJavaField *fm_type);
+R_API RList * r_bin_java_get_args ( RBinJavaField *fm_type);
+R_API RList * r_bin_java_get_ret ( RBinJavaField *fm_type);
 
 R_API RList * U(r_bin_java_get_args_from_bin)(RBinJavaObj *bin_obj, ut64 addr);
 R_API RList * U(r_bin_java_get_ret_from_bin)(RBinJavaObj *bin_obj, ut64 addr);

@@ -8,7 +8,7 @@
 
 #undef R_API
 #undef R_IPI
-#define R_API static
+#define R_API static inline
 #define R_IPI static
 #include "../../shlr/java/ops.c"
 #include "../../shlr/java/class.c"
