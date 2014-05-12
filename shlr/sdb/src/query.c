@@ -121,6 +121,7 @@ repeat:
 	}
 	eq = strchr (p, '=');
 	if (eq) {
+		d = 1;
 		*eq++ = 0;
 		if (*eq=='$') {
 			next = strchr (eq+1, ';');
@@ -129,7 +130,10 @@ repeat:
 			if (next) *next = ';';
 			is_ref = 1; // protect readonly buffer from being processed
 		} else val = eq;
-	} else val = NULL;
+	} else {
+		val = NULL;
+		d = 0;
+	}
 	if (!is_ref) {
 		next = strchr (val?val:cmd, ';'); //val?val:cmd, ';');
 	}
@@ -545,13 +549,15 @@ fail:
 }
 
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
-	char buf[1024], *out = sdb_querys (s, buf, sizeof (buf), cmd);
+	char buf[1024], *out;
+	int must_save = ((*cmd=='~') || strchr (cmd, '='));
+	out = sdb_querys (s, buf, sizeof (buf), cmd);
 	if (out) {
 		if (*out) puts (out);
 		if (out != buf)
 			free (out);
 	} 
-	return ((*cmd=='~')||strchr (cmd, '='))? 1: 0;
+	return must_save;
 }
 
 SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {

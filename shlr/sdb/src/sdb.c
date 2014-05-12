@@ -629,11 +629,11 @@ SDB_API void sdb_config(Sdb *s, int options) {
 	}
 }
 
-SDB_API void sdb_unlink (Sdb* s) {
+SDB_API int sdb_unlink (Sdb* s) {
 	// nullify Sdb
 	sdb_fini (s, 1);
 	// remove from disk
-	sdb_disk_unlink (s);
+	return sdb_disk_unlink (s);
 }
 
 SDB_API void sdb_drain(Sdb *s, Sdb *f) {

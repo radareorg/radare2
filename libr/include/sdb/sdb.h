@@ -107,7 +107,7 @@ int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
 int sdb_disk_create (Sdb* s);
 int sdb_disk_insert (Sdb* s, const char *key, const char *val);
 int sdb_disk_finish (Sdb* s);
-void sdb_disk_unlink (Sdb* s);
+int sdb_disk_unlink (Sdb* s);
 
 /* iterate */
 void sdb_dump_begin (Sdb* s);
@@ -127,7 +127,7 @@ ut64 sdb_num_dec (Sdb* s, const char *key, ut64 n, ut32 cas);
 int sdb_lock(const char *s);
 const char *sdb_lockfile(const char *f);
 void sdb_unlock(const char *s);
-SDB_API void sdb_unlink (Sdb* s);
+SDB_API int sdb_unlink (Sdb* s);
 SDB_API int sdb_lock_wait(const char *s UNUSED);
 
 /* expiration */
