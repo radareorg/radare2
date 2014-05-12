@@ -11,7 +11,7 @@
 #include <r_cons.h>
 
 #undef R_API
-#define R_API static
+#define R_API static inline
 #undef R_IPI
 #define R_IPI static
 
@@ -453,12 +453,11 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 
 static int java_print_ssa_fcn (RAnal *anal, const char *addrs) {
 	ut64 addr = addrs ? strtoul (addrs, NULL, 16): 0;
-	RList *fcns = anal->fcns, *bb_ssa = NULL;
+	RList *fcns = anal->fcns; //, *bb_ssa = NULL;
 	RAnalFunction *fcn = NULL, *found_fcn = NULL;
 	RListIter *iter;
-	RAnalBlock *bb;
-	char *ssa_str = NULL;
-	ut32 ssa_idx = 0;
+	//char *ssa_str = NULL;
+	//ut32 ssa_idx = 0;
 	RBinJavaObj *bin_obj = (RBinJavaObj * )get_java_bin_obj(anal);
 
 

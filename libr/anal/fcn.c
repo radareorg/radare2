@@ -93,7 +93,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	r_list_append (fcn->refs, ref);
 #endif
 #if FCN_SDB
-	char key[1024], val[1024];
+	char key[1024];
 	SETKEY ("fcn.0x%08"PFMT64x".xrefs", fcn->addr);
 	sdb_array_add_num (DB, key, at, 0);
 #endif
@@ -232,11 +232,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_STACK_SET:
 			if (op.ptr > 0) {
 				varname = r_str_newf ("arg_%x", op.ptr);
-				r_anal_var_add (anal, fcn, op.addr, op.ptr,
+				r_anal_var_add (anal, fcn->addr, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
 				varname = r_str_newf ("local_%x", -op.ptr);
-				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
+				r_anal_var_add (anal, fcn->addr, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
