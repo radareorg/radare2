@@ -95,6 +95,7 @@ char *sdb_get (Sdb*, const char *key, ut32 *cas);
 const char *sdb_const_get (Sdb*, const char *key, ut32 *cas);
 int sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
 int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
+int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas);
 void sdb_list(Sdb*);
 int sdb_sync (Sdb*);

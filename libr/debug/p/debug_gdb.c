@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake, defragger */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -267,6 +267,12 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			);
 		} else if (dbg->bits == R_SYS_BITS_64) {
 			return strdup (
+			"=pc	pc\n"
+			"=sp	sp\n"
+			"=a0	r0\n"
+			"=a1	r1\n"
+			"=a2	r2\n"
+			"=a3	r3\n"
 			"gpr	x0	.8	0	0\n"
 			"gpr	x1	.8	8	0\n"
 			"gpr	x2	.8	16	0\n"

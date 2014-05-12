@@ -231,6 +231,23 @@ SDB_API int sdb_unset (Sdb* s, const char *key, ut32 cas) {
 	return key? sdb_set (s, key, "", cas): 0;
 }
 
+// alias for '-key=str'.. '+key=str' concats
+SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
+	// remove 'value' from current key value.
+	// TODO: cas is ignored here
+	char *p, *v = sdb_get (s, key, NULL);
+	int vlen = strlen (value);
+	int mod = 0;
+	while ((p = strstr (v, value))) {
+		memmove (p, p+vlen, strlen (p+vlen)+1);
+		mod = 1;
+	}
+	if (mod)
+		sdb_set (s, key, v, 0);
+	free (v);
+	return 0;
+}
+
 SDB_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
 	int ret, kl, vl;
 	const char *p;

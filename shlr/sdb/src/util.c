@@ -157,7 +157,7 @@ SDB_API ut64 sdb_unow () {
 }
 
 SDB_API int sdb_isnum (const char *s) {
-	if (*s=='-') // || *s=='+')
+	if (*s=='-' || *s=='+')
 		return 1;
 	if (*s>='0' && *s<='9')
 		return 1;
