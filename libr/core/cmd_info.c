@@ -188,6 +188,7 @@ static int cmd_info(void *data, const char *input) {
 			"| 'j'   output in json\n"
 			"| 'q'   simple quiet output\n"
 			"|Actions:\n"
+			"| i, ij       show info of current file (in JSON)\n"
 			"| io [file]   load info from file (or last opened) use bin.baddr\n"
 			"| ik [query]  key-value database from RBinObject\n"
 			"| ia          show all info (imports, exports, sections..)\n"
@@ -210,9 +211,11 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
+			cmd_info_bin (core, offset, va, mode);
 			break;
 		default:
 			cmd_info_bin (core, offset, va, mode);
+			break;
 		}
 		input++;
 	}
