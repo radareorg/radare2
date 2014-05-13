@@ -790,14 +790,31 @@ void decode_registers(tms320_dasm_t * dasm)
 		substitute(dasm->syntax, "dst2", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 	}
 
+
+	code &= 0;
+	code |= field_valid(dasm, FSSS) ? 0x01 : 0x00;
+	code |= field_valid(dasm, FDDD) ? 0x02 : 0x00;
+
+	switch (code) {
+	case 0x01:	// FSSS
+		substitute(dasm->syntax, "TAx", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
+		break;
+	case 0x02:	//      FDDD
+		substitute(dasm->syntax, "TAx", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
+		substitute(dasm->syntax, "TAy", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
+		break;
+	case 0x03:	// FSSS FDDD
+		substitute(dasm->syntax, "TAx", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
+		substitute(dasm->syntax, "TAy", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
+		break;
+	}
+
 	if (field_valid(dasm, FSSS)) {
 		substitute(dasm->syntax, "src", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
-		substitute(dasm->syntax, "TAy", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
 	}
 
 	if (field_valid(dasm, FDDD)) {
 		substitute(dasm->syntax, "dst", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
-		substitute(dasm->syntax, "TAx", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 	}
 
 	if (field_valid(dasm, XACS))
@@ -809,6 +826,7 @@ void decode_registers(tms320_dasm_t * dasm)
 
 	// source and destination accumulator registers
 
+	code &= 0;
 	code |= field_valid(dasm, SS) ? 0x01 : 0x00;
 	code |= field_valid(dasm, SS2) ? 0x02 : 0x00;
 	code |= field_valid(dasm, DD) ? 0x10 : 0x00;
