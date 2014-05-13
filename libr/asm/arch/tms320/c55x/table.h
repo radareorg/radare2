@@ -958,7 +958,7 @@
 		.i_list = NULL,
 		.m_list = NULL,
 		.f_list = (insn_flag_t []) { INSN_FLAG(0,E), INSN_FLAG(8,K8),  LIST_END },
-		.syntax = INSN_SYNTAX(AADD K8,SP),
+		.syntax = INSN_SYNTAX(AADD K8, SP),
 	},
 },
 {
