@@ -415,3 +415,13 @@ R_API char* r_num_as_string(RNum *___, ut64 n) {
 		return strdup (str);
 	return NULL;
 }
+
+R_API int r_is_valid_input_num_value(RNum *num, const char *input_value){
+	ut64 value = input_value ? r_num_math (num, input_value) : 0;
+	return !(value == 0 && input_value && *input_value == '0');
+}
+
+R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
+	ut64 value = input_value ? r_num_math (num, input_value) : 0;
+	return value;
+}

@@ -1192,3 +1192,80 @@ R_API int r_core_bin_update_arch_bits (RCore *r) {
 	const char *name = binfile ? binfile->file : NULL;
 	return r_core_bin_set_arch_bits (r, name, arch, bits);
 }
+
+R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
+	RBin *bin = core->bin;
+	RBinFile *binfile = NULL;
+
+	if (binfile_idx == UT32_MAX && binobj_idx == UT32_MAX) {
+		return R_FALSE;
+	}
+
+	if (!r_bin_select_by_ids (bin, binfile_idx, binobj_idx)) return R_FALSE;
+	binfile = r_core_bin_cur (core);
+	r_io_raise (core->io, binfile->fd);
+	core->switch_file_view = 1;
+	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core, 0);
+}
+
+R_API int r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
+	RBin *bin = core->bin;
+	RBinFile *binfile = NULL;
+
+	if (binfile_idx == UT32_MAX && binobj_idx == UT32_MAX) {
+		return R_FALSE;
+	}
+
+	if (!r_bin_object_delete (bin, binfile_idx, binobj_idx)) return R_FALSE;
+	binfile = r_core_bin_cur (core);
+	r_io_raise (core->io, binfile->fd);
+	core->switch_file_view = 1;
+	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core, 0);
+}
+
+static int r_core_bin_file_print (RCore *core, RBinFile *binfile) {
+	RListIter *iter;
+	RBinObject *obj;
+	const char *name = binfile ? binfile->file : NULL;
+	ut32 id = binfile ? binfile->id : 0;
+	ut32 obj_cnt = binfile ? r_list_length (binfile->objs) : 0;
+	ut32 bin_sz = binfile ? binfile->size : 0;
+	int i = 0;
+
+	if (!binfile) return R_FALSE;
+
+	r_cons_printf("%s %d %d 0x%04x\n", name, id, obj_cnt, bin_sz );
+	r_list_foreach (binfile->objs, iter, obj) {
+		RBinInfo *info = obj ? obj->info : NULL;
+		// id, arch, bits, offset
+		ut8 bits = info ? info->bits : 0;
+		const char *arch = info ? info->arch : "unknown";
+		ut64 offset = obj ? obj->boffset : 0;
+		ut64 size = obj ? obj->obj_size : 0;
+		ut32 id = obj->id;
+		r_cons_printf("\t%d) %d %s %d 0x%04"PFMT64x" 0x%04"PFMT64x"\n",
+			i, id, arch, bits, offset, size );
+		i++;
+	}
+	return R_TRUE;
+}
+
+
+
+R_API int r_core_bin_list(RCore *core) {
+	// list all binfiles and there objects and there archs
+	int count = 0;
+	RListIter *iter;
+	RBinFile *binfile = NULL; //, *cur_bf = r_core_bin_cur (core) ;
+	RBin *bin = core->bin;
+	const RList *binfiles = bin ? bin->binfiles: NULL;
+
+	if (!binfiles) return R_FALSE;
+
+	r_list_foreach (binfiles, iter, binfile) {
+		r_core_bin_file_print (core, binfile);
+	}
+	//r_core_file_set_by_file (core, cur_cf);
+	//r_core_bin_bind (core, cur_bf);
+	return count;
+}

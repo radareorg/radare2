@@ -630,7 +630,6 @@ static int r_bin_files_populate_from_xtrlist (RBinFile *binfile, ut64 baseaddr, 
 
 static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	RBinFile * bf = LOCAL_RBIN_ACCESS ? r_bin_file_find_by_name (LOCAL_RBIN_ACCESS, filename) : NULL;
-	int res = R_FALSE;
 	if (!bf) {
 		bf = r_bin_file_create_append (LOCAL_RBIN_ACCESS, filename, bytes, sz, rawstr, fd, xtr->name);
 		if (!bf) return bf;
@@ -638,14 +637,16 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *fil
 	if (idx == 0 && xtr && xtr && bytes) {
 		RList *xtr_data_list = xtr->extractall_from_bytes (bytes, sz);
 		if (xtr_data_list){
-			res = r_bin_files_populate_from_xtrlist (bf, baseaddr, loadaddr, xtr_data_list);
+			if (!r_bin_files_populate_from_xtrlist (bf, baseaddr, loadaddr, xtr_data_list)) 
+				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
 		}
 		r_list_free (xtr_data_list);
 	} else if (xtr && xtr->extract_from_bytes) {
 		if (idx == 0) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bytes, sz, idx);
 		if (xtr_data){
-			res = r_bin_file_object_new_from_xtr_data (bf, baseaddr, loadaddr, xtr_data);
+			if (r_bin_file_object_new_from_xtr_data (bf, baseaddr, loadaddr, xtr_data)) 
+				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
 		}
 		r_bin_xtrdata_free (xtr_data);
 	}
@@ -711,7 +712,6 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 	RListIter *s_iter = NULL;
 	RIOBind *iob = bf ? &(bf->rbin->iob) : NULL;
 	RIO *io = iob ? iob->get_io(iob) : NULL;
-	int fd = bf->fd;
 
 	if (!io || !info) return R_FALSE;
 
@@ -1177,6 +1177,109 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, const char *name) {
 	RBinObject *obj = binfile ? r_bin_object_find_by_arch_bits (binfile, arch, bits, name) : NULL;
 	return obj && r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, obj);
+}
+
+static RBinObject * r_bin_file_object_find_by_id (RBinFile *binfile, ut32 binobj_id) {
+	RBinObject *obj = NULL;
+	RListIter *iter = NULL;
+
+	if (!binfile) return obj;
+	r_list_foreach (binfile->objs, iter, obj) {
+		if (obj->id == binobj_id) break;
+		obj = NULL;
+	}
+	return obj;
+}
+
+static RBinFile * r_bin_file_find_by_object_id (RBin *bin, ut32 binobj_id) {
+	RListIter *iter = NULL;
+	RBinFile *binfile = NULL;
+
+	r_list_foreach (bin->binfiles, iter, binfile) {
+		if (r_bin_file_object_find_by_id (binfile, binobj_id)) break;
+		binfile = NULL;
+	}
+	return binfile;
+}
+
+static RBinObject * r_bin_object_find_by_id (RBin *bin, ut32 binobj_id) {
+	RBinFile *binfile = NULL;
+	RBinObject *obj = NULL;
+	RListIter *iter = NULL;
+
+	r_list_foreach (bin->binfiles, iter, binfile) {
+		obj = r_bin_file_object_find_by_id (binfile, binobj_id);
+		if (obj) break;
+	}
+	return obj;
+
+}
+
+static RBinFile * r_bin_file_find_by_id (RBin *bin, ut32 binfile_id) {
+	RBinFile *binfile = NULL;
+	RListIter *iter = NULL;
+
+	r_list_foreach (bin->binfiles, iter, binfile) {
+		if (binfile->id == binfile_id) break;
+		binfile = NULL;
+	}
+	return binfile;
+
+}
+
+R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id) {
+
+	RBinFile *binfile = NULL;//, *cbinfile = r_bin_cur (bin);
+	RBinObject *obj = NULL;
+	int res = R_FALSE;
+
+	if (binfile_id == UT32_MAX && binobj_id == UT32_MAX) {
+		return R_FALSE;
+	}
+
+	if (binfile_id == -1 ) {
+		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
+		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
+	} else if (binobj_id == -1) {
+		binfile = r_bin_file_find_by_id (bin, binfile_id);
+		obj = binfile ? binfile->o : NULL;
+	} else {
+		binfile = r_bin_file_find_by_id (bin, binfile_id);
+		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
+	}
+
+	// lazy way out, always leaving at least 1 bin object loaded
+	if (r_list_length (binfile->objs) > 1) {
+		binfile->o = NULL;
+		r_list_delete_data (binfile->objs, obj);
+		obj = (RBinObject *) r_list_get_n (binfile->objs, 0);
+		res = obj && binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
+	}
+	return res;
+}
+
+R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id ) {
+	RBinFile *binfile = NULL;
+	RBinObject *obj = NULL;
+
+	if (binfile_id == UT32_MAX && binobj_id == UT32_MAX) {
+		return R_FALSE;
+	}
+
+	if (binfile_id == -1 ) {
+		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
+		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
+	} else if (binobj_id == -1) {
+		binfile = r_bin_file_find_by_id (bin, binfile_id);
+		obj = binfile ? binfile->o : NULL;
+	} else {
+		binfile = r_bin_file_find_by_id (bin, binfile_id);
+		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
+	}
+
+	if (!binfile || !obj) return R_FALSE;
+
+	return obj && binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
 
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {

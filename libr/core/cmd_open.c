@@ -55,24 +55,101 @@ static int cmd_open(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 'b':
-		/*
-		ptr = strchr (input+(isn?2:1), ' ');
-		if (ptr) {
-			r_core_file_binlist (core);
-			break;
-		} else if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
-			*ptr = '\0';
-			addr = r_num_math (core->num, ptr+1);
-		} else {
-			num = atoi (ptr? ptr: input+1);
-			addr = 0LL;
-		}
-		if (num<=0) {
+		{
+			const char *value = NULL;
+			ut32 binfile_num = -1, binobj_num = -1;
 
-		} else {
-			r_core_file_bin_raise (core, num);
+			switch (*(input+1)) {
+				case 'l':
+					r_core_bin_list (core);
+					break;
+				case 's':
+					value = *(input+2) ? input+3 : NULL;
+					if (!value) {
+						eprintf ("Invalid binfile number.");
+						break;
+					}
+					binfile_num = *value && r_is_valid_input_num_value (core->num, value) ?
+							r_get_input_num_value (core->num, value) : UT32_MAX;
+
+					if (binfile_num == UT32_MAX) {
+						eprintf ("Invalid binfile number.");
+						break;
+					}
+
+					value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
+					value = value && *(value+1) ? value+1 : NULL;
+
+					binobj_num = value && binfile_num != -1 && r_is_valid_input_num_value (core->num, value) ?
+							r_get_input_num_value (core->num, value) : UT32_MAX;
+
+					if (binobj_num == UT32_MAX) {
+						eprintf ("Invalid bin object number.");
+						break;
+					}
+					r_core_bin_raise (core, binfile_num, binobj_num);
+					break;
+
+				case 'b':
+					value = *(input+2) ? input+3 : NULL;
+					if (!value) {
+						eprintf ("Invalid binfile number.");
+						break;
+					}
+					binfile_num = *value && r_is_valid_input_num_value (core->num, value) ?
+							r_get_input_num_value (core->num, value) : UT32_MAX;
+
+					if (binfile_num == UT32_MAX) {
+						eprintf ("Invalid binfile number.");
+						break;
+					}
+
+					value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
+					value = value && *(value+1) ? value+1 : NULL;
+
+					r_core_bin_raise (core, binfile_num, -1);
+					break;
+
+				case 'o':
+					value = *(input+2) ? input+3 : NULL;
+					if (!value) {
+						eprintf ("Invalid binfile number.");
+						break;
+					}
+					binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
+							r_get_input_num_value (core->num, value) : UT32_MAX;
+
+					if (binobj_num == UT32_MAX) {
+						eprintf ("Invalid bin object number.");
+						break;
+					}
+
+					r_core_bin_raise (core, -1, binobj_num);
+					break;
+				case 'd':
+					value = *(input+2) ? input+3 : NULL;
+					if (!value) {
+						eprintf ("Invalid binfile number.");
+						break;
+					}
+					binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
+							r_get_input_num_value (core->num, value) : UT32_MAX;
+
+					if (binobj_num == UT32_MAX) {
+						eprintf ("Invalid bin object number.");
+						break;
+					}
+					r_core_bin_delete (core, -1, binobj_num);
+					break;
+				case '?':
+					r_cons_printf ("|Usage:\n"
+					"| obl                 list opened binfiles and bin objects\n"
+					"| obb [binfile #]     prioritize by binfile number with current selected object\n"
+					"| obd [binobject #]   delete binfile object numbers, if more than 1 object is loaded\n"
+					"| obo [binobject #]   prioritize by bin object number\n"
+					"| obs [bf #] [bobj #] prioritize by binfile and object numbers\n");
+			}
 		}
-		*/
 		break;
 	case '-':
 		if (!r_core_file_close_fd (core, atoi (input+1)))

@@ -331,6 +331,9 @@ R_API int r_num_to_bits(char *out, ut64 num);
 R_API int r_num_rand(int max);
 R_API void r_num_irand();
 R_API ut16 r_num_ntohs (ut16 foo);
+R_API int r_is_valid_input_num_value(RNum *num, const char *input_value);
+R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
+
 
 /* TODO ..use as uppercase maybe? they are macros! */
 #define strnull(x) (!x||!*x)
@@ -411,6 +414,7 @@ R_API void *r_str_free(void *ptr);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
+R_API const char * r_str_tok (const char *str1, const char b, size_t len);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
