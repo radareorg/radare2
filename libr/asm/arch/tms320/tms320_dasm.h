@@ -202,7 +202,6 @@ typedef struct {
 	} f;
 
 	RHashTable		* map;
-	RHashTable		* map_e;
 
 #define TMS320_F_CPU_C54X	0x0000001
 #define TMS320_F_CPU_C55X	0x0000002
