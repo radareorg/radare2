@@ -994,7 +994,7 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm)
 	if (!dasm->head) {
 		dasm->head = ht_(lookup)(dasm->map, dasm->opcode);
 		if (!dasm->head)
-			dasm->head = ht_(lookup)(dasm->map_e, dasm->opcode & 0xFE);
+			dasm->head = ht_(lookup)(dasm->map, dasm->opcode & 0xfe);
 	}
 
 	dasm->insn = dasm->head ? &dasm->head->insn : NULL;
@@ -1046,22 +1046,14 @@ static insn_head_t c55x_list[] = {
 #  include "c55x/table.h"
 };
 
-static insn_head_t c55x_list_e[] = {
-#  include "c55x/table_e.h"
-};
-
 int tms320_dasm_init(tms320_dasm_t * dasm)
 {
 	int i = 0;
 
 	dasm->map = ht_(new)();
-	dasm->map_e = ht_(new)();
 
 	for (i = 0; i < ARRAY_SIZE(c55x_list); i++)
 		ht_(insert)(dasm->map, c55x_list[i].byte, &c55x_list[i]);
-
-	for (i = 0; i < ARRAY_SIZE(c55x_list_e); i++)
-		ht_(insert)(dasm->map_e, c55x_list_e[i].byte, &c55x_list_e[i]);
 
 	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);
 
@@ -1070,7 +1062,6 @@ int tms320_dasm_init(tms320_dasm_t * dasm)
 
 int tms320_dasm_fini(tms320_dasm_t * dasm)
 {
-	ht_(free)(dasm->map_e);
 	ht_(free)(dasm->map);
 
 	return 0;
