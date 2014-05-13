@@ -22,16 +22,16 @@ static void find_refs(RCore *core, const char *glob) {
 /* TODO: Move into cmd_anal() */
 static void var_help(char ch) {
 	const char *kind = (ch=='v')?"locals":"args";
-if (ch) {
-	eprintf ("|Usage: af%c [idx] [type] [name]\n", ch);
-	eprintf ("| af%c                        ; list function %s\n", ch, kind);
-	eprintf ("| af%c 12 int buffer[3]       ; add %s at index, type and name\n", ch, kind);
-	eprintf ("| af%c-12                     ; delete %s at index 12\n", ch, kind);
-	eprintf ("| af%cs [index] ([offset])    ; register 'set' action\n", ch);
-	eprintf ("| af%cg [index] ([offset])    ; register 'get' action\n", ch);
-	eprintf ("|See also: afa? afv? -- add arguments and locals\n");
-} else {
-eprintf ("See afv? and afa?\n");
+	if (ch=='a' || ch=='A' || ch=='v') {
+		eprintf ("|Usage: af%c [idx] [type] [name]\n", ch);
+		eprintf ("| af%c                        ; list function %s\n", ch, kind);
+		eprintf ("| af%c 12 int buffer[3]       ; add %s at index, type and name\n", ch, kind);
+		eprintf ("| af%c-12                     ; delete %s at index 12\n", ch, kind);
+		eprintf ("| af%cs [index] ([offset])    ; register 'set' action\n", ch);
+		eprintf ("| af%cg [index] ([offset])    ; register 'get' action\n", ch);
+		eprintf ("|See also: afa? afv? -- add arguments and locals\n");
+	} else {
+		eprintf ("See afv? and afa?\n");
 }
 
 // TODO: fastrg == 'A'
@@ -73,7 +73,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_var_list (core->anal, fcn, 0, 0);
 			goto end;
 		case '?':
-			var_help(*str);
+			var_help (*str);
 			goto end;
 		case '.':
 			r_anal_var_list (core->anal, fcn, core->offset, 0);
@@ -119,10 +119,16 @@ static int var_cmd(RCore *core, const char *str) {
 				p3[0]='\0';
 				p3=p3+1;
 			}
+			char kind = *str;
 			// p2 - name of variable
-			r_anal_var_add (core->anal, fcn->addr, core->offset, delta, scope,
+			char *type = "int";
+			int size = 4;
+			char *name = "num";
+			r_anal_var_add (core->anal,
+				fcn->addr, 
+				scope, delta, kind, type, size, name);
 				//r_anal_str_to_type (core->anal, p)
-				NULL, p3? atoi (p3): 0, p2);
+				//NULL, p3? atoi (p3): 0, p2);
 		} else var_help (*str);
 		break;
 	default:

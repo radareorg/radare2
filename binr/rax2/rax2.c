@@ -77,9 +77,8 @@ static int rax (char *str, int len, int last) {
 	ut8 *buf;
 	char *p, out_mode = (flags&128)? 'I': '0';
 	int i;
-	if (!(flags&4) || !len)
+	if (!(flags & 4) || !len)
 		len = strlen (str);
-
 	if ((flags & 4))
 		goto dotherax;
 	if (*str=='-') {
