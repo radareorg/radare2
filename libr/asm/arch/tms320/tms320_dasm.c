@@ -782,14 +782,20 @@ void decode_registers(tms320_dasm_t * dasm)
 			substitute(dasm->syntax, "[src,] dst", "src, dst");
 	}
 
-	if (field_valid(dasm, FSSS)) {
+	if (field_valid(dasm, FSSS) && field_valid(dasm, FDDD)) {
 		substitute(dasm->syntax, "src1", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
+		substitute(dasm->syntax, "src2", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
+
+		substitute(dasm->syntax, "dst1", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
+		substitute(dasm->syntax, "dst2", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
+	}
+
+	if (field_valid(dasm, FSSS)) {
 		substitute(dasm->syntax, "src", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
 		substitute(dasm->syntax, "TAy", "%s", get_freg_str(field_value(dasm, FSSS), NULL));
 	}
 
 	if (field_valid(dasm, FDDD)) {
-		substitute(dasm->syntax, "dst1", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 		substitute(dasm->syntax, "dst", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 		substitute(dasm->syntax, "TAx", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 	}
