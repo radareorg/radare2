@@ -237,7 +237,7 @@ static int rax (char *str, int len, int last) {
 
 static int use_stdin () {
 	static char buf[STDIN_BUFFER_SIZE];
-	int l, sflag = (flags & 4);
+	int l, sflag = (flags & 5);
 	for (l=0; l>=0; l++) {
 		int n = read (0, buf+l, sizeof (buf)-l);
 		if (n<1) break;
@@ -251,7 +251,7 @@ static int use_stdin () {
 			buf[strlen (buf)] = '\0';
 		else buf[strlen (buf)-1] = '\0';
 		if (!rax (buf, l, 0)) break;
-		l = 0;
+		l = -1;
 	}
 	if (l>0)
 		rax (buf, l, 0);
