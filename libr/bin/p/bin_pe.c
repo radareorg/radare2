@@ -218,17 +218,13 @@ static int is_dot_net(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-	RList* imports_list = imports (arch);
+	const RList* imports_list = imports (arch);
 	RListIter *iter;
 	RBinImport *import;
 	// TODO: use O(1) when imports sdbized
-	r_list_foreach (imports_list, iter, import) {
-		if (!strcmp (import->name, "__security_init_cookie") ) {
-			r_list_free (imports_list);
+	r_list_foreach (imports_list, iter, import)
+		if (!strcmp (import->name, "__security_init_cookie"))
 			return 1;
-		}
-	}
-	r_list_free (imports_list);
 	return 0;
 }
 
