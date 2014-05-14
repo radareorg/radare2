@@ -79,14 +79,14 @@ R_API void r_num_free(RNum *num) {
 
 R_API char *r_num_units(char *buf, ut64 num) {
 	char unit;
-	double fnum;
+	double fnum = num;
 	if (!buf) buf = malloc (32);
 	//if (num>TB) { unit = 'T'; fnum = num/TB; } else
-	if (num>GB) { unit = 'G'; fnum = num/GB; } else
-	if (num>MB) { unit = 'M'; fnum = num/MB; } else
-	if (num>KB) { unit = 'K'; fnum = num/KB; } else
+	if (num>GB) { unit = 'G'; fnum = fnum/GB; } else
+	if (num>MB) { unit = 'M'; fnum = fnum/MB; } else
+	if (num>KB) { unit = 'K'; fnum = fnum/KB; } else
 		{ unit = 0; fnum = num; }
-	snprintf (buf, 32, "%.1f%c", fnum, unit);
+	snprintf (buf, 31, "%.1f%c", fnum, unit);
 	return buf;
 }
 

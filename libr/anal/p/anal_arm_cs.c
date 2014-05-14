@@ -14,7 +14,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		cs_open (CS_ARCH_ARM, mode, &handle);
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	op->type = R_ANAL_OP_TYPE_NULL;
-	op->size = 0;
+	op->size = (a->bits==16)? 2: 4;
 	op->delay = 0;
 	if (ret == CS_ERR_OK) {
 		n = cs_disasm_ex (handle, (ut8*)buf, len, addr, 1, &insn);
@@ -23,8 +23,28 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else {
 			op->size = insn->size;
 			switch (insn->id) {
+			case ARM_INS_POP:
+				if (cs_reg_read (handle, insn, ARM_REG_PC)) {
+					op->type = R_ANAL_OP_TYPE_RET;
+				} else {
+					op->type = R_ANAL_OP_TYPE_POP;
+				}
+				break;
+			case ARM_INS_SUB:
+				op->type = R_ANAL_OP_TYPE_SUB;
+				break;
 			case ARM_INS_ADD:
 				op->type = R_ANAL_OP_TYPE_ADD;
+				break;
+			case ARM_INS_MOV:
+			case ARM_INS_MOVS:
+			case ARM_INS_MOVT:
+			case ARM_INS_MOVW:
+			case ARM_INS_VMOVL:
+			case ARM_INS_VMOVN:
+			case ARM_INS_VQMOVUN:
+			case ARM_INS_VQMOVN:
+				op->type = R_ANAL_OP_TYPE_MOV;
 				break;
 			case ARM_INS_TST:
 				op->type = R_ANAL_OP_TYPE_CMP;
@@ -36,8 +56,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case ARM_INS_PUSH:
 			case ARM_INS_STR:
-			case ARM_INS_POP:
+			//case ARM_INS_POP:
 			case ARM_INS_LDR:
+				op->type = R_ANAL_OP_TYPE_LOAD;
 				break;
 			case ARM_INS_BL:
 			case ARM_INS_BLX:

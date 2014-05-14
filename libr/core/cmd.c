@@ -1355,7 +1355,7 @@ repeat_arroba:
 			goto next_arroba; //ignore; //return ret;
 		}
 ignore:
-		for (ptr++;*ptr== ' ';ptr++); ptr--;
+		for (ptr++; *ptr== ' '; ptr++); ptr--;
 		cmd = r_str_clean (cmd);
 		if (ptr2) {
 			if (strlen (ptr+1)==13 && strlen (ptr2+1)==6 && \
@@ -1385,7 +1385,7 @@ ignore:
 		}
 next_arroba:
 		if (arroba) {
-			ptr = arroba; //-3;
+			ptr = arroba;
 			arroba = NULL;
 			goto repeat_arroba;
 		}
@@ -1520,13 +1520,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				break;
 			str[i] = ch;
 			{
+				int flagspace = core->flags->space_idx;
 				/* for all flags in current flagspace */
 				// XXX: dont ask why, but this only works with _prev..
 				r_list_foreach_prev (core->flags->flags, iter, flag) {
 					if (r_cons_singleton()->breaked)
 						break;
 					/* filter per flag spaces */
-					if ((core->flags->space_idx != -1) && (flag->space != core->flags->space_idx))
+					if ((flagspace != -1) && (flag->space != flagspace))
 						continue;
 					if (r_str_glob (flag->name, word)) {
 						r_core_seek (core, flag->offset, 1);
@@ -1537,7 +1538,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 				}
 				r_cons_break (NULL, NULL);
-
+				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
 				free (word);
 				word = NULL;
