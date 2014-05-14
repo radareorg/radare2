@@ -376,7 +376,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	RIO *io = iob ? iob->get_io(iob) : NULL;
 	RBinFile *bf = NULL;
 	ut8* buf_bytes = NULL;
-	ut64 sz = 0;
+	ut64 len_bytes, sz = UT64_MAX;
 
 	if (!io) return R_FALSE;
 	RList *the_obj_list;
@@ -395,8 +395,26 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	buf_bytes = NULL;
 
 	sz = iob->desc_size (io, desc);
-	if (sz == UT64_MAX || sz>(64*1024*1024)) // too big, probably wrong
+	if (sz == UT64_MAX && desc->plugin && desc->plugin->debug ) {
+		// attempt a local open and read
+		// This happens when a plugin like debugger does not have a fixed size.
+		// if there is no fixed size or its MAXED, there is no way to definitively
+		// load the bin-properly.  Many of the plugins require all content and are not
+		// stream based loaders
+		RIODesc *tdesc = iob->desc_open (io, desc->name, desc->flags, R_IO_READ);
+		if (!tdesc) return R_FALSE;
+		sz = iob->desc_size (io, tdesc);
+		if (sz == UT64_MAX) {
+			iob->desc_close (io, tdesc);
+			return R_FALSE;
+		}
+		buf_bytes = iob->desc_read (io, tdesc, &len_bytes);
+		iob->desc_close (io, tdesc);
+	} else if (sz == UT64_MAX || sz>(64*1024*1024)) {// too big, probably wrong
 		return R_FALSE;
+	} else {
+		buf_bytes = iob->desc_read (io, desc, &len_bytes);
+	}
 
 	buf_bytes = iob->desc_read (io, desc, &sz);
 	if (!buf_bytes) {
@@ -443,13 +461,25 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 	buf_bytes = NULL;
 
 	sz = iob->desc_size (io, desc);
-	if (sz == UT64_MAX || sz>(64*1024*1024)) // too big, probably wrong
+	if (sz == UT64_MAX && desc->plugin && desc->plugin->debug ) {
+		// attempt a local open and read
+		// This happens when a plugin like debugger does not have a fixed size.
+		// if there is no fixed size or its MAXED, there is no way to definitively
+		// load the bin-properly.  Many of the plugins require all content and are not
+		// stream based loaders
+		RIODesc *tdesc = iob->desc_open (io, desc->name, desc->flags, R_IO_READ);
+		if (!tdesc) return R_FALSE;
+		sz = iob->desc_size (io, tdesc);
+		if (sz == UT64_MAX) {
+			iob->desc_close (io, tdesc);
+			return R_FALSE;
+		}
+		buf_bytes = iob->desc_read (io, tdesc, &len_bytes);
+		iob->desc_close (io, tdesc);
+	} else if (sz == UT64_MAX || sz>(64*1024*1024)) {// too big, probably wrong
 		return R_FALSE;
-
-	buf_bytes = iob->desc_read (io, desc, &len_bytes);
-	if (!buf_bytes || offset >= sz) {
-		free (buf_bytes);
-		return R_FALSE;
+	} else {
+		buf_bytes = iob->desc_read (io, desc, &len_bytes);
 	}
 
 	if (!name) {
