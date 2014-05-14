@@ -1732,8 +1732,10 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 			ptr = strstr (cmdline, "Tgid:");
 			if (ptr) {
 				int tgid = atoi (ptr+5);
-				if (tgid != pid)
+				if (tgid != pid) {
+					close (fd);
 					continue;
+				}
 				read (fd, cmdline, sizeof (cmdline)-1);
 				snprintf (cmdline, sizeof (cmdline), "thread_%d", thid++);
 				cmdline[sizeof (cmdline)-1] = '\0';
