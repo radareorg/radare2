@@ -476,8 +476,10 @@ static int cmd_search(void *data, const char *input) {
 		{
 			int ps = atoi (input+1);
 			if (ps>1) {
+				r_cons_break (NULL, NULL);
 				r_search_pattern_size (core->search, ps);
 				r_search_pattern (core->search, from, to);
+				r_cons_break_end ();
 			} else eprintf ("Invalid pattern size (must be >0)\n");
 		}
 		break;

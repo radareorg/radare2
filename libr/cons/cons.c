@@ -16,6 +16,7 @@ static RCons r_cons_instance;
 
 static void break_signal(int sig) {
 	I.breaked = R_TRUE;
+	r_print_set_interrupted (I.breaked);
 	if (I.event_interrupt)
 		I.event_interrupt (I.data);
 }
@@ -116,6 +117,7 @@ R_API void r_cons_break(void (*cb)(void *u), void *user) {
 
 R_API void r_cons_break_end() {
 	I.breaked = R_FALSE;
+	r_print_set_interrupted (I.breaked);
 #if __UNIX__
 	signal (SIGINT, SIG_IGN);
 #endif

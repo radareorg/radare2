@@ -58,7 +58,7 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 	int patlen = s->pattern_size;
 	fnditem* root;
 
-eprintf ("Searching patterns between 0x%llx and 0x%llx\n", from, to);
+	eprintf ("Searching patterns between 0x%llx and 0x%llx\n", from, to);
 	if (patlen < 1 || patlen > MAX_PATLEN) {
 		eprintf ("Invalid pattern length (must be > 1 and < %d)\n", MAX_PATLEN);
 		return R_FALSE;
@@ -74,6 +74,9 @@ eprintf ("Searching patterns between 0x%llx and 0x%llx\n", from, to);
 // bproc = from2
 	while (bact < bytes) {
 		addr = bact;
+		if (r_print_is_interrupted ()) {
+			break;
+		}
 
 		bproc = bact + patlen ;
 //		read ( fd, sblk, patlen );

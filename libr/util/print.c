@@ -6,6 +6,15 @@
 #include "r_util.h"
 
 static int nullprinter(const char* a, ...) { return 0; }
+static int IsInterrupted = 0;
+
+R_API int r_print_is_interrupted() {
+	return IsInterrupted;
+}
+
+R_API void r_print_set_interrupted(int i) {
+	IsInterrupted = i;
+}
 
 R_API int r_print_mute(RPrint *p, int x) {
 	if (x) {
