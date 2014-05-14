@@ -84,6 +84,20 @@ R_API int r_core_search_preludes(RCore *core) {
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	searchhits ++ ;///= kw->count+1;
+	ut64 base_addr = 0;
+
+	if (!core) {
+		eprintf ("Error: Callback has an invalid RCore.\n");
+		return R_FALSE;
+	}
+
+	// XXX - Need to sort out what the value will be,
+	// I (dso) think it should *always* physical offset in r2/file
+	if (r_config_get_i (core->config, "io.va")) {
+		addr = addr + r_config_get_i (core->config, "bin.baddr");
+		// XXX - this fails to work? why?
+		//addr = r_io_section_offset_to_vaddr (core->io, addr);
+	}
 	if (searchcount) {
 		if (!--searchcount) {
 			//eprintf ("\nsearch stop: search.count reached\n");
@@ -116,7 +130,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		}
 		r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
-			addr, searchprefix, kw->kwidx, kw->count, str);
+			base_addr + addr, searchprefix, kw->kwidx, kw->count, str);
 
 		free (buf);
 		free (str);
