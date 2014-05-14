@@ -17,12 +17,13 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
+	struct MACH0_(r_bin_mach0_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = MACH0_(r_bin_mach0_new_buf) (tbuf);
+	sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -40,7 +41,8 @@ static int load(RBinFile *arch) {
 	}
 	arch->o->bin_obj = res;
 	struct MACH0_(r_bin_mach0_obj_t) *mo = arch->o->bin_obj;
-	arch->o->kv = mo->kv;
+	arch->o->kv = mo->kv; // NOP
+	sdb_ns_set (arch->sdb, "info", mo->kv);
 	return R_TRUE;
 }
 
@@ -261,6 +263,7 @@ static RBinInfo* info(RBinFile *arch) {
 		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
+	ret->has_crypto = ((struct MACH0_(r_bin_mach0_obj_t)*)arch->o->bin_obj)->has_crypto;
 	ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
 	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
 	/* TODO detailed debug info */

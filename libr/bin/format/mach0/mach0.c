@@ -296,6 +296,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	int i, len;
 
 	bin->os = 0;
+	bin->has_crypto = 0;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
@@ -344,7 +345,30 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			//eprintf ("[mach0] Requires iOS >= x\n");
 			break;
 		case LC_UUID:
-			//eprintf ("[mach0] UUID\n");
+			if (0) {
+			struct uuid_command uc = {0};
+			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
+				static int uuidn = 0;
+				char key[128];
+				char val[128];
+				snprintf (key, sizeof (key)-1, "uuid.%d", uuidn++);
+				r_hex_bin2str (&uc.uuid, 16, val);
+				sdb_set (bin->kv, key, val, 0);
+				//for (i=0;i<16; i++) eprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
+			}
+			}
+			break;
+		case LC_ENCRYPTION_INFO:
+			{
+			struct encryption_info_command eic = {0};
+			if (r_buf_fread_at (bin->b, off, (ut8*)&eic,
+					bin->endian?"5I":"5i", 1) != -1) {
+				bin->has_crypto = 1;
+				sdb_set (bin->kv, "crypto", "true", 0);
+				sdb_num_set (bin->kv, "cryptid", eic.cryptid, 0);
+				sdb_num_set (bin->kv, "cryptoff", eic.cryptoff, 0);
+				sdb_num_set (bin->kv, "cryptsize", eic.cryptsize, 0);
+			} }
 			break;
 		case LC_LOAD_DYLINKER:
 			//eprintf ("[mach0] load dynamic linker\n");

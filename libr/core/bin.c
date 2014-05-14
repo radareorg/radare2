@@ -206,6 +206,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"pic\":%s,"
 			"\"canary\":%s,"
 			"\"nx\":%s,"
+			"\"crypto\":%s,"
 			"\"va\":%s,"
 			"\"bits\":%d,"
 			"\"stripped\":%s,"
@@ -223,6 +224,7 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool (info->has_pi),
 			r_str_bool (info->has_canary),
 			r_str_bool (info->has_nx),
+			r_str_bool (info->has_crypto),
 			r_str_bool (info->has_va),
 			info->bits,
 			r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
@@ -284,6 +286,7 @@ static int bin_info (RCore *r, int mode) {
 					"pic\t%s\n"
 					"canary\t%s\n"
 					"nx\t%s\n"
+					"crypto\t%s\n"
 					"has_va\t%s\n"
 					"root\t%s\n"
 					"class\t%s\n"
@@ -304,6 +307,7 @@ static int bin_info (RCore *r, int mode) {
 					r_str_bool (info->has_pi),
 					r_str_bool (info->has_canary),
 					r_str_bool (info->has_nx),
+					r_str_bool (info->has_crypto),
 					r_str_bool (info->has_va),
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,

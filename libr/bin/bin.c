@@ -343,7 +343,6 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	return R_TRUE;
 }
 
-
 // XXX - this is a rather hacky way to do things, there may need to be a better way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
 // ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr, xtr_idx, fd, rawstr, 0, file);
@@ -761,8 +760,10 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	if (sz == 0 || sz > bytes_sz) return NULL;
 	o = R_NEW0 (RBinObject);
 	o->obj_size = bytes && (bytes_sz >= sz+offset) ? sz : 0;
+	o->kv = sdb_new0 ();
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
+	o->kv = sdb_new0 ();
 
 	// XXX more checking will be needed here
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
@@ -772,10 +773,11 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		// switching out the current object for the new 
 		// one to be processed
 		RBinObject *old_o = binfile->o;
-
 		binfile->o = o;
-		plugin->load (binfile);
-		binfile->o = old_o;
+		if (plugin->load (binfile)) {
+			binfile->sdb_info = sdb_ns_set (binfile->sdb,
+				"info", o->kv);
+		} else binfile->o = old_o;
 		o->obj_size = sz;
 	} else {
 		free (o);
@@ -933,8 +935,6 @@ R_API void* r_bin_free(RBin *bin) {
 	r_list_free (bin->plugins);
 	sdb_free (bin->sdb);
 	free (bin);
-
-
 	return NULL;
 }
 
@@ -1001,36 +1001,31 @@ R_API RList* r_bin_get_fields(RBin *bin) {
 
 R_API RList* r_bin_get_imports(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->imports;
+	if (o) return o->imports;
 	return NULL;
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (!o)
-		return NULL;
+	if (!o) return NULL;
 	return o->info;
 }
 
 R_API RList* r_bin_get_libs(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->libs;
+	if (o) return o->libs;
 	return NULL;
 }
 
 R_API RList* r_bin_get_relocs(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->relocs;
+	if (o) return o->relocs;
 	return NULL;
 }
 
 R_API RList* r_bin_get_sections(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->sections;
+	if (o) return o->sections;
 	return NULL;
 }
 

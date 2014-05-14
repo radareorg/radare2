@@ -476,6 +476,10 @@ static void update_sdb(RCore *core) {
 	// TODO: sdb_hook should work across namespaces?
 	// HOOK!
 	sdb_ns_set (DB, "bin", core->bin->sdb);
+	RBinObject *o = r_bin_get_object (core->bin);
+	if (o) {
+		sdb_ns_set (sdb_ns (DB, "bin"), "info", o->kv);
+	}
 	sdb_ns_set (DB, "anal", core->anal->sdb);
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);

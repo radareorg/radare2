@@ -91,10 +91,18 @@ typedef struct r_bin_info_t {
 	int has_va;
 	int has_pi; // pic/pie
 	int has_canary;
+	int has_crypto;
 	int has_nx;
 	int big_endian;
 	ut64 dbg_info;
 	RBinHash sum[3];
+#if 0
+// stored in sdb
+	/* crypto (iOS bins) */
+	int crypt_offset;
+	int crypt_size;
+	int crypt_enabled;
+#endif
 } RBinInfo;
 
 typedef struct r_bin_object_t {
@@ -141,6 +149,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_plugin_t *curplugin;
 	RList *objs;
 	Sdb *sdb;
+	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	struct r_bin_t *rbin;
 } RBinFile;

@@ -96,6 +96,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	RBuffer* b;
 	int os;
 	Sdb *kv;
+	int has_crypto;
 };
 
 struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file);
