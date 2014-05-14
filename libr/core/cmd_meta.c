@@ -124,7 +124,7 @@ static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
 
 static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
-	ut64 offset;
+	ut64 offset = 0xffffffffffffffff; // use this as error value
 	int remove = R_FALSE;
 	int all = R_FALSE;
 	const char *p = input;
@@ -214,12 +214,15 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		}
 	}
 
-	if (remove) {
-		remove_meta_offset (core, offset);
+	if (offset != 0xffffffffffffffff) {
+		if (remove) {
+			remove_meta_offset (core, offset);
+		} else {
+			print_meta_offset (core, offset);
+		}
 	} else {
-		print_meta_offset (core, offset);
+		goto error;
 	}
-
 	return 0;
 
 error:
