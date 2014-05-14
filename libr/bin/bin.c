@@ -835,6 +835,7 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 		binfile->sdb = sdb_ns (sdb, fdkey);
 		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo");
 		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0);
+		sdb_ns_set (sdb, "cur", binfile->sdb);
 	}
 	return binfile;
 

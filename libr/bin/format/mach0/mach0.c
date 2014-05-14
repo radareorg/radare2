@@ -345,7 +345,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			//eprintf ("[mach0] Requires iOS >= x\n");
 			break;
 		case LC_UUID:
-			if (0) {
+			{
 			struct uuid_command uc = {0};
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
 				static int uuidn = 0;
