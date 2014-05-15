@@ -295,6 +295,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	ut64 off = 0LL;
 	int i, len;
 
+	bin->uuidn = 0;
 	bin->os = 0;
 	bin->has_crypto = 0;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
@@ -348,10 +349,9 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			{
 			struct uuid_command uc = {0};
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
-				static int uuidn = 0;
 				char key[128];
 				char val[128];
-				snprintf (key, sizeof (key)-1, "uuid.%d", uuidn++);
+				snprintf (key, sizeof (key)-1, "uuid.%d", bin->uuidn++);
 				r_hex_bin2str (&uc.uuid, 16, val);
 				sdb_set (bin->kv, key, val, 0);
 				//for (i=0;i<16; i++) eprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');

@@ -1,5 +1,5 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
-
+/* radare - LGPL - Copyright 2009-2014 - pancake */ 
+#if 0
 static void filter_line(char *line) {
 	char *a;
 
@@ -21,6 +21,7 @@ static void filter_line(char *line) {
 		}
 	}
 }
+#endif
 
 static int remove_meta_offset(RCore *core, ut64 offset) {
 	int ret;

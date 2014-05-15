@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2014 - pancake, nibble */
 
 #include <r_bin.h>
 #include <r_types.h>
@@ -97,6 +97,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	int os;
 	Sdb *kv;
 	int has_crypto;
+	int uuidn;
 };
 
 struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file);

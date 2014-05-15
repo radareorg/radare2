@@ -122,9 +122,7 @@ ifeq ($(CS_TAR),)
 capstone: capstone-sync
 
 capstone-sync:
-	if [ -d capstone ]; then \
-		( cd capstone ; git pull ) ; \
-	else \
+	if [ ! -d capstone ]; then \
 		git clone $(CS_URL) ; \
 	fi
 	cd capstone ; \

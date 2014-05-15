@@ -471,9 +471,9 @@ typedef struct dis_buffer dis_buffer_t;
 #else
 #define IS_INST(inst,val) ((inst/**/_MASK & (val)) == inst/**/_INST)
 #endif
-#define PRINT_FPREG(dbuf, reg) addstr(dbuf, fpregs[reg])
-#define PRINT_DREG(dbuf, reg) addstr(dbuf, dregs[reg])
-#define PRINT_AREG(dbuf, reg) addstr(dbuf, aregs[reg])
+#define PRINT_FPREG(dbuf, reg) addstr(dbuf, reg<8?fpregs[reg]:"f?")
+#define PRINT_DREG(dbuf, reg) addstr(dbuf, reg<8?dregs[reg]:"d?")
+#define PRINT_AREG(dbuf, reg) addstr(dbuf, reg<8?aregs[reg]:"a?")
 
 #undef NBBY
 #define NBBY 256  /*@@@*/
