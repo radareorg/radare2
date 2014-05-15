@@ -669,7 +669,7 @@ void decode_constants(tms320_dasm_t * dasm)
 	// immediate shift value
 
 	if (field_valid(dasm, SHFT))
-		substitute(dasm->syntax, "#SHFT", "0x%01Xh", field_value(dasm, SHFT));
+		substitute(dasm->syntax, "#SHFT", "0x%01X", field_value(dasm, SHFT));
 	if (field_valid(dasm, SHIFTW))
 		substitute(dasm->syntax, "#SHIFTW", "0x%02X", field_value(dasm, SHIFTW));
 }
