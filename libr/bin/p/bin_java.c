@@ -78,7 +78,7 @@ static int load(RBinFile *arch) {
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
  	struct r_bin_java_obj_t* bin_obj = NULL;
 
- 	if (!arch->o) return R_FALSE;
+ 	if (!arch || !arch->o) return R_FALSE;
 
 	bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
 
