@@ -539,14 +539,14 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				continue;
 			}
 		}
-		at = fcn->addr;
+		//at = fcn->addr;
 		 {
-			RFlagItem *f = r_flag_get_i (core->flags, at);
+			RFlagItem *f = r_flag_get_i (core->flags, fcn->addr);
 			free (fcn->name);
 			if (f) {
 				fcn->name = strdup (f->name);
 			} else {
-				fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 			}
 		 }
 // HACK
