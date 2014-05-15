@@ -91,13 +91,6 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		return R_FALSE;
 	}
 
-	// XXX - Need to sort out what the value will be,
-	// I (dso) think it should *always* physical offset in r2/file
-	if (r_config_get_i (core->config, "io.va")) {
-		addr = addr + r_config_get_i (core->config, "bin.baddr");
-		// XXX - this fails to work? why?
-		//addr = r_io_section_offset_to_vaddr (core->io, addr);
-	}
 	if (searchcount) {
 		if (!--searchcount) {
 			//eprintf ("\nsearch stop: search.count reached\n");
