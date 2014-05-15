@@ -91,7 +91,8 @@ const char* ud_reg_tab[] =
 uint64_t
 ud_syn_rel_target(struct ud *u, struct ud_operand *opr)
 {
-  const uint64_t trunc_mask = 0xffffffffffffffffull >> (64 - u->opr_mode);
+  uint64_t trunc_mask = 0xffffffffffffffffull;
+  if (u->dis_mode != 64) trunc_mask >>= (64 - u->opr_mode);
   switch (opr->size) {
   case 8 : return (u->pc + opr->lval.sbyte)  & trunc_mask;
   case 16: {

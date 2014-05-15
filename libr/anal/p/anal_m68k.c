@@ -31,18 +31,16 @@ static int instlen(const ut8 *buf, int len) {
 
 static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	int sz = 2;
-
 	if (op == NULL)
 		return sz;
-
-	memset (op, '\0', sizeof (RAnalOp));
+	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->nopcode = 1;
 	sz = instlen (b, len);
 	op->size = sz;
 // TODO: Use disasm string to detect type?
 
-	switch(b[0] &0xf0) {
+	switch (b[0] &0xf0) {
 	case 0xB0:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
@@ -105,7 +103,6 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	case 0x9D:
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
-
 	case 0x06:
 	case 0x50:
 	case 0x52:
@@ -115,13 +112,11 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	case 0xD3:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
-
 	case 0x0c:
 	case 0xB0:
 	case 0xB8:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
-
 	case 0x41:
 	case 0x43:
 	case 0x45:
@@ -129,12 +124,10 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	case 0x4D:
 		op->type = R_ANAL_OP_TYPE_LEA;
 		break;
-
 	case 0x02:
 	case 0xC0:
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
-
 	case 0x03:
 	case 0x10:
 	case 0x12:
@@ -167,7 +160,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_m68k = {
+RAnalPlugin r_anal_plugin_m68k = {
 	.name = "m68k",
 	.desc = "Motorola 68000",
 	.license = "LGPL3",
