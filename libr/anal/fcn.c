@@ -154,7 +154,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	char *varname;
 	RAnalOp op = {0};
 	int oplen, idx = 0;
-	int delay_cnt, delay_idx, delay_next, delay_done = 0;
+	int delay_cnt = 0, delay_idx = 0, delay_next = 0, delay_done = 0;
 // add basic block
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
