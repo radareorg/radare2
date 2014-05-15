@@ -138,14 +138,10 @@ r_8051_op r_8051_decode(const ut8 *buf, int len) {
 		switch (op) {
 		case 0x04: length = 1; opstr = "inc a"; argstr=""; break;
 		case 0x14: length = 1; opstr = "dec a"; break;
-		case 0x78: length = 2; break;
-		case 0xaa: length = 2; break;
-		case 0x77: length = 2; break;
-		case 0x7f: length = 2; break;
-		case 0xa4: opstr = "mul ab"; break;
-		case 0xa5: opstr = "reserved"; break;
    // XXX: 75 opcode is wrong
 		case 0x75: opstr = "mov $1, #RAM_D0"; argstr=""; length = 3; break;
+		case 0xa4: opstr = "mul ab"; break;
+		case 0xa5: opstr = "reserved"; break;
 		case 0xc4: opstr = "swap a"; break;
 		case 0xd4: opstr = "da a"; break;
 		case 0xd5: opstr = "djnz d, "; break;
@@ -159,7 +155,9 @@ r_8051_op r_8051_decode(const ut8 *buf, int len) {
 		if (op==0x06) length = 2;
 		else if (op==0x84) length = 1;
 		else if (op==0x85) length = 3;
-		else if (op==0x85) length = 3;
+		else if (op >= 0x86 && op <= 0x8f) length = 2;
+		else if (op >= 0xa6 && op <= 0xaf) length = 2;
+		else if (op >= 0x76 && op <= 0x7f) length = 2;
 		return _{ opstr, length, _ARG (argstr) };
 	}
 	return _{ "xxx", 0, 0 }; // XXX
