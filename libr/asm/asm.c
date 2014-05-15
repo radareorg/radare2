@@ -435,6 +435,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	if (!(acode->buf = malloc (64)))
 		return r_asm_code_free (acode);
 	lbuf = strdup (buf);
+	memset (&op, 0, sizeof (op));
 
 	/* accept ';' as comments when input is multiline */
 	{
