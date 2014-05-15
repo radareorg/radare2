@@ -34,7 +34,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	if (op == NULL)
 		return sz;
 	memset (op, 0, sizeof (RAnalOp));
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_NULL;
 	op->nopcode = 1;
 	sz = instlen (b, len);
 	op->size = sz;
