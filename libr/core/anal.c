@@ -502,9 +502,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
 	}
-fcn->addr = at;
-fcn->size = 0;
-fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+	fcn->addr = at;
+	fcn->size = 0;
+	fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 	if (!(buf = malloc (ANALBS))) { //core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -539,6 +539,16 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 				continue;
 			}
 		}
+		at = fcn->addr;
+		 {
+			RFlagItem *f = r_flag_get_i (core->flags, at);
+			free (fcn->name);
+			if (f) {
+				fcn->name = strdup (f->name);
+			} else {
+				fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+			}
+		 }
 // HACK
 		//r_anal_fcn_insert (core->anal, fcn);
 		if (fcnlen == R_ANAL_RET_ERROR ||
