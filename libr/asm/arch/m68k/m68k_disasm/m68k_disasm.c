@@ -1051,9 +1051,10 @@ static void opcode_1110(dis_buffer_t *dbuf, u_short opc)
     addchar('{');
 
     bf = BITFIELD(ext,10,6);
-    if (ISBITSET(ext, 11)) 
-      PRINT_DREG(dbuf, bf);
-    else      
+    if (ISBITSET(ext, 11)) {
+      if (bf<8)
+        PRINT_DREG(dbuf, bf);
+    } else
       printu_wb(dbuf, bf, SIZE_BYTE, 10);
     
     addchar(':');
