@@ -826,6 +826,8 @@ static void struct_decl(CType *type, int u)
     CType type1, btype;
 	const char *name = NULL;
 
+	memset (&type1, 0, sizeof (type1));
+
     a = tok; /* save decl type */
     next();
 	name = get_tok_str (tok, NULL);
