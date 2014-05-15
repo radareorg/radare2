@@ -139,7 +139,7 @@ static RList* sections(RBinFile *arch) {
 				ut64 align = phdr[i].p_align;
 				if (!align) align = 0x1000;
 				memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, align);
-				vaddr -= obj->baddr; // yeah
+				//vaddr -= obj->baddr; // yeah
 				if (!(ptr = R_NEW0 (RBinSection)))
 					return ret;
 				sprintf (ptr->name, "phdr%d", n);

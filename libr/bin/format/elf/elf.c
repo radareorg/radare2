@@ -907,8 +907,8 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 			return NULL;
 		}
 		ret[i].offset = bin->shdr[i].sh_offset;
-		ret[i].rva = bin->shdr[i].sh_addr > bin->baddr?
-		bin->shdr[i].sh_addr-bin->baddr: bin->shdr[i].sh_addr;
+		ret[i].rva = bin->shdr[i].sh_addr;//bin->shdr[i].sh_addr > bin->baddr?
+		//bin->shdr[i].sh_addr-bin->baddr: bin->shdr[i].sh_addr;
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;
@@ -931,6 +931,7 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		}
 		ret[i].name[sizeof (ret[i].name)-2] = 0;
 		ret[i].last = 0;
+		//eprintf ("%d) %s Sh_addr: 0x%04x, bin_base: 0x%04x, base_addr - bin_shdr: 0x%04x\n", i, ret[i].name, bin->shdr[i].sh_addr, bin->baddr, bin->shdr[i].sh_addr-bin->baddr);
 	}
 	ret[i].last = 1;
 	return ret;
