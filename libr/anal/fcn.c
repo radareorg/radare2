@@ -220,7 +220,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				continue;
 			} else {
 				idx = delay_next;
-				delay_idx, delay_cnt, delay_done = 0;
+				delay_idx = delay_cnt = delay_done = 0;
 			}
 		}
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
