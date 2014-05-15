@@ -158,6 +158,7 @@ r_8051_op r_8051_decode(const ut8 *buf, int len) {
 		else if (op >= 0x86 && op <= 0x8f) length = 2;
 		else if (op >= 0xa6 && op <= 0xaf) length = 2;
 		else if (op >= 0x76 && op <= 0x7f) length = 2;
+		else if (op >= 0xb4 && op <= 0xbf) length = 3;
 		return _{ opstr, length, _ARG (argstr) };
 	}
 	return _{ "xxx", 0, 0 }; // XXX
