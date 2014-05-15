@@ -119,6 +119,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						free (hits);
+						hits = NULL;
 						goto beach;
 					}
 					hit->addr = at+tidx;
