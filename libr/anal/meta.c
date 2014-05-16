@@ -159,6 +159,11 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 		return R_FALSE;
 	if (from == to)
 		to = from+1;
+	if (type == 100) {
+		if ((to-from)<3) {
+			return R_FALSE;
+		}
+	}
 	/* set entry */
 	e_str = sdb_encode ((const void*)str, -1);
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, from);
@@ -239,7 +244,8 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 					r_meta_type_to_string (d->type), pstr, d->from);
 			} else {
 				a->printf ("%s %d 0x%08"PFMT64x" # %s\n",
-					r_meta_type_to_string (d->type), d->size, d->from, pstr);
+					r_meta_type_to_string (d->type),
+					d->size, d->from, pstr);
 			}
 			break;
 		}
