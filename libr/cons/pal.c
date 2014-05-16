@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_cons.h>
 
@@ -34,6 +34,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.trap = Color_BRED;
 	cons->pal.ret = Color_RED;
 	cons->pal.num = Color_YELLOW;
+	cons->pal.mov = Color_WHITE;
 	cons->pal.reg = Color_CYAN;
 	cons->pal.reset = Color_RESET;
 }
@@ -144,6 +145,7 @@ static struct {
 	{ "cmp", r_offsetof (RConsPalette, cmp) },
 	{ "reg", r_offsetof (RConsPalette, reg) },
 	{ "num", r_offsetof (RConsPalette, num) },
+	{ "mov", r_offsetof (RConsPalette, mov) },
 	{ NULL, 0 }
 };
 

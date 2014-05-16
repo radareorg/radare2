@@ -46,13 +46,12 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 }
 
 R_API int r_core_bin_set_cur (RCore *core, RBinFile *binfile) {
-	RBinInfo *info = NULL;
-
 	if (!core->bin) return R_FALSE;
 	if (!binfile) {
 		// Find first available binfile
 		ut32 fd = r_core_file_cur_fd (core);
-		binfile = fd != (ut32) -1 ?  r_bin_file_find_by_fd (core->bin, fd) : NULL;
+		binfile = fd != (ut32) -1 ?  r_bin_file_find_by_fd (
+			core->bin, fd) : NULL;
 		if (!binfile) return R_FALSE;
 	}
 	r_bin_file_set_cur_binfile (core->bin, binfile);
@@ -769,7 +768,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 					r_meta_add (r->anal, R_META_TYPE_DATA, addr,
                                             addr + symbol->size, name);
 
-			dname = r_bin_demangle (r->bin, symbol->name);
+			dname = r_bin_demangle (r->bin->cur, symbol->name);
 			if (dname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
 						addr, symbol->size, dname);
@@ -795,7 +794,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 					r_cons_printf ("%s\n", symbol->name);
 			} else {
 				if (mode) {
-					char *mn = r_bin_demangle (r->bin, symbol->name);
+					char *mn = r_bin_demangle (r->bin->cur, symbol->name);
 					if (mn) {
 						//r_name_filter (mn, strlen (mn));
 						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
@@ -1170,7 +1169,6 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RBinFile *nbinfile = NULL;
-	RBinObject *binobj = NULL;
 	int res = R_FALSE;
 	name = !name &&  cf ? cf->filename : name;
 	res = r_asm_is_valid (r->assembler, arch) == R_TRUE;

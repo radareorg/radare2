@@ -86,6 +86,7 @@ typedef struct r_cons_palette_t {
 	char *swi;
 	char *cmp;
 	char *num;
+	char *mov;
 	char *reg;
 	char *invalid;
 } RConsPalette;

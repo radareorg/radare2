@@ -732,10 +732,9 @@ R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx) {
 
 R_API int r_core_file_binlist(RCore *core) {
 	int count = 0;
-	RCoreFile *f;
 	RListIter *iter;
 	RCoreFile *cur_cf = core->file, *cf = NULL;
-	RBinFile *binfile = NULL; //, *cur_bf = r_core_bin_cur (core) ;
+	RBinFile *binfile = NULL;
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
@@ -746,9 +745,9 @@ R_API int r_core_file_binlist(RCore *core) {
 		cf = r_core_file_get_by_fd (core, fd);
 		if (cf && cf->map) {
 			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
-				core->io->raised == f->fd->fd?'*':'-',
-				fd, f->uri, f->map->from,
-				f->fd->flags & R_IO_WRITE? "rw": "r");
+				core->io->raised == cf->fd->fd?'*':'-',
+				fd, cf->uri, cf->map->from,
+				cf->fd->flags & R_IO_WRITE? "rw": "r");
 		}
 	}
 	r_core_file_set_by_file (core, cur_cf);

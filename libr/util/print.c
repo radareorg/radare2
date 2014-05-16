@@ -865,6 +865,9 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 		case R_ANAL_OP_TYPE_CRET:
 		case R_ANAL_OP_TYPE_RET:
 			return p->cons->pal.ret;
+		case R_ANAL_OP_TYPE_MOV:
+		case R_ANAL_OP_TYPE_LEA:
+			return p->cons->pal.mov;
 		case R_ANAL_OP_TYPE_PUSH:
 		case R_ANAL_OP_TYPE_UPUSH:
 		case R_ANAL_OP_TYPE_LOAD:

@@ -102,6 +102,7 @@ typedef struct r_disam_options_t {
 	const char *color_pop;
 	const char *color_reg;
 	const char *color_num;
+	const char *color_mov;
 	const char *color_invalid;
 
 	RAnalHint *hint;
@@ -149,7 +150,6 @@ static void handle_print_stackptr (RCore *core, RDisasmState *ds);
 static void handle_print_offset (RCore *core, RDisasmState *ds );
 static void handle_print_op_size (RCore *core, RDisasmState *ds);
 static void handle_print_trace (RCore *core, RDisasmState *ds);
-static void handle_colorize_opcode (RCore *core, RDisasmState *ds);
 static void handle_adistrick_comments (RCore *core, RDisasmState *ds);
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx );
 static void handle_print_opstr (RCore *core, RDisasmState *ds);
@@ -202,6 +202,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_pop = P(pop): Color_BYELLOW;
 	ds->color_reg = P(reg): Color_YELLOW;
 	ds->color_num = P(num): Color_YELLOW;
+	ds->color_mov = P(num): Color_WHITE;
 	ds->color_invalid = P(invalid): Color_BRED;
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
@@ -776,7 +777,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 				}
 				r_cons_strcat (ds->comment);
 #endif
-				if (ds->show_color) handle_print_color_reset(core, ds);
+				if (ds->show_color) handle_print_color_reset (core, ds);
 				r_cons_newline ();
 				free (ds->comment);
 				ds->comment = NULL;
@@ -788,7 +789,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 					r_cons_strcat ("  ;  ");
 					r_cons_strcat_justify (item->comment, mycols, ';');
 					r_cons_newline ();
-					if (ds->show_color) handle_print_color_reset(core, ds);
+					if (ds->show_color) handle_print_color_reset (core, ds);
 				}
 			}
 		}
@@ -1591,7 +1592,6 @@ toro:
 			goto retry;
 		}
 		handle_atabs_option (core, ds);
-		//handle_colorize_opcode (core, ds);
 		// TODO: store previous oplen in core->dec
 		if (core->inc == 0)
 			core->inc = ds->oplen;
@@ -1947,7 +1947,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_show_comments_right (core, ds);
 			ret = perform_disassembly (core, ds, buf+idx, len - bb_size_consumed);
 			handle_atabs_option (core, ds);
-			//handle_colorize_opcode (core, ds);
 			// TODO: store previous oplen in core->dec
 			if (core->inc == 0) core->inc = ds->oplen;
 
