@@ -296,13 +296,6 @@ static void r_bin_object_free (void /*RBinObject*/ *o_) {
 	RBinObject* o = o_;
 	if (!o) return;
 	r_bin_object_delete_items (o);
-
-	o->baddr = 0;
-	o->boffset = 0;
-	o->size = 0;
-
-
-	memset (o, 0, sizeof (RBinObject));
 	free (o);
 }
 // XXX - change this to RBinObject instead of RBinFile
@@ -1391,7 +1384,6 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 		}
 	}
-
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {

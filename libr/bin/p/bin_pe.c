@@ -88,8 +88,8 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
+	ut64 ba = baddr (arch);
 	int i;
-
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
@@ -102,7 +102,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->offset = sections[i].offset;
-		ptr->rva = sections[i].rva;
+		ptr->rva = sections[i].rva + ba;
 		ptr->srwx = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags))
 			ptr->srwx |= 0x1;
