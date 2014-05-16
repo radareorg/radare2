@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <stdio.h>
 
@@ -140,6 +140,10 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					continue;
 				}
 				*ptr = 0;
+				// hack to realign pointer
+				ptr2--;
+				if (*ptr2!=0x1b)
+					ptr2++;
 				snprintf (str, len, "%s%s%s", data, flag->name,
 					(ptr!=ptr2)? ptr2: "");
 				return R_TRUE;

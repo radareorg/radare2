@@ -764,9 +764,13 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 				r_flag_set (r->flags, str, addr, symbol->size, 0);
 			}
 
-			if (!strncmp (symbol->type, "OBJECT", 6))
-					r_meta_add (r->anal, R_META_TYPE_DATA, addr,
-                                            addr + symbol->size, name);
+#if 0
+			// dunno why this is here and mips results in wrong dis
+			if (!strncmp (symbol->type, "OBJECT", 6)) {
+				r_meta_add (r->anal, R_META_TYPE_DATA, addr,
+					addr + symbol->size, name);
+			}
+#endif
 
 			dname = r_bin_demangle (r->bin->cur, symbol->name);
 			if (dname) {

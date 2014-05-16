@@ -363,11 +363,15 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 				core->parser->flagspace = -1;
 			}
 		}
+#if 1
 		r_parse_filter (core->parser, core->flags,
 			ds->opstr? ds->opstr: asm_str, ds->str, sizeof (ds->str));
 		core->parser->flagspace = ofs;
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
+#else
+		ds->opstr = strdup (asm_str);
+#endif
 		core->parser->flagspace = ofs; // ???
 	} else {
 		if (!ds->opstr)

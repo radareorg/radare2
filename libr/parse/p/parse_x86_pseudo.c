@@ -163,7 +163,6 @@ static inline int issegoff (const char *w) {
 }
 #endif
 
-
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	strncpy (str, data, len);
 #if USE_VARSUBS
