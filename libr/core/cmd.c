@@ -684,7 +684,7 @@ static int cmd_eval(void *data, const char *input) {
 		case '?':
 			r_cons_printf ("|Usage: ec[s?] [key][[=| ]fg] [bg]\n"
 			"|  ec                list all color keys\n"
-			"|  ec*       (TODO)  same as above, but using r2 commands\n"
+			"|  ec*               same as above, but using r2 commands\n"
 			"|  ecd               set default palette\n"
 			"|  ecr               set random palette\n"
 			"|  ecs               show a colorful palette\n"
