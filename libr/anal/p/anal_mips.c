@@ -6,23 +6,27 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len) {
 	unsigned int opcode;
+	ut8 b[4];
 	// WIP char buf[10]; int reg;
 	int family, optype, oplen = (anal->bits==16)?2:4;
 
-        if (op == NULL)
+	if (op == NULL)
 		return oplen;
 
-        memset (op, 0, sizeof (RAnalOp));
-        op->type = R_ANAL_OP_TYPE_UNK;
+	memset (op, 0, sizeof (RAnalOp));
+	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
-	//r_mem_copyendian ((ut8*)&opcode, b, 4, !anal->big_endian);
-	memcpy (&opcode, b, 4);
 
-//eprintf ("%02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]);
+	// Reminder: r_mem_copyendian swaps if arg `endian` !=0 ...
+	// When anal->big_endian is "false", as for mipsel architecture, we NEED to swap here for the below analysis to work.
+	r_mem_copyendian ((ut8*)&opcode, b_in, 4, anal->big_endian ? 1 : 0);
+	r_mem_copyendian (b, b_in, 4, anal->big_endian ? 1 : 0);
+
+	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", b[0], b[1], b[2], b[3], anal->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
@@ -264,6 +268,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		break;
 	}
 #endif
+	//eprintf ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
 	return oplen;
 #if 0
  R - all instructions that only take registers as arguments (jalr, jr)
