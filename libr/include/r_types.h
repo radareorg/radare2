@@ -306,6 +306,7 @@ enum {
 	R_SYS_ARCH_EBC = 0x100000,
 	R_SYS_ARCH_H8300 = 0x8300,
 	R_SYS_ARCH_CR16 = 0xc160,
+	R_SYS_ARCH_V850 = 0x0850, //XXX fixme
 };
 
 /* os */
