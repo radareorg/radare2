@@ -21,7 +21,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
 
-	// Reminder: r_mem_copyendian swaps if arg `endian` !=0 ...
+	// Reminder: r_mem_copyendian swaps if arg `endian` ==0 ...
 	// When anal->big_endian is "false", as for mipsel architecture, we NEED to swap here for the below analysis to work.
 	r_mem_copyendian ((ut8*)&opcode, b_in, 4, anal->big_endian ? 1 : 0);
 	r_mem_copyendian (b, b_in, 4, anal->big_endian ? 1 : 0);
