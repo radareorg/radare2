@@ -9,7 +9,7 @@ R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line) 
 	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
 
 	if (cp && cp->dbginfo) {
-		if (addr >= o->baddr && addr < (o->baddr+bin->cur->o->size))
+		if (o && addr >= o->baddr && addr < (o->baddr+bin->cur->o->size))
 			if (cp->dbginfo->get_line)
 				return cp->dbginfo->get_line (bin->cur,
 					addr, file, len, line);
