@@ -135,7 +135,7 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type 
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		ptr->size = 0;
 		ptr->rva = symbols[i].rva;
 		ptr->offset = symbols[i].offset;
@@ -248,9 +248,14 @@ static int has_canary(RBinFile *arch) {
 	RListIter *iter;
 	RBinImport *import;
 	// TODO: use O(1) when imports sdbized
-	r_list_foreach (imports_list, iter, import)
-		if (!strcmp (import->name, "__security_init_cookie"))
-			return 1;
+	if (imports_list) {
+		r_list_foreach (imports_list, iter, import)
+			if (!strcmp (import->name, "__security_init_cookie")) {
+				r_list_free (imports_list);
+				return 1;
+			}
+		r_list_free (imports_list);
+	}
 	return 0;
 }
 
