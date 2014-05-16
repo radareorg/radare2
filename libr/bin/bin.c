@@ -768,7 +768,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		o->bin_obj = plugin->load_bytes (bytes+offset, sz, loadaddr, sdb);
 	} else if (binfile && plugin && plugin->load) {
 		// XXX - haha, this is a hack.
-		// switching out the current object for the new 
+		// switching out the current object for the new
 		// one to be processed
 		RBinObject *old_o = binfile->o;
 		binfile->o = o;
@@ -788,7 +788,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	// XXX - binfile could be null here meaning an improper load
 	r_bin_object_set_items (binfile, o);
 	r_bin_file_object_add (binfile, o);
-	// XXX this is a very hacky alternative to rewriting the 
+	// XXX this is a very hacky alternative to rewriting the
 	// RIO stuff, as discussed here:
 	if (o->sections) {
 		r_bin_object_set_sections (binfile, o);
@@ -1152,7 +1152,10 @@ R_API RBin* r_bin_new() {
 
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits, name);
-	RBinObject *obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
+	RBinObject *obj = NULL;
+	if (binfile) {
+		obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
+	}
 	return binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
 
