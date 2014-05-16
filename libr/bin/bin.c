@@ -1278,7 +1278,7 @@ R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	}
 
 	// lazy way out, always leaving at least 1 bin object loaded
-	if (r_list_length (binfile->objs) > 1) {
+	if (binfile && (r_list_length (binfile->objs) > 1)) {
 		binfile->o = NULL;
 		r_list_delete_data (binfile->objs, obj);
 		obj = (RBinObject *) r_list_get_n (binfile->objs, 0);
