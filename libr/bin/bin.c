@@ -653,13 +653,14 @@ static int r_bin_files_populate_from_xtrlist (RBinFile *binfile, ut64 baseaddr, 
 static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	RBinFile * bf = LOCAL_RBIN_ACCESS ? r_bin_file_find_by_name (LOCAL_RBIN_ACCESS, filename) : NULL;
 	if (!bf) {
+		if (!LOCAL_RBIN_ACCESS) return NULL;
 		bf = r_bin_file_create_append (LOCAL_RBIN_ACCESS, filename, bytes, sz, rawstr, fd, xtr->name);
 		if (!bf) return bf;
 	}
 	if (idx == 0 && xtr && xtr && bytes) {
 		RList *xtr_data_list = xtr->extractall_from_bytes (bytes, sz);
 		if (xtr_data_list){
-			if (!r_bin_files_populate_from_xtrlist (bf, baseaddr, loadaddr, xtr_data_list)) 
+			if (!r_bin_files_populate_from_xtrlist (bf, baseaddr, loadaddr, xtr_data_list))
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
 		}
 		r_list_free (xtr_data_list);
@@ -667,7 +668,7 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *fil
 		if (idx == 0) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bytes, sz, idx);
 		if (xtr_data){
-			if (r_bin_file_object_new_from_xtr_data (bf, baseaddr, loadaddr, xtr_data)) 
+			if (r_bin_file_object_new_from_xtr_data (bf, baseaddr, loadaddr, xtr_data))
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
 		}
 		r_bin_xtrdata_free (xtr_data);
