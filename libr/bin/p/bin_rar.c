@@ -69,7 +69,7 @@ static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr = NULL;
 	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (bin_obj->buf): 0;
+	ut64 sz = arch && bin_obj ? r_buf_size (bin_obj->buf) : 0;
 
 	if (!ret) return NULL;
 	ret->free = free;
