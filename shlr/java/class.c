@@ -7135,7 +7135,7 @@ static void U(add_cp_objs_to_sdb)( RBinJavaObj *bin){
 	key_buf_size = strlen(class_name) + 4 + 8 + 1;
 	key = malloc(key_buf_size);
 	if ( key == NULL) {
-		free (class_name);
+		if (free_class_name) free (class_name);
 		return;
 	}
 	snprintf(key, key_buf_size-1,"%s.cp_count" , class_name);
