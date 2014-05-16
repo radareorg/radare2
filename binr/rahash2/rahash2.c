@@ -275,18 +275,24 @@ int main(int argc, char **argv) {
 		case 1: // encode
 			{
 			ut8 *out = malloc (INSIZE);
-			r_base64_encode (out, (const ut8*)hashstr, strlen (hashstr));
-			printf ("%s\n", out);
-			fflush (stdout);
-			free (out);
+			int binlen = strlen (hashstr);
+			out = malloc (((binlen+1)*4)/3);
+			if (out) {
+				r_base64_encode (out, (const ut8*)hashstr, binlen);
+				printf ("%s\n", out);
+				fflush (stdout);
+				free (out);
+			}
 			}
 			break;
 		case 2: // decode
 			{
 			ut8 *out = malloc (INSIZE);
-			int outlen = r_base64_decode (out, hashstr, strlen (hashstr));
-			write (1, out, outlen);
-			free (out);
+			if (out) {
+				int outlen = r_base64_decode (out, hashstr, strlen (hashstr));
+				write (1, out, outlen);
+				free (out);
+			}
 			}
 		       break;
 		default:
@@ -346,11 +352,13 @@ int main(int argc, char **argv) {
 				eprintf ("Cannot open file\n");
 				continue;
 			}
-			out = malloc (binlen+1);
-			r_base64_encode (out, bin, binlen);
-			printf ("%s\n", out);
-			fflush (stdout);
-			free (out);
+			out = malloc (((binlen+1)*4)/3);
+			if (out) {
+				r_base64_encode (out, bin, binlen);
+				printf ("%s\n", out);
+				fflush (stdout);
+				free (out);
+			}
 			free (bin);
 			}
 			break;
@@ -363,9 +371,11 @@ int main(int argc, char **argv) {
 				continue;
 			}
 			out = malloc (binlen+1);
-			outlen = r_base64_decode (out, (const char*)bin, binlen);
-			write (1, out, outlen);
-			free (out);
+			if (out) {
+				outlen = r_base64_decode (out, (const char*)bin, binlen);
+				write (1, out, outlen);
+				free (out);
+			}
 			free (bin);
 			}
 			break;
