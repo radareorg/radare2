@@ -231,14 +231,14 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
 		if (bin->thread.flavor == X86_THREAD_STATE32) {
-			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
+			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
 				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_32)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.ppc_32.srr0;
 		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
-			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
+			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
