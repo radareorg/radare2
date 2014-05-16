@@ -737,6 +737,11 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 
 	if (!io || !info) return R_FALSE;
 
+	// clear loaded sections
+	//r_io_section_clear (io);
+	r_list_free (io->sections);
+	io->sections = r_list_new ();
+
 	r_list_foreach (obj->sections, s_iter, s) {
 		iob->section_add (io, s->offset, s->rva, s->size, s->vsize, s->srwx, s->name, obj->id, bf->fd);
 		iob->section_set_arch_bin_id (io, s->offset, info->arch, info->bits, bf->id);
@@ -768,8 +773,8 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		RBinObject *old_o = binfile->o;
 		binfile->o = o;
 		if (plugin->load (binfile)) {
-			binfile->sdb_info = sdb_ns_set (binfile->sdb,
-				"info", o->kv);
+			binfile->sdb_info = o->kv;
+			sdb_ns_set (binfile->sdb, "info", o->kv);
 		} else binfile->o = old_o;
 		o->obj_size = sz;
 	} else {
@@ -1578,6 +1583,7 @@ R_API int r_bin_file_set_cur_binfile_obj (RBin * bin, RBinFile *bf, RBinObject *
 	bf->o = obj;
 	plugin = r_bin_file_cur_plugin (bf);
 	bin->minstrlen = plugin ? plugin->minstrlen : bin->minstrlen;
+	r_bin_object_set_sections (bf, obj);
 	return R_TRUE;
 
 }

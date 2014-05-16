@@ -71,6 +71,11 @@ R_API int r_io_section_rm(RIO *io, int idx) {
 	return r_list_del_n (io->sections, idx);
 }
 
+R_API void r_io_section_clear(RIO *io) {
+	r_list_free (io->sections);
+	io->sections = r_list_new ();
+}
+
 // TODO: implement as callback
 R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	int i = 0;
