@@ -872,7 +872,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 		int fd = r_core_file_cur_fd(r);
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->offset,
+// baddr already implicit in section->rva ?
+			ut64 addr = va? r_bin_get_vaddr (r->bin, 0, section->offset,
 				section->rva): section->offset;
 			if (!secbase || (section->rva && section->rva <secbase)) // ??
 				secbase = section->rva;
