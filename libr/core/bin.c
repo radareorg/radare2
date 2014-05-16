@@ -1210,7 +1210,9 @@ R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 
 	if (!r_bin_select_by_ids (bin, binfile_idx, binobj_idx)) return R_FALSE;
 	binfile = r_core_bin_cur (core);
-	r_io_raise (core->io, binfile->fd);
+	if (binfile) {
+		r_io_raise (core->io, binfile->fd);
+	}
 	core->switch_file_view = 1;
 	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core, 0);
 }
