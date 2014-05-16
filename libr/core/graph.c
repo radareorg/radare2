@@ -291,6 +291,7 @@ prevnode = curnode;
 	case 'H': N.x-=5; break;
 	case 'L': N.x+=5; break;
 	// scroll
+	case '0': can->sx = can->sy = 0; break;
 	case 'w': can->sy -= 1; break;
 	case 's': can->sy += 1; break;
 	case 'a': can->sx -= 1; break;

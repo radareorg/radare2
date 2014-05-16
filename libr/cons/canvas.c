@@ -93,21 +93,22 @@ static char *prefixline(RConsCanvas *c, int *left) {
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
-	int left, slen;
-	char *line, *n;
+	int left, slen, i;
 	char *p, *s, *str;
+	char *line, *n;
+
 	str = s = strdup (_s);
-	for (;;) {
+	for (i=0;;i++) {
 		line = getrow (s, &n);
 		p = prefixline (c, &left);
 		slen = R_MIN (left, strlen (line));
 		if (!G (c->x-c->sx+slen, c->y-c->sy)) {
 			// TODO : chop slen
 			slen = (c->w - (c->x-c->sx));
-			break;
+			continue;
 		}
 		if (!G (c->x-c->sx-slen, c->y-c->sy))
-			break;
+			continue;
 		memcpy (p, line, slen);
 		if (!n) break;
 		s = n;

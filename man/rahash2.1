@@ -4,7 +4,7 @@ hasher2 \- block based hashing utility
 .Dd Nov 11, 2013
 .Sh SYNOPSIS
 .Nm hasher2
-.Op Fl heBrkv
+.Op Fl dDheBrkv
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
 .Op Fl s Ar string
@@ -28,6 +28,10 @@ This is the command used by the '#' command of radare.
 Select an algorithm for the hashing. Valid values are md5, crc32 and sha1
 .It Fl b Ar blocksize
 Define the block size
+.It Fl d
+encoDe base64 string or file
+.It Fl D
+Decode base64 string or file
 .It Fl e
 Use little endian to display checksums
 .It Fl i Ar iters
