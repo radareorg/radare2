@@ -138,12 +138,12 @@ static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (bin_obj->buf): 0;
+	ut64 sz = arch && bin_obj ? r_buf_size (bin_obj->buf): 0;
 
-
-	int bits = 32;
+	int bits = 32; // Default value
 
 	if (!ret || !buf || sz < 0x30) return NULL;
+
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rclass, "rar", R_BIN_SIZEOF_STRINGS);
