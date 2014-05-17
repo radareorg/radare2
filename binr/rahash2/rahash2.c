@@ -24,6 +24,10 @@ static void do_hash_seed(const char *seed) {
 	}
 	_s = &s;
 	s.buf = (ut8*)malloc (strlen (seed)+128);
+	if (!s.buf) {
+		_s = NULL;
+		return;
+	}
 	if (*seed=='^') {
 		s.prefix = 1;
 		sptr++;
@@ -127,6 +131,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		return 1;
 	}
 	buf = malloc (bsize+1);
+	if (!buf)
+		return 1;
 	ctx = r_hash_new (R_TRUE, algobit);
 
 	if (incremental) {
