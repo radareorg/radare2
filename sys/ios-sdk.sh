@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ -z "${CPU}" ]; then
+export CPU=arm64
+export CPU=armv7
+fi
+
 BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
@@ -16,7 +21,6 @@ export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platfo
 export PATH=`pwd`/sys:${PATH}
 export CC=`pwd`/sys/ios-sdk-gcc
 # set only for arm64, otherwise it is armv7
-export CPU=arm64
 # select ios sdk version
 export IOSVER=7.1
 export IOSINC=`pwd`/sys/ios-include
@@ -31,8 +35,9 @@ fi
 if [ $? = 0 ]; then
 	make -j4
 	if [ $? = 0 ]; then
+		# ( cd binr/radare2 ; make sign )
 		rm -rf /tmp/r2ios
 		make install DESTDIR=/tmp/r2ios
-		cd /tmp/r2ios && tar czvf ../r2ios.tar.gz *
+		cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz *
 	fi
 fi
