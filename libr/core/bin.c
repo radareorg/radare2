@@ -806,6 +806,8 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 						free (mn);
 					}
 					r_name_filter (symbol->name, sizeof (symbol->name));
+#if 0
+// remove to avoid unexpected issues
 					if (!strncmp (symbol->type,"OBJECT", 6)) {
 						if (symbol->size == 0) {
 							symbol->size = strlen (symbol->name);
@@ -814,12 +816,13 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 						} else
 						if (symbol->size>0) {
 							r_cons_printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
-									symbol->size, addr);
+									(ut64)symbol->size, (ut64)addr);
 						} else eprintf ("Wrong symbol '%s' have size %"PFMT64d"\n",
 								symbol->name, symbol->size);
 					}
+#endif
 					r_cons_printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-							symbol->name, symbol->size, addr);
+							symbol->name, (ut64)symbol->size, (ut64)addr);
 				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ord=%03"PFMT64d" "
 						"fwd=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
 						addr, symbol->offset,

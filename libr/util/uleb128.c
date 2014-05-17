@@ -4,20 +4,23 @@
 
 R_API const ut8 *r_uleb128 (const ut8 *data, ut64 *v) {
 	ut8 c;
-	ut64 s, sum;
-	for (s = sum = 0; ; s += 7) {
-		c = *(data++) & 0xff;
-		sum |= ((ut32) (c&0x7f) << s);
-		if (!(c&0x80)) break;
-	}
+	ut64 s, sum = 0;
+	if (data && *data) {
+		for (s = 0; ; s += 7) {
+			c = *(data++) & 0xff;
+			sum |= ((ut32) (c&0x7f) << s);
+			if (!(c&0x80)) break;
+		}
+	} else data++;
 	if (v) *v = sum;
 	return data;
 }
 
 R_API const ut8 *r_leb128 (const ut8 *data, st64 *v) {
 	ut8 c;
-	st64 s, sum;
-	for (s = sum = 0;;) {
+	st64 s, sum = 0;
+	if (data)
+	for (s = 0; *data;) {
 		c = *(data++) & 0x0ff;
 		sum |= ((st64) (c & 0x7f) << s);
 		s += 7;
