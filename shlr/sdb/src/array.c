@@ -188,14 +188,16 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val, ut3
 	if (idx<0 || idx==len) // append
 		return sdb_array_insert (s, key, -1, val, cas);
 	if (idx>len) {
-		int i, ilen = idx-len;
+		int ret, i, ilen = idx-len;
 		char *newkey = malloc (ilen+strlen (val)+1);
 		if (!newkey)
 			return 0;
 		for (i=0; i<ilen; i++)
 			newkey [i]=',';
 		strcpy (newkey+i, val);
-		return sdb_array_insert (s, key, -1, newkey, cas);
+		ret = sdb_array_insert (s, key, -1, newkey, cas);
+		free (newkey);
+		return ret;
 	}
 	nstr = malloc (strlen (str)+strlen (val)+2);
 	strcpy (nstr, str);

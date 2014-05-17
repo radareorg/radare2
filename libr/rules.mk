@@ -26,10 +26,18 @@ LDFLAGS+=-Wl,-R${PREFIX}/lib
 endif
 
 ifeq (${OSTYPE},gnulinux)
+ifeq (${HAVE_LIBVERSION})
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}.${LIBVERSION}
 else
+LIBNAME=${LDFLAGS_SONAME}${LIBSO}
+endif
+else
 ifeq (${OSTYPE},darwin)
+ifeq (${HAVE_LIBVERSION},1)
 LIBNAME=${LDFLAGS_SONAME}${LIB}.${LIBVERSION}.${EXT_SO}
+else
+LIBNAME=${LDFLAGS_SONAME}${LIB}.${EXT_SO}
+endif
 else
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}
 endif

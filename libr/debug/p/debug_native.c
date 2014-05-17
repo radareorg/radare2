@@ -1661,6 +1661,8 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 #elif __APPLE__
 #if __arm__
 	#define OSX_PC state.__pc
+#elif __arm64__
+	#define OSX_PC state.__pc
 #elif __POWERPC__
 	#define OSX_PC state.srr0
 #elif __x86_64__
@@ -1672,11 +1674,11 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 #undef OSX_PC
 #define OSX_PC state.x32[REG_PC]
 #endif
-    int i, tid; //, err;
+	int i, tid; //, err;
 	//unsigned int gp_count;
 	static thread_array_t inferior_threads = NULL;
 	static unsigned int inferior_thread_count = 0;
-    R_DEBUG_REG_T state;
+	R_DEBUG_REG_T state;
 
 	if (task_threads (pid_to_task (pid), &inferior_threads,
 		&inferior_thread_count) != KERN_SUCCESS) {

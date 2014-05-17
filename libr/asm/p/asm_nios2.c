@@ -12,6 +12,8 @@
 #include "dis-asm.h"
 
 
+int print_insn_big_nios2 (bfd_vma address, disassemble_info *info);
+int print_insn_little_nios2 (bfd_vma address, disassemble_info *info);
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
 static unsigned char bytes[4];

@@ -176,9 +176,17 @@ ifeq (${OSTYPE},windows)
 libname=-shared -o $1.${EXT_SO}
 else
 ifeq (${OSTYPE},darwin)
+ifeq (${HAVE_LIBVERSION},1)
 libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${LIBVERSION}.${EXT_SO}
 else
+libname=-shared -o $1.${EXT_SO}
+endif
+else
+ifeq (${HAVE_LIBVERSION},1)
 libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${EXT_SO}.${LIBVERSION}
+else
+libname=-shared -o $1.${EXT_SO}
+endif
 endif
 endif
 endif

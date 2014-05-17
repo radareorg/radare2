@@ -39,6 +39,7 @@ IFAND HAVE_LIB_Z USE_ZIP {
 
 CHKLIB ewf
 PKGCFG EWF_CFLAGS EWF_LDFLAGS libewf
+ARG_WITHOUT HAVE_LIBVERSION libversion disable version library builds ;
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
 IF HAVE_PKGCFG_LIBEWF {
 	HAVE_LIB_EWF = 1 ;
