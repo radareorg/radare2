@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_cons.h>
+#include <r_print.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

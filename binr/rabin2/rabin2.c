@@ -87,7 +87,7 @@ static int extract_binobj (RBinFile *bf, RBinObject *o, int idx ) {
 	ut64 boffset = o ? o->boffset : 0;
 	ut64 bin_size = o ? o->obj_size : 0;
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
+	//ut64 sz = bf ? r_buf_size (bf->buf) : 0;
 	RBinInfo *info = o ? o->info : NULL;
 	const char *arch = info ? info->arch : "unknown";
 	char bits = info ? info->bits : 0;

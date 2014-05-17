@@ -9,10 +9,10 @@
 #include <r_lib.h>
 #include "../arch/6502/6502dis.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
-	int dlen = _6502Disass (op,buf,len);
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	int dlen = _6502Disass (op, buf, len);
 	if(dlen<0) dlen=0;
-	op->size=dlen;
+	op->size = dlen;
 	return dlen;
 }
 
