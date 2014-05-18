@@ -24,7 +24,7 @@ framework libraries without depending on them.
 
 DEPENDENCIES
 ------------
-radare can be built without any special dependency. It just requires
+radare2 can be built without any special dependency. It just requires
 a C compiler, a GNU make and a unix-like system.
 
 CROSSCOMPILATION
@@ -42,9 +42,12 @@ linux-arm and others, but the procedure is like this:
 
 SOURCE REPOSITORY
 -----------------
-The source of radare can be found in two mercurial repositories.
+The source of radare2 can be found in the following github repository.
 
    git clone git://github.com/radare/radare2
+
+Other packages radare2 depends on, such as Capstone, are pull from
+their git repository as required.
 
 To get an up to date copy of the repository you should perform the
 following steps:
@@ -52,7 +55,7 @@ following steps:
    git pull
 
 If you have conflicts in your local copy it's because you have modified
-files which are conflicting with the incomming patchsets. To get a clean
+files which are conflicting with the incoming patchsets. To get a clean
 source directory type the following command:
 
    git clean -xdf
@@ -67,7 +70,7 @@ This is a common issue and can end up having outdated libraries trying
 to use deprecated structures which may result into segfaults.
 
 You have to make clean on the affected modules or just, if you are not
-sure enought that everything is ok just make clean the whole project.
+sure enough that everything is ok just make clean the whole project.
 
 If you want to accelerate the build process after full make cleans
 you should use ccache in this way:
@@ -81,16 +84,29 @@ Developers use to modify the code, type make and then try.
 radare2 have a specific makefile target that allows you to install
 system wide but using symlinks instead of hard copies.
 
+   sudo make symstall
+
 This kind of installation is really helpful if you do lot of changes
 in the code for various reasons.
 
   - only one install is required across multiple builds
   - installation time is much faster
 
+REGRESSION TESTING
+------------------
+
+The source of the radare2 regression test suite can be found in the
+following github repository.
+
+   git clone git://github.com/radare/radare2-regressions
+
+
+See the README.md file in that repository for further information.
+
 REPORTING BUGS
 --------------
-If you notice any missfeature, issue, error, problem or you just
-don't know how to do something which is supossed to be covered
+If you notice any misfeature, issue, error, problem or you just
+don't know how to do something which is supposed to be covered
 by this framework.
 
 You should report it in our web page in the 'bugs' section.
