@@ -586,7 +586,7 @@ static int cmd_resize(void *data, const char *input) {
 			if (input[1]==' ')
 				r_file_rm (input+2);
 			else eprintf ("Usage: rm [file]   # removes a file\n");
-			break;
+			return R_TRUE;
 		case '+':
 		case '-':
 			delta = (st64)r_num_math (core->num, input);
@@ -594,7 +594,7 @@ static int cmd_resize(void *data, const char *input) {
 			break;
 		case '\0':
 			r_cons_printf ("%"PFMT64d"\n", oldsize);
-			break;
+			return R_TRUE;
 		case '?':
 			r_cons_printf (
 				"|Usage: r[+-][ size]\n"
