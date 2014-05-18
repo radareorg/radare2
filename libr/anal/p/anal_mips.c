@@ -19,6 +19,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->delay = 0;
+	op->addr = addr;
 	r_strbuf_init (&op->esil);
 
 	// Reminder: r_mem_copyendian swaps if arg `endian` ==0 ...
