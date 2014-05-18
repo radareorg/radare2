@@ -20,8 +20,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut64 off = a->pc;
 	cs_insn* insn;
 
-	mode = (a->bits==64)? CS_MODE_64: 
-		(a->bits==32)? CS_MODE_32: 0;
+	mode = CS_MODE_BIG_ENDIAN;
 	if (handle && mode != omode) {
 		cs_close (&handle);
 		handle = 0;
@@ -51,7 +50,7 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.desc = "Capstone PowerPC disassembler",
 	.license = "BSD",
 	.arch = "ppc",
-	.bits = 32|64,
+	.bits = 32,
 	.init = NULL,
 	.fini = the_end,
 	.disassemble = &disassemble,
