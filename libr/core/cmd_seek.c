@@ -206,9 +206,15 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_anal_bb_seek (core, off);
 			break;
 		case 'f':
-			{
+			if (strlen(input) > 2 && input[1]==' ') {
+				RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, input+2);
+				if (fcn) {
+					r_core_seek (core, fcn->addr, 1);
+				}
+				break;
+			}
 			RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
-			if (fcn)
+			if (fcn) {
 				r_core_seek (core, fcn->addr+fcn->size, 1);
 			}
 			break;
@@ -275,6 +281,7 @@ static int cmd_seek(void *data, const char *input) {
 			//"| sp [page]  seek page N (page = block)\n"
 			"| so [num]          seek to N next opcode(s)\n"
 			"| sf                seek to next function (f->addr+f->size)\n"
+			"| sf fcn            seek to address of specified function\n"
 			"| sC str            seek to comment matching given string\n"
 			"| sr pc             seek to register\n");
 			break;
