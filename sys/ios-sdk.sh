@@ -38,6 +38,10 @@ if [ $? = 0 ]; then
 		( cd binr/radare2 ; make ios_sdk_sign )
 		rm -rf /tmp/r2ios
 		make install DESTDIR=/tmp/r2ios
-		cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz *
+		( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz * )
+		rm -rf sys/cydia/radare2/root
+		mkdir -p sys/cydia/radare2/root
+		sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
+		( cd sys/cydia/radare2/root ; make clean ; make )
 	fi
 fi
