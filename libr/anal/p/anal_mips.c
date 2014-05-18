@@ -145,17 +145,36 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
                    |             |
                (b[0]>>2)  ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]
 #endif
+                // FIXME: what happens when addr is using a virtual map?
+                // ANS: address will be E 0x000000..0x0ffffffc
+                //      but addr could be anywhere
+                //      so address needs to be adjusted for that, somehow...
+                // MIPS is strange.  For example, the same code memory may be
+                // mapped simultaneously to 0x00600000 and 0x80600000.  The program is
+                // executing at 0x80600000 if we are operating in 'KSEG0' space
+                // (unmapped cached mode) vs 0x00600000 (KUSEG or user space)
+                // An immediate jump can only reach within 2^28 bits.
+                // HACK: if the user specified a mapping for the program
+                // then assume that they know which MIPS segment they
+                // are analysing in, and use the high order bits of addr 
+                // to be add to the jump.  
+                // WARNING: it is possible that this may not be the case
+                // in all situations!
+                // Maybe better solution: use a cfg. variable to do
+                // the offset... but I dont yet know how to get to that
+                // from this static function
 		int address = (((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]) << 2;
+		ut64 page_hack = addr & 0xf0000000;
 		switch (optype) {
 		case 2: // j
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = address;
+			op->jump = page_hack + address;
 			op->delay = 1;
 			r_strbuf_setf (&op->esil, "pc=0x%08x", address);
 			break;
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = address;
+			op->jump = page_hack + address;
 			op->fail = addr+8;
 			op->delay = 1;
 			r_strbuf_setf (&op->esil, "lr=pc+4,pc=0x%08x", address);
