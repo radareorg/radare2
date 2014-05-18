@@ -1314,6 +1314,22 @@ R_API int r_str_bounds(const char *str, int *h) {
 
 R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
 	char *ret = strdup (str);
+	char *r = ret;
+	int ch = 0, cw = 0;
+	while (*str) {
+		if (*str == '\n') {
+			*r++ = *str;
+			ch++;
+			cw = 0;
+		} else
+		if (ch>=y && ch<h)
+			if (cw>=x && cw<w)
+				*r++ = *str;
+		str++;
+		cw++;
+	}
+	*r = 0;
+	return ret;
 }
 
 R_API const char * r_str_tok (const char *str1, const char b, size_t len) {

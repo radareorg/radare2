@@ -59,7 +59,7 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 			return;
 	}
 	if (cur) {
-		F (n->x,n->y, n->w, n->h, '.');
+		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
 			"-[ 0x%08"PFMT64x" ]-", n->addr);
 	} else {
@@ -68,8 +68,11 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	}
 	if (G (n->x+1, n->y+1))
 		W (title);
-	if (G (n->x+2, n->y+2))
+	if (G (n->x+2, n->y+2)) {
+// TODO: temporary crop depending on out of screen offsets
+//n->text = r_str_crop (n->text, 1,1,4,4);
 		W (n->text);
+	}
 	if (G (n->x+1, n->y+1))
 		W (title);
 	B (n->x, n->y, n->w, n->h);
