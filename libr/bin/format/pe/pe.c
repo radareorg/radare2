@@ -321,26 +321,35 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_delay_import->VirtualAddress);
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
+	/// HACK to modify import size because of begin 0.. this may report wrong info con corkami tests
+	if (import_dir_size == 0) {
+		// asume 1 entry for each 
+		import_dir_size = data_dir_import->Size = 0xffff;
+	}
+	if (delay_import_dir_size == 0) {
+		// asume 1 entry for each 
+		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
+	}
 
 	if (import_dir_offset == 0 && delay_import_dir_offset == 0)
 		return R_FALSE;
 	if (import_dir_offset != 0) {
 		if (import_dir_size<1 || import_dir_size>0xffff) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n", import_dir_size);
-			import_dir_size = 0xffff;
+			import_dir_size = 0xFFFF;
 		}
-		if (!(bin->import_directory = malloc(import_dir_size))) {
+		if (!(bin->import_directory = malloc (import_dir_size))) {
 			perror("malloc (import directory)");
 			return R_FALSE;
 		}
 		if (r_buf_read_at (bin->b, import_dir_offset, (ut8*)bin->import_directory, import_dir_size) == -1) {
-			eprintf("Error: read (import directory)\n");
+			eprintf ("Error: read (import directory)\n");
 			return R_FALSE;
 		}
 	}
 	if (delay_import_dir_offset != 0) {
-		if (!(bin->delay_import_directory = malloc(delay_import_dir_size))) {
-			perror("malloc (delay import directory)");
+		if (!(bin->delay_import_directory = malloc (delay_import_dir_size))) {
+			perror ("malloc (delay import directory)");
 			return R_FALSE;
 		}
 		if (r_buf_read_at (bin->b, delay_import_dir_offset,

@@ -11,6 +11,7 @@ rabin2 \- Binary program info extractor
 .Op Fl B Ar addr
 .Op Fl c Ar fmt:C:[D]
 .Op Fl f Ar subbin
+.Op Fl k Ar query
 .Op Fl O Ar str
 .Op Fl o Ar str
 .Op Fl m Ar addr
@@ -40,6 +41,8 @@ Select sub-binary architecture. Useful for fat-mach0 binaries
 Same as \-SMRevsiz (Show all possible information). See \-r
 .It Fl i
 Show imports (symbols imported from libraries)
+.It Fl k Ar query
+Perform SDB query on loaded file
 .It Fl s
 Show exported symbols
 .It Fl S

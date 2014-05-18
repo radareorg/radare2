@@ -137,14 +137,14 @@ static RBinInfo* info(RBinFile *arch) {
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
 	RBinInfo *ret = NULL;
 
-	// TODO: remove those strings
-	eprintf ("SS : %x\n", exe->ss);
-	eprintf ("SP : %x\n", exe->sp);
-	eprintf ("IP : %x\n", exe->ip);
-	eprintf ("CS : %x\n", exe->cs);
-	eprintf ("NRELOCS: %x\n", exe->num_relocs);
-	eprintf ("RELOC  : %x\n", exe->reloc_table_offset);
-	eprintf ("CHKSUM : %x\n", exe->checksum);
+	sdb_num_set (arch->sdb, "ss", exe->ss, 0);
+	sdb_num_set (arch->sdb, "sp", exe->sp, 0);
+	sdb_num_set (arch->sdb, "ip", exe->ip, 0);
+	sdb_num_set (arch->sdb, "cs", exe->cs, 0);
+	sdb_num_set (arch->sdb, "mz.relocs.count", exe->num_relocs, 0);
+	sdb_num_set (arch->sdb, "mz.relocs.offset", exe->reloc_table_offset, 0);
+	sdb_num_set (arch->sdb, "mz.checksum", exe->checksum, 0);
+
 	if ((ret = R_NEW0 (RBinInfo)) == NULL)
 		return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);

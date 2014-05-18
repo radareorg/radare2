@@ -201,7 +201,6 @@ static RList* imports(RBinFile *arch) {
 		r_list_append (relocs, rel);
 	}
 	free (imports);
-
 	return ret;
 }
 
@@ -254,7 +253,7 @@ static int has_canary(RBinFile *arch) {
 				r_list_free (imports_list);
 				return 1;
 			}
-		r_list_free (imports_list);
+		// DO NOT FREE IT! r_list_free (imports_list);
 	}
 	return 0;
 }

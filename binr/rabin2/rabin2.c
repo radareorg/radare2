@@ -42,7 +42,7 @@ static RLib *l;
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-ACdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
 		"              [-B addr] [-c F:C:D] [-f str] [-m addr] [-n str] [-N len]\n"
-		"              [-o str] [-O str] file\n");
+		"              [-o str] [-O str] [-k query] file\n");
 	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
 		" -A              list archs\n"
@@ -54,6 +54,7 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
+		" -k [query]      perform sdb query on loaded file\n"
 		" -g              same as -SMRevsiz (show all info)\n"
 		" -h              this help\n"
 		" -H              header fields\n"
@@ -329,6 +330,7 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 }
 
 int main(int argc, char **argv) {
+	const char *query = NULL;
 	int c, bits = 0, actions_done = 0, actions = 0, action = ACTION_UNK;
 	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
 	char *ptr, *arch = NULL, *arch_name = NULL;
@@ -354,7 +356,7 @@ int main(int argc, char **argv) {
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:CdMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:dMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -384,6 +386,7 @@ int main(int argc, char **argv) {
 			set_action (ACTION_CREATE);
 			create = strdup (optarg);
 			break;
+		case 'k': query = optarg; break;
 		case 'C': set_action (ACTION_CLASSES); break;
 		case 'f': if (optarg) arch_name = strdup (optarg); break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
@@ -443,6 +446,7 @@ int main(int argc, char **argv) {
 	}
 
 	file = argv[optind];
+	if (!query)
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
 		if (va) return blob_version ("rabin2");
 		return rabin_show_help (0);
@@ -499,7 +503,7 @@ int main(int argc, char **argv) {
 		r_bin_free (bin);
 		return 0;
 	}
-	cf = r_core_file_open(&core, file, R_IO_READ, 0);
+	cf = r_core_file_open (&core, file, R_IO_READ, 0);
 	fd = cf ? r_core_file_cur_fd (&core) : -1;
 	if (!cf || fd == -1) {
 		eprintf ("r_core: Cannot open '%s'\n", file);
@@ -510,6 +514,11 @@ int main(int argc, char **argv) {
 			eprintf ("r_bin: Cannot open '%s'\n", file);
 			return 1;
 		}
+	}
+
+	if (query) {
+		sdb_query (bin->cur->sdb, query);
+		return 0;
 	}
 
 	// XXX: TODO move this to libr/core/bin.c
