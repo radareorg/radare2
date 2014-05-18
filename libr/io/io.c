@@ -12,7 +12,6 @@ R_LIB_VERSION (r_io);
 static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz);
 static RIO * r_io_bind_get_io(RIOBind *bnd);
 
-static RIO * MASTER_IO = NULL;
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
@@ -28,6 +27,7 @@ R_API RIO *r_io_new() {
 	io->plugin = NULL;
 	io->raised = -1;
 	io->off = 0;
+	io->enforce_rwx = 0;
 	r_io_map_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
@@ -177,24 +177,6 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 	return list_fds;
 }
 
-static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
-	int fd;
-	if (r_file_is_directory (file))
-		return -1;
-#if __WINDOWS__
-	if (flags & R_IO_WRITE) {
-		fd = r_sandbox_open (file, O_BINARY | 1, 0);
-		if (fd == -1)
-			r_sandbox_creat (file, O_BINARY);
-		fd = r_sandbox_open (file, O_BINARY | 1, 0);
-	} else fd = r_sandbox_open (file, O_BINARY, 0);
-#else
-	fd = r_sandbox_open (file, (flags&R_IO_WRITE)?
-			(O_RDWR|O_CREAT): O_RDONLY, mode);
-#endif
-	return fd;
-}
-
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
 	IO_IFDBG {
@@ -203,21 +185,6 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	}
 	if (io->redirect)
 		return NULL;
-	// This code can be removed after June 2014
-	/*if (desc) {
-		fd = desc->fd;
-	} else {
-		fd = __io_posix_open (io, file, flags, mode);
-		if (fd>=0){
-			desc = r_io_desc_new (io->plugin,
-				fd, file, flags, mode, NULL);
-			IO_IFDBG {
-				if (desc)
-					eprintf ("Opened file: %s locallly\n", file);
-			}
-		}
-
-	}*/
 	if (desc) {
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
@@ -299,10 +266,10 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
 	if (io==NULL || io->fd == NULL)
 		return -1;
-	/* IGNORE check section permissions
-	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
-		return -1;
-	 */
+	/* IGNORE check section permissions */
+	if (io->enforce_rwx & R_IO_READ)
+		if (!(r_io_section_get_rwx (io, io->off) & R_IO_READ))
+			return -1;
 	ret = r_io_read_at (io, io->off, buf, len);
 	if (ret>0) io->off += ret;
 	return ret;
@@ -457,8 +424,9 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 	ut8 *data = NULL;
 
 	/* check section permissions */
-	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_WRITE))
-		return -1;
+	if (io->enforce_rwx & R_IO_WRITE)
+		if (!(r_io_section_get_rwx (io, io->off) & R_IO_WRITE))
+			return -1;
 
 	if (io->cached) {
 		ret = r_io_cache_write (io, io->off, buf, len);
@@ -684,14 +652,16 @@ R_API void r_io_sort_maps (RIO *io) {
 static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	ut8 *buf_bytes = NULL;
 	ut64 off = io->off;
-	RIOPlugin *plugin = desc ? desc->plugin : NULL;
 
+	if (!io || !desc)
+		return NULL;
 	*out_sz = r_io_desc_size (io, desc);
 
 	if (*out_sz == UT64_MAX) return buf_bytes;
 
 	buf_bytes = malloc (*out_sz);
 
+	if (desc->plugin && desc->plugin->read) 
 	if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, *out_sz)) {
 		free (buf_bytes);
 		io->off = off;

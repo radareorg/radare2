@@ -351,7 +351,6 @@ static int cb_color(void *user, void *data) {
 }
 
 static int cb_dbgbep(void *user, void *data) {
-	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		r_cons_printf ("loader\nentry\nconstructor\nmain\n");
@@ -428,6 +427,16 @@ static int cb_hexcols(void *user, void *data) {
 static int cb_hexstride(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	((RCore *)user)->print->stride = node->i_value;
+	return R_TRUE;
+}
+
+static int cb_ioenforce(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	int perm = node->i_value;
+	core->io->enforce_rwx = 0;
+	if (perm & 1) core->io->enforce_rwx |= R_IO_READ;
+	if (perm & 2) core->io->enforce_rwx |= R_IO_WRITE;
 	return R_TRUE;
 }
 
@@ -922,6 +931,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("search.to", -1, "Search end address");
 
 	/* io */
+	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
