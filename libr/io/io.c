@@ -341,6 +341,12 @@ eprintf ("RETRERET\n");
 #endif
 		w += l;
 		len -= l;
+/* Fix famous io/f bug */
+#if 0
+this is not a real fix, because it just avoids reading again , even if the seek returns error.
+bear in mind that we need to fix that loop and honor lseek sections and sio maps fine
+#endif
+break;
 	}
 	return olen;
 }

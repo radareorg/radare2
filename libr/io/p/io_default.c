@@ -123,6 +123,10 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOMMapFileObj *mmo = NULL;
 	if (!fd || !fd->data || !buf)
 		return -1;
+	if (io->off==UT64_MAX) {
+		memset (buf, 0xff, count);
+		return count;
+	}
 	mmo = fd->data;
 	if (mmo->rawio) {
 		return read (mmo->fd, buf, count);
@@ -164,26 +168,26 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mod
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
-	ut64 seek_val;
+	ut64 seek_val = UT64_MAX;
+	if (!mmo) return UT64_MAX;
 	if (mmo->rawio)
 		return lseek (mmo->fd, offset, whence);
-	seek_val = mmo->buf->cur;
+	if (mmo->buf)
+		seek_val = mmo->buf->cur;
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = (mmo->buf->length < offset) ?
 			mmo->buf->length : offset;
-		mmo->buf->cur = io->off = seek_val;
-		return seek_val;
+		break;
 	case SEEK_CUR:
 		seek_val = (mmo->buf->length < (offset + mmo->buf->cur)) ?
 			mmo->buf->length : offset + mmo->buf->cur;
-		mmo->buf->cur = io->off = seek_val;
-		return seek_val;
+		break;
 	case SEEK_END:
 		seek_val = mmo->buf->length;
-		mmo->buf->cur = io->off = seek_val;
-		return seek_val;
+		break;
 	}
+	mmo->buf->cur = io->off = seek_val;
 	return seek_val;
 }
 
