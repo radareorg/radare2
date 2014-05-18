@@ -104,6 +104,15 @@ static int iterate (RAnalEsil *c, char *buf, int *tkns) {
 }
 #endif
 
+static void* R_malloc(size_t n) {
+	void* p = malloc(n);
+         if (!p) {        
+         	exit(12); /* ENOMEM */ 
+         }
+         return p;
+}
+
+#define MALLOC(n) R_malloc(n)
 #define TOKEN_IS(x,y,z) (x[i]==y && !strcmp (x[i+1]==z))
 #define TOKEN_GET(x,y) x=tkns[i]; y=buf+tkns[i+1]
 #define IS(x) (!strcmp(x,op))
@@ -157,7 +166,7 @@ eprintf (";; -> this means that we have to resolve before accessing memory %d\n"
 	if (IS ("+")) {
 		// push (get (p)+get (q));
 		ut64 n = esil_get (c, p) + esil_get (c, q);
-		char *ns = malloc (32); // XXX memleak
+		char *ns = MALLOC (32); // XXX memleak
 		sprintf (ns, "0x%"PFMT64x, n);
 		PUSH (ns);
 		eprintf (";;; %s %s\n", p, q);
@@ -167,7 +176,7 @@ eprintf (";; -> this means that we have to resolve before accessing memory %d\n"
 	if (IS ("-")) {
 		// push (get (p)+get (q));
 		ut64 n = esil_get (c, p) - esil_get (c, q);
-		char *ns = malloc (32); // XXX memleak
+		char *ns = MALLOC (32); // XXX memleak
 		sprintf (ns, "0x%"PFMT64x, n);
 		PUSH (ns);
 		eprintf (";;; %s %s\n", p, q);
@@ -176,7 +185,7 @@ eprintf (";; -> this means that we have to resolve before accessing memory %d\n"
 	if (IS ("*")) {
 		// push (get (p)+get (q));
 		ut64 n = esil_get (c, p) * esil_get (c, q);
-		char *ns = malloc (32); // XXX memleak
+		char *ns = MALLOC (32); // XXX memleak
 		sprintf (ns, "0x%"PFMT64x, n);
 		PUSH (ns);
 		eprintf (";;; %s %s\n", p, q);
