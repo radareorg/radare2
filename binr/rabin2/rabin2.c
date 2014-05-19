@@ -288,6 +288,7 @@ static int rabin_do_operation(const char *op) {
 	default:
 	_rabin_do_operation_error:
 		eprintf ("Unknown operation. use -O help\n");
+		free (arg);
 		return R_FALSE;
 	}
 
