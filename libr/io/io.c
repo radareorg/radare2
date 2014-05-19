@@ -658,21 +658,24 @@ R_API void r_io_sort_maps (RIO *io) {
 
 static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	ut8 *buf_bytes = NULL;
-	ut64 off = io->off;
+	ut64 off = 0;
 
 	if (!io || !desc)
 		return NULL;
+
+	off = io->off;
 	*out_sz = r_io_desc_size (io, desc);
 
 	if (*out_sz == UT64_MAX) return buf_bytes;
 
 	buf_bytes = malloc (*out_sz);
 
-	if (desc->plugin && desc->plugin->read) 
-	if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, *out_sz)) {
-		free (buf_bytes);
-		io->off = off;
-		return R_FALSE;
+	if (desc->plugin && desc->plugin->read) {
+		if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, *out_sz)) {
+			free (buf_bytes);
+			io->off = off;
+			return R_FALSE;
+		}
 	}
 	io->off = off;
 	return buf_bytes;
