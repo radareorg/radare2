@@ -51,20 +51,20 @@ R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s) {
 	return r_socket_accept (rap_s->fd);
 }
 
-static inline int getEndian ()
-{
+static inline int getEndian () {
 	int e = 0;
 	ut8 *n = (ut8 *)&e;
 	*n = 0x1;
 	return (e == 0x1);
 }
 
-R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s)
-{
+R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 	int endian, i, pipe_fd, ret;
 	ut64 offset;
 	char *ptr = NULL;
-	if (	!rap_s || !rap_s->fd || !r_socket_is_connected (rap_s->fd))
+	if (!rap_s || !rap_s->fd)
+		return R_FALSE;
+	if (!r_socket_is_connected (rap_s->fd))
 		return R_FALSE;
 	r_socket_read_block (rap_s->fd, rap_s->buf, 1);
 	endian = getEndian();

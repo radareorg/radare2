@@ -28,6 +28,21 @@ WSACleanup: closes all network connections
 #endif
 #define BUFFER_SIZE 4096
 
+R_API int r_socket_is_connected (RSocket *s) {
+#if __WINDOWS__
+	char buf[2];
+	r_socket_block_time (s, 0, 0);
+	int ret = recv (s->fd, &buf, 1, MSG_PEEK);
+	r_socket_block_time (s, 1, 0);
+	return ret? R_TRUE: R_FALSE;
+#else
+	char buf[2];
+	int ret = recv (s->fd, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
+	return ret? R_TRUE: R_FALSE;
+#endif
+}
+
+
 #if __UNIX__
 static int r_socket_unix_connect(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
@@ -48,12 +63,6 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 	s->fd = sock;
 	s->is_ssl = R_FALSE;
 	return R_TRUE;
-}
-
-R_API int r_socket_is_connected (RSocket *s) {
-	char buf[2];
-	int ret = recv (s->fd, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
-	return ret? R_TRUE: R_FALSE;
 }
 
 R_API int r_socket_unix_listen (RSocket *s, const char *file) {
