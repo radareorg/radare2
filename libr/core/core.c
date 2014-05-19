@@ -535,8 +535,12 @@ R_API int r_core_init(RCore *core) {
 	core->cons = r_cons_singleton ();
 	if (singleton) {
 		r_cons_new ();
-		core->cons->line->user = core;
-		core->cons->line->editor_cb = (RLineEditorCb)&r_core_editor;
+		core->cons = r_cons_singleton ();
+		if (core->cons->line) {
+			core->cons->line->user = core;
+			core->cons->line->editor_cb = \
+				(RLineEditorCb)&r_core_editor;
+		}
 #if __EMSCRIPTEN__
 		core->cons->user_fgets = NULL;
 #else
