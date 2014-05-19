@@ -362,10 +362,11 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 }
 
 R_API int r_io_resize(RIO *io, ut64 newsize) {
-	if (io->plugin && io->plugin->resize)
-		return io->plugin->resize (io, io->fd, newsize);
-	else if (io->plugin) return R_FALSE;
-	else ftruncate (io->fd->fd, newsize);
+	if (io->plugin) {
+		if (io->plugin->resize)
+			return io->plugin->resize (io, io->fd, newsize);
+		return R_FALSE;
+	}
 	return R_TRUE;
 }
 

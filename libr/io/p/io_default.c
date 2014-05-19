@@ -214,8 +214,8 @@ static int r_io_def_mmap_resize(RIO *io, RIODesc *fd, ut64 size) {
 	RIOMMapFileObj *mmo;
 	if (!fd || !fd->data)
 		return -1;
-
 	mmo = fd->data;
+	if (!(mmo->flags & R_IO_WRITE)) return -1;
 	return r_io_def_mmap_truncate(mmo, size);
 }
 
