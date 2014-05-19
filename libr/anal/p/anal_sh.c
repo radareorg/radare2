@@ -434,7 +434,6 @@ static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
  */
 static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	//TODO Check if we must do big or little endian. Also fix in RAsm
-	ut16 code = *((ut16 *)data);
 	ut8 b;
 	int ret;
 	if (data == NULL)
@@ -448,7 +447,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 
 	op->size = 2;
 
-	ret =  first_nibble_decode[(b>>4) & 0x0F](anal,op,code);
+	ret =  first_nibble_decode[(b>>4) & 0x0F](anal, op, *((ut16 *)data));
 	return ret;
 }
 
