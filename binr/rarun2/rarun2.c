@@ -48,6 +48,7 @@ static char *getstr(const char *src) {
 					return ret;
 				} else eprintf ("Missing \"\n");
 			}
+			free (ret);
 		}
 		return NULL;
 	case '"':
@@ -128,6 +129,8 @@ static void parseline (char *b) {
 		FILE *fd = fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
+			if (must_free == R_TRUE)
+				free (e);
 			return;
 		}
 		for (;;) {
