@@ -344,6 +344,7 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	RIODesc *desc = NULL;
 	if (!io) return R_FALSE;
 
+	bin->rawstr = rawstr;
 	desc = fd == -1 ? iob->desc_open (io, file, O_RDONLY, 0644) : iob->desc_get_by_fd (io, fd);
 	if (!desc) return R_FALSE;
 	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
@@ -480,13 +481,19 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 		r_list_foreach (bin->binxtrs, it, xtr) {
 			if (xtr->check && xtr->check_bytes (buf_bytes, sz)) {
 				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes))
-					binfile = r_bin_file_xtr_load_bytes (xtr, desc->name, buf_bytes, sz, baseaddr, loadaddr, xtr_idx, desc->fd, rawstr);
+					binfile = r_bin_file_xtr_load_bytes (xtr,
+						desc->name, buf_bytes, sz,
+						baseaddr, loadaddr, xtr_idx,
+						desc->fd, bin->rawstr);
 				xtr = NULL;
 			}
 		}
 	}
 
-	if (!binfile) binfile = r_bin_file_new_from_bytes (desc->name, buf_bytes, sz, rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
+	if (!binfile)
+		binfile = r_bin_file_new_from_bytes (desc->name,
+			buf_bytes, sz, bin->rawstr, baseaddr, loadaddr,
+			desc->fd, name, NULL, offset);
 	if (binfile) return r_bin_file_set_cur_binfile (bin, binfile);
 	return R_FALSE;
 }
@@ -499,7 +506,6 @@ R_API int r_bin_load_io_at_offset(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 	RBinXtrPlugin *xtr;
 	ut64 len_bytes, sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	int rawstr = 0;
 
 	if (!io) return R_FALSE;
 
@@ -519,12 +525,16 @@ R_API int r_bin_load_io_at_offset(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check_bytes (buf_bytes, sz)) {
 			if (xtr && (xtr->extractall_from_bytes || xtr->extract_from_bytes))
-				binfile = r_bin_file_xtr_load_bytes (xtr, desc->name, buf_bytes, sz, baseaddr, loadaddr, xtr_idx, desc->fd, rawstr);
+				binfile = r_bin_file_xtr_load_bytes (xtr,
+					desc->name, buf_bytes, sz, baseaddr,
+					loadaddr, xtr_idx, desc->fd, bin->rawstr);
 			xtr = NULL;
 		}
 	}
 
-	if (!binfile) binfile = r_bin_file_new_from_bytes (desc->name, buf_bytes, sz, rawstr, baseaddr, loadaddr, desc->fd, NULL, NULL, fileoffset);
+	if (!binfile) binfile = r_bin_file_new_from_bytes (desc->name,
+		buf_bytes, sz, bin->rawstr, baseaddr, loadaddr, desc->fd,
+		NULL, NULL, fileoffset);
 	if (binfile) return r_bin_file_set_cur_binfile (bin, binfile);
 	return R_FALSE;
 }
@@ -884,7 +894,6 @@ static RBinFile * r_bin_file_new_from_bytes (const char *file, const ut8 * bytes
 	if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bytes, sz);
 	if (!plugin) plugin = r_bin_get_binplugin_any ();
 
-
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 	if (!o) return R_FALSE;
 	if (strcmp (plugin->name, "any") )
@@ -1060,6 +1069,7 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 
 	if (bin->minstrlen <= 0)
 		return NULL;
+	a->rawstr = bin->rawstr;
 
 	if (plugin && plugin->strings)
 		o->strings = plugin->strings (a);
@@ -1069,8 +1079,7 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 
 R_API RList* r_bin_get_strings(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->strings;
+	if (o) return o->strings;
 	return NULL;
 }
 

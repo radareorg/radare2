@@ -340,6 +340,7 @@ int main(int argc, char **argv) {
 	RCoreFile *cf = NULL;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int fd = -1;
+	int rawstr = 0;
 
 	r_core_init (&core);
 	bin = core.bin;
@@ -399,12 +400,8 @@ int main(int argc, char **argv) {
 		case 'S': set_action (ACTION_SECTIONS); break;
 		case 'z':
 			if (is_active (ACTION_STRINGS)) {
-				r_config_set_i (core.config, "bin.rawstr", R_TRUE);
-				if (core.bin->cur) {
-					core.bin->cur->rawstr = R_TRUE;
-				}
-			}
-			set_action (ACTION_STRINGS);
+				rawstr = R_TRUE;
+			} else set_action (ACTION_STRINGS);
 			break;
 		case 'Z': set_action (ACTION_SIZE); break;
 		case 'I': set_action (ACTION_INFO); break;
@@ -503,14 +500,15 @@ int main(int argc, char **argv) {
 		r_bin_free (bin);
 		return 0;
 	}
+	r_config_set_i (core.config, "bin.rawstr", rawstr);
 	cf = r_core_file_open (&core, file, R_IO_READ, 0);
 	fd = cf ? r_core_file_cur_fd (&core) : -1;
 	if (!cf || fd == -1) {
 		eprintf ("r_core: Cannot open '%s'\n", file);
 		return 1;
 	}
-	if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, R_FALSE) ){
-		if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, R_TRUE)) {
+	if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, rawstr)){
+		if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open '%s'\n", file);
 			return 1;
 		}
