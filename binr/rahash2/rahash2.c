@@ -280,9 +280,8 @@ int main(int argc, char **argv) {
 		switch (b64mode) {
 		case 1: // encode
 			{
-			ut8 *out = malloc (INSIZE);
 			int binlen = strlen (hashstr);
-			out = malloc (((binlen+1)*4)/3);
+			ut8 *out = malloc (((binlen+1)*4)/3);
 			if (out) {
 				r_base64_encode (out, (const ut8*)hashstr, binlen);
 				printf ("%s\n", out);
