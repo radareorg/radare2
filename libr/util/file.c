@@ -37,7 +37,11 @@ R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 		fclose (ffd);
 	}
 
+#if __WINDOWS__
+	fd = r_sandbox_open (filename, O_RDWR, 0644);
+#else
 	fd = r_sandbox_open (filename, O_RDWR|O_SYNC, 0644);
+#endif
 	if (!fd || fd == -1) return R_FALSE;
 
 	ftruncate (fd, newsize);
@@ -451,7 +455,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 	return m;
 }
 #elif __WINDOWS__
-static RMmap *r_file_mmap_windows (RMmap *m) {
+static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 	m->fh = CreateFile (file, m->rw?GENERIC_WRITE:GENERIC_READ,
 		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
@@ -528,7 +532,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 #elif __WINDOWS__
 	close (fd);
 	m->fd = -1;
-	return r_file_mmap_windows (m);
+	return r_file_mmap_windows (m, file);
 #else
 	return r_file_mmap_other (m);
 #endif

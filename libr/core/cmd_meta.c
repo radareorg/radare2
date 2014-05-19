@@ -169,7 +169,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 				if (!space) {
 					file_line = strdup (p);
 				} else if (space > colon) {
-					file_line = strndup (p, space - p);
+					file_line = r_str_ndup (p, space - p);
 				} else {
 					goto error;
 				}

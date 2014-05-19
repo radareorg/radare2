@@ -160,6 +160,7 @@ typedef struct r_bin_t {
 	int narch;
 	void *user;
 	int minstrlen;
+	int rawstr;
 	Sdb *sdb;
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;

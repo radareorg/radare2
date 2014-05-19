@@ -579,33 +579,38 @@ static int cmd_resize(void *data, const char *input) {
 	int grow;
 
 	oldsize = core->file->size;
-	while (*input==' ')
-		input++;
 	switch (*input) {
-		case 'm':
-			if (input[1]==' ')
-				r_file_rm (input+2);
-			else eprintf ("Usage: rm [file]   # removes a file\n");
-			break;
-		case '+':
-		case '-':
-			delta = (st64)r_num_math (core->num, input);
-			newsize = oldsize + delta;
-			break;
-		case '\0':
-			r_cons_printf ("%"PFMT64d"\n", oldsize);
-			break;
-		case '?':
-			r_cons_printf (
-				"|Usage: r[+-][ size]\n"
-				"| r         display file size\n"
-				"| r size    expand or truncate file to given size\n"
-				"| r-num     remove num bytes, move following data down\n"
-				"| r+num     insert num bytes, move following data up\n"
-				"| rm [file] remove file\n");
-			return R_TRUE;
-		default:
-			newsize = r_num_math (core->num, input);
+	case 'm':
+		if (input[1]==' ')
+			r_file_rm (input+2);
+		else eprintf ("Usage: rm [file]   # removes a file\n");
+		return R_TRUE;
+	case '\0':
+		r_cons_printf ("%"PFMT64d"\n", oldsize);
+		return R_TRUE;
+	case '+':
+	case '-':
+		delta = (st64)r_num_math (core->num, input);
+		newsize = oldsize + delta;
+		break;
+	case ' ':
+		newsize = r_num_math (core->num, input+1);
+		if (newsize==0) {
+			if (input[1]=='0')
+				eprintf ("Invalid size\n");
+			return R_FALSE;
+		}
+		break;
+	default:
+	case '?':
+		r_cons_printf (
+			"|Usage: r[+-][ size]\n"
+			"| r         display file size\n"
+			"| r size    expand or truncate file to given size\n"
+			"| r-num     remove num bytes, move following data down\n"
+			"| r+num     insert num bytes, move following data up\n"
+			"| rm [file] remove file\n");
+		return R_TRUE;
 	}
 
 	grow = (newsize > oldsize);

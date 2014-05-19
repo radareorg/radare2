@@ -999,6 +999,9 @@ if (
 #endif
 					nsym) == -1) {
 				eprintf ("Warning: read (sym)\n");
+				free (ret);
+				free (sym);
+				free (strtab);
 				return NULL;
 			}
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof (Elf_(Sym)), k++) {
