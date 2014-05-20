@@ -247,7 +247,8 @@ static int r_cmd_yara_init() {
 	LOADSYM (yr_rules_scan_mem);
 	LOADSYM (yr_rules_destroy);
 
-	r_lib_dl_close (libyara);
+	// Causes segfault, FIXME: Resource leak
+	// r_lib_dl_close (libyara);
 
 	r_yr_initialize ();
 
