@@ -336,7 +336,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (import_dir_offset != 0) {
 		if (import_dir_size<1 || import_dir_size>0xffff) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n", import_dir_size);
-			import_dir_size = 0xFFFF;
+			import_dir_size = 0xffff;
 		}
 		if (!(bin->import_directory = malloc (import_dir_size))) {
 			perror("malloc (import directory)");
@@ -681,11 +681,14 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int mallocsz, i, j = 0;
 
 	/* NOTE: import_dirs and delay_import_dirs can be -1 */
-	mallocsz = (import_dirs_count + delay_import_dirs_count + 3) * sizeof (struct r_bin_pe_lib_t);
-	if (mallocsz<1 || mallocsz>bin->size) {
+	mallocsz = (import_dirs_count + delay_import_dirs_count + 3) * \
+		sizeof (struct r_bin_pe_lib_t);
+	if (mallocsz<1) {
 		//eprintf ("pe: Invalid libsize\n");
 		return NULL;
 	}
+	if (mallocsz>bin->size)
+		mallocsz = bin->size;
 	libs = malloc (mallocsz);
 	if (!libs) {
 		perror ("malloc (libs)");
@@ -693,7 +696,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	}
 	if (bin->import_directory) {
 		for (i = j = 0; i < import_dirs_count; i++, j++) {
-			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
+			if (r_buf_read_at (bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - import dirs)\n");
 				free (libs);
@@ -703,9 +706,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].FirstThunk) == 0)
 				break;
 		}
+		if (bin->delay_import_directory)
 		for (i = 0; i < delay_import_dirs_count; i++, j++) {
-			if (!bin->delay_import_directory)
-				break;
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - delay import dirs)\n");

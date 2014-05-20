@@ -277,12 +277,9 @@ static int has_seh(const RBinFile* arch) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
-	if (!arch)
-		return R_FALSE;
-
+	if (!arch) return R_FALSE;
 	buf = r_buf_buffer (arch->buf);
-	if (!buf)
-		return R_FALSE;
+	if (!buf) return R_FALSE;
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
