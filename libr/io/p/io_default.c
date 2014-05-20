@@ -98,8 +98,8 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 	free (mmo->filename);
 	r_buf_free (mmo->buf);
-	memset (mmo, 0, sizeof (RIOMMapFileObj));
 	close (mmo->fd);
+	memset (mmo, 0, sizeof (RIOMMapFileObj));
 	free (mmo);
 }
 

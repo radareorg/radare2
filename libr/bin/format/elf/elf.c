@@ -195,7 +195,7 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		//eprintf ("Warning: File is not ELF\n");
 		return R_FALSE;
 	}
-	Elf_(r_bin_elf_init_phdr) (bin);
+//	Elf_(r_bin_elf_init_phdr) (bin);
         if (!Elf_(r_bin_elf_init_phdr) (bin))
                 eprintf ("Warning: Cannot initialize program headers\n");
 	if (!Elf_(r_bin_elf_init_shdr) (bin))
