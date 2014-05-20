@@ -273,6 +273,24 @@ static int has_aslr(const RBinFile* arch) {
 	return (*(ut8*)(buf + idx + 0x5E)) & 0x40;
 }
 
+static int has_seh(const RBinFile* arch) {
+	const ut8 *buf;
+	unsigned int idx;
+	ut64 sz;
+	if (!arch)
+		return R_FALSE;
+
+	buf = r_buf_buffer (arch->buf);
+	if (!buf)
+		return R_FALSE;
+	sz = r_buf_size (arch->buf);
+	idx = (buf[0x3c] | (buf[0x3d]<<8));
+	if (sz < idx + 0x5E)
+		return R_FALSE;
+	return (*(ut16*)(buf + idx + 0x5E)) & \
+		IMAGE_DLLCHARACTERISTICS_NO_SEH;
+}
+
 static int has_nx(const RBinFile* arch) {
 	const ut8 *buf;
 	unsigned int idx;
@@ -283,13 +301,12 @@ static int has_nx(const RBinFile* arch) {
 	buf = r_buf_buffer (arch->buf);
 	if (!buf)
 		return R_FALSE;
-
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
 		return R_FALSE;
-
-	return (*(ut16*)(buf + idx + 0x5E)) & 0x100;
+	return (*(ut16*)(buf + idx + 0x5E)) & \
+		IMAGE_DLL_CHARACTERISTICS_NX_COMPAT;
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -330,6 +347,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary (arch);
 	ret->has_nx = has_nx (arch);
+	sdb_bool_set (arch->sdb, "pe.seh", has_seh(arch), 0);
 	ret->has_pi = has_aslr (arch);
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))

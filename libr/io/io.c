@@ -486,6 +486,8 @@ R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	int posix_whence = SEEK_SET;
 	ut64 ret = UT64_MAX;
+	if (io == NULL)
+		return ret;
 	if (io->buffer_enabled) {
 		io->off = offset;
 		return offset;
@@ -506,8 +508,6 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		posix_whence = SEEK_END;
 		break;
 	}
-	if (io == NULL)
-		return ret;
 	// XXX: list_empty trick must be done in r_io_set_va();
 	//eprintf ("-(seek)-> 0x%08llx\n", offset);
 	if (!io->debug && io->va && !r_list_empty (io->sections)) {

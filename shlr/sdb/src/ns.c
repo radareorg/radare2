@@ -114,7 +114,7 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	SdbListIter *it;
 	ut32 hash = sdb_hash (name);
 	if (!s || !name)
-		return NULL;
+		return 0;
 	ls_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
 			if (ns->sdb == r)
