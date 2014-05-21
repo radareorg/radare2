@@ -1225,7 +1225,7 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CALL:
 			if (core->bin->cur->o->imports && core->bin->cur->o->relocs) {
 				r_list_foreach(core->bin->cur->o->relocs, iter, rel) {
-					if ((rel->rva == ds->analop.jump) &&
+					if ((rel->vaddr == ds->analop.jump) &&
 						(rel->import != NULL)) {
 						if (ds->show_color)
 							r_cons_strcat (ds->color_fname);

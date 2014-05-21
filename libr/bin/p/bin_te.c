@@ -54,7 +54,7 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 		if (!(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = r_bin_te_get_main_offset (arch->o->bin_obj);
+		ret->paddr = ret->vaddr = r_bin_te_get_main_paddr (arch->o->bin_obj);
 		break;
 	}
 	return ret;
@@ -71,8 +71,8 @@ static RList* entries(RBinFile *arch) {
 	if (!(entry = r_bin_te_get_entrypoint (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->offset = entry->offset;
-		ptr->rva = entry->rva;
+		ptr->paddr = entry->paddr;
+		ptr->vaddr = entry->vaddr;
 		r_list_append (ret, ptr);
 	}
 	free (entry);
@@ -103,8 +103,8 @@ static RList* sections(RBinFile *arch) {
 			R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
-		ptr->offset = sections[i].offset;
-		ptr->rva = sections[i].rva;
+		ptr->paddr = sections[i].paddr;
+		ptr->vaddr = sections[i].vaddr;
 		ptr->srwx = 0;
 		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags))
 			ptr->srwx |= 0x1;

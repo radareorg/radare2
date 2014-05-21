@@ -91,8 +91,8 @@ static RList* sections(RBinFile *arch) {
 		return ret;
 	strcpy (ptr->name, "bootblk");
 	ptr->vsize = ptr->size = 0x10000;
-	ptr->offset = arch->buf->length - ptr->size;
-	ptr->rva = 0xf0000;
+	ptr->paddr = arch->buf->length - ptr->size;
+	ptr->vaddr = 0xf0000;
 	ptr->srwx = 7;
 	r_list_append (ret, ptr);
 	return ret;
@@ -101,14 +101,13 @@ static RList* sections(RBinFile *arch) {
 static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
 	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinAddr));
-	ptr->offset = ptr->rva = 0xffff0;
+	ptr->paddr = ptr->vaddr = 0xffff0;
 	r_list_append (ret, ptr);
 	return ret;
 }

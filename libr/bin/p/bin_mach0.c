@@ -67,8 +67,8 @@ static RList* entries(RBinFile *arch) {
 	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (obj->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->offset = entry->offset + obj->boffset;
-		ptr->rva = entry->addr;
+		ptr->paddr = entry->offset + obj->boffset;
+		ptr->vaddr = entry->addr;
 		r_list_append (ret, ptr);
 	}
 	free (entry);
@@ -93,10 +93,10 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].size;
-		ptr->offset = sections[i].offset + obj->boffset;
-		ptr->rva = sections[i].addr;
-		if (ptr->rva == 0)
-			ptr->rva = ptr->offset;
+		ptr->paddr = sections[i].offset + obj->boffset;
+		ptr->vaddr = sections[i].addr;
+		if (ptr->vaddr == 0)
+			ptr->vaddr = ptr->paddr;
 		ptr->srwx = sections[i].srwx;
 		r_list_append (ret, ptr);
 	}
@@ -127,8 +127,8 @@ static RList* symbols(RBinFile *arch) {
 		else
 			strncpy (ptr->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
-		ptr->rva = symbols[i].addr;
-		ptr->offset = symbols[i].offset+obj->boffset;
+		ptr->vaddr = symbols[i].addr;
+		ptr->paddr = symbols[i].offset+obj->boffset;
 		ptr->size = symbols[i].size;
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
@@ -211,8 +211,8 @@ static RList* relocs(RBinFile *arch) {
 			ptr->import = bin->imports_by_ord[relocs[i].ord];
 		else ptr->import = NULL;
 		ptr->addend = relocs[i].addend;
-		ptr->rva = relocs[i].addr;
-		ptr->offset = relocs[i].offset;
+		ptr->vaddr = relocs[i].addr;
+		ptr->paddr = relocs[i].offset;
 		r_list_append (ret, ptr);
 	}
 	free (relocs);
@@ -474,7 +474,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = MACH0_(r_bin_mach0_get_main) (arch->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		ret->offset = ret->rva = addr;
+		ret->paddr = ret->vaddr = addr;
 		break;
 	}
 	return ret;
@@ -488,8 +488,8 @@ static int size(RBinFile *arch) {
 		RBinSection *section;
 		arch->o->sections = sections (arch);
 		r_list_foreach (arch->o->sections, iter, section) {
-			if (section->offset > off) {
-				off = section->offset;
+			if (section->paddr > off) {
+				off = section->paddr;
 				len = section->size;
 			}
 		}

@@ -1195,11 +1195,11 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
-		r_core_anal_fcn (core, offset + va?baddr+binmain->rva:binmain->offset, -1,
+		r_core_anal_fcn (core, offset + va?baddr+binmain->vaddr:binmain->paddr, -1,
 				R_ANAL_REF_TYPE_NULL, depth);
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
-			r_core_anal_fcn (core, offset + va? baddr+entry->rva:entry->offset, -1,
+			r_core_anal_fcn (core, offset + va? baddr+entry->vaddr:entry->paddr, -1,
 					R_ANAL_REF_TYPE_NULL, depth);
 	/* Symbols (Imports are already analized by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL)
@@ -1207,7 +1207,7 @@ R_API int r_core_anal_all(RCore *core) {
 			if (core->cons->breaked)
 				break;
 			if (!strncmp (symbol->type, "FUNC", 4))
-				r_core_anal_fcn (core, offset + va?baddr+symbol->rva:symbol->offset, -1,
+				r_core_anal_fcn (core, offset + va?baddr+symbol->vaddr:symbol->paddr, -1,
 						R_ANAL_REF_TYPE_NULL, depth);
 		}
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */

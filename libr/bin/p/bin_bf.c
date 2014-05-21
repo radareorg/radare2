@@ -107,7 +107,7 @@ static RList* entries(RBinFile *arch) {
 	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinAddr));
-	ptr->offset = ptr->rva = 0;
+	ptr->paddr = ptr->vaddr = 0;
 	r_list_append (ret, ptr);
 	return ret;
 }

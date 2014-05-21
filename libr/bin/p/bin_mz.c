@@ -24,7 +24,7 @@ struct EXE {
 	unsigned short checksum;
 	unsigned short ip;
 	unsigned short cs;
-	unsigned short reloc_table_offset;
+	unsigned short reloc_table_paddr;
 	unsigned short overlay_number;
 };
 
@@ -38,7 +38,7 @@ if (exe.bytes_in_last_block)
 #endif
 
 struct EXE_RELOC {
-	unsigned short offset;
+	unsigned short paddr;
 	unsigned short segment;
 };
 
@@ -74,8 +74,8 @@ static RList* entries(RBinFile *arch) {
 	off = exe->header_paragraphs * 16L;
 	off += exe->ip; // XXX
 	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->offset = off;
-		ptr->rva = off;
+		ptr->paddr = off;
+		ptr->vaddr = off;
 		r_list_append (ret, ptr);
 	}
 
@@ -93,10 +93,10 @@ static RList* sections(RBinFile *arch) {
 
 	ptr = R_NEW0 (RBinSection);
 	strncpy (ptr->name, ".text", R_BIN_SIZEOF_STRINGS);
-	ptr->offset = exe->header_paragraphs * 16L;
-	ptr->size = arch->buf->length - ptr->offset;
+	ptr->paddr = exe->header_paragraphs * 16L;
+	ptr->size = arch->buf->length - ptr->paddr;
 	ptr->vsize = ptr->size;
-	ptr->rva = exe->header_paragraphs * 16L;
+	ptr->vaddr = exe->header_paragraphs * 16L;
 	ptr->srwx = r_str_rwx ("rwx");
 	if (ptr->size <1) {
 		eprintf ("Invalid section size\n");
@@ -108,8 +108,8 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, ".text", R_BIN_SIZEOF_STRINGS);
 	ptr->size = 100;
 	ptr->vsize = 100;
-	ptr->offset = 100;
-	ptr->rva = 0;
+	ptr->paddr = 100;
+	ptr->vaddr = 0;
 	ptr->srwx = r_str_rwx ("rwx");
 	r_list_append (ret, ptr);
 	//--
@@ -117,8 +117,8 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, ".data", R_BIN_SIZEOF_STRINGS);
 	ptr->size = 100;
 	ptr->vsize = 100;
-	ptr->offset = exe->header_paragraphs * 16L;
-	ptr->rva = 0;
+	ptr->paddr = exe->header_paragraphs * 16L;
+	ptr->vaddr = 0;
 	ptr->srwx = r_str_rwx ("rwx");
 	r_list_append (ret, ptr);
 #endif
@@ -142,7 +142,7 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_num_set (arch->sdb, "ip", exe->ip, 0);
 	sdb_num_set (arch->sdb, "cs", exe->cs, 0);
 	sdb_num_set (arch->sdb, "mz.relocs.count", exe->num_relocs, 0);
-	sdb_num_set (arch->sdb, "mz.relocs.offset", exe->reloc_table_offset, 0);
+	sdb_num_set (arch->sdb, "mz.relocs.paddr", exe->reloc_table_paddr, 0);
 	sdb_num_set (arch->sdb, "mz.checksum", exe->checksum, 0);
 
 	if ((ret = R_NEW0 (RBinInfo)) == NULL)
@@ -172,8 +172,8 @@ static int check(RBinFile *arch) {
 }
 
 /*
-	- MZ at offset 0
-	- no PE at offset stored at 0x3C
+	- MZ at paddr 0
+	- no PE at paddr stored at 0x3C
 */
 static int check_bytes(const ut8 *buf, ut64 length) {
 	int idx;

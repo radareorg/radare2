@@ -195,7 +195,7 @@ static int rabin_dump_symbols(int len) {
 			free (buf);
 			return R_FALSE;
 		}
-		r_buf_read_at (bin->cur->buf, symbol->offset, buf, len);
+		r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len);
 		r_hex_bin2str (buf, len, ret);
 		printf ("%s %s\n", symbol->name, ret);
 		free (buf);
@@ -222,7 +222,7 @@ static int rabin_dump_sections(char *scnname) {
 				free (buf);
 				return R_FALSE;
 			}
-			r_buf_read_at (bin->cur->buf, section->offset, buf, section->size);
+			r_buf_read_at (bin->cur->buf, section->paddr, buf, section->size);
 			if (output) {
 				r_file_dump (output, buf, section->size);
 			} else {

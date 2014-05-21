@@ -56,8 +56,8 @@ static RList* entries(RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->offset = 8*4;
-		ptr->rva = 8*4;// + baddr (arch);
+		ptr->paddr = 8*4;
+		ptr->vaddr = 8*4;// + baddr (arch);
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -80,8 +80,8 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
 	ptr->size = textsize;
 	ptr->vsize = textsize + (textsize%4096);
-	ptr->offset = 8*4;
-	ptr->rva = ptr->offset;
+	ptr->paddr = 8*4;
+	ptr->vaddr = ptr->paddr;
 	ptr->srwx = 5; // r-x
 	r_list_append (ret, ptr);
 	// add data segment
@@ -92,8 +92,8 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, "data", R_BIN_SIZEOF_STRINGS);
 		ptr->size = datasize;
 		ptr->vsize = datasize + (datasize%4096);
-		ptr->offset = textsize+(8*4);
-		ptr->rva = ptr->offset;
+		ptr->paddr = textsize+(8*4);
+		ptr->vaddr = ptr->paddr;
 		ptr->srwx = 6; // rw-
 		r_list_append (ret, ptr);
 	}
@@ -106,8 +106,8 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, "syms", R_BIN_SIZEOF_STRINGS);
 		ptr->size = symssize;
 		ptr->vsize = symssize + (symssize%4096);
-		ptr->offset = datasize+textsize+(8*4);
-		ptr->rva = ptr->offset;
+		ptr->paddr = datasize+textsize+(8*4);
+		ptr->vaddr = ptr->paddr;
 		ptr->srwx = 4; // r--
 		r_list_append (ret, ptr);
 	}
@@ -119,8 +119,8 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, "spsz", R_BIN_SIZEOF_STRINGS);
 		ptr->size = spszsize;
 		ptr->vsize = spszsize + (spszsize%4096);
-		ptr->offset = symssize+datasize+textsize+(8*4);
-		ptr->rva = ptr->offset;
+		ptr->paddr = symssize+datasize+textsize+(8*4);
+		ptr->vaddr = ptr->paddr;
 		ptr->srwx = 4; // r--
 		r_list_append (ret, ptr);
 	}
@@ -132,8 +132,8 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, "pcsz", R_BIN_SIZEOF_STRINGS);
 		ptr->size = pcszsize;
 		ptr->vsize = pcszsize + (pcszsize%4096);
-		ptr->offset = spszsize+symssize+datasize+textsize+(8*4);
-		ptr->rva = ptr->offset;
+		ptr->paddr = spszsize+symssize+datasize+textsize+(8*4);
+		ptr->vaddr = ptr->paddr;
 		ptr->srwx = 4; // r--
 		r_list_append (ret, ptr);
 	}
