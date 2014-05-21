@@ -6,6 +6,20 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
+/* Return a mapping from the register number i.e. $0 .. $31 to string name */
+static const char* mips_reg_decode(unsigned reg_num)
+{
+/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
+	static const char *REGISTERS[32] = {
+		"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
+		"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+		"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+		"t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
+	};
+	if (reg_num < 32) return REGISTERS[reg_num];
+	return NULL;
+}
+
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len) {
 	unsigned int opcode;
 	ut8 b[4];
@@ -230,9 +244,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		          |                     |
 		 ((b[0]&3)<<3)+(b[1]>>5)   (b[2]<<8)+b[3]
 #endif
-#if WIP
 		int rs = ((b[0]&3)<<3)+(b[1]>>5);
-#endif
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
 		if (((optype >> 2) ^ 0x3) && (imm & 0x8000))
@@ -249,14 +261,42 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			op->fail = addr+8;
 			op->delay = 1;
 			break;
-		case 8: // addi
+		// The following idiom is very common in mips 32 bit:
+		//
+		//     lui a0,0x8123
+		//     ; maybe other opcodes
+		//     ; maybe even a jump with branch delay
+		//     addui a0,a0,-12345
+		//
+		// Here, a0 might typically be any a0 or s0 register, and -12345 is a signed 16-bit number
+		// This is used to address const or static data in a 64kb page
+		// 0x8123 is the upper 16 bits of the register
+		// The net result: a0 := 0x8122cfc7
+		// The cases vary, so for now leave the smarts in a human generated macro to decide
+		// but the macro needs the opcode values as input
+		//
+		// TODO: this is a stop-gap. Really we need some smarts in here to tie this into the 
+		// flags directly, as suggested here: https://github.com/radare/radare2/issues/949#issuecomment-43654922
+		case 15: // lui
+			op->dst = r_anal_value_new ();
+			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			// TODO: currently there is no way for the macro to get access to this register
+			op->val = imm;
+			break;
 		case 9: // addiu
+			op->dst = r_anal_value_new ();
+			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			// TODO: currently there is no way for the macro to get access to this register
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = r_reg_get (anal->reg, mips_reg_decode(rs), R_REG_TYPE_GPR);
+			op->val = imm; // Beware: this one is signed... use `?vi $v`
+			break;
+		case 8: // addi
 		case 10: // stli
 		case 11: // stliu
 		case 12: // andi
 		case 13: // ori
 		case 14: // xori
-		case 15: // lui
 		case 32: // lb
 		case 33: // lh
 		case 35: // lw
@@ -346,7 +386,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		lbu 	rt, immediate(rs) 	100100 	
 
 		lh 	rt, immediate(rs) 	100001 	
-		lhu 	rt, immediate(rs) 	100101 	
+		lhu 	rt, immediate(rs) 	100101
 
 		lui 	rt, immediate 	 	001111 	
 
@@ -383,6 +423,52 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 	return op->size;
 }
 
+/* Set the profile register */
+static int mips_set_reg_profile(RAnal* anal){
+	int ret = r_reg_set_profile_string(anal->reg,
+			"=pc    pc\n"
+			"=sp    sp\n"
+			"=a0    a0\n"
+			"=a1    a1\n"
+			"=a2    a2\n"
+			"=a3    a3\n"
+			"gpr	zero	.32	0	0\n"
+			"gpr	at	.32	4	0\n"
+			"gpr	v0	.32	8	0\n"
+			"gpr	v1	.32	12	0\n"
+			"gpr	a0	.32	16	0\n"
+			"gpr	a1	.32	20	0\n"
+			"gpr	a2	.32	24	0\n"
+			"gpr	a3	.32	28	0\n"
+			"gpr	t0	.32	32	0\n"
+			"gpr	t1	.32	36	0\n"
+			"gpr	t2 	.32	40	0\n"
+			"gpr	t3 	.32	44	0\n"
+			"gpr	t4 	.32	48	0\n"
+			"gpr	t5 	.32	52	0\n"
+			"gpr	t6 	.32	56	0\n"
+			"gpr	t7 	.32	60	0\n"
+			"gpr	s0	.32	64	0\n"
+			"gpr	s1	.32	68	0\n"
+			"gpr	s2 	.32	72	0\n"
+			"gpr	s3 	.32	76	0\n"
+			"gpr	s4 	.32	80	0\n"
+			"gpr	s5 	.32	84	0\n"
+			"gpr	s6 	.32	88	0\n"
+			"gpr	s7 	.32	92	0\n"
+			"gpr	t8 	.32	96	0\n"
+			"gpr	t9 	.32	100	0\n"
+			"gpr	k0 	.32	104	0\n"
+			"gpr	k1 	.32	108	0\n"
+			"gpr	gp 	.32	112	0\n"
+			"gpr	sp	.32	116	0\n"
+			"gpr	fp	.32	120	0\n"
+			"gpr	ra	.32	124	0\n"
+	);
+	return ret;
+}
+
+
 struct r_anal_plugin_t r_anal_plugin_mips = {
 	.name = "mips",
 	.desc = "MIPS code analysis plugin",
@@ -392,7 +478,7 @@ struct r_anal_plugin_t r_anal_plugin_mips = {
 	.init = NULL,
 	.fini = NULL,
 	.op = &mips_op,
-	.set_reg_profile = NULL,
+	.set_reg_profile = mips_set_reg_profile,
 	.fingerprint_bb = NULL,
 	.fingerprint_fcn = NULL,
 	.diff_bb = NULL,
