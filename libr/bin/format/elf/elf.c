@@ -722,10 +722,10 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		return NULL;
 	if ((got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
 		(got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
-		return NULL;
+			got_offset = 0;
 	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
 		(got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1)
-		return NULL;
+			got_offset = 0;
 	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
 			bin->strtab_section = &bin->shdr[bin->shdr[i].sh_link];
@@ -765,15 +765,21 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		}
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		const char *sh_name = &bin->strtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_name > bin->strtab_size) {
 			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
 				bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
 		}
-		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt")) {
+		if (!strcmp (sh_name, ".rel.plt")) {
 			tsize = sizeof (Elf_(Rel));
 			rel_fmt[0] = '2';
-		} else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt")) {
+		} else if (!strcmp (sh_name, ".rela.plt")) {
+			tsize = sizeof (Elf_(Rela));
+			rel_fmt[0] = '3';
+		} else if (!strcmp (sh_name, ".rela.text")) {
+			// TODO: Implement this method somehow
+			// those types are not supported yet
 			tsize = sizeof (Elf_(Rela));
 			rel_fmt[0] = '3';
 		} else continue;
