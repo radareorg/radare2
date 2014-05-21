@@ -660,11 +660,14 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	ut8 *buf_bytes = NULL;
 	ut64 off = 0;
 
-	if (!io || !desc)
+	if (!io || !desc || !out_sz)
 		return NULL;
 
+	if (*out_sz == UT64_MAX)
+		*out_sz = r_io_desc_size (io, desc);
+
 	off = io->off;
-	*out_sz = r_io_desc_size (io, desc);
+
 
 	if (*out_sz == UT64_MAX) return buf_bytes;
 
