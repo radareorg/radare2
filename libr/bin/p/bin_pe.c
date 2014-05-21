@@ -344,8 +344,12 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary (arch);
 	ret->has_nx = has_nx (arch);
-	sdb_bool_set (arch->sdb, "pe.seh", has_seh(arch), 0);
 	ret->has_pi = has_aslr (arch);
+	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
+	sdb_bool_set (arch->sdb, "pe.nx", has_nx(arch), 0);
+	sdb_bool_set (arch->sdb, "pe.seh", has_seh(arch), 0);
+	sdb_bool_set (arch->sdb, "pe.aslr", has_aslr(arch), 0);
+	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= 0x01;
