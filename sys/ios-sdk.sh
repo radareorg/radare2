@@ -42,6 +42,6 @@ if [ $? = 0 ]; then
 		rm -rf sys/cydia/radare2/root
 		mkdir -p sys/cydia/radare2/root
 		sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-		( cd sys/cydia/radare2/root ; make clean ; make )
+		( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
 	fi
 fi
