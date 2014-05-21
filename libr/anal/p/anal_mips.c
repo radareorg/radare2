@@ -244,9 +244,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		          |                     |
 		 ((b[0]&3)<<3)+(b[1]>>5)   (b[2]<<8)+b[3]
 #endif
-#if WIP
 		int rs = ((b[0]&3)<<3)+(b[1]>>5);
-#endif
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
 		if (((optype >> 2) ^ 0x3) && (imm & 0x8000))
@@ -263,14 +261,42 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			op->fail = addr+8;
 			op->delay = 1;
 			break;
-		case 8: // addi
+		// The following idiom is very common in mips 32 bit:
+		//
+		//     lui a0,0x8123
+		//     ; maybe other opcodes
+		//     ; maybe even a jump with branch delay
+		//     addui a0,a0,-12345
+		//
+		// Here, a0 might typically be any a0 or s0 register, and -12345 is a signed 16-bit number
+		// This is used to address const or static data in a 64kb page
+		// 0x8123 is the upper 16 bits of the register
+		// The net result: a0 := 0x8122cfc7
+		// The cases vary, so for now leave the smarts in a human generated macro to decide
+		// but the macro needs the opcode values as input
+		//
+		// TODO: this is a stop-gap. Really we need some smarts in here to tie this into the 
+		// flags directly, as suggested here: https://github.com/radare/radare2/issues/949#issuecomment-43654922
+		case 15: // lui
+			op->dst = r_anal_value_new ();
+			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			// TODO: currently there is no way for the macro to get access to this register
+			op->val = imm;
+			break;
 		case 9: // addiu
+			op->dst = r_anal_value_new ();
+			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			// TODO: currently there is no way for the macro to get access to this register
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = r_reg_get (anal->reg, mips_reg_decode(rs), R_REG_TYPE_GPR);
+			op->val = imm; // Beware: this one is signed... use `?vi $v`
+			break;
+		case 8: // addi
 		case 10: // stli
 		case 11: // stliu
 		case 12: // andi
 		case 13: // ori
 		case 14: // xori
-		case 15: // lui
 		case 32: // lb
 		case 33: // lh
 		case 35: // lw
