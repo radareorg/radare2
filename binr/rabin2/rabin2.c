@@ -505,12 +505,12 @@ int main(int argc, char **argv) {
 	cf = r_core_file_open (&core, file, R_IO_READ, 0);
 	fd = cf ? r_core_file_cur_fd (&core) : -1;
 	if (!cf || fd == -1) {
-		eprintf ("r_core: Cannot open '%s'\n", file);
+		eprintf ("r_core: Cannot open file\n");
 		return 1;
 	}
 	if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, rawstr)){
 		if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, rawstr)) {
-			eprintf ("r_bin: Cannot open '%s'\n", file);
+			eprintf ("r_bin: Cannot open file\n");
 			return 1;
 		}
 	}
