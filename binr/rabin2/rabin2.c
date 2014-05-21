@@ -84,6 +84,22 @@ static int rabin_show_help(int v) {
 	return 1;
 }
 
+static char *stdin_gets() {
+        static char buf[96096];
+        fgets (buf, sizeof (buf)-1, stdin);
+        if (feof (stdin)) return NULL;
+        buf[strlen (buf)-1] = 0;
+        return strdup (buf);
+}
+
+static void __sdb_prompt(Sdb *sdb) {
+	char *line;
+	for (;(line = stdin_gets ());) {
+		sdb_query (sdb, line);
+		free (line);
+	}
+}
+
 static int extract_binobj (RBinFile *bf, RBinObject *o, int idx ) {
 	ut64 boffset = o ? o->boffset : 0;
 	ut64 bin_size = o ? o->obj_size : 0;
@@ -516,7 +532,9 @@ int main(int argc, char **argv) {
 	}
 
 	if (query) {
-		sdb_query (bin->cur->sdb, query);
+		if (!strcmp (query, "-")) {
+			__sdb_prompt (bin->cur->sdb);
+		} else sdb_query (bin->cur->sdb, query);
 		return 0;
 	}
 

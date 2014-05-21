@@ -527,12 +527,13 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB (MIN_LOAD_SIZE)
 	// if it fails, the whole file is loaded.
-	ut64 MIN_LOAD_SIZE = 2 * (1 << 10 << 10);
-	int res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr, loadaddr, xtr_idx, offset, name, MIN_LOAD_SIZE);
-	if (!res) {
-		return r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr, loadaddr, xtr_idx, offset, name, UT64_MAX);
-	}
-
+	const ut64 MIN_LOAD_SIZE = 2 * (1 << 10 << 10);
+	int res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
+		loadaddr, xtr_idx, offset, name, MIN_LOAD_SIZE);
+	if (res)
+		return res;
+	return r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
+		loadaddr, xtr_idx, offset, name, UT64_MAX);
 }
 
 #if 0
