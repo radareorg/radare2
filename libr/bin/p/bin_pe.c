@@ -284,7 +284,7 @@ static int has_seh(const RBinFile* arch) {
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
 		return R_FALSE;
-	return (*(ut16*)(buf + idx + 0x5E)) & \
+	return !(*(ut16*)(buf + idx + 0x5E)) & \
 		IMAGE_DLLCHARACTERISTICS_NO_SEH;
 }
 
