@@ -232,6 +232,7 @@ static int cmd_help(void *data, const char *input) {
 		"| $Dn    get nth data reference in function\n"
 		"| $Xn    get nth xref of function\n"
 		"| $m     opcode memory reference (e.g. mov eax,[0x10] => 0x10)\n"
+		"| $v     opcode immediate value (e.g. lui a0,0x8010 => 0x8010)\n"
 		"| $l     opcode length\n"
 		"| $e     1 if end of block, else 0\n"
 		"| ${ev}  get value of eval config variable # TODO: use ?k too\n"
