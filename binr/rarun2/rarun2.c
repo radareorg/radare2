@@ -221,6 +221,7 @@ static int runfile () {
 		RSocket *child, *fd = r_socket_new (0);
 		if (!r_socket_listen (fd, _listen, NULL)) {
 			eprintf ("rarun2: cannot listen\n");
+			r_socket_free (fd);
 			return 1;
 		}
 		child = r_socket_accept (fd);
