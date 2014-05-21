@@ -192,7 +192,7 @@ static RList* strings (RBinFile *arch) {
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
 					(ut8*)&ptr->string, len);
 			ptr->string[(int) len+1]='\0';
-			ptr->rva = ptr->offset = bin->strings[i];
+			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->ordinal = i+1;
 			r_list_append (ret, ptr);
@@ -357,7 +357,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 					RBinSymbol *sym = R_NEW0 (RBinSymbol);
 					strncpy (sym->name, flag_name, R_BIN_SIZEOF_STRINGS);
 					strcpy (sym->type, "FUNC");
-					sym->offset = sym->rva = MC;
+					sym->paddr = sym->vaddr = MC;
 					r_list_append (bin->methods_list, sym);
 				}
 				free (method_name);
@@ -398,7 +398,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
 				strcpy (sym->type, "FUNC");
-				sym->offset = sym->rva = 0; // UNKNOWN
+				sym->paddr = sym->vaddr = 0; // UNKNOWN
 				r_list_append (bin->imports_list, sym);
 			}
 			free (method_name);
@@ -440,15 +440,15 @@ dprintf ("----> %d\n", bin->methods[i].name_id);
 				classname, methodname);
 		ptr->ordinal = i+1;
 		ptr->size = 0;
-		ptr->rva = ptr->offset = getmethodoffset (bin,
+		ptr->vaddr = ptr->offset = getmethodoffset (bin,
 			(int)ptr->ordinal, (ut32*)&ptr->size);
 dprintf ("____%s__%s____  (%d)  %llx\n", classname,
-	methodname, bin->methods[i].name_id, ptr->rva);
+	methodname, bin->methods[i].name_id, ptr->vaddr);
 free (classname);
 free (methodname);
 		//strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		if (ptr->rva) {
+		if (ptr->vaddr) {
 			free (ptr);
 			continue;
 		}
@@ -531,7 +531,7 @@ static RList* entries(RBinFile *arch) {
 	r_list_foreach (bin->methods_list, iter, m) {
 		if (strlen (m->name)>=4 && !strcmp (m->name+strlen (m->name)-4, "main")) {
 			dprintf ("ENTRY -> %s\n", m->name);
-			ptr->offset = ptr->rva = m->offset;
+			ptr->paddr = ptr->vaddr = m->paddr;
 			r_list_append (ret, ptr);
 		}
 	}
@@ -577,9 +577,9 @@ static RList* sections(RBinFile *arch) {
 	int fsym = 0;
 
 	r_list_foreach (ml, iter, m) {
-		if (fsym == 0 || m->offset<fsym)
-			fsym = m->offset;
-		ns = m->offset + m->size;
+		if (fsym == 0 || m->paddr<fsym)
+			fsym = m->paddr;
+		ns = m->paddr + m->size;
 		if (ns > arch->buf->length)
 			continue;
 		if (ns>fsymsz)
@@ -593,24 +593,24 @@ static RList* sections(RBinFile *arch) {
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "code");
 		ptr->size = bin->code_to-bin->code_from; //ptr->vsize = fsymsz;
-		ptr->offset = bin->code_from; //ptr->rva = fsym;
+		ptr->paddr= bin->code_from; //ptr->vaddr = fsym;
 		ptr->srwx = 4|1;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "constpool");
 		ptr->size = ptr->vsize = fsym;
-		ptr->offset = ptr->rva = 0;
+		ptr->paddr= ptr->vaddr = 0;
 		ptr->srwx = 4;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "data");
-		ptr->offset = ptr->rva = fsymsz+fsym;
-		if (arch->buf->length > ptr->rva) {
-			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
+		ptr->paddr = ptr->vaddr = fsymsz+fsym;
+		if (arch->buf->length > ptr->vaddr) {
+			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
 		} else {
-			ptr->size = ptr->vsize = ptr->rva - arch->buf->length;
+			ptr->size = ptr->vsize = ptr->vaddr - arch->buf->length;
 			// hacky workaround
 			dprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;

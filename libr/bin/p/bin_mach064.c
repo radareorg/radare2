@@ -179,7 +179,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		if (!addr || !(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = addr;
+		ret->paddr = ret->vaddr = addr;
 		break;
 	}
 	return ret;

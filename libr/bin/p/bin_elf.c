@@ -69,7 +69,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		break;
 	}
 	if (addr && (ret = R_NEW0 (RBinAddr)))
-		ret->offset = ret->rva = addr;
+		ret->paddr = ret->vaddr = addr;
 	return ret;
 }
 
@@ -83,7 +83,7 @@ static RList* entries(RBinFile *arch) {
 	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinAddr));
-	ptr->offset = ptr->rva = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
+	ptr->paddr = ptr->vaddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
 	r_list_append (ret, ptr);
 	return ret;
 }
@@ -105,10 +105,10 @@ static RList* sections(RBinFile *arch) {
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 			ptr->size = section[i].size;
 			ptr->vsize = section[i].size;
-			ptr->offset = section[i].offset;
-			ptr->rva = section[i].rva;
-			// HACK
-			if (ptr->rva == 0) ptr->rva = section[i].offset;
+			ptr->paddr = section[i].offset;
+			ptr->vaddr = section[i].rva;
+
+			// HACK if (ptr->vaddr == 0) { ptr->vaddr = section[i].offset; }
 			ptr->srwx = 0;
 			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
 				ptr->srwx |= 1;
@@ -138,15 +138,15 @@ static RList* sections(RBinFile *arch) {
 				int perms = phdr[i].p_flags;
 				ut64 align = phdr[i].p_align;
 				if (!align) align = 0x1000;
-				memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, align);
+				memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, (int)align);
 				//vaddr -= obj->baddr; // yeah
 				if (!(ptr = R_NEW0 (RBinSection)))
 					return ret;
 				sprintf (ptr->name, "phdr%d", n);
 				ptr->size = memsz;
 				ptr->vsize = memsz;
-				ptr->offset = paddr;
-				ptr->rva = vaddr;
+				ptr->paddr = paddr;
+				ptr->vaddr = vaddr;
 				ptr->srwx = perms;
 				r_list_append (ret, ptr);
 				n++;
@@ -163,8 +163,8 @@ static RList* sections(RBinFile *arch) {
 			sprintf (ptr->name, "undefined");
 			ptr->size = arch->size;
 			ptr->vsize = arch->size;
-			ptr->offset = 0;
-			ptr->rva = 0;
+			ptr->paddr = 0;
+			ptr->vaddr = 0;
 			ptr->srwx = 7;
 			r_list_append (ret, ptr);
 		}
@@ -188,7 +188,7 @@ static RList* symbols(RBinFile *arch) {
 			RListIter *iter;
 			r_list_foreach (arch->o->sections, iter, s) {
 				if (s->srwx & 1) {
-					base = s->offset;
+					base = s->paddr;
 					break;
 				}
 			}
@@ -208,8 +208,8 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = symbol[i].offset + base;
-		ptr->offset = symbol[i].offset + base;
+		ptr->vaddr = symbol[i].offset + base;
+		ptr->paddr = symbol[i].offset + base;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		if(bin->symbols_by_ord && ptr->ordinal < bin->symbols_by_ord_size)
@@ -230,8 +230,8 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = symbol[i].offset;
-		ptr->offset = symbol[i].offset;
+		ptr->vaddr = symbol[i].offset;
+		ptr->paddr = symbol[i].offset;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		if(bin->symbols_by_ord && ptr->ordinal < bin->symbols_by_ord_size)
@@ -303,10 +303,10 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym])
 			r->import = bin->imports_by_ord[rel->sym];
 		else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym])
-			r->addend += B + bin->symbols_by_ord[rel->sym]->rva;
+			r->addend += B + bin->symbols_by_ord[rel->sym]->vaddr;
 	}
-	r->rva = rel->rva;
-	r->offset = rel->offset;
+	r->vaddr = rel->rva;
+	r->paddr = rel->offset;
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = !rel->is_rela; return r
@@ -382,9 +382,13 @@ static RList* relocs(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+#if 0
 	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got")) == -1 &&
-		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt")) == -1)
+		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt")) == -1) 
+	{
 		return ret;
+	}
+#endif
 	if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !relocs[i].last; i++) {
@@ -488,8 +492,8 @@ static RList* fields(RBinFile *arch) {
 		if (!(ptr = R_NEW (RBinField)))
 			break;
 		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = field[i].offset;
-		ptr->offset = field[i].offset;
+		ptr->vaddr = field[i].offset;
+		ptr->paddr = field[i].offset;
 		r_list_append (ret, ptr);
 	}
 	free (field);
@@ -504,8 +508,8 @@ static int size(RBinFile *arch) {
 		RBinSection *section;
 		arch->o->sections = sections (arch);
 		r_list_foreach (arch->o->sections, iter, section) {
-			if (section->offset > off) {
-				off = section->offset;
+			if (section->paddr > off) {
+				off = section->paddr;
 				len = section->size;
 			}
 		}

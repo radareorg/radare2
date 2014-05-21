@@ -62,8 +62,8 @@ enum {
 };
 
 typedef struct r_bin_addr_t {
-	ut64 rva;
-	ut64 offset;
+	ut64 vaddr;
+	ut64 paddr;
 } RBinAddr;
 
 typedef struct r_bin_hash_t {
@@ -243,8 +243,8 @@ typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS+1];
 	ut64 size;
 	ut64 vsize;
-	ut64 rva;
-	ut64 offset;
+	ut64 vaddr;
+	ut64 paddr;
 	ut64 srwx;
 	// per section platform info
 	const char *arch;
@@ -275,8 +275,8 @@ typedef struct r_bin_symbol_t {
 	char visibility_str[R_BIN_SIZEOF_STRINGS+1];
 	char classname[R_BIN_SIZEOF_STRINGS+1];
 	char descriptor[R_BIN_SIZEOF_STRINGS+1];
-	ut64 rva;
-	ut64 offset;
+	ut64 vaddr;
+	ut64 paddr;
 	ut64 size;
 	ut64 ordinal;
 	ut32 visibility;
@@ -297,16 +297,16 @@ typedef struct r_bin_reloc_t {
 	ut8 additive;
 	RBinImport *import;
 	st64 addend;
-	ut64 rva;
-	ut64 offset;
+	ut64 vaddr;
+	ut64 paddr;
 	ut32 visibility;
 } RBinReloc;
 
 typedef struct r_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
 	char string[R_BIN_SIZEOF_STRINGS+1];
-	ut64 rva;
-	ut64 offset;
+	ut64 vaddr;
+	ut64 paddr;
 	ut64 ordinal;
 	int size; // size of buffer containing the string in bytes
 	int length; // length of string in chars
@@ -315,8 +315,8 @@ typedef struct r_bin_string_t {
 
 typedef struct r_bin_field_t {
 	char name[R_BIN_SIZEOF_STRINGS+1];
-	ut64 rva;
-	ut64 offset;
+	ut64 vaddr;
+	ut64 paddr;
 	ut32 visibility;
 } RBinField;
 

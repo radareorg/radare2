@@ -2039,7 +2039,7 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 			addr = R_NEW (RBinAddr);
 			if (addr) {
 				memset (addr, 0, sizeof (RBinAddr));
-				addr->rva = addr->offset = r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
+				addr->vaddr = addr->paddr = r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
 			}
 			r_list_append (ret, addr);
 		}
@@ -2069,24 +2069,24 @@ R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym) {
 	ret = R_NEW0 (RBinAddr);
 	if (!ret)
 		return NULL;
-	ret->offset = -1;
+	ret->paddr = UT64_MAX;
 	switch (sym) {
 		case R_BIN_SYM_ENTRY:
 		case R_BIN_SYM_INIT:
-			ret->offset = r_bin_java_find_method_offset (bin, "<init>");
-			if(ret->offset == -1)
-				ret->offset = r_bin_java_find_method_offset (bin, "<cinit>");
+			ret->paddr = r_bin_java_find_method_offset (bin, "<init>");
+			if (ret->paddr == UT64_MAX)
+				ret->paddr = r_bin_java_find_method_offset (bin, "<cinit>");
 			break;
 		case R_BIN_SYM_FINI:
-			ret->offset = -1;
+			ret->paddr = UT64_MAX;
 			break;
 		case R_BIN_SYM_MAIN:
-			ret->offset = r_bin_java_find_method_offset (bin, "main");
+			ret->paddr = r_bin_java_find_method_offset (bin, "main");
 			break;
 		default:
-			ret->offset = -1;
+			ret->paddr = -1;
 	}
-	if (ret->offset != -1) ret->offset += bin->loadaddr;
+	if (ret->paddr != -1) ret->paddr += bin->loadaddr;
 	return ret;
 }
 
@@ -2140,7 +2140,7 @@ R_API RBinField* r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_ty
 	RBinField *field = r_bin_java_allocate_rbinfield ();
 	if (field) {
 		strncpy (field->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
-		field->offset = fm_type->file_offset + baddr;
+		field->paddr = fm_type->file_offset + baddr;
 		field->visibility = fm_type->flags;
 	}
 	return field;
@@ -2157,13 +2157,13 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD){
 			strncpy (sym->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-			sym->offset = r_bin_java_get_method_code_offset (fm_type);
-			sym->rva = r_bin_java_get_method_code_offset (fm_type) + baddr;
+			sym->paddr = r_bin_java_get_method_code_offset (fm_type);
+			sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 			sym->size = r_bin_java_get_method_code_size (fm_type);
 		} else{
 			strncpy (sym->type, "FIELD", R_BIN_SIZEOF_STRINGS);
-			sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
-			sym->rva = fm_type->file_offset + baddr;
+			sym->paddr = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
+			sym->vaddr = fm_type->file_offset + baddr;
 			sym->size = fm_type->size;
 		}
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
@@ -2217,8 +2217,8 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 		} else {
 			snprintf (sym->classname, R_BIN_SIZEOF_STRINGS, "%s", "UNKNOWN");
 		}
-		sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
-		sym->rva = fm_type->file_offset + baddr;
+		sym->paddr = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
+		sym->vaddr = fm_type->file_offset + baddr;
 		sym->ordinal = fm_type->metas->ord;
 		sym->size = fm_type->size;
 		sym->visibility = fm_type->flags;
@@ -2258,8 +2258,8 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 		}
 		if (class_name)
 			strncpy (sym->classname, class_name, R_BIN_SIZEOF_STRINGS);
-		sym->offset = obj->file_offset + baddr;
-		sym->rva = obj->file_offset + baddr;
+		sym->paddr = obj->file_offset + baddr;
+		sym->vaddr = obj->file_offset + baddr;
 		sym->ordinal = obj->metas->ord;
 		sym->size = 0;
 	}
@@ -2277,7 +2277,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "constant_pool");
 			section->size = bin->cp_size;
-			section->offset = bin->cp_offset + baddr;
+			section->paddr = bin->cp_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -2287,7 +2287,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		section = R_NEW0 (RBinSection);
 		strcpy (section->name, "fields");
 		section->size = bin->fields_size;
-		section->offset = bin->fields_offset + baddr;
+		section->paddr = bin->fields_offset + baddr;
 		section->srwx = 0;
 		r_list_append (sections, section);
 		section = NULL;
@@ -2296,7 +2296,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 			section = R_NEW0 (RBinSection);
 			snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
-			section->offset = fm_type->attr_offset + baddr;
+			section->paddr = fm_type->attr_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -2305,7 +2305,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		section = R_NEW0 (RBinSection);
 		strcpy (section->name, "methods");
 		section->size = bin->methods_size;
-		section->offset = bin->methods_offset + baddr;
+		section->paddr = bin->methods_offset + baddr;
 		section->srwx = 0;
 		r_list_append (sections, section);
 		section = NULL;
@@ -2314,7 +2314,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 			section = R_NEW0 (RBinSection);
 			snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
-			section->offset = fm_type->attr_offset + baddr;
+			section->paddr = fm_type->attr_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -2324,7 +2324,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "interfaces");
 			section->size = bin->interfaces_size;
-			section->offset = bin->interfaces_offset + baddr;
+			section->paddr = bin->interfaces_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -2335,7 +2335,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "attributes");
 			section->size = bin->attrs_size;
-			section->offset = bin->attrs_offset + baddr;
+			section->paddr = bin->attrs_offset + baddr;
 			r_list_append (sections, section);
 		}
 		section = NULL;
@@ -2588,7 +2588,7 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
 			str = (RBinString *) R_NEW0(RBinString);
 			if(str) {
-				str->offset = cp_obj->file_offset + bin->loadaddr;
+				str->paddr = cp_obj->file_offset + bin->loadaddr;
 				str->ordinal = cp_obj->metas->ord;
 				str->size = cp_obj->info.cp_utf8.length;
 				str->string[0] = 0;

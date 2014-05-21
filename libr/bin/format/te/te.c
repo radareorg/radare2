@@ -12,17 +12,17 @@ ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
 	return bin->header->StrippedSize - sizeof(TE_image_file_header);
 }
 
-ut64 r_bin_te_get_main_offset(struct r_bin_te_obj_t *bin) {
+ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	struct r_bin_te_addr_t *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
 
-	if (r_buf_read_at (bin->b, entry->offset, buf, sizeof (buf)) == -1) {
+	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
 		eprintf ("Error: read (entry)\n");
 	} else {
 		if (buf[367] == 0xe8) {
 			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
-			addr = entry->rva + 367 + 5 + delta;
+			addr = entry->vaddr + 367 + 5 + delta;
 		}
 	}
 	free (entry);
@@ -30,15 +30,15 @@ ut64 r_bin_te_get_main_offset(struct r_bin_te_obj_t *bin) {
 	return addr;
 }
 
-static TE_DWord r_bin_te_rva_to_offset(struct r_bin_te_obj_t* bin, TE_DWord rva) {
+static TE_DWord r_bin_te_vaddr_to_paddr(struct r_bin_te_obj_t* bin, TE_DWord vaddr) {
 	TE_DWord section_base;
 	int i, section_size;
 
 	for (i = 0; i < bin->header->NumberOfSections; i++) {
 		section_base = bin->section_header[i].VirtualAddress;
 		section_size = bin->section_header[i].VirtualSize;
-		if (rva >= section_base && rva < section_base + section_size)
-			return bin->section_header[i].PointerToRawData + (rva - section_base);
+		if (vaddr >= section_base && vaddr < section_base + section_size)
+			return bin->section_header[i].PointerToRawData + (vaddr - section_base);
 	}
 	return 0;
 }
@@ -132,10 +132,10 @@ struct r_bin_te_addr_t* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}
-	entry->rva = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta(bin);
-	if (entry->rva == 0) // in TE if EP = 0 then EP = baddr
-		entry->rva = bin->header->ImageBase;
-	entry->offset = r_bin_te_rva_to_offset(bin, entry->rva);
+	entry->vaddr = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta(bin);
+	if (entry->vaddr == 0) // in TE if EP = 0 then EP = baddr
+		entry->vaddr = bin->header->ImageBase;
+	entry->paddr = r_bin_te_vaddr_to_paddr(bin, entry->vaddr);
 	return entry;
 }
 
@@ -282,10 +282,10 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 		memcpy (sections[i].name, shdr[i].Name, TE_IMAGE_SIZEOF_NAME);
 		// not a null terminated string if len==buflen
 		//sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
-		sections[i].rva = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta(bin);
+		sections[i].vaddr = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta(bin);
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].VirtualSize;
-		sections[i].offset = shdr[i].PointerToRawData - r_bin_te_get_stripped_delta(bin);
+		sections[i].paddr = shdr[i].PointerToRawData - r_bin_te_get_stripped_delta(bin);
 		sections[i].flags = shdr[i].Characteristics;
 		sections[i].last = 0;
 	}

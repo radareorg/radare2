@@ -155,11 +155,11 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 				break;
 			}
 			str[matches] = '\0';
-			ptr->offset = i-matches;
+			ptr->paddr = i-matches;
 			if (scnrva) {
-				ptr->rva = (ptr->offset+scnrva-from);
+				ptr->vaddr = (ptr->paddr+scnrva-from);
 			} else {
-				ptr->rva = ptr->offset;
+				ptr->vaddr = ptr->paddr;
 			}
 			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
 			ptr->size = matches+1;
@@ -215,9 +215,9 @@ static RList* get_strings(RBinFile *a, int min) {
 			if (is_data_section (a, section)) {
 				count++;
 				get_strings_range (a, ret, min,
-					section->offset,
-					section->offset+section->size,
-					section->rva);
+					section->paddr,
+					section->paddr+section->size,
+					section->vaddr);
 			}
 		}
 		if (r_list_empty (o->sections)) {
@@ -754,8 +754,8 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 	io->sections = r_list_new ();
 
 	r_list_foreach (obj->sections, s_iter, s) {
-		iob->section_add (io, s->offset, s->rva, s->size, s->vsize, s->srwx, s->name, obj->id, bf->fd);
-		iob->section_set_arch_bin_id (io, s->offset, info->arch, info->bits, bf->id);
+		iob->section_add (io, s->paddr, s->vaddr, s->size, s->vsize, s->srwx, s->name, obj->id, bf->fd);
+		iob->section_set_arch_bin_id (io, s->paddr, info->arch, info->bits, bf->id);
 	}
 	return R_TRUE;
 }
@@ -1046,9 +1046,9 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
 		r_list_foreach (o->sections, iter, section) {
-			from = va ? o->baddr+section->rva : section->offset;
-			to = va ? o->baddr+section->rva+section->vsize :
-					  section->offset + section->size;
+			from = va ? o->baddr+section->vaddr: section->paddr;
+			to = va ? o->baddr+section->vaddr + section->vsize :
+					  section->paddr+ section->size;
 			if (off >= from && off < to)
 				return section;
 		}

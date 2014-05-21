@@ -296,7 +296,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 						include_dir = "./";
 				}
 
-				size_t namelen = strlen (filename) + include_dir?strlen (include_dir):0 + 8;
+				size_t namelen = len + (include_dir?strlen (include_dir):0) + 8;
 
 				hdr->file_names[count].name = malloc (sizeof(char) * namelen);
 				snprintf (hdr->file_names[count].name, namelen - 1, "%s/%s", include_dir, filename);
@@ -593,7 +593,7 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 	buf = obuf;
 	buf_end = obuf + len;
 
-	while (buf < buf_end) {
+	while (buf && buf < buf_end) {
 		opcode = *buf++;
 		len--;
 		if (opcode == 0) {
@@ -698,7 +698,11 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 
 	size_t offset = segment_size + address_size * 2;
 
-	buf += (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
+	if (offset) {
+		buf += (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
+	} else {
+	//	buf += 1;
+	}
 
 	while (buf - obuf < len) {
 		ut64 adr, length;
@@ -1387,13 +1391,13 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a) {
 		if (debug_str) {
 			debug_str_len = debug_str->size;
 			debug_str_buf = malloc (debug_str_len);
-			r_buf_read_at (binfile->buf, debug_str->offset,
+			r_buf_read_at (binfile->buf, debug_str->paddr,
 					debug_str_buf, debug_str_len);
 		}
 
 		len = section->size;
 		buf = malloc (len);
-		r_buf_read_at (binfile->buf, section->offset, buf, len);
+		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len);
 		if (debug_str_buf) {
@@ -1414,7 +1418,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 		RList *list = r_list_new ();
 		len = section->size;
 		buf = malloc (len);
-		r_buf_read_at (binfile->buf, section->offset, buf, len);
+		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, DBGFD);
 		free (buf);
 		return list;
@@ -1431,7 +1435,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a) {
 	if (binfile && section) {
 		len = section->size;
 		buf = malloc (len);
-		r_buf_read_at (binfile->buf, section->offset, buf, len);
+		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		r_bin_dwarf_parse_aranges_raw (buf, len, DBGFD);
 		free (buf);
 	}
@@ -1448,7 +1452,7 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a) {
 	if (binfile && section) {
 		len = section->size;
 		buf = malloc (len);
-		r_buf_read_at (binfile->buf, section->offset, buf, len);
+		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		da = r_bin_dwarf_parse_abbrev_raw (buf, len);
 		free (buf);
 	}

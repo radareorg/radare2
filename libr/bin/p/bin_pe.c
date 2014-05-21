@@ -55,11 +55,11 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
-		addr = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
+		addr = PE_(r_bin_pe_get_main_vaddr) (arch->o->bin_obj);
 		if (!addr) return NULL;
 		if (!(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		ret->offset = ret->rva = addr;
+		ret->paddr = ret->vaddr = addr;
 		break;
 	}
 	return ret;
@@ -76,8 +76,8 @@ static RList* entries(RBinFile *arch) {
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->offset = entry->offset;
-		ptr->rva = entry->rva;
+		ptr->paddr = entry->paddr;
+		ptr->vaddr = entry->vaddr;
 		r_list_append (ret, ptr);
 	}
 	free (entry);
@@ -101,8 +101,8 @@ static RList* sections(RBinFile *arch) {
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
-		ptr->offset = sections[i].offset;
-		ptr->rva = sections[i].rva + ba;
+		ptr->paddr = sections[i].paddr;
+		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->srwx = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags))
 			ptr->srwx |= 0x1;
@@ -137,8 +137,8 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		ptr->size = 0;
-		ptr->rva = symbols[i].rva;
-		ptr->offset = symbols[i].offset;
+		ptr->vaddr = symbols[i].vaddr;
+		ptr->paddr = symbols[i].paddr;
 		ptr->ordinal = symbols[i].ordinal;
 		r_list_append (ret, ptr);
 	}
@@ -196,8 +196,8 @@ static RList* imports(RBinFile *arch) {
 		rel->additive = 0;
 		rel->import = ptr;
 		rel->addend = 0;
-		rel->rva = imports[i].rva;
-		rel->offset = imports[i].offset;
+		rel->vaddr = imports[i].vaddr;
+		rel->paddr = imports[i].paddr;
 		r_list_append (relocs, rel);
 	}
 	free (imports);
@@ -277,17 +277,14 @@ static int has_seh(const RBinFile* arch) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
-	if (!arch)
-		return R_FALSE;
-
+	if (!arch) return R_FALSE;
 	buf = r_buf_buffer (arch->buf);
-	if (!buf)
-		return R_FALSE;
+	if (!buf) return R_FALSE;
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
 		return R_FALSE;
-	return (*(ut16*)(buf + idx + 0x5E)) & \
+	return !(*(ut16*)(buf + idx + 0x5E)) & \
 		IMAGE_DLLCHARACTERISTICS_NO_SEH;
 }
 

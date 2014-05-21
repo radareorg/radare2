@@ -68,12 +68,12 @@ static RList *entries(RBinFile *arch) {
 	memset (ptr, '\0', sizeof (RBinAddr));
 
 	if (obj->hdr.opt_hdr_size) {
-		ptr->offset = ptr->rva = obj->opt_hdr.entry_point;
+		ptr->paddr = ptr->vaddr = obj->opt_hdr.entry_point;
 	} else {
 		for (i = 0; i < obj->hdr.sections_num; i++) {
 			if (!strcmp(obj->scn_hdrs[i].name, ".text")) {
-				ptr->offset = obj->scn_hdrs[i].virtual_addr;
-				ptr->rva = obj->scn_hdrs[i].virtual_addr;
+				ptr->paddr = obj->scn_hdrs[i].virtual_addr;
+				ptr->vaddr = obj->scn_hdrs[i].virtual_addr;
 				break;
 			}
 		}
@@ -103,8 +103,8 @@ static RList *sections(RBinFile *arch)
 
 		ptr->size = obj->scn_hdrs[i].raw_data_size;
 		ptr->vsize = obj->scn_hdrs[i].virtual_size;
-		ptr->offset = obj->scn_hdrs[i].raw_data_pointer;
-		ptr->rva = obj->scn_hdrs[i].virtual_addr;
+		ptr->paddr = obj->scn_hdrs[i].raw_data_pointer;
+		ptr->vaddr = obj->scn_hdrs[i].virtual_addr;
 
 		r_list_append (ret, ptr);
 	}
@@ -153,8 +153,8 @@ static RList *symbols(RBinFile *arch)
 		case IMAGE_SYM_TYPE_DWORD:  strcpy (ptr->type, "DWORD");break;
 		}
 		strncpy (ptr->type, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = obj->symbols[i].value;
-		ptr->offset = obj->symbols[i].value;
+		ptr->vaddr = obj->symbols[i].value;
+		ptr->paddr = obj->symbols[i].value;
 		ptr->size = 0;
 		ptr->ordinal = 0;
 

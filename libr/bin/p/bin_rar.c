@@ -75,7 +75,7 @@ static RList* entries(RBinFile *arch) {
 	ret->free = free;
 	if (bin_obj && sz > 0x30 && !memcmp (buf+0x30, RAR_CONST, 16)) {
 		if ((ptr = R_NEW (RBinAddr))) {
-			ptr->rva = ptr->offset = 0x9a;
+			ptr->vaddr = ptr->paddr = 0x9a;
 			r_list_append (ret, ptr);
 		}
 	}
@@ -105,8 +105,8 @@ static RList* sections(RBinFile *arch) {
 		return ret;
 	strncpy (ptr->name, "header", R_BIN_SIZEOF_STRINGS);
 	ptr->size = ptr->vsize = 0x9a;
-	ptr->offset = 0;
-	ptr->rva = ptr->offset;
+	ptr->paddr = 0;
+	ptr->vaddr = ptr->paddr;
 	ptr->srwx = 4; // r--
 	r_list_append (ret, ptr);
 
@@ -115,7 +115,7 @@ static RList* sections(RBinFile *arch) {
 		return ret;
 	strncpy (ptr->name, "rarvm", R_BIN_SIZEOF_STRINGS);
 	ptr->vsize = ptr->size = sz - 0x9a;
-	ptr->rva = ptr->offset = 0x9a;
+	ptr->vaddr = ptr->paddr = 0x9a;
 	ptr->srwx = 5; // rw-
 	r_list_append (ret, ptr);
 	return ret;
