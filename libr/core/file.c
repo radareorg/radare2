@@ -563,12 +563,14 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 }
 
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
+	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	const int openmany = r_config_get_i (r->config, "file.openmany");
 
+	if (!file)
+		return NULL;
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 		mode = 4|2;
