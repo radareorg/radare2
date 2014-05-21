@@ -250,7 +250,7 @@ static int has_canary(RBinFile *arch) {
 	if (imports_list) {
 		r_list_foreach (imports_list, iter, import)
 			if (!strcmp (import->name, "__security_init_cookie")) {
-				r_list_free (imports_list);
+				//r_list_free (imports_list);
 				return 1;
 			}
 		// DO NOT FREE IT! r_list_free (imports_list);
@@ -284,8 +284,8 @@ static int has_seh(const RBinFile* arch) {
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
 		return R_FALSE;
-	return !(*(ut16*)(buf + idx + 0x5E)) & \
-		IMAGE_DLLCHARACTERISTICS_NO_SEH;
+	return !((*(ut16*)(buf + idx + 0x5E)) & \
+		IMAGE_DLLCHARACTERISTICS_NO_SEH);
 }
 
 static int has_nx(const RBinFile* arch) {
