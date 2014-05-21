@@ -145,12 +145,21 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 
 	mmo = fd->data;
 
-	if (!(mmo->flags & R_IO_WRITE)) return -1;
-
-	if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
-		ut64 sz = count + addr;
-		r_file_truncate (mmo->filename, sz);
+	if (mmo && mmo->buf) {
+		if (!(mmo->flags & R_IO_WRITE)) return -1;
+		if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
+			ut64 sz = count + addr;
+			r_file_truncate (mmo->filename, sz);
+		}
 	}
+
+#define HACK 1
+#if HACK
+	lseek (fd->fd, addr, 0);
+	len = write (fd->fd, buf, count);
+	if (len!=-1)
+		return len;
+#endif
 
 	len = r_file_mmap_write (mmo->filename, io->off, buf, count);
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
