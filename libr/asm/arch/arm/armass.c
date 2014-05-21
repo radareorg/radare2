@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
+/* radare - LGPL - Copyright 2010-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -340,11 +340,13 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		ao->o = 0xbe;
 		ao->o |= (0xff & getnum (ao->a[0]))<<8;
 	} else
+#if 0
 	if (!strcmp (ao->op, "and")) {
 		ao->o = 0x40;
 		ao->o |= (0xff & getreg (ao->a[0])) << 8;
 		ao->o |= (0xff & getreg (ao->a[1])) << 11;
 	} else
+#endif
 	if (!strcmp (ao->op, "svc")) {
 		ao->o = 0xdf;
 		ao->o |= (0xff & getnum (ao->a[0])) << 8;
@@ -508,6 +510,50 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			ao->o |= (getnum (ao->a[1])&0xff)<<8;
 		}
 	} else
+	if (!strcmp (ao->op, "and") || !strcmp (ao->op, "and.w")) {
+		int reg0 = getreg (ao->a[0]);
+		int reg1 = getreg (ao->a[1]);
+		int reg2 = getreg (ao->a[2]);
+		if (reg0!=-1 && reg1 != -1) {
+			if (reg2 == -1) {
+				reg0 = getreg (ao->a[0]);
+				reg1 = getreg (ao->a[0]);
+				reg2 = getreg (ao->a[1]);
+			}
+			ao->o = 0;
+			ao->o |= 0x00 | reg1;
+			ao->o <<= 8;
+			ao->o |= 0xea;
+			ao->o <<= 8;
+			ao->o |= 0x00 | reg2;
+			ao->o <<= 8;
+			ao->o |= 0xf0 | reg0;
+			return 4;
+		}
+		return 0;
+	} else
+	if (!strcmp (ao->op, "mul" || !strcmp (ao->op, "mul.w"))) {
+		int reg0 = getreg (ao->a[0]);
+		int reg1 = getreg (ao->a[1]);
+		int reg2 = getreg (ao->a[2]);
+		if (reg0!=-1 && reg1 != -1) {
+			if (reg2 == -1) {
+				reg0 = getreg (ao->a[0]);
+				reg1 = getreg (ao->a[0]);
+				reg2 = getreg (ao->a[1]);
+			}
+			ao->o = 0;
+			ao->o |= 0x00 | reg1;
+			ao->o <<= 8;
+			ao->o |= 0xfb;
+			ao->o <<= 8;
+			ao->o |= 0x00 | reg2;
+			ao->o <<= 8;
+			ao->o |= 0xf0 | reg0;
+			return 4;
+		}
+		return 0;
+	} else return 0;
 	if (!strcmp (ao->op, "add")) {
 		// XXX: signed unsigned ??
 		// add r, r = 44[7bits,7bits]
