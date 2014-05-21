@@ -124,6 +124,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'j': return op.jump;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
+		case 'v': return op.val; // immediate value
 		case 'l': return op.size;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
