@@ -84,6 +84,8 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 
 	if (io->va || io->debug)
 		offset = r_io_section_vaddr_to_offset (io, offset);
+	// XXX - Should this print the section->id or the location in the
+	// rio sections array?
 	r_list_foreach (io->sections, iter, s) {
 		if (rad) {
 			char *n = strdup (s->name);
@@ -96,7 +98,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		} else {
 			io->printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s",
-			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
+			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits)
 				io->printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
