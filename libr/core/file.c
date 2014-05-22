@@ -637,8 +637,10 @@ R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
 }
 
 R_API void r_core_file_free(RCoreFile *cf) {
-	int res = r_core_files_free (cf->core, cf);
-	if (!res && cf && cf->alive) {
+	int res = 1;
+	if (cf)
+		res = r_core_files_free (cf->core, cf);
+	if (!res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		cf->alive = 0;
 		const RIO *io = cf->fd ? cf->fd->io : NULL;
