@@ -1089,7 +1089,7 @@ static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) 
 // TODO: get from meta anal?
 	case R_ANAL_OP_TYPE_LEA:
 		src = ds->analop.src[0];
-		if (src && src->reg && core->anal->reg && core->anal->reg->name) {
+		if (src && src->reg && core->anal->reg && *(core->anal->reg->name)) {
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = ds->analop.dst;
 			if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
