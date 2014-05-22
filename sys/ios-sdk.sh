@@ -24,6 +24,7 @@ export CC=`pwd`/sys/ios-sdk-gcc
 # select ios sdk version
 export IOSVER=7.1
 export IOSINC=`pwd`/sys/ios-include
+export CFLAGS=-O2
 
 if true ; then
 make clean
