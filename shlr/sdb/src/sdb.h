@@ -187,6 +187,7 @@ int sdb_array_remove (Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_remove_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 // helpers
 char *sdb_anext(char *str, char **next);
+const char *sdb_const_anext(const char *str, const char **next);
 int sdb_alen(const char *str);
 int sdb_array_size(Sdb* s, const char *key);
 int sdb_array_length(Sdb* s, const char *key);

@@ -457,7 +457,7 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
-	if (file_sz == UT64_MAX &&  is_debugger) {
+	if ((file_sz == UT64_MAX && is_debugger)) {
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a fixed size.
 		// if there is no fixed size or its MAXED, there is no way to definitively
@@ -470,11 +470,11 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 			iob->desc_close (io, tdesc);
 			return R_FALSE;
 		}
-		sz = file_sz < sz ? file_sz : sz;
+		sz = R_MIN (file_sz, sz);
 		buf_bytes = iob->desc_read (io, tdesc, &sz);
 		iob->desc_close (io, tdesc);
 	} else if (sz != UT64_MAX) {
-		sz = file_sz < sz ? file_sz : sz;
+		sz = R_MIN (file_sz, sz);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	} else {
 		return R_FALSE;
@@ -524,13 +524,13 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 }
 
 R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
-#if 0
+#if 1
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB (MIN_LOAD_SIZE)
 	// if it fails, the whole file is loaded.
-	const ut64 MIN_LOAD_SIZE = 10 * (1 << 10 << 10);
+	const ut64 MAX_LOAD_SIZE = 128 * (1 << 10 << 10);
 	int res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
-		loadaddr, xtr_idx, offset, name, MIN_LOAD_SIZE);
+		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
 	if (res)
 		return res;
 #endif

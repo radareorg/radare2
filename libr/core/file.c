@@ -65,7 +65,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		eprintf ("File %s reopened in %s mode\n", path,
 			perm&R_IO_WRITE?"read-write": "read-only");
 
-		ret = r_core_bin_load(core, obinfilepath, baddr);
+		ret = r_core_bin_load (core, obinfilepath, baddr);
 
 		if (!ret){
 			eprintf ("Error: Failed to reload the bin for file: %s", path);
