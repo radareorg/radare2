@@ -532,7 +532,7 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		}
 		return 0;
 	} else
-	if (!strcmp (ao->op, "mul" || !strcmp (ao->op, "mul.w"))) {
+	if (!strcmp (ao->op, "mul") || !strcmp (ao->op, "mul.w")) {
 		int reg0 = getreg (ao->a[0]);
 		int reg1 = getreg (ao->a[1]);
 		int reg2 = getreg (ao->a[2]);
