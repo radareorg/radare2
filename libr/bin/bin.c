@@ -457,7 +457,7 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
-	if ((file_sz == UT64_MAX && is_debugger)) {
+	if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a fixed size.
 		// if there is no fixed size or its MAXED, there is no way to definitively
