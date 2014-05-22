@@ -533,7 +533,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "relocs");
 		r_list_foreach (relocs, iter, reloc) {
-			if (reloc->import && reloc->import->name) {
+			if (reloc->import && reloc->import->name[0]) {
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s", reloc->import->name);
 				r_name_filter (str, 0);
