@@ -114,7 +114,7 @@ static int decode_reg_reg(const ut16 instr, struct v850_cmd *cmd) {
 
 	opcode = get_opcode (instr);
 
-	if (opcode > sizeof (instrs)/sizeof (char *)) {
+	if (opcode >= sizeof (instrs)/sizeof (char *)) {
 		return -1;
 	}
 
