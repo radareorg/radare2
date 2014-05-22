@@ -6,6 +6,9 @@
 #include <r_io.h>
 #include <r_list.h>
 
+R_API int r_io_map_count (RIO *io) {
+	return r_list_length (io->maps);
+}
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap *map = R_NEW (RIOMap);
@@ -33,6 +36,37 @@ R_API int r_io_map_sort(void *_a, void *_b) {
 	return a->from < b->from;
 }
 
+R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
+	int res = R_FALSE;
+	RIOMap *map;
+	RListIter *iter;
+	r_list_foreach (io->maps, iter, map) {
+		if (map->fd == fd) break;
+		map = NULL;
+	}
+
+	if (map && map->to < addr+len) {
+		res = R_TRUE;
+		map->to = addr+len;
+	}
+	return res;
+}
+
+R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
+	int res = R_FALSE;
+	RIOMap *map;
+	RListIter *iter;
+	r_list_foreach (io->maps, iter, map) {
+		if (map->fd == fd) break;
+		map = NULL;
+	}
+
+	if (map) {
+		res = R_TRUE;
+		map->to = map->from+sz;
+	}
+	return res;
+}
 
 R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 	RIOMap *map;
@@ -54,7 +88,7 @@ R_API RIOMap *r_io_map_resolve(RIO *io, int fd) {
 	return NULL;
 }
 
-R_API RList *r_io_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
+R_API RList *r_io_map_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map;
 	RListIter *iter;
 	RList *maps = r_list_new ();
@@ -65,6 +99,19 @@ R_API RList *r_io_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 		if (addr <= map->from && map->to <= endaddr) r_list_append(maps, map);
 	}
 	return maps;
+}
+
+R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr) {
+	RIOMap *map = NULL;
+	RListIter *iter;
+	r_list_foreach (io->maps, iter, map) {
+		if (map->from <= addr && addr < map->to) break;
+		//if (map->from == addr && endaddr == map->to) r_list_append(maps, map);
+		if (map->from < endaddr && endaddr < map->to) break;
+		if (addr <= map->from && map->to <= endaddr) break;
+		map = NULL;
+	}
+	return map;
 }
 
 R_API int r_io_map_del(RIO *io, int fd) {
@@ -94,7 +141,7 @@ R_API int r_io_map_del_all(RIO *io, int fd) {
 
 
 R_API ut64 r_io_map_next(RIO *io, ut64 addr) {
-	ut64 next = 0;
+	ut64 next = UT64_MAX;
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
@@ -152,6 +199,18 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 	return r_io_map_new (io, fd, flags, delta, addr, size);
 }
 
+R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
+	int res = R_FALSE;
+	RIOMap *im = NULL;
+	RListIter *iter;
+	r_list_foreach (io->maps, iter, im) {
+		if (im->from <= off && off < im->to) {
+			res = R_TRUE;
+			break;
+		}
+	}
+	return res;
+}
 
 R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 	int done = 0;
