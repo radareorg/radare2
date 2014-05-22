@@ -11,6 +11,7 @@
 #define R_IPI static
 
 static YR_COMPILER* compiler;
+static void* libyara;
 
 static void (*r_yr_initialize)(void) = NULL;
 static int (*r_yr_compiler_add_file)(
@@ -218,7 +219,7 @@ static int r_cmd_yara_load_default_rules() {
 }
 
 static int r_cmd_yara_init() {
-	void *libyara = r_lib_dl_open ("libyara."R_LIB_EXT);
+	libyara = r_lib_dl_open ("libyara."R_LIB_EXT);
 	if (!libyara) {
 		eprintf ("Cannot find libyara\n");
 		return R_FALSE;
@@ -247,9 +248,6 @@ static int r_cmd_yara_init() {
 	LOADSYM (yr_rules_scan_mem);
 	LOADSYM (yr_rules_destroy);
 
-	// Causes segfault, FIXME: Resource leak
-	// r_lib_dl_close (libyara);
-
 	r_yr_initialize ();
 
 	if (r_yr_compiler_create (&compiler) != ERROR_SUCCESS) {
@@ -265,6 +263,7 @@ static int r_cmd_yara_init() {
 
 static int r_cmd_yara_deinit(){
 	if (r_yr_initialize != NULL) {
+		r_lib_dl_close (libyara);
 		r_yr_compiler_destroy(compiler);
 		r_yr_finalize();
 		r_yr_initialize = NULL;
