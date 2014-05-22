@@ -2629,7 +2629,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
             vtop->sym = sym;
         }
         /* patch symbol weakness */
-        if (type->t & VT_WEAK)
+        if ((type->t & VT_WEAK) && sym)
             weaken_symbol(sym);
     }
     no_alloc: ;
