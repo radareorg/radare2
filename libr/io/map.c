@@ -38,7 +38,7 @@ R_API int r_io_map_sort(void *_a, void *_b) {
 
 R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
 	int res = R_FALSE;
-	RIOMap *map;
+	RIOMap *map = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
 		if (map->fd == fd) break;
