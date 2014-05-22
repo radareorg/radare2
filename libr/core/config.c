@@ -191,7 +191,13 @@ static int cb_asmbits(void *user, void *data) {
 	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	int ret = r_asm_set_bits (core->assembler, node->i_value);
+	int ret;
+	if (!core) {
+		eprintf ("user can't be NULL\n");
+		return R_FALSE;
+	}
+
+	ret = r_asm_set_bits (core->assembler, node->i_value);
 	if (ret == R_FALSE) {
 		RAsmPlugin *h = core->assembler->cur;
 		if (h) {
@@ -210,7 +216,7 @@ static int cb_asmbits(void *user, void *data) {
 
 	asmos = r_config_get (core->config, "asm.os");
 	asmarch = r_config_get (core->config, "asm.arch");
-	if (core && core->anal)
+	if (core->anal)
 		if (!r_syscall_setup (core->anal->syscall, asmarch,
 					asmos, node->i_value)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
