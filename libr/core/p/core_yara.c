@@ -1,5 +1,7 @@
 /* radare - GPLv2 - Copyright 2014 jvoisin <julien.voisin@dustri.org> */
 
+#include <dirent.h>
+
 #include <r_core.h>
 #include <r_lib.h>
 
@@ -200,21 +202,23 @@ static int r_cmd_yara_call(void *user, const char *input) {
 
 static int r_cmd_yara_load_default_rules() {
 #define YARA_PREFIX R2_PREFIX"/share/radare2/"R2_VERSION"/yara/"
-	struct dirent *f;
+	struct dirent** f;
 	char complete_path[128];
-	DIR* dir = r_sandbox_opendir (YARA_PREFIX);
+	int i, n;
 
-	if (dir == NULL)
+	if (r_sandbox_enable(0) && !r_sandbox_check_path(YARA_PREFIX))
 		return R_FALSE;
 
-	while ((f = readdir(dir)) != NULL) {
-		if (f->d_name[0] == '.') // skip '.' and '..'
+	n = scandir (YARA_PREFIX, &f, 0, alphasort);
+	if (n < 0)
+		return R_FALSE;
+	for (i=0; i<n; i++) {
+		if (f[i]->d_name[0] == '.') // skip '.', '..' and hidden files
 			continue;
-		snprintf (complete_path, sizeof(complete_path), YARA_PREFIX "%s", f->d_name);
+		snprintf (complete_path, sizeof (complete_path), YARA_PREFIX "%s", f[i]->d_name);
 		r_cmd_yara_add (complete_path);
 	}
 
-	closedir (dir);
 	return R_TRUE;
 }
 
