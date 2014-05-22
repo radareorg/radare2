@@ -88,7 +88,7 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf(import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
+				snprintf (import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
 			} else {
 				import_ordinal ++;
 				ut64 off = PE_(r_bin_pe_vaddr_to_paddr)(bin, import_table);
@@ -96,11 +96,14 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 					eprintf ("Error: read import hint at 0x%08"PFMT64x"\n", off);
 					return 0;
 				}
+				name[0] = 0;
 				if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, import_table) + sizeof(PE_Word),
 							(ut8*)name, PE_NAME_LENGTH) == -1) {
 					eprintf ("Error: read (import name)\n");
 					return 0;
 				}
+				if (!*name)
+					break;
 				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
 			if (!(*importp = realloc (*importp, (*nimp+1) * sizeof(struct r_bin_pe_import_t)))) {
