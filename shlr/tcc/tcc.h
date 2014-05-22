@@ -239,7 +239,7 @@ typedef struct Sym {
     char *asm_label;    /* associated asm label */
     long r;    /* associated register */
     union {
-        long c;    /* associated number */
+        long long c;    /* associated number */
         int *d;   /* define token stream */
     };
     CType type;    /* associated type */
@@ -864,13 +864,13 @@ ST_FUNC void cstr_free(CString *cstr);
 ST_FUNC void cstr_reset(CString *cstr);
 
 ST_INLN void sym_free(Sym *sym);
-ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long c);
+ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long long c);
 ST_FUNC Sym *sym_find2(Sym *s, int v);
-ST_FUNC Sym *sym_push(int v, CType *type, int r, int c);
+ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c);
 ST_FUNC void sym_pop(Sym **ptop, Sym *b);
 ST_INLN Sym *struct_find(int v);
 ST_INLN Sym *sym_find(int v);
-ST_FUNC Sym *global_identifier_push(int v, int t, int c);
+ST_FUNC Sym *global_identifier_push(int v, int t, long long c);
 
 ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen);
 ST_FUNC int tcc_open(TCCState *s1, const char *filename);

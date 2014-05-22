@@ -3,7 +3,7 @@ include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
 CFLAGS+=-I../../libr/include
-CFLAGS+=-fPIC -Wall
+CFLAGS+=-fPIC -Wall -g -ggdb
 LDFLAGS+=-shared
 ifeq ($(OSNAME),darwin)
 SOEXT?=dylib
