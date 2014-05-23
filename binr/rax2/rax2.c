@@ -96,6 +96,8 @@ static int rax (char *str, int len, int last) {
 			case 'n': flags ^=512; break;
 			case 'u': flags ^=1024;break;
 			case 't': flags ^=2048;break;
+			case 'E': flags ^=4096;break;
+			case 'D': flags ^=8192;break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -116,16 +118,43 @@ static int rax (char *str, int len, int last) {
 	if (*str=='h' || *str=='?')
 		return help ();
 	dotherax:
-	if (flags & 512) { // -k
-		ut32 n = r_num_math (num, str);
-		ut8 *np = (ut8*)&n;
-		if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
-		else printf ("%02x%02x%02x%02x\n",
-			np[0], np[1], np[2], np[3]);
-		fflush (stdout);
+	
+	if (flags & 1) { // -s
+		ut64 n = ((strlen (str))>>1)+1;
+		buf = malloc (n);
+		if (buf) {
+			memset (buf, '\0', n);
+			n = r_hex_str2bin (str, (ut8*)buf);
+			if (n>0) fwrite (buf, n, 1, stdout);
+#if __EMSCRIPTEN__
+			puts ("");
+#endif
+			fflush (stdout);
+			free (buf);
+		}
 		return R_TRUE;
 	}
-	if (flags & 256) { // -k
+	if (flags & 4) { // -S
+		for (i=0; i<len; i++)
+			printf ("%02x", (ut8)str[i]);
+		printf ("\n");
+		return R_TRUE;
+	} else if (flags & 8) {
+		int i, len;
+		ut8 buf[4096];
+		len = r_str_binstr2bin (str, buf, sizeof (buf));
+		for (i=0; i<len; i++)
+			printf ("%c", buf[i]);
+		return R_TRUE;
+	} else if (flags & 16) {
+		int h = r_str_hash (str);
+		printf ("0x%x\n", h);
+		return R_TRUE;
+	} else if (flags & 32) {
+		out_mode = 'I';
+	} else if (flags & 64) {
+		out_mode = 'f';
+	} else if (flags & 256) { // -k
 		int n = ((strlen (str))>>1)+1;
 		char *s = NULL;
 		ut32 *m;
@@ -148,43 +177,20 @@ static int rax (char *str, int len, int last) {
 		}
 		free (m);
 		return R_TRUE;
-	}
-	if (flags & 1) { // -s
-		ut64 n = ((strlen (str))>>1)+1;
-		buf = malloc (n);
-		if (buf) {
-			memset (buf, '\0', n);
-			n = r_hex_str2bin (str, (ut8*)buf);
-			if (n>0) fwrite (buf, n, 1, stdout);
-#if __EMSCRIPTEN__
-			puts ("");
-#endif
-			fflush (stdout);
-			free (buf);
-		}
+	} else if (flags & 512) { // -k
+		ut32 n = r_num_math (num, str);
+		ut8 *np = (ut8*)&n;
+		if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
+		else printf ("%02x%02x%02x%02x\n",
+			np[0], np[1], np[2], np[3]);
+		fflush (stdout);
 		return R_TRUE;
-	}
-	if (flags & 4) { // -S
-		for (i=0; i<len; i++)
-			printf ("%02x", (ut8)str[i]);
-		printf ("\n");
-		return R_TRUE;
-	}
-	if (flags & 8) {
-		int i, len;
-		ut8 buf[4096];
-		len = r_str_binstr2bin (str, buf, sizeof (buf));
-		for (i=0; i<len; i++)
-			printf ("%c", buf[i]);
-		return R_TRUE;
-	}
-	if (flags & 1024) {
+	} else if (flags & 1024) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
 		printf ("%s\n", buf);
 		return R_TRUE;
-	}
-	if (flags & 2048) {
+	} else if (flags & 2048) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
 		p->big_endian = 0; // TODO: honor endian here
@@ -192,18 +198,30 @@ static int rax (char *str, int len, int last) {
 		r_print_date_unix (p, (const ut8*)&n, sizeof (ut64));
 		r_print_free (p);
 		return R_TRUE;
-	}
-	if (flags & 16) {
-		int h = r_str_hash (str);
-		printf ("0x%x\n", h);
+	} else if (flags & 4096) { // -E
+		const int len = strlen (str);
+		ut8* out = calloc (sizeof(ut8), ((len+1)*4)/3);
+		if (out) {
+			r_base64_encode (out, (const ut8*)str, len);
+			printf ("%s\n", out);
+			fflush (stdout);
+			free (out);
+		}
+		return R_TRUE;
+	} else if (flags & 8192) { // -D
+		const int len = strlen (str);
+		ut8* out = calloc (sizeof(ut8), ((len+1)/4)*3);
+		if (out) {
+			r_base64_decode (out, str, len);
+			printf ("%s\n", out);
+			fflush(stdout);
+			free (out);
+		}
 		return R_TRUE;
 	}
 
-#define KB (flags&32)
-	if (flags & 64) { out_mode = 'f';
-	} else if (KB) out_mode = 'I';
 	if (str[0]=='0' && str[1]=='x') {
-		out_mode = (KB)? '0': 'I';
+		out_mode = (flags&32)? '0': 'I';
 	} else if (str[0]=='b') {
 		out_mode = 'B';
 		str++;
@@ -231,7 +249,8 @@ static int rax (char *str, int len, int last) {
 		format_output (out_mode, str);
 		str = p+1;
 	}
-	if (*str) format_output (out_mode, str);
+	if (*str)
+		format_output (out_mode, str);
 	return R_TRUE;
 }
 

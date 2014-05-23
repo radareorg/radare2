@@ -8,8 +8,8 @@ CS_TAR=
 CS_URL=https://github.com/aquynh/capstone.git
 CS_UPD=20140307
 CS_BRA=next
-CS_TIP=c76d8d03ba32cd9ab81266a99011220009c720d6
 CS_TIP=897379f03080491d4de75bbb33c65bf804831dbe
+CS_TIP=1e93adf5c3e123416c211fddbb9f18f7f5cc5f24
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
@@ -127,7 +127,8 @@ capstone-sync:
 	fi
 	cd capstone ; \
 		git checkout $(CS_BRA) ; \
-		git reset --hard $(CS_TIP)
+		git reset --hard $(CS_TIP) || \
+	( git pull ; git reset --hard $(CS_TIP) )
 
 .PHONY: capstone
 else

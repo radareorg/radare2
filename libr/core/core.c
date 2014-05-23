@@ -1104,9 +1104,12 @@ reaccept:
 							free (ptr);
 							ptr = NULL; // potential use after free if i == 0
 							if (i>0) {
+								int r;
 								ptr = (ut8 *) malloc (i+6);
-								fread (ptr+5, i, 1, fd);
-								ptr[i+5]='\0';
+								if (!ptr)
+									return R_FALSE;
+								r = fread (ptr+5, i, 1, fd);
+								ptr[5+r]='\0';
 							}
 							fclose (fd);
 						} else {

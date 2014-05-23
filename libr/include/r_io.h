@@ -321,7 +321,12 @@ R_API RIOMap *r_io_map_resolve(RIO *io, int fd);
 R_API int r_io_map_sort (void *a, void *b);
 R_API RIOMap * r_io_map_add_next_available (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 align);
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
-R_API RList * r_io_get_maps_in_range (RIO *io, ut64 addr, ut64 endaddr);
+R_API RList * r_io_map_get_maps_in_range (RIO *io, ut64 addr, ut64 endaddr);
+R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr);
+R_API int r_io_map_exists_for_offset (RIO *io, ut64 off);
+R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len);
+R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz);
+R_API int r_io_map_count (RIO *io);
 
 /* io/section.c */
 R_API void r_io_section_init(RIO *io);
@@ -345,6 +350,10 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr);
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset);
 R_API ut64 r_io_section_next(RIO *io, ut64 o);
 R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
+R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr);
+R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr);
+R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr);
+R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr);
 
 /* undo api */
 // track seeks and writes

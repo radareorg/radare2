@@ -322,7 +322,7 @@ static int cmd_help(void *data, const char *input) {
 			r_num_math (core->num, input+2): core->offset;
 		n = r_io_section_vaddr_to_offset (core->io, n);
 		s = r_io_section_get (core->io, n);
-		if (s && s->name)
+		if (s && *(s->name))
 			r_cons_printf ("%s\n", s->name);
 		} break;
 	case '_': // hud input

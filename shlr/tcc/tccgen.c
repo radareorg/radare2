@@ -137,7 +137,7 @@ ST_INLN void sym_free(Sym *sym)
 }
 
 /* push, without hashing */
-ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long c)
+ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long long c)
 {
     Sym *s;
     if (ps == &local_stack) {
@@ -195,7 +195,7 @@ ST_INLN Sym *sym_find(int v)
 }
 
 /* push a given symbol on the symbol stack */
-ST_FUNC Sym *sym_push(int v, CType *type, int r, int c)
+ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c)
 {
     Sym *s, **ps;
     TokenSym *ts;
@@ -223,7 +223,7 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, int c)
 }
 
 /* push a global identifier */
-ST_FUNC Sym *global_identifier_push(int v, int t, int c)
+ST_FUNC Sym *global_identifier_push(int v, int t, long long c)
 {
     Sym *s, **ps;
     s = sym_push2(&global_stack, v, t, c);
@@ -303,7 +303,8 @@ void vpush(CType *type)
 /* push integer constant */
 ST_FUNC void vpushi(int v)
 {
-    CValue cval = { .i = v };
+    CValue cval = {0};
+    cval.i = v;
     vsetc(&int_type, VT_CONST, &cval);
 }
 
@@ -389,8 +390,6 @@ static void gaddrof(void)
     /* tricky: if saved lvalue, then we can go back to lvalue */
     if ((vtop->r & VT_VALMASK) == VT_LLOCAL)
         vtop->r = (vtop->r & ~(VT_VALMASK | VT_LVAL_TYPE)) | VT_LOCAL | VT_LVAL;
-
-
 }
 
 static int pointed_size(CType *type)
@@ -819,7 +818,7 @@ static void parse_attribute(AttributeDef *ad)
 static void struct_decl(CType *type, int u)
 {
     int a, v, size, align, maxalign, offset;
-	long long c;
+	long long c = 0;
     int bit_size, bit_pos, bsize, bt, lbit_pos, prevbt;
     Sym *s, *ss, *ass, **ps;
     AttributeDef ad;
@@ -860,15 +859,15 @@ static void struct_decl(CType *type, int u)
         if (s->c != -1)
             tcc_error("struct/union/enum already defined");
         /* cannot be empty */
-        c = 0;
+        c = 0LL;
         /* non empty enums are not allowed */
         if (a == TOK_ENUM) {
-			if (!strcmp (name, "{")) {
-				// UNNAMED
-				fprintf (stderr, "anonymous enums are ignored\n");
-			} else {
-				tcc_appendf ("%s=enum\n", name);
-			}
+		if (!strcmp (name, "{")) {
+			// UNNAMED
+			fprintf (stderr, "anonymous enums are ignored\n");
+		} else {
+			tcc_appendf ("%s=enum\n", name);
+		}
             for(;;) {
                 v = tok;
                 if (v < TOK_UIDENT)
@@ -878,10 +877,10 @@ static void struct_decl(CType *type, int u)
                     next();
                     c = expr_const();
                 }
-				if (strcmp (name, "{")) {
-					char *varstr = get_tok_str (v, NULL);
-					tcc_appendf ("%s.%s=0x%"PFMT64x"\n", name, varstr, c);
-				}
+		if (strcmp (name, "{")) {
+			char *varstr = get_tok_str (v, NULL);
+			tcc_appendf ("%s.%s=0x%"PFMT64x"\n", name, varstr, c);
+		}
                 /* enum symbols have static storage */
                 ss = sym_push(v, &llong_type, VT_CONST, c);
                 ss->type.t |= VT_STATIC;
@@ -2078,7 +2077,7 @@ static void expr_const1(void)
 /* parse an integer constant and return its value. */
 ST_FUNC long long expr_const(void)
 {
-    long long c;
+    long long c = 0LL;
     expr_const1();
     if ((vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) != VT_CONST)
         expect("constant expression");
@@ -2630,7 +2629,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
             vtop->sym = sym;
         }
         /* patch symbol weakness */
-        if (type->t & VT_WEAK)
+        if ((type->t & VT_WEAK) && sym)
             weaken_symbol(sym);
     }
     no_alloc: ;
@@ -2707,7 +2706,7 @@ static int decl0(int l, int is_for_loop_init)
                 (tok == TOK_ASM1 || tok == TOK_ASM2 || tok == TOK_ASM3)) {
                 /* global asm block */
 #if 1
-printf ("global asm not supported\n");
+eprintf ("global asm not supported\n");
 return 1;
 #endif
                 //asm_global_instr();

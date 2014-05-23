@@ -974,6 +974,7 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	} else if (!cmd || !*cmd) {
 		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+METHOD_INFO_IDX);
+		return R_FALSE;
 	}
 
 	if (*(cmd) == 's' || *(cmd) == 'n') {

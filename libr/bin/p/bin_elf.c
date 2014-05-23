@@ -92,12 +92,15 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_elf_section_t *section = NULL;
-	int i;
+	int i, n, num, found_phdr = 0;
+	struct Elf_(r_bin_elf_obj_t)* obj = arch && arch->o ? arch->o->bin_obj : NULL;
+	Elf_(Phdr)* phdr = NULL;
 
-	if (!(ret = r_list_new ()))
+
+	if (!obj || !(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if ((section = Elf_(r_bin_elf_get_sections) (arch->o->bin_obj))) {
+	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
 			if (!section[i].size) continue;
 			if (!(ptr = R_NEW0 (RBinSection)))
@@ -122,42 +125,38 @@ static RList* sections(RBinFile *arch) {
 	}
 
 	// program headers is another section
-	if (r_list_empty (ret)) {
-		int found = 0;
-#define USE_PHDR 1
-#if USE_PHDR
-		struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-		int i, n, num = obj->ehdr.e_phnum;
-		Elf_(Phdr)* phdr = obj->phdr;
-		for (i=n=0; i<num; i++) {
-			if (phdr && phdr[i].p_type == 1) {
-				found = 1;
-				ut64 paddr = phdr[i].p_offset;
-				ut64 vaddr = phdr[i].p_vaddr;
-				int memsz = (int)phdr[i].p_memsz;
-				int perms = phdr[i].p_flags;
-				ut64 align = phdr[i].p_align;
-				if (!align) align = 0x1000;
-				memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, (int)align);
-				//vaddr -= obj->baddr; // yeah
-				if (!(ptr = R_NEW0 (RBinSection)))
-					return ret;
-				sprintf (ptr->name, "phdr%d", n);
-				ptr->size = memsz;
-				ptr->vsize = memsz;
-				ptr->paddr = paddr;
-				ptr->vaddr = vaddr;
-				ptr->srwx = perms;
-				r_list_append (ret, ptr);
-				n++;
-			}
+	num = obj->ehdr.e_phnum;
+	phdr = obj->phdr;
+	for (i=n=0; i<num; i++) {
+		if (phdr && phdr[i].p_type == 1) {
+			found_phdr = 1;
+			ut64 paddr = phdr[i].p_offset;
+			ut64 vaddr = phdr[i].p_vaddr;
+			int memsz = (int)phdr[i].p_memsz;
+			int perms = phdr[i].p_flags;
+			ut64 align = phdr[i].p_align;
+			if (!align) align = 0x1000;
+			memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, (int)align);
+			//vaddr -= obj->baddr; // yeah
+			if (!(ptr = R_NEW0 (RBinSection)))
+				return ret;
+			sprintf (ptr->name, "phdr%d", n);
+			ptr->size = memsz;
+			ptr->vsize = memsz;
+			ptr->paddr = paddr;
+			ptr->vaddr = vaddr;
+			ptr->srwx = perms;
+			r_list_append (ret, ptr);
+			n++;
 		}
-#endif
+	}
+
+	if (r_list_empty (ret)) {
 		if (!arch->size) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->o->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
-		if (found == 0) {
+		if (found_phdr == 0) {
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;
 			sprintf (ptr->name, "undefined");
@@ -169,6 +168,29 @@ static RList* sections(RBinFile *arch) {
 			r_list_append (ret, ptr);
 		}
 	}
+	// add entry for ehdr
+	ptr = R_NEW0 (RBinSection);
+	if (ptr) {
+		RBinSection *t_sec = NULL;
+		RListIter *iter = 0;
+		ut64 ehdr_size = sizeof (obj->ehdr);
+
+		//r_list_foreach (ret, iter, t_sec) {
+		//	ehdr_size += t_sec->size;
+		//}
+
+		sprintf (ptr->name, "ehdr");
+		ptr->size = ehdr_size;
+		ptr->vsize = ehdr_size;
+		ptr->paddr = 0;
+		ptr->vaddr = obj->baddr;
+		ptr->srwx = 7;
+		r_list_append (ret, ptr);
+	}
+
+
+
+
 	return ret;
 }
 

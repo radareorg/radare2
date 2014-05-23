@@ -1,5 +1,7 @@
 /* radare - GPLv2 - Copyright 2014 jvoisin <julien.voisin@dustri.org> */
 
+#include <dirent.h>
+
 #include <r_core.h>
 #include <r_lib.h>
 
@@ -11,6 +13,7 @@
 #define R_IPI static
 
 static YR_COMPILER* compiler;
+static void* libyara;
 
 static void (*r_yr_initialize)(void) = NULL;
 static int (*r_yr_compiler_add_file)(
@@ -199,26 +202,28 @@ static int r_cmd_yara_call(void *user, const char *input) {
 
 static int r_cmd_yara_load_default_rules() {
 #define YARA_PREFIX R2_PREFIX"/share/radare2/"R2_VERSION"/yara/"
-	struct dirent *f;
+	struct dirent** f;
 	char complete_path[128];
-	DIR* dir = r_sandbox_opendir (YARA_PREFIX);
+	int i, n;
 
-	if (dir == NULL)
+	if (r_sandbox_enable(0) && !r_sandbox_check_path(YARA_PREFIX))
 		return R_FALSE;
 
-	while ((f = readdir(dir)) != NULL) {
-		if (f->d_name[0] == '.') // skip '.' and '..'
+	n = scandir (YARA_PREFIX, &f, 0, alphasort);
+	if (n < 0)
+		return R_FALSE;
+	for (i=0; i<n; i++) {
+		if (f[i]->d_name[0] == '.') // skip '.', '..' and hidden files
 			continue;
-		snprintf (complete_path, sizeof(complete_path), YARA_PREFIX "%s", f->d_name);
+		snprintf (complete_path, sizeof (complete_path), YARA_PREFIX "%s", f[i]->d_name);
 		r_cmd_yara_add (complete_path);
 	}
 
-	closedir (dir);
 	return R_TRUE;
 }
 
 static int r_cmd_yara_init() {
-	void *libyara = r_lib_dl_open ("libyara."R_LIB_EXT);
+	libyara = r_lib_dl_open ("libyara."R_LIB_EXT);
 	if (!libyara) {
 		eprintf ("Cannot find libyara\n");
 		return R_FALSE;
@@ -247,9 +252,6 @@ static int r_cmd_yara_init() {
 	LOADSYM (yr_rules_scan_mem);
 	LOADSYM (yr_rules_destroy);
 
-	// Causes segfault, FIXME: Resource leak
-	// r_lib_dl_close (libyara);
-
 	r_yr_initialize ();
 
 	if (r_yr_compiler_create (&compiler) != ERROR_SUCCESS) {
@@ -265,6 +267,7 @@ static int r_cmd_yara_init() {
 
 static int r_cmd_yara_deinit(){
 	if (r_yr_initialize != NULL) {
+		r_lib_dl_close (libyara);
 		r_yr_compiler_destroy(compiler);
 		r_yr_finalize();
 		r_yr_initialize = NULL;

@@ -154,6 +154,7 @@ R_API RAnalMetaItem *r_meta_item_new(int type) {
 }
 
 R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
+	int exists;
 	char *e_str, key[100], val[2048];
 	if (from>to)
 		return R_FALSE;
@@ -168,17 +169,24 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	e_str = sdb_encode ((const void*)str, -1);
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, from);
 	snprintf (val, sizeof (val)-1, "%d,%s", (int)(to-from), e_str);
+	exists = sdb_exists (DB, key);
 	sdb_set (DB, key, val, 0);
 	free (e_str);
 
-	/* set type index */
-	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, from);
-	snprintf (val, sizeof (val)-1, "%c", type);
-	sdb_array_add (DB, key, val, 0);
-
-	/* set type index */
-	snprintf (key, sizeof (key)-1, "meta.%c", type);
-	sdb_array_add_num (DB, key, from, 0);
+	// XXX: This is totally inefficient, using array_add withuot
+	// checking return value is wrong practice, also it may lead
+	// to inconsistent DB, and pretty bad performance. We should
+	// store this list in a different storage that doesnt have
+	// those limits and it's O(1) instead of O(n)
+	if (!exists) {
+		/* set type index */
+		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, from);
+		snprintf (val, sizeof (val)-1, "%c", type);
+		sdb_array_add (DB, key, val, 0);
+		/* set type index */
+		snprintf (key, sizeof (key)-1, "meta.%c", type);
+		sdb_array_add_num (DB, key, from, 0);
+	}
 
 	return R_TRUE;
 }

@@ -162,8 +162,6 @@ SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	// TODO: check cas vs mycas
 	if (sdb_array_contains (s, key, v10, NULL))
 		return 0;
-	if (sdb_array_contains (s, key, v16, NULL))
-		return 0;
 	return sdb_array_add (s, key, v16, cas); // TODO: v10 or v16
 }
 
@@ -306,21 +304,22 @@ SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 num, ut32 *cas)
 }
 
 SDB_API int sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *cas) {
-	int found = 0;
-	char *list = sdb_get (s, key, cas);
-	char *next, *ptr = list;
+	const char *list = sdb_const_get (s, key, cas);
+	const char *next, *ptr = list;
+	const int vlen = strlen (val);
 	if (list && *list) {
 		do {
-			char *str = sdb_anext (ptr, &next);
-			if (!strcmp (str, val)) {
-				found = 1;
-				break;
+			const char *str = sdb_const_anext (ptr, &next);
+			int len = next? (int)(size_t)(next-str)-1 : strlen (str);
+			if (len == vlen) {
+				if (!memcmp (str, val, len)) {
+					return 1;
+}
 			}
 			ptr = next;
 		} while (next);
 	}
-	free (list);
-	return found;
+	return 0;
 }
 
 SDB_API int sdb_array_size(Sdb *s, const char *key) {

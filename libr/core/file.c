@@ -65,7 +65,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		eprintf ("File %s reopened in %s mode\n", path,
 			perm&R_IO_WRITE?"read-write": "read-only");
 
-		ret = r_core_bin_load(core, obinfilepath, baddr);
+		ret = r_core_bin_load (core, obinfilepath, baddr);
 
 		if (!ret){
 			eprintf ("Error: Failed to reload the bin for file: %s", path);
@@ -563,12 +563,14 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 }
 
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
+	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	const int openmany = r_config_get_i (r->config, "file.openmany");
 
+	if (!file)
+		return NULL;
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 		mode = 4|2;
@@ -635,8 +637,10 @@ R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
 }
 
 R_API void r_core_file_free(RCoreFile *cf) {
-	int res = r_core_files_free (cf->core, cf);
-	if (!res && cf && cf->alive) {
+	int res = 1;
+	if (cf)
+		res = r_core_files_free (cf->core, cf);
+	if (!res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		cf->alive = 0;
 		const RIO *io = cf->fd ? cf->fd->io : NULL;

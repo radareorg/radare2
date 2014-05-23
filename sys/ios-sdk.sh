@@ -24,6 +24,7 @@ export CC=`pwd`/sys/ios-sdk-gcc
 # select ios sdk version
 export IOSVER=7.1
 export IOSINC=`pwd`/sys/ios-include
+export CFLAGS=-O2
 
 if true ; then
 make clean
@@ -42,6 +43,6 @@ if [ $? = 0 ]; then
 		rm -rf sys/cydia/radare2/root
 		mkdir -p sys/cydia/radare2/root
 		sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-		( cd sys/cydia/radare2/root ; make clean ; make )
+		( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
 	fi
 fi

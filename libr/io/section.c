@@ -84,6 +84,8 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 
 	if (io->va || io->debug)
 		offset = r_io_section_vaddr_to_offset (io, offset);
+	// XXX - Should this print the section->id or the location in the
+	// rio sections array?
 	r_list_foreach (io->sections, iter, s) {
 		if (rad) {
 			char *n = strdup (s->name);
@@ -96,7 +98,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		} else {
 			io->printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s",
-			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
+			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits)
 				io->printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
@@ -258,6 +260,32 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 	return UT64_MAX;
 }
 
+R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr) {
+	int res = R_FALSE;
+	RIOSection *s;
+	RListIter *iter;
+	r_list_foreach (io->sections, iter, s) {
+		if (s->offset <= paddr && paddr < s->offset + s->size) {
+			res = R_TRUE;
+			break;
+		}
+	}
+	return res;
+}
+
+R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr) {
+	int res = R_FALSE;
+	RIOSection *s;
+	RListIter *iter;
+	r_list_foreach (io->sections, iter, s) {
+		if (s->vaddr <= vaddr && vaddr < s->vaddr + s->size) {
+			res = R_TRUE;
+			break;
+		}
+	}
+	return res;
+}
+
 R_API ut64 r_io_section_next(RIO *io, ut64 o) {
 	int oset = 0;
 	ut64 newsec = 0LL;
@@ -290,6 +318,36 @@ R_API ut64 r_io_section_next(RIO *io, ut64 o) {
 	//eprintf ("Newsec %d %llx\n", oset, newsec);
 	if (oset) return o;
 	return newsec? newsec: o;
+}
+
+R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
+	RIOSection *sec = NULL;
+	RListIter *iter;
+	r_list_foreach (io->sections, iter, sec) {
+		ut64 sec_to = sec->offset + sec->size,
+			 sec_from = sec->offset;
+		if (sec_from <= addr && addr < sec_to) break;
+		//if (map->from == addr && endaddr == sec_to) r_list_append(maps, map);
+		if (sec_from < endaddr && endaddr < sec_to) break;
+		if (addr <= sec_from && sec_to <= endaddr) break;
+		sec = NULL;
+	}
+	return sec;
+}
+
+R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
+	RIOSection *sec = NULL;
+	RListIter *iter;
+	r_list_foreach (io->sections, iter, sec) {
+		ut64 sec_to = sec->vaddr + sec->size,
+			 sec_from = sec->vaddr;
+		if (sec_from <= addr && addr < sec_to) break;
+		//if (map->from == addr && endaddr == sec_to) r_list_append(maps, map);
+		if (sec_from < endaddr && endaddr < sec_to) break;
+		if (addr <= sec_from && sec_to <= endaddr) break;
+		sec = NULL;
+	}
+	return sec;
 }
 
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits) {

@@ -188,6 +188,7 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	if (desc) {
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
+		// add a map that represents the file
 	} else 	eprintf ("Unable to open file: %s\n", file);
 
 	return desc;
@@ -287,6 +288,50 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
 	while (len>0) {
+		// step one does a section exist for the offset
+		int exists = r_io_section_exists_for_paddr (io, addr+w) ||
+					 r_io_section_exists_for_vaddr (io, addr+w) ||
+					 r_io_map_exists_for_offset (io, addr+w);
+
+		// XXX this is a break b/c external IO caller do not need to create
+		// an IO Map (yet.), so the "checking existence of" only works if r_core_file
+		// APIs are used to load files.
+		if (!exists && r_io_map_count (io) > 0) {
+			// XXX this will break if there is actually data at this location
+			// or within UT64_MAX - len
+			ut64 next_map_addr = UT64_MAX,
+				 next_sec_addr = UT64_MAX;
+
+			RIOMap *next_map = NULL;
+			RIOSection * next_sec = NULL;
+			// is there a map somewhere within the next range for
+			// us to read from
+			next_sec = r_io_section_get_first_in_vaddr_range (io, addr+w, addr+len+w);
+			next_sec_addr = next_sec ? next_sec->offset : UT64_MAX;
+
+			if (!next_sec){
+				next_map = r_io_map_get_first_map_in_range (io, addr+w, addr+len+w);
+				next_map_addr = next_map ? next_map->from : UT64_MAX;
+				if (len <= next_map_addr-addr) next_map_addr = UT64_MAX;
+				else l = next_map_addr-addr;
+
+			} else if (len <= next_map_addr-addr) {
+				next_sec_addr = UT64_MAX;
+			} else {
+				l = next_sec_addr-addr;
+			}
+
+			if (!next_sec && !next_map) {
+				// done
+				return olen;
+			}
+			// want to capture monotonicity even when maps are 0 in length
+			if (l==0) l++;
+			w+= l;
+			len -= l;
+			continue;
+		}
+
 		last = r_io_section_next (io, addr+w);
 		last2 = r_io_map_next (io, addr+w); // XXX: must use physical address
 		if (last == (addr+w)) last = last2;
@@ -346,7 +391,7 @@ eprintf ("RETRERET\n");
 this is not a real fix, because it just avoids reading again , even if the seek returns error.
 bear in mind that we need to fix that loop and honor lseek sections and sio maps fine
 #endif
-break;
+//break;
 	}
 	return olen;
 }
@@ -363,8 +408,12 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 
 R_API int r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin) {
-		if (io->plugin->resize)
-			return io->plugin->resize (io, io->fd, newsize);
+		if (io->plugin->resize) {
+			int res = io->plugin->resize (io, io->fd, newsize);
+			if (res)
+				r_io_map_truncate_update (io, io->fd->fd, newsize);
+			return res;
+		}
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -470,8 +519,10 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 	}
 	if (ret == -1)
 		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
-	else
+	else{
+		r_io_map_write_update (io, io->fd->fd, io->off, ret);
 		io->off += ret;
+	}
 	if (data)
 		free (data);
 	return ret;
@@ -660,11 +711,14 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	ut8 *buf_bytes = NULL;
 	ut64 off = 0;
 
-	if (!io || !desc)
+	if (!io || !desc || !out_sz)
 		return NULL;
 
+	if (*out_sz == UT64_MAX)
+		*out_sz = r_io_desc_size (io, desc);
+
 	off = io->off;
-	*out_sz = r_io_desc_size (io, desc);
+
 
 	if (*out_sz == UT64_MAX) return buf_bytes;
 
