@@ -246,6 +246,9 @@ static int cmd_yank(void *data, const char *input) {
 	case 'x':
 		r_core_yank_hexdump (core, r_num_math (core->num, input+1));
 		break;
+	case 'z':
+		r_core_yank_string (core, core->offset, r_num_math (core->num, input+1));
+		break;
 	case 'p':
 		r_core_yank_cat (core, r_num_math (core->num, input+1));
 		break;
@@ -266,6 +269,10 @@ static int cmd_yank(void *data, const char *input) {
 		"| y 16             copy 16 bytes into clipboard\n"
 		"| y 16 0x200       copy 16 bytes into clipboard from 0x200\n"
 		"| y 16 @ 0x200     copy 16 bytes into clipboard from 0x200\n"
+		"| yz               copy up to blocksize zero terminated string bytes into clipboard\n"
+		"| yz 16            copy up to 16 zero terminated string bytes into clipboard\n"
+		"| yz @ 0x200       copy up to blocksize zero terminated string bytes into clipboard from 0x200\n"
+		"| yz 16 @ 0x200    copy up to 16 zero terminated string bytes into clipboard from 0x200\n"
 		"| yp               print contents of clipboard\n"
 		"| yx               print contents of clipboard in hexadecimal\n"
 		"| yt 64 0x200      copy 64 bytes from current seek to 0x200\n"

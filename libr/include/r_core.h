@@ -244,6 +244,7 @@ R_API ut32 r_core_file_cur_fd (RCore *core);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
+R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
 R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes

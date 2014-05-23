@@ -168,6 +168,33 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 
 	if (curseek != addr)
 		r_core_seek (core, curseek, 1);
+	free (buf);
+	return R_TRUE;
+}
+
+/* Copy a zero terminated string to the clipboard. Clamp to maxlen or blocksize. */
+R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
+	ut64 curseek = core->offset;
+	ut8 *buf = NULL;
+	if (maxlen<0) {
+		eprintf ("r_core_yank_string: cannot yank negative bytes\n");
+		return R_FALSE;
+	}
+	if (addr != core->offset)
+		r_core_seek (core, addr, 1);
+	/* Ensure space and safe termination for largest possible string allowed */
+	buf = malloc (core->blocksize + 1);
+	buf[core->blocksize] = 0;
+	r_core_read_at (core, addr, buf, core->blocksize);
+	if (maxlen == 0) {
+		maxlen = strnlen( buf, core->blocksize);
+	} else if (maxlen > core->blocksize) {
+		maxlen = core->blocksize;
+	}
+	r_core_yank_set (core, addr, buf, maxlen);
+	if (curseek != addr)
+		r_core_seek (core, curseek, 1);
+	free (buf);
 	return R_TRUE;
 }
 
