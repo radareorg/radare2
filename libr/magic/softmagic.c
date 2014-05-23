@@ -304,12 +304,13 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case 1:
 			buf = malloc (2);
 			if (snprintf (buf, 2, "%c", (ut8)v)<0) {
-				return -1;
 				free (buf);
+				return -1;
 			}
-			if (file_printf (ms, R_MAGIC_DESC, buf) == -1)
+			if (file_printf (ms, R_MAGIC_DESC, buf) == -1) {
 				free (buf);
 				return -1;
+			}
 			break;
 		default:
 			if (file_printf(ms, R_MAGIC_DESC, (ut8) v) == -1)
