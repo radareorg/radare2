@@ -316,26 +316,33 @@ static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+	sdb_set (arch->sdb, "pe.file", ret->file , 0);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+	sdb_set (arch->sdb, "pe.rpath", ret->rpath , 0);
 	if ((str = PE_(r_bin_pe_get_class) (arch->o->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
+		sdb_set (arch->sdb, "pe.bclass", ret->bclass , 0);
 		free (str);
 	}
 	strncpy (ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
 	if ((str = PE_(r_bin_pe_get_os) (arch->o->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
+		sdb_set (arch->sdb, "pe.rclass", ret->rclass , 0);
 		free (str);
 	}
 	if ((str = PE_(r_bin_pe_get_arch) (arch->o->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
+		sdb_set (arch->sdb, "pe.arch", ret->arch , 0);
 		free (str);
 	}
 	if ((str = PE_(r_bin_pe_get_machine) (arch->o->bin_obj))) {
 		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
+		sdb_set (arch->sdb, "pe.machine", ret->machine , 0);
 		free (str);
 	}
 	if ((str = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj))) {
 		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
+		sdb_set (arch->sdb, "pe.subsystem", ret->subsystem , 0);
 		free (str);
 	}
 	if (is_dot_net (arch)) {
@@ -344,6 +351,7 @@ static RBinInfo* info(RBinFile *arch) {
 	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		strncpy (ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
 	else strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+	sdb_set (arch->sdb, "pe.type", ret->type, 0);
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
@@ -353,7 +361,7 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.nx", has_nx(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.seh", has_seh(arch), 0);
-	sdb_bool_set (arch->sdb, "pe.aslr", has_aslr(arch), 0);
+	sdb_bool_set (arch->sdb, "pe.pic", has_aslr(arch), 0);
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
