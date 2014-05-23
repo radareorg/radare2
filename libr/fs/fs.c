@@ -542,6 +542,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		list = r_fs_root (fs, buf);
 		if (r_list_empty (list)) {
 			printf ("Unknown root\n");
+			r_list_free (list);
 			return R_FALSE;
 		}
 		strncpy (path, buf, sizeof (path)-1);
