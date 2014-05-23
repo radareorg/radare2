@@ -111,7 +111,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		type = "field";
 		if (p) {
 			*p = 0;
-			name = p+1;
+			name = strdup (p+1);
 		} else name = NULL;
 		if (binfile) r_bin_class_add_field (binfile, clas, name);
 	} else
@@ -123,6 +123,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			clas = strdup (sym+2);
 			name = strchr (clas, ' ');
 			if (name) *name++ = 0;
+			name = strdup (name);
 			for (i=0; name[i]; i++) {
 				if (name[i]==']') {
 					name[i] = 0;
