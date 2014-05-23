@@ -129,8 +129,10 @@ static RList *symbols(RBinFile *arch)
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 
-		strncpy (ptr->name, obj->symbols[i].name,
+		if (obj->symbols[i].name)
+			strncpy (ptr->name, obj->symbols[i].name,
 				R_BIN_SIZEOF_STRINGS);
+		else *ptr->name = 0;
 		strncpy (ptr->forwarder, "NONE",
 				R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "", R_BIN_SIZEOF_STRINGS);

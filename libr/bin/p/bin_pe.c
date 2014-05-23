@@ -10,8 +10,9 @@ static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
 static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
+	struct PE_(r_bin_pe_obj_t) *bin;
+	if (!o || !o->bin_obj) return NULL;
+	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
 	if (bin->kv) return bin->kv;
 	return NULL;
 }
@@ -163,6 +164,8 @@ static RList* imports(RBinFile *arch) {
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
+	if (!arch || !arch->o || !arch->o->bin_obj)
+		return NULL;
 	if (!(ret = r_list_new ()) || !(relocs = r_list_new ()))
 		return NULL;
 
@@ -205,7 +208,9 @@ static RList* imports(RBinFile *arch) {
 }
 
 static RList* relocs(RBinFile *arch) {
-	return ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs;
+	struct PE_(r_bin_pe_obj_t)* obj= arch->o->bin_obj;
+	if (obj) return obj->relocs;
+	return NULL;
 }
 
 static RList* libs(RBinFile *arch) {

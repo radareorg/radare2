@@ -156,7 +156,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	}
 	if (type) {
 		if (!strcmp (type, "field")) {
-			ret = malloc (strlen (clas)+strlen (name)+32);
+			int namelen = name?strlen (name):0;
+			ret = malloc (strlen (clas)+namelen+32);
 			if (ret) sprintf (ret, "field int %s::%s", clas, name);
 		} else {
 			if (nargs) {
