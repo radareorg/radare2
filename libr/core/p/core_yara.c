@@ -267,10 +267,10 @@ static int r_cmd_yara_init() {
 
 static int r_cmd_yara_deinit(){
 	if (r_yr_initialize != NULL) {
-		r_lib_dl_close (libyara);
 		r_yr_compiler_destroy(compiler);
 		r_yr_finalize();
 		r_yr_initialize = NULL;
+		r_lib_dl_close (libyara);
 	}
 	return R_TRUE;
 }
