@@ -168,6 +168,7 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 
 	if (curseek != addr)
 		r_core_seek (core, curseek, 1);
+	free (buf);
 	return R_TRUE;
 }
 
