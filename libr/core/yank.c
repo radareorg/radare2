@@ -47,7 +47,7 @@ static int perform_mapped_file_yank (RCore *core, ut64 offset, ut64 len, const c
 		RIOMap * map = NULL;
 		yankfd = r_io_open (core->io, filename, R_IO_READ, 0644);
 		// map the file in for IO operations.
-		if (yankfd) {
+		if (yankfd && load_align) {
 			yank_file_sz = r_io_size (core->io);
 			map = r_io_map_add_next_available (core->io,
 				yankfd->fd,
@@ -184,10 +184,12 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 		r_core_seek (core, addr, 1);
 	/* Ensure space and safe termination for largest possible string allowed */
 	buf = malloc (core->blocksize + 1);
+	if (!buf)
+		return R_FALSE;
 	buf[core->blocksize] = 0;
 	r_core_read_at (core, addr, buf, core->blocksize);
 	if (maxlen == 0) {
-		maxlen = strnlen( buf, core->blocksize);
+		maxlen = strnlen ((const char*)buf, core->blocksize);
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
 	}
