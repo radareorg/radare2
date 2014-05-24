@@ -462,7 +462,7 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 		map = r_io_map_new (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
 	if (!strcmp (loadmethod, "fail"))
 		map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
-	if (!strcmp (loadmethod, "append"))
+	if (!strcmp (loadmethod, "append") && load_align)
 		map = r_io_map_add_next_available (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size, load_align);
 	if (!strcmp (suppress_warning, "false")) {
 		if (!map)
