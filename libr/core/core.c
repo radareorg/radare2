@@ -255,7 +255,7 @@ static int autocomplete(RLine *line) {
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
-				if (p==path) path = "/";
+				if (p==path) path = strdup ("/");
 				else if (p!=path+1) *p = 0;
 				p++;
 			}
