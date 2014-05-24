@@ -288,6 +288,13 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
 	while (len>0) {
+		#if 0
+		// this code assumes that the IO backend knows
+		// 1) the size of a loaded file and its offset into the r2 data space
+		// 2) the sections with physical (offsets) and virtual addresses in r2 data space
+		// Currently debuggers may not support registering these data spaces in r2 and this
+		// may prevent "raw" access to locations in the data space for entities like debuggers.
+		// Until that issue is resolved this code will be disabled.
 		// step one does a section exist for the offset
 		int exists = r_io_section_exists_for_paddr (io, addr+w) ||
 					 r_io_section_exists_for_vaddr (io, addr+w) ||
@@ -331,6 +338,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			len -= l;
 			continue;
 		}
+		#endif
 
 		last = r_io_section_next (io, addr+w);
 		last2 = r_io_map_next (io, addr+w); // XXX: must use physical address
