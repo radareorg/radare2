@@ -1634,14 +1634,15 @@ static RList *r_debug_native_pids(int pid) {
 	} else
 	for (i = 2; i < MAXPID; i++) {
 		if (!r_sandbox_kill (i, 0)) {
+			int ret;
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
 			fd = open (cmdline, O_RDONLY);
 			if (fd == -1)
 				continue;
 			cmdline[0] = '\0';
-			read (fd, cmdline, sizeof (cmdline));
-			cmdline[sizeof (cmdline)-1] = '\0';
+			ret = read (fd, cmdline, sizeof (cmdline));
+			cmdline[ret] = '\0';
 			close (fd);
 			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 		}
