@@ -33,24 +33,22 @@ static int r_bin_file_set_bytes (RBinFile *binfile, const ut8 * bytes, ut64 sz);
 static void r_bin_file_free (void /*RBinFile*/ *bf_);
 static RBinFile * r_bin_file_create_append (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname);
 
-static int r_bin_file_object_new_from_xtr_data (RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *xtr_data);
-static int r_bin_files_populate_from_xtrlist (RBinFile *binfile, ut64 baseaddr, ut64 loadaddr, RList *xtr_data_list);
-static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
+static int r_bin_file_object_new_from_xtr_data (RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *xtr_data);
+static int r_bin_files_populate_from_xtrlist (RBin *bin, RBinFile *binfile, ut64 baseaddr, ut64 loadaddr, RList *xtr_data_list);
+static RBinFile * r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 
-static RBinPlugin * r_bin_get_binplugin_by_name (const char *name);
-static RBinPlugin * r_bin_get_binplugin_by_bytes (const ut8* bytes, ut64 sz);
-static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (const char *name);
-static RBinPlugin * r_bin_get_binplugin_any ();
+static RBinPlugin * r_bin_get_binplugin_by_name (RBin *bin, const char *name);
+static RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut64 sz);
+static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (RBin *bin, const char *name);
+static RBinPlugin * r_bin_get_binplugin_any (RBin *bin);
 static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb);
-static RBinFile * r_bin_file_new_from_bytes (const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset);
+static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset);
 static int getoffset (RBin *bin, int type, int idx);
 static const char *getname (RBin *bin, int off);
 static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o);
 
-
-RBin * LOCAL_RBIN_ACCESS = NULL;
 
 
 // TODO: move these two function do a different file
@@ -450,7 +448,6 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 	RBinXtrPlugin *xtr;
 	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	int rawstr = 0;
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->debug;
 
 	if (!io || !desc) return R_FALSE;
@@ -502,7 +499,7 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 						buf_bytes = iob->desc_read (io, desc, &sz);
 					}
 
-					binfile = r_bin_file_xtr_load_bytes (xtr,
+					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
 						desc->name, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
 						desc->fd, bin->rawstr);
@@ -513,7 +510,7 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 	}
 
 	if (!binfile) {
-		binfile = r_bin_file_new_from_bytes (desc->name,
+		binfile = r_bin_file_new_from_bytes (bin, desc->name,
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
 	}
@@ -645,28 +642,28 @@ static RBinFile * r_bin_file_create_append (RBin *bin, const char *file, const u
 	return bf;
 }
 
-static int r_bin_files_populate_from_xtrlist (RBinFile *binfile, ut64 baseaddr, ut64 loadaddr, RList *xtr_data_list) {
+static int r_bin_files_populate_from_xtrlist (RBin *bin, RBinFile *binfile, ut64 baseaddr, ut64 loadaddr, RList *xtr_data_list) {
 	RListIter *iter = NULL;
 	RBinXtrData *data = NULL;
 	int res = R_TRUE;
 	r_list_foreach (xtr_data_list, iter, data) {
-		res = r_bin_file_object_new_from_xtr_data  (binfile, baseaddr, loadaddr, data);
+		res = r_bin_file_object_new_from_xtr_data  (bin, binfile, baseaddr, loadaddr, data);
 		if (!res) break;
 	}
 	return res;
 }
 
-static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
-	RBinFile * bf = LOCAL_RBIN_ACCESS ? r_bin_file_find_by_name (LOCAL_RBIN_ACCESS, filename) : NULL;
+static RBinFile * r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
+	RBinFile * bf = bin? r_bin_file_find_by_name (bin, filename) : NULL;
 	if (!bf) {
-		if (!LOCAL_RBIN_ACCESS) return NULL;
-		bf = r_bin_file_create_append (LOCAL_RBIN_ACCESS, filename, bytes, sz, file_sz, rawstr, fd, xtr->name);
+		if (!bin) return NULL;
+		bf = r_bin_file_create_append (bin, filename, bytes, sz, file_sz, rawstr, fd, xtr->name);
 		if (!bf) return bf;
 	}
 	if (idx == 0 && xtr && xtr && bytes) {
 		RList *xtr_data_list = xtr->extractall_from_bytes (bytes, sz);
 		if (xtr_data_list){
-			if (!r_bin_files_populate_from_xtrlist (bf, baseaddr, loadaddr, xtr_data_list))
+			if (!r_bin_files_populate_from_xtrlist (bin, bf, baseaddr, loadaddr, xtr_data_list))
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
 		}
 		r_list_free (xtr_data_list);
@@ -674,7 +671,7 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *fil
 		if (idx == 0) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bytes, sz, idx);
 		if (xtr_data){
-			if (r_bin_file_object_new_from_xtr_data (bf, baseaddr, loadaddr, xtr_data))
+			if (r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
 		}
 		r_bin_xtrdata_free (xtr_data);
@@ -687,12 +684,11 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBinXtrPlugin *xtr, const char *fil
 	return bf;
 }
 
-static RBinPlugin * r_bin_get_binplugin_by_name (const char *name) {
+static RBinPlugin * r_bin_get_binplugin_by_name (RBin *bin, const char *name) {
 	RBinPlugin *plugin;
 	RListIter *it;
-	if (!LOCAL_RBIN_ACCESS) return NULL;
-	if (!name) return NULL;
-	r_list_foreach (LOCAL_RBIN_ACCESS->plugins, it, plugin) {
+	if (!bin || !name) return NULL;
+	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (plugin->name, name))
 			return plugin;
 		// must be set to null
@@ -701,25 +697,25 @@ static RBinPlugin * r_bin_get_binplugin_by_name (const char *name) {
 	return NULL;
 }
 
-static RBinPlugin * r_bin_get_binplugin_by_bytes (const ut8* bytes, ut64 sz) {
+static RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut64 sz) {
 	RBinPlugin *plugin;
 	RListIter *it;
-	if (!LOCAL_RBIN_ACCESS) return NULL;
-	if (!bytes) return NULL;
-	r_list_foreach (LOCAL_RBIN_ACCESS->plugins, it, plugin) {
-		if (plugin->check_bytes && plugin->check_bytes (bytes, sz) ) return plugin;
+	if (!bin || !bytes)
+		return NULL;
+	r_list_foreach (bin->plugins, it, plugin) {
+		if (plugin->check_bytes && plugin->check_bytes (bytes, sz) )
+			return plugin;
 		// must be set to null
 		plugin = NULL;
 	}
 	return NULL;
 }
 
-static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (const char *name) {
+static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (RBin *bin, const char *name) {
 	RBinXtrPlugin *xtr;
 	RListIter *it;
-	if (!name) return NULL;
-	if (!LOCAL_RBIN_ACCESS) return NULL;
-	r_list_foreach (LOCAL_RBIN_ACCESS->binxtrs, it, xtr) {
+	if (!bin || !name) return NULL;
+	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (!strcmp (xtr->name, name))
 			return xtr;
 		// must be set to null
@@ -728,10 +724,10 @@ static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (const char *name) {
 	return NULL;
 }
 
-static RBinPlugin * r_bin_get_binplugin_any () {
+static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
 	static RBinPlugin *any = NULL;
-	if (!LOCAL_RBIN_ACCESS) return NULL;
-	if (!any) any = r_bin_get_binplugin_by_name ("any");
+	if (!bin) return NULL;
+	if (!any) any = r_bin_get_binplugin_by_name (bin, "any");
 	return any;
 }
 
@@ -828,7 +824,7 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 	binfile->rawstr = rawstr;
 	binfile->fd = fd;
 	binfile->id = r_num_rand (0xfffff000);
-	binfile->curxtr = r_bin_get_xtrplugin_by_name (xtrname);
+	binfile->curxtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
 	binfile->sdb = sdb;
 	binfile->size = file_sz;
 
@@ -848,10 +844,9 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 		sdb_ns_set (sdb, "cur", binfile->sdb);
 	}
 	return binfile;
-
 }
 
-static int r_bin_file_object_new_from_xtr_data (RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
+static int r_bin_file_object_new_from_xtr_data (RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
 	RBinObject *o = NULL;
 	RBinPlugin *plugin = NULL;
 	ut64 offset = data ? data->offset : 0;
@@ -864,8 +859,8 @@ static int r_bin_file_object_new_from_xtr_data (RBinFile *bf, ut64 baseaddr, ut6
 	//if (!data || !data->buf) return bf;
 	if (!data || !bf) return R_FALSE;
 
-	plugin = r_bin_get_binplugin_by_bytes (bytes, sz);
-	if (!plugin) plugin = r_bin_get_binplugin_any ();
+	plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
+	if (!plugin) plugin = r_bin_get_binplugin_any (bin);
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
 	if (o) o->size = sz;
@@ -875,7 +870,7 @@ static int r_bin_file_object_new_from_xtr_data (RBinFile *bf, ut64 baseaddr, ut6
 	return R_TRUE;
 }
 
-static RBinFile * r_bin_file_new_from_bytes (const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr,
+static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr,
 		 ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
 	RBinPlugin *plugin = NULL;
 	RBinXtrPlugin *xtr = NULL;
@@ -883,28 +878,30 @@ static RBinFile * r_bin_file_new_from_bytes (const char *file, const ut8 * bytes
 	RBinObject *o = NULL;
 	ut8 binfile_created = R_FALSE;
 
-	if (xtrname) xtr = r_bin_get_xtrplugin_by_name (xtrname);
+	if (xtrname) xtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
 
 	if (xtr && xtr->check && xtr->check_bytes (bytes, sz)) {
-		return r_bin_file_xtr_load_bytes (xtr, file, bytes, sz, file_sz, baseaddr, loadaddr, 0, fd, rawstr);
+		return r_bin_file_xtr_load_bytes (bin, xtr, file,
+			bytes, sz, file_sz, baseaddr, loadaddr, 0,
+			fd, rawstr);
 	}
 
 	if (!bf) {
-		bf = r_bin_file_create_append (LOCAL_RBIN_ACCESS, file, bytes, sz, file_sz, rawstr, fd, xtrname);
+		bf = r_bin_file_create_append (bin, file, bytes, sz, file_sz, rawstr, fd, xtrname);
 		if (!bf) return NULL;
 		binfile_created = R_TRUE;
 	}
 
-	if (pluginname) plugin = r_bin_get_binplugin_by_name (pluginname);
-	if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bytes, sz);
-	if (!plugin) plugin = r_bin_get_binplugin_any ();
+	if (pluginname) plugin = r_bin_get_binplugin_by_name (bin, pluginname);
+	if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
+	if (!plugin) plugin = r_bin_get_binplugin_any (bin);
 
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
 	if (o) o->size = file_sz;
 
 	if (!o) {
-		if (bf && binfile_created) r_list_delete_data (LOCAL_RBIN_ACCESS->binfiles, bf);
+		if (bf && binfile_created) r_list_delete_data (bin->binfiles, bf);
 		return NULL;
 	}
 	if (strcmp (plugin->name, "any") )
@@ -946,7 +943,6 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 }
 
 R_API void* r_bin_free(RBin *bin) {
-	LOCAL_RBIN_ACCESS = NULL;
 	if (!bin) return NULL;
 	bin->file = NULL;
 	//r_bin_free_bin_files (bin);
@@ -1148,7 +1144,6 @@ R_API RBin* r_bin_new() {
 	int i;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBin *bin = R_NEW0 (RBin);
-	LOCAL_RBIN_ACCESS = bin;
 	if (!bin) return NULL;
 	bin->sdb = sdb_new0 ();
 	bin->printf = (PrintfCallback)printf;
@@ -1252,6 +1247,7 @@ static RBinFile * r_bin_file_find_by_object_id (RBin *bin, ut32 binobj_id) {
 	return binfile;
 }
 
+#if 0
 static RBinObject * r_bin_object_find_by_id (RBin *bin, ut32 binobj_id) {
 	RBinFile *binfile = NULL;
 	RBinObject *obj = NULL;
@@ -1262,8 +1258,8 @@ static RBinObject * r_bin_object_find_by_id (RBin *bin, ut32 binobj_id) {
 		if (obj) break;
 	}
 	return obj;
-
 }
+#endif
 
 static RBinFile * r_bin_file_find_by_id (RBin *bin, ut32 binfile_id) {
 	RBinFile *binfile = NULL;
@@ -1274,7 +1270,6 @@ static RBinFile * r_bin_file_find_by_id (RBin *bin, ut32 binfile_id) {
 		binfile = NULL;
 	}
 	return binfile;
-
 }
 
 R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id) {
