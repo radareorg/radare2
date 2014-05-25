@@ -286,7 +286,6 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 									strlen(include_dir) + 8);
 							snprintf(allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
 									"%s/%s/", comp_dir, include_dir);
-							printf( "%s\n", allocated_id);
 							include_dir = allocated_id;
 						}
 					}
