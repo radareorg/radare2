@@ -181,7 +181,7 @@ static const char *radare_argv[] = {
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!perl", "#!vala",
 	"V",
-	"aa", "ab", "af", "ar", "ag", "at", "a?",
+	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax",
 	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!", "e?", "env ",
