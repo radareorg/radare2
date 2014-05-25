@@ -352,7 +352,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				char key[128];
 				char val[128];
 				snprintf (key, sizeof (key)-1, "uuid.%d", bin->uuidn++);
-				r_hex_bin2str (&uc.uuid, 16, val);
+				r_hex_bin2str ((ut8*)&uc.uuid, 16, val);
 				sdb_set (bin->kv, key, val, 0);
 				//for (i=0;i<16; i++) eprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
 			}
@@ -374,6 +374,18 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			//eprintf ("[mach0] load dynamic linker\n");
 			break;
 		case LC_MAIN:
+			{
+			struct {
+				ut64 eo;
+				ut64 ss;
+			} ep = {0};
+			r_buf_fread_at (bin->b, off+8, (void*)&ep,
+				bin->endian?"2L": "2l", 1);
+			bin->entry = ep.eo;
+			sdb_num_set (bin->kv, "entry0", ep.eo, 0);
+			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
+			}
+			break;
 		case LC_UNIXTHREAD:
 		case LC_THREAD:
 			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
