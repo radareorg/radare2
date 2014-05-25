@@ -486,7 +486,6 @@ int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 
 		r_list_foreach (bin->binxtrs, it, xtr) {
 			if (xtr->check && xtr->check_bytes (buf_bytes, sz)) {
 				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
-
 					if (is_debugger && sz != file_sz) {
 						free (buf_bytes);
 						RIODesc *tdesc = iob->desc_open (io, desc->name, desc->flags, R_IO_READ);
@@ -877,7 +876,7 @@ static int r_bin_file_object_new_from_xtr_data (RBinFile *bf, ut64 baseaddr, ut6
 }
 
 static RBinFile * r_bin_file_new_from_bytes (const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr,
-											 ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
+		 ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
 	RBinPlugin *plugin = NULL;
 	RBinXtrPlugin *xtr = NULL;
 	RBinFile *bf = NULL;
