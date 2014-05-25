@@ -100,7 +100,7 @@ static void __sdb_prompt(Sdb *sdb) {
 	}
 }
 
-static int extract_binobj (RBinFile *bf, RBinObject *o, int idx ) {
+static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
 	ut64 boffset = o ? o->boffset : 0;
 	ut64 bin_size = o ? o->obj_size : 0;
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
@@ -168,19 +168,15 @@ static int rabin_extract(int all) {
 	int res = R_FALSE;
 	RBinFile *bf = r_bin_cur (bin);
 	RBinObject *obj = NULL;
+	if (!bf) return res;
 	if (all) {
 		int idx = 0;
-
 		RListIter *iter = NULL;
-		if (!bf) return res;
-
-		r_list_foreach (bf->objs, iter, obj) {
-			if (!bf || !obj) return res;
+		r_list_foreach (bf->objs, iter, obj)
 			res = extract_binobj (bf, obj, idx++);
-		}
 	} else {
 		obj = r_bin_cur_object (bin);
-		if (!bf || !obj) return res;
+		if (!obj) return res;
 		res = extract_binobj (bf, obj, 0);
 	}
 
