@@ -115,6 +115,7 @@ typedef struct r_io_t {
 	int debug;
 	int raised;
 	int va;
+	int raw;
 	char *redirect;
 	/* write mask */
 	void (*printf)(const char *str, ...);
@@ -252,6 +253,7 @@ typedef struct r_io_cache_t {
 /* io/plugin.c */
 R_API RIO *r_io_new();
 R_API RIO *r_io_free(RIO *io);
+R_API void r_io_set_raw(RIO *io, int raw);
 R_API int r_io_plugin_init(RIO *io);
 R_API void r_io_raise (RIO *io, int fd);
 R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin);
@@ -354,6 +356,7 @@ R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr);
 R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr);
 R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr);
 R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr);
+
 
 /* undo api */
 // track seeks and writes
