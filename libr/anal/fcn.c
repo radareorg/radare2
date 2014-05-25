@@ -82,6 +82,9 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	RAnalRef *ref;
 	if (!fcn || !a|| !(ref = r_anal_ref_new ()))
 		return R_FALSE;
+	// TODO: check if valid memory
+	if (addr<0xff)
+		return R_FALSE; // invalid reference
 	// set global reference
 	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference

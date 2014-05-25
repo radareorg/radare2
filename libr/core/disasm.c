@@ -446,6 +446,7 @@ static char *filter_refline2(RCore *core, const char *str) {
 		case '-':
 		case '>':
 		case '<':
+		case '.':
 		case '=':
 			  *p = ' '; break;
 		}
