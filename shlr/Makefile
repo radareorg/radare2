@@ -128,7 +128,9 @@ capstone-sync:
 	cd capstone ; \
 		git checkout $(CS_BRA) ; \
 		git reset --hard $(CS_TIP) || \
-	( git pull ; git reset --hard $(CS_TIP) )
+	( if [ -d .git ]; then \
+		git pull ; git reset --hard $(CS_TIP) ; \
+	else true ; fi)
 
 .PHONY: capstone
 else
