@@ -1642,7 +1642,7 @@ static RList *r_debug_native_pids(int pid) {
 				continue;
 			cmdline[0] = '\0';
 			ret = read (fd, cmdline, sizeof (cmdline));
-			cmdline[ret] = '\0';
+			cmdline[ret-1] = '\0';
 			close (fd);
 			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 		}
