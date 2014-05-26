@@ -10,7 +10,7 @@
 #define XBE_EP_CHIHIRO 0x40B5C16E
 #define XBE_KP_CHIHIRO 0x2290059D
 
-#define XBE_MAX_THUNK 366
+#define XBE_MAX_THUNK 378
 
 typedef struct {
 	ut32 magic;
