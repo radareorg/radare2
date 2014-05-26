@@ -259,7 +259,8 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	}
 	IO_IFDBG {
 		if (io->fd) eprintf ("Data source: %s\n", io->fd->name);
-		eprintf ("Asked for %d bytes, provided %d from %s\n", len, bytes_read, read_from);
+		eprintf ("Asked for %d bytes, provided %d from %s\n",
+			len, bytes_read, read_from);
 	}
 	return bytes_read;
 }
@@ -381,6 +382,7 @@ eprintf ("RETRERET\n");
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
+//eprintf ("READ 0x%llx = %d\n", addr+w, ret);
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 //memset(buf, 0xff, olen);
