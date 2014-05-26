@@ -268,6 +268,9 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
 	if (io==NULL || io->fd == NULL)
 		return -1;
+	//if (io->off ==UT64_MAX) asm("int3");
+	if (io->off==UT64_MAX)
+		return -1;
 	/* IGNORE check section permissions */
 	if (io->enforce_rwx & R_IO_READ)
 		if (!(r_io_section_get_rwx (io, io->off) & R_IO_READ))
@@ -347,16 +350,24 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		//else if (last2<last) last = last2;
 		l = (len > (last-addr+w))? (last-addr+w): len;
 		if (l<1) l = len;
-		{
-			paddr = r_io_map_select (io, addr); // XXX
-			paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+		 {
+			if (addr != UT64_MAX)
+				paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+			else paddr = 0;
+			if (!paddr || paddr==UT64_MAX)
+				paddr = r_io_map_select (io, addr); // XXX
+			if (paddr == UT64_MAX) {
+				w +=l;
+				len -= l;
+				continue;
+			}
 			r_io_map_select (io, addr); // XXX
 			if (len>0 && l>len) l = len;
 			addr = paddr-w;
 			if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
 				memset (buf+w, 0xff, l);
 			}
-		}
+		 }
 #if 0
 		if (io->zeromap)
 			if (!r_io_map_get (io, addr+w)) {
@@ -372,10 +383,12 @@ eprintf ("RETRERET\n");
 		ret = r_io_read_internal (io, buf+w, l);
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
+//memset(buf, 0xff, olen);
 			ret = 1;
 		} else if (ret<l) {
 			l = ret;
-		}
+		} else {
+}
 #if USE_CACHE
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len); //-w);
@@ -400,7 +413,10 @@ eprintf ("RETRERET\n");
 this is not a real fix, because it just avoids reading again , even if the seek returns error.
 bear in mind that we need to fix that loop and honor lseek sections and sio maps fine
 #endif
-//break;
+if (len>0) {
+	memset (buf+w, 0xff, len);
+}
+break;
 	}
 	return olen;
 }
