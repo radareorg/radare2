@@ -649,8 +649,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 static ut64 get_elf_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
+// WHY? NO NEED TO HAVE PLUGIN SPECIFIC VADDR
 	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-	return obj->baddr - obj->boffset + vaddr;
+	return obj->baddr - obj->boffset + vaddr -baddr;
 
 }
 

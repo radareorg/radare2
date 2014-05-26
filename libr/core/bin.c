@@ -28,11 +28,10 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 	if (info) {
 		const char * arch = info->arch;
 		ut16 bits = info->bits;
-		ut64 baseaddr = binobj->baddr;
-//eprintf ("OLD BADDR %llx\n", r_config_get_i (r->config, "bin.baddr"));
-//eprintf ("NEW BADDR %llx\n", baseaddr);
-baseaddr = binobj->baddr = r_config_get_i (r->config, "bin.baddr");
-
+		ut64 baseaddr = r_config_get_i (r->config, "bin.baddr");
+		if (baseaddr) {
+			binobj->baddr = baseaddr;
+		} else baseaddr = binobj->baddr;
 		int va = info->has_va;
 		r_config_set_i (r->config, "io.va",
 			(binobj->info)? binobj->info->has_va: 0);

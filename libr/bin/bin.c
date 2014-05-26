@@ -1539,26 +1539,20 @@ R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 
 	baddr = binfile->o->baddr;
 //baddr = 0xf00000;
 	if (!cp) return UT64_MAX;
-	if (cp && cp->get_vaddr)
+#if 0
+	if (cp && cp->get_vaddr) {
 		return cp->get_vaddr (binfile, baddr, paddr, vaddr);
+}
+#endif
 	if (!baddr) return vaddr;
  	delta = (paddr & 0xffff0000) | (vaddr & 0xffff);
 	return baddr + delta;
 }
 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	ut32 delta;
-	RBinFile *binfile = bin ? bin->cur : NULL;
-	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
-	// XXX hack to recover lost baddr
-baddr = bin->cur->o->baddr;
-//baddr = 0xf00000;
-	if (!cp) return UT64_MAX;
-	if (cp && cp->get_vaddr)
-		return cp->get_vaddr (bin->cur, baddr, paddr, vaddr);
-	if (!baddr) return vaddr;
- 	delta = (paddr & 0xffff0000) | (vaddr & 0xffff);
-	return baddr + delta;
+	if (!bin || !bin->cur)
+		return NULL;
+	return r_binfile_get_vaddr (bin->cur, baddr, paddr, vaddr);
 }
 
 R_API ut64 r_bin_get_size (RBin *bin) {
