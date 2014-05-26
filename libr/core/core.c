@@ -1106,8 +1106,10 @@ reaccept:
 							if (i>0) {
 								int r;
 								ptr = (ut8 *) malloc (i+6);
-								if (!ptr)
+								if (!ptr) {
+									fclose (fd);
 									return R_FALSE;
+								}
 								r = fread (ptr+5, i, 1, fd);
 								ptr[5+r]='\0';
 							}
