@@ -143,7 +143,7 @@ static RList* sections(RBinFile *arch)
 
 		r_buf_read_at (arch->buf, sect[i].name_addr - obj->header->base, (ut8 *)tmp, sizeof(tmp)); 
 
-		strncpy(item->name, tmp, sizeof(tmp));
+		snprintf(item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
 		item->size  = sect[i].size; 
@@ -208,7 +208,7 @@ static RList* symbols(RBinFile *arch)
 	// PA -> VA translation
 	for (i = 0; found == R_FALSE && i < obj->header->sections; i++) {
 		r_buf_read_at (arch->buf, obj->header->sechdr_addr - obj->header->base + (sizeof(xbe_section) * i), (ut8 *)&sect, sizeof(sect));
-		if (kt_addr >= sect.vaddr && kt_addr <= sect.vaddr + sect.vsize)
+		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize)
 			found = R_TRUE;
 	}
 
