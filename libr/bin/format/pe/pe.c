@@ -12,8 +12,10 @@ ut64 PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
 	ut64 addr = 0;
 	ut8 buf[512];
 
-	if (!bin || !bin->b)
+	if (!bin || !bin->b) {
+		free (entry);
 		return 0LL;
+	}
 	// option2: /x 8bff558bec83ec20
 	buf[367] = 0;
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
