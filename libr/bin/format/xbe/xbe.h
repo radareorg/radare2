@@ -10,6 +10,8 @@
 #define XBE_EP_CHIHIRO 0x40B5C16E
 #define XBE_KP_CHIHIRO 0x2290059D
 
+#define XBE_MAX_THUNK 366
+
 typedef struct {
 	ut32 magic;
 	ut8  signature[0x100];

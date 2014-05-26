@@ -197,7 +197,7 @@ static RList* symbols(RBinFile *arch)
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
 	RList *ret = r_list_new();
 	int i, found = R_FALSE;
-	ut32 thunk_addr[366];
+	ut32 thunk_addr[XBE_MAX_THUNK];
 	ut32 kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
 	xbe_section sect;
 
@@ -226,13 +226,18 @@ static RList* symbols(RBinFile *arch)
 			return NULL;
 		}
 
-		snprintf(sym->name, R_BIN_SIZEOF_STRINGS, "kt.%s\n", kt_name[thunk_addr[i] ^ 0x80000000]);
-		sym->vaddr = (obj->header->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
-		sym->paddr = sym->vaddr - obj->header->base;
-		sym->size = 4;
-		sym->ordinal = i;
+		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 
-		r_list_append(ret, sym);
+		// Basic sanity checks
+		if (thunk_addr[i]&0x80000000 && thunk_index <= XBE_MAX_THUNK) {
+			snprintf(sym->name, R_BIN_SIZEOF_STRINGS, "kt.%s\n", kt_name[thunk_index]);
+			sym->vaddr = (obj->header->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
+			sym->paddr = sym->vaddr - obj->header->base;
+			sym->size = 4;
+			sym->ordinal = i;
+
+			r_list_append(ret, sym);
+		}
 	}
 
 	return ret;
