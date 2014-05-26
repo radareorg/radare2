@@ -29,6 +29,10 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		const char * arch = info->arch;
 		ut16 bits = info->bits;
 		ut64 baseaddr = binobj->baddr;
+//eprintf ("OLD BADDR %llx\n", r_config_get_i (r->config, "bin.baddr"));
+//eprintf ("NEW BADDR %llx\n", baseaddr);
+baseaddr = binobj->baddr = r_config_get_i (r->config, "bin.baddr");
+
 		int va = info->has_va;
 		r_config_set_i (r->config, "io.va",
 			(binobj->info)? binobj->info->has_va: 0);
@@ -844,6 +848,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	RList *sections;
 	RListIter *iter;
 	int i = 0;
+	st64 delta = 0LL;
+
 
 	if ((sections = r_bin_get_sections (r->bin)) == NULL)
 		return R_FALSE;
@@ -851,6 +857,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (sections, iter, section) {
+if (va)
+delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section->vaddr);
 //			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->paddr,
 //				section->vaddr): section->paddr;
 			r_cons_printf ("%s{\"name\":\"%s\","
@@ -863,7 +871,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 				section->size,
 				r_str_rwx_i (section->srwx),
 				section->paddr, // paddr
-				section->vaddr); // paddr
+				delta + section->vaddr); // paddr
 		}
 		r_cons_printf ("]");
 	} else
@@ -879,11 +887,11 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		RBinInfo *info = r_bin_get_info (r->bin);
-		int fd = r_core_file_cur_fd(r);
+		int fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (sections, iter, section) {
 // baddr already implicit in section->vaddr ?
-			ut64 addr = va? r_bin_get_vaddr (r->bin, 0, section->paddr,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->paddr,
 				section->vaddr): section->paddr;
 			if (!secbase || (section->vaddr && section->vaddr <secbase)) // ??
 				secbase = section->vaddr;
@@ -892,8 +900,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 			r_flag_set (r->flags, str, addr, section->size, 0);
 			snprintf (str, R_FLAG_NAME_SIZE, "section_end.%s", section->name);
 			r_flag_set (r->flags, str, addr + section->size, 0, 0);
-			//r_io_section_add (r->io, section->paddr, addr, section->size,
-			//	section->vsize, section->srwx, section->name, 0, fd);
+			r_io_section_add (r->io, section->paddr, addr, section->size,
+				section->vsize, section->srwx, section->name, 0, fd);
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
@@ -1144,6 +1152,10 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	const char *name = NULL;
 	ut64 at = 0;
 
+	baseaddr = r_config_get_i (core->config, "bin.baddr");
+	// WTF, should be the same but we are not keeping it
+	baseaddr = core->bin->cur->o->baddr;
+
 	if (filter && filter->offset)
 		at = filter->offset;
 	if (filter && filter->name)
@@ -1266,8 +1278,6 @@ static int r_core_bin_file_print (RCore *core, RBinFile *binfile) {
 	}
 	return R_TRUE;
 }
-
-
 
 R_API int r_core_bin_list(RCore *core) {
 	// list all binfiles and there objects and there archs

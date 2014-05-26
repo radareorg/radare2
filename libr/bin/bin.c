@@ -740,6 +740,7 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 
 	if (!io || !info) return R_FALSE;
 
+#if 0
 	// clear loaded sections
 	//r_io_section_clear (io);
 	r_list_free (io->sections);
@@ -749,6 +750,7 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 		iob->section_add (io, s->paddr, s->vaddr, s->size, s->vsize, s->srwx, s->name, obj->id, bf->fd);
 		iob->section_set_arch_bin_id (io, s->paddr, info->arch, info->bits, bf->id);
 	}
+#endif
 	return R_TRUE;
 }
 
@@ -766,6 +768,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
 
+	o->baddr = baseaddr;
 	// XXX more checking will be needed here
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 		o->bin_obj = plugin->load_bytes (bytes+offset, sz, loadaddr, sdb);
@@ -971,8 +974,7 @@ R_API int r_bin_list(RBin *bin) {
 
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->baddr;
+	if (o) return o->baddr;
 	return 0LL;
 }
 
@@ -1530,16 +1532,32 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 	return UT64_MAX;
 }
 
+R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 vaddr) {
+	ut32 delta;
+	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
+	// XXX hack to recover lost baddr
+	baddr = binfile->o->baddr;
+//baddr = 0xf00000;
+	if (!cp) return UT64_MAX;
+	if (cp && cp->get_vaddr)
+		return cp->get_vaddr (binfile, baddr, paddr, vaddr);
+	if (!baddr) return vaddr;
+ 	delta = (paddr & 0xffff0000) | (vaddr & 0xffff);
+	return baddr + delta;
+}
+
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	ut32 delta;
 	RBinFile *binfile = bin ? bin->cur : NULL;
 	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
-
+	// XXX hack to recover lost baddr
+baddr = bin->cur->o->baddr;
+//baddr = 0xf00000;
 	if (!cp) return UT64_MAX;
 	if (cp && cp->get_vaddr)
 		return cp->get_vaddr (bin->cur, baddr, paddr, vaddr);
 	if (!baddr) return vaddr;
- 	delta = (paddr & 0xfffff000) | (vaddr & 0xfff);
+ 	delta = (paddr & 0xffff0000) | (vaddr & 0xffff);
 	return baddr + delta;
 }
 

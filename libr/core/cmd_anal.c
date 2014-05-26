@@ -660,7 +660,7 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 }
 
 static void cmd_anal_reg(RCore *core, const char *str) {
-	int size, i, type = R_REG_TYPE_GPR;
+	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	struct r_reg_item_t *r;
 	const char *name;

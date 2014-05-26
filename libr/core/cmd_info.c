@@ -120,6 +120,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'b':
 			{
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			if (input[1]==' ')
+				baddr = r_num_math (core->num, input+1);
 			// XXX: this will reload the bin using the buffer.
 			// An assumption is made that assumes there is an underlying
 			// plugin that will be used to load the bin (e.g. malloc://)
@@ -190,9 +192,9 @@ static int cmd_info(void *data, const char *input) {
 			"| 'q'   simple quiet output\n"
 			"|Actions:\n"
 			"| i, ij       show info of current file (in JSON)\n"
-			"| io [file]   load info from file (or last opened) use bin.baddr\n"
-			"| ik [query]  key-value database from RBinObject\n"
+			"| iA          list archs\n"
 			"| ia          show all info (imports, exports, sections..)\n"
+			"| ib          reload the current buffer for setting of the bin (use once only)\n"
 			"| ic          list classes\n"
 			"| id          debug information (source lines)\n"
 			"| ie          entrypoint\n"
@@ -200,11 +202,12 @@ static int cmd_info(void *data, const char *input) {
 			"| ii          imports\n"
 			"| iI          binary info\n"
 			"| il          libraries\n"
+			"| ik [query]  key-value database from RBinObject\n"
+			"| io [file]   load info from file (or last opened) use bin.baddr\n"
 			"| is          symbols\n"
 			"| iS          sections\n"
 			"| ir/iR       relocs\n"
 			"| iz          strings\n"
-			"| ib          reload the current buffer for setting of the bin (use once only)\n"
 			);
 			break;
 		case '*':

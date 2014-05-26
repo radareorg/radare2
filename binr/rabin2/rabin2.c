@@ -520,8 +520,9 @@ int main(int argc, char **argv) {
 		eprintf ("r_core: Cannot open file\n");
 		return 1;
 	}
-	if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, rawstr)){
-		if (!r_bin_load (bin, file, 0, 0, xtr_idx, fd, rawstr)) {
+
+	if (!r_bin_load (bin, file, baddr, 0, xtr_idx, fd, rawstr)) {
+		if (!r_bin_load (bin, file, baddr, 0, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open file\n");
 			return 1;
 		}
@@ -555,8 +556,10 @@ int main(int argc, char **argv) {
 		free (arch_name);
 	}
 
-	if (baddr != 0LL)
+	if (baddr != 0LL) {
+		r_bin_set_baddr (bin, baddr);
 		bin->cur->o->baddr = baddr;
+	}
 
 	core.bin = bin;
 	filter.offset = at;
