@@ -25,6 +25,7 @@ static void showfile(const int nth, const char *name, int minusl) {
 	perm = isdir? 0755: 0644;
 	if (!minusl) {
 		r_cons_printf ("%18s%s", nn, (nth%4)?"  ":"\n");
+		free (nn);
 		return;
 	}
 	// TODO: escape non-printable chars in filenames
@@ -49,12 +50,13 @@ static void showfile(const int nth, const char *name, int minusl) {
 #else
 	fch = isdir? 'd': '-';
 #endif
-	r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n", 
+	r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n",
 		isdir?'d':fch,
 		      r_str_rwx_i (perm>>6),
 		      r_str_rwx_i ((perm>>3)&7),
 		      r_str_rwx_i (perm&7),
 		      uid, gid, sz, nn);
+	free (nn);
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
