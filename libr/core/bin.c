@@ -1153,7 +1153,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 
 	baseaddr = r_config_get_i (core->config, "bin.baddr");
 	// WTF, should be the same but we are not keeping it
-	baseaddr = core->bin->cur->o->baddr;
+	if (core->bin && core->bin->cur && core->bin->cur->o)
+		baseaddr = core->bin->cur->o->baddr;
 
 	if (filter && filter->offset)
 		at = filter->offset;
