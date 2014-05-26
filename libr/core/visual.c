@@ -634,6 +634,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		r_cons_flush ();
 		ch = r_cons_readchar ();
+		if (fun && fun->refs)
 		if (ch >= '0' && ch <= '9') {
 			refi = r_list_get_n (fun->refs, ch-0x30);
 			if (refi)

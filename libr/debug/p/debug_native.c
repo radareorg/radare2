@@ -1616,7 +1616,7 @@ static RList *r_debug_native_pids(int pid) {
 			cmdline[sizeof (cmdline)-1] = '\0';
 			ptr = strstr (cmdline, "PPid: ");
 			if (ptr) {
-				int ppid = atoi (ptr+6);
+				int ret, ppid = atoi (ptr+6);
 				close (fd);
 				if (ppid != pid)
 					continue;
@@ -1624,9 +1624,12 @@ static RList *r_debug_native_pids(int pid) {
 				fd = open (cmdline, O_RDONLY);
 				if (fd == -1)
 					continue;
-				read (fd, cmdline, 1024);
-				cmdline[1023] = '\0';
-				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
+				ret = read (fd, cmdline, sizeof (cmdline));
+				if (ret>0) {
+					cmdline[ret-1] = '\0';
+					r_list_append (list, r_debug_pid_new (
+						cmdline, i, 's', 0));
+				}
 			}
 			close (fd);
 		}
@@ -1642,9 +1645,12 @@ static RList *r_debug_native_pids(int pid) {
 				continue;
 			cmdline[0] = '\0';
 			ret = read (fd, cmdline, sizeof (cmdline));
-			cmdline[ret-1] = '\0';
+			if (ret>0) {
+				cmdline[ret-1] = '\0';
+				r_list_append (list, r_debug_pid_new (
+					cmdline, i, 's', 0));
+			}
 			close (fd);
-			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 		}
 	}
 #endif

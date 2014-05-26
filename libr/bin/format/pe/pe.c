@@ -175,7 +175,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	const int srsz = 18; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
-	int bufsz, I, i, shsz = bufsz;
+	int bufsz, I, i, shsz;
 	SymbolRecord *sr;
 	ut64 text_off = 0LL;
 	ut64 text_vaddr = 0LL;
@@ -184,11 +184,12 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	int exports_sz;
 	int symctr = 0;
 	char *buf;
+
+	shsz = bufsz = num * srsz;
 	if (!bin || bufsz<1 || bufsz>bin->size)
 		return 0;
 	off = bin->nt_headers->file_header.PointerToSymbolTable;
 	num = bin->nt_headers->file_header.NumberOfSymbols;
-	shsz = bufsz = num * srsz;
 	buf = malloc (bufsz);
 	if (!buf)
 		return 0;
