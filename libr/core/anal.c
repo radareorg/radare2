@@ -458,9 +458,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			r_flag_space_set (core->flags, "functions");
 			r_flag_set (core->flags, fcni->name, fcni->addr, fcni->size, 0);
 		}
-
 		return result;
 	}
+
 	if (from != UT64_MAX && at == 0)
 		return R_FALSE;
 	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
@@ -475,7 +475,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 #define USE_NEW_REFS 1
 #if USE_NEW_REFS
 				r_list_foreach (fcni->xrefs, iter2, refi) {
-				  r_anal_xrefs_set (core->anal, refi->type, refi->addr, refi->at);
+					r_anal_xrefs_set (core->anal, refi->type, refi->addr, refi->at);
 				}
 #else
 				/* If the xref is new, add it */
@@ -518,10 +518,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			goto error;
 		}
 		// real read.
-		if (!r_core_read_at (core, at+delta, buf, ANALBS))
+		if (!r_core_read_at (core, at+delta, buf, ANALBS)) {
+			goto error; 
+		}
+		if (!memcmp (buf, "\xff\xff\xff\xff", 4)) {
 			goto error;
-		if (!memcmp (buf, "\xff\xff\xff\xff", 4))
-			goto error;
+		}
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -594,9 +596,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			if (has_next) {
 				int i;
 				ut64 addr = fcn->addr + fcn->size;
-				for (i=0; i<nexti; i++)
-					if (next[i] == addr)
+				for (i=0; i<nexti; i++) {
+					if (next[i] == addr) {
 						break;
+					}
+				}
 				if (i==nexti) {
 					// TODO: ensure next address is function after padding (nop or trap or wat)
 // XXX noisy for test cases because we want to clear the stderr
