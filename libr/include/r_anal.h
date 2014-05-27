@@ -1203,6 +1203,7 @@ extern RAnalPlugin r_anal_plugin_cr16;
 extern RAnalPlugin r_anal_plugin_v850;
 extern RAnalPlugin r_anal_plugin_sysz;
 extern RAnalPlugin r_anal_plugin_sparc_cs;
+extern RAnalPlugin r_anal_plugin_xcore_cs;
 #ifdef __cplusplus
 }
 #endif

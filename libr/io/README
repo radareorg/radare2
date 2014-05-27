@@ -4,6 +4,12 @@ RIO design
 rio api allows to seamlessly access to underlying IO backends
 and define rules on top of it to act as an mmu.
 
+What do io.va means?
+--------------------
+- obey sections
+
+- Plugins 
+
 Actions
 -------
  - open
