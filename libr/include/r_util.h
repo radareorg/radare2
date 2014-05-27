@@ -328,6 +328,7 @@ R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :
 R_API ut64 r_num_math(RNum *num, const char *str);
 R_API ut64 r_num_get(RNum *num, const char *str);
 R_API int r_num_to_bits(char *out, ut64 num);
+R_API int r_num_to_trits(char *out, ut64 num);	//Rename this please
 R_API int r_num_rand(int max);
 R_API void r_num_irand();
 R_API ut16 r_num_ntohs (ut16 foo);
