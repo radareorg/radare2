@@ -720,7 +720,7 @@ static int cmd_eval(void *data, const char *input) {
 				if (!r_core_cmd_file (core, home))
 					if (!r_core_cmd_file (core, path))
 						if (!r_core_cmd_file (core, input+3))
-							eprintf ("ecf: cannot open colorscheme profile\n");
+							eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
 				free (home);
 			} else {
 				// TODO: lof stuff
