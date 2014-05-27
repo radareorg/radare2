@@ -34,6 +34,12 @@ static int format_output (char mode, const char *s) {
 			printf ("%sb\n", strbits);
 		} else printf ("0b\n");
 		break;
+	case 'T':
+		if (n) {
+			r_num_to_trits (strbits, n);
+			printf ("%st\n", strbits);
+		} else	printf ("0t\n");
+		break;
 	}
 	return R_TRUE;
 }
@@ -45,6 +51,7 @@ static int help () {
 		"  -int  ->  hex           ;  rax2 -77\n"
 		"  -hex  ->  int           ;  rax2 0xffffffb3\n"
 		"  int   ->  bin           ;  rax2 b30\n"
+		"  int   ->  ternary       ;  rax2 t42\n"
 		"  bin   ->  int           ;  rax2 1010d\n"
 		"  float ->  hex           ;  rax2 3.33f\n"
 		"  hex   ->  float         ;  rax2 Fx40551ed8\n"
@@ -52,6 +59,7 @@ static int help () {
 		"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
 		"  bin   ->  hex           ;  rax2 1100011b\n"
 		"  hex   ->  bin           ;  rax2 Bx63\n"
+		"  hex   ->  ternary       ;  rax2 Tx23\n"
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
@@ -225,11 +233,17 @@ static int rax (char *str, int len, int last) {
 	} else if (str[0]=='b') {
 		out_mode = 'B';
 		str++;
+	} else if (str[0]=='t') {
+		out_mode = 'T';
+		str++;
 	} else if (str[0]=='F' && str[1]=='x') {
 		out_mode = 'F';
 		*str = '0';
 	} else if (str[0]=='B' && str[1]=='x') {
 		out_mode = 'B';
+		*str = '0';
+	} else if (str[0]=='T' && str[1]=='x') {
+		out_mode = 'T';
 		*str = '0';
 	} else if (str[0]=='O' && str[1]=='x') {
 		out_mode = 'O';
