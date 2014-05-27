@@ -321,14 +321,16 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	return size;
 }
 
+static const char *trit_c = "012";
+
 R_API int r_num_to_trits (char *out, ut64 num) {
-	int i = 38, j;
+	int i = 63, j;
 	while (i>=0 && num) {
 		out[i] = trit_c[num % 3];
 		num = num/3;
 		i--;
 	}
-	j = 38 - i;
+	j = 63 - i;
 	i++;
 	memmove (out, &out[i], j);
 	out[j] = '\0';
