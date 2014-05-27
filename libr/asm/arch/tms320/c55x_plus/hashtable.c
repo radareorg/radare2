@@ -73,7 +73,7 @@ st32 get_hashfunc_02(st32 arg1, st32 arg2) {
 								return 95;
 							return arg1;
 						}
-						if ( v2 != -1073741824 ) {
+						if ( v2 != 0xC0000000 ) {
 							if ( v2 == -1610612736 )
 								return 540;
 							if ( v2 == -1577058304 )
@@ -236,7 +236,7 @@ st32 get_hashfunc_02(st32 arg1, st32 arg2) {
 				return 178;
 			return arg1;
 		}
-		if ( v2 != 1140850688 && v2 != 1073741824 ) {
+		if ( v2 != 1140850688 && v2 != 0x40000000 ) {
 			if ( v2 == 1107296256 )
 				return 178;
 			return arg1;
@@ -300,7 +300,7 @@ st32 get_hashfunc_06(st32 arg1, st32 arg2) {
 	st32 result; 
 
 	if ( arg2 & 0x80000000 ) {
-		if ( (st32)(arg2 & 0x80000000) == -2147483648 )
+		if ( (st32)(arg2 & 0x80000000) == 0x80000000 )
 			result = 228;
 		else result = arg1;
 	} else result = 227;
@@ -327,11 +327,11 @@ st32 get_hashfunc_08(st32 arg1, st32 arg2) {
 			return 87;
 		if ( !tmp )
 			return 85;
-		if ( tmp == 1073741824 )
+		if ( tmp == 0x40000000 )
 			return 86;
 		return arg1;
 	}
-	if ( tmp != -1073741824 )
+	if ( tmp != 0xC0000000 )
 		return arg1;
 	return 88;
 }
@@ -345,11 +345,11 @@ st32 get_hashfunc_09(st32 arg1, st32 arg2) {
 			return 91;
 		if ( !v2 )
 			return 89;
-		if ( v2 == 1073741824 )
+		if ( v2 == 0x40000000 )
 			return 90;
 		return arg1;
 	}
-	if ( v2 != -1073741824 )
+	if ( v2 != 0xC0000000 )
 		return arg1;
 	return 92;
 }
@@ -480,10 +480,10 @@ st32 get_hashfunc_19(st32 arg1, st32 arg2) {
 
 	v2 = arg2 & 0xC1000000;
 	if ( (arg2 & 0xC1000000u) > 0x40000000 ) {
-		if ( v2 != -2147483648 && v2 != -1073741824 )
+		if ( v2 != 0x80000000 && v2 != 0xC0000000 )
 			return arg1;
 	} else {
-		if ( (arg2 & 0xC1000000) != 1073741824 && v2 ) {
+		if ( (arg2 & 0xC1000000) != 0x40000000 && v2 ) {
 			if ( v2 == 16777216 )
 				return 469;
 			return arg1;
@@ -1073,10 +1073,10 @@ st32 get_hashfunc_46(st32 arg1, st32 arg2) {
 
 	v2 = arg2 & 0xC1000000;
 	if ( (arg2 & 0xC1000000u) > 0x40000000 ) {
-		if ( v2 != -2147483648 && v2 != -1073741824 )
+		if ( v2 != 0x80000000 && v2 != 0xC0000000 )
 			return arg1;
 	} else {
-		if ( (arg2 & 0xC1000000) != 1073741824 && v2 ) {
+		if ( (arg2 & 0xC1000000) != 0x40000000 && v2 ) {
 			if ( v2 == 16777216 )
 				return 136;
 			return arg1;
