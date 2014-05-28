@@ -151,6 +151,8 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	int ret, skip = 0;
 	RIOmaddr pat;
 	memset (&pat, 0, sizeof (pat));
+	if (io->raw)
+		return r_io_pread (io, vaddr, buf, len);
 	io->ff =1;
 	while (left>0) {
 		pat = r_io_v2m (io, vaddr);
