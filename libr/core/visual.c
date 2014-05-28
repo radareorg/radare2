@@ -989,7 +989,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ut64 addr = core->offset;
 			if (curset) {
 				addr += cursor;
+
 				r_core_seek (core, addr, 0);
+				r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 			}
 			switch (buf[i]) {
 			case '-':

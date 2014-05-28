@@ -340,10 +340,10 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
 // ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr, xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob ? iob->get_io(iob) : NULL;
+	RIO *io;
 	RIODesc *desc = NULL;
+	io = (iob&&iob->get_io) ? iob->get_io(iob) : NULL;
 	if (!io) return R_FALSE;
-
 	bin->rawstr = rawstr;
 	desc = fd == -1 ? iob->desc_open (io, file, O_RDONLY, 0644) : iob->desc_get_by_fd (io, fd);
 	if (!desc) return R_FALSE;
@@ -733,8 +733,8 @@ static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
 
 static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 	RBinInfo *info = obj ? obj->info : NULL;
-	RBinSection *s;
-	RListIter *s_iter = NULL;
+	//RBinSection *s;
+	//RListIter *s_iter = NULL;
 	RIOBind *iob = bf ? &(bf->rbin->iob) : NULL;
 	RIO *io = iob ? iob->get_io(iob) : NULL;
 
@@ -1551,7 +1551,7 @@ R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 
 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	if (!bin || !bin->cur)
-		return NULL;
+		return UT64_MAX;
 	return r_binfile_get_vaddr (bin->cur, baddr, paddr, vaddr);
 }
 
