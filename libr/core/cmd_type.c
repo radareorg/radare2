@@ -1,21 +1,25 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake, Anton Kochkov */
 
-static void show_help() {
-	eprintf ("|Usage: t[-LCvsdfm?] [...]\n"
-	"| t                      list all loaded types\n"
-	"| t*                     list types info in r2 commands\n"
-	"| t- [name]              delete type by its name.\n"
-	"| t-*                    remove all types\n"
-	//"|. Use t-! to open $EDITOR\n"
-	"| t [type]               show given type in 'pf' syntax\n"
-	//"| to                     list of opened files\n"
-	"| to [path]              load types from C header file\n"
-	"| to -                   open cfg.editor to load types\n"
-	"| td int foo(int a)      parse oneliner type definition\n"
-	"| td-foo                 undefine type 'foo'\n"
-	"| tf addr                view linked type at given address\n"
-	"| ts k=v k=v @ link.addr set fields at given linked type\n"
-	"| tl [type] ([addr])     show show / link type to a address\n");
+static void show_help(RCore *core) {
+    RCoreHelp helps[] = {
+        {"Usage: t", "",    "cparse types commands"},
+        {"t",  "",          "List all loaded types"},
+        {"t",  " <type>",   "Show type in 'pf' syntax"},
+        {"t*", "",          "List types info in r2 commands"},
+        {"t-", " <name>",   "Delete types by its name"},
+        {"t-*", "",         "Remove all types"},
+      //{"t-!", "",         "Use to open $EDITOR"},
+        {"td", " <string>", "Load types from string"},
+        {"td-", "<name>",   "Undefine type by name"},
+        {"tf", " <addr>",   "View linked type at given address"},
+        {"tl", "[?]",       "Show/Link type to a address"},
+      //{"to", "",          "List opened files"},
+        {"to", " -",        "Open cfg.editor to load types"},
+        {"to", " <path>",   "Load types from C header file"},
+        {"ts", " <key>=<value>... @ <link>.<addr>", "Set fields at given linked type"} // old message on the next line, for clarity?
+        //"| ts k=v k=v @ link.addr set fields at given linked type\n"
+    };
+    r_core_cmd_help(core, helps, sizeof(helps)/sizeof(helps[0]));
 }
 
 static int sdbforcb (void *p, const char *k, const char *v) {
@@ -116,15 +120,19 @@ static int cmd_type(void *data, const char *input) {
 				free (out);
 			}
 		} else {
-			eprintf ("Usage: td[...]\n"
-				" td [string]    : load types from string\n");
+			eprintf ("Usage: td <string>\n"
+				"Load types from string\n");
 		}
 		break;
 	// tl - link a type to an address
 	case 'l':
 		if (input[1]=='?') {
-			eprintf("Usage: tl[...]\n"
-				" tl [typename|addr] ([addr])@[addr|function]\n");
+            RCoreHelp helps[] = {
+                {"Usage: tl", " [typename|addr] ([addr])@[addr|function]", ""}
+            };
+            r_core_cmd_help(core, helps, sizeof(helps)/sizeof(helps[0]));
+			//eprintf("Usage: tl[...]\n"
+			//	" tl [typename|addr] ([addr])@[addr|function]\n");
 		} else if (input[1]) {
 			ut64 addr = r_num_math (core->num, input+2);
 			char *ptr = strchr (input + 2, ' ');
@@ -145,8 +153,8 @@ static int cmd_type(void *data, const char *input) {
 			if (*name==' ') name++;
 			if (*name) {
 				r_anal_type_del (core->anal, name);
-			} else eprintf ("Usage: t- name\n"
-				"t- name : delete type by its name\n");
+			} else eprintf ("Usage: t- <type>\n"
+				"Delete type by its name\n");
 		}
 		break;
 	// tv - get/set type value linked to a given address
@@ -174,7 +182,7 @@ static int cmd_type(void *data, const char *input) {
 	case '?':
 		if (input[1]) {
 			sdb_query (core->anal->sdb_types, input+1);
-		} else show_help();
+		} else show_help(core);
 
 		break;
 	}

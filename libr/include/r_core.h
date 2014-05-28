@@ -420,6 +420,14 @@ R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
 
+/* help */
+typedef struct r_core_help_t {
+    char * command;
+    char * args;
+    char * help_message;
+} RCoreHelp;
+
+R_API void r_core_cmd_help(RCore *core, RCoreHelp  help[], int sizeof_help);
 
 /* anal stats */
 
