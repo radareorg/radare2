@@ -500,7 +500,7 @@ static int cb_ioraw(void *user, void *data) {
 static int cb_ioffio(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->ffio = node->i_value;
+	core->io->ff = node->i_value;
 	return R_TRUE;
 }
 

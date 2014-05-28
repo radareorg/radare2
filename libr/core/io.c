@@ -226,7 +226,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 		//eprintf ("RET =%d %llx\n", ret, addr);
 		/*
 		   XXX handle read errors correctly
-		   if (core->ffio) {
+		   if (core->io->ff) {
 		   core->offset = addr;
 		   } else return R_FALSE;
 		 */
@@ -237,7 +237,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	} else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);
-		if (core->ffio) {
+		if (core->io->ff) {
 			if (ret<1 || ret > core->blocksize)
 				memset (core->block, 0xff, core->blocksize);
 			else memset (core->block+ret, 0xff, core->blocksize-ret);

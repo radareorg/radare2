@@ -153,7 +153,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	memset (&pat, 0, sizeof (pat));
 	if (io->raw)
 		return r_io_pread (io, vaddr, buf, len);
-	io->ff =1;
+	io->ff = 1;
 	while (left>0) {
 		pat = r_io_v2m (io, vaddr);
 		if (pat.has_next)
@@ -168,6 +168,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 					if (!io->ff) {
 						r_io_cache_read (io, vaddr, buf, len);
 						return skip;
+						return -1; // fix invalid memreads. RCore expects this from vaddr
 					}
 					memset (buf+skip, 0xff, bufsz);
 				}

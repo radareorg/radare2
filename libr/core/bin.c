@@ -32,6 +32,9 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		if (baseaddr) {
 			binobj->baddr = baseaddr;
 		} else baseaddr = binobj->baddr;
+		/* Hack to make baddr work on some corner */
+		if (baseaddr & 0xff)
+			binobj->baddr = baseaddr = 0;
 		int va = info->has_va;
 		r_config_set_i (r->config, "io.va",
 			(binobj->info)? binobj->info->has_va: 0);

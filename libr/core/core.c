@@ -515,7 +515,6 @@ R_API int r_core_init(RCore *core) {
 	core->log = r_core_log_new ();
 	core->vmode = R_FALSE;
 	core->section = NULL;
-	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->printidx = 0;
@@ -577,6 +576,7 @@ R_API int r_core_init(RCore *core) {
 	core->bin->printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
+	core->io->ff = 1;
 	core->io->user = (void *)core;
 	core->io->core_cmd_cb = core_cmd_callback;
 	core->sign = r_sign_new ();
