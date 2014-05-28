@@ -852,7 +852,6 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	int i = 0;
 	st64 delta = 0LL;
 
-
 	if ((sections = r_bin_get_sections (r->bin)) == NULL)
 		return R_FALSE;
 

@@ -171,8 +171,8 @@ static RList* sections(RBinFile *arch) {
 	// add entry for ehdr
 	ptr = R_NEW0 (RBinSection);
 	if (ptr) {
-		RBinSection *t_sec = NULL;
-		RListIter *iter = 0;
+		//RBinSection *t_sec = NULL;
+		// RListIter *iter = 0;
 		ut64 ehdr_size = sizeof (obj->ehdr);
 
 		//r_list_foreach (ret, iter, t_sec) {
@@ -187,9 +187,6 @@ static RList* sections(RBinFile *arch) {
 		ptr->srwx = 7;
 		r_list_append (ret, ptr);
 	}
-
-
-
 
 	return ret;
 }
@@ -404,21 +401,22 @@ static RList* relocs(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-#if 0
+#if 1
 	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got")) == -1 &&
 		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt")) == -1) 
 	{
 		return ret;
 	}
-#endif
 	if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !relocs[i].last; i++) {
-		if (!(ptr = reloc_convert(arch->o->bin_obj, &relocs[i], got_addr)))
+		if (!(ptr = reloc_convert (arch->o->bin_obj,
+				&relocs[i], got_addr)))
 			break;
 		r_list_append (ret, ptr);
 	}
 	free (relocs);
+#endif
 	return ret;
 }
 
@@ -568,8 +566,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	int is_arm = !strcmp (bin->cur->o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 	// XXX: hardcoded
-	if (is_arm) baddr = 0x40000;
-	else baddr = 0x8048000;
+	if (is_arm) {
+		baddr = 0x40000;
+	} else {
+		baddr = 0x8048000;
+	}
 
 #define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
 #define D(x) r_buf_append_ut32(buf,x)

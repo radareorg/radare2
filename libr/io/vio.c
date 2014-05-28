@@ -86,6 +86,7 @@ static ut64 findNextVaddr (RIO *io, RIOmaddr *ma) {
 		if (checkSectionHit (s->vaddr+s->vsize))
 			foundSectionHit ();
 	}
+#if 0
 	/* or map */
 	r_list_foreach (io->maps, iter, m) {
 		if (cur<m->from) {
@@ -99,6 +100,7 @@ static ut64 findNextVaddr (RIO *io, RIOmaddr *ma) {
 				hit = diff;
 		}
 	}
+#endif
 	/* if not found */
 	if (hit == UT64_MAX) {
 		ma->has_next = R_FALSE;
@@ -150,7 +152,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	int left = len;
 	int ret, skip = 0;
 	RIOmaddr pat;
-	memset (&pat, 0, sizeof (pat));
+	memset (&pat, 0xff, sizeof (pat));
 	if (io->raw)
 		return r_io_pread (io, vaddr, buf, len);
 	io->ff = 1;
@@ -170,11 +172,15 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 						return skip;
 						return -1; // fix invalid memreads. RCore expects this from vaddr
 					}
-					memset (buf+skip, 0xff, bufsz);
+					memset (buf+skip, 0xff, left);
+					//memset (buf+skip, 0xff, bufsz);
 				}
 				
 			}
-		} else ret = 1; // avoid infinite loopz
+		} else {
+			ret = 0; // avoid infinite loopz
+			break;
+		}
 		skip += ret;
 		left -= ret;
 		if (!pat.has_next)
@@ -183,8 +189,9 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 		vaddr = pat.next_vaddr;
 	}
 	if (io->ff) {
-		if (left>0)
+		if (left>0) {
 			memset (buf+skip, 0xff, left);
+	}
 		r_io_cache_read (io, vaddr, buf, len);
 		return len;
 	}

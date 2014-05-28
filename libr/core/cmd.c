@@ -1416,11 +1416,12 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	core->cmd_depth --;
 	for (rcmd = cmd;;) {
-		ptr = strstr (rcmd, "\n");
+		ptr = strchr (rcmd, '\n');
 		if (ptr) *ptr = '\0';
 		ret = r_core_cmd_subst (core, rcmd);
 		if (ret == -1) {
-			eprintf ("|ERROR| Invalid command '%s'\n", rcmd);
+			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n",
+				rcmd, *rcmd);
 			break;
 		}
 		if (!ptr) break;
