@@ -703,6 +703,24 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			int argk = (*arg == '[');
 			addr = dst = r_num_math (NULL, arg2);
 			ptr = (ut8 *)&addr;
+			if (dst> UT32_MAX) {
+				if (a->bits==64) {
+					data[0] = 0x48;
+					data[1] = 0xb8| getreg (arg);
+					data[2] = ptr[0];
+					data[3] = ptr[1];
+					data[4] = ptr[2];
+					data[5] = ptr[3];
+					data[6] = ptr[4];
+					data[7] = ptr[5];
+					data[8] = ptr[6];
+					data[9] = ptr[7];
+					return 10;
+				} else {
+					eprintf ("Error: cannot encode 64bit value in 32bit mode\n");
+return -1;
+				} 
+			}
 
 			if (!arg || !arg2) {
 				eprintf ("No args for mov?\n");
