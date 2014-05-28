@@ -242,18 +242,14 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 'g':
 			{
-			RIOSection *s = r_io_section_get (core->io, 
-				r_io_section_vaddr_to_offset (core->io,
-				core->offset));
+			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			if (s) r_core_seek (core, s->vaddr, 1);
 			else r_core_seek (core, 0, 1);
 			}
 			break;
 		case 'G':
 			{
-			RIOSection *s = r_io_section_get (core->io, 
-				r_io_section_vaddr_to_offset (core->io,
-				core->offset));
+			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			// XXX: this +2 is a hack. must fix gap between sections
 			if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
 			else r_core_seek (core, core->file->size, 1);

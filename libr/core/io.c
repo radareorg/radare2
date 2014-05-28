@@ -6,7 +6,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 	int pid, *p = NULL;
 	ut8 is_gdb = (strcmp (debugbackend, "gdb") == 0);
 
-	RIODesc * fd = r->file ? r->file->fd : NULL;
+	RIODesc * fd = r->file ? r->file->desc : NULL;
 	p = fd ? fd->data : NULL;
 	r_config_set_i (r->config, "cfg.debug", 1);
 	if (!p) {
@@ -217,7 +217,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	ut64 ret;
 
 	/* XXX unnecesary call */
-	//r_io_set_fd (core->io, core->file->fd);
+	//r_io_use_fd (core->io, core->file->desc);
 	core->io->section = core->section; // HACK
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	newsection = core->io->section;
@@ -284,7 +284,7 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	int ret;
 	if (!core->io || !core->file || size<1)
 		return R_FALSE;
-	ret = r_io_set_fd (core->io, core->file->fd);
+	ret = r_io_use_fd (core->io, core->file->desc);
 	if (ret != -1) {
 		ret = r_io_write_at (core->io, addr, buf, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
@@ -298,7 +298,7 @@ R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	int ret;
 	if (!core->io || !core->file || size<1)
 		return R_FALSE;
-	ret = r_io_set_fd (core->io, core->file->fd);
+	ret = r_io_use_fd (core->io, core->file->desc);
 	if (ret != -1) {
 		ret = r_io_extend_at (core->io, addr, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
@@ -315,7 +315,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	int res = R_FALSE;
 
 	if (b_size == 0 || b_size == (ut64) -1) {
-		res = r_io_set_fd (core->io, core->file->fd);
+		res = r_io_use_fd (core->io, core->file->desc);
 		file_sz = r_io_size (core->io);
 		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
@@ -349,7 +349,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	else if ( (addr) + dist > fend) {
 		res = R_FALSE;
 	} else {
-		res = r_io_set_fd (core->io, core->file->fd);
+		res = r_io_use_fd (core->io, core->file->desc);
 		r_io_read_at (core->io, addr, shift_buf, b_size);
 		r_io_write_at (core->io, addr+dist, shift_buf, b_size);
 		res = R_TRUE;
@@ -365,8 +365,8 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RCoreFile *file = NULL;
 
 	r_list_foreach (core->files, iter, file) {
-		if (file && file->fd){
-			core->io->raised = file->fd->fd;
+		if (file && file->desc){
+			core->io->raised = file->desc->fd;
 			core->switch_file_view = 1;
 			break;
 		}
@@ -380,7 +380,7 @@ R_API int r_core_block_read(RCore *core, int next) {
 		memset (core->block, 0xff, core->blocksize);
 		return -1;
 	}
-	r_io_set_fdn (core->io, core->io->raised);
+	r_io_use_fd (core->io, core->io->raised);
 	if (core->switch_file_view) {
 		r_core_sync_view_by_fd (core, core->io->raised);
 		core->switch_file_view = 0;
@@ -404,12 +404,12 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (!core->io || !core->file || size<1)
 		return R_FALSE;
 #if 0
-	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
+	r_io_use_fd (core->io, core->file->desc); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
 	ret = r_io_read_at (core->io, addr, buf, size);
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
 #else
-	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
+	r_io_use_fd (core->io, core->file->desc); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
 	//ret = r_io_read_at (core->io, addr, buf, size);
 	r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	ret = r_io_read (core->io, buf, size);

@@ -45,7 +45,7 @@ static int cmd_open(void *data, const char *input) {
 			RCoreFile *f;
 			core->switch_file_view = 0;
 			r_list_foreach (core->files, iter, f) {
-				if (f->fd->fd == num) {
+				if (f->desc->fd == num) {
 					r_io_raise (core->io, num);
 					core->switch_file_view = 1;
 					break;
@@ -176,7 +176,7 @@ static int cmd_open(void *data, const char *input) {
 			} else {
 				cur = core->offset;
 				new = r_num_math (core->num, input+3);
-				map = r_io_map_resolve (core->io, core->file->fd->fd);
+				map = r_io_map_resolve (core->io, core->file->desc->fd);
 				if (map) {
 					ut64 diff = map->to - map->from;
 					map->from = new;

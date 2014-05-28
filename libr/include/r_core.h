@@ -80,7 +80,7 @@ typedef struct r_core_file_t {
 	RIOMap *map;
 	int rwx;
 	int dbg;
-	RIODesc *fd;
+	RIODesc *desc;
 	RBinBind binb;
 	const struct r_core_t *core;
 	ut8 alive;

@@ -92,7 +92,7 @@ static int cmd_zign(void *data, const char *input) {
 					fin = ini+r_num_math (core->num, input+2);
 				}
 			} else {
-				s = r_io_section_get (core->io, core->io->off);
+				s = r_io_section_vget (core->io, core->io->off);
 				if (s) {
 					ini = core->io->va?s->vaddr:s->offset;
 					fin = ini + (core->io->va?s->vsize:s->size);

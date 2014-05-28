@@ -105,7 +105,7 @@ typedef struct r_io_undo_w_t {
 } RIOUndoWrite;
 
 typedef struct r_io_t {
-	RIODesc *fd;
+	RIODesc *desc;
 	int enforce_rwx;
 	int enforce_seek;
 	int cached;
@@ -131,7 +131,7 @@ typedef struct r_io_t {
 	RIOSection *section; /* current section (cache) */
 	/* maps */
 	RList *maps; /*<RIOMap>*/
-	RList *desc;
+	RList *files;
 	RList *cache;
 	int zeromap;
 	//XXX: Need by rap
@@ -139,6 +139,7 @@ typedef struct r_io_t {
 	int (*core_cmd_cb)(void *user, const char *str);
 	RCache *buffer;
 	int buffer_enabled;
+	int ff;
 } RIO;
 
 typedef struct r_io_plugin_t {
@@ -273,10 +274,17 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode);
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
 R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode);
 R_API int r_io_redirect(RIO *io, const char *file);
+
+// TODO: deprecate
 R_API int r_io_set_fd(RIO *io, RIODesc *fd);
 R_API int r_io_set_fdn(RIO *io, int fd);
+
+R_API RIODesc *r_io_use_fd (RIO *io, int fd);
+R_API int r_io_use_desc(RIO *io, RIODesc *fd);
+
 R_API const ut8* r_io_get_raw (RIO *io, ut64 addr, int *len);
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
+R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);
@@ -337,6 +345,7 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name);
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx);
 R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr);
 R_API RIOSection *r_io_section_vget(RIO *io, ut64 addr);
+R_API RIOSection *r_io_section_pget(RIO *io, ut64 addr);
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits);
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits);
 R_API void r_io_section_clear(RIO *io);

@@ -686,7 +686,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 		methods_list = (RList *) r_bin_java_get_methods_list (bin);
 		if (methods_list) {
 			ut64 loadaddr = bin->loadaddr;
-			const char * bin_name = bin && bin->file ? bin->file : anal->iob.io->fd->name;
+			const char * bin_name = bin && bin->file ? bin->file : anal->iob.io->desc->name;
 			IFDBG eprintf ("Analyzing java functions for %s\n", bin_name);
 			IFDBG eprintf ("Analyzing functions.  binobj = %p, methods_list = %p, Analysing from buffer? %d\n", bin, methods_list, methods_list == NULL);
 			// loop over all methods in the binary object and analyse

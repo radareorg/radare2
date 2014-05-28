@@ -139,13 +139,13 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		if (input[2]) {
 			r_debug_attach (core->dbg, (int) r_num_math (
 				core->num, input+2));
-		} else r_debug_attach (core->dbg, core->file->fd->fd);
+		} else r_debug_attach (core->dbg, core->file->desc->fd);
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		r_config_set_i (core->config, "dbg.swstep",
 			(core->dbg->h && !core->dbg->h->canstep));
 		break;
 	case 'f':
-		r_debug_select (core->dbg, core->file->fd->fd, core->dbg->tid);
+		r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
 		break;
 	case '=':
 		r_debug_select (core->dbg,
@@ -1037,7 +1037,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
 				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 				if (aop.type == R_ANAL_OP_TYPE_CALL) {
-					RIOSection *s = r_io_section_get (core->io, aop.jump);
+					RIOSection *s = r_io_section_vget (core->io, aop.jump);
 					if (!s) {
 						r_debug_step_over (core->dbg, times);
 						continue;
@@ -1184,7 +1184,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 					pc = r_debug_reg_get (core->dbg, "pc");
 					eprintf (" %d %"PFMT64x"\r", n++, pc);
-					s = r_io_section_get (core->io, pc);
+					s = r_io_section_vget (core->io, pc);
 					if (r_cons_singleton ()->breaked)
 						break;
 				} while (!s);

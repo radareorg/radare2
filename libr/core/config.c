@@ -316,8 +316,8 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
-			r_debug_select (core->dbg, core->file->fd->fd,
-					core->file->fd->fd);
+			r_debug_select (core->dbg, core->file->desc->fd,
+					core->file->desc->fd);
 		}
 	} else if (core->dbg) r_debug_use (core->dbg, NULL);
 	r_config_set (core->config, "io.raw", "true");

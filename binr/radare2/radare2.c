@@ -486,8 +486,8 @@ int main(int argc, char **argv, char **envp) {
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 	if (asmos) r_config_set (r.config, "asm.os", asmos);
 	r_core_bin_update_arch_bits (&r);
-	debug = r.file && r.file->fd && r.file->fd->plugin && \
-		r.file->fd->plugin->debug != NULL;
+	debug = r.file && r.file->desc && r.file->desc->plugin && \
+		r.file->desc->plugin->debug != NULL;
 	if (debug) {
 		r_core_setup_debugger (&r, debugbackend);
 	}

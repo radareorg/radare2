@@ -321,7 +321,7 @@ static int cmd_help(void *data, const char *input) {
 		ut64 n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
 		n = r_io_section_vaddr_to_offset (core->io, n);
-		s = r_io_section_get (core->io, n);
+		s = r_io_section_vget (core->io, n);
 		if (s && *(s->name))
 			r_cons_printf ("%s\n", s->name);
 		} break;

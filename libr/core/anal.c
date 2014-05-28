@@ -429,7 +429,7 @@ static int cmpaddr (void *_a, void *_b) {
 }
 
 static int iscodesection(RCore *core, ut64 addr) {
-	RIOSection *s = r_io_section_getv (core->io, addr);
+	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
 
@@ -1088,7 +1088,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
 	if (buf==NULL)
 		return -1;
-	r_io_set_fd (core->io, core->file->fd);
+	r_io_use_desc (core->io, core->file->desc);
 	if (ref==0LL)
 		eprintf ("Null reference search is not supported\n");
 	else
