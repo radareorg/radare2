@@ -602,7 +602,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 
 	fh = R_NEW0 (RCoreFile);
 	if (!fh) {
-		eprintf ("file.c:r_core_open failed to allocate RCoreFile.\n");
+		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
 		//r_io_close (r->io, fd);
 		return NULL;
 	}
