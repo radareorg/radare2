@@ -438,10 +438,10 @@ R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
-R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a);
-R_API RList *r_bin_dwarf_parse_line(RBin *a);
-R_API RList *r_bin_dwarf_parse_aranges(RBin *a);
-R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a);
+R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
+R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
+R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
+R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;

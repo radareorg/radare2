@@ -359,10 +359,10 @@ static int bin_dwarf (RCore *core, int mode) {
 		// TODO: complete and speed-up support for dwarf
 		if (r_config_get_i (core->config, "bin.dwarf")) {
 			RBinDwarfDebugAbbrev *da = NULL;
-			da = r_bin_dwarf_parse_abbrev (core->bin);
-			r_bin_dwarf_parse_info (da, core->bin);
-			r_bin_dwarf_parse_aranges (core->bin);
-			list = r_bin_dwarf_parse_line (core->bin);
+			da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+			r_bin_dwarf_parse_info (da, core->bin, mode);
+			r_bin_dwarf_parse_aranges (core->bin, mode);
+			list = r_bin_dwarf_parse_line (core->bin, mode);
 
 			r_bin_dwarf_free_debug_abbrev(da);
 			free(da);
