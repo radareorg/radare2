@@ -171,7 +171,7 @@ typedef struct {
 
 static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_export_t *exports, int sz) {
 	//ut64 baddr = (ut64)bin->nt_headers->optional_header.ImageBase;
-	ut64 off, num;
+	ut64 off, num = 0;
 	const int srsz = 18; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
@@ -185,11 +185,14 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	int symctr = 0;
 	char *buf;
 
-	shsz = bufsz = num * srsz;
-	if (!bin || bufsz<1 || bufsz>bin->size)
+	if (!bin || !bin->nt_headers) {
 		return 0;
+	}
 	off = bin->nt_headers->file_header.PointerToSymbolTable;
 	num = bin->nt_headers->file_header.NumberOfSymbols;
+	shsz = bufsz = num * srsz;
+	if (bufsz<1 || bufsz>bin->size)
+		return 0;
 	buf = malloc (bufsz);
 	if (!buf)
 		return 0;
@@ -890,7 +893,6 @@ char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 // TODO: make it const
 char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin) {
-	char *class;
 	if (!bin || !bin->nt_headers)
 		return NULL;
 	switch (bin->nt_headers->optional_header.Magic) {
@@ -1004,7 +1006,7 @@ int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 int PE_(r_bin_pe_is_pie)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
 		return 0;
-	return bin->nt_headers->optional_header.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
+	return bin->nt_headers->optional_header.DllCharacteristics & IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE;
 #if 0
 	BOOL aslr = inh->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
 //TODO : implement dep?

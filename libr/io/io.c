@@ -217,7 +217,7 @@ R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
 }
 
 R_API int r_io_use_desc (RIO *io, RIODesc *d) {
-	if (d >= 0) {
+	if (d) {
 		io->desc = d;
 		io->plugin = d->plugin;
 		return R_TRUE;

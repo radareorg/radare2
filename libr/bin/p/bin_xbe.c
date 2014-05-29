@@ -77,32 +77,27 @@ static int destroy(RBinFile *arch)
 	return R_TRUE;
 }
 
-static RBinAddr* binsym(RBinFile *arch, int type)
-{
-	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
-
+static RBinAddr* binsym(RBinFile *arch, int type) {
+	RBinAddr *ret;
+	r_bin_xbe_obj_t *obj;
 	if (!arch || !arch->buf || type != R_BIN_SYM_MAIN)
 		return NULL;
-
-	RBinAddr *ret = R_NEW0 (RBinAddr);
-	if (!ret) 
-		return NULL;
-
+	obj = arch->o->bin_obj;
+	ret = R_NEW0 (RBinAddr);
+	if (!ret) return NULL;
 	ret->vaddr = obj->header->ep ^ obj->ep_key;
 	ret->paddr = ret->vaddr - obj->header->base;
-
 	return ret;
 }
 
-static RList* entries(RBinFile *arch)
-{
+static RList* entries(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
-	RList *ret = r_list_new ();
+	RList *ret;
 	RBinAddr *ptr = R_NEW(RBinAddr);
 
 	if (!arch || !arch->buf || !ret || !ptr)
 		return NULL;
-
+	ret = r_list_new ();
 	ret->free = free;
 
 	ptr->vaddr = obj->header->ep ^ obj->ep_key;
@@ -113,14 +108,14 @@ static RList* entries(RBinFile *arch)
 	return ret;
 }
 
-static RList* sections(RBinFile *arch)
-{
-	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
+static RList* sections(RBinFile *arch) {
+	r_bin_xbe_obj_t *obj;
 	RList *ret;
 	int i;
 
-	if (!arch)
+	if (!arch || !arch->o)
 		return NULL;
+	obj = arch->o->bin_obj;
 
 	ret = r_list_new();
 	if (!ret )
@@ -161,30 +156,32 @@ static RList* sections(RBinFile *arch)
 	return ret;
 }
 
-static RList* libs(RBinFile *arch)
-{
-	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
+static RList* libs(RBinFile *arch) {
+	r_bin_xbe_obj_t *obj;
 	RList *ret = r_list_new();
 	xbe_lib lib;
 	char *s;
 	int i;
 
-	if (!arch || !ret)
+	if (!arch || !ret || !arch->o)
 		return NULL;
+	obj = arch->o->bin_obj;
 
 	ret->free = free;
 
-	r_buf_read_at (arch->buf, obj->header->kernel_lib_addr - obj->header->base, (ut8 *)&lib, sizeof(xbe_lib));
-	s = r_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+	r_buf_read_at (arch->buf, obj->header->kernel_lib_addr - obj->header->base,
+		(ut8 *)&lib, sizeof(xbe_lib));
+	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+	if (s) r_list_append (ret, s);
+
+	r_buf_read_at (arch->buf, obj->header->xapi_lib_addr - obj->header->base,
+		(ut8 *)&lib, sizeof(xbe_lib));
+	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) r_list_append(ret, s);
 
-	r_buf_read_at (arch->buf, obj->header->xapi_lib_addr - obj->header->base, (ut8 *)&lib, sizeof(xbe_lib));
-	s = r_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
-	if (s) r_list_append(ret, s);
-
-	for (i = 0; i < obj->header->lib_versions; i++) 
-	{
-		r_buf_read_at (arch->buf, obj->header->lib_versions_addr - obj->header->base + (i * sizeof(xbe_lib)), (ut8 *)&lib, sizeof(xbe_lib));
+	for (i = 0; i < obj->header->lib_versions; i++) {
+		r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
+			obj->header->base + (i * sizeof(xbe_lib)), (ut8 *)&lib, sizeof(xbe_lib));
 		s = r_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 		if (s) r_list_append(ret, s);
 	}
@@ -192,17 +189,18 @@ static RList* libs(RBinFile *arch)
 	return ret;
 }
 
-static RList* symbols(RBinFile *arch)
-{
-	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
+static RList* symbols(RBinFile *arch) {
+	r_bin_xbe_obj_t *obj;
 	RList *ret = r_list_new();
 	int i, found = R_FALSE;
 	ut32 thunk_addr[XBE_MAX_THUNK];
-	ut32 kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
+	ut32 kt_addr;
 	xbe_section sect;
 
-	if (!ret)
+	if (!ret || !arch || !arch->o)
 		return NULL;
+	kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
+	obj = arch->o->bin_obj;
 	ret->free = free;
 
 	// PA -> VA translation
@@ -226,7 +224,7 @@ static RList* symbols(RBinFile *arch)
 			return NULL;
 		}
 
-		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
+		ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 
 		// Basic sanity checks
 		if (thunk_addr[i]&0x80000000 && thunk_index <= XBE_MAX_THUNK) {
@@ -237,7 +235,7 @@ static RList* symbols(RBinFile *arch)
 			sym->ordinal = i;
 
 			r_list_append(ret, sym);
-		}
+		} else free (sym);
 	}
 
 	return ret;
