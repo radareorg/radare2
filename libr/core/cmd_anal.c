@@ -125,7 +125,7 @@ static int var_cmd(RCore *core, const char *str) {
 			int size = 4;
 			char *name = "num";
 			r_anal_var_add (core->anal,
-				fcn->addr, 
+				fcn->addr,
 				scope, delta, kind, type, size, name);
 				//r_anal_str_to_type (core->anal, p)
 				//NULL, p3? atoi (p3): 0, p2);
@@ -653,15 +653,17 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	RReg *hack = core->dbg->reg;
 	int bits = core->anal->bits;
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	core->dbg->reg = core->anal->reg;
 	type = R_REG_TYPE_GPR;
-	r_debug_reg_list (core->dbg, type, bits, mode);
+	r_debug_reg_list (core->dbg, type, bits, mode, use_colors);
 	core->dbg->reg = hack;
 }
 
 static void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -790,16 +792,16 @@ free (rf);
 		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
 		break;
 	case 'd':
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_colors); // XXX detect which one is current usage
 		break;
 	case 'o':
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_colors); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2); // XXX detect which one is current usage
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_colors); // XXX detect which one is current usage
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '*':
@@ -842,6 +844,7 @@ static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
@@ -863,7 +866,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'e':
 		if (input[1] == 'r') {
-			r_debug_reg_list (core->dbg, 0, 0, 0);
+			r_debug_reg_list (core->dbg, 0, 0, 0, use_colors);
 		} else if (input[1] == ' ') {
 			r_anal_esil_eval (core->anal, input+2);
 		} else eprintf ("Usage: ae [esil]  # wip. analyze esil. (evaluable string intermediate language)\n");
