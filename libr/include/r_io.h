@@ -352,7 +352,7 @@ R_API void r_io_section_clear(RIO *io);
 R_API int r_io_section_rm(RIO *io, int idx);
 R_API void r_io_section_list(RIO *io, ut64 offset, int rad);
 R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len);
-R_API RIOSection *r_io_section_get(RIO *io, ut64 offset);
+R_API RIOSection *r_io_section_mget(RIO *io, ut64 offset);
 R_API ut64 r_io_section_get_offset(RIO *io, ut64 offset);
 R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 offset);
 R_API int r_io_section_get_rwx(RIO *io, ut64 offset);
