@@ -150,7 +150,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 				}
 				break;
 			default:
+                if (delta)
+						dbg->printf (Color_BWHITE);
 				dbg->printf (fmt, item->name, value, "\n");
+                if (delta)
+						dbg->printf (Color_RESET);
 				break;
 			}
 			n++;
