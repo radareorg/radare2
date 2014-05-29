@@ -44,7 +44,7 @@ repeat:
 	return ret;
 }
 
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
+R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_colors) {
 	int i, delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RListIter *iter;
@@ -107,7 +107,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 				 {
 					char whites[16];
 					strcpy (whites, kwhites);
-					if (delta) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
+					if (delta && use_colors) // TODO: do debug knows about console?? use inverse colors for clear bg
 						dbg->printf (Color_BWHITE);
 					if (item->flags) {
 						char *str = r_reg_get_bvalue (dbg->reg, item);
@@ -137,7 +137,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 							((n+1)%cols)? whites: "\n");
 
 					}
-					if (delta) // TODO: only in color mode ON
+					if (delta && use_colors) // TODO: same as above
 						dbg->printf (Color_RESET);
 				 }
 				break;
@@ -150,10 +150,10 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 				}
 				break;
 			default:
-                if (delta)
+                if (delta && use_colors) // TODO: same as above
 						dbg->printf (Color_BWHITE);
 				dbg->printf (fmt, item->name, value, "\n");
-                if (delta)
+                if (delta && use_colors) // TODO: same as above
 						dbg->printf (Color_RESET);
 				break;
 			}

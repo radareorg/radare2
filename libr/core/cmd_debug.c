@@ -405,6 +405,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 static void cmd_debug_reg(RCore *core, const char *str) {
 	int size, i, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
+    int use_colors = r_config_get_i(core->config, "scr.color");
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -583,26 +584,26 @@ free (rf);
 		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
 		break;
 	case 'd':
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_colors); // XXX detect which one is current usage
 		break;
 	case 'o':
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_colors); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2); // XXX detect which one is current usage
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_colors); // XXX detect which one is current usage
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '*':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*');
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_colors);
 		break;
 	case 'j':
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0]);
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_colors);
 		} else
 			eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
@@ -633,7 +634,7 @@ free (rf);
 		}
 		if (type != R_REG_TYPE_LAST) {
 			r_debug_reg_sync (core->dbg, type, R_FALSE);
-			r_debug_reg_list (core->dbg, type, size, str[0]=='*');
+			r_debug_reg_list (core->dbg, type, size, str[0]=='*', use_colors);
 		} else eprintf ("cmd_debug_reg: Unknown type\n");
 	}
 }
