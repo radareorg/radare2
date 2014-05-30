@@ -380,7 +380,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 						case 's':
 							// TODO: filter \n and so on :)
 							strncpy (name, t, sizeof (name)-1);
-							r_core_read_at (core, addr, (ut8*)name, sizeof (name));
+							r_core_read_at (core, addr, (ut8*)name, sizeof (name)-1);
 							break;
 						default:
 							fi = r_flag_get_i (core->flags, addr);

@@ -15,29 +15,29 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static int check_bytes(const ut8 *buf, ut64 size) 
+static int check_bytes(const ut8 *buf, ut64 size)
 {
 	xbe_header *header = (xbe_header *)buf;
 	return (size > sizeof(xbe_header) && header->magic == XBE_MAGIC);
 }
 
-static int check(RBinFile *arch) 
+static int check(RBinFile *arch)
 {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	const ut64 size = arch ? r_buf_size (arch->buf) : 0;
 
-	if (!arch || !arch->o) 
+	if (!arch || !arch->o)
 		return R_FALSE;
 
 	return check_bytes(bytes, size);
 }
 
-static int load(RBinFile *arch) 
+static int load(RBinFile *arch)
 {
 	r_bin_xbe_obj_t *obj = NULL;
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 
-	if (!arch || !arch->o) 
+	if (!arch || !arch->o)
 		return R_FALSE;
 
 	arch->o->bin_obj = malloc(sizeof(r_bin_plugin_xbe));
@@ -68,7 +68,7 @@ static int load(RBinFile *arch)
 	return R_FALSE;
 }
 
-static int destroy(RBinFile *arch) 
+static int destroy(RBinFile *arch)
 {
 	free(arch->o->bin_obj);
 	r_buf_free (arch->buf);
@@ -136,12 +136,12 @@ static RList* sections(RBinFile *arch) {
 		RBinSection *item = R_NEW0(RBinSection);
 		char tmp[0x100];
 
-		r_buf_read_at (arch->buf, sect[i].name_addr - obj->header->base, (ut8 *)tmp, sizeof(tmp)); 
+		r_buf_read_at (arch->buf, sect[i].name_addr - obj->header->base, (ut8 *)tmp, sizeof(tmp));
 
 		snprintf(item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
-		item->size  = sect[i].size; 
+		item->size  = sect[i].size;
 		item->vsize = sect[i].vsize;
 
 		item->srwx |= 4;
@@ -241,7 +241,7 @@ static RList* symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) 
+static RBinInfo* info(RBinFile *arch)
 {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
 	RBinInfo *ret = R_NEW (RBinInfo);
@@ -257,7 +257,7 @@ static RBinInfo* info(RBinFile *arch)
 
 	memset (ret, '\0', sizeof (RBinInfo));
 	r_buf_read_at (arch->buf, obj->header->debug_name_addr - obj->header->base, dbg_name, sizeof(dbg_name));
-	
+
 	strncpy (ret->file, (const char*)dbg_name, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->bclass, "program", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->machine, "Microsoft Xbox", R_BIN_SIZEOF_STRINGS);
@@ -272,7 +272,7 @@ static RBinInfo* info(RBinFile *arch)
 	return ret;
 }
 
-static ut64 baddr(RBinFile *arch) 
+static ut64 baddr(RBinFile *arch)
 {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
 	return obj->header->base;
