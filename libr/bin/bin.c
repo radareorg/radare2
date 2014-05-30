@@ -49,10 +49,6 @@ static int getoffset (RBin *bin, int type, int idx);
 static const char *getname (RBin *bin, int off);
 static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o);
 
-R_API void r_bin_iobind(RBin *bin, RIO *io) {
-	r_io_bind (io, &bin->iob);
-}
-
 // TODO: move these two function do a different file
 R_API RBinXtrData * r_bin_xtrdata_new (void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count) {
 	RBinXtrData *data = NULL;
