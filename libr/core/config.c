@@ -582,6 +582,13 @@ static int cb_scrrows(void* user, void* data) {
 	return R_TRUE;
 }
 
+static int cb_contiguous(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->search->contiguous = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_searchalign(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -940,6 +947,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.utf8", "false", &cb_utf8, "Show UTF-8 characters instead of ANSI");
 #endif
 	/* search */
+	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.count", 0, "Start index number at search hits");
 	SETI("search.distance", 0, "Search string distance");

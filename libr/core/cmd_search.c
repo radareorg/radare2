@@ -82,8 +82,8 @@ R_API int r_core_search_preludes(RCore *core) {
 }
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
+	static ut64 prevaddr = 0;
 	RCore *core = (RCore *)user;
-	searchhits ++ ;///= kw->count+1;
 	ut64 base_addr = 0;
 
 	if (!core) {
@@ -91,6 +91,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		return R_FALSE;
 	}
 
+	searchhits ++ ;///= kw->count+1;
 	if (searchcount) {
 		if (!--searchcount) {
 			//eprintf ("\nsearch stop: search.count reached\n");
