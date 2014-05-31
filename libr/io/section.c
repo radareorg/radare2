@@ -178,13 +178,15 @@ R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr) {
 	return NULL;
 }
 
-R_API ut64 r_io_section_get_offset(RIO *io, ut64 addr) {
-	RIOSection *s = r_io_section_mget(io, addr);
+// XXX: rename this
+R_API ut64 r_io_section_get_offset(RIO *io, ut64 maddr) {
+	RIOSection *s = r_io_section_mget(io, maddr);
 	return s? s->offset: -1;
 }
 
-R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_mget (io, offset);
+// XXX: must be renamed, this is confusing
+R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 maddr) {
+	RIOSection *s = r_io_section_mget (io, maddr);
 	return s? s->vaddr: -1;
 }
 
