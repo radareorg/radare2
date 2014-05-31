@@ -653,7 +653,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	RReg *hack = core->dbg->reg;
 	int bits = core->anal->bits;
-    int use_colors = r_config_get_i(core->config, "scr.color");
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	core->dbg->reg = core->anal->reg;
 	type = R_REG_TYPE_GPR;
 	r_debug_reg_list (core->dbg, type, bits, mode, use_colors);
@@ -663,7 +663,7 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 static void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
-    int use_colors = r_config_get_i(core->config, "scr.color");
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -844,7 +844,7 @@ static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
-    int use_colors = r_config_get_i(core->config, "scr.color");
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 

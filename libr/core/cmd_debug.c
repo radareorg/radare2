@@ -405,7 +405,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 static void cmd_debug_reg(RCore *core, const char *str) {
 	int size, i, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
-    int use_colors = r_config_get_i(core->config, "scr.color");
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
