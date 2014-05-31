@@ -672,6 +672,8 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	struct r_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH + 1];
 	int i, nimp = 0;
+    PE_DWord dll_name_offset;
+    PE_DWord import_func_name_offset;
 
     PE_(image_import_directory) *curr_import_dir = 0;
     PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
@@ -696,14 +698,22 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 
     if (bin->delay_import_directory) {
         curr_delay_import_dir = bin->delay_import_directory;
+
+        if (curr_delay_import_dir->Attributes == 0) {
+            dll_name_offset = PE_(r_bin_pe_rva_to_offset)(bin, curr_delay_import_dir->Name - PE_(r_bin_pe_get_image_base)(bin));
+            import_func_name_offset = curr_delay_import_dir->DelayImportNameTable - PE_(r_bin_pe_get_image_base)(bin);
+        } else {
+            dll_name_offset = PE_(r_bin_pe_rva_to_offset)(bin, curr_delay_import_dir->Name);
+            import_func_name_offset = curr_delay_import_dir->DelayImportNameTable;
+        }
+
         while (curr_delay_import_dir->Name != 0) {
-            if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, curr_delay_import_dir->Name - PE_(r_bin_pe_get_image_base)(bin)),
-                        (ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+            if (r_buf_read_at(bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH) == -1) {
                 eprintf ("Error: read (magic)\n");
                 return NULL;
             }
             if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
-                                            curr_delay_import_dir->DelayImportNameTable - PE_(r_bin_pe_get_image_base)(bin),
+                                            import_func_name_offset,
                                             curr_delay_import_dir->DelayImportAddressTable))
                 break;
 
