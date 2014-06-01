@@ -106,6 +106,12 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 	return NULL;
 }
 
+R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {
+	RIOPlugin *plugin = desc ? desc->plugin : NULL;
+	if (!plugin) return (ut64)lseek (desc->fd, offset, SEEK_SET);
+	return plugin->lseek (io, desc, offset, SEEK_SET);
+}
+
 #if 0
 // XXX: This must be deprecated in order to promote the cast of dataptr to ut32
 R_API int r_io_desc_generate(struct r_io_t *io) {
