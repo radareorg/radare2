@@ -660,12 +660,6 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 	return R_FALSE;
 }
 
-ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {
-	RIOPlugin *plugin = desc ? desc->plugin : NULL;
-	if (!plugin) return UT64_MAX;
-	return plugin->lseek (io, desc, 0, SEEK_SET);
-}
-
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->io = io;
 	bnd->init = R_TRUE;
