@@ -189,7 +189,7 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	buf[core->blocksize] = 0;
 	r_core_read_at (core, addr, buf, core->blocksize);
 	if (maxlen == 0) {
-		maxlen = strnlen ((const char*)buf, core->blocksize);
+		maxlen = r_str_nlen ((const char*)buf, core->blocksize);	//Don't use strnlen, see: http://sourceforge.net/p/mingw/bugs/1912/
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
 	}
