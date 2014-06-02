@@ -140,6 +140,7 @@ typedef struct r_io_t {
 	RCache *buffer;
 	int buffer_enabled;
 	int ff;
+	int autofd;
 } RIO;
 
 typedef struct r_io_plugin_t {
