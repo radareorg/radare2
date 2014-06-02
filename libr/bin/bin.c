@@ -619,7 +619,7 @@ static void r_bin_file_free (void /*RBinFile*/ *bf_) {
 	if (a->curxtr && a->curxtr->destroy)
 		a->curxtr->free_xtr ((void *) (a->xtr_obj));
 
-	r_bin_object_free (a->o);
+	r_list_free (a->objs);
 	a->o = NULL;
 	r_buf_free (a->buf);
 	// TODO: unset related sdb namespaces
