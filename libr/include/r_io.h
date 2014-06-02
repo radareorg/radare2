@@ -185,7 +185,7 @@ typedef RIODesc* (*RIODescGetFD)(RIO *io, int fd);
 typedef RIODesc* (*RIODescOpen)(RIO *io, const char *file, int flags, int mode);
 typedef int (*RIODescClose)(RIO *io, RIODesc *);
 typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
-typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset, int whence);
+typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset);
 typedef ut64 (*RIODescSize)(RIO *io, RIODesc *desc);
 
 typedef void (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
@@ -399,7 +399,7 @@ R_API int r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);
 R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc);
 R_API ut64 r_io_fd_size(RIO *io, int fd);
-R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence);
+R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset);
 //R_API int r_io_desc_generate(RIO *io);
 
 /* buffer.c */
