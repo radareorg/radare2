@@ -200,8 +200,27 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 }
 
 R_API int r_io_mread (RIO *io, ut64 maddr, ut8 *buf, int len) {
-	// resolve paddr for given maddr
-	return r_io_pread (io, maddr, buf, len);
+	int ret;						//return stat
+	ut64 endaddr = maddr + len;				//end-of-read-address
+	ut64 paddr;						//physical address in the map
+	RIODesc *desc;
+	RIOMap *map;
+	assert (len>=0);					//this can only happen if there is a bug somewhere else, so aborting is reasonable
+	map = r_io_map_get(io, maddr);				//get the map at current offset
+	if (!map) {
+		eprintf ("cannot get map at 0x%08"PFMT64x" in r_io_mread\n", maddr);
+		return 0;					//return 0, because 0 bytes are read here
+	}
+	if (endaddr > map->to) {				//prevent reading out of the map
+		endaddr = map->to;				//fix endaddr
+		len = endaddr - maddr;				//fix len
+	}
+	paddr = maddr - map->from + map->delta;			//resolve paddr
+	desc = io->desc;					//save current desc
+	io->desc = r_io_desc_get (io, map->fd);			//get desc for map
+	ret = r_io_pread (io, paddr, buf, len);			//read from the desc
+	io->desc = desc;					//restore io->desc
+	return ret;						//return number of read bytes
 }
 
 R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
