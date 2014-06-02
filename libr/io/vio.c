@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_io.h>
+#include <assert.h>
 
 #if 0
 
