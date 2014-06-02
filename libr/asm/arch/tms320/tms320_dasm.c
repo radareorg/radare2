@@ -249,7 +249,7 @@ int run_f_list(tms320_dasm_t * dasm)
 			}
 			break;
 		case TMS320_FLAG_Y:
-			temp = get_bits(dasm->opcode64, flag->f, 1) << 2;
+			temp = get_bits(dasm->opcode64, flag->f, 1) << 0;
 			if (!field_valid(dasm, Ymem_reg)) {
 				set_field_value(dasm, Ymem_reg, temp);
 			} else {
@@ -257,7 +257,7 @@ int run_f_list(tms320_dasm_t * dasm)
 			}
 			break;
 		case TMS320_FLAG_YY:
-			temp = get_bits(dasm->opcode64, flag->f, 2) << 0;
+			temp = get_bits(dasm->opcode64, flag->f, 2) << 1;
 			if (!field_valid(dasm, Ymem_reg)) {
 				set_field_value(dasm, Ymem_reg, temp);
 			} else {
