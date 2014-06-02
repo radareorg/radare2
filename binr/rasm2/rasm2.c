@@ -9,8 +9,8 @@
 #include <r_lib.h>
 #include "../blob/version.c"
 
-static struct r_lib_t *l;
-static struct r_asm_t *a;
+static struct r_lib_t *l = NULL;
+static struct r_asm_t *a = NULL;
 static int coutput = R_FALSE;
 
 static void rasm2_list(RAsm *a, const char *arch) {
@@ -188,6 +188,9 @@ int main(int argc, char *argv[]) {
 	int fd =-1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 
+	if (argc<2)
+		return rasm_show_help (0);
+
 	a = r_asm_new ();
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
@@ -197,8 +200,6 @@ int main(int argc, char *argv[]) {
 		path = R2_PREFIX"/lib/radare2/"R2_VERSION;
 	r_lib_opendir (l, path);
 
-	if (argc<2)
-		return rasm_show_help (0);
 
 	r_asm_use (a, R_SYS_ARCH);
 	r_asm_set_big_endian (a, R_FALSE);
@@ -255,14 +256,17 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'L':
 			rasm2_list (a, argv[optind]);
-			exit (1);
+			ret = 1;
+			goto beach;
 		case 'e':
 			r_asm_set_big_endian (a, !!!a->big_endian);
 			break;
 		case 'v':
-			return blob_version ("rasm2");
+			ret = blob_version ("rasm2");
+			goto beach;
 		case 'h':
-			return rasm_show_help (1);
+			ret = rasm_show_help (1);
+			goto beach;
 		case 'w':
 			whatsop = R_TRUE;
 			break;
@@ -272,18 +276,21 @@ int main(int argc, char *argv[]) {
 	if (arch) {
 		if (!r_asm_use (a, arch)) {
 			eprintf ("rasm2: Unknown asm plugin '%s'\n", arch);
-			return 0;
+			ret = 0;
+			goto beach;
 		}
 		if (!strcmp (arch, "bf"))
 			ascii = 1;
 	} else if (env_arch) {
 		if (!r_asm_use (a, env_arch)) {
 			eprintf ("rasm2: Unknown asm plugin '%s'\n", env_arch);
-			return 0;
+			ret = 0;
+			goto beach;
 		}
 	} else if (!r_asm_use (a, "x86")) {
 		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
-		return 0;
+		ret = 0;
+		goto beach;
 	}
 	r_asm_set_cpu (a, cpu);
 	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
@@ -292,11 +299,12 @@ int main(int argc, char *argv[]) {
 
 	if (whatsop) {
 		const char *s = r_asm_describe (a, argv[optind]);
+		ret = 1;
 		if (s) {
 			printf ("%s\n", s);
-			return 0;
+			ret = 0;
 		}
-		return 1;
+		goto beach;
 	}
 
 	if (filters) {
@@ -373,7 +381,8 @@ int main(int argc, char *argv[]) {
 				offset += ret;
 				if (!ret) goto beach;
 			} while (!len || idx<length);
-			return idx;
+			ret = idx;
+			goto beach;
 		}
 		if (dis) {
 			char *buf = argv[optind];
@@ -394,6 +403,10 @@ int main(int argc, char *argv[]) {
 		ret = !!!ret;
 	}
 beach:
+	if (a)
+		r_asm_free (a);
+	if (l)
+		r_lib_free (l);
 	if (fd != -1)
 		close (fd);
 	return ret;

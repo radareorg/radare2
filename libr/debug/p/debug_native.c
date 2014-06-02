@@ -1616,7 +1616,7 @@ static RList *r_debug_native_pids(int pid) {
 			cmdline[sizeof (cmdline)-1] = '\0';
 			ptr = strstr (cmdline, "PPid: ");
 			if (ptr) {
-				int ppid = atoi (ptr+6);
+				int ret, ppid = atoi (ptr+6);
 				close (fd);
 				if (ppid != pid)
 					continue;
@@ -1624,9 +1624,12 @@ static RList *r_debug_native_pids(int pid) {
 				fd = open (cmdline, O_RDONLY);
 				if (fd == -1)
 					continue;
-				read (fd, cmdline, 1024);
-				cmdline[1023] = '\0';
-				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
+				ret = read (fd, cmdline, sizeof (cmdline));
+				if (ret>0) {
+					cmdline[ret-1] = '\0';
+					r_list_append (list, r_debug_pid_new (
+						cmdline, i, 's', 0));
+				}
 			}
 			close (fd);
 		}
@@ -1634,16 +1637,20 @@ static RList *r_debug_native_pids(int pid) {
 	} else
 	for (i = 2; i < MAXPID; i++) {
 		if (!r_sandbox_kill (i, 0)) {
+			int ret;
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
 			fd = open (cmdline, O_RDONLY);
 			if (fd == -1)
 				continue;
 			cmdline[0] = '\0';
-			read (fd, cmdline, sizeof (cmdline));
-			cmdline[sizeof (cmdline)-1] = '\0';
+			ret = read (fd, cmdline, sizeof (cmdline));
+			if (ret>0) {
+				cmdline[ret-1] = '\0';
+				r_list_append (list, r_debug_pid_new (
+					cmdline, i, 's', 0));
+			}
 			close (fd);
-			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 		}
 	}
 #endif
@@ -1738,7 +1745,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 					close (fd);
 					continue;
 				}
-				read (fd, cmdline, sizeof (cmdline)-1);
+				(void)read (fd, cmdline, sizeof (cmdline)-1);
 				snprintf (cmdline, sizeof (cmdline), "thread_%d", thid++);
 				cmdline[sizeof (cmdline)-1] = '\0';
 				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));

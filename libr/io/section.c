@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2008-2014 - pancake, nibble */
 
 #include "r_io.h"
 
@@ -30,7 +30,6 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
-
 	if (size==0 || size>0xf0000000) {
 		if (size>0 && size != UT64_MAX && size != UT32_MAX)
 			eprintf ("Invalid size (0x%08"PFMT64x") for section '%s' at 0x%08"PFMT64x"\n",
@@ -159,17 +158,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	}
 }
 
-R_API RIOSection *r_io_section_vget(RIO *io, ut64 addr) {
-	RListIter *iter;
-	RIOSection *s;
-	r_list_foreach (io->sections, iter, s) {
-		if (addr >= s->vaddr && addr < s->vaddr + s->size)
-			return s;
-	}
-	return NULL;
-}
-
-R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr) {
+R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
 	r_list_foreach (io->sections, iter, s) {
@@ -179,32 +168,31 @@ R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr) {
 	return NULL;
 }
 
-R_API RIOSection *r_io_section_get(RIO *io, ut64 addr) {
-	RListIter *iter;
+R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr) {
 	RIOSection *s;
-
-	//addr = r_io_section_vaddr_to_offset(io, addr);
+	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
-		if (addr >= s->offset && addr < s->offset + s->size) {
+		if ((maddr >= s->offset && maddr < (s->offset + s->size)))
 			return s;
-		}
 	}
 	return NULL;
 }
 
-R_API ut64 r_io_section_get_offset(RIO *io, ut64 addr) {
-	RIOSection *s = r_io_section_get(io, addr);
+// XXX: rename this
+R_API ut64 r_io_section_get_offset(RIO *io, ut64 maddr) {
+	RIOSection *s = r_io_section_mget(io, maddr);
 	return s? s->offset: -1;
 }
 
-R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_get (io, offset);
+// XXX: must be renamed, this is confusing
+R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 maddr) {
+	RIOSection *s = r_io_section_mget (io, maddr);
 	return s? s->vaddr: -1;
 }
 
 // TODO: deprecate
 R_API int r_io_section_get_rwx(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_get (io, offset);
+	RIOSection *s = r_io_section_mget (io, offset);
 	return s?s->rwx:R_IO_READ|R_IO_WRITE|R_IO_EXEC;
 }
 
@@ -228,6 +216,7 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
 	return -1;
 }
 
+// TODO: rename to r_io_section_vaddr_to_maddr
 R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
@@ -244,48 +233,29 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 	return vaddr;
 }
 
+// TODO: rename to r_io_section_maddr_to_vaddr
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
-	RIOSection *s;
-	RListIter *iter;
-	r_list_foreach (io->sections, iter, s) {
-		if (offset >= s->offset && offset < s->offset + s->size) {
-			/* XXX: Do we need this hack?
-			if (s->vaddr == 0) // hack
-				return offset;
-			*/
-			io->section = s;
-			return (s->vaddr + offset - s->offset);
-		}
+	RIOSection *s = r_io_section_vget (io, offset);
+	if (s) {
+		io->section = s;
+		return (s->vaddr + offset - s->offset);
 	}
 	return UT64_MAX;
 }
 
-R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr) {
-	int res = R_FALSE;
-	RIOSection *s;
-	RListIter *iter;
-	r_list_foreach (io->sections, iter, s) {
-		if (s->offset <= paddr && paddr < s->offset + s->size) {
-			res = R_TRUE;
-			break;
-		}
-	}
-	return res;
+// TODO: deprecate ?
+R_API int r_io_section_exists_for_paddr (RIO *io, ut64 maddr) {
+	RIOSection *s = r_io_section_mget (io, maddr);
+	return s?1:0;
 }
 
+// TODO: deprecate ?
 R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr) {
-	int res = R_FALSE;
-	RIOSection *s;
-	RListIter *iter;
-	r_list_foreach (io->sections, iter, s) {
-		if (s->vaddr <= vaddr && vaddr < s->vaddr + s->size) {
-			res = R_TRUE;
-			break;
-		}
-	}
-	return res;
+	RIOSection *s = r_io_section_vget (io, vaddr);
+	return s?1:0;
 }
 
+// dupped in vio.c
 R_API ut64 r_io_section_next(RIO *io, ut64 o) {
 	int oset = 0;
 	ut64 newsec = 0LL;
@@ -351,7 +321,7 @@ R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut6
 }
 
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits) {
-	RIOSection *s = r_io_section_getv (io, addr);
+	RIOSection *s = r_io_section_vget (io, addr);
 	if (!s) return R_FALSE;
 	if (arch) {
 		s->arch = r_sys_arch_id (arch);
@@ -364,7 +334,7 @@ R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bi
 }
 
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits) {
-	RIOSection *s = r_io_section_getv (io, addr);
+	RIOSection *s = r_io_section_vget (io, addr);
 	if (!s || !s->bits || !s->arch) return NULL;
 	if (bits) *bits = s->bits;
 	return r_sys_arch_str (s->arch);

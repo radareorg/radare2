@@ -82,6 +82,11 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	RAnalRef *ref;
 	if (!fcn || !a|| !(ref = r_anal_ref_new ()))
 		return R_FALSE;
+	// TODO: check if valid memory
+	if (addr < 0xff) {
+		free (ref);
+		return R_FALSE; // invalid reference
+	}
 	// set global reference
 	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference
@@ -158,10 +163,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 // add basic block
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
-	if (depth<1)
+	if (depth<1) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
-	if (bbget (fcn, addr))
+	}
+	if (bbget (fcn, addr)) {
 		return R_ANAL_RET_ERROR; // MUST BE DUP
+	}
 	bb = r_anal_bb_new();
 	bb->addr = addr;
 	bb->size = 0;
@@ -245,12 +252,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_STACK_GET:
 			if (op.ptr > 0) {
 				varname = r_str_newf ("arg_%x", op.ptr);
-				r_anal_var_add (anal, fcn, op.addr, op.ptr,
-						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
+				r_anal_var_add (anal, fcn, op.addr, op.ptr, 'a', NULL, varname, 0);
+						//R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
 				varname = r_str_newf ("local_%x", -op.ptr);
-				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
-						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
+				r_anal_var_add (anal, fcn, op.addr, -op.ptr, 'v', NULL, varname, 0);
+						//R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
 			break;
@@ -259,9 +266,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			// swapped parameters wtf //
 			//if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd')) {
+#if 0
 				r_anal_op_fini (&op);
 				FITFCNSZ ();
 				return R_ANAL_RET_ERROR;
+#endif
 			}
 		}
 		switch (op.type) {
@@ -272,14 +281,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-#if 1
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
+#if 0
 				FITFCNSZ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
-			}
 #endif
+			}
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = UT64_MAX;
@@ -312,9 +321,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_OP_TYPE_CJMP:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 						  R_ANAL_REF_TYPE_CODE)) {
-			  FITFCNSZ();
-			  r_anal_op_fini (&op);
-			  return R_ANAL_RET_ERROR;
+				FITFCNSZ();
+/// XXX. fcn_xref_add returning false shouldnt result in fcn chop
+#if 0
+				r_anal_op_fini (&op);
+				eprintf ("ERR CJMP JAJAJWAT\n");
+				return R_ANAL_RET_ERROR;
+#endif
 			}
 
 			if (!overlapped) {
@@ -336,10 +349,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					op.type == R_ANAL_OP_TYPE_CALL?
 					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE)) {
-				r_anal_op_fini (&op);
 				//fcn->size = bbsum (fcn);
 				FITFCNSZ ();
+#if 0
+				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
+#endif
 			}
 			break;
 		//case R_ANAL_OP_TYPE_HLT:

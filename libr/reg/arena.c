@@ -134,7 +134,10 @@ R_API RRegArena *r_reg_arena_new (int size) {
 		if (!(arena->bytes = malloc (size+8))) {
 			free (arena);
 			arena = NULL;
-		} else arena->size = size;
+		} else {
+			arena->size = size;
+			memset (arena->bytes, 0, arena->size);
+		}
 	}
 	return arena;
 }

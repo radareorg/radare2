@@ -21,6 +21,7 @@
 #include <stdarg.h>
 
 static void cmd_debug_reg(RCore *core, const char *str);
+#include "cmd_quit.c"
 #include "cmd_hash.c"
 #include "cmd_debug.c"
 #include "cmd_zign.c"
@@ -29,6 +30,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_project.c"
 #include "cmd_write.c"
 #include "cmd_cmp.c"
+#include "cmd_eval.c"
 #include "cmd_anal.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
@@ -282,35 +284,6 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	}
 	return R_TRUE;
-}
-
-static int cmd_quit(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	if (input)
-	switch (*input) {
-	case '?':
-		r_cons_printf (
-		"|Usage: q[!] [retvalue]\n"
-		"| q      quit program\n"
-		"| q!     force quit (no questions)\n"
-		"| q 1    quit with return value 1\n"
-		"| q a-b  quit with return value a-b\n");
-		break;
-	case ' ':
-	case '!':
-		input++;
-	case '\0':
-		// TODO
-	default:
-		r_line_hist_save (R2_HOMEDIR"/history");
-		if (*input)
-			r_num_math (core->num, input);
-		else core->num->value = 0LL;
-		//exit (*input?r_num_math (core->num, input+1):0);
-		//if (core->http_up) return R_FALSE; // cancel quit when http is running
-		return -2;
-	}
-	return R_FALSE;
 }
 
 R_API int r_core_run_script (RCore *core, const char *file) {
@@ -639,172 +612,6 @@ static int cmd_resize(void *data, const char *input) {
 		r_core_block_read (core, 0);
 	}
 	return R_TRUE;
-}
-
-static int cmd_eval(void *data, const char *input) {
-	char *p;
-	RCore *core = (RCore *)data;
-	switch (input[0]) {
-	case 'n': // env
-		if (!strchr (input, '=')) {
-			char *var, *p;
-			var = strchr (input, ' ');
-			if (var) while (*var==' ') var++;
-			p = r_sys_getenv (var);
-			if (p) {
-				r_cons_printf ("%s\n", p);
-				free (p);
-			} else {
-				char **e = r_sys_get_environ ();
-				while (e && *e) {
-					r_cons_printf ("%s\n", *e);
-					e++;
-				}
-			}
-		} else
-		if (strlen (input)>3) {
-			char *v, *k = strdup (input+3);
-			if (!k) break;
-			v = strchr (k, '=');
-			if (v) {
-				*v++ = 0;
-				r_sys_setenv (k, v);
-			}
-			free (k);
-		}
-		return R_TRUE;
-	case 'x': // exit
-		return cmd_quit (data, "");
-	case 'j':
-		r_config_list (core->config, NULL, 'j');
-		break;
-	case '\0':
-		r_config_list (core->config, NULL, 0);
-		break;
-	case 'c':
-		switch (input[1]) {
-		case 'h': // echo
-			p = strchr (input, ' ');
-			if (p) {
-				r_cons_strcat (p+1);
-				r_cons_newline ();
-			}
-			break;
-		case 'd':
-			r_cons_pal_init (NULL);
-			break;
-		case '?':
-			r_cons_printf ("|Usage: ec[s?] [key][[=| ]fg] [bg]\n"
-			"|  ec                list all color keys\n"
-			"|  ec*               same as above, but using r2 commands\n"
-			"|  ecd               set default palette\n"
-			"|  ecr               set random palette\n"
-			"|  ecs               show a colorful palette\n"
-			"|  ecf dark|white    load white color scheme template\n"
-			"|  ec prompt red     change color of prompt\n"
-			"|Available colors:\n"
-			"|  rgb:000           24 bit hexadecimal rgb color\n"
-			"|  red|green|blue|.  well known ansi colors\n"
-			"|See:\n"
-			"|  e scr.rgbcolor    = true|false for 256 color cube\n"
-			"|  e scr.truecolor   = true|false for 256*256*256 colors\n"
-			"|  $DATADIR/radare2/cons ~/.config/radare2/cons ./\n");
-			break;
-		case 'f':
-			if (input[2] == ' ') {
-				char *home, path[512];
-				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input+3);
-				home = r_str_home (path);
-				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
-					R2_VERSION"/cons/%s", input+3);
-				if (!r_core_cmd_file (core, home))
-					if (!r_core_cmd_file (core, path))
-						if (!r_core_cmd_file (core, input+3))
-							eprintf ("ecf: cannot open colorscheme profile\n");
-				free (home);
-			} else {
-				// TODO: lof stuff
-				eprintf ("Usage: ecf [themename].\n");
-			}
-			break;
-		case 's': r_cons_pal_show (); break;
-		case '*': r_cons_pal_list (1); break;
-		case '\0': r_cons_pal_list (0); break;
-		case 'r': r_cons_pal_random (); break;
-		default: {
-			char *p = strdup (input+2);
-			char *q = strchr (p, '=');
-			if (!q) q = strchr (p, ' ');
-			if (q) {
-				// set
-				*q++ = 0;
-				r_cons_pal_set (p, q);
-			} else {
-				const char *k = r_cons_pal_get (p);
-				if (k)
-					eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, k);
-			}
-			free (p);
-		}
-		}
-		break;
-	case 'e':
-		if (input[1]==' ') {
-			char *p;
-			const char *val;
-			const char *input2 = strchr (input+2, ' ');
-			if (input2) input2++; else input2 = input+2;
-			val = r_config_get (core->config, input2);
-			p = r_core_editor (core, val);
-			if (p) {
-				r_str_replace_char (p, '\n', ';');
-				r_config_set (core->config, input2, p);
-			}
-		} else eprintf ("Usage: ee varname\n");
-		break;
-	case '!':
-		input = r_str_chop_ro (input+1);
-		if (!r_config_swap (core->config, input))
-			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
-		break;
-	case '-':
-		r_core_config_init (core);
-		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
-		break;
-	case 'v': eprintf ("Invalid command '%s'. Use 'e?'\n", input); break;
-	case '*': r_config_list (core->config, NULL, 1); break;
-	case '?':
-		switch (input[1]) {
-		case '?': r_config_list (core->config, input+2, 2); break;
-		default: r_config_list (core->config, input+1, 2); break;
-		case 0:
-			r_cons_printf (
-			"|Usage: e[?] [var[=value]]\n"
-			"| e?              show this help\n"
-			"| e?asm.bytes     show description\n"
-			"| e??             list config vars with description\n"
-			"| e               list config vars\n"
-			"| e-              reset config vars\n"
-			"| e*              dump config vars in r commands\n"
-			"| e!a             invert the boolean value of 'a' var\n"
-			"| er [key]        set config key as readonly. no way back\n"
-			"| ec [k] [color]  set color for given key (prompt, offset, ...)\n"
-			"| e a             get value of var 'a'\n"
-			"| e a=b           set var 'a' the 'b' value\n"
-			"| env [k[=v]]     get/set environment variable\n");
-		}
-		break;
-	case 'r':
-		if (input[1]) {
-			const char *key = input+((input[1]==' ')?2:1);
-			if (!r_config_readonly (core->config, key))
-				eprintf ("cannot find key '%s'\n", key);
-		} else eprintf ("Usage: er [key]\n");
-		break;
-	case ' ': r_config_eval (core->config, input+1); break;
-	default: r_config_eval (core->config, input); break;
-	}
-	return 0;
 }
 
 static int cmd_visual(void *data, const char *input) {
@@ -1609,11 +1416,12 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	core->cmd_depth --;
 	for (rcmd = cmd;;) {
-		ptr = strstr (rcmd, "\n");
+		ptr = strchr (rcmd, '\n');
 		if (ptr) *ptr = '\0';
 		ret = r_core_cmd_subst (core, rcmd);
 		if (ret == -1) {
-			eprintf ("|ERROR| Invalid command '%s'\n", rcmd);
+			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n",
+				rcmd, *rcmd);
 			break;
 		}
 		if (!ptr) break;

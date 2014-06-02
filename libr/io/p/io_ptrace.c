@@ -64,12 +64,14 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		return -1;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
 	fd = RIOPTRACE_FD (desc);
+	// /proc/pid/mem fails on latest linux
 	if (fd != -1) {
 		ret = lseek (fd, addr, SEEK_SET);
-		if (ret < 0) return -1;
-		ret = read (fd, buf, len);
-		// Workaround for the buggy Debian Wheeze's /proc/pid/mem
-		if (ret != -1) return ret;
+		if (ret >=0) {
+			ret = read (fd, buf, len);
+			// Workaround for the buggy Debian Wheeze's /proc/pid/mem
+			if (ret != -1) return ret;
+		}
 	}
 	return debug_os_read_at (RIOPTRACE_PID (desc), (ut32*)buf, len, addr);
 }
@@ -171,7 +173,6 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
-
 
 static int __close(RIODesc *desc) {
 	int pid, fd;

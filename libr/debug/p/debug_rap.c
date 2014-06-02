@@ -30,7 +30,7 @@ static int r_debug_rap_wait(RDebug *dbg, int pid) {
 
 static int r_debug_rap_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
-	RIODesc *d = dbg->iob.io->fd;
+	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
 		if (!strcmp ("rap", d->plugin->name)) {
 			eprintf ("SUCCESS: rap attach with inferior rap rio worked\n");

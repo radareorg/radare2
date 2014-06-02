@@ -111,7 +111,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		type = "field";
 		if (p) {
 			*p = 0;
-			name = p+1;
+			name = strdup (p+1);
 		} else name = NULL;
 		if (binfile) r_bin_class_add_field (binfile, clas, name);
 	} else
@@ -123,6 +123,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			clas = strdup (sym+2);
 			name = strchr (clas, ' ');
 			if (name) *name++ = 0;
+			name = strdup (name);
 			for (i=0; name[i]; i++) {
 				if (name[i]==']') {
 					name[i] = 0;
@@ -155,7 +156,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	}
 	if (type) {
 		if (!strcmp (type, "field")) {
-			ret = malloc (strlen (clas)+strlen (name)+32);
+			int namelen = name?strlen (name):0;
+			ret = malloc (strlen (clas)+namelen+32);
 			if (ret) sprintf (ret, "field int %s::%s", clas, name);
 		} else {
 			if (nargs) {

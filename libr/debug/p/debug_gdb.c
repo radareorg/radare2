@@ -56,7 +56,7 @@ static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
-	RIODesc *d = dbg->iob.io->fd;
+	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;

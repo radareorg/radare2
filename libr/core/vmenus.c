@@ -1038,7 +1038,7 @@ static void r_core_visual_anal_refresh (RCore *core) {
 		break;
 	case 3:
 		r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
-		sprintf (old, "arl~0x%08"PFMT64x, addr);
+		sprintf (old, "axl~0x%08"PFMT64x, addr);
 		r_core_cmd0 (core, old);
 		break;
 	}

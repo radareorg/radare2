@@ -125,7 +125,7 @@ static int var_cmd(RCore *core, const char *str) {
 			int size = 4;
 			char *name = "num";
 			r_anal_var_add (core->anal,
-				fcn->addr, 
+				fcn->addr,
 				scope, delta, kind, type, size, name);
 				//r_anal_str_to_type (core->anal, p)
 				//NULL, p3? atoi (p3): 0, p2);
@@ -557,7 +557,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'r':
+	case 'x':
 		switch (input[2]) {
 		case '\0':
 		case ' ':
@@ -592,7 +592,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (fcn) {
 						r_anal_fcn_xref_add (core->anal, fcn, a, b, input[2]);
 					} else eprintf ("Cannot add reference to non-function\n");
-				} else eprintf ("Usage: afr[cCd?] [src] [dst]\n");
+				} else eprintf ("Usage: afx[cCd?] [src] [dst]\n");
 				free (mi);
 			}
 			break;
@@ -616,11 +616,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default:
 		case '?':
 			r_cons_printf (
-			"|Usage: afr[-cCd?] [src] [dst]    # manage function references (see also ar?)\n"
-			"| afrc sym.main+0x38 sym.printf    add code ref\n"
-			"| afrC sym.main sym.puts           add call ref\n"
-			"| afrd sym.main str.helloworld     add data ref\n"
-			"| afr- sym.main str.helloworld     remove reference\n");
+			"|Usage: afx[-cCd?] [src] [dst]    # manage function references (see also ar?)\n"
+			"| afxc sym.main+0x38 sym.printf    add code ref\n"
+			"| afxC sym.main sym.puts           add call ref\n"
+			"| afxd sym.main str.helloworld     add data ref\n"
+			"| afx- sym.main str.helloworld     remove reference\n");
 			break;
 		}
 		break;
@@ -650,10 +650,201 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	return R_TRUE;
 }
 
+static void __anal_reg_list (RCore *core, int type, int size, char mode) {
+	RReg *hack = core->dbg->reg;
+	int bits = core->anal->bits;
+	int use_colors = r_config_get_i(core->config, "scr.color");
+	core->dbg->reg = core->anal->reg;
+	type = R_REG_TYPE_GPR;
+	r_debug_reg_list (core->dbg, type, bits, mode, use_colors);
+	core->dbg->reg = hack;
+}
+
+static void cmd_anal_reg(RCore *core, const char *str) {
+	int size = 0, i, type = R_REG_TYPE_GPR;
+	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
+	int use_colors = r_config_get_i(core->config, "scr.color");
+	struct r_reg_item_t *r;
+	const char *name;
+	char *arg;
+	switch (str[0]) {
+	case '?':
+		if (str[1]) {
+			ut64 off = r_reg_getv (core->anal->reg, str+1);
+			r_cons_printf ("0x%08"PFMT64x"\n", off);
+		} else
+		r_cons_printf (
+			"|Usage: ar              Analysis Register status\n"
+			"| ar                    Show 'gpr' registers\n"
+			"| ar 16                 Show 16 bit registers\n"
+			"| ar 32                 Show 32 bit registers\n"
+			"| ar all                Show all registers\n"
+			"| ar <type>             Show flag registers\n"
+			"| ar <register>=<val>   Set register value\n"
+			"| ar=                   Show registers in columns\n"
+			"| ar?<register>         Show value of eax register\n"
+			"| arb [type]            Display hexdump of gpr arena (WIP)\n"
+			"| arc [name]            Related to conditional flag registers\n"
+			"| ard                   Show only different registers\n"
+			"| arn <pc>              Get regname for pc,sp,bp,a0-3,zf,cf,of,sg\n"
+			"| aro                   Show previous (old) values of registers\n"
+			"| arp <file>            Load register metadata file\n"
+			"| arp                   Display current register profile\n"
+			"| ars?                  Stack register states\n"
+			"| art                   Show all register types\n"
+			"| .ar*                  Include common register values in flags\n"
+			"| .ar-                  Unflag all registers\n");
+		// TODO: 'drs' to swap register arenas and display old register valuez
+		break;
+	case 'b':
+		{ // WORK IN PROGRESS // DEBUG COMMAND
+		int len;
+		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
+		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
+		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		}
+		break;
+	case 'c':
+// TODO: set flag values with drc zf=1
+		{
+		RRegItem *r;
+		const char *name = str+1;
+		while (*name==' ') name++;
+		if (*name && name[1]) {
+			r = r_reg_cond_get (core->dbg->reg, name);
+			if (r) {
+				r_cons_printf ("%s\n", r->name);
+			} else {
+				int id = r_reg_cond_from_string (name);
+				RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+				if (rf) {
+					int o = r_reg_cond_bits (core->dbg->reg, id, rf);
+					core->num->value = o;
+					// ORLY?
+					r_cons_printf ("%d\n", o);
+free (rf);
+				} else eprintf ("unknown conditional or flag register\n");
+			}
+		} else {
+			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+			if (rf) {
+				r_cons_printf ("| s:%d z:%d c:%d o:%d p:%d\n",
+					rf->s, rf->z, rf->c, rf->o, rf->p);
+				if (*name=='=') {
+					for (i=0; i<R_REG_COND_LAST; i++) {
+						r_cons_printf ("%s:%d ",
+							r_reg_cond_to_string (i),
+							r_reg_cond_bits (core->dbg->reg, i, rf));
+					}
+					r_cons_newline ();
+				} else {
+					for (i=0; i<R_REG_COND_LAST; i++) {
+						r_cons_printf ("%d %s\n",
+							r_reg_cond_bits (core->dbg->reg, i, rf),
+							r_reg_cond_to_string (i));
+					}
+				}
+				free (rf);
+			}
+		}
+		}
+		break;
+	case 's':
+		switch (str[1]) {
+		case '-':
+			r_reg_arena_pop (core->dbg->reg);
+			// restore debug registers if in debugger mode
+			r_debug_reg_sync (core->dbg, 0, 1);
+			break;
+		case '+':
+			r_reg_arena_push (core->dbg->reg);
+			break;
+		case '?':
+			r_cons_printf (
+				"|Usage: drs   Register states commands\n"
+				"| drs    List register stack\n"
+				"| drs+   Push register state\n"
+				"| drs-   Pop register state\n");
+			break;
+		default:
+			r_cons_printf ("%d\n", r_list_length (
+				core->dbg->reg->regset[0].pool));
+			break;
+		}
+		break;
+	case 'p':
+		if (!str[1]) {
+			if (core->dbg->reg->reg_profile_str) {
+				//core->anal->reg = core->dbg->reg;
+				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
+				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
+			} else eprintf ("No register profile defined. Try 'dr.'\n");
+		} else r_reg_set_profile (core->dbg->reg, str+2);
+		break;
+	case 't':
+		for (i=0; (name=r_reg_get_type (i)); i++)
+			r_cons_printf ("%s\n", name);
+		break;
+	case 'n':
+		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
+		if (name && *name)
+			r_cons_printf ("%s\n", name);
+		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+		break;
+	case 'd':
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_colors); // XXX detect which one is current usage
+		break;
+	case 'o':
+		r_reg_arena_swap (core->dbg->reg, R_FALSE);
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_colors); // XXX detect which one is current usage
+		r_reg_arena_swap (core->dbg->reg, R_FALSE);
+		break;
+	case '=':
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_colors); // XXX detect which one is current usage
+		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		break;
+	case '*':
+	case 'j':
+	case '\0':
+		__anal_reg_list (core, type, size, str[0]);
+		break;
+	case ' ':
+		arg = strchr (str+1, '=');
+		if (arg) {
+			*arg = 0;
+			r = r_reg_get (core->dbg->reg, str+1, -1); //R_REG_TYPE_GPR);
+			if (r) {
+				r_cons_printf ("0x%08"PFMT64x" ->", str,
+					r_reg_get_value (core->dbg->reg, r));
+				r_reg_set_value (core->dbg->reg, r,
+					r_num_math (core->num, arg+1));
+				r_debug_reg_sync (core->dbg, -1, R_TRUE);
+				r_cons_printf ("0x%08"PFMT64x"\n",
+					r_reg_get_value (core->dbg->reg, r));
+			} else eprintf ("Unknown register '%s'\n", str+1);
+			return;
+		}
+		size = atoi (str+1);
+		if (size==0) {
+			arg = strchr (str+1, ' ');
+			if (arg && size==0) {
+				*arg='\0';
+				size = atoi (arg);
+			} else size = bits;
+			type = r_reg_type_by_name (str+1);
+		}
+		if (type != R_REG_TYPE_LAST) {
+			__anal_reg_list (core, type, size, str[0]);
+		} else eprintf ("cmd_debug_reg: Unknown type\n");
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
+	int use_colors = r_config_get_i(core->config, "scr.color");
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
@@ -670,10 +861,12 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		} else eprintf ("Usage: ab [hexpair-bytes]\n");
 		break;
-	case 'x':
+	case 'r':
+		cmd_anal_reg(core, input+1);
+		break;
 	case 'e':
 		if (input[1] == 'r') {
-			r_debug_reg_list (core->dbg, 0, 0, 0);
+			r_debug_reg_list (core->dbg, 0, 0, 0, use_colors);
 		} else if (input[1] == ' ') {
 			r_anal_esil_eval (core->anal, input+2);
 		} else eprintf ("Usage: ae [esil]  # wip. analyze esil. (evaluable string intermediate language)\n");
@@ -956,7 +1149,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'r':
+	case 'x':
 		switch (input[1]) {
 		case '-':
 			r_anal_ref_del (core->anal, r_num_math (core->num, input+2), core->offset);
@@ -964,7 +1157,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'k':
 			if (input[2]==' ') {
 				sdb_query (core->anal->sdb_xrefs, input+3);
-			} else eprintf ("|ERROR| Usage: ark [query]\n");
+			} else eprintf ("|ERROR| Usage: axk [query]\n");
 			break;
 		case '\0':
 		case 'j':
@@ -1000,17 +1193,17 @@ static int cmd_anal(void *data, const char *input) {
 		default:
 		case '?':
 			r_cons_printf (
-			"|Usage: ar[?d-l*]   # see also 'afr?'\n"
-			"| ar addr [at]    Add code ref pointing to addr (from curseek)\n"
-			"| arc addr [at]   Add code jmp ref // unused?\n"
-			"| arC addr [at]   Add code call ref\n"
-			"| ard addr [at]   Add data ref\n"
-			"| arj             List refs in json format\n"
-			"| arf [flg-glob]  Find data/code references of flags\n"
-			"| ar- [at]        Clean all refs (or refs from addr)\n"
-			"| ar              List refs\n"
-			"| ark [query]     Perform sdb query\n"
-			"| ar*             Output radare commands\n");
+			"|Usage: ax[?d-l*]   # see also 'afx?'\n"
+			"| ax addr [at]    Add code ref pointing to addr (from curseek)\n"
+			"| axc addr [at]   Add code jmp ref // unused?\n"
+			"| axC addr [at]   Add code call ref\n"
+			"| axd addr [at]   Add data ref\n"
+			"| axj             List refs in json format\n"
+			"| axf [flg-glob]  Find data/code references of flags\n"
+			"| ax- [at]        Clean all refs (or refs from addr)\n"
+			"| ax              List refs\n"
+			"| axk [query]     Perform sdb query\n"
+			"| ax*             Output radare commands\n");
 			break;
 		}
 		break;

@@ -87,7 +87,7 @@ static int openfile (const char *f, int x) {
 int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
-	const char *bytes = NULL;
+	char *bytes = NULL;
 	const char *contents = NULL;
 	const char *arch = R_SYS_ARCH;
 	const char *os = R_EGG_OS_NAME;
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 			bits = atoi (optarg);
 			break;
 		case 'B':
-			bytes = optarg;
+			bytes = r_str_concat (bytes, optarg);
 			break;
 		case 'C':
 			contents = optarg;
@@ -146,8 +146,8 @@ int main(int argc, char **argv) {
 			char *p = strchr (optarg, ':');
 			if (p) {
 				*p = 0;
-				off = r_num_get (NULL, optarg);
-				n = r_num_get (NULL, p+1);
+				off = r_num_math (NULL, optarg);
+				n = r_num_math (NULL, p+1);
 				*p = ':';
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 4);
@@ -159,8 +159,8 @@ int main(int argc, char **argv) {
 			ut64 off, n;
 			char *p = strchr (optarg, ':');
 			if (p) {
-				off = r_num_get (NULL, optarg);
-				n = r_num_get (NULL, p+1);
+				off = r_num_math (NULL, optarg);
+				n = r_num_math (NULL, p+1);
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 8);
 			} else eprintf ("Missing colon in -d\n");
@@ -291,6 +291,8 @@ int main(int argc, char **argv) {
 			}
 		} else eprintf ("Invalid hexpair string for -B\n");
 		free (b);
+		free (bytes);
+		bytes = NULL;
 	}
 	/* create output file if needed */
 	if (ofileauto) {
@@ -344,8 +346,7 @@ int main(int argc, char **argv) {
 		} else {
 			if (!format) {
 				eprintf ("No format specified wtf\n");
-				r_egg_free (egg);
-				return 1;
+				goto fail;
 			}
 			switch (*format) { //*format) {
 			case 'r':

@@ -309,7 +309,7 @@ R_API void *r_list_get_n(RList *list, int n) {
 R_API void *r_list_get_by_int(RList *list, int off, int n) {
 	ut8 *p;
 	RListIter *iter;
-	r_list_foreach(list, iter, p) {
+	r_list_foreach (list, iter, p) {
 		if (!memcmp (&n, p+off, sizeof (int)))
 			return p;
 	}

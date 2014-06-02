@@ -42,6 +42,7 @@ typedef struct r_search_keyword_t {
 	int kwidx;
 	int icase; // ignore case
 	int type;
+	ut64 last; // last hit hint
 } RSearchKeyword;
 
 typedef struct r_search_hit_t {
@@ -65,6 +66,7 @@ typedef struct r_search_t {
 	RMemoryPool *pool;
 	int distance;
 	int inverse;
+	int contiguous;
 	int align;
 	RSearchUpdate update;
 	RList *kws; // TODO: Use r_search_kw_new ()

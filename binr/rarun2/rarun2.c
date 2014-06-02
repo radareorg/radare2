@@ -23,6 +23,7 @@ static char *_chroot = NULL;
 static char *_libpath = NULL;
 static char *_preload = NULL;
 static int _r2preload = 0;
+static int _r2sleep = 0;
 static char *_setuid = NULL;
 static char *_seteuid = NULL;
 static char *_setgid = NULL;
@@ -108,6 +109,7 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "stderr")) _stderr = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
+	else if (!strcmp (b, "sleep")) _r2sleep = atoi (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
 	else if (!strcmp (b, "libpath")) _libpath = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
@@ -235,6 +237,9 @@ static int runfile () {
 			dup2 (child->fd, 2);
 		}
 	}
+	if (_r2sleep != 0) {
+		r_sys_sleep (_r2sleep);
+	}
 	if (_chgdir) {
 		ret = chdir (_chgdir);
 		if (ret < 0)
@@ -346,6 +351,7 @@ int main(int argc, char **argv) {
 			"timeout=3\n"
 			"# connect=localhost:8080\n"
 			"# listen=8080\n"
+			"# #sleep=0\n"
 			"# #stdio=blah.txt\n"
 			"# #stderr=foo.txt\n"
 			"# stdout=foo.txt\n"

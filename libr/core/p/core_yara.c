@@ -201,23 +201,18 @@ static int r_cmd_yara_call(void *user, const char *input) {
 }
 
 static int r_cmd_yara_load_default_rules() {
-#define YARA_PREFIX R2_PREFIX"/share/radare2/"R2_VERSION"/yara/"
-	struct dirent** f;
-	char complete_path[128];
-	int i, n;
-
-	if (r_sandbox_enable(0) && !r_sandbox_check_path(YARA_PREFIX))
-		return R_FALSE;
-
-	n = scandir (YARA_PREFIX, &f, 0, alphasort);
-	if (n < 0)
-		return R_FALSE;
-	for (i=0; i<n; i++) {
-		if (f[i]->d_name[0] == '.') // skip '.', '..' and hidden files
-			continue;
-		snprintf (complete_path, sizeof (complete_path), YARA_PREFIX "%s", f[i]->d_name);
-		r_cmd_yara_add (complete_path);
+#define YARA_PATH R2_PREFIX "/share/radare2/" R2_VERSION "/yara/"
+	RListIter* iter = NULL;
+	char* filename, *complete_path;
+	RList* list = r_sys_dir (YARA_PATH);
+	r_list_foreach (list, iter, filename) {
+		if (filename[0] != '.') { // skip '.', '..' and hidden files
+			complete_path = r_str_concat (strdup (YARA_PATH), filename);
+			r_cmd_yara_add (complete_path);
+			free (complete_path);
+		}
 	}
+	r_list_free (list);
 
 	return R_TRUE;
 }
@@ -267,10 +262,10 @@ static int r_cmd_yara_init() {
 
 static int r_cmd_yara_deinit(){
 	if (r_yr_initialize != NULL) {
-		r_lib_dl_close (libyara);
 		r_yr_compiler_destroy(compiler);
 		r_yr_finalize();
 		r_yr_initialize = NULL;
+		r_lib_dl_close (libyara);
 	}
 	return R_TRUE;
 }

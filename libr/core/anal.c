@@ -429,7 +429,7 @@ static int cmpaddr (void *_a, void *_b) {
 }
 
 static int iscodesection(RCore *core, ut64 addr) {
-	RIOSection *s = r_io_section_getv (core->io, addr);
+	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
 
@@ -458,9 +458,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			r_flag_space_set (core->flags, "functions");
 			r_flag_set (core->flags, fcni->name, fcni->addr, fcni->size, 0);
 		}
-
 		return result;
 	}
+
 	if (from != UT64_MAX && at == 0)
 		return R_FALSE;
 	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
@@ -475,7 +475,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 #define USE_NEW_REFS 1
 #if USE_NEW_REFS
 				r_list_foreach (fcni->xrefs, iter2, refi) {
-				  r_anal_xrefs_set (core->anal, refi->type, refi->addr, refi->at);
+					r_anal_xrefs_set (core->anal, refi->type, refi->addr, refi->at);
 				}
 #else
 				/* If the xref is new, add it */
@@ -518,10 +518,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			goto error;
 		}
 		// real read.
-		if (!r_core_read_at (core, at+delta, buf, ANALBS))
+		if (!r_core_read_at (core, at+delta, buf, ANALBS)) {
+			goto error; 
+		}
+		if (!memcmp (buf, "\xff\xff\xff\xff", 4)) {
 			goto error;
-		if (!memcmp (buf, "\xff\xff\xff\xff", 4))
-			goto error;
+		}
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -594,9 +596,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			if (has_next) {
 				int i;
 				ut64 addr = fcn->addr + fcn->size;
-				for (i=0; i<nexti; i++)
-					if (next[i] == addr)
+				for (i=0; i<nexti; i++) {
+					if (next[i] == addr) {
 						break;
+					}
+				}
 				if (i==nexti) {
 					// TODO: ensure next address is function after padding (nop or trap or wat)
 // XXX noisy for test cases because we want to clear the stderr
@@ -1053,9 +1057,9 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	int wordsize, endian;
 
 	if (ptr == ref) {
-		if (code) r_cons_printf ("ar 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+		if (code) r_cons_printf ("ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 			(ut64)ref, (ut64)at);
-		else r_cons_printf ("ard 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+		else r_cons_printf ("axd 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 			(ut64)ref, (ut64)at);
 		return R_TRUE;
 	}
@@ -1084,7 +1088,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
 	if (buf==NULL)
 		return -1;
-	r_io_set_fd (core->io, core->file->fd);
+	r_io_use_desc (core->io, core->file->desc);
 	if (ref==0LL)
 		eprintf ("Null reference search is not supported\n");
 	else
@@ -1152,14 +1156,14 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		r_list_foreach (fcni->refs, iter2, refi) {
-			if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+			if (rad) r_cons_printf ("ax%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 					refi->addr, refi->at);
 			else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n",
 					refi->addr, refi->at, refi->type);
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
-		if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+		if (rad) r_cons_printf ("ax%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 				refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 				refi->addr, refi->at);
 		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n",

@@ -27,7 +27,6 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr) {
 		out = r_file_slurp_line (file, line, 0);
 		if (!out)
 			return 0;
-
 		out2 = malloc((strlen(file) + 64 + strlen(out))*sizeof(char));
 		file_nopath = strrchr (file, '/');
 		snprintf(out2, strlen(file) + 63 + strlen(out), "%s:%d %s",

@@ -80,7 +80,7 @@ static int splitlines(const char *a, int len, struct line **lr)
 	return i - 1;
 }
 
-inline static int cmp(struct line *a, struct line *b)
+static int inline cmp(struct line *a, struct line *b)
 {
 	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
 }
@@ -282,7 +282,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 
 	an = splitlines ((const char *)sa, la, &al);
 	bn = splitlines ((const char*)sb, lb, &bl);
-	if (!al <= 0 || !bl <= 0 || an < 0 || bn < 0) {
+	if (!al || !bl) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
 		goto beach;
 	}

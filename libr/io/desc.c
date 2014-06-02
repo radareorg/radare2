@@ -4,28 +4,27 @@
 // TODO: to be deprecated.. this is slow and boring
 
 R_API void r_io_desc_init(RIO *io) {
-	io->desc = r_list_new ();
-	io->desc->free = (RListFree)r_io_desc_free;
+	io->files= r_list_new ();
+	io->files->free = (RListFree)r_io_desc_free;
 }
 
 R_API void r_io_desc_fini(RIO *io) {
-	r_list_free (io->desc);
+	r_list_free (io->files);
 }
 
 R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
 	RIODesc *old = NULL;
     	ut64 sz = -1;
 
-	if (desc && io->fd != desc){
-		old = io->fd;
-		r_io_set_fd(io, desc);
+	if (desc && io->desc != desc){
+		old = io->desc;
+		r_io_use_desc (io, desc);
 	}
 
 	if (desc) sz = r_io_size(io);
 
-	if(old){
-		r_io_set_fd(io, old);
-	}
+	if(old)
+		r_io_use_desc (io, old);
 	return sz;
 }
 
@@ -77,7 +76,7 @@ R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
 	RIODesc *foo = r_io_desc_get (io, desc->fd);
 	if (!foo){
 		desc->io = io;
-		r_list_append (io->desc, desc);
+		r_list_append (io->files, desc);
 	}
 	return foo? 1: 0;
 }
@@ -86,9 +85,9 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
 	/* No _safe loop necessary because we return immediately after the delete. */
-	r_list_foreach (io->desc, iter, d) {
+	r_list_foreach (io->files, iter, d) {
 		if (d->fd == fd) {
-			r_list_delete (io->desc, iter);
+			r_list_delete (io->files, iter);
 			return R_TRUE;
 		}
 	}
@@ -98,11 +97,19 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
-	r_list_foreach (io->desc, iter, d) {
+	if (fd<0)
+		return NULL;
+	r_list_foreach (io->files, iter, d) {
 		if (d && d->fd == fd)
 			return d;
 	}
 	return NULL;
+}
+
+R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {
+	RIOPlugin *plugin = desc ? desc->plugin : NULL;
+	if (!plugin) return (ut64)lseek (desc->fd, offset, SEEK_SET);
+	return plugin->lseek (io, desc, offset, SEEK_SET);
 }
 
 #if 0

@@ -6,6 +6,9 @@
 
 R_LIB_VERSION (r_io);
 
+// XXX: this is buggy. must use seek+read
+#define USE_CACHE 1
+#define USE_P_API 0
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
@@ -18,15 +21,17 @@ R_API RIO *r_io_new() {
 	io->buffer = r_cache_new (); // TODO: use RBuffer here
 	io->buffer_enabled = 0;
 	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
-	io->fd = NULL;
+	io->desc = NULL;
 	io->write_mask_fd = -1;
 	io->redirect = NULL;
 	io->printf = (void*) printf;
 	io->bits = (sizeof(void*) == 8)? 64: 32;
 	io->va = -1;
+	io->ff = 1;
 	io->plugin = NULL;
 	io->raised = -1;
 	io->off = 0;
+	io->raw = 0; // set to 1 for debugger mode (for example)
 	io->enforce_rwx = 0;
 	r_io_map_init (io);
 	r_io_desc_init (io);
@@ -43,7 +48,7 @@ R_API void r_io_raise(RIO *io, int fd) {
 
 R_API int r_io_is_listener(RIO *io) {
 	if (io && io->plugin && io->plugin->listener)
-		return io->plugin->listener (io->fd);
+		return io->plugin->listener (io->desc);
 	return R_FALSE;
 }
 
@@ -120,8 +125,8 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				r_io_desc_add (io, desc);
 				if (desc->fd != -1)
 					r_io_plugin_open (io, desc->fd, plugin);
-				if (desc != io->fd) {
-					r_io_set_fd (io, desc);
+				if (desc != io->desc) {
+					r_io_use_desc (io, desc);
 				}
 			}
 		}
@@ -134,8 +139,8 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 			r_io_desc_add (io, desc);
 			if (desc->fd != -1)
 				r_io_plugin_open (io, desc->fd, plugin);
-			if (desc != io->fd) {
-				r_io_set_fd (io, desc);
+			if (desc != io->desc) {
+				r_io_use_desc (io, desc);
 			}
 		}
 	}
@@ -187,7 +192,7 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		return NULL;
 	if (desc) {
 		r_io_desc_add (io, desc);
-		r_io_set_fd (io, desc);
+		r_io_use_desc (io, desc);
 		// add a map that represents the file
 	} else 	eprintf ("Unable to open file: %s\n", file);
 
@@ -211,32 +216,24 @@ R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
 	return list_fds;
 }
 
-R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
-	if (fd != NULL) {
-		io->fd = fd;
-		io->plugin = fd->plugin;
+R_API int r_io_use_desc (RIO *io, RIODesc *d) {
+	if (d) {
+		io->desc = d;
+		io->plugin = d->plugin;
 		return R_TRUE;
 	}
 	return R_FALSE;
 }
 
-static int r_io_update_desc (RIO *io, int fd) {
+R_API RIODesc *r_io_use_fd (RIO *io, int fd) {
 	RIODesc *desc = r_io_desc_get (io, fd);
-	if (!desc)
-		return R_FALSE;
-	io->fd = desc;
+	if (!desc) return NULL;
+	io->desc = desc;
 	io->plugin = desc->plugin;
-	return R_TRUE;
+	return desc;
 }
 
-R_API int r_io_set_fdn(RIO *io, int fd) {
-	if (fd != -1 && !(io->fd && fd == io->fd->fd))
-		return r_io_update_desc (io, fd);
-	else if (!io->fd && fd != -1)
-		return r_io_update_desc (io, fd);
-	return R_FALSE;
-}
-
+#if !USE_P_API
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	int bytes_read = 0;
 	const char *read_from = NULL;
@@ -244,28 +241,32 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 		read_from = "buffer";
 		bytes_read = r_io_buffer_read (io, io->off, buf, len);
 	}
-	if (io->fd && io->fd->plugin && io->fd->plugin->read){
-		read_from = io->fd->plugin->name;
-		bytes_read = io->fd->plugin->read (io, io->fd, buf, len);
-	}
-	else if (!io->fd) {
+	if (io->desc && io->desc->plugin && io->desc->plugin->read){
+		read_from = io->desc->plugin->name;
+		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
+	} else if (!io->desc) {
 		eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
 		read_from = "FAILED";
 		bytes_read = 0;
 	} else {
 		read_from = "File";
-		bytes_read = read (io->fd->fd, buf, len);
+		bytes_read = read (io->desc->fd, buf, len);
 	}
 	IO_IFDBG {
-		if (io->fd) eprintf ("Data source: %s\n", io->fd->name);
-		eprintf ("Asked for %d bytes, provided %d from %s\n", len, bytes_read, read_from);
+		if (io->desc) eprintf ("Data source: %s\n", io->desc->name);
+		eprintf ("Asked for %d bytes, provided %d from %s\n",
+			len, bytes_read, read_from);
 	}
 	return bytes_read;
 }
+#endif
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
-	if (io==NULL || io->fd == NULL)
+	if (io==NULL || io->desc == NULL)
+		return -1;
+	//if (io->off ==UT64_MAX) asm("int3");
+	if (io->off==UT64_MAX)
 		return -1;
 	/* IGNORE check section permissions */
 	if (io->enforce_rwx & R_IO_READ)
@@ -276,9 +277,11 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	return ret;
 }
 
-// XXX: this is buggy. must use seek+read
-#define USE_CACHE 1
+
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+#if USE_P_API
+	return r_io_vread (io, addr, buf, len);
+#else
 	ut64 paddr, last, last2;
 	int ms, ret, l, olen = len, w = 0;
 
@@ -288,48 +291,56 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
 	while (len>0) {
-		// step one does a section exist for the offset
-		int exists = r_io_section_exists_for_paddr (io, addr+w) ||
-					 r_io_section_exists_for_vaddr (io, addr+w) ||
-					 r_io_map_exists_for_offset (io, addr+w);
+		if (!io->raw) {
+			// this code assumes that the IO backend knows
+			// 1) the size of a loaded file and its offset into the r2 data space
+			// 2) the sections with physical (offsets) and virtual addresses in r2 data space
+			// Currently debuggers may not support registering these data spaces in r2 and this
+			// may prevent "raw" access to locations in the data space for entities like debuggers.
+			// Until that issue is resolved this code will be disabled.
+			// step one does a section exist for the offset
+			int exists = r_io_section_exists_for_paddr (io, addr+w) ||
+			r_io_section_exists_for_vaddr (io, addr+w) ||
+			r_io_map_exists_for_offset (io, addr+w);
 
-		// XXX this is a break b/c external IO caller do not need to create
-		// an IO Map (yet.), so the "checking existence of" only works if r_core_file
-		// APIs are used to load files.
-		if (!exists && r_io_map_count (io) > 0) {
-			// XXX this will break if there is actually data at this location
-			// or within UT64_MAX - len
-			ut64 next_map_addr = UT64_MAX,
-				 next_sec_addr = UT64_MAX;
+			// XXX this is a break b/c external IO caller do not need to create
+			// an IO Map (yet.), so the "checking existence of" only works if r_core_file
+			// APIs are used to load files.
+			if (!exists && r_io_map_count (io) > 0) {
+				// XXX this will break if there is actually data at this location
+				// or within UT64_MAX - len
+				ut64 next_map_addr = UT64_MAX,
+				     next_sec_addr = UT64_MAX;
 
-			RIOMap *next_map = NULL;
-			RIOSection * next_sec = NULL;
-			// is there a map somewhere within the next range for
-			// us to read from
-			next_sec = r_io_section_get_first_in_vaddr_range (io, addr+w, addr+len+w);
-			next_sec_addr = next_sec ? next_sec->offset : UT64_MAX;
+				RIOMap *next_map = NULL;
+				RIOSection * next_sec = NULL;
+				// is there a map somewhere within the next range for
+				// us to read from
+				next_sec = r_io_section_get_first_in_vaddr_range (io, addr+w, addr+len+w);
+				next_sec_addr = next_sec ? next_sec->offset : UT64_MAX;
 
-			if (!next_sec){
-				next_map = r_io_map_get_first_map_in_range (io, addr+w, addr+len+w);
-				next_map_addr = next_map ? next_map->from : UT64_MAX;
-				if (len <= next_map_addr-addr) next_map_addr = UT64_MAX;
-				else l = next_map_addr-addr;
+				if (!next_sec){
+					next_map = r_io_map_get_first_map_in_range (io, addr+w, addr+len+w);
+					next_map_addr = next_map ? next_map->from : UT64_MAX;
+					if (len <= next_map_addr-addr) next_map_addr = UT64_MAX;
+					else l = next_map_addr-addr;
 
-			} else if (len <= next_map_addr-addr) {
-				next_sec_addr = UT64_MAX;
-			} else {
-				l = next_sec_addr-addr;
+				} else if (len <= next_map_addr-addr) {
+					next_sec_addr = UT64_MAX;
+				} else {
+					l = next_sec_addr-addr;
+				}
+
+				if (!next_sec && !next_map) {
+					// done
+					return olen;
+				}
+				// want to capture monotonicity even when maps are 0 in length
+				if (l==0) l++;
+				w+= l;
+				len -= l;
+				continue;
 			}
-
-			if (!next_sec && !next_map) {
-				// done
-				return olen;
-			}
-			// want to capture monotonicity even when maps are 0 in length
-			if (l==0) l++;
-			w+= l;
-			len -= l;
-			continue;
 		}
 
 		last = r_io_section_next (io, addr+w);
@@ -338,16 +349,24 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		//else if (last2<last) last = last2;
 		l = (len > (last-addr+w))? (last-addr+w): len;
 		if (l<1) l = len;
-		{
-			paddr = r_io_map_select (io, addr); // XXX
-			paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+		 {
+			if (addr != UT64_MAX)
+				paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+			else paddr = 0;
+			if (!paddr || paddr==UT64_MAX)
+				paddr = r_io_map_select (io, addr); // XXX
+			if (paddr == UT64_MAX) {
+				w +=l;
+				len -= l;
+				continue;
+			}
 			r_io_map_select (io, addr); // XXX
 			if (len>0 && l>len) l = len;
 			addr = paddr-w;
 			if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
 				memset (buf+w, 0xff, l);
 			}
-		}
+		 }
 #if 0
 		if (io->zeromap)
 			if (!r_io_map_get (io, addr+w)) {
@@ -361,12 +380,15 @@ eprintf ("RETRERET\n");
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
+//eprintf ("READ 0x%llx = %d\n", addr+w, ret);
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
+//memset(buf, 0xff, olen);
 			ret = 1;
 		} else if (ret<l) {
 			l = ret;
-		}
+		} else {
+}
 #if USE_CACHE
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len); //-w);
@@ -391,9 +413,13 @@ eprintf ("RETRERET\n");
 this is not a real fix, because it just avoids reading again , even if the seek returns error.
 bear in mind that we need to fix that loop and honor lseek sections and sio maps fine
 #endif
-//break;
+if (len>0) {
+	memset (buf+w, 0xff, len);
+}
+break;
 	}
 	return olen;
+#endif
 }
 
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
@@ -406,12 +432,13 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 	return ret;
 }
 
+// TODO. this is a physical resize
 R_API int r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin) {
 		if (io->plugin->resize) {
-			int res = io->plugin->resize (io, io->fd, newsize);
+			int res = io->plugin->resize (io, io->desc, newsize);
 			if (res)
-				r_io_map_truncate_update (io, io->fd->fd, newsize);
+				r_io_map_truncate_update (io, io->desc->fd, newsize);
 			return res;
 		}
 		return R_FALSE;
@@ -427,7 +454,7 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	if (!size) return R_FALSE;
 
 	if (io->plugin && io->plugin->extend)
-		return io->plugin->extend (io, io->fd, size);
+		return io->plugin->extend (io, io->desc, size);
 
 	if (!r_io_resize (io, size+cur_size)) return R_FALSE;
 
@@ -466,7 +493,7 @@ R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
 	int ret = R_FALSE;
 	if (len>0) {
-		io->write_mask_fd = io->fd->fd;
+		io->write_mask_fd = io->desc->fd;
 		io->write_mask_buf = (ut8 *)malloc (len);
 		memcpy (io->write_mask_buf, buf, len);
 		io->write_mask_len = len;
@@ -512,15 +539,15 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 
 	if (io->plugin) {
 		if (io->plugin->write)
-			ret = io->plugin->write (io, io->fd, buf, len);
+			ret = io->plugin->write (io, io->desc, buf, len);
 		else eprintf ("r_io_write: io handler with no write callback\n");
 	} else {
-		ret = write (io->fd->fd, buf, len);
+		ret = write (io->desc->fd, buf, len);
 	}
 	if (ret == -1)
-		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
+		eprintf ("r_io_write: cannot write on fd %d\n", io->desc->fd);
 	else{
-		r_io_map_write_update (io, io->fd->fd, io->off, ret);
+		r_io_map_write_update (io, io->desc->fd, io->off, ret);
 		io->off += ret;
 	}
 	if (data)
@@ -570,11 +597,11 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	// if resolution fails... just return as invalid address
 	if (offset==UT64_MAX)
 		return UT64_MAX;
-	if (io->fd != NULL) {
+	if (io->desc != NULL) {
 		if (io->plugin && io->plugin->lseek)
-			ret = io->plugin->lseek (io, io->fd, offset, whence);
+			ret = io->plugin->lseek (io, io->desc, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?
-		else ret = (ut64)lseek (io->fd->fd, offset, posix_whence);
+		else ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
 		if (ret != UT64_MAX) {
 			if (whence == R_IO_SEEK_SET)
 				io->off = offset; // FIX linux-arm-32-bs at 0x10000
@@ -611,15 +638,15 @@ R_API ut64 r_io_size(RIO *io) {
 R_API int r_io_system(RIO *io, const char *cmd) {
 	int ret = -1;
 	if (io->plugin && io->plugin->system)
-		ret = io->plugin->system (io, io->fd, cmd);
+		ret = io->plugin->system (io, io->desc, cmd);
 	return ret;
 }
 
-R_API int r_io_close(RIO *io, RIODesc *fd) {
-	if (io == NULL || fd == NULL)
+R_API int r_io_close(RIO *io, RIODesc *d) {
+	if (io == NULL || d == NULL)
 		return -1;
-	if (r_io_set_fd (io, fd)) {
-		int nfd = fd->fd;
+	if (r_io_use_desc (io, d)) {
+		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
 			r_io_map_del (io, nfd);
@@ -629,14 +656,8 @@ R_API int r_io_close(RIO *io, RIODesc *fd) {
 			r_io_desc_del (io, desc->fd);
 		}
 	}
-	io->fd = NULL; // unset current fd
+	io->desc = NULL; // unset current fd
 	return R_FALSE;
-}
-
-ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {
-	RIOPlugin *plugin = desc ? desc->plugin : NULL;
-	if (!plugin) return UT64_MAX;
-	return plugin->lseek (io, desc, 0, SEEK_SET);
 }
 
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {
@@ -664,7 +685,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 
 R_API int r_io_accept(RIO *io, int fd) {
 	if (r_io_is_listener (io) && io->plugin && io->plugin->accept)
-		return io->plugin->accept (io, io->fd, fd);
+		return io->plugin->accept (io, io->desc, fd);
 	return R_FALSE;
 }
 
@@ -707,6 +728,7 @@ R_API void r_io_sort_maps (RIO *io) {
 	r_list_sort (io->maps, (RListComparator) r_io_map_sort);
 }
 
+// THIS IS pread.. a weird one
 static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	ut8 *buf_bytes = NULL;
 	ut64 off = 0;
@@ -737,4 +759,8 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 
 static RIO * r_io_bind_get_io(RIOBind *bnd) {
 	return bnd ? bnd->io : NULL;
+}
+
+R_API void r_io_set_raw(RIO *io, int raw) {
+	io->raw = raw?1:0;
 }

@@ -43,7 +43,7 @@ static void r_core_file_info (RCore *core, int mode) {
 	if (cf && mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-		r_cons_printf (",\"fd\":%d", cf->fd->fd);
+		r_cons_printf (",\"fd\":%d", cf->desc->fd);
 		r_cons_printf (",\"size\":%d", cf->size);
 		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 			cf->rwx | dbg));
@@ -62,7 +62,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		//r_cons_printf ("# Core file info\n");
 		r_cons_printf ("file\t%s\n", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-		r_cons_printf ("fd\t%d\n", cf->fd->fd);
+		r_cons_printf ("fd\t%d\n", cf->desc->fd);
 		r_cons_printf ("size\t0x%x\n", cf->size);
 		r_cons_printf ("mode\t%s\n", r_str_rwx_i (cf->rwx | dbg));
 		r_cons_printf ("block\t0x%x\n", core->blocksize);
@@ -120,6 +120,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'b':
 			{
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			if (input[1]==' ')
+				baddr = r_num_math (core->num, input+1);
 			// XXX: this will reload the bin using the buffer.
 			// An assumption is made that assumes there is an underlying
 			// plugin that will be used to load the bin (e.g. malloc://)
@@ -190,9 +192,9 @@ static int cmd_info(void *data, const char *input) {
 			"| 'q'   simple quiet output\n"
 			"|Actions:\n"
 			"| i, ij       show info of current file (in JSON)\n"
-			"| io [file]   load info from file (or last opened) use bin.baddr\n"
-			"| ik [query]  key-value database from RBinObject\n"
+			"| iA          list archs\n"
 			"| ia          show all info (imports, exports, sections..)\n"
+			"| ib          reload the current buffer for setting of the bin (use once only)\n"
 			"| ic          list classes\n"
 			"| id          debug information (source lines)\n"
 			"| ie          entrypoint\n"
@@ -200,11 +202,12 @@ static int cmd_info(void *data, const char *input) {
 			"| ii          imports\n"
 			"| iI          binary info\n"
 			"| il          libraries\n"
+			"| ik [query]  key-value database from RBinObject\n"
+			"| io [file]   load info from file (or last opened) use bin.baddr\n"
 			"| is          symbols\n"
 			"| iS          sections\n"
 			"| ir/iR       relocs\n"
 			"| iz          strings\n"
-			"| ib          reload the current buffer for setting of the bin (use once only)\n"
 			);
 			break;
 		case '*':

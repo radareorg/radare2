@@ -128,9 +128,9 @@ R_API int r_io_map_del(RIO *io, int fd) {
 
 R_API int r_io_map_del_all(RIO *io, int fd) {
 	RIOMap *map;
-	RListIter *iter;
+	RListIter *iter, *tmp;
 	ut8 deleted = R_FALSE;
-	r_list_foreach (io->maps, iter, map) {
+	r_list_foreach_safe (io->maps, iter, tmp, map) {
 		if (fd==-1 || map->fd==fd) {
 			r_list_delete (io->maps, iter);
 			deleted = R_TRUE;
@@ -223,9 +223,9 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 		if (off>=im->from) {
 			if (prevfrom) {
 				if (im->from<prevfrom)
-					r_io_set_fdn (io, im->fd);
+					r_io_use_fd (io, im->fd);
 			} else {
-				r_io_set_fdn (io, im->fd);
+				r_io_use_fd (io, im->fd);
 			}
 			prevfrom = im->from;
 		}
@@ -238,7 +238,7 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 		}
 	}
 	if (done == 0) {
-		r_io_set_fdn (io, fd);
+		r_io_use_fd (io, fd);
 		r_io_seek (io, -1, R_IO_SEEK_SET);
 		return paddr;
 	}
@@ -246,11 +246,11 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 		r_io_seek (io, off, R_IO_SEEK_SET);
 		return off;
 	}
-	r_io_set_fdn (io, fd);
+	r_io_use_fd (io, fd);
 	if (io->debug) /* HACK */
 		r_io_seek (io, off, R_IO_SEEK_SET);
 	else r_io_seek (io, paddr, R_IO_SEEK_SET);
-	r_io_set_fdn (io, fd);
+	r_io_use_fd (io, fd);
 	return paddr;
 }
 

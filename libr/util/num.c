@@ -321,6 +321,22 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	return size;
 }
 
+static const char *trit_c = "012";
+
+R_API int r_num_to_trits (char *out, ut64 num) {
+	int i = 63, j;
+	while (i>=0 && num) {
+		out[i] = trit_c[num % 3];
+		num = num/3;
+		i--;
+	}
+	j = 63 - i;
+	i++;
+	memmove (out, &out[i], j);
+	out[j] = '\0';
+	return R_TRUE;
+}
+
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
 	if (sectorsize<1) sectorsize = 512;
 	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;

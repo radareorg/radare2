@@ -286,7 +286,6 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 									strlen(include_dir) + 8);
 							snprintf(allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
 									"%s/%s/", comp_dir, include_dir);
-							printf( "%s\n", allocated_id);
 							include_dir = allocated_id;
 						}
 					}
@@ -624,14 +623,19 @@ static void r_bin_dwarf_set_regs_default (const RBinDwarfLNPHeader *hdr,
 }
 
 R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
-		size_t len, FILE *f) {
+		size_t len, int mode) {
 	RBinDwarfLNPHeader hdr;
 	const ut8 *buf = NULL, *buf_tmp = NULL, *buf_end = NULL;
 	RBinDwarfSMRegisters regs;
 	int tmplen;
+	FILE *f = NULL;
 	RBinFile *binfile = a ? a->cur : NULL;
 
 	if (!binfile || !obuf) return R_FALSE;
+
+	if (mode == R_CORE_BIN_PRINT) {
+		f = stdout;
+	}
 
 	buf = obuf;
 	buf_end = obuf + len;
@@ -1252,7 +1256,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 
 R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
-		const ut8 *debug_str, size_t debug_str_len)
+		const ut8 *debug_str, size_t debug_str_len, int mode)
 {
 	const ut8 *buf = obuf, *buf_end = obuf + len;
 	size_t curr_unit = 0, k, offset = 0;
@@ -1303,13 +1307,16 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		curr_unit++;
 	}
 
-	r_bin_dwarf_dump_debug_info (NULL, inf);
+	if (mode == R_CORE_BIN_PRINT) {
+		r_bin_dwarf_dump_debug_info (NULL, inf);
+	}
+
 	r_bin_dwarf_free_debug_info (inf);
 
 	return R_TRUE;
 }
 
-static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len) {
+static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len, int mode) {
 	const ut8 *buf = obuf, *buf_end = obuf + len;
 	ut64 tmp, spec1, spec2, offset;
 	ut8 has_children;
@@ -1359,7 +1366,8 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 		da->length++;
 	}
 
-	dump_r_bin_dwarf_debug_abbrev(NULL, da);
+	if (mode == R_CORE_BIN_PRINT)
+		dump_r_bin_dwarf_debug_abbrev(stdout, da);
 
 	return da;
 }
@@ -1379,7 +1387,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	return NULL;
 }
 
-R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a) {
+R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 	ut8 *buf, *debug_str_buf = 0;
 	int len, debug_str_len = 0, ret;
 	RBinSection *debug_str;
@@ -1399,7 +1407,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a) {
 		buf = malloc (len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
-				debug_str_buf, debug_str_len);
+				debug_str_buf, debug_str_len, mode);
 		if (debug_str_buf) {
 			free (debug_str_buf);
 		}
@@ -1409,7 +1417,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a) {
 	return R_FALSE;
 }
 
-R_API RList *r_bin_dwarf_parse_line(RBin *a) {
+R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 	ut8 *buf;
 	int len;
 	RBinSection *section = getsection (a, "debug_line");
@@ -1419,14 +1427,14 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		r_bin_dwarf_parse_line_raw2 (a, buf, len, DBGFD);
+		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 		free (buf);
 		return list;
 	}
 	return NULL;
 }
 
-R_API RList *r_bin_dwarf_parse_aranges(RBin *a) {
+R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 	ut8 *buf;
 	size_t len;
 	RBinSection *section = getsection (a, "debug_aranges");
@@ -1436,13 +1444,17 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a) {
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		r_bin_dwarf_parse_aranges_raw (buf, len, DBGFD);
+		if (mode == R_CORE_BIN_PRINT) {
+			r_bin_dwarf_parse_aranges_raw (buf, len, stdout);
+		} else {
+			r_bin_dwarf_parse_aranges_raw (buf, len, DBGFD);
+		}
 		free (buf);
 	}
 	return NULL;
 }
 
-R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a) {
+R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode) {
 	ut8 *buf;
 	size_t len;
 	RBinSection *section = getsection (a, "debug_abbrev");
@@ -1453,7 +1465,7 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a) {
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		da = r_bin_dwarf_parse_abbrev_raw (buf, len);
+		da = r_bin_dwarf_parse_abbrev_raw (buf, len, mode);
 		free (buf);
 	}
 

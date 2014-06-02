@@ -38,6 +38,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			switch (insn->id) {
 			case SPARC_INS_RETT:
 				op->type = R_ANAL_OP_TYPE_RET;
+				break;
 			case SPARC_INS_CALL:
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->jump = INSOP(0).imm;
@@ -135,7 +136,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_DIV;
 				break;
 			}
-
 		}
 		cs_free (insn, n);
 		cs_close (&handle);

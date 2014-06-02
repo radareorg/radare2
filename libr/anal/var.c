@@ -24,13 +24,14 @@ R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut
 
 R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char key[128], key2[128], val[128];
+	if (!kind) kind ='v';
 	switch (kind) {
 	case 'a':
 	case 'r':
 	case 'v':
 		break;
 	default:
-		eprintf ("Invalid var kind\n");
+		eprintf ("Invalid var kind '%c'\n", kind);
 		return R_FALSE;
 	}
 	if (scope>0) {

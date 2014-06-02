@@ -130,7 +130,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 's': return core->file->size;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			s = r_io_section_get (core->io,
+			s = r_io_section_vget (core->io,
 				r_io_section_vaddr_to_offset (core->io,
 				core->offset));
 			return s? (str[2]=='S'? s->size: s->offset): 0;
@@ -181,7 +181,7 @@ static const char *radare_argv[] = {
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!perl", "#!vala",
 	"V",
-	"aa", "ab", "af", "ar", "ag", "at", "a?",
+	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax",
 	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!", "e?", "env ",
@@ -255,7 +255,7 @@ static int autocomplete(RLine *line) {
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
-				if (p==path) path = "/";
+				if (p==path) path = strdup ("/");
 				else if (p!=path+1) *p = 0;
 				p++;
 			}
@@ -515,7 +515,6 @@ R_API int r_core_init(RCore *core) {
 	core->log = r_core_log_new ();
 	core->vmode = R_FALSE;
 	core->section = NULL;
-	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->printidx = 0;
@@ -577,6 +576,7 @@ R_API int r_core_init(RCore *core) {
 	core->bin->printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
+	core->io->ff = 1;
 	core->io->user = (void *)core;
 	core->io->core_cmd_cb = core_cmd_callback;
 	core->sign = r_sign_new ();
@@ -899,8 +899,9 @@ reaccept:
 					file = r_core_file_open (core, (const char *)ptr, R_IO_READ, 0); // XXX: write mode?
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
-						file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, 0, file->size);
-						pipefd = core->file->fd->fd;
+						file->map = r_io_map_add (core->io, file->desc->fd,
+							R_IO_READ, 0, 0, file->size);
+						pipefd = core->file->desc->fd;
 						eprintf ("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
@@ -1106,8 +1107,10 @@ reaccept:
 							if (i>0) {
 								int r;
 								ptr = (ut8 *) malloc (i+6);
-								if (!ptr)
+								if (!ptr) {
+									fclose (fd);
 									return R_FALSE;
+								}
 								r = fread (ptr+5, i, 1, fd);
 								ptr[5+r]='\0';
 							}

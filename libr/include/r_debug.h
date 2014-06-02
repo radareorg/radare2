@@ -298,7 +298,7 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad);
 
 /* registers */
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write);
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad);
+R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_colors);
 R_API int r_debug_reg_set(RDebug *dbg, const char *name, ut64 num);
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 

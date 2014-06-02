@@ -5,7 +5,38 @@
 #include <r_util.h>
 #include "mach0.h"
 
-static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
+static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
+	ut64 section_base, section_size;
+ut64 oaddr = addr;
+	int i, min = -1;
+
+	if (!bin->sects)
+		return 0;
+	/* align addr to lower denominator */
+	if (bin->nsects>0) {
+		for (i = 0; i < bin->nsects; i++) {
+			if (bin->sects[i].addr<1)
+				continue;
+			if (addr<bin->sects[i].addr) {
+				min = i;
+addr = bin->sects[i].addr & 0xffffffffFFFF0000;
+			}
+		}
+	}
+//if (min != -1) { addr += oaddr; }
+	for (i = 0; i < bin->nsects; i++) {
+		section_base = (ut64)bin->sects[i].addr;
+		section_size = (ut64)bin->sects[i].size;
+		if (addr >= section_base && addr < section_base + section_size) {
+			if (bin->sects[i].offset == 0)
+				continue;
+			return bin->sects[i].addr; //offset + (addr - section_base);
+		}
+	}
+	return 0;
+}
+
+static ut64 MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
 	ut64 section_base, section_size;
 	int i;
 
@@ -76,20 +107,25 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 			eprintf ("WARNING: mach0 header contains too many sections. Wrapping to 128\n");
 			bin->nsects = 128;
 		}
-		if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
-			perror ("realloc (sects)");
-			return R_FALSE;
-		}
-		len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
-			(ut8*)&bin->sects[sect],
+		if ((int)bin->nsects>0) {
+			if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
+				perror ("realloc (sects)");
+				return R_FALSE;
+			}
+			len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
+				(ut8*)&bin->sects[sect],
 #if R_BIN_MACH064
-			bin->endian?"16c16c2L8I":"16c16c2l8i", 
+			    bin->endian?"16c16c2L8I":"16c16c2l8i", 
 #else
-			bin->endian?"16c16c9I":"16c16c9i", 
+			    bin->endian?"16c16c9I":"16c16c9i", 
 #endif
-			bin->nsects - sect);
-		if (len == -1) {
-			eprintf ("Error: read (sects)\n");
+			    bin->nsects - sect);
+			if (len == -1) {
+				eprintf ("Error: read (sects)\n");
+				return R_FALSE;
+			}
+		} else {
+			eprintf ("Warning: Invalid number of sections\n");
 			return R_FALSE;
 		}
 	}
@@ -352,7 +388,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				char key[128];
 				char val[128];
 				snprintf (key, sizeof (key)-1, "uuid.%d", bin->uuidn++);
-				r_hex_bin2str (&uc.uuid, 16, val);
+				r_hex_bin2str ((ut8*)&uc.uuid, 16, val);
 				sdb_set (bin->kv, key, val, 0);
 				//for (i=0;i<16; i++) eprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
 			}
@@ -374,6 +410,18 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			//eprintf ("[mach0] load dynamic linker\n");
 			break;
 		case LC_MAIN:
+			{
+			struct {
+				ut64 eo;
+				ut64 ss;
+			} ep = {0};
+			r_buf_fread_at (bin->b, off+8, (void*)&ep,
+				bin->endian?"2L": "2l", 1);
+			bin->entry = ep.eo;
+			sdb_num_set (bin->kv, "entry0", ep.eo, 0);
+			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
+			}
+			break;
 		case LC_UNIXTHREAD:
 		case LC_THREAD:
 			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
@@ -487,6 +535,8 @@ struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_b
 	if (!bin->sects)
 		return NULL;
 	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
+	if (to<1)
+		return NULL;
 	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct r_bin_mach0_section_t))))
 		return NULL;
 	for (i = 0; i<to; i++) {
@@ -928,8 +978,19 @@ struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	if (bin->entry) {
-		//return bin->entry - MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
+		ut64 baddr = MACH0_(r_bin_mach0_vaddr_to_baddr)(bin, bin->entry);
+#if 0
+		eprintf ("ENTRY  %llx\n", bin->entry);
+		eprintf ("OFFSET %llx\n", MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry));
+		eprintf ("PADDR  %llx\n", baddr);
+	//	ut64 paddr = bin->entry - MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
+#endif
+		if (bin->entry>baddr)
+			return baddr;
+		//baddr -= bin->entry;
+		return baddr;
 	}
+//	return 0x0000000100000000;
 	return 0LL;
 }
 

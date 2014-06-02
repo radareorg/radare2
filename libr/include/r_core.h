@@ -80,7 +80,7 @@ typedef struct r_core_file_t {
 	RIOMap *map;
 	int rwx;
 	int dbg;
-	RIODesc *fd;
+	RIODesc *desc;
 	RBinBind binb;
 	const struct r_core_t *core;
 	ut8 alive;
@@ -100,7 +100,6 @@ typedef struct r_core_t {
 	ut32 blocksize_max;
 	ut8 *block;
 	ut8 *oobi; /* out of band input ; used for multiline or file input */
-	int ffio;
 	int oobi_len;
 	RBuffer *yank_buf;
 	int tmpseek;

@@ -200,7 +200,6 @@ static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
 	for (i = 0; i < obj->hdr.symbols_num; i++) {
 		r_mem_copyendian((ut8*)&short_name, obj->b->buf + offset,
 				sizeof(ut32), obj->endian);
-
 		if (short_name) {
 			obj->symbols[i].name = malloc(sizeof(char) * 9);
 			strncpy(obj->symbols[i].name,
@@ -209,9 +208,12 @@ static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
 			offset += 8;
 		} else {
 			offset += sizeof(ut32);
-			r_mem_copyendian((ut8*)&ofst, obj->b->buf + offset,
+			r_mem_copyendian ((ut8*)&ofst, obj->b->buf + offset,
 					sizeof(ut32), obj->endian);
-
+			if (ofst+obj->hdr.symtable_offset > obj->b->length) {
+				eprintf ("Symtable offset out of bounds\n");
+				return 0;
+			}
 			obj->symbols[i].name = strdup((char*)(obj->b->buf +
 					obj->hdr.symtable_offset + ofst +
 					obj->hdr.symbols_num * 18));

@@ -5,7 +5,7 @@
 #include <r_debug.h>
 
 static int is_io_esil(RDebug *dbg) {
-	RIODesc *d = dbg->iob.io->fd;
+	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name)
 		if (!strcmp ("esil", d->plugin->name))
 			return R_TRUE;
@@ -67,8 +67,8 @@ static int r_debug_esil_attach(RDebug *dbg, int pid) {
 	if (!is_io_esil (dbg))
 		return R_FALSE;
 #if 0
-	RIOBfdbg *o;
-	o = dbg->iob.io->fd->data;
+	RIOBdescbg *o;
+	o = dbg->iob.io->desc->data;
 eprintf ("base = %llx\n", o->bfvm->base);
 eprintf ("screen = %llx\n", o->bfvm->screen);
 eprintf ("input = %llx\n", o->bfvm->input);

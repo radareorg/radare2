@@ -402,6 +402,7 @@ R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
+R_API void r_bin_iobind(RBin *bin, RIO *io);
 R_API RBinFile * r_bin_cur (RBin *bin);
 R_API RBinObject * r_bin_cur_object (RBin *bin);
 R_API int r_bin_file_set_cur_binfile_obj (RBin * bin, RBinFile *bf, RBinObject *obj);
@@ -437,10 +438,10 @@ R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
-R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a);
-R_API RList *r_bin_dwarf_parse_line(RBin *a);
-R_API RList *r_bin_dwarf_parse_aranges(RBin *a);
-R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a);
+R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
+R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
+R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
+R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
@@ -463,6 +464,7 @@ extern RBinPlugin r_bin_plugin_rar;
 extern RBinPlugin r_bin_plugin_ningb;
 extern RBinPlugin r_bin_plugin_coff;
 extern RBinPlugin r_bin_plugin_ningba;
+extern RBinPlugin r_bin_plugin_xbe;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 

@@ -2,6 +2,12 @@
 
 #include <r_cmd.h>
 #include <r_util.h>
+#include <stdio.h>
+#include <r_cons.h>
+#include <r_cmd.h>
+#include <r_util.h>
+
+static int value = 0;
 
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
@@ -201,15 +207,6 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 }
 
 /** macro.c **/
-
-/* radare - LGPL - Copyright 2008-2013 - pancake */
-
-#include <stdio.h>
-#include <r_cons.h>
-#include <r_cmd.h>
-#include <r_util.h>
-
-static int value = 0;
 
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;

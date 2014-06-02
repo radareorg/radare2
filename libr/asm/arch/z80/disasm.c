@@ -360,7 +360,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 	static STR reg[8] = {"b","c","d","e","h","l","(hl)","a"};
 	static STR dreg[4] = {"bc","de","hl","sp"};
 	static STR cond[8] = {"nz","z","nc","c","po","pe","p","m"};
-	static STR arith[8] = {"add a,","adc a,","sub ","sbc a,","and ","xor ","or ","cp "};
+	static STR arith[8] = {"add a, ","adc a, ","sub ","sbc a, ","and ","xor ","or ","cp "};
 	char stemp[80];      // temp.String für sprintf()
 	char ireg[3];        // temp.Indexregister
 	int len = OpcodeLen (0, Opcodes);
@@ -378,17 +378,17 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 				break;
 			case 0x02:
 				strcpy (s,"djnz ");
-				sprintf (stemp,"0x%4.4X",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
+				sprintf (stemp,"0x%2.2X",(adr+2+(BYTE)Opcodes[adr+1])&0xff);strcat(s,stemp);
 				break;
 			case 0x03:
 				strcpy(s,"jr ");
-				sprintf(stemp,"0x%4.4X",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
+				sprintf(stemp,"0x%2.2X",(adr+2+(BYTE)Opcodes[adr+1])&0xff);strcat(s,stemp);
 				break;
 			default:
 				strcpy(s,"jr ");
 				strcat(s,cond[d & 3]);
 				strcat(s,", ");
-				sprintf(stemp,"0x%4.4X",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
+				sprintf(stemp,"0x%2.2X",(adr+2+(BYTE)Opcodes[adr+1])&0xff);strcat(s,stemp);
 				break;
 			}
 			break;
@@ -433,7 +433,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 				strcat(s,"), a");
 				break;
 			case 0x07:
-				strcpy(s,"ld a,(");
+				strcpy(s,"ld a, (");
 				sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
 				strcat(s,")");
 				break;
@@ -462,21 +462,21 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			break;
 		case 0x07:
 			{
-				static const STR str[8] = {"rlcs", "rrca", "rla", "rra", "daa", "cpl", "scf", "ccf"};
+				static const STR str[8] = {"rlca", "rrca", "rla", "rra", "daa", "cpl", "scf", "ccf"};
 				strcpy (s,str[d]);
 			}
 			break;
 		}
 		break;
 	case 0x40:                          // LD   d,s
-		if(d == e) {
-			strcpy(s,"halt");
-		} else {
-			strcpy(s,"ld ");
-			strcat(s,reg[d]);
-			strcat(s,", ");
-			strcat(s,reg[e]);
+		if (a == 0x76) {
+			strcpy(s, "halt");
+			break;
 		}
+		strcpy(s,"ld ");
+		strcat(s,reg[d]);
+		strcat(s,", ");
+		strcat(s,reg[e]);
 		break;
 	case 0x80:
 		strcpy(s,arith[d]);
@@ -501,7 +501,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 						strcpy(s,"jp (hl)");
 						break;
 					case 0x03:
-						strcpy(s,"ld sp,hl");
+						strcpy(s,"ld sp, hl");
 						break;
 				}
 			} else {
@@ -533,7 +533,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 				switch(a & 0xC0) {
 					case 0x00:
 						{
-							static STR str[8] = {"rlc","rrc","rl","rr","sla","sra","???","srl"};
+							static STR str[8] = {"rlc","rrc","rl","rr","sla","sra","sll","srl"};
 							strcpy(s,str[d]);
 						}
 						strcat(s," ");
@@ -542,19 +542,19 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 					case 0x40:
 						strcpy(s,"bit ");
 						stemp[0] = d+'0';strcat(s,stemp);
-						strcat(s,",");
+						strcat(s,", ");
 						strcat(s,reg[e]);
 						break;
 					case 0x80:
 						strcpy(s,"res ");
 						stemp[0] = d+'0';strcat(s,stemp);
-						strcat(s,",");
+						strcat(s,", ");
 						strcat(s,reg[e]);
 						break;
 					case 0xC0:
 						strcpy(s, "set ");
 						stemp[0] = d+'0';strcat(s,stemp);
-						strcat(s,",");
+						strcat(s,", ");
 						strcat(s,reg[e]);
 						break;
 				}
@@ -562,7 +562,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			case 0x02:
 				strcpy (s,"out (");
 				sprintf (stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-				strcat (s,"),A");
+				strcat (s,"), a");
 				break;
 			case 0x03:
 				strcpy(s,"in a, (");
@@ -605,32 +605,38 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 						switch(e) {
 							case 0x00:
 								strcpy(s,"in ");
-								strcat(s,reg[d]);
+								if (d != 6)
+									strcat(s,reg[d]);
+								else
+									strcat(s, "f");
 								strcat(s,", (c)");
 								break;
 							case 0x01:
 								strcpy(s,"out (c), ");
-								strcat(s,reg[d]);
+								if (d != 6)
+									strcat(s,reg[d]);
+								else
+									strcat(s, "0");
 								break;
 							case 0x02:
 								if(d & 1)
 									strcpy(s,"adc");
 								else
 									strcpy(s,"sbc");
-								strcat(s," HL, ");
+								strcat(s," hl, ");
 								strcat(s,dreg[d >> 1]);
 								break;
 							case 0x03:
 								if(d & 1) {
 									strcpy(s,"ld ");
 									strcat(s,dreg[d >> 1]);
-									strcat(s,",(");
+									strcat(s,", (");
 									sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
 									strcat(s,")");
 								} else {
 									strcpy(s,"ld (");
 									sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-									strcat(s,"),");
+									strcat(s,"), ");
 									strcat(s,dreg[d >> 1]);
 								}
 								break;
@@ -648,12 +654,15 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 								break;
 							case 0x06:
 								strcpy (s,"im ");
-								stemp[0] = d + '0' - 1; stemp[1] = 0;
-								strcat (s, stemp);
+								switch (a) {
+									case 0x46: strcat(s, "0"); break;
+									case 0x56: strcat(s, "1"); break;
+									case 0x5E: strcat(s, "2"); break;
+								}
 								break;
 							case 0x07:
 								{
-									static STR str[8] = {"ld i, a","???","ld a, i","???","rrd","rld","???","???"};
+									static STR str[8] = {"ld i, a","ld r, a","ld a, i","ld a, r","rrd","rld","???","???"};
 									strcpy (s,str[d]);
 								}
 								break;
@@ -687,7 +696,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 						case 0x21:
 							strcpy(s,"ld ");
 							strcat(s,ireg);
-							strcat(s,",");
+							strcat(s,", ");
 							sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
 							break;
 						case 0x22:
@@ -703,7 +712,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 						case 0x29:
 							strcpy(s,"add ");
 							strcat(s,ireg);
-							strcat(s,",");
+							strcat(s,", ");
 							strcat(s,ireg);
 							break;
 						case 0x2A:
@@ -736,7 +745,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-							strcat(s,"),");
+							strcat(s,"), ");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+2]);strcat(s,stemp);
 							break;
 						case 0x39:
@@ -752,7 +761,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 						case 0x6E:
 							strcpy(s,"ld ");
 							strcat(s,reg[(a>>3)&7]);
-							strcat(s,",(");
+							strcat(s,", (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
@@ -769,32 +778,32 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-							strcat(s,"),");
+							strcat(s,"), ");
 							strcat(s,reg[a & 7]);
 							break;
 						case 0x7E:
-							strcpy(s,"ld A,(");
+							strcpy(s,"ld a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
 							strcat(s,")");
 							break;
 						case 0x86:
-							strcpy(s,"add A, (");
+							strcpy(s,"add a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
 							strcat(s,")");
 							break;
 						case 0x8E:
-							strcpy(s,"adc a,(");
+							strcpy(s,"adc a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
 							strcat(s,")");
 							break;
 						case 0x96:
-							strcpy(s,"sub (");
+							strcpy(s,"sub a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
@@ -808,7 +817,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 							strcat(s,")");
 							break;
 						case 0xA6:
-							strcpy(s,"and a,(");
+							strcpy(s,"and a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
@@ -822,14 +831,14 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 							strcat(s,")");
 							break;
 						case 0xB6:
-							strcpy(s,"or a,(");
+							strcpy(s,"or a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
 							strcat(s,")");
 							break;
 						case 0xBE:
-							strcpy(s,"cp a,(");
+							strcpy(s,"cp a, (");
 							strcat(s,ireg);
 							strcat(s,"+");
 							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
@@ -863,29 +872,32 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 							switch(a & 0xC0) {
 								case 0x00:
 									{
-										static STR str[8] = {"rlc", "rrc", "rl", "rr", "sla", "sra", "???", "srl" };
+										static STR str[8] = {"rlc ", "rrc ", "rl ", "rr ", "sla ", "sra ", "sll ", "srl " };
 										strcpy(s,str[d]);
 									}
-									strcat(s," ");
 									break;
 								case 0x40:
 									strcpy(s,"bit ");
 									stemp[0] = d + '0';
 									strcat(s,stemp);
-									strcat(s,",");
+									strcat(s,", ");
 									break;
 								case 0x80:
 									strcpy(s,"res ");
 									stemp[0] = d + '0';
 									strcat(s,stemp);
-									strcat(s,",");
+									strcat(s,", ");
 									break;
 								case 0xC0:
 									strcpy(s,"set ");
 									stemp[0] = d + '0';
 									strcat(s,stemp);
-									strcat(s,",");
+									strcat(s,", ");
 									break;
+							}
+							if ((a&7) != 6) {
+								strcat(s,reg[a&7]);
+								strcat(s,", ");
 							}
 							strcat(s,"(");
 							strcat(s,ireg);

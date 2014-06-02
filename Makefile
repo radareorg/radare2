@@ -181,8 +181,9 @@ dist:
 	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
 	DIR=`basename $$PWD` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
+	CS_FILES=`cd shlr/capstone ; git ls-files | sed -e s,^,radare2-${VERSION}/shlr/capstone/,` ; \
 	cd .. && mv $${DIR} radare2-${VERSION} && \
-	${TAR} radare2-${VERSION}.tar $${FILES} radare2-${VERSION}/ChangeLog ;\
+	${TAR} radare2-${VERSION}.tar $${FILES} $${CS_FILES} radare2-${VERSION}/ChangeLog ;\
 	${CZ} radare2-${VERSION}.tar ; \
 	mv radare2-${VERSION} $${DIR}
 

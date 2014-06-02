@@ -7,11 +7,11 @@
 #include "bfvm.c"
 
 typedef struct {
-        int fd;
+        int desc;
         ut8 *buf;
         ut32 size;
         BfvmCPU *bfvm;
-} RIOBfdbg;
+} RIOBdescbg;
 
 struct bfvm_regs {
 	ut32 pc;
@@ -28,15 +28,15 @@ struct bfvm_regs {
 static struct bfvm_regs r;
 
 static int is_io_bf(RDebug *dbg) {
-	RIODesc *d = dbg->iob.io->fd;
+	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name)
-		if (!strcmp ("bfdbg", d->plugin->name))
+		if (!strcmp ("bdescbg", d->plugin->name))
 			return R_TRUE;
 	return R_FALSE;
 }
 
 static int r_debug_bf_step_over(RDebug *dbg) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	int op, oop = 0;
 	for (;;) {
 		op = bfvm_op (o->bfvm);
@@ -51,20 +51,20 @@ static int r_debug_bf_step_over(RDebug *dbg) {
 }
 
 static int r_debug_bf_step(RDebug *dbg) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_step (o->bfvm, 0);
 	return R_TRUE;
 }
 
 static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	RIOBfdbg *o;
+	RIOBdescbg *o;
 	if (!dbg)
 		return R_FALSE;
 	if (!is_io_bf (dbg))
 		return 0;
-	if (!(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
+	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data))
 		return 0;
-	o = dbg->iob.io->fd->data;
+	o = dbg->iob.io->desc->data;
 	r.pc = o->bfvm->eip;
 	r.ptr = o->bfvm->ptr;
 	r.sp = o->bfvm->esp;
@@ -80,14 +80,14 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	RIOBfdbg *o;
+	RIOBdescbg *o;
 	if (!dbg)
 		return R_FALSE;
 	if (!is_io_bf (dbg))
 		return 0;
-	if (!(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
+	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data))
 		return 0;
-	o = dbg->iob.io->fd->data;
+	o = dbg->iob.io->desc->data;
 	memcpy (&r, buf, sizeof (r));
 	o->bfvm->eip = r.pc;
 	o->bfvm->ptr = r.ptr; // dup
@@ -102,13 +102,13 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 }
 
 static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_cont (o->bfvm, UT64_MAX);
 	return R_TRUE;
 }
 
 static int r_debug_bf_continue_syscall(RDebug *dbg, int pid, int num) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_contsc (o->bfvm);
 	return R_TRUE;
 }
@@ -122,8 +122,8 @@ static int r_debug_bf_attach(RDebug *dbg, int pid) {
 	if (!is_io_bf (dbg))
 		return R_FALSE;
 #if 0
-	RIOBfdbg *o;
-	o = dbg->iob.io->fd->data;
+	RIOBdescbg *o;
+	o = dbg->iob.io->desc->data;
 eprintf ("base = %llx\n", o->bfvm->base);
 eprintf ("screen = %llx\n", o->bfvm->screen);
 eprintf ("input = %llx\n", o->bfvm->input);
@@ -159,13 +159,13 @@ static int r_debug_bf_breakpoint (void *user, int type, ut64 addr, int hw, int r
 }
 
 static int r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_reset (o->bfvm);
 	return R_TRUE;
 }
 
 static RList *r_debug_native_map_get(RDebug *dbg) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
 	RList *list = r_list_new ();
 	list->free = (RListFree)r_debug_map_free;
@@ -181,7 +181,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 }
 
 static int r_debug_bf_stop(RDebug *dbg) {
-	RIOBfdbg *o = dbg->iob.io->fd->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
 	c->breaked = R_TRUE;
 	return R_TRUE;

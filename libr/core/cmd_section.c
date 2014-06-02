@@ -16,6 +16,7 @@ static int cmd_section(void *data, const char *input) {
 		"| Sr [name]       ; rename section on current seek\n"
 		"| S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
 		"| S-[id|0xoff|*]  ; remove this section definition\n");
+// TODO: add command to resize current section
 		break;
 	case 'a':
 		switch (input[1]) {
@@ -66,13 +67,13 @@ static int cmd_section(void *data, const char *input) {
 		if (input[1]==' ') {
 			RIOSection *s;
 			int len = 0;
-			ut64 addr;
+			ut64 vaddr;
 			char *p = strchr (input+2, ' ');
 			if (p) {
-				addr = r_num_math (core->num, p+1);
+				vaddr = r_num_math (core->num, p+1);
 				len = (int)(size_t)(p-input+2);
-			} else addr = core->offset;
-			s = r_io_section_get (core->io, addr);
+			} else vaddr = core->offset;
+			s = r_io_section_vget (core->io, vaddr);
 			if (s) {
 				if (!len) len = sizeof (s->name);
 				r_str_ncpy (s->name, input+2, len);
@@ -143,9 +144,8 @@ static int cmd_section(void *data, const char *input) {
 			r_io_section_init (core->io);
 		} else
 		if (input[1] == '0' && input[2]=='x') {
-			RIOSection *s = r_io_section_get (core->io, r_num_get (NULL, input+1));
-			if (!s)
-				return 0;
+			RIOSection *s = r_io_section_vget (core->io, r_num_get (NULL, input+1));
+			if (!s) return 0;
 			// use offset
 			r_io_section_rm (core->io, s->id);
 		} else {

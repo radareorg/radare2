@@ -316,10 +316,11 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
-			r_debug_select (core->dbg, core->file->fd->fd,
-					core->file->fd->fd);
+			r_debug_select (core->dbg, core->file->desc->fd,
+					core->file->desc->fd);
 		}
 	} else if (core->dbg) r_debug_use (core->dbg, NULL);
+	r_config_set (core->config, "io.raw", "true");
 	return R_TRUE;
 }
 
@@ -489,10 +490,17 @@ static int cb_iozeromap(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_ioraw(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_io_set_raw (core->io, node->i_value);
+	return R_TRUE;
+}
+
 static int cb_ioffio(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->ffio = node->i_value;
+	core->io->ff = node->i_value;
 	return R_TRUE;
 }
 
@@ -571,6 +579,13 @@ static int cb_scrrows(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int n = atoi (node->value);
 	((RCore *)user)->cons->force_rows = n;
+	return R_TRUE;
+}
+
+static int cb_contiguous(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->search->contiguous = node->i_value;
 	return R_TRUE;
 }
 
@@ -932,6 +947,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.utf8", "false", &cb_utf8, "Show UTF-8 characters instead of ANSI");
 #endif
 	/* search */
+	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.count", 0, "Start index number at search hits");
 	SETI("search.distance", 0, "Search string distance");
@@ -949,6 +965,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
+	SETCB("io.raw", "false", &cb_ioraw, "Enable to ignore maps/sections and use raw io");
 	SETCB("io.ffio", "true", &cb_ioffio, "Fill invalid buffers with 0xff instead of returning error");
 	SETCB("io.va", "true", &cb_iova, "If enabled virtual address layout can be used");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");

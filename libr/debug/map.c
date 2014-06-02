@@ -45,7 +45,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	default:
 		r_list_foreach (dbg->maps, iter, map) {
 			dbg->printf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s\n",
-				map->addr, (addr>=map->addr && addr<=map->addr_end)?'*':'-',
+				map->addr, (addr>=map->addr && addr<map->addr_end)?'*':'-',
 				map->addr_end, map->user?'u':'s', r_str_rwx_i (map->perm), map->name);
 		}
 		r_list_foreach (dbg->maps_user, iter, map) {

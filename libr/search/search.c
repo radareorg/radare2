@@ -19,6 +19,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->callback = NULL;
 	s->align = 0;
 	s->distance = 0;
+	s->contiguous = 0;
 	s->pattern_size = 0;
 	s->string_max = 255;
 	s->string_min = 3;
@@ -73,6 +74,7 @@ R_API int r_search_begin(RSearch *s) {
 		kw->count = 0;
 		kw->idx[0] = 0;
 		kw->distance = 0; //s->distance;
+		kw->last = 0;
 	}
 #if 0
 	/* TODO: compile regexpes */
@@ -89,6 +91,15 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
 		return R_FALSE;
+	}
+	if (!s->contiguous) {
+		if (kw->last && addr == kw->last) {
+			kw->count--;
+			kw->last = addr + kw->keyword_length;
+			eprintf ("0x%08"PFMT64x" Sequencial hit ignored.\n", addr);
+			return R_TRUE;
+		}
+		kw->last = addr + kw->keyword_length;
 	}
 	if (s->callback)
 		return s->callback (kw, s->user, addr);
