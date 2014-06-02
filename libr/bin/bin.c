@@ -386,6 +386,8 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 
 	the_obj_list = bf->objs;
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
+	// invalidate current object reference
+	bf->o = NULL;
 
 	// XXX - this needs to be reimplemented to account for 
 	// performance impacts.
@@ -435,6 +437,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 			res = r_bin_load_io_at_offset_as (bin, desc, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
 		}
 	}
+	bf->o = r_list_get_n (bf->objs, 0);
 	r_list_free (the_obj_list);
 	return res;
 }
