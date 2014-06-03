@@ -92,12 +92,12 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 
 static RList* entries(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
-	RList *ret;
-	RBinAddr *ptr = R_NEW(RBinAddr);
+	RList *ret = r_list_new();
+	RBinAddr *ptr = R_NEW0(RBinAddr);
 
 	if (!arch || !arch->buf || !ret || !ptr)
 		return NULL;
-	ret = r_list_new ();
+
 	ret->free = free;
 
 	ptr->vaddr = obj->header->ep ^ obj->ep_key;
@@ -199,8 +199,9 @@ static RList* symbols(RBinFile *arch) {
 
 	if (!ret || !arch || !arch->o)
 		return NULL;
-	kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
+
 	obj = arch->o->bin_obj;
+	kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
 	ret->free = free;
 
 	// PA -> VA translation
@@ -244,7 +245,7 @@ static RList* symbols(RBinFile *arch) {
 static RBinInfo* info(RBinFile *arch)
 {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
-	RBinInfo *ret = R_NEW (RBinInfo);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ut8 dbg_name[256];
 
 	if (!ret)
@@ -255,7 +256,6 @@ static RBinInfo* info(RBinFile *arch)
 		return NULL;
 	}
 
-	memset (ret, '\0', sizeof (RBinInfo));
 	r_buf_read_at (arch->buf, obj->header->debug_name_addr - obj->header->base, dbg_name, sizeof(dbg_name));
 
 	strncpy (ret->file, (const char*)dbg_name, R_BIN_SIZEOF_STRINGS);

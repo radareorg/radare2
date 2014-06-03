@@ -3,6 +3,7 @@
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
+#include <limits.h>
 
 R_LIB_VERSION (r_search);
 
@@ -148,77 +149,70 @@ R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len)
 	return count;
 }
 
-// TODO: move into a plugin */
-// TODO: This algorithm can be simplified by just using a non-distance search
-// ... split this algorithm in two for performance
-R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
-	RListIter *iter;
-	int i, j, hit, count = 0;
-	RSearch *s = (RSearch*)_s;
+/* Boyer-Moore-Horspool pattern matching */
+R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out) {
+	ut64 bad_char_shift[UCHAR_MAX + 1];
+	ut64 pos = from;
+	int i, kw_len;
 
-	for (i=0; i<len; i++) {
-		RSearchKeyword *kw;
-		r_list_foreach (s->kws, iter, kw) {
-			if (s->inverse && s->nhits>0) {
-				//eprintf ("nhits = %d\n", s->nhits);
-				return -1;
+	kw_len = kw->keyword_length - 1;
+
+	for (i = 0; i < 256; i++)
+		bad_char_shift[i] = kw->keyword_length;
+
+	for (i = 0; i < kw_len; i++) {
+		const ut8 ch = kw->bin_keyword[i];
+		bad_char_shift[kw->icase?tolower(ch):ch] = kw_len - i;
+	}
+
+	while (pos < len) {
+		for (i = kw_len; ; i--) {
+			ut8 ch1 = buf[pos + i];
+			ut8 ch2 = kw->bin_keyword[i];
+			if (kw->icase) {
+				ch1 = tolower(ch1);
+				ch2 = tolower(ch2);
 			}
-			for (j=0; j<=kw->distance; j++) {
-				ut8 ch = kw->bin_keyword[kw->idx[j]];
-				ut8 ch2 = buf[i];
-				if (kw->icase) {
-					ch = tolower (ch);
-					ch2 = tolower (ch2);
-				}
-				if (kw->binmask_length != 0 && kw->idx[j]<kw->binmask_length) {
-					ch &= kw->bin_binmask[kw->idx[j]];
-					ch2 &= kw->bin_binmask[kw->idx[j]];
-				}
-				if (ch != ch2) {
-					if (s->inverse) {
-						if (!r_search_hit_new (s, kw, (ut64)
-							from+i-kw->keyword_length+1))
-							return -1;
-						kw->idx[j] = 0;
-						//kw->idx[0] = 0;
-						kw->distance = 0;
-//eprintf ("HIT FOUND !!! %x %x 0x%llx %d\n", ch, ch2, from+i, i);
-						kw->count++;
-						s->nhits++;
-						return 1; // only return 1 keyword if inverse mode
-					}
-					if (kw->distance<s->distance) {
-						kw->idx[kw->distance+1] = kw->idx[kw->distance];
-						kw->distance++;
-						hit = R_TRUE;
-					} else {
-						kw->idx[0] = 0;
-						kw->distance = 0;
-						hit = R_FALSE;
-					}
-				} else hit = R_TRUE;
-				if (hit) {
-					kw->idx[j]++;
-					if (kw->idx[j] == kw->keyword_length) {
-						if (s->inverse) {
-							kw->idx[j] = 0;
-							continue;
-						}
-						if (!r_search_hit_new (s, kw, (ut64)
-							from+i-kw->keyword_length+1))
-							return -1;
-						kw->idx[j] = 0;
-						//kw->idx[0] = 0;
-						kw->distance = 0;
-						kw->count++;
-						count++;
-						//s->nhits++;
-					}
-				}
+			if (kw->binmask_length && i < kw->binmask_length) {
+				ch1 &= kw->bin_binmask[i];
+				ch2 &= kw->bin_binmask[i];
+			}
+			if (ch1 != ch2)
+				break;
+			if (i == 0) {
+				if (out) 
+					*out = pos;
+				return R_TRUE;
 			}
 		}
-		count = 0;
+		const ut8 ch = buf[pos + kw_len];
+		pos += bad_char_shift[kw->icase?tolower(ch):ch];
 	}
+
+	return R_FALSE;
+}
+
+R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
+	RSearch *s = (RSearch*)_s;
+	RListIter *iter;
+	int count = 0;
+	ut64 match_pos;
+
+	RSearchKeyword *kw;
+	r_list_foreach (s->kws, iter, kw) {
+		if (r_search_bmh(kw, 0, buf, len, &match_pos)) {
+			if (!r_search_hit_new(s, kw, from + match_pos)) {
+				eprintf("Something very bad has happened...\n");
+				return -1;
+			}
+			kw->count++;
+			count++;
+			/* Stop at the first occurence */
+			if (s->inverse)
+				return -1;
+		}
+	}
+
 	return count;
 }
 
