@@ -20,11 +20,11 @@ R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 		RRegexMatch matches[10];
 		RRegex compiled;
 
-		if (strchr (kw->binmask, 'i'))
+		if (kw->icase)
 			reflags |= R_REGEX_ICASE;
 
-		if (r_regex_comp (&compiled, kw->keyword, reflags)) {
-			eprintf ("Cannot compile '%s' regexp\n",kw->keyword);
+		if (r_regex_comp (&compiled, kw->bin_keyword, reflags)) {
+			eprintf ("Cannot compile '%s' regexp\n",kw->bin_keyword);
             free(buffer);
 			return -1;
 		}

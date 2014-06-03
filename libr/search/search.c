@@ -3,6 +3,7 @@
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
+#include <limits.h>
 
 R_LIB_VERSION (r_search);
 
@@ -150,7 +151,7 @@ R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len)
 
 /* Boyer-Moore-Horspool pattern matching */
 R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out) {
-	ut64 bad_char_shift[255 + 1];
+	ut64 bad_char_shift[UCHAR_MAX + 1];
 	ut64 pos = from;
 	int i, kw_len;
 
@@ -191,9 +192,6 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 	return R_FALSE;
 }
 
-// TODO: move into a plugin */
-// TODO: This algorithm can be simplified by just using a non-distance search
-// ... split this algorithm in two for performance
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
 	RListIter *iter;

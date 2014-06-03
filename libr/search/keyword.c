@@ -4,25 +4,24 @@
 
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data) {
 	RSearchKeyword *k;
-	if (kwlen<1 || bmlen<0 || (kwlen >=sizeof (k->keyword)) || (bmlen >= sizeof (k->binmask)))
+	
+	if (kwlen < 1 || bmlen < 0)
 		return NULL;
-	if (bm == NULL)
-		bm = (const ut8*) "";
-	if ((k = R_NEW (RSearchKeyword))) {
-		k->type = R_SEARCH_KEYWORD_TYPE_BINARY;
-		k->icase = 0;
-		memcpy (k->keyword, kw, kwlen);
-		k->keyword_length = kwlen;
-		memcpy (k->bin_keyword, kw, kwlen);
-		if (bm && bmlen>0) {
-			//memcpy (k->binmask, bm, bmlen);
-			// XXX Fix this conversion.. r_hex_str.. ?
-			snprintf (k->binmask, sizeof (k->binmask),
-				"%02x%02x%02x..", bm[0], bm[1], bm[2]);
-			memcpy (k->bin_binmask, bm, bmlen);
-			k->binmask_length = bmlen;
-		} else k->binmask[0] = k->binmask_length = 0;
-	}
+
+	k = R_NEW0(RSearchKeyword);
+	if (!k)
+		return NULL;
+
+	k->type = R_SEARCH_KEYWORD_TYPE_BINARY;
+
+	k->keyword_length = kwlen;
+	memcpy(k->bin_keyword, kw, kwlen);
+
+	if (bm && bmlen > 0) {
+		memcpy(k->bin_binmask, bm, bmlen);
+		k->binmask_length = bmlen;
+	} 
+
 	return k;
 }
 
