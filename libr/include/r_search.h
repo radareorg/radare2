@@ -29,8 +29,6 @@ enum {
 #define R_SEARCH_KEYWORD_TYPE_STRING 's'
 
 typedef struct r_search_keyword_t {
-	char keyword[128];
-	char binmask[128];
 	ut8 bin_keyword[128];
 	ut8 bin_binmask[128];
 	ut32 keyword_length;
@@ -100,6 +98,8 @@ R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_reset(RSearch *s);
 R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
+
+R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out);
 
 // TODO: is this an internal API?
 R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
