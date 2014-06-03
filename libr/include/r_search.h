@@ -101,6 +101,8 @@ R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_reset(RSearch *s);
 R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
 
+R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len);
+
 // TODO: is this an internal API?
 R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(void *s, ut64 from, const ut8 *buf, int len);
