@@ -30,9 +30,10 @@ R_API RIO *r_io_new() {
 	io->ff = 1;
 	io->plugin = NULL;
 	io->raised = -1;
-	io->off = 0;
-	io->raw = 0; // set to 1 for debugger mode (for example)
-	io->enforce_rwx = 0;
+	io->off = R_FALSE;
+	io->autofd = R_FALSE;
+	io->raw = R_FALSE; // set to 1 for debugger mode (for example)
+	io->enforce_rwx = R_FALSE;
 	r_io_map_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
@@ -192,8 +193,8 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		return NULL;
 	if (desc) {
 		r_io_desc_add (io, desc);
-		r_io_use_desc (io, desc);
-		// add a map that represents the file
+		if (io->autofd)
+			r_io_use_desc (io, desc);
 	} else 	eprintf ("Unable to open file: %s\n", file);
 
 	return desc;
