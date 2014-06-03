@@ -80,9 +80,8 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = R_NEW (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-	memset (ptr, '\0', sizeof (RBinAddr));
 	ptr->paddr = ptr->vaddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
 	r_list_append (ret, ptr);
 	return ret;
@@ -275,7 +274,7 @@ static RList* imports(RBinFile *arch) {
 	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS)))
 		return ret;
 	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = R_NEW (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		strncpy (ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
@@ -313,7 +312,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	ut64 B = bin->baddr, P = B + rel->rva;
 	char *str;
 
-	if (!(r = R_NEW (RBinReloc)))
+	if (!(r = R_NEW0 (RBinReloc)))
 		return r;
 
 	r->import = NULL;
@@ -509,7 +508,7 @@ static RList* fields(RBinFile *arch) {
 	if (!(field = Elf_(r_bin_elf_get_fields) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !field[i].last; i++) {
-		if (!(ptr = R_NEW (RBinField)))
+		if (!(ptr = R_NEW0 (RBinField)))
 			break;
 		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->vaddr = field[i].offset;
