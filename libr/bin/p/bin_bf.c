@@ -42,9 +42,8 @@ static RList *strings(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
@@ -104,9 +103,8 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = R_NEW (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-	memset (ptr, '\0', sizeof (RBinAddr));
 	ptr->paddr = ptr->vaddr = 0;
 	r_list_append (ret, ptr);
 	return ret;

@@ -62,10 +62,8 @@ static RList *entries(RBinFile *arch) {
 
 	ret->free = free;
 
-	if (!(ptr = R_NEW (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-
-	memset (ptr, '\0', sizeof (RBinAddr));
 
 	if (obj->hdr.opt_hdr_size) {
 		ptr->paddr = ptr->vaddr = obj->opt_hdr.entry_point;

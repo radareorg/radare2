@@ -141,9 +141,8 @@ static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *version;
 
-	if (!(ret = R_NEW (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = "java";
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
