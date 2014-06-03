@@ -976,7 +976,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.ffio", "true", &cb_ioffio, "Fill invalid buffers with 0xff instead of returning error");
 	SETCB("io.va", "true", &cb_iova, "If enabled virtual address layout can be used");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
-	SETCB("io.autofd", "0", &cb_ioautofd, "change fd when opening new file automatically");
+	SETCB("io.autofd", "true", &cb_ioautofd, "change fd when opening new file automatically");
 	
 	/* file */
 	SETPREF("file.analyze", "false", "Analyze file on load. Same as r2 -c aa ..");
