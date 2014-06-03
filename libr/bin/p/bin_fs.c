@@ -88,9 +88,8 @@ static RBinInfo* info(RBinFile *arch) {
 
 	if (!arch || !bytes) 
 		return NULL;
-	else if (!(ret = R_NEW (RBinInfo)))
+	else if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);

@@ -53,7 +53,6 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 	case R_BIN_SYM_MAIN:
 		if (!(ret = R_NEW (RBinAddr)))
 			return NULL;
-		memset (ret, '\0', sizeof (RBinAddr));
 		ret->paddr = ret->vaddr = r_bin_te_get_main_paddr (arch->o->bin_obj);
 		break;
 	}
