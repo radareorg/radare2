@@ -177,7 +177,7 @@ static RList* imports(RBinFile *arch) {
 	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		filter_import (imports[i].name);
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
@@ -189,7 +189,7 @@ static RList* imports(RBinFile *arch) {
 		//ptr->hint = imports[i].hint;
 		r_list_append (ret, ptr);
 
-		if (!(rel = R_NEW (RBinReloc)))
+		if (!(rel = R_NEW0 (RBinReloc)))
 			break;
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
