@@ -169,12 +169,17 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 		if (core->io->va) {
 			RListIter *iter;
 			RIOSection *s;
-			*from = *to = core->offset;
+			*from = *to = 0;
 			r_list_foreach (core->io->sections, iter, s) {
+				if (!*from) {
+					*from = s->vaddr;
+					*to = s->vaddr+s->vsize;
+					continue;
+				}
 				if (((s->vaddr) < *from) && s->vaddr)
 					*from = s->vaddr;
-				if ((s->vaddr+s->size) > *to && *from>=s->vaddr)
-					*to = s->vaddr+s->size;
+				if ((s->vaddr+s->vsize) > *to && *from>=s->vaddr)
+					*to = s->vaddr+s->vsize;
 			}
 			if (*to == 0LL || *to == UT64_MAX || *to == UT32_MAX)
 				*to = r_io_size (core->io);
@@ -190,7 +195,12 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 			RIOSection *s;
 			*from = *to = core->offset;
 			r_list_foreach (core->io->sections, iter, s) {
-				if (*from >= s->vaddr && *from < (s->vaddr+s->size)) {
+				if (*from >= s->offset && *from < (s->offset+s->size)) {
+					*from = s->vaddr;
+					*to = s->vaddr+s->vsize;
+					break;
+				}
+				if (*from >= s->vaddr && *from < (s->vaddr+s->vsize)) {
 					*to = s->vaddr+s->size;
 					break;
 				}
@@ -220,6 +230,7 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 			}
 		}
 	}
+eprintf ("RNG %llx %llx\n", *from, *to);
 }
 
 // TODO: handle more than one?
@@ -389,6 +400,10 @@ static int cmd_search(void *data, const char *input) {
 	to = R_MAX(from, to);
 	from = __from;
 	core->search->bckwrds = R_FALSE;
+
+	if (from == to) {
+		eprintf ("WARNING from == to?\n");
+	}
 
 	reread:
 	switch (*input) {

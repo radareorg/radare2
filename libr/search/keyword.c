@@ -4,88 +4,80 @@
 
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut8 *bmbuf, int bmlen, const char *data) {
 	RSearchKeyword *kw;
-	
-	if (!kw || kwlen < 1 || bmlen < 0)
+	if (kwlen < 1 || bmlen < 0)
 		return NULL;
-
-	kw = R_NEW0(RSearchKeyword);
-	if (!kw)
-		return NULL;
+	kw = R_NEW0 (RSearchKeyword);
+	if (!kw) return NULL;
 	kw->type = R_SEARCH_KEYWORD_TYPE_BINARY;
 	kw->keyword_length = kwlen;
-	memcpy(kw->bin_keyword, kwbuf, kwlen);
+	memcpy (kw->bin_keyword, kwbuf, kwlen);
 	if (bmbuf && bmlen > 0) {
-		memcpy(kw->bin_binmask, bmbuf, bmlen);
+		memcpy (kw->bin_binmask, bmbuf, bmlen);
 		kw->binmask_length = bmlen;
 	} 
-
 	return kw;
 }
 
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
 	RSearchKeyword *kw;
-	ut8 *bmbuf;
-	int bmlen;
+	ut8 *bmbuf = NULL;
+	int bmlen = 0;
 
-	bmbuf = NULL;
 	if (bmstr) {
-		bmbuf = malloc (strlen(bmstr)+1);
-		if (!bmbuf)
-			return NULL;
+		bmbuf = malloc (strlen (bmstr)+1);
+		if (!bmbuf) return NULL;
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
 			free (bmbuf);
 			bmbuf = NULL;
 		}
 	}
-	kw = r_search_keyword_new((ut8 *)kwbuf, strlen(kwbuf), bmbuf, bmlen, data);
+	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf),
+		bmbuf, bmlen, data);
 	if (kw) {
 		kw->icase = ignore_case;
 		kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 	}
-	free(bmbuf);
-
+	free (bmbuf);
 	return kw;
 }
 
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data) {
 	RSearchKeyword *kw;
 	ut8 *kwbuf, *bmbuf;
-	int bmlen, kwlen;
+	int kwlen, bmlen = 0;
 
 	if (!kwstr)
 		return NULL;
 
-	kwbuf = malloc(strlen(kwstr)+1);
+	kwbuf = malloc (strlen (kwstr)+1);
 	if (!kwbuf)
 		return NULL;
 
-	kwlen = r_hex_str2bin(kwstr, kwbuf);
+	kwlen = r_hex_str2bin (kwstr, kwbuf);
 	if (kwlen < 1) {
-		free(kwbuf);
+		free (kwbuf);
 		return NULL;
 	}
 
 	bmbuf = NULL;
 	if (bmstr) {
-		bmbuf = malloc(strlen(bmstr)+1);
+		bmbuf = malloc (strlen (bmstr)+1);
 		if (!bmbuf) {
-			free(kwbuf);
+			free (kwbuf);
 			return NULL;
 		}
-		bmlen = r_hex_str2bin(bmstr, bmbuf);
+		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			free(bmbuf);
-			free(kwbuf);
+			free (bmbuf);
+			free (kwbuf);
 			return NULL;
 		}
 	}
 
-	kw = r_search_keyword_new(kwbuf, kwlen, bmbuf, bmlen, data);
-
-	free(kwbuf);
-	free(bmbuf);
-
+	kw = r_search_keyword_new (kwbuf, kwlen, bmbuf, bmlen, data);
+	free (kwbuf);
+	free (bmbuf);
 	return kw;
 }
 

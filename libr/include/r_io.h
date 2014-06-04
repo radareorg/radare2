@@ -47,7 +47,7 @@ typedef struct r_io_map_t {
 
 typedef struct r_io_section_t {
 	char name[64]; // use strpool
-	ut64 offset;
+	ut64 offset; // TODO: rename to paddr
 	ut64 vaddr;
 	ut64 size;
 	ut64 vsize;
