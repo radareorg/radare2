@@ -8,6 +8,7 @@
 #include <r_util.h>
 #include <r_socket.h>
 #if __UNIX__
+#include <sys/resource.h>
 #include <signal.h>
 #endif
 
@@ -23,6 +24,10 @@ static char *_chroot = NULL;
 static char *_libpath = NULL;
 static char *_preload = NULL;
 static int _r2preload = 0;
+static int _docore = 0;
+static int _maxstack = 0;
+static int _maxproc = 0;
+static int _maxfd = 0;
 static int _r2sleep = 0;
 static char *_setuid = NULL;
 static char *_seteuid = NULL;
@@ -32,6 +37,22 @@ static char *_input = NULL;
 static char *_connect = NULL;
 static char *_listen = NULL;
 static int _timeout = 0;
+
+static void set_limit(int n, int a, ut64 b) {
+	if (n) {
+#if __UNIX__
+		struct rlimit cl = {b, b};
+		setrlimit (RLIMIT_CORE, &cl);
+#else
+		eprintf ("ERROR: 'core' not available for this platform\n");
+#endif
+	} else {
+#if __UNIX__
+		struct rlimit cl = {0, 0};
+		setrlimit (a, &cl);
+#endif
+	}
+}
 
 static char *getstr(const char *src) {
 	int len;
@@ -109,7 +130,12 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "stderr")) _stderr = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
+	else if (!strcmp (b, "core")) _docore =
+		(strcmp (e, "yes")? (strcmp (e, "true")? (strcmp (e, "1")? 0: 1): 1): 1);
 	else if (!strcmp (b, "sleep")) _r2sleep = atoi (e);
+	else if (!strcmp (b, "maxstack")) _maxstack = atoi (e);
+	else if (!strcmp (b, "maxproc")) _maxproc = atoi (e);
+	else if (!strcmp (b, "maxfd")) _maxfd = atoi (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
 	else if (!strcmp (b, "libpath")) _libpath = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
@@ -197,6 +223,10 @@ static int runfile () {
 		close (2);
 		dup2 (f, 2);
 	}
+	set_limit (_docore, RLIMIT_CORE, RLIM_INFINITY);
+	set_limit (_maxfd, RLIMIT_NOFILE, _maxfd);
+	set_limit (_maxproc, RLIMIT_NPROC, _maxproc);
+	set_limit (_maxstack, RLIMIT_STACK, _maxstack);
 
 	if (_connect) {
 		char *p = strchr (_connect, ':');
@@ -352,6 +382,10 @@ int main(int argc, char **argv) {
 			"# connect=localhost:8080\n"
 			"# listen=8080\n"
 			"# #sleep=0\n"
+			"# #maxfd=0\n"
+			"# #maxproc=0\n"
+			"# #maxstack=0\n"
+			"# #core=false\n"
 			"# #stdio=blah.txt\n"
 			"# #stderr=foo.txt\n"
 			"# stdout=foo.txt\n"
