@@ -588,11 +588,20 @@ static int cmd_search(void *data, const char *input) {
 			opt = strdup (res+1);
 			res[1]='\0';
 		}
+		RSearchKeyword *kw;
+		kw = r_search_keyword_new_str (inp, NULL, NULL, 0);
+		if (!kw) {
+			eprintf("Could not construct the keyword\n");
+			free(inp);
+			free(opt);
+			break;
+		}
+		if (opt && strchr(opt, 'i'))
+			kw->icase = R_TRUE;
 		r_search_reset (core->search, R_SEARCH_REGEXP);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search,
-			r_search_keyword_new_str (inp, opt, NULL, 0));
+		r_search_kw_add (core->search, kw);
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		free (inp);
