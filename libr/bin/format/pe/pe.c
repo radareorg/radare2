@@ -40,7 +40,7 @@ static PE_DWord PE_(r_bin_pe_vaddr_to_paddr)(struct PE_(r_bin_pe_obj_t)* bin, PE
 		if (vaddr >= section_base && vaddr < section_base + section_size)
 			return bin->section_header[i].PointerToRawData + (vaddr - section_base);
 	}
-	return 0;
+	return vaddr;
 }
 
 #if 0
@@ -267,13 +267,13 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 }
 
 static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
-    int num_of_sections = bin->nt_headers->file_header.NumberOfSections;
-    int sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
+	int num_of_sections = bin->nt_headers->file_header.NumberOfSections;
+	int sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
 
-    if (num_of_sections == 0) {
-        //eprintf("Warning: number of sections in file = 0\n");
-        return R_TRUE;
-    }
+	if (num_of_sections == 0) {
+		//eprintf("Warning: number of sections in file = 0\n");
+		return R_TRUE;
+	}
 
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
@@ -286,7 +286,7 @@ static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
 				bin->nt_headers->file_header.SizeOfOptionalHeader,
 				(ut8*)bin->section_header, sections_size) == -1) {
-        eprintf ("Error: read (sections)\n");
+		eprintf ("Error: read (sections)\n");
 		return R_FALSE;
 	}
 #if 0
@@ -312,17 +312,17 @@ struct symrec {
 	ut8 symclass;
 	ut8 numaux;
 }
-       -------------------------------------------------------
+	   -------------------------------------------------------
    0  |                  8-char symbol name                   |
-      |          or 32-bit zeroes followed by 32-bit          |
-      |                 index into string table               |
-       -------------------------------------------------------
+	  |          or 32-bit zeroes followed by 32-bit          |
+	  |                 index into string table               |
+	   -------------------------------------------------------
    8  |                     symbol value                      |
-       -------------------------------------------------------
+	   -------------------------------------------------------
   0Ch |       section number      |         symbol type       |
-       -------------------------------------------------------
+	   -------------------------------------------------------
   10h |  sym class  |   num aux   |
-       ---------------------------
+	   ---------------------------
   12h
 
 #endif
@@ -336,45 +336,84 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
 	PE_DWord import_dir_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_import->VirtualAddress);
 	PE_DWord delay_import_dir_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_delay_import->VirtualAddress);
+
+	PE_DWord import_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_import->VirtualAddress);
+	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_delay_import->VirtualAddress);
+	PE_(image_import_directory) *import_dir = 0;
+	PE_(image_import_directory) *curr_import_dir = 0;
+	PE_(image_delay_import_directory) *delay_import_dir = 0;
+	PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
+	int dir_size = sizeof(PE_(image_import_directory));
+	int delay_import_size = sizeof(PE_(image_delay_import_directory));
+	int indx = 0;
+
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
 	/// HACK to modify import size because of begin 0.. this may report wrong info con corkami tests
 	if (import_dir_size == 0) {
-		// asume 1 entry for each 
+		// asume 1 entry for each
 		import_dir_size = data_dir_import->Size = 0xffff;
 	}
 	if (delay_import_dir_size == 0) {
-		// asume 1 entry for each 
+		// asume 1 entry for each
 		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
 	}
 
-	if (import_dir_paddr == 0 && delay_import_dir_paddr == 0)
-		return R_FALSE;
 	if (import_dir_paddr != 0) {
 		if (import_dir_size<1 || import_dir_size>0xffff) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n", import_dir_size);
 			import_dir_size = 0xffff;
 		}
-		if (!(bin->import_directory = malloc (import_dir_size))) {
-			perror("malloc (import directory)");
-			return R_FALSE;
-		}
-		if (r_buf_read_at (bin->b, import_dir_paddr, (ut8*)bin->import_directory, import_dir_size) == -1) {
-			eprintf ("Error: read (import directory)\n");
-			return R_FALSE;
-		}
+
+		do {
+			indx++;
+			import_dir = (PE_(image_import_directory) *)realloc(import_dir,
+																(indx * dir_size));
+
+			if (import_dir == 0) {
+				perror("malloc (import directory)");
+				return R_FALSE;
+			}
+
+			curr_import_dir = import_dir + (indx - 1);
+			if (r_buf_read_at(	bin->b,
+								import_dir_offset + (indx - 1) * dir_size,
+								(ut8*)(curr_import_dir),
+								dir_size) == -1) {
+				eprintf("Error: read (import directory)\n");
+				return R_FALSE;
+			}
+		} while ((curr_import_dir->Characteristics != 0) && (curr_import_dir->Name != 0));
+
+		bin->import_directory = import_dir;
 	}
-	if (delay_import_dir_paddr != 0) {
-		if (!(bin->delay_import_directory = malloc (delay_import_dir_size))) {
-			perror ("malloc (delay import directory)");
-			return R_FALSE;
-		}
-		if (r_buf_read_at (bin->b, delay_import_dir_paddr,
-				(ut8*)bin->delay_import_directory, delay_import_dir_size) == -1) {
-			eprintf ("Error: read (delay import directory)\n");
-			return R_FALSE;
-		}
+
+	indx = 0;
+	if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < bin->b->length)) {
+		do {
+			indx++;
+
+			delay_import_dir = (PE_(image_delay_import_directory) *)realloc(delay_import_dir,
+																			(indx * delay_import_size));
+			if (delay_import_dir == 0) {
+				perror("malloc (delay import directory)");
+				return R_FALSE;
+			}
+
+			curr_delay_import_dir = delay_import_dir + (indx - 1);
+
+			if (r_buf_read_at(	bin->b,
+								delay_import_dir_offset + (indx - 1) * delay_import_size,
+								(ut8*)(curr_delay_import_dir),
+								dir_size) == -1) {
+				eprintf("Error: read (delay import directory)\n");
+				return R_FALSE;
+			}
+		} while ((curr_delay_import_dir->Name != 0));
+
+		bin->delay_import_directory = delay_import_dir;
 	}
+
 	return R_TRUE;
 }
 
@@ -665,32 +704,55 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH + 1];
-	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
-	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
-	int i, nimp = 0;
+	int nimp = 0;
+	PE_DWord dll_name_offset;
+	PE_DWord import_func_name_offset;
+	PE_(image_import_directory) *curr_import_dir = 0;
+	PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
 
-	if (bin->import_directory)
-	for (i = 0; i < import_dirs_count; i++) {
-		if (r_buf_read_at(bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->import_directory[i].Name),
-					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-			eprintf("Error: read (magic)\n");
-			return NULL;
+	if (bin->import_directory) {
+		curr_import_dir = bin->import_directory;
+		while ((curr_import_dir->Characteristics != 0) && (dll_name_offset != 0)) {
+			dll_name_offset = curr_import_dir->Name;
+			if (r_buf_read_at(	bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
+											(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+				eprintf("Error: read (magic)\n");
+				return NULL;
+			}
+
+			if (!PE_(r_bin_pe_parse_imports)(	bin, &imports, &nimp, dll_name,
+												curr_import_dir->Characteristics, curr_import_dir->FirstThunk))
+				break;
+
+			curr_import_dir++;
 		}
-		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
-					bin->import_directory[i].Characteristics, bin->import_directory[i].FirstThunk))
-			break;
 	}
-	if (bin->delay_import_directory)
-	for (i = 0; i < delay_import_dirs_count; i++) {
-		if (r_buf_read_at(bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].Name),
-					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-			eprintf ("Error: read (magic)\n");
-			return NULL;
+
+	if (bin->delay_import_directory) {
+		curr_delay_import_dir = bin->delay_import_directory;
+
+		if (curr_delay_import_dir->Attributes == 0) {
+			dll_name_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name - PE_(r_bin_pe_get_image_base)(bin));
+			import_func_name_offset = curr_delay_import_dir->DelayImportNameTable - PE_(r_bin_pe_get_image_base)(bin);
+		} else {
+			dll_name_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
+			import_func_name_offset = curr_delay_import_dir->DelayImportNameTable;
 		}
-		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
-					bin->delay_import_directory[i].DelayImportNameTable, bin->delay_import_directory[i].DelayImportAddressTable))
+
+		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
+			if (r_buf_read_at(bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+				eprintf ("Error: read (magic)\n");
+				return NULL;
+			}
+			if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
+											import_func_name_offset,
+											curr_delay_import_dir->DelayImportAddressTable))
 			break;
+
+			curr_delay_import_dir++;
+		}
 	}
+
 	if (nimp) {
 		imps = realloc (imports, (nimp+1) * sizeof(struct r_bin_pe_import_t));
 		if (!imps) {
@@ -708,6 +770,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int mallocsz, i, j = 0;
+	PE_DWord delay_import_name_off;
 
 	if (!bin)
 		return NULL;
@@ -725,28 +788,37 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		perror ("malloc (libs)");
 		return NULL;
 	}
+
 	if (bin->import_directory) {
 		for (i = j = 0; i < import_dirs_count; i++, j++) {
+			if (bin->import_directory[i].Characteristics == 0 &&
+				bin->import_directory[i].FirstThunk == 0)
+				break;
+
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->import_directory[i].Name),
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - import dirs)\n");
 				free (libs);
 				return NULL;
 			}
-			if (PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->import_directory[i].Characteristics) == 0 &&
-				PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->import_directory[i].FirstThunk) == 0)
-				break;
 		}
 		if (bin->delay_import_directory)
 		for (i = 0; i < delay_import_dirs_count; i++, j++) {
-			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].Name),
+			if (bin->delay_import_directory[i].DelayImportNameTable == 0 &&
+				bin->delay_import_directory[i].DelayImportAddressTable == 0)
+				break;
+
+			if (bin->delay_import_directory[i].Attributes == 0) {
+				delay_import_name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].Name - PE_(r_bin_pe_get_image_base)(bin));
+			} else {
+				delay_import_name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].Name);
+			}
+
+			if (r_buf_read_at (bin->b, delay_import_name_off,
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - delay import dirs)\n");
 				return NULL;
 			}
-			if (PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].DelayImportNameTable) == 0 &&
-				PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].DelayImportAddressTable) == 0)
-				break;
 		}
 	}
 	for (i = 0; i < j; i++) {
