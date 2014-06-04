@@ -36,6 +36,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.num = Color_YELLOW;
 	cons->pal.mov = Color_WHITE;
 	cons->pal.reg = Color_CYAN;
+	cons->pal.creg = Color_CYAN;
 	cons->pal.reset = Color_RESET;
 }
 
@@ -144,6 +145,7 @@ static struct {
 	{ "swi", r_offsetof (RConsPalette, swi) },
 	{ "cmp", r_offsetof (RConsPalette, cmp) },
 	{ "reg", r_offsetof (RConsPalette, reg) },
+	{ "creg", r_offsetof (RConsPalette, creg) },
 	{ "num", r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPalette, mov) },
 	{ NULL, 0 }

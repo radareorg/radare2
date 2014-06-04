@@ -44,7 +44,7 @@ repeat:
 	return ret;
 }
 
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_colors) {
+R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int i, delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RListIter *iter;
@@ -107,8 +107,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_col
 				 {
 					char whites[16];
 					strcpy (whites, kwhites);
-					if (delta && use_colors) // TODO: do debug knows about console?? use inverse colors for clear bg
-						dbg->printf (Color_BWHITE);
+					if (delta && use_color)
+						dbg->printf (use_color);
 					if (item->flags) {
 						char *str = r_reg_get_bvalue (dbg->reg, item);
 						int len = strlen (str);
@@ -137,7 +137,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_col
 							((n+1)%cols)? whites: "\n");
 
 					}
-					if (delta && use_colors) // TODO: same as above
+					if (delta && use_color)
 						dbg->printf (Color_RESET);
 				 }
 				break;
@@ -150,11 +150,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_col
 				}
 				break;
 			default:
-                if (delta && use_colors) // TODO: same as above
-						dbg->printf (Color_BWHITE);
+				if (delta && use_color)
+					dbg->printf (use_color);
 				dbg->printf (fmt, item->name, value, "\n");
-                if (delta && use_colors) // TODO: same as above
-						dbg->printf (Color_RESET);
+				if (delta && use_color)
+					dbg->printf (Color_RESET);
 				break;
 			}
 			n++;
