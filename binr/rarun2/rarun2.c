@@ -38,21 +38,17 @@ static char *_connect = NULL;
 static char *_listen = NULL;
 static int _timeout = 0;
 
+#if __UNIX__
 static void set_limit(int n, int a, ut64 b) {
 	if (n) {
-#if __UNIX__
 		struct rlimit cl = {b, b};
 		setrlimit (RLIMIT_CORE, &cl);
-#else
-		eprintf ("ERROR: 'core' not available for this platform\n");
-#endif
 	} else {
-#if __UNIX__
 		struct rlimit cl = {0, 0};
 		setrlimit (a, &cl);
-#endif
 	}
 }
+#endif
 
 static char *getstr(const char *src) {
 	int len;
@@ -223,10 +219,15 @@ static int runfile () {
 		close (2);
 		dup2 (f, 2);
 	}
+#if __UNIX__
 	set_limit (_docore, RLIMIT_CORE, RLIM_INFINITY);
 	set_limit (_maxfd, RLIMIT_NOFILE, _maxfd);
 	set_limit (_maxproc, RLIMIT_NPROC, _maxproc);
 	set_limit (_maxstack, RLIMIT_STACK, _maxstack);
+#else
+	if (_docore || _maxfd || _maxproc || _maxstack)
+		eprintf ("Warning: setrlimits not supported for this platform\n");
+#endif
 
 	if (_connect) {
 		char *p = strchr (_connect, ':');
