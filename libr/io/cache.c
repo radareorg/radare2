@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 // TODO: implement a more inteligent way to store cached memory
 // TODO: define limit of max mem to cache
 
 #include "r_io.h"
 
-static void cache_free(RIOCache *cache) {
+static void cache_item_free(RIOCache *cache) {
 	if (!cache)
 		return;
 	if (cache->data)
@@ -15,7 +15,7 @@ static void cache_free(RIOCache *cache) {
 
 R_API void r_io_cache_init(RIO *io) {
 	io->cache = r_list_new ();
-	io->cache->free = (RListFree)cache_free;
+	io->cache->free = (RListFree)cache_item_free;
 	io->cached = R_FALSE; // cache write ops
 	io->cached_read = R_FALSE; // cached read ops
 }

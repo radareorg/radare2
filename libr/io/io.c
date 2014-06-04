@@ -18,7 +18,7 @@ static RIO * r_io_bind_get_io(RIOBind *bnd);
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
-	io->buffer = r_cache_new (); // TODO: use RBuffer here
+	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
 	io->buffer_enabled = 0;
 	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->desc = NULL;
