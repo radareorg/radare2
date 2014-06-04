@@ -155,15 +155,19 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		return NULL;
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
+	if (sz==0)
+		sz = 4096;
 	if (sz <0) {
 		fclose (fd);
 		return NULL;
 	}
 	fseek (fd, 0, SEEK_SET);
-	ret = (char *)malloc (sz+1);
+	ret = (char *)calloc (sz+1, 1);
 	rsz = fread (ret, 1, sz, fd);
-	if (rsz != sz)
-		eprintf ("r_file_slurp: fread: error\n");
+	if (rsz != sz) {
+		// eprintf ("r_file_slurp: fread: error\n");
+		sz = rsz;
+	}
 	fclose (fd);
 	ret[sz]='\0';
 	if (usz)
