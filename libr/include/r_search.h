@@ -89,6 +89,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
+R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *data);
 
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 R_API void r_search_reset(RSearch *s, int mode);

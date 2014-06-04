@@ -100,3 +100,53 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 	}
 	return ks;
 }
+
+/* Validate a regexp in the canonical format /<regexp>/<options> */
+R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *data) {
+	RSearchKeyword *kw;
+	int i = 0, start, length;
+
+	while (isspace(str[i]))
+		i++;
+
+	if (str[i++] != '/')
+		return NULL;
+
+	/* Find the fist non backslash-escaped slash */
+	for (start = i; str[i]; i++) {
+		if (str[i] == '/' && str[i-1] != '\\') 
+			break;
+	}
+
+	if (str[i++] != '/')
+		return NULL;
+
+	length = i - start - 1;
+	if (length > 128)
+		return NULL;
+
+	kw = R_NEW0(RSearchKeyword); 
+	if (!kw)
+		return NULL;
+
+	memcpy(kw->bin_keyword, str + start, length);
+	kw->keyword_length = length;
+	kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
+	kw->data = data;
+
+	/* Parse the options */
+	for (; str[i]; i++) {
+		switch (str[i]) {
+			case 'i':
+				kw->icase = R_TRUE;
+				break;
+			default:
+				free(kw);
+				return NULL;
+		}
+	}
+
+	return kw;
+}
+
+

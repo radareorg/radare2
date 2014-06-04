@@ -594,31 +594,18 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'e': /* match regexp */
 		{
-		inp = strdup (input+2);
-		char *res = (char *)r_str_lchr (inp+1, inp[0]);
-		char *opt = NULL;
-		if (res > inp) {
-			opt = strdup (res+1);
-			res[1]='\0';
-		}
 		RSearchKeyword *kw;
-		kw = r_search_keyword_new_str (inp, NULL, NULL, 0);
+		kw = r_search_keyword_new_regexp (input + 2, NULL);
 		if (!kw) {
-			eprintf("Could not construct the keyword\n");
-			free(inp);
-			free(opt);
+			eprintf("Invalid regexp specified\n");
 			break;
 		}
-		if (opt && strchr(opt, 'i'))
-			kw->icase = R_TRUE;
 		r_search_reset (core->search, R_SEARCH_REGEXP);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		r_search_kw_add (core->search, kw);
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
-		free (inp);
-		free (opt);
 		}
 		break;
 	case 'd': /* search delta key */
