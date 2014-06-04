@@ -1,0 +1,48 @@
+// XXX. this is wrong
+return strdup (
+"=pc	rip\n"
+"=sp	rsp\n"
+"=bp	rbp\n"
+"=a0	rax\n"
+"=a1	rbx\n"
+"=a2	rcx\n"
+"=a3	rdi\n"
+"drx	dr0	.32	4	0\n"
+"drx	dr1	.32	8	0\n"
+"drx	dr2	.32	12	0\n"
+"drx	dr3	.32	16	0\n"
+"drx	dr6	.32	20	0\n"
+"drx	dr7	.32	24	0\n"
+/* floating save area 4+4+4+4+4+4+4+80+4 = 112 */
+"seg	gs	.32	132	0\n"
+"seg	fs	.32	136	0\n"
+"seg	es	.32	140	0\n"
+"seg	ds	.32	144	0\n"
+"gpr	rdi	.32	156	0\n"
+"gpr	rsi	.32	160	0\n"
+"gpr	rbx	.32	164	0\n"
+"gpr	rdx	.32	168	0\n"
+"gpr	rcx	.32	172	0\n"
+"gpr	rax	.32	176	0\n"
+"gpr	rbp	.32	180	0\n"
+"gpr	rsp	.32	196	0\n"
+"gpr	rip	.32	184	0\n"
+"seg	cs	.32	184	0\n"
+"seg	ds	.32	152	0\n"
+"seg	gs	.32	140	0\n"
+"seg	fs	.32	144	0\n"
+"gpr	flags	.16	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+"gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+"gpr	rflags	.64	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+"gpr	cf	.1	.1536	0	carry\n"
+"gpr	pf	.1	.1538	0	parity\n"
+"gpr	af	.1	.1540	0	adjust\n"
+"gpr	zf	.1	.1542	0	zero\n"
+"gpr	sf	.1	.1543	0	sign\n"
+"gpr	tf	.1	.1544	0	trap\n"
+"gpr	if	.1	.1545	0	interrupt\n"
+"gpr	df	.1	.1546	0	direction\n"
+"gpr	of	.1	.1547	0	overflow\n"
+"seg	ss	.32	200	0\n"
+/* +512 bytes for maximum supoprted extension extended registers */
+);
