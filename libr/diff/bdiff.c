@@ -35,8 +35,7 @@ struct hunklist {
 	struct hunk *base, *head;
 };
 
-static int splitlines(const char *a, int len, struct line **lr)
-{
+static int splitlines(const char *a, int len, struct line **lr) {
 	int h, i;
 	const char *p, *b = a;
 	const char * const plast = a + len - 1;
@@ -80,13 +79,11 @@ static int splitlines(const char *a, int len, struct line **lr)
 	return i - 1;
 }
 
-static int inline cmp(struct line *a, struct line *b)
-{
+static int inline cmp(struct line *a, struct line *b) {
 	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
 }
 
-static int equatelines(struct line *a, int an, struct line *b, int bn)
-{
+static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	int i, j, buckets = 1, t, scale;
 	struct pos *h = NULL;
 
@@ -281,7 +278,9 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 	int hits = -1;
 
 	an = splitlines ((const char *)sa, la, &al);
-	bn = splitlines ((const char*)sb, lb, &bl);
+	if (an<0) return -1;
+	bn = splitlines ((const char *)sb, lb, &bl);
+	if (bn<0) return -1;
 	if (!al || !bl) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
 		goto beach;
@@ -337,4 +336,3 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 
 	return hits;
 }
-

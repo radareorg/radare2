@@ -284,7 +284,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	return r_io_vread (io, addr, buf, len);
 #else
 	ut64 paddr, last, last2;
-	int ms, ret, l, olen = len, w = 0;
+	int ms, ret, l = 0, olen = len, w = 0;
 
 	io->off = addr;
 	memset (buf, 0xff, len); // probably unnecessary

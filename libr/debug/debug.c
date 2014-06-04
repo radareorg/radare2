@@ -7,7 +7,7 @@
 R_LIB_VERSION(r_debug);
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
-	if (dbg && dbg->h && dbg->h->info)
+	if (!dbg || dbg->h || dbg->h->info)
 		return NULL;
 	return dbg->h->info (dbg, arg);
 }
