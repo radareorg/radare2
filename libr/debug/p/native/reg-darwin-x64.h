@@ -49,4 +49,3 @@ return strdup (
 "drx	dr6	.64	32	0\n"
 "drx	dr7	.64	40	0\n"
 );
-
