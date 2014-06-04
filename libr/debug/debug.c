@@ -1,10 +1,22 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_debug.h>
 #include <r_anal.h>
 #include <signal.h>
 
 R_LIB_VERSION(r_debug);
+
+R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
+	if (dbg && dbg->h && dbg->h->info)
+		return NULL;
+	return dbg->h->info (dbg, arg);
+}
+
+R_API void r_debug_info_free (RDebugInfo *rdi) {
+	free (rdi->cwd);
+	free (rdi->exe);
+	free (rdi->cmdline);
+}
 
 /* restore program counter after breakpoint hit */
 static int r_debug_recoil(RDebug *dbg) {

@@ -1265,7 +1265,16 @@ static int cmd_debug(void *data, const char *input) {
 		else r_debug_plugin_list (core->dbg);
 		break;
 	case 'i':
-		eprintf ("TODO: info\n");
+		{
+#define P r_cons_printf
+		RDebugInfo *rdi = r_debug_info(core->dbg, input+2);
+		P ("pid=%d\n", rdi->pid);
+		P ("tid=%d\n", rdi->tid);
+		if (rdi->exe) P ("exe=%s\n", rdi->exe);
+		if (rdi->cmdline) P ("cmdline=%s\n", rdi->cmdline);
+		if (rdi->cwd) P ("cwd=%s\n", rdi->cwd);
+		r_debug_info_free (rdi);
+		}
 		break;
 	case 'x':
 		switch (input[1]) {

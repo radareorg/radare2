@@ -1657,6 +1657,24 @@ static RList *r_debug_native_pids(int pid) {
 	return list;
 }
 
+RDebugInfo* r_debug_native_info(RDebug *dbg, const char *arg) {
+#if __linux__
+	char procpid_cmdline[1024];
+	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
+	rdi->pid = dbg->pid;
+	rdi->tid = dbg->tid;
+	rdi->uid = -1;// TODO
+	rdi->gid = -1;// TODO
+	rdi->cwd = NULL;// TODO : use readlink
+	rdi->exe = NULL;// TODO : use readlink!
+	snprintf (procpid_cmdline, "/proc/%d/cmdline", rdi->pid);
+	rdi->cmdline = r_file_slurp (procpid_cmdline, NULL);
+	return rdi;
+#endif
+	return NULL;
+}
+
 static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (list == NULL) {
@@ -2955,6 +2973,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.frames = &r_debug_native_frames, // rename to backtrace ?
 	.reg_profile = (void *)r_debug_native_reg_profile,
 	.reg_read = r_debug_native_reg_read,
+        .info = r_debug_native_info,
 	.reg_write = (void *)&r_debug_native_reg_write,
 	.map_alloc = r_debug_native_map_alloc,
 	.map_dealloc = r_debug_native_map_dealloc,

@@ -419,7 +419,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if (is_io_load) {
-		RIODesc *oldesc = desc;
+		//RIODesc *oldesc = desc;
 		// DEBUGGER
 		// Fix to select pid before trying to load the binary
 		if ( (desc->plugin && desc->plugin->debug) || r_config_get_i (r->config, "cfg.debug")) {
