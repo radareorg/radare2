@@ -82,7 +82,6 @@ R_API int r_core_search_preludes(RCore *core) {
 }
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	static ut64 prevaddr = 0;
 	RCore *core = (RCore *)user;
 	ut64 base_addr = 0;
 
@@ -230,7 +229,6 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 			}
 		}
 	}
-eprintf ("RNG %llx %llx\n", *from, *to);
 }
 
 // TODO: handle more than one?

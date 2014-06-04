@@ -408,8 +408,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	int use_colors = r_config_get_i(core->config, "scr.color");
 	const char *use_color;
 	if (use_colors) {
-#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
-		use_color = P(creg): Color_BWHITE;
+#undef ConsP
+#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+		use_color = ConsP(creg): Color_BWHITE;
 	} else {
 		use_color = NULL;
 	}
@@ -1281,6 +1282,7 @@ static int cmd_debug(void *data, const char *input) {
 		if (rdi->cmdline) P ("cmdline=%s\n", rdi->cmdline);
 		if (rdi->cwd) P ("cwd=%s\n", rdi->cwd);
 		r_debug_info_free (rdi);
+#undef P
 		}
 		break;
 	case 'x':
