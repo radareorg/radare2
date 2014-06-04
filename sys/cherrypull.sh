@@ -1,4 +1,8 @@
 #!/bin/sh
+
+[ "$1" = git ] && shift
+[ "$1" = pull ] && shift
+
 RR=$1
 RB=$2
 N=$3

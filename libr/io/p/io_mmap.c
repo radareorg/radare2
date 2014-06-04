@@ -93,14 +93,6 @@ static int r_io_mmap_check (const char *filename) {
 	return 0;
 }
 
-static int r_io_mmap_check_default (const char *filename) {
-	char * peekaboo = strstr (filename, "://");
-	if ( (filename && !peekaboo) ||
-		( (peekaboo-filename) > 10 ) )
-		return 1;
-	return 0;
-}
-
 static int r_io_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOMMapFileObj *mmo = NULL;
 	if (!fd || !fd->data || !buf)
