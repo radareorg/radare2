@@ -69,7 +69,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 			(ut64)io->off+copied, blen, (pointer_t)buf+copied, &size);
 		switch (err) {
 		case KERN_PROTECTION_FAILURE:
-			eprintf ("r_io_mach_read: kern protection failure.\n");
+			//eprintf ("r_io_mach_read: kern protection failure.\n");
 			break;
 		case KERN_INVALID_ADDRESS:
 			if (blocksize == 1) {
@@ -79,11 +79,11 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 			blocksize = 1;
 			blen = 1;
 			buf[copied] = 0xff;
-			eprintf("invaddr %d\n",len);
+			//eprintf("invaddr %d\n",len);
 			break;
 		}
 		if (err == -1) {
-			eprintf ("Cannot read\n");
+			//eprintf ("Cannot read\n");
 			return -1;
 		}
 		if (size==0) {

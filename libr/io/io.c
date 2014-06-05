@@ -297,6 +297,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
 	while (len>0) {
+		if ((addr+w)< ((addr+w)+len)) {
+
 		// this code assumes that the IO backend knows
 		// 1) the size of a loaded file and its offset into the r2 data space
 		// 2) the sections with physical (offsets) and virtual addresses in r2 data space
@@ -352,12 +354,18 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (last == (addr+w)) last = last2;
 		//else if (last2<last) last = last2;
 		l = (len > (last-addr+w))? (last-addr+w): len;
+} else {
+	// overflow //
+	l = (UT64_MAX-addr)+1;
+
+}
 		if (l<1) l = len;
 		 {
 			if (addr != UT64_MAX)
 				paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
 			else paddr = 0;
-			if (!paddr || paddr==UT64_MAX)
+			//if (!paddr || paddr==UT64_MAX)
+			if (paddr==UT64_MAX)
 				paddr = r_io_map_select (io, addr); // XXX
 			if (paddr == UT64_MAX) {
 				w +=l;
@@ -387,11 +395,10 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 //memset(buf, 0xff, olen);
-			ret = 1;
+			ret = l;
 		} else if (ret<l) {
 			l = ret;
-		} else {
-}
+		}
 #if USE_CACHE
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len); //-w);
@@ -419,7 +426,7 @@ bear in mind that we need to fix that loop and honor lseek sections and sio maps
 if (len>0) {
 	memset (buf+w, 0xff, len);
 }
-break;
+//break;
 	}
 	return olen;
 #endif
