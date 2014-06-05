@@ -8,4 +8,4 @@ LDFLAGS+=-lr_db -L../../db
 ALL_TARGETS+=${TARGET_ELF}
 
 ${TARGET_ELF}: ${OBJ_ELF}
-	${CC} $(call libname,bin_elf) ${CFLAGS} $(LDFLAGS) ${OBJ_ELF}
+	-${CC} $(call libname,bin_elf) ${CFLAGS} $(LDFLAGS) ${OBJ_ELF}
