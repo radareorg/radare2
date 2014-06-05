@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,6 +65,7 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		R_FREE (bin->phdr);
 		return R_FALSE;
 	}
+	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_have_relro)(bin), 0);
 	return R_TRUE;
 }
 
@@ -298,6 +300,15 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	}
 	free (rel);
 	return UT64_MAX;
+}
+
+int Elf_(r_bin_elf_have_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	if (bin->phdr)
+		for (i = 0; i < bin->ehdr.e_phnum; i++)
+			if (bin->phdr[i].p_type == PT_GNU_RELRO)
+				return 1;
+	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
