@@ -65,7 +65,8 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		R_FREE (bin->phdr);
 		return R_FALSE;
 	}
-	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_have_relro)(bin), 0);
+	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_has_relro)(bin), 0);
+	sdb_bool_set (bin->kv, "elf.nx", Elf_(r_bin_elf_has_nx)(bin), 0);
 	return R_TRUE;
 }
 
@@ -302,7 +303,16 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	return UT64_MAX;
 }
 
-int Elf_(r_bin_elf_have_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
+int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	if (bin->phdr)
+		for (i = 0; i < bin->ehdr.e_phnum; i++)
+			if (bin->phdr[i].p_type == PT_GNU_STACK)
+				return (!(bin->phdr[i].p_type & 1))? 1: 0;
+	return 0;
+}
+
+int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	if (bin->phdr)
 		for (i = 0; i < bin->ehdr.e_phnum; i++)

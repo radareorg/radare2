@@ -487,6 +487,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->o->bin_obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
+	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (arch->o->bin_obj))
 		ret->dbg_info |= 0x04 | 0x08 | 0x10;
