@@ -1193,6 +1193,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
+	bin->kv = sdb_new0();
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length))
