@@ -158,7 +158,9 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			str[matches] = '\0';
 			ptr->paddr = i-matches;
 			if (scnrva) {
-				ptr->vaddr = (ptr->paddr+scnrva-from);
+				//ptr->vaddr = (ptr->paddr+scnrva-from);
+// XXX. this is wrong. baddr doesnt seems to work for ELFs if used
+				ptr->vaddr = ptr->paddr;
 			} else {
 				ptr->vaddr = ptr->paddr;
 			}

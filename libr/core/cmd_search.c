@@ -177,7 +177,7 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 				}
 				if (((s->vaddr) < *from) && s->vaddr)
 					*from = s->vaddr;
-				if ((s->vaddr+s->vsize) > *to && *from>=s->vaddr)
+				if ((s->vaddr+s->vsize) > *to)
 					*to = s->vaddr+s->vsize;
 			}
 			if (*to == 0LL || *to == UT64_MAX || *to == UT32_MAX)
