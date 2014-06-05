@@ -1,8 +1,11 @@
-/* radare - LGPL - Copyright 2008-2012 pancake */
+/* radare - LGPL - Copyright 2008-2014 pancake */
 
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
+
+// Experimental search engine (fails, because stops at first hit of every block read 
+#define USE_BMH 0
 
 R_LIB_VERSION (r_search);
 
@@ -149,6 +152,7 @@ R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len)
 }
 
 /* Boyer-Moore-Horspool pattern matching */
+#if USE_BMH
 R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out) {
 	ut64 bad_char_shift[UT8_MAX + 1];
 	ut64 pos = from;
@@ -194,18 +198,20 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 
 	return R_FALSE;
 }
+#endif
 
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
 	RListIter *iter;
 	int count = 0;
-	ut64 match_pos;
 
+#if USE_BMH
+	ut64 match_pos;
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
 		if (r_search_bmh(kw, 0, buf, len, &match_pos)) {
-			if (!r_search_hit_new(s, kw, from + match_pos)) {
-				eprintf("Something very bad has happened...\n");
+			if (!r_search_hit_new (s, kw, from + match_pos)) {
+				eprintf ("Something very bad has happened...\n");
 				return -1;
 			}
 			kw->count++;
@@ -215,6 +221,72 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 				return -1;
 		}
 	}
+#else
+	int i, j, hit;
+	for (i=0; i<len; i++) {
+		RSearchKeyword *kw;
+		r_list_foreach (s->kws, iter, kw) {
+			if (s->inverse && s->nhits>0) {
+				//eprintf ("nhits = %d\n", s->nhits);
+				return -1;
+			}
+			for (j=0; j<=kw->distance; j++) {
+				ut8 ch = kw->bin_keyword[kw->idx[j]];
+				ut8 ch2 = buf[i];
+				if (kw->icase) {
+					ch = tolower (ch);
+					ch2 = tolower (ch2);
+				}
+				if (kw->binmask_length != 0 && kw->idx[j]<kw->binmask_length) {
+					ch &= kw->bin_binmask[kw->idx[j]];
+					ch2 &= kw->bin_binmask[kw->idx[j]];
+				}
+				if (ch != ch2) {
+					if (s->inverse) {
+						if (!r_search_hit_new (s, kw, (ut64)
+								from+i-kw->keyword_length+1))
+							return -1;
+						kw->idx[j] = 0;
+						//kw->idx[0] = 0;
+						kw->distance = 0;
+						//eprintf ("HIT FOUND !!! %x %x 0x%llx %d\n", ch, ch2, from+i, i);
+						kw->count++;
+						s->nhits++;
+						return 1; // only return 1 keyword if inverse mode
+					}
+					if (kw->distance<s->distance) {
+						kw->idx[kw->distance+1] = kw->idx[kw->distance];
+						kw->distance++;
+						hit = R_TRUE;
+					} else {
+						kw->idx[0] = 0;
+						kw->distance = 0;
+						hit = R_FALSE;
+					}
+				} else hit = R_TRUE;
+				if (hit) {
+					kw->idx[j]++;
+					if (kw->idx[j] == kw->keyword_length) {
+						if (s->inverse) {
+							kw->idx[j] = 0;
+							continue;
+						}
+						if (!r_search_hit_new (s, kw, (ut64)
+								from+i-kw->keyword_length+1))
+							return -1;
+						kw->idx[j] = 0;
+						//kw->idx[0] = 0;
+						kw->distance = 0;
+						kw->count++;
+						count++;
+						//s->nhits++;
+					}
+				}
+			}
+		}
+		count = 0;
+	}
+#endif
 
 	return count;
 }

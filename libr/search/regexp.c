@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2014 - pancake, TheLemonMan */
 
 #include "r_search.h"
 #include <r_regex.h>
