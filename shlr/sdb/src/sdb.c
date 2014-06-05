@@ -42,11 +42,11 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 		}
 		switch (lock) {
 		case 1:
-			if (!sdb_lock (sdb_lockfile (s->dir)))
+			if (!sdb_lock (sdb_lock_file (s->dir)))
 				goto fail;
 			break;
 		case 2:
-			if (!sdb_lock_wait (sdb_lockfile (s->dir)))
+			if (!sdb_lock_wait (sdb_lock_file (s->dir)))
 				goto fail;
 			break;
 		}
@@ -102,11 +102,11 @@ fail:
 // XXX: this is wrong. stuff not stored in memory is lost
 SDB_API void sdb_file (Sdb* s, const char *dir) {
 	if (s->lock)
-		sdb_unlock (sdb_lockfile (s->dir));
+		sdb_unlock (sdb_lock_file (s->dir));
 	free (s->dir);
 	s->dir = (dir && *dir)? strdup (dir): NULL;
 	if (s->lock)
-		sdb_lock (sdb_lockfile (s->dir));
+		sdb_lock (sdb_lock_file (s->dir));
 }
 
 static void sdb_fini(Sdb* s, int donull) {
@@ -114,7 +114,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	sdb_hook_free (s);
 	cdb_free (&s->db);
 	if (s->lock)
-		sdb_unlock (sdb_lockfile (s->dir));
+		sdb_unlock (sdb_lock_file (s->dir));
 	sdb_ns_free (s);
 	s->refs = 0;
 	free (s->name);
@@ -672,6 +672,7 @@ static int unset_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
+// TODO: rename to sdb_unset_similar ?
 SDB_API int sdb_unset_matching(Sdb *s, const char *k) {
 	UnsetCallbackData ucd = { s, k };
 	return sdb_foreach (s, unset_cb, &ucd);
