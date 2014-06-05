@@ -1247,7 +1247,8 @@ static int cmd_print(void *data, const char *input) {
 					break;
 				}
 			}
-			r_cons_strcat (b);
+			r_cons_strcat ((const char *)b);
+			r_cons_newline ();
 			//r_print_string (core->print, core->offset, b,
 			//	(size_t)(e-b), 0);
 			free (buf);

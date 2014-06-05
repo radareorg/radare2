@@ -695,8 +695,18 @@ static RList *r_debug_native_pids(int pid) {
 	return list;
 }
 
-RDebugInfo* r_debug_native_info(RDebug *dbg, const char *arg) {
-#if __linux__
+static RDebugInfo* r_debug_native_info(RDebug *dbg, const char *arg) {
+#if __APPLE__
+	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
+	rdi->pid = dbg->pid;
+	rdi->tid = dbg->tid;
+	rdi->uid = -1;// TODO
+	rdi->gid = -1;// TODO
+	rdi->cwd = NULL;// TODO : use readlink
+	rdi->exe = NULL;// TODO : use readlink!
+	return rdi;
+#elif __linux__
 	char procpid_cmdline[1024];
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
