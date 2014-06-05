@@ -203,17 +203,20 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
 	RListIter *iter;
+	ut64 offset;
 	int count = 0;
 
 #if USE_BMH
 	ut64 match_pos;
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
-		if (r_search_bmh(kw, 0, buf, len, &match_pos)) {
+		offset = 0;
+		while (offset < len && r_search_bmh(kw, offset, buf, len, &match_pos)) {
 			if (!r_search_hit_new (s, kw, from + match_pos)) {
 				eprintf ("Something very bad has happened...\n");
 				return -1;
 			}
+			offset += match_pos + kw->keyword_length;
 			kw->count++;
 			count++;
 			/* Stop at the first occurence */
