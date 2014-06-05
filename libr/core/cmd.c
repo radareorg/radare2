@@ -460,7 +460,7 @@ static int cmd_kuery(void *data, const char *input) {
 			for (o = p; n; o = n) {
 				n = strchr (o, '/'); // SDB_NS_SEPARATOR NAMESPACE
 				if (n) *n++ = 0;
-				s = sdb_ns (s, o);
+				s = sdb_ns (s, o, 1);
 			}
 			free (p);
 		}
@@ -493,7 +493,7 @@ static int cmd_kuery(void *data, const char *input) {
 	if (sp) {
 		char *inp = strdup (input);
 		inp [(size_t)(sp-input)] = 0;
-		s = sdb_ns (core->sdb, inp+1);
+		s = sdb_ns (core->sdb, inp+1, 1);
 		out = sdb_querys (s, NULL, 0, sp+1);
 		if (out) {
 			r_cons_printf ("%s\n", out);

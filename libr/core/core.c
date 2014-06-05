@@ -479,7 +479,7 @@ static void update_sdb(RCore *core) {
 	sdb_ns_set (DB, "bin", core->bin->sdb);
 	RBinObject *o = r_bin_get_object (core->bin);
 	if (o) {
-		sdb_ns_set (sdb_ns (DB, "bin"), "info", o->kv);
+		sdb_ns_set (sdb_ns (DB, "bin", 1), "info", o->kv);
 	}
 	sdb_ns_set (DB, "anal", core->anal->sdb);
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
@@ -489,7 +489,7 @@ static void update_sdb(RCore *core) {
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
 	}
 	{
-		Sdb *d = sdb_ns (DB, "debug");
+		Sdb *d = sdb_ns (DB, "debug", 1);
 		sdb_ns_set (d, "signals", core->dbg->sgnls);
 	}
 }

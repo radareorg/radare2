@@ -49,15 +49,15 @@ R_API RAnal *r_anal_new() {
 	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);
-	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns");
-	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
-	anal->sdb_hints = sdb_ns (anal->sdb, "hints");
-	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs");
-	//anal->sdb_vars = sdb_ns (anal->sdb, "vars");
-	//anal->sdb_args = sdb_ns (anal->sdb, "args");
-	//anal->sdb_ret = sdb_ns (anal->sdb, "ret");
-	//anal->sdb_locals = sdb_ns (anal->sdb, "locals");
-	anal->sdb_types = sdb_ns (anal->sdb, "types");
+	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
+	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
+	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
+	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
+	//anal->sdb_vars = sdb_ns (anal->sdb, "vars", 1);
+	//anal->sdb_args = sdb_ns (anal->sdb, "args", 1);
+	//anal->sdb_ret = sdb_ns (anal->sdb, "ret", 1);
+	//anal->sdb_locals = sdb_ns (anal->sdb, "locals", 1);
+	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
