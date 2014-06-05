@@ -786,14 +786,14 @@ static int cmd_search(void *data, const char *input) {
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
-				if (bckwrds){
+				if (bckwrds) {
 					if (!do_bckwrd_srch) break;
 					if (at > from + core->blocksize) at -= core->blocksize;
-					else{
+					else {
 						do_bckwrd_srch = R_FALSE;
 						at = from;
 					}
-				}else at += core->blocksize;
+				} else at += core->blocksize;
 			}
 			print_search_progress (at, to, searchhits);
 			r_cons_break_end ();
