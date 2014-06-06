@@ -25,25 +25,14 @@ R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename))
 		return R_FALSE;
-
-	if (r_file_exists (filename) && !r_file_is_regular (filename))
+	if (!r_file_exists (filename) || !r_file_is_regular (filename))
 		return R_FALSE;
-	else if (!r_file_exists (filename)){
-		FILE *ffd = r_sandbox_fopen (filename, "wb");
-		if (ffd == NULL) {
-			eprintf ("Cannot open '%s' for writing\n", filename);
-			return R_FALSE;
-		}
-		fclose (ffd);
-	}
-
 #if __WINDOWS__
 	fd = r_sandbox_open (filename, O_RDWR, 0644);
 #else
 	fd = r_sandbox_open (filename, O_RDWR|O_SYNC, 0644);
 #endif
-	if (!fd || fd == -1) return R_FALSE;
-
+	if (fd < 1) return R_FALSE;
 	ftruncate (fd, newsize);
 	close (fd);
 	return R_TRUE;
@@ -155,15 +144,19 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		return NULL;
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
+	if (sz==0)
+		sz = 4096;
 	if (sz <0) {
 		fclose (fd);
 		return NULL;
 	}
 	fseek (fd, 0, SEEK_SET);
-	ret = (char *)malloc (sz+1);
+	ret = (char *)calloc (sz+1, 1);
 	rsz = fread (ret, 1, sz, fd);
-	if (rsz != sz)
-		eprintf ("r_file_slurp: fread: error\n");
+	if (rsz != sz) {
+		// eprintf ("r_file_slurp: fread: error\n");
+		sz = rsz;
+	}
 	fclose (fd);
 	ret[sz]='\0';
 	if (usz)

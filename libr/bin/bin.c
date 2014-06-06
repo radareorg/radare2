@@ -158,7 +158,9 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			str[matches] = '\0';
 			ptr->paddr = i-matches;
 			if (scnrva) {
-				ptr->vaddr = (ptr->paddr+scnrva-from);
+				//ptr->vaddr = (ptr->paddr+scnrva-from);
+// XXX. this is wrong. baddr doesnt seems to work for ELFs if used
+				ptr->vaddr = ptr->paddr;
 			} else {
 				ptr->vaddr = ptr->paddr;
 			}
@@ -386,6 +388,8 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 
 	the_obj_list = bf->objs;
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
+	// invalidate current object reference
+	bf->o = NULL;
 
 	// XXX - this needs to be reimplemented to account for 
 	// performance impacts.
@@ -435,6 +439,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 			res = r_bin_load_io_at_offset_as (bin, desc, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
 		}
 	}
+	bf->o = r_list_get_n (bf->objs, 0);
 	r_list_free (the_obj_list);
 	return res;
 }
@@ -619,7 +624,7 @@ static void r_bin_file_free (void /*RBinFile*/ *bf_) {
 	if (a->curxtr && a->curxtr->destroy)
 		a->curxtr->free_xtr ((void *) (a->xtr_obj));
 
-	r_bin_object_free (a->o);
+	r_list_free (a->objs);
 	a->o = NULL;
 	r_buf_free (a->buf);
 	// TODO: unset related sdb namespaces
@@ -844,8 +849,8 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 	if (sdb) {
 		char fdkey[128];
 		snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", fd);
-		binfile->sdb = sdb_ns (sdb, fdkey);
-		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo");
+		binfile->sdb = sdb_ns (sdb, fdkey, 1);
+		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo", 1);
 		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0);
 		sdb_ns_set (sdb, "cur", binfile->sdb);
 	}

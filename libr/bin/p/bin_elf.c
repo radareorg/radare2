@@ -18,12 +18,13 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
+	struct Elf_(r_bin_elf_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res  = Elf_(r_bin_elf_new_buf) (tbuf);
+	res = Elf_(r_bin_elf_new_buf) (tbuf);
+	sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -80,9 +81,8 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = R_NEW (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-	memset (ptr, '\0', sizeof (RBinAddr));
 	ptr->paddr = ptr->vaddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
 	r_list_append (ret, ptr);
 	return ret;
@@ -275,7 +275,7 @@ static RList* imports(RBinFile *arch) {
 	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS)))
 		return ret;
 	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = R_NEW (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		strncpy (ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
@@ -313,7 +313,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	ut64 B = bin->baddr, P = B + rel->rva;
 	char *str;
 
-	if (!(r = R_NEW (RBinReloc)))
+	if (!(r = R_NEW0 (RBinReloc)))
 		return r;
 
 	r->import = NULL;
@@ -488,6 +488,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->o->bin_obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
+	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (arch->o->bin_obj))
 		ret->dbg_info |= 0x04 | 0x08 | 0x10;
@@ -509,7 +510,7 @@ static RList* fields(RBinFile *arch) {
 	if (!(field = Elf_(r_bin_elf_get_fields) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !field[i].last; i++) {
-		if (!(ptr = R_NEW (RBinField)))
+		if (!(ptr = R_NEW0 (RBinField)))
 			break;
 		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->vaddr = field[i].offset;

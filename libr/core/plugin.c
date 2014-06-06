@@ -31,7 +31,6 @@ R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 
 R_API int r_core_plugin_init(RCmd *cmd) {
 	int i;
-	RCorePlugin *static_plugin;
 	cmd->plist = r_list_newf (r_core_plugin_deinit);
 	for (i=0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {

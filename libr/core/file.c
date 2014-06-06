@@ -396,16 +396,20 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	int is_io_load = desc && desc->plugin;
 
-	if ( (filenameuri == NULL || !*filenameuri) && cf)
-		filenameuri = cf->filename;
-	else if (cf && strcmp (filenameuri, cf->filename) ) {
-		// XXX - this needs to be handled appropriately
-		// if the cf does not match the filenameuri then
-		// either that RCoreFIle * needs to be loaded or a
-		// new RCoreFile * should be opened.
-		if (!strcmp (suppress_warning, "false"))
-			eprintf ("Error: The filenameuri %s is not the same as the current RCoreFile: %s\n",
-			    filenameuri, cf->filename);
+	if (cf) {
+		if ((filenameuri == NULL || !*filenameuri))
+			filenameuri = cf->filename;
+		else if (cf->filename && strcmp (filenameuri, cf->filename) ) {
+			// XXX - this needs to be handled appropriately
+			// if the cf does not match the filenameuri then
+			// either that RCoreFIle * needs to be loaded or a
+			// new RCoreFile * should be opened.
+			if (!strcmp (suppress_warning, "false"))
+				eprintf ("Error: The filenameuri %s is not the same as the current RCoreFile: %s\n",
+				    filenameuri, cf->filename);
+		}
+		if (cf->map)
+			loadaddr = cf->map->from;
 	}
 
 	if (!filenameuri) {
@@ -413,16 +417,13 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		return R_FALSE;
 	}
 
-	if (cf && cf->map) {
-		loadaddr = cf->map->from;
-	}
-
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if (is_io_load) {
-		RIODesc *oldesc = desc;
-		// DEBUGGER
+		// TODO? necessary to restore the desc back? 
+		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ( (desc->plugin && desc->plugin->debug) || r_config_get_i (r->config, "cfg.debug")) {
+		if ( (desc->plugin && desc->plugin->debug) \
+				|| r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, loadaddr, filenameuri);
 		} else {
 			r_core_file_do_load_for_io_plugin (r, baddr, loadaddr);
@@ -435,7 +436,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
+	if (plugin && plugin->name && !strncmp (plugin->name, "any", 5)) {
 		// set use of raw strings
 		r_config_set (r->config, "bin.rawstr", "true");
 		r_config_set_i (r->config, "io.va", 0);

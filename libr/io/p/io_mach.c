@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_userconf.h>
 
@@ -61,12 +61,43 @@ static task_t pid_to_task(int pid) {
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	vm_size_t size = 0;
-        int err = vm_read_overwrite (RIOMACH_TASK (fd->data),
-		(vm_offset_t)io->off, len, (pointer_t)buf, &size);
-        if (err == -1) {
-                eprintf ("Cannot read\n");
-                return -1;
-        }
+	int blen, err, copied = 0;
+	int blocksize = 16;
+	while (copied<len) {
+		blen = R_MIN ((len-copied), blocksize);
+		err = vm_read_overwrite (RIOMACH_TASK (fd->data),
+			(ut64)io->off+copied, blen, (pointer_t)buf+copied, &size);
+		switch (err) {
+		case KERN_PROTECTION_FAILURE:
+			//eprintf ("r_io_mach_read: kern protection failure.\n");
+			break;
+		case KERN_INVALID_ADDRESS:
+			if (blocksize == 1) {
+				memset (buf+copied, 0xff, len-copied);
+				return size+copied;
+			}
+			blocksize = 1;
+			blen = 1;
+			buf[copied] = 0xff;
+			//eprintf("invaddr %d\n",len);
+			break;
+		}
+		if (err == -1) {
+			//eprintf ("Cannot read\n");
+			return -1;
+		}
+		if (size==0) {
+			if (blocksize == 1) {
+				memset (buf+copied, 0xff, len-copied);
+				return size+copied;
+			}
+			blocksize = 1;
+			blen = 1;
+			buf[copied] = 0xff;
+		}
+		//if (size != blen) { return size+copied; }
+		copied += blen;
+	}
         return (int)size;
 }
 
@@ -220,6 +251,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+	io->off = offset;
 	return offset;
 }
 

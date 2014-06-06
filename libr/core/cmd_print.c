@@ -1217,11 +1217,42 @@ static int cmd_print(void *data, const char *input) {
 		case '?':
 			r_cons_printf ("|Usage: ps[zpw] [N]\n"
 				"| ps  = print string\n"
+				"| psi = print string inside curseek\n"
 				"| psb = print strings in current block\n"
 				"| psx = show string with scaped chars\n"
 				"| psz = print zero terminated string\n"
 				"| psp = print pascal string\n"
 				"| psw = print wide string\n");
+			break;
+		case 'i':
+			{
+			ut8 *buf = malloc (1024);
+			int delta = 512;
+			ut8 *p, *e, *b;
+			if (!buf) return 0;
+			if (core->offset<delta)
+				delta = core->offset;
+			p = buf+delta;
+			r_core_read_at (core, core->offset-delta, buf, 1024);
+			for (b = p; b>buf; b--) {
+				if (!IS_PRINTABLE (*b)) {
+					b++;
+					break;
+				}
+			}
+			for (e = p; e<(buf+1024); e++) {
+				if (!IS_PRINTABLE (*b)) {
+					*e = 0;
+					e--;
+					break;
+				}
+			}
+			r_cons_strcat ((const char *)b);
+			r_cons_newline ();
+			//r_print_string (core->print, core->offset, b,
+			//	(size_t)(e-b), 0);
+			free (buf);
+			}
 			break;
 		case 'x':
 			r_print_string (core->print, core->offset, core->block, len, 0);

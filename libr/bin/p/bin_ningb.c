@@ -62,7 +62,6 @@ static RBinAddr* binsym(RBinFile *arch, int type)
 		RBinAddr *ret = R_NEW0 (RBinAddr);
 		if (!ret) return NULL;
 		r_buf_read_at (arch->buf, 0x100, init_jmp, 4);
-		memset(ret, '\0', sizeof(RBinAddr));
 		if (init_jmp[1] == 0xc3) {
 			ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
 			return ret;
@@ -81,9 +80,8 @@ static RList* entries(RBinFile *arch)
 		if (!ret)
 			return NULL;
 		ret->free = free;
-		if (!(ptr = R_NEW (RBinAddr)))
+		if (!(ptr = R_NEW0 (RBinAddr)))
 			return ret;
-		memset (ptr, '\0', sizeof (RBinAddr));
 		ptr->paddr = ptr->vaddr = 0x100;
 		r_list_append (ret, ptr);
 	}
@@ -206,7 +204,7 @@ static RList* symbols(RBinFile *arch)
 
 static RBinInfo* info(RBinFile *arch) {
 	ut8 rom_header[76];
-	RBinInfo *ret = R_NEW (RBinInfo);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 
 	if (!ret)
 		return NULL;
@@ -216,7 +214,6 @@ static RBinInfo* info(RBinFile *arch) {
 		return NULL;
 	}
 
-	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = NULL;
 	r_buf_read_at (arch->buf,0x104,rom_header,76);
 	strncpy (ret->file, (const char*)&rom_header[48], 16);

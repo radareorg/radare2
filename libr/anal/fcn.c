@@ -160,6 +160,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	RAnalOp op = {0};
 	int oplen, idx = 0;
 	int delay_cnt = 0, delay_idx = 0, delay_next = 0, delay_done = 0;
+	int delay_fin = 0;
 // add basic block
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
@@ -218,8 +219,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				idx = delay_idx;
 				delay_done = 1;
 				//break;
+
+				// At this point, we are looking at the last instruction in the branch delay group.
 			}
 		}
+		delay_fin = 0;
 		if (op.delay>0) {
 			if (!delay_done) {
 				delay_idx = idx - oplen;
@@ -228,6 +232,18 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			} else {
 				idx = delay_next;
 				delay_idx = delay_cnt = delay_done = 0;
+				// If delay_done is 1, then it means
+				// this is the second time we are looking at op.* 
+				// and op* is for addr+delay_idx, _not_ addr+delay_next
+				// Which means the switch statement below will have the
+				// wrong value for idx due to `idx = delay_next` above,
+				// so beware...
+				// additionally, if the starting opcode in the
+				// branch delay group is actually a function return
+				// we need to take care to avoid over-stating the
+				// size of the function because we double-counted
+				// (idx += oplen, etc) above
+				delay_fin = 1;
 			}
 		}
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
@@ -361,6 +377,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
+			if (delay_fin) {
+				// Don't double count the first instruction in
+				// the branch delay group when we pass back 
+				// through the loop, _if_ this is a return of some kind
+				idx -= oplen;
+				bb->size -= oplen;
+				fcn->size -= oplen;
+				fcn->ninstr--;
+			}
 			FITFCNSZ();
 			r_anal_op_fini (&op);
 			//fcn->size = bbsum (fcn);

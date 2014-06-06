@@ -2,7 +2,7 @@
 
 #include <r_io.h>
 
-#if 0
+/*
 
 | io.va |               | io.ff |
 .------------------.
@@ -34,7 +34,7 @@ maddr -> vaddr
 it is possible to get a list of virtual addresses that
 point to a given physical address from a virtual one.
 
-#endif
+*/
 
 /* Virtual Addressing API */
 
@@ -73,7 +73,7 @@ static ut64 findNextVaddr (RIO *io, RIOmaddr *ma) {
 	ut64 diff, hit, cur = ma->vaddr;
 	RListIter *iter;
 	RIOSection *s, *_s = NULL;
-	RIOMap *m, *_m = NULL;
+	RIOMap *_m = NULL;
 	
 #define foundSectionHit() {_s=s;_m=NULL;hit=diff;}
 #define foundMapHit() {_s=NULL;_m=m;hit=diff;}

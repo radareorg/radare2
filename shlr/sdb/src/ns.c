@@ -135,7 +135,7 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	return 1;
 }
 
-SDB_API Sdb *sdb_ns(Sdb *s, const char *name) {
+SDB_API Sdb *sdb_ns(Sdb *s, const char *name, int create) {
 	SdbListIter *it;
 	SdbNs *ns;
 	ut32 hash;
@@ -146,12 +146,38 @@ SDB_API Sdb *sdb_ns(Sdb *s, const char *name) {
 		if (ns->hash == hash)
 			return ns->sdb;
 	}
+	if (!create)
+		return NULL;
 	if (s->ns_lock)
 		return NULL;
 	ns = sdb_ns_new (s, name, hash);
 	if (!ns) return NULL;
 	ls_append (s->ns, ns);
 	return ns->sdb;
+}
+
+SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
+	char *ptr, *str;
+	char *slash;
+
+	if (!s || !path)
+		return NULL;
+	ptr = str = strdup (path);
+	do {
+		slash = strchr (ptr, '/');
+		if (slash)
+			*slash = 0;
+		s = sdb_ns (s, ptr, create);
+		if (!s) {
+			free (str);
+			return NULL;
+		}
+		//s = ns->sdb;
+		if (slash)
+			ptr = slash+1;
+	} while (slash);
+	free (str);
+	return s;
 }
 
 static void ns_sync (Sdb *s, SdbList *list) {

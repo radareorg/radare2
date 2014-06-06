@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,6 +65,7 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		R_FREE (bin->phdr);
 		return R_FALSE;
 	}
+	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_has_relro)(bin), 0);
 	return R_TRUE;
 }
 
@@ -298,6 +300,24 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	}
 	free (rel);
 	return UT64_MAX;
+}
+
+int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	if (bin->phdr)
+		for (i = 0; i < bin->ehdr.e_phnum; i++)
+			if (bin->phdr[i].p_type == PT_GNU_STACK)
+				return (!(bin->phdr[i].p_flags & 1))? 1: 0;
+	return 0;
+}
+
+int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	if (bin->phdr)
+		for (i = 0; i < bin->ehdr.e_phnum; i++)
+			if (bin->phdr[i].p_type == PT_GNU_RELRO)
+				return 1;
+	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -1172,6 +1192,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
+	bin->kv = sdb_new0();
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length))

@@ -32,7 +32,7 @@ endif
 CFLAGS+=-Wall
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
-CFLAGS+=-O2
+CFLAGS+=-g
 
 HAVE_VALA=#$(shell valac --version 2> /dev/null)
 # This is hacky

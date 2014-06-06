@@ -82,7 +82,6 @@ R_API int r_core_search_preludes(RCore *core) {
 }
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	static ut64 prevaddr = 0;
 	RCore *core = (RCore *)user;
 	ut64 base_addr = 0;
 
@@ -169,12 +168,17 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 		if (core->io->va) {
 			RListIter *iter;
 			RIOSection *s;
-			*from = *to = core->offset;
+			*from = *to = 0;
 			r_list_foreach (core->io->sections, iter, s) {
+				if (!*from) {
+					*from = s->vaddr;
+					*to = s->vaddr+s->vsize;
+					continue;
+				}
 				if (((s->vaddr) < *from) && s->vaddr)
 					*from = s->vaddr;
-				if ((s->vaddr+s->size) > *to && *from>=s->vaddr)
-					*to = s->vaddr+s->size;
+				if ((s->vaddr+s->vsize) > *to)
+					*to = s->vaddr+s->vsize;
 			}
 			if (*to == 0LL || *to == UT64_MAX || *to == UT32_MAX)
 				*to = r_io_size (core->io);
@@ -190,7 +194,12 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 			RIOSection *s;
 			*from = *to = core->offset;
 			r_list_foreach (core->io->sections, iter, s) {
-				if (*from >= s->vaddr && *from < (s->vaddr+s->size)) {
+				if (*from >= s->offset && *from < (s->offset+s->size)) {
+					*from = s->vaddr;
+					*to = s->vaddr+s->vsize;
+					break;
+				}
+				if (*from >= s->vaddr && *from < (s->vaddr+s->vsize)) {
 					*to = s->vaddr+s->size;
 					break;
 				}
@@ -390,6 +399,10 @@ static int cmd_search(void *data, const char *input) {
 	from = __from;
 	core->search->bckwrds = R_FALSE;
 
+	if (from == to) {
+		eprintf ("WARNING from == to?\n");
+	}
+
 	reread:
 	switch (*input) {
 	case '!':
@@ -557,9 +570,6 @@ static int cmd_search(void *data, const char *input) {
 		ignorecase = R_TRUE;
 	case ' ': /* search string */
 		inp = strdup (input+1+ignorecase);
-		if (ignorecase)
-			for (i=1; inp[i]; i++)
-				inp[i] = tolower (inp[i]);
 		len = r_str_unescape (inp);
 		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
 		for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
@@ -584,22 +594,18 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'e': /* match regexp */
 		{
-		inp = strdup (input+2);
-		char *res = (char *)r_str_lchr (inp+1, inp[0]);
-		char *opt = NULL;
-		if (res > inp) {
-			opt = strdup (res+1);
-			res[1]='\0';
+		RSearchKeyword *kw;
+		kw = r_search_keyword_new_regexp (input + 2, NULL);
+		if (!kw) {
+			eprintf("Invalid regexp specified\n");
+			break;
 		}
 		r_search_reset (core->search, R_SEARCH_REGEXP);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search,
-			r_search_keyword_new_str (inp, opt, NULL, 0));
+		r_search_kw_add (core->search, kw);
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
-		free (inp);
-		free (opt);
 		}
 		break;
 	case 'd': /* search delta key */
@@ -780,14 +786,14 @@ static int cmd_search(void *data, const char *input) {
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
-				if (bckwrds){
+				if (bckwrds) {
 					if (!do_bckwrd_srch) break;
 					if (at > from + core->blocksize) at -= core->blocksize;
-					else{
+					else {
 						do_bckwrd_srch = R_FALSE;
 						at = from;
 					}
-				}else at += core->blocksize;
+				} else at += core->blocksize;
 			}
 			print_search_progress (at, to, searchhits);
 			r_cons_break_end ();

@@ -43,10 +43,10 @@ R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certf
 	return r_socket_listen (rap_s->fd, rap_s->port, certfile);
 }
 
-R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s) {
+R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s) {
 	if (!rap_s || !rap_s->fd) {
 		eprintf ("error: r_socket_rap_server_accept\n");
-		return R_FALSE;
+		return NULL;
 	}
 	return r_socket_accept (rap_s->fd);
 }
@@ -59,7 +59,7 @@ static inline int getEndian () {
 }
 
 R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
-	int endian, i, pipe_fd, ret;
+	int endian, i, ret;
 	ut64 offset;
 	char *ptr = NULL;
 	if (!rap_s || !rap_s->fd)
@@ -112,7 +112,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
 			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
-			ptr = rap_s->system (rap_s->user, &rap_s->buf[5]);
+			ptr = rap_s->system (rap_s->user, (const char *)&rap_s->buf[5]);
 			if (ptr)
 				i = strlen (ptr) + 1;
 			else	i = 0;
@@ -128,7 +128,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
 			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
-			ptr = rap_s->cmd (rap_s->user, &rap_s->buf[5]);
+			ptr = rap_s->cmd (rap_s->user, (const char *)&rap_s->buf[5]);
 			if (ptr)
 				i = strlen (ptr) + 1;
 			else	i = 0;

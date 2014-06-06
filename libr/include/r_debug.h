@@ -171,6 +171,23 @@ typedef struct r_debug_desc_plugin_t {
 	RList* (*list)(int pid);
 } RDebugDescPlugin;
 
+typedef struct r_debug_info_t {
+	int pid;
+	int tid;
+	int uid;
+	int gid;
+	char *exe;
+	char *cmdline;
+	char *cwd;
+	int status; // zombie, running, sleeping, ...
+	// retrieve mem/fd/core limits?
+	// list of threads ? hasthreads? counter?
+	// environment?
+	// /proc/pid/stack ???
+	// /proc/pid/syscall ???
+	// 
+} RDebugInfo;
+
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_plugin_t {
 	const char *name;
@@ -180,6 +197,7 @@ typedef struct r_debug_plugin_t {
 	ut64 arch;
 	int canstep;
 	/* life */
+	RDebugInfo* (*info)(RDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
 	int (*attach)(RDebug *dbg, int pid);
 	int (*detach)(int pid);
@@ -248,6 +266,9 @@ R_API RList *r_debug_pids(RDebug *dbg, int pid);
 R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits);
 R_API int r_debug_use(RDebug *dbg, const char *str);
 
+R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
+R_API void r_debug_info_free (RDebugInfo *rdi);
+
 R_API RDebug *r_debug_new(int hard);
 R_API RDebug *r_debug_free(RDebug *dbg);
 
@@ -298,7 +319,7 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad);
 
 /* registers */
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write);
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, int use_colors);
+R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color);
 R_API int r_debug_reg_set(RDebug *dbg, const char *name, ut64 num);
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 

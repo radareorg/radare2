@@ -169,9 +169,9 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 	if (is_keva) {
 		char ns[64];
-		DB = sdb_ns (core->anal->sdb, "graph");
+		DB = sdb_ns (core->anal->sdb, "graph", 1);
 		snprintf (ns, sizeof (ns), "fcn.0x%08"PFMT64x, fcn->addr);
-		DB = sdb_ns (DB, ns);
+		DB = sdb_ns (DB, ns, 1);
 	}
 
 #define fmt(x,y...) snprintf (x,sizeof(x),##y)

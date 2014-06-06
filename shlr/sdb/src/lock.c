@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2012-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2012-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 #include <windows.h>
 #endif
 
-SDB_API const char *sdb_lockfile(const char *f) {
+SDB_API const char *sdb_lock_file(const char *f) {
 	static char buf[128];
 	size_t len;
 	if (!f || !*f)

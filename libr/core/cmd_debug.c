@@ -406,6 +406,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	int size, i, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i(core->config, "scr.color");
+	const char *use_color;
+	if (use_colors) {
+#undef ConsP
+#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+		use_color = ConsP(creg): Color_BWHITE;
+	} else {
+		use_color = NULL;
+	}
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -584,26 +592,26 @@ free (rf);
 		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
 		break;
 	case 'd':
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_colors); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o':
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_colors); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_colors); // XXX detect which one is current usage
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '*':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_colors);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_color);
 		break;
 	case 'j':
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_colors);
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
 		} else
 			eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
@@ -634,7 +642,7 @@ free (rf);
 		}
 		if (type != R_REG_TYPE_LAST) {
 			r_debug_reg_sync (core->dbg, type, R_FALSE);
-			r_debug_reg_list (core->dbg, type, size, str[0]=='*', use_colors);
+			r_debug_reg_list (core->dbg, type, size, str[0]=='*', use_color);
 		} else eprintf ("cmd_debug_reg: Unknown type\n");
 	}
 }
@@ -1265,7 +1273,19 @@ static int cmd_debug(void *data, const char *input) {
 		else r_debug_plugin_list (core->dbg);
 		break;
 	case 'i':
-		eprintf ("TODO: info\n");
+		{
+#define P r_cons_printf
+		RDebugInfo *rdi = r_debug_info (core->dbg, input+2);
+		if (rdi) {
+			P ("pid=%d\n", rdi->pid);
+			P ("tid=%d\n", rdi->tid);
+			if (rdi->exe) P ("exe=%s\n", rdi->exe);
+			if (rdi->cmdline) P ("cmdline=%s\n", rdi->cmdline);
+			if (rdi->cwd) P ("cwd=%s\n", rdi->cwd);
+			r_debug_info_free (rdi);
+		}
+#undef P
+		}
 		break;
 	case 'x':
 		switch (input[1]) {

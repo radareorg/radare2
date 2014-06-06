@@ -18,7 +18,7 @@ static RIO * r_io_bind_get_io(RIOBind *bnd);
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
-	io->buffer = r_cache_new (); // TODO: use RBuffer here
+	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
 	io->buffer_enabled = 0;
 	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->desc = NULL;
@@ -30,9 +30,10 @@ R_API RIO *r_io_new() {
 	io->ff = 1;
 	io->plugin = NULL;
 	io->raised = -1;
-	io->off = 0;
-	io->raw = 0; // set to 1 for debugger mode (for example)
-	io->enforce_rwx = 0;
+	io->off = R_FALSE;
+	io->autofd = R_TRUE;
+	io->raw = R_FALSE; // set to 1 for debugger mode (for example)
+	io->enforce_rwx = R_FALSE;
 	r_io_map_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
@@ -192,8 +193,8 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		return NULL;
 	if (desc) {
 		r_io_desc_add (io, desc);
-		r_io_use_desc (io, desc);
-		// add a map that represents the file
+		if (io->autofd || !io->desc)
+			r_io_use_desc (io, desc);
 	} else 	eprintf ("Unable to open file: %s\n", file);
 
 	return desc;
@@ -279,11 +280,16 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	if (io->raw) {
+		if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
+			memset (buf, 0xff, len);
+		return r_io_read_internal (io, buf, len);
+	}
 #if USE_P_API
 	return r_io_vread (io, addr, buf, len);
 #else
 	ut64 paddr, last, last2;
-	int ms, ret, l, olen = len, w = 0;
+	int ms, ret, l = 0, olen = len, w = 0;
 
 	io->off = addr;
 	memset (buf, 0xff, len); // probably unnecessary
@@ -291,56 +297,56 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
 	while (len>0) {
-		if (!io->raw) {
-			// this code assumes that the IO backend knows
-			// 1) the size of a loaded file and its offset into the r2 data space
-			// 2) the sections with physical (offsets) and virtual addresses in r2 data space
-			// Currently debuggers may not support registering these data spaces in r2 and this
-			// may prevent "raw" access to locations in the data space for entities like debuggers.
-			// Until that issue is resolved this code will be disabled.
-			// step one does a section exist for the offset
-			int exists = r_io_section_exists_for_paddr (io, addr+w) ||
-			r_io_section_exists_for_vaddr (io, addr+w) ||
-			r_io_map_exists_for_offset (io, addr+w);
+		if ((addr+w)< ((addr+w)+len)) {
 
-			// XXX this is a break b/c external IO caller do not need to create
-			// an IO Map (yet.), so the "checking existence of" only works if r_core_file
-			// APIs are used to load files.
-			if (!exists && r_io_map_count (io) > 0) {
-				// XXX this will break if there is actually data at this location
-				// or within UT64_MAX - len
-				ut64 next_map_addr = UT64_MAX,
-				     next_sec_addr = UT64_MAX;
+		// this code assumes that the IO backend knows
+		// 1) the size of a loaded file and its offset into the r2 data space
+		// 2) the sections with physical (offsets) and virtual addresses in r2 data space
+		// Currently debuggers may not support registering these data spaces in r2 and this
+		// may prevent "raw" access to locations in the data space for entities like debuggers.
+		// Until that issue is resolved this code will be disabled.
+		// step one does a section exist for the offset
+		int exists = r_io_section_exists_for_paddr (io, addr+w) ||
+		r_io_section_exists_for_vaddr (io, addr+w) ||
+		r_io_map_exists_for_offset (io, addr+w);
 
-				RIOMap *next_map = NULL;
-				RIOSection * next_sec = NULL;
-				// is there a map somewhere within the next range for
-				// us to read from
-				next_sec = r_io_section_get_first_in_vaddr_range (io, addr+w, addr+len+w);
-				next_sec_addr = next_sec ? next_sec->offset : UT64_MAX;
+		// XXX this is a break b/c external IO caller do not need to create
+		// an IO Map (yet.), so the "checking existence of" only works if r_core_file
+		// APIs are used to load files.
+		if (!exists && r_io_map_count (io) > 0) {
+			// XXX this will break if there is actually data at this location
+			// or within UT64_MAX - len
+			ut64 next_map_addr = UT64_MAX,
+			     next_sec_addr = UT64_MAX;
 
-				if (!next_sec){
-					next_map = r_io_map_get_first_map_in_range (io, addr+w, addr+len+w);
-					next_map_addr = next_map ? next_map->from : UT64_MAX;
-					if (len <= next_map_addr-addr) next_map_addr = UT64_MAX;
-					else l = next_map_addr-addr;
+			RIOMap *next_map = NULL;
+			RIOSection * next_sec = NULL;
+			// is there a map somewhere within the next range for
+			// us to read from
+			next_sec = r_io_section_get_first_in_vaddr_range (io, addr+w, addr+len+w);
+			next_sec_addr = next_sec ? next_sec->offset : UT64_MAX;
 
-				} else if (len <= next_map_addr-addr) {
-					next_sec_addr = UT64_MAX;
-				} else {
-					l = next_sec_addr-addr;
-				}
+			if (!next_sec){
+				next_map = r_io_map_get_first_map_in_range (io, addr+w, addr+len+w);
+				next_map_addr = next_map ? next_map->from : UT64_MAX;
+				if (len <= next_map_addr-addr) next_map_addr = UT64_MAX;
+				else l = next_map_addr-addr;
 
-				if (!next_sec && !next_map) {
-					// done
-					return olen;
-				}
-				// want to capture monotonicity even when maps are 0 in length
-				if (l==0) l++;
-				w+= l;
-				len -= l;
-				continue;
+			} else if (len <= next_map_addr-addr) {
+				next_sec_addr = UT64_MAX;
+			} else {
+				l = next_sec_addr-addr;
 			}
+
+			if (!next_sec && !next_map) {
+				// done
+				return olen;
+			}
+			// want to capture monotonicity even when maps are 0 in length
+			if (l==0) l++;
+			w+= l;
+			len -= l;
+			continue;
 		}
 
 		last = r_io_section_next (io, addr+w);
@@ -348,12 +354,18 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (last == (addr+w)) last = last2;
 		//else if (last2<last) last = last2;
 		l = (len > (last-addr+w))? (last-addr+w): len;
+} else {
+	// overflow //
+	l = (UT64_MAX-addr)+1;
+
+}
 		if (l<1) l = len;
 		 {
 			if (addr != UT64_MAX)
 				paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
 			else paddr = 0;
-			if (!paddr || paddr==UT64_MAX)
+			//if (!paddr || paddr==UT64_MAX)
+			if (paddr==UT64_MAX)
 				paddr = r_io_map_select (io, addr); // XXX
 			if (paddr == UT64_MAX) {
 				w +=l;
@@ -372,7 +384,6 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (!r_io_map_get (io, addr+w)) {
 				if (addr==0||r_io_section_getv (io, addr+w)) {
 					memset (buf+w, 0xff, l);
-eprintf ("RETRERET\n");
 					return -1;
 				}
 			}
@@ -384,11 +395,10 @@ eprintf ("RETRERET\n");
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 //memset(buf, 0xff, olen);
-			ret = 1;
+			ret = l;
 		} else if (ret<l) {
 			l = ret;
-		} else {
-}
+		}
 #if USE_CACHE
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len); //-w);
@@ -416,7 +426,7 @@ bear in mind that we need to fix that loop and honor lseek sections and sio maps
 if (len>0) {
 	memset (buf+w, 0xff, len);
 }
-break;
+//break;
 	}
 	return olen;
 #endif

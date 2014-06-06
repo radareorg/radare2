@@ -87,6 +87,7 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 		idx += 2;
 	}
 	strcat (line, "  ");
+	idx += 2;
 	if ((mallocsz-idx)>12)
 	switch (d->type) {
 	case R_ANAL_DATA_TYPE_STRING:
@@ -97,10 +98,9 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 		strcat (line, "wide string");
 		break;
 	case R_ANAL_DATA_TYPE_NUMBER:
-		strcat (line, "number ");
 		if (n32 == d->ptr)
-			snprintf (line+idx, mallocsz-idx, " %d 0x%x", n32, n32);
-		else snprintf (line+idx, mallocsz-idx, " %"PFMT64d" 0x%"PFMT64x,
+			snprintf (line+idx, mallocsz-idx, "number %d 0x%x", n32, n32);
+		else snprintf (line+idx, mallocsz-idx, "number %"PFMT64d" 0x%"PFMT64x,
 				d->ptr, d->ptr);
 		break;
 	case R_ANAL_DATA_TYPE_POINTER:

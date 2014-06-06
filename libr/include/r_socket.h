@@ -142,7 +142,7 @@ R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port);
 R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname);
 R_API void r_socket_rap_server_free (RSocketRapServer *rap_s);
 R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile);
-R_API int r_socket_rap_server_accept (RSocketRapServer *rap_s);
+R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s);
 R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s);
 
 #endif

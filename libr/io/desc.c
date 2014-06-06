@@ -15,16 +15,12 @@ R_API void r_io_desc_fini(RIO *io) {
 R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
 	RIODesc *old = NULL;
     	ut64 sz = -1;
-
 	if (desc && io->desc != desc){
 		old = io->desc;
 		r_io_use_desc (io, desc);
 	}
-
 	if (desc) sz = r_io_size(io);
-
-	if(old)
-		r_io_use_desc (io, old);
+	if (old) r_io_use_desc (io, old);
 	return sz;
 }
 
@@ -106,7 +102,7 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 	return NULL;
 }
 
-R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset, int whence) {
+R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset) {
 	RIOPlugin *plugin = desc ? desc->plugin : NULL;
 	if (!plugin) return (ut64)lseek (desc->fd, offset, SEEK_SET);
 	return plugin->lseek (io, desc, offset, SEEK_SET);

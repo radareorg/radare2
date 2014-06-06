@@ -29,15 +29,13 @@ enum {
 #define R_SEARCH_KEYWORD_TYPE_STRING 's'
 
 typedef struct r_search_keyword_t {
-	char keyword[128];
-	char binmask[128];
 	ut8 bin_keyword[128];
 	ut8 bin_binmask[128];
 	ut32 keyword_length;
 	ut32 binmask_length;
 	ut32 idx[R_SEARCH_DISTANCE_MAX]; // searching purposes
 	int distance;
-	void *data;
+	void const *data;
 	int count;
 	int kwidx;
 	int icase; // ignore case
@@ -91,6 +89,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
+R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *data);
 
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 R_API void r_search_reset(RSearch *s, int mode);
@@ -100,6 +99,8 @@ R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_reset(RSearch *s);
 R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
+
+R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out);
 
 // TODO: is this an internal API?
 R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);

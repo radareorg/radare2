@@ -48,13 +48,10 @@ R_API int r_io_plugin_init(RIO *io) {
 }
 
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many) {
-
 	if (!DEFAULT ||
 		!DEFAULT->plugin_open ||
 		!DEFAULT->plugin_open (io, filename, many) ) return NULL;
-
-	return DEFAULT;
-
+	return (RIOPlugin*) DEFAULT;
 }
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many) {

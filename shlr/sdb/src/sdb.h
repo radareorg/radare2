@@ -126,7 +126,7 @@ ut64 sdb_num_dec (Sdb* s, const char *key, ut64 n, ut32 cas);
 
 /* locking */
 int sdb_lock(const char *s);
-const char *sdb_lockfile(const char *f);
+const char *sdb_lock_file(const char *f);
 void sdb_unlock(const char *s);
 SDB_API int sdb_unlink (Sdb* s);
 SDB_API int sdb_lock_wait(const char *s UNUSED);
@@ -159,7 +159,8 @@ const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...);
 #define sdb_json_format_free(x) free ((x)->buf)
 
 // namespace
-Sdb* sdb_ns (Sdb *s, const char *name);
+Sdb* sdb_ns (Sdb *s, const char *name, int create);
+Sdb *sdb_ns_path(Sdb *s, const char *path, int create);
 void sdb_ns_init (Sdb* s);
 void sdb_ns_free (Sdb* s);
 void sdb_ns_lock(Sdb *s, int lock, int depth);

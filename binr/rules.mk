@@ -22,6 +22,8 @@ ifeq ($(WITHNONPIC),1)
 LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.a ; done )
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/grub/libgrubfs.a
+LDFLAGS+=../../shlr/zip/librz.a
+LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
 ifneq (${OSTYPE},haiku)
 LDFLAGS+=-lm
@@ -50,7 +52,7 @@ ${BINS}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo CC $@
 endif
-	${CC} ${CFLAGS} $@.c ${REAL_LDFLAGS} ${OBJS} -o $@
+	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} -o $@
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifneq ($(SILENT),)

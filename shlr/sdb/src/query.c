@@ -170,7 +170,7 @@ next_quote:
 	if (arroba) {
 	next_arroba:
 		*arroba = 0;
-		s = sdb_ns (s, cmd);
+		s = sdb_ns (s, cmd, eq?1:0);
 		if (!s) {
 			eprintf ("Cant find namespace %s\n", cmd);
 			free (out);

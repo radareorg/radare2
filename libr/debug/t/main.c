@@ -54,13 +54,13 @@ int main(int argc, char **argv) {
 	//r_io_system(io, "reg");
 
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, 0);
-	r_debug_reg_list (dbg, R_REG_TYPE_GPR, 32, 0);
+	r_debug_reg_list (dbg, R_REG_TYPE_GPR, 32, NULL);
 
 	printf ("--> perform 2 steps (only 1 probably?)\n");
 	r_debug_step (dbg, 2);
 
 	r_debug_reg_sync(dbg, R_REG_TYPE_GPR, 0);
-	r_debug_reg_list(dbg, R_REG_TYPE_GPR, 32, 0);
+	r_debug_reg_list(dbg, R_REG_TYPE_GPR, 32, NULL);
 
 	//printf("--> regs post step\n");
 	//r_io_system(io, "reg");
