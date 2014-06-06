@@ -62,8 +62,9 @@ static PE_DWord PE_(r_bin_pe_paddr_to_vaddr)(struct PE_(r_bin_pe_obj_t)* bin, PE
 static int PE_(r_bin_pe_get_import_dirs_count)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (!bin || !bin->nt_headers)
 		return 0;
-	PE_(image_data_directory) *data_dir_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
-
+	PE_(image_data_directory) *data_dir_import = \
+		&bin->nt_headers->optional_header.DataDirectory[\
+			PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 	return (int)(data_dir_import->Size / sizeof(PE_(image_import_directory)) - 1);
 }
 
@@ -72,8 +73,8 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 	if (!bin || !bin->nt_headers)
 		return 0;
 	data_dir_delay_import = \
-				&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
-
+		&bin->nt_headers->optional_header.DataDirectory[\
+		PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
 	return (int)(data_dir_delay_import->Size / sizeof(PE_(image_delay_import_directory)) - 1);
 }
 
@@ -145,18 +146,18 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf("Invalid e_lfanew field\n");
 		return R_FALSE;
 	}
-	if (!(bin->nt_headers = malloc(sizeof(PE_(image_nt_headers))))) {
+	if (!(bin->nt_headers = malloc (sizeof (PE_(image_nt_headers))))) {
 		r_sys_perror("malloc (nt header)");
 		return R_FALSE;
 	}
 	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew,
-				(ut8*)bin->nt_headers, sizeof(PE_(image_nt_headers))) == -1) {
+			(ut8*)bin->nt_headers, sizeof (PE_(image_nt_headers))) == -1) {
 		eprintf ("Error: read (dos header)\n");
 		return R_FALSE;
 	}
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
-		return R_FALSE;
+			return R_FALSE;
 	return R_TRUE;
 }
 
@@ -185,14 +186,14 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	int symctr = 0;
 	char *buf;
 
-	if (!bin || !bin->nt_headers) {
+	if (!bin || !bin->nt_headers)
 		return 0;
-	}
 	off = bin->nt_headers->file_header.PointerToSymbolTable;
 	num = bin->nt_headers->file_header.NumberOfSymbols;
 	shsz = bufsz = num * srsz;
-	if (bufsz<1 || bufsz>bin->size)
+	if (bufsz<1 || bufsz>bin->size) {
 		return 0;
+	}
 	buf = malloc (bufsz);
 	if (!buf)
 		return 0;
@@ -467,7 +468,6 @@ static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			ut32 n_value;    /* value of symbol (bfd_vma) */
 #endif
 		};
-eprintf ("SIZE IS %d\n", sizeof (struct stab_item));
 		ut8 *p = stab;
 		struct stab_item *si = p;
 #if 0
@@ -717,6 +717,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 
 	if (bin->import_directory) {
 		curr_import_dir = bin->import_directory;
+		dll_name_offset = curr_import_dir->Name;
 		while ((curr_import_dir->Characteristics != 0) && (dll_name_offset != 0)) {
 			dll_name_offset = curr_import_dir->Name;
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
