@@ -2,7 +2,7 @@
 
 #include <r_io.h>
 
-#if 0
+/*
 
 | io.va |               | io.ff |
 .------------------.
@@ -34,7 +34,7 @@ maddr -> vaddr
 it is possible to get a list of virtual addresses that
 point to a given physical address from a virtual one.
 
-#endif
+*/
 
 /* Virtual Addressing API */
 

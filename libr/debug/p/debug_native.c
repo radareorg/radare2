@@ -716,7 +716,7 @@ static RDebugInfo* r_debug_native_info(RDebug *dbg, const char *arg) {
 	rdi->gid = -1;// TODO
 	rdi->cwd = NULL;// TODO : use readlink
 	rdi->exe = NULL;// TODO : use readlink!
-	snprintf (procpid_cmdline, "/proc/%d/cmdline", rdi->pid);
+	snprintf (procpid_cmdline, sizeof(procpid_cmdline), "/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = r_file_slurp (procpid_cmdline, NULL);
 	return rdi;
 #endif
