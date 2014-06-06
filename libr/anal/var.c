@@ -52,7 +52,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		// fcn.<addr>.kind+=var.0x%"PFMT64x"..
 	} else {
 		// global
-		snprintf (key, "var.0x%"PFMT64x, addr);
+		snprintf (key, sizeof(key), "var.0x%"PFMT64x, addr);
 	}
 	sdb_array_add (DB, key, val, 0);
 	return R_TRUE;
@@ -202,7 +202,7 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delt
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta) {
 	char key[128], val[128], *v;
 	SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
-	v = sdb_itoa (val, delta, 10);
+	v = sdb_itoa (delta, val, 10);
 	int idx = sdb_array_indexof (DB, key, v, 0);
 	if (idx != -1) {
 		sdb_array_delete (DB, key, idx, 0);
