@@ -1015,12 +1015,15 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		return 0;
 shdr = bin->section_header;
 	sections_count = bin->nt_headers->file_header.NumberOfSections;
-	if ((sections = malloc ((sections_count + 1) * sizeof (struct r_bin_pe_section_t))) == NULL) {
+	if (!(sections = malloc ((sections_count + 1) * sizeof (struct r_bin_pe_section_t)))) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
 	}
 	for (i = 0; i < sections_count; i++) {
-		memcpy (sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+		if (shdr[i].SizeOfRawData<1)
+			continue;
+		memcpy (sections[i].name, shdr[i].Name, \
+			PE_IMAGE_SIZEOF_SHORT_NAME);
 		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
 		sections[i].vaddr = shdr[i].VirtualAddress;
 		sections[i].size = shdr[i].SizeOfRawData;
