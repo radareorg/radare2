@@ -114,6 +114,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	char *uri = strdup (_uri);
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri, 0);
+eprintf ("RESOLVE (%s) = %p\n", uri, plugin);
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
@@ -185,6 +186,7 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
+eprintf ("PUTA BARATA (0%o) %o %p\n", flags, O_CREAT|O_RDWR, desc);
 	IO_IFDBG {
 		if (desc && desc->plugin)
 			eprintf ("Opened file: %s with %s\n", file, desc->plugin->name);
@@ -494,7 +496,6 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 }
 
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
-
 	if (!size) return R_FALSE;
 	r_io_seek (io, addr, R_IO_SEEK_SET);
 	return 	r_io_extend (io, size);

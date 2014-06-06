@@ -80,10 +80,10 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 		return NULL;
 
 	mmo->filename = strdup (filename);
-	mmo->fd = r_num_rand (0xFFFF); // XXX: Use r_io_fd api
 	mmo->mode = mode;
 	mmo->flags = flags;
 	mmo->io_backref = io;
+	mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
 
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
 		mmo->rawio = 1;
@@ -153,15 +153,12 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 		}
 	}
 
-#define HACK 1
-#if HACK
-	lseek (fd->fd, addr, 0);
-	len = write (fd->fd, buf, count);
-	if (len!=-1)
-		return len;
-#endif
-
 	len = r_file_mmap_write (mmo->filename, io->off, buf, count);
+	if (len != count) {
+		// aim to hack some corner cases?
+		lseek (fd->fd, addr, 0);
+		len = write (fd->fd, buf, count);
+	}
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
 		eprintf ("io_def_mmap: failed to refresh the def_mmap backed buffer.\n");
 		// XXX - not sure what needs to be done here (error handling).
@@ -227,7 +224,7 @@ static int r_io_def_mmap_resize(RIO *io, RIODesc *fd, ut64 size) {
 		return -1;
 	mmo = fd->data;
 	if (!(mmo->flags & R_IO_WRITE)) return -1;
-	return r_io_def_mmap_truncate(mmo, size);
+	return r_io_def_mmap_truncate (mmo, size);
 }
 
 static int __plugin_open_default(RIO *io, const char *file, ut8 many) {
