@@ -6,7 +6,7 @@
 #include <r_lib.h>
 #include "../arch/snes/snesdis.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = snesDisass(op,buf,len);
 	if (dlen<0) dlen=0;
 	op->size = dlen;
