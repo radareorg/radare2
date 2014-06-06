@@ -3,13 +3,13 @@
 
 static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #if __linux__
-//    __
-// -=(o '.
-//    \.-.\
-//    /|  \\
-//    '|  ||
-//     _\_):,_
-//
+/*  __
+ -=(o '.
+    \.-.\
+    /|  \\
+    '|  ||
+     _\_):,_
+*/
 #if __arm__
 #include "reg-linux-arm.h"
 #elif __MIPS__ || __mips__
@@ -30,12 +30,12 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 
 
 #elif __APPLE__
-//     _
-//    _\)/_
-//   /     \
-//   \     /
-//    \_._/
-//
+/*   _
+    _\)/_
+   /     \
+   \     /
+    \_._/
+*/
 #if __i386__ || __x86_64__
 	if (dbg->bits & R_SYS_BITS_32) {
 #include "reg-darwin-x86.h"
@@ -59,26 +59,26 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #endif
 
 #elif __WINDOWS__
-//  _______
-// |   |   |
-// |___|___|
-// |   |   |
-// |___|___|
-//   
+/*_______
+ |   |   |
+ |___|___|
+ |   |   |
+ |___|___|
+*/
 	if (dbg->bits & R_SYS_BITS_64) {
 #include "reg-w64.h"
 	} else {
 #include "reg-w32.h"
 	}
 #elif (__OpenBSD__ || __NetBSD__)
-//                             __.--..__      
-//       \-/-/-/    _ __  _.--'  _.--' 
-//  _  \'       \   \\  ''      `------.__
-//  \\/      __)_)   \\      ____..---'
-//  //\       o  o    \\----'
-//     / <_/      3    \\
-//      \_,_,__,_/      \\
-
+/*                           __.--..__
+       \-/-/-/    _ __  _.--'  _.--'
+  _  \'       \   \\  ''      `------.__
+  \\/      __)_)   \\      ____..---'
+  //\       o  o    \\----'
+     / <_/      3    \\
+      \_,_,__,_/      \\
+*/
 #if __i386__
 #include "reg-netbsd-x86.h"
 #elif __x86_64__
@@ -88,16 +88,17 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #endif
 
 #elif __KFBSD__ || __FreeBSD__
-//
-//    /(       ).
-//    \ \__   /|
-//    /  _ '-/ |
-//   (/\/ |    \
-//   / /  | \   )
-//   O O _/     |
-//  (__)  __   /
-//    \___/   /
-//      `----'
+/*
+    /(       ).
+    \ \__   /|
+    /  _ '-/ |
+   (/\/ |    \
+   / /  | \   )
+   O O _/     |
+  (__)  __   /
+    \___/   /
+      `----'
+*/
 #if __i386__
 #include "reg-kfbsd-x86.h"
 #elif __x86_64__
