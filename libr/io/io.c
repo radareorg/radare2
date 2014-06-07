@@ -494,7 +494,6 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 }
 
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
-
 	if (!size) return R_FALSE;
 	r_io_seek (io, addr, R_IO_SEEK_SET);
 	return 	r_io_extend (io, size);
@@ -512,7 +511,7 @@ R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
+R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 	int i, ret = -1;
 	ut8 *data = NULL;
 
@@ -566,12 +565,14 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX)
-		return -1;
+	(void)r_io_seek (io, addr, R_IO_SEEK_SET);
+	// errors on seek are checked and ignored here //
 	return r_io_write (io, buf, len);
 }
 
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
+	// TODO: review the offset/vaddr/paddr/maddr thing here
+	// now, io-seek always works with vaddr, because it depends on read/write ops that use it
 	int posix_whence = SEEK_SET;
 	ut64 ret = UT64_MAX;
 	if (io == NULL)

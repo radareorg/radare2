@@ -7,7 +7,7 @@
 #include <string.h>
 #include "snes_op_table.h"
 
-static int snesDisass(RAsmOp *op, const ut8 *buf, ut64 len){
+static int snesDisass(RAsmOp *op, const ut8 *buf, int len){
 	if (len<snes_op[buf[0]].len)
 		return 0;
 	switch (snes_op[buf[0]].len) {

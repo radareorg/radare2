@@ -973,7 +973,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
 	SETCB("io.raw", "false", &cb_ioraw, "Enable to ignore maps/sections and use raw io");
-	SETCB("io.ffio", "true", &cb_ioffio, "Fill invalid buffers with 0xff instead of returning error");
+	SETCB("io.ff", "true", &cb_ioffio, "Fill invalid buffers with 0xff instead of returning error");
 	SETCB("io.va", "true", &cb_iova, "If enabled virtual address layout can be used");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
 	SETCB("io.autofd", "true", &cb_ioautofd, "change fd when opening new file automatically");
