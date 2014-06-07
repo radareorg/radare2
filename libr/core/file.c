@@ -445,9 +445,10 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
-		if (plugin && strcmp (plugin->name, "any") && info) {
-			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
-		}
+		if (plugin && plugin->name)
+			if (strcmp (plugin->name, "any") && info)
+				r_core_bin_set_arch_bits (r, binfile->file,
+					info->arch, info->bits);
 	}
 
 	if (plugin && !strcmp (plugin->name, "dex")) {

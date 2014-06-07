@@ -120,7 +120,7 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 
 SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	char *eq, *tmp, *json, *next, *quot, *arroba;
+	char *eq, *tmp, *json, *next, *quot, *arroba, *res;
 	const char *p, *q, *val = NULL;
 	StrBuf *out;
 	Sdb *s = r;
@@ -589,8 +589,9 @@ next_quote:
 fail:
 	if (bufset)
 		free (buf);
+	res = out->buf;
 	free (out);
-	return out->buf;
+	return res;
 }
 
 SDB_API int sdb_query (Sdb *s, const char *cmd) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -32,7 +32,8 @@ R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 #else
 	fd = r_sandbox_open (filename, O_RDWR|O_SYNC, 0644);
 #endif
-	if (fd < 1) return R_FALSE;
+	if (fd == -1)
+		return R_FALSE;
 	ftruncate (fd, newsize);
 	close (fd);
 	return R_TRUE;

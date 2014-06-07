@@ -79,7 +79,7 @@ static void r_core_file_info (RCore *core, int mode) {
 static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
 	if (core->file) {
 		if (mode == R_CORE_BIN_JSON)
-			r_cons_printf ("{\"bin\":");
+			r_cons_printf ("{\"bin\":{");
 		r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
 			mode, va, NULL, offset);
 		if (mode == R_CORE_BIN_JSON)
