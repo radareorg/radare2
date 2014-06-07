@@ -755,7 +755,8 @@ else
 				if (fmt==1) r_cons_printf ("digraph code {\n"
 					"\tgraph [bgcolor=white];\n"
 					"\tnode [color=lightgray, style=filled shape=box"
-					" fontname=\"%s\" fontsize=\"8\"];\n", font);
+					" fontname=\"%s\" fontsize=\"8\"];\n"
+					"\tedge [fontname=\"%s\" fontsize=\"8\"];\n", font, font);
 				showhdr = 1;
 			}
 			// TODO: display only code or data refs?
