@@ -44,21 +44,22 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	static const char* lookup = "0123456789abcdef";
 	const int imax = 62;
 	int i = imax;
+	if (base > 16)
+		return NULL;
 	if (!s) {
-		s = malloc (64);
+		s = calloc (64, sizeof(char));
 		if (!s) return NULL;
-		memset (s, 0, 64);
 	}
 	s[imax+1] = '\0';
-	if (base==16) {
-		for (; n && i>0; n/=16)
-			s[i--] = lookup[(n % 16)];
+	if (base <= 10) {
+		for (; n && i>0; n/=base)
+			s[i--] = (n % base) + '0';
+	} else {
+		for (; n && i>0; n/=base)
+			s[i--] = lookup[(n % base)];
 		if (i!=imax)
 			s[i--] = 'x';
 		s[i--] = '0';
-	} else {
-		for (; n && i>0; n/=10)
-			s[i--] = (n % 10) + '0';
 	}
 	return s+i+1;
 }

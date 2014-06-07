@@ -8,6 +8,39 @@
 #include <unistd.h>
 #include "sdb.h"
 
+typedef struct {
+	char *buf;
+	int len;
+	int size;
+} StrBuf;
+
+static StrBuf* strbuf_new() {
+	return calloc (sizeof(StrBuf),1);
+}
+
+static StrBuf* strbuf_append(StrBuf *sb, const char *str) {
+	int len = strlen (str);
+	if ((sb->len + len+1)>=sb->size) {
+		int newsize = sb->size+len+256;
+		char *b = realloc (sb->buf, newsize);
+		/// TODO perform free and force all callers to update the ref?
+		if (!b) return NULL;
+		sb->buf = b;
+	}
+	memcpy (sb->buf+sb->len, str, len);
+	memcpy (sb->buf+sb->len+len, "\n", 2);
+	sb->len += len+1;
+	return sb;
+}
+
+static StrBuf *strbuf_free(StrBuf *sb) {
+	free (sb->buf);
+	free (sb);
+	return NULL;
+}
+
+/*******/
+
 SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
         char string[4096];
         int ret;
@@ -32,24 +65,20 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 
 // TODO: Reimplement as a function with optimized concat
 #define out_concat(x) if (x&&*x) { \
-	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
-	if (out) { char *o = realloc (out, size); \
-		if (o) { strcat (o, "\n"); strcat (o, x); out = o; } \
-	} else out = strdup (x); \
+	strbuf_append (out, x); \
 }
 
 typedef struct {
-	char **out;
+	StrBuf *out;
 	int encode;
 } ForeachListUser;
 
 static int foreach_list_cb(void *user, const char *k, const char *v) {
 	ForeachListUser *rlu = user;
-	char *line, *out;
+	char *line;
 	int klen, vlen;
 	ut8 *v2 = NULL;
 	if (!rlu) return 0;
-	out = *rlu->out;
 	klen = strlen (k);
 	if (rlu->encode) {
 		v2 = sdb_decode (v, NULL);
@@ -60,43 +89,44 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	memcpy (line, k, klen);
 	line[klen] = '=';
 	memcpy (line+klen+1, v, vlen+1);
-	out_concat (line);
-	*(rlu->out) = out;
+	strbuf_append (rlu->out, line);
 	free (v2);
 	free (line);
 	return 1;
 }
 
-static void walk_namespace (char **_out, char *root, int left, char *p, SdbNs *ns) {
+static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns) {
 	int len;
 	SdbListIter *it;
-	char *out = *_out;
+	char *_out, *out = sb->buf;
 	SdbNs *n;
 	char *roote = root + strlen (root);
-	if (ns->sdb) {
-		ls_foreach (ns->sdb->ns, it, n) {
-			len = strlen (n->name);
-			p[0] = '/';
-			if (len+2<left) {
-				memcpy (p+1, n->name, len+1);
-				left -= len+2;
-			}
-			out_concat (root);
-			*_out = out;
-			walk_namespace (_out, root, left,
-				roote+len+1, n);
-			out = *_out;
+	if (!ns->sdb)
+		return;
+	ls_foreach (ns->sdb->ns, it, n) {
+		len = strlen (n->name);
+		p[0] = '/';
+		if (len+2<left) {
+			memcpy (p+1, n->name, len+1);
+			left -= len+2;
 		}
+		strbuf_append (sb, root);
+		_out = out;
+		walk_namespace (sb, root, left,
+			roote+len+1, n);
+		out = _out;
 	}
 }
 
 SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	char *eq, *tmp, *json, *next, *quot, *arroba, *out = NULL;
+	char *eq, *tmp, *json, *next, *quot, *arroba;
 	const char *p, *q, *val = NULL;
+	StrBuf *out;
 	Sdb *s = r;
 	ut64 n;
 	if (!s || (!cmd && !buf)) return NULL;
+	out = strbuf_new ();
 	if (cmd) {
 		if (len<1 || !buf) {
 			bufset = 1;
@@ -158,7 +188,7 @@ next_quote:
 			*eq++ = 0;
 			if (bufset)
 				free (buf);
-			free (out);
+			strbuf_free (out);
 			return NULL;
 		}
 		next = strchr (quot, ';');
@@ -173,7 +203,7 @@ next_quote:
 		s = sdb_ns (s, cmd, eq?1:0);
 		if (!s) {
 			eprintf ("Cant find namespace %s\n", cmd);
-			free (out);
+			strbuf_free (out);
 			if (bufset)
 				free (buf);
 			return NULL;
@@ -184,6 +214,7 @@ next_quote:
 			goto next_arroba;
 	}
 	if (*cmd=='*') {
+		char *res;
 		if (!strcmp (cmd, "***")) {
 			char root[1024]; // limit namespace length?
 			SdbListIter *it;
@@ -193,14 +224,16 @@ next_quote:
 				if (len<sizeof (root)) {
 					memcpy (root, ns->name, len+1);
 					out_concat (root);
-					walk_namespace (&out, root,
+					walk_namespace (out, root,
 						sizeof (root)-len,
 						root+len, ns);
 				} else eprintf ("TODO: Namespace too long\n");
 			}
 			if (bufset)
 				free (buf);
-			return out;
+			res = out->buf;
+			free (out);
+			return res;
 		}
 		if (!strcmp (cmd, "**")) {
 			SdbListIter *it;
@@ -210,14 +243,18 @@ next_quote:
 			}
 			if (bufset)
 				free (buf);
-			return out;
+			res = out->buf;
+			free (out);
+			return res;
 		}
 		if (!strcmp (cmd, "*")) {
-			ForeachListUser user = { &out, encode };
+			ForeachListUser user = { out, encode };
 			sdb_foreach (s, foreach_list_cb, &user);
 			if (bufset)
 				free (buf);
-			return out;
+			res = out->buf;
+			free (out);
+			return res;
 		}
 	}
 	json = strchr (cmd, ':');
@@ -552,7 +589,8 @@ next_quote:
 fail:
 	if (bufset)
 		free (buf);
-	return out;
+	free (out);
+	return out->buf;
 }
 
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
