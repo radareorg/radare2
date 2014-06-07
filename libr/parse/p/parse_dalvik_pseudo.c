@@ -191,8 +191,10 @@ static int parse(RParse *p, const char *data, char *str) {
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr==' '; ptr++);
-			strcpy (w0, buf);
-			strcpy (w1, ptr);
+			strncpy (w0, buf, sizeof (w0) - 1);
+			w0[sizeof(w0)-1] = '\0';
+			strncpy (w1, ptr, sizeof (w1) - 1);
+			w1[sizeof(w1)-1] = '\0';
 
 			optr=ptr;
 			ptr2 = strchr (ptr, '}');
@@ -201,23 +203,29 @@ static int parse(RParse *p, const char *data, char *str) {
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr==' '; ptr++);
-				strcpy (w1, optr);
-				strcpy (w2, ptr);
+				strncpy (w1, optr, sizeof (w1) - 1);
+				w1[sizeof(w1)-1] = '\0';
+				strncpy (w2, ptr, sizeof (w2) - 1);
+				w2[sizeof(w2)-1] = '\0';
 				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr==' '; ptr++);
-					strcpy (w2, optr);
-					strcpy (w3, ptr);
+					strncpy (w2, optr, sizeof (w2) - 1);
+					w2[sizeof(w2)-1] = '\0';
+					strncpy (w3, ptr, sizeof (w3) - 1);
+					w3[sizeof(w3)-1] = '\0';
 					optr=ptr;
 // bonus
 					ptr = strchr (ptr, ',');
 					if (ptr) {
 						*ptr = '\0';
 						for (++ptr; *ptr==' '; ptr++);
-						strcpy (w3, optr);
-						strcpy (w4, ptr);
+						strncpy (w3, optr, sizeof (w3) - 1);
+						w3[sizeof(w3)-1] = '\0';
+						strncpy (w4, ptr, sizeof (w4) - 1);
+						w4[sizeof(w4)-1] = '\0';
 					}
 				}
 			}
