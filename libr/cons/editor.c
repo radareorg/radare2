@@ -14,10 +14,11 @@ static int bytes;
 static void setnewline(int old) {
 	snprintf (prompt, sizeof (prompt), "%d: ", _n);
 	r_line_set_prompt (prompt);
-	strcpy (I->line->buffer.data, r_str_word_get0 (lines, _n));
-	I->line->buffer.index = 
-	I->line->buffer.length = strlen (I->line->buffer.data);
-		I->line->contents = I->line->buffer.data;
+	strncpy (I->line->buffer.data, r_str_word_get0 (lines, _n),
+			sizeof (I->line->buffer.data - 1));
+	I->line->buffer.data[sizeof (I->line->buffer.data) - 1] = '\0';
+	I->line->buffer.index = I->line->buffer.length = strlen (I->line->buffer.data);
+	I->line->contents = I->line->buffer.data;
 }
 
 static void saveline (int n, const char *str) {
