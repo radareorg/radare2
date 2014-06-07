@@ -198,7 +198,11 @@ static int bin_info (RCore *r, int mode) {
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
-	if (!info) return R_FALSE;
+	if (!info) {
+		if (mode & R_CORE_BIN_JSON)
+			r_cons_printf ("{}");
+		return R_FALSE;
+	}
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("{\"type\":\"%s\","
