@@ -510,6 +510,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		goto error;
 	}
 
+	//r_cons_clear_line (1);
 	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
 		int delta = fcn->size;
@@ -755,7 +756,8 @@ else
 				if (fmt==1) r_cons_printf ("digraph code {\n"
 					"\tgraph [bgcolor=white];\n"
 					"\tnode [color=lightgray, style=filled shape=box"
-					" fontname=\"%s\" fontsize=\"8\"];\n", font);
+					" fontname=\"%s\" fontsize=\"8\"];\n"
+					"\tedge [fontname=\"%s\" fontsize=\"8\"];\n", font, font);
 				showhdr = 1;
 			}
 			// TODO: display only code or data refs?

@@ -386,7 +386,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		lbu 	rt, immediate(rs) 	100100 	
 
 		lh 	rt, immediate(rs) 	100001 	
-		lhu 	rt, immediate(rs) 	100101 	
+		lhu 	rt, immediate(rs) 	100101
 
 		lui 	rt, immediate 	 	001111 	
 
