@@ -17,7 +17,10 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 		if (plugin && plugin->deinit) {
 			plugin->deinit (cmd, NULL);
 		}
+		r_list_pop(cmd->plist);
 	}
+	if (!r_list_empty(cmd->plist))
+		r_list_pop(cmd->plist);
 	return R_TRUE;
 }
 
@@ -31,7 +34,7 @@ R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 
 R_API int r_core_plugin_init(RCmd *cmd) {
 	int i;
-	cmd->plist = r_list_newf (r_core_plugin_deinit);
+	cmd->plist = r_list_newf (free);
 	for (i=0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
 			eprintf ("Error loading cmd plugin\n");
