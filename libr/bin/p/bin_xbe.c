@@ -24,7 +24,7 @@ static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	const ut64 size = arch ? r_buf_size (arch->buf) : 0;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o || !bytes)
 		return R_FALSE;
 
 	return check_bytes(bytes, size);
@@ -84,11 +84,15 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 
 static RList* entries(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
-	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	// XXX possible memleak if 1 of 2 alloc fails
-	if (!arch || !arch->buf || !ret || !ptr)
+	RList *ret;
+	if (!arch || !arch->buf || !ptr)
 		return NULL;
+	ret = r_list_new();
+	if (!ret) {
+		free(ptr);
+		return NULL;
+	}
 	ret->free = free;
 	ptr->vaddr = obj->header->ep ^ obj->ep_key;
 	ptr->paddr = ptr->vaddr - obj->header->base;
@@ -104,12 +108,13 @@ static RList* sections(RBinFile *arch) {
 
 	if (!arch || !arch->o)
 		return NULL;
+
 	obj = arch->o->bin_obj;
-	if (obj->header->sections<1)
+	if (obj->header->sections < 1)
 		return NULL;
 
 	ret = r_list_new ();
-	if (!ret )
+	if (!ret)
 		return NULL;
 
 	if (!arch->buf) {
