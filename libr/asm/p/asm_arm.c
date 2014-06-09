@@ -186,6 +186,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		r_mem_copyendian (op->buf, (void *)&opcode,
 			opsize, a->big_endian);
 	} else {
+		opsize = 4;
 		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
 	}
 // XXX. thumb endian assembler needs no swap
