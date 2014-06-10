@@ -80,18 +80,19 @@ static int bits8 (const char *p) {
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
-	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
+//	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
+	const char *regs16[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
 	if (!str)
 		return 0xff;
 	for (i=0; regs[i]; i++)
-		if (!memcmp (regs[i], str, strlen (regs[i])))
+		if (!strncmp (regs[i], str, strlen (regs[i])))
 			return i;
 	for (i=0; regs64[i]; i++)
-		if (!memcmp (regs64[i], str, strlen (regs64[i])))
+		if (!strncmp (regs64[i], str, strlen (regs64[i])))
 			return i;
 	for (i=0; regs16[i]; i++)
-		if (!memcmp (regs16[i], str, strlen (regs16[i])))
+		if (!strncmp (regs16[i], str, strlen (regs16[i])))
 			return i;
 	return 0xff;
 }
@@ -113,6 +114,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	if (arg) strcpy (arg, arg+strlen ("dword ptr"));
 	arg = strstr (op, "dword ");
 	if (arg) strcpy (arg, arg+strlen ("dword "));
+	else arg = strchr (op, ' ');
 
 	if (!memcmp (op, "rep ", 4)) {
 		data[l++] = 0xf3;
@@ -138,6 +140,69 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0x0f;
 		data[l++] = 0x31;
 		return l;
+	}
+	if (!strncmp (op, "set", 3)) {
+#if 0
+SETAE/SETNB - Set if Above or Equal / Set if Not Below (386+)
+SETB/SETNAE - Set if Below / Set if Not Above or Equal (386+)
+SETBE/SETNA - Set if Below or Equal / Set if Not Above (386+)
+SETE/SETZ - Set if Equal / Set if Zero (386+)
+SETNE/SETNZ - Set if Not Equal / Set if Not Zero (386+)
+SETL/SETNGE - Set if Less / Set if Not Greater or Equal (386+)
+SETGE/SETNL - Set if Greater or Equal / Set if Not Less (386+)
+SETLE/SETNG - Set if Less or Equal / Set if Not greater or Equal (386+)
+SETG/SETNLE - Set if Greater / Set if Not Less or Equal (386+)
+SETS - Set if Signed (386+)
+SETNS - Set if Not Signed (386+)
+SETC - Set if Carry (386+)
+SETNC - Set if Not Carry (386+)
+SETO - Set if Overflow (386+)
+SETNO - Set if Not Overflow (386+)
+SETP/SETPE - Set if Parity / Set if Parity Even (386+)
+SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
+#endif
+		const char *keys[] = {"o ","no ","b ","ae ","e ","ne ","be ", "a ",
+			"s ", "ns ","p ", "np ", "l ", "ge ", "le ", "g ", NULL};
+		char *tmp;
+		int i, arg0;
+		arg = strchr (op, ' ');
+		if (!arg) {
+			eprintf ("Missing parameter for '%s'\n", op);
+			return -1;
+		} else arg++;
+		tmp = strchr (arg, ' ');
+		if (!tmp) tmp = strchr (arg, '[');
+		if (tmp) {
+			if (*tmp != '[')
+				arg = tmp+1;
+			else arg = tmp;
+		} 
+
+		data[l++] = 0x0f;
+		for (i=0;keys[i];i++) {
+			if (!strncmp (op+3,keys[i], strlen(keys[i]))) {
+				data[l++] = 0x90|i;
+				break;
+			}
+		}
+		if (l==1) {
+			eprintf ("Invalid instruction\n");
+			return -1;
+		}
+		if (*arg=='[') {
+			// skip/implicit byte [...]
+			arg0 = getreg (arg+1);
+			if (arg0==4 || arg0==5) {
+				eprintf ("Invalid arg for '%s'\n", op);
+				return -1;
+			}
+			data[l++] = arg0;
+		} else {
+			arg0 = getreg (arg);
+			data[l++] = 0xc0 | arg0;
+		}
+		//TODO: verify if (l!=3)
+		return 3;
 	}
  	arg = strchr (op, ' ');
 	if (arg) {
