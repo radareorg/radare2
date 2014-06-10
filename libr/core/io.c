@@ -1,11 +1,10 @@
-/* radare2 - LGPL - Copyright 2009-2013 - pancake */
+/* radare2 - LGPL - Copyright 2009-2014 - pancake */
 
 #include "r_core.h"
 
 R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 	int pid, *p = NULL;
 	ut8 is_gdb = (strcmp (debugbackend, "gdb") == 0);
-
 	RIODesc * fd = r->file ? r->file->desc : NULL;
 	p = fd ? fd->data : NULL;
 	r_config_set_i (r->config, "cfg.debug", 1);
@@ -15,7 +14,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 	}
 
 	pid = *p; // 1st element in debugger's struct must be int
-	r_config_set (r->config, "io.ffio", "true");
+	r_config_set (r->config, "io.ff", "true");
 	if (is_gdb) r_core_cmd (r, "dh gdb", 0);
 	else r_core_cmdf (r, "dh %s", debugbackend);
 	r_core_cmdf (r, "dpa %d", pid);

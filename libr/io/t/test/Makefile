@@ -1,2 +1,2 @@
 all:
-	r2 -e io.ffio=1 -v a <script
+	r2 -e io.ff=1 -v a <script
