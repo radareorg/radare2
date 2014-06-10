@@ -84,7 +84,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 struct r_anal_plugin_t r_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = R_SYS_ARCH_8051,
-	.bits = 16,
+	.bits = 8,
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.init = NULL,

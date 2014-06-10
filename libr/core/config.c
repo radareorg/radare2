@@ -152,6 +152,7 @@ static int cb_analsplit(void *user, void *data) {
 }
 
 static int cb_asmarch(void *user, void *data) {
+	char asmparser[32];
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = core->config? r_config_get (core->config, "asm.os"): NULL;
@@ -163,11 +164,16 @@ static int cb_asmarch(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
-	{
-		char asmparser[32];
-		snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 
-		r_config_set (core->config, "asm.parser", asmparser);
+	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
+	r_config_set (core->config, "asm.parser", asmparser);
+	if (!(core->assembler->cur->bits & core->anal->bits)) {
+		int bits = core->assembler->cur->bits;
+		if (8&bits) bits = 8;
+		else if (16&bits) bits=16;
+		else if (32&bits) bits=32;
+		else bits=64;
+		r_config_set_i (core->config, "asm.bits", bits);
 	}
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
