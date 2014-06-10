@@ -647,6 +647,22 @@ static int cmd_write(void *data, const char *input) {
 				break;
 		}
 		break;
+	case 'd':
+		if (input[1]==' ') {
+			char *arg, *inp = strdup (input+2);
+			arg = strchr (inp, ' ');
+			if (arg) {
+				*arg = 0;
+				ut64 addr = r_num_math (core->num, input+2);
+				ut64 len = r_num_math (core->num, arg+1);
+				ut8 *data = malloc (len);
+				r_io_read_at (core->io, addr, data, len);
+				r_io_write_at (core->io, core->offset, data, len);
+				free (data);
+			} else eprintf ("See wd?\n");
+			free (inp);
+		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
+		break;
 	case 's':
 		{
 			ut8 ulen;
@@ -681,6 +697,7 @@ static int cmd_write(void *data, const char *input) {
 			"| wA r 0       alter/modify opcode at current seek (see wA?)\n"
 			"| wb 010203    fill current block with cyclic hexpairs\n"
 			"| wc[ir*?]     write cache undo/commit/reset/list (io.cache)\n"
+			"| wd [off] [n] duplicate N bytes from offset at current seek (memcpy) (see y?)\n"
 			"| wx 9090      write two intel nops\n"
 			"| wv eip+34    write 32-64 bit value\n"
 			"| wo? hex      write in block with operation. 'wo?' fmi\n"

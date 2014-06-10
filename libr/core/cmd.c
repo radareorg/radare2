@@ -266,7 +266,7 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf (
-		"|Usage: y[ptxy] [len] [[@]addr]\n"
+		"|Usage: y[ptxy] [len] [[@]addr]     # See wd? for memcpy, same as 'yf'.\n"
 		"| y                show yank buffer information (srcoff len bytes)\n"
 		"| y 16             copy 16 bytes into clipboard\n"
 		"| y 16 0x200       copy 16 bytes into clipboard from 0x200\n"
