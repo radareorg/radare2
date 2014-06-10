@@ -13,6 +13,7 @@
 #define st8 char
 #define boolt int
 
+#define R_ERROR -2
 #define R_FAIL -1
 #define R_FALSE 0
 #define R_TRUE 1
