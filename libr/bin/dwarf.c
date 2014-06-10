@@ -659,6 +659,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	ut32 debug_info_offset;
 	ut8 address_size, segment_size;
 	const ut8 *buf = obuf;
+	int idx = 0;
 
 	if (!obuf) return R_FALSE;
 
@@ -670,24 +671,36 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	}
 
 	if (length >= 0xfffffff0) {
+		if (idx+12>=len)
+			return R_FALSE;
+		idx += 12;
 		buf += 4;
 		buf += 8;
 	} else {
+		if (idx+4>=len)
+			return R_FALSE;
+		idx+=4;
 		buf += 4;
 	}
 
+	if (idx+2>=len)
+		return R_FALSE;
 	version = *(ut16*)buf;
-
 	buf += 2;
+	idx += 2;
 
 	if (f) printf("Version %d\n", version);
 
+	if (idx+4>=len)
+		return R_FALSE;
 	debug_info_offset = *(ut32*)buf;
 
 	if (f)  fprintf(f, "Debug info offset %d\n", debug_info_offset);
 
 	buf += 4;
+	idx += 4;
 
+// ???
 	address_size = *(ut8*)buf;
 
 	if (f) fprintf(f, "address size %d\n", (int)address_size);
@@ -703,19 +716,25 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	size_t offset = segment_size + address_size * 2;
 
 	if (offset) {
-		buf += (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
+		ut64 n = (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
+		if (idx+n>=len)
+			return R_FALSE;
+		buf += n;
+		idx += n;
 	} else {
 	//	buf += 1;
 	}
 
-	while (buf - obuf < len) {
+	while ((buf - obuf) < len) {
 		ut64 adr, length;
-
+		if ((idx+8)>=len)
+			break;
 		adr = *(ut64*)buf;
 		buf += 8;
+		idx += 8;
 		length = *(ut64*)buf;
 		buf += 8;
-
+		idx += 8;
 		if (f) printf("length 0x%llx address 0x%llx\n", length, adr);
 	}
 
@@ -1442,6 +1461,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 
 	if (binfile && section) {
 		len = section->size;
+		if (len==0) return NULL;
 		buf = malloc (len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (mode == R_CORE_BIN_PRINT) {
