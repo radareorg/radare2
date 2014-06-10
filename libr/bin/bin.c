@@ -1110,15 +1110,13 @@ R_API RList* r_bin_get_symbols(RBin *bin) {
 
 R_API int r_bin_is_big_endian (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->info->big_endian;
+	if (o) return o->info->big_endian;
 	return R_FALSE;
 }
 
 R_API int r_bin_is_stripped (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return R_BIN_DBG_STRIPPED (o->info->dbg_info);
+	if (o) return R_BIN_DBG_STRIPPED (o->info->dbg_info);
 	return 1;
 }
 

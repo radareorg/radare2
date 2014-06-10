@@ -240,7 +240,9 @@ static RList* libs(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
+	int i;
 	char *str;
+	struct r_bin_mach0_symbol_t *symbols = NULL;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 
@@ -267,11 +269,24 @@ static RBinInfo* info(RBinFile *arch) {
 		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	ret->has_crypto = ((struct MACH0_(r_bin_mach0_obj_t)*)arch->o->bin_obj)->has_crypto;
+	ret->has_crypto = ((struct MACH0_(r_bin_mach0_obj_t)*)
+		arch->o->bin_obj)->has_crypto;
 	ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
 	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
 	/* TODO detailed debug info */
 	ret->dbg_info = 0;
+
+	// if contains a symbol named radr:// the file is stripped
+	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (arch->o->bin_obj)))
+		return ret;
+	for (i = 0; !symbols[i].last; i++) {
+		if (!strncmp (symbols[i].name, "radr://", 7)) {
+			ret->dbg_info = 1; // stripped
+			break;
+		}
+	}
+	free (symbols);
+
 	ret->has_va = R_TRUE;
 	ret->has_pi = MACH0_(r_bin_mach0_is_pie) (arch->o->bin_obj);
 	return ret;
