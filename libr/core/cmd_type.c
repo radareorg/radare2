@@ -2,25 +2,25 @@
 
 static void show_help(RCore *core) {
     const char * help_message[] = {
-        "Usage: t", "",     "cparse types commands",
-        "t",   "",          "List all loaded types",
-        "t",   " <type>",   "Show type in 'pf' syntax",
-        "t*",  "",          "List types info in r2 commands",
-        "t-",  " <name>",   "Delete types by its name",
-        "t-*", "",          "Remove all types",
+        "Usage: t", "",    "# cparse types commands",
+        "t",   "",         "List all loaded types",
+        "t",   " <type>",  "Show type in 'pf' syntax",
+        "t*",  "",         "List types info in r2 commands",
+        "t-",  " <name>",  "Delete types by its name",
+        "t-*", "",         "Remove all types",
       //"t-!", "",          "Use to open $EDITOR",
-        "td",  " <string>", "Load types from string",
-        "td-", "<name>",    "Undefine type by name",
-        "tf",  " <addr>",   "View linked type at given address",
-        "tl",  "[?]",       "Show/Link type to a address",
-      //"to",  "",          "List opened files",
-        "to",  " -",        "Open cfg.editor to load types",
-        "to",  " <path>",   "Load types from C header file",
-        "ts",  " <key>=<value>... @ <link>.<addr>", "Set fields at given linked type", // old message on the next line, for clarity?
+        "td",  " <string>","Load types from string",
+        "td-", "<name>",   "Undefine type by name",
+        "tf",  " <addr>",  "View linked type at given address",
+        "tl",  "[?]",      "Show/Link type to a address",
+      //"to",  "",         "List opened files",
+        "to",  " -",       "Open cfg.editor to load types",
+        "to",  " <path>",  "Load types from C header file",
+        "ts",  " <k>=<v>", "Set fields at curseek linked type",
         //"| ts k=v k=v @ link.addr set fields at given linked type\n"
         NULL
     };
-    r_core_cmd_help(core, help_message);
+    r_core_cmd_help (core, help_message);
 }
 
 static int sdbforcb (void *p, const char *k, const char *v) {
