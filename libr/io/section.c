@@ -290,12 +290,43 @@ R_API ut64 r_io_section_next(RIO *io, ut64 o) {
 	return newsec? newsec: o;
 }
 
+R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
+	RIOSection *section;
+	RListIter *iter;
+	RList *sections = r_list_new ();
+	ut64 sec_from, sec_to;
+	r_list_foreach (io->sections, iter, section) {
+		sec_from = section->offset;
+		sec_to = sec_from + section->size;
+		if (sec_from <= addr && addr < sec_to) r_list_append(sections, section);
+		if (sec_from < endaddr && endaddr < sec_to) r_list_append(sections, section);
+		if (addr <= sec_from && sec_to <= endaddr) r_list_append(sections, section);
+	}
+	return sections;
+}
+
+R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
+	RIOSection *section;
+	RListIter *iter;
+	RList *sections = r_list_new ();
+	ut64 sec_from, sec_to;
+	r_list_foreach (io->sections, iter, section) {
+		sec_from = section->vaddr;
+		sec_to = sec_from + section->vsize;
+		if (sec_from <= addr && addr < sec_to) r_list_append(sections, section);
+		if (sec_from < endaddr && endaddr < sec_to) r_list_append(sections, section);
+		if (addr <= sec_from && sec_to <= endaddr) r_list_append(sections, section);
+	}
+	return sections;
+}
+
 R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *sec = NULL;
 	RListIter *iter;
+	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, sec) {
-		ut64 sec_to = sec->offset + sec->size,
-			 sec_from = sec->offset;
+		sec_to = sec->offset + sec->size;
+		sec_from = sec->offset;
 		if (sec_from <= addr && addr < sec_to) break;
 		//if (map->from == addr && endaddr == sec_to) r_list_append(maps, map);
 		if (sec_from < endaddr && endaddr < sec_to) break;
@@ -308,9 +339,10 @@ R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut6
 R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *sec = NULL;
 	RListIter *iter;
+	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, sec) {
-		ut64 sec_to = sec->vaddr + sec->size,
-			 sec_from = sec->vaddr;
+		sec_to = sec->vaddr + sec->vsize;
+		sec_from = sec->vaddr;
 		if (sec_from <= addr && addr < sec_to) break;
 		//if (map->from == addr && endaddr == sec_to) r_list_append(maps, map);
 		if (sec_from < endaddr && endaddr < sec_to) break;

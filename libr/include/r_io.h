@@ -364,6 +364,8 @@ R_API ut64 r_io_section_next(RIO *io, ut64 o);
 R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
 R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr);
 R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr);
+R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr);
+R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr);
 R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr);
 R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr);
 
