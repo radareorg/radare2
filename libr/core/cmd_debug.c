@@ -1137,6 +1137,10 @@ static int cmd_debug(void *data, const char *input) {
 		case 'a':
 			eprintf ("TODO: dca\n");
 			break;
+		case 'f':
+			eprintf ("[+] Running 'dcs fork' behind the scenes...\n");
+			r_core_cmd0 (core, "dcs fork");
+			break;
 		case 'c':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
