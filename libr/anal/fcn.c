@@ -380,7 +380,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 			anal->iob.read_at (anal->iob.io, op.fail, bbuf, sizeof (bbuf));
 			FITFCNSZ();
-			fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), depth-1);
+			// TODO: Discuss this 'return' statement, is this only necessary for mips?
+			return fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), depth-1);
 #if 0
 		// do not add xrefs for cjmps?
 				r_anal_op_fini (&op);
