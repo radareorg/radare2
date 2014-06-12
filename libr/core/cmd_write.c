@@ -1,18 +1,53 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+static void cmd_write_inc(RCore *core, int size, st64 num) {
+	ut64 *v64;
+	ut32 *v32;
+	ut16 *v16;
+	ut8 *v8;
+	switch (size) {
+	case 1: v8 = (ut8*)core->block; *v8 += num; break;
+	case 2: v16 = (ut16*)core->block; *v16 += num; break;
+	case 4: v32 = (ut32*)core->block; *v32 += num; break;
+	case 8: v64 = (ut64*)core->block; *v64 += num; break;
+	}
+	// TODO: obey endian here
+        r_core_write_at (core, core->offset, core->block, size);
+}
+
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
+	int wseek, i, size, len = strlen (input);
+	RCore *core = (RCore *)data;
+	char *tmp, *str, *ostr;
+	const char *arg;
 	ut64 off;
 	ut8 *buf;
-	const char *arg;
-	int wseek, i, size, len = strlen (input);
-	char *tmp, *str, *ostr;
-	RCore *core = (RCore *)data;
+	st64 num;
+
 	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	str = ostr = strdup (input+1);
 
 	switch (*input) {
+	case '1':
+	case '2':
+	case '4':
+	case '8':
+		if (input[1]==input[2]) {
+			num = 1;
+		} else num = r_num_math (core->num, input+2);
+		switch (input[1]) {
+		case '+':
+			cmd_write_inc (core, *input-'0', num);
+			break;
+		case '-':
+			cmd_write_inc (core, *input-'0', -num);
+			break;
+		default:
+			eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
+		}
+		break;
 	case 'h':
 		{
 		char *p = strchr (input, ' ');
@@ -37,7 +72,8 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 			case 'n':
 				if (input[2] == ' ') {
-					len = *input ? r_num_math (core->num, input+3) : 0;
+					len = *input ? r_num_math (
+						core->num, input+3) : 0;
 					if (len > 0){
 						ut64 cur_off = core->offset;
 						cmd_suc = r_core_extend_at (core, core->offset, len);
@@ -688,6 +724,7 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core, 0);
 		} else r_cons_printf (
 			"|Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
+			"| w[1248][+-][n] increment/decrement byte,word..\n"
 			"| w foobar     write string 'foobar'\n"
 			"| wh r2        whereis/which shell command\n"
 			"| wr 10        write 10 random bytes\n"
