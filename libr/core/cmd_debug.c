@@ -1138,8 +1138,11 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf ("TODO: dca\n");
 			break;
 		case 'f':
-			eprintf ("[+] Running 'dcs fork' behind the scenes...\n");
-			r_core_cmd0 (core, "dcs fork");
+			eprintf ("[+] Running 'dcs vfork' behind the scenes...\n");
+			// we should stop in fork and vfork syscalls
+			//TODO: multiple syscalls not handled yet
+			// r_core_cmd0 (core, "dcs vfork fork");
+			r_core_cmd0 (core, "dcs vfork");
 			break;
 		case 'c':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
@@ -1169,6 +1172,7 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 			break;
 		case 's':
+// TODO : handle more than one stopping syscall
 			if (input[2]==' ') {
 				sig = r_num_math (core->num, input+3);
 				if (sig <= 0) {
