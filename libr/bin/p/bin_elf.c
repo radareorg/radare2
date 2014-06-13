@@ -309,9 +309,8 @@ static RList* libs(RBinFile *arch) {
 	char *ptr = NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_newf (free)))
 		return NULL;
-	ret->free = free;
 	if (!(libs = Elf_(r_bin_elf_get_libs) (arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !libs[i].last; i++) {
