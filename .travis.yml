@@ -11,6 +11,14 @@ compiler:
   - '"clang -fsanitize=memory -fsanitize-memory-track-origins"'
   - '"clang -fsanitize=thread"'
 
+# Put different test categories in different jobs. This will also help keeping
+# the logs shorter than 10k lines (the maximum that's displayed).
+env:
+  - '"TESTS=t t.archos"'  # core stuff
+  - TESTS=t.asm           # (dis)assemblers
+  - TESTS=t.anal          # analysis
+  - TESTS=t.formats       # file formats
+
 # Additional depencies like capstone are downloaded by the r2 makefiles.
 install:
   - sudo apt-get install dc # GNU dc, used by r2r.
@@ -32,8 +40,5 @@ script:
   - ./configure   # TODO: Might enable some of the additional features.
   - make
   - sudo make install
-  # "make tests" isn't run here, because it wouldn't cover everything anyway.
   - cd radare2-regressions
-  - VERBOSE=1 make all
-  - VERBOSE=1 make asm
-  - VERBOSE=1 make formats
+  - ./run_tests.sh $TESTS; test $? != 1
