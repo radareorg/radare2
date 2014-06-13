@@ -1116,37 +1116,34 @@ R_API int r_bin_is_big_endian (RBin *bin) {
 
 R_API int r_bin_is_stripped (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return R_BIN_DBG_STRIPPED (o->info->dbg_info);
+	if (o) return R_BIN_DBG_STRIPPED & o->info->dbg_info;
 	return 1;
 }
 
 R_API int r_bin_is_static (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o && r_list_length (o->libs)>0)
-		return R_BIN_DBG_STATIC (o->info->dbg_info);
+		return R_BIN_DBG_STATIC & o->info->dbg_info;
 	return R_FALSE;
 }
 
 // TODO: Integrate with r_bin_dbg */
 R_API int r_bin_has_dbg_linenums (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return R_BIN_DBG_LINENUMS (o->info->dbg_info);
+	if (o) return R_BIN_DBG_LINENUMS & o->info->dbg_info;
 	return R_FALSE;
 }
 
 R_API int r_bin_has_dbg_syms (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return R_BIN_DBG_SYMS (o->info->dbg_info);
+	if (o) return R_BIN_DBG_SYMS & o->info->dbg_info;
 	return R_FALSE;
 }
 
 R_API int r_bin_has_dbg_relocs (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-	return R_BIN_DBG_RELOCS (o->info->dbg_info);
-	return R_FALSE;
+	if (!o) return R_FALSE;
+	return R_BIN_DBG_RELOCS & o->info->dbg_info;
 }
 
 R_API RBin* r_bin_new() {

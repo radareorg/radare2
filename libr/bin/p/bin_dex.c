@@ -204,6 +204,7 @@ static RList* strings (RBinFile *arch) {
 	return ret;
 }
 
+#if 0
 static inline ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
 	ut8 *buf, *map_end, *map;
 	ut32 mapsz, off = 0L;
@@ -225,6 +226,7 @@ static inline ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *si
 	}
 	return off;
 }
+#endif
 
 static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 	const ut8 buf[128], *buf2;

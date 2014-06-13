@@ -236,12 +236,11 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool (info->has_crypto),
 			r_str_bool (info->has_va),
 			info->bits,
-			r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
+			r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info)),
 			r_str_bool (r_bin_is_static (r->bin)),//R_BIN_DBG_STATIC (info->dbg_info)),
-			r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),
-			r_str_bool (R_BIN_DBG_SYMS (info->dbg_info)),
-			r_str_bool (R_BIN_DBG_RELOCS (info->dbg_info))
-			);
+			r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info),
+			r_str_bool (R_BIN_DBG_SYMS &info->dbg_info),
+			r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info);
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_cons_printf ("arch %s\n", info->arch);
@@ -262,7 +261,7 @@ static int bin_info (RCore *r, int mode) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
-				R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+				(R_BIN_DBG_STRIPPED &info->dbg_info)?"false":"true");
 		}
 	} else {
 		if (mode) {
@@ -285,7 +284,7 @@ static int bin_info (RCore *r, int mode) {
 					"e asm.dwarf=%s\n",
 					info->rclass, r_str_bool (info->big_endian), info->os,
 					info->arch, info->arch, info->bits,
-					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)));
+					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			}
 		} else {
 			// if type is 'fs' show something different?
@@ -321,11 +320,11 @@ static int bin_info (RCore *r, int mode) {
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,
 					info->subsystem, info->big_endian? "big": "little",
-					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
+					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info),
 					r_str_bool (r_bin_is_static (r->bin)),
-					r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),
-					r_str_bool (R_BIN_DBG_SYMS (info->dbg_info)),
-					r_str_bool (R_BIN_DBG_RELOCS (info->dbg_info)),
+					r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info),
+					r_str_bool (R_BIN_DBG_SYMS &info->dbg_info),
+					r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info),
 					info->rpath);
 			for (i=0; info->sum[i].type; i++) {
 				int len;
@@ -901,9 +900,9 @@ delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section
 			if (!secbase || (section->vaddr && section->vaddr <secbase)) // ??
 				secbase = section->vaddr;
 			r_name_filter (section->name, 128);
-			snprintf (str, R_FLAG_NAME_SIZE, "section.%s", section->name);
+			snprintf (str, sizeof(str)-1, "section.%s", section->name);
 			r_flag_set (r->flags, str, addr, section->size, 0);
-			snprintf (str, R_FLAG_NAME_SIZE, "section_end.%s", section->name);
+			snprintf (str, sizeof(str)-1, "section_end.%s", section->name);
 			r_flag_set (r->flags, str, addr + section->size, 0, 0);
 			r_io_section_add (r->io, section->paddr, addr, section->size,
 				section->vsize, section->srwx, section->name, 0, fd);
@@ -914,14 +913,14 @@ delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section
 				if (!bits) bits = info->bits;
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
-			snprintf (str, R_FLAG_NAME_SIZE, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
-					PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
-					i++, addr, section->paddr, section->size, section->vsize,
-					R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-					R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
-					section->name);
+			snprintf (str, sizeof(str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
+				PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
+				i++, addr, section->paddr, section->size, section->vsize,
+				(R_BIN_SCN_SHAREABLE &section->srwx)?'s':'-',
+				(R_BIN_SCN_READABLE &section->srwx)?'r':'-',
+				(R_BIN_SCN_WRITABLE &section->srwx)?'w':'-',
+				(R_BIN_SCN_EXECUTABLE &section->srwx)?'x':'-',
+				section->name);
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 		}
 		// H -> Header fields
@@ -967,10 +966,10 @@ delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section
 					r_cons_printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 							"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
 							i, addr, section->paddr, section->size, section->vsize,
-							R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-							R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-							R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-							R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
+							(R_BIN_SCN_SHAREABLE &section->srwx)?'s':'-',
+							(R_BIN_SCN_READABLE &section->srwx)?'r':'-',
+							(R_BIN_SCN_WRITABLE &section->srwx)?'w':'-',
+							(R_BIN_SCN_EXECUTABLE &section->srwx)?'x':'-',
 							section->name, addr);
 				} else {
 					char str[128];
@@ -984,10 +983,10 @@ delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section
 					r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"perm=%c%c%c%c %sname=%s\n",
 						i, addr, section->paddr, section->size, section->vsize,
-						R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-						R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-						R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-						R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
+						(R_BIN_SCN_SHAREABLE &section->srwx)?'s':'-',
+						(R_BIN_SCN_READABLE &section->srwx)?'r':'-',
+						(R_BIN_SCN_WRITABLE &section->srwx)?'w':'-',
+						(R_BIN_SCN_EXECUTABLE &section->srwx)?'x':'-',
 						str, section->name);
 				}
 			}

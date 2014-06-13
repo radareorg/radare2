@@ -20,7 +20,6 @@ static Sdb* get_sdb (RBinObject *o) {
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
-
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
@@ -30,16 +29,13 @@ static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 }
 
 static int load(RBinFile *arch) {
+	void *res;
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-
 	if (!arch || !arch->o) return R_FALSE;
-	void *res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
-
+	res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
  	arch->o->bin_obj = res;
-	if(!res)
-		return R_FALSE;
-	return R_TRUE;
+	return res? R_TRUE: R_FALSE;
 }
 
 static int destroy(RBinFile *arch) {
@@ -263,7 +259,7 @@ static int has_canary(RBinFile *arch) {
 	return 0;
 }
 
-static int has_dll_characteristics(const RBinFile* arch, ut16 dllCharacteristic) {
+static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
@@ -277,7 +273,6 @@ static int has_dll_characteristics(const RBinFile* arch, ut16 dllCharacteristic)
 	return ((*(ut16*)(buf + idx + 0x5E)) & \
 		dllCharacteristic);
 }
-
 
 static RBinInfo* info(RBinFile *arch) {
 	char *str;
@@ -316,32 +311,32 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary (arch);
-	ret->has_nx = has_dll_characteristics (arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
-	ret->has_pi = has_dll_characteristics (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->has_nx = haschr (arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
+	ret->has_pi = haschr (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
-	sdb_bool_set (arch->sdb, "pe.highva", has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set (arch->sdb, "pe.aslr", has_dll_characteristics(arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set (arch->sdb, "pe.forceintegrity", has_dll_characteristics(arch, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (arch->sdb, "pe.nx", has_dll_characteristics(arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set (arch->sdb, "pe.isolation", !has_dll_characteristics(arch, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (arch->sdb, "pe.seh", !has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set (arch->sdb, "pe.bind", !has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set (arch->sdb, "pe.appcontainer", has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set (arch->sdb, "pe.wdmdriver", has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set (arch->sdb, "pe.guardcf", has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set (arch->sdb, "pe.terminalserveraware", has_dll_characteristics(arch, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
+	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
+	sdb_bool_set (arch->sdb, "pe.aslr", haschr(arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
+	sdb_bool_set (arch->sdb, "pe.forceintegrity", haschr(arch, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (arch->sdb, "pe.nx", haschr(arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
+	sdb_bool_set (arch->sdb, "pe.isolation", !haschr(arch, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (arch->sdb, "pe.seh", !haschr(arch, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
+	sdb_bool_set (arch->sdb, "pe.bind", !haschr(arch, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
+	sdb_bool_set (arch->sdb, "pe.appcontainer", haschr(arch, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
+	sdb_bool_set (arch->sdb, "pe.wdmdriver", haschr(arch, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
+	sdb_bool_set (arch->sdb, "pe.guardcf", haschr(arch, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
+	sdb_bool_set (arch->sdb, "pe.terminalserveraware", haschr(arch, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
 	
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
-		ret->dbg_info |= 0x01;
+		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
-		ret->dbg_info |= 0x04;
+		ret->dbg_info |= R_BIN_DBG_LINENUMS;
 	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj))
-		ret->dbg_info |= 0x08;
+		ret->dbg_info |= R_BIN_DBG_SYMS;
 	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj))
-		ret->dbg_info |= 0x10;
+		ret->dbg_info |= R_BIN_DBG_RELOCS;
 	return ret;
 }
 

@@ -16,16 +16,16 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_bin);
 
-#define R_BIN_SCN_EXECUTABLE(x) x & 0x1
-#define R_BIN_SCN_WRITABLE(x)   x & 0x2
-#define R_BIN_SCN_READABLE(x)   x & 0x4
-#define R_BIN_SCN_SHAREABLE(x)  x & 0x8
+#define R_BIN_SCN_EXECUTABLE 0x1
+#define R_BIN_SCN_WRITABLE   0x2
+#define R_BIN_SCN_READABLE   0x4
+#define R_BIN_SCN_SHAREABLE  0x8
 
-#define R_BIN_DBG_STRIPPED(x) x & 0x01
-#define R_BIN_DBG_STATIC(x)   x & 0x02
-#define R_BIN_DBG_LINENUMS(x) x & 0x04
-#define R_BIN_DBG_SYMS(x)     x & 0x08
-#define R_BIN_DBG_RELOCS(x)   x & 0x10
+#define R_BIN_DBG_STRIPPED 0x01
+#define R_BIN_DBG_STATIC   0x02
+#define R_BIN_DBG_LINENUMS 0x04
+#define R_BIN_DBG_SYMS     0x08
+#define R_BIN_DBG_RELOCS   0x10
 
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
