@@ -1,0 +1,39 @@
+# travis.yml for testing radare2. Initially written in 2014, by jn__.
+# Validate with http://yaml.travis-ci.org/.
+
+language: c
+compiler:
+  - gcc
+  - clang
+  # With this scarry double quotation the strings will be passed to the shell
+  # still quoted, which is necessary here.
+  - '"clang -fsanitize=address"'
+  - '"clang -fsanitize=memory -fsanitize-memory-track-origins"'
+  - '"clang -fsanitize=thread"'
+
+# Additional depencies like capstone are downloaded by the r2 makefiles.
+install:
+  - sudo apt-get install dc # GNU dc, used by r2r.
+  - git clone `doc/repo REGRESSIONS`
+  # This little hack will prevent the test names from being erased in the
+  # travis logfile.
+  - sed -i 's/\\r//' radare2-regressions/tests.sh
+
+script:
+  # llvm-symbolizer isn't in PATH, so we need this.
+  # (Also, YAML doesn't like underscores)
+  - export SYMBOLIZER=/usr/local/clang-3.4/bin/llvm-symbolizer
+  - export ASAN_SYMBOLIZER_PATH=$SYMBOLIZER
+  - export MSAN_SYMBOLIZER_PATH=$SYMBOLIZER
+  - 'export TSAN_OPTIONS=external_symbolizer_path=$SYMBOLIZER'
+  # Limit the stack size (to 32MiB) to make ThreadSanitizer happy.
+  - ulimit -s 32768
+  # Now on to actually building stuff...
+  - ./configure   # TODO: Might enable some of the additional features.
+  - make
+  - sudo make install
+  # "make tests" isn't run here, because it wouldn't cover everything anyway.
+  - cd radare2-regressions
+  - VERBOSE=1 make all
+  - VERBOSE=1 make asm
+  - VERBOSE=1 make formats
