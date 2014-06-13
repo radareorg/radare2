@@ -7,8 +7,24 @@
 #include <r_bin.h>
 #include "elf/elf.h"
 
+#define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
+
+//TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
+static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
+	if (! eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size)
+		return;
+	free (eobj->symbols_by_ord[ord]);
+	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
+}
+
+static void setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+	if (!eobj->imports_by_ord && ord >= eobj->imports_by_ord_size)
+		return;
+	free (eobj->imports_by_ord[ord]);
+	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
+}
 
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
@@ -192,14 +208,15 @@ static RList* sections(RBinFile *arch) {
 }
 
 static RList* symbols(RBinFile *arch) {
-	RList *ret = NULL;
-	RBinSymbol *ptr = NULL;
-	ut64 base = 0;
+	int i, has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
+	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = arch->o->bin_obj;
-	int i;
-
-	int has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
+	RBinSymbol *ptr = NULL;
+	RList *ret = NULL;
+	ut64 base = 0;
+	if (!arch || !arch->o || !arch->o->bin_obj)
+		return NULL;
+	bin = arch->o->bin_obj;
 	if (!has_va) {
 		// find base address for non-linked object (.o) //
 		if (arch->o->sections) {
@@ -231,8 +248,7 @@ static RList* symbols(RBinFile *arch) {
 		ptr->paddr = symbol[i].offset + base;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
-		if(bin->symbols_by_ord && ptr->ordinal < bin->symbols_by_ord_size)
-			bin->symbols_by_ord[ptr->ordinal] = ptr;
+		setsymord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
@@ -253,8 +269,7 @@ static RList* symbols(RBinFile *arch) {
 		ptr->paddr = symbol[i].offset;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
-		if(bin->symbols_by_ord && ptr->ordinal < bin->symbols_by_ord_size)
-			bin->symbols_by_ord[ptr->ordinal] = ptr;
+		setsymord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
@@ -263,10 +278,10 @@ static RList* symbols(RBinFile *arch) {
 }
 
 static RList* imports(RBinFile *arch) {
-	RList *ret = NULL;
-	RBinImport *ptr = NULL;
-	struct r_bin_elf_symbol_t *import = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = arch->o->bin_obj;
+	struct r_bin_elf_symbol_t *import = NULL;
+	RBinImport *ptr = NULL;
+	RList *ret = NULL;
 	int i;
 
 	if (!(ret = r_list_new ()))
@@ -277,12 +292,11 @@ static RList* imports(RBinFile *arch) {
 	for (i = 0; !import[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
-		strncpy (ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->name, import[i].name, sizeof(ptr->name)-1);
+		strncpy (ptr->bind, import[i].bind, sizeof(ptr->bind)-1);
+		strncpy (ptr->type, import[i].type, sizeof(ptr->type)-1);
 		ptr->ordinal = import[i].ordinal;
-		if(bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
-			bin->imports_by_ord[ptr->ordinal] = ptr;
+		setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	free (import);
@@ -290,9 +304,9 @@ static RList* imports(RBinFile *arch) {
 }
 
 static RList* libs(RBinFile *arch) {
+	struct r_bin_elf_lib_t *libs = NULL;
 	RList *ret = NULL;
 	char *ptr = NULL;
-	struct r_bin_elf_lib_t *libs = NULL;
 	int i;
 
 	if (!(ret = r_list_new ()))
@@ -310,9 +324,12 @@ static RList* libs(RBinFile *arch) {
 
 static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
 	RBinReloc *r = NULL;
-	ut64 B = bin->baddr, P = B + rel->rva;
+	ut64 B, P;
 	char *str;
 
+	if (!bin || !rel) return NULL;
+	B = bin->baddr;
+	P = B + rel->rva;
 	if (!(r = R_NEW0 (RBinReloc)))
 		return r;
 
@@ -401,6 +418,10 @@ static RList* relocs(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
+	 * free detected by ASan that would corrupt the relocation names */
+	r_list_free (imports (arch));
+
 #if 1
 	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got")) == -1 &&
 		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt")) == -1) 

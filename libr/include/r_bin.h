@@ -277,8 +277,8 @@ typedef struct r_bin_symbol_t {
 	char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
-	ut64 size;
-	ut64 ordinal;
+	ut32 size;
+	ut32 ordinal;
 	ut32 visibility;
 } RBinSymbol;
 
@@ -288,7 +288,7 @@ typedef struct r_bin_import_t {
 	char type[R_BIN_SIZEOF_STRINGS+1];
 	char classname[R_BIN_SIZEOF_STRINGS+1];
 	char descriptor[R_BIN_SIZEOF_STRINGS+1];
-	ut64 ordinal;
+	ut32 ordinal;
 	ut32 visibility;
 } RBinImport;
 
@@ -307,9 +307,9 @@ typedef struct r_bin_string_t {
 	char string[R_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
-	ut64 ordinal;
-	int size; // size of buffer containing the string in bytes
-	int length; // length of string in chars
+	ut32 ordinal;
+	ut32 size; // size of buffer containing the string in bytes
+	ut32 length; // length of string in chars
 	char type; // Ascii Wide cp850 utf8 ...
 } RBinString;
 

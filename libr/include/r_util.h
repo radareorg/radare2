@@ -313,6 +313,7 @@ R_API void r_cache_flush (RCache *c);
 R_API void r_prof_start(RProfile *p);
 R_API double r_prof_end(RProfile *p);
 
+R_API void *r_mem_dup (void *s, int l);
 R_API int r_mem_protect(void *ptr, int size, const char *prot);
 R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian);
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len);

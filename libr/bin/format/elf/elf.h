@@ -1,5 +1,3 @@
-/* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -30,7 +28,7 @@ typedef struct r_bin_elf_section_t {
 typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
-	int ordinal;
+	ut32 ordinal;
 	char bind[ELF_STRING_LENGTH];
 	char type[ELF_STRING_LENGTH];
 	char name[ELF_STRING_LENGTH];

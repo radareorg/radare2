@@ -1158,13 +1158,22 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 }
 
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
+	int i;
 	if (!bin) return NULL;
 	free (bin->phdr);
 	free (bin->shdr);
 	free (bin->strtab);
 	//free (bin->strtab_section);
-	free (bin->imports_by_ord);
-	free (bin->symbols_by_ord);
+	if (bin->imports_by_ord) {
+		for (i=0; i<bin->imports_by_ord_size; i++)
+			free (bin->imports_by_ord[i]);
+		free (bin->imports_by_ord);
+	}
+	if (bin->symbols_by_ord) {
+		for (i=0; i<bin->symbols_by_ord_size; i++)
+			free (bin->symbols_by_ord[i]);
+		free (bin->symbols_by_ord);
+	}
 	r_buf_free (bin->b);
 	free (bin);
 	return NULL;
