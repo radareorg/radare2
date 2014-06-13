@@ -693,7 +693,12 @@ export_dir_vaddr = data_dir_export->VirtualAddress;
 		}
 		exports[i].last = 1;
 	}
-	return parse_symbol_table (bin, exports, exports_sz - 1);
+
+	if (parse_symbol_table (bin, exports, exports_sz - 1) == 0) {
+		eprintf("Warning: bad symbol table\n");
+	}
+
+	return exports;
 }
 
 int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
