@@ -324,7 +324,12 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 	return R_TRUE;
 }
 
+static int cmp(RConfigNode *a, RConfigNode *b) {
+	return strcmp (a->name, b->name);
+}
+
 R_API void r_config_lock(RConfig *cfg, int l) {
+	r_list_sort (cfg->nodes, (RListComparator)cmp);
 	cfg->lock = l;
 }
 
