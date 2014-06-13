@@ -155,7 +155,7 @@ static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	const char *asmos = core->config? r_config_get (core->config, "asm.os"): NULL;
+	const char *asmos = r_config_get (core->config, "asm.os");
 
 	if (*node->value=='?') {
 		rasm2_list (core->assembler, NULL);
