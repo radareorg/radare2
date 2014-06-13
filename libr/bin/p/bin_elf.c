@@ -401,6 +401,11 @@ static RList* relocs(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+
+	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
+	 * free detected by ASan that would corrupt the relocation names */
+	imports(arch);
+
 #if 1
 	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got")) == -1 &&
 		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt")) == -1) 
