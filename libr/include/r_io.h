@@ -223,6 +223,11 @@ typedef struct r_io_cache_t {
 	ut8 *data;
 } RIOCache;
 
+typedef struct r_io_range_t {
+	ut64 from;
+	ut64 to;
+} RIORange;
+
 // XXX: HACK this must be io->desc_new() maybe?
 #define RETURN_IO_DESC_NEW(fplugin,ffd,fname,fflags,mode,fdata) { \
 	if (!fname) return NULL; \
@@ -286,6 +291,7 @@ R_API int r_io_use_desc(RIO *io, RIODesc *fd);
 R_API const ut8* r_io_get_raw (RIO *io, ut64 addr, int *len);
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
 R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len);
+R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);
@@ -410,6 +416,9 @@ R_API void r_io_buffer_close(RIO* io);
 R_API int r_io_buffer_load(RIO* io, ut64 addr, int len);
 R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len);
 R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len);
+
+#define r_io_range_new()	R_NEW0(RIORange)
+#define r_io_range_free(x)	free(x)
 
 /* plugins */
 extern RIOPlugin r_io_plugin_procpid;
