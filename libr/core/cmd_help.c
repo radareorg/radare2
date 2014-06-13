@@ -435,47 +435,51 @@ static int cmd_help(void *data, const char *input) {
 		} else r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		break;
 	case '\0':
-	default:
-		r_cons_printf (
-		"|Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-		"|Append '?' to any char command to get detailed help\n"
-		"|Prefix with number to repeat command N times (f.ex: 3x)\n"
-		"| %%var=value            alias for 'env' command\n"
-		"| *off[=[0x]value]      pointer read/write data/values (see ?v, wx, wv)\n"
-		"| $alias=value          alias commands (simple macros)\n"
-		"| (macro arg0 arg1)     manage scripting macros\n"
-		"| .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file (see -?)\n"
-		"| = [cmd]               run this command via rap://\n"
-		"| /[xmp/]               search for bytes, regexps, patterns, ..\n"
-		"| ![cmd]                run given command as in system(3)\n"
-		"| #[algo] [len]         calculate hash checksum of current block\n"
-		"| a                     perform analysis of code\n"
-		"| b [bsz]               get or change block size\n"
-		"| c[dqxXfg] [arg]       compare block with given data\n"
-		"| C[Cf..]               code metadata management\n"
-		"| d[hrscb]              debugger commands\n"
-		"| e [a[=b]]             list/get/set config evaluable vars\n"
-		"| f [name][sz][at]      set flag at current address\n"
-		"| g[wcilper] [arg]      go compile shellcodes with r_egg\n"
-		"| i[acdeiIosSz] [file]  get info about opened file\n"
-		"| l[-num][ num| msg]    log utility\n"
-		"| m[lyogfdps]           mountpoints commands\n"
-		"| o [file] (addr)       open file at optional address\n"
-		"| p[?] [len]            print current block with format and length\n"
-		"| P[osi?]               project management utilities\n"
-		"| q [ret]               quit program with a return value\n"
-		"| r[+- ][len]           resize file\n"
-		"| s [addr]              seek to address (also for '0x', '0x1' == 's 0x1')\n"
-		"| S?[size] [vaddr]      io section manipulation information\n"
-		"| t[-odfsl] [arg]       cparse types management\n"
-		"| V[vcmds]              enter visual mode (vcmds=visualvisual  keystrokes)\n"
-		"| w[mode] [arg]         multiple write operations\n"
-		"| x [len]               alias for 'px' (print hexadecimal)\n"
-		"| y [len] [off]         yank/paste bytes from/to memory\n"
-		"| ?[??] [expr]          help or evaluate math expression\n"
-		"| ?$?                   show available '$' variables\n"
-		"| ?@?                   misc help for '@' (seek), '~' (grep) (see ~?""?)\n"
-		);
+	default:{
+		const char* help_message[] = {
+		"", "", "",
+		"%%var",        "=value", "Alias for 'env' command",
+		"*",   "off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
+		"$alias",       "=value", "Alias commands (simple macros)",
+		"(macro arg0 arg1)",  "", "Manage scripting macros",
+		".", "[ -|file|!sh|cmd]", "Interpret cparse, r2 or rlang file (see -?)",
+		"=",			 "[cmd]", "Run this command via rap://",
+		"/",				  "", "Search for bytes, regexps, patterns, ..",
+		"!",			 "[cmd]", "Run given command as in system(3)",
+		"#",      "[algo] [len]", "Calculate hash checksum of current block",
+		"a",				  "", "Perform analysis of code",
+		"b",				  "", "Get or change block size",
+		"c",			 "[arg]", "Compare block with given data",
+		"C",                  "", "Code metadata management",
+		"d",			      "", "Debugger commands",
+		"e",		   "[a[=b]]", "List/get/set config evaluable vars",
+		"f",    "[name][sz][at]", "Set flag at current address",
+		"g",			 "[arg]", "Go compile shellcodes with r_egg",
+		"i",			"[file]", "Get info about opened file",
+		"l",	 "[-] [num|msg]", "Log utility",
+		"m",				  "", "Mountpoints commands",
+		"o", "[file] ([offset])", "Open file at optional address",
+		"p",			 "[len]", "Print current block with format and length",
+		"P",				  "", "Project management utilities",
+		"q",			 "[ret]", "Quit program with a return value",
+		"r",			 "[len]", "Resize file",
+		"s",		    "[addr]", "Seek to address (also for '0x', '0x1' == 's 0x1')",
+		"S",				  "", "Io section manipulation information",
+		"t",				  "", "Cparse types management",
+		"V",				  "", "Enter visual mode (vcmds=visualvisual  keystrokes)",
+		"w", "[str] [<file] [<<EOF] [@addr]", "Multiple write operations",
+		"x",			 "[len]", "Alias for 'px' (print hexadecimal)",
+		"y",   "[len] [[[@]addr", "Yank/paste bytes from/to memory",
+		"?[??]",		"[expr]", "Help or evaluate math expression",
+		"?$?",                "", "Show available '$' variables",
+		"?@?",                "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
+			NULL
+		};
+		r_cons_printf("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
+			"Append '?' to any char command to get detailed help\n"
+			"Prefix with number to repeat command N times (f.ex: 3x)\n");
+		r_core_cmd_help (core, help_message);
+		}
 		break;
 	}
 	return 0;
