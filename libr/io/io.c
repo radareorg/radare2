@@ -8,7 +8,7 @@ R_LIB_VERSION (r_io);
 
 // XXX: this is buggy. must use seek+read
 #define USE_CACHE 1
-#define USE_P_API 0
+#define USE_NEW_IO 1
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
@@ -278,16 +278,43 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	return ret;
 }
 
+int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
+	RList *maps;
+	RListIter *iter;
+	RIOMap *map;
+	if (!io)
+		return R_FAIL;
+	if (io->ff)
+		memset (buf, 0xff, len);
+	if (io->raw) {
+		r_io_seek (io, addr, R_IO_SEEK_SET);
+		return r_io_read_internal (io, buf, len);
+	}
+	if (io->va) {
+		r_io_vread (io, addr, buf, len);			//must check return-stat
+		if (io->cached)
+			r_io_cache_read (io, addr, buf, len);
+		return len;
+	}
+	maps = r_io_map_get_maps_in_range (io, addr, addr+len);
+	r_list_foreach (maps, iter, map) {
+		r_io_mread (io, map->fd, addr, buf, len);		//must check return-stat
+	}
+	r_io_mread (io, io->desc->fd, addr, buf, len);			//must check return-stat
+	if (io->cached)
+		r_io_cache_read (io, addr, buf, len);
+	return len;
+}
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+#if USE_NEW_IO
+	return r_io_read_cr (io, addr, buf, len);
+#else
 	if (io->raw) {
 		if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
 			memset (buf, 0xff, len);
 		return r_io_read_internal (io, buf, len);
 	}
-#if USE_P_API
-	return r_io_vread (io, addr, buf, len);
-#else
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
