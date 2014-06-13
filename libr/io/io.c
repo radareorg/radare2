@@ -8,7 +8,7 @@ R_LIB_VERSION (r_io);
 
 // XXX: this is buggy. must use seek+read
 #define USE_CACHE 1
-#define USE_NEW_IO 1
+#define USE_NEW_IO 0
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
 
