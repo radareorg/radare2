@@ -428,7 +428,7 @@ static int getInt(char* s, unsigned *number)
 				if(isxdigit((int)*s)==0)
 					return -1;
 				*number*=16;
-				*number+=*s-(isdigit(*s)!=0)?'0':(isupper(*s)!=0)?'A'-10:'a'-10;
+				*number+=*s-((isdigit(*s)!=0)?'0':((isupper(*s)!=0)?'A'-10:'a'-10));
 				s++;
 			}
 		}else{
