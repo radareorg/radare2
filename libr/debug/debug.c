@@ -62,6 +62,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->graph = r_graph_new ();
 		dbg->swstep = 0;
 		dbg->newstate = 0;
+		dbg->syscall = NULL;
 		dbg->signum = 0;
 		dbg->reason = R_DBG_REASON_UNKNOWN;
 		dbg->stop_all_threads = R_FALSE;
@@ -460,35 +461,51 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 	//return -1;
 }
 
-// XXX: this function uses 'oeax' which is linux-i386-specific
-R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
-	int reg, ret = R_FALSE;
-	if (!dbg)
+R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+	const char *sysname;
+	int i, reg, ret = R_FALSE;
+	if (!dbg || !dbg->h || r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (r_debug_is_dead (dbg))
-		return R_FALSE;
-	if (dbg->h) {
-		if (dbg->h->contsc) {
-			do {
-				ret = dbg->h->contsc (dbg, dbg->pid, sc);
-				if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
-					eprintf ("--> eol\n");
-					sc = 0;
-					break;
-				}
-				reg = (int)r_debug_reg_get (dbg, "oeax"); // XXX
-				eprintf ("--> syscall %d\n", reg);
-				if (reg == 0LL)
-					break;
-				// TODO: must use r_core_cmd(as)..import code from rcore
-			} while (sc != 0 && sc != reg);
-		} else {
-			r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
-			reg = (int)r_debug_reg_get (dbg, "oeax"); // XXX
-			eprintf ("--> syscall %d\n", reg);
+	if (!dbg->h->contsc) {
+		/* user-level syscall tracing */
+		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
+		reg = (int)r_debug_reg_get (dbg, "a0"); // XXX
+		sysname = r_syscall_get_i (dbg->syscall, reg, -1);
+		eprintf ("--> syscall %d %s\n", reg, sysname);
+		return reg;
+	}
+
+	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
+		eprintf ("--> cannot read registers\n");
+		return -1;
+	}
+	reg = (int)r_debug_reg_get (dbg, "sn");
+	if (reg == (int)UT64_MAX) {
+		eprintf ("Cannot find 'sn' register for current arch-os.\n");
+		return -1;
+	}
+	for (;;) {
+		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			eprintf ("--> eol\n");
+			return -1;
 		}
+		reg = (int)r_debug_reg_get (dbg, "sn");
+		if (reg == (int)UT64_MAX)
+			return -1;
+		sysname = r_syscall_get_i (dbg->syscall, reg, -1);
+		eprintf ("--> syscall %d %s\n", reg, sysname);
+		for (i=0; i< n_sc; i++) {
+			if (sc[i] == reg)
+				return reg;
+		}
+		// TODO: must use r_core_cmd(as)..import code from rcore
 	}
 	return ret;
+}
+
+R_API int r_debug_continue_syscall(RDebug *dbg, int sc) {
+	return r_debug_continue_syscalls (dbg, &sc, 1);
 }
 
 // TODO: remove from here? this is code injection!

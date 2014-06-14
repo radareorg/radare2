@@ -192,7 +192,7 @@ R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name) {
 		name = r_reg_get_name (dbg->reg, role);
 		if (name == NULL || *name == '\0') {
 			eprintf ("No debug register profile defined for '%s'.\n", pname);
-			return 0LL;
+			return UT64_MAX;
 		}
 	}
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);

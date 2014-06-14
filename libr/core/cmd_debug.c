@@ -1,5 +1,36 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
+	// TODO : handle more than one stopping syscall
+	if (_str[0]==' ') {
+		char *str = strdup (_str+1);
+		int i, count = r_str_word_set0 (str);
+		int *syscalls = malloc (sizeof (int)*count);
+		for (i=0; i<count; i++) {
+			const char *sysnumstr = r_str_word_get0 (str, i);
+			int sig = (int)r_num_math (core->num, sysnumstr);
+			if (sig < 1) {
+				sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
+				eprintf ("-->(%s)\n", sysnumstr);
+				if (sig == -1) {
+					eprintf ("Unknown syscall number\n");
+					free (str);
+					free (syscalls);
+					return;
+				}
+				syscalls[i] = sig;
+
+			}
+		}
+		eprintf ("Running child until syscall %d\n", sig);
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_debug_continue_syscall (core->dbg, sig);
+		checkbpcallback (core);
+		free (syscalls);
+		free (str);
+	} else eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+}
+
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
 	RGraphNode *n, *n2;
 	RListIter *iter, *iter2;
@@ -1142,7 +1173,7 @@ static int cmd_debug(void *data, const char *input) {
 			// we should stop in fork and vfork syscalls
 			//TODO: multiple syscalls not handled yet
 			// r_core_cmd0 (core, "dcs vfork fork");
-			r_core_cmd0 (core, "dcs vfork");
+			r_core_cmd0 (core, "dcs vfork fork");
 			break;
 		case 'c':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
@@ -1172,21 +1203,7 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 			break;
 		case 's':
-// TODO : handle more than one stopping syscall
-			if (input[2]==' ') {
-				sig = r_num_math (core->num, input+3);
-				if (sig <= 0) {
-					sig = r_syscall_get_num (core->anal->syscall, input+3);
-					if (sig == -1) {
-						eprintf ("Unknown syscall number\n");
-						return 0;
-					}
-				}
-				eprintf ("Running child until syscall %d\n", sig);
-				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				r_debug_continue_syscall (core->dbg, sig);
-				checkbpcallback (core);
-			} else eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+			cmd_debug_cont_syscall (core, input+3);
 			break;
 		case 'p':
 			{ // XXX: this is very slow

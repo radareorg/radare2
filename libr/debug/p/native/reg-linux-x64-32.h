@@ -11,6 +11,7 @@ return strdup (
 "=sf	sf\n"
 "=of	of\n"
 "=cf	cf\n"
+"=sn	oeax\n"
 "gpr	eip	.32	128	0\n"
 "gpr	ip	.16	128	0\n"
 "gpr	oeax	.32	120	0\n"

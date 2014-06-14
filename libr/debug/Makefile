@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_debug
-DEPS=r_reg r_anal r_bp r_util r_io r_parse r_cons r_db
+DEPS=r_reg r_anal r_bp r_util r_io r_parse r_cons r_db r_syscall
 CFLAGS+=-DCORELIB
 
 foo:

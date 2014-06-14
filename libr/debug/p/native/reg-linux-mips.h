@@ -6,6 +6,7 @@ return strdup (
 "=a1	r5\n"
 "=a2	r6\n"
 "=a3	r7\n"
+"=snr	or0\n"
 "gpr	r0	.32	0	0\n"
 "gpr	r1	.32	4	0\n"
 "gpr	r2	.32	8	0\n"
@@ -23,6 +24,7 @@ return strdup (
 "gpr	r14	.32	112	0\n"
 "gpr	r15	.32	120	0\n"
 "gpr	r16	.32	128	0\n"
+"gpr	or0	.32	132	0\n"
 );
 
 // XXX wtf

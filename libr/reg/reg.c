@@ -35,6 +35,7 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 's'+('r'<<8): return R_REG_NAME_SR;
 	case 's'+('p'<<8): return R_REG_NAME_SP;
 	case 'b'+('p'<<8): return R_REG_NAME_BP;
+	case 's'+('n'<<8): return R_REG_NAME_SN;
 	/* args */
 	case 'a'+('0'<<8): return R_REG_NAME_A0;
 	case 'a'+('1'<<8): return R_REG_NAME_A1;

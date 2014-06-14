@@ -12,22 +12,23 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 */
 #if __arm__
 #include "reg-linux-arm.h"
+#elif __arm64__ || __aarch64__
+#include "reg-linux-arm64.h"
 #elif __MIPS__ || __mips__
 #include "reg-linux-mips.h"
 #elif (__i386__ || __x86_64__)
 	if (dbg->bits & R_SYS_BITS_32) {
-#if __x86_64__
-#include "reg-linux-x64-32.h"
-#else
-#include "reg-linux-x86.h"
-#endif
+#	if __x86_64__
+#	include "reg-linux-x64-32.h"
+#	else
+#	include "reg-linux-x86.h"
+#	endif
 	} else {
-#include "reg-linux-x64.h"
+#	include "reg-linux-x64.h"
 	}
 #else
 #error "Unsupported Linux CPU"
 #endif
-
 
 #elif __APPLE__
 /*   _

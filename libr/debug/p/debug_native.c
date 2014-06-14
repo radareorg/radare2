@@ -391,6 +391,7 @@ static int r_debug_native_detach(int pid) {
 }
 
 static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
+// XXX: num is ignored
 #if __linux__
 	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__

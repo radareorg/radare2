@@ -95,8 +95,7 @@ R_API int r_syscall_setup_file(RSyscall *s, const char *path) {
 R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {
 	RSyscallItem *si;
 	char *o;
-
-	if (!s) return NULL;
+	if (!name || !s) return NULL;
 	si = R_NEW0 (RSyscallItem);
 	o = strdup (s);
 
@@ -120,13 +119,14 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 }
 
 R_API void r_syscall_item_free(RSyscallItem *si) {
+	if (!si) return;
 	free (si->name);
 	free (si->sargs);
 	free (si);
 }
 
 static int getswi(Sdb *p, int swi) {
-	if (swi == -1) {
+	if (p && swi == -1) {
 		// TODO: use array_get_num here
 		const char *def = sdb_const_get (p, "_", 0);
 		if (def && *def) {
@@ -139,7 +139,7 @@ static int getswi(Sdb *p, int swi) {
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	char *ret, *ret2, foo[32];
 	RSyscallItem *si;
-	if (!s->db)
+	if (!s || !s->db)
 		return NULL;
 	swi = getswi (s->db, swi);
 	snprintf (foo, sizeof (foo), "0x%02x.%d", swi, num);
@@ -158,10 +158,10 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 
 R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 	char *o;
-	int i = 0;
+	int i = -1;
 	// TODO: use sdb array api here
-	if (!s->db)
-		return 0;
+	if (!s || !s->db)
+		return -1;
 	o = sdb_get (s->db, str, 0);
 	if (o && *o) {
 		r_str_split (o, ',');
@@ -171,17 +171,18 @@ R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 	return i;
 }
 
-R_API char *r_syscall_get_i(RSyscall *s, int num, int swi) {
+R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
 	char foo[32];
-	if (!s->db)
+	if (!s || !s->db)
 		return NULL;
 	swi = getswi (s->db, swi);
 	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
-	return sdb_get (s->db, foo, 0);
+	return sdb_const_get (s->db, foo, 0);
 }
 
 R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 	int i;
+	if (!s) return NULL;
 	for (i=0; s->sysport[i].name; i++) {
 		if (ioport == s->sysport[i].port)
 			return s->sysport[i].name;
@@ -196,6 +197,8 @@ static int callback_list(void *u, const char *k, const char *v) {
 }
 
 R_API RList *r_syscall_list(RSyscall *s) {
+	if (!s || !s->db)
+		return NULL;
 	sdb_foreach (s->db, callback_list, s);
 	// XXX: this method must be deprecated.. we have to use sdb to access this info
 	return NULL;
