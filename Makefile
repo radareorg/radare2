@@ -179,6 +179,7 @@ purge: purge-doc purge-dev
 dist:
 	-[ configure -nt config-user.mk ] && ./configure --prefix=${PREFIX}
 	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
+	cd shlr && ${MAKE} capstone-sync
 	DIR=`basename $$PWD` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
 	CS_FILES=`cd shlr/capstone ; git ls-files | sed -e s,^,radare2-${VERSION}/shlr/capstone/,` ; \
