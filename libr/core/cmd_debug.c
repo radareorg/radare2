@@ -4,7 +4,6 @@ static int checkbpcallback(RCore *core);
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
-eprintf ("STR(%s)\n", _str);
 	char *str = strdup (_str);
 	int i, count = r_str_word_set0 (str);
 	int *syscalls = malloc (sizeof (int)*count);
@@ -945,6 +944,11 @@ static int cmd_debug(void *data, const char *input) {
 	int i, times, follow=0;
 	ut64 addr;
 	char *ptr;
+
+	if (r_sandbox_enable (0)) {
+		eprintf ("Debugger commands disabled in sandbox mode\n");
+		return 0;
+	}
 
 	switch (input[0]) {
 	case 't':
