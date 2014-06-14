@@ -712,6 +712,10 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #endif
 	int olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
+	if (r_sandbox_enable (0)) {
+		eprintf ("Pipes are not allowed in sandbox mode\n");
+		return -1;
+	}
 	if (!r_config_get_i (core->config, "scr.pipecolor")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
