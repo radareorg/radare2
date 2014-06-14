@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+static int checkbpcallback(RCore *core);
+
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
 	if (_str[0]==' ') {
@@ -19,12 +21,14 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 					return;
 				}
 				syscalls[i] = sig;
-
 			}
 		}
-		eprintf ("Running child until syscall %d\n", sig);
+		eprintf ("Running child until syscalls:");
+		for (i=0;i<count;i++) 
+			eprintf ("%d ", syscalls[i]);
+		eprintf ("\n");
 		r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		r_debug_continue_syscall (core->dbg, sig);
+		r_debug_continue_syscalls (core->dbg, syscalls, count);
 		checkbpcallback (core);
 		free (syscalls);
 		free (str);
@@ -940,7 +944,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int i, times, sig, follow=0;
+	int i, times, follow=0;
 	ut64 addr;
 	char *ptr;
 

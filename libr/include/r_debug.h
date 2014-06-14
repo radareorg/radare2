@@ -255,6 +255,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
 R_API int r_debug_continue_until_nontraced(RDebug *dbg);
 R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
+R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
 //R_API int r_debug_pid_add(RDebug *dbg);
 //R_API int r_debug_pid_add_thread(RDebug *dbg);
 //R_API int r_debug_pid_del(RDebug *dbg);

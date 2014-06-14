@@ -566,7 +566,7 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
-	core->debug->syscall = \
+	core->dbg->syscall = \
 		core->assembler->syscall = \
 			core->anal->syscall; // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
