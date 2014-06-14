@@ -67,6 +67,10 @@ R_API void r_core_syscmd_ls(const char *input) {
 	RList *files;
 	char *name;
 	char *dir;
+	if (r_sandbox_enable (0)) {
+		eprintf ("Sandbox forbids listing directories\n");
+		return;
+	}
 	if (input[1]==' ') {
 		if (!strncmp (input+2, "-l", 2)) {
 			if (input[3]) {

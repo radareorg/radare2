@@ -518,10 +518,12 @@ static int cmd_print(void *data, const char *input) {
 			r_sys_sleep (1);
 			r_sys_cmd ("sh");
 		} else {
-			char *cwd = r_sys_getdir ();
-			if (cwd) {
-				eprintf ("%s\n", cwd);
-				free (cwd);
+			if (!r_sandbox_enable (0)) {
+				char *cwd = r_sys_getdir ();
+				if (cwd) {
+					eprintf ("%s\n", cwd);
+					free (cwd);
+				}
 			}
 		}
 		break;
