@@ -118,7 +118,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		}
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		r_cons_flush ();
-		snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x,
+		snprintf (cmd, sizeof (cmd), "pD %d @ 0x%08"PFMT64x,
 			bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
@@ -718,6 +718,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 #define FMT_GV 1
 #define FMT_JS 2
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int fmt) {
+	RAnalFunction fakefr = {0};
 	const char *font = r_config_get (core->config, "graph.font");
         int is_html = r_cons_singleton ()->is_html;
 	int first, first2, showhdr = 0;
@@ -749,9 +750,14 @@ else
 		first2 = 0;
 		r_list_foreach (fcni->refs, iter2, fcnr) {
 			RAnalFunction *fr = r_anal_get_fcn_at (core->anal, fcnr->addr);
-			if (!fr)
+			if (!fr) {
 				eprintf ("Invalid reference from 0x%08"PFMT64x
 					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
+				fr = &fakefr;
+				free (fr->name);
+				fr->name = malloc (32);
+				snprintf (fr->name, 31, "unk.0x%"PFMT64x, fcnr->addr);
+			}
 			if (!is_html && !showhdr) {
 				if (fmt==1) r_cons_printf ("digraph code {\n"
 					"\tgraph [bgcolor=white];\n"
@@ -771,7 +777,7 @@ else
 					flag? flag->name: "", fcnr->addr);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" "
 					"[label=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-					fcnr->addr, flag?flag->name:"",
+					fcnr->addr, flag?flag->name:fr?fr->name:"unk",
 					flag? flag->name: "", fcnr->addr);
 			} else if (fmt==2) {
 				if (fr) {

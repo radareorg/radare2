@@ -437,7 +437,6 @@ static int cmd_help(void *data, const char *input) {
 	case '\0':
 	default:{
 		const char* help_message[] = {
-		"", "", "",
 		"%var", "=value", "Alias for 'env' command",
 		"*", "off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
 		"$alias", "=value", "Alias commands (simple macros)",
@@ -456,6 +455,7 @@ static int cmd_help(void *data, const char *input) {
 		"f"," [name][sz][at]", "Set flag at current address",
 		"g"," [arg]", "Go compile shellcodes with r_egg",
 		"i"," [file]", "Get info about opened file",
+		"k"," [sdb-query]", "Run sdb-query. see k? for help, 'k *', 'k **' ...",
 		"l","[-] [num|msg]", "Log utility",
 		"m","", "Mountpoints commands",
 		"o"," [file] ([offset])", "Open file at optional address",
