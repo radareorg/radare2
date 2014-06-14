@@ -270,7 +270,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		       out[0] = 0;
 		       r_base64_encode (out, buf, len);
 		       p->printf ("%s", out);
-		       p->printf ("\", 'base64').toString('binary');\n");
+		       p->printf ("\", 'base64');\n");
 		       free (out);
 		}
 		break;
