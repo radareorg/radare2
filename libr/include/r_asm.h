@@ -200,6 +200,7 @@ extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_sysz;
 extern RAsmPlugin r_asm_plugin_sparc_cs;
 extern RAsmPlugin r_asm_plugin_xcore_cs;
+extern RAsmPlugin r_asm_plugin_spc700;
 #endif
 
 #ifdef __cplusplus
