@@ -31,7 +31,7 @@ static int spc700Disass(RAsmOp *op, const ut8 *buf, int len) {
 		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1]);
 		break;
 	case SPC_ARG8_2:
-		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1], buf[1]);
+		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1], buf[2]);
 		break;
 	case SPC_ARG16:
 		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1]+0x100*buf[2]);
