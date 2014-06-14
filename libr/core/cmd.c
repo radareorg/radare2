@@ -107,19 +107,22 @@ static int cmd_log(void *data, const char *input) {
 	case '-':
 		r_core_log_del (core, n);
 		break;
-	case '?':
-		r_cons_printf ("|Usage: l[-][ num|msg]\n"
-			"|  l new comment 0x80480\n"
-			"|  l       list all log messages\n"
-			"|  l*      list in radare commands\n"
-			"|  ll      get last log message id\n"
-			"|  ls      list files in current directory (see pwd, cd)\n"
-			"|  lj      list in json format\n"
-			"|  l-      delete all logs\n"
-			"|  l-123   delete logs before 123\n"
-			"|  l 123   list log from 123 \n"
-			"|  l 10 3  list 3 log messages starting from 10\n"
-		);
+	case '?':{
+			const char* help_msg[] = {
+			"Usage:", "l","[-][ num|msg]",
+			"l", "", "List all log messages",
+			"l", " new comment", "0x80480",
+			"l", " 123", "List log from 123",
+			"l", " 10 3", "List 3 log messages starting from 10",
+			"l*", "", "List in radare commands",
+			"l-", "", "Delete all logs",
+			"l-", " 123", "Delete logs before 123",
+			"ll", "", "Get last log message id",
+			"lj", "", "List in json format",
+			"ls", "", "List files in current directory (see pwd, cd)",
+			NULL};
+		r_core_cmd_help(core, help_msg);
+		}
 		break;
 	case ' ':
 		if (!n) {
