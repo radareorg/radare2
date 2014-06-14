@@ -71,8 +71,7 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	off = exe->header_paragraphs * 16L;
-	off += exe->ip; // XXX
+	off = (exe->cs << 4) + exe->ip;
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->paddr = off;
 		ptr->vaddr = off;
