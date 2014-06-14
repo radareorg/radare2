@@ -1,16 +1,16 @@
 #include <r_types.h>
 
-#define SPC_OP		0
+#define	SPC_OP		0
 #define	SPC_ARG8_1	1
 #define	SPC_ARG8_2	2
-#define SPC_ARG16	3
+#define	SPC_ARG16	3
 
 typedef struct spc_700_op_t {
 	char *name;
 	ut8 type;
 } Spc700Op;
 
-static Spc700Op spc_op_table[] = {
+static const Spc700Op spc_op_table[] = {
 	{"nop", SPC_OP},
 	{"call [0xffde]", SPC_OP},
 	{"set1 0x%02x.0", SPC_ARG8_1},
