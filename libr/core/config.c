@@ -333,6 +333,8 @@ static int cb_cfgdebug(void *user, void *data) {
 static int cb_cfgsanbox(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int ret = r_sandbox_enable (node->i_value);
+	if (node->i_value != ret)
+		eprintf ("Cannot disable sandbox\n");
 	return (!node->i_value && ret)? 0: 1;
 }
 
