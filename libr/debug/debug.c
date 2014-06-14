@@ -62,7 +62,6 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->graph = r_graph_new ();
 		dbg->swstep = 0;
 		dbg->newstate = 0;
-		dbg->syscall = NULL;
 		dbg->signum = 0;
 		dbg->reason = R_DBG_REASON_UNKNOWN;
 		dbg->stop_all_threads = R_FALSE;
@@ -470,7 +469,8 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
 		reg = (int)r_debug_reg_get (dbg, "a0"); // XXX
-		sysname = r_syscall_get_i (dbg->syscall, reg, -1);
+		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
+		if (!sysname) sysname = "unknown";
 		eprintf ("--> syscall %d %s\n", reg, sysname);
 		return reg;
 	}
@@ -493,9 +493,10 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		reg = (int)r_debug_reg_get (dbg, "sn");
 		if (reg == (int)UT64_MAX)
 			return -1;
-		sysname = r_syscall_get_i (dbg->syscall, reg, -1);
+		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
+		if (!sysname) sysname = "unknown";
 		eprintf ("--> syscall %d %s\n", reg, sysname);
-		for (i=0; i< n_sc; i++) {
+		for (i=0; i<n_sc; i++) {
 			if (sc[i] == reg)
 				return reg;
 		}

@@ -150,7 +150,6 @@ typedef struct r_debug_t {
 	struct list_head plugins;
 	RAnal *anal;
 	RIOBind iob;
-	RSyscall *syscall;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	RGraph *graph;

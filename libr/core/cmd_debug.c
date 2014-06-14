@@ -4,35 +4,33 @@ static int checkbpcallback(RCore *core);
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
-	if (_str[0]==' ') {
-		char *str = strdup (_str+1);
-		int i, count = r_str_word_set0 (str);
-		int *syscalls = malloc (sizeof (int)*count);
-		for (i=0; i<count; i++) {
-			const char *sysnumstr = r_str_word_get0 (str, i);
-			int sig = (int)r_num_math (core->num, sysnumstr);
-			if (sig < 1) {
-				sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
-				eprintf ("-->(%s)\n", sysnumstr);
-				if (sig == -1) {
-					eprintf ("Unknown syscall number\n");
-					free (str);
-					free (syscalls);
-					return;
-				}
-				syscalls[i] = sig;
+eprintf ("STR(%s)\n", _str);
+	char *str = strdup (_str);
+	int i, count = r_str_word_set0 (str);
+	int *syscalls = malloc (sizeof (int)*count);
+	for (i=0; i<count; i++) {
+		const char *sysnumstr = r_str_word_get0 (str, i);
+		int sig = (int)r_num_math (core->num, sysnumstr);
+		if (sig < 1) {
+			sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
+			if (sig == -1) {
+				eprintf ("Unknown syscall number\n");
+				free (str);
+				free (syscalls);
+				return;
 			}
+			syscalls[i] = sig;
 		}
-		eprintf ("Running child until syscalls:");
-		for (i=0;i<count;i++) 
-			eprintf ("%d ", syscalls[i]);
-		eprintf ("\n");
-		r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		r_debug_continue_syscalls (core->dbg, syscalls, count);
-		checkbpcallback (core);
-		free (syscalls);
-		free (str);
-	} else eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+	}
+	eprintf ("Running child until syscalls:");
+	for (i=0;i<count;i++) 
+		eprintf ("%d ", syscalls[i]);
+	eprintf ("\n");
+	r_reg_arena_swap (core->dbg->reg, R_TRUE);
+	r_debug_continue_syscalls (core->dbg, syscalls, count);
+	checkbpcallback (core);
+	free (syscalls);
+	free (str);
 }
 
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
@@ -1207,7 +1205,9 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 			break;
 		case 's':
-			cmd_debug_cont_syscall (core, input+3);
+			if (input[2]==' ') {
+				cmd_debug_cont_syscall (core, input+3);
+			} else eprintf ("|Usage: dcs [syscall-name-or-number]\n");
 			break;
 		case 'p':
 			{ // XXX: this is very slow
