@@ -131,7 +131,7 @@ static st64 getval(ud_operand_t *op) {
 	int bits = op->size;
 	switch (op->type) {
 	case UD_OP_PTR:
-		return (op->lval.ptr.seg<<4) | (op->lval.ptr.off & 0xFFFF);
+		return (op->lval.ptr.seg<<4) + (op->lval.ptr.off & 0xFFFF);
 	default:
 		break;
 	}
@@ -385,9 +385,11 @@ default:
 			op->type = R_ANAL_OP_TYPE_UCALL;
 			op->jump = 0; // EAX, EBX, ... use anal->reg
 			break;
+		case UD_OP_PTR:
+			op->jump = (int)getval (&u.operand[0]);
+			break;
 		case UD_OP_IMM:
 		case UD_OP_MEM:
-		case UD_OP_PTR:
 		default:
 			op->jump = addr + oplen + (int)getval (&u.operand[0]);
 		}
