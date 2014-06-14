@@ -22,7 +22,7 @@ static int gbOpLength(int gboptype){
 	return 0;
 }
 
-static int gbDisass(RAsmOp *op, const ut8 *buf, ut64 len){
+static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 	int foo = gbOpLength (gb_op[buf[0]].type);
 	if (len<foo)
 		return 0;
