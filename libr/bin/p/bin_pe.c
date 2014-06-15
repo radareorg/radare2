@@ -358,10 +358,12 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	int ret = R_FALSE;
 	if (!buf)
 		return R_FALSE;
+	if (length <= 0x3d)
+		return R_FALSE;
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (length > idx)
-		if (!memcmp (buf, "\x4d\x5a", 2) &&
-			!memcmp (buf+idx, "\x50\x45", 2) &&
+	if (length > idx+0x18+2)
+		if (!memcmp (buf, "MZ", 2) &&
+			!memcmp (buf+idx, "PE", 2) &&
 			!memcmp (buf+idx+0x18, "\x0b\x01", 2))
 			ret = R_TRUE;
 	return ret;
