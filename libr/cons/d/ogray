@@ -1,7 +1,7 @@
 ec comment rgb:f72
 ec fname rgb:f72
 ec fline rgb:f72
-ec flag rgb:557
+ec flag rgb:f72
 ec label rgb:f72
 ec flow rgb:f72
 ec prompt rgb:f72
@@ -25,6 +25,6 @@ ec trap rgb:f72
 ec swi rgb:f72
 ec cmp rgb:aaa
 ec reg rgb:fff
-ec creg rgb:999
+ec creg rgb:fff
 ec num rgb:f72
 ec mov rgb:777

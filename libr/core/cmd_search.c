@@ -425,21 +425,24 @@ static int cmd_search(void *data, const char *input) {
 		goto reread;
 		break;
 	case 'P':
-		 {
+		{
 		// print the offset of the Previous opcode
 		ut8 buf[64];
 		ut64 off = core->offset;
 		r_core_read_at (core, off-16, buf, 32);
 		off = findprevopsz (core, off, buf, 16);
 		r_cons_printf ("0x%08llx\n", off);
-		 }
+		}
 		break;
 	case 'R':
-		r_core_search_rop (core, from, to, 0, input+1);
+		if (input[1]=='?') {
+			r_cons_printf ("Usage: /R [filter-by-string]\n");
+		} else r_core_search_rop (core, from, to, 0, input+1);
 		return R_TRUE;
 	case 'r':
 		if (input[1]==' ')
-			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
+			r_core_anal_search (core, from, to,
+				r_num_math (core->num, input+2));
 		else r_core_anal_search (core, from, to, core->offset);
 		break;
 	case 'a': {
@@ -702,7 +705,7 @@ static int cmd_search(void *data, const char *input) {
 		"| /a jmp eax      assemble opcode and search its bytes\n"
 		"| /A              search for AES expanded keys\n"
 		"| /r sym.printf   analyze opcode reference an offset\n"
-		"| /R              search for ROP gadgets\n"
+		"| /R [grepopcode] search for matching ROP gadgets\n"
 		"| /P              show offset of previous instruction\n"
 		"| /m magicfile    search for matching magic file (use blocksize)\n"
 		"| /p patternsize  search for pattern of given size\n"
