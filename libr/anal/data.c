@@ -65,11 +65,11 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	return is_invalid (buf2, size)? 0: n;
 }
 
-static int is_bin(const ut8 *buf) {
+static int is_bin(const ut8 *buf, int size) {
 	// TODO: add more
-	if((!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-	|| (!memcmp (buf, "\x7e""ELF", 4))
-	|| (!memcmp (buf, "MZ", 2)))
+	if((size >= 4 && !memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+	|| (size >= 4 && !memcmp (buf, "\x7e""ELF", 4))
+	|| (size >= 2 && !memcmp (buf, "MZ", 2)))
 		return 1;
 	return 0;
 }
@@ -180,14 +180,15 @@ R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) 
 	int endi = !anal->big_endian;
 	int word = R_MIN (8, bits/8);
 
-	if (is_invalid (buf, word))
+	if (size >= word && is_invalid (buf, word))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID,
 			-1, buf, word);
-	if (is_null (buf, word))
+	if (size >= word && is_null (buf, word))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NULL,
 			0, buf, word);
-	if (is_bin (buf))
-		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1, buf, word);
+	if (is_bin (buf, size))
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1,
+				buf, word);
 	if (size>=word) {
 		dst = is_pointer (&anal->iob, buf, endi, word);
 		if (dst) return r_anal_data_new (addr,
@@ -199,11 +200,13 @@ R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) 
 	case 2: return r_anal_data_new_string (addr, (const char *)buf,
 		nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
 	}
-	n = is_number (buf, endi, word);
-	if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n,
-		buf, word);
+	if (size >= word) {
+		n = is_number (buf, endi, word);
+		if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER,
+				n, buf, word);
+	}
 	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst,
-		buf, word);
+		buf, R_MIN(word, size));
 }
 
 R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len) {
