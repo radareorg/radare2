@@ -1,3 +1,4 @@
+#if 0
 /* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_anal.h>
@@ -355,3 +356,4 @@ R_API int r_anal_esil_eval(RAnal *anal, const char *str) {
 	C (str);
 	return 0;
 }
+#endif

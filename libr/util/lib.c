@@ -46,6 +46,8 @@ R_API const char *r_lib_types_get(int idx) {
 
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
+	if (!libname || !*libname)
+		return NULL;
 	ret = DLOPEN (libname);
 	if (__has_debug && ret == NULL)
 #if __UNIX__

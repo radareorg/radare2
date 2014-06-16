@@ -851,7 +851,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_core_cmd (core, "ds", 0);
 				r_core_cmd (core, ".dr*", 0);
 			}
-		} else visual_offset (core);
+		} else {
+			r_core_cmd (core, "aes", 0);
+			r_core_cmd (core, ".ar*", 0);
+		}
 		break;
 	case 'S':
 		if (curset) {
