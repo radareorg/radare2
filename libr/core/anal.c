@@ -754,7 +754,7 @@ else
 				eprintf ("Invalid reference from 0x%08"PFMT64x
 					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
 				fr = &fakefr;
-				free (fr->name);
+				if (fr) free (fr->name);
 				fr->name = malloc (32);
 				snprintf (fr->name, 31, "unk.0x%"PFMT64x, fcnr->addr);
 			}

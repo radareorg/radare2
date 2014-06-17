@@ -20,7 +20,7 @@ static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 }
 
 static void setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
-	if (!eobj->imports_by_ord && ord >= eobj->imports_by_ord_size)
+	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size)
 		return;
 	free (eobj->imports_by_ord[ord]);
 	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
@@ -208,7 +208,7 @@ static RList* sections(RBinFile *arch) {
 }
 
 static RList* symbols(RBinFile *arch) {
-	int i, has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
+	int i, has_va;
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 	RBinSymbol *ptr = NULL;
@@ -217,6 +217,7 @@ static RList* symbols(RBinFile *arch) {
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 	bin = arch->o->bin_obj;
+	has_va = Elf_(r_bin_elf_has_va) (bin);
 	if (!has_va) {
 		// find base address for non-linked object (.o) //
 		if (arch->o->sections) {
