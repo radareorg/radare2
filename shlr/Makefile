@@ -6,10 +6,10 @@ CS_VER=2.1.2
 CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_TAR=
 CS_URL=https://github.com/aquynh/capstone.git
-CS_UPD=20140612
+CS_UPD=20140617
 CS_BRA=next
-#CS_TIP=04b9da4c4a03e7c17ef4786dd31d3dbd58866203
-CS_TIP=5493c87c2776b784e2692d3ec6258814de8b84ac
+#CS_TIP=5493c87c2776b784e2692d3ec6258814de8b84ac
+CS_TIP=476d5ad7a566977d5ec05c17bbf3f44acc3ed3cd
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
