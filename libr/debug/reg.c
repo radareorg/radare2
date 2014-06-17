@@ -105,32 +105,27 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case 'd':
 			case 2:
 				 {
-					char whites[16];
+					char *str, whites[16], content[128];
+					int len;
 					strcpy (whites, kwhites);
 					if (delta && use_color)
 						dbg->printf (use_color);
 					if (item->flags) {
-						char *str = r_reg_get_bvalue (dbg->reg, item);
-						int len = strlen (str);
+						str = r_reg_get_bvalue (dbg->reg, item);
+						len = strlen (str);
 						strcpy (whites, "        ");
-						if (len>9) len=9;
-						else len = 9-len;
+						len = (len>9)?9:(9-len);
 						whites[len] = 0;
 						dbg->printf (" %s = %s%s", item->name,
 							str, ((n+1)%cols)? whites: "\n");
 						free (str);
 					} else {
-						char content[128];
-						int len;
-
 						snprintf (content, sizeof(content), fmt2, item->name, value, "");
 						len = strlen (content);
 						len -= 4;
-
 						if (len>10) {
 							len -= 10;
-							if (len>9)len=9;
-							else len = 9-len;
+							len = (len>9)?9:(9-len);
 							whites[len] = 0;
 						}
 						dbg->printf (fmt2, item->name, value,

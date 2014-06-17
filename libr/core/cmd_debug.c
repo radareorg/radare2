@@ -632,9 +632,16 @@ free (rf);
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
-		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
+			} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		} else {
+			RReg *orig = core->dbg->reg;
+			core->dbg->reg = core->anal->reg;
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
-		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+			core->dbg->reg = orig;
+		}
 		break;
 	case '*':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
@@ -1294,7 +1301,12 @@ static int cmd_debug(void *data, const char *input) {
 		cmd_debug_map (core, input+1);
 		break;
 	case 'r':
-		cmd_debug_reg (core, input+1);
+		if (core->io->debug) {
+			cmd_debug_reg (core, input+1);
+		} else {
+			void cmd_anal_reg(RCore *core, const char *str);
+			cmd_anal_reg (core, input+1);
+		}
 		//r_core_cmd (core, "|reg", 0);
 		break;
 	case 'p':

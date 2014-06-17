@@ -9,65 +9,97 @@
 #include "udis86/extern.h"
 #include "esil.h"
 
+#define RPN 
 
-UDIS86_ESIL (nop,   ",");
-UDIS86_ESIL (jo,    "?of,%s=%s", info->pc, dst);
-UDIS86_ESIL (jno,   "?!of,%s=%s", info->pc, dst);
-UDIS86_ESIL (jb,    "?cf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jae,   "?cf,%s=%s", info->pc, dst);
-UDIS86_ESIL (je,    "?zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jne,   "?!zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (ja,    "?!cf&!zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jbe,   "?cf&zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (js,    "?sf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jns,   "?!sf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jp,    "?pf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jnp,   "?!pf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jl,    "?sf^of,%s=%s", info->pc, dst);
-UDIS86_ESIL (jge,   "?sf^!of,%s=%s", info->pc, dst);
-UDIS86_ESIL (jle,   "?(sf^of)|zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jg,    "?(sf^!of)&!zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jcxz,  "?cx==0,%s=%s", info->pc, dst);
-UDIS86_ESIL (jecxz, "?ecx==0,%s=%s", info->pc, dst);
-UDIS86_ESIL (jrcxz, "?rcx==0,%s=%s", info->pc, dst);
-UDIS86_ESIL (jmp,   "%s=%s", info->pc, dst);
-UDIS86_ESIL (call,  "%s-=%d,%d[%s]=%s,%s=%s", info->sp, info->regsz, info->regsz, info->sp, info->pc, info->pc, dst);
-UDIS86_ESIL (shl,   "cf=%s&(1<<%d-%s),%s<<=%s,zf=%s==0", dst, info->regsz * 8, src, dst, src, dst);
-UDIS86_ESIL (rol,   "cf=%s&(1<<%s),%s>>=%s,zf=%s==0", dst, src, dst, src, dst);
-UDIS86_ESIL (ror,   "cf=%s&(1<<%d-%s),%s<<<=%s,zf=%s==0", dst, info->regsz * 8, src, dst, src, dst);
-UDIS86_ESIL (add,   "cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
-UDIS86_ESIL (inc,   "of=(%s^(%s+1))>>%d,%s++,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
-UDIS86_ESIL (sub,   "cf=%s<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s-=%s,zf=%s==0,sf=%s>>%d", dst, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
-UDIS86_ESIL (dec,   "of=(%s^(%s-1))>>%d,%s--,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
-UDIS86_ESIL (cmp,   "cf=%s<%s,zf=%s==%s", dst, src, dst, src);
-UDIS86_ESIL (xor,   "%s^=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
-UDIS86_ESIL (or,    "%s|=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
-UDIS86_ESIL (and,   "%s&=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
-UDIS86_ESIL (test,  "zf=%s&%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, info->bits - 1);
-UDIS86_ESIL (syscall, "$");
-UDIS86_ESIL (int,   "$0x%"PFMT64x, info->n);
-UDIS86_ESIL (lea,   "%s=%s", dst, src);
-UDIS86_ESIL (mov,   "%s=%s", dst, src);
-UDIS86_ESIL (push,  "%s-=%d,%d[%s]=%s", info->sp, info->regsz, info->regsz, info->sp, dst);
-UDIS86_ESIL (pop,   "%s=%d[%s],%s+=%d", dst, info->regsz, info->sp, info->sp, info->regsz);
-UDIS86_ESIL (leave, "%s=%s,%s=%d[%s],%s+=%d", info->sp, info->bp, src, info->regsz, info->sp, info->sp, info->regsz);
-UDIS86_ESIL (ret,   "%s=%d[%s],%s+=%d", info->pc, info->regsz, info->sp, info->sp, info->regsz);
-UDIS86_ESIL (xchg,  "%s^=%s,%s^=%s,%s^=%s", dst, src, src, dst, dst, src);
-UDIS86_ESIL (xadd,  "%s^=%s,%s^=%s,%s^=%s,cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, dst, src, dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
-UDIS86_ESIL (bt,    "cf=%s&(1<<%d)!=0", dst, (int) info->n);
-UDIS86_ESIL (btc,   "cf=%s&(1<<%d)!=0,%s^=(1<<%d)",  dst, (int) info->n, dst, (int) info->n);
-UDIS86_ESIL (bts,   "cf=%s&(1<<%d)!=0,%s|=(1<<%d)",  dst, (int) info->n, dst, (int) info->n);
-UDIS86_ESIL (btr,   "cf=%s&(1<<%d)!=0,%s&=!(1<<%d)", dst, (int) info->n, dst, (int) info->n);
-UDIS86_ESIL (clc,   "cf=0");
-UDIS86_ESIL (cli,   "if=0");
-UDIS86_ESIL (cld,   "df=0");
-UDIS86_ESIL (cmc,   "cf=!cf");
-UDIS86_ESIL (int3,  "$3");
-UDIS86_ESIL (into,  "?of,$4");
-UDIS86_ESIL (lahf,  "ah=%s", info->bits == 16 ? "flags" : (info->bits == 32 ? "eflags" : "rflags"));
-UDIS86_ESIL (loop,  "%s--,?%s==0,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
-UDIS86_ESIL (loope, "%s--,?%s==0|zf,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
-UDIS86_ESIL (loopne,"%s--,?%s==0|!zf,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
+RPN UDIS86_ESIL (nop,   ",");
+    UDIS86_ESIL (jo,    "?of,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jno,   "?!of,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jb,    "?cf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jae,   "?cf,%s=%s", info->pc, dst);
+
+//  UDIS86_ESIL (je,    "?zf,%s=%s", info->pc, dst);
+RPN UDIS86_ESIL (je,    "zf,3,?,%s,%s,=", dst, info->pc);
+
+//  UDIS86_ESIL (jne,   "?!zf,%s=%s", info->pc, dst);
+RPN UDIS86_ESIL (jne,   "zf,!,?,%s,%s,=", dst, info->pc);
+
+    UDIS86_ESIL (ja,    "?!cf&!zf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jbe,   "?cf&zf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (js,    "?sf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jns,   "?!sf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jp,    "?pf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jnp,   "?!pf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jl,    "?sf^of,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jge,   "?sf^!of,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jle,   "?(sf^of)|zf,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jg,    "?(sf^!of)&!zf,%s=%s", info->pc, dst);
+
+RPN UDIS86_ESIL (jcxz,  "cx,!,?,%s,%s,=", dst, info->pc);
+    UDIS86_ESIL (jecxz, "?ecx==0,%s=%s", info->pc, dst);
+    UDIS86_ESIL (jrcxz, "?rcx==0,%s=%s", info->pc, dst);
+
+//  UDIS86_ESIL (jmp,   "%s=%s", info->pc, dst);
+RPN UDIS86_ESIL (jmp,   "%s,%s,=", dst, info->pc);
+
+//  UDIS86_ESIL (call,  "%s-=%d,%d[%s]=%s,%s=%s", info->sp, info->regsz, info->regsz, info->sp, info->pc, info->pc, dst);
+RPN UDIS86_ESIL (call,  "%d,%s,-=,%d,%s,+,=[%d],%s,%s,=", info->regsz,info->sp, 5, info->pc, info->regsz, dst, info->pc);
+    
+    UDIS86_ESIL (shl,   "cf=%s&(1<<%d-%s),%s<<=%s,zf=%s==0", dst, info->regsz * 8, src, dst, src, dst);
+    UDIS86_ESIL (rol,   "cf=%s&(1<<%s),%s>>=%s,zf=%s==0", dst, src, dst, src, dst);
+    UDIS86_ESIL (ror,   "cf=%s&(1<<%d-%s),%s<<<=%s,zf=%s==0", dst, info->regsz * 8, src, dst, src, dst);
+    UDIS86_ESIL (add,   "cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
+    UDIS86_ESIL (inc,   "of=(%s^(%s+1))>>%d,%s++,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
+//  UDIS86_ESIL (sub,   "cf=%s<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s-=%s,zf=%s==0,sf=%s>>%d", dst, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
+    UDIS86_ESIL (sub,   "%s,%s,-=,=?cosz", src, dst); // TODO: update flags
+    UDIS86_ESIL (dec,   "of=(%s^(%s-1))>>%d,%s--,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
+    UDIS86_ESIL (cmp,   "cf=%s<%s,zf=%s==%s", dst, src, dst, src);
+    UDIS86_ESIL (xor,   "%s^=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
+    UDIS86_ESIL (or,    "%s|=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
+    UDIS86_ESIL (and,   "%s&=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
+    UDIS86_ESIL (test,  "zf=%s&%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, info->bits - 1);
+
+//  UDIS86_ESIL (syscall, "$");
+RPN UDIS86_ESIL (syscall, "$");
+//  UDIS86_ESIL (int3,  "$3");
+RPN UDIS86_ESIL (int3,  "3,$");
+//  UDIS86_ESIL (int,   "$0x%"PFMT64x, info->n);
+RPN UDIS86_ESIL (int,   "0x%"PFMT64x",$", info->n);
+
+//  UDIS86_ESIL (lea,   "%s=%s", dst, src);
+RPN UDIS86_ESIL (lea,   "%s,%s,=", src, dst);
+//  UDIS86_ESIL (mov,   "%s=%s", dst, src);
+RPN UDIS86_ESIL (mov,   "%s,%s,=", src, dst);
+//  UDIS86_ESIL (push,  "%s-=%d,%d[%s]=%s", info->sp, info->regsz, info->regsz, info->sp, dst);
+RPN UDIS86_ESIL (push,  "%d,%s,-=,%s,%s,=[%d]", info->regsz, info->sp, dst, info->sp, info->regsz);
+
+//  UDIS86_ESIL (pop,   "%s=%d[%s],%s+=%d", dst, info->regsz, info->sp, info->sp, info->regsz);
+RPN UDIS86_ESIL (pop,   "%s,[%d],%s,=,%d,%s,+=", info->sp, info->regsz, dst, info->regsz, info->sp);
+
+    UDIS86_ESIL (leave, "%s=%s,%s=%d[%s],%s+=%d", info->sp, info->bp, src, info->regsz, info->sp, info->sp, info->regsz);
+
+//  UDIS86_ESIL (ret,   "%s=%d[%s],%s+=%d", info->pc, info->regsz, info->sp, info->sp, info->regsz);
+RPN UDIS86_ESIL (ret,   "%s,[%d],%s,=,%d,%s,+=", info->sp, info->regsz, info->pc, info->regsz, info->sp);
+
+    UDIS86_ESIL (xchg,  "%s^=%s,%s^=%s,%s^=%s", dst, src, src, dst, dst, src);
+    UDIS86_ESIL (xadd,  "%s^=%s,%s^=%s,%s^=%s,cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, dst, src, dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
+    UDIS86_ESIL (bt,    "cf=%s&(1<<%d)!=0", dst, (int) info->n);
+    UDIS86_ESIL (btc,   "cf=%s&(1<<%d)!=0,%s^=(1<<%d)",  dst, (int) info->n, dst, (int) info->n);
+    UDIS86_ESIL (bts,   "cf=%s&(1<<%d)!=0,%s|=(1<<%d)",  dst, (int) info->n, dst, (int) info->n);
+    UDIS86_ESIL (btr,   "cf=%s&(1<<%d)!=0,%s&=!(1<<%d)", dst, (int) info->n, dst, (int) info->n);
+//  UDIS86_ESIL (clc,   "cf=0");
+RPN UDIS86_ESIL (clc,   "0,cf,=");
+
+//  UDIS86_ESIL (cli,   "if=0");
+RPN UDIS86_ESIL (cli,   "0,if,="); // interrupt flag
+//  UDIS86_ESIL (cld,   "df=0");
+RPN UDIS86_ESIL (cld,   "0,df,=");
+
+    UDIS86_ESIL (cmc,   "cf=!cf");
+    UDIS86_ESIL (into,  "?of,$4");
+    UDIS86_ESIL (lahf,  "ah=%s", info->bits == 16 ? "flags" : (info->bits == 32 ? "eflags" : "rflags"));
+    UDIS86_ESIL (loop,  "%s--,?%s==0,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
+    UDIS86_ESIL (loope, "%s--,?%s==0|zf,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
+    UDIS86_ESIL (loopne,"%s--,?%s==0|!zf,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
 
 #define OP(args, inst) [JOIN (UD_I, inst)] = {args, UDIS86_ESIL_HANDLER (inst)}
 

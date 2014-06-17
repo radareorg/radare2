@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 // XXX DUP
 #define OPDELTA 32
@@ -35,7 +35,13 @@ static int cmd_seek(void *data, const char *input) {
 				off = r_debug_reg_get (core->dbg, input+2);
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek (core, off, 1);
-			}// else eprintf ("cfg.debug is false\n");
+			} else {
+				RReg *orig = core->dbg->reg;
+				core->dbg->reg = core->anal->reg;
+				off = r_debug_reg_get (core->dbg, input+2);
+				core->dbg->reg = orig;
+				r_core_seek (core, off, 1);
+			}
 		} else eprintf ("|Usage| 'sr pc' seek to program counter register\n");
 	} else
 	if (*input) {

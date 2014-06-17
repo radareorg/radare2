@@ -215,6 +215,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	ut64 old = core->offset;
 	ut64 ret;
 
+	core->offset = addr;
 	/* XXX unnecesary call */
 	//r_io_use_fd (core->io, core->file->desc);
 	core->io->section = core->section; // HACK

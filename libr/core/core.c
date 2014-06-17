@@ -629,7 +629,6 @@ R_API int r_core_init(RCore *core) {
 		r_config_set_i (core->config, "asm.bits", 32);
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	update_sdb (core);
-	r_core_cmd0 (core, "ar `arn pc`=$$");
 	return 0;
 }
 

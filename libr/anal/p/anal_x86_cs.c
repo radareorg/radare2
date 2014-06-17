@@ -108,8 +108,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_SYSRET:
 				op->type = R_ANAL_OP_TYPE_RET;
 				if (a->decode)
-					esilprintf (op, "%s=%d[%s],%s+=%d",
-						pc, rs, sp, sp, rs);
+					esilprintf (op, "%s,[%d],%s,=,%d,%s,+=",
+						sp, rs, pc, rs, sp);
 				break;
 			case X86_INS_INT1:
 			case X86_INS_INT3:
@@ -120,7 +120,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_SYSCALL:
 				op->type = R_ANAL_OP_TYPE_TRAP;
 				if (a->decode)
-					esilprintf (op, "$%d", (int)INSOP(0).imm);
+					esilprintf (op, "%d,$", (int)INSOP(0).imm);
 				break;
 			case X86_INS_JL:
 			case X86_INS_JLE:
@@ -168,7 +168,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				if (a->decode) {
 					ut64 dst = INSOP(0).imm;
-					esilprintf (op, "%s=0x%"PFMT64x, pc, dst);
+					esilprintf (op, "0x%"PFMT64x",%s,=", dst, pc);
 				}
 				break;
 			case X86_INS_IN:

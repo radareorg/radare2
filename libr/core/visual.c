@@ -946,6 +946,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} else {
 			if (r_debug_reg_get (core->dbg, "pc") != 0) {
 				r_core_cmd (core, "sr pc", 0);
+				r_core_cmd0 (core, "ar `arn pc`=$$");
 			} else {
 				r_core_seek (core, r_num_get (core->num, "entry0"), 1);
 				//r_core_cmd (core, "s entry0", 0);

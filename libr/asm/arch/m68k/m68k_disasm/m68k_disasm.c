@@ -3100,6 +3100,7 @@ static void prints(dis_buffer_t *dbuf, int val, int sz)
 }
 
 
+#if 0
 static void iprints(dis_buffer_t *dbuf, int val, int sz)
 {
   if (val == 0) {
@@ -3114,6 +3115,7 @@ static void iprints(dis_buffer_t *dbuf, int val, int sz)
   
   dbuf->cinfo = &dbuf->cinfo[strlen(dbuf->cinfo)];
 }
+#endif
 
 
 static void printu(dis_buffer_t *dbuf, u_int val, int sz)

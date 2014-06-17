@@ -117,6 +117,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 			if (size>arena->size) {
 				arena->size = size;
 				arena->bytes = realloc (arena->bytes, size);
+				memset (arena->bytes, 0, size);
 				if (arena->bytes == NULL)
 					return R_FALSE;
 			}
@@ -136,7 +137,7 @@ R_API RRegArena *r_reg_arena_new (int size) {
 			arena = NULL;
 		} else {
 			arena->size = size;
-			memset (arena->bytes, 0, arena->size);
+			memset (arena->bytes, 0, size);
 		}
 	}
 	return arena;

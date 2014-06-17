@@ -668,7 +668,7 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	core->dbg->reg = hack;
 }
 
-static void cmd_anal_reg(RCore *core, const char *str) {
+void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i(core->config, "scr.color");
@@ -817,9 +817,7 @@ static void cmd_anal_reg(RCore *core, const char *str) {
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
-		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
-		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		__anal_reg_list (core, type, size, 2);
 		break;
 	case '*':
 	case 'j':
@@ -829,7 +827,10 @@ static void cmd_anal_reg(RCore *core, const char *str) {
 	case ' ':
 		arg = strchr (str+1, '=');
 		if (arg) {
+			char *ostr, *regname;
 			*arg = 0;
+			ostr = strdup (str+1);
+			regname = r_str_clean (ostr);
 			r = r_reg_get (core->dbg->reg, str+1, -1); //R_REG_TYPE_GPR);
 			if (r) {
 				r_cons_printf ("0x%08"PFMT64x" ->", str,
@@ -839,7 +840,10 @@ static void cmd_anal_reg(RCore *core, const char *str) {
 				r_debug_reg_sync (core->dbg, -1, R_TRUE);
 				r_cons_printf ("0x%08"PFMT64x"\n",
 					r_reg_get_value (core->dbg->reg, r));
-			} else eprintf ("Unknown register '%s'\n", str+1);
+			} else {
+				eprintf ("ar: Unknown register '%s'\n", regname);
+			}
+			free (ostr);
 			return;
 		}
 		size = atoi (str+1);
