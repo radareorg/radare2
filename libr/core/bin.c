@@ -224,8 +224,8 @@ static int bin_info (RCore *r, int mode) {
 			"\"linenums\":%s,"
 			"\"syms\":%s,"
 			"\"relocs\":%s}",
-			info->rclass,
-			info->bclass,
+			info->rclass, // type
+			info->bclass, // class
 			info->big_endian? "big": "little",
 			info->machine,
 			info->arch,
@@ -630,7 +630,8 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (imports, iter, import)
-			r_cons_printf ("%s{\"name\":\"%s\"}", iter->p?",":"", import->name);
+			r_cons_printf ("%s{\"name\":\"%s\"}",
+				iter->p?",":"", import->name);
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {

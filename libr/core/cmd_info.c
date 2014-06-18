@@ -209,20 +209,23 @@ static int cmd_info(void *data, const char *input) {
 			"| ir/iR       relocs\n"
 			"| iz          strings\n"
 			);
-			break;
+			goto done;
 		case '*':
 			mode = R_CORE_BIN_RADARE;
-			break;
+			goto done;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
 			cmd_info_bin (core, offset, va, mode);
-			break;
+			goto done;
 		default:
 			cmd_info_bin (core, offset, va, mode);
 			break;
 		}
 		input++;
+		if (!strcmp (input, "j"))
+			break;
 	}
+done:
 	if (is_array)
 		r_cons_printf ("}\n");
 	if (newline) r_cons_newline();
