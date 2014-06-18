@@ -697,15 +697,27 @@ R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb) {
 }
 
 R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
-	struct r_anal_bb_t *bbi;
+/*
+    CC = E - N + 2P
+    E = the number of edges of the graph.
+    N = the number of nodes of the graph.
+    P = the number of connected components (exit nodes). 
+*/
+	int E = 0, N = 0, P = 0;
 	RListIter *iter;
-	int ret = 0, retbb;
+	RAnalBlock *bb;
 
-	r_list_foreach (fcn->bbs, iter, bbi) {
-		retbb = ((bbi->type & R_ANAL_BB_TYPE_LAST))? 1: 0;
-		ret += bbi->conditional + retbb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		N++; // nodes
+		if (bb->jump == UT64_MAX) {
+			P++; // exit nodes
+		} else {
+			E++; // edges
+			if (bb->fail != UT64_MAX)
+				E++;
+		}
 	}
-	return ret;
+	return E-N+(2*P);
 }
 
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int type) {

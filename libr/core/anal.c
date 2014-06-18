@@ -880,10 +880,20 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 #define infun(x,y) (y>=x->addr&&y<(x->addr+x->size))
 	r_list_foreach (core->anal->fcns, iter, fcn)
 		if (((input == NULL || *input == '\0') && fcn->type!=R_ANAL_FCN_TYPE_LOC)
-			 || infun(fcn, addr) || !strcmp (fcn->name, input+1)) {
-			if (!rad) {
+			 || infun (fcn, addr) || !strcmp (fcn->name, input+1)) {
+			if (rad) {
+				r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
+						fcn->addr, fcn->size, fcn->name,
+						fcn->type==R_ANAL_FCN_TYPE_LOC?'l':
+						fcn->type==R_ANAL_FCN_TYPE_SYM?'s':
+						fcn->type==R_ANAL_FCN_TYPE_IMP?'i':'f',
+						fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
+						fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
+				fcn_list_bbs (fcn);
+			} else {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, (ut64)fcn->size);
+				r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 				r_cons_printf ("\n type: %s",
 						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
 						fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
@@ -933,15 +943,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 							fcn->diff->name);
 				}
 				r_cons_newline ();
-			} else {
-				r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
-						fcn->addr, fcn->size, fcn->name,
-						fcn->type==R_ANAL_FCN_TYPE_LOC?'l':
-						fcn->type==R_ANAL_FCN_TYPE_SYM?'s':
-						fcn->type==R_ANAL_FCN_TYPE_IMP?'i':'f',
-						fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
-						fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
-				fcn_list_bbs (fcn);
 			}
 		}
 	return R_TRUE;

@@ -478,12 +478,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'c':
 		  {
 			 RAnalFunction *fcn;
-			 int cc;
 			 if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
-				 cc = r_anal_fcn_cc (fcn);
-				 r_cons_printf ("CyclomaticComplexity 0x%08"PFMT64x" = %i\n",
-					 fcn->addr, cc);
-			 } else eprintf ("Error: function not found\n");
+				 r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
+			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", fcn->addr);
 		  }
 		 break;
 	case 'b':
@@ -497,7 +494,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 }
 		 break;
 	case 'n':
-		 if (1) { //input[2]==' ' && input[3])
+		{
 			 RAnalFunction *fcn;
 			 ut64 off = core->offset;
 			 char *p, *name = strdup (input+3);
@@ -635,7 +632,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "| afl[*] [fcn name]         ; List functions (addr, size, bbs, name)\n"
 		 "| afi [fcn name]            ; Show function(s) information (verbose afl)\n"
 		 "| afn name [addr]           ; Rename name for function at address (change flag too)\n"
-		 "| afr[cCd-] src dst         ; Add/Remove code/Call/data/string reference\n"
+		 "| afx[cCd-] src dst         ; Add/Remove code/Call/data/string reference\n"
 		 "| afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
 		 "| afv[?] [idx] [type] [name]; Add local var on current function\n"
 		 "| afa[?] [idx] [type] [name]; Add function argument\n"
@@ -1507,7 +1504,8 @@ static int cmd_anal(void *data, const char *input) {
 			"| ah[?lba-]        analysis hints (force opcode size, ...)\n"
 			"| ao[e?] [len]     analyze Opcodes (or emulate it)\n"
 			"| ap               find and analyze function preludes\n"
-			"| ar[?ld-*]        manage refs/xrefs (see also afr?)\n"
+			"| ar               like 'dr' but for the esil vm. (registers)\n"
+			"| ax[?ld-*]        manage refs/xrefs (see also afx?)\n"
 			"| as [num]         analyze syscall using dbg.reg\n"
 			"| at[trd+-*?] [.]  analyze execution Traces\n"
 			//"| ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"

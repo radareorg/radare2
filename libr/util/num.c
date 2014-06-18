@@ -417,7 +417,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n) {
 	str[stri=0] = 0;
 	while (len--) {
 		char ch = (num & 0xff);
-		if (ch>=27 && ch <127) {
+		if (ch>=33 && ch <127) {
 			str[stri++] = ch;
 			str[stri] = 0;
 		} else {

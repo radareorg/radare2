@@ -252,27 +252,6 @@ typedef struct r_anal_varsub_t {
 	char sub[128];
 } RAnalVarSub;
 
-/*
-typedef struct r_anal_fcn_t {
-	char *name;
-	ut64 addr;
-	ut64 size;
-	int type;
-	int calltype; // See R_ANAL_CC_TYPE_
-	int stack;
-	int ninstr;
-	int nargs;
-	int depth;
-	RAnalVarSub varsubs[R_ANAL_VARSUBS];
-	ut8 *fingerprint;
-	RAnalDiff *diff;
-	RList *bbs;
-	RList *vars;
-	RList *refs;
-	RList *xrefs;
-} RAnalFcn;
-*/
-
 enum {
 	R_ANAL_DIFF_TYPE_NULL = 0,
 	R_ANAL_DIFF_TYPE_MATCH = 'm',
@@ -644,7 +623,6 @@ typedef struct r_anal_cond_t {
 	RAnalValue *arg[2]; // filled by CMP opcode
 } RAnalCond;
 
-struct r_anal_bb_t;
 typedef struct r_anal_bb_t {
 	char *name;
 	ut64 addr;
@@ -853,7 +831,6 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
-
 } RAnalPlugin;
 
 
@@ -1034,6 +1011,7 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr); // default 20
 #define r_anal_fcn_get_vars(x) x->vars
 #define r_anal_fcn_get_bbs(x) x->bbs
 #else
+R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad);
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal);

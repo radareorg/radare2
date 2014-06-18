@@ -1375,7 +1375,6 @@ static void handle_print_op_push_info (RCore *core, RDisasmState *ds){
 	}
 }
 
-
 static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4) {
 	ut64 ret = 0;
 	if (core->assembler->bits==64) {
@@ -1420,6 +1419,7 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 		ds->comment = NULL;
 	}
 }
+
 static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 ) {
 	RAnalMetaItem *mi2 = r_meta_find (core->anal, word8,
 		R_META_TYPE_ANY, R_META_WHERE_HERE);
