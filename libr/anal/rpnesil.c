@@ -232,6 +232,20 @@ static int esil_andeq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_cmp(RAnalEsil *esil) {
+}
+
+static int esil_if(RAnalEsil *esil) {
+	ut64 num = 0;
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &num)) {
+		if (!num) {
+			// condition not matching, skipping until }
+			esil->ifskip = R_TRUE;
+		}
+	}
+}
+
 static int esil_lsl(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, num2;
@@ -541,6 +555,8 @@ typedef int RAnalEsilCmd(RAnalEsil *esil);
 
 static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 //TODO: use RCmd here?
+	if (!strcmp (word, "==")) { *cmd = &esil_cmp; return 1; } else
+	if (!strcmp (word, "?{")) { *cmd = &esil_if; return 1; } else
 	if (!strcmp (word, "<<")) { *cmd = &esil_lsl; return 1; } else
 	if (!strcmp (word, "<<=")) { *cmd = &esil_lsleq; return 1; } else
 	if (!strcmp (word, ">>")) { *cmd = &esil_lsr; return 1; } else
@@ -568,6 +584,12 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 
 static int runword (RAnalEsil *esil, const char *word) {
 	RAnalEsilCmd *cmd = NULL;
+	if (esil->ifskip) {
+		if (!strcmp (word, "}")) {
+			esil->ifskip = 0;
+		}
+		return 0;
+	}
 	if (esil->skip) {
 		esil->skip--;
 		return 0;
@@ -585,7 +607,11 @@ static int runword (RAnalEsil *esil, const char *word) {
 R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	// split str by commas
 	int wordi = 0;
-	char word[32];
+	char word[32], *ostr = str;
+	loop:
+	esil->repeat = 0;
+	wordi = 0;
+	str = ostr;
 	while (*str) {
 		if (wordi>30) {
 			eprintf ("Invalid esil string\n");
@@ -596,12 +622,16 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 			wordi = 0;
 			runword (esil, word);
 			str++;
+			if (esil->repeat)
+				goto loop;
 		}
 		word[wordi++] = *str;
 		str++;
 	}
 	word[wordi] = 0;
 	runword (esil, word);
+	if (esil->repeat)
+		goto loop;
 	return 0;
 }
 

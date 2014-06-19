@@ -914,6 +914,8 @@ typedef struct r_anal_esil_t {
 	char *stack[32];
 	int stackptr;
 	int skip;
+	int ifskip;
+	int repeat;
 	int debug;
 	/* callbacks */
 	int (*hook_mem_read)(THIS *esil, ut64 addr, ut8 *buf, int len);
