@@ -776,14 +776,14 @@ struct r_anal_esil_op_t {
 	int in; // num of input parameters
 	int out; // num of output paramters
 	int (*run)(RAnalEsil *esil);
-;}
+};
 
-typedef void (*RAnalEsilAllocUser)(RAnal *anal);
-typedef int (RAnalEsilHookSetup)(RAnalEsil *esil);
-typedef int (RAnalEsilMemInit)(RAnalEsil *esil);
-typedef RList *(RAnaEsilCustomOps)(RAnalEsil *esil);	//must be put in a sdb for performance
-typedef int (RAnalEsilMemFinit)(RAnalEsil *esil);
-typedef int (RAnalEsilFreeUser)(void *user);
+typedef void *(*RAnalEsilAllocUser)(RAnal *anal);
+typedef int (*RAnalEsilHookSetup)(RAnalEsil *esil);
+typedef int (*RAnalEsilMemInit)(RAnalEsil *esil);
+typedef RList *(*RAnaEsilCustomOps)(RAnalEsil *esil);	//must be put in a sdb for performance
+typedef int (*RAnalEsilMemFinit)(RAnalEsil *esil);
+typedef int (*RAnalEsilFreeUser)(void *user);
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
