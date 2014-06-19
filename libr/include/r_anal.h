@@ -742,6 +742,38 @@ typedef struct r_anal_cycle_hook_t {	//rename ?
 	int cycles;
 } RAnalCycleHook;
 
+typedef struct r_anal_esil_word_t {
+	int type;
+	const char *str;
+} RAnalEsilWord;
+
+typedef struct r_anal_esil_t {
+	void *user;
+	RAnal *anal;
+	char *stack[32];
+	int stackptr;
+	int skip;
+	int ifskip;
+	int repeat;
+	int debug;
+	/* callbacks */
+	int (*hook_mem_read)(struct r_anal_esil_t *esil, ut64 addr, ut8 *buf, int len);
+	int (*mem_read)(struct r_anal_esil_t *esil, ut64 addr, ut8 *buf, int len);
+	int (*hook_mem_write)(struct r_anal_esil_t *esil, ut64 addr, const ut8 *buf, int len);
+	int (*mem_write)(struct r_anal_esil_t *esil, ut64 addr, const ut8 *buf, int len);
+	int (*hook_reg_read)(struct r_anal_esil_t *esil, const char *name, ut64 *res);
+	int (*reg_read)(struct r_anal_esil_t *esil, const char *name, ut64 *res);
+	int (*hook_reg_write)(struct r_anal_esil_t *esil, const char *name, ut64 val);
+	int (*reg_write)(struct r_anal_esil_t *esil, const char *name, ut64 val);
+} RAnalEsil;
+
+struct r_anal_esil_op_t {
+	const char *str;
+	int in; // num of input parameters
+	int out; // num of output paramters
+	int (*run)(RAnalEsil *esil);
+};
+
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
 typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
@@ -761,6 +793,8 @@ typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
 typedef int (*RAnalDiffBBCallback)(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
 typedef int (*RAnalDiffFcnCallback)(RAnal *anal, RList *fcns, RList *fcns2);
 typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
+
+typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 
 typedef struct r_anal_plugin_t {
 	char *name;
@@ -831,6 +865,9 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
+	RAnalEsilCB esil_init;		//init
+	RAnalEsilCB esil_post_loop;	//at the end of the emu loop
+	RAnalEsilCB esil_fini;		//fini
 } RAnalPlugin;
 
 
@@ -901,46 +938,6 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-#if NEW_ESIL
-typedef struct r_anal_esil_word_t {
-	int type;
-	const char *str;
-} RAnalEsilWord;
-
-#define THIS struct r_anal_esil_t
-typedef struct r_anal_esil_t {
-	void *user;
-	RAnal *anal;
-	char *stack[32];
-	int stackptr;
-	int skip;
-	int ifskip;
-	int repeat;
-	int debug;
-	/* callbacks */
-	int (*hook_mem_read)(THIS *esil, ut64 addr, ut8 *buf, int len);
-	int (*mem_read)(THIS *esil, ut64 addr, ut8 *buf, int len);
-	int (*hook_mem_write)(THIS *esil, ut64 addr, const ut8 *buf, int len);
-	int (*mem_write)(THIS *esil, ut64 addr, const ut8 *buf, int len);
-	int (*hook_reg_read)(THIS *esil, const char *name, ut64 *res);
-	int (*reg_read)(THIS *esil, const char *name, ut64 *res);
-	int (*hook_reg_write)(THIS *esil, const char *name, ut64 val);
-	int (*reg_write)(THIS *esil, const char *name, ut64 val);
-} RAnalEsil;
-
-
-enum R_ANAL_ESIL_TYPE {
-	NUMBER,
-	REGISTER,
-};
-
-struct r_anal_esil_op_t {
-	const char *str;
-	int in; // num of input parameters
-	int out; // num of output paramters
-	int (*run)(RAnalEsil *esil);
-};
-
 R_API RAnalEsil *r_anal_esil_new();
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal);
 R_API void r_anal_esil_free (RAnalEsil *esil);
@@ -949,10 +946,6 @@ R_API int r_anal_esil_dumpstack (RAnalEsil *esil);
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
 R_API int r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);
-#else
-R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op);
-R_API char *r_anal_esil_to_sdb(char *str);
-#endif
 
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new();
