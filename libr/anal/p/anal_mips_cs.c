@@ -5,6 +5,8 @@
 #include <capstone.h>
 #include <mips.h>
 
+// http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
+
 #define REG(x) cs_reg_name (*handle, insn->detail->mips.operands[x].reg)
 #define IMM(x) insn->detail->mips.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
@@ -79,11 +81,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_BLTZAL: // Branch on less than zero and link
 		r_strbuf_appendf (&op->esil, "pc,8,+,lr,=,%s,pc,=", ARG(0));
 		break;
-	case MIPS_INS_J:
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
-	case MIPS_INS_B:
+	case MIPS_INS_J:
+		// jump to address with conditional
+		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
+		break;
 	case MIPS_INS_BGEZ:
+	case MIPS_INS_B: // ???
 	case MIPS_INS_BZ:
 	case MIPS_INS_BGTZ:
 		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
@@ -119,12 +124,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			arg2, arg1, arg0);
 		}
 		break;
+	/** signed -- sets overflow flag */
 	case MIPS_INS_ADD:
-	case MIPS_INS_ADDU:
 	case MIPS_INS_ADDI:
-	case MIPS_INS_ADDIU:
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
+	/** unsigned */
+	case MIPS_INS_ADDU:
+	case MIPS_INS_ADDIU:
 	case MIPS_INS_DADDIU:
 		{
 		const char *arg0 = ARG(0);
@@ -139,6 +146,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_LI:
 	case MIPS_INS_LUI:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", IMM(1), ARG(0));
+		break;
+	case MIPS_INS_LB:
+		r_strbuf_appendf (&op->esil, "%s,[1],%s,=",
+			ARG(1), REG(0));
 		break;
 	case MIPS_INS_LW:
 	case MIPS_INS_LWC1:

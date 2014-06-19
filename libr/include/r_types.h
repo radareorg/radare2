@@ -183,9 +183,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 	((char *)(((size_t)(v) + (t - 1)) \
 	& ~(t - 1))) 
 
-#define R_BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))
-#define R_BIT_UNSET(x,y) (x[y>>4] &= ~(1<<(y&0xf)))
-#define R_BIT_CHK(x,y) ((x[y>>4] & (1<<(y&0xf))))
+#define R_BIT_SET(x,y) (((ut8*)x)[y>>4] |= (1<<(y&0xf)))
+#define R_BIT_UNSET(x,y) (((ut8*)x)[y>>4] &= ~(1<<(y&0xf)))
+#define R_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
 
 #if __UNIX__
 #include <sys/types.h>

@@ -907,6 +907,14 @@ typedef struct r_anal_esil_word_t {
 	const char *str;
 } RAnalEsilWord;
 
+// only flags that affect control flow
+enum {
+	R_ANAL_ESIL_FLAG_ZERO = 1,
+	R_ANAL_ESIL_FLAG_CARRY = 2,
+	R_ANAL_ESIL_FLAG_OVERFLOW = 4,
+	R_ANAL_ESIL_FLAG_PARITY = 8,
+	// ...
+};
 #define THIS struct r_anal_esil_t
 typedef struct r_anal_esil_t {
 	void *user;
@@ -914,9 +922,9 @@ typedef struct r_anal_esil_t {
 	char *stack[32];
 	int stackptr;
 	int skip;
-	int ifskip;
 	int repeat;
 	int debug;
+	ut64 flags;
 	/* callbacks */
 	int (*hook_mem_read)(THIS *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(THIS *esil, ut64 addr, ut8 *buf, int len);
@@ -928,16 +936,8 @@ typedef struct r_anal_esil_t {
 	int (*reg_write)(THIS *esil, const char *name, ut64 val);
 } RAnalEsil;
 
-
-enum R_ANAL_ESIL_TYPE {
-	NUMBER,
-	REGISTER,
-};
-
 struct r_anal_esil_op_t {
 	const char *str;
-	int in; // num of input parameters
-	int out; // num of output paramters
 	int (*run)(RAnalEsil *esil);
 };
 
