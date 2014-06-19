@@ -480,7 +480,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 RAnalFunction *fcn;
 			 if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
 				 r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
-			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", fcn->addr);
+			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", core->offset);
 		  }
 		 break;
 	case 'b':

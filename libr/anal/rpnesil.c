@@ -529,7 +529,7 @@ static int esil_peek8(RAnalEsil *esil) {
 	ut64 num;
 	char *dst = r_anal_esil_pop (esil);
 	if (dst && isregornum (esil, dst, &num)) {
-		ut8 buf[4];
+		ut8 buf[8];
 		ut64 *n64 = (ut64 *)&buf;
 		ret = esil_mem_read (esil, num, buf, sizeof (ut64));
 		snprintf (res, sizeof (res), "0x%"PFMT64x, *n64);

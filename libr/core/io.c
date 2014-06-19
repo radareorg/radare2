@@ -250,9 +250,9 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 			}
 		}
 	}
-	if (core->section != newsection) {//&& core->io->section->arch) {
+	if (core->section != newsection) {
 		r_core_seek_archbits (core, core->offset);
-		core->section = core->io->section;
+		core->section = newsection;
 	}
 	return (ret==-1)? R_FALSE: R_TRUE;
 }

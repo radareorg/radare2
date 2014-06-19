@@ -103,6 +103,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_LDR:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
+		break;
 	case ARM_INS_LDRB:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
@@ -281,6 +282,7 @@ static int set_reg_profile(RAnal *anal) {
 		);
 		break;
 	}
+	return 0;
 }
 
 RAnalPlugin r_anal_plugin_arm_cs = {
