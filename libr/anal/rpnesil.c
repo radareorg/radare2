@@ -43,13 +43,13 @@ static int esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static int internal_esil_mem_write (THIS *esil, ut64 addr, const ut8 *buf, int len) {
+static int internal_esil_mem_write (r_anal_esil_t *esil, ut64 addr, const ut8 *buf, int len) {
 	if (!esil || !esil->anal || !esil->anal->iob.io)
 		return 0;
 	return esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
 }
 
-static int esil_mem_write (THIS *esil, ut64 addr, const ut8 *buf, int len) {
+static int esil_mem_write (r_anal_esil_t *esil, ut64 addr, const ut8 *buf, int len) {
 	int i, ret = 0;
 	if (!buf || !esil)
 		return 0;
