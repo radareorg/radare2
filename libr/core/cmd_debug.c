@@ -1308,7 +1308,7 @@ static int cmd_debug(void *data, const char *input) {
 		cmd_debug_map (core, input+1);
 		break;
 	case 'r':
-		if (core->io->debug) {
+		if (core->io->debug || input[1]=='?') {
 			cmd_debug_reg (core, input+1);
 		} else {
 			void cmd_anal_reg(RCore *core, const char *str);
