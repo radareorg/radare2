@@ -87,6 +87,7 @@ typedef struct r_reg_t {
 	char *name[R_REG_NAME_LAST];
 	RRegSet regset[R_REG_TYPE_LAST];
 	int iters;
+	int bits;
 } RReg;
 
 typedef struct r_reg_flags_t {

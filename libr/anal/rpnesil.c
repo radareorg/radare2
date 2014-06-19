@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2014 - pancake */
 
 #include <r_anal.h>
 
@@ -213,6 +213,120 @@ static int esil_neg(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_andeq(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num &= num2;
+			esil_reg_write (esil, dst, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_lsl(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num <<= num2;
+			r_anal_esil_pushnum (esil, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_lsleq(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num <<= num2;
+			esil_reg_write (esil, dst, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_lsr(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num >>= num2;
+			r_anal_esil_pushnum (esil, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_lsreq(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num >>= num2;
+			esil_reg_write (esil, dst, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_and(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num &= num2;
+			r_anal_esil_pushnum (esil, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 	int i;
 	if (esil->stackptr<1) 
@@ -354,6 +468,20 @@ static int esil_poke4(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_peek1(RAnalEsil *esil) {
+	int ret = 0;
+	char res[32];
+	ut64 num;
+	char *dst = r_anal_esil_pop (esil);
+	if (dst && isregornum (esil, dst, &num)) {
+		ut8 buf;
+		ret = esil_mem_read (esil, num, &buf, 1);
+		snprintf (res, sizeof (res), "0x%x", buf);
+		r_anal_esil_push (esil, res);
+	}
+	return ret;
+}
+
 static int esil_peek4(RAnalEsil *esil) {
 	int ret = 0;
 	char res[32];
@@ -413,6 +541,12 @@ typedef int RAnalEsilCmd(RAnalEsil *esil);
 
 static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 //TODO: use RCmd here?
+	if (!strcmp (word, "<<")) { *cmd = &esil_lsl; return 1; } else
+	if (!strcmp (word, "<<=")) { *cmd = &esil_lsleq; return 1; } else
+	if (!strcmp (word, ">>")) { *cmd = &esil_lsr; return 1; } else
+	if (!strcmp (word, ">>=")) { *cmd = &esil_lsreq; return 1; } else
+	if (!strcmp (word, "&")) { *cmd = &esil_and; return 1; } else
+	if (!strcmp (word, "&=")) { *cmd = &esil_andeq; return 1; } else
 	if (!strcmp (word, "!")) { *cmd = &esil_neg; return 1; } else
 	if (!strcmp (word, "?")) { *cmd = &esil_ask; return 1; } else
 	if (!strcmp (word, "=")) { *cmd = &esil_eq; return 1; } else
@@ -424,6 +558,7 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, "/")) { *cmd = &esil_div; return 1; } else
 	if (!strcmp (word, "=[4]")) { *cmd = &esil_poke4; return 1; } else
 	if (!strcmp (word, "=[8]")) { *cmd = &esil_poke8; return 1; } else
+	if (!strcmp (word, "[1]")) { *cmd = &esil_peek1; return 1; } else
 	if (!strcmp (word, "[4]")) { *cmd = &esil_peek4; return 1; } else
 	if (!strcmp (word, "[8]")) { *cmd = &esil_peek8; return 1; } else
 	if (!strcmp (word, "[]")) { *cmd = &esil_peek; return 1; } else {

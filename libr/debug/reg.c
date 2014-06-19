@@ -54,6 +54,10 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 	if (!dbg || !dbg->reg)
 		return R_FALSE;
+	if (!(dbg->reg->bits & size)) {
+		// TODO: verify if 32bit exists, otherwise use 64 or 8?
+		size = 32;
+	}
 	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%08"PFMT64x"%s";

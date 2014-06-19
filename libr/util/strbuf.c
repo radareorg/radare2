@@ -71,6 +71,27 @@ R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 	return R_TRUE;
 }
 
+R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
+	int ret;
+	char string[4096];
+	va_list ap;
+
+	va_start (ap, fmt);
+	ret = vsnprintf (string, sizeof (string), fmt, ap);
+	if (ret>=sizeof (string)) {
+		char *p = malloc (ret+2);
+		if (!p) {
+			va_end (ap);
+			return R_FALSE;
+		}
+		vsnprintf (p, ret+1, fmt, ap);
+		ret = r_strbuf_append (sb, p);
+		free (p);
+	} else ret = r_strbuf_append (sb, string);
+	va_end (ap);
+	return ret;
+}
+
 R_API char *r_strbuf_get(RStrBuf *sb) {
 	if (sb) {
 		if (sb->ptr)

@@ -82,6 +82,7 @@ R_API RReg *r_reg_new() {
 	int i;
 	RRegArena *arena;
 	RReg *reg = R_NEW (RReg);
+	reg->bits = 0;
 	reg->iters = 0;
 	reg->profile = NULL;
 	reg->reg_profile_str = NULL;
@@ -118,7 +119,7 @@ R_API int r_reg_type_by_name(const char *str) {
 }
 
 /* TODO: make this parser better and cleaner */
-static int r_reg_set_word(RRegItem *item, int idx, char *word) {
+static int r_reg_set_word(RReg *reg, RRegItem *item, int idx, char *word) {
 	int ret = R_TRUE;
 	switch (idx) {
 	case 0:
@@ -136,6 +137,7 @@ static int r_reg_set_word(RRegItem *item, int idx, char *word) {
 		if (*word=='.') // XXX; this is kinda ugly
 			item->size = atoi (word+1);
 		else item->size = atoi (word)*8;
+		reg->bits |= item->size;
 		break;
 	case 3:
 		if (*word=='.') // XXX; this is kinda ugly
@@ -169,6 +171,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	if (!str||!reg)
 		return R_FALSE;
+	reg->bits = 0;
 	// XXX double free
 	free (reg->reg_profile_str);
 	reg->reg_profile_str = strdup (str);
@@ -193,7 +196,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 					eprintf ("Invalid register type: '%s'\n", buf+1);
 			} else
 			if (lastchar != ' ' && lastchar != '\t')
-				r_reg_set_word (item, word, buf);
+				r_reg_set_word (reg, item, word, buf);
 			chidx = 0;
 			word++;
 			break;
@@ -201,7 +204,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			if (setname != -1)
 				r_reg_set_name (reg, setname, buf);
 			else if (word>3) {
-				r_reg_set_word (item, word, buf);
+				r_reg_set_word (reg, item, word, buf);
 				if (item->name != NULL) {
 					if (reg->regset[item->type].regs) {
 						r_list_append (reg->regset[item->type].regs, item);
