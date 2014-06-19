@@ -537,15 +537,19 @@ static int cmd_bsize(void *data, const char *input) {
 	case '\0':
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
-	case '?':
-		r_cons_printf ("|Usage: b[f] [arg]\n"
-			"| b         display current block size\n"
-			"| b+3       increase blocksize by 3\n"
-			"| b-16      decrement blocksize by 3\n"
-			"| b 33      set block size to 33\n"
-			"| b eip+4   numeric argument can be an expression\n"
-			"| bf foo    set block size to flag size\n"
-			"| bm 1M     set max block size\n");
+	case '?':{
+		const char* help_msg[] = {
+			"Usage:",  "b[f] [arg]\n", "Get/Set block size",
+			"b", "", "display current block size",
+			"b", " 33", "set block size to 33",
+			"b", "+3", "increase blocksize by 3",
+			"b", "-16", "decrement blocksize by 3",
+			"b", " eip+4", "numeric argument can be an expression",
+			"bf", " foo", "set block size to flag size",
+			"bm", " 1M", "set max block size",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			 }
 		break;
 	default:
 		//input = r_str_clean(input);

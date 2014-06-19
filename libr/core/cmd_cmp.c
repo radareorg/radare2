@@ -384,29 +384,34 @@ static int cmd_cmp(void *data, const char *input) {
 			radare_compare_unified (core, core->offset, off,
 				core->blocksize);
 		} else {
-			r_cons_strcat (
-				"|Usage: cu [offset]  # creates a unified hex patch\n"
-			"|  cu $$+1 > p       # compare current seek and +1\n"
-			"|  wu p              # apply unified hex patch\n");
+			const char* help_msg[] = {
+			"Usage:",  "cu [offset]", "# creates a unified hex patch",
+			"cu", " $$+1 > p", "compare current seek and +1",
+			"wu", " p", "apply unified hex patch",
+			NULL};
+			r_core_cmd_help (core, help_msg);
 		}
 		break;
-	case '?':
-		r_cons_strcat (
-			"|Usage: c[?dfx] [argument]\n"
-		"| c  [string]    Compares a plain with escaped chars string\n"
-		"| cc [at] [(at)] Compares in two hexdump columns of block size\n"
-		//"| cc [offset]   Code bindiff current block against offset\n"
-		"| c4 [value]     Compare a doubleword from a math expression\n"
-		//"| cD [file]     Like above, but using radiff -b\n");
-		"| c8 [value]     Compare a quadword from a math expression\n"
-		"| cx [hexpair]   Compare hexpair string\n"
-		"| cX [addr]      Like 'cc' but using hexdiff output\n"
-		"| cf [file]      Compare contents of file at current seek\n"
-		"| cg[o] [file]   Graphdiff current file and [file]\n"
-		"| cu [addr] @at  Compare memory hexdumps of $$ and dst in unified diff\n"
-		"| cw[us?] [...]  Compare memory watchers\n"
-		"| cat  [file]    Show contents of file (see pwd, ls)\n"
-		"| cl|cls|clear   Clear screen, (clear0 to goto 0, 0 only)\n");
+	case '?':{
+			const char* help_msg[] = {
+				"Usage:", "c[?dfx] [argument]", " # Compare",
+				"c", " [string]", "compares a plain with escaped chars string",
+				"cc", " [at] [(at)]", "compares in two hexdump columns of block size",
+				//"cc", " [offset]", "code bindiff current block against offset"
+				"c4", " [value]", "compare a doubleword from a math expression",
+				//"cD", " [file]", "like above, but using radiff -b",
+				"c8", " [value]", "compare a quadword from a math expression",
+				"cx", " [hexpair]", "compare hexpair string",
+				"cX", " [addr]", "like 'cc' but using hexdiff output",
+				"cf", " [file]", "compare contents of file at current seek",
+				"cg", "[o] [file]","graphdiff current file and [file]",
+				"cu", " [addr] @at", "compare memory hexdumps of $$ and dst in unified diff",
+				"cw", "[us?] [...]", "compare memory watchers",
+				"cat", " [file]", "show contents of file (see pwd, ls)",
+				"cl|cls|clear", "", "clear screen, (clear0 to goto 0, 0 only)",
+				NULL};
+				r_core_cmd_help (core, help_msg);
+				}
 		break;
 	case 'l':
 		if (strchr (input, 'f')) {

@@ -200,22 +200,25 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_debug_pid_list (core->dbg,
 			(int) r_num_math (core->num, input+2));
 		break;
-	case '?':
-		r_cons_printf (
-			"|Usage: dp             Process commands\n"
-			"| dp                   List current pid and childrens\n"
-			"| dp <pid>             List children of pid\n"
-			"| dp*                  List all attachable pids\n"
-			"| dp=<pid>             Select pid\n"
-			"| dpa <pid>            Attach and select pid\n"
-			"| dpe                  Show path to executable\n"
-			"| dpf                  Attach to pid like file fd // HACK\n"
-			"| dpk <pid> <signal>   Send signal to process\n"
-			"| dpn                  Create new process (fork)\n"
-			"| dpnt                 Create new thread (clone)\n"
-			"| dpt                  List threads of current pid\n"
-			"| dpt <pid>            List threads of process\n"
-			"| dpt=<thread>         Attach to thread\n");
+	case '?':{
+			const char* help_msg[] = {
+				"Usage:", "dp", " # Process commands",
+				"dp", "", "list current pid and childrens",
+				"dp", " <pid>", "list children of pid",
+				"dp*", "", "list all attachable pids",
+				"dp=", "<pid>", "select pid",
+				"dpa", " <pid>", "attach and select pid",
+				"dpe", "", "show path to executable",
+				"dpf", "", "attach to pid like file fd // HACK",
+				"dpk", " <pid> <signal>", "send signal to process",
+				"dpn", "", "create new process (fork)",
+				"dpnt", "", "create new thread (clone)",
+				"dpt", "", "list threads of current pid",
+				"dpt", " <pid>", "list threads of process",
+				"dpt=", "<thread>", "attach to thread",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		}
 		break;
 	default:
 		eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
@@ -270,21 +273,24 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 
 	switch (input[0]) {
-	case '?':
-		r_cons_printf (
-		"|Usage: dm                        Memory maps commands\n"
-		"| dm                              List memory maps of target process\n"
-		"| dm <address> <size>             Allocate <size> bytes at <address> (anywhere if address is -1) in child process\n"
-		"| dm*                             List memmaps in radare commands\n"
-		"| dm-<address>                    Deallocate memory map of <address>\n"
-		"| dmd [file]                      Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
-		"| dmi [addr|libname] [symname]    List symbols of target lib\n"
-		"| dmi* [addr|libname] [symname]   List symbols of target lib in radare commands\n"
-		"| dmj                             List memmaps in JSON format\n"
-		"| dml <file>                      Load contents of file into the current map region (see Sl)\n"
-		"| dmp <address> <size> <perms>    Change page at <address> with <size>, protection <perms> (rwx)\n"
-		//"| dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
-		"|TODO: map files in process memory. (dmf file @ [addr])\n");
+	case '?':{
+			const char* help_msg[] = {
+			"Usage:", "dm", " # Memory maps commands",
+			"dm", "", "list memory maps of target process",
+			"dm", " <address> <size>", "allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+			"dm*", "", "list memmaps in radare commands",
+			"dm-", "<address>", "deallocate memory map of <address>",
+			"dmd", " [file]", "dump current debug map region to a file (from-to.dmp) (see Sd)",
+			"dmi", " [addr|libname] [symname]", "list symbols of target lib",
+			"dmi*", " [addr|libname] [symname]", "list symbols of target lib in radare commands",
+			"dmj", "", "list memmaps in JSON format",
+			"dml", " <file>", "load contents of file into the current map region (see Sl)",
+			"dmp", " <address> <size> <perms>", "change page at <address> with <size>, protection <perms> (rwx)",
+			//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
+			"TODO:", "map files in process memory. (dmf file @ [addr])", "",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+		}
 		break;
 	case 'p':
 		if (input[1] == ' ') {
@@ -795,21 +801,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-	default:
-		r_cons_printf (
-		"|Usage: db              Breakpoints commands\n"
-		"| db                    List breakpoints\n"
-		"| db sym.main           Add breakpoint into sym.main\n"
-		"| db <address>          Add breakpoint\n"
-		"| db -<address>         Remove breakpoint\n"
-		// "dbi 0x848 ecx=3   ; stop execution when condition matches\n"
-		"| dbc <address> <cmd>   Run command when breakpoint is hit\n"
-		"| dbd <address>         Disable breakpoint\n"
-		"| dbe <address>         Enable breakpoint\n"
-		"| dbh x86               Set/list breakpoint plugin handlers\n"
-		"| dbs <address>         Toggle breakpoint\n"
-		"|Unrelated:\n"
-		"| dbt [ebp]          Debug backtrace\n");
+	default:{
+			const char* help_msg[] = {
+				"Usage:", "db", " # Breakpoints commands",
+				"db", "", "list breakpoints",
+				"db", " sym.main", "add breakpoint into sym.main",
+				"db", " <address>", "add breakpoint",
+				"db", " -<address>", "remove breakpoint",
+				// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
+				"dbc", " <address> <cmd>", "run command when breakpoint is hit",
+				"dbd", " <address>", "disable breakpoint",
+				"dbe", " <address>", "enable breakpoint",
+				"dbh", " x86", "set/list breakpoint plugin handlers",
+				"dbs", " <address>", "toggle breakpoint\n",
+				NULL};
+		r_core_cmd_help(core, help_msg);
+		}
 		break;
 	}
 }
