@@ -383,7 +383,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			// TODO: Discuss bypassing this 'return' statement,
 			//       is this only necessary for branch delayed instructions?
 			ret = fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), depth-1);
-			if (!op.delay) {
+			if (1) { // XXX breaks mips analysis too !op.delay) {
 				// this will be all x86, arm (at least)
 				// without which the analysis is really slow,
 				// presumably because each opcode would get revisited
