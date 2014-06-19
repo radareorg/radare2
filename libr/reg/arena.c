@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_reg.h>
 
@@ -206,4 +206,13 @@ R_API int r_reg_arena_push(RReg *reg) {
 			return 0;
 	}
 	return r_list_length (reg->regset[0].pool);
+}
+
+R_API void r_reg_arena_zero(RReg *reg) {
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		RRegArena *a = reg->regset[i].arena;
+		if (a->size> 0)
+			memset (reg->regset[i].arena->bytes, 0, a->size);
+	}
 }

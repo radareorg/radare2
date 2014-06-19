@@ -55,15 +55,17 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
-	int l = strlen (s);
+	int l = strlen (s)+1;
 	if ((sb->len+l+1)<sizeof (sb->buf)) {
-		strcpy (sb->buf+sb->len, s);
+		memcpy (sb->buf+sb->len, s, l);
 		sb->ptr = NULL;
 	} else {
-		char *p = malloc (sb->len+l+1);
+		char *d, *p;
+		d = sb->ptr?sb->ptr:sb->buf;
+		p = malloc (sb->len+l);
 		if (!p) return R_FALSE;
-		strcpy (p, sb->ptr?sb->ptr:sb->buf);
-		strcpy (p+sb->len, s);
+		memcpy (p, d, sb->len);
+		memcpy (p+sb->len, s, l);
 		free (sb->ptr);
 		sb->ptr = p;
 	}

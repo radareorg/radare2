@@ -665,6 +665,32 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	core->dbg->reg = hack;
 }
 
+static void ar_show_help(RCore *core) {
+	const char * help_message[] = {
+		"Usage: ar", "", "# Analysis Registers",
+		"ar", "", "Show 'gpr' registers",
+		"ar0", "", "Reset register arenas to 0",
+		"ar", " 16", "Show 16 bit registers",
+		"ar", " 32", "Show 32 bit registers",
+		"ar", " all", "Show all bit registers",
+		"ar", " <type>", "Show all registers of given type",
+		"ar=", "", "Show register values in columns",
+		"ar?"," <reg>", "Show register value",
+		"arb"," <type>", "Display hexdump of the given arena",
+		"arc"," <name>", "Conditional flag registers",
+		"ard"," <name>", "Show only different registers",
+		"arn"," <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
+		"aro", "", "Show old (previous) register values",
+		"arp"," <file>", "Load register profile from file",
+		"ars", "", "Stack register state",
+		"art","","List all register types",
+		".ar*","", "Import register values as flags",
+		".ar-","", "Unflag all registers",
+		NULL
+	};
+	r_core_cmd_help (core, help_message);
+}
+
 void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
@@ -681,34 +707,14 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		use_color = NULL;
 	}
 	switch (str[0]) {
+	case '0':
+		r_reg_arena_zero (core->anal->reg);
+		break;
 	case '?':
 		if (str[1]) {
 			ut64 off = r_reg_getv (core->anal->reg, str+1);
 			r_cons_printf ("0x%08"PFMT64x"\n", off);
-		} else {
-			r_cons_printf (
-				"|Usage: ar              Analysis Register status\n"
-			"| ar                    Show 'gpr' registers\n"
-			"| ar 16                 Show 16 bit registers\n"
-			"| ar 32                 Show 32 bit registers\n"
-			"| ar all                Show all registers\n"
-			"| ar <type>             Show flag registers\n"
-			"| ar <register>=<val>   Set register value\n"
-			"| ar=                   Show registers in columns\n"
-			"| ar?<register>         Show value of eax register\n"
-			"| arb [type]            Display hexdump of gpr arena (WIP)\n"
-			"| arc [name]            Related to conditional flag registers\n"
-			"| ard                   Show only different registers\n"
-			"| arn <pc>              Get regname for pc,sp,bp,a0-3,zf,cf,of,sg\n"
-			"| aro                   Show previous (old) values of registers\n"
-			"| arp <file>            Load register metadata file\n"
-			"| arp                   Display current register profile\n"
-			"| ars?                  Stack register states\n"
-			"| art                   Show all register types\n"
-			"| .ar*                  Include common register values in flags\n"
-			"| .ar-                  Unflag all registers\n");
-			// TODO: 'drs' to swap register arenas and display old register valuez
-		}
+		} else ar_show_help (core);
 		break;
 	case 'b':
 		 { // WORK IN PROGRESS // DEBUG COMMAND

@@ -36,7 +36,8 @@ const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int i;
 	char str[32][32];
-r_strbuf_set (&op->esil, "");
+	r_strbuf_init (&op->esil);
+	r_strbuf_set (&op->esil, "");
 	switch (insn->detail->arm.cc) {
 	case ARM_CC_AL:
 		// no condition
@@ -53,15 +54,19 @@ r_strbuf_set (&op->esil, "");
 	}
 	// TODO: PREFIX CONDITIONAL
 	switch (insn->id) {
+	case ARM_INS_PUSH:
+		// TODO: increment stack
 	case ARM_INS_STM:
 		for (i=1; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf ("%s,%s,%d,+,=[4],",
+			r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[4],",
 				REG (i), ARG (0), i*4);
 		}
 		break;
+	case ARM_INS_POP:
+		// TODO: decrement stack
 	case ARM_INS_LDM:
 		for (i=1; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf ("%s,%d,+,[4],%s,=",
+			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
 				ARG (0), i*4, REG (i));
 		}
 		break;
@@ -103,6 +108,7 @@ r_strbuf_set (&op->esil, "");
 			MEMBASE(1), MEMDISP(1), REG(0));
 		break;
 	}
+	return 0;
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {

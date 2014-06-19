@@ -143,6 +143,7 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy);
 R_API void r_reg_arena_swap(RReg *reg, int copy);
 R_API int r_reg_arena_push(RReg *reg);
 R_API void r_reg_arena_pop(RReg *reg);
+R_API void r_reg_arena_zero(RReg *reg);
 R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item);
 R_API const char *r_reg_cond_to_string (int n);
 R_API int r_reg_cond_from_string(const char *str);
