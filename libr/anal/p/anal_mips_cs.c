@@ -333,11 +333,56 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return opsize;
 }
 
+static int set_reg_profile(RAnal *anal) {
+	return r_reg_set_profile_string (anal->reg,
+		"=pc    pc\n"
+		"=sp    sp\n"
+		"=a0    a0\n"
+		"=a1    a1\n"
+		"=a2    a2\n"
+		"=a3    a3\n"
+		"gpr	zero	.32	0	0\n"
+		"gpr	at	.32	4	0\n"
+		"gpr	v0	.32	8	0\n"
+		"gpr	v1	.32	12	0\n"
+		"gpr	a0	.32	16	0\n"
+		"gpr	a1	.32	20	0\n"
+		"gpr	a2	.32	24	0\n"
+		"gpr	a3	.32	28	0\n"
+		"gpr	t0	.32	32	0\n"
+		"gpr	t1	.32	36	0\n"
+		"gpr	t2 	.32	40	0\n"
+		"gpr	t3 	.32	44	0\n"
+		"gpr	t4 	.32	48	0\n"
+		"gpr	t5 	.32	52	0\n"
+		"gpr	t6 	.32	56	0\n"
+		"gpr	t7 	.32	60	0\n"
+		"gpr	s0	.32	64	0\n"
+		"gpr	s1	.32	68	0\n"
+		"gpr	s2 	.32	72	0\n"
+		"gpr	s3 	.32	76	0\n"
+		"gpr	s4 	.32	80	0\n"
+		"gpr	s5 	.32	84	0\n"
+		"gpr	s6 	.32	88	0\n"
+		"gpr	s7 	.32	92	0\n"
+		"gpr	t8 	.32	96	0\n"
+		"gpr	t9 	.32	100	0\n"
+		"gpr	k0 	.32	104	0\n"
+		"gpr	k1 	.32	108	0\n"
+		"gpr	gp 	.32	112	0\n"
+		"gpr	sp	.32	116	0\n"
+		"gpr	fp	.32	120	0\n"
+		"gpr	ra	.32	124	0\n"
+		"gpr	pc	.32	128	0\n"
+	);
+}
+
 RAnalPlugin r_anal_plugin_mips_cs = {
 	.name = "mips.cs",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
 	.arch = R_SYS_ARCH_MIPS,
+	.set_reg_profile = set_reg_profile,
 	.bits = 16|32|64,
 	.op = &analop,
 };
