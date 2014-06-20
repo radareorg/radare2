@@ -16,7 +16,7 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 0)
+	if (buf && length >= 4)
 		return (r_bin_p9_get_arch (buf, NULL, NULL));
 	return R_FALSE;
 }
