@@ -374,7 +374,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	RIO *io = iob ? iob->get_io(iob) : NULL;
 	RBinFile *bf = NULL;
 	ut8* buf_bytes = NULL;
-	ut64 len_bytes, sz = UT64_MAX;
+	ut64 len_bytes = UT64_MAX, sz = UT64_MAX;
 
 	if (!io) return R_FALSE;
 	RList *the_obj_list;
