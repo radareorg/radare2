@@ -1773,28 +1773,33 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_cons_printf (
-		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
-		"| p=[bep?] [blks]  show entropy/printable chars/chars bars\n"
-		"| p2 [len]         8x8 2bpp-tiles\n"
-		"| p6[de] [len]     base64 decode/encode\n"
-		"| p8 [len]         8bit hexpair list of bytes\n"
-		"| pa[ed] [hex|asm] assemble (pa) or disasm (pad) or esil (pae) from hexpairs\n"
-		"| p[bB] [len]      bitstream of N bytes\n"
-		"| pc[p] [len]      output C (or python) format\n"
-		"| p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
-		"| pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
-		"| p[iI][df] [len]  print N instructions/bytes (f=func) (see pi? and pdi)\n"
-		"| pm [magic]       print libmagic data (pm? for more information)\n"
-		"| pr [len]         print N raw bytes\n"
-		"| p[kK] [len]      print key in randomart (K is for mosaic)\n"
-		"| ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
-		"| pt[dn?] [len]    print different timestamps\n"
-		"| pu[w] [len]      print N url encoded bytes (w=wide)\n"
-		"| pv[jh] [mode]	   bar|json|histogram blocks (mode: e?search.in)\n"
-		"| p[xX][owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
-		"| pz [len]         print zoom view (see pz? for help)\n"
-		"| pwd              display current working directory\n");
+	{
+		const char* help_msg[] = {
+		"Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
+		"p=","[bep?] [blks]","show entropy/printable chars/chars bars",
+		"p2"," [len]","8x8 2bpp-tiles",
+		"p6","[de] [len]", "base64 decode/encode",
+		"p8"," [len]","8bit hexpair list of bytes",
+		"pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
+		"p","[bB] [len]","bitstream of N bytes",
+		"pc","[p] [len]","output C (or python) format",
+		"p","[dD][lf] [l]","disassemble N opcodes/bytes (see pd?)",
+		"pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
+		"p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
+		"pm"," [magic]","print libmagic data (pm? for more information)",
+		"pr"," [len]","print N raw bytes",
+		"p","[kK] [len]","print key in randomart (K is for mosaic)",
+		"ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
+		"pt","[dn?] [len]","print different timestamps",
+		"pu","[w] [len]","print N url encoded bytes (w=wide)",
+		"pv","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
+		"p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+		"pz"," [len]","print zoom view (see pz? for help)",
+		"pwd","","display current working directory",
+			NULL
+			};
+			r_core_cmd_help(core, help_msg);
+	}
 		break;
 	}
 	if (tbs != core->blocksize)
