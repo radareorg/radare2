@@ -83,7 +83,9 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	mmo->mode = mode;
 	mmo->flags = flags;
 	mmo->io_backref = io;
-	mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
+	if (flags & R_IO_WRITE)
+		mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
+	else mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
 
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
 		mmo->rawio = 1;
@@ -167,7 +169,8 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 }
 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
+	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (
+		io, file, mode, flags);
 	if (!mmo) return NULL;
 	return r_io_desc_new (&r_io_plugin_default, mmo->fd,
 				mmo->filename, flags, mode, mmo);

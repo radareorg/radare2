@@ -187,7 +187,8 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
 	IO_IFDBG {
 		if (desc && desc->plugin)
-			eprintf ("Opened file: %s with %s\n", file, desc->plugin->name);
+			eprintf ("Opened file: %s with %s\n",
+				file, desc->plugin->name);
 	}
 	if (io->redirect)
 		return NULL;
