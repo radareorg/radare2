@@ -2,15 +2,17 @@
 
 static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	const char* help_msg[] = {
+		"Usage:",  "q[!] [retval]", "",
+		"q","","quit program",
+		"q!","","force quit (no questions)",
+		"q"," 1","quit with return value 1",
+		"q"," a-b","quit with return value a-b",
+		NULL};
 	if (input)
 	switch (*input) {
 	case '?':
-		r_cons_printf (
-		"|Usage: q[!] [retvalue]\n"
-		"| q      quit program\n"
-		"| q!     force quit (no questions)\n"
-		"| q 1    quit with return value 1\n"
-		"| q a-b  quit with return value a-b\n");
+		r_core_cmd_help (core, help_msg);
 		break;
 	case ' ':
 	case '!':
