@@ -21,6 +21,7 @@ static int cmd_write(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
 	const char *arg;
+	const char *filename;
 	ut64 off;
 	ut8 *buf;
 	st64 num;
@@ -376,17 +377,24 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 't':
-		if (*str != ' ') {
+		if (*str == '?') {
 			eprintf ("Usage: wt file [size]\n");
-		} else {
-			tmp = strchr (str+1, ' ');
-			if (tmp) {
-				st64 sz = (st64) r_num_math (core->num, tmp+1);
-				*tmp = 0;
-				if (sz<1) eprintf ("Invalid length\n");
-				else r_core_dump (core, str+1, core->offset, (ut64)sz);
-			} else r_file_dump (str+1, core->block, core->blocksize);
-		}
+			return 0;
+		} else
+		if (*str != ' ') {
+			char _fn[32];
+			snprintf(_fn, sizeof(_fn), "dump.0x%08"PFMT64x, core->offset);
+			filename = _fn;
+		}  else filename = str+1;
+		tmp = strchr (str+1, ' ');
+		if (tmp) {
+			st64 sz = (st64) r_num_math (core->num, tmp+1);
+			*tmp = 0;
+			if (sz<1) eprintf ("Invalid length\n");
+			else r_core_dump (core, filename, core->offset, (ut64)sz);
+		} else r_file_dump (filename, core->block, core->blocksize);
+		eprintf ("Dump %d bytes from 0x%08"PFMT64x" into %s\n",
+			core->blocksize, core->offset, filename);
 		break;
 	case 'T':
 		eprintf ("TODO: wT // why?\n");
