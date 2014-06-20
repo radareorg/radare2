@@ -45,4 +45,5 @@ struct plan9_exec {
 #define p9bin_open(x) fopen(x,"r")
 #define p9bin_close(x) fclose(x)
 
+/* Reads four bytes from b. */
 int r_bin_p9_get_arch(const unsigned char *b, int *bits, int *big_endian);
