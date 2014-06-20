@@ -388,17 +388,20 @@ static int cmd_interpret(void *data, const char *input) {
 	case '(':
 		r_cmd_macro_call (&core->rcmd->macro, input+1);
 		break;
-	case '?':
-		r_cons_printf (
-		"|Usage: . [file] | [!command] | [(macro)]\n"
-		"| .                  repeat last command backward\n"
-		"| ..                 repeat last command forward (same as \\n)\n"
-		"| .:8080             listen for commands on given tcp port\n"
-		"| . foo.r2           interpret r2 script\n"
-		"| .-                 open cfg.editor and interpret tmp file\n"
-		"| .!rabin -ri $FILE  interpret output of command\n"
-		"| .(foo 1 2 3)       run macro 'foo' with args 1, 2, 3\n"
-		"| ./ ELF             interpret output of command /m ELF as r. commands\n");
+	case '?':{
+		const char* help_msg[] = {
+		"Usage:", ". [file] | [!command] | [(macro)]", " # define macro or load r2, cparse or rlang file",
+		".", "", "repeat last command backward",
+		"..", "", "repeat last command forward (same as \\n)",
+		".:", "8080", "listen for commands on given tcp port",
+		".", " foo.r2", "interpret r2 script",
+		".-", "", "open cfg.editor and interpret tmp file",
+		".!", "rabin -ri $FILE", "interpret output of command",
+		".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
+		"./", " ELF", "interpret output of command /m ELF as r. commands",
+		NULL};
+		r_core_cmd_help (core, help_msg);
+		}
 		break;
 	default:
 		inp = strdup (input);
@@ -690,7 +693,7 @@ static int cmd_system(void *data, const char *input) {
 		r_line_hist_list ();
 		break;
 	case '?':
-		r_core_sysenv_help ();
+		r_core_sysenv_help (core);
 		break;
 	default:
 		n = atoi (input);

@@ -119,28 +119,30 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 // because they can be replaced by commands in the given
 // command.. we should only expose the most essential and
 // unidirectional ones.
-R_API void r_core_sysenv_help() {
-	r_cons_printf (
-	"Usage: !<cmd>\n"
-	"  !                       list all historic commands\n"
-	"  !ls                     execute 'ls' in shell\n"
-	"  !!                      save command history to hist file\n"
-	"  !!ls~txt                print output of 'ls' and grep for 'txt'\n"
-	"  .!rabin2 -rvi ${FILE}   run each output line as a r2 cmd\n"
-	"  !echo $SIZE             display file size\n"
-	"Environment:\n"
-	"  FILE       file name\n"
-	"  SIZE       file size\n"
-	"  OFFSET     10base offset 64bit value\n"
-	"  XOFFSET    same as above, but in 16 base\n"
-	"  BSIZE      block size\n"
-	"  ENDIAN     'big' or 'little'\n"
-	"  ARCH       value of asm.arch\n"
-	"  DEBUG      debug mode enabled? (1,0)\n"
-	"  IOVA       is io.va true? virtual addressing (1,0)\n"
-	"  BLOCK      TODO: dump current block to tmp file\n"
-	"  BYTES      TODO: variable with bytes in curblock\n"
-	);
+R_API void r_core_sysenv_help(const RCore* core) {
+	const char* help_msg[] = {
+	"Usage:", "!<cmd>", "Run given command as in system(3)",
+	"!", "", "list all historic commands",
+	"!", "ls", "execute 'ls' in shell",
+	"!!", "", "save command history to hist file",
+	"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
+	".!", "rabin2 -rvi ${FILE}", "run each output line as a r2 cmd",
+	"!", "echo $SIZE", "display file size",
+	"\nEnvironment:", "", "",
+	"FILE", "", "file name",
+	"SIZE", "","file size",
+	"OFFSET", "", "10base offset 64bit value",
+	"XOFFSET", "", "same as above, but in 16 base",
+	"BSIZE", "", "block size",
+	"ENDIAN", "", "'big' or 'little'",
+	"ARCH", "", "value of asm.arch",
+	"DEBUG", "", "debug mode enabled? (1,0)",
+	"IOVA", "", "is io.va true? virtual addressing (1,0)",
+	"BLOCK", "", "TODO: dump current block to tmp file", 
+	"BYTES", "", "TODO: variable with bytes in curblock",
+	NULL
+	};
+	r_core_cmd_help (core, help_msg);
 }
 
 R_API void r_core_sysenv_end(RCore *core, const char *cmd) {

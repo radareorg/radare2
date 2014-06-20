@@ -339,7 +339,7 @@ R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
-R_API void r_core_sysenv_help();
+R_API void r_core_sysenv_help(const RCore* core);
 
 /* bin.c */
 #define R_CORE_BIN_PRINT	0x000
