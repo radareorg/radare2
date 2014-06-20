@@ -235,7 +235,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vV:S"
+	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVS"
 #if USE_THREADS
 "t"
 #endif
