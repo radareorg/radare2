@@ -1375,14 +1375,18 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_execute (core->dbg, bytes, bytes_len, 0);
 			}
 			break;
-		default:
-			r_cons_printf (
-			"|Usage: dx                               Code injection commands\n"
-			"| dx <opcode>...                         Inject opcodes\n"
-			"|     Example: dx 9090                   Inject two x86 nop\n"
-			"| \"dia mov eax,6;mov ebx,0;int 0x80\"   Inject and restore state\n"
-			"| dxr <opcode>...                        Inject opcodes and restore state\n"
-			"| dxs write 1, 0x8048, 12                Syscall injection (see gs)\n");
+		default:{
+			const char* help_msg[] = {
+			"Usage:", "dx", " # Code injection commands",
+			"dx", " <opcode>...", "inject opcodes",
+			"dxr", " <opcode>...", "inject opcodes and restore state",
+			"dxs", " write 1, 0x8048, 12", "syscall injection (see gs)",
+			"\nExamples:", "", "",
+			"dx", " 9090", "inject two x86 nop",
+			"\"dia mov eax,6;mov ebx,0;int 0x80\"", "", "inject and restore state",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;
@@ -1403,25 +1407,28 @@ static int cmd_debug(void *data, const char *input) {
 	case 'k':
 		r_core_debug_kill (core, input+1);
 		break;
-	default:
-		r_cons_printf (
-		"|Usage: d        Debug commands\n"
-		"| db[?]          Breakpoints commands\n"
-		"| dbt            Display backtrace\n"
-		"| dc[?]          Continue execution\n"
-		"| dd[?]          File descriptors (!fd in r1)\n"
-		"| dh [handler]   List or set debugger handler\n"
-		"| dH [handler]   Transplant process to a new handler\n"
-		"| di[?]          Show debugger backend information (See dh)\n"
-		"| dk[?]          List, send, get, set, signal handlers of child\n"
-		"| dm[?]          Show memory maps\n"
-		"| do[?]          Open process (reload, alias for 'oo')\n"
-		"| dp[?]          List, attach to process or thread id\n"
-		"| dr[?]          Cpu registers\n"
-		"| ds[?]          Step, over, source line\n"
-		"| dt[?]          Display instruction traces (dtr=reset)\n"
-		"| dw <pid>       Block prompt until pid dies\n"
-		"| dx[?]          Inject code on running process and execute it (See gs)\n");
+	default:{
+			const char* help_msg[] = {
+			"Usage:", "d", " # Debug commands",
+			"db", "[?]", "breakpoints commands",
+			"dbt", "", "display backtrace",
+			"dc", "[?]", "continue execution",
+			"dd", "[?]", "ile descriptors (!fd in r1)",
+			"dh", " [handler]", "list or set debugger handler",
+			"dH", " [handler]", "transplant process to a new handler",
+			"di", "[?]", "show debugger backend information (See dh)",
+			"dk", "[?]", "list, send, get, set, signal handlers of child",
+			"dm", "[?]", "show memory maps",
+			"do", "[?]", "open process (reload, alias for 'oo')",
+			"dp", "[?]", "list, attach to process or thread id",
+			"dr", "[?]", "cpu registers",
+			"ds", "[?]", "step, over, source line",
+			"dt", "[?]", "display instruction traces (dtr=reset)",
+			"dw", " <pid>", "block prompt until pid dies",
+			"dx", "[?]", "inject code on running process and execute it (See gs)",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	if (follow>0) {
