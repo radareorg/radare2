@@ -505,6 +505,10 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	}
 
+	if (input[0] == '\0')
+		/* nothing more to do, the command has been parsed. */
+		return 0;
+
 	sp = strchr (input+1, ' ');
 	if (sp) {
 		char *inp = strdup (input);
