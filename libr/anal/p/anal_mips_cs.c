@@ -44,6 +44,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	char str[32][32];
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
+	if (insn)
 	switch (insn->id) {
 	case MIPS_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
@@ -95,11 +96,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_BNE:  // bne $s, $t, offset 
 	case MIPS_INS_BNEZ:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,!,?{,%s,pc,=,}", ARG(3));
+		r_strbuf_appendf (&op->esil, "%s,%s,==,!,?{,%s,pc,=,}",
+			ARG(0), ARG(1), ARG(2));
 		break;
 	case MIPS_INS_BEQ:
 	case MIPS_INS_BEQZ:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,?{,%s,pc,=,}", ARG(3));
+		r_strbuf_appendf (&op->esil, "%s,%s,==,?{,%s,pc,=,}",
+			ARG(0), ARG(1), ARG(2));
 		break;
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
