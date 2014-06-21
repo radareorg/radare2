@@ -491,7 +491,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			};
 			// TODO: 'drs' to swap register arenas and display old register valuez
 
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 		}
 		break;
 	case 'b':
@@ -591,7 +591,7 @@ free (rf);
 				"drx-", "<number>", "Clear hardware breakpoint",
 				NULL
 			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 			}
 			break;
 		}
@@ -614,7 +614,7 @@ free (rf);
 				"drs", "-", "Pop register state",
 				NULL
 			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 			}
 			break;
 		default:
@@ -828,7 +828,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				"dbh", " x86", "Set/list breakpoint plugin handlers",
 				"dbs", " <address>", "Toggle breakpoint\n",
 				NULL};
-		r_core_cmd_help(core, help_msg);
+		r_core_cmd_help (core, help_msg);
 		}
 		break;
 	}
@@ -920,7 +920,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				"dko", " <signal> sc", "On signal Skip and CONT (default stop, always trace)",
 				NULL
 			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 		}
 	} else if (*input=='o') {
 		char *p, *name = strdup (input+2);
@@ -993,7 +993,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dtr", "", "Reset traces (instruction//cals)",
 				NULL
 			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 			}
 			break;
 		case 'c':
@@ -1059,7 +1059,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dd*", "", "List file descriptors (in radare commands)",
 				NLL
 			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 			}
 			break;
 		}
@@ -1084,7 +1084,7 @@ static int cmd_debug(void *data, const char *input) {
 				NULL
 			};
 
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help (core, help_message);
 			}
 			break;
 		case 'i':
@@ -1215,7 +1215,7 @@ static int cmd_debug(void *data, const char *input) {
 				NULL
 				};
 
-				r_core_cmd_help(core, help_message);
+				r_core_cmd_help (core, help_message);
 				}
 			break;
 		case 'a':
