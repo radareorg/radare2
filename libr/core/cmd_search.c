@@ -687,41 +687,42 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		}
 		break;
-	default:
-		r_cons_printf (
-		"|Usage: /[amx/] [arg]\n"
-		"| / foo\\x00       search for string 'foo\\0'\n"
-		"| /w foo          search for wide string 'f\\0o\\0o\\0'\n"
-		"| /wi foo         search for wide string ignoring case 'f\\0o\\0o\\0'\n"
-		"| /! ff           search for first occurrence not matching\n"
-		"| /i foo          search for string 'foo' ignoring case\n"
-		"| /e /E.F/i       match regular expression\n"
-		"| /x ff0033       search for hex string\n"
-		"| /x ff..33       search for hex string ignoring some nibbles\n"
-		"| /x ff43 ffd0    search for hexpair with mask\n"
-		"| /d 101112       search for a deltified sequence of bytes\n"
-		"| /!x 00          inverse hexa search (find first byte != 0x00)\n"
-		"| /c jmp [esp]    search for asm code (see search.asmstr)\n"
-		"| /a jmp eax      assemble opcode and search its bytes\n"
-		"| /A              search for AES expanded keys\n"
-		"| /r sym.printf   analyze opcode reference an offset\n"
-		"| /R [grepopcode] search for matching ROP gadgets\n"
-		"| /P              show offset of previous instruction\n"
-		"| /m magicfile    search for matching magic file (use blocksize)\n"
-		"| /p patternsize  search for pattern of given size\n"
-		"| /z min max      search for strings of given size\n"
-		"| /v[?248] num    look for a asm.bigendian 32bit value\n"
-		"| //              repeat last search\n"
-		"| /b              search backwards\n"
-		"|Configuration:\n"
-		"| e cmd.hit = x         ; command to execute on every search hit\n"
-		"| e search.distance = 0 ; search string distance\n"
-		"| e search.in = [foo]   ; boundaries to raw, block, file, section)\n"
-		"| e search.align = 4    ; only catch aligned search hits\n"
-		"| e search.from = 0     ; start address\n"
-		"| e search.to = 0       ; end address\n"
-		"| e search.asmstr = 0   ; search string instead of assembly\n"
-		"| e search.flags = true ; if enabled store flags on keyword hits\n");
+	default:{
+		const char* help_msg[] = {
+			"Usage:", "/[amx/] [arg]", "Search",
+			"/","foo\\x00", "search for string 'foo\\0'",
+			"/!", " ff", "search for first occurrence not matching",
+			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
+			"//", "", "repeat last search",
+			"/A", "", "search for AES expanded keys",
+			"/P", "", "show offset of previous instruction",
+			"/R", " [grepopcode]", "search for matching ROP gadgets",
+			"/a", " jmp eax", "assemble opcode and search its bytes",
+			"/b", "", "search backwards",
+			"/c", " jmp [esp]", "search for asm code (see search.asmstr)",
+			"/d", " 101112", "search for a deltified sequence of bytes",
+			"/e", " /E.F/i", "match regular expression",
+			"/i", " foo", "search for string 'foo' ignoring case",
+			"/m", " magicfile", "search for matching magic file (use blocksize)",
+			"/p", " patternsize", "search for pattern of given size",
+			"/r", " sym.printf", "analyze opcode reference an offset",
+			"/v", "[?248] num", "look for a asm.bigendian 32bit value",
+			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
+			"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
+			"/x"," ff..33", "search for hex string ignoring some nibbles",
+			"/x"," ff0033", "search for hex string",
+			"/x"," ff43 ffd0", "search for hexpair with mask",
+			"/z"," min max", "search for strings of given size",
+			"\nConfiguration:", "", "",
+			"e", " cmd.hit = x", "command to execute on every search hit",
+			"e", " search.align = 4", "only catch aligned search hits",
+			"e", " search.from = 0", "start address",
+			"e", " search.to = 0", "end address",
+			"e", " search.asmstr = 0", "search string instead of assembly",
+			"e", " search.flags = true", "if enabled store flags on keyword hits",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	searchhits = 0;
