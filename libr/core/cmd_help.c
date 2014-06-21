@@ -470,6 +470,7 @@ static int cmd_help(void *data, const char *input) {
 		"w"," [str]", "Multiple write operations",
 		"x"," [len]", "Alias for 'px' (print hexadecimal)",
 		"y"," [len] [[[@]addr", "Yank/paste bytes from/to memory",
+		"z", "", "Zignatures management",
 		"?[??]","[expr]", "Help or evaluate math expression",
 		"?$?", "", "Show available '$' variables",
 		"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",

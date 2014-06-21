@@ -131,24 +131,27 @@ static int cmd_zign(void *data, const char *input) {
 		r_sign_list (core->sign, (*input=='*'));
 		break;
 	default:
-	case '?':
-		r_cons_printf (
-			"Usage: z[abcp/*-] [arg]\n"
-			" z              show status of zignatures\n"
-			" z*             display all zignatures\n"
-			" zp             display current prefix\n"
-			" zp prefix      define prefix for following zignatures\n"
-			" zp-            unset prefix\n"
-			" z-prefix       unload zignatures prefixed as\n"
-			" z-*            unload all zignatures\n"
-			" za ...         define new zignature for analysis\n"
-			" zf name fmt    define function zignature (fast/slow, args, types)\n"
-			" zb name bytes  define zignature for bytes\n"
-			" zh name bytes  define function header zignature\n"
-			" zg pfx [file]  generate signature for current file\n"
-			" .zc @ fcn.foo  flag signature if matching (.zc@@fcn)\n"
-			" z/ [ini] [end] search zignatures between these regions\n"
-			"NOTE: bytes can contain '.' (dots) to specify a binary mask\n");
+	case '?':{
+		const char* help_msg[] = {
+			"Usage:", "z[abcp/*-] [arg]", "Zignatures",
+			"z", "", "show status of zignatures",
+			"z*", "", "display all zignatures",
+			"zp", "", "display current prefix",
+			"zp", " prefix", "define prefix for following zignatures",
+			"zp-", "", "unset prefix",
+			"z-", "prefix", "unload zignatures prefixed as",
+			"z-*", "", "unload all zignatures",
+			"za", " ...", "define new zignature for analysis",
+			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
+			"zb", " name bytes", "define zignature for bytes",
+			"zh", " name bytes", "define function header zignature",
+			"zg", " pfx [file]", "generate signature for current file",
+			".zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
+			"z/", "[ini] [end]", "search zignatures between these regions",
+			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			 }
 		break;
 	}
 	return 0;
