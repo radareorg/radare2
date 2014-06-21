@@ -141,13 +141,17 @@ static int cmd_open(void *data, const char *input) {
 					}
 					r_core_bin_delete (core, -1, binobj_num);
 					break;
-				case '?':
-					r_cons_printf ("|Usage:\n"
-					"| obl                 list opened binfiles and bin objects\n"
-					"| obb [binfile #]     prioritize by binfile number with current selected object\n"
-					"| obd [binobject #]   delete binfile object numbers, if more than 1 object is loaded\n"
-					"| obo [binobject #]   prioritize by bin object number\n"
-					"| obs [bf #] [bobj #] prioritize by binfile and object numbers\n");
+				case '?':{
+					const char* help_msg[] = {
+						"Usage:", "ob", " # List open binary files backed by fd",
+						"obl", "", "List opened binfiles and bin objects",
+						"obb", " [binfile #]", "Prioritize by binfile number with current selected object",
+						"obd", " [binobject #]", "Delete binfile object numbers, if more than 1 object is loaded",
+						"obo", " [binobject #]", "Prioritize by bin object number",
+						"obs", " [bf #] [bobj #]", "Prioritize by binfile and object numbers",
+						NULL};
+						r_core_cmd_help (core, help_msg);
+					}
 			}
 		}
 		break;
@@ -209,7 +213,7 @@ static int cmd_open(void *data, const char *input) {
 					} else size = r_num_math (core->num, q+1);
 				} else size = r_io_size (core->io);
 				r_io_map_add (core->io, fd, 0, delta, addr, size);
-			} else eprintf ("Usage: om fd addr [size] [delta]\n");
+			} else eprintf ("Invalid use of om . See om? for help.");
 			free (s);
 			}
 			break;
@@ -230,12 +234,16 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		default:
-		case '?':
-			r_cons_printf ("|Usage: om[-] [arg]  # map opened files\n"
-				"| om                  list all defined IO maps\n"
-				"| om-0x10000          remove the map at given address\n"
-				"| om fd addr [size]   create new io map\n"
-				"| omr fd|0xADDR ADDR  relocate current map\n");
+		case '?':{
+			const char* help_msg[] = {
+				"Usage:", "om[-] [arg]", " # map opened files",
+				"om", "", "list all defined IO maps",
+				"om", "-0x10000", "remove the map at given address",
+				"om", " fd addr [size]", "create new io map",
+				"omr", " fd|0xADDR ADDR", "relocate current map",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		r_core_block_read (core, 0);
