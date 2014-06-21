@@ -16,8 +16,8 @@ R_API void r_core_cmd_help(RCore *core, const char * help[]) {
 	char const *reset_colors;
 	char padding[256];
 
-	args_color_start = use_colors? cons->pal.pop: "";
-	help_color_start = use_colors? cons->pal.comment: "";
+	args_color_start = use_colors? cons->pal.args: "";
+	help_color_start = use_colors? cons->pal.help: "";
 	reset_colors     = use_colors? cons->pal.reset: "";
 
 	max_length = 0;
