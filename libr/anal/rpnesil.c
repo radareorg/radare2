@@ -228,6 +228,25 @@ static int esil_andeq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_xoreq(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, src, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num ^= num2;
+			esil_reg_write (esil, dst, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_xoreq: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static int esil_syscall(RAnalEsil *esil) {
 	// pop number
 	// resolve arguments and run syscall handler
@@ -427,6 +446,25 @@ static int esil_and(RAnalEsil *esil) {
 			ret = 1;
 		} else {
 			eprintf ("esil_neg: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_xor(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num ^= num2;
+			r_anal_esil_pushnum (esil, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_xor: empty stack\n");
 		}
 	}
 	free (src);
@@ -694,6 +732,8 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, "!")) { *cmd = &esil_neg; return 1; } else
 	if (!strcmp (word, "=")) { *cmd = &esil_eq; return 1; } else
 	if (!strcmp (word, "*")) { *cmd = &esil_mul; return 1; } else
+	if (!strcmp (word, "^")) { *cmd = &esil_xor; return 1; } else
+	if (!strcmp (word, "^=")) { *cmd = &esil_xoreq; return 1; } else
 	if (!strcmp (word, "+")) { *cmd = &esil_add; return 1; } else
 	if (!strcmp (word, "+=")) { *cmd = &esil_addeq; return 1; } else
 	if (!strcmp (word, "-")) { *cmd = &esil_sub; return 1; } else
