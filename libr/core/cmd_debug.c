@@ -22,7 +22,7 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 		}
 	}
 	eprintf ("Running child until syscalls:");
-	for (i=0;i<count;i++) 
+	for (i=0;i<count;i++)
 		eprintf ("%d ", syscalls[i]);
 	eprintf ("\n");
 	r_reg_arena_swap (core->dbg->reg, R_TRUE);
@@ -203,19 +203,19 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case '?':{
 			const char* help_msg[] = {
 				"Usage:", "dp", " # Process commands",
-				"dp", "", "list current pid and childrens",
-				"dp", " <pid>", "list children of pid",
-				"dp*", "", "list all attachable pids",
-				"dp=", "<pid>", "select pid",
-				"dpa", " <pid>", "attach and select pid",
-				"dpe", "", "show path to executable",
-				"dpf", "", "attach to pid like file fd // HACK",
-				"dpk", " <pid> <signal>", "send signal to process",
-				"dpn", "", "create new process (fork)",
-				"dpnt", "", "create new thread (clone)",
-				"dpt", "", "list threads of current pid",
-				"dpt", " <pid>", "list threads of process",
-				"dpt=", "<thread>", "attach to thread",
+				"dp", "", "List current pid and childrens",
+				"dp", " <pid>", "List children of pid",
+				"dp*", "", "List all attachable pids",
+				"dp=", "<pid>", "Select pid",
+				"dpa", " <pid>", "Attach and select pid",
+				"dpe", "", "Show path to executable",
+				"dpf", "", "Attach to pid like file fd // HACK",
+				"dpk", " <pid> <signal>", "Send signal to process",
+				"dpn", "", "Create new process (fork)",
+				"dpnt", "", "Create new thread (clone)",
+				"dpt", "", "List threads of current pid",
+				"dpt", " <pid>", "List threads of process",
+				"dpt=", "<thread>", "Attach to thread",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -276,16 +276,16 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '?':{
 			const char* help_msg[] = {
 			"Usage:", "dm", " # Memory maps commands",
-			"dm", "", "list memory maps of target process",
-			"dm", " <address> <size>", "allocate <size> bytes at <address> (anywhere if address is -1) in child process",
-			"dm*", "", "list memmaps in radare commands",
-			"dm-", "<address>", "deallocate memory map of <address>",
-			"dmd", " [file]", "dump current debug map region to a file (from-to.dmp) (see Sd)",
-			"dmi", " [addr|libname] [symname]", "list symbols of target lib",
-			"dmi*", " [addr|libname] [symname]", "list symbols of target lib in radare commands",
-			"dmj", "", "list memmaps in JSON format",
-			"dml", " <file>", "load contents of file into the current map region (see Sl)",
-			"dmp", " <address> <size> <perms>", "change page at <address> with <size>, protection <perms> (rwx)",
+			"dm", "", "List memory maps of target process",
+			"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+			"dm*", "", "List memmaps in radare commands",
+			"dm-", "<address>", "Deallocate memory map of <address>",
+			"dmd", " [file]", "Dump current debug map region to a file (from-to.dmp) (see Sd)",
+			"dmi", " [addr|libname] [symname]", "List symbols of target lib",
+			"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
+			"dmj", "", "List memmaps in JSON format",
+			"dml", " <file>", "Load contents of file into the current map region (see Sl)",
+			"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 			//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 			"TODO:", "map files in process memory. (dmf file @ [addr])", "",
 			NULL};
@@ -465,29 +465,34 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
 			r_cons_printf ("0x%08"PFMT64x"\n", off);
 			//r_reg_get_value (core->dbg->reg, r));
-		} else
-		r_cons_printf (
-			"|Usage: dr              Registers commands\n"
-			"| dr                    Show 'gpr' registers\n"
-			"| dr 16                 Show 16 bit registers\n"
-			"| dr 32                 Show 32 bit registers\n"
-			"| dr all                Show all registers\n"
-			"| dr <type>             Show flag registers\n"
-			"| dr <register>=<val>   Set register value\n"
-			"| dr=                   Show registers in columns\n"
-			"| dr?<register>         Show value of eax register\n"
-			"| drb [type]            Display hexdump of gpr arena (WIP)\n"
-			"| drc [name]            Related to conditional flag registers\n"
-			"| drd                   Show only different registers\n"
-			"| drn <pc>              Get regname for pc,sp,bp,a0-3,zf,cf,of,sg\n"
-			"| dro                   Show previous (old) values of registers\n"
-			"| drp <file>            Load register metadata file\n"
-			"| drp                   Display current register profile\n"
-			"| drs?                  Stack register states\n"
-			"| drt                   Show all register types\n"
-			"| .dr*                  Include common register values in flags\n"
-			"| .dr-                  Unflag all registers\n");
-		// TODO: 'drs' to swap register arenas and display old register valuez
+		} else {
+			const char * help_message[] = {
+				"Usage: dr", "", "Registers commands",
+				"dr", "", "Show 'gpr' registers",
+				"dr", " 16", "Show 16 bit registers",
+				"dr", " 32", "Show 32 bit registers",
+				"dr", " all", "Show all registers",
+				"dr", " <type>", "Show flag registers",
+				"dr", " <register>=<val>", "Set register value",
+				"dr=", "", "Show registers in columns",
+				"dr?", "<register>", "Show value of eax register",
+				"drb", " [type]", "Display hexdump of gpr arena (WIP)",
+				"drc", " [name]", "Related to conditional flag registers",
+				"drd", "", "Show only different registers",
+				"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
+				"dro", "", "Show previous (old) values of registers",
+				"drp", " <file>", "Load register metadata file",
+				"drp", "", "Display current register profile",
+				"drs", "[?]", "Stack register states",
+				"drt", "", "Show all register types",
+				".dr", "*", "Include common register values in flags",
+				".dr", "-", "Unflag all registers",
+				NULL
+			};
+			// TODO: 'drs' to swap register arenas and display old register valuez
+
+			r_core_cmd_help (core, help_message);
+		}
 		break;
 	case 'b':
 		{ // WORK IN PROGRESS // DEBUG COMMAND
@@ -578,12 +583,16 @@ free (rf);
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
 			r_debug_drx_list (core->dbg);
 			break;
-		default:
-			r_cons_printf (
-				"|Usage: drx                                 Hardware breakpoints commands\n"
-				"| drx                                       List all (x86?) hardware breakpoints\n"
-				"| drx <number> <address> <length> <perms>   Modify hardware breakpoint\n"
-				"| drx-<number>                              Clear hardware breakpoint\n");
+		default: {
+			const char * help_message[] = {
+				"Usage: drx", "", "Hardware breakpoints commands",
+				"drx", "", "List all (x86?) hardware breakpoints",
+				"drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
+				"drx-", "<number>", "Clear hardware breakpoint",
+				NULL
+			};
+			r_core_cmd_help (core, help_message);
+			}
 			break;
 		}
 		break;
@@ -597,12 +606,16 @@ free (rf);
 		case '+':
 			r_reg_arena_push (core->dbg->reg);
 			break;
-		case '?':
-			r_cons_printf (
-				"|Usage: drs   Register states commands\n"
-				"| drs    List register stack\n"
-				"| drs+   Push register state\n"
-				"| drs-   Pop register state\n");
+		case '?': {
+			const char * help_message[] = {
+				"Usage: drs", "", "Register states commands",
+				"drs", "", "List register stack",
+				"drs", "+", "Push register state",
+				"drs", "-", "Pop register state",
+				NULL
+			};
+			r_core_cmd_help (core, help_message);
+			}
 			break;
 		default:
 			r_cons_printf ("%d\n", r_list_length (
@@ -803,19 +816,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '?':
 	default:{
 			const char* help_msg[] = {
-				"Usage:", "db", " # Breakpoints commands",
-				"db", "", "list breakpoints",
-				"db", " sym.main", "add breakpoint into sym.main",
-				"db", " <address>", "add breakpoint",
-				"db", " -<address>", "remove breakpoint",
+				"Usage: db", "", " # Breakpoints commands",
+				"db", "", "List breakpoints",
+				"db", " sym.main", "Add breakpoint into sym.main",
+				"db", " <address>", "Add breakpoint",
+				"db", " -<address>", "Remove breakpoint",
 				// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-				"dbc", " <address> <cmd>", "run command when breakpoint is hit",
-				"dbd", " <address>", "disable breakpoint",
-				"dbe", " <address>", "enable breakpoint",
-				"dbh", " x86", "set/list breakpoint plugin handlers",
-				"dbs", " <address>", "toggle breakpoint\n",
+				"dbc", " <address> <cmd>", "Run command when breakpoint is hit",
+				"dbd", " <address>", "Disable breakpoint",
+				"dbe", " <address>", "Enable breakpoint",
+				"dbh", " x86", "Set/list breakpoint plugin handlers",
+				"dbs", " <address>", "Toggle breakpoint\n",
 				NULL};
-		r_core_cmd_help(core, help_msg);
+		r_core_cmd_help (core, help_msg);
 		}
 		break;
 	}
@@ -897,13 +910,18 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				if (signum>0)
 					r_cons_printf ("%d\n", signum);
 			}
-		} else eprintf (
-				"|Usage: dk          Signal commands\n"
-				"| dk                List all signal handlers of child process\n"
-				"| dk <signal>       Send KILL signal to child\n"
-				"| dk <signal>=1     Set signal handler for <signal> in child\n"
-				"| dk?<signal>       Name/signum resolver\n"
-				"| dko <signal> sc   On signal Skip and CONT (default stop, always trace)\n");
+		} else {
+			const char * help_message[] = {
+				"Usage: dk", "", "Signal commands",
+				"dk", "", "List all signal handlers of child process",
+				"dk", " <signal>", "Send KILL signal to child",
+				"dk", " <signal>=1", "Set signal handler for <signal> in child",
+				"dk?", "<signal>", "Name/signum resolver",
+				"dko", " <signal> sc", "On signal Skip and CONT (default stop, always trace)",
+				NULL
+			};
+			r_core_cmd_help (core, help_message);
+		}
 	} else if (*input=='o') {
 		char *p, *name = strdup (input+2);
 		p = strchr (name, ' ');
@@ -967,12 +985,16 @@ static int cmd_debug(void *data, const char *input) {
 	switch (input[0]) {
 	case 't':
 		switch (input[1]) {
-		case '?':
-			r_cons_printf (
-			"|Usage: dt    Trace commands\n"
-			"| dtc   Trace call/ret\n"
-			"| dtg   Graph call/ret trace\n"
-			"| dtr   Reset traces (instruction//cals)\n");
+		case '?': {
+			const char * help_message[] = {
+				"Usage: dt", "", "Trace commands",
+				"dtc", "", "Trace call/ret",
+				"dtg", "", "Graph call/ret trace",
+				"dtr", "", "Reset traces (instruction//cals)",
+				NULL
+			};
+			r_core_cmd_help (core, help_message);
+			}
 			break;
 		case 'c':
 			if (r_debug_is_dead (core->dbg))
@@ -1028,13 +1050,17 @@ static int cmd_debug(void *data, const char *input) {
 			// open file
 			break;
 		case '?':
-		default:
-			r_cons_printf (
-				"|Usage: dd    Descriptors commands\n"
-				"| dd          List file descriptors\n"
-				"| dd <file>   Open and map that file into the UI\n"
-				"| dd-<fd>     Close stdout fd\n"
-				"| dd*         List file descriptors (in radare commands)\n");
+		default: {
+			const char * help_message[] = {
+				"Usage: dd", "", "Descriptors commands",
+				"dd", "", "List file descriptors",
+				"dd", " <file>", "Open and map that file into the UI",
+				"dd-", "<fd>", "Close stdout fd",
+				"dd*", "", "List file descriptors (in radare commands)",
+				NLL
+			};
+			r_core_cmd_help (core, help_message);
+			}
 			break;
 		}
 		break;
@@ -1042,20 +1068,24 @@ static int cmd_debug(void *data, const char *input) {
 		times = atoi (input+2);
 		if (times<1) times = 1;
 		switch (input[1]) {
-		case '?':
-			r_cons_printf (
-				"|Usage: ds        Step commands\n"
-				"| ds              Step one instruction\n"
-				"| ds <num>        Step <num> instructions\n"
-				"| dsf             Step until end of frame\n"
-				"| dsi <cond>      Continue until condition matches\n"
-				"| dsl             Step one source line\n"
-				"| dsl <num>       Step <num> source lines\n"
-				"| dso <num>       Step over <num> instructions\n"
-				"| dsp             Step into program (skip libs)\n"
-				"| dss <num>       Skip <num> step instructions\n"
-				"| dsu <address>   Step until address\n"
-				);
+		case '?': {
+			const char * help_message[] = {
+				"Usage: ds", "", "Step commands",
+				"ds", "", "Step one instruction",
+				"ds", " <num>", "Step <num> instructions",
+				"dsf", "", "Step until end of frame",
+				"dsi", " <cond>", "Continue until condition matches",
+				"dsl", "", "Step one source line",
+				"dsl", " <num>", "Step <num> source lines",
+				"dso", " <num>", "Step over <num> instructions",
+				"dsp", "", "Step into program (skip libs)",
+				"dss", " <num>", "Skip <num> step instructions",
+				"dsu", " <address>", "Step until address",
+				NULL
+			};
+
+			r_core_cmd_help (core, help_message);
+			}
 			break;
 		case 'i':
 			if (input[2] == ' ') {
@@ -1162,28 +1192,31 @@ static int cmd_debug(void *data, const char *input) {
 		// TODO: we must use this for step 'ds' too maybe...
 		r_cons_break (static_debug_stop, core->dbg);
 		switch (input[1]) {
-		case '?':
-			eprintf(
-				"|Usage: dc              Execution continuation commands\n"
-				"| dc?                   Show this help\n"
-				"| dc                    Continue execution of all children\n"
-				"| dc <pid>              Continue execution of pid\n"
-				"| dc[-pid]              Stop execution of pid\n"
-				"| dca [sym] [sym].      Continue at every hit on any given symbol\n"
-				"| dcc                   Continue until call (use step into)\n"
-				"| dcf                   Continue until fork (TODO)\n"
-				"| dck <signal> <pid>    Continue sending signal to process\n"
-				"| dco <num>             Step over <num> instructions\n"
-				"| dcp                   Continue until program code (mapped io section)\n"
-				"| dcr                   Continue until ret (uses step over)\n"
-				"| dcs <num>             Continue until syscall\n"
-				"| dct <len>             Traptrace from curseek to len, no argument to list\n"
-				"| dcu [addr]            Continue until address\n"
-				"| dcu <address> [end]   Continue until given address range\n"
-				"|TODO: dcu/dcr needs dbg.untilover=true??\n"
-				"|TODO: same for only user/libs side, to avoid steping into libs\n"
-				"|TODO: support for threads?\n"
-				);
+		case '?': {
+				const char * help_message[] = {
+				"Usage: dc", "", "Execution continuation commands",
+				"dc", "", "Continue execution of all children",
+				"dc", " <pid>", "Continue execution of pid",
+				"dc", "[-pid]", "Stop execution of pid",
+				"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
+				"dcc", "", "Continue until call (use step into)",
+				"dcf", "", "Continue until fork (TODO)",
+				"dck", " <signal> <pid>", "Continue sending signal to process",
+				"dco", " <num>", "Step over <num> instructions",
+				"dcp", "", "Continue until program code (mapped io section)",
+				"dcr", "", "Continue until ret (uses step over)",
+				"dcs", " <num>"¸ "Continue until syscall",
+				"dct", " <len>", "Traptrace from curseek to len, no argument to list",
+				"dcu", " [addr]", "Continue until address",
+				"dcu", " <address> [end]", "Continue until given address range",
+				/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
+				/*"TODO: same for only user/libs side, to avoid steping into libs",*/
+				/*"TODO: support for threads?",*/
+				NULL
+				};
+
+				r_core_cmd_help (core, help_message);
+				}
 			break;
 		case 'a':
 			eprintf ("TODO: dca\n");
@@ -1377,13 +1410,13 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		default:{
 			const char* help_msg[] = {
-			"Usage:", "dx", " # Code injection commands",
-			"dx", " <opcode>...", "inject opcodes",
-			"dxr", " <opcode>...", "inject opcodes and restore state",
-			"dxs", " write 1, 0x8048, 12", "syscall injection (see gs)",
+			"Usage: dx", "", " # Code injection commands",
+			"dx", " <opcode>...", "Inject opcodes",
+			"dxr", " <opcode>...", "Inject opcodes and restore state",
+			"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
 			"\nExamples:", "", "",
-			"dx", " 9090", "inject two x86 nop",
-			"\"dia mov eax,6;mov ebx,0;int 0x80\"", "", "inject and restore state",
+			"dx", " 9090", "Inject two x86 nop",
+			"\"dia mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}
@@ -1410,22 +1443,22 @@ static int cmd_debug(void *data, const char *input) {
 	default:{
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
-			"db", "[?]", "breakpoints commands",
-			"dbt", "", "display backtrace",
-			"dc", "[?]", "continue execution",
-			"dd", "[?]", "ile descriptors (!fd in r1)",
-			"dh", " [handler]", "list or set debugger handler",
-			"dH", " [handler]", "transplant process to a new handler",
-			"di", "[?]", "show debugger backend information (See dh)",
-			"dk", "[?]", "list, send, get, set, signal handlers of child",
-			"dm", "[?]", "show memory maps",
-			"do", "[?]", "open process (reload, alias for 'oo')",
-			"dp", "[?]", "list, attach to process or thread id",
-			"dr", "[?]", "cpu registers",
-			"ds", "[?]", "step, over, source line",
-			"dt", "[?]", "display instruction traces (dtr=reset)",
-			"dw", " <pid>", "block prompt until pid dies",
-			"dx", "[?]", "inject code on running process and execute it (See gs)",
+			"db", "[?]", "Breakpoints commands",
+			"dbt", "", "Display backtrace",
+			"dc", "[?]", "Continue execution",
+			"dd", "[?]", "File descriptors (!fd in r1)",
+			"dh", " [handler]", "List or set debugger handler",
+			"dH", " [handler]", "Transplant process to a new handler",
+			"di", "[?]", "Show debugger backend information (See dh)",
+			"dk", "[?]", "List, send, get, set, signal handlers of child",
+			"dm", "[?]", "Show memory maps",
+			"do", "[?]", "Open process (reload, alias for 'oo')",
+			"dp", "[?]", "List, attach to process or thread id",
+			"dr", "[?]", "Cpu registers",
+			"ds", "[?]", "Step, over, source line",
+			"dt", "[?]", "Display instruction traces (dtr=reset)",
+			"dw", " <pid>", "Block prompt until pid dies",
+			"dx", "[?]", "Inject code on running process and execute it (See gs)",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 		}
