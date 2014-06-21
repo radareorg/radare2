@@ -342,6 +342,8 @@ static int cmd_search(void *data, const char *input) {
 	int i, len, ret, dosearch = R_FALSE;
 	RCore *core = (RCore *)data;
 	int aes_search = R_FALSE;
+	int rsa_search = R_FALSE;
+	int crypto_search = R_FALSE;
 	int ignorecase = R_FALSE;
 	int inverse = R_FALSE;
 	ut64 at, from = 0, to = 0;
@@ -458,9 +460,24 @@ static int cmd_search(void *data, const char *input) {
 		free (kwd);
 		dosearch = R_TRUE;
 		} break;
-	case 'A':
-		dosearch = aes_search = R_TRUE;
-		break;
+	case 'C': {
+		switch (input[1]) {
+			case 'a':
+				dosearch = aes_search = crypto_search = R_TRUE;
+				break;
+			case 'r':
+				dosearch = rsa_search = crypto_search = R_TRUE;
+				break;
+			default:{
+				const char* help_msg[] = {
+					"Usage: /C", "", "Search for crypto materials",
+					"/Ca", "" , "Search for AES keys",
+					"/Cr", "", "Search for RSA keys",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+				}
+			}
+		} break;
 	case '/':
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
@@ -694,7 +711,7 @@ static int cmd_search(void *data, const char *input) {
 			"/!", " ff", "search for first occurrence not matching",
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 			"//", "", "repeat last search",
-			"/A", "", "search for AES expanded keys",
+			"/C", "[ae]", "search for crypto materials",
 			"/P", "", "show offset of previous instruction",
 			"/R", " [grepopcode]", "search for matching ROP gadgets",
 			"/a", " jmp eax", "assemble opcode and search its bytes",
@@ -734,9 +751,9 @@ static int cmd_search(void *data, const char *input) {
 		searchcount = r_config_get_i (core->config, "search.count");
 		if (searchcount)
 			searchcount++;
-		if (core->search->n_kws>0 || aes_search) {
+		if (core->search->n_kws>0 || crypto_search) {
 			RSearchKeyword aeskw;
-			if (aes_search) {
+			if (crypto_search) {
 				memset (&aeskw, 0, sizeof (aeskw));
 				aeskw.keyword_length = 31;
 			}
@@ -777,8 +794,12 @@ static int cmd_search(void *data, const char *input) {
 */
 				if (ret <1)
 					break;
-				if (aes_search) {
-					int delta = r_search_aes_update (core->search, at, buf, ret);
+				if (crypto_search) {
+					int delta = 0;
+					if (aes_search)
+						delta = r_search_aes_update (core->search, at, buf, ret);
+					else if (rsa_search)
+						delta = r_search_rsa_update (core->search, at, buf, ret);
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at+delta)) {
 							break;

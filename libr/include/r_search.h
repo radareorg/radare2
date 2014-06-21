@@ -105,6 +105,7 @@ R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf
 // TODO: is this an internal API?
 R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_rsa_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_deltakey_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_regexp_update(void *s, ut64 from, const ut8 *buf, int len);
