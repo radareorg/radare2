@@ -104,28 +104,31 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	ut16 sz;
+
 	if (bin->strtab || !bin->shdr) return R_FALSE;
         if (bin->ehdr.e_shstrndx != SHN_UNDEF &&
             (bin->ehdr.e_shstrndx >= bin->ehdr.e_shnum ||
             (bin->ehdr.e_shstrndx >= SHN_LORESERVE && bin->ehdr.e_shstrndx <= SHN_HIRESERVE)))
             return R_FALSE;
+
+	/* sh_size must be lower than UT32_MAX, to avoid bad integer conversion
+	   on malloc() */
+	if(bin->shdr[bin->ehdr.e_shstrndx].sh_size > UT32_MAX)
+		return R_FALSE;
+
 	bin->shstrtab_section =
 		bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 
 	bin->shstrtab_size =
 		bin->strtab_size = bin->strtab_section->sh_size;
 
-	if(!r_safe_addu16(&sz, sizeof (struct r_bin_elf_section_t), bin->strtab_section->sh_size))
-		return R_FALSE;
-
-	if ((bin->strtab = malloc (sz)) == NULL) {
+	if ((bin->strtab = malloc (bin->strtab_size)) == NULL) {
 		perror ("malloc");
 		bin->shstrtab = NULL;
 		return R_FALSE;
 	}
 
-	memset (bin->strtab, 0, sz);
+	memset (bin->strtab, 0, bin->strtab_size);
 	bin->shstrtab = bin->strtab;
 
 	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
@@ -585,7 +588,7 @@ static inline int noodle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
 }
 static inline int needle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
 	if (bin->shstrtab) {
-		int len = bin->shstrtab_size;
+		ut32 len = bin->shstrtab_size;
 		if (len > 4096) len = 4096; // avoid slow loading .. can be buggy?
 		return r_mem_mem ((const ut8*)bin->shstrtab, len,
 				(const ut8*)s, strlen (s)) != NULL;
