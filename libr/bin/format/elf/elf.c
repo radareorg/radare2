@@ -210,7 +210,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Addr) plt_sym_addr;
 	Elf_(Shdr) *rel_shdr;
 	ut64 got_addr, got_offset;
-	int i, j, k, tsize, len;
+	int j, k, tsize, len;
 
 	if (!bin->shdr || !bin->strtab)
 		return -1;
@@ -707,6 +707,11 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			got_offset = 0;
 	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
+
+			/* Bad sh_link ! */
+			if(bin->shdr[i].sh_link >= bin->ehdr.e_shnum)
+				continue;
+
 			bin->strtab_section = &bin->shdr[bin->shdr[i].sh_link];
 			tsize = bin->strtab_section? bin->strtab_section->sh_size: 0;
 			if (!tsize) continue;
