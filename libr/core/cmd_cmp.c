@@ -198,17 +198,20 @@ static void cmd_cmp_watcher (RCore *core, const char *input) {
 	case '\0':
 		r_core_cmpwatch_show (core, UT64_MAX, 0);
 		break;
-	case '?':
-		r_cons_printf (
-			"Usage: cw[?] [...]\n"
-		"  cw              list all compare watchers\n"
-		"  cw*             list compare watchers in r2 cmds\n"
-		"  cw addr         list all compare watchers\n"
-		"  cw addr sz cmd  add a memory watcher\n"
-		//"  cws [addr]      show watchers\n"
-		"  cwu [addr]      update watchers\n"
-		"  cwr [addr]      reset/revert watchers\n"
-		);
+	case '?': {
+			const char * help_message[] = {
+				"Usage: cw", "", "Watcher commands",
+				"cw", "", "List all compare watchers",
+				"cw", " addr", "List all compare watchers",
+				"cw", " addr sz cmd", "Add a memory watcher",
+				//"cws", " [addr]", "Show watchers",
+				"cw", "*", "List compare watchers in r2 cmds",
+				"cwr", " [addr]", "Reset/revert watchers",
+				"cwu", " [addr]", "Update watchers",
+				NULL
+			};
+			r_core_cmd_help(core, help_message);
+		}
 		break;
 	}
 }
@@ -347,9 +350,14 @@ static int cmd_cmp(void *data, const char *input) {
 				file2 = (char*)r_str_chop_ro (input+2);
 				r_anal_diff_setup (core->anal, R_FALSE, -1, -1);
 			} else {
-				eprintf ("Usage: cg[o] [file]\n");
-				eprintf (" cg  - byte-per-byte code graph diff\n");
-				eprintf (" cgo - opcode-bytes code graph diff\n");
+				const char * help_message[] = {
+				"Usage: cg", "", "Graph code commands",
+				"cg",  "", "Byte-per-byte code graph diff",
+				"cgo", "", "Opcode-bytes code graph diff",
+				NULL
+				};
+
+				r_core_cmd_help(core, help_message);
 				return R_FALSE;
 			}
 
@@ -385,9 +393,9 @@ static int cmd_cmp(void *data, const char *input) {
 				core->blocksize);
 		} else {
 			const char* help_msg[] = {
-			"Usage:",  "cu [offset]", "# creates a unified hex patch",
-			"cu", " $$+1 > p", "compare current seek and +1",
-			"wu", " p", "apply unified hex patch",
+			"Usage: cu",  " [offset]", "# Creates a unified hex patch",
+			"cu", " $$+1 > p", "Compare current seek and +1",
+			"wu", " p", "Apply unified hex patch",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -395,23 +403,24 @@ static int cmd_cmp(void *data, const char *input) {
 	case '?':{
 			const char* help_msg[] = {
 				"Usage:", "c[?dfx] [argument]", " # Compare",
-				"c", " [string]", "compares a plain with escaped chars string",
-				"cc", " [at] [(at)]", "compares in two hexdump columns of block size",
+				"c", " [string]", "Compare a plain with escaped chars string",
+				"c4", " [value]", "Compare a doubleword from a math expression",
+				"c8", " [value]", "Compare a quadword from a math expression",
+				"cat", " [file]", "Show contents of file (see pwd, ls)",
+				"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
 				//"cc", " [offset]", "code bindiff current block against offset"
-				"c4", " [value]", "compare a doubleword from a math expression",
 				//"cD", " [file]", "like above, but using radiff -b",
-				"c8", " [value]", "compare a quadword from a math expression",
-				"cx", " [hexpair]", "compare hexpair string",
-				"cX", " [addr]", "like 'cc' but using hexdiff output",
-				"cf", " [file]", "compare contents of file at current seek",
-				"cg", "[o] [file]","graphdiff current file and [file]",
-				"cu", " [addr] @at", "compare memory hexdumps of $$ and dst in unified diff",
-				"cw", "[us?] [...]", "compare memory watchers",
-				"cat", " [file]", "show contents of file (see pwd, ls)",
-				"cl|cls|clear", "", "clear screen, (clear0 to goto 0, 0 only)",
-				NULL};
-				r_core_cmd_help (core, help_msg);
-				}
+				"cf", " [file]", "Compare contents of file at current seek",
+				"cg", "[o] [file]","Graphdiff current file and [file]",
+				"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
+				"cu", " [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
+				"cw", "[us?] [...]", "Compare memory watchers",
+				"cx", " [hexpair]", "Compare hexpair string",
+				"cX", " [addr]", "Like 'cc' but using hexdiff output",
+				NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			}
 		break;
 	case 'l':
 		if (strchr (input, 'f')) {
@@ -430,7 +439,7 @@ static int cmd_cmp(void *data, const char *input) {
 		//		r_cons_flush ();
 		break;
 	default:
-		eprintf ("|Usage: c[?48cdDxfw] [argument]\n");
+		eprintf ("Invalid use of c. See c? for help.\n");
 	}
 	if (val != UT64_MAX)
 		core->num->value = val;
