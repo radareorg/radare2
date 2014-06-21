@@ -812,6 +812,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	SETPREF("cfg.fortunes", "true", "If enabled show tips at start");
 	SETI("cfg.hashlimit", SLURP_LIMIT, "If the file its bigger than hashlimit don't calculate the hash");
+	SETPREF("cfg.prefixdump", "dump", "Prefix for automated dump filenames");
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 

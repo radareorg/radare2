@@ -383,7 +383,9 @@ static int cmd_write(void *data, const char *input) {
 		} else
 		if (*str != ' ') {
 			char _fn[32];
-			snprintf(_fn, sizeof(_fn), "dump.0x%08"PFMT64x, core->offset);
+			char* prefix = r_config_get (core->config, "cfg.prefixdump");
+			snprintf(_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+			free (prefix);
 			filename = _fn;
 		}  else filename = str+1;
 		tmp = strchr (str+1, ' ');

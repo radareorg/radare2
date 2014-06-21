@@ -12,20 +12,20 @@
 #endif
 
 struct EXE {
-	unsigned short signature; /* == 0x5a4D */
-	unsigned short bytes_in_last_block;
-	unsigned short blocks_in_file;
-	unsigned short num_relocs;
-	unsigned short header_paragraphs;
-	unsigned short min_extra_paragraphs;
-	unsigned short max_extra_paragraphs;
-	unsigned short ss;
-	unsigned short sp;
-	unsigned short checksum;
-	unsigned short ip;
-	unsigned short cs;
-	unsigned short reloc_table_paddr;
-	unsigned short overlay_number;
+	ut16 signature; /* == 0x5a4D */
+	ut16 bytes_in_last_block;
+	ut16 blocks_in_file;
+	ut16 num_relocs;
+	ut16 header_paragraphs;
+	ut16 min_extra_paragraphs;
+	ut16 max_extra_paragraphs;
+	ut16 ss;
+	ut16 sp;
+	ut16 checksum;
+	ut16 ip;
+	ut16 cs;
+	ut16 reloc_table_paddr;
+	ut16 overlay_number;
 };
 
 #if 0
@@ -38,8 +38,8 @@ if (exe.bytes_in_last_block)
 #endif
 
 struct EXE_RELOC {
-	unsigned short paddr;
-	unsigned short segment;
+	ut16 paddr;
+	ut16 segment;
 };
 
 static int check(RBinFile *arch);
@@ -54,16 +54,11 @@ static int destroy (RBinFile *arch) {
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinFile *arch) {
-	return 0; // XXX
-}
-
 static RBinAddr* binsym(RBinFile *arch, int type) {
 	return NULL;
 }
 
 static RList* entries(RBinFile *arch) {
-	ut64 off = 0LL;
 	RList* ret;
 	RBinAddr *ptr = NULL;
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
@@ -71,10 +66,10 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	off = (exe->cs << 4) + exe->ip;
+
 	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->paddr = off;
-		ptr->vaddr = off;
+		ptr->paddr = exe->ip;
+		ptr->vaddr = exe->ip;
 		r_list_append (ret, ptr);
 	}
 
@@ -86,6 +81,9 @@ static RList* sections(RBinFile *arch) {
 	RBinSection *ptr = NULL;
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
 
+	if (arch->buf->length - exe->header_paragraphs * 16L < 1)
+		return NULL;
+
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free; // r_bin-section_free
@@ -94,33 +92,11 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, ".text", R_BIN_SIZEOF_STRINGS);
 	ptr->paddr = exe->header_paragraphs * 16L;
 	ptr->size = arch->buf->length - ptr->paddr;
+	ptr->vaddr = exe->ip;
 	ptr->vsize = ptr->size;
-	ptr->vaddr = exe->header_paragraphs * 16L;
 	ptr->srwx = r_str_rwx ("rwx");
-	if (ptr->size <1) {
-		eprintf ("Invalid section size\n");
-		free (ptr);
-	} else r_list_append (ret, ptr);
-#if 0
-	//--
-	ptr = R_NEW (RBinSection);
-	strncpy (ptr->name, ".text", R_BIN_SIZEOF_STRINGS);
-	ptr->size = 100;
-	ptr->vsize = 100;
-	ptr->paddr = 100;
-	ptr->vaddr = 0;
-	ptr->srwx = r_str_rwx ("rwx");
+
 	r_list_append (ret, ptr);
-	//--
-	ptr = R_NEW (RBinSection);
-	strncpy (ptr->name, ".data", R_BIN_SIZEOF_STRINGS);
-	ptr->size = 100;
-	ptr->vsize = 100;
-	ptr->paddr = exe->header_paragraphs * 16L;
-	ptr->vaddr = 0;
-	ptr->srwx = r_str_rwx ("rwx");
-	r_list_append (ret, ptr);
-#endif
 	return ret;
 }
 
@@ -200,7 +176,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
-	.baddr = &baddr,
+	.baddr = NULL,
 	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
