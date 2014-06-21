@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake, Jody Frankowski */
 
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -11,6 +11,7 @@ static int cmd_open(void *data, const char *input) {
 	int num = -1;
 	int isn = 0;
 	char *ptr;
+	const char ** help_message;
 
 	switch (*input) {
 	case '\0':
@@ -142,12 +143,17 @@ static int cmd_open(void *data, const char *input) {
 					r_core_bin_delete (core, -1, binobj_num);
 					break;
 				case '?':
-					r_cons_printf ("|Usage:\n"
-					"| obl                 list opened binfiles and bin objects\n"
-					"| obb [binfile #]     prioritize by binfile number with current selected object\n"
-					"| obd [binobject #]   delete binfile object numbers, if more than 1 object is loaded\n"
-					"| obo [binobject #]   prioritize by bin object number\n"
-					"| obs [bf #] [bobj #] prioritize by binfile and object numbers\n");
+					help_message = (const char * []) {
+					"Usage: ob", "", "Opened files commands",
+					"obb", " [binfile #]",     "Prioritize by binfile number with current selected object",
+					"obd", " [binobject #]",   "Delete binfile object numbers, if more than 1 object is loaded",
+					"obl", "",                 "List opened binfiles and bin objects",
+					"obo", " [binobject #]",   "Prioritize by bin object number",
+					"obs", " [bf #] [bobj #]", "Prioritize by binfile and object numbers",
+					NULL
+					};
+
+					r_core_cmd_help(core, help_message);
 			}
 		}
 		break;
@@ -209,7 +215,7 @@ static int cmd_open(void *data, const char *input) {
 					} else size = r_num_math (core->num, q+1);
 				} else size = r_io_size (core->io);
 				r_io_map_add (core->io, fd, 0, delta, addr, size);
-			} else eprintf ("Usage: om fd addr [size] [delta]\n");
+			} else eprintf ("Invalid use of om . See om? for help.\n");
 			free (s);
 			}
 			break;
@@ -225,17 +231,22 @@ static int cmd_open(void *data, const char *input) {
 		case '\0':
 			r_list_foreach (core->io->maps, iter, map) { // _prev?
 				r_cons_printf (
-					"%d +0x%"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
+					"%d +0x%"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n",
 					(int)map->fd, (ut64)map->delta, (ut64)map->from, (ut64)map->to);
 			}
 			break;
 		default:
 		case '?':
-			r_cons_printf ("|Usage: om[-] [arg]  # map opened files\n"
-				"| om                  list all defined IO maps\n"
-				"| om-0x10000          remove the map at given address\n"
-				"| om fd addr [size]   create new io map\n"
-				"| omr fd|0xADDR ADDR  relocate current map\n");
+			help_message = (const char * []) {
+				"Usage: om", "", "Opened files maps commands",
+				"om", "", "List all defined IO maps",
+				"om", " <fd> <addr> [size]", "Create new io map",
+				"om-", "<addr>", "Remove the map at given address",
+				"omr", " <fd|source addr> <destination addr>", "Relocate current map",
+				NULL
+			};
+
+			r_core_cmd_help(core, help_message);
 			break;
 		}
 		r_core_block_read (core, 0);
@@ -255,20 +266,25 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '?':
 	default:
-		r_cons_printf ("|Usage: o[com- ] [file] ([offset])\n"
-		"| o                  list opened files\n"
-		"| oc [file]          open core file, like relaunching r2\n"
-		"| oo                 reopen current file (kill+fork in debugger)\n"
-		"| oo+                reopen current file in read-write\n"
-		"| o 4                priorize io on fd 4 (bring to front)\n"
-		"| o-1                close file index 1\n"
-		"| o /bin/ls          open /bin/ls file in read-only\n"
-		"| o+/bin/ls          open /bin/ls file in read-write mode\n"
-		"| o /bin/ls 0x4000   map file at 0x4000\n"
-		"| on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
-		"| ob                 list open binary files bascked by fd\n"
-		"| ob 4               priorize io and fd on 4 (bring to binfile to front)\n"
-		"| om[?]              create, list, remove IO maps\n");
+		help_message = (const char * []) {
+		"Usage: o", "", "File opening commands",
+		"o", "", "List opened files",
+		"o", "<fd>", "Priorize io on file descriptor (bring to front)",
+		"o", " <path>", "Open file in read-only",
+		"o+", " <path>", "Open file in read-write mode",
+		"o", " <path> <addr>", "Map file at address",
+		"o-", "<file index>", "Close file index",
+		"ob", "[?]", "List open binary files bascked by fd",
+		"ob", " <fd>", "Priorize io and fd on file descriptor (bring to binfile to front)",
+		"oc", " [file]", "Open core file, like relaunching r2",
+		"om", "[?]", "Create, list, remove IO maps",
+		"on", " <path> <addr>", "Map raw file at address (no r_bin involved)",
+		"oo", "", "Reopen current file (kill+fork in debugger)",
+		"oo+", "", "Reopen current file in read-write",
+		NULL
+		};
+
+		r_core_cmd_help(core, help_message);
 		break;
 	}
 	return 0;
