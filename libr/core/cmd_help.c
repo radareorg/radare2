@@ -212,32 +212,34 @@ static int cmd_help(void *data, const char *input) {
 		"|  0x33          go to 0x33'\n"
 		);
 		return 0;
-	case '$':
-		r_cons_printf (
-		"|RNum $variables usable in math expressions:\n"
-		"| $$     here (current virtual seek)\n"
-		"| $o     here (current disk io offset)\n"
-		"| $s     file size\n"
-		"| $b     block size\n"
-		"| $w     get word size, 4 if asm.bits=32, 8 if 64, ...\n"
-		"| $c,$r  get width and height of terminal\n"
-		"| $S     section offset\n"
-		"| $SS    section size\n"
-		"| $j     jump address (e.g. jmp 0x10, jz 0x10 => 0x10)\n"
-		"| $f     jump fail address (e.g. jz 0x10 => next instruction)\n"
-		"| $I     number of instructions of current function\n"
-		"| $F     current function size \n"
-		"| $Jn    get nth jump of function\n"
-		"| $Cn    get nth call of function\n"
-		"| $Dn    get nth data reference in function\n"
-		"| $Xn    get nth xref of function\n"
-		"| $m     opcode memory reference (e.g. mov eax,[0x10] => 0x10)\n"
-		"| $v     opcode immediate value (e.g. lui a0,0x8010 => 0x8010)\n"
-		"| $l     opcode length\n"
-		"| $e     1 if end of block, else 0\n"
-		"| ${ev}  get value of eval config variable # TODO: use ?k too\n"
-		"| $?     last comparision value\n"
-		);
+	case '$':{
+		const char* help_msg[] = {
+			"$$", "", "here (current virtual seek)",
+			"$?", "", "last comparision value",
+			"$Cn", "", "get nth call of function",
+			"$Dn", "", "get nth data reference in function",
+			"$F", "", "current function size",
+			"$I", "", "number of instructions of current function",
+			"$Ja", "", "get nth jump of function",
+			"$S", "", "section offset",
+			"$SS", "", "section size",
+			"$Xn", "", "get nth xref of function",
+			"$b", "", "block size",
+			"$c,$r", "", "get width and height of terminal",
+			"$e", "", "1 if end of block, else 0",
+			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
+			"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
+			"$l", "", "opcode length",
+			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
+			"$o", "", "here (current disk io offset)",
+			"$s", "", "file size",
+			"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
+			"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
+			"${ev}", "", "get value of eval config variable", //TODO: use ?k too
+			"RNum", "", " # $variables usable in math expressions",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		}
 		return R_TRUE;
 	case 'V':
 		if (!strcmp (R2_VERSION, GIT_TAP))
@@ -389,44 +391,45 @@ static int cmd_help(void *data, const char *input) {
 					r_core_cmd (core, input+1, 0);
 				break;	
 			}
-			r_cons_printf (
-			"|Usage: ?[?[?]] expression\n"
-			"| ? eip-0x804800    show hex and dec result for this math expr\n"
-			"| ?= eip-0x804800   same as above without user feedback\n"
-			"| ??                show value of operation\n"
-			"| ?? [cmd]          ? == 0 run command when math matches\n"
-			"| ?_ hudfile        load hud menu with given file\n"
-			"| ?b [num]          show binary value of number\n"
-			"| ?b64[-] [str]     encode/decode in base64\n"
-			"| ?B [elem]         show range boundaries like 'e?search.in\n"
-			"| ?d opcode         describe opcode for asm.arch\n"
-			"| ?e string         echo string\n"
-			"| ?f [num] [str]    map each bit of the number as flag string index\n"
-			"| ?h [str]          calculate hash for given string\n"
-			"| ?iy prompt        yesno input prompt\n"
-			"| ?i[ynmkp] arg     prompt for number or Yes,No,Msg,Key,Path and store in $$?\n"
-			"| ?in prompt        yesno input prompt\n"
-			"| ?im message       show message centered in screen\n"
-			"| ?ik               press any key input dialog\n"
-			"| ?l str            returns the length of string (0 if null)\n"
-			"| ?o num            get octal value\n"
-			"| ?p vaddr          get physical address for given virtual address\n"
-			"| ?P paddr          get virtual address for given physical one\n"
-			"| ?r [from] [to]    generate random number between from-to\n"
-			"| ?s from to step   sequence of numbers from to by steps\n"
-			"| ?S addr           return section name of given address\n"
-			"| ?t cmd            returns the time to run a command\n"
-			"| ?u num            get value in human units (KB, MB, GB, TB)\n"
-			"| ?v eip-0x804800   show hex value of math expr\n"
-			"| ?vi rsp-rbp       show decimal value of math expr\n"
-			"| ?V                show library version of r_core\n"
-			"| ?x num|str|-hexst returns the hexpair of number or string\n"
-			"| ?X num|expr       returns the hexadecimal value numeric expr\n"
-			"| ?y [str]          show contents of yank buffer, or set with string\n"
-			"| ?! [cmd]          ? != 0\n"
-			"| ?+ [cmd]          ? > 0\n"
-			"| ?- [cmd]          ? < 0\n"
-			"| ???               show this help\n");
+			const char* help_msg[] = {
+			"Usage: ?[?[?]] expression\n"
+			"?", " eip-0x804800", "show hex and dec result for this math expr",
+			"?!", " [cmd]", "? != 0",
+			"?+", " [cmd]", "? > 0",
+			"?-", " [cmd]", "? < 0",
+			"?=", " eip-0x804800", "hex and dec result for this math expr",
+			"??", "", "show value of operation",
+			"??", " [cmd]", "? == 0 run command when math matches",
+			"?B", " [elem]", "show range boundaries like 'e?search.in",
+			"?P", " paddr", "get virtual address for given physical one",
+			"?S", " addr", "return section name of given address",
+			"?V", "", "show library version of r_core",
+			"?X", " num|expr", "returns the hexadecimal value numeric expr",
+			"?_", " hudfile", "load hud menu with given file",
+			"?b", " [num]", "show binary value of number",
+			"?b64[-]", " [str]", "encode/decode in base64",
+			"?d", " opcode", "describe opcode for asm.arch",
+			"?e", " string", "echo string",
+			"?f", " [num] [str]", "map each bit of the number as flag string index",
+			"?h", " [str]", "calculate hash for given string",
+			"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
+			"?ik", "", "press any key input dialog",
+			"?im", " message", "show message centered in screen",
+			"?in", " prompt", "noyes input prompt",
+			"?iy", " prompt", "yesno input prompt",
+			"?l", " str", "returns the length of string",
+			"?o", " num", "get octal value",
+			"?p", " vaddr", "get physical address for given virtual address",
+			"?r", " [from] [to]", "generate random number between from-to",
+			"?s", " from to step", "sequence of numbers from to by steps",
+			"?t", " cmd", "returns the time to run a command",
+			"?u", " num", "get value in human units (KB, MB, GB, TB)",
+			"?v", " eip-0x804800", "show hex value of math expr",
+			"?vi", " rsp-rbp", "show decimal value of math expr",
+			"?x", " num|str|-hexst", "returns the hexpair of number or string",
+			"?y", " [str]", "show contents of yank buffer, or set with string",
+			NULL};
+			r_core_cmd_help (core, help_msg);
 			return 0;
 		} else
 		if (input[1]) {
