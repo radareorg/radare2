@@ -435,19 +435,22 @@ static int cmd_meta(void *data, const char *input) {
 		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
 	case '\0':
-	case '?':
-		r_cons_strcat (
-			"|Usage: C[-LCvsdfm?] [...]\n"
-		"| C*                              List meta info in r2 commands\n"
-		"| C- [len] [@][ addr]             delete metadata at given address range\n"
-		"| CL[-][*] [file:line] [addr]     show or add 'code line' information (bininfo)\n"
-		"| CC[-] [comment-text]    add/remove comment. Use CC! to edit with $EDITOR\n"
-		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
-		"| Cs[-] [size] [[addr]]   add string\n"
-		"| Ch[-] [size] [@addr]    hide data\n"
-		"| Cd[-] [size]            hexdump data\n"
-		"| Cf[-] [sz] [fmt..]      format memory (see pf?)\n"
-		"| Cm[-] [sz] [fmt..]      magic parse (see pm?)\n");
+	case '?':{
+			const char* help_msg[] = {
+				"Usage:", "C[-LCvsdfm?] [...]", " # Metadata management",
+				"C*", "", "list meta info in r2 commands",
+				"C-", " [len] [@][ addr]", "delete metadata at given address range",
+				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
+				"CC", "[-] [comment-text]", "add/remove comment. Use CC! to edit with $EDITOR",
+				"CCa", "[-at]|[at] [text]", "add/remove comment at given address",
+				"Cs", "[-] [size] [[addr]]", "add string",
+				"Ch", "[-] [size] [@addr]", "hide data",
+				"Cd", "[-] [size]", "hexdump data",
+				"Cf", "[-] [sz] [fmt..]", "format memory (see pf?)",
+				"Cm", "[-] [sz] [fmt..]", "magic parse (see pm?)",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 		break;
 	case 'F':
 		f = r_anal_fcn_find (core->anal, core->offset,

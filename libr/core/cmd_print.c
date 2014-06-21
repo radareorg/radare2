@@ -539,11 +539,15 @@ static int cmd_print(void *data, const char *input) {
 		as = r_core_anal_get_stats (core, from, to, piece);
 		//eprintf ("RANGE = %llx %llx\n", from, to);
 		switch (mode) {
-		case '?':
-			r_cons_printf ("Usage: p%%[jh] [pieces]\n");
-			r_cons_printf (" pv   show ascii-art bar of metadata in file boundaries\n");
-			r_cons_printf (" pvj  show json format\n");
-			r_cons_printf (" pvh  show histogram analysis of metadata per block\n");
+		case '?':{
+			const char* help_msg[] = {
+				"Usage:", "p%%[jh] [pieces]", "bar|json|histogram blocks",
+				"pv", "", "show ascii-art bar of metadata in file boundaries",
+				"pvj", "", "show json format",
+				"pvh", "", "show histogram analysis of metadata per block",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			return 0;
 		case 'j':
 			r_cons_printf (
@@ -657,12 +661,16 @@ static int cmd_print(void *data, const char *input) {
 			obsz = 0LL;
 		}
 		switch (input[1]) {
-		case '?': // bars
-			eprintf ("|Usage: p=[bep?] [num-of-blocks]\n"
-			"| p=   print bytes of current block in bars\n"
-			"| p=b  same as above\n"
-			"| p=e  print entropy for each filesize/blocksize\n"
-			"| p=p  print number of printable bytes for each filesize/blocksize\n");
+		case '?':{ // bars
+			const char* help_msg[] = {
+			"Usage:", "p=[bep?] [num-of-blocks]", "show entropy/printable chars/chars bars", 
+			"p=", "", "print bytes of current block in bars",
+			"p=", "b", "same as above",
+			"p=", "e", "print entropy for each filesize/blocksize",
+			"p=", "p", "print number of printable bytes for each filesize/blocksize",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case 'e': // entropy
 			{
@@ -1132,18 +1140,21 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?':
 			processed_cmd = R_TRUE;
-			eprintf ("|Usage: pd[f|i|l] [len] [arch] [bits] @ [addr]\n"
-			"|NOTE: len parameter can be negative\n"
-			//TODO: eprintf ("|  pdr  : disassemble resume\n");
-			"|  pda  disassemble all possible opcodes (byte per byte)\n"
-			"|  pdj  disassemble to json\n"
-			"|  pdb  disassemble basic block\n"
-			"|  pdr  recursive disassemble across the function graph\n"
-			"|  pdf  disassemble function\n"
-			"|  pdi  like 'pi', with offset and bytes\n"
-			"|  pdn  disassemble N bytes (like pdi)\n"
-			"|  pdl  show instruction sizes\n"
-			"|  pds  disassemble with back sweep (greedy disassembly backwards)\n");
+			const char* help_msg[] = {
+				"Usage:", "pd[f|i|l] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
+				"NOTE:", "len", "parameter can be negative",
+				//"pdr", "", "disassemble resume",
+				"pda", "", "disassemble all possible opcodes (byte per byte)",
+				"pdj", "", "disassemble to json",
+				"pdb", "", "disassemble basic block",
+				"pdr", "", "recursive disassemble across the function graph",
+				"pdf", "", "disassemble function",
+				"pdi", "", "like 'pi', with offset and bytes",
+				"pdn", "", "disassemble N bytes (like pdi)",
+				"pdl", "", "show instruction sizes",
+				"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
+				NULL};
+				r_core_cmd_help (core, help_msg);
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
@@ -1216,15 +1227,19 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 's':
 		switch (input[1]) {
-		case '?':
-			r_cons_printf ("|Usage: ps[zpw] [N]\n"
-				"| ps  = print string\n"
-				"| psi = print string inside curseek\n"
-				"| psb = print strings in current block\n"
-				"| psx = show string with scaped chars\n"
-				"| psz = print zero terminated string\n"
-				"| psp = print pascal string\n"
-				"| psw = print wide string\n");
+		case '?':{
+			const char* help_msg[] = {
+				"Usage:", "ps[zpw] [N]", "Print String",
+				"ps", "", "print string",
+				"psi", "", "print string inside curseek", 
+				"psb", "", "print strings in current block", 
+				"psx", "", "show string with scaped chars", 
+				"psz", "", "print zero terminated string", 
+				"psp", "", "print pascal string", 
+				"psw", "", "print wide string",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case 'i':
 			{
@@ -1773,28 +1788,33 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_cons_printf (
-		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
-		"| p=[bep?] [blks]  show entropy/printable chars/chars bars\n"
-		"| p2 [len]         8x8 2bpp-tiles\n"
-		"| p6[de] [len]     base64 decode/encode\n"
-		"| p8 [len]         8bit hexpair list of bytes\n"
-		"| pa[ed] [hex|asm] assemble (pa) or disasm (pad) or esil (pae) from hexpairs\n"
-		"| p[bB] [len]      bitstream of N bytes\n"
-		"| pc[p] [len]      output C (or python) format\n"
-		"| p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
-		"| pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
-		"| p[iI][df] [len]  print N instructions/bytes (f=func) (see pi? and pdi)\n"
-		"| pm [magic]       print libmagic data (pm? for more information)\n"
-		"| pr [len]         print N raw bytes\n"
-		"| p[kK] [len]      print key in randomart (K is for mosaic)\n"
-		"| ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
-		"| pt[dn?] [len]    print different timestamps\n"
-		"| pu[w] [len]      print N url encoded bytes (w=wide)\n"
-		"| pv[jh] [mode]	   bar|json|histogram blocks (mode: e?search.in)\n"
-		"| p[xX][owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
-		"| pz [len]         print zoom view (see pz? for help)\n"
-		"| pwd              display current working directory\n");
+	{
+		const char* help_msg[] = {
+		"Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
+		"p=","[bep?] [blks]","show entropy/printable chars/chars bars",
+		"p2"," [len]","8x8 2bpp-tiles",
+		"p6","[de] [len]", "base64 decode/encode",
+		"p8"," [len]","8bit hexpair list of bytes",
+		"pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
+		"p","[bB] [len]","bitstream of N bytes",
+		"pc","[p] [len]","output C (or python) format",
+		"p","[dD][lf] [l]","disassemble N opcodes/bytes (see pd?)",
+		"pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
+		"p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
+		"pm"," [magic]","print libmagic data (pm? for more information)",
+		"pr"," [len]","print N raw bytes",
+		"p","[kK] [len]","print key in randomart (K is for mosaic)",
+		"ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
+		"pt","[dn?] [len]","print different timestamps",
+		"pu","[w] [len]","print N url encoded bytes (w=wide)",
+		"pv","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
+		"p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+		"pz"," [len]","print zoom view (see pz? for help)",
+		"pwd","","display current working directory",
+			NULL
+			};
+			r_core_cmd_help(core, help_msg);
+	}
 		break;
 	}
 	if (tbs != core->blocksize)

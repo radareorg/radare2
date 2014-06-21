@@ -441,7 +441,7 @@ static int cmd_help(void *data, const char *input) {
 		"*", "off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
 		"$alias", "=value", "Alias commands (simple macros)",
 		"(macro arg0 arg1)",  "", "Manage scripting macros",
-		".", "[-|(macro)|file|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
+		".", "[-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 		"="," [cmd]", "Run this command via rap://",
 		"/","", "Search for bytes, regexps, patterns, ..",
 		"!"," [cmd]", "Run given command as in system(3)",

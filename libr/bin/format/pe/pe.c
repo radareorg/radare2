@@ -366,14 +366,17 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		// asume 1 entry for each
 		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
 	}
+	int maxidsz = R_MIN (bin->size, import_dir_offset+import_dir_size);
+	maxidsz -= import_dir_offset;
+	if (maxidsz<0) maxidsz = 0;
+	//int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
 
 	if (import_dir_paddr != 0) {
-		if (import_dir_size<1 || import_dir_size>0xffff) {
+		if (import_dir_size<1 || import_dir_size>maxidsz) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n",
 				import_dir_size);
-			import_dir_size = 0xffff;
+			import_dir_size = maxidsz;
 		}
-
 		do {
 			indx++;
 			import_dir = (PE_(image_import_directory) *)realloc (
@@ -393,6 +396,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		} while ((curr_import_dir->Characteristics != 0) && (curr_import_dir->Name != 0));
 
 		bin->import_directory = import_dir;
+		bin->import_directory_size = import_dir_size;
 	}
 
 	indx = 0;
@@ -737,6 +741,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	if (bin->import_directory) {
 		curr_import_dir = bin->import_directory;
 		dll_name_offset = curr_import_dir->Name;
+		void *last = curr_import_dir + bin->import_directory_size;
 		while ((curr_import_dir->Characteristics != 0) && (dll_name_offset != 0)) {
 			dll_name_offset = curr_import_dir->Name;
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
@@ -748,6 +753,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 					curr_import_dir->Characteristics, curr_import_dir->FirstThunk))
 				break;
 			curr_import_dir++;
+			if ((void*)curr_import_dir>= last) { 
+				eprintf ("EOF\n");
+				break;
+			}
 		}
 	}
 
@@ -799,15 +808,19 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	if (!bin)
 		return NULL;
+import_dirs_count = bin->import_directory_size /sizeof(struct r_bin_pe_import_t);;
 	/* NOTE: import_dirs and delay_import_dirs can be -1 */
-	mallocsz = (import_dirs_count + delay_import_dirs_count + 3) * \
+	mallocsz = (import_dirs_count + delay_import_dirs_count + 4) * \
 		sizeof (struct r_bin_pe_lib_t);
 	if (mallocsz<1) {
 		//eprintf ("pe: Invalid libsize\n");
 		return NULL;
 	}
-	if (mallocsz>bin->size)
-		mallocsz = bin->size;
+#if 1
+	if (mallocsz>bin->size) {
+		mallocsz = bin->size + sizeof (struct r_bin_pe_lib_t);
+	}
+#endif
 	libs = malloc (mallocsz);
 	if (!libs) {
 		r_sys_perror ("malloc (libs)");
@@ -822,7 +835,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->import_directory[i].Name),
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
-				eprintf("Error: read (libs - import dirs)\n");
+				eprintf ("Error: read (libs - import dirs)\n");
 				free (libs);
 				return NULL;
 			}
@@ -834,9 +847,11 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				break;
 
 			if (bin->delay_import_directory[i].Attributes == 0) {
-				delay_import_name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].Name - PE_(r_bin_pe_get_image_base)(bin));
+				delay_import_name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin,
+					bin->delay_import_directory[i].Name - PE_(r_bin_pe_get_image_base)(bin));
 			} else {
-				delay_import_name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->delay_import_directory[i].Name);
+				delay_import_name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin,
+					bin->delay_import_directory[i].Name);
 			}
 
 			if (r_buf_read_at (bin->b, delay_import_name_off,
@@ -864,62 +879,34 @@ char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 	if (bin && bin->nt_headers)
 	switch (bin->nt_headers->file_header.Machine) {
-	case PE_IMAGE_FILE_MACHINE_ALPHA:
-		machine = "Alpha"; break;
-	case PE_IMAGE_FILE_MACHINE_ALPHA64:
-		machine = "Alpha 64"; break;
-	case PE_IMAGE_FILE_MACHINE_AM33:
-		machine = "AM33"; break;
-	case PE_IMAGE_FILE_MACHINE_AMD64:
-		machine = "AMD 64"; break;
-	case PE_IMAGE_FILE_MACHINE_ARM:
-		machine = "ARM"; break;
-	case PE_IMAGE_FILE_MACHINE_CEE:
-		machine = "CEE"; break;
-	case PE_IMAGE_FILE_MACHINE_CEF:
-		machine = "CEF"; break;
-	case PE_IMAGE_FILE_MACHINE_EBC:
-		machine = "EBC"; break;
-	case PE_IMAGE_FILE_MACHINE_I386:
-		machine = "i386"; break;
-	case PE_IMAGE_FILE_MACHINE_IA64:
-		machine = "ia64"; break;
-	case PE_IMAGE_FILE_MACHINE_M32R:
-		machine = "M32R"; break;
-	case PE_IMAGE_FILE_MACHINE_M68K:
-		machine = "M68K"; break;
-	case PE_IMAGE_FILE_MACHINE_MIPS16:
-		machine = "Mips 16"; break;
-	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
-		machine = "Mips FPU"; break;
-	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
-		machine = "Mips FPU 16"; break;
-	case PE_IMAGE_FILE_MACHINE_POWERPC:
-		machine = "PowerPC"; break;
-	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
-		machine = "PowerPC FP"; break;
-	case PE_IMAGE_FILE_MACHINE_R10000:
-		machine = "R10000"; break;
-	case PE_IMAGE_FILE_MACHINE_R3000:
-		machine = "R3000"; break;
-	case PE_IMAGE_FILE_MACHINE_R4000:
-		machine = "R4000"; break;
-	case PE_IMAGE_FILE_MACHINE_SH3:
-		machine = "SH3"; break;
-	case PE_IMAGE_FILE_MACHINE_SH3DSP:
-		machine = "SH3DSP"; break;
-	case PE_IMAGE_FILE_MACHINE_SH3E:
-		machine = "SH3E"; break;
-	case PE_IMAGE_FILE_MACHINE_SH4:
-		machine = "SH4"; break;
-	case PE_IMAGE_FILE_MACHINE_SH5:
-		machine = "SH5"; break;
-	case PE_IMAGE_FILE_MACHINE_THUMB:
-		machine = "Thumb"; break;
-	case PE_IMAGE_FILE_MACHINE_TRICORE:
-		machine = "Tricore"; break;
-	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		machine = "WCE Mips V2"; break;
+	case PE_IMAGE_FILE_MACHINE_ALPHA: machine = "Alpha"; break;
+	case PE_IMAGE_FILE_MACHINE_ALPHA64: machine = "Alpha 64"; break;
+	case PE_IMAGE_FILE_MACHINE_AM33: machine = "AM33"; break;
+	case PE_IMAGE_FILE_MACHINE_AMD64: machine = "AMD 64"; break;
+	case PE_IMAGE_FILE_MACHINE_ARM: machine = "ARM"; break;
+	case PE_IMAGE_FILE_MACHINE_CEE: machine = "CEE"; break;
+	case PE_IMAGE_FILE_MACHINE_CEF: machine = "CEF"; break;
+	case PE_IMAGE_FILE_MACHINE_EBC: machine = "EBC"; break;
+	case PE_IMAGE_FILE_MACHINE_I386: machine = "i386"; break;
+	case PE_IMAGE_FILE_MACHINE_IA64: machine = "ia64"; break;
+	case PE_IMAGE_FILE_MACHINE_M32R: machine = "M32R"; break;
+	case PE_IMAGE_FILE_MACHINE_M68K: machine = "M68K"; break;
+	case PE_IMAGE_FILE_MACHINE_MIPS16: machine = "Mips 16"; break;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU: machine = "Mips FPU"; break;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU16: machine = "Mips FPU 16"; break;
+	case PE_IMAGE_FILE_MACHINE_POWERPC: machine = "PowerPC"; break;
+	case PE_IMAGE_FILE_MACHINE_POWERPCFP: machine = "PowerPC FP"; break;
+	case PE_IMAGE_FILE_MACHINE_R10000: machine = "R10000"; break;
+	case PE_IMAGE_FILE_MACHINE_R3000: machine = "R3000"; break;
+	case PE_IMAGE_FILE_MACHINE_R4000: machine = "R4000"; break;
+	case PE_IMAGE_FILE_MACHINE_SH3: machine = "SH3"; break;
+	case PE_IMAGE_FILE_MACHINE_SH3DSP: machine = "SH3DSP"; break;
+	case PE_IMAGE_FILE_MACHINE_SH3E: machine = "SH3E"; break;
+	case PE_IMAGE_FILE_MACHINE_SH4: machine = "SH4"; break;
+	case PE_IMAGE_FILE_MACHINE_SH5: machine = "SH5"; break;
+	case PE_IMAGE_FILE_MACHINE_THUMB: machine = "Thumb"; break;
+	case PE_IMAGE_FILE_MACHINE_TRICORE: machine = "Tricore"; break;
+	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: machine = "WCE Mips V2"; break;
 	default: machine = "unknown";
 	}
 	return machine? strdup (machine): NULL;
@@ -932,7 +919,7 @@ char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin) {
 		return NULL;
 	switch (bin->nt_headers->optional_header.Subsystem) {
 	case PE_IMAGE_SUBSYSTEM_NATIVE:
-		os = strdup("native");
+		os = strdup ("native");
 		break;
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
@@ -960,32 +947,22 @@ char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 // TODO: make it const
 char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin) {
-	if (!bin || !bin->nt_headers)
-		return NULL;
+	if (bin && bin->nt_headers)
 	switch (bin->nt_headers->optional_header.Magic) {
-	case PE_IMAGE_FILE_TYPE_PE32:
-		return strdup("PE32");
-	case PE_IMAGE_FILE_TYPE_PE32PLUS:
-		return strdup("PE32+");
-	default:
-		return strdup("Unknown");
+	case PE_IMAGE_FILE_TYPE_PE32: return strdup("PE32");
+	case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("PE32+");
+	default: return strdup("Unknown");
 	}
 	return NULL;
 }
 
 int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin) {
-	int bits;
-	if (!bin || !bin->nt_headers)
-		return 32;
+	int bits = 32;
+	if (bin && bin->nt_headers)
 	switch (bin->nt_headers->optional_header.Magic) {
-	case PE_IMAGE_FILE_TYPE_PE32:
-		bits = 32;
-		break;
-	case PE_IMAGE_FILE_TYPE_PE32PLUS:
-		bits = 64;
-		break;
-	default:
-		bits = -1;
+	case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
+	case PE_IMAGE_FILE_TYPE_PE32PLUS: bits = 64; break;
+	default: bits = -1;
 	}
 	return bits;
 }

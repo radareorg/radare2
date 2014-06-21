@@ -161,6 +161,7 @@ sub insn_parse_opcode
 		DD SS
 		dd ss
 		tt t
+		uu u
 		cc
 		vv
 		mm
@@ -168,7 +169,6 @@ sub insn_parse_opcode
 		U
 		%
 		r
-		u
 		g
 	);
 

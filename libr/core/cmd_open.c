@@ -255,20 +255,26 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '?':
 	default:
-		r_cons_printf ("|Usage: o[com- ] [file] ([offset])\n"
-		"| o                  list opened files\n"
-		"| oc [file]          open core file, like relaunching r2\n"
-		"| oo                 reopen current file (kill+fork in debugger)\n"
-		"| oo+                reopen current file in read-write\n"
-		"| o 4                priorize io on fd 4 (bring to front)\n"
-		"| o-1                close file index 1\n"
-		"| o /bin/ls          open /bin/ls file in read-only\n"
-		"| o+/bin/ls          open /bin/ls file in read-write mode\n"
-		"| o /bin/ls 0x4000   map file at 0x4000\n"
-		"| on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
-		"| ob                 list open binary files bascked by fd\n"
-		"| ob 4               priorize io and fd on 4 (bring to binfile to front)\n"
-		"| om[?]              create, list, remove IO maps\n");
+		{
+		const char *help_msg[] = {
+		"Usage: o","[com- ] [file] ([offset])","",
+		"o","","list opened files",
+		"oc"," [file]","open core file, like relaunching r2",
+		"oo","","reopen current file (kill+fork in debugger)",
+		"oo","+","reopen current file in read-write",
+		"o"," 4","priorize io on fd 4 (bring to front)",
+		"o","-1","close file descriptor 1",
+		"o"," /bin/ls","open /bin/ls file in read-only",
+		"o","+/bin/ls","open /bin/ls file in read-write mode",
+		"o"," /bin/ls 0x4000","map file at 0x4000",
+		"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
+		"ob","","list open binary files bascked by fd",
+		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
+		"om","[?]","create, list, remove IO maps",
+		NULL
+		};
+		r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	return 0;

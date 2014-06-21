@@ -290,22 +290,23 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 }
 
 R_API void r_core_rtr_help(RCore *core) {
-	r_cons_printf (
-	"|Usage: =[:!+-=hH] [...]   # radare remote command execution protocol\n"
-	"| =:port              listen on given port using rap protocol (o rap://9999)\n"
-	"| =:host:port cmd     run 'cmd' command on remote server.\n"
-	"|rap commands:\n"
-	"| =                   list all open connections\n"
-	//"| =:port [cmd]      ; same as .: but allow to send command if cmd\n"
-	"| =<[fd] cmd          send output of local command to remote fd\n"
-	"| =[fd] cmd           exec cmd at remote 'fd' (last open is default one)\n"
-	"| =! cmd              run command via r_io_system\n"
-	"| =+ [proto://]host   add host (default=rap://, tcp://, udp://)\n"
-	"| =-[fd]              remove all hosts or host 'fd'\n"
-	"| ==[fd]              open remote session with host 'fd', 'q' to quit\n"
-	"|http server:\n"
-	"| =h                  listen for http connections (r2 -qc=H /bin/ls)\n"
-	"| =H                  launch browser and listen for http\n");
+	const char* help_msg[] = {
+	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
+	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
+	"=", ":host:port cmd", "run 'cmd' command on remote server",
+	"\nrap commands:", "", "",
+	"=", "", "list all open connections",
+	"=<", "[fd] cmd", "send output of local command to remote fd",
+	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
+	"=!", " cmd", "run command via r_io_system",
+	"=+", " [proto://]host", "add host (default=rap://, tcp://, udp://)",
+	"=-", "[fd]", "remove all hosts or host 'fd'",
+	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
+	"\nhttp server:", "", "",
+	"=h", "", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=H", "", "launch browser and listen for http",
+	NULL};
+	r_core_cmd_help (core, help_msg);
 }
 
 R_API void r_core_rtr_pushout(RCore *core, const char *input) {

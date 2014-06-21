@@ -70,6 +70,7 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_export_directory)       *export_directory;
 	PE_(image_import_directory)       *import_directory;
 	PE_(image_delay_import_directory) *delay_import_directory;
+	int import_directory_size;
 	int size;
 	int endian;
 	RList *relocs;

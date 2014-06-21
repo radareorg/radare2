@@ -14,7 +14,7 @@
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 // TODO scale and disp
 
-const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		sprintf (buf, "%s",

@@ -22,6 +22,27 @@ to create a single static library, so you can use a single library
 archive (.a) to link your programs and get your programs using radare
 framework libraries without depending on them.
 
+The following presentation gives a good overview of the libraries:
+
+   http://radare.org/get/lacon-radare-2009/
+
+API
+---
+As mentioned in README.md, the API itself is maintained in a different
+repository. The API function definitions in C header files are derived
+from and documented in the radare2-bindings repository, found at:
+
+   git clone git://github.com/radare/radare2-bindings
+
+Currently the process of updating the header files from changed API
+bindings requires human intervention, to ensure that proper review
+occurs.  Incorrect definitions in the C header files will trigger
+a build failure in the bindings repository.
+
+If you are able to write a plugin for various IDE that can associate
+the bindings with the header files, such a contribution would be
+very welcome.
+
 DEPENDENCIES
 ------------
 radare2 can be built without any special dependency. It just requires
@@ -100,8 +121,10 @@ following github repository.
 
    git clone git://github.com/radare/radare2-regressions
 
-
 See the README.md file in that repository for further information.
+
+The existing test coverage can always do with improvement, so if you can
+contribute additions tests that would be gratefully accepted.
 
 REPORTING BUGS
 --------------

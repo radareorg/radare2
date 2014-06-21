@@ -251,7 +251,7 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 0) {
+	if (buf && length >= 2) {
 		if (coff_supported_arch(buf))
 			return R_TRUE;
 	}

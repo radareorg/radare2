@@ -21,6 +21,7 @@ static int cmd_write(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
 	const char *arg;
+	const char *filename;
 	ut64 off;
 	ut8 *buf;
 	st64 num;
@@ -341,14 +342,18 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core, 0);
 			break;
 		case '?':
-			r_cons_printf (
-			"|Usage: wc[ir*?]\n"
-			"| wc           list all write changes\n"
-			"| wc- [a] [b]  remove write op at curseek or given addr\n"
-			"| wc*          \"\" in radare commands\n"
-			"| wcr          reset all write changes in cache\n"
-			"| wci          commit write cache\n"
-			"|NOTE: Requires 'e io.cache=true'\n");
+	{
+                const char* help_msg[] = {
+			"Usage:", "wc[ir*?]","  # Note: requires io.cache=true",
+			"wc","","list all write changes",
+			"wc-"," [a] [b]","remove write op at curseek or given addr",
+			"wc*","","\"\" in radare commands",
+			"wcr","","reset all write changes in cache",
+			"wci","","commit write cache",
+                        NULL
+                        };
+                        r_core_cmd_help(core, help_msg);
+        }
 			break;
 		case '*':
 			r_io_cache_list (core->io, R_TRUE);
@@ -372,17 +377,24 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 't':
-		if (*str != ' ') {
+		if (*str == '?') {
 			eprintf ("Usage: wt file [size]\n");
-		} else {
-			tmp = strchr (str+1, ' ');
-			if (tmp) {
-				st64 sz = (st64) r_num_math (core->num, tmp+1);
-				*tmp = 0;
-				if (sz<1) eprintf ("Invalid length\n");
-				else r_core_dump (core, str+1, core->offset, (ut64)sz);
-			} else r_file_dump (str+1, core->block, core->blocksize);
-		}
+			return 0;
+		} else
+		if (*str != ' ') {
+			char _fn[32];
+			snprintf(_fn, sizeof(_fn), "dump.0x%08"PFMT64x, core->offset);
+			filename = _fn;
+		}  else filename = str+1;
+		tmp = strchr (str+1, ' ');
+		if (tmp) {
+			st64 sz = (st64) r_num_math (core->num, tmp+1);
+			*tmp = 0;
+			if (sz<1) eprintf ("Invalid length\n");
+			else r_core_dump (core, filename, core->offset, (ut64)sz);
+		} else r_file_dump (filename, core->block, core->blocksize);
+		eprintf ("Dump %d bytes from 0x%08"PFMT64x" into %s\n",
+			core->blocksize, core->offset, filename);
 		break;
 	case 'T':
 		eprintf ("TODO: wT // why?\n");
@@ -722,31 +734,35 @@ static int cmd_write(void *data, const char *input) {
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core, 0);
-		} else r_cons_printf (
-			"|Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
-			"| w[1248][+-][n] increment/decrement byte,word..\n"
-			"| w foobar     write string 'foobar'\n"
-			"| wh r2        whereis/which shell command\n"
-			"| wr 10        write 10 random bytes\n"
-			"| ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
-			"| wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
-			"| waf file     assemble file and write bytes\n"
-			"| wA r 0       alter/modify opcode at current seek (see wA?)\n"
-			"| wb 010203    fill current block with cyclic hexpairs\n"
-			"| wc[ir*?]     write cache undo/commit/reset/list (io.cache)\n"
-			"| wd [off] [n] duplicate N bytes from offset at current seek (memcpy) (see y?)\n"
-			"| wx 9090      write two intel nops\n"
-			"| wv eip+34    write 32-64 bit value\n"
-			"| wo? hex      write in block with operation. 'wo?' fmi\n"
-			"| wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
-			"| ws pstring   write 1 byte for length and then the string\n"
-			"| wf -|file    write contents of file at current offset\n"
-			"| wF -|file    write contents of hexpairs file here\n"
-			"| wp -|file    apply radare patch file. See wp? fmi\n"
-			"| wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
-			);
-			//TODO: add support for offset+seek
-			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
+		} else {
+
+                const char* help_msg[] = {
+			"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
+			"wc","","list all write changes",
+			"w","[1248][+-][n]","increment/decrement byte,word..",
+			"w"," foobar","write string 'foobar'",
+			"wh"," r2","whereis/which shell command",
+			"wr"," 10","write 10 random bytes",
+			"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
+			"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
+			"waf"," file","assemble file and write bytes",
+			"wA"," r 0","alter/modify opcode at current seek (see wA?)",
+			"wb"," 010203","fill current block with cyclic hexpairs",
+			"wc","[ir*?]","write cache undo/commit/reset/list (io.cache)",
+			"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
+			"wx"," 9090","write two intel nops",
+			"wv"," eip+34","write 32-64 bit value",
+			"wo?"," hex","write in block with operation. 'wo?' fmi",
+			"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
+			"ws"," pstring","write 1 byte for length and then the string",
+			"wf"," -|file","write contents of file at current offset",
+			"wF"," -|file","write contents of hexpairs file here",
+			"wp"," -|file","apply radare patch file. See wp? fmi",
+			"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
+                        NULL
+                        };
+                        r_core_cmd_help(core, help_msg);
+        }
 		break;
 	}
 	free (ostr);

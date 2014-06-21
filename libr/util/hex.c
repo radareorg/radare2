@@ -118,6 +118,8 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 					ptr++;
 				j = 0;
 			}
+			/* Go back one character, the loop head does ptr++. */
+			ptr--;
 			continue;
 		}
 		if (r_hex_to_byte (&c, ptr[0])) {

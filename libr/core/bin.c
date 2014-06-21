@@ -690,10 +690,10 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 				r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->vaddr:import->paddr);*/
 			} else if (import->classname[0] != 0) {
-				r_cons_printf ("ordinal=%03"PFMT64d" plt=0x%08"PFMT64x" bind=%s type=%s classname=%s name=%s descriptor=%s\n",
+				r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s classname=%s name=%s descriptor=%s\n",
 					import->ordinal, addr,
 					import->bind, import->type, import->classname, import->name, import->descriptor);
-			} else r_cons_printf ("ordinal=%03"PFMT64d" plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
+			} else r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
 					import->ordinal, addr,
 					import->bind, import->type, import->name);
 			i++;
