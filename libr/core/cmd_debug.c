@@ -467,7 +467,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			//r_reg_get_value (core->dbg->reg, r));
 		} else {
 			const char * help_message[] = {
-				"|Usage: dr", "", "Registers commands",
+				"Usage: dr", "", "Registers commands",
 				"dr", "", "Show 'gpr' registers",
 				"dr", " 16", "Show 16 bit registers",
 				"dr", " 32", "Show 32 bit registers",
