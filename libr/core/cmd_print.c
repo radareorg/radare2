@@ -1382,20 +1382,23 @@ static int cmd_print(void *data, const char *input) {
 		case '/':
 			r_core_print_examine (core, input+2);
 			break;
-		case '?':
-			eprintf ("|Usage: px[afoswqWqQ][f]\n"
-				"| px     show hexdump\n"
-				"| px/    same as x/ in gdb (help x)\n"
-				"| pxa    show annotated hexdump\n"
-				"| pxe    emoji hexdump! :)\n"
-				"| pxf    show hexdump of current function\n"
-				"| pxo    show octal dump\n"
-				"| pxq    show hexadecimal quad-words dump (64bit)\n"
-				"| pxs    show hexadecimal in sparse mode\n"
-				"| pxQ    same as above, but one per line\n"
-				"| pxw    show hexadecimal words dump (32bit)\n"
-				"| pxW    same as above, but one per line\n"
-				);
+		case '?':{
+			const char* help_msg[] = {
+				"Usage:", "px[afoswqWqQ][f]", " # Print heXadecimal",
+				"px",  "", "show hexdump",
+				"px/", "", "same as x/ in gdb (help x)",
+				"pxa", "", "show annotated hexdump",
+				"pxe", "", "emoji hexdump! :)",
+				"pxf", "", "show hexdump of current function",
+				"pxo", "", "show octal dump",
+				"pxq", "", "show hexadecimal quad-words dump (64bit)",
+				"pxs", "", "show hexadecimal in sparse mode",
+				"pxQ", "", "same as above, but one per line",
+				"pxw", "", "show hexadecimal words dump (32bit)",
+				"pxW", "", "same as above, but one per line",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case 'a':
 			if (len%16)
