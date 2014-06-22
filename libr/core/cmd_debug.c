@@ -1057,7 +1057,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dd", " <file>", "Open and map that file into the UI",
 				"dd-", "<fd>", "Close stdout fd",
 				"dd*", "", "List file descriptors (in radare commands)",
-				NLL
+				NULL
 			};
 			r_core_cmd_help (core, help_message);
 			}
@@ -1205,7 +1205,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dco", " <num>", "Step over <num> instructions",
 				"dcp", "", "Continue until program code (mapped io section)",
 				"dcr", "", "Continue until ret (uses step over)",
-				"dcs", " <num>"¸ "Continue until syscall",
+				"dcs", " <num>", "Continue until syscall",
 				"dct", " <len>", "Traptrace from curseek to len, no argument to list",
 				"dcu", " [addr]", "Continue until address",
 				"dcu", " <address> [end]", "Continue until given address range",
