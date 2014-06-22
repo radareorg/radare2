@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
 	}
 	
 	eprintf ("http://localhost:%d/\n", s->port);
-	if (r_sandbox_enable (dosandbox)) {
-		eprintf ("sandbox: connect disabled\n");
+	if (!r_sandbox_enable (dosandbox)) {
+		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
 	while (!r_cons_singleton ()->breaked) {
