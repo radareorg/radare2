@@ -9,7 +9,6 @@ OBJS+=list.o flist.o ht.o ht64.o mixed.o btree.o chmod.o graph.o lib.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o lock.o strpool.o bitmap.o strht.o
 OBJS+=p_date.o p_format.o print.o p_seven.o slist.o randomart.o strbuf.o
-OBJS+=safe_int.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)
