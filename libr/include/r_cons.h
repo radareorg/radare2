@@ -267,7 +267,8 @@ R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
 R_API RCons *r_cons_free ();
 
-R_API void r_cons_break(void (*cb)(void *u), void *user);
+typedef void (*RConsBreak)(void *);
+R_API void r_cons_break(RConsBreak cb, void *user);
 R_API void r_cons_break_end();
 
 /* pipe */

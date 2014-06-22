@@ -39,6 +39,22 @@ SECURITY IMPLICATIONS
 - follow symlinks
 #endif
 
+static char *rtr_dir_files (const char *path) {
+	char *ptr = strdup ("<html><body>\n");
+	const char *file;
+	RListIter *iter;
+	// list files
+	RList *files = r_sys_dir (path);
+	eprintf ("Listing directory %s\n", path);
+	r_list_foreach (files, iter, file) {
+		if (file[0] == '.') continue;
+		ptr = r_str_concatf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
+			path, file, file);
+	}
+	r_list_free (files);
+	return r_str_concat (ptr, "</body></html>\n");
+}
+
 R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	char buf[32];
 	RSocketHTTPRequest *rs;
@@ -95,7 +111,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	eprintf ("http://localhost:%d/\n", atoi (port));
 	core->http_up = R_TRUE;
 	while (!r_cons_singleton ()->breaked) {
-		r_cons_break (http_break, core);
+		r_cons_break ((RConsBreak)http_break, core);
 		rs = r_socket_http_accept (s, timeout);
 		if (!rs) {
 			if (!s) break;
@@ -131,25 +147,19 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			r_socket_http_close (rs);
 			continue;
 		}
+		char *dir = NULL;
+
+		if (r_config_get_i (core->config, "http.dirlist"))
+			if (r_file_is_directory (rs->path))
+				dir = strdup (rs->path);
 		if (!strcmp (rs->method, "GET")) {
 			if (!memcmp (rs->path, "/up", 3)) {
 				if (r_config_get_i (core->config, "http.upget")) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
 					if (!rs->path[3] || (rs->path[3]=='/'&&!rs->path[4])) {
-						char *ptr = strdup ("<html><body>\n");
-						const char *file;
-						RListIter *iter;
-						// list files
-						RList *files = r_sys_dir (uproot);
-						eprintf ("Listing directory %s\n", uproot);
-						r_list_foreach (files, iter, file) {
-							if (file[0] == '.') continue;
-							ptr = r_str_concatf (ptr, "<a href=\"/up/%s\">%s</a><br />\n",
-								file, file);
-						}
-						r_list_free (files);
-						ptr = r_str_concat (ptr, "<html><body>\n");
+						char *ptr = rtr_dir_files (uproot);
 						r_socket_http_response (rs, 200, ptr, 0, NULL);
+						free (ptr);
 					} else {
 						char *path = r_file_root (uproot, rs->path + 4);
 						if (r_file_exists (path)) {
@@ -163,8 +173,14 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 								eprintf ("http: Cannot open '%s'\n", path);
 							}
 						} else {
-							eprintf ("File '%s' not found\n", path);
-							r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+							if (dir) {
+								char *resp = rtr_dir_files (dir);
+								r_socket_http_response (rs, 404, resp, 0, NULL);
+								free (resp);
+							} else {
+								eprintf ("File '%s' not found\n", path);
+								r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+							}
 						}
 						free (path);
 					}
@@ -203,9 +219,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 				}
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
-				char *path;
-				path = r_file_root (root, rs->path);
-
+				char *path = r_file_root (root, rs->path);
 				// FD IS OK HERE
 				if (rs->path [strlen (rs->path)-1] == '/') {
 					path = r_str_concat (path, "index.html");
@@ -238,8 +252,15 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 						eprintf ("http: Cannot open '%s'\n", path);
 					}
 				} else {
-					eprintf ("File '%s' not found\n", path);
-					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+					if (dir) {
+						char *resp = rtr_dir_files (dir);
+						eprintf ("Dirlisting %s\n", dir);
+						r_socket_http_response (rs, 404, resp, 0, NULL);
+						free (resp);
+					} else {
+						eprintf ("File '%s' not found\n", path);
+						r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+					}
 				}
 				free (path);
 			}
@@ -275,6 +296,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			r_socket_http_response (rs, 404, "Invalid protocol", 0, NULL);
 		}
 		r_socket_http_close (rs);
+		free (dir);
 	}
 	core->http_up = R_FALSE;
 	r_socket_free (s);
@@ -679,7 +701,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	eprintf ("Listening for commands on port %s\n", port);
 	listenport = port;
 	for (;;) {
-		r_cons_break (http_break, core);
+		r_cons_break ((RConsBreak)http_break, core);
 		ch = r_socket_accept (s);
 		buf[0] = 0;
 		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
@@ -698,7 +720,8 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 			r_socket_write (ch, "\n", 1);
 			free (str);
 		}
-		if (r_cons_singleton()->breaked) break;
+		if (r_cons_singleton()->breaked)
+			break;
 		r_socket_close (ch);
 		r_cons_break_end ();
 	}
