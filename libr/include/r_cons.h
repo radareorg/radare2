@@ -57,39 +57,41 @@ typedef struct r_cons_grep_t {
 } RConsGrep;
 
 typedef struct r_cons_palette_t {
-	char *prompt;
-	char *offset;
-	char *comment;
-	char *fname;
-	char *floc;
-	char *fline;
-	char *flag;
-	char *label;
-	char *flow;
-	char *input;
-	char *reset;
 	char *b0x00;
 	char *b0x7f;
 	char *b0xff;
-	char *btext;
-	char *other;
-	char *math;
+	char *args;
 	char *bin;
-	char *push;
-	char *pop;
-	char *jmp;
-	char *cjmp;
+	char *btext;
 	char *call;
-	char *nop;
-	char *ret;
-	char *trap;
-	char *swi;
+	char *cjmp;
 	char *cmp;
-	char *num;
-	char *mov;
-	char *reg;
+	char *comment;
 	char *creg;
+	char *flag;
+	char *fline;
+	char *floc;
+	char *flow;
+	char *fname;
+	char *help;
+	char *input;
 	char *invalid;
+	char *jmp;
+	char *label;
+	char *math;
+	char *mov;
+	char *nop;
+	char *num;
+	char *offset;
+	char *other;
+	char *pop;
+	char *prompt;
+	char *push;
+	char *reg;
+	char *reset;
+	char *ret;
+	char *swi;
+	char *trap;
 } RConsPalette;
 
 typedef void (*RConsEvent)(void *);
@@ -265,7 +267,8 @@ R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
 R_API RCons *r_cons_free ();
 
-R_API void r_cons_break(void (*cb)(void *u), void *user);
+typedef void (*RConsBreak)(void *);
+R_API void r_cons_break(RConsBreak cb, void *user);
 R_API void r_cons_break_end();
 
 /* pipe */

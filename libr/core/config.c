@@ -876,6 +876,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("hex.stride", 0, &cb_hexstride, "Define the line stride in hexdump (default is 0)");
 
 	/* http */
+	SETPREF("http.dirlist", "false", "Enable directory listing");
 	SETPREF("http.allow", "", "http firewall. only accept clients from the comma separated IP list");
 #if __WINDOWS__
 	r_config_set (cfg, "http.browser", "start");

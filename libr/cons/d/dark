@@ -18,5 +18,6 @@ ec num rgb:f03
 ec offset rgb:366
 ec other rgb:bbb
 ec pop rgb:0c0
+ec prompt rgb:c60
 ec push rgb:0c0
 ec reg rgb:6f0
