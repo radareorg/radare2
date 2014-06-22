@@ -36,7 +36,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		return R_FALSE;
 	si->type = type;
 	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
-		*sig->prefix?sig->prefix:"sign", type, name);
+		*sig->prefix? sig->prefix: "sign", type, name);
 
 	switch (type) {
 	case R_SIGN_FUNC: // function signature
@@ -93,13 +93,16 @@ R_API void r_sign_list(RSign *sig, int rad) {
 			sig->printf ("zp-\n");
 		r_list_foreach (sig->items, iter, si) {
 			sig->printf ("z%c %s ", si->type, si->name);
-			// TODO: show mask..
-			for (i=0; i<si->size; i++)
-				sig->printf ("%02x", si->bytes[i]);
+			for (i=0; i<si->size; i++){
+				if (!si->mask[i]) // This is a mask
+					sig->printf ("..");
+				else
+					sig->printf ("%02x", si->bytes[i]);
+			}
 			sig->printf ("\n");
 		}
 	} else {
-		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
+		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal + sig->s_func);
 		sig->printf ("  %d byte signatures\n", sig->s_byte);
 		sig->printf ("  %d head signatures\n", sig->s_head);
 		sig->printf ("  %d func signatures\n", sig->s_func);
@@ -107,9 +110,35 @@ R_API void r_sign_list(RSign *sig, int rad) {
 }
 
 R_API void r_sign_reset(RSign *sig) {
+	if (!sig)
+		return;
 	r_list_free (sig->items);
 	sig->items = r_list_new ();
 	sig->s_anal = sig->s_byte = sig->s_head = sig->s_func = 0;
+}
+
+R_API int r_sign_remove_prefix(RSign* sig, const char* prefix) {
+	int i = 0;
+	RListIter* iter, *iter2;
+	RSignItem* si;
+	const prefix_len = strlen (prefix);
+
+	if (!sig || !prefix)
+		return -1;
+
+	r_list_foreach_safe (sig->items, iter, iter2, si) {
+		if (!strncmp(si->name, prefix, prefix_len)) {
+			if (si->type == R_SIGN_BYTE)
+				sig->s_byte--;
+			else if (si->type == R_SIGN_ANAL)
+				sig->s_anal--;
+			else if (si->type == R_SIGN_HEAD)
+				sig->s_head--;
+			r_list_delete (sig->items, iter);
+			i++;
+		}
+	}
+	return i;
 }
 
 R_API RSign *r_sign_free(RSign *sig) {
@@ -132,6 +161,10 @@ R_API void r_sign_item_free(void *_item) {
 R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 	RListIter *iter;
 	RSignItem *si;
+
+	if (!sig || !buf)
+		return NULL;
+
 	r_list_foreach (sig->items, iter, si) {
 		if (si->type == R_SIGN_BYTE) {
 			int l = (len>si->size)?si->size:len;

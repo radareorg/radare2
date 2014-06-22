@@ -30,8 +30,8 @@ static int cmd_zign(void *data, const char *input) {
 					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 					if (flag) {
 						name = flag->name;
-						r_cons_printf ("zb %s ", name);
-						len = (fcni->size>sizeof (buf))?sizeof (buf):fcni->size;
+						r_cons_printf ("zh %s ", name);
+						len = (fcni->size > sizeof (buf))? sizeof (buf): fcni->size;
 						for (i=0; i<len; i++)
 							r_cons_printf ("%02x", buf[i]);
 						r_cons_newline ();
@@ -48,7 +48,7 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case 'p':
 		if (!input[1])
-			r_cons_printf ("%s", core->sign->prefix);
+			r_cons_printf ("%s\n", core->sign->prefix);
 		else if (!strcmp ("-", input+1))
 			r_sign_prefix (core->sign, "");
 		else r_sign_prefix (core->sign, input+2);
@@ -71,7 +71,10 @@ static int cmd_zign(void *data, const char *input) {
 	case '-':
 		if (input[1] == '*')
 			r_sign_reset (core->sign);
-		else eprintf ("TODO\n");
+		else {
+			int i = r_sign_remove_prefix(core->sign, input+1);
+			r_cons_printf ("%d zignatures removed\n", i);
+		}
 		break;
 	case '/':
 		{
@@ -136,18 +139,18 @@ static int cmd_zign(void *data, const char *input) {
 			"Usage:", "z[abcp/*-] [arg]", "Zignatures",
 			"z", "", "show status of zignatures",
 			"z*", "", "display all zignatures",
-			"zp", "", "display current prefix",
-			"zp", " prefix", "define prefix for following zignatures",
-			"zp-", "", "unset prefix",
-			"z-", "prefix", "unload zignatures prefixed as",
+			"z-", "prefix", "unload zignatures with corresponding prefix",
 			"z-*", "", "unload all zignatures",
-			"za", " ...", "define new zignature for analysis",
-			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
-			"zb", " name bytes", "define zignature for bytes",
-			"zh", " name bytes", "define function header zignature",
-			"zg", " pfx [file]", "generate signature for current file",
-			".zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
 			"z/", "[ini] [end]", "search zignatures between these regions",
+			"za", " ...", "define new zignature for analysis",
+			"zb", " name bytes", "define zignature for bytes",
+			"zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
+			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
+			"zg", " prefix [file]", "generate signature for current file",
+			"zh", " name bytes", "define function header zignature",
+			"zp", " prefix", "define prefix for following zignatures",
+			"zp", "", "display current prefix",
+			"zp-", "", "unset prefix",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
 			r_core_cmd_help (core, help_msg);
