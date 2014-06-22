@@ -177,7 +177,8 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 }
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
-	int i, j, k, len, tsize, endian, m = 1;
+	ut64 len, check_len;
+	int i, j, k, tsize, endian, m = 1;
 	if (!b || b->empty) return 0;
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
@@ -186,8 +187,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		return -1;
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
-		if (len > b->length)
-			return -1;
+
 		switch (fmt[j]) {
 		case '0'...'9':
 			if (m == 1)
@@ -202,6 +202,18 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		case 'c': tsize = 1; endian = 1; break;
 		default: return -1;
 		}
+
+		/* Avoid read/write out of bound.
+		   tsize and m are not user controled, then don't
+		   need to check possible overflow.
+		 */
+		if(!UT64_ADD(&check_len, len, tsize*m))
+			return -1;
+		if(!UT64_ADD(&check_len, check_len, addr))
+			return -1;
+		if (check_len > b->length)
+			return -1;
+
 		for (k = 0; k < m; k++) {
 			if (write) r_mem_copyendian(
 				(ut8*)&buf[addr+len+k*tsize],
@@ -210,7 +222,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 				(ut8*)&buf[len+k*tsize],
 				(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
 		}
-		len += m*tsize; m = 1;
+		len += tsize*m; m = 1;
 	}
 	b->cur = addr + len;
 	return len;
