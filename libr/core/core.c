@@ -605,7 +605,8 @@ R_API int r_core_init(RCore *core) {
 	core->dbg->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
-	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
+// XXX pushing unititialized regstate results in trashed reg values
+//	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->sign->printf = r_cons_printf;
 	core->io->printf = r_cons_printf;
