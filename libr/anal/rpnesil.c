@@ -804,7 +804,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 		word[wordi++] = *str;
 		str++;
 	}
-	word[wordi] = 0;
+	word[wordi-1] = 0;
 	runword (esil, word);
 	if (esil->repeat)
 		goto loop;
