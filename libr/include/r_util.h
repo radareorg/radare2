@@ -666,7 +666,7 @@ static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
 }
 
 static inline int UT64_MUL(ut64 *r, ut64 a, ut64 b) {
-	if(UT64_MAX / a < b)
+	if(a && UT64_MAX / a < b)
 		return 0;
 	if(r != NULL)
 		*r = a * b;
@@ -690,7 +690,7 @@ static inline int UT32_ADD(ut32 *r, ut32 a, ut32 b) {
 }
 
 static inline int UT32_MUL(ut32 *r, ut32 a, ut32 b) {
-	if(UT32_MAX / a < b)
+	if(a && UT32_MAX / a < b)
 		return 0;
 	if(r != NULL)
 		*r = a * b;
@@ -714,7 +714,7 @@ static inline int UT16_ADD(ut16 *r, ut16 a, ut16 b) {
 }
 
 static inline int UT16_MUL(ut16 *r, ut16 a, ut16 b) {
-	if(UT16_MAX / a < b)
+	if(a && UT16_MAX / a < b)
 		return 0;
 	if(r != NULL)
 		*r = a * b;
@@ -738,7 +738,7 @@ static inline int UT8_ADD(ut8 *r, ut8 a, ut8 b) {
 }
 
 static inline int UT8_MUL(ut8 *r, ut8 a, ut8 b) {
-	if(UT8_MAX / a < b)
+	if(a && UT8_MAX / a < b)
 		return 0;
 	if(r != NULL)
 		*r = a * b;
