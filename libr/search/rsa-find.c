@@ -18,8 +18,8 @@ consists of a type, a length, and a value.  Puts the type of field
 into type, the number of bytes into len, and returns a pointer to
 the beginning of the value. */
 static ut8* parse_next_rsa_field(const ut8* start, ut32 *type, ut32 *len) {
-	ut8 *val = NULL;
-	*type = start[0]; 
+	ut8 *val = malloc(1);
+	*type = start[0];
 	*len  = 0;
 	if (!(start[1] & 0x80)) {
 		*len = start[1];
@@ -28,14 +28,14 @@ static ut8* parse_next_rsa_field(const ut8* start, ut32 *type, ut32 *len) {
 		int i;
 		const int lensize = start[1] & 0x7F;
 		for (i=0; i < lensize; i++)
-			*len = (*len << 8) | start[2+i];    
+			*len = (*len << 8) | start[2+i];
 		*val = start[2+lensize];
 	}
 	return val;
 }
 
 static int check_rsa_fields(const ut8* start, int nbfields) {
-	ut32 len=0, type;
+	ut32 len = 0, type;
 	int i;
 	ut8 const* ptr = start;
 	ptr = parse_next_rsa_field (ptr, &type, &len); // skip sequence field
