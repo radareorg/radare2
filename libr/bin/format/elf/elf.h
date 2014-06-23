@@ -70,7 +70,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Shdr)* shdr;
 
 	Elf_(Shdr) *strtab_section;
-	ut64 strtab_size;
+	ut32 strtab_size;
 	char* strtab;
 
 	Elf_(Shdr) *shstrtab_section;
