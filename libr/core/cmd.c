@@ -580,7 +580,7 @@ static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 oldsize, newsize=0;
 	st64 delta = 0;
-	int grow;
+	int grow, ret;
 
 	oldsize = core->file->size;
 	switch (*input) {
@@ -622,16 +622,20 @@ static int cmd_resize(void *data, const char *input) {
 
 	grow = (newsize > oldsize);
 	if (grow) {
-		r_io_resize (core->io, newsize);
-		core->file->size = newsize;
+		ret = r_io_resize (core->io, newsize);
+		if (ret<1) {
+			eprintf ("r_io_resize: cannot resize\n");
+		} else core->file->size = newsize;
 	}
 
 	if (delta && core->offset < newsize)
 		r_io_shift (core->io, core->offset, grow?newsize:oldsize, delta);
 
 	if (!grow) {
-		r_io_resize (core->io, newsize);
-		core->file->size = newsize;
+		ret = r_io_resize (core->io, newsize);
+		if (ret<1) {
+			eprintf ("r_io_resize: cannot resize\n");
+		} else core->file->size = newsize;
 	}
 
 	if (newsize < core->offset+core->blocksize ||
