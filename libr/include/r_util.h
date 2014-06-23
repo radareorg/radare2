@@ -655,6 +655,104 @@ R_API void r_strbuf_init(RStrBuf *sb);
 R_API char **r_sys_get_environ ();
 R_API void r_sys_set_environ (char **e);
 
+
+/* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
+static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
+	if(UT64_MAX - a < b)
+		return 0;
+	if(r != NULL)
+		*r = a + b;
+	return 1;
+}
+
+static inline int UT64_MUL(ut64 *r, ut64 a, ut64 b) {
+	if(UT64_MAX / a < b)
+		return 0;
+	if(r != NULL)
+		*r = a * b;
+	return 1;
+}
+
+static inline int UT64_SUB(ut64 *r, ut64 a, ut64 b) {
+	if(b > a)
+		return 0;
+	if(r != NULL)
+		*r = a - b;
+	return 1;
+}
+
+static inline int UT32_ADD(ut32 *r, ut32 a, ut32 b) {
+	if(UT32_MAX - a < b)
+		return 0;
+	if(r != NULL)
+		*r = a + b;
+	return 1;
+}
+
+static inline int UT32_MUL(ut32 *r, ut32 a, ut32 b) {
+	if(UT32_MAX / a < b)
+		return 0;
+	if(r != NULL)
+		*r = a * b;
+	return 1;
+}
+
+static inline int UT32_SUB(ut32 *r, ut32 a, ut32 b) {
+	if(b > a)
+		return 0;
+	if(r != NULL)
+		*r = a - b;
+	return 1;
+}
+
+static inline int UT16_ADD(ut16 *r, ut16 a, ut16 b) {
+	if(UT16_MAX - a < b)
+		return 0;
+	if(r != NULL)
+		*r = a + b;
+	return 1;
+}
+
+static inline int UT16_MUL(ut16 *r, ut16 a, ut16 b) {
+	if(UT16_MAX / a < b)
+		return 0;
+	if(r != NULL)
+		*r = a * b;
+	return 1;
+}
+
+static inline int UT16_SUB(ut16 *r, ut16 a, ut16 b) {
+	if(b > a)
+		return 0;
+	if(r != NULL)
+		*r = a - b;
+	return 1;
+}
+
+static inline int UT8_ADD(ut8 *r, ut8 a, ut8 b) {
+	if(UT8_MAX - a < b)
+		return 0;
+	if(r != NULL)
+		*r = a + b;
+	return 1;
+}
+
+static inline int UT8_MUL(ut8 *r, ut8 a, ut8 b) {
+	if(UT8_MAX / a < b)
+		return 0;
+	if(r != NULL)
+		*r = a * b;
+	return 1;
+}
+
+static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
+	if(b > a)
+		return 0;
+	if(r != NULL)
+		*r = a - b;
+	return 1;
+}
+
 #ifdef __cplusplus
 }
 #endif
