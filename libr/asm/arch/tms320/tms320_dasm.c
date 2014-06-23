@@ -731,6 +731,8 @@ void decode_cond(tms320_dasm_t * dasm)
 
 	if (field_valid(dasm, CCCCCCC))
 		substitute(dasm->syntax, "cond", "%s", get_cond_str(field_value(dasm, CCCCCCC), tmp));
+
+	substitute(dasm->syntax, "[label, ]", "");
 }
 
 void decode_registers(tms320_dasm_t * dasm)
