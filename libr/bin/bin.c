@@ -103,82 +103,97 @@ R_API int r_bin_file_cur_set_plugin (RBinFile *binfile, RBinPlugin *plugin) {
 }
 
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
-	char str[R_BIN_SIZEOF_STRINGS];
-	int i, matches = 0, ctr = 0;
+	RRune rune;
 	RBinString *ptr = NULL;
-	char type = 'A';
 	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
+	ut64 needle, start;
+	char str[R_BIN_SIZEOF_STRINGS];
+	int i, length, found = 0, wide = R_FALSE;
 
-	if (!arch)
+	if (!arch || !arch->buf || !arch->buf->buf)
 		return;
 
 	if (!arch->rawstr)
 		if (!plugin || !plugin->info)
 			return;
-	if (plugin && min==0)
-		min = plugin->minstrlen;
-	if (min==0)
-		min = 4; // defaults
-	if (min <= 0)
+
+	if (min == 0)
+		min = plugin? plugin->minstrlen: 4;
+	/* Some plugins return zero, fix it up */
+	if (min == 0)
+		min = 4;
+	if (min < 0)
 		return;
 
-	if (arch->buf && (!to || to > arch->buf->length))
+	if (!to || to > arch->buf->length)
 		to = arch->buf->length;
-	if (to != 0 && (to<1 || to > 0xf00000)) {
+	if (to != 0 && to > 0xf00000) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
 		return;
 	}
-	if (!arch->buf)
-		return;
-	if (to == 0 && arch->buf)
-		to = arch->buf->length;
-	if (arch->buf && arch->buf->buf)
-	for (i = from; i < to; i++) {
-		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
-				matches < R_BIN_SIZEOF_STRINGS-1) {
-			str[matches] = arch->buf->buf[i];
-			/* add support for wide char strings */
-			if (arch->buf->buf[i+1]==0) {
-				if (IS_PRINTABLE (arch->buf->buf[i+2])) {
-					if (arch->buf->buf[i+3]==0) {
-						i++;
-						type = 'W';
-					}
+
+	needle = from;
+	while (needle < to) {
+		/* Slurp a whole C-string */
+		start = needle;
+		for (i = 0, length = 0, wide = R_FALSE; i < R_BIN_SIZEOF_STRINGS - 1 && needle < to; i++) {
+			int step = r_utf8_decode (&arch->buf->buf[needle], &rune);
+			/* Might be a wide string */
+			if (step == 1) {
+				if (arch->buf->buf[needle+step] == 0x00) {
+					wide = R_TRUE;
+					step += 1;
 				}
 			}
-			matches++;
-			continue;
+			needle += step;
+			if (r_isprint (rune)) {
+				str[i] = rune;
+				length++;
+			}
+			/* Print the escape code */
+			else if (rune && strchr ("\b\v\f\n\r\t\a\e", rune)) {
+				str[i++] = '\\';
+				str[i] = "       abtnvfr             e"[rune];
+				length++;
+			}
+			/* \0 marks the end of C-strings */
+			else break;
 		}
+
+		str[i] = '\0';
+
 		/* check if the length fits in our request */
-		if (matches >= min) {
+		if (length >= min) {
 			if (!(ptr = R_NEW (RBinString))) {
 				eprintf ("Error allocating string\n");
 				break;
 			}
-			str[matches] = '\0';
-			ptr->paddr = i-matches;
+
+			ptr->type = wide? 'W' : 'A';
+			ptr->ordinal = found++;
+			ptr->size = needle - start;
+			ptr->length = length;
+			ptr->paddr = start;
+
 			if (scnrva) {
-				//ptr->vaddr = (ptr->paddr+scnrva-from);
-// XXX. this is wrong. baddr doesnt seems to work for ELFs if used
+				/*ptr->vaddr = (ptr->paddr+scnrva-from);*/
+				// XXX. this is wrong. baddr doesnt seems to work for ELFs if used
 				ptr->vaddr = ptr->paddr;
 			} else {
 				ptr->vaddr = ptr->paddr;
 			}
+
 			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
-			ptr->size = matches+1;
-			ptr->length = ptr->size << ((type=='W')? 1:0);
-			ptr->type = type;
-			type = 'A';
-			ptr->ordinal = ctr;
-			// copying so many bytes here..
-			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
-			ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
-			//r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
+
+			/* This is safe as "str" size is at most R_BIN_SIZEOF_STRINGS-1 and
+			 * "ptr->string" size is R_BIN_SIZEOF_STRINGS. "str" is also
+			 * guaranteed to be null terminated. */
+			strcpy (ptr->string, str);
+
 			r_list_append (list, ptr);
+
 			//if (!sdb_add (DB, 
-			ctr++;
 		}
-		matches = 0;
 	}
 }
 
