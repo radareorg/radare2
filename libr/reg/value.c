@@ -62,13 +62,15 @@ off,
 		(regset->arena->bytes[off+2]),
 		(regset->arena->bytes[off+3]));
 #endif
-		if (regset->arena->size-off-4>=0) {
+		if (off+4<=regset->arena->size) {
 			memcpy (&v32, regset->arena->bytes+off, 4);
 			ret = v32;
-		}
+		} else eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
-		memcpy (&ret, regset->arena->bytes+off, 8);
+		if (regset->arena->bytes && (off+8<=regset->arena->size))
+			memcpy (&ret, regset->arena->bytes+off, 8);
+		else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);

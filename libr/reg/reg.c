@@ -171,6 +171,8 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	if (!str||!reg)
 		return R_FALSE;
+	if (reg->reg_profile_str && !strcmp (str, reg->reg_profile_str))
+		return R_TRUE;
 	reg->bits = 0;
 	// XXX double free
 	free (reg->reg_profile_str);
@@ -189,6 +191,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		switch (*str) {
 		case ' ':
 		case '\t':
+			for (;str[1]==' '||str[1]=='\t';str++); // skip spaces
 			/* UGLY PASTAFARIAN PARSING */
 			if (word==0 && *buf=='=') {
 				setname = r_reg_get_name_idx (buf+1);
@@ -207,8 +210,12 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				r_reg_set_word (reg, item, word, buf);
 				if (item->name != NULL) {
 					if (reg->regset[item->type].regs) {
-						r_list_append (reg->regset[item->type].regs, item);
-						item = r_reg_item_new ();
+						if (item->size == 0) {
+							eprintf ("Missing size for register '%s'\n", item->name);
+						} else {
+							r_list_append (reg->regset[item->type].regs, item);
+							item = r_reg_item_new ();
+						}
 					} else eprintf ("REGSET is null wtf\n");
 				}
 			}

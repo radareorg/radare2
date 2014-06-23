@@ -107,22 +107,30 @@ R_API int r_reg_fit_arena(RReg *reg) {
 	RRegArena *arena;
 	RListIter *iter;
 	RRegItem *r;
-	int size, i;
+	int size, i, newsize;
 
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = reg->regset[i].arena;
-		arena->size = 0;
+		newsize = 0;
 		r_list_foreach (reg->regset[i].regs, iter, r) {
 			size = BITS2BYTES (r->offset+r->size);
-			if (size>arena->size) {
-				arena->size = size;
-				arena->bytes = realloc (arena->bytes, size);
-				memset (arena->bytes, 0, size);
-				if (arena->bytes == NULL)
-					return R_FALSE;
+			newsize = R_MAX (size, newsize);
+		}
+		if (newsize<1) {
+			free (arena->bytes);
+			arena->bytes = NULL;
+			arena->size = 0;
+		} else {
+			ut8 *buf = realloc (arena->bytes, newsize);
+			if (!buf) {
+				arena->bytes = NULL;
+				arena->size = 0;
+			} else {
+				arena->size = newsize;
+				arena->bytes = buf;
+				memset (arena->bytes, 0, arena->size);
 			}
 		}
-		memset (arena->bytes, 0, arena->size);
 	}
 	return R_TRUE;
 }
