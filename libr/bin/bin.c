@@ -21,7 +21,6 @@ R_LIB_VERSION(r_bin);
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 
-static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva);
 static int is_data_section(RBinFile *a, RBinSection *s);
 static RList* get_strings(RBinFile *a, int min);
 static void r_bin_object_delete_items (RBinObject *o);
@@ -102,83 +101,130 @@ R_API int r_bin_file_cur_set_plugin (RBinFile *binfile, RBinPlugin *plugin) {
 	return R_FALSE;
 }
 
-static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
-	char str[R_BIN_SIZEOF_STRINGS];
-	int i, matches = 0, ctr = 0;
-	RBinString *ptr = NULL;
-	char type = 'A';
-	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
+enum {
+	R_STRING_TYPE_DETECT = -1,
+	R_STRING_TYPE_ASCII,
+	R_STRING_TYPE_UTF8,
+	R_STRING_TYPE_WIDE,
+};
 
-	if (!arch)
+#define R_STRING_SCAN_BUFFER_SIZE 2048
+
+static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 from, const ut64 to, int type) {
+	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
+	ut64 needle = from, str_start;
+	int count = 0, i, rc, runes, str_type;
+
+	if (!list || !buf || !min)
+		return -1;
+
+	while (needle < to) {
+		rc = r_utf8_decode (&buf[needle], NULL);
+		if (!rc) {
+			needle++;
+			continue;
+		}
+
+		str_type = type;
+
+		if (str_type == R_STRING_TYPE_DETECT) {
+			if (buf[needle+rc+0] == 0x00 &&
+				buf[needle+rc+1] != 0x00 &&
+				buf[needle+rc+2] == 0x00)
+				str_type = R_STRING_TYPE_WIDE;
+			else
+				str_type = R_STRING_TYPE_ASCII;
+		}
+
+		runes = 0;
+		str_start = needle;
+
+		/* Eat a whole C string */
+		for (rc = i = 0; i < sizeof (tmp) - 1 && needle < to; i += rc) {
+			RRune r;
+
+			if (str_type == R_STRING_TYPE_WIDE) {
+				r = buf[needle+1] << 8 | buf[needle];
+				rc = 2;
+			} else {
+				rc = r_utf8_decode (&buf[needle], &r);
+				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
+			}
+
+			/* Invalid sequence detected */
+			if (!rc) {
+				needle++;
+				break;
+			}
+
+			needle += rc;
+
+			if (r_isprint (r)) {
+				rc = r_utf8_encode (&tmp[i], r);
+				runes++;
+			}
+			/* Print the escape code */
+			else if (r && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
+				tmp[i+0] = '\\';
+				tmp[i+1] = "       abtnvfr             e"[r];
+				rc = 2;
+				runes++;
+			}
+			/* \0 marks the end of C-strings */
+			else break;
+		}
+
+		tmp[i++] = '\0';
+
+		if (runes >= min) {
+			RBinString *new = R_NEW0 (RBinString);
+			new->type = str_type;
+			new->length = runes;
+			new->size = needle - str_start;
+			new->ordinal = count++;
+			new->paddr = new->vaddr = str_start;
+			if (i < sizeof (new->string))
+				memcpy (new->string, tmp, i);
+			r_list_append (list, new);
+		}
+	}
+
+	return count;
+}
+
+static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to) {
+	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
+	RBinString *ptr;
+	RListIter *it;
+
+	if (!arch || !arch->buf || !arch->buf->buf)
 		return;
 
 	if (!arch->rawstr)
 		if (!plugin || !plugin->info)
 			return;
-	if (plugin && min==0)
-		min = plugin->minstrlen;
-	if (min==0)
-		min = 4; // defaults
-	if (min <= 0)
+
+	if (min == 0)
+		min = plugin? plugin->minstrlen: 4;
+	/* Some plugins return zero, fix it up */
+	if (min == 0)
+		min = 4;
+	if (min < 0)
 		return;
 
-	if (arch->buf && (!to || to > arch->buf->length))
+	if (!to || to > arch->buf->length)
 		to = arch->buf->length;
-	if (to != 0 && (to<1 || to > 0xf00000)) {
+	if (to != 0 && to > 0xf00000) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
 		return;
 	}
-	if (!arch->buf)
+
+	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0)
 		return;
-	if (to == 0 && arch->buf)
-		to = arch->buf->length;
-	if (arch->buf && arch->buf->buf)
-	for (i = from; i < to; i++) {
-		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
-				matches < R_BIN_SIZEOF_STRINGS-1) {
-			str[matches] = arch->buf->buf[i];
-			/* add support for wide char strings */
-			if (arch->buf->buf[i+1]==0) {
-				if (IS_PRINTABLE (arch->buf->buf[i+2])) {
-					if (arch->buf->buf[i+3]==0) {
-						i++;
-						type = 'W';
-					}
-				}
-			}
-			matches++;
-			continue;
-		}
-		/* check if the length fits in our request */
-		if (matches >= min) {
-			if (!(ptr = R_NEW (RBinString))) {
-				eprintf ("Error allocating string\n");
-				break;
-			}
-			str[matches] = '\0';
-			ptr->paddr = i-matches;
-			if (scnrva) {
-				//ptr->vaddr = (ptr->paddr+scnrva-from);
-// XXX. this is wrong. baddr doesnt seems to work for ELFs if used
-				ptr->vaddr = ptr->paddr;
-			} else {
-				ptr->vaddr = ptr->paddr;
-			}
-			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
-			ptr->size = matches+1;
-			ptr->length = ptr->size << ((type=='W')? 1:0);
-			ptr->type = type;
-			type = 'A';
-			ptr->ordinal = ctr;
-			// copying so many bytes here..
-			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
-			ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
-			//r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
-			r_list_append (list, ptr);
-			//if (!sdb_add (DB, 
-			ctr++;
-		}
-		matches = 0;
+
+	r_list_foreach (list, it, ptr) {
+		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, R_FALSE);
+		ptr->vaddr += s? s->vaddr: 0;
 	}
 }
 
@@ -198,7 +244,6 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 }
 
 static RList* get_strings(RBinFile *a, int min) {
-	int count = 0;
 	RListIter *iter;
 	RBinSection *section;
 	RBinObject *o = a? a->o : NULL;
@@ -213,45 +258,16 @@ static RList* get_strings(RBinFile *a, int min) {
 	}
 	ret->free = free;
 
-	if (o->sections && !a->rawstr) {
+	if (o->sections && !r_list_empty (o->sections) && !a->rawstr) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
-				count++;
 				get_strings_range (a, ret, min,
 					section->paddr,
-					section->paddr+section->size,
-					section->vaddr);
-			}
-		}
-		if (r_list_empty (o->sections)) {
-			int i, next = 0, from = 0, funn = 0, to = 0;
-			ut8 *buf = a->buf->buf;
-			for (i=0; i<a->buf->length; i++) {
-				if (!buf[i] || IS_PRINTABLE (buf[i])) {
-					if (buf[i]) {
-						if (!from) from = i;
-						funn++;
-						next = 0;
-					}
-				} else {
-					next++;
-					if (next>5) from = 0;
-					if (!to) to = i;
-					to = i;
-					if (from && next==5 && funn>16) {
-						get_strings_range (a, ret, min, from, to, 0);
-				//eprintf ("FUNN %d\n", funn);
-				//eprintf ("MIN %d %d\n", from, to);
-						funn = 0;
-						from = 0;
-						to = 0;
-					}
-				}
+					section->paddr+section->size);
 			}
 		}
 	} else {
-		get_strings_range (a, ret, min,
-			0, a->size, 0);
+		get_strings_range (a, ret, min, 0, a->size);
 	}
 	return ret;
 }
@@ -1056,12 +1072,11 @@ R_API RList* r_bin_get_sections(RBin *bin) {
 }
 
 // TODO: MOve into section.c and rename it to r_io_section_get_at ()
-R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
+R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	RBinSection *section;
 	RListIter *iter;
 	ut64 from, to;
 
-	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
 		r_list_foreach (o->sections, iter, section) {
 			from = va ? o->baddr+section->vaddr: section->paddr;
