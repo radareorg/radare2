@@ -69,7 +69,7 @@ static int cmd_seek(void *data, const char *input) {
 		case 'C':
 			if (input[1]=='*') {
 				r_core_cmd0 (core, "C*~^\"CC");
-			} else 
+			} else
 			if (input[1]==' ') {
 				typedef struct {
 					ut64 addr;
@@ -106,7 +106,7 @@ static int cmd_seek(void *data, const char *input) {
 						cur = next;
 					}
 				}
-				
+
 				switch (count) {
 				case 0:
 					eprintf ("No matching comments\n");
@@ -238,7 +238,7 @@ static int cmd_seek(void *data, const char *input) {
 			for (val=i=0; i<n; i++) {
 				ret = r_anal_op (core->anal, &op,
 						core->offset, core->block, core->blocksize);
-				if (ret<1) 
+				if (ret<1)
 					break;
 				r_core_seek_delta (core, ret);
 				val += ret;
@@ -261,31 +261,35 @@ static int cmd_seek(void *data, const char *input) {
 			else r_core_seek (core, core->file->size, 1);
 			}
 			break;
-		case '?':
-			r_cons_printf (
-			"|Usage: s[+-] [addr]\n"
-			"| s                 print current address\n"
-			"| s 0x320           seek to this address\n"
-			"| s-                undo seek\n"
-			"| s+                redo seek\n"
-			"| s*                list undo seek history\n"
-			"| s++               seek blocksize bytes forward\n"
-			"| s--               seek blocksize bytes backward\n"
-			"| s+ 512            seek 512 bytes forward\n"
-			"| s- 512            seek 512 bytes backward\n"
-			"| sg/sG             seek begin (sg) or end (sG) of section or file\n"
-			"| s.hexoff          Seek honoring a base from core->offset\n"
-			"| sa [[+-]a] [asz]  seek asz (or bsize) aligned to addr\n"
-			"| sn/sp             seek next/prev scr.nkey\n"
-			"| s/ DATA           search for next occurrence of 'DATA'\n"
-			"| s/x 9091          search for next occurrence of \\x90\\x91\n"
-			"| sb                seek aligned to bb start\n"
-			//"| sp [page]  seek page N (page = block)\n"
-			"| so [num]          seek to N next opcode(s)\n"
-			"| sf                seek to next function (f->addr+f->size)\n"
-			"| sf fcn            seek to address of specified function\n"
-			"| sC str            seek to comment matching given string\n"
-			"| sr pc             seek to register\n");
+		case '?': {
+			const char * help_message[] = {
+			"Usage: s", "", " # Seek commands",
+			"s", "", "Print current address",
+			"s", " addr", "Seek to address",
+			"s-", "", "Undo seek",
+			"s-", " n", "Seek n bytes backward",
+			"s--", "", "Seek blocksize bytes backward",
+			"s+", "", "Redo seek",
+			"s+", " n", "Seek n bytes forward",
+			"s++", "", "Seek blocksize bytes forward",
+			"s*", "", "List undo seek history",
+			"s/", " DATA", "Search for next occurrence of 'DATA'",
+			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
+			"s.", "hexoff", "Seek honoring a base from core->offset",
+			"sa", " [[+-]a] [asz]", "Seek asz (or bsize) aligned to addr",
+			"sb", "", "Seek aligned to bb start",
+			"sC", " string", "Seek to comment matching given string",
+			"sf", "", "Seek to next function (f->addr+f->size)",
+			"sf", " function", "Seek to address of specified function",
+			"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
+			"sn/sp", "", "Seek next/prev scr.nkey",
+			"so", " [N]", "Seek to N next opcode(s)",
+			"sr", " pc", "Seek to register",
+			//"sp [page]  seek page N (page = block)",
+			NULL
+			};
+			r_core_cmd_help(core, help_message);
+		}
 			break;
 		}
 	} else r_cons_printf ("0x%"PFMT64x"\n", core->offset);
