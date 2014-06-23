@@ -17,11 +17,12 @@ git co -b branch
 git reset --hard @~100
 git pull $RR $RB
 C=`git log | grep ^commit | head -n $N | cut -d ' ' -f2`
+RC=""
 git co master
 for a in $C ; do
 	RC="$a $RC"
 done
-for a in $C ; do
+for a in $RC ; do
 	git cherry-pick $a
 done
 git branch -D branch
