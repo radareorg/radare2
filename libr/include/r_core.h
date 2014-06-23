@@ -424,7 +424,7 @@ R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
 
 /* help */
-R_API void r_core_cmd_help(RCore *core, const char * help[]);
+R_API void r_core_cmd_help(const RCore *core, const char * help[]);
 
 /* anal stats */
 

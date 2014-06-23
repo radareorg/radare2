@@ -20,8 +20,8 @@ static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len = strlen (input);
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
-	const char *arg;
-	const char *filename;
+	const char *arg, *filename;
+	char _fn[32];
 	ut64 off;
 	ut8 *buf;
 	st64 num;
@@ -29,6 +29,7 @@ static int cmd_write(void *data, const char *input) {
 	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	str = ostr = strdup (input+1);
+	_fn[0] = 0;
 
 	switch (*input) {
 	case '1':
@@ -382,7 +383,6 @@ static int cmd_write(void *data, const char *input) {
 			return 0;
 		} else
 		if (*str != ' ') {
-			char _fn[32];
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf(_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
 			filename = _fn;

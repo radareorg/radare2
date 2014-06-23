@@ -118,16 +118,16 @@ R_API void r_sign_reset(RSign *sig) {
 }
 
 R_API int r_sign_remove_prefix(RSign* sig, const char* prefix) {
-	int i = 0;
 	RListIter* iter, *iter2;
 	RSignItem* si;
-	const prefix_len = strlen (prefix);
+	int plen, i = 0;
 
 	if (!sig || !prefix)
 		return -1;
 
+	plen = strlen (prefix);
 	r_list_foreach_safe (sig->items, iter, iter2, si) {
-		if (!strncmp(si->name, prefix, prefix_len)) {
+		if (!strncmp (si->name, prefix, plen)) {
 			if (si->type == R_SIGN_BYTE)
 				sig->s_byte--;
 			else if (si->type == R_SIGN_ANAL)

@@ -7,7 +7,7 @@
  * help should be an array of the following form:
  * {"command", "args", "description",
  * "command2", "args2", "description"}; */
-R_API void r_core_cmd_help(RCore *core, const char * help[]) {
+R_API void r_core_cmd_help(const RCore *core, const char * help[]) {
 	int i, max_length, padding_length,
 		use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
 	RCons *cons = r_cons_singleton ();

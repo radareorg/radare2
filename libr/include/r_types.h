@@ -185,7 +185,8 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define R_BIT_SET(x,y) (((ut8*)x)[y>>4] |= (1<<(y&0xf)))
 #define R_BIT_UNSET(x,y) (((ut8*)x)[y>>4] &= ~(1<<(y&0xf)))
-#define R_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
+//#define R_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
+#define R_BIT_CHK(x,y) (*(x) & (1<<(y)))
 
 #if __UNIX__
 #include <sys/types.h>

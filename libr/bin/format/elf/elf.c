@@ -724,12 +724,14 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			if ((strtab = (char *)malloc (8+tsize)) == NULL) {
 				perror ("malloc (syms strtab)");
 				free (sym);
+				free (strtab);
 				return NULL;
 			} else {
 				if (tmp_ptr) free (tmp_ptr);
 			}
 			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, tsize) == -1) {
 				eprintf ("Warning: read (syms strtab)\n");
+				free (sym);
 				free (strtab);
 				return NULL;
 			}

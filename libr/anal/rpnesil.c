@@ -781,7 +781,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	wordi = 0;
 	str = ostr;
 	while (*str) {
-		if (wordi>63) {
+		if (wordi>62) {
 			eprintf ("Invalid esil string\n");
 			return -1;
 		}

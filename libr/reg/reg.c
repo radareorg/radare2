@@ -225,7 +225,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			break;
 		default:
 			if (chidx>128) {// WTF!!
-				eprintf ("PARSE FAILED\n");
+				eprintf ("r_reg_set_profile_string: parse fail\n");
+				r_reg_item_free (item);
+				r_reg_fit_arena (reg);
 				return R_FALSE;
 			}
 			buf[chidx++] = *str;

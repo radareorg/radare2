@@ -234,6 +234,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 							NULL, 0, res);
 						r_socket_http_close (rs);
 						free (path);
+						free (dir);
+						dir = NULL;
 						continue;
 					}
 				}
