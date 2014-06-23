@@ -832,14 +832,14 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 								symbol->name, symbol->size);
 					}
 #endif
-					r_cons_printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-							symbol->name, (ut64)symbol->size, (ut64)addr);
-				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ord=%03"PFMT64d" "
-						"fwd=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
-						addr, symbol->paddr,
-						symbol->ordinal, symbol->forwarder,
-						symbol->size, symbol->bind, symbol->type,
-						symbol->name);
+					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
+							symbol->name, symbol->size, addr);
+				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ord=%03u "
+						    "fwd=%s sz=%u bind=%s type=%s name=%s\n",
+						    addr, symbol->paddr,
+						    symbol->ordinal, symbol->forwarder,
+						    symbol->size, symbol->bind, symbol->type,
+						    symbol->name);
 			}
 			i++;
 		}
