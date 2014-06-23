@@ -21,7 +21,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.floc = Color_CYAN;
 	cons->pal.flow = Color_CYAN;
 	cons->pal.fname = Color_RED;
-	cons->pal.help = Color_WHITE;
+	cons->pal.help = Color_YELLOW;
 	cons->pal.input = Color_WHITE;
 	cons->pal.invalid = Color_BRED;
 	cons->pal.jmp = Color_GREEN;
@@ -121,10 +121,12 @@ static struct {
 	int off;
 } keys[] = {
 	{ "comment", r_offsetof (RConsPalette, comment) },
+	{ "args", r_offsetof (RConsPalette, args) },
 	{ "fname", r_offsetof (RConsPalette, fname) },
 	{ "fline", r_offsetof (RConsPalette, fline) },
 	{ "flag", r_offsetof (RConsPalette, flag) },
 	{ "label", r_offsetof (RConsPalette, label) },
+	{ "help", r_offsetof (RConsPalette, help) },
 	{ "flow", r_offsetof (RConsPalette, flow) },
 	{ "prompt", r_offsetof (RConsPalette, prompt) },
 	{ "offset", r_offsetof (RConsPalette, offset) },
