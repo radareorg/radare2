@@ -611,19 +611,25 @@ void decode_braces(tms320_dasm_t * dasm)
 	}
 
 	if (field_valid(dasm, uu)) {
+		boolt parallel = strstr(dasm->syntax, "::");
+
 		// first
 		replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 2 ? "uns(" : "");
 		replace(dasm->syntax, "[)]", "%s", field_value(dasm, uu) & 2 ? ")" : "");
 
-		replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 2 ? "uns(" : "");
-		replace(dasm->syntax, "[)]", "%s", field_value(dasm, uu) & 2 ? ")" : "");
+		if (parallel) {
+			replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 2 ? "uns(" : "");
+			replace(dasm->syntax, "[)]", "%s", field_value(dasm, uu) & 2 ? ")" : "");
+		}
 
 		// second
 		replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 1 ? "uns(" : "");
 		replace(dasm->syntax, "[)]", "%s", field_value(dasm, uu) & 1 ? ")" : "");
 
-		replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 1 ? "uns(" : "");
-		replace(dasm->syntax, "[)]", "%s", field_value(dasm, uu) & 1 ? ")" : "");
+		if (parallel) {
+			replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 1 ? "uns(" : "");
+			replace(dasm->syntax, "[)]", "%s", field_value(dasm, uu) & 1 ? ")" : "");
+		}
 	}
 
 	// remove rudiments
