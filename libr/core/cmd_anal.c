@@ -656,7 +656,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	RReg *hack = core->dbg->reg;
-	int bits = core->anal->bits;
+	int bits;
+	if (size > 0)			//TODO: ar all
+		bits = size;
+	else	bits = core->anal->bits;
 	const char *use_color;
 	int use_colors = r_config_get_i(core->config, "scr.color");
 	if (use_colors) {
