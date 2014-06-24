@@ -670,7 +670,6 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 		use_color = NULL;
 	}
 	core->dbg->reg = core->anal->reg;
-	type = R_REG_TYPE_GPR;
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
 }
