@@ -88,7 +88,6 @@ char *sdb_querys (Sdb* s, char *buf, size_t len, const char *cmd);
 char *sdb_querysf (Sdb* s, char *buf, size_t buflen, const char *fmt, ...);
 int sdb_query_file(Sdb *s, const char* file);
 int sdb_exists (Sdb*, const char *key);
-int sdb_num_exists (Sdb*, const char *key);
 int sdb_unset (Sdb*, const char *key, ut32 cas);
 int sdb_unset_matching(Sdb *s, const char *k);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
@@ -100,6 +99,14 @@ int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas);
 void sdb_list(Sdb*);
 int sdb_sync (Sdb*);
 void sdb_kv_free (SdbKv *kv);
+
+/* num.c */
+int sdb_num_exists (Sdb*, const char *key);
+int sdb_num_base (const char *s);
+ut64 sdb_num_get (Sdb* s, const char *key, ut32 *cas);
+int  sdb_num_set (Sdb* s, const char *key, ut64 v, ut32 cas);
+ut64 sdb_num_inc (Sdb* s, const char *key, ut64 n, ut32 cas);
+ut64 sdb_num_dec (Sdb* s, const char *key, ut64 n, ut32 cas);
 
 typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
 int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
@@ -118,11 +125,6 @@ int sdb_dump_dupnext (Sdb* s, char **key, char **value);
 /* numeric */
 char *sdb_itoa (ut64 n, char *s, int base);
 ut64  sdb_atoi (const char *s);
-
-ut64 sdb_num_get (Sdb* s, const char *key, ut32 *cas);
-int  sdb_num_set (Sdb* s, const char *key, ut64 v, ut32 cas);
-ut64 sdb_num_inc (Sdb* s, const char *key, ut64 n, ut32 cas);
-ut64 sdb_num_dec (Sdb* s, const char *key, ut64 n, ut32 cas);
 
 /* locking */
 int sdb_lock(const char *s);
@@ -210,7 +212,7 @@ void sdb_hook_free(Sdb *s);
 int sdb_check_value (const char *s);
 int sdb_check_key (const char *s);
 int sdb_isnum (const char *s);
-int sdb_num_base (const char *s);
+
 int sdb_match (const char *str, const char *glob);
 int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas);
 int sdb_bool_get(Sdb *db, const char *str, ut32 *cas);

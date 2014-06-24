@@ -382,6 +382,12 @@ SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 SDB_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas) {
 	ut64 ret;
 	char *a = sdb_array_pop (s, key, cas);
+	if (!a) {
+		if (cas) *cas = UT32_MAX; // invalid
+		return UT64_MAX;
+	}
+	if (cas)
+		*cas = 0;
 	ret = sdb_atoi (a);
 	free (a);
 	return ret;
