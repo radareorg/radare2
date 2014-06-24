@@ -401,6 +401,11 @@ tmp=`pkg-config --libs capstone 2>/dev/null`
 if [ $? = 0 ]; then 
 echo yes; HAVE_PKGCFG_CAPSTONE=1; 
 CAPSTONE_LDFLAGS=$tmp; fi; fi
+if [ 11 = "$USE_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
+
+USE_CAPSTONE="1"
+else
+USE_CAPSTONE="0"; fi
 check_library HAVE_LIB_Z z 0 
 check_library HAVE_LIB_ZIP zip 0 
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
