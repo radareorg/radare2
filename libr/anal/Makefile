@@ -8,6 +8,9 @@ CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
 
+include p/capstone.mk
+LDFLAGS+=$(CS_LDFLAGS)
+
 .PHONY: all plugins libs ${EXTRA_CLEAN}
 
 all: plugins

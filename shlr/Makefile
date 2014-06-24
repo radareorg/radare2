@@ -118,6 +118,15 @@ uninstall deinstall:
 	#rm -f ${D}/lib/libr_tcc*
 	#rm -f ${D}/lib/libr_z*
 
+ifeq ($(USE_CAPSTONE),1)
+# Do nothing here
+capstone:
+
+capstone-sync:
+
+capstone-build:
+
+else
 
 ifeq ($(CS_TAR),)
 capstone: capstone-sync
@@ -156,4 +165,4 @@ capstone-build: capstone
 		$(MAKE) CC="$(CC)" AR_EXT=a \
 		RANLIB="$(RANLIB)" AR="$(AR)" \
 		libcapstone.a 
-
+endif

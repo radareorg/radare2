@@ -20,6 +20,7 @@ trap control_c 2
 CPARSE=0
 DEBUGGER=1
 USE_MAGIC=0
+USE_CAPSTONE=0
 USE_ZIP=0
 HAVE_LIBVERSION=1
 HAVE_EWF=1
@@ -164,6 +165,7 @@ Optional Features:
   --enable-cparse        build with cparse support 
   --disable-debugger     disable native debugger features 
   --with-sysmagic        force to use system's magic 
+  --with-syscapstone     force to use system-wide capstone 
   --with-syszip          force to use system's libzip and zlib 
   --without-libversion   disable version library builds 
   --without-ewf          disable EWF dependency 
@@ -230,8 +232,8 @@ echo "VERSION:   0.9.8.git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic"
-echo "PKG-CONFIG:  libewf openssl"
-echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-syszip --without-libversion --without-ewf --with-openssl --with-rpath --with-little-endian --with-big-endian --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx"
+echo "PKG-CONFIG:  capstone libewf openssl"
+echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-syscapstone --with-syszip --without-libversion --without-ewf --with-openssl --with-rpath --with-little-endian --with-big-endian --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx"
 	exit 0
 	;;
 --cache-file) 
@@ -278,6 +280,7 @@ echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-syszi
 "--enable-cparse") CPARSE="1"; ;;
 "--disable-debugger") DEBUGGER="0"; ;;
 "--with-sysmagic") USE_MAGIC="1"; ;;
+"--with-syscapstone") USE_CAPSTONE="1"; ;;
 "--with-syszip") USE_ZIP="1"; ;;
 "--without-libversion") HAVE_LIBVERSION="0"; ;;
 "--without-ewf") HAVE_EWF="0"; ;;
@@ -307,7 +310,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C CPARSE DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_EWF EWF_CFLAGS EWF_LDFLAGS HAVE_PKGCFG_LIBEWF HAVE_LIBVERSION HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH HAVE_LILEND HAVE_BIGEND HAVE_LIB_LUA5_1 USERCC USEROSTYPE WITHPIC WITHNONPIC LIBVERSION"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C CPARSE DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC USE_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_EWF EWF_CFLAGS EWF_LDFLAGS HAVE_PKGCFG_LIBEWF HAVE_LIBVERSION HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH HAVE_LILEND HAVE_BIGEND HAVE_LIB_LUA5_1 USERCC USEROSTYPE WITHPIC WITHNONPIC LIBVERSION"
 
 create_environ
 
@@ -389,6 +392,15 @@ LIBMAGIC="-lmagic"
 else
 USE_LIB_MAGIC="0"
 LIBMAGIC="-lr_magic"; fi
+printf 'checking pkg-config flags for capstone... '
+tmp=`pkg-config --cflags capstone 2>/dev/null`
+if [ '!' $? = 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
+else 
+CAPSTONE_CFLAGS=$tmp; 
+tmp=`pkg-config --libs capstone 2>/dev/null`
+if [ $? = 0 ]; then 
+echo yes; HAVE_PKGCFG_CAPSTONE=1; 
+CAPSTONE_LDFLAGS=$tmp; fi; fi
 check_library HAVE_LIB_Z z 0 
 check_library HAVE_LIB_ZIP zip 0 
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
@@ -518,7 +530,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC USEROSTYPE LIL_ENDIAN LIBVERSION ; do # REPORT
+for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC USEROSTYPE LIL_ENDIAN LIBVERSION ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"
