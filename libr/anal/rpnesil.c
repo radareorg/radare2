@@ -209,6 +209,21 @@ static int esil_neg(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_negeq(RAnalEsil *esil) {			//check me
+	int ret = 0;
+	ut64 num;
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &num)) {
+		num = !num;
+		esil_reg_write (esil, src, num);
+		ret = 1;
+	} else {
+		eprintf ("esil_negeq: empty stack\n");
+	}
+	free (src);
+	return ret;
+}
+
 static int esil_andeq(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, num2;
@@ -220,7 +235,7 @@ static int esil_andeq(RAnalEsil *esil) {
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
-			eprintf ("esil_neg: empty stack\n");
+			eprintf ("esil_andeq: empty stack\n");
 		}
 	}
 	free (src);
@@ -730,6 +745,7 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, "&")) { *cmd = &esil_and; return 1; } else
 	if (!strcmp (word, "&=")) { *cmd = &esil_andeq; return 1; } else
 	if (!strcmp (word, "!")) { *cmd = &esil_neg; return 1; } else
+	if (!strcmp (word, "!=")){ *cmd = &esil_negeq; return 1; } else 
 	if (!strcmp (word, "=")) { *cmd = &esil_eq; return 1; } else
 	if (!strcmp (word, "*")) { *cmd = &esil_mul; return 1; } else
 	if (!strcmp (word, "^")) { *cmd = &esil_xor; return 1; } else
