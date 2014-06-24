@@ -68,7 +68,7 @@ static ut32 db_get_inst(const ut8* buf, int size) {
 	return result;
 }
 
-static ut32 arm_disasm_branch(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_branch(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short link = (inst >> 24) & 0x01;
 	int offset = (inst << 2) & 0x03ffffff;
 
@@ -81,7 +81,7 @@ static ut32 arm_disasm_branch(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_mul(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_mul(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short accu = (inst >> 21) & 0x01;
 	short condcodes = (inst >> 20) & 0x01;
 
@@ -96,7 +96,7 @@ static ut32 arm_disasm_mul(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_longmul(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_longmul(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short sign = (inst >> 22) & 0x01;
 	short accu = (inst >> 21) & 0x01;
 	short condcodes = (inst >> 20) & 0x01;
@@ -108,7 +108,7 @@ static ut32 arm_disasm_longmul(struct arm_insn *arminsn, ut32 inst) {
     return 0;
 }
 
-static ut32 arm_disasm_swp(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_swp(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short byte = (inst >> 22) & 0x01;
 
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "swp%s%s %s, %s, [%s]", get_cond(inst), byte ? "b" : "",
@@ -117,17 +117,17 @@ static ut32 arm_disasm_swp(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_branchreg(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_branchreg(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b%s %s", get_cond(inst), tbl_regs[get_nibble(inst, 0)]);
 	return 0;
 }
 
-static ut32 arm_disasm_branchxchg(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_branchxchg(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "bx%s %s", get_cond(inst), tbl_regs[get_nibble(inst, 0)]);
 	return 0;
 }
 
-static ut32 arm_disasm_mrstrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_mrstrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short src = (inst >> 22) & 0x01;
 
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "mrs%s %s, %s", get_cond(inst), tbl_regs[get_nibble(inst, 3)],
@@ -135,7 +135,7 @@ static ut32 arm_disasm_mrstrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_msrtrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_msrtrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short immediate = (inst >> 25) & 0x01;
 	short dst = (inst >> 22) & 0x01;
 	short simple = (inst >> 16) & 0x01;
@@ -150,7 +150,7 @@ static ut32 arm_disasm_msrtrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_wordmov(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_wordmov(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short top = (inst >> 22) & 0x01;
 
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "mov%s%s %s, #%u", top ? "t" : "w", get_cond(inst),
@@ -159,12 +159,12 @@ static ut32 arm_disasm_wordmov(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_nop(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_nop(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "nop%s", get_cond(inst));
 	return 0;
 }
 
-static ut32 arm_disasm_dataprocessing(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_dataprocessing(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short condcodes = (inst >> 20) & 0x01;
 	short opcode    = (inst >> 21) & 0x0f;
 	short immediate = (inst >> 25) & 0x01;
@@ -200,7 +200,7 @@ static ut32 arm_disasm_dataprocessing(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_singletrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_singletrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short load      = (inst >> 20) & 0x01;
 	short writeback = (inst >> 21) & 0x01;
 	short byte      = (inst >> 22) & 0x01;
@@ -242,7 +242,7 @@ static ut32 arm_disasm_singletrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_halfwordtrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_halfwordtrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short halfword  = (inst >> 5)  & 0x01;
 	short sign      = (inst >> 6)  & 0x01;
 	short load      = (inst >> 20) & 0x01;
@@ -273,7 +273,7 @@ static ut32 arm_disasm_halfwordtrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_blocktrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short load      = (inst >> 20) & 0x01;
 	short writeback = (inst >> 21) & 0x01;
 	short psr       = (inst >> 22) & 0x01;
@@ -298,13 +298,13 @@ static ut32 arm_disasm_blocktrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_swi(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_swi(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut32 comment = inst & 0x00ffffff;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "swi%s #%d", get_cond(inst), comment);
 	return 0;
 }
 
-static ut32 arm_disasm_coproctrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_coproctrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 CRm    = inst & 0x0f;
 	ut16 CP     = (inst >> 5)  & 0x07;
 	ut16 CPnum  = (inst >> 8)  & 0x0f;
@@ -317,7 +317,7 @@ static ut32 arm_disasm_coproctrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_coprocdataop(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_coprocdataop(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 CRm    = inst & 0x0f;
 	ut16 CP     = (inst >> 5)  & 0x07;
 	ut16 CPnum  = (inst >> 8)  & 0x0f;
@@ -330,7 +330,7 @@ static ut32 arm_disasm_coprocdataop(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 arm_disasm_coprocdatatrans(struct arm_insn *arminsn, ut32 inst) {
+static ut32 arm_disasm_coprocdatatrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 CPnum  = (inst >> 8)  & 0x0f;
 	ut16 CRd    = (inst >> 12) & 0x0f;
 	ut16 load      = (inst >> 20) & 0x01;
@@ -352,7 +352,7 @@ static ut32 arm_disasm_coprocdatatrans(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_hireg(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_hireg(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short dst = inst & 0x07;
 	short src = (inst >> 3) & 0x07;
 	short h2  = (inst >> 6) & 0x01;
@@ -375,7 +375,7 @@ static ut16 thumb_disasm_hireg(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_aluop(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_aluop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short dst = inst & 0x07;
 	short src = (inst >> 3) & 0x07;
 	short op  = (inst >> 6) & 0x0f;
@@ -384,7 +384,7 @@ static ut16 thumb_disasm_aluop(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_pushpop(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short lrpc = (inst >> 8)  & 0x01;
 	short load = (inst >> 11) & 0x01;
 	short i;
@@ -408,7 +408,7 @@ static ut16 thumb_disasm_pushpop(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_blocktrans(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short load = (inst >> 11) & 0x01;
 	short i;
 	short last;
@@ -429,7 +429,7 @@ static ut16 thumb_disasm_blocktrans(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_condbranch(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_condbranch(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = inst & 0x00ff;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b%s 0x%"PFMT64x, tbl_cond[(inst >> 8) & 0x0f], arminsn->pc+offset);
 
@@ -438,7 +438,7 @@ static ut16 thumb_disasm_condbranch(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_uncondbranch(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_uncondbranch(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short offset = (inst & 0x07ff) << 1;
 
 	if (offset & 0x0800) offset |= 0xf000;
@@ -449,7 +449,7 @@ static ut16 thumb_disasm_uncondbranch(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_loadadr(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_loadadr(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 src = (inst >> 11) & 0x01;
 	ut16 offset = (inst & 0xff) << 2;
 
@@ -458,31 +458,31 @@ static ut16 thumb_disasm_loadadr(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_swi(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_swi(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 comment = inst & 0x00ff;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "swi #%d", comment);
 	return 0;
 }
 
-static ut16 thumb_disasm_nop(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_nop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "nop");
 	return 0;
 }
 
-static ut16 thumb_disasm_ldrpcrel(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_ldrpcrel(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = (inst & 0xff) << 2;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "ldr %s, [pc, #%u]", tbl_regs[(inst >> 8) & 0x07], offset);
 	return 0;
 }
 
-static ut16 thumb_disasm_ldrsprel(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_ldrsprel(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = (inst & 0xff) << 2;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s %s, [sp, #%u]", (inst & 0x0800)?"ldr":"str",
 			tbl_regs[(inst >> 8) & 0x07], offset);
 	return 0;
 }
 
-static ut16 thumb_disasm_addsprel(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_addsprel(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = (inst & 0x7f) << 2;
 	if ((inst >> 7) & 0x01)
 		arminsn->str_asm = r_str_concatf(arminsn->str_asm, "sub sp, sp, #%u", offset);
@@ -491,7 +491,7 @@ static ut16 thumb_disasm_addsprel(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_ldrimm(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_ldrimm(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = (inst & 0x07c0) >> 6;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s%s %s, [%s, #%u]",
 			(inst & 0x0800)?"ldr":"str", (inst & 0x1000)?"b":"",
@@ -500,14 +500,14 @@ static ut16 thumb_disasm_ldrimm(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_ldrhimm(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_ldrhimm(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = (inst & 0x07c0) >> 5;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s %s, [%s, #%u]", (inst & 0x0800)?"ldrh":"strh",
 			tbl_regs[inst & 0x07], tbl_regs[(inst >> 3) & 0x07], offset);
 	return 0;
 }
 
-static ut16 thumb_disasm_ldrreg(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_ldrreg(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s%s %s, [%s, %s]",
 			(inst & 0x0800)?"ldr":"str", (inst & 0x0400)?"b":"",
 			tbl_regs[inst & 0x07], tbl_regs[(inst >> 3) & 0x07],
@@ -515,21 +515,21 @@ static ut16 thumb_disasm_ldrreg(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_ldrsreg(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_ldrsreg(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s %s, [%s, %s]",
 			tbl_sregops_t[(inst >> 10) & 0x03], tbl_regs[inst & 0x07],
 			tbl_regs[(inst >> 3) & 0x07], tbl_regs[(inst >> 6) & 0x07]);
 	return 0;
 }
 
-static ut16 thumb_disasm_immop(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_immop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 op = (inst >> 11) & 0x03;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s %s, #%u", tbl_immops_t[op], tbl_regs[(inst >> 8) & 0x07],
 			inst & 0xff);
 	return 0;
 }
 
-static ut16 thumb_disasm_addsub(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_addsub(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 op = (inst >> 9) & 0x01;
 	ut16 immediate = (inst >> 10) & 0x01;
 
@@ -542,14 +542,14 @@ static ut16 thumb_disasm_addsub(struct arm_insn *arminsn, ut16 inst) {
 	return 0;
 }
 
-static ut16 thumb_disasm_movshift(struct arm_insn *arminsn, ut16 inst) {
+static ut16 thumb_disasm_movshift(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 op = (inst >> 11) & 0x03;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "%s %s, %s, #%u", tbl_shifts[op],
 			tbl_regs[inst & 0x07], tbl_regs[(inst >> 3) & 0x07], (inst >> 6) & 0x1f);
 	return 0;
 }
 
-static ut32 thumb2_disasm_branchlinked(struct arm_insn *arminsn, ut32 inst) {
+static ut32 thumb2_disasm_branchlinked(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut32 offset = (((inst & 0x07ff0000) >> 4) | ((inst & 0x000007ff) << 1)) + 4;
 	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "bl 0x%"PFMT64x, arminsn->pc+offset);
 
@@ -557,7 +557,7 @@ static ut32 thumb2_disasm_branchlinked(struct arm_insn *arminsn, ut32 inst) {
 	return 0;
 }
 
-static ut32 thumb2_disasm_misc(struct arm_insn *arminsn, ut32 inst) {
+static ut32 thumb2_disasm_misc(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 op1 = (inst >> 20) & 0x03;
 	ut16 op2 = (inst >> 4) & 0x03;
 
@@ -592,7 +592,7 @@ static ut32 thumb2_disasm_misc(struct arm_insn *arminsn, ut32 inst) {
 	return inst;
 }
 
-static ut32 thumb2_disasm_mul(struct arm_insn *arminsn, ut32 inst) {
+static ut32 thumb2_disasm_mul(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 op1 = (inst >> 20) & 0x07;
 	ut16 op2 = (inst >> 4) & 0x03;
 
@@ -625,7 +625,7 @@ static ut32 thumb2_disasm_mul(struct arm_insn *arminsn, ut32 inst) {
 	return inst;
 }
 
-static ut32 thumb2_disasm_longmuldiv(struct arm_insn *arminsn, ut32 inst) {
+static ut32 thumb2_disasm_longmuldiv(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 op1 = (inst >> 20) & 0x07;
 	ut16 op2 = (inst >> 4) & 0x0f;
 
@@ -671,7 +671,7 @@ static ut32 thumb2_disasm_longmuldiv(struct arm_insn *arminsn, ut32 inst) {
 	return inst;
 }
 
-static ut32 thumb2_disasm_coprocmov1(struct arm_insn *arminsn, ut32 inst) {
+static ut32 thumb2_disasm_coprocmov1(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	ut16 opc1 = (inst >> 21) & 0x07;
 	ut16 opc2 = (inst >> 5) & 0x07;
 
@@ -691,7 +691,7 @@ static ut32 thumb2_disasm_coprocmov1(struct arm_insn *arminsn, ut32 inst) {
 struct inst_arm {
 	ut32 mask;
 	ut32 pattern;
-	ut32 (*func)(struct arm_insn*, ut32);
+	ut32 (*func)(struct winedbg_arm_insn*, ut32);
 };
 
 static const struct inst_arm tbl_arm[] = {
@@ -719,7 +719,7 @@ static const struct inst_arm tbl_arm[] = {
 struct inst_thumb16 {
 	ut16 mask;
 	ut16 pattern;
-	ut16 (*func)(struct arm_insn*, ut16);
+	ut16 (*func)(struct winedbg_arm_insn*, ut16);
 };
 
 static const struct inst_thumb16 tbl_thumb16[] = {
@@ -756,36 +756,36 @@ static const struct inst_arm tbl_thumb32[] = {
 	{ 0x00000000, 0x00000000, NULL }
 };
 
-void arm_set_pc(struct arm_insn *arminsn, ut64 pc) {
+void arm_set_pc(struct winedbg_arm_insn *arminsn, ut64 pc) {
 	arminsn->pc = pc;
 }
 
-void arm_set_input_buffer(struct arm_insn *arminsn, const ut8 *buf) {
+void arm_set_input_buffer(struct winedbg_arm_insn *arminsn, const ut8 *buf) {
 	arminsn->buf = buf;
 }
 
-void arm_set_thumb(struct arm_insn *arminsn, int thumb) {
+void arm_set_thumb(struct winedbg_arm_insn *arminsn, int thumb) {
 	arminsn->thumb = thumb;
 }
 
-char* arm_insn_asm(struct arm_insn *arminsn) {
+char* winedbg_arm_insn_asm(struct winedbg_arm_insn *arminsn) {
 	return arminsn->str_asm;
 }
 
-char* arm_insn_hex(struct arm_insn *arminsn) {
+char* winedbg_arm_insn_hex(struct winedbg_arm_insn *arminsn) {
 	return arminsn->str_hex;
 }
 
-void* arm_free(struct arm_insn *arminsn) {
+void* arm_free(struct winedbg_arm_insn *arminsn) {
 	free(arminsn->str_hex);
 	free(arminsn->str_asm);
 	free(arminsn);
 	return NULL;
 }
 
-struct arm_insn* arm_new() {
-	struct arm_insn *ret;
-	ret = malloc(sizeof(struct arm_insn));
+struct winedbg_arm_insn* arm_new() {
+	struct winedbg_arm_insn *ret;
+	ret = malloc(sizeof(struct winedbg_arm_insn));
 	ret->pc = 0;
 	ret->thumb = R_FALSE;
 	ret->str_hex = NULL;
@@ -793,7 +793,7 @@ struct arm_insn* arm_new() {
 	return ret;
 }
 
-int arm_disasm_one_insn(struct arm_insn *arminsn) {
+int arm_disasm_one_insn(struct winedbg_arm_insn *arminsn) {
 	struct inst_arm *a_ptr = (struct inst_arm *)&tbl_arm;
 	struct inst_thumb16 *t_ptr = (struct inst_thumb16 *)&tbl_thumb16;
 	struct inst_arm *t2_ptr = (struct inst_arm *)&tbl_thumb32;

@@ -25,7 +25,7 @@
 #include "sysdep.h"
 
 #include "dis-asm.h"
-#include "arm.h"
+#include "gnu-arm.h"
 #include "opintl.h"
 
 /* FIXME: This shouldn't be done here.  */

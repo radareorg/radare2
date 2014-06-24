@@ -8,8 +8,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include "dis-asm.h"
-#include "../arch/arm/arm.h"
-#include "../arch/arm/gnu/arm.h"
+#include "../arch/arm/asm-arm.h"
+#include "../arch/arm/gnu/gnu-arm.h"
 
 #if 0
 #define ARM_ARCH_OPT(N, V, DF) { N, sizeof (N) - 1, V, DF }

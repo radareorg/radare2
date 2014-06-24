@@ -11,7 +11,7 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut8 buf2[4];
-	struct arm_insn *arminsn = arm_new();
+	struct winedbg_arm_insn *arminsn = arm_new();
 	arm_set_pc (arminsn, a->pc);
 	arm_set_thumb (arminsn, a->bits == 16);
 	if (a->big_endian && a->bits == 32) {
@@ -21,8 +21,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		arm_set_input_buffer (arminsn, buf);
 	}
 	op->size = arm_disasm_one_insn (arminsn);
-	strncpy (op->buf_asm, arm_insn_asm (arminsn), R_ASM_BUFSIZE-1);
-	strncpy (op->buf_hex, arm_insn_hex (arminsn), R_ASM_BUFSIZE-1);
+	strncpy (op->buf_asm, winedbg_arm_insn_asm (arminsn), R_ASM_BUFSIZE-1);
+	strncpy (op->buf_hex, winedbg_arm_insn_hex (arminsn), R_ASM_BUFSIZE-1);
 	arm_free (arminsn);
 	return op->size;
 }

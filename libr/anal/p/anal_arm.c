@@ -7,8 +7,8 @@
 #include <r_anal.h>
 
 /* DEPRECATE ?? */
-#include "arm.h"
-#include "../asm/arch/arm/arm.h"
+#include "wine-arm.h"
+#include "../asm/arch/arm/asm-arm.h"
 #include "../asm/arch/arm/winedbg/be_arm.h"
 
 static unsigned int disarm_branch_offset (unsigned int pc, unsigned int insoff) {
@@ -37,7 +37,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	ut32 *_ins32 = (ut32*)data;
 	ut32 ins32 = *_ins32;
 
-	struct arm_insn *arminsn = arm_new();
+	struct winedbg_arm_insn *arminsn = arm_new();
 	arm_set_thumb(arminsn, R_TRUE);
 	arm_set_input_buffer(arminsn, data);
 	arm_set_pc(arminsn, addr);
@@ -160,7 +160,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	ut8 ndata[4];
 	ut32 branch_dst_addr, i = 0;
 	ut32* code = (ut32 *)data;
-	struct arm_insn *arminsn;
+	struct winedbg_arm_insn *arminsn;
 
 	if (data == NULL)
 		return 0;
