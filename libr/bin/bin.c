@@ -139,12 +139,14 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		for (i = 0, length = 0, wide = R_FALSE; i < R_BIN_SIZEOF_STRINGS - 1 && needle < to; i++) {
 			int step = r_utf8_decode (&arch->buf->buf[needle], &rune);
 			/* Might be a wide string */
-			if (step == 1) {
-				if (arch->buf->buf[needle+step] == 0x00) {
-					wide = R_TRUE;
-					step += 1;
-				}
+			if (!wide && to - needle > 3 &&
+				arch->buf->buf[needle+step+0] == 0x00 &&
+				arch->buf->buf[needle+step+1] != 0x00 &&
+				arch->buf->buf[needle+step+2] == 0x00) {
+				wide = R_TRUE;
 			}
+			if (wide)
+				step++;
 			needle += step;
 			if (r_isprint (rune)) {
 				str[i] = rune;
