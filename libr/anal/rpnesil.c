@@ -521,6 +521,30 @@ static int esil_div(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_diveq (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &s)) {
+		if (dst && isregornum (esil, dst, &d)) {
+			if (s == 0) {
+				eprintf ("esil_diveq: Division by zero!\n");
+			} else  {
+				esil_reg_write (esil, dst, d/s);
+			}
+			ret = 1;
+		} else {
+			eprintf ("esil_diveq: empty stack\n");
+		}
+	} else {
+		eprintf ("esil_diveq: invalid parameters");
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static int esil_mul(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 s, d;
@@ -782,6 +806,7 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, "-")) { *cmd = &esil_sub; return 1; } else
 	if (!strcmp (word, "-=")) { *cmd = &esil_subeq; return 1; } else
 	if (!strcmp (word, "/")) { *cmd = &esil_div; return 1; } else
+	if (!strcmp (word, "/=")) { *cmd = &esil_diveq; return 1; } else
 	if (!strcmp (word, "=[1]")) { *cmd = &esil_poke1; return 1; } else
 	if (!strcmp (word, "=[4]")) { *cmd = &esil_poke4; return 1; } else
 	if (!strcmp (word, "=[8]")) { *cmd = &esil_poke8; return 1; } else
