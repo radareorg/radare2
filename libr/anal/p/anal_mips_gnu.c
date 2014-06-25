@@ -469,7 +469,7 @@ static int mips_set_reg_profile(RAnal* anal){
 	return ret;
 }
 
-struct r_anal_plugin_t r_anal_plugin_mips = {
+struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
@@ -489,6 +489,6 @@ struct r_anal_plugin_t r_anal_plugin_mips = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
         .type = R_LIB_TYPE_ANAL,
-        .data = &r_anal_plugin_mips
+        .data = &r_anal_plugin_mips_gnu
 };
 #endif

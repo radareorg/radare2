@@ -448,7 +448,7 @@ static int set_reg_profile(RAnal *anal) {
 			"gpr	r17	.32	68	0\n");
 }
 
-struct r_anal_plugin_t r_anal_plugin_arm = {
+struct r_anal_plugin_t r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = R_SYS_ARCH_ARM,
 	.license = "LGPL3",
@@ -468,6 +468,6 @@ struct r_anal_plugin_t r_anal_plugin_arm = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_arm
+	.data = &r_anal_plugin_arm_gnu
 };
 #endif

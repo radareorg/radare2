@@ -193,7 +193,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return opsize;
 }
 
-RAsmPlugin r_asm_plugin_arm = {
+RAsmPlugin r_asm_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
 	.bits = 16|32|64,
@@ -208,6 +208,6 @@ RAsmPlugin r_asm_plugin_arm = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_arm
+	.data = &r_asm_plugin_arm_gnu
 };
 #endif

@@ -11,7 +11,7 @@ foo: all
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=mips.mk sparc.mk java.mk bf.mk arm.mk dalvik.mk x86_as.mk x86_nz.mk
+ARCHS=mips_gnu.mk sparc.mk java.mk bf.mk arm_gnu.mk dalvik.mk x86_as.mk x86_nz.mk
 ARCHS+=ppc.mk x86_olly.mk x86.mk csr.mk x86_nasm.mk psosvm.mk avr.mk
 ARCHS+=msil.mk sh.mk arm_winedbg.mk tms320.mk gb.mk snes.mk ebc.mk malbolge.mk ws.mk 6502.mk h8300.mk cr16.mk v850.mk spc700.mk
 include $(ARCHS)

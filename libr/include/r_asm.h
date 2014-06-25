@@ -157,7 +157,7 @@ R_API int r_asm_op_get_size(RAsmOp *op);
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_java;
-extern RAsmPlugin r_asm_plugin_mips;
+extern RAsmPlugin r_asm_plugin_mips_gnu;
 extern RAsmPlugin r_asm_plugin_mips_cs;
 extern RAsmPlugin r_asm_plugin_x86;
 extern RAsmPlugin r_asm_plugin_x86_as;
@@ -165,7 +165,7 @@ extern RAsmPlugin r_asm_plugin_x86_nz;
 extern RAsmPlugin r_asm_plugin_x86_olly;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
 extern RAsmPlugin r_asm_plugin_x86_cs;
-extern RAsmPlugin r_asm_plugin_arm;
+extern RAsmPlugin r_asm_plugin_arm_gnu;
 extern RAsmPlugin r_asm_plugin_arm_cs;
 extern RAsmPlugin r_asm_plugin_armthumb;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
