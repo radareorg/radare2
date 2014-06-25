@@ -2,8 +2,24 @@ include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
 
-#CFLAGS+=-g -ggdb -fPIC
-CFLAGS+=-g -ggdb -fPIC
+OSTYPE?=$(shell uname -s)
+ifeq (${OSTYPE},)
+all:
+	echo LE FAIL
+	exit 1
+endif
+
+ifeq ($(OSTYPE),cygwin_nt-6.1)
+OSTYPE=cygwin
+endif
+ifeq ($(OSTYPE),cygwin_nt-6.1-wow64)
+OSTYPE=cygwin
+endif
+ifneq ($(OSTYPE),cygwin)
+CFLAGS+=-fPIC
+endif
+
+#CFLAGS+=-g -ggdb
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o

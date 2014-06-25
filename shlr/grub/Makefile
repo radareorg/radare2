@@ -11,7 +11,7 @@ all:
 	exit 1
 endif
 
-KERNFILES=kern/file.c 
+KERNFILES=kern/file.c
 KERNFILES+=kern/term.c kern/device.c
 KERNFILES+=kern/err.c
 KERNFILES+=kern/env.c kern/disk.c
@@ -28,13 +28,13 @@ KERNFILES+=fs/ntfs.c
 KERNFILES+=fs/ntfscomp.c
 KERNFILES+=fs/cpio.c
 KERNFILES+=fs/tar.c
-KERNFILES+=fs/xfs.c 
-KERNFILES+=fs/ufs.c 
-KERNFILES+=fs/ufs2.c 
+KERNFILES+=fs/xfs.c
+KERNFILES+=fs/ufs.c
+KERNFILES+=fs/ufs2.c
 # All nested functions are removed from the following .c with a lot of tobacco :-)
-KERNFILES+=fs/hfs.c 
-KERNFILES+=fs/hfsplus.c 
-KERNFILES+=fs/udf.c 
+KERNFILES+=fs/hfs.c
+KERNFILES+=fs/hfsplus.c
+KERNFILES+=fs/udf.c
 KERNFILES+=fs/iso9660.c
 KERNFILES+=fs/minix.c
 #KERNFILES+=fs/minix2.c #XXX: Are minix2 and minix the same?
@@ -53,10 +53,19 @@ KERNFILES+=partmap/bsdlabel.c
 KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
-CFLAGS+=-Iinclude -fPIC 
+CFLAGS+=-Iinclude
 CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 
+ifeq ($(OSTYPE),cygwin_nt-6.1)
+OSTYPE=cygwin
+endif
+ifeq ($(OSTYPE),cygwin_nt-6.1-wow64)
+OSTYPE=cygwin
+endif
+ifneq ($(OSTYPE),cygwin)
+CFLAGS+=-fPIC
+endif
 # This fixes a silly GNU gcc build problem in OSX - BLAME! :D
 ifeq ($(OSTYPE),darwin)
 CFLAGS+=-DAPPLE_CC

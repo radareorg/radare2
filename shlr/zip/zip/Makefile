@@ -2,6 +2,21 @@ include ../../../config-user.mk
 include ../../../libr/config.mk
 include ../../../mk/${COMPILER}.mk
 
+ifeq (${OSTYPE},cygwin_nt-6.1)
+OSTYPE=cygwin
+endif
+ifeq (${OSTYPE},cygwin_nt-6.1-wow64)
+OSTYPE=cygwin
+endif
+ifeq (${OSTYPE},cygwin)
+CFLAGS+=-D__CYGWIN__=1
+EXT_SO=dll
+SOVER=${EXT_SO}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-shared
+else
+CFLAGS+=-fPIC
+endif
 ifeq (${OSTYPE},windows)
 EXT_SO=dll
 CFLAGS+=-D_WIN32=1
@@ -15,7 +30,7 @@ SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED?=-fPIC -shared
 # ifeq (${ARCH},i386)
-   #CC+=-arch i386 
+   #CC+=-arch i386
 #   CC+=-arch x86_64
 # endif
 else
@@ -26,7 +41,6 @@ LDFLAGS_SHARED?=-fPIC -shared
 LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
 endif
 endif
-
 
 OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_close.o zip_delete.o zip_dir_add.o zip_dirent.o \
@@ -64,8 +78,7 @@ OFILES=$(OBJS)
 
 #CFLAGS+=-g -ggdb -fPIC
 CFLAGS+=-I../../libr/include -I../include/
-CFLAGS+=-fPIC
-LDFLAGS+=-L../../../libr/util 
+LDFLAGS+=-L../../../libr/util
 LINKFLAGS=../zlib/libr_z.a
 #LDFLAGS=-shared
 EXT_SO?=dylib
