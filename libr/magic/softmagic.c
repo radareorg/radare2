@@ -121,7 +121,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 		if ((m->flag & BINTEST) != mode) {
 			/* Skip sub-tests */
 			while (magic[magindex + 1].cont_level != 0 &&
-			       ++magindex < nmagic)
+			       ++magindex < nmagic - 1)
 				continue;
 			continue; /* Skip to next top-level test*/
 		}
@@ -167,7 +167,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 		if (file_check_mem(ms, ++cont_level) == -1)
 			return -1;
 
-		while (magic[magindex+1].cont_level != 0 && ++magindex < nmagic) {
+		while (magic[magindex+1].cont_level != 0 && ++magindex < nmagic - 1) {
 			m = &magic[magindex];
 			ms->line = m->lineno; /* for messages */
 
