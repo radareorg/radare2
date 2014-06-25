@@ -5,7 +5,6 @@ LINK=
 RANLIB=ranlib
 ONELIB=0
 CC_AR=ar q ${LIBAR}
-PIC_CFLAGS=-fPIC
 CFLAGS+=-MD
 CFLAGS_INCLUDE=-I
 LDFLAGS_LINK=-l
@@ -18,6 +17,17 @@ CFLAGS_DEBUG=-g
 
 ifeq ($(OSTYPE),auto)
 OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
+endif
+ifeq ($(OSTYPE),cygwin_nt-6.1)
+OSTYPE=cygwin
+endif
+ifeq ($(OSTYPE),cygwin_nt-6.1-wow64)
+OSTYPE=cygwin
+endif
+ifeq ($(OSTYPE),cygwin)
+PIC_CFLAGS=
+else
+PIC_CFLAGS=-fPIC
 endif
 ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
