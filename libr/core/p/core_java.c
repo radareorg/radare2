@@ -8,8 +8,6 @@
 #include <string.h>
 #include <r_anal.h>
 
-#undef R_API
-#define R_API static inline
 #undef R_IPI
 #define R_IPI static
 
