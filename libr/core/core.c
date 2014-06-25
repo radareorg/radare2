@@ -221,7 +221,7 @@ static int autocomplete(RLine *line) {
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
-					if (i==TMP_ARGV_SZ)
+					if (i==TMP_ARGV_SZ-1)
 						break;
 				}
 			}
