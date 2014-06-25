@@ -4,7 +4,6 @@
 #include <r_lib.h>
 #include <capstone.h>
 #include <arm.h>
-
 #include "esil.h"
 
 #define REG(x) cs_reg_name (*handle, insn->detail->arm.operands[x].reg)
