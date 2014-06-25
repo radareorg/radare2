@@ -511,6 +511,7 @@ static int esil_div(RAnalEsil *esil) {
 			} else  {
 				r_anal_esil_pushnum (esil, d/s);
 			}
+			ret = 1;
 		}
 	} else {
 		eprintf ("esil_eq: invalid parameters");
@@ -529,12 +530,35 @@ static int esil_mul(RAnalEsil *esil) {
 		if (dst && isregornum (esil, dst, &d)) {
 // TODO: check overflow
 			r_anal_esil_pushnum (esil, d*s);
+			ret = 1;
+		} else {
+			eprintf ("esil_mul: empty stack\n");
 		}
 	} else {
-		eprintf ("esil_eq: invalid parameters");
+		eprintf ("esil_mul: invalid parameters");
 	}
 	free (src);
 	free (dst);
+	return ret;
+}
+
+static int esil_muleq (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &s)) {
+		if (dst && isregornum (esil, dst, &d)) {
+			esil_reg_write (esil, dst, s*d);
+			ret = 1;
+		} else {
+			eprintf ("esil_muleq: empty stack\n");
+		}
+	} else {
+		eprintf ("esil_muleq: invalid parameters\n");
+	}
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -547,6 +571,7 @@ static int esil_add (RAnalEsil *esil) {
 		if (dst && isregornum (esil, dst, &d)) {
 // TODO: check overflow
 			r_anal_esil_pushnum (esil, d+s);
+			ret = 1;
 		}
 	} else {
 		eprintf ("esil_eq: invalid parameters");
@@ -566,6 +591,7 @@ static int esil_addeq (RAnalEsil *esil) {
 	if (src && isregornum (esil, src, &s)) {
 		if (dst && isregornum (esil, dst, &d)) {
 			esil_reg_write (esil, dst, s+d);
+			ret = 1;
 		}
 	} else {
 		eprintf ("esil_eq: invalid parameters");
@@ -747,6 +773,7 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, "!")) { *cmd = &esil_neg; return 1; } else
 	if (!strcmp (word, "!=")){ *cmd = &esil_negeq; return 1; } else 
 	if (!strcmp (word, "=")) { *cmd = &esil_eq; return 1; } else
+	if (!strcmp (word, "*=")){ *cmd = &esil_muleq; return 1; } else
 	if (!strcmp (word, "*")) { *cmd = &esil_mul; return 1; } else
 	if (!strcmp (word, "^")) { *cmd = &esil_xor; return 1; } else
 	if (!strcmp (word, "^=")) { *cmd = &esil_xoreq; return 1; } else
