@@ -135,22 +135,22 @@ static RList *symbols(RBinFile *arch)
 				R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "", R_BIN_SIZEOF_STRINGS);
 		switch (obj->symbols[i].type) {
-		case IMAGE_SYM_TYPE_NULL:   strcpy (ptr->type, "NULL"); break;
-		case IMAGE_SYM_TYPE_VOID:   strcpy (ptr->type, "VOID"); break;
-		case IMAGE_SYM_TYPE_CHAR:   strcpy (ptr->type, "CHAR"); break;
-		case IMAGE_SYM_TYPE_SHORT:  strcpy (ptr->type, "SHORT");break;
-		case IMAGE_SYM_TYPE_INT:    strcpy (ptr->type, "INT");  break;
-		case IMAGE_SYM_TYPE_LONG:   strcpy (ptr->type, "LONG"); break;
-		case IMAGE_SYM_TYPE_FLOAT:  strcpy (ptr->type, "FLOAT");break;
-		case IMAGE_SYM_TYPE_DOUBLE: strcpy (ptr->type,"DOUBLE");break;
-		case IMAGE_SYM_TYPE_STRUCT: strcpy (ptr->type,"STRUCT");break;
-		case IMAGE_SYM_TYPE_UNION:  strcpy (ptr->type, "UNION");break;
-		case IMAGE_SYM_TYPE_ENUM:   strcpy (ptr->type, "ENUM"); break;
-		case IMAGE_SYM_TYPE_MOE:    strcpy (ptr->type, "MOE");  break;
-		case IMAGE_SYM_TYPE_BYTE:   strcpy (ptr->type, "BYTE"); break;
-		case IMAGE_SYM_TYPE_WORD:   strcpy (ptr->type, "WORD"); break;
-		case IMAGE_SYM_TYPE_UINT:   strcpy (ptr->type, "UINT"); break;
-		case IMAGE_SYM_TYPE_DWORD:  strcpy (ptr->type, "DWORD");break;
+		case COFF_SYM_TYPE_NULL:   strcpy (ptr->type, "NULL"); break;
+		case COFF_SYM_TYPE_VOID:   strcpy (ptr->type, "VOID"); break;
+		case COFF_SYM_TYPE_CHAR:   strcpy (ptr->type, "CHAR"); break;
+		case COFF_SYM_TYPE_SHORT:  strcpy (ptr->type, "SHORT");break;
+		case COFF_SYM_TYPE_INT:    strcpy (ptr->type, "INT");  break;
+		case COFF_SYM_TYPE_LONG:   strcpy (ptr->type, "LONG"); break;
+		case COFF_SYM_TYPE_FLOAT:  strcpy (ptr->type, "FLOAT");break;
+		case COFF_SYM_TYPE_DOUBLE: strcpy (ptr->type,"DOUBLE");break;
+		case COFF_SYM_TYPE_STRUCT: strcpy (ptr->type,"STRUCT");break;
+		case COFF_SYM_TYPE_UNION:  strcpy (ptr->type, "UNION");break;
+		case COFF_SYM_TYPE_ENUM:   strcpy (ptr->type, "ENUM"); break;
+		case COFF_SYM_TYPE_MOE:    strcpy (ptr->type, "MOE");  break;
+		case COFF_SYM_TYPE_BYTE:   strcpy (ptr->type, "BYTE"); break;
+		case COFF_SYM_TYPE_WORD:   strcpy (ptr->type, "WORD"); break;
+		case COFF_SYM_TYPE_UINT:   strcpy (ptr->type, "UINT"); break;
+		case COFF_SYM_TYPE_DWORD:  strcpy (ptr->type, "DWORD");break;
 		}
 		strncpy (ptr->type, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
 		ptr->vaddr = obj->symbols[i].value;
@@ -189,32 +189,32 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->dbg_info = 0;
 
 	switch (obj->hdr.machine) {
-	case IMAGE_FILE_MACHINE_I386:
+	case COFF_FILE_MACHINE_I386:
 		strncpy(ret->machine, "i386", R_BIN_SIZEOF_STRINGS);
 		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
 		ret->bits = 32;
 		break;
-	case IMAGE_FILE_MACHINE_AMD64:
+	case COFF_FILE_MACHINE_AMD64:
 		strncpy(ret->machine, "AMD 64", R_BIN_SIZEOF_STRINGS);
 		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
 		ret->bits = 64;
 		break;
-	case IMAGE_FILE_MACHINE_H8300:
+	case COFF_FILE_MACHINE_H8300:
 		strncpy(ret->machine, "H8300", R_BIN_SIZEOF_STRINGS);
 		strncpy(ret->arch, "h8300", R_BIN_SIZEOF_STRINGS);
 		ret->bits = 16;
 		break;
 
-	case IMAGE_FILE_TI_COFF:
-		if (obj->hdr.target_id == IMAGE_FILE_MACHINE_TMS320C54) {
+	case COFF_FILE_TI_COFF:
+		if (obj->hdr.target_id == COFF_FILE_MACHINE_TMS320C54) {
 			strncpy(ret->machine, "c54x", R_BIN_SIZEOF_STRINGS);
 			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
 			ret->bits = 32;
-		} else if (obj->hdr.target_id == IMAGE_FILE_MACHINE_TMS320C55) {
+		} else if (obj->hdr.target_id == COFF_FILE_MACHINE_TMS320C55) {
 			strncpy(ret->machine, "c55x", R_BIN_SIZEOF_STRINGS);
 			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
 			ret->bits = 32;
-		} else if (obj->hdr.target_id == IMAGE_FILE_MACHINE_TMS320C55PLUS) {
+		} else if (obj->hdr.target_id == COFF_FILE_MACHINE_TMS320C55PLUS) {
 			strncpy(ret->machine, "c55x+", R_BIN_SIZEOF_STRINGS);
 			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
 			ret->bits = 32;
