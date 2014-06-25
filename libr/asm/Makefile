@@ -8,7 +8,7 @@ include $(TOP)/libr/config.mk
 
 include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
-LDFLAGS+=$(SHLR)/java/libr_java.a
+LINK+=$(SHLR)/java/libr_java.a
 
 .PHONY: all plugins
 

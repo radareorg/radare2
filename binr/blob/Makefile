@@ -44,6 +44,7 @@ LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/zip/librz.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
+LDFLAGS+=../../shlr/java/libr_java.a
 LDFLAGS+=-lm
 else
 LDFLAGS+=-L../../libr/io -lr_io
