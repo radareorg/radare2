@@ -12,6 +12,7 @@ OBJS=code.o class.o ops.o
 all: out libr_java.a
 
 libr_java.a: ${OBJS}
+	rm -f libr_java.a
 	${AR} q libr_java.a ${OBJS}
 	${RANLIB} libr_java.a
 

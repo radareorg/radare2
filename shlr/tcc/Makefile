@@ -18,6 +18,7 @@ ${LIBNAME}: ${OFILES}
 	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}
 
 libr_tcc.a: ${OFILES}
+	rm -f libr_tcc.a
 	${AR} q libr_tcc.a ${OFILES}
 	${RANLIB} libr_tcc.a
 
