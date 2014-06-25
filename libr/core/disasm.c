@@ -4,6 +4,7 @@
 #include "r_cons.h"
 
 #define HASRETRY 1
+#define HAVE_LOCALS 1
 
 static const char* r_vline_a[] = {
 	"|", // LINE_VERT
@@ -155,7 +156,9 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 static void handle_print_opstr (RCore *core, RDisasmState *ds);
 static void handle_print_color_reset (RCore *core, RDisasmState *ds);
 static int handle_print_middle (RCore *core, RDisasmState *ds, int ret );
+#if HAVE_LOCALS
 static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf);
+#endif
 static void handle_print_import_name (RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
@@ -1181,14 +1184,15 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret ){
 	return ret;
 }
 
+#if HAVE_LOCALS
 static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf) {
 	ut8 have_local = 0;
 eprintf ("TODO: sdbize locals\n");
-#if 0
+#if 1
 	RAnalFcnLocal *l;
 	RListIter *iter;
-	r_list_foreach (f->locals, iter, l) {
-		if (ds->analop.jump == l->addr) {
+	r_list_foreach (f->vars, iter, l) {
+		//if (ds->analop.jump == l->index) {
 			if ((cf != NULL) && (f->addr == cf->addr)) {
 				if (ds->show_color) {
 					r_cons_strcat (ds->color_label);
@@ -1211,11 +1215,12 @@ eprintf ("TODO: sdbize locals\n");
 			}
 			have_local = 1;
 			break;
-		}
+	//	}
 	}
 #endif
 	return have_local;
 }
+#endif
 
 static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 	RListIter *iter = NULL;
@@ -1240,18 +1245,19 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 }
 
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
-	RAnalFunction *f, *cf;
+	RAnalFunction *f;
 	int have_local = 0;
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 	        case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			cf = r_anal_fcn_find (core->anal, /* current function */
-				ds->at, R_ANAL_FCN_TYPE_NULL);
 			f = r_anal_fcn_find (core->anal,
 				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 			if (f && !strstr (ds->opstr, f->name)) {
 #if 0
+				RAnalFunction *cf = r_anal_fcn_find (core->anal,
+					/* current function */
+				ds->at, R_ANAL_FCN_TYPE_NULL);
 				if (f->locals != NULL) {
 					have_local = handle_print_fcn_locals (core, ds, f, cf);
 				}
@@ -1821,7 +1827,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		ds->oldbits = 0;
 	}
 	handle_deinit_ds (core, ds);
-	return 0;
+	return err;
 }
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {

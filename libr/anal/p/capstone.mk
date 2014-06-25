@@ -8,4 +8,7 @@ CS_LDFLAGS=$(SHLR)/capstone/libcapstone.a
 SHARED_OBJ+=${CS_LDFLAGS}
 endif
 
+ifeq ($(CS_CFLAGS_INCLUDED),)
 CFLAGS+=$(CS_CFLAGS)
+CS_CFLAGS_INCLUDED=Yes
+endif
