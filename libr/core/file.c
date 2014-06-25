@@ -19,7 +19,7 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 // TODO: add support for args
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *path;
-	ut64 ofrom, baddr = 0; // XXX ? check file->map ?
+	ut64 ofrom = 0, baddr = 0; // XXX ? check file->map ?
 	RCoreFile *file = NULL,
 			  *ofile = core->file;
 

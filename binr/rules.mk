@@ -25,6 +25,7 @@ LDFLAGS+=../../shlr/grub/libgrubfs.a
 LDFLAGS+=../../shlr/zip/librz.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
+LDFLAGS+=../../shlr/java/libr_java.a
 ifneq (${OSTYPE},haiku)
 LDFLAGS+=-lm
 endif

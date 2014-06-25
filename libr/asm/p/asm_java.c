@@ -6,11 +6,8 @@
 #include <r_asm.h>
 #include <r_core.h>
 
-#undef R_IPI
-#define R_IPI static
-#include "../../shlr/java/ops.c"
-#include "../../shlr/java/class.c"
-#include "../../shlr/java/code.c"
+#include "../../shlr/java/code.h"
+#include "../../shlr/java/class.h"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	//void *cp;

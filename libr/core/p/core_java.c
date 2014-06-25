@@ -8,6 +8,9 @@
 #include <string.h>
 #include <r_anal.h>
 
+#undef R_API
+#define R_API static inline
+
 #undef R_IPI
 #define R_IPI static
 
@@ -15,10 +18,6 @@
 #include "../../../shlr/java/code.c"
 #include "../../../shlr/java/class.c"
 //#include "../../../shlr/java/class.h"
-#undef R_API
-#define R_API
-#undef R_IPI
-#define R_IPI
 
 #define DO_THE_DBG 0
 #undef IFDBG

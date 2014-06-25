@@ -17,6 +17,10 @@
 #define DO_THE_DBG 0
 #define IFDBG if(DO_THE_DBG)
 
+#ifndef R_API
+#define R_API
+#endif
+
 static void init_switch_op ();
 static int enter_switch_op (ut64 addr, const ut8 * bytes);
 static int update_switch_op (ut64 addr, const ut8 * bytes);
@@ -78,7 +82,7 @@ static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int out
 	return update_bytes_consumed(sz);
 }
 
-R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
+R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
 	int sz = 0;
 	ut32 val_one = 0,

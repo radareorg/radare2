@@ -11,7 +11,7 @@
 #include <r_cons.h>
 
 #undef R_API
-#define R_API 
+#define R_API static inline
 #undef R_IPI
 #define R_IPI static
 
