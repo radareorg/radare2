@@ -162,7 +162,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	RAnalOp op = {0};
 	int oplen, idx = 0;
 	int delay_cnt = 0, delay_idx = 0, delay_after = 0, delay_pending = 0, delay_adjust = 0, undelayed_idx = 0;
-	int delay_fin = 0;
 	// add basic block
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
@@ -276,12 +275,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_STACK_SET:
 			if (op.ptr > 0) {
 				varname = r_str_newf ("arg_%x", op.ptr);
-				r_anal_var_add (anal, fcn->addr, op.addr, op.ptr,
-						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
+				r_anal_var_add (anal, fcn->addr, 0, op.ptr,
+						'a', NULL, anal->bits/8, varname);
+				// TODO: DIR_IN?
+						//R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
 				varname = r_str_newf ("local_%x", -op.ptr);
-				r_anal_var_add (anal, fcn->addr, op.addr, -op.ptr,
-						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
+				r_anal_var_add (anal, fcn->addr, 0, -op.ptr, 'v', NULL, 
+						anal->bits/8, varname);
+						//R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
 			break;
@@ -289,11 +291,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_STACK_GET:
 			if (op.ptr > 0) {
 				varname = r_str_newf ("arg_%x", op.ptr);
-				r_anal_var_add (anal, fcn, op.addr, op.ptr, 'a', NULL, varname, 0);
+				r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'v', NULL, anal->bits/8, varname);
+				r_anal_var_access (anal, fcn->addr, 'a', 0, op.ptr, 0, op.addr); //, NULL, varname, 0);
 						//R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
 				varname = r_str_newf ("local_%x", -op.ptr);
-				r_anal_var_add (anal, fcn, op.addr, -op.ptr, 'v', NULL, varname, 0);
+				r_anal_var_add (anal, fcn->addr, 1, -op.ptr, 'v', NULL, anal->bits/8, varname);
+				r_anal_var_access (anal, fcn->addr, 'v', 0, -op.ptr, 0, -op.addr); //, 'v', NULL, varname, 0);
 						//R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);

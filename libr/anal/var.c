@@ -105,7 +105,7 @@ R_API int r_anal_var_check_name(const char *name) {
 // avr 1,4 counter @ var_addr
 R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, int delta, const char *new_name) {
 	ut32 hash;
-	char key[128], *old_name, val[128];
+	char key[128], *old_name;
 	if (!r_anal_var_check_name (new_name))
 		return 0;
 	if (scope>0) { // local

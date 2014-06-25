@@ -259,13 +259,9 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 	ut64 paddr = off;
 	RIOMap *im = NULL;
 	RListIter *iter;
-	ut64 prevfrom = 0LL;
 	r_list_foreach (io->maps, iter, im) {
 		if (im->fd != fd) continue;
 
-		if (off>=im->from) {
-			prevfrom = im->from;
-		}
 		if (off >= im->from && off < im->to) {
 			paddr = off - im->from + im->delta; //-im->from;
 			done = 1;

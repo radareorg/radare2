@@ -45,9 +45,8 @@ read all sections via mread, resolve maps for unsectioned areas and fill the gap
 R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	int tmp_len = len;
 	ut8 *tmp_buf = buf;
-	ut64 vendaddr, maddr, mendaddr, tmp_vaddr = vaddr;
+	ut64 vendaddr, maddr, tmp_vaddr = vaddr;
 	RIOMap *map;
-	RIODesc *desc;
 	RIOSection *section;
 	RIORange *range;
 	RList *sections, *ranges = NULL, *maps;
@@ -138,13 +137,13 @@ R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 	}
 	if (endaddr > map->to) {						//check if endaddr is in the map
 		if (maddr > map->to)						//check segfault
-			return NULL;
+			return R_FAIL;
 		endaddr = map->to;						//adjust endaddr
 		read_bytes = endaddr - maddr;					//adjust read_bytes
 	}
 	if (maddr < map->from) {						//adjusting things here will make vread very easy, because you can just get a list of fds in the range and the throw every fd on this function
 		if (endaddr < map->from)					//check segfaults
-			return NULL;
+			return R_FAIL;
 		d = map->from - maddr;						//get difference between maddr and start of the map
 		if (read_bytes < d)						//check if  adjusting would cause segfaults
 			return R_FAIL;
@@ -190,6 +189,9 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 	} else {
 		read_from = "File";
 		bytes_read = read (io->desc->fd, buf, len);
+	}
+	if (bytes_read<0) {
+		eprintf ("pread error: %s\n", read_from);
 	}
 	return bytes_read;
 }

@@ -203,7 +203,7 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
 	RListIter *iter;
-	ut64 offset;
+	//ut64 offset;
 	int count = 0;
 
 #if USE_BMH

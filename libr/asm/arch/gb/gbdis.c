@@ -22,6 +22,7 @@ static int gbOpLength(int gboptype){
 	return 0;
 }
 
+#ifndef GB_DIS_LEN_ONLY
 static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 	int foo = gbOpLength (gb_op[buf[0]].type);
 	if (len<foo)
@@ -45,3 +46,4 @@ static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 	}
 	return foo;
 }
+#endif

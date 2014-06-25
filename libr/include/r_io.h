@@ -292,6 +292,7 @@ R_API const ut8* r_io_get_raw (RIO *io, ut64 addr, int *len);
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
 R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
+R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);

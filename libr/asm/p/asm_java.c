@@ -6,9 +6,7 @@
 #include <r_asm.h>
 #include <r_core.h>
 
-#undef R_API
 #undef R_IPI
-#define R_API static inline
 #define R_IPI static
 #include "../../shlr/java/ops.c"
 #include "../../shlr/java/class.c"

@@ -460,5 +460,3 @@ R_API int r_anal_ex_bb_address_comparator(RAnalBlock *a, RAnalBlock *b);
 #define R_ANAL_EX_LDST_STORE_PUT_FIELD_STR "load from_ref to_stack ref"
 
 #endif
-
-

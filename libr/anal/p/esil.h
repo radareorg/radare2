@@ -1,6 +1,7 @@
 #ifndef _UDIS86_ESIL_H
 #define _UDIS86_ESIL_H
 
+#include "udis86/extern.h"
 /* This may be useful for other architectures */
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 

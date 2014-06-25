@@ -9,6 +9,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_reg.h>
+#define GB_DIS_LEN_ONLY
 #include "../../asm/arch/gb/gbdis.c"
 #include "../arch/gb/meta_gb_cmt.c"
 #include "../arch/gb/gb_makros.h"

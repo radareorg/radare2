@@ -31,6 +31,7 @@ R_API void r_flag_item_free (RFlagItem *item) {
 }
 
 R_API RFlag *r_flag_free(RFlag *f) {
+#if 0
 	RFlagItem *item;
 	RListIter *iter;
 	r_list_foreach (f->flags, iter, item) {
@@ -39,6 +40,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 		list = r_hashtable64_lookup (f->ht_off, item->offset);
 		// XXX: segfault sometimes wtf -- r_list_free (list);
 	}
+#endif
 	r_hashtable64_free (f->ht_off);
 	r_hashtable64_free (f->ht_name);
 	r_list_free (f->flags);

@@ -388,7 +388,6 @@ ST_FUNC int tcc_open(TCCState *s1, const char *filename)
 static int tcc_compile(TCCState *s1)
 {
     Sym *define_start;
-    SValue *pvtop;
 
 #ifdef INC_DEBUG
     printf("%s: **** new file\n", file->filename);
@@ -441,7 +440,7 @@ static int tcc_compile(TCCState *s1)
         ch = file->buf_ptr[0];
         tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
         parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM;
-        pvtop = vtop;
+        //pvtop = vtop;
         next();
         decl(VT_CONST);
         if (tok != TOK_EOF)

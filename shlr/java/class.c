@@ -19,7 +19,7 @@
 #define IFDBG  if(DO_THE_DBG)
 #define IFINT  if(0)
 
-static char * U(r_bin_java_unmangle_method)(const char *flags, const char *name, const char *params, const char *r_value);
+R_API char * U(r_bin_java_unmangle_method)(const char *flags, const char *name, const char *params, const char *r_value);
 static int r_bin_java_is_fm_type_private( RBinJavaField *fm_type);
 static int r_bin_java_is_fm_type_protected( RBinJavaField *fm_type);
 static ut32 U(r_bin_java_swap_uint)(ut32 x);
@@ -3265,7 +3265,7 @@ static RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut6
 		cur_location = buf_offset+offset;
 		lnattr = R_NEW0(RBinJavaLineNumberAttribute);
 		if (!lnattr) {
-			eprintf ("Handling Local Variable Table Attributes :Unable to allocate memory (%lu bytes) for a new exception handler structure.\n", sizeof (RBinJavaLocalVariableAttribute));
+			eprintf ("Handling Local Variable Table Attributes :Unable to allocate memory (%u bytes) for a new exception handler structure.\n", (int)sizeof (RBinJavaLocalVariableAttribute));
 			break;
 		}
 		lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
@@ -8124,7 +8124,7 @@ R_API ut8 * r_bin_java_cp_get_bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const
 	return NULL;
 }
 
-R_API ut32 r_bin_java_cp_get_size(RBinJavaObj *bin, ut16 idx){
+R_API ut32 r_bin_java_cp_get_size(RBinJavaObj *bin, ut16 idx) {
 	RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
 	switch (cp_obj->tag) {
 		case R_BIN_JAVA_CP_INTEGER:
@@ -8189,7 +8189,7 @@ static void U(r_bin_java_stack_frame_default_free) (void *s) {
 }
 static void U(r_bin_java_stack_frame_do_nothing_free) (void /*RBinJavaStackMapFrame*/ *stack_frame) {}
 static void U(r_bin_java_stack_frame_do_nothing_new) (RBinJavaObj *bin, RBinJavaStackMapFrame *stack_frame, ut64 offset) {}
-static RBinJavaCPTypeMetas* U(r_bin_java_get_cp_meta_from_tag)(ut8 tag) {
+static inline RBinJavaCPTypeMetas* U(r_bin_java_get_cp_meta_from_tag)(ut8 tag) {
 	ut16 i = 0;
 	// set default to unknown.
 	RBinJavaCPTypeMetas *res = &R_BIN_JAVA_CP_METAS[2];
@@ -8202,7 +8202,7 @@ static RBinJavaCPTypeMetas* U(r_bin_java_get_cp_meta_from_tag)(ut8 tag) {
 	return res;
 }
 
-static ut8 * U(r_bin_java_cp_append_ref_cname_fname_ftype) (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, const char *cname, const ut32 c_len, const char *fname, const ut32 f_len, const char *tname, const ut32 t_len ) {
+static inline ut8 * U(r_bin_java_cp_append_ref_cname_fname_ftype) (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, const char *cname, const ut32 c_len, const char *fname, const ut32 f_len, const char *tname, const ut32 t_len ) {
 	ut32 cn_len = 0, fn_len = 0, ft_len = 0;
 	ut16 cn_idx = 0, fn_idx = 0, ft_idx = 0;
 	ut8* bytes = NULL, *cn_bytes = NULL, *fn_bytes = NULL, *ft_bytes = NULL, *cref_bytes = NULL, *fref_bytes = NULL, *fnt_bytes = NULL;
@@ -8255,13 +8255,14 @@ static ut8 * U(r_bin_java_cp_append_ref_cname_fname_ftype) (RBinJavaObj *bin, ut
 	free (cref_bytes);
 	return bytes;
 }
-static ut8 * U(r_bin_java_cp_get_method_ref) (RBinJavaObj *bin, ut32 *out_sz, ut16 class_idx, ut16 name_and_type_idx ) {
+static inline ut8 * U(r_bin_java_cp_get_method_ref) (RBinJavaObj *bin, ut32 *out_sz, ut16 class_idx, ut16 name_and_type_idx ) {
 	return r_bin_java_cp_get_fm_ref (bin, out_sz, R_BIN_JAVA_CP_METHODREF, class_idx, name_and_type_idx );
 }
-static ut8 * U(r_bin_java_cp_get_field_ref) (RBinJavaObj *bin, ut32 *out_sz, ut16 class_idx, ut16 name_and_type_idx ) {
+static inline ut8 * U(r_bin_java_cp_get_field_ref) (RBinJavaObj *bin, ut32 *out_sz, ut16 class_idx, ut16 name_and_type_idx ) {
 	return r_bin_java_cp_get_fm_ref (bin, out_sz, R_BIN_JAVA_CP_FIELDREF, class_idx, name_and_type_idx );
 }
-R_IPI void U(deinit_java_type_null)() {
+
+R_API void U(deinit_java_type_null)() {
 	free (R_BIN_JAVA_NULL_TYPE.metas);
 }
 
