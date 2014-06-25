@@ -106,6 +106,16 @@ do_it_again:
 #else
 	do {
 		int ret = read (0, buf, 1);
+		// VTE HOME/END support
+		if (buf[0]==79) {
+			read (0,buf,1);
+			if (buf[0]==70) {
+				return 5;
+			} else if (buf[0]==72) {
+				return 1;
+			}
+			return 0;
+		}
 		if (ret == -1) return 0; // read no char
 		if (ret == 0) return -1; // eof
 		// TODO: add support for other invalid chars
@@ -543,117 +553,125 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 27: //esc-5b-41-00-00
 			buf[0] = r_line_readchar();
-			if (buf[0] == -1)
-				return NULL;
-			buf[1] = r_line_readchar();
-			if (buf[1] == -1)
-				return NULL;
-			if (buf[0]==0x5b) { // [
-				switch (buf[1]) {
-				case 0x33: // supr
-					if (I.buffer.index<I.buffer.length)
-						memmove (I.buffer.data+I.buffer.index,
-							I.buffer.data+I.buffer.index+1,
-							strlen (I.buffer.data+I.buffer.index+1)+1);
-					buf[1] = r_line_readchar ();
-					if (buf[1] == -1)
-						return NULL;
-					break;
-				/* arrows */
-				case 0x41:
-					if (gcomp) gcomp_idx++;
-					else if (r_line_hist_up ()==-1)
-						return NULL;
-					break;
-				case 0x42:
-					if (gcomp) {
-						if (gcomp_idx>0)
-							gcomp_idx--;
-					} else if (r_line_hist_down ()==-1)
-						return NULL;
-					break;
-				case 0x43: // C --> right arrow
+			switch (buf[0]) {
+				case -1: return NULL;
+				case 1: // begin
+					 I.buffer.index = 0;
+					 break;
+				case 5: // end
+					 I.buffer.index = I.buffer.length;
+					 break;
+				default:
+					 buf[1] = r_line_readchar();
+					 if (buf[1] == -1)
+						 return NULL;
+					 if (buf[0]==0x5b) { // [
+						 switch (buf[1]) {
+							 case 0x33: // supr
+								 if (I.buffer.index<I.buffer.length)
+									 memmove (I.buffer.data+I.buffer.index,
+											 I.buffer.data+I.buffer.index+1,
+											 strlen (I.buffer.data+I.buffer.index+1)+1);
+								 buf[1] = r_line_readchar ();
+								 if (buf[1] == -1)
+									 return NULL;
+								 break;
+								 /* arrows */
+							 case 0x41:
+								 if (gcomp) gcomp_idx++;
+								 else if (r_line_hist_up ()==-1)
+									 return NULL;
+								 break;
+							 case 0x42:
+								 if (gcomp) {
+									 if (gcomp_idx>0)
+										 gcomp_idx--;
+								 } else if (r_line_hist_down ()==-1)
+									 return NULL;
+								 break;
+							 case 0x43: // C --> right arrow
 #if USE_UTF8
-					{
-						char *s = I.buffer.data+I.buffer.index+1;
-						utflen = 1;
-						while ((*s & 0xc0) == 0x80) {
-							utflen++;
-							s++;
-						}
-						I.buffer.index = I.buffer.index<I.buffer.length?
-							I.buffer.index+utflen: I.buffer.length;
-					}
+								 {
+									 char *s = I.buffer.data+I.buffer.index+1;
+									 utflen = 1;
+									 while ((*s & 0xc0) == 0x80) {
+										 utflen++;
+										 s++;
+									 }
+									 I.buffer.index = I.buffer.index<I.buffer.length?
+										 I.buffer.index+utflen: I.buffer.length;
+								 }
 #else
-					I.buffer.index = I.buffer.index<I.buffer.length?
-						I.buffer.index+1: I.buffer.length;
+								 I.buffer.index = I.buffer.index<I.buffer.length?
+									 I.buffer.index+1: I.buffer.length;
 #endif
-					break;
-				case 0x44: // D --> left arrow
+								 break;
+							 case 0x44: // D --> left arrow
 #if USE_UTF8
-					{
-						char *s = I.buffer.data+I.buffer.index-1;
-						utflen = 1;
-						while (s>I.buffer.data && (*s & 0xc0) == 0x80) {
-							utflen++;
-							s--;
-						}
-					}
-					I.buffer.index = I.buffer.index? I.buffer.index-utflen: 0;
+								 {
+									 char *s = I.buffer.data+I.buffer.index-1;
+									 utflen = 1;
+									 while (s>I.buffer.data && (*s & 0xc0) == 0x80) {
+										 utflen++;
+										 s--;
+									 }
+								 }
+								 I.buffer.index = I.buffer.index? I.buffer.index-utflen: 0;
 #else
-					I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+								 I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
 #endif
-					break;
-				case 0x31: // control + arrow
-					r_cons_readchar ();
-					r_cons_readchar ();
-					ch = r_cons_readchar ();
-					switch (ch) {
-					case 0x41:
-						//first
-						I.buffer.index = 0;
-						break;
-					case 0x44:
-						// previous word
-						for (i=I.buffer.index; i>0; i--) {
-							if (I.buffer.data[i] == ' ') {
-								I.buffer.index = i-1;
-								break;
-							}
-						}
-						if (I.buffer.data[i] != ' ')
-							I.buffer.index = 0;
-						break;
-					case 0x42:
-						//end
-						I.buffer.index = I.buffer.length;
-						break;
-					case 0x43:
-						// next word
-						for (i=I.buffer.index; i<I.buffer.length; i++) {
-							if (I.buffer.data[i] == ' ') {
-								I.buffer.index = i+1;
-								break;
-							}
-						}
-						if (I.buffer.data[i] != ' ')
-							I.buffer.index = I.buffer.length;
-						break;
-					}
-					r_cons_set_raw (1);
-					break;
-				case 0x37: // HOME xrvt-unicode
-					r_cons_readchar ();
-				case 0x48: // HOME
-					I.buffer.index = 0;
-					break;
-				case 0x34: // END
-				case 0x38: // END xrvt-unicode
-					r_cons_readchar ();
-				case 0x46: // END
-					I.buffer.index = I.buffer.length;
-					break;
-				}
+								 break;
+							 case 0x31: // control + arrow
+								 r_cons_readchar ();
+								 r_cons_readchar ();
+								 ch = r_cons_readchar ();
+								 switch (ch) {
+									 case 0x41:
+										 //first
+										 I.buffer.index = 0;
+										 break;
+									 case 0x44:
+										 // previous word
+										 for (i=I.buffer.index; i>0; i--) {
+											 if (I.buffer.data[i] == ' ') {
+												 I.buffer.index = i-1;
+												 break;
+											 }
+										 }
+										 if (I.buffer.data[i] != ' ')
+											 I.buffer.index = 0;
+										 break;
+									 case 0x42:
+										 //end
+										 I.buffer.index = I.buffer.length;
+										 break;
+									 case 0x43:
+										 // next word
+										 for (i=I.buffer.index; i<I.buffer.length; i++) {
+											 if (I.buffer.data[i] == ' ') {
+												 I.buffer.index = i+1;
+												 break;
+											 }
+										 }
+										 if (I.buffer.data[i] != ' ')
+											 I.buffer.index = I.buffer.length;
+										 break;
+								 }
+								 r_cons_set_raw (1);
+								 break;
+							 case 0x37: // HOME xrvt-unicode
+								 r_cons_readchar ();
+							 case 0x48: // HOME
+								 I.buffer.index = 0;
+								 break;
+							 case 0x34: // END
+							 case 0x38: // END xrvt-unicode
+								 r_cons_readchar ();
+							 case 0x46: // END
+								 I.buffer.index = I.buffer.length;
+								 break;
+						 }
+					 }
 			}
 			break;
 		case 8:
