@@ -325,39 +325,41 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		r_cons_printf (
-		"Usage: f[?] [flagname]\n"
-		" f                ; list flags\n"
-		" f.[*[*]]         ; list local per-function flags (*) for r2 commands (cur, all)\n"
-		" f*               ; list flags in r commands\n"
-		" fj               ; list flags in JSON format\n"
-		" fs               ; display flagspaces\n"
-		" fs *             ; set all flagspace\n"
-		" fs sections      ; set flagspace (f will only list flags from selected ones)\n"
-		" fsr newname      ; set flagspace (f will only list flags from selected ones)\n"
-		" fsm [addr]       ; move flags at given address to the current flagspace\n"
-		" fb [addr]        ; set base address for new flags\n"
-		" fb [addr] [flag*]; move flags matching 'flag' to relative addr\n"
-		" f name 12 @ 33   ; set flag 'name' with length 12 at offset 33\n"
-		" f name = 33      ; alias for 'f name @ 33' or 'f name 1 33'\n"
-		" f name 12 33     ; same as above\n"
-		" f name 12 33 cmt ; same as above + set flag comment\n"
-		" f.blah=$$+12     ; set local function label named 'blah'\n"
-		" f-.blah@fcn.foo  ; delete local label from function at current seek (also f.-)\n"
-		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
-		" f-name           ; remove flag 'name'\n"
-		" f-@addr          ; remove flag at address expression\n"
-		" f. fname         ; list all local labels for the given function\n"
-		" fd addr          ; return flag+delta\n"
-		" fm addr          ; move flag at current offset to new address\n"
-		//" fc [name] [cmt]  ; set execution command for a specific flag\n"
-		" fC [name] [cmt]  ; set comment for given flag\n"
-		" fr [old] [[new]] ; rename flag (if no new flag current seek one is used)\n"
-		" fl [flagname]    ; show flag length (size)\n"
-		" fS[on]           ; sort flags by offset or name\n"
-		" fR [f] [t] [m]   ; relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask\n"
-		" fx[d]            ; show hexdump (or disasm) of flag:flagsize\n"
-		" fo               ; show fortunes\n");
+{
+		const char *help_msg[] = {
+		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
+		"f","","list flags",
+		"f."," [*[*]]","list local per-function flags (*) as r2 commands",
+		"f*","","list flags in r commands",
+		"fj","","list flags in JSON format",
+		"fs","","display flagspaces",
+		"fs"," *","set all flagspace",
+		"fs"," sections","set flagspace (f will only list flags from selected ones)",
+		"fsr"," newname","set flagspace (f will only list flags from selected ones)",
+		"fsm"," [addr]","move flags at given address to the current flagspace",
+		"fb"," [addr]","set base address for new flags",
+		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
+		"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
+		"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
+		"f"," name 12 33 [cmt]","same as above + optional comment",
+		"f.","blah=$$+12","set local function label named 'blah'",
+		"f-",".blah@fcn.foo","delete local label from function at current seek (also f.-)",
+		"f+","name 12 @ 33","like above but creates new one if doesnt exist",
+		"f-","name","remove flag 'name'",
+		"f-","@addr","remove flag at address expression",
+		"f."," fname","list all local labels for the given function",
+		"fd"," addr","return flag+delta",
+		"fm"," addr","move flag at current offset to new address",
+		//" fc [name] [cmt]  ; set execution command for a specific flag"
+		"fC"," [name] [cmt]","set comment for given flag",
+		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
+		"fl"," [flagname]","show flag length (size)",
+		"fS","[on]","sort flags by offset or name",
+		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
+		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
+		"fo","","show fortunes"};
+		r_core_cmd_help (core, help_msg);
+}
 		break;
 	}
 	if (str)
