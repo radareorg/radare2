@@ -3,17 +3,16 @@ include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
 
 #CFLAGS+=-g -ggdb -fPIC
-CFLAGS+=-g
+CFLAGS+=-g -ggdb -fPIC
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
-LDFLAGS+=-L../../libr/sdb
 OBJS=code.o class.o ops.o
 
 all: out libr_java.a
 
 libr_java.a: ${OBJS}
 	rm -f libr_java.a
-	${AR} q libr_java.a ${OBJS}
+	${CC_AR} libr_java.a ${OBJS}
 	${RANLIB} libr_java.a
 
 out: ${OBJS} main.o
