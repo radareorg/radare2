@@ -14,6 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		mode |= CS_MODE_BIG_ENDIAN;
 	else
 		mode |= CS_MODE_LITTLE_ENDIAN;
+
 	op->size = 4;
 	op->buf_asm[0] = 0;
 	ret = (a->bits==64)?
@@ -23,6 +24,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		ret = -1;
 		goto beach;
 	}
+	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+	} else cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	n = cs_disasm_ex (cd, buf, R_MIN (4, len),
 		a->pc, 1, &insn);

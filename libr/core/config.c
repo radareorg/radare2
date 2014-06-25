@@ -285,8 +285,10 @@ static int cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("att\nintel\n");
+		r_cons_printf ("att\nintel\nregnum\n");
 		return R_FALSE;
+	} else if (!strcmp (node->value, "regnum")) {
+		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_REGNUM);
 	} else if (!strcmp (node->value, "intel")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
 	} else if (!strcmp (node->value, "att")) {

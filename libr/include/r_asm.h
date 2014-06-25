@@ -44,7 +44,8 @@ R_LIB_VERSION_HEADER(r_asm);
 enum {
 	R_ASM_SYNTAX_NONE = 0,
 	R_ASM_SYNTAX_INTEL,
-	R_ASM_SYNTAX_ATT
+	R_ASM_SYNTAX_ATT,
+	R_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
 };
 
 enum {

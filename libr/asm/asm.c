@@ -285,6 +285,7 @@ R_API int r_asm_set_big_endian(RAsm *a, int b) {
 
 R_API int r_asm_set_syntax(RAsm *a, int syntax) {
 	switch (syntax) {
+	case R_ASM_SYNTAX_REGNUM:
 	case R_ASM_SYNTAX_INTEL:
 	case R_ASM_SYNTAX_ATT:
 		a->syntax = syntax;

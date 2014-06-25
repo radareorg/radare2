@@ -22,6 +22,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->size = 4;
 	ret = cs_open (CS_ARCH_MIPS, mode, &handle);
 	if (ret) goto fin;
+	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
+		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+	} else cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	n = cs_disasm_ex (handle, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n<1) {
