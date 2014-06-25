@@ -166,7 +166,7 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_setenv(const char *key, const char *value) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	if (!key) return 0;
 	if (value == NULL) {
 		unsetenv (key);
@@ -240,7 +240,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 }
 
 R_API char *r_sys_getenv(const char *key) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	static char envbuf[1024];
 	if (!key) return NULL;
 	envbuf[0] = 0;
