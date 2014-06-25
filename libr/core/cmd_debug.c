@@ -973,7 +973,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int i, times, follow=0;
+	int i, times=0, follow=0;
 	ut64 addr;
 	char *ptr;
 
@@ -1065,7 +1065,8 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 's':
-		times = atoi (input+2);
+		if (strlen (input) > 2)
+			times = atoi (input+2);
 		if (times<1) times = 1;
 		switch (input[1]) {
 		case '?': {
