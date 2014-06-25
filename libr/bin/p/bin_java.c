@@ -4,11 +4,9 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#undef R_API
-#define R_API static inline
-#undef R_IPI
-#define R_IPI static
-#include "../../shlr/java/class.c"
+
+#include "../../shlr/java/class.h"
+#include "../../shlr/java/code.h"
 
 #define IFDBG_BIN_JAVA  if(0)
 

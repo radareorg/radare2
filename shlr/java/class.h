@@ -7,7 +7,7 @@
 
 #include <r_types.h>
 #undef U
-#define U(x) UNUSED_FUNCTION(x)
+#define U(x) x
 #include <r_list.h>
 #include <r_bin.h>
 #include <sdb.h>
@@ -749,6 +749,8 @@ typedef struct r_bin_java_obj_t {
 
 R_API RList * U(r_bin_java_get_interface_names)(RBinJavaObj * bin);
 R_API RBinJavaCPTypeObj* U(r_bin_java_get_item_from_cp)(RBinJavaObj *bin, int i);
+R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
+R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz);
 R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin);
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin);
 R_API RList* r_bin_java_get_fields(RBinJavaObj *bin);

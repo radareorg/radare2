@@ -18,4 +18,6 @@ ALL_TARGETS+=${TARGET_JAVA}
 
 ${TARGET_JAVA}: ${OBJ_JAVA}
 	${CC} $(call libname,bin_java) ${CFLAGS} ${OBJ_JAVA} \
-		$(LDFLAGS) ${SHARED2_JAVA} ${SHLR}/sdb/src/libsdb.a
+		$(LDFLAGS) ${SHARED2_JAVA} \
+		${SHLR}/java/libr_java.a \
+		${SHLR}/sdb/src/libsdb.a
