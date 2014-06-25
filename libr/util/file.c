@@ -564,12 +564,12 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
 	char name[1024];
-	mode_t mask;
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
 		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	else h = -1;
 #else
+	mode_t mask;
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
 	mask = umask(S_IWGRP | S_IWOTH);
 	h = mkstemp (name);
