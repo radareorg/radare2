@@ -9,7 +9,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_socket);
 
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER(r_socket);
 #include <openssl/err.h>
 #endif
 
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 #include <ws2tcpip.h>
 #endif
 

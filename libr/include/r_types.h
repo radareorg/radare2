@@ -39,11 +39,15 @@
 #if __WIN32__ || __CYGWIN__ || MINGW32
   #define __addr_t_defined
   #include <windows.h>
+#endif
+#if __WIN32__ || MINGW32
   #include <winsock.h>
+#if __WIN32__ || __CYGWIN__ || MINGW32
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
   #undef __UNIX__
   #undef __BSD__
+#endif
 #endif
 
 #ifdef __GNUC__

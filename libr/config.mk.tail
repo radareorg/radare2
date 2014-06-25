@@ -108,6 +108,19 @@ EXT_SO=dll
 EXT_EXE=.exe
 TH_LIBS=
 endif
+ifeq (${OSTYPE},cygwin_nt-6.1)
+OSTYPE=cygwin
+endif
+ifeq (${OSTYPE},cygwin_nt-6.1-wow64)
+OSTYPE=cygwin
+endif
+ifeq (${OSTYPE},cygwin)
+CFLAGS+=-D__CYGWIN__=1
+EXT_AR=lib
+EXT_SO=dll
+EXT_EXE=.exe
+TH_LIBS=
+endif
 ifeq (${OSTYPE},bsd)
 CFLAGS+=-D__UNIX__=1
 EXT_AR=a

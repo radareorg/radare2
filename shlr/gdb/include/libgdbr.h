@@ -4,14 +4,17 @@
 
 #include <stdint.h>
 #include <unistd.h>
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netdb.h>
-#elif __WINDOWS__
+#endif
+#if __WINDOWS__
 #include <windows.h>
+#if !__CYGWIN__
 #include <winsock.h>
+#endif
 #endif
 
 #include "arch.h"
@@ -20,7 +23,7 @@
 #define X86_64 ARCH_X86_64
 #define X86_32 ARCH_X86_32
 
-/*! 
+/*!
  * Structure that saves a gdb message
  */
 typedef struct libgdbr_message_t
@@ -31,20 +34,20 @@ typedef struct libgdbr_message_t
 } libgdbr_message_t;
 
 
-/*! 
+/*!
  * Message stack
  */
 typedef struct libgdbr_message_stack_t
 {
-	int count; 
+	int count;
 } libgdbr_message_stack_t;
 
 
-/*! 
+/*!
  * Core "object" that saves
  * the instance of the lib
  */
-typedef struct libgdbr_t 
+typedef struct libgdbr_t
 {
 	char* send_buff; // defines a buffer for reading and sending stuff
 	ssize_t send_len; // definses the maximal len for the given buffer
