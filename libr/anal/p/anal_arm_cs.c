@@ -115,7 +115,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle;
 	cs_insn *insn;
 	int mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
-	int n, ret = (a->bits==64)?
+	int i, n, ret = (a->bits==64)?
 	cs_open (CS_ARCH_ARM64, mode, &handle):
 	cs_open (CS_ARCH_ARM, mode, &handle);
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -131,10 +131,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->size = insn->size;
 			switch (insn->id) {
 			case ARM_INS_POP:
-				if (cs_reg_read (handle, insn, ARM_REG_PC)) {
-					op->type = R_ANAL_OP_TYPE_RET;
-				} else {
-					op->type = R_ANAL_OP_TYPE_POP;
+			case ARM_INS_LDM:
+				op->type = R_ANAL_OP_TYPE_POP;
+
+				for (i = 0; i < insn->detail->arm.op_count; i++) {
+					if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
+							insn->detail->arm.operands[i].reg == ARM_REG_PC) {
+						if (insn->detail->arm.cc == ARM_CC_AL)
+							op->type = R_ANAL_OP_TYPE_RET;
+						else
+							op->type = R_ANAL_OP_TYPE_CRET;
+						break;
+					}
 				}
 				break;
 			case ARM_INS_SUB:
