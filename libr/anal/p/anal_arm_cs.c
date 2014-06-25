@@ -153,6 +153,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case ARM_INS_VQMOVN:
 				op->type = R_ANAL_OP_TYPE_MOV;
 				break;
+			case ARM_INS_CMP:
 			case ARM_INS_TST:
 				op->type = R_ANAL_OP_TYPE_CMP;
 				break;
@@ -285,7 +286,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 RAnalPlugin r_anal_plugin_arm_cs = {
-	.name = "arm.cs",
+	.name = "arm",
 	.desc = "Capstone ARM analyzer",
 	.license = "BSD",
 	.arch = R_SYS_ARCH_ARM,

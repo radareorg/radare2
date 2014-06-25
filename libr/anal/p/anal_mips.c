@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
+/* radare - LGPL - Copyright 2010-2014 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -470,7 +470,7 @@ static int mips_set_reg_profile(RAnal* anal){
 }
 
 struct r_anal_plugin_t r_anal_plugin_mips = {
-	.name = "mips",
+	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_MIPS,

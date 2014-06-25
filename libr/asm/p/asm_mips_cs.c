@@ -45,7 +45,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 RAsmPlugin r_asm_plugin_mips_cs = {
-	.name = "mips.cs",
+	.name = "mips",
 	.desc = "Capstone MIPS disassembler",
 	.license = "BSD",
 	.arch = "mips",

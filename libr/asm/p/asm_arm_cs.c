@@ -49,7 +49,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 RAsmPlugin r_asm_plugin_arm_cs = {
-	.name = "arm.cs",
+	.name = "arm",
 	.desc = "Capstone ARM disassembler",
 	.license = "BSD",
 	.arch = "arm",

@@ -449,7 +449,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 struct r_anal_plugin_t r_anal_plugin_arm = {
-	.name = "arm",
+	.name = "arm.gnu",
 	.arch = R_SYS_ARCH_ARM,
 	.license = "LGPL3",
 	.bits = 32 | 64,
