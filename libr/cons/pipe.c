@@ -23,7 +23,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	if (backup_fd != -1)
 		close (backup_fd);
 	backup_fdn = (fdn>0)? fdn: 1;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	backup_fd = 2002-(fd-2); // windows xp has 2048 as limit fd
 	if (_dup2 (fdn, backup_fd) == -1) {
 #else
