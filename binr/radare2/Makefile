@@ -28,3 +28,4 @@ endif
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
+include ../../shlr/java/deps.mk
