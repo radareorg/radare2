@@ -28,7 +28,7 @@
 
 
 /*!
- * \brief Function sends a command to the gdbserver 
+ * \brief Function sends a command to the gdbserver
  * \param instance the "instance" of the current libgdbr session
  * \param command the command that will be sent
  * \returns a failure code (currently -1) or 0 if call successfully

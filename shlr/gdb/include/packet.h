@@ -10,7 +10,9 @@
 #include <stdio.h>
 #if __WINDOWS__
 #include <windows.h>
+#if !__CYGWIN__
 #include <winsock.h>
+#endif
 #endif
 
 typedef struct parsing_object_t {
