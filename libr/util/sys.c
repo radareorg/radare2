@@ -16,7 +16,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 //#  include <libproc.h>
 # endif
 #endif
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
@@ -24,7 +24,8 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 #ifdef __HAIKU__
 # define Sleep sleep
 #endif
-#elif __WINDOWS__
+#endif
+#if __WINDOWS__
 # include <io.h>
 # include <winbase.h>
 #endif
