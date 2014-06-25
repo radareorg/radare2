@@ -162,7 +162,7 @@ endif
 
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
-		$(MAKE) CC="$(CC)" AR_EXT=a \
+		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 \
 		RANLIB="$(RANLIB)" AR="$(AR)" \
 		libcapstone.a 
 endif
