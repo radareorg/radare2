@@ -43,7 +43,7 @@ static int __resize(RIO *io, RIODesc *fd, ut64 count) {
 		return -1;
 	new_buf = malloc (count);
 	if (!new_buf) return -1;
-	memcpy (new_buf, RIOMALLOC_BUF (fd), count);
+	memcpy (new_buf, RIOMALLOC_BUF (fd), R_MIN(count, RIOMALLOC_SZ (fd)));
 	if (count > RIOMALLOC_SZ (fd) )
 		memset (new_buf+RIOMALLOC_SZ (fd), 0, count-RIOMALLOC_SZ (fd));
 
