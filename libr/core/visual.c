@@ -75,6 +75,7 @@ static void visual_help() {
 	r_cons_less_str (
 	"Visual mode help:\n"
 	" ?        show this help or manpage in cursor mode\n"
+	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 	" !        run r2048 game\n"
 	" _        enter the hud\n"
 	" .        seek to program counter\n"
@@ -565,6 +566,46 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'M':
 		r_core_visual_mounts (core);
+		break;
+	case '&':
+		switch (core->assembler->bits) {
+		case 8:
+			r_config_set_i (core->config, "asm.bits", 16);
+			if (core->assembler->bits!=16) {
+				r_config_set_i (core->config, "asm.bits", 32);
+				if (core->assembler->bits!=32) {
+					r_config_set_i (core->config, "asm.bits", 64);
+				}
+			}
+			break;
+		case 16:
+			r_config_set_i (core->config, "asm.bits", 32);
+			if (core->assembler->bits!=32) {
+				r_config_set_i (core->config, "asm.bits", 64);
+				if (core->assembler->bits!=64) {
+					r_config_set_i (core->config, "asm.bits", 8);
+				}
+			}
+			break;
+		case 32:
+			r_config_set_i (core->config, "asm.bits", 64);
+			if (core->assembler->bits!=64) {
+				r_config_set_i (core->config, "asm.bits", 8);
+				if (core->assembler->bits!=8) {
+					r_config_set_i (core->config, "asm.bits", 16);
+				}
+			}
+			break;
+		case 64:
+			r_config_set_i (core->config, "asm.bits", 8);
+			if (core->assembler->bits!=8) {
+				r_config_set_i (core->config, "asm.bits", 16);
+				if (core->assembler->bits!=16) {
+					r_config_set_i (core->config, "asm.bits", 32);
+				}
+			}
+			break;
+		}
 		break;
 	case 't':
 		r_core_visual_trackflags (core);

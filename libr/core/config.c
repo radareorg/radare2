@@ -222,13 +222,14 @@ static int cb_asmbits(void *user, void *data) {
 
 	asmos = r_config_get (core->config, "asm.os");
 	asmarch = r_config_get (core->config, "asm.arch");
-	if (core->anal)
+	if (core->anal) {
 		if (!r_syscall_setup (core->anal->syscall, asmarch,
 					asmos, node->i_value)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
-	if (core->anal) __setsegoff (core->config, asmarch, core->anal->bits);
+		__setsegoff (core->config, asmarch, core->anal->bits);
+	}
 	return ret;
 }
 
