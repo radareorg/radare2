@@ -222,7 +222,9 @@ static int runfile () {
 #if __UNIX__
 	set_limit (_docore, RLIMIT_CORE, RLIM_INFINITY);
 	set_limit (_maxfd, RLIMIT_NOFILE, _maxfd);
+#ifdef RLIMIT_NPROC
 	set_limit (_maxproc, RLIMIT_NPROC, _maxproc);
+#endif
 	set_limit (_maxstack, RLIMIT_STACK, _maxstack);
 #else
 	if (_docore || _maxfd || _maxproc || _maxstack)
@@ -321,6 +323,8 @@ static int runfile () {
 	if (_libpath) {
 #if __WINDOWS__
 		eprintf ("rarun2: libpath unsupported for this platform\n");
+#elif __HAIKU__
+		r_sys_setenv ("LIBRARY_PATH", _libpath);
 #elif __APPLE__
 		r_sys_setenv ("DYLD_LIBRARY_PATH", _libpath);
 #else
