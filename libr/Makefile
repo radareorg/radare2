@@ -2,11 +2,12 @@ include ../global.mk
 include config.mk
 include ../mk/${COMPILER}.mk
 
+DESTDIR:=$(call rmbdlslash,$(DESTDIR))
 PREFIX?=${PWD}/../prefix
-PFX=${DESTDIR}/${PREFIX}
-LFX=${DESTDIR}/${LIBDIR}
-IFX=${DESTDIR}/${INCLUDEDIR}
-PWD=$(shell pwd)
+PFX=$(call rmdblslash,${DESTDIR}/${PREFIX})
+LFX=$(call rmdblslash,${DESTDIR}/${LIBDIR})
+IFX=$(call rmdblslash,${DESTDIR}/${INCLUDEDIR})
+PWD=$(call rmdblslash,$(shell pwd))
 
 LIBS0=util hash
 LIBS1=reg cons db magic diff bp search config socket
