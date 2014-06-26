@@ -1,21 +1,25 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	const char* help_msg[] = {
+		"Usage:","S[?-.*=adlr] [...]","",
+		"S","","list sections",
+		"S.","","show current section name",
+		"S?","","show this help message",
+		"S*","","list sections (in radare commands)",
+		"S=","","list sections (in nice ascii-art bars)",
+		"Sa","[-] [arch] [bits] [[off]]","Specify arch and bits for given section",
+		"Sd"," [file]","dump current section to a file (see dmd)",
+		"Sl"," [file]","load contents of file into current section (see dml)",
+		"Sr"," [name]","rename section on current seek",
+		"S"," off va sz vsz name rwx","add new section (if(!vsz)vsz=sz)",
+		"S-","[id|0xoff|*]","remove this section definition",
+		NULL
+	};
 	switch (*input) {
 	case '?':
-		r_cons_printf ("|Usage: S[?-.*=adlr] [...]\n"
-		"| S               ; list sections\n"
-		"| S.              ; show current section name\n"
-		"| S?              ; show this help message\n"
-		"| S*              ; list sections (in radare commands)\n"
-		"| S=              ; list sections (in nice ascii-art bars)\n"
-		"| Sa[-] [arch] [bits] [[off]] ; Specify arch and bits for given section\n"
-		"| Sd [file]       ; dump current section to a file (see dmd)\n"
-		"| Sl [file]       ; load contents of file into current section (see dml)\n"
-		"| Sr [name]       ; rename section on current seek\n"
-		"| S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
-		"| S-[id|0xoff|*]  ; remove this section definition\n");
+		r_core_cmd_help (core, help_msg);
 // TODO: add command to resize current section
 		break;
 	case 'a':
@@ -178,6 +182,7 @@ static int cmd_section(void *data, const char *input) {
 				name = r_str_word_get0 (ptr, 4);
 			case 4: // get vsize
 				vsize = r_num_math (core->num, r_str_word_get0 (ptr, 3));
+				if (!vsize) vsize = size;
 			case 3: // get size
 				size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
 			case 2: // get vaddr

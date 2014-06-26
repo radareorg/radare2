@@ -273,7 +273,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 
 	switch (input[0]) {
-	case '?':{
+	case '?': {
 			const char* help_msg[] = {
 			"Usage:", "dm", " # Memory maps commands",
 			"dm", "", "List memory maps of target process",
@@ -287,7 +287,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			"dml", " <file>", "Load contents of file into the current map region (see Sl)",
 			"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 			//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-			"TODO:", "map files in process memory. (dmf file @ [addr])", "",
+			"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 		}

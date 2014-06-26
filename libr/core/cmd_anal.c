@@ -21,6 +21,7 @@ static void find_refs(RCore *core, const char *glob) {
 #if 1
 /* TODO: Move into cmd_anal() */
 static void var_help(char ch) {
+	// TODO: colorize using r_core_help()
 	const char *kind = (ch=='v')?"locals":"args";
 	if (ch=='a' || ch=='A' || ch=='v') {
 		eprintf ("|Usage: af%c [idx] [type] [name]\n", ch);
@@ -1549,8 +1550,8 @@ static int cmd_anal(void *data, const char *input) {
 			//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
 			NULL
 			};
-			r_core_cmd_help(core, help_msg);
-			r_cons_printf("Examples:\n"
+			r_core_cmd_help (core, help_msg);
+			r_cons_printf ("Examples:\n"
 			" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 			" f ds @ `S*~data:0[3]`; f d @ section..data\n"
 			" .ad t t+ts @ d:ds\n",
