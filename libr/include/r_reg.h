@@ -113,6 +113,8 @@ R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
+R_API RRegItem *r_reg_get_at (RReg *reg, int type, int regsize, int delta);
+R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8* buf, int buflen, RRegItem *prev_ri, int regsize);
 
 /* XXX: dupped ?? */
 R_API int r_reg_type_by_name(const char *str);

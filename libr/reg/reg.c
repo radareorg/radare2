@@ -324,3 +324,38 @@ R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	}
 	return 0LL;
 }
+
+R_API RRegItem *r_reg_get_at (RReg *reg, int type, int regsize, int delta) {
+	RList *list = r_reg_get_list (reg, type);
+	RRegItem *ri;
+	RListIter *iter;
+	r_list_foreach (list, iter, ri) {
+		if (ri->size == regsize) {
+			if (ri->offset == delta)
+				return ri;
+		}
+	}
+	return NULL;
+}
+
+/* return the next register in the current regset that differs from */
+R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8* buf, int buflen, RRegItem *prev_ri, int regsize) {
+	RRegArena *arena;
+	const ut8 *dist;
+	int delta;
+	if (type < 0 || type > (R_REG_TYPE_LAST-1))
+		return NULL;
+	arena = reg->regset[type].arena;
+	delta = prev_ri? prev_ri->offset+prev_ri->size: 0;
+	if (delta>=arena->size || delta >= buflen)
+		return NULL;
+	dist = r_mem_mem (arena->bytes+delta, arena->size, buf, buflen);
+	if (dist) {
+		RRegItem *ri = r_reg_get_at (reg, regsize, type,
+			(int)(size_t)(dist-arena->bytes));
+		if (ri) return ri;
+		return r_reg_next_diff (reg, type,
+			buf, buflen, ri, regsize);
+	}
+	return NULL;
+}
