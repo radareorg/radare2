@@ -25,6 +25,8 @@ PREFIX=${PWD}/prefix
 VERSION=`date '+%Y%m%d'`
 endif
 
+rmdblslash=$(subst //,/,$(subst //,/,$(subst /$$,,$1)))
+
 PFX=${DESTDIR}${PREFIX}
 MDR=${DESTDIR}${MANDIR}
 
