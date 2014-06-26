@@ -217,8 +217,14 @@ static int cb_asmbits(void *user, void *data) {
 	if (!r_anal_set_bits (core->anal, node->i_value))
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
 	core->print->bits = node->i_value;
-	if (core->dbg  && core->anal && core->anal->cur)
+	if (core->dbg  && core->anal && core->anal->cur) {
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
+		if (core->dbg->h && core->dbg->h->reg_profile) {
+			char *rp = core->dbg->h->reg_profile (core->dbg);
+			r_reg_set_profile_string (core->dbg->reg, rp);
+			r_reg_set_profile_string (core->anal->reg, rp);
+		}
+	}
 
 	asmos = r_config_get (core->config, "asm.os");
 	asmarch = r_config_get (core->config, "asm.arch");
