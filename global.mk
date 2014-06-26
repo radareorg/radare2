@@ -25,6 +25,10 @@ PREFIX=${PWD}/prefix
 VERSION=`date '+%Y%m%d'`
 endif
 
+define rmdblslash
+        @echo '$1' | sed -e 's,//,/,g' -e 's,//,/,g' -e 's,/$$,,'
+endef
+
 PFX=${DESTDIR}${PREFIX}
 MDR=${DESTDIR}${MANDIR}
 

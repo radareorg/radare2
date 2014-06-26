@@ -4,7 +4,7 @@ include ../../config-user.mk
 CC?=gcc
 CC_AR?=ar q
 RANLIB?=ranlib
-OSTYPE?=$(shell uname -s)
+OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)
 all:
 	echo LE FAIL
@@ -57,17 +57,11 @@ CFLAGS+=-Iinclude
 CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 
-ifeq ($(OSTYPE),cygwin_nt-6.1)
-OSTYPE=cygwin
-endif
-ifeq ($(OSTYPE),cygwin_nt-6.1-wow64)
-OSTYPE=cygwin
-endif
-ifneq ($(OSTYPE),cygwin)
+ifneq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-fPIC
 endif
 # This fixes a silly GNU gcc build problem in OSX - BLAME! :D
-ifeq ($(OSTYPE),darwin)
+ifeq (${OSTYPE},darwin)
 CFLAGS+=-DAPPLE_CC
 endif
 

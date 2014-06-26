@@ -2,10 +2,20 @@ include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
-CFLAGS+=-I../../libr/include
-CFLAGS+=-fPIC -Wall -g -ggdb
+ifneq (,$(findstring cygwin,${OSTYPE}))
+CFLAGS+=-D__CYGWIN__=1
+EXT_SO=dll
+SOVER=${EXT_SO}
 LDFLAGS+=-shared
-ifeq ($(OSNAME),darwin)
+LDFLAGS_SHARED?=-shared
+else
+CFLAGS+=-fPIC
+endif
+
+CFLAGS+=-I../../libr/include
+CFLAGS+=-Wall -g -ggdb
+LDFLAGS+=-shared
+ifeq (${OSNAME},darwin)
 SOEXT?=dylib
 else
 SOEXT?=so

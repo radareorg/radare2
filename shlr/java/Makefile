@@ -2,20 +2,14 @@ include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
 
-OSTYPE?=$(shell uname -s)
+OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)
 all:
 	echo LE FAIL
 	exit 1
 endif
 
-ifeq ($(OSTYPE),cygwin_nt-6.1)
-OSTYPE=cygwin
-endif
-ifeq ($(OSTYPE),cygwin_nt-6.1-wow64)
-OSTYPE=cygwin
-endif
-ifneq ($(OSTYPE),cygwin)
+ifeq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-fPIC
 endif
 

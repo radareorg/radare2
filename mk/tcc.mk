@@ -15,13 +15,7 @@ CFLAGS_OPT3=-O3
 ifeq ($(OSTYPE),auto)
 OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
 endif
-ifeq ($(OSTYPE),cygwin_nt-6.1)
-OSTYPE=cygwin
-endif
-ifeq ($(OSTYPE),cygwin_nt-6.1-wow64)
-OSTYPE=cygwin
-endif
-ifeq ($(OSTYPE),cygwin)
+ifneq (,$(findstring cygwin,$(OSTYPE)))
 PIC_CFLAGS=
 else
 PIC_CFLAGS=-fPIC
