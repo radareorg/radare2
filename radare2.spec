@@ -1,5 +1,5 @@
 Name:           radare2
-Version:        0.9.8rc3
+Version:        0.9.7.3
 Release:        1%{?dist}
 Summary:        radare2 reverse engineering framework
 Group:          Applications/Engineering
@@ -38,3 +38,6 @@ make install DESTDIR="%{buildroot}"
 %{_bindir}/%{name}
 
 %changelog
+* Fri Jun 27 2014 pancake <pancake@nopcode.org> 0.9.7.3-1
+- new package built with tito
+
