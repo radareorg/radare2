@@ -936,12 +936,14 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		return NULL;
 	if (!(entry = malloc (sizeof (struct r_bin_mach0_addr_t))))
 		return NULL;
+// hack to bypass this test
+bin->entry = NULL;
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		entry->addr = bin->entry;
 		return entry;
 	}
-	entry->addr = 0LL;
+	//entry->addr = 0LL;
 	if (!bin->entry || (entry->offset==0)) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
 		for (i = 0; i < bin->nsects; i++) {

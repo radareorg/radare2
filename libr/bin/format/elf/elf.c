@@ -180,7 +180,7 @@ static Elf_(Shdr)* Elf_(r_bin_elf_get_section_by_name)(struct Elf_(r_bin_elf_obj
 	int i;
 	ut32 cur_strtab_len;
 
-	if (!bin->shdr || !bin->strtab)
+	if (!bin || !bin->shdr || !bin->strtab)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if(!UT32_SUB(&cur_strtab_len, bin->shstrtab_section->sh_size, bin->shdr[i].sh_name))
@@ -265,14 +265,13 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 			break;
 		}
 	}
-
-	free(rel);
+	free (rel);
 	return plt_sym_addr;
 }
 
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (bin->phdr)
+	if (bin && bin->phdr)
 		for (i = 0; i < bin->ehdr.e_phnum; i++)
 			if (bin->phdr[i].p_type == PT_GNU_STACK)
 				return (!(bin->phdr[i].p_flags & 1))? 1: 0;
@@ -281,7 +280,7 @@ int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (bin->phdr)
+	if (bin && bin->phdr)
 		for (i = 0; i < bin->ehdr.e_phnum; i++)
 			if (bin->phdr[i].p_type == PT_GNU_RELRO)
 				return 1;
@@ -290,32 +289,29 @@ int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (!bin->phdr)
-		return 0;
-
 	/* hopefully.. the first PT_LOAD is base */
-	for (i = 0; i < bin->ehdr.e_phnum; i++)
-		if (bin->phdr[i].p_type == PT_LOAD)
-			return (ut64)bin->phdr[i].p_vaddr;
+	if (bin && bin->phdr)
+		for (i = 0; i < bin->ehdr.e_phnum; i++)
+			if (bin->phdr[i].p_type == PT_LOAD)
+				return (ut64)bin->phdr[i].p_vaddr;
 	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_boffset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (!bin->phdr)
-		return 0;
-
 	/* hopefully.. the first PT_LOAD is base */
-	for (i = 0; i < bin->ehdr.e_phnum; i++)
-		if (bin->phdr[i].p_type == PT_LOAD)
-			return (ut64) bin->phdr[i].p_offset;
+	if (bin && bin->phdr)
+		for (i = 0; i < bin->ehdr.e_phnum; i++)
+			if (bin->phdr[i].p_type == PT_LOAD)
+				return (ut64) bin->phdr[i].p_offset;
 	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
-
+	if (!bin)
+		return 0LL;
 	if (r_buf_read_at (bin->b, entry+16, buf, sizeof (buf)) == -1) {
 		eprintf ("Warning: read (init_offset)\n");
 		return 0;
@@ -330,6 +326,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
+	if (!bin) return 0LL;
 
 	if (r_buf_read_at (bin->b, entry+11, buf, sizeof (buf)) == -1) {
 		eprintf ("Warning: read (get_fini)\n");
@@ -337,13 +334,17 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	if (*buf == 0x68) { // push // x86/32 only
 		memmove (buf, buf+1, 4);
-		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+		return (ut64)((int)(buf[0]+(buf[1]<<8)+
+			(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
 	}
 	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	ut64 entry = (ut64) bin->ehdr.e_entry;
+	ut64 entry;
+	if (!bin)
+		return 0LL;
+	entry = (ut64) bin->ehdr.e_entry;
 	if (entry == 0LL) {
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) return entry;
@@ -360,6 +361,8 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
+	if (!bin)
+		return 0LL;
 
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) == -1) {
 		eprintf ("Warning: read (main)\n");
@@ -543,7 +546,10 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 char* Elf_(r_bin_elf_get_file_type)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	ut32 e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
+	ut32 e_type;
+	if (!bin)
+		return NULL;
+	e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
 	switch (e_type) {
 	case ET_NONE: return strdup ("NONE (None)");
 	case ET_REL:  return strdup ("REL (Relocatable file)");
@@ -640,7 +646,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	char *ret = NULL;
 	int ndyn, i, j, len;
 
-	if (!bin->phdr)
+	if (!bin || !bin->phdr)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
@@ -834,7 +840,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 	ut64 stroff = 0;
 	int ndyn, i, j, k, len;
 
-	if (!bin->phdr)
+	if (!bin || !bin->phdr)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
@@ -942,7 +948,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	Elf_(Sym) *sym;
 	char *strtab;
 
-	if (!bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
+	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
 		return NULL;
 	if (bin->ehdr.e_type == ET_REL) {
 		// XXX: we must obey shndx here
@@ -1106,7 +1112,8 @@ if (
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_field_t *ret = NULL;
 	int i = 0, j;
-
+	if (!bin)
+		return NULL;
 	if ((ret = malloc ((bin->ehdr.e_phnum+3 + 1) *
 			sizeof (struct r_bin_elf_field_t))) == NULL)
 		return NULL;

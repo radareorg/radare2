@@ -8,6 +8,7 @@
 
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
+static RBinInfo* info(RBinFile *arch);
 
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
@@ -52,7 +53,18 @@ static int destroy(RBinFile *arch) {
 }
 
 static ut64 baddr(RBinFile *arch) {
-	return MACH0_(r_bin_mach0_get_baddr) (arch->o->bin_obj);
+	RBinInfo *bi = info (arch);
+	if (strstr (bi->type, "Exe")) {
+		int is_arm = !strcmp (bi->arch, "arm");
+		free (bi);
+		// WARNING: THIS IS VERY HACKY
+		if (bi->bits==32)
+			return 0x1000;
+		//return MACH0_(r_bin_mach0_get_baddr) (arch->o->bin_obj);
+		return is_arm? 0x1000: 0x100000000;
+	}
+	free (bi);
+	return 0LL;
 }
 
 static RList* entries(RBinFile *arch) {
@@ -68,7 +80,7 @@ static RList* entries(RBinFile *arch) {
 		return ret;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + obj->boffset;
-		ptr->vaddr = entry->addr;
+		ptr->vaddr = entry->addr; //
 		r_list_append (ret, ptr);
 	}
 	free (entry);
