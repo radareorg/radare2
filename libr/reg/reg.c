@@ -347,15 +347,16 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8* buf, int buflen,
 		return NULL;
 	arena = reg->regset[type].arena;
 	delta = prev_ri? prev_ri->offset+prev_ri->size: 0;
-	if (delta>=arena->size || delta >= buflen)
-		return NULL;
-	dist = r_mem_mem (arena->bytes+delta, arena->size, buf, buflen);
-	if (dist) {
-		RRegItem *ri = r_reg_get_at (reg, regsize, type,
-			(int)(size_t)(dist-arena->bytes));
-		if (ri) return ri;
-		return r_reg_next_diff (reg, type,
-			buf, buflen, ri, regsize);
-	}
+	for (;;) {
+		if (delta>=arena->size || delta >= buflen)
+			break;
+		dist = r_mem_mem (arena->bytes+delta, arena->size, buf, buflen);
+		if (dist) {
+			RRegItem *ri = r_reg_get_at (reg, regsize, type,
+				(int)(size_t)(dist-arena->bytes));
+			if (ri) return ri;
+		}
+		delta += regsize;
+	} while (delta<buflen);
 	return NULL;
 }
