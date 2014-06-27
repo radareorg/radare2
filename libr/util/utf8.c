@@ -190,7 +190,7 @@ static const struct { ut32 from, to; } nonprintable_ranges[] = {
 };
 static const int nonprintable_ranges_count = sizeof (nonprintable_ranges) / sizeof (nonprintable_ranges[0]);
 
-R_API int r_utf8_decode (ut8 *ptr, RRune *ch) {
+R_API int r_utf8_decode (const ut8 *ptr, RRune *ch) {
 	if (ptr[0] < 0x80) {
 		*ch = (ut32)ptr[0];
 		return 1;

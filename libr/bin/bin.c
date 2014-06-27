@@ -102,13 +102,21 @@ R_API int r_bin_file_cur_set_plugin (RBinFile *binfile, RBinPlugin *plugin) {
 	return R_FALSE;
 }
 
+#include <locale.h>
+
+enum {
+	R_STRING_TYPE_ASCII,
+	R_STRING_TYPE_UTF8,
+	R_STRING_TYPE_WIDE,
+};
+
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
-	RRune rune;
 	RBinString *ptr = NULL;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
 	ut64 needle, start;
-	char str[R_BIN_SIZEOF_STRINGS];
-	int i, length, found = 0, wide = R_FALSE;
+	RRune rune; 
+	RRune str[R_BIN_SIZEOF_STRINGS];
+	int i, length, found = 0, type;
 
 	if (!arch || !arch->buf || !arch->buf->buf)
 		return;
@@ -136,24 +144,26 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	while (needle < to) {
 		/* Slurp a whole C-string */
 		start = needle;
-		for (i = 0, length = 0, wide = R_FALSE; i < R_BIN_SIZEOF_STRINGS - 1 && needle < to; i++) {
+		type = R_STRING_TYPE_ASCII;
+		for (i = 0, length = 0; i < R_BIN_SIZEOF_STRINGS - 1 && needle < to; i++) {
 			int step = r_utf8_decode (&arch->buf->buf[needle], &rune);
 			/* Might be a wide string */
-			if (!wide && to - needle > 3 &&
+			if (!i && to - needle > 3 &&
 				arch->buf->buf[needle+step+0] == 0x00 &&
 				arch->buf->buf[needle+step+1] != 0x00 &&
 				arch->buf->buf[needle+step+2] == 0x00) {
-				wide = R_TRUE;
+				type = R_STRING_TYPE_WIDE;
 			}
-			if (wide)
-				step++;
-			needle += step;
+			else if (type != R_STRING_TYPE_UTF8 && step > 1)
+				type = R_STRING_TYPE_UTF8;
+			static const int skip_table[] = { 0, 0, 1 };
+			needle += step + skip_table[type];
 			if (r_isprint (rune)) {
 				str[i] = rune;
 				length++;
 			}
 			/* Print the escape code */
-			else if (rune && strchr ("\b\v\f\n\r\t\a\e", rune)) {
+			else if (rune && strchr ("\b\v\f\n\r\t\a\e", (char)rune)) {
 				str[i++] = '\\';
 				str[i] = "       abtnvfr             e"[rune];
 				length++;
@@ -163,7 +173,6 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		}
 
 		str[i] = '\0';
-
 		/* check if the length fits in our request */
 		if (length >= min) {
 			if (!(ptr = R_NEW (RBinString))) {
@@ -171,7 +180,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 				break;
 			}
 
-			ptr->type = wide? 'W' : 'A';
+			ptr->type = 'K';
 			ptr->ordinal = found++;
 			ptr->size = needle - start;
 			ptr->length = length;
@@ -190,7 +199,8 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			/* This is safe as "str" size is at most R_BIN_SIZEOF_STRINGS-1 and
 			 * "ptr->string" size is R_BIN_SIZEOF_STRINGS. "str" is also
 			 * guaranteed to be null terminated. */
-			strcpy (ptr->string, str);
+			/*strcpy (ptr->string, str);*/
+			memcpy (ptr->string, str, sizeof (ptr->string));
 
 			r_list_append (list, ptr);
 
