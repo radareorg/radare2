@@ -3,6 +3,10 @@
 #include <r_types.h>
 #include <r_util.h>
 
+#ifndef R_IPI
+#define R_IPI
+#endif
+
 static const char * const regs[33] = {
   "zero", "at",   "v0",   "v1",   "a0",   "a1",   "a2",   "a3",
   "a4",   "a5",   "a6",   "a7",   "t0",   "t1",   "t2",   "t3",
@@ -78,7 +82,7 @@ static int getreg (const char *p) {
 	return n;
 }
 
-int mips_assemble(const char *str, ut64 pc, ut8 *out) {
+R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	int i, hasp;
 	char *s = strdup (str);
 	char w0[32], w1[32], w2[32], w3[32];

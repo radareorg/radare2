@@ -3,6 +3,8 @@
 #include <r_asm.h>
 #include <r_lib.h>
 #include <capstone.h>
+#define R_IPI static
+#include "../arch/mips/mipsasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
@@ -47,6 +49,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
+static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+	int ret = mips_assemble (str, a->pc, op->buf);
+	r_mem_copyendian (op->buf, op->buf, 4, !a->big_endian);
+	return ret;
+}
+
 RAsmPlugin r_asm_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS disassembler",
@@ -57,7 +65,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = assemble
 };
 
 #ifndef CORELIB
