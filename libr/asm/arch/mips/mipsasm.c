@@ -35,6 +35,38 @@ static struct {
 	{ "addi", 'I', 3, 8 },
 	{ "addiu", 'I', 3, 9 },
 	{ "bnez", 'I', 2, 5 },
+	{ "bne", 'I', 3, 5 },
+	{ "beq", 'I', 3, 4 },
+	{ "bgez", 'I', -2, -1 },
+	{ "bgtz", 'I', -2, 7 },
+	{ "blez", 'I', -2, 6 },
+	{ "bltz", 'I', -2, 1 },
+	//{ "syscall", 'R', 0, 12 },
+	//{ "break", 'R', 0, 13 },
+	{ "nor", 'R', 3, 39 },
+	{ "or", 'R', 3, 37 },
+	{ "xor", 'R', 3, 38 },
+	{ "and", 'R', 3, 36 },
+	{ "sll", 'R', 3, 0 },
+	{ "sllv", 'R', 3, 4 },
+	{ "slt", 'R', 3, 42 },
+	{ "sltu", 'R', 3, 43 },
+	{ "sra", 'R', 3, 3 },
+	{ "srl", 'R', 3, 2 },
+	{ "srlv", 'R', 3, 6 },
+	{ "srav", 'R', 3, 7 },
+	{ "add", 'R', 3, 32 },
+	{ "addu", 'R', 3, 33 },
+	{ "sub", 'R', 3, 34 },
+	{ "subu", 'R', 3, 35 },
+	{ "mult", 'R', 2, 24 },
+	{ "multu", 'R', 2, 25 },
+	{ "div", 'R', 2, 26 },
+	{ "divu", 'R', 2, 27 },
+	{ "mfhi", 'R', 1, 16 },
+	{ "mflo", 'R', 1, 18 },
+	{ "mthi", 'R', 1, 17 },
+	{ "mtlo", 'R', 1, 19 },
 	{ "jalr", 'R', 1, 9 },
 	{ "jr", 'R', 1, 8 },
 	{ "jal", 'J', 1, 3 },
@@ -98,6 +130,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 			switch (ops[i].args) {
 			case 1: sscanf (s, "%31s %31s", w0, w1); break;
 			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
+			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
 			}
 			if (hasp) {
@@ -121,6 +154,13 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				switch (ops[i].args) {
 				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2)); break;
 				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3)); break;
+                                case -2:
+                                        if (ops[i].n > 0) {
+                                              return mips_i (out, ops[i].n, getreg(w1), 0, getreg(w2)); break;
+                                        }
+					else {
+                                              return mips_i (out, (-1 * ops[i].n), getreg(w1), 1, getreg(w2)); break;
+					}
 				}
 				break;
 			case 'J':
