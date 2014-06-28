@@ -373,6 +373,77 @@ static int esil_if(RAnalEsil *esil) {
 	return 0;
 }
 
+static int esil_smaller(RAnalEsil *esil) {		// 'src < dst' => 'src,dst,<'
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &s)) {
+		if (dst && isregornum (esil, dst, &d)) {
+			r_anal_esil_pushnum(esil, (s < d));
+			ret = 1;
+		} else {
+			eprintf ("esil_smaller: dst is broken\n");
+		}
+	} else {
+		eprintf ("esil_smaller: src is broken\n");
+	}
+	return ret;
+}
+
+static int esil_bigger(RAnalEsil *esil) {		// 'src > dst' => 'src,dst,>'
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &s)) {
+		if (dst && isregornum (esil, dst, &d)) {
+			r_anal_esil_pushnum(esil, (s > d));
+			ret = 1;
+		} else {
+			eprintf ("esil_bigger: dst is broken\n");
+		}
+	} else {
+		eprintf ("esil_bigger: src is broken\n");
+	}
+	return ret;
+}
+static int esil_smaller_equal(RAnalEsil *esil) {		// 'src <= dst' => 'src,dst,<='
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &s)) {
+		if (dst && isregornum (esil, dst, &d)) {
+			r_anal_esil_pushnum(esil, (s <= d));
+			ret = 1;
+		} else {
+			eprintf ("esil_smaller_equal: dst is broken\n");
+		}
+	} else {
+		eprintf ("esil_smaller_equal: src is broken\n");
+	}
+	return ret;
+}
+
+static int esil_bigger_equal(RAnalEsil *esil) {		// 'src >= dst' => 'src,dst,>='
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &s)) {
+		if (dst && isregornum (esil, dst, &d)) {
+			r_anal_esil_pushnum(esil, (s >= d));
+			ret = 1;
+		} else {
+			eprintf ("esil_bigger_equal: dst is broken\n");
+		}
+	} else {
+		eprintf ("esil_bigger_equal: src is broken\n");
+	}
+	return ret;
+}
+
 static int esil_lsl(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, num2;
@@ -787,6 +858,10 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, "==")) { *cmd = &esil_cmp; return 1; } else
 	if (!strcmp (word, "?=")) { *cmd = &esil_ifset; return 1; } else
 	if (!strcmp (word, "?{")) { *cmd = &esil_if; return 1; } else
+	if (!strcmp (word, "<")) { *cmd = &esil_smaller; return 1; } else
+	if (!strcmp (word, ">")) { *cmd = &esil_bigger; return 1; } else
+	if (!strcmp (word, "<=")) { *cmd = &esil_smaller_equal; return 1; } else
+	if (!strcmp (word, ">=")) { *cmd = &esil_bigger_equal; return 1; } else
 	//if (!strcmp (word, "!?{")) { *cmd = &esil_ask; return 1; } else
 	if (!strcmp (word, "<<")) { *cmd = &esil_lsl; return 1; } else
 	if (!strcmp (word, "<<=")) { *cmd = &esil_lsleq; return 1; } else
