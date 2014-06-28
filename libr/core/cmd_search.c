@@ -461,18 +461,20 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		} break;
 	case 'C': {
+		dosearch = crypto_search = R_TRUE;
 		switch (input[1]) {
 			case 'a':
-				dosearch = aes_search = crypto_search = R_TRUE;
+				aes_search = R_TRUE;
 				break;
 			case 'r':
-				dosearch = rsa_search = crypto_search = R_TRUE;
+				rsa_search = R_TRUE;
 				break;
 			default:{
+				dosearch = crypto_search = R_FALSE;
 				const char* help_msg[] = {
 					"Usage: /C", "", "Search for crypto materials",
 					"/Ca", "" , "Search for AES keys",
-					"/Cr", "", "Search for RSA keys",
+					"/Cr", "", "Search for private RSA keys",
 					NULL};
 				r_core_cmd_help (core, help_msg);
 				}
