@@ -201,12 +201,11 @@ static int cmd_hash(void *data, const char *input) {
 	}
 
 	if (input[0]=='?' || handled_cmd == R_FALSE) {
-		const char* help_msg[] = {
-		"Usage:", "#algo <size> @ addr", "Hashes",
-		" # this is a comment   note the space after the sharp sign"
-		" ##                    List hash/checksum algorithms."
-		" #sha256 10K @ 33      calculate sha256 of 10K at 33"
-		"Hashes:\n"};
+		eprintf ("Usage: #algo <size> @ addr\n"
+		" # this is a comment   note the space after the sharp sign\n"
+		" ##                    List hash/checksum algorithms.\n"
+		" #sha256 10K @ 33      calculate sha256 of 10K at 33\n"
+		"Hashes:\n");
 		algolist (0);
 		eprintf (
 		"Usage #!interpreter [<args>] [<file] [<<eof]\n"
