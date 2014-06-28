@@ -139,20 +139,23 @@ eprintf ("TODO: list options\n");
 			break;
 		}
 		break;
-	case '?':
-		eprintf ("|Usage: g[wcilper] [arg]\n"
-			"| g foo.r        : compile r_egg source file\n"
-			"| gw             : compile and write\n"
-			"| gc cmd=/bin/ls : set config option for shellcodes and encoders\n"
-			"| gc             : list all config options\n"
-			"| gl             : list plugins (shellcodes, encoders)\n"
-			"| gs name args   : compile syscall name(args)\n"
-			"| gi exec        : compile shellcode. like ragg2 -i\n"
-			"| gp padding     : define padding for command\n"
-			"| ge xor         : specify an encoder\n"
-			"| gr             : reset r_egg\n"
-			"|EVAL VARS: asm.arch, asm.bits, asm.os\n"
-		);
+	case '?': {
+		const char* help_msg[] = {
+			"Usage:", "g[wcilper] [arg]", "Go compile shellcodes",
+			"g", " foo.r", "Compile r_egg source file",
+			"gw", "", "Compile and write",
+			"gc", " cmd=/bin/ls", "Set config option for shellcodes and encoders",
+			"gc", "", "List all config options",
+			"gl", "", "List plugins (shellcodes, encoders)",
+			"gs", " name args", "Compile syscall name(args)",
+			"gi", " exec", "Compile shellcode. like ragg2 -i",
+			"gp", " padding", "Define padding for command",
+			"ge", " xor", "Specify an encoder",
+			"gr", "", "Reset r_egg",
+			"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	return R_TRUE;

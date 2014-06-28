@@ -6,7 +6,6 @@ static int cmd_section(void *data, const char *input) {
 		"Usage:","S[?-.*=adlr] [...]","",
 		"S","","list sections",
 		"S.","","show current section name",
-		"S?","","show this help message",
 		"S*","","list sections (in radare commands)",
 		"S=","","list sections (in nice ascii-art bars)",
 		"Sa","[-] [arch] [bits] [[off]]","Specify arch and bits for given section",

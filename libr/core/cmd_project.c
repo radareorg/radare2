@@ -19,14 +19,17 @@ static int cmd_project(void *data, const char *input) {
 //		if (r_file_is_regular (file))
 		free (r_core_project_info (core, file));
 		break;
-	default:
-		r_cons_printf (
-		"|Usage: P[?osi] [file]\n"
-		"| Po [file]  open project\n"
-		"| Ps [file]  save project\n"
-		"| Pi [file]  show project information\n"
-		"|NOTE: See 'e file.project'\n"
-		"|NOTE: project files are stored in ~/.config/radare2/projects\n");
+	default: {
+		const char* help_msg[] = {
+		"Usage:", "P[?osi] [file]", "Project management",
+		"Po", " [file]", "open project",
+		"Ps", " [file]", "save project",
+		"Pi", " [file]", "show project information",
+		"NOTE:", "", "See 'e file.project'",
+		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
+		NULL};
+		r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	free (str);

@@ -173,26 +173,27 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'y':
 		eprintf ("TODO\n");
 		break;
-	case '?':
-		r_cons_printf (
-		"Usage: m[-?*dgy] [...]\n"
-		" m              ; list all mountpoints in human readable format\n"
-		" m*             ; same as above, but in r2 commands\n"
-		" ml             ; list filesystem plugins\n"
-		" m /mnt         ; mount fs at /mnt with autodetect fs and current offset\n"
-		" m /mnt ext2 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
-		" m-/            ; umount given path (/)\n"
-		" my             ; yank contents of file into clipboard\n"
-		" mo /foo        ; get offset and size of given file\n"
-		" mg /foo        ; get contents of file/dir dumped to disk (XXX?)\n"
-		" mf[o|n]        ; search files for given filename or for offset\n"
-		" md /           ; list directory contents for path\n"
-		" mp             ; list all supported partition types\n"
-		" mp msdos 0     ; show partitions in msdos format at offset 0\n"
-		" ms /mnt        ; open filesystem prompt at /mnt\n"
-		" m?             ; show this help\n"
-		"TODO: support multiple mountpoints and RFile IO's (need io+core refactor)\n"
-		);
+	case '?': {
+		const char* help_msg[] = {
+			"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
+			"m", "", "List all mountpoints in human readable format",
+			"m*", "", "Same as above, but in r2 commands",
+			"ml", "", "List filesystem plugins",
+			"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
+			"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
+			"m-/", "", "Umount given path (/)",
+			"my", "", "Yank contents of file into clipboard",
+			"mo", " /foo", "Get offset and size of given file",
+			"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
+			"mf", "[o|n]", "Search files for given filename or for offset",
+			"md", " /", "List directory contents for path",
+			"mp", "", "List all supported partition types",
+			"mp", " msdos 0", "Show partitions in msdos format at offset 0",
+			"ms", " /mnt", "Open filesystem prompt at /mnt",
+			//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	free (oinput);

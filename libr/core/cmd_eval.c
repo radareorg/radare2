@@ -153,21 +153,23 @@ static int cmd_eval(void *data, const char *input) {
 		switch (input[1]) {
 		case '?': r_config_list (core->config, input+2, 2); break;
 		default: r_config_list (core->config, input+1, 2); break;
-		case 0:
-			r_cons_printf (
-			"|Usage: e[?] [var[=value]]\n"
-			"| e?              show this help\n"
-			"| e?asm.bytes     show description\n"
-			"| e??             list config vars with description\n"
-			"| e               list config vars\n"
-			"| e-              reset config vars\n"
-			"| e*              dump config vars in r commands\n"
-			"| e!a             invert the boolean value of 'a' var\n"
-			"| er [key]        set config key as readonly. no way back\n"
-			"| ec [k] [color]  set color for given key (prompt, offset, ...)\n"
-			"| e a             get value of var 'a'\n"
-			"| e a=b           set var 'a' the 'b' value\n"
-			"| env [k[=v]]     get/set environment variable\n");
+		case 0:{
+			const char* help_msg[] = {
+			"Usage:", "e[?] [var[=value]]", "Evaluable vars",
+			"e","?asm.bytes", "show description",
+			"e", "??", "list config vars with description",
+			"e", "", "list config vars",
+			"e-", "", "reset config vars",
+			"e*", "", "dump config vars in r commands",
+			"e!", "a", "invert the boolean value of 'a' var",
+			"er", " [key]", "set config key as readonly. no way back",
+			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
+			"e", " a", "get value of var 'a'",
+			"e", " a=b", "set var 'a' the 'b' value",
+			"env", " [k[=v]]", "get/set environment variable",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 		}
 		break;
 	case 'r':
