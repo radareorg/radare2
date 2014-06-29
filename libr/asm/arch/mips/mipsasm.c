@@ -47,12 +47,12 @@ static struct {
 	{ "or", 'R', 3, 37 },
 	{ "xor", 'R', 3, 38 },
 	{ "and", 'R', 3, 36 },
-	{ "sll", 'R', 3, 0 },
+	{ "sll", 'R', -3, 0 },
 	{ "sllv", 'R', 3, 4 },
 	{ "slt", 'R', 3, 42 },
 	{ "sltu", 'R', 3, 43 },
-	{ "sra", 'R', 3, 3 },
-	{ "srl", 'R', 3, 2 },
+	{ "sra", 'R', -3, 3 },
+	{ "srl", 'R', -3, 2 },
 	{ "srlv", 'R', 3, 6 },
 	{ "srav", 'R', 3, 7 },
 	{ "add", 'R', 3, 32 },
@@ -67,7 +67,7 @@ static struct {
 	{ "mflo", 'R', 1, 18 },
 	{ "mthi", 'R', 1, 17 },
 	{ "mtlo", 'R', 1, 19 },
-	{ "jalr", 'R', 1, 9 },
+	{ "jalr", 'R', -2, 9 },//reg order is rd, rs - command line X, Y is switched - see code below for -2 R switch/case
 	{ "jr", 'R', 1, 8 },
 	{ "jal", 'J', 1, 3 },
 	{ "j",   'J', 1, 2 },
@@ -132,6 +132,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+			case -3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
 			}
 			if (hasp) {
 				char tmp[32];
@@ -146,20 +147,22 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 			case 'R':
 				switch (ops[i].args) {
 				case 1: return mips_r (out, 0, getreg (w1), getreg (w2), getreg (w3), 0, ops[i].n);
-				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2)); break;
-				case 3: return mips_i (out, ops[i].n, getreg (w1), getreg (w2), getreg (w3)); break;
+				case 2: return mips_r (out, 0, getreg (w1), getreg (w2), 0, 0, ops[i].n); break;
+				case 3: return mips_r (out, 0, getreg (w1), getreg (w2), getreg (w3), 0, ops[i].n); break;
+				case -3: return mips_r (out, 0, getreg (w1), getreg (w2), 0, getreg (w3), ops[i].n); break;
+				case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;//switched reg order
 				}
 				break;
 			case 'I':
 				switch (ops[i].args) {
 				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2)); break;
 				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3)); break;
-                                case -2:
-                                        if (ops[i].n > 0) {
-                                              return mips_i (out, ops[i].n, getreg(w1), 0, getreg(w2)); break;
-                                        }
+                    case -2:
+                         if (ops[i].n > 0) {
+                              return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2)); break;
+                         }
 					else {
-                                              return mips_i (out, (-1 * ops[i].n), getreg(w1), 1, getreg(w2)); break;
+                              return mips_i (out, (-1 * ops[i].n), getreg (w1), 1, getreg (w2)); break;
 					}
 				}
 				break;
