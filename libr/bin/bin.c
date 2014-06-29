@@ -102,21 +102,95 @@ R_API int r_bin_file_cur_set_plugin (RBinFile *binfile, RBinPlugin *plugin) {
 	return R_FALSE;
 }
 
-#include <locale.h>
-
 enum {
+	R_STRING_TYPE_DETECT = -1,
 	R_STRING_TYPE_ASCII,
 	R_STRING_TYPE_UTF8,
 	R_STRING_TYPE_WIDE,
 };
 
+#define R_STRING_SCAN_BUFFER_SIZE 2048
+
+static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 from, const ut64 to, int type) {
+	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
+	ut64 needle = from, str_start;
+	int count = 0, i, rc, runes, str_type;
+
+	if (!list || !buf || !min)
+		return -1;
+
+	while (needle < to) {
+		rc = r_utf8_decode (&buf[needle], NULL);
+		if (!rc) {
+			needle++;
+			continue;
+		}
+
+		str_type = type;
+
+		if (str_type == R_STRING_TYPE_DETECT) {
+			if (buf[needle+rc+0] == 0x00 &&
+				buf[needle+rc+1] != 0x00 &&
+				buf[needle+rc+2] == 0x00)
+				str_type = R_STRING_TYPE_WIDE;
+			else
+				str_type = R_STRING_TYPE_ASCII;
+		}
+
+		runes = 0;
+		str_start = needle;
+
+		/* Eat a whole C string */
+		for (rc = i = 0; i < sizeof (tmp) - 1 && needle < to; i += rc) {
+			RRune r;
+
+			if (str_type == R_STRING_TYPE_WIDE) {
+				r = buf[needle+1] << 8 | buf[needle];
+				rc = 2;
+			} else {
+				rc = r_utf8_decode (&buf[needle], &r);
+				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
+			}
+
+			needle += rc;
+
+			if (r_isprint (r)) {
+				rc = r_utf8_encode (&tmp[i], r);
+				runes++;
+			}
+			/* Print the escape code */
+			else if (r && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
+				tmp[i+0] = '\\';
+				tmp[i+1] = "       abtnvfr             e"[r];
+				rc = 2;
+				runes++;
+			}
+			/* \0 marks the end of C-strings */
+			else break;
+		}
+
+		tmp[i++] = '\0';
+
+		if (runes >= min) {
+			RBinString *new = R_NEW0 (RBinString);
+			new->type = str_type;
+			new->length = runes;
+			new->size = needle - str_start;
+			new->ordinal = count++;
+			new->paddr = new->vaddr = str_start;
+			if (i < sizeof (new->string))
+				memcpy (new->string, tmp, i);
+			r_list_append (list, new);
+		}
+	}
+
+	return count;
+}
+
 static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
-	RBinString *ptr = NULL;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
-	ut64 needle, start;
-	RRune rune; 
-	RRune str[R_BIN_SIZEOF_STRINGS];
-	int i, length, found = 0, type;
+	RBinString *ptr;
+	RListIter *it;
 
 	if (!arch || !arch->buf || !arch->buf->buf)
 		return;
@@ -140,72 +214,11 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		return;
 	}
 
-	needle = from;
-	while (needle < to) {
-		/* Slurp a whole C-string */
-		start = needle;
-		type = R_STRING_TYPE_ASCII;
-		for (i = 0, length = 0; i < R_BIN_SIZEOF_STRINGS - 1 && needle < to; i++) {
-			int step = r_utf8_decode (&arch->buf->buf[needle], &rune);
-			/* Might be a wide string */
-			if (!i && to - needle > 3 &&
-				arch->buf->buf[needle+step+0] == 0x00 &&
-				arch->buf->buf[needle+step+1] != 0x00 &&
-				arch->buf->buf[needle+step+2] == 0x00) {
-				type = R_STRING_TYPE_WIDE;
-			}
-			else if (type != R_STRING_TYPE_UTF8 && step > 1)
-				type = R_STRING_TYPE_UTF8;
-			static const int skip_table[] = { 0, 0, 1 };
-			needle += step + skip_table[type];
-			if (r_isprint (rune)) {
-				str[i] = rune;
-				length++;
-			}
-			/* Print the escape code */
-			else if (rune && strchr ("\b\v\f\n\r\t\a\e", (char)rune)) {
-				str[i++] = '\\';
-				str[i] = "       abtnvfr             e"[rune];
-				length++;
-			}
-			/* \0 marks the end of C-strings */
-			else break;
-		}
+	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0)
+		return;
 
-		str[i] = '\0';
-		/* check if the length fits in our request */
-		if (length >= min) {
-			if (!(ptr = R_NEW (RBinString))) {
-				eprintf ("Error allocating string\n");
-				break;
-			}
-
-			ptr->type = 'K';
-			ptr->ordinal = found++;
-			ptr->size = needle - start;
-			ptr->length = length;
-			ptr->paddr = start;
-
-			if (scnrva) {
-				/*ptr->vaddr = (ptr->paddr+scnrva-from);*/
-				// XXX. this is wrong. baddr doesnt seems to work for ELFs if used
-				ptr->vaddr = ptr->paddr;
-			} else {
-				ptr->vaddr = ptr->paddr;
-			}
-
-			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
-
-			/* This is safe as "str" size is at most R_BIN_SIZEOF_STRINGS-1 and
-			 * "ptr->string" size is R_BIN_SIZEOF_STRINGS. "str" is also
-			 * guaranteed to be null terminated. */
-			/*strcpy (ptr->string, str);*/
-			memcpy (ptr->string, str, sizeof (ptr->string));
-
-			r_list_append (list, ptr);
-
-			//if (!sdb_add (DB, 
-		}
+	r_list_foreach (list, it, ptr) {
+		ptr->vaddr = r_io_section_offset_to_vaddr(arch->rbin->iob.io, ptr->paddr);
 	}
 }
 

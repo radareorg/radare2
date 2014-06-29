@@ -190,23 +190,93 @@ static const struct { ut32 from, to; } nonprintable_ranges[] = {
 };
 static const int nonprintable_ranges_count = sizeof (nonprintable_ranges) / sizeof (nonprintable_ranges[0]);
 
+/* Convert an UTF-8 buf into a unicode RRune */
 R_API int r_utf8_decode (const ut8 *ptr, RRune *ch) {
 	if (ptr[0] < 0x80) {
-		*ch = (ut32)ptr[0];
+		if (ch) *ch = (ut32)ptr[0];
 		return 1;
 	}
-	else if ((ptr[0]&0xe0) == 0xc0) {
-		*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+	else if ((ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
+		if (ch) *ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		return 2;
 	}
-	else if ((ptr[0]&0xf0) == 0xe0) {
-		*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+	else if ((ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
+		if (ch) *ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		return 3;
 	}
-	else {
-		*ch = (ut32)ptr[0];
+	else if ((ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
+		if (ch) *ch = (ptr[0] & 0xf) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+		return 4;
+	}
+	return 0;
+}
+
+/* Convert a unicode RRune into an UTF-8 buf */
+R_API int r_utf8_encode (ut8 *ptr, const RRune ch) {
+	if (ch < 0x80) {
+		ptr[0] = (ut8)ch;
 		return 1;
 	}
+	else if (ch < 0x800) {
+		ptr[0] = 0xc0 | (ch >> 6);
+		ptr[1] = 0x80 | (ch & 0x3f);
+		return 2;
+	}
+	else if (ch < 0x10000) {
+		ptr[0] = 0xe0 | (ch >> 12);
+		ptr[1] = 0x80 | ((ch >> 6) & 0x3f);
+		ptr[2] = 0x80 | (ch & 0x3f);
+		return 3;
+	}
+	else if (ch < 0x200000) {
+		ptr[0] = 0xf0 | (ch >> 18);
+		ptr[1] = 0x80 | ((ch >> 12) & 0x3f);
+		ptr[2] = 0x80 | ((ch >> 6) & 0x3f);
+		ptr[3] = 0x80 | (ch & 0x3f );
+		return 4;
+	}
+	return 0;
+}
+
+/* Convert a unicode RRune string into an utf-8 one */
+R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length) {
+	int i, pos = 0;
+
+	if (!str || !dst)
+		return -1;
+
+	for (i = 0; str[i] && pos < dst_length - 1; i++)
+		pos += r_utf8_encode (&dst[pos], str[i]);
+
+	dst[pos++] = '\0';
+
+	return pos;
+}
+
+/* Returns the size in bytes of the utf-8 encoded char */
+R_API int r_utf8_size (const ut8 *ptr) {
+	const int utf8_size[] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // 0xC0-0xCF
+		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // 0xD0-0xDF
+		3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, // 0xE0-0xEF
+		4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, // 0xF0-0xFF
+	};
+	return (ptr[0]&0x80) ? utf8_size[ptr[0]^0x80] : 1;
+}
+
+R_API int r_utf8_strlen (const ut8 *str) {
+	int i, len = 0;
+
+	for (i = 0; str[i]; i++) {
+		if ((str[i] & 0xc0) != 0x80)
+			len++;
+	}
+
+	return len;
 }
 
 R_API int r_isprint (const RRune c) {

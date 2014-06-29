@@ -513,7 +513,11 @@ R_API int r_alloca_ret_i(int n);
 
 /* utf8 */
 typedef wchar_t RRune;
+R_API int r_utf8_encode (ut8 *ptr, const RRune  ch);
 R_API int r_utf8_decode (const ut8 *ptr, RRune *ch);
+R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length);
+R_API int r_utf8_size (const ut8 *ptr);
+R_API int r_utf8_strlen (const ut8 *str);
 R_API int r_isprint (const RRune c);
 
 /* LOG */
