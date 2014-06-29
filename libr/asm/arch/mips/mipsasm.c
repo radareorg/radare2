@@ -74,11 +74,12 @@ static struct {
 	{ NULL }
 };
 
-static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
+//static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
+static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
 	if (rs == -1 || rt == -1) return -1;
-	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
-	b[2] = (rs<<5) | (rt&0x1f);
-	b[1] = ((rd<<3)&0xff) | (sa>>2);
+	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3); // 2
+	b[2] = (rs<<5) | (rt&0x1f); // 1
+	b[1] = ((rd<<3)&0xff) | (sa>>2); // 0
 	b[0] = (fun&0x3f) | ((sa&3)<<5);
 	return 4;
 }

@@ -41,7 +41,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
 		insn->mnemonic, insn->op_str[0]? " ": "",
 		insn->op_str);
-	// TODO: remove the '$'<registername> in the string
+	// remove the '$'<registername> in the string
+	r_str_replace_char (op->buf_asm, '$', 0);
 	beach:
 	cs_free (insn, n);
 	cs_close (&handle);
