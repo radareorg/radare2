@@ -271,7 +271,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				return 0;
 			}
 			if (a->bits == 64)
-				data[l++] = 0x48;
+				if (*arg=='r')
+					data[l++] = 0x48;
 			if (isnum (a, arg2)) {
 				int num = getnum (a, arg2);
 				if (num>127 || num<-127) {
@@ -335,7 +336,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				return 0;
 			}
 			if (a->bits == 64)
-				data[l++] = 0x48;
+				if (*arg=='r')
+					data[l++] = 0x48;
 			if (isnum (a, arg2)) {
 				int num = getnum (a, arg2);
 				if (num>127 || num<-127) {
@@ -388,7 +390,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				return 0;
 			}
 			if (a->bits==64)
-				data[l++] = 0x48;
+				if (*arg=='r')
+					data[l++] = 0x48;
 			if (*arg2=='[') {
 				char *p = strchr (arg2+1, '+');
 				if (!p) {
@@ -445,7 +448,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		if (!strcmp (op, "test")) {
 			int arg0 = getreg (arg);
 			if (a->bits==64)
-				data[l++] = 0x48;
+				if (*arg=='r')
+					data[l++] = 0x48;
 			data[l++] = 0x85;
 			//data[l++] = 0xc0 | arg0<<3 | getreg (arg2);
 			data[l++] = 0xc0 | getreg (arg2)<<3 | arg0; //getreg (arg2);
@@ -656,7 +660,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			} else pfx = 0xc0;
 			arg0 = getreg (arg);
 			if (a->bits==64) {
-				data[l++] = 0x48;
+				if (*arg=='r')
+					data[l++] = 0x48;
 				data[l++] = 0x31; // NOTE: 0x33 is also a valid encoding for xor.. polimorfi?
 				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
 			} else {
@@ -675,7 +680,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				return 0;
 			}
 			if (a->bits==64)
-				data[l++] = 0x48;
+				if (*arg=='r')
+					data[l++] = 0x48;
 			data[l++] = 0x8d;
 			if (*arg2=='[') {
 				int r = getreg (arg);
@@ -770,7 +776,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			ptr = (ut8 *)&addr;
 			if (dst> UT32_MAX) {
 				if (a->bits==64) {
-					data[0] = 0x48;
+					if (*arg=='r')
+						data[l++] = 0x48;
 					data[1] = 0xb8| getreg (arg);
 					data[2] = ptr[0];
 					data[3] = ptr[1];
@@ -834,7 +841,8 @@ return -1;
 				int N;
 				arg2++;
 				if (a->bits==64)
-					data[l++] = 0x48;
+					if (*arg=='r')
+						data[l++] = 0x48;
 				delta = strchr (arg2, '+');
 				if (delta) {
 					N=1;
@@ -895,8 +903,8 @@ return -1;
 			}
 			// mov rax, 33
 			if (a->bits==64 && *arg == 'r' && !argk) {
+				data[l++] = 0x48;
 				if (isnum (a, arg2)) {
-					data[l++] = 0x48;
 					data[l++] = 0xc7;
 					data[l++] = arg0 | pfx;
 					data[l++] = ptr[0];
@@ -905,7 +913,6 @@ return -1;
 					data[l++] = ptr[3];
 					return l;
 				}
-				data[l++] = 0x48;
 				data[l++] = 0x89;
 				data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
 				return l;
@@ -963,7 +970,8 @@ return -1;
 				return l;
 			} else {
 				if (a->bits==64)
-					data[l++] = 0x48;
+					if (*arg=='r')
+						data[l++] = 0x48;
 				data[l++] = 0x89;
 				if (delta) {
 					if (isnum (a, delta)){
