@@ -75,14 +75,12 @@ R_API RBinFile * r_core_bin_cur (RCore *core) {
 }
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
-#define MINSTR 4
 	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
 	int hasstr, minstr, rawstr;
 	RBinString *string;
 	RListIter *iter;
 	RList *list;
-	int i = 0;
 	RBin *bin = r->bin;
 	RBinFile * binfile = r_core_bin_cur (r);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
@@ -102,22 +100,12 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			return R_FALSE;
 		}
 	}
-	//if (bin->minstrlen == 0 && minstr>0) bin->minstrlen = minstr;
-	//else if (bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", bin->minstrlen);
-	if (bin->minstrlen==0) {
-		bin->minstrlen = plugin->minstrlen;
-		if (bin->minstrlen==0)
-			bin->minstrlen = MINSTR;
-	}
-	if (minstr>0 || bin->minstrlen <=0) {
-		bin->minstrlen = R_MIN (minstr, MINSTR);
-		//return R_FALSE;
-	}
 
-	/* code */
-	if (rawstr) {
-		// TODO: search in whole file, ignoring sections
-	}
+	if (bin->minstrlen == 0)
+		bin->minstrlen = plugin->minstrlen? plugin->minstrlen: 4;
+	if (minstr > 0 || bin->minstrlen <= 0)
+		bin->minstrlen = R_MIN (minstr, 4);
+
 	if ((list = r_bin_get_strings (bin)) == NULL)
 		return R_FALSE;
 
@@ -127,7 +115,6 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->vaddr,
 				string->paddr): string->paddr;
 			q = strdup (string->string);
-			//r_name_filter (str, 128);
 			for (p=q; *p; p++) if (*p=='"') *p = '\'';
 			r_cons_printf ("%s{\"paddr\":%"PFMT64d
 				",\"length\":%d,\"size\":%d,"
@@ -152,34 +139,30 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
 		r_list_foreach (list, iter, string) {
-			int size = (string->type == 'W')? string->size*2: string->size;
 			if (r_cons_singleton()->breaked) break;
-			/* Jump the withespaces before the string */
-			for (i=0; *(string->string+i)==' '; i++);
 			r_meta_add (r->anal, R_META_TYPE_STRING,
 				va?baddr+string->vaddr:string->paddr,
 				(va?baddr+string->vaddr:string->paddr)+string->size,
-				string->string+i);
-			r_name_filter (string->string, 128);
-			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
+				string->string);
+			char *filtered_name = strdup (string->string);
+			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
+			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", str);
 			r_flag_set (r->flags, str,
 				va? baddr+string->vaddr:string->paddr,
-				size, 0);
+				string->size, 0);
+			free (filtered_name);
 		}
 		//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
 		r_cons_break_end ();
 	} else {
 		if (mode) r_cons_printf ("fs strings\n"); //: "[strings]\n");
 		r_list_foreach (list, iter, string) {
-			section = r_bin_get_section_at (bin, string->paddr, 0);
-			int size = (string->type == 'W')? string->size*2: string->size;
-// XXX string ->size is length! not size!!
+			section = r_bin_get_section_at (r_bin_cur_object (bin), string->paddr, 0);
 			if (mode) {
-				r_name_filter (string->string, sizeof (string->string));
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-					string->string, size, va?baddr+string->vaddr:string->paddr,
-					string->size, va?baddr+string->vaddr:string->paddr);
+					string->string, string->size, va? baddr+string->vaddr: string->paddr,
+					string->size, va? baddr+string->vaddr: string->paddr);
 			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x
 				" ordinal=%03u "
 				"sz=%u len=%u section=%s type=%c string=%s\n",
@@ -187,9 +170,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->ordinal, string->size, string->length,
 				section?section->name:"unknown",
 				string->type, string->string);
-			i++;
 		}
-		//if (!mode) r_cons_printf ("\n%i strings\n", i);
 	}
 	return R_TRUE;
 }

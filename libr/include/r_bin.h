@@ -391,7 +391,7 @@ R_API RBinClass *r_bin_class_new (RBinFile *binfile, const char *name, const cha
 R_API int r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
 
-R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
+R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
 R_API RList* r_bin_reset_strings(RBin *bin);
 R_API RList* r_bin_get_symbols(RBin *bin);

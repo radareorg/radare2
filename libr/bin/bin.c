@@ -21,7 +21,6 @@ R_LIB_VERSION(r_bin);
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 
-static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva);
 static int is_data_section(RBinFile *a, RBinSection *s);
 static RList* get_strings(RBinFile *a, int min);
 static void r_bin_object_delete_items (RBinObject *o);
@@ -193,7 +192,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 	return count;
 }
 
-static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
+static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to) {
 	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
 	RBinString *ptr;
 	RListIter *it;
@@ -224,7 +223,8 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		return;
 
 	r_list_foreach (list, it, ptr) {
-		ptr->vaddr += scnrva;
+		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, R_FALSE);
+		ptr->vaddr += s? s->vaddr: 0;
 	}
 }
 
@@ -244,7 +244,6 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 }
 
 static RList* get_strings(RBinFile *a, int min) {
-	int count = 0;
 	RListIter *iter;
 	RBinSection *section;
 	RBinObject *o = a? a->o : NULL;
@@ -259,45 +258,16 @@ static RList* get_strings(RBinFile *a, int min) {
 	}
 	ret->free = free;
 
-	if (o->sections && !a->rawstr) {
+	if (o->sections && !r_list_empty (o->sections) && !a->rawstr) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
-				count++;
 				get_strings_range (a, ret, min,
 					section->paddr,
-					section->paddr+section->size,
-					section->vaddr);
-			}
-		}
-		if (r_list_empty (o->sections)) {
-			int i, next = 0, from = 0, funn = 0, to = 0;
-			ut8 *buf = a->buf->buf;
-			for (i=0; i<a->buf->length; i++) {
-				if (!buf[i] || IS_PRINTABLE (buf[i])) {
-					if (buf[i]) {
-						if (!from) from = i;
-						funn++;
-						next = 0;
-					}
-				} else {
-					next++;
-					if (next>5) from = 0;
-					if (!to) to = i;
-					to = i;
-					if (from && next==5 && funn>16) {
-						get_strings_range (a, ret, min, from, to, 0);
-				//eprintf ("FUNN %d\n", funn);
-				//eprintf ("MIN %d %d\n", from, to);
-						funn = 0;
-						from = 0;
-						to = 0;
-					}
-				}
+					section->paddr+section->size);
 			}
 		}
 	} else {
-		get_strings_range (a, ret, min,
-			0, a->size, 0);
+		get_strings_range (a, ret, min, 0, a->size);
 	}
 	return ret;
 }
@@ -1102,12 +1072,11 @@ R_API RList* r_bin_get_sections(RBin *bin) {
 }
 
 // TODO: MOve into section.c and rename it to r_io_section_get_at ()
-R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
+R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	RBinSection *section;
 	RListIter *iter;
 	ut64 from, to;
 
-	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
 		r_list_foreach (o->sections, iter, section) {
 			from = va ? o->baddr+section->vaddr: section->paddr;
