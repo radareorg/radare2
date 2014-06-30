@@ -41,8 +41,8 @@ static struct {
 	{ "bgtz", 'I', -2, 7 },
 	{ "blez", 'I', -2, 6 },
 	{ "bltz", 'I', -2, 1 },
-	//{ "syscall", 'R', 0, 12 },
-	//{ "break", 'R', 0, 13 },
+	{ "syscall", 'R', 0, 12 },
+	{ "break", 'R', 0, 13 },
 	{ "nor", 'R', 3, 39 },
 	{ "or", 'R', 3, 37 },
 	{ "xor", 'R', 3, 38 },
@@ -129,12 +129,13 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	for (i=0; ops[i].name; i++) {
 		if (!strcmp (ops[i].name, w0)) {
 			switch (ops[i].args) {
-			case 1: sscanf (s, "%31s %31s", w0, w1); break;
-			case -1: sscanf (s, "%31s %31s", w0, w1); break;
-			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
-			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
 			case -3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
+			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
+			case 1: sscanf (s, "%31s %31s", w0, w1); break;
+			case -1: sscanf (s, "%31s %31s", w0, w1); break;
+			case 0: sscanf (s, "%31s", w0); break;
 			}
 			if (hasp) {
 				char tmp[32];
@@ -143,13 +144,10 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				strcpy (w3, tmp);
 			}
 			switch (ops[i].type) {
-			case 'N': // nop
-				memset (out, 0, 4);
-				break;
-			case 'R':
+			case 'R'://reg order diff per instruction 'group'
 				switch (ops[i].args) {
 				case 3: return mips_r (out, 0, getreg (w2), getreg (w3), getreg (w1), 0, ops[i].n); break;
-				case -3://switched reg order
+				case -3:
 					if(ops[i].n > -1) {
 						return mips_r (out, 0, 0, getreg (w2), getreg (w1), getreg (w3), ops[i].n); break;
 					}
@@ -158,8 +156,9 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					}
 				case 2: return mips_r (out, 0, getreg (w1), getreg (w2), 0, 0, ops[i].n); break;
 				case 1: return mips_r (out, 0, getreg (w1), 0, 0, 0, ops[i].n);
+				case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;
 				case -1: return mips_r (out, 0, 0, 0, getreg (w1), 0, ops[i].n);
-				case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;//switched reg order
+				case 0: return mips_r (out, 0, 0, 0, 0, 0, ops[i].n);
 				}
 				break;
 			case 'I':
@@ -179,6 +178,9 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				switch (ops[i].args) {
 				case 1: return mips_j (out, ops[i].n, getreg (w1)); break;
 				}
+				break;
+			case 'N': // nop
+				memset (out, 0, 4);
 				break;
 			}
 			return -1;
