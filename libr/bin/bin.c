@@ -152,6 +152,12 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
 			}
 
+			/* Invalid sequence detected */
+			if (!rc) {
+				needle++;
+				break;
+			}
+
 			needle += rc;
 
 			if (r_isprint (r)) {
@@ -218,7 +224,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		return;
 
 	r_list_foreach (list, it, ptr) {
-		ptr->vaddr = r_io_section_offset_to_vaddr(arch->rbin->iob.io, ptr->paddr);
+		ptr->vaddr += scnrva;
 	}
 }
 
