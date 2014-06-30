@@ -48,13 +48,13 @@ static struct {
 	{ "xor", 'R', 3, 38 },
 	{ "and", 'R', 3, 36 },
 	{ "sll", 'R', -3, 0 },
-	{ "sllv", 'R', 3, 4 },
+	{ "sllv", 'R', -3, -4 },
 	{ "slt", 'R', 3, 42 },
 	{ "sltu", 'R', 3, 43 },
 	{ "sra", 'R', -3, 3 },
 	{ "srl", 'R', -3, 2 },
-	{ "srlv", 'R', 3, 6 },
-	{ "srav", 'R', 3, 7 },
+	{ "srlv", 'R', -3, -6 },
+	{ "srav", 'R', -3, -7 },
 	{ "add", 'R', 3, 32 },
 	{ "addu", 'R', 3, 33 },
 	{ "sub", 'R', 3, 34 },
@@ -63,8 +63,8 @@ static struct {
 	{ "multu", 'R', 2, 25 },
 	{ "div", 'R', 2, 26 },
 	{ "divu", 'R', 2, 27 },
-	{ "mfhi", 'R', 1, 16 },
-	{ "mflo", 'R', 1, 18 },
+	{ "mfhi", 'R', -1, 16 },
+	{ "mflo", 'R', -1, 18 },
 	{ "mthi", 'R', 1, 17 },
 	{ "mtlo", 'R', 1, 19 },
 	{ "jalr", 'R', -2, 9 },//reg order is rd, rs - command line X, Y is switched - see code below for -2 R switch/case
@@ -74,12 +74,13 @@ static struct {
 	{ NULL }
 };
 
+
 static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	if (rs == -1 || rt == -1) return -1;
 	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
 	b[2] = (rs<<5) | (rt&0x1f);
-	b[1] = ((rd<<3)&0xff) | (sa>>2);
-	b[0] = (fun&0x3f) | ((sa&3)<<5);
+	b[1] = ((rd<<3)&0xf8) | (sa>>2);
+	b[0] = (fun&0x3f) | ((sa&3)<<6);
 	return 4;
 }
 
@@ -129,6 +130,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 		if (!strcmp (ops[i].name, w0)) {
 			switch (ops[i].args) {
 			case 1: sscanf (s, "%31s %31s", w0, w1); break;
+			case -1: sscanf (s, "%31s %31s", w0, w1); break;
 			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
@@ -146,10 +148,17 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				break;
 			case 'R':
 				switch (ops[i].args) {
-				case 1: return mips_r (out, 0, getreg (w1), getreg (w2), getreg (w3), 0, ops[i].n);
+				case 3: return mips_r (out, 0, getreg (w2), getreg (w3), getreg (w1), 0, ops[i].n); break;
+				case -3://switched reg order
+					if(ops[i].n > -1) {
+						return mips_r (out, 0, 0, getreg (w2), getreg (w1), getreg (w3), ops[i].n); break;
+					}
+					else {
+						return mips_r (out, 0, getreg (w3), getreg (w2), getreg (w1), 0, (-1 * ops[i].n) ); break;
+					}
 				case 2: return mips_r (out, 0, getreg (w1), getreg (w2), 0, 0, ops[i].n); break;
-				case 3: return mips_r (out, 0, getreg (w1), getreg (w2), getreg (w3), 0, ops[i].n); break;
-				case -3: return mips_r (out, 0, getreg (w1), getreg (w2), 0, getreg (w3), ops[i].n); break;
+				case 1: return mips_r (out, 0, getreg (w1), 0, 0, 0, ops[i].n);
+				case -1: return mips_r (out, 0, 0, 0, getreg (w1), 0, ops[i].n);
 				case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;//switched reg order
 				}
 				break;
