@@ -41,8 +41,8 @@ static struct {
 	{ "bgtz", 'I', -2, 7 },
 	{ "blez", 'I', -2, 6 },
 	{ "bltz", 'I', -2, 1 },
-	//{ "syscall", 'R', 0, 12 },
-	//{ "break", 'R', 0, 13 },
+	{ "syscall", 'R', 0, 12 },
+	{ "break", 'R', 0, 13 },
 	{ "nor", 'R', 3, 39 },
 	{ "or", 'R', 3, 37 },
 	{ "xor", 'R', 3, 38 },
@@ -67,20 +67,22 @@ static struct {
 	{ "mflo", 'R', 1, 18 },
 	{ "mthi", 'R', 1, 17 },
 	{ "mtlo", 'R', 1, 19 },
-	{ "jalr", 'R', -2, 9 },//reg order is rd, rs - command line X, Y is switched - see code below for -2 R switch/case
+	{ "jalr", 'R', -2, 9 },
 	{ "jr", 'R', 1, 8 },
 	{ "jal", 'J', 1, 3 },
 	{ "j",   'J', 1, 2 },
 	{ NULL }
 };
 
-//static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
-static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
+static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
+//^this will keep the below mips_r fuctions working
+// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
+//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
 	if (rs == -1 || rt == -1) return -1;
 	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3); // 2
 	b[2] = (rs<<5) | (rt&0x1f); // 1
 	b[1] = ((rd<<3)&0xff) | (sa>>2); // 0
-	b[0] = (fun&0x3f) | ((sa&3)<<5);
+	b[0] = (fun&0x3f) | ((sa&3)<<6);
 	return 4;
 }
 
@@ -129,11 +131,13 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	for (i=0; ops[i].name; i++) {
 		if (!strcmp (ops[i].name, w0)) {
 			switch (ops[i].args) {
-			case 1: sscanf (s, "%31s %31s", w0, w1); break;
-			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
-			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
 			case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
 			case -3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
+			case -2:sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
+			case 1: sscanf (s, "%31s %31s", w0, w1); break;
+			case -1: sscanf (s, "%31s %31s", w0, w1); break;
+			case 0: sscanf (s, "%31s", w0); break;
 			}
 			if (hasp) {
 				char tmp[32];
@@ -142,16 +146,21 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				strcpy (w3, tmp);
 			}
 			switch (ops[i].type) {
-			case 'N': // nop
-				memset (out, 0, 4);
-				break;
-			case 'R':
+			case 'R'://reg order diff per instruction 'group' - ordered to number of likelyhood to call (add > mfhi)
 				switch (ops[i].args) {
-				case 1: return mips_r (out, 0, getreg (w1), getreg (w2), getreg (w3), 0, ops[i].n);
+				case 3: return mips_r (out, 0, getreg (w2), getreg (w3), getreg (w1), 0, ops[i].n); break;
+				case -3:
+					if(ops[i].n > -1) {
+						return mips_r (out, 0, 0, getreg (w2), getreg (w1), getreg (w3), ops[i].n); break;
+					}
+					else {
+						return mips_r (out, 0, getreg (w3), getreg (w2), getreg (w1), 0, (-1 * ops[i].n) ); break;
+					}
 				case 2: return mips_r (out, 0, getreg (w1), getreg (w2), 0, 0, ops[i].n); break;
-				case 3: return mips_r (out, 0, getreg (w1), getreg (w2), getreg (w3), 0, ops[i].n); break;
-				case -3: return mips_r (out, 0, getreg (w1), getreg (w2), 0, getreg (w3), ops[i].n); break;
-				case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;//switched reg order
+				case 1: return mips_r (out, 0, getreg (w1), 0, 0, 0, ops[i].n);
+				case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;
+				case -1: return mips_r (out, 0, 0, 0, getreg (w1), 0, ops[i].n);
+				case 0: return mips_r (out, 0, 0, 0, 0, 0, ops[i].n);
 				}
 				break;
 			case 'I':
@@ -171,6 +180,9 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				switch (ops[i].args) {
 				case 1: return mips_j (out, ops[i].n, getreg (w1)); break;
 				}
+				break;
+			case 'N': // nop
+				memset (out, 0, 4);
 				break;
 			}
 			return -1;
