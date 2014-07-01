@@ -105,8 +105,8 @@ static void filter_type(char *t) {
 }
 
 R_API char *r_anal_type_format (RAnal *anal, const char *t) {
-	int n;
-	char *p, var[128], var2[128], var3[128];
+	int n, m;
+	char *p, *q, var[128], var2[128], var3[128];
 	char *fmt = NULL;
 	char *vars = NULL;
 	Sdb *DB = anal->sdb_types;
@@ -123,7 +123,7 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (DB, var, n, NULL)); n++) {
 			const char *tfmt;
-			char *type;
+			char *type, *type2;
 			int off;
 			int size;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
@@ -131,14 +131,36 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t) {
 			if (type) {
 				off = sdb_array_get_num (DB, var2, 1, NULL);
 				size = sdb_array_get_num (DB, var2, 2, NULL);
-				snprintf (var3, sizeof (var3), "type.%s", type);
-				tfmt = sdb_const_get (DB, var3, NULL);
-				if (tfmt) {
-					filter_type (type);
-					fmt = r_str_concat (fmt, tfmt);
-					vars = r_str_concat (vars, p);
-					vars = r_str_concat (vars, " ");
-				} else eprintf ("Cannot resolve type '%s'\n", type);
+				if (!strncmp (type, "struct ", 7)) {
+					// TODO: iterate over all the struct fields, and format the format and vars
+					snprintf (var3, sizeof (var3), "struct.%s", type+7);
+					for (m = 0; (q = sdb_array_get (DB, var3, m, NULL)); m++) {
+						snprintf (var2, sizeof (var2), "%s.%s", var3, q);
+						type2 = sdb_array_get (DB, var2, 0, NULL); // array of type, size, ..
+						if (type2) {
+							char var4[128];
+							snprintf (var4, sizeof (var4), "type.%s", type2);
+							tfmt = sdb_const_get (DB, var4, NULL);
+							if (tfmt) {
+								filter_type (type2);
+								fmt = r_str_concat (fmt, tfmt);
+								vars = r_str_concat (vars, q);
+								vars = r_str_concat (vars, " ");
+							} else eprintf ("Cannot resolve type '%s'\n", var3);
+						} else eprintf ("Cannot resolve type '%s'\n", var2);
+						free (type2);
+						free (q);
+					}
+				} else {
+					snprintf (var3, sizeof (var3), "type.%s", type);
+					tfmt = sdb_const_get (DB, var3, NULL);
+					if (tfmt) {
+						filter_type (type);
+						fmt = r_str_concat (fmt, tfmt);
+						vars = r_str_concat (vars, p);
+						vars = r_str_concat (vars, " ");
+					} else eprintf ("Cannot resolve type '%s'\n", var3);
+				}
 			}
 			free (type);
 			free (p);
