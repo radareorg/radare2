@@ -659,17 +659,31 @@ R_API ut64 r_io_fd_size(RIO *io, int fd){
 	return r_io_desc_size (io, desc);
 }
 
+R_API int r_io_is_blockdevice (RIO *io) {
+	if (io && io->desc && io->desc->fd) {
+		struct stat buf;
+		fstat (io->desc->fd , &buf);
+		if (io->plugin == &r_io_plugin_default) {
+			// TODO: optimal blocksize = 2048 for disk, 4096 for files
+			//eprintf ("OPtimal blocksize : %d\n", buf.st_blksize);
+			return ((buf.st_mode & S_IFBLK) == S_IFBLK);
+		}
+	}
+	return 0;
+}
+
 R_API ut64 r_io_size(RIO *io) {
-	int iova;
 	ut64 size, here;
 	if (!io) return 0LL;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
-	iova = io->va;
 	io->va = 0;
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
-	io->va = iova;
+	if (size == 0 && r_io_is_blockdevice (io)) {
+		io->va = 0;
+		size = UT64_MAX;
+	}
 	r_io_seek (io, here, R_IO_SEEK_SET);
 	return size;
 }
