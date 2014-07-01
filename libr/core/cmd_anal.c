@@ -649,7 +649,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		 break;
 	default:
-		 r_core_anal_fcn (core, core->offset, -1, R_ANAL_REF_TYPE_NULL,
+		 r_core_anal_fcn (core, core->offset, UT64_MAX,
+			R_ANAL_REF_TYPE_NULL,
 			 r_config_get_i (core->config, "anal.depth"));
 	}
 	return R_TRUE;
@@ -1033,7 +1034,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'F':
-		r_core_anal_fcn (core, core->offset, -1, R_ANAL_REF_TYPE_NULL, 1);
+		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'f':
 		if (!cmd_anal_fcn (core, input))

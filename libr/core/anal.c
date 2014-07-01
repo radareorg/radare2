@@ -461,17 +461,19 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return result;
 	}
 
-	if (from != UT64_MAX && at == 0)
+	if (from != UT64_MAX && at == 0) {
 		return R_FALSE;
+}
 	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
-	if (at == UT64_MAX || depth < 0)
+	if (at == UT64_MAX || depth < 0) {
 		return R_FALSE;
+	}
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (r_cons_singleton ()->breaked)
 			break;
 		if (at == fcni->addr) { /* Function already analyzed */
-			if (from != -1) {
+			if (from != UT64_MAX) {
 #define USE_NEW_REFS 1
 #if USE_NEW_REFS
 				r_list_foreach (fcni->xrefs, iter2, refi) {
@@ -519,9 +521,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			goto error;
 		}
 		// real read.
-		if (!r_core_read_at (core, at+delta, buf, ANALBS)) {
+#if 0
+		if (!r_core_read_at (core, at+delta, buf, ANALBS))
 			goto error; 
-		}
+#else
+		r_io_read_at (core->io, at+delta, buf, ANALBS);
+#endif
 		if (!memcmp (buf, "\xff\xff\xff\xff", 4)) {
 			goto error;
 		}
