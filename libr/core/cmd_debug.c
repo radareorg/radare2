@@ -731,8 +731,10 @@ static int bypassbp(RCore *core) {
 static int validAddress(RCore *core, ut64 addr) {
 	ut8 buf[8];
 	int word = r_io_read_at (core->io, addr, buf, 8);
+	core->num->value = 1;
 	if (word != 8)
 		return 0;
+	core->num->value = 0;
 	return 1;
 }
 
