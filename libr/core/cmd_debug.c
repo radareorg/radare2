@@ -728,6 +728,13 @@ static int bypassbp(RCore *core) {
 	return R_TRUE;
 }
 
+static int validAddress(RCore *core, ut64 addr) {
+	ut8 buf[8];
+	int word = r_io_read_at (core->io, addr, buf, 8);
+	if (word != 8)
+		return 0;
+	return 1;
+}
 
 static void static_debug_stop(void *u) {
 	RDebug *dbg = (RDebug *)u;
@@ -808,9 +815,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, p+1));
 		} else {
 			addr = r_num_math (core->num, input+2);
-			if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+			if (validAddress (core, addr)) {
+				if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+			} else eprintf ("Can't place a breakpoint here. No mapped memory\n");
 		}
 		break;
 	case '?':
