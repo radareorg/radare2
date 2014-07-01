@@ -58,7 +58,7 @@ R_API int r_search_rsa_update(void* s, ut64 from, const ut8 *buf, int len) {
 			continue;   
 
 		index = 0;
-		for (k=i; k >= 0 && k > i - 20; k--) {
+		for (k=i; k != 0 && k > i - 20; k--) {
 			if (buf[k] == '0'){ // The sequence identifier is '0'
 				index = k;
 				break;
