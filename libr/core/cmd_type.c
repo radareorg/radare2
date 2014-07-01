@@ -182,7 +182,7 @@ static int cmd_type(void *data, const char *input) {
 			if (input[1]) {
 				addr = r_num_math (core->num, input+1);
 			} else addr = core->offset;
-			snprintf (key, sizeof (key), "link.%"PFMT64x, addr);
+			snprintf (key, sizeof (key), "link.%08"PFMT64x, addr);
 			type = sdb_const_get (core->anal->sdb_types, key, 0);
 			if (type) {
 				fmt = r_anal_type_format (core->anal, type);
@@ -192,7 +192,7 @@ static int cmd_type(void *data, const char *input) {
 					free (fmt);
 				}// else eprintf ("Cannot find '%s' type\n", input+1);
 				r_cons_printf ("}\n");
-			}
+			} else eprintf ("Cant find type at 0x%llx\n", addr);
 		 }
 		break;
 	case '?':
