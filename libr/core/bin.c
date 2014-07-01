@@ -146,7 +146,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->string);
 			char *filtered_name = strdup (string->string);
 			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
-			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", str);
+			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
 			r_flag_set (r->flags, str,
 				va? baddr+string->vaddr:string->paddr,
 				string->size, 0);
