@@ -660,6 +660,7 @@ R_API ut64 r_io_fd_size(RIO *io, int fd){
 }
 
 R_API int r_io_is_blockdevice (RIO *io) {
+#if __UNIX__
 	if (io && io->desc && io->desc->fd) {
 		struct stat buf;
 		fstat (io->desc->fd , &buf);
@@ -669,6 +670,7 @@ R_API int r_io_is_blockdevice (RIO *io) {
 			return ((buf.st_mode & S_IFBLK) == S_IFBLK);
 		}
 	}
+#endif
 	return 0;
 }
 
