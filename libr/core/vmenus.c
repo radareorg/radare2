@@ -985,13 +985,9 @@ static ut64 addr = 0;
 static int option = 0;
 
 static void r_core_visual_anal_refresh_column (RCore *core) {
-	char *oprofile = strdup (r_config_get (core->config, "asm.profile"));
-	ut64 addr = level?  core->offset: var_functions_show (core, option, 0);
+	const ut64 addr = level? core->offset: var_functions_show (core, option, 0);
 	r_cons_printf ("Visual code analysis manipulation\n");
-	r_config_set (core->config, "asm.profile", "simple");
 	r_core_cmdf (core, "pd @ 0x%"PFMT64x"!16", addr);
-	r_config_set (core->config, "asm.profile", oprofile);
-	free (oprofile);
 }
 
 static void r_core_visual_anal_refresh (RCore *core) {

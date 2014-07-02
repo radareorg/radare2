@@ -46,82 +46,6 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 		r_config_set (cfg, "asm.segoff", (asmbits==16)?"true":"false");
 }
 
-static int asm_profile(RConfig *cfg, const char *profile) {
-	if (!strcmp (profile, "help") || *profile == '?') {
-		r_cons_printf ("Available asm.profile:\n"
-				" default, gas, smart, graph, debug, full, simple\n");
-		return R_FALSE;
-	} else if (!strcmp (profile, "default")) {
-		r_config_set (cfg, "asm.bytes", "true");
-		r_config_set (cfg, "asm.lines", "true");
-		r_config_set (cfg, "asm.linesout", "false");
-		r_config_set (cfg, "asm.lineswide", "false");
-		r_config_set (cfg, "asm.offset", "true");
-		r_config_set (cfg, "asm.comments", "true");
-		r_config_set (cfg, "asm.trace", "false");
-		r_config_set (cfg, "anal.split", "true");
-		r_config_set (cfg, "asm.flags", "true");
-		r_config_set (cfg, "asm.size", "false");
-		r_config_set (cfg, "asm.xrefs", "true");
-		r_config_set (cfg, "asm.functions", "true");
-		r_config_set (cfg, "scr.color", "true");
-		r_config_set (cfg, "asm.syntax", "intel");
-	} else if (!strcmp(profile, "compact")) {
-		asm_profile (cfg, "simple");
-		r_config_set (cfg, "asm.lines", "true");
-		r_config_set (cfg, "asm.comments", "false");
-		r_config_set (cfg, "scr.color", "false");
-	} else if (!strcmp(profile, "gas")) {
-		asm_profile (cfg, "default");
-		r_config_set (cfg, "asm.syntax", "att");
-		r_config_set (cfg, "asm.lines", "false");
-		r_config_set (cfg, "asm.comments", "false");
-		r_config_set (cfg, "asm.trace", "false");
-		r_config_set (cfg, "asm.bytes", "false");
-		r_config_set (cfg, "asm.stackptr", "false");
-		r_config_set (cfg, "asm.offset", "false");
-		r_config_set (cfg, "asm.flags", "true");
-		r_config_set (cfg, "scr.color", "false");
-	} else if (!strcmp(profile, "smart")) {
-		asm_profile (cfg, "default");
-		r_config_set (cfg, "asm.trace", "false");
-		r_config_set (cfg, "asm.bytes", "false");
-		r_config_set (cfg, "asm.stackptr", "false");
-		r_config_set (cfg, "asm.cycles", "false");
-	} else if (!strcmp (profile, "graph")) {
-		asm_profile (cfg, "default");
-		r_config_set (cfg, "asm.bytes", "false");
-		r_config_set (cfg, "asm.trace", "false");
-		r_config_set (cfg, "scr.color", "false");
-		r_config_set (cfg, "asm.lines", "false");
-		r_config_set (cfg, "asm.stackptr", "false");
-		if (r_config_get (cfg, "graph.offset"))
-			r_config_set (cfg, "asm.offset", "true");
-		else r_config_set (cfg, "asm.offset", "false");
-	} else if (!strcmp (profile, "debug")) {
-		asm_profile (cfg, "default");
-		r_config_set (cfg, "asm.trace", "true");
-	} else if (!strcmp (profile, "full")) {
-		asm_profile (cfg, "default");
-		r_config_set (cfg, "asm.bytes", "true");
-		r_config_set (cfg, "asm.lines", "true");
-		r_config_set (cfg, "asm.linesout", "true");
-		r_config_set (cfg, "asm.lineswide", "true");
-		r_config_set (cfg, "asm.size", "true");
-	} else if (!strcmp (profile, "simple")) {
-		asm_profile (cfg, "default");
-		r_config_set (cfg, "asm.bytes", "false");
-		r_config_set (cfg, "asm.lines", "false");
-		r_config_set (cfg, "asm.comments", "true");
-		r_config_set (cfg, "anal.split", "false");
-		r_config_set (cfg, "asm.flags", "false");
-		r_config_set (cfg, "asm.xrefs", "false");
-		r_config_set (cfg, "asm.stackptr", "false");
-		r_config_set (cfg, "asm.cycles", "false");
-	}
-	return R_TRUE;
-}
-
 static int cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -279,12 +203,6 @@ static int cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 	// TODO: control error and restore old value (return false?) show errormsg?
 	//return R_TRUE;
-}
-
-static int cb_asmprofile(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	return asm_profile (core->config, node->value);
 }
 
 static int cb_asmsyntax(void *user, void *data) {
@@ -793,7 +711,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be usedd by asm");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
 	SETCB("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
-	SETCB("asm.profile", "default", &cb_asmprofile, "configure disassembler (default, simple, gas, smart, debug, full)");
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
