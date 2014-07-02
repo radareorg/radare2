@@ -123,34 +123,10 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
-		if (!(str = malloc (strlen (cmdstr)*2))) {
-			free (cmdstr);
-			return NULL;
-		}
-		for (i=j=0; cmdstr[i]; i++,j++) {
-			switch (cmdstr[i]) {
-			case 0x1b:
-				/* skip ansi chars */
-				for (i++; cmdstr[i] && cmdstr[i]!='m' && \
-					cmdstr[i]!='H' && cmdstr[i]!='J'; i++);
-				j--;
-				break;
-			case '"':
-			case '\n':
-			case '\r':
-				if (is_html) {
-					str[j] = cmdstr[i];
-				}  else {
-					str[j] = '\\';
-					str[++j] = cmdstr[i]=='"'? '"': ((is_json)?'n':'l');
-				}
-				break;
-			default:
-				str[j] = cmdstr[i];
-			}
-		}
-		str[j] = '\0';
+		str = r_str_escape_dot (cmdstr);
 		free (cmdstr);
+		if (!str)
+			return NULL;
 	}
 	return str;
 }

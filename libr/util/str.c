@@ -446,19 +446,37 @@ R_API char *r_str_chop(char *str) {
 }
 
 R_API char *r_str_trim_head(char *str) {
-	if (str)
-		while (*str && iswhitechar (*str))
-			memmove (str, str+1, strlen (str+1));
+	char *p;
+
+	if (!str)
+		return NULL;
+
+	for (p = str; *p && iswhitechar (*p); p++)
+		;
+
+	/* Take the trailing null into account */
+	memmove (str, p, strlen (p) + 1);
+
 	return str;
 }
 
 R_API char *r_str_trim_tail(char *str) {
-	char *ptr = str;
-	if (str == NULL) return NULL;
-	if (!*str) return str;
-	ptr += strlen (str);
-	for (ptr--; (ptr > str) && iswhitechar (*ptr); ptr--)
-		*ptr = '\0';
+	int length;
+
+	if (!str)
+		return NULL;
+
+	length = strlen (str);
+
+	if (!length)
+		return str;
+
+	while (length--) {
+		if (iswhitechar (str[length]))
+			str[length] = '\0';
+		else break;
+	}
+
 	return str;
 }
 
@@ -752,37 +770,88 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
-R_API char *r_str_escape(const char *buf) {
-	char *ptr, *ret;
-	int len;
-	if (!buf) return NULL;
-	len = strlen (buf);
-	ptr = ret = malloc (1+len*3);
-	if (ptr == NULL)
+/* Internal function. dot_nl specifies wheter to convert \n into the
+ * graphiz-compatible newline \l */
+static char *r_str_escape_ (const char *buf, const int dot_nl) {
+	char *new_buf, *q;
+	const char *p;
+
+	if (!buf)
 		return NULL;
-	for (; *buf; buf++, ptr++) {
-		if (*buf=='\n') {
-			*ptr = '\\';
-			ptr++;
-			*ptr = 'n';
-		} else
-		if (*buf=='\t') {
-			*ptr = '\\';
-			ptr++;
-			*ptr = 't';
-		} else
-		if (IS_PRINTABLE (*buf)) {
-			*ptr = *buf;
-		} else {
-			ut8 ch = *buf;
-			*ptr++ = '\\';
-			*ptr++ = '0'+(ch>>4);
-			*ptr = '0'+(ch&0xf);
+
+	/* Worst case scenario, we convert every byte */
+	new_buf = malloc (1 + (strlen(buf) * 4));
+
+	if (!new_buf)
+		return NULL;
+
+	p = buf;
+	q = new_buf;
+
+	while (*p) {
+		switch (*p) {
+			case '\n':
+				*q++ = '\\';
+				*q++ = dot_nl? 'l': 'n';
+				break;
+			case '\r':
+				*q++ = '\\';
+				*q++ = 'r';
+				break;
+			case '\\':
+				*q++ = '\\';
+				*q++ = '\\';
+				break;
+			case '\t':
+				*q++ = '\\';
+				*q++ = 't';
+				break;
+			case '"' :
+				*q++ = '\\';
+				*q++ = '"';
+				break;
+			case '\f':
+				*q++ = '\\';
+				*q++ = 'f';
+				break;
+			case '\b':
+				*q++ = '\\';
+				*q++ = 'b';
+				break;
+			case 0x1b: // ESC
+				p++;
+				/* Parse the ANSI code (only the graphic mode
+				 * set ones are supported) */
+				if (*p == '[')
+					for (p++; *p != 'm'; p++)
+						;
+				break;
+			default:
+				/* Outside the ASCII printable range */
+				if (*p < ' ' && *p > 0x7E) {
+					*q++ = '\\';
+					*q++ = 'x';
+					*q++ = '0'+((*p)>>4);
+					*q++ = '0'+((*p)&0xf);
+				} else {
+					*q++ = *p;
+				}
 		}
+
+		p++;
 	}
-	*ptr = 0;
-	r_str_sanitize (ret);
-	return ret;
+
+	*q = '\0';
+
+	return new_buf;
+}
+
+R_API char *r_str_escape (const char *buf) {
+	return r_str_escape_ (buf, R_FALSE);
+}
+
+R_API char *r_str_escape_dot (const char *buf) {
+	return r_str_escape_ (buf, R_TRUE);
 }
 
 /* ansi helpers */
