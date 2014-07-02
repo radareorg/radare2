@@ -72,7 +72,7 @@ typedef struct sdb_ns_t {
 	Sdb *sdb;
 } SdbNs;
 
-#define sdb_new0() sdb_new(NULL,NULL,0)
+SDB_API Sdb* sdb_new0 ();
 Sdb* sdb_new (const char *path, const char *file, int lock);
 void sdb_config (Sdb *s, int options);
 int sdb_free (Sdb* s);

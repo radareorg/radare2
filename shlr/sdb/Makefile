@@ -16,17 +16,20 @@ ifneq (${HAVE_VALA},)
 	cd ${VALADIR}/types && ${MAKE}
 endif
 
-.PHONY: test
+.PHONY: test sdb.js
 test:
 	${MAKE} -C test
 
 src/sdb-version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb-version.h
 
-EMCCFLAGS=-O2 -s ASM_JS=1
+CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c
+CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
+EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
 sdb.js: src/sdb-version.h
-	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js *.c 
+	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
+
 #json/api.c json/js0n.c json/json.c json/rangstr.c  
 
 clean:

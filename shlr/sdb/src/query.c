@@ -95,14 +95,20 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns) {
+static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns, int encode) {
 	int len;
 	SdbListIter *it;
 	char *_out, *out = sb->buf;
 	SdbNs *n;
+	ForeachListUser user = { sb, encode };
 	char *roote = root + strlen (root);
 	if (!ns->sdb)
 		return;
+
+	/*Pick all key=value in the local ns*/
+	sdb_foreach (ns->sdb, foreach_list_cb, &user);
+
+	/*Pick "sub"-ns*/
 	ls_foreach (ns->sdb->ns, it, n) {
 		len = strlen (n->name);
 		p[0] = '/';
@@ -110,10 +116,11 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 			memcpy (p+1, n->name, len+1);
 			left -= len+2;
 		}
+		strbuf_append (sb, "");/*Print a new line after the "whole" ns*/
 		strbuf_append (sb, root);
 		_out = out;
 		walk_namespace (sb, root, left,
-			roote+len+1, n);
+			roote+len+1, n, encode);
 		out = _out;
 	}
 }
@@ -226,7 +233,7 @@ next_quote:
 					out_concat (root);
 					walk_namespace (out, root,
 						sizeof (root)-len,
-						root+len, ns);
+						root+len, ns, encode);
 				} else eprintf ("TODO: Namespace too long\n");
 			}
 			if (bufset)

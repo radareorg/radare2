@@ -23,6 +23,10 @@ SDB_API void sdb_global_hook(SdbHook hook, void *user) {
 }
 
 // TODO: use mmap instead of read.. much faster!
+SDB_API Sdb* sdb_new0 () {
+	return sdb_new (NULL, NULL, 0);
+}
+
 SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
         struct stat st = {0};
 	Sdb* s = R_NEW (Sdb);

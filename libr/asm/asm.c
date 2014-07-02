@@ -669,3 +669,7 @@ R_API char *r_asm_describe(RAsm *a, const char* str) {
 		return sdb_get (a->pair, str, 0);
 	return NULL;
 }
+
+R_API RList* r_asm_get_plugins(RAsm *a) {
+	return a->plugins;
+}

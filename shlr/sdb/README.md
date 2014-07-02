@@ -60,16 +60,13 @@ Using arrays (>=0.6):
 	1
 	foo
 	2
-	foo
-	fuck
-	2
 
 Let's play with json:
 
 	$ sdb d g='{"foo":1,"bar":{"cow":3}}'
-	$ sdb d g?bar.cow
+	$ sdb d g:bar.cow
 	3
-	$ sdb - user='{"id":123}' user?id=99 user?id
+	$ sdb - user='{"id":123}' user:id=99 user:id
 	99
 
 Using the commandline without any disk database:
