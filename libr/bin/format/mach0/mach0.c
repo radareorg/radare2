@@ -7,7 +7,6 @@
 
 static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
 	ut64 section_base, section_size;
-ut64 oaddr = addr;
 	int i, min = -1;
 
 	if (!bin->sects)
@@ -19,11 +18,10 @@ ut64 oaddr = addr;
 				continue;
 			if (addr<bin->sects[i].addr) {
 				min = i;
-addr = bin->sects[i].addr & 0xffffffffFFFF0000;
+				addr = bin->sects[i].addr & 0xffffffffFFFF0000;
 			}
 		}
 	}
-//if (min != -1) { addr += oaddr; }
 	for (i = 0; i < bin->nsects; i++) {
 		section_base = (ut64)bin->sects[i].addr;
 		section_size = (ut64)bin->sects[i].size;
@@ -936,8 +934,8 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		return NULL;
 	if (!(entry = malloc (sizeof (struct r_bin_mach0_addr_t))))
 		return NULL;
-// hack to bypass this test
-bin->entry = NULL;
+	// hack to bypass this test
+	bin->entry = 0LL;
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		entry->addr = bin->entry;
