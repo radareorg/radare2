@@ -179,6 +179,7 @@ static int cmd_seek(void *data, const char *input) {
 				if (off != UT64_MAX)
 					r_core_seek (core, off, 0);
 			}
+			r_core_block_read (core, 1);
 			break;
 		case 'n':
 			r_io_sundo_push (core->io, core->offset);
