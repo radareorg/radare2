@@ -159,8 +159,10 @@ capstone-$(CS_VER).tar.gz:
 	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
 endif
 
+CAPSTONE_CFLAGS=-g
+
 capstone-build: capstone
-	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 \
 		RANLIB="$(RANLIB)" AR="$(AR)" \
 		libcapstone.a 
