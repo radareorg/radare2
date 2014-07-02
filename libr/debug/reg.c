@@ -65,8 +65,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		cols = 3;
 		kwhites = "         ";
 	} else {
-		fmt = " %s = 0x%08"PFMT64x"%s";
-		fmt2 = " %3s 0x%08"PFMT64x"%s";
+		fmt = "%s = 0x%08"PFMT64x"%s";
+		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 4;
 		kwhites = "    ";
 	}
