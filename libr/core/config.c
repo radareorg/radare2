@@ -392,6 +392,7 @@ static int cb_dbgstatus(void *user, void *data) {
 				".dr* ; drd ; sr pc;pi 1;s-");
 		else r_config_set (r->config, "cmd.prompt", ".dr*");
 	}
+	return R_TRUE;
 }
 
 static int cb_dbgbackend(void *user, void *data) {
