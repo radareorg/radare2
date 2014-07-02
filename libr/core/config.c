@@ -705,7 +705,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
 	SETPREF("asm.cycles", "false", "Show cpu-cycles taken by instruction at disassembly");
 	SETI("asm.tabs", 0, "Use tabs in disassembly");
-	SETPREF("asm.trace", "true", "Show execution traces for each opcode");
+	SETPREF("asm.trace", "false", "Show execution traces for each opcode");
 	SETPREF("asm.ucase", "false", "Use uppercase syntax at disassembly");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be usedd by asm");
