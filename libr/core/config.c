@@ -383,6 +383,17 @@ static int cb_dbgbep(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_dbgstatus(void *user, void *data) {
+	RCore *r = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (r_config_get_i (r->config, "cfg.debug")) {
+		if (node->i_value)
+			r_config_set (r->config, "cmd.prompt",
+				".dr* ; drd ; sr pc;pi 1;s-");
+		else r_config_set (r->config, "cmd.prompt", ".dr*");
+	}
+}
+
 static int cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -837,6 +848,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 
 	/* debug */
+	SETCB("dbg.status", "true", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
 	if (core->cons->rows>30) // HACKY
