@@ -26,13 +26,14 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 	RBinObject *binobj = binfile ? binfile->o: NULL;
 	RBinInfo *info = binobj ? binobj->info: NULL;
 	if (info) {
+		int va = info->has_va;
 		const char * arch = info->arch;
 		ut16 bits = info->bits;
 		ut64 baseaddr = r_config_get_i (r->config, "bin.baddr");
 		if (baseaddr) {
 			binobj->baddr = baseaddr;
 		} else baseaddr = binobj->baddr;
-		int va = info->has_va;
+		/* Hack to make baddr work on some corner */
 		r_config_set_i (r->config, "io.va",
 			(binobj->info)? binobj->info->has_va: 0);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
