@@ -676,8 +676,9 @@ static int cmd_print(void *data, const char *input) {
 			{
 			ut8 *p;
 			int psz, i = 0;
-
+			if (nbsz<1) nbsz=1;
 			psz = fsz / nbsz;
+			if (!psz) psz = 1;
 			ptr = malloc (psz);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
@@ -703,8 +704,9 @@ static int cmd_print(void *data, const char *input) {
 			{
 			ut8 *p;
 			int psz, i = 0, j, k;
-
+			if (nbsz<1) nbsz=1;
 			psz = fsz / nbsz;
+			if (!psz) psz = 1;
 			ptr = malloc (psz);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");

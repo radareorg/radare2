@@ -100,7 +100,7 @@ static void handle_xor (const ut8 *block, int len) {
 }
 
 static void handle_entropy (const ut8 *block, int len) {
-	r_cons_printf ("%02x\n", r_hash_entropy (block, len));
+	r_cons_printf ("%f\n", r_hash_entropy (block, len));
 }
 
 static void handle_hamdist (const ut8 *block, int len) {
