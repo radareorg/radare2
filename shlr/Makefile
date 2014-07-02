@@ -10,6 +10,7 @@ CS_UPD=20140617
 CS_BRA=next
 #CS_TIP=5a7f409dec06859ad28ee577d404a501b7d380c8
 CS_TIP=ed6b8c5a96579e3907f7b2b9d8d0d9efa7e134df
+CS_TIP=22ea683583adbbc344989f83fdc3f5c618756eaa
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
