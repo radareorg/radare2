@@ -35,6 +35,9 @@ fi
 
 # build
 ${MAKE} mrproper > /dev/null 2>&1
+if [ -d shlr/capstone/.git ]; then
+( cd shlr/capstone ; git clean -xdf )
+fi
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed"
 rm -f plugins.cfg
 ./configure ${CFGARG} --prefix=${PREFIX} || exit 1
