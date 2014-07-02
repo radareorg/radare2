@@ -2,10 +2,10 @@
 
 #include <r_core.h>
 
-#define SETI(x,y,z) r_config_set_i(cfg,x,y)->desc = strdup(z);
-#define SETICB(w,x,y,z) r_config_set_i_cb(cfg,w,x,y)->desc = strdup(z);
-#define SETPREF(x,y,z) r_config_set(cfg,x,y)->desc = strdup(z);
-#define SETCB(w,x,y,z) r_config_set_cb(cfg,w,x,y)->desc = strdup(z);
+#define SETI(x,y,z) r_config_node_desc(r_config_set_i(cfg,x,y), z);
+#define SETICB(w,x,y,z) r_config_node_desc(r_config_set_i_cb(cfg,w,x,y), z);
+#define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
+#define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
 
 // copypasta from binr/rasm2/rasm2.c
 static void rasm2_list(RAsm *a, const char *arch) {

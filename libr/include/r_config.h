@@ -57,6 +57,7 @@ R_API int r_config_rm(RConfig *cfg, const char *name);
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name);
 R_API const char *r_config_get(RConfig *cfg, const char *name);
 R_API const char *r_config_desc(RConfig *cfg, const char *name, const char *desc);
+R_API const char *r_config_node_desc(RConfigNode *node, const char *desc);
 R_API void r_config_list(RConfig *cfg, const char *str, int rad);
 R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
