@@ -334,12 +334,13 @@ static void handle_set_pre (RDisasmState *ds, const char * str) {
 
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 	char *asm_str = NULL;
+	char *buf_asm = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 
 	if (ds->show_color && ds->colorop) {
 		r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
-		asm_str = r_print_colorize_opcode (ds->asmop.buf_asm, ds->color_reg, ds->color_num);
+		asm_str = r_print_colorize_opcode (buf_asm, ds->color_reg, ds->color_num);
 	} else
-		asm_str = strdup (ds->asmop.buf_asm);
+		asm_str = strdup (buf_asm);
 
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
@@ -368,7 +369,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 		}
 #if 1
 		r_parse_filter (core->parser, core->flags,
-			ds->opstr? ds->opstr: asm_str, ds->str, sizeof (ds->str));
+			asm_str, ds->str, sizeof (ds->str));
 		core->parser->flagspace = ofs;
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
