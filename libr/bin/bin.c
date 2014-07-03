@@ -47,6 +47,7 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 static int getoffset (RBin *bin, int type, int idx);
 static const char *getname (RBin *bin, int off);
 static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o);
+static ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 vaddr);
 
 R_API void r_bin_iobind(RBin *bin, RIO *io) {
 	r_io_bind (io, &bin->iob);
@@ -101,12 +102,14 @@ R_API int r_bin_file_cur_set_plugin (RBinFile *binfile, RBinPlugin *plugin) {
 	return R_FALSE;
 }
 
-enum {
-	R_STRING_TYPE_DETECT = -1,
-	R_STRING_TYPE_ASCII,
-	R_STRING_TYPE_UTF8,
-	R_STRING_TYPE_WIDE,
-};
+R_API const char *r_bin_string_type(const int type) {
+	const char *types[] = {
+		"ASCII", "UTF-8", "WCHAR",
+	};
+	if (type < 0 || type > R_STRING_TYPE_MAX)
+		return NULL;
+	return types[type];
+}
 
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 
@@ -223,8 +226,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		return;
 
 	r_list_foreach (list, it, ptr) {
-		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, R_FALSE);
-		ptr->vaddr += s? s->vaddr: 0;
+		ptr->vaddr = r_binfile_get_vaddr (arch, arch->o->baddr, ptr->paddr, ptr->vaddr);
 	}
 }
 
@@ -330,7 +332,7 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	minlen = cp->minstrlen;
 	binfile->o = o;
 	if (cp->baddr) o->baddr = cp->baddr (binfile);
-binfile->loadaddr = o->baddr;
+	binfile->loadaddr = o->baddr;
 	if (cp->boffset) o->boffset = cp->boffset (binfile);
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential inconsistencies
@@ -407,7 +409,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	// XXX - this needs to be reimplemented to account for 
+	// XXX - this needs to be reimplemented to account for
 	// performance impacts.
 	buf_bytes = NULL;
 
@@ -816,7 +818,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->loadaddr = loadaddr;
 	o->baddr = baseaddr;
 	// XXX - binfile could be null here meaning an improper load
-	// XXX - object size cant be set here and needs to be set where 
+	// XXX - object size cant be set here and needs to be set where
 	// where the object is created from.  The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is extracted
 	// from a set of bytes in the file
@@ -1552,57 +1554,17 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 }
 
 R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 vaddr) {
-#if 0
-This function is not right at all, the problem appears when using
-a user specified baddr, when loadaddr is 0, the rebasing doesnt works
-in all file formats. We have to refactor this to proper define the
-load address from the plugin side, and check all places where laddr
-and baddr is used.
-#endif
-	//eprintf ("LADDR %llx\tVADDR %llx\tBADDR %llx\tPADDR %llx\n",
-	//	binfile->loadaddr, vaddr, baddr, paddr);
-	//eprintf ("BADDR %llx\n", baddr);
-	if (baddr) {
-		/* Load object files which have no base load address specified */
-		if (!binfile->loadaddr) {
-			//return baddr+vaddr;
-			return baddr; // XXX: vaddr ignored here??
-		}
+	const int use_va = binfile->o->info->has_va;
 
-		if (vaddr<binfile->loadaddr) {
-			vaddr += binfile->loadaddr;
-			if (baddr != binfile->loadaddr) {
-				return vaddr - (binfile->loadaddr-baddr);
-			}
-			/* other cases */
-			st64 delta = 0; //binfile->loadaddr-vaddr;
-			//ut64 plus = (baddr && binfile->loadaddr == baddr)? baddr:0;
-			//		eprintf ("--> b:%llx l:%llx\n", baddr, binfile->loadaddr);
-			return vaddr-binfile->loadaddr+baddr+delta; //binfile->loadaddr+delta;
-		}
-		//return vaddr+baddr;
-		if (binfile->loadaddr == baddr)
-			return vaddr;
-	}
-	// wtf case
-	ut32 delta;
-	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
-	// XXX hack to recover lost baddr
-#if 0
-	if (vaddr>=baddr)
+	/* No va, just add the base */
+	if (!use_va)
+		return baddr + paddr;
+
+	/* Already a vaddr */
+	if (baddr && vaddr >= baddr)
 		return vaddr;
-#endif
-	baddr = binfile->o->baddr;
-//baddr = 0xf00000;
-	if (!cp) return UT64_MAX;
-#if 0
-	if (cp && cp->get_vaddr) {
-		return cp->get_vaddr (binfile, baddr, paddr, vaddr);
-}
-#endif
-	if (!baddr) return vaddr;
- 	delta = (paddr & 0xfffff000) | (vaddr & 0xfff);
-	return baddr + delta;
+
+	return baddr + vaddr;
 }
 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {

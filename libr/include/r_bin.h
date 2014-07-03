@@ -61,6 +61,14 @@ enum {
 	R_BIN_RELOC_64 = 64
 };
 
+enum {
+	R_STRING_TYPE_DETECT = -1,
+	R_STRING_TYPE_ASCII,
+	R_STRING_TYPE_UTF8,
+	R_STRING_TYPE_WIDE,
+	R_STRING_TYPE_MAX,
+};
+
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -428,7 +436,7 @@ R_API RBinFile * r_bin_file_find_by_name_n (RBin * bin, const char * name, int i
 R_API int r_bin_file_set_cur_binfile (RBin * bin, RBinFile *bf);
 R_API RBinPlugin * r_bin_file_cur_plugin (RBinFile *binfile);
 
-
+R_API const char *r_bin_string_type(const int type);
 
 /* dbginfo.c */
 R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);
