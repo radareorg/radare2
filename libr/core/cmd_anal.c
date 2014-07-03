@@ -727,6 +727,14 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			r_cons_printf ("0x%08"PFMT64x"\n", off);
 		} else ar_show_help (core);
 		break;
+	case 'S':
+		 {
+			int sz;
+			ut8 *buf = r_reg_get_bytes (
+				core->anal->reg, R_REG_TYPE_GPR, &sz);
+			r_cons_printf ("%d\n", sz);
+		 }
+		break;
 	case 'b':
 		 { // WORK IN PROGRESS // DEBUG COMMAND
 			int len;
