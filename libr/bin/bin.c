@@ -350,7 +350,6 @@ binfile->loadaddr = o->baddr;
 	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	if (cp->classes) o->classes = cp->classes (binfile);
 	if (cp->lines) o->lines = cp->lines (binfile);
-	if (cp->get_sdb) o->kv = cp->get_sdb (o);
 	o->lang = r_bin_load_languages (binfile);
 
 	binfile->o = old_o;
@@ -787,7 +786,6 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	if (sz == 0 || sz > bytes_sz) return NULL;
 	o = R_NEW0 (RBinObject);
 	o->obj_size = bytes && (bytes_sz >= sz+offset) ? sz : 0;
-	o->kv = sdb_new0 ();
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
@@ -1595,11 +1593,6 @@ and baddr is used.
 	baddr = binfile->o->baddr;
 //baddr = 0xf00000;
 	if (!cp) return UT64_MAX;
-#if 0
-	if (cp && cp->get_vaddr) {
-		return cp->get_vaddr (binfile, baddr, paddr, vaddr);
-}
-#endif
 	if (!baddr) return vaddr;
  	delta = (paddr & 0xfffff000) | (vaddr & 0xfff);
 	return baddr + delta;

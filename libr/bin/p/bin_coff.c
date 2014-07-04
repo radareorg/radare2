@@ -10,13 +10,6 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) o->bin_obj;
-	if (bin->kv) return bin->kv;
-	return NULL;
-}
-
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -264,7 +257,6 @@ RBinPlugin r_bin_plugin_coff = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -286,7 +278,6 @@ RBinPlugin r_bin_plugin_coff = {
 	.dbginfo = NULL,
 	.create = &create,
 	.write = NULL,
-	.get_vaddr = NULL,
 };
 
 #ifndef CORELIB

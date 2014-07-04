@@ -23,13 +23,6 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
-static ut64 get_elf_vaddr64 (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
-	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-	return obj->baddr - obj->boffset + vaddr;
-
-}
-
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
@@ -117,7 +110,6 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -139,7 +131,6 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.dbginfo = &r_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &r_bin_write_elf64,
-	.get_vaddr = &get_elf_vaddr64,
 };
 
 #ifndef CORELIB

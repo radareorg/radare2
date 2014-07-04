@@ -190,7 +190,6 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,

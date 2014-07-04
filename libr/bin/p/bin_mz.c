@@ -171,7 +171,6 @@ RBinPlugin r_bin_plugin_mz = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,	//.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,

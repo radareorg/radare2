@@ -208,7 +208,6 @@ typedef struct r_bin_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	Sdb * (*get_sdb)(RBinObject *obj);
 	int (*load)(RBinFile *arch);
 	void *(*load_bytes)(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
 	int (*size)(RBinFile *bin);
@@ -233,7 +232,6 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinFile *arch, int type, int idx);
-	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	int minstrlen;
 	void *user;

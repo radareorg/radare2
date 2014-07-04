@@ -9,14 +9,6 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
-static Sdb* get_sdb (RBinObject *o) {
-	struct PE_(r_bin_pe_obj_t) *bin;
-	if (!o || !o->bin_obj) return NULL;
-	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
-	if (bin->kv) return bin->kv;
-	return NULL;
-}
-
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -340,11 +332,6 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	if (!baddr) return vaddr;
-	return baddr + vaddr;
-}
-
 #if !R_BIN_PE64
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
@@ -449,7 +436,6 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -471,7 +457,6 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.write = NULL,
 	.minstrlen = 4,
 	.create = &create,
-	.get_vaddr = &get_vaddr
 };
 
 #ifndef CORELIB

@@ -26,14 +26,6 @@ static void setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
 }
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = \
-		(struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
-	if (bin && bin->kv) return bin->kv;
-	return NULL;
-}
-
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct Elf_(r_bin_elf_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -672,22 +664,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-
-static ut64 get_elf_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
-// WHY? NO NEED TO HAVE PLUGIN SPECIFIC VADDR
-	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-	return obj->baddr - obj->boffset + vaddr -baddr;
-
-}
-
 RBinPlugin r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -709,7 +691,6 @@ RBinPlugin r_bin_plugin_elf = {
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
-	.get_vaddr = &get_elf_vaddr,
 };
 
 #ifndef CORELIB

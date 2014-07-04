@@ -50,13 +50,6 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 	}
 }
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	struct r_bin_java_obj_t *bin = (struct r_bin_java_obj_t *) o->bin_obj;
-	if (bin->kv) return bin->kv;
-	return NULL;
-}
-
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -231,7 +224,6 @@ RBinPlugin r_bin_plugin_java = {
 	.license = "LGPL3",
 	.init = init,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
