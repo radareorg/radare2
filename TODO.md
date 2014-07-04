@@ -18,7 +18,6 @@
 * cmp rip+xx -> not resolved wtf
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination
-* analysis: assume there is a function at the end of each function
 * integrate dwarf parser with disassembler and debugger
 * step back .. log all state changes on every debugger stop
 * show analized functions in 'aa' -> discuss
@@ -43,16 +42,13 @@
 
 BUGS
 ----
-* If [0-9] keybindings in visual point to same address use same reference
 * RBinCreate:
   - mach0 create for darwin-ppc
   - mz
-  - pe <- must be fixed
   - pe64
   - plan9 bins
 * Implement support for args in 'oo' (like in r1s !load debugger..)
 * opening a file from inside r2 doesnt clears internal data (strings..)
-* 'ao' must be for opcodes, not bytes
 * backtrace for linux or osx at least
 * implement 'ax' to get/set xrefs (better than afl <addr>) .. or afx?
 * shell encoder - get x86-64 one from twitter
@@ -106,8 +102,6 @@ nibble
   - Search every possible function by searching typical prologs and put them in a queue.
   - Perform the same actions as in the previous steps with the entry points.
 * detect strings in code analysis
-* implement aoe = anal op exec
-  - sync regs or what?
 * register renaming (per-instruction or ranges)
   - r_parser fun? a specific asm.parser plugin that does all this tricks?
 * Display getsym() stuff in rabin2, not only legit syms
@@ -255,7 +249,6 @@ To think
 * radare2.c:217 . find name for maxfilesize to hash
 * r_list_foreach_prev is buggy, review and remove..
 * make symstall in r2-bindings/ ?
-* What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
 * Add deltified offset in PC? +10, +30 ... asm.reladdr
 * regio not implemented // it is really necessary? imho no..
 * distribute 'spp' with 'rarc2' ? imho no
@@ -263,11 +256,7 @@ To think
 
 Refactoring
 -----------
-* move r_th into r_util
-* Merge javasm code (asm, bin -> shlr)
 * Rename r_hashtable -> r_ht
-* Remove/deprecate libr/vm
-  - Make ht64.c include ht.c
 * Review the r_flags api
 * Add pipe_to_buffer..not only file descriptors
 * r_config set_int and so..simplify
@@ -320,8 +309,6 @@ Future
 * asm.pseudo for brainfuck
 * code analysis for msil
 * rax2 -k by default?
-* Merge libr/db inside libr/util ?
-* implement code analysis using udis86.. is this necessary.. x86im works fine?
 * r_cons_visual_write_tail() -> fill end of screen with spaces \o/
 * Add support for 'expect' like foo in rarun2
   - make rarun live in a lib.. or at least be usable from r2
@@ -330,7 +317,6 @@ Future
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
-* acr -ldl check must be fixed for kfreebsd
 * metaflags? support to define relations between flags
     (flag hirearchies)
 	r_flagtree

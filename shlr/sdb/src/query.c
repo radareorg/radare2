@@ -20,12 +20,13 @@ static StrBuf* strbuf_new() {
 
 static StrBuf* strbuf_append(StrBuf *sb, const char *str) {
 	int len = strlen (str);
-	if ((sb->len + len+1)>=sb->size) {
+	if ((sb->len + len+2)>=sb->size) {
 		int newsize = sb->size+len+256;
 		char *b = realloc (sb->buf, newsize);
 		/// TODO perform free and force all callers to update the ref?
 		if (!b) return NULL;
 		sb->buf = b;
+		sb->size = newsize;
 	}
 	memcpy (sb->buf+sb->len, str, len);
 	memcpy (sb->buf+sb->len+len, "\n", 2);
