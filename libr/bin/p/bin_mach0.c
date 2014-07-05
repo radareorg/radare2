@@ -56,9 +56,10 @@ static ut64 baddr(RBinFile *arch) {
 	RBinInfo *bi = info (arch);
 	if (strstr (bi->type, "Exe")) {
 		int is_arm = !strcmp (bi->arch, "arm");
+		int bi_bits = bi->bits;
 		free (bi);
 		// WARNING: THIS IS VERY HACKY
-		if (bi->bits==32)
+		if (bi_bits==32)
 			return 0x1000;
 		//return MACH0_(r_bin_mach0_get_baddr) (arch->o->bin_obj);
 		return is_arm? 0x1000: 0x100000000;
