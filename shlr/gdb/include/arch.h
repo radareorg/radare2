@@ -4,6 +4,8 @@
 
 #define ARCH_X86_64 0
 #define ARCH_X86_32 1
+#define ARCH_ARM_32 2
+#define ARCH_ARM_64 3
 
 /*!
  * This struct defines a generic
@@ -13,7 +15,6 @@ typedef struct registers_t {
 	char name[32]; /*! The Name of the current register */
 	uint64_t offset; /*! Offset in the data block */
 	uint64_t size;	/*! Size of the register */
-	uint64_t value; /*! Saves the value of the register */
 } registers_t;
 
 #endif

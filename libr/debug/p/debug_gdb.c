@@ -13,47 +13,90 @@ typedef struct {
 #define SUPPORTED 1
 
 static libgdbr_t *desc = NULL;
+static char* reg_buf = NULL;
+static int buf_size = 0;
 static int support_sw_bp = UNKNOWN; 
 static int support_hw_bp = UNKNOWN;
-
 
 static int r_debug_gdb_step(RDebug *dbg) {
 	gdbr_step(desc, -1); // TODO handle thread specific step?
 	return R_TRUE;
 }
 
-
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	gdbr_read_registers(desc);
+	// read the len of the current area
+	int buflen = 0;
+	free(r_reg_get_bytes(dbg->reg, type, &buflen));
 	memcpy(buf, desc->data, desc->data_len);
+	if (!reg_buf) {
+		reg_buf = calloc (buflen, sizeof (char));
+		if (!reg_buf) {
+			return -1;
+		}
+	}
+	else {
+		if (buf_size < desc->data_len) {
+			char* new_buf = realloc (reg_buf, desc->data_len * sizeof (char));
+			if (!new_buf) {
+				return -1;
+			}
+			reg_buf = new_buf;
+			buf_size = desc->data_len;
+		}
+	}
+	memcpy (reg_buf, desc->data, desc->data_len);
 	return desc->data_len;
 }
-
 
 static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	//TODO
 	return NULL;
 }
 
-
 static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	//gdbr_write_bin_registers(desc, buf); //TODO...
+	if (!reg_buf) {
+		// we cannot write registers before we once read them
+		return -1;
+	}
+	int buflen = 0;
+	int bits = dbg->anal->bits;
+	free(r_reg_get_bytes(dbg->reg, type, &buflen));
+	// some implementations of the gdb protocol are acting weird.
+	// so winedbg is not able to write registers through the <G> packet
+	// and also it does not return the whole gdb register profile after
+	// calling <g>
+	// so this workaround resizes the small register profile buffer
+	// to the whole set and fills the rest with 0
+	if (buf_size < buflen) {
+		char* new_buf = realloc (reg_buf, buflen * sizeof (char));
+		if (!new_buf) {
+			return -1;
+		}
+		reg_buf = new_buf;
+		memset (new_buf + buf_size, 0, buflen - buf_size);
+	}
+
+	RRegItem* current = NULL;
+	for (;;) {
+		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
+		if (!current) break;
+		ut64 val = r_reg_get_value (dbg->reg, current);
+		int bytes = bits / 8;
+		gdbr_write_reg (desc, current->name, &val, bytes);
+	}
 	return R_TRUE;
 }
-
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	gdbr_continue(desc, -1);
 	return R_TRUE;
 }
 
-
 static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 	/* do nothing */
 	return R_TRUE;
 }
-
-
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
@@ -85,12 +128,11 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	return R_TRUE;
 }
 
-
 static int r_debug_gdb_detach(int pid) {
 	gdbr_disconnect(desc);
+	if (reg_buf) free (reg_buf);
 	return R_TRUE;
 }
-
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = dbg->arch;
@@ -342,12 +384,10 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-
 static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
 	// TODO
 	return R_FALSE;
 }
-
 
 struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
@@ -373,7 +413,6 @@ struct r_debug_plugin_t r_debug_plugin_gdb = {
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };
-
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
