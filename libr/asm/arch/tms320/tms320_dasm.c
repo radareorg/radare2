@@ -611,7 +611,7 @@ void decode_braces(tms320_dasm_t * dasm)
 	}
 
 	if (field_valid(dasm, uu)) {
-		boolt parallel = strstr(dasm->syntax, "::");
+		boolt parallel = !!strstr(dasm->syntax, "::");
 
 		// first
 		replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 2 ? "uns(" : "");
