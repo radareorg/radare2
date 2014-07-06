@@ -195,6 +195,11 @@ typedef struct {
 
 		def_field	(Ymem_mmm, 3);
 		def_field	(Ymem_reg, 3);
+
+		// qualifiers
+
+		def_field	(q_lr, 1)
+		def_field	(q_cr, 1)
 	} f;
 
 	RHashTable		* map;

@@ -937,11 +937,29 @@ void decode_qualifiers(tms320_dasm_t * dasm)
 
 	case 0x9c:
 		// 1001 1100 - <insn>.LR
+		set_field_value(dasm, q_lr, 1);
 		break;
 	case 0x9d:
 		// 1001 1101 - <insn>.CR
+		set_field_value(dasm, q_cr, 1);
 		break;
 	}
+}
+
+static insn_item_t * finalize(tms320_dasm_t * dasm)
+{
+	// remove odd spaces
+
+	substitute(dasm->syntax, "  ", "%s", " ");
+
+	// add some qualifiers
+
+	if (field_value(dasm, q_lr))
+		replace(dasm->syntax, " ", ".LR ");
+	if (field_value(dasm, q_cr))
+		replace(dasm->syntax, " ", ".CR ");
+
+	return dasm->insn;
 }
 
 insn_item_t * decode_insn(tms320_dasm_t * dasm)
@@ -965,11 +983,8 @@ insn_item_t * decode_insn(tms320_dasm_t * dasm)
 	decode_registers(dasm);
 	decode_addressing_modes(dasm);
 
-	// cleanup rudiments
+	return finalize(dasm);
 
-	substitute(dasm->syntax, "  ", "%s", " ");	// spaces
-
-	return dasm->insn;
 }
 
 insn_item_t * decode_insn_head(tms320_dasm_t * dasm)
@@ -1042,6 +1057,18 @@ static void init_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 	dasm->insn = NULL;
 }
 
+static int full_insn_size(tms320_dasm_t * dasm)
+{
+	int qualifier_size = 0;
+
+	if (field_value(dasm, q_cr))
+		qualifier_size = 1;
+	if (field_value(dasm, q_lr))
+		qualifier_size = 1;
+
+	return dasm->length + qualifier_size;
+}
+
 /*
  * TMS320 disassembly engine public interface
  */
@@ -1065,7 +1092,7 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 	if (dasm->status & TMS320_S_INVAL)
 		strcpy(dasm->syntax, "invalid"), dasm->length = 1;
 
-	return dasm->length;
+	return full_insn_size(dasm);
 }
 
 static insn_head_t c55x_list[] = {
