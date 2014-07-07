@@ -438,7 +438,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && plugin->name && !strncmp (plugin->name, "any", 5)) {
+	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
 		// set use of raw strings
 		r_config_set (r->config, "bin.rawstr", "true");
 		r_config_set_i (r->config, "io.va", 0);
@@ -453,7 +453,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					info->arch, info->bits);
 	}
 
-	if (plugin && !strcmp (plugin->name, "dex")) {
+	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
 

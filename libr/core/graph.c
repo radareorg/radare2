@@ -191,6 +191,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	can = r_cons_canvas_new (w-1, h-1);
 
 	nodes = malloc (sizeof(Node)*(r_list_length (fcn->bbs)+1));
+	if (!nodes)
+		return R_FALSE;
 	i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		nodes[i].text = r_core_cmd_strf (core,
@@ -231,7 +233,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	n_edges = i;
 
 	// hack to make layout happy
-	if (nodes)
 	for (i=0;nodes[i].text;i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}

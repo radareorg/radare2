@@ -147,7 +147,7 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	int i, eq = 0;
-	if (len < 0)
+	if (len < 1)
 		return 0;
 	for (i=0; i<len; i++) {
 		if (f[i]==d[i]) {
