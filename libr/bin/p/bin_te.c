@@ -62,7 +62,7 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
-	struct r_bin_te_addr_t *entry = NULL;
+	RBinAddr *entry = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
