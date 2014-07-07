@@ -2,7 +2,7 @@
 
 #include "coff.h"
 
-int coff_supported_arch(const ut8 *buf)
+int r_coff_supported_arch (const ut8 *buf)
 {
 	ut16 arch = *(ut16*)buf;
 	int ret;
@@ -19,6 +19,10 @@ int coff_supported_arch(const ut8 *buf)
 	}
 
 	return ret;
+}
+
+int r_coff_is_stripped (struct r_bin_coff_obj *obj) {
+	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
 const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {

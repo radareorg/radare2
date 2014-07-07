@@ -50,15 +50,13 @@ static ut64 baddr(RBinFile *arch) {
 static RBinAddr* binsym(RBinFile *arch, int type) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
+
 	switch (type) {
-	case R_BIN_SYM_MAIN:
-		addr = PE_(r_bin_pe_get_main_vaddr) (arch->o->bin_obj);
-		if (!addr) return NULL;
-		if (!(ret = R_NEW0 (RBinAddr)))
-			return NULL;
-		ret->paddr = ret->vaddr = addr;
-		break;
+		case R_BIN_SYM_MAIN:
+			addr = PE_(r_bin_pe_get_main_vaddr) (arch->o->bin_obj);
+			break;
 	}
+
 	return ret;
 }
 
@@ -104,13 +102,13 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->srwx = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags))
-			ptr->srwx |= 0x1;
+			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].flags))
-			ptr->srwx |= 0x2;
+			ptr->srwx |= R_BIN_SCN_WRITABLE;
 		if (R_BIN_PE_SCN_IS_READABLE (sections[i].flags))
-			ptr->srwx |= 0x4;
+			ptr->srwx |= R_BIN_SCN_READABLE;
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags))
-			ptr->srwx |= 0x8;
+			ptr->srwx |= R_BIN_SCN_SHAREABLE;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

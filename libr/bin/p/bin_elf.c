@@ -72,6 +72,7 @@ static ut64 boffset(RBinFile *arch) {
 }
 
 static RBinAddr* binsym(RBinFile *arch, int sym) {
+	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
 	ut64 addr = 0LL;
 	RBinAddr *ret = NULL;
 	switch (sym) {
@@ -88,21 +89,29 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = Elf_(r_bin_elf_get_fini_offset) (arch->o->bin_obj);
 		break;
 	}
-	if (addr && (ret = R_NEW0 (RBinAddr)))
-		ret->paddr = ret->vaddr = addr;
+	if (addr && (ret = R_NEW0 (RBinAddr))) {
+		ret->paddr = addr;
+		ret->vaddr = obj->baddr + addr;
+	}
 	return ret;
 }
 
 static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
+	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
+
+	if (!obj)
+		return NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
+
 	ret->free = free;
 	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-	ptr->paddr = ptr->vaddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
+	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
+	ptr->vaddr = obj->baddr + ptr->paddr;
 	r_list_append (ret, ptr);
 	return ret;
 }
@@ -133,11 +142,11 @@ static RList* sections(RBinFile *arch) {
 			// HACK if (ptr->vaddr == 0) { ptr->vaddr = section[i].offset; }
 			ptr->srwx = 0;
 			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
-				ptr->srwx |= 1;
+				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
-				ptr->srwx |= 2;
+				ptr->srwx |= R_BIN_SCN_WRITABLE;
 			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
-				ptr->srwx |= 4;
+				ptr->srwx |= R_BIN_SCN_READABLE;
 			r_list_append (ret, ptr);
 		}
 		free (section); // TODO: use r_list_free here
@@ -190,20 +199,14 @@ static RList* sections(RBinFile *arch) {
 	// add entry for ehdr
 	ptr = R_NEW0 (RBinSection);
 	if (ptr) {
-		//RBinSection *t_sec = NULL;
-		// RListIter *iter = 0;
 		ut64 ehdr_size = sizeof (obj->ehdr);
 
-		//r_list_foreach (ret, iter, t_sec) {
-		//	ehdr_size += t_sec->size;
-		//}
-
 		sprintf (ptr->name, "ehdr");
-		ptr->size = ehdr_size;
-		ptr->vsize = ehdr_size;
 		ptr->paddr = 0;
 		ptr->vaddr = obj->baddr;
-		ptr->srwx = 7;
+		ptr->size = ehdr_size;
+		ptr->vsize = ehdr_size;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
 		r_list_append (ret, ptr);
 	}
 
@@ -227,7 +230,7 @@ static RList* symbols(RBinFile *arch) {
 			RBinSection *s;
 			RListIter *iter;
 			r_list_foreach (arch->o->sections, iter, s) {
-				if (s->srwx & 1) {
+				if (s->srwx & R_BIN_SCN_EXECUTABLE) {
 					base = s->paddr;
 					break;
 				}
@@ -248,8 +251,8 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->vaddr = symbol[i].offset + base;
 		ptr->paddr = symbol[i].offset + base;
+		ptr->vaddr = bin->baddr + ptr->paddr;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
@@ -269,8 +272,8 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->vaddr = symbol[i].offset;
 		ptr->paddr = symbol[i].offset;
+		ptr->vaddr = bin->baddr + symbol[i].offset;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);

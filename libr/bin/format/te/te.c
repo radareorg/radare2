@@ -13,7 +13,7 @@ ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
 }
 
 ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
-	struct r_bin_te_addr_t *entry = r_bin_te_get_entrypoint (bin);
+	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
 
@@ -125,10 +125,10 @@ int r_bin_te_get_bits(struct r_bin_te_obj_t* bin) {
 }
 
 
-struct r_bin_te_addr_t* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
-	struct r_bin_te_addr_t *entry = NULL;
+RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
+	RBinAddr *entry = NULL;
 
-	if ((entry = malloc(sizeof(struct r_bin_te_addr_t))) == NULL) {
+	if ((entry = malloc(sizeof(RBinAddr))) == NULL) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}

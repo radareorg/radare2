@@ -7,29 +7,35 @@
 #include <r_util.h>
 #include "pe.h"
 
-ut64 PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
-	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (bin);
+struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
+	struct r_bin_pe_addr_t *entry;
 	ut64 addr = 0;
 	ut8 b[512];
 
-	if (!bin || !bin->b) {
-		free (entry);
+	if (!bin || !bin->b)
 		return 0LL;
-	}
+
+	entry = PE_(r_bin_pe_get_entrypoint) (bin);
+
 	// option2: /x 8bff558bec83ec20
 	b[367] = 0;
-	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) == -1) {
+	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
 		eprintf ("Error: Cannot read entry at 0x%08"PFMT64x"\n",
 			entry->paddr);
-	} else {
-		if (b[367] == 0xe8) {
-			int delta = b[368] | (b[369]<<8) | \
-				(b[370]<<16) | (b[371]<<24);
-			addr = entry->vaddr + 367 + 5 + delta;
-		}
+		free (entry);
+		return NULL;
 	}
-	free (entry);
-	return addr;
+
+	/* Decode the jmp instruction, this gets the address of the 'main'
+	 * function for PE produced by a compiler whose name someone forgot to
+	 * write down. */ 
+	if (b[367] == 0xe8) {
+		const ut32 jmp_dst = b[368] | (b[369]<<8) | (b[370]<<16) | (b[371]<<24);
+		entry->paddr += 367 + 5 + jmp_dst;
+		entry->vaddr += 367 + 5 + jmp_dst;
+	}
+
+	return entry;
 }
 
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)

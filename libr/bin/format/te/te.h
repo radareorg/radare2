@@ -14,11 +14,6 @@
 #define R_BIN_TE_SCN_IS_READABLE(x)        x & TE_IMAGE_SCN_MEM_READ
 #define R_BIN_TE_SCN_IS_WRITABLE(x)        x & TE_IMAGE_SCN_MEM_WRITE
 
-struct r_bin_te_addr_t {
-	ut64 vaddr;
-	ut64 paddr;
-};
-
 struct r_bin_te_section_t {
 	ut8  name[TE_IMAGE_SIZEOF_NAME];
 	ut64 size;
@@ -39,17 +34,17 @@ struct r_bin_te_string_t {
 };
 
 struct r_bin_te_obj_t {
-	TE_image_file_header				*header;
-	TE_image_section_header     *section_header;
+	TE_image_file_header *header;
+	TE_image_section_header *section_header;
 	int size;
-	int	endian;
-    const char* file;
+	int endian;
+	const char* file;
 	struct r_buf_t* b;
 	Sdb *kv;
 };
 
 char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin);
-struct r_bin_te_addr_t* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin);
+RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin);
 ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin);
 ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin);
 int r_bin_te_get_image_size(struct r_bin_te_obj_t* bin);

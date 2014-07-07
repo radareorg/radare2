@@ -183,6 +183,17 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->has_va = R_FALSE;
 	ret->dbg_info = 0;
 
+	if (r_coff_is_stripped (obj))
+		ret->dbg_info |= R_BIN_DBG_STRIPPED;
+	else {
+		if (!!!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG))
+			ret->dbg_info |= R_BIN_DBG_RELOCS;
+		if (!!!(obj->hdr.f_flags & COFF_FLAGS_TI_F_LNNO))
+			ret->dbg_info |= R_BIN_DBG_LINENUMS;
+		if (!!!(obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC))
+			ret->dbg_info |= R_BIN_DBG_SYMS;
+	}
+
 	switch (obj->hdr.f_magic) {
 	case COFF_FILE_MACHINE_I386:
 		strncpy(ret->machine, "i386", R_BIN_SIZEOF_STRINGS);
@@ -242,7 +253,7 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 2) {
-		if (coff_supported_arch(buf))
+		if (r_coff_supported_arch(buf))
 			return R_TRUE;
 	}
 	return R_FALSE;
