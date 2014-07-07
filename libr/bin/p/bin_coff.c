@@ -52,10 +52,9 @@ static RBinAddr *binsym(RBinFile *arch, int sym) {
 }
 
 static RList *entries(RBinFile *arch) {
-	size_t i;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -64,19 +63,7 @@ static RList *entries(RBinFile *arch) {
 
 	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-
-	if (obj->hdr.opt_hdr_size) {
-		ptr->paddr = ptr->vaddr = obj->opt_hdr.entry_point;
-	} else {
-		for (i = 0; i < obj->hdr.sections_num; i++) {
-			if (!strcmp(obj->scn_hdrs[i].name, ".text")) {
-				ptr->paddr = obj->scn_hdrs[i].virtual_addr;
-				ptr->vaddr = obj->scn_hdrs[i].virtual_addr;
-				break;
-			}
-		}
-	}
-
+	ptr = r_coff_get_entry(obj);
 	r_list_append(ret, ptr);
 
 	return ret;
@@ -94,15 +81,22 @@ static RList *sections(RBinFile *arch)
 	if (!ret)
 		return NULL;
 
-	for (i = 0; i < obj->hdr.sections_num; i++) {
+	for (i = 0; i < obj->hdr.f_nscns; i++) {
 		ptr = R_NEW0 (RBinSection);
 
-		strncpy(ptr->name, obj->scn_hdrs[i].name, R_BIN_SIZEOF_STRINGS); 
+		strncpy(ptr->name, r_coff_symbol_name (obj, &obj->scn_hdrs[i]), R_BIN_SIZEOF_STRINGS); 
 
-		ptr->size = obj->scn_hdrs[i].raw_data_size;
-		ptr->vsize = obj->scn_hdrs[i].virtual_size;
-		ptr->paddr = obj->scn_hdrs[i].raw_data_pointer;
-		ptr->vaddr = obj->scn_hdrs[i].virtual_addr;
+		ptr->size = obj->scn_hdrs[i].s_size;
+		ptr->vsize = obj->scn_hdrs[i].s_size;
+		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+
+		ptr->srwx = 0;
+		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_READ)
+			ptr->srwx |= R_BIN_SCN_READABLE;
+		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_WRITE)
+			ptr->srwx |= R_BIN_SCN_WRITABLE;
+		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_EXECUTE)
+			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 
 		r_list_append (ret, ptr);
 	}
@@ -116,51 +110,47 @@ static RList *symbols(RBinFile *arch)
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 
-	struct r_bin_coff_obj *obj= (struct r_bin_coff_obj*)arch->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
 	if (!(ret = r_list_new()))
 		return ret;
 
 	ret->free = free;
 
-	for (i = 0; i < obj->hdr.symbols_num; i++) {
+	for (i = 0; i < obj->hdr.f_nsyms; i++) {
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 
-		if (obj->symbols[i].name)
-			strncpy (ptr->name, obj->symbols[i].name,
-				R_BIN_SIZEOF_STRINGS);
-		else *ptr->name = 0;
-		strncpy (ptr->forwarder, "NONE",
-				R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->name, r_coff_symbol_name (obj, &obj->symbols[i]), R_BIN_SIZEOF_STRINGS);
+
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "", R_BIN_SIZEOF_STRINGS);
-		switch (obj->symbols[i].type) {
-		case COFF_SYM_TYPE_NULL:   strcpy (ptr->type, "NULL"); break;
-		case COFF_SYM_TYPE_VOID:   strcpy (ptr->type, "VOID"); break;
-		case COFF_SYM_TYPE_CHAR:   strcpy (ptr->type, "CHAR"); break;
-		case COFF_SYM_TYPE_SHORT:  strcpy (ptr->type, "SHORT");break;
-		case COFF_SYM_TYPE_INT:    strcpy (ptr->type, "INT");  break;
-		case COFF_SYM_TYPE_LONG:   strcpy (ptr->type, "LONG"); break;
-		case COFF_SYM_TYPE_FLOAT:  strcpy (ptr->type, "FLOAT");break;
-		case COFF_SYM_TYPE_DOUBLE: strcpy (ptr->type,"DOUBLE");break;
-		case COFF_SYM_TYPE_STRUCT: strcpy (ptr->type,"STRUCT");break;
-		case COFF_SYM_TYPE_UNION:  strcpy (ptr->type, "UNION");break;
-		case COFF_SYM_TYPE_ENUM:   strcpy (ptr->type, "ENUM"); break;
-		case COFF_SYM_TYPE_MOE:    strcpy (ptr->type, "MOE");  break;
-		case COFF_SYM_TYPE_BYTE:   strcpy (ptr->type, "BYTE"); break;
-		case COFF_SYM_TYPE_WORD:   strcpy (ptr->type, "WORD"); break;
-		case COFF_SYM_TYPE_UINT:   strcpy (ptr->type, "UINT"); break;
-		case COFF_SYM_TYPE_DWORD:  strcpy (ptr->type, "DWORD");break;
+
+		switch (obj->symbols[i].n_sclass) {
+			case COFF_SYM_CLASS_FUNCTION:
+				strcpy (ptr->type, "FUNC"); break;
+			case COFF_SYM_CLASS_FILE:
+				strcpy (ptr->type, "FILE"); break;
+			case COFF_SYM_CLASS_SECTION:
+				strcpy (ptr->type, "SECTION"); break;
+			case COFF_SYM_CLASS_EXTERNAL:
+				strcpy (ptr->type, "EXTERNAL"); break;
+			case COFF_SYM_CLASS_STATIC:
+				strcpy (ptr->type, "STATIC"); break;
+			default:
+				snprintf (ptr->type, R_BIN_SIZEOF_STRINGS, "%i", obj->symbols[i].n_sclass);
 		}
-		strncpy (ptr->type, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
-		ptr->vaddr = obj->symbols[i].value;
-		ptr->paddr = obj->symbols[i].value;
-		ptr->size = 0;
+
+		if (obj->symbols[i].n_scnum)
+			ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr + 
+				obj->symbols[i].n_value;
+
+		ptr->size = 4;
 		ptr->ordinal = 0;
 
 		r_list_append (ret, ptr);
 
-		i += obj->symbols[i].aux_sym_num;
+		i += obj->symbols[i].n_numaux;
 	}
 
 	return ret;
@@ -180,15 +170,20 @@ static RList *relocs(RBinFile *arch) {
 
 static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0(RBinInfo);
-	ret->has_va = 1;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->bclass, "NONE", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->rclass, "coff", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->type, "COFF (Executable file)", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS);
 	ret->big_endian = obj->endian;
+	ret->has_va = R_FALSE;
 	ret->dbg_info = 0;
 
-	switch (obj->hdr.machine) {
+	switch (obj->hdr.f_magic) {
 	case COFF_FILE_MACHINE_I386:
 		strncpy(ret->machine, "i386", R_BIN_SIZEOF_STRINGS);
 		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
@@ -206,15 +201,15 @@ static RBinInfo *info(RBinFile *arch) {
 		break;
 
 	case COFF_FILE_TI_COFF:
-		if (obj->hdr.target_id == COFF_FILE_MACHINE_TMS320C54) {
+		if (obj->target_id == COFF_FILE_MACHINE_TMS320C54) {
 			strncpy(ret->machine, "c54x", R_BIN_SIZEOF_STRINGS);
 			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
 			ret->bits = 32;
-		} else if (obj->hdr.target_id == COFF_FILE_MACHINE_TMS320C55) {
+		} else if (obj->target_id == COFF_FILE_MACHINE_TMS320C55) {
 			strncpy(ret->machine, "c55x", R_BIN_SIZEOF_STRINGS);
 			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
 			ret->bits = 32;
-		} else if (obj->hdr.target_id == COFF_FILE_MACHINE_TMS320C55PLUS) {
+		} else if (obj->target_id == COFF_FILE_MACHINE_TMS320C55PLUS) {
 			strncpy(ret->machine, "c55x+", R_BIN_SIZEOF_STRINGS);
 			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
 			ret->bits = 32;
@@ -232,11 +227,6 @@ static RList *fields(RBinFile *arch)
 	return NULL;
 }
 
-static RBuffer *create(RBin *bin, const ut8 *code, int codelen,
-		const ut8 *data, int datalen)
-{
-	return NULL;
-}
 
 static int size(RBinFile *arch)
 {
@@ -284,7 +274,6 @@ RBinPlugin r_bin_plugin_coff = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.dbginfo = NULL,
-	.create = &create,
 	.write = NULL,
 	.get_vaddr = NULL,
 };
