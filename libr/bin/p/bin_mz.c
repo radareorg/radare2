@@ -61,14 +61,14 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
-	struct EXE *exe = (struct EXE*) arch->buf->buf;
+	const struct EXE *exe = (struct EXE*) arch->buf->buf;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
 
 	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->paddr = exe->ip;
+		ptr->paddr = exe->header_paragraphs * 16L;
 		ptr->vaddr = exe->ip;
 		r_list_append (ret, ptr);
 	}
@@ -77,9 +77,9 @@ static RList* entries(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile *arch) {
+	const struct EXE *exe = (struct EXE*) arch->buf->buf;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	struct EXE *exe = (struct EXE*) arch->buf->buf;
 
 	if (arch->buf->length - exe->header_paragraphs * 16L < 1)
 		return NULL;
@@ -92,7 +92,8 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, ".text", R_BIN_SIZEOF_STRINGS);
 	ptr->paddr = exe->header_paragraphs * 16L;
 	ptr->size = arch->buf->length - ptr->paddr;
-	ptr->vaddr = exe->ip;
+	/* DOS always loads the binary at 0x100 */
+	ptr->vaddr = 0x100;
 	ptr->vsize = ptr->size;
 	ptr->srwx = r_str_rwx ("rwx");
 
@@ -108,8 +109,16 @@ static RList* imports(RBinFile *arch) {
 	return NULL;
 }
 
+static ut64 size(RBinFile *arch) {
+	const struct EXE *exe = (struct EXE*) arch->buf->buf;
+	return r_buf_size (arch->buf) -
+		(exe->blocks_in_file * 0x200) +
+		(0x200 - exe->bytes_in_last_block) -
+		exe->header_paragraphs * 0x10;
+}
+
 static RBinInfo* info(RBinFile *arch) {
-	struct EXE *exe = (struct EXE*) arch->buf->buf;
+	const struct EXE *exe = (struct EXE*) arch->buf->buf;
 	RBinInfo *ret = NULL;
 
 	sdb_num_set (arch->sdb, "ss", exe->ss, 0);
@@ -146,20 +155,26 @@ static int check(RBinFile *arch) {
 
 }
 
-/*
-	- MZ at paddr 0
-	- no PE at paddr stored at 0x3C
-*/
 static int check_bytes(const ut8 *buf, ut64 length) {
-	int idx;
+	struct EXE *exe = (struct EXE*) buf;
+	ut16 pe_header_offset;
+
 	if (!buf)
 		return R_FALSE;
 
-	if (length <= 0x3d || buf[0] != 'M' || buf[1] != 'Z')
+	if (length <= 0x3d)
+		return R_FALSE;
+	/* The signature must be "MZ" or "ZM" */
+	if (exe->signature != 0x5a4d && exe->signature != 0x4d5a)
 		return R_FALSE;
 
-	idx = (buf[0x3c] | (buf[0x3d] << 8));
-	if (length > idx && buf[idx] == 'P' && buf[idx+1] == 'E')
+	/* Read the (undocumented) e_lfanew field which contains the address where
+	 * the PE header is (if any). If the signature "PE" is found then this exe
+	 * is a win32 one and we reject it */
+	pe_header_offset = (buf[0x3c] | (buf[0x3d] << 8));
+	if (length < pe_header_offset)
+		return R_FALSE;
+	if (buf[pe_header_offset] == 'P' && buf[pe_header_offset+1] == 'E')
 		return R_FALSE;
 
 	return R_TRUE;
@@ -185,6 +200,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.imports = &imports,
 	.strings = NULL,
 	.info = &info,
+	.size = &size,
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,

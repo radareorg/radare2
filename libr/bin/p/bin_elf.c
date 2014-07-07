@@ -515,10 +515,10 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (arch->o->bin_obj))
-		ret->dbg_info |= 0x04 | 0x08 | 0x10;
-	else  ret->dbg_info |= 0x01;
+		ret->dbg_info |= R_BIN_DBG_LINENUMS | R_BIN_DBG_SYMS | R_BIN_DBG_RELOCS;
+	else  ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	if (Elf_(r_bin_elf_get_static) (arch->o->bin_obj))
-		ret->dbg_info |= 0x02;
+		ret->dbg_info |= R_BIN_DBG_STATIC;
 	return ret;
 }
 

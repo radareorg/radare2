@@ -21,235 +21,111 @@ int coff_supported_arch(const ut8 *buf)
 	return ret;
 }
 
+const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
+	union { char name[8]; struct { ut32 zero; ut32 offset; }; } *p = ptr;
+
+	if (p->zero)
+		return p->name;
+
+	return (char *)obj->b->buf + obj->hdr.f_symptr + 
+		obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
+}
+
+static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
+	if (sym->n_scnum < 1)
+		return 0;
+	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
+	return 1;
+}
+
+/* Try to get a valid entrypoint using the methods outlined in 
+ * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
+RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
+	RBinAddr *addr = R_NEW0 (RBinAddr);
+	int i;
+
+	/* Simplest case, the header provides the entrypoint address */
+	if (obj->hdr.f_opthdr) {
+		addr->paddr = obj->opt_hdr.entry;
+		return addr;
+	}
+
+	/* No help from the header eh? Use the address of the symbols '_start'
+	 * or 'main' if present */
+	for (i = 0; i < obj->hdr.f_nsyms; i++) {
+		if ((!strcmp (obj->symbols[i].n_name, "_start") || 
+			!strcmp (obj->symbols[i].n_name, "start")) &&
+			r_coff_rebase_sym (obj, addr, &obj->symbols[i]))
+			return addr;
+	}
+
+	for (i = 0; i < obj->hdr.f_nsyms; i++) {
+		if ((!strcmp (obj->symbols[i].n_name, "_main") || 
+			!strcmp (obj->symbols[i].n_name, "main")) &&
+			r_coff_rebase_sym (obj, addr, &obj->symbols[i]))
+			return addr;
+	}
+
+	/* Still clueless ? Let's just use the address of .text */
+	for (i = 0; i < obj->hdr.f_nscns; i++) {
+		if (!strcmp (obj->scn_hdrs[i].s_name, ".text")) {
+			addr->paddr = obj->scn_hdrs[i].s_scnptr;
+			return addr;
+		}
+	}
+
+	return addr;
+}
+
 static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 {
-	size_t offset = 0;
+	ut16 magic;
 
-	obj->hdr.machine = *(ut16*)obj->b->buf;
-
-	switch(obj->hdr.machine) {
+	magic = *(ut16 *)obj->b->buf;
+	switch(magic) {
 		case COFF_FILE_MACHINE_H8300:
-			obj->endian = !LIL_ENDIAN;
+			obj->endian = 1;
 			break;
 		default:
-			obj->endian = LIL_ENDIAN;
+			obj->endian = 0;
 	}
 
-	offset += sizeof(ut16);
+	r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
 
-	r_mem_copyendian((ut8*)&(obj->hdr.sections_num), obj->b->buf + offset,
-			sizeof(ut16), obj->endian);
-
-	offset += sizeof(ut16);
-
-	r_mem_copyendian((ut8*)&obj->hdr.timestamp, obj->b->buf + offset,
-			sizeof(ut32), obj->endian);
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&obj->hdr.symtable_offset, obj->b->buf + offset,
-			sizeof(ut32), obj->endian);
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&(obj->hdr.symbols_num), obj->b->buf + offset,
-			sizeof(ut32), obj->endian);
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&(obj->hdr.opt_hdr_size), obj->b->buf + offset,
-			sizeof(ut16), obj->endian);
-	offset += sizeof(ut16);
-
-	r_mem_copyendian((ut8*)&(obj->hdr.flags), obj->b->buf + offset,
-			sizeof(ut16), obj->endian);
-
-       	if (obj->hdr.flags & COFF_FLAGS_TI_F_LITTLE) {
-		obj->endian = LIL_ENDIAN;
-	}
-	offset += sizeof(ut16);
-
-	if (obj->hdr.machine == COFF_FILE_TI_COFF) {
-		r_mem_copyendian((ut8*)&(obj->hdr.target_id), obj->b->buf + offset,
-			sizeof(ut16), obj->endian);
-	}
+	if (obj->hdr.f_magic == COFF_FILE_TI_COFF)
+		r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 
 	return R_TRUE;
 }
 
 static int r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj)
 {
-	size_t offset = 20;
-
-	if (obj->hdr.opt_hdr_size == 0)
+	if (!obj->hdr.f_opthdr)
 		return 0;
 
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.magic), obj->b->buf + offset,
-			sizeof(ut16), obj->endian);
-
-	offset += sizeof(ut16);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.major_linker_version),
-			obj->b->buf + offset, sizeof(ut8), obj->endian);
-
-	offset += sizeof(ut8);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.minor_linker_version),
-			obj->b->buf + offset, sizeof(ut8), obj->endian);
-
-	offset += sizeof(ut8);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.size_of_code),
-			obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.size_of_init_data),
-			obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.size_of_uninit_data),
-			obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.entry_point),
-			obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-	offset += sizeof(ut32);
-
-	r_mem_copyendian((ut8*)&(obj->opt_hdr.base_of_code),
-			obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-	offset += sizeof(ut32);
+	r_buf_fread_at (obj->b, obj->hdr.f_opthdr, (ut8 *)&obj->opt_hdr, obj->endian? "2S6I": "2s6i", 1);
 
 	return 0;
 }
 
 static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
 {
-	size_t i, offset = obj->hdr.opt_hdr_size + 20;
+	ut64 offset;
 
-	if (obj->hdr.machine == COFF_FILE_TI_COFF) {
+	offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr * sizeof (struct coff_opt_hdr));
+	if (obj->hdr.f_magic == COFF_FILE_TI_COFF)
 		offset += 2;
-	}
 
-	obj->scn_hdrs = calloc(obj->hdr.sections_num,
-			sizeof(struct coff_scn_hdr));
-
-	for (i = 0; i < obj->hdr.sections_num; i++) {
-		strncpy(obj->scn_hdrs[i].name, (char*)(obj->b->buf + offset), 8);
-
-		offset += 8;
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].virtual_size),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].virtual_addr),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].raw_data_size),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].raw_data_pointer),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].reloc_pointer),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].linenum_pointer),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].reloc_num),
-				obj->b->buf + offset, sizeof(ut16), obj->endian);
-
-		offset += sizeof(ut16);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].linenum_num),
-				obj->b->buf + offset, sizeof(ut16), obj->endian);
-
-		offset += sizeof(ut16);
-
-		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].flags),
-				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-
-		offset += sizeof(ut32);
-	}
+	obj->scn_hdrs = calloc(obj->hdr.f_nscns, sizeof(struct coff_scn_hdr));
+	r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", obj->hdr.f_nscns);
 
 	return 0;
 }
 
 static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
 {
-	size_t i, offset = obj->hdr.symtable_offset;
-	ut32 short_name, ofst;
-
-	obj->symbols = calloc(obj->hdr.symbols_num,
-			sizeof(struct coff_symbol));
-
-	for (i = 0; i < obj->hdr.symbols_num; i++) {
-		r_mem_copyendian((ut8*)&short_name, obj->b->buf + offset,
-				sizeof(ut32), obj->endian);
-		if (short_name) {
-			obj->symbols[i].name = malloc(sizeof(char) * 9);
-			strncpy(obj->symbols[i].name,
-					(char*)(obj->b->buf + offset), 8);
-			obj->symbols[i].name[8] = '\0';
-			offset += 8;
-		} else {
-			offset += sizeof(ut32);
-			r_mem_copyendian ((ut8*)&ofst, obj->b->buf + offset,
-					sizeof(ut32), obj->endian);
-			if (ofst+obj->hdr.symtable_offset > obj->b->length) {
-				eprintf ("Symtable offset out of bounds\n");
-				return 0;
-			}
-			obj->symbols[i].name = strdup((char*)(obj->b->buf +
-					obj->hdr.symtable_offset + ofst +
-					obj->hdr.symbols_num * 18));
-			offset += sizeof(ut32);
-		}
-
-		r_mem_copyendian((ut8*)&(obj->symbols[i].value),
-				obj->b->buf + offset,
-				sizeof(ut32), obj->endian);
-
-		offset += sizeof(ut32);
-
-		r_mem_copyendian((ut8*)&(obj->symbols[i].scn_num),
-				obj->b->buf + offset,
-				sizeof(ut16), obj->endian);
-
-		offset += sizeof(ut16);
-
-		r_mem_copyendian((ut8*)&(obj->symbols[i].type),
-				obj->b->buf + offset,
-				sizeof(ut16), obj->endian);
-
-		offset += sizeof(ut16);
-
-		r_mem_copyendian((ut8*)&(obj->symbols[i].storage_class),
-				obj->b->buf + offset,
-				sizeof(ut8), obj->endian);
-
-		offset += sizeof(ut8);
-
-		r_mem_copyendian((ut8*)&(obj->symbols[i].aux_sym_num),
-				obj->b->buf + offset,
-				sizeof(ut8), obj->endian);
-
-		offset += sizeof(ut8);
-	}
+	obj->symbols = calloc(obj->hdr.f_nsyms, sizeof(struct coff_symbol));
+	r_buf_fread_at (obj->b, obj->hdr.f_symptr, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);
 
 	return 0;
 }

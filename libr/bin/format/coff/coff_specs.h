@@ -130,25 +130,46 @@
 #define COFF_SYM_CLASS_CLR_TOKEN	107
 
 struct coff_hdr {
-	ut16	machine;
-	ut16	sections_num;
-	ut32	timestamp;
-	ut32	symtable_offset;
-	ut32	symbols_num;
-	ut16	opt_hdr_size;
-	ut16	flags;
-	ut16	target_id; // TI COFF specific
-};
+	ut16 f_magic;	/* Magic number */	
+	ut16 f_nscns;	/* Number of Sections */
+	ut32 f_timdat;	/* Time & date stamp */
+	ut32 f_symptr;	/* File pointer to Symbol Table */
+	ut32 f_nsyms;	/* Number of Symbols */
+	ut16 f_opthdr;	/* sizeof(Optional Header) */
+	ut16 f_flags;	/* Flags */
+} __attribute__((packed));
 
 struct coff_opt_hdr {
-	ut16	magic;
-	ut8	major_linker_version;
-	ut8	minor_linker_version;
-	ut32	size_of_code;
-	ut32	size_of_init_data;
-	ut32	size_of_uninit_data;
-	ut32	entry_point;
-	ut32	base_of_code;
-};
+	ut16 magic;			/* Magic Number                    */
+	ut16 vstamp;		/* Version stamp                   */
+	ut32 tsize;			/* Text size in bytes              */
+	ut32 dsize;			/* Initialised data size           */
+	ut32 bsize;			/* Uninitialised data size         */
+	ut32 entry;			/* Entry point                     */
+	ut32 text_start;	/* Base of Text used for this file */
+	ut32 data_start;	/* Base of Data used for this file */
+} __attribute__((packed));
+
+struct coff_scn_hdr {
+	char s_name[8];	/* Section Name */
+	ut32 s_paddr;	/* Physical Address */
+	ut32 s_vaddr;	/* Virtual Address */
+	ut32 s_size;	/* Section Size in Bytes */
+	ut32 s_scnptr;	/* File offset to the Section data */
+	ut32 s_relptr;	/* File offset to the Relocation table for this Section */
+	ut32 s_lnnoptr;	/* File offset to the Line Number table for this Section */
+	ut16 s_nreloc;	/* Number of Relocation table entries */
+	ut16 s_nlnno;	/* Number of Line Number table entries */
+	ut32 s_flags;	/* Flags for this section */
+} __attribute__((packed));
+
+struct coff_symbol {
+	char n_name[8];	/* Symbol Name */
+	ut32 n_value;	/* Value of Symbol */
+	ut16 n_scnum;	/* Section Number */
+	ut16 n_type;	/* Symbol Type */
+	ut8 n_sclass;	/* Storage Class */
+	ut8 n_numaux;	/* Auxiliary Count */
+} __attribute__((packed));
 
 #endif /* COFF_SPECS_H */
