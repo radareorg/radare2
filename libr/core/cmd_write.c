@@ -1,5 +1,18 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+static void cmd_write_bits(RCore *core, int set, ut64 val) {
+	ut64 ret, orig;
+	// used to set/unset bit in current address
+	r_core_read_at (core, core->offset, (ut8*)&orig, sizeof (orig));
+	if (set) {
+		ret = orig | val;
+	} else {
+		ret = orig & (~(val));
+	}
+	r_core_write_at (core, core->offset,
+		(const ut8*)&ret, sizeof (ret));
+}
+
 static void cmd_write_inc(RCore *core, int size, st64 num) {
 	ut64 *v64;
 	ut32 *v32;
@@ -32,6 +45,19 @@ static int cmd_write(void *data, const char *input) {
 	_fn[0] = 0;
 
 	switch (*input) {
+	case 'B':
+		switch (input[1]) {
+		case ' ':
+			cmd_write_bits (core, 1, r_num_math (core->num, input+2));
+			break;
+		case '-':
+			cmd_write_bits (core, 0, r_num_math (core->num, input+2));
+			break;
+		default:
+			eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");
+			break;
+		}
+		break;
 	case '1':
 	case '2':
 	case '4':

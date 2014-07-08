@@ -733,6 +733,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ut8 *buf = r_reg_get_bytes (
 				core->anal->reg, R_REG_TYPE_GPR, &sz);
 			r_cons_printf ("%d\n", sz);
+			free (buf);
 		 }
 		break;
 	case 'b':
