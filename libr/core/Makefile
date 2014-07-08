@@ -18,6 +18,11 @@ ifeq ($(shell uname),OpenBSD)
 LDFLAGS+=-lpthread
 endif
 
+ifeq ($(USE_LIB_MAGIC),1)
+#LDFLAGS+=-lmagic
+LDFLAGS+=${LIBMAGIC}
+endif
+
 first:: all
 
 include ${STATIC_CORE_PLUGINS}
