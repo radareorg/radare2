@@ -10,6 +10,9 @@
 #if __UNIX__
 #include <sys/resource.h>
 #include <signal.h>
+#if __linux__
+#include <sys/personality.h>
+#endif
 #endif
 
 #define NARGS (sizeof (_args)/sizeof(*_args))
