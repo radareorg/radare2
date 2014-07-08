@@ -25,6 +25,7 @@ static char *_libpath = NULL;
 static char *_preload = NULL;
 static int _r2preload = 0;
 static int _docore = 0;
+static int _aslr = -1;
 static int _maxstack = 0;
 static int _maxproc = 0;
 static int _maxfd = 0;
@@ -104,6 +105,34 @@ static char *getstr(const char *src) {
 	return ret;
 }
 
+static int parseBool (const char *e) {
+	return (strcmp (e, "yes")?
+		(strcmp (e, "true")?
+		(strcmp (e, "1")?
+		0: 1): 1): 1);
+}
+
+// TODO: move into r_util? r_run_... ? with the rest of funcs?
+static void setASLR(int enabled) {
+#if __linux__
+#define RVAS "/proc/sys/kernel/randomize_va_space"
+	if (enabled) {
+		system ("echo 2 > "RVAS);
+	} else {
+		if (personality (ADDR_NO_RANDOMIZE) == -1)
+			system ("echo 0 > "RVAS);
+	}
+#elif __APPLE__
+	setenv ("DYLD_NO_PIE", "1", 1);
+	eprintf ("Patch mach0.hdr.flags with:\n"
+		"f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
+	// for osxver>=10.7
+	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
+#else
+	// not supported for this platform
+#endif
+}
+
 static void parseline (char *b) {
 	int must_free = R_FALSE;
 	char *e = strchr (b, '=');
@@ -117,6 +146,7 @@ static void parseline (char *b) {
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _args[0] = _program = strdup (e);
 	else if (!strcmp (b, "system")) _system = strdup (e);
+	else if (!strcmp (b, "aslr")) _aslr = parseBool (e);
 	else if (!strcmp (b, "connect")) _connect = strdup (e);
 	else if (!strcmp (b, "listen")) _listen = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
@@ -126,8 +156,7 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "stderr")) _stderr = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
-	else if (!strcmp (b, "core")) _docore =
-		(strcmp (e, "yes")? (strcmp (e, "true")? (strcmp (e, "1")? 0: 1): 1): 1);
+	else if (!strcmp (b, "core")) _docore = parseBool (e);
 	else if (!strcmp (b, "sleep")) _r2sleep = atoi (e);
 	else if (!strcmp (b, "maxstack")) _maxstack = atoi (e);
 	else if (!strcmp (b, "maxproc")) _maxproc = atoi (e);
@@ -135,8 +164,7 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
 	else if (!strcmp (b, "libpath")) _libpath = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
-	else if (!strcmp (b, "r2preload")) _r2preload = \
-		(strcmp (e, "yes")? (strcmp (e, "true")? (strcmp (e, "1")? 0: 1): 1): 1);
+	else if (!strcmp (b, "r2preload")) _r2preload = parseBool (e);
 	else if (!strcmp (b, "setuid")) _setuid = strdup (e);
 	else if (!strcmp (b, "seteuid")) _seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) _setgid = strdup (e);
@@ -219,6 +247,8 @@ static int runfile () {
 		close (2);
 		dup2 (f, 2);
 	}
+	if (_aslr != -1)
+		setASLR (_aslr);
 #if __UNIX__
 	set_limit (_docore, RLIMIT_CORE, RLIM_INFINITY);
 	set_limit (_maxfd, RLIMIT_NOFILE, _maxfd);
@@ -380,6 +410,7 @@ int main(int argc, char **argv) {
 			"# arg4=:048490184058104849\n"
 			"# arg4=@arg.txt\n"
 			"# system=r2 -\n"
+			"# aslr=no\n"
 			"setenv=FOO=BAR\n"
 			"# unsetenv=FOO\n"
 			"# envfile=environ.txt\n"

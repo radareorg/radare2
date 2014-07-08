@@ -167,10 +167,17 @@ err_fork:
 		CloseHandle (th);
         return -1;
 }
-#else
+#else // windows
 
+static int getASLRState() {
+	// TODO: Handle dbg.aslr, or just support run profiles
+	return -1;
+}
+
+// __UNIX__ (not windows)
 static int fork_and_ptraceme(int bits, const char *cmd) {
 	char **argv;
+	int useASLR = getASLRState();
 	int ret, status, pid = fork ();
 	switch (pid) {
 	case -1:
@@ -201,15 +208,28 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 			cpu_type_t cpu;
 			int ret;
 			pid_t p = -1;
+#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
+			ut32 ps_flags = POSIX_SPAWN_SETEXEC;
 
 			posix_spawnattr_init (&attr);
-			posix_spawnattr_setflags (&attr, POSIX_SPAWN_SETEXEC);
+			if (useASLR != -1) {
+				if (useASLR) {
+					// enable aslr if not enabled? really?
+				} else {
+					ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+				}
+			}
+			(void)posix_spawnattr_setflags (&attr, ps_flags);
 #if __i386__ || __x86_64__
 			cpu = CPU_TYPE_I386;
 			if (bits == 64) 
 				cpu |= CPU_ARCH_ABI64;
 #else
 			cpu = CPU_TYPE_ANY;
+#endif
+#if __linux__
+			if (useASLR==0)
+				personality (ADDR_NO_RANDOMIZE);
 #endif
 			posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
 
