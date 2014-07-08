@@ -95,7 +95,9 @@ static RList* sections(RBinFile *arch) {
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
-		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		if (sections[i].name[0])
+			strncpy (ptr->name, (char*)sections[i].name,
+				R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
