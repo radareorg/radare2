@@ -7,4 +7,5 @@ ALL_TARGETS+=${TARGET_NINGB}
 
 ${TARGET_NINGB}: ${OBJ_NINGB}
 	${CC} $(call libname,bin_ningb) ${CFLAGS} \
-		$(LINK) $(LDFLAGS) ${OBJ_NINGB}
+		${OBJ_NINGB} \
+		$(LINK) $(LDFLAGS)

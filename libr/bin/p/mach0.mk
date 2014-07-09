@@ -9,4 +9,5 @@ ${TARGET_MACH0}: ${OBJ_MACH0}
 	@pwd
 	@echo SHLR=$(SHLR)
 	-${CC} $(call libname,bin_mach0) ${CFLAGS} \
-		$(LINK) $(LDFLAGS) ${OBJ_MACH0} ${SHLR}/sdb/src/libsdb.a
+		${OBJ_MACH0} ${SHLR}/sdb/src/libsdb.a \
+		$(LINK) $(LDFLAGS) 

@@ -8,4 +8,4 @@ ALL_TARGETS+=${TARGET_ELF64}
 
 ${TARGET_ELF64}: ${OBJ_ELF64}
 	-${CC} $(call libname,bin_elf64) -shared ${CFLAGS} \
-	$(LINK) $(LDFLAGS) ${OBJ_ELF64}
+	$(OBJ_ELF64) $(LINK) $(LDFLAGS)

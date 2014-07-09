@@ -8,4 +8,4 @@ LINK+=-lr_db -L../../db
 ALL_TARGETS+=${TARGET_ELF}
 
 ${TARGET_ELF}: ${OBJ_ELF}
-	-${CC} $(call libname,bin_elf) ${CFLAGS} $(LINK) $(LDFLAGS) ${OBJ_ELF}
+	-${CC} $(call libname,bin_elf) ${CFLAGS} ${OBJ_ELF} $(LINK) $(LDFLAGS)

@@ -7,4 +7,4 @@ ALL_TARGETS+=${TARGET_PE64}
 
 ${TARGET_PE64}: ${OBJ_PE64}
 	-${CC} $(call libname,bin_pe64) ${CFLAGS} \
-		$(LINK) $(LDFLAGS) ${OBJ_PE64}
+		$(OBJ_PE64) $(LINK) $(LDFLAGS)

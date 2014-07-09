@@ -7,4 +7,4 @@ ALL_TARGETS+=${TARGET_PE}
 
 ${TARGET_PE}: ${OBJ_PE}
 	-${CC} $(call libname,bin_pe) ${CFLAGS} \
-	$(LINK) $(LDFLAGS) ${OBJ_PE}
+	$(OBJ_PE) $(LINK) $(LDFLAGS)

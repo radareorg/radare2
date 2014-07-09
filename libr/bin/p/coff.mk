@@ -8,4 +8,4 @@ ALL_TARGETS+=${TARGET_COFF}
 
 ${TARGET_COFF}: ${OBJ_COFF}
 	${CC} $(call libname,bin_coff) ${CFLAGS} \
-		$(LINK) $(LDFLAGS) ${OBJ_COFF}
+		$(OBJ_COFF) $(LINK) $(LDFLAGS)
