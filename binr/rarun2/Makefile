@@ -1,4 +1,4 @@
 BIN=rarun2
-BINDEPS=r_util r_socket
+BINDEPS=r_socket r_util
 
 include ../rules.mk

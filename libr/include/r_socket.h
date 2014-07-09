@@ -145,6 +145,45 @@ R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certf
 R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s);
 R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s);
 
+/* run.c */
+#define R_RUN_PROFILE_NARGS 512
+typedef struct r_run_profile_t {
+	char *_args[R_RUN_PROFILE_NARGS];
+	char *_system;
+	char *_program;
+	char *_stdin;
+	char *_stdout;
+	char *_stderr;
+	char *_chgdir;
+	char *_chroot;
+	char *_libpath;
+	char *_preload;
+	int _bits;
+	int _r2preload;
+	int _docore;
+	int _aslr;
+	int _maxstack;
+	int _maxproc;
+	int _maxfd;
+	int _r2sleep;
+	char *_setuid;
+	char *_seteuid;
+	char *_setgid;
+	char *_setegid;
+	char *_input;
+	char *_connect;
+	char *_listen;
+	int _timeout;
+} RRunProfile;
+
+R_API RRunProfile *r_run_new(const char *str);
+R_API int r_run_parseline (RRunProfile *p, char *b);
+R_API int r_run_parse(RRunProfile *pf, const char *profile);
+R_API void r_run_free (RRunProfile *r);
+R_API int r_run_parseline (RRunProfile *p, char *b);
+R_API const char *r_run_help();
+R_API int r_run_start(RRunProfile *p);
+
 #endif
 
 #ifdef __cplusplus

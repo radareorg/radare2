@@ -301,6 +301,16 @@ static int cb_dbgbep(void *user, void *data) {
 	}
 	return R_TRUE;
 }
+static int cb_runprofile(void *user, ut8 *data) {
+	//RRunProfile = data;
+	RCore *r = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free ((void*)r->io->runprofile);
+	if (!data || !*data)
+		r->io->runprofile = NULL;
+	else r->io->runprofile = strdup (data);
+	return R_TRUE;
+}
 
 static int cb_dbgstatus(void *user, void *data) {
 	RCore *r = (RCore*) user;
@@ -766,6 +776,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 
+	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	/* debug */
 	SETCB("dbg.status", "true", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");

@@ -141,6 +141,7 @@ typedef struct r_io_t {
 	int buffer_enabled;
 	int ff;
 	int autofd;
+	char *runprofile;
 } RIO;
 
 typedef struct r_io_plugin_t {

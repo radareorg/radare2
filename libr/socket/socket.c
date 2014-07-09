@@ -42,7 +42,6 @@ R_API int r_socket_is_connected (RSocket *s) {
 #endif
 }
 
-
 #if __UNIX__
 static int r_socket_unix_connect(RSocket *s, const char *file) {
 	struct sockaddr_un addr;

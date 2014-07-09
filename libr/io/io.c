@@ -22,6 +22,7 @@ R_API RIO *r_io_new() {
 	io->buffer_enabled = 0;
 	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->desc = NULL;
+	io->runprofile = NULL;
 	io->write_mask_fd = -1;
 	io->redirect = NULL;
 	io->printf = (void*) printf;

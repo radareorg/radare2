@@ -1,12 +1,15 @@
+include ../config.mk
+
 NAME=r_parse
 DEPS=r_flags r_util r_anal
 
-include ../config.mk
-LINK=$(STOP)/tcc/libr_tcc.a
+LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/
 
 foo:
-	@for a in pre libr_parse.${EXT_SO} libr_parse.${EXT_AR} plugins bins ; do ${MAKE} $$a ; done
+	@for a in pre libr_parse.${EXT_SO} \
+	libr_parse.${EXT_AR} plugins bins \
+	; do ${MAKE} $$a ; done
 
 CFLAGS+=-DCORELIB
 -include ${STATIC_PARSE_PLUGINS}
@@ -27,4 +30,4 @@ endif
 plugins:
 	@cd p && ${MAKE} all
 
-include $(LTOP)/rules.mk
+include ../rules.mk

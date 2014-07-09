@@ -29,6 +29,7 @@ static void my_io_redirect (RIO *io, const char *file) {
 #endif
 
 #if __APPLE__
+#include <spawn.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -90,7 +91,7 @@ err_enable:
         return err;
 }
 
-static int fork_and_ptraceme(int bits, const char *cmd) {
+static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
         STARTUPINFO si = { sizeof (si) };
         DEBUG_EVENT de;
@@ -169,15 +170,9 @@ err_fork:
 }
 #else // windows
 
-static int getASLRState() {
-	// TODO: Handle dbg.aslr, or just support run profiles
-	return -1;
-}
-
 // __UNIX__ (not windows)
-static int fork_and_ptraceme(int bits, const char *cmd) {
+static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	char **argv;
-	int useASLR = getASLRState();
 	int ret, status, pid = fork ();
 	switch (pid) {
 	case -1:
@@ -197,19 +192,37 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 			eprintf ("ptrace-traceme failed\n");
 			exit (MAGIC_EXIT);
 		}
+#define USE_RARUN 0
+#if USE_RARUN
+	{
+	int i;
+	RRunProfile *rp = r_run_new (io->runprofile);
+	argv = r_str_argv (cmd, NULL);
+	for (i=0; argv[i]; i++) {
+		rp->_args[i] = argv[i];
+	}
+	rp->_args[i] = NULL;
+	rp->_program = argv[0];
+	//r_run_parse (rp, runprofile);
+	r_run_start (rp);
+	r_run_free (rp);
+	r_str_argv_free (argv);
+	exit (1);
+	}
+#else
 		// TODO: Add support to redirect filedescriptors
 		// TODO: Configure process environment
 		argv = r_str_argv (cmd, NULL);
+
 #if __APPLE__ 
-		#include <spawn.h>
 		{
+#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
+			ut32 ps_flags = POSIX_SPAWN_SETEXEC;
 			posix_spawnattr_t attr = {0};
 			size_t copied = 1;
 			cpu_type_t cpu;
-			int ret;
 			pid_t p = -1;
-#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
-			ut32 ps_flags = POSIX_SPAWN_SETEXEC;
+			int ret;
 
 			posix_spawnattr_init (&attr);
 			if (useASLR != -1) {
@@ -227,12 +240,7 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 #else
 			cpu = CPU_TYPE_ANY;
 #endif
-#if __linux__
-			if (useASLR==0)
-				personality (ADDR_NO_RANDOMIZE);
-#endif
 			posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
-
 			ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
 			switch (ret) {
 			case 0:
@@ -259,7 +267,7 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 		execvp (argv[0], argv);
 #endif
 		r_str_argv_free (argv);
-
+#endif
 		perror ("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
 		exit (MAGIC_EXIT); /* error */
@@ -292,7 +300,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file,  0)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
-			pid = fork_and_ptraceme (io->bits, file+6);
+			pid = fork_and_ptraceme (io, io->bits, file+6);
 			if (pid==-1)
 				return NULL;
 #if __WINDOWS__
