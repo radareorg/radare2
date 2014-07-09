@@ -485,7 +485,9 @@ int main(int argc, char **argv, char **envp) {
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 	if (asmos) r_config_set (r.config, "asm.os", asmos);
-	if (!r_core_bin_update_arch_bits (&r)) {
+
+	/* Don't set the arch if running in hex-editor mode */
+	if (run_anal && !r_core_bin_update_arch_bits (&r)) {
 		eprintf("Something went wrong while trying to set the specified architecture.\n"
 			"If you're trying to open a fat mach-o binary make sure that it has an\n"
 			"image for %sbit %s. Otherwise call help.\n",
