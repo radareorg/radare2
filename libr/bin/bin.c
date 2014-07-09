@@ -787,7 +787,6 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	if (sz == 0 || sz > bytes_sz) return NULL;
 	o = R_NEW0 (RBinObject);
 	o->obj_size = bytes && (bytes_sz >= sz+offset) ? sz : 0;
-	o->kv = sdb_new0 ();
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
