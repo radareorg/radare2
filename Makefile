@@ -1,9 +1,11 @@
 -include config-user.mk
 include global.mk
 
+DESTDIR:=$(call rmbdlslash,$(DESTDIR))
+WWWROOT:=$(call rmbdlslash,$(WWWROOT))
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
-DLIBDIR=$(DESTDIR)/$(LIBDIR)
+DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
@@ -61,7 +63,7 @@ w32dist:
 	#mkdir -p w32dist/include/libr/sflib
 	cp -f doc/fortunes w32dist/share/doc/radare2
 	mv w32dist radare2-w32-${VERSION}
-	rm -f radare2-w32-${VERSION}.zip 
+	rm -f radare2-w32-${VERSION}.zip
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
 clean:
@@ -104,22 +106,22 @@ install: install-doc install-man install-www
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
 	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
-	mkdir -p ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/
-	cp -fr shlr/yara/ ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/
+	mkdir -p $(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)
+	cp -fr shlr/yara/ $(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/)
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
 install-www:
-	rm -rf ${DESTDIR}/${WWWROOT}
+	rm -rf $(call rmdblslash,${DESTDIR}/${WWWROOT})
 	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
-	mkdir -p ${DESTDIR}/${WWWROOT}
-	cp -rf shlr/www/* ${DESTDIR}/${WWWROOT}
+	mkdir -p $(call rmdblslash,${DESTDIR}/${WWWROOT})
+	cp -rf shlr/www/* $(call rmdblslash,${DESTDIR}/${WWWROOT})
 
 symstall-www:
-	rm -rf ${DESTDIR}/${WWWROOT}
+	rm -rf $(call rmdblslash,${DESTDIR}/${WWWROOT})
 	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
-	mkdir -p ${DESTDIR}/${WWWROOT}
-	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
+	mkdir -p $(call rmdblslash,${DESTDIR}/${WWWROOT})
+	cd $(call rmdblslash,${DESTDIR}/${WWWROOT}) ; for a in ${PWD}/shlr/www/* ; do \
 		ln -fs $$a ${DESTDIR}/${DATADIR}/radare2/${VERSION}/www ; done
 
 install-pkgconfig-symlink:

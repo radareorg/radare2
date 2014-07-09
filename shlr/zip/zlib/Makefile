@@ -2,20 +2,22 @@ include ../../../config-user.mk
 include ../../../libr/config.mk
 include ../../../mk/${COMPILER}.mk
 
-ifeq (${OSTYPE},cygwin_nt-6.1)
-OSTYPE=cygwin
-endif
-ifeq (${OSTYPE},cygwin_nt-6.1-wow64)
-OSTYPE=cygwin
-endif
-ifeq (${OSTYPE},cygwin)
+ifneq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
 EXT_SO=dll
 SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
+ifneq (,$(findstring ming32,${OSTYPE}))
+CFLAGS+=-DMINGW32=1
+EXT_SO=dll
+SOVER=${EXT_SO}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-shared
+else
 CFLAGS+=-fPIC
+endif
 endif
 ifeq (${OSTYPE},windows)
 EXT_SO=dll

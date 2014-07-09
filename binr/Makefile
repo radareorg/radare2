@@ -1,13 +1,14 @@
 include ../global.mk
 include ../libr/config.mk
 
+DESTDIR:=$(call rmbdlslash,$(DESTDIR))
 BTOP=$(shell pwd)
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper preload
 
-PFX=${DESTDIR}/${PREFIX}
-BFX=${DESTDIR}/${BINDIR}
-LFX=${DESTDIR}/${LIBDIR}
+PFX=$(call rmdblslash,${DESTDIR}/${PREFIX})
+BFX=$(call rmdblslash,${DESTDIR}/${BINDIR})
+LFX=$(call rmdblslash,${DESTDIR}/${LIBDIR})
 
 BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 
