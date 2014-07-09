@@ -308,7 +308,7 @@ static int cb_runprofile(void *user, ut8 *data) {
 	free ((void*)r->io->runprofile);
 	if (!data || !*data)
 		r->io->runprofile = NULL;
-	else r->io->runprofile = strdup (data);
+	else r->io->runprofile = strdup (node->value);
 	return R_TRUE;
 }
 

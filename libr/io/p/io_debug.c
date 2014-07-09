@@ -192,91 +192,34 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			eprintf ("ptrace-traceme failed\n");
 			exit (MAGIC_EXIT);
 		}
-#define USE_RARUN 1
-#if USE_RARUN
-	{
-	int i;
-	RRunProfile *rp = r_run_new (io->runprofile);
-	argv = r_str_argv (cmd, NULL);
-	for (i=0; argv[i]; i++) {
-		rp->_args[i] = argv[i];
-	}
-	rp->_args[i] = NULL;
-	rp->_program = argv[0];
-	//r_run_parse (rp, runprofile);
-	{
-	char *expr = NULL;
-	if (bits==64)
-		r_run_parseline (rp, expr=strdup("bits=64"));
-	else if (bits==32)
-		r_run_parseline (rp, expr=strdup("bits=32"));
-	free (expr);
-	}
-	r_run_start (rp);
-	r_run_free (rp);
-	r_str_argv_free (argv);
-	exit (1);
-	}
-#else
-		// TODO: Add support to redirect filedescriptors
-		// TODO: Configure process environment
-		argv = r_str_argv (cmd, NULL);
-
-#if __APPLE__ 
-		{
-	int useASLR = -1;
-#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
-			ut32 ps_flags = POSIX_SPAWN_SETEXEC;
-			posix_spawnattr_t attr = {0};
-			size_t copied = 1;
-			cpu_type_t cpu;
-			pid_t p = -1;
-			int ret;
-
-			posix_spawnattr_init (&attr);
-			if (useASLR != -1) {
-				if (useASLR) {
-					// enable aslr if not enabled? really?
-				} else {
-					ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+		 {
+			int i;
+			RRunProfile *rp = r_run_new (NULL);//io->runprofile);
+			argv = r_str_argv (cmd, NULL);
+			for (i=0; argv[i]; i++) {
+				rp->_args[i] = argv[i];
+			}
+			rp->_args[i] = NULL;
+			rp->_program = argv[0];
+			if (io->runprofile && *io->runprofile) {
+				if (!r_run_parsefile (rp, io->runprofile)) {
+					eprintf ("Can't find profile '%s'\n", io->runprofile);
+					exit (MAGIC_EXIT);
 				}
 			}
-			(void)posix_spawnattr_setflags (&attr, ps_flags);
-#if __i386__ || __x86_64__
-			cpu = CPU_TYPE_I386;
-			if (bits == 64) 
-				cpu |= CPU_ARCH_ABI64;
-#else
-			cpu = CPU_TYPE_ANY;
-#endif
-			posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
-			ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
-			switch (ret) {
-			case 0:
-				eprintf ("Success\n");
-				break;
-			case 22:
-				eprintf ("posix_spawnp: Invalid argument\n");
-				break;
-			case 86:
-				eprintf ("Unsupported architecture\n");
-				break;
-			default:
-				eprintf ("posix_spawnp: unknown error %d\n", ret);
-				perror ("posix_spawnp");
-				break;
-			}
-/* only required if no SETEXEC called
-			if (p != -1)
-				wait (p);
-*/
-			exit (MAGIC_EXIT); /* error */
-		}
-#else
-		execvp (argv[0], argv);
-#endif
-		r_str_argv_free (argv);
-#endif
+			 {
+				char *expr = NULL;
+				if (bits==64)
+					r_run_parseline (rp, expr=strdup ("bits=64"));
+				else if (bits==32)
+					r_run_parseline (rp, expr=strdup ("bits=32"));
+				free (expr);
+			 }
+			r_run_start (rp);
+			r_run_free (rp);
+			r_str_argv_free (argv);
+			exit (1);
+		 }
 		perror ("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
 		exit (MAGIC_EXIT); /* error */

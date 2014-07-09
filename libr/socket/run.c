@@ -35,10 +35,17 @@
 #endif
 
 R_API RRunProfile *r_run_new(const char *str) {
-	RRunProfile *p = R_NEW0 (RRunProfile);
-	p->_aslr = -1;
-	if (str) r_run_parse (p, str);
+	RRunProfile *p = R_NEW (RRunProfile);
+	if (p) {
+		r_run_reset (p);
+		if (str) r_run_parsefile (p, str);
+	}
 	return p;
+}
+
+R_API void r_run_reset(RRunProfile *p) {
+	memset (p, 0, sizeof (RRunProfile));
+	p->_aslr = -1;
 }
 
 R_API int r_run_parse(RRunProfile *pf, const char *profile) {
@@ -161,6 +168,17 @@ static void setASLR(int enabled) {
 #else
 	// not supported for this platform
 #endif
+}
+
+R_API int r_run_parsefile (RRunProfile *p, char *b) {
+	int ret;
+	char *s = r_file_slurp (b, NULL);
+	if (s) {
+		ret = r_run_parse (p, s);
+		free (s);
+		return ret;
+	}
+	return 0;
 }
 
 R_API int r_run_parseline (RRunProfile *p, char *b) {
