@@ -1389,7 +1389,9 @@ R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
 	int ch = 0, cw = 0;
 	while (*str) {
 		if (*str == '\n') {
-			*r++ = *str;
+			if (ch>=y && ch<h)
+				if (cw>=x && cw<w)
+					*r++ = *str;
 			ch++;
 			cw = 0;
 		} else
