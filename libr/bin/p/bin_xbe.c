@@ -11,10 +11,6 @@ static const char *kt_name[] = {
 #include "../format/xbe/kernel.h"
 };
 
-static Sdb* get_sdb (RBinObject *o) {
-	return NULL;
-}
-
 static int check_bytes(const ut8 *buf, ut64 size) {
 	xbe_header *header = (xbe_header *)buf;
 	return (size > sizeof(xbe_header) && header->magic == XBE_MAGIC);
@@ -281,7 +277,6 @@ struct r_bin_plugin_t r_bin_plugin_xbe = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = NULL,
 	.destroy = &destroy,

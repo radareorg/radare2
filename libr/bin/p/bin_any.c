@@ -23,7 +23,6 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,
 	.load_bytes = NULL,
 	.destroy = &destroy,
