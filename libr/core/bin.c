@@ -1180,23 +1180,27 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits) {
 	RCoreFile *cf = r_core_file_cur (r);
-	RBinFile *nbinfile = NULL;
-	int res = R_FALSE;
-	name = !name &&  cf ? cf->filename : name;
-	res = r_asm_is_valid (r->assembler, arch) == R_TRUE;
+	RBinFile *binfile;
 
-	// this check takes place to ensure we can make the change
-	nbinfile = res ? r_bin_file_find_by_arch_bits (r->bin, arch, bits, name) : NULL;
-	if (!nbinfile) return res;
+	if (!name)
+		name = cf ? cf->filename : NULL;
+	if (!name)
+		return R_FALSE;
 
-	res = r_bin_use_arch (r->bin, arch, bits, name);
-	if (res) {
-		r_core_bin_set_cur (r, nbinfile);
-		if (r_asm_is_valid (r->assembler, arch) ) {
-			return r_core_bin_set_env (r, nbinfile);
-		}
-	}
-	return res;
+	/* Check if the arch name is a valid name */
+	if (!r_asm_is_valid (r->assembler, arch))
+		return R_FALSE;
+
+	/* Find a file with the requested name/arch/bits */
+	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits, name);
+	if (!binfile) 
+		return R_FALSE;
+
+	if (!r_bin_use_arch (r->bin, arch, bits, name))
+		return R_FALSE;
+
+	r_core_bin_set_cur (r, binfile);
+	return r_core_bin_set_env (r, binfile);
 }
 
 R_API int r_core_bin_update_arch_bits (RCore *r) {
