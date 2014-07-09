@@ -96,7 +96,6 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 	RListIter *bb_iter;
 
 	int index = 0;
-	ut64 opc = fcn->addr, addr = 0;
 	ut32 len;
 
 	INIT_LIST_HEAD (&(list->list));
@@ -106,7 +105,6 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 		if (!bb || bb->size == 0) continue;
 		if (nlines != -1 && --nlines == 0) break;
 		len = bb->size;
-		addr = bb->addr;
 
 		/* store data */
 		ut64 control_type = bb->type;

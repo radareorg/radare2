@@ -204,6 +204,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	rp->_args[i] = NULL;
 	rp->_program = argv[0];
 	//r_run_parse (rp, runprofile);
+	if (bits==64)
+		r_run_parseline (rp, "bits=64");
+	else if (bits==32)
+		r_run_parseline (rp, "bits=32");
 	r_run_start (rp);
 	r_run_free (rp);
 	r_str_argv_free (argv);
@@ -216,6 +220,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 #if __APPLE__ 
 		{
+	int useASLR = -1;
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 			ut32 ps_flags = POSIX_SPAWN_SETEXEC;
 			posix_spawnattr_t attr = {0};

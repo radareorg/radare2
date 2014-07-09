@@ -1,6 +1,7 @@
 /* radare2 - Copyleft 2011-2014 - pancake */
 
 #include <r_util.h>
+#include <r_socket.h>
 
 int main(int argc, char **argv) {
 	char *file;
@@ -8,7 +9,7 @@ int main(int argc, char **argv) {
 	int i, ret;
 	if (argc==1 || !strcmp (argv[1], "-h")) {
 		eprintf ("Usage: rarun2 [-v] [script.rr2] [directive ..]\n");
-		printf (r_run_help ());
+		printf ("%s", r_run_help ());
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {

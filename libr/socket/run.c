@@ -29,7 +29,7 @@
 #if __UNIX__
 #include <sys/resource.h>
 #include <signal.h>
-#if __linux__
+#if __linux__ && !__ANDROID__
 #include <sys/personality.h>
 #endif
 #endif
@@ -147,8 +147,10 @@ static void setASLR(int enabled) {
 	if (enabled) {
 		system ("echo 2 > "RVAS);
 	} else {
+#if !__ANDROID__
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
 			system ("echo 0 > "RVAS);
+#endif
 	}
 #elif __APPLE__
 	setenv ("DYLD_NO_PIE", "1", 1);
@@ -289,8 +291,10 @@ static void parseinput (char *s) {
 #endif
 
 R_API int r_run_start(RRunProfile *p) {
+#if __APPLE__
 	posix_spawnattr_t attr = {0};
 	pid_t pid = -1;
+#endif
 	int ret;
 	if (!p->_program && !p->_system) {
 		printf ("No program or system rule defined\n");
