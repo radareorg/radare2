@@ -465,19 +465,6 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 #if __APPLE__
 	posix_spawnattr_init (&attr);
-	if (p->_bits) {
-		size_t copied = 1;
-		cpu_type_t cpu;
-#if __i386__ || __x86_64__
-		cpu = CPU_TYPE_I386;
-		if (p->_bits == 64)
-			cpu |= CPU_ARCH_ABI64;
-#else
-		cpu = CPU_TYPE_ANY;
-#endif
-		posix_spawnattr_setbinpref_np (
-			&attr, 1, &cpu, &copied);
-	}
 	if (p->_args[0]) {
 		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
@@ -486,6 +473,19 @@ R_API int r_run_start(RRunProfile *p) {
 			spflags |= _POSIX_SPAWN_DISABLE_ASLR;
 		}
 		(void)posix_spawnattr_setflags (&attr, spflags);
+		if (p->_bits) {
+			size_t copied = 1;
+			cpu_type_t cpu;
+#if __i386__ || __x86_64__
+			cpu = CPU_TYPE_I386;
+			if (p->_bits == 64)
+				cpu |= CPU_ARCH_ABI64;
+#else
+			cpu = CPU_TYPE_ANY;
+#endif
+			posix_spawnattr_setbinpref_np (
+					&attr, 1, &cpu, &copied);
+		}
 		ret = posix_spawnp (&pid, p->_args[0],
 			NULL, &attr, p->_args, NULL);
 		switch (ret) {
