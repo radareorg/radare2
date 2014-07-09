@@ -7,4 +7,4 @@ ALL_TARGETS+=${TARGET_BIOS}
 
 ${TARGET_BIOS}: ${OBJ_BIOS}
 	${CC} $(call libname,bin_bios) -shared ${CFLAGS} \
-		-o ${TARGET_BIOS} ${OBJ_BIOS} $(LDFLAGS)
+		-o ${TARGET_BIOS} ${OBJ_BIOS} $(LINK) $(LDFLAGS)

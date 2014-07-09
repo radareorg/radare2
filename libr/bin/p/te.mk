@@ -6,4 +6,5 @@ TARGET_TE=bin_te.${EXT_SO}
 ALL_TARGETS+=${TARGET_TE}
 
 ${TARGET_TE}: ${OBJ_TE}
-	${CC} $(call libname,bin_te) ${CFLAGS} $(LDFLAGS) ${OBJ_TE}
+	${CC} $(call libname,bin_te) ${CFLAGS} \
+		$(LINK) $(LDFLAGS) ${OBJ_TE}

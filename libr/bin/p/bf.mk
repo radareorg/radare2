@@ -7,4 +7,4 @@ ALL_TARGETS+=${TARGET_BF}
 
 ${TARGET_BF}: ${OBJ_BF}
 	${CC} $(call libname,bin_bf) -shared ${CFLAGS} \
-		-o ${TARGET_BF} ${OBJ_BF} $(LDFLAGS)
+		-o ${TARGET_BF} ${OBJ_BF} $(LINK) $(LDFLAGS)

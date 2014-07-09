@@ -7,4 +7,4 @@ ALL_TARGETS+=${TARGET_XBE}
 
 ${TARGET_XBE}: ${OBJ_XBE}
 	${CC} $(call libname,bin_xbe) -shared ${CFLAGS} \
-		-o ${TARGET_XBE} ${OBJ_XBE} ${LDFLAGS}
+		-o ${TARGET_XBE} ${OBJ_XBE} $(LINK) ${LDFLAGS}
