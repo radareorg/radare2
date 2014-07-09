@@ -370,7 +370,8 @@ int gdbr_write_bin_registers(libgdbr_t* g){
 	if (!command) return -1;
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command+1);
-	send_command (g, command);
+	if (send_command (g, command) < 0)
+		return -1;
 	read_packet (g);
 	free (command);
 	handle_G (g);
@@ -382,7 +383,8 @@ int gdbr_write_register(libgdbr_t* g, int index, char* value, int len) {
 	int ret = snprintf (command, 255, "%s%d=", CMD_WRITEREG, index);
 	memcpy(command + ret, value, len);
 	pack_hex (value, len, (command + ret));
-	send_command (g, command);
+	if (send_command (g, command) < 0)
+		return -1;
 	if (read_packet (g) > 0) {
 		parse_packet (g, 0);
 		handle_P (g);
@@ -504,7 +506,8 @@ int send_vcont(libgdbr_t* g, const char* command, int thread_id) {
 		ret = snprintf (tmp, 255, "%s;%s:%x", CMD_C, command, thread_id);
 	}
 	if (ret < 0) return ret;
-	send_command (g, tmp);
+	ret = send_command (g, tmp);
+	if (ret < 0) return ret;
 	if (read_packet (g) > 0) { 
 		parse_packet (g, 0);
 		return handle_cont (g);
@@ -532,7 +535,8 @@ int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint t
 			break;
 	}
 	if (ret < 0) return ret;
-	send_command (g, tmp);
+	ret = send_command (g, tmp);
+	if (ret < 0) return ret;
 
 	if (read_packet (g) > 0) {
 		parse_packet (g, 0);
@@ -577,7 +581,8 @@ int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 			break;
 	}
 	if (ret < 0) return ret;
-	send_command (g, tmp);
+	ret = send_command (g, tmp);
+	if (ret < 0) return ret;
 
 	if (read_packet (g) > 0) {
 		parse_packet (g, 0);

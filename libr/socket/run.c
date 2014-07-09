@@ -414,6 +414,7 @@ R_API int r_run_start(RRunProfile *p) {
 			eprintf ("rarun2: cannot chroot\n");
 			return 1;
 		}
+		chdir("/");
 	}
 	if (p->_setuid) {
 		ret = setuid (atoi (p->_setuid));
