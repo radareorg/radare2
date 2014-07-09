@@ -39,22 +39,22 @@ clean:
 	rm -f *.sdb
 
 ${SDB}:
-	cp -rf $(SDBPATH)/src $(SDBPATH)/src-native
-	cd $(SDBPATH)/src-native && CFLAGS="-w ${CPPFLAGS}" \
+	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
+	cd "$(SDBPATH)/src-native" && CFLAGS="-w ${CPPFLAGS}" \
 		$(MAKE) -j 1 ARCH=xxx CC=${HOST_CC} clean sdb
-	cp -f $(SDBPATH)/src-native/sdb $(SDBPATH)/sdb
-	rm -rf $(SDBPATH)/src-native
+	cp -f "$(SDBPATH)/src-native/sdb" "$(SDBPATH)/sdb"
+	rm -rf "$(SDBPATH)/src-native"
 
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
-	mkdir -p ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall
-	cp -f *.sdb ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall
+	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
+	cp -f *.sdb "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
-	mkdir -p ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall
-	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$a ; done
+	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
+	for a in *.sdb ; do ln -fs "${CWD}/$$a" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$a" ; done
 
 uninstall:
-	rm -rf ${DESTDIR}${LIBDIR}/radare2/syscall
+	rm -rf "${DESTDIR}${LIBDIR}/radare2/syscall"

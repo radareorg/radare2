@@ -6,18 +6,18 @@ all clean:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
-	rm -rf $P
-	mkdir -p $P
-	cp -f * $P
+	rm -rf "$P"
+	mkdir -p "$P"
+	cp -f * "$P"
 
 CWD=$(shell pwd)
 symstall install-symlink:
-	mkdir -p $P
+	mkdir -p "$P"
 	for a in * ; do \
 		if [ $$a != Makefile ]; then \
-			ln -fs ${CWD}/$$a $P/$$a ; \
+			ln -fs "${CWD}/$$a" "$P/$$a" ; \
 		fi ; \
 	done
 
 uninstall:
-	rm -rf $P
+	rm -rf "$P"

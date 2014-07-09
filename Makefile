@@ -9,6 +9,7 @@ DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
+YARADIR=$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara)
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
@@ -80,35 +81,36 @@ pkgcfg:
 	cd libr && ${MAKE} pkgcfg
 
 install-man:
-	mkdir -p ${MDR}/man1
-	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${MDR}/man1 ; done
-	cd ${MDR}/man1 && ln -fs radare2.1 r2.1
+	mkdir -p "${MDR}/man1"
+	for a in man/*.1 ; do ${INSTALL_MAN} "$$a" "${MDR}/man1" ; done
+	cd "${MDR}/man1" && ln -fs radare2.1 r2.1
 
 install-man-symlink:
-	mkdir -p ${MDR}/man1
-	cd man && for a in *.1 ; do ln -fs ${PWD}/man/$$a ${MDR}/man1/$$a ; done
-	cd ${MDR}/man1 && ln -fs radare2.1 r2.1
+	mkdir -p "${MDR}/man1"
+	cd man && for a in *.1 ; do \
+		ln -fs "${PWD}/man/$$a" "${MDR}/man1/$$a" ; done
+	cd "${MDR}/man1" && ln -fs radare2.1 r2.1
 
 install-doc:
-	${INSTALL_DIR} ${PFX}/share/doc/radare2
-	for a in doc/* ; do ${INSTALL_DATA} $$a ${PFX}/share/doc/radare2 ; done
+	${INSTALL_DIR} "${PFX}/share/doc/radare2"
+	for a in doc/* ; do ${INSTALL_DATA} $$a "${PFX}/share/doc/radare2" ; done
 
 install-doc-symlink:
-	${INSTALL_DIR} ${PFX}/share/doc/radare2
+	${INSTALL_DIR} "${PFX}/share/doc/radare2"
 	cd doc ; for a in * ; do \
-		ln -fs ${PWD}/doc/$$a ${PFX}/share/doc/radare2 ; done
+		ln -fs "${PWD}/doc/$$a" "${PFX}/share/doc/radare2" ; done
 
 install: install-doc install-man install-www
-	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd shlr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}" PARENT=1
+	cd binr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}"
+	cd shlr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}"
 	for a in ${DATADIRS} ; do \
-	(cd $$a ; ${MAKE} install LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
+	(cd $$a ; ${MAKE} install LIBDIR="${LIBDIR}" PREFIX="${PREFIX}" DESTDIR="${DESTDIR}" ); \
 	done
-	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
-	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
+	mkdir -p "${DLIBDIR}/radare2/${VERSION}/hud"
+	cp -f doc/hud "${DLIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p $(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)
-	cp -fr shlr/yara/ $(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara/)
+	cp -fr shlr/yara/ "$(YARADIR)"
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
@@ -118,34 +120,42 @@ install-www:
 	mkdir -p $(call rmdblslash,${DESTDIR}/${WWWROOT})
 	cp -rf shlr/www/* $(call rmdblslash,${DESTDIR}/${WWWROOT})
 
+WWWDIR=$(call rmdblslash,${DESTDIR}/${DATADIR}/radare2/${VERSION}/www)
 symstall-www:
 	rm -rf $(call rmdblslash,${DESTDIR}/${WWWROOT})
 	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
-	mkdir -p $(call rmdblslash,${DESTDIR}/${WWWROOT})
-	cd $(call rmdblslash,${DESTDIR}/${WWWROOT}) ; for a in ${PWD}/shlr/www/* ; do \
-		ln -fs $$a ${DESTDIR}/${DATADIR}/radare2/${VERSION}/www ; done
+	mkdir -p "$(call rmdblslash,${DESTDIR}/${WWWROOT})"
+	cd $(call rmdblslash,${DESTDIR}/${WWWROOT}) ; \
+		for a in "${PWD}/shlr/www/"* ; do \
+			ln -fs $$a "$(WWWDIR)" ; done
 
 install-pkgconfig-symlink:
-	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DLIBDIR}/pkgconfig/$$a ; done
+	@${INSTALL_DIR} "${DLIBDIR}/pkgconfig"
+	cd pkgcfg ; for a in *.pc ; do \
+		ln -fs "$${PWD}/$$a" "${DLIBDIR}/pkgconfig/$$a" ; done
+
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www
-	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd shlr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR="${DESTDIR}"
+	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR="${DESTDIR}"
+	cd shlr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR="${DESTDIR}"
 	for a in ${DATADIRS} ; do (\
 		cd $$a ; \
 		echo $$a ; \
-		${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
+		${MAKE} install-symlink LIBDIR="${LIBDIR}" \
+			PREFIX="${PREFIX}" DESTDIR="${DESTDIR}" ); \
 	done
-	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
-	cd $(DESTDIR)/$(PREFIX)/lib/radare2/ ; rm -f last ; ln -fs $(VERSION) last
-	cd $(DESTDIR)/$(PREFIX)/share/radare2/ ; rm -f last ; ln -fs $(VERSION) last
-	ln -fs ${PWD}/doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
-	ln -fs ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
-	mkdir -p ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/
-	rm -rf ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara
-	ln -fs ${PWD}/shlr/yara/ ${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara
+	mkdir -p "${DLIBDIR}/radare2/${VERSION}/hud"
+	cd "$(call rmdblslash,$(DESTDIR)/$(PREFIX)/lib/radare2/)" ;\
+		rm -f last ; ln -fs $(VERSION) last
+	cd "$(call rmdblslash,$(DESTDIR)/$(PREFIX)/share/radare2/)" ;\
+		rm -f last ; ln -fs $(VERSION) last
+	ln -fs "${PWD}/doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main"
+	ln -fs "${PWD}/libr/lang/p/radare.lua" \
+		"${DLIBDIR}/radare2/${VERSION}/radare.lua"
+	mkdir -p "$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)"
+	rm -rf "$(YARADIR)"
+	ln -fs "${PWD}/shlr/yara/" "$(YARADIR)"
 	sys/ldconfig.sh
 
 deinstall uninstall:
@@ -159,7 +169,7 @@ deinstall uninstall:
 
 purge-doc:
 	rm -rf ${DESTDIR}/${PREFIX}/share/doc/radare2
-	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
+	cd man ; for a in *.1 ; do rm -f "${MDR}/man1/$$a" ; done
 	rm -f ${MDR}/man1/r2.1
 
 purge-dev:
