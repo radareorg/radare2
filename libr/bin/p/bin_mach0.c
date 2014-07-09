@@ -53,19 +53,24 @@ static int destroy(RBinFile *arch) {
 }
 
 static ut64 baddr(RBinFile *arch) {
-	RBinInfo *bi = info (arch);
-	if (strstr (bi->type, "Exe")) {
-		int is_arm = !strcmp (bi->arch, "arm");
-		int bi_bits = bi->bits;
-		free (bi);
-		// WARNING: THIS IS VERY HACKY
-		if (bi_bits==32)
-			return 0x1000;
-		//return MACH0_(r_bin_mach0_get_baddr) (arch->o->bin_obj);
-		return is_arm? 0x1000: 0x100000000;
+	struct MACH0_(r_bin_mach0_obj_t) *bin;
+
+	if (!arch)
+		return 0;
+
+	bin = arch->o->bin_obj;
+
+	if (bin->hdr.filetype != MH_EXECUTE)
+		return 0;
+
+	switch (bin->hdr.cputype) {
+		case CPU_TYPE_ARM:
+			return 0x1000;      /* 4k __PAGEZERO */
+		case CPU_TYPE_X86_64:
+			return 0x100000000; /* 4G __PAGEZERO */
 	}
-	free (bi);
-	return 0LL;
+
+	return 0;
 }
 
 static RList* entries(RBinFile *arch) {
