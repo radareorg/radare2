@@ -11,7 +11,7 @@ typedef struct {
 	int h;
 	ut64 addr;
 	int depth;
-	const char *text;
+	char *text;
 } Node;
 
 typedef struct {
@@ -171,46 +171,11 @@ static void Layout_depth(Node *nodes, Edge *edges) {
 	free (rowheight);
 }
 
-R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
-	RAnalFunction *fcn;
-	RConsCanvas *can;
+static int bbEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
+	Edge *edges = NULL;
 	RListIter *iter;
 	RAnalBlock *bb;
-	Node *nodes;
-	Edge *edges;
-	int cn, prevnode = curnode;
-	int w, h, i, n_nodes, n_edges;
-	char title[128];
-
-	fcn = _fcn?_fcn:r_anal_get_fcn_at (core->anal, core->offset);
-	if (!fcn) {
-		eprintf ("No function in current seek\n");
-		return R_FALSE;
-	}
-	w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w-1, h-1);
-
-	nodes = malloc (sizeof(Node)*(r_list_length (fcn->bbs)+1));
-	if (!nodes)
-		return R_FALSE;
-	i = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		nodes[i].text = r_core_cmd_strf (core,
-			"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		nodes[i].addr = bb->addr;
-		nodes[i].depth = -1;
-		nodes[i].x = 10;
-		nodes[i].y = 3;
-		nodes[i].w = 0;
-		nodes[i].h = 0;
-		i++;
-	}
-	nodes[i].text = NULL;
-	n_nodes = i;
-
-	i = 0;
-	edges = NULL;
-	n_edges = 0;
+	int i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		// add edge from bb->addr to bb->jump / bb->fail
 		if (bb->jump != UT64_MAX) {
@@ -230,7 +195,124 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 	if (edges)
 		edges[i].nth = -1;
-	n_edges = i;
+	free (*e);
+	*e = edges;
+	return i;
+}
+
+static int cgNodes (RCore *core, RAnalFunction *fcn, Node **n) {
+	int j, i = 0;
+	char *code;
+	RAnalRef *ref;
+	RListIter *iter;
+	Node *nodes = calloc (1, sizeof(Node)*(r_list_length (fcn->refs)+2));
+	if (!nodes)
+		return R_FALSE;
+	nodes[i].text = strdup ("");
+	nodes[i].addr = fcn->addr;
+	nodes[i].depth = -1;
+	nodes[i].x = 10;
+	nodes[i].y = 3;
+	nodes[i].w = 0;
+	nodes[i].h = 0;
+	i++;
+	r_list_foreach (fcn->refs, iter, ref) {
+		/* avoid dups wtf */
+		for (j=0; j<i; j++) {
+			if (ref->addr == nodes[j].addr)
+				goto sin;
+		}
+		RFlagItem *fi = r_flag_get_at (core->flags, ref->addr);
+		if (fi) {
+			nodes[i].text = strdup (fi->name);
+			nodes[i].text = r_str_concat (nodes[i].text, ":\n");
+		} else {
+			nodes[i].text = strdup ("");
+		}
+		code = r_core_cmd_strf (core,
+			"pi 4 @ 0x%08"PFMT64x, ref->addr);
+		nodes[i].text = r_str_concat (nodes[i].text, code);
+		free (code);
+		nodes[i].text = r_str_concat (nodes[i].text, "...\n");
+		nodes[i].addr = ref->addr;
+		nodes[i].depth = -1;
+		nodes[i].x = 10;
+		nodes[i].y = 10;
+		nodes[i].w = 0;
+		nodes[i].h = 0;
+		i++;
+		sin:
+		continue;
+	}
+	free (*n);
+	*n = nodes;
+	return i;
+}
+
+static int cgEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
+	int i = 0;
+	Edge *edges = NULL;
+	RAnalRef *ref;
+	RListIter *iter;
+	r_list_foreach (fcn->refs, iter, ref) {
+		edges = realloc (edges, sizeof (Edge)*(i+2));
+		edges[i].nth = 0;
+		edges[i].from = Node_find (nodes, fcn->addr);
+		edges[i].to = Node_find (nodes, ref->addr);
+		i++;
+	}
+	if (edges)
+		edges[i].nth = -1;
+	free (*e);
+	*e = edges;
+	return i;
+}
+
+static int bbNodes (RCore *core, RAnalFunction *fcn, Node **n) {
+	int i;
+	RAnalBlock *bb;
+	RListIter *iter;
+	Node *nodes = malloc (sizeof(Node)*(r_list_length (fcn->bbs)+1));
+	if (!nodes)
+		return R_FALSE;
+	i = 0;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		nodes[i].text = r_core_cmd_strf (core,
+			"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		nodes[i].addr = bb->addr;
+		nodes[i].depth = -1;
+		nodes[i].x = 10;
+		nodes[i].y = 3;
+		nodes[i].w = 0;
+		nodes[i].h = 0;
+		i++;
+	}
+	free (*n);
+	*n = nodes;
+	nodes[i].text = NULL;
+	return i;
+}
+
+R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
+	RAnalFunction *fcn;
+	RConsCanvas *can;
+	Node *nodes = NULL;
+	Edge *edges = NULL;
+	int key, cn, prevnode = curnode;
+	int w, h, i, n_nodes, n_edges;
+	int callgraph = 0;
+	char title[128];
+
+	fcn = _fcn?_fcn:r_anal_get_fcn_at (core->anal, core->offset);
+	if (!fcn) {
+		eprintf ("No function in current seek\n");
+		return R_FALSE;
+	}
+	w = r_cons_get_size (&h);
+	can = r_cons_canvas_new (w-1, h-1);
+
+	n_nodes = bbNodes (core, fcn, &nodes);
+	n_edges = bbEdges (fcn, nodes, &edges);
 
 	// hack to make layout happy
 	for (i=0;nodes[i].text;i++) {
@@ -253,21 +335,52 @@ repeat:
 		Edge_print (can, a, b, edges[i].nth);
 	}
 	if (nodes)
-	for (i=0;nodes[i].text;i++) {
+	//for (i=0;nodes[i].text;i++) {
+	for (i=0;i<n_nodes;i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}
 
 	G (-can->sx, -can->sy);
-	snprintf (title, sizeof(title)-1, "[0x%08"PFMT64x"]> VV @ %s (nodes %d)",
-		fcn->addr, fcn->name, n_nodes);
+	snprintf (title, sizeof(title)-1, "[0x%08"PFMT64x"]> VV @ %s (nodes %d) %s",
+		fcn->addr, fcn->name, n_nodes, callgraph?"CG":"BB");
 	W (title);
 
 	r_cons_canvas_print (can);
 	r_cons_flush ();
-	int key = r_cons_readchar ();
+	key = r_cons_readchar ();
 #define N nodes[curnode]
 prevnode = curnode;
 	switch (key) {
+	case 'V':
+		callgraph = !!!callgraph;
+		if (callgraph) {
+			int y = 5, x = 20;
+			n_nodes = cgNodes (core, fcn, &nodes);
+			n_edges = cgEdges (fcn, nodes, &edges);
+			// callgraph layout
+			for (i=0;nodes[i].text;i++) {
+// wrap to width 'w'
+				if (i>0) {
+					if (nodes[i].x<nodes[i-1].x) {
+						y+=10;
+						x = 0;
+					}
+				}
+				nodes[i].x = x;
+				nodes[i].y = i?y:2;
+				x += 30;
+			}
+		} else {
+			n_nodes = bbNodes (core, fcn, &nodes);
+			n_edges = bbEdges (fcn, nodes, &edges);
+			curnode = 0;
+			// hack to make the layout happy
+			for (i=0;nodes[i].text;i++) {
+				Node_print (can, &nodes[i], i==curnode);
+			}
+			Layout_depth (nodes, edges);
+		}
+		break;
 	case 9: curnode++;
 		if (!nodes[curnode].text)
 			curnode = 0;
@@ -280,6 +393,7 @@ prevnode = curnode;
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
 		" t/f  - follow true/false edges\n"
+		" V    - toggle basicblock / call graphs\n"
 		" R    - relayout\n");
 		r_cons_flush();
 		r_cons_any_key();

@@ -184,7 +184,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b);
 R_API const char *r_run_help();
 R_API int r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
-R_API int r_run_parsefile (RRunProfile *p, char *b);
+R_API int r_run_parsefile (RRunProfile *p, const char *b);
 
 #endif
 

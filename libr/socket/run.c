@@ -170,7 +170,7 @@ static void setASLR(int enabled) {
 #endif
 }
 
-R_API int r_run_parsefile (RRunProfile *p, char *b) {
+R_API int r_run_parsefile (RRunProfile *p, const char *b) {
 	int ret;
 	char *s = r_file_slurp (b, NULL);
 	if (s) {

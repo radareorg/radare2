@@ -1365,6 +1365,8 @@ R_API const char *r_str_closer_chr (const char *b, const char *s) {
 R_API int r_str_bounds(const char *str, int *h) {
 	int W = 0, H = 0;
 	int cw = 0;
+	if (!str)
+		return W;
 	while (*str) {
 		if (*str=='\n') {
 			H++;
