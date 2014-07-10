@@ -253,9 +253,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 
 /* 0,0 to list all */
 R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta) {
-	RAnalVarAccess *x;
+	//RAnalVarAccess *x;
 	RAnalVar *v;
-	RListIter *iter, *iter2;
+	RListIter *iter; //, *iter2;
 	if (fcn && fcn->vars)
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {

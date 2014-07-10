@@ -66,7 +66,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static int parse(RParse *p, const char *data, char *str) {
-	int i, n, len = strlen (data);
+	int i, n;
 	char w0[32];
 	char w1[32];
 	char w2[32];
@@ -74,12 +74,8 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf, *ptr, *optr, *num;
 
 	// malloc can be slow here :?
-	if ((buf = malloc (len+1)) == NULL)
-		return R_FALSE;
-	{/* strip whitechars from the beggining */	
-	char *o = (char *)r_str_trim_head (data);
-	memcpy (buf, o, strlen (o)+1);
-	}
+	buf = strdup (data);
+	r_str_trim_head (buf);
 
 	ptr = strchr (buf, '#');
 	if (ptr) {
