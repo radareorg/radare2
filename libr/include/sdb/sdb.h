@@ -141,6 +141,7 @@ ut64 sdb_unow (void);
 ut32 sdb_hash (const char *key);
 
 /* json api */
+int sdb_isjson (const char *k);
 char *sdb_json_get (Sdb* s, const char *key, const char *p, ut32 *cas);
 int sdb_json_set (Sdb* s, const char *k, const char *p, const char *v, ut32 cas);
 int sdb_json_num_get (Sdb* s, const char *k, const char *p, ut32 *cas);
@@ -213,6 +214,7 @@ int sdb_check_value (const char *s);
 int sdb_check_key (const char *s);
 int sdb_isnum (const char *s);
 
+const char *sdb_type(const char *k);
 int sdb_match (const char *str, const char *glob);
 int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas);
 int sdb_bool_get(Sdb *db, const char *str, ut32 *cas);

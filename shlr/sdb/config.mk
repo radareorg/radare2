@@ -39,16 +39,23 @@ HAVE_VALA=#$(shell valac --version 2> /dev/null)
 HOST_CC?=gcc
 RANLIB?=ranlib
 OS?=$(shell uname)
+OSTYPE?=$(shell uname -s)
 ARCH?=$(shell uname -m)
 
 ifeq (${OS},w32)
 WCP?=i386-mingw32
 CC=${WCP}-gcc
 AR?=${WCP}-ar
+ifeq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS_SHARED?=-fPIC
+endif
 EXEXT=.exe
 else
+ifeq (,$(findstring CYGWIN,${OSTYPE}))
+ifeq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS_SHARED?=-fPIC
+endif
+endif
 # -fvisibility=hidden
 AR?=ar
 CC?=gcc
@@ -63,15 +70,32 @@ SOEXT=dylib
 SOVER=dylib
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED?=-fPIC -shared
- ifeq (${ARCH},i386)
-   #CC+=-arch i386 
-   CC+=-arch x86_64
- endif
+ifeq (${ARCH},i386)
+#CC+=-arch i386
+CC+=-arch x86_64
+endif
 else
+ifneq (,$(findstring CYGWIN,${OSTYPE}))
+CFLAGS+=-D__CYGWIN__=1
+SOEXT=dll
+SOVER=${SOEXT}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-shared
+else
+ifneq (,$(findstring MINGW32,${OSTYPE}))
+CFLAGS+=-DMINGW32=1
+SOEXT=dll
+SOVER=${SOEXT}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-shared
+else
+CFLAGS+=-fPIC
 SOVERSION=0
 SOEXT=so
 SOVER=${SOEXT}.${SDBVER}
 LDFLAGS_SHARED?=-fPIC -shared
+endif
+endif
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)
 endif
 

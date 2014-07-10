@@ -30,7 +30,7 @@ EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 sdb.js: src/sdb-version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
 
-#json/api.c json/js0n.c json/json.c json/rangstr.c  
+#json/api.c json/js0n.c json/json.c json/rangstr.c
 
 clean:
 	rm -f src/sdb-version.h

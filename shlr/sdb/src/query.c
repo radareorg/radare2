@@ -18,7 +18,7 @@ static StrBuf* strbuf_new() {
 	return calloc (sizeof(StrBuf),1);
 }
 
-static StrBuf* strbuf_append(StrBuf *sb, const char *str) {
+static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	int len = strlen (str);
 	if ((sb->len + len+2)>=sb->size) {
 		int newsize = sb->size+len+256;
@@ -29,8 +29,14 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str) {
 		sb->size = newsize;
 	}
 	memcpy (sb->buf+sb->len, str, len);
-	memcpy (sb->buf+sb->len+len, "\n", 2);
-	sb->len += len+1;
+
+	/*nl != 0 -> newline at the end*/
+	if(nl!=0)
+	{
+		memcpy (sb->buf+sb->len+len, "\n", 2);
+		len+=1;
+	}
+	sb->len += len;
 	return sb;
 }
 
@@ -39,8 +45,6 @@ static StrBuf *strbuf_free(StrBuf *sb) {
 	free (sb);
 	return NULL;
 }
-
-/*******/
 
 SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
         char string[4096];
@@ -66,18 +70,19 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 
 // TODO: Reimplement as a function with optimized concat
 #define out_concat(x) if (x&&*x) { \
-	strbuf_append (out, x); \
+	strbuf_append (out, x, 1); \
 }
 
 typedef struct {
 	StrBuf *out;
 	int encode;
+	char *root;
 } ForeachListUser;
 
 static int foreach_list_cb(void *user, const char *k, const char *v) {
 	ForeachListUser *rlu = user;
-	char *line;
-	int klen, vlen;
+	char *line, *root = rlu->root;
+	int rlen, klen, vlen;
 	ut8 *v2 = NULL;
 	if (!rlu) return 0;
 	klen = strlen (k);
@@ -86,11 +91,21 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 		if (v2) v = (const char *)v2;
 	}
 	vlen = strlen (v);
-	line = malloc (klen + vlen + 2);
-	memcpy (line, k, klen);
-	line[klen] = '=';
-	memcpy (line+klen+1, v, vlen+1);
-	strbuf_append (rlu->out, line);
+	if (root) {
+		rlen = strlen (root);
+		line = malloc (klen + vlen + rlen + 2);
+		memcpy (line, root, rlen);
+		line[rlen]='/'; /*append the '/' at the end of the namespace */
+		memcpy (line+rlen+1, k, klen);
+		line[rlen+klen+1] = '=';
+		memcpy (line+rlen+klen+2, v, vlen+1);
+	} else {
+		line = malloc (klen + vlen +2);
+		memcpy (line, k, klen);
+		line[klen] = '=';
+		memcpy (line+klen+1,v,vlen+1);
+	}
+	strbuf_append (rlu->out, line, 1);
 	free (v2);
 	free (line);
 	return 1;
@@ -101,7 +116,7 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 	SdbListIter *it;
 	char *_out, *out = sb->buf;
 	SdbNs *n;
-	ForeachListUser user = { sb, encode };
+	ForeachListUser user = { sb, encode, root };
 	char *roote = root + strlen (root);
 	if (!ns->sdb)
 		return;
@@ -117,8 +132,7 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 			memcpy (p+1, n->name, len+1);
 			left -= len+2;
 		}
-		strbuf_append (sb, "");/*Print a new line after the "whole" ns*/
-		strbuf_append (sb, root);
+
 		_out = out;
 		walk_namespace (sb, root, left,
 			roote+len+1, n, encode);
@@ -221,6 +235,11 @@ next_quote:
 		if (arroba)
 			goto next_arroba;
 	}
+	if (*cmd=='?') {
+		const char *val = sdb_const_get (s, cmd+1, 0);
+		const char *type = sdb_type (val);
+		out_concat (type);
+	} else
 	if (*cmd=='*') {
 		char *res;
 		if (!strcmp (cmd, "***")) {
@@ -231,7 +250,6 @@ next_quote:
 				int len = strlen (ns->name);
 				if (len<sizeof (root)) {
 					memcpy (root, ns->name, len+1);
-					out_concat (root);
 					walk_namespace (out, root,
 						sizeof (root)-len,
 						root+len, ns, encode);
@@ -555,21 +573,28 @@ next_quote:
 				val = NULL;
 			}
 		} else {
-			// 0 1 kvpath?jspath
+			// 0 1 kvpath:jspath
 			// 0 0 kvpath
 			if (json) {
 				*json++ = 0;
-				// TODO: not optimized to reuse 'buf'
-				if ((tmp = sdb_json_get (s, cmd, json, 0))) {
-					if (encode) {
-						char *newtmp = (void*)sdb_decode (tmp, NULL);
-						if (!newtmp)
-							goto fail;
+				if (*json) {
+					// TODO: not optimized to reuse 'buf'
+					if ((tmp = sdb_json_get (s, cmd, json, 0))) {
+						if (encode) {
+							char *newtmp = (void*)sdb_decode (tmp, NULL);
+							if (!newtmp)
+								goto fail;
+							free (tmp);
+							tmp = newtmp;
+						}
+						out_concat (tmp);
 						free (tmp);
-						tmp = newtmp;
 					}
-					out_concat (tmp);
-					free (tmp);
+				} else {
+					// kvpath:  -> show indented json
+					char *o = sdb_json_indent (sdb_const_get (s, cmd, 0));
+					out_concat (o);
+					free (o);
 				}
 			} else {
 				// sdbget

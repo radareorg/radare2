@@ -200,3 +200,52 @@ SDB_API int sdb_match (const char *str, const char *glob) {
 		return 1;
 	return 0;
 }
+
+SDB_API const char *sdb_type(const char *k) {
+	if (!k || !*k)
+		return "undefined";
+	if (sdb_isnum (k))
+		return "number";
+	if (sdb_isjson (k))
+		return "json";
+	if (strchr (k, ','))
+		return "array";
+	if (!strcmp (k, "true") || !strcmp (k, "false"))
+		return "boolean";
+	return "string";
+}
+
+// TODO: check if open and closed bracket/parenthesis matches
+// TODO: check all the values
+SDB_API int sdb_isjson (const char *k) {
+	int level = 0;
+	int quotes = 0;
+	if (*k!='{' && *k != '[')
+		return 0;
+	if (k)
+	for (; *k; k++) {
+		if (quotes) {
+			if (*k == '"')
+				quotes = 0;
+			continue;
+		}
+		switch (*k) {
+		case '"':
+			if (quotes) quotes = 0;
+			else quotes = 1;
+			break;
+		case '[':
+		case '{':
+			level++;
+			break;
+		case ']':
+		case '}':
+			level--;
+			break;
+		}
+	}
+	if (quotes || level)
+		return 0;
+	return 1;
+}
+
