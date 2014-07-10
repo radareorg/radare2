@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+#define STR(x) (x)?(x):""
 static void r_core_file_info (RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
@@ -20,9 +21,9 @@ static void r_core_file_info (RCore *core, int mode) {
 			"\"arch\":\"%s\","
 			"\"bits\":%d,"
 			"\"endian\":\"%s\","
-			, info->type
-			, info->os
-			, info->machine
+			, STR(info->type)
+			, STR(info->os)
+			, STR(info->machine)
 			, info->bits
 			, info->big_endian? "big": "little");
 			break;
@@ -32,9 +33,9 @@ static void r_core_file_info (RCore *core, int mode) {
 			"arch\t%s\n"
 			"bits\t%d\n"
 			"endian\t%s\n"
-			, info->type
-			, info->os
-			, info->machine
+			, STR(info->type)
+			, STR(info->os)
+			, STR(info->machine)
 			, info->bits
 			, info->big_endian? "big": "little");
 			break;

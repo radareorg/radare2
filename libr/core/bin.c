@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 
+#define STR(x) (x)?(x):""
 // XXX - this may lead to conflicts with set by name
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 //static int r_core_bin_set_env (RCore *r, RBinFile *binfile);
@@ -203,12 +204,12 @@ static int bin_info (RCore *r, int mode) {
 			"\"linenums\":%s,"
 			"\"syms\":%s,"
 			"\"relocs\":%s}",
-			info->rclass, // type
-			info->bclass, // class
+			STR(info->rclass), // type
+			STR(info->bclass), // class
 			info->big_endian? "big": "little",
-			info->machine,
-			info->arch,
-			info->os,
+			STR(info->machine),
+			STR(info->arch),
+			STR(info->os),
 			info->lang?info->lang:"",
 			r_str_bool (info->has_pi),
 			r_str_bool (info->has_canary),
@@ -216,11 +217,11 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool (info->has_crypto),
 			r_str_bool (info->has_va),
 			info->bits,
-			r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info)),
+			r_str_bool ((R_BIN_DBG_STRIPPED & info->dbg_info)),
 			r_str_bool (r_bin_is_static (r->bin)),//R_BIN_DBG_STATIC (info->dbg_info)),
-			r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info),
-			r_str_bool (R_BIN_DBG_SYMS &info->dbg_info),
-			r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info);
+			r_str_bool ((R_BIN_DBG_LINENUMS & info->dbg_info)),
+			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
+			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)));
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_cons_printf ("arch %s\n", info->arch);
