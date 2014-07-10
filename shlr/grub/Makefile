@@ -57,11 +57,11 @@ CFLAGS+=-Iinclude
 CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 
-#ifneq (,$(findstring cygwin,${OSTYPE}))
-#ifneq (,$(findstring mingw32,${OSTYPE}))
+ifeq (,$(findstring cygwin,${OSTYPE}))
+ifeq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-fPIC
-#endif
-#endif
+endif
+endif
 # This fixes a silly GNU gcc build problem in OSX - BLAME! :D
 ifeq (${OSTYPE},darwin)
 CFLAGS+=-DAPPLE_CC
