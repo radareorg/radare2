@@ -6,7 +6,7 @@
 R_LIB_VERSION (r_sign);
 
 R_API RSign *r_sign_new() {
-	RSign *sig = R_NEW (RSign);
+	RSign *sig = R_NEW0 (RSign);
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
 		sig->prefix[0] = '\0';
