@@ -19,8 +19,8 @@ HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDBPATH=$(LTOP)/../shlr/sdb/
-SDB=$(SDBPATH)/sdb
+SDBPATH=$(call rmdblslash,$(LTOP)/../shlr/sdb/)
+SDB=$(call rmdblslash,$(SDBPATH)/sdb)
 
 all: ${SDB}
 	@$(MAKE) compile
