@@ -329,7 +329,6 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	cp = o->plugin;
 	minlen = cp->minstrlen;
 	binfile->o = o;
-	/*o->baddr = 0;*/
 	if (cp->baddr) o->baddr = cp->baddr (binfile);
 	o->loadaddr = o->baddr;
 	if (cp->boffset) o->boffset = cp->boffset (binfile);

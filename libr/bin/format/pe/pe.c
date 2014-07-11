@@ -261,7 +261,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 						}
 					}
 					exp[symctr].name[PE_NAME_LENGTH] = 0;
-					exp[symctr].vaddr = text_vaddr+sr->value;
+					exp[symctr].vaddr = bin->nt_headers->optional_header.ImageBase + text_vaddr+sr->value;
 					exp[symctr].paddr = text_off+sr->value;
 					exp[symctr].ordinal = symctr;
 					exp[symctr].forwarder[0] = 0;
@@ -623,10 +623,9 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		r_sys_perror("malloc (entrypoint)");
 		return NULL;
 	}
-	entry->vaddr = bin->nt_headers->optional_header.AddressOfEntryPoint;
-	if (entry->vaddr == 0) // in PE if EP = 0 then EP = baddr
-		entry->vaddr = bin->nt_headers->optional_header.ImageBase;
-	entry->paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, entry->vaddr);
+	entry->vaddr  = bin->nt_headers->optional_header.AddressOfEntryPoint;
+	entry->paddr  = PE_(r_bin_pe_vaddr_to_paddr)(bin, entry->vaddr);
+	entry->vaddr += bin->nt_headers->optional_header.ImageBase;
 	return entry;
 }
 
@@ -988,14 +987,12 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		return NULL;
 	shdr = bin->section_header;
 	sections_count = bin->nt_headers->file_header.NumberOfSections;
-	if (!(sections = calloc (1, (sections_count + 1) \
-			* sizeof (struct r_bin_pe_section_t)))) {
+	sections = calloc (sections_count + 1, sizeof (struct r_bin_pe_section_t));
+	if (!sections) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
 	}
 	for (i = 0; i < sections_count; i++) {
-		if (shdr[i].SizeOfRawData<1)
-			continue;
 		memcpy (sections[i].name, shdr[i].Name, \
 			PE_IMAGE_SIZEOF_SHORT_NAME);
 		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
