@@ -47,7 +47,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_free (insn, n);
 	cs_close (&handle);
 	fin:
-	return ret;
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
