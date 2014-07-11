@@ -109,38 +109,40 @@ R_API int r_hash_size(int bit) {
 	return 0;
 }
 
+/* Converts a comma separated list of names to the respective bit combination */
 R_API ut64 r_hash_name_to_bits(const char *name) {
-	int i = 0, j, len = 0;
-	char name_lowercase[128];
-	const char* ptr = name_lowercase;
-	ut64 bits = R_HASH_NONE;
+	char tmp[128];
+	int i;
+	const char *ptr;
+	ut64 ret;
 
-	for (j=0;name[j] && j<sizeof (name_lowercase)-1; j++)
-		name_lowercase[j] = tolower (name[j]);
-	name_lowercase[j] = 0;
+	ret = 0;
+	ptr = name;
 
-	while (name_lowercase[i++]) {
-		len++;
-		if (name_lowercase[i] == ',') {
-			for (j=0; hash_name_bytes[j].name; j++) {
-				if (!strncmp (ptr, hash_name_bytes[j].name, len)) {
-					bits |= hash_name_bytes[j].bit;
-					break;
-				}
+	if (!ptr)
+		return ret;
+
+	do {
+		/* Eat everything up to the comma */
+		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) - 1; i++)
+			tmp[i] = *ptr++;
+
+		/* Safety net */
+		tmp[i] = '\0';
+
+		for (i = 0; hash_name_bytes[i].name; i++) {
+			if (!strcasecmp(tmp, hash_name_bytes[i].name)) {
+				ret |= hash_name_bytes[i].bit;
+				break;
 			}
-			ptr = name_lowercase + i + 1;
-			len = -1;
 		}
-		while (name_lowercase[i+1] == ' ') {
-			i++;
+
+		/* Skip the trailing comma, if any */
+		if (*ptr)
 			ptr++;
-		}
-	}
-	for (i=0; hash_name_bytes[i].name; i++) { //last word of the list
-		if (!strcmp (ptr, hash_name_bytes[i].name))
-			bits |= hash_name_bytes[i].bit;
-	}
-	return bits;
+	} while (*ptr);
+
+	return ret;
 }
 
 R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {

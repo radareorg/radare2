@@ -16,7 +16,7 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz);
 static RIO * r_io_bind_get_io(RIOBind *bnd);
 
 R_API RIO *r_io_new() {
-	RIO *io = R_NEW (RIO);
+	RIO *io = R_NEW0 (RIO);
 	if (!io) return NULL;
 	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
 	io->buffer_enabled = 0;
@@ -55,7 +55,7 @@ R_API int r_io_is_listener(RIO *io) {
 }
 
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
-	RBuffer *b = R_NEW (RBuffer);
+	RBuffer *b = R_NEW0 (RBuffer);
 	b->buf = malloc (len);
 	len = r_io_read_at (io, addr, b->buf, len);
 	b->length = (len<0)?0:len;
