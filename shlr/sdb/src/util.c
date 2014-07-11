@@ -220,9 +220,8 @@ SDB_API const char *sdb_type(const char *k) {
 SDB_API int sdb_isjson (const char *k) {
 	int level = 0;
 	int quotes = 0;
-	if (*k!='{' && *k != '[')
+	if (!k || (*k!='{' && *k != '['))
 		return 0;
-	if (k)
 	for (; *k; k++) {
 		if (quotes) {
 			if (*k == '"')
@@ -231,8 +230,7 @@ SDB_API int sdb_isjson (const char *k) {
 		}
 		switch (*k) {
 		case '"':
-			if (quotes) quotes = 0;
-			else quotes = 1;
+			quotes = 1;
 			break;
 		case '[':
 		case '{':
