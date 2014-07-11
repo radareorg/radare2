@@ -9,6 +9,8 @@ R_API RSign *r_sign_new() {
 	RSign *sig = R_NEW (RSign);
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
+        sig->s_head = 0;
+        sig->s_func = 0;
 		sig->prefix[0] = '\0';
 		sig->printf = (PrintfCallback) printf;
 		sig->items = r_list_new ();
