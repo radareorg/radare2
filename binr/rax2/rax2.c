@@ -110,8 +110,10 @@ static int rax (char *str, int len, int last) {
 			case '\0': return !use_stdin ();
 			default:
 				out_mode = (flags^32)? '0': 'I';
-				if (str[1]>='0' && str[1]<='9')
+				if (str[1]>='0' && str[1]<='9') {
+					if (str[2]=='x') out_mode = 'I';
 					return format_output (out_mode, str);
+				}
 				printf ("Usage: rax2 [options] [expr ...]\n");
 				return help ();
 			}
