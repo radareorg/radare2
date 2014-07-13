@@ -224,7 +224,8 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 
 	r_list_foreach (list, it, ptr) {
 		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, R_FALSE);
-		ptr->vaddr += s? s->vaddr: 0;
+		if (s)
+			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
 	}
 }
 
