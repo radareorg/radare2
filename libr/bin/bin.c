@@ -1551,17 +1551,6 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 	return UT64_MAX;
 }
 
-R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	const int use_va = binfile->o->info->has_va;
-	return use_va? vaddr: paddr;
-}
-
-R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	if (!bin || !bin->cur)
-		return UT64_MAX;
-	return r_binfile_get_vaddr (bin->cur, baddr, paddr, vaddr);
-}
-
 R_API ut64 r_bin_get_size (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) return o->size;
