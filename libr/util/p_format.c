@@ -267,7 +267,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%d ; 0x%02x ; '%c' ", 
+					p->printf ("%d ; 0x%02x ; '%c' ",
 						buf[i], buf[i], IS_PRINTABLE (buf[i])?buf[i]:0);
 				}
 				i++;
@@ -361,6 +361,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 						else p->printf (".");
 					}
 				}
+				i++;
 				break;
 			case 'Z': // zero terminated wide string
 				p->printf ("0x%08"PFMT64x" = ", seeki);
@@ -370,6 +371,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					else p->printf (".");
 				}
 				p->printf (" ");
+				i+=2;
 				break;
 			case 's':
 				p->printf ("0x%08"PFMT64x" = ", seeki);
