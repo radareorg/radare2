@@ -893,6 +893,15 @@ R_API int r_str_nlen(const char *str, int n) {
 	return len;
 }
 
+// Length in chars of a wide string (find better name?)
+R_API int r_wstr_clen (const char *s) {
+    int len = 0;
+    if (*s++ == 0) return 0;
+    while (*s++ || *s++)
+        len++;
+    return len+1;
+}
+
 R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	int len, i, li;
 	for (li=i=len=0; str[i] && (n!=len); i++) {
