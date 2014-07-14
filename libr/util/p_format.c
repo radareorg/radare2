@@ -55,7 +55,7 @@ static void print_format_help(RPrint *p) {
 
 /* TODO: needs refactoring */
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
-	int nargs, i, j, nexti, idx, times, otimes, endian, isptr = 0;
+	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	int (*realprintf)(const char *str, ...);
 	int (*oldprintf)(const char *str, ...);
 	const char *argend = fmt+strlen (fmt);
@@ -127,6 +127,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		for (idx=0; i<len && arg<argend && *arg; idx++, arg++) {
 			seeki = seek+i;
 			addr = 0LL;
+			invalid = 0;
 			if (endian)
 				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
 			else     addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
@@ -412,6 +413,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 			default:
 				/* ignore unknown chars */
+				invalid = 1;
 				break;
 			}
 			if (viewflags && p->offname) {
@@ -420,7 +422,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				s = p->offname (p->user, addr);
 				if (s) p->printf ("*(%s)", s);
 			}
-			if (tmp != 'D')
+			if (tmp != 'D' && !invalid)
 				p->printf ("\n");
 			last = tmp;
 		}
