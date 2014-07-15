@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MAKE_JOBS=8
+MAKE_JOBS=12
 [ -z "${PREFIX}" ] && PREFIX=/usr
 
 case "$1" in
