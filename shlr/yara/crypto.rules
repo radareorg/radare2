@@ -31,7 +31,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-rule BLOWFISH_Constants {
+rule BLOWFISH_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for Blowfish constants"
@@ -53,7 +53,7 @@ rule BLOWFISH_Constants {
 	condition:
                 6 of them
 }
-rule MD5_Constants {
+rule MD5_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for MD5 constants"
@@ -75,7 +75,7 @@ rule MD5_Constants {
 	condition:
                 5 of them
 }
-rule RC6_Constants {
+rule RC6_Constants : crypto {
         meta:
                 author = "chort (@chort0)"
                 description = "Look for RC6 magic constants in binary"
@@ -90,7 +90,7 @@ rule RC6_Constants {
                 $c4 = { B979379E }
         condition:
                 2 of them
-}rule RIPEMD160_Constants {
+}rule RIPEMD160_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for RIPEMD-160 constants"
@@ -110,7 +110,7 @@ rule RC6_Constants {
 	condition:
 		5 of them
 }
-rule SHA1_Constants {
+rule SHA1_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for SHA1 constants"
@@ -130,7 +130,7 @@ rule SHA1_Constants {
 	condition:
                 5 of them
 }
-rule SHA256_Constants {
+rule SHA256_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for SHA224/SHA256 constants"
@@ -151,7 +151,7 @@ rule SHA256_Constants {
 	condition:
                 4 of ($c0,$c1,$c2,$c3,$c4,$c5,$c6,$c7) and not ($e0 or $e1)
 }
-rule SHA512_Constants {
+rule SHA512_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for SHA384/SHA512 constants"
@@ -171,8 +171,7 @@ rule SHA512_Constants {
 	condition:
 		5 of them
 }
-
-rule WHIRLPOOL_Constants {
+rule WHIRLPOOL_Constants : crypto {
         meta:
                 author = "phoul (@phoul)"
                 description = "Look for WhirlPool constants"
