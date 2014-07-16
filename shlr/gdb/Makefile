@@ -6,12 +6,12 @@ RANLIB?=ranlib
 LIBNAME=libgdbr
 LIBFILE=$(LIBNAME).$(EXT_SO)
 CFLAGS+=-I$(LIBR)/include
-CFLAGS+=-Iinclude
+CFLAGS+=-Iinclude -I${LIBR}/include
 MAJOR=0
 MINOR=1
 #CFLAGS=-Wall -g -O0 -ggdb # -std=gnu11
 LD=$(CC)
-LDFLAGS=-L /usr/lib -L /usr/local/lib -lr_socket
+LDFLAGS=-L ${LIBR}/socket
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 
