@@ -100,33 +100,18 @@ int send_packet(libgdbr_t* g) {
 		fprintf (stderr, "Initialize libgdbr_t first\n");
 		return -1;
 	}
-	return send (g->fd, g->send_buff, g->send_len, 0);
+	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }
 
 int read_packet(libgdbr_t* g) {
 	int ret = 0;
 	int po_size = 0;
-	fd_set readset;
-	int result = 1;
-	struct timeval tv;
 	if (!g) {
 		fprintf (stderr, "Initialize libgdbr_t first\n");
 		return -1;
 	}
-	tv.tv_sec = 0;
-	tv.tv_usec = 100*1000;
-	while (result > 0) {
-		FD_ZERO (&readset);
-		FD_SET (g->fd, &readset);
-		result = select (g->fd + 1, &readset, NULL, NULL, &tv);
-		if (result > 0) {
-			if (FD_ISSET (g->fd, &readset)) {
-				ret = recv (g->fd, (g->read_buff + \
-					po_size), (g->read_max - \
-					po_size), 0);
-				po_size += ret;
-			}
-		}
+		while (r_socket_ready (g->sock, 0, 100 * 1000) > 0) {
+			po_size += r_socket_read (g->sock, (g->read_buff + po_size), (g->read_max - po_size));
 	}
 	g->read_len = po_size;
 	return po_size;

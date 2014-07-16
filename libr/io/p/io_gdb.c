@@ -77,7 +77,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int i_port = atoi(port);
 	if (gdbr_connect(&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
-		return r_io_desc_new (&r_io_plugin_gdb, riog->desc.fd, file, rw, mode, riog);
+		return r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
 	free (riog);
