@@ -110,7 +110,7 @@ static int r_cmd_yara_show(const char * name) {
 
 	rule = rules->rules_list_head;
 	while (!RULE_IS_NULL(rule)) {
-		if(strstr(rule->identifier, name)) {
+		if(strcasestr(rule->identifier, name)) {
 			r_cons_printf ("%s\n", rule->identifier);
 		}
 		++rule;
