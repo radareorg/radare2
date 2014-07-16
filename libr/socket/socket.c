@@ -435,11 +435,12 @@ R_API int r_socket_flush(RSocket *s) {
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 #if __UNIX__
+	int msecs = usecs / 1000;
 	struct pollfd fds[1];
 	fds[0].fd = s->fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-	return poll ((struct pollfd *)&fds, 1, usecs);
+	return poll ((struct pollfd *)&fds, 1, msecs);
 #elif __WINDOWS__
 	return 1;
 #if XXX_THIS_IS_NOT_WORKING_WELL
