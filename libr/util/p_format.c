@@ -273,7 +273,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					p->printf ("(qword) ");
-					p->printf ("0x%08"PFMT64x" ", addr64);
+					p->printf ("0x%08"PFMT64x"", addr64);
 				}
 				i+= (size==-1) ? 8 : size;
 				break;
@@ -282,7 +282,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%d ; 0x%02x ; '%c' ",
+					p->printf ("%d ; 0x%02x ; '%c'",
 						buf[i], buf[i], IS_PRINTABLE (buf[i])?buf[i]:0);
 				}
 				i+= (size==-1) ? 1 : size;
@@ -292,7 +292,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					realprintf ("?e pf c not yet implemented\n");
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%d ; %d ; '%c' ",
+					p->printf ("%d ; %d ; '%c'",
 						buf[i], (char)buf[i],
 						IS_PRINTABLE (buf[i])?buf[i]:0);
 				}
@@ -333,7 +333,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%"PFMT64d" ", addr);
+					p->printf ("%"PFMT64d"", addr);
 				}
 				i+= (size==-1) ? 4 : size;
 				break;
@@ -348,7 +348,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				} else {
 					ut32 addr32 = (ut32)addr;
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("0x%08"PFMT64x" ", addr32);
+					p->printf ("0x%08"PFMT64x"", addr32);
 				}
 				//if (string_flag_offset(buf, (ut64)addr32, -1))
 				//	p->printf("; %s", buf);
@@ -363,7 +363,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					if (endian)
 						 addr = (*(buf+i))<<8 | (*(buf+i+1));
 					else     addr = (*(buf+i+1))<<8 | (*(buf+i));
-					p->printf ("0x%04x ", addr);
+					p->printf ("0x%04x", addr);
 				}
 				i+= (size==-1) ? 2 : size;
 				break;
@@ -399,7 +399,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
 					}
-					p->printf (" ");
 				}
 				i+=2;
 				break;
@@ -415,7 +414,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				}
 				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
 						seeki, addr);
-				p->printf ("%s ", buffer);
+				p->printf ("%s", buffer);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'S':
@@ -430,7 +429,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				}
 				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
 						seeki, addr);
-				p->printf ("%s ", buffer);
+				p->printf ("%s", buffer);
 				i+= (size==-1) ? 8 : size;
 				break;
 			default:
