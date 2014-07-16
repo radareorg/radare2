@@ -43,13 +43,13 @@ static int (*r_yr_rules_scan_mem)(
     int timeout) = NULL;
 
 
-/* ---- */ 
+/* ---- */
 
 static int callback(int message, YR_RULE* rule, void* data);
 static int r_cmd_yara_add (const char* rules_path);
 static int r_cmd_yara_call(void *user, const char *input);
 static int r_cmd_yara_clear();
-static int r_cmd_yara_help();
+static int r_cmd_yara_help(const RCore* core);
 static int r_cmd_yara_init();
 static int r_cmd_yara_process(const RCore* core, const char* input);
 static int r_cmd_yara_scan(const RCore* core);
@@ -160,13 +160,19 @@ static int r_cmd_yara_add(const char* rules_path) {
 	return R_TRUE;
 }
 
-static int r_cmd_yara_help() {
-    r_cons_printf ("Yara plugin\n"
-		"| add [path] : add yara rules\n"
-		"| clear      : clear all rules\n"
-		"| help       : show this help\n"
-		"| list       : list all rules\n"
-		"| scan       : scan the current file\n");
+static int r_cmd_yara_help(const RCore* core) {
+	const char * help_message[] = {
+		"Usage: yara", "", " Yara plugin",
+		"add", " [file]", "Add yara rules from file",
+		"clear", "", "Clear all rules",
+		"help", "", "Show this help",
+		"list", "", "List all rules",
+		"scan", "", "Scan the current file",
+		NULL
+	};
+
+	r_core_cmd_help (core, help_message);
+
     return R_TRUE;
 }
 
@@ -180,7 +186,7 @@ static int r_cmd_yara_process(const RCore* core, const char* input) {
     else if (!strncmp (input, "list", 4))
         return r_cmd_yara_list ();
     else
-        return r_cmd_yara_help ();
+        return r_cmd_yara_help (core);
 }
 
 static int r_cmd_yara_call(void *user, const char *input) {
@@ -188,7 +194,7 @@ static int r_cmd_yara_call(void *user, const char *input) {
 	if (strncmp (input, "yara", 4))
 		return R_FALSE;
 	else if (strncmp (input, "yara ", 5))
-		return r_cmd_yara_help ();
+		return r_cmd_yara_help (core);
 	const char *args = input+4;
 	if (r_yr_initialize == NULL)
 		if (!r_cmd_yara_init ())
