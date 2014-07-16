@@ -387,20 +387,23 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					while (size--) i++;
 				break;
 			case 'Z': // zero terminated wide string
-				if (size>0) p->printf ("Size not yet implemented\n");
 				if (MUSTSET) {
 					if (strlen(setval) > r_wstr_clen(buf+seeki))
 						eprintf ("Warning: new string is longer than previous one\n");
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					for (; buf[i] && i<len; i+=2) {
+					for (; ((size || size==-1) && buf[i]) && i<len; i+=2) {
 						if (IS_PRINTABLE (buf[i]))
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
+						size -= (size==-1) ? 0 : 2;
 					}
 				}
-				i+=2;
+				if (size == -1)
+					i+=2;
+				else
+					while (size--) i++;
 				break;
 			case 's':
 				p->printf ("0x%08"PFMT64x" = ", seeki);
