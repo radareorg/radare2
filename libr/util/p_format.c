@@ -125,9 +125,22 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		idx = 0;
 		arg = orig;
 		for (idx=0; i<len && arg<argend && *arg; idx++, arg++) {
+			int size;
 			seeki = seek+i;
 			addr = 0LL;
 			invalid = 0;
+			if (arg[0] == '[') {
+				char *end = strchr (arg,']');
+				if (end == NULL) {
+					eprintf ("No end bracket.\n");
+					goto beach;
+				}
+				*end='\0';
+				size = r_num_math (NULL, arg+1);
+				arg = end + 1;
+			} else {
+				size = -1;
+			}
 			if (endian)
 				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
 			else     addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
@@ -243,6 +256,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 #endif
 			case 'e':
+				if (size>0) p->printf ("Size not yet implemented\n");
 				if (MUSTSET) {
 					realprintf ("?e pf e not yet supported\n");
 				} else {
@@ -261,7 +275,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					p->printf ("(qword) ");
 					p->printf ("0x%08"PFMT64x" ", addr64);
 				}
-				i += 8;
+				i+= (size==-1) ? 8 : size;
 				break;
 			case 'b':
 				if (MUSTSET) {
@@ -271,7 +285,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					p->printf ("%d ; 0x%02x ; '%c' ",
 						buf[i], buf[i], IS_PRINTABLE (buf[i])?buf[i]:0);
 				}
-				i++;
+				i+= (size==-1) ? 1 : size;
 				break;
 			case 'c':
 				if (MUSTSET) {
@@ -282,7 +296,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 						buf[i], (char)buf[i],
 						IS_PRINTABLE (buf[i])?buf[i]:0);
 				}
-				i++;
+				i+= (size==-1) ? 1 : size;
 				break;
 			case 'B':
 				if (MUSTSET) {
@@ -299,9 +313,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					for (j=0; j<10; j++)
 						if (IS_PRINTABLE (buf[j]))
 							p->printf ("%c", buf[j]);
+					else p->printf (".");
 					p->printf (")");
 				}
-				i += 4;
+				i+= (size==-1) ? 4 : size;
 				break;
 			case 'f':
 				if (MUSTSET) {
@@ -310,7 +325,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					p->printf ("0x%08"PFMT64x" = %f", seeki,
 						(float)(addr));
 				}
-				i += 4;
+				i+= (size==-1) ? 4 : size;
 				break;
 			case 'i':
 			case 'd': // TODO: support unsigned int?
@@ -320,9 +335,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					p->printf ("%"PFMT64d" ", addr);
 				}
-				i += 4;
+				i+= (size==-1) ? 4 : size;
 				break;
 			case 'D':
+				if (size>0) p->printf ("Size not yet implemented\n");
 				if (p->disasm && p->user)
 					i += p->disasm (p->user, seeki);
 				break;
@@ -336,7 +352,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				}
 				//if (string_flag_offset(buf, (ut64)addr32, -1))
 				//	p->printf("; %s", buf);
-				i += 4;
+				i+= (size==-1) ? 4 : size;
 				break;
 			case 'w':
 			case '1': // word (16 bits)
@@ -349,7 +365,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					else     addr = (*(buf+i+1))<<8 | (*(buf+i));
 					p->printf ("0x%04x ", addr);
 				}
-				i+=2;
+				i+= (size==-1) ? 2 : size;
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
@@ -358,15 +374,20 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					for (; buf[i]&&i<len; i++) {
+					for (; ((size || size==-1) && buf[i]) && i<len; i++) {
 						if (IS_PRINTABLE (buf[i]))
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
+						size -= (size==-1) ? 0 : 1;
 					}
 				}
-				i++;
+				if (size == -1)
+					i++;
+				else
+					while (size--) i++;
 				break;
 			case 'Z': // zero terminated wide string
+				if (size>0) p->printf ("Size not yet implemented\n");
 				if (MUSTSET) {
 					if (strlen(setval) > r_wstr_clen(buf+seeki))
 						eprintf ("Warning: new string is longer than previous one\n");
@@ -387,30 +408,30 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				memset (buffer, '\0', 255);
 				if (p->iob.read_at) {
 					p->iob.read_at (p->iob.io, (ut64)addr,
-						buffer, sizeof (buffer)-8);
+							buffer, sizeof (buffer)-8);
 				} else {
 					printf ("(cannot read memory)\n");
 					break;
 				}
 				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
-					seeki, addr);
+						seeki, addr);
 				p->printf ("%s ", buffer);
-				i += 4;
+				i+= (size==-1) ? 4 : size;
 				break;
 			case 'S':
 				p->printf ("0x%08"PFMT64x" = ", seeki);
 				memset (buffer, '\0', 255);
 				if (p->iob.read_at) {
 					p->iob.read_at (p->iob.io, addr64,
-						buffer, sizeof (buffer)-8);
+							buffer, sizeof (buffer)-8);
 				} else {
 					printf ("(cannot read memory)\n");
 					break;
 				}
 				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
-					seeki, addr);
+						seeki, addr);
 				p->printf ("%s ", buffer);
-				i += 8;
+				i+= (size==-1) ? 8 : size;
 				break;
 			default:
 				/* ignore unknown chars */
