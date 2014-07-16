@@ -198,6 +198,7 @@ int gdbr_init(libgdbr_t* g) {
 		return -1;
 	}
 	g->read_len = 0;
+	g->sock = r_socket_new (0);
 	g->last_code = MSG_OK;
 	g->read_max = 4096;
 	g->connected = 0;
@@ -241,40 +242,12 @@ int gdbr_cleanup(libgdbr_t* g) {
 }
 
 int gdbr_connect(libgdbr_t* g, const char* host, int port) {
-	int	fd;
 	int ret;
-	int	connected;
-	struct protoent		*protocol;
-	struct hostent		*hostaddr;
-	struct sockaddr_in	socketaddr;
-	
-	protocol = getprotobyname ("tcp");
-	if (!protocol) {
-		fprintf (stderr, "Error prot\n");
-		return -1;
-	}
-
-	fd = socket ( PF_INET, SOCK_STREAM, protocol->p_proto);
-	if (fd == -1) {
-		fprintf (stderr, "Error sock\n");
-		return -1;
-	}
-	memset (&socketaddr, 0, sizeof (socketaddr));
-	socketaddr.sin_family = AF_INET;
-	socketaddr.sin_port = htons (port);
-	hostaddr = (struct hostent *)gethostbyname (host);
-
-	if (!hostaddr) {
-		fprintf (stderr, "Error host\n");
-		return -1;
-	}
-	
-	connected = connect (fd, (struct sockaddr *) &socketaddr, sizeof (socketaddr));
-	if (connected == -1) {
-		fprintf (stderr, "Error conn\n");
-		return -1;
-	}
-	g->fd = fd;
+	char tmp[255];
+	ret = snprintf (tmp, 255, "%d", port);
+	if (!ret) return -1;
+	ret = r_socket_connect_tcp (g->sock, host, tmp, 200);
+	if (!ret) return -1;
 	g->connected = 1;
 	// TODO add config possibility here
 	char* message = "qSupported:multiprocess+;qRelocInsn+";
@@ -287,7 +260,7 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 
 int gdbr_disconnect(libgdbr_t* g) {
 	// TODO Disconnect maybe send something to gdbserver
-	close (g->fd);
+	if (!r_socket_close (g->sock)) return -1;
 	g->connected = 0;
 	return 0;
 }

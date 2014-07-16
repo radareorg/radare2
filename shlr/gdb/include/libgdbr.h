@@ -4,21 +4,10 @@
 
 #include <stdint.h>
 #include <unistd.h>
-#if __UNIX__ || __CYGWIN__
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <netdb.h>
-#endif
-#if __WINDOWS__
-#include <windows.h>
-#if !__CYGWIN__
-#include <winsock.h>
-#endif
-#endif
 
 #include "arch.h"
 #include "r_types_base.h"
+#include "r_socket.h"
 
 #define X86_64 ARCH_X86_64
 #define X86_32 ARCH_X86_32
@@ -49,7 +38,7 @@ typedef struct libgdbr_t {
 	ssize_t read_max;
 
 	// is already handled (i.e. already send or ...)
-	int fd; // Filedescriptor // TODO add r_socket stuff from radare
+	RSocket* sock;
 	int connected;
 	int acks;
 	char* data;
