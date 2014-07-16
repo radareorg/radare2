@@ -120,6 +120,43 @@ static int r_cmd_yara_show(const char * name) {
 	return R_TRUE;
 }
 
+static int r_cmd_yara_tag(const char * search_tag) {
+	/* List rules with tag search_tag */
+	YR_RULES* rules;
+	YR_RULE* rule;
+	int tag_length, show_rule = R_FALSE;
+	char * tag_name;
+
+	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		eprintf ("Unable to get rules\n");
+		return R_FALSE;
+	}
+
+	rule = rules->rules_list_head;
+	while (!RULE_IS_NULL(rule)) {
+		tag_name = rule->tags;
+		tag_length = tag_name != NULL ? strlen(tag_name) : 0;
+
+		while (tag_length > 0) {
+			if(r_str_casestr (tag_name, search_tag)) {
+				show_rule = R_TRUE;
+				break;
+			}
+			tag_name += tag_length + 1;
+			tag_length = strlen(tag_name);
+		}
+
+		if (show_rule) {
+			r_cons_printf("%s\n", rule->identifier);
+			show_rule = R_FALSE;
+		}
+		++rule;
+	}
+	r_yr_rules_destroy (rules);
+
+	return R_TRUE;
+}
+
 static int r_cmd_yara_list () {
 	YR_RULES* rules;
 	YR_RULE* rule;
@@ -189,6 +226,7 @@ static int r_cmd_yara_help(const RCore* core) {
 		"list", "", "List all rules",
 		"scan", "", "Scan the current file",
 		"show", " name", "Show rules containing name",
+		"tag", " name", "List rules with tag 'name'",
 		NULL
 	};
 
@@ -208,6 +246,8 @@ static int r_cmd_yara_process(const RCore* core, const char* input) {
         return r_cmd_yara_scan (core);
     else if (!strncmp (input, "show", 4))
         return r_cmd_yara_show (input + 5);
+    else if (!strncmp (input, "tag ", 4))
+        return r_cmd_yara_tag (input + 4);
     else
         return r_cmd_yara_help (core);
 }
