@@ -8,7 +8,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
-	cons->pal.args = Color_BLUE;
+	cons->pal.args = Color_YELLOW;
 	cons->pal.bin = Color_YELLOW;
 	cons->pal.btext = Color_WHITE;
 	cons->pal.call = Color_BGREEN;
@@ -21,7 +21,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.floc = Color_CYAN;
 	cons->pal.flow = Color_CYAN;
 	cons->pal.fname = Color_RED;
-	cons->pal.help = Color_YELLOW;
+	cons->pal.help = Color_GREEN;
 	cons->pal.input = Color_WHITE;
 	cons->pal.invalid = Color_BRED;
 	cons->pal.jmp = Color_GREEN;
