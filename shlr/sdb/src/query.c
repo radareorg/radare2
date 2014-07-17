@@ -29,14 +29,12 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		sb->size = newsize;
 	}
 	memcpy (sb->buf+sb->len, str, len);
-
-	/*nl != 0 -> newline at the end*/
-	if(nl!=0)
-	{
-		memcpy (sb->buf+sb->len+len, "\n", 2);
-		len+=1;
-	}
 	sb->len += len;
+	if (nl) {
+		sb->buf[sb->len++] = '\n';
+		len++;
+	}
+	sb->buf[sb->len] = 0;
 	return sb;
 }
 
@@ -508,11 +506,13 @@ next_quote:
 					int idx = atoi (cmd+1);
 					ok = sdb_array_set (s, p, idx, sval, 0);
 // TODO: handle when idx > sdb_alen
+					if (encode)
+						free (sval);
 				} else {
-					ok = sdb_set (s, p, sval, 0);
+					if (encode) ok = sdb_set_owned (s, p, sval, 0);
+					else ok = sdb_set (s, p, sval, 0);
+
 				}
-				if (encode)
-					free (sval);
 				if (ok) *buf = 0;
 			} else {
 				/* [3]foo */

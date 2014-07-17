@@ -29,7 +29,7 @@ SDB_API Sdb* sdb_new0 () {
 
 SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
         struct stat st = {0};
-	Sdb* s = R_NEW (Sdb);
+	Sdb* s = R_NEW0 (Sdb);
 	if (!s) return NULL;
 	s->dir = NULL;
 	s->refs = 1;
@@ -70,32 +70,23 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 		s->name = strdup (name);
 		s->path = path? strdup (path): NULL;
 	} else {
-		s->dir = NULL;
 		s->last = sdb_now ();
-		s->name = NULL;
-		s->path = NULL;
 		s->fd = -1;
 	}
-	s->options = 0;
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL
 	if (!s->ns)
 		goto fail;
 	s->ns->free = NULL;
-	s->ns_lock = 0;
 	if (!s->ns) goto fail;
-	s->hooks = NULL;
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);
 	s->lock = lock;
-	s->expire = 0LL;
-	s->tmpkv.value = NULL;
 	//s->ht->list->free = (SdbListFree)sdb_kv_free;
 	// if open fails ignore
 	if (global_hook)
 		sdb_hook (s, global_hook, global_user);
 	cdb_init (&s->db, s->fd);
-	cdb_findstart (&s->db);
 	return s;
 fail:
 	free (s->dir);
@@ -132,6 +123,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	free (s->ndump);
 	free (s->dir);
 	free (s->tmpkv.value);
+	s->tmpkv.value_len = 0;
 	if (donull)
 		memset (s, 0, sizeof (Sdb));
 }
@@ -141,7 +133,7 @@ SDB_API int sdb_free (Sdb* s) {
 		if (s->refs>0)
 			s->refs--;
 		if (!s->refs) {
-			sdb_fini (s, 1);
+			sdb_fini (s, 0);
 			s->ht = NULL;
 			free (s);
 			return 1;
@@ -150,12 +142,13 @@ SDB_API int sdb_free (Sdb* s) {
 	return 0;
 }
 
-SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
+SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
 	ut32 hash, pos, len, keylen;
 	ut64 now = 0LL;
 	SdbKv *kv;
 	if (cas) *cas = 0;
 	if (!s||!key) return NULL;
+	// TODO: optimize, iterate once
 	keylen = strlen (key)+1;
 	hash = sdb_hash (key);
 	/* search in memory */
@@ -170,6 +163,7 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 				}
 			}
 			if (cas) *cas = kv->cas;
+			if (vlen) *vlen = kv->value_len;
 			return kv->value;
 		}
 		return NULL;
@@ -183,8 +177,14 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 	len = cdb_datalen (&s->db);
 	if (len == 0)
 		return NULL;
+	if (vlen)
+		*vlen = len;
 	pos = cdb_datapos (&s->db);
 	return s->db.map+pos;
+}
+
+SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
+	return sdb_const_get_len (s, key, NULL, cas);
 }
 
 SDB_API char *sdb_get (Sdb* s, const char *key, /*OUT*/ut32 *cas) {
@@ -246,28 +246,26 @@ SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
 		memmove (p, p+vlen, strlen (p+vlen)+1);
 		mod = 1;
 	}
-	if (mod)
-		sdb_set (s, key, v, 0);
-	free (v);
+	if (mod) sdb_set_owned (s, key, v, 0);
+	else free (v);
 	return 0;
 }
 
 SDB_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
-	int ret, kl, vl;
+	int kl, vl;
 	const char *p;
 	char *o;
 	if (!s || !key || !*key || !value || !*value)
 		return 0;
-	p = sdb_const_get (s, key, 0);
+	p = sdb_const_get_len (s, key, &kl, 0);
 	if (!p) return sdb_set (s, key, value, cas);
-	kl = strlen (p);
+	kl--;
+	//kl = strlen (p);
 	vl = strlen (value);
 	o = malloc (kl+vl+1);
 	memcpy (o, p, kl);
 	memcpy (o+kl, value, vl+1);
-	ret = sdb_set (s, key, o, cas);
-	free (o);
-	return ret;
+	return sdb_set_owned (s, key, o, cas);
 }
 
 // set if not defined
@@ -308,13 +306,19 @@ SDB_API void sdb_reset (Sdb* s) {
 
 // TODO: too many allocs here. use slices
 SDB_API SdbKv* sdb_kv_new (const char *k, const char *v) {
-	int vl = strlen (v)+1;
+	SdbKv *kv;
+	int vl = v?strlen (v)+1:0;
 	if (!sdb_check_key (k))
 		return NULL;
-	SdbKv *kv = R_NEW (SdbKv);
+	if (!sdb_check_value (v))
+		return NULL;
+	kv = R_NEW (SdbKv);
 	strncpy (kv->key, k, sizeof (kv->key)-1);
-	kv->value = malloc (vl);
-	memcpy (kv->value, v, vl);
+	kv->value_len = vl;
+	if (vl) {
+		kv->value = malloc (vl);
+		memcpy (kv->value, v, vl);
+	} else kv->value = NULL;
 	kv->cas = nextcas ();
 	kv->expire = 0LL;
 	return kv;
@@ -325,10 +329,11 @@ SDB_API void sdb_kv_free (SdbKv *kv) {
 	free (kv);
 }
 
-SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
+static int sdb_set_internal (Sdb* s, const char *key, char *val, int owned, ut32 cas) {
 	ut32 hash, klen;
 	SdbHashEntry *e;
 	SdbKv *kv;
+	int vlen;
 	if (!s || !key)
 		return 0;
 	if (!sdb_check_key (key))
@@ -337,38 +342,60 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	if (!sdb_check_value (val))
 		return 0;
 	klen = strlen (key)+1;
+	vlen = strlen (val)+1;
 	hash = sdb_hash (key);
 	cdb_findstart (&s->db);
 	e = ht_search (s->ht, hash);
 	if (e) {
 		if (cdb_findnext (&s->db, hash, key, klen)) {
-			int vl = strlen (val)+1;
 			kv = e->data;
 			if (cas && kv->cas != cas)
 				return 0;
 			kv->cas = cas = nextcas ();
-			free (kv->value);
-			kv->value = malloc (vl);
-			memcpy (kv->value, val, vl);
+			kv->value_len = vlen;
+			if (owned) {
+				if (vlen>kv->value_len) {
+					free (kv->value);
+					kv->value = malloc (vlen);
+				}
+				kv->value = val; // owned
+			} else {
+				memcpy (kv->value, val, vlen);
+			}
 		} else ht_delete_entry (s->ht, e);
 		sdb_hook_call (s, key, val);
 		return cas;
 	}
 	// empty values are also stored
 	// TODO store only the ones that are in the CDB
-	kv = sdb_kv_new (key, val);
+	if (owned) {
+		kv = sdb_kv_new (key, NULL);
+		kv->value = val; // owned
+		kv->value_len = vlen; // owned
+	} else {
+		kv = sdb_kv_new (key, val);
+	}
 	kv->cas = nextcas ();
 	ht_insert (s->ht, hash, kv, NULL);
 	sdb_hook_call (s, key, val);
 	return kv->cas;
 }
 
+SDB_API int sdb_set_owned (Sdb* s, const char *key, char *val, ut32 cas) {
+	return sdb_set_internal (s, key, val, 1, cas);
+}
+
+SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
+	return sdb_set_internal (s, key, (char*)val, 0, cas);
+}
+
+
 SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	SdbListIter *iter;
 	char *k, *v;
 	SdbKv *kv;
 	sdb_dump_begin (s);
-	while (sdb_dump_dupnext (s, &k, &v)) {
+	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
 		ut32 hash = sdb_hash (k);
 		SdbHashEntry *hte = ht_search (s->ht, hash);
 		if (hte) {
@@ -419,7 +446,7 @@ SDB_API int sdb_sync (Sdb* s) {
 		return 0;
 // TODO: use sdb_foreach here
 	sdb_dump_begin (s);
-	while (sdb_dump_dupnext (s, &k, &v)) {
+	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
 		ut32 hash = sdb_hash (k);
 		SdbHashEntry *hte = ht_search (s->ht, hash);
 		if (hte) {
@@ -453,7 +480,7 @@ SDB_API int sdb_sync (Sdb* s) {
 	return 1;
 }
 
-// TODO: optimize: do not use syscalls here
+// TODO: optimize: do not use syscalls here. we can just do mmap and pointer arithmetics
 static int getbytes(Sdb *s, char *b, int len) {
 	if (read (s->fd, b, len) != len)
 		return -1;
@@ -468,25 +495,34 @@ SDB_API void sdb_dump_begin (Sdb* s) {
 }
 
 SDB_API SdbKv *sdb_dump_next (Sdb* s) {
+	int vl = 0;
 	char *k = NULL, *v = NULL;
-	if (!sdb_dump_dupnext (s, &k, &v))
+	// we dont need to malloc, because all values are null terminated in memory.
+	if (!sdb_dump_dupnext (s, &k, &v, &vl))
 		return NULL;
+	vl--;
 	strncpy (s->tmpkv.key, k, SDB_KSZ-1);
 	s->tmpkv.key[SDB_KSZ-1] = '\0';
 	free (k);
 	free (s->tmpkv.value);
 	s->tmpkv.value = v;
+	s->tmpkv.value_len = vl;
 	return &s->tmpkv;
 }
 
-SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
+// TODO: make it static? internal api?
+SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 	ut32 vlen = 0, klen = 0;
+	if (_vlen)
+		*_vlen = 0;
 	if (s->fd==-1)
 		return 0;
 	if (!cdb_getkvlen (s->fd, &klen, &vlen))
 		return 0;
 	if (klen<1 || vlen<1)
 		return 0;
+	if (_vlen)
+		*_vlen = vlen;
 	if (key) {
 		*key = 0;
 		if (klen>0 && klen<0xff) {
@@ -564,8 +600,7 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 		return 0;
 	cdb_read (&s->db, buf, len, pos);
 	buf[len] = 0;
-	sdb_set (s, key, buf, cas);
-	free (buf);
+	sdb_set_owned (s, key, buf, cas);
 	return sdb_expire_set (s, key, expire, cas); // recursive
 }
 

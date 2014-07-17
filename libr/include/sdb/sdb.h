@@ -39,6 +39,7 @@ extern "C" {
 typedef struct sdb_kv {
 	char key[SDB_KSZ];
 	char *value;
+	int value_len;
 	ut64 expire;
 	ut32 cas;
 } SdbKv;
@@ -92,7 +93,9 @@ int sdb_unset (Sdb*, const char *key, ut32 cas);
 int sdb_unset_matching(Sdb *s, const char *k);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
 const char *sdb_const_get (Sdb*, const char *key, ut32 *cas);
+const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas);
 int sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
+int sdb_set_owned (Sdb* s, const char *key, char *val, ut32 cas);
 int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas);
@@ -120,7 +123,7 @@ int sdb_disk_unlink (Sdb* s);
 /* iterate */
 void sdb_dump_begin (Sdb* s);
 SdbKv *sdb_dump_next (Sdb* s);
-int sdb_dump_dupnext (Sdb* s, char **key, char **value);
+int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen);
 
 /* numeric */
 char *sdb_itoa (ut64 n, char *s, int base);

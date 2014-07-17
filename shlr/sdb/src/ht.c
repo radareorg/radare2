@@ -115,13 +115,13 @@ static int rehash = 0;
 static void ht_rehash(SdbHash *ht, ut32 new_size_index) {
 	SdbHash old_ht = *ht;
 	SdbHashEntry *e;
-	if (new_size_index >= ARRAY_SIZE (hash_sizes))
+	if (!ht || new_size_index >= ARRAY_SIZE (hash_sizes))
 		return;
 	// XXX: This code is redupped! fuck't
 	ht->table = calloc (hash_sizes[new_size_index].size, sizeof (*ht->table));
 	if (!ht->table)
 		return;
-rehash = 1;
+	rehash = 1;
 	ht->size_index = new_size_index;
 	ht->size = hash_sizes[ht->size_index].size;
 	ht->rehash = hash_sizes[ht->size_index].rehash;
@@ -166,7 +166,7 @@ void ht_free(SdbHash *ht) {
 
 void *ht_lookup(SdbHash *ht, ut32 hash) {
 	SdbHashEntry *entry;
-	if (!ht->list->head) return NULL;
+	if (!ht || !ht->list || !ht->list->head) return NULL;
 	entry = ht_search (ht, hash);
 	return entry? entry->data : NULL;
 }
@@ -191,6 +191,8 @@ void ht_set(SdbHash *ht, ut32 hash, void *data) {
  */
 int ht_insert(SdbHash *ht, ut32 hash, void *data, SdbListIter *iter) {
 	ut32 hash_address;
+	if (!ht || !data)
+		return 0;
 
 	if (ht->entries >= ht->max_entries)
 		ht_rehash (ht, ht->size_index + 1);
@@ -225,7 +227,7 @@ int ht_insert(SdbHash *ht, ut32 hash, void *data, SdbListIter *iter) {
 }
 
 void ht_delete_entry(SdbHash *ht, SdbHashEntry *entry) {
-	if (!entry)
+	if (!ht || !entry)
 		return;
 	if (!rehash && entry->iter) {
 		ls_delete (ht->list, entry->iter);

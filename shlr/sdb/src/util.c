@@ -121,6 +121,7 @@ SDB_API char *sdb_aslice(char *out, int from, int to) {
 }
 
 // TODO: find better name for it
+// TODO: optimize, because this is the main bottleneck for sdb_array_set()
 SDB_API int sdb_alen(const char *str) {
 	int len = 1;
 	const char *n, *p = str;

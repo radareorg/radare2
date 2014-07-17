@@ -49,7 +49,7 @@ static int sdb_dump (const char *db, int json) {
 	sdb_dump_begin (s);
 	if (json)
 		printf ("{");
-	while (sdb_dump_dupnext (s, &k, &v)) {
+	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
 		if (json) {
 			if (!strcmp (v, "true") || !strcmp (v, "false")) {
 				printf ("%s\"%s\":%s", comma, k, v);
@@ -121,7 +121,7 @@ static int dbdiff (const char *a, const char *b) {
 	Sdb *A = sdb_new (NULL, a, 0);
 	Sdb *B = sdb_new (NULL, b, 0);
 	sdb_dump_begin (A);
-	while (sdb_dump_dupnext (A, &k, &v)) {
+	while (sdb_dump_dupnext (A, &k, &v, NULL)) {
 		v2 = sdb_const_get (B, k, 0);
 		if (!v2) {
 			printf ("%s=\n", k);
@@ -129,7 +129,7 @@ static int dbdiff (const char *a, const char *b) {
 		}
 	}
 	sdb_dump_begin (B);
-	while (sdb_dump_dupnext (B, &k, &v)) {
+	while (sdb_dump_dupnext (B, &k, &v, NULL)) {
 		if (!v || !*v) continue;
 		v2 = sdb_const_get (A, k, 0);
 		if (!v2 || strcmp (v, v2)) {
