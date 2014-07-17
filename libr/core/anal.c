@@ -411,6 +411,7 @@ static int iscodesection(RCore *core, ut64 addr) {
 
 // XXX: This function takes sometimes forever
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	RAnalHint *hint;
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RListIter *iter, *iter2;
 	int buflen, fcnlen = 0;
@@ -479,6 +480,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	if (!(fcn = r_anal_fcn_new ())) {
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
+	}
+	hint = r_anal_hint_get (core->anal, at);
+	if (hint && hint->bits == 16) {
+		// expand 16bit for function
+		fcn->bits = 16;
 	}
 	fcn->addr = at;
 	fcn->size = 0;

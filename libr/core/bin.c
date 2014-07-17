@@ -686,11 +686,13 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 }
 
 static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
+	RBinInfo *info = r_bin_get_info (r->bin);
 	char str[R_FLAG_NAME_SIZE];
 	RList *symbols;
 	RListIter *iter;
 	RBinSymbol *symbol;
 	int i = 0;
+	int is_arm = info && info->arch && !strcmp (info->arch, "arm");
 
 	if ((symbols = r_bin_get_symbols (r->bin)) == NULL)
 		return R_FALSE;
@@ -719,6 +721,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
+		int is_thumb = 0;
 		char *name, *dname, *cname;
 		//ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
@@ -731,6 +734,11 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 			// XXX - need something to handle overloaded symbols (e.g. methods)
 			// void add (int i, int j);
 			// void add (float i, int j);
+			is_thumb = (is_arm && va && symbol->vaddr &1);
+			if (is_thumb) {
+				r_anal_hint_set_bits (r->anal, addr, 16);
+			}
+
 			r_name_filter (name, 80);
 			if (cname) {
 				RFlagItem *flag_item = NULL;
