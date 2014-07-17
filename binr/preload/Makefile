@@ -11,6 +11,9 @@ CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
 endif
+ifeq ($(OSTYPE),gnulinux)
+LDFLAGS+=-Wl,-soname,libr2.${EXT_SO}.${VERSION}
+endif
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
