@@ -491,9 +491,8 @@ int main(int argc, char **argv) {
 			datalen = 0;
 		}
 		code = malloc (strlen (p)+1);
-		if (!code) {
+		if (!code)
 		    return 1;
-	    }
 		codelen = r_hex_str2bin (p, code);
 		if (!arch) arch = "x86";
 		if (!bits) bits = 32;
