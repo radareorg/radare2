@@ -134,21 +134,19 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
+		char *filtered_name;
 		if (r_config_get_i (r->config, "bin.strings"))
 			r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
 		r_list_foreach (list, iter, string) {
+			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->vaddr,
+				string->paddr): string->paddr;
 			if (r_cons_singleton()->breaked) break;
-			r_meta_add (r->anal, R_META_TYPE_STRING,
-				va?baddr+string->vaddr:string->paddr,
-				(va?baddr+string->vaddr:string->paddr)+string->size,
-				string->string);
-			char *filtered_name = strdup (string->string);
+			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr+string->size, string->string);
+			filtered_name = strdup (string->string);
 			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
-			r_flag_set (r->flags, str,
-				va? baddr+string->vaddr:string->paddr,
-				string->size, 0);
+			r_flag_set (r->flags, str, baddr+addr, string->size, 0);
 			free (filtered_name);
 		}
 		//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
