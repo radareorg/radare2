@@ -112,7 +112,7 @@ void hexdump(void* ptr, ut64 len, ut64 offset) {
 		curr_offset = x+offset;
 
 		do {
-			p += sprintf (p, "%02hhx ", data[x]);
+			p += sprintf (p, "%02x ", data[x]);
 			*c++ = (data[x] >= 32 && data[x] <= 127) ? data[x] : '.';
 		} while (++x % 16 && x < len);
 
