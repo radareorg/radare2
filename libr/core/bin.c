@@ -120,7 +120,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				"\"type\":\"%s\",\"string\":\"%s\"}",
 				iter->p? ",": "", addr,
 				string->length, string->size,
-				string->type=='W'?"wide":"ascii", q);
+				string->type=='w'?"wide":"ascii", q);
 			free (q);
 		}
 		r_cons_printf ("]");
@@ -139,14 +139,15 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->vaddr,
-				string->paddr): string->paddr;
+			ut64 addr = va? string->vaddr: string->paddr;
+			 //r_bin_get_vaddr (bin, baddr, string->vaddr,
+		//		string->paddr): string->paddr;
 			if (r_cons_singleton()->breaked) break;
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr+string->size, string->string);
 			filtered_name = strdup (string->string);
 			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
-			r_flag_set (r->flags, str, baddr+addr, string->size, 0);
+			r_flag_set (r->flags, str, addr, string->size, 0);
 			free (filtered_name);
 		}
 		//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
@@ -513,8 +514,8 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			else r_cons_printf ("%s{\"name\":null,",
 					iter->p?",":"");
 			r_cons_printf ("\"type\":\"%s\","
-				"\"paddr\":%"PFMT64d","
-				"\"physical\":%"PFMT64d"}",
+				"\"vaddr\":%"PFMT64d","
+				"\"paddr\":%"PFMT64d"}",
 				bin_reloc_type_name (reloc),
 				reloc->vaddr, reloc->paddr);
 		}
@@ -523,13 +524,13 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "relocs");
 		r_list_foreach (relocs, iter, reloc) {
+			ut64 addr = va? reloc->vaddr: reloc->paddr;
 			if (reloc->import && reloc->import->name[0]) {
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s", reloc->import->name);
 				r_name_filter (str, 0);
 				//r_str_replace_char (str, '$', '_');
-				r_flag_set (r->flags, str, va?reloc->vaddr:reloc->paddr,
-					bin_reloc_size (reloc), 0);
+				r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
 			} else {
 				// TODO(eddyb) implement constant relocs.
 			}
@@ -537,18 +538,19 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (relocs, iter, reloc) {
-			r_cons_printf ("0x%08"PFMT64x"  %s\n",
-				va?reloc->vaddr:reloc->paddr, reloc->import ? reloc->import->name : "");
+			ut64 addr = va? reloc->vaddr: reloc->paddr;
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr,
+				reloc->import ? reloc->import->name : "");
 		}
 	} else {
 		if (mode) {
 			r_cons_printf ("fs relocs\n");
 			r_list_foreach (relocs, iter, reloc) {
+				ut64 addr = va? reloc->vaddr: reloc->paddr;
 				if (reloc->import) {
 					char *str = strdup (reloc->import->name);
 					r_str_replace_char (str, '$', '_');
-					r_cons_printf ("f reloc.%s @ 0x%08"PFMT64x"\n", str,
-						va?reloc->vaddr:reloc->paddr);
+					r_cons_printf ("f reloc.%s @ 0x%08"PFMT64x"\n", str, addr);
 					free (str);
 				} else {
 					// TODO(eddyb) implement constant relocs.
@@ -558,8 +560,9 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		} else {
 			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
+				ut64 addr = va? reloc->vaddr: reloc->paddr;
 				r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=%s",
-					reloc->vaddr, reloc->paddr, bin_reloc_type_name (reloc));
+					addr, reloc->paddr, bin_reloc_type_name (reloc));
 				if (reloc->import && reloc->import->name[0])
 					r_cons_printf (" %s", reloc->import->name);
 				if (reloc->addend) {

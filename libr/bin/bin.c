@@ -102,10 +102,10 @@ R_API int r_bin_file_cur_set_plugin (RBinFile *binfile, RBinPlugin *plugin) {
 }
 
 enum {
-	R_STRING_TYPE_DETECT = -1,
-	R_STRING_TYPE_ASCII,
-	R_STRING_TYPE_UTF8,
-	R_STRING_TYPE_WIDE,
+	R_STRING_TYPE_DETECT = '?',
+	R_STRING_TYPE_ASCII = 'a',
+	R_STRING_TYPE_UTF8 = 'u',
+	R_STRING_TYPE_WIDE = 'w',
 };
 
 #define R_STRING_SCAN_BUFFER_SIZE 2048
@@ -113,7 +113,9 @@ enum {
 static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 from, const ut64 to, int type) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 needle = from, str_start;
-	int count = 0, i, rc, runes, str_type;
+	int count = 0, i, rc, runes, str_type = R_STRING_TYPE_DETECT;
+	if (type == -1)
+		type = R_STRING_TYPE_DETECT;
 
 	if (!list || !buf || !min)
 		return -1;
