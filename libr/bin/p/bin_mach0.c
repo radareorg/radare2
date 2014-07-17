@@ -13,7 +13,7 @@ static RBinInfo* info(RBinFile *arch);
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	struct MACH0_(r_bin_mach0_obj_t) *bin = (struct MACH0_(r_bin_mach0_obj_t) *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin && bin->kv) return bin->kv;
 	return NULL;
 }
 
@@ -55,7 +55,7 @@ static int destroy(RBinFile *arch) {
 static ut64 baddr(RBinFile *arch) {
 	struct MACH0_(r_bin_mach0_obj_t) *bin;
 
-	if (!arch)
+	if (!arch || !arch->o || !arch->o->bin_obj)
 		return 0;
 
 	bin = arch->o->bin_obj;
@@ -265,7 +265,9 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!ret) return NULL;
 
 	ret->lang = "c";
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+	if (arch->file)
+		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+	else *ret->file = 0;
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_class) (arch->o->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
@@ -287,8 +289,10 @@ static RBinInfo* info(RBinFile *arch) {
 		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
+	if (arch && arch->o && arch->o->bin_obj) {
 	ret->has_crypto = ((struct MACH0_(r_bin_mach0_obj_t)*)
 		arch->o->bin_obj)->has_crypto;
+	} else ret->has_crypto = 0;
 	ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
 	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
 	/* TODO detailed debug info */

@@ -278,7 +278,9 @@ static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+	if (arch->file)
+		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+	else *ret->file = 0;
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = PE_(r_bin_pe_get_class) (arch->o->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);

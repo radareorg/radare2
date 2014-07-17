@@ -612,7 +612,7 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 	struct r_bin_mach0_symbol_t *symbols;
 	int from, to, i, j, s, stridx, symbols_size;
 
-	if (!bin->symtab || !bin->symstr)
+	if (!bin || !bin->symtab || !bin->symstr)
 		return NULL;
 	symbols_size = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
@@ -1011,10 +1011,11 @@ int MACH0_(r_bin_mach0_get_bits)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 }
 
 int MACH0_(r_bin_mach0_is_big_endian)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
-	return bin->endian;
+	return bin && bin->endian;
 }
 
 const char* MACH0_(r_bin_mach0_get_os)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin)
 	switch (bin->os) {
 	case 1: return "osx";
 	case 2: return "ios";
@@ -1023,6 +1024,7 @@ const char* MACH0_(r_bin_mach0_get_os)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 }
 
 char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin)
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_VAX: 	return strdup ("vax");
 	case CPU_TYPE_MC680x0:	return strdup ("mc680x0");
@@ -1044,6 +1046,7 @@ char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 
 // TODO: use const char* 
 char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin)
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_VAX:
 		switch (bin->hdr.cpusubtype) {
@@ -1182,10 +1185,11 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 }
 
 int MACH0_(r_bin_mach0_is_pie)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
-	return (bin->hdr.filetype == MH_EXECUTE && bin->hdr.flags & MH_PIE);
+	return (bin && bin->hdr.filetype == MH_EXECUTE && bin->hdr.flags & MH_PIE);
 }
 
 char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin)
 	switch (bin->hdr.filetype) {
 	case MH_OBJECT:		return strdup ("Relocatable object");
 	case MH_EXECUTE:	return strdup ("Executable file");

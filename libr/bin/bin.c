@@ -758,13 +758,13 @@ static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
 
 static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 	RBinInfo *info = obj ? obj->info : NULL;
-	//RBinSection *s;
-	//RListIter *s_iter = NULL;
-	RIOBind *iob = bf ? &(bf->rbin->iob) : NULL;
-	RIO *io = iob ? iob->get_io(iob) : NULL;
-
-	if (!io || !info) return R_FALSE;
-
+	RIOBind *iob;
+	RIO *io;
+	if (!info || !bf || !obj || !bf->rbin)
+		return R_FALSE;
+	iob = bf ? &(bf->rbin->iob) : NULL;
+	io = iob ? iob->get_io (iob) : NULL;
+	if (!io || !iob) return R_FALSE;
 #if 0
 	// clear loaded sections
 	//r_io_section_clear (io);
@@ -785,7 +785,8 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	RBinObject *o;
 	Sdb *sdb = binfile ? binfile->sdb : NULL;
 
-	if (sz == 0 || sz > bytes_sz) return NULL;
+	if (sz<0) return NULL;
+	//if (sz == 0 || sz > bytes_sz) return NULL;
 	o = R_NEW0 (RBinObject);
 	o->obj_size = bytes && (bytes_sz >= sz+offset) ? sz : 0;
 	o->boffset = offset;
@@ -858,8 +859,9 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 	binfile->objs = r_list_newf ((RListFree)r_bin_object_free);
 
 	if (!binfile->buf) {
-		r_bin_file_free (binfile);
-		return NULL;
+		//r_bin_file_free (binfile);
+		binfile->buf = r_buf_new ();
+	//	return NULL;
 	}
 
 	if (sdb) {
@@ -1192,8 +1194,16 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 	RBinObject *obj = NULL;
 	if (binfile) {
 		obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
+	} else {
+		void *plugin = r_bin_get_binplugin_by_name (bin, name);
+		if (plugin) {
+			if (bin->cur)
+				bin->cur->curplugin = plugin;
+			binfile = r_bin_file_new (bin, "-", NULL, 0, 0, 0, 999, NULL, NULL);
+			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
+		}
 	}
-	return binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
+	return (binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj));
 }
 
 R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char *arch, int bits, const char *name) {
@@ -1621,7 +1631,7 @@ R_API int r_bin_file_set_cur_by_fd (RBin * bin, ut32 bin_fd) {
 
 R_API int r_bin_file_set_cur_binfile_obj (RBin * bin, RBinFile *bf, RBinObject *obj) {
 	RBinPlugin *plugin = NULL;
-	if (!bf || !obj) return R_FALSE;
+	if (!bin || !bf || !obj) return R_FALSE;
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
