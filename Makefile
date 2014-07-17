@@ -26,6 +26,7 @@ PWD=$(shell pwd)
 
 all: plugins.cfg
 	${MAKE} -C libr/util
+	${MAKE} -C libr/socket
 	${MAKE} -C shlr
 	${MAKE} -C libr
 	${MAKE} -C binr
