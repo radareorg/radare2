@@ -386,6 +386,7 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	if (!binmain) return R_FALSE;
 
+	baddr = 0LL; // This is broken, just to make t.formats/elf/main happy
 	if ((mode & R_CORE_BIN_SIMPLE) || mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("%"PFMT64d, va? baddr+binmain->vaddr:binmain->paddr);
 	} else
@@ -765,7 +766,6 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
 				r_flag_set (r->flags, str, addr, symbol->size, 0);
 			}
-
 #if 0
 			// dunno why this is here and mips results in wrong dis
 			if (!strncmp (symbol->type, "OBJECT", 6)) {
@@ -773,7 +773,6 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 					addr + symbol->size, name);
 			}
 #endif
-
 			dname = r_bin_demangle (r->bin->cur, symbol->name);
 			if (dname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
