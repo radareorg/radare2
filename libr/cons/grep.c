@@ -220,11 +220,9 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			if (cons->grep.begin)
 				hit = (p == in)? 1: 0;
 			else hit = !cons->grep.neg;
-			if (cons->grep.end){
-                for (j=0; cons->grep.strings[i][j] && p[j]; j++);
-                if (!(cons->grep.strings[i][j] || p[j]))
-                    hit = 0;
-            }
+			// TODO: optimize without strlen without breaking t/feat_grep (grep end)
+			if (cons->grep.end && (strlen (cons->grep.strings[i]) != strlen (p)))
+				hit = 0 ;
 			if (!cons->grep.amp)
 				break;
 		}
