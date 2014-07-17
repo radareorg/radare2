@@ -987,6 +987,8 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		return NULL;
 	shdr = bin->section_header;
 	sections_count = bin->nt_headers->file_header.NumberOfSections;
+	if (sections_count == 0xffff)
+		sections_count = 16; // hackaround for 65k sections file
 	sections = calloc (sections_count + 1, sizeof (struct r_bin_pe_section_t));
 	if (!sections) {
 		r_sys_perror ("malloc (sections)");
