@@ -23,6 +23,16 @@ SDB_URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
+ifneq (,$(findstring CYGWIN,${OSTYPE}))
+ifneq (,$(findstring MINGW32,${OSTYPE}))
+CFLAGS_SHARED?=-fPIC
+else
+CFLAGS_SHARED=
+endif
+else
+CFLAGS_SHARED=
+endif
+
 all: sdb/sdb libgdbr capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
@@ -45,7 +55,7 @@ $(SDBLIB) sdb/sdb:
 		cp -f src/sdb src/.sdb
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
-	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
+	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 	cp -f sdb/src/.sdb sdb/sdb
