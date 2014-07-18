@@ -42,6 +42,7 @@
 #endif
 #if __WIN32__ || MINGW32
   #include <winsock.h>
+  typedef int socklen_t;
 #if __WIN32__ || __CYGWIN__ || MINGW32
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
