@@ -45,7 +45,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
 	int off = 0;
-	if (len<0)
+	if (len<0 || !buf)
 		return R_FALSE;
 
 	if (type == -1) {
@@ -115,7 +115,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 		arena = reg->regset[i].arena;
 		newsize = 0;
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			int regsize_in_bytes = r->size / 8;
+			//int regsize_in_bytes = r->size / 8;
 			// XXX: bits2bytes doesnt seems to work fine 
 			size = BITS2BYTES (r->offset+r->size);
 			newsize = R_MAX (size, newsize);
