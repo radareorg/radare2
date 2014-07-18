@@ -1396,7 +1396,6 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 }
 
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
-handle_print_as_string (core, ds);
 	if (ds->analop.ptr != UT64_MAX && ds->analop.ptr) {
 		char msg[32];
 		int bsz = len - idx;
@@ -1409,7 +1408,7 @@ handle_print_as_string (core, ds);
 			strcat (msg, "\"");
 		}
 		r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, ds->analop.ptr);
-	}
+	} else handle_print_as_string (core, ds);
 }
 
 static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
