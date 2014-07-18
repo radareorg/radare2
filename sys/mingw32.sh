@@ -11,7 +11,11 @@ unset LDFLAGS
 
 CFGFLAGS="--without-ewf --with-ostype=windows"
 
-if [ -x /usr/bin/i686-w64-mingw32-gcc ]; then
+type i686-pc-mingw32-gcc >/dev/null 2>&1
+if [ $? = 0 ]; then
+	C=i686-pc-mingw32-gcc
+	H=i686-unknown-windows
+elif [ -x /usr/bin/i686-w64-mingw32-gcc ]; then
 	C=i686-w64-mingw32-gcc
 	H=i686-unknown-windows
 elif [ -x /usr/bin/pacman ]; then
