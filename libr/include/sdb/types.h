@@ -16,6 +16,17 @@
 #define SDB_API
 #endif
 
+#if __CYGWIN__
+#define ULLFMT "ll"
+#define USE_MMAN 1
+#elif __WIN32__ || MINGW32
+#define ULLFMT "I64"
+#define USE_MMAN 0
+#else
+#define ULLFMT "ll"
+#define USE_MMAN 1
+#endif
+
 #if __WIN32__ || __CYGWIN__ || MINGW32
 #undef __WINDOWS__
 #define __WINDOWS__ 1

@@ -8,14 +8,6 @@
 
 #define KVLSZ 4
 
-#if __WIN32__ || __CYGWIN__ || MINGW32
-#define ULLFMT "I64"
-#define USE_MMAN 0
-#else
-#define ULLFMT "ll"
-#define USE_MMAN 1
-#endif
-
 extern char *cdb_alloc(unsigned int n);
 extern void cdb_alloc_free(void*);
 extern int cdb_alloc_re(void);

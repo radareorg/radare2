@@ -12,8 +12,10 @@ static Sdb *s = NULL;
 
 static void terminate(int sig UNUSED) {
 	if (!s) return;
-	if (save && !sdb_sync (s))
+	if (save && !sdb_sync (s)) {
+		sdb_free (s);
 		exit (1);
+	}
 	sdb_free (s);
 	exit (0);
 }

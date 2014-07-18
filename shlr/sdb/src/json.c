@@ -316,7 +316,7 @@ SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 			case 'l':
 				JSONSTR_ALLOCATE (32);
 				arg_l = va_arg (ap, unsigned long long);
-				snprintf (tmp, sizeof (tmp), "0x%llx", arg_l);
+				snprintf (tmp, sizeof (tmp), "0x%"ULLFMT"x", arg_l);
 				memcpy (s->buf+s->len, tmp, strlen (tmp));
 				s->len += strlen (tmp);
 				break;
