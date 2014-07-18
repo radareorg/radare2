@@ -23,7 +23,7 @@ SDB_URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-ifneq (,$(findstring CYGWIN,${OSTYPE})$(findstring MINGW32,${OSTYPE}))
+ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE}))
 CFLAGS_SHARED=
 else
 CFLAGS_SHARED=-fPIC
