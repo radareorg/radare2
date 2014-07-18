@@ -149,7 +149,8 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			r_socket_flush (rap_s->fd);
 			break;
 		default:
-			eprintf ("unknown command 0x%02hhx\n", rap_s->buf[0]);
+			eprintf ("unknown command 0x%02x\n", \
+				(unsigned int)(unsigned char)rap_s->buf[0]);
 			r_socket_close (rap_s->fd);
 			ret = -1;
 			break;

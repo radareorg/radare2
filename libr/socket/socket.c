@@ -32,7 +32,7 @@ R_API int r_socket_is_connected (RSocket *s) {
 #if __WINDOWS__
 	char buf[2];
 	r_socket_block_time (s, 0, 0);
-	int ret = recv (s->fd, &buf, 1, MSG_PEEK);
+	ssize_t ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 	r_socket_block_time (s, 1, 0);
 	return ret? R_TRUE: R_FALSE;
 #else
@@ -284,9 +284,11 @@ R_API int r_socket_port_by_name(const char *name) {
 }
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
+#if __UNIX__
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
+#endif
 	if (r_sandbox_enable (0))
 		return R_FALSE;
 #if __WINDOWS__
@@ -393,11 +395,12 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 }
 
 R_API int r_socket_block_time (RSocket *s, int block, int sec) {
-	int ret;
+#if __UNIX__
+	int ret, flags;
+#endif
 	if (!s) return R_FALSE;
 #if __UNIX__
-	{
-	int flags = fcntl (s->fd, F_GETFL, 0);
+	flags = fcntl (s->fd, F_GETFL, 0);
 	if (flags < 0)
 		return R_FALSE;
 	ret = fcntl (s->fd, F_SETFL, block?
@@ -405,7 +408,6 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 			(flags | O_NONBLOCK));
 	if (ret < 0)
 		return R_FALSE;
-	}
 #elif __WINDOWS__
 	// HACK: nonblocking io on w32 behaves strange
 	return R_TRUE;
@@ -464,7 +466,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 R_API char *r_socket_to_string(RSocket *s) {
 #if __WINDOWS__
 	char *str = malloc (32);
-	snprintf (str, sizeof (str), "fd%d", s->fd);
+	snprintf (str, 31, "fd%d", s->fd);
 	return str;
 #elif __UNIX__
 	char *str = NULL;
