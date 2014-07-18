@@ -85,7 +85,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
         int is_html = r_cons_singleton ()->is_html;
         int is_json = opts & R_CORE_ANAL_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
-	int i, j, line = 0, oline = 0, idx = 0;
+	int line = 0, oline = 0, idx = 0;
 	ut64 at;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
