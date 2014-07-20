@@ -101,16 +101,15 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
-					cmdstr = realloc (cmdstr, idx + strlen (filestr) + (is_html?7:3));
-					memcpy (cmdstr + idx, filestr, strlen (filestr));
-					idx += strlen (filestr);
+					int flen = strlen (filestr);
+					cmdstr = realloc (cmdstr, idx + flen + 8);
+					memcpy (cmdstr + idx, filestr, flen);
+					idx += flen;
 					if (is_json)
-						memcpy(cmdstr + idx, "\\n", 2);
+						memcpy (cmdstr + idx, "\\n", 3);
 					else if (is_html)
-						memcpy(cmdstr + idx, "<br />", 6);
-					else
-						memcpy(cmdstr + idx, "\\l", 2);
-					cmdstr[idx + (is_html?7:3)] = 0;
+						memcpy (cmdstr + idx, "<br />", 7);
+					else memcpy (cmdstr + idx, "\\l", 3);
 					free (filestr);
 				}
 			}

@@ -19,7 +19,7 @@ function Ajax (method, uri, body, fn) {
 
 function get_graph() {
   Ajax ('GET', "/cmd/ag $$", '', function (x) {
-    document.getElementById ('mainCanvas').innerHTML = x;
+    document.getElementById ('mainCanvas').innerHTML = x.replace (/\\l/g,"\n");
     setMenu ();
     resizeCanvas ();
     initPageObjects ();
