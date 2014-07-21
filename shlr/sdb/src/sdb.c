@@ -352,15 +352,20 @@ static int sdb_set_internal (Sdb* s, const char *key, char *val, int owned, ut32
 			if (cas && kv->cas != cas)
 				return 0;
 			kv->cas = cas = nextcas ();
-			kv->value_len = vlen;
 			if (owned) {
 				if (vlen>kv->value_len) {
 					free (kv->value);
 					kv->value = malloc (vlen);
 				}
+				kv->value_len = vlen;
 				kv->value = val; // owned
 			} else {
+				if (vlen>kv->value_len) {
+					free (kv->value);
+					kv->value = strdup (val);
+				}
 				memcpy (kv->value, val, vlen);
+				kv->value_len = vlen;
 			}
 		} else ht_delete_entry (s->ht, e);
 		sdb_hook_call (s, key, val);

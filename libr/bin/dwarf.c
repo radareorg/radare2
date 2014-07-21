@@ -458,8 +458,11 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 			(adj_opcode % hdr->line_range), regs->line);
 	}
 	if (binfile && binfile->sdb_addrinfo) {
-		add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
-			hdr->file_names[regs->file - 1].name, regs->line);
+		int idx = regs->file -1;
+		if(idx>0 && idx<hdr->file_names_count) {
+			add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
+					hdr->file_names[regs->file - 1].name, regs->line);
+		}
 	}
 	regs->basic_block = DWARF_FALSE;
 	regs->prologue_end = DWARF_FALSE;
