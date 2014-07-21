@@ -1083,16 +1083,18 @@ R_API double r_bin_java_raw_to_double(const ut8* raw, ut64 offset) {
 }
 
 R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 offset, const ut8 * buf, const ut64 len) {
-	RBinJavaField *method;
 	ut32 i, idx;
 	const ut8 * f_buf = buf + offset;
 	ut64 adv = 0;
 	RBinJavaCPTypeObj *item = NULL;
-	method = (RBinJavaField *) R_NEW0(RBinJavaField);
-	method->metas = (RBinJavaMetaInfo *) R_NEW0(RBinJavaMetaInfo);
+	RBinJavaField *method = (RBinJavaField *) R_NEW0(RBinJavaField);
 	if (bin == NULL || method == NULL || method->metas == NULL) {
-		eprintf ("Unable to allocate memory for method or meta information\n");
-		if (method) free(method->metas);
+		eprintf ("Unable to allocate memory for method information\n");
+		return NULL;
+	}
+	method->metas = (RBinJavaMetaInfo *) R_NEW0(RBinJavaMetaInfo);
+	if (method->metas == NULL) {
+		eprintf ("Unable to allocate memory for meta information\n");
 		free(method);
 		return NULL;
 	}
@@ -1175,18 +1177,20 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 }
 
 R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 offset, const ut8 * buffer, const ut64 len ) {
-	RBinJavaField *field;
 	RBinJavaAttrInfo* attr;
 	ut32 i, idx;
 	ut8 buf[8];
 	RBinJavaCPTypeObj *item = NULL;
 	const ut8 *f_buf = buffer + offset;
 	ut64 adv = 0;
-	field = (RBinJavaField *) R_NEW0(RBinJavaField);
+	RBinJavaField *field = (RBinJavaField *) R_NEW0(RBinJavaField);
+	if (bin == NULL || field == NULL) {
+		eprintf ("Unable to allocate memory for field information\n");
+		return NULL;
+	}
 	field->metas = (RBinJavaMetaInfo *) R_NEW0(RBinJavaMetaInfo);
-	if (bin == NULL || field == NULL || field->metas == NULL) {
-		eprintf ("Unable to allocate memory for field or meta information\n");
-		if (field) free(field->metas);
+	if (field->metas == NULL) {
+		eprintf ("Unable to allocate memory for meta information\n");
 		free(field);
 		return NULL;
 	}
@@ -3514,8 +3518,9 @@ R_API ut64 r_bin_java_source_code_file_attr_calc_size(RBinJavaAttrInfo* attr) {
 
 R_API RBinJavaAttrInfo* r_bin_java_synthetic_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
-	RBinJavaAttrInfo* attr = NULL;
-	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	if (attr == NULL)
+		return NULL;
 	offset += 6;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SYNTHETIC_ATTR;
 	attr->size = offset;
