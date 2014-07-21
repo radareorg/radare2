@@ -533,7 +533,7 @@ R_API int r_run_start(RRunProfile *p) {
 			return 1;
 		}
 		// TODO: use posix_spawn
-		exit (execv (p->_program, (const char **)p->_args));
+		exit (execv (p->_program, (char* const*)p->_args));
 	}
 	return 0;
 }

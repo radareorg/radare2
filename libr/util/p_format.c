@@ -387,7 +387,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
-					if (strlen(setval) > strlen(buf+seeki))
+					if (strlen(setval) > strlen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one \n");
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
@@ -406,7 +406,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 			case 'Z': // zero terminated wide string
 				if (MUSTSET) {
-					if (strlen(setval) > r_wstr_clen(buf+seeki))
+					if (strlen(setval) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {

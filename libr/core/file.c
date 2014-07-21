@@ -672,7 +672,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	RIODesc *desc = fh && fh->desc? fh->desc : NULL;
-	RCoreFile *prev_cf = r->file != fh ? r->file : NULL;
+	RCoreFile *prev_cf = r && r->file != fh ? r->file : NULL;
 	// XXX -these checks are intended to *try* and catch
 	// stale objects.  Unfortunately, if the file handle
 	// (fh) is stale and freed, and there is more than 1

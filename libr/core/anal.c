@@ -1257,6 +1257,8 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 
 	//if (addr != core->offset) {
 		buf = malloc (len);
+		if (buf == NULL)
+			return R_FALSE;
 		memset (buf, 0xff, len);
 		r_io_read_at (core->io, addr, buf, len);
 	//}

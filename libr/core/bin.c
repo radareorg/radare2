@@ -694,7 +694,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 	RListIter *iter;
 	RBinSymbol *symbol;
 	int i = 0;
-	int is_arm = info && *info->arch && !strcmp (info->arch, "arm");
+	int is_arm = info && !strcmp (info->arch, "arm");
 
 	if ((symbols = r_bin_get_symbols (r->bin)) == NULL)
 		return R_FALSE;
