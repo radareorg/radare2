@@ -78,12 +78,11 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 	case UD_OP_CONST:
 	case UD_OP_JIMM:
 	case UD_OP_IMM:
-		n = getval (op);
-		if (op->type == UD_OP_JIMM)
-			n += u->pc;
+		n = getval (op) & mask;
+		if (op->type == UD_OP_JIMM) n += u->pc;
 		if (n>=0 && n<256)
 			sprintf (src, "%"PFMT64d, n & mask);
-		else sprintf (src, "0x%"PFMT64x, n & mask);
+		else sprintf (src, "0x%"PFMT64x, n&mask);
 		break;
 	case UD_OP_REG:
 		idx = op->base-UD_R_AL;
@@ -177,6 +176,8 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	r_strbuf_init (&op->esil);
 	if (anal->decode && (handler = udis86_esil_get_handler (u.mnemonic))) {
 		info.oplen = oplen;
+		//if (anal->bits==32)
+			info.bitmask = UT32_MAX;
 		if (handler->argc > 0) {
 			info.n = getval (u.operand);
 			getarg (dst, &u, info.bitmask, 0);

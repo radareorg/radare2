@@ -701,6 +701,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.filter", "true", "Replace numbers in disassembly using flags containing a dot in the name in disassembly");
+	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "If enabled show ascii-art lines at disassembly");
@@ -778,7 +779,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	/* debug */
-	SETCB("dbg.status", "true", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
+	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
 	if (core->cons->rows>30) // HACKY

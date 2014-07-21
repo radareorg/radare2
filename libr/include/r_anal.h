@@ -753,7 +753,15 @@ enum {
 	R_ANAL_ESIL_FLAG_CARRY = 2,
 	R_ANAL_ESIL_FLAG_OVERFLOW = 4,
 	R_ANAL_ESIL_FLAG_PARITY = 8,
+	R_ANAL_ESIL_FLAG_SIGN = 16,
 	// ...
+};
+enum {
+	R_ANAL_TRAP_NONE = 0,
+	R_ANAL_TRAP_UNHANDLED = 1,
+	R_ANAL_TRAP_BREAKPOINT = 2,
+	R_ANAL_TRAP_DIVBYZERO = 3,
+	R_ANAL_TRAP_HALT = 4,
 };
 #define ESIL struct r_anal_esil_t
 typedef struct r_anal_esil_t {
@@ -765,6 +773,9 @@ typedef struct r_anal_esil_t {
 	int repeat;
 	int debug;
 	ut64 flags;
+	int trap;
+	ut32 trap_code; // extend into a struct to store more exception info?
+// parity flag?
 	/* callbacks */
 	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);

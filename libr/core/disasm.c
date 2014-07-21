@@ -59,6 +59,7 @@ typedef struct r_disam_options_t {
 	int show_flags;
 	int show_bytes;
 	int show_comments;
+	int show_fcnlines;
 	int show_cmtflgrefs;
 	int show_cycles;
 	int show_stackptr;
@@ -229,6 +230,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
@@ -328,6 +330,11 @@ static void handle_deinit_ds (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_set_pre (RDisasmState *ds, const char * str) {
+	if (!ds->show_fcnlines) {
+		str = "";
+		if (ds->pre && !*ds->pre)
+			return;
+	}
 	free (ds->pre);
 	ds->pre = strdup (str);
 }
@@ -673,6 +680,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 							f->name, f->size, core->cons->vline[LINE_VERT]); // |-
 					}
 				} else {
+					char *korner = "";
 					const char *fmt = ds->show_color?
 						"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
 						"%s (%s) %s %d\n%s ";
@@ -684,19 +692,20 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 					if (item)
 						corner = 0;
 #endif
+					korner = ds->show_fcnlines? core->cons->vline[corner]: "";
+					handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
 					if (ds->show_color) {
-						r_cons_printf (fmt, ds->color_fline,
-							core->cons->vline[RUP_CORNER], ds->color_fname,
+						r_cons_printf (fmt, ds->color_fline, ds->pre, ds->color_fname,
 							(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 							f->name, f->size, corner);
 						r_cons_printf ("%s%s "Color_RESET,
-							ds->color_fline, core->cons->vline[corner]);
+							ds->color_fline, korner);
 					} else {
-						r_cons_printf (fmt, core->cons->vline[RUP_CORNER],
+						r_cons_printf (fmt, ds->pre, 
 							(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-							f->name, f->size, core->cons->vline[corner]);
+							f->name, f->size, korner);
 					}
 				}
 				if (sign) r_cons_printf ("// %s\n", sign);
@@ -707,18 +716,18 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				ds->pre = r_str_concat (ds->pre, " ");
 				ds->stackptr = 0;
 			} else if (f->addr+f->size-ds->analop.size== ds->at) {
+				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
 				if (ds->show_color) {
-					r_cons_printf ("%s%s "Color_RESET,
-						ds->color_fline, core->cons->vline[RDWN_CORNER]);
+					r_cons_printf ("%s%s "Color_RESET, ds->color_fline, ds->pre);
 				} else {
-					r_cons_printf ("%s ", core->cons->vline[RDWN_CORNER]);
+					r_cons_printf ("%s ", ds->pre);
 				}
 			} else if (ds->at > f->addr && ds->at < f->addr+f->size-1) {
+				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				if (ds->show_color) {
-					r_cons_printf ("%s%s "Color_RESET,
-						ds->color_fline, core->cons->vline[LINE_VERT]);
+					r_cons_printf ("%s%s "Color_RESET, ds->color_fline, ds->pre);
 				} else {
-					r_cons_printf ("%s ", core->cons->vline[LINE_VERT]);
+					r_cons_printf ("%s ", ds->pre);
 				}
 				//ds->pre = "| "; // TOFIX!
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);

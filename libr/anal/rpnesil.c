@@ -4,6 +4,7 @@
 #include <r_types.h>
 
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
+#define cpuflag(x,y) if (y) { R_BIT_SET (&esil->flags, FLG(x)); } else { R_BIT_UNSET (&esil->flags, FLG(x)); }
 static int esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num);
 static int esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num);
 
@@ -95,6 +96,8 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	// this is: set
 	esil->debug = 1;
 	esil->anal = anal;
+	esil->trap = 0;
+	esil->trap_code = 0;
 	//esil->user = NULL;
 	esil->reg_read = internal_esil_reg_read;
 	esil->reg_write = internal_esil_reg_write;
@@ -243,6 +246,32 @@ static int esil_andeq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_oreq(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	int sizeofreg=32; 
+	if (esil->anal->bits==64)
+		sizeofreg=64; 
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num |= num2;
+			cpuflag (ZERO, !num);
+			cpuflag (CARRY, 0);
+			cpuflag (OVERFLOW, 0);
+			cpuflag (SIGN, num>>(sizeofreg-1));
+			esil_reg_write (esil, dst, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_andeq: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static int esil_xoreq(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, num2;
@@ -262,11 +291,65 @@ static int esil_xoreq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_syscall_linux_i386(RAnalEsil *esil) {
+	ut32 sn, ret = 0;
+	char *usn = r_anal_esil_pop (esil);
+	if (usn) {
+		sn = (ut32) r_num_get (NULL, usn);
+	} else sn = 0x80;
+
+	if (sn == 3) {
+		// trap
+		esil->trap = R_ANAL_TRAP_BREAKPOINT;
+		esil->trap_code = 3;
+		return -1;
+	}
+
+	if (sn != 0x80) {
+		eprintf ("Interrupt 0x%x not handled.", sn);
+		esil->trap = R_ANAL_TRAP_UNHANDLED;
+		esil->trap_code = sn;
+		return -1;
+	}
+#undef r
+#define r(x) r_reg_getv(esil->anal->reg, "##x##")
+#undef rs
+#define rs(x,y) r_reg_setv(esil->anal->reg, "##x##",y)
+	switch (r(eax)) {
+	case 1:
+		printf ("exit(%d)\n", (int)r(ebx));
+		rs(eax, -1);
+		// never return. stop execution somehow, throw an exception
+		break;
+	case 3:
+		ret = r(edx);
+		printf ("ret:%d = read(fd:%"PFMT64d", ptr:0x%08"PFMT64x", len:%"PFMT64d")\n",
+			(int)ret, r(ebx), r(ecx), r(edx));
+		rs(eax, ret);
+		break;
+	case 4:
+		ret = r(edx);
+		printf ("ret:%d = write(fd:%"PFMT64d", ptr:0x%08"PFMT64x", len:%"PFMT64d")\n",
+			(int)ret, r(ebx), r(ecx), r(edx));
+		rs(eax, ret);
+		break;
+	case 5:
+		ret = -1;
+		printf ("fd:%d = open(file:0x%08"PFMT64x", mode:%"PFMT64d", perm:%"PFMT64d")\n",
+			(int)ret, r(ebx), r(ecx), r(edx));
+		rs(eax, ret);
+		break;
+	}
+#undef r
+#undef rs
+	return 0;
+}
+
 static int esil_syscall(RAnalEsil *esil) {
 	// pop number
 	// resolve arguments and run syscall handler
 	eprintf ("SYSCALL: Not yet implemented\n");
-	return 0;
+	return esil_syscall_linux_i386 (esil);
 }
 
 static int esil_cmp(RAnalEsil *esil) {
@@ -317,26 +400,49 @@ JBE : CF = 1 || ZF = 1
 #endif
 }
 
+/*
+ * Expects a string in the stack. Each char of the string represents a CPU flag.
+ * Those relations are associated by the CPU itself and are used to move values
+ * from the internal ESIL into the RReg instance.
+ *
+ * For example:
+ *   zco,?=     # update zf, cf and of
+ * 
+ * If we want to update the esil value of a specific flag we use the =? command
+ * 
+ *    zf,z,=?    # esil[zf] = r_reg[zf]
+ *
+ * Defining new cpu flags
+ */
 static int esil_ifset(RAnalEsil *esil) {
-	// set RReg flags acording to esil->flags
-	//ut64 num = 0;
-	char *src = r_anal_esil_pop (esil);
-	eprintf ("UPDATE FLAGS (%s)\n", src);
-	esil_reg_write (esil, "zf", R_BIT_CHK(&esil->flags, FLG(ZERO)));
-	esil_reg_write (esil, "cf", R_BIT_CHK(&esil->flags, FLG(CARRY)));
-	esil_reg_write (esil, "of", R_BIT_CHK(&esil->flags, FLG(OVERFLOW)));
-	esil_reg_write (esil, "pf", R_BIT_CHK(&esil->flags, FLG(PARITY)));
+	char *s, *src = r_anal_esil_pop (esil);
+	for (s=src; *s; s++) {
+		switch (*s) {
+		case 'z':
+			esil_reg_write (esil, "zf", R_BIT_CHK(&esil->flags, FLG(ZERO)));
+			break;
+		case 'c':
+			esil_reg_write (esil, "cf", R_BIT_CHK(&esil->flags, FLG(CARRY)));
+			break;
+		case 'o':
+			esil_reg_write (esil, "of", R_BIT_CHK(&esil->flags, FLG(OVERFLOW)));
+			break;
+		case 'p':
+			esil_reg_write (esil, "pf", R_BIT_CHK(&esil->flags, FLG(PARITY)));
+			break;
+		}
+	}
+	free (src);
 	return 0;
 }
 
 static int esil_if(RAnalEsil *esil) {
-	ut64 num = 0;
+	ut64 onum, num = 0;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
-		if (!isregornum (esil, src, &num)) {
+		if (!isregornum (esil, src, &onum)) {
 			int zf = R_BIT_CHK (&esil->flags, FLG(ZERO));
 			int cf = R_BIT_CHK (&esil->flags, FLG(CARRY));
-			num = 0;
 			if (!strcmp (src, "z")) {
 				// equal, zero
 				if (!zf) num = 1;
@@ -363,7 +469,7 @@ static int esil_if(RAnalEsil *esil) {
 			if (!strcmp (src, "be")) {
 				// below or equal
 				if (!zf) num = 1;
-			}
+			} else num = onum;
 		}
 		if (!num) {
 			// condition not matching, skipping until }
@@ -476,6 +582,33 @@ static int esil_xor(RAnalEsil *esil) {
 	if (dst && esil_reg_read (esil, dst, &num)) {
 		if (src && isregornum (esil, src, &num2)) {
 			num ^= num2;
+			cpuflag (ZERO, !num);
+			r_anal_esil_pushnum (esil, num);
+			ret = 1;
+		} else {
+			eprintf ("esil_xor: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_or(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	int sizeofreg=32; 
+	if (esil->anal->bits==64)
+		sizeofreg=64; 
+	if (dst && esil_reg_read (esil, dst, &num)) {
+		if (src && isregornum (esil, src, &num2)) {
+			num |= num2;
+			cpuflag (ZERO, !num);
+			cpuflag (CARRY, 0);
+			cpuflag (OVERFLOW, 0);
+			cpuflag (SIGN, num>>(sizeofreg-1));
 			r_anal_esil_pushnum (esil, num);
 			ret = 1;
 		} else {
@@ -489,6 +622,10 @@ static int esil_xor(RAnalEsil *esil) {
 
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 	int i;
+	if (esil->trap) {
+		eprintf ("ESIL TRAP type %d 0x%x\n",
+			esil->trap, esil->trap_code);
+	}
 	if (esil->stackptr<1) 
 		return 0;
 	eprintf ("StackDump:\n");
@@ -508,8 +645,12 @@ static int esil_div(RAnalEsil *esil) {
 // TODO: check overflow
 			if (s == 0) {
 				eprintf ("esil_div: Division by zero!\n");
+				esil->trap = R_ANAL_TRAP_DIVBYZERO;
+				esil->trap_code = 0;
 			} else  {
-				r_anal_esil_pushnum (esil, d/s);
+				ut64 res = d/s;
+				cpuflag (ZERO, !res);
+				r_anal_esil_pushnum (esil, res);
 			}
 			ret = 1;
 		}
@@ -552,8 +693,10 @@ static int esil_mul(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && isregornum (esil, src, &s)) {
 		if (dst && isregornum (esil, dst, &d)) {
-// TODO: check overflow
-			r_anal_esil_pushnum (esil, d*s);
+			ut64 res = d*s;
+			cpuflag (ZERO, !res);
+			cpuflag (OVERFLOW, ((res<d)||(res<s))); // check sign maybe? its unsigned!
+			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
 			eprintf ("esil_mul: empty stack\n");
@@ -593,8 +736,9 @@ static int esil_add (RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && isregornum (esil, src, &s)) {
 		if (dst && isregornum (esil, dst, &d)) {
-// TODO: check overflow
-			r_anal_esil_pushnum (esil, d+s);
+			ut64 res = d+s;
+			cpuflag (OVERFLOW, (res<d || res < s));
+			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		}
 	} else {
@@ -614,7 +758,9 @@ static int esil_addeq (RAnalEsil *esil) {
 // src = src - dst;
 	if (src && isregornum (esil, src, &s)) {
 		if (dst && isregornum (esil, dst, &d)) {
-			esil_reg_write (esil, dst, s+d);
+			ut64 res = d+s;
+			cpuflag (OVERFLOW, (res<d || res < s));
+			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		}
 	} else {
@@ -705,6 +851,7 @@ static int esil_peek1(RAnalEsil *esil) {
 		snprintf (res, sizeof (res), "0x%x", buf);
 		r_anal_esil_push (esil, res);
 	}
+	free (dst);
 	return ret;
 }
 
@@ -720,6 +867,7 @@ static int esil_peek2(RAnalEsil *esil) {
 		snprintf (res, sizeof (res), "0x%hx", *n16);
 		r_anal_esil_push (esil, res);
 	}
+	free (dst);
 	return ret;
 }
 
@@ -735,6 +883,7 @@ static int esil_peek4(RAnalEsil *esil) {
 		snprintf (res, sizeof (res), "0x%x", *n32);
 		r_anal_esil_push (esil, res);
 	}
+	free (dst);
 	return ret;
 }
 
@@ -751,6 +900,8 @@ static int esil_poke8(RAnalEsil *esil) {
 				(const ut8*)&num8, sizeof (num8));
 		}
 	}
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -766,6 +917,7 @@ static int esil_peek8(RAnalEsil *esil) {
 		snprintf (res, sizeof (res), "0x%"PFMT64x, *n64);
 		r_anal_esil_push (esil, res);
 	}
+	free (dst);
 	return ret;
 }
 
@@ -783,6 +935,7 @@ typedef int RAnalEsilCmd(RAnalEsil *esil);
 
 static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 //TODO: use RCmd here?
+// TODO: Implement rotate >>>= and <<<=
 	if (!strcmp (word, "$")) { *cmd = &esil_syscall; return 1; } else
 	if (!strcmp (word, "==")) { *cmd = &esil_cmp; return 1; } else
 	if (!strcmp (word, "?=")) { *cmd = &esil_ifset; return 1; } else
@@ -794,6 +947,8 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
 	if (!strcmp (word, ">>=")) { *cmd = &esil_lsreq; return 1; } else
 	if (!strcmp (word, "&")) { *cmd = &esil_and; return 1; } else
 	if (!strcmp (word, "&=")) { *cmd = &esil_andeq; return 1; } else
+	if (!strcmp (word, "|")) { *cmd = &esil_or; return 1; } else
+	if (!strcmp (word, "|=")) { *cmd = &esil_oreq; return 1; } else
 	if (!strcmp (word, "!")) { *cmd = &esil_neg; return 1; } else
 	if (!strcmp (word, "!=")){ *cmd = &esil_negeq; return 1; } else 
 	if (!strcmp (word, "=")) { *cmd = &esil_eq; return 1; } else
@@ -844,6 +999,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int wordi = 0;
 	char word[64];
 	const char *ostr = str;
+	esil->trap = 0;
 	loop:
 	esil->repeat = 0;
 	wordi = 0;
