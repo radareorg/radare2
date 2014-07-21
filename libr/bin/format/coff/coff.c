@@ -81,20 +81,11 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	return addr;
 }
 
-static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
-{
-	ut16 magic;
+static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
+	ut16 magic = *(ut16 *)obj->b->buf;
+	obj->endian = (magic == COFF_FILE_MACHINE_H8300)?1:0;
 
-	magic = *(ut16 *)obj->b->buf;
-	switch(magic) {
-		case COFF_FILE_MACHINE_H8300:
-			obj->endian = 1;
-			break;
-		default:
-			obj->endian = 0;
-	}
-
-	r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
+	(void)r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
 
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF)
 		r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
@@ -102,41 +93,32 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 	return R_TRUE;
 }
 
-static int r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj)
-{
+static int r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
 	if (!obj->hdr.f_opthdr)
 		return 0;
-
-	r_buf_fread_at (obj->b, obj->hdr.f_opthdr, (ut8 *)&obj->opt_hdr, obj->endian? "2S6I": "2s6i", 1);
-
+	(void)r_buf_fread_at (obj->b, obj->hdr.f_opthdr,
+		(ut8 *)&obj->opt_hdr, obj->endian? "2S6I": "2s6i", 1);
 	return 0;
 }
 
-static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
-{
-	ut64 offset;
-
-	offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr * sizeof (struct coff_opt_hdr));
+static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
+	ut64 offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr * sizeof (struct coff_opt_hdr));
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF)
 		offset += 2;
-
 	obj->scn_hdrs = calloc(obj->hdr.f_nscns, sizeof(struct coff_scn_hdr));
-	r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", obj->hdr.f_nscns);
-
+	(void)r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs,
+		obj->endian? "8c6I2S1I": "8c6i2s1i", obj->hdr.f_nscns);
 	return 0;
 }
 
-static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
-{
+static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 	obj->symbols = calloc(obj->hdr.f_nsyms, sizeof(struct coff_symbol));
-	r_buf_fread_at (obj->b, obj->hdr.f_symptr, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);
-
+	(void)r_buf_fread_at (obj->b, obj->hdr.f_symptr, (ut8 *)obj->symbols,
+		obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);
 	return 0;
 }
 
-static int r_bin_coff_init(struct r_bin_coff_obj *obj, struct r_buf_t *buf)
-{
-	obj->size = buf->length;
+static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf) {
 	obj->b = r_buf_new ();
 	obj->size = buf->length;
 	if (!r_buf_set_bytes (obj->b, buf->buf, obj->size)){
@@ -148,26 +130,17 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, struct r_buf_t *buf)
 
 	r_bin_coff_init_scn_hdr(obj);
 	r_bin_coff_init_symtable(obj);
-
 	return R_TRUE;
 }
 
-void r_bin_coff_free(struct r_bin_coff_obj *obj)
-{
-	if (obj->scn_hdrs)
-		free(obj->scn_hdrs);
-
-	if (obj->symbols)
-		free(obj->symbols);
-
-	free(obj);
+void r_bin_coff_free(struct r_bin_coff_obj *obj) {
+	free (obj->scn_hdrs);
+	free (obj->symbols);
+	free (obj);
 }
 
-struct r_bin_coff_obj* r_bin_coff_new_buf(struct r_buf_t *buf)
-{
-	struct r_bin_coff_obj* bin = R_NEW0(struct r_bin_coff_obj);
-
-	r_bin_coff_init(bin, buf);
-
+struct r_bin_coff_obj* r_bin_coff_new_buf(struct r_buf_t *buf) {
+	struct r_bin_coff_obj* bin = R_NEW0 (struct r_bin_coff_obj);
+	r_bin_coff_init (bin, buf);
 	return bin;
 }

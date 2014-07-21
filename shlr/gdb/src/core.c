@@ -371,7 +371,7 @@ int gdbr_write_reg(libgdbr_t* g, const char* name, char* value, int len) {
 	static int P = 1;
 	int i = 0;
 	while ( g->registers[i].size > 0) {
-		if (strcmp(g->registers[i].name, name) == 0) {
+		if (strcmp (g->registers[i].name, name) == 0) {
 			break;
 		}
 		i++;
@@ -394,15 +394,19 @@ int gdbr_write_reg(libgdbr_t* g, const char* name, char* value, int len) {
 }
 
 int gdbr_write_registers(libgdbr_t* g, char* registers) {
+	uint64_t buffer_size;
+	int ret, i = 0;
+	unsigned int x, len;
+	char* command, *reg, *buff;
 	// read current register set
-	gdbr_read_registers (g);
 
-	unsigned int x, len = strlen(registers);
-	char* buff = calloc(len, sizeof(char));
+	gdbr_read_registers (g);
+	len = strlen (registers);
+	buff = calloc (len, sizeof(char));
 	if (!buff)
 		return -1;
-	memcpy(buff, registers, len);
-	char* reg = strtok(buff, ",");
+	memcpy (buff, registers, len);
+	reg = strtok(buff, ",");
 	while ( reg != NULL ) {
 		char* name_end = strchr (reg, '=');
 		if (name_end == NULL) {
@@ -413,7 +417,6 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 		*name_end = '\0'; // change '=' to '\0'
 
 		// time to find the current register
-		int i = 0;
 		while ( g->registers[i].size > 0) {
 			if (strcmp(g->registers[i].name, reg) == 0) {
 				const uint64_t register_size = g->registers[i].size;
@@ -443,9 +446,8 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 
 	free (buff);
 
-	uint64_t buffer_size = g->data_len * 2 + 8;
-	int ret;
-	char* command = calloc(buffer_size, sizeof(char));
+	buffer_size = g->data_len * 2 + 8;
+	command = calloc(buffer_size, sizeof(char));
 	if (!command)
 		return -1;
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
@@ -492,20 +494,22 @@ int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint t
 	char tmp[255] = {};
 	int ret = 0;
 	switch (type) {
-		case BREAKPOINT:
-			ret = snprintf (tmp, 255, "%s,%lx,1", CMD_BP, address);
-			break;
-		case HARDWARE_BREAKPOINT:
-			ret = snprintf (tmp, 255, "%s,%lx,1", CMD_HBP, address);
-			break;
-		case WRITE_WATCHPOINT:
-			break;
-		case READ_WATCHPOINT:
-			break;
-		case ACCESS_WATCHPOINT:
-			break;
-		default:
-			break;
+	case BREAKPOINT:
+		ret = snprintf (tmp, sizeof (tmp)-1,
+			"%s,%"PFMT64x",1", CMD_BP, address);
+		break;
+	case HARDWARE_BREAKPOINT:
+		ret = snprintf (tmp, sizeof (tmp)-1,
+			"%s,%"PFMT64x",1", CMD_HBP, address);
+		break;
+	case WRITE_WATCHPOINT:
+		break;
+	case READ_WATCHPOINT:
+		break;
+	case ACCESS_WATCHPOINT:
+		break;
+	default:
+		break;
 	}
 	if (ret < 0) return ret;
 	ret = send_command (g, tmp);
@@ -538,20 +542,20 @@ int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 	char tmp[255] = {};
 	int ret = 0;
 	switch (type) {
-		case BREAKPOINT:
-			ret = snprintf (tmp, 255, "%s,%lx,1", CMD_RBP, address);
-			break;
-		case HARDWARE_BREAKPOINT:
-			ret = snprintf (tmp, 255, "%s,%lx,1", CMD_RHBP, address);
-			break;
-		case WRITE_WATCHPOINT:
-			break;
-		case READ_WATCHPOINT:
-			break;
-		case ACCESS_WATCHPOINT:
-			break;
-		default:
-			break;
+	case BREAKPOINT:
+		ret = snprintf (tmp, sizeof (tmp)-1, "%s,%"PFMT64x",1", CMD_RBP, address);
+		break;
+	case HARDWARE_BREAKPOINT:
+		ret = snprintf (tmp, sizeof (tmp)-1, "%s,%"PFMT64x",1", CMD_RHBP, address);
+		break;
+	case WRITE_WATCHPOINT:
+		break;
+	case READ_WATCHPOINT:
+		break;
+	case ACCESS_WATCHPOINT:
+		break;
+	default:
+		break;
 	}
 	if (ret < 0) return ret;
 	ret = send_command (g, tmp);

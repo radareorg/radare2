@@ -306,7 +306,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					size = (size < 1) ? 1 : size;
-					for (j=0; j<size; j++) p->printf ("%02x ", buf[j]);
+					for (j=0; j<size; j++) p->printf ("%02x ", (ut8)buf[j]);
 					p->printf (" ... (");
 					for (j=0; j<size; j++)
 						if (IS_PRINTABLE (buf[j]))
