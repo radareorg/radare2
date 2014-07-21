@@ -243,6 +243,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		"  pcd    C dwords (8 byte)\n"
 		"  pca    Assembly\n"
 		"  pcs    string\n"
+		"  pcS    shellscript that reconstructs the bin\n"
 		"  pcj    json\n"
 		"  pcJ    javascript\n"
 		"  pcp    python\n");
@@ -263,6 +264,20 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		}
 		p->printf ("\"\n");
 		break;
+	case 'S':
+		{
+			const int trunksize = 16;
+			for (i=0; !p->interrupt && i<len; i++) {
+				if ((i % trunksize ) == 0)
+					p->printf ("printf \"");
+				p->printf ("\\%03o", buf[i]);
+				if ((i % trunksize ) == (trunksize-1))
+					p->printf ("\" %s bin\n", (i <= trunksize) ? ">" : ">>" );
+			}
+			if ((i % trunksize))
+				p->printf("\" %s bin\n", (i <= trunksize) ? ">" : ">>" );
+		}
+                break;
 	case 'J':
 		{
 		       ut8 *out = malloc (len*3);
