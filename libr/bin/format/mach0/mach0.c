@@ -1042,6 +1042,7 @@ char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	case CPU_TYPE_POWERPC64:return strdup ("ppc");
 	default:		return strdup ("unknown");
 	}
+	return strdup ("unknown");
 }
 
 // TODO: use const char* 
@@ -1179,9 +1180,8 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		case CPU_SUBTYPE_POWERPC_970:	return strdup ("970");
 		default:			return strdup ("Unknown ppc subtype");
 		}
-	default:
-		return strdup ("Unknown cputype");
 	}
+	return strdup ("Unknown cputype");
 }
 
 int MACH0_(r_bin_mach0_is_pie)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
@@ -1203,6 +1203,7 @@ char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	case MH_DSYM:		return strdup ("Companion file with only debug sections");
 	default:		return strdup ("Unknown");
 	}
+	return strdup ("Unknown");
 }
 
 ut64 MACH0_(r_bin_mach0_get_main)(struct MACH0_(r_bin_mach0_obj_t)* bin) {

@@ -784,12 +784,8 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	const ut8 *bytes = binfile ? r_buf_buffer (binfile->buf) : NULL;
 	ut64 bytes_sz = binfile ? r_buf_size (binfile->buf): 0;
-	RBinObject *o;
 	Sdb *sdb = binfile ? binfile->sdb : NULL;
-
-	if (sz<0) return NULL;
-	//if (sz == 0 || sz > bytes_sz) return NULL;
-	o = R_NEW0 (RBinObject);
+	RBinObject *o = R_NEW0 (RBinObject);
 	o->obj_size = bytes && (bytes_sz >= sz+offset) ? sz : 0;
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);

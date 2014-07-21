@@ -9,7 +9,6 @@
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_addr_t *entry;
-	ut64 addr = 0;
 	ut8 b[512];
 
 	if (!bin || !bin->b)

@@ -289,12 +289,14 @@ static RBinInfo* info(RBinFile *arch) {
 		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
+	ret->bits = 32;
+	ret->big_endian = 0;
 	if (arch && arch->o && arch->o->bin_obj) {
-	ret->has_crypto = ((struct MACH0_(r_bin_mach0_obj_t)*)
-		arch->o->bin_obj)->has_crypto;
+		ret->has_crypto = ((struct MACH0_(r_bin_mach0_obj_t)*)
+			arch->o->bin_obj)->has_crypto;
+		ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
+		ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
 	} else ret->has_crypto = 0;
-	ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
-	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
 	/* TODO detailed debug info */
 	ret->dbg_info = 0;
 
