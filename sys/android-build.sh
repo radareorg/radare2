@@ -95,7 +95,7 @@ rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
 
 echo rm -rf ${PWD}/${D}/${PREFIX}/bin/*
-rm -rf ${PWD}/${D}/${PREFIX}/bin/*
+rm -rf "${PWD}/${D}/${PREFIX}/bin/"*
 
 #end build
 
@@ -106,22 +106,30 @@ make STATIC_BUILD=1 || exit 1
 make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
 cd ../..
 
-chmod +x ${PWD}/${D}/${PREFIX}/bin/*
+chmod +x "${HERE}/${D}/${PREFIX}/bin/"*
 
 # TODO: remove unused files like include files and so on
-rm -f ${PWD}/${D}/${PREFIX}/lib/radare2/*/*.so
-rm -f ${PWD}/${D}/${PREFIX}/lib/*.a
-rm -rf ${PWD}/${D}/${PREFIX}/include
-rm -rf ${PWD}/${D}/${PREFIX}/doc
-eval `grep ^VERSION= ${PWD}/config-user.mk`
+rm -f ${HERE}/${D}/${PREFIX}/lib/radare2/*/*.so
+rm -f ${HERE}/${D}/${PREFIX}/lib/*.a
+rm -rf ${HERE}/${D}/${PREFIX}/include
+rm -rf ${HERE}/${D}/${PREFIX}/doc
+eval `grep ^VERSION= ${HERE}/config-user.mk`
 WWWROOT="/data/data/org.radare.installer/radare2/lib/radare2/${VERSION}/www"
-ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
-cd $D
-tar -czovf ../$D.tar.gz data
+#ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
+cp -rf ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
+cd ${D}
+tar --help| grep -q GNU
+if [ $? = 0 ]; then
+	echo tar -czv -H oldgnu -f ../$D.tar.gz data
+	tar -czv -H oldgnu -f ../$D.tar.gz data
+else
+	echo tar -czovf ../$D.tar.gz data
+	tar -czovf ../$D.tar.gz data
+fi
 cd ..
 D2=`git log HEAD 2>/dev/null|head -n1|awk '{print $2}'|cut -c 1-8`
 if [ -n "$D2" ]; then
 	ln -fs $D.tar.gz "${D}-${D2}".tar.gz
 fi
 echo `pwd`"/${D}.tar.gz"
-echo `pwd`"/${D}${D2}.tar.gz"
+echo `pwd`"/${D}-${D2}.tar.gz"
