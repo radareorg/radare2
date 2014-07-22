@@ -44,8 +44,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		insn->op_str[0]?" ":"",
 		insn->op_str);
 	r_str_rmch (op->buf_asm, '#');
-	beach:
 	cs_free (insn, n);
+	beach:
 	cs_close (&cd);
 	if (!op->buf_asm[0])
 		strcpy (op->buf_asm, "invalid");

@@ -50,8 +50,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				eprintf ("op_str is null wtf\n");
 			}
 		}
+		cs_free (insn, n);
 	}
-	cs_free (insn, n);
 	return op->size;
 }
 

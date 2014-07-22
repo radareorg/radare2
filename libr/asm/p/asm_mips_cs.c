@@ -43,8 +43,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		insn->op_str);
 	// remove the '$'<registername> in the string
 	r_str_replace_char (op->buf_asm, '$', 0);
-	beach:
 	cs_free (insn, n);
+	beach:
 	cs_close (&handle);
 	fin:
 	return op->size;
