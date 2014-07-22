@@ -1451,7 +1451,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 			r_cons_printf (" (data)");
 			break;
 		default:
-			eprintf ("unknown type '%c'\n", mi2->type);
+			r_cons_printf (" (%c) %s", mi2->type, mi2->str);
 			break;
 		}
 	} else {
