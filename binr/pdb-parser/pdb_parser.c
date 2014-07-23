@@ -3,6 +3,9 @@
 
 int main() {
 	printf("main()\n");
-	init_pdb_parser();
+
+	R_PDB pdb = 0;
+	init_pdb_parser(&pdb);
+
 	return 0;
 }
