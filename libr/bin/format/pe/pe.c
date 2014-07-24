@@ -422,7 +422,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
 					(ut8*)(curr_delay_import_dir), dir_size) == -1) {
 				eprintf("Error: read (delay import directory)\n");
-				return R_FALSE;
+				goto fail;
 			}
 		} while ((curr_delay_import_dir->Name != 0));
 

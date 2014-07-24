@@ -61,8 +61,6 @@ static RList *entries(RBinFile *arch) {
 
 	ret->free = free;
 
-	if (!(ptr = R_NEW0 (RBinAddr)))
-		return ret;
 	ptr = r_coff_get_entry(obj);
 	r_list_append(ret, ptr);
 

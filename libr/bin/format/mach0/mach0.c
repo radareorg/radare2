@@ -486,8 +486,10 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file) {
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return MACH0_(r_bin_mach0_free)(bin);
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes(bin->b, buf, bin->size))
+	if (!r_buf_set_bytes(bin->b, buf, bin->size)) {
+		free (buf);
 		return MACH0_(r_bin_mach0_free)(bin);
+	}
 	free (buf);
 
 	bin->dyld_info = NULL;

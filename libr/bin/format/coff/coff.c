@@ -88,7 +88,7 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
 	(void)r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
 
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF)
-		r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
+		(void)r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 
 	return R_TRUE;
 }
