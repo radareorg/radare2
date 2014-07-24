@@ -1087,8 +1087,11 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 	const ut8 * f_buf = buf + offset;
 	ut64 adv = 0;
 	RBinJavaCPTypeObj *item = NULL;
-	RBinJavaField *method = (RBinJavaField *) R_NEW0(RBinJavaField);
-	if (bin == NULL || method == NULL || method->metas == NULL) {
+	RBinJavaField *method;
+	if (bin == NULL)
+		return NULL;
+	method = (RBinJavaField *) R_NEW0(RBinJavaField);
+	if (method == NULL) {
 		eprintf ("Unable to allocate memory for method information\n");
 		return NULL;
 	}
@@ -1183,8 +1186,11 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 	RBinJavaCPTypeObj *item = NULL;
 	const ut8 *f_buf = buffer + offset;
 	ut64 adv = 0;
-	RBinJavaField *field = (RBinJavaField *) R_NEW0(RBinJavaField);
-	if (bin == NULL || field == NULL) {
+	RBinJavaField *field;
+	if (bin == NULL)
+		return NULL;
+	field = (RBinJavaField *) R_NEW0(RBinJavaField);
+	if (field == NULL) {
 		eprintf ("Unable to allocate memory for field information\n");
 		return NULL;
 	}

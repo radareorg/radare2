@@ -48,7 +48,7 @@ static ut64 baddr(RBinFile *arch) {
 }
 
 static RBinAddr* binsym(RBinFile *arch, int type) {
-	struct r_bin_pe_addr_t *peaddr;
+	struct r_bin_pe_addr_t *peaddr = NULL;
 	RBinAddr *ret = NULL;
 	if (arch && arch->o && arch->o->bin_obj)
 	switch (type) {
@@ -60,6 +60,7 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 		ret->paddr = peaddr->paddr;
 		ret->vaddr = peaddr->vaddr;
 	}
+	free (peaddr);
 	return ret;
 }
 

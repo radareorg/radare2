@@ -209,7 +209,7 @@ R_API int r_lang_prompt(RLang *lang) {
 		char *p = r_line_readline ();
 		if (!p) break;
 		r_line_hist_add (p);
-		strncpy (buf, p, sizeof(buf));
+		strncpy (buf, p, sizeof(buf) - 1);
 		if (*buf == '!') {
 			r_sandbox_system (buf+1, 1);
 			continue;
