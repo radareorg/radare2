@@ -20,6 +20,10 @@ static int (*r_yr_compiler_add_file)(
     YR_COMPILER* compiler,
     FILE* rules_file,
     const char* namespace_);
+static int (*r_yr_compiler_add_string)(
+    YR_COMPILER* compiler,
+    const char* rules_string,
+    const char* namespace_);
 static void (*r_yr_finalize)(void);
 static int (*r_yr_compiler_create)( YR_COMPILER** compiler);
 static void (*r_yr_compiler_destroy)( YR_COMPILER* compiler);
@@ -46,14 +50,17 @@ static int (*r_yr_rules_scan_mem)(
 /* ---- */
 
 static int callback(int message, YR_RULE* rule, void* data);
-static int r_cmd_yara_add (const char* rules_path);
+static int r_cmd_yara_add (const RCore* core, const char* input);
+static int r_cmd_yara_add_file (const char* rules_path);
 static int r_cmd_yara_call(void *user, const char *input);
 static int r_cmd_yara_clear();
 static int r_cmd_yara_help(const RCore* core);
-static int r_cmd_yara_init();
+static int r_cmd_yara_init(const RCore* core);
 static int r_cmd_yara_process(const RCore* core, const char* input);
 static int r_cmd_yara_scan(const RCore* core);
-static int r_cmd_yara_load_default_rules ();
+static int r_cmd_yara_load_default_rules (const RCore* core);
+
+static const char* yara_rule_template = "rule RULE_NAME {\n\tstrings:\n\tcondition:\n}";
 
 static int callback (int message, YR_RULE* rule, void* data) {
     (void)data; // avoid Unused parameter warning
@@ -185,7 +192,29 @@ static int r_cmd_yara_clear () {
     return R_TRUE;
 }
 
-static int r_cmd_yara_add(const char* rules_path) {
+static int r_cmd_yara_add(const RCore* core, const char* input) {
+	char* ret;
+	int result;
+	if ( input == ' ' ) {
+		return r_cmd_yara_add_file (input + 1);
+	}
+
+	ret = r_core_editor (core, yara_rule_template);
+	result = r_yr_compiler_add_string (compiler, ret, NULL);
+	if (result > 0) {
+		char buf[64];
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
+		r_cmd_yara_clear (); // The compiler is screwed :|
+		return R_FALSE;
+	} else {
+		r_cons_printf ("Rule successfully added.\n");
+	}
+
+	return R_TRUE;
+}
+
+static int r_cmd_yara_add_file(const char* rules_path) {
 	FILE* rules_file;
 	int result;
 
@@ -220,7 +249,7 @@ static int r_cmd_yara_add(const char* rules_path) {
 static int r_cmd_yara_help(const RCore* core) {
 	const char * help_message[] = {
 		"Usage: yara", "", " Yara plugin",
-		"add", " [file]", "Add yara rules from file",
+		"add", " [file]", "Add yara rules from file, or open $EDITOR with yara rule template",
 		"clear", "", "Clear all rules",
 		"help", "", "Show this help",
 		"list", "", "List all rules",
@@ -236,8 +265,8 @@ static int r_cmd_yara_help(const RCore* core) {
 }
 
 static int r_cmd_yara_process(const RCore* core, const char* input) {
-    if (!strncmp (input, "add ", 4))
-        return r_cmd_yara_add (input + 4);
+    if (!strncmp (input, "add", 3))
+        return r_cmd_yara_add (core, input + 3);
     else if (!strncmp (input, "clear", 4))
         return r_cmd_yara_clear ();
     else if (!strncmp (input, "list", 4))
@@ -260,7 +289,7 @@ static int r_cmd_yara_call(void *user, const char *input) {
 		return r_cmd_yara_help (core);
 	const char *args = input+4;
 	if (r_yr_initialize == NULL)
-		if (!r_cmd_yara_init ())
+		if (!r_cmd_yara_init (core))
 			return R_TRUE;
 	if (*args)
 		args++;
@@ -269,7 +298,7 @@ static int r_cmd_yara_call(void *user, const char *input) {
 	return R_TRUE;
 }
 
-static int r_cmd_yara_load_default_rules() {
+static int r_cmd_yara_load_default_rules(const RCore* core) {
 #define YARA_PATH R2_PREFIX "/share/radare2/" R2_VERSION "/yara/"
 	RListIter* iter = NULL;
 	char* filename, *complete_path;
@@ -277,7 +306,7 @@ static int r_cmd_yara_load_default_rules() {
 	r_list_foreach (list, iter, filename) {
 		if (filename[0] != '.') { // skip '.', '..' and hidden files
 			complete_path = r_str_concat (strdup (YARA_PATH), filename);
-			r_cmd_yara_add (complete_path);
+			r_cmd_yara_add (core, complete_path);
 			free (complete_path);
 		}
 	}
@@ -286,7 +315,7 @@ static int r_cmd_yara_load_default_rules() {
 	return R_TRUE;
 }
 
-static int r_cmd_yara_init() {
+static int r_cmd_yara_init(const RCore* core) {
 	libyara = r_lib_dl_open ("libyara."R_LIB_EXT);
 	if (!libyara) {
 		eprintf ("Cannot find libyara\n");
@@ -307,6 +336,7 @@ static int r_cmd_yara_init() {
 		return R_FALSE;
 	}
 	LOADSYM (yr_compiler_add_file);
+	LOADSYM (yr_compiler_add_string);
 	LOADSYM (yr_compiler_create);
 	LOADSYM (yr_compiler_destroy);
 	LOADSYM (yr_compiler_get_error_message)
@@ -324,7 +354,7 @@ static int r_cmd_yara_init() {
 		return R_FALSE;
 	}
 
-	r_cmd_yara_load_default_rules ();
+	r_cmd_yara_load_default_rules (core);
 
 	return R_TRUE;
 }
