@@ -60,7 +60,7 @@ static int r_cmd_yara_process(const RCore* core, const char* input);
 static int r_cmd_yara_scan(const RCore* core);
 static int r_cmd_yara_load_default_rules (const RCore* core);
 
-static const char* yara_rule_template = "rule RULE_NAME {\n\tstrings:\n\tcondition:\n}";
+static const char* yara_rule_template = "rule RULE_NAME {\n\tstrings:\n\n\tcondition:\n}";
 
 static int callback (int message, YR_RULE* rule, void* data) {
     (void)data; // avoid Unused parameter warning
