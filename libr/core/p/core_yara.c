@@ -195,7 +195,7 @@ static int r_cmd_yara_clear () {
 static int r_cmd_yara_add(const RCore* core, const char* input) {
 	char* ret;
 	int result;
-	if ( input == ' ' ) {
+	if ( *input == ' ' ) {
 		return r_cmd_yara_add_file (input + 1);
 	}
 
@@ -306,7 +306,7 @@ static int r_cmd_yara_load_default_rules(const RCore* core) {
 	r_list_foreach (list, iter, filename) {
 		if (filename[0] != '.') { // skip '.', '..' and hidden files
 			complete_path = r_str_concat (strdup (YARA_PATH), filename);
-			r_cmd_yara_add (core, complete_path);
+			r_cmd_yara_add_file (complete_path);
 			free (complete_path);
 		}
 	}
