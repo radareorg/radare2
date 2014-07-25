@@ -243,8 +243,6 @@ static int r_cmd_yara_add_file(const char* rules_path) {
 		return R_FALSE;
 	}
 
-	r_cons_printf ("%s added\n", rules_path);
-
 	return R_TRUE;
 }
 
