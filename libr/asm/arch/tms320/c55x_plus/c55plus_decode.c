@@ -97,7 +97,7 @@ static boolt check_arg(ut32 ins_bits, int *err_code)
 {
 	boolt res = 0;
 
-	if ((ins_bits >= 0 && ins_bits <= 31) | (ins_bits >= 128 && ins_bits < 160)) {
+	if (ins_bits <= 31 | (ins_bits >= 128 && ins_bits < 160)) {
 		res = 1;
 	} else if (ins_bits >= 32 && ins_bits <= 252) {
 		res = 0;

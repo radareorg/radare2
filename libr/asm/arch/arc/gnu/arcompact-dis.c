@@ -553,6 +553,8 @@ write_instr_name_(struct arcDisState *state,
 		  int addrWriteBack,
 		  int directMem)
 {
+  if(!instrName)
+	return;
   strcpy(state->instrBuffer, instrName);
   if (cond > 0)
     {
