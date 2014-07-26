@@ -193,7 +193,7 @@ static int r_cmd_yara_clear () {
 }
 
 static int r_cmd_yara_add(const RCore* core, const char* input) {
-	char* ret;
+	char* modified_template;
 	int result;
 	int i;
 
@@ -203,8 +203,10 @@ static int r_cmd_yara_add(const RCore* core, const char* input) {
 		}
 	}
 
-	ret = r_core_editor (core, yara_rule_template);
-	result = r_yr_compiler_add_string (compiler, ret, NULL);
+	modified_template = r_core_editor (core, yara_rule_template);
+	result = r_yr_compiler_add_string (compiler, modified_template, NULL);
+	free(modified_template);
+
 	if (result > 0) {
 		char buf[64];
 		eprintf ("Error: %s : \n",
