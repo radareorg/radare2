@@ -195,8 +195,12 @@ static int r_cmd_yara_clear () {
 static int r_cmd_yara_add(const RCore* core, const char* input) {
 	char* ret;
 	int result;
-	if ( *input == ' ' ) {
-		return r_cmd_yara_add_file (input + 1);
+	int i;
+
+	for( i = 0 ; input[i] != NULL ; i++ ) {
+		if ( input[i] != ' ' ) {
+			return r_cmd_yara_add_file (input + i);
+		}
 	}
 
 	ret = r_core_editor (core, yara_rule_template);
