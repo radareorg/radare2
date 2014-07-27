@@ -154,6 +154,26 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					| (ut64)(*(buf+i+5))<<40 | (ut64)(*(buf+i+4))<<32
 				 	| (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
 			tmp = *arg;
+			if (otimes>1)
+				p->printf ("   ");
+#define MUSTSET (setval && elem == idx)
+#define MUSTSEE (elem == -1 || elem == idx)
+			if (MUSTSEE) {
+				if (!(MUSTSET)) {
+					if (oldprintf)
+						p->printf = oldprintf;
+					if (idx<nargs && tmp != 'e')
+						if (tmp == '*')
+							idx--;
+						else
+							p->printf (namefmt, r_str_word_get0 (args, idx));
+				}
+			} else {
+				if (!oldprintf)
+					oldprintf = p->printf;
+				p->printf = nullprintf;
+			}
+
 		feed_me_again:
 			switch (isptr) {
 			case 1:
@@ -177,7 +197,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				memcpy (buf, b, len);
 				isptr = 0;
 				arg--;
-				idx--;
 				continue;
 			}
 			if (tmp == 0 && last != '*')
@@ -190,7 +209,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				arg++;
 				tmp = *arg; //last;
 			//	arg--;
-			//	idx--;
+				idx--;
 				goto feed_me_again;
 			case '+':
 				idx--;
@@ -218,22 +237,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				i = len; // exit
 				continue;
 			}
-			if (otimes>1)
-				p->printf ("   ");
-#define MUSTSET (setval && elem == idx)
-#define MUSTSEE (elem == -1 || elem == idx)
-			if (MUSTSEE) {
-				if (!(MUSTSET)) {
-					if (oldprintf)
-						p->printf = oldprintf;
-					if (idx<nargs)
-						p->printf (namefmt, r_str_word_get0 (args, idx));
-				}
-			} else {
-				if (!oldprintf)
-					oldprintf = p->printf;
-				p->printf = nullprintf;
-			}
+
 			/* cmt chars */
 			switch (tmp) {
 	#if 0
