@@ -106,11 +106,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		int l=0, maxl = 0;
 		argend = args;
 		args = strdup (args+1);
-		nargs = r_str_word_set0 (args+1);
+		nargs = r_str_word_set0 (args);
 		if (nargs == 0)
 			R_FREE (args);
 		for (i=0; i<nargs; i++) {
-			int len = strlen (r_str_word_get0 (args+1, i));
+			int len = strlen (r_str_word_get0 (args, i));
 			if (len>maxl) maxl = len;
 		}
 		l++;
