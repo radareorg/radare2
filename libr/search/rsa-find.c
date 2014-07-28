@@ -14,8 +14,7 @@ Parses a single field of the key, beginning at start.  Each field
 consists of a type, a length, and a value.  Puts the type of field
 into type, the number of bytes into len, and returns a pointer to
 the beginning of the value. */
-static const ut8* parse_next_rsa_field(const ut8* start, ut32 *type, ut32 *len) {
-	type = (ut32*) start;
+static const ut8* parse_next_rsa_field(const ut8* start, ut32 *len) {
 	*len = 0;
 	if (!(start[1] & 128)) {
 		len = (ut32*)(start + 1);
@@ -32,17 +31,17 @@ static const ut8* parse_next_rsa_field(const ut8* start, ut32 *type, ut32 *len) 
 // Check if `start` points to an ensemble of BER fields
 static int check_rsa_fields(const ut8* start) {
 #define NB_PRIV_FIELDS 10
-	ut32 type, len = 0;
+	ut32 len = 0;
 	int i;
 	ut8 const* ptr = start;
 
-	ptr = parse_next_rsa_field (start, &type, &len); // skip sequence field
+	ptr = parse_next_rsa_field (start, &len); // skip sequence field
 
 	if (!len || len > 1024)
 		return R_FALSE;
 
 	for (i = 0; i < NB_PRIV_FIELDS; i++)
-		if (!(ptr = parse_next_rsa_field (ptr, &type, &len)))
+		if (!(ptr = parse_next_rsa_field (ptr, &len)))
 			return R_FALSE;
 
 	return R_TRUE;

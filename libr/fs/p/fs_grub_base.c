@@ -47,10 +47,12 @@ static int dirhook (const char *filename, const struct grub_dirhook_info *info, 
 }
 
 static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
-	GrubFS *gfs = root->ptr;
-	if (root == NULL) {
+	GrubFS *gfs;
+
+	if (root == NULL)
 		return NULL;
-	}
+
+	gfs = root->ptr;
 	list = r_list_new ();
 //	eprintf ("r_fs_???_dir: %s\n", path);
 	//gfs->file->device->data = &root->iob;
