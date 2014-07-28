@@ -94,7 +94,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		t = (time_t) l; // TODO limit above!
 		// "%d:%m:%Y %H:%M:%S %z",
-		if (p->datefmt && p->datefmt[0]) {
+		if (p->datefmt[0]) {
 			ret = strftime(datestr, 256, p->datefmt,
 				(const struct tm*) gmtime((const time_t*)&t));
 			if (ret) {

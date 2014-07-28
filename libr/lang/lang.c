@@ -250,5 +250,6 @@ R_API int r_lang_prompt(RLang *lang) {
 
 	clearerr (stdin);
 	printf ("\n");
+	free(prompt);
 	return R_TRUE;
 }
