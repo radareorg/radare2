@@ -619,15 +619,16 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				eprintf ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
-			char *s;
+			char *s = 0;
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
 			if (input[0] == '/') {
-				s = malloc (strlen (root) + strlen (input) + 2);
-				if (!s) goto beach;
-				if (root) strcpy (s, root);
-				else *s = 0;
+				if (root) {
+					s = malloc (strlen (root) + strlen (input) + 2);
+					if (!s) goto beach;
+					strcpy (s, root);
+				}
 			} else {
 				s = malloc (strlen (path) + strlen (input) + 2);
 				if (!s) goto beach;

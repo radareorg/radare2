@@ -343,8 +343,10 @@ int gdbr_write_bin_registers(libgdbr_t* g){
 	if (!command) return -1;
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command+1);
-	if (send_command (g, command) < 0)
+	if (send_command (g, command) < 0) {
+		free (command);
 		return -1;
+	}
 	read_packet (g);
 	free (command);
 	handle_G (g);

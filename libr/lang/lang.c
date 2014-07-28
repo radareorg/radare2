@@ -222,8 +222,10 @@ R_API int r_lang_prompt(RLang *lang) {
 			}
 			continue;
 		}
-		if (!strcmp (buf, "q"))
+		if (!strcmp (buf, "q")) {
+			free (prompt);
 			return R_TRUE;
+		}
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
