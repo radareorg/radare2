@@ -305,6 +305,7 @@ int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
 	r_io_mread (io, io->desc->fd, addr, buf, len);			//must check return-stat
 	if (io->cached)
 		r_io_cache_read (io, addr, buf, len);
+	r_list_free(maps);
 	return len;
 }
 

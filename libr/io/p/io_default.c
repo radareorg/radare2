@@ -114,10 +114,11 @@ static int r_io_def_mmap_close(RIODesc *fd) {
 }
 
 static int r_io_def_mmap_check_default (const char *filename) {
-	char * peekaboo = strstr (filename, "://");
-	if ( (filename && !peekaboo) ||
-		( (peekaboo-filename) > 10 ) )
-		return 1;
+	if (filename) {
+		const char * peekaboo = strstr (filename, "://");
+		if (!peekaboo || (peekaboo-filename) > 10 )
+			return 1;
+	}
 	return 0;
 }
 
@@ -158,7 +159,8 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	len = r_file_mmap_write (mmo->filename, io->off, buf, count);
 	if (len != count) {
 		// aim to hack some corner cases?
-		lseek (fd->fd, addr, 0);
+		if (lseek (fd->fd, addr, 0) < 0)
+			return -1;
 		len = write (fd->fd, buf, count);
 	}
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {

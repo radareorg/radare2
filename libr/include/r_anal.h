@@ -293,7 +293,7 @@ typedef struct r_anal_fcn_store_t {
 typedef struct r_anal_type_function_t {
 	char* name;
 	char* dsc; // For producing nice listings
-	int size; // Size of function XXX. use int, or ut32. no need for ut64
+	ut32 size;
 	int bits; // ((> bits 0) (set-bits bits))
 	short type;
 	/*item_list *rets; // Type of return value */
