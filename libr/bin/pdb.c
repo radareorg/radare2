@@ -7,6 +7,14 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+typedef enum {
+	ePDB_STREAM_ROOT = 0, // PDB_ROOT_DIRECTORY
+	ePDB_STREAM_PDB, // PDB STREAM INFO
+	ePDB_STREAM_TPI, // TYPE INFO
+	ePDB_STREAM_DBI, // DEBUG INFO
+	ePDB_STREAM_MAX
+} EStream;
+
 ///////////////////////////////////////////////////////////////////////////////
 static int read_int_var(char *var_name, int *var, FILE *fp)
 {
@@ -27,6 +35,13 @@ static int count_pages(int length, int page_size)
 	if (length % page_size)
 		num_pages++;
 	return num_pages;
+}
+
+static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, EStream indx,
+								 int root_size, int page_size)
+{
+	printf("init_pdb7_root_stream()\n");
+	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -128,6 +143,7 @@ static int pdb7_parse(R_PDB *pdb)
 		p_tmp = (int *)p_tmp + 1;
 	}
 
+	init_pdb7_root_stream(pdb, root_page_list, ePDB_STREAM_ROOT, root_size, page_size);
 	// TODO: get root stream
 	// TODO: read root stream
 //self.root_stream = PDB7RootStream(self.fp, root_page_list,
