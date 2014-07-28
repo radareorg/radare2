@@ -7,6 +7,31 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+typedef struct {
+	FILE *fp;
+	int *pages;
+	int page_size;
+	int pages_amount;
+	int end;
+	int pos;
+} R_STREAM_FILE;
+
+typedef struct {
+	FILE *fp;
+	int *pages;
+	int pages_amount;
+	int indx;
+	int page_size;
+	int size;
+	R_STREAM_FILE stream_file;
+	// int fast_load;
+	// ... parent;
+} R_PDB_STREAM;
+
+typedef struct {
+	R_PDB_STREAM pdb_stream;
+} R_PDB7_ROOT_STREAM;
+
 typedef enum {
 	ePDB_STREAM_ROOT = 0, // PDB_ROOT_DIRECTORY
 	ePDB_STREAM_PDB, // PDB STREAM INFO
@@ -14,6 +39,55 @@ typedef enum {
 	ePDB_STREAM_DBI, // DEBUG INFO
 	ePDB_STREAM_MAX
 } EStream;
+
+///////////////////////////////////////////////////////////////////////////////
+/// size = -1 (default value)
+/// pages_size = 0x1000 (default value)
+////////////////////////////////////////////////////////////////////////////////
+static int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
+							  int pages_amount, int size, int page_size)
+{
+	stream_file->fp = fp;
+	stream_file->pages = pages;
+	stream_file->pages_amount = pages_amount;
+	stream_file->page_size = page_size;
+
+	if (size == -1) {
+			stream_file->end = pages_amount * page_size;
+	} else {
+			stream_file->end = size;
+	}
+
+	stream_file->pos = 0;
+
+	return 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/// size - default value = -1
+/// page_size - default value = 0x1000
+///////////////////////////////////////////////////////////////////////////////
+static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, FILE *fp, int *pages,
+							 int pages_amount, int index, int size, int page_size)
+{
+	printf("init_r_pdb_stream()\n");
+
+	pdb_stream->fp = fp;
+	pdb_stream->pages = pages;
+	pdb_stream->indx = index;
+	pdb_stream->page_size = page_size;
+	pdb_stream->pages_amount = pages_amount;
+
+	if (size == -1) {
+		pdb_stream->size =  pages_amount * page_size;
+	} else {
+		pdb_stream->size = size;
+	}
+
+	init_r_stream_file(&(pdb_stream->stream_file), fp, pages, pages_amount, size, page_size);
+
+	return 1;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 static int read_int_var(char *var_name, int *var, FILE *fp)
