@@ -709,8 +709,11 @@ static int checkbpcallback(RCore *core) {
 	ut64 pc = r_debug_reg_get (core->dbg, "pc");
 	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, pc);
 	if (bpi) {
+		const char *cmdbp = r_config_get (core->config, "cmd.bp");
 		if (bpi->data)
 			r_core_cmd (core, bpi->data, 0);
+		if (cmdbp && *cmdbp)
+			r_core_cmd (core, cmdbp, 0);
 		return R_TRUE;
 	}
 	return R_FALSE;
