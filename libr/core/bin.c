@@ -30,13 +30,12 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		int va = info->has_va;
 		const char * arch = info->arch;
 		ut16 bits = info->bits;
-		ut64 baseaddr = r_config_get_i (r->config, "bin.baddr");
-		if (baseaddr) {
-			binobj->baddr = baseaddr;
-		} else baseaddr = binobj->baddr;
+		ut64 loadaddr = r_config_get_i (r->config, "bin.laddr");
+		ut64 baseaddr = binobj->baddr;
 		/* Hack to make baddr work on some corner */
 		r_config_set_i (r->config, "io.va",
 			(binobj->info)? binobj->info->has_va: 0);
+		r_config_set_i (r->config, "bin.laddr", loadaddr);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "asm.arch", arch);
@@ -44,7 +43,8 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		r_config_set (r->config, "anal.cpu", arch);
 		r_asm_use (r->assembler, arch);
 
-		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, baseaddr);
+		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
+			va, NULL, loadaddr);
 		r_core_bin_set_cur (r, binfile);
 		return R_TRUE;
 	}
@@ -388,11 +388,11 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 
 	baddr = 0LL; // This is broken, just to make t.formats/elf/main happy
 	if ((mode & R_CORE_BIN_SIMPLE) || mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("%"PFMT64d, va? baddr+binmain->vaddr:binmain->paddr);
+		r_cons_printf ("%"PFMT64d, va? (baddr+binmain->vaddr):binmain->paddr);
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "symbols");
-		r_flag_set (r->flags, "main", va? baddr+binmain->vaddr: binmain->paddr,
+		r_flag_set (r->flags, "main", va? (baddr+binmain->vaddr): binmain->paddr,
 				r->blocksize, 0);
 	} else {
 		if (mode) {
@@ -408,7 +408,7 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
-static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
+static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *entries;
 	RListIter *iter;
@@ -461,10 +461,11 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 				r_cons_printf ("f entry%i @ 0x%08"PFMT64x"\n",
 					i, va?vaddr: paddr);
 				r_cons_printf ("s entry%i\n", i);
-			} else r_cons_printf ("addr=0x%08"PFMT64x
+			} else r_cons_printf ("vaddr=0x%08"PFMT64x
 					" off=0x%08"PFMT64x
-					" baddr=0x%08"PFMT64x"\n",
-					va?vaddr:paddr, paddr, baddr);
+					" baddr=0x%08"PFMT64x
+					" laddr=0x%08"PFMT64x"\n",
+					vaddr, paddr, baddr, laddr);
 			i++;
 		}
 		if (!mode) r_cons_printf ("\n%i entrypoints\n", i);
@@ -1143,12 +1144,11 @@ static int bin_libs (RCore *r, int mode) {
 	return R_TRUE;
 }
 
-R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 baseaddr) {
+R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 loadaddr) {
 	int ret = R_TRUE;
 	const char *name = NULL;
-	ut64 at = 0;
+	ut64 at = 0, baseaddr = 0LL;
 
-	baseaddr = r_config_get_i (core->config, "bin.baddr");
 	// WTF, should be the same but we are not keeping it
 	if (core->bin && core->bin->cur && core->bin->cur->o)
 		baseaddr = core->bin->cur->o->baddr;
@@ -1166,7 +1166,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_DWARF))
 		ret &= bin_dwarf (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
-		ret &= bin_entry (core, mode, baseaddr, va);
+		ret &= bin_entry (core, mode, baseaddr, loadaddr, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
 		ret &= bin_relocs (core, mode, baseaddr, va);
 	if ((action & R_CORE_BIN_ACC_IMPORTS))

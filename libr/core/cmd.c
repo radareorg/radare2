@@ -24,6 +24,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"
 #include "cmd_debug.c"
+#include "cmd_log.c"
 #include "cmd_zign.c"
 #include "cmd_section.c"
 #include "cmd_flag.c"
@@ -80,65 +81,6 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 		return NULL;
 	}
 	return op;
-}
-
-static int cmd_log(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	const char *input2 = input + (*input? (*input==' '? 2: 1): 0);
-	char *arg = strchr (input2, ' ');
-	int n = atoi (input2);
-	int n2 = arg? atoi (arg+1): 0;
-	switch (*input) {
-	case 'e': // shell: less
-		{
-		char *p = strchr (input, ' ');
-		if (p) {
-			char *b = r_file_slurp (p+1, NULL);
-			if (b) {
-				r_cons_less_str (b);
-				free (b);
-			} else eprintf ("File not found\n");
-		} else eprintf ("Usage: less [filename]\n");
-		}
-		break;
-	case 'l':
-		r_cons_printf ("%d\n", core->log->last-1);
-		break;
-	case '-':
-		r_core_log_del (core, n);
-		break;
-	case '?':{
-			const char* help_msg[] = {
-			"Usage:", "l","[-][ num|msg]",
-			"l", "", "List all log messages",
-			"l", " new comment", "0x80480",
-			"l", " 123", "List log from 123",
-			"l", " 10 3", "List 3 log messages starting from 10",
-			"l*", "", "List in radare commands",
-			"l-", "", "Delete all logs",
-			"l-", " 123", "Delete logs before 123",
-			"ll", "", "Get last log message id",
-			"lj", "", "List in json format",
-			"ls", "", "List files in current directory (see pwd, cd)",
-			NULL};
-		r_core_cmd_help(core, help_msg);
-		}
-		break;
-	case ' ':
-		if (!n) {
-			r_core_log_add (core, input+1);
-			break;
-		}
-	case 's':
-		r_core_syscmd_ls (input);
-		break;
-	case 'j':
-	case '*':
-	case '\0':
-		r_core_log_list (core, n, n2, *input);
-		break;
-	}
-	return 0;
 }
 
 static int cmd_alias(void *data, const char *input) {

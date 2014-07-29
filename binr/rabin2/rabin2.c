@@ -31,7 +31,7 @@ static struct r_bin_t *bin = NULL;
 static char* output = NULL;
 static char* create = NULL;
 static int rad = R_FALSE;
-static ut64 baddr = 0LL;
+static ut64 laddr = 0LL;
 static char* file = NULL;
 static char *name = NULL;
 static int rw = R_FALSE;
@@ -445,7 +445,7 @@ int main(int argc, char **argv) {
 		case 'r': rad = R_TRUE; break;
 		case 'v': va = R_TRUE; break;
 		case 'L': r_bin_list (bin); return 1;
-		case 'B': baddr = r_num_math (NULL, optarg); break;
+		case 'B': laddr = r_num_math (NULL, optarg); break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
@@ -520,8 +520,8 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	if (!r_bin_load (bin, file, baddr, 0, xtr_idx, fd, rawstr)) {
-		if (!r_bin_load (bin, file, baddr, 0, xtr_idx, fd, rawstr)) {
+	if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
+		if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open file\n");
 			return 1;
 		}
@@ -555,10 +555,12 @@ int main(int argc, char **argv) {
 		free (arch_name);
 	}
 
-	if (baddr != 0LL) {
-		r_bin_set_baddr (bin, baddr);
-		bin->cur->o->baddr = baddr;
+	// ASLR WTF
+	if (laddr != 0LL) {
+		//r_bin_set_baddr (bin, laddr);
+		//bin->cur->o->baddr = laddr;
 	}
+	r_config_set_i (core.config, "bin.laddr", laddr);
 
 	core.bin = bin;
 	filter.offset = at;
@@ -570,7 +572,7 @@ int main(int argc, char **argv) {
 #define run_action(n,x,y) {\
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("\"%s\":",n);\
-		if (!r_core_bin_info (&core, y, rad, va, &filter, 0)) {\
+		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr)) {\
 			if (isradjson) r_cons_printf("false");\
 		};\
 		actions_done++;\

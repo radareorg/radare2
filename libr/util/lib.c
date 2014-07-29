@@ -157,8 +157,26 @@ R_API R_API int r_lib_close(RLib *lib, const char *file) {
 	RListIter *iter;
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (lib->plugins, iter, p) {
-		if ((file==NULL || (!strcmp(file, p->file))) && p->handler->destructor != NULL) {
-			int ret = p->handler->destructor (p, p->handler->user, p->data);
+		if ((file==NULL || (!strcmp (file, p->file)))) {
+			int ret = 0;
+			if (p->handler && p->handler->constructor) {
+				ret = p->handler->destructor (p,
+					p->handler->user, p->data);
+			}
+			free (p->file);
+			r_list_delete (lib->plugins, iter);
+			return ret;
+		}
+	}
+	// delete similar plugin name
+	r_list_foreach (lib->plugins, iter, p) {
+		if (strstr (p->file, file)) {
+			int ret = 0;
+			if (p->handler && p->handler->constructor) {
+				ret = p->handler->destructor (p,
+					p->handler->user, p->data);
+			}
+			eprintf ("Unloaded %s\n", p->file);
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
 			return ret;
@@ -233,7 +251,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		}
 	}
 
-	p = R_NEW (RLibPlugin);
+	p = R_NEW0 (RLibPlugin);
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup (file);
@@ -323,20 +341,11 @@ R_API int r_lib_del_handler(RLib *lib, int type) {
 	return R_FALSE;
 }
 
-/* XXX _list methods must be deprecated before r2-1.0 */
 R_API void r_lib_list(RLib *lib) {
 	RListIter *iter;
 	RLibPlugin *p;
-#if 0
-	printf("Plugin Plugins:\n");
-	list_for_each_prev(pos, &lib->handlers) {
-		RLibHandler *h = list_entry(pos, RLibHandler, list);
-		printf(" - %d: %s\n", h->type, h->desc);
-	}
-#endif
-	//printf("Loaded plugins:\n");
 	r_list_foreach (lib->plugins, iter, p) {
 		printf (" %5s %p %s \n", r_lib_types_get (p->type),
-			p->handler->destructor, p->file);
+			p->dl_handler, p->file);
 	}
 }
