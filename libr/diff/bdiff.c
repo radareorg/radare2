@@ -278,9 +278,15 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 	int hits = -1;
 
 	an = splitlines ((const char *)sa, la, &al);
-	if (an<0) return -1;
+	if (an<0) {
+		free (al);
+		return -1;
+	}
 	bn = splitlines ((const char *)sb, lb, &bl);
-	if (bn<0) return -1;
+	if (bn<0) {
+		free (bl);
+		return -1;
+	}
 	if (!al || !bl) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
 		goto beach;
