@@ -224,7 +224,7 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	bin = arch->o->bin_obj;
 	has_va = Elf_(r_bin_elf_has_va) (bin);
-	if (!has_va) {
+	//if (!has_va) {
 		// find base address for non-linked object (.o) //
 		if (arch->o->sections) {
 			RBinSection *s;
@@ -236,7 +236,7 @@ static RList* symbols(RBinFile *arch) {
 				}
 			}
 		}
-	}
+	//}
 
 	if (!(ret = r_list_new ()))
 		return NULL;
