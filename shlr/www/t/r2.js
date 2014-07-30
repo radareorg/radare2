@@ -9,6 +9,9 @@ var next_lastoff = 0;
 var prev_curoff = 0;
 var prev_lastoff = 0;
 
+r2.plugin = r2plugin? r2plugin: function() {
+  console.error ("r2.plugin is not available in this environment");
+}
 r2.root = ""; // prefix path
 
 /* helpers */
