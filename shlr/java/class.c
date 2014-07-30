@@ -604,7 +604,7 @@ R_API char * r_bin_java_unmangle_method (const char *flags, const char *name, co
 		p_val_str = strdup ("");
 	}
 
-	prototype_len += (*f_val_str ? strlen(flags) + 1 : 0); // space vs no space
+	prototype_len += (flags ? strlen(flags) + 1 : 0); // space vs no space
 	prototype_len += strlen(name) + 1; // name + space
 	prototype_len += strlen(r_val_str) + 1; // r_value + space
 	prototype_len += strlen (p_val_str) + 3; // space + l_paren + params + r_paren

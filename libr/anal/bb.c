@@ -111,7 +111,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		case R_ANAL_OP_TYPE_LEA:
 {
 			RAnalValue *src = op->src[0];
-			if (src && src->reg && anal->reg && anal->reg->name) {
+			if (src && src->reg && anal->reg) {
 				const char *pc = anal->reg->name[R_REG_NAME_PC];
 				RAnalValue *dst = op->dst;
 				if (dst && dst->reg && !strcmp (src->reg->name, pc)) {

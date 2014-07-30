@@ -107,7 +107,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 	// OPENBSDBUG
         file_vprintf (ms, f, va);
 	if (error > 0)
-		file_printf (ms, " (%s)", strerror(error));
+		(void)file_printf (ms, " (%s)", strerror(error));
 	ms->haderr++;
 	ms->error = error;
 }

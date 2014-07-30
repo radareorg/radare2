@@ -88,7 +88,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	int ret = 0;
 	char datestr[256];
 
-	if (p && p->datefmt && len >= sizeof (ut64)) {
+	if (p && len >= sizeof (ut64)) {
 		r_mem_copyendian ((ut8*)&l, buf, sizeof (ut64), p->big_endian);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?

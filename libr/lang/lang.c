@@ -233,11 +233,9 @@ R_API int r_lang_prompt(RLang *lang) {
 				"  !command - run system command\n"
 				"  . file   - interpret file\n"
 				"  q        - quit prompt\n");
-			if (lang->cur) {
-				eprintf ("%s example:\n", lang->cur->name);
-				if (lang->cur->help)
-					eprintf ("%s", *lang->cur->help);
-			} else eprintf ("no selected r_lang plugin\n");
+			eprintf ("%s example:\n", lang->cur->name);
+			if (lang->cur->help)
+				eprintf ("%s", *lang->cur->help);
 			if (!r_list_empty (lang->defs))
 				eprintf ("variables:\n");
 			r_list_foreach (lang->defs, iter, def) {
