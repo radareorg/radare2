@@ -150,9 +150,10 @@ grub_sfs_read_extent (struct grub_sfs_data *data, unsigned int block,
   int i;
   int next;
 
-  treeblock = grub_malloc (data->blocksize);
   if (!block)
     return 0;
+
+  treeblock = grub_malloc (data->blocksize);
 
   next = grub_be_to_cpu32 (data->rblock.btree);
   tree = (struct grub_sfs_btree *) treeblock;

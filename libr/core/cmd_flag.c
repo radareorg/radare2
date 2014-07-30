@@ -8,6 +8,8 @@ static void flagbars(RCore *core) {
 	r_list_foreach (core->flags->flags, iter, flag) {
 		total += flag->offset;
 	}
+	if (!total) // avoid a division by zero
+		return;
 	r_list_foreach (core->flags->flags, iter, flag) {
 		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
 		r_cons_printf ("%10s", flag->name);

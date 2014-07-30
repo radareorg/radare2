@@ -788,7 +788,7 @@ grub_udf_iterate_dir (grub_fshelp_node_t dir,
       /* Align to dword boundary.  */
       offset = (offset + dirent.file_ident_length + 3) & (~3);
     }
-
+  grub_free(child);
   return 0;
 }
 

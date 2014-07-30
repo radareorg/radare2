@@ -621,6 +621,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	return NULL;
     }
 #else
+	umask (S_IWGRP | S_IWOTH);
     if ((tfd=mkstemp(temp)) == -1) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	free(temp);
