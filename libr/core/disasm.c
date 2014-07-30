@@ -1082,7 +1082,7 @@ static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) 
 	case R_ANAL_OP_TYPE_MOV:
 		src = ds->analop.src[0];
 		if (src && src->memref>0 && src->reg) {
-			if (core->anal->reg && core->anal->reg->name) {
+			if (core->anal->reg) {
 				const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 				RAnalValue *dst = ds->analop.dst;
 				if (dst && dst->reg && dst->reg->name)
