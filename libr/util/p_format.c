@@ -124,9 +124,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		const char * orig = arg;
 		if (otimes>1)
 			p->printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
-		idx = 0;
 		arg = orig;
-		for (idx=0; i<len && arg<argend && *arg; idx++, arg++) {
+		for (idx=0; i<len && arg<argend && *arg; arg++) {
 			int size;
 			seeki = seek+i;
 			addr = 0LL;
@@ -154,6 +153,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					| (ut64)(*(buf+i+5))<<40 | (ut64)(*(buf+i+4))<<32
 				 	| (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
 			tmp = *arg;
+
 			if (otimes>1)
 				p->printf ("   ");
 #define MUSTSET (setval && elem == idx)
@@ -162,11 +162,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				if (!(MUSTSET)) {
 					if (oldprintf)
 						p->printf = oldprintf;
-					if (idx<nargs && tmp != 'e')
-						if (tmp == '*')
-							idx--;
-						else
-							p->printf (namefmt, r_str_word_get0 (args, idx));
+					if (idx<nargs && tmp != 'e' && isptr == 0) {
+						p->printf (namefmt, r_str_word_get0 (args, idx));
+						idx++;
+					}
 				}
 			} else {
 				if (!oldprintf)
@@ -179,7 +178,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 			case 1:
 				nexti = i + (p->bits/8);
 				i = 0;
-				tmp = *arg;
 				memset (buf, '\0', len);
 				p->printf ("(*0x%"PFMT64x") ", addr);
 				if (p->iob.read_at) {
@@ -205,27 +203,20 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 			switch (tmp) {
 			case '*':
 				isptr = 1;
-				if (i<=0 || !arg[1]) break;
 				arg++;
 				tmp = *arg; //last;
-			//	arg--;
-				idx--;
 				goto feed_me_again;
 			case '+':
-				idx--;
 				viewflags = !viewflags;
 				continue;
 			case 'e': // tmp swap endian
-				idx--;
 				endian ^= 1;
 				continue;
 			case ':': // skip char
 				i+=4;
-				idx-=4;
 				continue;
 			case '.': // skip char
 				i++;
-				idx--;
 				continue;
 			case 'p':
 				tmp = (p->bits==64)?'q': 'x';
@@ -233,7 +224,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 			case '?': // help
 				print_format_help (p);
-				idx--;
 				i = len; // exit
 				continue;
 			}
@@ -391,7 +381,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
-					if (strlen(setval) > strlen((char*)(buf+seeki)))
+					if ((size = strlen(setval)) > strlen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one \n");
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
@@ -410,9 +400,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				break;
 			case 'Z': // zero terminated wide string
 				if (MUSTSET) {
-					if (strlen(setval) > r_wstr_clen((char*)(buf+seeki)))
+					if ((size = strlen(setval)) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
+					size*=2;
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					for (; ((size || size==-1) && buf[i]) && i<len; i+=2) {
@@ -462,6 +453,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				invalid = 1;
 				break;
 			}
+			if (!MUSTSEE || MUSTSET) idx++;
 			if (viewflags && p->offname) {
 				const char *s = p->offname (p->user, seeki);
 				if (s) p->printf ("@(%s)", s);
@@ -475,7 +467,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		if (otimes>1)
 			p->printf ("}\n");
 		arg = orig;
-		idx = 0;
 	}
 	if (oldprintf)
 		p->printf = oldprintf;
