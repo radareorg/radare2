@@ -44,6 +44,15 @@ R_API const char *r_lib_types_get(int idx) {
 	return r_lib_types[idx];
 }
 
+R_API int r_lib_types_get_i(const char *str) {
+	int i;
+	for (i=0; r_lib_types[i]; i++) {
+		if (!strcmp (str, r_lib_types[i])) 
+			return i;
+	}
+	return -1;
+}
+
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
 	if (!libname || !*libname)
@@ -216,11 +225,8 @@ static int samefile(const char *a, const char *b) {
 }
 
 R_API int r_lib_open(RLib *lib, const char *file) {
-	RLibPlugin *p;
-	RListIter *iter;
 	RLibStruct *stru;
 	void *handler;
-	int ret = R_FALSE;
 
 	/* ignored by filename */
 	if (!r_lib_dl_check_filename (file)) {
@@ -242,10 +248,20 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return R_FAIL;
 	}
 
+	return r_lib_open_ptr (lib, file, handler, stru);
+}
+
+R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct *stru) {
+	RLibPlugin *p;
+	RListIter *iter;
+	int ret = R_FALSE;
 	// TODO: Use Sdb here. just a single line
 	r_list_foreach (lib->plugins, iter, p) {
 		if (samefile (file, p->file)) {
 			IFDBG eprintf ("Dupped\n");
+			// TODO: reload if opening again?
+			// TODO: store timestamp of file
+			// TODO: autoreload plugins if updated \o/
 			r_lib_dl_close (handler);
 			return R_FAIL;
 		}
