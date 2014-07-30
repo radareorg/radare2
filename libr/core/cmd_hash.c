@@ -170,7 +170,7 @@ static int cmd_hash(void *data, const char *input) {
 			if (p) r_lang_run_file (core->lang, p+1);
 			else r_lang_prompt (core->lang);
 		} else
-		if (!p || *p)
+		if (!p || *p==' ')
 			eprintf ("Invalid hashbang. See '#!' for help.\n");
 		return R_TRUE;
 	}

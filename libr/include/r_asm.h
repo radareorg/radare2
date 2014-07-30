@@ -109,6 +109,7 @@ typedef struct r_asm_plugin_t {
 	char *cpus;
 	char *desc;
 	char *license;
+	void *user; // user data pointer
 	int bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
