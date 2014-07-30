@@ -678,18 +678,23 @@ R_API int r_io_is_blockdevice (RIO *io) {
 }
 
 R_API ut64 r_io_size(RIO *io) {
+	int oldva;
 	ut64 size, here;
 	if (!io) return 0LL;
+	oldva = io->va;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
-	io->va = 0;
+	io->va = R_FALSE;
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
+	if (r_io_seek (io, here, R_IO_SEEK_SET) != here) {
+		eprintf("Failed to reset the file position\n");
+	}
+	io->va = oldva;
 	if (size == 0 && r_io_is_blockdevice (io)) {
 		io->va = 0;
 		size = UT64_MAX;
 	}
-	r_io_seek (io, here, R_IO_SEEK_SET);
 	return size;
 }
 
