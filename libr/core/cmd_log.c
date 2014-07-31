@@ -2,7 +2,7 @@
 
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	const char *input2 = input + (*input? (*input==' '? 2: 1): 0);
+	const char *input2 = input + 1;
 	char *arg = strchr (input2, ' ');
 	int n = atoi (input2);
 	int n2 = arg? atoi (arg+1): 0;
@@ -38,6 +38,7 @@ static int cmd_log(void *data, const char *input) {
 			"l-", " 123", "Delete logs before 123",
 			"ll", "", "Get last log message id",
 			"lj", "", "List in json format",
+			"lm", " [idx]", "Display log messages without index",
 			"ls", "", "List files in current directory (see pwd, cd)",
 			"lp", "[-plug]", "list, load, unload plugins",
 			NULL};
@@ -68,10 +69,19 @@ static int cmd_log(void *data, const char *input) {
 		}
 		break;
 	case ' ':
-		if (!n) {
+		if (n>0) {
+			r_core_log_list (core, n, n2, *input);
+		} else {
 			r_core_log_add (core, input+1);
-			break;
 		}
+		break;
+	case 'm':
+		if (n>0) {
+			r_core_log_list (core, n, 1, 't');
+		} else {
+			r_core_log_list (core, n, 0, 't');
+		}
+		break;
 	case 's':
 		r_core_syscmd_ls (input);
 		break;
