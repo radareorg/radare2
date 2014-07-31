@@ -19,6 +19,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 }
 
 static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
+	char buf_err[128];
 	static t_asmmodel asm_obj;
 	int attempt, constsize, oattempt = 0, oconstsize = 0, ret = 0, oret = 0xCAFE;
 
@@ -26,7 +27,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
 	/* constsize == 0: Address constants and inmediate data of 16/32b */
 	for (constsize = 0; constsize < 4; constsize++) {
 		for (attempt = 0; ret > 0; attempt++) {
-			ret = Assemble((char*)buf, a->pc, &asm_obj, attempt, constsize, op->buf_err);
+			ret = Assemble((char*)buf, a->pc, &asm_obj, attempt, constsize, buf_err);
 			if (ret > 0 && ret < oret) {
 				oret = ret;
 				oattempt = attempt;
@@ -34,7 +35,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
 			}
 		}
 	}
-	op->size = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, op->buf_err));
+	op->size = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, buf_err));
 	if (op->size > 0)
 		memcpy (op->buf, asm_obj.code, R_MIN(op->size, (R_ASM_BUFSIZE-1)));
 	return op->size;

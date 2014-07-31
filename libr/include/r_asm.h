@@ -17,7 +17,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_OPCODES_PATH R2_LIBDIR "/radare2/" R2_VERSION "/opcodes"
 // XXX too big!
-#define R_ASM_BUFSIZE 1024
+#define R_ASM_BUFSIZE 512
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
@@ -64,7 +64,6 @@ typedef struct r_asm_op_t {
 	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];
 	char buf_hex[R_ASM_BUFSIZE];
-	char buf_err[R_ASM_BUFSIZE];
 } RAsmOp;
 
 typedef struct r_asm_code_t {
