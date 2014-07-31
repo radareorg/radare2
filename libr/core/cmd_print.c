@@ -1420,7 +1420,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'W':
 			for (i=0; i<len; i+=4) {
-				ut32 *p = (ut32*)core->block+i;
+				ut32 *p = (ut32*)((ut8*)core->block+i);
 				r_cons_printf ("0x%08"PFMT64x" 0x%08x\n", core->offset+i, *p);
 			}
 			break;
