@@ -101,6 +101,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				dbg->printf ("%s\"%s\":%"PFMT64d,
 					n?",":"", item->name, value);
 				break;
+			case '-':
+				dbg->printf ("f-%s\n", item->name);
+				break;
 			case 1:
 			case '*':
 				dbg->printf ("f %s 1 0x%"PFMT64x"\n",

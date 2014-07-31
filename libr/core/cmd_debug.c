@@ -456,6 +456,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	const char *name;
 	char *arg;
 	switch (str[0]) {
+	case '-':
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '-', 0);
+		break;
 	case '?':
 		if (str[1]) {
 			ut64 off;

@@ -842,6 +842,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case '=':
 		__anal_reg_list (core, type, size, 2);
 		break;
+	case '-':
 	case '*':
 	case 'j':
 	case '\0':
