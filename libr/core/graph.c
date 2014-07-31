@@ -358,7 +358,7 @@ prevnode = curnode;
 			n_nodes = cgNodes (core, fcn, &nodes);
 			n_edges = cgEdges (fcn, nodes, &edges);
 			// callgraph layout
-			for (i=0;nodes[i].text;i++) {
+			for (i=0; nodes[i].text; i++) {
 // wrap to width 'w'
 				if (i>0) {
 					if (nodes[i].x<nodes[i-1].x) {

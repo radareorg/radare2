@@ -43,19 +43,19 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	int ret = R_TRUE;
 	x += c->sx;
 	y += c->sy;
-	if (c->x >= c->w) {
+	if (x >= c->w) {
 		c->x = c->w;
 		ret = R_FALSE;
 	}
-	if (c->y >= c->h) {
+	if (y >= c->h) {
 		c->y = c->h;
 		ret = R_FALSE;
 	}
-	if (c->x <0) {
+	if (x <0) {
 		c->x = 0;
 		ret = R_FALSE;
 	}
-	if (c->y <0) {
+	if (y <0) {
 		c->y = 0;
 		ret = R_FALSE;
 	}
