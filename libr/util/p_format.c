@@ -54,6 +54,29 @@ static void print_format_help(RPrint *p) {
 	" : - skip 4 bytes\n"
 	" . - skip 1 byte\n");
 }
+static void updateAddr(const ut8 *buf, int i, int endian, ut32 *addr, ut64 *addr64) {
+	if (endian)
+		*addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
+	else     *addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
+	if (endian)
+		*addr64 = ((ut64)(*(buf+i))<<56)
+		| ((ut64)(*(buf+i+1))<<48)
+		| ((ut64)(*(buf+i+2))<<40)
+		| ((ut64)(*(buf+i+3))<<32)
+		| ((*(buf+i+4))<<24)
+		| ((*(buf+i+5))<<16)
+		| (*(buf+i+6)<<8)
+		| (*(buf+i+7));
+	else
+		*addr64 =(((ut64)(*(buf+i+7)))<<56) 
+		| ((ut64)(*(buf+i+6))<<48)
+		| ((ut64)(*(buf+i+5))<<40)
+		| ((ut64)(*(buf+i+4))<<32)
+		| ((ut64)(*(buf+i+3))<<24)
+		| ((ut64)(*(buf+i+2))<<16)
+		| ((ut64)(*(buf+i+1))<<8)
+		| ((ut64)(*(buf+i)));
+}
 
 /* TODO: needs refactoring */
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
@@ -142,16 +165,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 			} else {
 				size = -1;
 			}
-			if (endian)
-				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
-			else     addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
-			if (endian)
-				 addr64 = (ut64)(*(buf+i))<<56 | (ut64)(*(buf+i+1))<<48
-					| (ut64)*(buf+i+2)<<40 | (ut64)(*(buf+i+3))<<32
-				 	| (*(buf+i+4))<<24 | (*(buf+i+5))<<16 | *(buf+i+6)<<8 | *(buf+i+7);
-			else addr64 = ((ut64)(*(buf+i+7)))<<56 | (ut64)(*(buf+i+6))<<48
-					| (ut64)(*(buf+i+5))<<40 | (ut64)(*(buf+i+4))<<32
-				 	| (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
+			updateAddr (buf, i, endian, &addr, &addr64);
+
 			tmp = *arg;
 
 			if (otimes>1)
@@ -182,6 +197,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				p->printf ("(*0x%"PFMT64x") ", addr);
 				if (p->iob.read_at) {
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
+					updateAddr (buf, i, endian, &addr, &addr64);
 				} else {
 					eprintf ("(cannot read memory)\n");
 					break;
@@ -269,9 +285,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					p->printf ("(qword) ");
-					p->printf ("0x%08"PFMT64x"", addr64);
+					p->printf ("0x%016"PFMT64x, addr64);
 				}
-				i+= (size==-1) ? 8 : size;
+				i += (size==-1) ? 8 : size;
 				break;
 			case 'b':
 				if (MUSTSET) {
