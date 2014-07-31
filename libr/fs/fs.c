@@ -634,6 +634,10 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				if (!s) goto beach;
 				strcpy (s, path);
 			}
+			if (!s) {
+				s = malloc (strlen (input)+32);
+				if (!s) goto beach;
+			}
 			strcat (s, "/");
 			strcat (s, input);
 			file = r_fs_open (fs, s);
