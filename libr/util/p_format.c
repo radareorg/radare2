@@ -54,21 +54,21 @@ static void print_format_help(RPrint *p) {
 	" : - skip 4 bytes\n"
 	" . - skip 1 byte\n");
 }
-static void updateAddr(const ut8 *buf, int i, int endian, ut32 *addr, ut64 *addr64) {
+static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
 	if (endian)
 		*addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
 	else     *addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
 	if (endian)
-		*addr64 = ((ut64)(*(buf+i))<<56)
+		*addr64 = (((ut64)(*(buf+i))<<56))
 		| ((ut64)(*(buf+i+1))<<48)
 		| ((ut64)(*(buf+i+2))<<40)
 		| ((ut64)(*(buf+i+3))<<32)
-		| ((*(buf+i+4))<<24)
-		| ((*(buf+i+5))<<16)
-		| (*(buf+i+6)<<8)
-		| (*(buf+i+7));
+		| ((ut64)(*(buf+i+4))<<24)
+		| ((ut64)(*(buf+i+5))<<16)
+		| ((ut64)(*(buf+i+6))<<8)
+		| ((ut64)(*(buf+i+7)));
 	else
-		*addr64 =(((ut64)(*(buf+i+7)))<<56) 
+		*addr64 =(((ut64)(*(buf+i+7))<<56)) 
 		| ((ut64)(*(buf+i+6))<<48)
 		| ((ut64)(*(buf+i+5))<<40)
 		| ((ut64)(*(buf+i+4))<<32)
