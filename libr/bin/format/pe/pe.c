@@ -1037,7 +1037,7 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return subsystem? strdup (subsystem): NULL;
 }
 
-#define HASCHR(x) bin->nt_headers->file_header.Characteristics
+#define HASCHR(x) bin->nt_headers->file_header.Characteristics & x
 
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
