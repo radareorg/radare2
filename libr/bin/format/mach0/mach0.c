@@ -7,7 +7,7 @@
 
 static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
 	ut64 section_base, section_size;
-	int i, min = -1;
+	int i;
 
 	if (!bin->sects)
 		return 0;
@@ -17,7 +17,6 @@ static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)*
 			if (bin->sects[i].addr<1)
 				continue;
 			if (addr<bin->sects[i].addr) {
-				min = i;
 				addr = bin->sects[i].addr & 0xffffffffFFFF0000;
 			}
 		}
@@ -575,6 +574,9 @@ static int MACH0_(r_bin_mach0_parse_import_stub)(struct MACH0_(r_bin_mach0_obj_t
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
 	symbol->name[0] = '\0';
+
+	if (!bin || !bin->sects)
+		return R_FALSE;
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
 				bin->sects[i].reserved2 > 0) {
@@ -650,6 +652,7 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 				symstr = (char*)bin->symstr+stridx;
 			else symstr = "???";
 			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
+			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
 			symbols[j].last = 0;
 		}
 	}
@@ -721,6 +724,7 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 		if (!*symstr)
 			continue;
 		strncpy (imports[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
+		imports[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
 		imports[j].ord = i;
 		imports[j++].last = 0;
 	}
@@ -889,7 +893,7 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 					break;
 				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 					DO_BIND();
-					addr += imm * wordsize + wordsize;
+					addr += (ut64)imm * (ut64)wordsize + wordsize;
 					break;
 				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
 					count = ULEB();
