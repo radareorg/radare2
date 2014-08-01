@@ -306,7 +306,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	int i, idx, len, qi;
-	char *str = NULL, foo[32], *q, *ret;
+	char *str = NULL, foo[32], *q, *ret = NULL;
 
 	delta += stackfixed; // XXX can be problematic
 	if (_str == NULL)
@@ -380,7 +380,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	//free ((void *)_str);
 	free (str);
-	return strdup (ret); // memleak or wtf
+	return ret? strdup (ret): NULL; // memleak or wtf
 }
 
 static void rcc_fun(REgg *egg, const char *str) {
