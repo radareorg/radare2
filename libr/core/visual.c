@@ -188,9 +188,11 @@ static int visual_nkey(RCore *core, int ch) {
 	case R_CONS_KEY_F4:
 		cmd = r_config_get (core->config, "key.f4");
 		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
+		break;
 	case R_CONS_KEY_F5:
 		cmd = r_config_get (core->config, "key.f5");
 		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
+		break;
 	case R_CONS_KEY_F6:
 		cmd = r_config_get (core->config, "key.f6");
 		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
