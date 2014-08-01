@@ -1,16 +1,5 @@
 /* radare - LGPL - Copyright 2007-2013 - pancake */
 
-#if 0
-# TEST DAT PTR SHIT
-e asm.bits=32
-wv 0x10
-wv 0x10 @ 4
-w hello @ 0x10
-pf ss
-pf *x*x
-pf *z*z
-#endif
-
 #include "r_cons.h"
 #include "r_util.h"
 #include "r_print.h"
@@ -56,8 +45,15 @@ static void print_format_help(RPrint *p) {
 }
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
 	if (endian)
-		*addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
-	else     *addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
+		*addr = (*(buf+i))<<24
+		| (*(buf+i+1))<<16
+		| (*(buf+i+2))<<8
+		| (*(buf+i+3));
+	else
+		*addr = (*(buf+i+3))<<24
+		| (*(buf+i+2))<<16
+		| (*(buf+i+1))<<8
+		| (*(buf+i));
 	if (endian)
 		*addr64 = (((ut64)(*(buf+i))<<56))
 		| ((ut64)(*(buf+i+1))<<48)
