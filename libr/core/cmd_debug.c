@@ -478,7 +478,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dr", " <type>", "Show flag registers",
 				"dr", " <register>=<val>", "Set register value",
 				"dr=", "", "Show registers in columns",
-				"dr?", "<register>", "Show value of eax register",
+				"dr?", "<register>", "Show value of given register",
 				"drb", " [type]", "Display hexdump of gpr arena (WIP)",
 				"drc", " [name]", "Related to conditional flag registers",
 				"drd", "", "Show only different registers",
