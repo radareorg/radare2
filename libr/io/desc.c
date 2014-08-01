@@ -103,9 +103,11 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 }
 
 R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset) {
-	RIOPlugin *plugin = desc ? desc->plugin : NULL;
-	if (!plugin) return (ut64)lseek (desc->fd, offset, SEEK_SET);
-	return plugin->lseek (io, desc, offset, SEEK_SET);
+	if (!desc)
+		return UT64_MAX;
+	if (!desc->plugin)
+		return (ut64)lseek (desc->fd, offset, SEEK_SET);
+	return desc->plugin->lseek (io, desc, offset, SEEK_SET);
 }
 
 #if 0
