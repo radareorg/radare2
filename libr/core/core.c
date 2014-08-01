@@ -1015,6 +1015,8 @@ reaccept:
 					memcpy (ptr+5, core->block, i); //core->blocksize);
 					r_socket_write (c, ptr, i+5);
 					r_socket_flush (c);
+					free(ptr);
+					ptr = NULL;
 				}
 				break;
 			case RMT_CMD:
