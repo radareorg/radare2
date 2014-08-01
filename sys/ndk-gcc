@@ -39,6 +39,9 @@ x86)
 	;;
 esac
 
+if [ -d "${PROGDIR}/platforms/android-L/arch-${ARCH}" ]; then
+	ANDROID_SDK_VERSION=L
+fi
 
 PLATFORM=android-${ANDROID_SDK_VERSION}
 PLATFORM_ROOT=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH}
