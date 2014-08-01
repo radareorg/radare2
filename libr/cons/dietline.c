@@ -108,7 +108,8 @@ do_it_again:
 		int ret = read (0, buf, 1);
 		// VTE HOME/END support
 		if (buf[0]==79) {
-			read (0,buf,1);
+			if (read (0,buf,1) != 1)
+				return -1;
 			if (buf[0]==70) {
 				return 5;
 			} else if (buf[0]==72) {

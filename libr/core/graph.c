@@ -274,7 +274,7 @@ static int bbNodes (RCore *core, RAnalFunction *fcn, Node **n) {
 	RListIter *iter;
 	Node *nodes = malloc (sizeof(Node)*(r_list_length (fcn->bbs)+1));
 	if (!nodes)
-		return R_FALSE;
+		return 0;
 	i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		nodes[i].text = r_core_cmd_strf (core,
@@ -314,6 +314,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	n_nodes = bbNodes (core, fcn, &nodes);
 	n_edges = bbEdges (fcn, nodes, &edges);
 
+	if (!nodes || !edges)
+		return R_FALSE;
 	// hack to make layout happy
 	for (i=0;nodes[i].text;i++) {
 		Node_print (can, &nodes[i], i==curnode);
@@ -334,15 +336,13 @@ repeat:
 		Node *b = &nodes[edges[i].to];
 		Edge_print (can, a, b, edges[i].nth);
 	}
-	if (nodes)
-	//for (i=0;nodes[i].text;i++) {
 	for (i=0;i<n_nodes;i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}
 
 	G (-can->sx, -can->sy);
-	snprintf (title, sizeof(title)-1, "[0x%08"PFMT64x"]> VV @ %s (nodes %d) %s",
-		fcn->addr, fcn->name, n_nodes, callgraph?"CG":"BB");
+	snprintf (title, sizeof(title)-1, "[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d) %s",
+		fcn->addr, fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
 	W (title);
 
 	r_cons_canvas_print (can);

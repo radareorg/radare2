@@ -350,8 +350,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		data_dir_import->VirtualAddress);
 	PE_DWord import_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin,
 		data_dir_import->VirtualAddress);
-	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin,
-		data_dir_delay_import->VirtualAddress);
+	PE_DWord delay_import_dir_offset = data_dir_delay_import?
+		PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_delay_import->VirtualAddress): 0;
 	PE_(image_import_directory) *import_dir = NULL;
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *delay_import_dir = NULL;
