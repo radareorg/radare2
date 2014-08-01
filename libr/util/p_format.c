@@ -4,6 +4,7 @@
 #include "r_util.h"
 #include "r_print.h"
 
+static int (*realprintf)(const char *str, ...);
 static int nullprintf(const char *fmt, ...) { return 0; }
 
 static void print_format_help(RPrint *p) {
@@ -74,10 +75,105 @@ static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr
 		| ((ut64)(*(buf+i)));
 }
 
-/* TODO: needs refactoring */
+static void r_print_format_pointer(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr64) {
+	if (mustset) {
+		realprintf ("wv8 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("(qword) ");
+		p->printf ("0x%016"PFMT64x, addr64);
+	}
+}
+
+static void r_print_format_byte(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
+	if (mustset) {
+		realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
+			IS_PRINTABLE (buf[i])?buf[i]:0);
+	}
+}
+
+static void r_print_format_char(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
+	if (mustset) {
+		realprintf ("?e pf c not yet implemented\n");
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("%d ; %d ; '%c'", buf[i], (char)buf[i],
+			IS_PRINTABLE (buf[i])?buf[i]:0);
+	}
+}
+
+static int r_print_format_ptrstring(const RPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64) {
+	ut8 buffer[255];
+	p->printf ("0x%08"PFMT64x" = ", seeki);
+	if (p->iob.read_at) {
+		if (is64 == 1)
+			p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer)-8);
+		else
+			p->iob.read_at (p->iob.io, (ut64)addr, buffer, sizeof (buffer)-8);
+	} else {
+		printf ("(cannot read memory)\n");
+		return -1;
+	}
+	p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
+	p->printf ("%s", buffer);
+	return 0;
+}
+
+// TODO: support unsigned int?
+static void r_print_format_hex(const RPrint* p, int mustset, ut64 seeki, const char* setval, ut64 addr) {
+	if (mustset) {
+		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("%"PFMT64d"", addr);
+	}
+}
+static void r_print_format_hexflag(const RPrint* p, int mustset, ut64 seeki, const char* setval, ut64 addr) {
+	if (mustset) {
+		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		ut32 addr32 = (ut32)addr;
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x"", addr32);
+	}
+	//if (string_flag_offset(buf, (ut64)addr32, -1))
+	//	p->printf("; %s", buf);
+}
+
+static int r_print_format_10bytes(const RPrint* p, int mustset, ut64 seeki, const char* setval, ut64 addr, ut8* buf) {
+	ut8 buffer[255];
+	int j;
+
+	if (mustset) {
+		realprintf ("?e pf B not yet implemented\n");
+	} else {
+		if (!p->iob.read_at) {
+			printf ("(cannot read memory)\n");
+			return -1;
+		} else
+			p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
+
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+
+		for (j=0; j<10; j++)
+			p->printf ("%02x ", buf[j]);
+
+		p->printf (" ... (");
+		for (j=0; j<10; j++)
+			if (IS_PRINTABLE (buf[j]))
+				p->printf ("%c", buf[j]);
+			else
+				p->printf (".");
+		p->printf (")");
+	}
+	return 0;
+}
+
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
-	int (*realprintf)(const char *str, ...);
 	int (*oldprintf)(const char *str, ...);
 	const char *argend = fmt+strlen (fmt);
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
@@ -85,7 +181,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	const char *arg = fmt;
 	int viewflags = 0;
 	char namefmt[8];
-	ut8 *buf, buffer[256];
+	ut8 *buf;
 
 	nexti = nargs = endian = i = j = 0;
 
@@ -242,11 +338,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 
 			/* cmt chars */
 			switch (tmp) {
-	#if 0
-			case 'n': // enable newline
-				j ^= 1;
-				continue;
-	#endif
 #if 0
 			case 't':
 				/* unix timestamp */
@@ -276,34 +367,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				}
 				break;
 			case 'q':
-				if (MUSTSET) {
-					realprintf ("wv8 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("(qword) ");
-					p->printf ("0x%016"PFMT64x, addr64);
-				}
+				r_print_format_pointer(p, MUSTSET, setval, seeki, addr64);
 				i += (size==-1) ? 8 : size;
 				break;
 			case 'b':
-				if (MUSTSET) {
-					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%d ; 0x%02x ; '%c'",
-						buf[i], buf[i], IS_PRINTABLE (buf[i])?buf[i]:0);
-				}
+				r_print_format_byte(p, MUSTSET, setval, seeki, buf, i);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'c':
-				if (MUSTSET) {
-					realprintf ("?e pf c not yet implemented\n");
-				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%d ; %d ; '%c'",
-						buf[i], (char)buf[i],
-						IS_PRINTABLE (buf[i])?buf[i]:0);
-				}
+				r_print_format_char(p, MUSTSET, setval, seeki, buf, i);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'X':
@@ -323,24 +395,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				i+=size;
 				break;
 			case 'B':
-				if (MUSTSET) {
-					realprintf ("?e pf B not yet implemented\n");
-				} else {
-					memset (buffer, '\0', 255);
-					if (!p->iob.read_at) {
-						printf ("(cannot read memory)\n");
-						break;
-					} else p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					for (j=0; j<10; j++) p->printf ("%02x ", buf[j]);
-					p->printf (" ... (");
-					for (j=0; j<10; j++)
-						if (IS_PRINTABLE (buf[j]))
-							p->printf ("%c", buf[j]);
-						else p->printf (".");
-					p->printf (")");
-				}
-				i+= (size==-1) ? 4 : size;
+				if(r_print_format_10bytes(p, MUSTSET, seeki, setval, addr, buf) == 0)
+					i+= (size==-1) ? 4 : size;
 				break;
 			case 'f':
 				if (MUSTSET) {
@@ -352,13 +408,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'i':
-			case 'd': // TODO: support unsigned int?
-				if (MUSTSET) {
-					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%"PFMT64d"", addr);
-				}
+			case 'd':
+				r_print_format_hex(p, MUSTSET, seeki, setval, addr);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'D':
@@ -367,15 +418,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					i += p->disasm (p->user, seeki);
 				break;
 			case 'x':
-				if (MUSTSET) {
-					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					ut32 addr32 = (ut32)addr;
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("0x%08"PFMT64x"", addr32);
-				}
-				//if (string_flag_offset(buf, (ut64)addr32, -1))
-				//	p->printf("; %s", buf);
+				r_print_format_hexflag(p, MUSTSET, seeki, setval, addr);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'w':
@@ -431,34 +474,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					while (size--) i++;
 				break;
 			case 's':
-				p->printf ("0x%08"PFMT64x" = ", seeki);
-				memset (buffer, '\0', 255);
-				if (p->iob.read_at) {
-					p->iob.read_at (p->iob.io, (ut64)addr,
-							buffer, sizeof (buffer)-8);
-				} else {
-					printf ("(cannot read memory)\n");
-					break;
-				}
-				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
-						seeki, addr);
-				p->printf ("%s", buffer);
-				i+= (size==-1) ? 4 : size;
+				if(r_print_format_ptrstring(p, seeki, addr64, addr, 0) == 0)
+					i+= (size==-1) ? 4 : size;
 				break;
 			case 'S':
-				p->printf ("0x%08"PFMT64x" = ", seeki);
-				memset (buffer, '\0', 255);
-				if (p->iob.read_at) {
-					p->iob.read_at (p->iob.io, addr64,
-							buffer, sizeof (buffer)-8);
-				} else {
-					printf ("(cannot read memory)\n");
-					break;
-				}
-				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
-						seeki, addr);
-				p->printf ("%s", buffer);
-				i+= (size==-1) ? 8 : size;
+				if(r_print_format_ptrstring(p, seeki, addr64, addr, 1) == 0)
+					i+= (size==-1) ? 8 : size;
 				break;
 			default:
 				/* ignore unknown chars */
