@@ -184,8 +184,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case ARM_INS_B:
 			case ARM_INS_BX:
 			case ARM_INS_BXJ:
-				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = IMM(0);
+				if (insn->detail->arm.cc) {
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					op->jump = IMM(0);
+					op->fail = addr+op->size;
+				} else {
+					op->type = R_ANAL_OP_TYPE_JMP;
+					op->jump = IMM(0);
+				}
 				break;
 			}
 			if (a->decode) {
