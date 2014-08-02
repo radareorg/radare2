@@ -123,7 +123,7 @@ static int r_print_format_ptrstring(const RPrint* p, ut64 seeki, ut64 addr64, ut
 }
 
 // TODO: support unsigned int?
-static void r_print_format_hex(const RPrint* p, int mustset, ut64 seeki, const char* setval, ut64 addr) {
+static void r_print_format_hex(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
 	if (mustset) {
 		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
@@ -131,7 +131,7 @@ static void r_print_format_hex(const RPrint* p, int mustset, ut64 seeki, const c
 		p->printf ("%"PFMT64d"", addr);
 	}
 }
-static void r_print_format_hexflag(const RPrint* p, int mustset, ut64 seeki, const char* setval, ut64 addr) {
+static void r_print_format_hexflag(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
 	if (mustset) {
 		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
@@ -143,7 +143,7 @@ static void r_print_format_hexflag(const RPrint* p, int mustset, ut64 seeki, con
 	//	p->printf("; %s", buf);
 }
 
-static int r_print_format_10bytes(const RPrint* p, int mustset, ut64 seeki, const char* setval, ut64 addr, ut8* buf) {
+static int r_print_format_10bytes(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr, ut8* buf) {
 	ut8 buffer[255];
 	int j;
 
@@ -170,6 +170,36 @@ static int r_print_format_10bytes(const RPrint* p, int mustset, ut64 seeki, cons
 		p->printf (")");
 	}
 	return 0;
+}
+
+static int r_print_format_hexpairs(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int size) {
+	int j;
+
+	if (mustset) {
+		realprintf ("?e pf X not yet implemented\n");
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		size = (size < 1) ? 1 : size;
+
+		for (j=0; j<size; j++)
+			p->printf ("%02x ", (ut8)buf[j]);
+
+		p->printf (" ... (");
+		for (j=0; j<size; j++)
+			if (IS_PRINTABLE (buf[j]))
+				p->printf ("%c", buf[j]);
+			else
+				p->printf (".");
+		p->printf (")");
+	}
+	return size;
+}
+
+static void r_print_format_float(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
+	if (mustset)
+		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	else
+		p->printf ("0x%08"PFMT64x" = %f", seeki, (float)(addr));
 }
 
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
@@ -199,6 +229,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	otimes = times = atoi (arg);
 	if (times > 0)
 		while ((*arg>='0'&&*arg<='9')) arg++;
+
 	bracket = strchr (arg,'{');
 	if (bracket) {
 		char *end = strchr (arg,'}');
@@ -215,6 +246,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		print_format_help (p);
 		goto beach;
 	}
+
 	/* get args */
 	args = strchr (arg, ' ');
 	if (args) {
@@ -225,8 +257,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		if (nargs == 0)
 			R_FREE (args);
 		for (i=0; i<nargs; i++) {
-			int len = strlen (r_str_word_get0 (args, i));
-			if (len>maxl) maxl = len;
+			const int len = strlen (r_str_word_get0 (args, i));
+			if (len > maxl)
+				maxl = len;
 		}
 		l++;
 		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl);
@@ -234,7 +267,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 
 	/* go format */
 	i = 0;
-	if (!times) otimes = times = 1;
+	if (!times)
+		otimes = times = 1;
 	for (; times; times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
@@ -307,6 +341,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 			}
 			if (tmp == 0 && last != '*')
 				break;
+
 			/* skip chars */
 			switch (tmp) {
 			case '*':
@@ -314,20 +349,20 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				arg++;
 				tmp = *arg; //last;
 				goto feed_me_again;
-			case '+':
+			case '+': // toggle view flags
 				viewflags = !viewflags;
 				continue;
 			case 'e': // tmp swap endian
 				endian ^= 1;
 				continue;
-			case ':': // skip char
+			case ':': // skip 4 bytes
 				i+=4;
 				continue;
-			case '.': // skip char
+			case '.': // skip 1 byte
 				i++;
 				continue;
-			case 'p':
-				tmp = (p->bits==64)?'q': 'x';
+			case 'p': // pointer reference
+				tmp = (p->bits == 64)? 'q': 'x';
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
 			case '?': // help
@@ -354,8 +389,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				}
 				break;
 #endif
-			case 'e':
-				if (size>0) p->printf ("Size not yet implemented\n");
+			case 'e': //WTF is this? 'e' is supposed to swap endians?!
+				if (size > 0)
+					p->printf ("Size not yet implemented\n");
 				if (MUSTSET) {
 					realprintf ("?e pf e not yet supported\n");
 				} else {
@@ -379,37 +415,20 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'X':
-				if (MUSTSET) {
-					realprintf ("?e pf X not yet implemented\n");
-				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					size = (size < 1) ? 1 : size;
-					for (j=0; j<size; j++) p->printf ("%02x ", (ut8)buf[j]);
-					p->printf (" ... (");
-					for (j=0; j<size; j++)
-						if (IS_PRINTABLE (buf[j]))
-							p->printf ("%c", buf[j]);
-						else p->printf (".");
-					p->printf (")");
-				}
+				size = r_print_format_hexpairs(p, MUSTSET, setval, seeki, buf, size);
 				i+=size;
 				break;
 			case 'B':
-				if(r_print_format_10bytes(p, MUSTSET, seeki, setval, addr, buf) == 0)
+				if(r_print_format_10bytes(p, MUSTSET, setval, seeki, addr, buf) == 0)
 					i+= (size==-1) ? 4 : size;
 				break;
 			case 'f':
-				if (MUSTSET) {
-					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					p->printf ("0x%08"PFMT64x" = %f", seeki,
-						(float)(addr));
-				}
+				r_print_format_float(p, MUSTSET, setval, seeki, addr);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'i':
 			case 'd':
-				r_print_format_hex(p, MUSTSET, seeki, setval, addr);
+				r_print_format_hex(p, MUSTSET, setval, seeki, addr);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'D':
@@ -418,7 +437,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 					i += p->disasm (p->user, seeki);
 				break;
 			case 'x':
-				r_print_format_hexflag(p, MUSTSET, seeki, setval, addr);
+				r_print_format_hexflag(p, MUSTSET, setval, seeki, addr);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'w':
@@ -486,12 +505,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				invalid = 1;
 				break;
 			}
-			if (!MUSTSEE || MUSTSET) idx++;
+			if (!MUSTSEE || MUSTSET)
+				idx++;
 			if (viewflags && p->offname) {
 				const char *s = p->offname (p->user, seeki);
-				if (s) p->printf ("@(%s)", s);
+				if (s)
+					p->printf ("@(%s)", s);
 				s = p->offname (p->user, addr);
-				if (s) p->printf ("*(%s)", s);
+				if (s)
+					p->printf ("*(%s)", s);
 			}
 			if (tmp != 'D' && !invalid)
 				p->printf ("\n");
@@ -505,8 +527,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		p->printf = oldprintf;
 beach:
 	free (buf);
-	if (args) {
+	if (args)
 		free (args);
-	}
 	return i;
 }
