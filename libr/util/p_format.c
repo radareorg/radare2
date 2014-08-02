@@ -75,7 +75,7 @@ static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr
 		| ((ut64)(*(buf+i)));
 }
 
-static void r_print_format_pointer(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr64) {
+static void r_print_format_quadword(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr64) {
 	if (mustset) {
 		realprintf ("wv8 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
@@ -97,7 +97,7 @@ static void r_print_format_byte(const RPrint* p, int mustset, const char* setval
 
 static void r_print_format_char(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
 	if (mustset) {
-		realprintf ("?e pf c not yet implemented\n");
+		realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		p->printf ("%d ; %d ; '%c'", buf[i], (char)buf[i],
@@ -213,11 +213,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	char namefmt[8];
 	ut8 *buf;
 
-	nexti = nargs = endian = i = j = 0;
+	nexti = nargs = i = j = 0;
 
-	if (len<1) return 0;
+	if (len < 1)
+		return 0;
 	buf = malloc (len);
-	if (!buf) return 0;
+	if (!buf)
+		return 0;
 	memcpy (buf, b, len);
 	endian = p->big_endian;
 
@@ -225,6 +227,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	realprintf = p->printf;
 
 	while (*arg && iswhitechar (*arg)) arg++;
+
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0)
@@ -344,7 +347,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 
 			/* skip chars */
 			switch (tmp) {
-			case '*':
+			case '*': // next char is a pointer
 				isptr = 1;
 				arg++;
 				tmp = *arg; //last;
@@ -403,7 +406,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				}
 				break;
 			case 'q':
-				r_print_format_pointer(p, MUSTSET, setval, seeki, addr64);
+				r_print_format_quadword(p, MUSTSET, setval, seeki, addr64);
 				i += (size==-1) ? 8 : size;
 				break;
 			case 'b':
