@@ -63,11 +63,21 @@ static int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
 	return 1;
 }
 
-#define GET_PAGE(pn, off, pos, page_size)	(pn) = (pos) / (page_size); \
-											(off) = (pos) % (page_size);
+#define GET_PAGE(pn, off, pos, page_size)	{ \
+	(pn) = (pos) / (page_size); \
+	(off) = (pos) % (page_size); \
+}
+
+#define READ_PAGES(start_indx, end_indx) { \
+	for (i = start_indx; i < end_indx; i++) { \
+		fseek(stream_file->fp, stream_file->pages[i] * stream_file->page_size, SEEK_SET); \
+		fread(tmp, stream_file->page_size, 1, stream_file->fp); \
+		tmp += stream_file->page_size; \
+	} \
+}
 
 ///////////////////////////////////////////////////////////////////////////////
-static char* stream_file_read(R_STREAM_FILE *stream, int size)
+static char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 {
 	int pn_start, off_start, pn_end, off_end;
 	int i = 0;
@@ -76,34 +86,26 @@ static char* stream_file_read(R_STREAM_FILE *stream, int size)
 	char *ret = 0;
 
 	if (size == -1) {
-		pdata = (char *) malloc(stream->pages_amount * stream->page_size);
-		GET_PAGE(pn_start, off_start, stream->pos, stream->page_size);
+		pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
+		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 		tmp = pdata;
-		// read_pages (...) {
-		for (i = 0; i < stream->pages_amount; i++) {
-			fseek(stream->fp, stream->pages[i] * stream->page_size, SEEK_SET);
-			fread(tmp, stream->page_size, 1, stream->fp);
-		}
-		//}
-		stream->pos = stream->end;
+		READ_PAGES(0, stream_file->pages_amount)
+		stream_file->pos = stream_file->end;
 		tmp = pdata;
-		ret = (char *) malloc(stream->end - off_start);
-		memcpy(ret, tmp + off_start, stream->end - off_start);
+		ret = (char *) malloc(stream_file->end - off_start);
+		memcpy(ret, tmp + off_start, stream_file->end - off_start);
 		free(pdata);
 	} else {
-		GET_PAGE(pn_start, off_start, stream->pos, stream->page_size);
-		GET_PAGE(pn_end, off_end, stream->pos + size, stream->page_size);
+		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
+		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
 
 		pdata = (char *) malloc(pn_end + 1);
 		tmp = pdata;
-		for (i = pn_start; i < (pn_end + 1); i++) {
-			fseek(stream->fp, stream->pages[i] * stream->page_size, SEEK_SET);
-			fread(tmp, stream->page_size, 1, stream->fp);
-		}
-		stream->pos += size;
-		ret = (char *) malloc(-(stream->page_size - off_end));
+		READ_PAGES(pn_start, (pn_end + 1))
+		stream_file->pos += size;
+		ret = (char *) malloc(-(stream_file->page_size - off_end));
 		tmp = pdata;
-		memcpy(ret, tmp + off_start, -(stream->page_size - off_end));
+		memcpy(ret, tmp + off_start, -(stream_file->page_size - off_end));
 		free(pdata);
 	}
 
@@ -118,6 +120,9 @@ static char* stream_file_read(R_STREAM_FILE *stream, int size)
 //        self.pos += offset
 //    elif whence == 2:
 //        self.pos = self.end + offset
+//if self.pos < 0: self.pos = 0
+//if self.pos > self.end: self.pos = self.end
+
 static void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence)
 {
 	switch (whence) {
@@ -133,6 +138,9 @@ static void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence)
 	default:
 		break;
 	}
+
+	if (stream_file->pos < 0) stream_file->pos = 0;
+	if (stream_file->pos > stream_file->end) stream_file->pos = stream_file->end;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -141,9 +149,20 @@ static int stream_file_tell(R_STREAM_FILE *stream_file)
 	return stream_file->pos;
 }
 
+//def _get_data(self):
+//    pos = self.stream_file.tell()
+//    self.stream_file.seek(0)
+//    data = self.stream_file.read()
+//    self.stream_file.seek(pos)
+//    return data
 static char* pdb_stream_get_data(R_PDB_STREAM *pdb_stream)
 {
-	return 0;
+	char *data;
+	int pos = stream_file_tell(&pdb_stream->stream_file);
+	stream_file_seek(&pdb_stream->stream_file, 0, 0);
+	data = stream_file_read(&pdb_stream->stream_file, -1);
+	stream_file_seek(&pdb_stream->stream_file, pos, 0);
+	return data;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,12 +216,44 @@ static int count_pages(int length, int page_size)
 static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
 								 EStream indx, int root_size, int page_size)
 {
+	int num_streams;
 	char *data;
+	R_PDB7_ROOT_STREAM *root_stream7;
 	pdb->root_stream = (R_PDB7_ROOT_STREAM *)malloc(sizeof(R_PDB7_ROOT_STREAM));
 	init_r_pdb_stream(pdb->root_stream, pdb->fp, root_page_list, pages_amount,
 					  indx, root_size, page_size);
 
-	// data = self.data
+	root_stream7 = pdb->root_stream;
+	data = pdb_stream_get_data(&(root_stream7->pdb_stream));
+
+	num_streams = *(int *)data;
+//# num_streams dwords giving stream sizes
+//       rs = data[4:]
+//       sizes = []
+//       for i in range(0,self.num_streams*4,4):
+//           (stream_size,) = unpack("<I",rs[i:i+4])
+//           # Seen in some recent symbols. Not sure what the difference between this
+//           # and stream_size == 0 is.
+//           if stream_size == 0xffffffff:
+//               stream_size = 0
+//           sizes.append(stream_size)
+
+//       # Next comes a list of the pages that make up each stream
+//       rs = rs[self.num_streams*4:]
+//       page_lists = []
+//       pos = 0
+//       for i in range(self.num_streams):
+//           num_pages = _pages(sizes[i], self.page_size)
+
+//           if num_pages != 0:
+//               pages = unpack("<" + ("%sI" % num_pages),
+//                              rs[pos:pos+(num_pages*4)])
+//               page_lists.append(pages)
+//               pos += num_pages*4
+//           else:
+//               page_lists.append(())
+
+//       self.streams = zip(sizes, page_lists)
 
 	printf("init_pdb7_root_stream()\n");
 	return 1;
