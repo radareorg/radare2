@@ -97,7 +97,7 @@ static boolt check_arg(ut32 ins_bits, int *err_code)
 {
 	boolt res = 0;
 
-	if (ins_bits <= 31 | (ins_bits >= 128 && ins_bits < 160)) {
+	if ((ins_bits <= 31) | (ins_bits >= 128 && ins_bits < 160)) {
 		res = 1;
 	} else if (ins_bits >= 32 && ins_bits <= 252) {
 		res = 0;
@@ -258,12 +258,14 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 			aux = strchr(pos, '`');
 			if (aux == NULL || pos == aux) {
 				fprintf(stderr, "Invalid instruction %s\n", ins);
+				free (res_decode);
 				*err_code = -1;
 				return NULL;
 			}
 			len = (ut32)(size_t)(aux-pos);
 			if (len >= 80) {
 				fprintf(stderr, "Invalid length token %d\n", len);
+				free (res_decode);
 				*err_code = -1;
 				return NULL;
 			}
@@ -366,6 +368,7 @@ void set_magic_value(ut32 *magic_value, st32 hash_code, int *err_code)
 			break;
 		case 482:
 			*magic_value |= 0x400;
+			break;
 		default:
 			fprintf(stderr, "invalid hash code 0x%x for magic value 0x%x\n", hash_code, *magic_value);
 			*err_code = -1;
