@@ -1259,9 +1259,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		input++;
 	}
 	core->vmode = R_TRUE;
-	core->cons->event_data = core;
-	core->cons->event_resize = \
-		(RConsEvent)r_core_visual_refresh;
 	r_cons_show_cursor (R_FALSE);
 	r_cons_enable_mouse (R_TRUE);
 
@@ -1271,6 +1268,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	core->print->flags |=  R_PRINT_FLAGS_ADDRMOD;
 	do {
+		core->cons->event_data = core;
+		core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
 		flags = core->print->flags;
 		color = r_config_get_i (core->config, "scr.color");
 		if (color) flags |= R_PRINT_FLAGS_COLOR;

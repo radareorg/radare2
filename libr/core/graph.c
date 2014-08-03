@@ -293,17 +293,57 @@ static int bbNodes (RCore *core, RAnalFunction *fcn, Node **n) {
 	return i;
 }
 
-R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
-	RAnalFunction *fcn;
-	RConsCanvas *can;
-	Node *nodes = NULL;
-	Edge *edges = NULL;
-	int key, cn, prevnode = curnode;
-	int w, h, i, n_nodes, n_edges;
-	int callgraph = 0;
-	char title[128];
+// damn singletons.. there should be only one screen and therefor
+// only one visual instance of the graph view. refactoring this
+// into a struct makes the code to reference pointers unnecesarily
+// we can look for a non-global solution here in the future if
+// necessary
+static RConsCanvas *can;
+static RAnalFunction *fcn;
+static Node *nodes = NULL;
+static Edge *edges = NULL;
+static int n_nodes = 0;
+static int n_edges = 0;
+static int callgraph = 0;
 
-	fcn = _fcn?_fcn:r_anal_get_fcn_at (core->anal, core->offset);
+static void r_core_graph_refresh (RCore *core) {
+	char title[128];
+	int i, h, w = r_cons_get_size (&h);
+	r_cons_clear00 ();
+	r_cons_canvas_resize (can, w, h);
+	r_cons_canvas_clear (can);
+
+	if (edges)
+	for (i=0;edges[i].nth!=-1;i++) {
+		if (edges[i].from == -1 || edges[i].to == -1)
+			continue;
+		Node *a = &nodes[edges[i].from];
+		Node *b = &nodes[edges[i].to];
+		Edge_print (can, a, b, edges[i].nth);
+	}
+	for (i=0;i<n_nodes;i++) {
+		Node_print (can, &nodes[i], i==curnode);
+	}
+
+	G (-can->sx, -can->sy);
+	snprintf (title, sizeof (title)-1,
+		"[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d) %s",
+		fcn->addr, fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
+	W (title);
+
+	r_cons_canvas_print (can);
+	r_cons_flush ();
+}
+ 
+R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
+	int key, cn, prevnode = curnode;
+	int i, w, h;
+	n_nodes = n_edges = 0;
+	nodes = NULL;
+	edges = NULL;
+	callgraph = 0;
+
+	fcn = _fcn? _fcn: r_anal_get_fcn_at (core->anal, core->offset);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
 		return R_FALSE;
@@ -325,39 +365,21 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 
 	// hack to make layout happy
-	for (i=0;nodes[i].text;i++) {
+	for (i=0; nodes[i].text; i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}
 	// run layout
 	Layout_depth (nodes, edges);
-	r_cons_clear00();
 repeat:
-	w = r_cons_get_size (&h);
-	r_cons_canvas_resize (can, w, h);
-	r_cons_canvas_clear (can);
+	core->cons->event_data = core;
+	core->cons->event_resize = \
+		(RConsEvent)r_core_graph_refresh;
+	r_core_graph_refresh (core);
 
-	if (edges)
-	for (i=0;edges[i].nth!=-1;i++) {
-		if (edges[i].from == -1 || edges[i].to == -1)
-			continue;
-		Node *a = &nodes[edges[i].from];
-		Node *b = &nodes[edges[i].to];
-		Edge_print (can, a, b, edges[i].nth);
-	}
-	for (i=0;i<n_nodes;i++) {
-		Node_print (can, &nodes[i], i==curnode);
-	}
-
-	G (-can->sx, -can->sy);
-	snprintf (title, sizeof(title)-1, "[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d) %s",
-		fcn->addr, fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
-	W (title);
-
-	r_cons_canvas_print (can);
-	r_cons_flush ();
+	// r_core_graph_inputhandle()
 	key = r_cons_readchar ();
 #define N nodes[curnode]
-prevnode = curnode;
+	prevnode = curnode;
 	switch (key) {
 	case 'V':
 		callgraph = !!!callgraph;
@@ -367,15 +389,15 @@ prevnode = curnode;
 			n_edges = cgEdges (fcn, nodes, &edges);
 			// callgraph layout
 			for (i=0; nodes[i].text; i++) {
-// wrap to width 'w'
+				// wrap to width 'w'
 				if (i>0) {
-					if (nodes[i].x<nodes[i-1].x) {
-						y+=10;
+					if (nodes[i].x < nodes[i-1].x) {
+						y += 10;
 						x = 0;
 					}
 				}
 				nodes[i].x = x;
-				nodes[i].y = i?y:2;
+				nodes[i].y = i? y: 2;
 				x += 30;
 			}
 		} else {
@@ -383,7 +405,7 @@ prevnode = curnode;
 			n_edges = bbEdges (fcn, nodes, &edges);
 			curnode = 0;
 			// hack to make the layout happy
-			for (i=0;nodes[i].text;i++) {
+			for (i=0; nodes[i].text; i++) {
 				Node_print (can, &nodes[i], i==curnode);
 			}
 			Layout_depth (nodes, edges);
@@ -453,7 +475,7 @@ prevnode = curnode;
 			if (r_cons_readchar () == 90) {
 				if (curnode<1) {
 					int i;
-					for(i=0; nodes[i].text;i++){};
+					for (i=0; nodes[i].text; i++) {};
 					curnode = i-1;
 				} else curnode--;
 			}
