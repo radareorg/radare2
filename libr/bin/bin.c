@@ -759,14 +759,16 @@ static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
 }
 
 static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
-	RBinInfo *info = obj ? obj->info : NULL;
 	RIOBind *iob;
 	RIO *io;
-	if (!info || !bf || !obj || !bf->rbin)
+	RBinInfo *info;
+	if (!bf || !bf->rbin || !obj || !obj->info)
 		return R_FALSE;
-	iob = bf ? &(bf->rbin->iob) : NULL;
+	info = obj->info;
+	iob = &(bf->rbin->iob);
 	io = iob ? iob->get_io (iob) : NULL;
-	if (!io || !iob) return R_FALSE;
+	if (!io || !iob)
+		return R_FALSE;
 #if 0
 	// clear loaded sections
 	//r_io_section_clear (io);
@@ -1215,7 +1217,7 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 	RListIter *iter = NULL;
 	RBinInfo *info = NULL;
 	r_list_foreach (binfile->objs, iter, obj) {
-		info = obj ? obj->info : NULL;
+		info = obj->info;
 
 		if ( info && (bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
@@ -1401,8 +1403,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 
 		RBinInfo *info = obj ? obj->info : NULL;
 		char bits = info ? info->bits : 0;
-		ut64 boffset = obj ? obj->boffset : 0;
-		ut32 obj_size = obj ? obj->obj_size : 0;
+		ut64 boffset = obj->boffset;
+		ut32 obj_size = obj->obj_size;
 		const char *arch = info ? info->arch : NULL;
 		const char *machine = info ? info->machine : "unknown_machine";
 

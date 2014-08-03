@@ -241,17 +241,19 @@ static RList* symbols(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	r_bin_xbe_obj_t *obj;
+	RBinInfo *ret;
 	ut8 dbg_name[256];
 
+	if (!arch || !arch->buf)
+		return NULL;
+
+	ret = R_NEW0 (RBinInfo);
 	if (!ret)
 		return NULL;
 
-	if (!arch || !arch->buf) {
-		free (ret);
-		return NULL;
-	}
+	obj = arch->o->bin_obj;
+
 
 	r_buf_read_at (arch->buf, obj->header->debug_name_addr - \
 		obj->header->base, dbg_name, sizeof(dbg_name));

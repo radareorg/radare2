@@ -88,9 +88,8 @@ static RList* sections(RBinFile *arch) {
 	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
 	ut64 sz = 0;
-	if (bin_obj) {
-		sz = arch ? r_buf_size (bin_obj->buf): 0;
-	}
+	if (bin_obj)
+		sz = r_buf_size (bin_obj->buf);
 
 	if (!(ret = r_list_new ()))
 		return NULL;

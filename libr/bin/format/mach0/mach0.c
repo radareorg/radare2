@@ -938,7 +938,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 
 	if (!bin->entry && !bin->sects)
 		return NULL;
-	if (!(entry = malloc (sizeof (struct r_bin_mach0_addr_t))))
+	if (!(entry = calloc (1, sizeof (struct r_bin_mach0_addr_t))))
 		return NULL;
 	// hack to bypass this test
 	bin->entry = 0LL;

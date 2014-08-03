@@ -261,8 +261,14 @@ static RBinInfo* info(RBinFile *arch) {
 	int i;
 	char *str;
 	struct r_bin_mach0_symbol_t *symbols = NULL;
-	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	RBinInfo *ret;
+	
+	if (!arch || !arch->o)
+		return NULL;
+
+	ret = R_NEW0 (RBinInfo);
+	if (!ret)
+		return NULL;
 
 	ret->lang = "c";
 	if (arch->file)
@@ -296,8 +302,7 @@ static RBinInfo* info(RBinFile *arch) {
 			arch->o->bin_obj)->has_crypto;
 		ret->bits = MACH0_(r_bin_mach0_get_bits) (arch->o->bin_obj);
 		ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->o->bin_obj);
-	} else ret->has_crypto = 0;
-	/* TODO detailed debug info */
+	}
 	ret->dbg_info = 0;
 
 	// if contains a symbol named radr:// the file is stripped
