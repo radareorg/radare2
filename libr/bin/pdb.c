@@ -63,6 +63,89 @@ static int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
 	return 1;
 }
 
+#define GET_PAGE(pn, off, pos, page_size)	(pn) = (pos) / (page_size); \
+											(off) = (pos) % (page_size);
+
+///////////////////////////////////////////////////////////////////////////////
+static char* stream_file_read(R_STREAM_FILE *stream, int size)
+{
+	int pn_start, off_start, pn_end, off_end;
+	int i = 0;
+	char *pdata = 0;
+	char *tmp;
+	char *ret = 0;
+
+	if (size == -1) {
+		pdata = (char *) malloc(stream->pages_amount * stream->page_size);
+		GET_PAGE(pn_start, off_start, stream->pos, stream->page_size);
+		tmp = pdata;
+		// read_pages (...) {
+		for (i = 0; i < stream->pages_amount; i++) {
+			fseek(stream->fp, stream->pages[i] * stream->page_size, SEEK_SET);
+			fread(tmp, stream->page_size, 1, stream->fp);
+		}
+		//}
+		stream->pos = stream->end;
+		tmp = pdata;
+		ret = (char *) malloc(stream->end - off_start);
+		memcpy(ret, tmp + off_start, stream->end - off_start);
+		free(pdata);
+	} else {
+		GET_PAGE(pn_start, off_start, stream->pos, stream->page_size);
+		GET_PAGE(pn_end, off_end, stream->pos + size, stream->page_size);
+
+		pdata = (char *) malloc(pn_end + 1);
+		tmp = pdata;
+		for (i = pn_start; i < (pn_end + 1); i++) {
+			fseek(stream->fp, stream->pages[i] * stream->page_size, SEEK_SET);
+			fread(tmp, stream->page_size, 1, stream->fp);
+		}
+		stream->pos += size;
+		ret = (char *) malloc(-(stream->page_size - off_end));
+		tmp = pdata;
+		memcpy(ret, tmp + off_start, -(stream->page_size - off_end));
+		free(pdata);
+	}
+
+	return ret;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//def seek(self, offset, whence=0):
+//    if whence == 0:
+//        self.pos = offset
+//    elif whence == 1:
+//        self.pos += offset
+//    elif whence == 2:
+//        self.pos = self.end + offset
+static void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence)
+{
+	switch (whence) {
+	case 0:
+		stream_file->pos = offset;
+		break;
+	case 1:
+		stream_file->pos += offset;
+		break;
+	case 2:
+		stream_file->pos = stream_file->end + offset;
+		break;
+	default:
+		break;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static int stream_file_tell(R_STREAM_FILE *stream_file)
+{
+	return stream_file->pos;
+}
+
+static char* pdb_stream_get_data(R_PDB_STREAM *pdb_stream)
+{
+	return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /// size - default value = -1
 /// page_size - default value = 0x1000
@@ -111,9 +194,16 @@ static int count_pages(int length, int page_size)
 	return num_pages;
 }
 
-static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, EStream indx,
-								 int root_size, int page_size)
+static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
+								 EStream indx, int root_size, int page_size)
 {
+	char *data;
+	pdb->root_stream = (R_PDB7_ROOT_STREAM *)malloc(sizeof(R_PDB7_ROOT_STREAM));
+	init_r_pdb_stream(pdb->root_stream, pdb->fp, root_page_list, pages_amount,
+					  indx, root_size, page_size);
+
+	// data = self.data
+
 	printf("init_pdb7_root_stream()\n");
 	return 1;
 }
@@ -217,7 +307,7 @@ static int pdb7_parse(R_PDB *pdb)
 		p_tmp = (int *)p_tmp + 1;
 	}
 
-	init_pdb7_root_stream(pdb, root_page_list, ePDB_STREAM_ROOT, root_size, page_size);
+	init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size);
 	// TODO: get root stream
 	// TODO: read root stream
 //self.root_stream = PDB7RootStream(self.fp, root_page_list,
