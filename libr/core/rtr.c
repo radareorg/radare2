@@ -339,7 +339,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	char *str = NULL;
 	if (fd) {
 		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \
-			&& rtr_n < RTR_MAX_HOSTS; rtr_n++);
+			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
 		if (!(cmd = strchr (input, ' '))) {
 			eprintf ("Error\n");
 			return;
@@ -539,6 +539,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			break;
 		}
 	core->num->value = ret;
+	r_socket_free(fd);
 	//r_core_rtr_list (core);
 }
 
@@ -552,7 +553,8 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 				r_socket_free (rtr_host[i].fd);
 				rtr_host[i].fd = NULL;
 				if (rtr_n == i)
-					for (rtr_n = 0; !rtr_host[rtr_n].fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+					for (rtr_n = 0; !rtr_host[rtr_n].fd \
+						&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
 				break;
 		}
 	} else {
@@ -572,7 +574,7 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
 		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \
-			&& rtr_n < RTR_MAX_HOSTS; rtr_n++);
+			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
 	}
 
 	for (;;) {
@@ -606,7 +608,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	if (fd != 0) {
 		if (rtr_host[rtr_n].fd)
 			for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd
-				&& rtr_n < RTR_MAX_HOSTS; rtr_n++);
+				&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
 		if (!(cmd = strchr (input, ' '))) {
 			eprintf ("Error\n");
 			return;
@@ -727,5 +729,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		r_socket_close (ch);
 		r_cons_break_end ();
 	}
+	r_socket_free(s);
+	r_socket_free(ch);
 	return 0;
 }
