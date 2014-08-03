@@ -125,9 +125,8 @@ static int var_cmd(RCore *core, const char *str) {
 			char *type = "int";
 			int size = 4;
 			char *name = "num";
-			r_anal_var_add (core->anal,
-				fcn->addr,
-				       scope, delta, kind, type, size, name);
+			r_anal_var_add (core->anal, fcn->addr,
+				scope, delta, kind, type, size, name);
 			//r_anal_str_to_type (core->anal, p)
 			//NULL, p3? atoi (p3): 0, p2);
 		} else var_help (*str);
@@ -889,17 +888,8 @@ static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
-	int use_colors = r_config_get_i(core->config, "scr.color");
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
-	const char *use_color;
-	if (use_colors) {
-#undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
-		use_color = ConsP(creg): Color_BWHITE;
-	} else {
-		use_color = NULL;
-	}
 
 	r_cons_break (NULL, NULL);
 

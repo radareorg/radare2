@@ -112,7 +112,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int rows = len/COLS;
 	char out[1024];
 	char *note[COLS];
-	int lnote[COLS];
+	//int lnote[COLS];
 	char bytes[1024];
 	char chars[1024];
 	int i, j, low, max, marks, tmarks, setcolor, hascolor;
@@ -136,7 +136,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		hascolor = 0;
 		for (j=0; j<COLS; j++) {
 			note[j] = NULL;
-			lnote[j] = 0;
+			//lnote[j] = 0;
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr+j);
 			if (comment) {
@@ -901,10 +901,8 @@ static int cmd_print(void *data, const char *input) {
 				RListIter *iter = NULL;
 				RCoreAsmHit *hit = NULL;
 				ut8 *buf;
-				ut8 ignore_invalid = R_TRUE;
 
 				if (*input == 'D'){
-					ignore_invalid = R_FALSE;
 					bwdhits = r_core_asm_back_disassemble_byte (core,
 						core->offset, use_blocksize, -1, 0);
 				} else bwdhits = r_core_asm_back_disassemble_instr (core,

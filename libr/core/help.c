@@ -36,7 +36,7 @@ R_API void r_core_cmd_help(const RCore *core, const char * help[]) {
 		} else padding[0] = 0;
 		if (i) {
 			r_cons_printf("|%s%s%s%s%s%s  %s%s%s\n",
-				i?" ":"",
+				" ",
 				help[i], args_color_start,
 				help[i+1], reset_colors,
 				padding, help_color_start,
