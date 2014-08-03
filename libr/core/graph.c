@@ -312,10 +312,18 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	can = r_cons_canvas_new (w-1, h-1);
 
 	n_nodes = bbNodes (core, fcn, &nodes);
-	n_edges = bbEdges (fcn, nodes, &edges);
-
-	if (!nodes || !edges)
+	if (!nodes) {
+		free (can);
 		return R_FALSE;
+	}
+
+	n_edges = bbEdges (fcn, nodes, &edges);
+	if (!edges) {
+		free (can);
+		free (nodes);
+		return R_FALSE;
+	}
+
 	// hack to make layout happy
 	for (i=0;nodes[i].text;i++) {
 		Node_print (can, &nodes[i], i==curnode);
