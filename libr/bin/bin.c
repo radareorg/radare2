@@ -795,6 +795,12 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	// XXX more checking will be needed here
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 		o->bin_obj = plugin->load_bytes (bytes+offset, sz, loadaddr, sdb);
+		if (!o->bin_obj) {
+			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
+				plugin->name);
+			free (o);
+			return NULL;
+		}
 	} else if (binfile && plugin && plugin->load) {
 		// XXX - haha, this is a hack.
 		// switching out the current object for the new
