@@ -10,6 +10,16 @@
     - remove unused arguments from r_meta_find (where ?)
     - implement r_meta_find
 #endif
+#if 0
+  SDB SPECS
+  
+DatabaseName:
+  'anal.meta'
+Keys:
+  'meta.<type>.count=<int>'     number of added metas where 'type' is a single char
+  'meta.<type>.<last>=<array>'  splitted array, each block contains K elements
+  'meta.<type>.<addr>=<string>' string representing extra information of the meta type at given address
+#endif
 
 #include <r_anal.h>
 #include <r_print.h>
@@ -62,13 +72,34 @@ static int meta_inrange_del (RAnal *a, ut64 addr, int size) {
 	return set;
 }
 
+// 512 = 1.5s
+// 256 = 1.3s
+// 128 = 1.2s
+// 64 = 1.14
+// 32 = 1.12
+// not storing any = 1
+#define K 256
+
+static int meta_type_add (RAnal *a, char type, ut64 addr) {
+	char key[32];
+	ut32 count, last;
+
+	snprintf (key, sizeof (key)-1, "meta.%c.count", type);
+	count = (ut32)sdb_num_inc (DB, key, 1, 0);
+	last = count/K;
+
+	snprintf (key, sizeof (key)-1, "meta.%c.%d", type, last);
+	sdb_array_add_num (DB, key, addr, 0);
+	return count;
+}
+
 // TODO: Add APIs to resize meta? nope, just del and add
 R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	char key[100], val[2048], *e_str;
 	int ret;
 	ut64 size;
-	snprintf (key, sizeof (key)-1, "meta.%c", type);
-	sdb_array_add_num (DB, key, addr, 0);
+	meta_type_add (a, type, addr);
+
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	size = sdb_array_get_num (DB, key, 0, 0);
 	if (!size) {
@@ -106,18 +137,22 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		if (type == R_META_TYPE_ANY) {
 			sdb_reset (DB);
 		} else {
-			snprintf (key, sizeof (key)-1, "meta.%c", type);
-			dtr = sdb_get (DB, key, 0);
-			for (p = dtr; p; p = next) {
-				s = sdb_anext (p, &next);
-				snprintf (key, sizeof (key)-1,
-					"meta.%c.0x%"PFMT64x,
-					type, sdb_atoi (s));
-				eprintf ("--> %s\n", key);
-				sdb_unset (DB, key, 0);
-				if (!next) break;
+			snprintf (key, sizeof (key)-1, "meta.%c.count", type);
+			int last = (ut64)sdb_num_get (DB, key, NULL)/K;
+			for (i=0; i<last; i++) {
+				snprintf (key, sizeof (key)-1, "meta.%c.%d", type, i);
+				dtr = sdb_get (DB, key, 0);
+				for (p = dtr; p; p = next) {
+					s = sdb_anext (p, &next);
+					snprintf (key, sizeof (key)-1,
+						"meta.%c.0x%"PFMT64x,
+						type, sdb_atoi (s));
+					eprintf ("--> %s\n", key);
+					sdb_unset (DB, key, 0);
+					if (!next) break;
+				}
+				free (dtr);
 			}
-			free (dtr);
 		}
 		return R_FALSE;
 	}
@@ -179,13 +214,13 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	// store this list in a different storage that doesnt have
 	// those limits and it's O(1) instead of O(n)
 	if (!exists) {
+		ut64 count;
 		/* set type index */
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, from);
 		snprintf (val, sizeof (val)-1, "%c", type);
 		sdb_array_add (DB, key, val, 0);
 		/* set type index */
-		snprintf (key, sizeof (key)-1, "meta.%c", type);
-		sdb_array_add_num (DB, key, from, 0);
+		count = meta_type_add (a, type, from);
 	}
 
 	return R_TRUE;
