@@ -756,6 +756,7 @@ enum {
 	R_ANAL_ESIL_FLAG_SIGN = 16,
 	// ...
 };
+
 enum {
 	R_ANAL_TRAP_NONE = 0,
 	R_ANAL_TRAP_UNHANDLED = 1,
@@ -763,7 +764,17 @@ enum {
 	R_ANAL_TRAP_DIVBYZERO = 3,
 	R_ANAL_TRAP_HALT = 4,
 };
+
+enum {
+	R_ANAL_ESIL_PARM_INVALID = 0,
+	R_ANAL_ESIL_PARM_INTERNAL,
+	R_ANAL_ESIL_PARM_REG,
+	R_ANAL_ESIL_PARM_NUM,
+};
+
+#define ESIL_INTERNAL_PREFIX	'%'		//must be a char
 #define ESIL struct r_anal_esil_t
+
 typedef struct r_anal_esil_t {
 	void *user;
 	RAnal *anal;
@@ -776,6 +787,8 @@ typedef struct r_anal_esil_t {
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
 // parity flag?
+	ut64 old;	//used for carry-flagging and borrow-flagging
+	ut64 new;	//used for carry-flagging and borrow-flagging
 	/* callbacks */
 	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
