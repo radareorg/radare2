@@ -85,6 +85,8 @@ R_API void r_anal_esil_free (RAnalEsil *esil) {
 	int i;
 	for (i=0; i<esil->stackptr;i++)
 		free (esil->stack[i]);
+	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_init && esil->anal->cur->esil_fini)
+		esil->anal->cur->esil_fini (esil);
 	free (esil);
 }
 
@@ -169,6 +171,8 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	esil->reg_write = internal_esil_reg_write;
 	esil->mem_read = internal_esil_mem_read;
 	esil->mem_write = internal_esil_mem_write;
+	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
+		return anal->cur->esil_init (esil);
 	return 1;
 }
 
