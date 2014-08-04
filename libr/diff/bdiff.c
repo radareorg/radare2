@@ -284,6 +284,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 	}
 	bn = splitlines ((const char *)sb, lb, &bl);
 	if (bn<0) {
+		free (al);
 		free (bl);
 		return -1;
 	}
