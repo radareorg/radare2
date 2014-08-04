@@ -9,7 +9,7 @@ static int gs (int rgb) {
 }
 
 static int rgb(int r, int g, int b) {
-	const double k = (256/6);
+	const double k = (256.0/6.0);
 	r = R_DIM (r/k, 0, 6);
 	g = R_DIM (g/k, 0, 6);
 	b = R_DIM (b/k, 0, 6);
@@ -49,7 +49,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 #define SETRGB(x,y,z) if(r)*r=(x);if(g)*g=(y);if(b)*b=(z)
 	if (bold != 255 && strchr (p, ';')) {
 		if (p[4]=='5')  {
-			const double k = (256/6);
+			const double k = (256.0/6.0);
 			int x, y, z;
 			int n = atoi (p+6);
 			/* this is slow.. need to reverse search */
