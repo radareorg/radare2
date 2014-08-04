@@ -652,8 +652,10 @@ list_file (struct grub_ntfs_file *diro, char *pos,
 	  fdiro->ino = u32at (pos, 0);
 
 	  ustr = grub_malloc (ns * 4 + 1);
-	  if (ustr == NULL)
+	  if (ustr == NULL){
+		  grub_free(fdiro);
 	    return 0;
+	  }
 	  *grub_utf16_to_utf8 ((grub_uint8_t *) ustr, (grub_uint16_t *) np,
 			       ns) = '\0';
 

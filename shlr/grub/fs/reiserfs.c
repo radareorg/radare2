@@ -658,7 +658,8 @@ grub_reiserfs_read_symlink (grub_fshelp_node_t node)
 
   block_size = grub_le_to_cpu16 (node->data->superblock.block_size);
   len = grub_le_to_cpu16 (found.header.item_size);
-  block = found.block_number * (block_size  >> GRUB_DISK_SECTOR_BITS);
+  block = (grub_disk_addr_t)found.block_number \
+		  * ((grub_disk_addr_t)block_size  >> GRUB_DISK_SECTOR_BITS);
   offset = grub_le_to_cpu16 (found.header.item_location);
 
   symlink_buffer = grub_malloc (len + 1);
@@ -1106,7 +1107,8 @@ grub_reiserfs_read (grub_file_t file, char *buf, grub_size_t len)
       switch (found.type)
         {
         case GRUB_REISERFS_DIRECT:
-          block = found.block_number * (block_size  >> GRUB_DISK_SECTOR_BITS);
+          block = (grub_disk_addr_t)found.block_number \
+				  * ((grub_disk_addr_t)block_size  >> GRUB_DISK_SECTOR_BITS);
           grub_dprintf ("reiserfs_blocktype", "D: %u\n", (unsigned) block);
           if (initial_position < current_position + item_size)
             {

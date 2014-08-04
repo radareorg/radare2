@@ -229,6 +229,10 @@ grub_partition_get_name (const grub_partition_t partition)
 	}
       else
 	{
+		if (out){
+		  grub_free(out);
+		  out = NULL;
+		}
 	  curlen = strl;
 	  out = grub_strdup (buf);
 	}

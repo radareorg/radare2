@@ -450,7 +450,8 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       grub_free (indir);
     }
   /* Double indirect.  */
-  else if (fileblock < INDIRECT_BLOCKS + blksz / 4 * (blksz / 4 + 1))
+  else if (fileblock < (grub_disk_addr_t)(INDIRECT_BLOCKS + blksz / 4) \
+		  * (grub_disk_addr_t)(blksz / 4 + 1))
     {
       unsigned int perblock = blksz / 4;
       unsigned int rblock = fileblock - (INDIRECT_BLOCKS

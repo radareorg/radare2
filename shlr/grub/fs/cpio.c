@@ -250,12 +250,16 @@ grub_cpio_dir (grub_device_t device, const char *path,
 	      info.dir = (p != NULL);
 
 	      hook (name + len, &info, closure);
-	      if (prev)
-		grub_free (prev);
+	      if (prev) {
+			grub_free (prev);
+			prev = NULL;
+		  }
 	      prev = name;
 	    }
-	  else
+	  else {
 	    grub_free (name);
+		name = NULL;
+	  }
 	}
       data->hofs = ofs;
     }
