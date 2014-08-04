@@ -76,6 +76,7 @@ static int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
 	} \
 }
 
+// size by default = -1
 ///////////////////////////////////////////////////////////////////////////////
 static char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 {
@@ -122,7 +123,7 @@ static char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 //        self.pos = self.end + offset
 //if self.pos < 0: self.pos = 0
 //if self.pos > self.end: self.pos = self.end
-
+// whence by default = 0
 static void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence)
 {
 	switch (whence) {
@@ -216,28 +217,52 @@ static int count_pages(int length, int page_size)
 static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
 								 EStream indx, int root_size, int page_size)
 {
-	int num_streams;
-	char *data;
+	int num_streams = 0;
+	char *data = 0;
+	char *tmp_data = 0;
+	int *tmp_sizes = 0;
+	int num_pages = 0;
+	int i = 0;
+	int *sizes = 0;
+	int stream_size = 0;
+	int pos = 0;
 	R_PDB7_ROOT_STREAM *root_stream7;
 	pdb->root_stream = (R_PDB7_ROOT_STREAM *)malloc(sizeof(R_PDB7_ROOT_STREAM));
 	init_r_pdb_stream(pdb->root_stream, pdb->fp, root_page_list, pages_amount,
 					  indx, root_size, page_size);
 
 	root_stream7 = pdb->root_stream;
+	// FIXME: data need to be free somewhere!!!
 	data = pdb_stream_get_data(&(root_stream7->pdb_stream));
 
 	num_streams = *(int *)data;
-//# num_streams dwords giving stream sizes
-//       rs = data[4:]
-//       sizes = []
-//       for i in range(0,self.num_streams*4,4):
-//           (stream_size,) = unpack("<I",rs[i:i+4])
-//           # Seen in some recent symbols. Not sure what the difference between this
-//           # and stream_size == 0 is.
-//           if stream_size == 0xffffffff:
-//               stream_size = 0
-//           sizes.append(stream_size)
+	tmp_data = data;
+	tmp_data += 4;
+	// FIXME: size need to be free somewhere!!!
+	sizes = (int *) malloc(num_streams * 4);
 
+	for (i = 0; i < num_streams; i++) {
+		stream_size = *(int *)(tmp_data);
+		tmp_data += 4;
+		if (stream_size == 0xffffffff) {
+			stream_size = 0;
+		}
+		memcpy(sizes + i, &stream_size, 4);
+	}
+
+//	tmp_data = ((char *)data + num_streams * 4);
+//	// create page_lists???
+//	for (i = 0; i < num_streams; i++) {
+//		num_pages = count_pages(sizes[i], page_size);
+//		printf("%d\n", num_pages);
+
+//		if (num_pages != 0) {
+
+//		} else {
+
+//		}
+//	}
+	//_pages = count_pages(...)
 //       # Next comes a list of the pages that make up each stream
 //       rs = rs[self.num_streams*4:]
 //       page_lists = []
