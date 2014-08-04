@@ -339,15 +339,39 @@ static void handle_set_pre (RDisasmState *ds, const char * str) {
 	ds->pre = strdup (str);
 }
 
-static void handle_build_op_str (RCore *core, RDisasmState *ds) {
-	char *asm_str = NULL;
-	char *buf_asm = ds->opstr? ds->opstr: ds->asmop.buf_asm;
+static char *colorize_asm_string(RCore *core, RDisasmState *ds)
+{
+	char *spacer = NULL;
+	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 
-	if (ds->show_color && ds->colorop) {
-		r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
-		asm_str = r_print_colorize_opcode (buf_asm, ds->color_reg, ds->color_num);
-	} else
-		asm_str = strdup (buf_asm);
+	if (!(ds->show_color && ds->colorop))
+		return strdup(source);
+
+	r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
+
+	// workaround dummy colorizer in case of paired commands (tms320 & friends)
+
+	spacer = strstr(source, "||");
+	if (spacer) {
+		char *scol1, *s1 = strndup(source, spacer - source);
+		char *scol2, *s2 = strdup (spacer + 2);
+
+		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num); free(s1);
+		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num); free(s2);
+
+		source = malloc(strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
+		sprintf(source, "%s||%s", scol1, scol2);
+		free(scol1);
+		free(scol2);
+
+		return source;
+	}
+
+	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
+}
+
+static void handle_build_op_str (RCore *core, RDisasmState *ds) {
+	char *asm_str = colorize_asm_string(core, ds);
 
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
