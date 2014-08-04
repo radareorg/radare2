@@ -352,8 +352,7 @@ R_API int r_cons_html_print(const char *ptr) {
 				// reset color
 			} else
 			if (ptr[0]=='3' && ptr[2]=='m') {
-				// TODO: honor inv here
-				printf ("<font color='%s'>", gethtmlcolor (ptr[1], "#000"));
+				printf ("<font color='%s'>", gethtmlcolor (ptr[1], inv?"#fff":"#000"));
 				fflush(stdout);
 				ptr = ptr + 1;
 				str = ptr + 2;
@@ -361,8 +360,8 @@ R_API int r_cons_html_print(const char *ptr) {
 				continue;
 			} else
 			if (ptr[0]=='4' && ptr[2]=='m') {
-				// TODO: USE INV HERE
-				printf ("<font style='background-color:%s'>", gethtmlcolor (ptr[1], "#fff"));
+				printf ("<font style='background-color:%s'>",
+						gethtmlcolor (ptr[1], inv?"#000":"#fff"));
 				fflush(stdout);
 			}
 		} 

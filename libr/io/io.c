@@ -240,10 +240,6 @@ R_API RIODesc *r_io_use_fd (RIO *io, int fd) {
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	int bytes_read = 0;
 	const char *read_from = NULL;
-	if (io->buffer_enabled){
-		read_from = "buffer";
-		bytes_read = r_io_buffer_read (io, io->off, buf, len);
-	}
 	if (io->desc && io->desc->plugin && io->desc->plugin->read){
 		read_from = io->desc->plugin->name;
 		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
