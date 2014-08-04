@@ -2222,7 +2222,7 @@ maybe_newline:
             p--;
             PEEKC(c, p);
         parse_ident_slow:
-            while (isidnum_table[c-CH_EOF]) {
+            while (isidnum_table[(c>256?256-1:c)-CH_EOF]) {
                 cstr_ccat(&tokcstr, c);
                 PEEKC(c, p);
             }
