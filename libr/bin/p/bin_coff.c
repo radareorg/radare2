@@ -139,9 +139,10 @@ static RList *symbols(RBinFile *arch)
 				snprintf (ptr->type, R_BIN_SIZEOF_STRINGS, "%i", obj->symbols[i].n_sclass);
 		}
 
-		if (obj->symbols[i].n_scnum)
+		if (obj->symbols[i].n_scnum < obj->hdr.f_nscns) {
 			ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr + 
 				obj->symbols[i].n_value;
+		}
 
 		ptr->size = 4;
 		ptr->ordinal = 0;
