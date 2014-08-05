@@ -178,12 +178,12 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 
 static int esil_internal_borrow_check (RAnalEsil *esil, ut8 bit) {
 	bit = ((bit & 0x3f) + 0x3e) & 0x3f;	//safer-sex version of -1
-	return ((esil->old & masks[bit]) < (esil->new & masks[bit]));
+	return ((esil->old & masks[bit]) < (esil->cur & masks[bit]));
 }
 
 static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 	bit &= 0x3f;				//say no to segfaults
-	return ((esil->new & masks[bit]) < (esil->old & masks[bit]));
+	return ((esil->cur & masks[bit]) < (esil->old & masks[bit]));
 }
 
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
@@ -234,7 +234,7 @@ static int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 		case R_ANAL_ESIL_PARM_INTERNAL:
 			switch (str[1]) {
 				case 'z':						//zero-flag
-					*num = (esil->new == 0);
+					*num = (esil->cur == 0);
 					return R_TRUE;
 				case 'b':						//borrow
 					bit = (ut8) r_num_get (NULL, &str[2]);
@@ -316,11 +316,11 @@ static int esil_eq (RAnalEsil *esil) {
 	if (src && dst && esil_reg_read (esil, dst, NULL)) {
 		if (esil_get_parm (esil, src, &num)) {
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)		//necessary for some flag-things
-				esil->new = num;
+				esil->cur = num;
 			esil_reg_read (esil, dst, &num);
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
 				esil->old = num;
-			ret = esil_reg_write (esil, dst, esil->new);
+			ret = esil_reg_write (esil, dst, esil->cur);
 		} else eprintf ("esil_eq: invalid src\n");
 	} else {
 		eprintf ("esil_eq: invalid parameters\n");
@@ -371,7 +371,7 @@ static int esil_andeq(RAnalEsil *esil) {
 				esil->old = num;
 			num &= num2;
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->new = num;
+				esil->cur = num;
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
@@ -394,7 +394,7 @@ static int esil_oreq(RAnalEsil *esil) {
 				esil->old = num;
 			num |= num2;
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->new = num;
+				esil->cur = num;
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
@@ -417,7 +417,7 @@ static int esil_xoreq(RAnalEsil *esil) {
 				esil->old = num;
 			num ^= num2;
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->new = num;
+				esil->cur = num;
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
@@ -498,7 +498,7 @@ static int esil_cmp(RAnalEsil *esil) {
 	if (dst && esil_get_parm (esil, dst, &num)) {
 		if (src && esil_get_parm (esil, src, &num2)) {
 			esil->old = num;
-			esil->new = num - num2;
+			esil->cur = num - num2;
 			ret = 1;
 		}
 	}
@@ -635,7 +635,7 @@ static int esil_lsleq(RAnalEsil *esil) {
 		if (src && esil_get_parm (esil, src, &num2)) {
 			esil->old = num;
 			num <<= num2;
-			esil->new = num;
+			esil->cur = num;
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
@@ -675,7 +675,7 @@ static int esil_lsreq(RAnalEsil *esil) {
 		if (src && esil_get_parm (esil, src, &num2)) {
 			esil->old = num;
 			num >>= num2;
-			esil->new = num;
+			esil->cur = num;
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
@@ -797,7 +797,7 @@ static int esil_diveq (RAnalEsil *esil) {
 			} else  {
 				if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 					esil->old = d;
-					esil->new = d/s;
+					esil->cur = d/s;
 				}
 				esil_reg_write (esil, dst, d/s);
 			}
@@ -844,7 +844,7 @@ static int esil_muleq (RAnalEsil *esil) {
 				esil->old = d;
 			esil_reg_write (esil, dst, s*d);
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->new = d*s;
+				esil->cur = d*s;
 			ret = 1;
 		} else {
 			eprintf ("esil_muleq: empty stack\n");
@@ -886,7 +886,7 @@ static int esil_addeq (RAnalEsil *esil) {
 				esil->old = d;
 			esil_reg_write (esil, dst, d+s);
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->new = d+s;
+				esil->cur = d+s;
 		}
 	} else {
 		eprintf ("esil_addeq: invalid parameters");
@@ -924,7 +924,7 @@ static int esil_subeq (RAnalEsil *esil) {
 				esil->old = d;
 			esil_reg_write (esil, dst, d-s);
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->new = d-s;
+				esil->cur = d-s;
 		}
 	} else {
 		eprintf ("esil_eq: invalid parameters");
