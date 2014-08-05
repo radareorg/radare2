@@ -466,6 +466,9 @@ repeat:
 			curnode = cn;
 		// select jump node
 		break;
+	case ':':
+		r_core_visual_prompt_input (core);
+		break;
 	case 'f':
 		cn = Edge_node (edges, curnode, 1);
 		if (cn != -1)

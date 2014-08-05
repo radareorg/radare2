@@ -106,7 +106,7 @@ static void visual_help() {
 	" v        visual code analysis menu\n"
 	" V/W      (V)iew graph using cmd.graph (agv?), open (W)ebUI\n"
 	" uU       undo/redo seek\n"
-	" x        show xrefs to seek between them\n"
+	" xX       show xrefs/refs of current function from/to data/code\n"
 	" yY       copy and paste selection\n"
 	" z        toggle zoom mode\n"
 	" Enter    follow address of jump/call\n"
@@ -135,6 +135,26 @@ static void prompt_read (const char *p, char *buf, int buflen) {
 	showcursor (NULL, R_TRUE);
 	r_cons_fgets (buf, buflen, 0, NULL);
 	showcursor (NULL, R_FALSE);
+}
+
+R_API void r_core_visual_prompt_input (RCore *core) {
+	int ret;
+	eprintf ("Press <enter> to return to Visual mode.\n");
+	do {
+		ut64 addr = core->offset;
+		ut64 bsze = core->blocksize;
+		if (curset) {
+			if (ocursor != -1) {
+				r_core_block_size (core, cursor-ocursor);
+				r_core_seek (core, core->offset + ocursor, 1);
+			} else r_core_seek (core, core->offset + cursor, 1);
+		}
+		ret = r_core_visual_prompt (core);
+		if (curset) {
+			r_core_seek (core, addr, 1);
+			r_core_block_size (core, bsze);
+		}
+	} while (ret);
 }
 
 R_API int r_core_visual_prompt (RCore *core) {
@@ -1018,22 +1038,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'N': r_core_seek_delta (core, 0-(int)core->blocksize); break;
 #endif
 	case ':':
-		eprintf ("Press <enter> to return to Visual mode.\n");
-		do {
-			ut64 addr = core->offset;
-			ut64 bsze = core->blocksize;
-			if (curset) {
-				if (ocursor != -1) {
-					r_core_block_size (core, cursor-ocursor);
-					r_core_seek (core, core->offset + ocursor, 1);
-				} else r_core_seek (core, core->offset + cursor, 1);
-			}
-			ret = r_core_visual_prompt (core);
-			if (curset) {
-				r_core_seek (core, addr, 1);
-				r_core_block_size (core, bsze);
-			}
-		} while (ret);
+		r_core_visual_prompt_input (core);
 		break;
 	case '_':
 		if (r_config_get_i (core->config, "hud.once"))
