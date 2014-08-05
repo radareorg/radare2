@@ -19,6 +19,7 @@ Keys:
   'meta.<type>.count=<int>'     number of added metas where 'type' is a single char
   'meta.<type>.<last>=<array>'  splitted array, each block contains K elements
   'meta.<type>.<addr>=<string>' string representing extra information of the meta type at given address
+  'range.<baddr>=<array>'       store valid addresses in a base range array
 #endif
 
 #include <r_anal.h>
@@ -83,7 +84,6 @@ static int meta_inrange_del (RAnal *a, ut64 addr, int size) {
 static int meta_type_add (RAnal *a, char type, ut64 addr) {
 	char key[32];
 	ut32 count, last;
-
 	snprintf (key, sizeof (key)-1, "meta.%c.count", type);
 	count = (ut32)sdb_num_inc (DB, key, 1, 0);
 	last = count/K;
@@ -157,7 +157,8 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		return R_FALSE;
 	}
 	meta_inrange_del (a, addr, size);
-	snprintf (key, sizeof (key)-1, type==R_META_TYPE_COMMENT ? "meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
+	snprintf (key, sizeof (key)-1, type==R_META_TYPE_COMMENT ?
+		"meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
 	ptr = sdb_const_get (DB, key, 0);
 	if (ptr) {
 		for (i=0; ptr[i]; i++) {
@@ -308,7 +309,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	RAnalMetaItem it;
 	if (strlen (k)<8)
 		return 1;
-	if (k[6]!='.')
+	if (memcmp (k+6, ".0x", 3))
 		return 1;
 	it.type = k[5];
 	it.size = sdb_atoi (v);
