@@ -48,6 +48,7 @@ typedef struct r_disam_options_t {
 	int varsub;
 	int show_lines;
 	int linesright;
+	int show_indent;
 	int show_dwarf;
 	int show_linescall;
 	int show_size;
@@ -112,6 +113,7 @@ typedef struct r_disam_options_t {
 
 	int l;
 	int middle;
+	int indent_level;
 	char *line;
 	char *refline, *refline2;
 	char *comment;
@@ -220,6 +222,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
+	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	ds->show_linescall = r_config_get_i (core->config, "asm.linescall");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
@@ -377,7 +380,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 		// TODO: Use data from code analysis..not raw ds->analop here
 		// if we want to get more information
-		ds->opstr = tmpopstr? tmpopstr: strdup (asm_str);
+		ds->opstr = tmpopstr? tmpopstr: asm_str? strdup (asm_str): strdup ("");
 	}
 	if (ds->hint && ds->hint->opcode) {
 		free (ds->opstr);
@@ -866,6 +869,10 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 		ds->line = r_anal_reflines_str (core, ds->at, ds->linesopts);
 		ds->refline = filter_refline (core, ds->line);
 		ds->refline2 = filter_refline2 (core, ds->refline);
+		if (strchr (ds->line, '<'))
+			ds->indent_level++;
+		if (strchr (ds->line, '>'))
+			ds->indent_level--;
 	} else {
 		free (ds->line);
 		free (ds->refline);
@@ -1201,7 +1208,21 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 	}
 }
 
+static void handle_print_indent (RCore *core, RDisasmState *ds) {
+	if (ds->show_indent) {
+		char indent[128];
+		int num = ds->indent_level;
+		if (num<0) num = 0;
+		if (num>sizeof (indent))
+			num = sizeof(indent)-1;
+		memset (indent, ' ', num+1);
+		indent[num] = 0;
+		r_cons_strcat (indent);
+	}
+}
+
 static void handle_print_opstr (RCore *core, RDisasmState *ds) {
+	handle_print_indent (core, ds);
 	r_cons_strcat (ds->opstr);
 }
 
@@ -1283,7 +1304,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 	int have_local = 0;
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
-	        case R_ANAL_OP_TYPE_CJMP:
+	        //case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			f = r_anal_fcn_find (core->anal,
 				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
@@ -1431,6 +1452,7 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	if (ds->analop.ptr != UT64_MAX && ds->analop.ptr) {
 		char msg[32];
+		RFlagItem *f;
 		int bsz = len - idx;
 		const char *kind = r_anal_data_kind (core->anal,
 			ds->analop.ptr,	ds->buf, bsz);
@@ -1440,7 +1462,12 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			snprintf (msg+1, sizeof (msg)-2, "%d", idx); //ds->buf+idx);
 			strcat (msg, "\"");
 		}
-		r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, ds->analop.ptr);
+		f = r_flag_get_i (core->flags, ds->analop.ptr);
+		if (f) {
+			r_cons_printf (" ; %s", f->name);
+		} else {
+			r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, ds->analop.ptr);
+		}
 	} else handle_print_as_string (core, ds);
 }
 
@@ -1507,9 +1534,15 @@ static void handle_print_refptr (RCore *core, RDisasmState *ds) {
 	if (ret) {
 		handle_print_refptr_meta_infos (core, ds, word8);
 	} else {
-		st64 sref = ds->analop.ptr;
-		if (sref>0)
-			r_cons_printf (" ; 0x%08"PFMT64x"\n", ds->analop.ptr);
+		st64 sref = ds->analop.ptr; // todo. use .refptr?
+		if (sref>0) {
+			RFlagItem *f = r_flag_get_i (core->flags, ds->analop.ptr);
+			if (f) {
+				r_cons_printf (" ; %s", f->name);
+			} else {
+				r_cons_printf (" ; 0x%08"PFMT64x, ds->analop.ptr);
+			}
+		}
 	}
 }
 

@@ -92,12 +92,15 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	// set global reference
 	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference
+#if 0
+// with old function storage enabled there are some wrong analysis stuff
 #if FCN_OLD
 	ref->at = at; // from
 	ref->addr = addr; // to
 	ref->type = type;
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
+#endif
 #endif
 #if FCN_SDB
 	char key[1024];
@@ -197,7 +200,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				FITFCNSZ();
 				return R_ANAL_RET_END;
 			} else {
-                            break; // unspecified behaviour
+				break; // unspecified behaviour
 			}
 		}
 		if (idx>0 && !overlapped) {
@@ -245,8 +248,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				// at the original instruction that entered
 				// the branch delay.
 			}
-		}
-		else if (op.delay > 0 && delay_pending) {
+		} else if (op.delay > 0 && delay_pending) {
 			VERBOSE_DELAY eprintf ("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", addr+idx-oplen, bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the

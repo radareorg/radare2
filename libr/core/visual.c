@@ -366,6 +366,90 @@ static void visual_offset (RCore *core) {
 	}
 }
 
+R_API int r_core_visual_xrefs_x (RCore *core) {
+	char ch, ret = 0;
+	int count = 0;
+	RList *xrefs = NULL;
+	RAnalRef *refi;
+	RListIter *iter;
+	RAnalFunction *fun;
+
+	if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
+		r_cons_gotoxy (1, 1);
+		r_cons_printf ("[GOTO XREF]> \n");
+		if (r_list_empty (xrefs)) {
+			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
+			r_cons_any_key ();
+			r_cons_clear00 ();
+		} else {
+			r_list_foreach (xrefs, iter, refi) {
+				fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n", count,
+					refi->at,
+					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+					      fun?fun->name:"unk");
+				if (++count > 9) break;
+			}
+		}
+	} else xrefs = NULL;
+	if (!xrefs || !r_list_length (xrefs))
+		return 0;
+	r_cons_flush ();
+	ch = r_cons_readchar ();
+	if (ch >= '0' && ch <= '9') {
+		refi = r_list_get_n (xrefs, ch-0x30);
+		if (refi) {
+			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
+			ret = 1;
+		}
+	}
+	r_list_free (xrefs);
+	return ret;
+}
+
+R_API int r_core_visual_xrefs_X (RCore *core) {
+	char ch, ret = 0;
+	int count = 0;
+	RAnalRef *refi;
+	RListIter *iter;
+	RAnalFunction *fun;
+
+	fun = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (fun) {
+		r_cons_gotoxy (1, 1);
+		r_cons_printf ("[GOTO REF]> \n");
+		if (r_list_empty (fun->refs)) {
+			r_cons_printf ("\tNo REF found at 0x%"PFMT64x"\n", core->offset);
+			r_cons_any_key ();
+			r_cons_clear00 ();
+		} else {
+			r_list_foreach (fun->refs, iter, refi) {
+				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)  \n", count,
+					refi->at,
+					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+					      fun?fun->name:"unk");
+				if (++count > 9) break;
+			}
+		}
+	}
+	r_cons_flush ();
+	if (!count)
+		return 0;
+	ch = r_cons_readchar ();
+	if (fun && fun->refs) {
+		if (ch >= '0' && ch <= '9') {
+			refi = r_list_get_n (fun->refs, ch-0x30);
+			if (refi) {
+				r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
+				ret = 1;
+			}
+		}
+	}
+	return ret;
+}
+
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	ut64 offset = core->offset;
@@ -613,77 +697,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_trackflags (core);
 		break;
 	case 'x':
-		{
-		int count = 0;
-		RList *xrefs = NULL;
-		RAnalRef *refi;
-		RListIter *iter;
-		RAnalFunction *fun;
-
-		if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
-			r_cons_gotoxy (1, 1);
-			r_cons_printf ("[GOTO XREF]> \n");
-			if (r_list_empty (xrefs)) {
-				r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
-				r_cons_any_key ();
-				r_cons_clear00 ();
-			} else {
-				r_list_foreach (xrefs, iter, refi) {
-					fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-					r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n", count,
-							refi->at,
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
-					if (++count > 9) break;
-				}
-			}
-		} else xrefs = NULL;
-		r_cons_flush ();
-		ch = r_cons_readchar ();
-		if (ch >= '0' && ch <= '9') {
-			refi = r_list_get_n (xrefs, ch-0x30);
-			if (refi)
-				r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
-		}
-		r_list_free (xrefs);
-		}
+		r_core_visual_xrefs_x (core);
 		break;
 	case 'X':
-		{
-		int count = 0;
-		RAnalRef *refi;
-		RListIter *iter;
-		RAnalFunction *fun;
-
-		fun = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-		if (fun) {
-			r_cons_gotoxy (1, 1);
-			r_cons_printf ("[GOTO REF]> \n");
-			if (r_list_empty (fun->refs)) {
-				r_cons_printf ("\tNo REF found at 0x%"PFMT64x"\n", core->offset);
-				r_cons_any_key ();
-				r_cons_clear00 ();
-			} else {
-				r_list_foreach (fun->refs, iter, refi) {
-					r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n", count,
-							refi->at,
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
-					if (++count > 9) break;
-				}
-			}
-		}
-		r_cons_flush ();
-		ch = r_cons_readchar ();
-		if (fun && fun->refs)
-		if (ch >= '0' && ch <= '9') {
-			refi = r_list_get_n (fun->refs, ch-0x30);
-			if (refi)
-				r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
-		}
-		}
+		r_core_visual_xrefs_X (core);
 		break;
 	case 'T':
 		r_core_visual_comments (core);

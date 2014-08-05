@@ -411,6 +411,14 @@ repeat:
 			Layout_depth (nodes, edges);
 		}
 		break;
+	case 'x':
+		if (r_core_visual_xrefs_x (core))
+			goto beach;
+		break;
+	case 'X':
+		if (r_core_visual_xrefs_X (core))
+			goto beach;
+		break;
 	case 9: curnode++;
 		if (!nodes[curnode].text)
 			curnode = 0;
@@ -464,12 +472,8 @@ repeat:
 			curnode = cn;
 		// select false node
 		break;
-	case 'q': {
-		free (nodes);
-		free (edges);
-		free (can);
-		return R_TRUE;
-	}
+	case 'q':
+		goto beach;
 	case 27: // ESC
 		if (r_cons_readchar () == 91) {
 			if (r_cons_readchar () == 90) {
@@ -487,4 +491,9 @@ repeat:
 		break;
 	}
 	goto repeat;
+beach:
+	free (nodes);
+	free (edges);
+	free (can);
+	return R_TRUE;
 }
