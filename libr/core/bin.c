@@ -111,14 +111,16 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_JSON)) {
 		r_cons_printf ("[");
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->vaddr,
-				string->paddr): string->paddr;
+			ut64 vaddr = r_bin_get_vaddr (bin, baddr,
+				string->vaddr, string->paddr);
+			ut64 paddr = string->paddr;
 			q = strdup (string->string);
 			for (p=q; *p; p++) if (*p=='"') *p = '\'';
-			r_cons_printf ("%s{\"paddr\":%"PFMT64d
+			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
+				",\"paddr\":%"PFMT64d
 				",\"length\":%d,\"size\":%d,"
 				"\"type\":\"%s\",\"string\":\"%s\"}",
-				iter->p? ",": "", addr,
+				iter->p? ",": "", vaddr, paddr,
 				string->length, string->size,
 				string->type=='w'?"wide":"ascii", q);
 			free (q);
@@ -143,7 +145,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			 //r_bin_get_vaddr (bin, baddr, string->vaddr,
 		//		string->paddr): string->paddr;
 			if (r_cons_singleton()->breaked) break;
-			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr+string->size, string->string);
+			r_meta_add (r->anal, R_META_TYPE_STRING, addr,
+				addr+string->size, string->string);
 			filtered_name = strdup (string->string);
 			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
@@ -155,16 +158,18 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	} else {
 		if (mode) r_cons_printf ("fs strings\n"); //: "[strings]\n");
 		r_list_foreach (list, iter, string) {
+			// TODO: honor laddr..
+			ut64 vaddr = string->vaddr;
+			ut64 paddr = string->paddr;
 			section = r_bin_get_section_at (r_bin_cur_object (bin), string->paddr, 0);
 			if (mode) {
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-					string->string, string->size, va? baddr+string->vaddr: string->paddr,
-					string->size, va? baddr+string->vaddr: string->paddr);
+					string->string, string->size, va? vaddr: paddr,
+					string->size, va? vaddr: paddr);
 			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x
 				" ordinal=%03u "
-				"sz=%u len=%u section=%s type=%c string=%s\n",
-				baddr+string->vaddr, string->paddr,
+				"sz=%u len=%u section=%s type=%c string=%s\n", vaddr, paddr,
 				string->ordinal, string->size, string->length,
 				section?section->name:"unknown",
 				string->type, string->string);
