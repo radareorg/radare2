@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_db.h>
 
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
 #define cpuflag(x,y) if (y) { R_BIT_SET (&esil->flags, FLG(x)); } else { R_BIT_UNSET (&esil->flags, FLG(x)); }
@@ -78,13 +79,23 @@ const ut64 masks[] = {
 
 R_API RAnalEsil *r_anal_esil_new() {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
+	esil->ops = sdb_new0 ();
 	return esil;
+}
+
+R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code) {
+	if (!code || !op || !strlen(op) || !esil || !esil->ops)
+		return R_FALSE;
+	sdb_num_set (esil->ops, op, (ut64)code, 0);
+	return R_TRUE;
 }
 
 R_API void r_anal_esil_free (RAnalEsil *esil) {
 	int i;
 	for (i=0; i<esil->stackptr;i++)
 		free (esil->stack[i]);
+	if (esil->ops)
+		sdb_free (esil->ops);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_init && esil->anal->cur->esil_fini)
 		esil->anal->cur->esil_fini (esil);
 	free (esil);
@@ -157,23 +168,6 @@ static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 nu
 		return 1;
 	}
 	return 0;
-}
-
-R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
-	// register callbacks using this anal module.
-	// this is: set
-	esil->debug = 1;
-	esil->anal = anal;
-	esil->trap = 0;
-	esil->trap_code = 0;
-	//esil->user = NULL;
-	esil->reg_read = internal_esil_reg_read;
-	esil->reg_write = internal_esil_reg_write;
-	esil->mem_read = internal_esil_mem_read;
-	esil->mem_write = internal_esil_mem_write;
-	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
-		return anal->cur->esil_init (esil);
-	return 1;
 }
 
 static int esil_internal_borrow_check (RAnalEsil *esil, ut8 bit) {
@@ -1140,54 +1134,16 @@ static int esil_bigger_equal(RAnalEsil *esil) {		// 'src >= dst' => 'src,dst,>='
 }
 
 
-typedef int RAnalEsilCmd(RAnalEsil *esil);
-
-static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilCmd **cmd) {
-//TODO: use RCmd here?
-// TODO: Implement rotate >>>= and <<<=
-	if (!strcmp (word, "$")) { *cmd = &esil_syscall; return 1; } else
-	if (!strcmp (word, "==")) { *cmd = &esil_cmp; return 1; } else
-	if (!strcmp (word, "<")) { *cmd = &esil_smaller; return 1; } else
-	if (!strcmp (word, ">")) { *cmd = &esil_bigger; return 1; } else
-	if (!strcmp (word, "<=")) { *cmd = &esil_smaller_equal; return 1; } else
-	if (!strcmp (word, ">=")) { *cmd = &esil_bigger_equal; return 1; } else
-	//if (!strcmp (word, "?=")) { *cmd = &esil_ifset; return 1; } else
-	if (!strcmp (word, "?{")) { *cmd = &esil_if; return 1; } else
-	//if (!strcmp (word, "!?{")) { *cmd = &esil_ask; return 1; } else
-	if (!strcmp (word, "<<")) { *cmd = &esil_lsl; return 1; } else
-	if (!strcmp (word, "<<=")) { *cmd = &esil_lsleq; return 1; } else
-	if (!strcmp (word, ">>")) { *cmd = &esil_lsr; return 1; } else
-	if (!strcmp (word, ">>=")) { *cmd = &esil_lsreq; return 1; } else
-	if (!strcmp (word, "&")) { *cmd = &esil_and; return 1; } else
-	if (!strcmp (word, "&=")) { *cmd = &esil_andeq; return 1; } else
-	if (!strcmp (word, "|")) { *cmd = &esil_or; return 1; } else
-	if (!strcmp (word, "|=")) { *cmd = &esil_oreq; return 1; } else
-	if (!strcmp (word, "!")) { *cmd = &esil_neg; return 1; } else
-	if (!strcmp (word, "!=")){ *cmd = &esil_negeq; return 1; } else 
-	if (!strcmp (word, "=")) { *cmd = &esil_eq; return 1; } else
-	if (!strcmp (word, "*=")){ *cmd = &esil_muleq; return 1; } else
-	if (!strcmp (word, "*")) { *cmd = &esil_mul; return 1; } else
-	if (!strcmp (word, "^")) { *cmd = &esil_xor; return 1; } else
-	if (!strcmp (word, "^=")) { *cmd = &esil_xoreq; return 1; } else
-	if (!strcmp (word, "+")) { *cmd = &esil_add; return 1; } else
-	if (!strcmp (word, "+=")) { *cmd = &esil_addeq; return 1; } else
-	if (!strcmp (word, "-")) { *cmd = &esil_sub; return 1; } else
-	if (!strcmp (word, "-=")) { *cmd = &esil_subeq; return 1; } else
-	if (!strcmp (word, "/")) { *cmd = &esil_div; return 1; } else
-	if (!strcmp (word, "/=")) { *cmd = &esil_diveq; return 1; } else
-	if (!strcmp (word, "=[1]")) { *cmd = &esil_poke1; return 1; } else
-	if (!strcmp (word, "=[4]")) { *cmd = &esil_poke4; return 1; } else
-	if (!strcmp (word, "=[8]")) { *cmd = &esil_poke8; return 1; } else
-	if (!strcmp (word, "[1]")) { *cmd = &esil_peek1; return 1; } else
-	if (!strcmp (word, "[4]")) { *cmd = &esil_peek4; return 1; } else
-	if (!strcmp (word, "[8]")) { *cmd = &esil_peek8; return 1; } else
-	if (!strcmp (word, "[]")) { *cmd = &esil_peek; return 1; } else {
+static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
+	if (word && esil && esil->ops && sdb_num_exists (esil->ops, word)) {
+		*op = (RAnalEsilOp) sdb_num_get (esil->ops, word, 0);
+		return R_TRUE;
 	}
-	return 0;
+	return R_FALSE;
 }
 
 static int runword (RAnalEsil *esil, const char *word) {
-	RAnalEsilCmd *cmd = NULL;
+	RAnalEsilOp op = NULL;
 	if (esil->skip) {
 		if (!strcmp (word, "}"))
 			esil->skip = 0;
@@ -1198,10 +1154,10 @@ static int runword (RAnalEsil *esil, const char *word) {
 			return 0;
 		}
 	}
-	if (iscommand (esil, word, &cmd)) {
+	if (iscommand (esil, word, &op)) {
 		// run action
-		if (cmd)
-			return cmd (esil);
+		if (op)
+			return op (esil);
 	}
 	// push value
 	r_anal_esil_push (esil, word);
@@ -1248,7 +1204,54 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	return 0;
 }
 
-R_API int r_anal_esil_register_cmd() {
-	// TODO: register new commands
-	return 0;
+R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
+	// register callbacks using this anal module.
+	// this is: set
+	esil->debug = 1;
+	esil->anal = anal;
+	esil->trap = 0;
+	esil->trap_code = 0;
+	//esil->user = NULL;
+	esil->reg_read = internal_esil_reg_read;
+	esil->reg_write = internal_esil_reg_write;
+	esil->mem_read = internal_esil_mem_read;
+	esil->mem_write = internal_esil_mem_write;
+	r_anal_esil_set_op (esil, "$", esil_syscall);
+	r_anal_esil_set_op (esil, "==", esil_cmp);
+	r_anal_esil_set_op (esil, "<", esil_smaller);
+	r_anal_esil_set_op (esil, ">", esil_bigger);
+	r_anal_esil_set_op (esil, "<=", esil_smaller_equal);
+	r_anal_esil_set_op (esil, ">=", esil_bigger_equal);
+	r_anal_esil_set_op (esil, "?{", esil_if);
+	r_anal_esil_set_op (esil, "<<", esil_lsl);
+	r_anal_esil_set_op (esil, "<<=", esil_lsleq);
+	r_anal_esil_set_op (esil, ">>", esil_lsr);
+	r_anal_esil_set_op (esil, ">>=", esil_lsreq);
+	r_anal_esil_set_op (esil, "&", esil_and);
+	r_anal_esil_set_op (esil, "&=", esil_andeq);
+	r_anal_esil_set_op (esil, "|", esil_or);
+	r_anal_esil_set_op (esil, "|=", esil_oreq);
+	r_anal_esil_set_op (esil, "!", esil_neg);
+	r_anal_esil_set_op (esil, "!=", esil_negeq);
+	r_anal_esil_set_op (esil, "=", esil_eq);
+	r_anal_esil_set_op (esil, "*", esil_mul);
+	r_anal_esil_set_op (esil, "*=", esil_muleq);
+	r_anal_esil_set_op (esil, "^", esil_xor);
+	r_anal_esil_set_op (esil, "^=", esil_xoreq);
+	r_anal_esil_set_op (esil, "+", esil_add);
+	r_anal_esil_set_op (esil, "+=", esil_addeq);
+	r_anal_esil_set_op (esil, "-", esil_sub);
+	r_anal_esil_set_op (esil, "-=", esil_subeq);
+	r_anal_esil_set_op (esil, "/", esil_div);
+	r_anal_esil_set_op (esil, "/=", esil_diveq);
+	r_anal_esil_set_op (esil, "=[1]", esil_poke1);
+	r_anal_esil_set_op (esil, "=[4]", esil_poke4);
+	r_anal_esil_set_op (esil, "=[8]", esil_poke8);
+	r_anal_esil_set_op (esil, "[1]", esil_peek1);
+	r_anal_esil_set_op (esil, "[4]", esil_peek4);
+	r_anal_esil_set_op (esil, "[8]", esil_peek8);
+	r_anal_esil_set_op (esil, "[]", esil_peek);
+	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
+		return anal->cur->esil_init (esil);
+	return R_TRUE;
 }
