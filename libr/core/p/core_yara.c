@@ -146,6 +146,7 @@ static int r_cmd_yara_tags() {
 	char * tag_name;
 	RListIter *iter;
 	RList *tag_list = r_list_new();
+	tag_list->free = free;
 
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
 		eprintf ("Unable to get rules\n");
