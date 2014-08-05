@@ -1202,7 +1202,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 	return R_TRUE;
 }
 
-R_API char *r_core_editor (RCore *core, const char *str) {
+R_API char *r_core_editor (const RCore *core, const char *str) {
 	const char *editor;
 	char *name, *ret = NULL;
 	int len, fd;

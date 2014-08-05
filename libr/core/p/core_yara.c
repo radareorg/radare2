@@ -12,6 +12,13 @@
 #undef R_IPI
 #define R_IPI static
 
+/*
+ * YR_RULE->tag is a special structure holding the rule's tags.
+ * It is a concatenated list of string with a finishing NULL byte.
+ * See example below:
+ * tagNULLtag2NULLtag3NULLNULL
+ */
+
 static YR_COMPILER* compiler;
 static void* libyara;
 
@@ -47,8 +54,6 @@ static int (*r_yr_rules_scan_mem)(
     int timeout) = NULL;
 
 
-/* ---- */
-
 static int callback(int message, YR_RULE* rule, void* data);
 static int r_cmd_yara_add (const RCore* core, const char* input);
 static int r_cmd_yara_add_file (const char* rules_path);
@@ -63,7 +68,6 @@ static int r_cmd_yara_load_default_rules (const RCore* core);
 static const char* yara_rule_template = "rule RULE_NAME {\n\tstrings:\n\n\tcondition:\n}";
 
 static int callback (int message, YR_RULE* rule, void* data) {
-    (void)data; // avoid Unused parameter warning
     if (message == CALLBACK_MSG_RULE_MATCHING)
         r_cons_printf ("%s\n", rule->identifier);
     return CALLBACK_CONTINUE;
@@ -74,6 +78,7 @@ static int r_cmd_yara_scan(const RCore* core) {
 	void* buffer;
 	int result;
 	const unsigned int buffer_size = r_io_size (core->io);
+
 	if (buffer_size < 1) {
 		eprintf ("Invalid file size\n");
 		return R_FALSE;
@@ -110,6 +115,7 @@ static int r_cmd_yara_scan(const RCore* core) {
 static int r_cmd_yara_show(const char * name) {
 	YR_RULES* rules;
 	YR_RULE* rule;
+
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
 		eprintf ("Unable to get rules\n");
 		return R_FALSE;
@@ -117,12 +123,55 @@ static int r_cmd_yara_show(const char * name) {
 
 	rule = rules->rules_list_head;
 	while (!RULE_IS_NULL(rule)) {
-		if(r_str_casestr (rule->identifier, name)) {
+		if (r_str_casestr (rule->identifier, name)) {
 			r_cons_printf ("%s\n", rule->identifier);
 		}
 		++rule;
 	}
 	r_yr_rules_destroy (rules);
+
+	return R_TRUE;
+}
+
+static int r_cmd_yara_tags() {
+	/* List tags from all the different loaded rules */
+	YR_RULES* rules;
+	YR_RULE* rule;
+	int tag_length;
+	char * tag_name;
+	RListIter *iter;
+	RList *tag_list = r_list_new();
+	tag_list->free = free;
+
+	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		eprintf ("Unable to get rules\n");
+		return R_FALSE;
+	}
+
+	rule = rules->rules_list_head;
+	while (! RULE_IS_NULL(rule)) {
+		tag_name = rule->tags;
+		tag_length = tag_name != NULL ? strlen(tag_name) : 0;
+
+		while (tag_length > 0) {
+			if (! r_list_find (tag_list, tag_name, (RListComparator)strcmp)) {
+				r_list_add_sorted (tag_list,
+						strdup (tag_name), (RListComparator)strcmp);
+			}
+			 /*+1 to jump the NULL byte,*/
+			tag_name += tag_length + 1;
+			tag_length = strlen (tag_name);
+		}
+		++rule;
+	}
+	r_yr_rules_destroy (rules);
+
+	r_cons_printf ("[YARA tags]\n");
+	r_list_foreach (tag_list, iter, tag_name) {
+		r_cons_printf ("%s\n", tag_name);
+	}
+
+	r_list_free (tag_list);
 
 	return R_TRUE;
 }
@@ -140,12 +189,12 @@ static int r_cmd_yara_tag(const char * search_tag) {
 	}
 
 	rule = rules->rules_list_head;
-	while (!RULE_IS_NULL(rule)) {
+	while (! RULE_IS_NULL(rule)) {
 		tag_name = rule->tags;
 		tag_length = tag_name != NULL ? strlen(tag_name) : 0;
 
 		while (tag_length > 0) {
-			if(r_str_casestr (tag_name, search_tag)) {
+			if (r_str_casestr (tag_name, search_tag)) {
 				show_rule = R_TRUE;
 				break;
 			}
@@ -167,6 +216,7 @@ static int r_cmd_yara_tag(const char * search_tag) {
 static int r_cmd_yara_list () {
 	YR_RULES* rules;
 	YR_RULE* rule;
+
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
 		eprintf ("Unable to get rules\n");
 		return R_FALSE;
@@ -197,8 +247,8 @@ static int r_cmd_yara_add(const RCore* core, const char* input) {
 	int result;
 	int i;
 
-	for( i = 0 ; input[i] != NULL ; i++ ) {
-		if ( input[i] != ' ' ) {
+	for( i = 0; input[i] != '\0'; i++) {
+		if (input[i] != ' ') {
 			return r_cmd_yara_add_file (input + i);
 		}
 	}
@@ -260,6 +310,7 @@ static int r_cmd_yara_help(const RCore* core) {
 		"scan", "", "Scan the current file",
 		"show", " name", "Show rules containing name",
 		"tag", " name", "List rules with tag 'name'",
+		"tags", "", "List tags from the loaded rules",
 		NULL
 	};
 
@@ -279,6 +330,8 @@ static int r_cmd_yara_process(const RCore* core, const char* input) {
         return r_cmd_yara_scan (core);
     else if (!strncmp (input, "show", 4))
         return r_cmd_yara_show (input + 5);
+    else if (!strncmp (input, "tags", 4))
+        return r_cmd_yara_tags ();
     else if (!strncmp (input, "tag ", 4))
         return r_cmd_yara_tag (input + 4);
     else
@@ -307,6 +360,7 @@ static int r_cmd_yara_load_default_rules(const RCore* core) {
 	RListIter* iter = NULL;
 	char* filename, *complete_path;
 	RList* list = r_sys_dir (YARA_PATH);
+
 	r_list_foreach (list, iter, filename) {
 		if (filename[0] != '.') { // skip '.', '..' and hidden files
 			complete_path = r_str_concat (strdup (YARA_PATH), filename);
