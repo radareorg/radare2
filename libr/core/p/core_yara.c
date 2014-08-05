@@ -134,10 +134,6 @@ static int r_cmd_yara_show(const char * name) {
 	return R_TRUE;
 }
 
-static int cmp_tag(void *a, void *b) {
-	return strcmp((char*) a, (char*) b);
-}
-
 static int r_cmd_yara_tags() {
 	/* List tags from all the different loaded rules */
 	YR_RULES* rules;
@@ -159,11 +155,10 @@ static int r_cmd_yara_tags() {
 		tag_length = tag_name != NULL ? strlen(tag_name) : 0;
 
 		while (tag_length > 0) {
-			if( ! r_list_find(tag_list, tag_name, cmp_tag) ) {
+			if( ! r_list_find(tag_list, tag_name, strcmp) ) {
 				r_list_add_sorted(tag_list, strdup(tag_name), cmp_tag);
 			}
 			 /*+1 to jump the NULL byte,*/
-			 /*see comment at the top of the file, about tag structure*/
 			tag_name += tag_length + 1;
 			tag_length = strlen(tag_name);
 		}
