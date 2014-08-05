@@ -788,7 +788,7 @@ typedef struct r_anal_esil_t {
 	ut32 trap_code; // extend into a struct to store more exception info?
 // parity flag?
 	ut64 old;	//used for carry-flagging and borrow-flagging
-	ut64 new;	//used for carry-flagging and borrow-flagging
+	ut64 cur;	//used for carry-flagging and borrow-flagging
 	/* callbacks */
 	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
