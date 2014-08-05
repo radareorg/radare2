@@ -12,6 +12,13 @@
 #undef R_IPI
 #define R_IPI static
 
+/*
+ * YR_RULE->tag is a special structure holding the rule's tags.
+ * It is a concatenated list of string with a finishing NULL byte.
+ * See example below:
+ * tagNULLtag2NULLtag3NULLNULL
+ */
+
 static YR_COMPILER* compiler;
 static void* libyara;
 
@@ -123,6 +130,52 @@ static int r_cmd_yara_show(const char * name) {
 		++rule;
 	}
 	r_yr_rules_destroy (rules);
+
+	return R_TRUE;
+}
+
+static int cmp_tag(void *a, void *b) {
+	return strcmp((char*) a, (char*) b);
+}
+
+static int r_cmd_yara_tags() {
+	/* List tags from all the different loaded rules */
+	YR_RULES* rules;
+	YR_RULE* rule;
+	int tag_length;
+	char * tag_name;
+	RListIter *iter;
+	RList *tag_list = r_list_new();
+
+	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		eprintf ("Unable to get rules\n");
+		return R_FALSE;
+	}
+
+	rule = rules->rules_list_head;
+	while (!RULE_IS_NULL(rule)) {
+		tag_name = rule->tags;
+		tag_length = tag_name != NULL ? strlen(tag_name) : 0;
+
+		while (tag_length > 0) {
+			if( ! r_list_find(tag_list, tag_name, cmp_tag) ) {
+				r_list_add_sorted(tag_list, strdup(tag_name), cmp_tag);
+			}
+			 /*+1 to jump the NULL byte,*/
+			 /*see comment at the top of the file, about tag structure*/
+			tag_name += tag_length + 1;
+			tag_length = strlen(tag_name);
+		}
+		++rule;
+	}
+	r_yr_rules_destroy (rules);
+
+	r_cons_printf("Available tags:\n");
+	r_list_foreach(tag_list, iter, tag_name) {
+		r_cons_printf("%s\n", tag_name);
+	}
+
+	r_list_free(tag_list);
 
 	return R_TRUE;
 }
@@ -260,6 +313,7 @@ static int r_cmd_yara_help(const RCore* core) {
 		"scan", "", "Scan the current file",
 		"show", " name", "Show rules containing name",
 		"tag", " name", "List rules with tag 'name'",
+		"tags", "", "List tags from the loaded rules",
 		NULL
 	};
 
@@ -279,6 +333,8 @@ static int r_cmd_yara_process(const RCore* core, const char* input) {
         return r_cmd_yara_scan (core);
     else if (!strncmp (input, "show", 4))
         return r_cmd_yara_show (input + 5);
+    else if (!strncmp (input, "tags", 4))
+        return r_cmd_yara_tags ();
     else if (!strncmp (input, "tag ", 4))
         return r_cmd_yara_tag (input + 4);
     else
