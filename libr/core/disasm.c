@@ -356,7 +356,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds)
 
 	spacer = strstr(source, "||");
 	if (spacer) {
-		char *scol1, *s1 = strndup(source, spacer - source);
+		char *scol1, *s1 = r_str_ndup(source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
 		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num); free(s1);
