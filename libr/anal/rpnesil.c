@@ -84,9 +84,15 @@ R_API RAnalEsil *r_anal_esil_new() {
 }
 
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code) {
-	if (!code || !op || !strlen(op) || !esil || !esil->ops)
+	char t[128];
+	char *h;
+	if (!code || !op || !strlen(op) || !esil || !esil->ops) {
 		return R_FALSE;
-	sdb_num_set (esil->ops, op, (ut64)code, 0);
+	}
+	h = sdb_itoa (sdb_hash (op), t, 16);
+	sdb_num_set (esil->ops, h, (ut64)code, 0);
+	if (!sdb_num_exists (esil->ops, h))
+		eprintf ("can't set esil-op %s\n", op);
 	return R_TRUE;
 }
 
@@ -1135,8 +1141,11 @@ static int esil_bigger_equal(RAnalEsil *esil) {		// 'src >= dst' => 'src,dst,>='
 
 
 static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
-	if (word && esil && esil->ops && sdb_num_exists (esil->ops, word)) {
-		*op = (RAnalEsilOp) sdb_num_get (esil->ops, word, 0);
+	char t[128];
+	char *h;
+	h = sdb_itoa(sdb_hash (word), t, 16);
+	if (sdb_num_exists (esil->ops, h)) {
+		*op = (RAnalEsilOp) sdb_num_get (esil->ops, h, 0);
 		return R_TRUE;
 	}
 	return R_FALSE;
