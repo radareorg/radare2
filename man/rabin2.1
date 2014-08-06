@@ -21,6 +21,8 @@ rabin2 \- Binary program info extractor
 .Sh DESCRIPTION
 This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
 .Bl -tag -width Fl
+.It Fl @ Ar addr
+Show information (symbol, section, import) of the given address
 .It Fl A
 List archs
 .It Fl a Ar arch
@@ -33,54 +35,64 @@ Override baddr
 Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
 .It Fl C
 List classes
+.It Fl d
+Show debug/dwarf information
 .It Fl e
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
 .It Fl g
-Same as \-SMRevsiz (Show all possible information). See \-r
-.It Fl i
-Show imports (symbols imported from libraries)
-.It Fl k Ar query
-Perform SDB query on loaded file
-.It Fl s
-Show exported symbols
-.It Fl S
-Show sections
-.It Fl M
-Show address of 'main' symbol
-.It Fl z
-Show strings inside .data section (like gnu strings does)
-.It Fl I
-Show binary info
+Show all possible information
+.It Fl h
+Show usage help message.
 .It Fl H
 Show header fields
+.It Fl I
+Show binary info
+.It Fl i
+Show imports (symbols imported from libraries)
+.It Fl j
+Output in json
+.It Fl k Ar query
+Perform SDB query on loaded file
 .It Fl l
 List linked libraries to the binary
-.It Fl R
-Show realocations
+.It Fl L
+List supported bin plugins
+.It Fl M
+Show address of 'main' symbol
+.It Fl m Ar addr
+Show source line reference from a given address
+.it Fl N minlen
+Force minimum number of chars per string (see -z)
+.It Fl n Ar str
+Show information (symbol, section, import) at string offset
 .It Fl O Ar str
 Write/extract operations (\-O help)
 .It Fl o Ar str
 Output file/folder for write operations (out by default)
+.It Fl q
+Be quiet, just show fewer data
+.It Fl R
+Show realocations
 .It Fl r
 Show output in radare format
-.It Fl v
-Display virtual addressing offsets
-.It Fl m Ar addr
-Show source line reference from a given address
-.It Fl L
-List supported bin plugins
-.It Fl @ Ar addr
-Show information (symbol, section, import) of the given address
-.It Fl n Ar str
-Show information (symbol, section, import) at string offset
-.It Fl x
-Extract all sub binaries from a fat binary (f.ex: fatmach0)
+.It Fl s
+Show exported symbols
+.It Fl S
+Show sections
 .It Fl V
 Show version information
-.It Fl h
-Show usage help message.
+.It Fl v
+Display virtual addressing offsets
+.It Fl x
+Extract all sub binaries from a fat binary (f.ex: fatmach0)
+.It Fl z
+Show strings inside .data section (like gnu strings does)
+.It Fl Z
+Guess size of binary program
+.It Fl zz
+Shows strings from raw bins
 .El
 .Sh EXAMPLES
 .Pp
