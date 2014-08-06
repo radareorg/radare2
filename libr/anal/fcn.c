@@ -92,7 +92,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	// set global reference
 	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference
-#if 0
+#if 1
 // with old function storage enabled there are some wrong analysis stuff
 #if FCN_OLD
 	ref->at = at; // from
