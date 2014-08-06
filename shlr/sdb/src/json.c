@@ -199,7 +199,10 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 SDB_API char *sdb_json_indent(const char *s) {
 	int indent = 0;
 	int i, instr = 0;
-	char *o, *O = malloc (strlen (s)*2);
+	char *o, *O;
+	if (!s) return NULL;
+	O = malloc (strlen (s)*2);
+	if (!O) return NULL;
 	for (o=O; *s; s++) {
 		if (instr) {
 			if (s[0] == '"') instr = 0;
