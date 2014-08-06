@@ -42,5 +42,5 @@ script:
   - make
   - sudo make install
   - cd radare2-regressions
-  # Run the tests, report only regressions (FAILED, exit value 1) as errors.
-  - VERBOSE=1 ./run_tests.sh $TESTS; test $? != 1
+  # Run the tests, report only regressions as errors.
+  - VERBOSE=1 ./run_tests.sh $TESTS
