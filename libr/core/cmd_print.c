@@ -424,6 +424,46 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 	return err;
 }
 
+static void cmd_print_pwn(const RCore* core) {
+	int i, n = r_num_rand (10);
+	ut64 num, base = r_num_get (core->num, "entry0");
+	if (!base)
+		base = 0x8048000;
+	
+	eprintf ("[+] Analyzing code starting at 0x%08"PFMT64x"...\n", base);
+	r_sys_sleep (3);
+
+	eprintf ("[+] Looking for vulnerabilities...\n");
+	r_sys_sleep (3);
+	
+	eprintf ("[+] Found %d bugs...\n", n);
+	for (i=0; i<n; i++) {
+		eprintf ("[+] Deeply analyzing bug %d at 0x%08"PFMT64x"...\n",
+				i, base+r_num_rand (0xffff));
+		r_sys_sleep (1);
+	}
+	
+	eprintf ("[+] Finding ROP gadgets...\n");
+	n = r_num_rand (0x20);
+	num = base;
+	for (i=0; i<n; i++) {
+		num += r_num_rand (0xfff);
+		eprintf (" * 0x%08"PFMT64x" %d : %02x %02x ..\n",
+				num, r_num_rand (10),
+				r_num_rand (0xff), r_num_rand (0xff));
+		r_sys_sleep (r_num_rand (2));
+	}
+
+	eprintf ("[+] Cooking the shellcode...\n");
+	r_sys_sleep (4);
+	
+	eprintf ("[+] Launching the exploit...\n");
+	r_sys_sleep (1);
+	
+	r_sys_cmd ("sh");
+}
+
+
 static int cmd_print(void *data, const char *input) {
 	RAsmOp asmop = {0};
 	RAnalOp analop = {0};
@@ -489,34 +529,7 @@ static int cmd_print(void *data, const char *input) {
 	switch (*input) {
 	case 'w':
 		if (input[1]=='n') {
-			int i, n = r_num_rand (10);
-			ut64 num, base = r_num_get (core->num, "entry0");
-			if (!base) base = 0x8048000;
-			eprintf ("[+] Analyzing code starting at 0x%08"PFMT64x"...\n", base);
-			r_sys_sleep (3);
-			eprintf ("[+] Looking for vulnerabilities...\n");
-			r_sys_sleep (3);
-			eprintf ("[+] Found %d bugs...\n", n);
-			for (i=0; i<n; i++) {
-				eprintf ("[+] Deeply analyzing bug %d at 0x%08"PFMT64x"...\n",
-					i, base+r_num_rand (0xffff));
-				r_sys_sleep (1);
-			}
-			eprintf ("[+] Finding ROP gadgets...\n");
-			n = r_num_rand (0x20);
-			num = base;
-			for (i=0; i<n; i++) {
-				num += r_num_rand (0xfff);
-				eprintf (" * 0x%08"PFMT64x" %d : %02x %02x ..\n",
-					num, r_num_rand (10),
-					r_num_rand (0xff), r_num_rand (0xff));
-				r_sys_sleep (r_num_rand (2));
-			}
-			eprintf ("[+] Cooking the shellcode...\n");
-			r_sys_sleep (4);
-			eprintf ("[+] Launching the exploit...\n");
-			r_sys_sleep (1);
-			r_sys_cmd ("sh");
+			cmd_print_pwn(core);
 		} else {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
@@ -1132,10 +1145,16 @@ static int cmd_print(void *data, const char *input) {
 				pd_result = 0;
 			}
 			break;
-		case 'j':
+		case 'j':{ //pDj
+			const int bsize = strtol(input+2, NULL, 10);
 			processed_cmd = R_TRUE;
-			r_core_print_disasm_json (core, core->offset,
-				core->block, core->blocksize);
+			if (bsize)
+				r_core_print_disasm_json (core,
+					core->offset, core->block, bsize);
+			else
+				r_core_print_disasm_json (core, core->offset,
+					core->block, core->blocksize);
+			}
 			pd_result = 0;
 			break;
 		case '?':
