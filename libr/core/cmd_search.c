@@ -315,30 +315,31 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				} else ropat = from+i;
 				roplen = from - ropat + i + aop.size;
 				if (grep && *grep) {
-					char *tmp, *s, cmd[32];
-					int show_match = 0;
+					char *tmp, cmd[32];
+					char* dis, *filtered_dis;
 
-					snprintf (cmd, sizeof (cmd),
-						"pD %d @ 0x%"PFMT64x,
-						roplen, ropat);
-					// backup cons buffer
+					snprintf (cmd, sizeof (cmd), "pD %d @ 0x%"PFMT64x, roplen, ropat);
 					tmp = strdup (r_cons_singleton ()->buffer);
-					s = r_core_cmd_str (core, cmd);
-					if (strstr (s, grep)) show_match = 1;
-					// restore cons buffer
-					r_cons_strcat (tmp);
-					free (tmp);
-					if (show_match) {
+
+					dis = r_core_cmd_str (core, cmd);
+					filtered_dis = r_core_cmd_str (core, cmd);
+
+					r_str_ansi_filter(filtered_dis, strlen(filtered_dis));
+					if (strstr (filtered_dis, grep)) {
 						match++;
 						if (mode=='j') {
 							r_cons_printf ("TODO\n");
 						} else {
 							r_cons_printf ("0x%08"PFMT64x"  %s\n",
 								from+i, asmop.buf_asm);
-							r_cons_printf ("%s\n", s);
+							r_cons_printf ("%s\n", dis);
 						}
 					}
-					free (s);
+					r_cons_strcat (tmp);
+
+					free (tmp);
+					free (dis);
+					free (filtered_dis);
 				} else {
 					match++;
 					if (mode=='j') {
