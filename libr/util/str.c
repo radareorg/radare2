@@ -432,7 +432,7 @@ R_API char *r_str_chop(char *str) {
 		return NULL;
 
 	while (*str && iswhitechar (*str))
-		str = str + 1;
+		memmove (str, str+1, strlen (str+1)+1);
 
 	len = strlen (str);
 

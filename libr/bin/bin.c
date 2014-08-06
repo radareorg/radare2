@@ -339,7 +339,8 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->boffset) o->boffset = cp->boffset (binfile);
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential inconsistencies
-	//if (cp->size) o->size = cp->size (binfile);
+	if (cp->size)
+		o->size = cp->size (binfile);
 	if (cp->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			o->binsym[i] = cp->binsym (binfile, i);
@@ -900,7 +901,7 @@ static int r_bin_file_object_new_from_xtr_data (RBin *bin, RBinFile *bf, ut64 ba
 	if (!plugin) plugin = r_bin_get_binplugin_any (bin);
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
-	if (o) o->size = sz;
+	if (o && !o->size) o->size = sz;
 
 	if (!o) return R_FALSE;
 	bf->narch = data->file_count;
@@ -935,7 +936,7 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
-	if (o) o->size = file_sz;
+	if (o && !o->size) o->size = file_sz;
 
 	if (!o) {
 		if (bf && binfile_created) r_list_delete_data (bin->binfiles, bf);
