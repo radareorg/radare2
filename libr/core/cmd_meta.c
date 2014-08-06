@@ -233,7 +233,10 @@ error:
 
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
-	if (input[1] == '+' || input[1] == ' ') {
+	switch (input[1]) {
+	case '+':
+	case ' ':
+		{
 		const char* newcomment = input+2;
 		char *text;
 		while (*newcomment==' ') newcomment++;
@@ -251,8 +254,31 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
 					addr, newcomment);
 		}
-		return R_TRUE;
-	} else if (input[1] == 'a') {
+		}
+		break;
+	case '*':
+		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
+		break;
+	case '-':
+		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1, NULL);
+		break;
+	case 'u':
+		//
+		{
+		const char* newcomment = input+2;
+		char *text;
+		while (*newcomment==' ') newcomment++;
+		char *comment = r_meta_get_string (
+				core->anal, R_META_TYPE_COMMENT, addr);
+		if (!comment || comment && !strstr (comment, newcomment)) {
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+					addr, newcomment);
+		}
+		free (comment);
+		}
+		break;
+	case 'a':
+		{
 		char *s, *p;
 		s = strchr (input, ' ');
 		if (s) {
@@ -304,10 +330,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		} else eprintf ("Usage: CCa [address] [comment]\n");
 		free (s);
 		return R_TRUE;
-	} else if (input[1] == '*') {
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
-	} else if (input[1] == '-') {
-		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1, NULL);
+		}
 	}
 
 	return R_TRUE;
@@ -443,6 +466,7 @@ static int cmd_meta(void *data, const char *input) {
 				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 				"CC", "[-] [comment-text]", "add/remove comment. Use CC! to edit with $EDITOR",
 				"CCa", "[-at]|[at] [text]", "add/remove comment at given address",
+				"CCu", " [comment-text]", "add unique comment",
 				"Cs", "[-] [size] [[addr]]", "add string",
 				"Ch", "[-] [size] [@addr]", "hide data",
 				"Cd", "[-] [size]", "hexdump data",
