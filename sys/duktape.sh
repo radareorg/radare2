@@ -11,7 +11,9 @@ ID=`id -u`
 
 export DESTDIR
 
-cd radare2-bindings/libr/lang/p
+cd radare2-bindings
+./configure --prefix=/usr --enable=duktape
+cd libr/lang/p
 make clean
 make
 rm ~/.config/radare2/plugins/lang_duktape.*
