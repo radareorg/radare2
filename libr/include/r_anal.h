@@ -789,6 +789,8 @@ typedef struct r_anal_esil_t {
 // parity flag?
 	ut64 old;	//used for carry-flagging and borrow-flagging
 	ut64 cur;	//used for carry-flagging and borrow-flagging
+	/* native ops and custom ops */
+	Sdb *ops;
 	/* callbacks */
 	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
@@ -800,10 +802,7 @@ typedef struct r_anal_esil_t {
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } RAnalEsil;
 
-struct r_anal_esil_op_t {
-	const char *str;
-	int (*run)(RAnalEsil *esil);
-};
+typedef int (*RAnalEsilOp)(RAnalEsil *esil);
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
@@ -980,6 +979,7 @@ R_API int r_anal_esil_dumpstack (RAnalEsil *esil);
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
 R_API int r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);
+R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code);
 
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new();
