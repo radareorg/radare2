@@ -273,12 +273,21 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RAsmOp asmop;
 	RAnalOp aop;
 	ut8 *buf;
+	int mode = 0;
+	int match = 0;
 
 	if (delta<1) delta = from-to;
 	if (delta<1) return R_FALSE;
-	while (*grep==' ') grep++;
+	if (*grep==' ') {
+		for (++grep; *grep==' '; grep++) {}
+	} else {
+		mode = *grep;
+		grep = NULL;
+	}
 	buf = malloc (delta);
 
+	if (mode == 'j')
+		r_cons_printf ("[");
 	for (i=0; i<delta; i++) {
 		if (i>=end) {
 			r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
@@ -320,21 +329,38 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_cons_strcat (tmp);
 					free (tmp);
 					if (show_match) {
-						r_cons_printf ("0x%08"PFMT64x"  %s\n",
-							from+i, asmop.buf_asm);
-						r_cons_printf ("%s\n", s);
+						match++;
+						if (mode=='j') {
+							r_cons_printf ("TODO\n");
+						} else {
+							r_cons_printf ("0x%08"PFMT64x"  %s\n",
+								from+i, asmop.buf_asm);
+							r_cons_printf ("%s\n", s);
+						}
 					}
 					free (s);
 				} else {
-					r_cons_printf ("0x%08"PFMT64x"  %s\n",
-						from+i, asmop.buf_asm);
-					r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
-						roplen, ropat);
+					match++;
+					if (mode=='j') {
+						r_cons_printf ("%s{\"addr\":%"PFMT64d
+							",\"size\":%d,\"retaddr\":%"PFMT64d
+							",\"inst\":\"%s\"}"
+							,match>1?",":""
+							,ropat, roplen
+							,from+i, asmop.buf_asm);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x"  %s\n",
+							from+i, asmop.buf_asm);
+						r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
+							roplen, ropat);
+					}
 				}
 				break;
 			}
 		}
 	}
+	if (mode == 'j')
+		r_cons_printf ("]\n");
 	return R_TRUE;
 }
 
@@ -439,6 +465,7 @@ static int cmd_search(void *data, const char *input) {
 	case 'R':
 		if (input[1]=='?') {
 			r_cons_printf ("Usage: /R [filter-by-string]\n");
+			r_cons_printf ("Usage: /Rj [filter-by-string] # json output\n");
 		} else r_core_search_rop (core, from, to, 0, input+1);
 		return R_TRUE;
 	case 'r':
