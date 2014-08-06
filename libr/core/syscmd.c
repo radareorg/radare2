@@ -99,3 +99,17 @@ R_API void r_core_syscmd_ls(const char *input) {
 	free (dir);
 	r_list_free (files);
 }
+
+R_API void r_core_syscmd_cat(const char *file) {
+	int sz;
+	const char *p = strchr (file, ' ');
+	if (p) {
+		char *data, *filename = strdup (p+1);
+		filename = r_str_chop (filename);
+		data = r_file_slurp (filename, &sz);
+		if (data) {
+			r_cons_memcat (data, sz);
+			free (data);
+		} else eprintf ("No such file or directory\n");
+	} else eprintf ("Usage: cat [file]\n");
+}

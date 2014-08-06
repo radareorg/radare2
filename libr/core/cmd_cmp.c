@@ -229,14 +229,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 	switch (*input) {
 	case 'a':
-		p = strchr (input+1, ' ');
-		if (p) {
-			char *data = r_file_slurp (p+1, &sz);
-			if (data) {
-				r_cons_memcat (data, sz);
-				free (data);
-			} else eprintf ("No such file or directory\n");
-		} else eprintf ("Usage: cat [file]\n");
+		r_core_syscmd_cat (input+1);
 		break;
 	case 'w':
 		cmd_cmp_watcher (core, input+1);
