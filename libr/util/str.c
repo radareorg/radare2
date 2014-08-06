@@ -918,7 +918,9 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 
 R_API int r_str_ansi_filter(char *str, int len) {
 	int i, j;
-	char *tmp = malloc (len);
+	char *tmp;
+	if (len<1) len = strlen (str)+1;
+	tmp = malloc (len);
 	if (!tmp) return -1;
 	memcpy (tmp, str, len);
 	for (i=j=0; i<len; i++)
