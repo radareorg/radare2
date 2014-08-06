@@ -173,6 +173,7 @@ static int cb_asmcpu(void *user, void *data) {
 		return 0;
 	}
 	r_asm_set_cpu (core->assembler, node->value);
+	r_config_set (core->config, "anal.cpu", node->value);
 	return R_TRUE;
 }
 
