@@ -260,6 +260,9 @@ R_API int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 				case 'p':						//parity
 					*num = esil_internal_parrity_check (esil);
 					return R_TRUE;
+				case 'r':
+					*num = esil->anal->bits/8;
+					return R_TRUE;
 			}
 			break;
 		case R_ANAL_ESIL_PARM_NUM:
