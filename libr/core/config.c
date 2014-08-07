@@ -144,7 +144,7 @@ static int cb_asmbits(void *user, void *data) {
 	core->print->bits = node->i_value;
 	if (core->dbg  && core->anal && core->anal->cur) {
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
-		if (core->dbg->h && core->dbg->h->reg_profile) {
+		if (core->dbg->h && core->dbg->h->reg_profile && !core->anal->reg) {
 			char *rp = core->dbg->h->reg_profile (core->dbg);
 			r_reg_set_profile_string (core->dbg->reg, rp);
 			r_reg_set_profile_string (core->anal->reg, rp);
