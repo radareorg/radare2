@@ -179,41 +179,41 @@ static int cmd_help(void *data, const char *input) {
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '@':
-		r_cons_printf (
-		"|Usage: ... @[(f|s|b)]:] [@iter] expr[!size] [~grep]\n"
-		"|Pipes:\n"
-		"|  x > foo       pipe output of 'x' command to 'foo' file\n"
-		"|  x >> foo      concatenate output of 'x' in 'foo' file\n"
-		"|  x | less      pipe output of 'x' command to less program\n"
-		"|Command evaluation:\n"
-		"|  `pdi~push:0[0]`  replace output of command inside the line\n"
-		"|  .!rabin2 -ri $FILE  load imports by running rabin2\n"
-		"|  .:8080        expect commands at tcp port 8080\n"
-		"|Special suffixes to temporary set the contents of block:\n"
-		"|  @f:/bin/ls    from file contents\n"
-		"|  @s:hello      from given string\n"
-		"|  @b:909192     from hex pairs string\n"
-		"|Temporary seeks:\n"
-		"|  @ 0x1024      seek to 0x1024 offset\n"
-		"|  @ sym.main+3  seek to the evaluated math expressions\n"
-		"|  @ 32!128      blocksize = 128, offset = 32\n"
-		"|Repeaters:\n"
-		"|  @@=1 2 3      repeat previous command at offsets 1, 2 and 3\n"
-		"|  @@ hit*       repeat command for all flags matching 'hit*' glob\n"
-		// TODO: documentate @@ glob1 glob2 glob3
-		"|Internal grep:\n"
-		"|  ~?            count lines\n"
-		"|  ~mov          grep lines matching 'mov'\n"
-		"|  ~!mov         grep lines not matching 'mov'\n"
-		"|  ~mov[0]       get first column of lines matching 'mov'\n"
-		"|  ~mov:3[0]     get 1st column from the 4th line matching 'mov'\n"
-		"|Misc:\n"
-		"|  0             go to begining of file\n"
-		"|  0x33          go to 0x33'\n"
-		);
+		{
+		const char* help_msg[] = {
+			"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
+			"0", "", "alias for 's 0'",
+			"0x", "addr", "alias for 's 0x..'",
+			"#", "cmd", "if # is a number repeat the command # times",
+			".", "cmd", "execute output of command as r2 script",
+			".:", "8080", "wait for commands on port 8080",
+			".!", "rabin2 -re $FILE", "run command output as r2 script",
+			"*", "", "output of command in r2 script format (CC*)",
+			"j", "", "output of command in JSON format (pdj)",
+			"~", "?", "count number of lines (like wc -l)",
+			"~", "..", "internal less",
+			"~", "word", "grep for lines matching word",
+			"~", "!word", "grep for lines NOT matching word",
+			"~", "word[2]", "grep 3rd column of lines matching word",
+			"~", "word:3[0]", "grep 1st column from the 4th line matching mov",
+			"@", " 0x1024", "temporary seek to this address (sym.main+3",
+			"@", " addr[!blocksize]", "temporary set a new blocksize",
+			"@@=", "1 2 3", " run the previous command at offsets 1, 2 and 3",
+			"@@", " hit*", "run the command on every flag matching 'hit*'",
+			"@f:", "file", "temporary replace block with file contents",
+			"@s:", "string", "same as above but from a string",
+			"@b:", "909192", "from hex pairs string",
+			">", "file", "pipe output of command to file",
+			">>", "file", "append to file",
+			"`", "pdi~push:0[0]`",  "replace output of command inside the line",
+			"|", "cmd", "pipe output to command (pd|less) (.dr*)",
+			NULL};
+		r_core_cmd_help (core, help_msg);
 		return 0;
+		}
 	case '$':{
 		const char* help_msg[] = {
+			"Usage: ?v [$.]","","",
 			"$$", "", "here (current virtual seek)",
 			"$?", "", "last comparision value",
 			"$Cn", "", "get nth call of function",
@@ -392,7 +392,7 @@ static int cmd_help(void *data, const char *input) {
 				break;	
 			}
 			const char* help_msg[] = {
-			"Usage: ?[?[?]] expression\n"
+			"Usage: ?[?[?]] expression", "", "",
 			"?", " eip-0x804800", "show hex and dec result for this math expr",
 			"?!", " [cmd]", "? != 0",
 			"?+", " [cmd]", "? > 0",
