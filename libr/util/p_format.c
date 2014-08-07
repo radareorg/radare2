@@ -202,6 +202,34 @@ static void r_print_format_float(const RPrint* p, int mustset, const char* setva
 		p->printf ("0x%08"PFMT64x" = %f", seeki, (float)(addr));
 }
 
+static int computeStructSize(char *fmt) {
+	char *end = strchr(fmt, ' ');
+	int size = 0, i;
+	*end = 0;
+	for (i=0; i<strlen(fmt); i++) {
+		switch(fmt[i]) {
+			case 'i':
+				size+= 4;
+				break;
+			case 'w':
+				size+= 2;
+				break;
+			default:
+				break;
+		}
+	}
+	free(fmt);
+	return size;
+}
+
+static int r_print_format_struct(const RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
+	const char *fmt;
+	fmt = r_strht_get (p->formats, name);
+	eprintf("%s\n%s\n", name, fmt);
+	r_print_format (p, seek, b, len, fmt, -1, NULL);
+	return computeStructSize(strdup(fmt));
+}
+
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	int (*oldprintf)(const char *str, ...);
@@ -211,6 +239,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	const char *arg = fmt;
 	int viewflags = 0;
 	char namefmt[8];
+	static int slide=0;
 	ut8 *buf;
 
 	nexti = nargs = i = j = 0;
@@ -265,7 +294,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				maxl = len;
 		}
 		l++;
-		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl);
+		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl+6*slide);
 	}
 
 	/* go format */
@@ -503,6 +532,24 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				if(r_print_format_ptrstring(p, seeki, addr64, addr, 1) == 0)
 					i+= (size==-1) ? 8 : size;
 				break;
+			case '"':
+				if (1) {
+					char *end = strchr(arg+1, '"');
+					char *name;
+					if (end == NULL) {
+						eprintf("Struct name error\n");
+						goto beach;
+					}
+					*end = '\0';
+					name = strdup(arg+1);
+					p->printf("<struct> %s\n", name);
+					arg = end;
+					slide++;
+					i+= r_print_format_struct(p, seeki, b, len, name, slide);
+					slide--;
+				}
+				break;
+
 			default:
 				/* ignore unknown chars */
 				invalid = 1;
