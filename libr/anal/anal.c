@@ -50,7 +50,6 @@ R_API RAnal *r_anal_new() {
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
-	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
@@ -65,11 +64,9 @@ R_API RAnal *r_anal_new() {
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
-	anal->diff_ops = 0;
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->split = R_TRUE; // used from core
-	anal->queued = NULL;
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
 	anal->reg = r_reg_new ();
@@ -119,6 +116,8 @@ R_API void r_anal_free(RAnal *a) {
 	a->sdb = NULL;
 	r_syscall_free (a->syscall);
 	sdb_ns_free (a->sdb);
+	if (a->esil)
+		r_anal_esil_free (a->esil);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	free (a);
 }
@@ -151,6 +150,10 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);
+			if (anal->esil) {
+				r_anal_esil_free (anal->esil);
+				anal->esil = NULL;
+			}
 			return R_TRUE;
 		}
 	}
