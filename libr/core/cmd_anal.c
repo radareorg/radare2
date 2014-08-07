@@ -915,47 +915,56 @@ static int cmd_anal(void *data, const char *input) {
 		case ' ':
 			 {
 				//r_anal_esil_eval (core->anal, input+2);
-				RAnalEsil *esil = r_anal_esil_new ();
-				r_anal_esil_setup (esil, core->anal); // setup io
+				if (!core->anal->esil) {
+					core->anal->esil = r_anal_esil_new ();
+					r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+				}
+				RAnalEsil *esil = core->anal->esil;
 				r_anal_esil_parse (esil, input+2);
 				r_anal_esil_dumpstack (esil);
-				r_anal_esil_free (esil);
+				r_anal_esil_stack_free (esil);
 			 }
 			break;
 		case 's':
 			// stepping
 			{
-			       int ret;
-			       ut8 code[32];
-			       RAnalOp op;
-			       const char *name = r_reg_get_name (core->anal->reg, r_reg_get_name_idx ("pc"));
-			       ut64 addr = r_reg_getv (core->anal->reg, name);
-			       if (addr == 0) {
-				       eprintf ("PC=OFF\n");
-				       addr = core->offset;
-			       }
-			       r_io_read_at (core->io, addr, code, 32);
-			       eprintf ("PC=0x%llx\n", (ut64)addr);
-			       r_asm_set_pc (core->assembler, addr);
-			       ret = r_anal_op (core->anal, &op, addr, code, 32);
-			       eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
-			 {
-				//r_anal_esil_eval (core->anal, input+2);
-				RAnalEsil *esil = r_anal_esil_new ();
-				r_anal_esil_setup (esil, core->anal); // setup io
-				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-				r_anal_esil_dumpstack (esil);
-				r_anal_esil_free (esil);
-			 }
-			ut64 newaddr = r_reg_getv (core->anal->reg, name);
-			if (addr == newaddr || addr == core->offset) {
-				r_reg_setv (core->anal->reg, name, addr + op.size);
-			}
-			//sleep (1);
+				int ret;
+				ut8 code[32];
+				RAnalOp op;
+				const char *name = r_reg_get_name (core->anal->reg, r_reg_get_name_idx ("pc"));
+				ut64 addr = r_reg_getv (core->anal->reg, name);
+				if (addr == 0) {
+					eprintf ("PC=OFF\n");
+					addr = core->offset;
+				}
+				r_io_read_at (core->io, addr, code, 32);
+				eprintf ("PC=0x%llx\n", (ut64)addr);
+				r_asm_set_pc (core->assembler, addr);
+				ret = r_anal_op (core->anal, &op, addr, code, 32);
+				eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
+				{
+					//r_anal_esil_eval (core->anal, input+2);
+					if (!core->anal->esil) {
+						core->anal->esil = r_anal_esil_new ();
+						r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+					}
+					RAnalEsil *esil = core->anal->esil;
+					r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+					r_anal_esil_dumpstack (esil);
+					r_anal_esil_stack_free (esil);
+				}
+				ut64 newaddr = r_reg_getv (core->anal->reg, name);
+				if (addr == newaddr)
+					r_reg_setv (core->anal->reg, name, addr + op.size);
 			}
 			break;
+		case 'D':
+			if (core->anal->esil)
+				r_anal_esil_free (core->anal->esil);
+			core->anal->esil = NULL;
+			break;
 		default:
-			eprintf ("Usage: ae [esil]  # aes = step, aer = 'ar' alias\n");
+			eprintf ("Usage: ae [esil]  # aes = step, aer = 'ar' alias, aeD deinit esil / reset esil-vm\n");
 		}
 		break;
 	case 'o':
@@ -1548,6 +1557,7 @@ static int cmd_anal(void *data, const char *input) {
 			"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
 			"as", " [num]", "analyze syscall using dbg.reg",
 			"at", "[trd+-%*?] [.]", "analyze execution traces",
+			"ac", "[cycles]", "analyze which op could be executed in [cycles] cycles, only cycles supporting archs",
 			//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
 			NULL
 			};
