@@ -89,7 +89,7 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	ut32 c;
 	char *js = sdb_get (s, k, &c);
 	if (!js) {
-		char *b = malloc (strlen (k)+strlen (v)+8);
+		char *b = malloc (strlen (p)+strlen (v)+8);
 		if (b) {
 			int is_str = isstring (v);
 			const char *q = is_str?"\"":"";

@@ -92,7 +92,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	vlen = strlen (v);
 	if (root) {
 		rlen = strlen (root);
-		line = malloc (klen + vlen + rlen + 2);
+		line = malloc (klen + vlen + rlen + 3);
 		memcpy (line, root, rlen);
 		line[rlen]='/'; /*append the '/' at the end of the namespace */
 		memcpy (line+rlen+1, k, klen);
