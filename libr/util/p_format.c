@@ -202,7 +202,42 @@ static void r_print_format_float(const RPrint* p, int mustset, const char* setva
 		p->printf ("0x%08"PFMT64x" = %f", seeki, (float)(addr));
 }
 
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
+static int computeStructSize(char *fmt) {
+	char *end = strchr(fmt, ' ');
+	int size = 0, i;
+	*end = 0;
+	for (i=0; i<strlen(fmt); i++) {
+		switch(fmt[i]) {
+			case 'i':
+				size+= 4;
+				break;
+			case 'w':
+				size+= 2;
+				break;
+			case '*':
+				size+= 4;
+				i++;
+				// TODO continue list
+			default:
+				break;
+		}
+	}
+	free(fmt);
+	return size;
+}
+
+static int r_print_format_struct(const RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
+	const char *fmt;
+	if (slide%100 > 14) {
+		eprintf("Too much nested struct, recursion too deep...\n");
+		return 0;
+	}
+	fmt = r_strht_get (p->formats, name);
+	r_print_format (p, seek, b, len, fmt, -1, NULL);
+	return computeStructSize(strdup(fmt));
+}
+
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, const char *fmt, int elem, const char *setval) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	int (*oldprintf)(const char *str, ...);
 	const char *argend = fmt+strlen (fmt);
@@ -211,6 +246,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	const char *arg = fmt;
 	int viewflags = 0;
 	char namefmt[8];
+	static int slide=0;
 	ut8 *buf;
 
 	nexti = nargs = i = j = 0;
@@ -265,7 +301,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				maxl = len;
 		}
 		l++;
-		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl);
+		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl+6*slide%100);
 	}
 
 	/* go format */
@@ -279,6 +315,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		arg = orig;
 		for (idx=0; i<len && arg<argend && *arg; arg++) {
 			int size;
+			char *name = NULL;
 			seeki = seek+i;
 			addr = 0LL;
 			invalid = 0;
@@ -320,18 +357,25 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		feed_me_again:
 			switch (isptr) {
 			case 1:
+				{
 				nexti = i + (p->bits/8);
 				i = 0;
+				if(tmp == '?' )seeki = addr;
 				memset (buf, '\0', len);
 				p->printf ("(*0x%"PFMT64x") ", addr);
-				if (p->iob.read_at) {
+				if (addr == 0) isptr = 3;
+				else isptr = 2;
+				if (/*addr<(b+len) && addr>=b && */p->iob.read_at) { /* The test was here to avoid segfault in the next line, 
+																		but len make it doesnt work... */
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
 					updateAddr (buf, i, endian, &addr, &addr64);
 				} else {
-					eprintf ("(cannot read memory)\n");
-					break;
+					eprintf ("(SEGFAULT: cannot read memory at 0x%x, Block: 0x%x, blocksize: 0x%x)\n",
+							addr, b, len);
+					p->printf("\n");
+					goto beach;
 				}
-				isptr = 2;
+				}
 				break;
 			case 2:
 				// restore state after pointer seek
@@ -368,12 +412,18 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				tmp = (p->bits == 64)? 'q': 'x';
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
+#if 0
 			case '?': // help
 				print_format_help (p);
 				i = len; // exit
 				continue;
+#endif
 			}
 
+			if (isptr == 3) {
+				p->printf ("NULL");
+				isptr = 2;
+			} else
 			/* cmt chars */
 			switch (tmp) {
 #if 0
@@ -503,6 +553,31 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				if(r_print_format_ptrstring(p, seeki, addr64, addr, 1) == 0)
 					i+= (size==-1) ? 8 : size;
 				break;
+			case '?':
+				{
+				int s;
+				char *structname = strdup(r_str_word_get0 (args, idx-1));
+				if (*structname == '[') {
+					name = strchr(structname, ']');
+				} else {
+					eprintf("Struct name missing\n");
+					goto beach;
+				}
+				structname++;
+				if (name == NULL) {
+					eprintf ("No ')'\n");
+				} else {
+					*(name++) = '\0';
+				}
+				p->printf("<struct>\n");
+				slide+= (isptr) ? 100 : 1;
+				s = r_print_format_struct(p, seeki, buf+i, len, structname--, slide);
+				free(structname);
+				i+= (isptr) ? 4 : s;
+				slide-= (isptr) ? 100 : 1;
+				break;
+				}
+
 			default:
 				/* ignore unknown chars */
 				invalid = 1;
@@ -518,7 +593,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				if (s)
 					p->printf ("*(%s)", s);
 			}
-			if (tmp != 'D' && !invalid)
+			if (tmp != 'D' && !invalid && name==NULL)
 				p->printf ("\n");
 			last = tmp;
 		}
