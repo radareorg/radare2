@@ -187,6 +187,17 @@ static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 	return ((esil->cur & masks[bit]) < (esil->old & masks[bit]));
 }
 
+static int esil_internal_parrity_check (RAnalEsil *esil) {
+	int i, bits = 0;
+	ut64 mask = 1;
+	for (i=0; i<64; i++) {
+		if (esil->cur & mask)
+			bits++;
+		mask = (ut64)(mask>>1);						//yes, this cast is needed since every shift will produce a ut32
+	}
+	return (bits & 1);
+}
+
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[64];
 	snprintf (str, sizeof (str)-1, "0x%"PFMT64x, num);
@@ -246,7 +257,9 @@ R_API int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 					*num = esil_internal_carry_check (esil, bit);
 					return R_TRUE;
 				//case 'o':						//overflow
-				//case 'p':						//parity
+				case 'p':						//parity
+					*num = esil_internal_parrity_check (esil);
+					return R_TRUE;
 			}
 			break;
 		case R_ANAL_ESIL_PARM_NUM:
