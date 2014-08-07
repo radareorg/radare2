@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014 - pancake
+				-condret	*/
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -205,7 +206,7 @@ R_API char *r_anal_esil_pop(RAnalEsil *esil) {
 	return esil->stack[--esil->stackptr];
 }
 
-static int esil_get_parm_type (RAnalEsil *esil, const char *str) {
+R_API int esil_get_parm_type (RAnalEsil *esil, const char *str) {
 	int len, i;
 	if (!str || !(len=strlen(str)))
 		return R_ANAL_ESIL_PARM_INVALID;
@@ -224,7 +225,7 @@ static int esil_get_parm_type (RAnalEsil *esil, const char *str) {
 	return R_ANAL_ESIL_PARM_INVALID;
 }
 
-static int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
+R_API int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 	int parm_type;
 	ut8 bit;
 	if (!num)
@@ -542,6 +543,7 @@ JBE : CF = 1 || ZF = 1
  *
  * Defining new cpu flags
  */
+#if 0
 static int esil_ifset(RAnalEsil *esil) {
 	char *s, *src = r_anal_esil_pop (esil);
 	for (s=src; *s; s++) {
@@ -563,6 +565,7 @@ static int esil_ifset(RAnalEsil *esil) {
 	free (src);
 	return 0;
 }
+#endif
 
 static int esil_if(RAnalEsil *esil) {
 	ut64 onum, num = 0;
@@ -1212,6 +1215,15 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 		goto loop;
 	return 0;
 }
+
+R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
+	if (esil) {
+		char *ptr;
+		while (ptr = r_anal_esil_pop(esil))
+			free (ptr);
+	}
+}
+
 
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	// register callbacks using this anal module.
