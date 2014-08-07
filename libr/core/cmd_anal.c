@@ -913,7 +913,7 @@ static int cmd_anal(void *data, const char *input) {
 			// 'aer' is an alias for 'ar'
 			return cmd_anal (core, input+1);
 		case ' ':
-			 {
+			{
 				//r_anal_esil_eval (core->anal, input+2);
 				if (!core->anal->esil) {
 					core->anal->esil = r_anal_esil_new ();
@@ -923,7 +923,7 @@ static int cmd_anal(void *data, const char *input) {
 				r_anal_esil_parse (esil, input+2);
 				r_anal_esil_dumpstack (esil);
 				r_anal_esil_stack_free (esil);
-			 }
+			}
 			break;
 		case 's':
 			// stepping
@@ -950,6 +950,8 @@ static int cmd_anal(void *data, const char *input) {
 					}
 					RAnalEsil *esil = core->anal->esil;
 					r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+					if (core->anal->cur && core->anal->cur->esil_post_loop)
+						core->anal->cur->esil_post_loop(esil, &op);
 					r_anal_esil_dumpstack (esil);
 					r_anal_esil_stack_free (esil);
 				}
