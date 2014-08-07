@@ -37,8 +37,8 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 			(binobj->info)? binobj->info->has_va: 0);
 		r_config_set_i (r->config, "bin.laddr", loadaddr);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
-		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "asm.arch", arch);
+		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "anal.arch", arch);
 		r_config_set (r->config, "anal.cpu", arch);
 		r_asm_use (r->assembler, arch);
