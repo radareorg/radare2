@@ -451,6 +451,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case '*':
 		r_core_anal_fcn_list (core, input+2, 1);
 		break;
+	case 'j':
+		r_core_anal_fcn_list (core, input+2, 'j');
+		break;
 	case 's': {
 			  ut64 addr;
 			  RAnalFunction *f;
@@ -634,7 +637,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afb", " 16", "set current function as thumb",
 		 "afbb", " fcnaddr addr size name [type] [diff]", "add bb to function @ fcnaddr",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
-		 "afi", " [fcn name]", "show function(s) information (verbose afl)",
+		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
+		 "afj", " [addr|fcn.name]", "show function(s) information in JSON",
 		 "afn", " name [addr]", "rename name for function at address (change flag too)",
 		 "afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
 		 "afs", " [addr] [fcnsign]", "get/set function signature at current address",
