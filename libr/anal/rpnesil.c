@@ -590,49 +590,16 @@ static int esil_ifset(RAnalEsil *esil) {
 #endif
 
 static int esil_if(RAnalEsil *esil) {
-	ut64 onum, num = 0;
+	ut64 num;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
-		if (isregornum (esil, src, &onum)) {
-			num = !!! onum;
-		} else {
-			// TODO: this shuold be deprecated maybe.. or redefined
-			int zf = R_BIT_CHK (&esil->flags, FLG(ZERO));
-			int cf = R_BIT_CHK (&esil->flags, FLG(CARRY));
-			if (!strcmp (src, "z")) {
-				// equal, zero
-				if (!zf) num = 1;
-			} else
-			if (!strcmp (src, "nz")) {
-				// different, non-zero
-				if (zf) num = 1;
-			} else
-			if (!strcmp (src, "a")) {
-				// above
-				if (!zf && !cf)
-					num = 1;
-			} else
-			if (!strcmp (src, "ae")) {
-				// above or equal
-				if (!zf) num = 1;
-				if (!zf && !cf) num = 1;
-			} else
-			if (!strcmp (src, "b")) {
-				// below
-				if (!zf && cf)
-					num = 1;
-			} else
-			if (!strcmp (src, "be")) {
-				// below or equal
-				if (!zf) num = 1;
-			} else num = onum;
-		}
-		if (num) {
+		esil_get_parm (esil, src, &num);
 			// condition not matching, skipping until }
+		if (*num)
 			esil->skip = R_TRUE;
-		}
+		return R_TRUE;
 	}
-	return 0;
+	return R_FALSE;
 }
 
 static int esil_lsl(RAnalEsil *esil) {
