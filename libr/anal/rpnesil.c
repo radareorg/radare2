@@ -327,17 +327,18 @@ static int esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num) {
 
 static int esil_eq (RAnalEsil *esil) {
 	int ret = 0;
-	ut64 num;
+	ut64 num, n;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (src && dst && esil_reg_read (esil, dst, NULL)) {
 		if (esil_get_parm (esil, src, &num)) {
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)		//necessary for some flag-things
 				esil->cur = num;
+			n = num;
 			esil_reg_read (esil, dst, &num);
 			if (esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
 				esil->old = num;
-			ret = esil_reg_write (esil, dst, esil->cur);
+			ret = esil_reg_write (esil, dst, n);
 		} else eprintf ("esil_eq: invalid src\n");
 	} else {
 		eprintf ("esil_eq: invalid parameters\n");
