@@ -226,6 +226,8 @@ R_API int esil_get_parm_type (RAnalEsil *esil, const char *str) {
 			return R_ANAL_ESIL_PARM_INTERNAL;
 		return R_ANAL_ESIL_PARM_INVALID;
 	}
+	if (!strncmp (str, "0x", 2))
+		return R_ANAL_ESIL_PARM_NUM;
 	for (i = 0; i < len; i++)
 		if (!(str[i] >= '0' && str[i] <= '9'))
 			goto not_a_number;
@@ -271,6 +273,9 @@ R_API int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 		case R_ANAL_ESIL_PARM_REG:
 			esil_reg_read (esil, str, num);
 			return R_TRUE;
+		default:
+			eprintf ("Invalid arg (%s)\n", str);
+			break;
 	}
 	return R_FALSE;
 }
@@ -912,7 +917,7 @@ static int esil_addeq (RAnalEsil *esil) {
 				esil->cur = d+s;
 		}
 	} else {
-		eprintf ("esil_addeq: invalid parameters");
+		eprintf ("esil_addeq: invalid parameters\n");
 	}
 	free (src);
 	free (dst);
@@ -921,15 +926,15 @@ static int esil_addeq (RAnalEsil *esil) {
 
 static int esil_sub (RAnalEsil *esil) {
 	int ret = 0;
-	ut64 s, d;
+	ut64 s = 0, d = 0;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (src && esil_get_parm (esil, src, &s)) {
 		if (dst && esil_get_parm (esil, dst, &d)) {
 			r_anal_esil_pushnum (esil, s-d);
-		}
+		} else eprintf ("esil_sub: invalid parameters\n");
 	} else {
-		eprintf ("esil_sub: invalid parameters");
+		eprintf ("esil_sub: invalid parameters\n");
 	}
 	free (src);
 	free (dst);
@@ -950,7 +955,7 @@ static int esil_subeq (RAnalEsil *esil) {
 				esil->cur = d-s;
 		}
 	} else {
-		eprintf ("esil_eq: invalid parameters");
+		eprintf ("esil_subeq: invalid parameters\n");
 	}
 	free (src);
 	free (dst);
