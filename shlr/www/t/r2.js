@@ -8,17 +8,42 @@ var next_curoff = 0;
 var next_lastoff = 0;
 var prev_curoff = 0;
 var prev_lastoff = 0;
+var r2cmd = false;
 
-r2.plugin = r2plugin? r2plugin: function() {
+if (module !== undefined) {
+	module.exports = function(r) {
+		if (typeof (r) == 'function')
+			r2cmd = r;
+		else r2cmd = r.cmd;
+		return r2;
+	}
+}
+
+r2.plugin = function() {
   console.error ("r2.plugin is not available in this environment");
 }
+try { if (r2plugin) r2.plugin = r2plugin } catch(e) { }
+
 r2.root = ""; // prefix path
 
 /* helpers */
 function dump(obj) {
   var x = "";
   for (var a in obj) x += a+"\n";
-  alert (x);
+  if (typeof ('alert') != 'undefined')
+	  alert (x);
+  else console.log (x);
+}
+
+r2.analOp = function (addr, cb) {
+  r2.cmd ("aoj 1 @ "+addr, function (txt) {
+    try {
+      cb(JSON.parse (txt)[0]);
+    } catch (e) {
+      console.error (e)
+      cb (txt);
+    }
+  });
 }
 
 function objtostr(obj) {
@@ -143,9 +168,7 @@ r2.cmds = function (cmds, cb) {
 r2.cmd = function (c, cb) {
   if (r2cmd) {
     // TODO: use setTimeout for async?
-    if (cb)
-      return cb (r2cmd (c));
-    return r2cmd (c);
+    return r2cmd (c, cb);
   } else
   Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '', function (x) {
     if (cb) cb (x);
