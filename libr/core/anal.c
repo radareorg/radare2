@@ -1268,9 +1268,10 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, symbol) {
 			if (core->cons->breaked)
 				break;
-			if (!strncmp (symbol->type, "FUNC", 4))
-				r_core_anal_fcn (core, offset + va?baddr+symbol->vaddr:symbol->paddr, -1,
-						R_ANAL_REF_TYPE_NULL, depth);
+			if (!strcmp (symbol->type, "FUNC"))
+				r_core_anal_fcn (core, va? symbol->vaddr:symbol->paddr,
+//offset + va?baddr+symbol->vaddr:symbol->paddr, -1,
+						-1, R_ANAL_REF_TYPE_NULL, depth);
 		}
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 	r_list_foreach (core->anal->fcns, iter, fcni) {
