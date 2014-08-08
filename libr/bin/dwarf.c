@@ -459,7 +459,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	}
 	if (binfile && binfile->sdb_addrinfo) {
 		int idx = regs->file -1;
-		if(idx>0 && idx<hdr->file_names_count) {
+		if(idx>=0 && idx<hdr->file_names_count) {
 			add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
 					hdr->file_names[regs->file - 1].name, regs->line);
 		}
