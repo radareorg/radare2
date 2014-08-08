@@ -358,11 +358,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 
 	n_edges = bbEdges (fcn, nodes, &edges);
-	if (!edges) {
-		free (can);
-		free (nodes);
-		return R_FALSE;
-	}
+	if (!edges)
+		n_edges = 0;
 
 	// hack to make layout happy
 	for (i=0; nodes[i].text; i++) {
