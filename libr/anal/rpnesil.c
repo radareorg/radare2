@@ -587,7 +587,10 @@ static int esil_if(RAnalEsil *esil) {
 	ut64 onum, num = 0;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
-		if (!isregornum (esil, src, &onum)) {
+		if (isregornum (esil, src, &onum)) {
+			num = !!! onum;
+		} else {
+			// TODO: this shuold be deprecated maybe.. or redefined
 			int zf = R_BIT_CHK (&esil->flags, FLG(ZERO));
 			int cf = R_BIT_CHK (&esil->flags, FLG(CARRY));
 			if (!strcmp (src, "z")) {
