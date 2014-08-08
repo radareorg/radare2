@@ -511,7 +511,6 @@ next_quote:
 				} else {
 					if (encode) ok = sdb_set_owned (s, p, sval, 0);
 					else ok = sdb_set (s, p, sval, 0);
-
 				}
 				if (ok) *buf = 0;
 			} else {
@@ -573,6 +572,7 @@ next_quote:
 				free ((void*)val);
 				val = NULL;
 			}
+			if (ok) *buf = 0;
 		} else {
 			// 0 1 kvpath:jspath
 			// 0 0 kvpath
