@@ -99,7 +99,7 @@ R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code)
 
 R_API void r_anal_esil_free (RAnalEsil *esil) {
 	int i;
-	for (i=0; i<esil->stackptr;i++)
+	for (i=0; i<esil->stackptr; i++)
 		free (esil->stack[i]);
 	if (esil->ops)
 		sdb_free (esil->ops);
@@ -212,7 +212,7 @@ R_API int r_anal_esil_push(RAnalEsil *esil, const char *str) {
 }
 
 R_API char *r_anal_esil_pop(RAnalEsil *esil) {
-	if (esil->stackptr<1)
+	if (!esil || esil->stackptr<1)
 		return NULL;
 	return esil->stack[--esil->stackptr];
 }
@@ -357,10 +357,16 @@ static int esil_neg(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num;
 	char *src = r_anal_esil_pop (esil);
-	if (src && esil_get_parm (esil, src, &num)) {
-		num = !num;
-		r_anal_esil_pushnum (esil, num);
-		ret = 1;
+	if (src) {
+		if (esil_get_parm (esil, src, &num)) {
+			r_anal_esil_pushnum (esil, !!!num);
+			ret = 1;
+		} else {
+			if (isregornum (esil, src, &num)) {
+				ret = 1;
+				r_anal_esil_pushnum (esil, !!!num);
+			} else eprintf ("esil_neg: trashed stack wtf? %s\n", src);
+		}
 	} else {
 		eprintf ("esil_neg: empty stack\n");
 	}
@@ -646,7 +652,7 @@ static int esil_lsl(RAnalEsil *esil) {
 			r_anal_esil_pushnum (esil, num);
 			ret = 1;
 		} else {
-			eprintf ("esil_neg: empty stack\n");
+			eprintf ("esil_lsl: empty stack\n");
 		}
 	}
 	free (src);
@@ -707,7 +713,7 @@ static int esil_lsreq(RAnalEsil *esil) {
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
-			eprintf ("esil_neg: empty stack\n");
+			eprintf ("esil_lsreq: empty stack\n");
 		}
 	}
 	free (src);
@@ -726,7 +732,7 @@ static int esil_and(RAnalEsil *esil) {
 			r_anal_esil_pushnum (esil, num);
 			ret = 1;
 		} else {
-			eprintf ("esil_neg: empty stack\n");
+			eprintf ("esil_and: empty stack\n");
 		}
 	}
 	free (src);
@@ -932,7 +938,9 @@ static int esil_sub (RAnalEsil *esil) {
 	if (src && esil_get_parm (esil, src, &s)) {
 		if (dst && esil_get_parm (esil, dst, &d)) {
 			r_anal_esil_pushnum (esil, s-d);
-		} else eprintf ("esil_sub: invalid parameters\n");
+		} else {
+			eprintf ("esil_sub: invalid parameters");
+		}
 	} else {
 		eprintf ("esil_sub: invalid parameters\n");
 	}
@@ -1232,6 +1240,8 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int wordi = 0;
 	char word[64];
 	const char *ostr = str;
+	if (!esil)
+		return 0;
 	esil->trap = 0;
 	loop:
 	esil->repeat = 0;
@@ -1273,6 +1283,25 @@ R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
 	if (esil)
 		while ((ptr = r_anal_esil_pop (esil)))
 			free (ptr);
+}
+
+R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
+	char *popped;
+	int ret;
+	while (*str==' ') str++; // use proper string chop?
+	ret = r_anal_esil_parse (esil, str);
+	popped = r_anal_esil_pop (esil);
+	if (popped) {
+		ut64 num;
+		if (isregornum (esil, popped, &num)) {
+			ret = !! num;
+		} else ret = 0;
+		free (popped);
+	} else {
+		eprintf ("ESIL stack is empty\n");
+		return -1;
+	}
+	return ret;
 }
 
 

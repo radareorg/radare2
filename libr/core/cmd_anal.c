@@ -970,13 +970,30 @@ static int cmd_anal(void *data, const char *input) {
 					r_reg_setv (core->anal->reg, name, addr + op.size);
 			}
 			break;
-		case 'D':
+		case 'd':
 			if (core->anal->esil)
 				r_anal_esil_free (core->anal->esil);
 			core->anal->esil = NULL;
 			break;
-		default:
-			eprintf ("Usage: ae [esil]  # aes = step, aer = 'ar' alias, aeD deinit esil / reset esil-vm\n");
+		case 'i':
+			if (core->anal->esil)
+				r_anal_esil_free (core->anal->esil);
+			// reinitialize
+			core->anal->esil = r_anal_esil_new ();
+			r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+			break;
+		default: {
+				const char* help_msg[] = {
+				"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
+				"aei", "", "initialize ESIL VM state",
+				"aed", "", "deinitialize ESIL VM state",
+				"ae", " [expr]", "evaluate ESIL expression",
+				"aes", "", "perform emulated debugger step",
+				"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
+				NULL};
+				r_core_cmd_help (core, help_msg);
+				 }
+			break;
 		}
 		break;
 	case 'o':

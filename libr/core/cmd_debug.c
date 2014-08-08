@@ -75,6 +75,26 @@ static int step_until(RCore *core, ut64 addr) {
 	return R_TRUE;
 }
 
+static int step_until_esil(RCore *core, const char *esilstr) {
+	if (!core || !esilstr || !core->dbg || !core->dbg->anal->esil) {
+		eprintf ("Not initialized %p. Run 'aei' first.\n", core->anal->esil);
+		return R_FALSE;
+	}
+	for (;;) {
+		r_debug_step (core->dbg, 1);
+		r_debug_reg_sync (core->dbg, -1, 0);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
+		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
+			eprintf ("ESIL BREAK!\n");
+			break;
+		}
+	}
+	return R_TRUE;
+}
+
 /* until end of frame */
 static int step_until_eof(RCore *core) {
 	ut64 off, now = r_debug_reg_get (core->dbg, "sp");
@@ -200,7 +220,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_debug_pid_list (core->dbg,
 			(int) r_num_math (core->num, input+2));
 		break;
-	case '?':{
+	case '?': {
 			const char* help_msg[] = {
 				"Usage:", "dp", " # Process commands",
 				"dp", "", "List current pid and childrens",
@@ -1099,6 +1119,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dsp", "", "Step into program (skip libs)",
 				"dss", " <num>", "Skip <num> step instructions",
 				"dsu", " <address>", "Step until address",
+				"dsue", " <esil>", "Step until esil expression matches",
 				NULL
 			};
 
@@ -1131,8 +1152,12 @@ static int cmd_debug(void *data, const char *input) {
 			step_until_eof (core);
 			break;
 		case 'u':
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
+			if (input[2]=='e') {
+				step_until_esil (core, input+3);
+			} else {
+				r_reg_arena_swap (core->dbg->reg, R_TRUE);
+				step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
+			}
 			break;
 		case 'p':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
