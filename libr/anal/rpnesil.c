@@ -601,7 +601,7 @@ static int esil_if(RAnalEsil *esil) {
 	if (src) {
 		esil_get_parm (esil, src, &num);
 			// condition not matching, skipping until }
-		if (*num)
+		if (num)
 			esil->skip = R_TRUE;
 		return R_TRUE;
 	}
