@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER(r_socket);
 #include <openssl/err.h>
 #endif
 
-#if __WINDOWS__ && !__CYGWIN__ && !MINGW32
+#if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32)
 #include <ws2tcpip.h>
 #endif
 
