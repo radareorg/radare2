@@ -942,22 +942,36 @@ static int cmd_anal(void *data, const char *input) {
 				ut8 code[32];
 				RAnalOp op;
 				const char *name = r_reg_get_name (core->anal->reg, r_reg_get_name_idx ("pc"));
-				ut64 addr = r_reg_getv (core->anal->reg, name);
-				if (addr == 0) {
-					eprintf ("PC=OFF\n");
-					addr = core->offset;
+				ut64 addr;
+				if (!core->anal->esil) {
+					core->anal->esil = r_anal_esil_new ();
+					r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+					RList *entries = r_bin_get_entries (core->bin);
+					RBinAddr *entry = NULL;
+					RBinInfo *info = NULL;
+					if (entries && r_list_length(entries)) {
+						entry = (RBinAddr *) r_list_pop (entries);
+						info = r_bin_get_info (core->bin);
+						if (info->has_va)
+							addr = entry->vaddr;
+						else	addr = entry->paddr;
+						eprintf ("PC=entry0\n");
+						r_list_push (entries, entry);
+					} else {
+						addr = core->offset;
+						eprintf ("PC=OFF\n");
+					}
+					r_reg_setv (core->anal->reg, name, addr);
+				} else {
+					addr = r_reg_getv (core->anal->reg, name);
+					eprintf ("PC=0x%llx\n", (ut64)addr);
 				}
 				r_io_read_at (core->io, addr, code, 32);
-				eprintf ("PC=0x%llx\n", (ut64)addr);
 				r_asm_set_pc (core->assembler, addr);
 				ret = r_anal_op (core->anal, &op, addr, code, 32);
 				eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
 				{
 					//r_anal_esil_eval (core->anal, input+2);
-					if (!core->anal->esil) {
-						core->anal->esil = r_anal_esil_new ();
-						r_anal_esil_setup (core->anal->esil, core->anal); // setup io
-					}
 					RAnalEsil *esil = core->anal->esil;
 					r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 					if (core->anal->cur && core->anal->cur->esil_post_loop)
