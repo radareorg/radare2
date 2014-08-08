@@ -389,6 +389,10 @@ static int esil_negeq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_nop(RAnalEsil *esil) {
+	return 0;
+}
+
 static int esil_andeq(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, num2;
@@ -601,7 +605,7 @@ static int esil_if(RAnalEsil *esil) {
 	if (src) {
 		esil_get_parm (esil, src, &num);
 			// condition not matching, skipping until }
-		if (num)
+		if (!num)
 			esil->skip = R_TRUE;
 		return R_TRUE;
 	}
@@ -1297,6 +1301,7 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	r_anal_esil_set_op (esil, ">>=", esil_lsreq);
 	r_anal_esil_set_op (esil, "&", esil_and);
 	r_anal_esil_set_op (esil, "&=", esil_andeq);
+	r_anal_esil_set_op (esil, "}", esil_nop); // just to avoid push
 	r_anal_esil_set_op (esil, "|", esil_or);
 	r_anal_esil_set_op (esil, "|=", esil_oreq);
 	r_anal_esil_set_op (esil, "!", esil_neg);
