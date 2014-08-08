@@ -989,6 +989,22 @@ static int esil_poke4(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_poke2(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, addr;
+	ut16 num4;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && isregornum (esil, src, &num)) {
+		if (dst && isregornum (esil, dst, &addr)) {
+			num4 = (ut16)num;
+			ret = esil_mem_write (esil, addr,
+				(const ut8*)&num4, 2);
+		}
+	}
+	return ret;
+}
+
 static int esil_peek1(RAnalEsil *esil) {
 	int ret = 0;
 	char res[32];
@@ -1053,6 +1069,17 @@ static int esil_poke8(RAnalEsil *esil) {
 	free (src);
 	return ret;
 }
+
+static int esil_poke(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+	case 64: return esil_poke8 (esil);
+	case 32: return esil_poke4 (esil);
+	case 16: return esil_poke2 (esil);
+	case 8: return esil_poke1 (esil);
+	}
+	return 0;
+}
+
 
 static int esil_peek8(RAnalEsil *esil) {
 	int ret = 0;
@@ -1237,11 +1264,10 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 }
 
 R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
-	if (esil) {
-		char *ptr;
-		while (ptr = r_anal_esil_pop(esil))
+	char *ptr;
+	if (esil)
+		while ((ptr = r_anal_esil_pop (esil)))
 			free (ptr);
-	}
 }
 
 
@@ -1285,13 +1311,16 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	r_anal_esil_set_op (esil, "-=", esil_subeq);
 	r_anal_esil_set_op (esil, "/", esil_div);
 	r_anal_esil_set_op (esil, "/=", esil_diveq);
+	r_anal_esil_set_op (esil, "=[]", esil_poke);
 	r_anal_esil_set_op (esil, "=[1]", esil_poke1);
+	r_anal_esil_set_op (esil, "=[2]", esil_poke2);
 	r_anal_esil_set_op (esil, "=[4]", esil_poke4);
 	r_anal_esil_set_op (esil, "=[8]", esil_poke8);
+	r_anal_esil_set_op (esil, "[]", esil_peek);
 	r_anal_esil_set_op (esil, "[1]", esil_peek1);
+	r_anal_esil_set_op (esil, "[2]", esil_peek2);
 	r_anal_esil_set_op (esil, "[4]", esil_peek4);
 	r_anal_esil_set_op (esil, "[8]", esil_peek8);
-	r_anal_esil_set_op (esil, "[]", esil_peek);
 	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
 		return anal->cur->esil_init (esil);
 	return R_TRUE;
