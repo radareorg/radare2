@@ -871,6 +871,12 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		size = atoi (str+1);
 		if (size==0) {
+			r = r_reg_get (core->dbg->reg, str+1, -1);
+			if (r) {
+				r_cons_printf ("0x%08"PFMT64x"\n",
+					r_reg_get_value (core->dbg->reg, r));
+				return;
+			}
 			arg = strchr (str+1, ' ');
 			if (arg && size==0) {
 				*arg='\0';
