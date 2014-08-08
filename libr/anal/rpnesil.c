@@ -622,7 +622,7 @@ static int esil_if(RAnalEsil *esil) {
 				if (!zf) num = 1;
 			} else num = onum;
 		}
-		if (!num) {
+		if (num) {
 			// condition not matching, skipping until }
 			esil->skip = R_TRUE;
 		}
@@ -662,7 +662,7 @@ static int esil_lsleq(RAnalEsil *esil) {
 			esil_reg_write (esil, dst, num);
 			ret = 1;
 		} else {
-			eprintf ("esil_neg: empty stack\n");
+			eprintf ("esil_lsleq: empty stack\n");
 		}
 	}
 	free (src);
@@ -775,9 +775,9 @@ R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 	}
 	if (esil->stackptr<1) 
 		return 0;
-	eprintf ("StackDump:\n");
+	//eprintf ("StackDump:\n");
 	for (i=esil->stackptr-1;i>=0; i--) {
-		eprintf (" [%d] %s\n", i, esil->stack[i]);
+		eprintf ("%s\n", esil->stack[i]);
 	}
 	return 1;
 }
