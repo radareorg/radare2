@@ -97,7 +97,7 @@ static int print_addrinfo (void *user, const char *k, const char *v) {
 	if (colonpos)
 		*colonpos = ':';
 
-	printf ("CL %s %s\n", subst, v);
+	r_cons_printf ("CL %s %s\n", subst, v);
 
 	free (subst);
 
@@ -270,7 +270,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		while (*newcomment==' ') newcomment++;
 		char *comment = r_meta_get_string (
 				core->anal, R_META_TYPE_COMMENT, addr);
-		if (!comment || comment && !strstr (comment, newcomment)) {
+		if (!comment || (comment && !strstr (comment, newcomment))) {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
 					addr, newcomment);
 		}

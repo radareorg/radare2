@@ -288,8 +288,9 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 
 	for (; i<e; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			if (r->name && !strcmp (r->name, name))
+			if (r->name && !strcmp (r->name, name)) {
 				return r;
+	}
 		}
 	}
 	return NULL;

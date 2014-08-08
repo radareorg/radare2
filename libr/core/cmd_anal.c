@@ -800,7 +800,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			break;
 		case '?':
 			r_cons_printf (
-				"|Usage: drs   Register states commands\n"
+			"|Usage: drs   Register states commands\n"
 			"| drs    List register stack\n"
 			"| drs+   Push register state\n"
 			"| drs-   Pop register state\n");
@@ -852,9 +852,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		if (arg) {
 			char *ostr, *regname;
 			*arg = 0;
-			ostr = strdup (str+1);
+			ostr = r_str_chop (strdup (str+1));
 			regname = r_str_clean (ostr);
-			r = r_reg_get (core->dbg->reg, str+1, -1); //R_REG_TYPE_GPR);
+			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
 			if (r) {
 				r_cons_printf ("0x%08"PFMT64x" ->", str,
 					r_reg_get_value (core->dbg->reg, r));
