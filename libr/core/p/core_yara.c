@@ -86,7 +86,10 @@ static int r_cmd_yara_scan(const RCore* core) {
 
 	result = r_yr_compiler_get_rules (compiler, &rules);
 	if (result < 0) {
+		char buf[64];
 		eprintf ("Unable to get rules\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		return R_FALSE;
 	}
 
@@ -117,7 +120,10 @@ static int r_cmd_yara_show(const char * name) {
 	YR_RULE* rule;
 
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		char buf[64];
 		eprintf ("Unable to get rules\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		return R_FALSE;
 	}
 
@@ -144,7 +150,10 @@ static int r_cmd_yara_tags() {
 	tag_list->free = free;
 
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		char buf[64];
 		eprintf ("Unable to get rules\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		return R_FALSE;
 	}
 
@@ -184,7 +193,10 @@ static int r_cmd_yara_tag(const char * search_tag) {
 	char * tag_name;
 
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		char buf[64];
 		eprintf ("Unable to get rules\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		return R_FALSE;
 	}
 
@@ -218,7 +230,10 @@ static int r_cmd_yara_list () {
 	YR_RULE* rule;
 
 	if (r_yr_compiler_get_rules (compiler, &rules) < 0) {
+		char buf[64];
 		eprintf ("Unable to get rules\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		return R_FALSE;
 	}
 
@@ -235,7 +250,10 @@ static int r_cmd_yara_list () {
 static int r_cmd_yara_clear () {
 	r_yr_compiler_destroy (compiler);
 	if (r_yr_compiler_create (&compiler) != ERROR_SUCCESS) {
+		char buf[64];
 		eprintf ("Unable to re-create the yara compiler\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		return R_FALSE;
 	}
     eprintf ("Rules cleared\n");
@@ -261,7 +279,7 @@ static int r_cmd_yara_add(const RCore* core, const char* input) {
 		char buf[64];
 		eprintf ("Error: %s : \n",
 		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
-		r_cmd_yara_clear (); // The compiler is screwed :|
+
 		return R_FALSE;
 	} else {
 		r_cons_printf ("Rule successfully added.\n");
@@ -275,7 +293,7 @@ static int r_cmd_yara_add_file(const char* rules_path) {
 	int result;
 
 	if (!rules_path){
-		eprintf ("Please tell me what am I supported to load\n");
+		eprintf ("Please tell me what am I supposed to load\n");
 		return R_FALSE;
 	}
 
@@ -293,7 +311,7 @@ static int r_cmd_yara_add_file(const char* rules_path) {
 		eprintf ("Error: %s : %s\n",
 		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)),
 			rules_path);
-		r_cmd_yara_clear (); // The compiler is screwed :|
+
 		return R_FALSE;
 	}
 
@@ -407,7 +425,10 @@ static int r_cmd_yara_init(const RCore* core) {
 	r_yr_initialize ();
 
 	if (r_yr_compiler_create (&compiler) != ERROR_SUCCESS) {
+		char buf[64];
 		eprintf ("Unable to create the yara compiler\n");
+		eprintf ("Error: %s : \n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
 		r_yr_finalize ();
 		return R_FALSE;
 	}
