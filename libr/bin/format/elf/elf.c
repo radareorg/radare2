@@ -27,6 +27,7 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)?
 		LIL_ENDIAN: !LIL_ENDIAN;
+	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
 	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->ehdr,
 #if R_BIN_ELF64
 		bin->endian?"16c2SI3LI6S":"16c2si3li6s",

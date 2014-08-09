@@ -187,7 +187,6 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		return -1;
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
-
 		switch (fmt[j]) {
 		case '0'...'9':
 			if (m == 1)
@@ -211,8 +210,10 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 			return -1;
 		if(!UT64_ADD(&check_len, check_len, addr))
 			return -1;
-		if (check_len > b->length)
-			return -1;
+		if (check_len > b->length) {
+			return check_len;
+			// return -1;
+		}
 
 		for (k = 0; k < m; k++) {
 			if (write) r_mem_copyendian(
