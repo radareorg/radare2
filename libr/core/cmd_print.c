@@ -1102,7 +1102,20 @@ static int cmd_print(void *data, const char *input) {
 			{
 				RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-				if (f) {
+				if (f && input[2] == 'j') {
+					r_cons_printf ("{");
+					r_cons_printf ("\"name\":\"%s\"", f->name);
+					r_cons_printf (",\"size\":%d", f->size);
+					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
+					r_cons_printf (",\"ops\":");
+					// instructions are all outputted as a json list
+					r_core_cmdf (core, "pDj %d @ 0x%"PFMT64x, f->size, f->addr);
+					//close function json
+					r_cons_printf ("}");
+					pd_result = 0;
+
+
+				} else if (f) {
 #if 0
 #if 1
 // funsize = sum(bb)
@@ -1168,6 +1181,7 @@ static int cmd_print(void *data, const char *input) {
 				"pdb", "", "disassemble basic block",
 				"pdr", "", "recursive disassemble across the function graph",
 				"pdf", "", "disassemble function",
+				"pdfj", "", "disassemble function to json",
 				"pdi", "", "like 'pi', with offset and bytes",
 				"pdn", "", "disassemble N bytes (like pdi)",
 				"pdl", "", "show instruction sizes",
