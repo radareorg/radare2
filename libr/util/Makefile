@@ -29,6 +29,7 @@ ifeq ($(USE_LIB_ZIP),1)
 else
   LINK+=$(SHLR)/zip/librz.a
 endif
+CFLAGS+=-I$(SHLR)/zip/include
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
