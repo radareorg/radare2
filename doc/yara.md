@@ -14,6 +14,13 @@ logic. Rules can be
 applied to files or running processes in order to determine if it belongs to the described
 malware family.
 
+Requirements
+------------
+
+You can either install libyara with your prefered package manager, or you
+can execute sys/yara.sh in order to retrieve latest source, compile, and
+install the library.
+
 Yara in radare2
 ----------
 
