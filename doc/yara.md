@@ -36,6 +36,8 @@ By default, radare2 ships with some common crypto and packers rules that you
 can find in `/usr/local/share/radare2/last/yara/` if you installed it r2 or
 `radare2/shlr/yara/` in the git repo.
 They are loaded as soon as you start using the yara plugin.
+So you can issue `yara scan` and automatically see if your binary is packed
+with a known packer.
 
 Example
 -------
