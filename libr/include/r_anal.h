@@ -982,8 +982,8 @@ R_API int r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code);
 R_API void r_anal_esil_stack_free (RAnalEsil *esil);
-R_API int esil_get_parm_type (RAnalEsil *esil, const char *str);	//rename
-R_API int esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);	//rename
+R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
+R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str);
 
 /* fcn.c */
