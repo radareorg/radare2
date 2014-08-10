@@ -57,7 +57,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 }
 
 RAsmPlugin r_asm_plugin_mips_cs = {
-	.name = "mips",
+	.name = "mips.cs",
 	.desc = "Capstone MIPS disassembler",
 	.license = "BSD",
 	.arch = "mips",

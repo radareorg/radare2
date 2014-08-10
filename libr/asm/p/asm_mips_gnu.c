@@ -93,7 +93,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 }
 
 RAsmPlugin r_asm_plugin_mips_gnu = {
-	.name = "mips.gnu",
+	.name = "mips",
 	.arch = "mips",
 	.license = "GPL3",
 	.bits = 32|64,
