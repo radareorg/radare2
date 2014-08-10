@@ -1,4 +1,4 @@
-/* radare - GPLv2 - Copyright 2014 jvoisin <julien.voisin@dustri.org> */
+/* radare - LGPLv3 - Copyright 2014 jvoisin <julien.voisin@dustri.org> */
 
 #include <dirent.h>
 

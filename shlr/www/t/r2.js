@@ -10,6 +10,39 @@ var prev_curoff = 0;
 var prev_lastoff = 0;
 var r2cmd = false;
 
+// async helper
+function asyncLoop(iterations, func, callback) {
+    var index = 0;
+    var done = false;
+    var loop = {
+        next: function() {
+            if (done) {
+                return;
+            }
+
+            if (index < iterations) {
+                index++;
+                func(loop);
+
+            } else {
+                done = true;
+                callback();
+            }
+        },
+
+        iteration: function() {
+            return index - 1;
+        },
+
+        break: function() {
+            done = true;
+            callback();
+        }
+    };
+    loop.next();
+    return loop;
+}
+
 if (module !== undefined) {
 	module.exports = function(r) {
 		if (typeof (r) == 'function')
@@ -165,7 +198,7 @@ r2.cmds = function (cmds, cb) {
   r2.cmd (cmd, lala);
 }
 
-r2.cmd = function (c, cb) {
+function _internal_cmd(c, cb) {
   if (r2cmd) {
     // TODO: use setTimeout for async?
     return r2cmd (c, cb);
@@ -173,6 +206,26 @@ r2.cmd = function (c, cb) {
   Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '', function (x) {
     if (cb) cb (x);
   });
+}
+
+r2.cmd = function (c, cb) {
+  if (Array.isArray (c)) {
+    var res = [];
+    var idx = 0;
+    asyncLoop (c.length, function(loop) {
+      _internal_cmd (c[idx], function(result) {
+        idx = loop.iteration();
+        res[idx] = result.replace(/\n$/,"");
+	idx++;
+        loop.next ();
+      });
+    }, function() {
+      // all iterations done
+      cb (res);
+    });
+  } else {
+    _internal_cmd (c, cb);
+  }
 }
 
 r2.alive = function (cb) {
