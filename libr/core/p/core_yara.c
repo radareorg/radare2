@@ -319,7 +319,18 @@ static int r_cmd_yara_add_file(const char* rules_path) {
 		return R_FALSE;
 	}
 
-	r_yr_compiler_push_file_name (compiler, rules_path);
+	if (r_yr_compiler_push_file_name (compiler, rules_path) != ERROR_SUCCESS) {
+		char buf[64];
+		eprintf ("Error: %s : %s\n",
+		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)),
+			rules_path);
+
+		fclose (rules_file);
+		return R_FALSE;
+	}
+
+	/*reset the errors counter, otherwise multiple runs will fail after old error*/
+	compiler->errors = 0;
 	result = r_yr_compiler_add_file (compiler, rules_file, NULL);
 	fclose (rules_file);
 	if (result > 0) {
