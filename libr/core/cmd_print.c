@@ -1161,9 +1161,17 @@ static int cmd_print(void *data, const char *input) {
 		case 'j':{ //pDj
 			const int bsize = strtol(input+2, NULL, 10);
 			processed_cmd = R_TRUE;
-			if (bsize)
+			if (bsize > core->blocksize) {
+				char *block = malloc (bsize);
+				if (block && r_core_read_at (core, core->offset, block, bsize))
+					r_core_print_disasm_json (core,
+							core->offset, block, bsize);
+				free (block);
+			}
+			else if (bsize){
 				r_core_print_disasm_json (core,
 					core->offset, core->block, bsize);
+			}
 			else
 				r_core_print_disasm_json (core, core->offset,
 					core->block, core->blocksize);
