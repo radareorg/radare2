@@ -165,6 +165,17 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	return ret;
 }
 
+R_API char *r_file_gzslurp(const char *str, int *outlen) {
+	int sz;
+	char *in, *out;
+	if (outlen) *outlen = 0;
+	in = r_file_slurp (str, &sz);
+	if (!in) return NULL;
+	out = r_gunzip (in, sz, outlen);
+	free (in);
+	return out;
+}
+
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	ut8 *ret;
 	long sz;
