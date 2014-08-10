@@ -1372,8 +1372,10 @@ static int cmd_anal(void *data, const char *input) {
 	case 'a':
 		r_cons_break (NULL, NULL);
 		r_core_anal_all (core);
-		if (core->cons->breaked)
+		if (core->cons->breaked) {
+			r_cons_clear_line (1);
 			eprintf ("Interrupted\n");
+		}
 		r_cons_break_end();
 		break;
 	case 'c':
@@ -1615,8 +1617,10 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		if (tbs != core->blocksize)
 			r_core_block_size (core, tbs);
-		if (core->cons->breaked)
+		if (core->cons->breaked) {
+			r_cons_clear_line (1);
 			eprintf ("Interrupted\n");
+		}
 		r_cons_break_end();
 		return 0;
 	}

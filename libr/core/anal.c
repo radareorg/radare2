@@ -7,6 +7,10 @@
 
 #define ANALBS 4096
 
+static void loganal(ut64 from, ut64 to) {
+	r_cons_clear_line (1);
+	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", from, to);
+}
 
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	RAnalOp op, *_op;
@@ -592,8 +596,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					// TODO: ensure next address is function after padding (nop or trap or wat)
 // XXX noisy for test cases because we want to clear the stderr
 					r_cons_clear_line (1);
-					eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
-							fcn->addr, fcn->addr + fcn->size);
+					loganal (fcn->addr, fcn->addr+fcn->size);
 					next_append (fcn->addr+fcn->size);
 				}
 			}
@@ -1442,7 +1445,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 				case R_ANAL_OP_TYPE_JMP:
 					addr = op->jump;
 					ccl -= op->cycles;
-					eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", op->addr, addr);
+					loganal (op->addr, addr);
 					break;
 				case R_ANAL_OP_TYPE_UJMP:
 				case R_ANAL_OP_TYPE_UCALL:
@@ -1473,7 +1476,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 					r_list_push (cf->hooks, ch);
 					ch = NULL;
 					addr = op->jump;
-					eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", op->addr, addr);
+					loganal (op->addr, addr);
 					break;
 				case R_ANAL_OP_TYPE_UCJMP:
 				case R_ANAL_OP_TYPE_UCCALL:
@@ -1500,7 +1503,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 					}
 					ccl -= op->cycles;
 					addr = op->jump;
-					eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", op->addr, addr);
+					loganal (op->addr, addr);
 					break;
 				case R_ANAL_OP_TYPE_RET:
 					ch = R_NEW0 (RAnalCycleHook);
