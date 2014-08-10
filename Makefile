@@ -25,6 +25,7 @@ endif
 PWD=$(shell pwd)
 
 all: plugins.cfg
+	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util
 	${MAKE} -C libr/socket
 	${MAKE} -C shlr
