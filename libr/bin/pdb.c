@@ -2,10 +2,18 @@
 
 #include <string.h>
 
+#define _R_LIST_C
+#include "r_util.h"
+
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
+
+typedef struct {
+	int size;
+	char *page;
+} SPage;
 
 typedef struct {
 	FILE *fp;
@@ -30,6 +38,8 @@ typedef struct {
 
 typedef struct {
 	R_PDB_STREAM pdb_stream;
+	int num_streams;
+	RList *streams_list;
 } R_PDB7_ROOT_STREAM;
 
 typedef enum {
@@ -226,7 +236,12 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	int *sizes = 0;
 	int stream_size = 0;
 	int pos = 0;
+
+	char *tmp;
+	int some_int;
+
 	R_PDB7_ROOT_STREAM *root_stream7;
+
 	pdb->root_stream = (R_PDB7_ROOT_STREAM *)malloc(sizeof(R_PDB7_ROOT_STREAM));
 	init_r_pdb_stream(pdb->root_stream, pdb->fp, root_page_list, pages_amount,
 					  indx, root_size, page_size);
@@ -238,6 +253,9 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	num_streams = *(int *)data;
 	tmp_data = data;
 	tmp_data += 4;
+
+	root_stream7->num_streams = num_streams;
+
 	// FIXME: size need to be free somewhere!!!
 	sizes = (int *) malloc(num_streams * 4);
 
@@ -250,38 +268,46 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		memcpy(sizes + i, &stream_size, 4);
 	}
 
-//	tmp_data = ((char *)data + num_streams * 4);
-//	// create page_lists???
-//	for (i = 0; i < num_streams; i++) {
-//		num_pages = count_pages(sizes[i], page_size);
-//		printf("%d\n", num_pages);
+	tmp_data = ((char *)data + num_streams * 4);
+	//FIXME: free list...
+	root_stream7->streams_list = r_list_new();
+	RList *pList = root_stream7->streams_list;
+	SPage *page = 0;
+	for (i = 0; i < num_streams; i++) {
+		num_pages = count_pages(sizes[i], page_size);
 
-//		if (num_pages != 0) {
+		// FIXME: remove tmp..
+		tmp = (char *) malloc(num_pages + 4);
+		memset(tmp, 0, num_pages + 4);
+		page = (SPage *) malloc(sizeof(SPage));
+		if (num_pages != 0) {			
+			memcpy(tmp, tmp_data + pos, num_pages + 4);
+			pos += num_pages *4;
 
-//		} else {
+			page->size = sizes[i];
+			page->page = tmp;
+		} else {
+			page->size = 0;
+			page->page = 0;
+			free(tmp);
+		}
 
-//		}
-//	}
-	//_pages = count_pages(...)
-//       # Next comes a list of the pages that make up each stream
-//       rs = rs[self.num_streams*4:]
-//       page_lists = []
-//       pos = 0
-//       for i in range(self.num_streams):
-//           num_pages = _pages(sizes[i], self.page_size)
-
-//           if num_pages != 0:
-//               pages = unpack("<" + ("%sI" % num_pages),
-//                              rs[pos:pos+(num_pages*4)])
-//               page_lists.append(pages)
-//               pos += num_pages*4
-//           else:
-//               page_lists.append(())
-
-//       self.streams = zip(sizes, page_lists)
+		r_list_append(pList, page);
+	}
 
 	printf("init_pdb7_root_stream()\n");
 	return 1;
+}
+
+static int pdb7_read_root(R_PDB7_ROOT_STREAM *root_stream)
+{
+	int i;
+
+//	for (i = 0; i < 25; i++) {
+
+//	}
+
+	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -384,11 +410,7 @@ static int pdb7_parse(R_PDB *pdb)
 	}
 
 	init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size);
-	// TODO: get root stream
-	// TODO: read root stream
-//self.root_stream = PDB7RootStream(self.fp, root_page_list,
-//    index=PDB_STREAM_ROOT, size=root_size, page_size=self.page_size)
-//self.read_root(self.root_stream)
+	pdb7_read_root(pdb->root_stream);
 
 	if (root_page_list) {
 		free(root_page_list);
