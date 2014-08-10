@@ -1,0 +1,23 @@
+
+#------------------------------------------------------------
+# $File: mach,v 1.18 2014/03/29 15:40:34 christos Exp $
+# Mach has two magic numbers, 0xcafebabe and 0xfeedface.
+# Unfortunately the first, cafebabe, is shared with
+# Java ByteCode, so they are both handled in the file "cafebabe".
+# The "feedface" ones are handled herein.
+#------------------------------------------------------------
+# if set, it's for the 64-bit version of the architecture
+# yes, this is separate from the low-order magic number bit
+# it's also separate from the "64-bit libraries" bit in the
+# upper 8 bits of the CPU subtype
+
+
+
+#
+0	lelong&0xfffffffe	0xfeedface	Mach-O
+
+0	belong&0xfffffffe	0xfeedface	Mach-O
+0	belong&0xfffffffe	0xcafebabe
+>8	byte	0x00	Java CLASS
+>8	byte	!0x00	Fat-Mach-O
+

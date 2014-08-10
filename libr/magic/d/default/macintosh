@@ -9,23 +9,6 @@
 !:mime	application/mac-binhex40
 >41	string	x					\b, version %.3s
 
-# Stuffit archives are the de facto standard of compression for Macintosh
-# files obtained from most archives. (franklsm@tuns.ca)
-0	string		SIT!			StuffIt Archive (data)
-!:mime	application/x-stuffit
-!:apple	SIT!SIT!
->2	string		x			: %s
-0	string		SITD			StuffIt Deluxe (data)
->2	string		x			: %s
-0	string		Seg			StuffIt Deluxe Segment (data)
->2	string		x			: %s
-
-# Newer StuffIt archives (grant@netbsd.org)
-0	string		StuffIt			StuffIt Archive
-!:mime	application/x-stuffit
-!:apple	SIT!SIT!
-#>162	string		>0			: %s
-
 # Macintosh Applications and Installation binaries (franklsm@tuns.ca)
 # GRR: Too weak
 #0	string		APPL			Macintosh Application (data)
