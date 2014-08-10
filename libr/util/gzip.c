@@ -3,19 +3,27 @@
 #include <r_util.h>
 #include <zlib.h>
 
-// TODO: r_gzip
+// TODO: add r_gzip
 
-R_API ut8 *r_gunzip(const void *src, int srcLen, int *dstLen) {
+// avoid gzipbombs
+#define MAXRETRIES 10
+
+R_API ut8 *r_gunzip(const ut8 *src, int srcLen, int *dstLen) {
 	ut8 *dst = NULL, *dst2;
 	z_stream strm;
 	int tryLen = 1+(srcLen * 4);
+	int retries = 0;
 	// TODO: optimize this using an incremental method
 	retrygunzip:
 	free (dst);
+	if (++retries>MAXRETRIES)
+		return NULL;
 	if (tryLen<1)
 		return NULL;
 	memset (&strm, 0, sizeof (z_stream));
 	dst = malloc (tryLen+1);
+	if (!dst)
+		return NULL;
 	strm.total_in  = strm.avail_in  = srcLen;
 	strm.total_out = strm.avail_out = tryLen;
 	strm.next_in   = (Bytef *) src;

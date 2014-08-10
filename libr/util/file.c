@@ -165,13 +165,20 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	return ret;
 }
 
-R_API char *r_file_gzslurp(const char *str, int *outlen) {
+R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
 	int sz;
-	char *in, *out;
+	ut8 *in, *out;
 	if (outlen) *outlen = 0;
-	in = r_file_slurp (str, &sz);
+	in = (ut8*)r_file_slurp (str, &sz);
 	if (!in) return NULL;
 	out = r_gunzip (in, sz, outlen);
+	if (!out && origonfail) {
+		// if uncompression fails, return orig buffer ?
+		if (outlen)
+			*outlen = sz;
+		in[sz] = 0;
+		return in;
+	}
 	free (in);
 	return out;
 }
