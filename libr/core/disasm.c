@@ -1910,6 +1910,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	// TODO: add support for anal hints
 	for (i=0; i<len;) {
 		ut64 at = addr +i;
+		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i+5);
 		if (ret<1) {
@@ -1925,11 +1926,34 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 		r_cons_printf (i>0? ",{": "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		r_cons_printf (",\"size\":%d", oplen);
-		r_cons_printf (",\"opcode\":\"%s\"", asmop.buf_asm);
+		escaped_str = r_str_escape(asmop.buf_asm);
+		r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
 		//r_cons_printf (",\"family\":\"%s\"", asmop.family);
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (analop.type));
-		if (analop.jump != UT64_MAX) {
+		// wanted the numerical values of the type information
+		r_cons_printf (",\"type_num\":%"PFMT64d, analop.type);
+		r_cons_printf (",\"type2_num\":%"PFMT64d, analop.type2);
+		// handle switch statements
+		if (analop.switch_op && r_list_length (analop.switch_op->cases) > 0) {
+			RListIter *iter;
+			RAnalCaseOp *caseop;
+			int cnt = r_list_length (analop.switch_op->cases);
+			r_cons_printf (", \"switch\":[");
+			r_list_foreach (analop.switch_op->cases, iter, caseop ) {
+				cnt--;
+				r_cons_printf ("{");
+				r_cons_printf ("\"addr\":%"PFMT64d, caseop->addr);
+				r_cons_printf (", \"value\":%"PFMT64d, (st64) caseop->value);
+				r_cons_printf (", \"jump\":%"PFMT64d, caseop->jump);
+				r_cons_printf ("}");
+				if (cnt > 0) r_cons_printf (",");
+			}
+			r_cons_printf ("]");
+		} else {
+			r_cons_printf (",\"is_switch\":0");
+		}
+		if (analop.jump != UT64_MAX ) {
 			r_cons_printf (",\"next\":%"PFMT64d, analop.jump);
 			if (analop.fail != UT64_MAX)
 				r_cons_printf (",\"fail\":%"PFMT64d, analop.fail);
