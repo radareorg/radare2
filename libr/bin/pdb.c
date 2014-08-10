@@ -2,17 +2,14 @@
 
 #include <string.h>
 
-#define _R_LIST_C
-#include "r_util.h"
-
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
 typedef struct {
-	int size;
-	char *page;
+	int stream_size;
+	char *stream_pages;
 } SPage;
 
 typedef struct {
@@ -284,11 +281,11 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 			memcpy(tmp, tmp_data + pos, num_pages + 4);
 			pos += num_pages *4;
 
-			page->size = sizes[i];
-			page->page = tmp;
+			page->stream_size = sizes[i];
+			page->stream_pages = tmp;
 		} else {
-			page->size = 0;
-			page->page = 0;
+			page->stream_size = 0;
+			page->stream_pages = 0;
 			free(tmp);
 		}
 
@@ -299,15 +296,49 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	return 1;
 }
 
-static int pdb7_read_root(R_PDB7_ROOT_STREAM *root_stream)
+//self.streams = []
+//for i in range(len(rs.streams)):
+//    try:
+//        pdb_cls = self._stream_map[i]
+//    except KeyError:
+//        pdb_cls = PDBStream
+//    stream_size, stream_pages = rs.streams[i]
+//    self.streams.append(
+//        pdb_cls(self.fp, stream_pages, i, size=stream_size,
+//            page_size=self.page_size, fast_load=self.fast_load,
+//            parent=self))
+
+//# Sets up access to streams by name
+//self._update_names()
+
+//# Second stage init. Currently only used for FPO strings
+//if not self.fast_load:
+//    for s in self.streams:
+//        if hasattr(s, 'load2'):
+//            s.load2()
+///////////////////////////////////////////////////////////////////////////////
+static int pdb_read_root(R_PDB *pdb)
 {
 	int i;
 
-//	for (i = 0; i < 25; i++) {
+	RList *pList = pdb->pdb_streams;
+	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
+	R_PDB_STREAM *pdb_stream = 0;
+	RListIter *it;
+	SPage *page = 0;
 
-//	}
+	it = r_list_iterator(root_stream->streams_list);
+	while (r_list_iter_next(it)) {
+		page = (SPage*) r_list_iter_get(it);
+		pdb_stream = (R_PDB_STREAM *)malloc(sizeof(R_PDB_STREAM));
+		init_r_pdb_stream(pdb_stream, pdb->fp, page->stream_pages,
+						  root_stream->pdb_stream.pages_amount, i,
+						  page->stream_size,
+						  root_stream->pdb_stream.page_size);
+		r_list_append(pList, pdb_stream);
+	}
 
-	return 0;
+	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -410,7 +441,7 @@ static int pdb7_parse(R_PDB *pdb)
 	}
 
 	init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size);
-	pdb7_read_root(pdb->root_stream);
+	pdb_read_root(pdb);
 
 	if (root_page_list) {
 		free(root_page_list);
@@ -498,6 +529,9 @@ int init_pdb_parser(R_PDB *pdb)
 		signature = 0;
 	}
 
+	//FIXME: remove pdb_streams_list
+	pdb->pdb_streams = r_list_new();
+	pdb->stream_map = 0;
 	pdb->finish_pdb_parse = finish_pdb_parse;
 	printf("init_pdb_parser() finish with success\n");
 	return 1;

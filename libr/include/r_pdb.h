@@ -1,6 +1,8 @@
 #ifndef R2_PDB_H
 #define R2_PDB_H
 
+#define _R_LIST_C
+#include "r_util.h"
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -18,6 +20,8 @@ typedef struct {
 	char file_name[FILE_NAME_LEN];
 	FILE *fp;
 	struct R_PDB7_ROOT_STREAM *root_stream;
+	void *stream_map;
+	RList *pdb_streams;
 } R_PDB;
 
 int init_pdb_parser(R_PDB *pdb);
