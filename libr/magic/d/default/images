@@ -47,17 +47,6 @@
 0	string		P7		Netpbm PAM image file
 !:mime	image/x-portable-pixmap
 
-# From: bryanh@giraffe-data.com (Bryan Henderson)
-0	string		\117\072	Solitaire Image Recorder format
->4	string		\013		MGI Type 11
->4	string		\021		MGI Type 17
-0	string		.MDA		MicroDesign data
->21	byte		48		version 2
->21	byte		51		version 3
-0	string		.MDP		MicroDesign page data
->21	byte		48		version 2
->21	byte		51		version 3
-
 # NIFF (Navy Interchange File Format, a modification of TIFF) images
 # [GRR:  this *must* go before TIFF]
 0	string		IIN1		NIFF image data
@@ -94,24 +83,6 @@
 >>28	byte		1		interlaced
 1	string		PNG		PNG image data, CORRUPTED
 
-# possible GIF replacements; none yet released!
-# (Greg Roelofs, newt@uchicago.edu)
-#
-# GRR 950115:  this was mine ("Zip GIF"):
-0	string		GIF94z		ZIF image (GIF+deflate alpha)
-!:mime	image/x-unknown
-#
-# GRR 950115:  this is Jeremy Wohl's Free Graphics Format (better):
-#					
-0	string		FGF95a		FGF image (GIF+deflate beta)
-!:mime	image/x-unknown
-#
-# GRR 950115:  this is Thomas Boutell's Portable Bitmap Format proposal
-# (best; not yet implemented):
-#					
-0	string		PBF		PBF image (deflate compression)
-!:mime	image/x-unknown
-
 # GIF
 0	string		GIF8		GIF image data
 !:mime	image/gif
@@ -139,51 +110,9 @@
 # Magick Image File Format
 0	string		id=ImageMagick	MIFF image data
 
-# Artisan
-0	long		1123028772	Artisan image data
->4	long		1		\b, rectangular 24-bit
->4	long		2		\b, rectangular 8-bit with colormap
->4	long		3		\b, rectangular 32-bit (24-bit with matte)
-
 # FIG (Facility for Interactive Generation of figures), an object-based format
 0	search/1	#FIG		FIG image text
 >5	string		x		\b, version %.3s
-
-# PHIGS
-0	string		ARF_BEGARF		PHIGS clear text archive
-0	string		@(#)SunPHIGS		SunPHIGS
-# version number follows, in the form m.n
->40	string		SunBin			binary
->32	string		archive			archive
-
-# GKS (Graphics Kernel System)
-0	string		GKSM		GKS Metafile
->24	string		SunGKS		\b, SunGKS
-
-# CGM image files
-0	string		BEGMF		clear text Computer Graphics Metafile
-# XXX - questionable magic
-#0	beshort&0xffe0	0x0020		binary Computer Graphics Metafile
-#0	beshort		0x3020		character Computer Graphics Metafile
-
-# MGR bitmaps  (Michael Haardt, u31b3hs@pool.informatik.rwth-aachen.de)
-0	string	yz	MGR bitmap, modern format, 8-bit aligned
-0	string	zz	MGR bitmap, old format, 1-bit deep, 16-bit aligned
-0	string	xz	MGR bitmap, old format, 1-bit deep, 32-bit aligned
-0	string	yx	MGR bitmap, modern format, squeezed
-
-# Fuzzy Bitmap (FBM) images
-0	string		%bitmap\0	FBM image data
->30	long		0x31		\b, mono
->30	long		0x33		\b, color
-
-# facsimile data
-1	string		PC\ Research,\ Inc	group 3 fax data
->29	byte		0		\b, normal resolution (204x98 DPI)
->29	byte		1		\b, fine resolution (204x196 DPI)
-# From: Herbert Rosmanith <herp@wildsau.idv.uni.linz.at>
-0	string		Sfff		structured fax file
-
 
 # PC bitmaps (OS/2, Windows BMP files)  (Greg Roelofs, newt@uchicago.edu)
 0	string		BM		PC bitmap data
@@ -198,13 +127,6 @@
 >>18	lelong		x		\b, %d x
 >>22	lelong		x		%d x
 >>28	leshort		x		%d
-# Too simple - MPi
-#0	string		IC		PC icon data
-#0	string		PI		PC pointer image data
-#0	string		CI		PC color icon data
-#0	string		CP		PC color pointer image data
-# Conflicts with other entries [BABYL]
-#0	string		BA		PC bitmap array data
 
 # XPM icons (Greg Roelofs, newt@uchicago.edu)
 # note possible collision with C/REXX entry in c-lang; currently commented out
@@ -229,50 +151,6 @@
 # this adds the whole header (inc. version number), informative but longish
 >10	string		>\0		%s
 
-# Sun raster images, from Daniel Quinlan (quinlan@yggdrasil.com)
-0	belong		0x59a66a95	Sun raster image data
->4	belong		>0		\b, %d x
->8	belong		>0		%d,
->12	belong		>0		%d-bit,
-#>16	belong		>0		%d bytes long,
->20	belong		0		old format,
-#>20	belong		1		standard,
->20	belong		2		compressed,
->20	belong		3		RGB,
->20	belong		4		TIFF,
->20	belong		5		IFF,
->20	belong		0xffff		reserved for testing,
->24	belong		0		no colormap
->24	belong		1		RGB colormap
->24	belong		2		raw colormap
-#>28	belong		>0		colormap is %d bytes long
-
-# SGI image file format, from Daniel Quinlan (quinlan@yggdrasil.com)
-#
-# See
-#	http://reality.sgi.com/grafica/sgiimage.html
-#
-0	beshort		474		SGI image data
-#>2	byte		0		\b, verbatim
->2	byte		1		\b, RLE
-#>3	byte		1		\b, normal precision
->3	byte		2		\b, high precision
->4	beshort		x		\b, %d-D
->6	beshort		x		\b, %d x
->8	beshort		x		%d
->10	beshort		x		\b, %d channel
->10	beshort		!1		\bs
->80	string		>0		\b, "%s"
-
-0	string		IT01		FIT image data
->4	belong		x		\b, %d x
->8	belong		x		%d x
->12	belong		x		%d
-#
-0	string		IT02		FIT image data
->4	belong		x		\b, %d x
->8	belong		x		%d x
->12	belong		x		%d
 #
 2048	string		PCD_IPI		Kodak Photo CD image pack file
 >0xe02	byte&0x03	0x00		, landscape mode
@@ -315,17 +193,6 @@
 >20	belong	x			\b%dx
 >12	belong	x			\b%d
 
-# PDS - Planetary Data System
-#   These files use Parameter Value Language in the header section.
-#   Unfortunately, there is no certain magic, but the following
-#   strings have been found to be most likely.
-0	string	NJPL1I00		PDS (JPL) image data
-2	string	NJPL1I			PDS (JPL) image data
-0	string	CCSD3ZF			PDS (CCSD) image data
-2	string	CCSD3Z			PDS (CCSD) image data
-0	string	PDS_			PDS image data
-0	string	LBLSIZE=		PDS (VICAR) image data
-
 # pM8x: ATARI STAD compressed bitmap format
 #
 # from Oskar Schirmer <schirmer@scara.com> Feb 2, 2001
@@ -345,27 +212,6 @@
 # Gürkan Sengün <gurkan@linuks.mine.nu>, www.linuks.mine.nu
 # http://www.atarimax.com/jindroush.atari.org/afmtatr.html
 0	leshort	0x0296		Atari ATR image
-
-# XXX:
-# This is bad magic 0x5249 == 'RI' conflicts with RIFF and other
-# magic.
-# SGI RICE image file <mpruett@sgi.com>
-#0	beshort	0x5249		RICE image
-#>2	beshort	x		v%d
-#>4	beshort	x		(%d x
-#>6	beshort	x		%d)
-#>8	beshort	0		8 bit
-#>8	beshort	1		10 bit
-#>8	beshort	2		12 bit
-#>8	beshort	3		13 bit
-#>10	beshort	0		4:2:2
-#>10	beshort	1		4:2:2:4
-#>10	beshort	2		4:4:4
-#>10	beshort	3		4:4:4:4
-#>12	beshort	1		RGB
-#>12	beshort	2		CCIR601
-#>12	beshort	3		RP175
-#>12	beshort	4		YUV
 
 #------------------------------------------------------------------------------
 #
@@ -459,43 +305,6 @@
 # descended from "xv", but in use by other applications as well (Wolfram Kleff)
 0       string          P7\ 332         XV "thumbnail file" (icon) data
 
-# taken from fkiss: (<yav@mte.biglobe.ne.jp> ?)
-0       string          KiSS            KISS/GS
->4      byte            16              color
->>5     byte            x               %d bit
->>8     leshort         x               %d colors
->>10    leshort         x               %d groups
->4      byte            32              cell
->>5     byte            x               %d bit
->>8     leshort         x               %d x
->>10    leshort         x               %d
->>12    leshort         x               +%d
->>14    leshort         x               +%d
-
-# Webshots (www.webshots.com), by John Harrison
-0       string          C\253\221g\230\0\0\0 Webshots Desktop .wbz file
-
-# Hercules DASD image files
-# From Jan Jaeger <jj@septa.nl>
-0       string  CKD_P370        Hercules CKD DASD image file
->8      long    x               \b, %d heads per cylinder
->12     long    x               \b, track size %d bytes
->16     byte    x               \b, device type 33%2.2X
-
-0       string  CKD_C370        Hercules compressed CKD DASD image file
->8      long    x               \b, %d heads per cylinder
->12     long    x               \b, track size %d bytes
->16     byte    x               \b, device type 33%2.2X
-
-0       string  CKD_S370        Hercules CKD DASD shadow file
->8      long    x               \b, %d heads per cylinder
->12     long    x               \b, track size %d bytes
->16     byte    x               \b, device type 33%2.2X
-
-# Squeak images and programs - etoffi@softhome.net
-0	string		\146\031\0\0	Squeak image data
-0	search/1	'From\040Squeak	Squeak program text
-
 # partimage: file(1) magic for PartImage files (experimental, incomplete)
 # Author: Hans-Joachim Baader <hjb@pro-linux.de>
 0		string	PaRtImAgE-VoLuMe	PartImage
@@ -561,32 +370,8 @@
 0	string	\211HDF\r\n\032	Hierarchical Data Format (version 5) data
 !:mime	application/x-hdf
 
-# From: Tobias Burnus <burnus@net-b.de>
-# Xara (for a while: Corel Xara) is a graphic package, see
-# http://www.xara.com/ for Windows and as GPL application for Linux
-0	string	XARA\243\243	Xara graphics file
-
-# http://www.cartesianinc.com/Tech/
-0	string	CPC\262		Cartesian Perceptual Compression image
-!:mime	image/x-cpi
-
-# From Albert Cahalan <acahalan@gmail.com>
-# puredigital used it for the CVS disposable camcorder
-#8       lelong  4       ZBM bitmap image data
-#>4      leshort x       %u x
-#>6      leshort x       %u
-
 # From Albert Cahalan <acahalan@gmail.com>
 # uncompressed 5:6:5 HighColor image for OLPC XO firmware icons
 0       string C565     OLPC firmware icon image data
 >4      leshort x       %u x
 >6      leshort x       %u
-
-# Applied Images - Image files from Cytovision
-# Gustavo Junior Alves <gjalves@gjalves.com.br>
-0	string	\xce\xda\xde\xfa	Cytovision Metaphases file
-0	string	\xed\xad\xef\xac	Cytovision Karyotype file
-0	string	\x0b\x00\x03\x00	Cytovision FISH Probe file
-0	string	\xed\xfe\xda\xbe	Cytovision FLEX file
-0	string	\xed\xab\xed\xfe	Cytovision FLEX file
-0	string	\xad\xfd\xea\xad	Cytovision RATS file
