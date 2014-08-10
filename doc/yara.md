@@ -22,6 +22,14 @@ scan a file, and list or use rules tags.
 
 You can list the yara commands with the following r2 command `yara [help]`.
 
+Rules
+-----
+
+By default, radare2 ships with some common crypto and packers rules that you
+can find in `/usr/local/share/radare2/last/yara/` if you installed it r2 or
+`radare2/shlr/yara/` in the git repo.
+They are loaded as soon as you start using the yara plugin.
+
 Example
 -------
 
