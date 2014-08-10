@@ -404,12 +404,19 @@ static int r_cmd_yara_load_default_rules(const RCore* core) {
 #define YARA_PATH R2_PREFIX "/share/radare2/" R2_VERSION "/yara/"
 	RListIter* iter = NULL;
 	char* filename, *complete_path;
+	ut8* rules;
 	RList* list = r_sys_dir (YARA_PATH);
 
 	r_list_foreach (list, iter, filename) {
 		if (filename[0] != '.') { // skip '.', '..' and hidden files
 			complete_path = r_str_concat (strdup (YARA_PATH), filename);
-			r_cmd_yara_add_file (complete_path);
+			rules = r_file_gzslurp(complete_path, NULL, R_TRUE);
+			if (r_yr_compiler_add_string (compiler, rules, NULL) > 0) {
+				char buf[64];
+				eprintf ("Error: %s\n",
+				r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
+			}
+			free(rules);
 			free (complete_path);
 		}
 	}
