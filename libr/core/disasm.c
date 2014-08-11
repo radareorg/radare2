@@ -1936,6 +1936,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 		r_cons_printf (",\"type2_num\":%"PFMT64d, analop.type2);
 		// handle switch statements
 		if (analop.switch_op && r_list_length (analop.switch_op->cases) > 0) {
+			// XXX - the java caseop will still be reported in the assembly,
+			// this is an artifact to make ensure the disassembly is properly
+			// represented during the analysis
 			RListIter *iter;
 			RAnalCaseOp *caseop;
 			int cnt = r_list_length (analop.switch_op->cases);
@@ -1950,8 +1953,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 				if (cnt > 0) r_cons_printf (",");
 			}
 			r_cons_printf ("]");
-		} else {
-			r_cons_printf (",\"is_switch\":0");
 		}
 		if (analop.jump != UT64_MAX ) {
 			r_cons_printf (",\"next\":%"PFMT64d, analop.jump);

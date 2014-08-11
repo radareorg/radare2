@@ -416,6 +416,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_XCHG  = 36,
 	R_ANAL_OP_TYPE_MOD   = 37,
 	R_ANAL_OP_TYPE_SWITCH = 38,
+	R_ANAL_OP_TYPE_CASE = 39,
 } _RAnalOpType;
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -1206,7 +1207,7 @@ R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 /* switch.c APIs */
 R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp * swop);
-R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value);
+R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 value, ut64 jump);
 
 /* cycles.c */
 R_API RAnalCycleFrame* r_anal_cycle_frame_new ();

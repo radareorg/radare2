@@ -316,7 +316,7 @@ static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6},
 	{"private", R_BIN_JAVA_FIELD_ACC_PRIVATE, 7},
 	{"protected", R_BIN_JAVA_FIELD_ACC_PROTECTED, 9},
-	{"R_API", R_BIN_JAVA_FIELD_ACC_STATIC, 6},
+	{"static", R_BIN_JAVA_FIELD_ACC_STATIC, 6},
 	{"final", R_BIN_JAVA_FIELD_ACC_FINAL, 5},
 	{"undefined.0x0020", 0x0020, 16},
 	{"volatile", R_BIN_JAVA_FIELD_ACC_VOLATILE, 8},
@@ -335,7 +335,7 @@ static RBinJavaAccessFlags METHOD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_METHOD_ACC_PUBLIC, 6},
 	{"private", R_BIN_JAVA_METHOD_ACC_PRIVATE, 7},
 	{"protected", R_BIN_JAVA_METHOD_ACC_PROTECTED, 9},
-	{"R_API", R_BIN_JAVA_METHOD_ACC_STATIC, 6},
+	{"static", R_BIN_JAVA_METHOD_ACC_STATIC, 6},
 	{"final", R_BIN_JAVA_METHOD_ACC_FINAL, 5},
 	{"synchronized", R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED, 12},
 	{"bridge", R_BIN_JAVA_METHOD_ACC_BRIDGE, 6},
@@ -2046,7 +2046,7 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 		if (strcmp (fm_type->name, "main") == 0 ||
 			strcmp (fm_type->name, "<init>") == 0 ||
 			strcmp (fm_type->name, "<clinit>") == 0 ||
-			strstr (fm_type->flags_str, "R_API") != 0 ) {
+			strstr (fm_type->flags_str, "static") != 0 ) {
 			addr = R_NEW (RBinAddr);
 			if (addr) {
 				memset (addr, 0, sizeof (RBinAddr));
