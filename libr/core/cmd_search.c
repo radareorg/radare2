@@ -352,8 +352,6 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		nb_instr++;
 	}
 ret:
-	if (!nb_instr) // don't return a list with only a RET gadget
-		return NULL;
 	if (!match) // we didn't find a gadget that matches the grep
 		return NULL;
 	return hitlist;
