@@ -278,42 +278,43 @@
 #0	byte		0xe9		DOS executable (COM)
 #>0x1FE	leshort		0xAA55		\b, boot code
 >6	string		SFX\ of\ LHarc	(%s)
-0	belong	0xffffffff		DOS executable (device driver)
-#CMD640X2.SYS
->10	string	>\x23			
->>10	string	!\x2e			
->>>17	string	<\x5B			
->>>>10	string	x			\b, name: %.8s
-#UDMA.SYS KEYB.SYS CMD640X2.SYS
->10	string	<\x41			
->>12	string	>\x40			
->>>10	string	!$			
->>>>12	string	x			\b, name: %.8s
-#BTCDROM.SYS ASPICD.SYS
->22	string	>\x40			
->>22	string	<\x5B			
->>>23	string	<\x5B			
->>>>22	string	x			\b, name: %.8s
-#ATAPICD.SYS
->76	string	\0			
->>77	string	>\x40			
->>>77	string	<\x5B			
->>>>77	string	x			\b, name: %.8s
-#0	byte		0x8c		DOS executable (COM)
-# 0xeb conflicts with "sequent" magic
-#0	byte		0xeb		DOS executable (COM)
-#>0x1FE	leshort		0xAA55		\b, boot code
-#>85	string		UPX		\b, UPX compressed
-#>4	string		\ $ARX		\b, ARX self-extracting archive
-#>4	string		\ $LHarc	\b, LHarc self-extracting archive
-#>0x20e	string		SFX\ by\ LARC	\b, LARC self-extracting archive
-#0	byte		0xb8		COM executable
-# modified by Joerg Jenderek
->1	lelong          !0x21cd4cff	for DOS
-# http://syslinux.zytor.com/comboot.php
-# (32-bit COMBOOT) programs *.C32 contain 32-bit code and run in flat-memory 32-bit protected mode
-# start with assembler instructions mov eax,21cd4cffh
->1	lelong          0x21cd4cff	(32-bit COMBOOT)
+##### Can be problematic because reading ffffffff results in identified hit
+### 0	belong	0xffffffff		DOS executable (device driver)
+### #CMD640X2.SYS
+### >10	string	>\x23			
+### >>10	string	!\x2e			
+### >>>17	string	<\x5B			
+### >>>>10	string	x			\b, name: %.8s
+### #UDMA.SYS KEYB.SYS CMD640X2.SYS
+### >10	string	<\x41			
+### >>12	string	>\x40			
+### >>>10	string	!$			
+### >>>>12	string	x			\b, name: %.8s
+### #BTCDROM.SYS ASPICD.SYS
+### >22	string	>\x40			
+### >>22	string	<\x5B			
+### >>>23	string	<\x5B			
+### >>>>22	string	x			\b, name: %.8s
+### #ATAPICD.SYS
+### >76	string	\0			
+### >>77	string	>\x40			
+### >>>77	string	<\x5B			
+### >>>>77	string	x			\b, name: %.8s
+### #0	byte		0x8c		DOS executable (COM)
+### # 0xeb conflicts with "sequent" magic
+### #0	byte		0xeb		DOS executable (COM)
+### #>0x1FE	leshort		0xAA55		\b, boot code
+### #>85	string		UPX		\b, UPX compressed
+### #>4	string		\ $ARX		\b, ARX self-extracting archive
+### #>4	string		\ $LHarc	\b, LHarc self-extracting archive
+### #>0x20e	string		SFX\ by\ LARC	\b, LARC self-extracting archive
+### #0	byte		0xb8		COM executable
+### # modified by Joerg Jenderek
+### >1	lelong          !0x21cd4cff	for DOS
+### # http://syslinux.zytor.com/comboot.php
+### # (32-bit COMBOOT) programs *.C32 contain 32-bit code and run in flat-memory 32-bit protected mode
+### # start with assembler instructions mov eax,21cd4cffh
+### >1	lelong          0x21cd4cff	(32-bit COMBOOT)
 0	string	\x81\xfc		
 >4	string	\x77\x02\xcd\x20\xb9	
 >>36	string	UPX! 			FREE-DOS executable (COM), UPX compressed
@@ -408,22 +409,6 @@
 0	string	\x09\x04\x06\x00\x00\x00\x10\x00	Microsoft Excel Worksheet
 !:mime	application/vnd.ms-excel
 #
-0	belong	0x00001a00	Lotus 1-2-3
-!:mime	application/x-123
->4	belong	0x00100400	wk3 document data
->4	belong	0x02100400	wk4 document data
->4	belong	0x07800100	fm3 or fmb document data
->4	belong	0x07800000	fm3 or fmb document data
-#
-0	belong	0x00000200 	Lotus 1-2-3
-!:mime	application/x-123
->4	belong	0x06040600	wk1 document data
->4	belong	0x06800200	fmt document data
-0	string		WordPro\0	Lotus WordPro
-!:mime	application/vnd.lotus-wordpro
-0	string		WordPro\r\373	Lotus WordPro
-!:mime	application/vnd.lotus-wordpro
-
 
 # Help files
 0	string	?_\3\0		MS Windows Help Data
@@ -475,15 +460,15 @@
 #ico files
 0	string	\102\101\050\000\000\000\056\000\000\000\000\000\000\000	Icon for MS Windows
 
-# Windows icons (Ian Springer <ips@fpk.hp.com>)
-0	string	\000\000\001\000	MS Windows icon resource
-!:mime	image/x-ico
->4	byte	1			- 1 icon
->4	byte	>1			- %d icons
->>6	byte	>0			\b, %dx
->>>7	byte	>0			\b%d
->>8	byte	0			\b, 256-colors
->>8	byte	>0			\b, %d-colors
+### # Windows icons (Ian Springer <ips@fpk.hp.com>)
+### 0	string	\000\000\001\000
+### !:mime	image/x-ico
+### >4	byte	1			MS Windows icon resource - 1 icon
+### >4	byte	>1			MS Windows icon resource - %d icons
+### >>6	byte	>0			\b, %dx
+### >>>7	byte	>0			\b%d
+### >>8	byte	0			\b, 256-colors
+### >>8	byte	>0			\b, %d-colors
 
 
 # .chr files
@@ -512,55 +497,9 @@
 #>3	string  >\0     oops, not a font file. Cancel that.
 #it clashes with ttf files so put it lower down.
 
-# From Doug Lee via a FreeBSD pr
-9	string		GERBILDOC	First Choice document
-9	string		GERBILDB	First Choice database
-9	string		GERBILCLIP	First Choice database
-0	string		GERBIL		First Choice device file
-9	string		RABBITGRAPH	RabbitGraph file
-0	string		DCU1		Borland Delphi .DCU file
-0	string		=!<spell>	MKS Spell hash list (old format)
-0	string		=!<spell2>	MKS Spell hash list
-# Too simple - MPi
-#0	string		AH		Halo(TM) bitmapped font file
-0	lelong		0x08086b70	TurboC BGI file
-0	lelong		0x08084b50	TurboC Font file
-
-# WARNING: below line conflicts with Infocom game data Z-machine 3
-0	byte		0x03		DBase 3 data file
->0x04	lelong		0		(no records)
->0x04	lelong		>0		(%ld records)
-0	byte		0x83		DBase 3 data file with memo(s)
->0x04	lelong		0		(no records)
->0x04	lelong		>0		(%ld records)
-0	leshort		0x0006		DBase 3 index file
-0	string		PMCC		Windows 3.x .GRP file
-1	string		RDC-meg		MegaDots 
->8	byte		>0x2F		version %c
->9	byte		>0x2F		\b.%c file
-0	lelong		0x4C
->4	lelong		0x00021401	Windows shortcut file
-
-# DOS EPS Binary File Header
-# From: Ed Sznyter <ews@Black.Market.NET>
-0	belong		0xC5D0D3C6	DOS EPS Binary File
->4	long		>0		Postscript starts at byte %d
->>8	long		>0		length %d
->>>12	long		>0		Metafile starts at byte %d
->>>>16	long		>0		length %d
->>>20	long		>0		TIFF starts at byte %d
->>>>24	long		>0		length %d
-
-# TNEF magic From "Joomy" <joomy@se-ed.net> 
-# Microsoft Outlook's Transport Neutral Encapsulation Format (TNEF)
-0	leshort		0x223e9f78	TNEF
-!:mime	application/vnd.ms-tnef
 
 # HtmlHelp files (.chm)
 0	string  ITSF\003\000\000\000\x60\000\000\000\001\000\000\000	MS Windows HtmlHelp Data
-
-# GFA-BASIC (Wolfram Kleff)
-2	string		GFA-BASIC3	GFA-BASIC 3 data
 
 #------------------------------------------------------------------------------
 # From Stuart Caie <kyzer@4u.net> (developer of cabextract)

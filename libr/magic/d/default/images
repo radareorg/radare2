@@ -10,48 +10,6 @@
 #
 # little magic: PCX (first byte is 0x0a)
 
-# Targa - matches `povray', `ppmtotga' and `xv' outputs
-# by Philippe De Muyter <phdm@macqel.be>
-# at 2, byte ImgType must be 1, 2, 3, 9, 10 or 11
-# at 1, byte CoMapType must be 1 if ImgType is 1 or 9, 0 otherwise
-# at 3, leshort Index is 0 for povray, ppmtotga and xv outputs
-# `xv' recognizes only a subset of the following (RGB with pixelsize = 24)
-# `tgatoppm' recognizes a superset (Index may be anything)
-1	belong&0xfff7ffff	0x01010000	Targa image data - Map
->2	byte&8			8		- RLE
->12	leshort			>0		%hd x
->14	leshort			>0		%hd
-1	belong&0xfff7ffff	0x00020000	Targa image data - RGB
->2	byte&8			8		- RLE
->12	leshort			>0		%hd x
->14	leshort			>0		%hd
-1	belong&0xfff7ffff	0x00030000	Targa image data - Mono
->2	byte&8			8		- RLE
->12	leshort			>0		%hd x
->14	leshort			>0		%hd
-
-# PBMPLUS images
-# The next byte following the magic is always whitespace.
-0	search/1	P1		Netpbm PBM image text
-!:mime	image/x-portable-bitmap
-0	search/1	P2		Netpbm PGM image text
-!:mime	image/x-portable-greymap
-0	search/1	P3		Netpbm PPM image text
-!:mime	image/x-portable-pixmap
-0	string		P4		Netpbm PBM "rawbits" image data
-!:mime	image/x-portable-bitmap
-0	string		P5		Netpbm PGM "rawbits" image data
-!:mime	image/x-portable-greymap
-0	string		P6		Netpbm PPM "rawbits" image data
-!:mime	image/x-portable-pixmap
-0	string		P7		Netpbm PAM image file
-!:mime	image/x-portable-pixmap
-
-# NIFF (Navy Interchange File Format, a modification of TIFF) images
-# [GRR:  this *must* go before TIFF]
-0	string		IIN1		NIFF image data
-!:mime	image/x-niff
-
 # Tag Image File Format, from Daniel Quinlan (quinlan@yggdrasil.com)
 # The second word of TIFF files is the TIFF version number, 42, which has
 # never changed.  The TIFF specification recommends testing for it.
@@ -183,72 +141,6 @@
 128	string	DICM			DICOM medical imaging data
 !:mime	application/dicom
 
-# XWD - X Window Dump file.
-#   As described in /usr/X11R6/include/X11/XWDFile.h
-#   used by the xwd program.
-#   Bradford Castalia, idaeim, 1/01
-4	belong	7			XWD X Window Dump image data
->100	string	>\0			\b, "%s"
->16	belong	x			\b, %dx
->20	belong	x			\b%dx
->12	belong	x			\b%d
-
-# pM8x: ATARI STAD compressed bitmap format
-#
-# from Oskar Schirmer <schirmer@scara.com> Feb 2, 2001
-# p M 8 5/6 xx yy zz data...
-# Atari ST STAD bitmap is always 640x400, bytewise runlength compressed.
-# bytes either run horizontally (pM85) or vertically (pM86). yy is the
-# most frequent byte, xx and zz are runlength escape codes, where xx is
-# used for runs of yy.
-#
-0	string	pM85		Atari ST STAD bitmap image data (hor)
->5	byte	0x00		(white background)
->5	byte	0xFF		(black background)
-0	string	pM86		Atari ST STAD bitmap image data (vert)
->5	byte	0x00		(white background)
->5	byte	0xFF		(black background)
-
-# Gürkan Sengün <gurkan@linuks.mine.nu>, www.linuks.mine.nu
-# http://www.atarimax.com/jindroush.atari.org/afmtatr.html
-0	leshort	0x0296		Atari ATR image
-
-#------------------------------------------------------------------------------
-#
-# Marco Schmidt (marcoschmidt@users.sourceforge.net) -- an image  file format
-# for the EPOC operating system, which is used with PDAs like those from Psion
-#
-# see http://huizen.dds.nl/~frodol/psiconv/html/Index.html for a description
-# of various EPOC file formats
-
-0	string \x37\x00\x00\x10\x42\x00\x00\x10\x00\x00\x00\x00\x39\x64\x39\x47 EPOC MBM image file
-
-# PCX image files
-# From: Dan Fandrich <dan@coneharvesters.com>
-0	beshort		0x0a00	PCX ver. 2.5 image data
-0	beshort		0x0a02	PCX ver. 2.8 image data, with palette
-0	beshort		0x0a03	PCX ver. 2.8 image data, without palette
-0	beshort		0x0a04	PCX for Windows image data
-0	beshort		0x0a05	PCX ver. 3.0 image data
->4	leshort		x      bounding box [%hd,
->6	leshort		x      %hd] -
->8	leshort		x      [%hd,
->10	leshort		x      %hd],
->65	byte		>1	%d planes each of
->3	byte		x	%hhd-bit
->68	byte		0	image,
->68	byte		1	colour,
->68	byte		2	grayscale,
->68	byte		>2	image,
->68	byte		<0	image,
->12	leshort		>0	%hd x
->>14	leshort		x      %hd dpi,
->2	byte		0	uncompressed
->2	byte		1	RLE compressed
-
-# Adobe Photoshop
-0	string		8BPS Adobe Photoshop Image
-!:mime	image/vnd.adobe.photoshop
 
 # XV thumbnail indicator (ThMO)
 0	string		P7\ 332		XV thumbnail image data

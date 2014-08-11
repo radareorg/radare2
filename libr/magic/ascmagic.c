@@ -132,6 +132,10 @@ int file_ascmagic(RMagic *ms, const ut8 *buf, size_t nbytes) {
 		type = "character data";
 		code_mime = "utf-16";    /* is this defined? */
 	} else if (looks_latin1(buf, nbytes, ubuf, &ulen)) {
+		if (!memcmp (buf, "\xff\xff\xff\xff", 4)) {
+			// uninitialized memory is not iso-8859!!
+			goto done;
+		}
 		code = "ISO-8859";
 		type = "text";
 		code_mime = "iso-8859-1"; 

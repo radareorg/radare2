@@ -122,75 +122,7 @@
 0	lelong		0x39bed		PDP-11 old archive
 0	lelong		0x39bee		PDP-11 4.0 archive
 
-# ARC archiver, from Daniel Quinlan (quinlan@yggdrasil.com)
-#
-# The first byte is the magic (0x1a), byte 2 is the compression type for
-# the first file (0x01 through 0x09), and bytes 3 to 15 are the MS-DOS
-# filename of the first file (null terminated).  Since some types collide
-# we only test some types on basis of frequency: 0x08 (83%), 0x09 (5%),
-# 0x02 (5%), 0x03 (3%), 0x04 (2%), 0x06 (2%).  0x01 collides with terminfo.
-0	lelong&0x8080ffff	0x0000081a	ARC archive data, dynamic LZW
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000091a	ARC archive data, squashed
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000021a	ARC archive data, uncompressed
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000031a	ARC archive data, packed
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000041a	ARC archive data, squeezed
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000061a	ARC archive data, crunched
-!:mime	application/x-arc
-# [JW] stuff taken from idarc, obviously ARC successors:
-0	lelong&0x8080ffff	0x00000a1a	PAK archive data
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000141a	ARC+ archive data
-!:mime	application/x-arc
-0	lelong&0x8080ffff	0x0000481a	HYP archive data
-!:mime	application/x-arc
 
-# Acorn archive formats (Disaster prone simpleton, m91dps@ecs.ox.ac.uk)
-# I can't create either SPARK or ArcFS archives so I have not tested this stuff
-# [GRR:  the original entries collide with ARC, above; replaced with combined
-#  version (not tested)]
-#0	byte		0x1a		RISC OS archive (spark format)
-0	string		\032archive	RISC OS archive (ArcFS format)
-0       string          Archive\000     RISC OS archive (ArcFS format)
-
-# All these were taken from idarc, many could not be verified. Unfortunately,
-# there were many low-quality sigs, i.e. easy to trigger false positives.
-# Please notify me of any real-world fishy/ambiguous signatures and I'll try
-# to get my hands on the actual archiver and see if I find something better. [JW]
-# probably many can be enhanced by finding some 0-byte or control char near the start
-
-# idarc calls this Crush/Uncompressed... *shrug*
-0	string	CRUSH Crush archive data
-# Squeeze It (.sqz)
-0	string	HLSQZ Squeeze It archive data
-# SQWEZ
-0	string	SQWEZ SQWEZ archive data
-# HPack (.hpk)
-0	string	HPAK HPack archive data
-# HAP
-0	string	\x91\x33HF HAP archive data
-# MD/MDCD
-0	string	MDmd MDCD archive data
-# LIM
-0	string	LIM\x1a LIM archive data
-# SAR
-3	string	LH5 SAR archive data
-# BSArc/BS2
-0	string	\212\3SB \0 BSArc/BS2 archive data
-# MAR
-2	string	=-ah MAR archive data
-# ACB
-0	belong&0x00f800ff	0x00800000 ACB archive data
-# CPZ
-# TODO, this is what idarc says: 0	string	\0\0\0 CPZ archive data
-# JRC
-0	string	JRchive JRC archive data
-# Quantum
-0	string	DS\0 Quantum archive data
 # ReSOF
 0	string	PK\3\6 ReSOF archive data
 # QuArk
@@ -223,23 +155,6 @@
 # DPA
 0	string	Dirk\ Paehl DPA archive data
 # BA
-# TODO: idarc says "bytes 0-2 == bytes 3-5"
-# TTComp
-0	string	\0\6 TTComp archive data
-# ESP, could this conflict with Easy Software Products' (e.g.ESP ghostscript) documentation?
-0	string	ESP ESP archive data
-# ZPack
-0	string	\1ZPK\1 ZPack archive data
-# Sky
-0	string	\xbc\x40 Sky archive data
-# UFA
-0	string	UFA UFA archive data
-# Dry
-0	string	=-H2O DRY archive data
-# FoxSQZ
-0	string	FOXSQZ FoxSQZ archive data
-# AR7
-0	string	,AR7 AR7 archive data
 # PPMZ
 0	string	PPMZ PPMZ archive data
 # MS Compress
@@ -675,114 +590,19 @@
 #>25	byte	x		v%d
 #>24	byte	x		\b.%d
 # MPi: All CABs have version 1.3, so this is pointless.
-# Better magic in debian-additions.
-
-# GTKtalog catalogs 
-# by David Necas (Yeti) <yeti@physics.muni.cz>
-4	string	gtktalog\ 	GTKtalog catalog data,
->13	string	3		version 3
->>14	beshort	0x677a		(gzipped)
->>14	beshort	!0x677a		(not gzipped)
->13	string	>3		version %s
-
-############################################################################
-# Parity archive reconstruction file, the 'par' file format now used on Usenet.
-0       string          PAR\0	PARity archive data
->48	leshort		=0	- Index file
->48	leshort		>0	- file number %d
 
 # Felix von Leitner <felix-file@fefe.de>
 0	string	d8:announce	BitTorrent file
 !:mime	application/x-bittorrent
 
-# Atari MSA archive - Teemu Hukkanen <tjhukkan@iki.fi>
-0       beshort 0x0e0f          Atari MSA archive data
->2      beshort x       	\b, %d sectors per track
->4      beshort 0       	\b, 1 sided
->4      beshort 1       	\b, 2 sided
->6      beshort x       	\b, starting track: %d
->8      beshort x       	\b, ending track: %d
-
 # Alternate ZIP string (amc@arwen.cs.berkeley.edu)
 0	string	PK00PK\003\004	Zip archive data
-
-# ACE archive (from http://www.wotsit.org/download.asp?f=ace)
-# by Stefan `Sec` Zehl <sec@42.org>
-7	string		**ACE**		ACE archive data
->15	byte	>0		version %d
->16	byte	=0x00		\b, from MS-DOS
->16	byte	=0x01		\b, from OS/2
->16	byte	=0x02		\b, from Win/32
->16	byte	=0x03		\b, from Unix
->16	byte	=0x04		\b, from MacOS
->16	byte	=0x05		\b, from WinNT
->16	byte	=0x06		\b, from Primos
->16	byte	=0x07		\b, from AppleGS
->16	byte	=0x08		\b, from Atari
->16	byte	=0x09		\b, from Vax/VMS
->16	byte	=0x0A		\b, from Amiga
->16	byte	=0x0B		\b, from Next
->14	byte	x		\b, version %d to extract
->5	leshort &0x0080		\b, multiple volumes,
->>17	byte	x		\b (part %d),
->5	leshort &0x0002		\b, contains comment
->5	leshort	&0x0200		\b, sfx
->5	leshort	&0x0400		\b, small dictionary
->5	leshort	&0x0800		\b, multi-volume
->5	leshort	&0x1000		\b, contains AV-String
->>30	string	\x16*UNREGISTERED\x20VERSION*	(unregistered)
->5	leshort &0x2000		\b, with recovery record
->5	leshort &0x4000		\b, locked
->5	leshort &0x8000		\b, solid
-# Date in MS-DOS format (whatever that is)
-#>18	lelong	x		Created on
-
-# sfArk : compression program for Soundfonts (sf2) by Dirk Jagdmann
-# <doj@cubic.org>
-0x1A	string	sfArk		sfArk compressed Soundfont
->0x15	string	2
->>0x1	string	>\0		Version %s
->>0x2A	string	>\0		: %s
-
-# DR-DOS 7.03 Packed File *.??_
-0	string	Packed\ File\ 	Personal NetWare Packed File
->12	string	x    		\b, was "%.12s"
-
-# EET archive
-# From: Tilman Sauerbeck <tilman@code-monkey.de>
-0	belong	0x1ee7ff00	EET archive
-!:mime	application/x-eet
 
 # rzip archives
 0	string	RZIP		rzip compressed data
 >4	byte	x		- version %d
 >5	byte	x		\b.%d
 >6	belong	x		(%d bytes)
-
-# From: "Robert Dale" <robdale@gmail.com>
-0	belong	123		dar archive,
->4	belong	x		label "%.8x
->>8	belong	x		%.8x
->>>12	beshort	x		%.4x"
->14	byte	0x54		end slice
->14	beshort	0x4e4e		multi-part
->14	beshort	0x4e53		multi-part, with -S
-
-# Symbian installation files
-#  http://www.thouky.co.uk/software/psifs/sis.html
-#  http://developer.symbian.com/main/downloads/papers/SymbianOSv91/softwareinstallsis.pdf
-8	lelong	0x10000419	Symbian installation file
-!:mime	application/vnd.symbian.install
->4	lelong	0x1000006D	(EPOC release 3/4/5)
->4	lelong	0x10003A12	(EPOC release 6)
-0	lelong	0x10201A7A	Symbian installation file (Symbian OS 9.x)
-!:mime	x-epoc/x-sisx-app
-
-# Pack200 Java archives, http://jcp.org/en/jsr/detail?id=200
-0	belong	0xcafed00d	Pack200 Java archive
-
-# From "Nelson A. de Oliveira" <naoliv@gmail.com>
-0	string	MPQ\032		MoPaQ (MPQ) archive
 
 # From: Dirk Jagdmann <doj@cubic.org>
 # xar archive format: http://code.google.com/p/xar/

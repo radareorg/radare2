@@ -45,13 +45,6 @@
 # this can be overridden by the DOS executable (COM) entry
 2	string		LILO		Linux/i386 LILO boot/chain loader
 #
-# PSF fonts, from H. Peter Anvin <hpa@yggdrasil.com>
-0	leshort		0x0436		Linux/i386 PC Screen Font data,
->2	byte		0		256 characters, no directory,
->2	byte		1		512 characters, no directory,
->2	byte		2		256 characters, Unicode directory,
->2	byte		3		512 characters, Unicode directory,
->3	byte		>0		8x%d
 # Linux swap file, from Daniel Quinlan <quinlan@yggdrasil.com>
 4086	string		SWAP-SPACE	Linux/i386 swap file
 # From: Jeff Bailey <jbailey@ubuntu.com>
