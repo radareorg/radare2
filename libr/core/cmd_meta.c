@@ -266,7 +266,6 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		//
 		{
 		const char* newcomment = input+2;
-		char *text;
 		while (*newcomment==' ') newcomment++;
 		char *comment = r_meta_get_string (
 				core->anal, R_META_TYPE_COMMENT, addr);

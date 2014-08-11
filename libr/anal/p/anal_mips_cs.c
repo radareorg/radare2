@@ -40,7 +40,6 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 #define ARG(x) arg(handle, insn, str[x], x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	int i;
 	char str[32][32];
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");

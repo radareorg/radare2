@@ -302,12 +302,11 @@ static int cb_dbgbep(void *user, void *data) {
 	}
 	return R_TRUE;
 }
-static int cb_runprofile(void *user, ut8 *data) {
-	//RRunProfile = data;
+static int cb_runprofile(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	free ((void*)r->io->runprofile);
-	if (!data || !*data)
+	if (!node || !*(node->value))
 		r->io->runprofile = NULL;
 	else r->io->runprofile = strdup (node->value);
 	return R_TRUE;

@@ -223,8 +223,7 @@ static int cmd_cmp(void *data, const char *input) {
 	ut16 v16;
 	ut32 v32;
 	ut64 v64;
-	int ret, sz;
-	const char *p;
+	int ret;
 	FILE *fd;
 
 	switch (*input) {

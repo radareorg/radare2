@@ -25,8 +25,10 @@ int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 		ins.address = addr;
 		ins.opcode = 
 			(buf[3]<<8) | (buf[2]);
-//			(buf[3]<<24) | (buf[2]<<16) | \
-			//(buf[1]<<8) | (buf[0]);
+		/*
+			(buf[3]<<24) | (buf[2]<<16) | \
+			(buf[1]<<8) | (buf[0]);
+		*/
 		if (disassembleInstruction (&dins, ins)) {
 			strcpy (out, "invalid");
 			return -1;

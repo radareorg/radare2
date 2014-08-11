@@ -707,7 +707,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 							f->name, f->size, core->cons->vline[LINE_VERT]); // |-
 					}
 				} else {
-					char *korner = "";
+					const char* korner;
 					const char *fmt = ds->show_color?
 						"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
 						"%s (%s) %s %d\n%s ";

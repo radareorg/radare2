@@ -464,11 +464,12 @@ static int r_cmd_java_reload_bin_from_buf (RCore *core, RBinJavaObj *obj, ut8* b
 	int res = r_bin_java_load_bin (obj, buffer, len);
 
 	if (res == R_TRUE) {
-		RBinPlugin *cp = NULL, *tmp;
+		//RBinPlugin *cp = NULL;
+		RBinPlugin *tmp;
 		RListIter *iter;
 		r_list_foreach (core->bin->plugins, iter, tmp) {
 			if (!strncmp ("java", tmp->name, 4)) {
-				cp = tmp;
+				//cp = tmp;
 				break;
 			}
 		}

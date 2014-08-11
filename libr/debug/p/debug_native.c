@@ -31,7 +31,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
 	int ret = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
 	if (ret != -1 && siginfo.si_signo>0) {
-		siginfo_t newsiginfo = {0};
+		//siginfo_t newsiginfo = {0};
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason = R_DBG_REASON_SIGNAL;
 		dbg->signum = siginfo.si_signo;

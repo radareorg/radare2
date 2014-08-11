@@ -7,7 +7,6 @@
 #include <r_anal.h>
 
 static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
-	ut64 dst = 0LL;
 	if (op == NULL)
 		return 1;
 	/* Ayeeee! What's inside op? Do we have an initialized RAnalOp? Are we going to have a leak here? :-( */

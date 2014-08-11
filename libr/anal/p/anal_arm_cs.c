@@ -26,6 +26,8 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 	case ARM_OP_MEM:
 		// TODO
 		break;
+	default:
+		break;
 	}
 	return buf;
 }
@@ -49,6 +51,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM_CC_GT:
 	case ARM_CC_LE:
+		break;
+	default:
 		break;
 	}
 	// TODO: PREFIX CONDITIONAL
@@ -106,6 +110,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_LDRB:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
+		break;
+	default:
 		break;
 	}
 	return 0;
@@ -192,6 +198,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->type = R_ANAL_OP_TYPE_JMP;
 					op->jump = IMM(0);
 				}
+				break;
+			default:
 				break;
 			}
 			if (a->decode) {

@@ -104,7 +104,6 @@ int send_packet(libgdbr_t* g) {
 }
 
 int read_packet(libgdbr_t* g) {
-	int ret = 0;
 	int po_size = 0;
 	if (!g) {
 		fprintf (stderr, "Initialize libgdbr_t first\n");
