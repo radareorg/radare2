@@ -174,6 +174,7 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
 	case R_ANAL_OP_TYPE_MOD   : return "mod";
 	case R_ANAL_OP_TYPE_SWITCH : return "switch";
+	case R_ANAL_OP_TYPE_CASE:	return "case";
 	}
 	return "undefined";
 }
@@ -314,6 +315,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_SWITCH:
+	case R_ANAL_OP_TYPE_CASE:
 		eprintf ("Command not implemented.\n");
 		free (r0);
 		free (a0);

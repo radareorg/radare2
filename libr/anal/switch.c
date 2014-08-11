@@ -27,7 +27,7 @@ R_API void r_anal_switch_op_free(RAnalSwitchOp * swop) {
 	free(swop);
 }
 
-R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value) {
+R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 value, ut64 jump) {
 	RAnalCaseOp * caseop = R_NEW0(RAnalCaseOp);
 	caseop->addr = addr;
 	caseop->value = value;

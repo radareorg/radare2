@@ -51,6 +51,10 @@ typedef struct r_anal_ex_java_lin_sweep {
 
 ut64 METHOD_START = 0;
 
+// XXX - TODO add code in the java_op that is aware of when it is in a
+// switch statement, like in the shlr/java/code.c so that this does not 
+// report bad blocks.  currently is should be easy to ignore these blocks,
+// in output for the pdj
 
 //static int java_print_ssa_fcn (RAnal *anal, char *addr);
 //static int java_print_ssa_bb (RAnal *anal, char *addr);
@@ -778,7 +782,25 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	// handle lookup and table switch offsets
 	if (op_byte == 0xaa || op_byte == 0xab) {
 		java_switch_op (anal, op, addr, data, len);
+		// IN_SWITCH_OP = 1;
 	}
+	/* TODO: 
+	// not sure how to handle the states for IN_SWITCH_OP, SWITCH_OP_CASES,
+	// and NUM_CASES_SEEN, because these are dependent on whether or not we
+	// are in a switch, and given the non-reentrant state of opcode analysis
+	// this can't always be guaranteed.  Below is the pseudo code for handling
+	// the easy parts though
+	if (IN_SWITCH_OP) {
+		NUM_CASES_SEEN++;
+		if (NUM_CASES_SEEN == SWITCH_OP_CASES) IN_SWITCH_OP=0;
+		op->addr = addr;
+		op->size = 4;
+		op->type2 = 0;
+		op->type = R_ANAL_OP_TYPE_CASE
+		op->eob = 0;
+		return op->sizes;
+	}
+	*/
 
 	op->eob = r_anal_ex_is_op_type_eop (op->type2);
 	IFDBG {
