@@ -894,6 +894,71 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
+static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
+	// Stepping
+	int ret;
+	ut8 code[32];
+	RAnalOp op;
+	const char *name = r_reg_get_name (core->anal->reg, r_reg_get_name_idx ("pc"));
+	ut64 addr = r_reg_getv (core->anal->reg, name);
+	repeat:
+	if (r_cons_singleton()->breaked) {
+		eprintf ("[+] ESIL emulation interrupted at 0x%08"PFMT64x"\n", addr);
+		return;
+	}
+	if (!core->anal->esil) {
+		core->anal->esil = r_anal_esil_new ();
+		r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+		RList *entries = r_bin_get_entries (core->bin);
+		RBinAddr *entry = NULL;
+		RBinInfo *info = NULL;
+		if (entries && r_list_length(entries)) {
+			entry = (RBinAddr *) r_list_pop (entries);
+			info = r_bin_get_info (core->bin);
+			if (info->has_va)
+				addr = entry->vaddr;
+			else	addr = entry->paddr;
+			eprintf ("PC=entry0\n");
+			r_list_push (entries, entry);
+		} else {
+			addr = core->offset;
+			eprintf ("PC=OFF\n");
+		}
+		r_reg_setv (core->anal->reg, name, addr);
+	} else {
+		addr = r_reg_getv (core->anal->reg, name);
+		eprintf ("PC=0x%llx\n", (ut64)addr);
+	}
+	r_io_read_at (core->io, addr, code, 32);
+	r_asm_set_pc (core->assembler, addr);
+	ret = r_anal_op (core->anal, &op, addr, code, 32);
+	eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
+	 {
+		//r_anal_esil_eval (core->anal, input+2);
+		RAnalEsil *esil = core->anal->esil;
+		r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+		if (core->anal->cur && core->anal->cur->esil_post_loop)
+			core->anal->cur->esil_post_loop(esil, &op);
+		r_anal_esil_dumpstack (esil);
+		r_anal_esil_stack_free (esil);
+	 }
+	ut64 newaddr = r_reg_getv (core->anal->reg, name);
+	if (addr == newaddr)
+		r_reg_setv (core->anal->reg, name, addr + op.size);
+	// check addr
+	if (until_addr != UT64_MAX) {
+		if (addr == until_addr) {
+			eprintf ("ADDR BREAK\n");
+		} else goto repeat;
+	}
+	// check esil 
+	if (until_expr) {
+		if (r_anal_esil_condition (core->anal->esil, until_expr)) {
+			eprintf ("ESIL BREAK!\n");
+		} else goto repeat;
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -935,53 +1000,32 @@ static int cmd_anal(void *data, const char *input) {
 				r_anal_esil_stack_free (esil);
 			}
 			break;
-		case 's':
-			// stepping
-			{
-				int ret;
-				ut8 code[32];
-				RAnalOp op;
-				const char *name = r_reg_get_name (core->anal->reg, r_reg_get_name_idx ("pc"));
-				ut64 addr;
-				if (!core->anal->esil) {
-					core->anal->esil = r_anal_esil_new ();
-					r_anal_esil_setup (core->anal->esil, core->anal); // setup io
-					RList *entries = r_bin_get_entries (core->bin);
-					RBinAddr *entry = NULL;
-					RBinInfo *info = NULL;
-					if (entries && r_list_length(entries)) {
-						entry = (RBinAddr *) r_list_pop (entries);
-						info = r_bin_get_info (core->bin);
-						if (info->has_va)
-							addr = entry->vaddr;
-						else	addr = entry->paddr;
-						eprintf ("PC=entry0\n");
-						r_list_push (entries, entry);
-					} else {
-						addr = core->offset;
-						eprintf ("PC=OFF\n");
-					}
-					r_reg_setv (core->anal->reg, name, addr);
+		case 's': 
+			// aes -> single step
+			// aesu -> until address
+			// aesue -> until esil expression
+			if (input[2]=='u') {
+				if (input[3]=='e') {
+					esil_step (core, UT64_MAX, input+4);
 				} else {
-					addr = r_reg_getv (core->anal->reg, name);
-					eprintf ("PC=0x%llx\n", (ut64)addr);
+					esil_step (core, r_num_math (core->num, input+3), NULL);
 				}
-				r_io_read_at (core->io, addr, code, 32);
-				r_asm_set_pc (core->assembler, addr);
-				ret = r_anal_op (core->anal, &op, addr, code, 32);
-				eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
-				{
-					//r_anal_esil_eval (core->anal, input+2);
-					RAnalEsil *esil = core->anal->esil;
-					r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-					if (core->anal->cur && core->anal->cur->esil_post_loop)
-						core->anal->cur->esil_post_loop(esil, &op);
-					r_anal_esil_dumpstack (esil);
-					r_anal_esil_stack_free (esil);
+			} else {
+				esil_step (core, UT64_MAX, NULL);
+			}
+			break;
+		case 'c':
+			// aec  -> continue until ^C
+			// aecu -> until address
+			// aecue -> until esil expression
+			if (input[2]=='u') {
+				if (input[3]=='e') {
+					esil_step (core, UT64_MAX, input+4);
+				} else {
+					esil_step (core, r_num_math (core->num, input+3), NULL);
 				}
-				ut64 newaddr = r_reg_getv (core->anal->reg, name);
-				if (addr == newaddr)
-					r_reg_setv (core->anal->reg, name, addr + op.size);
+			} else {
+				esil_step (core, UT64_MAX, "0");
 			}
 			break;
 		case 'd':
@@ -1002,7 +1046,12 @@ static int cmd_anal(void *data, const char *input) {
 				"aei", "", "initialize ESIL VM state",
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
+				"aec", "", "continue until ^C",
+				"aecu", " [addr]", "continue until address",
+				"aecue", " [esil]", "continue until esil expression match",
 				"aes", "", "perform emulated debugger step",
+				"aesu", " [addr]", "step until given address",
+				"aesue", " [esil]", "step until esil expression match",
 				"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
 				NULL};
 				r_core_cmd_help (core, help_msg);
