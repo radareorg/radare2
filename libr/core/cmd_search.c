@@ -290,14 +290,18 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf, int idx) {
 	return UT64_MAX;
 }
 
-static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
+static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep) {
 	int i = 0;
 	const int max_instr = r_config_get_i (core->config, "search.roplen");
 	int nb_instr = 0;
+	boolt match = 0;
 	RAnalOp aop;
 	RAsmOp asmop;
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
+
+	if (!grep) // don't grep.
+		match = 1;
 
 	// add the last intruction of the ROP gadget to the list
 	r_anal_op (core->anal, &aop, addr, buf+idx, 32);
@@ -307,6 +311,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 	hit->addr = addr;
 	hit->len = aop.size;
 	hit->code = NULL;
+	if (!match && !strcasecmp (asmop.buf_asm, grep))
+		match = 1;
 	r_list_append (hitlist, hit);
 	idx -= 1;
 	addr -=1;
@@ -320,7 +326,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 				else if (aop.size < 1)
 					goto ret;
 				else if (i == aop.size) {
-					switch (aop.type) { // Start of another gadget
+					switch (aop.type) { // start of another gadget
 						case R_ANAL_OP_TYPE_ILL:
 						case R_ANAL_OP_TYPE_TRAP:
 						case R_ANAL_OP_TYPE_RET:
@@ -335,6 +341,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 					hit->addr = addr - i;
 					hit->len = aop.size;
 					r_list_prepend (hitlist, hit);
+					if (!match && !strcasecmp (asmop.buf_asm, grep))
+						match = 1;
 					idx -= aop.size;
 					addr -= aop.size;
 					break;
@@ -344,7 +352,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 		nb_instr++;
 	}
 ret:
-	if (!nb_instr) // Don't return a list with only a RET gadget
+	if (!nb_instr) // don't return a list with only a RET gadget
+		return NULL;
+	if (!match) // we didn't find a gadget that matches the grep
 		return NULL;
 	return hitlist;
 }
@@ -391,7 +401,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				case R_ANAL_OP_TYPE_RET:
 				case R_ANAL_OP_TYPE_UCALL:
 				case R_ANAL_OP_TYPE_UJMP:
-					hitlist = construct_rop_gadget(core, from+i, buf, i);
+					hitlist = construct_rop_gadget(core, from+i, buf, i, grep);
 					if (hitlist) {
 						RCoreAsmHit *hit = NULL;
 						RAnalOp analop = {0};
