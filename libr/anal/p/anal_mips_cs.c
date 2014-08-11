@@ -377,7 +377,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 RAnalPlugin r_anal_plugin_mips_cs = {
-	.name = "mips",
+	.name = "mips.cs",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
 	.arch = R_SYS_ARCH_MIPS,
