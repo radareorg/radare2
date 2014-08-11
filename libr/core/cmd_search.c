@@ -8,6 +8,29 @@ static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
 
+static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
+	RBinPlugin *plug;
+	ut8 buf[1024];
+	int sz = sizeof (buf);
+
+	while (from <to) {
+		r_io_read_at (core->io, from, buf, sz);
+		plug = r_bin_get_binplugin_by_bytes (core->bin, buf, sz);
+		if (plug) {
+			r_cons_printf ("0x%08"PFMT64x"  %s\n",
+				from, plug->name);
+#if TODO
+			// TODO: load the bin and calculate its size
+			if (plug->size) {
+				r_bin_load_io_at_offset_as_sz(core->bin, core->file->desc, 0, 0, 0, core->offset, plug->name, 4096);
+				eprintf ("SizE %d\n", plug->size (core->bin));
+			}
+#endif
+		}
+		from ++;
+	}
+}
+
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	int depth = r_config_get_i (core->config, "anal.depth");
@@ -439,6 +462,9 @@ static int cmd_search(void *data, const char *input) {
 		inverse = R_TRUE;
 		goto reread;
 		break;
+	case 'B':
+		cmd_search_bin (core, from, to);
+		break;
 	case 'b':
 		if (*(++input) == '?'){
 			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
@@ -746,6 +772,7 @@ static int cmd_search(void *data, const char *input) {
 			"/R", " [grepopcode]", "search for matching ROP gadgets",
 			"/a", " jmp eax", "assemble opcode and search its bytes",
 			"/b", "", "search backwards",
+			"/B", "", "search recognized RBin headers",
 			"/c", " jmp [esp]", "search for asm code (see search.asmstr)",
 			"/d", " 101112", "search for a deltified sequence of bytes",
 			"/e", " /E.F/i", "match regular expression",

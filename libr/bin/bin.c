@@ -38,7 +38,6 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, cons
 int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 
 static RBinPlugin * r_bin_get_binplugin_by_name (RBin *bin, const char *name);
-static RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut64 sz);
 static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (RBin *bin, const char *name);
 static RBinPlugin * r_bin_get_binplugin_any (RBin *bin);
 static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
@@ -727,7 +726,7 @@ static RBinPlugin * r_bin_get_binplugin_by_name (RBin *bin, const char *name) {
 	return NULL;
 }
 
-static RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut64 sz) {
+R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut64 sz) {
 	RBinPlugin *plugin;
 	RListIter *it;
 	if (!bin || !bytes)
