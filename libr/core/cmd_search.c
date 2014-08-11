@@ -290,14 +290,6 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf, int idx) {
 	return UT64_MAX;
 }
 
-static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
-	if (a->addr == b->addr)
-		return 0;
-	else if (a->addr < b->addr)
-		return -1;
-	return 1;
-}
-
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 	int i = 0;
 	const int max_instr = r_config_get_i (core->config, "search.roplen");
@@ -324,9 +316,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 			if (r_anal_op (core->anal, &aop, addr-i, buf+idx-i, 32-i) > 0) {
 				r_asm_set_pc (core->assembler, addr-i);
 				if (!r_asm_disassemble (core->assembler, &asmop, buf+idx-i, 32-i))
-					return hitlist;
+					goto ret;
 				else if (aop.size < 1)
-					return hitlist;
+					goto ret;
 				else if (i == aop.size) {
 					switch (aop.type) { // Start of another gadget
 						case R_ANAL_OP_TYPE_ILL:
@@ -337,7 +329,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 						case R_ANAL_OP_TYPE_UJMP:
 						case R_ANAL_OP_TYPE_JMP:
 						case R_ANAL_OP_TYPE_CALL:
-							return hitlist;
+							goto ret;
 					}
 					hit = r_core_asm_hit_new ();
 					hit->addr = addr - i;
@@ -351,6 +343,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx) {
 		}
 		nb_instr++;
 	}
+ret:
+	if (!nb_instr) // Don't return a list with only a RET gadget
+		return NULL;
 	return hitlist;
 }
 
