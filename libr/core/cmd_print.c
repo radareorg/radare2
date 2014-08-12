@@ -1176,6 +1176,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_print_disasm_json (core, core->offset,
 					core->block, core->blocksize);
 			}
+			r_cons_printf ("\n");
 			pd_result = 0;
 			break;
 		case '?':
