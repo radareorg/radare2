@@ -223,6 +223,10 @@ static int computeStructSize(char *fmt) {
 }
 
 static int r_print_format_struct(const RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
+	if (slide > 14) {
+		eprintf("Too much nested struct, recursion too deep...\n");
+		return 0;
+	}
 	const char *fmt;
 	fmt = r_strht_get (p->formats, name);
 	eprintf("%s\n%s\n", name, fmt);
@@ -308,6 +312,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 		arg = orig;
 		for (idx=0; i<len && arg<argend && *arg; arg++) {
 			int size;
+			char *name;
 			seeki = seek+i;
 			addr = 0LL;
 			invalid = 0;
@@ -397,10 +402,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				tmp = (p->bits == 64)? 'q': 'x';
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
+#if 0
 			case '?': // help
 				print_format_help (p);
 				i = len; // exit
 				continue;
+#endif
 			}
 
 			/* cmt chars */
@@ -532,22 +539,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				if(r_print_format_ptrstring(p, seeki, addr64, addr, 1) == 0)
 					i+= (size==-1) ? 8 : size;
 				break;
-			case '"':
-				if (1) {
-					char *end = strchr(arg+1, '"');
-					char *name;
-					if (end == NULL) {
-						eprintf("Struct name error\n");
-						goto beach;
-					}
-					*end = '\0';
-					name = strdup(arg+1);
-					p->printf("<struct> %s\n", name);
-					arg = end;
-					slide++;
-					i+= r_print_format_struct(p, seeki, b, len, name, slide);
-					slide--;
-				}
+			case '?':
+				name = r_str_word_get0 (args, idx-1);
+				p->printf("<struct>\n");
+				slide++;
+				i+= r_print_format_struct(p, seeki, buf+i, len, name, slide);
+				slide--;
 				break;
 
 			default:
