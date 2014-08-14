@@ -254,23 +254,14 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 	}
 }
 
-// TODO: handle more than one?
-static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf, int idx) {
-	int i;
-	int K = 32;
+static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
+	ut8 i;
 	RAnalOp aop;
-	//ut8 buf[132];
-	ut64 base = addr - K;
 
-	K = R_MIN (idx, K);
-	buf += idx;
-	buf -= K;
-
-	//r_io_read_at (core->io, base, buf, sizeof (buf));
-///	r_core_read_at (core, base, buf, sizeof (buf));
 	for (i=0; i<16; i++) {
-		if (r_anal_op (core->anal, &aop, base+K-i, buf+K-i, 32-i)) {
-			if (aop.size<1) break;
+		if (r_anal_op (core->anal, &aop, addr-i, buf-i, 32-i)) {
+			if (aop.size < 1)
+				return UT64_MAX;
 			if (i == aop.size) {
 				switch (aop.type) {
 				case R_ANAL_OP_TYPE_ILL:
@@ -535,7 +526,7 @@ static int cmd_search(void *data, const char *input) {
 		ut8 buf[64];
 		ut64 off = core->offset;
 		r_core_read_at (core, off-16, buf, 32);
-		off = findprevopsz (core, off, buf, 16);
+		off = findprevopsz (core, off, buf + 16);
 		r_cons_printf ("0x%08llx\n", off);
 		}
 		break;
