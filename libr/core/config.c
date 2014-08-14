@@ -928,7 +928,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
 	SETI("search.kwidx", 0, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
-	SETI("search.roplen", 12, "Maximum number of instructions for a ROP Gadget");
+	SETI("search.roplen", 3, "Maximum number of instructions for a ROP Gadget");
 	SETPREF("search.show", "true", "Show search results while found (disable if lot of hits)");
 	SETI("search.to", -1, "Search end address");
 
