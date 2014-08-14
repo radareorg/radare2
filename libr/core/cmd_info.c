@@ -179,7 +179,7 @@ static int cmd_info(void *data, const char *input) {
 			{
 				switch (mode) {
 				case R_CORE_BIN_RADARE: cmd_info (core, "i*IiesSz"); break;
-				case R_CORE_BIN_JSON: cmd_info (core, "ijIiesSz"); break;
+				case R_CORE_BIN_JSON: cmd_info (core, "iIiesSzj"); break;
 				default:
 				case R_CORE_BIN_SIMPLE: cmd_info (core, "iIiesSz"); break;
 				}
