@@ -229,7 +229,6 @@ static int r_print_format_struct(const RPrint* p, ut64 seek, const ut8* b, int l
 	}
 	const char *fmt;
 	fmt = r_strht_get (p->formats, name);
-	eprintf("%s\n%s\n", name, fmt);
 	r_print_format (p, seek, b, len, fmt, -1, NULL);
 	return computeStructSize(strdup(fmt));
 }
