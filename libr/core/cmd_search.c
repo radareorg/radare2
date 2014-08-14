@@ -397,8 +397,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 					r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 					size += hit->len;
-					r_cons_printf ("{offset:\"0x%08"PFMT64x"\", size:\"%d\", opcode:\"%s\", %"PFMT64d"}%s",
-							hit->addr, hit->len, asmop.buf_asm , analop.type, iter->n?",":"");
+					r_cons_printf ("{offset:\"0x%08"PFMT64x"\", size:\"%d\", opcode:\"%s\", type:\"%s\"}%s",
+							hit->addr, hit->len, asmop.buf_asm,
+							r_anal_optype_to_string (analop.type), iter->n?",":"");
 				}
 				r_cons_printf ("], retaddr:\"0x%08"PFMT64x"\", size:\"%d\"}", hit->addr, size);
 			} else {
