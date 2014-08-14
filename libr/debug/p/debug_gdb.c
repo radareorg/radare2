@@ -385,7 +385,20 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 }
 
 static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
-	// TODO
+	// TODO handle rwx
+	if (type == R_FALSE) { // set bp
+		if (hw) {
+			gdbr_set_hwbp (desc, addr, "");
+		} else {
+			gdbr_set_bp (desc, addr, "");
+		}
+	} else { // unset bp
+		if (hw) {
+			gdbr_remove_hwbp (desc, addr, "");
+		} else {
+			gdbr_remove_bp (desc, addr, "");
+		}
+	}
 	return R_FALSE;
 }
 
