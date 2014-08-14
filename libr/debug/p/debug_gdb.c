@@ -13,7 +13,7 @@ typedef struct {
 #define SUPPORTED 1
 
 static libgdbr_t *desc = NULL;
-static char* reg_buf = NULL;
+static ut8* reg_buf = NULL;
 static int buf_size = 0;
 static int support_sw_bp = UNKNOWN; 
 static int support_hw_bp = UNKNOWN;
@@ -37,7 +37,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	else {
 		if (buf_size < desc->data_len) {
-			char* new_buf = realloc (reg_buf, desc->data_len * sizeof (char));
+			ut8* new_buf = realloc (reg_buf, desc->data_len * sizeof (ut8));
 			if (!new_buf) {
 				return -1;
 			}
@@ -69,7 +69,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	// so this workaround resizes the small register profile buffer
 	// to the whole set and fills the rest with 0
 	if (buf_size < buflen) {
-		char* new_buf = realloc (reg_buf, buflen * sizeof (char));
+		ut8* new_buf = realloc (reg_buf, buflen * sizeof (ut8));
 		if (!new_buf) {
 			return -1;
 		}
@@ -83,7 +83,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		if (!current) break;
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
-		gdbr_write_reg (desc, current->name, &val, bytes);
+		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
 	}
 	return R_TRUE;
 }
@@ -385,8 +385,23 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 }
 
 static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
-	// TODO
-	return R_FALSE;
+	int ret = 0;
+	// TODO handle rwx and conditions
+	if (type == R_FALSE) { // set bp
+		if (hw) {
+			ret = gdbr_set_hwbp (desc, addr, "");
+		} else {
+			ret = gdbr_set_bp (desc, addr, "");
+		}
+	} else { // unset bp
+		if (hw) {
+			ret = gdbr_remove_hwbp (desc, addr);
+		} else {
+			ret = gdbr_remove_bp (desc, addr);
+		}
+	}
+	if (ret) return R_FALSE;
+	return R_TRUE;
 }
 
 struct r_debug_plugin_t r_debug_plugin_gdb = {
