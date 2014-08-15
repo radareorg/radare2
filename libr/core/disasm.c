@@ -985,7 +985,7 @@ static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_offset (RCore *core, RDisasmState *ds ) {
+static void handle_print_offset (RCore *core, RDisasmState *ds) {
 	if (ds->show_offset)
 		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
 						ds->show_offseg);
@@ -1768,14 +1768,14 @@ toro:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);
 		if (ds->tries>0) {
-			ds->addr += idx;
+			//ds->addr += idx;
 			if (r_core_read_at (core, ds->addr, buf, len) ) {
 				idx = 0;
 				goto toro;
 			}
 		}
 		if (ds->lines<ds->l) {
-			ds->addr += idx;
+			//ds->addr += idx;
 			if (r_core_read_at (core, ds->addr, buf, len) != len) {
 				//ds->tries = -1;
 			}
