@@ -605,6 +605,7 @@ static int cmd_search(void *data, const char *input) {
 			}
 			r_cons_break_end ();
 		} else eprintf ("Usage: /m [file]\n");
+		r_cons_clear_line (1);
 		break;
 	case 'p':
 		{

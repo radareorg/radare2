@@ -2,36 +2,38 @@
 
 static int magicdepth = 99; //XXX: do not use global var here
 
+static RMagic *ck = NULL; // XXX: Use RCore->magic
+static char *oldfile = NULL;
+
 static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
-	static RMagic *ck = NULL; // XXX: Use RCore->magic
-	static char *oldfile = NULL;
 
 	if (--depth<0)
 		 return 1;
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
+	eprintf ("0x%08"PFMT64x"\r", addr);
 	if (file) {
 		if (*file == ' ') file++;
 		if (!*file) file = NULL;
 	}
-	if (!oldfile || ck==NULL || (file && strcmp (file, oldfile))) {
+	if (ck==NULL || (file && strcmp (file, oldfile))) {
 		// TODO: Move RMagic into RCore
 		r_magic_free (ck);
 		ck = r_magic_new (0);
-	}
-	if (file) {
-		if (r_magic_load (ck, file) == -1) {
-			eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
-			return -1;
-		}
-	} else {
-		const char *magicpath = r_config_get (core->config, "dir.magic");
-		if (r_magic_load (ck, magicpath) == -1) {
-			eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
-			return -1;
+		if (file) {
+			if (r_magic_load (ck, file) == -1) {
+				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
+				return -1;
+			}
+		} else {
+			const char *magicpath = r_config_get (core->config, "dir.magic");
+			if (r_magic_load (ck, magicpath) == -1) {
+				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
+				return -1;
+			}
 		}
 	}
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
@@ -49,6 +51,9 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		// TODO: This must be a callback .. move this into RSearch?
 		r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr, magicdepth-depth, p);
+		r_cons_clear_line (1);
+		eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\r",
+			addr, addr, magicdepth-depth, p);
 		// walking children
 		for (q=p; *q; q++) {
 			switch (*q) {
