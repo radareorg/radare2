@@ -88,24 +88,24 @@ R_API const char *r_hash_name(ut64 bit) {
     return "";
 }
 
-R_API int r_hash_size(int bit) {
-	if (bit & R_HASH_MD4) return R_HASH_SIZE_MD4;
-	if (bit & R_HASH_MD5) return R_HASH_SIZE_MD5;
-	if (bit & R_HASH_SHA1) return R_HASH_SIZE_SHA1;
-	if (bit & R_HASH_SHA256) return R_HASH_SIZE_SHA256;
-	if (bit & R_HASH_SHA384) return R_HASH_SIZE_SHA384;
-	if (bit & R_HASH_SHA512) return R_HASH_SIZE_SHA512;
-	if (bit & R_HASH_CRC16) return R_HASH_SIZE_CRC16;
-	if (bit & R_HASH_CRC32) return R_HASH_SIZE_CRC32;
-	if (bit & R_HASH_XXHASH) return R_HASH_SIZE_XXHASH;
-	if (bit & R_HASH_ADLER32) return R_HASH_SIZE_ADLER32;
-	if (bit & R_HASH_PARITY) return 1;
-	if (bit & R_HASH_ENTROPY) return 4; // special case
-	if (bit & R_HASH_HAMDIST) return 1;
-	if (bit & R_HASH_XOR) return 1;
-	if (bit & R_HASH_XORPAIR) return 1;
-	if (bit & R_HASH_MOD255) return 1;
-	if (bit & R_HASH_PCPRINT) return 1;
+R_API int r_hash_size(ut64 algo) {
+	if (algo & R_HASH_MD4) return R_HASH_SIZE_MD4;
+	if (algo & R_HASH_MD5) return R_HASH_SIZE_MD5;
+	if (algo & R_HASH_SHA1) return R_HASH_SIZE_SHA1;
+	if (algo & R_HASH_SHA256) return R_HASH_SIZE_SHA256;
+	if (algo & R_HASH_SHA384) return R_HASH_SIZE_SHA384;
+	if (algo & R_HASH_SHA512) return R_HASH_SIZE_SHA512;
+	if (algo & R_HASH_CRC16) return R_HASH_SIZE_CRC16;
+	if (algo & R_HASH_CRC32) return R_HASH_SIZE_CRC32;
+	if (algo & R_HASH_XXHASH) return R_HASH_SIZE_XXHASH;
+	if (algo & R_HASH_ADLER32) return R_HASH_SIZE_ADLER32;
+	if (algo & R_HASH_PARITY) return 1;
+	if (algo & R_HASH_ENTROPY) return 4; // special case
+	if (algo & R_HASH_HAMDIST) return 1;
+	if (algo & R_HASH_XOR) return 1;
+	if (algo & R_HASH_XORPAIR) return 1;
+	if (algo & R_HASH_MOD255) return 1;
+	if (algo & R_HASH_PCPRINT) return 1;
 	return 0;
 }
 
@@ -164,4 +164,23 @@ R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
 		}
 		(void)r_hash_calculate (ctx, algo, buf, len);
 	}
+}
+
+R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
+	char *digest_hex = NULL;
+	int i, digest_size;
+	ut64 algo = r_hash_name_to_bits (name);
+	if (!ctx)
+		ctx = r_hash_new (R_TRUE, algo);
+	r_hash_do_begin (ctx, algo);
+	r_hash_calculate (ctx, algo, data, len);
+	r_hash_do_end (ctx, algo);
+	digest_size= r_hash_size (algo);
+	digest_hex = malloc ((digest_size *2)+1);
+	for (i = 0; i< digest_size; i++) {
+		sprintf (digest_hex+(i*2), "%02x", ctx->digest[i]);
+	}
+	digest_hex[digest_size] = 0;
+	r_hash_free (ctx);
+	return digest_hex;
 }

@@ -17,10 +17,10 @@ typedef struct {
 } R_MD5_CTX;
 
 typedef struct {
-	unsigned int H[5];
-	unsigned int W[80];
+	ut32 H[5];
+	ut32 W[80];
 	int lenW;
-	unsigned int sizeHi, sizeLo;
+	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
 
 #define SHA256_BLOCK_LENGTH 64
@@ -103,11 +103,13 @@ R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, int len);
 
+R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len);
+
 /* static methods */
 R_API const char *r_hash_name(ut64 bit);
 R_API ut64 r_hash_name_to_bits(const char *name);
-R_API int r_hash_size(int bit);
-R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, int len);
+R_API int r_hash_size(ut64 bit);
+R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *input, int len);
 
 /* checksums */
 /* XXX : crc16 should use 0 as arg0 by default */

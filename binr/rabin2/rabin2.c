@@ -55,6 +55,7 @@ static int rabin_show_help(int v) {
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -k [query]      perform sdb query on loaded file\n"
+		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -g              same as -SMRevsiz (show all info)\n"
 		" -h              this help\n"
 		" -H              header fields\n"
@@ -348,6 +349,7 @@ int main(int argc, char **argv) {
 	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
 	char *ptr, *arch = NULL, *arch_name = NULL;
 	const char *op = NULL;
+	const char *chksum = NULL;
 	RCoreBinFilter filter;
 	RCore core;
 	RCoreFile *cf = NULL;
@@ -370,7 +372,7 @@ int main(int argc, char **argv) {
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:dMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -401,6 +403,7 @@ int main(int argc, char **argv) {
 			create = strdup (optarg);
 			break;
 		case 'k': query = optarg; break;
+		case 'K': chksum = optarg; break;
 		case 'C': set_action (ACTION_CLASSES); break;
 		case 'f': if (optarg) arch_name = strdup (optarg); break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
@@ -572,7 +575,7 @@ int main(int argc, char **argv) {
 #define run_action(n,x,y) {\
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("\"%s\":",n);\
-		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr)) {\
+		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr, chksum)) {\
 			if (isradjson) r_cons_printf("false");\
 		};\
 		actions_done++;\

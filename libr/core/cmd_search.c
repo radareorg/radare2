@@ -350,9 +350,11 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RListIter *iter = NULL;
 	boolt json_first = 1;
 
-	if (delta < 1)
-		if((delta = from-to) < 1)
+	if (delta < 1) {
+		delta = from-to;
+		if (delta < 1)
 			return R_FALSE;
+	}
 	if (*grep==' ') { // grep mode
 		for (++grep; *grep==' '; grep++);
 	} else {
@@ -378,7 +380,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			if (!ret)
 				continue;
 
-			hitlist = construct_rop_gadget(core, from+i, buf, i, grep);
+			hitlist = construct_rop_gadget (core, from+i, buf, i, grep);
 			if (!hitlist)
 				continue;
 

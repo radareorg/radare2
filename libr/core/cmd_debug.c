@@ -415,7 +415,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				baddr = o->baddr;
 				o->baddr = map->addr;
 				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
-						R_TRUE, &filter, 0);
+						R_TRUE, &filter, 0, NULL);
 				o->baddr = baddr;
 				break;
 			}

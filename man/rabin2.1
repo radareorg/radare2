@@ -12,6 +12,7 @@ rabin2 \- Binary program info extractor
 .Op Fl c Ar fmt:C:[D]
 .Op Fl f Ar subbin
 .Op Fl k Ar query
+.Op Fl K Ar algo
 .Op Fl O Ar str
 .Op Fl o Ar str
 .Op Fl m Ar addr
@@ -55,6 +56,8 @@ Show imports (symbols imported from libraries)
 Output in json
 .It Fl k Ar query
 Perform SDB query on loaded file
+.It Fl K Ar algo
+Select a rahash2 checksum algorithm to be performed on sections listing (and maybe others in the future)
 .It Fl l
 List linked libraries to the binary
 .It Fl L

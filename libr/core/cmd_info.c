@@ -82,7 +82,7 @@ static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("{\"bin\":");
 		r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-			mode, va, NULL, offset);
+			mode, va, NULL, offset, NULL);
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf (",\"core\":");
 		r_core_file_info (core, mode);
@@ -159,7 +159,7 @@ static int cmd_info(void *data, const char *input) {
 		if (is_array==1) is_array++; else r_cons_printf (","); \
 		r_cons_printf ("\"%s\":",n); \
 	}\
-	r_core_bin_info (core,x,mode,va,NULL,offset);
+	r_core_bin_info (core,x,mode,va,NULL,offset,NULL);
 		case 'A': newline=0; r_bin_list_archs (core->bin, 1); break;
 		case 'Z': RBININFO ("size",R_CORE_BIN_ACC_SIZE); break;
 		case 'S': RBININFO ("sections",R_CORE_BIN_ACC_SECTIONS); break;

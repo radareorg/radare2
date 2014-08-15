@@ -44,7 +44,7 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		r_asm_use (r->assembler, arch);
 
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
-			va, NULL, loadaddr);
+			va, NULL, loadaddr, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return R_TRUE;
 	}
@@ -844,7 +844,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 	return R_TRUE;
 }
 
-static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
+static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name, const char *chksum) {
 	char str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
 	ut64 secbase = 0LL;
@@ -857,34 +857,62 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 		return R_FALSE;
 
 	if (mode & R_CORE_BIN_JSON) {
+		char *hashstr = NULL;
 		r_cons_printf ("[");
 		r_list_foreach (sections, iter, section) {
-if (va)
-delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section->vaddr);
-//			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->paddr,
-//				section->vaddr): section->paddr;
+			if (va)
+				delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section->vaddr);
+			//ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->paddr,
+			//	section->vaddr): section->paddr;
+			if (chksum) {
+				char *chkstr;
+				ut8 *data = malloc (section->size);
+				ut32 datalen = section->size;
+				r_io_pread (r->io, section->paddr, data, datalen);
+				chkstr = r_hash_to_string (NULL, chksum, data, datalen);
+				free (data);
+				hashstr = malloc (strlen (chkstr)+strlen (chksum)+7);
+				sprintf (hashstr, "\"%s\":\"%s\",", chksum, chkstr);
+				free (chkstr);
+			}
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
 				"\"flags\":\"%s\","
+				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
 				iter->p?",":"",
 				section->name,
 				section->size,
 				r_str_rwx_i (section->srwx),
+				hashstr? hashstr: "",
 				section->paddr, // paddr
-				delta + section->vaddr); // paddr
+				delta + section->vaddr); // vaddr
+			free (hashstr);
+			hashstr = NULL;
 		}
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
+		char *chkstr = NULL;
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->paddr,
-				section->vaddr): section->paddr;
-			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s\n",
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr,
+				section->paddr, section->vaddr): section->paddr;
+			if (chksum) {
+				ut8 *data = malloc (section->size);
+				ut32 datalen = section->size;
+				r_io_read_at (r->io, addr, data, datalen);
+				chkstr = r_hash_to_string (NULL, chksum, data, datalen);
+				free (data);
+			}
+			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
 				addr, addr + section->size,
 				r_str_rwx_i (section->srwx),
-				section->name);
+				chkstr?chkstr:"", chkstr?" ":"",
+				section->name
+			);
+			free (chkstr);
+			chkstr = NULL;
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
@@ -970,7 +998,18 @@ delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section
 							(R_BIN_SCN_EXECUTABLE &section->srwx)?'x':'-',
 							section->name, addr);
 				} else {
-					char str[128];
+					char *hashstr = NULL, str[128];
+					if (chksum) {
+						char *chkstr;
+						ut8 *data = malloc (section->size);
+						ut32 datalen = section->size;
+						r_io_read_at (r->io, addr, data, datalen);
+						chkstr = r_hash_to_string (NULL, chksum, data, datalen);
+						free (data);
+						hashstr = malloc (strlen (chkstr)+strlen (chksum)+3);
+						sprintf (hashstr, "%s=%s ", chksum, chkstr);
+						free (chkstr);
+					}
 					if (section->arch || section->bits) {
 						const char *arch = section->arch;
 						int bits = section->bits;
@@ -979,13 +1018,14 @@ delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section
 						snprintf (str, sizeof (str), "arch=%s bits=%d ", arch, bits);
 					} else str[0] = 0;
 					r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-						"perm=%c%c%c%c %sname=%s\n",
+						"perm=%c%c%c%c %s%sname=%s\n",
 						i, addr, section->paddr, section->size, section->vsize,
 						(R_BIN_SCN_SHAREABLE &section->srwx)?'s':'-',
 						(R_BIN_SCN_READABLE &section->srwx)?'r':'-',
 						(R_BIN_SCN_WRITABLE &section->srwx)?'w':'-',
 						(R_BIN_SCN_EXECUTABLE &section->srwx)?'x':'-',
-						str, section->name);
+						str, hashstr?hashstr:"", section->name);
+					free (hashstr);
 				}
 			}
 			i++;
@@ -1149,7 +1189,7 @@ static int bin_libs (RCore *r, int mode) {
 	return R_TRUE;
 }
 
-R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 loadaddr) {
+R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 loadaddr, const char *chksum) {
 	int ret = R_TRUE;
 	const char *name = NULL;
 	ut64 at = 0, baseaddr = 0LL;
@@ -1179,7 +1219,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_SYMBOLS))
 		ret &= bin_symbols (core, mode, baseaddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SECTIONS))
-		ret &= bin_sections (core, mode, baseaddr, va, at, name);
+		ret &= bin_sections (core, mode, baseaddr, va, at, name, chksum);
 	if ((action & R_CORE_BIN_ACC_FIELDS))
 		ret &= bin_fields (core, mode, baseaddr, va);
 	if ((action & R_CORE_BIN_ACC_LIBS))
