@@ -312,7 +312,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			addr += aop.size;
 
 			//handle (possible) grep
-			if (!match && grep && !strcasecmp (asmop.buf_asm, grep))
+			if (!match && grep && r_str_casestr (asmop.buf_asm, grep))
 				match = 1;
 
 			switch (aop.type) { // end of the gadget
@@ -339,16 +339,20 @@ ret:
 }
 
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep) {
-	int ret, i, delta = to-from, end = 0;
+	int i=0, end=0, mode=0, increment=1, ret;
+	int delta = to - from;
 	RAsmOp asmop;
 	RAnalOp aop;
 	ut8 *buf;
 	RList* hitlist;
-	int mode = 0;
 	RCoreAsmHit *hit = NULL;
 	RAnalOp analop = {0};
 	RListIter *iter = NULL;
 	boolt json_first = 1;
+	const char *arch = r_config_get (core->config, "asm.arch");
+
+	if (!strcmp(arch, "mips")) // MIPS has no jump-in-the-middle
+		increment = 4;
 
 	if (delta < 1) {
 		delta = from-to;
@@ -369,7 +373,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	if (mode == 'j')
 		r_cons_printf ("[");
 
-	for (i=0; i < delta - 32; i++) {
+	for (i=0; i < delta - 32; i+=increment) {
 		if (i >= end) { // read by chunk of 4k
 			r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
 			end = i + 2048;
