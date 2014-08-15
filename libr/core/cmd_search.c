@@ -387,22 +387,25 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 				//Handle comma between gadgets
 				if (json_first == 0)
-					r_cons_printf(",");
+					r_cons_strcat (",");
 				else
 					json_first = 0;
 
-				r_cons_printf("{opcodes:[");
+				r_cons_printf("{\"opcodes\":[");
 				r_list_foreach (hitlist, iter, hit) {
 					r_core_read_at (core, hit->addr, buf, hit->len);
 					r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 					r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 					size += hit->len;
-					r_cons_printf ("{offset:\"0x%08"PFMT64x"\", size:\"%d\", opcode:\"%s\", type:\"%s\"}%s",
+					r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,\"opcode\":\"%s\",\"type\":\"%s\"}%s",
 							hit->addr, hit->len, asmop.buf_asm,
 							r_anal_optype_to_string (analop.type), iter->n?",":"");
 				}
-				r_cons_printf ("], retaddr:\"0x%08"PFMT64x"\", size:\"%d\"}", hit->addr, size);
+				r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
 			} else {
+				const char *otype;
+				char *buf_asm, *buf_hex;
+
 				// Print the address and the last instruction of the gadget
 				hit = r_list_get_top(hitlist);
 				r_core_read_at (core, hit->addr, buf, hit->len);
@@ -414,14 +417,14 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_core_read_at (core, hit->addr, buf, hit->len);
 					r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 					r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-					char *buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
-					char *buf_hex = r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
-					const char * otype = r_print_color_op_type (core->print, analop.type);
-					r_cons_printf ("\t0x%08"PFMT64x" %s%16s  %s%s\n", hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+					buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
+					buf_hex = r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
+					otype = r_print_color_op_type (core->print, analop.type);
+					r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n", hit->addr, otype, buf_hex, buf_asm, Color_RESET);
 					free (buf_asm);
 					free (buf_hex);
 				}
-				r_cons_printf("\n");
+				r_cons_newline ();
 			}
 		}
 	}
