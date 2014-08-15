@@ -175,12 +175,14 @@ static RList* libs(RBinFile *arch) {
 	r_buf_read_at (arch->buf, obj->header->xapi_lib_addr - obj->header->base,
 		(ut8 *)&lib, sizeof(xbe_lib));
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
-	if (s) r_list_append(ret, s);
+	if (s) r_list_append (ret, s);
 
 	for (i = 0; i < obj->header->lib_versions; i++) {
 		r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
-			obj->header->base + (i * sizeof(xbe_lib)), (ut8 *)&lib, sizeof(xbe_lib));
-		s = r_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+			obj->header->base + (i * sizeof (xbe_lib)),
+			(ut8 *)&lib, sizeof (xbe_lib));
+		s = r_str_newf ("%s %i.%i.%i", lib.name,
+			lib.major, lib.minor, lib.build);
 		if (s) r_list_append(ret, s);
 	}
 
@@ -202,6 +204,7 @@ static RList* symbols(RBinFile *arch) {
 	kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
 	ret->free = free;
 
+//eprintf ("VA %llx  %llx\n", sym->paddr, sym->vaddr);
 	// PA -> VA translation
 	for (i = 0; found == R_FALSE && i < obj->header->sections; i++) {
 		r_buf_read_at (arch->buf, obj->header->sechdr_addr - \
@@ -271,8 +274,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *arch)
-{
+static ut64 baddr(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
 	return obj->header->base;
 }

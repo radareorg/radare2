@@ -27,9 +27,9 @@ static void setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 }
 
 static Sdb* get_sdb (RBinObject *o) {
+	struct Elf_(r_bin_elf_obj_t) *bin;
 	if (!o) return NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = \
-		(struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
+	bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
 	if (bin && bin->kv) return bin->kv;
 	return NULL;
 }
@@ -247,14 +247,27 @@ static RList* symbols(RBinFile *arch) {
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
+		ut64 vaddr = r_bin_get_vaddr (arch->o->bin_obj,
+			arch->o->baddr, symbol[i].offset,
+			symbol[i].offset+arch->o->baddr);
+		ut64 paddr = symbol[i].offset;
+		if (vaddr == UT64_MAX) {
+			ut64 ba = baddr (arch);
+			if (ba) {
+				vaddr = paddr + ba;
+			} else {
+				// no base address, probably an object file
+				vaddr = paddr + base;
+			}
+		}
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->paddr = symbol[i].offset;// + base;
-		ptr->vaddr = bin->baddr + ptr->paddr;
+		ptr->paddr = paddr;
+		ptr->vaddr = vaddr;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
@@ -265,7 +278,17 @@ static RList* symbols(RBinFile *arch) {
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 vaddr = symbol[i].offset; //jr_bin_get_vaddr (bin, baddr, paddr, vaddr);
+		ut64 paddr = symbol[i].offset;
+		ut64 vaddr = r_bin_get_vaddr (bin, baddr, paddr, vaddr);
+		if (vaddr == UT64_MAX) {
+			ut64 ba = baddr (arch);
+			if (ba) {
+				vaddr = paddr + ba;
+			} else {
+				// no base address, probably an object file
+				vaddr = paddr + base;
+			}
+		}
 //bin->baddr + symbol[i].offset;
 		if (!symbol[i].size)
 			continue;
@@ -276,7 +299,7 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->paddr = symbol[i].offset;
+		ptr->paddr = paddr;
 		ptr->vaddr = vaddr; 
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
@@ -684,11 +707,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 
-static ut64 get_elf_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_elf_vaddr (RBinFile *arch, ut64 ba, ut64 pa, ut64 va) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 // WHY? NO NEED TO HAVE PLUGIN SPECIFIC VADDR
 	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-	return obj->baddr - obj->boffset + vaddr -baddr;
+	return obj->baddr - obj->boffset + va - ba;
 
 }
 

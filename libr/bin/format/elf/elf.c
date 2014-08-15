@@ -1041,7 +1041,7 @@ if (
 					}
 				}
 #endif
-				ret[ret_ctr].offset = toffset; //(toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");

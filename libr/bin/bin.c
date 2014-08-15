@@ -1128,8 +1128,7 @@ R_API RList* r_bin_get_strings(RBin *bin) {
 
 R_API RList* r_bin_get_symbols(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->symbols;
+	if (o) return o->symbols;
 	return NULL;
 }
 
@@ -1579,7 +1578,7 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 		return UT64_MAX;
 	// autodetect thumb
 	if (!strcmp (bin->cur->o->info->arch, "arm")) {
-		if (vaddr &1) {
+		if (vaddr & 1) {
 			vaddr = (vaddr>>1)<<1;
 		}
 	}

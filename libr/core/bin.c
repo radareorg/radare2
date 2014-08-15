@@ -167,7 +167,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 					string->string, string->size, va? vaddr: paddr,
 					string->size, va? vaddr: paddr);
-			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x
+			} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x
 				" ordinal=%03u "
 				"sz=%u len=%u section=%s type=%c string=%s\n", vaddr, paddr,
 				string->ordinal, string->size, string->length,
@@ -406,7 +406,7 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 				va? baddr+binmain->vaddr: binmain->paddr);
 		} else {
 			r_cons_printf ("[Main]\n");
-			r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
+			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x"\n",
 					baddr+binmain->vaddr, binmain->paddr);
 		}
 	}
@@ -568,7 +568,8 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
 				ut64 addr = va? reloc->vaddr: reloc->paddr;
-				r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=%s",
+addr = reloc->vaddr;
+				r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
 					addr, reloc->paddr, bin_reloc_type_name (reloc));
 				if (reloc->import && reloc->import->name[0])
 					r_cons_printf (" %s", reloc->import->name);
@@ -737,7 +738,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->paddr,
 				symbol->vaddr): symbol->paddr;
 			name = strdup (symbol->name);
-			cname = (symbol->classname[0] != 0) ? strdup(symbol->classname) : NULL;
+			cname = (symbol->classname[0] != 0) ? strdup (symbol->classname) : NULL;
 			// XXX - may want a configuration variable here for class and name lengths.
 			// XXX - need something to handle overloaded symbols (e.g. methods)
 			// void add (int i, int j);
@@ -1016,7 +1017,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 						if (!bits) bits = info->bits;
 						snprintf (str, sizeof (str), "arch=%s bits=%d ", arch, bits);
 					} else str[0] = 0;
-					r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+					r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"perm=%c%c%c%c %s%sname=%s\n",
 						i, addr, section->paddr, section->size, section->vsize,
 						(R_BIN_SCN_SHAREABLE &section->srwx)?'s':'-',
@@ -1074,9 +1075,9 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 			if (mode) {
 				r_name_filter (field->name, sizeof (field->name));
 				r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
-				r_cons_printf ("[%02i] addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
+				r_cons_printf ("[%02i] vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
 						i, addr, field->paddr, field->name);
-			} else r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
+			} else r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
 					i, addr, field->paddr, field->name);
 			i++;
 		}
