@@ -284,6 +284,14 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	case 'd':
+		if (input[1] != ' ') {
+			char* home = NULL;
+			home = r_sys_getenv(R_SYS_HOME);
+			if (r_sandbox_chdir (home)==-1)
+				eprintf ("Cannot chdir\n");
+			free (home);
+			break;
+		}
 		while (input[1]==' ') input++;
 		if (r_sandbox_chdir (input+1)==-1)
 			eprintf ("Cannot chdir\n");
