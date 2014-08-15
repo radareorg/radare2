@@ -467,7 +467,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 					i, va?vaddr: paddr);
 				r_cons_printf ("s entry%i\n", i);
 			} else r_cons_printf ("vaddr=0x%08"PFMT64x
-					" off=0x%08"PFMT64x
+					" paddr=0x%08"PFMT64x
 					" baddr=0x%08"PFMT64x
 					" laddr=0x%08"PFMT64x"\n",
 					vaddr, paddr, baddr, laddr);
@@ -796,8 +796,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		}
 
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->paddr,
-				symbol->vaddr): symbol->paddr;
+			ut64 addr = r_bin_get_vaddr (r->bin, baddr, symbol->paddr, symbol->vaddr);
 			if (name && strcmp (symbol->name, name))
 				continue;
 			if (at) {
@@ -830,7 +829,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 #endif
 					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size, addr);
-				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ord=%03u "
+				} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 						    "fwd=%s sz=%u bind=%s type=%s name=%s\n",
 						    addr, symbol->paddr,
 						    symbol->ordinal, symbol->forwarder,

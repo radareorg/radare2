@@ -253,7 +253,7 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->paddr = symbol[i].offset + base;
+		ptr->paddr = symbol[i].offset;// + base;
 		ptr->vaddr = bin->baddr + ptr->paddr;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
@@ -265,6 +265,8 @@ static RList* symbols(RBinFile *arch) {
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
+		ut64 vaddr = symbol[i].offset; //jr_bin_get_vaddr (bin, baddr, paddr, vaddr);
+//bin->baddr + symbol[i].offset;
 		if (!symbol[i].size)
 			continue;
 		if (!(ptr = R_NEW0 (RBinSymbol)))
@@ -275,7 +277,7 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
 		ptr->paddr = symbol[i].offset;
-		ptr->vaddr = bin->baddr + symbol[i].offset;
+		ptr->vaddr = vaddr; 
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);

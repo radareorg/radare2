@@ -1027,7 +1027,8 @@ if (
 					perror ("realloc (symbols|imports)");
 					return NULL;
 				}
-				if (bin->baddr) {
+#if 0
+				if (bin->laddr) {
 					int idx = sym[k].st_shndx;
 					if (idx>=0 && idx < bin->ehdr.e_shnum) {
 						if (bin->baddr && toffset>bin->baddr)
@@ -1039,6 +1040,7 @@ if (
 						continue;
 					}
 				}
+#endif
 				ret[ret_ctr].offset = toffset; //(toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name > strtab_section->sh_size) {
