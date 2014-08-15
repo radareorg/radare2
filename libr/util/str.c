@@ -445,6 +445,12 @@ R_API char *r_str_chop(char *str) {
 	return str;
 }
 
+R_API const char *r_str_trim_const(const char *str) {
+	if (str)
+		for (; *str && iswhitechar (*str); str++);
+	return str;
+}
+
 R_API char *r_str_trim_head(char *str) {
 	char *p;
 

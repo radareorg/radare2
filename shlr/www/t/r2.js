@@ -119,16 +119,13 @@ r2.get_disasm = function (offset, length, cb) {
   r2.cmd ("pD "+length+"@"+offset, cb);
 }
 
-r2.config_set = function (k, v, fn) {
-  r2.cmd ("e "+k+"="+v, fn);
-}
-
-r2.config_get = function (k, fn) {
-  r2.cmd ("e "+k, fn);
-}
-
-r2.set_flag_space = function (ns, fn) {
-  r2.cmd ("fs "+ns, fn);
+r2.Config = function (k, v, fn) {
+	if (typeof v == 'function' || !v) { // get
+		r2.cmd ("e "+k, fn || v);
+	} else { // set
+		r2.cmd ("e "+k+"="+v, fn);
+	}
+	return r2;
 }
 
 r2.set_flag_space = function (ns, fn) {
@@ -202,10 +199,10 @@ function _internal_cmd(c, cb) {
   if (r2cmd) {
     // TODO: use setTimeout for async?
     return r2cmd (c, cb);
-  } else
-  Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '', function (x) {
-    if (cb) cb (x);
-  });
+  } else {
+    Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '',
+      function (x) { if (cb) cb (x); });
+  }
 }
 
 r2.cmd = function (c, cb) {

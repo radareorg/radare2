@@ -49,16 +49,16 @@ R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "ptr:", addr, NULL, ptr);
 }
 
-R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, char *arch) {
-	setHint (a, "arch:", addr, r_str_trim_head (arch), 0);
+R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, const char *arch) {
+	setHint (a, "arch:", addr, r_str_trim_const (arch), 0);
 }
 
-R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, char *opcode) {
-	setHint (a, "opcode:", addr, r_str_trim_head (opcode), 0);
+R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, const char *opcode) {
+	setHint (a, "opcode:", addr, r_str_trim_const (opcode), 0);
 }
 
-R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, char *esil) {
-	setHint (a, "esil:", addr, r_str_trim_head (esil), 0);
+R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *esil) {
+	setHint (a, "esil:", addr, r_str_trim_const (esil), 0);
 }
 
 R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int bits) {
