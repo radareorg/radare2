@@ -229,7 +229,7 @@ RPN UDIS86_ESIL (popa,
 RPN UDIS86_ESIL (cmc,   "cf,!=");
 RPN UDIS86_ESIL (into,  "of,?{,4,$,}");
 RPN UDIS86_ESIL (lahf,  "%s,ah,=", info->bits == 16 ? "flags" : (info->bits == 32 ? "eflags" : "rflags"));
-RPN UDIS86_ESIL (loop,  "1,%s,-=,%s!,?{%s,%s,=,}",
+RPN UDIS86_ESIL (loop,  "1,%s,-=,!,?{%s,%s,=,}",
 		info->bits == 16 ? "cx" : IS32 ? "ecx" : "rcx",
 		dst, info->pc);
 RPN UDIS86_ESIL (loope, "1,%s,-=,zf,?{,%s,%s,}",
