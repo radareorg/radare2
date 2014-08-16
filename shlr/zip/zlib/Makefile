@@ -66,7 +66,7 @@ endif
 	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS}
 
 libr_z.a: ${OFILES}
-	${CC_AR} libr_z.a ${OFILES}
+	${CC_AR} ${OFILES}
 	${RANLIB} libr_z.a
 
 clean:
