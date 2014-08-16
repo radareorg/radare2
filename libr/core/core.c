@@ -499,6 +499,7 @@ R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
+	core->zerosep = R_FALSE;
 	core->config = NULL;
 	core->print = r_print_new ();
 	core->http_up = R_FALSE;
@@ -764,6 +765,8 @@ R_API int r_core_prompt(RCore *r, int sync) {
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, R_TRUE);
 	r_cons_flush ();
+	if (r->zerosep)
+		r_cons_zero ();
 	return ret;
 }
 

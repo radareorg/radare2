@@ -284,6 +284,7 @@ R_API char *r_cons_editor (const char *file);
 R_API void r_cons_reset();
 R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();
+R_API void r_cons_zero();
 R_API void r_cons_clear();
 R_API void r_cons_clear00();
 R_API void r_cons_clear_line(int err);

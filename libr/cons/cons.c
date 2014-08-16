@@ -668,3 +668,7 @@ R_API void r_cons_set_title(const char *str) {
 	r_cons_printf ("\x1b]0;%s\007", str);
 	
 }
+
+R_API void r_cons_zero() {
+	write (1, "", 0);
+}

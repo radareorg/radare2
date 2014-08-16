@@ -175,6 +175,7 @@ int main(int argc, char **argv, char **envp) {
 	int fullfile = 0;
 	int has_project = R_FALSE;
 	int prefile = 0;
+	int zerosep = 0;
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
@@ -235,12 +236,20 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVS"
+	while ((c = getopt (argc, argv, "0ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVS"
 #if USE_THREADS
 "t"
 #endif
 			))!=-1) {
 		switch (c) {
+		case '0': 
+			zerosep = R_TRUE;
+			//r_config_set (r.config, "scr.color", "false");
+			/* implicit -q */
+			r_config_set (r.config, "scr.interactive", "false");
+			r_config_set (r.config, "scr.prompt", "false");
+			quiet = R_TRUE;
+			break;
 		case 'a': asmarch = optarg; break;
 		case 'A':
 			do_analysis = R_TRUE;
@@ -583,8 +592,11 @@ int main(int argc, char **argv, char **envp) {
 	r.num->value = 0;
 	if (patchfile) {
 		r_core_patch (&r, patchfile);
-	} else
+	} else {
+		if (zerosep)
+			r_cons_zero ();
 	for (;;) {
+		r.zerosep = zerosep;
 #if USE_THREADS
 		do { 
 			int err = r_core_prompt (&r, R_FALSE);
@@ -618,6 +630,7 @@ int main(int argc, char **argv, char **envp) {
 		if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
 			r_core_project_save (&r, prj);
 		break;
+	}
 	}
 	// TODO: kill thread
 

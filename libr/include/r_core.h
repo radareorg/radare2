@@ -142,6 +142,7 @@ typedef struct r_core_t {
 	int printidx;
 	int utf8;
 	int vseek;
+	int zerosep;
 	RList *watchers;
 	RList *scriptstack;
 	int cmd_depth;
