@@ -9,7 +9,7 @@ R_API RSign *r_sign_new() {
 	RSign *sig = R_NEW0 (RSign);
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
-		sig->prefix[0] = '\0';
+		sig->ns[0] = '\0';
 		sig->printf = (PrintfCallback) printf;
 		sig->items = r_list_new ();
 		sig->items->free = r_sign_item_free;
@@ -17,11 +17,12 @@ R_API RSign *r_sign_new() {
 	return sig;
 }
 
-R_API void r_sign_prefix(RSign *sig, const char *str) {
+R_API void r_sign_ns(RSign *sig, const char *str) {
+    /*Set namespace*/
 	if (str) {
-		strncpy (sig->prefix, str, sizeof (sig->prefix)-1);
-		sig->prefix[sizeof (sig->prefix)-1] = '\0';
-	} else sig->prefix[0] = '\0';
+		strncpy (sig->ns, str, sizeof (sig->ns)-1);
+		sig->ns[sizeof (sig->ns)-1] = '\0';
+	} else sig->ns[0] = '\0';
 }
 
 R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
@@ -36,7 +37,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		return R_FALSE;
 	si->type = type;
 	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
-		*sig->prefix? sig->prefix: "sign", type, name);
+		*sig->ns? sig->ns: "sign", type, name);
 
 	switch (type) {
 	case R_SIGN_FUNC: // function signature
@@ -117,17 +118,18 @@ R_API void r_sign_reset(RSign *sig) {
 	sig->s_anal = sig->s_byte = sig->s_head = sig->s_func = 0;
 }
 
-R_API int r_sign_remove_prefix(RSign* sig, const char* prefix) {
+R_API int r_sign_remove_ns(RSign* sig, const char* ns) {
+    /*Remove namespace*/
 	RListIter* iter, *iter2;
 	RSignItem* si;
 	int plen, i = 0;
 
-	if (!sig || !prefix)
+	if (!sig || !ns)
 		return -1;
 
-	plen = strlen (prefix);
+	plen = strlen (ns);
 	r_list_foreach_safe (sig->items, iter, iter2, si) {
-		if (!strncmp (si->name, prefix, plen)) {
+		if (!strncmp (si->name, ns, plen)) {
 			if (si->type == R_SIGN_BYTE)
 				sig->s_byte--;
 			else if (si->type == R_SIGN_ANAL)
