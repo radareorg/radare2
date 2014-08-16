@@ -285,7 +285,7 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep) {
 	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
 	ut8 nb_instr = 0;
-	boolt match = 0;
+	boolt grep_found=0, valid=0;
 	RAnalOp aop;
 	RAsmOp asmop;
 	RCoreAsmHit *hit = NULL;
@@ -294,13 +294,10 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	while (nb_instr < max_instr) {
 		if (r_anal_op (core->anal, &aop, addr, buf+idx, 32) > 0) {
 			r_asm_set_pc (core->assembler, addr);
-			if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 32)) {
-				match = 0;
-				break;
-			} else if (aop.size < 1 || aop.type == R_ANAL_OP_TYPE_ILL) {
-				match = 0;
-				break;
-			}
+			if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 32))
+				goto ret;
+			else if (aop.size < 1 || aop.type == R_ANAL_OP_TYPE_ILL)
+				goto ret;
 
 			hit = r_core_asm_hit_new ();
 			hit->addr = addr;
@@ -311,9 +308,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			idx += aop.size;
 			addr += aop.size;
 
-			//handle (possible) grep
-			if (!match && grep && r_str_casestr (asmop.buf_asm, grep))
-				match = 1;
+			//Handle (possible) grep
+			if (!grep_found && grep && r_str_casestr (asmop.buf_asm, grep))
+				grep_found = 1;
 
 			switch (aop.type) { // end of the gadget
 				case R_ANAL_OP_TYPE_TRAP:
@@ -323,15 +320,14 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 				case R_ANAL_OP_TYPE_UJMP:
 				case R_ANAL_OP_TYPE_JMP:
 				case R_ANAL_OP_TYPE_CALL:
-				if (!grep)
-					match = 1;
-				goto ret;
+					valid = 1;
+					goto ret;
 			}
 		}
 		nb_instr++;
 	}
 ret:
-	if (!match) {
+	if (!valid || (grep && !grep_found)) {
 		r_list_free (hitlist);
 		return NULL;
 	}
