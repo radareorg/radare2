@@ -111,5 +111,6 @@ R_API void r_core_syscmd_cat(const char *file) {
 			r_cons_memcat (data, sz);
 			free (data);
 		} else eprintf ("No such file or directory\n");
+		free (filename);
 	} else eprintf ("Usage: cat [file]\n");
 }

@@ -413,7 +413,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 		core->parser->flagspace = ofs; // ???
 	} else {
 		if (!ds->opstr)
-			ds->opstr = strdup (asm_str);
+			ds->opstr = strdup (asm_str?asm_str:"");
 	}
 	if (ds->varsub) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal,
@@ -1215,7 +1215,7 @@ static void handle_print_indent (RCore *core, RDisasmState *ds) {
 		if (num<0) num = 0;
 		if (num>sizeof (indent))
 			num = sizeof(indent)-1;
-		memset (indent, ' ', num+1);
+		memset (indent, ' ', num);
 		indent[num] = 0;
 		r_cons_strcat (indent);
 	}

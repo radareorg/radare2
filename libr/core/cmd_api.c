@@ -83,7 +83,7 @@ R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 				memmove (cmd->aliases.values,
 					cmd->aliases.values+1,
 					cmd->aliases.count*sizeof (void*));
-				memcpy (cmd->aliases.keys,
+				memmove (cmd->aliases.keys,
 					cmd->aliases.keys+1,
 					cmd->aliases.count*sizeof (void*));
 			}

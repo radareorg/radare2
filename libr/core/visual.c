@@ -413,8 +413,10 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 			}
 		}
 	} else xrefs = NULL;
-	if (!xrefs || !r_list_length (xrefs))
+	if (!xrefs || !r_list_length (xrefs)) {
+		r_list_free (xrefs);
 		return 0;
+	}
 	r_cons_flush ();
 	ch = r_cons_readchar ();
 	if (ch >= '0' && ch <= '9') {

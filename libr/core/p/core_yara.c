@@ -153,6 +153,7 @@ static int r_cmd_yara_tags() {
 		eprintf ("Unable to get rules\n");
 		eprintf ("Error: %s\n",
 		r_yr_compiler_get_error_message (compiler, buf, sizeof (buf)));
+		r_list_free (tag_list);
 		return R_FALSE;
 	}
 

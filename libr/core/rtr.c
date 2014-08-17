@@ -468,6 +468,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						free (str);
 					}
 				}
+				r_socket_free (fd);
 				return;
 			}
 			snprintf (uri, sizeof (uri), "http://%s:%s/%s",
