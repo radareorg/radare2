@@ -216,6 +216,7 @@ static int cmd_help(void *data, const char *input) {
 			"Usage: ?v [$.]","","",
 			"$$", "", "here (current virtual seek)",
 			"$?", "", "last comparision value",
+			"$alias", "=value", "Alias commands (simple macros)",
 			"$Cn", "", "get nth call of function",
 			"$Dn", "", "get nth data reference in function",
 			"$F", "", "current function size",
@@ -236,7 +237,7 @@ static int cmd_help(void *data, const char *input) {
 			"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 			"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 			"${ev}", "", "get value of eval config variable", //TODO: use ?k too
-			"RNum", "", " # $variables usable in math expressions",
+			"RNum", "", " $variables usable in math expressions",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
@@ -442,7 +443,6 @@ static int cmd_help(void *data, const char *input) {
 		const char* help_message[] = {
 		"%var", "=value", "Alias for 'env' command",
 		"*", "off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
-		"$alias", "=value", "Alias commands (simple macros)",
 		"(macro arg0 arg1)",  "", "Manage scripting macros",
 		".", "[-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 		"="," [cmd]", "Run this command via rap://",
@@ -475,7 +475,7 @@ static int cmd_help(void *data, const char *input) {
 		"y"," [len] [[[@]addr", "Yank/paste bytes from/to memory",
 		"z", "", "Zignatures management",
 		"?[??]","[expr]", "Help or evaluate math expression",
-		"?$?", "", "Show available '$' variables",
+		"?$?", "", "Show available '$' variables and aliases",
 		"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
 		NULL
 		};
