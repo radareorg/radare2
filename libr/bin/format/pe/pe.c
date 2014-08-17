@@ -278,12 +278,17 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 
 static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	int num_of_sections = bin->nt_headers->file_header.NumberOfSections;
-	int sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
+	int sections_size;
+	if (num_of_sections<1) {
+		//eprintf("Warning: Invalid number of sections\n");
+		return R_TRUE;
+	}
 
 	if (num_of_sections == 0) {
 		//eprintf("Warning: number of sections in file = 0\n");
 		return R_TRUE;
 	}
+	sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
 
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
@@ -376,6 +381,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (maxidsz<0) maxidsz = 0;
 	//int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
 
+		bin->import_directory = NULL;
 	if (import_dir_paddr != 0) {
 		if (import_dir_size<1 || import_dir_size>maxidsz) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n",
@@ -385,12 +391,11 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		do {
 			indx++;
 			import_dir = (PE_(image_import_directory) *)realloc (
-				import_dir, (indx * dir_size)+1);
+				import_dir, ((1+indx) * dir_size));
 			if (!import_dir) {
 				r_sys_perror ("malloc (import directory)");
 				goto fail;
 			}
-
 			curr_import_dir = import_dir + (indx - 1);
 			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size,
 					(ut8*)(curr_import_dir), dir_size) == -1) {
@@ -812,7 +817,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	if (!bin)
 		return NULL;
-import_dirs_count = bin->import_directory_size /sizeof(struct r_bin_pe_import_t);;
+	import_dirs_count = bin->import_directory_size /sizeof(struct r_bin_pe_import_t);;
 	/* NOTE: import_dirs and delay_import_dirs can be -1 */
 	mallocsz = (import_dirs_count + delay_import_dirs_count + 4) * \
 		sizeof (struct r_bin_pe_lib_t);
