@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 typedef void (*HashHandler)(const ut8 *block, int len);
 
@@ -116,18 +116,19 @@ static void algolist(int mode) {
 	const char *name;
 	ut64 bits;
 	int i;
+	r_cons_printf ("| ");
 	for (i=0; ; i++) {
 		bits = 1<<i;
 		name = r_hash_name (bits);
 		if (!name||!*name) break;
 		if (mode) {
-			eprintf ("%s\n", name);
+			r_cons_printf ("%s\n| ", name);
 		} else {
-			eprintf (" #%s", name);
-			if (!((i+1)%10)) r_cons_newline ();
+			r_cons_printf (" #%s", name);
+			if (!((i+1)%6)) r_cons_printf ("\n| ");
 		}
 	}
-	if (!mode) eprintf ("\n");
+	if (!mode) r_cons_newline ();
 }
 
 static int cmd_hash(void *data, const char *input) {
@@ -201,19 +202,27 @@ static int cmd_hash(void *data, const char *input) {
 	}
 
 	if (input[0]=='?' || handled_cmd == R_FALSE) {
-		eprintf ("Usage: #algo <size> @ addr\n"
-		" # this is a comment   note the space after the sharp sign\n"
-		" ##                    List hash/checksum algorithms.\n"
-		" #sha256 10K @ 33      calculate sha256 of 10K at 33\n"
-		"Hashes:\n");
-		algolist (0);
-		eprintf (
-		"Usage #!interpreter [<args>] [<file] [<<eof]\n"
-		" #!                    list all available interpreters\n"
-		" #!python              run python commandline\n"
-		" #!python foo.py       run foo.py python script (same as '. foo.py')\n"
+		const char *helpmsg[] = {
+		"Usage: #algo <size> @ addr", "", "",
+		" #"," comment","note the space after the sharp sign",
+		" ##","","List hash/checksum algorithms.",
+		" #sha256", " 10K @ 33","calculate sha256 of 10K at 33",
+		NULL
+		};
+		const char *helpmsg2[] = {
+		"Hashes:","","", NULL };
+		const char *helpmsg3[] = {
+		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
+		" #!","","list all available interpreters",
+		" #!python","","run python commandline",
+		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
 		//" #!python <<EOF        get python code until 'EOF' mark\n"
-		" #!python arg0 a1 <<q  set arg0 and arg1 and read until 'q'\n");
+		" #!python"," arg0 a1 <<q","set arg0 and arg1 and read until 'q'",
+		NULL};
+		r_core_cmd_help (core, helpmsg);
+		r_core_cmd_help (core, helpmsg2);
+		algolist (0);
+		r_core_cmd_help (core, helpmsg3);
 	}
 	if (osize)
 		r_core_block_size (core, osize);
