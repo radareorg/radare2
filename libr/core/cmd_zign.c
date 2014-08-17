@@ -46,7 +46,7 @@ static int cmd_zign(void *data, const char *input) {
 			}
 		} else eprintf ("Usage: zg libc [libc.sig]\n");
 		break;
-	case 'p':
+	case 'n':
 		if (!input[1])
 			r_cons_printf ("%s\n", core->sign->ns);
 		else if (!strcmp ("-", input+1))
@@ -148,9 +148,9 @@ static int cmd_zign(void *data, const char *input) {
 			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
 			"zg", " namespace [file]", "Generate zignatures for current file",
 			"zh", " name bytes", "define function header zignature",
-			"zp", " namespace", "Define namespace for following zignatures (until zp-)",
-			"zp", "", "Display current namespace",
-			"zp-", "", "Unset namespace",
+			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
+			"zn", "", "Display current namespace",
+			"zn-", "", "Unset namespace",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
 			r_core_cmd_help (core, help_msg);

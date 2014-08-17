@@ -12,7 +12,7 @@
 #endif
 #if 0
   SDB SPECS
-  
+
 DatabaseName:
   'anal.meta'
 Keys:
