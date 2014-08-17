@@ -359,7 +359,8 @@ static int cmd_flag(void *data, const char *input) {
 		"fS","[on]","sort flags by offset or name",
 		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
-		"fo","","show fortunes"};
+		"fo","","show fortunes",
+		NULL};
 		r_core_cmd_help (core, help_msg);
 }
 		break;
