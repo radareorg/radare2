@@ -670,5 +670,5 @@ R_API void r_cons_set_title(const char *str) {
 }
 
 R_API void r_cons_zero() {
-	write (1, "", 0);
+	write (1, "", 1);
 }
