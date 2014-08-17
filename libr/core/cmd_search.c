@@ -636,9 +636,6 @@ static int cmd_search(void *data, const char *input) {
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		switch (input[1]) {
-		case '?':
-			eprintf ("Usage: /v[1|2|4|8] [value]   # obeys cfg.bigendian\n");
-			return R_TRUE;
 		case '8':
 			n64 = r_num_math (core->num, input+2);
 			r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
@@ -845,7 +842,7 @@ static int cmd_search(void *data, const char *input) {
 			"/m", " magicfile", "search for matching magic file (use blocksize)",
 			"/p", " patternsize", "search for pattern of given size",
 			"/r", " sym.printf", "analyze opcode reference an offset",
-			"/v", "[?248] num", "look for a asm.bigendian 32bit value",
+			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
 			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
 			"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
 			"/x"," ff..33", "search for hex string ignoring some nibbles",

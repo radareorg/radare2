@@ -802,12 +802,15 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		case '+':
 			r_reg_arena_push (core->dbg->reg);
 			break;
-		case '?':
-			r_cons_printf (
-			"|Usage: drs   Register states commands\n"
-			"| drs    List register stack\n"
-			"| drs+   Push register state\n"
-			"| drs-   Pop register state\n");
+		case '?':{
+			const char* help_msg[] = {
+				"Usage:", "drs", " # Register states commands",
+				"drs", "", "List register stack",
+				"drs+", "", "Push register state",
+				"drs-", "", "Pop register state",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		default:
 			r_cons_printf ("%d\n", r_list_length (

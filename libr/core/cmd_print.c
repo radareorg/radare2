@@ -1775,13 +1775,15 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
 			core->print->big_endian = !core->print->big_endian;
 			break;
-		case '?':
-			r_cons_printf (
-			"|Usage: pt[dn?]\n"
-			"| pt      print unix time (32 bit cfg.big_endian)\n"
-			"| ptd     print dos time (32 bit cfg.big_endian)\n"
-			"| ptn     print ntfs time (64 bit !cfg.big_endian)\n"
-			"| pt?     show help message\n");
+		case '?':{
+			const char* help_msg[] = {
+			"Usage: pt", "[dn]", "print timestamps",
+			"pt", "", "print unix time (32 bit `cfg.big_endian`",
+			"ptd","", "print dos time (32 bit `cfg.big_endian`",
+			"ptn","", "print ntfs time (64 bit `cfg.big_endian`",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;
