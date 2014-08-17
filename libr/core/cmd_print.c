@@ -1789,22 +1789,22 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'z':
 		if (input[1]=='?') {
-			r_cons_printf (
-			"|Usage: pz [len]\n"
-			"| print N bytes where each byte represents a block of filesize/N\n"
-			"|Configuration:\n"
-			"| zoom.maxsz : max size of block\n"
-			"| zoom.from  : start address\n"
-			"| zoom.to    : end address\n"
-			"| zoom.byte  : specify how to calculate each byte\n"
-			"|   p : number of printable chars\n"
-			"|   f : count of flags in block\n"
-			"|   s : strings in range\n"
-			"|   0 : number of bytes with value '0'\n"
-			"|   F : number of bytes with value 0xFF\n"
-			"|   e : calculate entropy and expand to 0-255 range\n"
-			"|   h : head (first byte value)\n"
-			"|WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
+			const char *help_msg[] = {
+			"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
+			"e zoom.maxsz","","max size of block",
+			"e zoom.from","","start address",
+			"e zoom.to","","end address",
+			"e zoom.byte","", "specify how to calculate each byte",
+			"  p","","number of printable chars",
+			"  f","","count of flags in block",
+			"  s","","strings in range",
+			"  0","","number of bytes with value '0'",
+			"  F","","number of bytes with value 0xFF",
+			"  e","","calculate entropy and expand to 0-255 range",
+			"  h","","head (first byte value)",
+			//"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
+			NULL};
+			r_core_cmd_help (core, help_msg);
 		} else {
 			char *oldzoom = NULL;
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
