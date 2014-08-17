@@ -129,8 +129,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? r_bin_get_vaddr (bin, baddr, string->vaddr,
-				string->paddr): string->paddr;
+			ut64 addr = va? r_bin_get_vaddr (bin, baddr,
+				string->paddr, string->vaddr): string->paddr;
 			r_cons_printf ("%"PFMT64d" %d %d %s\n",
 				addr, string->size, string->length, string->string);
 		}
