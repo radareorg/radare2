@@ -287,7 +287,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1] != ' ') {
 			char* home = NULL;
 			home = r_sys_getenv(R_SYS_HOME);
-			if (r_sandbox_chdir (home)==-1)
+			if (!home || r_sandbox_chdir (home)==-1)
 				eprintf ("Cannot chdir\n");
 			free (home);
 			break;
