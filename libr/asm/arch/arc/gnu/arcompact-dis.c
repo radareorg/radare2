@@ -527,11 +527,11 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  break;
 	}
     }
+
+
+ DOCOMM:
+  *bp = 0;
   va_end (ap);
-
-
- DOCOMM: *bp = 0;
-
 }
 
 static const char *condName[] =

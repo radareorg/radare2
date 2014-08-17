@@ -619,6 +619,7 @@ static int cmd_write(void *data, const char *input) {
 					"|  wv1 234      # write one byte with this value\n"
 					"|  wv 0x834002  # write dword with this value\n"
 					"|Supported sizes are: 1, 2, 4, 8\n");
+				free (ostr);
 				return 0;
 			case '1': type = 1; break;
 			case '2': type = 2; break;

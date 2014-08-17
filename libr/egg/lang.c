@@ -524,8 +524,8 @@ static void rcc_context(REgg *egg, int delta) {
 	lastctxdelta = delta;
 
 	if (CTX == 0 && delta < 0) {
-if (mode != NAKED)
-		emit->frame_end (egg, stackframe+stackfixed, nbrackets);
+		if (mode != NAKED)
+			emit->frame_end (egg, stackframe+stackfixed, nbrackets);
 		if (mode == NORMAL) /* XXX : commenting this makes hello.r unhappy! TODO: find a cleaner alternative */
 			stackframe = 0;
 		mode = NORMAL;
