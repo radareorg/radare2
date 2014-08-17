@@ -69,6 +69,7 @@ static int main_help(int line) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-\n");
 	if (line != 1) printf (
+		" -0           Print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"

@@ -15,7 +15,7 @@ radare2 \- Advanced commandline hexadecimal editor, disassembler and debugger
 .Op Fl p Ar project
 .Op Fl P Ar patch
 .Op Fl s Ar addr
-.Op Fl AdDwntLqv
+.Op Fl 0AdDwntLqv
 .Ar file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -26,6 +26,8 @@ This manpage is not updated yet. Feel free to contribute.
 .Pp
 The options are:
 .Bl -tag -width Fl
+.It Fl 0
+Print \\x00 after initialization and after every command executed
 .It Fl a Ar arch
 force asm.arch (x86, ppc, arm, mips, bf, java, ...)
 .It Fl A
