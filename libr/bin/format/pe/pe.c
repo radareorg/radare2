@@ -833,15 +833,15 @@ import_dirs_count = bin->import_directory_size /sizeof(struct r_bin_pe_import_t)
 
 	if (bin->import_directory) {
 		for (i = j = 0; i < import_dirs_count; i++, j++) {
+			ut64 addr = PE_(r_bin_pe_vaddr_to_paddr)(bin,
+				bin->import_directory[i].Name);
 			if (bin->import_directory[i].Characteristics == 0 &&
 				bin->import_directory[i].FirstThunk == 0)
 				break;
-
-			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->import_directory[i].Name),
-					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
+			if (r_buf_read_at (bin->b, addr, (ut8*)libs[j].name,
+					PE_STRING_LENGTH) == -1) {
 				eprintf ("Error: read (libs - import dirs)\n");
-				free (libs);
-				return NULL;
+				break;
 			}
 		}
 		if (bin->delay_import_directory)
