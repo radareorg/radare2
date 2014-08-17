@@ -1559,10 +1559,9 @@ static int cmd_anal(void *data, const char *input) {
 				if (input[2]) {
 					int i;
 					char *ptr = strdup (input+3);
-					int size = 1;
 					i = r_str_word_set0 (ptr);
 					if (i==2)
-						size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+						r_num_math (core->num, r_str_word_get0 (ptr, 1));
 					r_anal_hint_set_arch (core->anal, core->offset,
 						r_str_word_get0 (ptr, 0));
 					free (ptr);
@@ -1572,10 +1571,9 @@ static int cmd_anal(void *data, const char *input) {
 				if (input[2]) {
 					char *ptr = strdup (input+3);
 					int bits;
-					int size = 1;
 					int i = r_str_word_set0 (ptr);
 					if (i==2)
-						size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+						r_num_math (core->num, r_str_word_get0 (ptr, 1));
 					bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 					r_anal_hint_set_bits (core->anal, core->offset, bits);
 					free (ptr);

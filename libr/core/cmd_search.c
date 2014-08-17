@@ -283,13 +283,21 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep) {
-	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
-	ut8 nb_instr = 0;
-	boolt grep_found=0, valid=0;
 	RAnalOp aop;
 	RAsmOp asmop;
+	const char* start, *end;
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
+	ut8 nb_instr = 0;
+	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
+	boolt valid = 0;
+
+	if (grep) {
+		start = grep;
+		end = strstr (grep, ",");
+		if (!end) // We filter on a single opcode, so no ","
+			end = start + strlen (grep);
+	}
 
 	while (nb_instr < max_instr) {
 		if (r_anal_op (core->anal, &aop, addr, buf+idx, 32) > 0) {
@@ -304,13 +312,19 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			hit->len = aop.size;
 			r_list_append (hitlist, hit);
 
-			//Move to the next instruction
+			//Move on to the next instruction
 			idx += aop.size;
 			addr += aop.size;
 
 			//Handle (possible) grep
-			if (!grep_found && grep && r_str_casestr (asmop.buf_asm, grep))
-				grep_found = 1;
+			if (grep && !strncasecmp (asmop.buf_asm, start, end - start)) {
+				if (end[0] == ',') { // fields are comma-seperated
+					start = end + 1; // skip the comma
+					end = strstr (start, ",");
+					end = end?end: start + strlen(start); //latest field?
+				} else
+					end = NULL;
+			}
 
 			switch (aop.type) { // end of the gadget
 				case R_ANAL_OP_TYPE_TRAP:
@@ -327,7 +341,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		nb_instr++;
 	}
 ret:
-	if (!valid || (grep && !grep_found)) {
+	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
 		return NULL;
 	}
@@ -347,8 +361,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	boolt json_first = 1;
 	const char *arch = r_config_get (core->config, "asm.arch");
 
-	if (!strcmp(arch, "mips")) // MIPS has no jump-in-the-middle
+	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
 		increment = 4;
+	else if (!strcmp (arch, "arm")) // ARM has no jump-in-the-middle
+		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
 
 	if (delta < 1) {
 		delta = from-to;
@@ -818,7 +834,7 @@ static int cmd_search(void *data, const char *input) {
 			"//", "", "repeat last search",
 			"/C", "[ae]", "search for crypto materials",
 			"/P", "", "show offset of previous instruction",
-			"/R", " [grepopcode]", "search for matching ROP gadgets",
+			"/R", " [grepopcode]", "search for matching ROP gadgets, comma-separated",
 			"/a", " jmp eax", "assemble opcode and search its bytes",
 			"/b", "", "search backwards",
 			"/B", "", "search recognized RBin headers",
