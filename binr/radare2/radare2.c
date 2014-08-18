@@ -92,7 +92,7 @@ static int main_help(int line) {
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
-		" -S           start r2 in sanbox mode\n"
+		" -S           start r2 in sandbox mode\n"
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
