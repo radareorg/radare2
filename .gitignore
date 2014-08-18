@@ -10,6 +10,7 @@ config.mk
 plugins.cfg
 langs.cfg
 .*.swp
+.*.swo
 *.un~
 binr/r2agent/r2agent
 binr/rabin2/rabin2
