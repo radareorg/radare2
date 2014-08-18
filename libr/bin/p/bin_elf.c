@@ -187,11 +187,11 @@ static RList* sections(RBinFile *arch) {
 		if (found_phdr == 0) {
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;
-			sprintf (ptr->name, "undefined");
+			sprintf (ptr->name, "uphdr");
 			ptr->size = arch->size;
 			ptr->vsize = arch->size;
 			ptr->paddr = 0;
-			ptr->vaddr = 0;
+			ptr->vaddr = 0x10000;
 			ptr->srwx = 7;
 			r_list_append (ret, ptr);
 		}
