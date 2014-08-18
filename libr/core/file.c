@@ -18,15 +18,16 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 
 // TODO: add support for args
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
+	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
 	ut64 ofrom = 0, baddr = 0; // XXX ? check file->map ?
-	RCoreFile *file = NULL,
-			  *ofile = core->file;
-
-	RBinFile *bf = ofile && ofile->desc ? r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
+	RCoreFile *file = NULL;
+	RCoreFile *ofile = core->file;
+	RBinFile *bf = (ofile && ofile->desc) ?
+		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
-	char *ofilepath = ofile ? strdup(ofile->uri) : NULL,
-		 *obinfilepath = bf ? strdup(bf->file) : NULL;
+	char *ofilepath = ofile ? strdup (ofile->uri) : NULL;
+	char *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = R_FALSE;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
@@ -43,8 +44,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	if (!perm) perm = core->file->rwx;
 	path = strdup (ofilepath);
 
-	if (r_config_get_i (core->config, "cfg.debug")) {
-		r_debug_kill (core->dbg, 0, R_FALSE, 9); // KILL
+	if (isdebug) {
+		r_debug_kill (core->dbg, core->dbg->pid,
+			core->dbg->tid, 9); // KILL
 	}
 
 	// HACK: move last mapped address to higher place
@@ -66,9 +68,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			perm&R_IO_WRITE?"read-write": "read-only");
 
 		ret = r_core_bin_load (core, obinfilepath, baddr);
-
-		if (!ret){
-			eprintf ("Error: Failed to reload the bin for file: %s", path);
+		if (!ret) {
+			eprintf ("Error: Failed to reload rbin for: %s", path);
 		}
 
 		/*
@@ -78,7 +79,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		}*/
 		// close old file
 		core->file = file;
-	} else if (ofile){
+	} else if (ofile) {
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
 			     " attempting to open read-only.\n", path, perm);
 		// lower it down back
@@ -86,13 +87,12 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		r_core_file_set_by_file (core, ofile);
 		ofile->map->from = ofrom;
 	}
-	// TODO: in debugger must select new PID
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (isdebug) {
 		// XXX - select the right backend
 		if (core->file && core->file->desc)
 			newpid = core->file->desc->fd;
-		r_debug_select (core->dbg, newpid, newpid);
 		r_core_setup_debugger (core, "native");
+		r_debug_select (core->dbg, newpid, newpid);
 	}
 
 	if (core->file) {

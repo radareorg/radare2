@@ -249,7 +249,8 @@ static int cmd_open(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 'o':
-		r_core_file_reopen (core, input+2, (input[1]=='+')?R_IO_READ|R_IO_WRITE:0);
+		r_core_file_reopen (core, input+2,
+			(input[1]=='+')?R_IO_READ|R_IO_WRITE:0);
 		break;
 	case 'c':
 		// memleak? lose all settings wtf

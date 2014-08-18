@@ -259,7 +259,7 @@ task_t pid_to_task(int pid) {
 	int err;
 
 	/* xlr8! */
-	if (old_task!= -1) //old_pid != -1 && old_pid == pid)
+	if (old_task!= -1 && old_pid == pid)
 		return old_task;
 
 	err = task_for_pid (mach_task_self(), (pid_t)pid, &task);
@@ -755,23 +755,23 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	R_DEBUG_REG_T state;
 
 	if (task_threads (pid_to_task (pid), &inferior_threads,
-		&inferior_thread_count) != KERN_SUCCESS) {
+			&inferior_thread_count) != KERN_SUCCESS) {
 		eprintf ("Failed to get list of task's threads.\n");
 		return list;
-    }
-    for (i = 0; i < inferior_thread_count; i++) {
+	}
+	for (i = 0; i < inferior_thread_count; i++) {
 		tid = inferior_threads[i];
-/*
-		XXX overflow here
-        	gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
-                if ((err = thread_get_state (tid, R_DEBUG_STATE_T,
-				(thread_state_t) &state, &gp_count)) != KERN_SUCCESS) {
-                        // eprintf ("debug_list_threads: %s\n", MACH_ERROR_STRING(err));
-			OSX_PC = 0;
-                }
-*/
+		/*
+		   XXX overflow here
+		   gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
+		   if ((err = thread_get_state (tid, R_DEBUG_STATE_T,
+		   (thread_state_t) &state, &gp_count)) != KERN_SUCCESS) {
+		// eprintf ("debug_list_threads: %s\n", MACH_ERROR_STRING(err));
+		OSX_PC = 0;
+		}
+		 */
 		r_list_append (list, r_debug_pid_new ("???", tid, 's', OSX_PC));
-    }
+	}
 #elif __linux__
 	int i, fd, thid = 0;
 	char *ptr, cmdline[1024];

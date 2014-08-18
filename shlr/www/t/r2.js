@@ -44,12 +44,12 @@ function asyncLoop(iterations, func, callback) {
 }
 
 if (module !== undefined) {
-	module.exports = function(r) {
-		if (typeof (r) == 'function')
-			r2cmd = r;
-		else r2cmd = r.cmd;
-		return r2;
-	}
+  module.exports = function(r) {
+    if (typeof (r) == 'function')
+      r2cmd = r;
+    else r2cmd = r.cmd;
+    return r2;
+  }
 }
 
 r2.plugin = function() {
@@ -64,7 +64,7 @@ function dump(obj) {
   var x = "";
   for (var a in obj) x += a+"\n";
   if (typeof ('alert') != 'undefined')
-	  alert (x);
+    alert (x);
   else console.log (x);
 }
 
@@ -120,12 +120,12 @@ r2.get_disasm = function (offset, length, cb) {
 }
 
 r2.Config = function (k, v, fn) {
-	if (typeof v == 'function' || !v) { // get
-		r2.cmd ("e "+k, fn || v);
-	} else { // set
-		r2.cmd ("e "+k+"="+v, fn);
-	}
-	return r2;
+  if (typeof v == 'function' || !v) { // get
+    r2.cmd ("e "+k, fn || v);
+  } else { // set
+    r2.cmd ("e "+k+"="+v, fn);
+  }
+  return r2;
 }
 
 r2.set_flag_space = function (ns, fn) {
@@ -213,7 +213,7 @@ r2.cmd = function (c, cb) {
       _internal_cmd (c[idx], function(result) {
         idx = loop.iteration();
         res[idx] = result.replace(/\n$/,"");
-	idx++;
+        idx++;
         loop.next ();
       });
     }, function() {
