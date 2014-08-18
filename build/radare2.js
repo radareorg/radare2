@@ -32,7 +32,7 @@ M.make ({
     path: 'libr/util',
     type: 'library',
     link: ['-liconv'],
-    files: [ "alloca.c", "base64.c", "base85.c", "bitmap.c",
+    files: [ "base64.c", "base85.c", "bitmap.c",
       "btree.c", "buf.c", "cache.c", "calc.c", "chmod.c",
       "constr.c", "file.c", "flist.c", "graph.c", "hex.c",
       "ht.c", "ht64.c", "iconv.c", "judy64na.c", "list.c",
