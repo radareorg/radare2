@@ -25,6 +25,7 @@ R_API RFlag * r_flag_new() {
 
 R_API void r_flag_item_free (RFlagItem *item) {
 	free (item->cmd);
+	free (item->color);
 	free (item->comment);
 	item->cmd = item->comment = NULL;
 	free (item);
@@ -433,3 +434,15 @@ int main () {
 	else printf ("iRIP: null\n");
 }
 #endif
+
+R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color) {
+	if (!f || !it)
+		return NULL;
+	if (!color)
+		return it->color;
+	free (it->color);
+	if (*color)
+		it->color = strdup (color);
+	else it->color = NULL;
+	return it->color;
+}

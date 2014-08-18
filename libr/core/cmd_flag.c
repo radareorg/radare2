@@ -244,7 +244,31 @@ static int cmd_flag(void *data, const char *input) {
 		r_core_cmd0 (core, "V");
 		break;
 	case 'c':
-		eprintf ("TODO: fc\n");
+		if (input[1]=='?') {
+			const char *help_msg[] = {
+			"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
+			"fc", " flagname", "Get current color for given flagname",
+			"fc", " flagname color", "Set color to a flag",
+			NULL
+			};
+			r_core_cmd_help (core, help_msg);
+		} else {
+			RFlagItem *fi;
+			const char *ret;
+			char *arg = r_str_chop (strdup (input+2));
+			char *color = strchr (arg, ' ');
+			if (color && color[1])
+				*color++ = 0;
+			fi = r_flag_get (core->flags, arg);
+			if (fi) {
+				ret = r_flag_color (core->flags, fi, color);
+				if (!color && ret)
+					r_cons_printf ("%s\n", ret);
+			} else {
+				eprintf ("Unknown flag '%s'\n", arg);
+			}
+			free (arg);
+		}
 		break;
 	case 'C':
 		if (input[1]==' ') {

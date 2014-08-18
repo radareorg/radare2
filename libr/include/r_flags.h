@@ -32,6 +32,7 @@ typedef struct r_flag_item_t {
 	int format; // ???
 	int space;
 	char *cmd;
+	char *color;
 	char *comment;
 	unsigned char data[R_FLAG_BUF_SIZE]; // only take a minor part of the data
 } RFlagItem;
@@ -71,6 +72,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off);
 R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to);
 R_API int r_flag_move (RFlag *f, ut64 at, ut64 to);
+R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
 
 /* spaces */
 R_API int r_flag_space_get(RFlag *f, const char *name);

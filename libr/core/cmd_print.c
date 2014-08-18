@@ -122,6 +122,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
 	};
 	int col = core->print->col;
+	RFlagItem *f, *lf = NULL;
 
 	if (usecolor) r_cons_strcat (Color_GREEN);
 	r_cons_strcat ("- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n");
@@ -145,14 +146,19 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				free (comment);
 			}
 			// collect flags
-			RFlagItem *f = r_flag_get_i (core->flags, addr+j);
+			f = r_flag_get_i (core->flags, addr+j);
 			setcolor = 1;
 			if (f) {
 				fend = addr +j+ f->size;
 				note[j] = f->name;
 				marks++;
 				tmarks++;
+				lf = f;
 			} else {
+				if (lf) {
+					if (addr+j> (lf->offset+lf->size))
+						lf = NULL;
+				}
 				if (fend==UT64_MAX || fend<=(addr+j))
 					setcolor = 0;
 				// use old flag if still valid
@@ -160,14 +166,20 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			if (setcolor && !hascolor) {
 				hascolor = 1;
 				if (usecolor) {
+					if (lf && lf->color) {
+						char *ansicolor = r_cons_pal_parse (lf->color);
+						append (ebytes, ansicolor);
+						free (ansicolor);
+					} else {
 #if 1
-					append (ebytes, colors[tmarks%5]);
+						append (ebytes, colors[tmarks%5]);
 #else
-					// psycodelia!
-					char *color = r_cons_color_random (0);
-					append (ebytes, color);
-					free (color);
+						// psycodelia!
+						char *color = r_cons_color_random (0);
+						append (ebytes, color);
+						free (color);
 #endif
+					}
 				} else {
 					append (ebytes, Color_INVERT);
 				}
