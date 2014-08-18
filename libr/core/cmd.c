@@ -158,6 +158,7 @@ static int cmd_alias(void *data, const char *input) {
 			}
 		} else eprintf ("unknown key '%s'\n", buf);
 	}
+	free (buf);
 	return 0;
 }
 

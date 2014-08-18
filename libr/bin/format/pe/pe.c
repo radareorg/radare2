@@ -661,6 +661,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 				bin, bin->export_directory->Name),
 				(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
 			eprintf ("Error: read (dll name)\n");
+			free (exports);
 			return NULL;
 		}
 		functions_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,
@@ -681,12 +682,14 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 					sizeof(PE_Word), (ut8*)&function_ordinal,
 					sizeof (PE_Word)) == -1) {
 				eprintf ("Error: read (function ordinal)\n");
+				free (exports);
 				return NULL;
 			}
 			if (-1 == r_buf_read_at (bin->b, functions_paddr +
 					function_ordinal * sizeof(PE_VWord),
 					(ut8*)&function_vaddr, sizeof(PE_VWord))) {
 				eprintf ("Error: read (function vaddr)\n");
+				free (exports);
 				return NULL;
 			}
 			name_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, name_vaddr);
@@ -694,6 +697,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 				if (-1 == r_buf_read_at(bin->b, name_paddr,
 					(ut8*)function_name, PE_NAME_LENGTH)) {
 					eprintf("Error: read (function name)\n");
+					free (exports);
 					return NULL;
 				}
 			} else {
@@ -704,6 +708,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 				if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr),
 						(ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
 					eprintf ("Error: read (magic)\n");
+					free (exports);
 					return NULL;
 				}
 			} else {
@@ -866,6 +871,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (r_buf_read_at (bin->b, delay_import_name_off,
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - delay import dirs)\n");
+				free (libs);
 				return NULL;
 			}
 		}

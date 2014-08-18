@@ -123,9 +123,11 @@ static int step_line(RCore *core, int times) {
 	file[0] = 0;
 	file2[0] = 0;
 	if (r_bin_addr2line (core->bin, off, file, sizeof (file), &line)) {
+		char* ptr = r_file_slurp_line (file, line, 0);
 		eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file, line);
-		eprintf ("--> %s\n", r_file_slurp_line (file, line, 0));
+		eprintf ("--> %s\n", ptr);
 		find_meta = R_FALSE;
+		free (ptr);
 	} else {
 		eprintf ("--> Stepping until dwarf line\n");
 		find_meta = R_TRUE;
@@ -1426,8 +1428,8 @@ static int cmd_debug(void *data, const char *input) {
 				r_reg_arena_push (core->dbg->reg);
 				r_debug_execute (core->dbg, acode->buf, acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
-				r_asm_code_free (acode);
 			}
+			r_asm_code_free (acode);
 			}
 			break;
 		case 's':

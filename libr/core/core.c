@@ -268,6 +268,7 @@ static int autocomplete(RLine *line) {
 			} else if (*path!='.' && *path!='/') {
 				char *o = malloc (strlen (path)+4);
 				memcpy (o, "./", 3);
+				free (p);
 				p = o+3;
 				n = strlen (path);
 				memcpy (o+3, path, strlen (path)+1);
@@ -297,6 +298,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 			free (path);
+			free (p);
 		} else
 		if((!memcmp (line->buffer.data, ".(", 2))  ||
 		   (!memcmp (line->buffer.data, "(-", 2))) {
