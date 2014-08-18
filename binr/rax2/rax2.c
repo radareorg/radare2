@@ -274,7 +274,7 @@ static int use_stdin () {
 	static char buf[STDIN_BUFFER_SIZE];
 	int l, sflag = (flags & 5);
 	for (l=0; l>=0; l++) {
-		int n = read (0, buf+l, sizeof (buf)-l);
+		int n = read (0, buf+l, sizeof (buf)-l-1);
 		if (n<1) break;
 		l+= n;
 		if (buf[l-1]==0) {

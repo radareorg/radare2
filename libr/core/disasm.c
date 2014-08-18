@@ -1213,7 +1213,7 @@ static void handle_print_indent (RCore *core, RDisasmState *ds) {
 		char indent[128];
 		int num = ds->indent_level;
 		if (num<0) num = 0;
-		if (num>sizeof (indent))
+		if (num>=sizeof (indent))
 			num = sizeof(indent)-1;
 		memset (indent, ' ', num);
 		indent[num] = 0;
