@@ -555,7 +555,7 @@ write_instr_name_(struct arcDisState *state,
 {
   if(!instrName)
 	return;
-  strcpy(state->instrBuffer, instrName);
+  strncpy(state->instrBuffer, instrName, sizeof(state->instrBuffer));
   if (cond > 0)
     {
       int condlim = 0; /* condition code limit*/

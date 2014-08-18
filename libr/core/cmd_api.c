@@ -285,7 +285,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro->name = strdup (name);
 	}
 
-	macro->codelen = (pbody)? strlen (pbody)+2 : 4096;
+	macro->codelen = (pbody[0])? strlen (pbody)+2 : 4096;
 	macro->code = (char *)malloc (macro->codelen);
 	*macro->code = '\0';
 	macro->nargs = 0;

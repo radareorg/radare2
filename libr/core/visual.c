@@ -450,8 +450,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)  \n", count,
 					refi->at,
 					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-					      fun?fun->name:"unk");
+					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr, fun->name);
 				if (++count > 9) break;
 			}
 		}

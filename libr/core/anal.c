@@ -582,7 +582,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->type = reftype;
 				r_list_append (fcn->xrefs, ref);
 			}
-			// XXX: this looks weird
+			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);
 			if (has_next) {
 				int i;

@@ -595,7 +595,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			if (r_list_empty (list)) {
 				strcpy (path, opath);
 				eprintf ("cd: unknown path: %s\n", path);
-			} else r_list_free (list);
+			}
 		} else if (!memcmp (buf, "cat ", 4)) {
 			input = buf+3;
 			while (input[0] == ' ')

@@ -243,11 +243,10 @@ R_API void r_cons_pal_list (int rad) {
 			r >>= 4;
 			g >>= 4;
 			b >>= 4;
-			r_cons_printf ("ec %s rgb:%x%x%x\n", //Color_RESET " # vs %sTEST"Color_RESET"\n",
+			r_cons_printf ("ec %s rgb:%x%x%x\n",
 				keys[i].name, r, g, b);
 		} else
-		r_cons_printf (" %s##"Color_RESET"  %s\n",
-			(color)? *color: "", keys[i].name);
+		r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
 	}
 }
 

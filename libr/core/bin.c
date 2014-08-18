@@ -1311,15 +1311,11 @@ static int r_core_bin_file_print (RCore *core, RBinFile *binfile) {
 
 	r_cons_printf("%s %d %d 0x%04x\n", name, id, obj_cnt, bin_sz );
 	r_list_foreach (binfile->objs, iter, obj) {
-		RBinInfo *info = obj ? obj->info : NULL;
-		// id, arch, bits, paddr
+		RBinInfo *info = obj->info;
 		ut8 bits = info ? info->bits : 0;
 		const char *arch = info ? info->arch : "unknown";
-		ut64 paddr = obj ? obj->boffset : 0;
-		ut64 size = obj ? obj->obj_size : 0;
-		ut32 id = obj->id;
 		r_cons_printf("\t%d) %d %s %d 0x%04"PFMT64x" 0x%04"PFMT64x"\n",
-			i, id, arch, bits, paddr, size );
+			i, obj->id, arch, bits, obj->boffset, obj->obj_size );
 		i++;
 	}
 	return R_TRUE;

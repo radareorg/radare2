@@ -1402,7 +1402,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	i = -1;
 	r_list_foreach (nbinfile->objs, iter, obj){
 
-		RBinInfo *info = obj ? obj->info : NULL;
+		RBinInfo *info = obj->info;
 		char bits = info ? info->bits : 0;
 		ut64 boffset = obj->boffset;
 		ut32 obj_size = obj->obj_size;

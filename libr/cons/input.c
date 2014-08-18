@@ -44,6 +44,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			ch = r_cons_readchar ();
 			switch (ch) {
 			case '[':
+				ch = r_cons_readchar ();
 				switch (ch) {
 				case '2': ch = R_CONS_KEY_F11; break;
 				case 'A': ch = R_CONS_KEY_F1; break;

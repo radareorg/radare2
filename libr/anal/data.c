@@ -14,7 +14,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	for (i=0; i<size; i++) {
 		if (!buf[i] && i>MINLEN) {
 			*len = i;
-			return i?1:0;
+			return 1;
 		}
 		if (buf[i]<32 || buf[i]>127) {
 			// not ascii text

@@ -56,9 +56,14 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 		s->regs = fastcall_arm;
 	else if (!strcmp (arch, "x86")) {
 		switch (bits) {
-		case 8: s->regs = fastcall_x86_8;
-		case 32: s->regs = fastcall_x86_32;
-		case 64: s->regs = fastcall_x86_64;
+		case 8:
+			s->regs = fastcall_x86_8;
+			break;
+		case 32:
+			s->regs = fastcall_x86_32;
+			break;
+		case 64:
+			s->regs = fastcall_x86_64;
 		}
 	}
 
