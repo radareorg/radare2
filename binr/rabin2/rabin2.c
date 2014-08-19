@@ -397,6 +397,7 @@ int main(int argc, char **argv) {
 		case 'c':
 			if (!optarg) {
 				eprintf ("Missing argument for -c");
+				r_core_fini (&core);
 				return 1;
 			}
 			set_action (ACTION_CREATE);
@@ -437,10 +438,12 @@ int main(int argc, char **argv) {
 						"  Dump symbols: d/s/1024\n"
 						"  Dump section: d/S/.text\n"
 						"  Resize section: r/.data/1024\n");
+				r_core_fini (&core);
 				return 0;
 			}
 			if (optind==argc) {
 				eprintf ("Missing filename\n");
+				r_core_fini (&core);
 				return 1;
 			}
 			break;
@@ -453,7 +456,9 @@ int main(int argc, char **argv) {
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
 		//case 'V': return blob_version ("rabin2");
-		case 'h': return rabin_show_help (1);
+		case 'h':
+				r_core_fini (&core);
+				return rabin_show_help (1);
 		default: action |= ACTION_HELP;
 		}
 	}
@@ -461,7 +466,9 @@ int main(int argc, char **argv) {
 	file = argv[optind];
 	if (!query)
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
-		if (va) return blob_version ("rabin2");
+		r_core_fini (&core);
+		if (va)
+			return blob_version ("rabin2");
 		return rabin_show_help (0);
 	}
 
@@ -480,6 +487,7 @@ int main(int argc, char **argv) {
 		char *p2, *p = strchr (create, ':');
 		if (!p) {
 			eprintf ("Invalid format for -c flag. Use 'format:codehexpair:datahexpair'\n");
+			r_core_fini (&core);
 			return 1;
 		}
 		*p++ = 0;
@@ -494,14 +502,17 @@ int main(int argc, char **argv) {
 			datalen = 0;
 		}
 		code = malloc (strlen (p)+1);
-		if (!code)
+		if (!code) {
+			r_core_fini (&core);
 		    return 1;
+		}
 		codelen = r_hex_str2bin (p, code);
 		if (!arch) arch = "x86";
 		if (!bits) bits = 32;
 
 		if (!r_bin_use_arch (bin, arch, bits, create)) {
 			eprintf ("Cannot set arch\n");
+			r_core_fini (&core);
 			return 1;
 		}
 		b = r_bin_create (bin, code, codelen, data, datalen);
@@ -513,6 +524,7 @@ int main(int argc, char **argv) {
 			r_buf_free (b);
 		} else eprintf ("Cannot create binary for this format '%s'.\n", create);
 		r_bin_free (bin);
+		r_core_fini (&core);
 		return 0;
 	}
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
@@ -520,12 +532,14 @@ int main(int argc, char **argv) {
 	fd = cf ? r_core_file_cur_fd (&core) : -1;
 	if (!cf || fd == -1) {
 		eprintf ("r_core: Cannot open file\n");
+		r_core_fini (&core);
 		return 1;
 	}
 
 	if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 		if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open file\n");
+			r_core_fini (&core);
 			return 1;
 		}
 	}
@@ -534,6 +548,7 @@ int main(int argc, char **argv) {
 		if (!strcmp (query, "-")) {
 			__sdb_prompt (bin->cur->sdb);
 		} else sdb_query (bin->cur->sdb, query);
+		r_core_fini (&core);
 		return 0;
 	}
 

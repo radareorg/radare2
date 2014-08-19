@@ -641,6 +641,9 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
 	update_sdb (c);
+	free (c->cmdqueue);
+	free (c->lastcmd);
+	r_list_free (c->lang->defs);
 	r_io_free (c->io);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
@@ -662,6 +665,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */
+	r_cons_free ();
 	r_cons_singleton()->teefile = NULL; // HACK
 	r_search_free (c->search);
 	r_sign_free (c->sign);
