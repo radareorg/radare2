@@ -13,6 +13,7 @@ static void handle_crc16 (const ut8 *block, int len);
 static void handle_xor (const ut8 *block, int len);
 static void handle_entropy (const ut8 *block, int len);
 static void handle_hamdist (const ut8 *block, int len);
+static void handle_parity (const ut8 *block, int len);
 static void handle_pcprint (const ut8 *input, int len);
 
 typedef struct {
@@ -31,6 +32,7 @@ static RHashHashHandlers HASH_HANDLERS[] = {
 	{"crc16", handle_crc16},
 	{"xor", handle_xor},
 	{"entropy", handle_entropy},
+	{"parity", handle_parity},
 	{"hamdist", handle_hamdist},
 	{"pcprint", handle_pcprint},
 	{NULL, NULL},
@@ -101,6 +103,10 @@ static void handle_xor (const ut8 *block, int len) {
 
 static void handle_entropy (const ut8 *block, int len) {
 	r_cons_printf ("%f\n", r_hash_entropy (block, len));
+}
+
+static void handle_parity (const ut8 *block, int len) {
+	r_cons_printf ("%d\n", r_hash_parity (block, len)?1:0);
 }
 
 static void handle_hamdist (const ut8 *block, int len) {
