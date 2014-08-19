@@ -1,5 +1,4 @@
 /* radare - LGPL - Copyright 2009-2012 - pancake */
-
 #include <r_cons.h>
 
 #if __WINDOWS__
@@ -23,7 +22,7 @@ static void w32_clear() {
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
 	const COORD startCoords = { 0, 0 };
 	DWORD dummy;
-	
+
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 		GetConsoleScreenBufferInfo (hStdout, &csbi);
@@ -70,7 +69,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 		if (ptr[0] == 0xa) {
 			int ll = (size_t)(ptr-str);
 			lines--;
-			if (lines<0) 
+			if (lines<0)
 				break; //return 0;
 			if (ll<1)
 				continue;
@@ -142,7 +141,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 			}
 			esc = 2;
 			continue;
-		} else 
+		} else
 		if (esc == 2) {
 			{
 				int x, y;
@@ -155,7 +154,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 							y = atoi (ptr);
 							state = 1;
 							ptr2 = ptr+i+1;
-						} else 
+						} else
 						if (ptr[i] >='0' && ptr[i]<='9') {
 							// ok
 						} else state = -1; // END FAIL
@@ -320,10 +319,10 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 				str = ptr + 1;
 				continue;
 			}
-		} 
+		}
 		len++;
 	}
-	
+
 	/* the ending padding */ {
 		int ll = (size_t)(ptr-str);
 		if (ll>0) {
