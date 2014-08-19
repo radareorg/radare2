@@ -339,8 +339,9 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '?':{
 		const char* help_msg[] = {
-		"Usage:", ". [file] | [!command] | [(macro)]", " # define macro or load r2, cparse or rlang file",
+		"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", " # define macro or load r2, cparse or rlang file",
 		".", "", "repeat last command backward",
+		".", "r2cmd", "interpret the output of the command as r2 commands",
 		"..", "", "repeat last command forward (same as \\n)",
 		".:", "8080", "listen for commands on given tcp port",
 		".", " foo.r2", "interpret r2 script",
