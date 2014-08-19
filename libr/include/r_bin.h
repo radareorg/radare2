@@ -82,6 +82,7 @@ typedef struct r_bin_info_t {
 	char bclass[R_BIN_SIZEOF_STRINGS+1];
 	char rclass[R_BIN_SIZEOF_STRINGS+1];
 	char arch[R_BIN_SIZEOF_STRINGS+1];
+	char cpu[R_BIN_SIZEOF_STRINGS+1];
 	char machine[R_BIN_SIZEOF_STRINGS+1];
 	char os[R_BIN_SIZEOF_STRINGS+1];
 	char subsystem[R_BIN_SIZEOF_STRINGS+1];
