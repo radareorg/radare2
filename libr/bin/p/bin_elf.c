@@ -247,7 +247,7 @@ static RList* symbols(RBinFile *arch) {
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 vaddr = r_bin_get_vaddr (arch->o->bin_obj,
+		ut64 vaddr = r_bin_get_vaddr (NULL, //arch->o->bin_obj,
 			arch->o->baddr, symbol[i].offset,
 			symbol[i].offset+arch->o->baddr);
 		ut64 paddr = symbol[i].offset;
@@ -279,7 +279,7 @@ static RList* symbols(RBinFile *arch) {
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = r_bin_get_vaddr (bin, baddr, paddr, 
+		ut64 vaddr = r_bin_get_vaddr (NULL, baddr, paddr, 
 			symbol[i].offset+arch->o->baddr);
 		if (vaddr == UT64_MAX) {
 			ut64 ba = baddr (arch);

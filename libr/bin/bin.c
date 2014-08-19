@@ -357,7 +357,6 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->lines) o->lines = cp->lines (binfile);
 	if (cp->get_sdb) o->kv = cp->get_sdb (o);
 	o->lang = r_bin_load_languages (binfile);
-
 	binfile->o = old_o;
 	return R_TRUE;
 }
@@ -833,10 +832,8 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	r_bin_file_object_add (binfile, o);
 	// XXX this is a very hacky alternative to rewriting the
 	// RIO stuff, as discussed here:
-	if (o->sections) {
+	if (o->sections)
 		r_bin_object_set_sections (binfile, o);
-	}
-
 	return o;
 }
 
@@ -1569,7 +1566,9 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 }
 
 R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	const int use_va = binfile->o->info->has_va;
+	int use_va = 0;
+	if (binfile && binfile->o && binfile->o->info)
+		use_va = binfile->o->info->has_va;
 	return use_va? vaddr: paddr;
 }
 
