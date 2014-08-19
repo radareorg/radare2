@@ -107,6 +107,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			eprintf ("Error: Unable to switch the view to file: %s\n", name);
 		}
 	}
+	if (isdebug) {
+		r_core_cmd0 (core, ".dr*");
+		r_core_cmd0 (core, "sr pc");
+	}
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free (obinfilepath);

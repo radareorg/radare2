@@ -109,7 +109,6 @@ static int cmd_open(void *data, const char *input) {
 
 					r_core_bin_raise (core, binfile_num, -1);
 					break;
-
 				case 'o':
 					value = *(input+2) ? input+3 : NULL;
 					if (!value) {
