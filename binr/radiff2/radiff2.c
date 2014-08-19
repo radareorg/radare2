@@ -72,13 +72,12 @@ static RCore* opencore(const char *f) {
 static int show_help(int v) {
 	printf ("Usage: radiff2 [-abcCdrspOv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
-//		"  -l        diff lines of text\n"
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -c         count of changes\n"
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
 		"  -d         use delta diffing\n"
-		"  -g [sym]   graph diff of given symbol\n"
+		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
 		"  -O         code diffing with opcode bytes only\n"
 		"  -p         use physical addressing (io.va=0)\n"
 		"  -r         output in radare commands\n"
@@ -201,10 +200,22 @@ int main(int argc, char **argv) {
 		}
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
-		r_core_gdiff (c, c2);
 		if (mode == MODE_GRAPH) {
-			/* show only ->diff info from main core */
-			r_core_cmdf (c, "agd %s", addr);
+			const char* second = strstr (addr, ",");
+			if (!second) {
+				r_core_gdiff (c, c2);
+				r_core_cmdf (c, "agd %s", addr);
+			} else {
+				// define the same function at each offsets and diff them
+				r_flag_set(c->flags, "diffing_offset",
+					strtoull(addr, 0, 16), 1, R_FALSE);
+				r_flag_set(c2->flags, "diffing_offset",
+					strtoull(second, 0, 16), 1, R_FALSE);
+				r_core_cmdf (c, "af @ diffing_offset");
+				r_core_cmdf (c2, "af @ diffing_offset");
+				r_core_gdiff (c, c2);
+				r_core_cmdf (c, "agd diffing_offset");
+			}
 		} else r_core_diff_show (c, c2);
 		return 0;
 	}
