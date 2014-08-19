@@ -184,6 +184,11 @@ static int cmd_hash(void *data, const char *input) {
 		osize = core->blocksize;
 		if (nlen>core->blocksize) {
 			r_core_block_size (core, nlen);
+			if (nlen != core->blocksize) {
+				eprintf ("Invalid block size\n");
+				r_core_block_size (core, osize);
+				return R_TRUE;
+			}
 		}
 	} else if (!ptr || !*(ptr+1)) osize = len;
 	/* TODO: Simplify this spaguetti monster */
