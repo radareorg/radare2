@@ -7,6 +7,8 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+typedef void (*f_load)();
+
 typedef struct {
 	int stream_size;
 	char *stream_pages;
@@ -46,6 +48,11 @@ typedef enum {
 	ePDB_STREAM_DBI, // DEBUG INFO
 	ePDB_STREAM_MAX
 } EStream;
+
+typedef struct {
+	R_PDB_STREAM *pdb_stream;
+	f_load load;
+} SParsedPDBStream;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// size = -1 (default value)
@@ -296,6 +303,20 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	return 1;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
+								   int pages_amount, int index, int size,
+								   int page_size, f_load pLoad)
+{
+	// FIXME: free memory...
+	pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
+	init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
+	pdb_stream->load = pLoad;
+	if (pLoad != NULL) {
+		pLoad();
+	}
+}
+
 //self.streams = []
 //for i in range(len(rs.streams)):
 //    try:
@@ -319,23 +340,56 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 ///////////////////////////////////////////////////////////////////////////////
 static int pdb_read_root(R_PDB *pdb)
 {
-	int i;
+	int i = 0;
 
 	RList *pList = pdb->pdb_streams;
 	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
 	R_PDB_STREAM *pdb_stream = 0;
+	SParsedPDBStream *parsed_pdb_stream = 0;
 	RListIter *it;
 	SPage *page = 0;
 
 	it = r_list_iterator(root_stream->streams_list);
 	while (r_list_iter_next(it)) {
 		page = (SPage*) r_list_iter_get(it);
-		pdb_stream = (R_PDB_STREAM *)malloc(sizeof(R_PDB_STREAM));
-		init_r_pdb_stream(pdb_stream, pdb->fp, page->stream_pages,
-						  root_stream->pdb_stream.pages_amount, i,
-						  page->stream_size,
-						  root_stream->pdb_stream.page_size);
-		r_list_append(pList, pdb_stream);
+		switch (i) {
+		case 1:
+			//TODO: free memory
+			parsed_pdb_stream = (SParsedPDBStream *) malloc(sizeof(SParsedPDBStream));
+			init_parsed_pdb_stream(parsed_pdb_stream, pdb->fp, page->stream_pages,
+								   root_stream->pdb_stream.pages_amount, i,
+								   page->stream_size,
+								   root_stream->pdb_stream.page_size, 0);
+			r_list_append(pList, parsed_pdb_stream);
+			break;
+		case 2:
+			//TODO: free memory
+			parsed_pdb_stream = (SParsedPDBStream *) malloc(sizeof(SParsedPDBStream));
+			init_parsed_pdb_stream(parsed_pdb_stream, pdb->fp, page->stream_pages,
+								   root_stream->pdb_stream.pages_amount, i,
+								   page->stream_size,
+								   root_stream->pdb_stream.page_size, 0);
+			r_list_append(pList, parsed_pdb_stream);
+			break;
+		case 3:
+			//TODO: free memory
+			parsed_pdb_stream = (SParsedPDBStream *) malloc(sizeof(SParsedPDBStream));
+			init_parsed_pdb_stream(parsed_pdb_stream, pdb->fp, page->stream_pages,
+								   root_stream->pdb_stream.pages_amount, i,
+								   page->stream_size,
+								   root_stream->pdb_stream.page_size, 0);
+			r_list_append(pList, parsed_pdb_stream);
+			break;
+		default:
+			pdb_stream = (R_PDB_STREAM *)malloc(sizeof(R_PDB_STREAM));
+			init_r_pdb_stream(pdb_stream, pdb->fp, page->stream_pages,
+							  root_stream->pdb_stream.pages_amount, i,
+							  page->stream_size,
+							  root_stream->pdb_stream.page_size);
+			r_list_append(pList, pdb_stream);
+			break;
+		}
+		i++;
 	}
 
 	return 1;
