@@ -92,17 +92,20 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs) {
 	ut32 i, j;
 	printf ("  offset     1 2 3 4 5 6 7 8             1 2 3 4 5 6 7 8\n");
 	for (i=0; i<sz; i++) {
-		char dch = (memcmp (a+i, b+i, 8))? ' ': '!';
-		printf ("0x%08x%c ", i, dch);
+		printf ("0x%08x%c ", i, (memcmp (a+i, b+i, 8))? ' ': '!');
+
 		for (j=0; j<8; j++)
 			printf ("%02x", a[i+j]);
 		printf (" ");
+
 		for (j=0; j<8; j++)
                 	printf ("%c", IS_PRINTABLE (a[i+j])?a[i+j]:'.');
 		printf ("   ");
+
 		for (j=0; j<8; j++)
 			printf ("%02x", b[i+j]);
 		printf (" ");
+
 		for (j=0; j<8; j++)
                 	printf ("%c", IS_PRINTABLE (b[i+j])? b[i+j]:'.');
 		printf ("\n");
@@ -204,14 +207,15 @@ int main(int argc, char **argv) {
 			const char* second = strstr (addr, ",");
 			if (!second) {
 				r_core_gdiff (c, c2, R_TRUE);
-				r_core_cmdf (c, "agd %s", addr);
+				r_core_anal_graph (c, r_num_math (c->num, addr),
+					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			} else {
 				const ut64 off = strtoull(addr, 0, 16);
-				// define the same function at each offsets
+				// define the same function at each offset
 				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_anal_fcn (c2, strtoull (second+1, 0, 16),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
-				r_core_gdiff (c, c2, R_FALSE); // Compute the diff
+				r_core_gdiff (c, c2, R_FALSE); // compute the diff
 				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			}
 		} else {
@@ -222,14 +226,17 @@ int main(int argc, char **argv) {
 	}
 
 	bufa = (ut8*)r_file_slurp (file, &sza);
+	if (!bufa) {
+		eprintf ("radiff2: Can not open %s\n", bufa);
+		return 1;
+	}
 	bufb = (ut8*)r_file_slurp (file2, &szb);
-	if (bufa == NULL || bufb == NULL) {
-		eprintf ("radiff2: Cannot open: %s\n",
-			bufa? file2: file);
+	if (!bufb) {
+		eprintf ("radiff2: Cannot open: %s\n", bufb);
+		free (bufa);
 		return 1;
 	}
 
-	//delta = 0;
 	switch (mode) {
 	case MODE_COLS:
 		dump_cols (bufa, sza, bufb, szb);
