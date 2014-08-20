@@ -38,6 +38,7 @@ R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn) {
 	anal->diff_thfcn = (thfcn>=0)? ((double)thfcn)/100: R_ANAL_THRESHOLDFCN;
 }
 
+// Fingerprint function basic block
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	RAnalOp *op;
 	ut8 *buf;
@@ -52,16 +53,15 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 		return R_FALSE;
 	if (!(buf = malloc (1+bb->size))) {
 		free (bb->fingerprint);
-		return 0;
+		return R_FALSE;
 	}
 	if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size) == bb->size) {
 		memcpy (bb->fingerprint, buf, bb->size);
-		/* diff using only the opcode */
-		if (anal->diff_ops) {
+		if (anal->diff_ops) { // diff using only the opcode
 			if (!(op = r_anal_op_new ())) {
 				free (bb->fingerprint);
 				free (buf);
-				return 0;
+				return R_FALSE;
 			}
 			while (idx < bb->size) {
 				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx)) <1)

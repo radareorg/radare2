@@ -7,7 +7,9 @@
 #include <r_util.h>
 #include <r_core.h>
 
-R_API int r_core_gdiff(RCore *c, RCore *c2) {
+/* Fingerprint functions and blocs, then diff.
+ * If `anal_all` is true, analyse the whole binary before */
+R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
@@ -15,8 +17,9 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	int i;
 
 	for (i = 0; i < 2; i++) {
-		r_core_anal_all (cores[i]);
-		/* Fingerprint fcn bbs */
+		if (anal_all)
+			r_core_anal_all (cores[i]);
+		/* Fingerprint fcn bbs (functions basic-blocs) */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
 			r_list_foreach (fcn->bbs, iter2, bb) {
 				r_anal_diff_fingerprint_bb (cores[i]->anal, bb);

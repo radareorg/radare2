@@ -203,20 +203,21 @@ int main(int argc, char **argv) {
 		if (mode == MODE_GRAPH) {
 			const char* second = strstr (addr, ",");
 			if (!second) {
-				r_core_gdiff (c, c2);
+				r_core_gdiff (c, c2, R_TRUE);
 				r_core_cmdf (c, "agd %s", addr);
 			} else {
-				// define the same function at each offsets and diff them
-				r_flag_set(c->flags, "diffing_offset",
-					strtoull(addr, 0, 16), 1, R_FALSE);
-				r_flag_set(c2->flags, "diffing_offset",
-					strtoull(second, 0, 16), 1, R_FALSE);
-				r_core_cmdf (c, "af @ diffing_offset");
-				r_core_cmdf (c2, "af @ diffing_offset");
-				r_core_gdiff (c, c2);
-				r_core_cmdf (c, "agd diffing_offset");
+				const ut64 off = strtoull(addr, 0, 16);
+				// define the same function at each offsets
+				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_anal_fcn (c2, strtoull (second+1, 0, 16),
+						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_gdiff (c, c2, R_FALSE); // Compute the diff
+				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			}
-		} else r_core_diff_show (c, c2);
+		} else {
+			r_core_gdiff (c, c2, R_TRUE);
+			r_core_diff_show (c, c2);
+		}
 		return 0;
 	}
 
