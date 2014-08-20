@@ -701,7 +701,6 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	}
 	if (*shell_cmd=='!') {
 		_ptr = (char *)r_str_lastbut (shell_cmd, '~', "\"");
-		//ptr = strchr (cmd, '~');
 		if (_ptr) {
 			*_ptr = '\0';
 			_ptr++;
@@ -1086,6 +1085,13 @@ next2:
 
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
+	if (ptr>cmd) {
+		char *escape = ptr-1;
+		if (*escape == '\\') {
+			memmove (escape, ptr, strlen (escape));
+			ptr = NULL;
+		}
+	}
 	if (*cmd!='.' && ptr) {
 		*ptr = '\0';
 		ptr++;

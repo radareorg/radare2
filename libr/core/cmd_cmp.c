@@ -284,17 +284,25 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	case 'd':
-		if (input[1] != ' ') {
-			char* home = NULL;
-			home = r_sys_getenv(R_SYS_HOME);
-			if (!home || r_sandbox_chdir (home)==-1)
-				eprintf ("Cannot chdir\n");
-			free (home);
-			break;
-		}
 		while (input[1]==' ') input++;
-		if (r_sandbox_chdir (input+1)==-1)
-			eprintf ("Cannot chdir\n");
+		if (input[1]) {
+			if (input[1]=='~' && input[2]=='/') {
+				char *homepath = r_str_home (input+3);
+				if (homepath && *homepath) {
+					if (r_sandbox_chdir (homepath)==-1)
+						eprintf ("Cannot chdir to %s\n", homepath);
+					free (homepath);
+				} else eprintf ("Cannot find home\n");
+			} else {
+				if (r_sandbox_chdir (input+1)==-1)
+					eprintf ("Cannot chdir to %s\n", input+1);
+			}
+		} else {
+			char* home = r_sys_getenv (R_SYS_HOME);
+			if (!home || r_sandbox_chdir (home)==-1)
+				eprintf ("Cannot find home.\n");
+			free (home);
+		}
 		break;
 	case '2':
 		v16 = (ut16) r_num_math (core->num, input+1);
