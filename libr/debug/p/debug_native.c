@@ -1072,11 +1072,11 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			switch (type) {
 			case R_REG_TYPE_DRX:
 				if (dbg->bits== R_SYS_BITS_64) {
-					ret = thread_set_state (inferior_threads[tid],
+					ret = thread_set_state (tid,
 						x86_DEBUG_STATE64, (thread_state_t)
 						regs, gp_count);
 				} else {
-					ret = thread_set_state (inferior_threads[tid],
+					ret = thread_set_state (tid,
 						x86_DEBUG_STATE32, (thread_state_t)
 						regs, gp_count);
 				}
@@ -1091,8 +1091,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 				}
 			}
 #else
-			ret = thread_set_state (inferior_threads[tid],
-					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+			ret = thread_set_state (tid, R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
 #endif
 //if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
 		if (ret != KERN_SUCCESS) {
