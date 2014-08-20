@@ -435,7 +435,7 @@ ut64 extract_unknown_op(ut64 ranal2_op_type) {
 
 ut64 extract_bin_op(ut64 ranal2_op_type) {
 
-	ut64 bin_op_val = ranal2_op_type & (R_ANAL_EX_BIN_OP | 0x7FFFF);
+	ut64 bin_op_val = ranal2_op_type & (R_ANAL_EX_BIN_OP | 0x80000);
 	switch (bin_op_val) {
 		case R_ANAL_EX_BINOP_XCHG:return R_ANAL_OP_TYPE_XCHG;
 		case R_ANAL_EX_BINOP_CMP: return R_ANAL_OP_TYPE_CMP;

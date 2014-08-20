@@ -116,10 +116,6 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	}
 
 	if (anal->queued) {
-		if (op && op->delay>0) {
-			eprintf ("Exception! two consecutive delayed instructions\n");
-			return R_FALSE;
-		}
 		anal->queued->delay--;
 		if (anal->queued->delay == 0) {
 			r_anal_op_execute (anal, anal->queued);

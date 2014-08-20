@@ -271,7 +271,8 @@ R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 			*num = r_num_get (NULL, str);
 			return R_TRUE;
 		case R_ANAL_ESIL_PARM_REG:
-			esil_reg_read (esil, str, num);
+			if (!esil_reg_read (esil, str, num))
+				break;
 			return R_TRUE;
 		default:
 			eprintf ("Invalid arg (%s)\n", str);
@@ -340,10 +341,11 @@ static int esil_eq (RAnalEsil *esil) {
 			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)		//necessary for some flag-things
 				esil->cur = num;
 			n = num;
-			esil_reg_read (esil, dst, &num);
-			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
-				esil->old = num;
-			ret = esil_reg_write (esil, dst, n);
+			if (esil_reg_read (esil, dst, &num)) {
+				if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
+					esil->old = num;
+				ret = esil_reg_write (esil, dst, n);
+			} else eprintf ("esil_eq: invalid dest\n");
 		} else eprintf ("esil_eq: invalid src\n");
 	} else {
 		eprintf ("esil_eq: invalid parameters\n");
