@@ -23,7 +23,7 @@ static void cmd_pDj (RCore *core, const char *arg, int lines) {
 			core->offset, core->block, bsize, lines);
 	} else r_core_print_disasm_json (core, core->offset,
 			core->block, core->blocksize, lines);
-	r_cons_printf ("\n");
+	r_cons_newline ();
 }
 
 static void cmd_pdj (RCore *core, const char *arg) {
@@ -516,16 +516,18 @@ static int cmd_print(void *data, const char *input) {
 			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a' && input[0]!='f') {
-				if (l>0) len = l;
-				if (l>tbs) {
-					if (!r_core_block_size (core, l)) {
-						eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
-							 *input, input+2);
-						return R_FALSE;
+				if (l>0) {
+					len = l;
+					if (l>tbs) {
+						if (!r_core_block_size (core, l)) {
+							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+								*input, input+2);
+							return R_FALSE;
+						}
+						l = core->blocksize;
+					} else {
+						l = len;
 					}
-					l = core->blocksize;
-				} else {
-					l = len;
 				}
 			}
 		}// else l = 0;
@@ -970,7 +972,7 @@ static int cmd_print(void *data, const char *input) {
 							char *hex_str = r_hex_bin2strdup (buf, hit->len);
 							if (hex_str == NULL) hex_str = (char *)owallawalla;
 							if (show_color & colorop) r_cons_strcat (r_print_color_op_type (core->print, analop.type));
-							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  hit->addr, hex_str);
+							r_cons_printf ("0x%08"PFMT64x" %14s <invalid>\n",  hit->addr, hex_str);
 							if (show_color & colorop) r_cons_strcat (Color_RESET);
 							if (hex_str && hex_str != owallawalla) free(hex_str);
 						} else if (show_color & colorop) {
@@ -1026,7 +1028,7 @@ static int cmd_print(void *data, const char *input) {
 							char *hex_str = r_hex_bin2strdup (buf+pdn_offset, 1);
 							if (hex_str == NULL) hex_str = (char*)owallawalla;
 							if (show_color & colorop) r_cons_strcat (r_print_color_op_type (core->print, analop.type));
-							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  core->offset+pdn_offset, hex_str);
+							r_cons_printf ("0x%08"PFMT64x" %12s <invalid>\n",  core->offset+pdn_offset, hex_str);
 							if (show_color & colorop) r_cons_strcat (Color_RESET);
 							pdn_offset += 1;
 							instr_cnt += asmop.size;
