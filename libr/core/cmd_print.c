@@ -10,14 +10,15 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 }
 
 static void cmd_pdj (RCore *core, const char *arg) {
-	int bsize = r_num_math (core->num, arg) * 3;
+	int bsize = r_num_math (core->num, arg);
 	if (bsize > core->blocksize) {
+		// pD
 		ut8 *block = malloc (bsize);
 		if (block && r_core_read_at (core, core->offset, block, bsize))
 			r_core_print_disasm_json (core,
 				core->offset, block, bsize);
 		free (block);
-	} else if (bsize) {
+	} else if (bsize>0) {
 		r_core_print_disasm_json (core,
 			core->offset, core->block, bsize);
 	} else r_core_print_disasm_json (core, core->offset,
