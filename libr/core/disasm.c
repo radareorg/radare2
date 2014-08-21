@@ -1896,10 +1896,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	return err;
 }
 
-R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
+R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines) {
 	RAsmOp asmop;
 	RAnalOp analop;
-	int i, oplen, ret;
+	int i, oplen, ret, line;
 	r_cons_printf ("[");
 
 	// XXX - is there a better way to reset a the analysis counter so that
@@ -1908,7 +1908,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 	// TODO: add support for anal hints
-	for (i=0; i<len;) {
+	for (i=line=0; i<len;) {
 		ut64 at = addr +i;
 		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
@@ -1961,6 +1961,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 		}
 		r_cons_printf ("}");
 		i += oplen;
+		line++;
+		if (lines && line>=lines)
+			break;
 	}
 	r_cons_printf ("]");
 	return R_TRUE;

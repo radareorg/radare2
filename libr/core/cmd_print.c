@@ -9,21 +9,25 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
-static void cmd_pdj (RCore *core, const char *arg) {
+static void cmd_pDj (RCore *core, const char *arg, int lines) {
 	int bsize = r_num_math (core->num, arg);
 	if (bsize > core->blocksize) {
 		// pD
 		ut8 *block = malloc (bsize);
 		if (block && r_core_read_at (core, core->offset, block, bsize))
 			r_core_print_disasm_json (core,
-				core->offset, block, bsize);
+				core->offset, block, bsize, lines);
 		free (block);
 	} else if (bsize>0) {
 		r_core_print_disasm_json (core,
-			core->offset, core->block, bsize);
+			core->offset, core->block, bsize, lines);
 	} else r_core_print_disasm_json (core, core->offset,
-			core->block, core->blocksize);
+			core->block, core->blocksize, lines);
 	r_cons_printf ("\n");
+}
+
+static void cmd_pdj (RCore *core, const char *arg) {
+	return cmd_pDj (core, "9999", r_num_math (core->num, arg));
 }
 
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
@@ -1192,6 +1196,9 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'j':
 			processed_cmd = R_TRUE;
+				if (*input == 'D'){
+			cmd_pDj (core, input+2, 0);
+} else
 			cmd_pdj (core, input+2);
 			r_cons_printf ("\n");
 			pd_result = 0;
