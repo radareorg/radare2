@@ -52,6 +52,8 @@ R_API void r_sign_reset(RSign *sig);
 R_API void r_sign_item_free(void *_item);
 R_API int r_sign_remove_ns(RSign* sig, const char* ns);
 
+R_API int r_flirt_parse (RIO *io, const char *filename);
+
 // old api
 R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd);
 R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len);
