@@ -130,10 +130,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 's': return core->file->size;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			s = r_io_section_vget (core->io,
-				r_io_section_vaddr_to_offset (core->io,
-				core->offset));
-			return s? (str[2]=='S'? s->size: s->offset): 0;
+			s = r_io_section_vget (core->io, core->offset);
+			return s? (str[2]=='S'? s->size: s->vaddr): 3;
 		case '?': return core->num->value;
 		case '$': return core->offset;
 		case 'o': return r_io_section_vaddr_to_offset (core->io,
