@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -177,8 +177,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const int is_thumb = a->bits==16? 1: 0;
 	int opsize;
-	int opcode = armass_assemble (buf, a->pc, is_thumb);
-	if (opcode==-1)
+	ut32 opcode = armass_assemble (buf, a->pc, is_thumb);
+	if (opcode==UT32_MAX)
 		return -1;
 	if (is_thumb) {
 		const int o = opcode>>16;
