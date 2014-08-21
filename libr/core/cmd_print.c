@@ -9,6 +9,22 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
+static void cmd_pdj (RCore *core, const char *arg) {
+	int bsize = r_num_math (core->num, arg) * 3;
+	if (bsize > core->blocksize) {
+		ut8 *block = malloc (bsize);
+		if (block && r_core_read_at (core, core->offset, block, bsize))
+			r_core_print_disasm_json (core,
+				core->offset, block, bsize);
+		free (block);
+	} else if (bsize) {
+		r_core_print_disasm_json (core,
+			core->offset, core->block, bsize);
+	} else r_core_print_disasm_json (core, core->offset,
+			core->block, core->blocksize);
+	r_cons_printf ("\n");
+}
+
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: blocksize if present, otherwise -1
@@ -835,10 +851,13 @@ static int cmd_print(void *data, const char *input) {
 	case 'I': 
 		r_core_print_disasm_instructions (core, len, l);
 		break;
-	case 'i': 
+	case 'i': // pi
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("Usage: pi[df] [num]\n");
+			break;
+		case 'j':
+			cmd_pdj (core, input+2);
 			break;
 		case 'd':
 			pdi (core, l, len, core->blocksize);
@@ -1170,24 +1189,9 @@ static int cmd_print(void *data, const char *input) {
 				pd_result = 0;
 			}
 			break;
-		case 'j':{ //pDj
-			const int bsize = strtol(input+2, NULL, 10);
+		case 'j':
 			processed_cmd = R_TRUE;
-			if (bsize > core->blocksize) {
-				ut8 *block = malloc (bsize);
-				if (block && r_core_read_at (core, core->offset, block, bsize))
-					r_core_print_disasm_json (core,
-							core->offset, block, bsize);
-				free (block);
-			}
-			else if (bsize){
-				r_core_print_disasm_json (core,
-					core->offset, core->block, bsize);
-			}
-			else
-				r_core_print_disasm_json (core, core->offset,
-					core->block, core->blocksize);
-			}
+			cmd_pdj (core, input+2);
 			r_cons_printf ("\n");
 			pd_result = 0;
 			break;
