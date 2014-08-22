@@ -38,11 +38,10 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 			} while (olen<len);
 			res[len] = 0;
 		} else {
-			len = 0;
 			res = malloc (len+1);
 			if (res) {
-				memcpy (res, dn, len);
-				res[len] = '\n';
+				memcpy (res, dn+delta, len);
+				res[len] = 0;
 			}
 		}
 	} else res = NULL;
