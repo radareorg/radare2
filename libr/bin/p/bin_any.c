@@ -44,7 +44,7 @@ static RBinInfo* info(RBinFile *arch) {
 	strncpy (ret->subsystem, "", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->machine, "", R_BIN_SIZEOF_STRINGS);
 	// TODO: what should an "any" assembler be?
-	strncpy (ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+	//strncpy (ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rclass, "", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
 	ret->big_endian = 0;
