@@ -1383,6 +1383,15 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (cstr[0]==':') {
 		RListIter *iter;
 		RCorePlugin *cp;
+		if (cstr[1]=='?') {
+			const char* help_msg[] = {
+				"Usage:", ":[plugin] [args]", "",
+				":", "", "list RCore plugins",
+				":yara", "", "run yara plugin",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			return 0;
+		}
 		if (cstr[1])
 			return r_core_cmd0 (core, cstr+1);
 		r_list_foreach (core->rcmd->plist, iter, cp) {
