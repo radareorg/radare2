@@ -117,7 +117,10 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->vaddr, string->paddr);
 			ut64 paddr = string->paddr;
 			q = strdup (string->string);
-			for (p=q; *p; p++) if (*p=='"') *p = '\'';
+			for (p=q; *p; p++) {
+				if (*p=='"') *p = '\'';
+				if (*p=='\\') *p = '/';
+			}
 			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
 				",\"paddr\":%"PFMT64d
 				",\"length\":%d,\"size\":%d,"
