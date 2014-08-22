@@ -2,7 +2,7 @@ include ../config.mk
 include ../../global.mk
 
 NAME=r_bin
-DEPS=r_util r_db r_io
+DEPS=r_util r_db r_io r_magic
 
 .PHONY: pre
 
