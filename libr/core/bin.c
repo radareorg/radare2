@@ -425,8 +425,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 	RBinAddr *entry = NULL;
 	int i = 0;
 
-	if ((entries = r_bin_get_entries (r->bin)) == NULL)
-		return R_FALSE;
+	entries = r_bin_get_entries (r->bin);
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
@@ -620,8 +619,7 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 	RList *imports;
 	int i = 0;
 
-	if ((imports = r_bin_get_imports (r->bin)) == NULL)
-		return R_FALSE;
+	imports = r_bin_get_imports (r->bin);
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
@@ -708,8 +706,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 	int i = 0;
 	int is_arm = info && !strcmp (info->arch, "arm");
 
-	if ((symbols = r_bin_get_symbols (r->bin)) == NULL)
-		return R_FALSE;
+	symbols = r_bin_get_symbols (r->bin);
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
@@ -858,8 +855,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	int i = 0;
 	st64 delta = 0LL;
 
-	if ((sections = r_bin_get_sections (r->bin)) == NULL)
-		return R_FALSE;
+	sections = r_bin_get_sections (r->bin);
 
 	if (mode & R_CORE_BIN_JSON) {
 		char *hashstr = NULL;
