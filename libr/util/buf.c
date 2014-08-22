@@ -5,6 +5,9 @@
 #include <r_io.h>
 
 #if 0
+
+TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
+
 /* TODO: the basic object lifecycle must be simplified */
 struct r_class_t {
 	// new/free are implicit
@@ -73,7 +76,7 @@ R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
 	free (b->buf);
 	if (!(b->buf = malloc (length)))
 		return R_FALSE;
-	memcpy (b->buf, buf, length);
+	memmove (b->buf, buf, length);
 	b->length = length;
 	b->empty = 0;
 	return R_TRUE;
@@ -83,7 +86,7 @@ R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
 	if (!(b->buf = realloc (b->buf, b->length+length)))
 		return R_FALSE;
 	memmove (b->buf+length, b->buf, b->length);
-	memcpy (b->buf, buf, length);
+	memmove (b->buf, buf, length);
 	b->length += length;
 	b->empty = 0;
 	return R_TRUE;
@@ -96,7 +99,7 @@ R_API char *r_buf_to_string(RBuffer *b) {
 	char *s;
 	if (!b) return strdup ("");
 	s = malloc (b->length+1);
-	memcpy (s, b->buf, b->length);
+	memmove (s, b->buf, b->length);
 	s[b->length] = 0;
 	return s;
 }
@@ -105,7 +108,7 @@ R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+length)))
 		return R_FALSE;
-	memcpy (b->buf+b->length, buf, length);
+	memmove (b->buf+b->length, buf, length);
 	b->length += length;
 
 	return R_TRUE;
@@ -124,7 +127,7 @@ R_API int r_buf_append_ut16(RBuffer *b, ut16 n) {
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
 		return R_FALSE;
-	memcpy (b->buf+b->length, &n, sizeof (n));
+	memmove (b->buf+b->length, &n, sizeof (n));
 	b->length += sizeof (n);
 	return R_TRUE;
 }
@@ -133,7 +136,7 @@ R_API int r_buf_append_ut32(RBuffer *b, ut32 n) {
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
 		return R_FALSE;
-	memcpy (b->buf+b->length, &n, sizeof (n));
+	memmove (b->buf+b->length, &n, sizeof (n));
 	b->length += sizeof (n);
 	return R_TRUE;
 }
@@ -142,7 +145,7 @@ R_API int r_buf_append_ut64(RBuffer *b, ut64 n) {
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
 		return R_FALSE;
-	memcpy (b->buf+b->length, &n, sizeof (n));
+	memmove (b->buf+b->length, &n, sizeof (n));
 	b->length += sizeof (n);
 	return R_TRUE;
 }
@@ -154,7 +157,7 @@ R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	}
 	if (!(b->buf = realloc (b->buf, b->length+a->length)))
 		return R_FALSE;
-	memcpy (b->buf+b->length, a->buf, a->length);
+	memmove (b->buf+b->length, a->buf, a->length);
 	b->length += a->length;
 	return R_TRUE;
 }
@@ -171,7 +174,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (write)
 		dst += addr;
 	else src += addr;
-	memcpy (dst, src, len);
+	memmove (dst, src, len);
 	b->cur = addr + len;
 	return len;
 }
