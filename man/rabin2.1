@@ -85,9 +85,9 @@ Show exported symbols
 .It Fl S
 Show sections
 .It Fl V
-Show version information
+Disable VA. Show physical addresses
 .It Fl v
-Display virtual addressing offsets
+Show version information
 .It Fl x
 Extract all sub binaries from a fat binary (f.ex: fatmach0)
 .It Fl z
@@ -111,9 +111,10 @@ Get entrypoint
 .Pp
   $ rabin2 \-e a.out
 .Pp
-Load symbols and imports from radare
+Load symbols and imports from radare2
 .Pp
-  .!rabin2 \-vrsi a.out
+  $ r2 -n /bin/ls
+  [0x00000000]> .!rabin2 \-Vrsi $FILE
 .Sh SEE ALSO
 .Pp
 .Xr rahash2(1) ,
