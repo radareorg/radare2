@@ -133,6 +133,13 @@ static int cmd_zign(void *data, const char *input) {
 	case '*':
 		r_sign_list (core->sign, (*input=='*'));
 		break;
+	case 'o':
+        if(input[1] != ' ') {
+            eprintf("Usage: zo <file>\n");
+            return R_FALSE;
+        }
+        r_flirt_parse(core->io, input+2);
+        break;
 	default:
 	case '?':{
 		const char* help_msg[] = {
@@ -151,6 +158,7 @@ static int cmd_zign(void *data, const char *input) {
 			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
 			"zn", "", "Display current namespace",
 			"zn-", "", "Unset namespace",
+            "zo", " file", "Open a flirt signature file and scan opened file",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
 			r_core_cmd_help (core, help_msg);
