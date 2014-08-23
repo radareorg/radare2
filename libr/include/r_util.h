@@ -456,6 +456,7 @@ R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
 R_API char *r_file_abspath(const char *file);
 R_API ut8 *r_gunzip(const ut8 *src, int srcLen, int *dstLen);
+R_API int r_zip_decompress (ut8 *buf, int buf_size, ut8 **out, int *out_size);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
 R_API char *r_file_slurp(const char *str, int *usz);
 //R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
