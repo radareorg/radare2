@@ -31,7 +31,7 @@ In soviet russia, radare2 debugs you!
 Add comments using the ';' key in visual mode or the 'C' command from the radare2 shell
 Assemble opcodes with the 'a' and 'A' keys in visual mode, which are bindings to the 'wa' and 'wA' commands
 Find expanded AES keys in memory with '/Ca'
-Find wide-char strings with '/w <string> command'
+Find wide-char strings with the '/w <string>' command
 Enable ascii-art jump lines in disassembly by setting 'e asm.lines=true'. asm.linesout and asm.linestyle may interest you as well
 Control the signal handlers of the child process with the 'dk' command
 Get a free shell with 'ragg2 -i exec -x'
