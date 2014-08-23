@@ -53,11 +53,15 @@ static int cb_analarch(void *user, void *data) {
 	if (*node->value == '?') {
 		r_anal_list (core->anal);
 		return R_FALSE;
-	} else if (!r_anal_use (core->anal, node->value)) {
-		const char *aa = r_config_get (core->config, "asm.arch");
-		if (!aa || strcmp (aa, node->value))
-			eprintf ("anal.arch: cannot find '%s'\n", node->value);
-		return R_FALSE;
+	} else {
+		if (*node->value) {
+			if (!r_anal_use (core->anal, node->value)) {
+				const char *aa = r_config_get (core->config, "asm.arch");
+				if (!aa || strcmp (aa, node->value))
+					eprintf ("anal.arch: cannot find '%s'\n", node->value);
+				return R_FALSE;
+			}
+		} else return R_FALSE;
 	}
 	return R_TRUE;
 }
@@ -87,8 +91,11 @@ static int cb_asmarch(void *user, void *data) {
 		return 0;
 	}
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
-	if (!r_asm_use (core->assembler, node->value))
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+	if (*node->value) {
+		if (!r_asm_use (core->assembler, node->value)) {
+			eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		}
+	} else return 0;
 
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
