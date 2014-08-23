@@ -1003,9 +1003,11 @@ static void r_core_visual_anal_refresh (RCore *core) {
 
 	cols -= 50;
 	if (cols > 60) cols = 60;
-	r_cons_clear ();
-	if (cols>20) {
-		r_core_visual_anal_refresh_column (core);
+
+	r_cons_clear00 ();
+	r_cons_flush ();
+	r_core_visual_anal_refresh_column (core);
+	if (cols>30) {
 		r_cons_column (cols);
 	}
 	switch (level) {
@@ -1025,21 +1027,20 @@ static void r_core_visual_anal_refresh (RCore *core) {
 		var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
+		r_cons_printf ("Press 'q' to quit call refs\n");
 		r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
-#if 0
-		sprintf(old, "aCf@0x%08llx", addr);
-		cons_flush();
-		radare_cmd(old, 0);
-#endif
-		break;
-	case 3:
-		r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
-		sprintf (old, "axl~0x%08"PFMT64x, addr);
+		// TODO: filter only the callrefs. but we cant grep here
+		sprintf(old, "afi @ 0x%08"PFMT64x, addr);
 		r_core_cmd0 (core, old);
 		break;
+	case 3:
+		r_cons_printf ("Press 'q' to view call refs\n");
+		r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
+		//sprintf (old, "axl~0x%08"PFMT64x, addr);
+		r_core_cmd0 (core, "pd 1");
+		//r_core_cmd0 (core, old);
+		break;
 	}
-	if (cols<=20)
-		r_core_visual_anal_refresh_column (core);
 	r_cons_flush ();
 }
 
@@ -1052,6 +1053,8 @@ R_API void r_core_visual_anal(RCore *core) {
 	level = 0;
 	addr = core->offset;
 
+	int asmbytes = r_config_get_i (core->config, "asm.bytes");
+	r_config_set_i (core->config, "asm.bytes", 0);
 	for (;;) {
 		r_core_visual_anal_refresh (core);
 		ch = r_cons_readchar ();
@@ -1160,6 +1163,7 @@ R_API void r_core_visual_anal(RCore *core) {
 beach:
 	core->cons->event_resize = olde;
 	level = 0;
+	r_config_set_i (core->config, "asm.bytes", asmbytes);
 }
 
 R_API void r_core_seek_next(RCore *core, const char *type) {
