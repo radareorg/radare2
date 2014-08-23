@@ -453,7 +453,11 @@ int main(int argc, char **argv) {
 		case 'V': va = R_FALSE; break;
 		case 'v': return blob_version ("rabin2");
 		case 'L': r_bin_list (bin); return 1;
-		case 'B': laddr = r_num_math (NULL, optarg); break;
+		case 'B':
+			laddr = r_num_math (NULL, optarg);
+			if (laddr == 0LL)
+				va = R_FALSE;
+			break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
