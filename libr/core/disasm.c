@@ -176,7 +176,6 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx);
 
-
 static int cmpaddr (void *_a, void *_b) {
 	RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
@@ -1794,13 +1793,34 @@ toro:
 	return idx; //-ds->lastfail;
 }
 
-R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
+/* Disassemble either `nb_opcodes` instructions, or
+ * `nb_bytes` bytes; both can be negative.
+ * Set to 0 the parameter you don't use */
+R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
-	const ut8 *buf = core->block;
 	int bs = core->blocksize;
 	int i, j, ret, err = 0;
 	RAnalFunction *f;
 	char *tmpopstr;
+	const ut64 old_offset = core->offset;
+
+	if (!nb_bytes) {
+		nb_bytes = core->blocksize;
+		if (nb_opcodes < 0) {
+			/* Backward disassembly or nb_opcodes opcodes
+			 * - We compute the new starting offset
+			 * - Read at the new offset */
+			nb_opcodes = -nb_opcodes;
+			r_core_asm_bwdis_len (core, &nb_bytes, &core->offset, nb_opcodes);
+			r_core_read_at (core, core->offset, core->block, nb_bytes);
+		}
+	} else if (!nb_opcodes) {
+		if (nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
+			nb_bytes = -nb_bytes;
+			core->offset -= nb_bytes;
+			r_core_read_at (core, core->offset, core->block, nb_bytes);
+		}
+	}
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
@@ -1808,13 +1828,14 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		core->anal->cur->reset_counter (core->anal, core->offset);
 
 	ds = handle_init_ds (core);
-	ds->len = len;
-	ds->l = l;
+	ds->len = nb_bytes;
+	ds->l = nb_opcodes;
 
 	if (ds->len>core->blocksize)
 		r_core_block_size (core, ds->len);
 
-	if (ds->l==0) ds->l = ds->len;
+	if (ds->l == 0)
+		ds->l = ds->len;
 
 	for (i=j=0; i<bs && i<ds->len && j<ds->l; i+=ret, j++) {
 		ds->at = core->offset +i;
@@ -1849,7 +1870,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			}
 		}
 		ret = r_asm_disassemble (core->assembler,
-			&ds->asmop, buf+i, core->blocksize-i);
+			&ds->asmop, core->block+i, core->blocksize-i);
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size)
 			ret = ds->hint->size;
@@ -1858,7 +1879,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			ds->opstr = strdup (ds->hint->opcode);
 		} else {
 			if (ds->use_esil) {
-				r_anal_op (core->anal, &ds->analop, ds->at, buf+i, core->blocksize-i);
+				r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
 					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
@@ -1866,7 +1887,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			} else
 			if (ds->decode) {
 				free (ds->opstr);
-				r_anal_op (core->anal, &ds->analop, ds->at, buf+i, core->blocksize-i);
+				r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
 			} else {
@@ -1893,14 +1914,36 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		ds->oldbits = 0;
 	}
 	handle_deinit_ds (core, ds);
+	core->offset = old_offset;
 	return err;
 }
 
-R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines) {
+R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	RAsmOp asmop;
 	RAnalOp analop;
 	int i, oplen, ret, line;
+	const ut64 old_offset = core->offset;
 	r_cons_printf ("[");
+
+	if (!nb_bytes) { // Disassemble `nb_opcodes` opcodes.
+		nb_bytes = core->blocksize;
+		if (nb_opcodes < 0) {
+			/* Backward disassembly of `nb_opcodes` opcodes:
+			 * - We compute the new starting offset
+			 * - Read at the new offset */
+			nb_opcodes = -nb_opcodes;
+			r_core_asm_bwdis_len (core, &nb_bytes, &addr, nb_opcodes);
+			r_core_read_at (core, addr, buf, nb_bytes);
+		}
+	} else if (!nb_opcodes) { // Dissasemble `nb_bytes` bytes
+		if (nb_bytes < 0) {
+			//Backward disassembly of `nb_bytes` bytes
+			nb_bytes = -nb_bytes;
+			addr -= nb_bytes;
+			r_core_read_at (core, addr, buf, nb_bytes);
+		}
+	}
+	core->offset = addr;
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
@@ -1908,11 +1951,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, in
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 	// TODO: add support for anal hints
-	for (i=line=0; i<len;) {
+	for (i=line=0; i<nb_bytes;) {
 		ut64 at = addr +i;
 		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i+5);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i+5);
 		if (ret<1) {
 			r_cons_printf (i>0? ",{": "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -1920,7 +1963,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, in
 			i++;
 			continue;
 		}
-		r_anal_op (core->anal, &analop, at, buf+i, len-i+5);
+		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i+5);
 
 		oplen = r_asm_op_get_size (&asmop);
 		r_cons_printf (i>0? ",{": "{");
@@ -1962,10 +2005,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, in
 		r_cons_printf ("}");
 		i += oplen;
 		line++;
-		if (lines && line>=lines)
+		if (nb_opcodes && line>=nb_opcodes)
 			break;
 	}
 	r_cons_printf ("]");
+	core->offset = old_offset;
 	return R_TRUE;
 }
 

@@ -219,6 +219,11 @@ R_API void *r_list_get_top(RList *list) {
 		return list->tail->data;
 	return NULL;
 }
+R_API void *r_list_get_bottom(RList *list) {
+	if (list && list->head)
+		return list->head->data;
+	return NULL;
+}
 
 R_API void r_list_reverse(RList *list) {
 	RListIter *it, *tmp;

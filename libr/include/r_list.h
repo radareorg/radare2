@@ -81,6 +81,7 @@ R_API void r_list_join (RList *list1, RList *list2);
 R_API void *r_list_get_n (RList *list, int n);
 R_API int r_list_del_n (RList *list, int n);
 R_API void *r_list_get_top (RList *list);
+R_API void *r_list_get_bottom (RList *list);
 R_API void *r_list_pop (RList *list);
 R_API void r_list_reverse (RList *list);
 R_API RList *r_list_clone (RList *list);
