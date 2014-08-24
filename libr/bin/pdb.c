@@ -7,8 +7,6 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
-typedef void (*f_load)();
-
 typedef struct {
 	int stream_size;
 	char *stream_pages;
@@ -49,10 +47,58 @@ typedef enum {
 	ePDB_STREAM_MAX
 } EStream;
 
+typedef void (*f_load)(void *parsed_pdb_stream, R_STREAM_FILE *stream);
+
 typedef struct {
 	R_PDB_STREAM *pdb_stream;
 	f_load load;
 } SParsedPDBStream;
+
+//Const(Bytes("magic", 4), "\xFF\xFF\xFF\xFF"),                           # 0
+//ULInt32("version"),                                                     # 4
+//ULInt32("age"),                                                         # 8
+//SLInt16("gssymStream"),                                                 # 12
+//ULInt16("vers"),                                                        # 14
+//SLInt16("pssymStream"),                                                 # 16
+//ULInt16("pdbver"),                                                      # 18
+//SLInt16("symrecStream"),           # stream containing global symbols   # 20
+//ULInt16("pdbver2"),                                                     # 22
+//ULInt32("module_size"),         # total size of DBIExHeaders            # 24
+//ULInt32("secconSize"),                                                  # 28
+//ULInt32("secmapSize"),                                                  # 32
+//ULInt32("filinfSize"),                                                  # 36
+//ULInt32("tsmapSize"),                                                   # 40
+//ULInt32("mfcIndex"),                                                    # 44
+//ULInt32("dbghdrSize"),                                                  # 48
+//ULInt32("ecinfoSize"),                                                  # 52
+//ULInt16("flags"),                                                       # 56
+//Enum(ULInt16("Machine"),                                                # 58
+//    IMAGE_FILE_MACHINE_UNKNOWN = 0x0,
+//    IMAGE_FILE_MACHINE_I386 = 0x014c,
+//    IMAGE_FILE_MACHINE_IA64 = 0x0200,
+//    IMAGE_FILE_MACHINE_AMD64 = 0x8664,
+//),
+//ULInt32("resvd"),                                                       # 60
+typedef struct {
+	unsigned int data1;
+	unsigned short data2;
+	unsigned short data3;
+	char data4[8];
+} SGUID;
+
+typedef struct {
+	unsigned int version;
+	unsigned int time_date_stamp;
+	unsigned int age;
+	SGUID guid;
+	unsigned int cb_names;
+	char *names;
+} SPDBInfoStreamD;
+
+typedef struct {
+	SParsedPDBStream *parsed_pdb_stream;
+	SPDBInfoStreamD data;
+} SPDBInfoStream;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// size = -1 (default value)
@@ -82,6 +128,24 @@ static int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
 	(off) = (pos) % (page_size); \
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
+								   int end_indx, char *res)
+{
+	int i;
+	int page_offset;
+	int curr_pos;
+//	char buffer[1024];
+
+	for (i = start_indx; i < end_indx; i++) {
+		page_offset = stream_file->pages[i] * stream_file->page_size;
+		fseek(stream_file->fp, page_offset, SEEK_SET);
+//		curr_pos = ftell(stream_file->fp);
+		fread(res, stream_file->page_size, 1, stream_file->fp);
+		res += stream_file->page_size;
+	}
+}
+
 #define READ_PAGES(start_indx, end_indx) { \
 	for (i = start_indx; i < end_indx; i++) { \
 		fseek(stream_file->fp, stream_file->pages[i] * stream_file->page_size, SEEK_SET); \
@@ -99,6 +163,7 @@ static char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 	char *pdata = 0;
 	char *tmp;
 	char *ret = 0;
+	int len = 0;
 
 	if (size == -1) {
 		pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
@@ -114,13 +179,14 @@ static char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
 
-		pdata = (char *) malloc(pn_end + 1);
+		pdata = (char *) malloc(stream_file->page_size * (pn_end + 1 - pn_start));
 		tmp = pdata;
-		READ_PAGES(pn_start, (pn_end + 1))
+		stream_file_read_pages(stream_file, pn_start, pn_end + 1, tmp);
+		//READ_PAGES(pn_start, (pn_end + 1))
 		stream_file->pos += size;
-		ret = (char *) malloc(-(stream_file->page_size - off_end));
+		ret = (char *) malloc((stream_file->page_size - off_end));
 		tmp = pdata;
-		memcpy(ret, tmp + off_start, -(stream_file->page_size - off_end));
+		memcpy(ret, tmp + off_start, (stream_file->page_size - off_end) - off_start);
 		free(pdata);
 	}
 
@@ -272,7 +338,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		memcpy(sizes + i, &stream_size, 4);
 	}
 
-	tmp_data = ((char *)data + num_streams * 4);
+	tmp_data = ((char *)data + num_streams * 4 + 4);
 	//FIXME: free list...
 	root_stream7->streams_list = r_list_new();
 	RList *pList = root_stream7->streams_list;
@@ -281,12 +347,12 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		num_pages = count_pages(sizes[i], page_size);
 
 		// FIXME: remove tmp..
-		tmp = (char *) malloc(num_pages + 4);
-		memset(tmp, 0, num_pages + 4);
+		tmp = (char *) malloc(num_pages * 4);
+		memset(tmp, 0, num_pages * 4);
 		page = (SPage *) malloc(sizeof(SPage));
-		if (num_pages != 0) {			
-			memcpy(tmp, tmp_data + pos, num_pages + 4);
-			pos += num_pages *4;
+		if (num_pages != 0) {
+			memcpy(tmp, tmp_data + pos, num_pages * 4);
+			pos += num_pages * 4;
 
 			page->stream_size = sizes[i];
 			page->stream_pages = tmp;
@@ -313,8 +379,24 @@ static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *
 	init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
 	pdb_stream->load = pLoad;
 	if (pLoad != NULL) {
-		pLoad();
+		pLoad(pdb_stream, &(pdb_stream->pdb_stream->stream_file));
 	}
+}
+
+static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
+{
+	SPDBInfoStream *tmp = (SPDBInfoStream *)parsed_pdb_stream;
+	tmp->data.version = *(int *)stream_file_read(stream, 4);
+	tmp->data.time_date_stamp = *(int *)stream_file_read(stream, 4);
+	tmp->data.age = *(int *)stream_file_read(stream, 4);
+	tmp->data.guid.data1 = *(int *)stream_file_read(stream, 4);
+	tmp->data.guid.data2 = *(short *)stream_file_read(stream, 2);
+	tmp->data.guid.data3 = *(short *)stream_file_read(stream, 2);
+	memcpy(tmp->data.guid.data4, stream_file_read(stream, 8), 8);
+	tmp->data.cb_names = *(int *)stream_file_read(stream, 4);
+	//FIXME: free memory
+	tmp->data.names = (char *) malloc(tmp->data.cb_names);
+	memcpy(tmp->data.names, stream_file_read(stream, tmp->data.cb_names), tmp->data.cb_names);
 }
 
 //self.streams = []
@@ -359,7 +441,7 @@ static int pdb_read_root(R_PDB *pdb)
 			init_parsed_pdb_stream(parsed_pdb_stream, pdb->fp, page->stream_pages,
 								   root_stream->pdb_stream.pages_amount, i,
 								   page->stream_size,
-								   root_stream->pdb_stream.page_size, 0);
+								   root_stream->pdb_stream.page_size, &parse_pdb_info_stream);
 			r_list_append(pList, parsed_pdb_stream);
 			break;
 		case 2:
@@ -551,7 +633,7 @@ int init_pdb_parser(R_PDB *pdb)
 		goto error;
 	}
 
-	pdb->fp = fopen(pdb->file_name, "r");
+	pdb->fp = fopen(pdb->file_name, "rb");
 	if (!pdb->fp) {
 		printf("file %s can not be open\n", pdb->file_name);
 		goto error;
