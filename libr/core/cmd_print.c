@@ -115,31 +115,52 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 #define append(x,y) { strcat (x,y);x += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
-	const int COLS = 16;
+	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
 	char *ebytes, *echars;
 	ut64 fend = UT64_MAX;
 	char *comment;
-	int rows = len/COLS;
+	int rows = len/nb_cols;
 	char out[1024];
-	char *note[COLS];
-	//int lnote[COLS];
 	char bytes[1024];
 	char chars[1024];
 	int i, j, low, max, marks, tmarks, setcolor, hascolor;
 	ut8 ch;
-	const char *colors[8] = {
-		Color_WHITE, Color_GREEN, Color_YELLOW, Color_RED,
+	const char *colors[] = {
+		Color_WHITE, /*Color_GREEN,*/ Color_YELLOW, Color_RED,
 		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
 	};
-	int col = core->print->col;
+	const int col = core->print->col;
 	RFlagItem *f, *lf = NULL;
+	char** note = calloc (nb_cols, sizeof(char*));
+	char* legend;
 
+	if (!note) return;
+	nb_cols -= (nb_cols % 2); //nb_cols should be even
+
+	//Compute then show the legend
+	legend = calloc (nb_cols * 4 + 15, sizeof(char));
+	if (!legend) {
+		free (note);
+		return;
+	}
+	strcpy (legend, "- offset -  ");
+	j = strlen ("- offset -  ");
+	for (i=0; i<nb_cols; i+=2) {
+		sprintf (legend+j, "%02X%02X  ", i, i+1);
+		j+= 5;
+	}
+	sprintf (legend+j+i, " ");
+	j++;
+	for (i=0; i<nb_cols; i++)
+		sprintf (legend+j+i, "%0X", i%17);
+	sprintf (legend+j+i, "\n");
 	if (usecolor) r_cons_strcat (Color_GREEN);
-	r_cons_strcat ("- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n");
+	r_cons_strcat (legend);
 	if (usecolor) r_cons_strcat (Color_RESET);
-	hascolor = 0;
+
+	//hexdump
 	tmarks = marks = 0;
 	for (i=0; i<rows; i++) {
 		bytes[0] = 0;
@@ -147,9 +168,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		chars[0] = 0;
 		echars = chars;
 		hascolor = 0;
-		for (j=0; j<COLS; j++) {
+		for (j=0; j<nb_cols; j++) {
 			note[j] = NULL;
-			//lnote[j] = 0;
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr+j);
 			if (comment) {
@@ -160,20 +180,19 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			// collect flags
 			f = r_flag_get_i (core->flags, addr+j);
 			setcolor = 1;
-			if (f) {
-				fend = addr +j+ f->size;
+			if (f) { // Begining of a flag
+				fend = addr + j + f->size;
 				note[j] = f->name;
 				marks++;
 				tmarks++;
 				lf = f;
 			} else {
-				if (lf) {
-					if (addr+j> (lf->offset+lf->size))
-						lf = NULL;
-				}
+				// Are we still in the flag ?
+				if (lf && addr+j > (lf->offset + lf->size))
+					lf = NULL;
+				// Are we at the end of the flag yet?
 				if (fend==UT64_MAX || fend<=(addr+j))
 					setcolor = 0;
-				// use old flag if still valid
 			}
 			if (setcolor && !hascolor) {
 				hascolor = 1;
@@ -182,21 +201,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						char *ansicolor = r_cons_pal_parse (lf->color);
 						append (ebytes, ansicolor);
 						free (ansicolor);
-					} else {
-#if 1
-						append (ebytes, colors[tmarks%5]);
-#else
-						// psycodelia!
-						char *color = r_cons_color_random (0);
-						append (ebytes, color);
-						free (color);
-#endif
+					} else { // cycle colours
+						append (ebytes, colors[tmarks%sizeof(colors)]);
 					}
 				} else {
 					append (ebytes, Color_INVERT);
 				}
 			}
-			ch = buf[(i*COLS)+j];
+			ch = buf[(i*nb_cols)+j];
 			if (core->print->ocur!=-1) {
 				low = R_MIN (core->print->cur, core->print->ocur);
 				max = R_MAX (core->print->cur, core->print->ocur);
@@ -204,7 +216,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				low = max = core->print->cur;
 			}
 			if (core->print->cur_enabled) {
-				int here = (i*COLS)+j;
+				int here = (i*nb_cols)+j;
 				if (low==max) {
 					if (low == here) {
 						append (echars, Color_INVERT);
@@ -222,14 +234,15 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
 			echars++;
 			if (core->print->cur_enabled) {
-				if (max == ((i*COLS)+j)) {
+				if (max == ((i*nb_cols)+j)) {
 					append (ebytes, Color_RESET);
 					append (echars, Color_RESET);
 					hascolor = 0;
 				}
 			}
-			if (j<15&&j%2) append (ebytes, " ");
 
+			if (j < (nb_cols-1) && (j%2))
+				append (ebytes, " ");
 
 			if (fend!=UT64_MAX && fend == addr+j+1) {
 				if (usecolor) {
@@ -239,13 +252,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				fend = UT64_MAX;
 				hascolor = 0;
 			}
+
 		}
 		// show comments and flags
 		if (marks>0) {
 			r_cons_strcat ("              ");
 			memset (out, ' ', sizeof (out));
 			out[sizeof (out)-1] = 0;
-			for (j=0; j<COLS; j++) {
+			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
 					int off = (j*3);
 					off -= (j/2);
@@ -271,8 +285,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		r_cons_strcat (Color_RESET);
 		if (col==2) r_cons_strcat ("|");
 		r_cons_newline ();
-		addr += 16;
+		addr += nb_cols;
 	}
+	free (note);
+	free (legend);
 }
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
