@@ -147,9 +147,16 @@ n_functions      : number of functions
 pattern_size     : size of the leading bytes pattern
 */
 
+#define READ_BYTE_ERR(name, b) if( (name = read_byte(b)) < 0 ) { goto buf_err_exit; }
+
 static ut8 read_byte (RBuffer *b) {
-	ut8 r = *r_buf_get_at(b, -1, NULL);
-	b->cur++;
+	/*returns a negative value on error, else it returns the read byte*/
+	ut8 r;
+	if ( r_buf_read_at(b, b->cur, &r, 1) != 1 ) {
+		eprintf("Couldn't read from the buffer any further\n");
+		exit(-1);
+	}
+
 	return r;
 }
 
@@ -680,43 +687,43 @@ static void print_header(idasig_v5_t *header) {
 }
 
 static int parse_header(RBuffer *buf, idasig_v5_t *header) {
-	if( r_buf_read_at(buf,  0, header->magic, sizeof(header->magic)) != sizeof(header->magic) )
+	/*if( r_buf_read_at(buf,  0, header->magic, sizeof(header->magic)) != sizeof(header->magic) )*/
+		/*return R_FALSE;*/
+	/*if( r_buf_read_at(buf, -1, &header->version, sizeof(header->version)) != sizeof(header->version) )*/
+		/*return R_FALSE;*/
+	if( r_buf_read_at(buf, buf->cur, &header->arch, sizeof(header->arch)) != sizeof(header->arch) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->version, sizeof(header->version)) != sizeof(header->version) )
+	if( r_buf_read_at(buf, buf->cur, &header->file_types, sizeof(header->file_types)) != sizeof(header->file_types) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->arch, sizeof(header->arch)) != sizeof(header->arch) )
+	if( r_buf_read_at(buf, buf->cur, &header->os_types, sizeof(header->os_types)) != sizeof(header->os_types) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->file_types, sizeof(header->file_types)) != sizeof(header->file_types) )
+	if( r_buf_read_at(buf, buf->cur, &header->app_types, sizeof(header->app_types)) != sizeof(header->app_types) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->os_types, sizeof(header->os_types)) != sizeof(header->os_types) )
+	if( r_buf_read_at(buf, buf->cur, &header->features, sizeof(header->features)) != sizeof(header->features) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->app_types, sizeof(header->app_types)) != sizeof(header->app_types) )
+	if( r_buf_read_at(buf, buf->cur, &header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->features, sizeof(header->features)) != sizeof(header->features) )
+	if( r_buf_read_at(buf, buf->cur, &header->crc16, sizeof(header->crc16)) != sizeof(header->crc16) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions) )
+	if( r_buf_read_at(buf, buf->cur, header->ctype, sizeof(header->ctype)) != sizeof(header->ctype) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->crc16, sizeof(header->crc16)) != sizeof(header->crc16) )
+	if( r_buf_read_at(buf, buf->cur, &header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, -1, header->ctype, sizeof(header->ctype)) != sizeof(header->ctype) )
-		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len) )
-		return R_FALSE;
-	if( r_buf_read_at(buf, -1, &header->crc_, sizeof(header->crc_)) != sizeof(header->crc_) )
+	if( r_buf_read_at(buf, buf->cur, &header->crc_, sizeof(header->crc_)) != sizeof(header->crc_) )
 		return R_FALSE;
 
 	return R_TRUE;
 }
 
 static int parse_v6_v7_header(RBuffer *buf, idasig_v6_v7_t *header) {
-	if(r_buf_read_at(buf, -1, &header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions))
+	if(r_buf_read_at(buf, buf->cur, &header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions))
 		return R_FALSE;
 
 	return R_TRUE;
 }
 
 static int parse_v8_v9_header(RBuffer *buf, idasig_v8_v9_t *header) {
-	if(r_buf_read_at(buf, -1, &header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size))
+	if(r_buf_read_at(buf, buf->cur, &header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size))
 		return R_FALSE;
 
 	return R_TRUE;
@@ -726,13 +733,13 @@ R_API int r_sign_is_flirt (RBuffer *buf) {
 	/*if buf is a flirt signature, return signature version, otherwise return false*/
 
 	idasig_v5_t *header = R_NEW0(idasig_v5_t);
-	if( r_buf_read_at(buf, -1, header->magic, sizeof(header->magic)) != sizeof(header->magic) )
+	if( r_buf_read_at(buf, buf->cur, header->magic, sizeof(header->magic)) != sizeof(header->magic) )
 		return R_FALSE;
 
 	if (memcmp(header->magic, "IDASGN", 6))
 		return R_FALSE;
 
-	if( r_buf_read_at(buf, -1, &header->version, sizeof(header->version)) != sizeof(header->version) )
+	if( r_buf_read_at(buf, buf->cur, &header->version, sizeof(header->version)) != sizeof(header->version) )
 		return R_FALSE;
 
 	return header->version;
@@ -776,7 +783,7 @@ R_API int r_sign_flirt_parse (const RAnal *anal, RBuffer *buf_to_scan, RBuffer *
 	if (!name)
 		goto err_exit;
 
-	if (r_buf_read_at(flirt_buf, -1, name, header->library_name_len) != header->library_name_len)
+	if (r_buf_read_at(flirt_buf, flirt_buf->cur, name, header->library_name_len) != header->library_name_len)
 		goto err_exit;
 	name[header->library_name_len] = '\0';
 
@@ -785,7 +792,7 @@ R_API int r_sign_flirt_parse (const RAnal *anal, RBuffer *buf_to_scan, RBuffer *
 
 	size = r_buf_size(flirt_buf) - flirt_buf->cur;
 	buf = malloc(size);
-	if (r_buf_read_at(flirt_buf, -1, buf, size) != size)
+	if (r_buf_read_at(flirt_buf, flirt_buf->cur, buf, size) != size)
 		goto err_exit;
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
