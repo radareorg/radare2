@@ -5,7 +5,7 @@ rabin2 \- Binary program info extractor
 .Pp
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl ACeigsSMzIHlRrLxvVh
+.Op Fl ACeghHiIsSMzlpRrLxvh
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -70,10 +70,12 @@ Show source line reference from a given address
 Force minimum number of chars per string (see -z)
 .It Fl n Ar str
 Show information (symbol, section, import) at string offset
-.It Fl O Ar str
-Write/extract operations (\-O help)
 .It Fl o Ar str
 Output file/folder for write operations (out by default)
+.It Fl O Ar str
+Write/extract operations (\-O help)
+.It Fl p
+Disable VA. Show physical addresses
 .It Fl q
 Be quiet, just show fewer data
 .It Fl R
@@ -84,8 +86,6 @@ Show output in radare format
 Show exported symbols
 .It Fl S
 Show sections
-.It Fl V
-Disable VA. Show physical addresses
 .It Fl v
 Show version information
 .It Fl x
@@ -114,7 +114,7 @@ Get entrypoint
 Load symbols and imports from radare2
 .Pp
   $ r2 -n /bin/ls
-  [0x00000000]> .!rabin2 \-Vrsi $FILE
+  [0x00000000]> .!rabin2 \-prsi $FILE
 .Sh SEE ALSO
 .Pp
 .Xr rahash2(1) ,

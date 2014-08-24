@@ -130,7 +130,7 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"!", "ls", "execute 'ls' in shell",
 	"!!", "", "save command history to hist file",
 	"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
-	".!", "rabin2 -rVsei ${FILE}", "run each output line as a r2 cmd",
+	".!", "rabin2 -rpsei ${FILE}", "run each output line as a r2 cmd",
 	"!", "echo $SIZE", "display file size",
 	"\nEnvironment:", "", "",
 	"FILE", "", "file name",

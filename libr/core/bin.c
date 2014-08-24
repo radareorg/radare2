@@ -9,7 +9,7 @@ static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 
 static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 laddr) {
 	switch (va) {
-	case 0: // pa $ rabin2 -V
+	case 0: // pa $ rabin2 -p
 		return paddr;
 	case 1: // va $ rabin2
 		return r_bin_get_vaddr (bin, baddr, paddr, vaddr);

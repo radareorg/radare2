@@ -70,13 +70,13 @@ static int rabin_show_help(int v) {
 		" -N [minlen]     force minimum number of chars per string (see -z)\n"
 		" -o [str]        output file/folder for write operations (out by default)\n"
 		" -O [str]        write/extract operations (-O help)\n"
+		" -p              show physical addresses\n"
 		" -q              be quiet, just show fewer data\n"
 		" -r              radare output\n"
 		" -R              relocations\n"
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
 		" -v              display version and quit\n"
-		" -V              disable va. show physical addresses\n"
 		//" -V              show version information\n"
 		" -x              extract bins contained in file\n"
 		" -z              strings (from data section)\n"
@@ -373,7 +373,7 @@ int main(int argc, char **argv) {
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:rvLhxzZV")) != -1) {
+	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:prvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -449,8 +449,8 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'o': output = optarg; break;
+		case 'p': va = R_FALSE; break;
 		case 'r': rad = R_TRUE; break;
-		case 'V': va = R_FALSE; break;
 		case 'v': return blob_version ("rabin2");
 		case 'L': r_bin_list (bin); return 1;
 		case 'B':
