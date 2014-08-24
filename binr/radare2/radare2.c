@@ -477,6 +477,11 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "io.va", "false");
 		}
 	}
+	{ // if $LANG contains UTF-8, let's use UTF-8 in r2
+		const char *env_lang = r_sys_getenv ("LANG");
+		if (env_lang && strstr (env_lang, "UTF-8"))
+			r_config_set_i (r.config, "scr.utf8", R_TRUE);
+	}
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
 		if (homerc) {
@@ -495,11 +500,6 @@ int main(int argc, char **argv, char **envp) {
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 	if (asmos) r_config_set (r.config, "asm.os", asmos);
-	{ // if $LANG contains UTF-8, let's use UTF-8 in r2
-		const char *env_lang = r_sys_getenv ("LANG");
-		if (env_lang && strstr (env_lang, "UTF-8"))
-			r_config_set_i (r.config, "scr.utf8", R_TRUE);
-	}
 
 	(void)r_core_bin_update_arch_bits (&r);
 
