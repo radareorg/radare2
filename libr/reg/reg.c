@@ -63,6 +63,10 @@ R_API void r_reg_free_internal(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		r_list_purge (reg->regset[i].regs);
+		if (reg->name[i]) {
+			free (reg->name[i]);
+			reg->name[i] = NULL;
+		}
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 }
@@ -86,9 +90,8 @@ R_API RReg *r_reg_new() {
 	reg->iters = 0;
 	reg->profile = NULL;
 	reg->reg_profile_str = NULL;
-	for (i=0; i<R_REG_NAME_LAST; i++)
-		reg->name[i] = NULL;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		reg->name[i] = NULL;
 		arena = r_reg_arena_new (0);
 		if (!arena) {
 			free (reg);
