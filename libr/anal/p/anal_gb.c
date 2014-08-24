@@ -1319,6 +1319,7 @@ struct r_anal_plugin_t r_anal_plugin_gb = {
 	.desc = "Gameboy CPU code analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_NONE,
+	.esil = R_TRUE,
 	.bits = 16,
 	.init = NULL,
 	.fini = NULL,

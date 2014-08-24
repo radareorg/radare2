@@ -120,7 +120,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			break;
 		case 'c': return r_cons_get_size (NULL);
 		case 'r': { int rows; r_cons_get_size (&rows); return rows; }
-		case 'e': return op.eob;
+		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref

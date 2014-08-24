@@ -146,6 +146,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 RAnalPlugin r_anal_plugin_sparc_cs = {
 	.name = "sparc.cs",
 	.desc = "Capstone SPARC analysis",
+	.esil = R_TRUE,
 	.license = "BSD",
 	.arch = R_SYS_ARCH_SPARC,
 	.bits = 32|64,

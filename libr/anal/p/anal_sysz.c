@@ -113,6 +113,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 RAnalPlugin r_anal_plugin_sysz = {
 	.name = "systemz.cs",
 	.desc = "Capstone SystemZ microanalysis",
+	.esil = R_TRUE,
 	.license = "BSD",
 	.arch = R_SYS_ARCH_SYSZ,
 	.bits = 32|64,

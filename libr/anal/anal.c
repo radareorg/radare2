@@ -269,3 +269,14 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	r_anal_op (anal, op, addr, buf, len);
 	return op;
 }
+
+R_API int r_anal_op_is_eob (RAnalOp *op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_RET:
+		return 1;
+	}
+	return 0;
+}

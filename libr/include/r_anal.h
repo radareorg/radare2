@@ -603,12 +603,8 @@ typedef struct r_anal_op_t {
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
 	ut32 selector;  /* segment selector */
-#if 0
-ref->ptr
-value->val
-#endif
 	st64 ptr;       /* reference to memory */ /* XXX signed? */
-	ut64 val;     /* reference to value */ /* XXX signed? */
+	ut64 val;       /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */
 	int refptr;
 	RAnalValue *src[3];
@@ -835,11 +831,13 @@ typedef struct r_anal_plugin_t {
 	char *license;
 	int arch;
 	int bits;
+	int esil; // can do esil or not
 	int fileformat_type;
 	int custom_fn_anal;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*reset_counter) (RAnal *anal, ut64 start_addr);
+
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalBbCallback bb;
@@ -965,6 +963,7 @@ R_API int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 addr);
 R_API RAnalOp *r_anal_op_new();
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_fini(RAnalOp *op);
+R_API int r_anal_op_is_eob (RAnalOp *op);
 R_API RList *r_anal_op_list_new();
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *data, int len);

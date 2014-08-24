@@ -475,6 +475,7 @@ struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_MIPS,
 	.bits = 32,
+	.esil = R_TRUE,
 	.init = NULL,
 	.fini = NULL,
 	.op = &mips_op,

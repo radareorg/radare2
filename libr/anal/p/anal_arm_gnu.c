@@ -93,7 +93,6 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
-		op->eob = 1;
         } else if ( (ins & B4(B1111,B1111,B1000,0)) == B4(B0100,B0111,B1000,0) ) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UCALL;
@@ -277,7 +276,6 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	} else
 	if ( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr
 		op->type = R_ANAL_OP_TYPE_RET;
-		op->eob = 1;
 	} else
 	if ((code[i] & ARM_DTX_LOAD)) { //IS_LOAD(code[i])) {
 		ut32 ptr = 0;
@@ -316,36 +314,29 @@ if (
 ) && ((code[i]&0xffffff00) == 0xe12fff00)
 ) {
 		op->type = R_ANAL_OP_TYPE_UJMP;
-			op->eob = 1;
 } else
 		if (IS_BRANCHL (code[i])) {
 			if (IS_BRANCH (code[i])) {
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->jump = branch_dst_addr;
 				op->fail = addr + 4 ;
-				op->eob  = 1;
 			} else {
 				op->type = R_ANAL_OP_TYPE_RET;
-				op->eob = 1;
 			}
 		} else if (IS_BRANCH (code[i])) {
 			if (IS_CONDAL (code[i])) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				op->jump = branch_dst_addr;
 				op->fail = UT64_MAX;
-				op->eob = 1;
 			} else {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->jump = branch_dst_addr;
 				op->fail = addr + 4;
-				op->eob  = 1;
 			}
 		} else {
 			//unknown jump o return
 			//op->type = R_ANAL_OP_TYPE_UJMP;
-		//op->type = R_ANAL_OP_TYPE_NOP;
-		//	op->eob = 1;
-		op->eob = 0;
+			//op->type = R_ANAL_OP_TYPE_NOP;
 		}
 	}
 	//op->jump = arminsn->jmp;

@@ -380,6 +380,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.name = "mips.cs",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
+	.esil = R_TRUE,
 	.arch = R_SYS_ARCH_MIPS,
 	.set_reg_profile = set_reg_profile,
 	.bits = 16|32|64,

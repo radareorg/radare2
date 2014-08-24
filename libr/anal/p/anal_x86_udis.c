@@ -592,6 +592,7 @@ struct r_anal_plugin_t r_anal_plugin_x86_udis = {
 	.desc = "X86 analysis plugin (udis86 backend)",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,
+	.esil = R_TRUE,
 	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,

@@ -172,7 +172,8 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	current_bb = r_anal_bb_new ();
 	r_anal_ex_op_to_bb(anal, state, current_bb, op);
 
-	if (op->eob) current_bb->type |= R_ANAL_BB_TYPE_LAST;
+	if (r_anal_op_is_eob (op))
+		current_bb->type |= R_ANAL_BB_TYPE_LAST;
 
 	if (current_bb->op_bytes == NULL) {
 		current_bb->op_sz = state->current_op->size;
@@ -322,57 +323,43 @@ R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RA
 	bb->jump = op->jump;
 
 	bb->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
-
-	if (op->eob) bb->type |= R_ANAL_BB_TYPE_LAST;
+	if (r_anal_op_is_eob (op))
+		bb->type |= R_ANAL_BB_TYPE_LAST;
 	r_anal_ex_clone_op_switch_to_bb (bb, op);
 }
 
 R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {
 	ut64 bb_type = 0;
-	ut64 conditional = R_ANAL_EX_COND_OP & ranal2_op_type ? R_ANAL_OP_TYPE_COND : 0;
+	ut64 conditional = (R_ANAL_EX_COND_OP & ranal2_op_type)?
+		R_ANAL_OP_TYPE_COND : 0;
 	ut64 code_op_val = ranal2_op_type & (R_ANAL_EX_CODE_OP | 0x1FF);
 
-	if (conditional) {
+	if (conditional)
 		bb_type |= R_ANAL_BB_TYPE_COND;
-	}
-
-	if (ranal2_op_type & R_ANAL_EX_LOAD_OP) {
+	if (ranal2_op_type & R_ANAL_EX_LOAD_OP)
 		bb_type |= R_ANAL_BB_TYPE_LD;
-	}
-
-	if (ranal2_op_type & R_ANAL_EX_BIN_OP) {
+	if (ranal2_op_type & R_ANAL_EX_BIN_OP)
 		bb_type |= R_ANAL_BB_TYPE_BINOP;
-	}
-
-	if (ranal2_op_type & R_ANAL_EX_LOAD_OP) {
+	if (ranal2_op_type & R_ANAL_EX_LOAD_OP)
 		bb_type |= R_ANAL_BB_TYPE_LD;
-	}
-
-	if (ranal2_op_type & R_ANAL_EX_STORE_OP) {
+	if (ranal2_op_type & R_ANAL_EX_STORE_OP)
 		bb_type |= R_ANAL_BB_TYPE_ST;
-	}
 	/* mark bb with a comparison */
-	if (ranal2_op_type & R_ANAL_EX_BINOP_CMP) {
+	if (ranal2_op_type & R_ANAL_EX_BINOP_CMP)
 		bb_type |= R_ANAL_BB_TYPE_CMP;
-	}
 
 	/* change in control flow here */
 	if (code_op_val & R_ANAL_EX_CODEOP_JMP) {
 		bb_type |= R_ANAL_BB_TYPE_JMP;
 		bb_type |= R_ANAL_BB_TYPE_TAIL;
-
 	} else if (code_op_val & R_ANAL_EX_CODEOP_CALL) {
 		bb_type |= R_ANAL_BB_TYPE_CALL;
 		bb_type |= R_ANAL_BB_TYPE_TAIL;
-
 	} else if ( code_op_val & R_ANAL_EX_CODEOP_SWITCH) {
-
 		bb_type |= R_ANAL_BB_TYPE_SWITCH;
 		bb_type |= R_ANAL_BB_TYPE_TAIL;
-
 	} else if (code_op_val & R_ANAL_EX_CODEOP_LEAVE ||
 				code_op_val & R_ANAL_EX_CODEOP_RET ) {
-
 		bb_type |= R_ANAL_BB_TYPE_RET;
 		bb_type |= R_ANAL_BB_TYPE_LAST;
 		bb_type |= R_ANAL_BB_TYPE_TAIL;

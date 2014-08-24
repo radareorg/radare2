@@ -80,6 +80,7 @@ RAnalPlugin r_anal_plugin_xcore_cs = {
 	.name = "xcore",
 	.desc = "Capstone XCORE analysis",
 	.license = "BSD",
+	.esil = R_TRUE,
 	.arch = R_SYS_ARCH_XCORE,
 	.bits = 32,
 	.op = &analop,

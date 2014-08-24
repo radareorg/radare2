@@ -311,6 +311,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
 	.license = "BSD",
+	.esil = R_TRUE,
 	.arch = R_SYS_ARCH_ARM,
 	.set_reg_profile = set_reg_profile,
 	.bits = 16|32|64,

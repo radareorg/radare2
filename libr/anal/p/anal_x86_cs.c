@@ -237,6 +237,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86.cs",
 	.desc = "Capstone X86 analysis",
+	.esil = R_TRUE,
 	.license = "BSD",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,

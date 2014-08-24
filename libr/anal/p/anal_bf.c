@@ -72,6 +72,7 @@ struct r_anal_plugin_t r_anal_plugin_bf = {
 	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
+	.esil = R_TRUE,
 	.op = &bf_op,
 	.set_reg_profile = NULL,
 	.fingerprint_bb = NULL,
