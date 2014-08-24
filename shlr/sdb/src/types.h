@@ -27,7 +27,7 @@
 #define USE_MMAN 1
 #endif
 
-#if __WIN32__ || __CYGWIN__ || MINGW32
+#if __WIN32__ || __CYGWIN__ || MINGW32 || __MINGW32__ || __MINGW64__
 #undef __WINDOWS__
 #define __WINDOWS__ 1
 #include <windows.h>

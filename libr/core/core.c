@@ -474,23 +474,26 @@ static int __disasm(void *_core, ut64 addr) {
 }
 
 static void update_sdb(RCore *core) {
-	// TODO: Use refcounting for Sdb! to avoid dblfrees and so
-	// TODO: sdb_hook should work across namespaces?
-	// HOOK!
+	RBinObject *o;
+	//SDB// anal/
+	sdb_ns_set (DB, "anal", core->anal->sdb);
+	//SDB// bin/
 	sdb_ns_set (DB, "bin", core->bin->sdb);
-	RBinObject *o = r_bin_get_object (core->bin);
+	//SDB// bin/info
+	o = r_bin_get_object (core->bin);
 	if (o) {
 		sdb_ns_set (sdb_ns (DB, "bin", 1), "info", o->kv);
 	}
-	sdb_ns_set (DB, "anal", core->anal->sdb);
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
+	//SDB// syscall/
 	if (core->assembler && core->assembler->syscall && core->assembler->syscall->db) {
 		core->assembler->syscall->db->refs++;
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
 	}
 	{
 		Sdb *d = sdb_ns (DB, "debug", 1);
+		core->dbg->sgnls->refs++;
 		sdb_ns_set (d, "signals", core->dbg->sgnls);
 	}
 }
@@ -646,7 +649,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
-	sdb_free (c->sdb);
 	//r_core_file_free (c->file);
 	//c->file = NULL;
 	r_list_free (c->files);
@@ -672,6 +674,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
 	r_buf_free (c->yank_buf);
+	sdb_free (c->sdb);
 	return NULL;
 }
 

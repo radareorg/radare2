@@ -25,7 +25,6 @@ static int in_list(SdbList *list, void *item) {
 }
 
 static void ns_free(Sdb *s, SdbList *list) {
-	SdbList *ons = NULL;
 	SdbListIter next;
 	SdbListIter *it;
 	int deleted;
@@ -39,39 +38,43 @@ static void ns_free(Sdb *s, SdbList *list) {
 		deleted = 0;
 		next.n = it->n;
 		if (!in_list (list, ns)) {
-			ls_append (list, ns);
-			ls_append (list, ns->sdb);
-			ns_free (ns->sdb, list);
-			if (s->ns)
-				s->ns->free = NULL;
 			ls_delete (s->ns, it); // free (it)
+			free (ns->name);
+			ns->name = NULL;
 			deleted = 1;
 			if (ns->sdb) {
-				if (ns->sdb->ns)
-					ons = ns->sdb->ns;
-				ns->sdb->ns = NULL;
 				if (sdb_free (ns->sdb)) {
 					ns->sdb = NULL;
 					free (ns->name);
 					ns->name = NULL;
 				}
-				if (ns && ns->sdb)
-					ns->sdb->ns = ons;
 			}
+			ls_append (list, ns);
+			ls_append (list, ns->sdb);
+			ns_free (ns->sdb, list);
+			sdb_free (ns->sdb);
 		}
 		if (!deleted) {
+			sdb_free (ns->sdb);
 			s->ns->free = NULL;
 			ls_delete (s->ns, it); // free (it)
 		}
+		free (ns);
 		it = &next;
 	}
+	ls_free (s->ns);
+	s->ns = NULL;
 }
 
-
 SDB_API void sdb_ns_free(Sdb *s) {
-	SdbList *list = ls_new ();
-	ns_free (s, NULL);
+	SdbList *list;
+	if (!s) return;
+	list = ls_new ();
+	list->free = NULL;
+	ns_free (s, list);
 	ls_free (list);
+	ls_free (s->ns);
+	s->ns = NULL;
 }
 
 static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
@@ -93,6 +96,7 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	//ns->sdb = sdb_new (dir, ns->name, 0);
 	ns->sdb = sdb_new0 ();
 	// TODO: generate path
+
 	if (ns->sdb) {
 		free (ns->sdb->path);
 		ns->sdb->path = NULL;
@@ -108,6 +112,11 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	}
 	return ns;
 }
+
+/*
+static void sdb_ns_free (SdbNs *) {
+}
+*/
 
 SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
@@ -131,6 +140,7 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	ns->name = strdup (name);
 	ns->hash = hash;
 	ns->sdb = r;
+	r->refs++;
 	ls_append (s->ns, ns);
 	return 1;
 }

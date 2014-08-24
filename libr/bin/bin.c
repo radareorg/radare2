@@ -644,8 +644,6 @@ static void r_bin_file_free (void /*RBinFile*/ *bf_) {
 	if (a->curxtr && a->curxtr->destroy)
 		a->curxtr->free_xtr ((void *) (a->xtr_obj));
 
-	r_list_free (a->objs);
-	a->o = NULL;
 	r_buf_free (a->buf);
 	// TODO: unset related sdb namespaces
 	if (a && a->sdb_addrinfo) {
@@ -653,6 +651,7 @@ static void r_bin_file_free (void /*RBinFile*/ *bf_) {
 		a->sdb_addrinfo = NULL;
 	}
 	free (a->file);
+	r_list_free (a->objs);
 	memset (a, 0, sizeof (RBinFile));
 }
 
@@ -812,6 +811,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		binfile->o = o;
 		if (plugin->load (binfile)) {
 			binfile->sdb_info = o->kv;
+// mark as do not walk
 			sdb_ns_set (binfile->sdb, "info", o->kv);
 		} else binfile->o = old_o;
 		o->obj_size = sz;
@@ -873,9 +873,14 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 		char fdkey[128];
 		snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", fd);
 		binfile->sdb = sdb_ns (sdb, fdkey, 1);
-		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo", 1);
 		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0);
+		/* NOTE */
+		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all sub-namespaces */
+		/* And if any namespace is referenced backwards it gets double-freed */
+		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo", 1);
+		binfile->sdb_addrinfo->refs++;
 		sdb_ns_set (sdb, "cur", binfile->sdb);
+		binfile->sdb->refs++;
 	}
 	return binfile;
 }

@@ -94,7 +94,13 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 			int is_str = isstring (v);
 			const char *q = is_str?"\"":"";
 			sprintf (b, "{\"%s\":%s%s%s}", p, q, v, q);
+#if 0
+			/* disabled because it memleaks */
 			sdb_set_owned (s, k, b, cas);
+#else
+			sdb_set (s, k, b, cas);
+			free (b);
+#endif
 			return 1;
 		}
 		return 0;
@@ -105,7 +111,7 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	}
 	rs = json_get (js, p);
 	if (!rs.p) {
-		char *b = malloc (strlen (js)+strlen(k)+strlen (v)+5);
+		char *b = malloc (strlen (js)+strlen(k)+strlen (v)+32);
 		if (b) {
 			int is_str = isstring (v);
 			const char *q = is_str?"\"":"";
@@ -143,7 +149,10 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	// TODO: accelerate with small buffer in stack for small jsons
 	if (*v) {
 		int is_str = isstring (v);
-		str = malloc (len[0]+len[1]+len[2]+1);
+		int msz = len[0]+len[1]+len[2]+strlen (v);
+		if (msz<1)
+			return 0;
+		str = malloc (msz);
 		idx = len[0];
 		memcpy (str, beg[0], idx);
 		if (is_str) {
@@ -156,7 +165,6 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 				idx--;
 			}
 		}
-
 		l = len[1];
 		memcpy (str+idx, beg[1], l);
 		idx += len[1];
@@ -190,7 +198,6 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 			beg[2]--;
 		memcpy (str+len[0], beg[2], len[2]+1);
 	}
-
 	sdb_set_owned (s, k, str, cas);
 	free (js);
 	return 1;

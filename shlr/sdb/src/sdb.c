@@ -82,7 +82,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	if (!s->ns) goto fail;
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);
 	s->lock = lock;
-	//s->ht->list->free = (SdbListFree)sdb_kv_free;
+	// s->ht->list->free = (SdbListFree)sdb_kv_free;
 	// if open fails ignore
 	if (global_hook)
 		sdb_hook (s, global_hook, global_user);
@@ -129,10 +129,10 @@ static void sdb_fini(Sdb* s, int donull) {
 }
 
 SDB_API int sdb_free (Sdb* s) {
-	if (s && s->ht) {
-		if (s->refs>0)
-			s->refs--;
-		if (!s->refs) {
+	if (s && s->ht && s->refs) {
+		s->refs--;
+		if (s->refs<1) {
+			s->refs = 0;
 			sdb_fini (s, 0);
 			s->ht = NULL;
 			free (s);
@@ -353,18 +353,16 @@ static int sdb_set_internal (Sdb* s, const char *key, char *val, int owned, ut32
 				return 0;
 			kv->cas = cas = nextcas ();
 			if (owned) {
-				if (vlen>kv->value_len) {
-					free (kv->value);
-					kv->value = malloc (vlen);
-				}
 				kv->value_len = vlen;
+				free (kv->value);
 				kv->value = val; // owned
 			} else {
 				if (vlen>kv->value_len) {
 					free (kv->value);
 					kv->value = strdup (val);
+				} else {
+					memcpy (kv->value, val, vlen);
 				}
-				memcpy (kv->value, val, vlen);
 				kv->value_len = vlen;
 			}
 		} else ht_delete_entry (s->ht, e);
@@ -375,15 +373,21 @@ static int sdb_set_internal (Sdb* s, const char *key, char *val, int owned, ut32
 	// TODO store only the ones that are in the CDB
 	if (owned) {
 		kv = sdb_kv_new (key, NULL);
-		kv->value = val; // owned
-		kv->value_len = vlen; // owned
+		if (kv) {
+			kv->value = val;
+			kv->value_len = vlen;
+		}
 	} else {
 		kv = sdb_kv_new (key, val);
 	}
-	kv->cas = nextcas ();
-	ht_insert (s->ht, hash, kv, NULL);
+	if (kv) {
+		kv->cas = nextcas ();
+		ht_insert (s->ht, hash, kv, NULL);
+		sdb_hook_call (s, key, val);
+		return kv->cas;
+	}
 	sdb_hook_call (s, key, val);
-	return kv->cas;
+	return 0;
 }
 
 SDB_API int sdb_set_owned (Sdb* s, const char *key, char *val, ut32 cas) {
