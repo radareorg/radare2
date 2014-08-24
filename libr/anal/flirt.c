@@ -334,7 +334,7 @@ static void subleaf_free (RFlirtSubLeaf *sub) {
 }
 
 static void leaf_free (RFlirtLeaf *leaf) {
-	leaf->sub_list->free = subleaf_free;
+	leaf->sub_list->free = (RListFree)subleaf_free;
 	r_list_free(leaf->sub_list);
 }
 
@@ -343,12 +343,12 @@ static void node_free (RFlirtNode *node) {
 	free(node->match);
 
 	if (node->leaf_list) {
-		node->leaf_list->free = leaf_free;
+		node->leaf_list->free = (RListFree)leaf_free;
 		r_list_free(node->leaf_list);
 	}
 
 	if (node->child_list) {
-		node->child_list->free = node_free;
+		node->child_list->free = (RListFree)node_free;
 		r_list_free(node->child_list);
 	}
 }
@@ -693,37 +693,37 @@ static int parse_header(RBuffer *buf, idasig_v5_t *header) {
 		/*return R_FALSE;*/
 	if( r_buf_read_at(buf, buf->cur, &header->arch, sizeof(header->arch)) != sizeof(header->arch) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->file_types, sizeof(header->file_types)) != sizeof(header->file_types) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->file_types, sizeof(header->file_types)) != sizeof(header->file_types) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->os_types, sizeof(header->os_types)) != sizeof(header->os_types) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->os_types, sizeof(header->os_types)) != sizeof(header->os_types) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->app_types, sizeof(header->app_types)) != sizeof(header->app_types) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->app_types, sizeof(header->app_types)) != sizeof(header->app_types) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->features, sizeof(header->features)) != sizeof(header->features) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->features, sizeof(header->features)) != sizeof(header->features) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->crc16, sizeof(header->crc16)) != sizeof(header->crc16) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->crc16, sizeof(header->crc16)) != sizeof(header->crc16) )
 		return R_FALSE;
 	if( r_buf_read_at(buf, buf->cur, header->ctype, sizeof(header->ctype)) != sizeof(header->ctype) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len) )
 		return R_FALSE;
-	if( r_buf_read_at(buf, buf->cur, &header->crc_, sizeof(header->crc_)) != sizeof(header->crc_) )
+	if( r_buf_read_at(buf, buf->cur, (unsigned char*)&header->crc_, sizeof(header->crc_)) != sizeof(header->crc_) )
 		return R_FALSE;
 
 	return R_TRUE;
 }
 
 static int parse_v6_v7_header(RBuffer *buf, idasig_v6_v7_t *header) {
-	if(r_buf_read_at(buf, buf->cur, &header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions))
+	if(r_buf_read_at(buf, buf->cur, (unsigned char*)&header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions))
 		return R_FALSE;
 
 	return R_TRUE;
 }
 
 static int parse_v8_v9_header(RBuffer *buf, idasig_v8_v9_t *header) {
-	if(r_buf_read_at(buf, buf->cur, &header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size))
+	if(r_buf_read_at(buf, buf->cur, (unsigned char*)&header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size))
 		return R_FALSE;
 
 	return R_TRUE;
