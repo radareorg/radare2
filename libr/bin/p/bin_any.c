@@ -8,14 +8,11 @@
 
 static const char * get_filetype (RBinFile *arch) {
 	const char *res = NULL;
-	int len = 0;
-	char *str = NULL;
+	ut8 test_buffer[4096] = {0};
 	RMagic * ck = r_magic_new (0);
-	ut8 *test_buffer = malloc (4096);
 
-	if (ck && test_buffer && arch && arch->buf) {
+	if (ck && arch && arch->buf) {
 		r_magic_load (ck, R_MAGIC_PATH);
-		memset (test_buffer, 0, 4096);
 		r_buf_read_at(arch->buf, 0, test_buffer, 4096);
 		res = r_magic_buffer (ck, test_buffer, 4096);
 	}

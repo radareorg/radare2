@@ -288,9 +288,10 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1]) {
 			if (input[1]=='~' && input[2]=='/') {
 				char *homepath = r_str_home (input+3);
-				if (homepath && *homepath) {
-					if (r_sandbox_chdir (homepath)==-1)
-						eprintf ("Cannot chdir to %s\n", homepath);
+				if (homepath) {
+					if (*homepath)
+						if (r_sandbox_chdir (homepath)==-1)
+							eprintf ("Cannot chdir to %s\n", homepath);
 					free (homepath);
 				} else eprintf ("Cannot find home\n");
 			} else {

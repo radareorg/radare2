@@ -1576,7 +1576,7 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	if (!bin || !bin->cur)
 		return UT64_MAX;
 	// autodetect thumb
-	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
+	if (bin->cur->o && bin->cur->o->info) {
 		if (!strcmp (bin->cur->o->info->arch, "arm")) {
 			if (vaddr & 1) {
 				vaddr = (vaddr>>1)<<1;
