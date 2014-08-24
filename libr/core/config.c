@@ -7,9 +7,25 @@
 #define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
 
+static const char *has_esil(RCore *core, const char *name) {
+	RListIter *iter;
+	RAnalPlugin *h;
+	RAnal *a = core->anal;
+	r_list_foreach (a->plugins, iter, h) {
+		if (!strcmp (name, h->name)) {
+			if (h->esil)
+				return "Ae";
+			return "A_";
+		}
+	}
+	return "__";
+}
+
 // copypasta from binr/rasm2/rasm2.c
-static void rasm2_list(RAsm *a, const char *arch) {
+static void rasm2_list(RCore *core, const char *arch) {
 	int i;
+	const char *feat2, *feat;
+	RAsm *a = core->assembler;
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
@@ -25,18 +41,19 @@ static void rasm2_list(RAsm *a, const char *arch) {
 				break;
 			}
 		} else {
-			const char *feat = "--";
 			bits[0] = 0;
 			if (h->bits&8) strcat (bits, "_8");
 			if (h->bits&16) strcat (bits, "_16");
 			if (h->bits&32) strcat (bits, "_32");
 			if (h->bits&64) strcat (bits, "_64");
 			if (!*bits) strcat (bits, "_0");
+			feat = "__";
 			if (h->assemble && h->disassemble)  feat = "ad";
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
-			r_cons_printf ("%s  %-9s  %-11s %-7s %s\n", feat, bits,
-				h->name,
+			feat2 = has_esil (core, h->name);
+			r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
+				feat, feat2, bits, h->name,
 				h->license?h->license:"unknown", h->desc);
 		}
 	}
@@ -87,7 +104,7 @@ static int cb_asmarch(void *user, void *data) {
 	const char *asmos = r_config_get (core->config, "asm.os");
 
 	if (*node->value=='?') {
-		rasm2_list (core->assembler, NULL);
+		rasm2_list (core, NULL);
 		return 0;
 	}
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
@@ -175,8 +192,7 @@ static int cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value=='?') {
-		rasm2_list (core->assembler,
-			r_config_get (core->config, "asm.arch"));
+		rasm2_list (core, r_config_get (core->config, "asm.arch"));
 		return 0;
 	}
 	r_asm_set_cpu (core->assembler, node->value);

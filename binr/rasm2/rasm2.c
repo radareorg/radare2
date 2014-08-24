@@ -5,17 +5,32 @@
 #include <getopt.c> /* getopt.h is not portable :D */
 #include <r_types.h>
 #include <r_asm.h>
+#include <r_anal.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include "../blob/version.c"
 
-static struct r_lib_t *l = NULL;
-static struct r_asm_t *a = NULL;
+static RLib *l = NULL;
+static RAsm *a = NULL;
+static RAnal *anal = NULL;
 static int coutput = R_FALSE;
 
+static const char *has_esil(RAnal *a, const char *name) {
+	RListIter *iter;
+	RAnalPlugin *h;
+	r_list_foreach (a->plugins, iter, h) {
+		if (!strcmp (name, h->name)) {
+			if (h->esil)
+				return "Ae";
+			return "A_";
+		}
+	}
+	return "__";
+}
 static void rasm2_list(RAsm *a, const char *arch) {
 	int i;
 	char bits[32];
+	const char *feat2, *feat;
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
@@ -34,12 +49,13 @@ static void rasm2_list(RAsm *a, const char *arch) {
 			if (h->bits&16) strcat (bits, "16 ");
 			if (h->bits&32) strcat (bits, "32 ");
 			if (h->bits&64) strcat (bits, "64 ");
-			const char *feat = "--";
+			feat = "__";
 			if (h->assemble && h->disassemble)  feat = "ad";
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
-			printf ("%s  %-9s  %-11s %-7s %s\n", feat, bits,
-				h->name,
+			feat2 = has_esil (anal, h->name);
+			printf ("%s%s  %-9s  %-11s %-7s %s\n",
+				feat, feat2, bits, h->name,
 				h->license?h->license:"unknown", h->desc);
 		}
 	}
@@ -192,6 +208,7 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help (0);
 
 	a = r_asm_new ();
+	anal = r_anal_new ();
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
