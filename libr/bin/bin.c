@@ -129,7 +129,8 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 		str_type = type;
 
 		if (str_type == R_STRING_TYPE_DETECT) {
-			if (buf[needle+rc+0] == 0x00 &&
+			if (needle+rc+2 < to &&
+				buf[needle+rc+0] == 0x00 &&
 				buf[needle+rc+1] != 0x00 &&
 				buf[needle+rc+2] == 0x00)
 				str_type = R_STRING_TYPE_WIDE;
