@@ -32,7 +32,6 @@ static RBinInfo* info(RBinFile *arch) {
 	else *ret->file = 0;
 
 	strncpy (ret->rpath, "", R_BIN_SIZEOF_STRINGS);
-	// TODO: add this in
 	strncpy (ret->type, get_filetype (arch), R_BIN_SIZEOF_STRINGS);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
@@ -40,8 +39,6 @@ static RBinInfo* info(RBinFile *arch) {
 	strncpy (ret->os, "", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->machine, "", R_BIN_SIZEOF_STRINGS);
-	// TODO: what should an "any" assembler be?
-	//strncpy (ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rclass, "", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
 	ret->big_endian = 0;
