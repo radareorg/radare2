@@ -477,10 +477,8 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "io.va", "false");
 		}
 	}
-	{ // if $LANG contains UTF-8, let's use UTF-8 in r2
-		const char *env_lang = r_sys_getenv ("LANG");
-		if (env_lang && strstr (env_lang, "UTF-8"))
-			r_config_set_i (r.config, "scr.utf8", R_TRUE);
+	if (!quiet && r_cons_is_utf8 ()) {
+		r_config_set_i (r.config, "scr.utf8", R_TRUE);
 	}
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");

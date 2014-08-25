@@ -312,6 +312,7 @@ R_API void r_cons_2048();
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush();
 R_API void r_cons_visual_write (char *buffer);
+R_API int r_cons_is_utf8();
 
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
