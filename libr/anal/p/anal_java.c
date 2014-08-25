@@ -546,10 +546,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 
 
 	if (code_attr == NULL) {
-		char gen_name[1025];
-		snprintf (gen_name, 1024, "sym.UNKNOWN");
-
-		fcn->name = strdup (gen_name);
+		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
 
 		fcn->size = code_length;
