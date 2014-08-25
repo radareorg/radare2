@@ -300,6 +300,9 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	if (count<1) count = 1;
 	// skipsapces
 	while (*str>='0' && *str<='9') str++;
+
+	// "px/" alone isn't a full command.
+	if (!str[0]) return;
 #if 0
 Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 #endif

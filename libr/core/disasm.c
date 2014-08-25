@@ -1955,7 +1955,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		ut64 at = addr +i;
 		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i+5);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
 		if (ret<1) {
 			r_cons_printf (i>0? ",{": "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -1963,7 +1963,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			i++;
 			continue;
 		}
-		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i+5);
+		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
 
 		oplen = r_asm_op_get_size (&asmop);
 		r_cons_printf (i>0? ",{": "{");

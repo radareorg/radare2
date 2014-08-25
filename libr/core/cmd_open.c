@@ -164,7 +164,10 @@ static int cmd_open(void *data, const char *input) {
 		case 'r':
 			{
 			ut64 cur, new;
-			const char *p = strchr (input+3, ' ');
+			const char *p;
+			if (input[2] != ' ')
+				break;
+			p = strchr (input+3, ' ');
 			if (p) {
 				cur = r_num_math (core->num, input+3);
 				new = r_num_math (core->num, p+1);
