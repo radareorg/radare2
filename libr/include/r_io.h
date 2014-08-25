@@ -349,7 +349,7 @@ R_API int r_io_map_count (RIO *io);
 
 /* io/section.c */
 R_API void r_io_section_init(RIO *io);
-R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
+R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 R_API RIOSection *r_io_section_get_name(RIO *io, const char *name);
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx);
 R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr);

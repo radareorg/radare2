@@ -196,6 +196,7 @@ int main(int argc, char **argv, char **envp) {
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	int cmdfilei = 0;
+	int va = 1; // set va = 0 to load physical offsets from rbin
 
 	r_sys_set_environ (envp);
 
@@ -256,7 +257,10 @@ int main(int argc, char **argv, char **envp) {
 			do_analysis = R_TRUE;
 			break;
 		case 'b': asmbits = optarg; break;
-		case 'B': baddr = r_num_math (r.num, optarg); break;
+		case 'B':
+			baddr = r_num_math (r.num, optarg);
+			va = 2;
+			break;
 		case 'c': r_list_append (cmds, optarg); break;
 		case 'C':
 			do_connect = R_TRUE;
@@ -350,7 +354,10 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	r_config_set_i (r.config, "bin.baddr", baddr);
+	if (va == 2) {
+		r_config_set_i (r.config, "bin.laddr", baddr);
+	}
+// TODO: set io.va = 2 if -B
 
 	if (debug) {
 		r_config_set (r.config, "search.in", "raw"); // implicit?

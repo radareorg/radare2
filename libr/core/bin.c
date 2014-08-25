@@ -5,7 +5,6 @@
 #define STR(x) (x)?(x):""
 // XXX - this may lead to conflicts with set by name
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
-//static int r_core_bin_set_env (RCore *r, RBinFile *binfile);
 
 static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 laddr) {
 	switch (va) {

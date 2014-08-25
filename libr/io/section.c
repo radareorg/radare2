@@ -27,7 +27,7 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 	return NULL;
 }
 
-R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
+R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
 	if (size==0 || size>0xf0000000) {
@@ -54,6 +54,7 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 		else *s->name = '\0';
 		r_list_append (io->sections, s);
 	}
+	return s;
 }
 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
@@ -73,6 +74,7 @@ R_API int r_io_section_rm(RIO *io, int idx) {
 R_API void r_io_section_clear(RIO *io) {
 	r_list_free (io->sections);
 	io->sections = r_list_new ();
+	io->sections->free = free;
 }
 
 // TODO: implement as callback
