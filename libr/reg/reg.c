@@ -92,8 +92,9 @@ R_API RReg *r_reg_new() {
 	reg->iters = 0;
 	reg->profile = NULL;
 	reg->reg_profile_str = NULL;
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
+	for (i=0; i<R_REG_NAME_LAST; i++)
 		reg->name[i] = NULL;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = r_reg_arena_new (0);
 		if (!arena) {
 			free (reg);
