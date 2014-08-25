@@ -1,5 +1,5 @@
 #include <r_pdb.h>
-
+//#include <tpi.c>
 #include <string.h>
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
@@ -54,6 +54,50 @@ typedef struct {
 	f_load load;
 } SParsedPDBStream;
 
+//### Header structures
+//def OffCb(name):
+//    return Struct(name,
+//        SLInt32("off"),
+//        SLInt32("cb"),
+//    )
+
+//TPI = Struct("TPIHash",
+//    ULInt16("sn"),
+//    Padding(2),
+//    SLInt32("HashKey"),
+//    SLInt32("Buckets"),
+//    OffCb("HashVals"),
+//    OffCb("TiOff"),
+//    OffCb("HashAdj"),
+//)
+
+typedef struct {
+	int off;
+	int cb;
+} SOffCb;
+
+typedef struct {
+	short sn;
+	short padding;
+	int hash_key;
+	int buckets;
+	SOffCb hash_vals;
+	SOffCb ti_off;
+	SOffCb hash_adj;
+} STPI;
+
+typedef struct {
+	unsigned int version;
+	int hdr_size;
+	unsigned int ti_min;
+	unsigned int ti_max;
+	unsigned int follow_size;
+	STPI tpi;
+} STPIHeader;
+
+//typedef struct {
+
+//}
 //Const(Bytes("magic", 4), "\xFF\xFF\xFF\xFF"),                           # 0
 //ULInt32("version"),                                                     # 4
 //ULInt32("age"),                                                         # 8
@@ -99,6 +143,8 @@ typedef struct {
 	SParsedPDBStream *parsed_pdb_stream;
 	SPDBInfoStreamD data;
 } SPDBInfoStream;
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// size = -1 (default value)
@@ -399,6 +445,18 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 	memcpy(tmp->data.names, stream_file_read(stream, tmp->data.cb_names), tmp->data.cb_names);
 }
 
+static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
+{
+	STPIHeader tpi_header = *(STPIHeader *)stream_file_read(stream, sizeof(STPIHeader));
+//	tpi_header.version = *(unsigned int *)stream_file_read(stream, 4);
+//	tpi_header.hdr_size = *(int *)stream_file_read(stream, 4);
+//	tpi_header.ti_min = *(unsigned int *)stream_file_read(stream, 4);
+//	tpi_header.ti_max = *(unsigned int *)stream_file_read(stream, 4);
+//	tpi_header.follow_size = *(unsigned int *)stream_file_read(stream, 4);
+
+
+}
+
 //self.streams = []
 //for i in range(len(rs.streams)):
 //    try:
@@ -450,7 +508,7 @@ static int pdb_read_root(R_PDB *pdb)
 			init_parsed_pdb_stream(parsed_pdb_stream, pdb->fp, page->stream_pages,
 								   root_stream->pdb_stream.pages_amount, i,
 								   page->stream_size,
-								   root_stream->pdb_stream.page_size, 0);
+								   root_stream->pdb_stream.page_size, &parse_tpi_stream);
 			r_list_append(pList, parsed_pdb_stream);
 			break;
 		case 3:
