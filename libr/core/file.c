@@ -257,8 +257,10 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 		r_debug_select (r->dbg, newpid, newpid);
 	}
 	baseaddr = get_base_from_maps (r, filenameuri);
-	//eprintf ("LOADING AT 0x%08llx\n", baseaddr);
-	r_config_set_i (r->config, "bin.baddr", baseaddr);
+	if (baseaddr != UT64_MAX) {
+		// eprintf ("LOADING AT 0x%08llx\n", baseaddr);
+		r_config_set_i (r->config, "bin.laddr", baseaddr);
+	}
 
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
 		treat_as_rawstr ++;
