@@ -641,7 +641,7 @@ R_API void r_print_raw(RPrint *p, const ut8* buf, int len, int offlines) {
 		const ut8 *o, *q;
 		int mustbreak = 0 ;
 		o = q = buf;
-		do {
+		do {
 			p->printf ("0x%08x  ", (int)(size_t)(q-buf));
 			for (;*q && *q != '\n'; q++);
 			if (!*q) {
