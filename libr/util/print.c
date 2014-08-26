@@ -925,6 +925,9 @@ static char * realloc_color_buffer (char *buf, ut32 *size, ut32 add_to) {
 	return buf;
 }
 
+// Global buffer to speed up colorizing performance
+#define COLORIZE_BUFSIZE 1024
+static char o[COLORIZE_BUFSIZE];
 
 R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod, is_arg = 0;
@@ -937,12 +940,23 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 	if (is_jmp)
 		return strdup (p);
 
-	o = malloc (opcode_sz);
+	if (opcode_sz > COLORIZE_BUFSIZE) {
+		/* return same string in case of error */
+		return strdup (p);
+	}
+
+	memset (o, 0, COLORIZE_BUFSIZE);
 
 	for (i=j=0; p[i]; i++,j++) {
 		/* colorize numbers */
+		/*
 		if (j+100 >= opcode_sz) {
 			o = realloc_color_buffer (o, &opcode_sz, 100);
+		}
+		*/
+		if (j+100 >= COLORIZE_BUFSIZE) {
+			eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+			return strdup (p);
 		}
 		switch (p[i]) {
 		case 0x1b:
@@ -963,18 +977,30 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 		case '[':
 		case ',':
 			if (is_arg) {
-				if (c_reset+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, c_reset+100);
+				/* if (c_reset+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, c_reset+100); */
+				if (c_reset+j+10 >= COLORIZE_BUFSIZE) {
+					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+					return strdup (p);
+				}
 				strcpy (o+j, Color_RESET);
 				j += strlen (Color_RESET);
 				o[j++] = p[i];
 				if (p[i]=='$' || ((p[i] > '0') && (p[i] < '9'))) {
 					ut32 num_len = strlen (num);
-					if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100);
+					/* if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100); */
+					if (num_len+j+10 >= COLORIZE_BUFSIZE) {
+						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+						return strdup (p);
+					}
 					strcpy (o+j, num);
 					j += strlen (num)-1;
 				} else {
 					ut32 reg_len = strlen (reg);
-					if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100);
+					/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
+					if (reg_len+j+10 >= COLORIZE_BUFSIZE) {
+						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+						return strdup (p);
+					}
 					strcpy (o+j, reg);
 					j += strlen (reg)-1;
 				}
@@ -997,7 +1023,11 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 			if (!is_jmp && is_mod) {
 				// COLOR FOR REGISTER
 				ut32 reg_len = strlen (reg);
-				if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100);
+				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
+				if (reg_len+j+10 >= COLORIZE_BUFSIZE) {
+					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+					return strdup (p);
+				}
 				strcpy (o+j, reg);
 				j += strlen (reg);
 			}
@@ -1005,7 +1035,11 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 		case '0':
 			if (!is_jmp && p[i+1]== 'x') {
 				ut32 num_len = strlen (num);
-				if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100);
+				/* if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100); */
+				if (num_len+j+10 >= COLORIZE_BUFSIZE) {
+					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+					return strdup (p);
+				}
 				strcpy (o+j, num);
 				j += strlen (num);
 			}
@@ -1016,12 +1050,12 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 	// decolorize at the end
 	if (j+20 >= opcode_sz) {
 		char *t_o = o;
-		o = malloc (opcode_sz+21);
+		/* o = malloc (opcode_sz+21); */
 		memcpy (o, t_o, opcode_sz);
 		opcode_sz += 21;
-		free (t_o);
+		/* free (t_o); */
 	}
 	strcpy (o+j, Color_RESET);
 	//strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
-	return o;
+	return strdup (o);
 }
