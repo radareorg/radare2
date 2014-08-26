@@ -915,16 +915,6 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	}
 }
 
-
-static char * realloc_color_buffer (char *buf, ut32 *size, ut32 add_to) {
-	char *t_o = buf;
-	buf = malloc (*size+add_to);
-	memcpy (buf, t_o, *size);
-	*size += add_to;
-	free (t_o);
-	return buf;
-}
-
 // Global buffer to speed up colorizing performance
 #define COLORIZE_BUFSIZE 1024
 static char o[COLORIZE_BUFSIZE];
@@ -934,7 +924,6 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 	ut32 c_reset = strlen (Color_RESET);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p ? strlen (p)*10 + 1 : 0;
-	char *o;
 
 	if (!p || !*p) return NULL;
 	if (is_jmp)
