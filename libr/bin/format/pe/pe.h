@@ -64,12 +64,19 @@ struct r_bin_pe_lib_t {
 #endif
 
 struct PE_(r_bin_pe_obj_t) {
+	// these pointers contain a copy of the headers and sections!
 	PE_(image_dos_header)             *dos_header;
 	PE_(image_nt_headers)			  *nt_headers;
 	PE_(image_section_header)         *section_header;
 	PE_(image_export_directory)       *export_directory;
 	PE_(image_import_directory)       *import_directory;
 	PE_(image_delay_import_directory) *delay_import_directory;
+	// these values define the real offset into the untouched binary
+	ut64 nt_header_offset;
+	ut64 import_directory_offset;
+	ut64 export_directory_offset;
+	ut64 delay_import_directory_offset;
+
 	int import_directory_size;
 	int size;
 	int endian;
