@@ -112,103 +112,134 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 }
 
 // > pxa
+/* In this function, most of the buffers have 4 times
+ * the required lenght. This is because we supports colours,
+ * that are 4 chars long. */
 #define append(x,y) { strcat (x,y);x += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
-	char *ebytes, *echars;
+	char *bytes, *chars;
+	char *ebytes, *echars; //They'll walk over the vars above
 	ut64 fend = UT64_MAX;
 	char *comment;
-	int rows = len/nb_cols;
-	char out[1024];
-	char bytes[1024];
-	char chars[1024];
-	int i, j, low, max, marks, tmarks, setcolor, hascolor;
+	int i, j, low, max, here, rows;
+	int color_idx = 0;
+	boolt marks = R_FALSE, setcolor = R_TRUE, hascolor = R_FALSE;
 	ut8 ch;
 	const char *colors[] = {
 		Color_WHITE, /*Color_GREEN,*/ Color_YELLOW, Color_RED,
 		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
 	};
 	const int col = core->print->col;
-	RFlagItem *f, *lf = NULL;
-	char** note = calloc (nb_cols, sizeof(char*));
-	char* legend;
+	RFlagItem *flag, *current_flag = NULL;
+	char** note;
+	int nb_cons_cols;
 
-	if (!note) return;
+	// Adjust the number of columns
+	if (nb_cols < 1)
+		nb_cols = 16;
 	nb_cols -= (nb_cols % 2); //nb_cols should be even
 
-	//Compute then show the legend
-	legend = calloc (nb_cols * 4 + 15, sizeof(char));
-	if (!legend) {
+	nb_cons_cols = 12 + nb_cols * 2 + (nb_cols/2);
+	rows = len/nb_cols;
+
+	chars = calloc (nb_cols * 4, sizeof(char));
+	if (!chars)
+		return;
+	note = calloc (nb_cols, sizeof(char*));
+	if (!note) {
+		free (chars);
+		return;
+	}
+	bytes = calloc (nb_cons_cols*4, sizeof(char));
+	if (!bytes) {
+		free (chars);
 		free (note);
 		return;
 	}
-	strcpy (legend, "- offset -  ");
+
+	//Compute, then show the legend
+	strcpy (bytes, "- offset -  ");
 	j = strlen ("- offset -  ");
 	for (i=0; i<nb_cols; i+=2) {
-		sprintf (legend+j, "%02X%02X  ", i, i+1);
+		sprintf (bytes+j, "%02X%02X  ", i, i+1);
 		j+= 5;
 	}
-	sprintf (legend+j+i, " ");
+	sprintf (bytes+j+i, " ");
 	j++;
 	for (i=0; i<nb_cols; i++)
-		sprintf (legend+j+i, "%0X", i%17);
-	sprintf (legend+j+i, "\n");
+		sprintf (bytes+j+i, "%0X", i%17);
 	if (usecolor) r_cons_strcat (Color_GREEN);
-	r_cons_strcat (legend);
+	r_cons_strcat (bytes);
 	if (usecolor) r_cons_strcat (Color_RESET);
+	r_cons_newline ();
 
 	//hexdump
-	tmarks = marks = 0;
 	for (i=0; i<rows; i++) {
-		bytes[0] = 0;
+		bytes[0] = '\0';
+		chars[0] = '\0';
 		ebytes = bytes;
-		chars[0] = 0;
 		echars = chars;
-		hascolor = 0;
+		hascolor = R_FALSE;
+
+		if (usecolor) append (ebytes, Color_GREEN);
+		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
+		if (usecolor) append (ebytes, Color_RESET);
+		append (ebytes, (col==1)?" |":"  ");
+
 		for (j=0; j<nb_cols; j++) {
+			setcolor = R_TRUE;
 			note[j] = NULL;
+
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr+j);
 			if (comment) {
-				comment = r_str_prefix_all (comment, "  ; ");
-				r_cons_strcat (comment);
-				free (comment);
+				comment = r_str_prefix (comment, ";");
+				note[j] = comment;
+				marks = R_TRUE;
 			}
+
 			// collect flags
-			f = r_flag_get_i (core->flags, addr+j);
-			setcolor = 1;
-			if (f) { // Begining of a flag
-				fend = addr + j + f->size;
-				note[j] = f->name;
-				marks++;
-				tmarks++;
-				lf = f;
+			flag = r_flag_get_i (core->flags, addr+j);
+			if (flag) { // Begining of a flag
+				fend = addr + j + flag->size;
+				note[j] = r_str_prefix (strdup(flag->name), "/");
+				marks = R_TRUE;
+				color_idx++;
+				color_idx %= sizeof (colors);
+				current_flag = flag;
 			} else {
-				// Are we still in the flag ?
-				if (lf && addr+j > (lf->offset + lf->size))
-					lf = NULL;
-				// Are we at the end of the flag yet?
-				if (fend==UT64_MAX || fend<=(addr+j))
-					setcolor = 0;
+				// Are we past the current flag?
+				if (current_flag && addr+j > (current_flag->offset + current_flag->size)){
+					setcolor = R_FALSE;
+					current_flag = NULL;
+				}
+				// Turn colour off if we're at the end of the current flag
+				if (fend == UT64_MAX || fend <= addr + j)
+					setcolor = R_FALSE;
 			}
 			if (setcolor && !hascolor) {
-				hascolor = 1;
+				hascolor = R_TRUE;
 				if (usecolor) {
-					if (lf && lf->color) {
-						char *ansicolor = r_cons_pal_parse (lf->color);
+					if (current_flag && current_flag->color) {
+						char *ansicolor = r_cons_pal_parse (current_flag->color);
 						append (ebytes, ansicolor);
+						append (echars, ansicolor);
 						free (ansicolor);
-					} else { // cycle colours
-						append (ebytes, colors[tmarks%sizeof(colors)]);
+					} else { // Use "random" colours
+						append (ebytes, colors[color_idx]);
+						append (echars, colors[color_idx]);
 					}
 				} else {
 					append (ebytes, Color_INVERT);
+					append (echars, Color_INVERT);
 				}
 			}
-			ch = buf[(i*nb_cols)+j];
+			here = R_MIN ((i * nb_cols) + j, core->blocksize);
+			ch = buf[here];
 			if (core->print->ocur!=-1) {
 				low = R_MIN (core->print->cur, core->print->ocur);
 				max = R_MAX (core->print->cur, core->print->ocur);
@@ -216,7 +247,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				low = max = core->print->cur;
 			}
 			if (core->print->cur_enabled) {
-				int here = (i*nb_cols)+j;
 				if (low==max) {
 					if (low == here) {
 						append (echars, Color_INVERT);
@@ -233,62 +263,55 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			ebytes += strlen (ebytes);
 			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
 			echars++;
-			if (core->print->cur_enabled) {
-				if (max == ((i*nb_cols)+j)) {
-					append (ebytes, Color_RESET);
-					append (echars, Color_RESET);
-					hascolor = 0;
-				}
+			if (core->print->cur_enabled && max == here) {
+				append (ebytes, Color_RESET);
+				append (echars, Color_RESET);
+				hascolor = R_FALSE;
 			}
 
 			if (j < (nb_cols-1) && (j%2))
 				append (ebytes, " ");
 
-			if (fend!=UT64_MAX && fend == addr+j+1) {
+			if (fend != UT64_MAX && fend == addr+j+1) {
 				if (usecolor) {
 					append (ebytes, Color_RESET);
 					append (echars, Color_RESET);
 				}
 				fend = UT64_MAX;
-				hascolor = 0;
+				hascolor = R_FALSE;
 			}
 
 		}
-		// show comments and flags
-		if (marks>0) {
-			r_cons_strcat ("              ");
-			memset (out, ' ', sizeof (out));
-			out[sizeof (out)-1] = 0;
+		append (ebytes, Color_RESET);
+		append (echars, Color_RESET);
+		append (ebytes, (col==1)?"| ":(col==2)?" |":"  ");
+		if (col==2) append (echars, "|");
+
+		if (marks) { // show comments and flags
+			char* out = calloc (nb_cons_cols+1, sizeof(char));
+			memset (out, ' ', nb_cons_cols-1);
 			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
-					int off = (j*3);
-					off -= (j/2);
+					int off = (j*3) - (j/2) + 12;
 					if (j%2) off--;
-					memcpy (out+off, "/", 1);
-					memcpy (out+off+1, note[j], strlen (note[j]));
+					memcpy (out+off, note[j], //avoid overflow
+						R_MIN(strlen (note[j]), nb_cons_cols-(off+13)));
+					free (note[j]);
 				}
-				/// XXX overflow
 			}
-			out[70] = 0;
 			r_cons_strcat (out);
 			r_cons_newline ();
-			marks = 0;
+			marks = R_FALSE;
+			free (out);
 		}
-		if (usecolor) r_cons_strcat (Color_GREEN);
-		r_cons_printf ("0x%08"PFMT64x, addr);
-		if (usecolor) r_cons_strcat (Color_RESET);
-		r_cons_strcat ((col==1)?" |":"  ");
 		r_cons_strcat (bytes);
-		r_cons_strcat (Color_RESET);
-		r_cons_strcat ((col==1)?"| ":(col==2)?" |":"  ");
 		r_cons_strcat (chars);
-		r_cons_strcat (Color_RESET);
-		if (col==2) r_cons_strcat ("|");
 		r_cons_newline ();
 		addr += nb_cols;
 	}
 	free (note);
-	free (legend);
+	free (bytes);
+	free (chars);
 }
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
