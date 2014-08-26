@@ -636,8 +636,25 @@ R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 	}
 }
 
-R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {
-	p->write (buf, len);
+R_API void r_print_raw(RPrint *p, const ut8* buf, int len, int offlines) {
+	if (offlines) {
+		const ut8 *o, *q;
+		int mustbreak = 0 ;
+		o = q = buf;
+		do {
+			p->printf ("0x%08x  ", (int)(size_t)(q-buf));
+			for (;*q && *q != '\n'; q++);
+			if (!*q) {
+				mustbreak = 1;
+			}
+			p->write (o, (int)(size_t)(q-o));
+
+			p->printf ("\n");
+			o = ++q;
+		} while (!mustbreak);
+	} else {
+		p->write (buf, len);
+	}
 }
 
 R_API void r_print_c(RPrint *p, const ut8 *str, int len) {

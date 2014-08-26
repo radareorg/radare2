@@ -1350,7 +1350,16 @@ static int cmd_print(void *data, const char *input) {
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
 		break;
 	case 'r': //pr
-		r_print_raw (core->print, core->block, len);
+		switch (input[1]) {
+		case '?':
+			eprintf("Usage: prl: print raw with lines offsets\n");
+			break;
+		case 'l':
+			r_print_raw (core->print, core->block, len, 1);
+			break;
+		default:
+			r_print_raw (core->print, core->block, len, 0);
+		}
 		break;
 	case 'x': //px
 		{
