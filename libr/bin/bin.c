@@ -1091,10 +1091,11 @@ R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	ut64 from, to;
 
 	if (o) {
+		// TODO: must be O(1) .. use sdb here
 		r_list_foreach (o->sections, iter, section) {
 			from = va ? o->baddr+section->vaddr: section->paddr;
-			to = va ? o->baddr+section->vaddr + section->vsize :
-					  section->paddr+ section->size;
+			to = va ? (o->baddr+section->vaddr + section->vsize) :
+					  (section->paddr+ section->size);
 			if (off >= from && off < to)
 				return section;
 		}
@@ -1125,26 +1126,22 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 
 R_API RList* r_bin_get_strings(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->strings;
-	return NULL;
+	return o? o->strings: NULL;
 }
 
 R_API RList* r_bin_get_symbols(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->symbols;
-	return NULL;
+	return o? o->symbols: NULL;
 }
 
 R_API int r_bin_is_big_endian (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->info->big_endian;
-	return R_FALSE;
+	return o? o->info->big_endian: R_FALSE;
 }
 
 R_API int r_bin_is_stripped (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return R_BIN_DBG_STRIPPED & o->info->dbg_info;
-	return 1;
+	return o? (R_BIN_DBG_STRIPPED & o->info->dbg_info): 1;
 }
 
 R_API int r_bin_is_static (RBin *bin) {
@@ -1157,20 +1154,17 @@ R_API int r_bin_is_static (RBin *bin) {
 // TODO: Integrate with r_bin_dbg */
 R_API int r_bin_has_dbg_linenums (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return R_BIN_DBG_LINENUMS & o->info->dbg_info;
-	return R_FALSE;
+	return o? (R_BIN_DBG_LINENUMS & o->info->dbg_info): R_FALSE;
 }
 
 R_API int r_bin_has_dbg_syms (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return R_BIN_DBG_SYMS & o->info->dbg_info;
-	return R_FALSE;
+	return o? (R_BIN_DBG_SYMS & o->info->dbg_info): R_FALSE;
 }
 
 R_API int r_bin_has_dbg_relocs (RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (!o) return R_FALSE;
-	return R_BIN_DBG_RELOCS & o->info->dbg_info;
+	return o?(R_BIN_DBG_RELOCS & o->info->dbg_info): R_FALSE;
 }
 
 R_API RBin* r_bin_new() {
@@ -1222,7 +1216,6 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 	RBinInfo *info = NULL;
 	r_list_foreach (binfile->objs, iter, obj) {
 		info = obj->info;
-
 		if ( info && (bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
 			!strcmp (info->file, name)){

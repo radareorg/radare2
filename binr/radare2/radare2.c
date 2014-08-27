@@ -259,7 +259,10 @@ int main(int argc, char **argv, char **envp) {
 		case 'b': asmbits = optarg; break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
-			va = baddr? 2: 0;
+			va = 2;
+			// hackaround. baddr=0: no laddr and -1 means baddr=0
+			if (baddr==0)
+				baddr = UT64_MAX;
 			break;
 		case 'c': r_list_append (cmds, optarg); break;
 		case 'C':
@@ -357,7 +360,7 @@ int main(int argc, char **argv, char **envp) {
 	switch (va) {
 	case 0:
 		r_config_set_i (r.config, "io.va", 0);
-baddr = 0;
+		baddr = 0;
 		break;
 	case 2:
 		r_config_set_i (r.config, "bin.laddr", baddr);
