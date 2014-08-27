@@ -822,7 +822,6 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_delay_import_directory) *curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
 	int i, index = 0;
-	int already_added = 0;
 	int len = 0;
 	int max_libs = 20;
 	libs = calloc (max_libs, sizeof(struct r_bin_pe_lib_t));
@@ -831,8 +830,9 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		return NULL;
 	}
 
-	// normal imports
+	RStrHT *lib_map = r_strht_new();
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
+		// normal imports
 		curr_import_dir = (bin->b->buf + bin->import_directory_offset);
 		while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
@@ -845,31 +845,24 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			}
 			libs[index].name[len] = '\0';
 			r_str_case (libs[index].name, 0);
-			for (i = 0; i < index; i++) {
-				if (strncmp (libs[i].name, libs[index].name, len) == 0) {
-					already_added = 1;
-					break;
-				}
-			}
-			if (!already_added) {
+			if (r_strht_get (lib_map, libs[index].name) == NULL) {
+				r_strht_set (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
 					if (!libs) {
 						r_sys_perror ("realloc (libs)");
+						r_strht_free (lib_map);
 						return NULL;
 					}
 					max_libs *= 2;
 				}
-			} else {
-				already_added = 0;
 			}
 			curr_import_dir++;
 		}
 	}
 
 	if (bin->delay_import_directory_offset < bin->size && bin->delay_import_directory_offset > 0) {
-	// delayed imports
 		curr_delay_import_dir = (bin->b->buf + bin->delay_import_directory_offset);
 		while (curr_delay_import_dir->Name != 0 && curr_delay_import_dir->DelayImportNameTable != 0) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
@@ -880,28 +873,23 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			}
 			libs[index].name[len] = '\0';
 			r_str_case (libs[index].name, 0);
-			for (i = 0; i < index; i++) {
-				if (strncmp (libs[i].name, libs[index].name, len) == 0) {
-					already_added = 1;
-					break;
-				}
-			}
-			if (!already_added) {
+			if (r_strht_get (lib_map, libs[index].name) == NULL) {
+				r_strht_set (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
 					if (!libs) {
+						r_strht_free (lib_map);
 						r_sys_perror ("realloc (libs)");
 						return NULL;
 					}
 					max_libs *= 2;
 				}
-			} else {
-				already_added = 0;
 			}
 			curr_delay_import_dir++;
 		}
 	}
+	r_strht_free (lib_map);
 	libs[index].last = 1;
 	return libs;
 }
