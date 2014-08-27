@@ -259,7 +259,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'b': asmbits = optarg; break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
-			va = 2;
+			va = baddr? 2: 0;
 			break;
 		case 'c': r_list_append (cmds, optarg); break;
 		case 'C':
@@ -354,8 +354,14 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	if (va == 2) {
+	switch (va) {
+	case 0:
+		r_config_set_i (r.config, "io.va", 0);
+baddr = 0;
+		break;
+	case 2:
 		r_config_set_i (r.config, "bin.laddr", baddr);
+		break;
 	}
 // TODO: set io.va = 2 if -B
 
@@ -480,6 +486,7 @@ int main(int argc, char **argv, char **envp) {
 			}
 			if (r.file && r.file->filename)
 				filepath = r.file->filename;
+
 			if (!r_core_bin_load (&r, filepath, baddr))
 				r_config_set (r.config, "io.va", "false");
 		}
