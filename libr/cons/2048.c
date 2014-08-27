@@ -66,7 +66,7 @@ moves++;
 	if (d=='a') {
 		twok_add ();
 	} else
-	for (k=0;k<4;k++) {
+	for (k=0; k<4; k++) {
 	switch (d) {
 	case 'h': // left
 		// for each row
@@ -190,6 +190,7 @@ R_API void r_cons_2048() {
 		r_cons_flush ();
 		twok_print();
 		ch = r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch);
 		if (ch<1||ch =='q') break;
 		twok_move (ch);
 		twok_add ();
