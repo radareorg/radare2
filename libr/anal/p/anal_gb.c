@@ -296,8 +296,8 @@ static inline void gb_anal_and_res (RAnal *anal, RAnalOp *op, const ut8 data)	//
 	op->dst->memref = ((data & 7) == 6);
 	op->dst->reg = r_reg_get (anal->reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if (op->dst->memref)
-		r_strbuf_setf (&op->esil, "1[%s]=1[%s]&0x%02x", regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
-	else	r_strbuf_setf (&op->esil, "%s=%s&0x%02x", regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
+		r_strbuf_setf (&op->esil, "0x%02x,%s,[1],&,%s,=[1]", op->src[0]->imm, regs_x[data & 7], regs_x[data & 7]);
+	else	r_strbuf_setf (&op->esil, "0x%02x,%s,&=", op->src[0]->imm, regs_x[data & 7]);
 }
 
 static inline void gb_anal_and_bit (RReg *reg, RAnalOp *op, const ut8 data)
@@ -308,8 +308,8 @@ static inline void gb_anal_and_bit (RReg *reg, RAnalOp *op, const ut8 data)
 	op->dst->memref = ((data & 7) == 6);
 	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if (op->dst->memref)
-		r_strbuf_setf (&op->esil, "Z=(1[%s]&%i)==0", regs_x[data & 7], op->src[0]->imm);
-	else	r_strbuf_setf (&op->esil, "Z=(%s&%i)==0", regs_x[data & 7], op->src[0]->imm);
+		r_strbuf_setf (&op->esil, "%i,%s,[1],&,0,==,%%z,Z,=,0,N,=,1,H,=", op->src[0]->imm, regs_x[data & 7]);
+	else	r_strbuf_setf (&op->esil, "%i,%s,&,0,==,%%z,Z,=,0,N,=,1,H,=", op->src[0]->imm, regs_x[data & 7]);
 }
 
 static inline void gb_anal_or_set (RAnal *anal, RAnalOp *op, const ut8 data)	//set
@@ -320,8 +320,8 @@ static inline void gb_anal_or_set (RAnal *anal, RAnalOp *op, const ut8 data)	//s
 	op->dst->memref = ((data & 7) == 6);
 	op->dst->reg = r_reg_get (anal->reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if (op->dst->memref)
-		r_strbuf_setf (&op->esil, "1[%s]=1[%s]|0x%02x", regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
-	else	r_strbuf_setf (&op->esil, "%s=%s|0x%02x", regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
+		r_strbuf_setf (&op->esil, "0x%02x,%s,[1],|,%s,=[1]", op->src[0]->imm, regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
+	else	r_strbuf_setf (&op->esil, "0x%02x,%s,|=", op->src[0]->imm, regs_x[data & 7]);
 }
 
 static void gb_anal_xoaasc (RReg *reg, RAnalOp *op, const ut8 *data)
