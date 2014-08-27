@@ -213,6 +213,11 @@ typedef struct r_cons_t {
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
 
+#define Colors_PLAIN { \
+	Color_BLACK, Color_RED, Color_WHITE, \
+	Color_GREEN, Color_MAGENTA, Color_YELLOW, \
+	Color_CYAN, Color_BLUE, Color_GRAY}
+
 enum {
 	PAL_PROMPT = 0,
 	PAL_ADDRESS,
