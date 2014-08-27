@@ -276,6 +276,7 @@ R_API int r_anal_op_is_eob (RAnalOp *op) {
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_TRAP:
 		return 1;
 	}
 	return 0;

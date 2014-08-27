@@ -42,10 +42,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			switch (insn->id) {
 			case X86_INS_FNOP:
 			case X86_INS_NOP:
-			case X86_INS_HLT:
 				op->type = R_ANAL_OP_TYPE_NOP;
 				if (a->decode)
 					esilprintf (op, "");
+				break;
+			case X86_INS_HLT:
+				op->type = R_ANAL_OP_TYPE_TRAP;
 				break;
 			case X86_INS_CLI:
 			case X86_INS_STI:
