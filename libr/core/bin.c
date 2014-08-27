@@ -458,7 +458,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 			ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
 			if (at == 0) at = entry->vaddr;
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
-			r_flag_set (r->flags, str, at, r->blocksize, 0);
+			r_flag_set (r->flags, str, at, 1, 0);
 		}
 		/* Seek to the last entry point */
 		if (entry)
@@ -473,7 +473,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 				paddr, entry->vaddr);
 			if (mode) {
 				ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
-				r_cons_printf ("f entry%i @ 0x%08"PFMT64x"\n", i, at);
+				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
 				r_cons_printf ("s entry%i\n", i);
 			} else r_cons_printf ("vaddr=0x%08"PFMT64x
 					" paddr=0x%08"PFMT64x
