@@ -8,9 +8,6 @@
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
 #endif
-#if CS_API_MINOR < 1
-#error Old Capstone not supported
-#endif
 
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 #define INSOP(n) insn->detail->x86.operands[n]
