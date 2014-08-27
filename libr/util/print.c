@@ -639,17 +639,18 @@ R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 R_API void r_print_raw(RPrint *p, const ut8* buf, int len, int offlines) {
 	if (offlines) {
 		const ut8 *o, *q;
-		int mustbreak = 0 ;
+		int mustbreak = 0, linenum = 1;
 		o = q = buf;
 		do {
-			p->printf ("0x%08x  ", (int)(size_t)(q-buf));
+			p->printf ("%d 0x%08x ", linenum,
+				(int)(size_t)(q-buf));
 			for (;*q && *q != '\n'; q++);
-			if (!*q) {
+			if (!*q)
 				mustbreak = 1;
-			}
 			p->write (o, (int)(size_t)(q-o));
 
 			p->printf ("\n");
+			linenum++;
 			o = ++q;
 		} while (!mustbreak);
 	} else {
