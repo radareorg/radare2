@@ -134,9 +134,6 @@ static int cmd_log(void *data, const char *input) {
 			r_core_log_list (core, n, 0, 't');
 		}
 		break;
-	case 's':
-		r_core_syscmd_ls (input);
-		break;
 	case 'j':
 	case '*':
 	case '\0':
