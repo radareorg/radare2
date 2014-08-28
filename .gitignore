@@ -28,3 +28,4 @@ libr/include/r_userconf.h
 shlr/java/out
 shlr/sdb/sdb
 shlr/sdb/src/sdb
+shlr/sdb/src/sdb-version.h
