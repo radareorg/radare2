@@ -43,7 +43,7 @@ function asyncLoop(iterations, func, callback) {
     return loop;
 }
 
-if (module !== undefined) {
+if (typeof (module) !== 'undefined') {
   module.exports = function(r) {
     if (typeof (r) == 'function')
       r2cmd = r;

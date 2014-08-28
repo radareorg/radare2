@@ -200,7 +200,14 @@ static char *rtr_dir_files (const char *path) {
 	return r_str_concat (ptr, "</body></html>\n");
 }
 
-R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+
+typedef struct {
+	RCore *core;
+	int launch;
+	const char *path;
+} HttpThread;
+
+static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	char buf[32];
 	RSocketHTTPRequest *rs;
 	int iport, oldsandbox = -1;
@@ -212,24 +219,13 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	int v = r_config_get_i (core->config, "asm.cmtright");
 	const char *port = r_config_get (core->config, "http.port");
 	char *allow = (char *)r_config_get (core->config, "http.allow");
-	if (core->http_up) {
-		eprintf ("http server is already running\n");
-		return 1;
-	}
-	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
-		return 1;
-	}
-	if (path && atoi (path)) {
-		port = path;
-		path = NULL;
-	}
 	if (!strcmp (port, "0")) {
 		r_num_irand ();
 		iport = 1024+r_num_rand (45256);
 		snprintf (buf, sizeof (buf), "%d", iport);
 		port = buf;
 	}
+	RSocket *s;
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
 	if (!r_socket_listen (s, port, NULL)) {
@@ -456,6 +452,49 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	if (oldsandbox != -1)
 		r_config_set_i (core->config, "cfg.sandbox", oldsandbox);
 	return 0;
+}
+
+static int r_core_rtr_http_thread (RThread *th) {
+	HttpThread *ht = th->user;
+	return r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+}
+
+static RThread *httpthread = NULL;
+
+#define USE_THREADS 1
+
+R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+	const char *port;
+
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: connect disabled\n");
+		return 1;
+	}
+	if (core->http_up) {
+		eprintf ("http server is already running\n");
+		return 1;
+	}
+	if (path && atoi (path)) {
+		port = path;
+		path = NULL;
+	}
+
+	if (launch==2) {
+	if (httpthread) {
+		eprintf ("HTTP Thread is already running\n");
+		eprintf ("This is experimental and probably buggy. Use at your own risk\n");
+		eprintf ("TODO: Add a command to kill that thread\n");
+		eprintf ("TODO: Use different eval environ for scr. for the web\n");
+		eprintf ("TODO: Visual mode should be enabled on local\n");
+	} else {
+		HttpThread ht = { core, launch, path };
+		httpthread = r_th_new (r_core_rtr_http_thread, &ht, 0);
+		r_th_start (httpthread, 1);
+		eprintf ("Background http server started.\n");
+	}
+	return 0;
+	}
+	return r_core_rtr_http_run (core, launch, path);
 }
 
 R_API void r_core_rtr_help(RCore *core) {

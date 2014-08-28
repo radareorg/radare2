@@ -35,9 +35,7 @@ R_API int r_th_push_task(struct r_th_t *th, void *user) {
 }
 
 R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
-	RThread *th;
-	
-	th = R_NEW (RThread);
+	RThread *th = R_NEW0 (RThread);
 	if (th) {
 		th->lock = r_th_lock_new();
 		th->running = R_FALSE;
