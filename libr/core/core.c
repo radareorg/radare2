@@ -658,7 +658,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_anal_free (c->anal);
 	r_asm_free (c->assembler);
 	r_print_free (c->print);
-	r_bin_free (c->bin);
+	// r_bin_free (c->bin); // XXX segfaults rabin2 -c
 	//r_lang_free (c->lang); // XXX segfaults
 	r_debug_free (c->dbg);
 	r_config_free (c->config);
