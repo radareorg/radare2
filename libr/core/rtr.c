@@ -10,6 +10,97 @@
 static RSocket *s = NULL;
 static const char *listenport = NULL;
 
+typedef struct {
+	const char *host;
+	const char *port;
+	const char *file;
+} TextLog;
+
+static char *rtrcmd (TextLog T, const char *str) {
+	int len;
+	char uri[1024];
+	char *res, *ptr2, *ptr = r_str_uri_encode (str);
+	if (ptr) str = ptr;
+	snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
+		T.host, T.port, T.file, str);
+	if (ptr == str) free (ptr);
+	ptr2 = r_socket_http_get (uri, NULL, &len);
+	if (ptr2) {
+		ptr2[len] = 0;
+		res = strstr (ptr2, "\n\n");
+		if (res) res = strstr (res+1, "\n\n");
+		if (res) res += 2; else res = ptr2;
+		//printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
+		return ptr2;
+	}
+	return NULL;
+}
+
+// TODO: rename /name to /nick or /so?
+// clone of textlog_chat () using rtrcmd()
+static int rtr_textlog_chat (RCore *core, TextLog T) {
+	char prompt[64];
+	char buf[1024];
+	int lastmsg = 0;
+	const char *me = r_config_get (core->config, "cfg.user");
+	char *ret, msg[1024];
+
+	eprintf ("Type '/help' for commands:\n");
+	char *oldprompt = strdup (r_line_singleton ()->prompt);
+	snprintf (prompt, sizeof (prompt)-1, "[%s]> ", me);
+	r_line_set_prompt (prompt);
+	ret = rtrcmd (T, msg);
+	for (;;) {
+		if (lastmsg) {
+			snprintf (msg, sizeof (msg)-1, "T %d", lastmsg);
+		} else {
+			strcpy (msg, "T");
+}
+		ret = rtrcmd (T, msg);
+		r_cons_printf ("%s\n", ret);
+		free (ret);
+		ret = rtrcmd (T, "Tl");
+		lastmsg = atoi (ret)-1;
+		free (ret);
+		if (r_cons_fgets (buf, sizeof (buf)-1, 0, NULL)<0)
+			goto beach;
+		if (!*buf) continue;
+		if (!strcmp (buf, "/help")) {
+			eprintf ("/quit           quit the chat (same as ^D)\n");
+			eprintf ("/name <nick>    set cfg.user name\n");
+			eprintf ("/log            show full log\n");
+			eprintf ("/clear          clear text log messages\n");
+		} else if (!strncmp (buf, "/name ", 6)) {
+			snprintf (msg, sizeof (msg)-1, "* '%s' is now known as '%s'", me, buf+6);
+			r_core_log_add (core, msg);
+			r_config_set (core->config, "cfg.user", buf+6);
+			me = r_config_get (core->config, "cfg.user");
+			snprintf (prompt, sizeof (prompt)-1, "[%s]> ", me);
+			r_line_set_prompt (prompt);
+		} else if (!strcmp (buf, "/log")) {
+			char *ret = rtrcmd (T, "T");
+			if (ret) {
+				r_cons_printf ("%s\n", ret);
+				free (ret);
+			}
+		} else if (!strcmp (buf, "/clear")) {
+			//r_core_log_del (core, 0);
+			free (rtrcmd (T, "T-"));
+		} else if (!strcmp (buf, "/quit")) {
+			goto beach;
+		} else if (*buf=='/') {
+			eprintf ("Unknown command: %s\n", buf);
+		} else {
+			snprintf (msg, sizeof (msg)-1, "T [%s] %s", me, buf);
+			free (rtrcmd (T, msg));
+		}
+	}
+beach:
+	r_line_set_prompt (oldprompt);
+	free (oldprompt);
+	return 1;
+}
+
 #define http_break r_core_rtr_http_stop
 R_API int r_core_rtr_http_stop(RCore *u) {
 	RSocket* sock;
@@ -453,6 +544,11 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 					char *ptr, *str = r_line_readline ();
 					if (!str || !*str) break;
 					if (*str == 'q') break;
+					if (!strcmp (str, "TT")) {
+						TextLog T = { host, port, file };
+						rtr_textlog_chat (core, T);
+
+					} else {
 					ptr = r_str_uri_encode (str);
 					if (ptr) str = ptr;
 					snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
@@ -468,6 +564,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						r_line_hist_add (str);
 						free (str);
 					}
+}
 				}
 				r_socket_free (fd);
 				return;

@@ -38,6 +38,8 @@ static int textlog_chat (RCore *core) {
 			return 0;
 		} else if (!strcmp (buf, "/quit")) {
 			return 0;
+		} else if (*buf=='/') {
+			eprintf ("Unknown command: %s\n", buf);
 		} else {
 			snprintf (msg, sizeof (msg)-1, "[%s] %s", me, buf);
 			r_core_log_add (core, msg);
