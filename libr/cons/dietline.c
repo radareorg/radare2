@@ -178,8 +178,11 @@ static int r_line_hist_down() {
 			I.buffer.index = I.buffer.length = 0;
 			return 0;
 		}
-		strncpy (I.buffer.data, I.history.data[++I.history.index], R_LINE_BUFSIZE-1);
-		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+		I.history.index++;
+		if (I.history.data[I.history.index]) {
+			strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE-1);
+			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+		}
 		return R_TRUE;
 	}
 	return R_FALSE;
