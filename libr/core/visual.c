@@ -99,10 +99,11 @@ static void visual_help() {
 	" o        go/seek to given offset\n"
 	" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
 	" q        back to radare shell\n"
+	" r        browse anal info and comments\n"
 	" R        randomize color palette (ecr)\n"
 	" sS       step / step over\n"
 	" t        track flags (browse symbols, functions..)\n"
-	" T        browse anal info and comments\n"
+	" T        enter textlog chat console (TT)\n"
 	" v        visual code analysis menu\n"
 	" V/W      (V)iew graph using cmd.graph (agv?), open (W)ebUI\n"
 	" uU       undo/redo seek\n"
@@ -604,6 +605,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} }
 		showcursor (core, R_FALSE);
 		break;
+	case 'T':
+		r_core_cmd0 (core, "TT");
+		break;
 	case 'F':
 		r_flag_unset_i (core->flags, core->offset + cursor, NULL);
 		break;
@@ -724,7 +728,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'X':
 		r_core_visual_xrefs_X (core);
 		break;
-	case 'T':
+	case 'r':
 		r_core_visual_comments (core);
 		break;
 	case 'W':

@@ -619,3 +619,12 @@ eprintf ("SET %p\n", env);
 R_API void r_sys_set_environ (char **e) {
 	env = e;
 }
+
+R_API char *r_sys_whoami (char *buf) {
+	char _buf[32];
+	int pid = getpid ();
+	int hasbuf = buf != 0;
+	if (!hasbuf) buf = _buf;
+	sprintf (buf, "pid%d", pid);
+	return hasbuf? strdup (buf): buf;
+}

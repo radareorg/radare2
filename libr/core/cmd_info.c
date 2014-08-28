@@ -150,9 +150,13 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Usage: ik [sdb-query]\n");
 			}
 			break;
-		case 'o': r_core_bin_load (core, input[1]==' '?
-				input+2: cf->filename,
-				r_config_get_i (core->config, "bin.baddr"));
+		case 'o': 
+			 {
+				const char *fn = input[1]==' '? input+2: cf->filename;
+				ut64 laddr = UT64_MAX;
+				laddr = r_config_get_i (core->config, "bin.baddr");
+				r_core_bin_load (core, fn, laddr);
+			 }
 			break;
 	#define RBININFO(n,x) \
 	if (is_array) { \

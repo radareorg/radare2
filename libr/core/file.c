@@ -441,7 +441,8 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_io_use_desc (r->io, desc);
 	}
 
-	if (cf && binfile && desc) binfile->fd = desc->fd;
+	if (cf && binfile && desc)
+		binfile->fd = desc->fd;
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
@@ -461,7 +462,8 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
+		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ;"
+			" wx `#adler32 $s-12 @12` @8)\"\n");
 	}
 
 	if (r_config_get_i (r->config, "file.analyze"))
@@ -645,7 +647,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	r_config_set_i (r->config, "zoom.to", fh->map->from+fh->size);
 	return fh;
 }
-
 
 R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
 	if (!core || !core->files || !cf) return R_FALSE;

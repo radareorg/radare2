@@ -784,6 +784,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
 #endif
 	free (p);
+	 {
+		char username[128];
+		SETPREF("cfg.user", r_sys_whoami (username), "Set current username/pid");
+	 }
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	SETPREF("cfg.fortunes", "true", "If enabled show tips at start");
 	SETI("cfg.hashlimit", SLURP_LIMIT, "If the file its bigger than hashlimit don't calculate the hash");

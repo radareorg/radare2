@@ -518,6 +518,22 @@ static int esil_syscall_linux_i386(RAnalEsil *esil) {
 	return 0;
 }
 
+static int esil_trap(RAnalEsil *esil) {
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && dst) {
+		if (r_anal_esil_get_parm (esil, src, &s)) {
+			if (r_anal_esil_get_parm (esil, dst, &d)) {
+				esil->trap = s;
+				esil->trap_code = d;
+				return 1;
+			} else eprintf ("FUCK\n");
+		} else eprintf ("JKWJKL\n");
+	}
+	return 0;
+}
+
 static int esil_syscall(RAnalEsil *esil) {
 	// pop number
 	// resolve arguments and run syscall handler
@@ -760,9 +776,14 @@ R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 	if (esil->stackptr<1) 
 		return 0;
 	//eprintf ("StackDump:\n");
-	for (i=esil->stackptr-1;i>=0; i--) {
+	for (i=esil->stackptr-1; i>=0; i--) {
 		esil->anal->printf ("%s\n", esil->stack[i]);
 	}
+	return 1;
+}
+static int esil_pop(RAnalEsil *esil) {
+	char *dst = r_anal_esil_pop (esil);
+	free (dst);
 	return 1;
 }
 
@@ -1309,6 +1330,7 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	esil->mem_read = internal_esil_mem_read;
 	esil->mem_write = internal_esil_mem_write;
 	r_anal_esil_set_op (esil, "$", esil_syscall);
+	r_anal_esil_set_op (esil, "$$", esil_trap);
 	r_anal_esil_set_op (esil, "==", esil_cmp);
 	r_anal_esil_set_op (esil, "<", esil_smaller);
 	r_anal_esil_set_op (esil, ">", esil_bigger);
@@ -1347,6 +1369,8 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	r_anal_esil_set_op (esil, "[2]", esil_peek2);
 	r_anal_esil_set_op (esil, "[4]", esil_peek4);
 	r_anal_esil_set_op (esil, "[8]", esil_peek8);
+	r_anal_esil_set_op (esil, "STACK", r_anal_esil_dumpstack);
+	r_anal_esil_set_op (esil, "POP", esil_pop);
 	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
 		return anal->cur->esil_init (esil);
 	return R_TRUE;

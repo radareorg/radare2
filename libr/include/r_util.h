@@ -497,6 +497,7 @@ R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
+R_API char *r_sys_whoami (char *buf);
 R_API char *r_sys_getdir();
 R_API int r_sys_chdir(const char *s);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
