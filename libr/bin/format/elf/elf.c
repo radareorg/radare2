@@ -474,6 +474,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_PPC:
 	case EM_PPC64:
 		return strdup ("ppc");
+	case EM_PROPELLER:
+		return strdup ("propeller");
 	case EM_SH: return strdup ("sh");
 	default: return strdup ("x86");
 	}
@@ -557,6 +559,7 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_ARC_A5:      return strdup ("ARC Cores Tangent-A5");
 	case EM_XTENSA:      return strdup ("Tensilica Xtensa Architecture");
 	case EM_AARCH64:     return strdup ("ARM aarch64");
+	case EM_PROPELLER:   return strdup ("Parallax Propeller");
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
 }
