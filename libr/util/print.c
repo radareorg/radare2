@@ -239,6 +239,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	case '?':
 		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
 		"  pc     C\n"
+		"  pc*    print 'wx' r2 commands\n"
 		"  pcw    C words (4 byte)\n"
 		"  pcd    C dwords (8 byte)\n"
 		"  pca    Assembly\n"
@@ -247,6 +248,16 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		"  pcj    json\n"
 		"  pcJ    javascript\n"
 		"  pcp    python\n");
+		break;
+	case '*':
+		p->printf ("wx ");
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (i && !(i%16)) p->printf (";s+16\nwx ");
+			p->printf ("%02x", buf[i]);
+		}
+		if (i && !(i%16)) p->printf (";s+16\n");
+		else p->printf (";s+%d\n", (i%16));
+		p->printf ("s-%d\n", len);
 		break;
 	case 'a':
 		p->printf ("shellcode:");
