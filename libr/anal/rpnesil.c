@@ -1021,7 +1021,7 @@ static int esil_deceq (RAnalEsil *esil) {
 	if (src_dst && (r_anal_esil_get_parm_type (esil, src_dst) == R_ANAL_ESIL_PARM_REG) && r_anal_esil_get_parm (esil, src_dst, &sd)) {
 		esil->old = sd;
 		sd--;
-		esil->cur = sd:
+		esil->cur = sd;
 		esil_reg_write (esil, src_dst, sd);
 		ret = R_TRUE;
 	} else {
