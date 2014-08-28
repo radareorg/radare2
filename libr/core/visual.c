@@ -606,7 +606,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		showcursor (core, R_FALSE);
 		break;
 	case 'T':
-		r_core_cmd0 (core, "TT");
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox not enabled\n");
+		} else {
+			if (r_config_get_i (core->config, "scr.interactive"))
+				r_core_cmd0 (core, "TT");
+		}
 		break;
 	case 'F':
 		r_flag_unset_i (core->flags, core->offset + cursor, NULL);

@@ -316,8 +316,6 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 R_API void r_core_rtr_help(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
-	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
-	"=", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nrap commands:", "", "",
 	"=", "", "list all open connections",
 	"=<", "[fd] cmd", "send output of local command to remote fd",
@@ -326,6 +324,9 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=+", " [proto://]host", "add host (default=rap://, tcp://, udp://)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
 	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
+	"\nrap server:","","",
+	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
+	"=", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nhttp server:", "", "",
 	"=h", "", "listen for http connections (r2 -qc=H /bin/ls)",
 	"=H", "", "launch browser and listen for http",
