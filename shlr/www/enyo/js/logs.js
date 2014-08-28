@@ -16,7 +16,7 @@ enyo.kind ({
   create: function() {
     this.inherited (arguments);
     var out = this.$.output;
-    this.logger = r2.get_logger ().on ("message", function (msg) {
+    this.logger = r2.getTextLogger ().on ("message", function (msg) {
       out.setContent (out.getContent() + msg.text + "\n");
     });
     this.logger.autorefresh (3);

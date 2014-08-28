@@ -15,7 +15,7 @@ r2ui.consoleExec = function () {
 
 r2ui.logger = null;
 function init () {
-	logger = r2.get_logger ().on ("message", function (msg) {
+	logger = r2.getTextLogger ().on ("message", function (msg) {
 		var out = document.getElementById ('logsBody');
 		out.innerHTML += "<br />"+msg.text; // XXX XSS
 	});

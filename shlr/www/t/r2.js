@@ -234,26 +234,26 @@ r2.alive = function (cb) {
   });
 }
 
-r2.get_logger = function (obj) {
+r2.getTextLogger = function (obj) {
   if (typeof (obj) != "object")
     obj = {};
   obj.last = 0;
   obj.events = {};
   obj.interval = null;
-  r2.cmd ("ll", function (x) {
+  r2.cmd ("Tl", function (x) {
     obj.last = +x;
   });
   obj.load = function (cb) {
-    r2.cmd ("lj "+(obj.last+1), function (ret) {
+    r2.cmd ("Tj "+(obj.last+1), function (ret) {
       if (cb) cb (JSON.parse (ret));
     });
   }
   obj.clear = function (cb) {
     // XXX: fix l-N
-    r2.cmd ("l-", cb); //+obj.last, cb);
+    r2.cmd ("T-", cb); //+obj.last, cb);
   }
   obj.send = function (msg, cb) {
-    r2.cmd ("l "+msg, cb);
+    r2.cmd ("T "+msg, cb);
   }
   obj.refresh = function (cb) {
     obj.load (function (ret) {
