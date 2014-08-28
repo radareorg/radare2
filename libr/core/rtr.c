@@ -30,10 +30,64 @@ static char *rtrcmd (TextLog T, const char *str) {
 		res = strstr (ptr2, "\n\n");
 		if (res) res = strstr (res+1, "\n\n");
 		if (res) res += 2; else res = ptr2;
-		//printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
 		return ptr2;
 	}
 	return NULL;
+}
+
+static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
+	if (cmd) {
+		r_cons_break (NULL, NULL);
+		for (;;) {
+			r_cons_clear00 ();
+			r_cons_printf ("%s\n", rtrcmd (T, cmd));
+			r_cons_flush ();
+			if (r_cons_singleton ()->breaked)
+				break;
+			r_sys_sleep (1);
+		}
+		r_cons_break_end ();
+	} else {
+		const char *cmds[] = { "px", "pd", "pxa", NULL };
+		int cmdidx = 0;
+		char *ret, ch;
+		for (;;) {
+			r_cons_clear00 ();
+			ret = rtrcmd (T, cmds[cmdidx]);
+			if (ret) {
+				r_cons_printf ("%s\n", ret);
+				free (ret);
+			}
+			r_cons_flush ();
+			ch = r_cons_readchar ();
+#if 0
+TODO: 
+ :   prompt
+ i   insert hex/string/asm
+ 0-9 follow jumps
+#endif
+			switch (ch) {
+			case '?': 
+				r_cons_clear00();
+				r_cons_printf ("Remote Visual keys:\n");
+				r_cons_printf (" hjkl : move\n");
+				r_cons_printf (" pP   : rotate print modes\n");
+				r_cons_printf (" q    : quit this mode and go back to the shell\n");
+				r_cons_flush ();
+				r_cons_any_key ();
+				break;
+			case 'j': free (rtrcmd (T, "s+16")); break;
+			case 'k': free (rtrcmd (T, "s-16")); break;
+			case 'h': free (rtrcmd (T, "s-1")); break;
+			case 'l': free (rtrcmd (T, "s+1")); break;
+			case 'p': cmdidx++; if (!cmds[cmdidx]) cmdidx = 0; break;
+			case 'P': cmdidx--; if (cmdidx<0) cmdidx = 2; break;
+			case 'q':
+				return 0;
+			}
+		}
+	}
+	return 1;
 }
 
 // TODO: rename /name to /nick or /so?
@@ -537,6 +591,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			int len;
 			char *str, *res;
 			if (file[strlen (file)-1]=='/') {
+				TextLog T = { host, port, file };
 				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
 					host, port, file);
 				r_line_set_prompt (prompt);
@@ -544,8 +599,14 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 					char *ptr, *str = r_line_readline ();
 					if (!str || !*str) break;
 					if (*str == 'q') break;
+					if (str[0]=='V') {
+						if (str[1]==' ') {
+							rtr_visual (core, T, str+1);
+						} else {
+							rtr_visual (core, T, NULL);
+						}
+					} else
 					if (!strcmp (str, "TT")) {
-						TextLog T = { host, port, file };
 						rtr_textlog_chat (core, T);
 
 					} else {
