@@ -219,6 +219,12 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	int v = r_config_get_i (core->config, "asm.cmtright");
 	const char *port = r_config_get (core->config, "http.port");
 	char *allow = (char *)r_config_get (core->config, "http.allow");
+
+	if (path && atoi (path)) {
+		port = path;
+		path = NULL;
+	}
+
 	if (!strcmp (port, "0")) {
 		r_num_irand ();
 		iport = 1024+r_num_rand (45256);
@@ -464,8 +470,6 @@ static RThread *httpthread = NULL;
 #define USE_THREADS 1
 
 R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
-	const char *port;
-
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return 1;
@@ -473,10 +477,6 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	if (core->http_up) {
 		eprintf ("http server is already running\n");
 		return 1;
-	}
-	if (path && atoi (path)) {
-		port = path;
-		path = NULL;
 	}
 
 	if (launch==2) {
