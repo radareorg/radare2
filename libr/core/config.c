@@ -898,7 +898,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.web", "false", "Display graph in web browser (VV)");
 
 	/* hud */
-	r_config_set (cfg, "hud.path", "");
+	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 
 	/* scr */
 #if __EMSCRIPTEN__
