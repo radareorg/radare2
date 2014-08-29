@@ -1199,6 +1199,576 @@ static int esil_peek(RAnalEsil *esil) {
 	return 0;
 }
 
+static int esil_mem_oreq1 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);				//save the dst-addr
+	char *src0 = r_anal_esil_pop (esil);				//get the src
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {		//get the src
+		ret = 1;
+		r_anal_esil_push (esil, dst);				//push the dst-addr
+		ret &= esil_peek1 (esil);				//read
+		src1 = r_anal_esil_pop (esil);				//get the old dst-value
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {	//get the old dst-value
+			d |= s;						//calculate the new dst-value
+			r_anal_esil_pushnum (esil, d);			//push the new dst-value
+			r_anal_esil_push (esil, dst);			//push the dst-addr
+			ret &= esil_poke1 (esil);			//write
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_oreq1: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_oreq2 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek2 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d |= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke2 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_oreq2: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_oreq4 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek4 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d |= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke4 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_oreq4: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_oreq8 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek8 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d |= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke8 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_oreq8: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_oreq(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+	case 64: return esil_mem_oreq8 (esil);
+	case 32: return esil_mem_oreq4 (esil);
+	case 16: return esil_mem_oreq2 (esil);
+	case 8: return esil_mem_oreq1 (esil);
+	}
+	return 0;
+}
+
+static int esil_mem_xoreq1 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek1 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d ^= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke1 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_xoreq1: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_xoreq2 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek2 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d ^= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke2 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_xoreq2: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_xoreq4 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek4 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d ^= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke4 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_xoreq4: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_xoreq8 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek8 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d ^= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke8 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_xoreq8: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_xoreq(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+	case 64: return esil_mem_xoreq8 (esil);
+	case 32: return esil_mem_xoreq4 (esil);
+	case 16: return esil_mem_xoreq2 (esil);
+	case 8: return esil_mem_xoreq1 (esil);
+	}
+	return 0;
+}
+
+static int esil_mem_andeq1 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek1 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d &= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke1 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_andeq1: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_andeq2 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek2 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d &= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke2 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_andeq2: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_andeq4 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek4 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d &= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke4 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_andeq4: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_andeq8 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek8 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d &= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke8 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_andeq8: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_andeq(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+	case 64: return esil_mem_andeq8 (esil);
+	case 32: return esil_mem_andeq4 (esil);
+	case 16: return esil_mem_andeq2 (esil);
+	case 8: return esil_mem_andeq1 (esil);
+	}
+	return 0;
+}
+
+static int esil_mem_addeq1 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek1 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d += s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke1 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_addeq1: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_addeq2 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek2 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d += s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke2 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_addeq2: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_addeq4 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek4 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d += s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke4 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_addeq4: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_addeq8 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek8 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d += s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke8 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_addeq8: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_addeq(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+	case 64: return esil_mem_addeq8 (esil);
+	case 32: return esil_mem_addeq4 (esil);
+	case 16: return esil_mem_addeq2 (esil);
+	case 8: return esil_mem_addeq1 (esil);
+	}
+	return 0;
+}
+
+static int esil_mem_subeq1 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek1 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d -= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke1 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_subeq1: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_subeq2 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek2 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d -= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke2 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_subeq2: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_subeq4 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek4 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d -= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke4 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_subeq4: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_subeq8 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		ret = 1;
+		r_anal_esil_push (esil, dst);
+		ret &= esil_peek8 (esil);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d -= s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= esil_poke8 (esil);
+		} else	ret = 0;
+	}
+	if (!ret)
+		eprintf ("esil_mem_subeq8: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_subeq(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+	case 64: return esil_mem_subeq8 (esil);
+	case 32: return esil_mem_subeq4 (esil);
+	case 16: return esil_mem_subeq2 (esil);
+	case 8: return esil_mem_subeq1 (esil);
+	}
+	return 0;
+}
+
 static int esil_smaller(RAnalEsil *esil) {		// 'src < dst' => 'src,dst,<'
 	int ret = 0;
 	ut64 s, d;
@@ -1435,6 +2005,31 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	r_anal_esil_set_op (esil, "=[2]", esil_poke2);
 	r_anal_esil_set_op (esil, "=[4]", esil_poke4);
 	r_anal_esil_set_op (esil, "=[8]", esil_poke8);
+	r_anal_esil_set_op (esil, "|=[]", esil_mem_oreq);
+	r_anal_esil_set_op (esil, "|=[1]", esil_mem_oreq1);
+	r_anal_esil_set_op (esil, "|=[2]", esil_mem_oreq2);
+	r_anal_esil_set_op (esil, "|=[4]", esil_mem_oreq4);
+	r_anal_esil_set_op (esil, "|=[8]", esil_mem_oreq8);
+	r_anal_esil_set_op (esil, "^=[]", esil_mem_xoreq);
+	r_anal_esil_set_op (esil, "^=[1]", esil_mem_xoreq1);
+	r_anal_esil_set_op (esil, "^=[2]", esil_mem_xoreq2);
+	r_anal_esil_set_op (esil, "^=[4]", esil_mem_xoreq4);
+	r_anal_esil_set_op (esil, "^=[8]", esil_mem_xoreq8);
+	r_anal_esil_set_op (esil, "&=[]", esil_mem_andeq);
+	r_anal_esil_set_op (esil, "&=[1]", esil_mem_andeq1);
+	r_anal_esil_set_op (esil, "&=[2]", esil_mem_andeq2);
+	r_anal_esil_set_op (esil, "&=[4]", esil_mem_andeq4);
+	r_anal_esil_set_op (esil, "&=[8]", esil_mem_andeq8);
+	r_anal_esil_set_op (esil, "+=[]", esil_mem_addeq);
+	r_anal_esil_set_op (esil, "+=[1]", esil_mem_addeq1);
+	r_anal_esil_set_op (esil, "+=[2]", esil_mem_addeq2);
+	r_anal_esil_set_op (esil, "+=[4]", esil_mem_addeq4);
+	r_anal_esil_set_op (esil, "+=[8]", esil_mem_addeq8);
+	r_anal_esil_set_op (esil, "-=[]", esil_mem_subeq);
+	r_anal_esil_set_op (esil, "-=[1]", esil_mem_subeq1);
+	r_anal_esil_set_op (esil, "-=[2]", esil_mem_subeq2);
+	r_anal_esil_set_op (esil, "-=[4]", esil_mem_subeq4);
+	r_anal_esil_set_op (esil, "-=[8]", esil_mem_subeq8);
 	r_anal_esil_set_op (esil, "[]", esil_peek);
 	r_anal_esil_set_op (esil, "[1]", esil_peek1);
 	r_anal_esil_set_op (esil, "[2]", esil_peek2);
