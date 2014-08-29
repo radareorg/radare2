@@ -13,12 +13,12 @@ if [ -z "$N" ]; then
 fi
 
 git branch -D branch
-git co -b branch
+git checkout -b branch
 git reset --hard @~100
 git pull $RR $RB
 C=`git log | grep ^commit | head -n $N | cut -d ' ' -f2`
 RC=""
-git co master
+git checkout master
 for a in $C ; do
 	RC="$a $RC"
 done
