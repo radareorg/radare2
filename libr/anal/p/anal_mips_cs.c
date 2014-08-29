@@ -74,10 +74,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SLL:
 		r_strbuf_appendf (&op->esil, "%s,%s,<<=", ARG(1), ARG(0));
 		break;
+	case MIPS_INS_BAL:
 	case MIPS_INS_JAL:
 	case MIPS_INS_JALR:
 	case MIPS_INS_JALRC:
-	case MIPS_INS_BGEZAL: // Branch on less than zero and link
 	case MIPS_INS_BLTZAL: // Branch on less than zero and link
 		r_strbuf_appendf (&op->esil, "pc,8,+,lr,=,%s,pc,=", ARG(0));
 		break;
@@ -87,10 +87,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// jump to address with conditional
 		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
 		break;
-	case MIPS_INS_BGEZ:
 	case MIPS_INS_B: // ???
 	case MIPS_INS_BZ:
 	case MIPS_INS_BGTZ:
+	case MIPS_INS_BGTZC:
+	case MIPS_INS_BGTZALC:
+	case MIPS_INS_BGEZ:
+	case MIPS_INS_BGEZC:
+	case MIPS_INS_BGEZAL: // Branch on less than zero and link
+	case MIPS_INS_BGEZALC:
 		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
 		break;
 	case MIPS_INS_BNE:  // bne $s, $t, offset 
@@ -100,6 +105,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_BEQ:
 	case MIPS_INS_BEQZ:
+	case MIPS_INS_BEQZC:
+	case MIPS_INS_BEQZALC:
 		r_strbuf_appendf (&op->esil, "%s,%s,==,?{,%s,pc,=,}",
 			ARG(0), ARG(1), ARG(2));
 		break;
@@ -236,10 +243,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
 		break;
+	case MIPS_INS_BAL:
 	case MIPS_INS_JAL:
 	case MIPS_INS_JALRC:
+	case MIPS_INS_BGEZAL: // Branch on less than zero and link
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->delay = 1;
+		op->jump = IMM(0);
+		op->fail = addr+4;
 		break;
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -308,8 +319,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_BNEZ:
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
+	case MIPS_INS_BGEZ:
+	case MIPS_INS_BGEZC:
+	case MIPS_INS_BGEZALC:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->delay = 1;
+		op->jump = IMM(0);
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
