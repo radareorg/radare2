@@ -475,10 +475,14 @@ static int __disasm(void *_core, ut64 addr) {
 
 static void update_sdb(RCore *core) {
 	RBinObject *o;
+	if (!core)
+		return;
 	//SDB// anal/
-	sdb_ns_set (DB, "anal", core->anal->sdb);
+	if (core->anal && core->anal->sdb)
+		sdb_ns_set (DB, "anal", core->anal->sdb);
 	//SDB// bin/
-	sdb_ns_set (DB, "bin", core->bin->sdb);
+	if (core->bin && core->bin->sdb)
+		sdb_ns_set (DB, "bin", core->bin->sdb);
 	//SDB// bin/info
 	o = r_bin_get_object (core->bin);
 	if (o) {
@@ -641,10 +645,9 @@ R_API int r_core_init(RCore *core) {
 R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
-	update_sdb (c);
+	//update_sdb (c);
 	free (c->cmdqueue);
 	free (c->lastcmd);
-	r_list_free (c->lang->defs);
 	r_io_free (c->io);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
@@ -654,13 +657,13 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
-	r_cmd_free (c->rcmd);
-	r_anal_free (c->anal);
-	r_asm_free (c->assembler);
-	r_print_free (c->print);
-	// r_bin_free (c->bin); // XXX segfaults rabin2 -c
-	//r_lang_free (c->lang); // XXX segfaults
-	r_debug_free (c->dbg);
+	c->rcmd = r_cmd_free (c->rcmd);
+	c->anal = r_anal_free (c->anal);
+	c->assembler = r_asm_free (c->assembler);
+	c->print = r_print_free (c->print);
+	c->bin = r_bin_free (c->bin); // XXX segfaults rabin2 -c
+	c->lang = r_lang_free (c->lang); // XXX segfaults
+	c->dbg = r_debug_free (c->dbg);
 	r_config_free (c->config);
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we

@@ -404,7 +404,6 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	if (!desc || !io) return R_FALSE;
 
 	bf = r_bin_file_find_by_name (bin, desc->name);
-
 	if (!bf) return R_FALSE;
 
 	the_obj_list = bf->objs;
@@ -984,12 +983,14 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 
 R_API void* r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
+
 	bin->file = NULL;
 	//r_bin_free_bin_files (bin);
 	r_list_free (bin->binfiles);
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->plugins);
 	sdb_free (bin->sdb);
+	memset (bin, 0, sizeof (RBin));
 	free (bin);
 	return NULL;
 }

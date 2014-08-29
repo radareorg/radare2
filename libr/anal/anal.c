@@ -100,8 +100,8 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	}
 }
 
-R_API void r_anal_free(RAnal *a) {
-	if (!a) return;
+R_API RAnal *r_anal_free(RAnal *a) {
+	if (!a) return NULL;
 	/* TODO: Free anals here */
 	free (a->cpu);
 	a->cpu = NULL;
@@ -119,7 +119,9 @@ R_API void r_anal_free(RAnal *a) {
 	if (a->esil)
 		r_anal_esil_free (a->esil);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
+	memset (a, 0, sizeof (RAnal));
 	free (a);
+	return NULL;
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {

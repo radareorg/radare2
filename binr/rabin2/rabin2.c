@@ -529,7 +529,6 @@ int main(int argc, char **argv) {
 			} else eprintf ("error dumping into a.out\n");
 			r_buf_free (b);
 		} else eprintf ("Cannot create binary for this format '%s'.\n", create);
-		r_bin_free (bin);
 		r_core_fini (&core);
 		return 0;
 	}

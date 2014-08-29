@@ -76,17 +76,20 @@ R_API void r_lang_def_free (RLangDef *def) {
 }
 
 R_API void r_lang_undef(RLang *lang, const char *name) {
-	if (name != NULL && *name) {
+	if (name && *name) {
 		RLangDef *def;
 		RListIter *iter;
 		/* No _safe loop necessary because we return immediately after the delete. */
 		r_list_foreach (lang->defs, iter, def) {
-			if (!strcasecmp (name, def->name)) {
+			if (!name || !strcasecmp (name, def->name)) {
 				r_list_delete (lang->defs, iter);
 				break;
 			}
 		}
-	} else r_list_purge (lang->defs);
+	} else {
+		r_list_purge (lang->defs);
+		lang->defs = NULL;
+	}
 }
 
 R_API int r_lang_setup(RLang *lang) {

@@ -180,19 +180,21 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 	return R_TRUE;
 }
 
-R_API void r_asm_free(RAsm *a) {
-	if (!a) return;
-	free (a->cpu);
-	// TODO: any memory leak here?
-	sdb_free (a->pair);
-	a->pair = NULL;
-	// XXX: segfault, plugins cannot be freed
-	if (a->plugins) {
-		a->plugins->free = NULL;
-		r_list_free (a->plugins);
-		a->plugins = NULL;
+R_API RAsm *r_asm_free(RAsm *a) {
+	if (a) {
+		free (a->cpu);
+		// TODO: any memory leak here?
+		sdb_free (a->pair);
+		a->pair = NULL;
+		// XXX: segfault, plugins cannot be freed
+		if (a->plugins) {
+			a->plugins->free = NULL;
+			r_list_free (a->plugins);
+			a->plugins = NULL;
+		}
+		free (a);
 	}
-	free (a);
+	return NULL;
 }
 
 R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
