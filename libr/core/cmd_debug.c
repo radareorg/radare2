@@ -208,6 +208,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case '*':
 		r_debug_pid_list (core->dbg, 0);
 		break;
+	case 'j':
+		r_debug_pid_list (core->dbg, -'j');
+		break;
 	case 'e':
 		{
 			int pid = (input[2] == ' ')? atoi(input+2): core->dbg->pid;
@@ -220,7 +223,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case ' ':
 		r_debug_pid_list (core->dbg,
-			(int) r_num_math (core->num, input+2));
+			(int) R_MAX (0, r_num_math (core->num, input+2)));
 		break;
 	case '?': {
 			const char* help_msg[] = {

@@ -25,25 +25,37 @@ R_API RList *r_debug_pids(RDebug *dbg, int pid) {
 }
 
 // TODO: deprecate? iterating in api? wtf?
-R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid) {
+R_API int r_debug_pid_list(RDebug *dbg, int pid) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
 	if (dbg && dbg->h && dbg->h->pids) {
-		list = dbg->h->pids (pid);
+		list = dbg->h->pids (R_MAX (0, pid));
 		if (list == NULL)
 			return R_FALSE;
-		r_list_foreach (list, iter, p) {
-			eprintf (" %c %d %c %s\n", 
-				dbg->pid==p->pid?'*':'-',
-				p->pid, p->status, p->path);
+		if (pid== -'j') {
+			dbg->printf ("[");
+			r_list_foreach (list, iter, p) {
+				dbg->printf ("{\"pid\":%d,"
+					"\"status\":\"%s\","
+					"\"path\":\"%s\"}%s",
+					p->pid, p->status, p->path,
+					iter->n?",":"");
+			}
+			dbg->printf ("]\n");
+		} else {
+			r_list_foreach (list, iter, p) {
+				dbg->printf (" %c %d %c %s\n", 
+					dbg->pid==p->pid?'*':'-',
+					p->pid, p->status, p->path);
+			}
 		}
 		r_list_free (list);
 	}
 	return R_FALSE;
 }
 
-R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid) {
+R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
@@ -51,10 +63,22 @@ R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid) {
 		list = dbg->h->threads (dbg, pid);
 		if (list == NULL)
 			return R_FALSE;
-		r_list_foreach (list, iter, p) {
-			eprintf (" %c %d %c %s\n",
-				dbg->tid==p->pid?'*':'-',
-				p->pid, p->status, p->path);
+		if (pid== -'j') {
+			dbg->printf ("[");
+			r_list_foreach (list, iter, p) {
+				dbg->printf ("{\"pid\":%d,"
+					"\"status\":\"%s\","
+					"\"path\":\"%s\"}%s",
+					p->pid, p->status, p->path,
+					iter->n?",":"");
+			}
+			dbg->printf ("]\n");
+		} else {
+			r_list_foreach (list, iter, p) {
+				dbg->printf (" %c %d %c %s\n",
+					dbg->tid==p->pid?'*':'-',
+					p->pid, p->status, p->path);
+			}
 		}
 		r_list_free (list);
 	}
