@@ -87,7 +87,7 @@ static void visual_help() {
 	" ;[-]cmt  add/remove comment\n"
 	" /*+-[]   change block size, [] = resize hex.cols\n"
 	" >||<     seek aligned to block size\n"
-	" i/a/A    (i)nsert hex, (a)ssemble code, visual (A)ssembler\n"
+	" a/A      (a)ssemble code, visual (A)ssembler\n"
 	" b/B      toggle breakpoint / automatic block size\n"
 	" c/C      toggle (c)ursor and (C)olors\n"
 	" d[f?]    define function, data, code, ..\n"
@@ -96,10 +96,12 @@ static void visual_help() {
 	" f/F      set/unset flag\n"
 	" gG       go seek to begin and end of file (0-$s)\n"
 	" hjkl     move around (or HJKL) (left-down-up-right)\n"
+	" i        insert hex or string (in hexdump) use tab to toggle\n"
 	" mK/'K    mark/go to Key (any key)\n"
 	" M        walk the mounted filesystems\n"
 	" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
 	" o        go/seek to given offset\n"
+	" O        toggle asm.esil\n"
 	" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
 	" q        back to radare shell\n"
 	" r        browse anal info and comments\n"
@@ -107,9 +109,9 @@ static void visual_help() {
 	" sS       step / step over\n"
 	" t        track flags (browse symbols, functions..)\n"
 	" T        enter textlog chat console (TT)\n"
+	" uU       undo/redo seek\n"
 	" v        visual code analysis menu\n"
 	" V/W      (V)iew graph using cmd.graph (agv?), open (W)ebUI\n"
-	" uU       undo/redo seek\n"
 	" xX       show xrefs/refs of current function from/to data/code\n"
 	" yY       copy and paste selection\n"
 	" z        toggle zoom mode\n"
@@ -1098,6 +1100,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 		}
 		}
+		break;
+	case 'O':
+		r_core_cmd0 (core, "e!asm.esil");
 		break;
 	case 'B':
 		autoblocksize = !autoblocksize;
