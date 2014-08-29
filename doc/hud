@@ -7,10 +7,13 @@ analyze preludes	ap
 continue process execution	dc;?i
 disable colors	e scr.color=0
 enable colors	e scr.color=1
-hide bytes in disassembly	e asm.bytes=0
+randomize colors	ecr
+hide bytes in disassembly	e asm.bytes=false
+show bytes in disassembly	e asm.bytes=true
 list imports 	ii;?ik
 list sections	iS;?ik
 list symbols	is;?ik
+list processes	dp*;?ik
 run command	?i cmd;`?y`;?ik
 seek to entrypoint	s entry0
 seek to main	s main
@@ -29,3 +32,5 @@ edit eval configuration	Veq
 calculator	?i enter math expression;? `?y`;?ik
 disassemble 1024 bytes and pipe to less(1)	b 1024;pd|less -R
 rename function	?i New name;afr `?y`
+set flag	?i Flag name;f `?y`
+unset flag	?i Flag name to delete;f-`?y`
