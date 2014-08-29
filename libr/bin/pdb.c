@@ -95,189 +95,193 @@ typedef struct {
 	STPI tpi;
 } STPIHeader;
 
-//# Fewer than 255 values so we're ok here
-//leaf_type = Enum(ULInt16("leaf_type"),
-//    LF_MODIFIER_16t         = 0x00000001,
-//    LF_POINTER_16t          = 0x00000002,
-//    LF_ARRAY_16t            = 0x00000003,
-//    LF_CLASS_16t            = 0x00000004,
-//    LF_STRUCTURE_16t        = 0x00000005,
-//    LF_UNION_16t            = 0x00000006,
-//    LF_ENUM_16t             = 0x00000007,
-//    LF_PROCEDURE_16t        = 0x00000008,
-//    LF_MFUNCTION_16t        = 0x00000009,
-//    LF_VTSHAPE              = 0x0000000A,
-//    LF_COBOL0_16t           = 0x0000000B,
-//    LF_COBOL1               = 0x0000000C,
-//    LF_BARRAY_16t           = 0x0000000D,
-//    LF_LABEL                = 0x0000000E,
-//    LF_NULL                 = 0x0000000F,
-//    LF_NOTTRAN              = 0x00000010,
-//    LF_DIMARRAY_16t         = 0x00000011,
-//    LF_VFTPATH_16t          = 0x00000012,
-//    LF_PRECOMP_16t          = 0x00000013,
-//    LF_ENDPRECOMP           = 0x00000014,
-//    LF_OEM_16t              = 0x00000015,
-//    LF_TYPESERVER_ST        = 0x00000016,
-//    LF_SKIP_16t             = 0x00000200,
-//    LF_ARGLIST_16t          = 0x00000201,
-//    LF_DEFARG_16t           = 0x00000202,
-//    LF_LIST                 = 0x00000203,
-//    LF_FIELDLIST_16t        = 0x00000204,
-//    LF_DERIVED_16t          = 0x00000205,
-//    LF_BITFIELD_16t         = 0x00000206,
-//    LF_METHODLIST_16t       = 0x00000207,
-//    LF_DIMCONU_16t          = 0x00000208,
-//    LF_DIMCONLU_16t         = 0x00000209,
-//    LF_DIMVARU_16t          = 0x0000020A,
-//    LF_DIMVARLU_16t         = 0x0000020B,
-//    LF_REFSYM               = 0x0000020C,
-//    LF_BCLASS_16t           = 0x00000400,
-//    LF_VBCLASS_16t          = 0x00000401,
-//    LF_IVBCLASS_16t         = 0x00000402,
-//    LF_ENUMERATE_ST         = 0x00000403,
-//    LF_FRIENDFCN_16t        = 0x00000404,
-//    LF_INDEX_16t            = 0x00000405,
-//    LF_MEMBER_16t           = 0x00000406,
-//    LF_STMEMBER_16t         = 0x00000407,
-//    LF_METHOD_16t           = 0x00000408,
-//    LF_NESTTYPE_16t         = 0x00000409,
-//    LF_VFUNCTAB_16t         = 0x0000040A,
-//    LF_FRIENDCLS_16t        = 0x0000040B,
-//    LF_ONEMETHOD_16t        = 0x0000040C,
-//    LF_VFUNCOFF_16t         = 0x0000040D,
-//    LF_TI16_MAX             = 0x00001000,
-//    LF_MODIFIER             = 0x00001001,
-//    LF_POINTER              = 0x00001002,
-//    LF_ARRAY_ST             = 0x00001003,
-//    LF_CLASS_ST             = 0x00001004,
-//    LF_STRUCTURE_ST         = 0x00001005,
-//    LF_UNION_ST             = 0x00001006,
-//    LF_ENUM_ST              = 0x00001007,
-//    LF_PROCEDURE            = 0x00001008,
-//    LF_MFUNCTION            = 0x00001009,
-//    LF_COBOL0               = 0x0000100A,
-//    LF_BARRAY               = 0x0000100B,
-//    LF_DIMARRAY_ST          = 0x0000100C,
-//    LF_VFTPATH              = 0x0000100D,
-//    LF_PRECOMP_ST           = 0x0000100E,
-//    LF_OEM                  = 0x0000100F,
-//    LF_ALIAS_ST             = 0x00001010,
-//    LF_OEM2                 = 0x00001011,
-//    LF_SKIP                 = 0x00001200,
-//    LF_ARGLIST              = 0x00001201,
-//    LF_DEFARG_ST            = 0x00001202,
-//    LF_FIELDLIST            = 0x00001203,
-//    LF_DERIVED              = 0x00001204,
-//    LF_BITFIELD             = 0x00001205,
-//    LF_METHODLIST           = 0x00001206,
-//    LF_DIMCONU              = 0x00001207,
-//    LF_DIMCONLU             = 0x00001208,
-//    LF_DIMVARU              = 0x00001209,
-//    LF_DIMVARLU             = 0x0000120A,
-//    LF_BCLASS               = 0x00001400,
-//    LF_VBCLASS              = 0x00001401,
-//    LF_IVBCLASS             = 0x00001402,
-//    LF_FRIENDFCN_ST         = 0x00001403,
-//    LF_INDEX                = 0x00001404,
-//    LF_MEMBER_ST            = 0x00001405,
-//    LF_STMEMBER_ST          = 0x00001406,
-//    LF_METHOD_ST            = 0x00001407,
-//    LF_NESTTYPE_ST          = 0x00001408,
-//    LF_VFUNCTAB             = 0x00001409,
-//    LF_FRIENDCLS            = 0x0000140A,
-//    LF_ONEMETHOD_ST         = 0x0000140B,
-//    LF_VFUNCOFF             = 0x0000140C,
-//    LF_NESTTYPEEX_ST        = 0x0000140D,
-//    LF_MEMBERMODIFY_ST      = 0x0000140E,
-//    LF_MANAGED_ST           = 0x0000140F,
-//    LF_ST_MAX               = 0x00001500,
-//    LF_TYPESERVER           = 0x00001501,
-//    LF_ENUMERATE            = 0x00001502,
-//    LF_ARRAY                = 0x00001503,
-//    LF_CLASS                = 0x00001504,
-//    LF_STRUCTURE            = 0x00001505,
-//    LF_UNION                = 0x00001506,
-//    LF_ENUM                 = 0x00001507,
-//    LF_DIMARRAY             = 0x00001508,
-//    LF_PRECOMP              = 0x00001509,
-//    LF_ALIAS                = 0x0000150A,
-//    LF_DEFARG               = 0x0000150B,
-//    LF_FRIENDFCN            = 0x0000150C,
-//    LF_MEMBER               = 0x0000150D,
-//    LF_STMEMBER             = 0x0000150E,
-//    LF_METHOD               = 0x0000150F,
-//    LF_NESTTYPE             = 0x00001510,
-//    LF_ONEMETHOD            = 0x00001511,
-//    LF_NESTTYPEEX           = 0x00001512,
-//    LF_MEMBERMODIFY         = 0x00001513,
-//    LF_MANAGED              = 0x00001514,
-//    LF_TYPESERVER2          = 0x00001515,
-//    LF_CHAR                 = 0x00008000,
-//    LF_SHORT                = 0x00008001,
-//    LF_USHORT               = 0x00008002,
-//    LF_LONG                 = 0x00008003,
-//    LF_ULONG                = 0x00008004,
-//    LF_REAL32               = 0x00008005,
-//    LF_REAL64               = 0x00008006,
-//    LF_REAL80               = 0x00008007,
-//    LF_REAL128              = 0x00008008,
-//    LF_QUADWORD             = 0x00008009,
-//    LF_UQUADWORD            = 0x0000800A,
-//    LF_REAL48               = 0x0000800B,
-//    LF_COMPLEX32            = 0x0000800C,
-//    LF_COMPLEX64            = 0x0000800D,
-//    LF_COMPLEX80            = 0x0000800E,
-//    LF_COMPLEX128           = 0x0000800F,
-//    LF_VARSTRING            = 0x00008010,
-//    LF_OCTWORD              = 0x00008017,
-//    LF_UOCTWORD             = 0x00008018,
-//    LF_DECIMAL              = 0x00008019,
-//    LF_DATE                 = 0x0000801A,
-//    LF_UTF8STRING           = 0x0000801B,
-//    LF_PAD0                 = 0x000000F0,
-//    LF_PAD1                 = 0x000000F1,
-//    LF_PAD2                 = 0x000000F2,
-//    LF_PAD3                 = 0x000000F3,
-//    LF_PAD4                 = 0x000000F4,
-//    LF_PAD5                 = 0x000000F5,
-//    LF_PAD6                 = 0x000000F6,
-//    LF_PAD7                 = 0x000000F7,
-//    LF_PAD8                 = 0x000000F8,
-//    LF_PAD9                 = 0x000000F9,
-//    LF_PAD10                = 0x000000FA,
-//    LF_PAD11                = 0x000000FB,
-//    LF_PAD12                = 0x000000FC,
-//    LF_PAD13                = 0x000000FD,
-//    LF_PAD14                = 0x000000FE,
-//    LF_PAD15                = 0x000000FF
-//)
+typedef enum {
+	eLF_MODIFIER_16t         = 0x00000001,
+	eLF_POINTER_16t          = 0x00000002,
+	eLF_ARRAY_16t            = 0x00000003,
+	eLF_CLASS_16t            = 0x00000004,
+	eLF_STRUCTURE_16t        = 0x00000005,
+	eLF_UNION_16t            = 0x00000006,
+	eLF_ENUM_16t             = 0x00000007,
+	eLF_PROCEDURE_16t        = 0x00000008,
+	eLF_MFUNCTION_16t        = 0x00000009,
+	eLF_VTSHAPE              = 0x0000000A,
+	eLF_COBOL0_16t           = 0x0000000B,
+	eLF_COBOL1               = 0x0000000C,
+	eLF_BARRAY_16t           = 0x0000000D,
+	eLF_LABEL                = 0x0000000E,
+	eLF_NULL                 = 0x0000000F,
+	eLF_NOTTRAN              = 0x00000010,
+	eLF_DIMARRAY_16t         = 0x00000011,
+	eLF_VFTPATH_16t          = 0x00000012,
+	eLF_PRECOMP_16t          = 0x00000013,
+	eLF_ENDPRECOMP           = 0x00000014,
+	eLF_OEM_16t              = 0x00000015,
+	eLF_TYPESERVER_ST        = 0x00000016,
+	eLF_SKIP_16t             = 0x00000200,
+	eLF_ARGLIST_16t          = 0x00000201,
+	eLF_DEFARG_16t           = 0x00000202,
+	eLF_LIST                 = 0x00000203,
+	eLF_FIELDLIST_16t        = 0x00000204,
+	eLF_DERIVED_16t          = 0x00000205,
+	eLF_BITFIELD_16t         = 0x00000206,
+	eLF_METHODLIST_16t       = 0x00000207,
+	eLF_DIMCONU_16t          = 0x00000208,
+	eLF_DIMCONLU_16t         = 0x00000209,
+	eLF_DIMVARU_16t          = 0x0000020A,
+	eLF_DIMVARLU_16t         = 0x0000020B,
+	eLF_REFSYM               = 0x0000020C,
+	eLF_BCLASS_16t           = 0x00000400,
+	eLF_VBCLASS_16t          = 0x00000401,
+	eLF_IVBCLASS_16t         = 0x00000402,
+	eLF_ENUMERATE_ST         = 0x00000403,
+	eLF_FRIENDFCN_16t        = 0x00000404,
+	eLF_INDEX_16t            = 0x00000405,
+	eLF_MEMBER_16t           = 0x00000406,
+	eLF_STMEMBER_16t         = 0x00000407,
+	eLF_METHOD_16t           = 0x00000408,
+	eLF_NESTTYPE_16t         = 0x00000409,
+	eLF_VFUNCTAB_16t         = 0x0000040A,
+	eLF_FRIENDCLS_16t        = 0x0000040B,
+	eLF_ONEMETHOD_16t        = 0x0000040C,
+	eLF_VFUNCOFF_16t         = 0x0000040D,
+	eLF_TI16_MAX             = 0x00001000,
+	eLF_MODIFIER             = 0x00001001,
+	eLF_POINTER              = 0x00001002,
+	eLF_ARRAY_ST             = 0x00001003,
+	eLF_CLASS_ST             = 0x00001004,
+	eLF_STRUCTURE_ST         = 0x00001005,
+	eLF_UNION_ST             = 0x00001006,
+	eLF_ENUM_ST              = 0x00001007,
+	eLF_PROCEDURE            = 0x00001008,
+	eLF_MFUNCTION            = 0x00001009,
+	eLF_COBOL0               = 0x0000100A,
+	eLF_BARRAY               = 0x0000100B,
+	eLF_DIMARRAY_ST          = 0x0000100C,
+	eLF_VFTPATH              = 0x0000100D,
+	eLF_PRECOMP_ST           = 0x0000100E,
+	eLF_OEM                  = 0x0000100F,
+	eLF_ALIAS_ST             = 0x00001010,
+	eLF_OEM2                 = 0x00001011,
+	eLF_SKIP                 = 0x00001200,
+	eLF_ARGLIST              = 0x00001201,
+	eLF_DEFARG_ST            = 0x00001202,
+	eLF_FIELDLIST            = 0x00001203,
+	eLF_DERIVED              = 0x00001204,
+	eLF_BITFIELD             = 0x00001205,
+	eLF_METHODLIST           = 0x00001206,
+	eLF_DIMCONU              = 0x00001207,
+	eLF_DIMCONLU             = 0x00001208,
+	eLF_DIMVARU              = 0x00001209,
+	eLF_DIMVARLU             = 0x0000120A,
+	eLF_BCLASS               = 0x00001400,
+	eLF_VBCLASS              = 0x00001401,
+	eLF_IVBCLASS             = 0x00001402,
+	eLF_FRIENDFCN_ST         = 0x00001403,
+	eLF_INDEX                = 0x00001404,
+	eLF_MEMBER_ST            = 0x00001405,
+	eLF_STMEMBER_ST          = 0x00001406,
+	eLF_METHOD_ST            = 0x00001407,
+	eLF_NESTTYPE_ST          = 0x00001408,
+	eLF_VFUNCTAB             = 0x00001409,
+	eLF_FRIENDCLS            = 0x0000140A,
+	eLF_ONEMETHOD_ST         = 0x0000140B,
+	eLF_VFUNCOFF             = 0x0000140C,
+	eLF_NESTTYPEEX_ST        = 0x0000140D,
+	eLF_MEMBERMODIFY_ST      = 0x0000140E,
+	eLF_MANAGED_ST           = 0x0000140F,
+	eLF_ST_MAX               = 0x00001500,
+	eLF_TYPESERVER           = 0x00001501,
+	eLF_ENUMERATE            = 0x00001502,
+	eLF_ARRAY                = 0x00001503,
+	eLF_CLASS                = 0x00001504,
+	eLF_STRUCTURE            = 0x00001505,
+	eLF_UNION                = 0x00001506,
+	eLF_ENUM                 = 0x00001507,
+	eLF_DIMARRAY             = 0x00001508,
+	eLF_PRECOMP              = 0x00001509,
+	eLF_ALIAS                = 0x0000150A,
+	eLF_DEFARG               = 0x0000150B,
+	eLF_FRIENDFCN            = 0x0000150C,
+	eLF_MEMBER               = 0x0000150D,
+	eLF_STMEMBER             = 0x0000150E,
+	eLF_METHOD               = 0x0000150F,
+	eLF_NESTTYPE             = 0x00001510,
+	eLF_ONEMETHOD            = 0x00001511,
+	eLF_NESTTYPEEX           = 0x00001512,
+	eLF_MEMBERMODIFY         = 0x00001513,
+	eLF_MANAGED              = 0x00001514,
+	eLF_TYPESERVER2          = 0x00001515,
+	eLF_CHAR                 = 0x00008000,
+	eLF_SHORT                = 0x00008001,
+	eLF_USHORT               = 0x00008002,
+	eLF_LONG                 = 0x00008003,
+	eLF_ULONG                = 0x00008004,
+	eLF_REAL32               = 0x00008005,
+	eLF_REAL64               = 0x00008006,
+	eLF_REAL80               = 0x00008007,
+	eLF_REAL128              = 0x00008008,
+	eLF_QUADWORD             = 0x00008009,
+	eLF_UQUADWORD            = 0x0000800A,
+	eLF_REAL48               = 0x0000800B,
+	eLF_COMPLEX32            = 0x0000800C,
+	eLF_COMPLEX64            = 0x0000800D,
+	eLF_COMPLEX80            = 0x0000800E,
+	eLF_COMPLEX128           = 0x0000800F,
+	eLF_VARSTRING            = 0x00008010,
+	eLF_OCTWORD              = 0x00008017,
+	eLF_UOCTWORD             = 0x00008018,
+	eLF_DECIMAL              = 0x00008019,
+	eLF_DATE                 = 0x0000801A,
+	eLF_UTF8STRING           = 0x0000801B,
+	eLF_PAD0                 = 0x000000F0,
+	eLF_PAD1                 = 0x000000F1,
+	eLF_PAD2                 = 0x000000F2,
+	eLF_PAD3                 = 0x000000F3,
+	eLF_PAD4                 = 0x000000F4,
+	eLF_PAD5                 = 0x000000F5,
+	eLF_PAD6                 = 0x000000F6,
+	eLF_PAD7                 = 0x000000F7,
+	eLF_PAD8                 = 0x000000F8,
+	eLF_PAD9                 = 0x000000F9,
+	eLF_PAD10                = 0x000000FA,
+	eLF_PAD11                = 0x000000FB,
+	eLF_PAD12                = 0x000000FC,
+	eLF_PAD13                = 0x000000FD,
+	eLF_PAD14                = 0x000000FE,
+	eLF_PAD15                = 0x000000FF,
+	eLF_MAX                  = 0xFFFFFFFF
+} ELeafType;
 
 //Type = Debugger(Struct("type",
 //    leaf_type,
 //    Switch("type_info", lambda ctx: ctx.leaf_type,
 //        {
-//            "LF_ARGLIST": lfArgList,
-//            "LF_ARRAY": lfArray,
-//            "LF_ARRAY_ST": lfArrayST,
-//            "LF_BITFIELD": lfBitfield,
-//            "LF_CLASS": lfClass,
-//            "LF_ENUM": lfEnum,
-//            "LF_FIELDLIST": lfFieldList,
-//            "LF_MFUNCTION": lfMFunc,
-//            "LF_MODIFIER": lfModifier,
-//            "LF_POINTER": lfPointer,
-//            "LF_PROCEDURE": lfProcedure,
-//            "LF_STRUCTURE": lfStructure,
-//            "LF_STRUCTURE_ST": lfStructureST,
-//            "LF_UNION": lfUnion,
-//            "LF_UNION_ST": lfUnionST,
-//            "LF_VTSHAPE": lfVTShape,
+//            "eLF_ARGLIST": eLFArgList,
+//            "eLF_ARRAY": eLFArray,
+//            "eLF_ARRAY_ST": eLFArrayST,
+//            "eLF_BITFIELD": eLFBitfield,
+//            "eLF_CLASS": eLFClass,
+//            "eLF_ENUM": eLFEnum,
+//            "eLF_FIELDLIST": eLFFieldList,
+//            "eLF_MFUNCTION": eLFMFunc,
+//            "eLF_MODIFIER": eLFModifier,
+//            "eLF_POINTER": eLFPointer,
+//            "eLF_PROCEDURE": eLFProcedure,
+//            "eLF_STRUCTURE": eLFStructure,
+//            "eLF_STRUCTURE_ST": eLFStructureST,
+//            "eLF_UNION": eLFUnion,
+//            "eLF_UNION_ST": eLFUnionST,
+//            "eLF_VTSHAPE": eLFVTShape,
 //        },
 //        default = Pass,
 //    ),
 //))
 
+typedef struct {
+	ELeafType leaf_type;
+	// typeinfo
+} SType;
 typedef struct {
 	unsigned short length;
 	// Type type_data
@@ -403,9 +407,9 @@ static unsigned char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 		stream_file_read_pages(stream_file, pn_start, pn_end + 1, tmp);
 		//READ_PAGES(pn_start, (pn_end + 1))
 		stream_file->pos += size;
-		ret = (char *) malloc((stream_file->page_size - off_end));
+		ret = (char *) malloc((/*stream_file->page_size -*/ off_end));
 		tmp = pdata;
-		memcpy(ret, tmp + off_start, (stream_file->page_size - off_end) - off_start);
+		memcpy(ret, tmp + off_start, off_end /*(stream_file->page_size - off_end) - off_start*/);
 		free(pdata);
 	}
 
@@ -413,15 +417,15 @@ static unsigned char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//def seek(self, offset, whence=0):
+//def seek(seeLF, offset, whence=0):
 //    if whence == 0:
-//        self.pos = offset
+//        seeLF.pos = offset
 //    elif whence == 1:
-//        self.pos += offset
+//        seeLF.pos += offset
 //    elif whence == 2:
-//        self.pos = self.end + offset
-//if self.pos < 0: self.pos = 0
-//if self.pos > self.end: self.pos = self.end
+//        seeLF.pos = seeLF.end + offset
+//if seeLF.pos < 0: seeLF.pos = 0
+//if seeLF.pos > seeLF.end: seeLF.pos = seeLF.end
 // whence by default = 0
 static void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence)
 {
@@ -449,11 +453,11 @@ static int stream_file_tell(R_STREAM_FILE *stream_file)
 	return stream_file->pos;
 }
 
-//def _get_data(self):
-//    pos = self.stream_file.tell()
-//    self.stream_file.seek(0)
-//    data = self.stream_file.read()
-//    self.stream_file.seek(pos)
+//def _get_data(seeLF):
+//    pos = seeLF.stream_file.tell()
+//    seeLF.stream_file.seek(0)
+//    data = seeLF.stream_file.read()
+//    seeLF.stream_file.seek(pos)
 //    return data
 static char* pdb_stream_get_data(R_PDB_STREAM *pdb_stream)
 {
@@ -472,7 +476,7 @@ static char* pdb_stream_get_data(R_PDB_STREAM *pdb_stream)
 static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, FILE *fp, int *pages,
 							 int pages_amount, int index, int size, int page_size)
 {
-	printf("init_r_pdb_stream()\n");
+//	printf("init_r_pdb_stream()\n");
 
 	pdb_stream->fp = fp;
 	pdb_stream->pages = pages;
@@ -602,6 +606,7 @@ static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
 static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 {
 	SPDBInfoStream *tmp = (SPDBInfoStream *)parsed_pdb_stream;
@@ -618,15 +623,66 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 	memcpy(tmp->data.names, stream_file_read(stream, tmp->data.cb_names), tmp->data.cb_names);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_fieldlist(unsigned char *leaf_data)
+{
+	ELeafType leaf_type;
+
+	leaf_type = *(unsigned short *)leaf_data;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
+{
+	SType type;
+	unsigned char *leaf_data;
+	ELeafType leaf_type;
+
+	types->length = *(unsigned short *)stream_file_read(stream, sizeof(unsigned short));
+	leaf_data = stream_file_read(stream, types->length);
+	type.leaf_type = *(unsigned short *)leaf_data;
+	switch (type.leaf_type) {
+	case eLF_FIELDLIST:
+		printf("eLF_FIELDLIST\n");
+		parse_lf_fieldlist(leaf_data + 2);
+		break;
+	default:
+		printf("unsupported leaf type\n");
+		break;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 {
+	int i;
 	STPIHeader tpi_header = *(STPIHeader *)stream_file_read(stream, sizeof(STPIHeader));
 	STypes types;
-	unsigned char *leaf_type;
-	unsigned short leaf_type_short;
-	types.length = *(unsigned short *)stream_file_read(stream, sizeof(unsigned short));
-	leaf_type = stream_file_read(stream, types.length);
-	leaf_type_short = *(unsigned short *)leaf_type;
+
+	for (i = 0; i < (tpi_header.ti_max - tpi_header.ti_min); i++) {
+		parse_tpi_stypes(stream, &types);
+	}
+
+	printf("i = %d\n", i);
+//	SType type;
+//	unsigned char *leaf_data;
+//	ELeafType leaf_type;
+
+//	types.length = *(unsigned short *)stream_file_read(stream, sizeof(unsigned short));
+//	leaf_data = stream_file_read(stream, types.length);
+//	type.leaf_type = *(unsigned short *)leaf_data;
+//	switch (type.leaf_type) {
+//	case eLF_FIELDLIST:
+//		printf("eLF_FIELDLIST\n");
+//		parse_lf_fieldlist(leaf_data + 2);
+//		break;
+//	default:
+//		printf("unsupported leaf type");
+//		break;
+//	}
+//	for (i = 0; i < (tpi_header.ti_max - tpi_header.ti_min); i++) {
+//		parse_tpi_stypes(stream, &types);
+//	}
 
 //	tpi_header.version = *(unsigned int *)stream_file_read(stream, 4);
 //	tpi_header.hdr_size = *(int *)stream_file_read(stream, 4);
@@ -635,24 +691,24 @@ static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 //	tpi_header.follow_size = *(unsigned int *)stream_file_read(stream, 4);
 }
 
-//self.streams = []
+//seeLF.streams = []
 //for i in range(len(rs.streams)):
 //    try:
-//        pdb_cls = self._stream_map[i]
+//        pdb_cls = seeLF._stream_map[i]
 //    except KeyError:
 //        pdb_cls = PDBStream
 //    stream_size, stream_pages = rs.streams[i]
-//    self.streams.append(
-//        pdb_cls(self.fp, stream_pages, i, size=stream_size,
-//            page_size=self.page_size, fast_load=self.fast_load,
-//            parent=self))
+//    seeLF.streams.append(
+//        pdb_cls(seeLF.fp, stream_pages, i, size=stream_size,
+//            page_size=seeLF.page_size, fast_load=seeLF.fast_load,
+//            parent=seeLF))
 
 //# Sets up access to streams by name
-//self._update_names()
+//seeLF._update_names()
 
 //# Second stage init. Currently only used for FPO strings
-//if not self.fast_load:
-//    for s in self.streams:
+//if not seeLF.fast_load:
+//    for s in seeLF.streams:
 //        if hasattr(s, 'load2'):
 //            s.load2()
 ///////////////////////////////////////////////////////////////////////////////
