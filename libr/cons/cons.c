@@ -230,9 +230,14 @@ static void palloc(int moar) {
 		I.buffer_sz = moar+MOAR;
 		I.buffer = (char *)malloc (I.buffer_sz);
 		I.buffer[0] = '\0';
-	} else if (moar + I.buffer_len > I.buffer_sz) {
+	} else if (moar + I.buffer_len >= I.buffer_sz) {
+		char *new_buffer;
+		int old_buffer_sz = I.buffer_sz;
 		I.buffer_sz += moar+MOAR;
-		I.buffer = (char *)realloc (I.buffer, I.buffer_sz);
+		new_buffer = (char *)realloc (I.buffer, I.buffer_sz);
+		if (new_buffer)
+			I.buffer = new_buffer;
+		else I.buffer_sz = old_buffer_sz;
 	}
 }
 
@@ -474,10 +479,13 @@ R_API void r_cons_printf(const char *format, ...) {
 	if (I.null) return;
 	if (strchr (format, '%')) {
 		palloc (MOAR);
+		I.buffer_sz += MOAR;
 		size = I.buffer_sz-I.buffer_len; /* remaining space in I.buffer */
-
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
+		if (written>0) {
+			I.buffer[I.buffer_len+written] = 0;
+		}
 		va_end (ap);
 
 		if (written>=size) { /* not all bytes were written */
