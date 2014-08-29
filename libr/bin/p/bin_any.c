@@ -16,6 +16,7 @@ static const char * get_filetype (RBinFile *arch) {
 		r_buf_read_at(arch->buf, 0, test_buffer, 4096);
 		res = r_magic_buffer (ck, test_buffer, 4096);
 	}
+	r_magic_free (ck);
 	if (!res) res = "";
 	return res;
 }

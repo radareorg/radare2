@@ -667,8 +667,8 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		cf->desc = NULL;
 		cf->map = NULL;
 
-		cf->filename = NULL;
 		free (cf->filename);
+		cf->filename = NULL;
 		free (cf->uri);
 		r_bin_file_deref_by_bind (&cf->binb);
 		cf->uri = NULL;

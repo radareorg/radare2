@@ -39,8 +39,11 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block, core->blocksize);
 	if (str) {
-		if (!v && !strcmp (str, "data"))
+		if (!v && !strcmp (str, "data")) {
+			r_magic_free (ck);
+			ck = NULL;
 			return -1;
+		}
 		p = strdup (str);
 		fmt = p;
 		// processing newlinez
@@ -71,8 +74,12 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		}
 		free (p);
+		r_magic_free (ck);
+		ck = NULL;
 		return 1;
 	}
+	r_magic_free (ck);
+	ck = NULL;
 	return 0;
 }
 

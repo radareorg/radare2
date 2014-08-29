@@ -213,6 +213,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	if ((ml = malloc (sizeof (*ml))) == NULL) {
 		file_delmagic (magic, mapped, nmagic);
 		file_oomem (ms, sizeof(*ml));
+		free (magic);
 		return -1;
 	}
 
@@ -531,7 +532,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name);
 				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode))
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
-				else perror (subfn);
+				//else perror (subfn);
 			}
 			closedir (dir);
 		} else errs++;

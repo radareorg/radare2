@@ -32,6 +32,7 @@ R_API void r_flag_item_free (RFlagItem *item) {
 }
 
 R_API RFlag *r_flag_free(RFlag *f) {
+	int i;
 #if 0
 	RFlagItem *item;
 	RListIter *iter;
@@ -42,6 +43,8 @@ R_API RFlag *r_flag_free(RFlag *f) {
 		// XXX: segfault sometimes wtf -- r_list_free (list);
 	}
 #endif
+	for (i=0; i<R_FLAG_SPACES_MAX; i++)
+		free (f->spaces[i]);
 	r_hashtable64_free (f->ht_off);
 	r_hashtable64_free (f->ht_name);
 	r_list_free (f->flags);

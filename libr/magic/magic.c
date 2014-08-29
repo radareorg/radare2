@@ -43,6 +43,8 @@ R_API RMagic* r_magic_new(int flags) {
 }
 
 R_API void r_magic_free(RMagic* m) {
+eprintf ("DA FREE\n");
+free (m->magic);
 	if (m) magic_close (m);
 }
 
