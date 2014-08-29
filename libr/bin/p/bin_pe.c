@@ -346,7 +346,7 @@ static RBinInfo* info(RBinFile *arch) {
 
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
-		sdb_bool_set (arch->sdb, "strip", ret->dbg_info |= R_BIN_DBG_LINENUMS, 0);
+		sdb_bool_set (arch->sdb, "strip", ret->dbg_info |= R_BIN_DBG_STRIPPED, 0);
 	}
 	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_LINENUMS;
