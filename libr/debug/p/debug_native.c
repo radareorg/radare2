@@ -362,8 +362,8 @@ static int r_debug_native_step(RDebug *dbg) {
 static int r_debug_native_attach(RDebug *dbg, int pid) {
 	int ret = -1;
 #if __WINDOWS__
-	HANDLE hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid))
+	dbg->process_handle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	if (dbg->process_handle != (HANDLE)NULL && DebugActiveProcess (pid))
 		ret = w32_first_thread (pid);
 	else ret = -1;
 	ret = w32_first_thread (pid);
@@ -1392,6 +1392,20 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	r_debug_map_sync (dbg); // update process memory maps
 	map = r_debug_map_get (dbg, (ut64)base);
 	return map;
+#elif __WINDOWS__
+	RDebugMap *map = NULL;
+	LPVOID base = NULL;
+	if (!dbg->process_handle) {
+		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
+	}
+	base = VirtualAllocEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	if (!base) {
+		eprintf("Failed to allocate memory\n");
+		return map;
+	}
+	r_debug_map_sync (dbg);
+	map = r_debug_map_get (dbg, (ut64)base);
+	return map;
 #else
 #warning malloc not implemented for this platform
 	return NULL;
@@ -1406,6 +1420,15 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 			(vm_size_t)size);
 	if (ret != KERN_SUCCESS) {
 		printf("vm_deallocate failed\n");
+		return R_FALSE;
+	}
+	return R_TRUE;
+#elif __WINDOWS__
+	if (!dbg->process_handle) {
+		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
+	}
+	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+		eprintf("Failed to free memory\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -1943,10 +1966,12 @@ vm_prot_t unix_prot_to_darwin(int prot) {
 #endif
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__
-        DWORD old;
-	HANDLE hProcess = tid2handler (dbg->pid, dbg->tid);
+	DWORD old;
+	if (!dbg->process_handle) {
+			dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
+	}
 	// TODO: align pointers
-        return VirtualProtectEx (WIN32_PI (hProcess), (LPVOID)(UINT)addr, size, perms, &old);
+  return VirtualProtectEx (WIN32_PI (dbg->process_handle), (LPVOID)(UINT)addr, size, perms, &old);
 #elif __APPLE__
 	int ret;
 	// TODO: align pointers

@@ -154,6 +154,9 @@ typedef struct r_debug_t {
 	RList *maps_user; // <RDebugMap>
 	RGraph *graph;
 	Sdb *sgnls;
+#if __WINDOWS__
+	HANDLE process_handle;
+#endif
 	/* TODO
 	- list of processes and their threads
 	- list of mapped memory (from /proc/XX/maps)
