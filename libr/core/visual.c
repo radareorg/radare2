@@ -31,19 +31,22 @@ static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
 
 static int r_core_visual_hud(RCore *core) {
+	const char *c = r_config_get (core->config, "hud.path");
 	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
 	char *homehud = r_str_home (R2_HOMEDIR"/hud");
 	char *res = NULL;
 	char *p = 0;
 
 	showcursor (core, R_TRUE);
-	if (homehud)
+	if (c && *c && r_file_exists (c))
+		res = r_cons_hud_file (c);
+	if (!res && homehud)
 		res = r_cons_hud_file (homehud);
-	if (!res) {
-		if (r_file_exists (f))
-			res = r_cons_hud_file (f);
-		else r_cons_message ("Cannot find hud file");
-	}
+	if (!res && r_file_exists (f))
+		res = r_cons_hud_file (f);
+	if (!res)
+		r_cons_message ("Cannot find hud file");
+
 	r_cons_clear ();
 	if (res) {
 		p = strchr (res, '\t');
@@ -1052,9 +1055,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_prompt_input (core);
 		break;
 	case '_':
-		if (r_config_get_i (core->config, "hud.once"))
-			r_core_visual_hud (core);
-		else	while (r_core_visual_hud (core));
+		r_core_visual_hud (core);
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
