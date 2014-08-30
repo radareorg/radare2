@@ -16,28 +16,13 @@ INTERNAL void twok_init() {
 }
 
 INTERNAL void twok_add() {
-	int i, j, min = 1;
-	int holes = 0;
-	for (i=0;i<4;i++) {
-		for (j=0;j<4;j++) {
-			if (twok_buf[i][j] > 1) {
-				min = 2;
-				break;
-			}
-		}
-	}
-	for (i=0;i<4;i++)
-		for (j=0;j<4;j++)
-			if (!twok_buf[i][j]) {
-				holes = 1;
-				break;
-			 }
-	if (holes)
-	for (;;) {
+	int i, j;
+
+	while (R_TRUE) {
 		i = r_num_rand (4);
 		j = r_num_rand (4);
 		if (!twok_buf[i][j]) {
-			twok_buf[i][j] = r_num_rand (min)+1;
+			twok_buf[i][j] = 1 + (r_num_rand (10) == 1);
 			break;
 		}
 	}
@@ -60,78 +45,33 @@ INTERNAL int twok_fin() {
 	return 0;
 }
 
-INTERNAL void twok_move(int d) {
+INTERNAL void twok_move(int u, int v) {
 	int i, j, k;
-moves++;
-	if (d=='a') {
+	int nKI, nKJ, nIK, nJK;
+	int moved = 0;
+	for(k = 0; k < 4; ++k) {
+		for(i = 0; i < 4; ++i) {
+			for(j = i + 1; j < 4 && !twok_buf[nKJ = u?k:v?j:3-j][nJK = !u?k:v?j:3-j]; ++j) ;
+			if(j == 4) continue;
+			nKI= u?k:v?i:3-i;
+			nIK= !u?k:v?i:3-i;
+			if(!twok_buf[nKI][nIK]){
+				twok_buf[nKI][nIK] = twok_buf[nKJ][nJK];
+				twok_buf[nKJ][nJK] = 0;
+				--i;
+				moved = 1;
+			}
+			else if(twok_buf[nKI][nIK] == twok_buf[nKJ][nJK]) {
+				score += 1 << ++twok_buf[nKI][nIK];
+				twok_buf[nKJ][nJK] = 0;
+				moved = 1;
+			}
+		}
+	}
+	if(moved) {
 		twok_add ();
-	} else
-	for (k=0; k<4; k++) {
-	switch (d) {
-	case 'h': // left
-		// for each row
-		for (i=0; i<4; i++) {
-			for (j=0; j<3; j++) {
-				if (twok_buf[i][j] == 0) {
-					twok_buf[i][j] = twok_buf[i][j+1];
-					twok_buf[i][j+1] = 0;
-				} else
-				if (twok_buf[i][j] == twok_buf[i][j+1]) {
-					twok_buf[i][j] ++;
-					score += (1<<twok_buf[i][j]);
-					twok_buf[i][j+1] = 0;
-				}
-			}
-		}
-		break;
-	case 'l': // right
-		for (i=0; i<4; i++) {
-			for (j=3; j>0; j--) {
-				if (twok_buf[i][j] == 0) {
-					twok_buf[i][j] = twok_buf[i][j-1];
-					twok_buf[i][j-1] = 0;
-				} else
-				if (twok_buf[i][j] == twok_buf[i][j-1]) {
-					twok_buf[i][j] ++;
-					score += (1<<twok_buf[i][j]);
-					twok_buf[i][j-1] = 0;
-				}
-			}
-		}
-		break;
-	case 'j': // down
-		// for each column
-		for (j=0; j<4; j++) {
-			for (i=3; i>0; i--) {
-				if (twok_buf[i][j] == 0) {
-					twok_buf[i][j] = twok_buf[i-1][j];
-					twok_buf[i-1][j] = 0;
-				} else
-				if (twok_buf[i][j] == twok_buf[i-1][j]) {
-					twok_buf[i][j] ++;
-					score += (1<<twok_buf[i][j]);
-					twok_buf[i-1][j] = 0;
-				}
-			}
-		}
-		break;
-	case 'k': // up
-		// for each column
-		for (j=0; j<4; j++) {
-			for (i=0; i<3; i++) {
-				if (twok_buf[i][j] == 0) {
-					twok_buf[i][j] = twok_buf[i+1][j];
-					twok_buf[i+1][j] = 0;
-				} else
-				if (twok_buf[i][j] == twok_buf[i+1][j]) {
-					twok_buf[i][j] ++;
-					score += (1<<twok_buf[i][j]);
-					twok_buf[i+1][j] = 0;
-				}
-			}
-		}
-		break;
-	}}
+		moves++;
+	}
 }
 
 INTERNAL void twok_print() {
@@ -154,35 +94,18 @@ INTERNAL void twok_print() {
 		printf ("  +------+------+------+------+\n");
 	}
 	printf ("Hexboard:     'hjkl' and 'q'uit\n");
-	for (i = 0; i<4; i++) 
+	for (i = 0; i<4; i++)
 		printf ("  %02x %02x %02x %02x\n",
 			twok_buf[i][0], twok_buf[i][1],
 			twok_buf[i][2], twok_buf[i][3]);
 }
 
-#if 0
-int main() {
-	char buf[128];
-	twok_init();
-	twok_add();
-// canonical stdin here
-	while (twok_fin()) {
-		twok_print();
-		if (!fgets (buf, sizeof (buf)-1, stdin))
-			break;
-		twok_move (buf[0]);
-		twok_add ();
-	}
-	printf ("score: %d\n", twok_score ());
-	return 0;
-}
-#endif
-
 R_API void r_cons_2048() {
 	int ch;
 	r_cons_set_raw (1);
 	twok_init ();
-		twok_add ();
+	twok_add ();
+	twok_add ();
 	while (twok_fin()) {
 		r_cons_clear00();
 		r_cons_printf ("[r2048] score: %d   moves: %d\n",
@@ -191,9 +114,21 @@ R_API void r_cons_2048() {
 		twok_print();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
+		switch(ch){
+		case 'h':
+			twok_move(1,1);
+			break;
+		case 'j':
+			twok_move(0,0);
+			break;
+		case 'k':
+			twok_move(0,1);
+			break;
+		case 'l':
+			twok_move(1,0);
+			break;
+		}
 		if (ch<1||ch =='q') break;
-		twok_move (ch);
-		twok_add ();
 	}
 	r_cons_clear00();
 	r_cons_printf ("[r2048] score: %d\n", score );
