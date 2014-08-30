@@ -1271,6 +1271,9 @@ R_API void r_core_visual_define (RCore *core) {
 		// set function size
 		{
 		RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+		if (!fcn) {
+			fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+		}
 		if (fcn) {
 			RAnalOp op;
 			ut64 size;
