@@ -1251,20 +1251,42 @@ R_API void r_core_visual_define (RCore *core) {
 		p += cur;
 	}
 	r_cons_printf ("Define current block as:\n"
-		" r  - rename function\n"
-		" d  - set as data\n"
 		" c  - set as code\n"
+		" d  - set as data\n"
+		" e  - end of function\n"
+		" f  - analyze function\n"
+		" q  - quit/cancel operation\n"
+		" r  - rename function\n"
 		" s  - set string\n"
 		" S  - set strings in current block\n"
-		" f  - analyze function\n"
 		" u  - undefine metadata here\n"
-		" q  - quit/cancel operation\n");
+	);
 	r_cons_flush ();
 
 	// get ESC+char, return 'hjkl' char
 	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 
 	switch (ch) {
+	case 'e':
+		// set function size
+		{
+		RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+		if (fcn) {
+			RAnalOp op;
+			ut64 size;
+			int delta = 0;
+			ut64 here = core->offset;
+			if (core->print->cur_enabled)
+				delta = core->print->cur;
+			here += delta;
+			if (r_anal_op (core->anal, &op, here, core->block+delta,
+					core->blocksize-delta)) {
+				size = here - fcn->addr + op.size;
+				fcn->size = size;
+			}
+		}
+		}
+		break;
 	case 'r':
 		r_core_cmd0 (core, "?i new function name;afn `?y`");
 		break;
