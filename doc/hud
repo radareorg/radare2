@@ -19,7 +19,7 @@ seek to entrypoint  s entry0
 seek to main  s main
 set breakpoint  db;?i 
 new breakpoint address  db `?y`
-remove breakpoint  ?i 
+remove breakpoint  db-;?i 
 delete breakpoint at given address  db-`?y`
 show backtrace	dbt;?ik
 show bytes in disassembly	e asm.bytes=1
