@@ -317,7 +317,11 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 			}
 		}
 		if (i == 0) {
-			hdr->file_names = calloc(sizeof(file_entry), count);
+			if (count>0) {
+				hdr->file_names = calloc(sizeof(file_entry), count);
+			} else {
+				hdr->file_names = NULL;
+			}
 			hdr->file_names_count = count;
 			buf = tmp_buf;
 			count = 0;
@@ -493,8 +497,13 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 
 		if (binfile && binfile->sdb_addrinfo) {
-			add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
-				hdr->file_names[regs->file - 1].name, regs->line);
+			int fnidx = regs->file - 1;
+			if (fnidx>=0 && fnidx<hdr->file_names_count) {
+				add_sdb_addrline(binfile->sdb_addrinfo,
+					regs->address,
+					hdr->file_names[fnidx].name,
+					regs->line);
+			} else eprintf ("dwarf: file name index out of range\n");
 		}
 		regs->basic_block = DWARF_FALSE;
 		break;
