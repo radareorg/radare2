@@ -10,7 +10,7 @@ CS_UPD=20141125
 CS_BRA=next
 CS_TIP=3caf837c9a39850b6e4afecc49d20388c2aafabb
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
@@ -28,7 +28,7 @@ else
 CFLAGS_SHARED=-fPIC
 endif
 
-preall: sdb/sdb libgdbr capstone-build
+preall: sdb/sdb libgdbr libwind capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
 		$(MAKE) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -37,6 +37,7 @@ preall: sdb/sdb libgdbr capstone-build
 clean mrproper:
 	-cd capstone && $(MAKE) clean
 	cd gdb && $(MAKE) clean
+	cd wind && $(MAKE) clean
 	rm -f sdb/src/.sdb sdb/sdb
 	cd sdb && $(MAKE) clean
 	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
@@ -62,6 +63,9 @@ I=../libr/include
 
 libgdbr:
 	cd gdb ; $(MAKE) all
+
+libwind:
+	cd wind; $(MAKE) all
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
