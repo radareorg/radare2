@@ -72,6 +72,11 @@ typedef struct {
 //)
 
 typedef struct {
+	char *value_name;
+	unsigned short value_or_type;
+} SVal;
+
+typedef struct {
 	int off;
 	int cb;
 } SOffCb;
@@ -623,12 +628,116 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 	memcpy(tmp->data.names, stream_file_read(stream, tmp->data.cb_names), tmp->data.cb_names);
 }
 
+#define CAN_READ(curr_read_bytes, bytes_for_read, max_len) { \
+	if ((((curr_read_bytes) + (bytes_for_read)) >= (len))) { \
+		return 0; \
+	} \
+}
+
 ///////////////////////////////////////////////////////////////////////////////
-static void parse_lf_fieldlist(unsigned char *leaf_data)
+static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	int read_bytes_before = 0;
+	unsigned short fldattr = 0;
+	unsigned short value_or_type = 0;
+	unsigned char *name = 0;
+	unsigned char *p_leaf_data;
+	int c = 0;
+	unsigned char pad = 0;
+
+	p_leaf_data = leaf_data;
+	read_bytes_before = *read_bytes;
+
+	CAN_READ(*read_bytes, 2, len)
+	fldattr = *(unsigned short *)p_leaf_data; //CV_fldattr = BitStruct("fldattr",
+	*read_bytes += 2;
+	CAN_READ(*read_bytes, 2, len)
+	value_or_type = *(unsigned short *)(p_leaf_data + 2);
+	p_leaf_data += 4;
+	*read_bytes += 2;
+
+	// name_or_val parsing
+	if (value_or_type < eLF_CHAR) {
+		while (*p_leaf_data != 0) {
+			CAN_READ(*read_bytes, 1, len)
+			c++;
+			p_leaf_data++;
+			(*read_bytes) += 1;
+		}
+		CAN_READ(*read_bytes, 1, len)
+		p_leaf_data++;
+		(*read_bytes) += 1;
+		//TODO: free name
+		name = (unsigned char *) malloc(c + 1);
+		memcpy(name, p_leaf_data - (c + 1), c + 1);
+		printf("name = %s\n", name);
+	} else {
+		printf("oops\n");
+		//TODO:
+//		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
+//		                {
+//		                    "LF_CHAR": Struct("char",
+//		                        String("value", 1),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_SHORT": Struct("short",
+//		                        SLInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_USHORT": Struct("ushort",
+//		                        ULInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_LONG": Struct("char",
+//		                        SLInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_ULONG": Struct("char",
+//		                        ULInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                },
+//		            ),
+		return 0;
+	}
+
+	CAN_READ(*read_bytes, 1, len)
+	pad = *(unsigned char *)p_leaf_data;
+	if (pad > 0x0F) {
+		CAN_READ(*read_bytes, pad & 0x0F, len)
+		p_leaf_data += (pad & 0x0F);
+		*read_bytes += (pad & 0x0F);
+	}
+
+	return (*read_bytes - read_bytes_before);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 {
 	ELeafType leaf_type;
+	int read_bytes = 0;
+	int curr_read_bytes = 0;
+	unsigned char *p = leaf_data;
 
-	leaf_type = *(unsigned short *)leaf_data;
+	while (read_bytes <= len) {
+		leaf_type = *(unsigned short *)p;
+		p += 2;
+		read_bytes += 2;
+		switch (leaf_type) {
+		case eLF_ENUMERATE:
+			curr_read_bytes = parse_lf_enumerate(p, &read_bytes, len);
+			break;
+		default:
+			printf("unsupported leaf type in parse_lf_fieldlist()\n");
+			return;
+		}
+		//read_bytes += curr_read_bytes;
+		if (curr_read_bytes != 0)
+			p += curr_read_bytes;
+		else
+			return;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -644,7 +753,7 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	switch (type.leaf_type) {
 	case eLF_FIELDLIST:
 		printf("eLF_FIELDLIST\n");
-		parse_lf_fieldlist(leaf_data + 2);
+		parse_lf_fieldlist(leaf_data + 2, types->length);
 		break;
 	default:
 		printf("unsupported leaf type\n");
