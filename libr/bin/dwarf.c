@@ -383,8 +383,11 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 		regs->end_sequence = DWARF_TRUE;
 
 		if (binfile && binfile->sdb_addrinfo) {
-			add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
-					hdr->file_names[regs->file - 1].name, regs->line);
+			int fnidx = regs->file - 1;
+			if (fnidx>=0 && fnidx<hdr->file_names_count) {
+				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
+						hdr->file_names[fnidx].name, regs->line);
+			} else eprintf ("dwarf: file name index out of range\n");
 		}
 
 		if (f) {
