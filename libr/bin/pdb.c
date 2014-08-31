@@ -703,7 +703,7 @@ static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes
 
 	CAN_READ(*read_bytes, 1, len)
 	pad = *(unsigned char *)p_leaf_data;
-	if (pad > 0x0F) {
+	if (pad > 0xF0) {
 		CAN_READ(*read_bytes, pad & 0x0F, len)
 		p_leaf_data += (pad & 0x0F);
 		*read_bytes += (pad & 0x0F);
@@ -797,13 +797,110 @@ static int parse_lf_method(unsigned char *leaf_data, unsigned int *read_bytes, u
 
 	CAN_READ(*read_bytes, 1, len);
 	pad = *(unsigned char *)p;
-	if (pad > 0x0F) {
+	if (pad > 0xF0) {
 		CAN_READ(*read_bytes, pad & 0x0F, len)
 		p += (pad & 0x0F);
 		*read_bytes += (pad & 0x0F);
 	}
 
 	return *read_bytes - read_bytes_before;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//"LF_MEMBER": Struct("lfMember",
+//    CV_fldattr,
+//    ULInt32("index"),
+//    val("offset"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//),
+static int parse_lf_member(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	int read_bytes_before = 0;
+	unsigned short fldattr = 0;
+	unsigned char *name = 0;
+	unsigned char *p;
+	int c = 0;
+	unsigned char pad = 0;
+	unsigned int index = 0;
+	unsigned short value_or_type = 0;
+
+	read_bytes_before = *read_bytes;
+	p = leaf_data;
+
+	CAN_READ(*read_bytes, 2, len);
+	fldattr = *(unsigned short *)p; //CV_fldattr = BitStruct("fldattr",
+	*read_bytes += 2;
+	p += 2;
+
+	CAN_READ(*read_bytes, 4, len);
+	index = *(unsigned int *)p;
+	*read_bytes += 4;
+	p += 4;
+
+	//val("offset") ...
+	// TODO: create macros val()
+	CAN_READ(*read_bytes, 2, len)
+	value_or_type = *(unsigned short *)(p);
+	p += 2;
+	*read_bytes += 2;
+
+	// name_or_val parsing
+	if (value_or_type < eLF_CHAR) {
+		while (*p != 0) {
+			CAN_READ(*read_bytes, 1, len)
+			c++;
+			p++;
+			(*read_bytes) += 1;
+		}
+		CAN_READ(*read_bytes, 1, len)
+		p++;
+		(*read_bytes) += 1;
+		//TODO: free name
+		name = (unsigned char *) malloc(c + 1);
+		memcpy(name, p - (c + 1), c + 1);
+		printf("parse_lf_member(): name = %s\n", name);
+	} else {
+		printf("parser_lf_member(): oops\n");
+		//TODO:
+//		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
+//		                {
+//		                    "LF_CHAR": Struct("char",
+//		                        String("value", 1),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_SHORT": Struct("short",
+//		                        SLInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_USHORT": Struct("ushort",
+//		                        ULInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_LONG": Struct("char",
+//		                        SLInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_ULONG": Struct("char",
+//		                        ULInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                },
+//		            ),
+		return 0;
+	}
+	// end of val offset
+
+	CAN_READ(*read_bytes, 1, len)
+	pad = *(unsigned char *)p;
+	// TODO: add macros PadAlign
+	if (pad > 0xF0) {
+		CAN_READ(*read_bytes, pad & 0x0F, len)
+		p += (pad & 0x0F);
+		*read_bytes += (pad & 0x0F);
+	}
+
+	return (*read_bytes - read_bytes_before);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -829,17 +926,19 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 		case eLF_METHOD:
 			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
 			break;
+		case eLF_MEMBER:
+			curr_read_bytes = parse_lf_member(p, &read_bytes, len);
+			break;
 		default:
 			printf("unsupported leaf type in parse_lf_fieldlist()\n");
 			return;
 		}
-		//read_bytes += curr_read_bytes;
+
 		if (curr_read_bytes != 0)
 			p += curr_read_bytes;
 		else
 			return;
 	}
-	printf("end\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
