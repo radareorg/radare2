@@ -1097,10 +1097,10 @@ return -1;
 		if (!strcmp(op, "iret") || !strcmp(op, "iretd")) {
 			data[l++] = 0xcf;
 		} else
-		if (!strcmp (op, "pusha")) {
+		if (!strcmp (op, "pusha") || !strcmp (op, "pushad")) {
 			data[l++] = 0x60;
 		} else
-		if (!strcmp (op, "popa")) {
+		if (!strcmp (op, "popa") || !strcmp (op, "popad")) {
 			data[l++] = 0x61;
 		} else
 		if (!strcmp (op, "nop")) {
