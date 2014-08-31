@@ -24,7 +24,7 @@ EXT_SO=dll
 CFLAGS+=-D_WIN32=1
 SOVER=${EXT_SO}
 LDFLAGS+=-shared
-LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-shared
 else
 ifeq (${OSTYPE},darwin)
 EXT_SO=dylib

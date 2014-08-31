@@ -17,6 +17,7 @@ LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
 CFLAGS+=-fPIC
+LDFLAGS_SHARED?=-fPIC -shared
 endif
 endif
 ifeq (${OSTYPE},windows)
@@ -38,7 +39,6 @@ else
 SOVERSION=0
 EXT_SO=so
 SOVER=${EXT_SO}
-LDFLAGS_SHARED?=-fPIC -shared
 LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
 endif
 endif
