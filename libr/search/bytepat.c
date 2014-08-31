@@ -59,11 +59,7 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 	int patlen = s->pattern_size;
 	fnditem* root;
 
-#if defined(__WINDOWS__) || defined(MINGW32)
-	eprintf ("Searching patterns between 0x%Iu and 0x%Iu\n", from, to);
-#else
-	eprintf ("Searching patterns between 0x%llx and 0x%llx\n", from, to);
-#endif
+	eprintf ("Searching patterns between 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
 	if (patlen < 1 || patlen > MAX_PATLEN) {
 		eprintf ("Invalid pattern length (must be > 1 and < %d)\n", MAX_PATLEN);
 		return R_FALSE;
