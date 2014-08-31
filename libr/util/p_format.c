@@ -205,6 +205,8 @@ static void r_print_format_float(const RPrint* p, int mustset, const char* setva
 static int computeStructSize(char *fmt) {
 	char *end = strchr(fmt, ' ');
 	int size = 0, i;
+	if (!end)
+		return -1;
 	*end = 0;
 	for (i=0; i<strlen(fmt); i++) {
 		switch(fmt[i]) {
@@ -370,7 +372,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
 					updateAddr (buf, i, endian, &addr, &addr64);
 				} else {
-					eprintf ("(SEGFAULT: cannot read memory at 0x%x, Block: 0x%x, blocksize: 0x%x)\n",
+					eprintf ("(SEGFAULT: cannot read memory at 0x%x, Block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
 					p->printf("\n");
 					goto beach;
@@ -561,6 +563,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					name = strchr(structname, ']');
 				} else {
 					eprintf("Struct name missing\n");
+					free (structname);
 					goto beach;
 				}
 				structname++;
