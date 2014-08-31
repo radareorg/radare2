@@ -34,3 +34,5 @@ disassemble 1024 bytes and pipe to less(1)	b 1024;pd|less -R
 rename function	?i New name;afr `?y`
 set flag	?i Flag name;f `?y`
 unset flag	?i Flag name to delete;f-`?y`
+use big endianness	e cfg.bigendian=true
+use little endianness	e cfg.bigendian=false
