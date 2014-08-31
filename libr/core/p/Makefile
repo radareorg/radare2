@@ -14,6 +14,7 @@ CFLAGS+=-L../../bp -lr_bp -L../../reg -lr_reg -L../../asm -lr_asm
 CFLAGS+=../../../shlr/sdb/src/libsdb.a
 CFLAGS+=../../../shlr/zip/librz.a
 CFLAGS+=../../../shlr/gdb/lib/libgdbr.a
+CFLAGS+=../../../shlr/wind/libr_wind.a
 #CFLAGS+=-L../../anal -lr_anal -L../../core -lr_core
 LDFLAGS+=${LINK}
 

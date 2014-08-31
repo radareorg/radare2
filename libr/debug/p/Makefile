@@ -6,7 +6,7 @@ CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. 
 foo: all
 
 ALL_TARGETS=
-DEBUGS=native.mk gdb.mk
+DEBUGS=native.mk gdb.mk wind.mk
 include $(DEBUGS)
 
 all: ${ALL_TARGETS}
