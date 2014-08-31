@@ -372,7 +372,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
 					updateAddr (buf, i, endian, &addr, &addr64);
 				} else {
-					eprintf ("(SEGFAULT: cannot read memory at 0x%x, Block: %s, blocksize: 0x%x)\n",
+					eprintf ("(SEGFAULT: cannot read memory at 0x%08"PFMT64x", Block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
 					p->printf("\n");
 					goto beach;
