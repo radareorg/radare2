@@ -8,7 +8,7 @@ continue process execution	dc;?i
 disable colors	e scr.color=0
 enable colors	e scr.color=1
 randomize colors	ecr
-switch endianess	e! cfg.bigendian
+toggle endianess	e! cfg.bigendian
 hide bytes in disassembly	e asm.bytes=false
 show bytes in disassembly	e asm.bytes=true
 list imports 	ii;?ik
