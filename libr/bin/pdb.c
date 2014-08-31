@@ -670,7 +670,7 @@ static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes
 		//TODO: free name
 		name = (unsigned char *) malloc(c + 1);
 		memcpy(name, p_leaf_data - (c + 1), c + 1);
-		printf("name = %s\n", name);
+		printf("parse_lf_enumerate(): name = %s\n", name);
 	} else {
 		printf("oops\n");
 		//TODO:
@@ -713,6 +713,46 @@ static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//	"LF_NESTTYPE": Struct("lfNestType",
+//        Padding(2),
+//        ULInt32("index"),
+//        CString("name"),
+//    ),
+static int parse_lf_nesttype(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	unsigned int read_bytes_before = *read_bytes;
+	unsigned int index = 0;
+	char *name = 0;
+	unsigned int c = 0;
+	unsigned char *p = leaf_data;
+
+	CAN_READ(*read_bytes, 2, len);
+	p += 2; // PADDING(2)
+	*read_bytes += 2;
+
+	CAN_READ(*read_bytes, 4, len);
+	index = *(unsigned int *)p;
+	p += 4;
+	*read_bytes += 4;
+
+	while (*p != 0) {
+		CAN_READ(*read_bytes, 1, len);
+		c++;
+		p++;
+		*read_bytes += 1;
+	}
+	CAN_READ(*read_bytes, 1, len)
+	p++;
+	*read_bytes += 1;
+	//TODO: free name
+	name = (unsigned char *) malloc(c + 1);
+	memcpy(name, p - (c + 1), c + 1);
+	printf("parse_lf_nesttype(): name = %s\n", name);
+
+	return *read_bytes - read_bytes_before;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 {
 	ELeafType leaf_type;
@@ -721,12 +761,16 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 	unsigned char *p = leaf_data;
 
 	while (read_bytes <= len) {
+		CAN_READ(read_bytes, 2, len)
 		leaf_type = *(unsigned short *)p;
 		p += 2;
 		read_bytes += 2;
 		switch (leaf_type) {
 		case eLF_ENUMERATE:
 			curr_read_bytes = parse_lf_enumerate(p, &read_bytes, len);
+			break;
+		case eLF_NESTTYPE:
+			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
 			break;
 		default:
 			printf("unsupported leaf type in parse_lf_fieldlist()\n");
@@ -738,6 +782,7 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 		else
 			return;
 	}
+	printf("end\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
