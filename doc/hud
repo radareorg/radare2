@@ -8,6 +8,7 @@ continue process execution	dc;?i
 disable colors	e scr.color=0
 enable colors	e scr.color=1
 randomize colors	ecr
+switch endianess	e! cfg.bigendian
 hide bytes in disassembly	e asm.bytes=false
 show bytes in disassembly	e asm.bytes=true
 list imports 	ii;?ik
@@ -34,5 +35,3 @@ disassemble 1024 bytes and pipe to less(1)	b 1024;pd|less -R
 rename function	?i New name;afr `?y`
 set flag	?i Flag name;f `?y`
 unset flag	?i Flag name to delete;f-`?y`
-use big endianness	e cfg.bigendian=true
-use little endianness	e cfg.bigendian=false
