@@ -559,8 +559,8 @@ static inline void gb_anal_cb_sla (RReg *reg, RAnalOp *op, const ut8 data)						
 	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref)
-		r_strbuf_setf (&op->esil, "1[%s]=1[%s]<<1", regs_x[data & 7], regs_x[data & 7]);
-	else	r_strbuf_setf (&op->esil, "%s=%s<<1", regs_x[data & 7], regs_x[data & 7]);
+		r_strbuf_setf (&op->esil, "1,%s,[1],<<,%s,=[1],%%c7,C,=,%s,[1],%s,=[1],%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+	else	r_strbuf_setf (&op->esil, "1,%s,<<=,%%c7,C,=,%s,%s,=,%%z,Z,=,0,H,=0,N,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);	// %s,%s,= is a HACK for %%z
 }
 
 static inline void gb_anal_cb_sra (RReg *reg, RAnalOp *op, const ut8 data)
