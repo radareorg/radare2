@@ -753,6 +753,60 @@ static int parse_lf_nesttype(unsigned char *leaf_data, unsigned int *read_bytes,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//"LF_METHOD": Struct("lfMethod",
+//    ULInt16("count"),
+//    ULInt32("mlist"),
+//    CString("name"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//),
+static int parse_lf_method(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	unsigned int read_bytes_before = *read_bytes;
+	unsigned short count;
+	unsigned int m_list = 0;
+	char *name = 0;
+	unsigned char pad;
+	unsigned int c = 0;
+	unsigned char *p = leaf_data;
+
+	CAN_READ(*read_bytes, 2, len);
+	count = *(unsigned short *)p;
+	p += 2;
+	*read_bytes += 2;
+
+	CAN_READ(*read_bytes, 4, len);
+	m_list = *(unsigned int *)p;
+	p += 4;
+	*read_bytes += 4;
+
+	// TODO: ADD CSTRING MACROS!!!
+	while (*p != 0) {
+		CAN_READ(*read_bytes, 1, len);
+		c++;
+		p++;
+		*read_bytes += 1;
+	}
+	CAN_READ(*read_bytes, 1, len)
+	p++;
+	*read_bytes += 1;
+	//TODO: free name
+	name = (unsigned char *) malloc(c + 1);
+	memcpy(name, p - (c + 1), c + 1);
+	printf("parse_lf_method(): name = %s\n", name);
+
+	CAN_READ(*read_bytes, 1, len);
+	pad = *(unsigned char *)p;
+	if (pad > 0x0F) {
+		CAN_READ(*read_bytes, pad & 0x0F, len)
+		p += (pad & 0x0F);
+		*read_bytes += (pad & 0x0F);
+	}
+
+	return *read_bytes - read_bytes_before;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 {
 	ELeafType leaf_type;
@@ -771,6 +825,9 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 			break;
 		case eLF_NESTTYPE:
 			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
+			break;
+		case eLF_METHOD:
+			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
 			break;
 		default:
 			printf("unsupported leaf type in parse_lf_fieldlist()\n");
