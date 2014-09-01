@@ -34,6 +34,7 @@ typedef struct r_flag_item_t {
 	char *cmd;
 	char *color;
 	char *comment;
+	char *alias;
 	unsigned char data[R_FLAG_BUF_SIZE]; // only take a minor part of the data
 } RFlagItem;
 
@@ -42,6 +43,7 @@ typedef struct r_flag_t {
 	int space_idx;
 	int space_idx2;
 	char *spaces[R_FLAG_SPACES_MAX];
+	RNum *num;
 #if USE_HT
 	RHashTable64 *ht_off;
 	RHashTable64 *ht_name;
@@ -62,9 +64,10 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p);
 R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p);
-R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);
+R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);
 R_API int r_flag_sort(RFlag *f, int namesort);
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name);
+R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);

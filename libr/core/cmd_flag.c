@@ -23,6 +23,7 @@ static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;
+	char *name = NULL;
 	st64 base;
 
 	// TODO: off+=cursor
@@ -31,6 +32,29 @@ static int cmd_flag(void *data, const char *input) {
 	switch (*input) {
 	case '=':
 		flagbars (core);
+		break;
+	case 'a':
+		if (input[1]==' '){
+			RFlagItem *fi;
+			str = strdup (input+2);
+			ptr = strchr (str, '=');
+			if (!ptr)
+				ptr = strchr (str, ' ');
+			if (ptr) *ptr++ = 0;
+			name = r_str_chop_ro (str);
+			ptr = r_str_chop_ro (ptr);
+			fi = r_flag_get (core->flags, name);
+			if (!fi)
+				fi = r_flag_set (core->flags, name,
+					core->offset, 1, 0);
+			if (fi) {
+				r_flag_item_set_alias (fi, ptr);
+			} else {
+				eprintf ("Cannot find flag '%s'\n", name);
+			}
+		} else {
+			eprintf ("Usage: fa flagname flagalias\n");
+		}
 		break;
 	case 'm':
 		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
@@ -363,6 +387,7 @@ static int cmd_flag(void *data, const char *input) {
 		"fs"," sections","set flagspace (f will only list flags from selected ones)",
 		"fsr"," newname","set flagspace (f will only list flags from selected ones)",
 		"fsm"," [addr]","move flags at given address to the current flagspace",
+		"fa"," [name] [alias]","alias a flag to evaluate an expression",
 		"fb"," [addr]","set base address for new flags",
 		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
 		"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
