@@ -9,12 +9,17 @@ R_LIB_VERSION(r_flag);
 
 static ut64 num_callback (RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag*)user;
-	RList *list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
+	RList *list;
+
+	if (ok) *ok = 0;
+	
+	list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
 		if (item->alias)
 			return 0LL;
+		if (ok) *ok = 1;
 		return item->offset;
 	}
 	return 0LL;
