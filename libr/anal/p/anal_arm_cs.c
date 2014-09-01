@@ -101,7 +101,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
 	case ARM_INS_ADD:
-		r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDR:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
