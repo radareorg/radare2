@@ -22,7 +22,7 @@ install: ${F_SDB}
 	cp -f *.sdb "${OPDIR}"
 
 #that sed is a workaround for mingw's pwd
-CWD=$(shell pwd | sed -e 's,^/c/,/,')
+CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "${OPDIR}"
 	for a in *.sdb ; do ln -fs "${CWD}/$$a" "${OPDIR}/$$a" ; done

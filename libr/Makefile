@@ -7,7 +7,7 @@ PREFIX?=${PWD}/../prefix
 PFX=$(call rmdblslash,${DESTDIR}/${PREFIX})
 LFX=$(call rmdblslash,${DESTDIR}/${LIBDIR})
 IFX=$(call rmdblslash,${DESTDIR}/${INCLUDEDIR})
-PWD=$(call rmdblslash,$(shell pwd |sed -e 's,^/c/,/,'))
+PWD=$(call rmdblslash,$(shell pwd))
 
 LIBS0=util hash
 LIBS1=reg cons db magic diff bp search config socket

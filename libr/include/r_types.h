@@ -28,6 +28,11 @@
 #define __KFBSD__ 0
 #endif
 
+#if __MINGW32__ || __MINGW64__
+#undef MINGW32
+#define MINGW32 1
+#endif
+
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
   #define __BSD__ 0
   #define __UNIX__ 1
