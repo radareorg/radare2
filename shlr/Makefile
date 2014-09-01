@@ -107,7 +107,7 @@ tcc-sync sync-tcc:
 	git add tcc
 	rm -rf _
 
-D=${DESTDIR}/${PREFIX}
+D=$(call rmdblslash,${DESTDIR}/${PREFIX})
 install:
 	#mkdir -p ${D}/lib
 	#cp -f tcc/libr_tcc* ${D}/lib
