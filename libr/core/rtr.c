@@ -238,11 +238,11 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
 	}
-	if (launch) {
+	if (launch=='H') {
 		char cmd[128];
 		const char *browser = r_config_get (core->config, "http.browser");
 		snprintf (cmd, sizeof (cmd)-1, "%s http://localhost:%d/%s &",
-			browser, atoi (port), path?path:"");
+			browser, atoi (port), path? path:"");
 		r_sys_cmd (cmd);
 	}
 	r_config_set (core->config, "asm.cmtright", "false");
@@ -474,25 +474,34 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		eprintf ("sandbox: connect disabled\n");
 		return 1;
 	}
+
+	if (launch=='-') {
+		if (httpthread) {
+			eprintf ("Press ^C to stop the webserver\n");
+			r_th_free (httpthread);
+			httpthread = NULL;
+		} else {
+			eprintf ("No webserver running\n");
+		}
+		return 0;
+	}
 	if (core->http_up) {
 		eprintf ("http server is already running\n");
 		return 1;
 	}
-
-	if (launch==2) {
-	if (httpthread) {
-		eprintf ("HTTP Thread is already running\n");
-		eprintf ("This is experimental and probably buggy. Use at your own risk\n");
-		eprintf ("TODO: Add a command to kill that thread\n");
-		eprintf ("TODO: Use different eval environ for scr. for the web\n");
-		eprintf ("TODO: Visual mode should be enabled on local\n");
-	} else {
-		HttpThread ht = { core, launch, path };
-		httpthread = r_th_new (r_core_rtr_http_thread, &ht, 0);
-		r_th_start (httpthread, 1);
-		eprintf ("Background http server started.\n");
-	}
-	return 0;
+	if (launch=='&') {
+		if (httpthread) {
+			eprintf ("HTTP Thread is already running\n");
+			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
+			eprintf ("TODO: Use different eval environ for scr. for the web\n");
+			eprintf ("TODO: Visual mode should be enabled on local\n");
+		} else {
+			HttpThread ht = { core, launch, path };
+			httpthread = r_th_new (r_core_rtr_http_thread, &ht, 0);
+			r_th_start (httpthread, 1);
+			eprintf ("Background http server started.\n");
+		}
+		return 0;
 	}
 	return r_core_rtr_http_run (core, launch, path);
 }
@@ -512,9 +521,12 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nhttp server:", "", "",
-	"=h", "", "listen for http connections (r2 -qc=H /bin/ls)",
-	"=H", "", "launch browser and listen for http",
-	NULL};
+	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=h-", "", "stop background webserver",
+	"=h&", " port", "start http server in background)",
+	"=H", " port", "launch browser and listen for http",
+	"=H&", " port", "launch browser and listen for http in background",
+	NULL };
 	r_core_cmd_help (core, help_msg);
 }
 
