@@ -760,7 +760,8 @@ enum {
 	R_ANAL_TRAP_UNHANDLED = 1,
 	R_ANAL_TRAP_BREAKPOINT = 2,
 	R_ANAL_TRAP_DIVBYZERO = 3,
-	R_ANAL_TRAP_HALT = 4,
+	R_ANAL_TRAP_TODO = 4,
+	R_ANAL_TRAP_HALT = 5,
 };
 
 enum {
@@ -780,6 +781,10 @@ typedef struct r_anal_esil_t {
 	int stackptr;
 	int skip;
 	int repeat;
+	int parse_stop;
+	int parse_goto;
+	int parse_goto_limit;
+	int parse_goto_count;
 	int debug;
 	ut64 flags;
 	int trap;

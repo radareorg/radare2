@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake
-				-condret	*/
+/* radare - LGPL - Copyright 2014 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -78,8 +77,14 @@ const ut64 masks[] = {
 	0xffffffffffffffff
 };
 
+/* magic limit */
+#define R_ANAL_ESIL_GOTO_LIMIT 457
+// TODO: this must be configurable from 'e' somehow
+
 R_API RAnalEsil *r_anal_esil_new() {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
+	esil->parse_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
+	esil->parse_goto_count = esil->parse_goto_limit;
 	esil->ops = sdb_new0 ();
 	return esil;
 }
@@ -276,6 +281,7 @@ R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 			return R_TRUE;
 		default:
 			eprintf ("Invalid arg (%s)\n", str);
+			esil->parse_stop = 1;
 			break;
 	}
 	return R_FALSE;
@@ -781,6 +787,27 @@ R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 	}
 	return 1;
 }
+
+static int esil_break(RAnalEsil *esil) {
+	esil->parse_stop = 1;
+	return 1;
+}
+
+static int esil_todo(RAnalEsil *esil) {
+	esil->parse_stop = 2;
+	return 1;
+}
+
+static int esil_goto(RAnalEsil *esil) {
+	ut64 num = 0;
+	char *src = r_anal_esil_pop (esil);
+	if (src && *src && r_anal_esil_get_parm (esil, src, &num)) {
+		esil->parse_goto = num;
+	}
+	free (src);
+	return 1;
+}
+
 static int esil_pop(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	free (dst);
@@ -2191,6 +2218,13 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 
 static int runword (RAnalEsil *esil, const char *word) {
 	RAnalEsilOp op = NULL;
+	esil->parse_goto_count--;
+	if (esil->parse_goto_count<1) {
+		eprintf ("ESIL infinite loop detected\n");
+		esil->trap = 1; // INTERNAL ERROR
+		esil->parse_stop = 1; // INTERNAL ERROR
+		return 0;
+	}
 	if (esil->skip) {
 		if (!strcmp (word, "}"))
 			esil->skip = 0;
@@ -2207,12 +2241,53 @@ static int runword (RAnalEsil *esil, const char *word) {
 			return op (esil);
 	}
 	// push value
-	r_anal_esil_push (esil, word);
+	if (!r_anal_esil_push (esil, word)) {
+		eprintf ("ESIL stack is full\n");
+		esil->trap = 1;
+		esil->trap_code = 1;
+	}
 	return 0;
 }
 
+static char *gotoWord(char *str, int n) {
+	char *ostr = str;
+	int count = 0;
+	while (*str) {
+		if (count == n)
+			return ostr;
+		str++;
+		if (*str == ',') {
+			ostr = str+1;
+			count++;
+		}
+	}
+	return NULL;
+}
+
+static int evalWord (RAnalEsil *esil, char *ostr, char **str) {
+	if (esil->repeat)
+		return 0;
+	if (esil->parse_goto != -1) {
+		// TODO: detect infinite loop??? how??
+		*str = gotoWord (ostr, esil->parse_goto);
+		if (*str) {
+			esil->parse_goto = -1;
+			return 2;
+		}
+		eprintf ("Cannot find word %d\n", esil->parse_goto);
+		return 1;
+	}
+	if (esil->parse_stop) {
+		if (esil->parse_stop == 2) {
+			eprintf ("ESIL TODO: %s\n", *str+1);
+		}
+		return 1;
+	}
+	return 3;
+}
 R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int wordi = 0;
+	int dorunword;
 	char word[64];
 	const char *ostr = str;
 	if (!esil)
@@ -2220,27 +2295,38 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	esil->trap = 0;
 	loop:
 	esil->repeat = 0;
-	wordi = 0;
+	esil->parse_goto = -1;
+	esil->parse_stop = 0;
+	esil->parse_goto_count = esil->parse_goto_limit;
 	str = ostr;
+repeat:
+	wordi = 0;
 	while (*str) {
 		if (wordi>62) {
 			eprintf ("Invalid esil string\n");
 			return -1;
 		}
+		dorunword = 0;
 		if (*str == ';') {
 			word[wordi] = 0;
-			wordi = 0;
-			runword (esil, word);
-			if (esil->repeat)
-				goto loop;
-			return 0;
+			dorunword = 1;
 		}
 		if (*str == ',') {
 			word[wordi] = 0;
-			wordi = 0;
+			dorunword = 2;
+		}
+
+		if (dorunword) {
 			runword (esil, word);
-			if (esil->repeat)
-				goto loop;
+			word[wordi] = ',';
+			wordi = 0;
+			switch (evalWord (esil, ostr, &str)) {
+			case 0: goto loop;
+			case 1: return 0;
+			case 2: continue;
+			}
+			if (dorunword==1)
+				return 0;
 			str++;
 		}
 		word[wordi++] = *str;
@@ -2248,8 +2334,12 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	}
 	word[wordi] = 0;
 	runword (esil, word);
-	if (esil->repeat)
-		goto loop;
+	switch (evalWord (esil, ostr, &str)) {
+		case 0: goto loop;
+		case 1: return 0;
+		case 2: goto repeat;
+	}
+	
 	return 0;
 }
 
@@ -2378,6 +2468,9 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal) {
 	r_anal_esil_set_op (esil, "[8]", esil_peek8);
 	r_anal_esil_set_op (esil, "STACK", r_anal_esil_dumpstack);
 	r_anal_esil_set_op (esil, "POP", esil_pop);
+	r_anal_esil_set_op (esil, "TODO", esil_todo);
+	r_anal_esil_set_op (esil, "GOTO", esil_goto);
+	r_anal_esil_set_op (esil, "BREAK", esil_break);
 	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
 		return anal->cur->esil_init (esil);
 	return R_TRUE;
