@@ -6,9 +6,9 @@ CS_VER=2.1.2
 CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_TAR=
 CS_URL=https://github.com/aquynh/capstone.git
-CS_UPD=20140829
+CS_UPD=20140901
 CS_BRA=v3
-CS_TIP=e0eb06b7ab57c5c307f787eb7d02a33128766c98
+CS_TIP=17d1d0055e3902721a8aa3ca969cb42167b3389f
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
@@ -46,7 +46,7 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; $(MAKE) clean
 	cd sdb ; \
 		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} CFLAGS="${HOST_CFLAGS} -g" && \
+		$(MAKE) CC=${HOST_CC} CFLAGS="-fPIC ${HOST_CFLAGS} -g" && \
 		cp -f src/sdb src/.sdb
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
