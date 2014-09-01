@@ -800,6 +800,8 @@ typedef struct r_anal_esil_t {
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } RAnalEsil;
 
+#undef ESIL
+
 typedef int (*RAnalEsilOp)(RAnalEsil *esil);
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
