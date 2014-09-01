@@ -380,7 +380,6 @@ R_API RConfig *r_config_clone (RConfig *cfg) {
 	RConfig *c = r_config_new (cfg->user);
 	r_list_foreach (cfg->nodes, iter, node) {
 		RConfigNode *nn = r_config_node_clone (node);
-eprintf ("CLONE (%x)\n", node->hash);
 		r_hashtable_insert (c->ht, node->hash, nn);
 		r_list_append (c->nodes, nn);
 		c->n_nodes++;

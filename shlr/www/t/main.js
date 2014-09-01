@@ -1,24 +1,3 @@
-function newHexdumpFrame_html(name) {
-	// TODO: disas_code id
-	setTimeout (function () {
-		r2.cmd ("px 1024", function (x) {
-			document.getElementById(name+"_code").innerHTML="<pre>"+x+"</pre>";
-		});
-	}, 1);
-	return "" //"<h2>Hexdump</h2>"
-		+"<div id='"+name+"_code' style='background-color:#304050;overflow:scroll;height:100%'></div>";
-}
-
-function newDisasmFrame_html(name) {
-	// TODO: disas_code id
-	setTimeout (function () {
-		r2.cmd ("pd 512", function (x) {
-			document.getElementById(name+"_code").innerHTML="<pre>"+x+"</pre>";
-		});
-	}, 1);
-	return "" // "<h2>Disassembler</h2>"
-		+"<div id='"+name+"_code' style='background-color:#304050;overflow:scroll;height:100%'></div>";
-}
 
 function findPos(obj) {
 	var curleft = curtop = 0;
@@ -68,6 +47,34 @@ window.onload = function() {
 			}
 		});
 	}
+	function newConsoleFrame() {
+		var n = t.defname ("console");
+		function newthing(name) {
+			return "<div><input id=\""+name+"_input\"></input></div>"
+			+"<div id='"+name+"_output' class='frame_body'>"
+			+"</div>";
+		}
+
+		t.new_frame (n, newthing (n), function(obj) {
+			var flags = _(n+'_console');
+			if (flags) { 
+				var top = flags.style.offsetTop;
+				var pos = findPos (flags);
+				flags.style.height = obj.offsetHeight - pos[1]+20;
+				flags.style.width = obj.style.width - pos[0];
+			}
+		}, null, function () {
+				var input = _(n+"_input");
+				input.onkeyup = function (ev) {
+				if (ev.keyCode == 13) {
+					r2.cmd (input.value, function(x) {
+							_(n+"_output").innerHTML = "<pre>"+x+"</pre>";
+							input.value = "";
+						});
+					}
+				}
+		});
+	}
 	function newFlagsFrame () {
 		var n = t.defname ("flags");
 		function newthing(name) {
@@ -78,7 +85,7 @@ window.onload = function() {
 				});
 			}, 1);
 			return "<h2>Flags</h2>"
-			+"<div id='"+name+"_flags' style='background-color:#304050;overflow:scroll;height:100%'></div>";
+			+"<div id='"+name+"_flags' class='frame_body'></div>";
 		}
 		t.new_frame (n, newthing (n), function(obj) {
 			var flags = _(n+'_flags');
@@ -92,7 +99,8 @@ window.onload = function() {
 	}
 	function newHexdumpFrame () {
 		var n = t.defname ("hexdump");
-		t.new_frame (n, newHexdumpFrame_html (n), function(obj) {
+		var msgbody = "<div id='"+n+"_code' class='frame_body'></div>";
+		t.new_frame (n, msgbody, function(obj) {
 			var code = _(n+'code');
 			if (code) { 
 				var top = code.style.offsetTop;
@@ -100,11 +108,16 @@ window.onload = function() {
 				code.style.height = obj.offsetHeight - pos[1]+20;
 				code.style.width = obj.style.width - pos[0];
 			}
+		},null, function() {
+			r2.cmd ("px 1024", function (x) {
+				_(n+"_code").innerHTML="<pre>"+x+"</pre>";
+			});
 		});
 	}
 	function newDisasmFrame() {
 		var n = t.defname ('disas');
-		t.new_frame (n, newDisasmFrame_html (n), function(obj) {
+		var disasmbody = "<div id='"+n+"_code' class='frame_body'></div>";
+		t.new_frame (n, disasmbody, function(obj) {
 			var code = _(n+'_code');
 			if (code) { 
 				var top = code.style.offsetTop;
@@ -112,6 +125,10 @@ window.onload = function() {
 				code.style.height = obj.offsetHeight - pos[1]+20;
 				code.style.width = obj.style.width - pos[0];
 			}
+		}, null, function () {
+			r2.cmd ("pd 512", function (x) {
+				_(n+"_code").innerHTML="<pre>"+x+"</pre>";
+			});
 		});
 	}
 	function addPanel (pos) {
@@ -121,7 +138,7 @@ window.onload = function() {
 		t.update = function() {
 			r2.cmd (t.cmd, function(x) {
 				_(t.key).innerHTML = 
-			"<div style='background-color:#304050;overflow:scroll;height:100%'><pre>"+x+"</pre></div>";
+			"<div class='frame_body'><pre>"+x+"</pre></div>";
 			});
 		}
 		_('cmd_'+ctr).onclick = function() {
@@ -135,6 +152,7 @@ window.onload = function() {
 	_('open-dis').onclick = function() { newDisasmFrame(); }
 	_('open-fla').onclick = function() { newFlagsFrame(); }
 	_('open-hlp').onclick = function() { newHelpFrame(); }
+	_('open-con').onclick = function() { newConsoleFrame(); }
 	_('add-column').onclick = function() {
 		addPanel ("right");
 	}
@@ -146,7 +164,7 @@ window.onload = function() {
 		t.update = function() {
 			r2.cmd (t.cmd, function(x) {
 				_(t.key).innerHTML = 
-				"<div style='background-color:#304050;overflow:scroll;height:100%'><pre>"+x+"</pre></div>";
+				"<div class='frame_body'><pre>"+x+"</pre></div>";
 			});
 		}
 		_('cmd_'+ctr).onclick = function() {
@@ -166,7 +184,6 @@ window.onload = function() {
 	_('body').onkeyup = function (e) {
 		var key = String.fromCharCode(e.keyCode);
 		//if (!key.altKey) return;
-console.log (e);
 		if (!e.altKey)
 			return;
 		key = e.keyCode;

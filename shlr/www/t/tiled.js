@@ -242,10 +242,10 @@ f.mw = false;
 				}
 			}
 		}
-this.tile ();
+		this.tile ();
 		return ret;
 	}
-	this.new_frame = function(name, body, update, pos) {
+	this.new_frame = function(name, body, update, pos, cb) {
 		var nf = {};
 		nf.name = name = name || this.defname ();
 			var obj_title = document.createElement ('div');
@@ -253,12 +253,46 @@ this.tile ();
 			obj_title.id = 'frame_'+name;
 			var d = document.createElement ('div');
 			d.style.backgroundColor = '#d0a090';
+
+			var b2 = document.createElement ('a');
+			b2.innerHTML = "[r]";
+			b2.href='#';
+			b2.ival = null;
+			b2.onclick = function (x) {
+				// TODO : toggle auto refresh
+				if (b2.ival) {
+					clearInterval (b2.ival);
+					b2.ival = null;
+					b2.innerHTML = "[r]";
+				} else {
+					b2.innerHTML = "[R]";
+					if (cb) {
+						cb (this);
+						b2.ival = setInterval (function () {
+							cb (this);
+						}, 1000);
+					}
+				}
+			}
+			d.appendChild (b2);
+
+			var b = document.createElement ('a');
+			b.innerHTML = "[@] ";
+			b.href='#';
+			b.onclick = function (x) {
+				if (cb) {
+					cb (this);
+				}
+			}
+			d.appendChild (b);
+
 			var a = document.createElement ('a');
 			a.innerHTML = name;
 			a.href='#';
 			d.appendChild (a);
+
 			obj_title.appendChild (d);
-			(function(self,name) {
+			(function (self,name) {
 				 a.onclick = function() {
 					 //alert ("clicked "+name);
 					 self.del_frame (name);
@@ -298,6 +332,9 @@ this.tile ();
 			break;
 		}
 		this.select_frame (name);
+		if (cb) {
+			cb (this);
+		}
 		(function (self, name) {
 			var f = _('frame_'+name);
 			f.onmouseup = function() {

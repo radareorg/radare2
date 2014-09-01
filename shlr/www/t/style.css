@@ -28,6 +28,11 @@ iframe {
 	font-family: monospace;
 	width:100%;
 }
+.frame_body {
+	background-color:#304050;
+	overflow:scroll;
+	height:100%;
+}
 .canvas {
 	padding-top:3px;
 	width:100%;
@@ -36,6 +41,13 @@ iframe {
 	border-top:5px;
 	font-size:14px;
 	font-family:monospace;
+}
+input {
+	width: 100%;
+	border: 1px solid black;
+	background-color: #404040;
+	color: white;
+	font-family: monospace;
 }
 h2 {
 	padding:0px;
