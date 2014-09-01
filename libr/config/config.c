@@ -19,6 +19,18 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	return node;
 }
 
+R_API RConfigNode *r_config_node_clone (RConfigNode *n) {
+	RConfigNode *cn = R_NEW0 (RConfigNode);
+	cn->name = strdup (n->name);
+	cn->desc = n->desc? strdup (n->desc): NULL;
+	cn->hash = n->hash;
+	cn->value = strdup (n->value? n->value: "");
+	cn->i_value = n->i_value;
+	cn->flags = n->flags;
+	cn->callback = n->callback;
+	return cn;
+}
+
 R_API void r_config_node_free (void *n) {
 	RConfigNode *node = (RConfigNode*)n;
 	if (!node) return;
@@ -274,7 +286,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 
 	if (node && node->callback) {
 		ut64 oi = node->i_value;
-		int ret = node->callback(cfg->user, node);
+		int ret = node->callback (cfg->user, node);
 		if (ret == R_FALSE) {
 			node->i_value = oi;
 			free (node->value);
@@ -360,6 +372,21 @@ R_API RConfig *r_config_new(void *user) {
 		cfg->printf = (void *)printf;
 	}
 	return cfg;
+}
+
+R_API RConfig *r_config_clone (RConfig *cfg) {
+	RListIter *iter;
+	RConfigNode *node;
+	RConfig *c = r_config_new (cfg->user);
+	r_list_foreach (cfg->nodes, iter, node) {
+		RConfigNode *nn = r_config_node_clone (node);
+eprintf ("CLONE (%x)\n", node->hash);
+		r_hashtable_insert (c->ht, node->hash, nn);
+		r_list_append (c->nodes, nn);
+		c->n_nodes++;
+	}
+	c->lock = cfg->lock;
+	return c;
 }
 
 R_API int r_config_free(RConfig *cfg) {

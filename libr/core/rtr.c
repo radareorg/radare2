@@ -209,7 +209,9 @@ typedef struct {
 
 static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	char buf[32];
+	RSocket *s;
 	RSocketHTTPRequest *rs;
+	RConfig *newcfg = NULL, *origcfg = NULL;
 	int iport, oldsandbox = -1;
 	int timeout = r_config_get_i (core->config, "http.timeout");
 	int x = r_config_get_i (core->config, "scr.html");
@@ -231,7 +233,6 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		snprintf (buf, sizeof (buf), "%d", iport);
 		port = buf;
 	}
-	RSocket *s;
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
 	if (!r_socket_listen (s, port, NULL)) {
@@ -245,6 +246,11 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			browser, atoi (port), path? path:"");
 		r_sys_cmd (cmd);
 	}
+
+	origcfg = core->config;
+	newcfg = r_config_clone (core->config);
+	core->config = newcfg;
+
 	r_config_set (core->config, "asm.cmtright", "false");
 	r_config_set (core->config, "scr.html", "true");
 	r_config_set (core->config, "scr.color", "false");
@@ -257,9 +263,23 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	eprintf ("Starting http server...\n");
 	eprintf ("http://localhost:%d/\n", atoi (port));
 	core->http_up = R_TRUE;
+
+// TODO: handle mutex lock/unlock here
 	while (!r_cons_singleton ()->breaked) {
 		r_cons_break ((RConsBreak)http_break, core);
+
+		core->config = origcfg;
+		r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
+		r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
+		r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
+core->http_up = 0;
 		rs = r_socket_http_accept (s, timeout);
+core->http_up = 1;
+		core->config = newcfg;
+		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
+		r_config_set (newcfg, "scr.color", r_config_get (newcfg, "scr.color"));
+		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
+
 		if (!rs) {
 			if (!s) break;
 			r_sys_usleep (100);
@@ -450,13 +470,11 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	core->http_up = R_FALSE;
 	r_socket_free (s);
 	r_cons_break_end ();
-	r_config_set_i (core->config, "scr.html", x);
-	r_config_set_i (core->config, "scr.color", y);
-	r_config_set_i (core->config, "asm.bytes", z);
-	r_config_set_i (core->config, "scr.interactive", u);
-	r_config_set_i (core->config, "asm.cmtright", v);
-	if (oldsandbox != -1)
-		r_config_set_i (core->config, "cfg.sandbox", oldsandbox);
+	core->config = origcfg;
+	r_config_free (newcfg);
+	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
+	r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
+	r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
 	return 0;
 }
 
