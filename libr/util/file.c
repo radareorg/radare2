@@ -16,7 +16,7 @@
 R_API int r_what_os_am_i () {
 #if __UNIX__
 	return ON_NIX_OS;
-#elif __WINDOWS__
+#elif __WINDOWS__ || __CYGWIN__ || __MINGW32__ || MINGW32
 	return ON_WINDOWS_OS;
 #endif
 }
