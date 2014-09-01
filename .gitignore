@@ -5,6 +5,7 @@
 *.pc
 *.sdb
 *.dylib
+*.dll
 supported.*
 config.mk
 plugins.cfg
@@ -26,6 +27,9 @@ config-user.mk
 libr/config.h
 libr/include/r_userconf.h
 shlr/java/out
+shlr/java/out.exe
 shlr/sdb/sdb
+shlr/sdb/sdb.exe
 shlr/sdb/src/sdb
+shlr/sdb/src/sdb.exe
 shlr/sdb/src/sdb-version.h
