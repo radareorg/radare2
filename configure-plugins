@@ -123,8 +123,17 @@ sub () {
   n="" ; for a in $1 ; do [ $a = $2 ] && continue ; n="$n $a" ; done ; echo $n
 }
 
+
+echo | sort -t. > /dev/null 2>&1
+if [ $? = 0 ]; then
+  SORT="sort -t."
+else
+  SORT="sort"
+fi
+
 dosort () {
-  ( for a in $1 ; do echo $a ; done ) | sort -t.
+
+  ( for a in $1 ; do echo $a ; done ) | ${SORT}
   #( for a in $1 ; do echo $a ; done ) | sort -t. --key=1,1d
 }
 
@@ -165,6 +174,9 @@ done
 sort_vars
 
 [ ${DONOTHING} = 0 ] && generate
+
+echo ${SHARED}
+echo ${STATIC}
 
 save
 
