@@ -22,7 +22,7 @@ TAR=bsdtar cvf
 TAREXT=tar.gz
 CZ=gzip -f
 endif
-PWD=$(shell pwd)
+PWD=$(shell pwd | sed -e 's,^/c/,/,')
 
 all: plugins.cfg
 	${MAKE} -C shlr/zip
