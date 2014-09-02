@@ -525,13 +525,23 @@ static void gb_anal_store (RReg *reg, RAnalOp *op, const ut8 *data)
 	}
 }
 
+static inline void gb_anal_cb_swap (RReg *reg, RAnalOp* op, const ut8 data)
+{
+	op->dst = r_anal_value_new ();
+	op->src[0] = r_anal_value_new ();
+	op->src[0]->imm = 4;
+	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	if ((data & 7) == 6) {
+		op->dst->memref = 1;
+		r_strbuf_setf (&op->esil, "4,%s,[1],>>,4,%s,[1],<<,|,%s,=[1],%%z,Z,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+	} else	r_strbuf_setf (&op->esil, "4,%s,>>,4,%s,<<,|,%s,=,%%z,Z,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+}
+
 static inline void gb_anal_cb_rol (RReg *reg, RAnalOp* op, const ut8 data)
 {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
-	if ((data>>3) == 6)
-		op->src[0]->imm = 4;												//swap
-	else	op->src[0]->imm = 1;
+	op->src[0]->imm = 1;
 	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
 		op->dst->memref = 1;
@@ -571,8 +581,8 @@ static inline void gb_anal_cb_sra (RReg *reg, RAnalOp *op, const ut8 data)
 	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref)
-		r_strbuf_setf (&op->esil, "1[%s]=(1[%s]>>1)|(1[%s]&0x80)", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
-	else	r_strbuf_setf (&op->esil, "%s=(%s>>1)|(%s&0x80)", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);	//spaguesil
+	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,0x80,%s,&,1,%s,>>,|,%s=,%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 }
 
 static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data)
@@ -583,8 +593,8 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data)
 	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref)
-		r_strbuf_setf (&op->esil, "1[%s]=1[%s]>>1", regs_x[data & 7], regs_x[data & 7]);
-	else	r_strbuf_setf (&op->esil, "%s=%s>>1", regs_x[data & 7], regs_x[data & 7]);
+		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,=,1,%s,[1],>>,%s,=[1],%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,1,%s,>>=,%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7]);
 }
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len){
@@ -1193,7 +1203,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			{
 				case 0:
 				case 2:
-				case 6:				//swap
 					if ((data[1]&7) == 6)
 						op->cycles = 16;
 					else	op->cycles = 8;
@@ -1214,6 +1223,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					else	op->cycles = 8;
 					op->type = R_ANAL_OP_TYPE_SAL;
 					gb_anal_cb_sla (anal->reg, op, data[1]);
+					break;
+				case 6:
+					if ((data[1] & 7) == 6)
+						op->cycles = 16;
+					else	op->cycles = 8;
+					op->type = R_ANAL_OP_TYPE_ROL;
+					gb_anal_cb_swap (anal->reg, op, data[1]);
 					break;
 				case 5:
 					if ((data [1] & 7) == 6)
