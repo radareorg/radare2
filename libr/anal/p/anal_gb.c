@@ -537,6 +537,30 @@ static inline void gb_anal_cb_swap (RReg *reg, RAnalOp* op, const ut8 data)
 	} else	r_strbuf_setf (&op->esil, "4,%s,>>,4,%s,<<,|,%s,=,%%z,Z,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 }
 
+static inline void gb_anal_cb_rlc (RReg *reg, RAnalOp *op, const ut8 data)
+{
+	op->dst = r_anal_value_new ();
+	op->src[0] = r_anal_value_new ();
+	op->src[0]->imm = 1;
+	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	if ((data & 7) == 6) {
+		op->dst->memref = 1;
+		r_strbuf_setf (&op->esil, "7,%s,[1],>>,1,&,C,=,1,%s,[1],<<,C,|,%s,=[1],%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+	} else	r_strbuf_setf (&op->esil, "1,%s,<<=,%%c7,C,=,C,%s,|=,%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7]);
+}
+
+static inline void gb_anal_cb_rl (RReg *reg, RAnalOp *op, const ut8 data)
+{
+	op->dst = r_anal_value_new ();
+	op->src[0] = r_anal_value_new ();
+	op->src[0]->imm = 1;
+	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	if ((data & 7) == 6) {
+		op->dst->memref = 1;
+		r_strbuf_setf (&op->esil, "1,%s,<<,C,|,%s,=[1],%%c7,C,=,%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7]);
+	} else	r_strbuf_setf (&op->esil, "1,%s,<<,C,|,%s,=,%%c7,C,=,%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7]);
+}
+
 static inline void gb_anal_cb_rol (RReg *reg, RAnalOp* op, const ut8 data)
 {
 	op->dst = r_anal_value_new ();
@@ -884,10 +908,15 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			gb_anal_xoaasc (anal->reg, op, data);
 			op->cycles = 8;
 			break;
-		case 0x07:
-		case 0x17:
+		case 0x07:					//rlca
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ROL;
+			gb_anal_cb_rlc (anal->reg, op, 7);
+			break;
+		case 0x17:					//rla
+			op->cycles = 4;
+			op->type = R_ANAL_OP_TYPE_ROL;
+			gb_anal_cb_rl (anal->reg, op, 7);
 			break;
 		case 0x0f:
 		case 0x1f:
@@ -1202,12 +1231,18 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			switch (data[1]>>3)
 			{
 				case 0:
+					if ((data[1]&7) == 6)
+						op->cycles = 16;
+					else	op->cycles = 8;
+					op->type = R_ANAL_OP_TYPE_ROL;
+					gb_anal_cb_rlc (anal->reg, op, data[1]);
+					break;
 				case 2:
 					if ((data[1]&7) == 6)
 						op->cycles = 16;
 					else	op->cycles = 8;
 					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_rol (anal->reg, op, data[1]);
+					gb_anal_cb_rl (anal->reg, op, data[1]);
 					break;
 				case 1:
 				case 3:
