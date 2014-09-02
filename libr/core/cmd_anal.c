@@ -1430,7 +1430,6 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_clear_line (1);
 			eprintf ("Interrupted\n");
 		}
-		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		r_cons_break_end();
 		break;
 	case 'c':
