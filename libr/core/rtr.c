@@ -94,25 +94,26 @@ TODO:
 			switch (ch) {
 			case '?': 
 				r_cons_clear00();
-				r_cons_printf ("Remote Visual keys:\n");
-				r_cons_printf (" hjkl : move\n");
-				r_cons_printf (" +-*/ : change block size\n");
-				r_cons_printf (" pP   : rotate print modes\n");
-				r_cons_printf (" T    : enter TextLog chat console\n");
-				r_cons_printf (" @    : enter auto-refresh mode\n");
-				r_cons_printf (" q    : quit this mode and go back to the shell\n");
+				r_cons_printf ("Remote Visual keys:\n"
+				" hjkl : move\n"
+				" +-*/ : change block size\n"
+				" pP   : rotate print modes\n"
+				" T    : enter TextLog chat console\n"
+				" @    : enter auto-refresh mode\n"
+				" q    : quit this mode and go back to the shell\n"
+				" .    : seek entry or pc\n");
 				r_cons_flush ();
 				r_cons_any_key ();
+				break;
+			case '.':
+				free (rtrcmd (T, "s entry0"));
 				break;
 			case ':':
 				{
 					int ret;
 					eprintf ("Press <enter> to return to Visual mode.\n");
 					do {
-						ut64 addr = core->offset;
-						ut64 bsze = core->blocksize;
 						char buf[1024];
-						ut64 oseek = core->offset;
 #if __UNIX__
 						r_line_set_prompt (Color_RESET":> ");
 #else
@@ -282,13 +283,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	RSocket *s;
 	RSocketHTTPRequest *rs;
 	RConfig *newcfg = NULL, *origcfg = NULL;
-	int iport, oldsandbox = -1;
-	int timeout = r_config_get_i (core->config, "http.timeout");
-	int x = r_config_get_i (core->config, "scr.html");
-	int y = r_config_get_i (core->config, "scr.color");
-	int z = r_config_get_i (core->config, "asm.bytes");
-	int u = r_config_get_i (core->config, "scr.interactive");
-	int v = r_config_get_i (core->config, "asm.cmtright");
+	int iport, timeout = r_config_get_i (core->config, "http.timeout");
 	const char *port = r_config_get (core->config, "http.port");
 	char *allow = (char *)r_config_get (core->config, "http.allow");
 
@@ -327,24 +322,54 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
 	if (r_config_get_i (core->config, "http.sandbox")) {
-		oldsandbox = r_config_get_i (core->config, "cfg.sandbox");
+		//(void)r_config_get_i (core->config, "cfg.sandbox");
 		r_config_set (core->config, "cfg.sandbox", "true");
 	}
 	eprintf ("Starting http server...\n");
 	eprintf ("http://localhost:%d/\n", atoi (port));
 	core->http_up = R_TRUE;
 
+	ut64 newoff, origoff = core->offset;
+	int newblksz, origblksz = core->blocksize;
+	ut8 *newblk, *origblk = core->block;
+
+	newblk = malloc (core->blocksize);
+	memcpy (newblk, core->block, core->blocksize);
+
+	core->block = newblk;
 // TODO: handle mutex lock/unlock here
 	while (!r_cons_singleton ()->breaked) {
 		r_cons_break ((RConsBreak)http_break, core);
 
+		/* restore environment */
 		core->config = origcfg;
 		r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
 		r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
 		r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
-core->http_up = 0;
+		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
+
+		newoff = core->offset;
+		newblk = core->block;
+		newblksz = core->blocksize;
+
+		core->offset = origoff;
+		core->block = origblk;
+		core->blocksize = origblksz;
+
+// backup and restore offset and blocksize
+		
+		/* this is blocking */
 		rs = r_socket_http_accept (s, timeout);
-core->http_up = 1;
+
+		origoff = core->offset;
+		origblk = core->block;
+		origblksz = core->blocksize;
+		core->offset = newoff;
+		core->block = newblk;
+		core->blocksize = newblksz;
+		/* set environment */
+// backup and restore offset and blocksize
+		core->http_up = 1;
 		core->config = newcfg;
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
 		r_config_set (newcfg, "scr.color", r_config_get (newcfg, "scr.color"));
