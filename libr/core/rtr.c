@@ -15,6 +15,7 @@ typedef struct {
 	const char *port;
 	const char *file;
 } TextLog;
+static int rtr_textlog_chat (RCore *core, TextLog T);
 
 static char *rtrcmd (TextLog T, const char *str) {
 	int len;
@@ -35,7 +36,16 @@ static char *rtrcmd (TextLog T, const char *str) {
 	return NULL;
 }
 
+static void showcursor(RCore *core, int x) {
+	if (core && core->vmode) {
+		r_cons_show_cursor (x);
+		r_cons_enable_mouse (!!!x);
+	} else r_cons_enable_mouse (R_FALSE);
+	r_cons_flush ();
+}
+
 static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
+	int autorefresh = R_FALSE;
 	if (cmd) {
 		r_cons_break (NULL, NULL);
 		for (;;) {
@@ -59,7 +69,22 @@ static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
 				free (ret);
 			}
 			r_cons_flush ();
-			ch = r_cons_readchar ();
+			if (autorefresh) {
+				r_cons_printf ("(auto-refresh)\n");
+				r_cons_flush ();
+				r_cons_break (NULL, NULL);
+				r_sys_sleep (1);
+				if (r_cons_singleton()->breaked)  {
+					autorefresh = R_FALSE;
+					ch = r_cons_readchar ();
+				} else {
+					r_cons_break_end ();
+					continue;
+				}
+				r_cons_break_end ();
+			} else {
+				ch = r_cons_readchar ();
+			}
 #if 0
 TODO: 
  :   prompt
@@ -71,18 +96,62 @@ TODO:
 				r_cons_clear00();
 				r_cons_printf ("Remote Visual keys:\n");
 				r_cons_printf (" hjkl : move\n");
+				r_cons_printf (" +-*/ : change block size\n");
 				r_cons_printf (" pP   : rotate print modes\n");
+				r_cons_printf (" T    : enter TextLog chat console\n");
+				r_cons_printf (" @    : enter auto-refresh mode\n");
 				r_cons_printf (" q    : quit this mode and go back to the shell\n");
 				r_cons_flush ();
 				r_cons_any_key ();
 				break;
+			case ':':
+				{
+					int ret;
+					eprintf ("Press <enter> to return to Visual mode.\n");
+					do {
+						ut64 addr = core->offset;
+						ut64 bsze = core->blocksize;
+						char buf[1024];
+						ut64 oseek = core->offset;
+#if __UNIX__
+						r_line_set_prompt (Color_RESET":> ");
+#else
+						r_line_set_prompt (":> ");
+#endif
+						showcursor (core, R_TRUE);
+						r_cons_fgets (buf, sizeof (buf), 0, NULL);
+						if (*buf) {
+							r_line_hist_add (buf);
+							char *res = rtrcmd (T, buf);
+							if (res) {
+								r_cons_printf ("%s\n", res);
+								free (res);
+							}
+							r_cons_flush ();
+							ret = R_TRUE;
+						} else {
+							ret = R_FALSE;
+							//r_cons_any_key ();
+							r_cons_clear00 ();
+							showcursor (core, R_FALSE);
+						}
+					} while (ret);
+				}
+				break;
+			case '@': autorefresh = R_TRUE; break;
 			case 'j': free (rtrcmd (T, "s+16")); break;
 			case 'k': free (rtrcmd (T, "s-16")); break;
 			case 'h': free (rtrcmd (T, "s-1")); break;
 			case 'l': free (rtrcmd (T, "s+1")); break;
+			case 'T': rtr_textlog_chat (core, T); break;
+			case '+': free (rtrcmd (T, "b+1")); break;
+			case '*': free (rtrcmd (T, "b+16")); break;
+			case '-': free (rtrcmd (T, "b-1")); break;
+			case '/': free (rtrcmd (T, "b-16")); break;
 			case 'p': cmdidx++; if (!cmds[cmdidx]) cmdidx = 0; break;
 			case 'P': cmdidx--; if (cmdidx<0) cmdidx = 2; break;
 			case 'q':
+//restore prompt
 				return 0;
 			}
 		}
@@ -99,13 +168,13 @@ static int rtr_textlog_chat (RCore *core, TextLog T) {
 	const char *me = r_config_get (core->config, "cfg.user");
 	char *ret, msg[1024];
 
-	eprintf ("Type '/help' for commands:\n");
+	eprintf ("Type '/help' for commands and ^D to quit:\n");
 	char *oldprompt = strdup (r_line_singleton ()->prompt);
 	snprintf (prompt, sizeof (prompt)-1, "[%s]> ", me);
 	r_line_set_prompt (prompt);
 	ret = rtrcmd (T, msg);
 	for (;;) {
-		if (lastmsg) {
+		if (lastmsg>=0) {
 			snprintf (msg, sizeof (msg)-1, "T %d", lastmsg);
 		} else {
 			strcpy (msg, "T");
@@ -121,11 +190,12 @@ static int rtr_textlog_chat (RCore *core, TextLog T) {
 		if (!*buf) continue;
 		if (!strcmp (buf, "/help")) {
 			eprintf ("/quit           quit the chat (same as ^D)\n");
-			eprintf ("/name <nick>    set cfg.user name\n");
+			eprintf ("/nick <nick>    set cfg.user nick name\n");
 			eprintf ("/log            show full log\n");
 			eprintf ("/clear          clear text log messages\n");
-		} else if (!strncmp (buf, "/name ", 6)) {
+		} else if (!strncmp (buf, "/nick ", 6)) {
 			snprintf (msg, sizeof (msg)-1, "* '%s' is now known as '%s'", me, buf+6);
+			r_cons_printf ("%s\n", msg);
 			r_core_log_add (core, msg);
 			r_config_set (core->config, "cfg.user", buf+6);
 			me = r_config_get (core->config, "cfg.user");
@@ -658,14 +728,14 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		{
 			char uri[1024], prompt[64];
 			int len;
-			char *str, *res;
+			char *str, *res, *ptr;
 			if (file[strlen (file)-1]=='/') {
 				TextLog T = { host, port, file };
+				for (;;) {
 				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
 					host, port, file);
 				r_line_set_prompt (prompt);
-				for (;;) {
-					char *ptr, *str = r_line_readline ();
+					str = r_line_readline ();
 					if (!str || !*str) break;
 					if (*str == 'q') break;
 					if (str[0]=='V') {
@@ -677,7 +747,6 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 					} else
 					if (!strcmp (str, "TT")) {
 						rtr_textlog_chat (core, T);
-
 					} else {
 					ptr = r_str_uri_encode (str);
 					if (ptr) str = ptr;
