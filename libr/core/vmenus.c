@@ -1285,7 +1285,7 @@ R_API void r_core_visual_define (RCore *core) {
 			if (r_anal_op (core->anal, &op, here, core->block+delta,
 					core->blocksize-delta)) {
 				size = here - fcn->addr + op.size;
-				fcn->size = size;
+				r_anal_fcn_resize (fcn, size);
 			}
 		}
 		}

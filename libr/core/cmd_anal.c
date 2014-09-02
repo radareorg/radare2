@@ -373,6 +373,9 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	switch (input[1]) {
+	case 'f':
+		r_anal_fcn_fit_overlaps (core->anal, NULL);
+		break;
 	case '-':
 		 {
 			ut64 addr = input[2]?
@@ -1424,6 +1427,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_clear_line (1);
 			eprintf ("Interrupted\n");
 		}
+		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		r_cons_break_end();
 		break;
 	case 'c':

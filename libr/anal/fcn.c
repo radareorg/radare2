@@ -23,6 +23,16 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 	return "unk";
 }
 
+R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
+	if (!fcn || newsize<1)
+		return R_FALSE;
+	fcn->size = newsize;
+	// TODO: walk the basic blocks and remove the ones outside the boundaries
+	// ----  or swap them into an alternative linked list
+	// we should also support to shrink basic blocks
+	return R_TRUE;
+}
+
 R_API RAnalFunction *r_anal_fcn_new() {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) return NULL;
@@ -430,6 +440,28 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	return ret;
 }
 
+static void fcnfit (RAnal *a, RAnalFunction *f) {
+	// find next function
+	RAnalFunction *next = r_anal_fcn_next (a, f->addr);
+	if (next) {
+		if ((f->addr + f->size)> next->addr) {
+			r_anal_fcn_resize (f, (next->addr - f->addr));
+		}
+	}
+}
+
+R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn) {
+	if (fcn) {
+		fcnfit (anal, fcn);
+	} else {
+		RAnalFunction *f;
+		RListIter *iter;
+		r_list_foreach (anal->fcns, iter, f) {
+			fcnfit (anal, f);
+		}
+	}
+}
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
@@ -675,7 +707,6 @@ R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb) {
 	RListIter *iter_tmp;
 	RAnalOp *opi;
 #endif
-
 	r_list_foreach (fcn->bbs, iter, bbi)
 		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
@@ -850,6 +881,19 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
 		if (addr >= fcni->addr && addr < (fcni->addr+fcni->size))
 			return fcni;
 	return NULL;
+}
+
+R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
+	RAnalFunction *fcni;
+	RListIter *iter;
+	RAnalFunction *closer = NULL;
+	r_list_foreach (anal->fcns, iter, fcni) {
+		//if (fcni->addr == addr)
+		if (fcni->addr > addr && (!closer || fcni->addr<closer->addr)) {
+			closer = fcni;
+		}
+	}
+	return closer;
 }
 
 /* getters */
