@@ -20,17 +20,19 @@ static void find_refs(RCore *core, const char *glob) {
 
 #if 1
 /* TODO: Move into cmd_anal() */
-static void var_help(char ch) {
+static void var_help(RCore *core, char ch) {
 	// TODO: colorize using r_core_help()
 	const char *kind = (ch=='v')?"locals":"args";
 	if (ch=='a' || ch=='A' || ch=='v') {
-		eprintf ("|Usage: af%c [idx] [type] [name]\n", ch);
-		eprintf ("| af%c                        ; list function %s\n", ch, kind);
-		eprintf ("| af%c 12 int buffer[3]       ; add %s at index, type and name\n", ch, kind);
-		eprintf ("| af%c-12                     ; delete %s at index 12\n", ch, kind);
-		eprintf ("| af%cs [index] ([offset])    ; register 'set' action\n", ch);
-		eprintf ("| af%cg [index] ([offset])    ; register 'get' action\n", ch);
-		eprintf ("|See also: afa? afv? -- add arguments and locals\n");
+		 const char* help_msg[] = {
+		 "Usage:", "af[aAv]", " [idx] [type] [name]",
+		 "af[aAv]", "", "list function args/locals",
+		 "af[aAv]", " 12 int buffer[3]", "define local var at index 12",
+		 "af[aAv]", "-12", "undefine local var",
+		 "af[aAv]s", " [index] ([offset])", "register 'set' action",
+		 "af[aAv]g", " [index] ([offset])", "register 'get' action",
+		 NULL};
+		 r_core_cmd_help (core, help_msg);
 	} else {
 		eprintf ("See afv? and afa?\n");
 	}
@@ -52,7 +54,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_anal_var_list_show (core->anal, fcn, core->offset);
 		break;
 	case '?':
-		var_help (0);
+		var_help (core, 0);
 		break;
 	case 'v': // frame variable
 	case 'a': // stack arg
@@ -74,7 +76,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_var_list (core->anal, fcn, 0, 0);
 			goto end;
 		case '?':
-			var_help (*str);
+			var_help (core, *str);
 			goto end;
 		case '.':
 			r_anal_var_list (core->anal, fcn, core->offset, 0);
@@ -107,7 +109,7 @@ static int var_cmd(RCore *core, const char *str) {
 		delta = atoi (str);
 		p = strchr (str, ' ');
 		if (p==NULL) {
-			var_help (*str);
+			var_help (core, *str);
 			break;
 		}
 		// TODO: Improve parsing error handling
@@ -129,10 +131,10 @@ static int var_cmd(RCore *core, const char *str) {
 				scope, delta, kind, type, size, name);
 			//r_anal_str_to_type (core->anal, p)
 			//NULL, p3? atoi (p3): 0, p2);
-		} else var_help (*str);
+		} else var_help (core, *str);
 		break;
 	default:
-		var_help (*str);
+		var_help (core, *str);
 		break;
 	}
 	end:
@@ -635,6 +637,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "af-", " [addr]", "clean all function analysis data (or function at addr)",
 		 "afb", " 16", "set current function as thumb",
 		 "afbb", " fcnaddr addr size name [type] [diff]", "add bb to function @ fcnaddr",
+		 "aff", "", "re-adjust function boundaries to fit",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afj", " [addr|fcn.name]", "show function(s) information in JSON",
