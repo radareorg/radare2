@@ -87,7 +87,6 @@ static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
 			}
 #if 0
 TODO: 
- :   prompt
  i   insert hex/string/asm
  0-9 follow jumps
 #endif
@@ -100,13 +99,46 @@ TODO:
 				" pP   : rotate print modes\n"
 				" T    : enter TextLog chat console\n"
 				" @    : enter auto-refresh mode\n"
+				" i    : insert hexpair\n"
 				" q    : quit this mode and go back to the shell\n"
+				" sS   : step / step over\n"
 				" .    : seek entry or pc\n");
 				r_cons_flush ();
 				r_cons_any_key ();
 				break;
+			case 'i':
+				{
+					char buf[1024];
+#if __UNIX__
+					if (core->print->flags & R_PRINT_FLAGS_COLOR) {
+#else
+					if (0) {
+#endif
+						r_line_set_prompt (Color_RESET":> ");
+					} else {
+						r_line_set_prompt (":> ");
+					}
+					showcursor (core, R_TRUE);
+					r_cons_fgets (buf+3, sizeof (buf)-4, 0, NULL);
+					memcpy (buf, "wx ", 3);
+					if (buf[3]) {
+						char *res = rtrcmd (T, buf);
+						if (res) {
+							r_cons_printf ("%s\n", res);
+							free (res);
+						}
+						r_cons_flush ();
+					}
+				}
+				break;
+			case 's':
+				free (rtrcmd (T, "ds;.dr*"));
+				break;
+			case 'S':
+				free (rtrcmd (T, "dso;.dr*"));
+				break;
 			case '.':
-				free (rtrcmd (T, "s entry0"));
+				free (rtrcmd (T, "s entry0;dr?rip;?? sr pc"));
 				break;
 			case ':':
 				{

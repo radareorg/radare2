@@ -492,6 +492,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	//		r = r_reg_get (core->dbg->reg, str+1, 0);
 	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
 			r_cons_printf ("0x%08"PFMT64x"\n", off);
+			core->num->value = off;
 			//r_reg_get_value (core->dbg->reg, r));
 		} else {
 			const char * help_message[] = {
