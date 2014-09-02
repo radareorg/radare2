@@ -561,16 +561,16 @@ static inline void gb_anal_cb_rl (RReg *reg, RAnalOp *op, const ut8 data)
 	} else	r_strbuf_setf (&op->esil, "1,%s,<<,C,|,%s,=,%%c7,C,=,%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7]);
 }
 
-static inline void gb_anal_cb_rol (RReg *reg, RAnalOp* op, const ut8 data)
+static inline void gb_anal_cb_rrc (RReg *reg, RAnalOp *op, const ut8 data)
 {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;
-	op->dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
-	if ((data & 7) == 6) {
+	op->dst->reg = r_reg_get(reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	if ((data &7) == 6) {
 		op->dst->memref = 1;
-		r_strbuf_setf (&op->esil, "1[%s]=1[%s]<<<%i", regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
-	} else	r_strbuf_setf (&op->esil, "%s=%s<<<%i", regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
+		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,=,1,%s,[1],>>,7,C,<<,|,%s,=[1],%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+	} else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,1,%s,>>,7,C,<<,|,%s,=,%%z,Z,=,0,H,=,0,N,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 }
 
 static inline void gb_anal_cb_ror (RReg *reg, RAnalOp *op, const ut8 data)
@@ -919,6 +919,10 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			gb_anal_cb_rl (anal->reg, op, 7);
 			break;
 		case 0x0f:
+			op->cycles = 4;
+			op->type = R_ANAL_OP_TYPE_ROR;
+			gb_anal_cb_rrc (anal->reg, op, 7);
+			break;
 		case 0x1f:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ROR;
@@ -1237,6 +1241,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					op->type = R_ANAL_OP_TYPE_ROL;
 					gb_anal_cb_rlc (anal->reg, op, data[1]);
 					break;
+				case 1:
+					if ((data[1] & 7) == 6)
+						op->cycles = 16;
+					else	op->cycles = 8;
+					op->type = R_ANAL_OP_TYPE_ROR;
+					gb_anal_cb_rrc (anal->reg, op, data[1]);
+					break;
 				case 2:
 					if ((data[1]&7) == 6)
 						op->cycles = 16;
@@ -1244,7 +1255,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					op->type = R_ANAL_OP_TYPE_ROL;
 					gb_anal_cb_rl (anal->reg, op, data[1]);
 					break;
-				case 1:
 				case 3:
 					if ((data[1]&7) == 6)
 						op->cycles = 16;
