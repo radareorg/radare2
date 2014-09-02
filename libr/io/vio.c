@@ -168,34 +168,34 @@ R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 
 R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 	int bytes_read = 0;
-	const char *read_from = NULL;
+	char *read_from = NULL;
 // TODO: implement cache at physical level
 	if (paddr == UT64_MAX) {
 		if (io->ff) {
 			memset (buf, 0xff, len);
 			return len;
 		}
-		return -1;
+		return R_FAIL;
 	}
 	if (io->buffer_enabled){
 		read_from = "buffer";
 		bytes_read = r_io_buffer_read (io, io->off, buf, len);
-	}
-	if (io->desc && io->desc->plugin && io->desc->plugin->read){
-		read_from = io->desc->plugin->name;
-		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
-	} else if (!io->desc) {
-		eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
-		read_from = "FAILED";
-		bytes_read = 0;
 	} else {
-		read_from = "File";
-		bytes_read = read (io->desc->fd, buf, len);
-	}
-	if (bytes_read<0) {
-		eprintf ("pread error: %s\n", read_from);
+		if (io->desc && io->desc->plugin && io->desc->plugin->read){
+			read_from = io->desc->plugin->name;
+			bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
+		} else if (!io->desc) {
+			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
+			read_from = "FAILED";
+			bytes_read = 0;
+		} else {
+			read_from = "File";
+			lseek (io->desc->fd, paddr, SEEK_SET);
+			bytes_read = read (io->desc->fd, buf, len);
+		}
+//		if (bytes_read<0) {
+//			eprintf ("pread error: %s\n", read_from);
+//		}
 	}
 	return bytes_read;
 }
-
-// TODO: Implement vresize, mresize and presize
