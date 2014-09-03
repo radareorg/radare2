@@ -39,7 +39,14 @@ static char *rtrcmd (TextLog T, const char *str) {
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
-		r_cons_enable_mouse (!!!x);
+		if (x) {
+			// TODO: cache this
+			int wheel = r_config_get_i (core->config, "scr.wheel");
+			if (wheel)
+				r_cons_enable_mouse (R_TRUE);
+		} else {
+			r_cons_enable_mouse (R_FALSE);
+		}
 	} else r_cons_enable_mouse (R_FALSE);
 	r_cons_flush ();
 }

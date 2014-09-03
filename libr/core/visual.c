@@ -512,7 +512,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	switch (ch) {
 	case 0x0d:
 		{
-			r_cons_enable_mouse (R_TRUE);
+			int wheel = r_config_get_i (core->config, "scr.wheel");
+			if (wheel)
+				r_cons_enable_mouse (R_TRUE);
 			RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
 			if (op) {
 				if (op->type == R_ANAL_OP_TYPE_JMP	||
@@ -521,8 +523,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 						r_io_sundo_push (core->io, offset);
 						r_core_visual_seek_animation(core, op->jump);
 					}
-				}
-				r_anal_op_free (op);
+			}
+			r_anal_op_free (op);
 		}
 		break;
 	case 90: // shift+tab
