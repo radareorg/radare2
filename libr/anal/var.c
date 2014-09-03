@@ -15,6 +15,16 @@
 #define SETKEY2(x,y...) snprintf (key2, sizeof (key)-1, x, ##y);
 #define SETVAL(x,y...) snprintf (val, sizeof (val)-1, x, ##y);
 
+static char *F(int n, const char *fmt, ...) {
+	static char Key[16][256];
+	va_list ap;
+	va_start (ap, fmt);
+	*Key[n] = 0;
+	vsnprintf (Key[n], 255, fmt, ap);
+	va_end (ap);
+	return Key[n];
+}
+
 // DUPPED FUNCTIONALITY
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
 R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta, const char *type, const char *name) {
@@ -23,6 +33,7 @@ R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut
 }
 
 R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+	char *var_def = F (0,"%s,%d,%s", type, size, name);
 	char key[128], val[128];
 	if (!kind) kind ='v';
 	switch (kind) {
@@ -35,26 +46,22 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		return R_FALSE;
 	}
 	if (scope>0) {
-		// local
-		SETKEY("fcn.0x%"PFMT64x".%c", addr, kind);
-		SETVAL("var.0x%"PFMT64x".%c.%d.%d", addr, kind, scope, delta);
-		sdb_array_add (DB, key, val, 0);
-		strcpy (key, val);
-		SETVAL("%s,%d,%s", type, size, name);
-		sdb_set (DB, key, val, 0);
-#if 0
-	fcn.0x80480.a=1.8,1.16
-	fcn.0x80480.a.1.8=type,size,name
-	fcn.0x80480.a.1.16=type,size,name
-#endif
-		SETKEY("var.0x%"PFMT64x".%d.%d", addr, scope, delta);
-		// TODO: link to function
-		// fcn.<addr>.kind+=var.0x%"PFMT64x"..
+		/* local variable */
+		char *fcn_key = F (1, "fcn.0x%"PFMT64x".%c", addr, kind);
+		char *var_key = F (2, "var.0x%"PFMT64x".%c.%d.%d",
+			addr, kind, scope, delta);
+		char *var_local = F (3, "var.0x%"PFMT64x".%d.%d",
+			addr, scope, delta);
+
+		sdb_array_add (DB, fcn_key, var_key, 0);
+		sdb_set (DB, var_key, var_def, 0);
+		sdb_array_add (DB, var_local, val, 0);
 	} else {
-		// global
-		snprintf (key, sizeof(key), "var.0x%"PFMT64x, addr);
+		/* global variable */
+		char *var_global = F (1, "var.0x%"PFMT64x, addr);
+		char *var_def = F (2,"%s,%d,%s", type, size, name);
+		sdb_array_add (DB, var_global, var_def, 0);
 	}
-	sdb_array_add (DB, key, val, 0);
 	return R_TRUE;
 }
 
@@ -84,6 +91,7 @@ R_API void r_anal_var_free (RAnalVar *av) {
 	free (av);
 }
 
+/* (columns) elements in the array value */
 #define R_ANAL_VAR_SDB_KIND 0 /* char */
 #define R_ANAL_VAR_SDB_TYPE 1 /* string */
 #define R_ANAL_VAR_SDB_SIZE 2 /* number */
@@ -113,6 +121,7 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, int delta, cons
 		old_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
 		if (!old_name) return 0;
 		SETKEY ("var.%s.%d", old_name, scope);
+// for local vars, the addr is fcn->addr
 		sdb_unset (DB, key, 0);
 		free (old_name);
 		SETKEY ("var.%s.%d", new_name, scope);
@@ -141,19 +150,19 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, int delta, cons
 
 // avr
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int xs_type, ut64 xs_addr) {
+	const char *var_global;
 	const char *xs_type_str = xs_type? "writes": "reads";
 	char key[128];
 // TODO: kind is not used
 	if (scope>0) { // local
-		SETKEY ("var.0x%"PFMT64x, var_addr);
-		//sdb_add (DB, key, var, 0);
-		SETKEY ("var.0x%"PFMT64x".%d.%d.%s", var_addr, scope, delta, xs_type_str);
-	} else { // global
-		SETKEY ("var.0x%"PFMT64x, var_addr);
-		sdb_add (DB, key, "a,", 0);
-		SETKEY ("var.0x%"PFMT64x".%s", var_addr, xs_type_str);
+		char *var_local = F (0, "var.0x%"PFMT64x".%d.%d.%s",
+			var_addr, scope, delta, xs_type_str);
+		return sdb_array_add_num (DB, var_local, xs_addr, 0);
 	}
-	return sdb_array_add_num (DB, key, xs_addr, 0);
+	// global
+	sdb_add (DB, F (0,"var.0x%"PFMT64x, var_addr), "a,", 0);
+	var_global = F (0, "var.0x%"PFMT64x".%s", var_addr, xs_type_str);
+	return sdb_array_add_num (DB, var_global, xs_addr, 0);
 }
 
 // DONE
@@ -200,13 +209,14 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delt
 #endif
 
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta) {
+	int idx;
 	char key[128], val[128], *v;
 	SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
 	v = sdb_itoa (delta, val, 10);
-	int idx = sdb_array_indexof (DB, key, v, 0);
+	idx = sdb_array_indexof (DB, key, v, 0);
 	if (idx != -1) {
 		sdb_array_delete (DB, key, idx, 0);
-		SETKEY("fcn.0x%08"PFMT64x".%c.%d", fna, kind, delta);
+		SETKEY ("fcn.0x%08"PFMT64x".%c.%d", fna, kind, delta);
 		sdb_unset (DB, key, 0);
 	}
 	free (v);
@@ -217,9 +227,19 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalVar *v;
 	RListIter *iter;
-	if (fcn && fcn->vars)
+	if (!anal || !fcn)
+		return;
+
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
+#if 0
+			char *list = sdb_getf (DB, "fcn.0x%08"PFMT64x".%c", fcn->addr, 'a');
+			free (list);
+			list = sdb_getf (DB, "fcn.0x%08"PFMT64x".%c", fcn->addr, 'v');
+			free (list);
+			list = sdb_getf (DB, "fcn.0x%08"PFMT64x".%c", fcn->addr, 'r');
+			free (list);
+#endif
 #if 0
 			char *s = r_anal_type_field_to_string (anal, fcn->addr, v->name);
 			var a = ("frame.${addr}.${name}")
@@ -260,20 +280,6 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
 eprintf ("TODO\n");
-#if 0
-			if (v->type->type == R_ANAL_TYPE_ARRAY)
-				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
-					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str (anal, v->type, ""), v->name, v->delta, (int)v->type->custom.a->count);
-			else
-				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d\n",
-					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str(anal, v->type, ""), v->name, v->delta);
-
-			r_list_foreach (v->accesses, iter2, x) {
-				eprintf ("  0x%08"PFMT64x" %s\n", x->addr, x->set?"set":"get");
-			}
-#endif
 		}
 	}
 }

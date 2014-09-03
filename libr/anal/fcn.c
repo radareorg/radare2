@@ -49,7 +49,6 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->attr = NULL;
 	fcn->addr = -1;
 	fcn->bits = 0;
-	//fcn->vars = r_anal_var_list_new ();
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();
 	fcn->bbs = r_anal_bb_list_new ();
@@ -76,7 +75,6 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->attr);
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
-	r_list_free (fcn->vars);
 	r_list_free (fcn->locs);
 #if 0
 	// XXX: some shared basic blocks make it crash.
@@ -763,7 +761,7 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int type) {
 	int count = 0;
 	// vars are sorted by delta in r_anal_var_add()
 	r_list_foreach (fs->vars, iter, var) {
-		//if (type & var->type) /* What we need to use here? */
+		if (type && type == var->type) /* What we need to use here? */
 			if (count++ == num)
 				return var;
 	}

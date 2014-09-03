@@ -124,9 +124,9 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			char kind = *str;
 			// p2 - name of variable
-			char *type = "int";
-			int size = 4;
-			char *name = "num";
+			char *type = p;
+			char *name = p2;
+			int size = atoi (p3);
 			r_anal_var_add (core->anal, fcn->addr,
 				scope, delta, kind, type, size, name);
 			//r_anal_str_to_type (core->anal, p)
