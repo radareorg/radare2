@@ -59,8 +59,7 @@ R_API void r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, u
 	sdb_array_remove_num (DB, key, from, 0);
 }
 
-R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type,
-			     ut64 addr) {
+R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	char *next, *s, *str, *ptr, key[256];
 	RAnalRef *ref = NULL;
 	XREFKEY(key, sizeof (key), kind, type, addr);
@@ -89,6 +88,21 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CALL, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_DATA, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_STRING, to);
+	if (r_list_length (list)<1) {
+		r_list_free (list);
+		list = NULL;
+	}
+	return list;
+}
+
+R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
+	RList *list = r_list_new ();
+	list->free = NULL; // XXX
+	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_NULL, to);
+	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CODE, to);
+	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CALL, to);
+	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_DATA, to);
+	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_STRING, to);
 	if (r_list_length (list)<1) {
 		r_list_free (list);
 		list = NULL;

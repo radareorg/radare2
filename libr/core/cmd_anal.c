@@ -1377,7 +1377,41 @@ static int cmd_anal(void *data, const char *input) {
 		case '*':
 			r_core_anal_ref_list (core, input[1]);
 			break;
+		case 't':
+			{
+				RList *list;
+				RAnalRef *ref;
+				RListIter *iter;
+				addr = r_num_math (core->num, input+2);
+				list = r_anal_xrefs_get (core->anal, addr);
+				if (list) {
+					r_list_foreach (list, iter, ref) {
+						r_cons_printf ("0x%"PFMT64x" -%c-> 0x%"PFMT64x"\n",
+							ref->addr, ref->type, ref->at);
+					}
+					r_list_free (list);
+				}
+			}
+			break;
 		case 'f':
+			{
+				RList *list;
+				RAnalRef *ref;
+				RListIter *iter;
+				addr = r_num_math (core->num, input+2);
+				list = r_anal_xrefs_get_from (core->anal, addr);
+				if (list) {
+					r_list_foreach (list, iter, ref) {
+						r_cons_printf ("0x%"PFMT64x" -%c-> 0x%"PFMT64x"\n",
+							ref->at, ref->type, ref->addr);
+					}
+					r_list_free (list);
+				}
+			}
+			break;
+			break;
+		case 'F':
+			// WTF
 			find_refs (core, input+2);
 			break;
 		case 'C':
@@ -1412,7 +1446,9 @@ static int cmd_anal(void *data, const char *input) {
 				"axC", " addr [at]", "add code call ref",
 				"axd", " addr [at]", "add data ref",
 				"axj", "", "list refs in json format",
-				"axf", " [flg-glob]", "find data/code references of flags",
+				"axF", " [flg-glob]", "find data/code references of flags",
+				"axt", " [addr]", "find data/code references to this address",
+				"axf", " [addr]", "find data/code references from this address",
 				"ax-", " [at]", "clean all refs (or refs from addr)",
 				"ax", "", "list refs",
 				"axk", " [query]", "perform sdb query",
