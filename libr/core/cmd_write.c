@@ -215,15 +215,16 @@ static int cmd_write(void *data, const char *input) {
 			const char *tmpfile = ".tmp";
 			char *out = r_core_editor (core, NULL);
 			if (out) {
-				// XXX hacky .. patch should support str, not only file
-				r_file_dump (tmpfile, (ut8*)out, strlen (out));
-				r_core_patch (core, tmpfile);
-				r_file_rm (tmpfile);
+				r_core_patch (core, out);
 				free (out);
 			}
 		} else {
 			if (input[1]==' ' && input[2]) {
-				r_core_patch (core, input+2);
+				char *data = r_file_slurp (input+2, NULL);
+				if (data) {
+					r_core_patch (core, data);
+					free (data);
+				}
 			} else {
 				eprintf ("Usage: wp [-|r2patch-file]\n"
 			         "TODO: rapatch format documentation here\n");

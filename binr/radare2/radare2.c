@@ -612,10 +612,18 @@ int main(int argc, char **argv, char **envp) {
 
 	r.num->value = 0;
 	if (patchfile) {
-		r_core_patch (&r, patchfile);
-	} else {
+		char *data = r_file_slurp (patchfile, NULL);
+		if (data) {
+			r_core_patch (&r, data);
+			r_core_seek (&r, 0, 1);
+			free (data);
+		} else eprintf ("Cannot open '%s'\n", patchfile);
+	} 
+	if ((patchfile && !quiet) || !patchfile) {
 		if (zerosep)
 			r_cons_zero ();
+	if (seek != UT64_MAX)
+		r_core_seek (&r, seek, 1);
 	for (;;) {
 		r.zerosep = zerosep;
 #if USE_THREADS
