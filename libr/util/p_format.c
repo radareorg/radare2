@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -44,6 +44,7 @@ static void print_format_help(RPrint *p) {
 	" : - skip 4 bytes\n"
 	" . - skip 1 byte\n");
 }
+
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
 	if (endian)
 		*addr = (*(buf+i))<<24
@@ -202,6 +203,7 @@ static void r_print_format_float(const RPrint* p, int mustset, const char* setva
 		p->printf ("0x%08"PFMT64x" = %f", seeki, (float)(addr));
 }
 
+// XXX: this is very incomplete. must be updated to handle all format chars
 static int computeStructSize(char *fmt) {
 	char *end = strchr(fmt, ' ');
 	int size = 0, i;
@@ -209,15 +211,15 @@ static int computeStructSize(char *fmt) {
 		return -1;
 	*end = 0;
 	for (i=0; i<strlen(fmt); i++) {
-		switch(fmt[i]) {
+		switch (fmt[i]) {
 			case 'i':
-				size+= 4;
+				size += 4;
 				break;
 			case 'w':
-				size+= 2;
+				size += 2;
 				break;
 			case '*':
-				size+= 4;
+				size += 4;
 				i++;
 				// TODO continue list
 			default:
@@ -230,8 +232,8 @@ static int computeStructSize(char *fmt) {
 
 static int r_print_format_struct(const RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
 	const char *fmt;
-	if (slide%100 > 14) {
-		eprintf("Too much nested struct, recursion too deep...\n");
+	if ((slide%100) > 14) {
+		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
 	fmt = r_strht_get (p->formats, name);
@@ -548,21 +550,21 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					while (size--) i++;
 				break;
 			case 's':
-				if(r_print_format_ptrstring(p, seeki, addr64, addr, 0) == 0)
-					i+= (size==-1) ? 4 : size;
+				if (r_print_format_ptrstring (p, seeki, addr64, addr, 0) == 0)
+					i += (size==-1) ? 4 : size;
 				break;
 			case 'S':
-				if(r_print_format_ptrstring(p, seeki, addr64, addr, 1) == 0)
-					i+= (size==-1) ? 8 : size;
+				if (r_print_format_ptrstring (p, seeki, addr64, addr, 1) == 0)
+					i += (size==-1) ? 8 : size;
 				break;
 			case '?':
 				{
 				int s;
-				char *structname = strdup(r_str_word_get0 (args, idx-1));
+				char *structname = strdup (r_str_word_get0 (args, idx-1));
 				if (*structname == '[') {
-					name = strchr(structname, ']');
+					name = strchr (structname, ']');
 				} else {
-					eprintf("Struct name missing\n");
+					eprintf ("Struct name missing\n");
 					free (structname);
 					goto beach;
 				}
@@ -572,15 +574,14 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				} else {
 					*(name++) = '\0';
 				}
-				p->printf("<struct>\n");
-				slide+= (isptr) ? 100 : 1;
-				s = r_print_format_struct(p, seeki, buf+i, len, structname--, slide);
-				free(structname);
+				p->printf ("<struct>\n");
+				slide += (isptr) ? 100 : 1;
+				s = r_print_format_struct (p, seeki, buf+i, len, structname--, slide);
+				free (structname);
 				i+= (isptr) ? 4 : s;
-				slide-= (isptr) ? 100 : 1;
+				slide -= (isptr) ? 100 : 1;
 				break;
 				}
-
 			default:
 				/* ignore unknown chars */
 				invalid = 1;

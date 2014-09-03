@@ -196,10 +196,8 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 		return R_FALSE;
 	if (from == to)
 		to = from+1;
-	if (type == 100) {
-		if ((to-from)<3) {
-			return R_FALSE;
-		}
+	if (type == 100 && (to-from)<1) {
+		return R_FALSE;
 	}
 	/* set entry */
 	e_str = sdb_encode ((const void*)str, -1);

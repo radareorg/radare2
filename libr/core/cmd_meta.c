@@ -380,7 +380,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 	case ' ':
 	case '\0':
 		if (type!='z' && !input[1]) {
-			r_meta_list (core->anal, input[0], 0);
+			r_meta_list (core->anal, type, 0);
 			break;
 		}
 		t = strdup (input+2);
@@ -389,6 +389,12 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		strncpy (name, t, sizeof (name)-1);
 		if (*input != 'C') {
 			n = r_num_math (core->num, t);
+			if (type == 'f') {
+				p = strchr (t, ' ');
+				if (p)
+					n = r_print_format (core->print, addr, core->block,
+							core->blocksize, p+1, -1, NULL);
+			}
 			if (!*t || n>0) {
 				RFlagItem *fi;
 				p = strchr (t, ' ');

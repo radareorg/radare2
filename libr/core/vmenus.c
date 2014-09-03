@@ -1251,15 +1251,21 @@ R_API void r_core_visual_define (RCore *core) {
 		p += cur;
 	}
 	r_cons_printf ("Define current block as:\n"
+		" b  - set as byte\n"
+		" B  - set as short word (2 bytes)\n"
 		" c  - set as code\n"
 		" d  - set as data\n"
 		" e  - end of function\n"
 		" f  - analyze function\n"
+		" F  - format\n"
 		" q  - quit/cancel operation\n"
 		" r  - rename function\n"
 		" s  - set string\n"
 		" S  - set strings in current block\n"
 		" u  - undefine metadata here\n"
+		" w  - set as 32bit word\n"
+		" W  - set as 64bit word\n"
+		" q  - quit this menu\n"
 	);
 	r_cons_flush ();
 
@@ -1267,6 +1273,43 @@ R_API void r_core_visual_define (RCore *core) {
 	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 
 	switch (ch) {
+	case 'F':
+		{
+			char cmd[128];
+			r_cons_show_cursor (R_TRUE);
+			r_core_cmd0 (core, "pf?");
+			r_cons_flush ();
+			r_line_set_prompt ("format: ");
+			strcpy (cmd, "Cf 0 ");
+			if (r_cons_fgets (cmd+5, sizeof (cmd)-4, 0, NULL) > 0) {
+				r_core_cmd (core, cmd, 0);
+				r_cons_set_raw (1);
+				r_cons_show_cursor (R_FALSE);
+			}
+		}
+		break;
+	case 'B':
+		r_meta_cleanup (core->anal, off, off+2);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+2, "");
+		break;
+	case 'b':
+		r_meta_cleanup (core->anal, off, off+1);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+1, "");
+		break;
+	case 'w':
+		{
+		int asmbits = 32; //r_config_get_i (core->config, "asm.bits");
+		r_meta_cleanup (core->anal, off, off+plen);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+(asmbits/8), "");
+		}
+		break;
+	case 'W':
+		{
+		int asmbits = 64; //r_config_get_i (core->config, "asm.bits");
+		r_meta_cleanup (core->anal, off, off+plen);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+(asmbits/8), "");
+		}
+		break;
 	case 'e':
 		// set function size
 		{

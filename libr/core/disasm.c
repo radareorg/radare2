@@ -341,8 +341,7 @@ static void handle_set_pre (RDisasmState *ds, const char * str) {
 	ds->pre = strdup (str);
 }
 
-static char *colorize_asm_string(RCore *core, RDisasmState *ds)
-{
+static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	char *spacer = NULL;
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 
@@ -1074,8 +1073,33 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				if (mi->size<hexlen) hexlen = mi->size;
 				ds->oplen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-				r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
-				r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
+				switch (mi->size) {
+				case 1:
+					r_cons_printf (".byte 0x%02x\n", buf[idx]);
+					break;
+				case 2:
+					{
+					ut16 *data = buf+idx;
+					r_cons_printf (".word 0x%04x\n", *data);
+					}
+					break;
+				case 4:
+					{
+					ut32 *data = buf+idx;
+					r_cons_printf (".dword 0x%08x\n", *data);
+					}
+					break;
+				case 8:
+					{
+					ut64 *data = buf+idx;
+					r_cons_printf (".qword 0x%016x\n", *data);
+					}
+					break;
+				default:
+					r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
+					r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
+					break;
+				}
 				core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				ds->asmop.size = ret = (int)mi->size; //-delta;
@@ -1089,7 +1113,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				r_cons_printf ("format %s {\n", mi->str);
 				r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, -1, NULL);
 				r_cons_printf ("} %d\n", mi->size);
-				ds->asmop.size = ret = (int)mi->size;
+				ds->oplen = ds->asmop.size = ret = (int)mi->size;
 				free (ds->line);
 				free (ds->refline);
 				free (ds->refline2);
@@ -1625,7 +1649,7 @@ toro:
 
 	r_cons_break (NULL, NULL);
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
-			idx+=ds->oplen,i++, ds->index+=ds->oplen,ds->lines++) {
+			idx+=ds->oplen,i++, ds->index+=ds->oplen, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -2138,7 +2162,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_import_name (core, ds);
 			handle_print_color_reset (core, ds);
 			handle_print_dwarf (core, ds);
-			ret = handle_print_middle (core, ds, ret );
+			ret = handle_print_middle (core, ds, ret);
 			handle_print_asmop_payload (core, ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
@@ -2158,10 +2182,8 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 					handle_print_ptr (core, ds, len, idx);
 			}*/
 			handle_print_comments_right (core, ds);
-			if ( !(ds->show_comments &&
-				   ds->show_comment_right &&
-				   ds->show_comment_right &&
-				   ds->comment))
+			if ( !(ds->show_comments && ds->show_comment_right &&
+					ds->show_comment_right && ds->comment))
 				r_cons_newline ();
 
 			if (ds->line) {
@@ -2184,7 +2206,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 	free (buf);
 	r_cons_break_end ();
-
 
 	if (ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);

@@ -192,9 +192,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			eprintf ("ptrace-traceme failed\n");
 			exit (MAGIC_EXIT);
 		}
-		 {
+		{
+			char *expr = NULL;
 			int i;
-			RRunProfile *rp = r_run_new (NULL);//io->runprofile);
+			RRunProfile *rp = r_run_new (NULL);
 			argv = r_str_argv (cmd, NULL);
 			for (i=0; argv[i]; i++) {
 				rp->_args[i] = argv[i];
@@ -207,19 +208,17 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					exit (MAGIC_EXIT);
 				}
 			}
-			 {
-				char *expr = NULL;
-				if (bits==64)
-					r_run_parseline (rp, expr=strdup ("bits=64"));
-				else if (bits==32)
-					r_run_parseline (rp, expr=strdup ("bits=32"));
-				free (expr);
-			 }
+			if (bits==64)
+				r_run_parseline (rp, expr=strdup ("bits=64"));
+			else if (bits==32)
+				r_run_parseline (rp, expr=strdup ("bits=32"));
+			free (expr);
 			r_run_start (rp);
 			r_run_free (rp);
-			r_str_argv_free (argv);
+			// double free wtf
+		//	r_str_argv_free (argv);
 			exit (1);
-		 }
+		}
 		perror ("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
 		exit (MAGIC_EXIT); /* error */
