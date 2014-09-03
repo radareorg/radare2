@@ -41,8 +41,8 @@ static int cmd_flag(void *data, const char *input) {
 			if (!ptr)
 				ptr = strchr (str, ' ');
 			if (ptr) *ptr++ = 0;
-			name = r_str_chop_ro (str);
-			ptr = r_str_chop_ro (ptr);
+			name = (char *)r_str_chop_ro (str);
+			ptr = (char *)r_str_chop_ro (ptr);
 			fi = r_flag_get (core->flags, name);
 			if (!fi)
 				fi = r_flag_set (core->flags, name,

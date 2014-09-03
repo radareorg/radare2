@@ -1402,6 +1402,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxa", "", "show annotated hexdump",
 				"pxe", "", "emoji hexdump! :)",
 				"pxf", "", "show hexdump of current function",
+				"pxl", "", "display N lines (rows) of hexdump",
 				"pxo", "", "show octal dump",
 				"pxq", "", "show hexadecimal quad-words dump (64bit)",
 				"pxs", "", "show hexadecimal in sparse mode",
@@ -1420,7 +1421,6 @@ static int cmd_print(void *data, const char *input) {
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
 			break;
-
 		case 'd':
 			r_print_hexdump (core->print, core->offset,
 				core->block, len, 10, 4);
@@ -1535,6 +1535,8 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
+		case 'l':
+			len = core->print->cols*len;
 		default: {
 				 ut64 from = r_config_get_i (core->config, "diff.from");
 				 ut64 to = r_config_get_i (core->config, "diff.to");
@@ -1544,6 +1546,7 @@ static int cmd_print(void *data, const char *input) {
 				 } else {
 					 r_core_print_cmp (core, from, to);
 				 }
+				 core->num->value = len;
 			 }
 			break;
 		}
