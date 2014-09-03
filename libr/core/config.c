@@ -908,6 +908,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
 	SETPREF("scr.colorops", "true", "Colorize in numbers/registers in opcodes");
+	SETPREF("scr.wheel", "true", "Enable the use of mouse wheel in visual mode");
 	SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
 	SETICB("scr.rows", 0, &cb_rows, "Force specific console rows (height)");

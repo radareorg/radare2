@@ -16,7 +16,14 @@ static int obs = 0;
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
-		r_cons_enable_mouse (!!!x);
+		if (x) {
+			// TODO: cache this
+			int wheel = r_config_get_i (core->config, "scr.wheel");
+			if (wheel)
+				r_cons_enable_mouse (R_TRUE);
+		} else {
+			r_cons_enable_mouse (R_FALSE);
+		}
 	} else r_cons_enable_mouse (R_FALSE);
 	r_cons_flush ();
 }
@@ -1287,6 +1294,7 @@ static void r_core_visual_refresh (RCore *core) {
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt, *teefile;
 	ut64 scrseek;
+	int wheel = r_config_get_i (core->config, "scr.wheel");
 	int flags, ch;
 
 	obs = core->blocksize;
@@ -1300,7 +1308,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	}
 	core->vmode = R_TRUE;
 	r_cons_show_cursor (R_FALSE);
-	r_cons_enable_mouse (R_TRUE);
+	if (wheel)
+		r_cons_enable_mouse (R_TRUE);
 
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
