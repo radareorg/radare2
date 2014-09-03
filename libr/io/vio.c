@@ -177,6 +177,7 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 		}
 		return R_FAIL;
 	}
+	r_io_seek (io, paddr, R_IO_SEEK_SET);
 	if (io->buffer_enabled){
 		read_from = "buffer";
 		bytes_read = r_io_buffer_read (io, io->off, buf, len);
@@ -190,7 +191,6 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 			bytes_read = 0;
 		} else {
 			read_from = "File";
-			lseek (io->desc->fd, paddr, SEEK_SET);
 			bytes_read = read (io->desc->fd, buf, len);
 		}
 //		if (bytes_read<0) {
