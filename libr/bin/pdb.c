@@ -363,9 +363,11 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
 	int i;
 	int page_offset;
 	int curr_pos;
+	int tmp;
 //	char buffer[1024];
 
 	for (i = start_indx; i < end_indx; i++) {
+		tmp = stream_file->pages[i];
 		page_offset = stream_file->pages[i] * stream_file->page_size;
 		fseek(stream_file->fp, page_offset, SEEK_SET);
 //		curr_pos = ftell(stream_file->fp);
@@ -397,7 +399,8 @@ static unsigned char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 		pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 		tmp = pdata;
-		READ_PAGES(0, stream_file->pages_amount)
+		stream_file_read_pages(stream_file, 0, stream_file->pages_amount, tmp);
+//		READ_PAGES(0, stream_file->pages_amount)
 		stream_file->pos = stream_file->end;
 		tmp = pdata;
 		ret = (char *) malloc(stream_file->end - off_start);
@@ -412,9 +415,11 @@ static unsigned char* stream_file_read(R_STREAM_FILE *stream_file, int size)
 		stream_file_read_pages(stream_file, pn_start, pn_end + 1, tmp);
 		//READ_PAGES(pn_start, (pn_end + 1))
 		stream_file->pos += size;
+		// TODO: need to be free
 		ret = (char *) malloc((/*stream_file->page_size -*/ off_end));
-		tmp = pdata;
-		memcpy(ret, tmp + off_start, off_end /*(stream_file->page_size - off_end) - off_start*/);
+		memset(ret, 0, off_end);
+		tmp = pdata + off_start;
+		memcpy(ret, tmp/* + off_start*/, off_end /*(stream_file->page_size - off_end) - off_start*/);
 		free(pdata);
 	}
 
@@ -522,6 +527,7 @@ static int count_pages(int length, int page_size)
 	return num_pages;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
 								 EStream indx, int root_size, int page_size)
 {
@@ -566,6 +572,9 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		memcpy(sizes + i, &stream_size, 4);
 	}
 
+//	char *tmp_file_name = (char *) malloc(strlen("/root/test.pdb.000") + 1);
+//	short ii;
+//	FILE *tmp_file;
 	tmp_data = ((char *)data + num_streams * 4 + 4);
 	//FIXME: free list...
 	root_stream7->streams_list = r_list_new();
@@ -581,7 +590,10 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		if (num_pages != 0) {
 			memcpy(tmp, tmp_data + pos, num_pages * 4);
 			pos += num_pages * 4;
-
+//			sprintf(tmp_file_name, "%s%d", "/root/test.pdb", i);
+//			tmp_file = fopen(tmp_file_name, "wb");
+//			fwrite(tmp, num_pages * 4, 1, tmp_file);
+//			fclose(tmp_file);
 			page->stream_size = sizes[i];
 			page->stream_pages = tmp;
 		} else {
@@ -648,10 +660,10 @@ static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes
 	p_leaf_data = leaf_data;
 	read_bytes_before = *read_bytes;
 
-	CAN_READ(*read_bytes, 2, len)
-	fldattr = *(unsigned short *)p_leaf_data; //CV_fldattr = BitStruct("fldattr",
+	CAN_READ(*read_bytes, 2, len);
+	fldattr = *(unsigned short *)p_leaf_data; // CV_fldattr = BitStruct("fldattr",
 	*read_bytes += 2;
-	CAN_READ(*read_bytes, 2, len)
+	CAN_READ(*read_bytes, 2, len);
 	value_or_type = *(unsigned short *)(p_leaf_data + 2);
 	p_leaf_data += 4;
 	*read_bytes += 2;
@@ -659,17 +671,21 @@ static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes
 	// name_or_val parsing
 	if (value_or_type < eLF_CHAR) {
 		while (*p_leaf_data != 0) {
-			CAN_READ(*read_bytes, 1, len)
+			CAN_READ((*read_bytes + c), 1, len);
 			c++;
 			p_leaf_data++;
-			(*read_bytes) += 1;
+//			(*read_bytes) += 1;
 		}
-		CAN_READ(*read_bytes, 1, len)
-		p_leaf_data++;
-		(*read_bytes) += 1;
+		CAN_READ(*read_bytes, 1, len);
+		p_leaf_data += 1;
+		(*read_bytes) += (c + 1);
 		//TODO: free name
 		name = (unsigned char *) malloc(c + 1);
 		memcpy(name, p_leaf_data - (c + 1), c + 1);
+		if (strcmp(name, "eInterfaceMethodUsage") == 0) {
+			printf("debug\n");
+		}
+
 		printf("parse_lf_enumerate(): name = %s\n", name);
 	} else {
 		printf("oops\n");
@@ -704,9 +720,9 @@ static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes
 	CAN_READ(*read_bytes, 1, len)
 	pad = *(unsigned char *)p_leaf_data;
 	if (pad > 0xF0) {
-		CAN_READ(*read_bytes, pad & 0x0F, len)
-		p_leaf_data += (pad & 0x0F);
-		*read_bytes += (pad & 0x0F);
+		CAN_READ(*read_bytes, ((int)pad & 0x0F), len)
+//		p_leaf_data += (pad & 0x0F);
+		*read_bytes += ((int)pad & 0x0F);
 	}
 
 	return (*read_bytes - read_bytes_before);
@@ -920,15 +936,15 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 		case eLF_ENUMERATE:
 			curr_read_bytes = parse_lf_enumerate(p, &read_bytes, len);
 			break;
-		case eLF_NESTTYPE:
-			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
-			break;
-		case eLF_METHOD:
-			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
-			break;
-		case eLF_MEMBER:
-			curr_read_bytes = parse_lf_member(p, &read_bytes, len);
-			break;
+//		case eLF_NESTTYPE:
+//			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
+//			break;
+//		case eLF_METHOD:
+//			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
+//			break;
+//		case eLF_MEMBER:
+//			curr_read_bytes = parse_lf_member(p, &read_bytes, len);
+//			break;
 		default:
 			printf("unsupported leaf type in parse_lf_fieldlist()\n");
 			return;
@@ -950,6 +966,9 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 
 	types->length = *(unsigned short *)stream_file_read(stream, sizeof(unsigned short));
 	leaf_data = stream_file_read(stream, types->length);
+	if (types->length == 754) {
+		printf("coold debug\n");
+	}
 	type.leaf_type = *(unsigned short *)leaf_data;
 	switch (type.leaf_type) {
 	case eLF_FIELDLIST:
@@ -957,19 +976,51 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 		parse_lf_fieldlist(leaf_data + 2, types->length);
 		break;
 	default:
-		printf("unsupported leaf type\n");
+		printf("parse_tpi_stremas(): unsupported leaf type\n");
 		break;
 	}
+	free(leaf_data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 {
 	int i;
-	STPIHeader tpi_header = *(STPIHeader *)stream_file_read(stream, sizeof(STPIHeader));
+	STPIHeader tpi_header ;//= *(STPIHeader *)stream_file_read(stream, sizeof(STPIHeader));
 	STypes types;
 
+//	short sn;
+//	short padding;
+//	int hash_key;
+//	int buckets;
+//	SOffCb hash_vals;
+//	SOffCb ti_off;
+//	SOffCb hash_adj;
+//	typedef struct {
+//		int off;
+//		int cb;
+//	} SOffCb;
+
+	tpi_header.version = *(unsigned int *)stream_file_read(stream, 4);
+	tpi_header.hdr_size = *(int *)stream_file_read(stream, 4);
+	tpi_header.ti_min = *(unsigned int *)stream_file_read(stream, 4);
+	tpi_header.ti_max = *(unsigned int *)stream_file_read(stream, 4);
+	tpi_header.follow_size = *(unsigned int *)stream_file_read(stream, 4);
+	tpi_header.tpi.sn = *(short *)stream_file_read(stream, 2);
+	tpi_header.tpi.padding = *(short *)stream_file_read(stream, 2);
+	tpi_header.tpi.hash_key = *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.buckets = *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.hash_vals.off =  *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.hash_vals.cb = *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.ti_off.off =  *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.ti_off.cb = *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.hash_adj.off =  *(int *)stream_file_read(stream, 4);
+	tpi_header.tpi.hash_adj.cb = *(int *)stream_file_read(stream, 4);
+
 	for (i = 0; i < (tpi_header.ti_max - tpi_header.ti_min); i++) {
+		if (i == 68) {
+			types.length = 22;
+		}
 		parse_tpi_stypes(stream, &types);
 	}
 
@@ -993,12 +1044,6 @@ static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 //	for (i = 0; i < (tpi_header.ti_max - tpi_header.ti_min); i++) {
 //		parse_tpi_stypes(stream, &types);
 //	}
-
-//	tpi_header.version = *(unsigned int *)stream_file_read(stream, 4);
-//	tpi_header.hdr_size = *(int *)stream_file_read(stream, 4);
-//	tpi_header.ti_min = *(unsigned int *)stream_file_read(stream, 4);
-//	tpi_header.ti_max = *(unsigned int *)stream_file_read(stream, 4);
-//	tpi_header.follow_size = *(unsigned int *)stream_file_read(stream, 4);
 }
 
 //seeLF.streams = []
