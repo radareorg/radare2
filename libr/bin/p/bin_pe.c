@@ -342,14 +342,24 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
 	
 	ret->has_va = R_TRUE;
-	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
+	sdb_bool_set (arch->sdb, "has_va", R_TRUE, 0);
+
+	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
-	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
+		sdb_bool_set (arch->sdb, "strip", ret->dbg_info |= R_BIN_DBG_STRIPPED, 0);
+	}
+	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_LINENUMS;
-	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj))
+		sdb_bool_set (arch->sdb, "linenum", ret->dbg_info |= R_BIN_DBG_LINENUMS, 0);
+	}
+	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_SYMS;
-	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj))
+		sdb_bool_set (arch->sdb, "lsyms", ret->dbg_info |= R_BIN_DBG_SYMS, 0);
+	}
+	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
+		sdb_bool_set (arch->sdb, "relocs", ret->dbg_info |= R_BIN_DBG_RELOCS, 0);
+	}
 	return ret;
 }
 
