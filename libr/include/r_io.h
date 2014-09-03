@@ -299,6 +299,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);
 R_API int r_io_write(RIO *io, const ut8 *buf, int len);
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
+R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API int r_io_system(RIO *io,  const char *cmd);
 R_API int r_io_close(RIO *io, RIODesc *fd);

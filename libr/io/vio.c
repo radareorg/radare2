@@ -2,6 +2,7 @@
 
 #include <r_io.h>
 
+#define	VIO_DEBUG	1
 /*
 
 | io.va |               | io.ff |
@@ -169,7 +170,15 @@ R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 	int bytes_read = 0;
 	char *read_from = NULL;
-// TODO: implement cache at physical level
+	if (!io) {
+#if	VIO_DEBUG					//show debug-info
+		eprintf ("r_io_pread: io is NULL\n"
+		"paddr: 0x%016"PFMT64x"\n"
+		"len: 0x%x\n", paddr, len);
+		r_sys_backtrace();
+#endif
+		return 0;
+	} 
 	if (paddr == UT64_MAX) {
 		if (io->ff) {
 			memset (buf, 0xff, len);
@@ -186,16 +195,69 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 			read_from = io->desc->plugin->name;
 			bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
 		} else if (!io->desc) {
-			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
-			read_from = "FAILED";
-			bytes_read = 0;
+#if	VIO_DEBUG
+			eprintf ("r_io_pread: io->desc is NULL\n"
+			"paddr: 0x%016"PFMT64x"\n"
+			"len: 0x%x\n", paddr, len);
+			r_sys_backtrace();
+#endif
+			return 0;
 		} else {
 			read_from = "File";
 			bytes_read = read (io->desc->fd, buf, len);
 		}
-//		if (bytes_read<0) {
-//			eprintf ("pread error: %s\n", read_from);
-//		}
+		if (bytes_read<0) {
+#if	VIO_DEBUG
+			eprintf ("r_io_pread: bytes_read %i\n"
+			"from: %s\n"
+			"paddr: 0x%016"PFMT64x"\n"
+			"len: 0x%x\n", bytes_read, read_from, paddr, len);
+			r_sys_backtrace();
+#endif
+		}
 	}
 	return bytes_read;
+}
+
+R_API r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
+{
+	int bytes_written = 0;
+	char *written_to = NULL;
+	if (!io) {
+#if	VIO_DEBUG
+		eprintf ("r_io_pwrite: io is NULL\n"
+		"paddr: 0x%016"PFMT64x"\n"
+		"len: 0x%x\n", paddr, len);
+		r_sys_backtrace();
+#endif
+		return 0;
+	}
+	if ((UT64_MAX - len) < paddr)			//prevent overflows
+		len = UT64_MAX - paddr;
+	r_io_seek (io, paddr, R_IO_SEEK_SET);
+	if (io->desc && io->desc->plugin && io->desc->plugin->write) {
+		written_to = io->desc->plugin->name;
+		bytes_written = io->desc->plugin->write (io, io->desc, buf, len);
+	} else if (!io->desc) {
+#if	VIO_DEBUG					//show debug-info
+		eprintf ("r_io_pwrite: io->desc is NULL\n"
+		"paddr: 0x%016"PFMT64x"\n"
+		"len: 0x%x\n", paddr, len);
+		r_sys_backtrace();
+#endif
+		return 0;
+	} else {
+		written_to = "File";
+		bytes_written = write (io->desc->fd, buf, len);
+	}
+	if (bytes_written < 0) {
+#if	VIO_DEBUG
+		eprintf ("r_io_pwrite: bytes_written: %i\n"
+		"to: %s\n"
+		"paddr: 0x%016"PFMT64x"\n"
+		"len: 0x%x\n", bytes_written, written_to, paddr, len);
+		r_sys_backtrace();
+#endif
+	}
+	return bytes_written;
 }
