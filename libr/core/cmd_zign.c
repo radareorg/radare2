@@ -133,6 +133,26 @@ static int cmd_zign(void *data, const char *input) {
 	case '*':
 		r_sign_list (core->sign, (*input=='*'));
 		break;
+	case 'o': {
+		ut8* buf = NULL;
+		RBuffer *b;
+		ut64 from, to;
+
+		if(input[1] != ' ') {
+			eprintf("Usage: zo <file>\n");
+			return R_FALSE;
+		}
+
+		r_core_get_boundaries (core, r_config_get(core->config, "search.in"), &from, &to);
+		buf = malloc(to-from);
+		r_core_read_at (core, from, buf, to-from);
+		b = r_buf_new ();
+		b->buf = buf;
+		b->length = to - from;
+
+		r_sign_flirt_parse(core->anal, b, r_buf_file(input + 2));
+	}
+		break;
 	default:
 	case '?':{
 		const char* help_msg[] = {
@@ -151,6 +171,7 @@ static int cmd_zign(void *data, const char *input) {
 			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
 			"zn", "", "Display current namespace",
 			"zn-", "", "Unset namespace",
+			"zo", " file", "Open a flirt signature file and scan opened file",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
 			r_core_cmd_help (core, help_msg);

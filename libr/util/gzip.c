@@ -75,3 +75,55 @@ R_API ut8 *r_gunzip(const ut8 *src, int srcLen, int *dstLen) {
 	}
 	return NULL;
 }
+
+R_API int r_zip_decompress (ut8 *buf, int buf_size, ut8 **out, int *out_size) {
+	z_stream *stream = R_NEW0(z_stream);
+	int wbits, dec_size = buf_size * 2;
+	ut8 *dec_buf = malloc(dec_size);
+	*out = NULL;
+	*out_size = 0;
+	if (!stream || !dec_buf)
+		goto err_exit;
+	/* Check for zlib header */
+	if (buf[0] == 0x78 && buf[1] == 0x9C)
+		wbits = MAX_WBITS;
+	else
+		wbits = -MAX_WBITS;
+	if (inflateInit2(stream, wbits) != Z_OK)
+		goto err_exit;
+	stream->next_in = buf;
+	stream->avail_in = buf_size;
+	stream->next_out = dec_buf;
+	stream->avail_out = dec_size;
+	int ret, size;
+	for (;;) {
+		ret = inflate(stream, Z_FINISH);
+		switch (ret) {
+			case Z_STREAM_END:
+				*out = dec_buf;
+				*out_size = stream->next_out - dec_buf;
+				inflateEnd(stream);
+				free(stream);
+				return R_TRUE;
+			case Z_BUF_ERROR:
+				size = stream->next_out - dec_buf;
+				dec_size *= 2;
+				dec_buf = realloc(dec_buf, dec_size);
+				if (!dec_buf)
+					goto err_exit;
+				stream->next_out = dec_buf + size;
+				stream->avail_out = dec_size - size;
+				break;
+			default:
+				eprintf("Unhandled zlib error! (%i)\n", ret);
+				goto err_exit;
+		}
+	}
+err_exit:
+	inflateEnd(stream);
+	free(stream);
+	free(dec_buf);
+	*out = NULL;
+	*out_size = 0;
+	return R_FALSE;
+}
