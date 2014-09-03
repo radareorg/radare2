@@ -1056,6 +1056,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize);
 #define r_anal_fcn_get_bbs(x) x->bbs
 #else
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to);
+R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 from);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad);
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal);

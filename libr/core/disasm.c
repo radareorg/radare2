@@ -1079,19 +1079,19 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 					break;
 				case 2:
 					{
-					ut16 *data = buf+idx;
+					ut16 *data = (ut16*)(buf+idx);
 					r_cons_printf (".word 0x%04x\n", *data);
 					}
 					break;
 				case 4:
 					{
-					ut32 *data = buf+idx;
+					ut32 *data = (ut32*)(buf+idx);
 					r_cons_printf (".dword 0x%08x\n", *data);
 					}
 					break;
 				case 8:
 					{
-					ut64 *data = buf+idx;
+					ut64 *data = (ut64*)(buf+idx);
 					r_cons_printf (".qword 0x%016x\n", *data);
 					}
 					break;
