@@ -3,8 +3,12 @@
 // For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
 // Efficient Algorithm for Generating Necklaces with Fixed Density"
 
-char* peda_charset =
-    "A%sB$nC-(D;)Ea0Fb1Gc2Hd3Ie4Jf5Kg6Lh7Mi8Nj9OkPlQmRnSoTpUqVrWsXtYuZvwxyz";
+// The following two (commented out) lines are the character set used in peda.
+// You may use this charset instead of the A-Za-z0-9 charset normally used.
+// char* peda_charset =
+//    "A%sB$nC-(D;)Ea0Fb1Gc2Hd3Ie4Jf5Kg6Lh7Mi8Nj9OkPlQmRnSoTpUqVrWsXtYuZvwxyz";
+char* debruijn_charset =
+    "ABCDEFGHIJKLMNOPQRSTUVWZYZabcdefghijklmnopqrstuvwxyz1234567890";
 
 // Generate a De Bruijn sequence.
 void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int order,
@@ -71,7 +75,7 @@ char* cyclic_pattern(int size, int start, char* charset) {
 // In-place reverse a string.
 void reverse_string(char* str) {
   // Skip null and empty strings.
-  if (*str == 0 || str[0] == 0) {
+  if (str == 0 || str[0] == 0) {
     return;
   }
   char* start = str;
@@ -92,7 +96,7 @@ void reverse_string(char* str) {
 char* cyclic_pattern_long() {
   // 0x10000 should be long enough. This is how peda works, and nobody
   // complains.
-  return cyclic_pattern(0x10000, 0, peda_charset);
+  return cyclic_pattern(0x10000, 0, debruijn_charset);
 }
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
@@ -121,14 +125,10 @@ static int cyclic_pattern_offset(RCore* r, unsigned long long value) {
   char* pch = strstr(pattern, needle);
   int retval = -1;
   if (pch != NULL) {
-    retval = (int)(pch - pattern - 1);
+    retval = (int)(pch - pattern);
   }
   free(pattern);
   return retval;
-}
-
-void print_debruijn_usage() {
-  eprintf("Usage: [g|o] [length|value]\n");
 }
 
 int cmd_debruijn(void* data, const char* input) {
@@ -138,15 +138,15 @@ int cmd_debruijn(void* data, const char* input) {
       case 'g':
         ++input;  // Skip the space.
         ++input;  // Points to the length argument now.
-        int length = (int)strtol(input, NULL, 0);
-        char* pattern = cyclic_pattern(length, 0, peda_charset);
+        int length = (int)strtoul(input, NULL, 0);
+        char* pattern = cyclic_pattern(length, 0, debruijn_charset);
         r_cons_printf("%s\n", pattern);
         free(pattern);
         return R_TRUE;
       case 'o':
         ++input;  // Skip the space.
         ++input;  // Points to the length argument now.
-        unsigned long long value = strtoll(input, NULL, 0);
+        unsigned long long value = strtoull(input, NULL, 0);
         int offset = cyclic_pattern_offset(core, value);
         r_cons_printf("%d\n", offset);
         free(pattern);
@@ -154,9 +154,15 @@ int cmd_debruijn(void* data, const char* input) {
     }
   } else {
     const char* help_msg[] = {
-        "Usage:", " D[go]", "Generate or calculate offset of De Bruijn pattern",
-        "Dg", " length", "Generate of pattern with given length",
-        "Do", " value", "Get offset of value in pattern",
+        "Usage:",
+        " D[go]",
+        "Generate or calculate offset of De Bruijn pattern",
+        "Dg",
+        " length",
+        "Generate of pattern with given length",
+        "Do",
+        " value",
+        "Get offset of value in pattern",
         NULL};
     r_core_cmd_help(core, help_msg);
   }
