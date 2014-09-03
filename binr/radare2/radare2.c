@@ -609,6 +609,8 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (sandbox)
 		r_config_set (r.config, "cfg.sandbox", "true");
+	if (quiet)
+		r_config_set (r.config, "scr.wheel", "false");
 
 	r.num->value = 0;
 	if (patchfile) {
