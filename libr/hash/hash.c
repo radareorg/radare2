@@ -175,12 +175,11 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	r_hash_do_begin (ctx, algo);
 	r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
-	digest_size= r_hash_size (algo);
+	digest_size = r_hash_size (algo);
 	digest_hex = malloc ((digest_size *2)+1);
-	for (i = 0; i< digest_size; i++) {
+	for (i = 0; i< digest_size; i++)
 		sprintf (digest_hex+(i*2), "%02x", ctx->digest[i]);
-	}
-	digest_hex[digest_size] = 0;
+	digest_hex[digest_size*2] = 0;
 	r_hash_free (ctx);
 	return digest_hex;
 }
