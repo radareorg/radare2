@@ -92,6 +92,7 @@ R_API RList *r_io_map_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map;
 	RListIter *iter;
 	RList *maps = r_list_new ();
+	maps->free = NULL;
 	r_list_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) r_list_append(maps, map);
 		//if (map->from == addr && endaddr == map->to) r_list_append(maps, map);
