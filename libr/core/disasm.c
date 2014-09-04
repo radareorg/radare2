@@ -1473,23 +1473,33 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 }
 
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
-	if (ds->analop.ptr != UT64_MAX && ds->analop.ptr) {
+	ut64 p = ds->analop.ptr;
+	if (p != UT64_MAX && p) {
 		char msg[32];
 		RFlagItem *f;
 		int bsz = len - idx;
-		const char *kind = r_anal_data_kind (core->anal,
-			ds->analop.ptr,	ds->buf, bsz);
+		const char *kind = r_anal_data_kind (core->anal, p, ds->buf, bsz);
 		*msg = 0;
 		if (kind && !strcmp (kind, "text")) {
 			*msg = '"';
-			snprintf (msg+1, sizeof (msg)-2, "%d", idx); //ds->buf+idx);
+			snprintf (msg+1, sizeof (msg)-2, "%d", idx);
 			strcat (msg, "\"");
 		}
-		f = r_flag_get_i (core->flags, ds->analop.ptr);
+		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_cons_printf (" ; %s", f->name);
 		} else {
-			r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, ds->analop.ptr);
+			if (p==UT64_MAX || p==UT32_MAX) {
+				r_cons_printf (" ; -1", p);
+			} else
+			if (p>='!' && p<='~') {
+				r_cons_printf (" ; 0x%02"PFMT64x" '%c'", p, p);
+			} else {
+				if (!msg && p>10) {
+					r_cons_printf (" ; %s%s0x%08"PFMT64x" ",
+						msg, msg?" ":"", p);
+				}
+			}
 		}
 	} else handle_print_as_string (core, ds);
 }
