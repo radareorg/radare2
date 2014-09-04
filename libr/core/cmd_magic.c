@@ -19,7 +19,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (*file == ' ') file++;
 		if (!*file) file = NULL;
 	}
-	if (ck==NULL || (file && strcmp (file, oldfile))) {
+	if (ck==NULL || (file && oldfile && strcmp (file, oldfile))) {
 		// TODO: Move RMagic into RCore
 		r_magic_free (ck);
 		ck = r_magic_new (0);
