@@ -223,7 +223,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case ' ':
 		r_debug_pid_list (core->dbg,
-			(int) R_MAX (0, r_num_math (core->num, input+2)));
+			(int) R_MAX (0, (int)r_num_math (core->num, input+2)));
 		break;
 	case '?': {
 			const char* help_msg[] = {

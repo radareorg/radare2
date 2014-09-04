@@ -212,7 +212,6 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'p':
 		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
-			const char *tmpfile = ".tmp";
 			char *out = r_core_editor (core, NULL);
 			if (out) {
 				r_core_patch (core, out);
