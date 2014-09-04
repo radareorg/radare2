@@ -945,12 +945,12 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 //		case eLF_NESTTYPE:
 //			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
 //			break;
-//		case eLF_METHOD:
-//			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
-//			break;
-//		case eLF_MEMBER:
-//			curr_read_bytes = parse_lf_member(p, &read_bytes, len);
-//			break;
+		case eLF_METHOD:
+			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
+			break;
+		case eLF_MEMBER:
+			curr_read_bytes = parse_lf_member(p, &read_bytes, len);
+			break;
 		default:
 			printf("unsupported leaf type in parse_lf_fieldlist()\n");
 			return;
@@ -1018,11 +1018,8 @@ static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 //	tpi_header.tpi.hash_adj.cb = *(int *)stream_file_read(stream, 4);
 
 	for (i = 0; i < (tpi_header.ti_max - tpi_header.ti_min); i++) {
-		if (i == 68) {
+		if (i == 21) {
 			types.length = 22;
-		}
-		if (i == 384) {
-			types.length = 33;
 		}
 		parse_tpi_stypes(stream, &types);
 	}
