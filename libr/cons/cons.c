@@ -147,12 +147,12 @@ R_API int r_cons_enable_mouse (const int enable) {
 	int enabled = I.mouse;
 	if ((I.mouse = enable)) {
 	//	r_cons_memcat ("\x1b[?1001s", 8);
-		eprintf ("\x1b[?1001s");
-		eprintf ("\x1b[?1000h");
+		const char *code = "\x1b[?1001s" "\x1b[?1000h";
+		write (2, code, strlen (code));
 	} else {
 		//r_cons_memcat ("\x1b[?1001r", 8);
-		eprintf ("\x1b[?1001r");
-		eprintf ("\x1b[?1000l");
+		const char *code = "\x1b[?1001r" "\x1b[?1000l";
+		write (2, code, strlen (code));
 	}
 	return enabled;
 #else
@@ -641,11 +641,15 @@ R_API void r_cons_invert(int set, int color) {
 R_API void r_cons_set_cup(int enable) {
 #if __UNIX__
 	if (enable) {
-		printf ("\x1b[?1049h"); // xterm
-		printf ("\x1b" "7\x1b[?47h"); // xterm-color
+		const char *code =
+			"\x1b[?1049h" // xterm
+			"\x1b" "7\x1b[?47h"; // xterm-color
+		write (2, code, strlen (code));
 	} else {
-		printf ("\x1b[?1049l"); // xterm
-		printf ("\x1b[?47l""\x1b""8"); // xterm-color
+		const char *code =
+			"\x1b[?1049l" // xterm
+			"\x1b[?47l""\x1b""8"; // xterm-color
+		write (2, code, strlen (code));
 	}
 	fflush (stdout);
 #else
