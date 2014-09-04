@@ -1382,12 +1382,40 @@ static int cmd_anal(void *data, const char *input) {
 				RList *list;
 				RAnalRef *ref;
 				RListIter *iter;
-				addr = r_num_math (core->num, input+2);
+				ut8 buf[12];
+				RAsmOp asmop;
+				char* buf_asm = NULL;
+
+				addr = r_num_math (core->num, strchr(input+2, ' '));
 				list = r_anal_xrefs_get (core->anal, addr);
 				if (list) {
-					r_list_foreach (list, iter, ref) {
-						r_cons_printf ("0x%"PFMT64x" -%c-> 0x%"PFMT64x"\n",
-							ref->addr, ref->type, ref->at);
+					if (input[2] == 'q') { // axtq
+						r_list_foreach (list, iter, ref)
+							r_cons_printf ("0x%"PFMT64x"\n", ref->addr);
+					} else if (input[2] == 'j') { // axtj
+						r_cons_printf("[");
+						r_list_foreach (list, iter, ref) {
+							r_core_read_at (core, ref->addr, buf, 12);
+							r_asm_disassemble (core->assembler, &asmop, buf, 12);
+							r_cons_printf ("{\"from\":0x%"PFMT64x",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
+								ref->addr, ref->type, asmop.buf_asm, iter->n?",":"");
+						}
+						r_cons_printf("]");
+						r_cons_newline();
+					} else if (input[2] == '*') { // axt*
+						// TODO: implement multi-line comments
+						r_list_foreach (list, iter, ref)
+							r_cons_printf ("CCa 0x%"PFMT64x" \"XREF from 0x%"PFMT64x"\n",
+								ref->addr, ref->type, asmop.buf_asm, iter->n?",":"");
+					} else { // axt
+						r_list_foreach (list, iter, ref) {
+							r_core_read_at (core, ref->addr, buf, 12);
+							r_asm_disassemble (core->assembler, &asmop, buf, 12);
+							buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg,
+									core->cons->pal.num);
+							r_cons_printf ("0x%"PFMT64x": (%c) %s\n",
+								ref->addr, ref->type, buf_asm);
+						}
 					}
 					r_list_free (list);
 				}
