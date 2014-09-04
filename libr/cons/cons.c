@@ -551,6 +551,7 @@ R_API int r_cons_get_size(int *rows) {
 	struct winsize win;
 	if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
 		if (win.ws_col==0) {
+			// TODO: use ttyname() ?
 			int fd = open ("/dev/tty", O_RDONLY);
 			if (fd != -1) {
 				if (ioctl (fd, TIOCGWINSZ, &win) != 0) {
@@ -559,7 +560,6 @@ R_API int r_cons_get_size(int *rows) {
 				}
 				close (fd);
 			}
-
 		}
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
@@ -592,7 +592,7 @@ R_API void r_cons_show_cursor (int cursor) {
 	// TODO
 #else
 	if (cursor) write (1, "\x1b[?25h", 6);
-	else write(1, "\x1b[?25l", 6);
+	else write (1, "\x1b[?25l", 6);
 #endif
 }
 

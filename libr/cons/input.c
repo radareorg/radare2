@@ -131,6 +131,9 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 					/* Grab wheel events only */
 					ch = "kj"[(ch - (64 + 32))&1];
 				} else {
+					// temporary disable the mouse wheel to allow select
+					r_cons_enable_mouse (R_FALSE);
+					(void)r_cons_readchar ();
 					ch = 0;
 				}
 			}
