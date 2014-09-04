@@ -7,6 +7,35 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+//CV_property = BitStruct("prop",
+//    Flag("fwdref"),
+//    Flag("opcast"),
+//    Flag("opassign"),
+//    Flag("cnested"),
+//    Flag("isnested"),
+//    Flag("ovlops"),
+//    Flag("ctor"),
+//    Flag("packed"),
+
+//    BitField("reserved", 7, swapped=True),
+//    Flag("scoped"),
+//)
+typedef union {
+	struct {
+		char fwdref : 1;
+		char opcast : 1;
+		char opassign : 1;
+		char cnested : 1;
+		char isnested : 1;
+		char ovlops : 1;
+		char ctor : 1;
+		char packed : 1;
+		char reserved : 7; // swapped
+		char scoped : 1;
+	} a;
+	unsigned short cv_property;
+} UCV_PROPERTY;
+
 typedef struct {
 	int stream_size;
 	char *stream_pages;
@@ -929,7 +958,7 @@ static int parse_lf_member(unsigned char *leaf_data, unsigned int *read_bytes, u
 static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 {
 	ELeafType leaf_type;
-	int read_bytes = 0;
+	int read_bytes = 2;
 	int curr_read_bytes = 0;
 	unsigned char *p = leaf_data;
 
@@ -964,6 +993,58 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//	lfEnum = Struct("lfEnum",
+//ULInt16("count"),
+//CV_property,
+//ULInt32("utype"),
+//ULInt32("fieldlist"),
+//CString("name"),
+//Peek(ULInt8("_pad")),
+//PadAlign,
+//)
+static void parse_lf_enum(unsigned char *leaf_data, unsigned int len)
+{
+	unsigned short count = 0;
+	UCV_PROPERTY cv_property;
+	unsigned int utype = 0;
+	unsigned int fieldList = 0;
+	char *name = 0;
+	int c = 0;
+	unsigned char pad = 0;
+
+	count = *(unsigned short *)leaf_data;
+	leaf_data += 2;
+	cv_property.cv_property = *(unsigned short *)leaf_data;
+	leaf_data += 2;
+	utype = *(unsigned int *)leaf_data;
+	leaf_data += 4;
+	fieldList = *(unsigned int *)leaf_data;
+	leaf_data += 4;
+	while (*leaf_data != 0) {
+//		CAN_READ(*read_bytes, 1, len)
+		c++;
+		leaf_data++;
+//		(*read_bytes) += 1;
+	}
+//	CAN_READ(*read_bytes, 1, len)
+	leaf_data++;
+//	(*read_bytes) += 1;
+	//TODO: free name
+	name = (unsigned char *) malloc(c + 1);
+	memcpy(name, leaf_data - (c + 1), c + 1);
+	printf("parse_lf_enum(): name = %s\n", name);
+
+//	CAN_READ(*read_bytes, 1, len)
+	pad = *(unsigned char *)leaf_data;
+	// TODO: add macros PadAlign
+	if (pad > 0xF0) {
+//		CAN_READ(*read_bytes, pad & 0x0F, len)
+		leaf_data += (pad & 0x0F);
+//		*read_bytes += (pad & 0x0F);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 {
 	SType type;
@@ -983,6 +1064,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_FIELDLIST:
 		printf("eLF_FIELDLIST\n");
 		parse_lf_fieldlist(leaf_data + 2, types->length);
+		break;
+	case eLF_ENUM:
+		printf("eLF_ENUM\n");
+		parse_lf_enum(leaf_data + 2, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
