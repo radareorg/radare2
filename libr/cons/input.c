@@ -146,9 +146,11 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
 	RCons *cons = r_cons_singleton ();
 	int ret = 0, color = cons->pal.input && *cons->pal.input;
+#if 0
 	int mouse = r_cons_enable_mouse (R_FALSE);
 	r_cons_enable_mouse (R_FALSE);
 	r_cons_flush ();
+#endif
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
 	}
@@ -176,7 +178,7 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (color) printf (Color_RESET);
 	ret = strlen (buf);
 beach:
-	r_cons_enable_mouse (mouse);
+	//r_cons_enable_mouse (mouse);
 	return ret;
 }
 

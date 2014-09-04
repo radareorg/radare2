@@ -21,6 +21,8 @@ static void showcursor(RCore *core, int x) {
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel)
 				r_cons_enable_mouse (R_TRUE);
+			else
+				r_cons_enable_mouse (R_FALSE);
 		} else {
 			r_cons_enable_mouse (R_FALSE);
 		}
@@ -1296,8 +1298,7 @@ static void r_core_visual_refresh (RCore *core) {
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt, *teefile;
 	ut64 scrseek;
-	int wheel = r_config_get_i (core->config, "scr.wheel");
-	int flags, ch;
+	int wheel, flags, ch;
 
 	obs = core->blocksize;
 	//r_cons_set_cup (R_TRUE);
@@ -1309,9 +1310,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		input++;
 	}
 	core->vmode = R_TRUE;
-	r_cons_show_cursor (R_FALSE);
-	if (wheel)
-		r_cons_enable_mouse (R_TRUE);
 
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
@@ -1319,6 +1317,10 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	core->print->flags |=  R_PRINT_FLAGS_ADDRMOD;
 	do {
+		wheel = r_config_get_i (core->config, "scr.wheel");
+		r_cons_show_cursor (R_FALSE);
+		if (wheel)
+			r_cons_enable_mouse (R_TRUE);
 		core->cons->event_data = core;
 		core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
 		flags = core->print->flags;
