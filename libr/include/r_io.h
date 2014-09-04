@@ -338,6 +338,8 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off);
 R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd);
 //R_API int r_io_map_read_rest(RIO *io, ut64 off, ut8 *buf, ut64 len);
 R_API RIOMap *r_io_map_resolve(RIO *io, int fd);
+R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd);
+R_API RIOMap *r_io_map_resolve_in_range (RIO *io, ut64 addr, ut64 endaddr, int fd);
 R_API int r_io_map_sort (void *a, void *b);
 R_API RIOMap * r_io_map_add_next_available (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 align);
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);

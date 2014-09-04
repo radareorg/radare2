@@ -2,7 +2,7 @@
 
 #include <r_io.h>
 
-#define	VIO_DEBUG	1
+#define	VIO_DEBUG	0
 /*
 
 | io.va |               | io.ff |
@@ -133,7 +133,9 @@ R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 		read_bytes = UT64_MAX - maddr;					//shrink len/read_bytes
 	}
 	endaddr = maddr + read_bytes;						//get endaddr
-	map = r_io_map_resolve (io, fd);					//resolve map for fd
+	map = r_io_map_resolve_in_range (io, maddr, endaddr, fd);		//resolve map for fd in range
+	if (!map)
+		map = r_io_map_resolve (io, fd);				//try to resolve map if it is not in range
 	if (!map) {								//check if map exists
 		eprintf ("r_io_mread: cannot resolve map for fd %i\n", fd);
 		return R_ERROR;

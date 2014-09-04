@@ -88,6 +88,29 @@ R_API RIOMap *r_io_map_resolve(RIO *io, int fd) {
 	return NULL;
 }
 
+R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd) {
+	RIOMap *map = NULL;
+	RListIter *iter;
+	if (maps) {
+		r_list_foreach (maps, iter, map) {
+			if (map->fd == fd)
+				return map;
+		}
+	}
+	return map;
+}
+
+R_API RIOMap *r_io_map_resolve_in_range (RIO *io, ut64 addr, ut64 endaddr, int fd) {
+	RList *maps;
+	RIOMap *map;
+	if (!io || !io->maps)
+		return NULL;
+	maps = r_io_map_get_maps_in_range (io, addr, endaddr);
+	map = r_io_map_resolve_from_list (maps, fd);
+	r_list_free (maps);
+	return map;
+}
+
 R_API RList *r_io_map_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map;
 	RListIter *iter;
