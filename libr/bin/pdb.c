@@ -647,7 +647,7 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 }
 
 #define CAN_READ(curr_read_bytes, bytes_for_read, max_len) { \
-	if ((((curr_read_bytes) + (bytes_for_read)) >= (len))) { \
+	if ((((curr_read_bytes) + (bytes_for_read)) >= (max_len))) { \
 		return 0; \
 	} \
 }
@@ -942,9 +942,9 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 		case eLF_ENUMERATE:
 			curr_read_bytes = parse_lf_enumerate(p, &read_bytes, len);
 			break;
-//		case eLF_NESTTYPE:
-//			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
-//			break;
+		case eLF_NESTTYPE:
+			curr_read_bytes = parse_lf_nesttype(p, &read_bytes, len);
+			break;
 		case eLF_METHOD:
 			curr_read_bytes = parse_lf_method(p, &read_bytes, len);
 			break;
