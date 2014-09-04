@@ -473,8 +473,6 @@ int main(int argc, char **argv) {
 	if (!query)
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
 		r_core_fini (&core);
-		if (va)
-			return blob_version ("rabin2");
 		return rabin_show_help (0);
 	}
 
