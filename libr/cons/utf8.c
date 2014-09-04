@@ -21,20 +21,24 @@ static inline int rd(const int fd) {
 		if (n > (ssize_t)0) {
 			return buffer[0];
 		}
-		if (n == (ssize_t)0)
+		if (n == (ssize_t)0) {
 			return RD_EOF;
-		if (n != (ssize_t)-1)
+		}
+		if (n != (ssize_t)-1) {
 			return RD_EIO;
-		if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
+		}
+		if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
 			return RD_EIO;
+		}
 	}
 }
 
 static inline int wr(const int fd, const char *const data, const size_t bytes) {
+	write (fd, data, bytes);
+	return 0;
 	const char       *head = data;
 	const char *const tail = data + bytes;
 	ssize_t           n;
-
 	while (head < tail) {
 		n = write(fd, head, (size_t)(tail - head));
 		if (n > (ssize_t)0) {
@@ -53,14 +57,14 @@ static inline int wr(const int fd, const char *const data, const size_t bytes) {
 /* Return a new file descriptor to the current TTY.
  */
 int current_tty(void) {
-	const char *dev;
 	int fd;
-
-	dev = ttyname(STDIN_FILENO);
+	const char *dev = ttyname(STDERR_FILENO);
+#if 0
 	if (!dev)
-		dev = ttyname(STDOUT_FILENO);
+		dev = ttyname(STDIN_FILENO);
 	if (!dev)
 		dev = ttyname(STDERR_FILENO);
+#endif
 	if (!dev) {
 		errno = ENOTTY;
 		return -1;
@@ -71,7 +75,6 @@ int current_tty(void) {
 	} while (fd == -1 && errno == EINTR);
 	if (fd == -1)
 		return -1;
-
 	return fd;
 }
 
@@ -138,10 +141,18 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		/* Assume coordinate reponse parsing fails. */
 		ret = EIO;
 
+		// Read until ESC is found. previous chars, should be
+		// refeeded to the terminal after finishing
+		// that makes typing a command before the prompt
+		// appears results in no data in it.
+
 		/* Expect an ESC. */
-		res = rd(tty);
-		if (res != 27)
-			break;
+		for (;;) {
+			res = rd(tty);
+			if (res == 27)
+				break;
+			// else store_skipped_data_from_stdin_here
+		}
 
 		/* Expect [ after the ESC. */
 		res = rd(tty);
