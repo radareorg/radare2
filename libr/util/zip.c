@@ -8,14 +8,6 @@
 // avoid gzipbombs
 #define MAXRETRIES 10
 
-R_API ut8 *r_unzip(const ut8 *src, int srcLen, int *dstLen) {
-	return r_inflate(src, srcLen, dstLen);
-}
-
-R_API ut8 *r_gunzip(const ut8 *src, int srcLen, int *dstLen) {
-	return r_inflate(src, srcLen, dstLen);
-}
-
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *dstLen) {
 	ut8 *dst = NULL, *dst2;
 	z_stream strm;
