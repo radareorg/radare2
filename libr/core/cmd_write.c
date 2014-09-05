@@ -670,7 +670,6 @@ static int cmd_write(void *data, const char *input) {
 			case 'e':
 			case 'A':
 			case 'x':
-        printf("WOX!!!\n");
 			case 'r':
 			case 'l':
 			case 'm':
