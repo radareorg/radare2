@@ -696,70 +696,51 @@ static int cmd_write(void *data, const char *input) {
 				r_core_write_op (core, "ff", 'x');
 				r_core_block_read (core, 0);
 				break;
-      case 'D':
-        if (input[2] != ' ') {
-          r_cons_printf("Usage: woD length @ address\n");
-          free(ostr);
-          return 0;
-        }
-        off = r_num_math(core->num, input + 2);
-        len = (int)off;
-        int i;
-        if (len > 0) {
-          buf = cyclic_pattern(len, 0, debruijn_charset);
-          if (buf != NULL) {
-            printf("%s\n", buf);
-            // Stupid hack, writing the entire length at once doesn't work for
-            // some reason that I can't figure out right now.
-            for(i = 0; i < len; ++i) {
-              r_core_write_at(core, (core->offset) + i, buf + i, 1);
-            }
-            free(buf);
-          } else {
-            eprintf("Couldn't generate pattern of length %d\n", len);
-          }
-        }
-        break;
-      case 'O':
-        if (input[2] != ' ') {
-          r_cons_printf("Usage: woO value\n");
-          free(ostr);
-          return 0;
-        }
-        off = r_num_math(core->num, input + 2);
-        len = (int)off;
-        int guest_endian = r_bin_get_info(core->bin)->big_endian ? 0 : 1;
-        int offset = cyclic_pattern_offset(len, guest_endian);
-        printf("%d\n", offset);
-        break;
+			case 'D':
+				len = (int)(input[2]==' ')?
+					r_num_math (core->num, input + 2): core->blocksize;
+				if (len > 0) {
+					buf = cyclic_pattern(len, 0, debruijn_charset);
+					if (buf) {
+						r_core_write_at (core, core->offset, buf, len);
+						free (buf);
+					} else {
+						eprintf ("Couldn't generate pattern of length %d\n", len);
+					}
+				}
+				break;
+			case 'O':
+				len = (int)(input[2]==' ')?
+					r_num_math (core->num, input + 2): core->blocksize;
+				core->num->value = cyclic_pattern_offset (len, !core->assembler->big_endian);
+				r_cons_printf ("%d\n", core->num->value);
+				break;
 			case '\0':
 			case '?':
 			default:
-				r_cons_printf (
-					"|Usage: wo[asmdxoArl24] [hexpairs] @ addr[:bsize]\n"
-					"|Example:\n"
-					"|  wox 0x90   ; xor cur block with 0x90\n"
-					"|  wox 90     ; xor cur block with 0x90\n"
-					"|  wox 0x0203 ; xor cur block with 0203\n"
-					"|  woa 02 03  ; add [0203][0203][...] to curblk\n"
-					"|  woe 02 03  \n"
-					"|Supported operations:\n"
-					"|  wow  ==  write looped value (alias for 'wb')\n"
-					"|  woa  +=  addition\n"
-					"|  wos  -=  substraction\n"
-					"|  wom  *=  multiply\n"
-					"|  wod  /=  divide\n"
-					"|  wox  ^=  xor\n"
-					"|  woo  |=  or\n"
-					"|  woA  &=  and\n"
-					"|  woR  random bytes (alias for 'wr $b'\n"
-					"|  wor  >>= shift right\n"
-					"|  wol  <<= shift left\n"
-					"|  wo2  2=  2 byte endian swap\n"
-					"|  wo4  4=  4 byte endian swap\n"
-          "|  woD  De Bruijn Pattern (syntax woD length @ addr)\n"
-          "|  woO  De Bruijn Pattern Offset (syntax: woO value)\n"
-						);
+				{
+					const char* help_msg[] = {
+						"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[:bsize]",
+						"wow"," [val]", "==  write looped value (alias for 'wb')",
+						"woa"," [val]", "+=  addition (f.ex: woa 0102)",
+						"wos"," [val]", "-=  substraction",
+						"wom"," [val]", "*=  multiply",
+						"wod"," [val]", "/=  divide",
+						"woe"," [from-to] [step]","..  create sequence",
+						"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+						"woo"," [val]","|=  or",
+						"woA"," [val]","&=  and",
+						"woR","","random bytes (alias for 'wr $b')",
+						"wor"," [val]", ">>= shift right",
+						"wol"," [val]","<<= shift left",
+						"wo2"," [val]","2=  2 byte endian swap",
+						"wo4"," [val]", " 4=  4 byte endian swap",
+						"woD"," [len]","De Bruijn Pattern (syntax woD length @ addr)",
+						"woO"," [len]", "De Bruijn Pattern Offset (syntax: woO value)",
+						NULL
+					};
+					r_core_cmd_help(core, help_msg);
+				}
 				break;
 		}
 		break;
