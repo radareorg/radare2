@@ -1472,6 +1472,7 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 	return ret;
 }
 
+/* convert numeric value in opcode to ascii char or number */
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
 	if (p != UT64_MAX && p) {
@@ -1493,7 +1494,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				r_cons_printf (" ; -1", p);
 			} else
 			if (p>='!' && p<='~') {
-				r_cons_printf (" ; 0x%02"PFMT64x" '%c'", p, p);
+				r_cons_printf (" ; '%c'", p);
 			} else {
 				if (!msg && p>10) {
 					r_cons_printf (" ; %s%s0x%08"PFMT64x" ",
