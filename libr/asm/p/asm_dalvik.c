@@ -385,9 +385,12 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strasm = NULL;
 			size = 2;
 		}
-		strncpy (op->buf_asm, strasm, sizeof (op->buf_asm)-1);
-		op->buf_asm[sizeof (op->buf_asm)-1] = 0;
-		free (strasm);
+		if (strasm) {
+			strncpy (op->buf_asm, strasm, sizeof (op->buf_asm)-1);
+			op->buf_asm[sizeof (op->buf_asm)-1] = 0;
+		} else {
+			op->buf_asm[0] = 0;
+		}
 	} else if (len>0) {
 		strcpy (op->buf_asm, "invalid ");
 		op->size = len;
