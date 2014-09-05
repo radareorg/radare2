@@ -8,7 +8,15 @@
 // avoid gzipbombs
 #define MAXRETRIES 10
 
+R_API ut8 *r_unzip(const ut8 *src, int srcLen, int *dstLen) {
+	return r_inflate(src, srcLen, dstLen);
+}
+
 R_API ut8 *r_gunzip(const ut8 *src, int srcLen, int *dstLen) {
+	return r_inflate(src, srcLen, dstLen);
+}
+
+R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *dstLen) {
 	ut8 *dst = NULL, *dst2;
 	z_stream strm;
 	int tryLen = 1+(srcLen * 4);
@@ -36,10 +44,8 @@ R_API ut8 *r_gunzip(const ut8 *src, int srcLen, int *dstLen) {
 	int err = -1;
 	int ret = -1;
 
-	// ZLIB
-	//err = inflateInit2(&strm, (15 + 32)); //15 window bits, and the +32 tells zlib to to detect if using gzip or zlib
-	// GZIP
-	err = inflateInit2(&strm, 16+MAX_WBITS);
+	// + 32 tells zlib not to care whether the stream is a zlib or gzip stream
+	err = inflateInit2(&strm, MAX_WBITS + 32);
 	if (err == Z_OK) {
 		err = inflate(&strm, Z_FINISH);
 		if (err == Z_STREAM_END) {
