@@ -704,12 +704,16 @@ static int cmd_write(void *data, const char *input) {
         }
         off = r_num_math(core->num, input + 2);
         len = (int)off;
+        int i;
         if (len > 0) {
-          char* buf = cyclic_pattern(len, 0, debruijn_charset);
-          printf("%s\n", buf);
+          buf = cyclic_pattern(len, 0, debruijn_charset);
           if (buf != NULL) {
-            r_core_write_at(core, core->offset, (const ut8 *)buf, len);
-            WSEEK(core, len);
+            printf("%s\n", buf);
+            // Stupid hack, writing the entire length at once doesn't work for
+            // some reason that I can't figure out right now.
+            for(i = 0; i < len; ++i) {
+              r_core_write_at(core, (core->offset) + i, buf + i, 1);
+            }
             free(buf);
           } else {
             eprintf("Couldn't generate pattern of length %d\n", len);
