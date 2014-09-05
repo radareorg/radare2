@@ -146,7 +146,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 						hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				for (j=from; j<to; j+=bsize) {
-					r_io_read_at (io, j, buf, bsize);
+					r_io_pread (io, j, buf, bsize);
 					do_hash_internal (ctx, hashbit, buf,
 						((j+bsize)<fsize)?  bsize:
 						(bsize>j)?(fsize-j):0, rad, 0, ule);
@@ -181,7 +181,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				t = to;
 				for (j=f; j<t; j+=bsize) {
 					int nsize = (j+bsize<fsize)? bsize: (fsize-j);
-					r_io_read_at (io, j, buf, bsize);
+					r_io_pread (io, j, buf, bsize);
 					from = j;
 					to = j+bsize;
 					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
