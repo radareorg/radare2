@@ -913,7 +913,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				ut32 datalen = section->size;
-				r_io_read_at (r->io, addr, data, datalen);
+				r_io_pread (r->io, section->paddr, data, datalen);
 				chkstr = r_hash_to_string (NULL, chksum, data, datalen);
 				free (data);
 			}
@@ -1013,7 +1013,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 						char *chkstr;
 						ut8 *data = malloc (section->size);
 						ut32 datalen = section->size;
-						r_io_read_at (r->io, addr, data, datalen);
+						// VA READ IS BROKEN? 
+						r_io_pread (r->io, section->paddr, data, datalen);
 						chkstr = r_hash_to_string (NULL, chksum, data, datalen);
 						free (data);
 						hashstr = malloc (strlen (chkstr)+strlen (chksum)+3);
