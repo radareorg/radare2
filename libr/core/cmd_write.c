@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+#include "../util/debruijn.c"
+
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	ut64 ret, orig;
 	// used to set/unset bit in current address
@@ -694,6 +696,42 @@ static int cmd_write(void *data, const char *input) {
 				r_core_write_op (core, "ff", 'x');
 				r_core_block_read (core, 0);
 				break;
+      case 'D':
+        if (input[2] != ' ') {
+          r_cons_printf("Usage: woD length @ address\n");
+          free(ostr);
+          return 0;
+        }
+        off = r_num_math(core->num, input + 2);
+        len = (int)off;
+        int i;
+        if (len > 0) {
+          buf = cyclic_pattern(len, 0, debruijn_charset);
+          if (buf != NULL) {
+            printf("%s\n", buf);
+            // Stupid hack, writing the entire length at once doesn't work for
+            // some reason that I can't figure out right now.
+            for(i = 0; i < len; ++i) {
+              r_core_write_at(core, (core->offset) + i, buf + i, 1);
+            }
+            free(buf);
+          } else {
+            eprintf("Couldn't generate pattern of length %d\n", len);
+          }
+        }
+        break;
+      case 'O':
+        if (input[2] != ' ') {
+          r_cons_printf("Usage: woO value\n");
+          free(ostr);
+          return 0;
+        }
+        off = r_num_math(core->num, input + 2);
+        len = (int)off;
+        int guest_endian = r_bin_get_info(core->bin)->big_endian ? 0 : 1;
+        int offset = cyclic_pattern_offset(len, guest_endian);
+        printf("%d\n", offset);
+        break;
 			case '\0':
 			case '?':
 			default:
@@ -719,6 +757,8 @@ static int cmd_write(void *data, const char *input) {
 					"|  wol  <<= shift left\n"
 					"|  wo2  2=  2 byte endian swap\n"
 					"|  wo4  4=  4 byte endian swap\n"
+          "|  woD  De Bruijn Pattern (syntax woD length @ addr)\n"
+          "|  woO  De Bruijn Pattern Offset (syntax: woO value)\n"
 						);
 				break;
 		}
