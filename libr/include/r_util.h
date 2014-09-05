@@ -611,6 +611,10 @@ R_API int r_sandbox_chdir (const char *path);
 R_API int r_sandbox_check_path (const char *path);
 R_API int r_sandbox_kill(int pid, int sig);
 
+/* derbuijn.c */
+R_API char* r_debruijn_pattern(int size, int start, const char* charset);
+R_API int r_debruijn_offset(ut64 value, int guest_endian);
+
 /* strpool */
 #define R_STRPOOL_INC 1024
 

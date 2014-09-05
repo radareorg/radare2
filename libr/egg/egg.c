@@ -420,3 +420,9 @@ R_API void r_egg_finalize(REgg *egg) {
 		memcpy (egg->bin->buf + b->cur, b->buf, b->length);
 	}
 }
+
+R_API void r_egg_pattern(REgg *egg, int size) {
+	char *ret = r_debruijn_pattern ((int)size, 0, NULL);
+	r_buf_prepend_bytes (egg->bin, ret, strlen (ret));
+	free (ret);
+}

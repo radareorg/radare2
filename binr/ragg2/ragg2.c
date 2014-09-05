@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
 #include <r_egg.h>
 #include <r_bin.h>
@@ -28,6 +28,7 @@ static int usage (int v) {
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
 	"                 NTAS : same as above, but at the end\n"
+	" -P [size]       prepend debrujn pattern\n"
 	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
 	" -x              execute\n"
@@ -87,6 +88,7 @@ static int openfile (const char *f, int x) {
 int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
+	const char *pattern = NULL;
 	char *bytes = NULL;
 	const char *contents = NULL;
 	const char *arch = R_SYS_ARCH;
@@ -106,7 +108,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:C:vd:D:w:")) != -1) {
+        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -181,6 +183,9 @@ int main(int argc, char **argv) {
 		case 'p':
 			padding = optarg;
 			break;
+		case 'P':
+			pattern = optarg;
+			break;
 		case 'c':
 			{
 			char *p = strchr (optarg, '=');
@@ -231,7 +236,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding) {
+	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern) {
 		return usage (0);
 	} else file = argv[optind];
 
@@ -332,6 +337,9 @@ int main(int argc, char **argv) {
 				eprintf ("Invalid encoder '%s'\n", encoder);
 		if (padding)
 			r_egg_padding (egg, padding);
+
+		if (pattern)
+			r_egg_pattern (egg, r_num_math (NULL, pattern));
 
 		if (!(b = r_egg_get_bin (egg))) {
 			eprintf ("r_egg_get_bin: invalid egg :(\n");

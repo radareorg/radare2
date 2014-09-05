@@ -141,6 +141,7 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...);
 R_API int r_egg_compile(REgg *egg);
 R_API int r_egg_padding (REgg *egg, const char *pad);
 R_API int r_egg_assemble(REgg *egg);
+R_API void r_egg_pattern(REgg *egg, int size);
 R_API RBuffer *r_egg_get_bin(REgg *egg);
 //R_API int r_egg_dump (REgg *egg, const char *file) { }
 R_API char *r_egg_get_source(REgg *egg);

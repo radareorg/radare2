@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
-#include "../util/debruijn.c"
-
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	ut64 ret, orig;
 	// used to set/unset bit in current address
@@ -700,7 +698,7 @@ static int cmd_write(void *data, const char *input) {
 				len = (int)(input[2]==' ')?
 					r_num_math (core->num, input + 2): core->blocksize;
 				if (len > 0) {
-					buf = cyclic_pattern(len, 0, debruijn_charset);
+					buf = (ut8*)r_debruijn_pattern (len, 0, NULL); //debruijn_charset);
 					if (buf) {
 						r_core_write_at (core, core->offset, buf, len);
 						free (buf);
@@ -712,7 +710,7 @@ static int cmd_write(void *data, const char *input) {
 			case 'O':
 				len = (int)(input[2]==' ')?
 					r_num_math (core->num, input + 2): core->blocksize;
-				core->num->value = cyclic_pattern_offset (len, !core->assembler->big_endian);
+				core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
 				r_cons_printf ("%d\n", core->num->value);
 				break;
 			case '\0':
