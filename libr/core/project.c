@@ -6,10 +6,13 @@
 #include <r_core.h>
 
 static char *r_core_project_file(RCore *core, const char *file) {
-	char *ret = r_file_abspath (r_config_get (
-		core->config, "dir.projects"));
-	ret = r_str_concat (ret, "/");
-	return r_str_concat (ret, file);
+	if (*file != '/') {
+		char *ret = r_file_abspath (r_config_get (
+			core->config, "dir.projects"));
+		ret = r_str_concat (ret, "/");
+		return r_str_concat (ret, file);
+	}
+	return strdup (file);
 }
 
 static int r_core_project_init(RCore *core) {
