@@ -26,9 +26,9 @@ static int r_debug_gdb_step(RDebug *dbg) {
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	gdbr_read_registers(desc);
 	// read the len of the current area
-	int buflen = 0;
-	free(r_reg_get_bytes(dbg->reg, type, &buflen));
-	memcpy(buf, desc->data, desc->data_len);
+	int chopsz, buflen = 0;
+	free (r_reg_get_bytes (dbg->reg, type, &buflen));
+	memcpy (buf, desc->data, desc->data_len);
 	if (!reg_buf) {
 		reg_buf = calloc (buflen, sizeof (char));
 		if (!reg_buf) {
@@ -42,10 +42,12 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				return -1;
 			}
 			reg_buf = new_buf;
+			buflen = desc->data_len;
 			buf_size = desc->data_len;
 		}
 	}
-	memcpy (reg_buf, desc->data, desc->data_len);
+	buflen = R_MIN (desc->data_len, buflen);
+	memcpy (reg_buf, desc->data, buflen);
 	return desc->data_len;
 }
 
@@ -140,6 +142,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	case R_SYS_ARCH_X86:
 		if ( dbg->bits == R_SYS_BITS_32) {
 			return strdup (
+					"=pc	eip\n"
+					"=sp	esp\n"
+					"=bp	ebp\n"
+					"=a0	eax\n"
+					"=a1	ebx\n"
+					"=a2	ecx\n"
+					"=a3	edi\n"
+					"=sn	oeax\n"
 				"gpr	eax	.32	0	0\n"
 				"gpr	ecx	.32	4	0\n"
 				"gpr	edx	.32	8	0\n"
@@ -185,6 +195,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		} 
 		else if ( dbg->bits == R_SYS_BITS_64) {
 			return strdup (
+					"=pc	rip\n"
+					"=sp	rsp\n"
+					"=bp	rbp\n"
+					"=a0	rax\n"
+					"=a1	rbx\n"
+					"=a2	rcx\n"
+					"=a3	rdx\n"
+					"=sn	orax\n"
 				"gpr	rax	.64	0	0\n"
 				"gpr	rbx	.64	8	0\n"
 				"gpr	rcx	.64	16	0\n"
