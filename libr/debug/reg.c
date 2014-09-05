@@ -21,7 +21,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		return R_FALSE;
 
 	// Sync all the types sequentially if asked
-	i = (type != R_REG_TYPE_ALL) ? R_REG_TYPE_GPR : type;
+	i = (type == R_REG_TYPE_ALL) ? R_REG_TYPE_GPR : type;
 
 	do {
 		if (write) {
