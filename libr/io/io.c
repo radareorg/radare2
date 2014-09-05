@@ -178,14 +178,15 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 }
 
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
-	RIODesc *desc = __getioplugin (io, file, flags, mode);
+	RIODesc *desc;
+	if (io->redirect)
+		return NULL;
+	desc = __getioplugin (io, file, flags, mode);
 	IO_IFDBG {
 		if (desc && desc->plugin)
 			eprintf ("Opened file: %s with %s\n",
 				file, desc->plugin->name);
 	}
-	if (io->redirect)
-		return NULL;	//memleak
 	if (desc) {
 		r_io_desc_add (io, desc);
 		if (io->autofd || !io->desc)
@@ -196,15 +197,16 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 }
 
 R_API RIODesc *r_io_open_at (RIO *io, const char *file, int flags, int mode, ut64 maddr) {
-	RIODesc *desc = __getioplugin (io, file, flags, mode);
+	RIODesc *desc;
 	ut64 size;
+	if (io->redirect)
+		return NULL;
+	desc = __getioplugin (io, file, flags, mode);
 	IO_IFDBG {
 		if (desc && desc->plugin)
 			eprintf ("Opened file: %s with %s\n",
 				file, desc->plugin->name);
 	}
-	if (io->redirect)
-		return NULL;	//memleak
 	if (desc) {
 		r_io_desc_add (io, desc);
 		size = r_io_desc_size (io, desc);
@@ -219,10 +221,13 @@ R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc;
 	RListIter *desc_iter = NULL;
 	int fd;
-	RList *list_fds = __getioplugin_many (io, file, flags, mode);
+	RList *list_fds;
+	if (io->redirect)
+		return NULL;
+	list_fds = __getioplugin_many (io, file, flags, mode);
 
-	if (!list_fds) return NULL;
-	if (io->redirect) return NULL;
+	if (!list_fds)
+		return NULL;
 
 	r_list_foreach (list_fds, desc_iter, desc) {
 		fd = -1;
