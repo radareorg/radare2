@@ -135,8 +135,3 @@ int cyclic_pattern_offset(unsigned long long value, int guest_endian) {
   free(pattern);
   return retval;
 }
-
-void debruijn_print(char* name) {
-  printf("%s\n", name);
-  printf("\n");
-}
