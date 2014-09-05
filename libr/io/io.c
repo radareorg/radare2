@@ -19,22 +19,15 @@ R_API RIO *r_io_new() {
 	RIO *io = R_NEW0 (RIO);
 	if (!io) return NULL;
 	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
-	io->buffer_enabled = 0;
-	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
-	io->desc = NULL;
-	io->runprofile = NULL;
+//	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->write_mask_fd = -1;
-	io->redirect = NULL;
 	io->printf = (void*) printf;
 	io->bits = (sizeof(void*) == 8)? 64: 32;
 	io->va = -1;
 	io->ff = 1;
-	io->plugin = NULL;
 	io->raised = -1;
-	io->off = R_FALSE;
 	io->autofd = R_TRUE;
-	io->raw = R_FALSE; // set to 1 for debugger mode (for example)
-	io->enforce_rwx = R_FALSE;
+//	io->raw = R_FALSE; // set to 1 for debugger mode (for example)
 	r_io_map_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
@@ -192,13 +185,33 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 				file, desc->plugin->name);
 	}
 	if (io->redirect)
-		return NULL;
+		return NULL;	//memleak
 	if (desc) {
 		r_io_desc_add (io, desc);
 		if (io->autofd || !io->desc)
 			r_io_use_desc (io, desc);
 	} else 	eprintf ("Unable to open file: %s\n", file);
 
+	return desc;
+}
+
+R_API RIODesc *r_io_open_at (RIO *io, const char *file, int flags, int mode, ut64 maddr) {
+	RIODesc *desc = __getioplugin (io, file, flags, mode);
+	ut64 size;
+	IO_IFDBG {
+		if (desc && desc->plugin)
+			eprintf ("Opened file: %s with %s\n",
+				file, desc->plugin->name);
+	}
+	if (io->redirect)
+		return NULL;	//memleak
+	if (desc) {
+		r_io_desc_add (io, desc);
+		size = r_io_desc_size (io, desc);
+		if (io->autofd || !io->desc)
+			r_io_use_desc (io, desc);
+		r_io_map_new (io, desc->fd, mode, 0, maddr, size);
+	} else	eprintf ("Unable to open file: %s\n", file);
 	return desc;
 }
 

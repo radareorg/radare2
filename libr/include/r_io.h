@@ -278,6 +278,7 @@ R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many
 /* io/io.c */
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode);
+R_API RIODesc *r_io_open_at (RIO *io, const char *file, int flags, int mode, ut64 maddr);
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
 R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode);
 R_API int r_io_redirect(RIO *io, const char *file);
