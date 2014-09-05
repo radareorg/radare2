@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2014 - crowell */
 
+#include <stdlib.h>
+#include <string.h>
+
 // For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
 // Efficient Algorithm for Generating Necklaces with Fixed Density"
 
@@ -7,6 +10,8 @@
 // You may use this charset instead of the A-Za-z0-9 charset normally used.
 // char* peda_charset =
 //    "A%sB$nC-(D;)Ea0Fb1Gc2Hd3Ie4Jf5Kg6Lh7Mi8Nj9OkPlQmRnSoTpUqVrWsXtYuZvwxyz";
+
+//TODO(crowell): Make charset configurable, to allow banning characters.
 char* debruijn_charset =
     "ABCDEFGHIJKLMNOPQRSTUVWZYZabcdefghijklmnopqrstuvwxyz1234567890";
 
@@ -101,7 +106,8 @@ char* cyclic_pattern_long() {
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
 // Guest endian = 1 if little, 0 if big.
-static int cyclic_pattern_offset(RCore* r, unsigned long long value) {
+// Host endian = 1 if little, 0 if big.
+int cyclic_pattern_offset(unsigned long long value, int guest_endian) {
   if (value == 0) {
     return -1;
   }
@@ -118,7 +124,6 @@ static int cyclic_pattern_offset(RCore* r, unsigned long long value) {
   int n = 1;
   // little endian if true
   int host_endian = (*(char*)&n == 1) ? 1 : 0;
-  int guest_endian = r_bin_get_info(r->bin)->big_endian ? 0 : 1;
   if (host_endian != guest_endian) {
     reverse_string(needle);
   }
@@ -131,40 +136,7 @@ static int cyclic_pattern_offset(RCore* r, unsigned long long value) {
   return retval;
 }
 
-int cmd_debruijn(void* data, const char* input) {
-  RCore* core = (RCore*)data;
-  if (!(strlen(input) < 3 || input[1] != ' ')) {
-    switch (input[0]) {
-      case 'g':
-        ++input;  // Skip the space.
-        ++input;  // Points to the length argument now.
-        int length = (int)strtoul(input, NULL, 0);
-        char* pattern = cyclic_pattern(length, 0, debruijn_charset);
-        r_cons_printf("%s\n", pattern);
-        free(pattern);
-        return R_TRUE;
-      case 'o':
-        ++input;  // Skip the space.
-        ++input;  // Points to the length argument now.
-        unsigned long long value = strtoull(input, NULL, 0);
-        int offset = cyclic_pattern_offset(core, value);
-        r_cons_printf("%d\n", offset);
-        free(pattern);
-        return R_TRUE;
-    }
-  } else {
-    const char* help_msg[] = {
-        "Usage:",
-        " D[go]",
-        "Generate or calculate offset of De Bruijn pattern",
-        "Dg",
-        " length",
-        "Generate of pattern with given length",
-        "Do",
-        " value",
-        "Get offset of value in pattern",
-        NULL};
-    r_core_cmd_help(core, help_msg);
-  }
-  return R_TRUE;
+void debruijn_print(char* name) {
+  printf("%s\n", name);
+  printf("\n");
 }

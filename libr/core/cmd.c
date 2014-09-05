@@ -45,7 +45,6 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_search.c"
-#include "cmd_debruijn.c"
 
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
@@ -1680,5 +1679,4 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
-	r_cmd_add (core->rcmd, "DeBruijn", "cyclic pattern", &cmd_debruijn);
 }
