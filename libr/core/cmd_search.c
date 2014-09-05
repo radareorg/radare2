@@ -825,7 +825,7 @@ static int cmd_search(void *data, const char *input) {
 	default:{
 		const char* help_msg[] = {
 			"Usage:", "/[amx/] [arg]", "Search",
-			"/","foo\\x00", "search for string 'foo\\0'",
+			"/"," foo\\x00", "search for string 'foo\\0'",
 			"/!", " ff", "search for first occurrence not matching",
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 			"//", "", "repeat last search",
