@@ -110,7 +110,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
 		int len;
 		char *file = r_file_slurp (pathname+7, &len);
-		mal->buf = r_gunzip (file, len, &mal->size);
+		mal->buf = r_inflate (file, len, &mal->size);
 		if (mal->buf) {
 			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
 				mal->fd, pathname, rw, mode,mal);
