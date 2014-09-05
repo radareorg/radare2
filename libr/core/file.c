@@ -660,9 +660,9 @@ R_API void r_core_file_free(RCoreFile *cf) {
 	if (!res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		cf->alive = 0;
-		const RIO *io = cf->desc ? cf->desc->io : NULL;
+		RIO *io = cf->desc ? cf->desc->io : NULL;
 
-		if (io && cf->map) r_io_map_del_at ((RIO *)io, cf->map->from);
+		if (io && cf->map) r_io_map_del_all (io, cf->map->fd);
 		if (io) r_io_close ((RIO *) io, cf->desc);
 		cf->desc = NULL;
 		cf->map = NULL;
