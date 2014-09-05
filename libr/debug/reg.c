@@ -5,43 +5,45 @@
 #include <r_reg.h>
 
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
-	ut8 buf[4096]; // XXX hacky!
-	int next, size, ret = R_FALSE;
-	if (!dbg || !dbg->reg || dbg->pid == -1)
+	int i, size;
+
+	if (!dbg || !dbg->reg || !dbg->h)
 		return R_FALSE;
-	if (type == -1) {
-		type = R_REG_TYPE_GPR;
-		next = R_REG_TYPE_DRX;
-	} else next = 0;
-repeat:
-	if (write) {
-		if (dbg && dbg->h && dbg->h->reg_write) {
-			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
-			if (!dbg->h->reg_write (dbg, type, buf, sizeof (buf)))
+
+	// Theres no point in syncing a dead target
+	if (r_debug_is_dead(dbg))
+		return R_FALSE;
+
+	// Check if the functions needed are available
+	if (write && !dbg->h->reg_write)
+		return R_FALSE;
+	if (!write && !dbg->h->reg_read)
+		return R_FALSE;
+
+	// Sync all the types sequentially if asked
+	i = (type != R_REG_TYPE_ALL) ? R_REG_TYPE_GPR : type;
+
+	do {
+		if (write) {
+			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
+			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
 				eprintf ("r_debug_reg: error writing registers\n");
-			else ret = R_TRUE;
-		} //else eprintf ("r_debug_reg: cannot set registers\n");
-	} else {
-		/* read registers from debugger backend to dbg->regs */
-		if (dbg && dbg->h && dbg->h->reg_read) {
-			size = dbg->h->reg_read (dbg, type, buf, sizeof (buf));
-			if (size == 0) {
-				eprintf ("r_debug_reg: error reading registers pid=%d\n", dbg->pid);
-			} else {
-				ret = r_reg_set_bytes (dbg->reg, type, buf, size);
+				return R_FALSE;
 			}
-		} //else eprintf ("r_debug_reg: cannot read registers\n");
-	}
-	if (next) {
-		type = next;
-		switch (next) {
-		case R_REG_TYPE_FPU: next = R_REG_TYPE_DRX; break;
-		case R_REG_TYPE_DRX: next = 0; break;
-		default: next = 0; break;
+		} else {
+			// TODO : Get an exact size of the profile
+			ut8 buf[2048];
+			size = dbg->h->reg_read (dbg, i, buf, sizeof (buf));
+			if (!size) {
+				eprintf ("r_debug_reg: error reading registers\n");
+				return R_FALSE;
+			}
+			r_reg_set_bytes (dbg->reg, i, buf, size);
 		}
-		goto repeat;
-	}
-	return ret;
+		// Continue the syncronization or just stop if it was asked only for a single type of regs 
+	} while(i++ < R_REG_TYPE_LAST && type != R_REG_TYPE_ALL);
+
+	return R_TRUE;
 }
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
