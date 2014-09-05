@@ -41,7 +41,10 @@ shlr/java/out.exe
 shlr/sdb/sdb
 shlr/sdb/sdb.exe
 shlr/sdb/src/sdb
+shlr/sdb/src/.sdb
 shlr/sdb/src/sdb.exe
+shlr/sdb/src/.sdb.exe
 shlr/sdb/src/sdb-version.h
 shlr/sdb/src/libsdb.so*
 shlr/capstone/
+radare2-w32-*
