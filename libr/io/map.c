@@ -100,12 +100,26 @@ R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd) {
 	return map;
 }
 
+static RList *r_io_map_get_maps_in_range_prepend(RIO *io, ut64 addr, ut64 endaddr) {
+	RIOMap *map;
+	RListIter *iter;
+	RList *maps = r_list_new ();
+	maps->free = NULL;
+	r_list_foreach (io->maps, iter, map) {
+		if (map->from <= addr && addr < map->to) r_list_append(maps, map);
+		//if (map->from == addr && endaddr == map->to) r_list_prepend(maps, map);
+		if (map->from < endaddr && endaddr < map->to) r_list_prepend(maps, map);
+		if (addr <= map->from && map->to <= endaddr) r_list_prepend(maps, map);
+	}
+	return maps;
+}
+
 R_API RIOMap *r_io_map_resolve_in_range (RIO *io, ut64 addr, ut64 endaddr, int fd) {
 	RList *maps;
 	RIOMap *map;
 	if (!io || !io->maps)
 		return NULL;
-	maps = r_io_map_get_maps_in_range (io, addr, endaddr);
+	maps = r_io_map_get_maps_in_range_prepend (io, addr, endaddr);
 	map = r_io_map_resolve_from_list (maps, fd);
 	r_list_free (maps);
 	return map;
