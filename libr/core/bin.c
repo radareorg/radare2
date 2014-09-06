@@ -7,10 +7,15 @@
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 
 static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 laddr) {
-	// hackaround to make -1 be va=0 and 0 to be no-laddr
-	if (baddr == 0) {
-		// its an object, so load it at base 0
-		va = 2;
+	if (bin && bin->cur && bin->cur->o && bin->cur->o->info) {
+		if (bin->cur->o->info->type[0] != 'E') {
+			// if its not an executable, use va = 2 mode to load the syms
+			// hackaround to make -1 be va=0 and 0 to be no-laddr
+			if (baddr == 0) {
+				// its an object, so load it at base 0
+				va = 2;
+			}
+		}
 	}
 	if (laddr == UT64_MAX)
 		va = 0;
