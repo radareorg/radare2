@@ -212,15 +212,40 @@ static int computeStructSize(char *fmt) {
 	*end = 0;
 	for (i=0; i<strlen(fmt); i++) {
 		switch (fmt[i]) {
+			case 'f':
+				size += 4;
+				break;
+			case 'c':
+				size++;
+				break;
 			case 'i':
 				size += 4;
 				break;
 			case 'w':
 				size += 2;
 				break;
+			case 'q':
+				size += 8;
+				break;
+			case 'd':
+				size += 4;
+				break;
+			case 's':
+				size += 4;
+				break;
+			case 'S':
+				size += 8;
+				break;
+			case ':':
+				size += 4;
+				break;
+			case '.':
+				size += 1;
+				break;
 			case '*':
 				size += 4;
 				i++;
+				break;
 				// TODO continue list
 			default:
 				break;
@@ -230,7 +255,7 @@ static int computeStructSize(char *fmt) {
 	return size;
 }
 
-static int r_print_format_struct(const RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
+static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
 	const char *fmt;
 	if ((slide%100) > 14) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
