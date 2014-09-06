@@ -117,7 +117,7 @@ static int rafind_open(char *file) {
 			bsize = to-cur;
 			last=1;
 		}
-		ret = r_io_read_at (io, cur, buf, bsize);
+		ret = r_io_pread (io, cur, buf, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
 		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
