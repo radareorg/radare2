@@ -285,7 +285,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 		arg = end + 1;
 	}
 
-	if (*arg=='\0') {
+	if (*arg=='\0' || *arg=='?') {
 		print_format_help (p);
 		goto beach;
 	}
@@ -416,12 +416,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				tmp = (p->bits == 64)? 'q': 'x';
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
-#if 0
-			case '?': // help
-				print_format_help (p);
-				i = len; // exit
-				continue;
-#endif
 			}
 
 			if (isptr == 3) {
