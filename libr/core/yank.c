@@ -45,7 +45,7 @@ static int perform_mapped_file_yank (RCore *core, ut64 offset, ut64 len, const c
 		ut64 load_align = r_config_get_i (core->config,
 			"file.loadalign");
 		RIOMap * map = NULL;
-		yankfd = r_io_open (core->io, filename, R_IO_READ, 0644);
+		yankfd = r_io_open_nomap (core->io, filename, R_IO_READ, 0644);
 		// map the file in for IO operations.
 		if (yankfd && load_align) {
 			yank_file_sz = r_io_size (core->io);

@@ -97,7 +97,7 @@ R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, i
 		return NULL;
 	if (hlen>0) snprintf (uri, urilen, "%s://%s", urihandler, file);
 	else strncpy (uri, file, urilen);
-	ret = r_io_open (io, uri, flags, mode);
+	ret = r_io_open_nomap (io, uri, flags, mode);
 	free (uri);
 	return ret;
 }
@@ -177,7 +177,7 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 	return list_fds;
 }
 
-R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
+R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc;
 	if (io->redirect)
 		return NULL;
@@ -215,6 +215,10 @@ R_API RIODesc *r_io_open_at (RIO *io, const char *file, int flags, int mode, ut6
 		r_io_map_new (io, desc->fd, mode, 0, maddr, size);
 	} else	eprintf ("Unable to open file: %s\n", file);
 	return desc;
+}
+
+R_API RIODesc *r_io_open (RIO *io, const char *file, int flags, int mode) {
+	return r_io_open_at (io, file, flags, mode, 0LL);
 }
 
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
@@ -746,7 +750,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->size = r_io_size;
 	bnd->seek = r_io_seek;
 
-	bnd->desc_open = r_io_open;
+	bnd->desc_open = r_io_open_nomap;
 	bnd->desc_close = r_io_close;
 	bnd->desc_read = r_io_desc_read;
 	bnd->desc_size = r_io_desc_size;

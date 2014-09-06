@@ -389,7 +389,7 @@ int main(int argc, char **argv) {
 				eprintf ("rahash2: Cannot hash directories\n");
 				return 1;
 			}
-			if (!r_io_open (io, argv[i], 0, 0)) {
+			if (!r_io_open_nomap (io, argv[i], 0, 0)) {
 				eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 				return 1;
 			}

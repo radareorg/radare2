@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 	if (io == NULL)
 		return 1;
 	file = argc>1?argv[1]:"/bin/ls";
-	fd = r_io_open(io, file, R_IO_READ, 0);
+	fd = r_io_open_nomap(io, file, R_IO_READ, 0);
 	if (fd == NULL) {
 		printf("Cannot open file '%s'\n", file);
 		r_io_free (io);

@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
 	io = r_io_new();
 
-	fd = r_io_open(io, argv[1], R_IO_READ, 0);
+	fd = r_io_open_nomap (io, argv[1], R_IO_READ, 0);
 	if (fd == NULL) {
 		eprintf ("Cannot open file\n");
 		return 1;

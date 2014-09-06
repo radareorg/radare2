@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 	io = r_io_new();
 	if (io == NULL)
 		return 1;
-	fd = r_io_open(io, argc>1?argv[1]:"/etc/issue", R_IO_READ, 0);
+	fd = r_io_open_nomap(io, argc>1?argv[1]:"/etc/issue", R_IO_READ, 0);
 	memset(buf, '\0', 4096);
 //r_io_set_fd(&io, fd);
 	r_io_read (io, (ut8*)buf, sizeof (buf));

@@ -15,13 +15,13 @@ int main(int argc, char **argv) {
 	printf ("Supported IO pluggins:\n");
 	r_io_plugin_list (io);
 
-	fd = r_io_open (io, "dbg:///bin/ls", 0, 0);
+	fd = r_io_open_nomap (io, "dbg:///bin/ls", 0, 0);
 	if (!fd) {
 		printf("Cannot open dbg:///bin/ls\n");
 		goto beach;
 	}
 //	r_io_set_fd(io, ret);
-	printf ("r_io_open dbg:///bin/ls' = %d\n", io->fd->fd);
+	printf ("r_io_open_nomap dbg:///bin/ls' = %d\n", io->fd->fd);
 
 	{
 		/* dump process memory */

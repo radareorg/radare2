@@ -594,7 +594,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		mode = 4|2;
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
-	fd = r_io_open (r->io, file, mode, 0644);
+	fd = r_io_open_nomap (r->io, file, mode, 0644);
 	if (fd == NULL && openmany > 2) {
 		// XXX - make this an actual option somewhere?
 		fh = r_core_file_open_many (r, file, mode, loadaddr);
@@ -604,7 +604,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		if (mode & 2) {
 			if (!r_io_create (r->io, file, 0644, 0))
 				return NULL;
-			if (!(fd = r_io_open (r->io, file, mode, 0644)))
+			if (!(fd = r_io_open_nomap (r->io, file, mode, 0644)))
 				return NULL;
 		} else return NULL;
 	}
