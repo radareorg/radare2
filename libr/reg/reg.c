@@ -71,6 +71,7 @@ R_API void r_reg_free_internal(RReg *reg) {
 		r_list_purge (reg->regset[i].regs);
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
+	reg->size = 0;
 }
 
 R_API void r_reg_free(RReg *reg) {
@@ -85,15 +86,10 @@ R_API void r_reg_free(RReg *reg) {
 }
 
 R_API RReg *r_reg_new() {
-	int i;
 	RRegArena *arena;
-	RReg *reg = R_NEW (RReg);
-	reg->bits = 0;
-	reg->iters = 0;
-	reg->profile = NULL;
-	reg->reg_profile_str = NULL;
-	for (i=0; i<R_REG_NAME_LAST; i++)
-		reg->name[i] = NULL;
+	RReg *reg = R_NEW0 (RReg);
+	int i;
+
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = r_reg_arena_new (0);
 		if (!arena) {
@@ -108,11 +104,6 @@ R_API RReg *r_reg_new() {
 	return reg;
 }
 
-static RRegItem *r_reg_item_new() {
-	RRegItem *item = R_NEW0 (RRegItem);
-	return item;
-}
-
 R_API int r_reg_type_by_name(const char *str) {
 	int i;
 	for (i=0; types[i] && i<R_REG_TYPE_LAST; i++)
@@ -124,129 +115,136 @@ R_API int r_reg_type_by_name(const char *str) {
 	return -1;
 }
 
-/* TODO: make this parser better and cleaner */
-static int r_reg_set_word(RReg *reg, RRegItem *item, int idx, char *word) {
-	int ret = R_TRUE;
-	switch (idx) {
-	case 0:
-		item->type = r_reg_type_by_name (word);
-		if (item->type == -1) {
-			eprintf ("Invalid reg type\n");
-			ret = R_FALSE;
-		}
-		break;
-	case 1:
-		item->name = strdup (word);
-		break;
-	/* spaguetti ftw!!1 */
-	case 2:
-		if (*word=='.') // XXX; this is kinda ugly
-			item->size = atoi (word+1);
-		else item->size = atoi (word)*8;
-		reg->bits |= item->size;
-		break;
-	case 3:
-		if (*word=='.') // XXX; this is kinda ugly
-			item->offset = atoi (word+1);
-		else item->offset = atoi (word)*8;
-		break;
-	case 4:
-		if (*word=='.') // XXX; this is kinda ugly
-			item->packed_size = atoi (word+1);
-		else item->packed_size = atoi (word)*8;
-		break;
-	case 5:
-		item->flags = strdup (word);
-		break;
-	default:
-		eprintf ("register set fail (%s)\n", word);
-		ret = R_FALSE;
-	}
-	return ret;
+static int parse_alias (RReg *reg, char **tok, const int n) {
+	int role;
+
+	if (n != 2)
+		return R_FALSE;
+
+	role = r_reg_get_name_idx(tok[0] + 1);
+	return r_reg_set_name(reg, role, tok[1]);
 }
 
-/* TODO: make this parser better and cleaner */
-R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
+// Sizes prepended with a dot are expressed in bits
+#define parse_size(c) \
+	((c)[0] == '.') ? \
+		atoi((c)+1) : \
+		atoi((c)) << 3;
+
+static int parse_def (RReg *reg, char **tok, const int n) {
 	RRegItem *item;
-	int setname = -1;
-	int ret = R_FALSE;
-	int lastchar = 0;
-	int chidx = 0;
-	int word = 0;
-	char buf[512];
+	int type;
 
-	if (!str||!reg)
+	if (n != 5 && n != 6)
 		return R_FALSE;
-	if (reg->reg_profile_str && !strcmp (str, reg->reg_profile_str))
-		return R_TRUE;
-	reg->bits = 0;
-	// XXX double free
-	free (reg->reg_profile_str);
-	reg->reg_profile_str = strdup (str);
-	memset (buf, 0, sizeof (buf));
-	/* format file is: 'type name size offset packedsize' */
-	r_reg_free_internal (reg);
-	item = r_reg_item_new ();
 
-	while (*str) {
-		if (*str == '#') {
-			/* skip until newline */
-			while (*str && *str != '\n') str++;
-			continue;
-		}
-		switch (*str) {
-		case ' ':
-		case '\t':
-			for (;str[1]==' '||str[1]=='\t';str++); // skip spaces
-			/* UGLY PASTAFARIAN PARSING */
-			if (word==0 && *buf=='=') {
-				setname = r_reg_get_name_idx (buf+1);
-				if (setname == -1)
-					eprintf ("Invalid register type: '%s'\n", buf+1);
-			} else
-			if (lastchar != ' ' && lastchar != '\t')
-				r_reg_set_word (reg, item, word, buf);
-			chidx = 0;
-			word++;
-			break;
-		case '\n':
-			if (setname != -1)
-				r_reg_set_name (reg, setname, buf);
-			else if (word>3) {
-				r_reg_set_word (reg, item, word, buf);
-				if (item->name != NULL) {
-					if (reg->regset[item->type].regs) {
-						if (item->size == 0) {
-							eprintf ("Missing size for register '%s'\n", item->name);
-						} else {
-							r_list_append (reg->regset[item->type].regs, item);
-							item = r_reg_item_new ();
-						}
-					} else eprintf ("REGSET is null wtf\n");
-				}
-			}
-			chidx = word = 0;
-			*buf = 0;
-			setname = -1;
-			break;
-		default:
-			if (chidx>128) {// WTF!!
-				eprintf ("r_reg_set_profile_string: parse fail\n");
-				r_reg_item_free (item);
-				r_reg_fit_arena (reg);
-				return R_FALSE;
-			}
-			buf[chidx++] = *str;
-			buf[chidx] = 0;
-			break;
-		}
-		lastchar = *str;
-		str++;
+	type = r_reg_type_by_name (tok[0]);
+	if (type < 0)
+		return R_FALSE;
+
+	item = R_NEW0 (RRegItem);
+
+	item->type = type;
+	item->name = strdup (tok[1]);
+	item->size = parse_size (tok[2]);
+	item->offset = parse_size (tok[3]);
+	item->packed_size = parse_size (tok[4]); 
+
+	if (!item->size) {
+		free (item);
+		return R_FALSE;
 	}
-	r_reg_item_free (item);
+
+	// This is optional
+	if (n == 6)
+		item->flags = strdup (tok[5]);
+
+	// Update the overall profile size
+	if (reg->size <= item->offset)
+		reg->size = item->offset + item->size;
+
+	r_list_append (reg->regset[item->type].regs, item);
+
+	return R_TRUE;
+}
+
+#define PARSER_MAX_TOKENS 8
+
+R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
+	char *tok[PARSER_MAX_TOKENS];
+	char tmp[128];
+	int i, j, l;
+	const char *p = str;
+
+	if (!reg || !str)
+		return R_FALSE;
+
+	// Same profile, no need to change
+	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str))
+		return R_TRUE;
+
+	// Purge the old registers
+	r_reg_free_internal (reg);
+
+	// Cache the profile string (const)
+	reg->reg_profile_str = str;
+
+	// Make line numbers start from 1
+	l = 1;
+	// For every line
+	do {
+		j = 0;
+		// Skip comment lines
+		if (*p == '#')
+			while (*p++ != '\n')
+				;
+		// For every word
+		while (*p) {
+			// Skip the whitespace
+			while (*p == ' ' || *p == '\t')
+				p++;
+			// EOL ?
+			if (*p == '\n')
+				break;
+			// Gather a handful of chars
+			for (i = 0; isprint (*p) && i < sizeof(tmp);)
+				tmp[i++] = *p++;
+			tmp[i] = '\0';
+			// Limit the number of tokens 
+			if (j > PARSER_MAX_TOKENS)
+				break;
+			// Save the token
+			tok[j++] = strdup (tmp);
+		}
+		// Empty line, eww
+		if (j) {
+			// Do the actual parsing 
+			char *first = tok[0];
+			// Check whether it's defining an alias or a register
+			int r = (*first == '=') ?
+				parse_alias (reg, tok, j) :
+				parse_def (reg, tok, j);
+			// Warn the user and try to recover
+			if (!r)
+				eprintf("%s: Parse error @ line %d\n", __FUNCTION__, l);
+			// Clean up
+			for (i = 0; i < j; i++)
+				free(tok[i]);
+		}
+		// Increment the line counter
+		l++;
+	} while(*p++);
+
+	// Align to byte boundary if needed
+	if (reg->size&7)
+		reg->size += 8 - (reg->size&7);
+
+	// Transform to bytes
+	reg->size >>= 3;
+
 	r_reg_fit_arena (reg);
 
-	return *str? ret: R_TRUE;
+	return R_TRUE;
 }
 
 R_API int r_reg_set_profile(RReg *reg, const char *profile) {
@@ -254,7 +252,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	char *base, *str, *file;
 	/* TODO: append .regs extension to filename */
 	if ((str = r_file_slurp (profile, NULL))==NULL) {
- 		// XXX we must define this varname in r_lib.h /compiletime/
+		// XXX we must define this varname in r_lib.h /compiletime/
 		base = r_sys_getenv ("LIBR_PLUGINS");
 		if (base) {
 			file = r_str_concat (base, profile);
