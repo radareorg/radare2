@@ -152,7 +152,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 		rm -f last ; ln -fs $(VERSION) last
 	cd "$(call rmdblslash,$(DESTDIR)/$(PREFIX)/share/radare2/)" ;\
 		rm -f last ; ln -fs $(VERSION) last
-	ln -fs "${PWD}/doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main"
+	ln -fs "${PWD}/doc/hud" "${DLIBDIR}/radare2/${VERSION}/hud/main"
 	ln -fs "${PWD}/libr/lang/p/radare.lua" \
 		"${DLIBDIR}/radare2/${VERSION}/radare.lua"
 	mkdir -p "$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)"
