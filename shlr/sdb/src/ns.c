@@ -170,8 +170,8 @@ SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 	char *ptr, *str;
 	char *slash;
 
-	if (!s || !path)
-		return NULL;
+	if (!s || !path || !*path)
+		return s;
 	ptr = str = strdup (path);
 	do {
 		slash = strchr (ptr, '/');
