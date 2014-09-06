@@ -378,8 +378,9 @@ R_API void r_cons_flush() {
 	else r_cons_write (I.buffer, I.buffer_len);
 	// add newline if there's no one in buffer. this fixes the problem of printing
 	// stuff without newline to the console and the prompt hides it.
-	if (I.buffer[I.buffer_len-1]!= '\n')
-		write (2, "\n", 1);
+	if (I.buffer_len>0)
+		if (I.buffer[I.buffer_len-1]!= '\n')
+			write (2, "\n", 1);
 	r_cons_reset ();
 }
 
