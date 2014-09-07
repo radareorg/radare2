@@ -189,7 +189,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #else
 		if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
 #endif
-			eprintf ("ptrace-traceme failed\n");
+			r_sys_perror ("ptrace-traceme");
 			exit (MAGIC_EXIT);
 		}
 		{
