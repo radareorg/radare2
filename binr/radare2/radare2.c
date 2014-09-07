@@ -429,8 +429,8 @@ int main(int argc, char **argv, char **envp) {
 				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 				if (perms & R_IO_WRITE) {
 					if (!fh) {
-						r_io_create (r.io, pfile, 0644, 0);
-						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						if (r_io_create (r.io, pfile, 0644, 0))
+							fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					}
 				}
 			}
