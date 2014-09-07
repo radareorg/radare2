@@ -292,6 +292,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		if (col==2) append (echars, "|");
 
 		if (marks) { // show comments and flags
+			int hasline = 0;
 			char* out = calloc (nb_cons_cols+10, sizeof(char));
 			memset (out, ' ', nb_cons_cols-1);
 			for (j=0; j<nb_cols; j++) {
@@ -300,11 +301,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					if (j%2) off--;
 					memcpy (out+off, note[j], //avoid overflow
 						R_MIN(strlen (note[j]), nb_cons_cols-(off+13)));
+					hasline = (out[off] != ' ');
 					free (note[j]);
 				}
 			}
-			r_cons_strcat (out);
-			r_cons_newline ();
+			if (hasline) {
+				r_cons_strcat (out);
+				r_cons_newline ();
+			}
 			marks = R_FALSE;
 			free (out);
 		}
