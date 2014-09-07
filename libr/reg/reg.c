@@ -232,12 +232,16 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			int r = (*first == '=') ?
 				parse_alias (reg, tok, j) :
 				parse_def (reg, tok, j);
-			// Warn the user and try to recover
-			if (!r)
-				eprintf("%s: Parse error @ line %d\n", __FUNCTION__, l);
 			// Clean up
 			for (i = 0; i < j; i++)
 				free(tok[i]);
+			// Warn the user if something went wrong
+			if (!r) {
+				eprintf("%s: Parse error @ line %d\n", __FUNCTION__, l);
+				// Clean up
+				r_reg_free_internal (reg);
+				return R_FALSE;
+			}
 		}
 		// Increment the line counter
 		l++;
