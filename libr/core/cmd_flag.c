@@ -393,6 +393,7 @@ static int cmd_flag(void *data, const char *input) {
 		"fa"," [name] [alias]","alias a flag to evaluate an expression",
 		"fb"," [addr]","set base address for new flags",
 		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
+		"fc"," [name] [color]","set color for given flag",
 		"fC"," [name] [cmt]","set comment for given flag",
 		"fd"," addr","return flag+delta",
 		"fj","","list flags in JSON format",

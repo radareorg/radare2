@@ -92,6 +92,8 @@ typedef struct r_cons_palette_t {
 	char *ret;
 	char *swi;
 	char *trap;
+#define R_CONS_PALETTE_LIST_SIZE 8
+	char *list[R_CONS_PALETTE_LIST_SIZE];
 } RConsPalette;
 
 typedef void (*RConsEvent)(void *);

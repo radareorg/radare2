@@ -40,6 +40,14 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.ret = Color_RED;
 	cons->pal.swi = Color_MAGENTA;
 	cons->pal.trap = Color_BRED;
+
+	cons->pal.list[0] = strdup (Color_RED);
+	cons->pal.list[1] = strdup (Color_YELLOW);
+	cons->pal.list[2] = strdup (Color_WHITE);
+	cons->pal.list[3] = strdup (Color_CYAN);
+	cons->pal.list[4] = strdup (Color_MAGENTA);
+	cons->pal.list[5] = strdup (Color_GRAY);
+	cons->pal.list[6] = strdup (Color_BLUE);
 }
 
 struct {
@@ -79,6 +87,10 @@ R_API void r_cons_pal_random() {
 		b = r_num_rand (0xf);
 		sprintf (val, "rgb:%x%x%x", r, g, b);
 		r_cons_pal_set (k, val);
+	}
+RCons *cons = r_cons_singleton ();
+	for (i=0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
+		cons->pal.list[i] = r_cons_color_random (0);
 	}
 }
 

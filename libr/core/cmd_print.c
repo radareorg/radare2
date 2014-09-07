@@ -121,6 +121,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
+	int color_idx = 0;
 	char *bytes, *chars;
 	char *ebytes, *echars; //They'll walk over the vars above
 	ut64 fend = UT64_MAX;
@@ -128,7 +129,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int i, j, low, max, here, rows;
 	boolt marks = R_FALSE, setcolor = R_TRUE, hascolor = R_FALSE;
 	ut8 ch;
-	const char* colors[] = Colors_PLAIN;
+	const char **colors = &core->cons->pal.list;
+#if 0
+	const char *colors[] = {
+		Color_WHITE, /*Color_GREEN,*/ Color_YELLOW, Color_RED,
+		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
+	};
+#endif
+//	const char* colors[] = Colors_PLAIN;
 	const int col = core->print->col;
 	RFlagItem *flag, *current_flag = NULL;
 	char** note;
@@ -204,6 +212,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				fend = addr + j + flag->size;
 				note[j] = r_str_prefix (strdup(flag->name), "/");
 				marks = R_TRUE;
+				color_idx++;
+				color_idx %= R_CONS_PALETTE_LIST_SIZE;
 				current_flag = flag;
 			} else {
 				// Are we past the current flag?
@@ -224,9 +234,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						append (echars, ansicolor);
 						free (ansicolor);
 					} else { // Use "random" colours
-						int idx = rand() % (sizeof(colors)/sizeof(char*));
-						append (ebytes, colors[idx]);
-						append (echars, colors[idx]);
+						append (ebytes, colors[color_idx]);
+						append (echars, colors[color_idx]);
 					}
 				} else {
 					append (ebytes, Color_INVERT);

@@ -1250,23 +1250,44 @@ R_API void r_core_visual_define (RCore *core) {
 		off += cur;
 		p += cur;
 	}
-	r_cons_printf ("Define current block as:\n"
-		" b  - set as byte\n"
-		" B  - set as short word (2 bytes)\n"
-		" c  - set as code\n"
-		" d  - set as data\n"
-		" e  - end of function\n"
-		" f  - analyze function\n"
-		" F  - format\n"
-		" q  - quit/cancel operation\n"
-		" r  - rename function\n"
-		" s  - set string\n"
-		" S  - set strings in current block\n"
-		" u  - undefine metadata here\n"
-		" w  - set as 32bit word\n"
-		" W  - set as 64bit word\n"
-		" q  - quit this menu\n"
-	);
+	{
+		int h;
+		(void)r_cons_get_size (&h);
+		h-=18;
+		if (h<0) {
+			r_cons_clear00 ();
+		} else {
+			r_cons_gotoxy (0, h);
+		}
+	}
+	const char *lines[] = { ""
+		,"[Vd]- Define current block as:"
+		," $    define flag size"
+		," b    set as byte"
+		," B    set as short word (2 bytes)"
+		," c    set as code"
+		," C    define flag color (fc)"
+		," d    set as data"
+		," e    end of function"
+		," f    analyze function"
+		," F    format"
+		," q    quit/cancel operation"
+		," r    rename function"
+		," s    set string"
+		," S    set strings in current block"
+		," u    undefine metadata here"
+		," w    set as 32bit word"
+		," W    set as 64bit word"
+		," q    quit this menu"
+		, NULL};
+	{
+		int i;
+		for (i=0;lines[i];i++) {
+			r_cons_fill_line ();
+			r_cons_printf ("\r%s\n", lines[i]);
+		}
+	}
+
 	r_cons_flush ();
 
 	// get ESC+char, return 'hjkl' char
@@ -1295,6 +1316,45 @@ R_API void r_core_visual_define (RCore *core) {
 	case 'b':
 		r_meta_cleanup (core->anal, off, off+1);
 		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+1, "");
+		break;
+	case 'C':
+		{
+			RFlagItem *item = r_flag_get_i (core->flags, off);
+			if (item) {
+				char cmd[128];
+				r_cons_show_cursor (R_TRUE);
+				r_cons_flush ();
+				r_line_set_prompt ("color: ");
+				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) > 0) {
+					r_flag_color (core->flags, item, cmd);
+					r_cons_set_raw (1);
+					r_cons_show_cursor (R_FALSE);
+				}
+			} else {
+				eprintf ("Sorry. No flag here\n");
+				r_cons_any_key ();
+			}
+		}
+		break;
+	case '$':
+		{
+			RFlagItem *item = r_flag_get_i (core->flags, off);
+			if (item) {
+				char cmd[128];
+				r_cons_printf ("Current flag size is: %d\n", item->size);
+				r_cons_show_cursor (R_TRUE);
+				r_cons_flush ();
+				r_line_set_prompt ("new size: ");
+				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) > 0) {
+					item->size = r_num_math (core->num, cmd);
+					r_cons_set_raw (1);
+					r_cons_show_cursor (R_FALSE);
+				}
+			} else {
+				eprintf ("Sorry. No flag here\n");
+				r_cons_any_key ();
+			}
+		}
 		break;
 	case 'w':
 		{
