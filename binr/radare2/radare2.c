@@ -431,6 +431,7 @@ int main(int argc, char **argv, char **envp) {
 					if (!fh) {
 						if (r_io_create (r.io, pfile, 0644, 0))
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						else eprintf ("r_io_create: Permission denied.\n");
 					}
 				}
 			}
