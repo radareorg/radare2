@@ -142,7 +142,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	nb_cons_cols = 12 + nb_cols * 2 + (nb_cols/2);
 	rows = len/nb_cols;
 
-	chars = calloc (nb_cols * 4, sizeof(char));
+	chars = calloc (nb_cols * 10, sizeof(char));
 	if (!chars)
 		return;
 	note = calloc (nb_cols, sizeof(char*));
@@ -150,7 +150,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		free (chars);
 		return;
 	}
-	bytes = calloc (nb_cons_cols*4, sizeof(char));
+	bytes = calloc (nb_cons_cols*10, sizeof(char));
 	if (!bytes) {
 		free (chars);
 		free (note);
@@ -283,7 +283,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		if (col==2) append (echars, "|");
 
 		if (marks) { // show comments and flags
-			char* out = calloc (nb_cons_cols+1, sizeof(char));
+			char* out = calloc (nb_cons_cols+10, sizeof(char));
 			memset (out, ' ', nb_cons_cols-1);
 			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
