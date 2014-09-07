@@ -61,13 +61,17 @@ R_API const char *r_reg_get_name(RReg *reg, int role) {
 
 R_API void r_reg_free_internal(RReg *reg) {
 	int i;
-	for (i=0; i<R_REG_NAME_LAST; i++) {
+
+	free (reg->reg_profile_str);
+	reg->reg_profile_str = NULL;
+
+	for (i = 0; i < R_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {
 			free (reg->name[i]);
 			reg->name[i] = NULL;
 		}
 	}
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
+	for (i = 0; i<R_REG_TYPE_LAST; i++) {
 		r_list_purge (reg->regset[i].regs);
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
@@ -76,8 +80,11 @@ R_API void r_reg_free_internal(RReg *reg) {
 
 R_API void r_reg_free(RReg *reg) {
 	int i;
-	if (!reg) return;
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
+
+	if (!reg) 
+		return;
+
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_purge (reg->regset[i].pool);
 		reg->regset[i].pool = NULL;
 	}
@@ -186,7 +193,8 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	// Purge the old registers
 	r_reg_free_internal (reg);
 
-	// Cache the profile string (const)
+	// Cache the profile string
+	// 'str' is always heap-allocated
 	reg->reg_profile_str = str;
 
 	// Make line numbers start from 1
@@ -248,10 +256,10 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 }
 
 R_API int r_reg_set_profile(RReg *reg, const char *profile) {
-	int ret = R_FALSE;
 	char *base, *str, *file;
-	/* TODO: append .regs extension to filename */
-	if ((str = r_file_slurp (profile, NULL))==NULL) {
+
+	str = r_file_slurp (profile, NULL);
+	if (!str) {
 		// XXX we must define this varname in r_lib.h /compiletime/
 		base = r_sys_getenv ("LIBR_PLUGINS");
 		if (base) {
@@ -260,12 +268,13 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 			free (file);
 		}
 	}
-	if (str) {
-		ret = r_reg_set_profile_string (reg, str);
-		free (str);
+
+	if (!str) {
+		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
+		return R_FALSE;
 	}
-	else eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
-	return ret;
+	
+	return r_reg_set_profile_string (reg, str);
 }
 
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {

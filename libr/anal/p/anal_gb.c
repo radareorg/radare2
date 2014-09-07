@@ -1352,7 +1352,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 */
 
 static int set_reg_profile(RAnal *anal) {
-	return r_reg_set_profile_string (anal->reg,
+	const char *p =
 		"=pc	mpc\n"
 		"=sp	sp\n"
 		"=a0	af\n"
@@ -1389,7 +1389,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	mbcrom	.16	14	0\n"
 		"gpr	mbcram	.16	16	0\n"
 
-		"gpr	ime	.1	18	0\n");
+		"gpr	ime	.1	18	0\n";
+	return r_reg_set_profile_string (anal->reg, strdup (p));
 }
 
 struct r_anal_plugin_t r_anal_plugin_gb = {

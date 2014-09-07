@@ -348,7 +348,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 static int set_reg_profile(RAnal *anal) {
-	return r_reg_set_profile_string (anal->reg,
+	char *p =
 		"=pc    pc\n"
 		"=sp    sp\n"
 		"=a0    a0\n"
@@ -387,8 +387,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	sp	.32	116	0\n"
 		"gpr	fp	.32	120	0\n"
 		"gpr	ra	.32	124	0\n"
-		"gpr	pc	.32	128	0\n"
-	);
+		"gpr	pc	.32	128	0\n";
+	return r_reg_set_profile_string (anal->reg, strdup (p));
 }
 
 RAnalPlugin r_anal_plugin_mips_cs = {

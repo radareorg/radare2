@@ -215,11 +215,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 
 static int set_reg_profile(RAnal *anal) {
 	/* XXX Dupped Profiles */
-	switch (anal->bits) {
-	case 16:
-	case 32:
-		return r_reg_set_profile_string (anal->reg,
-			"=pc	r15\n"
+	const char *p32 =
+		"=pc	r15\n"
 		"=sp	r14\n" // XXX
 		"=bp	r14\n" // XXX
 		"=a0	r0\n"
@@ -246,10 +243,9 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
-		"gpr	r17	.32	68	0\n");
-	case 64:
-		return r_reg_set_profile_string (anal->reg,
-			"=pc	pc\n"
+		"gpr	r17	.32	68	0\n";
+	const char *p64 =
+		"=pc	pc\n"
 		"=sp	sp\n" // XXX
 		"=a0	x0\n"
 		"=a1	x1\n"
@@ -300,11 +296,12 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	nf	.1	.256	0	sign\n" // msb bit of last op
 		"gpr	zf	.1	.257	0	zero\n" // set if last op is 0
 		"gpr	cf	.1	.258	0	carry\n" // set if last op carries
-		"gpr	vf	.1	.515	0	overflow\n" // set if overflows
-		);
-		break;
-	}
-	return 0;
+		"gpr	vf	.1	.515	0	overflow\n"; // set if overflows
+
+	if (anal->bits != 64)
+		return r_reg_set_profile_string (anal->reg, strdup (p32));
+	else
+		return r_reg_set_profile_string (anal->reg, strdup (p64));
 }
 
 RAnalPlugin r_anal_plugin_arm_cs = {
