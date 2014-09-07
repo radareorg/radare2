@@ -57,6 +57,8 @@ static inline int wr(const int fd, const char *const data, const size_t bytes) {
 /* Return a new file descriptor to the current TTY.
  */
 int current_tty(void) {
+	return 1;
+#if 0
 	int fd;
 	const char *dev = ttyname(STDERR_FILENO);
 #if 0
@@ -76,6 +78,7 @@ int current_tty(void) {
 	if (fd == -1)
 		return -1;
 	return fd;
+#endif
 }
 
 /* As the tty for current cursor position.
