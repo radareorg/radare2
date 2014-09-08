@@ -298,7 +298,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
 					int off = (j*3) - (j/2) + 12;
-					int sz = R_MIN (strlen (note[j]), nb_cons_cols-(off+13));
+					int sz = R_MIN (strlen (note[j]), nb_cons_cols-(off));
 					if (j%2) off--;
 					memcpy (out+off, note[j], sz); //avoid overflow
 					out[off+sz] = 0;

@@ -1197,6 +1197,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	if (autoblocksize)
 	switch (core->printidx) {
 	case 0:
+	case 5:
 		scrcols = r_config_get_i (core->config, "hex.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
 		break;
