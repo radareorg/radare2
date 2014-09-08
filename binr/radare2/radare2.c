@@ -86,7 +86,7 @@ static int main_help(int line) {
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
 		" -m [addr]    map file at given address\n"
-		" -n           do not load file type information\n"
+		" -n           do not load file type information (-nn load only bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -p [prj]     set project file\n"
@@ -289,7 +289,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'L': list_io_plugins (r.io); return 0;
 		case 'm': mapaddr = r_num_math (r.num, optarg); break;
-		case 'n': run_anal = 0; break;
+		case 'n': run_anal --; break;
 		case 'N': run_rc = 0; break;
 		case 'p':
 			  if (*optarg == '-') {
@@ -457,7 +457,7 @@ int main(int argc, char **argv, char **envp) {
 		return 1;
 	//if (!has_project && run_anal) {
 #if USE_THREADS
-	if (run_anal && threaded) {
+	if (run_anal>0 && threaded) {
 		// XXX: if no rabin2 in path that may fail
 		rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
 				(debug||r.io->va)?"":"p", r.file->filename);
@@ -476,7 +476,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 
 	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
-	if (run_anal) {
+	if (run_anal>0) {
 #if USE_THREADS
 		if (!rabin_th)	
 #endif
@@ -493,6 +493,13 @@ int main(int argc, char **argv, char **envp) {
 
 			if (!r_core_bin_load (&r, filepath, baddr))
 				r_config_set (r.config, "io.va", "false");
+		}
+	} else {
+		if (run_anal<0) {
+			// PoC -- must move -rk functionalitiy into rcore
+			// this may be used with caution (r2 -nn $FILE)
+			r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
+			eprintf (".!rabin2 -rk '' '%s'\n", r.file->desc->name);
 		}
 	}
 	if (!quiet && r_cons_is_utf8 ()) {

@@ -566,13 +566,13 @@ int main(int argc, char **argv) {
 						*flagname = 0;
 						flagname = dup;
 
-						eprintf ("f %s @ %s\n", flagname, v);
+						printf ("f %s @ %s\n", flagname, v);
 					}
 					if ((flagname=strstr (dup, ".format"))) {
 						*flagname = 0;
 						flagname = dup;
 
-						eprintf ("pf.%s %s\n", flagname, v);
+						printf ("pf.%s %s\n", flagname, v);
 					}
 					free (dup);
 				}

@@ -25,8 +25,8 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: read (magic)\n");
 		return R_FALSE;
 	}
-	sdb_num_set (bin->kv, "elf.header.offset", 0, 0);
-	sdb_set (bin->kv, "elf.header.format", "qqxxxx ident ident2 type machine version entry", 0);
+	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
+	sdb_set (bin->kv, "elf_header.format", "qqxxxx ident ident2 type machine version entry", 0);
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)?
 		LIL_ENDIAN: !LIL_ENDIAN;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
@@ -78,8 +78,8 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return R_FALSE;
 	}
 	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_has_relro)(bin), 0);
-	sdb_num_set (bin->kv, "elf.phdr.offset", bin->ehdr.e_phoff, 0);
-	sdb_set (bin->kv, "elf.phdr.format", "wxxxwwww type offset vaddr paddr filesz memsz flags align", 0);
+	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
+	sdb_set (bin->kv, "elf_phdr.format", "wxxxwwww type offset vaddr paddr filesz memsz flags align", 0);
 	// Usage example:
 	// > pf `k bin/cur/info/elf.phdr.format` @ `k bin/cur/info/elf.phdr.offset`
 	return R_TRUE;
@@ -144,8 +144,8 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	memset (bin->strtab, 0, bin->strtab_size);
 	bin->shstrtab = bin->strtab;
 
-	sdb_num_set (bin->kv, "elf.strtab.offset", bin->strtab_section->sh_offset, 0);
-	sdb_num_set (bin->kv, "elf.strtab.size", bin->strtab_section->sh_size, 0);
+	sdb_num_set (bin->kv, "elf_strtab.offset", bin->strtab_section->sh_offset, 0);
+	sdb_num_set (bin->kv, "elf_strtab.size", bin->strtab_section->sh_size, 0);
 
 	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
 				bin->strtab_section->sh_size) == -1) {
