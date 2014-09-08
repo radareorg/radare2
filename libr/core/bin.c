@@ -121,8 +121,10 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if (plugin->info && plugin->name) {
 		if (!strcmp (plugin->name, "any")) {
 			if (!rawstr) {
+#if 0
 				eprintf ("NOTE: Use '-e bin.rawstr=true' or 'r2 -zz' or '.!rabin2 -zz $FILE'"
 					" to find strings on unknown file types\n");
+#endif
 				return R_FALSE;
 
 			}
