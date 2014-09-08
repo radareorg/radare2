@@ -621,6 +621,37 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data)
 	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,1,%s,>>=,%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7]);
 }
 
+static int gb_custom_daa (RAnalEsil *esil)
+{
+	ut8 a, H, C, Z;
+	if (!esil || !esil->anal || !esil->anal->reg)
+		return R_FALSE;
+	H = r_reg_getv (esil->anal->reg, "H");
+	C = r_reg_getv (esil->anal->reg, "C");
+	a = r_reg_getv (esil->anal->reg, "a");
+	esil->old = a;
+	if (r_reg_getv (esil->anal->reg, "N")) {
+		if (C)
+			a = (a - 0x60) & 0xff;
+		else	r_reg_setv (esil->anal->reg, "C", 0);
+		if (H)
+			a = (a - 0x06) & 0xff;
+	} else {
+		if (C || (a > 0x99)) {
+			a = (a + 0x60) & 0xff;
+			r_reg_setv (esil->anal, "C", 1);
+		}
+		if (H || ((a & 0x0f) > 0x09))
+			a += 0x06;;
+	}
+	esil->cur = a;
+	Z = (a == 0);
+	r_reg_setv (esil->anal->reg, "a", a);
+	r_reg_setv (esil->anal->reg, "Z", Z);
+	r_reg_setv (esil->anal->reg, "H", 0);
+	return R_TRUE;
+}
+
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len){
 	int ilen = gbOpLength (gb_op[data[0]].type);
 	if (ilen > len)
@@ -1228,8 +1259,12 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x27:				//daa
 			op->cycles = 4;
+			op->type = R_ANAL_OP_TYPE_XOR;
+			r_strbuf_set (&op->esil, "daa");
+			break;
 		case 0x10:				//stop
 			op->type = R_ANAL_OP_TYPE_NULL;
+			r_strbuf_set (&op->esil, "TODO,stop");
 			break;
 		case 0xcb:
 			op->nopcode = 2;
@@ -1393,6 +1428,17 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, strdup (p));
 }
 
+static int esil_gb_init (RAnalEsil *esil)
+{
+	r_anal_esil_set_op (esil, "daa", gb_custom_daa);
+	return R_TRUE;
+}
+
+static int esil_gb_fini (RAnalEsil *esil)
+{
+	return R_TRUE;
+}
+
 struct r_anal_plugin_t r_anal_plugin_gb = {
 	.name = "gb",
 	.desc = "Gameboy CPU code analysis plugin",
@@ -1408,7 +1454,9 @@ struct r_anal_plugin_t r_anal_plugin_gb = {
 	.fingerprint_fcn = NULL,
 	.diff_bb = NULL,
 	.diff_fcn = NULL,
-	.diff_eval = NULL
+	.diff_eval = NULL,
+	.esil_init = esil_gb_init,
+	.esil_fini = esil_gb_fini
 };
 
 #ifndef CORELIB
