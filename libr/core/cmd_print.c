@@ -189,7 +189,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		echars = chars;
 		hascolor = R_FALSE;
 
-		if (usecolor) append (ebytes, Color_GREEN);
+		if (usecolor) append (ebytes, core->cons->pal.offset);
 		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
 		if (usecolor) append (ebytes, Color_RESET);
 		append (ebytes, (col==1)?" |":"  ");
@@ -298,9 +298,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
 					int off = (j*3) - (j/2) + 12;
+					int sz = R_MIN (strlen (note[j]), nb_cons_cols-(off+13));
 					if (j%2) off--;
-					memcpy (out+off, note[j], //avoid overflow
-						R_MIN(strlen (note[j]), nb_cons_cols-(off+13)));
+					memcpy (out+off, note[j], sz); //avoid overflow
+					out[off+sz] = 0;
 					hasline = (out[off] != ' ');
 					free (note[j]);
 				}

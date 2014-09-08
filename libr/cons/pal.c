@@ -43,7 +43,7 @@ R_API void r_cons_pal_init(const char *foo) {
 
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
-	cons->pal.list[2] = strdup (Color_WHITE);
+	cons->pal.list[2] = strdup (Color_BGREEN);
 	cons->pal.list[3] = strdup (Color_CYAN);
 	cons->pal.list[4] = strdup (Color_MAGENTA);
 	cons->pal.list[5] = strdup (Color_GRAY);
