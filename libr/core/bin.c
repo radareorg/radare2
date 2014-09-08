@@ -878,6 +878,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 	if (mode & R_CORE_BIN_JSON) {
 		char *hashstr = NULL;
 		r_cons_printf ("[");
+		i = 0;
 		r_list_foreach (sections, iter, section) {
 			ut64 addr = rva (r->bin, va, section->paddr, section->vaddr, baddr, laddr);
 			if (va)
@@ -897,6 +898,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 			}
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
+				"\"vsize\":%"PFMT64d","
 				"\"flags\":\"%s\","
 				"%s"
 				"\"addr\":%"PFMT64d","
@@ -905,6 +907,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 				iter->p?",":"",
 				section->name,
 				section->size,
+				section->vsize,
 				r_str_rwx_i (section->srwx),
 				hashstr? hashstr: "",
 				addr, // paddr
