@@ -15,18 +15,6 @@
 #define SETKEY2(x,y...) snprintf (key2, sizeof (key)-1, x, ##y);
 #define SETVAL(x,y...) snprintf (val, sizeof (val)-1, x, ##y);
 
-static char *F(int n, const char *fmt, ...) {
-	static char Key[16][256];
-	va_list ap;
-	va_start (ap, fmt);
-	if (n<0 || n>15)
-		return NULL;
-	*Key[n] = 0;
-	vsnprintf (Key[n], 255, fmt, ap);
-	va_end (ap);
-	return Key[n];
-}
-
 // DUPPED FUNCTIONALITY
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
 R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta, const char *type, const char *name) {
@@ -35,7 +23,7 @@ R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut
 }
 
 R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
-	char *var_def = F (0,"%s,%d,%s", type, size, name);
+	char *var_def = sdb_fmt (0,"%s,%d,%s", type, size, name);
 	char key[128], val[128];
 	if (!kind) kind ='v';
 	switch (kind) {
@@ -49,10 +37,10 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	}
 	if (scope>0) {
 		/* local variable */
-		char *fcn_key = F (1, "fcn.0x%"PFMT64x".%c", addr, kind);
-		char *var_key = F (2, "var.0x%"PFMT64x".%c.%d.%d",
+		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
+		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d",
 			addr, kind, scope, delta);
-		char *var_local = F (3, "var.0x%"PFMT64x".%d.%d",
+		char *var_local = sdb_fmt (3, "var.0x%"PFMT64x".%d.%d",
 			addr, scope, delta);
 
 		sdb_array_add (DB, fcn_key, var_key, 0);
@@ -60,8 +48,8 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		sdb_array_add (DB, var_local, val, 0);
 	} else {
 		/* global variable */
-		char *var_global = F (1, "var.0x%"PFMT64x, addr);
-		char *var_def = F (2,"%s,%d,%s", type, size, name);
+		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
+		char *var_def = sdb_fmt (2,"%s,%d,%s", type, size, name);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 	return R_TRUE;
@@ -157,13 +145,13 @@ R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int 
 	char key[128];
 // TODO: kind is not used
 	if (scope>0) { // local
-		char *var_local = F (0, "var.0x%"PFMT64x".%d.%d.%s",
+		char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
 			var_addr, scope, delta, xs_type_str);
 		return sdb_array_add_num (DB, var_local, xs_addr, 0);
 	}
 	// global
-	sdb_add (DB, F (0,"var.0x%"PFMT64x, var_addr), "a,", 0);
-	var_global = F (0, "var.0x%"PFMT64x".%s", var_addr, xs_type_str);
+	sdb_add (DB, sdb_fmt (0,"var.0x%"PFMT64x, var_addr), "a,", 0);
+	var_global = sdb_fmt (0, "var.0x%"PFMT64x".%s", var_addr, xs_type_str);
 	return sdb_array_add_num (DB, var_global, xs_addr, 0);
 }
 
