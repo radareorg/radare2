@@ -423,6 +423,7 @@ static int cmd_cmp(void *data, const char *input) {
 				"cg", "[o] [file]","Graphdiff current file and [file]",
 				"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 				"cu", " [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
+				"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
 				"cw", "[us?] [...]", "Compare memory watchers",
 				"cx", " [hexpair]", "Compare hexpair string",
 				"cX", " [addr]", "Like 'cc' but using hexdiff output",
@@ -430,6 +431,43 @@ static int cmd_cmp(void *data, const char *input) {
 			};
 			r_core_cmd_help (core, help_msg);
 			}
+		break;
+	case 'v':
+		{
+		int sz = input[1];
+		if (sz== ' ') {
+			switch (r_config_get_i (core->config, "asm.bits")) {
+			case 8: sz = '1'; break;
+			case 16: sz = '2'; break;
+			case 32: sz = '4'; break;
+			case 64: sz = '8'; break;
+			default: sz = '4'; break; // default
+			}
+		}
+		// TODO: honor endian
+		switch (sz) {
+		case '1':
+			{ ut8 n = (ut8)r_num_math (core->num, input+2);
+			if (core->block[0] == n) r_cons_printf ("0x%08"PFMT64x"\n", core->offset); }
+			break;
+		case '2':
+			{ ut16 *b = (ut16*)core->block, n = (ut16)r_num_math (core->num, input+2);
+			if (*b == n) r_cons_printf ("0x%08"PFMT64x"\n", core->offset); }
+			break;
+		case '4':
+			{ ut32 *b = (ut32*)core->block, n = (ut32)r_num_math (core->num, input+2);
+			if (*b == n) r_cons_printf ("0x%08"PFMT64x"\n", core->offset); }
+			break;
+		case '8':
+			{ ut64 *b = (ut64*)core->block, n = (ut64)r_num_math (core->num, input+2);
+			if (*b == n) r_cons_printf ("0x%08"PFMT64x"\n", core->offset); }
+			break;
+		default:
+		case '?':
+			eprintf ("Usage: cv[1248] [num]\n");
+			break;
+		}
+		}
 		break;
 	case 'l':
 		if (strchr (input, 'f')) {

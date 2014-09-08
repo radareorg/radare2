@@ -129,7 +129,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int i, j, low, max, here, rows;
 	boolt marks = R_FALSE, setcolor = R_TRUE, hascolor = R_FALSE;
 	ut8 ch;
-	const char **colors = &core->cons->pal.list;
+	const char **colors = (const char **)&core->cons->pal.list;
 #if 0
 	const char *colors[] = {
 		Color_WHITE, /*Color_GREEN,*/ Color_YELLOW, Color_RED,
