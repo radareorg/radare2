@@ -122,45 +122,60 @@ R_API int r_reg_type_by_name(const char *str) {
 	return -1;
 }
 
-static int parse_alias (RReg *reg, char **tok, const int n) {
+static const char *parse_alias (RReg *reg, char **tok, const int n) {
 	int role;
 
 	if (n != 2)
-		return R_FALSE;
+		return "Invalid syntax";
 
 	role = r_reg_get_name_idx(tok[0] + 1);
-	return r_reg_set_name(reg, role, tok[1]);
+	return r_reg_set_name(reg, role, tok[1]) ?
+		NULL :
+		"Invalid alias";
 }
 
 // Sizes prepended with a dot are expressed in bits
+// strtoul with base 0 allows the input to be in decimal/octal/hex format
 #define parse_size(c) \
 	((c)[0] == '.') ? \
-		atoi((c)+1) : \
-		atoi((c)) << 3;
+		strtoul((c) + 1, &end, 10) : \
+		strtoul((c), &end, 0) << 3;
 
-static int parse_def (RReg *reg, char **tok, const int n) {
+static const char *parse_def (RReg *reg, char **tok, const int n) {
 	RRegItem *item;
+	char *end;
 	int type;
 
 	if (n != 5 && n != 6)
-		return R_FALSE;
+		return "Invalid syntax";
 
 	type = r_reg_type_by_name (tok[0]);
 	if (type < 0)
-		return R_FALSE;
+		return "Invalid register type";
 
 	item = R_NEW0 (RRegItem);
 
 	item->type = type;
 	item->name = strdup (tok[1]);
+	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2]);
-	item->offset = parse_size (tok[3]);
-	item->packed_size = parse_size (tok[4]); 
-
-	if (!item->size) {
+	if (*end != '\0' || !item->size) {
 		free (item);
-		return R_FALSE;
+		return "Invalid size";
 	}
+	item->offset = parse_size (tok[3]);
+	if (*end != '\0') {
+		free (item);
+		return "Invalid offset";
+	}
+	item->packed_size = parse_size (tok[4]); 
+	if (*end != '\0') {
+		free (item);
+		return "Invalid packed size";
+	}
+
+	// Dynamically update the list of supported bit sizes
+	reg->bits |= item->size;
 
 	// This is optional
 	if (n == 6)
@@ -172,7 +187,7 @@ static int parse_def (RReg *reg, char **tok, const int n) {
 
 	r_list_append (reg->regset[item->type].regs, item);
 
-	return R_TRUE;
+	return NULL;
 }
 
 #define PARSER_MAX_TOKENS 8
@@ -197,25 +212,34 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	// 'str' is always heap-allocated
 	reg->reg_profile_str = str;
 
-	// Make line numbers start from 1
-	l = 1;
+	// Line number
+	l = 0;
 	// For every line
 	do {
-		j = 0;
+		// Increment line number
+		l++;
 		// Skip comment lines
-		if (*p == '#')
-			while (*p++ != '\n')
-				;
+		if (*p == '#') {
+			while (*p != '\n')
+				p++;
+			continue;
+		}
+		j = 0;
 		// For every word
 		while (*p) {
 			// Skip the whitespace
 			while (*p == ' ' || *p == '\t')
 				p++;
+			// Skip the rest of the line is a comment is encountered
+			if (*p == '#')
+				while (*p != '\n')
+					p++;
 			// EOL ?
 			if (*p == '\n')
 				break;
 			// Gather a handful of chars
-			for (i = 0; isprint (*p) && i < sizeof(tmp);)
+			// Use isgraph instead of isprint because the latter considers ' ' printable
+			for (i = 0; isgraph (*p) && i < sizeof(tmp);)
 				tmp[i++] = *p++;
 			tmp[i] = '\0';
 			// Limit the number of tokens 
@@ -229,15 +253,15 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			// Do the actual parsing 
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
-			int r = (*first == '=') ?
+			const char *r = (*first == '=') ?
 				parse_alias (reg, tok, j) :
 				parse_def (reg, tok, j);
 			// Clean up
 			for (i = 0; i < j; i++)
 				free(tok[i]);
 			// Warn the user if something went wrong
-			if (!r) {
-				eprintf("%s: Parse error @ line %d\n", __FUNCTION__, l);
+			if (r) {
+				eprintf("%s: Parse error @ line %d (%s)\n", __FUNCTION__, l, r);
 				// Clean up
 				r_reg_free_internal (reg);
 				return R_FALSE;
