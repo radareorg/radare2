@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,19 +6,21 @@
 #include <r_bin.h>
 #include <r_magic.h>
 
-static const char * get_filetype (RBinFile *arch) {
-	const char *res = NULL;
+static void get_filetype (RBinFile *arch, char *res, int len) {
 	ut8 test_buffer[4096] = {0};
-	RMagic * ck = r_magic_new (0);
-
+	RMagic * ck;
+	if (!res || !arch)
+		return;
+	ck = r_magic_new (0);
+	*res = 0;
 	if (ck && arch && arch->buf) {
+		char *tmp;
 		r_magic_load (ck, R_MAGIC_PATH);
-		r_buf_read_at(arch->buf, 0, test_buffer, 4096);
-		res = r_magic_buffer (ck, test_buffer, 4096);
+		r_buf_read_at (arch->buf, 0, test_buffer, 4096);
+		tmp = r_magic_buffer (ck, test_buffer, 4096);
+		strncpy (res, tmp, len-1);
 	}
 	r_magic_free (ck);
-	if (!res) res = "";
-	return res;
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -33,7 +35,8 @@ static RBinInfo* info(RBinFile *arch) {
 	else *ret->file = 0;
 
 	strncpy (ret->rpath, "", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, get_filetype (arch), R_BIN_SIZEOF_STRINGS);
+
+	get_filetype (arch, ret->type, R_BIN_SIZEOF_STRINGS);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
 	strncpy (ret->bclass, "", R_BIN_SIZEOF_STRINGS);
