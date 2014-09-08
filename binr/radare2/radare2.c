@@ -499,7 +499,6 @@ int main(int argc, char **argv, char **envp) {
 			// PoC -- must move -rk functionalitiy into rcore
 			// this may be used with caution (r2 -nn $FILE)
 			r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
-			eprintf (".!rabin2 -rk '' '%s'\n", r.file->desc->name);
 		}
 	}
 	if (!quiet && r_cons_is_utf8 ()) {

@@ -33,6 +33,7 @@ static void print_format_help(RPrint *p) {
 	" p - pointer reference (2, 4 or 8 bytes)\n"
 	" d - 0x%%08x hexadecimal value (4 bytes)\n"
 	" D - disassemble one opcode\n"
+	" o - 0x%%08o octal value (4 byte)\n"
 	" x - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
 	" z - \\0 terminated string\n"
 	" Z - \\0 terminated wide string\n"
@@ -132,6 +133,19 @@ static void r_print_format_hex(const RPrint* p, int mustset, const char* setval,
 		p->printf ("%"PFMT64d"", addr);
 	}
 }
+
+static void r_print_format_octal (const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
+	if (mustset) {
+		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		ut32 addr32 = (ut32)addr;
+		p->printf ("0x%08"PFMT64x" = (octal) ", seeki);
+		p->printf ("0%"PFMT64o"", addr32);
+	}
+	//if (string_flag_offset(buf, (ut64)addr32, -1))
+	//	p->printf("; %s", buf);
+}
+
 static void r_print_format_hexflag(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
 	if (mustset) {
 		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
@@ -275,7 +289,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 
 	bracket = strchr (arg,'{');
 	if (bracket) {
-		char *end = strchr (arg,'}');
+		char *end = strchr (arg, '}');
 		if (end == NULL) {
 			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
 			goto beach;
@@ -329,9 +343,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					eprintf ("No end bracket.\n");
 					goto beach;
 				}
-				*end='\0';
+				*end = '\0';
 				size = r_num_math (NULL, arg+1);
 				arg = end + 1;
+				*end = ']';
 			} else {
 				size = -1;
 			}
@@ -486,6 +501,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				if (size>0) p->printf ("Size not yet implemented\n");
 				if (p->disasm && p->user)
 					i += p->disasm (p->user, seeki);
+				break;
+			case 'o':
+				r_print_format_octal (p, MUSTSET, setval, seeki, addr);
+				i+= (size==-1) ? 4 : size;
 				break;
 			case 'x':
 				r_print_format_hexflag(p, MUSTSET, setval, seeki, addr);

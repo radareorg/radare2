@@ -93,6 +93,12 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg],
 		bin->endian?"2I16c8I":"2i16c8i", 1);
 #endif
+	sdb_num_set (bin->kv, sdb_fmt (0, "mach0_segment_%d.offset", seg), off, 0);
+	sdb_array_add_num (bin->kv, "mach0_segments.count", off, 0);
+	sdb_set (bin->kv, sdb_fmt (0, "mach0_segment.format", seg),
+		"xd[16]zxxxxoodx "
+		"cmd cmdsize segname vmaddr vmsize "
+		"fileoff filesize maxprot initprot nsects flags", 0);
 	if (len == -1) {
 		eprintf ("Error: read (seg)\n");
 		return R_FALSE;

@@ -19,6 +19,8 @@ static char *F(int n, const char *fmt, ...) {
 	static char Key[16][256];
 	va_list ap;
 	va_start (ap, fmt);
+	if (n<0 || n>15)
+		return NULL;
 	*Key[n] = 0;
 	vsnprintf (Key[n], 255, fmt, ap);
 	va_end (ap);

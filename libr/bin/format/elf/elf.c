@@ -26,7 +26,9 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return R_FALSE;
 	}
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
-	sdb_set (bin->kv, "elf_header.format", "qqxxxx ident ident2 type machine version entry", 0);
+	sdb_set (bin->kv, "elf_header.format", "[16]zwwxxxxxwwwwww"
+		" ident type machine version entry phoff shoff flags ehsize"
+		" phentsize phnum shentsize shnum shstrndx", 0);
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)?
 		LIL_ENDIAN: !LIL_ENDIAN;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));

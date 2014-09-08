@@ -556,6 +556,7 @@ int main(int argc, char **argv) {
 
 				SdbListIter *iter;
 				SdbKv *kv;
+				printf ("fs format\n");
 				// iterate over all keys
 				ls_foreach (db->ht->list, iter, kv) {
 					char *k = kv->key;

@@ -1,6 +1,7 @@
 /* sdb - LGPLv3 - Copyright 2014 - pancake */
 
 #include "sdb.h"
+#include <stdarg.h>
 
 // TODO: Add 'a' format for array of pointers null terminated??
 // XXX SLOW CONCAT
@@ -10,6 +11,21 @@
 		if (o) { strcat (o, ","); strcat (o, x); out = o; } \
 	} else out = strdup (x); \
 }
+
+// move to util?
+SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
+        static char Key[16][256];
+        va_list ap;
+        va_start (ap, fmt);
+        if (n<0 || n>15)
+                return NULL;
+        *Key[n] = 0;
+        vsnprintf (Key[n], 255, fmt, ap);
+	Key[n][255] = 0;
+        va_end (ap);
+        return Key[n];
+}
+
 
 SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 	char buf[128], *e_str, *out = NULL;

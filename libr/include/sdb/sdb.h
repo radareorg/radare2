@@ -229,6 +229,7 @@ void sdb_encode_raw(char *bout, const ut8 *bin, int len);
 int sdb_decode_raw(ut8 *bout, const char *bin, int len);
 
 // binfmt
+char *sdb_fmt(int n, const char *fmt, ...);
 int sdb_fmt_init (void *p, const char *fmt);
 void sdb_fmt_free (void *p, const char *fmt);
 int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);
