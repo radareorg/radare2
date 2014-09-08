@@ -1040,9 +1040,10 @@ return -1;
 					data[l++] = (char)(dst-2);
 					return l;
 				} else {
-					/* absolute address */
-					addr-=5;
-					data[l++]= 0xe9;
+					/* relative address */
+					addr -= offset;
+					addr -= 5;
+					data[l++] = 0xe9;
 					data[l++] = ptr[0];
 					data[l++] = ptr[1];
 					data[l++] = ptr[2];
