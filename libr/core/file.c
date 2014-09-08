@@ -263,9 +263,11 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	}
 
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
-		treat_as_rawstr ++;
-		if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
-			return R_FALSE;
+		if (r_config_get_i (r->config, "bin.rawstr")) {
+			treat_as_rawstr = R_TRUE;
+			if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
+				return R_FALSE;
+			}
 		}
 	}
 
@@ -275,7 +277,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
 		r_config_set_i (r->config, "io.va", 0);
-		r_config_set (r->config, "bin.rawstr", "true");
+		//\\ r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	} else if (binfile) {
@@ -313,7 +315,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
 		r_config_set_i (r->config, "io.va", 0);
-		r_config_set (r->config, "bin.rawstr", "true");
+		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	} else if (binfile) {
@@ -448,7 +450,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
 		// set use of raw strings
-		r_config_set (r->config, "bin.rawstr", "true");
+		//r_config_set (r->config, "bin.rawstr", "true");
 		r_config_set_i (r->config, "io.va", 0);
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");

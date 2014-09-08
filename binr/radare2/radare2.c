@@ -97,7 +97,8 @@ static int main_help(int line) {
 		" -t           load rabin2 info in thread\n"
 #endif
 		" -v, -V       show radare2 version (-V show lib versions)\n"
-		" -w           open file in write mode\n");
+		" -w           open file in write mode\n"
+		" -z, -zz      do not load strings or load them even in raw\n");
 	if (line==2)
 		printf (
 		"Scripts:\n"
@@ -171,6 +172,7 @@ int main(int argc, char **argv, char **envp) {
 	const char *prj = NULL;
 	//int threaded = R_FALSE;
 	int debug = 0;
+	int zflag = 0;
 	int do_analysis = 0;
 	int do_connect = 0;
 	int fullfile = 0;
@@ -238,7 +240,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "0ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVS"
+	while ((c = getopt (argc, argv, "0ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
 #if USE_THREADS
 "t"
 #endif
@@ -253,6 +255,7 @@ int main(int argc, char **argv, char **envp) {
 			quiet = R_TRUE;
 			break;
 		case 'a': asmarch = optarg; break;
+		case 'z': zflag++; break;
 		case 'A':
 			do_analysis = R_TRUE;
 			break;
@@ -355,6 +358,15 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmdf (&r, "=+%s", uri);
 		else r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
 		return 0;
+	}
+
+	switch (zflag) {
+	case 1:
+		r_config_set (r.config, "bin.strings", "false");
+		break;
+	case 2:
+		r_config_set (r.config, "bin.rawstr", "true");
+		break;
 	}
 
 	switch (va) {

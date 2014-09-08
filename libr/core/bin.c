@@ -116,12 +116,16 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
+
 	if (!plugin) return 0;
-	if (!plugin->info) {
-		if (!rawstr) {
-			eprintf ("WARN: Use '-e bin.rawstr=true' or 'rabin2 -zz'"
-				" to find strings on unknown file types\n");
-			return R_FALSE;
+	if (plugin->info && plugin->name) {
+		if (!strcmp (plugin->name, "any")) {
+			if (!rawstr) {
+				eprintf ("NOTE: Use '-e bin.rawstr=true' or 'r2 -zz' or '.!rabin2 -zz $FILE'"
+					" to find strings on unknown file types\n");
+				return R_FALSE;
+
+			}
 		}
 	}
 
