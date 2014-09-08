@@ -112,6 +112,12 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 #endif
 #if FCN_SDB
 	char key[1024];
+#if 0
+	SETKEY ("fcn.0x%08"PFMT64x".name", fcn->addr);
+	sdb_add (DB, key, fcn->name, 0);
+	SETKEY ("fcn.name.%s", fcn->name);
+	sdb_num_add (DB, key, fcn->addr, 0);
+#endif
 	SETKEY ("fcn.0x%08"PFMT64x".xrefs", fcn->addr);
 	sdb_array_add_num (DB, key, at, 0);
 #endif

@@ -25,6 +25,8 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: read (magic)\n");
 		return R_FALSE;
 	}
+	sdb_num_set (bin->kv, "elf.header.offset", 0, 0);
+	sdb_set (bin->kv, "elf.header.format", "qqxxxx ident ident2 type machine version entry", 0);
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)?
 		LIL_ENDIAN: !LIL_ENDIAN;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
@@ -52,16 +54,17 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return R_FALSE;
 	if (bin->phdr) return R_TRUE;
 
-	if(!UT32_MUL(&phdr_size, bin->ehdr.e_phnum, sizeof(Elf_(Phdr))))
+	if (!UT32_MUL (&phdr_size, bin->ehdr.e_phnum, sizeof (Elf_(Phdr))))
 		return R_FALSE;
 
-	if(!phdr_size)
+	if (!phdr_size)
 		return R_FALSE;
 
-	if ((bin->phdr = malloc (phdr_size)) == NULL) {
+	if ((bin->phdr = calloc (phdr_size, 1)) == NULL) {
 		perror ("malloc (phdr)");
 		return R_FALSE;
 	}
+//eprintf ("edhr.e_phoff", bin->ehdr.e_phoff);
 	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr,
 		#if R_BIN_ELF64
 		bin->endian? "2I6L": "2i6l",
@@ -75,6 +78,10 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return R_FALSE;
 	}
 	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_has_relro)(bin), 0);
+	sdb_num_set (bin->kv, "elf.phdr.offset", bin->ehdr.e_phoff, 0);
+	sdb_set (bin->kv, "elf.phdr.format", "wxxxwwww type offset vaddr paddr filesz memsz flags align", 0);
+	// Usage example:
+	// > pf `k bin/cur/info/elf.phdr.format` @ `k bin/cur/info/elf.phdr.offset`
 	return R_TRUE;
 }
 
@@ -118,9 +125,9 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	/* sh_size must be lower than UT32_MAX and not equal to zero, to avoid bugs
 	   on malloc() */
-	if(bin->shdr[bin->ehdr.e_shstrndx].sh_size > UT32_MAX)
+	if (bin->shdr[bin->ehdr.e_shstrndx].sh_size > UT32_MAX)
 		return R_FALSE;
-	if(!bin->shdr[bin->ehdr.e_shstrndx].sh_size)
+	if (!bin->shdr[bin->ehdr.e_shstrndx].sh_size)
 		return R_FALSE;
 
 	bin->shstrtab_section =
@@ -136,6 +143,9 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	memset (bin->strtab, 0, bin->strtab_size);
 	bin->shstrtab = bin->strtab;
+
+	sdb_num_set (bin->kv, "elf.strtab.offset", bin->strtab_section->sh_offset, 0);
+	sdb_num_set (bin->kv, "elf.strtab.size", bin->strtab_section->sh_size, 0);
 
 	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
 				bin->strtab_section->sh_size) == -1) {

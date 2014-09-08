@@ -548,9 +548,42 @@ int main(int argc, char **argv) {
 	}
 
 	if (query) {
-		if (!strcmp (query, "-")) {
-			__sdb_prompt (bin->cur->sdb);
-		} else sdb_query (bin->cur->sdb, query);
+		if (rad) {
+// TODO: Should be moved into core, to load those flags and formats into r2
+			Sdb *db = sdb_ns (bin->cur->sdb, "info", 0);
+			char *flagname;
+			if (db) {
+
+				SdbListIter *iter;
+				SdbKv *kv;
+				// iterate over all keys
+				ls_foreach (db->ht->list, iter, kv) {
+					char *k = kv->key;
+					char *v = kv->value;
+					char *dup = strdup (k);
+
+					if ((flagname=strstr (dup, ".offset"))) {
+						*flagname = 0;
+						flagname = dup;
+
+						eprintf ("f %s @ %s\n", flagname, v);
+					}
+					if ((flagname=strstr (dup, ".format"))) {
+						*flagname = 0;
+						flagname = dup;
+
+						eprintf ("pf.%s %s\n", flagname, v);
+					}
+					free (dup);
+				}
+
+			}
+			//sdb_query (bin->cur->sdb, "info/*");
+		} else {
+			if (!strcmp (query, "-")) {
+				__sdb_prompt (bin->cur->sdb);
+			} else sdb_query (bin->cur->sdb, query);
+		}
 		r_core_fini (&core);
 		return 0;
 	}

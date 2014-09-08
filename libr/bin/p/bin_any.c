@@ -18,7 +18,8 @@ static void get_filetype (RBinFile *arch, char *res, int len) {
 		r_magic_load (ck, R_MAGIC_PATH);
 		r_buf_read_at (arch->buf, 0, test_buffer, 4096);
 		tmp = r_magic_buffer (ck, test_buffer, 4096);
-		strncpy (res, tmp, len-1);
+		if (tmp)
+			strncpy (res, tmp, len-1);
 	}
 	r_magic_free (ck);
 }
