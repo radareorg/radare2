@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
-//#include <r_anal_ex.h>
+/*#include <r_anal_ex.h>*/
 
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
@@ -1667,11 +1667,17 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 					} else {
-						const char *fmt = r_strht_get (core->print->formats, name);
+						const char *fmt;
+						int namelen = strlen (name), flag = -1;
+						if (name[namelen-1] == '*') {
+							name[namelen-1] = '\0';
+							flag = -2;
+						}
+						fmt = r_strht_get (core->print->formats, name);
 						if (fmt) {
 							//printf ("GET (%s) = %s\n", name, fmt);
 							r_print_format (core->print, core->offset,
-								core->block, len, fmt, -1, NULL);
+								core->block, len, fmt, flag, NULL);
 						} else eprintf ("Unknown format (%s)\n", name);
 					}
 				}
