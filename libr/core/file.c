@@ -103,7 +103,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			core->switch_file_view = 1;
 			r_core_block_read (core, 0);
 		} else {
-			const char *name = cf ? cf->filename : "ERROR";
+			const char *name = (cf && cf->desc) ? cf->desc->name : "ERROR";
 			eprintf ("Error: Unable to switch the view to file: %s\n", name);
 		}
 	}
@@ -191,8 +191,8 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 		r_sys_setenv ("BYTES", s);
 		free (s);
 	}
-	if (core->file->filename)
-		r_sys_setenv ("FILE", core->file->filename);
+	if (core->file->desc && core->file->desc->name)
+		r_sys_setenv ("FILE", core->file->desc->name);
 	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
 	r_sys_setenv ("OFFSET", buf);
 	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);
@@ -409,17 +409,17 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	if (cf) {
 		if ((filenameuri == NULL || !*filenameuri))
-			filenameuri = cf->filename;
-		else if (cf->filename && strcmp (filenameuri, cf->filename) ) {
+			filenameuri = cf->desc->name;
+		else if (cf->desc->name && strcmp (filenameuri, cf->desc->name) ) {
 			// XXX - this needs to be handled appropriately
 			// if the cf does not match the filenameuri then
 			// either that RCoreFIle * needs to be loaded or a
 			// new RCoreFile * should be opened.
 			if (!strcmp (suppress_warning, "false"))
 				eprintf ("Error: The filenameuri %s is not the same as the current RCoreFile: %s\n",
-				    filenameuri, cf->filename);
+				    filenameuri, cf->desc->name);
 		}
-		if (cf->map)
+		if (cf->map)	//XXX: a file can have more then 1 map
 			loadaddr = cf->map->from;
 	}
 
@@ -430,7 +430,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if (is_io_load) {
-		// TODO? necessary to restore the desc back? 
+		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
 		if ( (desc->plugin && desc->plugin->debug) \
@@ -542,7 +542,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 		fh->uri = strdup (file);
 		fh->desc = fd;
 		fh->size = r_io_desc_size (r->io, fd);
-		fh->filename = strdup (fd->name);
 		fh->rwx = mode;
 		r->file = fh;
 		r->io->plugin = fd->plugin;
@@ -565,7 +564,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 		}
 		r_bin_bind (r->bin, &(fh->binb));
 		r_list_append (r->files, fh);
-		r_core_bin_load (r, fh->filename, fh->map->from);
+		r_core_bin_load (r, fh->desc->name, fh->map->from);
 	}
 	if (!top_file) {
 		free (loadmethod);
@@ -574,7 +573,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp) r_core_cmd (r, cp, 0);
 
-	r_config_set (r->config, "file.path", top_file->filename);
+	r_config_set (r->config, "file.path", top_file->desc->name);
 	r_config_set_i (r->config, "zoom.to", top_file->map->from+top_file->size);
 	if (loadmethod) r_config_set (r->config, "file.loadmethod", loadmethod);
 	free (loadmethod);
@@ -626,7 +625,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh->uri = strdup (file);
 	fh->desc = fd;
 	fh->size = r_io_desc_size (r->io, fd);
-	fh->filename = strdup (fd->name);
 	fh->rwx = mode;
 	fh->size = r_io_size (r->io);
 
@@ -669,8 +667,6 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		cf->desc = NULL;
 		cf->map = NULL;
 
-		free (cf->filename);
-		cf->filename = NULL;
 		free (cf->uri);
 		r_bin_file_deref_by_bind (&cf->binb);
 		cf->uri = NULL;
@@ -849,7 +845,7 @@ R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name) {
 	RCoreFile *cf = NULL;
 
 	r_list_foreach (core->files, iter, cf) {
-		if (cf && !strcmp (cf->filename, name)) break;
+		if (cf && cf->desc && !strcmp (cf->desc->name, name)) break;
 		cf = NULL;
 	}
 	return cf;

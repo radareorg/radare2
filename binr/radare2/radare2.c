@@ -139,7 +139,7 @@ static void list_io_plugins(RIO *io) {
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
 static int rabin_delegate(RThread *th) {
-	if (rabin_cmd && r_file_exists (r.file->filename)) {
+	if (rabin_cmd && r_file_exists (r.file->desc->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
 		if (ptr)
@@ -472,7 +472,7 @@ int main(int argc, char **argv, char **envp) {
 	if (run_anal>0 && threaded) {
 		// XXX: if no rabin2 in path that may fail
 		rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
-				(debug||r.io->va)?"":"p", r.file->filename);
+				(debug||r.io->va)?"":"p", r.file->desc->name);
 		/* TODO: only load data if no project is used */
 		lock = r_th_lock_new ();
 		rabin_th = r_th_new (&rabin_delegate, lock, 0);
@@ -500,8 +500,8 @@ int main(int argc, char **argv, char **envp) {
 				if (filepath) filepath += 3;
 				else filepath = pfile;
 			}
-			if (r.file && r.file->filename)
-				filepath = r.file->filename;
+			if (r.file && r.file->desc && r.file->desc->name)
+				filepath = r.file->desc->name;
 
 			if (!r_core_bin_load (&r, filepath, baddr))
 				r_config_set (r.config, "io.va", "false");
@@ -560,7 +560,7 @@ int main(int argc, char **argv, char **envp) {
 		has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 		if (has_project)
 			r_config_set (r.config, "bin.strings", "false");
-		if (r_core_hash_load (&r, r.file->filename) == R_FALSE)
+		if (r_core_hash_load (&r, r.file->desc->name) == R_FALSE)
 			{} //eprintf ("WARNING: File hash not calculated\n");
 		nsha1 = r_config_get (r.config, "file.sha1");
 		npath = r_config_get (r.config, "file.path");

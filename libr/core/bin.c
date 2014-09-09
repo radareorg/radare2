@@ -1263,12 +1263,12 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	return ret;
 }
 
-R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits) {
+R_API int r_core_bin_set_arch_bits (RCore *r, char *name, const char * arch, ut16 bits) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RBinFile *binfile;
 
 	if (!name)
-		name = cf ? cf->filename : NULL;
+		name = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (!name)
 		return R_FALSE;
 
@@ -1278,7 +1278,7 @@ R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arc
 
 	/* Find a file with the requested name/arch/bits */
 	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits, name);
-	if (!binfile) 
+	if (!binfile)
 		return R_FALSE;
 
 	if (!r_bin_use_arch (r->bin, arch, bits, name))

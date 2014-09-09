@@ -40,7 +40,7 @@ static void r_core_file_info (RCore *core, int mode) {
 			, info->big_endian? "big": "little");
 			break;
 		}
-	} else fn = cf ? cf->filename : NULL;
+	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (cf && mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
@@ -152,7 +152,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'o': 
 			 {
-				const char *fn = input[1]==' '? input+2: cf->filename;
+				const char *fn = input[1]==' '? input+2: cf->desc->name;
 				ut64 laddr = UT64_MAX;
 				laddr = r_config_get_i (core->config, "bin.baddr");
 				r_core_bin_load (core, fn, laddr);

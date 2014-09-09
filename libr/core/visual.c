@@ -1214,7 +1214,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		break;
 	}
 
-	filename = (core->file && core->file->filename)? core->file->filename: "";
+	filename = (core->file && core->file->desc && core->file->desc->name)? core->file->desc->name: "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (curset? cursor: 0);
 		RFlagItem *f = r_flag_get_at (core->flags, addr);
