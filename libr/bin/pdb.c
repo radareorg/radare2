@@ -7,6 +7,49 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+//lfPointer = Struct("lfPointer",
+//    ULInt32("utype"),
+//    BitStruct("ptr_attr",
+//        Enum(BitField("mode", 3),
+//            PTR_MODE_PTR         = 0x00000000,
+//            PTR_MODE_REF         = 0x00000001,
+//            PTR_MODE_PMEM        = 0x00000002,
+//            PTR_MODE_PMFUNC      = 0x00000003,
+//            PTR_MODE_RESERVED    = 0x00000004,
+//        ),
+//        Enum(BitField("type", 5),
+//            PTR_NEAR             = 0x00000000,
+//            PTR_FAR              = 0x00000001,
+//            PTR_HUGE             = 0x00000002,
+//            PTR_BASE_SEG         = 0x00000003,
+//            PTR_BASE_VAL         = 0x00000004,
+//            PTR_BASE_SEGVAL      = 0x00000005,
+//            PTR_BASE_ADDR        = 0x00000006,
+//            PTR_BASE_SEGADDR     = 0x00000007,
+//            PTR_BASE_TYPE        = 0x00000008,
+//            PTR_BASE_SELF        = 0x00000009,
+//            PTR_NEAR32           = 0x0000000A,
+//            PTR_FAR32            = 0x0000000B,
+//            PTR_64               = 0x0000000C,
+//            PTR_UNUSEDPTR        = 0x0000000D,
+//        ),
+//        Padding(3),
+//        Flag("restrict"),
+//        Flag("unaligned"),
+//        Flag("const"),
+//        Flag("volatile"),
+//        Flag("flat32"),
+//        Padding(16),
+//    ),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int utype;
+	unsigned int ptr_attr;
+	unsigned char pad;
+} SLF_POINTER;
+
 //CV_property = BitStruct("prop",
 //    Flag("fwdref"),
 //    Flag("opcast"),
@@ -559,7 +602,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	int pn_start, off_start;
 	R_PDB_STREAM *pdb_stream = 0;
 
-
 	char *tmp;
 	int some_int;
 
@@ -1044,12 +1086,135 @@ static void parse_lf_enum(unsigned char *leaf_data, unsigned int len)
 	}
 }
 
+//lfStructure = Struct("lfStructure",
+//    ULInt16("count"),
+//    CV_property,
+//    ULInt32("fieldlist"),
+//    ULInt32("derived"),
+//    ULInt32("vshape"),
+//    val("size"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_structure(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	unsigned short count = 0;
+	UCV_PROPERTY cv_property;
+	unsigned int field_list = 0;
+	unsigned int derived = 0;
+	unsigned int vshape = 0;
+	// val("size");
+	unsigned short value_or_type = 0;
+	unsigned int c = 0;
+	unsigned char *name = 0;
+	// end of val("size");
+	unsigned char pad = 0;
+
+	count = *(unsigned short *)leaf_data;
+	leaf_data += 2;
+	cv_property.cv_property = *(unsigned short *)leaf_data;
+	leaf_data += 2;
+	field_list = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	derived = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	vshape = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 16;
+
+	value_or_type = *(unsigned short *)(leaf_data);
+	leaf_data += 2;
+	*read_bytes += 2;
+
+	// name_or_val parsing
+	if (value_or_type < eLF_CHAR) {
+		while (*leaf_data != 0) {
+			CAN_READ(*read_bytes, 1, len)
+			c++;
+			leaf_data++;
+			(*read_bytes) += 1;
+		}
+		CAN_READ(*read_bytes, 1, len)
+		leaf_data++;
+		(*read_bytes) += 1;
+		//TODO: free name
+		name = (unsigned char *) malloc(c + 1);
+		memcpy(name, leaf_data - (c + 1), c + 1);
+		printf("parse_lf_structure(): name = %s\n", name);
+	} else {
+		printf("parse_lf_structure(): oops\n");
+		//TODO:
+//		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
+//		                {
+//		                    "LF_CHAR": Struct("char",
+//		                        String("value", 1),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_SHORT": Struct("short",
+//		                        SLInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_USHORT": Struct("ushort",
+//		                        ULInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_LONG": Struct("char",
+//		                        SLInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_ULONG": Struct("char",
+//		                        ULInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                },
+//		            ),
+		return 0;
+	}
+	// end of val offset
+	// size;
+
+	pad = *(unsigned char *) leaf_data;
+	// TODO: add macros PadAlign
+	if (pad > 0xF0) {
+		CAN_READ(*read_bytes, pad & 0x0F, len)
+		leaf_data += (pad & 0x0F);
+		*read_bytes += (pad & 0x0F);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_pointer(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_POINTER lf_pointer;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_pointer.utype = *(unsigned int *) leaf_data;
+	*read_bytes += 4;
+	leaf_data += 4;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_pointer.ptr_attr = *(unsigned int *) leaf_data;
+	*read_bytes += 4;
+	leaf_data += 4;
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_pointer.pad = *(unsigned char *) leaf_data;
+	// TODO: add macros PadAlign
+	if (lf_pointer.pad > 0xF0) {
+		CAN_READ(*read_bytes, lf_pointer.pad & 0x0F, len)
+		leaf_data += (lf_pointer.pad & 0x0F);
+		*read_bytes += (lf_pointer.pad & 0x0F);
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 {
 	SType type;
 	unsigned char *leaf_data;
 	ELeafType leaf_type;
+	unsigned int read_bytes = 0;
 
 	stream_file_read(stream, 2, (char *)&types->length);
 	leaf_data = (unsigned char *) malloc(types->length);
@@ -1068,6 +1233,14 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_ENUM:
 		printf("eLF_ENUM\n");
 		parse_lf_enum(leaf_data + 2, types->length);
+		break;
+	case eLF_STRUCTURE:
+		printf("eLF_STRUCTURE\n");
+		parse_lf_structure(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_POINTER:
+		printf("eLF_POINTER\n");
+		parse_lf_pointer(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
