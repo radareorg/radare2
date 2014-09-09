@@ -266,7 +266,6 @@ static int autocomplete(RLine *line) {
 			} else if (*path!='.' && *path!='/') {
 				char *o = malloc (strlen (path)+4);
 				memcpy (o, "./", 3);
-				free (p);
 				p = o+3;
 				n = strlen (path);
 				memcpy (o+3, path, strlen (path)+1);
