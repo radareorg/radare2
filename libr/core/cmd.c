@@ -131,12 +131,11 @@ static int cmd_alias(void *data, const char *input) {
 		char *describe = strchr (buf, '?');
 		char *v;
 		if (q) *q = 0;
-		if (describe) *describe = 0;
 		v = r_cmd_alias_get (core->rcmd, buf);
 		if (v) {
 			if (describe) {
 				r_cons_printf ("%s\n", v);
-				free (describe);
+				free (buf);
 				return 1;
 			}
 			if (q) {

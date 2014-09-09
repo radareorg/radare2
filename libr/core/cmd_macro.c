@@ -10,22 +10,24 @@ static int cmd_macro(void *data, const char *input) {
 	case '*':
 	case '\0': r_cmd_macro_list (&core->rcmd->macro); break;
 	case '(':
-	case '?':
-		eprintf (
-		"|Usage: (foo args,cmd1,cmd2,..)\n"
-		"| (foo args,..,..)    ; define a macro\n"
-		"| (foo args,..,..)()  ; define and call a macro\n"
-		"| (-foo)              ; remove a macro\n"
-		"| .(foo)              ; to call it\n"
-		"| ()                  ; break inside macro\n"
-		"| (*                  ; list all defined macros\n"
-		"|Argument support:\n"
-		"| (foo x y\\n$0 @ $1)  ; define fun with args\n"
-		"| .(foo 128 0x804800) ; call it with args\n"
-		"|Iterations:\n"
-		"| .(foo\\n() $@)       ; define iterator returning iter index\n"
-		"| x @@ .(foo)         ; iterate over them\n"
-		);
+	case '?': {
+		const char* help_msg[] = {
+			"Usage:", "(foo args,cmd1,cmd2,..)", "Aliases",
+			"(foo args,..,..)", "", "define a macro",
+			"(foo args,..,..)()", "", "define and call a macro",
+			"(-foo)", "", "remove a macro",
+			".(foo)", "", "to call it",
+			"()", "", "break inside macro",
+			"(*", "", "list all defined macros",
+			"", "Argument support:", "",
+			"(foo x y\\n$0 @ $1)", "", "define fun with args",
+			".(foo 128 0x804800)", "", "call it with args",
+			"", "Iterations:", "",
+			".(foo\\n() $@)", "", "define iterator returning iter index",
+			"x @@ .(foo)", "", "iterate over them",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		}
 		break;
 	default: {
 		// XXX: stop at first ')'. if next is '(' and last
