@@ -1329,7 +1329,7 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 		break;
 	case eLF_ARRAY:
 		printf("eLF_ARRAY\n");
-//		parse_lf_array(leaf_data + 2, &read_bytes, types->length);
+		parse_lf_array(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
