@@ -16,10 +16,13 @@ static inline int rd(const int fd) {
 	unsigned char   buffer[4];
 	ssize_t         n;
 
-	while (1) {
+	for (;;) {
 		n = read(fd, buffer, 1);
 		if (n > (ssize_t)0) {
 			return buffer[0];
+		}
+		if (n == (ssize_t)-1) {
+			return RD_EOF;
 		}
 		if (n == (ssize_t)0) {
 			return RD_EOF;
@@ -57,8 +60,11 @@ static inline int wr(const int fd, const char *const data, const size_t bytes) {
 /* Return a new file descriptor to the current TTY.
  */
 int current_tty(void) {
+#if __WINDOWS__
+	return 0;
+#elif __ANDROID__
 	return 1;
-#if 0
+#else
 	int fd;
 	const char *dev = ttyname(STDERR_FILENO);
 #if 0
@@ -73,7 +79,7 @@ int current_tty(void) {
 	}
 
 	do {
-		fd = open(dev, O_RDWR | O_NOCTTY);
+		fd = open (dev, O_RDWR | O_NOCTTY);
 	} while (fd == -1 && errno == EINTR);
 	if (fd == -1)
 		return -1;
@@ -96,10 +102,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	saved_errno = errno;
 
 	/* Save current terminal settings. */
-	do {
-		res = tcgetattr(tty, &saved);
-	} while (res == -1 && errno == EINTR);
-
+	res = tcgetattr (tty, &saved);
 	if (res == -1) {
 		ret = errno;
 		errno = saved_errno;
@@ -107,9 +110,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	}
 
 	/* Get current terminal settings for basis, too. */
-	do {
-		res = tcgetattr(tty, &temporary);
-	} while (res == -1 && errno == EINTR);
+	res = tcgetattr (tty, &temporary);
 	if (res == -1) {
 		ret = errno;
 		errno = saved_errno;
@@ -126,11 +127,8 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	 * will return ret to caller. It's better than goto.
 	 */
 	do {
-
 		/* Set modified settings. */
-		do {
-			res = tcsetattr(tty, TCSANOW, &temporary);
-		} while (res == -1 && errno == EINTR);
+		res = tcsetattr(tty, TCSANOW, &temporary);
 		if (res == -1) {
 			ret = errno;
 			break;
@@ -152,7 +150,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		/* Expect an ESC. */
 		for (;;) {
 			res = rd(tty);
-			if (res == 27)
+			if (res == 27 || res < 1)
 				break;
 			// else store_skipped_data_from_stdin_here
 		}
@@ -176,6 +174,8 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		/* Parse cols. */
 		cols = 0;
 		res = rd(tty);
+		if (res==-1)
+			break;
 		while (res >= '0' && res <= '9') {
 			cols = 10 * cols + res - '0';
 			res = rd(tty);
@@ -194,9 +194,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	} while (0);
 
 	/* Restore saved terminal settings. */
-	do {
-		res = tcsetattr (tty, TCSANOW, &saved);
-	} while (res == -1 && errno == EINTR);
+	res = tcsetattr (tty, TCSANOW, &saved);
 	if (res == -1 && !ret)
 		ret = errno;
 
