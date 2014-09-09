@@ -271,16 +271,18 @@ static int computeStructSize(char *fmt) {
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
 	const char *fmt;
+	/*int flag = (slide>=10000) ? -2 : -1;*/
 	if ((slide%100) > 14) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
 	fmt = r_strht_get (p->formats, name);
-	r_print_format (p, seek, b, len, fmt, -1, NULL);
+	r_print_format (p, seek, b, len, fmt, /*flag*/-1, NULL);
 	return computeStructSize(strdup(fmt));
 }
 
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, const char *fmt, int elem, const char *setval) {
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
+		const char *fmt, int elem, const char *setval) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	int (*oldprintf)(const char *str, ...);
 	const char *argend = fmt+strlen (fmt);
@@ -383,6 +385,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				p->printf ("   ");
 #define MUSTSET (setval && elem == idx)
 #define MUSTSEE (elem == -1 || elem == idx)
+#define SEEFLAG (elem == -2)
 			if (MUSTSEE) {
 				if (!(MUSTSET)) {
 					if (oldprintf)
@@ -456,6 +459,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				tmp = (p->bits == 64)? 'q': 'x';
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
+			}
+			if (SEEFLAG) {
+				p->printf ("f %s=0x%08"PFMT64x"\n", r_str_word_get0 (args, idx) , seeki);
 			}
 
 			if (isptr == 3) {
@@ -613,11 +619,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					*(name++) = '\0';
 				}
 				p->printf ("<struct>\n");
+				/* if (SEEFLAG) slide+=10000;*/
 				slide += (isptr) ? 100 : 1;
 				s = r_print_format_struct (p, seeki, buf+i, len, structname--, slide);
 				free (structname);
 				i+= (isptr) ? 4 : s;
 				slide -= (isptr) ? 100 : 1;
+				/*if (SEEFLAG) slide-=10000;*/
 				break;
 				}
 			default:
