@@ -7,6 +7,20 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+//lfArray = Struct("lfArray",
+//    ULInt32("element_type"),
+//    ULInt32("index_type"),
+//    val("size"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int element_type;
+	unsigned int index_type;
+	// val("size")
+	unsigned char pad;
+} SLF_ARRAY;
+
 //lfPointer = Struct("lfPointer",
 //    ULInt32("utype"),
 //    BitStruct("ptr_attr",
@@ -1209,6 +1223,77 @@ static void parse_lf_pointer(unsigned char *leaf_data, unsigned int *read_bytes,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_array(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_ARRAY lf_array;
+
+	// val("size")
+	unsigned int c = 0;
+	char *name = 0;
+	unsigned short value_or_type = 0;
+	// end of val("size);
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_array.element_type = *(unsigned int *)leaf_data;
+	*read_bytes += 4;
+	leaf_data += 4;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_array.index_type = *(unsigned int *)leaf_data;
+	*read_bytes += 4;
+	leaf_data += 4;
+
+	value_or_type = *(unsigned short *)(leaf_data);
+	leaf_data += 2;
+	*read_bytes += 2;
+
+	// name_or_val parsing
+	if (value_or_type < eLF_CHAR) {
+		while (*leaf_data != 0) {
+			CAN_READ(*read_bytes, 1, len)
+			c++;
+			leaf_data++;
+			(*read_bytes) += 1;
+		}
+		CAN_READ(*read_bytes, 1, len)
+		leaf_data++;
+		(*read_bytes) += 1;
+		//TODO: free name
+		name = (unsigned char *) malloc(c + 1);
+		memcpy(name, leaf_data - (c + 1), c + 1);
+		printf("parse_lf_array(): name = %s\n", name);
+	} else {
+		printf("parse_lf_array(): oops\n");
+		//TODO:
+//		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
+//		                {
+//		                    "LF_CHAR": Struct("char",
+//		                        String("value", 1),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_SHORT": Struct("short",
+//		                        SLInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_USHORT": Struct("ushort",
+//		                        ULInt16("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_LONG": Struct("char",
+//		                        SLInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                    "LF_ULONG": Struct("char",
+//		                        ULInt32("value"),
+//		                        CString("name"),
+//		                    ),
+//		                },
+//		            ),
+		return 0;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 {
 	SType type;
@@ -1241,6 +1326,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_POINTER:
 		printf("eLF_POINTER\n");
 		parse_lf_pointer(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_ARRAY:
+		printf("eLF_ARRAY\n");
+//		parse_lf_array(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
