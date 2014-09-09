@@ -608,11 +608,13 @@ R_API char *r_sys_pid_to_path(int pid) {
 static char** env = NULL;
 
 R_API char **r_sys_get_environ () {
+#if __APPLE__
+	extern char **environ;
+	env = environ;
+#endif
 	// return environ if available??
-	if (!env) {
+	if (!env)
 		env = r_lib_dl_sym (NULL, "environ");
-eprintf ("SET %p\n", env);
-}
 	return env;
 }
 

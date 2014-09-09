@@ -485,6 +485,7 @@ R_API int r_run_start(RRunProfile *p) {
 #if __APPLE__
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
+		char **envp = r_sys_get_environ();
 		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
 		if (p->_aslr == 0) {
@@ -506,7 +507,7 @@ R_API int r_run_start(RRunProfile *p) {
 					&attr, 1, &cpu, &copied);
 		}
 		ret = posix_spawnp (&pid, p->_args[0],
-			NULL, &attr, p->_args, NULL);
+			NULL, &attr, p->_args, envp);
 		switch (ret) {
 		case 0:
 			break;
