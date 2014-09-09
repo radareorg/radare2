@@ -871,7 +871,7 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 		core->offset = cf && cf->map ? cf->map->from : 0;
 		core->file = cf;
 		if (desc) {
-			r_io_use_fd (core->io, desc->fd);
+			r_io_use_desc (core->io, desc);
 			r_core_bin_set_by_fd (core, desc->fd);
 			//r_core_bin_bind (core, NULL);
 		}

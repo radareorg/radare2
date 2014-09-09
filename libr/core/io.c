@@ -413,7 +413,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
 #else
-	r_io_use_fd (core->io, core->file->desc->fd); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
+	r_io_use_desc (core->io, core->file->desc); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
 	//ret = r_io_read_at (core->io, addr, buf, size);
 	r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	ret = r_io_read (core->io, buf, size);
