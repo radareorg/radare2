@@ -28,7 +28,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm_ex (cd, buf, R_MIN (4, len),
+	n = cs_disasm (cd, buf, R_MIN (4, len),
 		a->pc, 1, &insn);
 	if (n<1) {
 		ret = -1;

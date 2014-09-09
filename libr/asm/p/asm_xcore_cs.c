@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ret = cs_open (CS_ARCH_XCORE, mode, &handle);
 	if (ret) goto fin;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm_ex (handle, (ut8*)buf, len, a->pc, 1, &insn);
+	n = cs_disasm (handle, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n<1) {
 		strcpy (op->buf_asm, "invalid");
 		op->size = 4;
