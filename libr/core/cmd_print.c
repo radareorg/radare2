@@ -1646,7 +1646,10 @@ static int cmd_print(void *data, const char *input) {
 								r_str_word_set0 (res);
 								for (i = 1; ; i++) {
 									const char *k = r_str_word_get0 (res, i);
-									if (!k) break;
+									if (!k || !*k) {
+										eprintf ("Unknown field '%s'\n", dot);
+										break;
+									}
 									if (!strcmp (k, dot)) {
 										r_print_format (core->print, core->offset,
 												core->block, core->blocksize, fmt, i-1, eq);
@@ -1667,7 +1670,10 @@ static int cmd_print(void *data, const char *input) {
 									r_str_word_set0 (res);
 									for (i = 1; ; i++) {
 										k = r_str_word_get0 (res, i);
-										if (!k) break;
+										if (!k || !*k) {
+											eprintf ("Unknown field '%s'\n", dot);
+											break;
+										}
 										if (!strcmp (k, dot)) {
 											r_print_format (core->print, core->offset,
 												core->block, core->blocksize, fmt, i-1, NULL);
