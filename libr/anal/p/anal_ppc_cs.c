@@ -17,7 +17,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
-		n = cs_disasm_ex (handle, (const ut8*)buf, len, addr, 1, &insn);
+		n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n<1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {

@@ -197,7 +197,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->size = 4;
 	if (ret != CS_ERR_OK) goto fin;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	n = cs_disasm_ex (handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n<1 || insn->size<1)
 		goto beach;
 	op->type = R_ANAL_OP_TYPE_NULL;
