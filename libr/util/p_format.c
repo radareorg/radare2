@@ -605,27 +605,21 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				{
 				int s;
 				char *structname = strdup (r_str_word_get0 (args, idx-1));
-				if (*structname == '[') {
-					name = strchr (structname, ']');
-				} else {
+				name = strchr (structname, ':');
+				if (name == NULL) {
 					eprintf ("Struct name missing\n");
 					free (structname);
 					goto beach;
 				}
-				structname++;
-				if (name == NULL) {
-					eprintf ("No ')'\n");
-				} else {
-					*(name++) = '\0';
-				}
+				*(name++) = '\0';
 				p->printf ("<struct>\n");
 				/* if (SEEFLAG) slide+=10000;*/
 				slide += (isptr) ? 100 : 1;
-				s = r_print_format_struct (p, seeki, buf+i, len, structname--, slide);
-				free (structname);
+				s = r_print_format_struct (p, seeki, buf+i, len, structname, slide);
 				i+= (isptr) ? 4 : s;
 				slide -= (isptr) ? 100 : 1;
 				/*if (SEEFLAG) slide-=10000;*/
+				free (structname);
 				break;
 				}
 			default:
