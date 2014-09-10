@@ -966,6 +966,31 @@ static void parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_b
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void free_sval(SVal *val)
+{
+	if (val->value_or_type < eLF_CHAR) {
+		SCString *scstr;
+		scstr = (SCString *) val->name_or_val;
+		free(scstr->name);
+		free(val->name_or_val);
+	} else {
+		printf("free_sval()::oops\n");
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void printf_sval_name(SVal *val)
+{
+	if (val->value_or_type < eLF_CHAR) {
+		SCString *scstr;
+		scstr = (SCString *) val->name_or_val;
+		printf("%s", scstr->name);
+	} else {
+		printf("free_sval()::oops\n");
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
 {
 	int read_bytes_before = 0;
@@ -1634,6 +1659,12 @@ static void parse_lf_union(unsigned char *leaf_data, unsigned int *read_bytes, u
 
 	PEEK_READ(*read_bytes, 1, len, lf_union.pad, leaf_data, unsigned char);
 	PAD_ALIGN(lf_union.pad, *read_bytes, leaf_data, len);
+
+	printf("%s:", "parse_lf_union()");
+	printf_sval_name(&lf_union.size);
+
+	// TODO: move to appropriate place
+	free_sval(&lf_union.size);
 }
 
 //Type = Debugger(Struct("type",
