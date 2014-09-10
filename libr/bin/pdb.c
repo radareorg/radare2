@@ -823,9 +823,42 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 //	memcpy(tmp->data.names, stream_file_read(stream, tmp->data.cb_names), tmp->data.cb_names);
 }
 
+///////////////////////////////////////////////////////////////////////////////
 #define CAN_READ(curr_read_bytes, bytes_for_read, max_len) { \
 	if ((((curr_read_bytes) + (bytes_for_read)) >= (max_len))) { \
 		return 0; \
+	} \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define UPDATE_DATA(src, curr_read_bytes, bytes_for_read) { \
+	(src) += (bytes_for_read); \
+	(curr_read_bytes) += (bytes_for_read); \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define PEEK_READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), (bytes_for_read), (max_len)); \
+	(dst) = *(type_name *) (src); \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
+	PEEK_READ((curr_read_bytes), (bytes_for_read), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), (bytes_for_read)); \
+}
+
+//if (lf_mfunction.pad > 0xF0) {
+//	tmp = lf_mfunction.pad & 0x0F;
+//	CAN_READ(*read_bytes, tmp, len);
+//	UPDATE_DATA(leaf_data, *read_bytes, tmp);
+//}
+#define PAD_ALIGN(pad, curr_read_bytes, src, max_len) { \
+	int tmp = 0; \
+	if ((pad) > 0xF0) { \
+		tmp = (pad) & 0x0F; \
+		CAN_READ((curr_read_bytes), (tmp), (len)); \
+		UPDATE_DATA((src), (curr_read_bytes), (tmp)); \
 	} \
 }
 
@@ -1453,54 +1486,17 @@ static void parse_lf_mfunction(unsigned char *leaf_data, unsigned int *read_byte
 {
 	SLF_MFUNCTION lf_mfunction;
 
-	CAN_READ(*read_bytes, 4, len);
-	lf_mfunction.return_type = *(unsigned int *) leaf_data;
-	leaf_data += 4;
-	*read_bytes += 4;
+	READ(*read_bytes, 4, len, lf_mfunction.return_type, leaf_data, unsigned int);
+	READ(*read_bytes, 4, len, lf_mfunction.class_type, leaf_data, unsigned int);
+	READ(*read_bytes, 4, len, lf_mfunction.this_type, leaf_data, unsigned int);
+	READ(*read_bytes, 1, len, lf_mfunction.call_conv, leaf_data, unsigned char);
+	READ(*read_bytes, 1, len, lf_mfunction.reserved, leaf_data, unsigned char);
+	READ(*read_bytes, 2, len, lf_mfunction.parm_count, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_mfunction.arglist, leaf_data, unsigned int);
+	READ(*read_bytes, 4, len, lf_mfunction.this_adjust, leaf_data, int);
 
-	CAN_READ(*read_bytes, 4, len);
-	lf_mfunction.class_type = *(unsigned int *) leaf_data;
-	leaf_data += 4;
-	*read_bytes += 4;
-
-	CAN_READ(*read_bytes, 4, len);
-	lf_mfunction.this_type = *(unsigned int *) leaf_data;
-	leaf_data += 4;
-	*read_bytes += 4;
-
-	CAN_READ(*read_bytes, 1, len);
-	lf_mfunction.call_conv = *(unsigned char *) leaf_data;
-	leaf_data += 1;
-	*read_bytes += 1;
-
-	CAN_READ(*read_bytes, 1, len);
-	lf_mfunction.reserved = *(unsigned char *) leaf_data;
-	leaf_data += 1;
-	*read_bytes += 1;
-
-	CAN_READ(*read_bytes, 2, len);
-	lf_mfunction.parm_count = *(unsigned short *) leaf_data;
-	leaf_data += 2;
-	*read_bytes += 2;
-
-	CAN_READ(*read_bytes, 4, len);
-	lf_mfunction.arglist = *(unsigned int *) leaf_data;
-	leaf_data += 4;
-	*read_bytes += 4;
-
-	CAN_READ(*read_bytes, 4, len);
-	lf_mfunction.this_adjust = *(int *) leaf_data;
-	leaf_data += 4;
-	*read_bytes += 4;
-
-	CAN_READ(*read_bytes, 1, len);
-	lf_mfunction.pad = *(unsigned char *) leaf_data;
-	// TODO: add macros PadAlign
-	if (lf_mfunction.pad > 0xF0) {
-		CAN_READ(*read_bytes, lf_mfunction.pad & 0x0F, len)
-		leaf_data += (lf_mfunction.pad & 0x0F);
-		*read_bytes += (lf_mfunction.pad & 0x0F);
-	}
+	PEEK_READ(*read_bytes, 1, len, lf_mfunction.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_mfunction.pad, *read_bytes, leaf_data, len);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
