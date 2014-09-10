@@ -239,11 +239,11 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				break;
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; i<sizeof (tmp)-2 && isgraph (*p) && i < sizeof(tmp);)
+			for (i = 0; i<sizeof (tmp)-1 && isgraph (*p) && i < sizeof(tmp);)
 				tmp[i++] = *p++;
 			tmp[i] = '\0';
 			// Limit the number of tokens 
-			if (j > PARSER_MAX_TOKENS-2)
+			if (j > PARSER_MAX_TOKENS-1)
 				break;
 			// Save the token
 			tok[j++] = strdup (tmp);
@@ -284,9 +284,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 }
 
 R_API int r_reg_set_profile(RReg *reg, const char *profile) {
-	char *base, *str, *file;
-
-	str = r_file_slurp (profile, NULL);
+	int ret;
+	char *base, *file;
+	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		// XXX we must define this varname in r_lib.h /compiletime/
 		base = r_sys_getenv ("LIBR_PLUGINS");
@@ -302,7 +302,9 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 		return R_FALSE;
 	}
 	
-	return r_reg_set_profile_string (reg, str);
+	ret = r_reg_set_profile_string (reg, str);
+	free (str);
+	return ret;
 }
 
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
