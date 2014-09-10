@@ -314,6 +314,20 @@ typedef struct {
 	unsigned pad;
 } SLF_UNION;
 
+//lfBitfield = Struct("lfBitfield",
+//    ULInt32("base_type"),
+//    ULInt8("length"),
+//    ULInt8("position"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int base_type;
+	unsigned char length;
+	unsigned char position;
+	unsigned char pad;
+} SLF_BITFIELD;
+
 typedef struct {
 	int off;
 	int cb;
@@ -1667,6 +1681,19 @@ static void parse_lf_union(unsigned char *leaf_data, unsigned int *read_bytes, u
 	free_sval(&lf_union.size);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_bitfield(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_BITFIELD lf_bitfield;
+
+	READ(*read_bytes, 4, len, lf_bitfield.base_type, leaf_data, unsigned int);
+	READ(*read_bytes, 1, len, lf_bitfield.length, leaf_data, unsigned char);
+	READ(*read_bytes, 1, len, lf_bitfield.position, leaf_data, unsigned char);
+
+	PEEK_READ(*read_bytes, 1, len, lf_bitfield.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_bitfield.pad, *read_bytes, leaf_data, len);
+}
+
 //Type = Debugger(Struct("type",
 //    leaf_type,
 //    Switch("type_info", lambda ctx: ctx.leaf_type,
@@ -1751,6 +1778,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_UNION:
 		printf("eLF_UNION\n");
 		parse_lf_union(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_BITFIELD:
+		printf("eLF_BITFIELD\n");
+		parse_lf_bitfield(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
