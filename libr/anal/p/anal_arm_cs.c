@@ -130,7 +130,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
 	if (ret == CS_ERR_OK) {
-		n = cs_disasm_ex (handle, (ut8*)buf, len, addr, 1, &insn);
+		n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 		if (n<1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {

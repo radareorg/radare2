@@ -33,7 +33,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (ret) return 0;
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	n = cs_disasm_ex (cd, (const ut8*)buf, len, off, 1, &insn);
+	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 	if (n>0) {
 		if (insn->size>0) {
 			op->size = insn->size;
