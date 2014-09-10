@@ -34,6 +34,35 @@ typedef enum {
 	eMAX_CV_CALL
 } ECV_CALL;
 
+//CV_property = BitStruct("prop",
+//    Flag("fwdref"),
+//    Flag("opcast"),
+//    Flag("opassign"),
+//    Flag("cnested"),
+//    Flag("isnested"),
+//    Flag("ovlops"),
+//    Flag("ctor"),
+//    Flag("packed"),
+
+//    BitField("reserved", 7, swapped=True),
+//    Flag("scoped"),
+//)
+typedef union {
+	struct {
+		char fwdref : 1;
+		char opcast : 1;
+		char opassign : 1;
+		char cnested : 1;
+		char isnested : 1;
+		char ovlops : 1;
+		char ctor : 1;
+		char packed : 1;
+		char reserved : 7; // swapped
+		char scoped : 1;
+	} a;
+	unsigned short cv_property;
+} UCV_PROPERTY;
+
 //lfProcedure = Struct("lfProcedure",
 //    ULInt32("return_type"),
 //    CV_call,
@@ -174,35 +203,6 @@ typedef struct {
 	unsigned char pad;
 } SLF_POINTER;
 
-//CV_property = BitStruct("prop",
-//    Flag("fwdref"),
-//    Flag("opcast"),
-//    Flag("opassign"),
-//    Flag("cnested"),
-//    Flag("isnested"),
-//    Flag("ovlops"),
-//    Flag("ctor"),
-//    Flag("packed"),
-
-//    BitField("reserved", 7, swapped=True),
-//    Flag("scoped"),
-//)
-typedef union {
-	struct {
-		char fwdref : 1;
-		char opcast : 1;
-		char opassign : 1;
-		char cnested : 1;
-		char isnested : 1;
-		char ovlops : 1;
-		char ctor : 1;
-		char packed : 1;
-		char reserved : 7; // swapped
-		char scoped : 1;
-	} a;
-	unsigned short cv_property;
-} UCV_PROPERTY;
-
 typedef struct {
 	int stream_size;
 	char *stream_pages;
@@ -268,9 +268,51 @@ typedef struct {
 //)
 
 typedef struct {
-	char *value_name;
+	unsigned int size;
+	char *name;
+} SCString;
+
+typedef struct {
+	SCString name;
+} SNoVal;
+
+typedef struct {
+	char value;
+	SCString name;
+} SVal_LF_CHAR;
+
+typedef struct {
+	short value;
+	SCString name;
+} SVal_LF_SHORT;
+
+typedef struct {
+	unsigned short value;
+	SCString name;
+} SVal_LF_USHORT;
+
+typedef struct {
+	long value;
+	SCString name;
+} SVal_LF_LONG;
+
+typedef struct {
+	unsigned long value;
+	SCString name;
+} SVal_LF_ULONG;
+
+typedef struct {
 	unsigned short value_or_type;
+	void *name_or_val;
 } SVal;
+
+typedef struct {
+	unsigned short count;
+	UCV_PROPERTY prop;
+	unsigned int field_list;
+	SVal size;
+	unsigned pad;
+} SLF_UNION;
 
 typedef struct {
 	int off;
@@ -522,7 +564,19 @@ typedef struct {
 	SPDBInfoStreamD data;
 } SPDBInfoStream;
 
+///////////////////////////////////////////////////////////////////////////////
+void init_scstring(SCString *cstr, unsigned int size, char *name)
+{
+	cstr->size = size;
+	cstr->name = (char *) malloc(size);
+	strcpy(cstr->name, name);
+}
 
+///////////////////////////////////////////////////////////////////////////////
+void deinit_scstring(SCString *cstr)
+{
+	free(cstr->name);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// size = -1 (default value)
@@ -878,6 +932,37 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 		CAN_READ((curr_read_bytes), (tmp), (len)); \
 		UPDATE_DATA((src), (curr_read_bytes), (tmp)); \
 	} \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	unsigned int c = 0;
+	while (*leaf_data != 0) {
+		CAN_READ((*read_bytes + c), 1, len);
+		c++;
+		leaf_data++;
+	}
+	CAN_READ(*read_bytes, 1, len);
+	leaf_data += 1;
+	(*read_bytes) += (c + 1);
+
+	init_scstring(sctr, c + 1, leaf_data - (c + 1));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	READ(*read_bytes, 2, len, val->value_or_type, leaf_data, unsigned short);
+
+	if (val->value_or_type < eLF_CHAR) {
+		SCString sctr;
+		parse_sctring(&sctr, leaf_data, read_bytes, len);
+		val->name_or_val = malloc(sizeof(SCString));
+		memcpy(val->name_or_val, &sctr, sizeof(SCString));
+	} else {
+		printf("parse_sval()::oops\n");
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1532,6 +1617,25 @@ static void parse_lf_procedure(unsigned char *leaf_data, unsigned int *read_byte
 	PAD_ALIGN(lf_procedure.pad, *read_bytes, leaf_data, len);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_union(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_UNION lf_union;
+	unsigned int before_read_bytes = 0;
+
+	READ(*read_bytes, 2, len, lf_union.count, leaf_data, unsigned short);
+	READ(*read_bytes, 2, len, lf_union.prop.cv_property, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_union.field_list, leaf_data, unsigned int);
+
+	before_read_bytes = *read_bytes;
+	parse_sval(&lf_union.size, leaf_data, read_bytes, len);
+	before_read_bytes = *read_bytes - before_read_bytes;
+	leaf_data = (unsigned char *)leaf_data + before_read_bytes;
+
+	PEEK_READ(*read_bytes, 1, len, lf_union.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_union.pad, *read_bytes, leaf_data, len);
+}
+
 //Type = Debugger(Struct("type",
 //    leaf_type,
 //    Switch("type_info", lambda ctx: ctx.leaf_type,
@@ -1612,6 +1716,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_PROCEDURE:
 		printf("eLF_PROCEDURE\n");
 		parse_lf_procedure(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_UNION:
+		printf("eLF_UNION\n");
+		parse_lf_union(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
