@@ -210,7 +210,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			flag = r_flag_get_i (core->flags, addr+j);
 			if (flag) { // Begining of a flag
 				fend = addr + j + flag->size;
-				note[j] = r_str_prefix (strdup(flag->name), "/");
+				note[j] = r_str_prefix (strdup (flag->name), "/");
 				marks = R_TRUE;
 				color_idx++;
 				color_idx %= R_CONS_PALETTE_LIST_SIZE;
@@ -297,7 +297,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			memset (out, ' ', nb_cons_cols-1);
 			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
-					int off = (j*3) - (j/2) + 12;
+					int off = (j*3) - (j/2) + 13;
 					int sz = R_MIN (strlen (note[j]), nb_cons_cols-(off));
 					if (j%2) off--;
 					memcpy (out+off, note[j], sz); //avoid overflow
