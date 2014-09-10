@@ -210,7 +210,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	// Cache the profile string
 	// 'str' is always heap-allocated
-	reg->reg_profile_str = str;
+	reg->reg_profile_str = strdup (str);
 
 	// Line number
 	l = 0;
@@ -239,11 +239,11 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				break;
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; isgraph (*p) && i < sizeof(tmp);)
+			for (i = 0; i<sizeof (tmp)-2 && isgraph (*p) && i < sizeof(tmp);)
 				tmp[i++] = *p++;
 			tmp[i] = '\0';
 			// Limit the number of tokens 
-			if (j > PARSER_MAX_TOKENS)
+			if (j > PARSER_MAX_TOKENS-2)
 				break;
 			// Save the token
 			tok[j++] = strdup (tmp);

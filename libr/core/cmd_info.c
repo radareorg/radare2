@@ -44,7 +44,8 @@ static void r_core_file_info (RCore *core, int mode) {
 	if (cf && mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-		r_cons_printf (",\"fd\":%d", cf->desc->fd);
+		if (cf->desc)
+			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 		r_cons_printf (",\"size\":%d", cf->size);
 		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 			cf->rwx | dbg));
