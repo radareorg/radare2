@@ -7,6 +7,56 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+typedef enum {
+	eNEAR_C          = 0x00000000,
+	eFAR_C           = 0x00000001,
+	eNEAR_PASCAL     = 0x00000002,
+	eFAR_PASCAL      = 0x00000003,
+	eNEAR_FAST       = 0x00000004,
+	eFAR_FAST        = 0x00000005,
+	eSKIPPED         = 0x00000006,
+	eNEAR_STD        = 0x00000007,
+	eFAR_STD         = 0x00000008,
+	eNEAR_SYS        = 0x00000009,
+	eFAR_SYS         = 0x0000000A,
+	eTHISCALL        = 0x0000000B,
+	eMIPSCALL        = 0x0000000C,
+	eGENERIC         = 0x0000000D,
+	eALPHACALL       = 0x0000000E,
+	ePPCCALL         = 0x0000000F,
+	eSHCALL          = 0x00000010,
+	eARMCALL         = 0x00000011,
+	eAM33CALL        = 0x00000012,
+	eTRICALL         = 0x00000013,
+	eSH5CALL         = 0x00000014,
+	eM32RCALL        = 0x00000015,
+	eRESERVED        = 0x00000016,
+	eMAX_CV_CALL
+} ECV_CALL;
+
+//lfMFunc = Struct("lfMFunc",
+//    ULInt32("return_type"),
+//    ULInt32("class_type"),
+//    ULInt32("this_type"),
+//    CV_call,
+//    ULInt8("reserved"),
+//    ULInt16("parm_count"),
+//    ULInt32("arglist"),
+//    SLInt32("thisadjust"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int return_type;
+	unsigned int class_type;
+	unsigned int this_type;
+	ECV_CALL call_conv; // 1 byte
+	unsigned char reserved;
+	unsigned short parm_count;
+	unsigned int arglist;
+	int this_adjust;
+	unsigned char pad;
+} SLF_MFUNCTION;
 
 //lfArgList = Struct("lfArgList",
 //    ULInt32("count"),
@@ -17,7 +67,7 @@
 typedef struct {
 	unsigned int count;
 	// TODO: need to be free
-	int *arg_type;
+	unsigned int *arg_type;
 	unsigned char pad;
 } SLF_ARGLIST;
 
@@ -1399,6 +1449,61 @@ static void parse_lf_arglist(unsigned char *leaf_data, unsigned int *read_bytes,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_mfunction(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_MFUNCTION lf_mfunction;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_mfunction.return_type = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_mfunction.class_type = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_mfunction.this_type = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_mfunction.call_conv = *(unsigned char *) leaf_data;
+	leaf_data += 1;
+	*read_bytes += 1;
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_mfunction.reserved = *(unsigned char *) leaf_data;
+	leaf_data += 1;
+	*read_bytes += 1;
+
+	CAN_READ(*read_bytes, 2, len);
+	lf_mfunction.parm_count = *(unsigned short *) leaf_data;
+	leaf_data += 2;
+	*read_bytes += 2;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_mfunction.arglist = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_mfunction.this_adjust = *(int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_mfunction.pad = *(unsigned char *) leaf_data;
+	// TODO: add macros PadAlign
+	if (lf_mfunction.pad > 0xF0) {
+		CAN_READ(*read_bytes, lf_mfunction.pad & 0x0F, len)
+		leaf_data += (lf_mfunction.pad & 0x0F);
+		*read_bytes += (lf_mfunction.pad & 0x0F);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 {
 	SType type;
@@ -1443,6 +1548,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_ARGLIST:
 		printf("eLF_ARGLIST\n");
 		parse_lf_arglist(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_MFUNCTION:
+		printf("eLF_MFUNCTION\n");
+		parse_lf_mfunction(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
