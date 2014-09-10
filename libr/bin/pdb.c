@@ -8,6 +8,19 @@
 #define PDB2_SIGNATURE_LEN 51
 
 
+//lfArgList = Struct("lfArgList",
+//    ULInt32("count"),
+//    Array(lambda ctx: ctx.count, ULInt32("arg_type")),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int count;
+	// TODO: need to be free
+	int *arg_type;
+	unsigned char pad;
+} SLF_ARGLIST;
+
 //lfModifier = Struct("lfModifier",
 //    ULInt32("modified_type"),
 //    BitStruct("modifier",
@@ -1357,6 +1370,35 @@ static void parse_lf_modifier(unsigned char *leaf_data, unsigned int *read_bytes
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_arglist(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_ARGLIST lf_arglist;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_arglist.count = *(unsigned int *) leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 4 * lf_arglist.count, len);
+	lf_arglist.arg_type = (unsigned int *) malloc(4 * lf_arglist.count);
+	memcpy(lf_arglist.arg_type, leaf_data, 4 * lf_arglist.count);
+	leaf_data += (4 * lf_arglist.count);
+	*read_bytes += (4 * lf_arglist.count);
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_arglist.pad = *(unsigned char *) leaf_data;
+	// TODO: add macros PadAlign
+	if (lf_arglist.pad > 0xF0) {
+		CAN_READ(*read_bytes, lf_arglist.pad & 0x0F, len)
+		leaf_data += (lf_arglist.pad & 0x0F);
+		*read_bytes += (lf_arglist.pad & 0x0F);
+	}
+
+	// TODO: add this free to appropriate place
+	free(lf_arglist.arg_type);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 {
 	SType type;
@@ -1397,6 +1439,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_MODIFIER:
 		printf("eLF_MODIFIER\n");
 		parse_lf_modifier(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_ARGLIST:
+		printf("eLF_ARGLIST\n");
+		parse_lf_arglist(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
