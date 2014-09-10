@@ -34,6 +34,24 @@ typedef enum {
 	eMAX_CV_CALL
 } ECV_CALL;
 
+//lfProcedure = Struct("lfProcedure",
+//    ULInt32("return_type"),
+//    CV_call,
+//    ULInt8("reserved"),
+//    ULInt16("parm_count"),
+//    ULInt32("arglist"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int return_type;
+	ECV_CALL call_conv;
+	unsigned char reserved;
+	unsigned short parm_count;
+	unsigned int arg_list;
+	unsigned char pad;
+} SLF_PROCEDURE;
+
 //lfMFunc = Struct("lfMFunc",
 //    ULInt32("return_type"),
 //    ULInt32("class_type"),
@@ -1500,6 +1518,45 @@ static void parse_lf_mfunction(unsigned char *leaf_data, unsigned int *read_byte
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_procedure(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_PROCEDURE lf_procedure;
+
+	READ(*read_bytes, 4, len, lf_procedure.return_type, leaf_data, unsigned int);
+	READ(*read_bytes, 1, len, lf_procedure.call_conv, leaf_data, unsigned char);
+	READ(*read_bytes, 1, len, lf_procedure.reserved, leaf_data, unsigned char);
+	READ(*read_bytes, 2, len, lf_procedure.parm_count, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_procedure.arg_list, leaf_data, unsigned int);
+
+	PEEK_READ(*read_bytes, 1, len, lf_procedure.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_procedure.pad, *read_bytes, leaf_data, len);
+}
+
+//Type = Debugger(Struct("type",
+//    leaf_type,
+//    Switch("type_info", lambda ctx: ctx.leaf_type,
+//        {
+//            "LF_ARGLIST": lfArgList,
+//            "LF_ARRAY": lfArray,
+//            "LF_ARRAY_ST": lfArrayST,
+//            "LF_BITFIELD": lfBitfield,
+//            "LF_CLASS": lfClass,
+//            "LF_ENUM": lfEnum,
+//            "LF_FIELDLIST": lfFieldList,
+//            "LF_MFUNCTION": lfMFunc,
+//            "LF_MODIFIER": lfModifier,
+//            "LF_POINTER": lfPointer,
+//            "LF_PROCEDURE": lfProcedure,
+//            "LF_STRUCTURE": lfStructure,
+//            "LF_STRUCTURE_ST": lfStructureST,
+//            "LF_UNION": lfUnion,
+//            "LF_UNION_ST": lfUnionST,
+//            "LF_VTSHAPE": lfVTShape,
+//        },
+//        default = Pass,
+//    ),
+//))
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 {
 	SType type;
@@ -1548,6 +1605,13 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_MFUNCTION:
 		printf("eLF_MFUNCTION\n");
 		parse_lf_mfunction(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_METHODLIST:
+		printf("eLF_METHOD_LIST\n");
+		break;
+	case eLF_PROCEDURE:
+		printf("eLF_PROCEDURE\n");
+		parse_lf_procedure(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
