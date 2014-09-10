@@ -7,6 +7,35 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+
+//lfModifier = Struct("lfModifier",
+//    ULInt32("modified_type"),
+//    BitStruct("modifier",
+//        Padding(5),
+//        Flag("unaligned"),
+//        Flag("volatile"),
+//        Flag("const"),
+//        Padding(8),
+//    ),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned int modified_type;
+	// TODO: fix union (bitstruct("...")
+	union {
+		struct {
+			char pad1 : 5;
+			char unaligned : 1;
+			char volatile_ : 1;
+			char const_ : 1;
+			char pad2 : 8;
+		} smodifier;
+		unsigned short modifier;
+	};
+	unsigned char pad;
+} SLF_MODIFIER;
+
 //lfArray = Struct("lfArray",
 //    ULInt32("element_type"),
 //    ULInt32("index_type"),
@@ -1291,6 +1320,40 @@ static void parse_lf_array(unsigned char *leaf_data, unsigned int *read_bytes, u
 //		            ),
 		return 0;
 	}
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_array.pad = *(unsigned char *) leaf_data;
+	// TODO: add macros PadAlign
+	if (lf_array.pad > 0xF0) {
+		CAN_READ(*read_bytes, lf_array.pad & 0x0F, len)
+		leaf_data += (lf_array.pad & 0x0F);
+		*read_bytes += (lf_array.pad & 0x0F);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_modifier(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_MODIFIER lf_modifier;
+
+	CAN_READ(*read_bytes, 4, len);
+	lf_modifier.modified_type = *(unsigned int *)leaf_data;
+	leaf_data += 4;
+	*read_bytes += 4;
+
+	CAN_READ(*read_bytes, 2, len);
+	lf_modifier.modifier = *(unsigned short *)leaf_data;
+	leaf_data += 2;
+	*read_bytes += 2;
+
+	CAN_READ(*read_bytes, 1, len);
+	lf_modifier.pad = *(unsigned char *) leaf_data;
+	// TODO: add macros PadAlign
+	if (lf_modifier.pad > 0xF0) {
+		CAN_READ(*read_bytes, lf_modifier.pad & 0x0F, len)
+		leaf_data += (lf_modifier.pad & 0x0F);
+		*read_bytes += (lf_modifier.pad & 0x0F);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1330,6 +1393,10 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_ARRAY:
 		printf("eLF_ARRAY\n");
 		parse_lf_array(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_MODIFIER:
+		printf("eLF_MODIFIER\n");
+		parse_lf_modifier(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
