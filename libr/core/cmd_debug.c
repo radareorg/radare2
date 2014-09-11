@@ -705,11 +705,14 @@ free (rf);
 	case ' ':
 		arg = strchr (str+1, '=');
 		if (arg) {
+			char *string;
+			char *regname;
 			*arg = 0;
-			int role = r_reg_get_name_idx (str+1);
-			char *regname = r_reg_get_name (core->dbg->reg, role);
+			string = r_str_chop (strdup (str+1));
+			regname = r_reg_get_name (core->dbg->reg,
+				r_reg_get_name_idx (string));
 			if (!regname)
-				regname= str+1;
+				regname= string;
 			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
 			if (r) {
 				r_cons_printf ("0x%08"PFMT64x" ->", str,
@@ -719,7 +722,8 @@ free (rf);
 				r_debug_reg_sync (core->dbg, -1, R_TRUE);
 				r_cons_printf ("0x%08"PFMT64x"\n",
 					r_reg_get_value (core->dbg->reg, r));
-			} else eprintf ("Unknown register '%s'\n", str+1);
+			} else eprintf ("Unknown register '%s'\n", string);
+			free (string);
 			return;
 		} else {
 			int role = r_reg_get_name_idx (str+1);
