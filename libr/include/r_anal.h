@@ -780,6 +780,7 @@ typedef struct r_anal_esil_t {
 	char *stack[32];
 	int stackptr;
 	int skip;
+	int nowrite;
 	int repeat;
 	int parse_stop;
 	int parse_goto;
@@ -794,7 +795,12 @@ typedef struct r_anal_esil_t {
 	ut64 cur;	//used for carry-flagging and borrow-flagging
 	/* native ops and custom ops */
 	Sdb *ops;
+	/* deep esil parsing fills this */
+	Sdb *stats;
 	/* callbacks */
+	int (*hook_flag_read)(ESIL *esil, char flag, ut64 *num);
+	int (*hook_command)(ESIL *esil, const char *op);
+
 	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
@@ -980,7 +986,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
 
 R_API RAnalEsil *r_anal_esil_new();
-R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal);
+R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
 R_API void r_anal_esil_free (RAnalEsil *esil);
 R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil);
@@ -993,6 +999,8 @@ R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str);
 
+R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
+R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new();
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);

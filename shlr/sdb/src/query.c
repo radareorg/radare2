@@ -568,7 +568,7 @@ next_quote:
 				free ((void*)val);
 				val = NULL;
 			}
-			if (ok) *buf = 0;
+			if (ok && buf) *buf = 0;
 		} else {
 			// 0 1 kvpath:jspath
 			// 0 0 kvpath

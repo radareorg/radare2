@@ -900,6 +900,9 @@ R_API int r_core_config_init(RCore *core) {
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 
+	SETPREF("esil.romem", "false", "If set to true memory cannot be writen from esil");
+	SETPREF("esil.stats", "false", "Statistics from esil emulation stored in sdb");
+
 	/* scr */
 #if __EMSCRIPTEN__
 	r_config_set_cb (cfg, "scr.fgets", "true", cb_scrfgets);
@@ -908,6 +911,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
 	SETPREF("scr.colorops", "true", "Colorize in numbers/registers in opcodes");
+	SETPREF("scr.responsive", "true", "Auto-adjust asm. and hex. depending on screen size");
 	SETPREF("scr.wheel", "true", "Enable the use of mouse wheel in visual mode");
 	SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");

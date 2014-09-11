@@ -912,8 +912,10 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		return;
 	}
 	if (!core->anal->esil) {
+		int romem = r_config_get_i (core->config, "esil.romem");
+		int stats = r_config_get_i (core->config, "esil.stats");
 		core->anal->esil = r_anal_esil_new ();
-		r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+		r_anal_esil_setup (core->anal->esil, core->anal, romem, stats); // setup io
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
 		RBinInfo *info = NULL;
@@ -930,6 +932,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 			eprintf ("PC=OFF\n");
 		}
 		r_reg_setv (core->anal->reg, name, addr);
+		// set memory read only
 	} else {
 		addr = r_reg_getv (core->anal->reg, name);
 		eprintf ("PC=0x%llx\n", (ut64)addr);
@@ -994,12 +997,17 @@ static int cmd_anal(void *data, const char *input) {
 			return cmd_anal (core, input+1);
 		case ' ':
 			{
-				//r_anal_esil_eval (core->anal, input+2);
-				if (!core->anal->esil) {
-					core->anal->esil = r_anal_esil_new ();
-					r_anal_esil_setup (core->anal->esil, core->anal); // setup io
-				}
 				RAnalEsil *esil = core->anal->esil;
+					int romem = r_config_get_i (core->config, "esil.romem");
+					int stats = r_config_get_i (core->config, "esil.stats");
+				//r_anal_esil_eval (core->anal, input+2);
+				if (!esil) {
+					esil = r_anal_esil_new ();
+					r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+					core->anal->esil = esil;
+				}
+					r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+				esil = core->anal->esil;
 				r_anal_esil_parse (esil, input+2);
 				r_anal_esil_dumpstack (esil);
 				r_anal_esil_stack_free (esil);
@@ -1043,7 +1051,62 @@ static int cmd_anal(void *data, const char *input) {
 				r_anal_esil_free (core->anal->esil);
 			// reinitialize
 			core->anal->esil = r_anal_esil_new ();
-			r_anal_esil_setup (core->anal->esil, core->anal); // setup io
+			 {
+				int romem = r_config_get_i (core->config, "esil.romem");
+				int stats = r_config_get_i (core->config, "esil.stats");
+				r_anal_esil_setup (core->anal->esil, core->anal, romem, stats); // setup io
+			 }
+			break;
+		case 'k':
+			switch (input[2]) {
+			case '\0':
+				input = "123*";
+			case ' ':
+				if (core && core->anal && core->anal->esil && core->anal->esil->stats) {
+					char *out = sdb_querys (core->anal->esil->stats, NULL, 0, input+3);
+					if (out) {
+						r_cons_printf ("%s\n", out);
+						free (out);
+					}
+				} else eprintf ("esil.stats is empty. Run 'aei'\n");
+				break;
+			case '-':
+				sdb_reset (core->anal->esil->stats);
+				break;
+			}
+			break;
+		case 'f':
+			{
+			       RListIter *iter;
+			       RAnalBlock *bb;
+			       RAnalFunction *fcn = r_anal_fcn_find (core->anal,
+				       core->offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+			       if (fcn) {
+				       // emulate every instruction in the function recursively across all the basic blocks
+				       r_list_foreach (fcn->bbs, iter, bb) {
+						ut64 pc = bb->addr;
+						ut64 end = bb->addr +bb->size;
+						RAnalOp op;
+						ut8 *buf;
+						int ret, bbs = end-pc;
+						if (bbs<1 || bbs > 0xfffff) {
+							eprintf ("Invalid block size\n");
+						}
+						eprintf ("Emulate basic block 0x%08"PFMT64x" - 0x%08"PFMT64x"\n",pc, end);
+						buf = malloc (bbs+1);
+						r_io_read_at (core->io, pc, buf, bbs);
+						while (pc<end) {
+							r_asm_set_pc (core->assembler, pc);
+							ret = r_anal_op (core->anal, &op, addr, buf, 32); // read overflow
+							r_reg_setv (core->anal->reg, "pc", pc);
+							r_anal_esil_parse (core->anal->esil, R_STRBUF_SAFEGET (&op.esil));
+							r_anal_esil_dumpstack (core->anal->esil);
+							r_anal_esil_stack_free (core->anal->esil);
+							pc += op.size;
+					       }
+				       }
+			       } else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			}
 			break;
 		default: {
 				const char* help_msg[] = {
@@ -1051,6 +1114,9 @@ static int cmd_anal(void *data, const char *input) {
 				"aei", "", "initialize ESIL VM state",
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
+				"aef", " [addr]", "emulate function",
+				"aek", " [query]", "perform sdb query on ESIL.info",
+				"aek-", "", "resets the ESIL.info sdb instance",
 				"aec", "", "continue until ^C",
 				"aecu", " [addr]", "continue until address",
 				"aecue", " [esil]", "continue until esil expression match",

@@ -18,18 +18,14 @@ int main(int argc, char **argv) {
 	}
 	file = argv[1];
 	if (*file && !strchr (file, '=')) {
-		char *data = r_file_slurp (file, NULL);
-		if (!data) {
-			eprintf ("Cannot open %s\n", file);
-			return 1;
-		}
-		p = r_run_new (data);
-		free (data);
+		p = r_run_new (file);
 	} else {
 		p = r_run_new (NULL);
 		for (i = *file?1:2; i<argc; i++)
 			r_run_parseline (p, argv[i]);
 	}
+	if (!p)
+		return 1;
 	ret = r_run_start (p);
 	r_run_free (p);
 	return ret;

@@ -1248,13 +1248,38 @@ R_API void r_core_visual_title (RCore *core, int color) {
 }
 
 static void r_core_visual_refresh (RCore *core) {
+	int w, h;
 	RCons *cons;
 	const char *vi, *vcmd;
 	if (!core) return;
-	r_cons_get_size (NULL);
+	w = r_cons_get_size (&h);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 	cons = r_cons_singleton ();
 	cons->blankline = R_TRUE;
+
+	if (r_config_get_i (core->config, "scr.responsive")) {
+		if (w<68) {
+			r_config_set_i (core->config, "hex.cols", w/5.2);
+		} else {
+			r_config_set_i (core->config, "hex.cols", 16);
+		}
+		if (w<25) {
+			r_config_set_i (core->config, "asm.offset", 0);
+		} else {
+			r_config_set_i (core->config, "asm.offset", 1);
+		}
+		if (w>80) {
+			r_config_set_i (core->config, "asm.lineswidth", 14);
+		} else {
+			r_config_set_i (core->config, "asm.lineswidth", 7);
+		}
+		if (w<55) {
+			r_config_set_i (core->config, "asm.lineswidth", 1);
+			r_config_set_i (core->config, "asm.bytes", 0);
+		} else {
+			r_config_set_i (core->config, "asm.bytes", 1);
+		}
+	}
 
 	/* hack to blank last line. move prompt here? */
 	r_cons_fill_line ();
