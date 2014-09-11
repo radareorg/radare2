@@ -387,7 +387,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 			if (fnidx>=0 && fnidx<hdr->file_names_count) {
 				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
 						hdr->file_names[fnidx].name, regs->line);
-			} else eprintf ("dwarf: file name index out of range\n");
+			}
 		}
 
 		if (f) {
@@ -506,7 +506,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 					regs->address,
 					hdr->file_names[fnidx].name,
 					regs->line);
-			} else eprintf ("dwarf: file name index out of range\n");
+			}
 		}
 		regs->basic_block = DWARF_FALSE;
 		break;
