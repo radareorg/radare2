@@ -13,6 +13,7 @@
 #include "../../asm/arch/gb/gbdis.c"
 #include <meta_gb_cmt.c>
 #include <gb_makros.h>
+#include <gb.h>
 
 static const char *regs_1[] = { "Z", "N", "H", "C"};
 static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a"};				//deprecate this and rename regs_x
@@ -1430,12 +1431,22 @@ static int set_reg_profile(RAnal *anal) {
 
 static int esil_gb_init (RAnalEsil *esil)
 {
+	GBUser *user = R_NEW0 (GBUser);
 	r_anal_esil_set_op (esil, "daa", gb_custom_daa);
+	if (user) {
+		if (esil->anal) {
+			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
+			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
+			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
+		}
+		esil->user = user;
+	}
 	return R_TRUE;
 }
 
 static int esil_gb_fini (RAnalEsil *esil)
 {
+	R_FREE (esil->user);
 	return R_TRUE;
 }
 
