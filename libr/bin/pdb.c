@@ -306,6 +306,26 @@ typedef struct {
 	void *name_or_val;
 } SVal;
 
+//lfStructure = Struct("lfStructure",
+//    ULInt16("count"),
+//    CV_property,
+//    ULInt32("fieldlist"),
+//    ULInt32("derived"),
+//    ULInt32("vshape"),
+//    val("size"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned short count;
+	UCV_PROPERTY prop;
+	unsigned int field_list;
+	unsigned int derived;
+	unsigned int vshape;
+	SVal size;
+	unsigned char pad;
+} SLF_STRUCTURE, SLF_CLASS;
+
 typedef struct {
 	unsigned short count;
 	UCV_PROPERTY prop;
@@ -1367,16 +1387,34 @@ static void parse_lf_enum(unsigned char *leaf_data, unsigned int len)
 	}
 }
 
-//lfStructure = Struct("lfStructure",
-//    ULInt16("count"),
-//    CV_property,
-//    ULInt32("fieldlist"),
-//    ULInt32("derived"),
-//    ULInt32("vshape"),
-//    val("size"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_class(unsigned char *leaf_data,unsigned int *read_bytes, unsigned int len)
+{
+	SLF_CLASS lf_class;
+	unsigned int before_read_bytes = 0;
+
+	READ(*read_bytes, 2, len, lf_class.count, leaf_data, unsigned short);
+	READ(*read_bytes, 2, len, lf_class.prop.cv_property, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_class.field_list, leaf_data, unsigned int);
+	READ(*read_bytes, 4, len, lf_class.derived, leaf_data, unsigned int);
+	READ(*read_bytes, 4, len, lf_class.vshape, leaf_data, unsigned int);
+
+	before_read_bytes = *read_bytes;
+	parse_sval(&lf_class.size, leaf_data, read_bytes, len);
+	before_read_bytes = *read_bytes - before_read_bytes;
+	leaf_data = (unsigned char *)leaf_data + before_read_bytes;
+
+	PEEK_READ(*read_bytes, 1, len, lf_class.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_class.pad, *read_bytes, leaf_data, len);
+
+	printf("%s:", "parse_lf_class()");
+	printf_sval_name(&lf_class.size);
+	printf("\n");
+
+	// TODO: move to appropriate place
+	free_sval(&lf_class.size);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static void parse_lf_structure(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
 {
@@ -1676,6 +1714,7 @@ static void parse_lf_union(unsigned char *leaf_data, unsigned int *read_bytes, u
 
 	printf("%s:", "parse_lf_union()");
 	printf_sval_name(&lf_union.size);
+	printf("\n");
 
 	// TODO: move to appropriate place
 	free_sval(&lf_union.size);
@@ -1744,6 +1783,11 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 		printf("eLF_ENUM\n");
 		parse_lf_enum(leaf_data + 2, types->length);
 		break;
+	// TODO: combine with eLF_STRUCTURE
+	case eLF_CLASS:
+		printf("eLF_CLASS\n");
+		parse_lf_class(leaf_data + 2, &read_bytes, types->length);
+		break;
 	case eLF_STRUCTURE:
 		printf("eLF_STRUCTURE\n");
 		parse_lf_structure(leaf_data + 2, &read_bytes, types->length);
@@ -1782,6 +1826,9 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 	case eLF_BITFIELD:
 		printf("eLF_BITFIELD\n");
 		parse_lf_bitfield(leaf_data + 2, &read_bytes, types->length);
+		break;
+	case eLF_VTSHAPE:
+		printf("eLF_VTSHAPE\n");
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
