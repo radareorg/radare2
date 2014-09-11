@@ -221,6 +221,57 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 	return bytes_read;
 }
 
+// This is not so good commented, because it's mostly copy-pasta from mread
+R_API int r_io_mwrite (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
+	int write_bytes = len;
+	ut64 endaddr, paddr, d;
+	RIODesc *desc;								//desc for tmp use
+	RIOMap *map;								//map
+	if (len<0) {
+		eprintf ("r_io_mwrite: wrong usage; len is smaller than 0, len: %i\n", len);
+		return R_FAIL;
+	}
+	if ((UT64_MAX - len) < maddr) {						//no overflows please
+		eprintf ("r_io_mwrite: no, you cannot overflow this ut64\n");
+		write_bytes = UT64_MAX - maddr;
+	}
+	endaddr = maddr + write_bytes;
+	map = r_io_map_resolve_in_range (io, maddr, endaddr, fd);
+	if (!map)
+		map = r_io_map_resolve (io, fd);
+	if (!map) {
+		eprintf ("r_io_mwrite: cannot resolve map for fd%i\n", fd);
+		return R_ERROR;
+	}
+	if (endaddr > map->to) {
+		if (maddr > map->to)
+			return R_FAIL;
+		endaddr = map->to;
+		write_bytes = endaddr - maddr;
+	}
+	if (maddr < map->from) {
+		if (endaddr < map->from)
+			return R_FAIL;
+		d = map->from - maddr;
+		if (write_bytes < d)
+			return R_FAIL;
+		buf += d;
+		write_bytes -= d;
+		maddr += d;
+	}
+	paddr = maddr - map->from + map->delta;
+	desc = io->desc;
+	io->desc = r_io_desc_get (io, fd);
+	if (!io->desc) {
+		eprintf ("r_io_mwrite: cannot get desc for fd %i\n", fd);
+		io->desc = desc;
+		return R_ERROR;
+	}
+	write_bytes = r_io_pwrite (io, paddr, buf, write_bytes);
+	io->desc = desc;
+	return write_bytes;
+}
+
 R_API r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
 {
 	int bytes_written = 0;
