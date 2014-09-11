@@ -319,7 +319,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	RListIter *iter;
 	RRegItem *r;
 	int i, e;
-  char *pch, *copy;
+  	char *pch, *copy;
 	if (!reg || !name)
 		return NULL;
 	if (type == -1) {
@@ -329,12 +329,12 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 		i = type;
 		e = type+1;
 	}
-  copy = strdup(name);
-  pch = strtok((char*)name, " ");
-  free(copy);
-  if (!pch) {
-    pch = name;
-  }
+	copy = strdup(name);
+	pch = strtok((char*)name, " ");
+	free(copy);
+	if (!pch) {
+	  pch = name;
+	}
 	for (; i<e; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
 			if (r->name && !strcmp (r->name, name)) {
