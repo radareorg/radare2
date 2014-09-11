@@ -174,6 +174,7 @@ static int cb_asmbits(void *user, void *data) {
 			char *rp = core->dbg->h->reg_profile (core->dbg);
 			r_reg_set_profile_string (core->dbg->reg, rp);
 			r_reg_set_profile_string (core->anal->reg, rp);
+			free (rp);
 		}
 	}
 

@@ -192,11 +192,11 @@ static const char *parse_def (RReg *reg, char **tok, const int n) {
 
 #define PARSER_MAX_TOKENS 8
 
-R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
+R_API int r_reg_set_profile_string(RReg *reg, char *str) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
-	const char *p = str;
+	char *p = str;
 
 	if (!reg || !str)
 		return R_FALSE;
@@ -209,7 +209,6 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	r_reg_free_internal (reg);
 
 	// Cache the profile string
-	// 'str' is always heap-allocated
 	reg->reg_profile_str = strdup (str);
 
 	// Line number
@@ -239,11 +238,11 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				break;
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; i<sizeof (tmp)-1 && isgraph (*p) && i < sizeof(tmp);)
+			for (i = 0; isgraph (*p) && i < sizeof(tmp) - 1;)
 				tmp[i++] = *p++;
 			tmp[i] = '\0';
 			// Limit the number of tokens 
-			if (j > PARSER_MAX_TOKENS-1)
+			if (j > PARSER_MAX_TOKENS - 1)
 				break;
 			// Save the token
 			tok[j++] = strdup (tmp);
