@@ -348,6 +348,24 @@ typedef struct {
 	unsigned char pad;
 } SLF_BITFIELD;
 
+//lfVTShape = Struct("lfVTShape",
+//    ULInt16("count"),
+//    BitStruct("vt_descriptors",
+//        Array(lambda ctx: ctx._.count,
+//            BitField("vt_descriptors", 4)
+//        ),
+//        # Needed to align to a byte boundary
+//        Padding(lambda ctx: (ctx._.count % 2) * 4),
+//    ),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//)
+typedef struct {
+	unsigned short count;
+	char *vt_descriptors;
+	unsigned char pad;
+} SLF_VTSHAPE;
+
 typedef struct {
 	int off;
 	int cb;
@@ -1733,6 +1751,23 @@ static void parse_lf_bitfield(unsigned char *leaf_data, unsigned int *read_bytes
 	PAD_ALIGN(lf_bitfield.pad, *read_bytes, leaf_data, len);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void parse_lf_vtshape(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
+{
+	SLF_VTSHAPE lf_vtshape;
+	unsigned int size; // in bytes;
+
+	READ(*read_bytes, 2, len, lf_vtshape.count, leaf_data, unsigned short);
+
+	size = (4 * lf_vtshape.count + (lf_vtshape.count % 2) * 4) / 8;
+	lf_vtshape.vt_descriptors = (char *) malloc(size);
+	memcpy(lf_vtshape.vt_descriptors, leaf_data, size);
+	leaf_data += size;
+
+	PEEK_READ(*read_bytes, 1, len, lf_vtshape.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_vtshape.pad, *read_bytes, leaf_data, len);
+}
+
 //Type = Debugger(Struct("type",
 //    leaf_type,
 //    Switch("type_info", lambda ctx: ctx.leaf_type,
@@ -1829,6 +1864,7 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, STypes *types)
 		break;
 	case eLF_VTSHAPE:
 		printf("eLF_VTSHAPE\n");
+		parse_lf_vtshape(leaf_data + 2, &read_bytes, types->length);
 		break;
 	default:
 		printf("parse_tpi_stremas(): unsupported leaf type\n");
