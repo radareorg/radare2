@@ -51,11 +51,11 @@ R_API void r_run_reset(RRunProfile *p) {
 R_API int r_run_parse(RRunProfile *pf, const char *profile) {
 	char *p, *o, *str = strdup (profile);
 	for (o = p = str; (o = strchr (p, '\n')); p = o) {
-		*o = 0;
+		*o++ = 0;
 		r_run_parseline (pf, p);
 	}
 	free (str);
-	return 0;
+	return 1;
 }
 
 R_API void r_run_free (RRunProfile *r) {
