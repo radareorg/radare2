@@ -49,19 +49,53 @@ typedef enum {
 //)
 typedef union {
 	struct {
-		char fwdref : 1;
-		char opcast : 1;
-		char opassign : 1;
-		char cnested : 1;
-		char isnested : 1;
-		char ovlops : 1;
-		char ctor : 1;
-		char packed : 1;
-		char reserved : 7; // swapped
-		char scoped : 1;
-	} a;
+		unsigned char fwdref : 1;
+		unsigned char opcast : 1;
+		unsigned char opassign : 1;
+		unsigned char cnested : 1;
+		unsigned char isnested : 1;
+		unsigned char ovlops : 1;
+		unsigned char ctor : 1;
+		unsigned char packed : 1;
+		unsigned char reserved : 7; // swapped
+		unsigned char scoped : 1;
+	} bits;
 	unsigned short cv_property;
 } UCV_PROPERTY;
+
+enum {
+	eMTvanilla   = 0x00,
+	eMTvirtual   = 0x01,
+	eMTstatic    = 0x02,
+	eMTfriend    = 0x03,
+	eMTintro     = 0x04,
+	eMTpurevirt  = 0x05,
+	eMTpureintro = 0x06,
+	eMT_MAX
+} EMPROP;
+
+enum {
+	ePrivate    = 1,
+	eProtected  = 2,
+	ePublic     = 3,
+	eAccessMax
+} EACCESS;
+
+//### CodeView bitfields and enums
+//# NOTE: Construct assumes big-endian
+//# ordering for BitStructs
+typedef union {
+	struct {
+		unsigned char access : 2;
+		unsigned char mprop : 3;
+		unsigned char pseudo : 1;
+		unsigned char noinherit : 1;
+		unsigned char noconstruct : 1;
+		unsigned char padding : 7;
+		unsigned char compgenx : 1;
+	} bits;
+	unsigned short fldattr;
+} UCV_fldattr;
 
 //lfProcedure = Struct("lfProcedure",
 //    ULInt32("return_type"),
@@ -365,6 +399,75 @@ typedef struct {
 	char *vt_descriptors;
 	unsigned char pad;
 } SLF_VTSHAPE;
+
+//	lfEnum = Struct("lfEnum",
+//ULInt16("count"),
+//CV_property,
+//ULInt32("utype"),
+//ULInt32("fieldlist"),
+//CString("name"),
+//Peek(ULInt8("_pad")),
+//PadAlign,
+//)
+typedef struct {
+	unsigned short count;
+	UCV_PROPERTY prop;
+	unsigned int utype;
+	unsigned int field_list;
+	SCString name;
+	unsigned char pad;
+} SLF_ENUM;
+
+//"LF_ENUMERATE": Struct("lfEnumerate",
+//    CV_fldattr,
+//    val("enum_value"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//),
+typedef struct {
+	UCV_fldattr fldattr;
+	SVal enum_value;
+	unsigned char pad;
+} SLF_ENUMERATE;
+
+//	"LF_NESTTYPE": Struct("lfNestType",
+//        Padding(2),
+//        ULInt32("index"),
+//        CString("name"),
+//    ),
+typedef struct {
+	unsigned short pad;
+	unsigned int index;
+	SCString name;
+} SLF_NESTTYPE;
+
+//"LF_METHOD": Struct("lfMethod",
+//    ULInt16("count"),
+//    ULInt32("mlist"),
+//    CString("name"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//),
+typedef struct {
+	unsigned short count;
+	unsigned int mlist;
+	SCString name;
+	unsigned char pad;
+} SLF_METHOD;
+
+//"LF_MEMBER": Struct("lfMember",
+//    CV_fldattr,
+//    ULInt32("index"),
+//    val("offset"),
+//    Peek(ULInt8("_pad")),
+//    PadAlign,
+//),
+typedef struct {
+	UCV_fldattr fldattr;
+	unsigned int inedex;
+	SVal offset;
+	unsigned char pad;
+} SLF_MEMBER;
 
 typedef struct {
 	int off;
@@ -1013,7 +1116,24 @@ static void parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_b
 		val->name_or_val = malloc(sizeof(SCString));
 		memcpy(val->name_or_val, &sctr, sizeof(SCString));
 	} else {
-		printf("parse_sval()::oops\n");
+		switch (val->value_or_type) {
+		case eLF_ULONG:
+		{
+			SVal_LF_ULONG lf_ulong;
+			lf_ulong.value = 0;
+			// unsinged long = 4 bytes for Windows, but not in Linux x64,
+			// so here is using unsinged int instead of unsigned long when
+			// reading ulong value
+			READ(*read_bytes, 4, len, lf_ulong.value, leaf_data, unsigned int);
+			parse_sctring(&lf_ulong.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc(sizeof(SVal_LF_ULONG));
+			memcpy(val->name_or_val, &lf_ulong, sizeof(SVal_LF_ULONG));
+			break;
+		}
+		default:
+			printf("parse_sval()::oops\n");
+			break;
+		}
 	}
 }
 
@@ -1026,7 +1146,19 @@ static void free_sval(SVal *val)
 		free(scstr->name);
 		free(val->name_or_val);
 	} else {
-		printf("free_sval()::oops\n");
+		switch (val->value_or_type) {
+		case eLF_ULONG:
+		{
+			SVal_LF_ULONG *lf_ulong;
+			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
+			free(lf_ulong->name.name);
+			free(val->name_or_val);
+			break;
+		}
+		default:
+			printf("free_sval()::oops\n");
+			break;
+		}
 	}
 }
 
@@ -1038,279 +1170,189 @@ static void printf_sval_name(SVal *val)
 		scstr = (SCString *) val->name_or_val;
 		printf("%s", scstr->name);
 	} else {
-		printf("free_sval()::oops\n");
+		switch (val->value_or_type) {
+		case eLF_ULONG:
+		{
+			SVal_LF_ULONG *lf_ulong;
+			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
+			printf("%s", lf_ulong->name.name);
+			break;
+		}
+		default:
+			printf("printf_sval_name()::oops\n");
+			break;
+		}
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_enumerate(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
 {
-	int read_bytes_before = 0;
-	unsigned short fldattr = 0;
-	unsigned short value_or_type = 0;
-	unsigned char *name = 0;
-	unsigned char *p_leaf_data;
-	int c = 0;
-	unsigned char pad = 0;
+	SLF_ENUMERATE lf_enumerate;
+	unsigned int read_bytes_before = 0, tmp_read_bytes_before = 0;
 
-	p_leaf_data = leaf_data;
 	read_bytes_before = *read_bytes;
+	READ(*read_bytes, 2, len, lf_enumerate.fldattr.fldattr, leaf_data, unsigned short);
 
-	CAN_READ(*read_bytes, 2, len);
-	fldattr = *(unsigned short *)p_leaf_data; // CV_fldattr = BitStruct("fldattr",
-	*read_bytes += 2;
-	CAN_READ(*read_bytes, 2, len);
-	value_or_type = *(unsigned short *)(p_leaf_data + 2);
-	p_leaf_data += 4;
-	*read_bytes += 2;
+	tmp_read_bytes_before = *read_bytes;
+	parse_sval(&lf_enumerate.enum_value, leaf_data, read_bytes, len);
+	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	// name_or_val parsing
-	if (value_or_type < eLF_CHAR) {
-		while (*p_leaf_data != 0) {
-			CAN_READ((*read_bytes + c), 1, len);
-			c++;
-			p_leaf_data++;
-//			(*read_bytes) += 1;
-		}
-		CAN_READ(*read_bytes, 1, len);
-		p_leaf_data += 1;
-		(*read_bytes) += (c + 1);
-		//TODO: free name
-		name = (unsigned char *) malloc(c + 1);
-		memcpy(name, p_leaf_data - (c + 1), c + 1);
-		if (strcmp(name, "eInterfaceMethodUsage") == 0) {
-			printf("debug\n");
-		}
+	PEEK_READ(*read_bytes, 1, len, lf_enumerate.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_enumerate.pad, *read_bytes, leaf_data, len);
 
-		printf("parse_lf_enumerate(): name = %s\n", name);
-	} else {
-		printf("oops\n");
-		//TODO:
-//		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
-//		                {
-//		                    "LF_CHAR": Struct("char",
-//		                        String("value", 1),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_SHORT": Struct("short",
-//		                        SLInt16("value"),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_USHORT": Struct("ushort",
-//		                        ULInt16("value"),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_LONG": Struct("char",
-//		                        SLInt32("value"),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_ULONG": Struct("char",
-//		                        ULInt32("value"),
-//		                        CString("name"),
-//		                    ),
-//		                },
-//		            ),
-		return 0;
-	}
+	printf("%s:", "parse_lf_enumerate()");
+	printf_sval_name(&lf_enumerate.enum_value);
+	printf("\n");
 
-	CAN_READ(*read_bytes, 1, len)
-	pad = *(unsigned char *)p_leaf_data;
-	if (pad > 0xF0) {
-		CAN_READ(*read_bytes, ((int)pad & 0x0F), len)
-//		p_leaf_data += (pad & 0x0F);
-		*read_bytes += ((int)pad & 0x0F);
-	}
+	free_sval(&lf_enumerate.enum_value);
 
 	return (*read_bytes - read_bytes_before);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//	"LF_NESTTYPE": Struct("lfNestType",
-//        Padding(2),
-//        ULInt32("index"),
-//        CString("name"),
-//    ),
 static int parse_lf_nesttype(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
 {
 	unsigned int read_bytes_before = *read_bytes;
-	unsigned int index = 0;
-	char *name = 0;
-	unsigned int c = 0;
-	unsigned char *p = leaf_data;
+	SLF_NESTTYPE lf_nesttype;
 
-	CAN_READ(*read_bytes, 2, len);
-	p += 2; // PADDING(2)
-	*read_bytes += 2;
+	READ(*read_bytes, 2, len, lf_nesttype.pad, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_nesttype.index, leaf_data, unsigned short);
 
-	CAN_READ(*read_bytes, 4, len);
-	index = *(unsigned int *)p;
-	p += 4;
-	*read_bytes += 4;
-
-	while (*p != 0) {
-		CAN_READ(*read_bytes, 1, len);
-		c++;
-		p++;
-		*read_bytes += 1;
-	}
-	CAN_READ(*read_bytes, 1, len)
-	p++;
-	*read_bytes += 1;
-	//TODO: free name
-	name = (unsigned char *) malloc(c + 1);
-	memcpy(name, p - (c + 1), c + 1);
-	printf("parse_lf_nesttype(): name = %s\n", name);
+	parse_sctring(&lf_nesttype.name, leaf_data, read_bytes, len);
+	printf("parse_lf_nesttype(): name = %s\n", lf_nesttype.name.name);
 
 	return *read_bytes - read_bytes_before;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//"LF_METHOD": Struct("lfMethod",
-//    ULInt16("count"),
-//    ULInt32("mlist"),
-//    CString("name"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//),
 static int parse_lf_method(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
 {
-	unsigned int read_bytes_before = *read_bytes;
-	unsigned short count;
-	unsigned int m_list = 0;
-	char *name = 0;
-	unsigned char pad;
-	unsigned int c = 0;
-	unsigned char *p = leaf_data;
 
-	CAN_READ(*read_bytes, 2, len);
-	count = *(unsigned short *)p;
-	p += 2;
-	*read_bytes += 2;
+	unsigned int read_bytes_before = *read_bytes, tmp_read_bytes_before = 0;
+	SLF_METHOD lf_method;
 
-	CAN_READ(*read_bytes, 4, len);
-	m_list = *(unsigned int *)p;
-	p += 4;
-	*read_bytes += 4;
+	READ(*read_bytes, 2, len, lf_method.count, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_method.mlist, leaf_data, unsigned int);
 
-	// TODO: ADD CSTRING MACROS!!!
-	while (*p != 0) {
-		CAN_READ(*read_bytes, 1, len);
-		c++;
-		p++;
-		*read_bytes += 1;
-	}
-	CAN_READ(*read_bytes, 1, len)
-	p++;
-	*read_bytes += 1;
-	//TODO: free name
-	name = (unsigned char *) malloc(c + 1);
-	memcpy(name, p - (c + 1), c + 1);
-	printf("parse_lf_method(): name = %s\n", name);
+	tmp_read_bytes_before = *read_bytes;
+	parse_sctring(&lf_method.name, leaf_data, read_bytes, len);
+	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	CAN_READ(*read_bytes, 1, len);
-	pad = *(unsigned char *)p;
-	if (pad > 0xF0) {
-		CAN_READ(*read_bytes, pad & 0x0F, len)
-		p += (pad & 0x0F);
-		*read_bytes += (pad & 0x0F);
-	}
+	PEEK_READ(*read_bytes, 1, len, lf_method.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_method.pad, *read_bytes, leaf_data, len);
+
+	printf("parse_lf_method(): name = %s\n", lf_method.name.name);
+
+	// TODO: free in appropriate place
+	free(lf_method.name.name);
 
 	return *read_bytes - read_bytes_before;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//"LF_MEMBER": Struct("lfMember",
-//    CV_fldattr,
-//    ULInt32("index"),
-//    val("offset"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//),
 static int parse_lf_member(unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
 {
-	int read_bytes_before = 0;
-	unsigned short fldattr = 0;
-	unsigned char *name = 0;
-	unsigned char *p;
-	int c = 0;
-	unsigned char pad = 0;
-	unsigned int index = 0;
-	unsigned short value_or_type = 0;
+	int read_bytes_before = *read_bytes, tmp_read_bytes_before = 0;
+	SLF_MEMBER lf_member;
 
-	read_bytes_before = *read_bytes;
-	p = leaf_data;
+	READ(*read_bytes, 2, len, lf_member.fldattr.fldattr, leaf_data, unsigned short);
+	READ(*read_bytes, 4, len, lf_member.inedex, leaf_data, unsigned int);
 
-	CAN_READ(*read_bytes, 2, len);
-	fldattr = *(unsigned short *)p; //CV_fldattr = BitStruct("fldattr",
-	*read_bytes += 2;
-	p += 2;
+	tmp_read_bytes_before = *read_bytes;
+	parse_sval(&lf_member.offset, leaf_data, read_bytes, len);
+	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	CAN_READ(*read_bytes, 4, len);
-	index = *(unsigned int *)p;
-	*read_bytes += 4;
-	p += 4;
+	PEEK_READ(*read_bytes, 1, len, lf_member.pad, leaf_data, unsigned char);
+	PAD_ALIGN(lf_member.pad, *read_bytes, leaf_data, len);
 
-	//val("offset") ...
-	// TODO: create macros val()
-	CAN_READ(*read_bytes, 2, len)
-	value_or_type = *(unsigned short *)(p);
-	p += 2;
-	*read_bytes += 2;
+	printf("parse_lf_member(): name = ");
+	printf_sval_name(&lf_member.offset);
+	printf("\n");
 
-	// name_or_val parsing
-	if (value_or_type < eLF_CHAR) {
-		while (*p != 0) {
-			CAN_READ(*read_bytes, 1, len)
-			c++;
-			p++;
-			(*read_bytes) += 1;
-		}
-		CAN_READ(*read_bytes, 1, len)
-		p++;
-		(*read_bytes) += 1;
-		//TODO: free name
-		name = (unsigned char *) malloc(c + 1);
-		memcpy(name, p - (c + 1), c + 1);
-		printf("parse_lf_member(): name = %s\n", name);
-	} else {
-		printf("parser_lf_member(): oops\n");
-		//TODO:
-//		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
-//		                {
-//		                    "LF_CHAR": Struct("char",
-//		                        String("value", 1),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_SHORT": Struct("short",
-//		                        SLInt16("value"),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_USHORT": Struct("ushort",
-//		                        ULInt16("value"),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_LONG": Struct("char",
-//		                        SLInt32("value"),
-//		                        CString("name"),
-//		                    ),
-//		                    "LF_ULONG": Struct("char",
-//		                        ULInt32("value"),
-//		                        CString("name"),
-//		                    ),
-//		                },
-//		            ),
-		return 0;
-	}
-	// end of val offset
+	free_sval(&lf_member.offset);
+//	unsigned short fldattr = 0;
+//	unsigned char *name = 0;
+//	unsigned char *p;
+//	int c = 0;
+//	unsigned char pad = 0;
+//	unsigned int index = 0;
+//	unsigned short value_or_type = 0;
 
-	CAN_READ(*read_bytes, 1, len)
-	pad = *(unsigned char *)p;
-	// TODO: add macros PadAlign
-	if (pad > 0xF0) {
-		CAN_READ(*read_bytes, pad & 0x0F, len)
-		p += (pad & 0x0F);
-		*read_bytes += (pad & 0x0F);
-	}
+//	read_bytes_before = *read_bytes;
+//	p = leaf_data;
+
+//	CAN_READ(*read_bytes, 2, len);
+//	fldattr = *(unsigned short *)p; //CV_fldattr = BitStruct("fldattr",
+//	*read_bytes += 2;
+//	p += 2;
+
+//	CAN_READ(*read_bytes, 4, len);
+//	index = *(unsigned int *)p;
+//	*read_bytes += 4;
+//	p += 4;
+
+//	//val("offset") ...
+//	// TODO: create macros val()
+//	CAN_READ(*read_bytes, 2, len)
+//	value_or_type = *(unsigned short *)(p);
+//	p += 2;
+//	*read_bytes += 2;
+
+//	// name_or_val parsing
+//	if (value_or_type < eLF_CHAR) {
+//		while (*p != 0) {
+//			CAN_READ(*read_bytes, 1, len)
+//			c++;
+//			p++;
+//			(*read_bytes) += 1;
+//		}
+//		CAN_READ(*read_bytes, 1, len)
+//		p++;
+//		(*read_bytes) += 1;
+//		//TODO: free name
+//		name = (unsigned char *) malloc(c + 1);
+//		memcpy(name, p - (c + 1), c + 1);
+//		printf("parse_lf_member(): name = %s\n", name);
+//	} else {
+//		printf("parser_lf_member(): oops\n");
+//		//TODO:
+////		Switch("val", lambda ctx: leaf_type._decode(ctx.value_or_type, {}),
+////		                {
+////		                    "LF_CHAR": Struct("char",
+////		                        String("value", 1),
+////		                        CString("name"),
+////		                    ),
+////		                    "LF_SHORT": Struct("short",
+////		                        SLInt16("value"),
+////		                        CString("name"),
+////		                    ),
+////		                    "LF_USHORT": Struct("ushort",
+////		                        ULInt16("value"),
+////		                        CString("name"),
+////		                    ),
+////		                    "LF_LONG": Struct("char",
+////		                        SLInt32("value"),
+////		                        CString("name"),
+////		                    ),
+////		                    "LF_ULONG": Struct("char",
+////		                        ULInt32("value"),
+////		                        CString("name"),
+////		                    ),
+////		                },
+////		            ),
+//		return 0;
+//	}
+//	// end of val offset
+
+//	CAN_READ(*read_bytes, 1, len)
+//	pad = *(unsigned char *)p;
+//	// TODO: add macros PadAlign
+//	if (pad > 0xF0) {
+//		CAN_READ(*read_bytes, pad & 0x0F, len)
+//		p += (pad & 0x0F);
+//		*read_bytes += (pad & 0x0F);
+//	}
 
 	return (*read_bytes - read_bytes_before);
 }
@@ -1354,15 +1396,6 @@ static void parse_lf_fieldlist(unsigned char *leaf_data, unsigned int len)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//	lfEnum = Struct("lfEnum",
-//ULInt16("count"),
-//CV_property,
-//ULInt32("utype"),
-//ULInt32("fieldlist"),
-//CString("name"),
-//Peek(ULInt8("_pad")),
-//PadAlign,
-//)
 static void parse_lf_enum(unsigned char *leaf_data, unsigned int len)
 {
 	unsigned short count = 0;
@@ -1766,6 +1799,8 @@ static void parse_lf_vtshape(unsigned char *leaf_data, unsigned int *read_bytes,
 
 	PEEK_READ(*read_bytes, 1, len, lf_vtshape.pad, leaf_data, unsigned char);
 	PAD_ALIGN(lf_vtshape.pad, *read_bytes, leaf_data, len);
+
+	free(lf_vtshape.vt_descriptors);
 }
 
 //Type = Debugger(Struct("type",
