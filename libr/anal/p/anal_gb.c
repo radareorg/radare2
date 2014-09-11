@@ -11,8 +11,8 @@
 #include <r_reg.h>
 #define GB_DIS_LEN_ONLY
 #include "../../asm/arch/gb/gbdis.c"
-#include "../arch/gb/meta_gb_cmt.c"
-#include "../arch/gb/gb_makros.h"
+#include <meta_gb_cmt.c>
+#include <gb_makros.h>
 
 static const char *regs_1[] = { "Z", "N", "H", "C"};
 static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a"};				//deprecate this and rename regs_x
