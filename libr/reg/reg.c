@@ -331,17 +331,18 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	}
 	copy = strdup(name);
 	pch = strtok((char*)name, " ");
-	free(copy);
 	if (!pch) {
 	  pch = name;
 	}
 	for (; i<e; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			if (r->name && !strcmp (r->name, name)) {
+			if (r->name && !strcmp (r->name, pch)) {
+			  	free(copy);
 				return r;
 	}
 		}
 	}
+	free(copy);
 	return NULL;
 }
 
