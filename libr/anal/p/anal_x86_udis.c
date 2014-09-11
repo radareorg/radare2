@@ -460,7 +460,7 @@ default:
 }
 
 static int set_reg_profile(RAnal *anal) {
-	const char *p32 = 
+	char *p = (anal->bits == 32) ?
 		"=pc	eip\n"
 		"=sp	esp\n"
 		"=bp	ebp\n"
@@ -519,8 +519,8 @@ static int set_reg_profile(RAnal *anal) {
 		//"drx	dr4	.32	16	0\n"
 		//"drx	dr5	.32	20	0\n"
 		"drx	dr6	.32	24	0\n"
-		"drx	dr7	.32	28	0\n";
-	const char *p64 =
+		"drx	dr7	.32	28	0\n"
+	:
 		"=pc	rip\n"
 		"=sp	rsp\n"
 		"=bp	rbp\n"
@@ -584,10 +584,7 @@ static int set_reg_profile(RAnal *anal) {
 		"drx	dr6	.32	24	0\n"
 		"drx	dr7	.32	28	0\n";
 
-	if (anal->bits == 32)
-		return r_reg_set_profile_string (anal->reg, strdup (p32)); 
-	else
-		return r_reg_set_profile_string (anal->reg, strdup (p64)); 
+	return r_reg_set_profile_string (anal->reg, p); 
 }
 
 struct r_anal_plugin_t r_anal_plugin_x86_udis = {

@@ -1387,8 +1387,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 */
 
 static int set_reg_profile(RAnal *anal) {
-	const char *p =
-		"=pc	mpc\n"
+	const char *p = "=pc	mpc\n"
 		"=sp	sp\n"
 		"=a0	af\n"
 		"=a1	bc\n"
@@ -1425,7 +1424,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return r_reg_set_profile_string (anal->reg, strdup (p));
+	return r_reg_set_profile_string (anal->reg, p);
 }
 
 static int esil_gb_init (RAnalEsil *esil)

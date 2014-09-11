@@ -407,8 +407,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 static int set_reg_profile(RAnal *anal) {
 	// TODO: support 64bit profile
-	const char *p32 = 
-		"=pc	r15\n"
+	const char *p32 = "=pc	r15\n"
 		"=sp	r13\n" 
 		"=bp	r14\n" // XXX
 		"=a0	r0\n"
@@ -436,7 +435,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n";
-	return r_reg_set_profile_string (anal->reg, strdup (p32));
+	return r_reg_set_profile_string (anal->reg, p32);
 }
 
 struct r_anal_plugin_t r_anal_plugin_arm_gnu = {

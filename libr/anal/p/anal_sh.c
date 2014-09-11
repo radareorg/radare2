@@ -454,8 +454,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 /* Set the profile register */
 static int sh_set_reg_profile(RAnal* anal){
 	//TODO Add system ( ssr, spc ) + fpu regs 
-	const char *p =
-		"=pc    pc\n"
+	const char *p = "=pc    pc\n"
 		"=sp    r15\n"
 		"=bp    r14\n"
 		"gpr	r0	.32	0	0\n"
@@ -480,7 +479,7 @@ static int sh_set_reg_profile(RAnal* anal){
 		"gpr	gbr	.32	76	0\n"
 		"gpr	mach	.32	80	0\n"
 		"gpr	macl	.32	84	0\n";
-	return r_reg_set_profile_string(anal->reg, strdup (p));
+	return r_reg_set_profile_string(anal->reg, p);
 }
 
 struct r_anal_plugin_t r_anal_plugin_sh = {
