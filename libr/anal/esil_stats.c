@@ -1,8 +1,7 @@
 #include <r_anal.h>
 
-static int hook_flag_read(RAnalEsil *esil, char flag, ut64 *num) {
-	char str[2] = {flag,0};
-	sdb_array_add (esil->stats, "flg.read", str, 0);
+static int hook_flag_read(RAnalEsil *esil, char *flag, ut64 *num) {
+	sdb_array_add (esil->stats, "flg.read", flag, 0);
 	return 0;
 }
 
