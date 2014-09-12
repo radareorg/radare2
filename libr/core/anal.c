@@ -47,12 +47,14 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 			return strdup ("parse_args"); // main?
 		}
 		if (use_isatty) {
-			char *ret = r_str_newf ("sub.setup_tty_%s", do_call);
+			char *ret = r_str_newf ("sub.setup_tty_%s_%x",
+				do_call, addr&0xfff);
 			free (do_call);
 			return ret;
 		}
 		if (do_call) {
-			char *ret = r_str_newf ("sub.do_%s", do_call);
+			char *ret = r_str_newf ("sub.%s_%x",
+				do_call, addr &0xfff);
 			free (do_call);
 			return ret;
 		}

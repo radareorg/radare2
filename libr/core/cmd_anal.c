@@ -501,7 +501,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		if (input[2]=='a') { // afna autoname
 			char *name = r_core_anal_fcn_autoname (core, core->offset);
 			if (name) {
-				r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, name);
+				r_cons_printf ("afn %s 0x%08"PFMT64x"\n", name, core->offset);
 				free (name);
 			}
 		} else {
