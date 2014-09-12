@@ -507,11 +507,11 @@ R_API void r_core_visual_config(RCore *core) {
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
 			r_list_foreach (core->config->nodes, iter, bt) {
-				if (option==i) {
-					fs2 = bt->name;
-					hit = 1;
-				}
 				if (!r_str_ccmp (bt->name, fs, '.')) {
+					if (option==i) {
+						fs2 = bt->name;
+						hit = 1;
+					}
 					if ( (i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 						// TODO: Better align
 						r_cons_printf (" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
