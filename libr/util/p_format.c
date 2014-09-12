@@ -556,8 +556,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
-					if ((size = strlen(setval)) > strlen((char*)(buf+seeki)))
+					int buflen = strlen (buf);
+					if (buflen>seeki) {
+						buflen = strlen (buf+seeki);
+					}
+					if (strlen (setval) > buflen) {
 						eprintf ("Warning: new string is longer than previous one \n");
+					}
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
