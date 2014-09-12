@@ -12,6 +12,54 @@ static void loganal(ut64 from, ut64 to) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", from, to);
 }
 
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
+	int use_getopt = 0;
+	int use_getuid = 0;
+	int use_isatty = 0;
+	char *do_call = NULL;
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr);
+	if (fcn) {
+		RAnalRef *ref;
+		RListIter *iter;
+		r_list_foreach (fcn->refs, iter, ref) {
+			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
+			if (f) {
+				if (strstr (f->name, "isatty"))
+					use_isatty = 1;
+				if (strstr (f->name, "getopt"))
+					use_getopt = 1;
+				if (strstr (f->name, "getuid"))
+					use_getuid = 1;
+				if (!strncmp (f->name, "sym.imp.", 8)) {
+					free (do_call);
+					do_call = strdup (f->name+8);
+				}
+				eprintf (" (debug) 0x%08"PFMT64x" TO 0x%08"PFMT64x"  %s\n",
+					addr, ref->addr, f->name);
+			} else {
+				//eprintf (" (debug) TO 0x%llx\n", ref->addr);
+			}
+		}
+		// TODO: append counter if name already exists
+		if (use_getopt) {
+			free (do_call);
+			// if referenced from entrypoint. this should be main
+			return strdup ("parse_args"); // main?
+		}
+		if (use_isatty) {
+			char *ret = r_str_newf ("sub.setup_tty_%s", do_call);
+			free (do_call);
+			return ret;
+		}
+		if (do_call) {
+			char *ret = r_str_newf ("sub.do_%s", do_call);
+			free (do_call);
+			return ret;
+		}
+	}
+	return NULL;
+}
+
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	int len;
 	RAnalOp op = {0}, *_op;
@@ -565,7 +613,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	do {
 		int delta = fcn->size;
 		// XXX hack slow check io error
-#if 0
+#if 1
 		if ((buflen = r_io_read_at (core->io, at+delta, buf, 4) != 4)) {
 			goto error;
 		}

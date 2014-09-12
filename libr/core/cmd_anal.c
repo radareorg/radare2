@@ -498,7 +498,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 }
 		 break;
 	case 'n':
-		{
+		if (input[2]=='a') { // afna autoname
+			char *name = r_core_anal_fcn_autoname (core, core->offset);
+			if (name) {
+				r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, name);
+				free (name);
+			}
+		} else {
 			 RAnalFunction *fcn;
 			 ut64 off = core->offset;
 			 char *p, *name = strdup (input+3);
@@ -642,6 +648,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afj", " [addr|fcn.name]", "show function(s) information in JSON",
 		 "afn", " name [addr]", "rename name for function at address (change flag too)",
+		 "afna", "", "suggest automatic name for current offset",
 		 "afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
 		 "afs", " [addr] [fcnsign]", "get/set function signature at current address",
 		 "afv", "[?] [idx] [type] [name]", "add local var on current function",
