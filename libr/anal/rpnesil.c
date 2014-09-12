@@ -638,7 +638,8 @@ static int esil_if(RAnalEsil *esil) {
 	ut64 num;
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
-		r_anal_esil_get_parm (esil, src, &num);
+		// TODO: check return value
+		(void)r_anal_esil_get_parm (esil, src, &num);
 			// condition not matching, skipping until }
 		if (!num)
 			esil->skip = R_TRUE;
