@@ -428,9 +428,9 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 			free (ds->opstr);
 			ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 		} else {
-			char *p = malloc (strlen (ds->opstr)+3); /* What's up '\0' ? */
-			strcpy (p, ": ");
-			strcpy (p+2, ds->opstr);
+			char *p = malloc (strlen (ds->opstr)+6); /* What's up '\0' ? */
+			strcpy (p, "TODO,");
+			strcpy (p+5, ds->opstr);
 			free (ds->opstr);
 			ds->opstr = p;
 		}
