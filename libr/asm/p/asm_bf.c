@@ -45,10 +45,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		else strcpy (op->buf_asm, "dec [ptr]");
 		break;
 	case ',':
-		strcpy (op->buf_asm, "peek [ptr]");
+		strcpy (op->buf_asm, "in [ptr]");
 		break;
 	case '.':
-		strcpy (op->buf_asm, "poke [ptr]");
+		strcpy (op->buf_asm, "out [ptr]");
 		break;
 	case 0xff:
 	case 0x00:
@@ -137,7 +137,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		op->buf[0] = ']';
 		n = 1;
 	} else
-	if (!strncmp (buf, "peek", 4)) {
+	if (!strncmp (buf, "in", 4)) {
 		if (arg) {
 			n = atoi (arg+1);
 			memset (op->buf, ',', n);
@@ -146,7 +146,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			n = 1;
 		}
 	} else
-	if (!strncmp (buf, "poke", 4)) {
+	if (!strncmp (buf, "out", 4)) {
 		if (arg) {
 			n = atoi (arg+1);
 			memset (op->buf, '.', n);
