@@ -415,7 +415,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 				ret++;
 		}
 		break;
-	case '0': // 0xFF
+	case '0': // 0x00
 		for (j=0; j<size; j++)
 			if (bufz[j] == 0)
 				ret++;
@@ -609,7 +609,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 	}
 
-	if (input[0] && input[0]!='Z' && input[1] == 'f') {
+	if (input[0] && input[0]!='z' && input[1] == 'f') {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
