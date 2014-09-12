@@ -9,14 +9,15 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *buf_cp, *b;
-	int i = 0;
+	int rep;
 
 	if (!(b = buf_cp = malloc (len+1)))
 		return 0;
 	memcpy (buf_cp, buf, len);
 	buf_cp[len] = 0;
 
-	for (i=0; b[0]&&b[1] && (b[0]==b[1]) && i<len; b++, i++)
+	/* Count repetitions of the current instruction. */
+	for (rep=1; b[0]&&b[1] && (b[0]==b[1]) && rep<len; b++, rep++)
 		if (b[0] == -1)
 			break;
 	b[1] = '\0';
@@ -29,19 +30,19 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		strcpy (op->buf_asm, "loop"); // TODO: detect clause and put label name
 		break;
 	case '>':
-		if (i>1) strcpy (op->buf_asm, "add ptr");
+		if (rep>1) strcpy (op->buf_asm, "add ptr");
 		else strcpy (op->buf_asm, "inc ptr");
 		break;
 	case '<':
-		if (i>1) strcpy (op->buf_asm, "sub ptr");
+		if (rep>1) strcpy (op->buf_asm, "sub ptr");
 		else strcpy (op->buf_asm, "dec ptr");
 		break;
 	case '+':
-		if (i>1) strcpy (op->buf_asm, "add [ptr]");
+		if (rep>1) strcpy (op->buf_asm, "add [ptr]");
 		else strcpy (op->buf_asm, "inc [ptr]");
 		break;
 	case '-':
-		if (i>1) strcpy (op->buf_asm, "sub [ptr]");
+		if (rep>1) strcpy (op->buf_asm, "sub [ptr]");
 		else strcpy (op->buf_asm, "dec [ptr]");
 		break;
 	case ',':
@@ -59,19 +60,18 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		break;
 	}
 
-	if (i>0) {
+	if (rep>1) {
 		/* Note: snprintf's source and destination buffers may not
 		 * overlap. */
 		const char *fmt = strchr (op->buf_asm, ' ')? "%s, %d":"%s %d";
 		char buf[sizeof (op->buf_asm)];
-		snprintf (buf, sizeof (buf), fmt, op->buf_asm, i+1);
+		snprintf (buf, sizeof (buf), fmt, op->buf_asm, rep);
 		strcpy(op->buf_asm, buf);
 	}
-	if (i<1) i=1; else i++;
 
 	free (buf_cp);
-	op->size = i;
-	return i;
+	op->size = rep;
+	return rep;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
