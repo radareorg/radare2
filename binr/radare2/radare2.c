@@ -86,7 +86,7 @@ static int main_help(int line) {
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
 		" -m [addr]    map file at given address\n"
-		" -n           do not load file type information (-nn load only bin structures)\n"
+		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -p [prj]     set project file\n"

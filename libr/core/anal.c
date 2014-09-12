@@ -13,11 +13,20 @@ static void loganal(ut64 from, ut64 to) {
 }
 
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
-	RAnalOp op, *_op;
-	ut8 buf[128];
-	if (r_io_read_at (core->io, addr, buf, sizeof (buf))<1)
-		return NULL;
-	if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))<1)
+	int len;
+	RAnalOp op = {0}, *_op;
+	ut8 buf[128], *ptr;
+	if (addr >= core->offset && (addr+16)< (core->offset+core->blocksize)) {
+		int delta = (addr - core->offset);
+		ptr = core->block + delta;
+		len = core->blocksize - delta;
+	} else {
+		if (r_io_read_at (core->io, addr, buf, sizeof (buf))<1)
+			return NULL;
+		ptr = buf;
+		len = sizeof (buf);
+	}
+	if (r_anal_op (core->anal, &op, addr, ptr, len)<1)
 		return NULL;
 	_op = malloc (sizeof (op));
 	if (!_op) return NULL;
@@ -412,10 +421,31 @@ static int iscodesection(RCore *core, ut64 addr) {
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
 
+R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	const char *esil;
+	RAnalOp *op;
+	while (1) {
+		// TODO: Implement the proper logic for doing esil analysis
+		op = r_core_anal_op (core, at);
+		if (!op)
+			break;
+		esil = R_STRBUF_SAFEGET (&op->esil);
+		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
+		at += op->size;
+		// esilIsRet()
+		// esilIsCall()
+		// esilIsJmp()
+		r_anal_op_free (op);
+		break;
+	}
+	return 0;
+}
+
 // XXX: This function takes sometimes forever
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RAnalHint *hint;
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
+	int use_esil = r_config_get_i (core->config, "anal.esil");
 	RListIter *iter, *iter2;
 	int buflen, fcnlen = 0;
 	RAnalFunction *fcn = NULL, *fcni;
@@ -427,6 +457,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		next = realloc (next, sizeof (ut64)*(1+nexti)); \
 		next[nexti] = (x); \
 		nexti++; \
+	}
+	if (use_esil) {
+		return r_core_anal_esil_fcn (core, at, from, reftype, depth);
 	}
 
 	if (core->anal->cur && core->anal->cur->analyze_fns) {
@@ -448,11 +481,40 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	if (at == UT64_MAX || depth < 0) {
 		return R_FALSE;
 	}
+
+	{
+	if (r_cons_singleton ()->breaked)
+		return R_FALSE;
+	RAnalFunction *fcn = r_anal_get_fcn_at(core->anal, at);
+		if (fcn) {
+			RAnalFunction *fcni = fcn;
+				/* If the xref is new, add it */
+				r_list_foreach (fcni->xrefs, iter2, refi)
+					if (from == refi->addr)
+						return R_TRUE;
+				if (!(ref = r_anal_ref_new ())) {
+					eprintf ("Error: new (xref)\n");
+					return R_FALSE;
+				}
+				ref->addr = from;
+				ref->at = at;
+				ref->type = reftype;
+				if (reftype == 'd') {
+					// XXX HACK TO AVOID INVALID REFS
+					r_list_append (fcni->xrefs, ref);
+				}
+			return 1;
+		}
+	}
+#if 0
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (r_cons_singleton ()->breaked)
 			break;
-		if (at == fcni->addr) { /* Function already analyzed */
+		if (at == fcni->addr) {
+#if 0
+		if (at >= fcni->addr && at < (fcni->addr +fcni->size)) { /* Function already analyzed */
+#endif
 			if (from != UT64_MAX) {
 #define USE_NEW_REFS 1
 #if USE_NEW_REFS
@@ -480,6 +542,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			return R_TRUE;
 		}
 	}
+#endif
 	if (!(fcn = r_anal_fcn_new ())) {
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
@@ -501,15 +564,18 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
 		int delta = fcn->size;
-		// check io error
+		// XXX hack slow check io error
+#if 0
 		if ((buflen = r_io_read_at (core->io, at+delta, buf, 4) != 4)) {
 			goto error;
 		}
+#endif
 		// real read.
 #if 0
 		if (!r_core_read_at (core, at+delta, buf, ANALBS))
 			goto error; 
 #else
+		// this is unnecessary if its contiguous
 		r_io_read_at (core->io, at+delta, buf, ANALBS);
 #endif
 		if (!memcmp (buf, "\xff\xff\xff\xff", 4)) {

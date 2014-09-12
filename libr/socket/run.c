@@ -154,7 +154,9 @@ static void setASLR(int enabled) {
 	if (enabled) {
 		system ("echo 2 > "RVAS);
 	} else {
-#if !__ANDROID__
+#if __ANDROID__
+		system ("echo 0 > "RVAS);
+#else
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
 			system ("echo 0 > "RVAS);
 #endif
