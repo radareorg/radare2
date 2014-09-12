@@ -357,6 +357,10 @@ repeat:
 				bb->fail = UT64_MAX;
 			}
 			// hardcoded jmp size // must be checked at the end wtf?
+			// always fitfcnsz and retend
+			FITFCNSZ();
+			return R_ANAL_RET_END;
+#if 0
 			if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
 				/* jump inside the same function */
 				FITFCNSZ();
@@ -371,6 +375,7 @@ repeat:
 					return R_ANAL_RET_END;
 				}
 			}
+#endif
 			break;
 			//
 			//FITFCNSZ();

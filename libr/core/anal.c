@@ -536,7 +536,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return R_FALSE;
 #if 1
 	{
-	RAnalFunction *fcn = r_anal_get_fcn_at(core->anal, at);
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, at);
 		if (fcn) {
 			int len = r_list_length (fcn->xrefs);
 			// XXX: use r_anal-xrefs api and sdb
