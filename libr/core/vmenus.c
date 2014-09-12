@@ -21,8 +21,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			j = 1;
 	if (j==0) menu = 1;
 	for (;;) {
-		r_cons_gotoxy (0, 0);
-		r_cons_clear ();
+		r_cons_clear00 ();
 
 		if (menu) {
 			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n\n",
@@ -267,8 +266,7 @@ R_API int r_core_visual_comments (RCore *core) {
 
 // XXX: mode is always 0, remove useless code
 	for (;;) {
-		r_cons_gotoxy (0, 0);
-		r_cons_clear ();
+		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
 		i = 0;
 		found = 0;
@@ -467,8 +465,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 	option = 0;
 	for (;;) {
-		r_cons_gotoxy (0,0);
-		r_cons_clear ();
+		r_cons_clear00 ();
 
 		switch (menu) {
 		case 0: // flag space
@@ -609,7 +606,6 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_show_cursor (R_FALSE);
 			if (cmd[0])
 				r_cons_any_key ();
-			//r_cons_gotoxy(0,0);
 			r_cons_clear00 ();
 			continue;
 		}
@@ -629,8 +625,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 	dir = partition = option = mode = 0;
 	for (;;) {
 		/* Clear */
-		r_cons_gotoxy (0,0);
-		r_cons_clear ();
+		r_cons_clear00 ();
 
 		/* Show */
 		if (mode == 0) {
