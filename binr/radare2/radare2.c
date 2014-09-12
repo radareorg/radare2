@@ -51,8 +51,7 @@ static int verify_version(int show) {
 		{NULL,NULL}
 	};
 
-	if (show)
-	printf ("%s  r2\n", base);
+	if (show) printf ("%s  r2\n", base);
 	for (i=ret=0; vcs[i].name; i++) {
 		struct vcs_t *v = &vcs[i];
 		const char *name = v->callback ();
@@ -60,7 +59,10 @@ static int verify_version(int show) {
 			ret = 1;
 		if (show) printf ("%s  %s\n", name, v->name);
 	}
-	if (ret) eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+	if (ret) {
+		if (show) eprintf ("WARNING: r2 library versions mismatch!\n");
+		else eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+	}
 	return ret;
 }
 
