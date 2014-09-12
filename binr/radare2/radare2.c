@@ -597,7 +597,6 @@ int main(int argc, char **argv, char **envp) {
 		if (ret<0 || (ret==0 && quiet))
 			return 0;
 	}
-
 	/* load <file>.r2 */
 	{
 		char f[128];
@@ -607,6 +606,10 @@ int main(int argc, char **argv, char **envp) {
 				eprintf ("NOTE: Loading '%s' script.\n", f);
 			r_core_cmd_file (&r, f);
 		}
+	}
+	if (do_analysis) {
+		r_core_cmd0 (&r, "aa");
+		r_cons_flush ();
 	}
 /////
 	r_list_foreach (cmds, iter, cmdn) {
@@ -622,10 +625,6 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmd (&r, "fo", 0);
 			r_cons_flush ();
 		}
-	if (do_analysis) {
-		r_core_cmd0 (&r, "aa");
-		r_cons_flush ();
-	}
 	if (sandbox)
 		r_config_set (r.config, "cfg.sandbox", "true");
 	if (quiet)
