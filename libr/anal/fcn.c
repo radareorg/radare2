@@ -199,6 +199,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x" (fcn)\n", addr);
 
 	while (idx < len) {
+repeat:
 		r_anal_op_fini (&op);
 		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {
 			FITFCNSZ();
@@ -332,10 +333,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_NOP:
+#if 0
+// XXX: skipping spaces at the beginign breaks the analysis! this feature must be fixed before re-enable
 			if ((addr + undelayed_idx-oplen) == fcn->addr) {
 				fcn->addr = bb->addr = addr + undelayed_idx;
-				continue;
+//				idx = undelayed_idx;
+				goto repeat;
+	//			continue;
 			}
+#endif
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,

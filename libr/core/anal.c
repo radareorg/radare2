@@ -526,20 +526,22 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (from != UT64_MAX && at == 0) {
 		return R_FALSE;
-}
+	}
 	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
 	if (at == UT64_MAX || depth < 0) {
 		return R_FALSE;
 	}
 
-	{
 	if (r_cons_singleton ()->breaked)
 		return R_FALSE;
+#if 1
+	{
 	RAnalFunction *fcn = r_anal_get_fcn_at(core->anal, at);
 		if (fcn) {
-			RAnalFunction *fcni = fcn;
+			int len = r_list_length (fcn->xrefs);
+			// XXX: use r_anal-xrefs api and sdb
 				/* If the xref is new, add it */
-				r_list_foreach (fcni->xrefs, iter2, refi)
+				r_list_foreach (fcn->xrefs, iter2, refi)
 					if (from == refi->addr)
 						return R_TRUE;
 				if (!(ref = r_anal_ref_new ())) {
@@ -553,9 +555,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					// XXX HACK TO AVOID INVALID REFS
 					r_list_append (fcni->xrefs, ref);
 				}
+			//if (len==0) return R_TRUE;
 			return 1;
 		}
 	}
+#endif
 #if 0
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -677,7 +681,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
-			fcn->addr = at;
+			// XXX fixes overlined function ranges wtf  // fcn->addr = at;
 			/* TODO: Dupped analysis, needs more optimization */
 			fcn->depth = 256;
 			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
@@ -700,6 +704,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);
+#if 1
 			if (has_next) {
 				int i;
 				ut64 addr = fcn->addr + fcn->size;
@@ -716,6 +721,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					next_append (fcn->addr+fcn->size);
 				}
 			}
+#endif
 			r_list_foreach (fcn->refs, iter, refi) {
 				if (refi->addr != UT64_MAX) {
 					switch (refi->type) {
@@ -792,8 +798,8 @@ error:
 			next_append (fcn->addr+fcn->size);
 			for (i=0; i<nexti; i++) {
 				if (!next[i]) continue;
-				r_core_anal_fcn (core, next[i],
-					next[i], 0, depth-1);
+				//r_cons_printf ("af @ 0x%08"PFMT64x"\n", next[i]);
+				r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
 			}
 			free (next);
 		}
