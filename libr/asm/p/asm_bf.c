@@ -8,19 +8,13 @@
 
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	char *buf_cp, *b;
+	const ut8 *b;
 	int rep;
 
-	if (!(b = buf_cp = malloc (len+1)))
-		return 0;
-	memcpy (buf_cp, buf, len);
-	buf_cp[len] = 0;
-
 	/* Count repetitions of the current instruction. */
-	for (rep=1; b[0]&&b[1] && (b[0]==b[1]) && rep<len; b++, rep++)
+	for (rep=1, b=buf; b[0]&&b[1] && (b[0]==b[1]) && rep<len; b++, rep++)
 		if (b[0] == -1)
 			break;
-	b[1] = '\0';
 
 	switch (*buf) {
 	case '[':
@@ -69,7 +63,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		strcpy(op->buf_asm, buf);
 	}
 
-	free (buf_cp);
 	op->size = rep;
 	return rep;
 }
