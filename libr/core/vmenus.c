@@ -580,7 +580,7 @@ R_API void r_core_visual_config(RCore *core) {
 			" h/b   - go back\n"
 			" e/' ' - edit/toggle current variable\n"
 			" E     - edit variable with 'cfg.editor' (vi?)\n"
-			" +/-   - increase/decrease numeric value\n"
+			" +/-   - increase/decrease numeric value (* and /, too)\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key ();
