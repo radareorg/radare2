@@ -453,7 +453,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 }
 
 R_API void r_core_visual_config(RCore *core) {
-	char cmd[1024], *fs = NULL, *fs2 = NULL;
+	char cmd[1024], *fs = NULL, *fs2 = NULL, *desc = NULL;
 	int i, j, ch, hit, show;
 	int option, _option = 0;
 	RListIter *iter;
@@ -507,6 +507,7 @@ R_API void r_core_visual_config(RCore *core) {
 				if (!r_str_ccmp (bt->name, fs, '.')) {
 					if (option==i) {
 						fs2 = bt->name;
+						desc = bt->desc;
 						hit = 1;
 					}
 					if ( (i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
@@ -522,7 +523,9 @@ R_API void r_core_visual_config(RCore *core) {
 				continue;
 			}
 			if (fs2 != NULL)
-				r_cons_printf ("\n Selected: %s\n\n", fs2);
+				// TODO: Break long lines.
+				r_cons_printf ("\n Selected: %s (%s)\n\n",
+						fs2, desc);
 		}
 
 		if (fs && !memcmp (fs, "asm.", 4))
