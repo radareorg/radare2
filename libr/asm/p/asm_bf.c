@@ -60,9 +60,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	if (i>0) {
-		if (strchr (op->buf_asm, ' '))
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s, %d", op->buf_asm, i+1);
-		else snprintf (op->buf_asm, sizeof (op->buf_asm), "%s %d", op->buf_asm, i+1);
+		/* Note: snprintf's source and destination buffers may not
+		 * overlap. */
+		const char *fmt = strchr (op->buf_asm, ' ')? "%s, %d":"%s %d";
+		char buf[sizeof (op->buf_asm)];
+		snprintf (buf, sizeof (buf), fmt, op->buf_asm, i+1);
+		strcpy(op->buf_asm, buf);
 	}
 	if (i<1) i=1; else i++;
 
