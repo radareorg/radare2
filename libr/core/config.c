@@ -42,6 +42,8 @@ static void rasm2_list(RCore *core, const char *arch) {
 			}
 		} else {
 			bits[0] = 0;
+			/* The underscore makes it easier to distinguish the
+			 * columns */
 			if (h->bits&8) strcat (bits, "_8");
 			if (h->bits&16) strcat (bits, "_16");
 			if (h->bits&32) strcat (bits, "_32");
