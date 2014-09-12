@@ -58,9 +58,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 
 	if (ok) *ok = R_FALSE;
 	if (*str=='[') {
-		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
-		const char *p = strchr (str+5, ':');
 		ut64 n;
+		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
+		const char *p = NULL;
+		if (strlen (str)>5)
+			p = strchr (str+5, ':');
 		// TODO: honor LE
 		if (p) {
 			refsz = atoi (str+1);
