@@ -1790,17 +1790,17 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1]=='?') {
 			const char *help_msg[] = {
 			"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
-			"e zoom.maxsz","","max size of block",
-			"e zoom.from","","start address",
-			"e zoom.to","","end address",
-			"e zoom.byte","", "specify how to calculate each byte",
-			"  p","","number of printable chars",
-			"  f","","count of flags in block",
-			"  s","","strings in range",
-			"  0","","number of bytes with value '0'",
-			"  F","","number of bytes with value 0xFF",
-			"  e","","calculate entropy and expand to 0-255 range",
-			"  h","","head (first byte value)",
+			"e ","zoom.maxsz","max size of block",
+			"e ","zoom.from","start address",
+			"e ","zoom.to","end address",
+			"e ","zoom.byte","specify how to calculate each byte",
+			"pzp","","number of printable chars",
+			"pzf","","count of flags in block",
+			"pzs","","strings in range",
+			"pz0","","number of bytes with value '0'",
+			"pzF","","number of bytes with value 0xFF",
+			"pze","","calculate entropy and expand to 0-255 range",
+			"pzh","","head (first byte value); This is the default mode",
 			//"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
 			NULL};
 			r_core_cmd_help (core, help_msg);
