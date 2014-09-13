@@ -76,15 +76,22 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 				arena->bytes = malloc (len);
 			}
 			if (arena->size != len) {
-				arena->size = len;
-			//	arena->bytes = malloc (len);
-				regset->arena->bytes = realloc (regset->arena->bytes, len);
+				ut8 *buf = realloc (regset->arena->bytes, len);
+				if (buf) {
+					arena->size = len;
+					arena->bytes = buf;
+				} else {
+					eprintf ("Error resizing arena to %d\n", len);
+					return R_FALSE;
+				}
 			}
 			if (len > arena->size)
 				len = arena->size;
-			memset (arena->bytes, 0, arena->size);
-			memcpy (arena->bytes, buf, len);
-			ret = R_TRUE;
+			if (arena->bytes) {
+				memset (arena->bytes, 0, arena->size);
+				memcpy (arena->bytes, buf, len);
+				ret = R_TRUE;
+			} else ret = R_FALSE;
 		}
 	}
 	return ret;
