@@ -7,7 +7,7 @@ int main() {
 	printf("main()\n");
 
 	R_PDB pdb;
-	strcpy(&pdb.file_name, "/home/inisider/Dropbox/test.pdb");
+	strcpy(&pdb.file_name, "/root/test.pdb");
 	init_pdb_parser(&pdb);
 	pdb.pdb_parse(&pdb);
 	pdb.finish_pdb_parse(&pdb);
