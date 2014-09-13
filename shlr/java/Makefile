@@ -20,7 +20,7 @@ endif
 #CFLAGS+=-g -ggdb
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
-OBJS=code.o class.o ops.o
+OBJS=code.o class.o ops.o dsojson.o
 
 all: out libr_java.a
 
