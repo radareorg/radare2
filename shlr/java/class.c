@@ -1013,6 +1013,11 @@ R_API int extract_type_value (const char *arg_str, char **output) {
 				str = get_type_value_str ("boolean", array_cnt);
 				array_cnt = 0;
 				break;
+			case 'S':
+				len = 1;
+				str = get_type_value_str ("short", array_cnt);
+				array_cnt = 0;
+				break;
 			case '[': len = 1; array_cnt ++; break;
 			case 'L':
 				len = r_bin_java_extract_reference_name (arg_str, &str, array_cnt);
