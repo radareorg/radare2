@@ -788,6 +788,13 @@ static void printf_sval_name(SVal *val)
 			printf("%s", lf_ulong->name.name);
 			break;
 		}
+		case eLF_USHORT:
+		{
+			SVal_LF_USHORT *lf_ushort;
+			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
+			printf("%s", lf_ushort->name.name);
+			break;
+		}
 		default:
 			printf("printf_sval_name()::oops\n");
 			break;
@@ -819,6 +826,16 @@ static void free_sval(SVal *val)
 			free(lf_ulong->name.name);
 			free(val->name_or_val);
 			lf_ulong->name.name = 0;
+			val->name_or_val = 0;
+			break;
+		}
+		case eLF_USHORT:
+		{
+			SVal_LF_USHORT *lf_ushort;
+			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
+			free(lf_ushort->name.name);
+			free(val->name_or_val);
+			lf_ushort->name.name = 0;
 			val->name_or_val = 0;
 			break;
 		}
@@ -1403,6 +1420,15 @@ static void parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_b
 			parse_sctring(&lf_ulong.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_ULONG));
 			memcpy(val->name_or_val, &lf_ulong, sizeof(SVal_LF_ULONG));
+			break;
+		}
+		case eLF_USHORT:
+		{
+			SVal_LF_USHORT lf_ushort;
+			READ(*read_bytes, 2, len, lf_ushort.value, leaf_data, unsigned short);
+			parse_sctring(&lf_ushort.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc(sizeof(SVal_LF_USHORT));
+			memcpy(val->name_or_val, &lf_ushort, sizeof(SVal_LF_USHORT));
 			break;
 		}
 		default:
