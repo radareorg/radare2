@@ -35,7 +35,7 @@ static const char * r_cmd_java_strtok (const char *str1, const char b, size_t le
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len);
 static int r_cmd_java_reload_bin_from_buf (RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
 
-static int r_cmd_java_print_json_definitions( RAnal *anal );
+static int r_cmd_java_print_json_definitions( RBinJavaObj *obj  );
 static int r_cmd_java_print_all_definitions( RAnal *anal );
 static int r_cmd_java_print_class_definitions( RBinJavaObj *obj );
 static int r_cmd_java_print_field_definitions( RBinJavaObj *obj );
@@ -368,7 +368,7 @@ static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 		case 'i': return r_cmd_java_print_import_definitions (obj);
 		case 'c': return r_cmd_java_print_class_definitions (obj);
 		case 'a': return r_cmd_java_print_all_definitions (anal);
-		case 'j': return r_cmd_java_print_json_definitions (anal);
+		case 'j': return r_cmd_java_print_json_definitions (obj);
 	}
 	return R_FALSE;
 }
@@ -1351,19 +1351,11 @@ static int r_cmd_java_print_all_definitions( RAnal *anal ) {
 	return R_TRUE;
 }
 
-static int r_cmd_java_print_json_definitions( RAnal *anal ) {
-	RList * obj_list  = r_cmd_java_get_bin_obj_list (anal);
+static int r_cmd_java_print_json_definitions( RBinJavaObj *obj ) {
 	RListIter *iter;
-	RBinJavaObj *obj;
-	char *str = NULL;
-	if (!obj_list) return 1;
-	DsoJsonObj *json_bin_obj_list = dso_json_list_new ();
-	r_list_foreach (obj_list, iter, obj) {
-		DsoJsonObj *json_obj = r_bin_java_get_bin_obj_json (obj);
-		dso_json_list_append (json_bin_obj_list, json_obj);
-	}
-	str = dso_json_obj_to_str (json_bin_obj_list);
-	dso_json_obj_del (json_bin_obj_list);
+	DsoJsonObj *json_obj = r_bin_java_get_bin_obj_json (obj);
+	char *str = dso_json_obj_to_str (json_obj);
+	dso_json_obj_del (json_obj);
 	r_cons_printf ("%s\n", str);
 	return R_TRUE;
 }
