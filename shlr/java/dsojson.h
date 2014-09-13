@@ -57,12 +57,15 @@ typedef struct  basic_json_t {
 	} val;
 } DsoJsonObj;
 
+R_API ut8  dso_json_char_needs_hexing ( ut8 b);
+
 R_API void dso_json_obj_del (void *dso_objv);
+
 R_API char * dso_json_obj_to_str (DsoJsonObj * dso_obj);
 R_API DsoJsonObj * dso_json_null_new ();
 R_API void dso_json_null_free (void *x);
 R_API DsoJsonObj * dso_json_str_new ();
-R_API DsoJsonObj * dso_json_str_free (void *y);
+R_API void dso_json_str_free (void *y);
 R_API DsoJsonObj * dso_json_str_new_from_str (const char *str);
 R_API DsoJsonObj * dso_json_str_new_from_str_len (const char *str, unsigned int len);
 R_API DsoJsonObj * dso_json_str_new_from_num (long num);
@@ -90,11 +93,24 @@ R_API int dso_json_list_append_str (DsoJsonObj *list_obj, char *y);
 R_API int dso_json_list_append_num (DsoJsonObj *list_obj, ut64 y);
 
 R_API DsoJsonObj * dso_json_dict_new ();
+R_API int dso_json_dict_insert_str_key_obj (DsoJsonObj *dict, char *key, DsoJsonObj *val_obj);
+R_API int dso_json_dict_insert_str_key_num (DsoJsonObj *dict, char *key, int val);
+R_API int dso_json_dict_insert_str_key_str (DsoJsonObj *dict, char *key, char *val);
+R_API int dso_json_dict_insert_num_key_obj (DsoJsonObj *dict, int key, DsoJsonObj *val_obj);
+R_API int dso_json_dict_insert_num_key_num (DsoJsonObj *dict, int key, int val);
+R_API int dso_json_dict_insert_num_key_str (DsoJsonObj *dict, int key, char *val);
+R_API int dso_json_dict_insert_key_obj (DsoJsonObj *dict, DsoJsonObj *key, DsoJsonObj *value);
+R_API int dso_json_dict_remove_key_obj (DsoJsonObj *dict, DsoJsonObj *key);
+R_API int dso_json_dict_remove_key_str (DsoJsonObj *dict, char *key);
+R_API int dso_json_dict_contains_key_str (DsoJsonObj *dict, char *key);
+R_API int dso_json_dict_contains_key_obj (DsoJsonObj *dict, DsoJsonObj *key);
 R_API void dso_json_dict_free (void * y);
 
 R_API DsoJsonObj * dso_json_num_new ();
-R_API DsoJsonObj * dso_json_num_free (void *y);
+R_API void dso_json_num_free (void *y);
 R_API DsoJsonObj * dso_json_num_new_from_num (ut64 num);
 
 R_API char * dso_json_convert_string (const char * bytes, ut32 len );
+
+
 #endif

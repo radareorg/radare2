@@ -1041,4 +1041,5 @@ R_API DsoJsonObj * r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJ
 R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin);
 
 R_API DsoJsonObj * r_bin_java_get_bin_obj_json (RBinJavaObj *bin);
+
 #endif

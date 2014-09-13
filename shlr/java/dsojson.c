@@ -1,10 +1,10 @@
 /* radare - Apache - Copyright 2014 dso <adam.pridgen@thecoverofnight.com | dso@rice.edu> */
 
 #include "dsojson.h"
+#include "class.h"
 #include <r_types.h>
 #include <r_util.h>
 #include <stdint.h>
-
 
 R_API char * dso_json_dict_entry_to_str (DsoJsonDictEntry * entry);
 R_API char * dso_json_list_to_str (DsoJsonList *list);
@@ -15,6 +15,8 @@ R_API char * dso_json_str_to_str (DsoJsonStr *str);
 static int cmpDsoStr (DsoJsonStr *dsoStr1, DsoJsonStr *dsoStr2);
 static int cmpDsoStr_to_str (DsoJsonStr *dsoStr1, char *dsoStr2);
 static const DsoJsonInfo* get_type_info (unsigned int type);
+static char * dso_json_get_str_data (DsoJsonObj *dso_obj);
+static DsoJsonStr * dso_json_get_str (DsoJsonObj *dso_obj);
 
 static DsoJsonInfo DSO_JSON_INFOS []= {
 	{DSO_JSON_NULL},
@@ -34,7 +36,7 @@ static void * json_new0 (unsigned int sz) {
 	return alloc;
 }
 
-inline RList * build_str_list_from_iterable (RList *the_list) {
+static RList * build_str_list_from_iterable (RList *the_list) {
 	RList * res = r_list_newf (free);
 	DsoJsonObj *json_obj;
 	RListIter *iter;
@@ -45,7 +47,7 @@ inline RList * build_str_list_from_iterable (RList *the_list) {
 	return res;
 }
 
-inline char * build_str_from_str_list_for_iterable (RList *the_list) {
+static char * build_str_from_str_list_for_iterable (RList *the_list) {
 	char *res = NULL, *str;
 	int len = 3, pos = 1;
 	RListIter *iter = NULL;
@@ -102,6 +104,21 @@ static int dso_json_is_dict (DsoJsonObj *y) {
 
 static int dso_json_is_dict_entry (DsoJsonObj *y) {
 	return get_type (y) == DSO_JSON_DICT_ENTRY;
+}
+
+R_API ut8  dso_json_char_needs_hexing ( ut8 b) {
+	if (b < 0x20) return 1;
+	switch (b) {
+		case 0x7f:
+		case 0x81:
+		case 0x8F:
+		case 0x90:
+		case 0x9D:
+		case 0xA0:
+		case 0xAD:
+			return 1;
+	}
+	return 0;
 }
 
 R_API char * dso_json_obj_to_str (DsoJsonObj * dso_obj) {
@@ -177,6 +194,12 @@ static RList * dso_json_get_list (DsoJsonObj *dso_obj) {
 	return the_list;
 }
 
+static char * dso_json_get_str_data (DsoJsonObj *dso_obj) {
+	DsoJsonStr * str = dso_json_get_str (dso_obj);
+	if (str) return str->data;
+	return NULL;
+}
+
 static DsoJsonStr * dso_json_get_str (DsoJsonObj *dso_obj) {
 	DsoJsonStr * str = NULL;
 	if (dso_obj) {
@@ -206,7 +229,7 @@ R_API DsoJsonObj * dso_json_str_new () {
 	return x;
 }
 
-R_API DsoJsonObj * dso_json_str_free (void *y) {
+R_API void dso_json_str_free (void *y) {
 	DsoJsonStr *x = (DsoJsonStr *)y;
 	if (x) free (x->data);
 	x->data = NULL;
@@ -605,6 +628,10 @@ R_API int dso_json_dict_insert_key_obj (DsoJsonObj *dict, DsoJsonObj *key, DsoJs
 }
 
 R_API int dso_json_dict_remove_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
+	return dso_json_dict_remove_key_str (dict, dso_json_get_str_data (key));
+}
+
+R_API int dso_json_dict_remove_key_str (DsoJsonObj *dict, char *key) {
 	RListIter *iter;
 	DsoJsonObj *dso_obj;
 	int res = R_FALSE;
@@ -613,7 +640,7 @@ R_API int dso_json_dict_remove_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
 		r_list_foreach (the_list, iter, dso_obj) {
 			if (get_type (dso_obj) == DSO_JSON_DICT_ENTRY &&
 				get_type (dso_obj->val._dict_entry->key) == DSO_JSON_STR) {
-				if (!cmpDsoStr (dso_json_get_str (dso_obj), dso_json_get_str (key))) {
+				if (!cmpDsoStr_to_str (dso_json_get_str (dso_obj), key)) {
 					res = R_TRUE;
 					r_list_delete (the_list, iter);
 					break;
@@ -625,6 +652,10 @@ R_API int dso_json_dict_remove_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
 }
 
 R_API int dso_json_dict_contains_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
+	return dso_json_dict_contains_key_str (dict, dso_json_get_str_data (key));
+}
+
+R_API int dso_json_dict_contains_key_str (DsoJsonObj *dict, char *key) {
 	RListIter *iter;
 	DsoJsonObj *dso_obj;
 	int res = R_FALSE;
@@ -633,7 +664,7 @@ R_API int dso_json_dict_contains_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
 		r_list_foreach (the_list, iter, dso_obj) {
 			if (get_type (dso_obj) == DSO_JSON_DICT_ENTRY &&
 				get_type (dso_obj->val._dict_entry->key) == DSO_JSON_STR) {
-				if (!cmpDsoStr (dso_json_get_str (dso_obj), dso_json_get_str (key))) {
+				if (!cmpDsoStr_to_str (dso_json_get_str (dso_obj),  key)) {
 					res = R_TRUE;
 					break;
 				}
@@ -653,7 +684,7 @@ R_API DsoJsonObj * dso_json_num_new () {
 	return x;
 }
 
-R_API DsoJsonObj * dso_json_num_free (void *y) {
+R_API void dso_json_num_free (void *y) {
 	DsoJsonNum *x = (DsoJsonNum *)y;
 	free (x);
 }
@@ -687,7 +718,7 @@ R_API char * dso_json_convert_string (const char * bytes, ut32 len ) {
 		if (bytes[idx] == '"') {
 			sprintf (cpy_buffer+pos, "\\%c", bytes[idx]);
 			pos += 2;
-		} else if (char_needs_hexing (bytes[idx])) {
+		} else if (dso_json_char_needs_hexing (bytes[idx])) {
 			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
 			pos += 4;
 		} else {

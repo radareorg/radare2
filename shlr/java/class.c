@@ -266,21 +266,6 @@ R_API ut8 * r_bin_java_cp_get_2_ut16 (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, u
 R_API ut8 * r_bin_java_cp_get_name_type (RBinJavaObj *bin, ut32 *out_sz, ut16 name_idx, ut16 type_idx );
 
 
-R_API ut8  char_needs_hexing ( ut8 b) {
-	if (b < 0x20) return 1;
-	switch (b) {
-		case 0x7f:
-		case 0x81:
-		case 0x8F:
-		case 0x90:
-		case 0x9D:
-		case 0xA0:
-		case 0xAD:
-			return 1;
-	}
-	return 0;
-}
-
 R_API char * convert_string (const char * bytes, ut32 len ) {
 	ut32 idx = 0, pos = 0;
 	ut32 str_sz = 4*len+1;
@@ -289,7 +274,7 @@ R_API char * convert_string (const char * bytes, ut32 len ) {
 	// 4x is the increase from byte to \xHH where HH represents hexed byte
 	memset (cpy_buffer, 0, str_sz);
 	while (idx < len) {
-		if (char_needs_hexing (bytes[idx])) {
+		if (dso_json_char_needs_hexing (bytes[idx])) {
 			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
 			pos += 4;
 		} else {
@@ -898,10 +883,10 @@ R_API DsoJsonObj * r_bin_java_get_fm_type_definition_json (RBinJavaObj *bin, RBi
 
 	if (is_method) fq_name = r_bin_java_create_method_fq_str(fm_type->class_name, fm_type->name, fm_type->descriptor);
 	else fq_name = r_bin_java_create_field_fq_str(fm_type->class_name, fm_type->name, fm_type->descriptor);
-	dso_json_dict_insert_str_key_str (fm_type, "fq_name", fq_name);
+	dso_json_dict_insert_str_key_str (fm_type_dict, "fq_name", fq_name);
 
 	prototype = r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
-	dso_json_dict_insert_str_key_str (fm_type, "prototype", prototype);
+	dso_json_dict_insert_str_key_str (fm_type_dict, "prototype", prototype);
 	free (prototype);
 	free (fq_name);
 	return fm_type_dict;
