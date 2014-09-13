@@ -805,6 +805,13 @@ static int esil_break(RAnalEsil *esil) {
 	return 1;
 }
 
+static int esil_clear(RAnalEsil *esil) {
+	char *r;
+	while ((r = r_anal_esil_pop (esil)))
+		free (r);
+	return 1;
+}
+
 static int esil_todo(RAnalEsil *esil) {
 	esil->parse_stop = 2;
 	return 1;
@@ -2494,6 +2501,7 @@ eprintf ("INI %p\n", esil->hook_reg_read);
 	r_anal_esil_set_op (esil, "TODO", esil_todo);
 	r_anal_esil_set_op (esil, "GOTO", esil_goto);
 	r_anal_esil_set_op (esil, "BREAK", esil_break);
+	r_anal_esil_set_op (esil, "CLEAR", esil_clear);
 	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
 		return anal->cur->esil_init (esil);
 	return R_TRUE;
