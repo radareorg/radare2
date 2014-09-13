@@ -17,15 +17,25 @@ typedef struct {
 	int pid;
 	int tid;
 	int fd;
+	int opid;
 } RIOPtrace;
+#define RIOPTRACE_OPID(x) (((RIOPtrace*)x->data)->opid)
 #define RIOPTRACE_PID(x) (((RIOPtrace*)x->data)->pid)
 #define RIOPTRACE_FD(x) (((RIOPtrace*)x->data)->fd)
+static void open_pidmem (RIOPtrace *iop);
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
 #ifndef __ANDROID__
 extern int errno;
 #endif
+
+#if 0
+procpidmem is buggy.. running this sometimes results in ffff
+
+	while : ; do r2 -qc 'oo;x' -d ls ; done
+#endif
+#define USE_PROC_PID_MEM 0
 
 static int __waitpid(int pid) {
 	int st = 0;
@@ -58,12 +68,23 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
+#if USE_PROC_PID_MEM
 	int ret, fd;
+#endif
 	ut64 addr = io->off;
 	if (!desc || !desc->data)
 		return -1;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
+	/* reopen procpidmem if necessary */
+#if USE_PROC_PID_MEM
 	fd = RIOPTRACE_FD (desc);
+	if (RIOPTRACE_PID(desc) != RIOPTRACE_OPID(desc)) {
+		if (fd != -1)
+			close (fd);
+		open_pidmem ((RIOPtrace*)desc->data);
+		fd = RIOPTRACE_FD (desc);
+		RIOPTRACE_OPID(desc) = RIOPTRACE_PID(desc);
+	}
 	// /proc/pid/mem fails on latest linux
 	if (fd != -1) {
 		ret = lseek (fd, addr, SEEK_SET);
@@ -73,6 +94,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 			if (ret != -1) return ret;
 		}
 	}
+#endif
 	return debug_os_read_at (RIOPTRACE_PID (desc), (ut32*)buf, len, addr);
 }
 
@@ -102,13 +124,17 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static void open_pidmem (RIOPtrace *iop) {
+#if USE_PROC_PID_MEM
 	char pidmem[32];
 	snprintf (pidmem, sizeof (pidmem), "/proc/%d/mem", iop->pid);
 	iop->fd = open (pidmem, O_RDWR);
+	if (iop->fd == -1)
+		iop->fd = open (pidmem, O_RDONLY);
 #if 0
 	if (iop->fd == -1)
 		eprintf ("Warning: Cannot open /proc/%d/mem. "
 			"Fallback to ptrace io.\n", iop->pid);
+#endif
 #endif
 }
 
@@ -127,7 +153,7 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return R_FALSE;
 }
 
-static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *pidpath;
 	int ret = -1;
 	if (__plugin_open (io, file,0)) {
@@ -157,7 +183,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 		else eprintf ("Error in waitpid\n");
 		if (ret != -1) {
 			RIODesc *desc;
-			RIOPtrace *riop = R_NEW (RIOPtrace);
+			RIOPtrace *riop = R_NEW0 (RIOPtrace);
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
 			pidpath = r_sys_pid_to_path (pid);
@@ -170,7 +196,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
 
