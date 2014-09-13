@@ -294,13 +294,15 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 }
 
 SDB_API void sdb_reset (Sdb* s) {
+	if (!s) return;
 	/* disable disk cache */
 	if (s->fd != -1) {
 		close (s->fd);
 		s->fd = -1;
 	}
 	/* empty memory hashtable */
-	ht_free (s->ht);
+	if (s->ht)
+		ht_free (s->ht);
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);
 }
 
