@@ -316,7 +316,7 @@ R_API int dso_json_dict_entry_set_key_str_len (DsoJsonObj * entry_obj, char *key
 	return res;
 }
 
-R_API int dso_json_dict_entry_set_key_num (DsoJsonObj * entry_obj, int64_t num) {
+R_API int dso_json_dict_entry_set_key_num (DsoJsonObj * entry_obj, st64 num) {
 	int res = R_FALSE;
 	if (dso_json_is_dict_entry (entry_obj)) {
 		DsoJsonDictEntry *entry = (DsoJsonDictEntry *)entry_obj;
@@ -350,7 +350,7 @@ R_API int dso_json_dict_entry_value_append_str_len (DsoJsonObj *entry_obj, char 
 	return res;
 }
 
-R_API int dso_json_dict_entry_value_append_num (DsoJsonObj *entry_obj, int64_t num) {
+R_API int dso_json_dict_entry_value_append_num (DsoJsonObj *entry_obj, st64 num) {
 	int res = R_FALSE;
 	if (dso_json_is_dict_entry (entry_obj)) {
 		DsoJsonObj *o_num = dso_json_num_new_from_num (num);
@@ -401,7 +401,7 @@ R_API int dso_json_dict_entry_value_set_str_len (DsoJsonObj *entry_obj, char *st
 	return res;
 }
 
-R_API int dso_json_dict_entry_value_set_num (DsoJsonObj *entry_obj, int64_t num) {
+R_API int dso_json_dict_entry_value_set_num (DsoJsonObj *entry_obj, st64 num) {
 	int res = R_FALSE;
 	if (dso_json_is_dict_entry (entry_obj)) {
 		DsoJsonObj *o_val = dso_json_num_new_from_num (num);
