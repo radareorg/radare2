@@ -589,7 +589,8 @@ R_API int r_cons_get_size(int *rows) {
 	if (I.force_rows) I.rows = I.force_rows;
 	if (I.fix_columns) I.columns += I.fix_columns;
 	if (I.fix_rows) I.rows += I.fix_rows;
-	return I.columns;
+	I.rows = R_MAX (0, I.rows);
+	return R_MAX (0, I.columns);
 }
 
 R_API void r_cons_show_cursor (int cursor) {
