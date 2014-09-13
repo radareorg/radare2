@@ -45,7 +45,7 @@ static int cmd_seek(void *data, const char *input) {
 		} else eprintf ("|Usage| 'sr pc' seek to program counter register\n");
 	} else
 	if (*input) {
-		const char *inputnum = strchr (input+1, ' ');
+		const char *inputnum = strchr (input, ' ');
 		int sign = 1;
 		inputnum = inputnum? inputnum+1: input+1;
 		off = r_num_math (core->num, inputnum);
