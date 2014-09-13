@@ -11,6 +11,7 @@
 #include <r_list.h>
 #include <r_bin.h>
 #include <sdb.h>
+#include "dsojson.h"
 
 #define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
 #define UINT(x,y) ((ut32)((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3]))
@@ -1028,5 +1029,17 @@ R_API ut8 * U(r_bin_java_cp_append_method_ref) (RBinJavaObj *bin, ut32 *out_sz, 
 R_API ut8 * U(r_bin_java_cp_append_field_ref)(RBinJavaObj *bin, ut32 *out_sz, ut16 cn_idx, ut16 fn_idx, ut16 ft_idx );
 R_API char * U(r_bin_java_unmangle_without_flags) (const char *name, const char *descriptor);
 R_API char * r_bin_java_unmangle (const char *flags, const char *name, const char *descriptor);
+
+R_API DsoJsonObj * r_bin_java_get_field_json_definitions(RBinJavaObj *bin);
+R_API DsoJsonObj * r_bin_java_get_method_json_definitions(RBinJavaObj *bin);
+R_API DsoJsonObj * r_bin_java_get_import_json_definitions(RBinJavaObj *bin);
+R_API DsoJsonObj * r_bin_java_get_interface_json_definitions(RBinJavaObj *bin);
+
+R_API DsoJsonObj * r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, int is_method);
+R_API DsoJsonObj * r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type);
+R_API DsoJsonObj * r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type);
+R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin);
+
+R_API DsoJsonObj * r_bin_java_get_bin_obj_json (RBinJavaObj *bin);
 
 #endif

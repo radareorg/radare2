@@ -16,6 +16,7 @@
 #endif
 #include "../../../shlr/java/class.h"
 #include "../../../shlr/java/code.h"
+#include "../../../shlr/java/dsojson.h"
 
 #define DO_THE_DBG 0
 #undef IFDBG
@@ -34,6 +35,7 @@ static const char * r_cmd_java_strtok (const char *str1, const char b, size_t le
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len);
 static int r_cmd_java_reload_bin_from_buf (RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
 
+static int r_cmd_java_print_json_definitions( RAnal *anal );
 static int r_cmd_java_print_all_definitions( RAnal *anal );
 static int r_cmd_java_print_class_definitions( RBinJavaObj *obj );
 static int r_cmd_java_print_field_definitions( RBinJavaObj *obj );
@@ -129,8 +131,8 @@ typedef struct r_cmd_java_cms_t {
 #define SET_ACC_FLAGS_LEN 9
 
 #define PROTOTYPES "prototypes"
-#define PROTOTYPES_ARGS "< a | i | c | m | f>"
-#define PROTOTYPES_DESC "print prototypes for all bins, imports only, class, methods, and fields, methods only, or fields only"
+#define PROTOTYPES_ARGS "< j | a | i | c | m | f>"
+#define PROTOTYPES_DESC "print prototypes for json or text for all bins, imports only, class, methods, and fields, methods only, or fields only"
 #define PROTOTYPES_LEN 10
 
 #define RESOLVE_CP "resolve_cp"
@@ -366,6 +368,7 @@ static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 		case 'i': return r_cmd_java_print_import_definitions (obj);
 		case 'c': return r_cmd_java_print_class_definitions (obj);
 		case 'a': return r_cmd_java_print_all_definitions (anal);
+		case 'j': return r_cmd_java_print_json_definitions (anal);
 	}
 	return R_FALSE;
 }
@@ -1347,6 +1350,24 @@ static int r_cmd_java_print_all_definitions( RAnal *anal ) {
 	}
 	return R_TRUE;
 }
+
+static int r_cmd_java_print_json_definitions( RAnal *anal ) {
+	RList * obj_list  = r_cmd_java_get_bin_obj_list (anal);
+	RListIter *iter;
+	RBinJavaObj *obj;
+	char *str = NULL;
+	if (!obj_list) return 1;
+	DsoJsonObj *json_bin_obj_list = dso_json_list_new ();
+	r_list_foreach (obj_list, iter, obj) {
+		DsoJsonObj *json_obj = r_bin_java_get_bin_obj_json (obj);
+		dso_json_list_append (json_bin_obj_list, json_obj);
+	}
+	str = dso_json_obj_to_str (json_bin_obj_list);
+	dso_json_obj_del (json_bin_obj_list);
+	r_cons_printf ("%s\n", str);
+	return R_TRUE;
+}
+
 static int r_cmd_java_print_class_definitions( RBinJavaObj *obj ) {
 	RList * the_fields = r_bin_java_get_field_definitions (obj),
 			* the_methods = r_bin_java_get_method_definitions (obj),
