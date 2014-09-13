@@ -1,10 +1,20 @@
-/* radare2 - LGPL - Copyright 2011-2013 - pancake */
+/* radare2 - LGPL - Copyright 2011-2014 - pancake */
 
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+
+static int countChar (const ut8 *buf, int len, char ch) {
+	int i;
+	for (i=0; i<len; i++) {
+		if (buf[i] != ch)
+			break;
+		
+	}
+	return i;
+}
 
 static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 dst = 0LL;
@@ -27,9 +37,11 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					 lev--;
 					 if (lev==-1) {
 						 dst = addr + (size_t)(p-buf);
+						 dst ++;
 						 op->jump = dst;
 						 r_strbuf_setf (&op->esil,
-							"if (!*ptr) pc=0x%"PFMT64x, dst);
+							 "pc,brk,=[4],brk,++=,"
+							 "ptr,[1],!,?{,0x%"PFMT64x",pc,=,}", dst);
 						 break;
 					 }
 				 }
@@ -39,29 +51,62 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		  }
 	// ?1[ptr],pc=${NEW_PC
 	break;
-	case ']': op->type = R_ANAL_OP_TYPE_UJMP; break;
+	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
+		// XXX This is wrong esil
+		r_strbuf_set (&op->esil, "brk,--=,brk,[4],pc,=");
+		break;
 	case '>': op->type = R_ANAL_OP_TYPE_ADD;
-		r_strbuf_set (&op->esil, "ptr++");
+		r_strbuf_set (&op->esil, "ptr,++=");
 		break;
 	case '<': op->type = R_ANAL_OP_TYPE_SUB;
-		r_strbuf_set (&op->esil, "ptr--");
+		r_strbuf_set (&op->esil, "ptr,--=");
 		break;
-	case '+': op->type = R_ANAL_OP_TYPE_ADD;
-		r_strbuf_set (&op->esil, "*ptr++");
+	case '+':
+		op->size = countChar (buf, len, '+');
+		op->type = R_ANAL_OP_TYPE_ADD;
+		r_strbuf_setf (&op->esil, "ptr,[1],%d,+,ptr,=[1]", op->size);
 		break;
-	case '-': op->type = R_ANAL_OP_TYPE_SUB;
-		r_strbuf_set (&op->esil, "*ptr--");
+	case '-':
+		op->type = R_ANAL_OP_TYPE_SUB;
+		op->size = countChar (buf, len, '-');
+		r_strbuf_setf (&op->esil, "ptr,[1],%d,-,ptr,=[1]", op->size);
 		break;
-	case '.': op->type = R_ANAL_OP_TYPE_STORE;
-		r_strbuf_set (&op->esil, "=*ptr");
+	case '.':
+		// print element in stack to screen
+		op->type = R_ANAL_OP_TYPE_STORE;
+		r_strbuf_set (&op->esil, "ptr,[1],scr,=[1],scr,++=");
 		break;
-	case ',': op->type = R_ANAL_OP_TYPE_LOAD; break;
+	case ',':
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		r_strbuf_set (&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
+		break;
 	case 0x00:
 	case 0xff:
-		op->type = R_ANAL_OP_TYPE_TRAP; break;
-	default: op->type = R_ANAL_OP_TYPE_NOP; break;
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
+	default:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		r_strbuf_set (&op->esil, ",");
+		break;
 	}
 	return op->size;
+}
+
+static int set_reg_profile(RAnal *anal) {
+	const char *p = \
+		"=pc	pc\n"
+		"=bp	brk\n"
+		"=sp	ptr\n"
+		"=a0	rax\n"
+		"=a1	rbx\n"
+		"=a2	rcx\n"
+		"=a3	rdx\n"
+		"gpr	ptr	.32	0	0\n" // data pointer
+		"gpr	pc	.32	4	0\n" // program counter
+		"gpr	brk	.32	8	0\n" // brackets
+		"gpr	scr	.32	12	0\n" // screen
+		"gpr	kbd	.32	16	0\n"; // keyboard
+	return r_reg_set_profile_string (anal->reg, p);
 }
 
 struct r_anal_plugin_t r_anal_plugin_bf = {
@@ -74,7 +119,7 @@ struct r_anal_plugin_t r_anal_plugin_bf = {
 	.fini = NULL,
 	.esil = R_TRUE,
 	.op = &bf_op,
-	.set_reg_profile = NULL,
+	.set_reg_profile = set_reg_profile,
 	.fingerprint_bb = NULL,
 	.fingerprint_fcn = NULL,
 	.diff_bb = NULL,

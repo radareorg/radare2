@@ -29,7 +29,6 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
 	ut8 lict[48];
 	if (!buf || length < (0x104+48))
 		return 0;

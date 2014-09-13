@@ -192,11 +192,11 @@ static const char *parse_def (RReg *reg, char **tok, const int n) {
 
 #define PARSER_MAX_TOKENS 8
 
-R_API int r_reg_set_profile_string(RReg *reg, char *str) {
+R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
-	char *p = str;
+	const char *p = str;
 
 	if (!reg || !str)
 		return R_FALSE;

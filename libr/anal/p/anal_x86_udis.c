@@ -460,7 +460,7 @@ default:
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p = (anal->bits == 32) ?
+	const char *p = (anal->bits == 32) ?
 		"=pc	eip\n"
 		"=sp	esp\n"
 		"=bp	ebp\n"
