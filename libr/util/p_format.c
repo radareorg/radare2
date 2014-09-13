@@ -89,7 +89,7 @@ static void r_print_format_quadword(const RPrint* p, int mustset, const char* se
 
 static void r_print_format_byte(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
 	if (mustset) {
-		realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
@@ -99,7 +99,7 @@ static void r_print_format_byte(const RPrint* p, int mustset, const char* setval
 
 static void r_print_format_char(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
 	if (mustset) {
-		realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		p->printf ("%d ; %d ; '%c'", buf[i], (char)buf[i],
@@ -563,7 +563,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (strlen (setval) > buflen) {
 						eprintf ("Warning: new string is longer than previous one \n");
 					}
-					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+					realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					for (; ((size || size==-1) && buf[i]) && i<len; i++) {
@@ -582,7 +582,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (MUSTSET) {
 					if ((size = strlen(setval)) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
-					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
+					realprintf ("\"ww %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 					size*=2;
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
