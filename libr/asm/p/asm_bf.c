@@ -9,12 +9,12 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const ut8 *b;
-	int rep;
+	int rep = 1;
 
-	/* Count repetitions of the current instruction. */
-	for (rep=1, b=buf; b[0]&&b[1] && (b[0]==b[1]) && rep<len; b++, rep++)
-		if (b[0] == -1)
-			break;
+	/* Count repetitions of the current instruction, unless it's a trap. */
+	if (*buf != 0x00 && *buf != 0xff)
+		for (b = &buf[1]; b < buf+len && *b == *buf; b++)
+			rep++;
 
 	switch (*buf) {
 	case '[':
