@@ -374,7 +374,7 @@ typedef struct r_core_bin_filter_t {
 } RCoreBinFilter;
 
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset, const char *chksum);
-R_API int r_core_bin_set_arch_bits (RCore *r, char *name, const char * arch, ut16 bits);
+R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);

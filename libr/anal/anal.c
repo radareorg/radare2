@@ -50,6 +50,7 @@ R_API RAnal *r_anal_new() {
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
+	anal->nopskip = R_TRUE; // skip nops in code analysis
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);

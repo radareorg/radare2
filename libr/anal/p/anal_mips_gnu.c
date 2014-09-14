@@ -425,7 +425,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 
 /* Set the profile register */
 static int mips_set_reg_profile(RAnal* anal){
-     const char *p = "=pc    pc\n"
+     const char *p =
+#if 0
+          "=pc    pc\n"
 	  "=sp    sp\n"
 	  "=a0    a0\n"
 	  "=a1    a1\n"
@@ -464,8 +466,9 @@ static int mips_set_reg_profile(RAnal* anal){
 	  "gpr	fp	.32	120	0\n"
 	  "gpr	ra	.32	124	0\n"
 	  "gpr	pc	.32	128	0\n";
+#else
      // take the one from the debugger //
-	return strdup (
+	p = 
 	"=pc	pc\n"
 	"=sp	sp\n"
 	"=bp	fp\n"
@@ -512,8 +515,9 @@ static int mips_set_reg_profile(RAnal* anal){
 	"gpr	ra	.64	248	0\n"
 	/* extra */
 	"gpr	pc	.64	272	0\n"
-	);
-	return r_reg_set_profile_string(anal->reg, p);
+	;
+#endif
+	return r_reg_set_profile_string (anal->reg, p);
 }
 
 struct r_anal_plugin_t r_anal_plugin_mips_gnu = {

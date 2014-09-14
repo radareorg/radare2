@@ -521,6 +521,7 @@ typedef struct r_anal_t {
 	int lineswidth; // wtf
 	int big_endian;
 	int split; // used only from core
+	int nopskip; // skip nops at the begining of functions
 	void *user;
 	RList *fcns;
 	RListRange *fcnstore;

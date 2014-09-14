@@ -66,6 +66,13 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 		r_config_set (cfg, "asm.segoff", (asmbits==16)?"true":"false");
 }
 
+static int cb_analnopskip (void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->nopskip = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -711,6 +718,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("anal.depth", 50, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
+	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the begining of functions");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");

@@ -640,7 +640,7 @@ static int gb_custom_daa (RAnalEsil *esil)
 	} else {
 		if (C || (a > 0x99)) {
 			a = (a + 0x60) & 0xff;
-			r_reg_setv (esil->anal, "C", 1);
+			r_reg_setv (esil->anal->reg, "C", 1);
 		}
 		if (H || ((a & 0x0f) > 0x09))
 			a += 0x06;;
