@@ -344,9 +344,9 @@ unsigned short crc16 (const unsigned char *data_p, size_t length) {
 	return (unsigned short)(crc);
 }
 
-#define RETURN_FALSE_ON_ERR() if(eof || buf_err) return R_FALSE;
+#define RETURN_FALSE_ON_ERR() if(buf_eof || buf_err) return R_FALSE;
 // this is ugly, but we can't afford to change the return size of read_byte
-static int eof;
+static int buf_eof;
 static int buf_err;
 
 #define READ_BYTE_ERR(b) read_byte (b); RETURN_FALSE_ON_ERR ();
@@ -354,11 +354,11 @@ static ut8 read_byte (RBuffer *b) {
 	ut8 r;
 	int length;
 
-	if (eof || buf_err) return 0;
+	if (buf_eof || buf_err) return 0;
 
 	if ( (length = r_buf_read_at(b, b->cur, &r, 1)) != 1 ) {
 		if ( length == -1 ) buf_err = R_TRUE;
-		if ( length == 0 )  eof = R_TRUE;
+		if ( length == 0 )  buf_eof = R_TRUE;
 
 		return 0;
 	}
@@ -1062,7 +1062,7 @@ static RFlirtNode* flirt_parse (const RAnal *anal, RBuffer *flirt_buf) {
 	idasig_v6_v7_t *v6_v7 = NULL;
 	idasig_v8_v9_t *v8_v9 = NULL;
 
-	eof = R_FALSE;
+	buf_eof = R_FALSE;
 	buf_err = R_FALSE;
 
 	if (!(version = r_sign_is_flirt (flirt_buf))) goto exit;
