@@ -13,10 +13,10 @@ return strdup(
 "drx	dr6	.32	20	0\n"
 "drx	dr7	.32	24	0\n"
 /* floating save area 4+4+4+4+4+4+4+80+4 = 112 */
-"seg	gs	.32	132	0\n"
-"seg	fs	.32	136	0\n"
-"seg	es	.32	140	0\n"
-"seg	ds	.32	144	0\n"
+"seg	gs	.32	140	0\n"
+"seg	fs	.32	144	0\n"
+"seg	es	.32	148	0\n"
+"seg	ds	.32	152	0\n"
 "gpr	edi	.32	156	0\n"
 "gpr	esi	.32	160	0\n"
 "gpr	ebx	.32	164	0\n"
@@ -24,13 +24,11 @@ return strdup(
 "gpr	ecx	.32	172	0\n"
 "gpr	eax	.32	176	0\n"
 "gpr	ebp	.32	180	0\n"
-"gpr	esp	.32	196	0\n"
 "gpr	eip	.32	184	0\n"
-"seg	cs	.32	184	0\n"
-"seg	ds	.32	152	0\n"
-"seg	gs	.32	140	0\n"
-"seg	fs	.32	144	0\n"
+"seg	cs	.32	188	0\n"
 "gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+"gpr	esp	.32	196	0\n"
+"seg	ss	.32	200	0\n"
 "gpr	cf	.1	.1536	0	carry\n"
 "gpr	pf	.1	.1538	0	parity\n"
 "gpr	af	.1	.1540	0	adjust\n"
@@ -40,6 +38,5 @@ return strdup(
 "gpr	if	.1	.1545	0	interrupt\n"
 "gpr	df	.1	.1546	0	direction\n"
 "gpr	of	.1	.1547	0	overflow\n"
-"seg	ss	.32	200	0\n"
 /* +512 bytes for maximum supoprted extension extended registers */
 );

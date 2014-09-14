@@ -160,17 +160,17 @@ static const char *parse_def (RReg *reg, char **tok, const int n) {
 	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2]);
 	if (*end != '\0' || !item->size) {
-		free (item);
+		r_reg_item_free (item);
 		return "Invalid size";
 	}
 	item->offset = parse_size (tok[3]);
 	if (*end != '\0') {
-		free (item);
+		r_reg_item_free (item);
 		return "Invalid offset";
 	}
 	item->packed_size = parse_size (tok[4]); 
 	if (*end != '\0') {
-		free (item);
+		r_reg_item_free (item);
 		return "Invalid packed size";
 	}
 
@@ -181,11 +181,17 @@ static const char *parse_def (RReg *reg, char **tok, const int n) {
 	if (n == 6)
 		item->flags = strdup (tok[5]);
 
-	// Update the overall profile size
-	if ((item->offset+item->size )>reg->size)
-		reg->size = item->offset + item->size;
+	// Don't allow duplicate registers
+	if (r_reg_get (reg, item->name, R_REG_TYPE_ALL)) {
+		r_reg_item_free (item);
+		return "Duplicate register definition";
+	}
 
 	r_list_append (reg->regset[item->type].regs, item);
+
+	// Update the overall profile size
+	if (item->offset + item->size > reg->size)
+		reg->size = item->offset + item->size;
 
 	return NULL;
 }
@@ -266,8 +272,6 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				return R_FALSE;
 			}
 		}
-		// Increment the line counter
-		l++;
 	} while(*p++);
 
 	// Align to byte boundary if needed
