@@ -1168,6 +1168,7 @@ R_API void r_sign_flirt_dump (const RAnal *anal, const char *flirt_file) {
 
 	if (!(flirt_buf = r_buf_file (flirt_file))) {
 		eprintf("Can't open %s\n", flirt_file);
+		goto exit;
 	}
 
 	node = flirt_parse (anal, flirt_buf);
@@ -1176,8 +1177,10 @@ R_API void r_sign_flirt_dump (const RAnal *anal, const char *flirt_file) {
 		print_node (anal, node, -1);
 	} else {
 		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		goto exit;
 	}
 
+exit:
 	node_free (node);
 }
 
@@ -1188,6 +1191,7 @@ R_API void r_sign_flirt_scan (const RAnal *anal, const char *flirt_file) {
 
 	if (!(flirt_buf = r_buf_file (flirt_file))) {
 		eprintf ("Can't open %s\n", flirt_file);
+		goto exit;
 	}
 
 	node = flirt_parse (anal, flirt_buf);
@@ -1195,10 +1199,13 @@ R_API void r_sign_flirt_scan (const RAnal *anal, const char *flirt_file) {
 	if (node) {
 		if (!node_match_functions (anal, node)) {
 			eprintf ("Error while scanning the file\n");
+			goto exit;
 		}
 	} else {
 		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		goto exit;
 	}
 
+exit:
 	node_free (node);
 }
