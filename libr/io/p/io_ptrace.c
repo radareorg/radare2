@@ -135,6 +135,8 @@ static void open_pidmem (RIOPtrace *iop) {
 		eprintf ("Warning: Cannot open /proc/%d/mem. "
 			"Fallback to ptrace io.\n", iop->pid);
 #endif
+#else
+	iop->fd = -1;
 #endif
 }
 
