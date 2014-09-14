@@ -942,7 +942,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		// set memory read only
 	} else {
 		addr = r_reg_getv (core->anal->reg, name);
-		eprintf ("PC=0x%llx\n", (ut64)addr);
+		//eprintf ("PC=0x%llx\n", (ut64)addr);
 	}
 	r_io_read_at (core->io, addr, code, 32);
 	r_asm_set_pc (core->assembler, addr);

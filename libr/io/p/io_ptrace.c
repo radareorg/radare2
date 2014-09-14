@@ -161,10 +161,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 		if (file[0]=='p')  //ptrace
 			ret = 0;
-		else
-		if (ret == -1) {
+		else if (ret == -1) {
 #ifdef __ANDROID__
-		eprintf ("ptrace_attach: Operation not permitted\n");
+			eprintf ("ptrace_attach: Operation not permitted\n");
 #else
 			switch (errno) {
 			case EPERM:
@@ -177,10 +176,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				break;
 			}
 #endif
-		} else
-		if (__waitpid (pid))
+		} else if (__waitpid (pid)) {
 			ret = pid;
-		else eprintf ("Error in waitpid\n");
+		} else eprintf ("Error in waitpid\n");
 		if (ret != -1) {
 			RIODesc *desc;
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);

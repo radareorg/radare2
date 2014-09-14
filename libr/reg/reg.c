@@ -182,7 +182,7 @@ static const char *parse_def (RReg *reg, char **tok, const int n) {
 		item->flags = strdup (tok[5]);
 
 	// Update the overall profile size
-	if (reg->size <= item->offset)
+	if ((item->offset+item->size )>reg->size)
 		reg->size = item->offset + item->size;
 
 	r_list_append (reg->regset[item->type].regs, item);

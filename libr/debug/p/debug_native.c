@@ -232,7 +232,7 @@ struct user_regs_struct_x86_32 {
 # define R_DEBUG_REG_T struct user_regs
 # elif __mips__
 #include <sys/ucontext.h>
-typedef unsigned long mips64_regs_t [4096];
+typedef ut64 mips64_regs_t [274];
 # define R_DEBUG_REG_T mips64_regs_t
 #endif
 # endif

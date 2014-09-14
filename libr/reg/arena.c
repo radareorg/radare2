@@ -40,7 +40,7 @@ R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 }
 
 /* reduce number of return statements */
-R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
+R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 	int i, ret = R_FALSE;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
@@ -52,14 +52,20 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 		ret = R_TRUE;
 		/* deserialize ALL register types in a single buffer */
 		for (i=0; i<R_REG_TYPE_LAST; i++) {
-			if (!reg->regset[i].arena) {
+			if (reg->regset[i].arena) {
+				arena = reg->regset[i].arena;
+			} else {
 				arena = reg->regset[i].arena = R_NEW (RRegArena);
 				arena->size = len;
 				arena->bytes = malloc (len);
-			} else arena = reg->regset[i].arena;
-			if (arena->bytes == NULL)
+			}
+			if (!arena->bytes) {
+				arena->size = 0;
 				return R_FALSE;
-			memcpy (arena->bytes, buf+off, arena->size);
+			}
+			memset (arena->bytes, 0, arena->size);
+			memcpy (arena->bytes, buf+off,
+				R_MIN (len-off, arena->size));
 			off += arena->size;
 			if (off>len) {
 				ret = R_FALSE;
@@ -71,12 +77,16 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 			regset = &reg->regset[type];
 			arena = regset->arena;
 			if (len<1) return R_FALSE;
-			if ((arena->size !=len ) || (arena->bytes == NULL)) {
-				arena->size = len;
+			if ((arena->size !=len) || (arena->bytes == NULL)) {
 				arena->bytes = malloc (len);
+				if (!arena->bytes) {
+					arena->size = 0;
+					return R_FALSE;
+				}
+				arena->size = len;
 			}
 			if (arena->size != len) {
-				ut8 *buf = realloc (regset->arena->bytes, len);
+				ut8 *buf = realloc (arena->bytes, len);
 				if (buf) {
 					arena->size = len;
 					arena->bytes = buf;
@@ -85,9 +95,9 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 					return R_FALSE;
 				}
 			}
-			if (len > arena->size)
-				len = arena->size;
 			if (arena->bytes) {
+				memset (arena->bytes, 0, arena->size);
+				//len = R_MIN (len, arena->size);
 				memset (arena->bytes, 0, arena->size);
 				memcpy (arena->bytes, buf, len);
 				ret = R_TRUE;

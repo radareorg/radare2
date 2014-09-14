@@ -1,32 +1,3 @@
-return strdup (
-"=pc	r0\n"
-"=sp	29\n" // status register
-"=sr	v0\n" // status register
-"=a0	r4\n"
-"=a1	r5\n"
-"=a2	r6\n"
-"=a3	r7\n"
-"=snr	or0\n"
-"gpr	r0	.32	0	0\n"
-"gpr	r1	.32	4	0\n"
-"gpr	r2	.32	8	0\n"
-"gpr	r3	.32	16	0\n"
-"gpr	r4	.32	24	0\n"
-"gpr	r5	.32	32	0\n"
-"gpr	r6	.32	48	0\n"
-"gpr	r7	.32	56	0\n"
-"gpr	r8	.32	64	0\n"
-"gpr	r9	.32	72	0\n"
-"gpr	r10	.32	80	0\n"
-"gpr	r11	.32	88	0\n"
-"gpr	r12	.32	96	0\n"
-"gpr	r13	.32	104	0\n"
-"gpr	r14	.32	112	0\n"
-"gpr	r15	.32	120	0\n"
-"gpr	r16	.32	128	0\n"
-"gpr	or0	.32	132	0\n"
-);
-
 // XXX wtf
 #if 0
 	reg      name    usage
@@ -66,7 +37,7 @@ PC = 272
 	"=a2	a2\n"
 	"=a3	a3\n"
 	"gpr	zero	.64	0	0\n"
-	"gpr	at	.32	8	0\n"
+	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
 	"gpr	at	.64	8	0\n"
 	"gpr	v0	.64	16	0\n"
 	"gpr	v1	.64	24	0\n"
