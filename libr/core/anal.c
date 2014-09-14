@@ -553,7 +553,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->type = reftype;
 				if (reftype == 'd') {
 					// XXX HACK TO AVOID INVALID REFS
-					r_list_append (fcni->xrefs, ref);
+					r_list_append (fcn->xrefs, ref);
+				} else {
+					free (ref);
 				}
 			//if (len==0) return R_TRUE;
 			return 1;
