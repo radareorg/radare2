@@ -7,6 +7,13 @@ RR=$1
 RB=$2
 N=$3
 
+git diff --exit-code 2>&1 >/dev/null
+if [ $? != 0 ]; then
+	echo "ERROR: There are local changes that must be commited or reseted"
+	echo "ERROR: Cherrypulling process stopped to avoid data loss."
+	exit 1
+fi
+
 if [ -z "$N" ]; then
 	echo "Usage: sys/cherrypull.sh [url] [branch] [ncommits]"
 	exit 1
