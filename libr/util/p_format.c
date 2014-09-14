@@ -271,13 +271,14 @@ static int computeStructSize(char *fmt) {
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
 	const char *fmt;
-	/*int flag = (slide>=10000) ? -2 : -1;*/
+	int flag = (slide>=10000)?-2:-1;
 	if ((slide%100) > 14) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
+	if (flag) p->printf = realprintf;
 	fmt = r_strht_get (p->formats, name);
-	r_print_format (p, seek, b, len, fmt, /*flag*/-1, NULL);
+	r_print_format (p, seek, b, len, fmt, flag, NULL);
 	return computeStructSize(strdup(fmt));
 }
 
@@ -289,7 +290,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
 	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = fmt;
-	int viewflags = 0;
+	int viewflags = 0, flag = (elem==-2)?1:0;
 	char namefmt[8];
 	static int slide=0;
 	ut8 *buf;
@@ -385,8 +386,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->printf ("   ");
 #define MUSTSET (setval && elem == idx)
 #define MUSTSEE (elem == -1 || elem == idx)
-#define SEEFLAG (elem == -2)
-			if (MUSTSEE) {
+			if (MUSTSEE && !flag) {
 				if (!(MUSTSET)) {
 					if (oldprintf)
 						p->printf = oldprintf;
@@ -460,8 +460,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
 			}
-			if (SEEFLAG) {
-				p->printf ("f %s=0x%08"PFMT64x"\n", r_str_word_get0 (args, idx) , seeki);
+			if (flag && isptr != 3) {
+				if (tmp == '?') {
+					char *n = strdup (r_str_word_get0 (args, idx));
+					*strchr (n, ':') = '.';
+					realprintf ("f %s_", n);
+					free(n);
+				} else if (slide>0 && idx==0) {
+					realprintf ("%s=0x%08"PFMT64x"\n", r_str_word_get0 (args, idx), seeki);
+				} else
+					realprintf ("f %s=0x%08"PFMT64x"\n", r_str_word_get0 (args, idx) , seeki);
+				idx++;
 			}
 
 			if (isptr == 3) {
@@ -607,18 +616,18 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				char *structname = strdup (r_str_word_get0 (args, idx-1));
 				name = strchr (structname, ':');
 				if (name == NULL) {
-					eprintf ("Struct name missing\n");
+					eprintf ("Struct name missing (%s)\n", structname);
 					free (structname);
 					goto beach;
 				}
 				*(name++) = '\0';
 				p->printf ("<struct>\n");
-				/* if (SEEFLAG) slide+=10000;*/
+				if (flag) slide+=100000;
 				slide += (isptr) ? 100 : 1;
 				s = r_print_format_struct (p, seeki, buf+i, len, structname, slide);
 				i+= (isptr) ? 4 : s;
 				slide -= (isptr) ? 100 : 1;
-				/*if (SEEFLAG) slide-=10000;*/
+				if (flag) slide-=100000;
 				free (structname);
 				break;
 				}
@@ -627,7 +636,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				invalid = 1;
 				break;
 			}
-			if (!MUSTSEE || MUSTSET)
+			if (!flag && (!MUSTSEE || MUSTSET))
 				idx++;
 			if (viewflags && p->offname) {
 				const char *s = p->offname (p->user, seeki);

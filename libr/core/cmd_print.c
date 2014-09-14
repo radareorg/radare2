@@ -1600,6 +1600,12 @@ static int cmd_print(void *data, const char *input) {
 		r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f':
+	{
+		int flag = -1;
+		if (input[1]=='*') {
+			input++;
+			flag = -2;
+		}
 		if (input[1]=='.') {
 			if (input[2]=='\0') {
 				RListIter *iter;
@@ -1687,13 +1693,7 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 					} else {
-						const char *fmt;
-						int namelen = strlen (name), flag = -1;
-						if (name[namelen-1] == '*') {
-							name[namelen-1] = '\0';
-							flag = -2;
-						}
-						fmt = r_strht_get (core->print->formats, name);
+						const char *fmt = r_strht_get (core->print->formats, name);
 						if (fmt) {
 							//printf ("GET (%s) = %s\n", name, fmt);
 							r_print_format (core->print, core->offset,
@@ -1704,7 +1704,9 @@ static int cmd_print(void *data, const char *input) {
 				free (name);
 			}
 		} else r_print_format (core->print, core->offset,
-			core->block, len, input+1, -1, NULL);
+			core->block, len, input+1, flag, NULL);
+	}
+
 		break;
 	case 'k':
 		{
