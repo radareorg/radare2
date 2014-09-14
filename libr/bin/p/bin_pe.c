@@ -240,17 +240,24 @@ static RList* libs(RBinFile *arch) {
 }
 
 static int is_dot_net(RBinFile *arch) {
-	struct r_bin_pe_lib_t *libs = NULL;
+	struct r_bin_pe_import_t *imports;
 	int i;
-	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
 		return R_FALSE;
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp (libs[i].name, "mscoree.dll")) {
-			free (libs);
+
+	for (i = 0; !imports[i].last; i++) {
+		// Check if the exe imports _CorExeMain or _CorDllMain from mscoree.dll
+		if (!strcmp((const char *)imports[i].name, "mscoree.dll__CorExeMain") ||
+			!strcmp((const char *)imports[i].name, "mscoree.dll__CorDllMain"))
+		{
+			free (imports);
 			return R_TRUE;
 		}
 	}
-	free (libs);
+
+	free (imports);
+
 	return R_FALSE;
 }
 
