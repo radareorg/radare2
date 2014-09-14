@@ -51,6 +51,9 @@ R_API void r_sign_list(RSign *sig, int rad);
 R_API void r_sign_reset(RSign *sig);
 R_API void r_sign_item_free(void *_item);
 R_API int r_sign_remove_ns(RSign* sig, const char* ns);
+R_API int r_sign_is_flirt (RBuffer *buf);
+R_API void r_sign_flirt_dump (const RAnal *anal, const char *flirt_file);
+R_API void r_sign_flirt_scan (const RAnal *anal, const char *flirt_file);
 
 // old api
 R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd);
