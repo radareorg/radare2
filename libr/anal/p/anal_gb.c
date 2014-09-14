@@ -99,13 +99,13 @@ static inline void gb_anal_esil_cjmp (RAnalOp *op, const ut8 data)
 			cond = 'C';
 	}
 	if (op->cond == R_ANAL_COND_EQ)
-		r_strbuf_setf (&op->esil, "%c,?{,%"PFMT64d",pc,=,}", cond, (op->jump & 0xffff));
-	else	r_strbuf_setf (&op->esil, "%c,!,?{,%"PFMT64d",pc,=,}", cond, (op->jump & 0xffff));
+		r_strbuf_setf (&op->esil, "%c,?{,0x%"PFMT64x",pc,=,}", cond, (op->jump & 0xffff));
+	else	r_strbuf_setf (&op->esil, "%c,!,?{,0x%"PFMT64x",pc,=,}", cond, (op->jump & 0xffff));
 }
 
 static inline void gb_anal_esil_jmp (RAnalOp *op)
 {
-	r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", (op->jump & 0xffff));
+	r_strbuf_setf (&op->esil, "0x%"PFMT64x",pc,=", (op->jump & 0xffff));
 }
 
 static inline void gb_anal_jmp_hl (RReg *reg, RAnalOp *op)
@@ -487,7 +487,7 @@ static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data)
 	op->src[0]->absolute = R_TRUE;
 	if (data[0] == 0x36) {
 		op->src[0]->imm = data[1];
-		r_strbuf_setf (&op->esil, "%d,hl,=[1]", data[1]);
+		r_strbuf_setf (&op->esil, "0x%02x,hl,=[1]", data[1]);
 	} else {
 		op->src[0]->reg = r_reg_get (reg, regs_8[((data[0] & 0x38)>>3)], R_REG_TYPE_GPR);
 		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[(data[0] & 0x38)>>3]);
