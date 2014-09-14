@@ -274,7 +274,7 @@ next_quote:
 	if (*cmd == '[') {
 		char *tp = strchr (cmd, ']');
 		if (!tp) {
-			fprintf (stderr, "Missing ']'.\n");
+			eprintf ("Missing ']'.\n");
 			goto fail;
 		}
 		*tp++ = 0;
@@ -292,11 +292,11 @@ next_quote:
 	if (*cmd == '.') {
 		if (s->options & SDB_OPTION_FS) {
 			if (!sdb_query_file (s, cmd+1)) {
-				fprintf (stderr, "sdb: cannot open '%s'\n", cmd+1);
+				eprintf ("sdb: cannot open '%s'\n", cmd+1);
 				goto fail;
 			}
 		} else {
-			fprintf (stderr, "sdb: filesystem access disabled in config\n");
+			eprintf ("sdb: filesystem access disabled in config\n");
 		}
 	} else
 	if (*cmd == '~') {
@@ -420,13 +420,15 @@ next_quote:
 						// [+]K = remove first element
 						// XXX: this is a little strange syntax to remove an item
 						ret = sdb_array_get (s, p, 0, 0);
-						out_concat (ret);
+						if (ret && *ret)
+							out_concat (ret);
 						// (+)foo :: remove first element
 						sdb_array_delete (s, p, 0, 0);
 					} else {
 						// [-]K = remove last element
 						ret = sdb_array_get (s, p, -1, 0);
-						out_concat (ret);
+						if (ret && *ret)
+							out_concat (ret);
 						// (-)foo :: remove last element
 						sdb_array_delete (s, p, -1, 0);
 					}
@@ -472,20 +474,24 @@ next_quote:
 						if (cmd[1]=='-') {
 							sdb_array_remove (s, p, cmd+2, 0);
 						} else {
-							fprintf (stderr, "TODO: [b]foo -> get index of b key inside foo array\n");
+							eprintf ("TODO: [b]foo -> get index of b key inside foo array\n");
 						//	sdb_array_dels (s, p, cmd+1, 0);
 						}
 					} else
 					if (i<0) {
 						/* [-3]foo */
 						char *tmp = sdb_array_get (s, p, -i, NULL);
-						out_concat (tmp);
+						if (tmp && *tmp) {
+							out_concat (tmp);
+							sdb_array_delete (s, p, -i, 0);
+						}
 						free (tmp);
-						sdb_array_delete (s, p, -i, 0);
 					} else {
 						/* [+3]foo */
 						char *tmp = sdb_array_get (s, p, i, NULL);
-						out_concat (tmp);
+						if (tmp && *tmp) {
+							out_concat (tmp);
+						}
 						free (tmp);
 					}
 				}

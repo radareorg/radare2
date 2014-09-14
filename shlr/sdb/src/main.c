@@ -90,7 +90,7 @@ static int createdb(const char *f) {
 	char *line, *eq;
 	s = sdb_new (NULL, f, 0);
 	if (!s || !sdb_disk_create (s)) {
-		fprintf (stderr, "Cannot create database\n");
+		eprintf ("Cannot create database\n");
 		return 1;
 	}
 	sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);

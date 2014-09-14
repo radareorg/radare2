@@ -84,12 +84,15 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	const char *beg[3];
 	const char *end[3];
 	int l, idx, len[3];
-	char *str = NULL;
+	char *b, *js, *str = NULL;
 	Rangstr rs;
 	ut32 c;
-	char *js = sdb_get (s, k, &c);
+
+	if (!s || !k)
+		return 0; 
+	js = sdb_get (s, k, &c);
 	if (!js) {
-		char *b = malloc (strlen (p)+strlen (v)+8);
+		b = malloc (strlen (p)+strlen (v)+8);
 		if (b) {
 			int is_str = isstring (v);
 			const char *q = is_str?"\"":"";
@@ -113,20 +116,20 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	if (!rs.p) {
 		char *b = malloc (strlen (js)+strlen(k)+strlen (v)+32);
 		if (b) {
-			int is_str = isstring (v);
+			int curlen, is_str = isstring (v);
 			const char *q = is_str?"\"":"";
 			const char *e = ""; // XX: or comma
-			if (js[0] && js[1] != '}') {
+			if (js[0] && js[1] != '}')
 				e = ",";
-			}
-			sprintf (b, "{\"%s\":%s%s%s%s", p, q,v, q, e);
-			// TODO: verify ending }
-			strcat (b, js+1);
+			curlen = sprintf (b, "{\"%s\":%s%s%s%s",
+				p, q, v, q, e);
+			strcpy (b+curlen, js+1);
+			// transfer ownership
 			sdb_set_owned (s, k, b, cas);
 			free (js);
 			return 1;
 		}
-// invalid json?
+		// invalid json?
 		free (js);
 		return 0;
 	} 
@@ -183,16 +186,19 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 		memcpy (str+idx, beg[2], l);
 		str[idx+l] = 0;
 	} else {
+		int kidx;
 		// DELETE KEY
 		rs.f -= 2;
-		int kidx = findkey (&rs);
-		len[0] = R_MAX(1, kidx-1);
+		kidx = findkey (&rs);
+		len[0] = R_MAX (1, kidx-1);
 		if (kidx==1){
 			if (beg[2][0]=='"')
 				beg[2]++;
 			beg[2]++;
 		}
 		str = malloc (len[0]+len[2]+1);
+		if (!str)
+			return 0;
 		memcpy (str, beg[0], len[0]);
 		if (!*beg[2])
 			beg[2]--;

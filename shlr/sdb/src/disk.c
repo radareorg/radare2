@@ -27,7 +27,7 @@ static inline int r_sys_rmkdir(char *dir) {
         while ((ptr = strchr (ptr, DIRSEP))) {
                 *ptr = 0;
                 if (!r_sys_mkdir (dir) && r_sys_mkdir_failed ()) {
-                        fprintf (stderr, "r_sys_rmkdir: fail %s\n", dir);
+                        eprintf ("r_sys_rmkdir: fail %s\n", dir);
 			*ptr = DIRSEP;
                         return 0;
                 }
