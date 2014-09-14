@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2014 - jfrankowski */
 /* credits to IDA for the flirt tech */
 /* original cpp code from Rheax <rheaxmascot@gmail.com> */
+/* thanks LemonBoy for the improved research on rheax original work */
 /* more information on flirt https://www.hex-rays.com/products/ida/tech/flirt/in_depth.shtml */
 
 /*
@@ -578,11 +579,12 @@ static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node)
 	ut8 *func_buf = NULL;
 	RAnalFunction *func;
 	RFlirtNode *child;
-	int ret = R_TRUE;
+	int size, ret = R_TRUE;
 
 	r_list_foreach (anal->fcns, it_func, func) {
 		func_buf = malloc (func->size);
-		if  (anal->iob.read_at (anal->iob.io, func->addr, func_buf, func->size) != R_TRUE) {
+		size = anal->iob.read_at (anal->iob.io, func->addr, func_buf, func->size);
+		if  (size != func->size) {
 			eprintf ("Couldn't read function\n");
 			ret = R_FALSE;
 			goto exit;
