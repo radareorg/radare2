@@ -362,23 +362,25 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 #if __WINDOWS__
 	HANDLE fm, fh;
 	if (r_sandbox_enable (0)) return -1;
-	fh = CreateFile (file, GENERIC_WRITE,
-		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	fh = CreateFile (file, GENERIC_READ|GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("CreateFile");
+		r_sys_perror ("r_file_mmap_write: CreateFile");
 		return -1;
 	}
 
 	fm = CreateFileMapping (fh, NULL,
 		PAGE_READWRITE, 0, 0, NULL);
 	if (fm == NULL) {
+		r_sys_perror ("r_file_mmap_write: CreateFileMapping");
 		CloseHandle (fh);
 		return -1;
 	}
 
 	if (fm != INVALID_HANDLE_VALUE) {
 		ut8 *obuf = MapViewOfFile (fm,
-			FILE_MAP_READ|FILE_MAP_WRITE,
+			FILE_MAP_WRITE,
 			0, 0, len);
 		memcpy (obuf, buf, len);
 		UnmapViewOfFile (obuf);
@@ -415,16 +417,12 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 
 	if (fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("CreateFile");
+		r_sys_perror ("r_file_mmap_read: CreateFile");
 		return -1;
 	}
 
 	fm = CreateFileMapping (fh, NULL,
 		PAGE_READONLY, 0, 0, NULL);
-	if (fm == NULL) {
-		CloseHandle (fh);
-		return -1;
-	}
 
 	if (fm != INVALID_HANDLE_VALUE) {
 		ut8 *obuf = MapViewOfFile (fm,
@@ -432,9 +430,14 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 			0, 0, len);
 		memcpy (obuf, buf, len);
 		UnmapViewOfFile (obuf);
+	} else {
+		r_sys_perror ("r_file_mmap_read: CreateFileMapping");
+		CloseHandle (fh);
+		return -1;
 	}
 	CloseHandle (fh);
 	CloseHandle (fm);
+	return len;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;
@@ -468,25 +471,24 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 }
 #elif __WINDOWS__
 static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
-	m->fh = CreateFile (file, m->rw?GENERIC_WRITE:GENERIC_READ,
-		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	m->fh = CreateFile (file, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
+		FILE_SHARE_READ|(m->rw?FILE_SHARE_WRITE:0), NULL,
+		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("CreateFile");
+		r_sys_perror ("r_file_mmap_windows: CreateFile");
 		free (m);
 		return NULL;
 	}
 	m->fm = CreateFileMapping (m->fh, NULL,
-		m->rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
-	if (m->fm == NULL) {
-		CloseHandle (m->fh);
-		free (m);
-		return NULL;
-	}
+		PAGE_READONLY, 0, 0, NULL);
+		//m->rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
 	if (m->fm != INVALID_HANDLE_VALUE) {
-		m->buf = MapViewOfFile (m->fm, m->rw?
-			FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ,
+		m->buf = MapViewOfFile (m->fm, 
+			// m->rw?(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
+			FILE_MAP_COPY,
 			UT32_HI (m->base), UT32_LO (m->base), 0);
 	} else {
+		r_sys_perror ("r_file_mmap_windows: CreateFileMapping");
 		CloseHandle (m->fh);
 		free (m);
 		m = NULL;

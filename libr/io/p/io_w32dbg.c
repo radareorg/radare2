@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_userconf.h>
 
@@ -23,7 +23,7 @@ typedef struct {
 #define R_IO_NFDS 2
 
 static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
-	size_t ret;
+	DWORD ret;
         ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
 //	if (len != ret)
 //		eprintf ("Cannot read 0x%08llx\n", addr);
@@ -37,7 +37,7 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int w32dbg_write_at(RIODesc *fd, const ut8 *buf, int len, ut64 addr) {
-	size_t ret;
+	DWORD ret;
 	RIOW32Dbg *dbg = fd->data;
         return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
@@ -110,7 +110,7 @@ static int __init(struct r_io_t *io) {
 // TODO: rename w32dbg to io_w32dbg .. err io.w32dbg ??
 RIOPlugin r_io_plugin_w32dbg = {
         //void *plugin;
-	.name = "io_w32dbg",
+	.name = "w32dbg",
         .desc = "w32dbg io",
 	.license = "LGPL3",
         .open = __open,

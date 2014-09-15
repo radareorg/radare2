@@ -41,10 +41,11 @@ static int __io_posix_open (const char *file, int flags, int mode) {
 		return -1;
 #if __WINDOWS__
 	if (flags & R_IO_WRITE) {
-		fd = r_sandbox_open (file, O_BINARY | 1, 0);
-		if (fd == -1)
-			r_sandbox_creat (file, O_BINARY);
-		fd = r_sandbox_open (file, O_BINARY | 1, 0);
+		fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
+		if (fd == -1) {
+			r_sandbox_creat (file, 0644);
+			fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
+		}
 	} else fd = r_sandbox_open (file, O_BINARY, 0);
 #else
 	fd = r_sandbox_open (file, (flags&R_IO_WRITE)?

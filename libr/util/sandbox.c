@@ -98,9 +98,6 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 			return -1;
 		}
 	}
-#if __WINDOWS__
-	perm = 0;
-#endif
 	ret = open (epath, mode, perm);
 	free (epath);
 	return ret;
