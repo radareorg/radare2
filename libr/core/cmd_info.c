@@ -180,18 +180,29 @@ static int cmd_info(void *data, const char *input) {
 		case 'z': 
 			if (input[1] == 'z') {
 				/* TODO: reimplement in C to avoid forks */
-				char *ret = r_sys_cmd_strf ("rabin2 -zz '%s'", core->file->desc->name);
+				char *ret;
+				switch (input[2]) {
+				case '*':
+					ret = r_sys_cmd_strf ("rabin2 -rzz '%s'", core->file->desc->name);
+					break;
+				case 'j':
+					ret = r_sys_cmd_strf ("rabin2 -jzz '%s'", core->file->desc->name);
+					break;
+				default:
+					ret = r_sys_cmd_strf ("rabin2 -zz '%s'", core->file->desc->name);
+					break;
+				}
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
 				free (ret);
 				input++;
 			} else {
-				RBININFO ("strings",R_CORE_BIN_ACC_STRINGS);
+				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS);
 			}
 			break;
 		case 'c':
-		case 'C': RBININFO ("classes",R_CORE_BIN_ACC_CLASSES); break;
+		case 'C': RBININFO ("classes", R_CORE_BIN_ACC_CLASSES); break;
 		case 'a':
 			{
 				switch (mode) {
