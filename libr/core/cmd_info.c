@@ -177,7 +177,19 @@ static int cmd_info(void *data, const char *input) {
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
 		case 'e': RBININFO ("entries",R_CORE_BIN_ACC_ENTRIES); break;
-		case 'z': RBININFO ("strings",R_CORE_BIN_ACC_STRINGS); break;
+		case 'z': 
+			if (input[1] == 'z') {
+				/* TODO: reimplement in C to avoid forks */
+				char *ret = r_sys_cmd_strf ("rabin2 -zz '%s'", core->file->desc->name);
+				if (ret && *ret) {
+					r_cons_strcat (ret);
+				}
+				free (ret);
+				input++;
+			} else {
+				RBININFO ("strings",R_CORE_BIN_ACC_STRINGS);
+			}
+			break;
 		case 'c':
 		case 'C': RBININFO ("classes",R_CORE_BIN_ACC_CLASSES); break;
 		case 'a':
