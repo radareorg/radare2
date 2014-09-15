@@ -2,7 +2,7 @@ function makelist(x) {
   var z = "List of "+x.length+"\n\n";
   for (var i = 0; i<x.length; i++)
     z += "<a style='color:yellow' href='javascript:r2ui.opendis("+
-         x[i].offset+")'>0x"+x[i].offset.toString (16) + "</a>  "+ x[i].name+"\n";
+         x[i].offset+")'>0x"+x[i].offset.toString (16) + "</a>  "+ enyo.dom.escape(x[i].name)+"\n";
   return z;
 }
 
@@ -108,7 +108,7 @@ enyo.kind ({
         for (var i in s) {
           var off = (+s[i]['offset']).toString(16);
           h += '<a style="color:yellow" href="javascript:r2ui.opendis(0x'+
-          off+')">0x'+off+'</a> '+s[i]['string']+'<br />';
+          off+')">0x'+off+'</a> '+enyo.dom.escape(s[i]['string'])+'<br />';
         }
         self.$.output.setContent (h);
       });
