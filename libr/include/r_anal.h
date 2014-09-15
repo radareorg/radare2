@@ -789,6 +789,7 @@ typedef struct r_anal_esil_t {
 	int parse_goto_count;
 	int debug;
 	ut64 flags;
+	ut64 offset;
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
 // parity flag?
@@ -986,6 +987,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
 
 R_API RAnalEsil *r_anal_esil_new();
+R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 addr);
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
 R_API void r_anal_esil_free (RAnalEsil *esil);
 R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str);

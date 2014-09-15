@@ -951,6 +951,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	 {
 		//r_anal_esil_eval (core->anal, input+2);
 		RAnalEsil *esil = core->anal->esil;
+		r_anal_esil_set_offset (esil, addr);
 		r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 		if (core->anal->cur && core->anal->cur->esil_post_loop)
 			core->anal->cur->esil_post_loop(esil, &op);
@@ -1015,6 +1016,7 @@ static int cmd_anal(void *data, const char *input) {
 				}
 					r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 				esil = core->anal->esil;
+				r_anal_esil_set_offset (esil, core->offset);
 				r_anal_esil_parse (esil, input+2);
 				r_anal_esil_dumpstack (esil);
 				r_anal_esil_stack_free (esil);

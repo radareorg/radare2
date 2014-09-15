@@ -102,10 +102,16 @@ R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code)
 	return R_TRUE;
 }
 
+R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 off) {
+	if (esil) {
+		esil->offset = off;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 R_API void r_anal_esil_free (RAnalEsil *esil) {
-	int i;
-	for (i=0; i<esil->stackptr; i++)
-		free (esil->stack[i]);
+	r_anal_esil_stack_free (esil);
 	if (esil->ops)
 		sdb_free (esil->ops);
 	if (esil->stats)
@@ -247,41 +253,48 @@ R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str) {
 
 static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 	ut8 bit;
+	if (!str)
+		return R_FALSE;
 	if (esil->hook_flag_read) {
-		int ret = esil->hook_flag_read (esil, str[1], num);
+		int ret = esil->hook_flag_read (esil, str+1, num);
 		if (ret)
 			return R_TRUE;
 	}
 	switch (str[1]) {
+	case '%':
+		*num = esil->offset;
+		break;
 	case 'z':						//zero-flag
 		*num = (esil->cur == 0);
-		return R_TRUE;
+		break;
 	case 'b':						//borrow
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_borrow_check (esil, bit);
-		return R_TRUE;
+		break;
 	case 'c':						//carry
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_carry_check (esil, bit);
-		return R_TRUE;
+		break;
 		//case 'o':						//overflow
 	case 'p':						//parity
 		*num = esil_internal_parrity_check (esil);
-		return R_TRUE;
+		break;
 	case 'r':
 		*num = esil->anal->bits/8;
-		return R_TRUE;
+		break;
+	default:
+		return R_FALSE;
 	}
-	return R_FALSE;
+	return R_TRUE;
 }
 
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 	int parm_type = r_anal_esil_get_parm_type (esil, str);
-	if (!num) return R_FALSE;
+	if (!num || !esil) return R_FALSE;
 	switch (parm_type) {
 	case R_ANAL_ESIL_PARM_INTERNAL:
-		*num = esil_internal_read (esil, str, num);
-		return R_TRUE;
+		//*num = esil_internal_read (esil, str, num);
+		return esil_internal_read (esil, str, num);
 	case R_ANAL_ESIL_PARM_NUM:
 		*num = r_num_get (NULL, str);
 		return R_TRUE;
@@ -335,7 +348,6 @@ static int esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num) {
 	int ret = 0;
 	if (num)
 		*num = 0LL;
-eprintf ("REG READING %s\n", regname);
 	if (esil->hook_reg_read) {
 		ret = esil->hook_reg_read (esil, regname, num);
 	}
@@ -2369,10 +2381,10 @@ repeat:
 }
 
 R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
-	char *ptr;
-	if (esil)
-		while ((ptr = r_anal_esil_pop (esil)))
-			free (ptr);
+	int i;
+	for (i=0; i<esil->stackptr; i++)
+		free (esil->stack[i]);
+	esil->stackptr = 0;
 }
 
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
@@ -2410,7 +2422,6 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 
 	r_anal_esil_mem_ro (esil, romem);
 	r_anal_esil_stats (esil, stats);
-eprintf ("INI %p\n", esil->hook_reg_read);
 
 	r_anal_esil_set_op (esil, "$", esil_syscall);
 	r_anal_esil_set_op (esil, "$$", esil_trap);

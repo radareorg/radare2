@@ -22,8 +22,10 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 #if TODO
 			// TODO: load the bin and calculate its size
 			if (plug->size) {
-				r_bin_load_io_at_offset_as_sz(core->bin, core->file->desc, 0, 0, 0, core->offset, plug->name, 4096);
-				eprintf ("SizE %d\n", plug->size (core->bin));
+				r_bin_load_io_at_offset_as_sz (core->bin,
+					core->file->desc, 0, 0, 0, core->offset,
+					plug->name, 4096);
+				eprintf ("Size %d\n", plug->size (core->bin));
 			}
 #endif
 		}
@@ -510,8 +512,8 @@ static int cmd_search(void *data, const char *input) {
 	/* we don't really care what's bigger bc there's a flag for backward search
 	   from now on 'from' and 'to' represent only the search boundaries, not
 	   search direction */
-	__from = R_MIN(from, to);
-	to = R_MAX(from, to);
+	__from = R_MIN (from, to);
+	to = R_MAX (from, to);
 	from = __from;
 	core->search->bckwrds = R_FALSE;
 
@@ -746,6 +748,50 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		}
 		break;
+	case 'E': {
+		RSearchKeyword kw;
+		dosearch = R_FALSE;
+		if (input[1]==' ' || input[1]=='\0') {
+			char *res;
+			ut64 nres, addr = from;
+			r_cons_break (NULL, NULL);
+			if (!core->anal->esil) {
+				core->anal->esil = r_anal_esil_new ();
+			}
+			r_anal_esil_setup (core->anal->esil, core->anal, 1, 0);
+			core->anal->esil->debug = 0;
+			for (; addr<to; addr++) {
+				if (r_cons_singleton ()->breaked) {
+					eprintf ("Breaked at 0x%08"PFMT64x"\n", addr);
+					break;
+				}
+				r_anal_esil_set_offset (core->anal->esil, addr);
+				if (!r_anal_esil_parse (core->anal->esil, input+2)) {
+					// XXX: return value doesnt seems to be correct here
+					//eprintf ("Cannot parse esil (%s)\n", input+2);
+					//break;
+				}
+				res = r_anal_esil_pop (core->anal->esil);
+				int kwidx = r_config_get_i (core->config, "search.kwidx");
+				if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
+					if (nres) {
+						__cb_hit (&kw, core, addr);
+						//eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
+						kw.type = 0; //R_SEARCH_TYPE_ESIL;
+						kw.kwidx = kwidx;
+						kw.count++;
+						kw.keyword_length = 0;
+					}
+				}
+				r_anal_esil_stack_free (core->anal->esil);
+				free (res);
+			}
+			r_cons_break_end ();
+		} else eprintf ("Usage: /E [esil-expr]\n");
+		r_cons_clear_line (1);
+		return R_TRUE;
+		}
+		break;
 	case 'd': /* search delta key */
 		r_search_reset (core->search, R_SEARCH_DELTAKEY);
 		r_search_kw_add (core->search,
@@ -770,7 +816,7 @@ static int cmd_search(void *data, const char *input) {
 				r_search_kw_add (core->search,
 						r_search_keyword_new_hexmask (input+2, NULL));
 			}
-            free (p);
+			free (p);
 		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
@@ -836,6 +882,7 @@ static int cmd_search(void *data, const char *input) {
 			"/C", "[ae]", "search for crypto materials",
 			"/d", " 101112", "search for a deltified sequence of bytes",
 			"/e", " /E.F/i", "match regular expression",
+			"/E", " esil-expr", "offset matching given esil expressions %%= here ",
 			"/i", " foo", "search for string 'foo' ignoring case",
 			"/m", " magicfile", "search for matching magic file (use blocksize)",
 			"/p", " patternsize", "search for pattern of given size",
