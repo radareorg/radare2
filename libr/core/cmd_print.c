@@ -1626,7 +1626,7 @@ static int cmd_print(void *data, const char *input) {
 		int flag = -1;
 		if (input[1]=='*') {
 			input++;
-			flag = -2;
+			flag = SEEFLAG;
 		}
 		if (input[1]=='.') {
 			if (input[2]=='\0') {

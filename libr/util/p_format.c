@@ -4,6 +4,15 @@
 #include "r_util.h"
 #include "r_print.h"
 
+#define NOPTR 0
+#define PTRSEEK 1
+#define PTRBACK 2
+#define NULLPTR 3
+#define STRUCTPTR 100
+#define NESTEDSTRUCT 1
+#define STRUCTFLAG 10000
+#define NESTDEPTH 14
+
 static int (*realprintf)(const char *str, ...);
 static int nullprintf(const char *fmt, ...) { return 0; }
 
@@ -89,7 +98,7 @@ static void r_print_format_quadword(const RPrint* p, int mustset, const char* se
 
 static void r_print_format_byte(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
 	if (mustset) {
-		realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
@@ -99,7 +108,7 @@ static void r_print_format_byte(const RPrint* p, int mustset, const char* setval
 
 static void r_print_format_char(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
 	if (mustset) {
-		realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		p->printf ("%d ; %d ; '%c'", buf[i], (char)buf[i],
@@ -271,8 +280,8 @@ static int computeStructSize(char *fmt) {
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, char *name, int slide) {
 	const char *fmt;
-	int flag = (slide>=10000)?-2:-1;
-	if ((slide%100) > 14) {
+	int flag = (slide>=STRUCTFLAG)?SEEFLAG:-1;
+	if ((slide%STRUCTPTR) > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
@@ -290,7 +299,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
 	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = fmt;
-	int viewflags = 0, flag = (elem==-2)?1:0;
+	int viewflags = 0, flag = (elem==SEEFLAG)?1:0;
 	char namefmt[8];
 	static int slide=0;
 	ut8 *buf;
@@ -347,7 +356,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				maxl = len;
 		}
 		l++;
-		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl+6*slide%100);
+		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl+6*slide%STRUCTPTR);
 	}
 
 	/* go format */
@@ -410,8 +419,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if(tmp == '?' )seeki = addr;
 				memset (buf, '\0', len);
 				p->printf ("(*0x%"PFMT64x") ", addr);
-				if (addr == 0) isptr = 3;
-				else isptr = 2;
+				if (addr == 0) isptr = NULLPTR;
+				else isptr = PTRBACK;
 				if (/*addr<(b+len) && addr>=b && */p->iob.read_at) { /* The test was here to avoid segfault in the next line, 
 						but len make it doesnt work... */
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
@@ -429,7 +438,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				i = nexti;
 				seeki = seek+i;
 				memcpy (buf, b, len);
-				isptr = 0;
+				isptr = NOPTR;
 				arg--;
 				continue;
 			}
@@ -439,7 +448,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			/* skip chars */
 			switch (tmp) {
 			case '*': // next char is a pointer
-				isptr = 1;
+				isptr = PTRSEEK;
 				arg++;
 				tmp = *arg; //last;
 				goto feed_me_again;
@@ -460,15 +469,18 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
 			}
-			if (flag && isptr != 3) {
+			if (flag && isptr != NULLPTR) {
 				if (tmp == '?') {
 					char *n = strdup (r_str_word_get0 (args, idx)+1);
 					char *par = strchr (n, ')');
-					if (par) {
+					if (par == NULL) {
+						eprintf ("No end parenthesis for struct name");
+						goto beach;
+					} else {
 						*par = '.';
-						realprintf ("f %s_", n);
 					}
-					free (n);
+					realprintf ("f %s_", n);
+					free(n);
 				} else if (slide>0 && idx==0) {
 					realprintf ("%s=0x%08"PFMT64x"\n",
 						r_str_word_get0 (args, idx), seeki);
@@ -477,9 +489,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				idx++;
 			}
 
-			if (isptr == 3) {
+			if (isptr == NULLPTR) {
 				p->printf ("NULL");
-				isptr = 2;
+				isptr = PTRBACK;
 			} else
 			/* cmt chars */
 			switch (tmp) {
@@ -521,20 +533,23 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'c':
-				r_print_format_char(p, MUSTSET, setval, seeki, buf, i);
+				r_print_format_char (p, MUSTSET,
+					setval, seeki, buf, i);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'X':
-				size = r_print_format_hexpairs(p, MUSTSET, setval, seeki, buf, size);
-				i+=size;
+				size = r_print_format_hexpairs(p, MUSTSET,
+					setval, seeki, buf, size);
+				i += size;
 				break;
 			case 'B':
-				if(r_print_format_10bytes(p, MUSTSET, setval, seeki, addr, buf) == 0)
-					i+= (size==-1) ? 4 : 4*size;
+				if(r_print_format_10bytes(p, MUSTSET,
+					setval, seeki, addr, buf) == 0)
+					i += (size==-1) ? 4 : 4*size;
 				break;
 			case 'f':
 				r_print_format_float(p, MUSTSET, setval, seeki, addr);
-				i+= (size==-1) ? 4 : 4*size;
+				i += (size==-1) ? 4 : 4*size;
 				break;
 			case 'i':
 			case 'd':
@@ -596,7 +611,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if ((size = strlen(setval)) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
-					//size*=2;
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					for (; ((size || size==-1) && buf[i]) && i<len; i+=2) {
@@ -634,12 +648,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
 				p->printf ("<struct>\n");
-				if (flag) slide+=100000;
-				slide += (isptr) ? 100 : 1;
-				s = r_print_format_struct (p, seeki, buf+i, len, structname--, slide);
+				if (flag) slide+=STRUCTFLAG;
+				slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+				s = r_print_format_struct (p, seeki,
+					buf+i, len, structname--, slide);
 				i+= (isptr) ? 4 : s;
-				slide -= (isptr) ? 100 : 1;
-				if (flag) slide-=100000;
+				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+				if (flag) slide-=STRUCTFLAG;
 				free (structname);
 				break;
 				}
