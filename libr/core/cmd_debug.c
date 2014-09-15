@@ -707,7 +707,7 @@ free (rf);
 		arg = strchr (str+1, '=');
 		if (arg) {
 			char *string;
-			char *regname;
+			const char *regname;
 			*arg = 0;
 			string = r_str_chop (strdup (str+1));
 			regname = r_reg_get_name (core->dbg->reg,
@@ -728,7 +728,7 @@ free (rf);
 			return;
 		} else {
 			int role = r_reg_get_name_idx (str+1);
-			char *regname = r_reg_get_name (core->dbg->reg, role);
+			const char *regname = r_reg_get_name (core->dbg->reg, role);
 			if (!regname)
 				regname = str+1;
 			size = atoi (regname);

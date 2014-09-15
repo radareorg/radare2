@@ -234,6 +234,22 @@ error:
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
+	case '!':
+		{
+			char *out, *comment = r_meta_get_string (
+					core->anal, R_META_TYPE_COMMENT, addr);
+			out = r_core_editor (core, comment);
+			if (out) {
+				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				r_meta_set_string (core->anal,
+						R_META_TYPE_COMMENT, addr, out);
+				free (out);
+			}
+			free (comment);
+		}
+		break;
 	case '+':
 	case ' ':
 		{
