@@ -745,7 +745,12 @@ typedef enum {
 typedef struct {
 	ELeafType leaf_type;
 	void *type_info;
+
 	free_func free_;
+	get_value_name get_name;
+	get_value get_val;
+	get_value_name_len get_name_len;
+	get_member_list get_members;
 } STypeInfo;
 
 typedef struct {
@@ -754,10 +759,6 @@ typedef struct {
 	STypeInfo type_data;
 
 	free_func free_;
-	get_value_name get_name;
-	get_value get_val;
-	get_value_name_len get_name_len;
-	get_member_list get_members;
 } SType;
 
 typedef struct {
@@ -1773,6 +1774,129 @@ static int parse_lf_member(SLF_MEMBER *lf_member, unsigned char *leaf_data, unsi
 	return (*read_bytes - read_bytes_before);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void init_stype_info(STypeInfo *type_info)
+{
+	type_info->type_info = 0;
+	type_info->free_ = 0;
+
+	switch (type_info->leaf_type) {
+	case eLF_FIELDLIST:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = get_fieldlist_members;
+		break;
+	case eLF_ENUM:
+		type_info->get_name = get_enum_name;
+		type_info->get_val = 0;
+		type_info->get_name_len = get_enum_name_len;
+		type_info->get_members = get_enum_members;
+		break;
+	case eLF_CLASS:
+	case eLF_STRUCTURE:
+		type_info->get_name = get_class_struct_name;
+		type_info->get_val = get_class_struct_val; // for structure this is size
+		type_info->get_name_len = get_class_struct_name_len;
+		type_info->get_members = get_struct_class_members;
+		break;
+	case eLF_POINTER:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_ARRAY:
+		type_info->get_name = get_array_name;
+		type_info->get_val = get_array_val;
+		type_info->get_name_len = get_array_name_len;
+		type_info->get_members = 0;
+		break;
+	case eLF_MODIFIER:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_ARGLIST:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_MFUNCTION:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_METHODLIST:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_PROCEDURE:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_UNION:
+		type_info->get_name = get_union_name;
+		type_info->get_val = get_union_val;
+		type_info->get_name_len = get_union_name_len;
+		type_info->get_members = get_union_members;
+		break;
+	case eLF_BITFIELD:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	case eLF_VTSHAPE:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+		// TODO: stubs...
+	case eLF_ENUMERATE:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+		// TODO: stubs...
+	case eLF_NESTTYPE:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+		// TODO: stubs...
+	case eLF_METHOD:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+		// TODO: stubs...
+	case eLF_MEMBER:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	default:
+		type_info->get_name = 0;
+		type_info->get_val = 0;
+		type_info->get_name_len = 0;
+		type_info->get_members = 0;
+		break;
+	}
+}
+
 #define PARSE_LF2(lf_type, lf_func_name, free_func, type) { \
 	STypeInfo *type_info = (STypeInfo *) malloc(sizeof(STypeInfo)); \
 	lf_type *lf = (lf_type *) malloc(sizeof(lf_type)); \
@@ -1780,6 +1904,7 @@ static int parse_lf_member(SLF_MEMBER *lf_member, unsigned char *leaf_data, unsi
 	type_info->type_info = (void *) lf; \
 	type_info->leaf_type = type; \
 	type_info->free_ = free_func; \
+	init_stype_info(type_info); \
 	r_list_append(lf_fieldlist->substructs, type_info); \
 }
 
@@ -2143,102 +2268,6 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void init_stype(SType *type)
-{
-	type->free_ = 0;
-	type->type_data.type_info = 0;
-	type->type_data.free_ = 0;
-
-	switch (type->type_data.leaf_type) {
-	case eLF_FIELDLIST:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = get_fieldlist_members;
-		break;
-	case eLF_ENUM:
-		type->get_name = get_enum_name;
-		type->get_val = 0;
-		type->get_name_len = get_enum_name_len;
-		type->get_members = get_enum_members;
-		break;
-	case eLF_CLASS:
-	case eLF_STRUCTURE:
-		type->get_name = get_class_struct_name;
-		type->get_val = get_class_struct_val; // for structure this is size
-		type->get_name_len = get_class_struct_name_len;
-		type->get_members = get_struct_class_members;
-		break;
-	case eLF_POINTER:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_ARRAY:
-		type->get_name = get_array_name;
-		type->get_val = get_array_val;
-		type->get_name_len = get_array_name_len;
-		type->get_members = 0;
-		break;
-	case eLF_MODIFIER:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_ARGLIST:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_MFUNCTION:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_METHODLIST:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_PROCEDURE:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_UNION:
-		type->get_name = get_union_name;
-		type->get_val = get_union_val;
-		type->get_name_len = get_union_name_len;
-		type->get_members = get_union_members;
-		break;
-	case eLF_BITFIELD:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	case eLF_VTSHAPE:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	default:
-		type->get_name = 0;
-		type->get_val = 0;
-		type->get_name_len = 0;
-		type->get_members = 0;
-		break;
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 {
 	int i;
@@ -2254,7 +2283,8 @@ static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 	for (i = tpi_stream->header.ti_min; i < tpi_stream->header.ti_max; i++) {
 		type = (SType *) malloc(sizeof(SType));
 		type->tpi_idx = i;
-		init_stype(type);
+		type->free_ = 0;
+		init_stype_info(&type->type_data);
 		parse_tpi_stypes(stream, type);
 		r_list_append(tpi_stream->types, type);
 	}
