@@ -751,7 +751,7 @@ static int cmd_search(void *data, const char *input) {
 	case 'E': {
 		RSearchKeyword kw;
 		dosearch = R_FALSE;
-		if (input[1]==' ' || input[1]=='\0') {
+		if (input[1]==' ') {
 			char *res;
 			ut64 nres, addr = from;
 			r_cons_break (NULL, NULL);
