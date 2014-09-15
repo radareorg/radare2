@@ -364,6 +364,9 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Ijmp:
 		switch (u.operand[0].type) {
 		case UD_OP_MEM:
+			op->ptr = getval (&u.operand[0]);
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			break;
 		case UD_OP_REG:
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			break;

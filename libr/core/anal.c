@@ -519,12 +519,14 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (core->anal->cur && core->anal->cur->analyze_fns) {
 		int result = R_ANAL_RET_ERROR;
-		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
+		result = core->anal->cur->analyze_fns (core->anal,
+			at, from, reftype, depth);
 		// do this to prevent stale usage and catch others who are using it
 		//memset(&core->anal->binb, 0, sizeof(RBinBind));
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			r_flag_space_set (core->flags, "functions");
-			r_flag_set (core->flags, fcni->name, fcni->addr, fcni->size, 0);
+			r_flag_set (core->flags, fcni->name,
+				fcni->addr, fcni->size, 0);
 		}
 		return result;
 	}
@@ -675,7 +677,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			RFlagItem *f = r_flag_get_i2 (core->flags, at);
+			RFlagItem *f = r_flag_get_i2 (core->flags, fcn->addr);
 			free (fcn->name);
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name); // memleak here?
@@ -686,7 +688,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
 				/* Add flag */
 				r_flag_space_set (core->flags, "functions");
-				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
+				r_flag_set (core->flags, fcn->name,
+					fcn->addr, fcn->size, 0);
 			}
 			// XXX fixes overlined function ranges wtf  // fcn->addr = at;
 			/* TODO: Dupped analysis, needs more optimization */
@@ -1322,9 +1325,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				}
 			}
 			if(bckwrds){
-				if(!do_bckwrd_srch) break;
-				if(at > from + core->blocksize - OPSZ) at -= core->blocksize;
-				else{
+				if (!do_bckwrd_srch) break;
+				if (at > from + core->blocksize - OPSZ) at -= core->blocksize;
+				else {
 					do_bckwrd_srch = R_FALSE;
 					at = from;
 				}
