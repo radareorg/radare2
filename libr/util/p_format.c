@@ -510,7 +510,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'q':
 				r_print_format_quadword(p, MUSTSET, setval, seeki, addr64);
-				i += (size==-1) ? 8 : size;
+				i += (size==-1) ? 8 : 8*size;
 				break;
 			case 'b':
 				r_print_format_byte(p, MUSTSET, setval, seeki, buf, i);
@@ -526,16 +526,16 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'B':
 				if(r_print_format_10bytes(p, MUSTSET, setval, seeki, addr, buf) == 0)
-					i+= (size==-1) ? 4 : size;
+					i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'f':
 				r_print_format_float(p, MUSTSET, setval, seeki, addr);
-				i+= (size==-1) ? 4 : size;
+				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'i':
 			case 'd':
 				r_print_format_hex(p, MUSTSET, setval, seeki, addr);
-				i+= (size==-1) ? 4 : size;
+				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'D':
 				if (size>0) p->printf ("Size not yet implemented\n");
@@ -544,11 +544,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'o':
 				r_print_format_octal (p, MUSTSET, setval, seeki, addr);
-				i+= (size==-1) ? 4 : size;
+				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'x':
 				r_print_format_hexflag(p, MUSTSET, setval, seeki, addr);
-				i+= (size==-1) ? 4 : size;
+				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'w':
 			case '1': // word (16 bits)
@@ -561,7 +561,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					else     addr = (*(buf+i+1))<<8 | (*(buf+i));
 					p->printf ("0x%04x", addr);
 				}
-				i+= (size==-1) ? 2 : size;
+				i+= (size==-1) ? 2 : 2*size;
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
@@ -587,28 +587,28 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if ((size = strlen(setval)) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
-					size*=2;
+					//size*=2;
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					for (; ((size || size==-1) && buf[i]) && i<len; i+=2) {
 						if (IS_PRINTABLE (buf[i]))
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
-						size -= (size==-1) ? 0 : 2;
+						size -= (size==-1) ? 0 : 1;
 					}
 				}
 				if (size == -1)
 					i+=2;
 				else
-					while (size--) i++;
+					while (size--) i+=2;
 				break;
 			case 's':
 				if (r_print_format_ptrstring (p, seeki, addr64, addr, 0) == 0)
-					i += (size==-1) ? 4 : size;
+					i += (size==-1) ? 4 : 4*size;
 				break;
 			case 'S':
 				if (r_print_format_ptrstring (p, seeki, addr64, addr, 1) == 0)
-					i += (size==-1) ? 8 : size;
+					i += (size==-1) ? 8 : 8*size;
 				break;
 			case '?':
 				{
