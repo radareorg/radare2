@@ -800,7 +800,7 @@ typedef struct r_anal_esil_t {
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	/* callbacks */
-	int (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
+	int (*hook_flag_read)(ESIL *esil, char *flag, ut64 *num);
 	int (*hook_command)(ESIL *esil, const char *op);
 	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);

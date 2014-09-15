@@ -386,7 +386,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 #define MUSTSET (setval && elem == idx)
 #define MUSTSEE (elem == -1 || elem == idx)
 #define SEEFLAG (elem == -2)
-			if (1 && MUSTSEE) {
+			if (MUSTSEE) {
 				if (!(MUSTSET)) {
 					if (oldprintf)
 						p->printf = oldprintf;
@@ -460,9 +460,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
 			}
-			if (1 && SEEFLAG) {
-				p->printf ("f %s=0x%08"PFMT64x"\n",
-					r_str_word_get0 (args, idx) , seeki);
+			if (SEEFLAG) {
+				p->printf ("f %s=0x%08"PFMT64x"\n", r_str_word_get0 (args, idx) , seeki);
 			}
 
 			if (isptr == 3) {
@@ -509,22 +508,19 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'c':
-				r_print_format_char (p, MUSTSET,
-					setval, seeki, buf, i);
+				r_print_format_char(p, MUSTSET, setval, seeki, buf, i);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'X':
-				size = r_print_format_hexpairs(p, MUSTSET,
-					setval, seeki, buf, size);
-				i += size;
+				size = r_print_format_hexpairs(p, MUSTSET, setval, seeki, buf, size);
+				i+=size;
 				break;
 			case 'B':
-				if (r_print_format_10bytes (p, MUSTSET,
-					setval, seeki, addr, buf) == 0)
-					i += (size==-1) ? 4 : size;
+				if(r_print_format_10bytes(p, MUSTSET, setval, seeki, addr, buf) == 0)
+					i+= (size==-1) ? 4 : size;
 				break;
 			case 'f':
-				r_print_format_float (p, MUSTSET, setval, seeki, addr);
+				r_print_format_float(p, MUSTSET, setval, seeki, addr);
 				i+= (size==-1) ? 4 : size;
 				break;
 			case 'i':
@@ -560,9 +556,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
-					int buflen = strlen ((const char *)buf);
+					int buflen = strlen (buf);
 					if (buflen>seeki) {
-						buflen = strlen ((const char *)buf+seeki);
+						buflen = strlen (buf+seeki);
 					}
 					if (strlen (setval) > buflen) {
 						eprintf ("Warning: new string is longer than previous one \n");
@@ -614,28 +610,21 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				{
 				int s;
 				char *structname = strdup (r_str_word_get0 (args, idx-1));
-				if (*structname == '(') {
-					name = strchr (structname, ')');
-				} else {
+				name = strchr (structname, ':');
+				if (name == NULL) {
 					eprintf ("Struct name missing\n");
 					free (structname);
 					goto beach;
 				}
-				structname++;
-				if (name == NULL) {
-					eprintf ("No ')'\n");
-				} else {
-					*(name++) = '\0';
-				}
+				*(name++) = '\0';
 				p->printf ("<struct>\n");
 				/* if (SEEFLAG) slide+=10000;*/
 				slide += (isptr) ? 100 : 1;
-				s = r_print_format_struct (p, seeki,
-					buf+i, len, structname--, slide);
-				free (structname);
+				s = r_print_format_struct (p, seeki, buf+i, len, structname, slide);
 				i+= (isptr) ? 4 : s;
 				slide -= (isptr) ? 100 : 1;
 				/*if (SEEFLAG) slide-=10000;*/
+				free (structname);
 				break;
 				}
 			default:
