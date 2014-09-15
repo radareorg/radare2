@@ -33,6 +33,10 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
 					do_call = strdup (f->name+8);
+				} else
+				if (!strncmp (f->name, "reloc.", 6)) {
+					free (do_call);
+					do_call = strdup (f->name+6);
 				}
 				eprintf (" (debug) 0x%08"PFMT64x" TO 0x%08"PFMT64x"  %s\n",
 					addr, ref->addr, f->name);
