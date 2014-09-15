@@ -462,8 +462,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 			if (flag && isptr != 3) {
 				if (tmp == '?') {
-					char *n = strdup (r_str_word_get0 (args, idx));
-					*strchr (n, ':') = '.';
+					char *n = strdup (r_str_word_get0 (args, idx)+1);
+					*strchr (n, ')') = '.';
 					realprintf ("f %s_", n);
 					free(n);
 				} else if (slide>0 && idx==0) {
@@ -614,17 +614,23 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				{
 				int s;
 				char *structname = strdup (r_str_word_get0 (args, idx-1));
-				name = strchr (structname, ':');
-				if (name == NULL) {
+				if (*structname == '(') {
+					name = strchr (structname, ')');
+				} else {
 					eprintf ("Struct name missing (%s)\n", structname);
 					free (structname);
 					goto beach;
 				}
-				*(name++) = '\0';
+				structname++;
+				if (name == NULL) {
+					eprintf ("No ')'\n");
+				} else {
+					*(name++) = '\0';
+				}
 				p->printf ("<struct>\n");
 				if (flag) slide+=100000;
 				slide += (isptr) ? 100 : 1;
-				s = r_print_format_struct (p, seeki, buf+i, len, structname, slide);
+				s = r_print_format_struct (p, seeki, buf+i, len, structname--, slide);
 				i+= (isptr) ? 4 : s;
 				slide -= (isptr) ? 100 : 1;
 				if (flag) slide-=100000;
