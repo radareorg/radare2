@@ -9,6 +9,10 @@
 #define PDB2_SIGNATURE_LEN 51
 
 typedef void (*free_func)(void *);
+typedef void (*get_value_name)(void *type, char *res_name);
+typedef void (*get_value)(void *type, int *res);
+typedef void (*get_value_name_len)(void *type, int *res);
+typedef void (*get_member_list)(void *type, RList *l);
 
 typedef enum {
 	eNEAR_C          = 0x00000000,
@@ -744,7 +748,12 @@ typedef struct {
 typedef struct {
 	unsigned short length;
 	STypeInfo type_data;
+
 	free_func free_;
+	get_value_name get_name;
+	get_value get_val;
+	get_value_name_len get_name_len;
+	get_member_list get_members;
 } SType;
 
 typedef struct {
@@ -773,33 +782,205 @@ typedef struct {
 } SPDBInfoStream/*D*/;
 
 ///////////////////////////////////////////////////////////////////////////////
-static void printf_sval_name(SVal *val)
+static void get_sval_name_len(SVal *val, int *res_len)
 {
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr;
 		scstr = (SCString *) val->name_or_val;
-		printf("%s", scstr->name);
+		*res_len = scstr->size;
 	} else {
 		switch (val->value_or_type) {
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
 			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
-			printf("%s", lf_ulong->name.name);
+			*res_len = lf_ulong->name.size;
 			break;
 		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
 			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
-			printf("%s", lf_ushort->name.name);
+			*res_len = lf_ushort->name.size;
 			break;
 		}
 		default:
-			printf("printf_sval_name()::oops\n");
+			printf("get_sval_name::oops\n");
 			break;
 		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_sval_name(SVal *val, char *name)
+{
+	if (val->value_or_type < eLF_CHAR) {
+		SCString *scstr;
+		scstr = (SCString *) val->name_or_val;
+		strcpy(name, scstr->name);
+	} else {
+		switch (val->value_or_type) {
+		case eLF_ULONG:
+		{
+			SVal_LF_ULONG *lf_ulong;
+			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
+			strcpy(name, lf_ulong->name.name);
+			break;
+		}
+		case eLF_USHORT:
+		{
+			SVal_LF_USHORT *lf_ushort;
+			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
+			strcpy(name, lf_ushort->name.name);
+			break;
+		}
+		default:
+			printf("get_sval_name::oops\n");
+			break;
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_sval_val(SVal *val, int *res)
+{
+	if (val->value_or_type < eLF_CHAR) {
+		*res = 0;
+	} else {
+		switch (val->value_or_type) {
+		case eLF_ULONG:
+		{
+			SVal_LF_ULONG *lf_ulong;
+			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
+			*res = lf_ulong->value;
+			break;
+		}
+		case eLF_USHORT:
+		{
+			SVal_LF_USHORT *lf_ushort;
+			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
+			*res = lf_ushort->value;
+			break;
+		}
+		default:
+			*res = 0;
+			printf("get_sval_val::oops\n");
+			break;
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enum_name_len(void *type, int *res_len)
+{
+	SType *t = (SType *) type;
+	SLF_ENUM *lf_enum = (SLF_ENUM *)t->type_data.type_info;
+
+	*res_len = lf_enum->name.size;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_class_struct_name_len(void *type, int *res_len)
+{
+	SType *t = (SType *) type;
+	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_data.type_info;
+
+	get_sval_name_len(&lf->size, res_len);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_array_name_len(void *type, int *res_len)
+{
+	SType *t = (SType *) type;
+	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_data.type_info;
+
+	get_sval_name_len(&lf_array->size, res_len);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_union_name_len(void *type, int *res_len)
+{
+	SType *t = (SType *) type;
+	SLF_UNION *lf_union = (SLF_UNION *) t->type_data.type_info;
+
+	get_sval_name_len(&lf_union->size, res_len);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enum_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_ENUM *lf_enum = (SLF_ENUM *)t->type_data.type_info;
+
+	name = lf_enum->name.name;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_class_struct_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_data.type_info;
+
+	get_sval_name(&lf->size, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_array_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_data.type_info;
+
+	get_sval_name(&lf_array->size, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_union_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_UNION *lf_union = (SLF_UNION *) t->type_data.type_info;
+
+	get_sval_name(&lf_union->size, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_class_struct_val(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_data.type_info;
+
+	get_sval_val(&lf->size, res);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_array_val(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_data.type_info;
+
+	get_sval_val(&lf_array->size, res);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_union_val(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_UNION *lf_union = (SLF_UNION *) t->type_data.type_info;
+
+	get_sval_val(&lf_union->size, res);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void printf_sval_name(SVal *val)
+{
+	int len = 0;
+	char *name = 0;
+
+	get_sval_name_len(val, &len);
+	name = (char *) malloc(len);
+	get_sval_name(val, name);
+	printf("%s", name);
+
+	free(name);
 }
 
 //typedef struct {
@@ -1014,6 +1195,10 @@ void init_scstring(SCString *cstr, unsigned int size, char *name)
 	cstr->size = size;
 	cstr->name = (char *) malloc(size);
 	strcpy(cstr->name, name);
+
+	if (strcmp(cstr->name, "i4") == 0) {
+		size = 22;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1894,6 +2079,102 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void init_stype(SType *type)
+{
+	type->free_ = 0;
+	type->type_data.type_info = 0;
+	type->type_data.free_ = 0;
+
+	switch (type->type_data.leaf_type) {
+	case eLF_FIELDLIST:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+//		type->get_members = get_fieldlist_members;
+		break;
+	case eLF_ENUM:
+		type->get_name = get_enum_name;
+		type->get_val = 0;
+		type->get_name_len = get_enum_name_len;
+		type->get_members = 0;
+		break;
+	case eLF_CLASS:
+	case eLF_STRUCTURE:
+		type->get_name = get_class_struct_name;
+		type->get_val = get_class_struct_val;
+		type->get_name_len = get_class_struct_name_len;
+//		type->get_members = get_class_struct_members;
+		break;
+	case eLF_POINTER:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_ARRAY:
+		type->get_name = get_array_name;
+		type->get_val = get_array_val;
+		type->get_name_len = get_array_name_len;
+		type->get_members = 0;
+		break;
+	case eLF_MODIFIER:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_ARGLIST:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_MFUNCTION:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_METHODLIST:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_PROCEDURE:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_UNION:
+		type->get_name = get_union_name;
+		type->get_val = get_union_val;
+		type->get_name_len = get_union_name_len;
+//		type->get_members = get_union_members;
+		break;
+	case eLF_BITFIELD:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	case eLF_VTSHAPE:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	default:
+		type->get_name = 0;
+		type->get_val = 0;
+		type->get_name_len = 0;
+		type->get_members = 0;
+		break;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 {
 	int i;
@@ -1905,9 +2186,7 @@ static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 
 	for (i = 0; i < (tpi_stream->header.ti_max - tpi_stream->header.ti_min); i++) {
 		type = (SType *) malloc(sizeof(SType));
-		type->free_ = 0;
-		type->type_data.type_info = 0;
-		type->type_data.free_ = 0;
+		init_stype(type);
 		parse_tpi_stypes(stream, type);
 		r_list_append(tpi_stream->types, type);
 	}
