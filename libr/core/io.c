@@ -402,9 +402,7 @@ if (off != UT64_MAX)
 	return (int)r_io_read (core->io, core->block, core->blocksize);
 }
 
-// seems broken, we should always use r_io api. and remove all the calls to r_core_read()
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
-	int ret;
 	if (!core->io || !core->file || !core->file->desc || size<1)
 		return R_FALSE;
 	r_io_use_desc (core->io, core->file->desc);
