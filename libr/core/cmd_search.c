@@ -752,6 +752,7 @@ static int cmd_search(void *data, const char *input) {
 		RSearchKeyword kw;
 		dosearch = R_FALSE;
 		if (input[1]==' ') {
+			int kwidx = r_config_get_i (core->config, "search.kwidx");
 			char *res;
 			ut64 nres, addr = from;
 			r_cons_break (NULL, NULL);
@@ -759,8 +760,14 @@ static int cmd_search(void *data, const char *input) {
 				core->anal->esil = r_anal_esil_new ();
 			}
 			r_anal_esil_setup (core->anal->esil, core->anal, 1, 0);
+			r_anal_esil_stack_free (core->anal->esil);
 			core->anal->esil->debug = 0;
 			for (; addr<to; addr++) {
+				if (core->search->align) {
+					if ((addr % core->search->align)) {
+						continue;
+					}
+				}
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("Breaked at 0x%08"PFMT64x"\n", addr);
 					break;
@@ -768,11 +775,10 @@ static int cmd_search(void *data, const char *input) {
 				r_anal_esil_set_offset (core->anal->esil, addr);
 				if (!r_anal_esil_parse (core->anal->esil, input+2)) {
 					// XXX: return value doesnt seems to be correct here
-					//eprintf ("Cannot parse esil (%s)\n", input+2);
-					//break;
+					eprintf ("Cannot parse esil (%s)\n", input+2);
+					break;
 				}
 				res = r_anal_esil_pop (core->anal->esil);
-				int kwidx = r_config_get_i (core->config, "search.kwidx");
 				if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
 					if (nres) {
 						__cb_hit (&kw, core, addr);
@@ -782,10 +788,16 @@ static int cmd_search(void *data, const char *input) {
 						kw.count++;
 						kw.keyword_length = 0;
 					}
+				} else {
+					eprintf ("Cannot parse esil (%s)\n", input+2);
+					r_anal_esil_stack_free (core->anal->esil);
+					free (res);
+					break;
 				}
 				r_anal_esil_stack_free (core->anal->esil);
 				free (res);
 			}
+			r_config_set_i (core->config, "search.kwidx", kwidx +1);
 			r_cons_break_end ();
 		} else eprintf ("Usage: /E [esil-expr]\n");
 		r_cons_clear_line (1);

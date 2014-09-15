@@ -2134,7 +2134,7 @@ static int esil_mem_deceq8 (RAnalEsil *esil) {
 			r_anal_esil_pushnum (esil, s);
 			r_anal_esil_push (esil, off);
 			ret &= esil_poke8 (esil);
-		} else	ret = 0;
+		} else ret = 0;
 	}
 	if (!ret)
 		eprintf ("esil_mem_deceq8: invalid parameters\n");
@@ -2239,7 +2239,7 @@ static int esil_bigger_equal(RAnalEsil *esil) {		// 'src >= dst' => 'src,dst,>='
 static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 	char t[128];
 	char *h;
-	h = sdb_itoa(sdb_hash (word), t, 16);
+	h = sdb_itoa (sdb_hash (word), t, 16);
 	if (sdb_num_exists (esil->ops, h)) {
 		*op = (RAnalEsilOp) sdb_num_get (esil->ops, h, 0);
 		return R_TRUE;
@@ -2282,7 +2282,7 @@ static int runword (RAnalEsil *esil, const char *word) {
 		esil->trap = 1;
 		esil->trap_code = 1;
 	}
-	return 0;
+	return 1;
 }
 
 static const char *gotoWord(const char *str, int n) {
@@ -2354,7 +2354,9 @@ repeat:
 		}
 
 		if (dorunword) {
-			runword (esil, word);
+			if (!runword (esil, word)) {
+				return 0;
+			}
 			word[wordi] = ',';
 			wordi = 0;
 			switch (evalWord (esil, ostr, &str)) {
@@ -2370,14 +2372,17 @@ repeat:
 		str++;
 	}
 	word[wordi] = 0;
-	runword (esil, word);
-	switch (evalWord (esil, ostr, &str)) {
+	if (*word) {
+		if (!runword (esil, word))
+			return 0;
+		switch (evalWord (esil, ostr, &str)) {
 		case 0: goto loop;
 		case 1: return 0;
 		case 2: goto repeat;
+		}
 	}
 	
-	return 0;
+	return 1;
 }
 
 R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
