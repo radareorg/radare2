@@ -405,24 +405,8 @@ if (off != UT64_MAX)
 // seems broken, we should always use r_io api. and remove all the calls to r_core_read()
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	int ret;
-	if (!core->io || !core->file || size<1)
+	if (!core->io || !core->file || !core->file->desc || size<1)
 		return R_FALSE;
-#if 0
-	r_io_use_fd (core->io, core->file->desc); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
-	ret = r_io_read_at (core->io, addr, buf, size);
-	if (addr>=core->offset && addr<=core->offset+core->blocksize)
-		r_core_block_read (core, 0);
-#else
-	r_io_use_desc (core->io, core->file->desc); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
-	//ret = r_io_read_at (core->io, addr, buf, size);
-	r_io_seek (core->io, addr, R_IO_SEEK_SET);
-	ret = r_io_read (core->io, buf, size);
-	if (ret != size) {
-		if (ret>=size || ret<0) ret = 0;
-		memset (buf+ret, 0xff, size-ret);
-	}
-	if (addr>=core->offset && addr<=core->offset+core->blocksize)
-		r_core_block_read (core, 0);
-#endif
-	return (ret==size);
+	r_io_use_desc (core->io, core->file->desc);
+	return r_io_read_at (core->io, addr, buf, size);
 }
