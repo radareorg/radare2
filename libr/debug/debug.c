@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake, TheLemonMan */
 
 #include <r_debug.h>
 #include <r_anal.h>
@@ -285,36 +285,70 @@ R_API int r_debug_wait(RDebug *dbg) {
 	return ret;
 }
 
-// XXX: very experimental
 R_API int r_debug_step_soft(RDebug *dbg) {
-	int ret;
 	ut8 buf[32];
+	ut64 pc, sp;
+	ut64 next[2];
 	RAnalOp op;
-	ut64 pc0, pc1, pc2;
+	int br, i;
+	union {
+		ut64 r64;
+		ut32 r32[2];
+	} ret;
+
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	dbg->iob.read_at (dbg->iob.io, pc0, buf, sizeof (buf));
-	ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
-//eprintf ("read from pc0 = 0x%llx\n", pc0);
-	pc1 = pc0 + op.size;
-//eprintf ("oplen = %d\n", op.length);
-//eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
-	// XXX: Does not works for 'ret'
-	pc2 = op.jump? op.jump: 0;
-//eprintf ("ADD SECOND BREAKPOINT FRO CALLS %llx\n", op.jump);
-//eprintf ("breakpoint 2 at pc2 = 0x%llx\n", pc2);
 
-	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
-	if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
+	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	sp = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_SP]);
+
+	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) < 0)
+		return R_FALSE;
+
+	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)))
+		return R_FALSE;
+
+	if (op.type == R_ANAL_OP_TYPE_ILL)
+		return R_FALSE;
+
+	switch (op.type) {
+		case R_ANAL_OP_TYPE_RET:
+			dbg->iob.read_at (dbg->iob.io, sp, &ret, 8);
+			next[0] = (dbg->bits == R_SYS_BITS_32) ? ret.r32[0] : ret.r64;
+			br = 1;
+			break;
+
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CCALL:
+			next[0] = op.jump;
+			next[1] = op.fail;
+			br = 2;
+			break;
+
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_JMP:
+			next[0] = op.jump;
+			br = 1;
+			break;
+
+		default:
+			next[0] = op.addr + op.size;
+			br = 1;
+			break;
+	}
+
+	for (i = 0; i < br; i++)
+		eprintf("\t * 0x%016x\n", next[i]);
+
+	for (i = 0; i < br; i++)
+		r_bp_add_sw (dbg->bp, next[i], 1, R_BP_PROT_EXEC);
+
 	r_debug_continue (dbg);
-//eprintf ("wait\n");
-	//r_debug_wait (dbg);
-//eprintf ("del\n");
-	r_bp_del (dbg->bp, pc1);
-	if (pc2) r_bp_del (dbg->bp, pc2);
 
-	return ret;
+	for (i = 0; i < br; i++)
+		r_bp_del (dbg->bp, next[i]);
+
+	return R_TRUE;
 }
 
 R_API int r_debug_step_hard(RDebug *dbg) {
@@ -365,7 +399,6 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	if (dbg->anal && dbg->reg) {
 		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 		if (op.type & R_ANAL_OP_TYPE_CALL
 		   || op.type & R_ANAL_OP_TYPE_UCALL) {
 			ut64 bpaddr = pc + op.size;
@@ -386,11 +419,11 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 	if (dbg->h && dbg->h->cont) {
-		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
+		r_bp_restore (dbg->bp, R_TRUE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->signum = 0;
 		r_debug_wait (dbg);
-		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
+		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
 		r_debug_recoil (dbg);
 #if 0
 #if __UNIX__
@@ -413,32 +446,50 @@ R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	return R_FALSE;
 }
 
-/* optimization: avoid so many reads */
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
-	int (*step)(RDebug *d, int n);
 	int ret, n = 0;
-	ut64 pc = 0;
+	ut64 pc, buf_pc = 0;
 	RAnalOp op;
-	ut8 buf[64];
+	ut8 buf[512];
 
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg->anal && dbg->reg) {
-		const char *pcreg = dbg->reg->name[R_REG_NAME_PC];
-		step = over? r_debug_step_over: r_debug_step;
-		for (;;) {
-			pc = r_debug_reg_get (dbg, pcreg);
-			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			ret = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-			if (ret>0 && op.type&type)
-				break;
-			if (!step (dbg, 1)) {
-				eprintf ("r_debug_step: failed\n");
-				break;
-			}
-			n++;
+
+	if (!dbg->anal || !dbg->reg) { 
+		eprintf ("Undefined pointer at dbg->anal\n");
+		return R_FALSE;
+	}
+
+	// Initial refill
+	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
+
+	for (;;) {
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		// Try to keep a 16 bytes lookahead buffer
+		if (pc - buf_pc > sizeof (buf)) { 
+			buf_pc = pc;
+			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
-	} else eprintf ("Undefined pointer at dbg->anal\n");
+		// Analyze the opcode
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc))) {
+			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			return R_FALSE;
+		}
+		if (op.type == type) 
+			break;
+		// Step over and repeat
+		ret = over ?
+			r_debug_step_over (dbg, 1) :
+			r_debug_step (dbg, 1);
+
+		if (!ret) {
+			eprintf ("r_debug_step: failed\n");
+			break;
+		}
+		n++;
+	}
+
 	return n;
 }
 
