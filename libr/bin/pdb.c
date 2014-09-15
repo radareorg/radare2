@@ -8,6 +8,9 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+static unsigned int base_idx = 0;
+static RList *p_types_list;
+
 typedef void (*free_func)(void *);
 typedef void (*get_value_name)(void *type, char *res_name);
 typedef void (*get_value)(void *type, int *res);
@@ -747,6 +750,7 @@ typedef struct {
 
 typedef struct {
 	unsigned short length;
+	unsigned int tpi_idx;
 	STypeInfo type_data;
 
 	free_func free_;
@@ -838,6 +842,66 @@ static void get_sval_name(SVal *val, char *name)
 			printf("get_sval_name::oops\n");
 			break;
 		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_fieldlist_members(void *type, RList *l)
+{
+	SType *t = (SType *) type;
+	SLF_FIELDLIST *lf_fieldlist = (SLF_FIELDLIST *) t->type_data.type_info;
+
+	l = lf_fieldlist->substructs;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_union_members(void *type, RList *l)
+{
+	SType *t = (SType *) type;
+	SLF_UNION *lf_union = (SLF_UNION *) t->type_data.type_info;
+	unsigned int indx = 0;
+
+	if (lf_union->field_list == 0) {
+		l = indx;
+	} else {
+		SType *tmp = 0;
+		indx = lf_union->field_list - base_idx;
+		tmp = (SType *)r_list_get_n(p_types_list, indx);
+		l = ((SLF_FIELDLIST *) tmp->type_data.type_info)->substructs;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_struct_class_members(void *type, RList *l)
+{
+	SType *t = (SType *) type;
+	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_data.type_info;
+	unsigned int indx = 0;
+
+	if (lf->field_list == 0) {
+		l = indx;
+	} else {
+		SType *tmp = 0;
+		indx = lf->field_list - base_idx;
+		tmp = (SType *)r_list_get_n(p_types_list, indx);
+		l = ((SLF_FIELDLIST *) tmp->type_data.type_info)->substructs;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enum_members(void *type, RList *l)
+{
+	SType *t = (SType *) type;
+	SLF_ENUM *lf = (SLF_ENUM *) t->type_data.type_info;
+	unsigned int indx = 0;
+
+	if (lf->field_list == 0) {
+		l = indx;
+	} else {
+		SType *tmp = 0;
+		indx = lf->field_list - base_idx;
+		tmp = (SType *)r_list_get_n(p_types_list, indx);
+		l = ((SLF_FIELDLIST *) tmp->type_data.type_info)->substructs;
 	}
 }
 
@@ -2090,20 +2154,20 @@ static void init_stype(SType *type)
 		type->get_name = 0;
 		type->get_val = 0;
 		type->get_name_len = 0;
-//		type->get_members = get_fieldlist_members;
+		type->get_members = get_fieldlist_members;
 		break;
 	case eLF_ENUM:
 		type->get_name = get_enum_name;
 		type->get_val = 0;
 		type->get_name_len = get_enum_name_len;
-		type->get_members = 0;
+		type->get_members = get_enum_members;
 		break;
 	case eLF_CLASS:
 	case eLF_STRUCTURE:
 		type->get_name = get_class_struct_name;
-		type->get_val = get_class_struct_val;
+		type->get_val = get_class_struct_val; // for structure this is size
 		type->get_name_len = get_class_struct_name_len;
-//		type->get_members = get_class_struct_members;
+		type->get_members = get_struct_class_members;
 		break;
 	case eLF_POINTER:
 		type->get_name = 0;
@@ -2151,7 +2215,7 @@ static void init_stype(SType *type)
 		type->get_name = get_union_name;
 		type->get_val = get_union_val;
 		type->get_name_len = get_union_name_len;
-//		type->get_members = get_union_members;
+		type->get_members = get_union_members;
 		break;
 	case eLF_BITFIELD:
 		type->get_name = 0;
@@ -2181,11 +2245,15 @@ static void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 	SType *type = 0;
 	STpiStream *tpi_stream = (STpiStream *) parsed_pdb_stream;
 	tpi_stream->types = r_list_new();
+	p_types_list = tpi_stream->types;
 
 	stream_file_read(stream, sizeof(STPIHeader), (char *)&tpi_stream->header);
 
-	for (i = 0; i < (tpi_stream->header.ti_max - tpi_stream->header.ti_min); i++) {
+	base_idx = tpi_stream->header.ti_min;
+
+	for (i = tpi_stream->header.ti_min; i < tpi_stream->header.ti_max; i++) {
 		type = (SType *) malloc(sizeof(SType));
+		type->tpi_idx = i;
 		init_stype(type);
 		parse_tpi_stypes(stream, type);
 		r_list_append(tpi_stream->types, type);
