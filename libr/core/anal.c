@@ -416,7 +416,8 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 #endif
 			r_core_read_at (core, at+bblen, buf, ANALBS); //core->blocksize);
-			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
+//			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
+			if (!r_io_map_exists_for_offset (core->io, at+bblen) && !r_io_section_exists_for_vaddr (core->io, at+bblen))
 				goto error;
 			buflen = ANALBS; //core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
