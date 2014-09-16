@@ -847,6 +847,298 @@ static void get_sval_name(SVal *val, char *name)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void get_arglist_type(void *type, void *arglist_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ARGLIST *lf_arglist = (SLF_ARGLIST *) t->type_info;
+	RList *l = (RList *) arglist_type;
+	int i = 0;
+	int tmp = 0;
+
+	for (i = 0; i < lf_arglist->count; i++) {
+		tmp = lf_arglist->arg_type[i];
+		if (tmp < base_idx) {
+			// 0 - means NO_TYPE
+			r_list_append(l, 0);
+		} else {
+			r_list_append(l, r_list_get_n(p_types_list, (tmp - base_idx)));
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_array_element_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_info;
+	int curr_idx = lf_array->element_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_array_index_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_info;
+	int curr_idx = lf_array->index_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_bitfield_base_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_BITFIELD *lf = (SLF_BITFIELD *) t->type_info;
+	int curr_idx = lf->base_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_class_struct_derived(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
+	int curr_idx = lf->derived;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_class_struct_vshape(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
+	int curr_idx = lf->vshape;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_mfunction_return_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
+	int curr_idx = lf->return_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_mfunction_class_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
+	int curr_idx = lf->class_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_mfunction_this_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
+	int curr_idx = lf->this_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_mfunction_arglist(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
+	int curr_idx = lf->arglist;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_modifier_modified_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MODIFIER *lf = (SLF_MODIFIER *) t->type_info;
+	int curr_idx = lf->modified_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_pointer_utype(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_POINTER *lf = (SLF_POINTER *) t->type_info;
+	int curr_idx = lf->utype;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_procedure_return_type(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
+	int curr_idx = lf->return_type;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_procedure_arglist(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
+	int curr_idx = lf->arg_list;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_member_index(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
+	int curr_idx = lf->inedex;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_nesttype_index(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_NESTTYPE *lf = (SLF_NESTTYPE *) t->type_info;
+	int curr_idx = lf->index;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_method_mlist(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_METHOD *lf = (SLF_METHOD *) t->type_info;
+	int curr_idx = lf->mlist;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enum_utype(void *type, void *ret_type)
+{
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ENUM *lf = (SLF_ENUM *) t->type_info;
+	int curr_idx = lf->utype;
+
+	if (curr_idx < base_idx) {
+		ret_type = 0;
+		return;
+	}
+
+	curr_idx -= base_idx;
+	ret_type = r_list_get_n(p_types_list, curr_idx);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void get_fieldlist_members(void *type, RList *l)
 {
 	SType *t = (SType *) type;
