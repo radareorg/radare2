@@ -78,8 +78,11 @@ int disassembleInstruction(disassembledInstruction *dInstruction, const assemble
 		 * so in order to jump/call to the right address (which increments by
 		 * two for every instruction), we must multiply this distance by two. */
 		//printf ("ii=%d\n", insidx);
-		if (insidx==86)
+                if(!strcmp(longInstruction.instruction->mnemonic,"call")||
+                   !strcmp(longInstruction.instruction->mnemonic,"jmp"))
+	        {
 			AVR_Long_Address *= 2;
+                }
 		*dInstruction = longInstruction;
 		return 0;
 	/* If a long instruction was printed in the last instruction disassembly,
