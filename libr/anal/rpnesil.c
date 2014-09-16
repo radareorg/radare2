@@ -191,7 +191,7 @@ static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 nu
 }
 
 static int esil_internal_borrow_check (RAnalEsil *esil, ut8 bit) {
-	bit = ((bit & 0x3f) + 0x3e) & 0x3f;	//safer-sex version of -1
+	bit = ((bit & 0x3f) + 0x3f) & 0x3f;	//safer-sex version of -1
 	return ((esil->old & masks[bit]) < (esil->cur & masks[bit]));
 }
 
