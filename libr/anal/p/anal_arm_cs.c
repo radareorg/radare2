@@ -128,6 +128,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = (a->bits==16)? 2: 4;
 	op->delay = 0;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
 	r_strbuf_init (&op->esil);
 	if (ret == CS_ERR_OK) {
 		n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
@@ -203,8 +205,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			}
 			if (a->decode) {
-				if (!analop_esil (a, op, addr, buf, len, &handle, insn))
-					r_strbuf_fini (&op->esil);
+				analop_esil (a, op, addr, buf, len, &handle, insn);
 			}
 			cs_free (insn, n);
 		}

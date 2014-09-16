@@ -516,11 +516,13 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 					char *code = asmop.buf_asm;
 					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
 					int j, wlen = sizeof (spaces)-strlen (code);
-					for (j=0;j<wlen;j++) {
+					for (j=0; j<wlen; j++) {
 						spaces[j] = ' ';
 					}
-					spaces[R_MIN(32,j)] = 0;
-					r_cons_printf ("%s%s%s\n", code, spaces, esil);
+					if (!esil) esil = "";
+					spaces[R_MIN(sizeof (spaces)-1,j)] = 0;
+					r_cons_printf ("%s%s%s\n",
+						code, spaces, esil);
 				} else {
 					if (decode) {
 						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);

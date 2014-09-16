@@ -20,6 +20,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		(a->bits==16)? CS_MODE_16: 0;
 	int n, ret = cs_open (CS_ARCH_X86, mode, &handle);
 	op->type = R_ANAL_OP_TYPE_NULL;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
 	op->size = 0;
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
