@@ -494,18 +494,34 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 }
 
 R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
-// TODO: use breakpoint+continue... more efficient
-	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-	int n = 0;
-	ut64 pc = r_reg_get_value (dbg->reg, ripc);
-	while (pc != addr && !r_debug_is_dead (dbg)) {
-		r_debug_step (dbg, 1);
-		// TODO: obey breakpoints too?
-	/* TODO: check if the debugger stops at the right address */
-		pc = r_reg_get_value (dbg->reg, ripc);
-		n++;
+	int has_bp;
+	ut64 pc;
+
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
+
+	// Check if there was another breakpoint set at addr
+	has_bp = r_bp_at_addr (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
+	if (!has_bp)
+		r_bp_add_sw (dbg->bp, addr, 1, R_BP_PROT_EXEC);
+
+	// Continue until the bp is reached
+	for (;;) {
+		if (r_debug_is_dead (dbg))
+			break;
+
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		if (pc == addr)
+			break;
+
+		r_debug_continue (dbg);
 	}
-	return n;
+
+	// Clean up if needed
+	if (has_bp)
+		r_bp_del (dbg->bp, addr);
+
+	return R_TRUE;
 }
 
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
