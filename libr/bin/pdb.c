@@ -16,6 +16,20 @@ typedef void (*get_value_name)(void *type, char *res_name);
 typedef void (*get_value)(void *type, int *res);
 typedef void (*get_value_name_len)(void *type, int *res);
 typedef void (*get_member_list)(void *type, RList *l);
+typedef void (*get_arg_type_)(void *type, void *ret_type);
+typedef get_arg_type_ get_element_type_;
+typedef get_arg_type_ get_index_type_;
+typedef get_arg_type_ get_base_type_;
+typedef get_arg_type_ get_derived_;
+typedef get_arg_type_ get_vshape_;
+typedef get_arg_type_ get_utype_;
+typedef get_arg_type_ get_return_type_;
+typedef get_arg_type_ get_class_type_;
+typedef get_arg_type_ get_this_type_;
+typedef get_arg_type_ get_arglist_;
+typedef get_arg_type_ get_index_;
+typedef get_arg_type_ get_mlist_;
+
 
 typedef enum {
 	eNEAR_C          = 0x00000000,
@@ -751,6 +765,19 @@ typedef struct {
 	get_value get_val;
 	get_value_name_len get_name_len;
 	get_member_list get_members;
+	get_arg_type_ get_arg_type;
+	get_element_type_ get_element_type;
+	get_index_type_ get_index_type;
+	get_base_type_ get_base_type;
+	get_derived_ get_derived;
+	get_vshape_ get_vshape;
+	get_utype_ get_utype;
+	get_return_type_ get_return_type;
+	get_class_type_ get_class_type;
+	get_this_type_ get_this_type;
+	get_arglist_ get_arglist;
+	get_index_ get_index;
+	get_mlist_ get_mlist;
 } STypeInfo;
 
 typedef struct {
@@ -2161,17 +2188,30 @@ static void init_stype_info(STypeInfo *type_info)
 {
 	type_info->type_info = 0;
 	type_info->free_ = 0;
+	type_info->get_members = 0;
+	type_info->get_name = 0;
+	type_info->get_val = 0;
+	type_info->get_name_len = 0;
+	type_info->get_arg_type = 0;
+	type_info->get_element_type = 0;
+	type_info->get_index_type = 0;
+	type_info->get_base_type = 0;
+	type_info->get_derived = 0;
+	type_info->get_vshape = 0;
+	type_info->get_utype = 0;
+	type_info->get_return_type = 0;
+	type_info->get_class_type = 0;
+	type_info->get_this_type = 0;
+	type_info->get_arglist = 0;
+	type_info->get_index = 0;
+	type_info->get_mlist = 0;
 
 	switch (type_info->leaf_type) {
 	case eLF_FIELDLIST:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
 		type_info->get_members = get_fieldlist_members;
 		break;
 	case eLF_ENUM:
 		type_info->get_name = get_enum_name;
-		type_info->get_val = 0;
 		type_info->get_name_len = get_enum_name_len;
 		type_info->get_members = get_enum_members;
 		break;
@@ -2183,46 +2223,21 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_members = get_struct_class_members;
 		break;
 	case eLF_POINTER:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_ARRAY:
 		type_info->get_name = get_array_name;
 		type_info->get_val = get_array_val;
 		type_info->get_name_len = get_array_name_len;
-		type_info->get_members = 0;
 		break;
 	case eLF_MODIFIER:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_ARGLIST:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_MFUNCTION:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_METHODLIST:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_PROCEDURE:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_UNION:
 		type_info->get_name = get_union_name;
@@ -2231,46 +2246,46 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_members = get_union_members;
 		break;
 	case eLF_BITFIELD:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_VTSHAPE:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
-		type_info->get_members = 0;
 		break;
 	case eLF_ENUMERATE:
 		type_info->get_name = get_enumerate_name;
 		type_info->get_val = get_enumerate_val;
 		type_info->get_name_len = get_enumerate_name_len;
-		type_info->get_members = 0;
 		break;
 	case eLF_NESTTYPE:
 		type_info->get_name = get_nesttype_name;
-		type_info->get_val = 0;
 		type_info->get_name_len = get_nesttype_name_len;
-		type_info->get_members = 0;
 		break;
 	case eLF_METHOD:
 		type_info->get_name = get_method_name;
-		type_info->get_val = 0;
 		type_info->get_name_len = get_method_name_len;
-		type_info->get_members = 0;
 		break;
 	case eLF_MEMBER:
 		type_info->get_name = get_member_name;
 		type_info->get_val = get_member_val;
 		type_info->get_name_len = get_member_name_len;
-		type_info->get_members = 0;
 		break;
 	default:
+		printf("init_stype_info(): unknown type for init\n");
 		type_info->get_name = 0;
 		type_info->get_val = 0;
 		type_info->get_name_len = 0;
 		type_info->get_members = 0;
+		type_info->get_arg_type = 0;
+		type_info->get_element_type = 0;
+		type_info->get_index_type = 0;
+		type_info->get_base_type = 0;
+		type_info->get_derived = 0;
+		type_info->get_vshape = 0;
+		type_info->get_utype = 0;
+		type_info->get_return_type = 0;
+		type_info->get_class_type = 0;
+		type_info->get_this_type = 0;
+		type_info->get_arglist = 0;
+		type_info->get_index = 0;
+		type_info->get_mlist = 0;
 		break;
 	}
 }
@@ -2279,10 +2294,10 @@ static void init_stype_info(STypeInfo *type_info)
 	STypeInfo *type_info = (STypeInfo *) malloc(sizeof(STypeInfo)); \
 	lf_type *lf = (lf_type *) malloc(sizeof(lf_type)); \
 	curr_read_bytes = parse_##lf_func_name(lf, p, read_bytes, len); \
+	init_stype_info(type_info); \
 	type_info->type_info = (void *) lf; \
 	type_info->leaf_type = type; \
 	type_info->free_ = free_func; \
-	init_stype_info(type_info); \
 	r_list_append(lf_fieldlist->substructs, type_info); \
 }
 
