@@ -79,6 +79,7 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 	case UD_OP_JIMM:
 	case UD_OP_IMM:
 		n = getval (op) & mask;
+		mask = UT64_MAX; // uhm?
 		if (op->type == UD_OP_JIMM) n += u->pc;
 		if (n>=0 && n<256)
 			sprintf (src, "%"PFMT64d, n & mask);
@@ -514,7 +515,7 @@ static int set_reg_profile(RAnal *anal) {
 		"flg	flag_t	.1	.453	0\n"
 		"flg	flag_i	.1	.454	0\n"
 		"flg	flag_d	.1	.455	0\n"
-		"flg	flag_o	.1	.456	0\n"
+		"flg	of	.1	.456	0\n"
 		"flg	flag_r	.1	.457	0\n"
 		"drx	dr0	.32	0	0\n"
 		"drx	dr1	.32	4	0\n"
@@ -571,7 +572,7 @@ static int set_reg_profile(RAnal *anal) {
 		"flg	flag_t	.1	.1157	0\n"
 		"flg	flag_i	.1	.1158	0\n"
 		"flg	flag_d	.1	.1159	0\n"
-		"flg	flag_o	.1	.1160	0\n"
+		"flg	of	.1	.1160	0\n"
 		"flg	flag_r	.1	.1161	0\n"
 		"gpr	rsp	.64	152	0\n"
 		"seg	ss	.64	160	0\n"
