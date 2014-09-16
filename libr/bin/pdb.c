@@ -972,6 +972,78 @@ static void get_union_name_len(void *type, int *res_len)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void get_enumerate_name_len(void *type, int *res_len)
+{
+	SType *t = (SType *) type;
+	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_data.type_info;
+
+	get_sval_name_len(&lf->enum_value, res_len);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_nesttype_name_len(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_NESTTYPE *lf = (SLF_NESTTYPE *)t->type_data.type_info;
+
+	*res = lf->name.size;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_method_name_len(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_METHOD *lf = (SLF_METHOD *)t->type_data.type_info;
+
+	*res = lf->name.size;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_member_name_len(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_data.type_info;
+
+	get_sval_name_len(&lf->offset, res);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_member_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_data.type_info;
+
+	get_sval_name(&lf->offset, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_method_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_METHOD *lf = (SLF_METHOD *)t->type_data.type_info;
+
+	name = lf->name.name;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_nesttype_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_NESTTYPE *lf = (SLF_NESTTYPE *)t->type_data.type_info;
+
+	name = lf->name.name;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enumerate_name(void *type, char *name)
+{
+	SType *t = (SType *) type;
+	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_data.type_info;
+
+	get_sval_name(&lf->enum_value, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void get_enum_name(void *type, char *name)
 {
 	SType *t = (SType *) type;
@@ -1005,6 +1077,24 @@ static void get_union_name(void *type, char *name)
 	SLF_UNION *lf_union = (SLF_UNION *) t->type_data.type_info;
 
 	get_sval_name(&lf_union->size, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_member_val(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_data.type_info;
+
+	get_sval_val(&lf->offset, res);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enumerate_val(void *type, int *res)
+{
+	SType *t = (SType *) type;
+	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_data.type_info;
+
+	get_sval_val(&lf->enum_value, res);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1860,32 +1950,28 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_name_len = 0;
 		type_info->get_members = 0;
 		break;
-		// TODO: stubs...
 	case eLF_ENUMERATE:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
+		type_info->get_name = get_enumerate_name;
+		type_info->get_val = get_enumerate_val;
+		type_info->get_name_len = get_enumerate_name_len;
 		type_info->get_members = 0;
 		break;
-		// TODO: stubs...
 	case eLF_NESTTYPE:
-		type_info->get_name = 0;
+		type_info->get_name = get_nesttype_name;
 		type_info->get_val = 0;
-		type_info->get_name_len = 0;
+		type_info->get_name_len = get_nesttype_name_len;
 		type_info->get_members = 0;
 		break;
-		// TODO: stubs...
 	case eLF_METHOD:
-		type_info->get_name = 0;
+		type_info->get_name = get_method_name;
 		type_info->get_val = 0;
-		type_info->get_name_len = 0;
+		type_info->get_name_len = get_method_name_len;
 		type_info->get_members = 0;
 		break;
-		// TODO: stubs...
 	case eLF_MEMBER:
-		type_info->get_name = 0;
-		type_info->get_val = 0;
-		type_info->get_name_len = 0;
+		type_info->get_name = get_member_name;
+		type_info->get_val = get_member_val;
+		type_info->get_name_len = get_member_name_len;
 		type_info->get_members = 0;
 		break;
 	default:
