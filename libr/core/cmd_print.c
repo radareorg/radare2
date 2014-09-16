@@ -448,7 +448,7 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	free (b);
 }
 
-static int pdi(RCore *core, int nb_opcodes, int nb_bytes) {
+static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int show_offset = r_config_get_i (core->config, "asm.offset");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
@@ -457,6 +457,10 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes) {
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
 
+	if (fmt=='e') {
+		show_bytes = 0;
+		decode = 1;
+	}
 
 	if (!nb_opcodes) {
 		nb_opcodes = 0xffff;
@@ -500,18 +504,31 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes) {
 		} else {
 			if (show_bytes)
 				r_cons_printf ("%16s  ", asmop.buf_hex);
+			ret = asmop.size;
 			if (decode || esil) {
 				RAnalOp analop = {0};
 				char *tmpopstr, *opstr = NULL;
 				r_anal_op (core->anal, &analop, core->offset+i,
 					core->block+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
-				if (decode) {
-					opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
-				} else if (esil) {
-					opstr = (R_STRBUF_SAFEGET (&analop.esil));
+				if (fmt == 'e') { // pie
+					char spaces[26];
+					char *code = asmop.buf_asm;
+					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
+					int j, wlen = sizeof (spaces)-strlen (code);
+					for (j=0;j<wlen;j++) {
+						spaces[j] = ' ';
+					}
+					spaces[R_MIN(32,j)] = 0;
+					r_cons_printf ("%s%s%s\n", code, spaces, esil);
+				} else {
+					if (decode) {
+						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
+					} else if (esil) {
+						opstr = (R_STRBUF_SAFEGET (&analop.esil));
+					}
+					r_cons_printf ("%s\n", opstr);
 				}
-				r_cons_printf ("%s\n", opstr);
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
 		i+=ret;
@@ -931,7 +948,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			case 'd': //pId is the same as pDi
-				pdi (core, 0, l);
+				pdi (core, 0, l, 0);
 				break;
 			default:
 				r_core_print_disasm_instructions (core, l, 0);
@@ -940,13 +957,16 @@ static int cmd_print(void *data, const char *input) {
 	case 'i': // pi
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: pi[df] [num]\n");
+			r_cons_printf ("Usage: pi[defj] [num]\n");
 			break;
 		case 'j': //pij is the same as pdj
 			cmd_pdj (core, input+2);
 			break;
 		case 'd': //pid is the same as pdi
-			pdi (core, l, 0);
+			pdi (core, l, 0, 0);
+			break;
+		case 'e':
+			pdi (core, l, 0, 'e');
 			break;
 		case 'f': //pif
 			{
@@ -1017,9 +1037,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'i': //pdi
 			processed_cmd = R_TRUE;
 			if (*input == 'D')
-				pdi (core, 0, l);
+				pdi (core, 0, l, 0);
 			else
-				pdi (core, l, 0);
+				pdi (core, l, 0, 0);
 			pd_result = 0;
 			break;
 		case 'a': //pda
