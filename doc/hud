@@ -31,6 +31,6 @@ xor current block with hexpair key	?i hexpair key;wox `?y`
 edit eval configuration	Veq
 calculator	?i enter math expression;? `?y`;?ik
 disassemble 1024 bytes and pipe to less(1)	b 1024;pd|less -R
-rename function	?i New name;afr `?y`
+rename function	?i New name;afn `?y`
 set flag	?i Flag name;f `?y`
 unset flag	?i Flag name to delete;f-`?y`
