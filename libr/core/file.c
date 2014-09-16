@@ -660,7 +660,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 	if (!res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		cf->alive = 0;
-		RIO *io = cf->desc ? cf->desc->io : NULL;
+		RIO *io = (RIO*)(cf->desc ? cf->desc->io : NULL);
 
 		if (io && cf->map) r_io_map_del_all (io, cf->map->fd);
 		if (io) r_io_close ((RIO *) io, cf->desc);
@@ -679,6 +679,11 @@ R_API void r_core_file_free(RCoreFile *cf) {
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	RIODesc *desc = fh && fh->desc? fh->desc : NULL;
 	RCoreFile *prev_cf = r && r->file != fh ? r->file : NULL;
+
+	// TODO: This is not correclty done. because map and iodesc are 
+	// still referenced // we need to fully clear all R_IO structs
+	// related to a file as well as the ones needed for RBin.
+	//
 	// XXX -these checks are intended to *try* and catch
 	// stale objects.  Unfortunately, if the file handle
 	// (fh) is stale and freed, and there is more than 1

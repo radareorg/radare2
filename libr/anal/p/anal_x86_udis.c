@@ -111,10 +111,11 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 					if (n>0) sprintf (src, ",%"PFMT64d",+", n);
 					else if (n<0) sprintf (src, "%"PFMT64d, n);
 				} else if (n >= -256 && n < 256) {
+					char nb = (char)n;
+					char absn = (nb<0)? -nb: nb;
 					if (n==0) sprintf (src, ",[%d]", regsz);
 					else sprintf (src, ",%d,%c,[%d]",
-						(int)R_ABS(n),
-						n<0?'-':'+', regsz);
+						absn, nb<0?'-':'+', regsz);
 				} else {
 					sprintf (src, ",0x%"PFMT64x",+,[%d]",
 						mask & n, regsz);
