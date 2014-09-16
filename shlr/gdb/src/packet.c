@@ -109,8 +109,8 @@ int read_packet(libgdbr_t* g) {
 		fprintf (stderr, "Initialize libgdbr_t first\n");
 		return -1;
 	}
-		while (r_socket_ready (g->sock, 0, 100 * 1000) > 0) {
-			po_size += r_socket_read (g->sock, (g->read_buff + po_size), (g->read_max - po_size));
+	while (r_socket_ready (g->sock, 0, 250 * 1000) > 0) {
+		po_size += r_socket_read (g->sock, (g->read_buff + po_size), (g->read_max - po_size));
 	}
 	g->read_len = po_size;
 	return po_size;

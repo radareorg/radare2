@@ -110,10 +110,13 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			if (( desc = &g->desc ))
 			switch (dbg->arch) {
 			case R_SYS_ARCH_X86:
-				if ( dbg->bits == R_SYS_BITS_32) {
+				if ( dbg->anal->bits == 16 || dbg->anal->bits == 32) {
 					gdbr_set_architecture(&g->desc, X86_32);
-				} else {
+				} else if (dbg->anal->bits == 64) {
 					gdbr_set_architecture(&g->desc, X86_64);
+				} else {
+					eprintf("Not supported register profile\n");
+					return R_FALSE;
 				}
 				break;
 			case R_SYS_ARCH_SH:
@@ -140,7 +143,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = dbg->arch;
 	switch (arch) {
 	case R_SYS_ARCH_X86:
-		if ( dbg->bits == R_SYS_BITS_32) {
+		if ( dbg->anal->bits == 16 || dbg->anal->bits == 32) {
 			return strdup (
 					"=pc	eip\n"
 					"=sp	esp\n"
@@ -193,7 +196,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	mxcsr	.32	304	0\n"
 				);
 		} 
-		else if ( dbg->bits == R_SYS_BITS_64) {
+		else if ( dbg->anal->bits == 64) {
 			return strdup (
 					"=pc	rip\n"
 					"=sp	rsp\n"
