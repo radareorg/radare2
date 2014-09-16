@@ -974,8 +974,8 @@ static void get_union_name_len(void *type, int *res_len)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_enumerate_name_len(void *type, int *res_len)
 {
-	SType *t = (SType *) type;
-	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_info;
 
 	get_sval_name_len(&lf->enum_value, res_len);
 }
@@ -983,8 +983,8 @@ static void get_enumerate_name_len(void *type, int *res_len)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_nesttype_name_len(void *type, int *res)
 {
-	SType *t = (SType *) type;
-	SLF_NESTTYPE *lf = (SLF_NESTTYPE *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_NESTTYPE *lf = (SLF_NESTTYPE *)t->type_info;
 
 	*res = lf->name.size;
 }
@@ -992,8 +992,8 @@ static void get_nesttype_name_len(void *type, int *res)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_method_name_len(void *type, int *res)
 {
-	SType *t = (SType *) type;
-	SLF_METHOD *lf = (SLF_METHOD *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_METHOD *lf = (SLF_METHOD *)t->type_info;
 
 	*res = lf->name.size;
 }
@@ -1001,8 +1001,8 @@ static void get_method_name_len(void *type, int *res)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_member_name_len(void *type, int *res)
 {
-	SType *t = (SType *) type;
-	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_info;
 
 	get_sval_name_len(&lf->offset, res);
 }
@@ -1010,8 +1010,8 @@ static void get_member_name_len(void *type, int *res)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_member_name(void *type, char *name)
 {
-	SType *t = (SType *) type;
-	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_info;
 
 	get_sval_name(&lf->offset, name);
 }
@@ -1019,8 +1019,8 @@ static void get_member_name(void *type, char *name)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_method_name(void *type, char *name)
 {
-	SType *t = (SType *) type;
-	SLF_METHOD *lf = (SLF_METHOD *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_METHOD *lf = (SLF_METHOD *)t->type_info;
 
 	name = lf->name.name;
 }
@@ -1028,8 +1028,8 @@ static void get_method_name(void *type, char *name)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_nesttype_name(void *type, char *name)
 {
-	SType *t = (SType *) type;
-	SLF_NESTTYPE *lf = (SLF_NESTTYPE *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_NESTTYPE *lf = (SLF_NESTTYPE *)t->type_info;
 
 	name = lf->name.name;
 }
@@ -1037,8 +1037,8 @@ static void get_nesttype_name(void *type, char *name)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_enumerate_name(void *type, char *name)
 {
-	SType *t = (SType *) type;
-	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_info;
 
 	get_sval_name(&lf->enum_value, name);
 }
@@ -1082,8 +1082,8 @@ static void get_union_name(void *type, char *name)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_member_val(void *type, int *res)
 {
-	SType *t = (SType *) type;
-	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_info;
 
 	get_sval_val(&lf->offset, res);
 }
@@ -1091,8 +1091,8 @@ static void get_member_val(void *type, int *res)
 ///////////////////////////////////////////////////////////////////////////////
 static void get_enumerate_val(void *type, int *res)
 {
-	SType *t = (SType *) type;
-	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_data.type_info;
+	STypeInfo *t = (STypeInfo *) type;
+	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_info;
 
 	get_sval_val(&lf->enum_value, res);
 }
