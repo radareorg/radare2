@@ -463,15 +463,17 @@ static RList* relocs(RBinFile *arch) {
 	{
 		return ret;
 	}
-	if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->o->bin_obj)))
-		return ret;
-	for (i = 0; !relocs[i].last; i++) {
-		if (!(ptr = reloc_convert (arch->o->bin_obj,
-				&relocs[i], got_addr)))
-			break;
-		r_list_append (ret, ptr);
+	if (arch->o) {
+		if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->o->bin_obj)))
+			return ret;
+		for (i = 0; !relocs[i].last; i++) {
+			if (!(ptr = reloc_convert (arch->o->bin_obj,
+					&relocs[i], got_addr)))
+				break;
+			r_list_append (ret, ptr);
+		}
+		free (relocs);
 	}
-	free (relocs);
 #endif
 	return ret;
 }

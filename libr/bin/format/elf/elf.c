@@ -229,7 +229,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Shdr) *rel_shdr;
 	Elf_(Addr) plt_sym_addr;
 	ut64 got_addr, got_offset;
-	int j, k, tsize, len;
+	int j, k, tsize, len, nrel;
 
 	if (!bin->shdr || !bin->strtab)
 		return -1;
@@ -248,7 +248,8 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		return -1;
 	}
 
-	if ((rel = malloc ((rel_shdr->sh_size / tsize) * sizeof (Elf_(Rel)))) == NULL) {
+	nrel = (rel_shdr->sh_size / 4);
+	if ((rel = malloc (nrel * sizeof (Elf_(Rel)))) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
 	}
@@ -804,16 +805,18 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if (tsize <1) // NOTE(eddyb) UNREACHABLE.
 			return ret; // -1 ?
 
-		if ((rel = (Elf_(Rela)*)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rela)))) == NULL) {
+		nrel = (bin->shdr[i].sh_size / 4); //tsize);
+		if ((rel = (Elf_(Rela)*)malloc (nrel * sizeof (Elf_(Rela)))) == NULL) {
 			perror ("malloc (rel)");
 			free (sym);
 			free (strtab);
 			return NULL;
 		}
 		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
-			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[nrel], rel_fmt, 1) == -1) {
+			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j,
+					(ut8*)&rel[nrel], rel_fmt, 1) == -1) {
 				eprintf ("Warning: read (rel)\n");
-				free(rel);
+				free (rel);
 				free (strtab);
 				free (sym);
 				return NULL;
@@ -821,27 +824,30 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			if (tsize < sizeof (Elf_(Rela)))
 				rel[nrel].r_addend = 0;
 		}
-		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
+		if ((ret = (struct r_bin_elf_reloc_t *)malloc ( (nrel+1) *
+				sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
-			free(rel);
+			free (rel);
 			free (sym);
 			free (strtab);
 			return NULL;
 		}
 		j = 0;
-		if (sym) for (; j < nrel; j++) {
-			ret[j].sym = ELF_R_SYM (rel[j].r_info);
-			ret[j].type = ELF_R_TYPE (rel[j].r_info);
-			ret[j].offset = rel[j].r_offset-got_addr+got_offset; // HACK FIXME(eddyb) there has to be a better way of getting the offset (for relocs outside GOT).
-			ret[j].rva = rel[j].r_offset - bin->baddr;
-			ret[j].addend = rel[j].r_addend;
-			ret[j].is_rela = tsize == sizeof (Elf_(Rela));
-			ret[j].last = 0;
+		if (sym) {
+			for (j=0; j < nrel; j++) {
+				ret[j].sym = ELF_R_SYM (rel[j].r_info);
+				ret[j].type = ELF_R_TYPE (rel[j].r_info);
+				ret[j].offset = rel[j].r_offset-got_addr+got_offset; // HACK FIXME(eddyb) there has to be a better way of getting the offset (for relocs outside GOT).
+				ret[j].rva = rel[j].r_offset - bin->baddr;
+				ret[j].addend = rel[j].r_addend;
+				ret[j].is_rela = tsize == sizeof (Elf_(Rela));
+				ret[j].last = 0;
+			}
 		}
 		ret[j].last = 1;
 		break;
 	}
-	free(rel);
+	free (rel);
 	free (strtab);
 	free (sym);
 	return ret;

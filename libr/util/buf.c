@@ -219,12 +219,14 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		}
 
 		for (k = 0; k < m; k++) {
-			if (write) r_mem_copyendian(
+			if (write) r_mem_copyendian (
 				(ut8*)&buf[addr+len+k*tsize],
-				(ut8*)&b->buf[len+k*tsize], tsize, endian);
-			else r_mem_copyendian(
+				(ut8*)&b->buf[len+k*tsize],
+				tsize, endian);
+			else r_mem_copyendian (
 				(ut8*)&buf[len+k*tsize],
-				(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+				(ut8*)&b->buf[addr+len+k*tsize],
+				tsize, endian);
 		}
 		len += tsize*m; m = 1;
 	}
