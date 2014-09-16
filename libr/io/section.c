@@ -71,6 +71,18 @@ R_API int r_io_section_rm(RIO *io, int idx) {
 	return r_list_del_n (io->sections, idx);
 }
 
+R_API int r_io_section_rm_all (RIO *io, int fd) {
+	RIOSection *section;
+	RListIter *iter, *ator;
+	if (!io || !io->sections)
+		return R_FALSE;
+	r_list_foreach_safe (io->sections, iter, ator, section) {
+		if (section->fd == fd)
+			r_list_delete (io->sections, iter);
+	}
+	return R_TRUE;
+}
+
 R_API void r_io_section_clear(RIO *io) {
 	r_list_free (io->sections);
 	io->sections = r_list_new ();

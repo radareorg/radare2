@@ -365,6 +365,7 @@ R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bi
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits);
 R_API void r_io_section_clear(RIO *io);
 R_API int r_io_section_rm(RIO *io, int idx);
+R_API int r_io_section_rm_all (RIO *io, int fd);
 R_API void r_io_section_list(RIO *io, ut64 offset, int rad);
 R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len);
 R_API RIOSection *r_io_section_get(RIO *io, ut64 offset);

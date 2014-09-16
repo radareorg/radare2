@@ -724,20 +724,24 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 }
 
 R_API int r_io_close(RIO *io, RIODesc *d) {
+	RIODesc *cur = NULL;
 	if (io == NULL || d == NULL)
 		return -1;
+	if (d != io->desc)
+		cur = io->desc;
 	if (r_io_use_desc (io, d)) {
 		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
-			r_io_map_del (io, nfd);
+			r_io_map_del_all (io, nfd);
+			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, nfd, io->plugin);
 			if (io->plugin && io->plugin->close)
 				return io->plugin->close (desc);
 			r_io_desc_del (io, desc->fd);
 		}
 	}
-	io->desc = NULL; // unset current fd
+	io->desc = cur;
 	return R_FALSE;
 }
 
