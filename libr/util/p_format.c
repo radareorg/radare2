@@ -56,63 +56,110 @@ static void print_format_help(RPrint *p) {
 }
 
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
-	if (endian)
-		*addr = (*(buf+i))<<24
-		| (*(buf+i+1))<<16
-		| (*(buf+i+2))<<8
-		| (*(buf+i+3));
-	else
-		*addr = (*(buf+i+3))<<24
-		| (*(buf+i+2))<<16
-		| (*(buf+i+1))<<8
-		| (*(buf+i));
-	if (endian)
-		*addr64 = (((ut64)(*(buf+i))<<56))
-		| ((ut64)(*(buf+i+1))<<48)
-		| ((ut64)(*(buf+i+2))<<40)
-		| ((ut64)(*(buf+i+3))<<32)
-		| ((ut64)(*(buf+i+4))<<24)
-		| ((ut64)(*(buf+i+5))<<16)
-		| ((ut64)(*(buf+i+6))<<8)
-		| ((ut64)(*(buf+i+7)));
-	else
-		*addr64 =(((ut64)(*(buf+i+7))<<56)) 
-		| ((ut64)(*(buf+i+6))<<48)
-		| ((ut64)(*(buf+i+5))<<40)
-		| ((ut64)(*(buf+i+4))<<32)
-		| ((ut64)(*(buf+i+3))<<24)
-		| ((ut64)(*(buf+i+2))<<16)
-		| ((ut64)(*(buf+i+1))<<8)
-		| ((ut64)(*(buf+i)));
+	if (addr) {
+		if (endian)
+			*addr = (*(buf+i))<<24
+			| (*(buf+i+1))<<16
+			| (*(buf+i+2))<<8
+			| (*(buf+i+3));
+		else
+			*addr = (*(buf+i+3))<<24
+			| (*(buf+i+2))<<16
+			| (*(buf+i+1))<<8
+			| (*(buf+i));
+	}
+	if (addr64) {
+		if (endian)
+			*addr64 = (((ut64)(*(buf+i))<<56))
+			| ((ut64)(*(buf+i+1))<<48)
+			| ((ut64)(*(buf+i+2))<<40)
+			| ((ut64)(*(buf+i+3))<<32)
+			| ((ut64)(*(buf+i+4))<<24)
+			| ((ut64)(*(buf+i+5))<<16)
+			| ((ut64)(*(buf+i+6))<<8)
+			| ((ut64)(*(buf+i+7)));
+		else
+			*addr64 =(((ut64)(*(buf+i+7))<<56))
+			| ((ut64)(*(buf+i+6))<<48)
+			| ((ut64)(*(buf+i+5))<<40)
+			| ((ut64)(*(buf+i+4))<<32)
+			| ((ut64)(*(buf+i+3))<<24)
+			| ((ut64)(*(buf+i+2))<<16)
+			| ((ut64)(*(buf+i+1))<<8)
+			| ((ut64)(*(buf+i)));
+	}
 }
 
-static void r_print_format_quadword(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr64) {
+static void r_print_format_quadword(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr64;
+	updateAddr (buf, i, endian, NULL, &addr64);
 	if (mustset) {
 		realprintf ("wv8 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		p->printf ("(qword) ");
-		p->printf ("0x%016"PFMT64x, addr64);
+		if (size==-1)
+			p->printf ("0x%016"PFMT64x, addr64);
+		else {
+			p->printf ("[ 0x%016"PFMT64x, addr64);
+			size--;
+			i+=8;
+			while (size--) {
+				updateAddr (buf, i, endian, NULL, &addr64);
+				p->printf (", 0x%016"PFMT64x, addr64);
+				i+=8;
+			}
+			p->printf (" ]");
+		}
 	}
 }
 
-static void r_print_format_byte(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
+static void r_print_format_byte(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (mustset) {
 		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (size==-1)
 		p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
 			IS_PRINTABLE (buf[i])?buf[i]:0);
+		else {
+			p->printf ("[ %d ; 0x%02x ; '%c'", buf[i], buf[i],
+				IS_PRINTABLE (buf[i])?buf[i]:0);
+			size--;
+			i++;
+			while (size--) {
+				p->printf (", %d ; 0x%02x ; '%c'", buf[i], buf[i],
+					IS_PRINTABLE (buf[i])?buf[i]:0);
+				i++;
+			}
+			p->printf (" ]");
+		}
 	}
 }
 
-static void r_print_format_char(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int i) {
+static void r_print_format_char(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (mustset) {
 		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
-		p->printf ("%d ; %d ; '%c'", buf[i], (char)buf[i],
+		if (size==-1)
+		p->printf ("%d ; %d ; '%c'", buf[i], buf[i],
 			IS_PRINTABLE (buf[i])?buf[i]:0);
+		else {
+			p->printf ("[ %d ; %d ; '%c'", buf[i], buf[i],
+				IS_PRINTABLE (buf[i])?buf[i]:0);
+			size--;
+			i++;
+			while (size--) {
+				p->printf (", %d ; %d ; '%c'", buf[i], buf[i],
+					IS_PRINTABLE (buf[i])?buf[i]:0);
+				i++;
+			}
+			p->printf (" ]");
+		}
 	}
 }
 
@@ -134,37 +181,81 @@ static int r_print_format_ptrstring(const RPrint* p, ut64 seeki, ut64 addr64, ut
 }
 
 // TODO: support unsigned int?
-static void r_print_format_hex(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
+static void r_print_format_hex(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr;
+	updateAddr (buf, i, endian, &addr, NULL);
 	if (mustset) {
 		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
-		p->printf ("%"PFMT64d"", addr);
+		if (size==-1)
+			p->printf ("%"PFMT64d, addr);
+		else {
+			p->printf ("[ %"PFMT64d, addr);
+			size--;
+			i+=4;
+			while (size--) {
+				updateAddr (buf, i, endian, &addr, NULL);
+				p->printf (", %"PFMT64d, addr);
+				i+=4;
+			}
+			p->printf (" ]");
+		}
 	}
 }
 
-static void r_print_format_octal (const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
-	if (mustset) {
-		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-	} else {
-		ut32 addr32 = (ut32)addr;
-		p->printf ("0x%08"PFMT64x" = (octal) ", seeki);
-		p->printf ("0%"PFMT64o"", addr32);
-	}
-	//if (string_flag_offset(buf, (ut64)addr32, -1))
-	//	p->printf("; %s", buf);
-}
-
-static void r_print_format_hexflag(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
+static void r_print_format_octal (const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr;
+	updateAddr (buf, i, endian, &addr, NULL);
 	if (mustset) {
 		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
 		ut32 addr32 = (ut32)addr;
 		p->printf ("0x%08"PFMT64x" = ", seeki);
-		p->printf ("0x%08"PFMT64x"", addr32);
+		p->printf ("(octal) ");
+		if (size==-1)
+			p->printf ("0%08"PFMT64o, addr32);
+		else {
+			p->printf ("[ 0%08"PFMT64o, addr32);
+			size--;
+			i+=4;
+			while (size--) {
+				updateAddr (buf, i, endian, &addr, NULL);
+				addr32 = (ut32)addr;
+				p->printf (", 0%08"PFMT64o, addr32);
+				i+=4;
+			}
+			p->printf (" ]");
+		}
 	}
-	//if (string_flag_offset(buf, (ut64)addr32, -1))
-	//	p->printf("; %s", buf);
+}
+
+static void r_print_format_hexflag(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr;
+	updateAddr (buf, i, endian, &addr, NULL);
+	if (mustset) {
+		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		ut32 addr32 = (ut32)addr;
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (size==-1)
+			p->printf ("0x%08"PFMT64x, addr32);
+		else {
+			p->printf ("[ 0x%08"PFMT64x, addr32);
+			size--;
+			i+=4;
+			while (size--) {
+				updateAddr (buf, i, endian, &addr, NULL);
+				addr32 = (ut32)addr;
+				p->printf (", 0x%08"PFMT64x, addr32);
+				i+=4;
+			}
+			p->printf (" ]");
+		}
+	}
 }
 
 static int r_print_format_10bytes(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr, ut8* buf) {
@@ -196,7 +287,8 @@ static int r_print_format_10bytes(const RPrint* p, int mustset, const char* setv
 	return 0;
 }
 
-static int r_print_format_hexpairs(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut8* buf, int size) {
+static int r_print_format_hexpairs(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int size) {
 	int j;
 
 	if (mustset) {
@@ -219,11 +311,56 @@ static int r_print_format_hexpairs(const RPrint* p, int mustset, const char* set
 	return size;
 }
 
-static void r_print_format_float(const RPrint* p, int mustset, const char* setval, ut64 seeki, ut64 addr) {
-	if (mustset)
+static void r_print_format_float(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr;
+	updateAddr (buf, i, endian, &addr, NULL);
+	if (mustset) {
 		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-	else
-		p->printf ("0x%08"PFMT64x" = %f", seeki, (float)(addr));
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (size==-1)
+			p->printf ("%f", (float)addr);
+		else {
+			p->printf ("[ %f", (float)addr);
+			size--;
+			i+=4;
+			while (size--) {
+				updateAddr (buf, i, endian, &addr, NULL);
+			p->printf (", %f", (float)addr);
+				i+=4;
+			}
+			p->printf (" ]");
+		}
+	}
+}
+
+static void r_print_format_word(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr;
+	if (endian)
+		addr = (*(buf+i))<<8 | (*(buf+i+1));
+	else addr = (*(buf+i+1))<<8 | (*(buf+i));
+	if (mustset) {
+		realprintf ("wv2 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (size==-1)
+			p->printf ("0x%04x", addr);
+		else {
+			p->printf ("[ 0x%04x", addr);
+			size--;
+			i+=2;
+			while (size--) {
+				if (endian)
+					addr = (*(buf+i))<<8 | (*(buf+i+1));
+				else addr = (*(buf+i+1))<<8 | (*(buf+i));
+				p->printf (", 0x%04x", addr);
+				i+=2;
+			}
+			p->printf (" ]");
+		}
+	}
 }
 
 // XXX: this is very incomplete. must be updated to handle all format chars
@@ -459,10 +596,14 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				endian ^= 1;
 				continue;
 			case ':': // skip 4 bytes
-				i+=4;
+				if (size == -1) i+=4;
+				else
+					while (size--) i+=4;
 				continue;
 			case '.': // skip 1 byte
-				i++;
+				if (size == -1) i++;
+				else
+					while (size--) i++;
 				continue;
 			case 'p': // pointer reference
 				tmp = (p->bits == 64)? 'q': 'x';
@@ -525,20 +666,20 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				}
 				break;
 			case 'q':
-				r_print_format_quadword(p, MUSTSET, setval, seeki, addr64);
+				r_print_format_quadword(p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i += (size==-1) ? 8 : 8*size;
 				break;
 			case 'b':
-				r_print_format_byte(p, MUSTSET, setval, seeki, buf, i);
+				r_print_format_byte(p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'c':
-				r_print_format_char (p, MUSTSET,
-					setval, seeki, buf, i);
+				r_print_format_char (p, endian, MUSTSET,
+					setval, seeki, buf, i, size);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'X':
-				size = r_print_format_hexpairs(p, MUSTSET,
+				size = r_print_format_hexpairs(p, endian, MUSTSET,
 					setval, seeki, buf, size);
 				i += size;
 				break;
@@ -548,12 +689,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size==-1) ? 4 : 4*size;
 				break;
 			case 'f':
-				r_print_format_float(p, MUSTSET, setval, seeki, addr);
+				r_print_format_float(p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i += (size==-1) ? 4 : 4*size;
 				break;
 			case 'i':
 			case 'd':
-				r_print_format_hex(p, MUSTSET, setval, seeki, addr);
+				r_print_format_hex(p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'D':
@@ -562,24 +703,16 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += p->disasm (p->user, seeki);
 				break;
 			case 'o':
-				r_print_format_octal (p, MUSTSET, setval, seeki, addr);
+				r_print_format_octal (p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'x':
-				r_print_format_hexflag(p, MUSTSET, setval, seeki, addr);
+				r_print_format_hexflag(p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i+= (size==-1) ? 4 : 4*size;
 				break;
 			case 'w':
 			case '1': // word (16 bits)
-				if (MUSTSET) {
-					realprintf ("wv2 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					p->printf ("0x%08x = ", seeki);
-					if (endian)
-						 addr = (*(buf+i))<<8 | (*(buf+i+1));
-					else     addr = (*(buf+i+1))<<8 | (*(buf+i));
-					p->printf ("0x%04x", addr);
-				}
+				r_print_format_word(p, endian, MUSTSET, setval, seeki, buf, i, size);
 				i+= (size==-1) ? 2 : 2*size;
 				break;
 			case 'z': // zero terminated string
