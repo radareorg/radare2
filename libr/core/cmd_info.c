@@ -137,14 +137,26 @@ static int cmd_info(void *data, const char *input) {
 			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
 			case 'v':
-				if (db) sdb_query (db, input+3);
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, input+3);
+					if (o && *o) r_cons_printf ("%s", o);
+					free (o);
+				}
 				break;
 			case '.':
 			case ' ':
-				if (db) sdb_query (db, input+2);
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, input+2);
+					if (o && *o) r_cons_printf ("%s", o);
+					free (o);
+				}
 				break;
 			case '\0':
-				if (db) sdb_list (db);
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, "*");
+					if (o && *o) r_cons_printf ("%s", o);
+					free (o);
+				}
 				break;
 			case '?':
 			default:
