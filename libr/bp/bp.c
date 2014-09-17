@@ -8,6 +8,12 @@ R_LIB_VERSION (r_bp);
 static struct r_bp_plugin_t *bp_static_plugins[] = 
 	{ R_BP_STATIC_PLUGINS };
 
+static void r_bp_item_free (RBreakpointItem *b) {
+	free (b->bbytes);
+	free (b->obytes);
+	free (b);
+}
+
 R_API RBreakpoint *r_bp_new() {
 	RBreakpointPlugin *static_plugin;
 	RBreakpoint *bp = R_NEW (RBreakpoint);
@@ -21,8 +27,8 @@ R_API RBreakpoint *r_bp_new() {
 		bp->endian = 0; // little by default
 		bp->traces = r_bp_traptrace_new ();
 		bp->printf = (PrintfCallback)printf;
-		bp->bps = r_list_new ();
-		bp->plugins = r_list_new ();
+		bp->bps = r_list_newf (r_bp_item_free);
+		bp->plugins = r_list_newf (free);
 		for (i=0; bp_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RBreakpointPlugin);
 			memcpy (static_plugin, bp_static_plugins[i], sizeof (RBreakpointPlugin));
@@ -34,7 +40,8 @@ R_API RBreakpoint *r_bp_new() {
 }
 
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
-	/* XXX : properly destroy bp list */
+	r_list_free (bp->bps);
+	r_list_free (bp->plugins);
 	free (bp);
 	return NULL;
 }
@@ -128,9 +135,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		ret = r_bp_get_bytes (bp, b->bbytes, size, 0, 0);
 		if (ret == 0) {
 			eprintf ("Cannot get breakpoint bytes. No r_bp_use()?\n");
-			free (b->obytes);
-			free (b->bbytes);
-			free (b);
+			r_bp_item_free (b);
 			return NULL;
 		}
 		b->recoil = ret;
