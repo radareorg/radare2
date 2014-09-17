@@ -248,7 +248,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		return -1;
 	}
 
-	nrel = (rel_shdr->sh_size / 4);
+	nrel = (rel_shdr->sh_size / 2);
 	if ((rel = malloc (nrel * sizeof (Elf_(Rel)))) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
@@ -257,7 +257,8 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	plt_sym_addr = -1;
 
 	for (j = k = 0; j < rel_shdr->sh_size; j += tsize, k++) {
-		len = r_buf_fread_at (bin->b, rel_shdr->sh_offset + j, (ut8*)&rel[k],
+		len = r_buf_fread_at (bin->b, rel_shdr->sh_offset + j, 
+			(ut8*)(&rel[k]),
 #if R_BIN_ELF64
 				      bin->endian?"2L":"2l",
 #else
@@ -805,13 +806,14 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if (tsize <1) // NOTE(eddyb) UNREACHABLE.
 			return ret; // -1 ?
 
-		nrel = (bin->shdr[i].sh_size / 4); //tsize);
+		nrel = (bin->shdr[i].sh_size / tsize);
 		if ((rel = (Elf_(Rela)*)malloc (nrel * sizeof (Elf_(Rela)))) == NULL) {
 			perror ("malloc (rel)");
 			free (sym);
 			free (strtab);
 			return NULL;
 		}
+
 		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j,
 					(ut8*)&rel[nrel], rel_fmt, 1) == -1) {
@@ -943,9 +945,12 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 			invalid_c++;
 		}
 		else {
-			if (bin->shstrtab && bin->shstrtab_size > bin->shdr[i].sh_name && bin->shdr[i].sh_name > 0)
-				strncpy (ret[i].name, &bin->shstrtab[bin->shdr[i].sh_name], sizeof (ret[i].name)-4);
-			else {
+#define SHNAME bin->shdr[i].sh_name
+#define SHNLEN sizeof (ret[i].name)-4
+#define SHSIZE bin->shstrtab_size
+			if (bin->shstrtab && SHNAME > 0 && SHNAME+SHNLEN < SHSIZE) {
+				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN); //sizeof (ret[i].name)-4);
+			} else {
 				snprintf(unknown_s, sizeof(unknown_s)-4, "unknown%d", unknown_c);
 				strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
 				unknown_c++;

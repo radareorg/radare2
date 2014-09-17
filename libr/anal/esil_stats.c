@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014 - pancake */
+
 #include <r_anal.h>
 
 static int hook_flag_read(RAnalEsil *esil, const char *flag, ut64 *num) {

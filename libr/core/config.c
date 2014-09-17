@@ -746,6 +746,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.linesright", "false", "If enabled show lines before opcode instead of offset");
 	SETPREF("asm.linesstyle", "false", "If enabled iterate the jump list backwards");
 	SETPREF("asm.lineswide", "false", "If enabled put an space between lines");
+	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF("asm.offset", "true", "Show offsets at disassembly");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax"); // DEPRECATED ?
@@ -764,7 +765,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETPREF("asm.bytespace", "false", "Separate hex bytes with a whitespace");
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
-	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 #if 0
