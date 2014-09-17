@@ -586,7 +586,7 @@ static DWORD WINAPI (*gpifn) (HANDLE, LPTSTR, DWORD);
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	HANDLE psapi = LoadLibrary ("psapi.dll");
-	if (!paspi) {
+	if (!psapi) {
 		eprintf ("Error getting the handle to psapi.dll\n");
 		return NULL;
 	}
