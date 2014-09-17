@@ -587,12 +587,12 @@ R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	HANDLE psapi = LoadLibrary ("psapi.dll");
 	if (!paspi) {
-		eprintf ("Unable to get handle to psapi.dll\n");
+		eprintf ("Error getting the handle to psapi.dll\n");
 		return NULL;
 	}
 	gpifn = GetProcAddress (psapi, "GetProcessImageFileNameA");
 	if (!gpifn) {
-		eprintf ("Unable to get address of function GetProcessImageFileNameA\n");
+		eprintf ("Error getting the address of GetProcessImageFileNameA\n");
 		return NULL;
 	}
 	HANDLE handle = NULL;
@@ -600,7 +600,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (handle != NULL) {
 		if (gpifn (handle, filename, MAX_PATH) == 0) {
-			eprintf("Error und so code: %d\n", GetLastError());
+			eprintf("Error calling GetProcessImageFileNameA\n");
 			CloseHandle (handle);
 			return NULL;
 		} else {
