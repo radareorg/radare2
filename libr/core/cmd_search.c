@@ -497,7 +497,7 @@ static int cmd_search(void *data, const char *input) {
 	searchflags = r_config_get_i (core->config, "search.flags");
 	//TODO: handle section ranges if from&&to==0
 /*
-	section = r_io_section_get (core->io, core->offset);
+	section = r_io_section_vget (core->io, core->offset);
 	if (section) {
 		from += section->vaddr;
 		//fin = ini + s->size;

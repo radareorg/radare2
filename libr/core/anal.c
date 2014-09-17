@@ -718,17 +718,21 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			if (has_next) {
 				int i;
 				ut64 addr = fcn->addr + fcn->size;
-				for (i=0; i<nexti; i++) {
-					if (next[i] == addr) {
-						break;
+				RIOSection *sect = r_io_section_vget (core->io, addr);
+				// only get next if found on an executable section
+				if (!sect || (sect && sect->rwx & 1)) {
+					for (i=0; i<nexti; i++) {
+						if (next[i] == addr) {
+							break;
+						}
 					}
-				}
-				if (i==nexti) {
-					// TODO: ensure next address is function after padding (nop or trap or wat)
-// XXX noisy for test cases because we want to clear the stderr
-					r_cons_clear_line (1);
-					loganal (fcn->addr, fcn->addr+fcn->size);
-					next_append (fcn->addr+fcn->size);
+					if (i==nexti) {
+						// TODO: ensure next address is function after padding (nop or trap or wat)
+	// XXX noisy for test cases because we want to clear the stderr
+						r_cons_clear_line (1);
+						loganal (fcn->addr, fcn->addr+fcn->size);
+						next_append (fcn->addr+fcn->size);
+					}
 				}
 			}
 #endif
@@ -805,13 +809,17 @@ error:
 #endif
 		}
 		if (fcn && has_next) {
-			next_append (fcn->addr+fcn->size);
-			for (i=0; i<nexti; i++) {
-				if (!next[i]) continue;
-				//r_cons_printf ("af @ 0x%08"PFMT64x"\n", next[i]);
-				r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+			ut64 newaddr = fcn->addr+fcn->size;
+			RIOSection *sect = r_io_section_vget (core->io, newaddr);
+			if (!sect || (sect && (sect->rwx&1))) {
+				next_append (newaddr);
+				for (i=0; i<nexti; i++) {
+					if (!next[i]) continue;
+					//r_cons_printf ("af @ 0x%08"PFMT64x"\n", next[i]);
+					r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+				}
+				free (next);
 			}
-			free (next);
 		}
 	}
 	return R_FALSE;
