@@ -249,7 +249,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	}
 
 	nrel = (ut32)((int)rel_shdr->sh_size / (int)tsize);
-	int relsz = nrel * sizeof (Elf_(Rel));
+	int relsz = (int)nrel * sizeof (Elf_(Rel));
 	if (relsz<1 || (rel = malloc (relsz)) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
@@ -947,11 +947,11 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 			invalid_c++;
 		}
 		else {
-#define SHNAME bin->shdr[i].sh_name
+#define SHNAME (int)bin->shdr[i].sh_name
 #define SHNLEN sizeof (ret[i].name)-4
-#define SHSIZE bin->shstrtab_size
-			if (bin->shstrtab && SHNAME > 0 && SHNAME+SHNLEN < SHSIZE) {
-				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN); //sizeof (ret[i].name)-4);
+#define SHSIZE (int)bin->shstrtab_size
+			if (bin->shstrtab && (SHNAME > 0) && (SHNAME+8 < SHSIZE)) {
+				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN);
 			} else {
 				snprintf(unknown_s, sizeof(unknown_s)-4, "unknown%d", unknown_c);
 				strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
