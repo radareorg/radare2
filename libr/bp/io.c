@@ -66,12 +66,12 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 			//eprintf ("Setting bp at 0x%08"PFMT64x"\n", b->addr);
 			if (b->hw || !b->obytes)
 				eprintf ("hw breakpoints not yet supported\n");
-			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
+			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
 		} else {
 			//eprintf ("Clearing bp at 0x%08"PFMT64x"\n", b->addr);
-			if (b->hw || !b->bbytes)
+			if (b->hw || !b->obytes)
 				eprintf ("hw breakpoints not yet supported\n");
-			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
+			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
 		}
 	}
 	

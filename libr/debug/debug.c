@@ -1,10 +1,13 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake, TheLemonMan */
 
 #include <r_debug.h>
 #include <r_anal.h>
 #include <signal.h>
 
 R_LIB_VERSION(r_debug);
+
+// Size of the lookahead buffers used in r_debug functions
+#define DBG_BUF_SIZE 512
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 	if (!dbg || !dbg->h || !dbg->h->info)
@@ -85,7 +88,7 @@ R_API RDebug *r_debug_new(int hard) {
 R_API RDebug *r_debug_free(RDebug *dbg) {
 	if (!dbg) return NULL;
 	// TODO: free it correctly.. we must ensure this is an instance and not a reference..
-	//r_bp_free(&dbg->bp);
+	r_bp_free (dbg->bp);
 	//r_reg_free(&dbg->reg);
 	sdb_free (dbg->sgnls);
 	//r_debug_plugin_free();
@@ -285,34 +288,65 @@ R_API int r_debug_wait(RDebug *dbg) {
 	return ret;
 }
 
-// XXX: very experimental
 R_API int r_debug_step_soft(RDebug *dbg) {
-	int ret;
 	ut8 buf[32];
+	ut64 pc, sp;
+	ut64 next[2];
 	RAnalOp op;
-	ut64 pc0, pc1, pc2;
+	int br, i, ret;
+	union {
+		ut64 r64;
+		ut32 r32[2];
+	} sp_top;
+
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	dbg->iob.read_at (dbg->iob.io, pc0, buf, sizeof (buf));
-	ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
-//eprintf ("read from pc0 = 0x%llx\n", pc0);
-	pc1 = pc0 + op.size;
-//eprintf ("oplen = %d\n", op.length);
-//eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
-	// XXX: Does not works for 'ret'
-	pc2 = op.jump? op.jump: 0;
-//eprintf ("ADD SECOND BREAKPOINT FRO CALLS %llx\n", op.jump);
-//eprintf ("breakpoint 2 at pc2 = 0x%llx\n", pc2);
 
-	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
-	if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
-	r_debug_continue (dbg);
-//eprintf ("wait\n");
-	//r_debug_wait (dbg);
-//eprintf ("del\n");
-	r_bp_del (dbg->bp, pc1);
-	if (pc2) r_bp_del (dbg->bp, pc2);
+	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	sp = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_SP]);
+
+	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) < 0)
+		return R_FALSE;
+
+	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)))
+		return R_FALSE;
+
+	if (op.type == R_ANAL_OP_TYPE_ILL)
+		return R_FALSE;
+
+	switch (op.type) {
+		case R_ANAL_OP_TYPE_RET:
+			dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
+			next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+			br = 1;
+			break;
+
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CCALL:
+			next[0] = op.jump;
+			next[1] = op.fail;
+			br = 2;
+			break;
+
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_JMP:
+			next[0] = op.jump;
+			br = 1;
+			break;
+
+		default:
+			next[0] = op.addr + op.size;
+			br = 1;
+			break;
+	}
+
+	for (i = 0; i < br; i++)
+		r_bp_add_sw (dbg->bp, next[i], 1, R_BP_PROT_EXEC);
+
+	ret = r_debug_continue (dbg);
+
+	for (i = 0; i < br; i++)
+		r_bp_del (dbg->bp, next[i]);
 
 	return ret;
 }
@@ -322,26 +356,32 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 		return R_FALSE;
 	if (!dbg->h->step (dbg))
 		return R_FALSE;
-	r_debug_wait (dbg);
-	/* return value ignored? */
-	return R_TRUE;
+	return r_debug_wait (dbg);
 }
 
-// TODO: count number of steps done to check if no error??
 R_API int r_debug_step(RDebug *dbg, int steps) {
-	int i, ret = R_FALSE;
-	if (dbg && dbg->h && dbg->h->step) {
-		for (i=0; i<steps; i++) {
-			ret = (dbg->swstep)?
-				r_debug_step_soft (dbg):
-				r_debug_step_hard (dbg);
-			// TODO: create wrapper for dbg_wait
-			// TODO: check return value of wait and show error
-			if (ret)
-				dbg->steps++;
-		}
+	int i, ret;
+
+	if (!dbg || !dbg->h)
+		return R_FALSE;
+
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
+
+	if (steps < 1)
+		steps = 1;
+
+	for (i = 0; i < steps; i++) {
+		ret = dbg->swstep?
+			r_debug_step_soft (dbg):
+			r_debug_step_hard (dbg);
+		if (!ret) {
+			eprintf ("Stepping failed!\n");
+			return R_FALSE;
+		} else dbg->steps++;
 	}
-	return ret;
+
+	return i;
 }
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
@@ -351,32 +391,58 @@ R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
-	ut8 buf[64];
-	int ret = -1;
+	ut64 buf_pc, pc;
+	ut8 buf[DBG_BUF_SIZE];
+	int i;
+
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
+
+	if (steps < 1)
+		steps = 1;
+
 	if (dbg->h && dbg->h->step_over) {
-		if (steps<1) steps = 1;
-		while (steps--)
+		for (i = 0; i < steps; i++)
 			if (!dbg->h->step_over (dbg))
 				return R_FALSE;
-		return R_TRUE;
+		return i;
 	}
-	if (dbg->anal && dbg->reg) {
-		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-		if (op.type & R_ANAL_OP_TYPE_CALL
-		   || op.type & R_ANAL_OP_TYPE_UCALL) {
-			ut64 bpaddr = pc + op.size;
-			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
-			ret = r_debug_continue (dbg);
-			r_bp_del (dbg->bp, bpaddr);
-		} else {
-			ret = r_debug_step (dbg, 1);
+
+	if (!dbg->anal || !dbg->reg)
+		return R_FALSE;
+
+	// Initial refill
+	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
+
+	for (i = 0; i < steps; i++) {
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		// Try to keep the buffer full 
+		if (pc - buf_pc > sizeof (buf)) { 
+			buf_pc = pc;
+			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
-	} else eprintf ("Undefined debugger backend\n");
-	return ret;
+		// Analyze the opcode
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc))) {
+			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			return R_FALSE;
+		}
+
+		// Skip over all the subroutine calls
+		if (op.type == R_ANAL_OP_TYPE_CALL  ||
+			op.type == R_ANAL_OP_TYPE_CCALL ||
+			op.type == R_ANAL_OP_TYPE_UCALL ||
+			op.type == R_ANAL_OP_TYPE_UCCALL) {
+
+			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
+			if (!r_debug_continue_until (dbg, op.fail)) {
+				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
+				return R_FALSE;
+			}
+		} else r_debug_step (dbg, 1);
+	}
+
+	return i;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
@@ -386,11 +452,11 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 	if (dbg->h && dbg->h->cont) {
-		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
+		r_bp_restore (dbg->bp, R_TRUE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->signum = 0;
 		r_debug_wait (dbg);
-		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
+		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
 		r_debug_recoil (dbg);
 #if 0
 #if __UNIX__
@@ -413,48 +479,82 @@ R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	return R_FALSE;
 }
 
-/* optimization: avoid so many reads */
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
-	int (*step)(RDebug *d, int n);
 	int ret, n = 0;
-	ut64 pc = 0;
+	ut64 pc, buf_pc = 0;
 	RAnalOp op;
-	ut8 buf[64];
+	ut8 buf[DBG_BUF_SIZE];
 
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg->anal && dbg->reg) {
-		const char *pcreg = dbg->reg->name[R_REG_NAME_PC];
-		step = over? r_debug_step_over: r_debug_step;
-		for (;;) {
-			pc = r_debug_reg_get (dbg, pcreg);
-			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			ret = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-			if (ret>0 && op.type&type)
-				break;
-			if (!step (dbg, 1)) {
-				eprintf ("r_debug_step: failed\n");
-				break;
-			}
-			n++;
+
+	if (!dbg->anal || !dbg->reg) { 
+		eprintf ("Undefined pointer at dbg->anal\n");
+		return R_FALSE;
+	}
+
+	// Initial refill
+	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
+
+	for (;;) {
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		// Try to keep the buffer full 
+		if (pc - buf_pc > sizeof (buf)) { 
+			buf_pc = pc;
+			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
-	} else eprintf ("Undefined pointer at dbg->anal\n");
+		// Analyze the opcode
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc))) {
+			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			return R_FALSE;
+		}
+		if (op.type == type) 
+			break;
+		// Step over and repeat
+		ret = over ?
+			r_debug_step_over (dbg, 1) :
+			r_debug_step (dbg, 1);
+
+		if (!ret) {
+			eprintf ("r_debug_step: failed\n");
+			break;
+		}
+		n++;
+	}
+
 	return n;
 }
 
 R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
-// TODO: use breakpoint+continue... more efficient
-	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-	int n = 0;
-	ut64 pc = r_reg_get_value (dbg->reg, ripc);
-	while (pc != addr && !r_debug_is_dead (dbg)) {
-		r_debug_step (dbg, 1);
-		// TODO: obey breakpoints too?
-	/* TODO: check if the debugger stops at the right address */
-		pc = r_reg_get_value (dbg->reg, ripc);
-		n++;
+	int has_bp;
+	ut64 pc;
+
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
+
+	// Check if there was another breakpoint set at addr
+	has_bp = r_bp_at_addr (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
+	if (!has_bp)
+		r_bp_add_sw (dbg->bp, addr, 1, R_BP_PROT_EXEC);
+
+	// Continue until the bp is reached
+	for (;;) {
+		if (r_debug_is_dead (dbg))
+			break;
+
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		if (pc == addr)
+			break;
+
+		r_debug_continue (dbg);
 	}
-	return n;
+
+	// Clean up if needed
+	if (has_bp)
+		r_bp_del (dbg->bp, addr);
+
+	return R_TRUE;
 }
 
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
