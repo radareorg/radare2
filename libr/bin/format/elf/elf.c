@@ -248,15 +248,16 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		return -1;
 	}
 
-	nrel = (rel_shdr->sh_size / 2);
-	if ((rel = malloc (nrel * sizeof (Elf_(Rel)))) == NULL) {
+	nrel = (ut32)((int)rel_shdr->sh_size / (int)tsize);
+	int relsz = nrel * sizeof (Elf_(Rel));
+	if (relsz<1 || (rel = malloc (relsz)) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
 	}
 
 	plt_sym_addr = -1;
 
-	for (j = k = 0; j < rel_shdr->sh_size; j += tsize, k++) {
+	for (j = k = 0; j < rel_shdr->sh_size && k <nrel; j += tsize, k++) {
 		len = r_buf_fread_at (bin->b, rel_shdr->sh_offset + j, 
 			(ut8*)(&rel[k]),
 #if R_BIN_ELF64
@@ -806,15 +807,16 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if (tsize <1) // NOTE(eddyb) UNREACHABLE.
 			return ret; // -1 ?
 
-		nrel = (bin->shdr[i].sh_size / tsize);
-		if ((rel = (Elf_(Rela)*)malloc (nrel * sizeof (Elf_(Rela)))) == NULL) {
+		nrel = ((int)bin->shdr[i].sh_size / (int)tsize);
+		ut32 relsz = (ut32) (int)nrel * (int)sizeof (Elf_(Rela));
+		if ((rel = (Elf_(Rela)*)malloc (relsz)) == NULL) {
 			perror ("malloc (rel)");
 			free (sym);
 			free (strtab);
 			return NULL;
 		}
 
-		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
+		for (j = nrel = 0; j < (int)bin->shdr[i].sh_size; j += tsize, nrel++) {
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j,
 					(ut8*)&rel[nrel], rel_fmt, 1) == -1) {
 				eprintf ("Warning: read (rel)\n");
