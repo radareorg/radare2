@@ -290,11 +290,11 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	ut64 pc, sp;
 	ut64 next[2];
 	RAnalOp op;
-	int br, i;
+	int br, i, ret;
 	union {
 		ut64 r64;
 		ut32 r32[2];
-	} ret;
+	} sp_top;
 
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
@@ -313,8 +313,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 
 	switch (op.type) {
 		case R_ANAL_OP_TYPE_RET:
-			dbg->iob.read_at (dbg->iob.io, sp, &ret, 8);
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? ret.r32[0] : ret.r64;
+			dbg->iob.read_at (dbg->iob.io, sp, &sp_top, 8);
+			next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
 			br = 1;
 			break;
 
@@ -338,17 +338,14 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	}
 
 	for (i = 0; i < br; i++)
-		eprintf("\t * 0x%016x\n", next[i]);
-
-	for (i = 0; i < br; i++)
 		r_bp_add_sw (dbg->bp, next[i], 1, R_BP_PROT_EXEC);
 
-	r_debug_continue (dbg);
+	ret = r_debug_continue (dbg);
 
 	for (i = 0; i < br; i++)
 		r_bp_del (dbg->bp, next[i]);
 
-	return R_TRUE;
+	return ret;
 }
 
 R_API int r_debug_step_hard(RDebug *dbg) {
@@ -356,26 +353,29 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 		return R_FALSE;
 	if (!dbg->h->step (dbg))
 		return R_FALSE;
-	r_debug_wait (dbg);
-	/* return value ignored? */
-	return R_TRUE;
+	return r_debug_wait (dbg);
 }
 
-// TODO: count number of steps done to check if no error??
 R_API int r_debug_step(RDebug *dbg, int steps) {
-	int i, ret = R_FALSE;
-	if (dbg && dbg->h && dbg->h->step) {
-		for (i=0; i<steps; i++) {
-			ret = (dbg->swstep)?
-				r_debug_step_soft (dbg):
-				r_debug_step_hard (dbg);
-			// TODO: create wrapper for dbg_wait
-			// TODO: check return value of wait and show error
-			if (ret)
-				dbg->steps++;
-		}
+	int i, ret;
+
+	if (!dbg || !dbg->h)
+		return R_FALSE;
+
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
+
+	for (i = 0; i < steps; i++) {
+		ret = dbg->swstep?
+			r_debug_step_soft (dbg):
+			r_debug_step_hard (dbg);
+		if (!ret) {
+			eprintf ("Stepping failed!\n");
+			return R_FALSE;
+		} else dbg->steps++;
 	}
-	return ret;
+
+	return i;
 }
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
