@@ -178,8 +178,8 @@ struct r_io_bind_t;
 /* TODO: find better name... RIOSetFd_Callback? ..Func? .. too camels here */
 typedef RIO * (*RIOGetIO) (struct r_io_bind_t *iob);
 typedef int (*RIOSetFd)(RIO *io, int fd);
-typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int size);
-typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int size);
+typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, ut64 size);
+typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, ut64 size);
 typedef ut64 (*RIOSize)(RIO *io);
 typedef ut64 (*RIOSeek)(RIO *io, ut64 offset, int whence);
 
@@ -220,7 +220,7 @@ typedef struct r_io_bind_t {
 typedef struct r_io_cache_t {
 	ut64 from;
 	ut64 to;
-	int size;
+	ut64 size;
 	ut8 *data;
 } RIOCache;
 
