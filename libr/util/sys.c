@@ -579,9 +579,35 @@ R_API int r_is_heap (void *p) {
 	return (((ut64)(size_t)p) == mask);
 }
 
+#if __WINDOWS__
+static DWORD WINAPI (*gpifn) (HANDLE, LPTSTR, DWORD);
+#endif
+
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	// TODO: implement r_sys_pid_to_path on W32
+	HANDLE psapi = LoadLibrary ("psapi.dll");
+	if (!paspi) {
+		eprintf ("Error getting the handle to psapi.dll\n");
+		return NULL;
+	}
+	gpifn = GetProcAddress (psapi, "GetProcessImageFileNameA");
+	if (!gpifn) {
+		eprintf ("Error getting the address of GetProcessImageFileNameA\n");
+		return NULL;
+	}
+	HANDLE handle = NULL;
+	TCHAR filename[MAX_PATH];
+	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	if (handle != NULL) {
+		if (gpifn (handle, filename, MAX_PATH) == 0) {
+			eprintf("Error calling GetProcessImageFileNameA\n");
+			CloseHandle (handle);
+			return NULL;
+		} else {
+			CloseHandle (handle);
+			return strdup (filename);
+		}
+	}
 	return NULL;
 #elif __APPLE__
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
