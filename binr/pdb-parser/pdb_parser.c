@@ -8,8 +8,10 @@ int main() {
 
 	R_PDB pdb;
 	strcpy(&pdb.file_name, "/root/test.pdb");
-	init_pdb_parser(&pdb);
-	pdb.pdb_parse(&pdb);
+	if (init_pdb_parser(&pdb)) {
+		pdb.pdb_parse(&pdb);
+		pdb.print_types(&pdb);
+	}
 	pdb.finish_pdb_parse(&pdb);
 
 	return 0;
