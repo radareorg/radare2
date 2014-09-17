@@ -551,7 +551,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 	}
 
 	// Clean up if needed
-	if (has_bp)
+	if (!has_bp)
 		r_bp_del (dbg->bp, addr);
 
 	return R_TRUE;
