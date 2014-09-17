@@ -1286,7 +1286,10 @@ static void r_core_visual_refresh (RCore *core) {
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 		r_cons_flush ();
-	} else r_cons_clear ();
+	} else {
+		r_cons_clear ();
+		r_cons_flush ();
+	}
 
 	r_cons_print_clear ();
 
@@ -1377,8 +1380,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	if (autoblocksize)
 		r_core_block_size (core, obs);
 	r_cons_singleton ()->teefile = teefile;
-	r_cons_clear00 ();
 	r_cons_set_cup (R_FALSE);
+	r_cons_clear00 ();
 	core->vmode = R_FALSE;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
