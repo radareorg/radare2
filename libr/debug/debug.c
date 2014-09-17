@@ -316,7 +316,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 
 	switch (op.type) {
 		case R_ANAL_OP_TYPE_RET:
-			dbg->iob.read_at (dbg->iob.io, sp, &sp_top, 8);
+			dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
 			next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
 			br = 1;
 			break;
@@ -436,7 +436,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
 			if (!r_debug_continue_until (dbg, op.fail)) {
-				eprintf ("Could not step over call @ 0x"PFMT64x"\n", pc);
+				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return R_FALSE;
 			}
 		} else r_debug_step (dbg, 1);
