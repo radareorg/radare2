@@ -397,9 +397,7 @@ R_API int r_core_block_read(RCore *core, int next) {
 		if (!core->io->va)
 			return -1;
 	}
-if (off != UT64_MAX)
-	core->io->off = off;
-	return (int)r_io_read (core->io, core->block, core->blocksize);
+	return r_io_read (core->io, core->block, core->blocksize);
 }
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
