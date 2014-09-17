@@ -886,7 +886,7 @@ R_API ut32 r_core_file_cur_fd (RCore *core) {
 	if (desc) {
 		return desc->fd;
 	}
-	return (ut32)-1;
+	return (ut32)-1;		//WTF
 }
 
 R_API RCoreFile * r_core_file_cur (RCore *r) {

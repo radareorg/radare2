@@ -378,26 +378,16 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 }
 
 R_API int r_core_block_read(RCore *core, int next) {
-	ut64 off;
 	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
 		memset (core->block, 0xff, core->blocksize);
 		return -1;
 	}
-	r_io_use_fd (core->io, core->io->raised);
 	if (core->switch_file_view) {
-		r_core_sync_view_by_fd (core, core->io->raised);
+		r_io_use_desc (core->io, core->file->desc);
+		r_core_bin_set_by_fd (core, core->file->desc->fd);	//needed?
 		core->switch_file_view = 0;
-	}
-
-	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0),
-		R_IO_SEEK_SET);
-	if (off == UT64_MAX) {
-		memset (core->block, 0xff, core->blocksize);
-// TODO: do continuation in io
-		if (!core->io->va)
-			return -1;
-	}
-	return r_io_read (core->io, core->block, core->blocksize);
+	} else	r_io_use_fd (core->io, core->io->raised);		//possibly not needed
+	return r_io_read_at (core->io, core->offset+((next)?core->blocksize:0), core->block, core->blocksize);
 }
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
