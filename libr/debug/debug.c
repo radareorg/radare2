@@ -6,6 +6,9 @@
 
 R_LIB_VERSION(r_debug);
 
+// Size of the lookahead buffers used in r_debug functions
+#define DBG_BUF_SIZE 512
+
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 	if (!dbg || !dbg->h || !dbg->h->info)
 		return NULL;
@@ -365,6 +368,9 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 
+	if (steps < 1)
+		steps = 1;
+
 	for (i = 0; i < steps; i++) {
 		ret = dbg->swstep?
 			r_debug_step_soft (dbg):
@@ -385,31 +391,58 @@ R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
-	ut8 buf[64];
-	int ret = -1;
+	ut64 buf_pc, pc;
+	ut8 buf[DBG_BUF_SIZE];
+	int i;
+
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
+
+	if (steps < 1)
+		steps = 1;
+
 	if (dbg->h && dbg->h->step_over) {
-		if (steps<1) steps = 1;
-		while (steps--)
+		for (i = 0; i < steps; i++)
 			if (!dbg->h->step_over (dbg))
 				return R_FALSE;
-		return R_TRUE;
+		return i;
 	}
-	if (dbg->anal && dbg->reg) {
-		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-		if (op.type & R_ANAL_OP_TYPE_CALL
-		   || op.type & R_ANAL_OP_TYPE_UCALL) {
-			ut64 bpaddr = pc + op.size;
-			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
-			ret = r_debug_continue (dbg);
-			r_bp_del (dbg->bp, bpaddr);
-		} else {
-			ret = r_debug_step (dbg, 1);
+
+	if (!dbg->anal || !dbg->reg)
+		return R_FALSE;
+
+	// Initial refill
+	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
+
+	for (i = 0; i < steps; i++) {
+		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		// Try to keep the buffer full 
+		if (pc - buf_pc > sizeof (buf)) { 
+			buf_pc = pc;
+			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
-	} else eprintf ("Undefined debugger backend\n");
-	return ret;
+		// Analyze the opcode
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc))) {
+			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			return R_FALSE;
+		}
+
+		// Skip over all the subroutine calls
+		if (op.type == R_ANAL_OP_TYPE_CALL  ||
+			op.type == R_ANAL_OP_TYPE_CCALL ||
+			op.type == R_ANAL_OP_TYPE_UCALL ||
+			op.type == R_ANAL_OP_TYPE_UCCALL) {
+
+			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
+			if (!r_debug_continue_until (dbg, op.fail)) {
+				eprintf ("Could not step over call @ 0x"PFMT64x"\n", pc);
+				return R_FALSE;
+			}
+		} else r_debug_step (dbg, 1);
+	}
+
+	return i;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
@@ -450,7 +483,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
 	RAnalOp op;
-	ut8 buf[512];
+	ut8 buf[DBG_BUF_SIZE];
 
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
@@ -466,7 +499,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 
 	for (;;) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		// Try to keep a 16 bytes lookahead buffer
+		// Try to keep the buffer full 
 		if (pc - buf_pc > sizeof (buf)) { 
 			buf_pc = pc;
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
