@@ -31,9 +31,8 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				return R_FALSE;
 			}
 		} else {
-			// TODO : Get an exact size of the profile
-			ut8 buf[2048];
-			size = dbg->h->reg_read (dbg, i, buf, sizeof (buf));
+			ut8 buf[dbg->reg->size];
+			size = dbg->h->reg_read (dbg, i, buf, dbg->reg->size);
 			if (!size) {
 				eprintf ("r_debug_reg: error reading registers\n");
 				return R_FALSE;
