@@ -16,6 +16,7 @@ struct R_PDB7_ROOT_STREAM;
 typedef struct {
 	int (*pdb_parse)(struct R_PDB *pdb);
 	void (*finish_pdb_parse)(struct R_PDB *pdb);
+	void (*print_types)(struct R_PDB *pdb);
 
 	char file_name[FILE_NAME_LEN];
 	FILE *fp;
