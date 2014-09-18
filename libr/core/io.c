@@ -40,11 +40,6 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 	return R_TRUE;
 }
 
-R_API int r_core_sync_view_by_file (RCore *core, RCoreFile *cf) {
-	int res = r_core_file_set_by_file (core, cf);
-	return res;
-}
-
 R_API int r_core_seek_base (RCore *core, const char *hex) {
 	int i;
 	ut64 n = 0;
