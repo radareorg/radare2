@@ -454,7 +454,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			if (r_file_is_directory (rs->path))
 				dir = strdup (rs->path);
 		if (!strcmp (rs->method, "GET")) {
-			if (!memcmp (rs->path, "/up", 3)) {
+			if (!strncmp (rs->path, "/up", 3)) {
 				if (r_config_get_i (core->config, "http.upget")) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
 					if (!rs->path[3] || (rs->path[3]=='/'&&!rs->path[4])) {
@@ -489,7 +489,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					r_socket_http_response (rs, 403,
 							"Permission denied\n", 0, NULL);
 				}
-			} else if (!memcmp (rs->path, "/cmd/", 5)) {
+			} else if (!strncmp (rs->path, "/cmd/", 5)) {
 				char *cmd = rs->path +5;
 				char foo[32];
 				const char *httpcmd = r_config_get (core->config, "http.uri");
