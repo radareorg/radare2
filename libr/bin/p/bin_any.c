@@ -14,7 +14,7 @@ static void get_filetype (RBinFile *arch, char *res, int len) {
 	ck = r_magic_new (0);
 	*res = 0;
 	if (ck && arch && arch->buf) {
-		char *tmp;
+		const char *tmp;
 		r_magic_load (ck, R_MAGIC_PATH);
 		r_buf_read_at (arch->buf, 0, test_buffer, 4096);
 		tmp = r_magic_buffer (ck, test_buffer, 4096);
