@@ -464,7 +464,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					} else {
 						char *path = r_file_root (uproot, rs->path + 4);
 						if (r_file_exists (path)) {
-							int sz = 0;
+							ut64 sz = 0;
 							char *f = r_file_slurp (path, &sz);
 							if (f) {
 								r_socket_http_response (rs, 200, f, sz, NULL);
@@ -541,7 +541,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					}
 				}
 				if (r_file_exists (path)) {
-					int sz = 0;
+					ut64 sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
 						const char *contenttype = NULL;

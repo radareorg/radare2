@@ -88,7 +88,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	} thread_state;
 	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
-	int size;
+	ut64 size;
 	ut64 baddr;
 	ut64 entry;
 	int endian;

@@ -101,7 +101,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 }
 
 R_API void r_core_syscmd_cat(const char *file) {
-	int sz;
+	ut64 sz;
 	const char *p = strchr (file, ' ');
 	if (p) {
 		char *data, *filename = strdup (p+1);

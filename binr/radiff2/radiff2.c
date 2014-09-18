@@ -122,7 +122,8 @@ int main(int argc, char **argv) {
 	int bits = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int o, sza, szb, rad = 0, delta = 0;
+	int o,  rad = 0, delta = 0;
+	ut64 sza, szb;
 	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;

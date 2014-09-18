@@ -36,7 +36,7 @@ struct r_bin_te_string_t {
 struct r_bin_te_obj_t {
 	TE_image_file_header *header;
 	TE_image_section_header *section_header;
-	int size;
+	ut64 size;
 	int endian;
 	const char* file;
 	struct r_buf_t* b;

@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
 		switch (b64mode) {
 		case 1: // encode
 			{
-			int binlen;
+			ut64 binlen;
 			ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
 			if (!bin) {
 				eprintf ("Cannot open file\n");
@@ -369,7 +369,8 @@ int main(int argc, char **argv) {
 			break;
 		case 2: // decode
 			{
-			int binlen, outlen;
+			ut64 binlen; 
+			int outlen;
 			ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
 			if (!bin) {
 				eprintf ("Cannot open file\n");

@@ -147,7 +147,7 @@ R_API char *r_file_slurp(const char *str, ut64 *usz) {
 	sz = ftell (fd);
 	if (sz==0)
 		sz = 4096;
-	if (sz <0) {
+	if (sz == UT64_MAX ) {
 		fclose (fd);
 		return NULL;
 	}
@@ -161,7 +161,7 @@ R_API char *r_file_slurp(const char *str, ut64 *usz) {
 	fclose (fd);
 	ret[sz]='\0';
 	if (usz)
-		*usz = (ut32)sz;
+		*usz = sz;
 	return ret;
 }
 
@@ -278,7 +278,7 @@ R_API char *r_file_slurp_random_line(const char *file) {
 
 R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	int i, lines = 0;
-	int sz;
+	ut64 sz;
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
