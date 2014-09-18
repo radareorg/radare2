@@ -387,3 +387,12 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	r_io_use_desc (core->io, core->file->desc);
 	return r_io_read_at (core->io, addr, buf, size);
 }
+
+R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
+	if (!core) {
+		eprintf ("r_core_is_valid_offset: core is NULL\n");
+		r_sys_backtrace ();
+		return R_FAIL;
+	}
+	return r_io_is_valid_offset (core->io, offset);
+}

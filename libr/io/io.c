@@ -849,3 +849,36 @@ static RIO * r_io_bind_get_io(RIOBind *bnd) {
 R_API void r_io_set_raw(RIO *io, int raw) {
 	io->raw = raw?1:0;
 }
+
+//checks if reading at offset or writting to offset is reasonable
+R_API int r_io_is_valid_offset (RIO *io, ut64 offset)
+{
+	if (!io) {
+		eprintf ("r_io_is_valid_offset: io is NULL\n");
+		r_sys_backtrace ();
+		return R_FAIL;
+	}
+	if (!io->desc) {
+		eprintf ("r_io_is_valid_offset: io->desc is NULL\n");
+		r_sys_backtrace ();
+		return R_FAIL;
+	}
+	switch (io->va) {
+		case 0:
+			return (offset < r_io_size (io));
+#if USE_NEW_IO
+		case 1:
+			return r_io_map_exists_for_offset (io, offset);
+		case 2:
+			return (r_io_map_exists_for_offset (io, offset) |
+				r_io_section_exists_for_vaddr (io, offset));
+#else
+		case 1:
+			return (r_io_map_exists_for_offset (io, offset) |
+				r_io_section_exists_for_vaddr (io, offset));
+#endif
+	}
+	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
+	r_sys_backtrace ();
+	return R_FAIL;
+}
