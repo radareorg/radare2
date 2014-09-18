@@ -38,8 +38,10 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 					free (do_call);
 					do_call = strdup (f->name+6);
 				}
+#if 0
 				eprintf (" (debug) 0x%08"PFMT64x" TO 0x%08"PFMT64x"  %s\n",
 					addr, ref->addr, f->name);
+#endif
 			} else {
 				//eprintf (" (debug) TO 0x%llx\n", ref->addr);
 			}
