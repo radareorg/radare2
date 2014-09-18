@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
 		case 2: // decode
 			{
 			ut64 binlen; 
-            int outlen;
+			int outlen;
 			ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
 			if (!bin) {
 				eprintf ("Cannot open file\n");
