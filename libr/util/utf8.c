@@ -283,7 +283,7 @@ R_API int r_isprint (const RRune c) {
 	int low, hi, mid;
 
 	low = 0;
-	hi = nonprintable_ranges_count;
+	hi = nonprintable_ranges_count - 1;
 
 	do {
 		mid = (low + hi) >> 1;
