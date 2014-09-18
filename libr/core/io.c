@@ -40,10 +40,6 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 	return R_TRUE;
 }
 
-R_API int r_core_sync_view_by_fd (RCore *core, ut64 fd) {
-	int res = r_core_file_set_by_fd (core, fd);
-	return res;
-}
 R_API int r_core_sync_view_by_file (RCore *core, RCoreFile *cf) {
 	int res = r_core_file_set_by_file (core, cf);
 	return res;
