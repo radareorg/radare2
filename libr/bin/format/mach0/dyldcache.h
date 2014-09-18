@@ -8,7 +8,7 @@
 
 struct r_bin_dyldcache_obj_t {
 	const char *file;
-	int size;
+	ut64 size;
 	int nlibs;
 	struct cache_header hdr;
 	RBuffer* b;
@@ -16,7 +16,7 @@ struct r_bin_dyldcache_obj_t {
 
 struct r_bin_dyldcache_lib_t {
 	char path[1024];
-	int size;
+	ut64 size;
 	ut64 offset;
 	RBuffer *b; 
 	int last;
