@@ -19,15 +19,12 @@ R_API RIO *r_io_new() {
 	RIO *io = R_NEW0 (RIO);
 	if (!io) return NULL;
 	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
-//	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->write_mask_fd = -1;
 	io->printf = (void*) printf;
 	io->bits = (sizeof(void*) == 8)? 64: 32;
-	io->va = -1;
 	io->ff = 1;
 	io->raised = -1;
 	io->autofd = R_TRUE;
-//	io->raw = R_FALSE; // set to 1 for debugger mode (for example)
 	r_io_map_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
