@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<pkg-info overwrite-permissions="true" relocatable="false" identifier="org.radare.radare2" postinstall-action="none" version="0" format-version="2" generator-version="InstallCmds-237 (11E53)" auth="root">
+    <payload numberOfFiles="648" installKBytes="50281"/>
+    <bundle-version/>
+    <upgrade-bundle/>
+    <update-bundle/>
+    <atomic-update-bundle/>
+    <strict-identifier/>
+    <relocate/>
+</pkg-info>
