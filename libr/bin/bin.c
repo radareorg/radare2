@@ -142,7 +142,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 		str_start = needle;
 
 		/* Eat a whole C string */
-		for (rc = i = 0; i < sizeof (tmp) - 1 && needle < to; i += rc) {
+		for (rc = i = 0; i < sizeof (tmp) - 2 && needle < to; i += rc) {
 			RRune r;
 
 			if (str_type == R_STRING_TYPE_WIDE) {
