@@ -454,6 +454,8 @@ typedef struct {
 	unsigned short parm_count;
 	unsigned int arg_list;
 	unsigned char pad;
+
+	char *procedure_name;
 } SLF_PROCEDURE;
 
 //lfMFunc = Struct("lfMFunc",
@@ -478,6 +480,8 @@ typedef struct {
 	unsigned int arglist;
 	int this_adjust;
 	unsigned char pad;
+
+	char *mfunction_name;
 } SLF_MFUNCTION;
 
 //lfArgList = Struct("lfArgList",
@@ -517,6 +521,8 @@ typedef struct {
 		unsigned short modifier;
 	} umodifier;
 	unsigned char pad;
+
+	char *modifier_type_name;
 } SLF_MODIFIER;
 
 typedef enum {
@@ -602,6 +608,8 @@ typedef struct {
 	unsigned int utype;
 	UPTR_ATTR ptr_attr;
 	unsigned char pad;
+
+	char *pointer_type;
 } SLF_POINTER;
 
 typedef struct {
@@ -1163,6 +1171,91 @@ typedef struct {
 
 	free_func free_;
 } SPDBInfoStream/*D*/;
+
+///////////////////////////////////////////////////////////////////////////////
+static void print_base_type(EBASE_TYPES base_type, char **name)
+{
+	switch (base_type) {
+	case eT_32PINT4:
+		*name = "pointer to long";
+		break;
+	case eT_32PRCHAR:
+		*name = "pointer to unsgined char";
+		break;
+	case eT_32PUCHAR:
+		*name = "pointer to unsgined char";
+		break;
+	case eT_32PULONG:
+		*name = "pointer to unsigned long";
+		break;
+	case eT_32PLONG:
+		*name = "pointer to long";
+		break;
+	case eT_32PUQUAD:
+		*name = "pointer to unsigned long long";
+		break;
+	case eT_32PUSHORT:
+		*name = "pointer to unsigned short";
+		break;
+	case eT_32PVOID:
+		*name = "pointer to void";
+		break;
+	case eT_64PVOID:
+		*name = "pointer64 to void";
+		break;
+	case eT_INT4:
+		*name = "long";
+		break;
+	case eT_INT8:
+		*name = "long long";
+		break;
+	case eT_LONG:
+		*name = "long";
+		break;
+	case eT_QUAD:
+		*name = "long long";
+		break;
+	case eT_RCHAR:
+		*name = "unsigned char";
+		break;
+	case eT_REAL32:
+		*name = "float";
+		break;
+	case eT_REAL64:
+		*name = "double";
+		break;
+	case eT_REAL80:
+		*name = "long double";
+		break;
+	case eT_SHORT:
+		*name = "short";
+		break;
+	case eT_UCHAR:
+		*name = "unsigned char";
+		break;
+	case eT_UINT4:
+		*name = "unsigned long";
+		break;
+	case eT_ULONG:
+		*name = "unsigned long";
+		break;
+	case eT_UQUAD:
+		*name = "unsigned long long";
+		break;
+	case eT_USHORT:
+		*name = "unsigned short";
+		break;
+	case eT_WCHAR:
+		*name = "wchar";
+		break;
+	case eT_VOID:
+		*name = "void";
+		break;
+	default:
+		*name = "unsupported base type";
+		break;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_sval_name_len(SVal *val, int *res_len)
@@ -1789,6 +1882,97 @@ static void get_enumerate_name(void *type, char **name)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void get_mfunction_name(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SLF_MFUNCTION *lf_mfunc = (SLF_MFUNCTION *) ti->type_info;
+
+	*name = lf_mfunc->mfunction_name;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_procedure_name(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SLF_PROCEDURE *lf_proc = (SLF_PROCEDURE *) ti->type_info;
+
+	*name = lf_proc->procedure_name;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_modifier_name(void *type, char **name)
+{
+//	strcpy(*name, "modifier");
+	STypeInfo *ti = (STypeInfo *) type;
+	SLF_MODIFIER *lf_modifier = (SLF_MODIFIER *) ti->type_info;
+	char *modifer_name = 0, *tmp = 0;
+	unsigned int base_type = 0;
+	SType *t = 0;
+
+	if (lf_modifier->modifier_type_name) {
+		*name = lf_modifier->modifier_type_name;
+	}
+
+	// TODO: fix 2048...
+	lf_modifier->modifier_type_name = (char *) malloc(2048);
+	modifer_name = lf_modifier->modifier_type_name;
+
+	base_type = ti->get_modified_type(ti, &t);
+	if (!t) {
+		print_base_type(base_type, &modifer_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_name(ti, &modifer_name);
+	}
+
+	base_type = strlen(modifer_name) + 1;
+	tmp = (char *) malloc(base_type);
+	tmp[base_type] = '\0';
+	memcpy(tmp, modifer_name, base_type);
+
+	free(modifer_name);
+	lf_modifier->modifier_type_name = tmp;
+	*name = tmp;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_pointer_name(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SLF_POINTER *lf_pointer = (SLF_POINTER *) ti->type_info;
+	char *pointer_type = 0, *tmp = 0;
+	unsigned int base_type = 0;
+	SType *t = 0;
+
+	if (lf_pointer->pointer_type) {
+		*name = lf_pointer->pointer_type;
+		return;
+	}
+
+	// TODO: fix 2048...
+	lf_pointer->pointer_type = (char *) malloc(2048);
+	pointer_type = lf_pointer->pointer_type;
+
+	base_type = ti->get_utype(ti, &t);
+	if (t == 0) {
+		print_base_type(base_type, &pointer_type);
+	} else {
+		ti = &t->type_data;
+		ti->get_name(ti, &pointer_type);
+	}
+
+	base_type = strlen(pointer_type) + 2;
+	tmp = (char *) malloc(base_type);
+	tmp[0] = '*';
+	tmp[base_type] = '\0';
+	memcpy(tmp + 1, pointer_type, base_type - 2);
+
+	free(pointer_type);
+	lf_pointer->pointer_type = tmp;
+	*name = tmp;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void get_enum_name(void *type, char **name)
 {
 	STypeInfo *t = (STypeInfo *) type;
@@ -1936,7 +2120,43 @@ static void free_sval(SVal *val)
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+static void free_lf_mfunction(void *type_info)
+{
+	STypeInfo *ti = (STypeInfo *) type_info;
+	SLF_MFUNCTION *lf_mfunc = (SLF_MFUNCTION *) ti->type_info;
+
+	free(lf_mfunc->mfunction_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void free_lf_procedure(void *type_info)
+{
+	STypeInfo *ti = (STypeInfo *) type_info;
+	SLF_PROCEDURE *lf_proc = (SLF_PROCEDURE *) ti->type_info;
+
+	free(lf_proc->procedure_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void free_lf_modifier(void *type_info)
+{
+	STypeInfo *ti = (STypeInfo *) type_info;
+	SLF_MODIFIER *lf_modifier = (SLF_MODIFIER *) ti->type_info;
+
+	free(lf_modifier->modifier_type_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void free_lf_pointer(void *type_info)
+{
+	STypeInfo *ti = (STypeInfo *) type_info;
+	SLF_POINTER *lf_pointer = (SLF_POINTER *) ti->type_info;
+
+	free(lf_pointer->pointer_type);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void free_lf_enumerate(void *type_info)
 {
 	STypeInfo *typeInfo = (STypeInfo *) type_info;
@@ -2700,6 +2920,10 @@ static void init_stype_info(STypeInfo *type_info)
 		break;
 	case eLF_POINTER:
 		type_info->get_utype = get_pointer_utype;
+		type_info->get_name = get_pointer_name;
+		type_info->free_ = free_lf_pointer;
+
+		((SLF_POINTER *)type_info->type_info)->pointer_type = 0;
 		break;
 	case eLF_ARRAY:
 		type_info->get_name = get_array_name;
@@ -2710,7 +2934,11 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->free_ = free_lf_array;
 		break;
 	case eLF_MODIFIER:
+		type_info->get_name = get_modifier_name;
 		type_info->get_modified_type = get_modifier_modified_type;
+		type_info->free_ = free_lf_modifier;
+
+		((SLF_MODIFIER *)type_info->type_info)->modifier_type_name = 0;
 		break;
 	case eLF_ARGLIST:
 		type_info->get_arg_type = get_arglist_type;
@@ -2721,12 +2949,22 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_class_type = get_mfunction_class_type;
 		type_info->get_this_type = get_mfunction_this_type;
 		type_info->get_arglist = get_mfunction_arglist;
+		type_info->get_name = get_mfunction_name;
+		type_info->free_ = free_lf_mfunction;
+
+		((SLF_MFUNCTION *)type_info->type_info)->mfunction_name = (char *) malloc(strlen("mfunction"));;
+		strcpy(((SLF_MFUNCTION *)type_info->type_info)->mfunction_name, "mfunction");
 		break;
 	case eLF_METHODLIST:
 		break;
 	case eLF_PROCEDURE:
+		type_info->get_name = get_procedure_name;
 		type_info->get_return_type = get_procedure_return_type;
 		type_info->get_arglist = get_procedure_arglist;
+		type_info->free_ = free_lf_procedure;
+
+		((SLF_PROCEDURE *)type_info->type_info)->procedure_name = (char *) malloc(strlen("proc"));
+		strcpy(((SLF_PROCEDURE *)type_info->type_info)->procedure_name, "proc");
 		break;
 	case eLF_UNION:
 		type_info->get_name = get_union_name;
@@ -3128,13 +3366,7 @@ static void parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
 		break;
 	case eLF_POINTER:
 //		printf("eLF_POINTER\n");
-	{
-		SLF_POINTER *lf = (SLF_POINTER *) malloc(sizeof(SLF_POINTER)); \
-		parse_lf_pointer(lf, leaf_data + 2, &read_bytes, type->length); \
-		type->type_data.type_info = (void *) lf; \
-		init_stype_info(&type->type_data); \
-	}
-//		PARSE_LF(SLF_POINTER, lf_pointer);
+		PARSE_LF(SLF_POINTER, lf_pointer);
 		break;
 	case eLF_ARRAY:
 //		printf("eLF_ARRAY\n");
@@ -3487,91 +3719,6 @@ static void finish_pdb_parse(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_base_type(EBASE_TYPES base_type, char **name)
-{
-	switch (base_type) {
-	case eT_32PINT4:
-		*name = "pointer to long";
-		break;
-	case eT_32PRCHAR:
-		*name = "pointer to unsgined char";
-		break;
-	case eT_32PUCHAR:
-		*name = "pointer to unsgined char";
-		break;
-	case eT_32PULONG:
-		*name = "pointer to unsigned long";
-		break;
-	case eT_32PLONG:
-		*name = "pointer to long";
-		break;
-	case eT_32PUQUAD:
-		*name = "pointer to unsigned long long";
-		break;
-	case eT_32PUSHORT:
-		*name = "pointer to unsigned short";
-		break;
-	case eT_32PVOID:
-		*name = "pointer to void";
-		break;
-	case eT_64PVOID:
-		*name = "pointer64 to void";
-		break;
-	case eT_INT4:
-		*name = "long";
-		break;
-	case eT_INT8:
-		*name = "long long";
-		break;
-	case eT_LONG:
-		*name = "long";
-		break;
-	case eT_QUAD:
-		*name = "long long";
-		break;
-	case eT_RCHAR:
-		*name = "unsigned char";
-		break;
-	case eT_REAL32:
-		*name = "float";
-		break;
-	case eT_REAL64:
-		*name = "double";
-		break;
-	case eT_REAL80:
-		*name = "long double";
-		break;
-	case eT_SHORT:
-		*name = "short";
-		break;
-	case eT_UCHAR:
-		*name = "unsigned char";
-		break;
-	case eT_UINT4:
-		*name = "unsigned long";
-		break;
-	case eT_ULONG:
-		*name = "unsigned long";
-		break;
-	case eT_UQUAD:
-		*name = "unsigned long long";
-		break;
-	case eT_USHORT:
-		*name = "unsigned short";
-		break;
-	case eT_WCHAR:
-		*name = "wchar";
-		break;
-	case eT_VOID:
-		*name = "void";
-		break;
-	default:
-		*name = "unsupported base type";
-		break;
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
 static void print_member_type(STypeInfo *ti)
 {
 	EBASE_TYPES base_type;
@@ -3598,38 +3745,34 @@ static void print_member_type(STypeInfo *ti)
 			print_base_type(base_type, &name);
 		} else {
 			tmp = &t->type_data;
-			if (tmp->leaf_type == eLF_POINTER) {
-				printf("pointer");
-				break;
-			} else {
-				t->type_data.get_name(&t->type_data, &name);
-			}
+			tmp->get_name(tmp, &name);
 		}
 		printf("array: %s (%d byte)", name, val);
 		break;
-	case eLF_POINTER:
-		base_type = tmp->get_utype(tmp, &t);
-		if (t == 0) {
-			print_base_type(base_type, &name);
-		} else {
-			tmp = &t->type_data;
-			if (tmp->leaf_type == eLF_MODIFIER) {
-				base_type = tmp->get_modified_type(tmp, &t);
-				if (!t) {
-					print_base_type(base_type, &name);
-				} else {
-					t->type_data.get_name(&t->type_data, &name);
-				}
-			} else if (tmp->leaf_type == eLF_PROCEDURE) {
-				printf("pointer to function\n");
-				break;
-			} else {
-				tmp->get_name(&t->type_data, &name);
-			}
-		}
-		printf("pointer to: %s", name);
-		break;
+//	case eLF_POINTER:
+//		base_type = tmp->get_utype(tmp, &t);
+//		if (t == 0) {
+//			print_base_type(base_type, &name);
+//		} else {
+//			tmp = &t->type_data;
+//			if (tmp->leaf_type == eLF_MODIFIER) {
+//				base_type = tmp->get_modified_type(tmp, &t);
+//				if (!t) {
+//					print_base_type(base_type, &name);
+//				} else {
+//					t->type_data.get_name(&t->type_data, &name);
+//				}
+//			} else if (tmp->leaf_type == eLF_PROCEDURE) {
+//				name = "pointer to function";
+//			} else {
+//				tmp->get_name(&t->type_data, &name);
+//			}
+//		}
+//		printf("pointer to: %s", name);
+//		break;
 	default:
+		tmp->get_name(tmp, &name);
+		printf("%s", name);
 		break;
 	}
 
