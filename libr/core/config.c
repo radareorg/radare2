@@ -120,6 +120,7 @@ static int cb_asmarch(void *user, void *data) {
 	if (*node->value) {
 		if (!r_asm_use (core->assembler, node->value)) {
 			eprintf ("asm.arch: cannot find (%s)\n", node->value);
+			return R_FALSE;
 		}
 	} else return 0;
 
