@@ -272,7 +272,7 @@ R_API int r_io_mwrite (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 	return write_bytes;
 }
 
-R_API r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
+R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
 {
 	int bytes_written = 0;
 	char *written_to = NULL;
