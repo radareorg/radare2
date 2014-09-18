@@ -80,12 +80,12 @@ int main(int argc, char **argv) {
 		rs = r_socket_http_accept (s, timeout);
 		if (!rs) continue;
 		if (!strcmp (rs->method, "GET")) {
-			if (!memcmp (rs->path, "/proc/kill/", 11)) {
+			if (!strncmp (rs->path, "/proc/kill/", 11)) {
 				// TODO: show page here?
 				int pid = atoi (rs->path+11);
 				if (pid>0) kill (pid, 9);
 			} else
-			if (!memcmp (rs->path, "/file/open/", 11)) {
+			if (!strncmp (rs->path, "/file/open/", 11)) {
 				int pid;
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path +11;
