@@ -4060,7 +4060,7 @@ static void print_types(R_PDB *pdb)
 					tf->get_val(tf, &offset);
 				else
 					offset = 0;
-				printf("\t0x%x: %s ", offset, name);
+				printf("\t0x%x: %s type:", offset, name);
 				tf->get_print_type(tf, &name);
 				printf("%s\n", name);
 				free(name);
