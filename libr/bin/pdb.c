@@ -1,9 +1,6 @@
-
-
 #include <r_pdb.h>
 //#include <tpi.c>
 #include <string.h>
-#include <byteswap.h>
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
@@ -35,6 +32,7 @@ typedef get_arg_type_ get_index_;
 typedef get_arg_type_ get_mlist_;
 typedef get_arg_type_ get_modified_type_;
 typedef get_value get_index_val;
+typedef get_value_name get_print_type_;
 
 typedef enum {
 	eT_NOTYPE =               0x00000000,
@@ -1129,6 +1127,8 @@ typedef struct {
 	get_mlist_ get_mlist;
 	get_modified_type_ get_modified_type;
 	get_value is_fwdref;
+	get_print_type_ get_print_type;
+
 } STypeInfo;
 
 typedef struct {
@@ -1163,6 +1163,91 @@ typedef struct {
 
 	free_func free_;
 } SPDBInfoStream/*D*/;
+
+///////////////////////////////////////////////////////////////////////////////
+static void print_base_type(EBASE_TYPES base_type, char **name)
+{
+	switch (base_type) {
+	case eT_32PINT4:
+		*name = "pointer to long";
+		break;
+	case eT_32PRCHAR:
+		*name = "pointer to unsgined char";
+		break;
+	case eT_32PUCHAR:
+		*name = "pointer to unsgined char";
+		break;
+	case eT_32PULONG:
+		*name = "pointer to unsigned long";
+		break;
+	case eT_32PLONG:
+		*name = "pointer to long";
+		break;
+	case eT_32PUQUAD:
+		*name = "pointer to unsigned long long";
+		break;
+	case eT_32PUSHORT:
+		*name = "pointer to unsigned short";
+		break;
+	case eT_32PVOID:
+		*name = "pointer to void";
+		break;
+	case eT_64PVOID:
+		*name = "pointer64 to void";
+		break;
+	case eT_INT4:
+		*name = "long";
+		break;
+	case eT_INT8:
+		*name = "long long";
+		break;
+	case eT_LONG:
+		*name = "long";
+		break;
+	case eT_QUAD:
+		*name = "long long";
+		break;
+	case eT_RCHAR:
+		*name = "unsigned char";
+		break;
+	case eT_REAL32:
+		*name = "float";
+		break;
+	case eT_REAL64:
+		*name = "double";
+		break;
+	case eT_REAL80:
+		*name = "long double";
+		break;
+	case eT_SHORT:
+		*name = "short";
+		break;
+	case eT_UCHAR:
+		*name = "unsigned char";
+		break;
+	case eT_UINT4:
+		*name = "unsigned long";
+		break;
+	case eT_ULONG:
+		*name = "unsigned long";
+		break;
+	case eT_UQUAD:
+		*name = "unsigned long long";
+		break;
+	case eT_USHORT:
+		*name = "unsigned short";
+		break;
+	case eT_WCHAR:
+		*name = "wchar";
+		break;
+	case eT_VOID:
+		*name = "void";
+		break;
+	default:
+		*name = "unsupported base type";
+		break;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_sval_name_len(SVal *val, int *res_len)
@@ -2108,6 +2193,440 @@ static void free_pdb_stream(void *stream)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void get_array_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_element_type(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("array: ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "array: ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free) {
+		free(tmp_name);
+		tmp_name = 0;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_pointer_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_utype(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("pointer to ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "pointer to ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free) {
+		free(tmp_name);
+		tmp_name = 0;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_modifier_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_modified_type(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("modifier ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "modifier ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free) {
+		free(tmp_name);
+		tmp_name = 0;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_procedure_print_type(void *type, char **name)
+{
+	int name_len = 0;
+
+	name_len = strlen("proc ");
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "proc ");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_bitfield_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_base_type(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("bitfield ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "bitfield ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free)
+		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_fieldlist_print_type(void *type, char **name)
+{
+	int name_len = 0;
+
+	name_len = strlen("fieldlist ");
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "fieldlist ");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enum_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_utype(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("enum ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "enum ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free)
+		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_class_struct_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	ELeafType lt;
+	char *tmp_name = 0, *tmp1 = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	lt = ti->leaf_type;
+	ti->get_name(ti, &tmp_name);
+
+	if (lt == eLF_CLASS) {
+		tmp1 = "class ";
+	} else {
+		tmp1 = "struct ";
+	}
+	name_len = strlen(tmp1);
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, tmp1);
+	strcat(*name, tmp_name);
+
+//	if (need_to_free) {
+//		free(tmp_name);
+//		tmp_name = 0;
+//	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_arglist_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_arg_type(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("arglist ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "arglist ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free)
+		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_mfunction_print_type(void *type, char **name)
+{
+	int name_len = 0;
+
+	name_len = strlen("mfunction ");
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "mfunction ");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_union_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	ELeafType lt;
+	char *tmp_name = 0, *tmp1 = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	lt = ti->leaf_type;
+	ti->get_name(ti, &tmp_name);
+
+	tmp1 = "union ";
+	name_len = strlen(tmp1);
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, tmp1);
+	strcat(*name, tmp_name);
+
+//	if (need_to_free) {
+//		free(tmp_name);
+//		tmp_name = 0;
+//	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_vtshape_print_type(void *type, char **name)
+{
+	int name_len = 0;
+
+	name_len = strlen("mfunction");
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "mfunction");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_enumerate_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	ELeafType lt;
+	char *tmp_name = 0, *tmp1 = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	lt = ti->leaf_type;
+	ti->get_name(ti, &tmp_name);
+
+	tmp1 = "enumerate ";
+	name_len = strlen(tmp1);
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, tmp1);
+	strcat(*name, tmp_name);
+
+//	if (need_to_free)
+//		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_nesttype_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_index(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("arglist ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "arglist ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free)
+		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_method_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	ELeafType lt;
+	char *tmp_name = 0, *tmp1 = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	lt = ti->leaf_type;
+	ti->get_name(ti, &tmp_name);
+
+	tmp1 = "method ";
+	name_len = strlen(tmp1);
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, tmp1);
+	strcat(*name, tmp_name);
+
+//	if (need_to_free)
+//		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_member_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_index(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("(member) ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "(member) ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free) {
+		free(tmp_name);
+		tmp_name = 0;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void get_onemethod_print_type(void *type, char **name)
+{
+	STypeInfo *ti = (STypeInfo *) type;
+	SType *t = 0;
+	char *tmp_name = 0;
+	int name_len = 0;
+	int need_to_free = 1;
+	int base_type = 0;
+
+	base_type = ti->get_index(ti, &t);
+	if (!t) {
+		need_to_free = 0;
+		print_base_type(base_type, &tmp_name);
+	} else {
+		ti = &t->type_data;
+		ti->get_print_type(ti, &tmp_name);
+	}
+
+	name_len = strlen("onemethod ");
+	name_len += strlen(tmp_name);
+	*name = (char *) malloc(name_len + 1);
+	// name[name_len] = '\0';
+	strcpy(*name, "onemethod ");
+	strcat(*name, tmp_name);
+
+	if (need_to_free)
+		free(tmp_name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 void init_scstring(SCString *cstr, unsigned int size, char *name)
 {
 	cstr->size = size;
@@ -2674,11 +3193,13 @@ static void init_stype_info(STypeInfo *type_info)
 	type_info->get_mlist = 0;
 	type_info->get_modified_type = 0;
 	type_info->is_fwdref = 0;
+	type_info->get_print_type = 0;
 
 	switch (type_info->leaf_type) {
 	case eLF_FIELDLIST:
 		type_info->get_members = get_fieldlist_members;
 		type_info->free_ = free_lf_fieldlist;
+		type_info->get_print_type = get_fieldlist_print_type;
 		break;
 	case eLF_ENUM:
 		type_info->get_name = get_enum_name;
@@ -2686,6 +3207,7 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_members = get_enum_members;
 		type_info->get_utype = get_enum_utype;
 		type_info->free_ = free_lf_enum;
+		type_info->get_print_type = get_enum_print_type;
 		break;
 	case eLF_CLASS:
 	case eLF_STRUCTURE:
@@ -2697,9 +3219,11 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_vshape = get_class_struct_vshape;
 		type_info->is_fwdref = is_struct_class_fwdref;
 		type_info->free_ = free_lf_class;
+		type_info->get_print_type = get_class_struct_print_type;
 		break;
 	case eLF_POINTER:
 		type_info->get_utype = get_pointer_utype;
+		type_info->get_print_type = get_pointer_print_type;
 		break;
 	case eLF_ARRAY:
 		type_info->get_name = get_array_name;
@@ -2708,25 +3232,30 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_element_type = get_array_element_type;
 		type_info->get_index_type = get_array_index_type;
 		type_info->free_ = free_lf_array;
+		type_info->get_print_type = get_array_print_type;
 		break;
 	case eLF_MODIFIER:
 		type_info->get_modified_type = get_modifier_modified_type;
+		type_info->get_print_type = get_modifier_print_type;
 		break;
 	case eLF_ARGLIST:
 		type_info->get_arg_type = get_arglist_type;
 		type_info->free_ = free_lf_arglist;
+		type_info->get_print_type = get_arglist_print_type;
 		break;
 	case eLF_MFUNCTION:
 		type_info->get_return_type = get_mfunction_return_type;
 		type_info->get_class_type = get_mfunction_class_type;
 		type_info->get_this_type = get_mfunction_this_type;
 		type_info->get_arglist = get_mfunction_arglist;
+		type_info->get_print_type = get_mfunction_print_type;
 		break;
 	case eLF_METHODLIST:
 		break;
 	case eLF_PROCEDURE:
 		type_info->get_return_type = get_procedure_return_type;
 		type_info->get_arglist = get_procedure_arglist;
+		type_info->get_print_type = get_procedure_print_type;
 		break;
 	case eLF_UNION:
 		type_info->get_name = get_union_name;
@@ -2735,30 +3264,36 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_members = get_union_members;
 		type_info->is_fwdref = is_union_fwdref;
 		type_info->free_ = free_lf_union;
+		type_info->get_print_type = get_union_print_type;
 		break;
 	case eLF_BITFIELD:
 		type_info->get_base_type = get_bitfield_base_type;
+		type_info->get_print_type = get_bitfield_print_type;
 		break;
 	case eLF_VTSHAPE:
 		type_info->free_ = free_lf_vtshape;
+		type_info->get_print_type = get_vtshape_print_type;
 		break;
 	case eLF_ENUMERATE:
 		type_info->get_name = get_enumerate_name;
 		type_info->get_val = get_enumerate_val;
 		type_info->get_name_len = get_enumerate_name_len;
 		type_info->free_ = free_lf_enumerate;
+		type_info->get_print_type = get_enumerate_print_type;
 		break;
 	case eLF_NESTTYPE:
 		type_info->get_name = get_nesttype_name;
 		type_info->get_name_len = get_nesttype_name_len;
 		type_info->get_index = get_nesttype_index;
 		type_info->free_ = free_lf_nesttype;
+		type_info->get_print_type = get_nesttype_print_type;
 		break;
 	case eLF_METHOD:
 		type_info->get_name = get_method_name;
 		type_info->get_name_len = get_method_name_len;
 		type_info->get_mlist = get_method_mlist;
 		type_info->free_ = free_lf_method;
+		type_info->get_print_type = get_method_print_type;
 		break;
 	case eLF_MEMBER:
 		type_info->get_name = get_member_name;
@@ -2766,6 +3301,7 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_name_len = get_member_name_len;
 		type_info->get_index = get_member_index;
 		type_info->free_ = free_lf_member;
+		type_info->get_print_type = get_member_print_type;
 		break;
 	case eLF_ONEMETHOD:
 		type_info->get_name = get_onemethod_name;
@@ -2773,6 +3309,7 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_val = get_onemethod_val;
 		type_info->get_index = get_onemethod_index;
 		type_info->free_ = free_lf_onemethod;
+		type_info->get_print_type = get_onemethod_print_type;
 		break;
 	default:
 //		printf("init_stype_info(): unknown type for init\n");
@@ -2793,6 +3330,7 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_arglist = 0;
 		type_info->get_index = 0;
 		type_info->get_mlist = 0;
+		type_info->get_print_type = 0;
 		break;
 	}
 }
@@ -3487,160 +4025,10 @@ static void finish_pdb_parse(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_base_type(EBASE_TYPES base_type, char **name)
-{
-	switch (base_type) {
-	case eT_32PINT4:
-		*name = "pointer to long";
-		break;
-	case eT_32PRCHAR:
-		*name = "pointer to unsgined char";
-		break;
-	case eT_32PUCHAR:
-		*name = "pointer to unsgined char";
-		break;
-	case eT_32PULONG:
-		*name = "pointer to unsigned long";
-		break;
-	case eT_32PLONG:
-		*name = "pointer to long";
-		break;
-	case eT_32PUQUAD:
-		*name = "pointer to unsigned long long";
-		break;
-	case eT_32PUSHORT:
-		*name = "pointer to unsigned short";
-		break;
-	case eT_32PVOID:
-		*name = "pointer to void";
-		break;
-	case eT_64PVOID:
-		*name = "pointer64 to void";
-		break;
-	case eT_INT4:
-		*name = "long";
-		break;
-	case eT_INT8:
-		*name = "long long";
-		break;
-	case eT_LONG:
-		*name = "long";
-		break;
-	case eT_QUAD:
-		*name = "long long";
-		break;
-	case eT_RCHAR:
-		*name = "unsigned char";
-		break;
-	case eT_REAL32:
-		*name = "float";
-		break;
-	case eT_REAL64:
-		*name = "double";
-		break;
-	case eT_REAL80:
-		*name = "long double";
-		break;
-	case eT_SHORT:
-		*name = "short";
-		break;
-	case eT_UCHAR:
-		*name = "unsigned char";
-		break;
-	case eT_UINT4:
-		*name = "unsigned long";
-		break;
-	case eT_ULONG:
-		*name = "unsigned long";
-		break;
-	case eT_UQUAD:
-		*name = "unsigned long long";
-		break;
-	case eT_USHORT:
-		*name = "unsigned short";
-		break;
-	case eT_WCHAR:
-		*name = "wchar";
-		break;
-	case eT_VOID:
-		*name = "void";
-		break;
-	default:
-		*name = "unsupported base type";
-		break;
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-static void print_member_type(STypeInfo *ti)
-{
-	EBASE_TYPES base_type;
-	int val;
-	char *name = 0;
-	SType *t = 0;
-	STypeInfo *tmp = 0;
-
-	base_type = ti->get_index(ti, &t);
-
-	printf("\t(");
-	if (!t) {
-		print_base_type(base_type, &name);
-		printf("%s)", name);
-		return;
-	}
-
-	tmp = &t->type_data;
-	switch (t->type_data.leaf_type) {
-	case eLF_ARRAY:
-		tmp->get_val(tmp, &val);
-		base_type = tmp->get_element_type(tmp, &t);
-		if (!t) {
-			print_base_type(base_type, &name);
-		} else {
-			tmp = &t->type_data;
-			if (tmp->leaf_type == eLF_POINTER) {
-				printf("pointer");
-				break;
-			} else {
-				t->type_data.get_name(&t->type_data, &name);
-			}
-		}
-		printf("array: %s (%d byte)", name, val);
-		break;
-	case eLF_POINTER:
-		base_type = tmp->get_utype(tmp, &t);
-		if (t == 0) {
-			print_base_type(base_type, &name);
-		} else {
-			tmp = &t->type_data;
-			if (tmp->leaf_type == eLF_MODIFIER) {
-				base_type = tmp->get_modified_type(tmp, &t);
-				if (!t) {
-					print_base_type(base_type, &name);
-				} else {
-					t->type_data.get_name(&t->type_data, &name);
-				}
-			} else if (tmp->leaf_type == eLF_PROCEDURE) {
-				printf("pointer to function\n");
-				break;
-			} else {
-				tmp->get_name(&t->type_data, &name);
-			}
-		}
-		printf("pointer to: %s", name);
-		break;
-	default:
-		break;
-	}
-
-	printf(")");
-}
-
-///////////////////////////////////////////////////////////////////////////////
 static void print_types(R_PDB *pdb)
 {
 	printf("print_types()\n");
-	char *name;//[255];
+	char *name;
 	int val = 0;
 	int offset = 0;
 	SType *t = 0;
@@ -3659,9 +4047,6 @@ static void print_types(R_PDB *pdb)
 				continue;
 			}
 			tf->get_name(tf, &name);
-			if (strcmp(name, "TPI") == 0) {
-				offset = 22;
-			}
 			// val for STRUCT or UNION mean size
 			tf->get_val(tf, &val);
 			printf("%s: size 0x%x\n", name, val);
@@ -3676,11 +4061,9 @@ static void print_types(R_PDB *pdb)
 				else
 					offset = 0;
 				printf("\t0x%x: %s ", offset, name);
-				if (strcmp(name, "wLanguage") == 0) {
-					offset = 22;
-				}
-				print_member_type(tf);
-				printf("\n");
+				tf->get_print_type(tf, &name);
+				printf("%s\n", name);
+				free(name);
 			}
 		}
 	}
