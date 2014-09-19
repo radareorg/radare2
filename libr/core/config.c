@@ -768,6 +768,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
+	SETPREF("asm.demangle", "false", "Show demangled symbols");
 #if 0
 	r_config_set (cfg, "asm.offseg", "false");
 	r_config_desc (cfg, "asm.offseg", "Show offsets as in 16 bit segment addressing mode");
