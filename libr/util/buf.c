@@ -18,6 +18,13 @@ struct r_class_t {
 #define r_buf_init(x) r_buf_class->init
 #endif
 
+R_API RBuffer *r_buf_from_bytes( const ut8 *bytes, ut64 len) {
+	RBuffer *b = r_buf_new ();
+	if (bytes && (len > 0 && len != UT64_MAX))
+		r_buf_set_bytes (b, bytes, len);
+	return b;
+}
+
 R_API RBuffer *r_buf_new() {
 	RBuffer *b = R_NEW0 (RBuffer);
 	if (b) {

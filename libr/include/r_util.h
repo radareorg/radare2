@@ -263,6 +263,7 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 
 #define R_BUF_CUR UT64_MAX
+R_API RBuffer *r_buf_from_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new();
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);

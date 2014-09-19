@@ -703,6 +703,7 @@ typedef struct r_bin_java_obj_t {
 	ut64 loadaddr; // load address that is used to calc actual offset
 				// when multiple bins are loaded at once
 	int size;
+	int calc_size;
 	char* file;
 	RBinJavaLines lines;
 
@@ -764,6 +765,7 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin);
 R_API void* r_bin_java_free(RBinJavaObj* bin);
 R_API RBinJavaObj* r_bin_java_new(const char* file, ut64 baddr, Sdb * kv);
 R_API RBinJavaObj* r_bin_java_new_buf(struct r_buf_t* buf, ut64 baddr, Sdb * kv);
+R_API int r_bin_java_valid_class (const ut8 * buf, ut64 buf_sz);
 
 // Stuff used to manage Java Class File Constant Information
 typedef struct r_bin_java_object_allocs_t {
@@ -1041,5 +1043,6 @@ R_API DsoJsonObj * r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJ
 R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin);
 
 R_API DsoJsonObj * r_bin_java_get_bin_obj_json (RBinJavaObj *bin);
-
+R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size);
+R_API int r_bin_java_valid_class (const ut8 * buf, ut64 buf_sz);
 #endif

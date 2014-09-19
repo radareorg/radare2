@@ -117,6 +117,9 @@ static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input);
 static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input);
 static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char *input);
 
+static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd);
+static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd);
+
 typedef struct r_cmd_java_cms_t {
 	const char *name;
 	const char *args;
@@ -124,6 +127,16 @@ typedef struct r_cmd_java_cms_t {
 	const ut32 name_len;
 	RCMDJavaCmdHandler handler;
 } RCmdJavaCmd;
+
+#define CALC_SZ "calc_sz"
+#define CALC_SZ_ARGS "<addr>"
+#define CALC_SZ_DESC "calculate the classfile at location"
+#define CALC_SZ_LEN 7
+
+#define ISVALID "is_valid"
+#define ISVALID_ARGS "<addr> <sz>"
+#define ISVALID_DESC "check buffer to see if it is a valid class file"
+#define ISVALID_LEN 8
 
 #define SET_ACC_FLAGS "set_flags"
 #define SET_ACC_FLAGS_ARGS "[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
@@ -241,6 +254,8 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{PRINT_EXC, PRINT_EXC_ARGS, PRINT_EXC_DESC, PRINT_EXC_LEN, r_cmd_java_handle_print_exceptions},
 	{YARA_CODE_REFS, YARA_CODE_REFS_ARGS, YARA_CODE_REFS_DESC, YARA_CODE_REFS_LEN, r_cmd_java_handle_yara_code_extraction_refs},
 	{INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, r_cmd_java_handle_insert_method_ref},
+	{CALC_SZ, CALC_SZ_ARGS, CALC_SZ_DESC, CALC_SZ_LEN, r_cmd_java_handle_calc_class_sz},
+	{ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, r_cmd_java_handle_isvalid},
 };
 
 enum {
@@ -263,7 +278,9 @@ enum {
 	PRINT_EXC_IDX = 16,
 	YARA_CODE_REFS_IDX = 17,
 	INSERT_MREF_IDX = 18,
-	END_CMDS = 19,
+	CALC_SZ_IDX = 19,
+	ISVALID_IDX = 20,
+	END_CMDS = 21,
 };
 
 static ut8 _(r_cmd_java_obj_ref)(const char *name, const char *class_name, ut32 len) {
@@ -992,6 +1009,95 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	return R_FALSE;
 }
 
+static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
+	int res = R_FALSE;
+	ut64 sz = UT64_MAX;
+	ut64 addr = UT64_MAX;
+	ut64 res_size = UT64_MAX,
+		 cur_fsz = r_core_file_cur (core)->size;
+	ut8 *buf = NULL;
+	ut32 max_size = (8096 << 16);
+	ut32 init_size = (1 << 16);
+	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
+	addr = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
+
+	// TODO add a size parameter to the command to skip the guessing part.
+
+	if (addr != UT64_MAX && sz == UT64_MAX) {
+		IFDBG r_cons_printf ("Function call made: %s\n", cmd);
+		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
+		sz = cur_fsz < init_size ? cur_fsz : init_size;
+		while (sz <= cur_fsz && sz <= max_size) {
+			buf = realloc (buf, sz);
+			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
+			// check the return read on the read
+			if (r_sz == UT64_MAX || r_sz == 0) break;
+			res_size = r_bin_java_calc_class_size (buf, sz);
+			// if the data buffer contains a class starting 
+			// at address, then the res_size will be the size
+			// if the r_sz is less than the sz, then we are near
+			// the end of the core buffer, and there is no need
+			// to continue trying to find the class size.
+			if (res_size != UT64_MAX ||
+				r_sz < sz) {
+				free (buf);
+				break;
+			}else {
+				sz += (1 << 16);
+			}
+		}
+		res = res_size != UT64_MAX ? R_TRUE : R_FALSE;
+		if (res) r_cons_printf ("%"PFMT64d, res_size);
+		else r_cons_printf ("-1\n");
+
+		//snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
+		//res = r_core_cmd0(core, y);
+	}
+	return R_TRUE;
+}
+
+static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
+	int res = R_FALSE;
+	ut64 res_size = UT64_MAX;
+	ut8 *buf = NULL;
+	ut32 cur_fsz = r_core_file_cur (core)->size;
+	ut32 max_size = (8096 << 16);
+	ut64 sz = UT64_MAX;
+	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
+	ut64 addr = UT64_MAX;
+	addr = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
+
+	// TODO add a size parameter to the command to skip the guessing part.
+
+	if (addr != UT64_MAX && sz == UT64_MAX) {
+		IFDBG r_cons_printf ("Function call made: %s\n", cmd);
+		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
+
+		while (sz <= cur_fsz && !(sz <= max_size)) {
+			buf = realloc (buf, sz);
+			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
+			// check the return read on the read
+			if (r_sz == UT64_MAX || r_sz == 0) break;
+			res_size = r_bin_java_calc_class_size (buf, sz);
+			// if the data buffer contains a class starting 
+			// at address, then the res_size will be the size
+			// if the r_sz is less than the sz, then we are near
+			// the end of the core buffer, and there is no need
+			// to continue trying to find the class size.
+			if (res_size != UT64_MAX ||
+				r_sz < sz) {
+				free (buf);
+				break;
+			}else {
+				sz <<= 1;
+			}
+		}
+		res = res_size != UT64_MAX ? R_TRUE : R_FALSE;
+		if (res) r_cons_printf ("True\n");
+		else r_cons_printf ("False\n");
+	}
+	return R_TRUE;
+}
 
 static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
@@ -1352,7 +1458,6 @@ static int r_cmd_java_print_all_definitions( RAnal *anal ) {
 }
 
 static int r_cmd_java_print_json_definitions( RBinJavaObj *obj ) {
-	RListIter *iter;
 	DsoJsonObj *json_obj = r_bin_java_get_bin_obj_json (obj);
 	char *str = dso_json_obj_to_str (json_obj);
 	dso_json_obj_del (json_obj);
