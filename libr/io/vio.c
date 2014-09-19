@@ -171,7 +171,9 @@ R_API int r_io_mread (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 
 R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 	int bytes_read = 0;
+#if	VIO_DEBUG
 	char *read_from = NULL;
+#endif
 	if (!io) {
 #if	VIO_DEBUG					//show debug-info
 		eprintf ("r_io_pread: io is NULL\n"
@@ -190,11 +192,15 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 	}
 	r_io_seek (io, paddr, R_IO_SEEK_SET);
 	if (io->buffer_enabled){
+#if	VIO_DEBUG
 		read_from = "buffer";
+#endif
 		bytes_read = r_io_buffer_read (io, io->off, buf, len);
 	} else {
 		if (io->desc && io->desc->plugin && io->desc->plugin->read){
+#if	VIO_DEBUG
 			read_from = io->desc->plugin->name;
+#endif
 			bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
 		} else if (!io->desc) {
 #if	VIO_DEBUG
@@ -205,7 +211,9 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 #endif
 			return 0;
 		} else {
+#if	VIO_DEBUG
 			read_from = "File";
+#endif
 			bytes_read = read (io->desc->fd, buf, len);
 		}
 		if (bytes_read<0) {
@@ -275,7 +283,9 @@ R_API int r_io_mwrite (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
 {
 	int bytes_written = 0;
+#if	VIO_DEBUG
 	char *written_to = NULL;
+#endif
 	if (!io) {
 #if	VIO_DEBUG
 		eprintf ("r_io_pwrite: io is NULL\n"
@@ -289,7 +299,9 @@ R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
 		len = UT64_MAX - paddr;
 	r_io_seek (io, paddr, R_IO_SEEK_SET);
 	if (io->desc && io->desc->plugin && io->desc->plugin->write) {
+#if	VIO_DEBUG
 		written_to = io->desc->plugin->name;
+#endif
 		bytes_written = io->desc->plugin->write (io, io->desc, buf, len);
 	} else if (!io->desc) {
 #if	VIO_DEBUG					//show debug-info
@@ -300,7 +312,9 @@ R_API int r_io_pwrite (RIO *io, ut64 paddr, const ut8 *buf, int len)
 #endif
 		return 0;
 	} else {
+#if	VIO_DEBUG
 		written_to = "File";
+#endif
 		bytes_written = write (io->desc->fd, buf, len);
 	}
 	if (bytes_written < 0) {
