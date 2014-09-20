@@ -9,6 +9,9 @@
 #define JMP_IS_EOB 0
 #define JMP_IS_EOB_RANGE 512
 
+// 64KB max size
+#define MAX_FCN_SIZE 65535
+
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
@@ -174,7 +177,11 @@ static int bbsum(RAnalFunction *fcn) {
 
 #define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
 	if(n<0) { fcn->addr += n; fcn->size = -n; } else \
-	if(fcn->size<n)fcn->size=n; }
+	if(fcn->size<n)fcn->size=n; } \
+	if (fcn->size > MAX_FCN_SIZE) { \
+		eprintf ("Function too big at 0x%"PFMT64x"\n", bb->addr); \
+		fcn->size = 0; \
+		return R_ANAL_RET_ERROR; }
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int ret = R_ANAL_RET_END;
 	ut8 bbuf[8096];
@@ -448,7 +455,9 @@ repeat:
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
-			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n", addr+undelayed_idx-oplen, overlapped, bb->size, fcn->size);
+			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
+				addr+undelayed_idx-oplen, overlapped,
+				bb->size, fcn->size);
 			FITFCNSZ();
 			r_anal_op_fini (&op);
 			//fcn->size = bbsum (fcn);
@@ -523,7 +532,10 @@ fcn.<offset>.bbs
 
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
 	int append = 0;
-	RAnalFunction *fcn = r_anal_fcn_find (a, addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn;
+	if (size<1)
+		return R_FALSE;
+	fcn = r_anal_fcn_find (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (fcn == NULL) {
 		if (!(fcn = r_anal_fcn_new ()))
 			return R_FALSE;
