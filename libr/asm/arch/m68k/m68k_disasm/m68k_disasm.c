@@ -92,9 +92,9 @@ static void printu_wb (dis_buffer_t *, u_int, int, int);
 static void prints_bf (dis_buffer_t *, int, int, int);
 static void printu_bf (dis_buffer_t *, u_int, int, int);
 static void iaddstr (dis_buffer_t *, const char *s);
-static void iprints (dis_buffer_t *, int, int);
+//static void iprints (dis_buffer_t *, int, int);
 static void iprintu (dis_buffer_t *, u_int, int);
-static void iprints_wb (dis_buffer_t *, int, int, int);
+//static void iprints_wb (dis_buffer_t *, int, int, int);
 static void iprintu_wb (dis_buffer_t *, u_int, int, int);
 static void make_cond (dis_buffer_t *, int , char *);
 static void print_fcond (dis_buffer_t *, char);
@@ -3208,6 +3208,7 @@ static void iprintu_wb(dis_buffer_t *dbuf, u_int val, int sz, int base)
 }
 
 
+#if 0
 static void iprints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
 {
   if (val < 0) {
@@ -3216,6 +3217,7 @@ static void iprints_wb(dis_buffer_t *dbuf, int val, int sz, int base)
   }
   iprintu_wb(dbuf, val, sz, base);
 }
+#endif
 
 
 static void prints_bf(dis_buffer_t *dbuf, int val, int sb, int eb)
