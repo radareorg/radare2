@@ -66,7 +66,6 @@ static PE_DWord PE_(r_bin_pe_paddr_to_vaddr)(struct PE_(r_bin_pe_obj_t)* bin, PE
 	}
 	return 0;
 }
-#endif
 
 static int PE_(r_bin_pe_get_import_dirs_count)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (!bin || !bin->nt_headers)
@@ -87,6 +86,7 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 	return (int)(data_dir_delay_import->Size / \
 		sizeof(PE_(image_delay_import_directory)) - 1);
 }
+#endif
 
 static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
 	char import_name[PE_NAME_LENGTH + 1], name[PE_NAME_LENGTH + 1];
@@ -152,6 +152,11 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf("Error: read (dos header)\n");
 		return R_FALSE;
 	}
+	sdb_num_set (bin->kv, "pe_dos_header.offset", 0, 0);
+	sdb_set (bin->kv, "pe_dos_header.format", "[2]zwwwwwwwwwwwww[4]www[10]wx"
+			" e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc"
+			" e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid"
+			" e_oeminfo e_res2 e_lfanew", 0);
 	if (bin->dos_header->e_lfanew > bin->size) {
 		eprintf("Invalid e_lfanew field\n");
 		return R_FALSE;
@@ -753,7 +758,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
 
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
-		curr_import_dir = (bin->b->buf + bin->import_directory_offset);
+		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
 		dll_name_offset = curr_import_dir->Name;
 		void *last = curr_import_dir + bin->import_directory_size;
 		while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
@@ -777,7 +782,8 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	}
 
 	if (bin->delay_import_directory_offset < bin->size && bin->delay_import_directory_offset > 0) {
-		curr_delay_import_dir = (bin->b->buf + bin->delay_import_directory_offset);
+		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(
+			bin->b->buf + bin->delay_import_directory_offset);
 
 		if (curr_delay_import_dir->Attributes == 0) {
 			dll_name_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin,
@@ -821,7 +827,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
-	int i, index = 0;
+	int index = 0;
 	int len = 0;
 	int max_libs = 20;
 	libs = calloc (max_libs, sizeof(struct r_bin_pe_lib_t));
@@ -833,7 +839,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	RStrHT *lib_map = r_strht_new();
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
 		// normal imports
-		curr_import_dir = (bin->b->buf + bin->import_directory_offset);
+		curr_import_dir = (PE_(image_import_directory)*)(
+			bin->b->buf + bin->import_directory_offset);
 		while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0) {
@@ -863,7 +870,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	}
 
 	if (bin->delay_import_directory_offset < bin->size && bin->delay_import_directory_offset > 0) {
-		curr_delay_import_dir = (bin->b->buf + bin->delay_import_directory_offset);
+		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(
+			bin->b->buf + bin->delay_import_directory_offset);
 		while (curr_delay_import_dir->Name != 0 && curr_delay_import_dir->DelayImportNameTable != 0) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
@@ -1142,6 +1150,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf) {
 	struct PE_(r_bin_pe_obj_t) *bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	if (!bin) return NULL;
+	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){

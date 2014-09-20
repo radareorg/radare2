@@ -13,17 +13,19 @@ static Sdb* get_sdb (RBinObject *o) {
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) return NULL;
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin && bin->kv) return bin->kv;
 	return NULL;
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
+	struct PE_(r_bin_pe_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = PE_(r_bin_pe_new_buf) (tbuf);
+	if (res)
+		sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
 	return res;
 }
