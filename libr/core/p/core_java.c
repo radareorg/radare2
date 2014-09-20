@@ -1019,7 +1019,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 	ut32 max_size = (8096 << 16);
 	ut32 init_size = (1 << 16);
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
-	addr = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
+	addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
 
 	// TODO add a size parameter to the command to skip the guessing part.
 
@@ -1040,19 +1040,20 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 			// to continue trying to find the class size.
 			if (res_size != UT64_MAX ||
 				r_sz < sz) {
+				res = r_sz < sz ? R_FALSE : R_TRUE;
 				free (buf);
 				break;
 			}else {
 				sz += (1 << 16);
 			}
 		}
-		res = res_size != UT64_MAX ? R_TRUE : R_FALSE;
 		if (res) r_cons_printf ("%"PFMT64d, res_size);
 		else r_cons_printf ("-1\n");
 
 		//snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
 		//res = r_core_cmd0(core, y);
-	}
+	}else
+		r_cmd_java_print_cmd_help (JAVA_CMDS+CALC_SZ_IDX);
 	return R_TRUE;
 }
 
@@ -1065,7 +1066,7 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 	ut64 sz = UT64_MAX;
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 	ut64 addr = UT64_MAX;
-	addr = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
+	addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
 
 	// TODO add a size parameter to the command to skip the guessing part.
 
@@ -1086,16 +1087,17 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 			// to continue trying to find the class size.
 			if (res_size != UT64_MAX ||
 				r_sz < sz) {
+				res = r_sz < sz ? R_FALSE : R_TRUE;
 				free (buf);
 				break;
 			}else {
 				sz <<= 1;
 			}
 		}
-		res = res_size != UT64_MAX ? R_TRUE : R_FALSE;
 		if (res) r_cons_printf ("True\n");
 		else r_cons_printf ("False\n");
-	}
+	} else
+		r_cmd_java_print_cmd_help (JAVA_CMDS+ISVALID_IDX);
 	return R_TRUE;
 }
 
