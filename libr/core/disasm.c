@@ -1492,14 +1492,11 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		} else {
 			if (p==UT64_MAX || p==UT32_MAX) {
 				r_cons_printf (" ; -1", p);
-			} else
-			if (p>='!' && p<='~') {
+			} else if (p>='!' && p<='~') {
 				r_cons_printf (" ; '%c'", p);
-			} else {
-				if (!msg && p>10) {
+			} else if (p>10) {
 					r_cons_printf (" ; %s%s0x%08"PFMT64x" ",
-						msg, msg?" ":"", p);
-				}
+						msg, msg[0]?" ":"", p);
 			}
 		}
 	} else handle_print_as_string (core, ds);

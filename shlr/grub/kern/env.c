@@ -248,8 +248,10 @@ grub_register_variable_hook (const char *name,
       /* XXX Insert an assertion?  */
     }
 
-  var->read_hook = read_hook;
-  var->write_hook = write_hook;
+  if (var) {
+	  var->read_hook = read_hook;
+	  var->write_hook = write_hook;
+  }
 
   return GRUB_ERR_NONE;
 }

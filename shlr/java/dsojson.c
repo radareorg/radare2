@@ -231,8 +231,10 @@ R_API DsoJsonObj * dso_json_str_new () {
 
 R_API void dso_json_str_free (void *y) {
 	DsoJsonStr *x = (DsoJsonStr *)y;
-	if (x) free (x->data);
-	x->data = NULL;
+	if (x) {
+		free (x->data);
+		x->data = NULL;
+	}
 	free (x);
 }
 

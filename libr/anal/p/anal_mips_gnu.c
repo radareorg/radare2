@@ -468,7 +468,6 @@ static int mips_set_reg_profile(RAnal* anal){
 	  "gpr	pc	.32	128	0\n";
 #else
      // take the one from the debugger //
-	p = 
 	"=pc	pc\n"
 	"=sp	sp\n"
 	"=bp	fp\n"

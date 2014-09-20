@@ -176,11 +176,6 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 				r_socket_block_time (s, 1, timeout);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-			if (ret<0) {
-				close (s->fd);
-				s->fd = -1;
-				continue;
-			}
 			if (timeout<1) {
 				if (ret == -1) {
 					close (s->fd);
@@ -188,6 +183,11 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 					return R_FALSE;
 				}
 				return R_TRUE;
+			}
+			if (ret<0) {
+				close (s->fd);
+				s->fd = -1;
+				continue;
 			}
 			if (timeout>0) {
 				struct timeval tv;
