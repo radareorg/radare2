@@ -949,7 +949,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, 32);
 	eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
-	 {
+	if (ret) {
 		//r_anal_esil_eval (core->anal, input+2);
 		RAnalEsil *esil = core->anal->esil;
 		r_anal_esil_set_offset (esil, addr);
@@ -1108,11 +1108,15 @@ static int cmd_anal(void *data, const char *input) {
 						while (pc<end) {
 							r_asm_set_pc (core->assembler, pc);
 							ret = r_anal_op (core->anal, &op, addr, buf, 32); // read overflow
+if (ret) {
 							r_reg_setv (core->anal->reg, "pc", pc);
 							r_anal_esil_parse (core->anal->esil, R_STRBUF_SAFEGET (&op.esil));
 							r_anal_esil_dumpstack (core->anal->esil);
 							r_anal_esil_stack_free (core->anal->esil);
 							pc += op.size;
+} else {
+	pc += 4; // XXX
+}
 					       }
 				       }
 			       } else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);

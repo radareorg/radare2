@@ -11,7 +11,7 @@
 typedef struct {
 	int fd;
 	ut8 *buf;
-	ut32 size;
+	int size;
 	ut64 offset;
 } RIOGzip;
 
@@ -109,12 +109,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
 		int len;
-		char *file = r_file_slurp (pathname+7, &len);
-		mal->buf = r_inflate (file, len, &mal->size);
+		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
+		mal->buf = r_inflate (data, len, &mal->size);
 		if (mal->buf) {
 			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
-				mal->fd, pathname, rw, mode,mal);
+				mal->fd, pathname, rw, mode, mal);
 		}
+		free (data);
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
 			mal->size);
 		free (mal);

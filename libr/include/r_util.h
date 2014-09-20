@@ -233,7 +233,7 @@ R_API void r_graph_push (RGraph *t, ut64 addr, void *data);
 R_API RGraphNode* r_graph_pop(RGraph *t);
 
 R_API boolt r_file_truncate (const char *filename, ut64 newsize);
-R_API int r_file_size(const char *str);
+R_API ut64 r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);
 R_API boolt r_file_is_directory(const char *str);
 R_API boolt r_file_is_regular(const char *str);

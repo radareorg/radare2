@@ -761,10 +761,8 @@ static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
 static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 	RIOBind *iob;
 	RIO *io;
-	RBinInfo *info;
 	if (!bf || !bf->rbin || !obj || !obj->info)
 		return R_FALSE;
-	info = obj->info;
 	iob = &(bf->rbin->iob);
 	io = iob ? iob->get_io (iob) : NULL;
 	if (!io || !iob)
