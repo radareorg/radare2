@@ -197,6 +197,7 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	sdb_set (bin->kv, "pe_image_file_header.format", "wwxxxww"
 					  " machine numberOfSections timeDateStamp pointerToSymbolTable"
 					  " numberOfSymbols sizeOfOptionalHeader characteristics", 0);
+	sdb_set (bin->kv, "pe_image_data_directory.format", "xx virtualAddress size",0);
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
 			return R_FALSE;
