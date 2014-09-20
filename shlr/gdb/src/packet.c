@@ -110,7 +110,9 @@ int read_packet(libgdbr_t* g) {
 		return -1;
 	}
 	while (r_socket_ready (g->sock, 0, 250 * 1000) > 0) {
-		po_size += r_socket_read (g->sock, (g->read_buff + po_size), (g->read_max - po_size));
+		po_size += r_socket_read (g->sock, (
+			(ut8*)g->read_buff + po_size),
+			(g->read_max - po_size));
 	}
 	g->read_len = po_size;
 	return po_size;

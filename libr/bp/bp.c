@@ -27,8 +27,8 @@ R_API RBreakpoint *r_bp_new() {
 		bp->endian = 0; // little by default
 		bp->traces = r_bp_traptrace_new ();
 		bp->printf = (PrintfCallback)printf;
-		bp->bps = r_list_newf (r_bp_item_free);
-		bp->plugins = r_list_newf (free);
+		bp->bps = r_list_newf ((RListFree)r_bp_item_free);
+		bp->plugins = r_list_newf ((RListFree)free);
 		for (i=0; bp_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RBreakpointPlugin);
 			memcpy (static_plugin, bp_static_plugins[i], sizeof (RBreakpointPlugin));
