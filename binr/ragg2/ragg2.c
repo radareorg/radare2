@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (contents) {
-		ut64 l;
+		int l;
 		char *buf = r_file_slurp (contents, &l);
 		if (buf && l>0) {
 			r_egg_raw (egg, (const ut8*)buf, l);

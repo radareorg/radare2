@@ -83,7 +83,7 @@ R_API boolt r_file_exists(const char *str) {
 	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
 
-R_API off_t r_file_size(const char *str) {
+R_API int r_file_size(const char *str) {
 	struct stat buf = {0};
 	if (stat (str, &buf)==-1)
 		return 0;
@@ -133,11 +133,11 @@ R_API char *r_file_path(const char *bin) {
 	return strdup (bin);
 }
 
-R_API char *r_file_slurp(const char *str, ut64 *usz) {
+R_API char *r_file_slurp(const char *str, int *usz) {
 	size_t rsz;
 	char *ret;
 	FILE *fd;
-	ut64 sz;
+	long sz;
 	if (!r_file_exists (str))
 		return NULL;
 	fd = r_sandbox_fopen (str, "rb");
@@ -147,7 +147,7 @@ R_API char *r_file_slurp(const char *str, ut64 *usz) {
 	sz = ftell (fd);
 	if (sz==0)
 		sz = 4096;
-	if (sz == UT64_MAX ) {
+	if (sz <0) {
 		fclose (fd);
 		return NULL;
 	}
@@ -161,12 +161,12 @@ R_API char *r_file_slurp(const char *str, ut64 *usz) {
 	fclose (fd);
 	ret[sz]='\0';
 	if (usz)
-		*usz = sz;
+		*usz = (ut32)sz;
 	return ret;
 }
 
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
-	ut64 sz;
+	int sz;
 	ut8 *in, *out;
 	if (outlen) *outlen = 0;
 	in = (ut8*)r_file_slurp (str, &sz);
@@ -248,8 +248,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 
 R_API char *r_file_slurp_random_line(const char *file) {
 	char *ptr = NULL, *str;
-	ut64 sz;
-	int i, lines = 0;
+	int sz, i, lines = 0;
 	struct timeval tv;
 
 	if ((str = r_file_slurp (file, &sz))) {
@@ -278,7 +277,7 @@ R_API char *r_file_slurp_random_line(const char *file) {
 
 R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	int i, lines = 0;
-	ut64 sz;
+	int sz;
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
@@ -531,7 +530,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 	m->base = base;
 	m->rw = rw;
 	m->fd = fd;
-	m->len = fd != -1? r_file_size (file) : 0;
+	m->len = fd != -1? lseek (fd, (off_t)0, SEEK_END) : 0;
 
 	if (m->fd == -1) {
 		return m;

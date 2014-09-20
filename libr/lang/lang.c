@@ -166,8 +166,7 @@ R_API int r_lang_run_string(RLang *lang, const char *code) {
 }
 
 R_API int r_lang_run_file(RLang *lang, const char *file) { 
-	ut64 len; 
-	int ret = R_FALSE;
+	int len, ret = R_FALSE;
 	if (lang->cur) {
 		if (lang->cur->run_file == NULL) {
 			if (lang->cur->run != NULL) {

@@ -135,7 +135,6 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return count;
 	}
 	mmo = fd->data;
-	//eprintf ("r_io_def_mmap_read: fd: %d buf: %p count: %d.\n", mmo->fd, mmo->buf, count);
 	if (mmo->rawio) {
 		return read (mmo->fd, buf, count);
 	}

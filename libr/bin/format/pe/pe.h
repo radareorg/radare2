@@ -78,8 +78,8 @@ struct PE_(r_bin_pe_obj_t) {
 	ut64 delay_import_directory_offset;
 
 	int import_directory_size;
-	ut64 size;
-	ut64 endian;
+	int size;
+	int endian;
 	RList *relocs;
 	const char* file;
 	struct r_buf_t* b;

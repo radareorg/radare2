@@ -1122,7 +1122,7 @@ next2:
 		ut8 *buf;
 		const char *offstr;
 		char *f, *ptr2 = strchr (ptr+1, '!');
-		ut64 sz, len;
+		int sz, len;
 		addr = 0LL;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;

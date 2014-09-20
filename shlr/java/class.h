@@ -702,7 +702,7 @@ typedef struct r_bin_java_obj_t {
 
 	ut64 loadaddr; // load address that is used to calc actual offset
 				// when multiple bins are loaded at once
-	ut64 size;
+	int size;
 	char* file;
 	RBinJavaLines lines;
 

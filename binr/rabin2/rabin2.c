@@ -522,7 +522,7 @@ int main(int argc, char **argv) {
 		b = r_bin_create (bin, code, codelen, data, datalen);
 		if (b) {
 			if (r_file_dump (file, b->buf, b->length)) {
-				eprintf ("dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
+				eprintf ("dumped %d bytes in '%s'\n", b->length, file);
 				r_file_chmod (file, "+x", 0);
 			} else eprintf ("error dumping into a.out\n");
 			r_buf_free (b);

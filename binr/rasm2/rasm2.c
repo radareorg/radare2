@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
 
 	if (file) {
 		char *content;
-		ut64 length = 0;
+		int length = 0;
 		if (!strcmp (file, "-")) {
 			ret = read (0, buf, sizeof (buf)-1);
 			if (ret == R_ASM_BUFSIZE)

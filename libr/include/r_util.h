@@ -79,7 +79,7 @@ typedef struct r_mem_pool_factory_t {
 typedef struct r_mmap_t {
 	ut8 *buf;
 	ut64 base;
-	off_t len;
+	int len;
 	int fd;
 	int rw;
 #if __WINDOWS__
@@ -90,8 +90,8 @@ typedef struct r_mmap_t {
 
 typedef struct r_buf_t {
 	ut8 *buf;
-	ut64 length;
-	ut64 cur;
+	int length;
+	int cur;
 	ut64 base;
 	RMmap *mmap;
 	ut8 empty;
@@ -233,7 +233,7 @@ R_API void r_graph_push (RGraph *t, ut64 addr, void *data);
 R_API RGraphNode* r_graph_pop(RGraph *t);
 
 R_API boolt r_file_truncate (const char *filename, ut64 newsize);
-R_API off_t r_file_size(const char *str);
+R_API int r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);
 R_API boolt r_file_is_directory(const char *str);
 R_API boolt r_file_is_regular(const char *str);
@@ -267,21 +267,21 @@ R_API RBuffer *r_buf_new();
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
-R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length);
+R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_string(RBuffer *b, const char *str);
 R_API int r_buf_append_buf(RBuffer *b, RBuffer *a);
-R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length);
-R_API int r_buf_append_nbytes(RBuffer *b, ut64 length);
+R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);
+R_API int r_buf_append_nbytes(RBuffer *b, int length);
 R_API int r_buf_append_ut32(RBuffer *b, ut32 n);
 R_API int r_buf_append_ut64(RBuffer *b, ut64 n);
 R_API int r_buf_append_ut16(RBuffer *b, ut16 n);
-R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length);
+R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API char *r_buf_to_string(RBuffer *b);
-R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, ut64 *len);
-R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len);
-R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, ut64 n);
-R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len);
-R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, ut64 n);
+R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
+R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
+R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
+R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
+R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API void r_buf_free(RBuffer *b);
 R_API char *r_buf_free_to_string (RBuffer *b);
 R_API const ut8 *r_buf_buffer (RBuffer *b);
@@ -457,7 +457,7 @@ R_API const char *r_file_basename (const char *path);
 R_API char *r_file_abspath(const char *file);
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *dstLen);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
-R_API char *r_file_slurp(const char *str, ut64 *usz);
+R_API char *r_file_slurp(const char *str, int *usz);
 //R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 R_API char *r_file_slurp_random_line(const char *file);

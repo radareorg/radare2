@@ -108,7 +108,7 @@ static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
-		ut64 len;
+		int len;
 		char *file = r_file_slurp (pathname+7, &len);
 		mal->buf = r_inflate (file, len, &mal->size);
 		if (mal->buf) {
