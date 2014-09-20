@@ -424,6 +424,10 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, ch
 	}
 	if (flag) p->printf = realprintf;
 	fmt = r_strht_get (p->formats, name);
+	if (!fmt || !*fmt) {
+		eprintf ("Undefined struct.\n");
+		return 0;
+	}
 	r_print_format (p, seek, b, len, fmt, flag, NULL);
 	return computeStructSize(strdup(fmt));
 }
