@@ -382,6 +382,9 @@ int main(int argc, char **argv, char **envp) {
 	}
 // TODO: set io.va = 2 if -B
 
+// -- means opening r2 without any file
+if (strcmp (argv[1], "--")) {
+
 	if (debug) {
 		r_config_set (r.config, "search.in", "raw"); // implicit?
 		r_config_set (r.config, "io.va", "false"); // implicit?
@@ -469,7 +472,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (r.file == NULL) // no given file
 		return 1;
-	//if (!has_project && run_anal) {
+	//if (!has_project && run_anal) 
 #if USE_THREADS
 	if (run_anal>0 && threaded) {
 		// XXX: if no rabin2 in path that may fail
@@ -515,9 +518,13 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
 		}
 	}
+#if 0
+// Do not autodetect utf8 terminals to avoid problems on initial
+// stdin buffer and some terminals that just hang (android/ios)
 	if (!quiet && r_cons_is_utf8 ()) {
 		r_config_set_i (r.config, "scr.utf8", R_TRUE);
 	}
+#endif
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
 		if (homerc) {
@@ -609,6 +616,7 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmd_file (&r, f);
 		}
 	}
+}
 	if (do_analysis) {
 		r_core_cmd0 (&r, "aa");
 		r_cons_flush ();
@@ -646,6 +654,7 @@ int main(int argc, char **argv, char **envp) {
 			r_cons_zero ();
 	if (seek != UT64_MAX)
 		r_core_seek (&r, seek, 1);
+
 	for (;;) {
 		r.zerosep = zerosep;
 #if USE_THREADS
