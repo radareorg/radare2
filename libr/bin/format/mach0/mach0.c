@@ -107,8 +107,10 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 		sect = bin->nsects;
 		bin->nsects += bin->segs[seg].nsects;
 		if (bin->nsects > 128) {
-			eprintf ("WARNING: mach0 header contains too many sections. Wrapping to 128\n");
-			bin->nsects = 128;
+			int new_nsects = bin->nsects & 0xf;
+			eprintf ("WARNING: mach0 header contains too many sections (%d). Wrapping to %d\n",
+				 bin->nsects, new_nsects);
+			bin->nsects = new_nsects;
 		}
 		if ((int)bin->nsects>0) {
 			if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
@@ -142,6 +144,8 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		eprintf ("Error: read (symtab)\n");
 		return R_FALSE;
 	}
+	bin->symtab = NULL;
+	bin->nsymtab = 0;
 	if (st.strsize > 0 && st.strsize < bin->size && st.nsyms > 0) {
 		bin->nsymtab = st.nsyms;
 		if (!(bin->symstr = malloc (st.strsize))) {
@@ -626,6 +630,7 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 		return NULL;
 	symbols_size = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
+			bin->dysymtab.iundefsym + \
 			bin->dysymtab.nundefsym + 1) * \
 			sizeof (struct r_bin_mach0_symbol_t);
 
@@ -641,11 +646,13 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 		}
 		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct r_bin_mach0_symbol_t));
 		to = R_MIN (to , symbols_size/sizeof(struct r_bin_mach0_symbol_t));
+		to = R_MIN (to, bin->nsymtab);
 		if (to>0x40000) {
 			eprintf ("WARNING: corrupted mach0 header: symbol table is too big\n");
 			free (symbols);
 			return NULL;
 		}
+		j = 0;
 		for (i = from; i < to; i++, j++) {
 			symbols[j].offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->symtab[i].n_value);
 			symbols[j].addr = bin->symtab[i].n_value;
@@ -843,7 +850,7 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 					//ut8 sym_flags = imm;
 					while (*p++);
 					sym_ord = -1;
-					if (bin->symtab)
+					if (bin->symtab && bin->dysymtab.nundefsym<0xffff)
 					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
 						int stridx = 0;
 						int iundefsym = bin->dysymtab.iundefsym;
