@@ -423,7 +423,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 #endif
 			r_core_read_at (core, at+bblen, buf, ANALBS); //core->blocksize);
 //			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
-			if (R_TRUE > r_io_is_valid_offset (core->io, at+bblen))
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+bblen))
 				goto error;
 			buflen = ANALBS; //core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
@@ -643,7 +643,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// this is unnecessary if its contiguous
 		r_io_read_at (core->io, at+delta, buf, ANALBS);
 #endif
-		if (R_TRUE > r_io_is_valid_offset (core->io, at+delta))
+		if (R_TRUE != r_io_is_valid_offset (core->io, at+delta))
 			goto error;
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)

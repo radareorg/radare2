@@ -263,7 +263,8 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 		read_from = io->desc->plugin->name;
 		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
 	} else if (!io->desc) {
-		eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
+		if (io->files && r_list_length (io->files) != 0)
+			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
 		read_from = "FAILED";
 		bytes_read = 0;
 	} else {
@@ -855,6 +856,13 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset)
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
+	if (!io->files) {
+		eprintf ("r_io_is_valid_offset: io->files is NULL\n");
+		r_sys_backtrace ();
+		return R_FAIL;
+	}
+	if (r_list_length (io->files) == 0)
+		return R_FALSE;
 	if (!io->desc) {
 		eprintf ("r_io_is_valid_offset: io->desc is NULL\n");
 		r_sys_backtrace ();
@@ -867,11 +875,11 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset)
 		case 1:
 			return r_io_map_exists_for_offset (io, offset);
 		case 2:
-			return (r_io_map_exists_for_offset (io, offset) |
+			return (r_io_map_exists_for_offset (io, offset) ||
 				r_io_section_exists_for_vaddr (io, offset));
 #else
 		case 1:
-			return (r_io_map_exists_for_offset (io, offset) |
+			return (r_io_map_exists_for_offset (io, offset) ||
 				r_io_section_exists_for_vaddr (io, offset));
 #endif
 	}
