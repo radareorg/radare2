@@ -2242,6 +2242,7 @@ R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 		return R_TRUE;
 	}
 	adv += r_bin_java_parse_attrs (bin, adv, buf, buf_sz);
+	bin->calc_size = adv;
 	//if (adv > buf_sz) {
 	//	eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attributes.\n");
 	//	return R_TRUE;
@@ -8581,6 +8582,27 @@ R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz
 			return r_bin_java_cp_get_utf8 (cp_obj->tag, out_sz, cp_obj->info.cp_utf8.bytes, cp_obj->info.cp_utf8.length);
 	}
 	return NULL;
+}
+
+R_API int r_bin_java_valid_class (const ut8 * buf, ut64 buf_sz) {
+	RBinJavaObj *bin = R_NEW0 (RBinJavaObj), *cur_bin = R_BIN_JAVA_GLOBAL_BIN;
+	int res = r_bin_java_load_bin (bin, buf, buf_sz);
+	if (bin->calc_size == buf_sz) res = R_TRUE;
+	r_bin_java_free (bin);
+	R_BIN_JAVA_GLOBAL_BIN = cur_bin;
+	return res;
+}
+
+R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size){
+	RBinJavaObj *bin = R_NEW0 (RBinJavaObj), *cur_bin = R_BIN_JAVA_GLOBAL_BIN;
+	int res = R_FALSE;
+	ut64 bin_size = UT64_MAX;
+	if (!bin) return bin_size;
+	if (r_bin_java_load_bin (bin, bytes, size))
+		bin_size = bin->calc_size;
+	r_bin_java_free (bin);
+	R_BIN_JAVA_GLOBAL_BIN = cur_bin;
+	return bin_size;
 }
 
 R_API int U(r_bin_java_get_cp_idx_with_name) ( RBinJavaObj *bin_obj, const char * name, ut32 len) {
