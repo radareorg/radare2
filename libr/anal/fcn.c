@@ -5,6 +5,10 @@
 #include <r_list.h>
 
 #define FCN_DEPTH 32
+
+#define JMP_IS_EOB 0
+#define JMP_IS_EOB_RANGE 512
+
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
@@ -344,6 +348,7 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+#if JMP_IS_EOB
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
 #if 0
@@ -356,24 +361,24 @@ repeat:
 				bb->jump = op.jump;
 				bb->fail = UT64_MAX;
 			}
+#else
 			// hardcoded jmp size // must be checked at the end wtf?
 			// always fitfcnsz and retend
-			FITFCNSZ();
-			return R_ANAL_RET_END;
-#if 0
 			if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
 				/* jump inside the same function */
 				FITFCNSZ();
 				return R_ANAL_RET_END;
+#if JMP_IS_EOB_RANGE>0
 			} else {
-				if (op.jump < addr-512 && op.jump<addr) {
+				if (op.jump < addr-JMP_IS_EOB_RANGE && op.jump<addr) {
 					FITFCNSZ();
 					return R_ANAL_RET_END;
 				}
-				if (op.jump > addr+512) {
+				if (op.jump > addr+JMP_IS_EOB_RANGE) {
 					FITFCNSZ();
 					return R_ANAL_RET_END;
 				}
+#endif
 			}
 #endif
 			break;
