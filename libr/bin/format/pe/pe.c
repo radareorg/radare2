@@ -555,13 +555,15 @@ printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
 	}
 	//sdb_setn (DB, "hdr.exports_directory", export_dir_paddr);
 //eprintf ("Pexports paddr at 0x%"PFMT64x"\n", export_dir_paddr);
-	if (!(bin->export_directory = malloc(sizeof(PE_(image_export_directory))))) {
+	if (!(bin->export_directory = malloc (sizeof(PE_(image_export_directory))))) {
 		r_sys_perror ("malloc (export directory)");
 		return R_FALSE;
 	}
 	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*)bin->export_directory,
 			sizeof (PE_(image_export_directory))) == -1) {
 		eprintf ("Error: read (export directory)\n");
+		free (bin->export_directory);
+		bin->export_directory = NULL;
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -657,9 +659,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	export_dir_vaddr = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
 
-	if (bin->export_directory) {
+	if (bin->export_directory && bin->export_directory->NumberOfNames<0xfff) {
 		exports_sz = (bin->export_directory->NumberOfNames + 1) \
-			* sizeof(struct r_bin_pe_export_t);
+			* sizeof (struct r_bin_pe_export_t);
 		if (!(exports = malloc (exports_sz)))
 			return NULL;
 		if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(
@@ -775,7 +777,6 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				break;
 			curr_import_dir++;
 			if ((void*)curr_import_dir>= last) { 
-				eprintf ("EOF\n");
 				break;
 			}
 		}
@@ -876,7 +877,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
 			if (len < 0) {
-				eprintf ("Error: read (libs - import dirs)\n");
+				eprintf ("Error: read (libs - delay import dirs)\n");
 				break;
 			}
 			libs[index].name[len] = '\0';
