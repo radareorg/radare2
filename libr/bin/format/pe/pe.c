@@ -171,6 +171,32 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf ("Error: read (dos header)\n");
 		return R_FALSE;
 	}
+	#if R_BIN_PE64
+	sdb_num_set (bin->kv, "pe_nt_image_headers64.offset", bin->dos_header->e_lfanew, 0);
+	sdb_set (bin->kv, "pe_nt_image_headers64.format", "[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header64)optionalHeader", 0);
+	sdb_set (bin->kv, "pe_image_optional_header64.format", "wbbxxxxxqxxwwwwwwxxxxwwqqqqxx[16]?"
+					  " magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData"
+					  " sizeOfUninitializedData addressOfEntryPoint baseOfCode imageBase"
+					  " sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion"
+					  " majorImageVersion minorImageVersion majorSubsystemVersion minorSubsystemVersion"
+					  " win32VersionValue sizeOfImage sizeOfHeaders checkSum subsystem dllCharacteristics"
+					  " sizeOfStackReserve sizeOfStackCommit sizeOfHeapReserve sizeOfHeapCommit loaderFlags"
+					  " numberOfRvaAndSizes (pe_image_data_directory)dataDirectory", 0);
+	#else
+	sdb_num_set (bin->kv, "pe_nt_image_headers32.offset", bin->dos_header->e_lfanew, 0);
+	sdb_set (bin->kv, "pe_nt_image_headers32.format", "[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header32)optionalHeader", 0);
+	sdb_set (bin->kv, "pe_image_optional_header32.format", "wbbxxxxxxxxxwwwwwwxxxxwwxxxxxx[16]?"
+					  " magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData"
+					  " sizeOfUninitializedData addressOfEntryPoint baseOfCode baseOfData imageBase"
+					  " sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion"
+					  " majorImageVersion minorImageVersion majorSubsystemVersion minorSubsystemVersion"
+					  " win32VersionValue sizeOfImage sizeOfHeaders checkSum subsystem dllCharacteristics"
+					  " sizeOfStackReserve sizeOfStackCommit sizeOfHeapReserve sizeOfHeapCommit loaderFlags numberOfRvaAndSizes"
+					  " (pe_image_data_directory)dataDirectory", 0);
+	#endif
+	sdb_set (bin->kv, "pe_image_file_header.format", "wwxxxww"
+					  " machine numberOfSections timeDateStamp pointerToSymbolTable"
+					  " numberOfSymbols sizeOfOptionalHeader characteristics", 0);
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
 			return R_FALSE;
