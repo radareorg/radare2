@@ -811,7 +811,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			return ret; // -1 ?
 
 		nrel = ((int)bin->shdr[i].sh_size / (int)tsize);
-		ut32 relsz = (ut32) (int)nrel * (int)sizeof (Elf_(Rela));
+		ut32 relsz = (ut32) (int)(nrel+1) * (int)sizeof (Elf_(Rela));
 		if ((rel = (Elf_(Rela)*)malloc (relsz)) == NULL) {
 			perror ("malloc (rel)");
 			free (sym);
