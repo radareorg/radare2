@@ -37,6 +37,8 @@ typedef struct r_print_t {
 	int (*printf)(const char *str, ...);
 	int (*disasm)(void *p, ut64 addr);
 	int (*oprintf)(const char *str, ...);
+	char* (*get_bitfield)(void *user, const char *name, ut64 value);
+	char* (*get_enumname)(void *user, const char *name, ut64 value);
 	int interrupt;
 	int big_endian;
 	int width;

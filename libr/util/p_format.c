@@ -32,18 +32,21 @@ static void print_format_help(RPrint *p) {
 	" e - temporally swap endian\n"
 	//" D - double (8 bytes)\n"
 	" f - float value (4 bytes)\n"
-	" c - char (signed byte)\n"
 	" b - byte (unsigned)\n"
-	" B - show 10 first bytes of buffer\n" // B must be for binary ??
+	" B - resolve enum bitfield (see t?)\n" // B must be for binary ??
+	" c - char (signed byte)\n"
+	" E - resolve enum name `pf E (Foo)type`\n" // B must be for binary ??
 	" X - show n hexpairs (default n=1)"
 	" i - %%i integer value (4 bytes)\n"
 	" w - word (2 bytes unsigned short in hex)\n"
 	" q - quadword (8 bytes)\n"
 	" p - pointer reference (2, 4 or 8 bytes)\n"
+	" T - show Ten first bytes of buffer\n" // B must be for binary ??
 	" d - 0x%%08x hexadecimal value (4 bytes)\n"
 	" D - disassemble one opcode\n"
 	" o - 0x%%08o octal value (4 byte)\n"
 	" x - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
+	" X - show formatted hexpairs\n" // B must be for binary ??
 	" z - \\0 terminated string\n"
 	" Z - \\0 terminated wide string\n"
 	" s - 32bit pointer to string (4 bytes)\n"
@@ -683,11 +686,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'X':
-				size = r_print_format_hexpairs(p, endian, MUSTSET,
+				size = r_print_format_hexpairs (p, endian, MUSTSET,
 					setval, seeki, buf, size);
 				i += size;
 				break;
-			case 'B':
+			case 'T':
 				if(r_print_format_10bytes(p, MUSTSET,
 					setval, seeki, addr, buf) == 0)
 					i += (size==-1) ? 4 : 4*size;
@@ -770,10 +773,70 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (r_print_format_ptrstring (p, seeki, addr64, addr, 1) == 0)
 					i += (size==-1) ? 8 : 8*size;
 				break;
+			case 'B': // resolve bitfield
+				{
+				char *structname, *osn;
+				char *bitfield = NULL;
+				structname = osn = strdup (r_str_word_get0 (args, idx-1));
+				if (*structname == '(') {
+					name = strchr (structname, ')');
+				} else {
+					eprintf ("Struct name missing (%s)\n", structname);
+					free (structname);
+					goto beach;
+				}
+				structname++;
+				if (name) *(name++) = '\0';
+				else eprintf ("No ')'\n");
+
+				// TODO: add a callback in RPrint to resolve a bitfield
+				if (p->get_bitfield) 
+					bitfield = p->get_bitfield (p->user, structname, addr);
+				if (bitfield && *bitfield) {
+					p->printf (" %s (enum) = %s\n", name, bitfield);
+				} else {
+					p->printf (" %s (enum) = `tb %s %x`\n",
+						name, structname, addr);
+				}
+				i+= 4; //(isptr) ? 4 : s;
+				free (osn);
+				free (bitfield);
+				}
+				break;
+			case 'E': // resolve enum
+				{
+				char *enumname, *osn;
+				char *enumvalue = NULL;
+				enumname = osn = strdup (r_str_word_get0 (args, idx-1));
+				if (*enumname == '(') {
+					name = strchr (enumname, ')');
+				} else {
+					eprintf ("Struct name missing (%s)\n", enumname);
+					free (enumname);
+					goto beach;
+				}
+				enumname++;
+				if (name) *(name++) = '\0';
+				else eprintf ("No ')'\n");
+				// TODO: add a callback in RPrint to resolve an enum
+				if (p->get_enumname) 
+					enumvalue = p->get_enumname (p->user, enumname, addr);
+				if (enumvalue && *enumvalue) {
+					p->printf (" %s (enum) = %s %s\n", name, enumname, enumvalue);
+				} else {
+					p->printf (" %s (bitfield) = `te %s %x`\n",
+						name, enumname, addr);
+				}
+				i+= 4; //(isptr) ? 4 : s;
+				free (osn);
+				free (enumvalue);
+				}
+				break;
 			case '?':
 				{
 				int s;
-				char *structname = strdup (r_str_word_get0 (args, idx-1));
+				char *structname, *osn;
+				structname = osn = strdup (r_str_word_get0 (args, idx-1));
 				if (*structname == '(') {
 					name = strchr (structname, ')');
 				} else {
@@ -792,7 +855,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				i+= (isptr) ? 4 : s;
 				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 				if (flag) slide-=STRUCTFLAG;
-				free (structname);
+				free (osn);
 				break;
 				}
 			default:

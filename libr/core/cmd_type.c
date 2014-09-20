@@ -9,6 +9,8 @@ static void show_help(RCore *core) {
 		"t-",  " <name>",  "Delete types by its name",
 		"t-*", "",         "Remove all types",
 		//"t-!", "",          "Use to open $EDITOR",
+		"tb",  " <enum> <value>","Show matching enum bitfield for given number",
+		"te",  " <enum> <value>","Show name for given enum number",
 		"td",  " <string>","Load types from string",
 		"td-", "<name>",   "Undefine type by name",
 		"tf",  " <addr>",  "View linked type at given address",
@@ -16,6 +18,7 @@ static void show_help(RCore *core) {
 		//"to",  "",         "List opened files",
 		"to",  " -",       "Open cfg.editor to load types",
 		"to",  " <path>",  "Load types from C header file",
+		"tk",  " <sdb-query>", "Perform sdb query",
 		"ts",  " <k>=<v>", "Set fields at curseek linked type",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL
@@ -33,6 +36,11 @@ static int cmd_type(void *data, const char *input) {
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
+	case 'k':
+		if (input[1]==' ') {
+			sdb_query (core->anal->sdb_types, input+2);
+		} else sdb_query (core->anal->sdb_types, "*");
+		break;
 	case 's':
 	{
 		char *q, *p, *o, *e;
@@ -56,13 +64,70 @@ static int cmd_type(void *data, const char *input) {
 		free (o);
 	}
 		break;
+	case 'b':
+		{
+	int i;
+		char *p, *s = strdup (input+2);
+		const char *isenum;
+		p = strchr (s, ' ');
+		if (p) {
+			*p++ = 0;
+			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
+			if (isenum && !strcmp (isenum, "enum")) {
+				ut32 num = (ut32)r_num_math (core->num, p);
+				for (i=0; i< 32; i++) {
+					if (num & (1<<i)) {
+						const char *q = sdb_fmt (0, "%s.0x%x", s, (1<<i));
+						const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
+						if (res) r_cons_printf ("%s | ", res);
+						else r_cons_printf ("0x%x | ", (1<<i));
+						
+					}
+				}
+				r_cons_printf ("0\n");
+			} else {
+				eprintf ("This is not an enum\n");
+			}
+			free (s);
+		} else {
+			eprintf ("Missing value\n");
+		}
+		}
+		break;
+	case 'e':
+		{
+		char *p, *s = strdup (input+2);
+		const char *isenum;
+		p = strchr (s, ' ');
+		if (p) {
+			*p++ = 0;
+			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
+			if (isenum && !strcmp (isenum, "enum")) {
+				const char *q = sdb_fmt (0, "%s.0x%x", s, (ut32)r_num_math (core->num, p));
+				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
+				if (res)
+					r_cons_printf ("%s\n", res);
+			} else {
+				eprintf ("This is not an enum\n");
+			}
+			free (s);
+		} else {
+			eprintf ("Missing value\n");
+		}
+		}
+		break;
 	case ' ':
 	{
-		char *fmt = r_anal_type_format (core->anal, input +1);
-		if (fmt) {
-			r_cons_printf ("pf %s\n", fmt);
-			free (fmt);
-		} else eprintf ("Cannot find '%s' type\n", input+1);
+		const char *isenum = sdb_const_get (core->anal->sdb_types, input+2, 0);
+		if (isenum && !strcmp (isenum, "enum")) {
+			eprintf ("IS ENUM! \n");
+		} else {
+			char *fmt = r_anal_type_format (core->anal, input +1);
+			if (fmt) {
+				r_cons_printf ("pf %s\n", fmt);
+				free (fmt);
+			} else eprintf ("Cannot find '%s' type\n", input+1);
+		}
 	}
 		break;
 #if 0
@@ -72,8 +137,6 @@ static int cmd_type(void *data, const char *input) {
 		break;
 #endif
 	case 0:
-		// TODO: use r_cons here
-		//sdb_list (core->anal->sdb_types);
 		sdb_foreach (core->anal->sdb_types, sdbforcb, core);
 		break;
 	case 'o':
@@ -120,7 +183,7 @@ static int cmd_type(void *data, const char *input) {
 		} else
 		if (input[1] == ' ') {
 			char tmp[256];
-			snprintf (tmp, sizeof (tmp), "%s;", input+2);
+			snprintf (tmp, sizeof (tmp)-1, "%s;", input+2);
 			//const char *string = input + 2;
 			//r_anal_str_to_type (core->anal, string);
 			char *out = r_parse_c_string (tmp);
@@ -196,10 +259,7 @@ static int cmd_type(void *data, const char *input) {
 		 }
 		break;
 	case '?':
-		if (input[1]) {
-			sdb_query (core->anal->sdb_types, input+1);
-		} else show_help(core);
-
+		show_help (core);
 		break;
 	}
 	return R_TRUE;

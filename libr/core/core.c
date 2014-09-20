@@ -503,15 +503,53 @@ static void update_sdb(RCore *core) {
 	}
 }
 
+// dupped in cmd_type.c
+static char *getenumname(void *_core, const char *name, ut64 val) {
+	const char *isenum;
+	RCore *core = (RCore*)_core;
+	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
+	if (isenum && !strcmp (isenum, "enum")) {
+		const char *q = sdb_fmt (0, "%s.0x%x", name, val);
+		return sdb_get (core->anal->sdb_types, q, 0);
+	} else {
+		eprintf ("This is not an enum\n");
+	}
+	return NULL;
+}
+
+static char *getbitfield(void *_core, const char *name, ut64 val) {
+	const char *isenum;
+	int i;
+	RCore *core = (RCore*)_core;
+	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
+	if (isenum && !strcmp (isenum, "enum")) {
+		for (i=0; i< 32; i++) {
+			if (val & (1<<i)) {
+				const char *q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
+				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
+				if (res) r_cons_printf ("%s | ", res);
+				else r_cons_printf ("0x%x | ", (1<<i));
+
+			}
+		}
+		r_cons_printf ("0\n");
+	} else {
+		eprintf ("This is not an enum\n");
+	}
+	return NULL;
+}
+
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->zerosep = R_FALSE;
 	core->config = NULL;
-	core->print = r_print_new ();
 	core->http_up = R_FALSE;
+	core->print = r_print_new ();
 	core->print->user = core;
+	core->print->get_enumname = getenumname;
+	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;
 	core->print->printf = (void *)r_cons_printf;
 	core->print->write = (void *)r_cons_memcat;

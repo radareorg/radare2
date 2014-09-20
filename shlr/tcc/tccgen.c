@@ -881,6 +881,8 @@ static void struct_decl(CType *type, int u)
 			char *varstr = get_tok_str (v, NULL);
 			tcc_appendf ("%s.%s=0x%"PFMT64x"\n", name, varstr, c);
 			tcc_appendf ("%s.0x%"PFMT64x"=%s\n", name, c, varstr);
+// TODO: if token already defined throw an error
+//  if (varstr isInside (arrayOfvars)) { erprintf ("ERROR: DUP VAR IN ENUM\n"); }
 		}
                 /* enum symbols have static storage */
                 ss = sym_push(v, &llong_type, VT_CONST, c);
