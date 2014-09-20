@@ -669,7 +669,8 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 			symbols[j].last = 0;
 		}
 	}
-	for (i = bin->dysymtab.iundefsym; i < bin->dysymtab.iundefsym + bin->dysymtab.nundefsym; i++)
+	to = R_MIN (bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
+	for (i = bin->dysymtab.iundefsym; i < to; i++)
 		if (MACH0_(r_bin_mach0_parse_import_stub)(bin, &symbols[j], i))
 			symbols[j++].last = 0;
 	symbols[j].last = 1;
