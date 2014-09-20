@@ -1,9 +1,10 @@
+/* radare - LGPL - Copyright 2008-2014 pancake, inisider */
+
 #include <r_util.h>
 
 #include "coff.h"
 
-int r_coff_supported_arch (const ut8 *buf)
-{
+int r_coff_supported_arch (const ut8 *buf) {
 	ut16 arch = *(ut16*)buf;
 	int ret;
 
@@ -22,12 +23,16 @@ int r_coff_supported_arch (const ut8 *buf)
 }
 
 int r_coff_is_stripped (struct r_bin_coff_obj *obj) {
-	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
+	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
+		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
 const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
 	union { char name[8]; struct { ut32 zero; ut32 offset; }; } *p = ptr;
 
+return NULL;
+	if (!ptr)
+		return NULL;
 	if (p->zero)
 		return p->name;
 
@@ -56,6 +61,7 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
+	if (obj->symbols)
 	for (i = 0; i < obj->hdr.f_nsyms; i++) {
 		if ((!strcmp (obj->symbols[i].n_name, "_start") || 
 			!strcmp (obj->symbols[i].n_name, "start")) &&
@@ -63,6 +69,7 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 			return addr;
 	}
 
+	if (obj->symbols)
 	for (i = 0; i < obj->hdr.f_nsyms; i++) {
 		if ((!strcmp (obj->symbols[i].n_name, "_main") || 
 			!strcmp (obj->symbols[i].n_name, "main")) &&
@@ -71,6 +78,7 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	}
 
 	/* Still clueless ? Let's just use the address of .text */
+	if (obj->scn_hdrs)
 	for (i = 0; i < obj->hdr.f_nscns; i++) {
 		if (!strcmp (obj->scn_hdrs[i].s_name, ".text")) {
 			addr->paddr = obj->scn_hdrs[i].s_scnptr;

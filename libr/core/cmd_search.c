@@ -11,7 +11,7 @@ static unsigned int searchcount = 0;
 static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	RBinPlugin *plug;
 	ut8 buf[1024];
-	int sz = sizeof (buf);
+	int size, sz = sizeof (buf);
 
 	while (from <to) {
 		r_io_read_at (core->io, from, buf, sz);
@@ -19,15 +19,15 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 		if (plug) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n",
 				from, plug->name);
-#if TODO
 			// TODO: load the bin and calculate its size
 			if (plug->size) {
 				r_bin_load_io_at_offset_as_sz (core->bin,
 					core->file->desc, 0, 0, 0, core->offset,
 					plug->name, 4096);
-				eprintf ("Size %d\n", plug->size (core->bin));
+				size = plug->size (core->bin->cur);
+				if (size)
+					r_cons_printf ("size %d\n", size);
 			}
-#endif
 		}
 		from ++;
 	}

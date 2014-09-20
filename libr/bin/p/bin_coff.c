@@ -17,7 +17,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 
@@ -67,8 +67,8 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList *sections(RBinFile *arch)
-{
+static RList *sections(RBinFile *arch) {
+	char *coffname;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -79,10 +79,14 @@ static RList *sections(RBinFile *arch)
 	if (!ret)
 		return NULL;
 
+	if (obj && obj->scn_hdrs)
 	for (i = 0; i < obj->hdr.f_nscns; i++) {
 		ptr = R_NEW0 (RBinSection);
 
-		strncpy(ptr->name, r_coff_symbol_name (obj, &obj->scn_hdrs[i]), R_BIN_SIZEOF_STRINGS); 
+		coffname = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
+		if (!coffname)
+			return NULL;
+		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS); 
 
 		ptr->size = obj->scn_hdrs[i].s_size;
 		ptr->vsize = obj->scn_hdrs[i].s_size;
@@ -102,8 +106,8 @@ static RList *sections(RBinFile *arch)
 	return ret;
 }
 
-static RList *symbols(RBinFile *arch)
-{
+static RList *symbols(RBinFile *arch) {
+	char *coffname;
 	size_t i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
@@ -115,11 +119,14 @@ static RList *symbols(RBinFile *arch)
 
 	ret->free = free;
 
+	if (obj->symbols)
 	for (i = 0; i < obj->hdr.f_nsyms; i++) {
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
-
-		strncpy (ptr->name, r_coff_symbol_name (obj, &obj->symbols[i]), R_BIN_SIZEOF_STRINGS);
+		coffname = r_coff_symbol_name (obj, &obj->symbols[i]);
+		if (!coffname)
+			break;
+		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
 
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "", R_BIN_SIZEOF_STRINGS);
@@ -226,20 +233,18 @@ static RBinInfo *info(RBinFile *arch) {
 		}
 		break;
 	default:
-		strncpy(ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
+		strncpy (ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
 	}
 
 	return ret;
 }
 
-static RList *fields(RBinFile *arch)
-{
+static RList *fields(RBinFile *arch) {
 	return NULL;
 }
 
 
-static int size(RBinFile *arch)
-{
+static int size(RBinFile *arch) {
 	return 0;
 }
 
@@ -251,10 +256,19 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 2) {
-		if (r_coff_supported_arch(buf))
-			return R_TRUE;
-	}
+#if 0
+TODO: do more checks here to avoid false positives
+
+ut16 MACHINE 
+ut16 NSECTIONS
+ut32 DATE
+ut32 PTRTOSYMTABLE
+ut32 NUMOFSYMS
+ut16 OPTHDRSIZE
+ut16 CHARACTERISTICS
+#endif
+	if (buf && length >= 20)
+		return r_coff_supported_arch (buf);
 	return R_FALSE;
 }
 
