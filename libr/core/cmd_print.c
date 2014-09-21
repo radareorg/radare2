@@ -1055,7 +1055,8 @@ static int cmd_print(void *data, const char *input) {
 					buf = malloc (l+1);
 					r_core_read_at (core, core->offset, buf, l);
 				}
-				for (i=0; i<l; i++ ) {
+				for (i=0; i<l; i++) {
+					r_asm_set_pc (core->assembler, core->offset+i);
 					ret = r_asm_disassemble (core->assembler, &asmop,
 						buf+i, l-i);
 					if (ret<1) {
