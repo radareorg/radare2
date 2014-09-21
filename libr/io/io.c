@@ -751,6 +751,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->write_at = r_io_write_at;
 	bnd->size = r_io_size;
 	bnd->seek = r_io_seek;
+	bnd->is_valid_offset = r_io_is_valid_offset;
 
 	bnd->desc_open = r_io_open_nomap;
 	bnd->desc_close = r_io_close;
@@ -760,6 +761,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->desc_get_by_fd = r_io_desc_get;
 
 	bnd->section_add = r_io_section_add;
+
 	bnd->section_set_arch = r_io_section_set_archbits;
 	bnd->section_set_arch_bin_id = r_io_section_set_archbits_bin_id;
 

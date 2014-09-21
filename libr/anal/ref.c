@@ -4,8 +4,11 @@
 #include <r_util.h>
 #include <r_list.h>
 
-// XXX this .c wraps a reversed xrefs.c api.. this is dupping code. we must merge apis!
-// NOTE: This file uses the xrefs api which is sdb based
+// This file contains the reversed api for querying xrefs.c which
+// is implemented on top of sdb. Anyway, the sdbization is not
+// complete because there's still r_anal_ref_new() which doesnt
+// serializes with sdb_native
+
 R_API RAnalRef *r_anal_ref_new() {
 	RAnalRef *ref = R_NEW (RAnalRef);
 	if (ref) {
@@ -26,7 +29,6 @@ R_API void r_anal_ref_free(void *ref) {
 	free (ref);
 }
 
-// TODO: use sdb or hashmap for fucks sake
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 	r_anal_xrefs_set (anal, type, at, addr);
 	return R_TRUE;
@@ -41,8 +43,6 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr);
-// XXX: MAJOR SLOWDOWN PLZ FIX
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 	return r_anal_xrefs_get (anal, addr);
 }

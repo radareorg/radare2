@@ -32,9 +32,8 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	}
 	if (bb->op_bytes)
 		free (bb->op_bytes);
-	if (bb->switch_op) {
+	if (bb->switch_op)
 		r_anal_switch_op_free (bb->switch_op);
-	}
 #if R_ANAL_BB_HAS_OPS
 	if (bb->ops)
 		r_list_free (bb->ops);
@@ -143,7 +142,6 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	r_list_foreach (anal->fcns, iter, fcn)
 		r_list_foreach (fcn->bbs, iter2, bb)
 			if (r_anal_bb_is_in_offset (bb, off))
-			//if (off >= bb->addr && off < bb->addr + bb->size)
 				return bb;
 	return NULL;
 }

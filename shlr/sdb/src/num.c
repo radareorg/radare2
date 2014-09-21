@@ -15,6 +15,13 @@ SDB_API ut64 sdb_num_get(Sdb *s, const char *key, ut32 *cas) {
 	return sdb_atoi (v);
 }
 
+SDB_API int sdb_num_add(Sdb *s, const char *key, ut64 v, ut32 cas) {
+	char *val, b[128];
+	int numbase = sdb_num_base (sdb_const_get (s, key, NULL));
+	val = sdb_itoa (v, b, numbase);
+	return sdb_add (s, key, val, cas);
+}
+
 SDB_API int sdb_num_set(Sdb *s, const char *key, ut64 v, ut32 cas) {
 	char *val, b[128];
 	int numbase = sdb_num_base (sdb_const_get (s, key, NULL));

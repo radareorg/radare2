@@ -104,8 +104,7 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 R_API RAnal *r_anal_free(RAnal *a) {
 	if (!a) return NULL;
 	/* TODO: Free anals here */
-	free (a->cpu);
-	a->cpu = NULL;
+	R_FREE (a->cpu);
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
@@ -245,10 +244,9 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 R_API RList* r_anal_get_fcns (RAnal *anal) { return anal->fcns; }
 
 R_API int r_anal_project_load(RAnal *anal, const char *prjfile) {
-	if (!prjfile || !*prjfile)
-		return R_FALSE;
-	r_anal_xrefs_load (anal, prjfile);
-	return R_TRUE;
+	if (prjfile && *prjfile)
+		return r_anal_xrefs_load (anal, prjfile);
+	return R_FALSE;
 }
 
 R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {

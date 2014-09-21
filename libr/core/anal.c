@@ -434,7 +434,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
 				if (split)
-					ret = r_anal_fcn_overlap_bb (fcn, bb);
+					ret = r_anal_fcn_bb_overlaps (fcn, bb);
 				if (ret == R_ANAL_RET_NEW) {
 					r_list_append (fcn->bbs, bb);
 					fail = bb->fail;

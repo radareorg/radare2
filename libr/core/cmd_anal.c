@@ -1834,9 +1834,9 @@ if (ret) {
 			break;
 		default:{
 			const char* help_msg[] = {
-			"Usage:", "a", "",
+			"Usage:", "a", "[8adefFghoprxstc] [...]",
 			"a8", " [hexpairs]", "analyze bytes",
-			"aa", "", "analyze all (fcns + bbs)",
+			"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 			"ad", "", "analyze data trampoline (wip)",
 			"ad", " [from] [to]", "analyze data pointers to (from-to)",
 			"ae", " [expr]", "analyze opcode eval expression (see ao)",
@@ -1850,7 +1850,7 @@ if (ret) {
 			"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
 			"as", " [num]", "analyze syscall using dbg.reg",
 			"at", "[trd+-%*?] [.]", "analyze execution traces",
-			"ac", "[cycles]", "analyze which op could be executed in [cycles] cycles, only cycles supporting archs",
+			"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 			//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
 			NULL
 			};

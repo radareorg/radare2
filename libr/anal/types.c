@@ -172,3 +172,56 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t) {
 	}
 	return NULL;
 }
+
+#if 0
+//NOTES FROM THE OLD CPARSE IMPLEMENTATION
+enum {
+	R_ANAL_TYPE_VARIABLE = 1,
+	R_ANAL_TYPE_POINTER = 2,
+	R_ANAL_TYPE_ARRAY = 3,
+	R_ANAL_TYPE_STRUCT = 4,
+	R_ANAL_TYPE_UNION = 5,
+	R_ANAL_TYPE_ALLOCA = 6,
+	R_ANAL_TYPE_FUNCTION = 7,
+	R_ANAL_TYPE_ANY = 8,
+};
+
+// [0:3] bits - place to store variable size
+#define R_ANAL_VAR_TYPE_SIZE_MASK 0xF
+
+enum {
+	R_ANAL_VAR_TYPE_CHAR = 1,
+	R_ANAL_VAR_TYPE_BYTE = 2,
+	R_ANAL_VAR_TYPE_WORD = 3,
+	R_ANAL_VAR_TYPE_DWORD = 4,
+	R_ANAL_VAR_TYPE_QWORD = 5,
+	R_ANAL_VAR_TYPE_SHORT = 6,
+	R_ANAL_VAR_TYPE_INT = 7,
+	R_ANAL_VAR_TYPE_LONG = 8,
+	R_ANAL_VAR_TYPE_LONGLONG = 9,
+	R_ANAL_VAR_TYPE_FLOAT = 10,
+	R_ANAL_VAR_TYPE_DOUBLE = 11,
+	R_ANAL_VAR_TYPE_VOID = 12,
+};
+
+
+// [4:7] bits - place to store sign of variable
+#define R_ANAL_VAR_TYPE_SIGN_MASK 0xF0
+#define R_ANAL_VAR_TYPE_SIGN_SHIFT 4
+
+enum {
+	R_ANAL_VAR_TYPE_SIGNED = 1,
+	R_ANAL_VAR_TYPE_UNSIGNED = 2,
+};
+
+// [8:11] bits - place to store variable modifiers/parameters
+#define R_ANAL_VAR_TYPE_MODIFIER_MASK 0xF00
+#define R_ANAL_VAR_TYPE_MODIFIER_SHIFT 8
+
+enum {
+	R_ANAL_VAR_TYPE_REGISTER = 1,
+	R_ANAL_VAR_TYPE_CONST = 2,
+	R_ANAL_VAR_TYPE_STATIC = 3,
+	R_ANAL_VAR_TYPE_VOLATILE = 4,
+};
+#endif

@@ -28,35 +28,52 @@ static void XREFKEY(char * const key, const size_t key_len,
 	snprintf (key, key_len, "%s.%s.0x%"PFMT64x, kind, _sdb_type, addr);
 }
 
-R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
+R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
         char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
+	if (!db) return R_FALSE;
 	path = r_str_home (db);
+	if (!path) {
+		free (db);
+		return R_FALSE;
+	}
 	sdb_free (DB);
 	DB = sdb_new (path, "xrefs", 0);
+	if (!DB) {
+		free (db);
+		free (path);
+		return R_FALSE;
+	}
 	sdb_ns_set (anal->sdb, "xrefs", DB);
 	free (path);
 	free (db);
+	return R_TRUE;
 }
 
 R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 	sdb_sync (anal->sdb_xrefs);
 }
 
-R_API void r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
+R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
 			     ut64 from, ut64 to) {
 	char key[32];
+	if (!anal || !DB)
+		return R_FALSE;
 	XREFKEY (key, sizeof (key), "ref", type, from);
 	sdb_array_add_num (DB, key, to, 0);
 	XREFKEY (key, sizeof (key), "xref", type, to);
 	sdb_array_add_num (DB, key, from, 0);
+	return R_TRUE;
 }
 
-R_API void r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
+R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	char key[32];
+	if (!anal || !DB)
+		return R_FALSE;
 	XREFKEY (key, sizeof (key), "ref", type, from);
 	sdb_array_remove_num (DB, key, to, 0);
 	XREFKEY (key, sizeof (key), "xref", type, to);
 	sdb_array_remove_num (DB, key, from, 0);
+	return R_TRUE;
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
@@ -110,9 +127,11 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	return list;
 }
 
-R_API void r_anal_xrefs_init (RAnal *anal) {
+R_API int r_anal_xrefs_init (RAnal *anal) {
 	sdb_reset (DB);
+	if (!DB) return R_FALSE;
 	sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
+	return R_TRUE;
 }
 
 static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {

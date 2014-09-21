@@ -189,8 +189,9 @@ typedef int (*RIODescClose)(RIO *io, RIODesc *);
 typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
 typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset);
 typedef ut64 (*RIODescSize)(RIO *io, RIODesc *desc);
+typedef int (*RIOIsValidOffset)(RIO *io, ut64 addr);
 
-typedef void (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
+typedef RIOSection* (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 typedef int (*RIOSectionSetArchBinID)(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
 typedef int (*RIOSectionSetArchBin)(RIO *io, ut64 addr, const char *arch, int bits);
 
@@ -204,6 +205,7 @@ typedef struct r_io_bind_t {
 	RIOWriteAt write_at;
 	RIOSize size;
 	RIOSeek seek;
+	RIOIsValidOffset is_valid_offset;
 
 	RIOSectionAdd section_add;
 	RIOSectionSetArchBin section_set_arch;

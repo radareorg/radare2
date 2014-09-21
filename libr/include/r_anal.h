@@ -53,35 +53,6 @@ typedef struct r_anal_meta_item_t {
 #define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_VAR_TYPE_UNSIGNED)?0:1
 
 enum {
-	R_ANAL_TYPE_VARIABLE = 1,
-	R_ANAL_TYPE_POINTER = 2,
-	R_ANAL_TYPE_ARRAY = 3,
-	R_ANAL_TYPE_STRUCT = 4,
-	R_ANAL_TYPE_UNION = 5,
-	R_ANAL_TYPE_ALLOCA = 6,
-	R_ANAL_TYPE_FUNCTION = 7,
-	R_ANAL_TYPE_ANY = 8,
-};
-
-// [0:3] bits - place to store variable size
-#define R_ANAL_VAR_TYPE_SIZE_MASK 0xF
-
-enum {
-	R_ANAL_VAR_TYPE_CHAR = 1,
-	R_ANAL_VAR_TYPE_BYTE = 2,
-	R_ANAL_VAR_TYPE_WORD = 3,
-	R_ANAL_VAR_TYPE_DWORD = 4,
-	R_ANAL_VAR_TYPE_QWORD = 5,
-	R_ANAL_VAR_TYPE_SHORT = 6,
-	R_ANAL_VAR_TYPE_INT = 7,
-	R_ANAL_VAR_TYPE_LONG = 8,
-	R_ANAL_VAR_TYPE_LONGLONG = 9,
-	R_ANAL_VAR_TYPE_FLOAT = 10,
-	R_ANAL_VAR_TYPE_DOUBLE = 11,
-	R_ANAL_VAR_TYPE_VOID = 12,
-};
-
-enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_STRING = 1,
 	R_ANAL_DATA_TYPE_WIDE_STRING = 2,
@@ -90,26 +61,6 @@ enum {
 	R_ANAL_DATA_TYPE_INVALID = 5,
 	R_ANAL_DATA_TYPE_HEADER = 6,
 	R_ANAL_DATA_TYPE_UNKNOWN = 7,
-};
-
-// [4:7] bits - place to store sign of variable
-#define R_ANAL_VAR_TYPE_SIGN_MASK 0xF0
-#define R_ANAL_VAR_TYPE_SIGN_SHIFT 4
-
-enum {
-	R_ANAL_VAR_TYPE_SIGNED = 1,
-	R_ANAL_VAR_TYPE_UNSIGNED = 2,
-};
-
-// [8:11] bits - place to store variable modifiers/parameters
-#define R_ANAL_VAR_TYPE_MODIFIER_MASK 0xF00
-#define R_ANAL_VAR_TYPE_MODIFIER_SHIFT 8
-
-enum {
-	R_ANAL_VAR_TYPE_REGISTER = 1,
-	R_ANAL_VAR_TYPE_CONST = 2,
-	R_ANAL_VAR_TYPE_STATIC = 3,
-	R_ANAL_VAR_TYPE_VOLATILE = 4,
 };
 
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
@@ -1049,7 +1000,7 @@ R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
 
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
-R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb);
+R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr);
@@ -1071,8 +1022,8 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad);
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal);
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
-R_API void r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
-R_API void r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
+R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
+R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
 R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile);
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
@@ -1113,8 +1064,8 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 /* project */
 R_API int r_anal_project_load(RAnal *anal, const char *prjfile);
 R_API int r_anal_project_save(RAnal *anal, const char *prjfile);
-R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile);
-R_API void r_anal_xrefs_init (RAnal *anal);
+R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile);
+R_API int r_anal_xrefs_init (RAnal *anal);
 
 #define R_ANAL_THRESHOLDFCN 0.7F
 #define R_ANAL_THRESHOLDBB 0.7F
@@ -1221,9 +1172,7 @@ R_API void r_anal_hint_set_size (RAnal *a, ut64 addr, int length);
 R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
-
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);
-
 
 /* switch.c APIs */
 R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val);
