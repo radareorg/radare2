@@ -10,12 +10,16 @@ static RNum *num;
 static int help ();
 static ut64 flags = 0;
 static int use_stdin ();
+static int force_mode = '0';
 static int rax (char *str, int len, int last);
 
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
 	const char *str = (char*) &n;
 	char strbits[65];
+
+	if (force_mode)
+		mode = force_mode;
 
 	if (flags & 2) {
 		/* swap endian */
@@ -39,6 +43,9 @@ static int format_output (char mode, const char *s) {
 			r_num_to_trits (strbits, n);
 			printf ("%st\n", strbits);
 		} else	printf ("0t\n");
+		break;
+	default:
+		eprintf ("Unknown output mode %d\n", mode);
 		break;
 	}
 	return R_TRUE;
@@ -89,6 +96,17 @@ static int rax (char *str, int len, int last) {
 		len = strlen (str);
 	if ((flags & 4))
 		goto dotherax;
+	if (*str=='=') {
+		switch (atoi (str+1)) {
+		case 2: force_mode = 'B'; break;
+		case 3: force_mode = 'T'; break;
+		case 8: force_mode = 'O'; break;
+		case 10: force_mode = 'I'; break;
+		case 16: force_mode = '0'; break;
+		case 0: force_mode = str[1]; break;
+		}
+		return R_TRUE;
+	}
 	if (*str=='-') {
 		while (str[1] && str[1]!=' ') {
 			switch (str[1]) {
