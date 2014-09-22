@@ -763,7 +763,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 			} else if (
 			((magic_value & 0x40) && *ins_token == 'X' && strchr(reg_arg, 'r'))
 			    ||
-			   ((magic_value & 0x80000000) 0 && *ins_token == 'Y' && strchr(reg_arg, 'w'))
+			   ((magic_value & 0x80000000) && *ins_token == 'Y' && strchr(reg_arg, 'w'))
 
 			) {
 				aux = strcat_dup(aux, ")", 1);
