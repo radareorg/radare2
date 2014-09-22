@@ -1369,6 +1369,7 @@ static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 			if (ds->counter<9) {
 				int found = 0;
 				for (i=0; i<ds->counter+1; i++) {
