@@ -53,6 +53,7 @@ static int format_output (char mode, const char *s) {
 
 static int help () {
 	printf (
+		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int   ->  hex           ;  rax2 10\n"
 		"  hex   ->  int           ;  rax2 0xa\n"
 		"  -int  ->  hex           ;  rax2 -77\n"
