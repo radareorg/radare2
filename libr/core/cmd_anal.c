@@ -666,9 +666,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		 break;
 	default:
-		 r_core_anal_fcn (core, core->offset, UT64_MAX,
+		{
+		// first undefine
+		//r_core_anal_undefine (core, core->offset);
+		/* resize function if overlaps */
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset);
+			if (fcn) 
+				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
+		}
+		r_core_anal_fcn (core, core->offset, UT64_MAX,
 			R_ANAL_REF_TYPE_NULL,
-			 r_config_get_i (core->config, "anal.depth"));
+				r_config_get_i (core->config, "anal.depth"));
+		}
 	}
 	return R_TRUE;
 }
@@ -1227,8 +1237,9 @@ if (ret) {
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'f':
-		if (!cmd_anal_fcn (core, input))
+		if (!cmd_anal_fcn (core, input)) {
 			return R_FALSE;
+		}
 		break;
 	case 'g':
 		switch (input[1]) {

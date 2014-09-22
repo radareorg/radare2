@@ -1428,13 +1428,21 @@ R_API void r_core_visual_define (RCore *core) {
 		r_meta_add (core->anal, R_META_TYPE_CODE, off, off+plen, "");
 		break;
 	case 'u':
+		r_core_anal_undefine (core, off);
+#if 0
 		r_flag_unset_i (core->flags, off, NULL);
 		f = r_anal_fcn_find (core->anal, off, 0);
 		r_anal_fcn_del_locs (core->anal, off);
 		if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
 		r_anal_fcn_del (core->anal, off);
+#endif
 		break;
 	case 'f':
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset);
+			if (fcn) 
+				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
+		}
 		{
 			int funsize = 0;
 			int depth = r_config_get_i (core->config, "anal.depth");

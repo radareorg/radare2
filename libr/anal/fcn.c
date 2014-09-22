@@ -6,7 +6,7 @@
 
 #define FCN_DEPTH 32
 
-#define JMP_IS_EOB 0
+#define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 512
 #define CALL_IS_EOB 0
 
@@ -459,8 +459,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) fcn->addr = addr;
-	if (anal->cur && anal->cur->fcn){
-		int result = anal->cur->fcn(anal, fcn, addr, buf, len, reftype);
+	if (anal->cur && anal->cur->fcn) {
+		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
 	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);

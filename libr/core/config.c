@@ -924,7 +924,11 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
 	SETPREF("scr.colorops", "true", "Colorize in numbers/registers in opcodes");
-	SETPREF("scr.responsive", "true", "Auto-adjust asm. and hex. depending on screen size");
+#if __ANDROID__
+	SETPREF("scr.responsive", "true", "Auto-adjust Visual depending on screen (disable asm.bytes and other)");
+#else
+	SETPREF("scr.responsive", "false", "Auto-adjust Visual depending on screen (disable asm.bytes and other)");
+#endif
 	SETPREF("scr.wheel", "true", "Enable the use of mouse wheel in visual mode");
 	SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
