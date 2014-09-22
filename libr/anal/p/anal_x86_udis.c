@@ -170,25 +170,24 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 }
 
 static st64 getval(ud_operand_t *op) {
-	int bits = 32; // XXX
+	int bits = op->size;
 	switch (op->type) {
 	case UD_OP_PTR:
 		return (op->lval.ptr.seg<<4) + (op->lval.ptr.off & 0xFFFF);
 	default:
 		break;
 	}
-//eprintf ("BITS %d\n", op->signed_lval);
 	if (!bits) bits = 32;
 	if (op->signed_lval) { // TODO: honor sign
 		switch (bits) {
-		case 8: return (st64)(char)(255-op->lval.sbyte);
+		case 8: return (st64)(char) (op->lval.sbyte);
 		case 16: return (st64)(short) op->lval.uword;
 		case 32: return op->lval.udword;
 		case 64: return op->lval.uqword;
 		}
 	} else {
 		switch (bits) {
-		case 8: return (st64)(char)(255-op->lval.sbyte);
+		case 8: return (st64)(char)(255-op->lval.sbyte); // XXX?
 		case 16: return (st64)(short) op->lval.uword;
 		case 32: return op->lval.udword;
 		case 64: return op->lval.uqword;
