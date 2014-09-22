@@ -614,9 +614,11 @@ typedef struct r_anal_var_access_t {
 // generic for args and locals
 typedef struct r_anal_var_t {
 	char *name;		/* name of the variable */
-	char *type; // arg or local
+	char *type; // cparse type of the variable
+	char kind; // 'a'rg, 'v'ar ..
 	ut64 addr;		// not used correctly?
 	ut64 eaddr;		// not used correctly?
+	int size;
 	int delta;		/* delta offset inside stack frame */
 	int scope;		/* global, local... | in, out... */
 	/* probably dupped or so */
@@ -925,6 +927,7 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
 R_API int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 addr);
 
 /* op.c */
+R_API const char *r_anal_stackop_tostring (int s);
 R_API RAnalOp *r_anal_op_new();
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_fini(RAnalOp *op);
@@ -1055,8 +1058,7 @@ R_API void r_anal_var_access_free(void *access);
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
-//R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
-R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, const char *kind, int scope, int index);
+R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);

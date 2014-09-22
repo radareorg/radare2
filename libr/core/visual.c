@@ -4,6 +4,7 @@
 
 #define NPF 6
 static int blocksize = 0;
+static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
 	"x", "pd $r",
@@ -883,7 +884,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor-=cols;
 				ocursor-=cols;
 			}
-		} else r_core_seek (core, core->offset+obs, 1);
+		} else {
+			if (last_printed_address) {
+				r_core_seek (core, last_printed_address, 1);
+				//eprintf ("0x%llx\n", last_printed_address);
+			} else {
+				r_core_seek (core, core->offset+obs, 1);
+			}
+		}
 		break;
 	case 'k':
 		if (curset) {
@@ -923,8 +931,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				}
 			}
 		} else {
-			ut64 at = (core->offset>obs)?core->offset-obs:0;
-			r_core_seek (core, at, 1);
+			if (last_printed_address > core->offset) {
+				int delta = (last_printed_address - core->offset);
+				r_core_seek (core, core->offset-delta, 1);
+			} else {
+				ut64 at = (core->offset>obs)?core->offset-obs:0;
+				r_core_seek (core, at, 1);
+			}
 		}
 		break;
 	case '[':
@@ -1310,6 +1323,7 @@ static void r_core_visual_refresh (RCore *core) {
 		r_core_visual_title (core, color);
 	}
 
+	core->screen_bounds = 1LL;
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
 		r_core_cmd (core, vcmd, 0);
@@ -1317,6 +1331,13 @@ static void r_core_visual_refresh (RCore *core) {
 		if (zoom) r_core_cmd0 (core, "pz");
 		else r_core_cmd0 (core, printfmt[PIDX]);
 	}
+// TODO: rename screen_bounds to offset_last ?
+	if (core->screen_bounds != 1LL) {
+		last_printed_address = core->screen_bounds;
+		r_cons_printf ("[0x%08"PFMT64x"..0x%08"PFMT64x"]\n",
+			core->offset, core->screen_bounds);
+	}
+	core->screen_bounds = 0LL; // disable screen bounds
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
 	/* this is why there's flickering */

@@ -39,6 +39,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	char *var_def;
 	if (!kind) kind ='v';
 	if (!type) type = "int";
+//eprintf ("VAR ADD 0x%llx  - %d\n", addr, delta);
 	switch (kind) {
 	case 'a':
 	case 'r':
@@ -81,11 +82,32 @@ R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope
 	return R_TRUE;
 }
 
-R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, const char *kind, int scope, int delta) {
-	RAnalVar *av = R_NEW0 (RAnalVar);
+R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
+	RAnalVar *av;
+	struct VarType vt;
+	RAnalFunction *fcn = r_anal_get_fcn_at (a, addr);
+	if (!fcn)
+		return NULL;
+	if (delta<0) {
+		kind = 'v';
+		delta = -delta;
+	}
+	char *vardef = sdb_get (DB, 
+		sdb_fmt (0, "var.0x%"PFMT64x".%c.%d.%d",
+			fcn->addr, kind, scope, delta), 0);
+	if (!vardef)
+		return NULL;
+	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
+
+	av = R_NEW0 (RAnalVar);
 	av->addr = addr;
 	av->scope = scope;
 	av->delta = delta;
+	av->name = strdup (vt.name);
+	av->size = vt.size;
+	av->type = strdup (vt.type);
+	
+	sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 	// TODO:
 	// get name from sdb
 	// get size from sdb
@@ -170,11 +192,9 @@ R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int 
 	return sdb_array_add_num (DB, var_global, xs_addr, 0);
 }
 
-// DONE
-// avx-
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delta) {
 	char key[128], key2[128];
-	if (scope>0) { // local
+	if (scope>0) { // local arg or var
 		SETKEY ("var.0x%"PFMT64x".%d.%d.%s", var_addr, scope, delta, "writes");
 		SETKEY2 ("var.0x%"PFMT64x".%d.%d.%s", var_addr, scope, delta, "reads");
 	} else { // global
@@ -227,55 +247,6 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 	return R_FALSE;
 }
 
-// XXX: move into core_anal?
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	RAnalVar *v;
-	RListIter *iter;
-	if (!anal || !fcn)
-		return;
-
-eprintf ("VAR LIST SHOW IS DEPRECATED\n");
-	r_list_foreach (fcn->vars, iter, v) {
-		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-#if 0
-			char *list = sdb_getf (DB, "fcn.0x%08"PFMT64x".%c", fcn->addr, 'a');
-			free (list);
-			list = sdb_getf (DB, "fcn.0x%08"PFMT64x".%c", fcn->addr, 'v');
-			free (list);
-			list = sdb_getf (DB, "fcn.0x%08"PFMT64x".%c", fcn->addr, 'r');
-			free (list);
-#endif
-#if 0
-			char *s = r_anal_type_field_to_string (anal, fcn->addr, v->name);
-			var a = ("frame.${addr}.${name}")
-			a[0] = "type"
-			a[1] = offset
-			a[2] = arraysize
-			eprintf ("%s\n", s);
-			free (s);
-			//ut32 value = r_var_dbg_read(v->delta);
-			if (v->type->type == R_ANAL_TYPE_ARRAY)
-				eprintf ("%s %s %s[%d] = ",
-					r_anal_var_scope_to_str (anal, v->scope),
-					r_anal_type_to_str (anal, v->type, ""),
-					v->name, (int)v->type->custom.a->count);
-			else
-				eprintf ("%s %s %s = ", r_anal_var_scope_to_str (anal, v->scope),
-					r_anal_type_to_str (anal, v->type, ""), v->name);
-			// TODO: implement r_var_dbg_read using r_vm or r_num maybe?? sounds dupped
-			// XXX: not fully implemented
-			eprintf ("0x%"PFMT64x, 0LL);
-			//r_var_print_value(anal, v);
-			/* TODO: detect pointer to strings and so on */
-			//if (string_flag_offset(NULL, buf, value, 0))
-			//	r_cons_printf(" ; %s\n", buf);
-			//else
-			eprintf ("\n"); //r_cons_newline();
-#endif
-		}
-	}
-}
-
 /* 0,0 to list all */
 R_API int r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind, ut64 addr, int delta) {
 	int count = 0;
@@ -295,16 +266,28 @@ R_API int r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind, ut64 addr, int
 					"var.0x%08"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
 				int delta = atoi (word+2);
+				if (vardef) {
 				sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 				sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 
+				a->printf ("%s %s %s @ %s%s%d\n",
+					kind=='v'?"var":"arg",
+					vt.type, vt.name, a->reg->name[R_REG_NAME_BP],
+					(kind=='v')?"-":"+",
+					delta);
 				//a->printf (" - (%s)(%s) = %d\n", vt.type, vt.name, vt.size);
-				a->printf (".t %s @ %s+%d # name: %s\n",
+#if 0
+				a->printf (".t %s @ %s%s%d # name: %s\n",
 					vt.type, a->reg->name[R_REG_NAME_BP],
+					(kind=='v')?"-":"+",
 					delta, vt.name);
+#endif
 
 				sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 				free (vardef);
+			} else {
+eprintf ("Cannot find '%s'\n", word);
+}
 				ptr = next;
 			} while (next);
 		}

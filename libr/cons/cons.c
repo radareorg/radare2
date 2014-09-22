@@ -550,6 +550,35 @@ R_API void r_cons_newline() {
 	//else r_cons_strcat ("\n");
 }
 
+/* return the aproximated x,y of cursor before flushing */
+R_API int r_cons_get_cursor(int *rows) {
+	int i, col = 0;
+	int row = 0;
+	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
+	for (i=0; i<I.buffer_len; i++) {
+		// ignore ansi chars, copypasta from r_str_ansi_len
+		if (I.buffer[i] == 0x1b) {
+			char ch2 = I.buffer[i+1];
+			char *str = I.buffer;
+			if (ch2 == '\\') {
+				i++;
+			} else if (ch2 == ']') {
+				if (!strncmp (str+2+5, "rgb:", 4))
+					i += 18;
+			} else if (ch2 == '[') {
+				for (++i; str[i]&&str[i]!='J'&& str[i]!='m'&&str[i]!='H';i++);
+			}
+		} else
+		if (I.buffer[i] == '\n') {
+			row++;
+			col = 0;
+		} else col++;
+	}
+	if (rows)
+		*rows = row;
+	return col;
+}
+
 R_API int r_cons_get_size(int *rows) {
 #if EMSCRIPTEN
 	I.columns = 80;
@@ -689,7 +718,6 @@ R_API void r_cons_set_last_interactive() {
 
 R_API void r_cons_set_title(const char *str) {
 	r_cons_printf ("\x1b]0;%s\007", str);
-	
 }
 
 R_API void r_cons_zero() {

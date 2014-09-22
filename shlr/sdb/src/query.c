@@ -305,6 +305,8 @@ next_quote:
 	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;
+		if (!buf)
+			buf = strdup ("");
 		*buf = 0;
 		if (val) {
 			if (sdb_isnum (val)) {

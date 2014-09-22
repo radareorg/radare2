@@ -328,3 +328,19 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	free (a1);
 	return strdup (ret);
 }
+
+R_API const char *r_anal_stackop_tostring (int s) {
+	switch (s) {
+	case R_ANAL_STACK_NULL:
+		return "null";
+	case R_ANAL_STACK_NOP:
+		return "nop";
+	case R_ANAL_STACK_INC:
+		return "inc";
+	case R_ANAL_STACK_GET:
+		return "get";
+	case R_ANAL_STACK_SET:
+		return "set";
+	}
+	return "unk";
+}

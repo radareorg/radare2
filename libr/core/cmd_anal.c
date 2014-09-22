@@ -28,10 +28,12 @@ static void var_help(RCore *core, char ch) {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
 		 "afa", "", "list function arguments",
 		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
+		 "afa-", " [idx]", "delete argument at the given index",
 		 "afag", " [idx] [addr]", "define var get reference",
 		 "afas", " [idx] [addr]", "define var set reference",
 		 "afv", "", "list function local variables",
 		 "afv", " [idx] [name] ([type])", "define variable N with name and type",
+		 "afv-", " [idx]", "delete variable at the given index",
 		 "afvg", " [idx] [addr]", "define var get reference",
 		 "afvs", " [idx] [addr]", "define var set reference",
 		 NULL};
@@ -53,7 +55,8 @@ static int var_cmd(RCore *core, const char *str) {
 
 	switch (type) {
 	case 'V': // show vars in human readable format
-		r_anal_var_list_show (core->anal, fcn, core->offset);
+		r_anal_var_list (core->anal, fcn, 'v', 0, 0);
+		r_anal_var_list (core->anal, fcn, 'a', 0, 0);
 		break;
 	case '?':
 		var_help (core, 0);
@@ -82,6 +85,10 @@ static int var_cmd(RCore *core, const char *str) {
 			goto end;
 		case '.':
 			r_anal_var_list (core->anal, fcn, core->offset, 0, 0);
+			goto end;
+		case '-':
+			r_anal_var_delete (core->anal, fcn->addr, type, 1, (int)
+				r_num_math (core->num, str+1));
 			goto end;
 		case 's':
 		case 'g':
@@ -267,7 +274,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 			r_cons_printf ("\"cycles\":%d,", op.cycles);
 			if (op.failcycles)
 				r_cons_printf ("failcycles: %d\n", op.failcycles);
-			r_cons_printf ("\"stack\":%d,", op.stackop); // TODO: string
+			r_cons_printf ("\"stack\":%d,", r_anal_stackop_tostring (op.stackop));
 			r_cons_printf ("\"cond\":%d,",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 			r_cons_printf ("\"family\":%d}", op.family);
@@ -299,7 +306,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 			if (op.fail != UT64_MAX)
 				r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
 
-			r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
+			r_cons_printf ("stack: %s\n", r_anal_stackop_tostring (op.stackop));
 			r_cons_printf ("cond: %d\n",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 			r_cons_printf ("family: %d\n", op.family);
@@ -514,8 +521,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				 fcn = r_anal_fcn_find (core->anal, off,
 					 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
 				 if (fcn) {
-					 r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
-						 fcn->name, name, off);
+					 //r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
+					//	 fcn->name, name, off);
 					 r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
 						 fcn->name, name, off);
 					 free (fcn->name);

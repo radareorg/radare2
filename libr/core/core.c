@@ -164,7 +164,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 }
 
 R_API RCore *r_core_new() {
-	RCore *c = R_NEW (RCore);
+	RCore *c = R_NEW0 (RCore);
 	r_core_init (c);
 	return c;
 }
@@ -544,6 +544,7 @@ R_API int r_core_init(RCore *core) {
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->zerosep = R_FALSE;
+	core->screen_bounds = 0LL;
 	core->config = NULL;
 	core->http_up = R_FALSE;
 	core->print = r_print_new ();

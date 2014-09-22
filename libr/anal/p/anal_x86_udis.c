@@ -170,19 +170,29 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 }
 
 static st64 getval(ud_operand_t *op) {
-	int bits = op->size;
+	int bits = 32; // XXX
 	switch (op->type) {
 	case UD_OP_PTR:
 		return (op->lval.ptr.seg<<4) + (op->lval.ptr.off & 0xFFFF);
 	default:
 		break;
 	}
+//eprintf ("BITS %d\n", op->signed_lval);
 	if (!bits) bits = 32;
-	switch (bits) {
-	case 8: return (char)op->lval.sbyte;
-	case 16: return (short) op->lval.uword;
-	case 32: return op->lval.udword;
-	case 64: return op->lval.uqword;
+	if (op->signed_lval) { // TODO: honor sign
+		switch (bits) {
+		case 8: return (st64)(char)(255-op->lval.sbyte);
+		case 16: return (st64)(short) op->lval.uword;
+		case 32: return op->lval.udword;
+		case 64: return op->lval.uqword;
+		}
+	} else {
+		switch (bits) {
+		case 8: return (st64)(char)(255-op->lval.sbyte);
+		case 16: return (st64)(short) op->lval.uword;
+		case 32: return op->lval.udword;
+		case 64: return op->lval.uqword;
+		}
 	}
 	return 0LL;
 }
@@ -191,7 +201,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	const char *pc = anal->bits==64? "rip": anal->bits==32? "eip": "ip";
 	const char *sp = anal->bits==64? "rsp": anal->bits==32? "esp": "sp";
         const char *bp = anal->bits==64? "rbp": anal->bits==32? "ebp": "bp";
-	int oplen, regsz = 4;
+	int delta, oplen, regsz = 4;
 	char str[64], src[32], dst[32];
 	struct ud u;
 	switch (anal->bits) {
@@ -279,21 +289,53 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Ilea:
 	case UD_Imov:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		switch (u.operand[1].type) {
+		switch (u.operand[0].type) {
 		case UD_OP_MEM:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			if (u.operand[1].base == UD_R_RIP) {
-				int delta = u.operand[1].lval.uword;
+			switch (u.operand[0].base) {
+			case UD_R_RIP:
+				// Self modifying code? relative local vars
+				delta = u.operand[0].lval.uword;
 				op->ptr = addr + oplen + delta;
+				break;
+			case UD_R_RBP:
+				{
+				       op->stackop = R_ANAL_STACK_SET;
+				       op->ptr = getval (&u.operand[0]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
+				       op->ptr = (st64)((char)u.operand[0].lval.sbyte); //getval (&u.operand[0]);
+					// if positive = arg
+					// if negative = var
+				}
+				break;
 			}
 			break;
 		default:
-			op->type = R_ANAL_OP_TYPE_MOV;
-			op->ptr = getval (&u.operand[1]);
-			// XX
-			break;
+			switch (u.operand[1].type) {
+			case UD_OP_MEM:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				switch (u.operand[1].base) {
+				case UD_R_RIP:
+					delta = u.operand[1].lval.uword;
+					op->ptr = addr + oplen + delta;
+					break;
+				case UD_R_RBP:
+					{
+					       op->stackop = R_ANAL_STACK_GET;
+					       op->ptr = getval (&u.operand[1]);
+					       op->ptr = (st64)((char)u.operand[1].lval.sbyte); //getval (&u.operand[0]);
+						// if positive = arg
+						// if negative = var
+					}
+					break;
+				}
+				break;
+			default:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				op->ptr = getval (&u.operand[1]);
+				// XX
+				break;
+			}
 		}
-		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = regsz;
 		break;
 	case UD_Ipush:

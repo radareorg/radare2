@@ -131,6 +131,7 @@ typedef struct r_core_t {
 	char *lastcmd;
 	int cmdrepeat;
 	ut64 inc;
+	ut64 screen_bounds;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	int curasmstep;

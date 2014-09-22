@@ -988,13 +988,13 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 	r_core_cmdf (core, "pd @ 0x%"PFMT64x"!16", addr);
 }
 
-static void r_core_visual_anal_refresh (RCore *core) {
+static ut64 r_core_visual_anal_refresh (RCore *core) {
 	RAnalFunction *fcn;
 	ut64 addr;
 	char old[1024];
 	int cols = r_cons_get_size (NULL);
 
-	if (!core) return;
+	if (!core) return 0LL;
 	old[0]='\0';
 	addr = core->offset;
 	fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
@@ -1040,6 +1040,7 @@ static void r_core_visual_anal_refresh (RCore *core) {
 		break;
 	}
 	r_cons_flush ();
+	return addr;
 }
 
 /* Like emenu but for real */
@@ -1054,7 +1055,7 @@ R_API void r_core_visual_anal(RCore *core) {
 	int asmbytes = r_config_get_i (core->config, "asm.bytes");
 	r_config_set_i (core->config, "asm.bytes", 0);
 	for (;;) {
-		r_core_visual_anal_refresh (core);
+		addr = r_core_visual_anal_refresh (core);
 		ch = r_cons_readchar ();
 		if (ch==4||ch==-1) {
 			if (level==0)

@@ -352,7 +352,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
 
-	spacer = strstr(source, "||");
+	spacer = strstr (source, "||");
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup(source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
@@ -360,11 +360,10 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num); free(s1);
 		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num); free(s2);
 
-		source = malloc(strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
-		sprintf(source, "%s||%s", scol1, scol2);
-		free(scol1);
-		free(scol2);
-
+		source = malloc (strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
+		sprintf (source, "%s||%s", scol1, scol2);
+		free (scol1);
+		free (scol2);
 		return source;
 	}
 
@@ -605,9 +604,9 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 						       _xref_type, refi->addr,
 						       fun?fun->name:"unk");
 				} else {
-				  r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
-						 _xref_type, refi->addr,
-						 fun?fun->name: "unk");
+					r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
+						_xref_type, refi->addr,
+						fun?fun->name: "unk");
 				}
 			}
 			}
@@ -660,8 +659,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		//ds->pre = "  ";
 		if (f) {
-#warning TODO list from anal->sdb_fcns/fcn.0x%%x.locals|args
-
+#warning TODO list from anal->sdb_fcns/fcn.0x%%x.v|a (vars/args)
 #if 0
 			if (f->locals != NULL) {
 				RAnalFcnLocal *f_loc;
@@ -691,6 +689,9 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 			}
 #endif
 			if (f->addr == ds->at) {
+				r_core_cmdf (core, "afa @ 0x%llx", ds->at);
+				r_core_cmdf (core, "afv @ 0x%llx", ds->at);
+				//if (ds->at == f->addr)
 				char *sign = r_anal_fcn_to_string (core->anal, f);
 				if (f->type == R_ANAL_FCN_TYPE_LOC) {
 					if (ds->show_color) {
@@ -984,6 +985,16 @@ static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_offset (RCore *core, RDisasmState *ds) {
+	 if (core->screen_bounds) {
+		int R, C = r_cons_get_size (&R);
+		int r, c = r_cons_get_cursor (&r);
+		//r_cons_printf ("(%d,%d)/(%d,%d) ", r,c, R, C);
+		if (r+1>=R) {
+		//	r_cons_printf ("LAST (0x%llx)\n", ds->at);
+			if (core->screen_bounds == 1LL)
+				core->screen_bounds = ds->at;
+		}
+	 }
 	if (ds->show_offset)
 		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
 						ds->show_offseg);
@@ -1495,8 +1506,19 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			} else if (p>='!' && p<='~') {
 				r_cons_printf (" ; '%c'", p);
 			} else if (p>10) {
+				if ((st64)p<0) {
+					// resolve local var if possible
+					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)p);
+					if (v) {
+						r_cons_printf (" ; var %s", v->name);	
+						r_anal_var_free (v);
+					} else {
+						r_cons_printf (" ; var %d", (int)-p);
+					}
+				} else {
 					r_cons_printf (" ; %s%s0x%08"PFMT64x" ",
 						msg, msg[0]?" ":"", p);
+				}
 			}
 		}
 	} else handle_print_as_string (core, ds);

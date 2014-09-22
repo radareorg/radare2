@@ -18,6 +18,9 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
         va_list ap;
         if (n<0 || n>15)
                 return NULL;
+	if (fmt == NULL) {
+		return Key[n];
+	}
         va_start (ap, fmt);
         *Key[n] = 0;
         vsnprintf (Key[n], 255, fmt, ap);
@@ -69,6 +72,8 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 	int n, idx = 0;
 	char *next, *str, *ptr, *word, *e_str;
+	if (!_str || !*_str || !fmt)
+		return 0;
 	str = ptr = strdup (_str);
 	for (; *fmt; fmt++) {
 		word = sdb_anext (ptr, &next);
