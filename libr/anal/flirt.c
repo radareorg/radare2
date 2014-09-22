@@ -1033,6 +1033,7 @@ static void print_features (ut16 flags) {
 	PRINT_FLAG(IDASIG__FEATURE__COMPRESSED, "COMPRESSED");
 }
 
+#if DEBUG
 static void print_header (idasig_v5_t *header) {
 	/*eprintf("magic: %s\n", header->magic);*/
 	eprintf("version: %d\n", header->version);
@@ -1047,6 +1048,7 @@ static void print_header (idasig_v5_t *header) {
 	eprintf("library_name_len: %d\n", header->library_name_len);
 	eprintf("ctypes_crc16: %04x\n", header->ctypes_crc16);
 }
+#endif
 
 static int parse_header (RBuffer *buf, idasig_v5_t *header) {
 	if( r_buf_read_at(buf,  0, header->magic, sizeof(header->magic)) != sizeof(header->magic) )

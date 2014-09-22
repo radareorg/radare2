@@ -109,9 +109,9 @@ static RList* imports(RBinFile *arch) {
 	return NULL;
 }
 
-static ut64 size(RBinFile *arch) {
+static int size(RBinFile *arch) {
 	const struct EXE *exe = (struct EXE*) arch->buf->buf;
-	return r_buf_size (arch->buf) -
+	return (int)r_buf_size (arch->buf) -
 		(exe->blocks_in_file * 0x200) +
 		(0x200 - exe->bytes_in_last_block) -
 		exe->header_paragraphs * 0x10;

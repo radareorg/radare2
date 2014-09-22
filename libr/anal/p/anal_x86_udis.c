@@ -307,6 +307,9 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 					// if negative = var
 				}
 				break;
+			default:
+				/* nothing to do here yet */
+				break;
 			}
 			break;
 		default:
@@ -326,6 +329,9 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 						// if positive = arg
 						// if negative = var
 					}
+					break;
+				default:
+					/* nothing to do here yet */
 					break;
 				}
 				break;

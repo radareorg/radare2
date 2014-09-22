@@ -280,7 +280,7 @@ static RList* symbols(RBinFile *arch) {
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = r_bin_get_vaddr (NULL, baddr, paddr, 
+		ut64 vaddr = r_bin_get_vaddr (NULL, baddr (arch), paddr, 
 			symbol[i].offset+arch->o->baddr);
 		if (vaddr == UT64_MAX) {
 			ut64 ba = baddr (arch);

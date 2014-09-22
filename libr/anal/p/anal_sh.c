@@ -15,9 +15,9 @@
 
 //Macros for different instruction types
 
-#define IS_RTE(x)			((x) == 0x002b)
-#define IS_RTS(x)			((x) == 0x000b)
-#define IS_BSRF(x)			(((x) & 0xf0ff) == 0x0003)
+#define IS_RTE(x)			x == 0x002b
+#define IS_RTS(x)			x == 0x000b
+#define IS_BSRF(x)			(x & 0xf0ff) == 0x0003
 #define IS_BRAF(x)			(((x) & 0xf0ff) == 0x0023)
 #define IS_MOVB_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0004)
 #define IS_MOVW_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0005)
