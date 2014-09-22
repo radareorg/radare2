@@ -36,6 +36,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	RList *list;
 	int i=0;
 	if (!fcn) return UT64_MAX;
+#if FCN_OLD
 	list = (t=='r')? fcn->refs: fcn->xrefs;
 	r_list_foreach (list, iter, r) {
 		if (r->type == type) {
@@ -44,6 +45,9 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 			i++;
 		}
 	}
+#else
+#warning implement getref() using sdb
+#endif
 	return UT64_MAX;
 }
 

@@ -201,11 +201,16 @@ static int bbEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
 }
 
 static int cgNodes (RCore *core, RAnalFunction *fcn, Node **n) {
-	int j, i = 0;
+	int i = 0;
+#if FCN_OLD
+	int j;
 	char *code;
 	RAnalRef *ref;
 	RListIter *iter;
-	Node *nodes = calloc (1, sizeof(Node)*(r_list_length (fcn->refs)+2));
+	Node *nodes;
+
+	int fcn_refs_length = r_list_length (fcn->refs);
+	nodes = calloc (1, sizeof(Node)*(fcn_refs_length+2));
 	if (!nodes)
 		return R_FALSE;
 	nodes[i].text = strdup ("");
@@ -246,11 +251,15 @@ static int cgNodes (RCore *core, RAnalFunction *fcn, Node **n) {
 	}
 	free (*n);
 	*n = nodes;
+#else
+	eprintf ("Must be sdbized\n");
+#endif
 	return i;
 }
 
 static int cgEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
 	int i = 0;
+#if FCN_OLD
 	Edge *edges = NULL;
 	RAnalRef *ref;
 	RListIter *iter;
@@ -265,6 +274,9 @@ static int cgEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
 		edges[i].nth = -1;
 	free (*e);
 	*e = edges;
+#else
+	#warning cgEdges not sdbized for fcn refs
+#endif
 	return i;
 }
 

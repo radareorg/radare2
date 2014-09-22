@@ -403,7 +403,9 @@ static void visual_offset (RCore *core) {
 }
 
 R_API int r_core_visual_xrefs_x (RCore *core) {
-	char ch, ret = 0;
+	int ret = 0;
+#if FCN_OLD
+	char ch;
 	int count = 0;
 	RList *xrefs = NULL;
 	RAnalRef *refi;
@@ -443,11 +445,16 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 		}
 	}
 	r_list_free (xrefs);
+#else
+	eprintf ("TODO: sdbize xrefs here\n");
+#endif
 	return ret;
 }
 
 R_API int r_core_visual_xrefs_X (RCore *core) {
-	char ch, ret = 0;
+	int ret = 0;
+#if FCN_OLD
+	char ch;
 	int count = 0;
 	RAnalRef *refi;
 	RListIter *iter;
@@ -484,6 +491,9 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 			}
 		}
 	}
+#else
+	eprintf ("TODO: sdbize this\n");
+#endif
 	return ret;
 }
 

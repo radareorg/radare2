@@ -54,8 +54,10 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = -1;
 	fcn->bits = 0;
+#if FCN_OLD
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();
+#endif
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
@@ -75,8 +77,10 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	fcn->size = 0;
 	free (fcn->name);
 	free (fcn->attr);
+#if FCN_OLD
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
+#endif
 	r_list_free (fcn->locs);
 #if 0
 	r_list_free (fcn->locals);
@@ -510,9 +514,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 			fcn->diff->name = strdup (diff->name);
 	}
 #if FCN_SDB
-	char key[128];
-	SETKEY ("fcn.0x%08"PFMT64x, addr);
-	sdb_set (DB, key, "TODO", 0); // TODO: add more info here
+	sdb_set (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
 #endif
 	return append? r_anal_fcn_insert (a, fcn): R_TRUE;
 }
@@ -862,6 +864,8 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 }
 
 R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
+	return r_anal_fcn_find (anal, addr, 0);
+#if 0
 	RAnalFunction *fcni;
 	RListIter *iter;
 //eprintf ("DEPRECATED: get-at\n");
@@ -870,6 +874,7 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
 		if (addr >= fcni->addr && addr < (fcni->addr+fcni->size))
 			return fcni;
 	return NULL;
+#endif
 }
 
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
@@ -886,9 +891,11 @@ R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
 }
 
 /* getters */
+#if FCN_OLD
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal) { return anal->refs; }
 R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal) { return anal->xrefs; }
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal) { return anal->vars; }
+#endif
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) { return anal->bbs; }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {

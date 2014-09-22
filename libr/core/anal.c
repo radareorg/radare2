@@ -706,6 +706,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 			/* New function: Add initial xref */
 			if (from != UT64_MAX) {
+#if 1
+// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
+// the concepts of refs and xrefs are a bit twisted in the old implementation
 				if (!(ref = r_anal_ref_new ())) {
 					eprintf ("Error: new (xref)\n");
 					goto error;
@@ -714,6 +717,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->at = at;
 				ref->type = reftype;
 				r_list_append (fcn->xrefs, ref);
+#endif
+				r_anal_xrefs_set (core->anal, reftype, from, at);
 			}
 			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);

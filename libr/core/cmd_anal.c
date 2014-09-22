@@ -535,6 +535,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 }
 		 }
 		 break;
+#if FCN_OLD
+/* this is undocumented and probably have no uses. plz discuss */
 	case 'e':
 		  {
 			 RAnalFunction *fcn;
@@ -569,10 +571,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 }
 		  }
 		 break;
+#endif
 	case 'x':
 		 switch (input[2]) {
 		 case '\0':
 		 case ' ':
+#if FCN_OLD
 			 // TODO: sdbize!
 			 // list xrefs from current address
 			  {
@@ -587,6 +591,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					 }
 				 } else eprintf ("Cant find function\n");
 			  }
+#else
+#warning TODO_ FCNOLD sdbize xrefs here
+			eprintf ("TODO\n");
+#endif
 			 break;
 		 case 'c': // add meta xref
 		 case 'd':

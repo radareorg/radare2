@@ -4,7 +4,10 @@
 #define R2_ANAL_H
 
 #define NEW_ESIL 1
+/* use sdb function storage */
 #define FCN_SDB 1
+/* use old refs and function storage */
+// still required by core in lot of places
 #define FCN_OLD 1
 #define USE_VARSUBS 0
 
@@ -268,8 +271,10 @@ typedef struct r_anal_type_function_t {
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
 	RList *vars;
+#if FCN_OLD
 	RList *refs;
 	RList *xrefs;
+#endif
 } RAnalFunction;
 
 struct r_anal_type_t {
