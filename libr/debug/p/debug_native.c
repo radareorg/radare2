@@ -361,6 +361,8 @@ static int r_debug_native_step(RDebug *dbg) {
 // return thread id
 static int r_debug_native_attach(RDebug *dbg, int pid) {
 	int ret = -1;
+	if (pid == dbg->pid)
+		return pid;
 #if __WINDOWS__
 	dbg->process_handle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (dbg->process_handle != (HANDLE)NULL && DebugActiveProcess (pid))
@@ -373,7 +375,9 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 		perror ("ptrace (PT_ATTACH)");
 	ret = pid;
 #else
-	// No need to attach here as r2 has already been attached to the child process after the fork
+	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+	if (ret!=-1)
+		perror ("ptrace (PT_ATTACH)");
 	ret = pid;
 #endif
 	return ret;
