@@ -373,9 +373,8 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 		perror ("ptrace (PT_ATTACH)");
 	ret = pid;
 #else
-	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-	if (ret!=-1)
-		ret = pid;
+	// No need to attach here as r2 has already been attached to the child process after the fork
+	ret = pid;
 #endif
 	return ret;
 }
