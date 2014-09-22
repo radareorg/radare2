@@ -389,7 +389,6 @@ repeat:
 		case R_ANAL_OP_TYPE_CJMP:
 			#define recurseAt(x) \
 				anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
-				FITFCNSZ();\
 				ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			if (!overlapped) {
@@ -764,9 +763,9 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int type) {
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 	int i;
 	char *sign;
-	RAnalVar *arg, *ret;
 	return NULL;
 #if 0
+	RAnalVar *arg, *ret;
 	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
 	sign = ret ? r_str_newf ("%s %s (", ret->name, fs->name):
 		r_str_newf ("void %s (", fs->name);
