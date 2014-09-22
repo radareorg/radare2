@@ -47,7 +47,7 @@ static void var_help(RCore *core, char ch) {
 
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, -1);
-	char *p, *p2, *p3, *ostr;
+	char *p, *ostr;
 	int scope, delta, type = *str;
 
 	ostr = p = strdup (str);
@@ -97,7 +97,7 @@ static int var_cmd(RCore *core, const char *str) {
 					int rw = 0; // 0 = read, 1 = write
 					char kind = type;
 					RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-						&kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
+						kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
 					if (var != NULL) {
 						int scope = (str[1]=='g')?0: 1;
 						r_anal_var_access (core->anal, fcn->addr, kind,
