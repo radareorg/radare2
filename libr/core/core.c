@@ -78,27 +78,29 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (o);
 		}
 		// pop state
+		if (ok) *ok = 1;
 		switch (refsz) {
 		case 8: {
 			ut64 num = 0;
-			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			(void)r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
 			return num; }
 		case 4: {
 			ut32 num = 0;
-			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			(void)r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
 			return num; }
 		case 2: {
 			ut16 num = 0;
-			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			(void)r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
 			return num; }
 		case 1: {
 			ut8 num = 0;
-			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			(void)r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
 			return num; }
 		default:
 			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
 			break;
 		}
+		return 0LL;
 	} else
 	if (str[0]=='$') {
 		if (ok) *ok = 1;
