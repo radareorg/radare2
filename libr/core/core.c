@@ -528,6 +528,7 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		int empty = 1;
+		ret = r_str_concatf (ret, "0x%08"PFMT64x" : ", val);
 		for (i=0; i< 32; i++) {
 			if (val & (1<<i)) {
 				const char *q = sdb_fmt (0, "%s.0x%x", name, (1<<i));

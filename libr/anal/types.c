@@ -27,7 +27,6 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	Sdb *DB = anal->sdb_types;
 	const char *kind = sdb_const_get (DB, name, 0);
 	snprintf (str, sizeof (str), "%s.%s", kind, name);
-	eprintf ("(((%s)))\n", str);
 
 #define SDB_FOREACH(x,y,z) for (z = 0; (p = sdb_array_get (x, y, z, NULL)); z++)
 #define SDB_FOREACH_NEXT() free(p)
