@@ -254,6 +254,7 @@ int main(int argc, char **argv, char **envp) {
 			/* implicit -q */
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
+			r_config_set (r.config, "scr.color", "false");
 			quiet = R_TRUE;
 			break;
 		case 'a': asmarch = optarg; break;
