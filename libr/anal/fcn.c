@@ -405,6 +405,7 @@ repeat:
 			gotoBeach (ret);
                         // For some reason, branch delayed code (MIPS) needs to continue
 			break;
+		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 #if CALL_IS_EOB
