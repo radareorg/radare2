@@ -547,7 +547,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	{
 	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, at);
 		if (fcn) {
-			int len = r_list_length (fcn->xrefs);
+			//int len = r_list_length (fcn->xrefs);
 			// XXX: use r_anal-xrefs api and sdb
 				/* If the xref is new, add it */
 				r_list_foreach (fcn->xrefs, iter2, refi)
@@ -643,8 +643,10 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// this is unnecessary if its contiguous
 		r_io_read_at (core->io, at+delta, buf, ANALBS);
 #endif
-		if (R_TRUE != r_io_is_valid_offset (core->io, at+delta))
-			goto error;
+		if (!core->io->raw) {
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta))
+				goto error;
+		}
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;

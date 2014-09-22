@@ -137,7 +137,7 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		if (*str == '.') {
 			RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
-			if (fcn) r_anal_fcn_var_add (core->anal, fcn->addr, 0, 'v', off, "int", str+1);
+			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
 		}
@@ -177,8 +177,8 @@ static int cmd_flag(void *data, const char *input) {
 						r_anal_fcn_var_del_bydelta (core->anal, fcn->addr,
 							0, R_ANAL_FCN_VARKIND_LOCAL, r_num_math (NULL, name+1));
 					} else {
-						r_anal_fcn_var_add (core->anal, fcn->addr,
-							0, R_ANAL_FCN_VARKIND_LOCAL, off, "int", name);
+						r_anal_var_add (core->anal, fcn->addr, off, 'v',
+							R_ANAL_FCN_VARKIND_LOCAL, "int", 4, name);
 					}
 				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 			}

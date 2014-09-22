@@ -26,11 +26,14 @@ static void var_help(RCore *core, char ch) {
 	if (ch=='a' || ch=='A' || ch=='v') {
 		 const char* help_msg[] = {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
-		 "af[aAv]", "", "list function args/locals",
-		 "af[aAv]", " 12 int buffer[3]", "define local var at index 12",
-		 "af[aAv]", "-12", "undefine local var",
-		 "af[aAv]s", " [index] ([offset])", "register 'set' action",
-		 "af[aAv]g", " [index] ([offset])", "register 'get' action",
+		 "afa", "", "list function arguments",
+		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
+		 "afag", " [idx] [addr]", "define var get reference",
+		 "afas", " [idx] [addr]", "define var set reference",
+		 "afv", "", "list function local variables",
+		 "afv", " [idx] [name] ([type])", "define variable N with name and type",
+		 "afvg", " [idx] [addr]", "define var get reference",
+		 "afvs", " [idx] [addr]", "define var set reference",
 		 NULL};
 		 r_core_cmd_help (core, help_msg);
 	} else {
@@ -41,15 +44,14 @@ static void var_help(RCore *core, char ch) {
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset,
-		R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, -1);
 	char *p, *p2, *p3, *ostr;
-	int scope, delta;
+	int scope, delta, type = *str;
 
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
 
-	switch (*str) {
+	switch (type) {
 	case 'V': // show vars in human readable format
 		r_anal_var_list_show (core->anal, fcn, core->offset);
 		break;
@@ -73,20 +75,20 @@ static int var_cmd(RCore *core, const char *str) {
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0':
-			r_anal_var_list (core->anal, fcn, 0, 0);
+			r_anal_var_list (core->anal, fcn, type, 0, 0);
 			goto end;
 		case '?':
 			var_help (core, *str);
 			goto end;
 		case '.':
-			r_anal_var_list (core->anal, fcn, core->offset, 0);
+			r_anal_var_list (core->anal, fcn, core->offset, 0, 0);
 			goto end;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
 				if (fcn != NULL) {
 					int rw = 0; // 0 = read, 1 = write
-					char kind = 'v';
+					char kind = type;
 					RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
 						&kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
 					if (var != NULL) {
@@ -103,39 +105,34 @@ static int var_cmd(RCore *core, const char *str) {
 				return R_FALSE;
 			} else eprintf ("Missing argument\n");
 			break;
-		}
-		str++;
-		if (str[0]==' ') str++;
-		delta = atoi (str);
-		p = strchr (str, ' ');
-		if (p==NULL) {
+		case ' ':
+			for (str++;*str==' ';) str++;
+			p = strchr (str, ' ');
+			if (!p) {
+				var_help (core, type);
+				break;
+			}
+			*p++ = 0;
+			delta = r_num_math (core->num, str);
+			 {
+				int size = 4;
+				int scope = 1; // 0 = global, 1 = LOCAL;
+				const char *name = p;
+				char *vartype = strchr (name, ' ');
+				if (vartype) {
+					*vartype++ = 0;
+				}
+				if (fcn) {
+					r_anal_var_add (core->anal, fcn->addr,
+						scope, delta, type,
+						vartype, size, name); 
+				} else eprintf ("Cannot find function\n");
+			 }
+			break;
+		default:
 			var_help (core, *str);
 			break;
 		}
-		// TODO: Improve parsing error handling
-		p[0]='\0'; p++;
-		p2 = strchr (p, ' ');
-		if (p2) {
-			p2[0]='\0'; p2 = p2+1;
-			p3 = strchr (p2,'[');
-			if (p3 != NULL) {
-				p3[0]='\0';
-				p3=p3+1;
-			}
-			char kind = *str;
-			// p2 - name of variable
-			char *type = p;
-			char *name = p2;
-			int size = atoi (p3);
-			r_anal_var_add (core->anal, fcn->addr,
-				scope, delta, kind, type, size, name);
-			//r_anal_str_to_type (core->anal, p)
-			//NULL, p3? atoi (p3): 0, p2);
-		} else var_help (core, *str);
-		break;
-	default:
-		var_help (core, *str);
-		break;
 	}
 	end:
 	free (ostr);

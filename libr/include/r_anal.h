@@ -988,9 +988,10 @@ R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index
 	R_ANAL_FCN_VARKIND_LOCAL, z)
 #define r_anal_fcn_local_del_name(x,y,z) error
 
+R_API int r_anal_fcn_arg_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name);
+
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind,
-	int scope, ut32 idx, const char *name, const char *type);
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name);
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
 	int scope, ut32 idx);
 /* args */
@@ -1051,7 +1052,7 @@ R_API void r_anal_var_free(RAnalVar *var);
 R_API void r_anal_var_access_free(void *access);
 //R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
 //		RAnalType *type, const char *name, int set);
-R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char *kind, int scope, int delta);
+R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 //R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
@@ -1108,7 +1109,7 @@ R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunctio
     int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr);
-R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta);
+R_API int r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind, ut64 addr, int delta);
 
 // calling conventions API
 R_API RAnalCC* r_anal_cc_new ();

@@ -761,10 +761,10 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int type) {
 #endif
 
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
-	int i;
-	char *sign;
 	return NULL;
 #if 0
+	char *sign = NULL;
+	int i;
 	RAnalVar *arg, *ret;
 	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
 	sign = ret ? r_str_newf ("%s %s (", ret->name, fs->name):
@@ -783,8 +783,8 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 		sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
 			arg->type, arg->name, arg->delta);
 	}
-#endif
 	return (sign = r_str_concatf (sign, ");"));
+#endif
 }
 
 // TODO: This function is not fully implemented

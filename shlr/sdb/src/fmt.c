@@ -47,6 +47,9 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 			concat (sdb_itoa (*((ut64*)(p+len)), buf, 10));
 			n = 8;
 			break;
+		case 'z':
+			concat (p+len);
+			break;
 		case 's':
 			e_str = sdb_encode ((const ut8*)*((char**)(p+len)), -1);
 			concat (e_str);
@@ -82,6 +85,9 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 			*((char**)(stru + idx)) = (char*)strdup (e_str?e_str:word);
 			free (e_str);
 			break;
+		case 'z':
+			*((char**)(stru + idx)) = (char*)strdup (word);
+			break;
 		case 'p': *((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
@@ -104,6 +110,7 @@ SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
 		case 'h':
 		case 'd': break;
 		case 'q': n = 8; break;
+		case 'z':
 		case 's': free ((void*)*((char**)(stru+len))); break;
 		}
 		len += R_MAX (sizeof (void*), n); // align
@@ -118,6 +125,7 @@ SDB_API int sdb_fmt_init (void *p, const char *fmt) {
 		case 'h': len += sizeof (short); break; // 2
 		case 'd': len += sizeof (ut32); break;  // 4
 		case 'q': len += sizeof (ut64); break;  // 8
+		case 'z': len += sizeof (char*); break; // void*
 		case 's': len += sizeof (char*); break; // void*
 		case 'p': len += sizeof (char*); break; // void *
 		}

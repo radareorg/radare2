@@ -5,8 +5,15 @@
 #include <r_cons.h>
 #include <r_list.h>
 
-// Use sdb_vars ?
 #define DB a->sdb_fcns
+
+struct VarType {
+	char *type;
+	int size;
+	char *name;
+	// out of scope
+};
+#define SDB_VARTYPE_FMT "zdz"
 
 // WHAT ABOUT REGISTER VARIABLES?
 
@@ -15,17 +22,23 @@
 #define SETKEY2(x,y...) snprintf (key2, sizeof (key)-1, x, ##y);
 #define SETVAL(x,y...) snprintf (val, sizeof (val)-1, x, ##y);
 
+#if 0
 // DUPPED FUNCTIONALITY
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta, const char *type, const char *name) {
-	eprintf ("r_anal_fcn_var_add is deprecated");
-	return r_anal_var_add (a, fna, scope, delta, kind, type, 4, name);
+#endif
+
+R_API int r_anal_fcn_arg_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
+	return r_anal_var_add (a, fna, scope, delta, 'a', type, 4, name);
+}
+
+R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
+	return r_anal_var_add (a, fna, scope, delta, 'v', type, 4, name);
 }
 
 R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
-	char *var_def = sdb_fmt (0,"%s,%d,%s", type, size, name);
-	char key[128], val[128];
+	char *var_def;
 	if (!kind) kind ='v';
+	if (!type) type = "int";
 	switch (kind) {
 	case 'a':
 	case 'r':
@@ -35,17 +48,20 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return R_FALSE;
 	}
+	var_def = sdb_fmt (0,"%s,%d,%s", type, size, name);
 	if (scope>0) {
 		/* local variable */
 		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
 		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d",
 			addr, kind, scope, delta);
-		char *var_local = sdb_fmt (3, "var.0x%"PFMT64x".%d.%d",
-			addr, scope, delta);
+		//char *var_local = sdb_fmt (3, "var.0x%"PFMT64x".%d.%d",
+		//	addr, scope, delta);
+		char *shortvar = sdb_fmt (4, "%d.%d", scope, delta);
 
-		sdb_array_add (DB, fcn_key, var_key, 0);
+		sdb_array_add (DB, fcn_key, shortvar, 0);
+		// inverse resolution
+	//	sdb_array_add (DB, var_local, val, 0);
 		sdb_set (DB, var_key, var_def, 0);
-		sdb_array_add (DB, var_local, val, 0);
 	} else {
 		/* global variable */
 		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
@@ -55,7 +71,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	return R_TRUE;
 }
 
-R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char *kind, int scope, int delta) {
+R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta) {
 	if (scope>0) {
 		// TODO
 	} else {
@@ -142,7 +158,6 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, int delta, cons
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int xs_type, ut64 xs_addr) {
 	const char *var_global;
 	const char *xs_type_str = xs_type? "writes": "reads";
-	char key[128];
 // TODO: kind is not used
 	if (scope>0) { // local
 		char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
@@ -173,8 +188,8 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delt
 #if 0
 #if FCN_SDB
 #if 0
-  fcn.0x80480.locals=8,16,24
-  fcn.0x80480.locals.8=name,type
+  fcn.0x80480.v=8,16,24
+  fcn.0x80480.v.8=name,type
 #endif
 	char key[1024], val[1024], *e;
 	if (EXISTS("fcn.0x%08"PFMT64x, fna)) {
@@ -219,6 +234,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	if (!anal || !fcn)
 		return;
 
+eprintf ("VAR LIST SHOW IS DEPRECATED\n");
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
 #if 0
@@ -261,14 +277,38 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 }
 
 /* 0,0 to list all */
-R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta) {
-	//RAnalVarAccess *x;
-	RAnalVar *v;
-	RListIter *iter; //, *iter2;
-	if (fcn && fcn->vars)
-	r_list_foreach (fcn->vars, iter, v) {
-		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-eprintf ("TODO\n");
+R_API int r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind, ut64 addr, int delta) {
+	int count = 0;
+	char *varlist;
+	if (!a|| !fcn)
+		return 0;
+	if (!kind) kind = 'v'; // by default show vars
+	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x".%c", fcn->addr, kind), 0);
+	if (varlist) {
+		count = sdb_alen (varlist);
+		char *next, *ptr = varlist;
+		if (varlist && *varlist) {
+			do {
+				struct VarType vt;
+				char *word = sdb_anext (ptr, &next);
+				char *vardef = sdb_get (DB, sdb_fmt (1,
+					"var.0x%08"PFMT64x".%c.%s",
+					fcn->addr, kind, word), 0);
+				int delta = atoi (word+2);
+				sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
+				sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
+
+				//a->printf (" - (%s)(%s) = %d\n", vt.type, vt.name, vt.size);
+				a->printf (".t %s @ %s+%d # name: %s\n",
+					vt.type, a->reg->name[R_REG_NAME_BP],
+					delta, vt.name);
+
+				sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
+				free (vardef);
+				ptr = next;
+			} while (next);
 		}
 	}
+	free (varlist);
+	return count;
 }
