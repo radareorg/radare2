@@ -434,7 +434,7 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 		ins_res = strcat_dup(ins_aux, ins_res, 1);
 		//printf("NEXT POS %d %d\n", ins_len_dec, reg_len_dec);
 		//getchar();
-		*next_ins_pos += ins_len_dec, reg_len_dec;
+		*next_ins_pos += ins_len_dec; // reg_len_dec;
 	}
 
 	return ins_res;
@@ -675,7 +675,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 				aux = strcat_dup("port(", aux, 2);
 			} else if (
 			((magic_value & 0x40) && strchr(reg_arg, 'r')) ||
-			((magic_value < 0) && strchr(reg_arg, 'w'))) {
+			((magic_value & 0x80000000) && strchr(reg_arg, 'w'))) {
 
 				aux = strcat_dup(aux, ")", 1);
 				aux = strcat_dup("volatile(", aux, 2);
@@ -763,7 +763,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 			} else if (
 			((magic_value & 0x40) && *ins_token == 'X' && strchr(reg_arg, 'r'))
 			    ||
-			   (magic_value < 0 && *ins_token == 'Y' && strchr(reg_arg, 'w'))
+			   ((magic_value & 0x80000000) 0 && *ins_token == 'Y' && strchr(reg_arg, 'w'))
 
 			) {
 				aux = strcat_dup(aux, ")", 1);
