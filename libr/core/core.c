@@ -519,26 +519,30 @@ static char *getenumname(void *_core, const char *name, ut64 val) {
 	return NULL;
 }
 
+// TODO: dupped in cmd_type.c
 static char *getbitfield(void *_core, const char *name, ut64 val) {
 	const char *isenum;
+	char *ret = NULL;
 	int i;
 	RCore *core = (RCore*)_core;
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
+		int empty = 1;
 		for (i=0; i< 32; i++) {
 			if (val & (1<<i)) {
 				const char *q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
 				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
-				if (res) r_cons_printf ("%s | ", res);
-				else r_cons_printf ("0x%x | ", (1<<i));
-
+				if (!empty)
+					ret = r_str_concat (ret, " | ");
+				if (res) ret = r_str_concat (ret, res);
+				else ret = r_str_concatf (ret, "0x%x", (1<<i));
+				empty = 0;
 			}
 		}
-		r_cons_printf ("0\n");
 	} else {
 		eprintf ("This is not an enum\n");
 	}
-	return NULL;
+	return ret;
 }
 
 R_API int r_core_init(RCore *core) {

@@ -789,7 +789,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
 
-				// TODO: add a callback in RPrint to resolve a bitfield
 				if (p->get_bitfield) 
 					bitfield = p->get_bitfield (p->user, structname, addr);
 				if (bitfield && *bitfield) {

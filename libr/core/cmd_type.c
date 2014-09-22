@@ -72,6 +72,8 @@ static int cmd_type(void *data, const char *input) {
 		p = strchr (s, ' ');
 		if (p) {
 			*p++ = 0;
+// dupp in core.c (see getbitfield())
+#if 1
 			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
 			if (isenum && !strcmp (isenum, "enum")) {
 				int empty = 1;
@@ -92,6 +94,7 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				eprintf ("This is not an enum\n");
 			}
+#endif
 			free (s);
 		} else {
 			eprintf ("Missing value\n");
