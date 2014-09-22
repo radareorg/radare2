@@ -587,6 +587,8 @@ if (strcmp (argv[1], "--")) {
 	}
 	r_list_free (evals);
 #endif
+	// no flagspace selected by default the begining
+	r.flags->space_idx = -1;
 	{
 	const char *global_rc = R2_PREFIX"/share/radare2/radare2rc";
 	if (r_file_exists (global_rc))
@@ -655,6 +657,8 @@ if (strcmp (argv[1], "--")) {
 	if (seek != UT64_MAX)
 		r_core_seek (&r, seek, 1);
 
+	// no flagspace selected by default the begining
+	r.flags->space_idx = -1;
 	for (;;) {
 		r.zerosep = zerosep;
 #if USE_THREADS
