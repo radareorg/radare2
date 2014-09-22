@@ -522,7 +522,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (op) {
 				if (op->type == R_ANAL_OP_TYPE_JMP	||
 						op->type == R_ANAL_OP_TYPE_CJMP ||
-						op->type == R_ANAL_OP_TYPE_CALL) {
+						op->type == R_ANAL_OP_TYPE_CALL ||
+						op->type == R_ANAL_OP_TYPE_CCALL) {
 						r_io_sundo_push (core->io, offset);
 						r_core_visual_seek_animation(core, op->jump);
 					}
