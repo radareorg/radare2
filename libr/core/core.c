@@ -161,11 +161,19 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 	} else
 	if (*str>'A') {
-		if ((flag = r_flag_get (core->flags, str))) {
-			ret = flag->offset;
-			if (ok) *ok = R_TRUE;
-		}
+#if 0
+		ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
+		if (addr != 0) {
+			ret = addr;
+		} else {
+#endif
+			if ((flag = r_flag_get (core->flags, str))) {
+				ret = flag->offset;
+				if (ok) *ok = R_TRUE;
+			}
+//		}
 	}
+
 	return ret;
 }
 

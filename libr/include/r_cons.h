@@ -339,6 +339,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg);
 R_API void r_cons_pal_list (int rad);
 R_API void r_cons_pal_show ();
 R_API int r_cons_get_size(int *rows);
+R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);
 

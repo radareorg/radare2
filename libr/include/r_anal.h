@@ -1208,6 +1208,13 @@ R_API int r_anal_state_addr_is_valid (RAnalState *state, ut64 addr);
 R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs);
 R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth);
 
+/* labels */
+R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *name);
+R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 addr);
+R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr);
+R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr);
+R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad);
+
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;

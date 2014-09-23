@@ -241,6 +241,14 @@ SDB_API ut64* sdb_fmt_array_num(const char *list);
 // raw array helpers
 char *sdb_array_compact(char *p);
 char *sdb_aslice(char *out, int from, int to);
+#define sdb_aforeach(x,y) \
+	{ char *next; \
+	if (y) for (x=y;;) { \
+		x = sdb_anext (x, &next);
+#define sdb_aforeach_next(x) \
+	if (!next) break; \
+	*(next-1) = ','; \
+	x = next; } }
 
 #ifdef __cplusplus
 }

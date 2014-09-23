@@ -616,16 +616,24 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		showcursor (core, R_TRUE);
 		if (r_cons_fgets (name, sizeof (name), 0, NULL) >=0 && *name) {
 			n = r_str_chop (name);
-			if (*name=='-') {
+			if (ocursor != -1) {
+				min = R_MIN (cursor, ocursor);
+				max = R_MAX (cursor, ocursor);
+			} else {
+				min = max = cursor;
+			}
+			range = max-min+1;
+			if (*n=='.') {
+				if (n[1]=='-') {
+					//unset
+					r_core_cmdf (core, "f.-%s@0x%"PFMT64x, n+1, core->offset+min);
+				} else {
+					r_core_cmdf (core, "f.%s@0x%"PFMT64x, n+1, core->offset+min);
+				}
+			} else
+			if (*n=='-') {
 				if (*n) r_flag_unset (core->flags, n+1, NULL);
 			} else {
-				if (ocursor != -1) {
-					min = R_MIN (cursor, ocursor);
-					max = R_MAX (cursor, ocursor);
-				} else {
-					min = max = cursor;
-				}
-				range = max-min+1;
 				if (range<1) range = 1;
 				if (*n) r_flag_set (core->flags, n,
 					core->offset + min, range, 1);

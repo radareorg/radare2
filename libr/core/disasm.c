@@ -158,10 +158,8 @@ static void handle_adistrick_comments (RCore *core, RDisasmState *ds);
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx );
 static void handle_print_opstr (RCore *core, RDisasmState *ds);
 static void handle_print_color_reset (RCore *core, RDisasmState *ds);
-static int handle_print_middle (RCore *core, RDisasmState *ds, int ret );
-#if HAVE_LOCALS
-static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf);
-#endif
+static int handle_print_middle (RCore *core, RDisasmState *ds, int ret);
+static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f);
 static void handle_print_import_name (RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
@@ -657,37 +655,8 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	if (ds->show_functions) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		//ds->pre = "  ";
 		if (f) {
 #warning TODO list from anal->sdb_fcns/fcn.0x%%x.v|a (vars/args)
-#if 0
-			if (f->locals != NULL) {
-				RAnalFcnLocal *f_loc;
-				RListIter *l_iter;
-				r_list_foreach (f->locals, l_iter, f_loc) {
-					if (f_loc && f_loc->addr == ds->at) {
-						handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-						if (ds->show_color) {
-							r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre); // "|"
-						} else {
-							ds->pre = r_str_concat (ds->pre, " ");
-							r_cons_printf (ds->pre); //"| "
-						}
-						if (ds->show_lines && ds->refline) {
-							if (ds->show_color) {
-								r_cons_printf ("%s%s"Color_RESET, ds->color_flow, ds->refline);
-							} else r_cons_strcat (ds->refline);
-						}
-						if (ds->show_offset)
-							r_cons_printf ("; -- ");
-						if (ds->show_color)
-							r_cons_printf ("%s %s"Color_RESET"\n",
-								ds->color_label, f_loc->name?f_loc->name:"unk");
-						else r_cons_printf (" %s\n", f_loc->name?f_loc->name:"unk");
-					}
-				}
-			}
-#endif
 			if (f->addr == ds->at) {
 				r_core_cmdf (core, "afa @ 0x%llx", ds->at);
 				r_core_cmdf (core, "afv @ 0x%llx", ds->at);
@@ -1274,43 +1243,23 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret ){
 	return ret;
 }
 
-#if HAVE_LOCALS
-static int handle_print_fcn_locals (RCore *core, RDisasmState *ds, RAnalFunction *f, RAnalFunction *cf) {
-	ut8 have_local = 0;
-eprintf ("TODO: sdbize locals\n");
-#if 1
-	RAnalFcnLocal *l;
-	RListIter *iter;
-	r_list_foreach (f->vars, iter, l) {
-		//if (ds->analop.jump == l->index) {
-			if ((cf != NULL) && (f->addr == cf->addr)) {
-				if (ds->show_color) {
-					r_cons_strcat (ds->color_label);
-					r_cons_printf ("; (%s)", l->name);
-					handle_print_color_reset(core, ds);
-				} else {
-					r_cons_printf ("; (%s)", l->name);
-				}
-			} else {
-				if (ds->show_color) {
-					r_cons_strcat (ds->color_fname);
-					r_cons_printf ("; (%s", f->name);
-					//handle_print_color_reset(core, ds);
-					r_cons_strcat (ds->color_label);
-					r_cons_printf (".%s)", l->name);
-					handle_print_color_reset(core, ds);
-				} else {
-					r_cons_printf ("; (%s.%s)", f->name, l->name);
-				}
-			}
-			have_local = 1;
-			break;
-	//	}
+static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f) {
+	const char *label;
+	if (!core || !ds || !f)
+		return R_FALSE;
+	label = r_anal_fcn_label_at (core->anal, f, ds->at);
+	if (label) {
+		if (ds->show_color) {
+			r_cons_strcat (ds->color_label);
+			r_cons_printf (" .%s:  \n", label);
+			handle_print_color_reset (core, ds);
+		} else {
+			r_cons_printf (" .%s:  \n", label);
+		}
+		return 1;
 	}
-#endif
-	return have_local;
+	return 0;
 }
-#endif
 
 static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 	RListIter *iter = NULL;
@@ -1336,7 +1285,6 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 	RAnalFunction *f;
-	int have_local = 0;
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 	        //case R_ANAL_OP_TYPE_CJMP:
@@ -1344,20 +1292,10 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 			f = r_anal_fcn_find (core->anal,
 				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 			if (f && !strstr (ds->opstr, f->name)) {
-#if 0
-				RAnalFunction *cf = r_anal_fcn_find (core->anal,
-					/* current function */
-				ds->at, R_ANAL_FCN_TYPE_NULL);
-				if (f->locals != NULL) {
-					have_local = handle_print_fcn_locals (core, ds, f, cf);
-				}
-#endif
-				if (!have_local) {
-					if (ds->show_color)
-						r_cons_strcat (ds->color_fname);
-					r_cons_printf (" ; (%s)", f->name);
-					handle_print_color_reset (core, ds);
-				}
+				if (ds->show_color)
+					r_cons_strcat (ds->color_fname);
+				r_cons_printf (" ; (%s)", f->name);
+				handle_print_color_reset (core, ds);
 			}
 			break;
 	}
@@ -1746,6 +1684,12 @@ toro:
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
+		 {
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, ds->addr);
+			if (handle_print_labels (core, ds, fcn)) {
+				handle_show_functions (core, ds);
+			}
+		 }
 		handle_show_flags_option (core, ds);
 		handle_print_lines_left (core, ds);
 		handle_print_offset (core, ds);
@@ -2172,6 +2116,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_adistrick_comments (core, ds);
 			/* XXX: This is really cpu consuming.. need to be fixed */
 			handle_show_functions (core, ds);
+			if (handle_print_labels (core, ds, fcn)) {
+				handle_show_functions (core, ds);
+			}
 			handle_show_flags_option (core, ds);
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);

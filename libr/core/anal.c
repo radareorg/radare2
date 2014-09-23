@@ -964,36 +964,6 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	}
 }
 
-R_API void r_core_anal_fcn_local_list(RCore *core, RAnalFunction *fcn, int rad) {
-	if (!fcn) {
-		RAnalFunction *f;
-		RListIter *iter;
-		r_list_foreach (core->anal->fcns, iter, f) {
-			r_core_anal_fcn_local_list (core, f, rad);
-		}
-	} else
-	if (fcn) {
-//eprintf ("TODO: sdbize\n");
-#if 0
- && fcn->locals) {
-		RAnalFcnLocal *loc;
-		RListIter *iter;
-		r_list_foreach (fcn->locals, iter, loc) {
-			if ((loc != NULL) && (loc->name != NULL)) {
-				if (rad) {
-					r_cons_printf ("f.%s@0x%08"PFMT64x"\n",
-						loc->name, fcn->name,
-						loc->addr - fcn->addr, loc->addr);
-				} else {
-					r_cons_printf ("%s at [%s + %"PFMT64d"] (0x%08"PFMT64x")\n",
-						loc->name, fcn->name,
-						loc->addr - fcn->addr, loc->addr);
-				}
-			}
-		}
-#endif
-	}
-}
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr = r_num_math (core->num, input+1);

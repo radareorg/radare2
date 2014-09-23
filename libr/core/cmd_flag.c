@@ -162,10 +162,10 @@ static int cmd_flag(void *data, const char *input) {
 		if (input[1]) {
 			if (input[1] == '*') {
 				if (input[2] == '*') {
-					r_core_anal_fcn_local_list (core, NULL, 1);
+					r_anal_fcn_labels (core->anal, NULL, 1);
 				} else {
 					RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
-					if (fcn) r_core_anal_fcn_local_list (core, fcn, 1);
+					if (fcn) r_anal_fcn_labels (core->anal, fcn, 1);
 					else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
 			} else {
@@ -173,18 +173,15 @@ static int cmd_flag(void *data, const char *input) {
 				RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
 				if (fcn) {
 					if (*name=='-') {
-						//r_anal_fcn_local_del_name (core->anal, fcn, name+1);
-						r_anal_fcn_var_del_bydelta (core->anal, fcn->addr,
-							0, R_ANAL_FCN_VARKIND_LOCAL, r_num_math (NULL, name+1));
+						r_anal_fcn_label_del (core->anal, fcn, name+1, off);
 					} else {
-						r_anal_var_add (core->anal, fcn->addr, off, 'v',
-							R_ANAL_FCN_VARKIND_LOCAL, "int", 4, name);
+						r_anal_fcn_label_set (core->anal, fcn, name, off);
 					}
 				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
-			if (fcn) r_core_anal_fcn_local_list (core, fcn, 0);
+			if (fcn) r_anal_fcn_labels (core->anal, fcn, 0);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		}
 		break;

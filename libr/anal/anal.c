@@ -57,7 +57,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
-	//anal->sdb_vars = sdb_ns (anal->sdb, "vars", 1);
+	//anal->sdb_vars = sdb_ns (anal->sdb, "vars", 1); // its inside fcns right now
 	//anal->sdb_args = sdb_ns (anal->sdb, "args", 1);
 	//anal->sdb_ret = sdb_ns (anal->sdb, "ret", 1);
 	//anal->sdb_locals = sdb_ns (anal->sdb, "locals", 1);
@@ -108,7 +108,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
-	//r_listrange_free (a->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
+	// might provoke double frees since this is used in r_anal_fcn_insert()
+	//r_listrange_free (a->fcnstore);
 	r_list_free (a->refs);
 	r_list_free (a->types);
 	r_reg_free (a->reg);
@@ -217,7 +218,8 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
 			if (op->nopcode != 0)
-				memset (ret+(idx+op->nopcode)*2, '.', (oplen-op->nopcode)*2);
+				memset (ret+(idx+op->nopcode)*2,
+					'.', (oplen-op->nopcode)*2);
 		}
 		idx += oplen;
 	}
@@ -230,7 +232,6 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter, *iter2;
-	VERBOSE_ANAL eprintf ("bbtraced\n"); // XXX Debug msg
 	r_list_foreach (anal->fcns, iter, fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
