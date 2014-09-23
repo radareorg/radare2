@@ -428,7 +428,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, ch
 	if (flag) p->printf = realprintf;
 	fmt = r_strht_get (p->formats, name);
 	if (!fmt || !*fmt) {
-		eprintf ("Undefined struct.\n");
+		eprintf ("Undefined struct '%s'.\n", name);
 		return 0;
 	}
 	r_print_format (p, seek, b, len, fmt, flag, NULL);
@@ -793,9 +793,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (p->get_bitfield) 
 					bitfield = p->get_bitfield (p->user, structname, addr);
 				if (bitfield && *bitfield) {
-					p->printf (" %s (enum) = %s\n", name, bitfield);
+					p->printf (" %s (bitfield) = %s\n", name, bitfield);
 				} else {
-					p->printf (" %s (enum) = `tb %s %x`\n",
+					p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
 						name, structname, addr);
 				}
 				i+= 4; //(isptr) ? 4 : s;
@@ -824,7 +824,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (enumvalue && *enumvalue) {
 					p->printf (" %s (enum) = %s %s\n", name, enumname, enumvalue);
 				} else {
-					p->printf (" %s (bitfield) = `te %s %x`\n",
+					p->printf (" %s (enum) = `te %s 0x%x`\n",
 						name, enumname, addr);
 				}
 				i+= 4; //(isptr) ? 4 : s;
