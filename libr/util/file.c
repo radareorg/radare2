@@ -369,7 +369,8 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 		r_sys_perror ("r_file_mmap_write: CreateFile");
 		return -1;
 	}
-
+// no need to overengineer the file write more
+#if 0
 	fm = CreateFileMapping (fh, NULL,
 		PAGE_READWRITE, 0, 0, NULL);
 	if (fm == NULL) {
@@ -379,14 +380,24 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	}
 
 	if (fm != INVALID_HANDLE_VALUE) {
+		MEMORY_BASIC_INFORMATION info;
 		ut8 *obuf = MapViewOfFile (fm,
 			FILE_MAP_WRITE,
-			0, 0, len);
-		memcpy (obuf, buf, len);
+			0,0,
+			0);
+		VirtualQuery (obuf, &info, sizeof(info);
+		memcpy (obuf+addr, buf, len);
 		UnmapViewOfFile (obuf);
 	}
-	CloseHandle (fh);
 	CloseHandle (fm);
+#else
+	SetFilePointer (fh, addr, NULL, FILE_BEGIN);
+	if (!WriteFile (fh, buf, len, NULL, NULL)) {
+		r_sys_perror ("WriteFile");
+		len = -1;
+	}
+#endif
+	CloseHandle (fh);
 	return len;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
