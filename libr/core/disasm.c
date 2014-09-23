@@ -131,6 +131,7 @@ typedef struct r_disam_options_t {
 	int len;
 
 	int counter;
+	int maxrefs;
 } RDisasmState;
 
 static void handle_reflines_init (RCore *core, RDisasmState *ds);
@@ -217,6 +218,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
+	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
@@ -543,6 +545,18 @@ static char *filter_refline(RCore *core, const char *str) {
 }
 #endif
 
+static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
+	// THAT'S OK
+	if (ds->show_color) {
+		r_cons_printf ("%s%s "Color_RESET"%s%s"Color_RESET, ds->color_fline,
+			((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==ds->at)
+		?" ":core->cons->vline[LINE_VERT], ds->color_flow, ds->refline2);
+	} else {
+		r_cons_printf ("%s %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
+				&& f->addr==ds->at)?" ":core->cons->vline[LINE_VERT], ds->refline2);
+	}
+}
+
 static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	// Show xrefs
 	if (ds->show_xrefs) {
@@ -551,65 +565,53 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		RAnalRef *refi;
 		RListIter *iter;
 
-		/* show reverse refs */
-
 		/* show xrefs */
-		if ((xrefs = r_anal_xref_get (core->anal, ds->at))) {
+		int count = 0;
+		xrefs = r_anal_xref_get (core->anal, ds->at);
+		if (!xrefs)
+			return;
+		
+		if (r_list_length (xrefs)> ds->maxrefs) {
+			beginline (core, ds, f);
+			r_cons_printf ("%s; XREFS: ", ds->pal_comment);
 			r_list_foreach (xrefs, iter, refi) {
-#if 0
-		r_list_foreach (core->anal->refs, iter, refi)
-#endif
+				r_cons_printf ("%s 0x%08"PFMT64x"  ",
+					r_anal_xrefs_type_tostring (refi->type), refi->addr);
+				if (count == 2) {
+					if (iter->n) {
+						r_cons_newline ();
+						beginline (core, ds, f);
+						r_cons_printf ("%s; XREFS: ", ds->pal_comment);
+					}
+					count = 0;
+				} else count++;
+			}
+			r_cons_newline ();
+			return;
+		}
+		r_list_foreach (xrefs, iter, refi) {
 			if (refi->at == ds->at) {
 				RAnalFunction *fun = r_anal_fcn_find (
 					core->anal, refi->addr,
 					R_ANAL_FCN_TYPE_FCN |
 					R_ANAL_FCN_TYPE_ROOT);
-#if 1
-// THAT'S OK
-				if (ds->show_color) {
-					r_cons_printf ("%s%s "Color_RESET"%s%s"Color_RESET, ds->color_fline,
-						((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==ds->at)
-						?" ":core->cons->vline[LINE_VERT], ds->color_flow, ds->refline2);
-				} else {
-					r_cons_printf ("%s %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
-						&& f->addr==ds->at)?" ":core->cons->vline[LINE_VERT], ds->refline2);
-				}
-#endif
-
-				char const * _xref_type = "UNKNOWN";
-				switch(refi->type)
-				  {
-				  case R_ANAL_REF_TYPE_NULL:
-				    _xref_type = "UNKNOWN";
-				    break;
-				  case R_ANAL_REF_TYPE_CODE:
-				    _xref_type = "JMP";
-				    break;
-				  case R_ANAL_REF_TYPE_CALL:
-				    _xref_type = "CALL";
-				    break;
-				  case R_ANAL_REF_TYPE_DATA:
-				    _xref_type = "DATA";
-				    break;
-				  case R_ANAL_REF_TYPE_STRING:
-				    _xref_type = "STRING";
-				    break;
-				  }
+				beginline (core, ds, fun);
 
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-						       ds->pal_comment,
-						       _xref_type, refi->addr,
-						       fun?fun->name:"unk");
+						ds->pal_comment,
+						r_anal_xrefs_type_tostring (refi->type),
+						refi->addr,
+						fun?fun->name:"unk");
 				} else {
 					r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
-						_xref_type, refi->addr,
+						r_anal_xrefs_type_tostring (refi->type),
+						refi->addr,
 						fun?fun->name: "unk");
 				}
 			}
-			}
-			r_list_free (xrefs);
 		}
+		r_list_free (xrefs);
 	}
 }
 

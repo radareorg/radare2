@@ -729,6 +729,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
 	SETCB("asm.os", R_SYS_OS, &cb_asmos, "Select operating system (kernel) (linux, darwin, w32,..)");
+	SETI("asm.maxrefs", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETPREF("asm.bytes", "true",  "Display the bytes of each instruction");
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch referece");
 	SETPREF("asm.cmtright", "false", "Show comments at right of disassembly if they fit in screen");

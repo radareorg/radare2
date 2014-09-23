@@ -180,3 +180,19 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		break;
 	}
 }
+
+R_API const char *r_anal_xrefs_type_tostring (char type) {
+	switch (type) {
+	case R_ANAL_REF_TYPE_NULL:
+		return "UNKNOWN";
+	case R_ANAL_REF_TYPE_CODE:
+		return "JMP";
+	case R_ANAL_REF_TYPE_CALL:
+		return "CALL";
+	case R_ANAL_REF_TYPE_DATA:
+		return "DATA";
+	case R_ANAL_REF_TYPE_STRING:
+		return "STRING";
+	}
+}
+
