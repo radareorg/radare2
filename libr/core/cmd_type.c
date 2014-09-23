@@ -189,7 +189,7 @@ static int cmd_type(void *data, const char *input) {
 			r_anal_type_del (core->anal, arg);
 		} else
 		if (input[1] == ' ') {
-			char tmp[256];
+			char tmp[8192];
 			snprintf (tmp, sizeof (tmp)-1, "%s;", input+2);
 			//const char *string = input + 2;
 			//r_anal_str_to_type (core->anal, string);
