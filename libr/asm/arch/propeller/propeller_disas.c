@@ -289,9 +289,9 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
 				cmd->instr[1] = 'r';
 			}
 
-			if (opcode == PROP_SUB && instr & 0x08000000) {
+			if (opcode == PROP_SUB && in & 0x08000000) {
 				snprintf (cmd->instr, PROP_INSTR_MAXLEN - 1, "sub");
-			} else if (opcode == PROP_SUBX && instr & 0x08000000) {
+			} else if (opcode == PROP_SUBX && in & 0x08000000) {
 				snprintf (cmd->instr, PROP_INSTR_MAXLEN - 1, "subx");
 			}
 
