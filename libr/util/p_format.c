@@ -831,7 +831,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (p->get_enumname) 
 					enumvalue = p->get_enumname (p->user, enumname, addr);
 				if (enumvalue && *enumvalue) {
-					p->printf (" %s (enum) = %s %s\n", name, enumname, enumvalue);
+					p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
+						name, addr, enumvalue);
 				} else {
 					p->printf (" %s (enum) = `te %s 0x%x`\n",
 						name, enumname, addr);
