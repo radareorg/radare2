@@ -623,6 +623,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					char *par = strchr (n, ')');
 					if (par == NULL) {
 						eprintf ("No end parenthesis for struct name");
+						free (n);
 						goto beach;
 					} else {
 						*par = '.';

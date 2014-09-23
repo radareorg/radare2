@@ -157,6 +157,7 @@ static RList *symbols(RBinFile *arch) {
 		r_list_append (ret, ptr);
 
 		i += obj->symbols[i].n_numaux;
+		free (ptr);
 	}
 
 	return ret;
