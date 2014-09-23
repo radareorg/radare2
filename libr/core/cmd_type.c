@@ -95,10 +95,10 @@ static int cmd_type(void *data, const char *input) {
 				eprintf ("This is not an enum\n");
 			}
 #endif
-			free (s);
 		} else {
 			eprintf ("Missing value\n");
 		}
+		free (s);
 		}
 		break;
 	case 'e':
@@ -117,10 +117,10 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				eprintf ("This is not an enum\n");
 			}
-			free (s);
 		} else {
 			eprintf ("Missing value\n");
 		}
+		free (s);
 		}
 		break;
 	case ' ':
