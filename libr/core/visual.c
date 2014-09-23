@@ -534,8 +534,19 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 						op->type == R_ANAL_OP_TYPE_CJMP ||
 						op->type == R_ANAL_OP_TYPE_CALL ||
 						op->type == R_ANAL_OP_TYPE_CCALL) {
-						r_io_sundo_push (core->io, offset);
-						r_core_visual_seek_animation(core, op->jump);
+						if (curset) {
+							int delta = R_ABS ((st64)op->jump-(st64)offset);
+							if ( op->jump < core->offset || op->jump > last_printed_address) {
+								r_io_sundo_push (core->io, offset);
+								r_core_visual_seek_animation (core, op->jump);
+								cursor = 0;
+							} else {
+								cursor = delta;
+							}
+						} else {
+							r_io_sundo_push (core->io, offset);
+							r_core_visual_seek_animation(core, op->jump);
+						}
 					}
 			}
 			r_anal_op_free (op);
@@ -858,16 +869,29 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'j':
 		if (curset) {
-			if (core->printidx == 1 || core->printidx == 2)
+			if (core->printidx == 1 || core->printidx == 2) { // these are dis modes
+				// we read the size of the current mnemonic 
 				cols = r_asm_disassemble (core->assembler,
 					&op, core->block+cursor, 32);
-			if (cols<1) cols = 1;
-			cursor += cols;
-			ocursor = -1;
-			offscreen = (core->cons->rows-3)*cols;
-			if (cursor>=offscreen) {
-				r_core_seek (core, core->offset+cols, 1);
-				cursor-=cols;
+				if (cols<1) cols = 1;
+				cursor += cols; // we move the cursor sizeof the current mnemonic
+				ocursor = -1;
+				if (cursor + core->offset > last_printed_address) {
+					// we seek with the size of the first mnemo
+					cols = r_asm_disassemble (core->assembler,
+							&op, core->block, 32);
+					r_core_seek (core, core->offset+cols, 1); 
+					cursor-=cols;
+				}
+			} else { // every other printmode
+				if (cols<1) cols = 1;
+				cursor += cols;
+				ocursor = -1;
+				offscreen = (core->cons->rows - 3) * cols;
+				if (cursor > offscreen ) {
+					r_core_seek (core, core->offset+cols, 1);
+					cursor-=cols;
+				}
 			}
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
