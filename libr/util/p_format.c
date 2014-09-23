@@ -779,6 +779,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				char *structname, *osn;
 				char *bitfield = NULL;
 				structname = osn = strdup (r_str_word_get0 (args, idx-1));
+				switch (size) {
+				case 1: addr &= UT8_MAX; break;
+				case 2: addr &= UT16_MAX; break;
+				case 4: addr &= UT32_MAX; break;
+				}
 				if (*structname == '(') {
 					name = strchr (structname, ')');
 				} else {
@@ -808,6 +813,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				char *enumname, *osn;
 				char *enumvalue = NULL;
 				enumname = osn = strdup (r_str_word_get0 (args, idx-1));
+				switch (size) {
+				case 1: addr &= UT8_MAX; break;
+				case 2: addr &= UT16_MAX; break;
+				case 4: addr &= UT32_MAX; break;
+				}
 				if (*enumname == '(') {
 					name = strchr (enumname, ')');
 				} else {
@@ -818,7 +828,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				enumname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
-				// TODO: add a callback in RPrint to resolve an enum
 				if (p->get_enumname) 
 					enumvalue = p->get_enumname (p->user, enumname, addr);
 				if (enumvalue && *enumvalue) {

@@ -194,8 +194,9 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 					  " sizeOfStackReserve sizeOfStackCommit sizeOfHeapReserve sizeOfHeapCommit loaderFlags numberOfRvaAndSizes"
 					  " (pe_image_data_directory)dataDirectory", 0);
 	#endif
-	sdb_set (bin->kv, "pe_image_file_header.format", "wwxxxww"
-					  " machine numberOfSections timeDateStamp pointerToSymbolTable"
+	sdb_set (bin->kv, "pe_machine.cparse", "enum pe_machine { IMAGE_FILE_MACHINE_I386=0x014c, IMAGE_FILE_MACHINE_IA64=0x0200, IMAGE_FILE_MACHINE_AMD64=0x8664 };", 0);
+	sdb_set (bin->kv, "pe_image_file_header.format", "[2]Ewxxxww"
+					  " (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable"
 					  " numberOfSymbols sizeOfOptionalHeader characteristics", 0);
 	sdb_set (bin->kv, "pe_image_data_directory.format", "xx virtualAddress size",0);
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
