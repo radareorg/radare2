@@ -14,18 +14,13 @@ static const char *instrs[] = {
 	[PROP_AND]		= "and",
 	[PROP_ANDN]		= "andn",
 	[PROP_CALL]		= "call",
-	[PROP_CLKSET]	= "clkset",
 	[PROP_CMP]		= "cmp",
 	[PROP_CMPS]		= "cmps",
 	[PROP_CMPSUB]	= "cmpsub",
 	[PROP_CMPSX]	= "cmpsx",
 	[PROP_CMPX]		= "cmpx",
-	[PROP_COGID]	= "cogid",
-	[PROP_COGINIT]	= "coginit",
 	[PROP_DJNZ]		= "djnz",
 	[PROP_HUBOP]	= "hubop",
-	[PROP_JMP]		= "jmp",
-	[PROP_JMPRET]	= "jmpret",
 	[PROP_MOV]		= "mov",
 	[PROP_MAX]		= "max",
 	[PROP_MAXS]		= "maxs",
@@ -43,7 +38,6 @@ static const char *instrs[] = {
 	[PROP_NEGNC]	= "negnc",
 	[PROP_NEGNZ]	= "negnz",
 	[PROP_NEGZ]		= "negz",
-	[PROP_NOP]		= "nop",
 	[PROP_OR]		= "or",
 	[PROP_RCL]		= "rcl",
 	[PROP_RCR]		= "rcr",
@@ -57,11 +51,9 @@ static const char *instrs[] = {
 	[PROP_SAR]		= "sar",
 	[PROP_SHL]		= "shl",
 	[PROP_SHR]		= "shr",
-	[PROP_SUB]		= "sub",
 	[PROP_SUBABS]	= "subabs",
 	[PROP_SUBS]		= "subs",
 	[PROP_SUBSX]	= "subsx",
-	[PROP_SUBX]		= "subx",
 	[PROP_SUMC]		= "sumc",
 	[PROP_SUMNC]	= "sumnc",
 	[PROP_SUMNZ]	= "sumnz",
@@ -273,7 +265,6 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
 		case PROP_SAR:
 		case PROP_SHL:
 		case PROP_SHR:
-			//case PROP_SUB:
 		case PROP_SUBABS:
 		case PROP_SUBS:
 		case PROP_SUBSX:
@@ -296,6 +287,12 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
 						opcode == PROP_RDWORD) && (!(get_zcri (in) & 0x2))) {
 				cmd->instr[0] = 'w';
 				cmd->instr[1] = 'r';
+			}
+
+			if (opcode == PROP_SUB && instr & 0x08000000) {
+				snprintf (cmd->instr, PROP_INSTR_MAXLEN - 1, "sub");
+			} else if (opcode == PROP_SUBX && instr & 0x08000000) {
+				snprintf (cmd->instr, PROP_INSTR_MAXLEN - 1, "subx");
 			}
 
 			if (is_immediate (in)) {

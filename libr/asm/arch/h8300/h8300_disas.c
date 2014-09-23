@@ -69,7 +69,6 @@ static const char *commands[] = {
 	[H8300_SLEEP] = "sleep",
 	[H8300_STC] = "stc",
 	[H8300_SUB_1] = "sub.b",
-	[H8300_SUBW] = "sub.w",
 	[H8300_SUBS] = "subs",
 	[H8300_SUBX] = "subx",
 	[H8300_XOR] = "xor",
