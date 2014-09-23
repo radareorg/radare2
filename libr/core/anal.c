@@ -971,7 +971,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	RAnalFunction *fcn;
 	RAnalRef *refi;
 	RAnalVar *vari;
-	int bbs, count = 0;
+	int first, bbs, count = 0;
 
 	if (rad==2) {
 		r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -1004,41 +1004,56 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 							fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
 				r_cons_printf (",\"callrefs\":[");
+				first = 1;
 				r_list_foreach (fcn->refs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
-						refi->type == R_ANAL_REF_TYPE_CALL)
-						r_cons_printf ("{\"addr\":%"PFMT64d",\"type\":\"%c\"}%s",
+							refi->type == R_ANAL_REF_TYPE_CALL) {
+						r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\"}",
+								first?"":",",
 								refi->addr,
-								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J',
-								iter2->n? ",":"");
+								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
+						first = 0;
+					}
 
 				r_cons_printf ("],\"datarefs\":[");
+				first = 1;
 				r_list_foreach (fcn->refs, iter2, refi)
-					if (refi->type == R_ANAL_REF_TYPE_DATA)
-						r_cons_printf ("%"PFMT64d"%s", refi->addr, iter2->n?",":"");
+					if (refi->type == R_ANAL_REF_TYPE_DATA) {
+						r_cons_printf ("%s%"PFMT64d, first?"":",", refi->addr);
+						first = 0;
+					}
 
 				r_cons_printf ("],\"codexrefs\":[");
+				first = 1;
 				r_list_foreach (fcn->xrefs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
-						refi->type == R_ANAL_REF_TYPE_CALL)
-						r_cons_printf ("{\"addr\":%"PFMT64d",\"type\":\"%c\"}%s",
+							refi->type == R_ANAL_REF_TYPE_CALL) {
+						r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\"}",
+								first?"":",",
 								refi->addr,
-								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J',
-								iter2->n? ",":"");
+								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
+						first = 0;
+					}
 
 				r_cons_printf ("],\"dataxrefs\":[");
+				first = 1;
 				r_list_foreach (fcn->xrefs, iter2, refi)
-					if (refi->type == R_ANAL_REF_TYPE_DATA)
-						r_cons_printf ("%"PFMT64d"%s", refi->addr, iter2->n?",":"");
+					if (refi->type == R_ANAL_REF_TYPE_DATA) {
+						r_cons_printf ("%s%"PFMT64d, first?"":",", refi->addr);
+						first = 0;
+					}
 				r_cons_printf ("]");
 
 				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM) {
+#if 0
+// XXX: this is stored in SDB now
 					r_cons_printf (",\"vars\":%d", r_list_length (fcn->vars));
 					r_list_foreach (fcn->vars, iter2, vari) {
 						char *s = r_anal_type_to_str (core->anal, vari->type);
 						r_cons_printf ("\n  %s %s @ 0x%02x", s, vari->name, vari->delta);
 						free (s);
 					}
+#endif
 					r_cons_printf (",\"difftype\":\"%s\"",
 							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
 							fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
