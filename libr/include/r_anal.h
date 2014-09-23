@@ -1254,6 +1254,7 @@ extern RAnalPlugin r_anal_plugin_sysz;
 extern RAnalPlugin r_anal_plugin_sparc_cs;
 extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_propeller;
+extern RAnalPlugin r_anal_plugin_msp430;
 #ifdef __cplusplus
 }
 #endif
