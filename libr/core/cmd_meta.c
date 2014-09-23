@@ -411,6 +411,11 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					n = r_print_format (core->print, addr, core->block,
 							core->blocksize, p+1, -1, NULL);
 			}
+			if (type == 's') {
+				p = strchr (t, ' ');
+				if (p)
+					addr = r_num_math (core->num, p+1);
+			}
 			if (!*t || n>0) {
 				RFlagItem *fi;
 				p = strchr (t, ' ');
