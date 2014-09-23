@@ -569,6 +569,9 @@ int main(int argc, char **argv) {
 
 						printf ("f %s @ %s\n", flagname, v);
 					}
+					if ((flagname=strstr (dup, ".cparse"))) {
+						printf ("\"td %s\"\n", v);
+					}
 					if ((flagname=strstr (dup, ".format"))) {
 						*flagname = 0;
 						flagname = dup;

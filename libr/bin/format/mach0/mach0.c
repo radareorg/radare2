@@ -95,10 +95,16 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 #endif
 	sdb_num_set (bin->kv, sdb_fmt (0, "mach0_segment_%d.offset", seg), off, 0);
 	sdb_array_add_num (bin->kv, "mach0_segments.count", off, 0);
-	sdb_set (bin->kv, sdb_fmt (0, "mach0_segment.format", seg),
+	sdb_set (bin->kv, sdb_fmt (0, "mach0_segment.format"),
 		"xd[16]zxxxxoodx "
 		"cmd cmdsize segname vmaddr vmsize "
 		"fileoff filesize maxprot initprot nsects flags", 0);
+#if 0
+// ENUM DEMO
+	sdb_set (bin->kv, sdb_fmt (0, "mach0_segment.cparse"),
+		"enum { FOO=1, FOO=2, FOO=4 }", 0);
+#endif
+
 	if (len == -1) {
 		eprintf ("Error: read (seg)\n");
 		return R_FALSE;
