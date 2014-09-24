@@ -77,7 +77,8 @@ R_API void r_flag_list(RFlag *f, int rad) {
 	RListIter *iter;
 	RFlagItem *flag;
 
-	if (rad=='j') {
+	switch (rad) {
+	case 'j': {
 		int first = 1;
 		r_cons_printf ("[");
 		r_list_foreach_prev (f->flags, iter, flag) {
@@ -96,38 +97,58 @@ R_API void r_flag_list(RFlag *f, int rad) {
 			first = 0;
 		}
 		r_cons_printf ("]\n");
-		return;
-	}
-	r_list_foreach_prev (f->flags, iter, flag) {
-		if ((f->space_idx != -1) && (flag->space != f->space_idx))
-			continue;
-		if (rad) {
-			if (fs == -1 || flag->space != fs) {
-				const char *flagspace;
-				fs = flag->space;
-				flagspace = r_flag_space_get_i (f, fs);
-				if (!flagspace || !*flagspace)
-					flagspace = "*";
-				r_cons_printf ("fs %s\n", flagspace);
-			}
-			if (flag->alias) {
-				r_cons_printf ("fa %s %s\n", flag->name, flag->alias);
-			if (flag->comment && *flag->comment) 
-				r_cons_printf ("\"fC %s %s\"\n", flag->name, flag->comment);
-			} else {
-				r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
-					flag->name, flag->size, flag->offset,
-					flag->comment? flag->comment:"");
-			}
-		} else {
-			if (flag->alias) {
-				r_cons_printf ("%s %"PFMT64d" %s\n",
-					flag->alias, flag->size, flag->name);
-			} else {
-				r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-					flag->offset, flag->size, flag->name);
-			}
 		}
+		break;
+	case 1:
+	case '*':
+		 r_list_foreach_prev (f->flags, iter, flag) {
+			 if ((f->space_idx != -1) && (flag->space != f->space_idx))
+				 continue;
+			 if (fs == -1 || flag->space != fs) {
+				 const char *flagspace;
+				 fs = flag->space;
+				 flagspace = r_flag_space_get_i (f, fs);
+				 if (!flagspace || !*flagspace)
+					 flagspace = "*";
+				 r_cons_printf ("fs %s\n", flagspace);
+			 }
+			 if (flag->alias) {
+				 r_cons_printf ("fa %s %s\n", flag->name, flag->alias);
+				 if (flag->comment && *flag->comment) 
+					 r_cons_printf ("\"fC %s %s\"\n", flag->name, flag->comment);
+			 } else {
+				 r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
+					 flag->name, flag->size, flag->offset,
+					 flag->comment? flag->comment:"");
+			 }
+		 }
+		 break;
+	case 'n': // show original name
+		 r_list_foreach_prev (f->flags, iter, flag) {
+			 if ((f->space_idx != -1) && (flag->space != f->space_idx))
+				 continue;
+			 if (flag->alias) {
+				 r_cons_printf ("%s %"PFMT64d" %s\n",
+					 flag->alias, flag->size, flag->realname);
+			 } else {
+				 r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
+					 flag->offset, flag->size, flag->realname);
+			 }
+		 }
+		 break;
+	default:
+		 r_list_foreach_prev (f->flags, iter, flag) {
+			 if ((f->space_idx != -1) && (flag->space != f->space_idx))
+				 continue;
+			 if (flag->alias) {
+				 r_cons_printf ("%s %"PFMT64d" %s\n",
+					 flag->alias, flag->size, flag->name);
+			 } else {
+				 r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
+					 flag->offset, flag->size, flag->name);
+			 }
+		 }
+		 break;
 	}
 }
 
@@ -309,14 +330,19 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name) {
 	int len;
-	if (!item || !r_name_check (name))
+	if (!item)
 		return R_FALSE;
+	strncpy (item->realname, name, R_FLAG_NAME_SIZE);
+	if (!r_name_check (name))
+		return R_FALSE;
+	/* original name. maybe do some char mangling : printable*/
+	/* filtered name : typable */
 	strncpy (item->name, name, R_FLAG_NAME_SIZE);
 	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
 	memmove (item->name, r_str_chop (item->name), len);
 	r_name_filter (item->name, 0);
 	item->name[R_FLAG_NAME_SIZE-1]='\0';
-	item->namehash = r_str_hash64 (item->name);
+	item->namehash = r_str_hash64 (item->realname);
 	return R_TRUE;
 }
 

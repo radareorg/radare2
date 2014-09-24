@@ -26,6 +26,7 @@ R_LIB_VERSION_HEADER(r_flag);
 
 typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];
+	char realname[R_FLAG_NAME_SIZE];
 	ut64 namehash;
 	ut64 offset;
 	ut64 size;

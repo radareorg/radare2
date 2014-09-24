@@ -55,6 +55,7 @@ typedef struct r_disam_options_t {
 	int show_trace;
 	int linesout;
 	int adistrick;
+	int asm_demangle;
 	int show_offset;
 	int show_offseg;
 	int show_flags;
@@ -228,6 +229,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.linesout");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
+	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
@@ -823,8 +825,13 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			}
 			if (ds->show_offset) r_cons_printf (";-- ");
 			if (ds->show_color) r_cons_strcat (ds->color_flag);
-			if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
-			else r_cons_printf ("%s:\n", flag->name);
+			if (ds->asm_demangle) {
+				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
+				else r_cons_printf ("%s:\n", flag->realname);
+			} else {
+				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
+				else r_cons_printf ("%s:\n", flag->name);
+			}
 			//handle_set_pre (ds, "  ");
 			if (ds->show_color) {
 				r_cons_printf (Color_RESET"%s%s"Color_RESET, ds->color_fline,

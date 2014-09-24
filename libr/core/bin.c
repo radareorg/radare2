@@ -758,7 +758,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		int is_thumb = 0;
-		char *name, *dname, *cname;
+		char *name, *dname, *cname, *realname;
 		//ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
@@ -774,15 +774,15 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				r_anal_hint_set_bits (r->anal, addr, 16);
 			}
 
-			if (r_config_get_i (r->config, "asm.demangle")) {
+			if (r_config_get_i (r->config, "bin.demangle")) {
 				char *demname = r_bin_demangle (r->bin->cur, name);
-
 				if (demname) {
 					free (name);
 					name = demname;
 				}
 			}
 
+			realname = strdup (name);
 			r_name_filter (name, 80);
 			if (cname) {
 				RFlagItem *flag_item = NULL;
@@ -797,7 +797,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					flag_item = NULL;
 				}
 				// set the new sym.[cname].[name] with comment
-				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
+				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, realname);
 				r_flag_set (r->flags, str, addr, symbol->size, 0);
 				if (comment) {
 					flag_item = r_flag_get (r->flags, str);
@@ -806,8 +806,11 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				}
 			} else {
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
-				r_flag_set (r->flags, str, addr, symbol->size, 0);
+				r_flag_item_set_name (
+					r_flag_set (r->flags, sdb_fmt (0, "sym.%s", name), addr, symbol->size, 0),
+					sdb_fmt (1,"sym.%s", realname));
 			}
+			R_FREE (realname);
 #if 0
 			// dunno why this is here and mips results in wrong dis
 			if (!strncmp (symbol->type, "OBJECT", 6)) {

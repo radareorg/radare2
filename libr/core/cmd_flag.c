@@ -341,6 +341,7 @@ static int cmd_flag(void *data, const char *input) {
 			} else eprintf ("Cannot find flag\n");
 		}
 		break;
+	case 'n':
 	case '*':
 	case '\0':
 	case 'j':
@@ -396,6 +397,7 @@ static int cmd_flag(void *data, const char *input) {
 		"fj","","list flags in JSON format",
 		"fl"," [flagname]","show flag length (size)",
 		"fm"," addr","move flag at current offset to new address",
+		"fn","","list flags displaying the real name (demangled)",
 		"fo","","show fortunes",
 		//" fc [name] [cmt]  ; set execution command for a specific flag"
 		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
