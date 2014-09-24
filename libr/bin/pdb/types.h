@@ -1174,4 +1174,73 @@ typedef struct {
 	free_func free_;
 } SPDBInfoStream/*D*/;
 
+// dbi stream structures start here
+
+typedef enum {
+	eIMAGE_FILE_MACHINE_UNKNOWN = 0x0,
+	eIMAGE_FILE_MACHINE_I386 = 0x014c,
+	eIMAGE_FILE_MACHINE_IA64 = 0x0200,
+	eIMAGE_FILE_MACHINE_AMD64 = 0x8664,
+	eMaxMachine
+} EMachine;
+
+//DBIHeader = Struct("DBIHeader",
+//    Const(Bytes("magic", 4), "\xFF\xFF\xFF\xFF"),                           # 0
+//    ULInt32("version"),                                                     # 4
+//    ULInt32("age"),                                                         # 8
+//    SLInt16("gssymStream"),                                                 # 12
+//    ULInt16("vers"),                                                        # 14
+//    SLInt16("pssymStream"),                                                 # 16
+//    ULInt16("pdbver"),                                                      # 18
+//    SLInt16("symrecStream"),           # stream containing global symbols   # 20
+//    ULInt16("pdbver2"),                                                     # 22
+//    ULInt32("module_size"),         # total size of DBIExHeaders            # 24
+//    ULInt32("secconSize"),                                                  # 28
+//    ULInt32("secmapSize"),                                                  # 32
+//    ULInt32("filinfSize"),                                                  # 36
+//    ULInt32("tsmapSize"),                                                   # 40
+//    ULInt32("mfcIndex"),                                                    # 44
+//    ULInt32("dbghdrSize"),                                                  # 48
+//    ULInt32("ecinfoSize"),                                                  # 52
+//    ULInt16("flags"),                                                       # 56
+//    Enum(ULInt16("Machine"),                                                # 58
+//        IMAGE_FILE_MACHINE_UNKNOWN = 0x0,
+//        IMAGE_FILE_MACHINE_I386 = 0x014c,
+//        IMAGE_FILE_MACHINE_IA64 = 0x0200,
+//        IMAGE_FILE_MACHINE_AMD64 = 0x8664,
+//    ),
+//    ULInt32("resvd"),                                                       # 60
+//)
+#pragma pack(push, 1)
+typedef struct {
+	unsigned int magic;
+	unsigned int version;
+	unsigned int age;
+	short gssymStream;
+	unsigned short vers;
+	short pssymStream;
+	unsigned short pdbver;
+	short symrecStream;
+	unsigned short pdbver2;
+	unsigned int module_size;
+	unsigned int seccon_size;
+	unsigned int secmap_size;
+	unsigned int filinf_size;
+	unsigned int tsmap_size;
+	unsigned int mfc_index;
+	unsigned int dbghdr_size;
+	unsigned int ecinfo_size;
+	unsigned short flags;
+	EMachine machine; // read just 2 bytes
+	unsigned int resvd;
+} SDBIHeader;
+#pragma pack(pop)
+
+typedef struct {
+	SDBIHeader dbi_header;
+
+	free_func free_;
+} SDbiStream;
+// end of dbi stream structures
+
 #endif // TYPES_H

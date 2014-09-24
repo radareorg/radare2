@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "tpi.h"
+#include "dbi.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
@@ -271,14 +272,13 @@ static int pdb_read_root(R_PDB *pdb)
 			r_list_append(pList, tpi_stream);
 			break;
 		case ePDB_STREAM_DBI:
-			//TODO: free memory
-//			parsed_pdb_stream = (SParsedPDBStream *) malloc(sizeof(SParsedPDBStream));
-//			init_parsed_pdb_stream(parsed_pdb_stream, pdb->fp, page->stream_pages,
-//								   root_stream->pdb_stream.pages_amount, i,
-//								   page->stream_size,
-//								   root_stream->pdb_stream.page_size, 0);
-//			r_list_append(pList, parsed_pdb_stream);
+		{
+			SDbiStream *dbi_stream = (SDbiStream *) malloc(sizeof(SDbiStream));
+			init_dbi_stream(dbi_stream);
+			parse_dbi_stream(dbi_stream, &stream_file);
+			r_list_append(pList, parsed_pdb_stream);
 			break;
+		}
 		default:
 			pdb_stream = (R_PDB_STREAM *)malloc(sizeof(R_PDB_STREAM));
 			init_r_pdb_stream(pdb_stream, pdb->fp, page->stream_pages,
