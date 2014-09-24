@@ -1393,6 +1393,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	ut64 scrseek;
 	int wheel, flags, ch;
 
+	if (r_cons_get_size(&ch)<1 || ch<1) {
+		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
+		return 0;
+	}
+
 	obs = core->blocksize;
 	//r_cons_set_cup (R_TRUE);
 
@@ -1408,7 +1413,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	teefile = r_cons_singleton ()->teefile;
 	r_cons_singleton ()->teefile = "";
 
-	core->print->flags |=  R_PRINT_FLAGS_ADDRMOD;
+	core->print->flags |= R_PRINT_FLAGS_ADDRMOD;
 	do {
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		r_cons_show_cursor (R_FALSE);

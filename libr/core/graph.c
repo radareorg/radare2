@@ -46,6 +46,8 @@ static Edge edges[] = {
 static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	char title[128];
 
+	if (!can)
+		return;
 	n->w = r_str_bounds (n->text, &n->h);
 	n->w += 4;
 	n->h += 3;
@@ -81,11 +83,11 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	int x, y, x2, y2;
 	int xinc = 3+(nth*3);
-	x = a->x+xinc;
-	y = a->y+a->h;
-	x2 = b->x+xinc;
+	x = a->x + xinc;
+	y = a->y + a->h;
+	x2 = b->x + xinc;
 	y2 = b->y;
-	L (x,y,x2,y2);
+	L (x, y, x2, y2);
 }
 
 static int Edge_node(Edge *edges, int cur, int nth) {
@@ -322,6 +324,9 @@ static void r_core_graph_refresh (RCore *core) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
 	r_cons_clear00 ();
+	if (!can) {
+		return;
+	}
 	r_cons_canvas_resize (can, w, h);
 	r_cons_canvas_clear (can);
 
@@ -362,6 +367,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w-1, h-1);
+	if (!can) {
+		eprintf ("Cannot create RCons.canvas context\n");
+		return R_FALSE;
+	}
 
 	n_nodes = bbNodes (core, fcn, &nodes);
 	if (!nodes) {

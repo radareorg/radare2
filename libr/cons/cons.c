@@ -579,6 +579,7 @@ R_API int r_cons_get_cursor(int *rows) {
 	return col;
 }
 
+// XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
 #if EMSCRIPTEN
 	I.columns = 80;
@@ -614,12 +615,25 @@ R_API int r_cons_get_size(int *rows) {
 		I.rows = 23;
 	}
 #endif
-	if (rows)
-		*rows = I.rows;
+#if SIMULATE_ADB_SHELL
+	I.rows = 0;
+	I.columns = 0;
+#endif
+#if SIMULATE_MAYHEM
+	// expect tons of crashes
+	I.rows = -1;
+	I.columns = -1;
+#endif
+	if (I.rows<0)
+		I.rows = 0;
+	if (I.columns<0)
+		I.columns = 0;
 	if (I.force_columns) I.columns = I.force_columns;
 	if (I.force_rows) I.rows = I.force_rows;
 	if (I.fix_columns) I.columns += I.fix_columns;
 	if (I.fix_rows) I.rows += I.fix_rows;
+	if (rows)
+		*rows = I.rows;
 	I.rows = R_MAX (0, I.rows);
 	return R_MAX (0, I.columns);
 }

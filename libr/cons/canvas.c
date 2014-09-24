@@ -12,7 +12,7 @@ R_API void r_cons_canvas_free (RConsCanvas *c) {
 
 R_API void r_cons_canvas_clear (RConsCanvas *c) {
 	int y;
-	if (c->b) {
+	if (c && c->b) {
 		memset (c->b, '\n', c->blen);
 		c->b[c->blen] = 0;
 		for (y = 0; y<c->h; y++)
@@ -43,6 +43,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 
 R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	int ret = R_TRUE;
+	if (!c) return 0;
 	x += c->sx;
 	y += c->sy;
 	if (x >= c->w) {
@@ -85,7 +86,10 @@ static char *getrow (char *p, char **n) {
 
 static char *prefixline(RConsCanvas *c, int *left) {
 	int x;
-	char *p = c->b + (c->y * c->w);
+	char *p;
+	if (!c)
+		return NULL;
+	p = c->b + (c->y * c->w);
 	for (x = 0; x<c->x; x++) {
 		if (p[x] == '\n')
 			p[x] = ' ';
@@ -128,10 +132,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
-	char *o = malloc (c->w*(c->h+1));
-	char *b = c->b;
-	if (!o)
-		return NULL;
+	char *o, *b;
+	if (!c) return NULL;
+	b = c->b;
+	o = malloc (c->w*(c->h+1));
+	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
 			int p = x + (y*c->w);
@@ -156,7 +161,7 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	int blen = (w+1)*h;
 	char *b = NULL;
-	if (w < 0) return R_FALSE;
+	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);
 	if (!b) return R_FALSE;
 	c->blen = blen;
