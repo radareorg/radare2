@@ -85,9 +85,9 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 		"imp.",
 		NULL
 	};
-	if (*str==str[1] && *str=='_') {
+	if (str[0]==str[1] && *str=='_') {
 		str++;
-	} else {
+	} {
 		for (i=0; prefixes[i]; i++) {
 			int plen = strlen (prefixes[i]);
 			if (!strncmp (str, prefixes[i], plen)) {

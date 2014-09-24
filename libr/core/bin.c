@@ -556,15 +556,24 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
+		RFlagItem *fi;
+		char *demname;
 		r_flag_space_set (r->flags, "relocs");
 		r_list_foreach (relocs, iter, reloc) {
 			ut64 addr = va? reloc->vaddr: reloc->paddr;
+			demname = NULL;
 			if (reloc->import && reloc->import->name[0]) {
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s", reloc->import->name);
+				if (r_config_get_i (r->config, "bin.demangle"))
+					demname = r_bin_demangle (r->bin->cur, str); //reloc->import->name);
 				r_name_filter (str, 0);
 				//r_str_replace_char (str, '$', '_');
-				r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
+				fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
+				if (demname) {
+					r_flag_item_set_name (fi, str,
+						sdb_fmt (0, "reloc.%s", demname));
+				}
 			} else {
 				// TODO(eddyb) implement constant relocs.
 			}
