@@ -5,7 +5,7 @@
 static void showfile(const int nth, const char *name, int minusl) {
 	struct stat sb;
 	const char *n = name;
-	char *nn;
+	char *nn, *u_rwx;
 	int sz = r_file_size (n);
 	int perm, isdir, uid = 0, gid = 0;
 	int fch = '-';
@@ -37,6 +37,12 @@ static void showfile(const int nth, const char *name, int minusl) {
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
+		if (!(u_rwx = strdup(r_str_rwx_i(perm>>6)))) {
+			free(nn);
+			return;
+		}
+		if (sb.st_mode & S_ISUID)
+			u_rwx[2] = (sb.st_mode & S_IXUSR) ? 's' : 'S';
 		if (isdir) fch = 'd';
 		else
 			switch (ifmt) {
@@ -52,11 +58,12 @@ static void showfile(const int nth, const char *name, int minusl) {
 #endif
 	r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n",
 		isdir?'d':fch,
-		      r_str_rwx_i (perm>>6),
+		      u_rwx,
 		      r_str_rwx_i ((perm>>3)&7),
 		      r_str_rwx_i (perm&7),
 		      uid, gid, sz, nn);
 	free (nn);
+	free(u_rwx);
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
