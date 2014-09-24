@@ -45,6 +45,9 @@ EXTRA +=
     <include>format
 ;
 
+# PDB
+OBJS += pdb/tpi.c pdb/stream_file.c pdb/pdb.c
+
 # Java
 OBJS += p/bin_java.c ;
 EXTRA +=

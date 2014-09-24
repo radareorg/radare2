@@ -15,9 +15,10 @@ include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
-OBJS=bin.o dbginfo.o bin_write.o demangle.o dwarf.o pdb.o
+OBJS=bin.o dbginfo.o bin_write.o demangle.o dwarf.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
 OBJS+=mangling/objc.o mangling/cxx.o
+OBJS+=pdb/tpi.o pdb/stream_file.o pdb/pdb.o
 LINK+=$(SHLR)/java/libr_java.a
 
 include $(TOP)/libr/rules.mk
