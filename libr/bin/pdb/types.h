@@ -1184,6 +1184,64 @@ typedef enum {
 	eMaxMachine
 } EMachine;
 
+#pragma pack(push, 1)
+//Struct(name,
+//        SLInt16("section"),
+//        Padding(2),
+//        SLInt32("offset"),
+//        SLInt32("size"),
+//        ULInt32("flags"),
+//        SLInt16("module"),
+//        Padding(2),
+//        ULInt32("dataCRC"),
+//        ULInt32("relocCRC"),
+//    )
+typedef struct {
+	short section;
+	short padding1;
+	int offset;
+	int size;
+	unsigned int flags;
+	int module;
+	short padding2;
+	unsigned int data_crc;
+	unsigned int reloc_crc;
+} SSymbolRange;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+//Struct("DBIExHeader",
+//    ULInt32("opened"),
+//    SymbolRange("range"),
+//    ULInt16("flags"),
+//    SLInt16("stream"),
+//    ULInt32("symSize"),
+//    ULInt32("oldLineSize"),
+//    ULInt32("lineSize"),
+//    SLInt16("nSrcFiles"),
+//    Padding(2),
+//    ULInt32("offsets"),
+//    ULInt32("niSource"),
+//    ULInt32("niCompiler"),
+//    CString("modName"),
+//    CString("objName"),
+typedef struct {
+	unsigned int opened;
+	SSymbolRange range;
+	unsigned short flags;
+	short stream;
+	unsigned int symSize;
+	unsigned int oldLineSize;
+	unsigned int lineSize;
+	short nSrcFiles;
+	short padding1;
+	unsigned int offsets;
+	unsigned int niSource;
+	unsigned int niCompiler;
+	SCString modName;
+	SCString objName;
+} SDBIExHeader;
+#pragma pack(pop)
 //DBIHeader = Struct("DBIHeader",
 //    Const(Bytes("magic", 4), "\xFF\xFF\xFF\xFF"),                           # 0
 //    ULInt32("version"),                                                     # 4

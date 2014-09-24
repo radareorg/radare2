@@ -38,11 +38,19 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file)
 {
 	SDbiStream *dbi_stream = (SDbiStream *) parsed_pdb_stream;
 	int pos = 0;
+	char *dbiexhdr_data = 0;
+	int size = 0;
 
 	parse_dbi_header(&dbi_stream->dbi_header, stream_file);
 	pos += sizeof(SDBIHeader) - 2;	// 2 because enum in C equal to 4, but
 									// to read just 2;
 	stream_file_seek(stream_file, pos, 0);
+
+	size = dbi_stream->dbi_header.module_size;
+	dbiexhdr_data = (char *) malloc(size);
+	stream_file_read(stream_file, size, dbiexhdr_data);
+
+	free(dbiexhdr_data);
 
 	int i = 0;
 }
