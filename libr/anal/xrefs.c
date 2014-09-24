@@ -183,8 +183,6 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 
 R_API const char *r_anal_xrefs_type_tostring (char type) {
 	switch (type) {
-	case R_ANAL_REF_TYPE_NULL:
-		return "UNKNOWN";
 	case R_ANAL_REF_TYPE_CODE:
 		return "JMP";
 	case R_ANAL_REF_TYPE_CALL:
@@ -193,6 +191,9 @@ R_API const char *r_anal_xrefs_type_tostring (char type) {
 		return "DATA";
 	case R_ANAL_REF_TYPE_STRING:
 		return "STRING";
+	case R_ANAL_REF_TYPE_NULL:
+	default:
+		return "UNKNOWN";
 	}
 }
 

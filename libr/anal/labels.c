@@ -22,7 +22,7 @@ R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *na
 
 R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	if (!anal || !fcn)
-		return UT64_MAX;
+		return NULL;
 	return sdb_const_get (DB, ADDR(addr), NULL);
 }
 
