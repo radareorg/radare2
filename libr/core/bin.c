@@ -758,7 +758,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		int is_thumb = 0;
-		char *name, *dname, *cname, *realname;
+		char *name, *dname, *cname, *demname = NULL;
 		//ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
@@ -774,43 +774,41 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				r_anal_hint_set_bits (r->anal, addr, 16);
 			}
 
-			if (r_config_get_i (r->config, "bin.demangle")) {
-				char *demname = r_bin_demangle (r->bin->cur, name);
-				if (demname) {
-					free (name);
-					name = demname;
-				}
-			}
-
-			realname = strdup (name);
+			demname = NULL;
+			if (r_config_get_i (r->config, "bin.demangle"))
+				demname = r_bin_demangle (r->bin->cur, name);
 			r_name_filter (name, 80);
+			if (!demname)
+				demname = strdup (name);
 			if (cname) {
-				RFlagItem *flag_item = NULL;
+				RFlagItem *fi = NULL;
 				char * comment = NULL;
+
 				r_name_filter (cname, 50);
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
 				// check for a duplicate name sym.[name]
-				flag_item = r_flag_get (r->flags, str);
-				if (flag_item != NULL && (flag_item->offset - r->flags->base) == addr) {
-					comment = flag_item->comment ? strdup(flag_item->comment) : NULL;
-					r_flag_unset (r->flags, str, flag_item );
-					flag_item = NULL;
+				fi = r_flag_get (r->flags, str);
+				r_flag_item_set_name (fi, str, sdb_fmt (1,"sym.%s", demname));
+				if (fi != NULL && (fi->offset - r->flags->base) == addr) {
+					comment = fi->comment ? strdup (fi->comment) : NULL;
+					r_flag_unset (r->flags, str, fi);
+					fi = NULL;
 				}
 				// set the new sym.[cname].[name] with comment
-				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, realname);
-				r_flag_set (r->flags, str, addr, symbol->size, 0);
+				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, demname);
+				fi = r_flag_set (r->flags, str, addr, symbol->size, 0);
 				if (comment) {
-					flag_item = r_flag_get (r->flags, str);
-					if (flag_item) r_flag_item_set_comment (flag_item, comment);
-					free(comment);
+					r_flag_item_set_comment (fi, comment);
+					free (comment);
 				}
 			} else {
-				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
-				r_flag_item_set_name (
-					r_flag_set (r->flags, sdb_fmt (0, "sym.%s", name), addr, symbol->size, 0),
-					sdb_fmt (1,"sym.%s", realname));
+				const char *flagname = sdb_fmt (0, "sym.%s", name);
+				RFlagItem *fi = r_flag_set (r->flags, flagname, addr, symbol->size, 0);
+				r_flag_item_set_name (fi, flagname, sdb_fmt (1,"sym.%s", demname));
 			}
-			R_FREE (realname);
+			if (demname != name) {
+				R_FREE (demname);
+			}
 #if 0
 			// dunno why this is here and mips results in wrong dis
 			if (!strncmp (symbol->type, "OBJECT", 6)) {

@@ -223,7 +223,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 	if (dup) {
 // XXX: doesnt works well 
 		item = R_NEW0 (RFlagItem);
-		if (!r_flag_item_set_name (item, name)) {
+		if (!r_flag_item_set_name (item, name, NULL)) {
 			eprintf ("Invalid flag name '%s'.\n", name);
 			free (item);
 			return NULL;
@@ -285,7 +285,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 			item->size = size;
 		} else {
 			item = R_NEW0 (RFlagItem);
-			if (!r_flag_item_set_name (item, name)) {
+			if (!r_flag_item_set_name (item, name, NULL)) {
 				eprintf ("Invalid flag name '%s'.\n", name);
 				free (item);
 				return NULL;
@@ -328,15 +328,17 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 	}
 }
 
-R_API int r_flag_item_set_name(RFlagItem *item, const char *name) {
+R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname) {
 	int len;
 	if (!item)
 		return R_FALSE;
-	strncpy (item->realname, name, R_FLAG_NAME_SIZE);
+	if (!realname)
+		realname = name;
 	if (!r_name_check (name))
 		return R_FALSE;
 	/* original name. maybe do some char mangling : printable*/
 	/* filtered name : typable */
+	strncpy (item->realname, realname, R_FLAG_NAME_SIZE);
 	strncpy (item->name, name, R_FLAG_NAME_SIZE);
 	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
 	memmove (item->name, r_str_chop (item->name), len);
@@ -364,7 +366,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 			r_hashtable64_remove (f->ht_name, hash);
 			r_list_delete_data (list, item);
 		}
-		if (!r_flag_item_set_name (item, name)) {
+		if (!r_flag_item_set_name (item, name, NULL)) {
 			r_list_append (list, item);
 			return R_FALSE;
 		}
