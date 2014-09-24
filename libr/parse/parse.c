@@ -112,10 +112,18 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
 		else for (ptr2 = ptr; *ptr2 && ((*ptr2=='\x1b')||!isseparator (*ptr2)); ptr2++);
 		off = r_num_math (NULL, ptr);
+		// small numbers should not be replaced by flags
+		if (off <0xff) {
+			ptr = ptr2;
+			continue;
+		}
+#if 0
+		// old behaviour: only hide flags at 0
 		if (!off) {
 			ptr = ptr2;
 			continue;
 		}
+#endif
 		fcn = r_anal_fcn_find (p->anal, off, 0);
 		if (fcn) {
 			if (fcn->addr == off) {

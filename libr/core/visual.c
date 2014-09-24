@@ -921,18 +921,19 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 			if (ocursor==-1) ocursor = cursor;
 			cursor += cols;
-			if (cursor + core->offset > last_printed_address) {
-				// we seek with the size of the first mnemo
-				cols = r_asm_disassemble (core->assembler,
-						&op, core->block, 32);
-				r_core_seek (core, core->offset+cols, 1);
-				cursor-=cols;
-				ocursor-=cols;
+			if (core->printidx == 1 || core->printidx == 2) {
+				if (cursor + core->offset > last_printed_address) {
+					// we seek with the size of the first mnemo
+					cols = r_asm_disassemble (core->assembler,
+							&op, core->block, 32);
+					r_core_seek (core, core->offset+cols, 1);
+					cursor-=cols;
+					ocursor-=cols;
+				}
 			}
 		} else {
-			if (last_printed_address) {
+			if (last_printed_address && last_printed_address > core->offset) {
 				r_core_seek (core, last_printed_address, 1);
-				//eprintf ("0x%llx\n", last_printed_address);
 			} else {
 				r_core_seek (core, core->offset+obs, 1);
 			}
