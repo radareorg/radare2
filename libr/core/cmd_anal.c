@@ -1632,10 +1632,9 @@ if (ret) {
 	case 'a':
 		r_cons_break (NULL, NULL);
 		r_core_anal_all (core);
-		if (core->cons->breaked) {
-			r_cons_clear_line (1);
+		if (core->cons->breaked)
 			eprintf ("Interrupted\n");
-		}
+		r_cons_clear_line (1);
 		r_cons_break_end();
 		if (input[1] == '?') {
 			const char* help_msg[] = {

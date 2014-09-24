@@ -1562,8 +1562,7 @@ R_API void r_core_anal_stats_free (RCoreAnalStats *s) {
 	free (s);
 }
 
-R_API RList* r_core_anal_cycles (RCore *core, int ccl)
-{
+R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 	ut64 addr = core->offset;
 	RAnalOp *op = NULL;
 	RAnalCycleFrame *prev = NULL, *cf = r_anal_cycle_frame_new ();
@@ -1722,7 +1721,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl)
 		}
 	}
 	return hooks;
-};
+}
 
 R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 	RAnalFunction *f;

@@ -170,7 +170,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	j = strlen ("- offset -  ");
 	for (i=0; i<nb_cols; i+=2) {
 		sprintf (bytes+j, "%02X%02X  ", i, i+1);
-		j+= 5;
+		j += 5;
 	}
 	sprintf (bytes+j+i, " ");
 	j++;
