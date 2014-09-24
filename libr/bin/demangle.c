@@ -75,14 +75,27 @@ R_API char *r_bin_demangle_java(const char *str) {
 
 R_API char *r_bin_demangle_cxx(const char *str) {
 	char *out;
-	int flags = DMGL_NO_OPTS; // DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE; // | DMGL_RET_POSTFIX | DMGL_TYPES;
-	if (*str==str[1] && *str=='_') str++;
-	else if (!strncmp (str, "__symbol_stub1_", 15))
-		str += 15;
-	else if (!strncmp (str, "sym.imp.", 8))
-		str += 8;
-	else if (!strncmp (str, "imp.", 4))
-		str += 4;
+	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
+	// | DMGL_RET_POSTFIX | DMGL_TYPES;
+	int i, flags = DMGL_NO_OPTS;
+	const char *prefixes[] = {
+		"__symbol_stub1_",
+		"reloc.",
+		"sym.imp.",
+		"imp.",
+		NULL
+	};
+	if (*str==str[1] && *str=='_') {
+		str++;
+	} else {
+		for (i=0; prefixes[i]; i++) {
+			int plen = strlen (prefixes[i]);
+			if (!strncmp (str, prefixes[i], plen)) {
+				str += plen;
+				break;
+			}
+		}
+	}
 	out = cplus_demangle_v3 (str, flags);
 
 	if (out)
