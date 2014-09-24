@@ -55,8 +55,8 @@ static Sdb* get_sdb (RBinObject *o) {
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	if (check_bytes (buf, sz))
-		return R_TRUE;
-	return R_FALSE;
+		return (void*)R_TRUE;
+	return NULL;
 }
 
 static int load(RBinFile *arch) {

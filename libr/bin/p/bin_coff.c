@@ -68,7 +68,7 @@ static RList *entries(RBinFile *arch) {
 }
 
 static RList *sections(RBinFile *arch) {
-	char *coffname;
+	const char *coffname;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -107,7 +107,7 @@ static RList *sections(RBinFile *arch) {
 }
 
 static RList *symbols(RBinFile *arch) {
-	char *coffname;
+	const char *coffname;
 	size_t i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;

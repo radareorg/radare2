@@ -1237,7 +1237,6 @@ R_API void r_core_visual_define (RCore *core) {
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
 	ut8 *p = core->block;
-	RAnalFunction *f;
 	char *name;
 	if (core->print->cur_enabled) {
 		int cur = core->print->cur;

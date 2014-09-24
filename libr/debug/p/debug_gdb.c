@@ -26,7 +26,7 @@ static int r_debug_gdb_step(RDebug *dbg) {
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	gdbr_read_registers(desc);
 	// read the len of the current area
-	int chopsz, buflen = 0;
+	int buflen = 0;
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	memcpy (buf, desc->data, desc->data_len);
 	if (!reg_buf) {
