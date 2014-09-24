@@ -163,7 +163,7 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Usage: ik [sdb-query]\n");
 			}
 			break;
-		case 'o': 
+		case 'o':
 			 {
 				const char *fn = input[1]==' '? input+2: cf->desc->name;
 				ut64 laddr = UT64_MAX;
@@ -189,7 +189,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
 		case 'e': RBININFO ("entries",R_CORE_BIN_ACC_ENTRIES); break;
-		case 'z': 
+		case 'z':
 			if (input[1] == 'z') {
 				/* TODO: reimplement in C to avoid forks */
 				char *ret;
@@ -249,7 +249,8 @@ static int cmd_info(void *data, const char *input) {
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",
 				"iS", "", "Sections",
-				"iz", "", "Strings",
+				"iz", "", "Strings in data sections",
+				"izz", "", "Search for Strings in the whole binary",
 				NULL
 				};
 				r_core_cmd_help(core, help_message);
