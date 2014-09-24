@@ -921,8 +921,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 			if (ocursor==-1) ocursor = cursor;
 			cursor += cols;
-			offscreen = (core->cons->rows-3)*cols;
-			if (cursor>=offscreen) {
+			if (cursor + core->offset > last_printed_address) {
+				// we seek with the size of the first mnemo
+				cols = r_asm_disassemble (core->assembler,
+						&op, core->block, 32);
 				r_core_seek (core, core->offset+cols, 1);
 				cursor-=cols;
 				ocursor-=cols;
