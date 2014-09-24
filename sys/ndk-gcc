@@ -18,7 +18,7 @@ OS=`uname | tr 'A-Z' 'a-z'`
 
 case "${ARCH}" in
 arm)
-	ANDROID_SDK_VERSION=19
+	ANDROID_SDK_VERSION=14
 	NDKPFX=${ARCH}-linux-androideabi
 	;;
 mips)
@@ -47,6 +47,8 @@ PROGDIR=${NDK}
 PLATFORM=android-${ANDROID_SDK_VERSION}
 PLATFORM_ROOT=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH}
 PLATFORM_PATH=${PLATFORM_ROOT}/usr
+NDK_BINS=`ls ${PROGDIR}/toolchains/*/prebuilt/linux*/bin |grep prebuilt | grep "/${ARCH}-" |sort |tail -n 1`
+[ -z "${NDK_BINS}" ] && \
 NDK_BINS=`ls ${PROGDIR}/toolchains/*/prebuilt/linux*/bin |grep prebuilt | grep "/${ARCH}" |sort |tail -n 1`
 #echo "ls ${PROGDIR}/toolchains/*/prebuilt/linux*/bin |grep prebuilt | grep "/${ARCH}-" |sort |tail -n 1"
 if [ -z "${NDK_BINS}" ]; then
