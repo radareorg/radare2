@@ -774,6 +774,15 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				r_anal_hint_set_bits (r->anal, addr, 16);
 			}
 
+			if (r_config_get_i (r->config, "asm.demangle")) {
+				char *demname = r_bin_demangle (r->bin->cur, name);
+
+				if (demname) {
+					free (name);
+					name = demname;
+				}
+			}
+
 			r_name_filter (name, 80);
 			if (cname) {
 				RFlagItem *flag_item = NULL;
