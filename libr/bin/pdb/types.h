@@ -18,7 +18,48 @@
 		fread(tmp, stream_file->page_size, 1, stream_file->fp); \
 		tmp += stream_file->page_size; \
 	} \
-}r
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define SWAP_UINT16(x) (((x) >> 8) | ((x) << 8))
+
+///////////////////////////////////////////////////////////////////////////////
+#define SWAP_UINT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
+
+///////////////////////////////////////////////////////////////////////////////
+#define CAN_READ(curr_read_bytes, bytes_for_read, max_len) { \
+	if ((((curr_read_bytes) + (bytes_for_read)) >= (max_len))) { \
+		return 0; \
+	} \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define UPDATE_DATA(src, curr_read_bytes, bytes_for_read) { \
+	(src) += (bytes_for_read); \
+	(curr_read_bytes) += (bytes_for_read); \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define PEEK_READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), (bytes_for_read), (max_len)); \
+	(dst) = *(type_name *) (src); \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
+	PEEK_READ((curr_read_bytes), (bytes_for_read), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), (bytes_for_read)); \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#define PAD_ALIGN(pad, curr_read_bytes, src, max_len) { \
+	int tmp = 0; \
+	if ((pad) > 0xF0) { \
+		tmp = (pad) & 0x0F; \
+		CAN_READ((curr_read_bytes), (tmp), (len)); \
+		UPDATE_DATA((src), (curr_read_bytes), (tmp)); \
+	} \
+}
 
 typedef struct R_STREAM_FILE_{
 	FILE *fp;
@@ -1296,6 +1337,7 @@ typedef struct {
 
 typedef struct {
 	SDBIHeader dbi_header;
+	RList *dbiexhdrs;
 
 	free_func free_;
 } SDbiStream;
