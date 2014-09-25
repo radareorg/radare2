@@ -149,7 +149,7 @@ static ut8 get_con (ut32 instr) {
 	return (instr >> 18) & 0xf;
 }
 
-static int decode_prefix (struct propeller_cmd *cmd, ut32 instr) {
+static void decode_prefix (struct propeller_cmd *cmd, ut32 instr) {
 	ut8 prefix = (instr >> 18) & 0xF;
 
 	snprintf (cmd->prefix, 15, "%s", conditions[prefix]);
