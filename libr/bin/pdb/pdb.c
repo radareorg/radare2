@@ -10,6 +10,16 @@
 #define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
 
+typedef void (*parse_stream_)(void *stream, R_STREAM_FILE *stream_file);
+
+typedef struct {
+	int indx;
+	parse_stream_ parse_stream;
+	void *stream;
+	EStream type;
+	free_func free;
+} SStreamParseFunc;
+
 ///////////////////////////////////////////////////////////////////////////////
 static void free_pdb_stream(void *stream)
 {
@@ -216,6 +226,53 @@ static void free_info_stream(void *stream)
 	free(info_stream->names);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+#define ADD_INDX_TO_LIST(list, index, stream_for_parse, stream_type, free_func, parse_func) { \
+	if (index != -1) { \
+		SStreamParseFunc *stream_parse_func = (SStreamParseFunc *) malloc(sizeof(SStreamParseFunc)); \
+		stream_parse_func->indx = (index); \
+		stream_parse_func->type = (stream_type); \
+		stream_parse_func->parse_stream = (parse_func); \
+		stream_parse_func->free = (free_func); \
+		stream_parse_func->stream = malloc(sizeof((stream_for_parse))); \
+		r_list_append((list), stream_parse_func); \
+	} \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
+{
+	ADD_INDX_TO_LIST(l, dbi_stream->dbi_header.symrecStream, 0, ePDB_STREAM_GSYM, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr, 0, ePDB_STREAM_SECT_HDR, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr_orig, 0, ePDB_STREAM_SECT__HDR_ORIG, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_to_src, 0, ePDB_STREAM_OMAP_TO_SRC, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, 0, ePDB_STREAM_OMAP_FROM_SRC, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, 0, ePDB_STREAM_FPO, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_new_fpo, 0, ePDB_STREAM_FPO_NEW, 0, 0);
+
+	// unparsed, but know their names
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_pdata, 0, ePDB_STREAM_PDATA, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res)
+{
+	SStreamParseFunc *stream_parse_func = 0;
+	RListIter *it = 0;
+
+	*res = 0;
+	it = r_list_iterator(l);
+	while (r_list_iter_next(it)) {
+		stream_parse_func = (SStreamParseFunc *) r_list_iter_get(it);
+		if (index == stream_parse_func->indx) {
+			*res = stream_parse_func;
+			break;
+		}
+	}
+}
+
 //seeLF.streams = []
 //for i in range(len(rs.streams)):
 //    try:
@@ -250,6 +307,8 @@ static int pdb_read_root(R_PDB *pdb)
 	R_STREAM_FILE stream_file;
 	RListIter *it;
 	SPage *page = 0;
+	RList *tmp_list = 0;
+	SStreamParseFunc *stream_parse_func = 0;
 
 	it = r_list_iterator(root_stream->streams_list);
 	while (r_list_iter_next(it)) {
@@ -277,19 +336,44 @@ static int pdb_read_root(R_PDB *pdb)
 			init_dbi_stream(dbi_stream);
 			parse_dbi_stream(dbi_stream, &stream_file);
 			r_list_append(pList, dbi_stream);
+			tmp_list = r_list_new();
+			fill_list_for_stream_parsing(tmp_list, dbi_stream);
 			break;
 		}
 		default:
+			find_indx_in_list(tmp_list, i, &stream_parse_func);
+			if (stream_parse_func) {
+				if (stream_parse_func->parse_stream) {
+					stream_parse_func->parse_stream(stream_parse_func->stream,
+													&stream_file);
+					r_list_append(pList, stream_parse_func->stream);
+					break;
+				}
+			}
+
 			pdb_stream = (R_PDB_STREAM *)malloc(sizeof(R_PDB_STREAM));
 			init_r_pdb_stream(pdb_stream, pdb->fp, page->stream_pages,
 							  root_stream->pdb_stream.pages_amount, i,
 							  page->stream_size,
 							  root_stream->pdb_stream.page_size);
 			r_list_append(pList, pdb_stream);
+
 			break;
 		}
 		i++;
 	}
+
+	// FREE tmp list
+	it = r_list_iterator(tmp_list);
+	while (r_list_iter_next(it)) {
+		stream_parse_func = (SStreamParseFunc *) r_list_iter_get(it);
+		if (stream_parse_func->free)
+			stream_parse_func->free(stream_parse_func->stream);
+		if (stream_parse_func->stream)
+			free(stream_parse_func->stream);
+		free(stream_parse_func);
+	}
+	r_list_free(tmp_list);
 
 	return 1;
 }
