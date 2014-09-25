@@ -50,7 +50,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 			cf->rwx | dbg));
 		r_cons_printf (",\"block\":%d", core->blocksize);
-		r_cons_printf (",\"uri\":\"%s\"", cf->uri);
+		r_cons_printf (",\"uri\":\"%s\"", cf->desc->uri);
 		if (binfile) {
 			if (binfile->curxtr)
 				r_cons_printf (",\"packet\":\"%s\"",
@@ -68,7 +68,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("size\t0x%"PFMT64x"\n", cf->size);
 		r_cons_printf ("mode\t%s\n", r_str_rwx_i (cf->rwx | dbg));
 		r_cons_printf ("block\t0x%x\n", core->blocksize);
-		r_cons_printf ("uri\t%s\n", cf->uri);
+		r_cons_printf ("uri\t%s\n", cf->desc->uri);
 		if (binfile && binfile->curxtr)
 			r_cons_printf ("packet\t%s\n",
 				binfile->curxtr->name);

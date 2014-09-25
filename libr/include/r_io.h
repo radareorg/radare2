@@ -64,6 +64,7 @@ typedef struct r_io_desc_t {
 	int fd;
 	int flags;
 	int state;
+	char *uri;
 	char *name;
 	void *data;
 	struct r_io_plugin_t *plugin;

@@ -26,7 +26,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	RBinFile *bf = (ofile && ofile->desc) ?
 		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
-	char *ofilepath = ofile ? strdup (ofile->uri) : NULL;
+	char *ofilepath = odesc ? strdup (odesc->uri) : NULL;
 	char *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = R_FALSE;
 	if (r_sandbox_enable (0)) {
@@ -539,7 +539,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 		}
 		fh->alive = 1;
 		fh->core = r;
-		fh->uri = strdup (file);
 		fh->desc = fd;
 		fh->size = r_io_desc_size (r->io, fd);
 		fh->rwx = mode;
@@ -622,7 +621,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	}
 	fh->alive = 1;
 	fh->core = r;
-	fh->uri = strdup (file);
 	fh->desc = fd;
 	fh->size = r_io_desc_size (r->io, fd);
 	fh->rwx = mode;
@@ -667,9 +665,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		cf->desc = NULL;
 		cf->map = NULL;
 
-		free (cf->uri);
 		r_bin_file_deref_by_bind (&cf->binb);
-		cf->uri = NULL;
 		memset (cf, 0, sizeof (RCoreFile));
 		free (cf);
 	}
@@ -731,9 +727,9 @@ R_API int r_core_file_list(RCore *core) {
 		if (f->map)
 			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
 				core->io->raised == f->desc->fd?'*':'-',
-				f->desc->fd, f->uri, f->map->from,
+				f->desc->fd, f->desc->uri, f->map->from,
 				f->desc->flags & R_IO_WRITE? "rw": "r");
-		else r_cons_printf ("- %d %s\n", f->desc->fd, f->uri);
+		else r_cons_printf ("- %d %s\n", f->desc->fd, f->desc->uri);
 		count++;
 	}
 	return count;
@@ -770,7 +766,7 @@ R_API int r_core_file_binlist(RCore *core) {
 		if (cf && cf->map) {
 			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
 				core->io->raised == cf->desc->fd?'*':'-',
-				fd, cf->uri, cf->map->from,
+				fd, cf->desc->uri, cf->map->from,
 				cf->desc->flags & R_IO_WRITE? "rw": "r");
 		}
 	}

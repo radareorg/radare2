@@ -120,6 +120,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				if (desc != io->desc) {
 					r_io_use_desc (io, desc);
 				}
+				desc->uri = uri;
 			}
 		}
 		break;
@@ -134,10 +135,12 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 			if (desc != io->desc) {
 				r_io_use_desc (io, desc);
 			}
+			desc->uri = uri;
 		}
 	}
+	if (!desc)
+		free (uri);
 	io->plugin = NULL;
-	free (uri);
 	return desc;
 }
 
@@ -163,10 +166,16 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 		break;
 	}
 
-	if (!list_fds) return NULL;
+	if (!list_fds) {
+		free (uri);
+		return NULL;
+	}
 
 	r_list_foreach (list_fds, iter, desc) {
-		if (desc) r_io_desc_add (io, desc);
+		if (desc) {
+			r_io_desc_add (io, desc);
+			desc->uri = strdup (uri);
+		}
 	}
 
 	io->plugin = iop;
