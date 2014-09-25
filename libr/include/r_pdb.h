@@ -23,6 +23,7 @@ typedef struct {
 	struct R_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RList *pdb_streams;
+	RList *pdb_streams2;
 } R_PDB;
 
 int init_pdb_parser(R_PDB *pdb);

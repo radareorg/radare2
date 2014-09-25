@@ -1385,7 +1385,6 @@ typedef struct {
 // end of dbi stream structures
 
 // start of FPO stream structures
-
 typedef union {
 	struct {
 		unsigned char cbRegs : 3;

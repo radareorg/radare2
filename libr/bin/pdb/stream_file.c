@@ -110,3 +110,21 @@ int stream_file_tell(R_STREAM_FILE *stream_file)
 {
 	return stream_file->pos;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+void stream_file_get_data(R_STREAM_FILE *stream_file, char *data)
+{
+	int pos = 0;
+	pos = stream_file_tell(stream_file);
+	stream_file_seek(stream_file, 0, 0);
+	stream_file_read(stream_file, -1, data);
+	stream_file_seek(stream_file, pos, 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void stream_file_get_size(R_STREAM_FILE *stream_file, int *data_size)
+{
+	int pn_start = 0, off_start = 0;
+	GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
+	*data_size = stream_file->end - off_start;
+}

@@ -28,14 +28,9 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 	SFPO_DATA *fpo_data = 0;
 	SFPOStream *fpo_stream = 0;
 
-	// TODO: add to stream_file.h function get_data and get_data_size...
-	GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
-	data_size = stream_file->end - off_start;
+	stream_file_get_size(stream_file, &data_size);
 	data = (char *) malloc(data_size);
-	curr_read_bytes = stream_file_tell(stream_file);
-	stream_file_seek(stream_file, 0, 0);
-	stream_file_read(stream_file, -1, data);
-	stream_file_seek(stream_file, curr_read_bytes, 0);
+	stream_file_get_data(stream_file, data);
 
 	fpo_stream = (SFPOStream *) stream;
 	fpo_stream->fpo_data_list = r_list_new();
@@ -53,4 +48,21 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 
 		r_list_append(fpo_stream->fpo_data_list, fpo_data);
 	}
+
+	free(data);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void free_fpo_stream(void *stream)
+{
+	SFPOStream *fpo_stream = (SFPOStream *) stream;
+	RListIter *it = 0;
+	SFPO_DATA *fpo_data = 0;
+
+	it = r_list_iterator(fpo_stream->fpo_data_list);
+	while (r_list_iter_next(it)) {
+		fpo_data = (SFPO_DATA *) r_list_iter_get(it);
+		free(fpo_data);
+	}
+	r_list_free(fpo_stream->fpo_data_list);
 }
