@@ -6,9 +6,20 @@
 #define _ALIGN 4
 
 ///////////////////////////////////////////////////////////////////////////////
-void init_dbi_stream(SDbiStream *dbi_stream)
+static void free_dbi_stream(void *stream)
 {
-	dbi_stream->free_ = 0;
+	SDbiStream *t = (SDbiStream *) stream;
+	RListIter *it = 0;
+	SDBIExHeader *dbi_ex_header = 0;
+
+	it = r_list_iterator(t->dbiexhdrs);
+	while (r_list_iter_next(it)) {
+		dbi_ex_header = (SDBIExHeader *) r_list_iter_get(it);
+		free(dbi_ex_header->modName.name);
+		free(dbi_ex_header->objName.name);
+		free(dbi_ex_header);
+	}
+	r_list_free(t->dbiexhdrs);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -87,6 +98,12 @@ int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header)
 	data += (read_bytes - before_read_bytes);
 
 	return read_bytes;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void init_dbi_stream(SDbiStream *dbi_stream)
+{
+	dbi_stream->free_ = free_dbi_stream;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -276,7 +276,7 @@ static int pdb_read_root(R_PDB *pdb)
 			SDbiStream *dbi_stream = (SDbiStream *) malloc(sizeof(SDbiStream));
 			init_dbi_stream(dbi_stream);
 			parse_dbi_stream(dbi_stream, &stream_file);
-			r_list_append(pList, parsed_pdb_stream);
+			r_list_append(pList, dbi_stream);
 			break;
 		}
 		default:
@@ -461,6 +461,7 @@ static void finish_pdb_parse(R_PDB *pdb)
 //	SParsedPDBStream *parsed_pdb_stream = 0;
 	SPDBInfoStream *pdb_info_stream = 0;
 	STpiStream *tpi_stream = 0;
+	SDbiStream *dbi_stream = 0;
 	R_PDB_STREAM *pdb_stream = 0;
 	int i = 0;
 	it = r_list_iterator(pdb->pdb_streams);
@@ -477,6 +478,9 @@ static void finish_pdb_parse(R_PDB *pdb)
 			free(tpi_stream);
 			break;
 		case 3:
+			dbi_stream = (SDbiStream *) r_list_iter_get(it);
+			dbi_stream->free_(dbi_stream);
+			free(dbi_stream);
 			break;
 		default:
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get(it);
