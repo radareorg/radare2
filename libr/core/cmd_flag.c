@@ -376,7 +376,7 @@ static int cmd_flag(void *data, const char *input) {
 {
 		const char *help_msg[] = {
 		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
-		"f","","list flags",
+		"f","","list flags (will only list flags from selected flagspaces)",
 		"f."," [*[*]]","list local per-function flags (*) as r2 commands",
 		"f.","blah=$$+12","set local function label named 'blah'",
 		"f*","","list flags in r commands",
@@ -403,10 +403,10 @@ static int cmd_flag(void *data, const char *input) {
 		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
 		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 		"fs","","display flagspaces",
-		"fs"," *","set all flagspace",
-		"fs"," sections","set flagspace (f will only list flags from selected ones)",
-		"fsr"," newname","set flagspace (f will only list flags from selected ones)",
+		"fs"," *","select all flagspaces",
+		"fs"," flagspace","select flagspace (f will only list flags from selected ones)",
 		"fsm"," [addr]","move flags at given address to the current flagspace",
+		"fsr"," newname","rename selected flagspace",
 		"fS","[on]","sort flags by offset or name",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		NULL};
