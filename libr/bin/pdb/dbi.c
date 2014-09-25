@@ -48,7 +48,7 @@ static void parse_dbi_header(SDBIHeader *dbi_header, R_STREAM_FILE *stream_file)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_range)
+static int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_range)
 {
 	int read_bytes = 0;
 
@@ -68,7 +68,7 @@ int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_range)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header)
+static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header)
 {
 	unsigned int read_bytes = 0, before_read_bytes = 0;
 
@@ -98,6 +98,22 @@ int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header)
 	data += (read_bytes - before_read_bytes);
 
 	return read_bytes;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void parse_dbg_header(SDbiDbgHeader *dbg_header, R_STREAM_FILE *stream_file)
+{
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_fpo);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_exception);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_fixup);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_omap_to_src);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_omap_from_src);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_section_hdr);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_token_rid_map);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_xdata);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_pdata);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_new_fpo);
+	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_section_hdr_orig);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -141,4 +157,17 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file)
 	}
 
 	free(dbiexhdr_data);
+
+	// "Section Contribution"
+	stream_file_seek(stream_file, dbi_stream->dbi_header.seccon_size, 1);
+	// "Section Map"
+	stream_file_seek(stream_file, dbi_stream->dbi_header.secmap_size, 1);
+	// "File Info"
+	stream_file_seek(stream_file, dbi_stream->dbi_header.filinf_size, 1);
+	// "TSM"
+	stream_file_seek(stream_file, dbi_stream->dbi_header.tsmap_size, 1);
+	// "EC"
+	stream_file_seek(stream_file, dbi_stream->dbi_header.ecinfo_size, 1);
+
+	parse_dbg_header(&dbi_stream->dbg_header, stream_file);
 }

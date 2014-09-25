@@ -1283,6 +1283,35 @@ typedef struct {
 	SCString objName;
 } SDBIExHeader;
 #pragma pack(pop)
+
+#pragma pack(push, 1)
+//DbiDbgHeader = Struct("DbiDbgHeader",
+//	SLInt16("snFPO"),
+//	SLInt16("snException"),
+//	SLInt16("snFixup"),
+//	SLInt16("snOmapToSrc"),
+//	SLInt16("snOmapFromSrc"),
+//	SLInt16("snSectionHdr"),
+//	SLInt16("snTokenRidMap"),
+//	SLInt16("snXdata"),
+//	SLInt16("snPdata"),
+//	SLInt16("snNewFPO"),
+//	SLInt16("snSectionHdrOrig"),
+//)
+typedef struct {
+	short sn_fpo;
+	short sn_exception;
+	short sn_fixup;
+	short sn_omap_to_src;
+	short sn_omap_from_src;
+	short sn_section_hdr;
+	short sn_token_rid_map;
+	short sn_xdata;
+	short sn_pdata;
+	short sn_new_fpo;
+	short sn_section_hdr_orig;
+} SDbiDbgHeader;
+#pragma pack(pop)
 //DBIHeader = Struct("DBIHeader",
 //    Const(Bytes("magic", 4), "\xFF\xFF\xFF\xFF"),                           # 0
 //    ULInt32("version"),                                                     # 4
@@ -1337,6 +1366,7 @@ typedef struct {
 
 typedef struct {
 	SDBIHeader dbi_header;
+	SDbiDbgHeader dbg_header;
 	RList *dbiexhdrs;
 
 	free_func free_;
