@@ -404,7 +404,7 @@ static int cmd_flag(void *data, const char *input) {
 		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 		"fs","","display flagspaces",
 		"fs"," *","select all flagspaces",
-		"fs"," flagspace","select flagspace (f will only list flags from selected ones)",
+		"fs"," flagspace","select flagspace or create if it doesn't exist",
 		"fsm"," [addr]","move flags at given address to the current flagspace",
 		"fsr"," newname","rename selected flagspace",
 		"fS","[on]","sort flags by offset or name",
