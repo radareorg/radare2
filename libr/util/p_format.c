@@ -787,7 +787,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (*structname == '(') {
 					name = strchr (structname, ')');
 				} else {
-					eprintf ("Struct name missing (%s)\n", structname);
+					eprintf ("Bitfield name missing (%s)\n", structname);
 					free (structname);
 					goto beach;
 				}
@@ -821,7 +821,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (*enumname == '(') {
 					name = strchr (enumname, ')');
 				} else {
-					eprintf ("Struct name missing (%s)\n", enumname);
+					eprintf ("Enum name missing (%s)\n", enumname);
 					free (enumname);
 					goto beach;
 				}
@@ -837,7 +837,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->printf (" %s (enum) = `te %s 0x%x`\n",
 						name, enumname, addr);
 				}
-				i+= 4; //(isptr) ? 4 : s;
+				i+= (size==-1) ? 1 : size;
 				free (osn);
 				free (enumvalue);
 				}
