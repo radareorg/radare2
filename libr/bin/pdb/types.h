@@ -1384,4 +1384,47 @@ typedef struct {
 } SDbiStream;
 // end of dbi stream structures
 
+// start of FPO stream structures
+
+typedef union {
+	struct {
+		unsigned char cbRegs : 3;
+		unsigned char fHashSEH : 1;
+		unsigned char fUseBp : 1;
+		unsigned char reserved : 1;
+		unsigned char cbFrame : 2;
+		unsigned char cbProlog : 8;
+	} bits;
+	unsigned short bit_values;
+} UBit_values;
+
+//FPO_DATA = Struct("FPO_DATA",
+//    ULInt32("ulOffStart"),          # offset 1st byte of function code
+//    ULInt32("cbProcSize"),          # number of bytes in function
+//    ULInt32("cdwLocals"),           # number of bytes in locals/4
+//    ULInt16("cdwParams"),           # number of bytes in params/4
+//    Embed(BitStruct("BitValues",
+//        Octet("cbProlog"),          # number of bytes in prolog
+//        BitField("cbFrame",2),      # frame type
+//        Bit("reserved"),            # reserved for future use
+//        Flag("fUseBP"),             # TRUE if EBP has been allocated
+//        Flag("fHasSEH"),            # TRUE if SEH in func
+//        BitField("cbRegs",3),       # number of regs saved
+//    )),
+//)
+typedef struct {
+	unsigned int ul_off_start;
+	unsigned int cb_proc_size;
+	unsigned int cdw_locals;
+	unsigned short cdw_params;
+	UBit_values bit_values;
+} SFPO_DATA;
+
+typedef struct {
+	RList *fpo_data_list;
+
+	free_func free;
+} SFPOStream;
+// end of FPO stream structures
+
 #endif // TYPES_H

@@ -4,6 +4,7 @@
 #include "types.h"
 #include "tpi.h"
 #include "dbi.h"
+#include "fpo.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
@@ -114,7 +115,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	R_PDB_STREAM *pdb_stream = 0;
 
 	char *tmp;
-	int some_int;
 
 	R_PDB7_ROOT_STREAM *root_stream7;
 
@@ -247,7 +247,7 @@ static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr_orig, 0, ePDB_STREAM_SECT__HDR_ORIG, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_to_src, 0, ePDB_STREAM_OMAP_TO_SRC, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, 0, ePDB_STREAM_OMAP_FROM_SRC, 0, 0);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, 0, ePDB_STREAM_FPO, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, 0, ePDB_STREAM_FPO, 0, parse_fpo_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_new_fpo, 0, ePDB_STREAM_FPO_NEW, 0, 0);
 
 	// unparsed, but know their names
@@ -318,6 +318,8 @@ static int pdb_read_root(R_PDB *pdb)
 						   page->stream_size,
 						   root_stream->pdb_stream.page_size);
 		switch (i) {
+		//TODO: rewrite for style like for streams from dbg stream
+		//      look default
 		case ePDB_STREAM_PDB:
 			pdb_info_stream = (SPDBInfoStream *) malloc(sizeof(SPDBInfoStream));
 			pdb_info_stream->free_ = free_info_stream;
@@ -567,6 +569,8 @@ static void finish_pdb_parse(R_PDB *pdb)
 			free(dbi_stream);
 			break;
 		default:
+			// TODO: fix free for parsed stream
+			//       look at pdb.c:346
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get(it);
 			pdb_stream->free_(pdb_stream);
 			free(pdb_stream);

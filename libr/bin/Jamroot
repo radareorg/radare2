@@ -46,7 +46,7 @@ EXTRA +=
 ;
 
 # PDB
-OBJS += pdb/dbi.c pdb/tpi.c pdb/stream_file.c pdb/pdb.c
+OBJS += pdb/fpo.c pdb/dbi.c pdb/tpi.c pdb/stream_file.c pdb/pdb.c
 
 # Java
 OBJS += p/bin_java.c ;
