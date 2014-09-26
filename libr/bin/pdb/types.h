@@ -1421,8 +1421,6 @@ typedef struct {
 
 typedef struct {
 	RList *fpo_data_list;
-
-//	free_func free;
 } SFPOStream;
 // end of FPO stream structures
 
@@ -1439,5 +1437,29 @@ typedef struct {
 	SCString name;
 } SGlobal;
 // end GDATA structures
+
+// PE stream structures
+typedef union {
+	unsigned int physical_address;
+	unsigned int virtual_address;
+} UMISC;
+
+typedef struct {
+	char name[8];
+	UMISC misc;
+	unsigned int virtual_address;
+	unsigned int size_of_raw_data;
+	unsigned int pointer_to_raw_data;
+	unsigned int pointer_to_relocations;
+	unsigned int pointer_to_line_numbers;
+	unsigned short number_of_relocations;
+	unsigned short number_of_line_numbers;
+	unsigned int charactestics;
+} SIMAGE_SECTION_HEADER;
+
+typedef struct {
+	RList *sections_hdrs;
+} SPEStream;
+// end PE stream structures
 
 #endif // TYPES_H

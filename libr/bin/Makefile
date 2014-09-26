@@ -18,7 +18,7 @@ STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o dbginfo.o bin_write.o demangle.o dwarf.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
 OBJS+=mangling/objc.o mangling/cxx.o
-OBJS+=pdb/gdata.o pdb/fpo.o pdb/dbi.o pdb/tpi.o pdb/stream_file.o pdb/pdb.o
+OBJS+=pdb/pe.o pdb/gdata.o pdb/fpo.o pdb/dbi.o pdb/tpi.o pdb/stream_file.o pdb/pdb.o
 LINK+=$(SHLR)/java/libr_java.a
 
 include $(TOP)/libr/rules.mk

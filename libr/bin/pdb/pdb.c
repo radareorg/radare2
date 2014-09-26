@@ -8,6 +8,7 @@
 #include "dbi.h"
 #include "fpo.h"
 #include "gdata.h"
+#include "pe.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
@@ -252,7 +253,8 @@ static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
 {
 	ADD_INDX_TO_LIST(l, dbi_stream->dbi_header.symrecStream, sizeof(SGDATAStream),
 					 ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr, 0, ePDB_STREAM_SECT_HDR, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr, sizeof(SPEStream),
+					 ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr_orig, 0, ePDB_STREAM_SECT__HDR_ORIG, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_to_src, 0, ePDB_STREAM_OMAP_TO_SRC, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, 0, ePDB_STREAM_OMAP_FROM_SRC, 0, 0);

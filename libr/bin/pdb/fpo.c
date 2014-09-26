@@ -21,7 +21,6 @@ static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA 
 ///////////////////////////////////////////////////////////////////////////////
 void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 {
-	int pn_start, off_start;
 	int data_size;
 	char *data = 0, *ptmp = 0;
 	int curr_read_bytes = 0, read_bytes = 0;
