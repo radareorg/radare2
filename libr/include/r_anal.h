@@ -501,7 +501,7 @@ typedef struct r_anal_t {
 	RList *plugins;
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
-	Sdb *sdb_meta; // TODO: Future r_meta api 
+	Sdb *sdb_meta; // TODO: Future r_meta api
 	PrintfCallback printf;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 //moved from RAnalFcn
@@ -829,37 +829,37 @@ typedef struct r_anal_plugin_t {
 	// r_anal_ex_recursive_decent when using perform_analysis from
 	// RAnalEx stuffs
 	RAnalExAnalysisAlgorithm analysis_algorithm;
-	// order in which these call backs are 
+	// order in which these call backs are
 	// used with the recursive descent disassembler
 	// analysis
-	// 0) Before performing any analysis is start, opportunity to do any pre analysis. 
+	// 0) Before performing any analysis is start, opportunity to do any pre analysis.
 	// in the current function
 	RAnalExCallback pre_anal;
 	// 1) Before any ops are bbs are created
 	RAnalExCallback pre_anal_fn_cb;
-	// 2) Just Before an op is created. 
-	// if current_op is set in state, then an op in the main alg wont be processed 
+	// 2) Just Before an op is created.
+	// if current_op is set in state, then an op in the main alg wont be processed
 	RAnalExCallback pre_anal_op_cb;
-	// 3) After a op is created. 
-	// the current_op in state is used to fix-up the state of op before creating a bb 
+	// 3) After a op is created.
+	// the current_op in state is used to fix-up the state of op before creating a bb
 	RAnalExCallback post_anal_op_cb;
-	// 4) Before a bb is created. 
-	// if current_op is set in state, then an op in the main alg wont be processed 
+	// 4) Before a bb is created.
+	// if current_op is set in state, then an op in the main alg wont be processed
 	RAnalExCallback pre_anal_bb_cb;
-	// 5) After a bb is created. 
-	// the current_bb in state is used to fix-up the state of before performing analysis 
-	// with the current bb 	
+	// 5) After a bb is created.
+	// the current_bb in state is used to fix-up the state of before performing analysis
+	// with the current bb
 	RAnalExCallback post_anal_bb_cb;
-	// 6) After processing is bb and cb is completed, opportunity to do any post analysis. 
+	// 6) After processing is bb and cb is completed, opportunity to do any post analysis.
 	// in the current function
 	RAnalExCallback post_anal_fn_cb;
 
-	// 6) After bb in a node is completed, opportunity to do any post analysis. 
+	// 6) After bb in a node is completed, opportunity to do any post analysis.
 	// in the current function
 	RAnalExCallback post_anal;
 
 	RAnalExCallback revisit_bb_anal;
-	
+
 	// command extension to directly call any analysis functions
 	RAnalCmdExt cmd_ext;
 
@@ -870,7 +870,7 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
-	
+
 	RAnalEsilCB esil_init;
 	RAnalEsilLoopCB esil_post_loop;		//cycle-counting, firing interrupts, ...
 	RAnalEsilCB esil_fini;
@@ -968,6 +968,7 @@ R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
 R_API RAnalFunction *r_anal_fcn_new();
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type);
+R_API RAnalFunction *r_anal_fcn_find_addr(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API RList *r_anal_fcn_list_new();
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn);
@@ -1115,7 +1116,7 @@ R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
-R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn, 
+R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
     int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr);
@@ -1194,9 +1195,9 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut
 R_API RAnalCycleFrame* r_anal_cycle_frame_new ();
 R_API void r_anal_cycle_frame_free (RAnalCycleFrame *cf);
 
-/* 
+/*
  * RAnalState maintains state during analysis.
- * there are standard values current_fcn, current_op, current_bb, addr, 
+ * there are standard values current_fcn, current_op, current_bb, addr,
  * data buffer, etc. but there is also a void * for user defined structures
  * that can be updated during the callbacks.
  */
