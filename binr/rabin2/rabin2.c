@@ -152,12 +152,17 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
 		snprintf (outfile, outfile_sz, "%s/%s.%s_%i.%d",
 			outpath, ptr, arch, bits, idx);
 
-	if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size)) {
-		eprintf ("Error extracting %s\n", outfile);
-		res = R_FALSE;
+	if (boffset > r_buf_size (bf->buf)) {
+			eprintf ("Invalid offsets\n");
+			res = R_FALSE;
 	} else {
-		printf ("%s created (%"PFMT64d")\n", outfile, bin_size);
-		res = R_TRUE;
+		if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size)) {
+			eprintf ("Error extracting %s\n", outfile);
+			res = R_FALSE;
+		} else {
+			printf ("%s created (%"PFMT64d")\n", outfile, bin_size);
+			res = R_TRUE;
+		}
 	}
 
 	free (outfile);
