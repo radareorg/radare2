@@ -29,7 +29,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	memcpy(&loaded_header, buf, sizeof(struct nds_hdr));
+	return memcpy(&loaded_header, buf, sizeof(struct nds_hdr));
 }
 
 static int load(RBinFile *arch) {
