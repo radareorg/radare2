@@ -394,6 +394,7 @@ static int cmd_flag(void *data, const char *input) {
 		"fc"," [name] [color]","set color for given flag",
 		"fC"," [name] [cmt]","set comment for given flag",
 		"fd"," addr","return flag+delta",
+		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
 		"fl"," [flagname]","show flag length (size)",
 		"fm"," addr","move flag at current offset to new address",
