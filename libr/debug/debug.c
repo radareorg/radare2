@@ -61,6 +61,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->bits = R_SYS_BITS;
 		dbg->anal = NULL;
 		dbg->pid = -1;
+		dbg->bpsize = 1;
 		dbg->tid = -1;
 		dbg->graph = r_graph_new ();
 		dbg->swstep = 0;
@@ -180,7 +181,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		dbg->iob.read_at (dbg->iob.io, rpc, backup, len);
 		dbg->iob.read_at (dbg->iob.io, rsp, stackbackup, len);
 
-		r_bp_add_sw (dbg->bp, rpc+len, 1, R_BP_PROT_EXEC);
+		r_bp_add_sw (dbg->bp, rpc+len, dbg->bpsize, R_BP_PROT_EXEC);
 
 		/* execute code here */
 		dbg->iob.write_at (dbg->iob.io, rpc, buf, len);
@@ -341,7 +342,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	}
 
 	for (i = 0; i < br; i++)
-		r_bp_add_sw (dbg->bp, next[i], 1, R_BP_PROT_EXEC);
+		r_bp_add_sw (dbg->bp, next[i], dbg->bpsize, R_BP_PROT_EXEC);
 
 	ret = r_debug_continue (dbg);
 
@@ -536,7 +537,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 	// Check if there was another breakpoint set at addr
 	has_bp = r_bp_at_addr (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
 	if (!has_bp)
-		r_bp_add_sw (dbg->bp, addr, 1, R_BP_PROT_EXEC);
+		r_bp_add_sw (dbg->bp, addr, dbg->bpsize, R_BP_PROT_EXEC);
 
 	// Continue until the bp is reached
 	for (;;) {
