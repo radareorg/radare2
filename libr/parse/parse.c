@@ -124,7 +124,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 			continue;
 		}
 #endif
-		fcn = r_anal_fcn_find (p->anal, off, 0);
+		fcn = r_anal_get_fcn_in (p->anal, off, 0);
 		if (fcn) {
 			if (fcn->addr == off) {
 				*ptr = 0;

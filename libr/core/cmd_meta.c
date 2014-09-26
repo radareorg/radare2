@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */ 
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 #if 0
 static void filter_line(char *line) {
 	char *a;
@@ -504,7 +504,7 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		break;
 	case 'F':
-		f = r_anal_fcn_find (core->anal, core->offset,
+		f = r_anal_get_fcn_in (core->anal, core->offset,
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) r_anal_str_to_fcn (core->anal, f, input+2);
 		else eprintf ("Cannot find function here\n");

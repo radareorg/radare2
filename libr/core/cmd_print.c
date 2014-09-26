@@ -4,7 +4,7 @@
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
-	// XXX - this needs to be done here, because 
+	// XXX - this needs to be done here, because
 	// if arch == x86 and bits == 16, segoff automatically changes
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
@@ -471,7 +471,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 
 	if (!nb_opcodes) {
 		nb_opcodes = 0xffff;
-		if (nb_bytes < 0) { 
+		if (nb_bytes < 0) {
 			// Backward disasm `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
 			core->offset -= nb_bytes;
@@ -479,7 +479,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		}
 	} else if (!nb_bytes) {
 		if (nb_opcodes < 0) {
-			/* Backward disassembly of `ilen` opcodes 
+			/* Backward disassembly of `ilen` opcodes
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
@@ -553,20 +553,20 @@ static void cmd_print_pwn(const RCore* core) {
 	ut64 num, base = r_num_get (core->num, "entry0");
 	if (!base)
 		base = 0x8048000;
-	
+
 	eprintf ("[+] Analyzing code starting at 0x%08"PFMT64x"...\n", base);
 	r_sys_sleep (3);
 
 	eprintf ("[+] Looking for vulnerabilities...\n");
 	r_sys_sleep (3);
-	
+
 	eprintf ("[+] Found %d bugs...\n", n);
 	for (i=0; i<n; i++) {
 		eprintf ("[+] Deeply analyzing bug %d at 0x%08"PFMT64x"...\n",
 				i, base+r_num_rand (0xffff));
 		r_sys_sleep (1);
 	}
-	
+
 	eprintf ("[+] Finding ROP gadgets...\n");
 	n = r_num_rand (0x20);
 	num = base;
@@ -580,10 +580,10 @@ static void cmd_print_pwn(const RCore* core) {
 
 	eprintf ("[+] Cooking the shellcode...\n");
 	r_sys_sleep (4);
-	
+
 	eprintf ("[+] Launching the exploit...\n");
 	r_sys_sleep (1);
-	
+
 	r_sys_cmd ("sh");
 }
 
@@ -636,7 +636,7 @@ static int cmd_print(void *data, const char *input) {
 	}
 
 	if (input[0] && input[0]!='z' && input[1] == 'f') {
-		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
 			len = f->size;
@@ -709,7 +709,7 @@ static int cmd_print(void *data, const char *input) {
 			switch (mode) {
 			case 'j':
 				r_cons_printf ("%s{",len?",":"");
-				if ((as->block[p].flags) 
+				if ((as->block[p].flags)
 						|| (as->block[p].functions)
 						|| (as->block[p].comments)
 						|| (as->block[p].imports)
@@ -734,7 +734,7 @@ static int cmd_print(void *data, const char *input) {
 				total[3] += as->block[p].imports;
 				total[4] += as->block[p].symbols;
 				total[5] += as->block[p].strings;
-				if ((as->block[p].flags) 
+				if ((as->block[p].flags)
 						|| (as->block[p].functions)
 						|| (as->block[p].comments)
 						|| (as->block[p].imports)
@@ -799,7 +799,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':{ // bars
 			const char* help_msg[] = {
-			"Usage:", "p=[bep?] [num-of-blocks]", "show entropy/printable chars/chars bars", 
+			"Usage:", "p=[bep?] [num-of-blocks]", "show entropy/printable chars/chars bars",
 			"p=", "", "print bytes of current block in bars",
 			"p=", "b", "same as above",
 			"p=", "e", "print entropy for each filesize/blocksize",
@@ -949,7 +949,7 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			case 'f':
 				{
-					const RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+					const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 					if (f) {
 						r_core_print_disasm_instructions (core, f->size, l);
@@ -979,7 +979,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'f': //pif
 			{
-			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				r_core_print_disasm_instructions (core, f->size, l);
@@ -1020,7 +1020,7 @@ static int cmd_print(void *data, const char *input) {
 			// XXX - print help message
 			//return R_FALSE;
 		}
-		if (!use_blocksize) 
+		if (!use_blocksize)
 			use_blocksize = core->blocksize;
 
 		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
@@ -1081,7 +1081,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'r': // pdr
 			processed_cmd = R_TRUE;
 			{
-				RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					RListIter *iter;
@@ -1134,7 +1134,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': //pdf
 			processed_cmd = R_TRUE;
 			{
-				RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f && input[2] == 'j') {
 					r_cons_printf ("{");
@@ -1167,7 +1167,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 #endif
 #else
-					r_core_cmdf (core, "pD %d @ 0x%08llx", f->size, f->addr); 
+					r_core_cmdf (core, "pD %d @ 0x%08llx", f->size, f->addr);
 					pd_result = 0;
 #endif
 				} else {
@@ -1278,11 +1278,11 @@ static int cmd_print(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage:", "ps[zpw] [N]", "Print String",
 				"ps", "", "print string",
-				"psi", "", "print string inside curseek", 
-				"psb", "", "print strings in current block", 
-				"psx", "", "show string with scaped chars", 
-				"psz", "", "print zero terminated string", 
-				"psp", "", "print pascal string", 
+				"psi", "", "print string inside curseek",
+				"psb", "", "print strings in current block",
+				"psx", "", "show string with scaped chars",
+				"psz", "", "print zero terminated string",
+				"psp", "", "print pascal string",
 				"psw", "", "print wide string",
 				NULL};
 			r_core_cmd_help (core, help_msg);
@@ -1719,7 +1719,7 @@ static int cmd_print(void *data, const char *input) {
 									free (res);
 								}
 							} else {
-								
+
 							}
 						}
 					} else {

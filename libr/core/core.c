@@ -30,7 +30,7 @@ static int core_cmd_callback (void *user, const char *cmd) {
 }
 
 static ut64 getref (RCore *core, int n, char t, int type) {
-	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RListIter *iter;
 	RAnalRef *r;
 	RList *list;
@@ -153,10 +153,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'X': return getref (core, atoi (str+2), 'x',
 				R_ANAL_REF_TYPE_CALL);
 		case 'I':
-			fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			return fcn? fcn->ninstr: 0;
 		case 'F':
-			fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			return fcn? fcn->size: 0;
 		}
 	} else
@@ -749,7 +749,7 @@ R_API RCore *r_core_free(RCore *c) {
 
 R_API void r_core_prompt_loop(RCore *r) {
 	int ret;
-	do { 
+	do {
 		if (r_core_prompt (r, R_FALSE)<1)
 			break;
 //			if (lock) r_th_lock_enter (lock);
