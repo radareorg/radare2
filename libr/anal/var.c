@@ -85,7 +85,7 @@ R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;
-	RAnalFunction *fcn = r_anal_get_fcn_at (a, addr, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (!fcn)
 		return NULL;
 	if (delta<0) {

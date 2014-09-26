@@ -360,7 +360,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	edges = NULL;
 	callgraph = 0;
 
-	fcn = _fcn? _fcn: r_anal_get_fcn_at (core->anal, core->offset, 0);
+	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
 		return R_FALSE;
