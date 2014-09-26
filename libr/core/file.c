@@ -175,30 +175,29 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	BYTES       hexpairs of current block
 	BLOCK       temporally file with contents of current block
 #endif
-	if (!core->file)
-		return NULL;
 	ret = strdup (cmd);
-	if (strstr (cmd, "BLOCK")) {
-		// replace BLOCK in RET string
-		if ((f = r_file_temp ("r2block"))) {
-			if (r_file_dump (f, core->block, core->blocksize))
-				r_sys_setenv ("BLOCK", f);
-			free (f);
-		}
-	}
 	if (strstr (cmd, "BYTES")) {
 		char *s = r_hex_bin2strdup (core->block, core->blocksize);
 		r_sys_setenv ("BYTES", s);
 		free (s);
 	}
-	if (core->file->desc && core->file->desc->name)
+	if (core->file && core->file->desc && core->file->desc->name) {
 		r_sys_setenv ("FILE", core->file->desc->name);
+		snprintf (buf, sizeof (buf), "%"PFMT64d, core->file->size);
+		r_sys_setenv ("SIZE", buf);
+		if (strstr (cmd, "BLOCK")) {
+			// replace BLOCK in RET string
+			if ((f = r_file_temp ("r2block"))) {
+				if (r_file_dump (f, core->block, core->blocksize))
+					r_sys_setenv ("BLOCK", f);
+				free (f);
+			}
+		}
+	}
 	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
 	r_sys_setenv ("OFFSET", buf);
 	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);
 	r_sys_setenv ("XOFFSET", buf);
-	snprintf (buf, sizeof (buf), "%"PFMT64d, core->file->size);
-	r_sys_setenv ("SIZE", buf);
 	r_sys_setenv ("ENDIAN", core->assembler->big_endian?"big":"little");
 	snprintf (buf, sizeof (buf), "%d", core->blocksize);
 	r_sys_setenv ("BSIZE", buf);
