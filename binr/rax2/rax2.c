@@ -10,7 +10,7 @@ static RNum *num;
 static int help ();
 static ut64 flags = 0;
 static int use_stdin ();
-static int force_mode = '0';
+static int force_mode = 0;
 static int rax (char *str, int len, int last);
 
 static int format_output (char mode, const char *s) {
