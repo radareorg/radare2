@@ -18,6 +18,7 @@
 #include <r_list.h>
 #include <r_util.h>
 #include <r_syscall.h>
+#include <r_flags.h>
 #include <r_bin.h>
 
 #ifdef __cplusplus
@@ -490,6 +491,7 @@ typedef struct r_anal_t {
 	double diff_thbb;
 	double diff_thfcn;
 	RIOBind iob;
+	RFlagBind flb;
 	int decode;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;

@@ -153,11 +153,10 @@ static int cb_asmarch(void *user, void *data) {
 }
 
 static int cb_dbgbpsize(void *user, void *data) {
-	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->bpsize = node->i_value;
-	int ret;
+	return R_TRUE;
 }
 
 static int cb_asmbits(void *user, void *data) {

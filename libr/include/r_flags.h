@@ -56,6 +56,24 @@ typedef struct r_flag_t {
 	RList *flags;
 } RFlag;
 
+/* compile time dependency */
+
+#include <r_flags.h> // compile time line, no linkage needed
+typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
+typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size, int dup);
+typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
+
+typedef struct r_flag_bind_t {
+	int init;
+	RFlag *f;
+	RFlagGet get;
+	RFlagSet set;
+	RFlagSetSpace set_fs;
+} RFlagBind;
+
+#define r_flag_bind_init(x) memset(&x,0,sizeof(x))
+R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
+
 #ifdef R_API
 R_API RFlag * r_flag_new();
 R_API RFlag * r_flag_free(RFlag *f);
@@ -81,7 +99,7 @@ R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
 /* spaces */
 R_API int r_flag_space_get(RFlag *f, const char *name);
 R_API const char *r_flag_space_get_i(RFlag *f, int idx);
-R_API void r_flag_space_set(RFlag *f, const char *name);
+R_API int r_flag_space_set(RFlag *f, const char *name);
 R_API int r_flag_space_list(RFlag *f, int mode);
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
 #endif

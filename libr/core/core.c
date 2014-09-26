@@ -661,6 +661,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->anal->iob));
 	r_io_bind (core->io, &(core->fs->iob));
 	r_io_bind (core->io, &(core->bin->iob));
+	r_flag_bind (core->flags, &(core->anal->flb));
 
 	core->file = NULL;
 	core->files = r_list_new ();
