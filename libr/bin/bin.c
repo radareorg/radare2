@@ -1203,7 +1203,12 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 			if (bin->cur)
 				bin->cur->curplugin = plugin;
 			binfile = r_bin_file_new (bin, "-", NULL, 0, 0, 0, 999, NULL, NULL);
+			// create object and set arch/bits
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
+			binfile->o = obj;
+			obj->info = R_NEW0 (RBinInfo);
+			strcpy (obj->info->arch, arch);
+			obj->info->bits = bits;
 		}
 	}
 	return (binfile && r_bin_file_set_cur_binfile_obj (bin, binfile, obj));
@@ -1215,7 +1220,7 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 	RBinInfo *info = NULL;
 	r_list_foreach (binfile->objs, iter, obj) {
 		info = obj->info;
-		if ( info && (bits == info->bits) &&
+		if (info && (bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
 			!strcmp (info->file, name)){
 			break;
