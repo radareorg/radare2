@@ -29,7 +29,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	memcpy(&loaded_header, buf, sizeof(struct nds_hdr));
+	return memcpy(&loaded_header, buf, sizeof(struct nds_hdr));
 }
 
 static int load(RBinFile *arch) {
@@ -133,7 +133,7 @@ static RBinInfo* info(RBinFile *arch) {
 		return NULL;
 	}
 
-	strncat(ret->file, (char *) loaded_header.title, 0xC);
+	strncpy(ret->file, (char *) loaded_header.title, 0xC);
 	strncat(ret->file, " - ", 3);
 	strncat(ret->file, (char *) loaded_header.gamecode, 0x4);
 	strncpy (ret->type, "ROM", sizeof (ret->type)-1);
