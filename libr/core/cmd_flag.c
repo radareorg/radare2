@@ -136,7 +136,7 @@ static int cmd_flag(void *data, const char *input) {
 			bsze = r_num_math (core->num, s+1);
 		}
 		if (*str == '.') {
-			RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
@@ -147,7 +147,7 @@ static int cmd_flag(void *data, const char *input) {
 			const char *flagname = input+1;
 			while (*flagname==' ') flagname++;
 			if (*flagname=='.') {
-				RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) eprintf ("TODO: local_del_name has been deprecated\n");
 				//;r_anal_fcn_local_del_name (core->anal, fcn, flagname+1);
 				else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
@@ -164,13 +164,13 @@ static int cmd_flag(void *data, const char *input) {
 				if (input[2] == '*') {
 					r_anal_fcn_labels (core->anal, NULL, 1);
 				} else {
-					RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) r_anal_fcn_labels (core->anal, fcn, 1);
 					else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
 			} else {
 				const char *name = input+((input[2]==' ')? 2:1);
-				RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
 					if (*name=='-') {
 						r_anal_fcn_label_del (core->anal, fcn, name+1, off);
@@ -180,7 +180,7 @@ static int cmd_flag(void *data, const char *input) {
 				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 			}
 		} else {
-			RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) r_anal_fcn_labels (core->anal, fcn, 0);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		}

@@ -46,7 +46,7 @@ static void var_help(RCore *core, char ch) {
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, -1);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	char *p, *ostr;
 	int delta, type = *str;
 
@@ -122,7 +122,7 @@ static int var_cmd(RCore *core, const char *str) {
 				if (fcn) {
 					r_anal_var_add (core->anal, fcn->addr,
 						scope, delta, type,
-						vartype, size, name); 
+						vartype, size, name);
 				} else eprintf ("Cannot find function\n");
 			 }
 			break;
@@ -358,7 +358,7 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	case 1: // get fcnaddr
 		fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 	}
-	if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr)) == NULL ||
+	if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr, 0)) == NULL ||
 		!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff)) {
 		//eprintf ("Error: Cannot add bb\n");
 	}
@@ -432,7 +432,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 addr = core->offset;
 			if (input[2]==' ')
 				addr = r_num_math (core->num, input+2);
-			RAnalFunction *fcn = r_anal_fcn_find (core->anal,
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 				addr, R_ANAL_FCN_TYPE_NULL);
 			if (fcn) r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
 		 }
@@ -457,7 +457,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				  arg = strchr (arg, ' ');
 				  if (arg) arg++;
 			  } else addr = core->offset;
-			  if ((f = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
+			  if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 				  if (arg && *arg) {
 					  r_anal_str_to_fcn (core->anal, f, arg);
 				  } else {
@@ -476,7 +476,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'c':
 		  {
 			 RAnalFunction *fcn;
-			 if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
+			 if ((fcn = r_anal_get_fcn_at (core->anal, core->offset, 0)) != NULL) {
 				 r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
 			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", core->offset);
 		  }
@@ -485,7 +485,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 if (input[2] == 'b') {
 			 anal_fcn_add_bb (core, input+3);
 		 } else {
-			 RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset,
+			 RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
 				 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			 if (fcn) fcn->bits = atoi (input+3);
 			 else eprintf ("Cannot find function to set bits\n");
@@ -508,7 +508,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				 off = r_num_math (core->num, p);
 			 }
 			 if (*name) {
-				 fcn = r_anal_fcn_find (core->anal, off,
+				 fcn = r_anal_get_fcn_in (core->anal, off,
 					 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
 				 if (fcn) {
 					 //r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
@@ -536,7 +536,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				 *p = 0;
 				 off = r_num_math (core->num, p+1);
 			 }
-			 fcn = r_anal_fcn_find (core->anal, off,
+			 fcn = r_anal_get_fcn_in (core->anal, off,
 				 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			 if (fcn) {
 				 RAnalBlock *b;
@@ -571,7 +571,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 // list xrefs from current address
 			  {
 				 ut64 addr = input[2]?  r_num_math (core->num, input+2): core->offset;
-				 RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				 RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				 if (fcn) {
 					 RAnalRef *ref;
 					 RListIter *iter;
@@ -598,7 +598,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					   *p = 0;
 					   a = r_num_math (core->num, mi+3);
 					   b = r_num_math (core->num, p+1);
-					   fcn = r_anal_fcn_find (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
+					   fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
 					   if (fcn) {
 						   r_anal_fcn_xref_add (core->anal, fcn, a, b, input[2]);
 					   } else eprintf ("Cannot add reference to non-function\n");
@@ -615,7 +615,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					   *p = 0;
 					   a = r_num_math (core->num, mi);
 					   b = r_num_math (core->num, p+1);
-					   fcn = r_anal_fcn_find (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
+					   fcn = r_anal_get_fcn_in (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
 					   if (fcn) {
 						   r_anal_fcn_xref_del (core->anal, fcn, a, b, -1);
 					   } else eprintf ("Cannot del reference to non-function\n");
@@ -669,8 +669,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		//r_core_anal_undefine (core, core->offset);
 		/* resize function if overlaps */
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset);
-			if (fcn) 
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			if (fcn)
 				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
 		}
 		r_core_anal_fcn (core, core->offset, UT64_MAX,
@@ -980,7 +980,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 			eprintf ("ADDR BREAK\n");
 		} else goto repeat;
 	}
-	// check esil 
+	// check esil
 	if (until_expr) {
 		if (r_anal_esil_condition (core->anal->esil, until_expr)) {
 			eprintf ("ESIL BREAK!\n");
@@ -1035,7 +1035,7 @@ static int cmd_anal(void *data, const char *input) {
 				r_anal_esil_stack_free (esil);
 			}
 			break;
-		case 's': 
+		case 's':
 			// aes -> single step
 			// aesu -> until address
 			// aesue -> until esil expression
@@ -1101,7 +1101,7 @@ static int cmd_anal(void *data, const char *input) {
 			{
 			       RListIter *iter;
 			       RAnalBlock *bb;
-			       RAnalFunction *fcn = r_anal_fcn_find (core->anal,
+			       RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 				       core->offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 			       if (fcn) {
 				       // emulate every instruction in the function recursively across all the basic blocks

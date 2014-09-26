@@ -81,7 +81,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		}
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
-		fcn = r_anal_fcn_find (anal, cc->jump,
+		fcn = r_anal_get_fcn_in (anal, cc->jump,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_IMP);
 		if (fcn && fcn->name)
 			snprintf (str, sizeof (str), "%s(", fcn->name);

@@ -219,12 +219,12 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		snprintf (ret, sizeof (ret), "%s()", r0);
 		break;
 	case R_ANAL_OP_TYPE_CALL:
-		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
+		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if (f) snprintf (ret, sizeof (ret), "%s()", f->name);
 		else  snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
 		break;
 	case R_ANAL_OP_TYPE_CCALL:
-		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
+		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		{
 		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
 		if (bb) {

@@ -17,7 +17,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 	int use_getuid = 0;
 	int use_isatty = 0;
 	char *do_call = NULL;
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr);
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, 0);
 	if (fcn) {
 		RAnalRef *ref;
 		RListIter *iter;
@@ -545,7 +545,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return R_FALSE;
 #if 1
 	{
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, at);
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, at, 0);
 		if (fcn) {
 			//int len = r_list_length (fcn->xrefs);
 			// XXX: use r_anal-xrefs api and sdb
@@ -638,7 +638,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// real read.
 #if 0
 		if (!r_core_read_at (core, at+delta, buf, ANALBS))
-			goto error; 
+			goto error;
 #else
 		// this is unnecessary if its contiguous
 		r_io_read_at (core->io, at+delta, buf, ANALBS);
@@ -886,7 +886,7 @@ else
 		}
 		first2 = 0;
 		r_list_foreach (fcni->refs, iter2, fcnr) {
-			RAnalFunction *fr = r_anal_get_fcn_at (core->anal, fcnr->addr);
+			RAnalFunction *fr = r_anal_get_fcn_at (core->anal, fcnr->addr, 0);
 			if (!fr) {
 				eprintf ("Invalid reference from 0x%08"PFMT64x
 					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
@@ -1727,7 +1727,7 @@ R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 	RAnalFunction *f;
 	r_flag_unset_i (core->flags, off, NULL);
 	r_anal_fcn_del_locs (core->anal, off);
-	f = r_anal_fcn_find (core->anal, off, 0);
+	f = r_anal_get_fcn_in (core->anal, off, 0);
 	if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
 	r_anal_fcn_del (core->anal, off);
 }

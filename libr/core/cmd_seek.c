@@ -220,7 +220,7 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				break;
 			}
-			RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_core_seek (core, fcn->addr+fcn->size, 1);
 			}

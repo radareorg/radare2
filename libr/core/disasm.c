@@ -415,7 +415,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 			ds->opstr = strdup (asm_str?asm_str:"");
 	}
 	if (ds->varsub) {
-		RAnalFunction *f = r_anal_fcn_find (core->anal,
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 			ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
 			r_parse_varsub (core->parser, f,
@@ -518,7 +518,7 @@ static char *filter_refline2(RCore *core, const char *str) {
 
 static char *filter_refline(RCore *core, const char *str) {
 	char *p = strdup (str);
-	
+
 	p = r_str_replace (p, "`",
 		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
 	p = r_str_replace (p,
@@ -528,7 +528,7 @@ static char *filter_refline(RCore *core, const char *str) {
 	    	core->cons->vline[LINE_VERT], 1); // "=" -> "|"
 	p = r_str_replace (p, core->cons->vline[ARROW_RIGHT], " ", 0);
 	p = r_str_replace (p, core->cons->vline[ARROW_LEFT], " ", 0);
-	
+
 	return p;
 }
 #if 0
@@ -562,7 +562,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	// Show xrefs
 	if (ds->show_xrefs) {
-		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		RList *xrefs;
 		RAnalRef *refi;
 		RListIter *iter;
@@ -572,7 +572,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		xrefs = r_anal_xref_get (core->anal, ds->at);
 		if (!xrefs)
 			return;
-		
+
 		if (r_list_length (xrefs)> ds->maxrefs) {
 			beginline (core, ds, f);
 			r_cons_printf ("%s; XREFS: ", ds->pal_comment);
@@ -593,7 +593,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		}
 		r_list_foreach (xrefs, iter, refi) {
 			if (refi->at == ds->at) {
-				RAnalFunction *fun = r_anal_fcn_find (
+				RAnalFunction *fun = r_anal_get_fcn_in (
 					core->anal, refi->addr,
 					R_ANAL_FCN_TYPE_FCN |
 					R_ANAL_FCN_TYPE_ROOT);
@@ -658,7 +658,7 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	if (ds->show_functions) {
-		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
 #warning TODO list from anal->sdb_fcns/fcn.0x%%x.v|a (vars/args)
 			if (f->addr == ds->at) {
@@ -701,7 +701,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 						r_cons_printf ("%s%s "Color_RESET,
 							ds->color_fline, korner);
 					} else {
-						r_cons_printf (fmt, ds->pre, 
+						r_cons_printf (fmt, ds->pre,
 							(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 							f->name, f->size, korner);
@@ -745,7 +745,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 	/* show comment at right? */
 	ds->show_comment_right = 0;
 	if (ds->show_comments) {
-		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		RFlagItem *item = r_flag_get_i (core->flags, ds->at);
 		ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 		if (!ds->comment && item && item->comment) {
@@ -815,7 +815,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 
 static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 	if (ds->show_flags) {
-		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		RFlagItem *flag = r_flag_get_i (core->flags, ds->at);
 		if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
 			if (ds->show_lines && ds->refline) {
@@ -1298,7 +1298,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_JMP:
 	        //case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			f = r_anal_fcn_find (core->anal,
+			f = r_anal_get_fcn_in (core->anal,
 				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 			if (f && !strstr (ds->opstr, f->name)) {
 				if (ds->show_color)
@@ -1342,7 +1342,7 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 	static RAnalCC cc = {0};
 	if (!r_anal_cc_update (core->anal, &cc, &ds->analop)) {
 		if (ds->show_functions) {
-			RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 			char tmp[128];
 			char *ccstr = r_anal_cc_to_string (core->anal, &cc);
 			tmp[0] = 0;
@@ -1459,7 +1459,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					// resolve local var if possible
 					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)p);
 					if (v) {
-						r_cons_printf (" ; var %s", v->name);	
+						r_cons_printf (" ; var %s", v->name);
 						r_anal_var_free (v);
 					} else {
 						r_cons_printf (" ; var %d", (int)-p);
@@ -1641,7 +1641,7 @@ toro:
 		/* show type links */
 		r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
-		f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!ds->hint || !ds->hint->bits) {
 			if (f) {
 				if (f->bits) {
@@ -1694,7 +1694,7 @@ toro:
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
 		 {
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, ds->addr);
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, ds->addr, 0);
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
 			}
@@ -1856,7 +1856,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
-		f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!ds->hint || !ds->hint->bits) {
 			if (f) {
 				if (f->bits) {
@@ -2025,7 +2025,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
 	/* other */
 	//void *old_user = core->anal->user;
-	RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	ut32 cur_buf_sz = fcn->size+1;
 	ut8 *buf = malloc (cur_buf_sz);
 	ut32 len = fcn->size;
