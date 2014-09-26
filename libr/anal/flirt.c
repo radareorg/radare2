@@ -85,6 +85,7 @@ Function flags:
 Tail bytes:
   When two modules have the same pattern, and same crc, flirt tries to identify
   a byte which is different in all the same modules.
+  Their offset is from the first byte after the crc.
   They appear as "(XXXX: XX)" in dumpsig output
 
 Referenced functions:
@@ -520,20 +521,52 @@ static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
 	}
 }
 
-static int module_match_buffer (const RAnal *anal, RAnalFunction *anal_func,
-		const RFlirtModule *module, ut8 *b, int buf_size) {
-	/*print_module(anal, module);*/
-	if (module->crc16 != crc16 (b, module->crc_length)) // could be optimized, because some modules have the same crc
+static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
+		ut8 *b, ut64 address, int buf_size) {
+	/* Returns R_TRUE if module matches b, according to the signatures infos.
+	 * Return R_FALSE otherwise.
+	 * The buffer starts from the first byte after the pattern */
+	RFlirtFunction *flirt_func;
+	RAnalFunction *next_module_function;
+	RListIter *tail_byte_it, *flirt_func_it;
+	RFlirtTailByte *tail_byte;
+
+	if (module->crc16 != crc16 (b, module->crc_length))
 		return R_FALSE;
 
-	RFlirtFunction *func = r_list_get_n (module->public_functions, 0);
-	free (anal_func->name);
-	anal_func->name = strdup (func->name);
+	if (module->tail_bytes) {
+		r_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
+			if (b[module->crc_length + tail_byte->offset] != tail_byte->value)
+				return R_FALSE;
+		}
+	}
+
+	// TODO referenced functions
+
+	r_list_foreach (module->public_functions, flirt_func_it, flirt_func) {
+		// Once the first module function is found, we need to go through the module->public_functions
+		// list to identify the others. See flirt doc for more information
+
+		next_module_function = r_anal_get_fcn_at((RAnal*) anal, address + flirt_func->offset, 0);
+		if (next_module_function) {
+			if (!strncmp("?", flirt_func->name, 1)) // ignore functions named '?'
+				continue;
+
+			free (next_module_function->name);
+			next_module_function->name = r_str_newf("flirt.%s", strdup (flirt_func->name));
+			anal->flb.set (anal->flb.f, next_module_function->name,
+				next_module_function->addr, next_module_function->size, 0);
+
+			anal->printf ("Found %s\n", next_module_function->name);
+		}
+	}
 
 	return R_TRUE;
 }
 
 static int node_pattern_match (const RFlirtNode *node, ut8 *b, int buf_size) {
+	 /* Returns R_TRUE if b matches the pattern in node. */
+	 /* Returns R_FALSE otherwise. */
 	int i;
 
 	if (buf_size < node->length) return R_FALSE;
@@ -547,7 +580,8 @@ static int node_pattern_match (const RFlirtNode *node, ut8 *b, int buf_size) {
 	return R_TRUE;
 }
 
-static int node_match_buffer (const RAnal *anal, RAnalFunction *func, const RFlirtNode *node, ut8 *b, int buf_size) {
+static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b,
+		ut64 address, int buf_size) {
 	RListIter *node_child_it, *module_it;
 	RFlirtNode *child;
 	RFlirtModule *module;
@@ -555,12 +589,12 @@ static int node_match_buffer (const RAnal *anal, RAnalFunction *func, const RFli
 	if (node_pattern_match(node, b, buf_size)) {
 		if (node->child_list) {
 			r_list_foreach(node->child_list, node_child_it, child) {
-				if(node_match_buffer(anal, func, child, b + node->length, buf_size - node->length))
+				if(node_match_buffer(anal, child, b + node->length, address, buf_size - node->length))
 					return R_TRUE;
 			}
 		} else if (node->module_list) {
 			r_list_foreach(node->module_list, module_it, module) {
-				if(module_match_buffer(anal, func, module, b + node->length, buf_size - node->length))
+				if(module_match_buffer(anal, module, b + node->length, address, buf_size - node->length))
 					return R_TRUE;
 			}
 		}
@@ -570,13 +604,27 @@ static int node_match_buffer (const RAnal *anal, RAnalFunction *func, const RFli
 }
 
 static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node) {
+	/* Tries to find matching functions between the signature infos in root_node
+	 * and the analyzed functions in anal
+	 * Returns R_FALSE on error. */
+
 	RListIter *it_func, *node_child_it;
 	ut8 *func_buf = NULL;
 	RAnalFunction *func;
 	RFlirtNode *child;
 	int size, ret = R_TRUE;
 
+	if (r_list_length(anal->fcns) == 0) {
+		anal->printf("There is no analyzed functions. Have you run 'aa'?\n");
+		return R_TRUE;
+	}
+
+	anal->flb.set_fs (anal->flb.f, "flirt");
 	r_list_foreach (anal->fcns, it_func, func) {
+		if (func->type != R_ANAL_FCN_TYPE_FCN && func->type != R_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
+			continue;
+		}
+
 		func_buf = malloc (func->size);
 		size = anal->iob.read_at (anal->iob.io, func->addr, func_buf, func->size);
 		if  (size != func->size) {
@@ -585,8 +633,7 @@ static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node)
 			goto exit;
 		}
 		r_list_foreach (root_node->child_list, node_child_it, child) {
-			if (node_match_buffer (anal, func, child, func_buf, func->size)) {
-				anal->printf ("Found %s\n", func->name);
+			if (node_match_buffer (anal, child, func_buf, func->addr, func->size)) {
 				break;
 			}
 		}
