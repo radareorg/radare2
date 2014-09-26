@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2013 - pancake */
+/* radare2 - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_bp.h>
 #include "../config.h"
@@ -31,7 +31,8 @@ R_API RBreakpoint *r_bp_new() {
 		bp->plugins = r_list_newf ((RListFree)free);
 		for (i=0; bp_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RBreakpointPlugin);
-			memcpy (static_plugin, bp_static_plugins[i], sizeof (RBreakpointPlugin));
+			memcpy (static_plugin, bp_static_plugins[i],
+				sizeof (RBreakpointPlugin));
 			r_bp_plugin_add (bp, static_plugin);
 		}
 		memset (&bp->iob, 0, sizeof (bp->iob));
@@ -50,17 +51,25 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 	int i;
 	struct r_bp_arch_t *b;
 	if (bp->cur) {
-		/* XXX: can be buggy huh : infinite loop is possible */
-		for (i=0; 1; i++) {
-			b = &bp->cur->bps[i%bp->cur->nbps];
-			if (b->endian == endian && idx%(i+1)==0) {
-				for (i=0; i<len;) {
-					memcpy (buf+i, b->bytes, b->length);
-					i += b->length;
-				}
+		// find matching size breakpoint
+		for (i=0; i<bp->cur->nbps; i++) {
+			b = &bp->cur->bps[i];
+			if (bp->cur->bps[i].length == len) {
+				memcpy (buf, b->bytes, b->length);
 				return b->length;
 			}
 		}
+		// TODO: this must be reworked to work better
+		/* if not found try to pad with the first one */
+		b = &bp->cur->bps[0];
+		if (len % b->length) {
+			eprintf ("No matching bpsize\n");
+			return 0;
+		}
+		for (i=0;i<len;i++) {
+			memcpy (buf+i, b->bytes, b->length);
+		}
+		return b->length;
 	}
 	return 0;
 }

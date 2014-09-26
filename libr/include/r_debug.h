@@ -143,6 +143,7 @@ typedef struct r_debug_t {
 	int stop_all_threads;
 	RReg *reg;
 	RBreakpoint *bp;
+	int bpsize;
 	void *user;
 	/* io */
 	PrintfCallback printf;

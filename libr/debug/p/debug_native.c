@@ -414,9 +414,9 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
 		print_lasterr ((char *)__FUNCTION__);
 		eprintf ("debug_contp: error\n");
-		return -1;
+		return R_FALSE;
 	}
-	return 0;
+	return R_TRUE;
 #elif __APPLE__
 #if __arm__
 	int i, ret, status;
@@ -445,15 +445,15 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 1;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
-	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, (int)(size_t)data);
-        return 0;
+	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
+		(int)(size_t)data) == 0;
 #endif
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "pc");
-	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data);
+	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data) == 0;
 #else
 //eprintf ("SIG %d\n", dbg->signum);
-	return ptrace (PTRACE_CONT, pid, NULL, data);
+	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
 }
 

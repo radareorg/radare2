@@ -387,7 +387,7 @@ static int autocomplete(RLine *line) {
 			if (keys) {
 				int i, j;
 				for (i=j=0; i<count; i++) {
-					if (!memcmp (keys[i], data, line->buffer.index)) {
+					if (!strncmp (keys[i], data, line->buffer.index)) {
 						tmp_argv[j++] = keys[i];
 					}
 				}
@@ -399,8 +399,8 @@ static int autocomplete(RLine *line) {
 				line->completion.argv = NULL;
 			}
 		} else
-		if ( (!memcmp (line->buffer.data, "e ", 2))
-		   ||(!memcmp (line->buffer.data, "e? ", 3))) {
+		if ( (!strncmp (line->buffer.data, "e ", 2))
+		   ||(!strncmp (line->buffer.data, "e? ", 3))) {
 			int m = (line->buffer.data[1] == '?')? 3: 2;
 			int i = 0, n = strlen (line->buffer.data+m);
 			RConfigNode *bt;
@@ -418,7 +418,7 @@ static int autocomplete(RLine *line) {
 		} else {
 			int i, j;
 			for (i=j=0; radare_argv[i] && i<CMDS; i++)
-				if (!memcmp (radare_argv[i], line->buffer.data,
+				if (!strncmp (radare_argv[i], line->buffer.data,
 						line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
 			tmp_argv[j] = NULL;
@@ -661,6 +661,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->anal->iob));
 	r_io_bind (core->io, &(core->fs->iob));
 	r_io_bind (core->io, &(core->bin->iob));
+	r_flag_bind (core->flags, &(core->anal->flb));
 
 	core->file = NULL;
 	core->files = r_list_new ();

@@ -152,6 +152,13 @@ static int cb_asmarch(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_dbgbpsize(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg->bpsize = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_asmbits(void *user, void *data) {
 	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
@@ -833,6 +840,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB("dbg.stopthreads", "true", &cb_stopthreads, "Stop all threads when debugger breaks");
 	SETCB("dbg.swstep", "false", &cb_swstep, "If enabled forces the use of software steps (code analysis+breakpoint)");
+// TODO: This should be specified at first by the debug backend when attaching
+#if __arm__ || __mips__
+	SETICB("dbg.bpsize", 4, &cb_dbgbpsize, "Specify size of software breakpoints");
+#else
+	SETICB("dbg.bpsize", 1, &cb_dbgbpsize, "Specify size of software breakpoints");
+#endif
 	SETCB("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");
 	SETCB("dbg.trace.tag", "0xff", &cb_tracetag, "Set trace tag");
 

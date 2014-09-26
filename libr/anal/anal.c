@@ -70,6 +70,7 @@ R_API RAnal *r_anal_new() {
 	anal->split = R_TRUE; // used from core
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
+	r_flag_bind_init (anal->flb);
 	anal->reg = r_reg_new ();
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();

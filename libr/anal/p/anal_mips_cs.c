@@ -28,10 +28,20 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 		sprintf (buf, "%"PFMT64d, insn->detail->mips.operands[n].imm);
 		break;
 	case MIPS_OP_MEM:
-		sprintf (buf, "%s,%"PFMT64d",+,",
+		{
+			int disp = insn->detail->mips.operands[n].mem.disp;
+		if (disp<0) {
+		sprintf (buf, "%s,%"PFMT64d",-",
+			cs_reg_name (*handle,
+				insn->detail->mips.operands[n].mem.base),
+			-insn->detail->mips.operands[n].mem.disp);
+		} else {
+		sprintf (buf, "%s,%"PFMT64d",+",
 			cs_reg_name (*handle,
 				insn->detail->mips.operands[n].mem.base),
 			insn->detail->mips.operands[n].mem.disp);
+		}
+		}
 		break;
 	}
 	return buf;

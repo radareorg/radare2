@@ -48,7 +48,7 @@ static void var_help(RCore *core, char ch) {
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, -1);
 	char *p, *ostr;
-	int scope, delta, type = *str;
+	int delta, type = *str;
 
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
@@ -65,16 +65,6 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'a': // stack arg
 	case 'A': // fastcall arg
 		// XXX nested dup
-		switch (*str) {
-		case 'v': scope = R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE; break;
-		case 'a': scope = R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN; break;
-		case 'A': scope = R_ANAL_VAR_SCOPE_ARGREG|R_ANAL_VAR_DIR_IN; break;
-		default:
-			  eprintf ("Unknown type\n");
-			  free (ostr);
-			  return 0;
-		}
-
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0':
@@ -1450,6 +1440,15 @@ if (ret) {
 		case ' ':
 			  cmd_syscall_do (core, (int)r_num_get (core->num, input+2));
 			  break;
+		case 'k':
+			{
+			  char *out = sdb_querys (core->anal->syscall->db, NULL, 0, input+3);
+			  if (out) {
+				  r_cons_printf ("%s\n", out);
+				  free (out);
+			  }
+			}
+			break;
 		default:
 		case '?':{
 				const char* help_msg[] = {
@@ -1459,6 +1458,7 @@ if (ret) {
 			      "asl", "", "list of syscalls by asm.os and asm.arch",
 			      "asl", " close", "returns the syscall number for close",
 			      "asl", " 4", "returns the name of the syscall number 4",
+			      "ask", " [query]", "perform syscall/ queries",
 				  NULL};
 				r_core_cmd_help (core, help_msg);
 				 }
@@ -1632,10 +1632,9 @@ if (ret) {
 	case 'a':
 		r_cons_break (NULL, NULL);
 		r_core_anal_all (core);
-		if (core->cons->breaked) {
-			r_cons_clear_line (1);
+		if (core->cons->breaked)
 			eprintf ("Interrupted\n");
-		}
+		r_cons_clear_line (1);
 		r_cons_break_end();
 		if (input[1] == '?') {
 			const char* help_msg[] = {

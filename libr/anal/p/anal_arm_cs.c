@@ -85,9 +85,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "%s,%s,>>=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_B:
+		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
+		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
-		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
+		r_strbuf_appendf (&op->esil, "4,pc,+,lr,=,%s,pc,=", ARG(0));
 		break;
 	case ARM_INS_MOV:
 	case ARM_INS_MOVS:
@@ -101,11 +103,30 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
 	case ARM_INS_ADD:
-		r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
+		if (!strcmp (ARG(0),ARG(1))) {
+			r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(0));
+		} else if (!strcmp (ARG(2),"0")) {
+			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), ARG(0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
+		}
+		break;
+	case ARM_INS_STR:
+		r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[4]",
+			REG(0), MEMBASE(1), MEMDISP(1));
+		break;
+	case ARM_INS_STRB:
+		r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[1]",
+			REG(0), MEMBASE(1), MEMDISP(1));
 		break;
 	case ARM_INS_LDR:
+		if (MEMDISP(1)<0) {
+		r_strbuf_appendf (&op->esil, "%s,%d,-,[4],%s,=",
+			MEMBASE(1), -MEMDISP(1), REG(0));
+		} else {
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
+		}
 		break;
 	case ARM_INS_LDRB:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",

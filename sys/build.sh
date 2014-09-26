@@ -17,7 +17,7 @@ case "$1" in
 esac
 
 [ ! "${PREFIX}" = /usr ] && \
-	CFGARG=--with-rpath
+	CFGARG="${CFGARG} --with-rpath"
 
 MAKE=make
 gmake --help >/dev/null 2>&1

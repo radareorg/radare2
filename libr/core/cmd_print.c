@@ -148,6 +148,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	nb_cols -= (nb_cols % 2); //nb_cols should be even
 
 	nb_cons_cols = 12 + nb_cols * 2 + (nb_cols/2);
+	nb_cons_cols += 17;
 	rows = len/nb_cols;
 
 	chars = calloc (nb_cols * 10, sizeof(char));
@@ -169,8 +170,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	strcpy (bytes, "- offset -  ");
 	j = strlen ("- offset -  ");
 	for (i=0; i<nb_cols; i+=2) {
-		sprintf (bytes+j, "%02X%02X  ", i, i+1);
-		j+= 5;
+		sprintf (bytes+j, " %X %X  ", (i&0xf), (i+1)&0xf);
+		j += 5;
 	}
 	sprintf (bytes+j+i, " ");
 	j++;
@@ -293,19 +294,25 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 		if (marks) { // show comments and flags
 			int hasline = 0;
-			char* out = calloc (nb_cons_cols+10, sizeof(char));
+			int out_sz = nb_cons_cols+20;
+			char* out = calloc (out_sz, sizeof(char));
 			memset (out, ' ', nb_cons_cols-1);
 			for (j=0; j<nb_cols; j++) {
 				if (note[j]) {
 					int off = (j*3) - (j/2) + 13;
-					int sz = R_MIN (strlen (note[j]), nb_cons_cols-(off));
+					int notej_len = strlen (note[j]);
+					int sz = R_MIN (notej_len, nb_cons_cols-off);
 					if (j%2) off--;
-					memcpy (out+off, note[j], sz); //avoid overflow
-					out[off+sz] = 0;
+					memcpy (out+off, note[j], sz);
+					if (sz < notej_len) {
+						out[off+sz-2] = '.';
+						out[off+sz-1] = '.';
+					}
 					hasline = (out[off] != ' ');
 					free (note[j]);
 				}
 			}
+			out[out_sz-1] = 0;
 			if (hasline) {
 				r_cons_strcat (out);
 				r_cons_newline ();
