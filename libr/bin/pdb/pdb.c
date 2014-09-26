@@ -1,3 +1,4 @@
+
 #include <r_pdb.h>
 #include <string.h>
 
@@ -6,6 +7,7 @@
 #include "tpi.h"
 #include "dbi.h"
 #include "fpo.h"
+#include "gdata.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
@@ -127,7 +129,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	root_stream7 = pdb->root_stream;
 	pdb_stream = &(root_stream7->pdb_stream);
 
-//	GET_PAGE(pn_start, off_start, pdb_stream->stream_file.pos, pdb_stream->stream_file.page_size);
 	stream_file_get_size(&pdb_stream->stream_file, &data_size);
 	data = (char *) malloc(data_size);
 	stream_file_get_data(&pdb_stream->stream_file, data);
@@ -249,12 +250,14 @@ static void free_info_stream(void *stream)
 ///////////////////////////////////////////////////////////////////////////////
 static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
 {
-	ADD_INDX_TO_LIST(l, dbi_stream->dbi_header.symrecStream, 0, ePDB_STREAM_GSYM, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbi_header.symrecStream, sizeof(SGDATAStream),
+					 ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr, 0, ePDB_STREAM_SECT_HDR, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr_orig, 0, ePDB_STREAM_SECT__HDR_ORIG, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_to_src, 0, ePDB_STREAM_OMAP_TO_SRC, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, 0, ePDB_STREAM_OMAP_FROM_SRC, 0, 0);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, sizeof(SFPOStream), ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, sizeof(SFPOStream),
+					 ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_new_fpo, 0, ePDB_STREAM_FPO_NEW, 0, 0);
 
 	// unparsed, but know their names

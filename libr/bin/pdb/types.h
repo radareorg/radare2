@@ -1422,8 +1422,22 @@ typedef struct {
 typedef struct {
 	RList *fpo_data_list;
 
-	free_func free;
+//	free_func free;
 } SFPOStream;
 // end of FPO stream structures
+
+// GDATA structrens
+typedef struct {
+	RList *globals_list;
+} SGDATAStream;
+
+typedef struct {
+	unsigned short leaf_type;
+	unsigned int symtype;
+	unsigned int offset;
+	unsigned short segment;
+	SCString name;
+} SGlobal;
+// end GDATA structures
 
 #endif // TYPES_H
