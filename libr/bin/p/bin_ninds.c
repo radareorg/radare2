@@ -133,7 +133,7 @@ static RBinInfo* info(RBinFile *arch) {
 		return NULL;
 	}
 
-	strncat(ret->file, (char *) loaded_header.title, 0xC);
+	strncpy(ret->file, (char *) loaded_header.title, 0xC);
 	strncat(ret->file, " - ", 3);
 	strncat(ret->file, (char *) loaded_header.gamecode, 0x4);
 	strncpy (ret->type, "ROM", sizeof (ret->type)-1);
