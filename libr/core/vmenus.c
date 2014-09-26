@@ -1438,7 +1438,7 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'f':
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn)
 				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
 		}

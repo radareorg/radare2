@@ -358,7 +358,7 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	case 1: // get fcnaddr
 		fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 	}
-	if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr, 0)) == NULL ||
+	if ((fcn = r_anal_get_fcn_in (core->anal, fcnaddr, 0)) == NULL ||
 		!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff)) {
 		//eprintf ("Error: Cannot add bb\n");
 	}
@@ -476,7 +476,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'c':
 		  {
 			 RAnalFunction *fcn;
-			 if ((fcn = r_anal_get_fcn_at (core->anal, core->offset, 0)) != NULL) {
+			 if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
 				 r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
 			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", core->offset);
 		  }
@@ -669,7 +669,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		//r_core_anal_undefine (core, core->offset);
 		/* resize function if overlaps */
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn)
 				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
 		}

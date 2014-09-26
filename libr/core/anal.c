@@ -17,7 +17,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 	int use_getuid = 0;
 	int use_isatty = 0;
 	char *do_call = NULL;
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (fcn) {
 		RAnalRef *ref;
 		RListIter *iter;
@@ -545,7 +545,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return R_FALSE;
 #if 1
 	{
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, at, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
 		if (fcn) {
 			//int len = r_list_length (fcn->xrefs);
 			// XXX: use r_anal-xrefs api and sdb
@@ -886,7 +886,7 @@ else
 		}
 		first2 = 0;
 		r_list_foreach (fcni->refs, iter2, fcnr) {
-			RAnalFunction *fr = r_anal_get_fcn_at (core->anal, fcnr->addr, 0);
+			RAnalFunction *fr = r_anal_get_fcn_in (core->anal, fcnr->addr, 0);
 			if (!fr) {
 				eprintf ("Invalid reference from 0x%08"PFMT64x
 					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
