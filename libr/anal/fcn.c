@@ -288,7 +288,7 @@ repeat:
 			if (delay.adjust) {
 				bb->size -= oplen;
 				fcn->ninstr--;
-				VERBOSE_DELAY eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n", 
+				VERBOSE_DELAY eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
 						addr + idx - oplen, bb->addr, bb->size, fcn->size);
 				FITFCNSZ();
 			}
@@ -315,7 +315,7 @@ repeat:
 			} else {
 				varname = r_str_newf ("local_%x", -op.ptr);
 				r_anal_var_add (anal, fcn->addr, 1, -op.ptr,
-						'v', NULL, 
+						'v', NULL,
 						anal->bits/8, varname);
 			}
 			free (varname);
@@ -593,6 +593,31 @@ R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 #endif
 }
 
+R_API RAnalFunction *r_anal_fcn_find_addr(RAnal *anal, ut64 addr, int type) {
+#if USE_NEW_FCN_STORE
+	// TODO: type is ignored here? wtf.. we need more work on fcnstore
+	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
+	return r_listrange_find_root (anal->fcnstore, addr);
+#else
+	RAnalFunction *fcn, *ret = NULL;
+	RListIter *iter;
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		r_list_foreach (anal->fcns, iter, fcn) {
+			if (addr == fcn->addr)
+				return fcn;
+		}
+		return NULL;
+	}
+	r_list_foreach (anal->fcns, iter, fcn) {
+		if (!type || (fcn->type & type)) {
+			if (addr == fcn->addr)
+				ret = fcn;
+		}
+	}
+	return ret;
+#endif
+}
+
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	RAnalFunction *fcn = NULL;
 	RListIter *iter;
@@ -728,7 +753,7 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
     CC = E - N + 2P
     E = the number of edges of the graph.
     N = the number of nodes of the graph.
-    P = the number of connected components (exit nodes). 
+    P = the number of connected components (exit nodes).
 */
 	int E = 0, N = 0, P = 0;
 	RListIter *iter;
@@ -771,7 +796,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
 	sign = ret ? r_str_newf ("%s %s (", ret->name, fs->name):
 		r_str_newf ("void %s (", fs->name);
-	
+
 	/* FIXME: Use RAnalType instead */
 	for (i = 0; ; i++) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
