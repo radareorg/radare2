@@ -1481,18 +1481,20 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 
 R_API int r_core_cmd_file(RCore *core, const char *file) {
 	char *data, *odata;
+	int ret;
 	data = r_file_abspath (file);
 	if (!data) return R_FALSE;
 	odata = r_file_slurp (data, NULL);
 	free (data);
 	if (!odata) return R_FALSE;
-	if (!r_core_cmd_lines (core, odata)) {
+	ret = r_core_cmd_lines (core, odata);
+	if (!ret) {
 		eprintf ("Failed to run script '%s'\n", file);
 		free (odata);
 		return R_FALSE;
 	}
 	free (odata);
-	return R_TRUE;
+	return ret;
 }
 
 R_API int r_core_cmd_command(RCore *core, const char *command) {
