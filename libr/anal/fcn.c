@@ -566,7 +566,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API RAnalFunction *r_anal_fcn_in(RAnal *anal, ut64 addr, int type) {
+R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #if USE_NEW_FCN_STORE
 	// TODO: type is ignored here? wtf.. we need more work on fcnstore
 	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
