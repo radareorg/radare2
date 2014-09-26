@@ -652,6 +652,8 @@ R_API int r_core_init(RCore *core) {
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
+	core->flags = r_flag_new ();
+
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
@@ -668,7 +670,6 @@ R_API int r_core_init(RCore *core) {
 	core->files->free = (RListFree)r_core_file_free;
 	core->offset = 0LL;
 	r_core_cmd_init (core);
-	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
 	core->dbg->graph->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->printf = (PrintfCallback)r_cons_printf;
