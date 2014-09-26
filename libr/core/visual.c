@@ -421,7 +421,7 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (xrefs, iter, refi) {
-				fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+				fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
 				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n", count,
 					refi->at,
 					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
@@ -460,7 +460,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 	RListIter *iter;
 	RAnalFunction *fun;
 
-	fun = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (fun) {
 		r_cons_gotoxy (1, 1);
 		r_cons_printf ("[GOTO REF]> \n");
@@ -870,7 +870,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'j':
 		if (curset) {
 			if (core->printidx == 1 || core->printidx == 2) { // these are dis modes
-				// we read the size of the current mnemonic 
+				// we read the size of the current mnemonic
 				cols = r_asm_disassemble (core->assembler,
 					&op, core->block+cursor, 32);
 				if (cols<1) cols = 1;
@@ -880,7 +880,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					// we seek with the size of the first mnemo
 					cols = r_asm_disassemble (core->assembler,
 							&op, core->block, 32);
-					r_core_seek (core, core->offset+cols, 1); 
+					r_core_seek (core, core->offset+cols, 1);
 					cursor-=cols;
 				}
 			} else { // every other printmode

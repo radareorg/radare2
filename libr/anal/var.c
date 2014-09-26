@@ -85,14 +85,14 @@ R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;
-	RAnalFunction *fcn = r_anal_get_fcn_at (a, addr);
+	RAnalFunction *fcn = r_anal_get_fcn_at (a, addr, 0);
 	if (!fcn)
 		return NULL;
 	if (delta<0) {
 		kind = 'v';
 		delta = -delta;
 	}
-	char *vardef = sdb_get (DB, 
+	char *vardef = sdb_get (DB,
 		sdb_fmt (0, "var.0x%"PFMT64x".%c.%d.%d",
 			fcn->addr, kind, scope, delta), 0);
 	if (!vardef)
@@ -106,7 +106,7 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 	av->name = strdup (vt.name);
 	av->size = vt.size;
 	av->type = strdup (vt.type);
-	
+
 	sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 	// TODO:
 	// get name from sdb

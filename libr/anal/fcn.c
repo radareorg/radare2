@@ -288,7 +288,7 @@ repeat:
 			if (delay.adjust) {
 				bb->size -= oplen;
 				fcn->ninstr--;
-				VERBOSE_DELAY eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n", 
+				VERBOSE_DELAY eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
 						addr + idx - oplen, bb->addr, bb->size, fcn->size);
 				FITFCNSZ();
 			}
@@ -315,7 +315,7 @@ repeat:
 			} else {
 				varname = r_str_newf ("local_%x", -op.ptr);
 				r_anal_var_add (anal, fcn->addr, 1, -op.ptr,
-						'v', NULL, 
+						'v', NULL,
 						anal->bits/8, varname);
 			}
 			free (varname);
@@ -473,7 +473,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
-	RAnalFunction *f = r_anal_fcn_find (anal, fcn->addr,
+	RAnalFunction *f = r_anal_get_fcn_in (anal, fcn->addr,
 		R_ANAL_FCN_TYPE_ROOT);
 	if (f) return R_FALSE;
 #if USE_NEW_FCN_STORE
@@ -496,7 +496,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	RAnalFunction *fcn;
 	if (size<1)
 		return R_FALSE;
-	fcn = r_anal_fcn_find (a, addr, R_ANAL_FCN_TYPE_ROOT);
+	fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (fcn == NULL) {
 		if (!(fcn = r_anal_fcn_new ()))
 			return R_FALSE;
@@ -522,7 +522,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_fcn_find (anal, addr,
+	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr,
 		R_ANAL_FCN_TYPE_ROOT);
 #if USE_NEW_FCN_STORE
 #warning TODO: r_anal_fcn_del_locs not implemented for newstore
@@ -566,12 +566,11 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
+R_API RAnalFunction *r_anal_fcn_in(RAnal *anal, ut64 addr, int type) {
 #if USE_NEW_FCN_STORE
 	// TODO: type is ignored here? wtf.. we need more work on fcnstore
 	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
-	RAnalFunction *f = r_listrange_find_in_range (anal->fcnstore, addr);
-	return (f->addr == addr)? f: NULL;
+	return r_listrange_find_in_range (anal->fcnstore, addr);
 #else
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
@@ -728,7 +727,7 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
     CC = E - N + 2P
     E = the number of edges of the graph.
     N = the number of nodes of the graph.
-    P = the number of connected components (exit nodes). 
+    P = the number of connected components (exit nodes).
 */
 	int E = 0, N = 0, P = 0;
 	RListIter *iter;
@@ -771,7 +770,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
 	sign = ret ? r_str_newf ("%s %s (", ret->name, fs->name):
 		r_str_newf ("void %s (", fs->name);
-	
+
 	/* FIXME: Use RAnalType instead */
 	for (i = 0; ; i++) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
@@ -864,17 +863,28 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	//return R_FALSE;
 }
 
-R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
-	return r_anal_fcn_find (anal, addr, 0);
-#if 0
-	RAnalFunction *fcni;
+R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
+#if USE_NEW_FCN_STORE
+	// TODO: type is ignored here? wtf.. we need more work on fcnstore
+	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
+	return r_listrange_find_root (anal->fcnstore, addr);
+#else
+	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
-//eprintf ("DEPRECATED: get-at\n");
-	r_list_foreach (anal->fcns, iter, fcni)
-		//if (fcni->addr == addr)
-		if (addr >= fcni->addr && addr < (fcni->addr+fcni->size))
-			return fcni;
-	return NULL;
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		r_list_foreach (anal->fcns, iter, fcn) {
+			if (addr == fcn->addr)
+				return fcn;
+		}
+		return NULL;
+	}
+	r_list_foreach (anal->fcns, iter, fcn) {
+		if (!type || (fcn->type & type)) {
+			if (addr == fcn->addr)
+				ret = fcn;
+		}
+	}
+	return ret;
 #endif
 }
 
