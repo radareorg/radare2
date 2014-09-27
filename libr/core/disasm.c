@@ -1293,6 +1293,7 @@ static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f)
 	const char *label;
 	if (!core || !ds || !f)
 		return R_FALSE;
+	f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
 	if (label) {
 		if (ds->show_color) {
@@ -2060,8 +2061,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 }
 
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
-	/* other */
-	//void *old_user = core->anal->user;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	ut32 cur_buf_sz = fcn->size+1;
 	ut8 *buf = malloc (cur_buf_sz);
