@@ -171,12 +171,15 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr))-8;
 	char addrpad[32];
 	if (addrpadlen>0) {
-	memset (addrpad, ' ', addrpadlen);
-	addrpad[addrpadlen] = 0;
+		memset (addrpad, ' ', addrpadlen);
+		addrpad[addrpadlen] = 0;
 
-	//Compute, then show the legend
-	strcpy (bytes, addrpad);
-	} else addrpadlen = 0;
+		//Compute, then show the legend
+		strcpy (bytes, addrpad);
+	} else {
+		*addrpad = 0;
+		addrpadlen = 0;
+	}
 	strcpy (bytes+addrpadlen, "- offset -  ");
 #endif
 	j = strlen (bytes);
