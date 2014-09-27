@@ -162,6 +162,7 @@ R_API int r_cons_enable_mouse (const int enable) {
 
 R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
+	I.highlight = NULL;
 	I.event_interrupt = NULL;
 	I.fps = 0;
 	I.blankline = R_TRUE;
@@ -743,12 +744,12 @@ R_API void r_cons_zero() {
 R_API void r_cons_highlight (const char *word) {
 	char *rword, *res;
 	free (I.highlight);
-	if (word) {
+	if (word && *word) {
 		I.highlight = strdup (word);
 		rword = malloc (strlen (word)+32);
 		strcpy (rword, "\x1b[7m");
 		strcpy (rword+4, word);
-		strcpy (rword+4+strlen(word), "\x1b[0m");
+		strcpy (rword+4+strlen (word), "\x1b[0m");
 		res = r_str_replace (I.buffer, word, rword, 1);
 		if (res) {
 			I.buffer = res;
