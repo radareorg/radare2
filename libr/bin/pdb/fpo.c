@@ -25,13 +25,6 @@ static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DA
 
 	memcpy(fpo_data, data, sizeof(SFPO_DATA_V2));
 	*read_bytes += sizeof(SFPO_DATA_V2);
-//	READ(*read_bytes, 4, data_size, fpo_data->ul_off_start, data, unsigned int);
-//	READ(*read_bytes, 4, data_size, fpo_data->cb_proc_size, data, unsigned int);
-//	READ(*read_bytes, 4, data_size, fpo_data->cdw_locals, data, unsigned int);
-//	READ(*read_bytes, 2, data_size, fpo_data->cdw_params, data, unsigned short);
-//	READ(*read_bytes, 2, data_size, fpo_data->bit_values.bit_values, data, unsigned short);
-
-//	fpo_data->bit_values.bit_values = SWAP_UINT16(fpo_data->bit_values.bit_values);
 
 	return (*read_bytes - curr_read_bytes);
 }
