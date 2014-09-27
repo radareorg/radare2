@@ -1431,3 +1431,33 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	if (i == len) p = NULL;
 	return p;
 }
+
+R_API const char * r_strnstr (const char *str, const char *substr, size_t len) {
+
+	while(*str && len) {
+		if(!strncmp(str, substr, len))
+			return str;
+		str++;
+	}
+	return NULL;
+}
+
+R_API const char * r_strncasestr (const char *str, const char *substr, size_t len) {
+
+	while(*str) {
+		if(!strncasecmp(str, substr, len))
+			return str;
+		str++;
+	}
+	return NULL;
+}
+
+R_API const char * r_strcasestr (const char *str, const char *substr) {
+
+	while(*str) {
+		if(!strcasecmp(str, substr))
+			return str;
+		str++;
+	}
+	return NULL;
+}

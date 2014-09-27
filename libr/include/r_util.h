@@ -420,6 +420,9 @@ R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char * r_str_tok (const char *str1, const char b, size_t len);
+R_API const char * r_strnstr (const char *str, const char *substr, size_t len);
+R_API const char * r_strncasestr (const char *str, const char *substr, size_t len);
+R_API const char * r_strcasestr (const char *str, const char *substr);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
