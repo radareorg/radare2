@@ -1014,7 +1014,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 	ut64 sz = UT64_MAX;
 	ut64 addr = UT64_MAX;
 	ut64 res_size = UT64_MAX,
-		 cur_fsz = r_core_file_cur (core)->size;
+		 cur_fsz = r_io_desc_size (core->io, r_core_file_cur (core)->desc);
 	ut8 *buf = NULL;
 	ut32 max_size = (8096 << 16);
 	ut32 init_size = (1 << 16);
@@ -1061,7 +1061,7 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 	int res = R_FALSE;
 	ut64 res_size = UT64_MAX;
 	ut8 *buf = NULL;
-	ut32 cur_fsz = r_core_file_cur (core)->size;
+	ut32 cur_fsz =  r_io_desc_size (core->io, r_core_file_cur (core)->desc);
 	ut32 max_size = (8096 << 16);
 	ut64 sz = UT64_MAX;
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;

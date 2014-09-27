@@ -249,7 +249,7 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 				if (core->io->va) {
 					/* TODO: section size? */
 				} else {
-					*to = core->file->size;
+					*to = r_io_desc_size (core->io, core->file->desc);
 				}
 			}
 		}

@@ -538,7 +538,7 @@ static int cmd_resize(void *data, const char *input) {
 	st64 delta = 0;
 	int grow, ret;
 
-	oldsize = core->file->size;
+	oldsize = r_io_desc_size (core->io, core->file->desc);
 	switch (*input) {
 	case 'm':
 		if (input[1]==' ')
@@ -579,9 +579,8 @@ static int cmd_resize(void *data, const char *input) {
 	grow = (newsize > oldsize);
 	if (grow) {
 		ret = r_io_resize (core->io, newsize);
-		if (ret<1) {
+		if (ret<1)
 			eprintf ("r_io_resize: cannot resize\n");
-		} else core->file->size = newsize;
 	}
 
 	if (delta && core->offset < newsize)
@@ -589,9 +588,8 @@ static int cmd_resize(void *data, const char *input) {
 
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
-		if (ret<1) {
+		if (ret<1)
 			eprintf ("r_io_resize: cannot resize\n");
-		} else core->file->size = newsize;
 	}
 
 	if (newsize < core->offset+core->blocksize ||

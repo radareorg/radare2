@@ -283,7 +283,6 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
 			r_core_block_read (core, 0);
 	}
-	core->file->size = r_io_size (core->io);
 	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
@@ -298,7 +297,6 @@ R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
 			r_core_block_read (core, 0);
 	}
-	core->file->size = r_io_size (core->io);
 	return (ret==-1)? R_FALSE: R_TRUE;
 }
 

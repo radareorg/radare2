@@ -999,9 +999,12 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 		}
 		// H -> Header fields
 		if (0) {
+/*
 			ut64 size = r_io_size (r->io);
 			if (size == 0)
 				size = r->file->size;
+*/
+			ut64 size = r_io_desc_size (r->io, r->file->desc);
 			secbase >>= 16;
 			secbase <<= 16;
 			secbase = baddr; // always override?

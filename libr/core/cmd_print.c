@@ -803,7 +803,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '=': //p=
 		nbsz = r_num_get (core->num, *input?input[1]?input+2:input+1:input);
-		fsz = core->file? core->file->size: 0;
+		fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
 		if (nbsz) {
 			nbsz = fsz / nbsz;
 			obsz = core->blocksize;
