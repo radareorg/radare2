@@ -793,7 +793,8 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 R_API int r_core_hash_load(RCore *r, const char *file) {
 	const ut8 *md5, *sha1;
 	char hash[128], *p;
-	int i, buf_len = 0;
+	int i;
+	ut64 buf_len = 0;
 	ut8 *buf = NULL;
 	RHash *ctx;
 	ut64 limit;
