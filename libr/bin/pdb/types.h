@@ -1422,6 +1422,44 @@ typedef struct {
 typedef struct {
 	RList *fpo_data_list;
 } SFPOStream;
+
+typedef enum {
+	eSEH = 1,
+	eCPPEH = 2,
+	eFnStart = 4,
+	eFPO_DATA_FLAGS_MAX
+} EFPO_DATA_FLAGS;
+//# New style FPO records with program strings
+//FPO_DATA_V2 = Struct("FPO_DATA_V2",
+//    ULInt32("ulOffStart"),
+//    ULInt32("cbProcSize"),
+//    ULInt32("cbLocals"),
+//    ULInt32("cbParams"),
+//    ULInt32("maxStack"),        # so far only observed to be 0
+//    ULInt32("ProgramStringOffset"),
+//    ULInt16("cbProlog"),
+//    ULInt16("cbSavedRegs"),
+//    FlagsEnum(ULInt32("flags"),
+//        SEH = 1,
+//        CPPEH = 2,              # conjectured
+//        fnStart = 4,
+//    ),
+//)
+typedef struct {
+	unsigned int ul_off_start;
+	unsigned int cb_proc_size;
+	unsigned int cdw_locals;
+	unsigned int cdw_params;
+	unsigned int max_stack;
+	unsigned int programm_string_offset;
+	unsigned short cb_prolog;
+	unsigned short cb_save_regs;
+	EFPO_DATA_FLAGS flags;
+} SFPO_DATA_V2;
+
+typedef struct {
+	RList *fpo_data_list;
+} SFPONewStream;
 // end of FPO stream structures
 
 // GDATA structrens

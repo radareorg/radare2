@@ -260,7 +260,8 @@ static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, 0, ePDB_STREAM_OMAP_FROM_SRC, 0, 0);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, sizeof(SFPOStream),
 					 ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_new_fpo, 0, ePDB_STREAM_FPO_NEW, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_new_fpo, sizeof(SFPONewStream),
+					 ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
 
 	// unparsed, but know their names
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
