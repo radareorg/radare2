@@ -1220,6 +1220,7 @@ R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad);
 
 
 /* plugin pointers */
+extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_csr;
 extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_avr;
