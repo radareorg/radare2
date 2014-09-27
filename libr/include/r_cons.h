@@ -147,6 +147,7 @@ typedef struct r_cons_t {
 	char *pager;
 	int blankline;
 	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
+	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
 	RConsPalette pal;
@@ -292,6 +293,7 @@ R_API void r_cons_reset();
 R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();
 R_API void r_cons_zero();
+R_API void r_cons_highlight (const char *word);
 R_API void r_cons_clear();
 R_API void r_cons_clear00();
 R_API void r_cons_clear_line(int err);

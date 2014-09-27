@@ -957,11 +957,21 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 			return strdup (p);
 		}
 		switch (p[i]) {
+		// We dont need to skip ansi codes.
+		// original colors must be preserved somehow
 		case 0x1b:
+#define STRIP_ANSI 1
+#if STRIP_ANSI
 			/* skip until 'm' */
 			for (++i;p[i] && p[i]!='m'; i++)
 				o[j] = p[i];
 			continue;
+#else
+			/* copy until 'm' */
+			for (;p[i] && p[i]!='m'; i++)
+				o[j++] = p[i];
+			o[j++] = p[i++];
+#endif
 		case '+':
 		case '-':
 		case '/':

@@ -1269,6 +1269,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
+		," h    highlight word"
 		," q    quit/cancel operation"
 		," r    rename function"
 		," s    set string"
@@ -1390,6 +1391,9 @@ R_API void r_core_visual_define (RCore *core) {
 			}
 		}
 		}
+		break;
+	case 'h':
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
 		break;
 	case 'r':
 		r_core_cmd0 (core, "?i new function name;afn `?y`");

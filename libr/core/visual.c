@@ -7,7 +7,7 @@ static int blocksize = 0;
 static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
-	"x", "pd $r",
+	"x", "pd $r", 
 	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
 	"pxw", "pc", "pxa"
 };
@@ -89,6 +89,7 @@ static void visual_help() {
 	"Visual mode help:\n"
 	" ?        show this help or manpage in cursor mode\n"
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
+	" @        set cmd.vprompt to run commands before the visual prompt\n"
 	" !        run r2048 game\n"
 	" _        enter the hud\n"
 	" .        seek to program counter\n"
@@ -609,6 +610,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'c':
 		setcursor (core, curset?0:1);
 		break;
+	case '@':
+		r_core_cmd0 (core, "?i vmprompt;\"e cmd.vprompt=`?y`\"");
+		break;
 	case 'C':
 		color = color? 0: 1;
 		r_config_set_i (core->config, "scr.color", color);
@@ -1124,10 +1128,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'N': r_core_seek_delta (core, 0-(int)core->blocksize); break;
 #endif
 	case ':':
+		core->vmode = R_FALSE;
 		r_core_visual_prompt_input (core);
+		core->vmode = R_TRUE;
 		break;
 	case '_':
+		core->vmode = R_FALSE;
 		r_core_visual_hud (core);
+		core->vmode = R_TRUE;
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
@@ -1418,6 +1426,26 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	core->print->flags |= R_PRINT_FLAGS_ADDRMOD;
 	do {
+		if (core->printidx == 2) {
+			static char debugstr[512];
+			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
+			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
+			const int size = r_config_get_i (core->config, "stack.size"); // stack.size
+			const int delta = r_config_get_i (core->config, "stack.delta"); // stack.delta
+			if (cmdvhex && *cmdvhex) {
+				snprintf (debugstr, sizeof(debugstr),
+					"f tmp;sr sp;%s;dr=;s-;"
+					"s tmp;f-tmp;pd $r", cmdvhex);
+				debugstr[sizeof(debugstr)-1]=0;
+			} else {
+				snprintf (debugstr, sizeof(debugstr),
+					"f tmp;sr sp;%s %d@$$-%d;dr=;s-;"
+					"s tmp;f-tmp;pd $r",
+					pxa?"pxa":"pxw", size,
+					delta);
+			}
+			printfmt[2] = debugstr;
+		}
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		r_cons_show_cursor (R_FALSE);
 		if (wheel)

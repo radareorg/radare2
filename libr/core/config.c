@@ -560,6 +560,12 @@ static int cb_scrhtml(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_scrhighlight(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_highlight (node->value);
+	return R_TRUE;
+}
+
 static int cb_scrint(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->is_interactive = node->i_value;
@@ -829,6 +835,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 
+	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
+	SETI("stack.size", 64,  "Define size of anotated hexdump in visual debug");
+	SETI("stack.delta", 0,  "Define a delta for the stack dump");
+
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	/* debug */
 	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
@@ -869,6 +879,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Command to executed every breakpoint hit");
+	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF("cmd.hit", "", "Command to execute on every search hit");
 	SETPREF("cmd.open", "", "Command executed when file its opened");
@@ -882,6 +893,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* hexdump */
 	SETCB("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
+	SETI("hex.flagsz", 0, "if != 0 overrides the flag size in pxa");
 	SETICB("hex.cols", 16, &cb_hexcols, "Configure the number of columns in hexdump");
 	SETICB("hex.stride", 0, &cb_hexstride, "Define the line stride in hexdump (default is 0)");
 
@@ -952,6 +964,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.fps", "false", &cb_fps, "Show FPS indicator in Visual");
 	SETICB("scr.fix_rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS ssh client");
+	SETCB("scr.highlight", "", &cb_scrhighlight, "Highligh that word at RCons level");
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interractive mode");
 	SETCB("scr.html", "false", &cb_scrhtml, "If enabled disassembly uses HTML syntax");
 	SETCB("scr.nkey", "hit", &cb_scrnkey, "Select the seek mode in visual");

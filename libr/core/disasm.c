@@ -859,14 +859,49 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 		ds->line = NULL;
 	}
 }
+static int highlight (const char *word, char *op, int size) {
+	char *res, *rword, *opstr = strdup (op);
+	rword = malloc (strlen (word)+32);
+	strcpy (rword, "\x1b[7m");
+	strcpy (rword+4, word);
+	strcpy (rword+4+strlen(word), "\x1b[0m");
+	res = r_str_replace (opstr, word, rword, 1);
+	if (!res) {
+		free (rword);
+		free (opstr);
+		return R_FALSE;
+	}
+	opstr = res;
+	if (strlen (opstr)+1>=size) {
+		free (rword);
+		free (opstr);
+		return R_FALSE;
+	}
+	strcpy (op, opstr);
+	free (opstr);
+	free (rword);
+	return R_TRUE;
+}
 
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
 
 	// TODO : line analysis must respect data types! shouldnt be interpreted as code
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
-	if (ds->asmop.size<1) ds->asmop.size = 1;
+	if (ds->asmop.size<1) {
+		ut32 *n32 = (ut32*)buf;
+		ut64 *n64 = (ut64*)buf;
+		// if arm or mips.. 32 or 64
+		snprintf (ds->asmop.buf_asm,
+			sizeof (ds->asmop.buf_asm),
+			"0x%08x", *n32);
+		snprintf (ds->asmop.buf_asm,
+			sizeof (ds->asmop.buf_asm),
+			"0x%08"PFMT64x, *n64);
+		ds->asmop.size = 1;
+	}
 	ds->oplen = ds->asmop.size;
+// replace buf_asm to highlight shit
 
 	if (ret<1) { // XXX: move to r_asm_disassemble ()
 		ret = -1;
@@ -899,6 +934,8 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
+
+	//highlight ("eax", ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm));
 
 	if (ds->acase)
 		r_str_case (ds->asmop.buf_asm, 1);

@@ -119,6 +119,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
+	int flagsz = r_config_get_i (core->config, "hex.flagsz");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
 	int color_idx = 0;
@@ -166,9 +167,19 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		return;
 	}
 
+#if 1
+	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr))-8;
+	char addrpad[32];
+	if (addrpadlen>0) {
+	memset (addrpad, ' ', addrpadlen);
+	addrpad[addrpadlen] = 0;
+
 	//Compute, then show the legend
-	strcpy (bytes, "- offset -  ");
-	j = strlen ("- offset -  ");
+	strcpy (bytes, addrpad);
+	} else addrpadlen = 0;
+	strcpy (bytes+addrpadlen, "- offset -  ");
+#endif
+	j = strlen (bytes);
 	for (i=0; i<nb_cols; i+=2) {
 		sprintf (bytes+j, " %X %X  ", (i&0xf), (i+1)&0xf);
 		j += 5;
@@ -210,7 +221,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			// collect flags
 			flag = r_flag_get_i (core->flags, addr+j);
 			if (flag) { // Begining of a flag
-				fend = addr + j + flag->size;
+				if (flagsz) {
+					fend = addr + flagsz; //core->blocksize;
+				} else {
+					fend = addr + j + flag->size;
+				}
 				note[j] = r_str_prefix (strdup (flag->name), "/");
 				marks = R_TRUE;
 				color_idx++;
@@ -309,11 +324,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						out[off+sz-1] = '.';
 					}
 					hasline = (out[off] != ' ');
-					free (note[j]);
+					R_FREE (note[j]);
 				}
 			}
 			out[out_sz-1] = 0;
 			if (hasline) {
+				r_cons_strcat (addrpad);
 				r_cons_strcat (out);
 				r_cons_newline ();
 			}

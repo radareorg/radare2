@@ -60,9 +60,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	opsize = ud_disassemble (&d);
 	strncpy (op->buf_asm, ud_insn_asm (&d), R_ASM_BUFSIZE-1);
 	op->buf_asm[R_ASM_BUFSIZE-1] = 0;
-	op->size = opsize;
 	if (opsize<1 || strstr (op->buf_asm, "invalid"))
-		opsize = -1;
+		opsize = 0;
+	op->size = opsize;
 	return opsize;
 }
 

@@ -5,7 +5,7 @@
 static void showfile(const int nth, const char *name, int minusl) {
 	struct stat sb;
 	const char *n = name;
-	char *nn, *u_rwx;
+	char *nn, *u_rwx = "";
 	int sz = r_file_size (n);
 	int perm, isdir, uid = 0, gid = 0;
 	int fch = '-';
