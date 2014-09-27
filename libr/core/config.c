@@ -114,7 +114,7 @@ static int cb_asmarch(void *user, void *data) {
 
 	if (*node->value=='?') {
 		rasm2_list (core, NULL);
-		return 0;
+		return R_FALSE;
 	}
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (*node->value) {
@@ -122,7 +122,7 @@ static int cb_asmarch(void *user, void *data) {
 			eprintf ("asm.arch: cannot find (%s)\n", node->value);
 			return R_FALSE;
 		}
-	} else return 0;
+	} else return R_FALSE;
 
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
@@ -138,7 +138,10 @@ static int cb_asmarch(void *user, void *data) {
 		char *p, *s = strdup (node->value);
 		p = strchr (s, '.');
 		if (p) *p = 0;
-		r_config_set (core->config, "anal.arch", s);
+		if (!r_config_set (core->config, "anal.arch", s)) {
+			/* fall back to the anal.null plugin */
+			r_config_set (core->config, "anal.arch", "null");
+		}
 		free (s);
 	}
 	if (!r_syscall_setup (core->anal->syscall, node->value,
