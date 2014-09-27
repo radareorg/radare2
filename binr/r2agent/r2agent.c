@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 	}
 	
 	eprintf ("http://localhost:%d/\n", s->port);
-	if (!r_sandbox_enable (dosandbox)) {
+	if (dosandbox && !r_sandbox_enable (R_TRUE)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
