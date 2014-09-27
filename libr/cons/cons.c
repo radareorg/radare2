@@ -752,6 +752,7 @@ R_API void r_cons_highlight (const char *word) {
 		res = r_str_replace (I.buffer, word, rword, 1);
 		if (res) {
 			I.buffer = res;
+			I.buffer_len = I.buffer_sz = strlen (res);
 		}
 	} else {
 		I.highlight = NULL;
