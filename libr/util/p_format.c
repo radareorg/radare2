@@ -52,6 +52,7 @@ static void print_format_help(RPrint *p) {
 	" s - 32bit pointer to string (4 bytes)\n"
 	" S - 64bit pointer to string (8 bytes)\n"
 	//" t - unix timestamp string\n"
+	" ? - data structure `pf ? (struct_type)struct_name`\n"
 	" * - next char is pointer (honors asm.bits)\n"
 	" + - toggle show flags for each offset\n"
 	" : - skip 4 bytes\n"
