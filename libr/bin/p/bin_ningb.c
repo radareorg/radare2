@@ -18,7 +18,7 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void*)R_TRUFAE;
+	return R_NOTNULL;
 }
 
 static int check(RBinFile *arch) {

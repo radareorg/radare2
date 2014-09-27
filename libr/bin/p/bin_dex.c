@@ -29,9 +29,8 @@ static Sdb* get_sdb (RBinObject *o) {
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
-
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
-	tbuf = r_buf_new();
+	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_dex_new_buf (tbuf);
 	r_buf_free (tbuf);

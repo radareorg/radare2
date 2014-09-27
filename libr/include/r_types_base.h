@@ -18,6 +18,7 @@
 #define R_FALSE 0
 #define R_TRUE 1
 #define R_TRUFAE 2
+#define R_NOTNULL (void*)(size_t)1
 
 /* limits */
 #undef UT64_MAX

@@ -16,7 +16,7 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void*)(size_t)1;
+	return R_NOTNULL;
 }
 
 static int load(RBinFile *arch) {

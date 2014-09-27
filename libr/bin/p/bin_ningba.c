@@ -9,7 +9,6 @@
 
 static int check(RBinFile *arch);
 int check_bytes(const ut8 *buf, ut64 length);
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
 
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
@@ -19,7 +18,6 @@ static int check(RBinFile *arch) {
 }
 
 int check_bytes(const ut8 *buf, ut64 length) {
-
 	ut8 lict[156];
 	if (!buf || length < 160)
 		return 0;
@@ -34,15 +32,10 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return NULL;
-}
-
 static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o) return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
 
@@ -106,7 +99,6 @@ struct r_bin_plugin_t r_bin_plugin_ningba = {
 	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
-	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
