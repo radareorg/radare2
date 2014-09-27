@@ -135,7 +135,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'v': return op.val; // immediate value
 		case 'l': return op.size;
 		case 'b': return core->blocksize;
-		case 's': return core->file->size;
+		case 's': return r_io_desc_size (core->io, core->file->desc);
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
 			s = r_io_section_vget (core->io, core->offset);
@@ -987,7 +987,7 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-							R_IO_READ, 0, 0, file->size);
+							R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
 						pipefd = core->file->desc->fd;
 						eprintf ("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
@@ -1147,7 +1147,7 @@ reaccept:
 				if (buf[0]!=2) {
 					r_core_seek (core, x, buf[0]);
 					x = core->offset;
-				} else x = core->file->size;
+				} else x = r_io_desc_size (core->io, core->file->desc);
 				buf[0] = RMT_SEEK | RMT_REPLY;
 				r_mem_copyendian (buf+1, (ut8*)&x, 8, !LE);
 				r_socket_write (c, buf, 9);
