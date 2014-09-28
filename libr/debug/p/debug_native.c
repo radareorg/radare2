@@ -425,6 +425,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 // XXX: detach is noncontrollable continue
         ptrace (PT_DETACH, pid, 0, 0);
+        ptrace (PT_ATTACH, pid, 0, 0);
 #if 0
 	ptrace (PT_THUPDATE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
 	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
