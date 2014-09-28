@@ -972,8 +972,11 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		r_anal_esil_stack_free (esil);
 	 }
 	ut64 newaddr = r_reg_getv (core->anal->reg, name);
-	if (addr == newaddr)
+	if (addr == newaddr) {
+		if (op.size<1)
+			op.size = 1; // avoid inverted stepping
 		r_reg_setv (core->anal->reg, name, addr + op.size);
+	}
 	// check addr
 	if (until_addr != UT64_MAX) {
 		if (addr == until_addr) {

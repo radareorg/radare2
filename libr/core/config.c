@@ -969,6 +969,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS ssh client");
 	SETCB("scr.highlight", "", &cb_scrhighlight, "Highligh that word at RCons level");
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interractive mode");
+	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB("scr.html", "false", &cb_scrhtml, "If enabled disassembly uses HTML syntax");
 	SETCB("scr.nkey", "hit", &cb_scrnkey, "Select the seek mode in visual");
 	SETCB("scr.pager", "", &cb_pager, "Select pager program (used if output doesn't fit on window)");

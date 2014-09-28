@@ -319,7 +319,22 @@ static void visual_search (RCore *core) {
 	}
 }
 
+R_API void r_core_visual_show_char (RCore *core, char ch) {
+	if (r_config_get_i (core->config, "scr.feedback")<2)
+		return;
+	if (!IS_PRINTABLE(ch))
+		return;
+	r_cons_gotoxy (1, 2);
+	r_cons_printf (".---.\n");
+	r_cons_printf ("| %c |\n", ch);
+	r_cons_printf ("'---'\n");
+	r_cons_flush ();
+	r_sys_usleep (90000);
+}
+
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
+	if (r_config_get_i (core->config, "scr.feedback")<1)
+		return;
 #if 0
 	int i, ns = 90000;
 	const char *scmd = (addr > core->offset)? "so": "s-4";
@@ -1469,6 +1484,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, cmdprompt, 0);
 		r_core_visual_refresh (core);
 		ch = r_cons_readchar ();
+		r_core_visual_show_char (core, ch);
 		if (ch==-1 || ch==4) break; // error or eof
 	} while (r_core_visual_cmd (core, ch));
 

@@ -1251,7 +1251,7 @@ R_API void r_core_visual_define (RCore *core) {
 	{
 		int h;
 		(void)r_cons_get_size (&h);
-		h-=18;
+		h-=19;
 		if (h<0) {
 			r_cons_clear00 ();
 		} else {

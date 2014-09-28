@@ -25,6 +25,8 @@ static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 lad
 	case 1: // va $ rabin2
 		return r_bin_get_vaddr (bin, baddr, paddr, vaddr);
 	case 2: // la $ rabin2 -B
+		if (!baddr && !laddr)
+			return vaddr;
 		return paddr + laddr;
 	}
 	return vaddr;
@@ -1013,6 +1015,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 
 		r_list_foreach (sections, iter, section) {
 			ut64 addr = rva (r->bin, va, section->paddr, section->vaddr, baddr, laddr);
+			addr = section->vaddr; // this line fixes rbin_bios
 			if (name && strcmp (section->name, name))
 				continue;
 			r_name_filter (section->name, sizeof (section->name));
