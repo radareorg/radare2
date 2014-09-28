@@ -1107,8 +1107,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (curset) {
 			visual_search (core);
 		} else {
-			if (!autoblocksize)
+			if (autoblocksize) {
+				r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+			} else {
 				r_core_block_size (core, core->blocksize-cols);
+			}
 		}
 		break;
 	case '*':

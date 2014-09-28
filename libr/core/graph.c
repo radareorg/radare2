@@ -484,8 +484,13 @@ repeat:
 			curnode = cn;
 		// select jump node
 		break;
+	case '/':
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+		break;
 	case ':':
+		core->vmode = R_FALSE;
 		r_core_visual_prompt_input (core);
+		core->vmode = R_TRUE;
 		break;
 	case 'f':
 		cn = Edge_node (edges, curnode, 1);
