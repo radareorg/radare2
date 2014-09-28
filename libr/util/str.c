@@ -1115,6 +1115,15 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 	return NULL;
 }
 
+R_API const char *r_str_ncasestr(const char *a, const char *b, size_t s) {
+	while(*a) {
+		if(strncasecmp(a, b, s) == 0)
+			return a;
+		a++;
+	}
+	return NULL;
+}
+
 R_API int r_str_write (int fd, const char *b) {
 	return write (fd, b, strlen (b));
 }
@@ -1430,34 +1439,4 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	for ( ; i < len; i++,p++) if (*p == b) break;
 	if (i == len) p = NULL;
 	return p;
-}
-
-R_API const char * r_strnstr (const char *str, const char *substr, size_t len) {
-
-	while(*str && len) {
-		if(!strncmp(str, substr, len))
-			return str;
-		str++;
-	}
-	return NULL;
-}
-
-R_API const char * r_strncasestr (const char *str, const char *substr, size_t len) {
-
-	while(*str) {
-		if(!strncasecmp(str, substr, len))
-			return str;
-		str++;
-	}
-	return NULL;
-}
-
-R_API const char * r_strcasestr (const char *str, const char *substr) {
-
-	while(*str) {
-		if(!strcasecmp(str, substr))
-			return str;
-		str++;
-	}
-	return NULL;
 }

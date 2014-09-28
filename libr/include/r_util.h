@@ -372,6 +372,7 @@ R_API int r_str_write (int fd, const char *b);
 R_API void r_str_ncpy(char *dst, const char *src, int n);
 R_API void r_str_sanitize(char *c);
 R_API const char *r_str_casestr(const char *a, const char *b);
+R_API const char *r_str_ncasestr(const char *a, const char *b, size_t s);
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
@@ -420,9 +421,6 @@ R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char * r_str_tok (const char *str1, const char b, size_t len);
-R_API const char * r_strnstr (const char *str, const char *substr, size_t len);
-R_API const char * r_strncasestr (const char *str, const char *substr, size_t len);
-R_API const char * r_strcasestr (const char *str, const char *substr);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
