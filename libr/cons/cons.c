@@ -151,7 +151,7 @@ R_API int r_cons_enable_mouse (const int enable) {
 		write (2, code, strlen (code));
 	} else {
 		//r_cons_memcat ("\x1b[?1001r", 8);
-		const char *code = "\x1b[?1001r" "\x1b[?1000l\x1b[32m";
+		const char *code = "\x1b[?1001r" "\x1b[?1000l";
 		write (2, code, strlen (code));
 	}
 	return enabled;
@@ -743,9 +743,15 @@ R_API void r_cons_zero() {
 
 R_API void r_cons_highlight (const char *word) {
 	char *rword, *res;
-	free (I.highlight);
 	if (word && *word) {
-		I.highlight = strdup (word);
+		if (I.highlight) {
+			if (strcmp (word, I.highlight)) {
+				free (I.highlight);
+				I.highlight = strdup (word);
+			}
+		} else {
+			I.highlight = strdup (word);
+		}
 		rword = malloc (strlen (word)+32);
 		strcpy (rword, "\x1b[7m");
 		strcpy (rword+4, word);
@@ -756,6 +762,7 @@ R_API void r_cons_highlight (const char *word) {
 			I.buffer_len = I.buffer_sz = strlen (res);
 		}
 	} else {
+		free (I.highlight);
 		I.highlight = NULL;
 	}
 }
