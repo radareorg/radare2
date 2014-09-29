@@ -485,6 +485,7 @@ static int pdb7_parse(R_PDB *pdb)
 		p_tmp = (int *)p_tmp + 1;
 	}
 
+	pdb->pdb_streams2 = 0;
 	init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size);
 	pdb_read_root(pdb);
 
@@ -704,7 +705,8 @@ static void print_gvars(R_PDB *pdb, int img_base)
 		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
 			printf("%s, 0x%x, %d, %s\n",
-				   gdata->name.name, omap_remap(omap->stream, img_base + gdata->offset + sctn_header->virtual_address),
+				   gdata->name.name, img_base + omap_remap((omap) ? (omap->stream) : 0,
+												gdata->offset + sctn_header->virtual_address),
 				   gdata->symtype, sctn_header->name);
 		} else {
 			printf("Skipping %s, segment %d does not exist\n",

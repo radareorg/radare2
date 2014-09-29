@@ -68,7 +68,7 @@ void free_omap_stream(void *stream)
 //   imin unrestricted when using truncate toward minus infinity divide
 //     imid = (imin+imax)>>1; or
 //     imid = (int)floor((imin+imax)/2.0);
-static int binary_search(int A[], int key, int imin, int imax)
+static int binary_search(unsigned int *A, int key, int imin, int imax)
 {
 	int imid;
 
@@ -107,10 +107,10 @@ int omap_remap(void *stream, int address)
 		return address;
 	}
 
-	len = 4 * r_list_length(omap_stream->omap_entries);
+	len = r_list_length(omap_stream->omap_entries);
 
 	if (omap_stream->froms == 0) {
-		omap_stream->froms = (unsigned int *) malloc(len);
+		omap_stream->froms = (unsigned int *) malloc(4 * len);
 		it = r_list_iterator(omap_stream->omap_entries);
 		while (r_list_iter_next(it)) {
 			omap_entry = (SOmapEntry *) r_list_iter_get(it);
@@ -119,7 +119,17 @@ int omap_remap(void *stream, int address)
 		}
 	}
 
-//	pos = binary_search(omap_stream->froms, address, 0, len);
+	// mb (len -1) ???
+	pos = binary_search(omap_stream->froms, address, 0, (len));
 
-	return 0;
+	if (omap_stream->froms[pos] != address) {
+		pos -= 1;
+	}
+
+	omap_entry = (SOmapEntry *) r_list_get_n(omap_stream->omap_entries, pos);
+	if (omap_entry->to == 0) {
+		return omap_entry->to;
+	} else {
+		return omap_entry->to + (address - omap_entry->from);
+	}
 }
