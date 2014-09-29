@@ -24,6 +24,8 @@ typedef struct {
 	void *stream_map;
 	RList *pdb_streams;
 	RList *pdb_streams2;
+
+	void (*print_gvars)(struct R_PDB *pdb, int img_base);
 } R_PDB;
 
 int init_pdb_parser(R_PDB *pdb);

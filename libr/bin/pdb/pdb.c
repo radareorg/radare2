@@ -9,6 +9,7 @@
 #include "fpo.h"
 #include "gdata.h"
 #include "pe.h"
+#include "omap.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
@@ -32,7 +33,7 @@ static void free_pdb_stream(void *stream)
 
 	if (pdb_stream) {
 		if (pdb_stream->pages) {
-			free(pdb_stream->pages);
+//			free(pdb_stream->pages);
 			pdb_stream->pages = 0;
 		}
 	}
@@ -175,9 +176,11 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 //			fclose(tmp_file);
 			page->stream_size = sizes[i];
 			page->stream_pages = tmp;
+			page->num_pages = num_pages;
 		} else {
 			page->stream_size = 0;
 			page->stream_pages = 0;
+			page->num_pages = 0;
 			free(tmp);
 		}
 
@@ -255,9 +258,12 @@ static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
 					 ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr, sizeof(SPEStream),
 					 ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr_orig, 0, ePDB_STREAM_SECT__HDR_ORIG, 0, 0);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_to_src, 0, ePDB_STREAM_OMAP_TO_SRC, 0, 0);
-	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, 0, ePDB_STREAM_OMAP_FROM_SRC, 0, 0);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof(SPEStream),
+					 ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_to_src, sizeof(SOmapStream),
+					 ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
+	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_omap_from_src, sizeof(SOmapStream),
+					 ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_fpo, sizeof(SFPOStream),
 					 ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_new_fpo, sizeof(SFPONewStream),
@@ -327,7 +333,7 @@ static int pdb_read_root(R_PDB *pdb)
 	while (r_list_iter_next(it)) {
 		page = (SPage*) r_list_iter_get(it);
 		init_r_stream_file(&stream_file, pdb->fp, page->stream_pages,
-						   root_stream->pdb_stream.pages_amount,
+						   page->num_pages/*root_stream->pdb_stream.pages_amount*/,
 						   page->stream_size,
 						   root_stream->pdb_stream.page_size);
 		switch (i) {
@@ -578,6 +584,7 @@ static void finish_pdb_parse(R_PDB *pdb)
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get(it);
 			pdb_stream->free_(pdb_stream);
 			free(pdb_stream);
+			break;
 		}
 
 		i++;
@@ -651,6 +658,62 @@ static void print_types(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void print_gvars(R_PDB *pdb, int img_base)
+{
+	RList *l = 0;
+	RListIter *it = 0, *it1 = 0;
+	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0 ,
+			*gsym = 0, *tmp = 0;
+	SGDATAStream *gsym_data_stream = 0;
+	SGlobal *gdata = 0;
+	SPEStream *pe_stream = 0;
+	SIMAGE_SECTION_HEADER *sctn_header = 0;
+
+	l = pdb->pdb_streams2;
+	it = r_list_iterator(l);
+	while (r_list_iter_next(it)) {
+		tmp = (SStreamParseFunc *) r_list_iter_get(it);
+		switch (tmp->type) {
+		case ePDB_STREAM_SECT__HDR_ORIG:
+			sctns_orig = tmp;
+			break;
+		case ePDB_STREAM_SECT_HDR:
+			sctns = tmp;
+			break;
+		case ePDB_STREAM_OMAP_FROM_SRC:
+			omap = tmp;
+			break;
+		case ePDB_STREAM_GSYM:
+			gsym = tmp;
+			break;
+		default:
+			break;
+		}
+	}
+
+	gsym_data_stream = (SGDATAStream *) gsym->stream;
+	if ((omap != 0) && (sctns_orig != 0)) {
+		pe_stream = (SPEStream *) sctns_orig->stream;
+	} else {
+		pe_stream = (SPEStream *) sctns->stream;
+	}
+
+	it = r_list_iterator(gsym_data_stream->globals_list);
+	while (r_list_iter_next(it)) {
+		gdata = (SGlobal *) r_list_iter_get(it);
+		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
+		if (sctn_header) {
+			printf("%s, 0x%x, %d, %s\n",
+				   gdata->name.name, omap_remap(omap->stream, img_base + gdata->offset + sctn_header->virtual_address),
+				   gdata->symtype, sctn_header->name);
+		} else {
+			printf("Skipping %s, segment %d does not exist\n",
+				   gdata->name.name, (gdata->segment -1));
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 int init_pdb_parser(R_PDB *pdb)
 {
 	char *signature = 0;
@@ -697,6 +760,7 @@ int init_pdb_parser(R_PDB *pdb)
 	pdb->stream_map = 0;
 	pdb->finish_pdb_parse = finish_pdb_parse;
 	pdb->print_types = print_types;
+	pdb->print_gvars = print_gvars;
 	printf("init_pdb_parser() finish with success\n");
 	return 1;
 

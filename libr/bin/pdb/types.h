@@ -664,6 +664,7 @@ typedef struct {
 
 typedef struct {
 	int stream_size;
+	int num_pages;
 	char *stream_pages;
 } SPage;
 
@@ -1499,5 +1500,17 @@ typedef struct {
 	RList *sections_hdrs;
 } SPEStream;
 // end PE stream structures
+
+// omap structures
+typedef struct {
+	unsigned int from;
+	unsigned int to;
+} SOmapEntry;
+
+typedef struct {
+	RList *omap_entries;
+	unsigned int *froms;
+} SOmapStream;
+// end of omap structures
 
 #endif // TYPES_H
