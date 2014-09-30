@@ -13,7 +13,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	//void *cp;
 	RBinJavaObj *obj = NULL;
 	RBin *bin = a->binb.bin;
-	RBinPlugin *plugin = bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
+	RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
+		bin->cur->o->plugin : NULL;
 	if (plugin) {
 		if (!strcmp (plugin->name, "java")) { // XXX slow
 			obj = bin->cur->o->bin_obj; //o;
