@@ -114,20 +114,27 @@ static int cmd_zign(void *data, const char *input) {
 			len = fin-ini;
 			buf = malloc (len);
 			if (buf != NULL) {
+				int count = 0;
 				eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
-				r_cons_printf ("f-sign*\n");
+				r_cons_printf ("fs sign\n");
+				r_cons_break (NULL, NULL);
 				if (r_io_read_at (core->io, ini, buf, len) == len) {
 					for (idx=0; idx<len; idx++) {
+						if (r_cons_singleton ()->breaked)
+							break;
 						si = r_sign_check (core->sign, buf+idx, len-idx);
 						if (si) {
+							count++;
 							if (si->type == 'f')
 								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
 									si->name, idx, ini+idx); //core->offset);
 							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
 								si->name, ini+idx); //core->offset+idx);
+							eprintf ("- Found %d matching function signatures\r", count);
 						}
 					}
 				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
+				r_cons_break_end ();
 				free (buf);
 			} else eprintf ("Cannot alloc %d bytes\n", len);
 		}

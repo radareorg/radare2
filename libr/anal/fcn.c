@@ -11,7 +11,7 @@
 #define CALL_IS_EOB 0
 
 // 64KB max size
-#define MAX_FCN_SIZE 65535
+#define MAX_FCN_SIZE 262140
 
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
