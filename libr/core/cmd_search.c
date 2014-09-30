@@ -319,7 +319,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			addr += aop.size;
 
 			//Handle (possible) grep
-			if (grep && !strncasecmp (asmop.buf_asm, start, end - start)) {
+			if (end && grep && !strncasecmp (asmop.buf_asm, start, end - start)) {
 				if (end[0] == ',') { // fields are comma-seperated
 					start = end + 1; // skip the comma
 					end = strstr (start, ",");
