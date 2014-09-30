@@ -30,7 +30,7 @@ R_API RSearch *r_search_new(int mode) {
 	// TODO: review those mempool sizes. ensure never gets NULL
 	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
 	s->kws = r_list_new ();
-	s->kws->free = free;
+	s->kws->free = (RListFree) r_search_keyword_free;
 	return s;
 }
 

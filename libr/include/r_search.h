@@ -29,8 +29,8 @@ enum {
 #define R_SEARCH_KEYWORD_TYPE_STRING 's'
 
 typedef struct r_search_keyword_t {
-	ut8 bin_keyword[128];
-	ut8 bin_binmask[128];
+	ut8 *bin_keyword;
+	ut8 *bin_binmask;
 	ut32 keyword_length;
 	ut32 binmask_length;
 	ut32 idx[R_SEARCH_DISTANCE_MAX]; // searching purposes
@@ -85,6 +85,7 @@ R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len);
 R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len);
 R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len);
 
+R_API void r_search_keyword_free (RSearchKeyword *kw);
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);

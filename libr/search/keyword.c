@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2014 - pancake */
 
 #include <r_search.h>
 
@@ -10,12 +10,23 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 	if (!kw) return NULL;
 	kw->type = R_SEARCH_KEYWORD_TYPE_BINARY;
 	kw->keyword_length = kwlen;
+	kw->bin_keyword = malloc (kwlen);
 	memcpy (kw->bin_keyword, kwbuf, kwlen);
 	if (bmbuf && bmlen > 0) {
+		kw->bin_binmask = malloc (bmlen);
 		memcpy (kw->bin_binmask, bmbuf, bmlen);
 		kw->binmask_length = bmlen;
-	} 
+	} else {
+		kw->bin_binmask = NULL;
+		kw->binmask_length = 0;
+	}
 	return kw;
+}
+
+R_API void r_search_keyword_free (RSearchKeyword *kw) {
+	free (kw->bin_binmask);
+	free (kw->bin_keyword);
+	free (kw);
 }
 
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
