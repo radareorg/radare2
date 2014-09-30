@@ -1115,6 +1115,15 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 	return NULL;
 }
 
+R_API const char *r_str_ncasestr(const char *a, const char *b, size_t s) {
+	while(*a) {
+		if(strncasecmp(a, b, s) == 0)
+			return a;
+		a++;
+	}
+	return NULL;
+}
+
 R_API int r_str_write (int fd, const char *b) {
 	return write (fd, b, strlen (b));
 }

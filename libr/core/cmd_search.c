@@ -296,7 +296,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 
 	if (grep) {
 		start = grep;
-		end = strstr (grep, ",");
+		end = strchr (grep, ',');
 		if (!end) // We filter on a single opcode, so no ","
 			end = start + strlen (grep);
 	}
@@ -319,10 +319,10 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			addr += aop.size;
 
 			//Handle (possible) grep
-			if (grep && !strncasecmp (asmop.buf_asm, start, end - start)) {
+			if (end && grep && r_str_ncasestr (asmop.buf_asm, start, end - start)) {
 				if (end[0] == ',') { // fields are comma-seperated
 					start = end + 1; // skip the comma
-					end = strstr (start, ",");
+					end = strchr (start, ',');
 					end = end?end: start + strlen(start); //latest field?
 				} else
 					end = NULL;
