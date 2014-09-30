@@ -37,7 +37,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid) {
 			dbg->printf ("[");
 			r_list_foreach (list, iter, p) {
 				dbg->printf ("{\"pid\":%d,"
-					"\"status\":\"%s\","
+					"\"status\":\"%c\","
 					"\"path\":\"%s\"}%s",
 					p->pid, p->status, p->path,
 					iter->n?",":"");
