@@ -210,7 +210,7 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 	}
 	len = r_hex_str2bin (data, buf);
 	while (idx < len) {
-		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) == 0)
+		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) <1)
 			break;
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CALL:

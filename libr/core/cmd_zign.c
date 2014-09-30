@@ -23,22 +23,25 @@ static int cmd_zign(void *data, const char *input) {
 				r_cons_singleton ()->fdout = fd;
 				r_cons_strcat ("# Signatures\n");
 			}
-			r_cons_printf ("zp %s\n", input+2);
+			r_cons_printf ("zn %s\n", input+2);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				ut8 buf[128];
-				if (r_io_read_at (core->io, fcni->addr, buf, sizeof (buf)) == sizeof (buf)) {
-					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
+				if (r_io_read_at (core->io, fcni->addr, buf,
+						sizeof (buf)) == sizeof (buf)) {
+					RFlagItem *flag = r_flag_get_i (
+						core->flags, fcni->addr);
 					if (flag) {
 						name = flag->name;
-						r_cons_printf ("zh %s ", name);
-						len = (fcni->size > sizeof (buf))? sizeof (buf): fcni->size;
+						r_cons_printf ("zb %s ", name);
+						len = (fcni->size > sizeof (buf))?
+							sizeof (buf): fcni->size;
 						for (i=0; i<len; i++)
 							r_cons_printf ("%02x", buf[i]);
 						r_cons_newline ();
 					} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
 				} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
 			}
-			r_cons_strcat ("zp-\n");
+			r_cons_strcat ("zn-\n");
 			if (ptr) {
 				r_cons_flush ();
 				r_cons_singleton ()->fdout = fdold;
