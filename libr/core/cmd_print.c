@@ -152,7 +152,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	nb_cons_cols += 17;
 	rows = len/nb_cols;
 
-	chars = calloc (nb_cols * 10, sizeof(char));
+	chars = calloc (nb_cols * 20, sizeof(char));
 	if (!chars)
 		return;
 	note = calloc (nb_cols, sizeof(char*));
@@ -160,7 +160,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		free (chars);
 		return;
 	}
-	bytes = calloc (nb_cons_cols*10, sizeof(char));
+	bytes = calloc (nb_cons_cols*20, sizeof(char));
 	if (!bytes) {
 		free (chars);
 		free (note);
