@@ -695,11 +695,16 @@ static int cmd_search(void *data, const char *input) {
 				r_config_get_i (core->config, "search.distance"));
 			RSearchKeyword *skw;
 			skw = r_search_keyword_new ((const ut8*)str, len*2, NULL, 0, NULL);
-			skw->icase = ignorecase;
-			r_search_kw_add (core->search, skw);
-			r_search_begin (core->search);
-			dosearch = R_TRUE;
 			free (str);
+			if (skw) {
+				skw->icase = ignorecase;
+				r_search_kw_add (core->search, skw);
+				r_search_begin (core->search);
+				dosearch = R_TRUE;
+			} else {
+				eprintf ("Invalid keyword\n");
+				break;
+			}
 		}
 		break;
 	case 'i':
@@ -720,17 +725,18 @@ static int cmd_search(void *data, const char *input) {
 		{
 		RSearchKeyword *skw;
 		skw = r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL);
+		free (inp);
 		if (skw) {
 			skw->icase = ignorecase;
 			skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 			r_search_kw_add (core->search, skw);
 		} else {
 			eprintf ("Invalid keyword\n");
+			break;
 		}
 		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
-		free (inp);
 		break;
 	case 'e': /* match regexp */
 		{
