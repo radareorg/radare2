@@ -794,7 +794,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	const ut8 *md5, *sha1;
 	char hash[128], *p;
 	int i;
-	ut64 buf_len = 0;
+	int buf_len = 0;
 	ut8 *buf = NULL;
 	RHash *ctx;
 	ut64 limit;
