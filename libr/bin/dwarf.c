@@ -66,6 +66,7 @@ static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_subprogram] = "DW_TAG_subprogram",
 	[DW_TAG_template_type_param] = "DW_TAG_template_type_param",
 	[DW_TAG_template_value_param] = "DW_TAG_template_value_param",
+	[DW_TAG_template_alias] = "DW_TAG_template_alias",
 	[DW_TAG_thrown_type] = "DW_TAG_thrown_type",
 	[DW_TAG_try_block] = "DW_TAG_try_block",
 	[DW_TAG_variant_part] = "DW_TAG_variant_part",
@@ -896,8 +897,10 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 
 	if (!f || !da) return;
 	for (i = 0; i < da->length; i++) {
+		int declstag = da->decls[i].tag;
 		fprintf(f, "Abbreviation Code %lld ", da->decls[i].code);
-		fprintf(f, "Tag %s ", dwarf_tag_name_encodings[da->decls[i].tag]);
+		if (declstag>=0 && declstag < DW_TAG_LAST)
+			fprintf(f, "Tag %s ", dwarf_tag_name_encodings[declstag]);
 		fprintf(f, "[%s]\n", da->decls[i].has_children ?
 				"has children" : "no children");
 		fprintf(f, "Offset 0x%llx\n", da->decls[i].offset);

@@ -116,6 +116,8 @@ extern "C" {
 #define DW_TAG_type_unit                0x41  /* DWARF4 */
 #define DW_TAG_rvalue_reference_type    0x42  /* DWARF4 */
 #define DW_TAG_template_alias           0x43  /* DWARF4 */
+
+#define DW_TAG_LAST                     0x44  // correct ?
 #define DW_TAG_lo_user			0x4080
 #define DW_TAG_hi_user			0xffff
 
