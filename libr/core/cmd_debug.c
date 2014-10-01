@@ -207,10 +207,10 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			(int) r_num_math (core->num, input+2), core->dbg->tid);
 		break;
 	case '*':
-		r_debug_pid_list (core->dbg, 0);
+		r_debug_pid_list (core->dbg, 0, 0);
 		break;
 	case 'j':
-		r_debug_pid_list (core->dbg, -'j');
+		r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
 		break;
 	case 'e':
 		{
@@ -224,7 +224,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case ' ':
 		r_debug_pid_list (core->dbg,
-			(int) R_MAX (0, (int)r_num_math (core->num, input+2)));
+			(int) R_MAX (0, (int)r_num_math (core->num, input+2)), 0);
 		break;
 	case '?': {
 			const char* help_msg[] = {
@@ -248,7 +248,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	default:
 		eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
-		r_debug_pid_list (core->dbg, core->dbg->pid);
+		r_debug_pid_list (core->dbg, core->dbg->pid, 0);
 		break;
 	}
 }
