@@ -157,27 +157,34 @@ static void prompt_read (const char *p, char *buf, int buflen) {
 R_API void r_core_visual_prompt_input (RCore *core) {
 	int ret;
 	eprintf ("Press <enter> to return to Visual mode.\n");
+	ut64 addr = core->offset;
+	ut64 bsze = core->blocksize;
+	ut64 newaddr = addr;
+	if (curset) {
+		if (ocursor != -1) {
+			newaddr = core->offset + ocursor;
+			r_core_block_size (core, cursor-ocursor);
+		} else newaddr = core->offset + cursor;
+		r_core_seek (core, newaddr, 1);
+	}
 	do {
-		ut64 addr = core->offset;
-		ut64 bsze = core->blocksize;
-		if (curset) {
-			if (ocursor != -1) {
-				r_core_block_size (core, cursor-ocursor);
-				r_core_seek (core, core->offset + ocursor, 1);
-			} else r_core_seek (core, core->offset + cursor, 1);
-		}
 		ret = r_core_visual_prompt (core);
-		if (curset) {
+		if (core->offset != newaddr) {
+			// do not restore seek anymore
+			newaddr = addr;
+		}
+	} while (ret);
+	if (curset) {
+		if (addr != newaddr) {
 			r_core_seek (core, addr, 1);
 			r_core_block_size (core, bsze);
 		}
-	} while (ret);
+	}
 }
 
 R_API int r_core_visual_prompt (RCore *core) {
 	char buf[1024];
 	int ret;
-	ut64 oseek = core->offset;
 #if __UNIX__
 	r_line_set_prompt (Color_RESET":> ");
 #else
@@ -185,7 +192,9 @@ R_API int r_core_visual_prompt (RCore *core) {
 #endif
 	showcursor (core, R_TRUE);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
-	if (*buf) {
+	if (!strcmp (buf, "q")) {
+		ret = R_FALSE;
+	} else if (*buf) {
 		r_line_hist_add (buf);
 		r_core_cmd (core, buf, 0);
 		r_cons_flush ();
@@ -196,7 +205,6 @@ R_API int r_core_visual_prompt (RCore *core) {
 		r_cons_clear00 ();
 		showcursor (core, R_FALSE);
 	}
-	if (curset) r_core_seek (core, oseek, 1);
 	return ret;
 }
 
@@ -1146,14 +1154,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'N': r_core_seek_delta (core, 0-(int)core->blocksize); break;
 #endif
 	case ':':
-		core->vmode = R_FALSE;
 		r_core_visual_prompt_input (core);
-		core->vmode = R_TRUE;
 		break;
 	case '_':
-		core->vmode = R_FALSE;
 		r_core_visual_hud (core);
-		core->vmode = R_TRUE;
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");

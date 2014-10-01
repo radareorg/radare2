@@ -145,9 +145,11 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			buf[--i] = 0;
 			break;
 		default:
-			choose = 0;
-			buf[i++] = ch;
-			buf[i] = 0;
+			if (IS_PRINTABLE (ch)) {
+				choose = 0;
+				buf[i++] = ch;
+				buf[i] = 0;
+			}
 			break;
 		}
 	}
