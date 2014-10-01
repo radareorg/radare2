@@ -368,12 +368,14 @@ static void r_print_format_word(const RPrint* p, int endian, int mustset,
 }
 
 // XXX: this is very incomplete. must be updated to handle all format chars
-static int computeStructSize(char *fmt) {
-	char *end = strchr(fmt, ' ');
-	int size = 0, i;
+static int computeStructSize(char *fmt, RPrint *p) {
+	char *end = strchr(fmt, ' '), *args;
+	int size = 0, i, idx=0;
 	if (!end)
 		return -1;
 	*end = 0;
+	args = strdup (end+1);
+	r_str_word_set0 (args);
 	for (i=0; i<strlen(fmt); i++) {
 		switch (fmt[i]) {
 			case 'f':
@@ -410,12 +412,31 @@ static int computeStructSize(char *fmt) {
 				size += 4;
 				i++;
 				break;
+			case '?':
+				{
+				char *endname = NULL, *format = NULL, *structname = NULL;
+				structname = strdup(r_str_word_get0 (args, idx));
+				if (*structname == '(') {
+					endname = strchr (structname, ')');
+				} else {
+					eprintf ("Struct name missing (%s)\n", structname);
+					free(structname);
+					break;
+				}
+				if (endname!=NULL) *endname = '\0';
+				format = strdup(r_strht_get (p->formats, structname+1));
+				size += computeStructSize (format, p);
+				free (structname);
+				break;
+				}
 				// TODO continue list
 			default:
 				break;
 		}
+		idx++;
 	}
-	free(fmt);
+	free (args);
+	free (fmt);
 	return size;
 }
 
@@ -433,7 +454,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, ch
 		return 0;
 	}
 	r_print_format (p, seek, b, len, fmt, flag, NULL);
-	return computeStructSize(strdup(fmt));
+	return computeStructSize(strdup(fmt), p);
 }
 
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
