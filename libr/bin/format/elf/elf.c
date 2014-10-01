@@ -876,18 +876,24 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 	struct r_bin_elf_lib_t *ret = NULL;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0;
-	int ndyn, i, j, k, len;
+	int ndyn, i, j, k, len, filesz;
 
 	if (!bin || !bin->phdr)
 		return NULL;
-	for (i = 0; i < bin->ehdr.e_phnum; i++)
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		filesz = R_MIN (bin->size, bin->phdr[i].p_filesz);
+		if (filesz < bin->phdr[i].p_filesz) {
+			eprintf ("Invalid phdr.filesz value 0x%x\n",
+				(int)bin->phdr[i].p_filesz);
+		}
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
+			ndyn = (int)(filesz / sizeof (Elf_(Dyn)));
+			if (!(dyn = calloc (sizeof (Elf_(Dyn)), ndyn+1))) {
 				perror ("malloc (dyn)");
 				return NULL;
 			}
-			ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)));
-			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn,
+			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset,
+					(ut8*)dyn,
 #if R_BIN_ELF64
 					bin->endian?"2L":"2l",
 #else
@@ -920,7 +926,9 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 						return NULL;
 					}
 					ret[k].last = 0;
-					k++;
+					if (ret[k].name[0]) {
+						k++;
+					}
 				}
 			ret = realloc (ret, (k+1) * sizeof (struct r_bin_elf_lib_t));
 			if (ret == NULL) {
@@ -932,6 +940,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 			free (dyn);
 			break;
 		}
+	}
 	return ret;
 }
 
