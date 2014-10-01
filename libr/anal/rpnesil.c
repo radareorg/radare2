@@ -11,8 +11,8 @@ static int esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num);
 static int esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num);
 
 /* Returns the number that has bits+1 least significant bits set. */
-static inline uint64_t mask (int bits) {
-	return (((uint64_t)2) << bits) - 1;
+static inline ut64 mask (int bits) {
+	return (((ut64)2) << bits) - 1;
 }
 
 /* magic limit */
