@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_io.h>
 // TODO: to be deprecated.. this is slow and boring

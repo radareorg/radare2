@@ -479,24 +479,24 @@ static RList* relocs(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-    RList* imports_list = imports (arch);
-    RListIter *iter;
-    RBinImport *import;
-    r_list_foreach (imports_list, iter, import) {
-        if (!strcmp(import->name, "__stack_chk_fail") ) {
-            r_list_free (imports_list);
-            return 1;
-        }
-    }
-    r_list_free (imports_list);
-    return 0;
+	RList* imports_list = imports (arch);
+	RListIter *iter;
+	RBinImport *import;
+	r_list_foreach (imports_list, iter, import) {
+		if (!strcmp(import->name, "__stack_chk_fail") ) {
+			r_list_free (imports_list);
+			return 1;
+		}
+	}
+	r_list_free (imports_list);
+	return 0;
 }
 
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *str;
 
-	if(!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->lang = "c";
 	if (arch->file)

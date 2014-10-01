@@ -682,14 +682,13 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
+			ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)));
 			free (dyn); // TODO: reuse dyn allocation
-			if (!(dyn = malloc (1+bin->phdr[i].p_filesz))) {
+			if (!(dyn = calloc (sizeof (Elf_(Dyn)), ndyn+1))) {
 				perror ("malloc (dyn)");
 				free (ret);
-				free (dyn);
 				return NULL;
 			}
-			ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)));
 			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn,
 #if R_BIN_ELF64
 				bin->endian?"2L":"2l",
@@ -697,7 +696,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				bin->endian?"2I":"2i",
 #endif
 					ndyn);
-			if (len  == -1) {
+			if (len == -1) {
 				eprintf ("Warning: read (dyn)\n");
 				free (ret);
 				free (dyn);
