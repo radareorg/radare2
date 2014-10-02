@@ -40,7 +40,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						 dst ++;
 						 op->jump = dst;
 						 r_strbuf_setf (&op->esil,
-							 "pc,brk,=[4],brk,++=,"
+							 "pc,brk,=[1],brk,++=,"
 							 "ptr,[1],!,?{,0x%"PFMT64x",pc,=,}", dst);
 						 break;
 					 }
@@ -53,7 +53,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
-		r_strbuf_set (&op->esil, "brk,--=,brk,[4],pc,=");
+		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>': op->type = R_ANAL_OP_TYPE_ADD;
 		r_strbuf_set (&op->esil, "ptr,++=");

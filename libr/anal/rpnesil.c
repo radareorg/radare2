@@ -1019,7 +1019,6 @@ static int esil_deceq (RAnalEsil *esil) {
 		sd--;
 		esil->cur = sd;
 		esil_reg_write (esil, src_dst, sd);
-eprintf ("REGWRITE %d\n", sd);
 		ret = R_TRUE;
 	} else {
 		eprintf ("esil_deceq: invalid parameters\n");
@@ -2271,6 +2270,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	esil->trap = 0;
 	loop:
 	esil->repeat = 0;
+	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
 	esil->parse_goto_count = esil->parse_goto_limit;
