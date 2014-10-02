@@ -230,8 +230,10 @@ static int disassembleOperands(disassembledInstruction *dInstruction) {
 				 * Therefore we must convert to the positive value and then make the entire
 				 * short negative. */
 				dInstruction->operands[i] = (~dInstruction->operands[i]+1)&0x7F;
-				dInstruction->operands[i] = -dInstruction->operands[i];
-			}
+				dInstruction->operands[i] = -dInstruction->operands[i]+2;
+			} else {
+                          dInstruction->operands[i] += 2;
+                        }
 			break;
 		case OPERAND_RELATIVE_ADDRESS:
 			/* k is 12 bits, so maximum value it can store is 4095 decimal.
