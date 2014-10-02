@@ -166,7 +166,10 @@ R_API RHT* ht_(new)(void) {
 }
 
 R_API void ht_(free)(RHT *ht) {
-	if (ht) free (ht->table), free (ht);
+	if (ht) {
+		free (ht->table);
+		free (ht);
+	}
 }
 
 R_API void *ht_(lookup)(RHT *ht, utH hash) {

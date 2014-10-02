@@ -10,7 +10,7 @@
 
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
-static tms320_dasm_t engine = { };
+static tms320_dasm_t engine = { 0 };
 
 typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
@@ -18,19 +18,16 @@ int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
-static boolt match(const char * str, const char * token)
-{
+static boolt match(const char * str, const char * token) {
 	return !strncasecmp(str, token, strlen(token));
 }
 
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
-{
+int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	// TODO: add the implementation
 	return 0;
 }
 
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
-{
+int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	const char * str = engine.syntax;
 
 	op->delay = 0;
@@ -80,8 +77,7 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	return op->size;
 }
 
-int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len)
-{
+int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len) {
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
 	if (anal->cpu && strcasecmp(anal->cpu, "c54x") == 0)
@@ -94,14 +90,12 @@ int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len)
 	return aop(anal, op, addr, buf, len);
 }
 
-static int tms320_init(void * unused)
-{
-	return tms320_dasm_init(&engine);
+static int tms320_init(void * unused) {
+	return tms320_dasm_init (&engine);
 }
 
-static int tms320_fini(void * unused)
-{
-	return tms320_dasm_fini(&engine);
+static int tms320_fini(void * unused) {
+	return tms320_dasm_fini (&engine);
 }
 
 struct r_anal_plugin_t r_anal_plugin_tms320 = {

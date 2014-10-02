@@ -1019,6 +1019,7 @@ static int esil_deceq (RAnalEsil *esil) {
 		sd--;
 		esil->cur = sd;
 		esil_reg_write (esil, src_dst, sd);
+eprintf ("REGWRITE %d\n", sd);
 		ret = R_TRUE;
 	} else {
 		eprintf ("esil_deceq: invalid parameters\n");

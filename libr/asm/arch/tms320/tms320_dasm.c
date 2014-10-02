@@ -1099,8 +1099,7 @@ static insn_head_t c55x_list[] = {
 #  include "c55x/table.h"
 };
 
-int tms320_dasm_init(tms320_dasm_t * dasm)
-{
+int tms320_dasm_init(tms320_dasm_t * dasm) {
 	int i = 0;
 
 	dasm->map = ht_(new)();
@@ -1113,9 +1112,10 @@ int tms320_dasm_init(tms320_dasm_t * dasm)
 	return 0;
 }
 
-int tms320_dasm_fini(tms320_dasm_t * dasm)
-{
-	ht_(free)(dasm->map);
-
+int tms320_dasm_fini(tms320_dasm_t * dasm) {
+	if (dasm && dasm->map)
+		ht_(free)(dasm->map);
+	/* avoid double free */
+	memset (dasm, 0, sizeof (tms320_dasm_t));
 	return 0;
 }
