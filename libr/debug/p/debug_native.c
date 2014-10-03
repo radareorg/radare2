@@ -881,16 +881,15 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
         }
 
 	int tid = dbg->tid;
+	if (tid <0 || tid>=inferior_thread_count) {
+		dbg->tid = tid = dbg->pid;
+	}
 	if (tid == dbg->pid)
 		tid = 0;
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;
 
-		if (tid <0 || tid>=inferior_thread_count) {
-			eprintf ("Tid out of range %d\n", inferior_thread_count);
-			return R_FALSE;
-		}
 // XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
 		switch (type) {
