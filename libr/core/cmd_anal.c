@@ -885,12 +885,12 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			regname = r_str_clean (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
 			if (r) {
-				r_cons_printf ("0x%08"PFMT64x" ->", str,
+				eprintf ("%s 0x%08"PFMT64x" -> ", str,
 					r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 					r_num_math (core->num, arg+1));
 				r_debug_reg_sync (core->dbg, -1, R_TRUE);
-				r_cons_printf ("0x%08"PFMT64x"\n",
+				eprintf ("0x%08"PFMT64x"\n",
 					r_reg_get_value (core->dbg->reg, r));
 			} else {
 				eprintf ("ar: Unknown register '%s'\n", regname);
