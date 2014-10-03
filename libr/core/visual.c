@@ -1452,18 +1452,29 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			static char debugstr[512];
 			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
-			const int size = r_config_get_i (core->config, "stack.size"); // stack.size
-			const int delta = r_config_get_i (core->config, "stack.delta"); // stack.delta
+			const int size = r_config_get_i (core->config, "stack.size");
+			const int delta = r_config_get_i (core->config, "stack.delta");
+			const int bytes = r_config_get_i (core->config, "stack.bytes");
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof(debugstr),
 					"f tmp;sr sp;%s;dr=;s-;"
 					"s tmp;f-tmp;pd $r", cmdvhex);
 				debugstr[sizeof(debugstr)-1]=0;
 			} else {
+				const char *pxw;
+				if (bytes) {
+					pxw = "px";
+				} else {
+					switch (core->assembler->bits) {
+					case 64: pxw = "pxq"; break;
+					case 32: pxw = "pxw"; break;
+					default: pxw = "px"; break;
+					}
+				}
 				snprintf (debugstr, sizeof(debugstr),
 					"f tmp;sr sp;%s %d@$$-%d;dr=;s-;"
 					"s tmp;f-tmp;pd $r",
-					pxa?"pxa":"pxw", size,
+					pxa?"pxa":pxw, size,
 					delta);
 			}
 			printfmt[2] = debugstr;

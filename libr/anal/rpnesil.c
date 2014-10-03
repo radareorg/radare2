@@ -1031,10 +1031,13 @@ static int esil_poke1(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, addr;
 	ut8 num1;
+eprintf ("POKE ONE!\n");
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &num)) {
+eprintf ("POKE TWO!\n");
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
+eprintf ("PIKA THREE!\n");
 			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 				esil_mem_read (esil, addr, &num1, 1);
 				esil->old = num1;
@@ -2194,16 +2197,34 @@ static int runword (RAnalEsil *esil, const char *word) {
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return 0;
 	}
+#if NEWSHIT
+// seems wrong :D
 	if (esil->skip) {
-		if (!strcmp (word, "}"))
+		if (!strcmp (word, "}{")) {
 			esil->skip = 0;
-		return 0;
+			return 1;
+		} else if (!strcmp (word, "}")) {
+			esil->skip = 0;
+			return 1;
+		}
 	} else {
 		if (!strcmp (word, "}{")) {
 			esil->skip = 1;
-			return 0;
+			return 1;
 		}
 	}
+#else
+        if (esil->skip) {
+               if (!strcmp (word, "}"))
+                        esil->skip = 0;
+               return 0;
+        } else {
+                if (!strcmp (word, "}{")) {
+                        esil->skip = 1;
+                       return 0;
+                }
+	}
+#endif
 	if (iscommand (esil, word, &op)) {
 		// run action
 		if (op) {
@@ -2320,7 +2341,6 @@ repeat:
 		case 2: goto repeat;
 		}
 	}
-	
 	return 1;
 }
 

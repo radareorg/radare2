@@ -68,11 +68,12 @@ eprintf ("f stack 0x200 0x5000\n");
 eprintf ("o malloc://0x200 0x5000\n");
 eprintf ("f data 0x1000 0x6000\n");
 eprintf ("o malloc://0x1000 0x6000\n");
-eprintf ("ar\n"); // init?
+eprintf ("ar\n"); // hack to init
 eprintf ("ar brk=stack\n");
 eprintf ("ar scr=screen\n");
 eprintf ("ar kbd=input\n");
 eprintf ("ar ptr=data\n");
+eprintf ("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
 eprintf ("s 0\n");
 	return ret;
 }

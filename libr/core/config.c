@@ -838,6 +838,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 
+	SETPREF("stack.bytes", "false", "Show bytes instead of values in stack");
 	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI("stack.size", 64,  "Define size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Define a delta for the stack dump");
