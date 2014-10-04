@@ -7,7 +7,7 @@ R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
-R2BINS=$(shell cd binr ; echo r*2)
+R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
 YARADIR=$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara)
 #binr/ragg2/d
@@ -175,19 +175,23 @@ purge-doc:
 	rm -f ${MDR}/man1/r2.1
 
 purge-dev:
-	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a
-	rm -rf ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
+	rm -f ${DESTDIR}/${LIBDIR}/libr_*.${EXT_AR}
+	rm -f ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
+
+purge-syms:
 	# XXX: this must be in purge-sym ?
 	-for a in ${R2BINS} ; do ${STRIP} -s ${DESTDIR}/${BINDIR}/$$a 2> /dev/null ; done
-	-for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do ${STRIP} -s $$a ; done
+	-for a in ${DESTDIR}/${LIBDIR}/libr_*.${EXT_SO} \
+		${DESTDIR}/${LIBDIR}/libr2.${EXT_SO} ; do ${STRIP} -s $$a ; done
 
 purge: purge-doc purge-dev
 	for a in ${R2BINS} ; do rm -f ${DESTDIR}/${BINDIR}/$$a ; done
 	rm -f ${DESTDIR}/${BINDIR}/ragg2-cc
 	rm -f ${DESTDIR}/${BINDIR}/r2
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*
+	rm -f ${DESTDIR}/${LIBDIR}/libr2.${EXT_SO}
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 
