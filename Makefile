@@ -7,7 +7,7 @@ R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
-R2BINS=$(shell cd binr ; echo r*2)
+R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
 YARADIR=$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara)
 #binr/ragg2/d
@@ -175,7 +175,7 @@ purge-doc:
 	rm -f ${MDR}/man1/r2.1
 
 purge-dev:
-	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a
+	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a ${DESTDIR}/${LIBDIR}/libr2.so
 	rm -rf ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
