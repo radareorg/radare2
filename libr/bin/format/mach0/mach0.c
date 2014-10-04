@@ -643,12 +643,21 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 	if (!(symbols = malloc (symbols_size)))
 		return NULL;
 	for (s = j = 0; s < 2; s++) {
-		if (s == 0) {
+		switch (s) {
+		case 0:
 			from = bin->dysymtab.iextdefsym;
 			to = from + bin->dysymtab.nextdefsym;
-		} else {
+			break;
+		case 1:
 			from = bin->dysymtab.ilocalsym;
 			to = from + bin->dysymtab.nlocalsym;
+			break;
+#if NOT_USED
+		case 2:
+			from = bin->dysymtab.iundefsym;
+			to = from + bin->dysymtab.nundefsym;
+			break;
+#endif
 		}
 		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct r_bin_mach0_symbol_t));
 		to = R_MIN (to , symbols_size/sizeof(struct r_bin_mach0_symbol_t));
@@ -658,7 +667,6 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 			free (symbols);
 			return NULL;
 		}
-		j = 0;
 		for (i = from; i < to; i++, j++) {
 			symbols[j].offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->symtab[i].n_value);
 			symbols[j].addr = bin->symtab[i].n_value;
