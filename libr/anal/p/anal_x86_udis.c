@@ -492,7 +492,12 @@ default:
 	case UD_Ihlt:
 		op->type = R_ANAL_OP_TYPE_TRAP; //HALT;
 		break;
+	case UD_Iin:
+	case UD_Iout:
+		op->type = R_ANAL_OP_TYPE_IO;
+		break;
 	case UD_Iret:
+	case UD_Iiretd:
 	case UD_Iretf:
 	case UD_Isysret:
 		op->type = R_ANAL_OP_TYPE_RET;
