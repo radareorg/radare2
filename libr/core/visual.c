@@ -159,6 +159,9 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 	eprintf ("Press <enter> to return to Visual mode.\n");
 	ut64 addr = core->offset;
 	ut64 bsze = core->blocksize;
+
+	r_cons_show_cursor (R_TRUE);
+	core->vmode = R_FALSE;
 	ut64 newaddr = addr;
 	if (curset) {
 		if (ocursor != -1) {
@@ -180,6 +183,8 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 			r_core_block_size (core, bsze);
 		}
 	}
+	r_cons_show_cursor (R_FALSE);
+	core->vmode = R_TRUE;
 }
 
 R_API int r_core_visual_prompt (RCore *core) {
