@@ -73,6 +73,11 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 		bin->endian?"7I":"7i", 1
 #endif
 	);
+
+	sdb_set (bin->kv, "mach0_header.format",
+		"xxxxddx "
+		"magic cputype cpusubtype filetype ncmds sizeofcmds flags", 0);
+	sdb_num_set (bin->kv, "mach0_header.offset", 0, 0); // wat about fatmach0?
 	if (len == -1) {
 		eprintf ("Error: read (hdr)\n");
 		return R_FALSE;
@@ -94,8 +99,8 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 		bin->endian?"2I16c8I":"2i16c8i", 1);
 #endif
 	sdb_num_set (bin->kv, sdb_fmt (0, "mach0_segment_%d.offset", seg), off, 0);
-	sdb_array_add_num (bin->kv, "mach0_segments.count", off, 0);
-	sdb_set (bin->kv, sdb_fmt (0, "mach0_segment.format"),
+	sdb_num_set (bin->kv, "mach0_segments.count", 0, 0);
+	sdb_set (bin->kv, "mach0_segment.format",
 		"xd[16]zxxxxoodx "
 		"cmd cmdsize segname vmaddr vmsize "
 		"fileoff filesize maxprot initprot nsects flags", 0);
@@ -358,6 +363,12 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			eprintf ("Warning: mach0_header %d = cmdsize<1.\n", i);
 			break;
 		}
+
+		// TODO: a different format for each cmd
+		sdb_num_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.offset", i), off, 0);
+		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i), 
+			"xd cmd size", 0);
+
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			// TODO table of non-instructions in __text
