@@ -203,7 +203,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case ARM_INS_STR:
 				//case ARM_INS_POP:
 			case ARM_INS_LDR:
-				op->type = R_ANAL_OP_TYPE_LOAD;
+				if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
+					op->type = R_ANAL_OP_TYPE_UJMP;
+				} else {
+					op->type = R_ANAL_OP_TYPE_LOAD;
+				}
 				break;
 			case ARM_INS_BL:
 			case ARM_INS_BLX:
@@ -213,7 +217,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case ARM_INS_B:
 			case ARM_INS_BX:
 			case ARM_INS_BXJ:
-				if (insn->detail->arm.cc) {
+				// BX LR == RET
+				if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
+					op->type = R_ANAL_OP_TYPE_RET;
+				} else if (insn->detail->arm.cc) {
 					op->type = R_ANAL_OP_TYPE_CJMP;
 					op->jump = IMM(0);
 					op->fail = addr+op->size;
