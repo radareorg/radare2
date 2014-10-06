@@ -56,8 +56,11 @@ static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
 	if (cmd) {
 		r_cons_break (NULL, NULL);
 		for (;;) {
+			char *ret;
 			r_cons_clear00 ();
-			r_cons_printf ("%s\n", rtrcmd (T, cmd));
+			ret = rtrcmd (T, cmd);
+			r_cons_printf ("%s\n", ret);
+			free (ret);
 			r_cons_flush ();
 			if (r_cons_singleton ()->breaked)
 				break;
@@ -637,7 +640,7 @@ static int r_core_rtr_http_thread (RThread *th) {
 	if (!th) return R_FALSE;
 	ht = th->user;
 	if (!ht || !ht->core) return R_FALSE;
-	return !r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	return r_core_rtr_http_run (ht->core, ht->launch, ht->path);
 }
 
 static RThread *httpthread = NULL;
@@ -816,13 +819,19 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			char uri[1024], prompt[64];
 			int len;
 			char *str, *res, *ptr;
-			if (file[strlen (file)-1]=='/') {
+			int flen = strlen (file);
+			int is_visual = (file[flen-1]== 'V')?1:0;
+			int is_valid = (file[flen-(is_visual?2:1)] == '/')?1:0;
+			if (is_valid) {
 				TextLog T = { host, port, file };
-				rtr_visual (core, T, NULL);
-				for (;;) {
+				if (is_visual) {
+					file[flen-1] = 0; // remove V from url
+					rtr_visual (core, T, NULL);
+				}
 				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
-					host, port, file);
-				r_line_set_prompt (prompt);
+						host, port, file);
+				for (;;) {
+					r_line_set_prompt (prompt);
 					str = r_line_readline ();
 					if (!str || !*str) break;
 					if (*str == 'q') break;
@@ -832,26 +841,25 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						} else {
 							rtr_visual (core, T, NULL);
 						}
-					} else
-					if (!strcmp (str, "TT")) {
+					} else if (!strcmp (str, "TT")) {
 						rtr_textlog_chat (core, T);
 					} else {
-					ptr = r_str_uri_encode (str);
-					if (ptr) str = ptr;
-					snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
-						host, port, file, str);
-					if (ptr == str) free (ptr);
-					str = r_socket_http_get (uri, NULL, &len);
-					if (str) {
-						str[len] = 0;
-						res = strstr (str, "\n\n");
-						if (res) res = strstr (res+1, "\n\n");
-						if (res) res += 2; else res = str;
-						printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
-						r_line_hist_add (str);
-						free (str);
+						ptr = r_str_uri_encode (str);
+						if (ptr) str = ptr;
+						snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
+								host, port, file, str);
+						if (ptr == str) free (ptr);
+						str = r_socket_http_get (uri, NULL, &len);
+						if (str) {
+							str[len] = 0;
+							res = strstr (str, "\n\n");
+							if (res) res = strstr (res+1, "\n\n");
+							if (res) res += 2; else res = str;
+							printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
+							r_line_hist_add (str);
+							free (str);
+						}
 					}
-}
 				}
 				r_socket_free (fd);
 				return;
