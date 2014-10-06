@@ -1516,11 +1516,13 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 		int c = r_cons_get_column ();
 		if (c<ds->ocols)
 			r_cons_memset (' ', ds->ocols-c);
-		r_cons_strcat (ds->color_comment);
+		if (ds->show_color)
+			r_cons_strcat (ds->color_comment);
 		r_cons_strcat ("  ; ");
 		//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 		r_cons_strcat (ds->comment);
-		handle_print_color_reset(core, ds);
+		if (ds->show_color)
+			handle_print_color_reset (core, ds);
 		free (ds->comment);
 		ds->comment = NULL;
 	}
