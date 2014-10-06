@@ -6,6 +6,8 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
+#define	LIST_DEBUG	0
+
 inline RListIter *r_list_iter_new () {
 	return malloc (sizeof (RListIter));
 }
@@ -55,6 +57,12 @@ R_API int r_list_length(RList *list) {
 R_API void r_list_purge (RList *list) {
 	RListIter *it;
 	if (list) {
+#if	LIST_DEBUG
+		if (!list->free) {
+			eprintf ("r_list_purge: list->free is NULL o_O\n");
+			r_sys_backtrace ();
+		}
+#endif
 		it = list->head;
 		while (it) {
 			RListIter *next = it->n;
