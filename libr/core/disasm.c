@@ -859,33 +859,9 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 		ds->line = NULL;
 	}
 }
-static int highlight (const char *word, char *op, int size) {
-	char *res, *rword, *opstr = strdup (op);
-	rword = malloc (strlen (word)+32);
-	strcpy (rword, "\x1b[7m");
-	strcpy (rword+4, word);
-	strcpy (rword+4+strlen(word), "\x1b[0m");
-	res = r_str_replace (opstr, word, rword, 1);
-	if (!res) {
-		free (rword);
-		free (opstr);
-		return R_FALSE;
-	}
-	opstr = res;
-	if (strlen (opstr)+1>=size) {
-		free (rword);
-		free (opstr);
-		return R_FALSE;
-	}
-	strcpy (op, opstr);
-	free (opstr);
-	free (rword);
-	return R_TRUE;
-}
 
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
-
 	// TODO : line analysis must respect data types! shouldnt be interpreted as code
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size<1) {
