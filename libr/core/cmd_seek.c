@@ -234,13 +234,14 @@ static int cmd_seek(void *data, const char *input) {
 				int ret = prevopsz (core, n);
 				ret = r_anal_op (core->anal, &op,
 						core->offset, core->block, core->blocksize);
+				if (ret<1) ret = 1;
 				val += ret;
 			} else
 			for (val=i=0; i<n; i++) {
 				ret = r_anal_op (core->anal, &op,
 						core->offset, core->block, core->blocksize);
 				if (ret<1)
-					break;
+					ret = 1;
 				r_core_seek_delta (core, ret);
 				val += ret;
 			}

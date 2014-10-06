@@ -861,7 +861,7 @@ static int cmd_search(void *data, const char *input) {
 		if (input[1]==' ') {
 // TODO: support /+j
 			char *buf = malloc (strlen (input)*2);
-			const char * str = strdup (input+2);
+			char * str = strdup (input+2);
 			int ochunksize;
 			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");
 			if (chunksize<1) {

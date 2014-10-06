@@ -65,9 +65,11 @@ static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
 		}
 		r_cons_break_end ();
 	} else {
-		const char *cmds[] = { "px", "pd", "pxa", NULL };
+		const char *cmds[] = { "px", "pd", "pxa", "dr", "sr sp;pxa", NULL };
 		int cmdidx = 0;
 		char *ret, ch;
+		free (rtrcmd (T, "e scr.color=true"));
+		free (rtrcmd (T, "e scr.html=false"));
 		for (;;) {
 			r_cons_clear00 ();
 			ret = rtrcmd (T, cmds[cmdidx]);
@@ -102,6 +104,7 @@ TODO:
 				r_cons_clear00();
 				r_cons_printf ("Remote Visual keys:\n"
 				" hjkl : move\n"
+				" HJKL : move faster\n"
 				" +-*/ : change block size\n"
 				" pP   : rotate print modes\n"
 				" T    : enter TextLog chat console\n"
@@ -179,10 +182,25 @@ TODO:
 				}
 				break;
 			case '@': autorefresh = R_TRUE; break;
-			case 'j': free (rtrcmd (T, "s+16")); break;
+			case 'j': 
+				if (cmdidx==1) {
+					free (rtrcmd (T, "so")); break;
+				} else {
+					free (rtrcmd (T, "s+16")); break;
+				}
+				break;
 			case 'k': free (rtrcmd (T, "s-16")); break;
 			case 'h': free (rtrcmd (T, "s-1")); break;
 			case 'l': free (rtrcmd (T, "s+1")); break;
+			case 'J':
+				if (cmdidx==1) {
+					free (rtrcmd (T, "4so"));
+				} else {
+					free (rtrcmd (T, "s+32"));
+				} break;
+			case 'K': free (rtrcmd (T, "s-32")); break;
+			case 'H': free (rtrcmd (T, "s-2")); break;
+			case 'L': free (rtrcmd (T, "s+2")); break;
 			case 'T': rtr_textlog_chat (core, T); break;
 			case '+': free (rtrcmd (T, "b+1")); break;
 			case '*': free (rtrcmd (T, "b+16")); break;
@@ -317,6 +335,7 @@ typedef struct {
 	const char *path;
 } HttpThread;
 
+// return 1 on error
 static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	char buf[32];
 	RSocket *s;
@@ -365,7 +384,8 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		r_config_set (core->config, "cfg.sandbox", "true");
 	}
 	eprintf ("Starting http server...\n");
-	eprintf ("http://localhost:%d/\n", atoi (port));
+	eprintf ("open http://localhost:%d/\n", atoi (port));
+	eprintf ("r2 -C http://localhost:%d/cmd/\n", atoi (port));
 	core->http_up = R_TRUE;
 
 	ut64 newoff, origoff = core->offset;
@@ -613,8 +633,11 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 }
 
 static int r_core_rtr_http_thread (RThread *th) {
-	HttpThread *ht = th->user;
-	return r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	HttpThread *ht;
+	if (!th) return R_FALSE;
+	ht = th->user;
+	if (!ht || !ht->core) return R_FALSE;
+	return !r_core_rtr_http_run (ht->core, ht->launch, ht->path);
 }
 
 static RThread *httpthread = NULL;
@@ -795,6 +818,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			char *str, *res, *ptr;
 			if (file[strlen (file)-1]=='/') {
 				TextLog T = { host, port, file };
+				rtr_visual (core, T, NULL);
 				for (;;) {
 				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
 					host, port, file);

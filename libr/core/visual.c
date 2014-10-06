@@ -667,7 +667,22 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, curset?0:1);
 		break;
 	case '@':
-		r_core_cmd0 (core, "?i vmprompt;\"e cmd.vprompt=`?y`\"");
+#if __UNIX__ && !__APPLE__
+		{
+		int port = r_config_get_i (core->config, "http.port");
+		if (!r_core_rtr_http (core, '&', NULL)) {
+			const char *xterm = r_config_get (core->config, "cmd.xterm");
+			// TODO: this must be configurable
+			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/ || sleep 1' &", xterm, port);
+			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
+		} else {
+			r_cons_any_key ();
+		}
+		}
+#else
+		eprintf ("Unsupported on this platform\n");
+		r_cons_any_key ();
+#endif
 		break;
 	case 'C':
 		color = color? 0: 1;

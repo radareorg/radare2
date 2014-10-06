@@ -866,21 +866,17 @@ R_API int r_core_config_init(RCore *core) {
 	/* cmd */
 	if (r_file_exists ("/usr/bin/xdot"))
 		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
-	else
-		if (r_file_exists ("/usr/bin/open"))
-			r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
-		else
-			if (r_file_exists ("/usr/bin/gqview"))
-				r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
-			else
-				if (r_file_exists ("/usr/bin/eog"))
-					r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!eog a.gif");
-				else
-					if (r_file_exists ("/usr/bin/xdg-open"))
-						r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
-					else
-						r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
+	else if (r_file_exists ("/usr/bin/open"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
+	else if (r_file_exists ("/usr/bin/gqview"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+	else if (r_file_exists ("/usr/bin/eog"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!eog a.gif");
+	else if (r_file_exists ("/usr/bin/xdg-open"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
+	else r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
+	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Command to executed every breakpoint hit");
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
