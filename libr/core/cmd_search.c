@@ -862,17 +862,29 @@ static int cmd_search(void *data, const char *input) {
 // TODO: support /+j
 			char *buf = malloc (strlen (input)*2);
 			const char * str = strdup (input+2);
-			eprintf ("(%s)\n", str);
+			int ochunksize;
 			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");
 			if (chunksize<1) {
 				chunksize = core->assembler->bits / 8;
 			}
 			len = r_str_unescape (str);
+			ochunksize = chunksize = R_MIN (len, chunksize);
 			eprintf ("Using chunksize: %d\n", chunksize);
 			for (i=0; i<len; i += chunksize) {
+				chunksize = ochunksize;
+				again:
 				r_hex_bin2str (str+i, R_MIN (chunksize, len-i), buf);
 				eprintf ("/x %s\n", buf);
 				r_core_cmdf (core, "/x %s", buf);
+				if (core->num->value == 0) {
+					chunksize--;
+					if (chunksize<1) {
+						eprintf ("Oops\n");
+						return R_TRUE;
+					}
+					eprintf ("Repeat with chunk size %d\n", chunksize);
+					goto again;
+				}
 			} 
 		} else {
 			eprintf ("Usage: /+ [string]\n");
@@ -1030,12 +1042,17 @@ static int cmd_search(void *data, const char *input) {
 			r_cons_break_end ();
 			free (buf);
 			r_cons_clear_line (1);
+			core->num->value = searchhits;
 			if (searchflags && searchcount>0) {
 				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 					searchhits,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else eprintf ("hits: %d\n", searchhits);
+			} else {
+				eprintf ("hits: %d\n", searchhits);
+				if (searchhits==0)
+					core->search->n_kws--;
+			}
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;
