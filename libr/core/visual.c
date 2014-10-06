@@ -92,6 +92,8 @@ static void visual_help() {
 	" @        set cmd.vprompt to run commands before the visual prompt\n"
 	" !        run r2048 game\n"
 	" _        enter the hud\n"
+	" =        set cmd.vprompt (top row)\n"
+	" |        set cmd.cprompt (right column)\n"
 	" .        seek to program counter\n"
 	" /        in cursor mode search in current block\n"
 	" :cmd     run radare command\n"
@@ -620,6 +622,32 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		showcursor (core, R_FALSE);
 		r_cons_set_raw (R_TRUE);
+		break;
+	case '=':
+		{ // TODO: edit
+		char *buf = NULL;
+#define I core->cons
+		const char *cmd = r_config_get (core->config, "cmd.vprompt");
+		r_line_set_prompt ("cmd.vprompt> ");
+		I->line->contents = strdup (cmd);
+		buf = r_line_readline ();
+//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
+		I->line->contents = NULL;
+		r_config_set (core->config, "cmd.vprompt", buf);
+		}
+		break;
+	case '|':
+		{ // TODO: edit
+		char *buf = NULL;
+#define I core->cons
+		const char *cmd = r_config_get (core->config, "cmd.cprompt");
+		r_line_set_prompt ("cmd.cprompt> ");
+		I->line->contents = strdup (cmd);
+		buf = r_line_readline ();
+//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
+		I->line->contents = NULL;
+		r_config_set (core->config, "cmd.cprompt", buf);
+		}
 		break;
 	case '!':
 		r_cons_2048 ();
@@ -1391,11 +1419,22 @@ static void r_core_visual_refresh (RCore *core) {
 	if (vi && *vi) {
 		// XXX: slow
 		cons->blankline = R_FALSE;
-		r_cons_printf ("[cmd.cprompt=%s]\n", vi);
-		r_core_cmd (core, vi, 0);
-		r_cons_column (r_config_get_i (core->config, "scr.colpos"));
-		r_core_visual_title (core, color);
+		r_cons_clear00 ();
 		r_cons_flush ();
+		{
+		       int hc = r_config_get_i (core->config, "hex.cols");
+		       int nw = 12 + 4 + hc + (hc*3);
+		       if (nw>w) {
+				// do not show column contents
+			} else {
+				r_cons_printf ("[cmd.cprompt=%s]\n", vi);
+				r_core_cmd0 (core, vi);
+				r_cons_column (nw);
+				r_cons_flush ();
+			}
+		}
+		r_cons_gotoxy (0, 0);
+		r_core_visual_title (core, color);
 		vi = r_config_get (core->config, "cmd.vprompt");
 		if (vi) r_core_cmd (core, vi, 0);
 	} else {

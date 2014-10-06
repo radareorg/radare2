@@ -857,6 +857,27 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = 0;
 		}
 		break;
+	case '+':
+		if (input[1]==' ') {
+// TODO: support /+j
+			char *buf = malloc (strlen (input)*2);
+			const char * str = strdup (input+2);
+			eprintf ("(%s)\n", str);
+			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");
+			if (chunksize<1) {
+				chunksize = core->assembler->bits / 8;
+			}
+			len = r_str_unescape (str);
+			eprintf ("Using chunksize: %d\n", chunksize);
+			for (i=0; i<len; i += chunksize) {
+				r_hex_bin2str (str+i, R_MIN (chunksize, len-i), buf);
+				eprintf ("/x %s\n", buf);
+				r_core_cmdf (core, "/x %s", buf);
+			} 
+		} else {
+			eprintf ("Usage: /+ [string]\n");
+		}
+		break;
 	case 'z': /* search asm */
 		{
 		char *p;
@@ -891,6 +912,7 @@ static int cmd_search(void *data, const char *input) {
 			"Usage:", "/[amx/] [arg]", "Search",
 			"/"," foo\\x00", "search for string 'foo\\0'",
 			"/!", " ff", "search for first occurrence not matching",
+			"/+", " /bin/sh", "construct the string with chunks",
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 			"//", "", "repeat last search",
 			"/a", " jmp eax", "assemble opcode and search its bytes",

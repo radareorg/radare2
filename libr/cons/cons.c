@@ -743,6 +743,7 @@ R_API void r_cons_zero() {
 
 R_API void r_cons_highlight (const char *word) {
 	char *rword, *res;
+// that word str should ignore ansi scapes
 	if (word && *word) {
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
@@ -753,9 +754,9 @@ R_API void r_cons_highlight (const char *word) {
 			I.highlight = strdup (word);
 		}
 		rword = malloc (strlen (word)+32);
-		strcpy (rword, "\x1b[7m");
-		strcpy (rword+4, word);
-		strcpy (rword+4+strlen (word), "\x1b[0m");
+		strcpy (rword, "\x1b[0m\x1b[7m");
+		strcpy (rword+8, word);
+		strcpy (rword+8+strlen (word), "\x1b[0m");
 		res = r_str_replace (I.buffer, word, rword, 1);
 		if (res) {
 			I.buffer = res;

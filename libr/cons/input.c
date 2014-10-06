@@ -23,122 +23,117 @@ static int is_fd_ready(int fd) {
 #endif
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
-	if (ch==0x1b) {
-#if 0
-//__UNIX__
-		if (!is_fd_ready (0))
-			return 0;
-#endif
+	if (ch != 0x1b)
+		return ch;
+	ch = r_cons_readchar ();
+	if (!ch) return 0;
+	switch (ch) {
+	case 0x1b:
+		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
+		break;
+	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar ();
-		if (!ch) return 0;
+		ch = 0xf1 + (ch&0xf);
+		break;
+	case 0:
+	case '[': // function keys (2)
+		ch = r_cons_readchar ();
 		switch (ch) {
-		case 0x1b:
-			ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
-			break;
-		case 0x4f: // function keys from f1 to f4
-			ch = r_cons_readchar ();
-			ch = 0xf1 + (ch&0xf);
-			break;
-		case 0:
-		case '[': // function keys (2)
+		case '[':
 			ch = r_cons_readchar ();
 			switch (ch) {
-			case '[':
-				ch = r_cons_readchar ();
-				switch (ch) {
-				case '2': ch = R_CONS_KEY_F11; break;
-				case 'A': ch = R_CONS_KEY_F1; break;
-				case 'B': ch = R_CONS_KEY_F2; break;
-				case 'C': ch = R_CONS_KEY_F3; break;
-				case 'D': ch = R_CONS_KEY_F4; break;
-				}
-				break;
-			case '2':
-				ch = r_cons_readchar ();
-				switch (ch) {
-				case 0x7e:
-					ch = R_CONS_KEY_F12;
-					break;
-				default:
-					r_cons_readchar ();
-					switch (ch) {
-					case '0': ch = R_CONS_KEY_F9; break;
-					case '1': ch = R_CONS_KEY_F10; break;
-					case '3': ch = R_CONS_KEY_F11; break;
-					}
-					break;
-				}
-				break;
-			case '1':
-				ch = r_cons_readchar ();
-				switch (ch) {
-				case ':': // arrow+shift
-					ch = r_cons_readchar ();
-					ch = r_cons_readchar ();
-					switch (ch) {
-					case 'A': ch = 'K'; break;
-					case 'B': ch = 'J'; break;
-					case 'C': ch = 'L'; break;
-					case 'D': ch = 'H'; break;
-					}
-					break;
-/*
-				case '1': ch = R_CONS_KEY_F1; break;
-				case '2': ch = R_CONS_KEY_F2; break;
-				case '3': ch = R_CONS_KEY_F3; break;
-				case '4': ch = R_CONS_KEY_F4; break;
-*/
-				case '5': 
-					r_cons_readchar ();
-					ch = 0xf5;
-					break;
-				case '6': 
-					r_cons_readchar ();
-					ch = 0xf7;
-					break;
-				case '7': 
-					r_cons_readchar ();
-					ch = 0xf6;
-					break;
-				case '8': 
-					r_cons_readchar ();
-					ch = 0xf7;
-					break;
-				case '9': 
-					r_cons_readchar ();
-					ch = 0xf8;
-					break;
-				} // F9-F12 not yet supported!!
-				break;
-			case '5': ch='K'; break; // repag
-			case '6': ch='J'; break; // avpag
-			case 'A': ch='k'; break; // up
-			case 'B': ch='j'; break; // down
-			case 'C': ch='l'; break; // right
-			case 'D': ch='h'; break; // left
-			case 'M': // Mouse events
-				ch = r_cons_readchar ();
-				/* Skip the x/y coordinates */
-				(void)r_cons_readchar();
-				(void)r_cons_readchar();
-				if (ch==0x20) {
-					// click
-					r_cons_enable_mouse (R_FALSE);
-					ch = 0;
-					//r_cons_enable_mouse (R_TRUE);
-				} else
-				if (ch >= 64 + 32) {
-					/* Grab wheel events only */
-					ch = "kj"[(ch - (64 + 32))&1];
-				} else {
-					// temporary disable the mouse wheel to allow select
-					r_cons_enable_mouse (R_FALSE);
-					(void)r_cons_readchar ();
-					ch = 0;
-				}
+			case '2': ch = R_CONS_KEY_F11; break;
+			case 'A': ch = R_CONS_KEY_F1; break;
+			case 'B': ch = R_CONS_KEY_F2; break;
+			case 'C': ch = R_CONS_KEY_F3; break;
+			case 'D': ch = R_CONS_KEY_F4; break;
 			}
 			break;
+		case '2':
+			ch = r_cons_readchar ();
+			switch (ch) {
+			case 0x7e:
+				ch = R_CONS_KEY_F12;
+				break;
+			default:
+				r_cons_readchar ();
+				switch (ch) {
+				case '0': ch = R_CONS_KEY_F9; break;
+				case '1': ch = R_CONS_KEY_F10; break;
+				case '3': ch = R_CONS_KEY_F11; break;
+				}
+				break;
+			}
+			break;
+		case '1':
+			ch = r_cons_readchar ();
+			switch (ch) {
+			case ':': // arrow+shift
+				ch = r_cons_readchar ();
+				ch = r_cons_readchar ();
+				switch (ch) {
+				case 'A': ch = 'K'; break;
+				case 'B': ch = 'J'; break;
+				case 'C': ch = 'L'; break;
+				case 'D': ch = 'H'; break;
+				}
+				break;
+/*
+			case '1': ch = R_CONS_KEY_F1; break;
+			case '2': ch = R_CONS_KEY_F2; break;
+			case '3': ch = R_CONS_KEY_F3; break;
+			case '4': ch = R_CONS_KEY_F4; break;
+*/
+			case '5': 
+				r_cons_readchar ();
+				ch = 0xf5;
+				break;
+			case '6': 
+				r_cons_readchar ();
+				ch = 0xf7;
+				break;
+			case '7': 
+				r_cons_readchar ();
+				ch = 0xf6;
+				break;
+			case '8': 
+				r_cons_readchar ();
+				ch = 0xf7;
+				break;
+			case '9': 
+				r_cons_readchar ();
+				ch = 0xf8;
+				break;
+			} // F9-F12 not yet supported!!
+			break;
+		case '5': ch='K'; break; // repag
+		case '6': ch='J'; break; // avpag
+		case 'A': ch='k'; break; // up
+		case 'B': ch='j'; break; // down
+		case 'C': ch='l'; break; // right
+		case 'D': ch='h'; break; // left
+		case 'M': // Mouse events
+			ch = r_cons_readchar ();
+			/* Skip the x/y coordinates */
+			(void)r_cons_readchar();
+			(void)r_cons_readchar();
+			if (ch==0x20) {
+				// click
+				r_cons_enable_mouse (R_FALSE);
+				ch = 0;
+				//r_cons_enable_mouse (R_TRUE);
+			} else
+			if (ch >= 64 + 32) {
+				/* Grab wheel events only */
+				ch = "kj"[(ch - (64 + 32))&1];
+			} else {
+				// temporary disable the mouse wheel to allow select
+				r_cons_enable_mouse (R_FALSE);
+				(void)r_cons_readchar ();
+				ch = 0;
+			}
 		}
+		break;
 	}
 	return ch;
 }
