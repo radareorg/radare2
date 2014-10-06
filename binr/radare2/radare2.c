@@ -382,10 +382,23 @@ int main(int argc, char **argv, char **envp) {
 		break;
 	}
 // TODO: set io.va = 2 if -B
-
 // -- means opening r2 without any file
-if (strcmp (argv[1], "--")) {
-
+	if (run_rc) {
+		char *homerc = r_str_home (".radare2rc");
+		if (homerc) {
+			r_core_cmd_file (&r, homerc);
+			free (homerc);
+		}
+		homerc = r_str_home ("/.config/radare2/radare2rc");
+		if (homerc) {
+			r_core_cmd_file (&r, homerc);
+			free (homerc);
+		}
+		if (r_config_get_i (r.config, "file.analyze")) {
+			r_core_cmd0 (&r, "aa");
+		}
+	}
+if (strcmp (argv[optind-1], "--")) {
 	if (debug) {
 		r_config_set (r.config, "search.in", "raw"); // implicit?
 		r_config_set (r.config, "io.va", "false"); // implicit?
@@ -526,21 +539,6 @@ if (strcmp (argv[1], "--")) {
 		r_config_set_i (r.config, "scr.utf8", R_TRUE);
 	}
 #endif
-	if (run_rc) {
-		char *homerc = r_str_home (".radare2rc");
-		if (homerc) {
-			r_core_cmd_file (&r, homerc);
-			free (homerc);
-		}
-		homerc = r_str_home ("/.config/radare2/radare2rc");
-		if (homerc) {
-			r_core_cmd_file (&r, homerc);
-			free (homerc);
-		}
-		if (r_config_get_i (r.config, "file.analyze")) {
-			r_core_cmd0 (&r, "aa");
-		}
-	}
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 	if (asmos) r_config_set (r.config, "asm.os", asmos);
@@ -590,12 +588,23 @@ if (strcmp (argv[1], "--")) {
 #endif
 	// no flagspace selected by default the begining
 	r.flags->space_idx = -1;
+	/* load <file>.r2 */
+	{
+		char f[128];
+		snprintf (f, sizeof (f), "%s.r2", pfile);
+		if (r_file_exists (f)) {
+			if (!quiet)
+				eprintf ("NOTE: Loading '%s' script.\n", f);
+			r_core_cmd_file (&r, f);
+		}
+	}
+}
 	{
 	const char *global_rc = R2_PREFIX"/share/radare2/radare2rc";
 	if (r_file_exists (global_rc))
 		(void)r_core_run_script (&r, global_rc);
 	}
-	/* run -i and -c flags */
+	/* run -i flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
 		if (!r_file_exists (cmdfile[i])) {
@@ -609,17 +618,6 @@ if (strcmp (argv[1], "--")) {
 		if (ret<0 || (ret==0 && quiet))
 			return 0;
 	}
-	/* load <file>.r2 */
-	{
-		char f[128];
-		snprintf (f, sizeof (f), "%s.r2", pfile);
-		if (r_file_exists (f)) {
-			if (!quiet)
-				eprintf ("NOTE: Loading '%s' script.\n", f);
-			r_core_cmd_file (&r, f);
-		}
-	}
-}
 	if (do_analysis) {
 		r_core_cmd0 (&r, "aa");
 		r_cons_flush ();
