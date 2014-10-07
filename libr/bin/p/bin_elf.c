@@ -737,6 +737,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
+	.minstrlen = 4,
 	.imports = &imports,
 	.strings = NULL,
 	.info = &info,

@@ -130,6 +130,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
+	.minstrlen = 4,
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
