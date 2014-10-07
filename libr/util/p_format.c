@@ -368,48 +368,53 @@ static void r_print_format_word(const RPrint* p, int endian, int mustset,
 }
 
 // XXX: this is very incomplete. must be updated to handle all format chars
-static int computeStructSize(char *fmt, RPrint *p) {
-	char *end = strchr(fmt, ' '), *args;
-	int size = 0, i, idx=0;
+static int computeStructSize(char *format, RPrint *p) {
+	char *end = strchr(format, ' '), *args, *fmt=format;
+	int size = 0, tabsize=0, i, idx=0;
 	if (!end)
 		return -1;
 	*end = 0;
 	args = strdup (end+1);
 	r_str_word_set0 (args);
 	for (i=0; i<strlen(fmt); i++) {
+		if (fmt[i] == '[') {
+			char *end = strchr (fmt+i,']');
+			if (end == NULL) {
+				eprintf ("No end bracket.\n");
+				continue;
+			}
+			*end = '\0';
+			tabsize = r_num_math (NULL, fmt+i+1);
+			*end = ']';
+			while (fmt[i++]!=']');
+		} else {
+			tabsize = 1;
+		}
+
 		switch (fmt[i]) {
-			case 'f':
-				size += 4;
-				break;
 			case 'c':
-				size++;
-				break;
-			case 'i':
-				size += 4;
+			case 'E':
+			case '.':
+				size+=tabsize*1;
 				break;
 			case 'w':
-				size += 2;
-				break;
-			case 'q':
-				size += 8;
+			case 'B':
+				size += tabsize*2;
 				break;
 			case 'd':
-				size += 4;
-				break;
+			case 'i':
+			case 'x':
+			case 'f':
 			case 's':
-				size += 4;
+			case ':':
+				size += tabsize*4;
 				break;
 			case 'S':
-				size += 8;
-				break;
-			case ':':
-				size += 4;
-				break;
-			case '.':
-				size += 1;
+			case 'q':
+				size += tabsize*8;
 				break;
 			case '*':
-				size += 4;
+				size += tabsize*4;
 				i++;
 				break;
 			case '?':
@@ -425,7 +430,7 @@ static int computeStructSize(char *fmt, RPrint *p) {
 				}
 				if (endname!=NULL) *endname = '\0';
 				format = strdup(r_strht_get (p->formats, structname+1));
-				size += computeStructSize (format, p);
+				size += tabsize*computeStructSize (format, p);
 				free (structname);
 				break;
 				}
@@ -436,7 +441,7 @@ static int computeStructSize(char *fmt, RPrint *p) {
 		idx++;
 	}
 	free (args);
-	free (fmt);
+	free (format);
 	return size;
 }
 
@@ -816,16 +821,44 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				structname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
+				p->printf ("0x%08"PFMT64x, seeki);
 
-				if (p->get_bitfield) 
-					bitfield = p->get_bitfield (p->user, structname, addr);
-				if (bitfield && *bitfield) {
-					p->printf (" %s (bitfield) = %s\n", name, bitfield);
+				if (size == -1) {
+					if (p->get_bitfield)
+						bitfield = p->get_bitfield (p->user, structname, addr);
+					if (bitfield && *bitfield) {
+						p->printf (" %s (bitfield) = %s\n", name, bitfield);
+					} else {
+						p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
+								name, structname, addr);
+					}
+					i+= 2;
 				} else {
-					p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
-						name, structname, addr);
+					p->printf (" [\n");
+					if (p->get_bitfield)
+						bitfield = p->get_bitfield (p->user, structname, addr);
+					if (bitfield && *bitfield) {
+						p->printf (" %s (bitfield) = %s", name, bitfield);
+					} else {
+						p->printf (" %s (bitfield) = `tb %s 0x%x`",
+								name, structname, addr);
+					}
+					i+=2;
+					size--;
+					while (size--) {
+						p->printf (",\n");
+						if (p->get_bitfield)
+							bitfield = p->get_bitfield (p->user, structname, addr);
+						if (bitfield && *bitfield) {
+							p->printf (" %s (bitfield) = %s", name, bitfield);
+						} else {
+							p->printf (" %s (bitfield) = `tb %s 0x%x`",
+									name, structname, addr);
+						}
+						i+=2;
+					}
+					p->printf ("\n]\n");
 				}
-				i+= 4; //(isptr) ? 4 : s;
 				free (osn);
 				free (bitfield);
 				}
@@ -850,23 +883,54 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				enumname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
-				if (p->get_enumname) 
-					enumvalue = p->get_enumname (p->user, enumname, addr);
-				if (enumvalue && *enumvalue) {
-					p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
-						name, addr, enumvalue);
+				p->printf ("0x%08"PFMT64x, seeki);
+				if (size == -1) {
+					if (p->get_enumname)
+						enumvalue = p->get_enumname (p->user, enumname, addr);
+					if (enumvalue && *enumvalue) {
+						p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
+								name, addr, enumvalue);
+					} else {
+						p->printf (" %s (enum) = `te %s 0x%x`\n",
+								name, enumname, addr);
+					}
+					i++;
 				} else {
-					p->printf (" %s (enum) = `te %s 0x%x`\n",
-						name, enumname, addr);
+					p->printf (" [\n");
+					if (p->get_enumname)
+						enumvalue = p->get_enumname (p->user, enumname, addr);
+					if (enumvalue && *enumvalue) {
+						p->printf (" %s (enum) = 0x%"PFMT64x" ; %s",
+								name, addr, enumvalue);
+					} else {
+						p->printf (" %s (enum) = `te %s 0x%x`",
+								name, enumname, addr);
+					}
+					i++;
+					size--;
+					while (size--) {
+						p->printf (",\n");
+						if (p->get_enumname)
+							enumvalue = p->get_enumname (p->user, enumname, addr);
+						if (enumvalue && *enumvalue) {
+							p->printf (" %s (enum) = 0x%"PFMT64x" ; %s",
+									name, addr, enumvalue);
+						} else {
+							p->printf (" %s (enum) = `te %s 0x%x`",
+									name, enumname, addr);
+						}
+						i++;
+					}
+					p->printf ("\n]\n");
 				}
-				i+= (size==-1) ? 1 : size;
+
 				free (osn);
 				free (enumvalue);
 				}
 				break;
 			case '?':
 				{
-				int s;
+				int s = 0;
 				char *structname, *osn;
 				structname = osn = strdup (r_str_word_get0 (args, idx-1));
 				if (*structname == '(') {
@@ -882,9 +946,24 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->printf ("<struct>\n");
 				if (flag) slide+=STRUCTFLAG;
 				slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
-				s = r_print_format_struct (p, seeki,
-					buf+i, len, structname--, slide);
-				i+= (isptr) ? 4 : s;
+				if (size == -1) {
+					s = r_print_format_struct (p, seeki,
+						buf+i, len, structname, slide);
+					i+= (isptr) ? 4 : s;
+				} else {
+					p->printf ("[\n");
+					s = r_print_format_struct (p, seeki,
+						buf+i, len, structname, slide);
+					i+= (isptr) ? 4 : s;
+					size--;
+					while (size--) {
+						p->printf (",\n");
+						s = r_print_format_struct (p, seeki,
+							buf+i, len, structname, slide);
+						i+= (isptr) ? 4 : s;
+					}
+					p->printf ("]\n");
+				}
 				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 				if (flag) slide-=STRUCTFLAG;
 				free (osn);
