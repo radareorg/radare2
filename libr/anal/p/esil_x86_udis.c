@@ -106,6 +106,8 @@ RPN UDIS86_ESIL (leave, "%s,%s,=,%s,[%d],%s,%d,%s,-=",
 	info->bp, info->sp, info->sp, info->regsz, info->bp, info->regsz, info->sp);
 
 RPN UDIS86_ESIL (ret,   "%s,[%d],%s,=,%d,%s,+=", info->sp, info->regsz, info->pc, info->regsz, info->sp);
+RPN UDIS86_ESIL (iretf,   "%s,[%d],%s,=,%d,%s,+=", info->sp, info->regsz, info->pc, info->regsz, info->sp);
+RPN UDIS86_ESIL (iretd,   "%s,[%d],%s,=,%d,%s,+=", info->sp, info->regsz, info->pc, info->regsz, info->sp);
 
 //    UDIS86_ESIL (xchg,  "%s^=%s,%s^=%s,%s^=%s", dst, src, src, dst, dst, src);
 // TODO: add support for rpnesil tmp regs?

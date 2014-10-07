@@ -93,8 +93,6 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 	case UD_OP_MEM:
 		n = getval (op);
 		// TODO ->scale
-#define RPN 1
-#if RPN
 		if (op->base != UD_NONE) {
 			idx = op->base-UD_R_AL;
 			if (idx>=0 && idx<UD_REG_TAB_SIZE) {
@@ -109,11 +107,11 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
                                         src += strlen (src);
                                 }
                                 if (u->mnemonic == UD_Ilea) {
-					if (n>0) sprintf (src, ",%"PFMT64d",+", n);
-					else if (n<0) sprintf (src, "%"PFMT64d, n);
-				} else if (n >= -256 && n < 256) {
+					if ((st16)n>0) sprintf (src, ",%"PFMT64d",+", n);
+					else if ((st16)n<0) sprintf (src, ",%"PFMT64d",-", UT32_MAX-n);
+				} else if ((st16)n >= -256 && (st16)n < 256) {
 					char nb = (char)n;
-					char absn = (nb<0)? -nb: nb;
+					char absn = ((st16)nb<0)? -nb: nb;
 					if (n==0) sprintf (src, ",[%d]", regsz);
 					else sprintf (src, ",%d,%c,[%d]",
 						absn, nb<0?'-':'+', regsz);
@@ -128,39 +126,6 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 				 */
 			}
 		} else sprintf (src, "0x%"PFMT64x",[%d]", n & mask, regsz);
-#else
-		if (op->base != UD_NONE) {
-			idx = op->base-UD_R_AL;
-			if (idx>=0 && idx<UD_REG_TAB_SIZE) {
-				if (u->mnemonic == UD_Ilea)
-					sprintf (src, "%s", ud_reg_tab[idx]);
-				else sprintf (src, "[%s", ud_reg_tab[idx]);
-
-                                src += strlen (src);
-                                if (op->index != UD_NONE) {
-                                        idx = op->index - UD_R_AL;
-                                        if (idx >= 0 && idx < UD_REG_TAB_SIZE)
-                                                sprintf (src, "+%d*%s", op->scale, ud_reg_tab[idx]);
-
-                                        src += strlen (src);
-                                }
-                                if (u->mnemonic == UD_Ilea) {
-					if (n>0) sprintf (src, "+%"PFMT64d, n);
-					else if (n<0) sprintf (src, "%"PFMT64d, n);
-				} else if (n >= -256 && n < 256) {
-					sprintf (src, "%+d]", (int) n);
-				} else {
-					sprintf (src, "+0x%"PFMT64x"]", mask & n);
-				}
-			} else {
-				/* If UDis86 works properly, it will never reach this point.
-				 * Only useful for debug purposes ("unknown reg" is clearer
-				 * than an empty string, right?)
-				 */
-				sprintf (src, "[unknown_reg_%d]", idx);
-			}
-		} else sprintf (src, "[0x%"PFMT64x"]", n & mask);
-#endif
 		break;
 	default:
 		break;
