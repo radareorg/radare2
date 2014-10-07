@@ -292,6 +292,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	RList *hitlist = r_core_asm_hit_list_new ();
 	ut8 nb_instr = 0;
 	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
+	const ut8 crop = r_config_get_i (core->config, "search.conditionalrop");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	boolt valid = 0;
 
 	if (grep) {
@@ -332,12 +333,22 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 				case R_ANAL_OP_TYPE_TRAP:
 				case R_ANAL_OP_TYPE_RET:
 				case R_ANAL_OP_TYPE_UCALL:
-				case R_ANAL_OP_TYPE_CJMP:
 				case R_ANAL_OP_TYPE_UJMP:
 				case R_ANAL_OP_TYPE_JMP:
 				case R_ANAL_OP_TYPE_CALL:
-					valid = 1;
+					valid = R_TRUE;
 					goto ret;
+			}
+			if (crop) { //if conditional jumps, calls and returns should be used for the gadget-search too
+				switch (aop.type) {
+					case R_ANAL_OP_TYPE_CJMP:
+					case R_ANAL_OP_TYPE_UCJMP:
+					case R_ANAL_OP_TYPE_CCALL:
+					case R_ANAL_OP_TYPE_UCCALL:
+					case R_ANAL_OP_TYPE_CRET:	//i'm a condret
+						valid = R_TRUE;
+						goto ret;
+				}
 			}
 		}
 		nb_instr++;
