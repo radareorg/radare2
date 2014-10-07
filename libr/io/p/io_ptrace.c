@@ -188,7 +188,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			open_pidmem (riop);
 			pidpath = r_sys_pid_to_path (pid);
 			desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
-				pidpath, R_TRUE, mode, riop);
+				pidpath, rw | R_IO_EXEC, mode, riop);
 			free (pidpath);
 			return desc;
 		}
