@@ -27,6 +27,12 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		eprintf ("Cannot reopen in sandbox\n");
 		return R_FALSE;
 	}
+	if (isdebug) {
+		// if its in debugger mode we have to respawn a new process
+		// instead of reattaching
+		free (ofilepath);
+		ofilepath = r_str_newf ("dbg://%s", odesc->name);
+	}
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
 		free (ofilepath);
