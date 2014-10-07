@@ -840,7 +840,6 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 
 static int r_bin_file_set_bytes (RBinFile *binfile, const ut8 * bytes, ut64 sz) {
 	if (!bytes) return R_FALSE;
-
 	if (binfile->buf) r_buf_free (binfile->buf);
 	binfile->buf = r_buf_new ();
 	r_buf_set_bytes (binfile->buf, bytes, sz);
@@ -874,7 +873,7 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 		char fdkey[128];
 		snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", fd);
 		binfile->sdb = sdb_ns (sdb, fdkey, 1);
-		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0);
+		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all sub-namespaces */
 		/* And if any namespace is referenced backwards it gets double-freed */

@@ -19,6 +19,10 @@ static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 lad
 	}
 	if (laddr == UT64_MAX)
 		va = 0;
+	if (va == 2) {
+		if (!baddr) baddr=1;
+		// hackaround for PIE bins
+	}
 	switch (va) {
 	case 0: // pa $ rabin2 -p
 		return paddr;

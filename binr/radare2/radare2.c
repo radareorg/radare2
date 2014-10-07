@@ -516,6 +516,7 @@ if (strcmp (argv[optind-1], "--")) {
 #if USE_THREADS
 	if (run_anal>0 && threaded) {
 		// XXX: if no rabin2 in path that may fail
+		// TODO: pass -B 0 ? for pie bins?
 		rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
 				(debug||r.io->va)?"":"p", r.file->desc->name);
 		/* TODO: only load data if no project is used */
