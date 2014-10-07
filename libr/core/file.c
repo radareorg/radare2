@@ -498,7 +498,7 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 }
 
 
-R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	RList *list_fds = NULL;
 	RCoreFile *fh, *top_file = NULL;
 	RIODesc *fd;
@@ -508,7 +508,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
 
 
-	list_fds = r_io_open_many (r->io, file, mode, 0644);
+	list_fds = r_io_open_many (r->io, file, flags, 0644);
 
 	const char *cp = NULL;
 	char *loadmethod = NULL;
@@ -540,11 +540,11 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 		fh->alive = 1;
 		fh->core = r;
 		fh->desc = fd;
-		fh->rwx = mode;
+		fh->rwx = flags;
 		r->file = fh;
 		r->io->plugin = fd->plugin;
 		// XXX - load addr should be at a set offset
-		fh->map = r_core_file_get_next_map (r, fh, mode, current_loadaddr);
+		fh->map = r_core_file_get_next_map (r, fh, flags, current_loadaddr);
 
 		if (!fh->map) {
 			r_core_file_free(fh);
@@ -578,7 +578,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	return top_file;
 }
 
-R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;
@@ -589,20 +589,20 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		return NULL;
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
-		mode = 4|2;
+		flags = 4|2;
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
-	fd = r_io_open_nomap (r->io, file, mode, 0644);
+	fd = r_io_open_nomap (r->io, file, flags, 0644);
 	if (fd == NULL && openmany > 2) {
 		// XXX - make this an actual option somewhere?
-		fh = r_core_file_open_many (r, file, mode, loadaddr);
+		fh = r_core_file_open_many (r, file, flags, loadaddr);
 		if (fh) return fh;
 	}
 	if (fd == NULL) {
-		if (mode & 2) {
+		if (flags & 2) {
 			if (!r_io_create (r->io, file, 0644, 0))
 				return NULL;
-			if (!(fd = r_io_open_nomap (r->io, file, mode, 0644)))
+			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644)))
 				return NULL;
 		} else return NULL;
 	}
@@ -620,13 +620,13 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh->alive = 1;
 	fh->core = r;
 	fh->desc = fd;
-	fh->rwx = mode;
+	fh->rwx = flags;
 
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
 	r_config_set (r->config, "file.path", file);
-	fh->map = r_core_file_get_next_map (r, fh, mode, loadaddr);
+	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);
 		fh = NULL;
