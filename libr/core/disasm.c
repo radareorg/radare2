@@ -575,7 +575,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 
 		if (r_list_length (xrefs)> ds->maxrefs) {
 			beginline (core, ds, f);
-			r_cons_printf ("%s; XREFS: ", ds->pal_comment);
+			r_cons_printf ("%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 			r_list_foreach (xrefs, iter, refi) {
 				r_cons_printf ("%s 0x%08"PFMT64x"  ",
 					r_anal_xrefs_type_tostring (refi->type), refi->addr);
@@ -583,7 +583,8 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 					if (iter->n) {
 						r_cons_newline ();
 						beginline (core, ds, f);
-						r_cons_printf ("%s; XREFS: ", ds->pal_comment);
+						r_cons_printf ("%s; XREFS: ",
+							ds->show_color? ds->pal_comment: "");
 					}
 					count = 0;
 				} else count++;
