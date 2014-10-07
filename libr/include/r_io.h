@@ -225,6 +225,8 @@ typedef struct r_io_cache_t {
 	ut64 to;
 	int size;
 	ut8 *data;
+	ut8 *odata;
+	int written;
 } RIOCache;
 
 typedef struct r_io_range_t {
@@ -322,7 +324,7 @@ R_API void r_io_sort_maps (RIO *io);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
-R_API void r_io_cache_commit(RIO *io);
+R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to);
 R_API void r_io_cache_enable(RIO *io, int read, int write);
 R_API void r_io_cache_init(RIO *io);
 R_API int r_io_cache_list(RIO *io, int rad);

@@ -12,20 +12,12 @@ R_API void r_core_hack_help(RCore *core) {
 		"NOTE: those operations are only implemented for x86 atm. (TODO)\n");
 }
 
-// TODO: needs refactoring to make it cross-architecture
-R_API int r_core_hack(RCore *core, const char *op) {
+R_API int r_core_hack_x86(RCore *core, const char *op, RAnalOp *analop) {
 	ut8 *b = core->block;
-	RAnalOp analop;
-	if (strstr (r_config_get (core->config, "asm.arch"), "x86"))
-		eprintf ("TODO: write hacks are only for x86\n");
-	if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize)) {
- 		eprintf ("anal op fail\n");
-		return R_FALSE;
-	}
 	if (!strcmp (op, "nop")) {
-		int nopsize = 1; // XXX x86 only
-		const char *nopcode = "90"; // XXX x86 only
-		int len = analop.size;
+		int nopsize = 1;
+		const char *nopcode = "90";
+		int len = analop->size;
 		if (len%nopsize) {
 			eprintf ("Invalid nopcode size\n");
 			return R_FALSE;
@@ -65,4 +57,16 @@ R_API int r_core_hack(RCore *core, const char *op) {
 		// XXX. add support for jb, jg, jl, ..
 	} else eprintf ("Invalid operation\n");
 	return R_FALSE;
+}
+
+// TODO: needs refactoring to make it cross-architecture
+R_API int r_core_hack(RCore *core, const char *op) {
+	RAnalOp analop;
+	if (!strstr (r_config_get (core->config, "asm.arch"), "x86"))
+		eprintf ("TODO: write hacks are only for x86\n");
+	if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize)) {
+ 		eprintf ("anal op fail\n");
+		return R_FALSE;
+	}
+	return r_core_hack_x86 (core, op, &analop);
 }

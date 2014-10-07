@@ -330,7 +330,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'c':
 		switch (input[1]) {
 		case 'i':
-			r_io_cache_commit (core->io);
+			r_io_cache_commit (core->io, 0, UT64_MAX);
 			r_core_block_read (core, 0);
 			break;
 		case 'r':
@@ -340,6 +340,31 @@ static int cmd_write(void *data, const char *input) {
 			 * longer displayed. */
 			memset (core->block, 0xff, core->blocksize);
 			r_core_block_read (core, 0);
+			break;
+		case '+':
+			if (input[2]=='*') {
+				//r_io_cache_reset (core->io, R_TRUE);
+				eprintf ("TODO\n");
+			} else if (input[2]==' ') {
+				char *p = strchr (input+3, ' ');
+				ut64 to, from = core->offset;
+				if (p) {
+					*p = 0;
+					from = r_num_math (core->num, input+3);
+					to = r_num_math (core->num, input+3);
+					if (to<from) {
+						eprintf ("Invalid range (from>to)\n");
+						return 0;
+					}
+				} else {
+					from = r_num_math (core->num, input+3);
+					to = from + core->blocksize;
+				}
+				r_io_cache_commit (core->io, from, to);
+			} else {
+				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
+				r_io_cache_commit (core->io, core->offset, core->offset+1);
+			}
 			break;
 		case '-':
 			if (input[2]=='*') {
@@ -371,9 +396,10 @@ static int cmd_write(void *data, const char *input) {
 		case '?':
 	{
                 const char* help_msg[] = {
-			"Usage:", "wc[ir*?]","  # Note: requires io.cache=true",
+			"Usage:", "wc[ir+-*?]","  # NOTE: Uses io.cache=true",
 			"wc","","list all write changes",
-			"wc-"," [a] [b]","remove write op at curseek or given addr",
+			"wc-"," [from] [to]","remove write op at curseek or given addr",
+			"wc+"," [addr]","commit change from cache to io",
 			"wc*","","\"\" in radare commands",
 			"wcr","","reset all write changes in cache",
 			"wci","","commit write cache",
@@ -386,8 +412,8 @@ static int cmd_write(void *data, const char *input) {
 			r_io_cache_list (core->io, R_TRUE);
 			break;
 		case '\0':
-			if (!r_config_get_i (core->config, "io.cache"))
-				eprintf ("[warning] e io.cache must be true\n");
+			//if (!r_config_get_i (core->config, "io.cache"))
+			//	eprintf ("[warning] e io.cache must be true\n");
 			r_io_cache_list (core->io, R_FALSE);
 			break;
 		}

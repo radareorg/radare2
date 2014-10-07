@@ -584,6 +584,9 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			buf += ret;
 		}
 	}
+		if (1) { //io->history) {
+			r_io_cache_write (io, io->off, buf, len);
+		}
 
 	/* TODO: implement IO cache here. to avoid dupping work on vm for example */
 
@@ -602,20 +605,23 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 	r_io_map_select (io, io->off);
 
 	if (io->plugin) {
-		if (io->plugin->write)
+		if (io->plugin->write) {
 			ret = io->plugin->write (io, io->desc, buf, len);
-		else eprintf ("r_io_write: io handler with no write callback\n");
+		} else { 
+			eprintf ("r_io_write: io handler with no write callback\n");
+			ret = -1;
+		}
 	} else {
 		ret = write (io->desc->fd, buf, len);
 	}
-	if (ret == -1)
+	if (ret == -1) {
 		eprintf ("r_io_write: cannot write on fd %d\n", io->desc->fd);
-	else{
+		r_io_cache_invalidate (io, io->off, io->off+1);
+	} else {
 		r_io_map_write_update (io, io->desc->fd, io->off, ret);
 		io->off += ret;
 	}
-	if (data)
-		free (data);
+	free (data);
 	return ret;
 }
 
