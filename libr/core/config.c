@@ -1011,6 +1011,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("search.roplen", 5, "Maximum number of instructions for a ROP Gadget");
 	SETPREF("search.show", "true", "Show search results while found (disable if lot of hits)");
 	SETI("search.to", -1, "Search end address");
+	SETPREF("search.conditionalrop", "false", "Use conditional jump, calls and returns for ropsearch too");
 
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
@@ -1023,7 +1024,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.va", "true", &cb_iova, "If enabled virtual address layout can be used");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
 	SETCB("io.autofd", "true", &cb_ioautofd, "change fd when opening new file automatically");
-	
+
 	/* file */
 	SETPREF("file.analyze", "false", "Analyze file on load. Same as r2 -c aa ..");
 	SETPREF("file.desc", "", "User defined file description. Used by projects");
