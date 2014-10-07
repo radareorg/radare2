@@ -184,10 +184,33 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 			at, to, n, (c%2)?"[ #]":"[# ]");
 }
 
-R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+	RList *list = NULL;
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
+	} else
+	if (!strcmp (mode, "maps")) {
+		*from = *to = 0;
+		return core->io->maps;
+	} else if (!strcmp (mode, "mapsrange")) {
+		RListIter *iter;
+		RIOMap *m;
+		*from = *to = 0;
+		list = r_list_newf (free);
+		r_list_foreach (core->io->maps, iter, m) {
+			if (!*from) {
+				*from = m->from;
+				*to = m->to;
+				continue;
+			}
+			if ((m->from < *from) && m->from)
+				*from = m->from;
+			if (m->to > *to)
+				*to = m->to;
+		}
+		if (*to == 0LL || *to == UT64_MAX || *to == UT32_MAX)
+			*to = r_io_size (core->io);
 	} else
 	if (!strcmp (mode, "file")) {
 		if (core->io->va) {
@@ -254,6 +277,7 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 			}
 		}
 	}
+	return list;
 }
 
 static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
@@ -473,6 +497,7 @@ static int cmd_search(void *data, const char *input) {
 	int crypto_search = R_FALSE;
 	int ignorecase = R_FALSE;
 	int inverse = R_FALSE;
+	int use_mread = R_FALSE;
 	ut64 at, from = 0, to = 0;
 	const char *mode;
 	char *inp, bckwrds = R_FALSE, do_bckwrd_srch = R_FALSE;
@@ -481,6 +506,7 @@ static int cmd_search(void *data, const char *input) {
 	ut16 n16;
 	ut8 n8;
 	ut8 *buf;
+	RList/*<RIOMap>*/ *list;
 
 	c = 0;
 	__from = r_config_get_i (core->config, "search.from");
@@ -488,7 +514,8 @@ static int cmd_search(void *data, const char *input) {
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	mode = r_config_get (core->config, "search.in");
-	r_core_get_boundaries (core, mode, &from, &to);
+	list = r_core_get_boundaries (core, mode, &from, &to);
+	use_mread = (!strcmp (mode, "maps"))? 1: 0;
 
 	if (__from != UT64_MAX) from = __from;
 	if (__to != UT64_MAX) to = __to;
@@ -884,7 +911,7 @@ static int cmd_search(void *data, const char *input) {
 			for (i=0; i<len; i += chunksize) {
 				chunksize = ochunksize;
 				again:
-				r_hex_bin2str (str+i, R_MIN (chunksize, len-i), buf);
+				r_hex_bin2str ((ut8*)str+i, R_MIN (chunksize, len-i), buf);
 				eprintf ("/x %s\n", buf);
 				r_core_cmdf (core, "/x %s", buf);
 				if (core->num->value == 0) {
@@ -978,6 +1005,11 @@ static int cmd_search(void *data, const char *input) {
 	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
+		int oraise = core->io->raised;
+		int bufsz;
+		int maplist = R_FALSE;
+		RListIter *iter;
+		RIOMap *map;
 		if (!searchflags)
 			r_cons_printf ("fs hits\n");
 		core->search->inverse = inverse;
@@ -995,79 +1027,120 @@ static int cmd_search(void *data, const char *input) {
 			/* TODO: handle ^C */
 			/* TODO: launch search in background support */
 			// REMOVE OLD FLAGS r_core_cmdf (core, "f-%s*", r_config_get (core->config, "search.prefix"));
-			buf = (ut8 *)malloc (core->blocksize);
 			r_search_set_callback (core->search, &__cb_hit, core);
 			cmdhit = r_config_get (core->config, "cmd.hit");
 			r_cons_break (NULL, NULL);
 			// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
-			if (bckwrds){
-				if (to < from + core->blocksize){
-					at = from;
-					do_bckwrd_srch = R_FALSE;
-				}else at = to - core->blocksize;
-			}else at = from;
-			 /* bckwrds = false -> normal search -> must be at < to
-				bckwrds search -> check later */
-			for (; ( !bckwrds && at < to ) ||  bckwrds ;) {
-				print_search_progress (at, to, searchhits);
-				if (r_cons_singleton ()->breaked) {
-					eprintf ("\n\n");
-					break;
+			if (!list) {
+				RIOMap *map = R_NEW0 (RIOMap);
+				map->fd = core->io->desc->fd;
+				map->from = from;
+				map->to = to;
+				list = r_list_newf (free);
+				r_list_append (list, map);
+				maplist = R_TRUE;
+			}
+			buf = (ut8 *)malloc (core->blocksize);
+			bufsz = core->blocksize;
+			r_list_foreach (list, iter, map) {
+				int fd;
+				from = map->from;
+				to = map->to;
+				searchhits = 0;
+
+				r_io_raise (core->io, map->fd);
+				fd = core->io->raised;
+				if (fd == -1 && core->io->desc) {
+					fd = core->io->desc->fd;
 				}
-				//ret = r_core_read_at (core, at, buf, core->blocksize);
-			//	ret = r_io_read_at (core->io, at, buf, core->blocksize);
-				r_io_seek (core->io, at, R_IO_SEEK_SET);
-				ret = r_io_read (core->io, buf, core->blocksize);
-/*
-				if (ignorecase) {
-					int i;
-					for (i=0; i<core->blocksize; i++)
-						buf[i] = tolower (buf[i]);
-				}
-*/
-				if (ret <1)
-					break;
-				if (crypto_search) {
-					int delta = 0;
-					if (aes_search)
-						delta = r_search_aes_update (core->search, at, buf, ret);
-					else if (rsa_search)
-						delta = r_search_rsa_update (core->search, at, buf, ret);
-					if (delta != -1) {
-						if (!r_search_hit_new (core->search, &aeskw, at+delta)) {
-							break;
-						}
-						aeskw.count++;
-					}
-				} else
-				if (r_search_update (core->search, &at, buf, ret) == -1) {
-					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
-					break;
-				}
+				r_cons_printf ("# %d [0x%llx-0x%llx]\n", fd, from, to);
+
 				if (bckwrds) {
-					if (!do_bckwrd_srch) break;
-					if (at > from + core->blocksize) at -= core->blocksize;
-					else {
-						do_bckwrd_srch = R_FALSE;
+					if (to < from + bufsz) {
 						at = from;
+						do_bckwrd_srch = R_FALSE;
+					} else at = to - bufsz;
+				} else at = from;
+				/* bckwrds = false -> normal search -> must be at < to
+				   bckwrds search -> check later */
+				for (; ( !bckwrds && at < to ) ||  bckwrds ;) {
+					print_search_progress (at, to, searchhits);
+					if (r_cons_singleton ()->breaked) {
+						eprintf ("\n\n");
+						break;
 					}
-				} else at += core->blocksize;
+					//ret = r_core_read_at (core, at, buf, bufsz);
+					//	ret = r_io_read_at (core->io, at, buf, bufsz);
+					if (use_mread) {
+						// what about a config var to choose which io api to use?
+						ret = r_io_mread (core->io, fd, at, buf, bufsz);
+					} else {
+						r_io_seek (core->io, at, R_IO_SEEK_SET);
+						ret = r_io_read (core->io, buf, bufsz);
+					}
+					/*
+					   if (ignorecase) {
+					   int i;
+					   for (i=0; i<bufsz; i++)
+					   buf[i] = tolower (buf[i]);
+					   }
+					 */
+					if (ret <1)
+						break;
+					if (crypto_search) {
+						int delta = 0;
+						if (aes_search)
+							delta = r_search_aes_update (core->search, at, buf, ret);
+						else if (rsa_search)
+							delta = r_search_rsa_update (core->search, at, buf, ret);
+						if (delta != -1) {
+							if (!r_search_hit_new (core->search, &aeskw, at+delta)) {
+								break;
+							}
+							aeskw.count++;
+						}
+					} else if (r_search_update (core->search, &at, buf, ret) == -1) {
+						//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+						break;
+					}
+					if (bckwrds) {
+						if (!do_bckwrd_srch) break;
+						if (at > from + bufsz) at -= bufsz;
+						else {
+							do_bckwrd_srch = R_FALSE;
+							at = from;
+						}
+					} else at += bufsz;
+				}
+				print_search_progress (at, to, searchhits);
+				r_cons_break_end ();
+				r_cons_clear_line (1);
+				core->num->value = searchhits;
+				if (searchflags && searchcount>0) {
+					eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
+							searchhits,
+							searchprefix, core->search->n_kws-1,
+							searchprefix, core->search->n_kws-1, searchcount-1);
+				} else {
+					eprintf ("hits: %d\n", searchhits);
+					if (searchhits==0)
+						core->search->n_kws--;
+				}
+				if (!r_list_empty (core->search->kws)) {
+					RListIter *iter;
+					RSearchKeyword *kw;
+					r_list_foreach (core->search->kws, iter, kw) {
+						kw->kwidx++;
+					}
+				}
 			}
-			print_search_progress (at, to, searchhits);
-			r_cons_break_end ();
 			free (buf);
-			r_cons_clear_line (1);
-			core->num->value = searchhits;
-			if (searchflags && searchcount>0) {
-				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
-					searchhits,
-					searchprefix, core->search->n_kws-1,
-					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else {
-				eprintf ("hits: %d\n", searchhits);
-				if (searchhits==0)
-					core->search->n_kws--;
+			if (maplist) {
+				list->free = free;
+				r_list_free (list);
+				list = NULL;
 			}
+			r_io_raise (core->io, oraise);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;

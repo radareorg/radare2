@@ -400,7 +400,7 @@ R_API int r_core_visual_comments (RCore *core);
 R_API int r_core_visual_prompt (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
-R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
+R_API RList* /*<RIOMap*>*/ r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
