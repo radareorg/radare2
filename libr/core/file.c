@@ -714,12 +714,15 @@ R_API int r_core_file_list(RCore *core) {
 	RCoreFile *f;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
-		if (f->map)
-			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
+		if (f->map) {
+			int overlapped = r_io_map_overlaps (core->io, f->desc, f->map);
+			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%d %s\n",
 				core->io->raised == f->desc->fd?'*':'-',
 				f->desc->fd, f->desc->uri, f->map->from,
-				f->desc->flags & R_IO_WRITE? "rw": "r");
-		else r_cons_printf ("- %d %s\n", f->desc->fd, f->desc->uri);
+				f->desc->flags & R_IO_WRITE? "rw": "r",
+				r_io_desc_size (core->io, f->desc),
+				overlapped?"overlaps":"");
+		} else r_cons_printf ("- %d %s\n", f->desc->fd, f->desc->uri);
 		count++;
 	}
 	return count;
