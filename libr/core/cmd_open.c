@@ -279,7 +279,7 @@ static int cmd_open(void *data, const char *input) {
 		"o","+/bin/ls","open /bin/ls file in read-write mode",
 		"o"," /bin/ls 0x4000","map file at 0x4000",
 		"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"ob","","list open binary files backed by fd",
+		"ob","[lbdos] [...]","list open binary files backed by fd",
 		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"om","[?]","create, list, remove IO maps",
 		NULL

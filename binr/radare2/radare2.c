@@ -465,6 +465,32 @@ if (strcmp (argv[optind-1], "--")) {
 						else eprintf ("r_io_create: Permission denied.\n");
 					}
 				}
+				if (fh) {
+					if (run_anal>0) {
+#if USE_THREADS
+						if (!rabin_th)
+#endif
+						{
+							const char *filepath = NULL;
+							if (debug) {
+								// XXX: incorrect for PIE binaries
+								filepath = file? strstr (file, "://"): NULL;
+								filepath = filepath? filepath+3: pfile;
+							}
+							if (r.file && r.file->desc && r.file->desc->name)
+								filepath = r.file->desc->name;
+
+							if (!r_core_bin_load (&r, filepath, baddr))
+								r_config_set (r.config, "io.va", "false");
+						}
+					} else {
+						if (run_anal<0) {
+							// PoC -- must move -rk functionalitiy into rcore
+							// this may be used with caution (r2 -nn $FILE)
+							r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
+						}
+					}
+				}
 			}
 		} else {
 			const char *prj = r_config_get (r.config, "file.project");
@@ -507,31 +533,6 @@ if (strcmp (argv[optind-1], "--")) {
 	}
 
 	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
-	if (run_anal>0) {
-#if USE_THREADS
-		if (!rabin_th)	
-#endif
-		{
-			const char *filepath = NULL;
-			if (debug) {
-				// XXX: this is incorrect for PIE binaries
-				filepath = file? strstr (file, "://"): NULL;
-				if (filepath) filepath += 3;
-				else filepath = pfile;
-			}
-			if (r.file && r.file->desc && r.file->desc->name)
-				filepath = r.file->desc->name;
-
-			if (!r_core_bin_load (&r, filepath, baddr))
-				r_config_set (r.config, "io.va", "false");
-		}
-	} else {
-		if (run_anal<0) {
-			// PoC -- must move -rk functionalitiy into rcore
-			// this may be used with caution (r2 -nn $FILE)
-			r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
-		}
-	}
 #if 0
 // Do not autodetect utf8 terminals to avoid problems on initial
 // stdin buffer and some terminals that just hang (android/ios)
