@@ -433,19 +433,6 @@ typedef enum {
 	eMAX_CV_CALL
 } ECV_CALL;
 
-//CV_property = BitStruct("prop",
-//    Flag("fwdref"),
-//    Flag("opcast"),
-//    Flag("opassign"),
-//    Flag("cnested"),
-//    Flag("isnested"),
-//    Flag("ovlops"),
-//    Flag("ctor"),
-//    Flag("packed"),
-
-//    BitField("reserved", 7, swapped=True),
-//    Flag("scoped"),
-//)
 typedef union {
 	struct {
 		unsigned char scoped : 1;
@@ -496,15 +483,6 @@ typedef union {
 	unsigned short fldattr;
 } UCV_fldattr;
 
-//lfProcedure = Struct("lfProcedure",
-//    ULInt32("return_type"),
-//    CV_call,
-//    ULInt8("reserved"),
-//    ULInt16("parm_count"),
-//    ULInt32("arglist"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int return_type;
 	ECV_CALL call_conv;
@@ -514,18 +492,6 @@ typedef struct {
 	unsigned char pad;
 } SLF_PROCEDURE;
 
-//lfMFunc = Struct("lfMFunc",
-//    ULInt32("return_type"),
-//    ULInt32("class_type"),
-//    ULInt32("this_type"),
-//    CV_call,
-//    ULInt8("reserved"),
-//    ULInt16("parm_count"),
-//    ULInt32("arglist"),
-//    SLInt32("thisadjust"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int return_type;
 	unsigned int class_type;
@@ -538,30 +504,12 @@ typedef struct {
 	unsigned char pad;
 } SLF_MFUNCTION;
 
-//lfArgList = Struct("lfArgList",
-//    ULInt32("count"),
-//    Array(lambda ctx: ctx.count, ULInt32("arg_type")),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int count;
 	unsigned int *arg_type;
 	unsigned char pad;
 } SLF_ARGLIST;
 
-//lfModifier = Struct("lfModifier",
-//    ULInt32("modified_type"),
-//    BitStruct("modifier",
-//        Padding(5),
-//        Flag("unaligned"),
-//        Flag("volatile"),
-//        Flag("const"),
-//        Padding(8),
-//    ),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int modified_type;
 	union {
@@ -619,43 +567,6 @@ typedef union {
 	unsigned int ptr_attr;
 } UPTR_ATTR;
 
-//lfPointer = Struct("lfPointer",
-//    ULInt32("utype"),
-//    BitStruct("ptr_attr",
-//        Enum(BitField("mode", 3),
-//            PTR_MODE_PTR         = 0x00000000,
-//            PTR_MODE_REF         = 0x00000001,
-//            PTR_MODE_PMEM        = 0x00000002,
-//            PTR_MODE_PMFUNC      = 0x00000003,
-//            PTR_MODE_RESERVED    = 0x00000004,
-//        ),
-//        Enum(BitField("type", 5),
-//            PTR_NEAR             = 0x00000000,
-//            PTR_FAR              = 0x00000001,
-//            PTR_HUGE             = 0x00000002,
-//            PTR_BASE_SEG         = 0x00000003,
-//            PTR_BASE_VAL         = 0x00000004,
-//            PTR_BASE_SEGVAL      = 0x00000005,
-//            PTR_BASE_ADDR        = 0x00000006,
-//            PTR_BASE_SEGADDR     = 0x00000007,
-//            PTR_BASE_TYPE        = 0x00000008,
-//            PTR_BASE_SELF        = 0x00000009,
-//            PTR_NEAR32           = 0x0000000A,
-//            PTR_FAR32            = 0x0000000B,
-//            PTR_64               = 0x0000000C,
-//            PTR_UNUSEDPTR        = 0x0000000D,
-//        ),
-//        Padding(3),
-//        Flag("restrict"),
-//        Flag("unaligned"),
-//        Flag("const"),
-//        Flag("volatile"),
-//        Flag("flat32"),
-//        Padding(16),
-//    ),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int utype;
 	UPTR_ATTR ptr_attr;
@@ -714,23 +625,6 @@ typedef struct {
 	f_load load;
 } SParsedPDBStream;
 
-//### Header structures
-//def OffCb(name):
-//    return Struct(name,
-//        SLInt32("off"),
-//        SLInt32("cb"),
-//    )
-
-//TPI = Struct("TPIHash",
-//    ULInt16("sn"),
-//    Padding(2),
-//    SLInt32("HashKey"),
-//    SLInt32("Buckets"),
-//    OffCb("HashVals"),
-//    OffCb("TiOff"),
-//    OffCb("HashAdj"),
-//)
-
 typedef struct {
 	unsigned int size;
 	char *name;
@@ -770,13 +664,6 @@ typedef struct {
 	void *name_or_val;
 } SVal;
 
-//lfArray = Struct("lfArray",
-//    ULInt32("element_type"),
-//    ULInt32("index_type"),
-//    val("size"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int element_type;
 	unsigned int index_type;
@@ -784,19 +671,8 @@ typedef struct {
 	unsigned char pad;
 } SLF_ARRAY;
 
-//lfStructure = Struct("lfStructure",
-//    ULInt16("count"),
-//    CV_property,
-//    ULInt32("fieldlist"),
-//    ULInt32("derived"),
-//    ULInt32("vshape"),
-//    val("size"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned short count;
-	// TODO: fix displaying of UCV_PROPERTY
 	UCV_PROPERTY prop;
 	unsigned int field_list;
 	unsigned int derived;
@@ -813,13 +689,6 @@ typedef struct {
 	unsigned pad;
 } SLF_UNION;
 
-//lfBitfield = Struct("lfBitfield",
-//    ULInt32("base_type"),
-//    ULInt8("length"),
-//    ULInt8("position"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned int base_type;
 	unsigned char length;
@@ -827,33 +696,12 @@ typedef struct {
 	unsigned char pad;
 } SLF_BITFIELD;
 
-//lfVTShape = Struct("lfVTShape",
-//    ULInt16("count"),
-//    BitStruct("vt_descriptors",
-//        Array(lambda ctx: ctx._.count,
-//            BitField("vt_descriptors", 4)
-//        ),
-//        # Needed to align to a byte boundary
-//        Padding(lambda ctx: (ctx._.count % 2) * 4),
-//    ),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//)
 typedef struct {
 	unsigned short count;
 	char *vt_descriptors;
 	unsigned char pad;
 } SLF_VTSHAPE;
 
-//	lfEnum = Struct("lfEnum",
-//ULInt16("count"),
-//CV_property,
-//ULInt32("utype"),
-//ULInt32("fieldlist"),
-//CString("name"),
-//Peek(ULInt8("_pad")),
-//PadAlign,
-//)
 typedef struct {
 	unsigned short count;
 	UCV_PROPERTY prop;
@@ -863,12 +711,6 @@ typedef struct {
 	unsigned char pad;
 } SLF_ENUM;
 
-//"LF_ENUMERATE": Struct("lfEnumerate",
-//    CV_fldattr,
-//    val("enum_value"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//),
 typedef struct {
 	UCV_fldattr fldattr;
 	SVal enum_value;
@@ -877,11 +719,6 @@ typedef struct {
 	free_func free_;
 } SLF_ENUMERATE;
 
-//	"LF_NESTTYPE": Struct("lfNestType",
-//        Padding(2),
-//        ULInt32("index"),
-//        CString("name"),
-//    ),
 typedef struct {
 	unsigned short pad;
 	unsigned int index;
@@ -890,13 +727,6 @@ typedef struct {
 	free_func free_;
 } SLF_NESTTYPE;
 
-//"LF_METHOD": Struct("lfMethod",
-//    ULInt16("count"),
-//    ULInt32("mlist"),
-//    CString("name"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//),
 typedef struct {
 	unsigned short count;
 	unsigned int mlist;
@@ -906,13 +736,6 @@ typedef struct {
 	free_func free_;
 } SLF_METHOD;
 
-//"LF_MEMBER": Struct("lfMember",
-//    CV_fldattr,
-//    ULInt32("index"),
-//    val("offset"),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//),
 typedef struct {
 	UCV_fldattr fldattr;
 	unsigned int inedex;
@@ -928,25 +751,6 @@ typedef struct {
 	SCString str_data;
 } SLF_ONEMETHOD_VAL;
 
-//"LF_ONEMETHOD": Struct("lfOneMethod",
-//    CV_fldattr,
-//    ULInt32("index"),
-//    Switch("intro", lambda ctx: ctx.fldattr.mprop,
-//        {
-//            "MTintro": Struct("value",
-//                ULInt32("val"),
-//                CString("str_data"),
-//            ),
-//            "MTpureintro": Struct("value",
-//                ULInt32("val"),
-//                CString("str_data"),
-//            ),
-//        },
-//        default = CString("str_data"),
-//    ),
-//    Peek(ULInt8("_pad")),
-//    PadAlign,
-//),
 typedef struct {
 	UCV_fldattr fldattr;
 	unsigned int index;
@@ -1141,31 +945,6 @@ typedef enum {
 	eLF_MAX                  = 0xFFFFFFFF
 } ELeafType;
 
-//Type = Debugger(Struct("type",
-//    leaf_type,
-//    Switch("type_info", lambda ctx: ctx.leaf_type,
-//        {
-//            "eLF_ARGLIST": eLFArgList,
-//            "eLF_ARRAY": eLFArray,
-//            "eLF_ARRAY_ST": eLFArrayST,
-//            "eLF_BITFIELD": eLFBitfield,
-//            "eLF_CLASS": eLFClass,
-//            "eLF_ENUM": eLFEnum,
-//            "eLF_FIELDLIST": eLFFieldList,
-//            "eLF_MFUNCTION": eLFMFunc,
-//            "eLF_MODIFIER": eLFModifier,
-//            "eLF_POINTER": eLFPointer,
-//            "eLF_PROCEDURE": eLFProcedure,
-//            "eLF_STRUCTURE": eLFStructure,
-//            "eLF_STRUCTURE_ST": eLFStructureST,
-//            "eLF_UNION": eLFUnion,
-//            "eLF_UNION_ST": eLFUnionST,
-//            "eLF_VTSHAPE": eLFVTShape,
-//        },
-//        default = Pass,
-//    ),
-//))
-
 typedef struct {
 	ELeafType leaf_type;
 	void *type_info;
@@ -1238,17 +1017,6 @@ typedef enum {
 } EMachine;
 
 #pragma pack(push, 1)
-//Struct(name,
-//        SLInt16("section"),
-//        Padding(2),
-//        SLInt32("offset"),
-//        SLInt32("size"),
-//        ULInt32("flags"),
-//        SLInt16("module"),
-//        Padding(2),
-//        ULInt32("dataCRC"),
-//        ULInt32("relocCRC"),
-//    )
 typedef struct {
 	short section;
 	short padding1;
@@ -1263,21 +1031,6 @@ typedef struct {
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-//Struct("DBIExHeader",
-//    ULInt32("opened"),
-//    SymbolRange("range"),
-//    ULInt16("flags"),
-//    SLInt16("stream"),
-//    ULInt32("symSize"),
-//    ULInt32("oldLineSize"),
-//    ULInt32("lineSize"),
-//    SLInt16("nSrcFiles"),
-//    Padding(2),
-//    ULInt32("offsets"),
-//    ULInt32("niSource"),
-//    ULInt32("niCompiler"),
-//    CString("modName"),
-//    CString("objName"),
 typedef struct {
 	unsigned int opened;
 	SSymbolRange range;
@@ -1297,19 +1050,6 @@ typedef struct {
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-//DbiDbgHeader = Struct("DbiDbgHeader",
-//	SLInt16("snFPO"),
-//	SLInt16("snException"),
-//	SLInt16("snFixup"),
-//	SLInt16("snOmapToSrc"),
-//	SLInt16("snOmapFromSrc"),
-//	SLInt16("snSectionHdr"),
-//	SLInt16("snTokenRidMap"),
-//	SLInt16("snXdata"),
-//	SLInt16("snPdata"),
-//	SLInt16("snNewFPO"),
-//	SLInt16("snSectionHdrOrig"),
-//)
 typedef struct {
 	short sn_fpo;
 	short sn_exception;
@@ -1324,33 +1064,7 @@ typedef struct {
 	short sn_section_hdr_orig;
 } SDbiDbgHeader;
 #pragma pack(pop)
-//DBIHeader = Struct("DBIHeader",
-//    Const(Bytes("magic", 4), "\xFF\xFF\xFF\xFF"),                           # 0
-//    ULInt32("version"),                                                     # 4
-//    ULInt32("age"),                                                         # 8
-//    SLInt16("gssymStream"),                                                 # 12
-//    ULInt16("vers"),                                                        # 14
-//    SLInt16("pssymStream"),                                                 # 16
-//    ULInt16("pdbver"),                                                      # 18
-//    SLInt16("symrecStream"),           # stream containing global symbols   # 20
-//    ULInt16("pdbver2"),                                                     # 22
-//    ULInt32("module_size"),         # total size of DBIExHeaders            # 24
-//    ULInt32("secconSize"),                                                  # 28
-//    ULInt32("secmapSize"),                                                  # 32
-//    ULInt32("filinfSize"),                                                  # 36
-//    ULInt32("tsmapSize"),                                                   # 40
-//    ULInt32("mfcIndex"),                                                    # 44
-//    ULInt32("dbghdrSize"),                                                  # 48
-//    ULInt32("ecinfoSize"),                                                  # 52
-//    ULInt16("flags"),                                                       # 56
-//    Enum(ULInt16("Machine"),                                                # 58
-//        IMAGE_FILE_MACHINE_UNKNOWN = 0x0,
-//        IMAGE_FILE_MACHINE_I386 = 0x014c,
-//        IMAGE_FILE_MACHINE_IA64 = 0x0200,
-//        IMAGE_FILE_MACHINE_AMD64 = 0x8664,
-//    ),
-//    ULInt32("resvd"),                                                       # 60
-//)
+
 #pragma pack(push, 1)
 typedef struct {
 	unsigned int magic;
@@ -1398,20 +1112,6 @@ typedef union {
 	unsigned short bit_values;
 } UBit_values;
 
-//FPO_DATA = Struct("FPO_DATA",
-//    ULInt32("ulOffStart"),          # offset 1st byte of function code
-//    ULInt32("cbProcSize"),          # number of bytes in function
-//    ULInt32("cdwLocals"),           # number of bytes in locals/4
-//    ULInt16("cdwParams"),           # number of bytes in params/4
-//    Embed(BitStruct("BitValues",
-//        Octet("cbProlog"),          # number of bytes in prolog
-//        BitField("cbFrame",2),      # frame type
-//        Bit("reserved"),            # reserved for future use
-//        Flag("fUseBP"),             # TRUE if EBP has been allocated
-//        Flag("fHasSEH"),            # TRUE if SEH in func
-//        BitField("cbRegs",3),       # number of regs saved
-//    )),
-//)
 typedef struct {
 	unsigned int ul_off_start;
 	unsigned int cb_proc_size;
@@ -1430,22 +1130,7 @@ typedef enum {
 	eFnStart = 4,
 	eFPO_DATA_FLAGS_MAX
 } EFPO_DATA_FLAGS;
-//# New style FPO records with program strings
-//FPO_DATA_V2 = Struct("FPO_DATA_V2",
-//    ULInt32("ulOffStart"),
-//    ULInt32("cbProcSize"),
-//    ULInt32("cbLocals"),
-//    ULInt32("cbParams"),
-//    ULInt32("maxStack"),        # so far only observed to be 0
-//    ULInt32("ProgramStringOffset"),
-//    ULInt16("cbProlog"),
-//    ULInt16("cbSavedRegs"),
-//    FlagsEnum(ULInt32("flags"),
-//        SEH = 1,
-//        CPPEH = 2,              # conjectured
-//        fnStart = 4,
-//    ),
-//)
+
 typedef struct {
 	unsigned int ul_off_start;
 	unsigned int cb_proc_size;

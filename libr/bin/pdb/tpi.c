@@ -2074,30 +2074,6 @@ static void parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, 
 	init_stype_info(&type->type_data); \
 }
 
-//Type = Debugger(Struct("type",
-//    leaf_type,
-//    Switch("type_info", lambda ctx: ctx.leaf_type,
-//        {
-//            "LF_ARGLIST": lfArgList,
-//            "LF_ARRAY": lfArray,
-//            "LF_ARRAY_ST": lfArrayST,
-//            "LF_BITFIELD": lfBitfield,
-//            "LF_CLASS": lfClass,
-//            "LF_ENUM": lfEnum,
-//            "LF_FIELDLIST": lfFieldList,
-//            "LF_MFUNCTION": lfMFunc,
-//            "LF_MODIFIER": lfModifier,
-//            "LF_POINTER": lfPointer,
-//            "LF_PROCEDURE": lfProcedure,
-//            "LF_STRUCTURE": lfStructure,
-//            "LF_STRUCTURE_ST": lfStructureST,
-//            "LF_UNION": lfUnion,
-//            "LF_UNION_ST": lfUnionST,
-//            "LF_VTSHAPE": lfVTShape,
-//        },
-//        default = Pass,
-//    ),
-//))
 ///////////////////////////////////////////////////////////////////////////////
 static void parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
 {

@@ -16,16 +16,6 @@ int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
 void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res);
 
 ///////////////////////////////////////////////////////////////////////////////
-//def seek(seeLF, offset, whence=0):
-//    if whence == 0:
-//        seeLF.pos = offset
-//    elif whence == 1:
-//        seeLF.pos += offset
-//    elif whence == 2:
-//        seeLF.pos = seeLF.end + offset
-//if seeLF.pos < 0: seeLF.pos = 0
-//if seeLF.pos > seeLF.end: seeLF.pos = seeLF.end
-// whence by default = 0
 void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence);
 
 ///////////////////////////////////////////////////////////////////////////////

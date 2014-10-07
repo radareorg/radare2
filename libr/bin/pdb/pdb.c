@@ -39,12 +39,6 @@ static void free_pdb_stream(void *stream)
 	}
 }
 
-//def _get_data(seeLF):
-//    pos = seeLF.stream_file.tell()
-//    seeLF.stream_file.seek(0)
-//    data = seeLF.stream_file.read()
-//    seeLF.stream_file.seek(pos)
-//    return data
 //static void pdb_stream_get_data(R_PDB_STREAM *pdb_stream, char *data)
 //{
 //	int pos = stream_file_tell(&pdb_stream->stream_file);
@@ -156,14 +150,12 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 //	short ii;
 //	FILE *tmp_file;
 	tmp_data = ((char *)data + num_streams * 4 + 4);
-	//FIXME: free list...
 	root_stream7->streams_list = r_list_new();
 	RList *pList = root_stream7->streams_list;
 	SPage *page = 0;
 	for (i = 0; i < num_streams; i++) {
 		num_pages = count_pages(sizes[i], page_size);
 
-		// FIXME: remove tmp..
 		tmp = (char *) malloc(num_pages * 4);
 		memset(tmp, 0, num_pages * 4);
 		page = (SPage *) malloc(sizeof(SPage));
@@ -292,26 +284,6 @@ static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res)
 	}
 }
 
-//seeLF.streams = []
-//for i in range(len(rs.streams)):
-//    try:
-//        pdb_cls = seeLF._stream_map[i]
-//    except KeyError:
-//        pdb_cls = PDBStream
-//    stream_size, stream_pages = rs.streams[i]
-//    seeLF.streams.append(
-//        pdb_cls(seeLF.fp, stream_pages, i, size=stream_size,
-//            page_size=seeLF.page_size, fast_load=seeLF.fast_load,
-//            parent=seeLF))
-
-//# Sets up access to streams by name
-//seeLF._update_names()
-
-//# Second stage init. Currently only used for FPO strings
-//if not seeLF.fast_load:
-//    for s in seeLF.streams:
-//        if hasattr(s, 'load2'):
-//            s.load2()
 ///////////////////////////////////////////////////////////////////////////////
 static int pdb_read_root(R_PDB *pdb)
 {
@@ -441,10 +413,6 @@ static int pdb7_parse(R_PDB *pdb)
 //		//goto error;
 //	}
 
-	// TODO:
-	// create stream of maps and names
-	// ...
-
 	num_root_pages = count_pages(root_size, page_size);
 	num_root_index_pages = count_pages((num_root_pages * 4), page_size);
 
@@ -530,8 +498,6 @@ static void finish_pdb_parse(R_PDB *pdb)
 {
 	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
 
-	// TODO: maybe create some kind of destructor?
-	// free of R_PDB7_ROOT_STREAM
 	RListIter *it;
 	SPage *page = 0;
 
