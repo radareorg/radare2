@@ -615,8 +615,10 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 		ret = write (io->desc->fd, buf, len);
 	}
 	if (ret == -1) {
-		eprintf ("r_io_write: cannot write on fd %d\n", io->desc->fd);
-		r_io_cache_invalidate (io, io->off, io->off+1);
+		if (io->cached != 2) {
+			eprintf ("r_io_write: cannot write on fd %d\n", io->desc->fd);
+			r_io_cache_invalidate (io, io->off, io->off+1);
+		}
 	} else {
 		r_io_map_write_update (io, io->desc->fd, io->off, ret);
 		io->off += ret;
