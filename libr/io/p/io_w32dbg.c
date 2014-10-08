@@ -73,7 +73,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
 		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1,
-			pidpath, R_TRUE, 0, dbg);
+			pidpath, rw | R_IO_EXEC, mode, dbg);
 	}
 	return NULL;
 }
