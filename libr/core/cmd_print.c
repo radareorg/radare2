@@ -1340,7 +1340,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'x': //psx
 			r_print_string (core->print, core->offset, core->block, len, 0);
 			break;
-		case 'b': //pbx
+		case 'b': //psb
 			{
 				char *s = malloc (core->blocksize+1);
 				int i, j, hasnl = 0;;
@@ -1351,6 +1351,7 @@ static int cmd_print(void *data, const char *input) {
 						char ch = (char)core->block[i];
 						if (!ch) {
 							if (!hasnl) {
+								s[j] = 0;
 								if (*s) r_cons_printf ("%s\n", s);
 								j = 0;
 								s[0] = 0;
@@ -1362,6 +1363,7 @@ static int cmd_print(void *data, const char *input) {
 						if (IS_PRINTABLE (ch))
 							s[j++] = ch;
 					}
+					s[j] = 0;
 					r_cons_printf ("%s", s); // TODO: missing newline?
 					free (s);
 				}
