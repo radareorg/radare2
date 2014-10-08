@@ -34,6 +34,7 @@ static ut8 gb_op_calljump(RAnal *a, RAnalOp *op, const ut8 *data, ut64 addr)
 	return R_TRUE;
 }
 
+#if	0
 static inline int gb_anal_esil_banksw (RAnalOp *op)							//remove that
 {
 	ut64 base = op->dst->base;
@@ -47,6 +48,7 @@ static inline int gb_anal_esil_banksw (RAnalOp *op)							//remove that
 	}
 	return R_FALSE;
 }
+#endif
 
 static void gb_anal_esil_call (RAnalOp *op)
 {
