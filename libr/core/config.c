@@ -346,6 +346,31 @@ static int cb_dbgbep(void *user, void *data) {
 	}
 	return R_TRUE;
 }
+
+static int cb_dbg_forks(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->trace_forks = node->i_value;
+	r_debug_attach (core->dbg, core->dbg->pid);
+	return R_TRUE;
+}
+
+static int cb_dbg_execs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->trace_execs = node->i_value;
+	r_debug_attach (core->dbg, core->dbg->pid);
+	return R_TRUE;
+}
+
+static int cb_dbg_clone(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->trace_clone = node->i_value;
+	r_debug_attach (core->dbg, core->dbg->pid);
+	return R_TRUE;
+}
+
 static int cb_runprofile(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -843,6 +868,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.size", 64,  "Define size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Define a delta for the stack dump");
 
+	SETCB("dbg.forks", "true", &cb_dbg_forks, "Stop execution if fork() is done");
+	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
+	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	/* debug */
 	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");

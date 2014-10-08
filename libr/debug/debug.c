@@ -59,6 +59,9 @@ R_API RDebug *r_debug_new(int hard) {
 		// R_SYS_ARCH
 		dbg->arch = r_sys_arch_id (R_SYS_ARCH); // 0 is native by default
 		dbg->bits = R_SYS_BITS;
+		dbg->trace_forks = 1;
+		dbg->trace_clone = 0;
+		dbg->trace_execs = 0;
 		dbg->anal = NULL;
 		dbg->pid = -1;
 		dbg->bpsize = 1;
@@ -114,7 +117,7 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
 		}// else if (pid != -1)
 		//	eprintf ("Cannot attach to this pid %d\n", pid);
-	} else eprintf ("dbg->attach = NULL\n");
+	}// else eprintf ("dbg->attach = NULL\n");
 	return ret;
 }
 

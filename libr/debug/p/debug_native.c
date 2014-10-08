@@ -361,6 +361,27 @@ static int r_debug_native_step(RDebug *dbg) {
 // return thread id
 static int r_debug_native_attach(RDebug *dbg, int pid) {
 	int ret = -1;
+#if __linux__
+	int traceflags = 0;
+	if (dbg->trace_forks) {
+		traceflags |= PTRACE_O_TRACEFORK;
+		traceflags |= PTRACE_O_TRACEVFORK;
+		traceflags |= PTRACE_O_TRACEVFORKDONE;
+	}
+	if (dbg->trace_clone) {
+		// threads
+		traceflags |= PTRACE_O_TRACECLONE;
+	}
+	//traceflags |= PTRACE_O_TRACESYSGOOD; mark 0x80| on signal event, x86-only
+	if (dbg->trace_execs) {
+		traceflags |= PTRACE_O_TRACEEXEC;
+	}
+	traceflags |= PTRACE_O_TRACEEXIT;
+	if (ptrace (PTRACE_SETOPTIONS, pid, 0, traceflags) == -1) {
+		perror ("ptrace_setoptions");
+		return -1;
+	}
+#endif
 	if (pid == dbg->pid)
 		return pid;
 #if __WINDOWS__
@@ -657,13 +678,18 @@ static RList *r_debug_native_pids(int pid) {
 				continue;
 			}
 			cmdline[sizeof (cmdline)-1] = '\0';
-			ptr = strstr (cmdline, "PPid: ");
+			ptr = strstr (cmdline, "PPid:");
 			if (ptr) {
 				int ret, ppid = atoi (ptr+6);
 				close (fd);
+				if (i==pid) {
+					//eprintf ("PPid: %d\n", ppid);
+					r_list_append (list, r_debug_pid_new (
+						"(ppid)", ppid, 's', 0));
+				}
 				if (ppid != pid)
 					continue;
-				snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", ppid);
+				snprintf (cmdline, sizeof (cmdline)-1, "/proc/%d/cmdline", ppid);
 				fd = open (cmdline, O_RDONLY);
 				if (fd == -1)
 					continue;
