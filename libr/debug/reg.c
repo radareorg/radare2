@@ -27,7 +27,8 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		if (write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
-				eprintf ("r_debug_reg: error writing registers to %d\n", dbg->pid);
+				if (i==0)
+					eprintf ("r_debug_reg: error writing registers %d to %d\n", i, dbg->pid);
 				return R_FALSE;
 			}
 		} else {

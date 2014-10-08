@@ -1096,14 +1096,14 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #else
 			ret = thread_set_state (tid, R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
 #endif
-//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
-		if (ret != KERN_SUCCESS) {
-			eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
-					(int)dbg->pid, pid_to_task (dbg->pid), (int)ret,
-					MACH_ERROR_STRING (ret));
-			perror ("thread_set_state");
-			return R_FALSE;
-		}
+//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS)
+			if (ret != KERN_SUCCESS) {
+				eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
+						(int)dbg->pid, pid_to_task (dbg->pid), (int)ret,
+						MACH_ERROR_STRING (ret));
+				perror ("thread_set_state");
+				return R_FALSE;
+			}
 		} else eprintf ("There are no threads!\n");
 		return sizeof (R_DEBUG_REG_T);
 #else
@@ -1178,19 +1178,19 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			ret = thread_set_state (inferior_threads[tid],
 					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
 #endif
-//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
-		if (ret != KERN_SUCCESS) {
-			eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
-					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
-			perror ("thread_set_state");
-			return R_FALSE;
-		}
+//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS)
+			if (ret != KERN_SUCCESS) {
+				eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
+						(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
+				perror ("thread_set_state");
+				return R_FALSE;
+			}
 		} else eprintf ("There are no threads!\n");
 		return sizeof (R_DEBUG_REG_T);
 #else
 #warning r_debug_native_reg_write not implemented
 #endif
-	} else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
 	return R_FALSE;
 }
 
