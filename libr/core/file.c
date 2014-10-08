@@ -41,7 +41,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	}
 	newpid = odesc ? odesc->fd : -1;
 
-	if (!perm) perm = core->file->rwx;
+	if (!perm) perm = odesc ? odesc->flags : 0;		//maybe (odesc->flags & 7)
 	path = strdup (ofilepath);
 
 	if (isdebug) {
@@ -540,7 +540,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		fh->alive = 1;
 		fh->core = r;
 		fh->desc = fd;
-		fh->rwx = flags;
 		r->file = fh;
 		r->io->plugin = fd->plugin;
 		// XXX - load addr should be at a set offset
@@ -620,7 +619,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	fh->alive = 1;
 	fh->core = r;
 	fh->desc = fd;
-	fh->rwx = flags;
 
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)

@@ -74,7 +74,6 @@ typedef struct r_core_log_t {
 
 typedef struct r_core_file_t {
 	RIOMap *map;
-	int rwx;
 	int dbg;
 	RIODesc *desc;
 	RBinBind binb;
