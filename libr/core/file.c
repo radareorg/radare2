@@ -651,16 +651,12 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		res = r_core_files_free (cf->core, cf);
 	if (!res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
-		cf->alive = 0;
 		RIO *io = (RIO*)(cf->desc ? cf->desc->io : NULL);
 
 		if (io && cf->map) r_io_map_del_all (io, cf->map->fd);
 		if (io) r_io_close ((RIO *) io, cf->desc);
-		cf->desc = NULL;
-		cf->map = NULL;
 
 		r_bin_file_deref_by_bind (&cf->binb);
-		memset (cf, 0, sizeof (RCoreFile));
 		free (cf);
 	}
 	cf = NULL;
