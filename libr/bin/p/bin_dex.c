@@ -259,19 +259,24 @@ static char *dex_method_name (RBinDexObj *bin, int idx) {
 }
 
 static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
-	int cid = c->class_id;
-	int tid = bin->types [cid].descriptor_id;
+	int cid, tid;
+	if (!bin || !c || !bin->types)
+		return NULL;
+	cid = c->super_class;
+	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
 	return get_string (bin, tid);
 }
 
 static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
-	int cid = c->super_class;
-	int tid = bin->types [cid].descriptor_id;
+	int cid, tid;
+	if (!bin || !c || !bin->types)
+		return NULL;
+	cid = c->super_class;
+	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
 	return get_string (bin, tid);
 }
-
 
 static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	int *methods;
@@ -289,14 +294,22 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	bin->imports_list = r_list_new ();
 	bin->imports_list->free = free;
 
-	methods = malloc (sizeof (int) * bin->header.method_size);
-	for (i=0;i<bin->header.method_size;i++) { methods[i] = 0; }
+	methods = calloc (sizeof (int), bin->header.method_size);
+	if (!methods)
+		return R_FALSE;
+
+	/* WrapDown the header sizes to avoid huge allocations */
+	bin->header.method_size = R_MIN (bin->header.method_size, bin->size);
+	bin->header.class_size = R_MIN (bin->header.class_size, bin->size);
+	bin->header.strings_size = R_MIN (bin->header.strings_size, bin->size);
 
 	dprintf ("Walking %d classes\n", bin->header.class_size);
+	if (bin->classes)
 	for (i=0; i<bin->header.class_size; i++) {
 		struct dex_class_t *c = &bin->classes[i];
 		char *super_name = dex_class_super_name (bin, c);
 		char *class_name = dex_class_name (bin, c);
+		if (!c) continue;
 		dprintf ("{\n");
 		dprintf ("  class: %d,\n", c->class_id); // indexed by ordinal
 		dprintf ("  super: \"%s\",\n", super_name); // indexed by name
