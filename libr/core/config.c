@@ -757,7 +757,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->num = core->num;
 
 	/* anal */
-	SETI("anal.depth", 50, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
+	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB("anal.nopskip", "false", &cb_analnopskip, "Skip nops at the begining of functions");

@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#define FCN_DEPTH 32
+#define FCN_DEPTH 16
 
 #define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 512
@@ -146,10 +146,14 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->addr == addr)
+		ut64 eaddr = bb->addr + bb->size;
+		if (bb->addr >= eaddr) {
+			if (addr == bb->addr)
+				return bb;
+		}
+		if ((addr >= bb->addr) && (addr < eaddr)) {
 			return bb;
-		if (addr >= bb->addr && (addr < bb->addr+bb->size))
-			return bb;
+		}
 	}
 	return NULL;
 }
@@ -167,7 +171,17 @@ static int bbsum(RAnalFunction *fcn) {
 #endif
 
 static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
-	RAnalBlock *bb = r_anal_bb_new();
+	RListIter *iter;
+	RAnalBlock *bb;
+#if 0
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == addr)
+			return bb;
+	}
+#endif
+	// TODO: echeck if its already there
+	bb = r_anal_bb_new();
+	if (!bb) return NULL;
 	bb->addr = addr;
 	bb->size = 0;
 	bb->jump = UT64_MAX;
@@ -178,8 +192,8 @@ static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
 }
 
 #define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
-	if(n<0) { fcn->addr += n; fcn->size = -n; } else \
-	if(fcn->size<n)fcn->size=n; } \
+	if (n<0) { fcn->addr += n; fcn->size = -n; } else \
+	if (fcn->size<n)fcn->size=n; } \
 	if (fcn->size > MAX_FCN_SIZE) { \
 		eprintf ("Function too big at 0x%"PFMT64x"\n", bb->addr); \
 		fcn->size = 0; \
@@ -209,13 +223,17 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	if (depth<1) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
+	if (r_anal_get_fcn_at (anal, addr, 0)) {
+		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
+	}
 	if (bbget (fcn, addr)) {
-		return R_ANAL_RET_ERROR; // MUST BE DUP
+		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
 	bb = appendBasicBlock (fcn, addr);
 
-	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x" (fcn)\n", addr);
+	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x
+		" (fcn 0x%08llx)\n", addr, fcn->addr);
 
 	while (idx < len) {
 repeat:
