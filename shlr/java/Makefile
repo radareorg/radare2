@@ -11,7 +11,7 @@ endif
 
 ifeq (,$(findstring cygwin,${OSTYPE}))
 ifeq (,$(findstring mingw32,${OSTYPE}))
-CFLAGS+=-fPIC
+CFLAGS+=-fPIC -g
 else
 CFLAGS+=-DMINGW32=1
 endif

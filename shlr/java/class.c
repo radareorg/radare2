@@ -3181,9 +3181,8 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	ut32 k = 0, cur_location;
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	if (!attr) return NULL;
 	offset += 6;
-	if(attr == NULL)
-		return attr;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_CODE_ATTR;
 	attr->info.code_attr.max_stack = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
@@ -3194,21 +3193,24 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	attr->info.code_attr.code_offset = buf_offset+offset;
 	attr->info.code_attr.code = (ut8* ) malloc (attr->info.code_attr.code_length);
 	if (attr->info.code_attr.code == NULL) {
-		eprintf ("Handling Code Attributes: Unable to allocate memory (%u bytes )for a code.\n", attr->info.code_attr.code_length);
+		eprintf ("Handling Code Attributes: Unable to allocate memory "
+		"(%u bytes) for a code.\n", attr->info.code_attr.code_length);
 		return attr;
 	}
 	R_BIN_JAVA_GLOBAL_BIN->current_code_attr = attr;
 	memset (attr->info.code_attr.code, 0, attr->info.code_attr.code_length);
 	memcpy (attr->info.code_attr.code, buffer+offset, attr->info.code_attr.code_length);
 	offset += attr->info.code_attr.code_length;
-	attr->info.code_attr.exception_table_length =  R_BIN_JAVA_USHORT (buffer, offset);
+	attr->info.code_attr.exception_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		cur_location = buf_offset+offset;
 		exc_entry = R_NEW0(RBinJavaExceptionEntry);
 		exc_entry->file_offset = cur_location;
-		exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
+		if (cur_location>sz)
+			return attr;
+		exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		exc_entry->end_pc = R_BIN_JAVA_USHORT (buffer,offset);
 		offset += 2;
