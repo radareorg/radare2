@@ -6,6 +6,7 @@ static int cmd_help(void *data, const char *input) {
 	char *p, out[128];
 	ut64 n, n2;
 	int i;
+	RList *tmp;
 
 	switch (input[0]) {
 	case 'r':
@@ -47,8 +48,9 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'B':
 		k = r_str_chop_ro (input+1);
-		r_core_get_boundaries (core, k, &n, &n2);
+		tmp = r_core_get_boundaries (core, k, &n, &n2);
 		r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", n, n2);
+		r_list_free (tmp);
 		break;
 	case 'd':
 		if (input[1]==' '){
