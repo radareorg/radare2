@@ -572,7 +572,11 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		reg = (int)r_debug_reg_get (dbg, "a0"); // XXX
 		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
 		if (!sysname) sysname = "unknown";
-		eprintf ("--> syscall %d %s\n", reg, sysname);
+		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x")\n",
+			r_debug_reg_get (dbg, "pc"), reg, sysname,
+			r_debug_reg_get (dbg, "a0"),
+			r_debug_reg_get (dbg, "a1"),
+			r_debug_reg_get (dbg, "a2"));
 		return reg;
 	}
 
@@ -587,6 +591,8 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 	for (;;) {
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
+		// wait until continuation
+		r_debug_wait (dbg);
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
 			eprintf ("--> eol\n");
 			return -1;
@@ -596,7 +602,16 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 			return -1;
 		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
 		if (!sysname) sysname = "unknown";
-		eprintf ("--> syscall %d %s\n", reg, sysname);
+		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x")\n",
+			r_debug_reg_get (dbg, "pc"), reg, sysname,
+			r_debug_reg_get (dbg, "a0"),
+			r_debug_reg_get (dbg, "a1"),
+			r_debug_reg_get (dbg, "a2"));
+		if (n_sc == -1)
+			continue;
+		if (n_sc == 0) {
+			break;
+		}
 		for (i=0; i<n_sc; i++) {
 			if (sc[i] == reg)
 				return reg;

@@ -11,7 +11,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		return R_FALSE;
 
 	// Theres no point in syncing a dead target
-	if (r_debug_is_dead(dbg))
+	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 
 	// Check if the functions needed are available

@@ -1011,31 +1011,16 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
-		/* linux/arm/x86/x64 */
-		if (dbg->bits & R_SYS_BITS_32) {
-// XXX. this is wrong
-#if 0
-			struct user_regs_struct_x86_64 r64;
-			ret = ptrace (PTRACE_GETREGS, pid, NULL, &r64);
-eprintf (" EIP : 0x%x\n", r32.eip);
-eprintf (" ESP : 0x%x\n", r32.esp);
+		/* linux-{arm/x86/x64} */
+		ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
 #endif
-
-#if 0
-int i=0;
-unsigned char *p = &r64;;
-for(i=0;i< sizeof (r64); i++) {
-printf ("%02x ", p[i]);
-}
-printf ("\n");
-#endif
-			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
-		} else {
-			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
-		}
-#endif
-		if (ret != 0)
+		if (ret != 0) {
+			// if perror here says 'no such process' and the
+			// process exists still.. is because there's a
+			// missing call to 'wait'. and the process is not
+			// yet available to accept more ptrace queries.
 			return R_FALSE;
+		}
 		if (sizeof (regs) < size)
 			size = sizeof (regs);
 		memcpy (buf, &regs, size);

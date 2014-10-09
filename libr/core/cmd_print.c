@@ -688,7 +688,11 @@ static int cmd_print(void *data, const char *input) {
 		if (mode == 'j') r_cons_strcat ("{");
 		off = core->offset;
 		for (i=0; i<10; i++) total[i] = 0;
-		r_core_get_boundaries (core, "file", &from, &to);
+		{
+		RList* list = r_core_get_boundaries (core, "file", &from, &to);
+		if (from && to && list)
+			r_list_free (list);
+		}
 		piece = (to-from) / w;
 		if (piece<1) piece = 1;
 		as = r_core_anal_get_stats (core, from, to, piece);

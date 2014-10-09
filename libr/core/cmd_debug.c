@@ -4,32 +4,41 @@ static int checkbpcallback(RCore *core);
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
-	char *str = strdup (_str);
-	int i, count = r_str_word_set0 (str);
-	int *syscalls = malloc (sizeof (int)*count);
-	for (i=0; i<count; i++) {
-		const char *sysnumstr = r_str_word_get0 (str, i);
-		int sig = (int)r_num_math (core->num, sysnumstr);
-		if (sig < 1) {
-			sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
-			if (sig == -1) {
-				eprintf ("Unknown syscall number\n");
-				free (str);
-				free (syscalls);
-				return;
+	int i, *syscalls = NULL;
+	int count = 0;
+	if (_str && *_str) {
+		char *str = strdup (_str);
+		count = r_str_word_set0 (str);
+		syscalls = calloc (sizeof (int), count);
+		for (i=0; i<count; i++) {
+			const char *sysnumstr = r_str_word_get0 (str, i);
+			int sig = (int)r_num_math (core->num, sysnumstr);
+			if (sig == -1) { // trace ALL syscalls
+				syscalls[i] = -1;
+			} else
+			if (sig == 0) {
+				sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
+				if (sig == -1) {
+					eprintf ("Unknown syscall number\n");
+					free (str);
+					free (syscalls);
+					return;
+				}
+				syscalls[i] = sig;
 			}
-			syscalls[i] = sig;
 		}
+		eprintf ("Running child until syscalls:");
+		for (i=0; i<count; i++)
+			eprintf ("%d ", syscalls[i]);
+		eprintf ("\n");
+		free (str);
+	} else {
+		eprintf ("Running child until next syscall\n");
 	}
-	eprintf ("Running child until syscalls:");
-	for (i=0;i<count;i++)
-		eprintf ("%d ", syscalls[i]);
-	eprintf ("\n");
 	r_reg_arena_swap (core->dbg->reg, R_TRUE);
 	r_debug_continue_syscalls (core->dbg, syscalls, count);
 	checkbpcallback (core);
 	free (syscalls);
-	free (str);
 }
 
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
@@ -1319,9 +1328,25 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 			break;
 		case 's':
-			if (input[2]==' ') {
+			switch (input[2]) {
+			case '*':
+				cmd_debug_cont_syscall (core, "-1");
+				break;
+			case ' ':
 				cmd_debug_cont_syscall (core, input+3);
-			} else eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+				break;
+			case '\0':
+				cmd_debug_cont_syscall (core, NULL);
+				break;
+			default:
+			case '?':
+				eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+				eprintf ("|dcs         : continue until next syscall\n");
+				eprintf ("|dcs mmap    : continue until next call to mmap\n");
+				eprintf ("|dcs*        : trace all syscalls (strace)\n");
+				eprintf ("|dcs?        : show this help\n");
+				break;
+			}
 			break;
 		case 'p':
 			{ // XXX: this is very slow
