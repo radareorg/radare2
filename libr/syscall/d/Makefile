@@ -1,5 +1,6 @@
 include ../../../global.mk
 F=
+F+= dos-x86-16
 F+= linux-x86-32
 F+= linux-x86-64
 F+= linux-arm-32
