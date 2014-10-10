@@ -408,12 +408,17 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (delta < 1)
 			return R_FALSE;
 	}
-	if (*grep==' ') { // grep mode
-		for (++grep; *grep==' '; grep++);
-	} else {
+
+	//Options, like JSON, linear, ...
+	if (*grep != ' ') {
 		mode = *grep;
-		grep = NULL;
+		grep++;
 	}
+
+	if (*grep==' ') // grep mode
+		for (++grep; *grep==' '; grep++);
+	else // No grep
+		grep = NULL;
 
 	buf = malloc (delta);
 	if (!buf)
@@ -461,24 +466,28 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				const char *otype;
 				char *buf_asm, *buf_hex;
 
-				// Print the address and the last instruction of the gadget
-				hit = r_list_get_top(hitlist);
-				r_core_read_at (core, hit->addr, buf, hit->len);
-				r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-				r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-				r_cons_printf ("0x%08"PFMT64x" %s\n", hit->addr, asmop.buf_asm, Color_RESET);
-
-				r_list_foreach (hitlist, iter, hit) {
-					r_core_read_at (core, hit->addr, buf, hit->len);
-					r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-					r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-					buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
-					buf_hex = r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
-					otype = r_print_color_op_type (core->print, analop.type);
-					r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n", hit->addr, otype, buf_hex, buf_asm, Color_RESET);
-					free (buf_asm);
-					free (buf_hex);
-				}
+				// The two loops are distinct for performance reason
+				if (mode == 'l') {
+					hit = r_list_get_top(hitlist);
+					r_cons_printf ("0x%08"PFMT64x": ", hit->addr);
+					r_list_foreach (hitlist, iter, hit) {
+						r_core_read_at (core, hit->addr, buf, hit->len);
+						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+						buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
+						r_cons_printf (" %s%s;", buf_asm, Color_RESET);
+						free (buf_asm);
+					}
+				} else
+					r_list_foreach (hitlist, iter, hit) {
+						r_core_read_at (core, hit->addr, buf, hit->len);
+						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+						buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
+						buf_hex = r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
+						otype = r_print_color_op_type (core->print, analop.type);
+						r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n", hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+						free (buf_asm);
+						free (buf_hex);
+					}
 				r_cons_newline ();
 			}
 		}
@@ -595,8 +604,12 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'R':
 		if (input[1]=='?') {
-			r_cons_printf ("Usage: /R [filter-by-string]\n");
-			r_cons_printf ("Usage: /Rj [filter-by-string] # json output\n");
+			const char* help_msg[] = {
+				"Usage: /R", "", "Search for ROP gadgets",
+				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
+				"/Rj", " [filter-by-string]", "JSON output",
+				NULL};
+			r_core_cmd_help (core, help_msg);
 		} else r_core_search_rop (core, from, to, 0, input+1);
 		return R_TRUE;
 	case 'r':
