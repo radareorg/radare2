@@ -1028,6 +1028,10 @@ if (
 				continue;
 			}
 			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
+			if (!strtab_section) {
+				/* oops. we have no strtab, skip */
+				continue;
+			}
 			if ((strtab = (char *)malloc (8+strtab_section->sh_size)) == NULL) {
 				eprintf ("malloc (syms strtab)");
 				return NULL;
