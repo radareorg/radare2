@@ -606,6 +606,7 @@ static int cmd_search(void *data, const char *input) {
 		if (input[1]=='?') {
 			const char* help_msg[] = {
 				"Usage: /R", "", "Search for ROP gadgets",
+				"/R", " [filter-by-string]" , "Show gadgets",
 				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
 				"/Rj", " [filter-by-string]", "JSON output",
 				NULL};
