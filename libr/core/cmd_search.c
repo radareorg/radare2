@@ -124,24 +124,35 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 	if (searchshow && kw && kw->keyword_length > 0) {
-		int len, i;
+		int len, i, extra;
 		ut32 buf_sz = kw->keyword_length;
 		ut8 *buf = malloc (buf_sz);
 		char *str = NULL, *p = NULL;
+		extra = (json) ? 3 : 1;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
+			i = (json) ? 0 : 1;
 			str = malloc (kw->keyword_length + 20);
-			r_core_read_at (core, addr, (ut8*)str+1, kw->keyword_length);
-			*str = '"';
-			r_str_filter_zeroline (str, kw->keyword_length+1);
-			strcpy (str+kw->keyword_length+1, "\"");
+			r_core_read_at (core, addr, (ut8*)str+i, kw->keyword_length);
+			if (json) {
+				r_str_filter_zeroline (str, kw->keyword_length);
+			} else {
+				*str = '"';
+				r_str_filter_zeroline (str, kw->keyword_length+1);
+				strcpy (str+kw->keyword_length+1, "\"");
+			}
 			break;
 		default:
 			len = kw->keyword_length; // 8 byte context
-			str = malloc ((len*2)+1);
+			str = malloc ((len*2)+extra);
+			p=str;
 			memset (str, 0, len);
 			r_core_read_at (core, addr, buf, kw->keyword_length);
-			for (i=0, p=str; i<len; i++) {
+			if (json) {
+				strcpy (str, "0x");
+				p=str+2;
+			} 
+			for (i=0; i<len; i++) {
 				sprintf (p, "%02x", buf[i]);
 				p += 2;
 			}
@@ -149,21 +160,28 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		}
 
-		if (!json)
+		if (json) {
+			if (searchhits > 1) r_cons_printf(",");
+			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}", 
+					base_addr + addr, kw->kwidx, str);
+		} else {
 			r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
 				base_addr + addr, searchprefix, kw->kwidx, kw->count, str);
+		}
 
 		free (buf);
 		free (str);
-	} else if (kw && !json) {
-		if (searchflags)
-			r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
-		else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
-				kw->kwidx, kw->count, kw->keyword_length, addr);
-	}
-	if (kw && json) {
-		if (searchhits > 1) r_cons_printf(",");
-		r_cons_printf ("%"PFMT64d"", base_addr + addr);
+	} else if (kw) {
+		if (json) {
+			if (searchhits > 1) r_cons_printf(",");
+			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"len\":%d}", 
+					base_addr + addr, kw->kwidx, kw->keyword_length);
+		} else {
+			if (searchflags)
+				r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
+			else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
+					kw->kwidx, kw->count, kw->keyword_length, addr);
+		}
 	}
 	if (searchflags) {
 		char flag[64];
@@ -926,7 +944,9 @@ static int cmd_search(void *data, const char *input) {
 			r_list_foreach (hits, iter, hit) {
 				if (json) {
 					if (count > 0) r_cons_printf (",");
-					r_cons_printf ("%"PFMT64d"", hit->addr);
+					r_cons_printf (
+						"{\"offset\":%"PFMT64d",\"len\":%d,\"code\":\"%s\"}", 
+						hit->addr, hit->len, hit->code);
 				} else {
 					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
 						searchprefix, count, hit->addr, hit->len, hit->code);
