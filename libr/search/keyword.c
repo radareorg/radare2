@@ -133,7 +133,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 		return NULL;
 
 	length = i - start - 1;
-	if (length > 128)
+	if ((length > 128) || (length < 1))
 		return NULL;
 
 	kw = R_NEW0(RSearchKeyword); 
