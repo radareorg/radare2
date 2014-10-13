@@ -25,6 +25,7 @@
 #define ACTION_CREATE    0x08000
 #define ACTION_CLASSES   0x10000
 #define ACTION_DWARF     0x20000
+#define ACTION_PDB       0x30000
 #define ACTION_SIZE      0x40000
 
 static struct r_bin_t *bin = NULL;
@@ -52,6 +53,7 @@ static int rabin_show_help(int v) {
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
+		" -P              show debug/pdb information\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -k [query]      perform sdb query on loaded file\n"
@@ -378,7 +380,7 @@ int main(int argc, char **argv) {
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:prvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -430,6 +432,7 @@ int main(int argc, char **argv) {
 		case 'I': set_action (ACTION_INFO); break;
 		case 'H': set_action (ACTION_FIELDS); break;
 		case 'd': set_action (ACTION_DWARF); break;
+		case 'P': set_action (ACTION_PDB); break;
 		case 'e': set_action (ACTION_ENTRIES); break;
 		case 'M': set_action (ACTION_MAIN); break;
 		case 'l': set_action (ACTION_LIBS); break;
@@ -655,6 +658,7 @@ int main(int argc, char **argv) {
 	run_action ("libs", ACTION_LIBS, R_CORE_BIN_ACC_LIBS);
 	run_action ("relocs", ACTION_RELOCS, R_CORE_BIN_ACC_RELOCS);
 	run_action ("dwarf", ACTION_DWARF, R_CORE_BIN_ACC_DWARF);
+	run_action ("pdb", ACTION_PDB, R_CORE_BIN_ACC_PDB);
 	run_action ("size", ACTION_SIZE, R_CORE_BIN_ACC_SIZE);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);

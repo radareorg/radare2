@@ -427,6 +427,26 @@ static int bin_dwarf (RCore *core, int mode) {
 	return R_TRUE;
 }
 
+static int bin_pdb (RCore *core, int mode) {
+	R_PDB pdb;
+
+	strcpy(&pdb.file_name, core->bin->file);
+	if (!init_pdb_parser(&pdb)) {
+		printf("initialization error of pdb parser");
+		return R_FALSE;
+	}
+
+	pdb.pdb_parse(&pdb);
+	printf("Types:\n");
+	pdb.print_types(&pdb);
+
+	printf("\nGlobals:\n");
+	pdb.print_gvars(&pdb, 0x0);
+	pdb.finish_pdb_parse(&pdb);
+
+	return R_TRUE;
+}
+
 static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	if (!binmain) return R_FALSE;
@@ -1271,6 +1291,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		ret &= bin_main (core, mode, baseaddr, va);
 	if ((action & R_CORE_BIN_ACC_DWARF))
 		ret &= bin_dwarf (core, mode);
+	if ((action & R_CORE_BIN_ACC_PDB))
+		ret &= bin_pdb (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
 		ret &= bin_entry (core, mode, baseaddr, loadaddr, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
