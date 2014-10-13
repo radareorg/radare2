@@ -140,6 +140,10 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 	if (!kw)
 		return NULL;
 
+	kw->bin_keyword = malloc (length);
+	if (!kw->bin_keyword)
+		return NULL;
+
 	memcpy(kw->bin_keyword, str + start, length);
 	kw->keyword_length = length;
 	kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
