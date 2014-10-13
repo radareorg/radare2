@@ -1,4 +1,4 @@
-
+//R2: missing license/author header here
 #include <r_pdb.h>
 #include <string.h>
 
@@ -12,9 +12,10 @@
 #include "omap.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"
-#define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1ADS\0\0\0"
-#define PDB7_SIGNATURE_LEN 32
 #define PDB2_SIGNATURE_LEN 51
+
+#define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1A" "DS\0\0\0"
+#define PDB7_SIGNATURE_LEN 32
 
 typedef void (*parse_stream_)(void *stream, R_STREAM_FILE *stream_file);
 
@@ -25,6 +26,8 @@ typedef struct {
 	EStream type;
 	free_func free;
 } SStreamParseFunc;
+
+// R2: try to follow the current r2 indentation
 
 ///////////////////////////////////////////////////////////////////////////////
 static void free_pdb_stream(void *stream)
@@ -186,6 +189,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// R2: ugly indentation
 static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
 								   int pages_amount, int index, int size,
 								   int page_size, f_load pLoad)
@@ -692,6 +696,8 @@ int init_pdb_parser(R_PDB *pdb)
 		goto error;
 	}
 
+// R2: This is a sandbox bypass. you should not open files from this code
+// use rbuffer or just use the r_sandbox_ apis
 	pdb->fp = fopen(pdb->file_name, "rb");
 	if (!pdb->fp) {
 		printf("file %s can not be open\n", pdb->file_name);
@@ -704,6 +710,7 @@ int init_pdb_parser(R_PDB *pdb)
 		goto error;
 	}
 
+// R2: Dont use fread, you should pass an RBuffer
 	bytes_read = fread(signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		printf("file reading error\n");
@@ -712,8 +719,10 @@ int init_pdb_parser(R_PDB *pdb)
 
 	fseek(pdb->fp, 0, SEEK_SET);
 
-	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
-		pdb->pdb_parse =pdb7_parse;
+// R2: shouldnt this be !memcmp instead?
+	//if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
+	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
+		pdb->pdb_parse = pdb7_parse;
 	} else {
 		printf("unsupported pdb format\n");
 		goto error;
