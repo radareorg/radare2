@@ -4,6 +4,7 @@ static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
 static int searchhits = 0;
+static int json = 0;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
@@ -147,16 +148,22 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			*p = 0;
 			break;
 		}
-		r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
-			base_addr + addr, searchprefix, kw->kwidx, kw->count, str);
+
+		if (!json)
+			r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
+				base_addr + addr, searchprefix, kw->kwidx, kw->count, str);
 
 		free (buf);
 		free (str);
-	} else if (kw) {
+	} else if (kw && !json) {
 		if (searchflags)
 			r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 		else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 				kw->kwidx, kw->count, kw->keyword_length, addr);
+	}
+	if (kw && json) {
+		if (searchhits > 1) r_cons_printf(",");
+		r_cons_printf ("%"PFMT64d"", base_addr + addr);
 	}
 	if (searchflags) {
 		char flag[64];
@@ -169,13 +176,14 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		r_core_cmd (core, cmdhit, 0);
 		r_core_seek (core, here, R_TRUE);
 	}
+
 	return R_TRUE;
 }
 
 
 static int c = 0;
 static inline void print_search_progress(ut64 at, ut64 to, int n) {
-	if ((++c%64))
+	if ((++c%64) || (json))
 		return;
 	if (r_cons_singleton()->columns<50)
 		eprintf ("\r[  ]  0x%08"PFMT64x"  hits = %d   \r%s",
@@ -424,7 +432,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	if (!buf)
 		return -1;
 
-	if (mode == 'j')
+	if (json)
 		r_cons_printf ("[");
 
 	for (i=0; i < delta - 32; i+=increment) {
@@ -442,7 +450,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			if (!hitlist)
 				continue;
 
-			if (mode == 'j') { // json
+			if (json) { // json
 				unsigned int size = 0;
 
 				//Handle comma between gadgets
@@ -492,7 +500,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			}
 		}
 	}
-	if (mode == 'j')
+	if (json)
 		r_cons_printf ("]\n");
 	free (buf);
 	return R_TRUE;
@@ -507,6 +515,7 @@ static int cmd_search(void *data, const char *input) {
 	int ignorecase = R_FALSE;
 	int inverse = R_FALSE;
 	int use_mread = R_FALSE;
+	int param_offset = 2;
 	ut64 at, from = 0, to = 0;
 	const char *mode;
 	char *inp, bckwrds = R_FALSE, do_bckwrd_srch = R_FALSE;
@@ -518,6 +527,7 @@ static int cmd_search(void *data, const char *input) {
 	RList/*<RIOMap>*/ *list;
 
 	c = 0;
+	json = 0;
 	__from = r_config_get_i (core->config, "search.from");
 	__to = r_config_get_i (core->config, "search.to");
 
@@ -568,6 +578,12 @@ static int cmd_search(void *data, const char *input) {
 		eprintf ("WARNING from == to?\n");
 	}
 
+	/* Quick & dirty check for json output */
+	if(input[1] == 'j') {
+		json = R_TRUE;
+		param_offset++;
+	}
+
 	reread:
 	switch (*input) {
 	case '!':
@@ -599,7 +615,8 @@ static int cmd_search(void *data, const char *input) {
 		ut64 off = core->offset;
 		r_core_read_at (core, off-16, buf, 32);
 		off = findprevopsz (core, off, buf + 16);
-		r_cons_printf ("0x%08llx\n", off);
+		if (json) r_cons_printf ("[%llu]", off);
+		else r_cons_printf ("0x%08llx\n", off);
 		}
 		break;
 	case 'R':
@@ -614,14 +631,14 @@ static int cmd_search(void *data, const char *input) {
 		} else r_core_search_rop (core, from, to, 0, input+1);
 		return R_TRUE;
 	case 'r':
-		if (input[1]==' ')
+		if (input[param_offset-1]==' ')
 			r_core_anal_search (core, from, to,
 				r_num_math (core->num, input+2));
 		else r_core_anal_search (core, from, to, core->offset);
 		break;
 	case 'a': {
 		char *kwd;
-		if (!(kwd = r_core_asm_search (core, input+2, from, to)))
+		if (!(kwd = r_core_asm_search (core, input+param_offset, from, to)))
 			return R_FALSE;
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
@@ -676,7 +693,7 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'p':
 		{
-			int ps = atoi (input+1);
+			int ps = atoi (input+param_offset);
 			if (ps>1) {
 				r_cons_break (NULL, NULL);
 				r_search_pattern_size (core->search, ps);
@@ -686,24 +703,28 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case 'v':
+		if (input[2] == 'j') {
+			json = R_TRUE;
+			param_offset++;
+		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		switch (input[1]) {
 		case '8':
-			n64 = r_num_math (core->num, input+2);
+			n64 = r_num_math (core->num, input+param_offset);
 			r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
 				8, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
 			break;
 		case '1':
-			n8 = (ut8)r_num_math (core->num, input+2);
+			n8 = (ut8)r_num_math (core->num, input+param_offset);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
 			break;
 		case '2':
-			n16 = (ut16)r_num_math (core->num, input+2);
+			n16 = (ut16)r_num_math (core->num, input+param_offset);
 			r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
 				2, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
@@ -711,7 +732,7 @@ static int cmd_search(void *data, const char *input) {
 			break;
 		default: // default size
 		case '4':
-			n32 = (ut32)r_num_math (core->num, input+2);
+			n32 = (ut32)r_num_math (core->num, input+param_offset);
 			r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
 				4, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
@@ -723,16 +744,14 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
-		if (input[1]==' ' || (input[1]=='i' && input[2]==' ')) {
+		if (input[1] == 'j' || input[2] == 'j') json = R_TRUE;
+		if (input[1] == 'i' || input[2] == 'i') ignorecase = R_TRUE;
+
+		if (input[1+json+ignorecase] == ' ') {
 			int strstart, len;
 			const char *p2;
 			char *p, *str;
-			if (input[1]=='i') {
-				strstart = 3; ignorecase = R_TRUE;
-			}
-			else {
-				strstart = 2; ignorecase = R_FALSE;
-			}
+			strstart = 2+json+ignorecase;
 			len = strlen(input+strstart);
 			str = malloc ((len+1)*2);
 			for (p2=input+strstart, p=str; *p2; p+=2, p2++) {
@@ -760,17 +779,22 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case 'i':
-		if (input[1]!= ' ') {
+		if (input[param_offset-1]!= ' ') {
 			eprintf ("Missing ' ' after /i\n");
 			return R_FALSE;
 		}
 		ignorecase = R_TRUE;
+	case 'j':
+		if (input[0] =='j') json = R_TRUE;
 	case ' ': /* search string */
-		inp = strdup (input+1+ignorecase);
+		inp = strdup (input+1+ignorecase+json);
 		len = r_str_unescape (inp);
-		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
-		for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
-		eprintf ("\n");
+		if (!json) {
+			eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", 
+				len, from, to);
+			for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
+			eprintf ("\n");
+		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
@@ -793,7 +817,7 @@ static int cmd_search(void *data, const char *input) {
 	case 'e': /* match regexp */
 		{
 		RSearchKeyword *kw;
-		kw = r_search_keyword_new_regexp (input + 2, NULL);
+		kw = r_search_keyword_new_regexp (input + param_offset, NULL);
 		if (!kw) {
 			eprintf("Invalid regexp specified\n");
 			break;
@@ -865,7 +889,7 @@ static int cmd_search(void *data, const char *input) {
 	case 'd': /* search delta key */
 		r_search_reset (core->search, R_SEARCH_DELTAKEY);
 		r_search_kw_add (core->search,
-			r_search_keyword_new_hexmask (input+2, NULL));
+			r_search_keyword_new_hexmask (input+param_offset, NULL));
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;
@@ -875,7 +899,7 @@ static int cmd_search(void *data, const char *input) {
 			r_config_get_i (core->config, "search.distance"));
 		// TODO: add support for binmask here
 		{
-			char *s, *p = strdup (input+2);
+			char *s, *p = strdup (input+json+2);
 			s = strchr (p, ' ');
 			if (!s) s = strchr (p, ':');
 			if (s) {
@@ -884,7 +908,7 @@ static int cmd_search(void *data, const char *input) {
 						r_search_keyword_new_hex (p, s, NULL));
 			} else {
 				r_search_kw_add (core->search,
-						r_search_keyword_new_hexmask (input+2, NULL));
+						r_search_keyword_new_hexmask (input+json+2, NULL));
 			}
 			free (p);
 		}
@@ -898,11 +922,18 @@ static int cmd_search(void *data, const char *input) {
 		int count = 0;
 		RList *hits;
 		if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
+			if (json) r_cons_printf ("[");
 			r_list_foreach (hits, iter, hit) {
-				r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
-					searchprefix, count, hit->addr, hit->len, hit->code);
+				if (json) {
+					if (count > 0) r_cons_printf (",");
+					r_cons_printf ("%"PFMT64d"", hit->addr);
+				} else {
+					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
+						searchprefix, count, hit->addr, hit->len, hit->code);
+				}
 				count++;
 			}
+			if (json) r_cons_printf ("]");
 			r_list_purge (hits);
 			free (hits);
 		}
@@ -979,6 +1010,7 @@ static int cmd_search(void *data, const char *input) {
 		const char* help_msg[] = {
 			"Usage:", "/[amx/] [arg]", "Search",
 			"/"," foo\\x00", "search for string 'foo\\0'",
+			"/j"," foo\\x00", "search for string 'foo\\0' (json output)",
 			"/!", " ff", "search for first occurrence not matching",
 			"/+", " /bin/sh", "construct the string with chunks",
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
@@ -1019,12 +1051,13 @@ static int cmd_search(void *data, const char *input) {
 	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
+		if (json) r_cons_printf("[");
 		int oraise = core->io->raised;
 		int bufsz;
 		int maplist = R_FALSE;
 		RListIter *iter;
 		RIOMap *map;
-		if (!searchflags)
+		if (!searchflags && !json)
 			r_cons_printf ("fs hits\n");
 		core->search->inverse = inverse;
 		searchcount = r_config_get_i (core->config, "search.count");
@@ -1067,7 +1100,8 @@ static int cmd_search(void *data, const char *input) {
 				if (fd == -1 && core->io->desc) {
 					fd = core->io->desc->fd;
 				}
-				r_cons_printf ("# %d [0x%llx-0x%llx]\n", fd, from, to);
+				if (!json)
+					r_cons_printf ("# %d [0x%llx-0x%llx]\n", fd, from, to);
 
 				if (bckwrds) {
 					if (to < from + bufsz) {
@@ -1130,12 +1164,12 @@ static int cmd_search(void *data, const char *input) {
 				r_cons_break_end ();
 				r_cons_clear_line (1);
 				core->num->value = searchhits;
-				if (searchflags && searchcount>0) {
+				if ((searchflags && searchcount>0) && !json) {
 					eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 							searchhits,
 							searchprefix, core->search->n_kws-1,
 							searchprefix, core->search->n_kws-1, searchcount-1);
-				} else {
+				} else if (!json) {
 					eprintf ("hits: %d\n", searchhits);
 					if (searchhits==0)
 						core->search->n_kws--;
@@ -1156,6 +1190,8 @@ static int cmd_search(void *data, const char *input) {
 			}
 			r_io_raise (core->io, oraise);
 		} else eprintf ("No keywords defined\n");
+
+		if (json) r_cons_printf("]");
 	}
 	return R_TRUE;
 }
