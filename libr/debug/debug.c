@@ -497,13 +497,16 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		return R_FALSE;
 	}
 
+	r_debug_step (dbg, 1);
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+
 	// Initial refill
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
 	// step first, we dont want to check current optype
-	r_debug_step (dbg, 1);
 	for (;;) {
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full 
 		if (pc - buf_pc > sizeof (buf)) { 
