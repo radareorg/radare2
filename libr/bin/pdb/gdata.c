@@ -4,8 +4,7 @@
 #include "tpi.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-static void parse_global(char *data, int data_size, SGlobal *global)
-{
+static int parse_global(char *data, int data_size, SGlobal *global) {
 	unsigned int read_bytes = 2;
 
 	READ(read_bytes, 4, data_size, global->symtype, data, unsigned int);
@@ -20,8 +19,7 @@ static void parse_global(char *data, int data_size, SGlobal *global)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_gdata_stream(void *stream, R_STREAM_FILE *stream_file)
-{
+void parse_gdata_stream(void *stream, R_STREAM_FILE *stream_file) {
 	unsigned short len = 0;
 	unsigned short leaf_type = 0;
 	char *data = 0;
