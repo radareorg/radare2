@@ -393,12 +393,10 @@ static int computeStructSize(char *format, RPrint *p) {
 
 		switch (fmt[i]) {
 			case 'c':
-			case 'E':
 			case '.':
 				size+=tabsize*1;
 				break;
 			case 'w':
-			case 'B':
 				size += tabsize*2;
 				break;
 			case 'd':
@@ -416,6 +414,15 @@ static int computeStructSize(char *format, RPrint *p) {
 			case '*':
 				size += tabsize*4;
 				i++;
+				break;
+			case 'B':
+			case 'E':
+				switch (tabsize) {
+				case 1: size+=1; break;
+				case 2: size+=2; break;
+				case 4: size+=4; break;
+				default: break;
+				}
 				break;
 			case '?':
 				{
@@ -821,44 +828,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				structname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
-				p->printf ("0x%08"PFMT64x, seeki);
-
-				if (size == -1) {
-					if (p->get_bitfield)
-						bitfield = p->get_bitfield (p->user, structname, addr);
-					if (bitfield && *bitfield) {
-						p->printf (" %s (bitfield) = %s\n", name, bitfield);
-					} else {
-						p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
-								name, structname, addr);
-					}
-					i+= 2;
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				if (p->get_bitfield)
+					bitfield = p->get_bitfield (p->user, structname, addr);
+				if (bitfield && *bitfield) {
+					p->printf (" %s (bitfield) = %s\n", name, bitfield);
 				} else {
-					p->printf (" [\n");
-					if (p->get_bitfield)
-						bitfield = p->get_bitfield (p->user, structname, addr);
-					if (bitfield && *bitfield) {
-						p->printf (" %s (bitfield) = %s", name, bitfield);
-					} else {
-						p->printf (" %s (bitfield) = `tb %s 0x%x`",
-								name, structname, addr);
-					}
-					i+=2;
-					size--;
-					while (size--) {
-						p->printf (",\n");
-						if (p->get_bitfield)
-							bitfield = p->get_bitfield (p->user, structname, addr);
-						if (bitfield && *bitfield) {
-							p->printf (" %s (bitfield) = %s", name, bitfield);
-						} else {
-							p->printf (" %s (bitfield) = `tb %s 0x%x`",
-									name, structname, addr);
-						}
-						i+=2;
-					}
-					p->printf ("\n]\n");
+					p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
+							name, structname, addr);
 				}
+				i+=(size==-1)?1:size;
+
 				free (osn);
 				free (bitfield);
 				}
@@ -883,46 +863,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				enumname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
-				p->printf ("0x%08"PFMT64x, seeki);
-				if (size == -1) {
-					if (p->get_enumname)
-						enumvalue = p->get_enumname (p->user, enumname, addr);
-					if (enumvalue && *enumvalue) {
-						p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
-								name, addr, enumvalue);
-					} else {
-						p->printf (" %s (enum) = `te %s 0x%x`\n",
-								name, enumname, addr);
-					}
-					i++;
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				if (p->get_enumname)
+					enumvalue = p->get_enumname (p->user, enumname, addr);
+				if (enumvalue && *enumvalue) {
+					p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
+							name, addr, enumvalue);
 				} else {
-					p->printf (" [\n");
-					if (p->get_enumname)
-						enumvalue = p->get_enumname (p->user, enumname, addr);
-					if (enumvalue && *enumvalue) {
-						p->printf (" %s (enum) = 0x%"PFMT64x" ; %s",
-								name, addr, enumvalue);
-					} else {
-						p->printf (" %s (enum) = `te %s 0x%x`",
-								name, enumname, addr);
-					}
-					i++;
-					size--;
-					while (size--) {
-						p->printf (",\n");
-						if (p->get_enumname)
-							enumvalue = p->get_enumname (p->user, enumname, addr);
-						if (enumvalue && *enumvalue) {
-							p->printf (" %s (enum) = 0x%"PFMT64x" ; %s",
-									name, addr, enumvalue);
-						} else {
-							p->printf (" %s (enum) = `te %s 0x%x`",
-									name, enumname, addr);
-						}
-						i++;
-					}
-					p->printf ("\n]\n");
+					p->printf (" %s (enum) = `te %s 0x%x`\n",
+							name, enumname, addr);
 				}
+				i+=(size==-1)?1:size;
 
 				free (osn);
 				free (enumvalue);
