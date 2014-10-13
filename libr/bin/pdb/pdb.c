@@ -181,7 +181,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	free(sizes);
 	free(data);
-	printf("init_pdb7_root_stream()\n");
+//	printf("init_pdb7_root_stream()\n");
 	return 1;
 }
 
@@ -361,7 +361,7 @@ static int pdb_read_root(R_PDB *pdb)
 ///////////////////////////////////////////////////////////////////////////////
 static int pdb7_parse(R_PDB *pdb)
 {
-	printf("pdb7_parse()\n");
+//	printf("pdb7_parse()\n");
 
 	char signature[PDB7_SIGNATURE_LEN + 1];
 	int page_size = 0;
@@ -576,13 +576,13 @@ static void finish_pdb_parse(R_PDB *pdb)
 		free(pdb->stream_map);
 
 	fclose(pdb->fp);
-	printf("finish_pdb_parse()\n");
+//	printf("finish_pdb_parse()\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void print_types(R_PDB *pdb)
 {
-	printf("print_types()\n");
+//	printf("print_types()\n");
 	char *name;
 	int val = 0;
 	int offset = 0;
@@ -729,7 +729,7 @@ int init_pdb_parser(R_PDB *pdb)
 	pdb->finish_pdb_parse = finish_pdb_parse;
 	pdb->print_types = print_types;
 	pdb->print_gvars = print_gvars;
-	printf("init_pdb_parser() finish with success\n");
+//	printf("init_pdb_parser() finish with success\n");
 	return 1;
 
 error:

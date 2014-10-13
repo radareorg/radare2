@@ -9,6 +9,7 @@
 #include <r_io.h>
 #include <r_list.h>
 #include <r_bin_dwarf.h>
+#include <r_pdb.h>
 
 #ifdef __cplusplus
 extern "C" {

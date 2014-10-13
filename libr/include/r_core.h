@@ -360,6 +360,7 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_ACC_LIBS	0x200
 #define R_CORE_BIN_ACC_CLASSES	0x400
 #define R_CORE_BIN_ACC_DWARF	0x800
+#define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
 #define R_CORE_BIN_ACC_ALL	0xFFF
 
