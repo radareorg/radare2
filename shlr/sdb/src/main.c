@@ -22,7 +22,8 @@ static void terminate(int sig UNUSED) {
 
 static char *stdin_gets() {
 	static char buf[96096];
-	fgets (buf, sizeof (buf)-1, stdin);
+	if (!fgets (buf, sizeof (buf)-1, stdin))
+		return NULL;;
 	if (feof (stdin)) return NULL;
 	buf[strlen (buf)-1] = 0;
 	return strdup (buf);
@@ -86,13 +87,40 @@ static int sdb_dump (const char *db, int json) {
 	return 0;
 }
 
-static int createdb(const char *f) {
+static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
+	int must_save = 0;
+	if (args && nargs>0) {
+		int i;
+		for (i=0; i<nargs; i++) {
+			switch (mode) {
+			case '-':
+				must_save |= sdb_query (s, args[i]);
+				break;
+			case '=':
+				if (strchr (args[i], '=')) {
+					char *v, *kv = strdup (args[i]);
+					v = strchr (kv, '=');
+					if (v) {
+						*v++ = 0;
+						sdb_disk_insert (s, kv, v);
+					}
+					free (kv);
+				}
+				break;
+			}
+		}
+	}
+	return must_save;
+}
+
+static int createdb(const char *f, const char **args, int nargs) {
 	char *line, *eq;
 	s = sdb_new (NULL, f, 0);
 	if (!s || !sdb_disk_create (s)) {
 		eprintf ("Cannot create database\n");
 		return 1;
 	}
+	insertkeys (s, args, nargs, '=');
 	sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 	for (;(line = stdin_gets ());) {
 		if ((eq = strchr (line, '='))) {
@@ -178,9 +206,10 @@ int main(int argc, const char **argv) {
 	signal (SIGHUP, syncronize);
 #endif
 	if (!strcmp (argv[2], "="))
-		return createdb (argv[1]);
+		return createdb (argv[1], argv+3, argc-3);
 	else if (!strcmp (argv[2], "-")) {
 		if ((s = sdb_new (NULL, argv[1], 0))) {
+			save |= insertkeys (s, argv+3, argc-3, '-');
 			sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 			for (;(line = stdin_gets ());) {
 				save |= sdb_query (s, line);

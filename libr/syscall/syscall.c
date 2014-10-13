@@ -39,8 +39,7 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 }
 
 R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bits) {
-	char file[256];
-
+	const char *file;
 	if (os == NULL)
 		os = R_SYS_OS;
 	if (arch == NULL)
@@ -68,19 +67,25 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 	}
 
 #define SYSCALLPATH R2_LIBDIR"/radare2/"R2_VERSION"/syscall"
-	snprintf (file, sizeof (file), "%s/%s-%s-%d.sdb", 
+	file = sdb_fmt (0, "%s/%s-%s-%d.sdb", 
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {
 		//eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return R_FALSE;
 	}
 
+	//eprintf ("DBG098: syscall->db must be reindexed for k\n");
+#if 0
 	// TODO: use sdb_reset (s->db);
 	/// XXX: memoization doesnt seems to work because RSyscall is recreated instead of configured :(
-//eprintf ("DBG098: syscall->db must be reindexed for k\n");
+	sdb_close (s->db);
+	sdb_reset (s->db);
+	sdb_open (s->db, file);
+#else
+	sdb_close (s->db);
 	sdb_free (s->db);
 	s->db = sdb_new (0, file, 0);
-
+#endif
 	if (s->fd)
 		fclose (s->fd);
 	s->fd = NULL;
@@ -102,18 +107,16 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	char *o;
 	if (!name || !s) return NULL;
 	si = R_NEW0 (RSyscallItem);
+
 	o = strdup (s);
-
-	r_str_split (o, ',');
-
 /*
+	r_str_split (o, ',');
 	return r_syscall_item_new (name, 
 			r_num_get (NULL, r_str_word_get0 (o, 0)),
 			r_num_get (NULL, r_str_word_get0 (o, 1)),
 			r_num_get (NULL, r_str_word_get0 (o, 2)),
 			r_str_word_get0 (o, 3));
 */
-
 	si->name = strdup (name);
 	si->swi = r_num_get (NULL, r_str_word_get0 (o, 0));
 	si->num = r_num_get (NULL, r_str_word_get0 (o, 1));
@@ -132,48 +135,35 @@ R_API void r_syscall_item_free(RSyscallItem *si) {
 
 static int getswi(Sdb *p, int swi) {
 	if (p && swi == -1) {
-		// TODO: use array_get_num here
-		const char *def = sdb_const_get (p, "_", 0);
-		if (def && *def) {
-			swi = r_num_get (NULL, def);
-		} else swi = 0x80; // XXX hardcoded
+		swi = (int)sdb_array_get_num (p, "_", 0, NULL);
+		if (!swi)
+			swi = 0x80; // default hardcoded?
 	}
 	return swi;
 }
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
-	char *ret, *ret2, foo[32];
+	const char *ret, *ret2, *key;
 	RSyscallItem *si;
 	if (!s || !s->db)
 		return NULL;
 	swi = getswi (s->db, swi);
-	snprintf (foo, sizeof (foo), "0x%02x.%d", swi, num);
-	ret = sdb_get (s->db, foo, 0);
+	key = sdb_fmt (0, "0x%02x.%d", swi, num);
+	ret = sdb_const_get (s->db, key, 0);
 	if (ret == NULL)
 		return NULL;
-	// TODO: optimize with sdb_const_get
-	ret2 = sdb_get (s->db, ret, 0);
-	if (ret2 == NULL)
+	ret2 = sdb_const_get (s->db, ret, 0);
+	if (ret2 == NULL) {
 		return NULL;
+	}
 	si = r_syscall_item_new_from_string (ret, ret2);
-	free (ret);
-	free (ret2);
 	return si;
 }
 
 R_API int r_syscall_get_num(RSyscall *s, const char *str) {
-	char *o;
-	int i = -1;
-	// TODO: use sdb array api here
 	if (!s || !s->db)
 		return -1;
-	o = sdb_get (s->db, str, 0);
-	if (o && *o) {
-		r_str_split (o, ',');
-		i = r_num_get (NULL, r_str_word_get0 (o, 1));
-	}
-	free (o);
-	return i;
+	return (int)sdb_array_get_num (s->db, str, 1, NULL);
 }
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
@@ -197,29 +187,30 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 
 static int callback_list(void *u, const char *k, const char *v) {
 	//RSyscall *s = (RSyscall*)u;
-	eprintf ("%s=%s\n", k, v);
+	if (!strchr (k, '.')) {
+		eprintf ("%s=%s\n", k, v);
+	}
 	return 1; // continue loop
 }
 
 R_API RList *r_syscall_list(RSyscall *s) {
+	SdbListIter *ls_iter;
+	RList *list;
+	SdbKv *o;
+
 	if (!s || !s->db)
 		return NULL;
-	sdb_foreach (s->db, callback_list, s);
-	// XXX: this method must be deprecated.. we have to use sdb to access this info
-	return NULL;
-#if 0
-	RListIter *iter;
-	RPairItem *o;
-	RList *list = r_pair_list (s->db, NULL);
 
-	RList *olist = r_list_new ();
-	olist->free = (RListFree)r_syscall_item_free;
-	r_list_foreach (list, iter, o) {
-		RSyscallItem *si = r_syscall_item_new_from_string (o->k, o->v);
+	// show list of syscalls to stdout
+	sdb_foreach (s->db, callback_list, s);
+
+	list = r_list_new ();
+	list->free = (RListFree)r_syscall_item_free;
+	ls_foreach (s->db->ht->list, ls_iter, o) {
+		RSyscallItem *si = r_syscall_item_new_from_string (o->key, o->value);
 		if (!strchr (si->name, '.'))
-			r_list_append (olist, si);
+			r_list_append (list, si);
+		r_syscall_item_free (si);
 	}
-	r_list_free (list);
-	return olist;
-#endif
+	return list;
 }
