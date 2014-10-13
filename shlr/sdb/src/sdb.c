@@ -31,6 +31,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
         struct stat st = {0};
 	Sdb* s = R_NEW0 (Sdb);
 	if (!s) return NULL;
+	s->fd = -1;
 	s->dir = NULL;
 	s->refs = 1;
 	if (path && !*path)
@@ -43,6 +44,9 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 			memcpy (s->dir, path, plen);
 			s->dir[plen] = '/';
 			memcpy (s->dir+plen+1, name, nlen+1);
+			s->path = strdup (path);
+		} else {
+			s->dir = strdup (name);
 		}
 		switch (lock) {
 		case 1:
@@ -54,13 +58,9 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 				goto fail;
 			break;
 		}
-		s->dir = (name&&*name)? strdup (name): NULL;
-		if (s->dir) 
-			s->fd = open (s->dir, O_RDONLY|O_BINARY);
-		else s->fd = -1;
-		if (s->fd != -1) {
+		if (sdb_open (s, s->dir) != -1) {
 			if (fstat (s->fd, &st) != -1)
-				if ((S_IFREG & st.st_mode)!=S_IFREG)
+				if ((S_IFREG & st.st_mode) != S_IFREG)
 					goto fail;
 			s->last = st.st_mtime;
 		} else {
@@ -68,7 +68,6 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 			// TODO: must fail if we cant open for write in sync
 		}
 		s->name = strdup (name);
-		s->path = path? strdup (path): NULL;
 	} else {
 		s->last = sdb_now ();
 		s->fd = -1;
@@ -89,7 +88,11 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	cdb_init (&s->db, s->fd);
 	return s;
 fail:
+	close (s->fd);
+	s->fd = -1;
 	free (s->dir);
+	free (s->name);
+	free (s->path);
 	free (s);
 	return NULL;
 }
@@ -293,13 +296,36 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 	return 0;
 }
 
+SDB_API int sdb_open (Sdb *s, const char *file) {
+	if (!s) return -1;
+	if (file) {
+		char *realfile = strdup (file);
+		sdb_close (s);
+		s->fd = open (realfile, O_RDONLY|O_BINARY);
+		free (s->dir);
+		s->dir = realfile;
+	} else {
+		if (s->fd != -1) {
+			close (s->fd);
+			s->fd = -1;
+		}
+		if (s->dir) {
+			free (s->dir);
+			s->dir = NULL;
+		}
+	}
+	return s->fd;
+}
+
+SDB_API void sdb_close (Sdb *s) {
+	(void)sdb_open (s, NULL);
+}
+
 SDB_API void sdb_reset (Sdb* s) {
 	if (!s) return;
-	/* disable disk cache */
-	if (s->fd != -1) {
-		close (s->fd);
-		s->fd = -1;
-	}
+	/* ignore disk cache, file is not removed, but we will ignore
+	 * its values when syncing again */
+	sdb_close (s);
 	/* empty memory hashtable */
 	if (s->ht)
 		ht_free (s->ht);

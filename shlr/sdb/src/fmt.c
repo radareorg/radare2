@@ -13,20 +13,32 @@
 }
 
 // move to util?
+// if n == -1 , assign the next bucket
+// if n==-1 and !fmt return last buffer
 SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
-        static char Key[16][256];
-        va_list ap;
+	static char Key[16][256];
+	static int cyclic_n = 0;
+	va_list ap;
+	if (n==-1) {
+		if (fmt) {
+			n = cyclic_n++;
+			eprintf ("N = %d\n", n);
+			if (cyclic_n>15)
+				cyclic_n = 0;
+		} else {
+			n = cyclic_n;
+		}
+	}
         if (n<0 || n>15)
                 return NULL;
-	if (fmt == NULL) {
+	if (fmt == NULL)
 		return Key[n];
-	}
-        va_start (ap, fmt);
-        *Key[n] = 0;
-        vsnprintf (Key[n], 255, fmt, ap);
+	va_start (ap, fmt);
+	*Key[n] = 0;
+	vsnprintf (Key[n], 255, fmt, ap);
 	Key[n][255] = 0;
-        va_end (ap);
-        return Key[n];
+	va_end (ap);
+	return Key[n];
 }
 
 

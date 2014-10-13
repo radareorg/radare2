@@ -501,6 +501,8 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
+	// step first, we dont want to check current optype
+	r_debug_step (dbg, 1);
 	for (;;) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full 

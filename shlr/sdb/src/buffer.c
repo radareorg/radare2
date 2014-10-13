@@ -31,6 +31,8 @@ int buffer_flush(buffer *s) {
 
 int buffer_putalign(buffer *s, const char *buf, ut32 len) {
 	ut32 n;
+	if (!s || !s->x || !buf)
+		return 0;
 	while (len > (n = s->n - s->p)) {
 		memcpy (s->x + s->p, buf, n);
 		s->p += n; buf += n; len -= n;

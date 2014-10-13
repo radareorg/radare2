@@ -42,13 +42,15 @@ SDB_API int sdb_disk_create (Sdb* s) {
 	char *str;
 	if (!s || !s->dir || s->fdump != -1)
 		return 0; // cannot re-create
+	free (s->ndump);
+	s->ndump = NULL;
 	nlen = strlen (s->dir);
 	str = malloc (nlen+5);
 	if (!str) return 0;
-	strcpy (str, s->dir);
+	memcpy (str, s->dir, nlen+1);
 	r_sys_rmkdir (str);
-	strcpy (str+nlen, ".tmp");
-	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
+	memcpy (str+nlen, ".tmp", 4);
+	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, SDB_MODE);
 	if (s->fdump == -1) {
 		eprintf ("sdb: Cannot open '%s' for writing.\n", str);
 		free (str);
