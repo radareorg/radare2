@@ -1,5 +1,6 @@
 OBJ_CR16=asm_cr16.o
 OBJ_CR16+=../arch/cr16/cr16_disas.o
+CFLAGS+=-I./arch/cr16
 
 
 STATIC_OBJ+=${OBJ_CR16}
@@ -8,4 +9,4 @@ TARGET_CR16=asm_cr16.${EXT_SO}
 ALL_TARGETS+=${TARGET_CR16}
 
 ${TARGET_CR16}: ${OBJ_CR16}
-	${CC} ${LDFLAGS} ${CFLAGS} -I../arch/cr16 -o ${TARGET_CR16} ${OBJ_CR16}
+	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_CR16} ${OBJ_CR16}
