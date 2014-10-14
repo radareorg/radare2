@@ -33,9 +33,9 @@ static void print_format_help(RPrint *p) {
 	//" D - double (8 bytes)\n"
 	" f - float value (4 bytes)\n"
 	" b - byte (unsigned)\n"
-	" B - resolve enum bitfield (see t?) `pf B (Foo)type`\n" // B must be for binary ??
+	" B - resolve enum bitfield (see t?) `pf B (Bitfield_type)arg_name`\n" // B must be for binary ??
 	" c - char (signed byte)\n"
-	" E - resolve enum name  (see t?) `pf E (Foo)type`\n"
+	" E - resolve enum name  (see t?) `pf E (Enum_type)arg_name`\n"
 	" X - show n hexpairs (default n=1)"
 	" i - %%i integer value (4 bytes)\n"
 	" w - word (2 bytes unsigned short in hex)\n"
