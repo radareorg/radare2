@@ -84,6 +84,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	// decode instruction here
 	{
 		RAsmOp asmop;
+		r_asm_set_pc (core->assembler, addr);
 		if (r_asm_disassemble (core->assembler, &asmop, buf, len)>0) {
 			op.mnemonic = strdup (asmop.buf_asm);
 		}
@@ -999,6 +1000,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 						count>1? ",":"", fcn->addr, fcn->name, fcn->size);
 				r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+				r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
 				r_cons_printf (",\"type\":\"%s\"",
 						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
 						fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
@@ -1075,10 +1077,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						fcn->type==R_ANAL_FCN_TYPE_IMP?'i':'f',
 						fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
 						fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
+				if (fcn->call != R_ANAL_CC_TYPE_NONE)
+					r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n",
+							r_anal_cc_type2str (fcn->call), fcn->addr);
 				fcn_list_bbs (fcn);
 			} else {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, (ut64)fcn->size);
+				r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 				r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 				r_cons_printf ("\n type: %s",
 						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":

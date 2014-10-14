@@ -1129,6 +1129,8 @@ R_API void r_anal_cc_free (RAnalCC* cc);
 R_API void r_anal_cc_reset (RAnalCC *cc);
 R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc);
 R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op);
+R_API const char *r_anal_cc_type2str(int type);
+R_API int r_anal_cc_str2type (const char *str);
 //R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
 //R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
 
