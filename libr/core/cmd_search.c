@@ -856,9 +856,8 @@ static int cmd_search(void *data, const char *input) {
 			char *res;
 			ut64 nres, addr = from;
 			r_cons_break (NULL, NULL);
-			if (!core->anal->esil) {
+			if (!core->anal->esil)
 				core->anal->esil = r_anal_esil_new ();
-			}
 			r_anal_esil_setup (core->anal->esil, core->anal, 1, 0);
 			r_anal_esil_stack_free (core->anal->esil);
 			core->anal->esil->debug = 0;
@@ -868,6 +867,17 @@ static int cmd_search(void *data, const char *input) {
 						continue;
 					}
 				}
+#if 0
+// we need a way to retrieve info from a speicif address, and make it accessible from the esil search
+// maybe we can just do it like this: 0x804840,AddressType,3,&, ... bitmask
+// executable = 1
+// writable = 2
+// inprogram
+// instack
+// inlibrary
+// inheap
+r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
+#endif
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("Breaked at 0x%08"PFMT64x"\n", addr);
 					break;

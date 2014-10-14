@@ -38,6 +38,9 @@ ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
 static int arraysize = 0;
 
+static const char *global_symname = NULL;
+static const char *global_type = NULL;
+
 ST_DATA Sym *global_stack;
 ST_DATA Sym *local_stack;
 ST_DATA Sym *scope_stack_bottom;
@@ -1265,6 +1268,8 @@ static void post_type(CType *type, AttributeDef *ad)
     Sym **plast, *s, *first;
     AttributeDef ad1;
     CType pt;
+char *symname = NULL;
+int narg  =0;
 
     if (tok == '(') {
         /* function declaration */
@@ -1272,6 +1277,14 @@ static void post_type(CType *type, AttributeDef *ad)
         l = 0;
         first = NULL;
         plast = &first;
+{
+const char *ret_type = global_type;
+free (symname);
+symname = strdup (global_symname);
+tcc_appendf ("func.%s.ret=%s\n", symname, ret_type);
+tcc_appendf ("func.%s.cc=%s\n", symname, "cdecl"); // TODO
+tcc_appendf ("%s=func\n", symname);
+}
         arg_size = 0;
         if (tok != ')') {
             for(;;) {
@@ -1302,6 +1315,13 @@ static void post_type(CType *type, AttributeDef *ad)
                 }
                 convert_parameter_type(&pt);
                 s = sym_push(n | SYM_FIELD, &pt, 0, 0);
+{
+	    char kind[1024];
+	    type_to_str (kind, sizeof (kind), &pt, NULL);
+	    tcc_appendf ("func.%s.arg.%d=%s,%s\n",
+		symname, narg, kind, global_symname);
+	    narg++;
+}
                 *plast = s;
                 plast = &s->next;
                 if (tok == ')')
@@ -1314,6 +1334,7 @@ static void post_type(CType *type, AttributeDef *ad)
                 }
             }
         }
+	tcc_appendf ("func.%s.args=%d\n", symname, narg);
         /* if no parameters, then old type prototype */
         if (l == 0)
             l = FUNC_OLD;
@@ -1335,6 +1356,8 @@ static void post_type(CType *type, AttributeDef *ad)
         s->next = first;
         type->t = VT_FUNC;
         type->ref = s;
+free(symname);
+symname = NULL;
     } else if (tok == '[') {
         /* array definition */
         next();
@@ -1443,10 +1466,20 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
     if (storage & VT_STATIC) {
         int saved_nocode_wanted = nocode_wanted;
         nocode_wanted = 1;
+//eprintf ("STATIC %s\n", get_tok_str(*v, NULL));
         post_type(type, ad);
         nocode_wanted = saved_nocode_wanted;
-    } else
+    } else {
+{
+	    char kind[1024];
+	    char *name = get_tok_str (*v, NULL);
+	    type_to_str (kind, sizeof(kind), type, NULL);
+	    //eprintf ("---%d %s STATIC %s\n", td, kind, name);
+	    global_symname = name;
+	    global_type = kind;
+}
         post_type(type, ad);
+}
     type->t |= storage;
     if (tok == TOK_ATTRIBUTE1 || tok == TOK_ATTRIBUTE2)
         parse_attribute(ad);
@@ -1457,6 +1490,7 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
     type2 = &type1;
     for(;;) {
         s = type2->ref;
+//eprintf ("ARG:\n");
         type2 = &s->type;
         if (!type2->t) {
             *type2 = *type;

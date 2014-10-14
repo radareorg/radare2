@@ -17,6 +17,9 @@ struct Foo {
 	struct Cow c;
 	int d;
 };
+
+int write(int fd, char* str, int len);
+
 /*
 int main(int argc, char **argv);
 struct Foo foot = {0};

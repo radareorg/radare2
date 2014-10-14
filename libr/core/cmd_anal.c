@@ -481,6 +481,41 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", core->offset);
 		  }
 		 break;
+	case 'C':
+		if (input[2]=='?') {
+			int i;
+			for (i=0; ; i++) {
+				const char *s = r_anal_cc_type2str (i);
+				if (!s) break;
+				r_cons_printf ("%s\n", s);
+			}
+		} else {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				if (input[2]=='a') {
+					eprintf ("TODO: analyze function to guess its calling convention\n");
+				} else
+					if (input[2]==' ') {
+						int type = r_anal_cc_str2type (input+3);
+						if (type == -1) {
+							eprintf ("Unknown calling convention '%s'\n", input+3);
+						} else {
+							// set calling convention for current function
+							fcn->call = type;
+						}
+					} else {
+						const char *type = r_anal_cc_type2str (fcn->call);
+						if (type) {
+							r_cons_printf ("%s\n", type);
+						} else {
+							eprintf ("Unknown calling convention\n");
+						}
+					}
+			} else {
+				eprintf ("Cannot find function\n");
+			}
+		}
+		break;
 	case 'b':
 		 if (input[2] == 'b') {
 			 anal_fcn_add_bb (core, input+3);
@@ -658,6 +693,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
+		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "af*", "", "output radare commands",
 		 NULL};
 		 r_core_cmd_help (core, help_msg);
