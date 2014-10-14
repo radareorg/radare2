@@ -14,7 +14,6 @@ static void loganal(ut64 from, ut64 to) {
 
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 	int use_getopt = 0;
-	int use_getuid = 0;
 	int use_isatty = 0;
 	char *do_call = NULL;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
@@ -28,8 +27,6 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 					use_isatty = 1;
 				if (strstr (f->name, "getopt"))
 					use_getopt = 1;
-				if (strstr (f->name, "getuid"))
-					use_getuid = 1;
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
 					do_call = strdup (f->name+8);
@@ -84,6 +81,13 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	}
 	if (r_anal_op (core->anal, &op, addr, ptr, len)<1)
 		return NULL;
+	// decode instruction here
+	{
+		RAsmOp asmop;
+		if (r_asm_disassemble (core->assembler, &asmop, buf, len)>0) {
+			op.mnemonic = strdup (asmop.buf_asm);
+		}
+	}
 	_op = malloc (sizeof (op));
 	if (!_op) return NULL;
 	memcpy (_op, &op, sizeof (op));
