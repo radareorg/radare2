@@ -46,9 +46,11 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_bytes, int le
 		op->jump = (aa)?(baddr):(addr+baddr+4);
 		op->eob = 1;
 		break;
+#if 0
 	case 7: // sc/svc
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
+#endif
 #if 0
 	case 15: // bl
 		// OK

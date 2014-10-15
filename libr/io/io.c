@@ -127,7 +127,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	}
 	if (!desc) {
 		plugin = r_io_plugin_get_default (io, uri, 0);
-		desc = plugin ? plugin->open (io, uri, flags, mode) : NULL;
+		desc = (plugin&&plugin->open) ? plugin->open (io, uri, flags, mode) : NULL;
 		if (desc) {
 			r_io_desc_add (io, desc);
 			if (desc->fd != -1)
@@ -197,7 +197,7 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
 		r_io_desc_add (io, desc);
 		if (io->autofd || !io->desc)
 			r_io_use_desc (io, desc);
-	} else 	eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
+	} else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
 
 	return desc;
 }

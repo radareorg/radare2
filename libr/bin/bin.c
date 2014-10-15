@@ -491,7 +491,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		// if there is no fixed size or its MAXED, there is no way to definitively
 		// load the bin-properly.  Many of the plugins require all content and are not
 		// stream based loaders
-		RIODesc *tdesc = iob->desc_open (io, desc->name, desc->flags, R_IO_READ);
+		// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
+		RIODesc *tdesc = iob->desc_open (io, desc->name, R_IO_READ, 0); //desc->flags, R_IO_READ);
 		if (!tdesc) return R_FALSE;
 		file_sz = iob->desc_size (io, tdesc);
 		if (file_sz == UT64_MAX) {

@@ -66,6 +66,28 @@ static int verify_version(int show) {
 	return ret;
 }
 
+// we should probably move this functionality into the r_debug API
+// r_debug_get_baddr
+static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
+	RListIter *iter;
+	RDebugMap *map;
+	r_debug_attach (r->dbg, r->io->desc->fd);
+	r_debug_map_sync (r->dbg);
+	r_list_foreach (r->dbg->maps, iter, map) {
+		if (!strcmp (file, map->name)) {
+			return map->addr;
+		}
+	}
+	// fallback resolution (osx/w32?)
+	// we asume maps to be loaded in order, so lower addresses come first
+	r_list_foreach (r->dbg->maps, iter, map) {
+		if (map->perm == 5) { // r-x
+			return map->addr;
+		}
+	}
+	return 0LL;
+}
+
 static int main_help(int line) {
 	if (line<2)
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
@@ -442,14 +464,24 @@ int main(int argc, char **argv, char **envp) {
 					if (optind<argc)
 						file = r_str_concat (file, " ");
 				}
-				if (!r_core_bin_load (&r, file, baddr)) {
-					RBinObject *obj = r_bin_get_object (r.bin);
-					if (obj && obj->info)
-						eprintf ("bits %d\n", obj->info->bits);
+				{
+					char *diskfile = strstr (file, "://");
+					if (diskfile) {
+						diskfile += 3;
+					} else diskfile = file;
+					fh = r_core_file_open (&r, file, perms, mapaddr);
+					if (fh != NULL)
+						r_debug_use (r.dbg, is_gdb? "gdb": debugbackend);
+					/* load symbols when doing r2 -d ls */
+					// NOTE: the baddr is redefined to support PIE/ASLR
+					baddr = getBaddrFromDebugger (&r, diskfile);
+					if (baddr) eprintf ("Using BADDR %llx\n", baddr);
+					if (r_core_bin_load (&r, diskfile, baddr)) {
+						RBinObject *obj = r_bin_get_object (r.bin);
+						if (obj && obj->info)
+							eprintf ("bits %d\n", obj->info->bits);
+					}
 				}
-				fh = r_core_file_open (&r, file, perms, mapaddr);
-				if (fh != NULL)
-					r_debug_use (r.dbg, is_gdb? "gdb": debugbackend);
 			}
 		}
 
@@ -480,6 +512,8 @@ int main(int argc, char **argv, char **envp) {
 								if (r.file && r.file->desc && r.file->desc->name)
 									filepath = r.file->desc->name;
 
+								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
+								/* the baddr should be set manually here */
 								if (!r_core_bin_load (&r, filepath, baddr))
 									r_config_set (r.config, "io.va", "false");
 							}
