@@ -337,19 +337,19 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 
 			} else {
 				if (!strcmp (mode, "dbg.maps")) all = R_TRUE;
-			   if (!strcmp (mode, "dbg.maps.exec")) mask = R_IO_EXEC;
-			   if (!strcmp (mode, "dbg.maps.write")) mask = R_IO_WRITE;
-			   if (!strcmp (mode, "dbg.heap")) heap = R_TRUE;
-			   if (!strcmp (mode, "dbg.stack")) stack = R_TRUE;
+				if (!strcmp (mode, "dbg.maps.exec")) mask = R_IO_EXEC;
+				if (!strcmp (mode, "dbg.maps.write")) mask = R_IO_WRITE;
+				if (!strcmp (mode, "dbg.heap")) heap = R_TRUE;
+				if (!strcmp (mode, "dbg.stack")) stack = R_TRUE;
 
-			   r_list_foreach (core->dbg->maps, iter, map) {
+				r_list_foreach (core->dbg->maps, iter, map) {
 					add = 0;
 
-				if (stack && strstr(map->name, "stack")) add = 1;
-				if ((heap && (map->perm | R_IO_WRITE)) &&
-						((!strncmp (map->name, "unk", 3)) ||
-							strstr(map->name, "heap")))
-					add = 1;
+					if (stack && strstr(map->name, "stack"))
+						add = 1;
+					else if ((heap && (map->perm | R_IO_WRITE)) && \
+							strstr(map->name, "heap"))
+						add = 1;
 
 					if ((mask && (map->perm & mask)) || add || all) {
 						if (!list) {
