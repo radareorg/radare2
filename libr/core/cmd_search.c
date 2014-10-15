@@ -4,6 +4,7 @@ static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
 static int searchhits = 0;
+static int maplist = 0;
 static int json = 0;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
@@ -216,10 +217,10 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
 	} else
-	if (!strcmp (mode, "maps")) {
+	if (!strcmp (mode, "io.maps")) {
 		*from = *to = 0;
 		return core->io->maps;
-	} else if (!strcmp (mode, "mapsrange")) {
+	} else if (!strcmp (mode, "io.maps.range")) {
 		RListIter *iter;
 		RIOMap *m;
 		*from = *to = 0;
@@ -262,7 +263,7 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 			*to = r_io_size (core->io) + (map? map->to:0);
 		}
 	} else
-	if (!strcmp (mode, "section")) {
+	if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
 			RListIter *iter;
 			RIOSection *s;
@@ -276,6 +277,93 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 				if (*from >= s->vaddr && *from < (s->vaddr+s->vsize)) {
 					*to = s->vaddr+s->size;
 					break;
+				}
+			}
+		} else {
+			*from = core->offset;
+			*to = r_io_size (core->io);
+		}
+	} else
+	if (!strncmp (mode, "io.sections", sizeof("io.sections")-1)) {
+		if (core->io->va) {
+			int mask = 0;
+			RListIter *iter;
+			RIOSection *s;
+
+			if (!strcmp (mode, "io.sections.exec")) mask = R_IO_EXEC;
+			if (!strcmp (mode, "io.sections.write")) mask = R_IO_WRITE;
+
+			r_list_foreach (core->io->sections, iter, s) {
+				if (!mask || (s->rwx & mask)) {
+					if (!list) {
+						list = r_list_newf (free);
+						maplist = R_TRUE;
+					}
+					RIOMap *map = R_NEW0 (RIOMap);
+					map->fd = s->fd;
+					map->from = s->vaddr;
+					map->to = s->vaddr + s->size;
+					map->flags = s->rwx;
+					map->delta = 0;
+					r_list_append (list, map);
+				}
+			}
+		} else {
+			*from = core->offset;
+			*to = r_io_size (core->io);
+		}
+	} else
+	if (!strncmp (mode, "dbg.", sizeof("dbg.")-1)) {
+		if (core->io->debug) {
+
+			int mask = 0;
+			int add = 0;
+			int heap = R_FALSE;
+			int stack = R_FALSE;
+			int all = R_FALSE;
+			RListIter *iter;
+			RDebugMap *map;
+
+			r_debug_map_sync (core->dbg);
+
+			if (!strcmp (mode, "dbg.map")) {
+				*from = *to = core->offset;
+				r_list_foreach (core->dbg->maps, iter, map) {
+					if (*from >= map->addr && *from < map->addr_end) {
+						*from = map->addr;
+						*to = map->addr_end;
+					}
+				}
+
+			} else {
+				if (!strcmp (mode, "dbg.maps")) all = R_TRUE;
+			   if (!strcmp (mode, "dbg.maps.exec")) mask = R_IO_EXEC;
+			   if (!strcmp (mode, "dbg.maps.write")) mask = R_IO_WRITE;
+			   if (!strcmp (mode, "dbg.heap")) heap = R_TRUE;
+			   if (!strcmp (mode, "dbg.stack")) stack = R_TRUE;
+
+			   r_list_foreach (core->dbg->maps, iter, map) {
+					add = 0;
+
+				if (stack && strstr(map->name, "stack")) add = 1;
+				if ((heap && (map->perm | R_IO_WRITE)) &&
+						((!strncmp (map->name, "unk", 3)) ||
+							strstr(map->name, "heap")))
+					add = 1;
+
+					if ((mask && (map->perm & mask)) || add || all) {
+						if (!list) {
+							list = r_list_newf (free);
+							maplist = R_TRUE;
+						}
+						RIOMap *nmap = R_NEW0 (RIOMap);
+						nmap->fd = core->io->desc->fd;
+						nmap->from = map->addr;
+						nmap->to = map->addr_end;
+						nmap->flags = map->perm;
+						nmap->delta = 0;
+						r_list_append (list, nmap);
+					}
 				}
 			}
 		} else {
@@ -413,27 +501,25 @@ ret:
 
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep) {
 	int i=0, end=0, mode=0, increment=1, ret;
-	int delta = to - from;
+	int delta = 0;
 	RAsmOp asmop;
 	RAnalOp aop;
 	ut8 *buf;
+	RIOMap *map;
 	RList* hitlist;
+	RList/*<RIOMap>*/ *list;
 	RCoreAsmHit *hit = NULL;
 	RAnalOp analop = {0};
 	RListIter *iter = NULL;
+	RListIter *itermap = NULL;
 	boolt json_first = 1;
+	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
 		increment = 4;
 	else if (!strcmp (arch, "arm")) // ARM has no jump-in-the-middle
 		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
-
-	if (delta < 1) {
-		delta = from-to;
-		if (delta < 1)
-			return R_FALSE;
-	}
 
 	//Options, like JSON, linear, ...
 	if (*grep != ' ') {
@@ -446,81 +532,125 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	else // No grep
 		grep = NULL;
 
-	buf = malloc (delta);
-	if (!buf)
-		return -1;
+
+	smode = r_config_get (core->config, "search.in");
+	if (!strncmp(smode, "dbg.", 4) || !strncmp(smode, "io.sections", 11))
+		list = r_core_get_boundaries (core, smode, &from, &to);
+	else
+		list = NULL;
+
+	if (!list) {
+		map = R_NEW0 (RIOMap);
+		map->fd = core->io->desc->fd;
+		map->from = from;
+		map->to = to;
+		list = r_list_newf (free);
+		r_list_append (list, map);
+		maplist = R_TRUE;
+	}
+
 
 	if (json)
 		r_cons_printf ("[");
 
-	for (i=0; i < delta - 32; i+=increment) {
-		if (i >= end) { // read by chunk of 4k
-			r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
-			end = i + 2048;
+	r_list_foreach (list, itermap, map) {
+
+		from = map->from;
+		to = map->to;
+
+		delta = to - from;
+		if (delta < 1) {
+			delta = from - to;
+			if (delta < 1)
+				return R_FALSE;
 		}
-		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i) > 0) {
-			r_asm_set_pc (core->assembler, from+i);
-			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
-			if (!ret)
-				continue;
 
-			hitlist = construct_rop_gadget (core, from+i, buf, i, grep);
-			if (!hitlist)
-				continue;
+		buf = malloc (delta);
+		if (!buf)
+			return -1;
 
-			if (json) { // json
-				unsigned int size = 0;
+		for (i=0; i < delta - 32; i+=increment) {
+			if (i >= end) { // read by chunk of 4k
+				r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
+				end = i + 2048;
+			}
+			if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i) > 0) {
+				r_asm_set_pc (core->assembler, from+i);
+				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
+				if (!ret)
+					continue;
 
-				//Handle comma between gadgets
-				if (json_first == 0)
-					r_cons_strcat (",");
-				else
-					json_first = 0;
+				hitlist = construct_rop_gadget (core, from+i, buf, i, grep);
+				if (!hitlist)
+					continue;
 
-				r_cons_printf("{\"opcodes\":[");
-				r_list_foreach (hitlist, iter, hit) {
-					r_core_read_at (core, hit->addr, buf, hit->len);
-					r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-					r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-					size += hit->len;
-					r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,\"opcode\":\"%s\",\"type\":\"%s\"}%s",
-							hit->addr, hit->len, asmop.buf_asm,
-							r_anal_optype_to_string (analop.type), iter->n?",":"");
+				if (json) { // json
+					unsigned int size = 0;
+
+					//Handle comma between gadgets
+					if (json_first == 0)
+						r_cons_strcat (",");
+					else
+						json_first = 0;
+
+					r_cons_printf("{\"opcodes\":[");
+					r_list_foreach (hitlist, iter, hit) {
+						r_core_read_at (core, hit->addr, buf, hit->len);
+						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+						r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
+						size += hit->len;
+						r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,\"opcode\":\"%s\",\"type\":\"%s\"}%s",
+								hit->addr, hit->len, asmop.buf_asm,
+								r_anal_optype_to_string (analop.type), iter->n?",":"");
+					}
+					r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+				} else {
+					const char *otype;
+					char *buf_asm, *buf_hex;
+
+					// The two loops are distinct for performance reason
+					if (mode == 'l') {
+						hit = r_list_get_top(hitlist);
+						r_cons_printf ("0x%08"PFMT64x": ", hit->addr);
+						r_list_foreach (hitlist, iter, hit) {
+							r_core_read_at (core, hit->addr, buf, hit->len);
+							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+							buf_asm = r_print_colorize_opcode (asmop.buf_asm, 
+								core->cons->pal.reg, core->cons->pal.num);
+							r_cons_printf (" %s%s;", buf_asm, Color_RESET);
+							free (buf_asm);
+						}
+					} else
+						r_list_foreach (hitlist, iter, hit) {
+							r_core_read_at (core, hit->addr, buf, hit->len);
+							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+							buf_asm = r_print_colorize_opcode (asmop.buf_asm, 
+								core->cons->pal.reg, core->cons->pal.num);
+							buf_hex = r_print_colorize_opcode (asmop.buf_hex, 
+								core->cons->pal.reg, core->cons->pal.num);
+							otype = r_print_color_op_type (core->print, analop.type);
+							r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n", 
+								hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+							free (buf_asm);
+							free (buf_hex);
+						}
+					r_cons_newline ();
 				}
-				r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
-			} else {
-				const char *otype;
-				char *buf_asm, *buf_hex;
-
-				// The two loops are distinct for performance reason
-				if (mode == 'l') {
-					hit = r_list_get_top(hitlist);
-					r_cons_printf ("0x%08"PFMT64x": ", hit->addr);
-					r_list_foreach (hitlist, iter, hit) {
-						r_core_read_at (core, hit->addr, buf, hit->len);
-						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-						buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
-						r_cons_printf (" %s%s;", buf_asm, Color_RESET);
-						free (buf_asm);
-					}
-				} else
-					r_list_foreach (hitlist, iter, hit) {
-						r_core_read_at (core, hit->addr, buf, hit->len);
-						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-						buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg, core->cons->pal.num);
-						buf_hex = r_print_colorize_opcode (asmop.buf_hex, core->cons->pal.reg, core->cons->pal.num);
-						otype = r_print_color_op_type (core->print, analop.type);
-						r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n", hit->addr, otype, buf_hex, buf_asm, Color_RESET);
-						free (buf_asm);
-						free (buf_hex);
-					}
-				r_cons_newline ();
 			}
 		}
+
+		free (buf);
 	}
+
 	if (json)
 		r_cons_printf ("]\n");
-	free (buf);
+
+	if (maplist) {
+		list->free = free;
+		r_list_free (list);
+		list = NULL;
+	}
+
 	return R_TRUE;
 }
 
@@ -560,7 +690,9 @@ static int cmd_search(void *data, const char *input) {
 	RList/*<RIOMap>*/ *list;
 
 	c = 0;
-	json = 0;
+	json = R_FALSE;
+	//core->search->n_kws = 0;
+	maplist = R_FALSE;
 	__from = r_config_get_i (core->config, "search.from");
 	__to = r_config_get_i (core->config, "search.to");
 
@@ -965,27 +1097,56 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 	case 'c': /* search asm */
 		{
 		RCoreAsmHit *hit;
-		RListIter *iter;
+		RListIter *iter, *itermap;
 		int count = 0;
 		RList *hits;
-		if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
-			if (json) r_cons_printf ("[");
-			r_list_foreach (hits, iter, hit) {
-				if (json) {
-					if (count > 0) r_cons_printf (",");
-					r_cons_printf (
-						"{\"offset\":%"PFMT64d",\"len\":%d,\"code\":\"%s\"}", 
-						hit->addr, hit->len, hit->code);
-				} else {
-					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
-						searchprefix, count, hit->addr, hit->len, hit->code);
-				}
-				count++;
-			}
-			if (json) r_cons_printf ("]");
-			r_list_purge (hits);
-			free (hits);
+		RIOMap *map;
+
+		if (!strncmp(mode, "dbg.", 4) || !strncmp(mode, "io.sections", 11))
+			list = r_core_get_boundaries (core, mode, &from, &to);
+		else
+			list = NULL;
+
+		if (!list) {
+			map = R_NEW0 (RIOMap);
+			map->fd = core->io->desc->fd;
+			map->from = from;
+			map->to = to;
+			list = r_list_newf (free);
+			r_list_append (list, map);
+			maplist = R_TRUE;
 		}
+
+		if (json) r_cons_printf ("[");
+		r_list_foreach (list, itermap, map) {
+			from = map->from;
+			to = map->to;
+
+			if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
+				r_list_foreach (hits, iter, hit) {
+					if (json) {
+						if (count > 0) r_cons_printf (",");
+						r_cons_printf (
+							"{\"offset\":%"PFMT64d",\"len\":%d,\"code\":\"%s\"}", 
+							hit->addr, hit->len, hit->code);
+					} else {
+						r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
+							searchprefix, count, hit->addr, hit->len, hit->code);
+					}
+					count++;
+				}
+				r_list_purge (hits);
+				free (hits);
+			}
+		}
+		if (json) r_cons_printf ("]");
+
+		if (maplist) {
+			list->free = free;
+			r_list_free (list);
+			list = NULL;
+		}
+
 		dosearch = 0;
 		}
 		break;
@@ -1104,7 +1265,6 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 		if (json) r_cons_printf("[");
 		int oraise = core->io->raised;
 		int bufsz;
-		int maplist = R_FALSE;
 		RListIter *iter;
 		RIOMap *map;
 		if (!searchflags && !json)
@@ -1214,15 +1374,13 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 				r_cons_break_end ();
 				r_cons_clear_line (1);
 				core->num->value = searchhits;
-				if ((searchflags && searchcount>0) && !json) {
+				if (searchflags && (searchcount>0) && !json) {
 					eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 							searchhits,
 							searchprefix, core->search->n_kws-1,
 							searchprefix, core->search->n_kws-1, searchcount-1);
 				} else if (!json) {
 					eprintf ("hits: %d\n", searchhits);
-					if (searchhits==0)
-						core->search->n_kws--;
 				}
 				if (!r_list_empty (core->search->kws)) {
 					RListIter *iter;
@@ -1240,6 +1398,10 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 			}
 			r_io_raise (core->io, oraise);
 		} else eprintf ("No keywords defined\n");
+
+		/* Crazy party counter (kill me please) */
+		if ((searchhits == 0 ) && (core->search->n_kws > 0))
+			core->search->n_kws--;
 
 		if (json) r_cons_printf("]");
 	}

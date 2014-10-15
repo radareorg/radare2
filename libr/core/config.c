@@ -733,7 +733,10 @@ static int cb_binminstr(void *user, void *data) {
 static int cb_searchin(void *user, void *data) {
  	RConfigNode *node = (RConfigNode*) data;
  	if (*node->value == '?') {
- 		r_cons_printf ("raw\nblock\nfile\nsection\nmaps\nmaprange\n");
+		r_cons_printf ("raw\nblock\nfile\nio.maps\nio.maprange\nio.section\n" \
+							"io.sections\nio.sections.write\nio.sections.exec\n" \
+							"dbg.stack\ndbg.heap\ndbg.map\ndbg.maps\n"\
+							"dbg.maps.exec\ndbg.maps.write\n");
  		return R_FALSE;
  	}
  	return R_TRUE;
