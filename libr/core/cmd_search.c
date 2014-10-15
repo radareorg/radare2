@@ -524,6 +524,21 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	return R_TRUE;
 }
 
+static int esil_addrinfo(RAnalEsil *esil) {
+	RCore *core = (RCore*)esil->user;
+	ut64 num = 0;
+	char *src = r_anal_esil_pop (esil);
+	if (src && *src && r_anal_esil_get_parm (esil, src, &num)) {
+		num = r_core_anal_address (core, num);
+		r_anal_esil_pushnum (esil, num);
+	} else {
+// error. empty stack?
+		return 0;
+	}
+	free (src);
+	return 1;
+}
+
 static int cmd_search(void *data, const char *input) {
 	int i, len, ret, dosearch = R_FALSE;
 	RCore *core = (RCore *)data;
@@ -858,6 +873,10 @@ static int cmd_search(void *data, const char *input) {
 			r_cons_break (NULL, NULL);
 			if (!core->anal->esil)
 				core->anal->esil = r_anal_esil_new ();
+			/* hook addrinfo */
+			core->anal->esil->user = core;
+			r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo);
+			/* hook addrinfo */
 			r_anal_esil_setup (core->anal->esil, core->anal, 1, 0);
 			r_anal_esil_stack_free (core->anal->esil);
 			core->anal->esil->debug = 0;

@@ -14,7 +14,12 @@ static void loganal(ut64 from, ut64 to) {
 
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	ut64 types = 0;
-	RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+	RRegSet *rs = NULL;
+	if (!core)
+		return 0;
+	if (core->dbg && core->dbg->reg) {
+		rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+	}
 	if (rs) {
 		RRegItem *r;
 		RListIter *iter;
