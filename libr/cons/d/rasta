@@ -27,3 +27,10 @@ ec cmp rgb:ff0
 ec reg rgb:0f0
 ec num rgb:f00
 ec mov rgb:ff0
+ec args rgb:0f0
+ec help rgb:ff0
+ec input rgb:0f0
+ec trap rgb:f00
+ec swi rgb:f00
+ec creg rgb:0f0
+ec flag rgb:ff0

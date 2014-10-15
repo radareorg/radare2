@@ -144,6 +144,7 @@ static struct {
 	{ "prompt", r_offsetof (RConsPalette, prompt) },
 	{ "offset", r_offsetof (RConsPalette, offset) },
 	{ "input", r_offsetof (RConsPalette, input) },
+	{ "invalid", r_offsetof (RConsPalette, invalid) },
 	{ "other", r_offsetof (RConsPalette, other) },
 	{ "b0x00", r_offsetof (RConsPalette, b0x00) },
 	{ "b0x7f", r_offsetof (RConsPalette, b0x7f) },

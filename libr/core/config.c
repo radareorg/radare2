@@ -775,6 +775,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.os", R_SYS_OS, &cb_asmos, "Select operating system (kernel) (linux, darwin, w32,..)");
 	SETI("asm.maxrefs", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETPREF("asm.bytes", "true",  "Display the bytes of each instruction");
+	SETPREF("asm.flaginbytes", "false",  "Display flags inside the bytes space");
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch referece");
 	SETPREF("asm.cmtright", "false", "Show comments at right of disassembly if they fit in screen");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");

@@ -880,6 +880,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 		case R_ANAL_OP_TYPE_XOR:
 		case R_ANAL_OP_TYPE_NOT:
 		case R_ANAL_OP_TYPE_SHL:
+		case R_ANAL_OP_TYPE_SAR:
 		case R_ANAL_OP_TYPE_SHR:
 		case R_ANAL_OP_TYPE_ROL:
 		case R_ANAL_OP_TYPE_ROR:

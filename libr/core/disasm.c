@@ -70,6 +70,7 @@ typedef struct r_disam_options_t {
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
+	int show_flag_in_bytes;
 	int lbytes;
 	int show_comment_right;
 	char *pre;
@@ -248,7 +249,8 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
-	ds->show_comment_right = 0;
+	ds->show_comment_right = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
+	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -256,6 +258,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
+	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flaginbytes");
 
 
 	if (r_config_get_i (core->config, "asm.linesstyle"))
@@ -356,7 +359,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 
 	spacer = strstr (source, "||");
 	if (spacer) {
-		char *scol1, *s1 = r_str_ndup(source, spacer - source);
+		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
 		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num); free(s1);
@@ -1186,13 +1189,30 @@ static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) 
 }
 
 static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
-	if (ds->show_bytes) {
-		char *nstr, *str = NULL, pad[64];
-		char extra[64];
-		int j,k;
-		strcpy (extra, " ");
-		RFlagItem *flag = NULL;
-		if (!flag) {
+	char *nstr, *str = NULL, pad[64];
+	RFlagItem *flag = NULL;
+	char extra[64];
+	int j,k;
+	if (!ds->show_bytes)
+		return;
+	strcpy (extra, " ");
+	if (ds->show_flag_in_bytes)
+		flag = r_flag_get_i (core->flags, ds->at); // TODO: cache this into ds->flag ?
+	if (flag) {
+		str = strdup (flag->name);
+		k = ds->nb-strlen (str)-1;
+		if (k<0) k = 0;
+		for (j=0; j<k; j++)
+			pad[j] = ' ';
+		pad[j] = '\0';
+	} else {
+		if (ds->show_flag_in_bytes) {
+			k = ds->nb-1;
+			for (j=0; j<k; j++)
+				pad[j] = ' ';
+			pad[j] = '\0';
+			str = strdup ("");
+		} else {
 			str = strdup (ds->asmop.buf_hex);
 			if (r_str_ansi_len (str) > ds->nb) {
 				char *p = (char *)r_str_ansi_chrn (str, ds->nb);
@@ -1220,19 +1240,12 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 			}
 			free (str);
 			str = nstr;
-		} else {
-			str = strdup (flag->name);
-			k = ds->nb-strlen (str)-2;
-			if (k<0) k = 0;
-			for (j=0; j<k; j++)
-				pad[j] = ' ';
-			pad[j] = '\0';
 		}
-		if (ds->show_color)
-			r_cons_printf ("%s %s %s"Color_RESET, pad, str, extra);
-		else r_cons_printf ("%s %s %s", pad, str, extra);
-		free (str);
 	}
+	if (ds->show_color)
+		r_cons_printf ("%s %s %s"Color_RESET, pad, str, extra);
+	else r_cons_printf ("%s %s %s", pad, str, extra);
+	free (str);
 }
 
 static void handle_print_indent (RCore *core, RDisasmState *ds) {

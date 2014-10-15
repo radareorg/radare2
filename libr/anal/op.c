@@ -155,6 +155,7 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_SUB   : return "sub";
 	case R_ANAL_OP_TYPE_MUL   : return "mul";
 	case R_ANAL_OP_TYPE_DIV   : return "div";
+	case R_ANAL_OP_TYPE_SAR   : return "sar";
 	case R_ANAL_OP_TYPE_SHR   : return "shr";
 	case R_ANAL_OP_TYPE_SHL   : return "shl";
 	case R_ANAL_OP_TYPE_OR    : return "or";

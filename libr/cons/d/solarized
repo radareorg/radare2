@@ -10,7 +10,7 @@ ec cmp rgb:c41 # ffe
 ec comment rgb:28d
 ec ret rgb:899
 ec fline rgb:b80
-ec flow rgb:c41
+ec flow rgb:3a9
 ec fname rgb:d33
 ec label rgb:77c
 ec math rgb:28d
@@ -20,9 +20,16 @@ ec num rgb:eee
 ec offset rgb:9aa
 ec other rgb:577
 ec pop rgb:688
-ec prompt rgb:899
+ec prompt rgb:c41
 ec push rgb:e37
 ec reg rgb:de8
+ec args rgb:de8
+ec help rgb:e37
+ec input rgb:c41
+ec trap rgb:f00
+ec swi rgb:f00
+ec creg rgb:de8
+ec flag rgb:c41
 
 # background of the terminal must be 134 o 033
-# xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0
+# xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'ecf solarized' /bin/ls"
