@@ -107,13 +107,11 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	int num_streams = 0;
 	char *data = 0;
 	char *tmp_data = 0;
-	int *tmp_sizes = 0;
 	int num_pages = 0;
 	int i = 0;
 	int *sizes = 0;
 	int stream_size = 0;
 	int pos = 0;
-	int pn_start, off_start;
 	R_PDB_STREAM *pdb_stream = 0;
 	int data_size = 0;
 
@@ -122,7 +120,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	R_PDB7_ROOT_STREAM *root_stream7;
 
 	pdb->root_stream = (R_PDB7_ROOT_STREAM *) malloc(sizeof(R_PDB7_ROOT_STREAM));
-	init_r_pdb_stream(pdb->root_stream, pdb->fp, root_page_list, pages_amount,
+	init_r_pdb_stream(&pdb->root_stream->pdb_stream, pdb->fp, root_page_list, pages_amount,
 					  indx, root_size, page_size);
 
 	root_stream7 = pdb->root_stream;
@@ -190,17 +188,17 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 ///////////////////////////////////////////////////////////////////////////////
 // R2: ugly indentation
-static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
-								   int pages_amount, int index, int size,
-								   int page_size, f_load pLoad)
-{
-	pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
-	init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
-	pdb_stream->load = pLoad;
-	if (pLoad != NULL) {
-		pLoad(pdb_stream, &(pdb_stream->pdb_stream->stream_file));
-	}
-}
+//static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
+//								   int pages_amount, int index, int size,
+//								   int page_size, f_load pLoad)
+//{
+//	pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
+//	init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
+//	pdb_stream->load = pLoad;
+//	if (pLoad != NULL) {
+//		pLoad(pdb_stream, &(pdb_stream->pdb_stream->stream_file));
+//	}
+//}
 
 ///////////////////////////////////////////////////////////////////////////////
 static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
@@ -296,19 +294,17 @@ static int pdb_read_root(R_PDB *pdb)
 	RList *pList = pdb->pdb_streams;
 	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
 	R_PDB_STREAM *pdb_stream = 0;
-	SParsedPDBStream *parsed_pdb_stream = 0;
 	SPDBInfoStream *pdb_info_stream = 0;
 	STpiStream *tpi_stream = 0;
 	R_STREAM_FILE stream_file;
 	RListIter *it;
 	SPage *page = 0;
-	RList *tmp_list = 0;
 	SStreamParseFunc *stream_parse_func = 0;
 
 	it = r_list_iterator(root_stream->streams_list);
 	while (r_list_iter_next(it)) {
 		page = (SPage*) r_list_iter_get(it);
-		init_r_stream_file(&stream_file, pdb->fp, page->stream_pages,
+		init_r_stream_file(&stream_file, pdb->fp, (int *)page->stream_pages,
 						   page->num_pages/*root_stream->pdb_stream.pages_amount*/,
 						   page->stream_size,
 						   root_stream->pdb_stream.page_size);
@@ -348,7 +344,7 @@ static int pdb_read_root(R_PDB *pdb)
 			}
 
 			pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
-			init_r_pdb_stream(pdb_stream, pdb->fp, page->stream_pages,
+			init_r_pdb_stream(pdb_stream, pdb->fp, (int *)page->stream_pages,
 							  root_stream->pdb_stream.pages_amount, i,
 							  page->stream_size,
 							  root_stream->pdb_stream.page_size);
@@ -632,7 +628,7 @@ static void print_types(R_PDB *pdb)
 static void print_gvars(R_PDB *pdb, int img_base)
 {
 	RList *l = 0;
-	RListIter *it = 0, *it1 = 0;
+	RListIter *it = 0;
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0 ,
 			*gsym = 0, *tmp = 0;
 	SGDATAStream *gsym_data_stream = 0;
