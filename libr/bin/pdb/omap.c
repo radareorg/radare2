@@ -128,6 +128,9 @@ int omap_remap(void *stream, int address)
 	}
 
 	omap_entry = (SOmapEntry *) r_list_get_n(omap_stream->omap_entries, pos);
+	if (!omap_entry) {
+		return -1;
+	}
 	if (omap_entry->to == 0) {
 		return omap_entry->to;
 	} else {

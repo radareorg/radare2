@@ -867,7 +867,7 @@ static void free_sval(SVal *val)
 			break;
 		}
 		default:
-			printf("free_sval()::oops\n");
+			printf("free_sval()::not supproted type\n");
 			break;
 		}
 	}
