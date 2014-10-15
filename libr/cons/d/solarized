@@ -1,0 +1,28 @@
+ec b0x00 rgb:033
+ec b0x7f rgb:033
+ec b0xff rgb:577
+ec bin rgb:688
+ec btext rgb:899
+ec call rgb:890 #b80
+ec cjmp rgb:890 # b80 #ee8
+ec jmp rgb:e37
+ec cmp rgb:c41 # ffe
+ec comment rgb:28d
+ec ret rgb:899
+ec fline rgb:b80
+ec flow rgb:c41
+ec fname rgb:d33
+ec label rgb:77c
+ec math rgb:28d
+ec mov rgb:3a9
+ec nop rgb:577
+ec num rgb:eee
+ec offset rgb:9aa
+ec other rgb:577
+ec pop rgb:688
+ec prompt rgb:899
+ec push rgb:e37
+ec reg rgb:de8
+
+# background of the terminal must be 134 o 033
+# xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0
