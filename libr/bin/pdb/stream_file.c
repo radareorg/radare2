@@ -29,12 +29,11 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
 {
 	int i;
 	int page_offset;
-	int curr_pos;
-	int tmp;
+//	int tmp;
 //	char buffer[1024];
 
 	for (i = start_indx; i < end_indx; i++) {
-		tmp = stream_file->pages[i];
+//		tmp = stream_file->pages[i];
 		page_offset = stream_file->pages[i] * stream_file->page_size;
 		fseek(stream_file->fp, page_offset, SEEK_SET);
 //		curr_pos = ftell(stream_file->fp);
@@ -48,14 +47,13 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
 void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res)
 {
 	int pn_start, off_start, pn_end, off_end;
-	int i = 0;
 	char *pdata = 0;
 	char *tmp;
-	int len = 0;
 
 	if (size == -1) {
 		pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
+		(void)off_end; // hack for remove unused warning
 		tmp = pdata;
 		stream_file_read_pages(stream_file, 0, stream_file->pages_amount, tmp);
 		stream_file->pos = stream_file->end;
@@ -64,7 +62,7 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res)
 	} else {
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
-
+		(void)off_end; // hack for remove unused warning
 		pdata = (char *) malloc(stream_file->page_size * (pn_end + 1 - pn_start));
 		tmp = pdata;
 		stream_file_read_pages(stream_file, pn_start, pn_end + 1, tmp);
@@ -116,5 +114,6 @@ void stream_file_get_size(R_STREAM_FILE *stream_file, int *data_size)
 {
 	int pn_start = 0, off_start = 0;
 	GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
+	(void)pn_start; // hack for remove unused warning
 	*data_size = stream_file->end - off_start;
 }

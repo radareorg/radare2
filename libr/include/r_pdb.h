@@ -11,9 +11,11 @@ extern "C" {
 
 #define FILE_NAME_LEN 256
 
+struct RList;
+struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
-typedef struct {
+typedef struct R_PDB{
 	int (*pdb_parse)(struct R_PDB *pdb);
 	void (*finish_pdb_parse)(struct R_PDB *pdb);
 	void (*print_types)(struct R_PDB *pdb);
