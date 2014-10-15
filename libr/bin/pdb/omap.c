@@ -1,6 +1,7 @@
 #include "omap.h"
 
 #include "types.h"
+#include "stream_file.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 static int parse_omap_entry(char *data, int data_size, int *read_bytes, SOmapEntry *omap_entry)
