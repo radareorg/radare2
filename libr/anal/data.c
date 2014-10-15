@@ -82,13 +82,28 @@ static int is_bin(const ut8 *buf, int size) {
 
 // XXX: optimize by removing all strlens here
 R_API char *r_anal_data_to_string (RAnalData *d) {
-	int i, idx, mallocsz = 256;
-	ut32 n32 = (ut32)d->ptr;
-	char *line = malloc (mallocsz);
+	int i, len, idx, mallocsz = 1024;
+	ut32 n32;
+	char *line;
+
+	if (!d) return NULL;
+
+	line = malloc (mallocsz);
 	snprintf (line, mallocsz, "0x%08"PFMT64x"  ", d->addr);
-	for (i=0, idx = strlen (line); i<d->len; i++) {
-		snprintf (line+idx, mallocsz-idx, "%02x", d->buf[i]);
+	n32 = (ut32)d->ptr;
+	len = R_MIN (d->len, 8);
+	for (i=0, idx = strlen (line); i<len; i++) {
+		int msz = mallocsz-idx;
+		if (msz>1) {
+			snprintf (line+idx, msz, "%02x", d->buf[i]);
+			idx += 2;
+		}
+	}
+	if (i>0 && d->len> len) {
+		int msz = mallocsz-idx;
+		snprintf (line+idx, msz, "..");
 		idx += 2;
+		msz -= 2;
 	}
 	strcat (line, "  ");
 	idx += 2;
@@ -116,6 +131,12 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 		break;
 	case R_ANAL_DATA_TYPE_HEADER:
 		strcat (line, "header");
+		break;
+	case R_ANAL_DATA_TYPE_SEQUENCE:
+		strcat (line, "sequence");
+		break;
+	case R_ANAL_DATA_TYPE_PATTERN:
+		strcat (line, "pattern");
 		break;
 	case R_ANAL_DATA_TYPE_UNKNOWN:
 		strcat (line, "unknown");
@@ -164,7 +185,14 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 	ad->addr = addr;
 	ad->type = type;
 	ad->str = NULL;
-	ad->len = l;
+	switch (type) {
+		case R_ANAL_DATA_TYPE_PATTERN:
+		case R_ANAL_DATA_TYPE_SEQUENCE:
+			ad->len = len;
+			break;
+		default:
+			ad->len = l;
+	}
 	ad->ptr = n;
 	return ad;
 }
@@ -184,12 +212,39 @@ R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) 
 	int endi = !anal->big_endian;
 	int word = R_MIN (8, bits/8);
 
+	if (size<4)
+		return NULL;
 	if (size >= word && is_invalid (buf, word))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID,
 			-1, buf, word);
+	{
+		int i, len = R_MIN (size, 64);
+		int is_pattern = 0;
+		int is_sequence = 0;
+		char ch = buf[0];
+		char ch2 = ch+1;
+		for (i=1; i<len; i++) {
+			if (ch2 == buf[i]) {
+				ch2++;
+				is_sequence++;
+			} else is_sequence = 0;
+			if (ch==buf[i]) {
+				is_pattern++;
+			}
+		}
+		//eprintf ("%d %d %d %d\n", is_sequence, is_pattern , len, size);
+		if (is_sequence>len-2) {
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1,
+					buf, is_sequence);
+		}
+		if (is_pattern>len-2) {
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_PATTERN, -1,
+					buf, is_pattern);
+		}
+	}
 	if (size >= word && is_null (buf, word))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NULL,
-			0, buf, word);
+			-1, buf, word);
 	if (is_bin (buf, size))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1,
 				buf, word);
@@ -223,7 +278,10 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 	int word = a->bits /8;
 	for (i = j = 0; i<len; j++) {
 		data = r_anal_data (a, addr+i, buf+i, len-i);
-		if (data == NULL) continue;
+		if (data == NULL) {
+			i+= word;
+			continue;
+		}
 		switch (data->type) {
 		case R_ANAL_DATA_TYPE_INVALID:
 			inv++;
@@ -238,7 +296,9 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 			i += word;
 			break;
 		case R_ANAL_DATA_TYPE_STRING:
-			i += data->len; //strlen ((const char*)buf+i)+1;
+			if (data->len>0) {
+				i += data->len; //strlen ((const char*)buf+i)+1;
+			} else i+=word;
 			str++;
 			break;
 		default:

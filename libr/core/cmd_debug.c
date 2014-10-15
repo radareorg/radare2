@@ -518,6 +518,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drb", " [type]", "Display hexdump of gpr arena (WIP)",
 				"drc", " [name]", "Related to conditional flag registers",
 				"drd", "", "Show only different registers",
+				"drl", "", "List all register names",
 				"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 				"dro", "", "Show previous (old) values of registers",
 				"drp", " <file>", "Load register metadata file",
@@ -531,6 +532,19 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			// TODO: 'drs' to swap register arenas and display old register valuez
 
 			r_core_cmd_help (core, help_message);
+		}
+		break;
+	case 'l':
+		//r_core_cmd0 (core, "drp~[1]");
+		{
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				RRegItem *r;
+				RListIter *iter;
+				r_list_foreach (rs->regs, iter, r) {
+					r_cons_printf ("%s\n", r->name);
+				}
+			}
 		}
 		break;
 	case 'b':

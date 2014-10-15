@@ -51,7 +51,7 @@ typedef struct r_io_section_t {
 	ut64 vaddr;
 	ut64 size;
 	ut64 vsize;
-	int rwx;
+	int rwx; // rename to perm? like in rdebug? what about rbin?
 	int id;
 	/* */
 	int arch;

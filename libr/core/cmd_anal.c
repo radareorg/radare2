@@ -779,6 +779,18 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		use_color = NULL;
 	}
 	switch (str[0]) {
+	case 'l':
+		{
+			RRegSet *rs = r_reg_regset_get (core->anal->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				RRegItem *r;
+				RListIter *iter;
+				r_list_foreach (rs->regs, iter, r) {
+					r_cons_printf ("%s\n", r->name);
+				}
+			}
+		}
+		break;
 	case '0':
 		r_reg_arena_zero (core->anal->reg);
 		break;
@@ -1041,6 +1053,57 @@ sleep (1);
 	}
 }
 
+static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
+	ut64 addr, type;
+	if (!addrstr || !*addrstr) {
+		addr = core->offset;
+	} else {
+		addr = r_num_math (core->num, addrstr);
+	}
+	type = r_core_anal_address (core, addr);
+	int isp = 0;
+	switch(fmt) {
+	case 'j':
+#define COMMA isp++?",":""
+		r_cons_printf ("{");
+		if (type & R_ANAL_ADDR_TYPE_EXEC)
+			r_cons_printf ("%s\"exec\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_READ)
+			r_cons_printf ("%s\"read\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_WRITE)
+			r_cons_printf ("%s\"write\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_FLAG)
+			r_cons_printf ("%s\"flag\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_FUNC)
+			r_cons_printf ("%s\"func\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_STACK)
+			r_cons_printf ("%s\"stack\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_HEAP)
+			r_cons_printf ("%s\"heap\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_REG)
+			r_cons_printf ("%s\"reg\":true", COMMA);
+		r_cons_printf ("}");
+		break;
+	default:
+		if (type & R_ANAL_ADDR_TYPE_EXEC)
+			r_cons_printf ("exec\n");
+		if (type & R_ANAL_ADDR_TYPE_READ)
+			r_cons_printf ("read\n");
+		if (type & R_ANAL_ADDR_TYPE_WRITE)
+			r_cons_printf ("write\n");
+		if (type & R_ANAL_ADDR_TYPE_FLAG)
+			r_cons_printf ("flag\n");
+		if (type & R_ANAL_ADDR_TYPE_FUNC)
+			r_cons_printf ("func\n");
+		if (type & R_ANAL_ADDR_TYPE_STACK)
+			r_cons_printf ("stack\n");
+		if (type & R_ANAL_ADDR_TYPE_HEAP)
+			r_cons_printf ("heap\n");
+		if (type & R_ANAL_ADDR_TYPE_REG)
+			r_cons_printf ("reg\n");
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -1060,6 +1123,22 @@ static int cmd_anal(void *data, const char *input) {
 				r_core_anal_bytes (core, buf, len, 0, 0);
 			free (buf);
 		} else eprintf ("Usage: ab [hexpair-bytes]\n");
+		break;
+	case 'i':
+		switch (input[1]) {
+		case '?':
+			eprintf ("Usage: ai @ rsp\n");
+			break;
+		case ' ':
+			cmd_address_info (core, input+1, 0);
+			break;
+		case 'j':
+			cmd_address_info (core, input+2, 'j');
+			break;
+		default:
+			cmd_address_info (core, NULL, 0);
+			break;
+		}
 		break;
 	case 'r':
 		cmd_anal_reg (core, input+1);
@@ -1769,7 +1848,7 @@ static int cmd_anal(void *data, const char *input) {
 		case '\0':
 			 {
 				//int word = core->assembler->bits / 8;
-				r_core_anal_data (core, core->offset, core->blocksize, 1);
+				r_core_anal_data (core, core->offset, 2+(core->blocksize/4), 1);
 			 }
 			break;
 		default:{

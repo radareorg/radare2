@@ -225,6 +225,16 @@ r2.cmd = function (c, cb) {
   }
 }
 
+r2.cmdj = function (c, cb) {
+  r2.cmd (c, function(x) {
+try {
+cb (JSON.parse(x));
+} catch(e) {
+cb (null);
+}
+});
+}
+
 r2.alive = function (cb) {
   r2.cmd ("b", function (o) {
     var ret = false;

@@ -1068,6 +1068,7 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 			"/z"," min max", "search for strings of given size",
 			"\nConfiguration:", "", "",
 			"e", " cmd.hit = x", "command to execute on every search hit",
+			"e", " search.in = ?", "specify where to search stuff (depends on .from/.to)",
 			"e", " search.align = 4", "only catch aligned search hits",
 			"e", " search.from = 0", "start address",
 			"e", " search.to = 0", "end address",

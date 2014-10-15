@@ -12,6 +12,71 @@ static void loganal(ut64 from, ut64 to) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", from, to);
 }
 
+R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
+	ut64 types = 0;
+	RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+	if (rs) {
+		RRegItem *r;
+		RListIter *iter;
+		r_list_foreach (rs->regs, iter, r) {
+			ut64 val = r_reg_getv (core->dbg->reg, r->name);
+			//r_cons_printf ("%s\n", r->name);
+			if (addr == val) {
+				types |= R_ANAL_ADDR_TYPE_REG;
+				break;
+			}
+		}
+	}
+	if (r_flag_get_i (core->flags, addr))
+		types |= R_ANAL_ADDR_TYPE_FLAG;
+	if (r_anal_get_fcn_in (core->anal, addr, 0))
+		types |= R_ANAL_ADDR_TYPE_FUNC;
+	// check registers
+	if (core->io->debug) {
+		RDebugMap *map;
+		RListIter *iter;
+		// use 'dm'
+		r_debug_map_sync (core->dbg);
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				if (map->perm & R_IO_EXEC)
+					types |= R_ANAL_ADDR_TYPE_EXEC;
+				if (map->perm & R_IO_READ)
+					types |= R_ANAL_ADDR_TYPE_READ;
+				if (map->perm & R_IO_WRITE)
+					types |= R_ANAL_ADDR_TYPE_WRITE;
+				// find function
+				if (strstr (map->name, "heap"))
+					types |= R_ANAL_ADDR_TYPE_HEAP;
+				if (strstr (map->name, "stack"))
+					types |= R_ANAL_ADDR_TYPE_STACK;
+				break;
+			}
+		}
+	} else {
+		RIOSection *ios;
+		RListIter *iter;
+		// sections
+		r_list_foreach (core->io->sections, iter, ios) {
+			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {
+				if (ios->rwx & R_IO_EXEC)
+					types |= R_ANAL_ADDR_TYPE_EXEC;
+				if (ios->rwx & R_IO_READ)
+					types |= R_ANAL_ADDR_TYPE_READ;
+				if (ios->rwx & R_IO_WRITE)
+					types |= R_ANAL_ADDR_TYPE_WRITE;
+				// find function
+				if (strstr (ios->name, "heap"))
+					types |= R_ANAL_ADDR_TYPE_HEAP;
+				if (strstr (ios->name, "stack"))
+					types |= R_ANAL_ADDR_TYPE_STACK;
+		//		break;
+			}
+		}
+	}
+	return types;
+}
+
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 	int use_getopt = 0;
 	int use_isatty = 0;
@@ -1465,6 +1530,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	char *str;
         int i, j;
 
+count = R_MIN (count, len);
 	//if (addr != core->offset) {
 		buf = malloc (len);
 		if (buf == NULL)
@@ -1485,18 +1551,24 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		str = r_anal_data_to_string (d);
 		r_cons_printf ("%s\n", str);
 
-		switch (d->type) {
-		case R_ANAL_DATA_TYPE_POINTER:
-			r_cons_printf ("`- ");
-			dstaddr = r_mem_get_num (buf+i, word, !endi);
-			if (depth>0)
-				r_core_anal_data (core, dstaddr, 1, depth-1);
-			i += word;
-			break;
-		case R_ANAL_DATA_TYPE_STRING:
-			i += strlen ((const char*)buf+i)+1;
-			break;
-		default:
+		if (d) {
+			switch (d->type) {
+				case R_ANAL_DATA_TYPE_POINTER:
+					r_cons_printf ("`- ");
+					dstaddr = r_mem_get_num (buf+i, word, !endi);
+					if (depth>0)
+						r_core_anal_data (core, dstaddr, 1, depth-1);
+					i += word;
+					break;
+				case R_ANAL_DATA_TYPE_STRING:
+					buf[len] = 0;
+					i += strlen ((const char*)buf+i)+1;
+					break;
+				default:
+					if (d->len>3) i += d->len;
+					else i+= word;
+			}
+		} else {
 			i += word;
 		}
 		free (str);

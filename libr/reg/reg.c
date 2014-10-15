@@ -406,3 +406,13 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8* buf, int buflen,
 	}
 	return NULL;
 }
+
+R_API RRegSet *r_reg_regset_get(RReg *r, int type) {
+	RRegSet *rs;
+	if (type<0 || type>=R_REG_TYPE_LAST)
+		return NULL;
+	rs = &r->regset[type];
+	if (rs->arena)
+		return rs;
+	return NULL;
+}

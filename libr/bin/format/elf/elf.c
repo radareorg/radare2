@@ -751,7 +751,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
 
 			/* Bad sh_link ! */
-			if(bin->shdr[i].sh_link >= bin->ehdr.e_shnum)
+			if (bin->shdr[i].sh_link >= bin->ehdr.e_shnum)
 				continue;
 
 			bin->strtab_section = &bin->shdr[bin->shdr[i].sh_link];
@@ -768,6 +768,12 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			}
 			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, tsize) == -1) {
 				eprintf ("Warning: read (syms strtab)\n");
+				free (sym);
+				free (strtab);
+				return NULL;
+			}
+			if (bin->shdr[i].sh_size > bin->size) {
+				eprintf ("Warning: alloc (invalid shsize)\n");
 				free (sym);
 				free (strtab);
 				return NULL;
