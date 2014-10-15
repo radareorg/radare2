@@ -594,29 +594,40 @@ static void print_types(R_PDB *pdb)
 
 	it = r_list_iterator(tpi_stream->types);
 	while (r_list_iter_next(it)) {
+		val = 0;
 		t = (SType *) r_list_iter_get(it);
 		tf = &t->type_data;
-		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION)) {
-			tf->is_fwdref(tf, &val);
-			if (val == 1) {
-				continue;
+		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION)
+			|| (tf->leaf_type == eLF_ENUM)) {
+
+			if (tf->is_fwdref) {
+				tf->is_fwdref(tf, &val);
+				if (val == 1) {
+					continue;
+				}
 			}
-			tf->get_name(tf, &name);
+
+			if (tf->get_name)
+				tf->get_name(tf, &name);
 			// val for STRUCT or UNION mean size
-			tf->get_val(tf, &val);
+			if (tf->get_val)
+				tf->get_val(tf, &val);
 			printf("%s: size 0x%x\n", name, val);
 
-			tf->get_members(tf, &ptmp);
+			if (tf->get_members)
+				tf->get_members(tf, &ptmp);
 			it2 = r_list_iterator(ptmp);
 			while (r_list_iter_next(it2)) {
 				tf = (STypeInfo *) r_list_iter_get(it2);
-				tf->get_name(tf, &name);
+				if (tf->get_name)
+					tf->get_name(tf, &name);
 				if (tf->get_val)
 					tf->get_val(tf, &offset);
 				else
 					offset = 0;
 				printf("\t0x%x: %s type:", offset, name);
-				tf->get_print_type(tf, &name);
+				if (tf->get_print_type)
+					tf->get_print_type(tf, &name);
 				printf("%s\n", name);
 				free(name);
 			}

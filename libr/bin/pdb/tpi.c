@@ -1043,11 +1043,13 @@ static void get_array_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("array: ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "array: ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free) {
 		free(tmp_name);
@@ -1075,11 +1077,13 @@ static void get_pointer_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("pointer to ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "pointer to ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free) {
 		free(tmp_name);
@@ -1107,11 +1111,13 @@ static void get_modifier_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("modifier ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "modifier ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free) {
 		free(tmp_name);
@@ -1150,11 +1156,13 @@ static void get_bitfield_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("bitfield ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "bitfield ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free)
 		free(tmp_name);
@@ -1191,11 +1199,13 @@ static void get_enum_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("enum ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "enum ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free)
 		free(tmp_name);
@@ -1218,11 +1228,13 @@ static void get_class_struct_print_type(void *type, char **name)
 		tmp1 = "struct ";
 	}
 	name_len = strlen(tmp1);
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, tmp1);
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 //	if (need_to_free) {
 //		free(tmp_name);
@@ -1291,11 +1303,13 @@ static void get_union_print_type(void *type, char **name)
 
 	tmp1 = "union ";
 	name_len = strlen(tmp1);
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, tmp1);
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 //	if (need_to_free) {
 //		free(tmp_name);
@@ -1325,10 +1339,12 @@ static void get_enumerate_print_type(void *type, char **name)
 
 	tmp1 = "enumerate ";
 	name_len = strlen(tmp1);
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, tmp1);
+	if (tmp_name)
 	strcat(*name, tmp_name);
 
 //	if (need_to_free)
@@ -1355,11 +1371,13 @@ static void get_nesttype_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("arglist ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "arglist ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free)
 		free(tmp_name);
@@ -1376,11 +1394,13 @@ static void get_method_print_type(void *type, char **name)
 
 	tmp1 = "method ";
 	name_len = strlen(tmp1);
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, tmp1);
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 //	if (need_to_free)
 //		free(tmp_name);
@@ -1406,11 +1426,13 @@ static void get_member_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("(member) ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "(member) ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free) {
 		free(tmp_name);
@@ -1438,11 +1460,13 @@ static void get_onemethod_print_type(void *type, char **name)
 	}
 
 	name_len = strlen("onemethod ");
-	name_len += strlen(tmp_name);
+	if (tmp_name)
+		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
 	strcpy(*name, "onemethod ");
-	strcat(*name, tmp_name);
+	if (tmp_name)
+		strcat(*name, tmp_name);
 
 	if (need_to_free)
 		free(tmp_name);
