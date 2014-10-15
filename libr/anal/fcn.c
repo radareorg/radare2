@@ -381,6 +381,8 @@ repeat:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
 			}
+// This code seems to break #1519
+#if 0
 #if JMP_IS_EOB
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -405,6 +407,7 @@ repeat:
 				}
 #endif
 			}
+#endif
 #endif
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
