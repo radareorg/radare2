@@ -90,11 +90,11 @@ static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_hea
 	READ(read_bytes, 4, max_len, dbi_ex_header->niCompiler, data, unsigned int);
 
 	before_read_bytes = read_bytes;
-	parse_sctring(&dbi_ex_header->modName, data, &read_bytes, max_len);
+	parse_sctring(&dbi_ex_header->modName, (unsigned char *)data, &read_bytes, max_len);
 	data += (read_bytes - before_read_bytes);
 
 	before_read_bytes = read_bytes;
-	parse_sctring(&dbi_ex_header->objName, data, &read_bytes, max_len);
+	parse_sctring(&dbi_ex_header->objName, (unsigned char *)data, &read_bytes, max_len);
 	data += (read_bytes - before_read_bytes);
 
 	return read_bytes;

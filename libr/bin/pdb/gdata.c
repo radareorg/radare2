@@ -16,6 +16,8 @@ static int parse_global(char *data, int data_size, SGlobal *global) {
 		READ(read_bytes, 1, data_size, global->name.size, data, unsigned char);
 		init_scstring(&global->name, global->name.size, data);
 	}
+
+	return read_bytes;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
