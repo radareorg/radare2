@@ -449,7 +449,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'j':
 		r_core_anal_fcn_list (core, input+2, 'j');
 		break;
-	case 's': {
+	case 's': { // "afs"
 			  ut64 addr;
 			  RAnalFunction *f;
 			  const char *arg = input+3;
@@ -1066,6 +1066,10 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	case 'j':
 #define COMMA isp++?",":""
 		r_cons_printf ("{");
+		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
+			r_cons_printf ("%s\"program\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_LIBRARY)
+			r_cons_printf ("%s\"library\":true", COMMA);
 		if (type & R_ANAL_ADDR_TYPE_EXEC)
 			r_cons_printf ("%s\"exec\":true", COMMA);
 		if (type & R_ANAL_ADDR_TYPE_READ)
@@ -1085,6 +1089,10 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 		r_cons_printf ("}");
 		break;
 	default:
+		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
+			r_cons_printf ("program\n");
+		if (type & R_ANAL_ADDR_TYPE_LIBRARY)
+			r_cons_printf ("library\n");
 		if (type & R_ANAL_ADDR_TYPE_EXEC)
 			r_cons_printf ("exec\n");
 		if (type & R_ANAL_ADDR_TYPE_READ)

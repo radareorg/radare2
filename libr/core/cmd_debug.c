@@ -207,6 +207,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		r_config_set_i (core->config, "dbg.swstep",
 			(core->dbg->h && !core->dbg->h->canstep));
+		r_core_cmdf (core, "=!pid %d", core->dbg->pid);
 		break;
 	case 'f':
 		r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
@@ -423,8 +424,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (core && core->bin && core->bin->cur && core->bin->cur->o && \
-				(addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
-				(libname != NULL && (strstr (map->name, libname)))) {
+					((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
+					(libname != NULL && (strstr (map->name, libname))))) {
 				RBinObject *o = core->bin->cur->o;
 				filter.offset = 0LL;
 				filter.name = (char *)symname;

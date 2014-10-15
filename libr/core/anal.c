@@ -44,6 +44,14 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
+				if (*map->name=='/') {
+					if (core->io && core->io->desc && core->io->desc->name && \
+							!strcmp (map->name, core->io->desc->name)) {
+						types |= R_ANAL_ADDR_TYPE_PROGRAM;
+					} else {
+						types |= R_ANAL_ADDR_TYPE_LIBRARY;
+					}
+				}
 				if (map->perm & R_IO_EXEC)
 					types |= R_ANAL_ADDR_TYPE_EXEC;
 				if (map->perm & R_IO_READ)
@@ -64,6 +72,8 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		// sections
 		r_list_foreach (core->io->sections, iter, ios) {
 			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {
+				// TODO: we shuold identify which maps come from the program or other
+				//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 				if (ios->rwx & R_IO_EXEC)
 					types |= R_ANAL_ADDR_TYPE_EXEC;
 				if (ios->rwx & R_IO_READ)
