@@ -872,7 +872,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.size", 64,  "Define size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Define a delta for the stack dump");
 
-	SETCB("dbg.forks", "true", &cb_dbg_forks, "Stop execution if fork() is done");
+	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
@@ -884,7 +885,6 @@ R_API int r_core_config_init(RCore *core) {
 		r_config_set_i (cfg, "dbg.follow", 64);
 	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
-	SETCB("dbg.stopthreads", "true", &cb_stopthreads, "Stop all threads when debugger breaks");
 	SETCB("dbg.swstep", "false", &cb_swstep, "If enabled forces the use of software steps (code analysis+breakpoint)");
 // TODO: This should be specified at first by the debug backend when attaching
 #if __arm__ || __mips__
