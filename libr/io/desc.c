@@ -4,7 +4,7 @@
 // TODO: to be deprecated.. this is slow and boring
 
 R_API void r_io_desc_init(RIO *io) {
-	io->files= r_list_new ();
+	io->files = r_list_new ();
 	io->files->free = (RListFree)r_io_desc_free;
 }
 
@@ -68,7 +68,7 @@ R_API void r_io_desc_free(RIODesc *desc) {
 		R_FREE (desc->uri);
 	}
 	memset (desc, 0, sizeof (RIODesc));
-	//	free (desc); double free orw at
+	free (desc);
 }
 
 R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
@@ -86,6 +86,8 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (io->files, iter, d) {
 		if (d->fd == fd) {
+			r_io_desc_free (d);
+			iter->data = NULL; // enforce free
 			r_list_delete (io->files, iter);
 			return R_TRUE;
 		}

@@ -26,15 +26,7 @@ R_API RBuffer *r_buf_from_bytes( const ut8 *bytes, ut64 len) {
 }
 
 R_API RBuffer *r_buf_new() {
-	RBuffer *b = R_NEW0 (RBuffer);
-	if (b) {
-		b->buf = NULL;
-		b->length = 0;
-		b->cur = 0;
-		b->base = 0LL;
-		b->mmap = NULL;
-	}
-	return b;
+	return R_NEW0 (RBuffer);
 }
 
 R_API const ut8 *r_buf_buffer (RBuffer *b) {
@@ -59,6 +51,7 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 		if (b->length == 0) b->empty = 1;
 		return b;
 	}
+eprintf ("MMAP FAIL\n");
 	r_buf_free (b);
 	return NULL; /* we just freed b, don't return it */
 }

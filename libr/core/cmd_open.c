@@ -31,14 +31,19 @@ static int cmd_open(void *data, const char *input) {
 			addr = 0LL;
 		}
 		if (num<=0) {
-			const char *fn = input+(isn?2:1);
-			file = r_core_file_open (core, fn, perms, addr);
-			if (file) {
-				// MUST CLEAN BEFORE LOADING
-				if (!isn)
-					r_core_bin_load (core, fn, baddr);
-			} else if (!nowarn) {
-				eprintf ("Cannot open file '%s'\n", fn);
+			const char *fn = input+1; //(isn?2:1);
+			if (fn && *fn) {
+				if (isn) fn++;
+				file = r_core_file_open (core, fn, perms, addr);
+				if (file) {
+					// MUST CLEAN BEFORE LOADING
+					if (!isn)
+						r_core_bin_load (core, fn, baddr);
+				} else if (!nowarn) {
+					eprintf ("Cannot open file '%s'\n", fn);
+				}
+			} else {
+				eprintf ("Usage: on [file]\n");
 			}
 		} else {
 			RListIter *iter = NULL;
@@ -59,9 +64,12 @@ static int cmd_open(void *data, const char *input) {
 			const char *value = NULL;
 			ut32 binfile_num = -1, binobj_num = -1;
 
-			switch (*(input+1)) {
+			switch (input[1]) {
+				case 0:
 				case 'l':
-					r_core_bin_list (core);
+				case 'j':
+				case '*':
+					r_core_bin_list (core, input[1]);
 					break;
 				case 's':
 					value = *(input+2) ? input+3 : NULL;
@@ -89,7 +97,6 @@ static int cmd_open(void *data, const char *input) {
 					}
 					r_core_bin_raise (core, binfile_num, binobj_num);
 					break;
-
 				case 'b':
 					value = *(input+2) ? input+3 : NULL;
 					if (!value) {
@@ -103,7 +110,6 @@ static int cmd_open(void *data, const char *input) {
 						eprintf ("Invalid binfile number.");
 						break;
 					}
-
 					value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
 					value = value && *(value+1) ? value+1 : NULL;
 
@@ -122,18 +128,21 @@ static int cmd_open(void *data, const char *input) {
 						eprintf ("Invalid bin object number.");
 						break;
 					}
-
 					r_core_bin_raise (core, -1, binobj_num);
 					break;
-				case 'd':
-					value = *(input+2) ? input+3 : NULL;
+				case '-':
+					if (!r_bin_file_delete (core->bin, r_num_math (core->num, input+2))) {
+						eprintf ("Cant find an RBinFile associated with that fd.\n");
+					}
+					break;
+				case 'd': // backward compat, must be deleted
+					value = *(input+2) ? input+2 : NULL;
 					if (!value) {
 						eprintf ("Invalid binfile number.");
 						break;
 					}
 					binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
 							r_get_input_num_value (core->num, value) : UT32_MAX;
-
 					if (binobj_num == UT32_MAX) {
 						eprintf ("Invalid bin object number.");
 						break;
@@ -143,8 +152,9 @@ static int cmd_open(void *data, const char *input) {
 				case '?':{
 					const char* help_msg[] = {
 						"Usage:", "ob", " # List open binary files backed by fd",
-						"obl", "", "List opened binfiles and bin objects",
+						"ob", "", "List opened binfiles and bin objects",
 						"obb", " [binfile #]", "Prioritize by binfile number with current selected object",
+						"ob-", " [binfile #]", "Delete binfile",
 						"obd", " [binobject #]", "Delete binfile object numbers, if more than 1 object is loaded",
 						"obo", " [binobject #]", "Prioritize by bin object number",
 						"obs", " [bf #] [bobj #]", "Prioritize by binfile and object numbers",

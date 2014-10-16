@@ -1265,27 +1265,26 @@ R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, con
 	return obj && r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, obj);
 }
 
-static RBinObject * r_bin_file_object_find_by_id (RBinFile *binfile, ut32 binobj_id) {
-	RBinObject *obj = NULL;
-	RListIter *iter = NULL;
+static RBinObject* r_bin_file_object_find_by_id (RBinFile *binfile, ut32 binobj_id) {
+	RBinObject *obj;
+	RListIter *iter;
 
-	if (!binfile) return obj;
+	if (binfile)
 	r_list_foreach (binfile->objs, iter, obj) {
-		if (obj->id == binobj_id) break;
-		obj = NULL;
+		if (obj->id == binobj_id)
+			return obj;
 	}
-	return obj;
+	return NULL;
 }
 
-static RBinFile * r_bin_file_find_by_object_id (RBin *bin, ut32 binobj_id) {
-	RListIter *iter = NULL;
-	RBinFile *binfile = NULL;
-
+static RBinFile* r_bin_file_find_by_object_id (RBin *bin, ut32 binobj_id) {
+	RListIter *iter;
+	RBinFile *binfile;
 	r_list_foreach (bin->binfiles, iter, binfile) {
-		if (r_bin_file_object_find_by_id (binfile, binobj_id)) break;
-		binfile = NULL;
+		if (r_bin_file_object_find_by_id (binfile, binobj_id))
+			return binfile;
 	}
-	return binfile;
+	return NULL;
 }
 
 #if 0
@@ -1314,16 +1313,14 @@ static RBinFile * r_bin_file_find_by_id (RBin *bin, ut32 binfile_id) {
 }
 
 R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id) {
-
 	RBinFile *binfile = NULL;//, *cbinfile = r_bin_cur (bin);
 	RBinObject *obj = NULL;
 	int res = R_FALSE;
 
-	if (binfile_id == UT32_MAX && binobj_id == UT32_MAX) {
+	if (binfile_id == UT32_MAX && binobj_id == UT32_MAX)
 		return R_FALSE;
-	}
 
-	if (binfile_id == -1 ) {
+	if (binfile_id == -1) {
 		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
 		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
 	} else if (binobj_id == -1) {
@@ -1598,16 +1595,29 @@ R_API ut64 r_bin_get_size (RBin *bin) {
 	return UT64_MAX;
 }
 
+R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd) {
+	RListIter *iter;
+	RBinFile *bf;
+
+	if (bin)
+	r_list_foreach (bin->binfiles, iter, bf) {
+		if (bf && bf->fd == bin_fd) {
+			r_list_delete (bin->binfiles, iter);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 R_API RBinFile * r_bin_file_find_by_fd (RBin *bin, ut32 bin_fd) {
 	RListIter *iter;
-	RBinFile *bf = NULL;
-
-	if (!bin) return bf;
+	RBinFile *bf;
+	if (bin)
 	r_list_foreach (bin->binfiles, iter, bf) {
-		if (bf && bf->fd == bin_fd) break;
-		bf = NULL;
+		if (bf && bf->fd == bin_fd)
+			return bf;
 	}
-	return bf;
+	return NULL;
 }
 
 R_API RBinFile * r_bin_file_find_by_name (RBin * bin, const char * name) {

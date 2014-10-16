@@ -23,6 +23,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *ofilepath = odesc ? strdup (odesc->uri) : NULL;
 	char *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = R_FALSE;
+	ut64 origoff = core->offset;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
 		return R_FALSE;
@@ -41,31 +42,41 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	}
 	newpid = odesc ? odesc->fd : -1;
 
-	if (!perm) perm = odesc ? odesc->flags : 0;		//maybe (odesc->flags & 7)
-	path = strdup (ofilepath);
-
 	if (isdebug) {
 		r_debug_kill (core->dbg, core->dbg->pid,
 			core->dbg->tid, 9); // KILL
+		perm = 7;
+	} else {
+		if (!perm) {
+			perm = 4; //R_IO_READ;
+		}
+	}
+	if (ofilepath) {
+		path = strdup (ofilepath);
+	} else {
+		eprintf ("Unknown file path");
+		return R_FALSE;
 	}
 
 	// HACK: move last mapped address to higher place
 	// XXX - why does this hack work?
 	if (ofile->map) {
 		ofrom = ofile->map->from;
-		ofile->map->from = UT64_MAX;
+		ofile->map->from = UT32_MAX;
 	}
 	// closing the file to make sure there are no collisions
 	// when the new memory maps are created.
-	//r_core_file_close (core, ofile);
 	file = r_core_file_open (core, path, perm, baddr);
 	if (file) {
+		ofile->map->from = ofrom;
 		r_core_file_close (core, ofile);
 		r_core_file_set_by_file (core, file);
+		r_core_file_set_by_fd (core, file->desc->fd);
 		ofile = NULL;
 		odesc = NULL;
+	//	core->file = file;
 		eprintf ("File %s reopened in %s mode\n", path,
-			perm&R_IO_WRITE?"read-write": "read-only");
+			(perm&R_IO_WRITE)? "read-write": "read-only");
 
 		ret = r_core_bin_load (core, obinfilepath, baddr);
 		if (!ret) {
@@ -78,7 +89,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			ret = R_TRUE;
 		}*/
 		// close old file
-		core->file = file;
 	} else if (ofile) {
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
 			     " attempting to open read-only.\n", path, perm);
@@ -86,6 +96,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		//ofile = r_core_file_open (core, path, R_IO_READ, addr);
 		r_core_file_set_by_file (core, ofile);
 		ofile->map->from = ofrom;
+	} else {
+		eprintf ("Cannot reopen\n");
 	}
 	if (isdebug) {
 		// XXX - select the right backend
@@ -98,9 +110,11 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	if (core->file) {
 		RCoreFile * cf = core->file;
 		RIODesc *desc = cf ? cf->desc : NULL;
-		if (desc){
+		if (desc) {
+#if 0
 			r_io_raise (core->io, desc->fd);
 			core->switch_file_view = 1;
+#endif
 			r_core_block_read (core, 0);
 		} else {
 			const char *name = (cf && cf->desc) ? cf->desc->name : "ERROR";
@@ -111,6 +125,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd0 (core, "sr pc");
 	}
+	r_core_seek (core, origoff, 1);
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free (obinfilepath);
@@ -499,19 +514,18 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 
 
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
-	RList *list_fds = NULL;
-	RCoreFile *fh, *top_file = NULL;
 	RIODesc *fd;
+	RList *list_fds = NULL;
+	const char *cp = NULL;
+	char *loadmethod = NULL;
 	RListIter *fd_iter, *iter2;
+	RCoreFile *fh, *top_file = NULL;
 	ut64 current_loadaddr = loadaddr;
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
 
 
 	list_fds = r_io_open_many (r->io, file, flags, 0644);
-
-	const char *cp = NULL;
-	char *loadmethod = NULL;
 
 	if (!list_fds || r_list_length (list_fds) == 0 ) {
 		r_list_free (list_fds);
@@ -676,13 +690,17 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	// fh in the r->files list, we are hosed. (design flaw)
 	// TODO maybe using sdb to keep track of the allocated and
 	// deallocated files might be a good solutions
-	if (!r) return R_FALSE;
-	else if (r_list_length (r->files) == 0) return R_FALSE;
-	else if (!desc) return R_FALSE;
+	if (!r || !desc || r_list_empty (r->files))
+		return R_FALSE;
 
 	if (fh == r->file) r->file = NULL;
-	r_core_file_set_by_fd (r, desc->fd);
-	r_core_bin_set_by_fd (r, desc->fd);
+
+	r_core_file_set_by_fd (r, fh->desc->fd);
+	r_core_bin_set_by_fd (r, fh->desc->fd);
+
+	/* delete filedescriptor from io descs here */
+	r_io_desc_del (r->io, fh->desc->fd);
+
 	int ret = r_list_delete_data (r->files, fh);
 	if (ret) {
 		if (!prev_cf && r_list_length (r->files) > 0)
@@ -693,9 +711,21 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 			if (!desc)
 				eprintf ("Error: RCoreFile's found with out a supporting RIODesc.\n");
 			ret = r_core_file_set_by_file (r, prev_cf);
-			r_core_block_read (r, 0);
 		}
 	}
+#if 0
+	{
+		RListIter *iter;
+		RIODesc *iod;
+		RCoreFile *mcf;
+		r_list_foreach (r->files, iter, mcf) {
+			r_cons_printf ("[cf]--> %p %p %d\n", mcf, mcf->desc, mcf->desc->fd);
+		}
+		r_list_foreach (r->io->files, iter, iod) {
+			r_cons_printf ("[io]--> %p %d\n", iod, iod->fd);
+		}
+	}
+#endif
 	return ret;
 }
 
@@ -859,12 +889,11 @@ R_API int r_core_file_set_by_name (RCore * core, const char * name) {
 R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 	if (cf) {
 		RIODesc *desc = cf->desc;
-		core->offset = cf && cf->map ? cf->map->from : 0;
+		core->offset = cf && cf->map ? cf->map->from : 0LL;
 		core->file = cf;
 		if (desc) {
 			r_io_use_desc (core->io, desc);
 			r_core_bin_set_by_fd (core, desc->fd);
-			//r_core_bin_bind (core, NULL);
 		}
 		return R_TRUE;
 	}

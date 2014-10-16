@@ -138,9 +138,10 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 			desc->uri = uri;
 		}
 	}
-	if (!desc)
+	if (!desc) {
 		free (uri);
-	io->plugin = NULL;
+		io->plugin = NULL;
+	}
 	return desc;
 }
 
@@ -338,13 +339,14 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 #if USE_NEW_IO
 	return r_io_read_cr (io, addr, buf, len);
 #else
+	ut64 paddr, last, last2;
+	int ms, ret, l = 0, olen = len, w = 0;
+
 	if (io->raw) {
 		if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
 			memset (buf, 0xff, len);
 		return r_io_read_internal (io, buf, len);
 	}
-	ut64 paddr, last, last2;
-	int ms, ret, l = 0, olen = len, w = 0;
 
 	io->off = addr;
 	memset (buf, 0xff, len); // probably unnecessary
@@ -446,10 +448,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
-//eprintf ("READ 0x%llx = %d\n", addr+w, ret);
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
-//memset(buf, 0xff, olen);
 			ret = l;
 		} else if (ret<l) {
 			l = ret;

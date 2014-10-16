@@ -371,7 +371,7 @@ R_API int r_core_block_read(RCore *core, int next) {
 		memset (core->block, 0xff, core->blocksize);
 		return -1;
 	}
-	if (core->switch_file_view) {
+	if (core->file && core->switch_file_view) {
 		r_io_use_desc (core->io, core->file->desc);
 		r_core_bin_set_by_fd (core, core->file->desc->fd);	//needed?
 		core->switch_file_view = 0;

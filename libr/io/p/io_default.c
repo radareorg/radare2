@@ -56,12 +56,15 @@ static int __io_posix_open (const char *file, int flags, int mode) {
 
 static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
-	ut64 cur = mmo->buf ? mmo->buf->cur : 0;
+	ut64 cur;
 	if (mmo->buf) {
+		cur = mmo->buf->cur;
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
+	} else {
+		cur = 0;
 	}
-	if (r_file_size (mmo->filename)> ST32_MAX) {
+	if (r_file_size (mmo->filename) > ST32_MAX) {
 		// Do not use mmap if the file is huge
 		mmo->rawio = 1;
 	}
@@ -70,9 +73,15 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		return (mmo->fd != -1);
 	}
 	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
-	if (mmo->buf)
+	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
-	return (mmo->buf ? R_TRUE : R_FALSE);
+		return R_TRUE;
+	} else {
+		mmo->rawio = 1;
+		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
+		return (mmo->fd != -1);
+	}
+	return R_FALSE;
 }
 
 RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
@@ -132,8 +141,12 @@ static int r_io_def_mmap_check_default (const char *filename) {
 
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOMMapFileObj *mmo = NULL;
-	if (!fd || !fd->data || !buf)
+	if (!fd || !fd->data || !buf) {
+		// in this case we fallback reopening in raw mode
+		eprintf ("MAJOR FAILURE fOR %p %p\n", fd, fd->data);
+		asm("int3");
 		return -1;
+	}
 	if (io->off==UT64_MAX) {
 		memset (buf, 0xff, count);
 		return count;
