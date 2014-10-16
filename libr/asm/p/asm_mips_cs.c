@@ -13,7 +13,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (a->cpu) {
 		if (!strcmp (a->cpu, "n64")) {
-			mode |= CS_MODE_N64;
+			mode |= CS_MODE_64;
 		} else
 		if (!strcmp (a->cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
