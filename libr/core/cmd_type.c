@@ -155,7 +155,7 @@ static int cmd_type(void *data, const char *input) {
 				if (tmp) {
 					out = r_parse_c_string (tmp);
 					if (out) {
-						r_cons_strcat (out);
+				//		r_cons_strcat (out);
 						sdb_query_lines (core->anal->sdb_types, out);
 						free (out);
 					}
@@ -164,7 +164,7 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				char *out = r_parse_c_file (filename);
 				if (out) {
-					r_cons_strcat (out);
+				//	r_cons_strcat (out);
 					sdb_query_lines (core->anal->sdb_types, out);
 					free (out);
 				}
@@ -195,7 +195,7 @@ static int cmd_type(void *data, const char *input) {
 			//r_anal_str_to_type (core->anal, string);
 			char *out = r_parse_c_string (tmp);
 			if (out) {
-				r_cons_strcat (out);
+				//r_cons_strcat (out);
 				sdb_query_lines (core->anal->sdb_types, out);
 				free (out);
 			}
