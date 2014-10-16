@@ -71,6 +71,8 @@ static int verify_version(int show) {
 static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RListIter *iter;
 	RDebugMap *map;
+	if (!r || !r->io || !r->io->desc)
+		return 0LL;
 	r_debug_attach (r->dbg, r->io->desc->fd);
 	r_debug_map_sync (r->dbg);
 	r_list_foreach (r->dbg->maps, iter, map) {
@@ -451,7 +453,9 @@ int main(int argc, char **argv, char **envp) {
 				is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 				if (!is_gdb) file = strdup ("dbg://");
 				/* implicit ./ to make unix behave like windows */
-				if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
+				if (*f=='.' && f[1]=='/') {
+					ptr = strdup (argv[optind]);
+				} else if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
 					ptr = r_str_prefix (strdup (argv[optind]), "./");
 				} else	ptr = r_file_path (argv[optind]);
 				optind++;
