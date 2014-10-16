@@ -1288,6 +1288,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dc", "[-pid]", "Stop execution of pid",
 				"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
 				"dcc", "", "Continue until call (use step into)",
+				"dccu", "", "Continue until unknown call (call reg)",
 				"dcf", "", "Continue until fork (TODO)",
 				"dck", " <signal> <pid>", "Continue sending signal to process",
 				"dco", " <num>", "Step over <num> instructions",
@@ -1318,7 +1319,11 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'c':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+			if (input[2] == 'u') {
+				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+			} else {
+				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+			}
 			checkbpcallback (core);
 			break;
 		case 'r':
