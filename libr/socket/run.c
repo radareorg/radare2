@@ -535,6 +535,8 @@ R_API int r_run_start(RRunProfile *p) {
 			eprintf ("rarun2: %s: file not found\n", p->_program);
 			return 1;
 		}
+		// close all non-tty fds
+		{ int i; for (i=3; i<9999; i++) close (i); }
 		// TODO: use posix_spawn
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
