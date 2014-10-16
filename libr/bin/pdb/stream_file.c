@@ -7,6 +7,7 @@
 int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
 							  int pages_amount, int size, int page_size)
 {
+	stream_file->error = 0;
 	stream_file->fp = fp;
 	stream_file->pages = pages;
 	stream_file->pages_amount = pages_amount;
@@ -31,6 +32,12 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
 	int page_offset;
 //	int tmp;
 //	char buffer[1024];
+
+	if ((end_indx - start_indx) > stream_file->end)
+	{
+		stream_file->error = READ_PAGE_FAIL;
+		return;
+	}
 
 	for (i = start_indx; i < end_indx; i++) {
 //		tmp = stream_file->pages[i];
