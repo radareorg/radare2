@@ -11,7 +11,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 
 // TODO: add support for args
-R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
+R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
 	ut64 ofrom = 0, baddr = 0; // XXX ? check file->map ?
@@ -68,7 +68,11 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	// when the new memory maps are created.
 	file = r_core_file_open (core, path, perm, baddr);
 	if (file) {
+		int had_rbin_info = 0;
 		ofile->map->from = ofrom;
+		if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
+			had_rbin_info = 1;
+		}
 		r_core_file_close (core, ofile);
 		r_core_file_set_by_file (core, file);
 		r_core_file_set_by_fd (core, file->desc->fd);
@@ -78,9 +82,11 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		eprintf ("File %s reopened in %s mode\n", path,
 			(perm&R_IO_WRITE)? "read-write": "read-only");
 
-		ret = r_core_bin_load (core, obinfilepath, baddr);
-		if (!ret) {
-			eprintf ("Error: Failed to reload rbin for: %s", path);
+		if (loadbin && (loadbin==2 || had_rbin_info)) {
+			ret = r_core_bin_load (core, obinfilepath, baddr);
+			if (!ret) {
+				eprintf ("Error: Failed to reload rbin for: %s", path);
+			}
 		}
 
 		/*

@@ -261,8 +261,33 @@ static int cmd_open(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 'o':
-		r_core_file_reopen (core, input+2,
-			(input[1]=='+')?R_IO_READ|R_IO_WRITE:0);
+		switch (input[1]) {
+		case 'b': // "oob" : reopen with bin info
+			r_core_file_reopen (core, input+2, 0, 2);
+			break;
+		case 'n':
+			r_core_file_reopen (core, input+2, 0, 0);
+			break;
+		case '+':
+			r_core_file_reopen (core, input+2, R_IO_READ | R_IO_WRITE, 1);
+			break;
+		case 0: // "oo"
+			r_core_file_reopen (core, input+2, 0, 1);
+			break;
+		case '?':
+		default:
+			{
+				 const char* help_msg[] = {
+					 "Usage:", "oo[-] [arg]", " # map opened files",
+					 "oo", "", "reopen current file",
+					 "oob", "", "reopen loading rbin info",
+					 "oon", "", "reopen without loading rbin info",
+					 "oo+", "", "reopen in read-write",
+					 NULL};
+				 r_core_cmd_help (core, help_msg);
+			 }
+			 break;
+		}
 		break;
 	case 'c':
 		// memleak? lose all settings wtf

@@ -143,8 +143,6 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOMMapFileObj *mmo = NULL;
 	if (!fd || !fd->data || !buf) {
 		// in this case we fallback reopening in raw mode
-		eprintf ("MAJOR FAILURE fOR %p %p\n", fd, fd->data);
-		asm("int3");
 		return -1;
 	}
 	if (io->off==UT64_MAX) {

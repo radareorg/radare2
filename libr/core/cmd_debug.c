@@ -1533,7 +1533,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'o':
-		r_core_file_reopen (core, input[1]? input+2: NULL, 0);
+		r_core_file_reopen (core, input[1]? input+2: NULL, 0, 1);
 		break;
 	case 'w':
 		r_cons_break (static_debug_stop, core->dbg);
