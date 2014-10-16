@@ -258,7 +258,10 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
-	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flaginbytes");
+	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
+	if (ds->show_flag_in_bytes) {
+		ds->show_flags = 0;
+	}
 
 
 	if (r_config_get_i (core->config, "asm.linesstyle"))

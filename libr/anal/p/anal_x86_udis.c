@@ -79,7 +79,7 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 	case UD_OP_JIMM:
 	case UD_OP_IMM:
 		n = getval (op) & mask;
-		mask = UT64_MAX; // uhm?
+		//mask = UT64_MAX; // uhm?
 		if (op->type == UD_OP_JIMM) n += u->pc;
 		if (n>=0 && n<256)
 			sprintf (src, "%"PFMT64d, n & mask);
@@ -147,14 +147,14 @@ static st64 getval(ud_operand_t *op) {
 		switch (bits) {
 		case 8: return (st64)(char) (op->lval.sbyte);
 		case 16: return (st64)(short) op->lval.uword;
-		case 32: return op->lval.udword;
+		case 32: return (ut64)(ut32)(op->lval.udword&UT32_MAX);
 		case 64: return op->lval.uqword;
 		}
 	} else {
 		switch (bits) {
 		case 8: return (st64)(char)(255-op->lval.sbyte); // XXX?
-		case 16: return (st64)(short) op->lval.uword;
-		case 32: return op->lval.udword;
+		case 16: return (st64)(short) (op->lval.uword& UT16_MAX);
+		case 32: return (ut64)(ut32)(op->lval.udword & UT32_MAX);
 		case 64: return op->lval.uqword;
 		}
 	}
