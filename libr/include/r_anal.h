@@ -339,9 +339,43 @@ enum {
 	R_ANAL_OP_FAMILY_LAST
 };
 
+#if 0
+On x86 acording to Wikipedia
+
+     Prefix group 1
+        0xF0: LOCK prefix
+        0xF2: REPNE/REPNZ prefix
+        0xF3: REP or REPE/REPZ prefix 
+    Prefix group 2
+        0x2E: CS segment override
+        0x36: SS segment override
+        0x3E: DS segment override
+        0x26: ES segment override
+        0x64: FS segment override
+        0x65: GS segment override
+        0x2E: Branch not taken    (hinting)
+        0x3E: Branch taken 
+    Prefix group 3
+        0x66: Operand-size override prefix 
+    Prefix group 4
+        0x67: Address-size override prefix 
+#endif
+
+typedef enum {
+	R_ANAL_OP_PREFIX_COND     = 1,
+	R_ANAL_OP_PREFIX_REP      = 1<<1,
+	R_ANAL_OP_PREFIX_REPE     = 1<<2,
+	R_ANAL_OP_PREFIX_REPNE    = 1<<3,
+	R_ANAL_OP_PREFIX_LOCK     = 1<<4,
+	R_ANAL_OP_PREFIX_LIKELY   = 1<<5,
+	R_ANAL_OP_PREFIX_UNLIKELY = 1<<6
+	/* TODO: add segment override typemods? */
+} RAnalOpPrefix;
+
 // XXX: this definition is plain wrong. use enum or empower bits
 typedef enum {
-	R_ANAL_OP_TYPE_COND  = 0x80000000,
+	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
+	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
 	R_ANAL_OP_TYPE_NULL  = 0,
 	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
@@ -562,7 +596,8 @@ typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
 	ut64 type;      /* type of opcode */
-	ut64 type2;
+	ut64 prefix;    /* type of opcode prefix (rep,lock,..) */
+	ut64 type2; // used by java
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */

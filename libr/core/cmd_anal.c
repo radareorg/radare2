@@ -216,9 +216,12 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 	RAnalOp op;
 	ut64 addr;
 	RAnalHint *hint;
-	if (fmt=='j') {
+	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	const char *color = "";
+	if (use_color)
+		color = core->cons->pal.label;
+	if (fmt=='j')
 		r_cons_printf ("[");
-	}
 	for (i=idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
 		addr = core->offset+idx;
 		// TODO: use more anal hints
@@ -237,6 +240,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
 			if (hint && hint->opcode)
 				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
+			r_cons_printf ("\"prefix\": %"PFMT64d",", op.prefix);
 			r_cons_printf ("\"addr\": %"PFMT64d",", core->offset+idx);
 			r_cons_printf ("\"bytes\": \"");
 			for (j=0; j<size; j++)
@@ -269,11 +273,19 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 			r_cons_printf ("\"family\":%d}", op.family);
 		} else {
-			r_cons_printf ("opcode: %s\n", asmop.buf_asm);
-			if (hint && hint->opcode)
-				r_cons_printf ("ophint: %s\n", hint->opcode);
-			r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
-			r_cons_printf ("bytes: ");
+#define printline(k,fmt,arg) {\
+	if (use_color) r_cons_printf ("%s%s: "Color_RESET, color, k); \
+	else r_cons_printf ("%s: ", k); \
+	if (fmt) r_cons_printf (fmt, arg); \
+}
+			printline ("opcode", "%s\n", asmop.buf_asm);
+			if (hint) {
+				if (hint->opcode)
+					printline ("ophint", "%s\n", hint->opcode);
+				printline ("addr", "0x%08"PFMT64x"\n", (hint->addr+idx));
+			}
+			printline ("prefix", "%"PFMT64d"\n", op.prefix);
+			printline ("bytes", NULL, 0);
 			for (j=0; j<size; j++)
 				r_cons_printf ("%02x", buf[j]);
 			r_cons_newline ();
@@ -281,25 +293,23 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 				r_cons_printf ("val: 0x%08"PFMT64x"\n", op.val);
 			if (op.ptr != UT64_MAX)
 				r_cons_printf ("ptr: 0x%08"PFMT64x"\n", op.ptr);
-			r_cons_printf ("size: %d\n", size);
-			r_cons_printf ("type: %d (%s)\n", (int)(op.type & 0xffff),
-				r_anal_optype_to_string (op.type)); // TODO: string
+			printline ("size", "%d\n", size);
+			printline ("type","%s\n", r_anal_optype_to_string (op.type));
 			if (*R_STRBUF_SAFEGET (&op.esil))
-				r_cons_printf ("esil: %s\n", R_STRBUF_SAFEGET (&op.esil));
+				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
 			if (op.jump != UT64_MAX)
-				r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+				printline ("jump","0x%08"PFMT64x"\n", op.jump);
 
 			if (hint && hint->fail != UT64_MAX)
 				op.fail = hint->fail;
 			if (op.fail != UT64_MAX)
 				r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
 
-			r_cons_printf ("stack: %s\n", r_anal_stackop_tostring (op.stackop));
-			r_cons_printf ("cond: %d\n",
-				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
-			r_cons_printf ("family: %d\n", op.family);
+			printline ("stack","%s\n", r_anal_stackop_tostring (op.stackop));
+			printline ("cond","%d\n", (op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
+			printline ("family","%d\n", op.family);
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
