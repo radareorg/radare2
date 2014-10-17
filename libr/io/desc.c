@@ -67,7 +67,6 @@ R_API void r_io_desc_free(RIODesc *desc) {
 	if (desc->uri) {
 		R_FREE (desc->uri);
 	}
-	memset (desc, 0, sizeof (RIODesc));
 	free (desc);
 }
 
