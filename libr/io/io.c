@@ -114,12 +114,8 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				continue;
 			}
 			if (desc) {
-				r_io_desc_add (io, desc);
 				if (desc->fd != -1)
 					r_io_plugin_open (io, desc->fd, plugin);
-				if (desc != io->desc) {
-					r_io_use_desc (io, desc);
-				}
 				desc->uri = uri;
 			}
 		}
@@ -129,12 +125,8 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 		plugin = r_io_plugin_get_default (io, uri, 0);
 		desc = (plugin&&plugin->open) ? plugin->open (io, uri, flags, mode) : NULL;
 		if (desc) {
-			r_io_desc_add (io, desc);
 			if (desc->fd != -1)
 				r_io_plugin_open (io, desc->fd, plugin);
-			if (desc != io->desc) {
-				r_io_use_desc (io, desc);
-			}
 			desc->uri = uri;
 		}
 	}
@@ -173,10 +165,8 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 	}
 
 	r_list_foreach (list_fds, iter, desc) {
-		if (desc) {
-			r_io_desc_add (io, desc);
+		if (desc)
 			desc->uri = strdup (uri);
-		}
 	}
 
 	io->plugin = iop;
