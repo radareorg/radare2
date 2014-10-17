@@ -144,13 +144,16 @@ static int cmd_hash(void *data, const char *input) {
 	const char *ptr;
 	int pos = 0, handled_cmd = R_FALSE;
 
-	if (!*input) return 0;
-	else if (input[0]==' ') return 0;
-	if (input[0]=='#' && !input[1]) {
+	switch (*input) {
+	case '\t':
+	case ' ':
+		return 0;
+	case '#':
+		if (!input[1]) {
 		algolist (1);
 		return R_TRUE;
-	}
-	if (input[0]=='!') {
+		}
+	case '!': {
 		const char *lang = input+1;
 		if (*lang=='/') {
 			const char *ptr = lang+1;
@@ -180,6 +183,7 @@ static int cmd_hash(void *data, const char *input) {
 		if (!p || *p==' ')
 			eprintf ("Invalid hashbang. See '#!' for help.\n");
 		return R_TRUE;
+	}
 	}
 
 	ptr = strchr (input, ' ');
