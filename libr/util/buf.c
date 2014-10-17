@@ -51,7 +51,6 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 		if (b->length == 0) b->empty = 1;
 		return b;
 	}
-eprintf ("MMAP FAIL\n");
 	r_buf_free (b);
 	return NULL; /* we just freed b, don't return it */
 }
