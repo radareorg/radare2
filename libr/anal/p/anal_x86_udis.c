@@ -73,18 +73,6 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
 	src[0] = 0;
 	if (!mask) mask = UT64_MAX;
 
-#if 0
-  u->pfx_seg   = 0;
-  u->pfx_opr   = 0;
-  u->pfx_adr   = 0;
-  u->pfx_lock  = 0;
-  u->pfx_repne = 0;
-  u->pfx_rep   = 0;
-  u->pfx_repe  = 0;
-  u->pfx_rex   = 0;
-  u->pfx_str   = 0;
-#endif
-
 	switch (op->type) {
 	case UD_OP_PTR:
 	case UD_OP_CONST:
@@ -218,9 +206,19 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		}
 		handler->callback (&info, op, dst, src, str);
 	}
+#if 0
+	u->pfx_seg   = 0;
+	u->pfx_opr   = 0;
+	u->pfx_adr   = 0;
+	u->pfx_lock  = 0;
+	u->pfx_repne = 0;
+	u->pfx_rep   = 0;
+	u->pfx_repe  = 0;
+	u->pfx_rex   = 0;
+	u->pfx_str   = 0;
+#endif
 	op->prefix = 0;
 	if (u.pfx_rep) op->prefix |= R_ANAL_OP_PREFIX_REP;
-	if (u.pfx_repe) op->prefix |= R_ANAL_OP_PREFIX_REPE;
 	if (u.pfx_repne) op->prefix |= R_ANAL_OP_PREFIX_REPNE;
 	if (u.pfx_lock) op->prefix |= R_ANAL_OP_PREFIX_LOCK;
 	switch (u.mnemonic) {
@@ -260,6 +258,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Iror:
 		op->type = R_ANAL_OP_TYPE_ROR;
 		break;
+	case UD_Iint1:
 	case UD_Iint3:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;

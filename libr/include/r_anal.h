@@ -364,11 +364,10 @@ On x86 acording to Wikipedia
 typedef enum {
 	R_ANAL_OP_PREFIX_COND     = 1,
 	R_ANAL_OP_PREFIX_REP      = 1<<1,
-	R_ANAL_OP_PREFIX_REPE     = 1<<2,
-	R_ANAL_OP_PREFIX_REPNE    = 1<<3,
-	R_ANAL_OP_PREFIX_LOCK     = 1<<4,
-	R_ANAL_OP_PREFIX_LIKELY   = 1<<5,
-	R_ANAL_OP_PREFIX_UNLIKELY = 1<<6
+	R_ANAL_OP_PREFIX_REPNE    = 1<<2,
+	R_ANAL_OP_PREFIX_LOCK     = 1<<3,
+	R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
+	R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
 	/* TODO: add segment override typemods? */
 } RAnalOpPrefix;
 
