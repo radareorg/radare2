@@ -114,6 +114,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	int pos = 0;
 	R_PDB_STREAM *pdb_stream = 0;
 	int data_size = 0;
+	int tmp_data_max_size = 0;
 
 	char *tmp;
 
@@ -136,7 +137,19 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	root_stream7->num_streams = num_streams;
 
+	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
+	if (tmp_data_max_size <= 0) {
+		printf("too much amount of streams\n"
+			   "curremt pdb file is not corect\n");
+		return 0;
+	}
+
 	sizes = (int *) malloc(num_streams * 4);
+	if (!sizes) {
+		printf("too much amount of streams\n"
+			   "current pdb file is not correct\n");
+		return 0;
+	}
 
 	for (i = 0; i < num_streams; i++) {
 		stream_size = *(int *)(tmp_data);
@@ -156,6 +169,12 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	SPage *page = 0;
 	for (i = 0; i < num_streams; i++) {
 		num_pages = count_pages(sizes[i], page_size);
+
+		if ((pos + num_pages) > tmp_data_max_size) {
+			printf("warning: looks like there is not correct values "
+				   "of stream size in pdb file\n");
+			break;
+		}
 
 		tmp = (char *) malloc(num_pages * 4);
 		memset(tmp, 0, num_pages * 4);
@@ -352,6 +371,11 @@ static int pdb_read_root(R_PDB *pdb)
 
 			break;
 		}
+
+		if (stream_file.error) {
+			return 0;
+		}
+
 		i++;
 	}
 
@@ -454,8 +478,14 @@ static int pdb7_parse(R_PDB *pdb)
 	}
 
 	pdb->pdb_streams2 = 0;
-	init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size);
-	pdb_read_root(pdb);
+	if (!init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size)) {
+		printf("root stream has not initialized\n");
+		goto error;
+	}
+	if (!pdb_read_root(pdb)) {
+		printf("pdb root has not initialized\n");
+		goto error;
+	}
 
 	if (root_page_list) {
 		free(root_page_list);
@@ -592,6 +622,11 @@ static void print_types(R_PDB *pdb)
 	RList *plist = pdb->pdb_streams, *ptmp;
 	STpiStream *tpi_stream = r_list_get_n(plist, ePDB_STREAM_TPI);
 
+	if (!tpi_stream) {
+		printf("there is no tpi stream in current pdb\n");
+		return;
+	}
+
 	it = r_list_iterator(tpi_stream->types);
 	while (r_list_iter_next(it)) {
 		val = 0;
@@ -667,6 +702,11 @@ static void print_gvars(R_PDB *pdb, int img_base)
 		default:
 			break;
 		}
+	}
+
+	if (!gsym) {
+		printf("there is no global symbols in current pdb\n");
+		return;
 	}
 
 	gsym_data_stream = (SGDATAStream *) gsym->stream;
