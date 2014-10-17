@@ -371,6 +371,11 @@ static int pdb_read_root(R_PDB *pdb)
 
 			break;
 		}
+
+		if (stream_file.error) {
+			return 0;
+		}
+
 		i++;
 	}
 
@@ -477,7 +482,10 @@ static int pdb7_parse(R_PDB *pdb)
 		printf("root stream has not initialized\n");
 		goto error;
 	}
-	pdb_read_root(pdb);
+	if (!pdb_read_root(pdb)) {
+		printf("pdb root has not initialized\n");
+		goto error;
+	}
 
 	if (root_page_list) {
 		free(root_page_list);

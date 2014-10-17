@@ -4,6 +4,8 @@
 #define _R_LIST_C
 #include <r_util.h>
 
+#define READ_PAGE_FAIL 0x01
+
 //TODO: MOVE TO GENERAL MACROSE
 ///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size)	{ \
@@ -68,6 +70,7 @@ typedef struct R_STREAM_FILE_{
 	int pages_amount;
 	int end;
 	int pos;
+	int error;
 } R_STREAM_FILE;
 
 typedef void (*free_func)(void *);

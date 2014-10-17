@@ -438,7 +438,8 @@ static int bin_pdb (RCore *core, int mode) {
 
 	if (!pdb.pdb_parse(&pdb)) {
 		printf("pdb was not parsed\n");
-		return;
+		pdb.finish_pdb_parse(&pdb);
+		return R_FALSE;
 	}
 
 	printf("Types:\n");
