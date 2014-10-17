@@ -425,6 +425,7 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd);
 R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc);
 R_API ut64 r_io_fd_size(RIO *io, int fd);
 R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset);
+R_API void r_io_desc_list (RIO *io);
 //R_API int r_io_desc_generate(RIO *io);
 
 /* buffer.c */

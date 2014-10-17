@@ -114,6 +114,23 @@ R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset) {
 	return desc->plugin->lseek (io, desc, offset, SEEK_SET);
 }
 
+R_API void r_io_desc_list (RIO *io) {
+	RIODesc *desc = NULL;
+	RListIter *iter;
+	if (io && io->files) {
+		r_list_foreach (io->files, iter, desc) {
+			if (desc) {
+				io->printf ("- %i", desc->fd);
+				if (desc->uri)
+					io->printf ("\t%s", desc->uri);
+				if (desc->name)
+					io->printf ("\t%s", desc->name);
+				io->printf ("\tstate: %i\tflags: %i\n", desc->state, desc->flags);
+			}
+		}
+	}
+}
+
 #if 0
 // XXX: This must be deprecated in order to promote the cast of dataptr to ut32
 R_API int r_io_desc_generate(struct r_io_t *io) {
