@@ -481,6 +481,7 @@ R_API int r_what_os_am_i ();
 R_API ut64 r_sys_now();
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
+R_API int r_sys_getpid();
 R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);

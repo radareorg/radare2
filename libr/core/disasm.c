@@ -604,8 +604,12 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 					core->anal, refi->addr,
 					R_ANAL_FCN_TYPE_FCN |
 					R_ANAL_FCN_TYPE_ROOT);
-				beginline (core, ds, fun);
 
+				if (refi->type >= R_ANAL_REF_TYPE_NULL) {
+					// Hide those refs.. they are mostly wrong. need review
+					continue;
+				}
+				beginline (core, ds, fun);
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 						ds->pal_comment,

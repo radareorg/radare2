@@ -234,6 +234,7 @@ static int cmd_help(void *data, const char *input) {
 			"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
 			"$l", "", "opcode length",
 			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
+			"$p", "", "getpid()",
 			"$o", "", "here (current disk io offset)",
 			"$s", "", "file size",
 			"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",

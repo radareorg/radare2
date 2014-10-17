@@ -130,6 +130,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'r': { int rows; r_cons_get_size (&rows); return rows; }
 		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
+		case 'p': return r_sys_getpid ();
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
 		case 'v': return op.val; // immediate value

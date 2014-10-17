@@ -708,6 +708,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #endif
 	int olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
+
 	if (r_sandbox_enable (0)) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
 		return -1;
@@ -772,7 +773,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int ret = 0, rep = atoi (cmd);
-	char *cmt, *colon, *icmd = strdup (cmd);
+	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	cmd = r_str_trim_head_tail (icmd);
 	if (!icmd || !strncmp (cmd, "# ", 2))
 		goto beach;
@@ -780,8 +781,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (cmt && (cmt[1]==' ' || cmt[1]=='\t'))
 		*cmt = 0;
 	if (*cmd != '"') {
-		if ((colon = strchr (icmd, ';')))
-			*colon = 0;
+		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
+			if ((colon = strchr (cmd, ';')))
+				*colon = 0;
+		}
 	} else colon = NULL;
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')

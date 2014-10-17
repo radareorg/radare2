@@ -146,7 +146,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
 	if (sz==0)
-		sz = 4096;
+		sz = 65536;
 	if (sz <0) {
 		fclose (fd);
 		return NULL;

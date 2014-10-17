@@ -656,3 +656,11 @@ R_API char *r_sys_whoami (char *buf) {
 	sprintf (buf, "pid%d", pid);
 	return hasbuf? buf: strdup (buf);
 }
+
+R_API int r_sys_getpid() {
+#if __UNIX__
+	return getpid ();
+#else
+#warning r_sys_getpid not implemented for this platform
+#endif
+}
