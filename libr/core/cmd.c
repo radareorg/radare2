@@ -777,7 +777,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || !strncmp (cmd, "# ", 2))
 		goto beach;
 	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
-	if (cmt && cmt[1]==' ')
+	if (cmt && (cmt[1]==' ' || cmt[1]=='\t'))
 		*cmt = 0;
 	if (*cmd != '"') {
 		if ((colon = strchr (icmd, ';')))
@@ -902,7 +902,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* comments */
 	if (*cmd!='#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
-		if (ptr && ptr[1]==' ') *ptr = '\0';
+		if (ptr && (ptr[1]==' '||ptr[1]=='\t')) *ptr = '\0';
 	}
 
 	/* multiple commands */

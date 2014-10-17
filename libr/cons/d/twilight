@@ -1,0 +1,37 @@
+# background of the terminal must be 134 o 033
+# xterm -fn 10x20 -bg rgb:14/14/14 -fg rgb:fe/ff/d3
+# ref: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr
+
+ec b0x00 rgb:446
+ec b0x7f rgb:c64
+ec b0xff rgb:c64
+ec bin rgb:ffd
+ec other rgb:aaa
+ec btext rgb:bb7
+ec call rgb:9b7
+ec cjmp rgb:788
+ec jmp rgb:788
+ec cmp rgb:ffd
+ec comment rgb:c64
+ec ret rgb:ab7
+ec fline rgb:ca6
+ec flow rgb:446
+ec fname rgb:bb7
+ec label rgb:788
+ec math rgb:ffd
+ec invalid rgb:c64
+ec mov rgb:ffd
+ec nop rgb:445
+ec num rgb:ffd
+ec offset rgb:788
+ec pop rgb:bb7
+ec prompt rgb:788
+ec push rgb:ffd
+ec reg rgb:ca6
+ec args rgb:bb7
+ec help rgb:ab7
+ec input rgb:ca6
+ec trap rgb:445
+ec swi rgb:bb7
+ec creg rgb:788
+ec flag rgb:ffd
