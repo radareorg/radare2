@@ -238,6 +238,32 @@ R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
 	return list_fds;
 }
 
+R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode) {
+	RIODesc *n = NULL, *hack;			//hack is to prevent segfaults
+	RListIter *iter;
+	RIOMap *map;
+	if (desc && desc->uri && io && io->files && (desc == r_io_desc_get (io, desc->fd))) {
+		n = __getioplugin (io, desc->uri, flags, mode);
+		if (!n)
+			return R_FALSE;
+		r_io_section_rm_all (io, desc->fd);
+		if (io->maps) {
+			r_list_foreach (io->maps, iter, map) {
+				if (map->fd == desc->fd)
+					map->fd = n->fd;
+			}
+		}
+		if (desc->plugin && desc->plugin->close) {
+			hack = R_NEW (RIODesc);
+			*hack = *desc;
+			desc->plugin->close (hack);	//this should free desc->data
+		}
+		*desc = *n;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 R_API int r_io_use_desc (RIO *io, RIODesc *d) {
 	if (d) {
 		io->desc = d;

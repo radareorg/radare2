@@ -287,6 +287,7 @@ R_API RIODesc *r_io_open_at (RIO *io, const char *file, int flags, int mode, ut6
 R_API RIODesc *r_io_open_nomap (RIO *io, const char *file, int flags, int mode);		//opens a file without map -> only pread and pwrite can be used for access
 R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
 R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode);
+R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode);
 R_API int r_io_redirect(RIO *io, const char *file);
 R_API int r_io_is_valid_offset (RIO *io, ut64 offset);						//checks if io-access is reasonable at this offset
 
