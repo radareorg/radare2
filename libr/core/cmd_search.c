@@ -35,6 +35,59 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	}
 }
 
+static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
+	RBinPlugin *plug;
+	ut8 buf[4096];
+	const int sz = sizeof (buf);
+	int i, size, align = core->search->align;
+	int hitctr = 0;
+#define cbhit(y) \
+	r_cons_printf ("f hit0_%d = 0x%"PFMT64x"\n", hitctr, y);\
+	hitctr++;
+
+	if (vmin >= vmax) {
+		eprintf ("Error: vmin must be lower than vmax\n");
+		return;
+	}
+	while (from <to) {
+		memset (buf, 0, sz);
+		r_io_read_at (core->io, from, buf, sz);
+		for (i=0;i<sizeof (buf)-vsize; i++) { //= vsize) {
+			void *v = (buf+i);
+			if (align) {
+				if ((from+i)%4)
+					continue;
+			}
+			switch (vsize) {
+			case 1:
+				if (buf[i]>=vmin && buf[i]<=vmax)
+					cbhit (from+i);
+				break;
+			case 2:
+				{ ut16 v16 = *((ut16*)(v));
+				if (v16>=vmin && v16<=vmax)
+					cbhit (from+i);
+				} break;
+			case 4:
+				{ ut32 v32 = *((ut32 *)(v));
+				if (v32>=vmin && v32<=vmax)
+					cbhit (from+i);
+				} break;
+			case 8:
+				{ ut64 v64 = *((ut64 *)(v));
+				if (v64>=vmin && v64<=vmax)
+					cbhit (from+i);
+				} break;
+			default:
+				eprintf ("Unknown vsize\n");
+				return;
+			}
+		}
+		from += sz;
+	}
+	return hitctr;
+}
+
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	int depth = r_config_get_i (core->config, "anal.depth");
@@ -867,6 +920,23 @@ static int cmd_search(void *data, const char *input) {
 			} else eprintf ("Invalid pattern size (must be >0)\n");
 		}
 		break;
+	case 'V':
+		// TODO: add support for json
+		{
+		int err = 1, vsize = atoi (input+1);
+		ut64 vmin = r_num_math (core->num, input+2);
+		char *w = strchr (input+3, ' ');
+		if (w) {
+			ut64 vmax = r_num_math (core->num, w);
+			if (vsize>0) {
+				err = 0;
+				(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize);
+			}
+		}
+		if (err)
+			eprintf ("Usage: /V[1|2|4|8] [minval] [maxval]\n");
+		}
+		break;
 	case 'v':
 		if (input[2] == 'j') {
 			json = R_TRUE;
@@ -1240,6 +1310,7 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 			"/r", " sym.printf", "analyze opcode reference an offset",
 			"/R", " [grepopcode]", "search for matching ROP gadgets, comma-separated",
 			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
+			"/V", "[1248] min max", "look for an `asm.bigendian` 32bit value in range",
 			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
 			"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
 			"/x"," ff..33", "search for hex string ignoring some nibbles",
