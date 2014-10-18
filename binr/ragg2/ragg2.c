@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 	int show_raw = 0;
 	char *shellcode = NULL;
 	char *encoder = NULL;
-	int bits = 32;
+	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
