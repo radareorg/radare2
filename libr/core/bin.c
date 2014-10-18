@@ -428,26 +428,26 @@ static int bin_dwarf (RCore *core, int mode) {
 }
 
 static int bin_pdb (RCore *core, int mode) {
-	R_PDB pdb;
+	R_PDB pdb = {0};
 
-	strcpy(&pdb.file_name, core->bin->file);
-	if (!init_pdb_parser(&pdb)) {
-		printf("initialization error of pdb parser");
+	pdb.printf = r_cons_printf;
+	if (!init_pdb_parser (&pdb, core->bin->file)) {
+		eprintf ("initialization error of pdb parser");
 		return R_FALSE;
 	}
 
-	if (!pdb.pdb_parse(&pdb)) {
-		printf("pdb was not parsed\n");
-		pdb.finish_pdb_parse(&pdb);
+	if (!pdb.pdb_parse (&pdb)) {
+		eprintf ("pdb was not parsed\n");
+		pdb.finish_pdb_parse (&pdb);
 		return R_FALSE;
 	}
 
-	printf("Types:\n");
-	pdb.print_types(&pdb);
+	r_cons_printf ("Types:\n");
+	pdb.print_types (&pdb);
 
-	printf("\nGlobals:\n");
-	pdb.print_gvars(&pdb, 0x0);
-	pdb.finish_pdb_parse(&pdb);
+	r_cons_printf ("\nGlobals:\n");
+	pdb.print_gvars (&pdb, 0x0);
+	pdb.finish_pdb_parse (&pdb);
 
 	return R_TRUE;
 }

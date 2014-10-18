@@ -1,4 +1,5 @@
-//R2: missing license/author header here
+/* radare - LGPL - Copyright 2014 - inisider */
+
 #include <r_pdb.h>
 #include <string.h>
 
@@ -27,14 +28,12 @@ typedef struct {
 	free_func free;
 } SStreamParseFunc;
 
-// R2: try to follow the current r2 indentation
-
 ///////////////////////////////////////////////////////////////////////////////
-static void free_pdb_stream(void *stream)
-{
+static void free_pdb_stream(void *stream) {
 	R_PDB_STREAM *pdb_stream = (R_PDB_STREAM *) stream;
 
 	if (pdb_stream) {
+		//R_FREE (pdb_stream->pages);
 		if (pdb_stream->pages) {
 //			free(pdb_stream->pages);
 			pdb_stream->pages = 0;
@@ -55,10 +54,7 @@ static void free_pdb_stream(void *stream)
 /// page_size - default value = 0x1000
 ///////////////////////////////////////////////////////////////////////////////
 static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, FILE *fp, int *pages,
-							 int pages_amount, int index, int size, int page_size)
-{
-//	printf("init_r_pdb_stream()\n");
-
+		int pages_amount, int index, int size, int page_size) {
 	pdb_stream->fp = fp;
 	pdb_stream->pages = pages;
 	pdb_stream->indx = index;
@@ -71,28 +67,24 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, FILE *fp, int *pages,
 		pdb_stream->size = size;
 	}
 
-	init_r_stream_file(&(pdb_stream->stream_file), fp, pages, pages_amount, size, page_size);
-
+	init_r_stream_file (&(pdb_stream->stream_file), fp, pages, pages_amount, size, page_size);
 	pdb_stream->free_ = free_pdb_stream;
 
 	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int read_int_var(char *var_name, int *var, FILE *fp)
-{
+static int read_int_var(char *var_name, int *var, FILE *fp) {
 	int bytes_read = fread(var, 4, 1, fp);
 	if (bytes_read != 1) {
-		printf("error while reading from file [%s]", var_name);
+		eprintf ("error while reading from file [%s]", var_name);
 		return 0;
 	}
-
 	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int count_pages(int length, int page_size)
-{
+static int count_pages(int length, int page_size) {
 	int num_pages = 0;
 	num_pages = length / page_size;
 	if (length % page_size)
@@ -102,8 +94,7 @@ static int count_pages(int length, int page_size)
 
 ///////////////////////////////////////////////////////////////////////////////
 static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
-								 EStream indx, int root_size, int page_size)
-{
+		EStream indx, int root_size, int page_size) {
 	int num_streams = 0;
 	char *data = 0;
 	char *tmp_data = 0;
@@ -139,14 +130,14 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
 	if (tmp_data_max_size <= 0) {
-		printf("too much amount of streams\n"
-			   "curremt pdb file is not corect\n");
+		eprintf ("too much amount of streams\n"
+			   "curremt pdb file is not correct\n");
 		return 0;
 	}
 
-	sizes = (int *) malloc(num_streams * 4);
+	sizes = (int *) calloc (num_streams, 4);
 	if (!sizes) {
-		printf("too much amount of streams\n"
+		eprintf ("too much amount of streams\n"
 			   "current pdb file is not correct\n");
 		return 0;
 	}
@@ -154,10 +145,9 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	for (i = 0; i < num_streams; i++) {
 		stream_size = *(int *)(tmp_data);
 		tmp_data += 4;
-		if (stream_size == 0xffffffff) {
+		if (stream_size == UT32_MAX)
 			stream_size = 0;
-		}
-		memcpy(sizes + i, &stream_size, 4);
+		memcpy (sizes + i, &stream_size, 4);
 	}
 
 //	char *tmp_file_name = (char *) malloc(strlen("/root/test.pdb.000") + 1);
@@ -171,16 +161,17 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		num_pages = count_pages(sizes[i], page_size);
 
 		if ((pos + num_pages) > tmp_data_max_size) {
-			printf("warning: looks like there is not correct values "
+			eprintf("warning: looks like there is not correct values "
 				   "of stream size in pdb file\n");
 			break;
 		}
 
-		tmp = (char *) malloc(num_pages * 4);
+		// TODO: cache that num_pages * 4, its used 4 times
+		tmp = (char *) calloc (num_pages, 4);
 		memset(tmp, 0, num_pages * 4);
-		page = (SPage *) malloc(sizeof(SPage));
+		page = (SPage *) malloc (sizeof (SPage));
 		if (num_pages != 0) {
-			memcpy(tmp, tmp_data + pos, num_pages * 4);
+			memcpy (tmp, tmp_data + pos, num_pages * 4);
 			pos += num_pages * 4;
 //			sprintf(tmp_file_name, "%s%d", "/root/test.pdb", i);
 //			tmp_file = fopen(tmp_file_name, "wb");
@@ -196,11 +187,10 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 			free(tmp);
 		}
 
-		r_list_append(pList, page);
+		r_list_append (pList, page);
 	}
-
-	free(sizes);
-	free(data);
+	free (sizes);
+	free (data);
 //	printf("init_pdb7_root_stream()\n");
 	return 1;
 }
@@ -220,31 +210,28 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 //}
 
 ///////////////////////////////////////////////////////////////////////////////
-static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
-{
+static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 	SPDBInfoStream *tmp = (SPDBInfoStream *)parsed_pdb_stream;
 
 	tmp->names = 0;
 
-	stream_file_read(stream, 4, (char *)&tmp->/*data.*/version);
-	stream_file_read(stream, 4, (char *)&tmp->/*data.*/time_date_stamp);
-	stream_file_read(stream, 4, (char *)&tmp->/*data.*/age);
-	stream_file_read(stream, 4, (char *)&tmp->/*data.*/guid.data1);
-	stream_file_read(stream, 2, (char *)&tmp->/*data.*/guid.data2);
-	stream_file_read(stream, 2, (char *)&tmp->/*data.*/guid.data3);
-	stream_file_read(stream, 8, (char *)&tmp->/*data.*/guid.data4);
-	stream_file_read(stream, 4, (char *)&tmp->/*data.*/cb_names);
+	stream_file_read (stream, 4, (char *)&tmp->/*data.*/version);
+	stream_file_read (stream, 4, (char *)&tmp->/*data.*/time_date_stamp);
+	stream_file_read (stream, 4, (char *)&tmp->/*data.*/age);
+	stream_file_read (stream, 4, (char *)&tmp->/*data.*/guid.data1);
+	stream_file_read (stream, 2, (char *)&tmp->/*data.*/guid.data2);
+	stream_file_read (stream, 2, (char *)&tmp->/*data.*/guid.data3);
+	stream_file_read (stream, 8, (char *)&tmp->/*data.*/guid.data4);
+	stream_file_read (stream, 4, (char *)&tmp->/*data.*/cb_names);
 
 	tmp->/*data.*/names = (char *) malloc(tmp->/*data.*/cb_names);
-	stream_file_read(stream, tmp->/*data.*/cb_names, tmp->/*data.*/names);
+	stream_file_read (stream, tmp->/*data.*/cb_names, tmp->/*data.*/names);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void free_info_stream(void *stream)
-{
+static void free_info_stream(void *stream) {
 	SPDBInfoStream *info_stream = (SPDBInfoStream *)stream;
-
-	free(info_stream->names);
+	free (info_stream->names);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -265,8 +252,7 @@ static void free_info_stream(void *stream)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
-{
+static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream) {
 	ADD_INDX_TO_LIST(l, dbi_stream->dbi_header.symrecStream, sizeof(SGDATAStream),
 					 ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
 	ADD_INDX_TO_LIST(l, dbi_stream->dbg_header.sn_section_hdr, sizeof(SPEStream),
@@ -289,8 +275,7 @@ static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res)
-{
+static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 	SStreamParseFunc *stream_parse_func = 0;
 	RListIter *it = 0;
 
@@ -306,8 +291,7 @@ static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int pdb_read_root(R_PDB *pdb)
-{
+static int pdb_read_root(R_PDB *pdb) {
 	int i = 0;
 
 	RList *pList = pdb->pdb_streams;
@@ -383,53 +367,38 @@ static int pdb_read_root(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int pdb7_parse(R_PDB *pdb)
-{
-//	printf("pdb7_parse()\n");
-
+static int pdb7_parse(R_PDB *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
-	int page_size = 0;
-	int alloc_tbl_ptr = 0;
-	int num_file_pages = 0;
-	int root_size = 0;
-	int reserved = 0;
-
-	int num_root_pages = 0;
 	int num_root_index_pages = 0;
 	int *root_index_pages = 0;
 	void *root_page_data = 0;
 	int *root_page_list = 0;
-
-	int i = 0;
-	void *p_tmp;
-
+	int num_root_pages = 0;
+	int num_file_pages = 0;
+	int alloc_tbl_ptr = 0;
 	int bytes_read = 0;
+	int page_size = 0;
+	int root_size = 0;
+	int reserved = 0;
+	void *p_tmp;
+	int i = 0;
 
-	bytes_read = fread(signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
+	bytes_read = fread (signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		printf("error while reading PDB7_SIGNATURE\n");
+		eprintf ("error while reading PDB7_SIGNATURE\n");
 		goto error;
 	}
 
-	if (read_int_var("page_size", &page_size, pdb->fp) == 0) {
+	if (!read_int_var ("page_size", &page_size, pdb->fp))
 		goto error;
-	}
-
-	if (read_int_var("alloc_tbl_ptr", &alloc_tbl_ptr, pdb->fp) == 0) {
+	if (!read_int_var ("alloc_tbl_ptr", &alloc_tbl_ptr, pdb->fp))
 		goto error;
-	}
-
-	if (read_int_var("num_file_pages", &num_file_pages, pdb->fp) == 0) {
+	if (!read_int_var ("num_file_pages", &num_file_pages, pdb->fp))
 		goto error;
-	}
-
-	if (read_int_var("root_size", &root_size, pdb->fp) == 0) {
+	if (!read_int_var ("root_size", &root_size, pdb->fp))
 		goto error;
-	}
-
-	if (read_int_var("reserved", &reserved, pdb->fp) == 0) {
+	if (!read_int_var("reserved", &reserved, pdb->fp))
 		goto error;
-	}
 
 	// FIXME: why they is not equal ????
 //	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
@@ -440,21 +409,21 @@ static int pdb7_parse(R_PDB *pdb)
 	num_root_pages = count_pages(root_size, page_size);
 	num_root_index_pages = count_pages((num_root_pages * 4), page_size);
 
-	root_index_pages = (int *)malloc(sizeof(int) * num_root_index_pages);
+	root_index_pages = (int *)calloc (sizeof(int), num_root_index_pages);
 	if (!root_index_pages) {
-		printf("error memory allocation\n");
+		eprintf("error memory allocation\n");
 		goto error;
 	}
 
 	bytes_read = fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
 	if (bytes_read != num_root_index_pages) {
-		printf("error while reading root_index_pages\n");
+		eprintf ("error while reading root_index_pages\n");
 		goto error;
 	}
 
 	root_page_data = (int *)malloc(page_size * num_root_index_pages);
 	if (!root_page_data) {
-		printf("error memory allocation of root_page_data\n");
+		eprintf ("error memory allocation of root_page_data\n");
 		goto error;
 	}
 
@@ -465,9 +434,9 @@ static int pdb7_parse(R_PDB *pdb)
 		p_tmp = (char *)p_tmp + page_size;
 	}
 
-	root_page_list = (int *)malloc(sizeof(int) * num_root_pages);
+	root_page_list = (int *)calloc (sizeof(int), num_root_pages);
 	if (!root_page_list) {
-		printf("error: memory allocation of root page\n");
+		eprintf ("error: memory allocation of root page\n");
 		goto error;
 	}
 
@@ -478,48 +447,25 @@ static int pdb7_parse(R_PDB *pdb)
 	}
 
 	pdb->pdb_streams2 = 0;
-	if (!init_pdb7_root_stream(pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size)) {
-		printf("root stream has not initialized\n");
+	if (!init_pdb7_root_stream (pdb, root_page_list, num_root_pages,
+			ePDB_STREAM_ROOT, root_size, page_size)) {
+		eprintf ("root stream has not initialized\n");
 		goto error;
 	}
-	if (!pdb_read_root(pdb)) {
-		printf("pdb root has not initialized\n");
+	if (!pdb_read_root (pdb)) {
+		eprintf ("pdb root has not initialized\n");
 		goto error;
 	}
 
-	if (root_page_list) {
-		free(root_page_list);
-		root_page_list = 0;
-	}
-
-	if (root_page_data) {
-		free(root_page_data);
-		root_page_data = 0;
-	}
-
-	if (root_index_pages) {
-		free(root_index_pages);
-		root_index_pages = 0;
-	}
-
+	R_FREE (root_page_list);
+	R_FREE (root_page_data);
+	R_FREE (root_index_pages);
 	return 1;
 
 error:
-	if (root_page_list) {
-		free(root_page_list);
-		root_page_list = 0;
-	}
-
-	if (root_page_data) {
-		free(root_page_data);
-		root_page_data = 0;
-	}
-
-	if (root_index_pages) {
-		free(root_index_pages);
-		root_index_pages = 0;
-	}
-
+	R_FREE (root_page_list);
+	R_FREE (root_page_data);
+	R_FREE (root_index_pages);
 	return 0;
 }
 
@@ -610,8 +556,7 @@ static void finish_pdb_parse(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_types(R_PDB *pdb)
-{
+static void print_types(R_PDB *pdb) {
 //	printf("print_types()\n");
 	char *name;
 	int val = 0;
@@ -620,10 +565,10 @@ static void print_types(R_PDB *pdb)
 	STypeInfo *tf = 0;
 	RListIter *it = 0, *it2 = 0;
 	RList *plist = pdb->pdb_streams, *ptmp;
-	STpiStream *tpi_stream = r_list_get_n(plist, ePDB_STREAM_TPI);
+	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
 	if (!tpi_stream) {
-		printf("there is no tpi stream in current pdb\n");
+		eprintf ("there is no tpi stream in current pdb\n");
 		return;
 	}
 
@@ -647,7 +592,7 @@ static void print_types(R_PDB *pdb)
 			// val for STRUCT or UNION mean size
 			if (tf->get_val)
 				tf->get_val(tf, &val);
-			printf("%s: size 0x%x\n", name, val);
+			pdb->printf ("%s: size 0x%x\n", name, val);
 
 			if (tf->get_members)
 				tf->get_members(tf, &ptmp);
@@ -660,19 +605,18 @@ static void print_types(R_PDB *pdb)
 					tf->get_val(tf, &offset);
 				else
 					offset = 0;
-				printf("\t0x%x: %s type:", offset, name);
+				pdb->printf ("  0x%x: %s type:", offset, name);
 				if (tf->get_print_type)
 					tf->get_print_type(tf, &name);
-				printf("%s\n", name);
-				free(name);
+				pdb->printf ("%s\n", name);
+				free (name);
 			}
 		}
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_gvars(R_PDB *pdb, int img_base)
-{
+static void print_gvars(R_PDB *pdb, int img_base) {
 	RList *l = 0;
 	RListIter *it = 0;
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0 ,
@@ -705,7 +649,7 @@ static void print_gvars(R_PDB *pdb, int img_base)
 	}
 
 	if (!gsym) {
-		printf("there is no global symbols in current pdb\n");
+		eprintf ("there is no global symbols in current pdb\n");
 		return;
 	}
 
@@ -721,66 +665,62 @@ static void print_gvars(R_PDB *pdb, int img_base)
 		gdata = (SGlobal *) r_list_iter_get(it);
 		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
-			printf("%s, 0x%x, %d, %s\n",
-				   gdata->name.name, img_base + omap_remap((omap) ? (omap->stream) : 0,
-												gdata->offset + sctn_header->virtual_address),
-				   gdata->symtype, sctn_header->name);
+			pdb->printf ("%s, 0x%x, %d, %s\n", gdata->name.name,
+				img_base + omap_remap((omap) ? (omap->stream) : 0,
+				gdata->offset + sctn_header->virtual_address),
+				gdata->symtype, sctn_header->name);
 		} else {
-			printf("Skipping %s, segment %d does not exist\n",
+			eprintf ("Skipping %s, segment %d does not exist\n",
 				   gdata->name.name, (gdata->segment -1));
 		}
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int init_pdb_parser(R_PDB *pdb)
-{
+int init_pdb_parser(R_PDB *pdb, const char *filename) {
 	char *signature = 0;
 	int bytes_read = 0;
 
 	if (!pdb) {
-		printf("struct R_PDB is not correct\n");
+		eprintf ("struct R_PDB is not correct\n");
 		goto error;
 	}
+	if (!pdb->printf)
+		pdb->printf = printf;
 
-// R2: This is a sandbox bypass. you should not open files from this code
-// use rbuffer or just use the r_sandbox_ apis
-	pdb->fp = fopen(pdb->file_name, "rb");
+	// TODO: Reimplement using RBuffer here
+	pdb->fp = r_sandbox_fopen (filename, "rb");
 	if (!pdb->fp) {
-		printf("file %s can not be open\n", pdb->file_name);
+		eprintf ("file %s can not be open\n", filename);
 		goto error;
 	}
 
-	signature = (char *)malloc(sizeof(char) * PDB7_SIGNATURE_LEN);
+	signature = (char *)malloc (PDB7_SIGNATURE_LEN);
 	if (!signature) {
-		printf("memory allocation error\n");
+		eprintf ("memory allocation error\n");
 		goto error;
 	}
 
-// R2: Dont use fread, you should pass an RBuffer
-	bytes_read = fread(signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
+	bytes_read = fread (signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		printf("file reading error\n");
+		eprintf ("file reading error\n");
 		goto error;
 	}
 
-	fseek(pdb->fp, 0, SEEK_SET);
+	fseek (pdb->fp, 0, SEEK_SET);
 
 // R2: shouldnt this be !memcmp instead?
 	//if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;
 	} else {
-		printf("unsupported pdb format\n");
+		eprintf ("unsupported pdb format\n");
 		goto error;
 	}
 
-	if (signature) {
-		free(signature);
-		signature = 0;
-	}
+	R_FREE (signature);
 
-	pdb->pdb_streams = r_list_new();
+	pdb->pdb_streams = r_list_new ();
 	pdb->stream_map = 0;
 	pdb->finish_pdb_parse = finish_pdb_parse;
 	pdb->print_types = print_types;
@@ -789,10 +729,7 @@ int init_pdb_parser(R_PDB *pdb)
 	return 1;
 
 error:
-	if (signature) {
-		free(signature);
-		signature = 0;
-	}
+	R_FREE (signature);
 
 	return 0;
 }

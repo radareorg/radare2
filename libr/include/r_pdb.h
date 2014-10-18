@@ -15,13 +15,12 @@ struct RList;
 struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
-typedef struct R_PDB{
+typedef struct R_PDB {
 	int (*pdb_parse)(struct R_PDB *pdb);
 	void (*finish_pdb_parse)(struct R_PDB *pdb);
 	void (*print_types)(struct R_PDB *pdb);
-
-	char file_name[FILE_NAME_LEN];
 	FILE *fp;
+	PrintfCallback printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RList *pdb_streams;
@@ -30,7 +29,7 @@ typedef struct R_PDB{
 	void (*print_gvars)(struct R_PDB *pdb, int img_base);
 } R_PDB;
 
-int init_pdb_parser(R_PDB *pdb);
+int init_pdb_parser(R_PDB *pdb, const char *filename);
 
 #ifdef __cplusplus
 }
