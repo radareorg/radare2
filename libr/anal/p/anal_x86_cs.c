@@ -22,6 +22,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
+	op->ptr = op->val = UT64_MAX;
 	op->size = 0;
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
@@ -79,6 +80,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_MOVQ:
 			case X86_INS_MOVDQ2Q:
 				op->type = R_ANAL_OP_TYPE_MOV;
+				switch (INSOP(0).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(0).mem.disp;
+					break;
+				}
+				switch (INSOP(1).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(1).mem.disp;
+					break;
+				}
 				break;
 			case X86_INS_CMP:
 			case X86_INS_VCMP:
@@ -94,6 +105,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_LEA:
 				op->type = R_ANAL_OP_TYPE_LEA;
+				switch (INSOP(1).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(1).mem.disp;
+					break;
+				}
 				break;
 			case X86_INS_ENTER:
 			case X86_INS_PUSH:
