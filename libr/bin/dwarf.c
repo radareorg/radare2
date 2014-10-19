@@ -1314,9 +1314,8 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		inf->comp_units[curr_unit].hdr.version = READ (buf, ut16);
 
 		if (inf->comp_units[curr_unit].hdr.version != 2) {
-			eprintf("DWARF: version %d is yet not supported\n",
-					inf->comp_units[curr_unit].hdr.version);
-
+//			eprintf ("DWARF: version %d is not yet supported.\n",
+//					inf->comp_units[curr_unit].hdr.version);
 			return -1;
 		}
 
