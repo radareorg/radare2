@@ -36,10 +36,9 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 }
 
 static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
-	RBinPlugin *plug;
 	ut8 buf[4096];
 	const int sz = sizeof (buf);
-	int i, size, align = core->search->align;
+	int i, align = core->search->align;
 	int hitctr = 0;
 #define cbhit(y) \
 	r_cons_printf ("f hit0_%d = 0x%"PFMT64x"\n", hitctr, y);\
@@ -47,7 +46,7 @@ static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
 
 	if (vmin >= vmax) {
 		eprintf ("Error: vmin must be lower than vmax\n");
-		return;
+		return -1;
 	}
 	while (from <to) {
 		memset (buf, 0, sz);
@@ -80,7 +79,7 @@ static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
 				} break;
 			default:
 				eprintf ("Unknown vsize\n");
-				return;
+				return -1;
 			}
 		}
 		from += sz;
