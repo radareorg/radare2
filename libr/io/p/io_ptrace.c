@@ -49,7 +49,8 @@ typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, i
 #else
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
-typedef long ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+typedef ut32 ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+// XXX. using long here breaks 'w AAAABBBBCCCCDDDD' in r2 -d
 #endif
 
 static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
