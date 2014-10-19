@@ -446,8 +446,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	switch (base) {
 	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%3d"; pre = " "; break;
-	case 32: fmt = "0x%08x "; pre = " "; break;
-	case 64: fmt = "0x%016x "; pre = " "; break;
+	case 32: fmt = "0x%08x "; pre = " "; if (inc<4) inc = 4; break;
+	case 64: fmt = "0x%016x "; pre = " "; if (inc<8) inc= 8; break;
 	}
 
 	// TODO: Use base to change %03o and so on
