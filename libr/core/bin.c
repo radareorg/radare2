@@ -432,7 +432,7 @@ static int bin_pdb (RCore *core, int mode) {
 
 	pdb.printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, core->bin->file)) {
-		eprintf ("initialization error of pdb parser");
+		//eprintf ("initialization error of pdb parser\n");
 		return R_FALSE;
 	}
 

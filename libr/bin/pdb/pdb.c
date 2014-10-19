@@ -678,7 +678,7 @@ static void print_gvars(R_PDB *pdb, int img_base) {
 
 ///////////////////////////////////////////////////////////////////////////////
 int init_pdb_parser(R_PDB *pdb, const char *filename) {
-	char *signature = 0;
+	char *signature = NULL;
 	int bytes_read = 0;
 
 	if (!pdb) {
@@ -709,12 +709,9 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 
 	fseek (pdb->fp, 0, SEEK_SET);
 
-// R2: shouldnt this be !memcmp instead?
-	//if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;
 	} else {
-		eprintf ("unsupported pdb format\n");
 		goto error;
 	}
 
