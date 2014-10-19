@@ -13,6 +13,56 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
 	return 0;
 }
 
+/* convert:
+ *    char *foo = "\x41\x23\x42\x1b";
+ * into:
+ *    4123421b
+ */
+R_API char *r_hex_from_c(const char *code) {
+	char *out, *ret = malloc (strlen (code)*3);
+	int parse_on = 0, is_hexa = 0;
+	*ret = 0;
+	out = ret;
+	if (code) {
+		for (;*code; code++) {
+			if (*code == '"') {
+				parse_on = !!!parse_on;
+			} else if (parse_on) {
+					char abc[] = "0123456789abcdefABCDEF";
+				if (*code == '\\') {
+					code++;
+					switch (code[0]) {
+					case 'e': *out++='1';*out++='b';break;
+					case 'r': *out++='0';*out++='d';break;
+					case 'n': *out++='0';*out++='a';break;
+					case 'x': break;
+					default: 
+						  goto error;
+						  break;
+					}
+					is_hexa++;
+				} else {
+					if (is_hexa) {
+						if (strchr (abc, *code)) {
+							*out++ = *code;
+							if (++is_hexa==3)
+								is_hexa = 0;
+						} else goto error;
+					} else {
+						*out++ = abc[*code >>4];
+						*out++ = abc[*code & 0xf];
+					}
+				}
+			}
+		}
+	}
+	*out++ = 0;
+	return ret;
+error:
+	free (ret);
+	return NULL;
+}
+
 /* int byte = hexpair2bin("A0"); */
 // (0A) => 10 || -1 (on error)
 R_API int r_hex_pair2bin(const char *arg) {

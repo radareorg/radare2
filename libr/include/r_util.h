@@ -441,6 +441,7 @@ R_API void r_str_chop_path (char *s);
 R_API ut8 r_str_contains_macro(const char *input_value);
 R_API void r_str_truncate_cmd(char *string);
 
+R_API char *r_hex_from_c(const char *code);
 R_API int r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API int r_hex_pair2bin(const char *arg);
@@ -458,6 +459,7 @@ R_API const char *r_file_basename (const char *path);
 R_API char *r_file_abspath(const char *file);
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *dstLen);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
+R_API char *r_stdin_slurp (int *sz);
 R_API char *r_file_slurp(const char *str, int *usz);
 //R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);

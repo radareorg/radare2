@@ -133,6 +133,32 @@ R_API char *r_file_path(const char *bin) {
 	return strdup (bin);
 }
 
+R_API char *r_stdin_slurp (int *sz) {
+#define BS 1024
+#if __UNIX__
+	int i, ret, newfd = dup(0);
+	char *buf = malloc (BS);
+	for (i=ret=0;;i+=ret) {
+		buf = realloc (buf, i+BS);
+		ret = read (0, buf+i, BS);
+		if (ret<1)
+			break;
+	}
+	buf[i] = 0;
+	dup2 (newfd, 0);
+	close (newfd);
+	if (sz)
+		*sz = i;
+	if (i==0) {
+		R_FREE (buf);
+	}
+	return buf;
+#else
+	#warning TODO r_stdin_slurp
+	return NULL;
+#endif
+}
+
 R_API char *r_file_slurp(const char *str, int *usz) {
 	size_t rsz;
 	char *ret;

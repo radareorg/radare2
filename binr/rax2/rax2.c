@@ -75,6 +75,7 @@ static int help () {
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
+		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
 		"  -h    help              ;  rax2 -h\n"
 		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
 		"  -n    binary number     ;  rax2 -e 0x1234   # 34120000\n"
@@ -125,6 +126,7 @@ static int rax (char *str, int len, int last) {
 			case 't': flags ^=2048;break;
 			case 'E': flags ^=4096;break;
 			case 'D': flags ^=8192;break;
+			case 'F': flags ^=16384; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -243,10 +245,24 @@ static int rax (char *str, int len, int last) {
 		if (out) {
 			r_base64_decode (out, str, len);
 			printf ("%s\n", out);
-			fflush(stdout);
+			fflush (stdout);
 			free (out);
 		}
 		return R_TRUE;
+	} else if (flags & 16384) { // -F
+		char *str = r_stdin_slurp (NULL);
+		if (str) {
+			char *res = r_hex_from_c (str);
+			if (res) {
+				printf ("%s\n", res);
+				fflush (stdout);
+				free (res);
+			} else {
+				eprintf ("Invalid input.\n");
+			}
+			free (str);
+		}
+		return R_FALSE;
 	}
 
 	if (str[0]=='0' && str[1]=='x') {
@@ -292,20 +308,24 @@ static int rax (char *str, int len, int last) {
 static int use_stdin () {
 	static char buf[STDIN_BUFFER_SIZE];
 	int l, sflag = (flags & 5);
-	for (l=0; l>=0; l++) {
-		int n = read (0, buf+l, sizeof (buf)-l-1);
-		if (n<1) break;
-		l+= n;
-		if (buf[l-1]==0) {
-			l--;
-			continue;
+	if (! (flags & 16384)) {
+		for (l=0; l>=0; l++) {
+			int n = read (0, buf+l, sizeof (buf)-l-1);
+			if (n<1) break;
+			l+= n;
+			if (buf[l-1]==0) {
+				l--;
+				continue;
+			}
+			buf[n] = 0;
+			if (sflag && strlen (buf) < sizeof (buf)) // -S
+				buf[strlen (buf)] = '\0';
+			else buf[strlen (buf)-1] = '\0';
+			if (!rax (buf, l, 0)) break;
+			l = -1;
 		}
-		buf[n] = 0;
-		if (sflag && strlen (buf) < sizeof (buf)) // -S
-			buf[strlen (buf)] = '\0';
-		else buf[strlen (buf)-1] = '\0';
-		if (!rax (buf, l, 0)) break;
-		l = -1;
+	} else {
+		l = 1;
 	}
 	if (l>0)
 		rax (buf, l, 0);
