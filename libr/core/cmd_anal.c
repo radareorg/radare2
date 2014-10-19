@@ -872,7 +872,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			}
 		 }
 		break;
-	case 's':
+	case 's': // "drs"
 		switch (str[1]) {
 		case '-':
 			r_reg_arena_pop (core->dbg->reg);
@@ -1185,7 +1185,7 @@ static int cmd_anal(void *data, const char *input) {
 				r_anal_esil_stack_free (esil);
 			}
 			break;
-		case 's':
+		case 's': // "aes" "aesu" "aesue"
 			// aes -> single step
 			// aesu -> until address
 			// aesue -> until esil expression
@@ -1559,9 +1559,9 @@ static int cmd_anal(void *data, const char *input) {
 				  r_debug_trace_list (core->dbg, 0);
 		}
 		break;
-	case 's':
+	case 's': // "as"
 		switch (input[1]) {
-		case 'l':
+		case 'l': // "asl"
 			if (input[2] == ' ') {
 				int n = atoi (input+3);
 				if (n>0) {
@@ -1578,10 +1578,28 @@ static int cmd_anal(void *data, const char *input) {
 				RListIter *iter;
 				RList *list = r_syscall_list (core->anal->syscall);
 				r_list_foreach (list, iter, si) {
-					r_cons_printf ("%s = 0x%02x.%d\n", si->name, si->swi, si->num);
+					r_cons_printf ("%s = 0x%02x.%d\n",
+						si->name, si->swi, si->num);
 				}
 				r_list_free (list);
 			}
+			break;
+		case 'j': // "asj"
+			{
+				RSyscallItem *si;
+				RListIter *iter;
+				RList *list = r_syscall_list (core->anal->syscall);
+				r_cons_printf ("[");
+				r_list_foreach (list, iter, si) {
+					r_cons_printf ("{\"name\":\"%s\","
+							"\"swi\":\"%d\",\"num\":\"%d\"}",
+							si->name, si->swi, si->num);
+					if (iter->n) r_cons_printf (",");
+				}
+				r_cons_printf ("]\n");
+				r_list_free (list);
+			}
+			// JSON support
 			break;
 		case '\0': {
 				   int a0 = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX
@@ -1590,7 +1608,7 @@ static int cmd_anal(void *data, const char *input) {
 		case ' ':
 			  cmd_syscall_do (core, (int)r_num_get (core->num, input+2));
 			  break;
-		case 'k':
+		case 'k': // "ask"
 			{
 			  char *out = sdb_querys (core->anal->syscall->db, NULL, 0, input+3);
 			  if (out) {
@@ -1605,6 +1623,7 @@ static int cmd_anal(void *data, const char *input) {
 				  "Usage: as[l?]\n"
 			      "as", "", "display syscall and arguments",
 			      "as", " 4", "show syscall 4 based on asm.os and current regs/mem",
+			      "asj", "", "list of syscalls in JSON",
 			      "asl", "", "list of syscalls by asm.os and asm.arch",
 			      "asl", " close", "returns the syscall number for close",
 			      "asl", " 4", "returns the name of the syscall number 4",

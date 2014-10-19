@@ -107,16 +107,8 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	char *o;
 	if (!name || !s) return NULL;
 	si = R_NEW0 (RSyscallItem);
-
 	o = strdup (s);
-/*
 	r_str_split (o, ',');
-	return r_syscall_item_new (name, 
-			r_num_get (NULL, r_str_word_get0 (o, 0)),
-			r_num_get (NULL, r_str_word_get0 (o, 1)),
-			r_num_get (NULL, r_str_word_get0 (o, 2)),
-			r_str_word_get0 (o, 3));
-*/
 	si->name = strdup (name);
 	si->swi = r_num_get (NULL, r_str_word_get0 (o, 0));
 	si->num = r_num_get (NULL, r_str_word_get0 (o, 1));
@@ -186,31 +178,21 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 }
 
 static int callback_list(void *u, const char *k, const char *v) {
-	//RSyscall *s = (RSyscall*)u;
+	RList *list = (RList*)u;
 	if (!strchr (k, '.')) {
-		eprintf ("%s=%s\n", k, v);
+		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
+		if (!strchr (si->name, '.'))
+			r_list_append (list, si);
 	}
 	return 1; // continue loop
 }
 
 R_API RList *r_syscall_list(RSyscall *s) {
-	SdbListIter *ls_iter;
 	RList *list;
-	SdbKv *o;
-
 	if (!s || !s->db)
 		return NULL;
-
 	// show list of syscalls to stdout
-	sdb_foreach (s->db, callback_list, s);
-
-	list = r_list_new ();
-	list->free = (RListFree)r_syscall_item_free;
-	ls_foreach (s->db->ht->list, ls_iter, o) {
-		RSyscallItem *si = r_syscall_item_new_from_string (o->key, o->value);
-		if (!strchr (si->name, '.'))
-			r_list_append (list, si);
-		r_syscall_item_free (si);
-	}
+	list = r_list_newf ((RListFree)r_syscall_item_free);
+	sdb_foreach (s->db, callback_list, list);
 	return list;
 }
