@@ -49,7 +49,8 @@ typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, i
 #else
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
-typedef ut32 ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+// XXX. using int read fails on some addresses
 // XXX. using long here breaks 'w AAAABBBBCCCCDDDD' in r2 -d
 #endif
 
@@ -103,12 +104,12 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 	ptrace_word *buf = (ptrace_word*)pbuf;
 	ut32 words = sz / sizeof (ptrace_word);
 	ut32 last = sz % sizeof (ptrace_word);
-	ut32 x, *at = (ut32 *)(size_t)addr;
+	ut64 x, *at = (ut64 *)(size_t)addr;
 	ptrace_word lr;
 	if (sz<1 || addr==UT64_MAX)
 		return -1;
 	for (x=0; x<words; x++)
-		debug_write_raw (pid, (void*)(at++), buf[x]);
+		debug_write_raw (pid, (ut32*)(at++), buf[x]);
 	if (last) {
 		lr = debug_read_raw (pid, (void*)at);
 		memcpy (&lr, buf+x, last);
