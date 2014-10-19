@@ -366,8 +366,12 @@ int main(int argc, char *argv[]) {
 				if (dis) ret = rasm_disasm (content, offset,
 					length, a->bits, ascii, bin, dis-1);
 				else ret = rasm_asm (content, offset, length, a->bits, bin);
+				ret = !!! ret;
 				free (content);
-			} else eprintf ("rasm2: Cannot open file %s\n", file);
+			} else {
+				eprintf ("rasm2: Cannot open file %s\n", file);
+				ret = 1;
+			}
 		}
 	} else if (argv[optind]) {
 		if (!strcmp (argv[optind], "-")) {
