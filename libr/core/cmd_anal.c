@@ -447,18 +447,16 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
 		 }
 		break;
-	case 'i':
-		r_core_anal_fcn_list (core, input+2, 0);
+	case 'i': // "afi"
+		switch (input[2]) {
+		case 'j': r_core_anal_fcn_list (core, input+3, 'j'); break; // "afij"
+		case '*': r_core_anal_fcn_list (core, input+3, 1); break; // "afi*"
+		default: r_core_anal_fcn_list (core, input+2, 0); break;
+		}
 		break;
-	case 'l':
-		r_core_anal_fcn_list (core, input, 2);
-		break;
-	case '*':
-		r_core_anal_fcn_list (core, input+2, 1);
-		break;
-	case 'j':
-		r_core_anal_fcn_list (core, input+2, 'j');
-		break;
+	case 'l': r_core_anal_fcn_list (core, input, 2); break; // "afl"
+	case '*': r_core_anal_fcn_list (core, input+2, 1); break; // "af*"
+	case 'j': r_core_anal_fcn_list (core, input+2, 'j'); break; // "afj"
 	case 's': { // "afs"
 			  ut64 addr;
 			  RAnalFunction *f;
@@ -689,22 +687,22 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "af", " @[addr]", "analyze functions (start at addr)",
 		 "af+", " addr size name [type] [diff]", "add function",
 		 "af-", " [addr]", "clean all function analysis data (or function at addr)",
+		 "af*", "", "output radare commands",
+		 "afa", "[?] [idx] [type] [name]", "add function argument",
+		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
 		 "afb", " 16", "set current function as thumb",
 		 "afbb", " fcnaddr addr size name [type] [diff]", "add bb to function @ fcnaddr",
+		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
+		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afj", " [addr|fcn.name]", "show function(s) information in JSON",
 		 "afn", " name [addr]", "rename name for function at address (change flag too)",
 		 "afna", "", "suggest automatic name for current offset",
-		 "afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
 		 "afs", " [addr] [fcnsign]", "get/set function signature at current address",
+		 "afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
 		 "afv", "[?] [idx] [type] [name]", "add local var on current function",
-		 "afa", "[?] [idx] [type] [name]", "add function argument",
-		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
-		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
-		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
-		 "af*", "", "output radare commands",
 		 NULL};
 		 r_core_cmd_help (core, help_msg);
 		}
