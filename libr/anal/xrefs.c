@@ -58,6 +58,10 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
 	char key[32];
 	if (!anal || !DB)
 		return R_FALSE;
+	// unknown refs should not be stored. seems wrong
+	if (type == R_ANAL_REF_TYPE_NULL) {
+		return R_FALSE;
+	}
 	XREFKEY (key, sizeof (key), "ref", type, from);
 	sdb_array_add_num (DB, key, to, 0);
 	XREFKEY (key, sizeof (key), "xref", type, to);
@@ -105,7 +109,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CALL, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_DATA, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_STRING, to);
-	if (r_list_length (list)<1) {
+	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
 	}

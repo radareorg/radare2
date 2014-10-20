@@ -805,7 +805,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_list_append (fcn->xrefs, ref);
 #endif
 // XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
-				//r_anal_xrefs_set (core->anal, reftype, from, at);
+				r_anal_xrefs_set (core->anal, reftype, from, at);
 			}
 			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);
