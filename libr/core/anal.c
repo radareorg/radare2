@@ -635,6 +635,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			//int len = r_list_length (fcn->xrefs);
 			// XXX: use r_anal-xrefs api and sdb
 				/* If the xref is new, add it */
+// avoid dupes
 				r_list_foreach (fcn->xrefs, iter2, refi)
 					if (from == refi->addr)
 						return R_TRUE;
@@ -803,7 +804,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->type = reftype;
 				r_list_append (fcn->xrefs, ref);
 #endif
-				r_anal_xrefs_set (core->anal, reftype, from, at);
+// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
+				//r_anal_xrefs_set (core->anal, reftype, from, at);
 			}
 			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);
