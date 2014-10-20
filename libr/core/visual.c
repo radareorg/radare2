@@ -344,7 +344,7 @@ R_API void r_core_visual_show_char (RCore *core, char ch) {
 	r_cons_printf ("| %c |\n", ch);
 	r_cons_printf ("'---'\n");
 	r_cons_flush ();
-	r_sys_usleep (90000);
+	r_sys_sleep (1);
 }
 
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
@@ -375,7 +375,7 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 		r_cons_printf ("'----'\n");
 	}
 	r_cons_flush();
-	r_sys_usleep(90000);
+	r_sys_usleep (90000);
 #endif
 	r_core_seek (core, addr, 1);
 }
@@ -689,7 +689,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_config_set_i (core->config, "scr.color", color);
 		break;
 	case 'd':
-		r_core_visual_define (core);
+		{
+			int wheel = r_config_get_i (core->config, "scr.wheel");
+			if (wheel) r_cons_enable_mouse (R_FALSE);
+			r_core_visual_define (core);
+			if (wheel) r_cons_enable_mouse (R_TRUE);
+		}
 		break;
 	case 'D':
 		setdiff (core);
