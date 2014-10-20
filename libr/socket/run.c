@@ -123,6 +123,8 @@ static char *getstr(const char *src) {
 	case '@':
 		// slurp file
 		return r_file_slurp (src+1, NULL);
+	case '!':
+		return r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
 	case ':':
 		// hexpairs
 		ret = strdup (src);
