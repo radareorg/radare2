@@ -41,11 +41,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->size = insn->size;
 			op->prefix = 0;
 			switch (insn->detail->x86.prefix[0]) {
-			case 0xf2: // REPNE
+			case X86_PREFIX_REPNE:
 				op->prefix |= R_ANAL_OP_PREFIX_REPNE;
-			case 0xf3: // REP
+			case X86_PREFIX_REP:
 				op->prefix |= R_ANAL_OP_PREFIX_REP;
-			case 0xf0: // LOCK
+			case X86_PREFIX_LOCK:
 				op->prefix |= R_ANAL_OP_PREFIX_LOCK;
 			}
 			switch (insn->id) {
