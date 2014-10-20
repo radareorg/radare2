@@ -32,6 +32,7 @@ static int usage (int v) {
 	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
 	" -x              execute\n"
+	" -z              output in C string syntax\n"
 	" -v              show version\n"
 	" -h              show this help\n");
 	return 1;
@@ -98,6 +99,7 @@ int main(int argc, char **argv) {
 	int show_hex = 1;
 	int show_asm = 0;
 	int show_raw = 0;
+	int show_str = 0;
 	char *shellcode = NULL;
 	char *encoder = NULL;
 	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
@@ -108,7 +110,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:")) != -1) {
+        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:z")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -231,6 +233,9 @@ int main(int argc, char **argv) {
 		case 'v':
 			printf ("ragg2 "R2_VERSION" "R2_INCDIR"/sflib\n");
 			return 0;
+		case 'z':
+			show_str = 1;
+			break;
 		default:
 			return 1;
 		}
@@ -358,7 +363,12 @@ int main(int argc, char **argv) {
 			}
 			switch (*format) { //*format) {
 			case 'r':
-				if (show_hex) {
+				if (show_str) {
+					printf ("\"");
+					for (i=0; i<b->length; i++)
+						printf ("\\x%02x", b->buf[i]);
+					printf ("\"\n");
+				} else if (show_hex) {
 					for (i=0; i<b->length; i++)
 						printf ("%02x", b->buf[i]);
 					printf ("\n");
