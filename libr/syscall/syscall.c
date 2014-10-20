@@ -40,7 +40,7 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 
 R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bits) {
 	const char *file;
-	if (os == NULL)
+	if (os == NULL || !*os)
 		os = R_SYS_OS;
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
