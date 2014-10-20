@@ -1666,10 +1666,10 @@ static int cmd_anal(void *data, const char *input) {
 				}
 				list = r_anal_xrefs_get (core->anal, addr);
 				if (list) {
-					if (input[2] == 'q') { // axtq
+					if (input[2] == 'q') { // "axtq"
 						r_list_foreach (list, iter, ref)
 							r_cons_printf ("0x%"PFMT64x"\n", ref->addr);
-					} else if (input[2] == 'j') { // axtj
+					} else if (input[2] == 'j') { // "axtj"
 						r_cons_printf("[");
 						r_list_foreach (list, iter, ref) {
 							r_core_read_at (core, ref->addr, buf, 12);
@@ -1688,6 +1688,7 @@ static int cmd_anal(void *data, const char *input) {
 					} else { // axt
 						r_list_foreach (list, iter, ref) {
 							r_core_read_at (core, ref->addr, buf, 12);
+							r_asm_set_pc (core->assembler, ref->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, 12);
 							buf_asm = r_print_colorize_opcode (asmop.buf_asm, core->cons->pal.reg,
 									core->cons->pal.num);
