@@ -540,6 +540,7 @@ typedef struct r_anal_t {
 	RIOBind iob;
 	RFlagBind flb;
 	int decode;
+	int eobjmp; // option
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;

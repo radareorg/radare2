@@ -66,6 +66,12 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 		r_config_set (cfg, "asm.segoff", (asmbits==16)?"true":"false");
 }
 
+static int cb_analeobjmp(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->eobjmp = node->i_value;
+	return R_TRUE;
+}
 static int cb_analnopskip (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -760,6 +766,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->num = core->num;
 
 	/* anal */
+	SETCB("anal.eobjmp", "true", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
