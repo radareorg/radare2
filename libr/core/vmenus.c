@@ -167,7 +167,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				r_core_cmdf (core, "f %s=%s-1", fs2, fs2);
 			else r_core_block_size (core, core->blocksize-1);
 			break;
-		case 'r':
+		case 'r': // "Vtr"
 			if (menu == 1) {
 				int len;
 				r_cons_show_cursor (R_TRUE);
@@ -1237,6 +1237,11 @@ R_API void r_core_visual_define (RCore *core) {
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
 	ut8 *p = core->block;
+	int delta = 0;
+	ut64 here = core->offset;
+	if (core->print->cur_enabled)
+		delta = core->print->cur;
+	here += delta;
 	char *name;
 	if (core->print->cur_enabled) {
 		int cur = core->print->cur;
@@ -1379,11 +1384,6 @@ R_API void r_core_visual_define (RCore *core) {
 		if (fcn) {
 			RAnalOp op;
 			ut64 size;
-			int delta = 0;
-			ut64 here = core->offset;
-			if (core->print->cur_enabled)
-				delta = core->print->cur;
-			here += delta;
 			if (r_anal_op (core->anal, &op, here, core->block+delta,
 					core->blocksize-delta)) {
 				size = here - fcn->addr + op.size;
@@ -1392,11 +1392,11 @@ R_API void r_core_visual_define (RCore *core) {
 		}
 		}
 		break;
-	case 'h':
-		r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+	case 'h': // "Vdh"
+		r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, here);
 		break;
-	case 'r':
-		r_core_cmd0 (core, "?i new function name;afn `?y`");
+	case 'r': // "Vdr"
+		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, here);
 		break;
 	case 'S':
 		do {
