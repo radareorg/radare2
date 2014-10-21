@@ -10,9 +10,32 @@ static void flagbars(RCore *core) {
 	}
 	if (!total) // avoid a division by zero
 		return;
+	cols-=15;
+	r_cons_printf ("Total: %d\n", total);
 	r_list_foreach (core->flags->flags, iter, flag) {
 		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
-		r_cons_printf ("%10s", flag->name);
+		r_cons_printf ("%10s %.8"PFMT64d, flag->name, flag->offset);
+		r_print_progressbar (core->print,
+			(pbar_val*100)/total, cols);
+		r_cons_newline ();
+	}
+}
+
+static void flagbars_dos(RCore *core) {
+	int total = 0;
+	int cols = r_cons_get_size (NULL);
+	RListIter *iter;
+	RFlagItem *flag;
+	r_list_foreach (core->flags->flags, iter, flag) {
+		total = R_MAX(total,flag->offset);
+	}
+	if (!total) // avoid a division by zero
+		return;
+	cols-=15;
+	r_cons_printf ("Total: %d\n", total);
+	r_list_foreach (core->flags->flags, iter, flag) {
+		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
+		r_cons_printf ("%10s %.8"PFMT64d, flag->name, flag->offset);
 		r_print_progressbar (core->print,
 			(pbar_val*100)/total, cols);
 		r_cons_newline ();
@@ -30,8 +53,18 @@ static int cmd_flag(void *data, const char *input) {
 	if (*input)
 		str = strdup (input+1);
 	switch (*input) {
-	case '=':
-		flagbars (core);
+	case '=': // "f="
+		switch (input[1]) {
+		case '=':
+			flagbars_dos (core);
+			break;
+		case '?':
+			eprintf ("Usage: f= or f== to display flag bars\n");
+			break;
+		default:
+			flagbars (core);
+			break;
+		}
 		break;
 	case 'a':
 		if (input[1]==' '){

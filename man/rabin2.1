@@ -66,8 +66,8 @@ List supported bin plugins
 Show address of 'main' symbol
 .It Fl m Ar addr
 Show source line reference from a given address
-.It Fl N Ar minlen
-Force minimum number of chars per string (see -z)
+.It Fl N Ar minlen:maxlen
+Force minimum and maximum number of chars per string (see -z and -zz). if (strlen>minlen && (!maxlen || strlen<=maxlen))
 .It Fl n Ar str
 Show information (symbol, section, import) at string offset
 .It Fl o Ar str

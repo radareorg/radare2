@@ -42,7 +42,7 @@ static RLib *l;
 
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-ACdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
-		"              [-B addr] [-c F:C:D] [-f str] [-m addr] [-n str] [-N len]\n"
+		"              [-B addr] [-c F:C:D] [-f str] [-m addr] [-n str] [-N m:M]\n"
 		"              [-o str] [-O str] [-k query] file\n");
 	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -69,7 +69,7 @@ static int rabin_show_help(int v) {
 		" -m [addr]       show source line at addr\n"
 		" -M              main (show address of main symbol)\n"
 		" -n [str]        show section, symbol or import named str\n"
-		" -N [minlen]     force minimum number of chars per string (see -z)\n"
+		" -N [min:max]    force min:max number of chars per string (see -z and -zz)\n"
 		" -o [str]        output file/folder for write operations (out by default)\n"
 		" -O [str]        write/extract operations (-O help)\n"
 		" -p              show physical addresses\n"
@@ -468,7 +468,19 @@ int main(int argc, char **argv) {
 			break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
-		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
+		case 'N': 
+			  {
+				  char *q, *p = strdup (optarg);
+				  q = strchr (p, ':');
+				  if (q) {
+					  r_config_set (core.config, "bin.minstr", p);
+					  r_config_set (core.config, "bin.maxstr", q+1);
+				  } else {
+					  r_config_set (core.config, "bin.minstr", optarg);
+				  }
+				  free (p);
+			}
+			  break;
 		//case 'V': return blob_version ("rabin2");
 		case 'h':
 				r_core_fini (&core);

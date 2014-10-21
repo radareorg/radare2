@@ -162,6 +162,7 @@ typedef struct r_bin_t {
 	int narch;
 	void *user;
 	int minstrlen;
+	int maxstrlen;
 	int rawstr;
 	Sdb *sdb;
 	RList/*<RBinPlugin>*/ *plugins;

@@ -722,6 +722,20 @@ static int cb_rawstr(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_binmaxstr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core->bin) {
+		int v = node->i_value;
+		if (v<1) v = 4; // HACK
+		core->bin->maxstrlen = v;
+	// TODO: Do not refresh if nothing changed (minstrlen ?)
+		r_core_bin_refresh_strings (core);
+		return R_TRUE;
+	}
+	return R_TRUE;
+}
+
 static int cb_binminstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -833,6 +847,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("bin.laddr", 0, "Set base address for loading binaries ('o')");
 	SETPREF("bin.dwarf", "true", "Load dwarf information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
+	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Minimum string length for r_bin");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 

@@ -107,7 +107,7 @@ R_API RBinFile * r_core_bin_cur (RCore *core) {
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
-	int hasstr, minstr, rawstr;
+	int hasstr, minstr, maxstr, rawstr;
 	RBinString *string;
 	RListIter *iter;
 	RList *list;
@@ -117,6 +117,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 
 	if (!binfile) return R_FALSE;
 	minstr = r_config_get_i (r->config, "bin.minstr");
+	maxstr = r_config_get_i (r->config, "bin.maxstr");
 	rawstr = r_config_get_i (r->config, "bin.rawstr");
 	binfile->rawstr = rawstr;
 
@@ -137,10 +138,17 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		}
 	}
 
+#if 0
 	if (bin->minstrlen == 0)
-		bin->minstrlen = plugin->minstrlen? plugin->minstrlen: 4;
-	if (minstr > 0 || bin->minstrlen <= 0)
+		bin->minstrlen = minstr;
+	else plugin->minstrlen? plugin->minstrlen: 4;
+#endif
+		bin->minstrlen = minstr;
+#if 0
+	if (bin->minstrlen <= 0)
 		bin->minstrlen = R_MIN (minstr, 4);
+#endif
+	minstr = bin->minstrlen;
 
 	if ((list = r_bin_get_strings (bin)) == NULL)
 		return R_FALSE;
@@ -152,17 +160,22 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->vaddr, string->paddr);
 			ut64 paddr = string->paddr;
 			q = strdup (string->string);
+			if (maxstr && string->length>maxstr) {
+				continue;
+			}
 			for (p=q; *p; p++) {
 				if (*p=='"') *p = '\'';
 				if (*p=='\\') *p = '/';
 			}
-			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
+			if (string->length>minstr) {
+				r_cons_printf ("%s{\"vaddr\":%"PFMT64d
 				",\"paddr\":%"PFMT64d
 				",\"length\":%d,\"size\":%d,"
 				"\"type\":\"%s\",\"string\":\"%s\"}",
 				iter->p? ",": "", vaddr, paddr,
 				string->length, string->size,
 				string->type=='w'?"wide":"ascii", q);
+			}
 			free (q);
 		}
 		r_cons_printf ("]");
@@ -171,8 +184,13 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (list, iter, string) {
 			ut64 addr = va? r_bin_get_vaddr (bin, baddr,
 				string->paddr, string->vaddr): string->paddr;
-			r_cons_printf ("%"PFMT64d" %d %d %s\n",
-				addr, string->size, string->length, string->string);
+			if (maxstr && string->length>maxstr) {
+				continue;
+			}
+			if (string->length>minstr) {
+				r_cons_printf ("%"PFMT64d" %d %d %s\n",
+					addr, string->size, string->length, string->string);
+			}
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
@@ -184,6 +202,11 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			ut64 addr = va? string->vaddr: string->paddr;
 			 //r_bin_get_vaddr (bin, baddr, string->vaddr,
 		//		string->paddr): string->paddr;
+			if (string->length<minstr)
+				continue;
+			if (maxstr && string->length>maxstr) {
+				continue;
+			}
 			if (r_cons_singleton()->breaked) break;
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr,
 				addr+string->size, string->string);
@@ -201,6 +224,11 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			// TODO: honor laddr..
 			ut64 vaddr = string->vaddr;
 			ut64 paddr = string->paddr;
+			if (string->length<minstr)
+				continue;
+			if (maxstr && string->length>maxstr) {
+				continue;
+			}
 			section = r_bin_get_section_at (r_bin_cur_object (bin), string->paddr, 0);
 			if (mode) {
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
