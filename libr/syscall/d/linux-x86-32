@@ -184,3 +184,4 @@ gettid=0x80,224,0,
 set_thread_area=0x80,243,2,
 get_thread_area=0x80,244,2,
 exit_group=0x80,252,1,
+getrandom=0x80,355,3,pii

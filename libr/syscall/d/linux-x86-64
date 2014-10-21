@@ -311,3 +311,4 @@ setns=0x80,308,2,
 getcpu=0x80,309,3,
 process_vm_readv=0x80,310,6,
 process_vm_writev=0x80,311,6,
+getrandom=0x80,318,3,pii
