@@ -8,7 +8,7 @@ R2R_URL=$(shell doc/repo REGRESSIONS)
 DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
-DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
+DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
 YARADIR=$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara)
 #binr/ragg2/d
 STRIP?=strip

@@ -63,7 +63,6 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 		ptr_str_clone = strchr (input_three, ' ');
 	}
 
-
 	// command formats
 	// <size> <arch> <bits>
 	// <size> <arch>
@@ -109,6 +108,161 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 		result = R_TRUE;
 	}
 	return result;
+}
+
+static void cmd_print_format (RCore *core, const char *_input, int len) {
+	char *input = strdup (_input);
+	int i, flag = -1;
+	if (input[1]=='*') {
+		input++;
+		flag = SEEFLAG;
+	}
+	// "pfo" // open formatted thing
+	if (input[1]=='o') { // "pfo"
+		if (input[2] == '?') {
+			eprintf ("Usage: pfo [format-file]\n"
+			" ~/.config/radare2/format\n"
+			" "R2_DATDIR"/radare2/"R2_VERSION"/format/\n");
+		} else if (input[2] == ' ') {
+			char *home, path[512];
+			snprintf (path, sizeof (path), ".config/radare2/format/%s", input+3);
+			home = r_str_home (path);
+			snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
+					R2_VERSION"/format/%s", input+3);
+			if (!r_core_cmd_file (core, home))
+				if (!r_core_cmd_file (core, path))
+					if (!r_core_cmd_file (core, input+3))
+						eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
+			free (home);
+		} else {
+			RList *files;
+			RListIter *iter;
+			const char *fn;
+			char *home = r_str_home (".config/radare2/format/");
+			if (home) {
+				files = r_sys_dir (home);
+				r_list_foreach (files, iter, fn) {
+					if (*fn && *fn != '.')
+						r_cons_printf ("%s\n", fn);
+				}
+				r_list_free (files);
+				free (home);
+			}
+			files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/format/");
+			r_list_foreach (files, iter, fn) {
+				if (*fn && *fn != '.')
+					r_cons_printf ("%s\n", fn);
+			}
+			r_list_free (files);
+		}
+		return;
+	}
+	/* syntax aliasing bridge for 'pf foo=xxd' -> 'pf.foo xxd' */
+	if (input[1]==' ') {
+		char *eq = strchr (input+2, '=');
+		if (eq) {
+			input[1] = '.';
+			*eq = ' ';
+		}
+	}
+	if (input[1]=='.') {
+		if (input[2]=='\0') {
+			RListIter *iter;
+			RStrHT *sht = core->print->formats;
+			int *i;
+			r_list_foreach (sht->ls, iter, i) {
+				int idx = ((int)(size_t)i)-1;
+				const char *key = r_strpool_get (sht->sp, idx);
+				const char *val = r_strht_get (core->print->formats, key);
+				r_cons_printf ("pf.%s %s\n", key, val);
+			}
+		} else if (input[2]=='-') {
+			if (input[3]) r_strht_del (core->print->formats, input+3);
+			else r_strht_clear (core->print->formats);
+		} else {
+			const char *fmt;
+			char *name = strdup (input+2);
+			char *space = strchr (name, ' ');
+			char *eq, *dot = strchr (name, '.');
+			if (space) {
+				*space++ = 0;
+				//printf ("SET (%s)(%s)\n", name, space);
+				r_strht_set (core->print->formats, name, space);
+				free (input);
+				return;
+			}
+			if (dot) {
+				// TODO: support multiple levels
+				*dot++ = 0;
+				eq = strchr (dot, '=');
+				if (eq) {
+					char *res;
+					fmt = r_strht_get (core->print->formats, name);
+					// TODO: spaguettti, reuse code below.. and handle atoi() too
+					if (fmt) {
+						res = strdup (fmt);
+						*eq++ = 0;
+#if 0
+						ut64 v;
+						v = r_num_math (NULL, eq);
+						r_print_format (core->print, core->offset,
+								core->block, core->blocksize, fmt, v, eq);
+#endif
+						r_str_word_set0 (res);
+						for (i = 1; ; i++) {
+							const char *k = r_str_word_get0 (res, i);
+							if (!k || !*k) {
+								eprintf ("Unknown field '%s'\n", dot);
+								break;
+							}
+							if (!strcmp (k, dot)) {
+								r_print_format (core->print, core->offset,
+										core->block, core->blocksize, fmt, i-1, eq);
+								break;
+							}
+						}
+						free (res);
+					}
+				} else {
+					const char *k, *fmt = r_strht_get (core->print->formats, name);
+					if (fmt) {
+						if (atoi (dot)>0 || *dot=='0') {
+							// indexed field access
+							r_print_format (core->print, core->offset,
+									core->block, core->blocksize, fmt, atoi (dot), NULL);
+						} else {
+							char *res = strdup (fmt);
+							r_str_word_set0 (res);
+							for (i = 1; ; i++) {
+								k = r_str_word_get0 (res, i);
+								if (!k || !*k) {
+									eprintf ("Unknown field '%s'\n", dot);
+									break;
+								}
+								if (!strcmp (k, dot)) {
+									r_print_format (core->print, core->offset,
+											core->block, core->blocksize, fmt, i-1, NULL);
+									break;
+								}
+							}
+							free (res);
+						}
+					} else {
+
+					}
+				}
+			} else {
+				const char *fmt = r_strht_get (core->print->formats, name);
+				if (fmt) {
+					r_print_format (core->print, core->offset,
+							core->block, len, fmt, flag, NULL);
+				} else eprintf ("Unknown format (%s)\n", name);
+			}
+			free (name);
+		}
+	} else r_print_format (core->print, core->offset,
+			core->block, len, input+1, flag, NULL);
+	free (input);
 }
 
 // > pxa
@@ -166,7 +320,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		free (note);
 		return;
 	}
-
 #if 1
 	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr))-8;
 	char addrpad[32];
@@ -965,9 +1118,9 @@ static int cmd_print(void *data, const char *input) {
 		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
-	case 'I': //pI
+	case 'I': // "pI"
 		switch (input[1]) {
-			case 'j': //pIj is the same as pDj
+			case 'j': // "pIj" is the same as pDj
 				cmd_pDj (core, input+2);
 				break;
 			case 'f':
@@ -1017,8 +1170,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		return 0;
-	case 'D': //pD
-	case 'd': //pd
+	case 'D': // "pD"
+	case 'd': // "pd"
 		{
 		ut64 current_offset = core->offset;
 		ut32 new_bits = -1;
@@ -1066,7 +1219,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		switch (input[1]) {
-		case 'i': //pdi
+		case 'i': // "pdi"
 			processed_cmd = R_TRUE;
 			if (*input == 'D')
 				pdi (core, 0, l, 0);
@@ -1074,7 +1227,7 @@ static int cmd_print(void *data, const char *input) {
 				pdi (core, l, 0, 0);
 			pd_result = 0;
 			break;
-		case 'a': //pda
+		case 'a': // "pda"
 			processed_cmd = R_TRUE;
 			{
 				RAsmOp asmop;
@@ -1101,7 +1254,7 @@ static int cmd_print(void *data, const char *input) {
 				pd_result = R_TRUE;
 			}
 			break;
-		case 'r': // pdr
+		case 'r': // "pdr"
 			processed_cmd = R_TRUE;
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -1137,7 +1290,7 @@ static int cmd_print(void *data, const char *input) {
 				pd_result = R_TRUE;
 			}
 			break;
-		case 'b': //pdb
+		case 'b': // "pdb"
 			processed_cmd = R_TRUE;
 			{
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
@@ -1154,7 +1307,7 @@ static int cmd_print(void *data, const char *input) {
 				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			}
 			break;
-		case 'f': //pdf
+		case 'f': // "pdf"
 			processed_cmd = R_TRUE;
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -1655,113 +1808,7 @@ static int cmd_print(void *data, const char *input) {
 		r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f':
-	{
-		int flag = -1;
-		if (input[1]=='*') {
-			input++;
-			flag = SEEFLAG;
-		}
-		if (input[1]=='.') {
-			if (input[2]=='\0') {
-				RListIter *iter;
-				RStrHT *sht = core->print->formats;
-				int *i;
-				r_list_foreach (sht->ls, iter, i) {
-					int idx = ((int)(size_t)i)-1;
-					const char *key = r_strpool_get (sht->sp, idx);
-					const char *val = r_strht_get (core->print->formats, key);
-					r_cons_printf ("pf.%s %s\n", key, val);
-				}
-			} else
-			if (input[2]=='-') {
-				if (input[3]) r_strht_del (core->print->formats, input+3);
-				else r_strht_clear (core->print->formats);
-			} else {
-				char *name = strdup (input+2);
-				char *space = strchr (name, ' ');
-				if (space) {
-					*space++ = 0;
-					//printf ("SET (%s)(%s)\n", name, space);
-					r_strht_set (core->print->formats, name, space);
-					return 0;
-				} else {
-					const char *fmt;
-					char *eq, *dot = strchr (name, '.');
-					if (dot) {
-						// TODO: support multiple levels
-						*dot++ = 0;
-						eq = strchr (dot, '=');
-						if (eq) {
-							char *res;
-							fmt = r_strht_get (core->print->formats, name);
-							// TODO: spaguettti, reuse code below.. and handle atoi() too
-							if (fmt) {
-								res = strdup (fmt);
-								*eq++ = 0;
-#if 0
-								ut64 v;
-								v = r_num_math (NULL, eq);
-								r_print_format (core->print, core->offset,
-										core->block, core->blocksize, fmt, v, eq);
-#endif
-								r_str_word_set0 (res);
-								for (i = 1; ; i++) {
-									const char *k = r_str_word_get0 (res, i);
-									if (!k || !*k) {
-										eprintf ("Unknown field '%s'\n", dot);
-										break;
-									}
-									if (!strcmp (k, dot)) {
-										r_print_format (core->print, core->offset,
-												core->block, core->blocksize, fmt, i-1, eq);
-										break;
-									}
-								}
-								free (res);
-							}
-						} else {
-							const char *k, *fmt = r_strht_get (core->print->formats, name);
-							if (fmt) {
-								if (atoi (dot)>0 || *dot=='0') {
-									// indexed field access
-									r_print_format (core->print, core->offset,
-											core->block, core->blocksize, fmt, atoi (dot), NULL);
-								} else {
-									char *res = strdup (fmt);
-									r_str_word_set0 (res);
-									for (i = 1; ; i++) {
-										k = r_str_word_get0 (res, i);
-										if (!k || !*k) {
-											eprintf ("Unknown field '%s'\n", dot);
-											break;
-										}
-										if (!strcmp (k, dot)) {
-											r_print_format (core->print, core->offset,
-												core->block, core->blocksize, fmt, i-1, NULL);
-											break;
-										}
-									}
-									free (res);
-								}
-							} else {
-
-							}
-						}
-					} else {
-						const char *fmt = r_strht_get (core->print->formats, name);
-						if (fmt) {
-							//printf ("GET (%s) = %s\n", name, fmt);
-							r_print_format (core->print, core->offset,
-								core->block, len, fmt, flag, NULL);
-						} else eprintf ("Unknown format (%s)\n", name);
-					}
-				}
-				free (name);
-			}
-		} else r_print_format (core->print, core->offset,
-			core->block, len, input+1, flag, NULL);
-	}
-
+		cmd_print_format (core, input, len);
 		break;
 	case 'k':
 		{
