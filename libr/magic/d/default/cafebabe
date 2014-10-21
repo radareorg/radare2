@@ -17,11 +17,13 @@
 0	beshort		0xcafe
 >2	beshort         0xbabe
 !:mime	application/x-java-applet
->4	belong		>30		compiled Java class data,
->>6	beshort		x	        version %d.
->>4	beshort		x       	\b%d
->>4	belong		1		Mach-O fat file with 1 architecture
->>4	belong		>1
->>>4	belong		<20		Mach-O fat file with %ld architectures
+#>4	belong		>30		compiled Java class data,
+>4	belong		>30
+>>6	beshort		<20
+>>>6	beshort		x	        compiled Java class data version %d.
+>>>4	beshort		x       	\b%d
+>>>4	belong		1		Mach-O fat file with 1 architecture
+>>>4	belong		>1
+>>>>4	belong		<20		Mach-O fat file with %ld architectures
 >2	beshort		0xd00d		JAR compressed with pack200
 !:mime	application/x-java-pack200

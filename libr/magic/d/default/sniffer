@@ -248,51 +248,6 @@
 >16	lelong		x		\b, capture length %d)
 
 #
-# AIX "iptrace" capture files.
-#
-0	string		iptrace\ 1.0	"iptrace" capture file
-0	string		iptrace\ 2.0	"iptrace" capture file
-
-#
-# Novell LANalyzer capture files.
-#
-0	leshort		0x1001		LANalyzer capture file
-0	leshort		0x1007		LANalyzer capture file
-
-#
-# HP-UX "nettl" capture files.
-#
-0	string		\x54\x52\x00\x64\x00	"nettl" capture file
-
-#
-# RADCOM WAN/LAN Analyzer capture files.
-#
-0	string		\x42\xd2\x00\x34\x12\x66\x22\x88	RADCOM WAN/LAN Analyzer capture file
-
-#
-# NetStumbler log files.  Not really packets, per se, but about as
-# close as you can get.  These are log files from NetStumbler, a
-# Windows program, that scans for 802.11b networks.
-#
-0	string		NetS		NetStumbler log file
->8	lelong		x		\b, %d stations found
-
-#
 # EtherPeek/AiroPeek "version 9" capture files.
 #
 0	string		\177ver		EtherPeek/AiroPeek capture file
-
-#
-# Visual Networks traffic capture files.
-#
-0	string		\x05VNF		Visual Networks traffic capture file
-
-#
-# Network Instruments Observer capture files.
-#
-0	string		ObserverPktBuffe	Network Instruments Observer capture file
-
-#
-# Files from Accellent Group's 5View products.
-#
-0	string		\xaa\xaa\xaa\xaa	5View capture file

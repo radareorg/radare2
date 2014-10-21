@@ -22,18 +22,6 @@
 100	regex/c =^[\ \t]{0,10}call[\ \t]{1,10}rxfunc OS/2 REXX batch file text
 100	regex/c =^[\ \t]{0,10}say\ ['"]	     OS/2 REXX batch file text
 
-0	leshort		0x14c	MS Windows COFF Intel 80386 object file
-#>4	ledate		x	stamp %s
-0	leshort		0x166	MS Windows COFF MIPS R4000 object file
-#>4	ledate		x	stamp %s
-0	leshort		0x184	MS Windows COFF Alpha object file
-#>4	ledate		x	stamp %s
-0	leshort		0x268	MS Windows COFF Motorola 68000 object file
-#>4	ledate		x	stamp %s
-0	leshort		0x1f0	MS Windows COFF PowerPC object file
-#>4	ledate		x	stamp %s
-0	leshort		0x290	MS Windows COFF PA-RISC object file
-#>4	ledate		x	stamp %s
 
 # XXX - according to Microsoft's spec, at an offset of 0x3c in a
 # PE-format executable is the offset in the file of the PE header;
@@ -50,7 +38,8 @@
 #
 # many of the compressed formats were extraced from IDARC 1.23 source code
 #
-0	string	MZ		MS-DOS executable
+#0	string	MZ		MS-DOS executable
+0	string	MZ
 !:mime	application/x-dosexec
 >0 string MZ\0\0\0\0\0\0\0\0\0\0PE\0\0 \b, PE for MS Windows
 >>&18	leshort&0x2000	>0	(DLL)
@@ -184,14 +173,14 @@
 # looks like ASCII, probably some embedded copyright message.
 # and definitely not NE/LE/LX/PE
 >>0x3c		lelong	>0x20000000
->>>(4.s*512)	leshort !0x014c \b, MZ for MS-DOS
+#>>>(4.s*512)	leshort !0x014c \b, MZ for MS-DOS
 # header data too small for extended executable
 >2		long	!0
 >>0x18		leshort	<0x40
 >>>(4.s*512)	leshort !0x014c
 
 >>>>&(2.s-514)	string	!LE
->>>>>&-2	string	!BW \b, MZ for MS-DOS
+#>>>>>&-2	string	!BW \b, MZ for MS-DOS
 >>>>&(2.s-514)	string	LE \b, LE
 >>>>>0x240	search/0x100	DOS/4G for MS-DOS, DOS4GW DOS extender
 # educated guess since indirection is still not capable enough for complex offset
@@ -319,30 +308,6 @@
 >4	string	\x77\x02\xcd\x20\xb9	
 >>36	string	UPX! 			FREE-DOS executable (COM), UPX compressed
 252	string Must\ have\ DOS\ version	DR-DOS executable (COM)
-# GRR search is not working
-#2	search/28	\xcd\x21	COM executable for MS-DOS
-#WHICHFAT.cOM
-2	string	\xcd\x21		COM executable for DOS
-#DELTREE.cOM DELTREE2.cOM
-4	string	\xcd\x21		COM executable for DOS
-#IFMEMDSK.cOM ASSIGN.cOM COMP.cOM
-5	string	\xcd\x21		COM executable for DOS
-#DELTMP.COm HASFAT32.cOM
-7	string	\xcd\x21		
->0	byte	!0xb8			COM executable for DOS
-#COMP.cOM MORE.COm
-10	string	\xcd\x21		
->5	string	!\xcd\x21		COM executable for DOS
-#comecho.com
-13	string	\xcd\x21		COM executable for DOS
-#HELP.COm EDIT.coM
-18	string	\xcd\x21		COM executable for MS-DOS
-#NWRPLTRM.COm
-23	string	\xcd\x21		COM executable for MS-DOS
-#LOADFIX.cOm LOADFIX.cOm
-30	string	\xcd\x21		COM executable for MS-DOS
-#syslinux.com 3.11
-70	string	\xcd\x21		COM executable for DOS
 # many compressed/converted COMs start with a copy loop instead of a jump
 0x6	search/0xa	\xfc\x57\xf3\xa5\xc3	COM executable for MS-DOS
 0x6	search/0xa	\xfc\x57\xf3\xa4\xc3	COM executable for DOS
@@ -351,7 +316,7 @@
 # FIXME: missing diet .com compression
 
 # miscellaneous formats
-0	string		LZ		MS-DOS executable (built-in)
+#0	string		LZ		MS-DOS executable (built-in)
 #0	byte		0xf0		MS-DOS program library data
 #
 
@@ -380,18 +345,12 @@
 # Pawel Wiecek <coven@i17linuxb.ists.pwr.wroc.pl> (for polish Word)
 2112	string	MSWordDoc			Microsoft Word document data
 !:mime	application/msword
-#
-0	belong	0x31be0000			Microsoft Word Document
-!:mime	application/msword
-#
 0       string  PO^Q`				Microsoft Word 6.0 Document
 !:mime	application/msword
 #
 0	string	\376\067\0\043			Microsoft Office Document
 !:mime	application/msword
 0	string	\333\245-\0\0\0			Microsoft Office Document
-!:mime	application/msword
-512	string		\354\245\301		Microsoft Word Document
 !:mime	application/msword
 #
 2080	string	Microsoft\ Excel\ 5.0\ Worksheet	%s
@@ -411,10 +370,10 @@
 #
 
 # Help files
-0	string	?_\3\0		MS Windows Help Data
+#0	string	?_\3\0		MS Windows Help Data
 
 #  DeIsL1.isu what this is I don't know
-0	string	\161\250\000\000\001\002	DeIsL1.isu whatever that is
+#0	string	\161\250\000\000\001\002	DeIsL1.isu whatever that is
 
 # Winamp .avs
 #0	string	Nullsoft\ AVS\ Preset\ \060\056\061\032	A plug in for Winamp ms-windows Freeware media player
@@ -634,38 +593,7 @@
 0	string	\320\317\021\340\241\261\032\341	Microsoft Office Document
 #>48	byte	0x1B	                                Excel Document
 #!:mime	application/vnd.ms-excel
->546	string	bjbj			Microsoft Word Document
+>546	string	bjbj			Microsoft Word Document 1
 !:mime	application/msword
->546	string	jbjb			Microsoft Word Document
+>546	string	jbjb			Microsoft Word Document 2
 !:mime	application/msword
-
-0       string	\224\246\056		Microsoft Word Document
-!:mime	application/msword
-
-512	string	R\0o\0o\0t\0\ \0E\0n\0t\0r\0y	Microsoft Word Document
-!:mime	application/msword
-
-# From: "Nelson A. de Oliveira" <naoliv@gmail.com>
-# Magic type for Dell's BIOS .hdr files
-# Dell's .hdr
-0	string $RBU
->23	string Dell			%s system BIOS
->48	string x			version %.3s
-
-# Type: Microsoft DirectDraw Surface
-# URL:  http://msdn.microsoft.com/library/default.asp?url=/library/en-us/directx9_c/directx/graphics/reference/DDSFileReference/ddsfileformat.asp
-# From: Morten Hustveit <morten@debian.org>
-0	string	DDS\040\174\000\000\000	Microsoft DirectDraw Surface (DDS),
->16	lelong	>0			%hd x
->12	lelong	>0			%hd,
->84	string	x			%.4s
-
-# Type: Microsoft Document Imaging Format (.mdi)
-# URL:  http://en.wikipedia.org/wiki/Microsoft_Document_Imaging_Format
-# From: Daniele Sempione <scrows@oziosi.org>
-0	short	0x5045			Microsoft Document Imaging Format
-
-# MS eBook format (.lit)
-0	string  ITOLITLS		Microsoft Reader eBook Data
->8	lelong	x			\b, version %u
-!:mime					application/x-ms-reader

@@ -177,6 +177,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	int rv = -1;
 	int mapped;
 
+	if (!ms) return -1;
 	ms->haderr = 0;
 	if (magicsize != FILE_MAGICSIZE) {
 		file_error(ms, 0, "magic element size %lu != %lu",

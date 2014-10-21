@@ -1,0 +1,120 @@
+
+#------------------Compression Formats-----------------------------
+
+
+# bzip2
+0	string BZh91AY&SY	bzip2 compressed data, block size = 900k
+0	string BZh81AY&SY	bzip2 compressed data, block size = 800k
+0	string BZh71AY&SY	bzip2 compressed data, block size = 700k
+0	string BZh61AY&SY	bzip2 compressed data, block size = 600k
+0	string BZh51AY&SY	bzip2 compressed data, block size = 500k
+0	string BZh41AY&SY	bzip2 compressed data, block size = 400k
+0	string BZh31AY&SY	bzip2 compressed data, block size = 300k
+0	string BZh21AY&SY	bzip2 compressed data, block size = 200k
+0	string BZh11AY&SY	bzip2 compressed data, block size = 100k
+
+# LZO
+0	string		\211LZO\000\015\012\032\012	LZO compressed data
+
+# 7-zip archiver, from Thomas Klausner (wiz@danbala.tuwien.ac.at)
+# http://www.7-zip.org or DOC/7zFormat.txt 
+#
+0       string          7z\274\257\047\034      7-zip archive data,
+>6	byte		<0			invalid
+>6	byte		0			
+>>7	byte		0			invalid
+>6	byte		>20			invalid
+>6      byte            x                       version %d
+>7      byte            x                       \b.%d
+
+# standard unix compress
+# Implemented in the compress binwalk plugin.
+#0       string		\x1f\x9d\x90          compress'd data, 16 bits
+
+# http://tukaani.org/xz/xz-file-format.txt
+0	string		\xFD\x37\x7a\x58\x5a\x00	xz compressed data
+
+# gzip (GNU zip, not to be confused with Info-ZIP or PKWARE zip archiver)
+#   Edited by Chris Chittleborough <cchittleborough@yahoo.com.au>, March 2002
+#       * Original filename is only at offset 10 if "extra field" absent
+#       * Produce shorter output - notably, only report compression methods
+#         other than 8 ("deflate", the only method defined in RFC 1952).
+#0       string          \037\213\x08    gzip compressed data
+0	string		\x1f\x8b\x08	gzip compressed data
+>3      byte            &0x01           \b, ASCII
+>3	byte&0xE0	!0x00		\b, invalid reserved flag bits
+>8	byte		2		\b, maximum compression
+>8	byte		4		\b, fastest compression
+>8	byte		1		\b, invalid extra flags
+>8	byte		3		\b, invalid extra flags
+>8	byte		>4		\b, invalid extra flags
+>3      byte            &0x02           \b, has header CRC
+>3      byte&0x04       0x04
+>>10	leshort		x		\b, has %d bytes of extra data
+>3      byte&0xC        =0x08		\b, has original file name
+>>10	string		x		\b{file-name:%s}
+>>10    string          x               \b: "%s"
+>3      byte            &0x10           \b, has comment
+>>3	byte&0xC	0
+>>>10	string		x		\b: "%s"
+>9      byte            =0x00           \b, from FAT filesystem (MS-DOS, OS/2, NT)
+>9      byte            =0x01           \b, from Amiga
+>9      byte            =0x02           \b, from VMS
+>9      byte            =0x03           \b, from Unix
+>9      byte            =0x04           \b, from VM/CMS
+>9      byte            =0x05           \b, from Atari
+>9      byte            =0x06           \b, from HPFS filesystem (OS/2, NT)
+>9      byte            =0x07           \b, from MacOS
+>9      byte            =0x08           \b, from Z-System
+>9      byte            =0x09           \b, from CP/M
+>9      byte            =0x0A           \b, from TOPS/20
+>9      byte            =0x0B           \b, from NTFS filesystem (NT)
+>9      byte            =0x0C           \b, from QDOS
+>9      byte            =0x0D           \b, from Acorn RISCOS
+#>9	byte		=0xFF		\b, from ZyNOS
+#>9	byte		>0x0D		\b, invalid
+#>>9	byte		x		source: 0x%.2X
+#>9	byte		<0		\b, invalid
+#>>9	byte		x		source: 0x%.2X
+>3      byte            &0x20           \b, encrypted (invalid)
+# Dates before 1992 are invalid, unless of course you're DD-WRT in which
+# case you don't know how to set a date in your gzip files. Brilliant.
+>4	lelong		=0		\b, NULL date
+>4	lelong		<0		\b, invalid date
+>4	lelong		>0		
+>>4	lelong		<694224000	\b, invalid date
+>>4	lelong		=694224000	\b, invalid date
+>>4	lelong		>694224000	\b, last modified
+>>4     ledate          x               %s
+
+# Zlib signatures
+# Too short to be useful on their own; see:
+#
+#	o src/binwalk/magic/zlib
+#	o src/binwalk/plugins/zlib.py
+#
+#0	beshort		0x789C		zlib compressed data
+#0	beshort		0x78DA		zlib compressed data
+#0	beshort		0x7801		zlib compressed data
+
+
+# JAR
+0       belong          0xcafed00d      JAR compressed with pack200,
+>5      byte            x               version %d.
+>4      byte            x               \b%d
+
+# New LZMA format signature
+# See lzma file for LZMA signatures
+0	string		\xFFLZMA\x00	LZMA compressed data (new),
+>6	byte&0x10	0				single-block stream
+>6	byte&0x10	0x10			multi-block stream
+
+#0	string	\xff\x06\x00\x00\x73\x4e\x61\x50\x70\x59	Snappy compression, stream identifier
+
+#0   string	\x1f\x9d\x90	compress'd data, 16 bits
+
+#0	beshort		0x7801		Zlib header, no compression
+#0	beshort		0x789c		Zlib compressed data, default compression
+#0	beshort		0x78da		Zlib compressed data, best compression
+#0	beshort		0x785e		Zlib compressed data, compressed
+

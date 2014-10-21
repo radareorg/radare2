@@ -56,21 +56,6 @@
 >0x404	long		x		size %d pages
 >>4086	string		SWAPSPACE2	
 >>>1052	string		>\0		Label %s
-# ECOFF magic for OSF/1 and Linux (only tested under Linux though)
-#
-#	from Erik Troan (ewt@redhat.com) examining od dumps, so this
-#		could be wrong
-#      updated by David Mosberger (davidm@azstarnet.com) based on
-#      GNU BFD and MIPS info found below.
-#
-0	leshort		0x0183		ECOFF alpha
->24	leshort		0407		executable
->24	leshort		0410		pure
->24	leshort		0413		demand paged
->8	long		>0		not stripped
->8	long		0		stripped
->23	leshort		>0		- version %ld.
-#
 # Linux kernel boot images, from Albert Cahalan <acahalan@cs.uml.edu>
 # and others such as Axel Kohlmeyer <akohlmey@rincewind.chemie.uni-ulm.de>
 # and Nicolás Lichtmaier <nick@debian.org>
@@ -147,12 +132,6 @@
 0		belong		0xb8c0078e	Linux
 >0x1e6		belong		0x454c4b53	ELKS Kernel
 >0x1e6		belong		!0x454c4b53	style boot sector
-
-############################################################################
-# Linux 8086 executable
-0	lelong&0xFF0000FF 0xC30000E9	Linux-Dev86 executable, headerless
->5	string		.		
->>4	string		>\0		\b, libc version %s
 
 0	lelong&0xFF00FFFF 0x4000301	Linux-8086 executable
 >2	byte&0x01	!0		\b, unmapped zero page

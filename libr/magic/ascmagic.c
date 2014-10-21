@@ -67,6 +67,7 @@ static int ascmatch(const ut8 *, const unichar *, size_t);
 static ut8 *encode_utf8(ut8 *, size_t, unichar *, size_t);
 
 int file_ascmagic(RMagic *ms, const ut8 *buf, size_t nbytes) {
+return 0;
 	size_t i;
 	ut8 *nbuf = NULL, *utf8_buf = NULL, *utf8_end;
 	unichar *ubuf = NULL;	

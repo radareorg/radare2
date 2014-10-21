@@ -9,9 +9,9 @@
 #
 # both of which turn into "JPEG image data" here.
 #
-0	beshort		0xffd8		JPEG image data
+0	beshort		0xffd8
 !:mime	image/jpeg
->6	string		JFIF		\b, JFIF standard
+>6	string		JFIF		JPEG image data\b, JFIF standard
 # The following added by Erik Rossen <rossen@freesurf.ch> 1999-09-06
 # in a vain attempt to add image size reporting for JFIF.  Note that these
 # tests are not fool-proof since some perfectly valid JPEGs are currently
@@ -31,7 +31,7 @@
 # EXIF moved down here to avoid reporting a bogus version number,
 # and EXIF version number printing added.
 #   - Patrik R=E5dman <patrik+file-magic@iki.fi>
->6	string		Exif		\b, EXIF standard
+>6	string		Exif		JPEG image data\b, EXIF standard
 # Look for EXIF IFD offset in IFD 0, and then look for EXIF version tag in EXIF IFD.
 # All possible combinations of entries have to be enumerated, since no looping
 # is possible. And both endians are possible...
@@ -151,7 +151,7 @@
 #>16	beshort		x		\b %d
 
 # HSI is Handmade Software's proprietary JPEG encoding scheme
-0	string		hsi1		JPEG image data, HSI proprietary
+#0	string		hsi1		JPEG image data, HSI proprietary
 
 # From: David Santinoli <david@santinoli.com>
 0	string		\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A	JPEG 2000 image data

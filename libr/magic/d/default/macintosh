@@ -5,9 +5,9 @@
 #
 # BinHex is the Macintosh ASCII-encoded file format (see also "apple")
 # Daniel Quinlan, quinlan@yggdrasil.com
-11	string	must\ be\ converted\ with\ BinHex	BinHex binary text
-!:mime	application/mac-binhex40
->41	string	x					\b, version %.3s
+#11	string	must\ be\ converted\ with\ BinHex	BinHex binary text
+#!:mime	application/mac-binhex40
+#>41	string	x					\b, version %.3s
 
 # Macintosh Applications and Installation binaries (franklsm@tuns.ca)
 # GRR: Too weak
@@ -262,14 +262,14 @@
 # Alternatively, the boot block is supposed to be zeroed if it's
 # unused, so a simply >0 should suffice.
 
-0x400	beshort			0xD2D7		Macintosh MFS data
->0	beshort			0x4C4B		(bootable)
->0x40a	beshort			&0x8000		(locked)
->0x402	beldate-0x7C25B080	x		created: %s,
->0x406	beldate-0x7C25B080	>0		last backup: %s,
->0x414	belong			x		block size: %d,
->0x412	beshort			x		number of blocks: %d,
->0x424	pstring			x		volume name: %s
+#0x400	beshort			0xD2D7		Macintosh MFS data
+#>0	beshort			0x4C4B		(bootable)
+#>0x40a	beshort			&0x8000		(locked)
+#>0x402	beldate-0x7C25B080	x		created: %s,
+#>0x406	beldate-0x7C25B080	>0		last backup: %s,
+#>0x414	belong			x		block size: %d,
+#>0x412	beshort			x		number of blocks: %d,
+#>0x424	pstring			x		volume name: %s
 
 # "BD" gives many false positives
 #0x400	beshort			0x4244		Macintosh HFS data
@@ -286,24 +286,25 @@
 #>0x412	beshort			x		number of blocks: %d,
 #>0x424	pstring			x		volume name: %s
 
-0x400	beshort			0x482B		Macintosh HFS Extended
->&0	beshort			x		version %d data
->0	beshort			0x4C4B		(bootable)
->0x404	belong			^0x00000100	(mounted)
->&2	belong			&0x00000200	(spared blocks)
->&2	belong			&0x00000800	(unclean)
->&2	belong			&0x00008000	(locked)
->&6	string			x		last mounted by: '%.4s',
-# really, that should be treated as a belong and we print a string
-# based on the value. TN1150 only mentions '8.10' for "MacOS 8.1"
->&14	beldate-0x7C25B080	x		created: %s,
-# only the creation date is local time, all other timestamps in HFS+ are UTC.
->&18	bedate-0x7C25B080	x		last modified: %s,
->&22	bedate-0x7C25B080	>0		last backup: %s,
->&26	bedate-0x7C25B080	>0		last checked: %s,
->&38	belong			x		block size: %d,
->&42	belong			x		number of blocks: %d,
->&46	belong			x		free blocks: %d
+# disabled because it produces many false positives :(
+#0x400	beshort			0x482B		Macintosh HFS Extended
+#>&0	beshort			x		version %d data
+#>0	beshort			0x4C4B		(bootable)
+#>0x404	belong			^0x00000100	(mounted)
+#>&2	belong			&0x00000200	(spared blocks)
+#>&2	belong			&0x00000800	(unclean)
+#>&2	belong			&0x00008000	(locked)
+#>&6	string			x		last mounted by: '%.4s',
+## really, that should be treated as a belong and we print a string
+## based on the value. TN1150 only mentions '8.10' for "MacOS 8.1"
+#>&14	beldate-0x7C25B080	x		created: %s,
+## only the creation date is local time, all other timestamps in HFS+ are UTC.
+#>&18	bedate-0x7C25B080	x		last modified: %s,
+#>&22	bedate-0x7C25B080	>0		last backup: %s,
+#>&26	bedate-0x7C25B080	>0		last checked: %s,
+#>&38	belong			x		block size: %d,
+#>&42	belong			x		number of blocks: %d,
+#>&46	belong			x		free blocks: %d
 
 # I don't think this is really necessary since it doesn't do much and 
 # anything with a valid driver descriptor will also have a valid

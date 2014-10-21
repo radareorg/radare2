@@ -72,50 +72,31 @@
 0	search/1	#FIG		FIG image text
 >5	string		x		\b, version %.3s
 
-# PC bitmaps (OS/2, Windows BMP files)  (Greg Roelofs, newt@uchicago.edu)
-0	string		BM		PC bitmap data
-!:mime	image/x-ms-bmp
->14	leshort		12		\b, OS/2 1.x format
->>18	leshort		x		\b, %d x
->>20	leshort		x		%d
->14	leshort		64		\b, OS/2 2.x format
->>18	leshort		x		\b, %d x
->>20	leshort		x		%d
->14	leshort		40		\b, Windows 3.x format
->>18	lelong		x		\b, %d x
->>22	lelong		x		%d x
->>28	leshort		x		%d
-
 # XPM icons (Greg Roelofs, newt@uchicago.edu)
 # note possible collision with C/REXX entry in c-lang; currently commented out
 0	search/1	/*\ XPM\ */	X pixmap image text
 
 # Utah Raster Toolkit RLE images (janl@ifi.uio.no)
-0	leshort		0xcc52		RLE image data,
->6	leshort		x		%d x
->8	leshort		x		%d
->2	leshort		>0		\b, lower left corner: %d
->4	leshort		>0		\b, lower right corner: %d
->10	byte&0x1	=0x1		\b, clear first
->10	byte&0x2	=0x2		\b, no background
->10	byte&0x4	=0x4		\b, alpha channel
->10	byte&0x8	=0x8		\b, comment
->11	byte		>0		\b, %d color channels
->12	byte		>0		\b, %d bits per pixel
->13	byte		>0		\b, %d color map channels
-
-# image file format (Robert Potter, potter@cs.rochester.edu)
-0	string		Imagefile\ version-	iff image data
-# this adds the whole header (inc. version number), informative but longish
->10	string		>\0		%s
+#0	leshort		0xcc52		RLE image data,
+#>6	leshort		x		%d x
+#>8	leshort		x		%d
+#>2	leshort		>0		\b, lower left corner: %d
+#>4	leshort		>0		\b, lower right corner: %d
+#>10	byte&0x1	=0x1		\b, clear first
+#>10	byte&0x2	=0x2		\b, no background
+#>10	byte&0x4	=0x4		\b, alpha channel
+#>10	byte&0x8	=0x8		\b, comment
+#>11	byte		>0		\b, %d color channels
+#>12	byte		>0		\b, %d bits per pixel
+#>13	byte		>0		\b, %d color map channels
 
 #
-2048	string		PCD_IPI		Kodak Photo CD image pack file
->0xe02	byte&0x03	0x00		, landscape mode
->0xe02	byte&0x03	0x01		, portrait mode
->0xe02	byte&0x03	0x02		, landscape mode
->0xe02	byte&0x03	0x03		, portrait mode
-0	string		PCD_OPA		Kodak Photo CD overview pack file
+#2048	string		PCD_IPI		Kodak Photo CD image pack file
+#>0xe02	byte&0x03	0x00		, landscape mode
+#>0xe02	byte&0x03	0x01		, portrait mode
+#>0xe02	byte&0x03	0x02		, landscape mode
+#>0xe02	byte&0x03	0x03		, portrait mode
+#0	string		PCD_OPA		Kodak Photo CD overview pack file
 
 # FITS format.  Jeff Uphoff <juphoff@tarsier.cv.nrao.edu>
 # FITS is the Flexible Image Transport System, the de facto standard for
@@ -132,10 +113,6 @@
 0	string	This\ is\ a\ BitMap\ file	Lisp Machine bit-array-file
 #0	string		=!!		Bennet Yee's "face" format
 
-# From SunOS 5.5.1 "/etc/magic" - appeared right before Sun raster image
-# stuff.
-#
-0	beshort		0x1010		PEX Binary Archive
 
 # DICOM medical imaging data
 128	string	DICM			DICOM medical imaging data
@@ -227,15 +204,6 @@
 >200	belong  >0		\b, %ld x
 >204	belong  >0		%ld
 
-
-# Bio-Rad .PIC is an image format used by microscope control systems
-# and related image processing software used by biologists.
-# From: Vebjorn Ljosa <vebjorn@ljosa.com>
-54	leshort 12345		Bio-Rad .PIC Image File
->0	leshort >0		%hd x
->2	leshort >0		%hd,
->4	leshort =1		1 image in file
->4	leshort >1		%hd images in file
 
 # From Jan "Yenya" Kasprzak <kas@fi.muni.cz>
 # The description of *.mrw format can be found at

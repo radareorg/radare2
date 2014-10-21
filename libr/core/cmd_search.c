@@ -890,25 +890,29 @@ static int cmd_search(void *data, const char *input) {
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;
-	case 'm':
+	case 'm': // "/m"
 		dosearch = R_FALSE;
 		if (input[1]==' ' || input[1]=='\0') {
+			int ret;
 			const char *file = input[1]? input+2: NULL;
 			ut64 addr = from;
 			r_cons_break (NULL, NULL);
 			for (; addr<to; addr++) {
 				if (r_cons_singleton ()->breaked)
 					break;
-				if (r_core_magic_at (core, file, addr, 99, R_FALSE) == -1) {
+				ret = r_core_magic_at (core, file, addr, 99, R_FALSE);
+				if (ret == -1) {
 					// something went terribly wrong.
 					break;
 				}
+				addr += ret-1;
 			}
+			r_cons_clear_line (0);
 			r_cons_break_end ();
 		} else eprintf ("Usage: /m [file]\n");
 		r_cons_clear_line (1);
 		break;
-	case 'p':
+	case 'p': // "/p"
 		{
 			int ps = atoi (input+param_offset);
 			if (ps>1) {

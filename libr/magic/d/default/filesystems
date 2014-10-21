@@ -3,44 +3,44 @@
 #------------------------------------------------------------------------------
 # filesystems:  file(1) magic for different filesystems
 #
-0	string	\366\366\366\366	PC formatted floppy with no filesystem
-# Sun disk labels
-# From /usr/include/sun/dklabel.h:
-0774	beshort		0xdabe		
-# modified by Joerg Jenderek, because original test
-# succeeds for Cabinet archive dao360.dl_ with negative blocks
->0770	long		>0		Sun disk label
->>0	string		x		'%s
->>>31	string		>\0		\b%s
->>>>63	string		>\0		\b%s
->>>>>95	string		>\0		\b%s
->>0	string		x		\b'
->>0734	short		>0		%d rpm,
->>0736	short		>0		%d phys cys,
->>0740	short		>0		%d alts/cyl,
->>0746	short		>0		%d interleave,
->>0750	short		>0		%d data cyls,
->>0752	short		>0		%d alt cyls,
->>0754	short		>0		%d heads/partition,
->>0756	short		>0		%d sectors/track,
->>0764	long		>0		start cyl %ld,
->>0770	long		x		%ld blocks
-# Is there a boot block written 1 sector in?
->512    belong&077777777	0600407	\b, boot block present
-# Joerg Jenderek: Smart Boot Manager backup file is 41 byte header + first sectors of disc
-# (http://btmgr.sourceforge.net/docs/user-guide-3.html)
-0		string	SBMBAKUP_	Smart Boot Manager backup file
->9		string	x		\b, version %-5.5s
->>14		string	=_		
->>>15		string	x		%-.1s
->>>>16		string	=_		\b.
->>>>>17		string	x		\b%-.1s
->>>>>>18	string	=_		\b.
->>>>>>>19	string	x		\b%-.1s
->>>22		ubyte	0		
->>>>21		ubyte	x		\b, from drive 0x%x
->>>22		ubyte	>0		
->>>>21		string	x		\b, from drive %s
+#0	string	\366\366\366\366	PC formatted floppy with no filesystem
+## Sun disk labels
+## From /usr/include/sun/dklabel.h:
+#0774	beshort		0xdabe		
+## modified by Joerg Jenderek, because original test
+## succeeds for Cabinet archive dao360.dl_ with negative blocks
+#>0770	long		>0		Sun disk label
+#>>0	string		x		'%s
+#>>>31	string		>\0		\b%s
+#>>>>63	string		>\0		\b%s
+#>>>>>95	string		>\0		\b%s
+#>>0	string		x		\b'
+#>>0734	short		>0		%d rpm,
+#>>0736	short		>0		%d phys cys,
+#>>0740	short		>0		%d alts/cyl,
+#>>0746	short		>0		%d interleave,
+#>>0750	short		>0		%d data cyls,
+#>>0752	short		>0		%d alt cyls,
+#>>0754	short		>0		%d heads/partition,
+#>>0756	short		>0		%d sectors/track,
+#>>0764	long		>0		start cyl %ld,
+#>>0770	long		x		%ld blocks
+## Is there a boot block written 1 sector in?
+#>512    belong&077777777	0600407	\b, boot block present
+## Joerg Jenderek: Smart Boot Manager backup file is 41 byte header + first sectors of disc
+## (http://btmgr.sourceforge.net/docs/user-guide-3.html)
+#0		string	SBMBAKUP_	Smart Boot Manager backup file
+#>9		string	x		\b, version %-5.5s
+#>>14		string	=_		
+#>>>15		string	x		%-.1s
+#>>>>16		string	=_		\b.
+#>>>>>17		string	x		\b%-.1s
+#>>>>>>18	string	=_		\b.
+#>>>>>>>19	string	x		\b%-.1s
+#>>>22		ubyte	0		
+#>>>>21		ubyte	x		\b, from drive 0x%x
+#>>>22		ubyte	>0		
+#>>>>21		string	x		\b, from drive %s
 
 # Joerg Jenderek
 # DOS Emulator image is 128 byte, null right padded header + harddisc image
@@ -832,15 +832,6 @@
 0		string		FATX		FATX filesystem data
 
 
-# Minix filesystems - Juan Cespedes <cespedes@debian.org>
-0x410	leshort		0x137f		Minix filesystem
-0x410	beshort		0x137f		Minix filesystem (big endian)
->0x402	beshort		!0		\b, %d zones
->0x1e	string		minix		\b, bootable
-0x410	leshort		0x138f		Minix filesystem, 30 char names
-0x410	leshort		0x2468		Minix filesystem, version 2
-0x410	leshort		0x2478		Minix filesystem, version 2, 30 char names
-
 # romfs filesystems - Juan Cespedes <cespedes@debian.org>
 0	string		-rom1fs-\0	romfs filesystem, version 1
 >8	belong	x			%d bytes,
@@ -1206,8 +1197,8 @@
 >>12	string  x		version %s
 
 # JFFS2 file system
-0	leshort	0x1984		Linux old jffs2 filesystem data little endian
-0	leshort	0x1985		Linux jffs2 filesystem data little endian
+#0	leshort	0x1984		Linux old jffs2 filesystem data little endian
+#0	leshort	0x1985		Linux jffs2 filesystem data little endian
 
 # Squashfs
 0	string	sqsh	Squashfs filesystem, big endian,
@@ -1224,6 +1215,7 @@
 >28	beshort >1
 >>51	belong	x	blocksize: %d bytes,
 >39	bedate	x	created: %s
+
 0	string	hsqs	Squashfs filesystem, little endian,
 >28	leshort	x	version %d.
 >30	leshort	x	\b%d,
@@ -1239,7 +1231,52 @@
 >>51	lelong	x	blocksize: %d bytes,
 >39	ledate	x	created: %s
 
-0	string		td\000		floppy image data (TeleDisk)
+# Squashfs
+0	string	hsqt	Squashfs filesystem, little endian,
+>28	leshort	x	version %d.
+>30	leshort	x	\b%d,
+>28	leshort <3
+>>8	lelong	x	%d bytes,
+>28	leshort >2
+>>63	lequad x	%lld bytes,
+#>>63	lelong	x	%d bytes,
+>4	lelong	x	%d inodes,
+>28	leshort <2
+>>32	leshort	x	blocksize: %d bytes,
+>28	leshort >1
+>>51	lelong	x	blocksize: %d bytes,
+>39	ledate	x	created: %s
+0	string	hsqt	Squashfs filesystem, little endian,
+>28	beshort	x	version %d.
+>30	beshort x	\b%d,
+>28	beshort <3
+>>8	belong	x	%d bytes,
+>28	beshort >2
+>>63	bequad x	%lld bytes,
+#>>67	belong	x	%d bytes,
+>4	belong	x	%d inodes,
+>28	beshort <2
+>>32	beshort	x	blocksize: %d bytes,
+>28	beshort >1
+>>51	belong	x	blocksize: %d bytes,
+>39	bedate	x	created: %s
+
+#  0	string	hsqs	Squashfs filesystem, little endian,
+#  >28	leshort	x	version %d.
+#  >30	leshort	x	\b%d,
+#  >28	leshort <3
+#  >>8	lelong	x	%d bytes,
+#  >28	leshort >2
+#  >>63	lequad x	%lld bytes,
+#  #>>63	lelong	x	%d bytes,
+#  >4	lelong	x	%d inodes,
+#  >28	leshort <2
+#  >>32	leshort	x	blocksize: %d bytes,
+#  >28	leshort >1
+#  >>51	lelong	x	blocksize: %d bytes,
+#  >39	ledate	x	created: %s
+
+#0	string		td\000		floppy image data (TeleDisk)
 
 # AFS Dump Magic
 # From: Ty Sarna <tsarna@sarna.org> 

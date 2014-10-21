@@ -84,14 +84,14 @@
 #
 #
 # Round Robin Database Tool by Tobias Oetiker <oetiker@ee.ethz.ch>
-0	string	RRD		RRDTool DB
->4	string	x		version %s
+#0	string	RRD		RRDTool DB
+#>4	string	x		version %s
 #----------------------------------------------------------------------
 # ROOT: file(1) magic for ROOT databases
 #
-0       string  root\0  ROOT file
->4      belong  x       Version %d
->33     belong  x       (Compression: %d)
+#0       string  root\0  ROOT file
+#>4      belong  x       Version %d
+#>33     belong  x       (Compression: %d)
 
 # XXX: Weak magic.
 # Alex Ott <ott@jet.msk.su>
@@ -204,20 +204,15 @@
 4	string	Standard\ Jet\ DB	Microsoft Access Database
 !:mime	application/x-msaccess
 
-# TDB database from Samba et al - Martin Pool <mbp@samba.org>
-0	string	TDB\ file		TDB database
->32	lelong	0x2601196D		version 6, little-endian
->>36	lelong	x			hash size %d bytes
-
 # SE Linux policy database
-0       lelong  0xf97cff8c      SE Linux policy
->16     lelong  x               v%d
->20     lelong  1      MLS
->24     lelong  x       %d symbols
->28     lelong  x       %d ocons
+#0       lelong  0xf97cff8c      SE Linux policy
+#>16     lelong  x               v%d
+#>20     lelong  1      MLS
+#>24     lelong  x       %d symbols
+#>28     lelong  x       %d ocons
 
 # ICE authority file data (Wolfram Kleff)
-2	string		ICE		ICE authority data
+#2	string		ICE		ICE authority data
 
 # X11 Xauthority file (Wolfram Kleff)
 10	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
@@ -242,4 +237,4 @@
 # Type: Advanced Data Format (ADF) database
 # URL:  http://www.grc.nasa.gov/WWW/cgns/adf/
 # From: Nicolas Chauvat <nicolas.chauvat@logilab.fr>
-0	string	@(#)ADF\ Database	CGNS Advanced Data Format
+#0	string	@(#)ADF\ Database	CGNS Advanced Data Format

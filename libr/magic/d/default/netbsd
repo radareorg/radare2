@@ -6,242 +6,232 @@
 # All new-style magic numbers are in network byte order.
 #
 
-0	lelong			000000407	a.out NetBSD little-endian object file
->16	lelong			>0		not stripped
-0	belong			000000407	a.out NetBSD big-endian object file
->16	belong			>0		not stripped
-
-0	belong&0377777777	041400413	a.out NetBSD/i386 demand paged
->0	byte			&0x80		
->>20	lelong			<4096		shared library
->>20	lelong			=4096		dynamically linked executable
->>20	lelong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	041400410	a.out NetBSD/i386 pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	041400407	a.out NetBSD/i386
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	lelong			!0		executable
->>20	lelong			=0		object file
->16	lelong			>0		not stripped
-0	belong&0377777777	041400507	a.out NetBSD/i386 core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
-
-0	belong&0377777777	041600413	a.out NetBSD/m68k demand paged
->0	byte			&0x80		
->>20	belong			<8192		shared library
->>20	belong			=8192		dynamically linked executable
->>20	belong			>8192		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	041600410	a.out NetBSD/m68k pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	041600407	a.out NetBSD/m68k
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	belong			!0		executable
->>20	belong			=0		object file
->16	belong			>0		not stripped
-0	belong&0377777777	041600507	a.out NetBSD/m68k core
->12	string			>\0		from '%s'
->32	belong			!0		(signal %d)
-
-0	belong&0377777777	042000413	a.out NetBSD/m68k4k demand paged
->0	byte			&0x80		
->>20	belong			<4096		shared library
->>20	belong			=4096		dynamically linked executable
->>20	belong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	042000410	a.out NetBSD/m68k4k pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	042000407	a.out NetBSD/m68k4k
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	belong			!0		executable
->>20	belong			=0		object file
->16	belong			>0		not stripped
-0	belong&0377777777	042000507	a.out NetBSD/m68k4k core
->12	string			>\0		from '%s'
->32	belong			!0		(signal %d)
-
-0	belong&0377777777	042200413	a.out NetBSD/ns32532 demand paged
->0	byte			&0x80		
->>20	lelong			<4096		shared library
->>20	lelong			=4096		dynamically linked executable
->>20	lelong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	042200410	a.out NetBSD/ns32532 pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	042200407	a.out NetBSD/ns32532
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	lelong			!0		executable
->>20	lelong			=0		object file
->16	lelong			>0		not stripped
-0	belong&0377777777	042200507	a.out NetBSD/ns32532 core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
-
-0	belong&0377777777	045200507	a.out NetBSD/powerpc core
->12	string			>\0		from '%s'
-
-0	belong&0377777777	042400413	a.out NetBSD/sparc demand paged
->0	byte			&0x80		
->>20	belong			<8192		shared library
->>20	belong			=8192		dynamically linked executable
->>20	belong			>8192		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	042400410	a.out NetBSD/sparc pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	042400407	a.out NetBSD/sparc
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	belong			!0		executable
->>20	belong			=0		object file
->16	belong			>0		not stripped
-0	belong&0377777777	042400507	a.out NetBSD/sparc core
->12	string			>\0		from '%s'
->32	belong			!0		(signal %d)
-
-0	belong&0377777777	042600413	a.out NetBSD/pmax demand paged
->0	byte			&0x80		
->>20	lelong			<4096		shared library
->>20	lelong			=4096		dynamically linked executable
->>20	lelong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	042600410	a.out NetBSD/pmax pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	042600407	a.out NetBSD/pmax
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	lelong			!0		executable
->>20	lelong			=0		object file
->16	lelong			>0		not stripped
-0	belong&0377777777	042600507	a.out NetBSD/pmax core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
-
-0	belong&0377777777	043000413	a.out NetBSD/vax 1k demand paged
->0	byte			&0x80		
->>20	lelong			<4096		shared library
->>20	lelong			=4096		dynamically linked executable
->>20	lelong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	043000410	a.out NetBSD/vax 1k pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	043000407	a.out NetBSD/vax 1k
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	lelong			!0		executable
->>20	lelong			=0		object file
->16	lelong			>0		not stripped
-0	belong&0377777777	043000507	a.out NetBSD/vax 1k core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
-
-0	belong&0377777777	045400413	a.out NetBSD/vax 4k demand paged
->0	byte			&0x80		
->>20	lelong			<4096		shared library
->>20	lelong			=4096		dynamically linked executable
->>20	lelong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	045400410	a.out NetBSD/vax 4k pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	045400407	a.out NetBSD/vax 4k
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	lelong			!0		executable
->>20	lelong			=0		object file
->16	lelong			>0		not stripped
-0	belong&0377777777	045400507	a.out NetBSD/vax 4k core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
-
-# NetBSD/alpha does not support (and has never supported) a.out objects,
-# so no rules are provided for them.  NetBSD/alpha ELF objects are 
-# dealt with in "elf".
-0	lelong		0x00070185		ECOFF NetBSD/alpha binary
->10	leshort		0x0001			not stripped
->10	leshort		0x0000			stripped
-0	belong&0377777777	043200507	a.out NetBSD/alpha core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
-
-0	belong&0377777777	043400413	a.out NetBSD/mips demand paged
->0	byte			&0x80		
->>20	belong			<8192		shared library
->>20	belong			=8192		dynamically linked executable
->>20	belong			>8192		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	043400410	a.out NetBSD/mips pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	belong			>0		not stripped
-0	belong&0377777777	043400407	a.out NetBSD/mips
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	belong			!0		executable
->>20	belong			=0		object file
->16	belong			>0		not stripped
-0	belong&0377777777	043400507	a.out NetBSD/mips core
->12	string			>\0		from '%s'
->32	belong			!0		(signal %d)
-
-0	belong&0377777777	043600413	a.out NetBSD/arm32 demand paged
->0	byte			&0x80
->>20	lelong			<4096		shared library
->>20	lelong			=4096		dynamically linked executable
->>20	lelong			>4096		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	043600410	a.out NetBSD/arm32 pure
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80		executable
->16	lelong			>0		not stripped
-0	belong&0377777777	043600407	a.out NetBSD/arm32
->0	byte			&0x80		dynamically linked executable
->0	byte			^0x80
->>0	byte			&0x40		position independent
->>20	lelong			!0		executable
->>20	lelong			=0		object file
->16	lelong			>0		not stripped
-# NetBSD/arm26 has always used ELF objects, but it shares a core file
-# format with NetBSD/arm32.
-0	belong&0377777777	043600507	a.out NetBSD/arm core
->12	string			>\0		from '%s'
->32	lelong			!0		(signal %d)
+# 0	lelong			000000407	a.out NetBSD little-endian object file
+# >16	lelong			>0		not stripped
+# 0	belong			000000407	a.out NetBSD big-endian object file
+# >16	belong			>0		not stripped
+# 
+# 0	belong&0377777777	041400413	a.out NetBSD/i386 demand paged
+# >0	byte			&0x80		
+# >>20	lelong			<4096		shared library
+# >>20	lelong			=4096		dynamically linked executable
+# >>20	lelong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	041400410	a.out NetBSD/i386 pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	041400407	a.out NetBSD/i386
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	lelong			!0		executable
+# >>20	lelong			=0		object file
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	041400507	a.out NetBSD/i386 core
+# >12	string			>\0		from '%s'
+# >32	lelong			!0		(signal %d)
+# 
+# 0	belong&0377777777	041600413	a.out NetBSD/m68k demand paged
+# >0	byte			&0x80		
+# >>20	belong			<8192		shared library
+# >>20	belong			=8192		dynamically linked executable
+# >>20	belong			>8192		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	041600410	a.out NetBSD/m68k pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	041600407	a.out NetBSD/m68k
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	belong			!0		executable
+# >>20	belong			=0		object file
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	041600507	a.out NetBSD/m68k core
+# >12	string			>\0		from '%s'
+# >32	belong			!0		(signal %d)
+# 
+# 0	belong&0377777777	042000413	a.out NetBSD/m68k4k demand paged
+# >0	byte			&0x80		
+# >>20	belong			<4096		shared library
+# >>20	belong			=4096		dynamically linked executable
+# >>20	belong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	042000410	a.out NetBSD/m68k4k pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	042000407	a.out NetBSD/m68k4k
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	belong			!0		executable
+# >>20	belong			=0		object file
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	042000507	a.out NetBSD/m68k4k core
+# >12	string			>\0		from '%s'
+# >32	belong			!0		(signal %d)
+# 
+# 0	belong&0377777777	042200413	a.out NetBSD/ns32532 demand paged
+# >0	byte			&0x80		
+# >>20	lelong			<4096		shared library
+# >>20	lelong			=4096		dynamically linked executable
+# >>20	lelong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	042200410	a.out NetBSD/ns32532 pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	042200407	a.out NetBSD/ns32532
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	lelong			!0		executable
+# >>20	lelong			=0		object file
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	042200507	a.out NetBSD/ns32532 core
+# >12	string			>\0		from '%s'
+# >32	lelong			!0		(signal %d)
+# 
+# 0	belong&0377777777	045200507	a.out NetBSD/powerpc core
+# >12	string			>\0		from '%s'
+# 
+# 0	belong&0377777777	042400413	a.out NetBSD/sparc demand paged
+# >0	byte			&0x80		
+# >>20	belong			<8192		shared library
+# >>20	belong			=8192		dynamically linked executable
+# >>20	belong			>8192		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	042400410	a.out NetBSD/sparc pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	042400407	a.out NetBSD/sparc
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	belong			!0		executable
+# >>20	belong			=0		object file
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	042400507	a.out NetBSD/sparc core
+# >12	string			>\0		from '%s'
+# >32	belong			!0		(signal %d)
+# 
+# 0	belong&0377777777	042600413	a.out NetBSD/pmax demand paged
+# >0	byte			&0x80		
+# >>20	lelong			<4096		shared library
+# >>20	lelong			=4096		dynamically linked executable
+# >>20	lelong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	042600410	a.out NetBSD/pmax pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	042600407	a.out NetBSD/pmax
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	lelong			!0		executable
+# >>20	lelong			=0		object file
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	042600507	a.out NetBSD/pmax core
+# >12	string			>\0		from '%s'
+# >32	lelong			!0		(signal %d)
+# 
+# 0	belong&0377777777	043000413	a.out NetBSD/vax 1k demand paged
+# >0	byte			&0x80		
+# >>20	lelong			<4096		shared library
+# >>20	lelong			=4096		dynamically linked executable
+# >>20	lelong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	043000410	a.out NetBSD/vax 1k pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	043000407	a.out NetBSD/vax 1k
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	lelong			!0		executable
+# >>20	lelong			=0		object file
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	043000507	a.out NetBSD/vax 1k core
+# >12	string			>\0		from '%s'
+# >32	lelong			!0		(signal %d)
+# 
+# 0	belong&0377777777	045400413	a.out NetBSD/vax 4k demand paged
+# >0	byte			&0x80		
+# >>20	lelong			<4096		shared library
+# >>20	lelong			=4096		dynamically linked executable
+# >>20	lelong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	045400410	a.out NetBSD/vax 4k pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	045400407	a.out NetBSD/vax 4k
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	lelong			!0		executable
+# >>20	lelong			=0		object file
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	045400507	a.out NetBSD/vax 4k core
+# >12	string			>\0		from '%s'
+# >32	lelong			!0		(signal %d)
+# 
+# 0	belong&0377777777	043400413	a.out NetBSD/mips demand paged
+# >0	byte			&0x80		
+# >>20	belong			<8192		shared library
+# >>20	belong			=8192		dynamically linked executable
+# >>20	belong			>8192		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	043400410	a.out NetBSD/mips pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	043400407	a.out NetBSD/mips
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	belong			!0		executable
+# >>20	belong			=0		object file
+# >16	belong			>0		not stripped
+# 0	belong&0377777777	043400507	a.out NetBSD/mips core
+# >12	string			>\0		from '%s'
+# >32	belong			!0		(signal %d)
+# 
+# 0	belong&0377777777	043600413	a.out NetBSD/arm32 demand paged
+# >0	byte			&0x80
+# >>20	lelong			<4096		shared library
+# >>20	lelong			=4096		dynamically linked executable
+# >>20	lelong			>4096		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	043600410	a.out NetBSD/arm32 pure
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80		executable
+# >16	lelong			>0		not stripped
+# 0	belong&0377777777	043600407	a.out NetBSD/arm32
+# >0	byte			&0x80		dynamically linked executable
+# >0	byte			^0x80
+# >>0	byte			&0x40		position independent
+# >>20	lelong			!0		executable
+# >>20	lelong			=0		object file
+# >16	lelong			>0		not stripped
+# # NetBSD/arm26 has always used ELF objects, but it shares a core file
+# # format with NetBSD/arm32.
+# 0	belong&0377777777	043600507	a.out NetBSD/arm core
+# >12	string			>\0		from '%s'
+# >32	lelong			!0		(signal %d)
