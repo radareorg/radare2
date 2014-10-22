@@ -24,26 +24,19 @@
 #
 0	string		\007\001\000	Linux/i386 object file
 >20	lelong		>0x1020		\b, DLL library
-# Linux-8086 stuff:
-0	string		\01\03\020\04	Linux-8086 impure executable
->28	long		!0		not stripped
-0	string		\01\03\040\04	Linux-8086 executable
->28	long		!0		not stripped
 #
-0	string		\243\206\001\0	Linux-8086 object file
-#
-0	string		\01\03\020\20	Minix-386 impure executable
->28	long		!0		not stripped
-0	string		\01\03\040\20	Minix-386 executable
->28	long		!0		not stripped
-# core dump file, from Bill Reynolds <bill@goshawk.lanl.gov>
-216	lelong		0421		Linux/i386 core file
->220	string		>\0		of '%s'
->200	lelong		>0		(signal %d)
+# 0	string		\01\03\020\20	Minix-386 impure executable
+# >28	long		!0		not stripped
+# 0	string		\01\03\040\20	Minix-386 executable
+# >28	long		!0		not stripped
+# # core dump file, from Bill Reynolds <bill@goshawk.lanl.gov>
+# 216	lelong		0421		Linux/i386 core file
+# >220	string		>\0		of '%s'
+# >200	lelong		>0		(signal %d)
 #
 # LILO boot/chain loaders, from Daniel Quinlan <quinlan@yggdrasil.com>
 # this can be overridden by the DOS executable (COM) entry
-2	string		LILO		Linux/i386 LILO boot/chain loader
+#2	string		LILO		Linux/i386 LILO boot/chain loader
 #
 # Linux swap file, from Daniel Quinlan <quinlan@yggdrasil.com>
 4086	string		SWAP-SPACE	Linux/i386 swap file
