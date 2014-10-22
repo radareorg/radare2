@@ -1036,7 +1036,7 @@ sleep (1);
 	}
 	ut64 newaddr = r_reg_getv (core->anal->reg, name);
 
-		ut64 follow = r_config_get_i (core->config, "dbg.follow");
+	ut64 follow = r_config_get_i (core->config, "dbg.follow");
 	if (follow>0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "pc");
 		if ((pc<core->offset) || (pc > (core->offset+follow)))

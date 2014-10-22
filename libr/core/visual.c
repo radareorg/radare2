@@ -1089,9 +1089,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (curset) {
 				// dcu 0xaddr
-				char xxx[128];
-				snprintf (xxx, sizeof (xxx), "dcu 0x%08"PFMT64x, core->offset + cursor);
-				r_core_cmd (core, xxx, 0);
+				r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + cursor);
 				curset = 0;
 			} else {
 				r_core_cmd (core, "ds", 0);
@@ -1193,9 +1191,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_seek (core, core->offset+cursor, 1);
 			cursor = 0;
 		} else {
-			if (r_debug_reg_get (core->dbg, "pc") != 0) {
-				r_core_cmd (core, "sr pc", 0);
-				r_core_cmd0 (core, "ar `arn pc`=$$");
+			ut64 addr = r_debug_reg_get (core->dbg, "pc");
+			if (addr) {
+				r_core_seek (core, addr, 1);
+				r_core_cmdf (core, "ar `arn pc`=0x%"PFMT64x, addr);
 			} else {
 				r_core_seek (core, r_num_get (core->num, "entry0"), 1);
 				//r_core_cmd (core, "s entry0", 0);
@@ -1331,10 +1330,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 #define PIDX (R_ABS(core->printidx%NPF))
 R_API void r_core_visual_title (RCore *core, int color) {
+	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512];
 	int scrcols;
+	if (!oldpc) oldpc = core->offset;
 	/* automatic block size */
 	if (autoblocksize)
 	switch (core->printidx) {
@@ -1354,6 +1355,19 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	case 2: // pd+dbg
 		r_core_block_size (core, core->cons->rows * 5); // this is hacky
 		break;
+	}
+
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		ut64 curpc = r_debug_reg_get (core->dbg, "pc");
+		if (curpc != oldpc) {
+			// check dbg.follow here
+			ut64 follow = r_config_get_i (core->config, "dbg.follow");
+			if (follow>0) {
+				if ((curpc<core->offset) || (curpc> (core->offset+follow)))
+					r_core_seek (core, curpc, 1);
+			}
+			oldpc = curpc;
+		}
 	}
 
 	filename = (core->file && core->file->desc && core->file->desc->name)? core->file->desc->name: "";
