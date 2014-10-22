@@ -1361,10 +1361,12 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		ut64 curpc = r_debug_reg_get (core->dbg, "pc");
 		if (curpc != oldpc) {
 			// check dbg.follow here
-			ut64 follow = r_config_get_i (core->config, "dbg.follow");
+			int follow = (int)(st64)r_config_get_i (core->config, "dbg.follow");
 			if (follow>0) {
 				if ((curpc<core->offset) || (curpc> (core->offset+follow)))
 					r_core_seek (core, curpc, 1);
+			} else if (follow<0) {
+				r_core_seek (core, curpc+follow, 1);
 			}
 			oldpc = curpc;
 		}
