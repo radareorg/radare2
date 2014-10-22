@@ -249,8 +249,10 @@ R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode) {
 		r_io_section_rm_all (io, desc->fd);
 		if (io->maps) {
 			r_list_foreach (io->maps, iter, map) {
-				if (map->fd == desc->fd)
+				if (map->fd == desc->fd) {
 					map->fd = n->fd;
+					map->flags &= n->flags;
+				}
 			}
 		}
 		if (desc->plugin && desc->plugin->close)
