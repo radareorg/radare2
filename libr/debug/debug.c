@@ -443,6 +443,12 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return R_FALSE;
 			}
+		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
+			//eprintf ("REP: skip to next instruction...\n");
+			if (!r_debug_continue_until (dbg, pc+op.size)) {
+				eprintf ("step over failed over rep\n");
+				return R_FALSE;
+			}
 		} else r_debug_step (dbg, 1);
 	}
 
