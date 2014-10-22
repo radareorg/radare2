@@ -111,12 +111,13 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 }
 
 static void cmd_print_format (RCore *core, const char *_input, int len) {
-	char *input = strdup (_input);
+	char *input;
 	int i, flag = -1;
-	if (input[1]=='*') {
-		input++;
+	if (_input[1]=='*') {
+		_input++;
 		flag = SEEFLAG;
 	}
+	input = strdup (_input);
 	// "pfo" // open formatted thing
 	if (input[1]=='o') { // "pfo"
 		if (input[2] == '?') {
