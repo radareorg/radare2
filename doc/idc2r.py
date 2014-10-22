@@ -268,7 +268,7 @@ if __name__ == "__main__":
 		print("Usage: idc2r.py input.idc > output.r2")
 		sys.exit(1)
 
-	print(sys.argv[1])
+	#print(sys.argv[1])
 	idc_file = open(sys.argv[1], "r")
 	idc = idc_file.read()
 	idc_parse(idc)
