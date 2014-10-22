@@ -11,7 +11,6 @@ extern "C" {
 
 #define FILE_NAME_LEN 256
 
-struct RList;
 struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
