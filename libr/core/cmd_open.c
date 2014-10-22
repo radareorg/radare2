@@ -239,11 +239,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '\0':
-			r_list_foreach (core->io->maps, iter, map) { // _prev?
-				r_cons_printf (
-					"%d +0x%"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
-					(int)map->fd, (ut64)map->delta, (ut64)map->from, (ut64)map->to);
-			}
+			r_io_map_list (core->io);
 			break;
 		default:
 		case '?':{
