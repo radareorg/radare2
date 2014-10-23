@@ -114,6 +114,37 @@ static registers_t x86_32[] = {
 	{"",	0,	0}
 };
 
+static registers_t arm32[] = {
+	{"r0",	0,	4},
+	{"r1",	4,	4},
+	{"r2",	8,	4},
+	{"r3",	12,	4},
+	{"r4",	16,	4},
+	{"r5",	20,	4},
+	{"r6",	24,	4},
+	{"r7",	28,	4},
+	{"r8",	32,	4},
+	{"r9",	36,	4},
+	{"r10",	40,	4},
+	{"r11",	44,	4},
+	{"r12",	48,	4},
+	{"sp",	52,	4},
+	{"lr",  56, 4},
+	{"pc",	60,	4},
+	{"f0",  64, 12},
+	{"f1",  76, 12},
+	{"f2",  88, 12},
+	{"f3",  100, 12},
+	{"f4",  112, 12},
+	{"f5",  124, 12},
+	{"f6",  136, 12},
+	{"f7",  148, 12},
+	{"fps", 160, 12},
+	{"cpsr", 172,4},
+	{"",	0,	0}
+};
+
+
 static registers_t aarch64[] = {
 	{"x0",	0,	8},
 	{"x1",	8,	8},
@@ -210,7 +241,7 @@ int gdbr_init(libgdbr_t* g) {
 		return -1;
 	}
 	g->data_max = 4096;
-	return 0; 
+	return 0;
 }
 
 
@@ -222,6 +253,9 @@ int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture) {
 			break;
 		case ARCH_X86_64:
 			g->registers = x86_64;
+			break;
+		case ARCH_ARM_32:
+			g->registers = arm32;
 			break;
 		case ARCH_ARM_64:
 			g->registers = aarch64;
