@@ -521,6 +521,7 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 	switch (str[1]) {
 	case 'b': size = 1; break;
 	case 'h': size = 2; break;
+	case 'd': size = 4; break;
 	case 'w': size = 4; break;
 	case 'g': size = 8; break;
 	}
@@ -538,12 +539,10 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 );
 		break;
 	case 's':
-		snprintf (cmd, sizeof (cmd), "psb %d @ 0x%"PFMT64x, count*size, addr);
-		r_core_cmd0 (core, cmd);
+		r_core_cmdf (core, "psb %d @ 0x%"PFMT64x, count*size, addr);
 		break;
 	case 'o':
-		snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x, count*size, addr);
-		r_core_cmd0 (core, cmd);
+		r_core_cmd0 (core, "pxo %d @ 0x%"PFMT64x, count*size, addr);
 		break;
 	case 'f':
 	case 'A': // XXX (float in hex wtf)
@@ -556,14 +555,15 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 		cmd[n] = 0;
 		r_core_cmd0 (core, cmd);
 		break;
+	case 'x':
+		r_core_cmdf (core, "px %d @ 0x%"PFMT64x, count, addr);
+		break;
 	case 'a':
 	case 'd':
-		snprintf (cmd, sizeof (cmd), "pxw %d @ 0x%"PFMT64x, count*size, addr);
-		r_core_cmd0 (core, cmd);
+		r_core_cmdf (core, "pxw %d @ 0x%"PFMT64x, count*size, addr);
 		break;
 	case 'i':
-		snprintf (cmd, sizeof (cmd), "pid %d @ 0x%"PFMT64x, count, addr);
-		r_core_cmd0 (core, cmd);
+		r_core_cmdf (core, "pid %d @ 0x%"PFMT64x, count, addr);
 		break;
 	}
 }
