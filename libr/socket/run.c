@@ -121,8 +121,21 @@ static char *getstr(const char *src) {
 		}
 		return NULL;
 	case '@':
-		// slurp file
-		return r_file_slurp (src+1, NULL);
+		{
+			char *pat = strchr (src+1, '@');
+			if (pat) {
+				*pat++ = 0;
+				int i, rep = atoi (src+1);
+				int len = strlen (pat);
+				char *buf = malloc (rep);
+				for(i=0;i<rep;i++) {
+					buf[i] = pat[i%len];
+				}
+				return buf;
+			}
+			// slurp file
+			return r_file_slurp (src+1, NULL);
+		}
 	case '!':
 		return r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
 	case ':':
@@ -269,7 +282,8 @@ R_API const char *r_run_help() {
 	"# arg2=hello\n"
 	"# arg3=\"hello\\nworld\"\n"
 	"# arg4=:048490184058104849\n"
-	"# arg4=@arg.txt\n"
+	"# arg5=@arg.txt\n"
+	"# arg6=@300@ABCD\n"
 	"# system=r2 -\n"
 	"# aslr=no\n"
 	"setenv=FOO=BAR\n"
