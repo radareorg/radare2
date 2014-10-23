@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <r_io.h>
+#include <r_util.h>
 #include <r_list.h>
 
 R_API int r_io_map_count (RIO *io) {
@@ -338,7 +339,7 @@ R_API void r_io_map_list (RIO *io) {
 	if (io && io->maps && io->printf) {
 		r_list_foreach (io->maps, iter, map) {
 			if (map)
-				io->printf ("%i +0x%"PFMT64x" 0x%"PFMT64x" - 0x%"PFMT64x"\n", map->fd, map->delta, map->from, map->to);
+				io->printf ("%i +0x%"PFMT64x" 0x%"PFMT64x" - 0x%"PFMT64x" ; %s\n", map->fd, map->delta, map->from, map->to, r_str_rwx_i (map->flags));
 		}
 	}
 }
