@@ -958,6 +958,10 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 
+	// Adjust the windows size automaticaly
+	(void)r_cons_get_size (&window);
+	window-=5; // Size of printed things
+
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (i>=wdelta) {
 			if (i> window+wdelta) {
@@ -1008,11 +1012,12 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	if (cols>30) {
 		r_cons_column (cols);
 	}
-	switch (level) {
+switch (level) {
+	// Show functions list help in visual mode
 	case 0:
 		r_cons_printf ("-[ functions ]---------------- \n"
 			"(a) add     (x)xrefs     (q)quit \n"
-			"(m) modify  (c)calls     (g)go   \n"
+			"(m) modify  (c)calls     (g)go\n"
 			"(d) delete  (v)variables (?)help \n");
 		addr = var_functions_show (core, option, 1);
 		break;
