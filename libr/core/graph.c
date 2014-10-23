@@ -1,8 +1,11 @@
 /* Copyright radare2 2014 - Author: pancake */
 
 #include <r_core.h>
+int simple_mode = 1;
+static void reloadNodes(RCore *core) ;
+#define OS_SIZE 128
 	struct {
-		int nodes[128];
+		int nodes[OS_SIZE];
 		int size;
 	} ostack;
 
@@ -290,13 +293,18 @@ static int bbNodes (RCore *core, RAnalFunction *fcn, Node **n) {
 	int i;
 	RAnalBlock *bb;
 	RListIter *iter;
-	Node *nodes = malloc (sizeof(Node)*(r_list_length (fcn->bbs)+1));
+	Node *nodes = calloc (sizeof(Node), (r_list_length (fcn->bbs)+1));
 	if (!nodes)
 		return 0;
 	i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		nodes[i].text = r_core_cmd_strf (core,
-			"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		if (simple_mode) {
+			nodes[i].text = r_core_cmd_strf (core,
+					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}else {
+			nodes[i].text = r_core_cmd_strf (core,
+					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}
 		nodes[i].addr = bb->addr;
 		nodes[i].depth = -1;
 		nodes[i].x = 10;
@@ -327,6 +335,16 @@ static int callgraph = 0;
 static void r_core_graph_refresh (RCore *core) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
+	if (core->io->debug) {
+		r_core_cmd0 (core, "sr pc");
+		{
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (f && f != fcn) {
+				fcn = f;
+				reloadNodes (core);
+			}
+		}
+	}
 	r_cons_clear00 ();
 	if (!can) {
 		return;
@@ -357,20 +375,48 @@ fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
 	W (title);
 
 	r_cons_canvas_print (can);
+	if (1) {
+// if the command contains a
+		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
+		if (cmdv && *cmdv) {
+			r_cons_gotoxy (0,1);
+			r_core_cmd0 (core, cmdv);
+		}
+	}
 	r_cons_flush ();
 }
 
-R_API void updateSeek(RConsCanvas *can, Node *n, int w, int h) {
+static void reloadNodes(RCore *core) {
+int i;
+	n_nodes = bbNodes (core, fcn, &nodes);
+	if (!nodes) {
+		free (can);
+		return;
+	}
+	n_edges = bbEdges (fcn, nodes, &edges);
+	if (!edges)
+		n_edges = 0;
+	// hack to make layout happy
+	for (i=0; nodes[i].text; i++) {
+		Node_print (can, &nodes[i], i==curnode);
+	}
+	Layout_depth (nodes, edges);
+// update edges too maybe..
+}
+
+static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
 #define BORDER 3
 	int x = n->x + can->sx;
 	int y = n->y + can->sy;
 	int doscroll = 0;
-#if 1
-	if (y<0) doscroll = 1;
-	if ((y+5)>h) doscroll = 1;
-	if ((x+5)>w) doscroll = 1;
-	if ((x+n->w+5)<0) doscroll = 1;
-#endif
+	if (force) {
+		doscroll = 1;
+	} else {
+		if (y<0) doscroll = 1;
+		if ((y+5)>h) doscroll = 1;
+		if ((x+5)>w) doscroll = 1;
+		if ((x+n->w+5)<0) doscroll = 1;
+	}
 	if (doscroll) {
 		// top-left
 		can->sy = -n->y+BORDER;
@@ -383,7 +429,7 @@ R_API void updateSeek(RConsCanvas *can, Node *n, int w, int h) {
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 #define OS_INIT() ostack.size = 0; ostack.nodes[0] = 0;
-#define OS_PUSH(x) ostack.nodes[++ostack.size]=x
+#define OS_PUSH(x) if (ostack.size<OS_SIZE) {ostack.nodes[++ostack.size]=x;}
 #define OS_POP() ((ostack.size>0)? ostack.nodes[--ostack.size]:0)
 	int key, cn;
 	int i, w, h;
@@ -405,23 +451,20 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		return R_FALSE;
 	}
 
+#if 0
 	n_nodes = bbNodes (core, fcn, &nodes);
 	if (!nodes) {
 		free (can);
 		return R_FALSE;
 	}
+#endif
 
-	n_edges = bbEdges (fcn, nodes, &edges);
-	if (!edges)
-		n_edges = 0;
+#define N nodes[curnode]
+	reloadNodes (core);
+	updateSeek (can, &N, w, h, 1);
 
-	// hack to make layout happy
-	for (i=0; nodes[i].text; i++) {
-		Node_print (can, &nodes[i], i==curnode);
-	}
-	// run layout
-	Layout_depth (nodes, edges);
 repeat:
+	w = r_cons_get_size (&h);
 	core->cons->event_data = core;
 	core->cons->event_resize = \
 		(RConsEvent)r_core_graph_refresh;
@@ -429,9 +472,27 @@ repeat:
 
 	// r_core_graph_inputhandle()
 	key = r_cons_readchar ();
-#define N nodes[curnode]
 
 	switch (key) {
+	case '=':
+	case '|':
+		{ // TODO: edit
+		char *buf = NULL;
+#define I core->cons
+		const char *cmd = r_config_get (core->config, "cmd.gprompt");
+		r_line_set_prompt ("cmd.gprompt> ");
+		I->line->contents = strdup (cmd);
+		buf = r_line_readline ();
+//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
+		I->line->contents = NULL;
+		r_config_set (core->config, "cmd.gprompt", buf);
+		}
+		break;
+	case 'O':
+// free nodes or leak
+simple_mode = !!!simple_mode;
+reloadNodes(core);
+		break;
 	case 'V':
 		callgraph = !!!callgraph;
 		if (callgraph) {
@@ -462,6 +523,14 @@ repeat:
 			Layout_depth (nodes, edges);
 		}
 		break;
+	case 'z':
+		r_core_cmd0 (core, "ds;.dr*");
+		reloadNodes(core);
+		break;
+	case 'Z':
+		r_core_cmd0 (core, "dso;.dr*");
+		reloadNodes(core);
+		break;
 	case 'x':
 		if (r_core_visual_xrefs_x (core))
 			goto beach;
@@ -474,7 +543,7 @@ repeat:
 		curnode++;
 		if (!nodes[curnode].text)
 			curnode = 0;
-		updateSeek (can, &N, w, h);
+		updateSeek (can, &N, w, h, 0);
 		break;
 	case '?':
 		r_cons_clear00();
@@ -484,8 +553,10 @@ repeat:
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
 		" t/f  - follow true/false edges\n"
+		" O    - toggle disasm mode\n"
 		" u    - select previous node\n"
 		" V    - toggle basicblock / call graphs\n"
+		" z/Z  - step / step over\n"
 		" R    - relayout\n");
 		r_cons_flush();
 		r_cons_any_key();
@@ -513,10 +584,10 @@ repeat:
 		break;
 	case 'u':
 		curnode = OS_POP(); // wtf double push ?
-		updateSeek (can, &N, w, h);
+		updateSeek (can, &N, w, h, 0);
 		break;
 	case '.':
-		updateSeek (can, &N, w, h);
+		updateSeek (can, &N, w, h, 1);
 		break;
 	case 't':
 		cn = Edge_node (edges, curnode, 0);
@@ -524,7 +595,7 @@ repeat:
 			curnode = cn;
 			OS_PUSH (cn);
 		}
-		updateSeek (can, &N, w, h);
+		updateSeek (can, &N, w, h, 0);
 		// select jump node
 		break;
 	case 'f':
@@ -533,7 +604,7 @@ repeat:
 			curnode = cn;
 			OS_PUSH (cn);
 		}
-		updateSeek (can, &N, w, h);
+		updateSeek (can, &N, w, h, 0);
 		// select false node
 		break;
 	case '/':

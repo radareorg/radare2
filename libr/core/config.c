@@ -935,6 +935,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.bp", "", "Command to executed every breakpoint hit");
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
+	SETPREF("cmd.gprompt", "", "Graph visual prompt commands");
 	SETPREF("cmd.hit", "", "Command to execute on every search hit");
 	SETPREF("cmd.open", "", "Command executed when file its opened");
 	SETPREF("cmd.prompt", "", "Prompt commands");

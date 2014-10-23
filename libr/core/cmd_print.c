@@ -633,6 +633,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int esil = r_config_get_i (core->config, "asm.esil");
+	int flags = r_config_get_i (core->config, "asm.flags");
 	int i=0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
@@ -669,9 +670,18 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	}
 
 	for (i=j=0; j<nb_opcodes; j++) {
+		RFlagItem *item;
 		r_asm_set_pc (core->assembler, core->offset+i);
 		ret = r_asm_disassemble (core->assembler, &asmop, core->block+i,
 			core->blocksize-i);
+		if (flags) {
+			item = r_flag_get_i (core->flags, core->offset+i);
+			if (item) {
+				if (show_offset)
+					r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+				r_cons_printf ("  %s:\n", item->name);
+			}
+		}
 		if (show_offset)
 			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
