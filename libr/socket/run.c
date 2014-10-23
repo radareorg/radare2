@@ -127,11 +127,13 @@ static char *getstr(const char *src) {
 				*pat++ = 0;
 				int i, rep = atoi (src+1);
 				int len = strlen (pat);
-				char *buf = malloc (rep);
-				for(i=0;i<rep;i++) {
-					buf[i] = pat[i%len];
+				if (rep>0) {
+					char *buf = malloc (rep);
+					for(i=0;i<rep;i++) {
+						buf[i] = pat[i%len];
+					}
+					return buf;
 				}
-				return buf;
 			}
 			// slurp file
 			return r_file_slurp (src+1, NULL);
@@ -551,8 +553,8 @@ R_API int r_run_start(RRunProfile *p) {
 			eprintf ("rarun2: %s: file not found\n", p->_program);
 			return 1;
 		}
-		// close all non-tty fds
-		{ int i; for (i=3; i<9999; i++) close (i); }
+		// XXX HACK close all non-tty fds
+		{ int i; for (i=3; i<10; i++) close (i); }
 		// TODO: use posix_spawn
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
