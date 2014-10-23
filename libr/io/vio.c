@@ -267,6 +267,8 @@ R_API int r_io_mwrite (RIO *io, int fd, ut64 maddr, ut8 *buf, int len) {
 		write_bytes -= d;
 		maddr += d;
 	}
+	if (!(map->flags & R_IO_WRITE))						//check if the map allows writing
+		return write_bytes;
 	paddr = maddr - map->from + map->delta;
 	desc = io->desc;
 	io->desc = r_io_desc_get (io, fd);
