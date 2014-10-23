@@ -1,6 +1,10 @@
 /* Copyright radare2 2014 - Author: pancake */
 
 #include <r_core.h>
+	struct {
+		int nodes[128];
+		int size;
+	} ostack;
 
 // TODO: handle mouse wheel
 
@@ -331,35 +335,64 @@ static void r_core_graph_refresh (RCore *core) {
 	r_cons_canvas_clear (can);
 
 	if (edges)
-	for (i=0;edges[i].nth!=-1;i++) {
+	for (i=0; edges[i].nth!=-1; i++) {
 		if (edges[i].from == -1 || edges[i].to == -1)
 			continue;
 		Node *a = &nodes[edges[i].from];
 		Node *b = &nodes[edges[i].to];
 		Edge_print (can, a, b, edges[i].nth);
 	}
-	for (i=0;i<n_nodes;i++) {
+	for (i=0; i<n_nodes; i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}
+	// redraw current node to make it appear on top
+	Node_print (can, &nodes[curnode], 1);
 
 	G (-can->sx, -can->sy);
 	snprintf (title, sizeof (title)-1,
-		"[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d) %s",
-		fcn->addr, fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
+		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s",
+		fcn->addr, 
+ostack.size,
+fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
 	W (title);
 
 	r_cons_canvas_print (can);
 	r_cons_flush ();
 }
 
+R_API void updateSeek(RConsCanvas *can, Node *n, int w, int h) {
+#define BORDER 3
+	int x = n->x + can->sx;
+	int y = n->y + can->sy;
+	int doscroll = 0;
+#if 1
+	if (y<0) doscroll = 1;
+	if ((y+5)>h) doscroll = 1;
+	if ((x+5)>w) doscroll = 1;
+	if ((x+n->w+5)<0) doscroll = 1;
+#endif
+	if (doscroll) {
+		// top-left
+		can->sy = -n->y+BORDER;
+		can->sx = -n->x+BORDER;
+		// center
+		can->sy = -n->y+BORDER + (h/8);
+		can->sx = -n->x+BORDER + (w/4);
+	}
+}
+
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
-	int key, cn, prevnode = curnode;
+#define OS_INIT() ostack.size = 0; ostack.nodes[0] = 0;
+#define OS_PUSH(x) ostack.nodes[++ostack.size]=x
+#define OS_POP() ((ostack.size>0)? ostack.nodes[--ostack.size]:0)
+	int key, cn;
 	int i, w, h;
 	n_nodes = n_edges = 0;
 	nodes = NULL;
 	edges = NULL;
 	callgraph = 0;
 
+	OS_INIT();
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
@@ -397,7 +430,7 @@ repeat:
 	// r_core_graph_inputhandle()
 	key = r_cons_readchar ();
 #define N nodes[curnode]
-	prevnode = curnode;
+
 	switch (key) {
 	case 'V':
 		callgraph = !!!callgraph;
@@ -437,9 +470,11 @@ repeat:
 		if (r_core_visual_xrefs_X (core))
 			goto beach;
 		break;
-	case 9: curnode++;
+	case 9: // tab
+		curnode++;
 		if (!nodes[curnode].text)
 			curnode = 0;
+		updateSeek (can, &N, w, h);
 		break;
 	case '?':
 		r_cons_clear00();
@@ -449,6 +484,7 @@ repeat:
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
 		" t/f  - follow true/false edges\n"
+		" u    - select previous node\n"
 		" V    - toggle basicblock / call graphs\n"
 		" R    - relayout\n");
 		r_cons_flush();
@@ -476,13 +512,29 @@ repeat:
 	case 'D': can->sx += 5; break;
 		break;
 	case 'u':
-		curnode = prevnode;
+		curnode = OS_POP(); // wtf double push ?
+		updateSeek (can, &N, w, h);
+		break;
+	case '.':
+		updateSeek (can, &N, w, h);
 		break;
 	case 't':
 		cn = Edge_node (edges, curnode, 0);
-		if (cn != -1)
+		if (cn != -1) {
 			curnode = cn;
+			OS_PUSH (cn);
+		}
+		updateSeek (can, &N, w, h);
 		// select jump node
+		break;
+	case 'f':
+		cn = Edge_node (edges, curnode, 1);
+		if (cn != -1) {
+			curnode = cn;
+			OS_PUSH (cn);
+		}
+		updateSeek (can, &N, w, h);
+		// select false node
 		break;
 	case '/':
 		r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
@@ -491,12 +543,6 @@ repeat:
 		core->vmode = R_FALSE;
 		r_core_visual_prompt_input (core);
 		core->vmode = R_TRUE;
-		break;
-	case 'f':
-		cn = Edge_node (edges, curnode, 1);
-		if (cn != -1)
-			curnode = cn;
-		// select false node
 		break;
 	case 'q':
 		goto beach;
