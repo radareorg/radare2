@@ -11,6 +11,8 @@
 
 #define X86_64 ARCH_X86_64
 #define X86_32 ARCH_X86_32
+#define ARM_32 ARCH_ARM_32
+#define ARM_64 ARCH_ARM_64
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1

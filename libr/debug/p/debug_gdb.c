@@ -15,7 +15,7 @@ typedef struct {
 static libgdbr_t *desc = NULL;
 static ut8* reg_buf = NULL;
 static int buf_size = 0;
-static int support_sw_bp = UNKNOWN; 
+static int support_sw_bp = UNKNOWN;
 static int support_hw_bp = UNKNOWN;
 
 static int r_debug_gdb_step(RDebug *dbg) {
@@ -123,7 +123,15 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				// TODO
 				break;
 			case R_SYS_ARCH_ARM:
-				// TODO
+				if ( dbg->anal->bits == 32 ) {
+					gdbr_set_architecture(&g->desc, ARM_32);
+				} else if (dbg->anal->bits == 64) {
+					gdbr_set_architecture(&g->desc, ARM_64);
+				} else {
+					eprintf("Not supported register profile\n");
+					return R_FALSE;
+				}
+
 				break;
 			}
 		} else {
