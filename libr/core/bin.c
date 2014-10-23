@@ -231,10 +231,15 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			}
 			section = r_bin_get_section_at (r_bin_cur_object (bin), string->paddr, 0);
 			if (mode) {
+				char *filtered_name;
+				filtered_name = strdup (string->string);
+				r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
+				snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-					string->string, string->size, va? vaddr: paddr,
+					filtered_name, string->size, va? vaddr: paddr,
 					string->size, va? vaddr: paddr);
+				free (filtered_name);
 			} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x
 				" ordinal=%03u "
 				"sz=%u len=%u section=%s type=%c string=%s\n", vaddr, paddr,
