@@ -13,8 +13,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		r_list_foreach (dbg->maps, iter, map) {
 			if (notfirst) dbg->printf (",");
 			dbg->printf ("{\"name\":\"%s\",",map->name);
-			dbg->printf ("\"addr\":%"PFMT64d",", map->addr);
-			dbg->printf ("\"addr_end\":%"PFMT64d",", map->addr_end);
+			dbg->printf ("\"addr\":%"PFMT64u",", map->addr);
+			dbg->printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
 			dbg->printf ("\"type\":\"%c\",", map->user?'u':'s');
 			dbg->printf ("\"perm\":\"%s\"}", r_str_rwx_i (map->perm));
 			notfirst = R_TRUE;
@@ -22,8 +22,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		r_list_foreach (dbg->maps_user, iter, map) {
 			if (notfirst) dbg->printf (",");
 			dbg->printf ("{\"name\":\"%s\",",map->name);
-			dbg->printf ("\"addr\":%"PFMT64d",", map->addr);
-			dbg->printf ("\"addr_end\":%"PFMT64d",", map->addr_end);
+			dbg->printf ("\"addr\":%"PFMT64u",", map->addr);
+			dbg->printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
 			dbg->printf ("\"type\":\"%c\",", map->user?'u':'s');
 			dbg->printf ("\"perm\":\"%s\"}", r_str_rwx_i (map->perm));
 			notfirst = R_TRUE;
