@@ -542,7 +542,7 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 		r_core_cmdf (core, "psb %d @ 0x%"PFMT64x, count*size, addr);
 		break;
 	case 'o':
-		r_core_cmd0 (core, "pxo %d @ 0x%"PFMT64x, count*size, addr);
+		r_core_cmdf (core, "pxo %d @ 0x%"PFMT64x, count*size, addr);
 		break;
 	case 'f':
 	case 'A': // XXX (float in hex wtf)
