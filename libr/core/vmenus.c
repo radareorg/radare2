@@ -896,7 +896,12 @@ static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) 
 	RAnalVar *v;
 	RAnalVarAccess *x;
 	RListIter *iter, *iter2;
-	int window = 15;
+	int window ;
+
+	// Adjust the windows size automaticaly
+	(void)r_cons_get_size (&window);
+	window-=5; // Size of printed things
+
 	int wdelta = (idx>5)?idx-5:0;
 	if (!fcn) return;
 	r_list_foreach(fcn->vars, iter, v) {
@@ -949,11 +954,13 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 	}
 }
 
+
+// In visual mode, display function list
 static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int i = 0;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
-	int window = 15;
+	int window ;
 	int wdelta = (idx>5)?idx-5:0;
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -1012,12 +1019,12 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	if (cols>30) {
 		r_cons_column (cols);
 	}
-switch (level) {
+	switch (level) {
 	// Show functions list help in visual mode
 	case 0:
 		r_cons_printf ("-[ functions ]---------------- \n"
 			"(a) add     (x)xrefs     (q)quit \n"
-			"(m) modify  (c)calls     (g)go\n"
+			"(m) modify  (c)calls     (g)go \n"
 			"(d) delete  (v)variables (?)help \n");
 		addr = var_functions_show (core, option, 1);
 		break;
