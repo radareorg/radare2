@@ -83,6 +83,7 @@ static int rabin_show_help(int v) {
 		" -x              extract bins contained in file\n"
 		" -z              strings (from data section)\n"
 		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
+		" -zzz            dump raw strings to stdout (for huge files)\n"
 		" -Z              guess size of binary program\n"
 		);
 	return 1;
@@ -379,7 +380,8 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, LIBDIR"/radare2/"R2_VERSION);
 
 #define is_active(x) (action&x)
-#define set_action(x) actions++; action |=x
+#define set_action(x) actions++; action |= x
+#define unset_action(x) action &= ~x
 	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
@@ -425,7 +427,13 @@ int main(int argc, char **argv) {
 		case 'S': set_action (ACTION_SECTIONS); break;
 		case 'z':
 			if (is_active (ACTION_STRINGS)) {
-				rawstr = R_TRUE;
+				if (rawstr) {
+					/* rawstr mode 2 means that we are not going */
+					/* to store them just dump'm all to stdout */
+					rawstr = 2;
+				} else {
+					rawstr = R_TRUE;
+				}
 			} else set_action (ACTION_STRINGS);
 			break;
 		case 'Z': set_action (ACTION_SIZE); break;
@@ -550,6 +558,9 @@ int main(int argc, char **argv) {
 		r_core_fini (&core);
 		return 0;
 	}
+	if (rawstr == 2) {
+		unset_action (ACTION_STRINGS);
+	}
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
 	cf = r_core_file_open (&core, file, R_IO_READ, 0);
 	fd = cf ? r_core_file_cur_fd (&core) : -1;
@@ -565,6 +576,11 @@ int main(int argc, char **argv) {
 			r_core_fini (&core);
 			return 1;
 		}
+	}
+	if (rawstr == 2) {
+		rawstr = R_FALSE;
+		bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
+		r_bin_dump_strings (core.bin->cur, bin->minstrlen);
 	}
 
 	if (query) {

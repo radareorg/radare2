@@ -361,6 +361,8 @@ R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
+R_API int r_bin_load_languages(RBinFile *binfile);
+R_API int r_bin_dump_strings(RBinFile *a, int min);
 // ref
 R_API int r_bin_file_deref_by_bind (RBinBind * binb);
 R_API int r_bin_file_deref (RBin *bin, RBinFile * a);

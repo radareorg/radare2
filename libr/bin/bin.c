@@ -22,7 +22,7 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 
 static int is_data_section(RBinFile *a, RBinSection *s);
-static RList* get_strings(RBinFile *a, int min);
+static RList* get_strings(RBinFile *a, int min, int dump);
 static void r_bin_object_delete_items (RBinObject *o);
 static void r_bin_object_free (void /*RBinObject*/ *o_);
 static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
@@ -116,7 +116,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 	if (type == -1)
 		type = R_STRING_TYPE_DETECT;
 
-	if (!list || !buf || !min)
+	if (!buf || !min)
 		return -1;
 
 	while (needle < to) {
@@ -179,6 +179,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 		tmp[i++] = '\0';
 
 		if (runes >= min) {
+if (list) {
 			RBinString *new = R_NEW0 (RBinString);
 			new->type = str_type;
 			new->length = runes;
@@ -188,6 +189,10 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 			if (i < sizeof (new->string))
 				memcpy (new->string, tmp, i);
 			r_list_append (list, new);
+} else {
+	// DUMP TO STDOUT. raw dumping for rabin2 -zzz
+	printf ("0x%08"PFMT64x" %s\n", str_start, tmp);
+}
 		}
 	}
 
@@ -208,7 +213,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (min == 0)
 		min = plugin? plugin->minstrlen: 4;
 
-	if (arch->rawstr)
+	if (arch->rawstr == R_TRUE)
 		min = 1;
 
 	/* Some plugins return zero, fix it up */
@@ -219,9 +224,13 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 
 	if (!to || to > arch->buf->length)
 		to = arch->buf->length;
-	if (to != 0 && to > 0xf00000) {
-		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
-		return;
+
+	if (arch->rawstr != 2) {
+		// in case of dump ignore here
+		if (to != 0 && to > 0xf00000) {
+			eprintf ("WARNING: bin_strings buffer is too big (0x%08"PFMT64x")\n", to-from);
+			return;
+		}
 	}
 
 	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0)
@@ -229,8 +238,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 
 	r_list_foreach (list, it, ptr) {
 		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, R_FALSE);
-		if (s)
-			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
+		if (s) ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
 	}
 }
 
@@ -251,20 +259,19 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 	return 0;
 }
 
-static RList* get_strings(RBinFile *a, int min) {
+static RList* get_strings(RBinFile *a, int min, int dump) {
 	RListIter *iter;
 	RBinSection *section;
 	RBinObject *o = a? a->o : NULL;
-
-	RList *ret = r_list_new ();
-	if (!ret) {
-		eprintf ("Error allocating array\n");
-		return NULL;
-	} else if (!o) {
-		eprintf ("Error bin object unitialized\n");
-		return ret;
+	RList *ret;
+	if (!o) return NULL;
+	if (dump) {
+		/* dump to stdout, not stored in list */
+		ret = NULL;
+	} else {
+		ret = r_list_newf (free);
+		if (!ret) return NULL;
 	}
-	ret->free = free;
 
 	if (o->sections && !r_list_empty (o->sections) && !a->rawstr) {
 		r_list_foreach (o->sections, iter, section) {
@@ -278,6 +285,11 @@ static RList* get_strings(RBinFile *a, int min) {
 		get_strings_range (a, ret, min, 0, a->size);
 	}
 	return ret;
+}
+
+R_API int r_bin_dump_strings(RBinFile *a, int min) {
+	get_strings (a, min, 1);
+	return 0;
 }
 
 R_API int r_bin_load_languages(RBinFile *binfile) {
@@ -355,7 +367,7 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->relocs) o->relocs = cp->relocs (binfile);
 	if (cp->sections) o->sections = cp->sections (binfile);
 	if (cp->strings) o->strings = cp->strings (binfile);
-	else o->strings = get_strings (binfile, minlen);
+	else o->strings = get_strings (binfile, minlen, 0);
 	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	if (cp->classes) o->classes = cp->classes (binfile);
 	if (cp->lines) o->lines = cp->lines (binfile);
@@ -1122,7 +1134,7 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 
 	if (plugin && plugin->strings)
 		o->strings = plugin->strings (a);
-	else o->strings = get_strings (a, bin->minstrlen);
+	else o->strings = get_strings (a, bin->minstrlen, 0);
 	return o->strings;
 }
 
