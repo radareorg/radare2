@@ -53,21 +53,24 @@ static int cmd_eval(void *data, const char *input) {
 			r_cons_pal_init (NULL);
 			break;
 		case '?':
-			r_cons_printf ("|Usage: ec[s?] [key][[=| ]fg] [bg]\n"
-			"|  ec                list all color keys\n"
-			"|  ec*               same as above, but using r2 commands\n"
-			"|  ecd               set default palette\n"
-			"|  ecr               set random palette\n"
-			"|  ecs               show a colorful palette\n"
-			"|  ecf dark|white    load white color scheme template\n"
-			"|  ec prompt red     change color of prompt\n"
-			"|Available colors:\n"
-			"|  rgb:000           24 bit hexadecimal rgb color\n"
-			"|  red|green|blue|.  well known ansi colors\n"
-			"|See:\n"
-			"|  e scr.rgbcolor    = true|false for 256 color cube\n"
-			"|  e scr.truecolor   = true|false for 256*256*256 colors\n"
-			"|  $DATADIR/radare2/cons ~/.config/radare2/cons ./\n");
+{
+		const char *helpmsg[] = {
+			"Usage ec[s?] [key][[=| ]fg] [bg]","","",
+			"ec","","list all color keys",
+			"ec*","","same as above, but using r2 commands",
+			"ecd","","set default palette",
+			"ecr","","set random palette",
+			"ecs","","show a colorful palette",
+			"ecf"," dark|white","load white color scheme template",
+			"ec"," prompt red","change color of prompt",
+			""," ","",
+			"colors:","","rgb:000, red, green, blue, ...",
+			"e scr.rgbcolor","=1|0","for 256 color cube (boolean)",
+			"e scr.truecolor","=1|0","for 256*256*256 colors (boolean)",
+			"$DATADIR/radare2/cons","","~/.config/radare2/cons ./",
+		NULL};
+		r_core_cmd_help (core, helpmsg);
+}
 			break;
 		case 'f':
 			if (input[2] == ' ') {
