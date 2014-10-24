@@ -47,7 +47,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		}
 	}
-repeat:
+//repeat:
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block+delta, core->blocksize-delta);
 	if (str) {

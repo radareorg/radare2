@@ -289,6 +289,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				break;
 			default:
 				/* nothing to do here yet */
+				op->ptr = getval (&u.operand[1]);
 				break;
 			}
 			break;
@@ -312,7 +313,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 					break;
 				default:
 					/* nothing to do here yet */
-				       op->ptr = getval (&u.operand[1]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
+					op->ptr = getval (&u.operand[1]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
 					break;
 				}
 				break;
