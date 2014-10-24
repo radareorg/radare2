@@ -476,8 +476,7 @@ int main(int argc, char **argv) {
 			break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
-		case 'N': 
-			  {
+		case 'N': {
 				  char *q, *p = strdup (optarg);
 				  q = strchr (p, ':');
 				  if (q) {
@@ -487,8 +486,7 @@ int main(int argc, char **argv) {
 					  r_config_set (core.config, "bin.minstr", optarg);
 				  }
 				  free (p);
-			}
-			  break;
+			} break;
 		//case 'V': return blob_version ("rabin2");
 		case 'h':
 				r_core_fini (&core);
@@ -570,6 +568,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
 	if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 		if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open file\n");
@@ -579,7 +578,6 @@ int main(int argc, char **argv) {
 	}
 	if (rawstr == 2) {
 		rawstr = R_FALSE;
-		bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
 		r_bin_dump_strings (core.bin->cur, bin->minstrlen);
 	}
 
@@ -667,7 +665,7 @@ int main(int argc, char **argv) {
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("\"%s\":",n);\
 		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr, chksum)) {\
-			if (isradjson) r_cons_printf("false");\
+			if (isradjson) r_cons_printf  ("false");\
 		};\
 		actions_done++;\
 		if (isradjson) r_cons_printf (actions==actions_done? "":",");\

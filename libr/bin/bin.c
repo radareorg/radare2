@@ -213,8 +213,10 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (min == 0)
 		min = plugin? plugin->minstrlen: 4;
 
+#if 0
 	if (arch->rawstr == R_TRUE)
 		min = 1;
+#endif
 
 	/* Some plugins return zero, fix it up */
 	if (min == 0)
@@ -347,7 +349,11 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (!binfile || !o || !o->plugin) return R_FALSE;
 
 	cp = o->plugin;
-	minlen = cp->minstrlen;
+	if (binfile->rbin->minstrlen>0) {
+		minlen = binfile->rbin->minstrlen;
+	} else {
+		minlen = cp->minstrlen;
+	}
 	binfile->o = o;
 	if (cp->baddr) o->baddr = cp->baddr (binfile);
 	o->loadaddr = o->baddr;
@@ -1190,7 +1196,7 @@ R_API RBin* r_bin_new() {
 	bin->printf = (PrintfCallback)printf;
 	bin->plugins = r_list_new();
 	bin->plugins->free = free;
-	bin->minstrlen = -2;
+	bin->minstrlen = 0;
 	bin->cur = NULL;
 
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
@@ -1673,7 +1679,8 @@ R_API int r_bin_file_set_cur_binfile_obj (RBin * bin, RBinFile *bf, RBinObject *
 	bin->narch = bf->narch;
 	bf->o = obj;
 	plugin = r_bin_file_cur_plugin (bf);
-	bin->minstrlen = plugin ? plugin->minstrlen : bin->minstrlen;
+	if (bin->minstrlen <1)
+		bin->minstrlen = plugin ? plugin->minstrlen : bin->minstrlen;
 	r_bin_object_set_sections (bf, obj);
 	return R_TRUE;
 

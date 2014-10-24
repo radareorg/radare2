@@ -146,6 +146,9 @@ typedef struct r_bin_file_t {
 	RBinObject *o;
 	void *xtr_obj;
 	ut64 loadaddr;
+	/* values used when searching the strings */
+	int minstrlen;
+	int maxstrlen;
 	int narch;
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
@@ -161,6 +164,7 @@ typedef struct r_bin_t {
 	RBinFile *cur;
 	int narch;
 	void *user;
+	/* preconfigured values */
 	int minstrlen;
 	int maxstrlen;
 	int rawstr;
@@ -238,6 +242,7 @@ typedef struct r_bin_plugin_t {
 	int (*get_offset)(RBinFile *arch, int type, int idx);
 	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+	/* default value if not specified by user */
 	int minstrlen;
 	void *user;
 } RBinPlugin;
