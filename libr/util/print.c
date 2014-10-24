@@ -428,6 +428,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *fmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
+	const char *a, *b;
 
 	if (p) {
 		pairs = p->pairs;
@@ -521,7 +522,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut32 n = 0;
 				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
 				r_print_cursor (p, j, 1);
-				printfmt ("0x%08x ", n);
+
+				// stub for colors
+				if (p && p->colorfor) {
+					a = p->colorfor (p->user, n);
+					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+				} else { a = b = ""; }
+
+				printfmt ("%s0x%08x%s ", a, n, b);
 				r_print_cursor (p, j, 0);
 				j += 3;
 			} else
@@ -531,7 +539,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				 * a multiple of 4 for base == 64. */
 				r_mem_copyendian ((ut8*)&x, buf+j, sizeof (x), !p->big_endian);
 				r_print_cursor (p, j, 1);
-				printfmt ("0x%016"PFMT64x"  ", x);
+				// stub for colors
+				if (p && p->colorfor) {
+					a = p->colorfor (p->user, x);
+					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+				} else { a = b = ""; }
+				printfmt ("%s0x%016"PFMT64x"%s  ", a, x, b);
 				r_print_cursor (p, j, 0);
 				j += 7;
 			} else {

@@ -1094,6 +1094,10 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 			r_cons_printf ("%s\"heap\":true", COMMA);
 		if (type & R_ANAL_ADDR_TYPE_REG)
 			r_cons_printf ("%s\"reg\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_ASCII)
+			r_cons_printf ("%s\"ascii\":true", COMMA);
+		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+			r_cons_printf ("%s\"sequence\":true", COMMA);
 		r_cons_printf ("}");
 		break;
 	default:
@@ -1117,6 +1121,10 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 			r_cons_printf ("heap\n");
 		if (type & R_ANAL_ADDR_TYPE_REG)
 			r_cons_printf ("reg\n");
+		if (type & R_ANAL_ADDR_TYPE_ASCII)
+			r_cons_printf ("ascii\n");
+		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+			r_cons_printf ("sequence\n");
 	}
 }
 

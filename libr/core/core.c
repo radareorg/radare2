@@ -559,6 +559,22 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	return ret;
 }
 
+R_API const char *__colorfor(RCore *core, ut64 addr) {
+	ut64 type = r_core_anal_address (core, addr);
+// same colors as PEDA
+	if (type & R_ANAL_ADDR_TYPE_EXEC)
+		return Color_RED;
+	if (type & R_ANAL_ADDR_TYPE_WRITE)
+		return Color_BLUE;
+	if (type & R_ANAL_ADDR_TYPE_READ)
+		return Color_GREEN;
+	if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+		return Color_MAGENTA;
+	if (type & R_ANAL_ADDR_TYPE_ASCII)
+		return Color_YELLOW;
+	return NULL;
+}
+
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
@@ -575,6 +591,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->printf = (void *)r_cons_printf;
 	core->print->write = (void *)r_cons_memcat;
 	core->print->disasm = __disasm;
+	core->print->colorfor = __colorfor;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();

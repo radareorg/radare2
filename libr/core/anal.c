@@ -89,6 +89,41 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 			}
 		}
 	}
+
+	// check if it's ascii
+	int not_ascii = 0;
+	if (addr != 0) {
+		int i, failed_sequence, dir, on;
+		for (i=0; i<8; i++) {
+			ut8 n = (addr>> (i*8)) & 0xff;
+			if (n && !IS_PRINTABLE (n))
+				not_ascii = 1;
+		}
+		if (!not_ascii)
+			types |= R_ANAL_ADDR_TYPE_ASCII;
+
+		failed_sequence = 0;
+		dir = on = -1;
+		for (i=0; i<8; i++) {
+			ut8 n = (addr>> (i*8)) & 0xff;
+			if (on != -1) {
+				if (dir == -1)
+					dir = (n>on)? 1: -1;
+				if (n == on+dir) {
+					// ok
+				} else {
+					failed_sequence = 1;
+					break;
+				}
+			}
+			on = n;
+		}
+		if (!failed_sequence)
+			types |= R_ANAL_ADDR_TYPE_SEQUENCE;
+	}
+
+
+
 	return types;
 }
 
