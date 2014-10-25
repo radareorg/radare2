@@ -203,7 +203,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	xmm7	.128	288	0\n"
 				"gpr	mxcsr	.32	304	0\n"
 				);
-		} 
+		}
 		else if ( dbg->anal->bits == 64) {
 			return strdup (
 					"=pc	rip\n"
@@ -325,16 +325,16 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	r13	.32	52	0\n"
 				"gpr	r14	.32	56	0\n"
 				"gpr	r15	.32	60	0\n"
-				"gpr	f0	.32	64	0\n"
-				"gpr	f1	.32	68	0\n"
-				"gpr	f2	.32	72	0\n"
-				"gpr	f3	.32	76	0\n"
-				"gpr	f4	.32	80	0\n"
-				"gpr	f5	.32	84	0\n"
-				"gpr	f6	.32	88	0\n"
-				"gpr	f7	.32	92	0\n"
-				"gpr	fps	.32	96	0\n"
-				"gpr	cpsr	.32	100	0\n"
+				"gpr	f0	.96	64	0\n"
+				"gpr	f1	.96	76	0\n"
+				"gpr	f2	.96	88	0\n"
+				"gpr	f3	.96	100	0\n"
+				"gpr	f4	.96	112	0\n"
+				"gpr	f5	.96	124	0\n"
+				"gpr	f6	.96	136	0\n"
+				"gpr	f7	.96	148	0\n"
+				"gpr	fps	.96	160	0\n"
+				"gpr	cpsr	.32	172	0\n"
 			);
 		} else if (dbg->bits == R_SYS_BITS_64) {
 			return strdup (
