@@ -7,7 +7,6 @@ build-project reg ;
 build-project cons ;
 build-project db ;
 build-project magic ;
-build-project lib ;
 build-project diff ;
 build-project bp ;
 build-project search ;
@@ -19,7 +18,6 @@ build-project flags ;
 build-project crypto ;
 build-project io ;
 build-project lang ;
-build-project cmd ;
 build-project anal ;
 
 build-project parse ;

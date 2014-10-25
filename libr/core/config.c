@@ -172,7 +172,7 @@ static int cb_asmbits(void *user, void *data) {
 	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	int ret, asmbits;
+	int ret;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
 		return R_FALSE;
@@ -771,6 +771,12 @@ static int cb_fileloadmethod(void *user, void *data) {
  	return R_TRUE;
 }
 
+static int __dbg_swstep_getter(void *user, RConfigNode *node) {
+	RCore *core = (RCore*)user;
+	node->i_value = core->dbg->swstep;
+	return 1;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -908,6 +914,9 @@ R_API int r_core_config_init(RCore *core) {
 	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB("dbg.swstep", "false", &cb_swstep, "If enabled forces the use of software steps (code analysis+breakpoint)");
+
+	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
+
 // TODO: This should be specified at first by the debug backend when attaching
 #if __arm__ || __mips__
 	SETICB("dbg.bpsize", 4, &cb_dbgbpsize, "Specify size of software breakpoints");

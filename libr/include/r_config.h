@@ -29,7 +29,8 @@ typedef struct r_config_node_t {
 	ut64 *cb_ptr_q;
 	int *cb_ptr_i;
 	char **cb_ptr_s;
-	RConfigCallback callback;
+	RConfigCallback getter;
+	RConfigCallback setter;
 	char *desc;
 } RConfigNode;
 
@@ -65,6 +66,9 @@ R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API void r_config_node_free(void *n);
 R_API int r_config_swap(RConfig *cfg, const char *name);
 R_API int r_config_readonly (RConfig *cfg, const char *key);
+
+R_API int r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb);
+R_API int r_config_set_getter (RConfig *cfg, const char *key, RConfigCallback cb);
 #endif
 
 #ifdef __cplusplus

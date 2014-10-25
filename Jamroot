@@ -1,1 +1,1 @@
-build-project libr ;
+build-project libr/ ;

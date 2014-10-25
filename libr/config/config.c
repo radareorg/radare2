@@ -7,15 +7,13 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	RConfigNode *node;
 	if (!name || !*name)
 		return NULL;
-	node = R_NEW (RConfigNode);
+	node = R_NEW0 (RConfigNode);
 	if (!node) return NULL;
 	node->name = strdup (name);
-	node->desc = NULL;
 	node->hash = r_str_hash (name);
 	node->value = strdup (value? value: "");
 	node->flags = CN_RW | CN_STR;
 	node->i_value = r_num_get (NULL, value);;
-	node->callback = NULL;
 	return node;
 }
 
@@ -27,7 +25,7 @@ R_API RConfigNode *r_config_node_clone (RConfigNode *n) {
 	cn->value = strdup (n->value? n->value: "");
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
-	cn->callback = n->callback;
+	cn->setter = n->setter;
 	return cn;
 }
 
@@ -98,9 +96,29 @@ R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name) {
 	return r_hashtable_lookup (cfg->ht, r_str_hash (name));
 }
 
+R_API int r_config_set_getter (RConfig *cfg, const char *key, RConfigCallback cb) {
+	RConfigNode *node = r_config_node_get (cfg, key);
+	if (node) {
+		node->getter = cb;
+		return 1;
+	}
+	return 0;
+}
+
+R_API int r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb) {
+	RConfigNode *node = r_config_node_get (cfg, key);
+	if (node) {
+		node->setter = cb;
+		return 1;
+	}
+	return 0;
+}
+
 R_API const char *r_config_get(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
+		if (node->getter)
+			node->getter (cfg->user, node);
 		cfg->last_notfound = 0;
 		if (node->flags & CN_BOOL)
 			return (const char *)
@@ -125,6 +143,8 @@ R_API int r_config_swap(RConfig *cfg, const char *name) {
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
+		if (node->getter)
+			node->getter (cfg->user, node);
 		if (node->i_value != 0 || !strcmp (node->value, "false"))
 			return node->i_value;
 		return (ut64)r_num_math (cfg->num, node->value);
@@ -134,7 +154,7 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb) {
 	RConfigNode *node = r_config_set (cfg, name, value);
-	if (node && (node->callback = cb))
+	if (node && (node->setter = cb))
 		if (!cb (cfg->user, node))
 			return NULL;
 	return node;
@@ -142,8 +162,8 @@ R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *v
 
 R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb) {
 	RConfigNode *node = r_config_set_i (cfg, name, ivalue);
-	if (node && (node->callback = cb))
-		if (!node->callback (cfg->user, node))
+	if (node && (node->setter = cb))
+		if (!node->setter (cfg->user, node))
 			return NULL;
 	return node;
 }
@@ -204,8 +224,8 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 		} else eprintf ("r_config_set: variable '%s' not found\n", name);
 	}
 
-	if (node && node->callback) {
-		int ret = node->callback (cfg->user, node);
+	if (node && node->setter) {
+		int ret = node->setter (cfg->user, node);
 		if (ret == R_FALSE) {
 			if (oi != UT64_MAX)
 				node->i_value = oi;
@@ -284,9 +304,9 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		} else eprintf ("(locked: no new keys can be created (%s))\n", name);
 	}
 
-	if (node && node->callback) {
+	if (node && node->setter) {
 		ut64 oi = node->i_value;
-		int ret = node->callback (cfg->user, node);
+		int ret = node->setter (cfg->user, node);
 		if (ret == R_FALSE) {
 			node->i_value = oi;
 			free (node->value);

@@ -24,30 +24,46 @@ static int r_debug_gdb_step(RDebug *dbg) {
 }
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	gdbr_read_registers(desc);
+	gdbr_read_registers (desc);
+	int copy_size;
 	// read the len of the current area
 	int buflen = 0;
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
-	memcpy (buf, desc->data, desc->data_len);
-	if (!reg_buf) {
-		reg_buf = calloc (buflen, sizeof (char));
-		if (!reg_buf) {
-			return -1;
-		}
+	if (size<desc->data_len) {
+		eprintf ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
+			size, desc->data_len);
+		//	return -1;
 	}
-	else {
-		if (buf_size < desc->data_len) {
-			ut8* new_buf = realloc (reg_buf, desc->data_len * sizeof (ut8));
-			if (!new_buf) {
+	copy_size = R_MIN (desc->data_len, size);
+	buflen = R_MAX (desc->data_len, buflen);
+	if (reg_buf) {
+		if (buf_size < copy_size) { //desc->data_len) {
+			ut8* new_buf = realloc (reg_buf, copy_size);
+			if (!new_buf)
 				return -1;
-			}
 			reg_buf = new_buf;
-			buflen = desc->data_len;
+			buflen = copy_size;
 			buf_size = desc->data_len;
 		}
+	} else {
+		reg_buf = calloc (buflen, 1);
+		if (!reg_buf)
+			return -1;
+		buf_size = buflen;
 	}
-	buflen = R_MIN (desc->data_len, buflen);
-	memcpy (reg_buf, desc->data, buflen);
+	memset (buf, 0, size);
+	memcpy (buf, desc->data, copy_size);
+	memset (reg_buf, 0, buflen);
+	memcpy (reg_buf, desc->data, copy_size);
+#if 0
+	int i;
+	//for(i=0;i<168;i++) {
+	for(i=0;i<copy_size;i++) {
+		if (!(i%16)) printf ("\n0x%08x  ", i);
+		printf ("%02x ", buf[i]); //(ut8)desc->data[i]);
+	}
+	printf("\n");
+#endif
 	return desc->data_len;
 }
 
@@ -102,6 +118,9 @@ static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
+// TODO: the core must update the dbg.swstep config var when this var is changed
+dbg->swstep = R_FALSE;
+eprintf ("XWJSTEP TOFALSE\n");
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
@@ -110,7 +129,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			if (( desc = &g->desc ))
 			switch (dbg->arch) {
 			case R_SYS_ARCH_X86:
-				if ( dbg->anal->bits == 16 || dbg->anal->bits == 32) {
+				if (dbg->anal->bits == 16 || dbg->anal->bits == 32) {
 					gdbr_set_architecture(&g->desc, X86_32);
 				} else if (dbg->anal->bits == 64) {
 					gdbr_set_architecture(&g->desc, X86_64);
@@ -443,6 +462,7 @@ struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.cont = r_debug_gdb_continue,
 	.attach = &r_debug_gdb_attach,
 	.detach = &r_debug_gdb_detach,
+	.canstep = 1,
 	.wait = &r_debug_gdb_wait,
 	.pids = NULL,
 	.tids = NULL,
