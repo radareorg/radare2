@@ -656,7 +656,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							if (*name == '(') {
 								name = strchr (name, ')')+1;
 							} else {
-								eprintf ("Name missing (%s)\n", name);
+								eprintf ("Missing name (%s)\n", name);
 								goto beach;
 							}
 						}
