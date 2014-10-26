@@ -652,11 +652,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						p->printf = oldprintf;
 					if (idx<nargs && tmp != 'e' && isptr == 0) {
 						char *name = r_str_word_get0 (args, idx);
-						if (ISSTRUCT) {
+						if (ISSTRUCT || tmp=='E' || tmp=='B') {
 							if (*name == '(') {
 								name = strchr (name, ')')+1;
 							} else {
-								eprintf ("Struct name missing (%s)\n", name);
+								eprintf ("Name missing (%s)\n", name);
 								goto beach;
 							}
 						}
