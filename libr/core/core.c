@@ -351,6 +351,8 @@ static int autocomplete(RLine *line) {
 		    (!memcmp (line->buffer.data, "afi ", 4)) ||
 		    (!memcmp (line->buffer.data, "afb ", 4)) ||
 		    (!memcmp (line->buffer.data, "afc ", 4)) ||
+		    (!memcmp (line->buffer.data, "axt ", 4)) ||
+		    (!memcmp (line->buffer.data, "axf ", 4)) ||
 		    (!memcmp (line->buffer.data, "aga ", 5)) ||
 		    (!memcmp (line->buffer.data, "agc ", 4)) ||
 		    (!memcmp (line->buffer.data, "agl ", 4)) ||

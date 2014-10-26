@@ -1702,10 +1702,18 @@ static int cmd_anal(void *data, const char *input) {
 							r_asm_disassemble (core->assembler, &asmop, buf, 12);
 							r_parse_filter (core->parser, core->flags,
 									asmop.buf_asm, str, sizeof (str));
-							buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
+							if (r_config_get_i (core->config, "scr.color")) {
+								buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
 									core->cons->pal.num);
-							r_cons_printf ("%c 0x%"PFMT64x" %s\n",
+								r_cons_printf ("%c 0x%"PFMT64x" %s\n",
 								ref->type, ref->addr, buf_asm);
+							}
+							else {
+								r_cons_printf ("%c 0x%"PFMT64x" %s %s %s\n",
+								ref->type, ref->addr,str, core->cons->pal.reg,
+								core->cons->pal.num);
+							}
+
 						}
 					}
 					r_list_free (list);
