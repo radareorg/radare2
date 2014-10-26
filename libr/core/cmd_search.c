@@ -1385,7 +1385,7 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 					fd = core->io->desc->fd;
 				}
 				if (!json)
-					r_cons_printf ("# %d [0x%llx-0x%llx]\n", fd, from, to);
+					eprintf ("# %d [0x%llx-0x%llx]\n", fd, from, to);
 
 				if (bckwrds) {
 					if (to < from + bufsz) {

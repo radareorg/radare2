@@ -1708,7 +1708,7 @@ static int cmd_anal(void *data, const char *input) {
 									core->cons->pal.num);
 								r_cons_printf ("%c 0x%"PFMT64x" %s\n", ref->type, ref->addr, buf_asm);
 							} else {
-								r_cons_printf ("%c 0x%"PFMT64x" %s %s %s\n", ref->type, ref->addr, str);
+								r_cons_printf ("%c 0x%"PFMT64x" %s\n", ref->type, ref->addr, str);
 							}
 						}
 					}
