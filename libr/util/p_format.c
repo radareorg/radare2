@@ -99,13 +99,13 @@ static void r_print_format_byte(const RPrint* p, int endian, int mustset,
 				p->printf ("%d", buf[i]);
 			else
 				p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
-					IS_PRINTABLE (buf[i])?buf[i]:0);
+					IS_PRINTABLE (buf[i])?buf[i]:'.');
 		else {
 			if (json)
 				p->printf ("[ %d", buf[i]);
 			else
 				p->printf ("[ %d ; 0x%02x ; '%c'", buf[i], buf[i],
-					IS_PRINTABLE (buf[i])?buf[i]:0);
+					IS_PRINTABLE (buf[i])?buf[i]:'.');
 			size--;
 			i++;
 			while (size--) {
@@ -113,7 +113,7 @@ static void r_print_format_byte(const RPrint* p, int endian, int mustset,
 					p->printf (", %d", buf[i]);
 				else
 					p->printf (", %d ; 0x%02x ; '%c'", buf[i], buf[i],
-						IS_PRINTABLE (buf[i])?buf[i]:0);
+						IS_PRINTABLE (buf[i])?buf[i]:'.');
 				i++;
 			}
 			p->printf (" ]");
@@ -133,13 +133,13 @@ static void r_print_format_char(const RPrint* p, int endian, int mustset,
 				p->printf ("\"%c\"", buf[i]);
 			else
 				p->printf (" %d ; '%c'", buf[i], buf[i], buf[i],
-					IS_PRINTABLE (buf[i])?buf[i]:0);
+					IS_PRINTABLE (buf[i])?buf[i]:'.');
 		else {
 			if (json)
 				p->printf ("[ \"%c\"", buf[i]);
 			else
 				p->printf ("[ %d ; '%c'", buf[i], buf[i], buf[i],
-					IS_PRINTABLE (buf[i])?buf[i]:0);
+					IS_PRINTABLE (buf[i])?buf[i]:'.');
 			size--;
 			i++;
 			while (size--) {
@@ -147,7 +147,7 @@ static void r_print_format_char(const RPrint* p, int endian, int mustset,
 					p->printf (", \"%c\"", buf[i]);
 				else
 					p->printf (", %d ; '%c'", buf[i], buf[i], buf[i],
-						IS_PRINTABLE (buf[i])?buf[i]:0);
+						IS_PRINTABLE (buf[i])?buf[i]:'.');
 				i++;
 			}
 			p->printf (" ]");
@@ -651,12 +651,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (oldprintf)
 						p->printf = oldprintf;
 					if (idx<nargs && tmp != 'e' && isptr == 0) {
-						const char *name = r_str_word_get0 (args, idx);
-						if (ISSTRUCT) {
+						char *name = r_str_word_get0 (args, idx);
+						if (ISSTRUCT || tmp=='E' || tmp=='B') {
 							if (*name == '(') {
 								name = strchr (name, ')')+1;
 							} else {
-								eprintf ("Struct name missing (%s)\n", name);
+								eprintf ("Missing name (%s)\n", name);
 								goto beach;
 							}
 						}
