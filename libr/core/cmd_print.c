@@ -116,6 +116,9 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	if (_input[1]=='*') {
 		_input++;
 		flag = SEEFLAG;
+	} else if (_input[1]=='j') {
+		_input++;
+		flag = JSONOUTPUT;
 	}
 	input = strdup (_input);
 	// "pfo" // open formatted thing
