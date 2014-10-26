@@ -648,7 +648,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	}
 #define ISPOINTED ((slide%STRUCTFLAG)/STRUCTPTR<=(oldslide%STRUCTFLAG)/STRUCTPTR)
 #define ISNESTED ((slide%STRUCTPTR)<=(oldslide%STRUCTPTR))
-	if (json && slide==0) p->printf("[\n");
+	if (json && slide==0) p->printf("[");
 	
 	/* go format */
 	i = 0;
@@ -659,8 +659,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		int first = 1;
 		if (otimes>1) {
 			if (json) {
-				if (otimes > times) p->printf (",\n");
-				p->printf ("[\n{\"index\":%d,\"offset\":%d},\n", otimes-times, seek+i);
+				if (otimes > times) p->printf (",");
+				p->printf ("[{\"index\":%d,\"offset\":%d},", otimes-times, seek+i);
 			} else
 				p->printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
 		}
@@ -813,7 +813,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				idx++;
 			}
 			if (json) {
-				int s = slide%STRUCTPTR;
 				char *structname, *osn;
 				if (oldprintf)
 					p->printf = oldprintf;
@@ -834,16 +833,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				}
 				if (oldslide<=slide) {
 					if (!first)
-						p->printf (",\n");
+						p->printf (",");
 					else
 						first = 0;
 				} else if(oldslide!=0) {
-					int t = s;
-					p->printf ("\n");
-					while (t--) p->printf ("   ");
-					p->printf ("]},\n");
+					p->printf ("]},");
 				}
-				while (s--) p->printf ("   ");
 				p->printf ("{\"name\":\"%s\",\"type\":\"", name);
 				if (ISSTRUCT) {
 					p->printf ("%s", structname);
@@ -1083,9 +1078,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->printf ("struct<%s>\n", structname);
 				else {
 					if (isptr)
-						p->printf ("%d},\n", seeki);
+						p->printf ("%d},", seeki);
 					else
-						p->printf ("[\n");
+						p->printf ("[");
 				}
 				if (flag) slide+=STRUCTFLAG;
 				oldslide = slide;
@@ -1106,7 +1101,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							buf+i, len, structname, slide, json);
 						i+= (isptr) ? 4 : s;
 					}
-					p->printf ("]\n");
+					p->printf ("]");
 				}
 				oldslide = slide;
 				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
@@ -1144,7 +1139,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		oldslide = 0;
 		// if (json && arg != argend && slide>=oldslide) p->printf (",\n");
 	}
-	if (json && slide==0) p->printf("\n]\n");
+	if (json && slide==0) p->printf("]");
 	if (oldprintf)
 		p->printf = oldprintf;
 beach:
