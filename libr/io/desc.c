@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_io.h>
+#include <r_util.h>
 // TODO: to be deprecated.. this is slow and boring
 
 R_API void r_io_desc_init(RIO *io) {
@@ -125,7 +126,7 @@ R_API void r_io_desc_list (RIO *io) {
 					io->printf ("\t%s", desc->uri);
 				if (desc->name)
 					io->printf ("\t%s", desc->name);
-				io->printf ("\tstate: %i\tflags: %i\n", desc->state, desc->flags);
+				io->printf ("\tstate: %i\tflags: %s\n", desc->state, r_str_rwx_i (desc->flags));
 			}
 		}
 	}
