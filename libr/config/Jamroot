@@ -1,3 +1,7 @@
 OBJS = config.c callback.c ;
 
-lib r_config : $(OBJS) : <include>../include <library>../util ;
+lib r_config : $(OBJS) :
+  <include>../include
+  <library>../util
+  <cflags>-Wl,-ldl 
+;

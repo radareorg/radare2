@@ -5,7 +5,7 @@ CFILES += src/cdb_make.c src/lock.c src/ns.c src/array.c src/disk.c ;
 #CFILES += src/json/api.c src/json/path.c src/json/rangstr.c ;
 #CFILES += src/json/js0n.c ; 
 
-lib sdb : $(CFILES) : <link>static <include>. ;
+lib sdb : $(CFILES) : <link>static <include>. <cflags>-fPIC ;
 
 exe sdb : $(CFILES) src/main.c : <include>. ;
 

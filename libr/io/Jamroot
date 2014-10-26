@@ -1,4 +1,4 @@
-IO_OBJS = buffer.c cache.c desc.c dummy.c io.c ;
+IO_OBJS = buffer.c cache.c desc.c io.c vio.c ;
 IO_OBJS += map.c plugin.c section.c undo.c ;
 
 # plugins
@@ -27,12 +27,12 @@ IO_EXTRA +=
     <library>../../shlr/zip
     <include>../../shlr/zip/include
     <include>../debug/p/libgdbwrap/include
+    <include>../../shlr/gdb/include
 ;
 
 lib r_io : $(IO_OBJS) : <include>../include
     <define>CORELIB
     <library>../util 
-    <library>../lib
     <library>../socket
     <library>../cons
     <define>HAVE_LIB_EWF=0

@@ -48,7 +48,7 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 }
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
-	RListIter *iter, *iter_tmp;
+	RListIter *iter;
 	RIOCache *c;
 	int done = R_FALSE;
 

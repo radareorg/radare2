@@ -5,11 +5,8 @@ exe radare2 : radare2.c :
     <library>../../libr/asm
     <library>../../libr/syscall
     <library>../../libr/search
-    <library>../../libr/cmd
     <library>../../libr/io
-    <library>../../libr/asm
     <library>../../libr/bin
-    <library>../../libr/flags
     <library>../../libr/db
     <library>../../libr/cons
     <library>../../libr/parse
@@ -23,7 +20,14 @@ exe radare2 : radare2.c :
     <library>../../libr/hash
     <library>../../libr/crypto
     <library>../../libr/egg
-    <include>../../libr/include ;
+    <library>../../libr/socket
+    <library>../../libr/flags
+
+    <include>../../libr/include
+    <library>../../shlr/sdb
+    <library>../../shlr/zip
+    <library>../../shlr/gdb
+;
 
 # alias install : install-bin ;
 # install install-bin : radare2 : <location>/usr/bin ;

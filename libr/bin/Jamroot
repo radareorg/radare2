@@ -1,4 +1,4 @@
-OBJS = bin.c bin_meta.c bin_write.c demangle.c dwarf.c ;
+OBJS = bin.c bin_write.c demangle.c dwarf.c dbginfo.c ;
 OBJS += mangling/cxx/cp-demangle.c ;
 OBJS += mangling/objc.c mangling/cxx.c ;
 
@@ -19,7 +19,7 @@ OBJS += p/bin_te.c format/te/te.c ;
 
 # ELF
 # TODO: rename bin_write_elf64 to bin_elf64_write
-OBJS += p/bin_meta_elf.c p/bin_meta_elf64.c ;
+# OBJS += p/bin_meta_elf.c p/bin_meta_elf64.c ;
 OBJS += p/bin_elf.c format/elf/elf.c ;
 OBJS += p/bin_write_elf.c format/elf/elf_write.c ;
 OBJS += p/bin_elf64.c format/elf/elf64.c ;
@@ -46,7 +46,7 @@ EXTRA +=
 ;
 
 # PDB
-OBJS += pdb/omap.c pdb/pe.c pdb/gdata.c pdb/fpo.c pdb/dbi.c pdb/tpi.c pdb/stream_file.c pdb/pdb.c
+OBJS += pdb/omap.c pdb/pe.c pdb/gdata.c pdb/fpo.c pdb/dbi.c pdb/tpi.c pdb/stream_file.c pdb/pdb.c ;
 
 # Java
 OBJS += p/bin_java.c ;
@@ -59,7 +59,6 @@ lib r_bin : $(OBJS) :
     <include>mangling
     <define>CORELIB
     <library>../util 
-    <library>../lib
     <library>../db
     <library>../../shlr/sdb
     $(EXTRA)

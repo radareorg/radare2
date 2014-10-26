@@ -100,4 +100,4 @@ zlib/uncompr.c
 zlib/zutil.c
 ;
 
-lib zip : $(OBJS) : <link>static <include>include ;
+lib zip : $(OBJS) : <link>static <include>include <cflags>-fPIC <linkflags>-fPIC ;

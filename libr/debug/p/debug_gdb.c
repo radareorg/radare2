@@ -31,7 +31,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size<desc->data_len) {
 		eprintf ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
-			size, desc->data_len);
+			(int)size, (int)desc->data_len);
 		//	return -1;
 	}
 	copy_size = R_MIN (desc->data_len, size);

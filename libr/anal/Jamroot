@@ -14,6 +14,11 @@ ANAL_OBJS += p/anal_x86_udis.c ;
 ANAL_OBJS += p/esil_x86_udis.c ;
 ANAL_EXTRA =
     <library>../../shlr/udis86 
+    <include>../../shlr/capstone/include
+    <include>../asm/arch/8051
+    <include>../asm/arch/ebc
+    <include>../asm/arch/gb
+    <include>arch/gb
     <include>../../shlr/
 ;
 
@@ -25,11 +30,12 @@ ANAL_OBJS += p/anal_sparc.c
 ANAL_EXTRA += <include>../asm/arch/include ;
 
 # arm
-ANAL_OBJS += p/anal_arm.c 
+ANAL_OBJS += p/anal_arm_cs.c 
+	p/anal_arm_gnu.c 
     ../asm/arch/arm/gnu/arm-dis.c
-    ../asm/arch/arm/aarch64/aarch64-asm-2.c
+ #   ../asm/arch/arm/aarch64/aarch64-asm-2.c
  #   ../asm/arch/arm/aarch64/aarch64-gen.c
-    ../asm/arch/arm/aarch64/aarch64-asm.c
+ #   ../asm/arch/arm/aarch64/aarch64-asm.c
     ../asm/arch/arm/aarch64/aarch64-opc-2.c
     ../asm/arch/arm/aarch64/aarch64-dis-2.c
     ../asm/arch/arm/aarch64/aarch64-opc.c
@@ -47,7 +53,8 @@ ANAL_OBJS += p/anal_sh.c
 ;
 
 # MIPS
-ANAL_OBJS += p/anal_mips.c 
+ANAL_OBJS += p/anal_mips_gnu.c 
+    p/anal_mips_cs.c 
     ../asm/arch/mips/gnu/mips-dis.c
     ../asm/arch/mips/gnu/mips-opc.c
     ../asm/arch/mips/gnu/mips16-opc.c
@@ -105,7 +112,6 @@ lib r_anal : $(ANAL_OBJS) :
     <include>../include
     <define>CORELIB
     <library>../util 
-    <library>../lib
     <library>../reg
     <library>../diff
     <library>../syscall

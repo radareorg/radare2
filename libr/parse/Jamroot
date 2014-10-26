@@ -12,7 +12,6 @@ lib r_parse : $(OBJS) :
     <include>../include
     <include>../../shlr/tcc
     <library>../flags
-    <library>../lib
     <library>../anal
     <library>../util
     <define>CORELIB

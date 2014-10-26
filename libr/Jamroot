@@ -21,3 +21,7 @@ build-project lang ;
 build-project anal ;
 
 build-project parse ;
+
+build-project debug ;
+
+build-project core ;

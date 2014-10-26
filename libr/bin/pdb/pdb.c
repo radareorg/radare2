@@ -686,7 +686,7 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 		goto error;
 	}
 	if (!pdb->printf)
-		pdb->printf = printf;
+		pdb->printf = (PrintfCallback)printf;
 
 	// TODO: Reimplement using RBuffer here
 	pdb->fp = r_sandbox_fopen (filename, "rb");

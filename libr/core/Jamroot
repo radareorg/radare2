@@ -6,7 +6,6 @@ lib r_core : $(CORE_OBJS) :
     <define>CORELIB
     <library>../util
     <library>../anal
-    <library>../lib
     <library>../flags
     <library>../asm
     <library>../bin
@@ -19,7 +18,6 @@ lib r_core : $(CORE_OBJS) :
     <library>../socket
     <library>../syscall
     <library>../search
-    <library>../cmd
     <library>../lang
     <library>../magic
     <library>../hash

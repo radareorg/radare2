@@ -11,7 +11,7 @@
 #include <r_reg.h>
 #define GB_DIS_LEN_ONLY
 #include "../../asm/arch/gb/gbdis.c"
-#include <meta_gb_cmt.c>
+#include "../arch/gb/meta_gb_cmt.c"
 #include <gb_makros.h>
 #include <gb.h>
 
