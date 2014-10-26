@@ -721,7 +721,7 @@ free (rf);
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_color);
 		break;
-	case 'r':
+	case 'r': // "drr"
 		{
 		int bits = core->assembler->bits;
 		RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
@@ -731,6 +731,8 @@ free (rf);
 			ut64 value = r_reg_get_value (core->dbg->reg, r);
 			RFlagItem *fi = r_flag_get_i2 (core->flags, value);
 			ut64 type = r_core_anal_address (core, value);
+			if (r->size != bits)
+				continue;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
 			if (bits==64) {
 				r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
