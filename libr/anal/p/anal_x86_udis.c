@@ -219,6 +219,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 #endif
 	op->prefix = 0;
 	if (u.pfx_rep) op->prefix |= R_ANAL_OP_PREFIX_REP;
+	if (u.pfx_repe) op->prefix |= R_ANAL_OP_PREFIX_REP;
 	if (u.pfx_repne) op->prefix |= R_ANAL_OP_PREFIX_REPNE;
 	if (u.pfx_lock) op->prefix |= R_ANAL_OP_PREFIX_LOCK;
 	switch (u.mnemonic) {
