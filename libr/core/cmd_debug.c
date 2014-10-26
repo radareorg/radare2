@@ -1205,7 +1205,6 @@ static int cmd_debug(void *data, const char *input) {
 				"dsl", "", "Step one source line",
 				"dsl", " <num>", "Step <num> source lines",
 				"dso", " <num>", "Step over <num> instructions",
-				"dsh", "", "Step over a instruction and prefix",
 				"dsp", "", "Step into program (skip libs)",
 				"dss", " <num>", "Skip <num> step instructions",
 				"dsu", " <address>", "Step until address",
@@ -1298,31 +1297,6 @@ static int cmd_debug(void *data, const char *input) {
 			if (checkbpcallback (core)) {
 				eprintf ("Interrupted by a breakpoint\n");
 				break;
-			}
-			break;
-		case 'h':
-			{
-			ut8 buf[64];
-			ut64 addr,newaddr;
-			RAnalOp aop;
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-			addr = r_debug_reg_get (core->dbg, "pc");
-			r_io_read_at (core->io, addr, buf, sizeof (buf));
-			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-			for (;;) {
-				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				r_debug_step_over (core->dbg, 1);
-				if (checkbpcallback (core)) {
-					eprintf ("Interrupted by a breakpoint\n");
-					break;
-				}
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				newaddr = r_debug_reg_get (core->dbg, "pc");
-				if ((newaddr!=addr) || !(aop.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
-					//eprintf("ins: normal  0x%08"PFMT64x" 0x%08"PFMT64x"\n",aop.type,aop.prefix);
-					break;
-				} //else eprintf("ins: rep/repne/lock  0x%08"PFMT64x" 0x%08"PFMT64x"\n",aop.type,aop.prefix);
-			}
 			}
 			break;
 		case 'l':
