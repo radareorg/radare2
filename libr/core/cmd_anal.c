@@ -1695,6 +1695,7 @@ static int cmd_anal(void *data, const char *input) {
 							r_cons_printf ("CCa 0x%"PFMT64x" \"XREF from 0x%"PFMT64x"\n",
 								ref->addr, ref->type, asmop.buf_asm, iter->n?",":"");
 					} else { // axt
+						int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 						char str[512];
 						r_list_foreach (list, iter, ref) {
 							r_core_read_at (core, ref->addr, buf, 12);
@@ -1702,18 +1703,13 @@ static int cmd_anal(void *data, const char *input) {
 							r_asm_disassemble (core->assembler, &asmop, buf, 12);
 							r_parse_filter (core->parser, core->flags,
 									asmop.buf_asm, str, sizeof (str));
-							if (r_config_get_i (core->config, "scr.color")) {
+							if (has_color) {
 								buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
 									core->cons->pal.num);
-								r_cons_printf ("%c 0x%"PFMT64x" %s\n",
-								ref->type, ref->addr, buf_asm);
+								r_cons_printf ("%c 0x%"PFMT64x" %s\n", ref->type, ref->addr, buf_asm);
+							} else {
+								r_cons_printf ("%c 0x%"PFMT64x" %s %s %s\n", ref->type, ref->addr, str);
 							}
-							else {
-								r_cons_printf ("%c 0x%"PFMT64x" %s %s %s\n",
-								ref->type, ref->addr,str, core->cons->pal.reg,
-								core->cons->pal.num);
-							}
-
 						}
 					}
 					r_list_free (list);
