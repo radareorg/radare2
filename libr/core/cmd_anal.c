@@ -1148,7 +1148,7 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		} else eprintf ("Usage: ab [hexpair-bytes]\n");
 		break;
-	case 'i':
+	case 'i': // "ai"
 		switch (input[1]) {
 		case '?':
 			eprintf ("Usage: ai @ rsp\n");
@@ -1156,7 +1156,7 @@ static int cmd_anal(void *data, const char *input) {
 		case ' ':
 			cmd_address_info (core, input+1, 0);
 			break;
-		case 'j':
+		case 'j': // "aij"
 			cmd_address_info (core, input+2, 'j');
 			break;
 		default:

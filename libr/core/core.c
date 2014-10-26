@@ -561,7 +561,7 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	return ret;
 }
 
-R_API const char *__colorfor(RCore *core, ut64 addr) {
+R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
 	ut64 type;
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR))
 		return NULL;
@@ -595,7 +595,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->printf = (void *)r_cons_printf;
 	core->print->write = (void *)r_cons_memcat;
 	core->print->disasm = __disasm;
-	core->print->colorfor = (RPrintColorFor)__colorfor;
+	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();

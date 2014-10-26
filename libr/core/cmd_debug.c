@@ -721,12 +721,54 @@ free (rf);
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_color);
 		break;
+	case 'r':
+		{
+		int bits = core->assembler->bits;
+		RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		RListIter *iter;
+		RRegItem *r;
+		r_list_foreach (list, iter, r) {
+			ut64 value = r_reg_get_value (core->dbg->reg, r);
+			RFlagItem *fi = r_flag_get_i2 (core->flags, value);
+			ut64 type = r_core_anal_address (core, value);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
+			if (bits==64) {
+				r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
+			} else {
+				r_cons_printf ("%6s 0x%08"PFMT64x, r->name, value);
+			}
+			if (value && fi) {
+				r_cons_printf (" %s", fi->name);
+			}
+			if (fcn) {
+				r_cons_printf (" %s", fcn->name);
+			}
+			if (type) {
+				const char *c = r_core_anal_optype_colorfor (core, value);
+				const char *cend = (c&&*c)? Color_RESET: "";
+				if (!c) c = "";
+				if (type & R_ANAL_ADDR_TYPE_HEAP) {
+					r_cons_printf (" %sheap%s", c, cend);
+				} else if (type & R_ANAL_ADDR_TYPE_STACK) {
+					r_cons_printf (" %sstack%s", c, cend);
+				}
+				if (type & R_ANAL_ADDR_TYPE_EXEC) {
+					r_cons_printf (" %scode%s", c, cend);
+				} else if (type & R_ANAL_ADDR_TYPE_WRITE) {
+					r_cons_printf (" %sdata%s", c, cend);
+				} else if (type & R_ANAL_ADDR_TYPE_READ) {
+					r_cons_printf (" %srodata%s", c, cend);
+				}
+			}
+			r_cons_newline ();
+		}
+		}
+		break;
 	case 'j':
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
-		} else
-			eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
+		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
 		arg = strchr (str+1, '=');
