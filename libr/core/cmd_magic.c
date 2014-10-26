@@ -3,7 +3,6 @@
 static int magicdepth = 99; //XXX: do not use global var here
 
 static RMagic *ck = NULL; // XXX: Use RCore->magic
-static char *oldfile = NULL;
 
 static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 	const char *fmt;
@@ -29,7 +28,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (*file == ' ') file++;
 		if (!*file) file = NULL;
 	}
-	if (ck==NULL) { //|| (file && oldfile && strcmp (file, oldfile))) {
+	if (ck==NULL) {
 		// TODO: Move RMagic into RCore
 		r_magic_free (ck);
 		// allocate once

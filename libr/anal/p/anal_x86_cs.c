@@ -83,11 +83,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				switch (INSOP(0).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(0).mem.disp;
+				default:
 					break;
 				}
 				switch (INSOP(1).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(1).mem.disp;
+				default:
 					break;
 				}
 				break;
@@ -108,6 +110,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				switch (INSOP(1).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(1).mem.disp;
+				default:
 					break;
 				}
 				break;

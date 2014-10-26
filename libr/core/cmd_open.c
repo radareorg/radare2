@@ -7,7 +7,6 @@ static int cmd_open(void *data, const char *input) {
 	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	RIOMap *map = NULL;
 	RCoreFile *file;
-	RListIter *iter;
 	int num = -1;
 	int isn = 0;
 	char *ptr;

@@ -30,6 +30,8 @@ Keys:
 #undef DB
 #define DB a->sdb_meta
 
+#if 0
+// Defined but not used. Shall we remove it?
 static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	char key[64];
 	ut64 base, base2;
@@ -42,6 +44,7 @@ static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	}
 	return NULL;
 }
+#endif
 
 static int meta_inrange_add (RAnal *a, ut64 addr, int size) {
 	int set = 0;
@@ -213,13 +216,13 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	// store this list in a different storage that doesnt have
 	// those limits and it's O(1) instead of O(n)
 	if (!exists) {
-		ut64 count;
+		//ut64 count;
 		/* set type index */
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, from);
 		snprintf (val, sizeof (val)-1, "%c", type);
 		sdb_array_add (DB, key, val, 0);
 		/* set type index */
-		count = meta_type_add (a, type, from);
+		//count = meta_type_add (a, type, from);
 	}
 
 	return R_TRUE;
@@ -234,10 +237,10 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 off, int type, int where) {
 	}
 	//char *range = get_in_range (off);
 	if (type == R_META_TYPE_ANY) {
-		const char *p;
+		//const char *p;
 		char key [100];
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, off);
-		p = sdb_const_get (DB, key, 0);
+		//p = sdb_const_get (DB, key, 0);
 // XXX: TODO unimplemented. see core/disasm.c:1070
 	} else {
 	//	snprintf (key, sizeof (key)-1, "meta.

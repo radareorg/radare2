@@ -2467,10 +2467,6 @@ print_insn_coprocessor (bfd_vma pc,
 	    func (stream, "%c", *c);
 	}
 
-#if COMMENTS
-      if (value_in_comment > 64 || value_in_comment < -16)
-	func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
-#endif
 
       if (is_unpredictable)
 	func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -2609,7 +2605,6 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
     {
       if ((given & insn->mask) == insn->value)
 	{
-	  signed long value_in_comment = 0;
 	  bfd_boolean is_unpredictable = FALSE;
 	  const char *c;
 
@@ -2975,7 +2970,6 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			    break;
 			  case 'd':
 			    func (stream, "%ld", value);
-			    value_in_comment = value;
 			    break;
 			  case 'e':
 			    func (stream, "%ld", (1ul << width) - value);
@@ -3048,11 +3042,6 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 	      else
 		func (stream, "%c", *c);
 	    }
-
-#if 0
-	  if (value_in_comment > 32 || value_in_comment < -16)
-	    func (stream, " ; 0x%lx", value_in_comment);
-#endif
 
 	  if (is_unpredictable)
 	    func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -3662,7 +3651,6 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
   for (insn = thumb_opcodes; insn->assembler; insn++)
     if ((given & insn->mask) == insn->value)
       {
-	signed long value_in_comment = 0;
 	const char *c = insn->assembler;
 
 	for (; *c; c++)
@@ -3845,17 +3833,14 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 
 			  case 'd':
 			    func (stream, "%ld", (long) reg);
-			    value_in_comment = reg;
 			    break;
 
 			  case 'H':
 			    func (stream, "%ld", (long) (reg << 1));
-			    value_in_comment = reg << 1;
 			    break;
 
 			  case 'W':
 			    func (stream, "%ld", (long) (reg << 2));
-			    value_in_comment = reg << 2;
 			    break;
 
 			  case 'a':
@@ -3864,7 +3849,6 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			       before the calculation.  */
 			    info->print_address_func
 			      (((pc + 4) & ~3) + (reg << 2), info);
-			    value_in_comment = 0;
 			    break;
 
 			  case 'x':
@@ -3874,7 +3858,6 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			  case 'B':
 			    reg = ((reg ^ (1 << bitend)) - (1 << bitend));
 			    info->print_address_func (reg * 2 + pc + 4, info);
-			    value_in_comment = 0;
 			    break;
 
 			  case 'c':
@@ -3912,11 +3895,6 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 	      }
 	  }
 
-#if 0
-	if (value_in_comment > 64|| value_in_comment < -16) {
-	  func (stream, " ; 0x%lx", value_in_comment);
-	}
-#endif
 	return;
       }
 

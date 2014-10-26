@@ -958,6 +958,7 @@ err_exit:
 	return R_FALSE;
 }
 
+#if DEBUG
 #define PRINT_ARCH(define, str) if (arch == define) {eprintf(" %s", str); return;}
 static void print_arch (ut8 arch) {
 	PRINT_ARCH(IDASIG__ARCH__386, "386");
@@ -1080,7 +1081,6 @@ static void print_features (ut16 flags) {
 	PRINT_FLAG(IDASIG__FEATURE__COMPRESSED, "COMPRESSED");
 }
 
-#if DEBUG
 static void print_header (idasig_v5_t *header) {
 	/*eprintf("magic: %s\n", header->magic);*/
 	eprintf("version: %d\n", header->version);

@@ -698,7 +698,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (oldprintf)
 						p->printf = oldprintf;
 					if (idx<nargs && tmp != 'e' && isptr == 0) {
-						char *name = r_str_word_get0 (args, idx);
+						const char *name = r_str_word_get0 (args, idx);
 						if (ISSTRUCT) {
 							if (*name == '(') {
 								name = strchr (name, ')')+1;
@@ -1131,10 +1131,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->printf ("\n");
 			last = tmp;
 		}
-		if (otimes>1)
-			if (json)
-				p->printf ("]");
+		if (otimes>1) {
+			if (json) p->printf ("]");
 			else p->printf ("}\n");
+		}
 		arg = orig;
 		oldslide = 0;
 		// if (json && arg != argend && slide>=oldslide) p->printf (",\n");

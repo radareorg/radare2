@@ -352,6 +352,8 @@ static inline int cr16_print_reg_reg(struct cr16_cmd *cmd, ut8 src, ut8 dst)
 	return 0;
 }
 
+#if 0
+// This function is unused, shall we remove it?
 static int cr16_decode_stcbiti(const ut8 *instr, struct cr16_cmd *cmd)
 {
 	int ret = 2;
@@ -378,6 +380,7 @@ static int cr16_decode_stcbiti(const ut8 *instr, struct cr16_cmd *cmd)
 
 	return ret;
 }
+#endif
 
 static inline int cr16_print_4biti_opcode(struct cr16_cmd *cmd, ut16 instr)
 {

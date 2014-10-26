@@ -126,7 +126,7 @@ static int cmd_section(void *data, const char *input) {
 			if (o>=s->offset && o<s->offset+s->size) {
 				int sz;
 				char *buf = r_file_slurp (input+2, &sz);
-#warning TODO: use mmap here. we need a portable implementation
+				// TODO: use mmap here. we need a portable implementation
 				if (!buf) {
 					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", s->size);
 					return R_FALSE;

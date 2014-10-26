@@ -171,9 +171,9 @@ static int bbsum(RAnalFunction *fcn) {
 #endif
 
 static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
 	RAnalBlock *bb;
 #if 0
+	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == addr)
 			return bb;

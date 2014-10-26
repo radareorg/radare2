@@ -483,7 +483,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 #if __WINDOWS__
 	return w32_dbg_wait (dbg, pid);
 #else
-	int stopsig, ret, status = -1;
+	int ret, status = -1;
 	//printf ("prewait\n");
 	if (pid==-1)
 		return R_DBG_REASON_UNKNOWN;
@@ -493,15 +493,9 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	r_debug_handle_signals (dbg);
 
 	if (WIFSTOPPED (status)) {
-		stopsig = WSTOPSIG (status);
 		dbg->signum = WSTOPSIG (status);
 		status = R_DBG_REASON_SIGNAL;
 	} else
-#if 0
-	if (WIFEXITED (status)) {
-		status = R_DBG_REASON_DEAD;
-	} else
-#endif
 	if (status == 0 || ret == -1) {
 		status = R_DBG_REASON_DEAD;
 	} else {

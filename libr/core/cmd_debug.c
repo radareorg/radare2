@@ -354,7 +354,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				ut8 *buf = malloc (map->size);
-#warning TODO: use mmap here. we need a portable implementation
+				//TODO: use mmap here. we need a portable implementation
 				if (!buf) {
 					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
 					return R_FALSE;
@@ -387,7 +387,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				int sz;
 				char *buf = r_file_slurp (input+2, &sz);
-#warning TODO: use mmap here. we need a portable implementation
+				//TODO: use mmap here. we need a portable implementation
 				if (!buf) {
 					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
 					return R_FALSE;

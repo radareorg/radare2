@@ -123,13 +123,13 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t) {
 		for (n = 0; (p = sdb_array_get (DB, var, n, NULL)); n++) {
 			const char *tfmt;
 			char *type, *type2;
-			int off;
-			int size;
+			//int off;
+			//int size;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
 			type = sdb_array_get (DB, var2, 0, NULL);
 			if (type) {
-				off = sdb_array_get_num (DB, var2, 1, NULL);
-				size = sdb_array_get_num (DB, var2, 2, NULL);
+				//off = sdb_array_get_num (DB, var2, 1, NULL);
+				//size = sdb_array_get_num (DB, var2, 2, NULL);
 				if (!strncmp (type, "struct ", 7)) {
 					// TODO: iterate over all the struct fields, and format the format and vars
 					snprintf (var3, sizeof (var3), "struct.%s", type+7);

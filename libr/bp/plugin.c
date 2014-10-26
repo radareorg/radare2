@@ -3,7 +3,7 @@
 #include <r_bp.h>
 
 R_API int r_bp_plugin_del(struct r_bp_t *bp, const char *name) {
-#warning TODO: r_bp_plugin_del
+//TODO: r_bp_plugin_del
 	return R_FALSE;
 }
 

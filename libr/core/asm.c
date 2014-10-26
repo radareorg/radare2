@@ -475,7 +475,6 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 
 static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
 	RList *hits;;
-	RCoreAsmHit *found_addr = NULL;
 	RAsmOp op;
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
@@ -537,7 +536,6 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		r_asm_set_pc (core->assembler, current_instr_addr);
 		current_instr_len = next_buf_pos - current_buf_pos;
 		current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
-		found_addr = find_addr(hits, current_instr_addr);
 
 		IFDBG {
 			ut32 byte_cnt =  current_instr_len ? current_instr_len : 1;

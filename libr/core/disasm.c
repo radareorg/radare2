@@ -666,7 +666,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	if (ds->show_functions) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
-#warning TODO list from anal->sdb_fcns/fcn.0x%%x.v|a (vars/args)
+			//TODO list from anal->sdb_fcns/fcn.0x%%x.v|a (vars/args)
 			if (f->addr == ds->at) {
 				r_core_cmdf (core, "afa @ 0x%llx", ds->at);
 				r_core_cmdf (core, "afv @ 0x%llx", ds->at);
