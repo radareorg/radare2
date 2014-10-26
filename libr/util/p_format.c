@@ -16,52 +16,6 @@
 static int (*realprintf)(const char *str, ...);
 static int nullprintf(const char *fmt, ...) { return 0; }
 
-static void print_format_help(RPrint *p) {
-	p->printf (
-	"Usage: pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]\n"
-	"Examples:\n"
-	" pf 10xiz pointer length string\n"
-	" pf {array_size}b @ array_base\n"
-	" pf [4]w[7]i     # like pf w..i...\n"
-	" pfo             # list all format files\n"
-	" pfo trx.pf      # load that format definition file\n"
-	" pf.             # list all formats\n"
-	" pf.obj xxdz prev next size name\n"
-	" pf obj=xxdz prev next size name    # same as above\n"
-	" pf.obj          # run stored format\n"
-	" pf.obj.name     # show string inside object\n"
-	" pf.obj.size=33  # set new size\n"
-	"Format chars:\n"
-	" e - temporally swap endian\n"
-	//" D - double (8 bytes)\n"
-	" f - float value (4 bytes)\n"
-	" b - byte (unsigned)\n"
-	" B - resolve enum bitfield (see t?) `pf B (Bitfield_type)arg_name`\n" // B must be for binary ??
-	" c - char (signed byte)\n"
-	" E - resolve enum name  (see t?) `pf E (Enum_type)arg_name`\n"
-	" X - show n hexpairs (default n=1)"
-	" i - %%i integer value (4 bytes)\n"
-	" w - word (2 bytes unsigned short in hex)\n"
-	" q - quadword (8 bytes)\n"
-	" p - pointer reference (2, 4 or 8 bytes)\n"
-	" T - show Ten first bytes of buffer\n" // B must be for binary ??
-	" d - 0x%%08x hexadecimal value (4 bytes)\n"
-	" D - disassemble one opcode\n"
-	" o - 0x%%08o octal value (4 byte)\n"
-	" x - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
-	" X - show formatted hexpairs\n" // B must be for binary ??
-	" z - \\0 terminated string\n"
-	" Z - \\0 terminated wide string\n"
-	" s - 32bit pointer to string (4 bytes)\n"
-	" S - 64bit pointer to string (8 bytes)\n"
-	//" t - unix timestamp string\n"
-	" ? - data structure `pf ? (struct_type)struct_name`\n"
-	" * - next char is pointer (honors asm.bits)\n"
-	" + - toggle show flags for each offset\n"
-	" : - skip 4 bytes\n"
-	" . - skip 1 byte\n");
-}
-
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
 	if (addr) {
 		if (endian)
@@ -625,7 +579,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	}
 
 	if (*arg=='\0' || *arg=='?') {
-		print_format_help (p);
 		goto beach;
 	}
 
@@ -778,7 +731,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				continue;
 			case 'p': // pointer reference
 				tmp = (p->bits == 64)? 'q': 'x';
-				//tmp = (sizeof (void*)==8)? 'q': 'x';
 				break;
 			}
 			if (flag && isptr != NULLPTR) {
@@ -857,7 +809,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->printf ("NULL");
 				isptr = PTRBACK;
 			} else
-			/* cmt chars */
+			/* format chars */
 			switch (tmp) {
 #if 0
 			case 't':
@@ -875,19 +827,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				}
 				break;
 #endif
-			case 'e': //WTF is this? 'e' is supposed to swap endians?!
-				if (size > 0)
-					p->printf ("Size not yet implemented\n");
-				if (MUSTSET) {
-					realprintf ("?e pf e not yet supported\n");
-				} else {
-					double doub;
-					memcpy (&doub, buf+i, sizeof (double));
-					p->printf ("0x%08"PFMT64x" = (double) ", seeki);
-					p->printf ("%e", doub);
-					i += 8;
-				}
-				break;
 			case 'q':
 				r_print_format_quadword(p, endian, MUSTSET, setval, seeki, buf, i, size, json);
 				i += (size==-1) ? 8 : 8*size;
