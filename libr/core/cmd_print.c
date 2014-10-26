@@ -110,16 +110,73 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	return result;
 }
 
+static void print_format_help(RCore *core) {
+	const char* help_msg[] = {
+	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
+	"Examples:","","",
+	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
+	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
+	"pf", " {integer}bifc", "Print integer times the following format (bifc)",
+	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
+	"pfo", "", "List all format files",
+	"pfo", " elf32", "Load the elf32 format definition file",
+	"pf.", "", "List all formats",
+	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
+	"pf",  " obj=xxdz prev next size name", "Same as above",
+	"pf.", "obj", "Run stored format",
+	"pf.", "obj.name", "Show string inside object",
+	"pf.", "obj.size=33", "Set new value for the size field in obj",
+	"Format chars:", "", "",
+	"        ", "e", "temporally swap endian",
+	//" D - double (8 bytes)\n",
+	"        ", "f", "float value (4 bytes)",
+	"        ", "b", "byte (unsigned)",
+	"        ", "B", "resolve enum bitfield (see t?) `pf B (Bitfield_type)arg_name`",
+	"        ", "c", "char (signed byte)",
+	"        ", "E", "resolve enum name  (see t?) `pf E (Enum_type)arg_name`",
+	"        ", "X", "show n hexpairs (default n=1)",
+	"        ", "i", "%%i integer value (4 bytes)",
+	"        ", "w", "word (2 bytes unsigned short in hex)",
+	"        ", "q", "quadword (8 bytes)",
+	"        ", "p", "pointer reference (2, 4 or 8 bytes)",
+	"        ", "T", "show Ten first bytes of buffer",
+	"        ", "d", "0x%%08x hexadecimal value (4 bytes)",
+	"        ", "D", "disassemble one opcode",
+	"        ", "o", "0x%%08o octal value (4 byte)",
+	"        ", "x", "0x%%08x hexadecimal value and flag (fd @ addr)",
+	"        ", "X", "show formatted hexpairs",
+	"        ", "z", "\\0 terminated string",
+	"        ", "Z", "\\0 terminated wide string",
+	"        ", "s", "32bit pointer to string (4 bytes)",
+	"        ", "S", "64bit pointer to string (8 bytes)",
+	//" t - unix timestamp string\n",
+	"        ", "?", "data structure `pf ? (struct_type)struct_name`",
+	"        ", "*", "next char is pointer (honors asm.bits)",
+	"        ", "+", "toggle show flags for each offset",
+	"        ", ":", "skip 4 bytes",
+	"        ", ".", "skip 1 byte",
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
 static void cmd_print_format (RCore *core, const char *_input, int len) {
 	char *input;
 	int i, flag = -1;
-	if (_input[1]=='*') {
+	switch (_input[1]) {
+	case '*':
 		_input++;
 		flag = SEEFLAG;
-	} else if (_input[1]=='j') {
+		break;
+	case 'j':
 		_input++;
 		flag = JSONOUTPUT;
+		break;
+	case '?':
+		_input++;
+		print_format_help (core);
+		return;
 	}
+
 	input = strdup (_input);
 	// "pfo" // open formatted thing
 	if (input[1]=='o') { // "pfo"
