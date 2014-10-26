@@ -794,6 +794,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 					realprintf ("f %s_", n);
 					free(n);
+				} else if (tmp == 'E') {
+					char *n = strdup (r_str_word_get0 (args, idx)+1);
+					char *par = strchr (n, ')');
+					if (par == NULL) {
+						eprintf ("No end parenthesis for enum name");
+						free (n);
+						goto beach;
+					}
+					par++;
+					realprintf ("f %s=0x%08"PFMT64x"\n", par, seeki);
+					free(n);
 				} else if (slide>0 && idx==0) {
 					realprintf ("%s=0x%08"PFMT64x"\n",
 						r_str_word_get0 (args, idx), seeki);
