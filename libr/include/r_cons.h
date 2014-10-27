@@ -92,6 +92,11 @@ typedef struct r_cons_palette_t {
 	char *ret;
 	char *swi;
 	char *trap;
+	char *ai_read;
+	char *ai_write;
+	char *ai_exec;
+	char *ai_seq;
+	char *ai_ascii;
 #define R_CONS_PALETTE_LIST_SIZE 8
 	char *list[R_CONS_PALETTE_LIST_SIZE];
 } RConsPalette;

@@ -208,8 +208,9 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_pop = P(pop): Color_BYELLOW;
 	ds->color_reg = P(reg): Color_YELLOW;
 	ds->color_num = P(num): Color_YELLOW;
-	ds->color_mov = P(num): Color_WHITE;
+	ds->color_mov = P(mov): Color_WHITE;
 	ds->color_invalid = P(invalid): Color_BRED;
+
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->colorop = r_config_get_i (core->config, "scr.colorops");

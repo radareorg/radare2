@@ -41,6 +41,12 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.swi = Color_MAGENTA;
 	cons->pal.trap = Color_BRED;
 
+	cons->pal.ai_read = Color_GREEN;
+	cons->pal.ai_write = Color_BLUE;
+	cons->pal.ai_exec = Color_RED;
+	cons->pal.ai_seq = Color_MAGENTA;
+	cons->pal.ai_ascii = Color_YELLOW;
+
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
 	cons->pal.list[2] = strdup (Color_BGREEN);
@@ -76,6 +82,7 @@ static inline ut8 rgbnum (const char ch) {
 }
 
 R_API void r_cons_pal_random() {
+	RCons *cons = r_cons_singleton ();
 	ut8 r, g, b;
 	char val[32];
         const char *k;
@@ -89,7 +96,6 @@ R_API void r_cons_pal_random() {
 		sprintf (val, "rgb:%x%x%x", r, g, b);
 		r_cons_pal_set (k, val);
 	}
-RCons *cons = r_cons_singleton ();
 	for (i=0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
 		cons->pal.list[i] = r_cons_color_random (0);
 	}
@@ -166,6 +172,12 @@ static struct {
 	{ "creg", r_offsetof (RConsPalette, creg) },
 	{ "num", r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPalette, mov) },
+
+	{ "ai_read", r_offsetof (RConsPalette, ai_read) },
+	{ "ai_write", r_offsetof (RConsPalette, ai_write) },
+	{ "ai_exec", r_offsetof (RConsPalette, ai_exec) },
+	{ "ai_seq", r_offsetof (RConsPalette, ai_seq) },
+	{ "ai_ascii", r_offsetof (RConsPalette, ai_ascii) },
 	{ NULL, 0 }
 };
 

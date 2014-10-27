@@ -567,15 +567,15 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
 		return NULL;
 	type = r_core_anal_address (core, addr);
 	if (type & R_ANAL_ADDR_TYPE_EXEC)
-		return Color_RED;
+		return core->cons->pal.ai_exec; //Color_RED;
 	if (type & R_ANAL_ADDR_TYPE_WRITE)
-		return Color_BLUE;
+		return core->cons->pal.ai_write; //Color_BLUE;
 	if (type & R_ANAL_ADDR_TYPE_READ)
-		return Color_GREEN;
+		return core->cons->pal.ai_read; //Color_GREEN;
 	if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
-		return Color_MAGENTA;
+		return core->cons->pal.ai_seq; //Color_MAGENTA;
 	if (type & R_ANAL_ADDR_TYPE_ASCII)
-		return Color_YELLOW;
+		return core->cons->pal.ai_ascii; //Color_YELLOW;
 	return NULL;
 }
 
