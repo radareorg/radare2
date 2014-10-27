@@ -563,7 +563,18 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (j >= len) printfmt (" ");
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
-		printfmt (col==2?"|\n":"\n");
+		if (col==2) printfmt("|");
+		if (p->flags & R_PRINT_FLAGS_REFS) {
+			ut64 *foo = (ut64*)(buf+i);
+			ut64 addr = *foo;
+			if (base==32) addr &= UT32_MAX;
+			if (p->hasrefs) {
+				const char *rstr = p->hasrefs (p->user, addr);
+				if (rstr && *rstr)
+					printfmt ("%s", rstr);
+			}
+		}
+		printfmt ("\n");
 	}
 }
 

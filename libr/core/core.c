@@ -561,6 +561,49 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	return ret;
 }
 
+// TODO: return string instead of printing it. reuse from 'drr'
+R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
+	ut64 type;
+	int bits = core->assembler->bits;
+	RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+	RAnalFunction *fcn;
+	RFlagItem *fi;
+	fi = r_flag_get_i (core->flags, value);
+	type = r_core_anal_address (core, value);
+	fcn = r_anal_get_fcn_in (core->anal, value, 0);
+	if (value && fi) {
+		r_cons_printf (" %s", fi->name);
+	}
+	if (fcn) {
+		r_cons_printf (" %s", fcn->name);
+	}
+	if (type) {
+		const char *c = r_core_anal_optype_colorfor (core, value);
+		const char *cend = (c&&*c)? Color_RESET: "";
+		if (!c) c = "";
+		if (type & R_ANAL_ADDR_TYPE_HEAP) {
+			r_cons_printf (" %sheap%s", c, cend);
+		} else if (type & R_ANAL_ADDR_TYPE_STACK) {
+			r_cons_printf (" %sstack%s", c, cend);
+		}
+		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
+			r_cons_printf (" %sprogram%s", c, cend);
+		if (type & R_ANAL_ADDR_TYPE_LIBRARY)
+			r_cons_printf (" %slibrary%s", c, cend);
+		if (type & R_ANAL_ADDR_TYPE_ASCII)
+			r_cons_printf (" %sascii%s", c, cend);
+		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+			r_cons_printf (" %ssequence%s", c, cend);
+		if (type & R_ANAL_ADDR_TYPE_READ)
+			r_cons_printf (" %sR%s", c, cend);
+		if (type & R_ANAL_ADDR_TYPE_WRITE)
+			r_cons_printf (" %sW%s", c, cend);
+		if (type & R_ANAL_ADDR_TYPE_EXEC)
+			r_cons_printf (" %sX%s", c, cend);
+	}
+	return NULL;
+}
+
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
 	ut64 type;
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR))
@@ -596,6 +639,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->write = (void *)r_cons_memcat;
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
+	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();

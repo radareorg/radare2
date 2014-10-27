@@ -1565,10 +1565,10 @@ static int cmd_print(void *data, const char *input) {
 			free (buf);
 			}
 			break;
-		case 'x': //psx
+		case 'x': // "psx"
 			r_print_string (core->print, core->offset, core->block, len, 0);
 			break;
-		case 'b': //psb
+		case 'b': // "psb"
 			{
 				char *s = malloc (core->blocksize+1);
 				int i, j, hasnl = 0;;
@@ -1672,7 +1672,7 @@ static int cmd_print(void *data, const char *input) {
 			r_print_raw (core->print, core->block, len, 0);
 		}
 		break;
-	case 'x': //px
+	case 'x': // "px"
 		{
 		int show_offset = r_config_get_i (core->config, "asm.offset");
 		if (show_offset) {
@@ -1725,6 +1725,17 @@ static int cmd_print(void *data, const char *input) {
 			for (i=0; i<len; i+=4) {
 				ut32 *p = (ut32*)((ut8*)core->block+i);
 				r_cons_printf ("0x%08"PFMT64x" 0x%08x\n", core->offset+i, *p);
+			}
+			break;
+		case 'r':
+			{
+			int ocols = core->print->cols;
+			core->print->cols = 1;
+			core->print->flags |= R_PRINT_FLAGS_REFS;
+			r_print_hexdump (core->print, core->offset, core->block, len,
+				core->assembler->bits, core->assembler->bits/8);
+			core->print->flags &= ~R_PRINT_FLAGS_REFS;
+			core->print->cols = ocols;
 			}
 			break;
 		case 'q':

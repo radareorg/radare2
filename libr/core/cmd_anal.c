@@ -905,25 +905,25 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			} else eprintf ("No register profile defined. Try 'dr.'\n");
 		} else r_reg_set_profile (core->dbg->reg, str+2);
 		break;
-	case 't':
+	case 't': // "drt"
 		for (i=0; (name=r_reg_get_type (i)); i++)
 			r_cons_printf ("%s\n", name);
 		break;
-	case 'n':
+	case 'n': // "drn"
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
 		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
 		break;
-	case 'd':
+	case 'd': // "drd"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
 		break;
-	case 'o':
+	case 'o': // "dro"
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
-	case '=':
+	case '=': // "dr="
 		__anal_reg_list (core, type, size, 2);
 		break;
 	case '-':
