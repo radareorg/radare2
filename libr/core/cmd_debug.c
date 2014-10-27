@@ -723,27 +723,32 @@ free (rf);
 		break;
 	case 'r': // "drr"
 		{
+		ut64 type, value;
 		int bits = core->assembler->bits;
 		RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		RAnalFunction *fcn;
 		RListIter *iter;
+		RFlagItem *fi;
 		RRegItem *r;
 		r_list_foreach (list, iter, r) {
-			ut64 value = r_reg_get_value (core->dbg->reg, r);
-			RFlagItem *fi = r_flag_get_i2 (core->flags, value);
-			ut64 type = r_core_anal_address (core, value);
 			if (r->size != bits)
 				continue;
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
+			value = r_reg_get_value (core->dbg->reg, r);
+			fi = r_flag_get_i2 (core->flags, value);
+			type = r_core_anal_address (core, value);
+			fcn = r_anal_get_fcn_in (core->anal, value, 0);
 			if (bits==64) {
 				r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
 			} else {
 				r_cons_printf ("%6s 0x%08"PFMT64x, r->name, value);
 			}
 			if (value && fi) {
-				r_cons_printf (" %s", fi->name);
+				if (strcmp (fi->name, r->name))
+					r_cons_printf (" %s", fi->name);
 			}
 			if (fcn) {
-				r_cons_printf (" %s", fcn->name);
+				if (strcmp (fcn->name, r->name))
+					r_cons_printf (" %s", fcn->name);
 			}
 			if (type) {
 				const char *c = r_core_anal_optype_colorfor (core, value);
@@ -754,13 +759,20 @@ free (rf);
 				} else if (type & R_ANAL_ADDR_TYPE_STACK) {
 					r_cons_printf (" %sstack%s", c, cend);
 				}
-				if (type & R_ANAL_ADDR_TYPE_EXEC) {
-					r_cons_printf (" %scode%s", c, cend);
-				} else if (type & R_ANAL_ADDR_TYPE_WRITE) {
-					r_cons_printf (" %sdata%s", c, cend);
-				} else if (type & R_ANAL_ADDR_TYPE_READ) {
-					r_cons_printf (" %srodata%s", c, cend);
-				}
+				if (type & R_ANAL_ADDR_TYPE_PROGRAM)
+					r_cons_printf (" %sprogram%s", c, cend);
+				if (type & R_ANAL_ADDR_TYPE_LIBRARY)
+					r_cons_printf (" %slibrary%s", c, cend);
+				if (type & R_ANAL_ADDR_TYPE_ASCII)
+					r_cons_printf (" %sascii%s", c, cend);
+				if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+					r_cons_printf (" %ssequence%s", c, cend);
+				if (type & R_ANAL_ADDR_TYPE_READ)
+					r_cons_printf (" %sR%s", c, cend);
+				if (type & R_ANAL_ADDR_TYPE_WRITE)
+					r_cons_printf (" %sW%s", c, cend);
+				if (type & R_ANAL_ADDR_TYPE_EXEC)
+					r_cons_printf (" %sX%s", c, cend);
 			}
 			r_cons_newline ();
 		}
