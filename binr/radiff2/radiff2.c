@@ -87,26 +87,34 @@ static int show_help(int v) {
 	return 1;
 }
 
-static void dump_cols (ut8 *a, int as, ut8 *b, int bs) {
+static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 	ut32 sz = R_MIN (as, bs);
 	ut32 i, j;
-	printf ("  offset     1 2 3 4 5 6 7 8             1 2 3 4 5 6 7 8\n");
-	for (i=0; i<sz; i++) {
+	switch (w) {
+	case 8:
+		printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
+		break;
+	case 16:
+		printf ("  offset     "
+			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF    "
+			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
+		break;
+	default:
+		eprintf ("Invalid column width\n");
+		return ;
+	}
+	for (i=0; i<sz; i+=w) {
 		printf ("0x%08x%c ", i, (memcmp (a+i, b+i, 8))? ' ': '!');
-
-		for (j=0; j<8; j++)
+		for (j=0; j<w; j++)
 			printf ("%02x", a[i+j]);
 		printf (" ");
-
-		for (j=0; j<8; j++)
+		for (j=0; j<w; j++)
                 	printf ("%c", IS_PRINTABLE (a[i+j])?a[i+j]:'.');
 		printf ("   ");
-
-		for (j=0; j<8; j++)
+		for (j=0; j<w; j++)
 			printf ("%02x", b[i+j]);
 		printf (" ");
-
-		for (j=0; j<8; j++)
+		for (j=0; j<w; j++)
                 	printf ("%c", IS_PRINTABLE (b[i+j])? b[i+j]:'.');
 		printf ("\n");
 	}
@@ -239,7 +247,10 @@ int main(int argc, char **argv) {
 
 	switch (mode) {
 	case MODE_COLS:
-		dump_cols (bufa, sza, bufb, szb);
+		{
+			int cols = (r_cons_get_size (NULL)>112)?16:8;
+			dump_cols (bufa, sza, bufb, szb, cols);
+		}
 		break;
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);

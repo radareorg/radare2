@@ -589,7 +589,9 @@ R_API int r_cons_get_size(int *rows) {
 	I.rows = 23;
 #elif __UNIX__
 	struct winsize win;
-	if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
+	// use stdin as reference?
+	//if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
+	if (isatty (0) && ioctl (0, TIOCGWINSZ, &win) == 0) {
 		if (win.ws_col==0) {
 			// TODO: use ttyname() ?
 			int fd = open ("/dev/tty", O_RDONLY);
