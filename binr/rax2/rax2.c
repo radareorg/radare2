@@ -78,7 +78,8 @@ static int help () {
 		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
 		"  -h    help              ;  rax2 -h\n"
 		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
-		"  -n    binary number     ;  rax2 -e 0x1234   # 34120000\n"
+		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
+		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
 		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
 		"  -t    tstamp -> str     ;  rax2 -t 1234567890\n"
@@ -113,20 +114,21 @@ static int rax (char *str, int len, int last) {
 		while (str[1] && str[1]!=' ') {
 			switch (str[1]) {
 			case 's': flags ^= 1; break;
-			case 'e': flags ^= 2; break;
-			case 'S': flags ^= 4; break;
-			case 'b': flags ^= 8; break;
-			case 'x': flags ^= 16; break;
-			case 'B': flags ^= 32; break;
-			case 'f': flags ^= 64; break;
-			case 'd': flags ^=128; break;
-			case 'k': flags ^=256; break;
-			case 'n': flags ^=512; break;
-			case 'u': flags ^=1024;break;
-			case 't': flags ^=2048;break;
-			case 'E': flags ^=4096;break;
-			case 'D': flags ^=8192;break;
-			case 'F': flags ^=16384; break;
+			case 'e': flags ^= 1<<1; break;
+			case 'S': flags ^= 1<<2; break;
+			case 'b': flags ^= 1<<3; break;
+			case 'x': flags ^= 1<<4; break;
+			case 'B': flags ^= 1<<5; break;
+			case 'f': flags ^= 1<<6; break;
+			case 'd': flags ^= 1<<7; break;
+			case 'k': flags ^= 1<<8; break;
+			case 'n': flags ^= 1<<9; break;
+			case 'u': flags ^=1<<10; break;
+			case 't': flags ^=1<<11; break;
+			case 'E': flags ^=1<<12; break;
+			case 'D': flags ^=1<<13; break;
+			case 'F': flags ^=1<<14; break;
+			case 'N': flags ^=1<<15; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -208,12 +210,43 @@ static int rax (char *str, int len, int last) {
 		}
 		free (m);
 		return R_TRUE;
-	} else if (flags & 512) { // -k
-		ut32 n = r_num_math (num, str);
-		ut8 *np = (ut8*)&n;
-		if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
-		else printf ("%02x%02x%02x%02x\n",
-			np[0], np[1], np[2], np[3]);
+	} else if (flags & (1<<9)) { // -n
+		ut64 n = r_num_math (num, str);
+		if (n>>32) {
+			/* is 64 bit value */
+			ut8 *np = (ut8*)&n;
+			if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
+			else printf ("%02x%02x%02x%02x" "%02x%02x%02x%02x\n",
+				np[0], np[1], np[2], np[3],
+				np[4], np[5], np[6], np[7]);
+		} else {
+			/* is 32 bit value */
+			ut32 n32 = (ut32)(n&UT32_MAX);
+			ut8 *np = (ut8*)&n32;
+			if (flags & 1) fwrite (&n32, sizeof (n32), 1, stdout);
+			else printf ("%02x%02x%02x%02x\n",
+					np[0], np[1], np[2], np[3]);
+		}
+		fflush (stdout);
+		return R_TRUE;
+	} else if (flags & (1<<15)) { // -N
+		ut64 n = r_num_math (num, str);
+		if (n>>32) {
+			/* is 64 bit value */
+			ut8 *np = (ut8*)&n;
+			if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
+			else printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
+				"\\x%02x\\x%02x\\x%02x\\x%02x\n",
+				np[0], np[1], np[2], np[3],
+				np[4], np[5], np[6], np[7]);
+		} else {
+			/* is 32 bit value */
+			ut32 n32 = (ut32)(n&UT32_MAX);
+			ut8 *np = (ut8*)&n32;
+			if (flags & 1) fwrite (&n32, sizeof (n32), 1, stdout);
+			else printf ("\\x%02x\\x%02x\\x%02x\\x%02x\n",
+				np[0], np[1], np[2], np[3]);
+		}
 		fflush (stdout);
 		return R_TRUE;
 	} else if (flags & 1024) { // -u
