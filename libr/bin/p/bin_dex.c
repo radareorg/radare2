@@ -179,6 +179,10 @@ static RList* strings (RBinFile *arch) {
 	int i, len;
 	ut8 buf[6];
 
+	if (bin->header.strings_size>bin->size) {
+		bin->strings = NULL;
+		return R_FALSE;
+	}
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
@@ -294,6 +298,10 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	bin->imports_list = r_list_new ();
 	bin->imports_list->free = free;
 
+	if (bin->header.method_size>bin->size) {
+		bin->header.method_size = 0;
+		return R_FALSE;
+	}
 	methods = calloc (sizeof (int), bin->header.method_size);
 	if (!methods)
 		return R_FALSE;
@@ -496,6 +504,10 @@ static RList* classes (RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = (RListFree)__r_bin_class_free;
+	if (bin->header.class_size>bin->size) {
+		eprintf ("Too many classes %d\n", bin->header.class_size);
+		return NULL;
+	}
 	for (i = 0; i < bin->header.class_size; i++) {
 		// ETOOSLOW
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
