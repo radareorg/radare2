@@ -104,16 +104,17 @@ R_API char *r_buf_to_string(RBuffer *b) {
 }
 
 R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
+	if (!b) return R_FALSE;
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+length)))
 		return R_FALSE;
 	memmove (b->buf+b->length, buf, length);
 	b->length += length;
-
 	return R_TRUE;
 }
 
 R_API int r_buf_append_nbytes(RBuffer *b, int length) {
+	if (!b) return R_FALSE;
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+length)))
 		return R_FALSE;
@@ -123,6 +124,7 @@ R_API int r_buf_append_nbytes(RBuffer *b, int length) {
 }
 
 R_API int r_buf_append_ut16(RBuffer *b, ut16 n) {
+	if (!b) return R_FALSE;
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
 		return R_FALSE;
@@ -141,6 +143,7 @@ R_API int r_buf_append_ut32(RBuffer *b, ut32 n) {
 }
 
 R_API int r_buf_append_ut64(RBuffer *b, ut64 n) {
+	if (!b) return R_FALSE;
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
 		return R_FALSE;
@@ -150,6 +153,7 @@ R_API int r_buf_append_ut64(RBuffer *b, ut64 n) {
 }
 
 R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
+	if (!b) return R_FALSE;
 	if (b->empty) {
 		b->length = 0;
 		b->empty = 0;
