@@ -476,12 +476,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			  } else eprintf("No function defined at 0x%08"PFMT64x"\n", addr);
 		  }
 		 break;
-	case 'a':
-	case 'A':
-	case 'v':
+	case 'a': // "afa"
+	case 'A': // "afA"
+	case 'v': // "afv"
 		 var_cmd (core, input+1);
 		 break;
-	case 'c':
+	case 'c': // "afc"
 		  {
 			 RAnalFunction *fcn;
 			 if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
@@ -489,7 +489,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 } else eprintf ("Error: Cannot find function at 0x08%"PFMT64x"\n", core->offset);
 		  }
 		 break;
-	case 'C':
+	case 'C': // "afC"
 		if (input[2]=='?') {
 			int i;
 			for (i=0; ; i++) {
@@ -524,7 +524,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'b':
+	case 'b': // "afb"
 		 if (input[2] == 'b') {
 			 anal_fcn_add_bb (core, input+3);
 		 } else {
@@ -534,7 +534,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 else eprintf ("Cannot find function to set bits\n");
 		 }
 		 break;
-	case 'n':
+	case 'n': // "afn"
 		if (input[2]=='a') { // afna autoname
 			char *name = r_core_anal_fcn_autoname (core, core->offset);
 			if (name) {
@@ -570,7 +570,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 break;
 #if FCN_OLD
 /* this is undocumented and probably have no uses. plz discuss */
-	case 'e':
+	case 'e': // "afe"
 		  {
 			 RAnalFunction *fcn;
 			 ut64 off = core->offset;
@@ -681,7 +681,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			   break;
 		 }
 		 break;
-	case '?':{
+	case '?':{ // "af?"
 		 const char* help_msg[] = {
 		 "Usage:", "af", "",
 		 "af", " @[addr]", "analyze functions (start at addr)",

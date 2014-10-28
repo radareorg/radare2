@@ -254,7 +254,7 @@ R_API int r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind, ut64 addr, int
 	if (!a|| !fcn)
 		return 0;
 	if (!kind) kind = 'v'; // by default show vars
-	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x".%c", fcn->addr, kind), 0);
+	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c", fcn->addr, kind), 0);
 	if (varlist) {
 		count = sdb_alen (varlist);
 		char *next, *ptr = varlist;
@@ -263,31 +263,31 @@ R_API int r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind, ut64 addr, int
 				struct VarType vt;
 				char *word = sdb_anext (ptr, &next);
 				char *vardef = sdb_get (DB, sdb_fmt (1,
-					"var.0x%08"PFMT64x".%c.%s",
+					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
 				int delta = atoi (word+2);
 				if (vardef) {
-				sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
-				sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
+					sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
+					sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 
-				a->printf ("%s %s %s @ %s%s%d\n",
-					kind=='v'?"var":"arg",
-					vt.type, vt.name, a->reg->name[R_REG_NAME_BP],
-					(kind=='v')?"-":"+",
-					delta);
-				//a->printf (" - (%s)(%s) = %d\n", vt.type, vt.name, vt.size);
+					a->printf ("%s %s %s @ %s%s%d\n",
+							kind=='v'?"var":"arg",
+							vt.type, vt.name, a->reg->name[R_REG_NAME_BP],
+							(kind=='v')?"-":"+",
+							delta);
+					//a->printf (" - (%s)(%s) = %d\n", vt.type, vt.name, vt.size);
 #if 0
-				a->printf (".t %s @ %s%s%d # name: %s\n",
-					vt.type, a->reg->name[R_REG_NAME_BP],
-					(kind=='v')?"-":"+",
-					delta, vt.name);
+					a->printf (".t %s @ %s%s%d # name: %s\n",
+							vt.type, a->reg->name[R_REG_NAME_BP],
+							(kind=='v')?"-":"+",
+							delta, vt.name);
 #endif
 
-				sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
-				free (vardef);
-			} else {
-eprintf ("Cannot find '%s'\n", word);
-}
+					sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
+					free (vardef);
+				} else {
+					eprintf ("Cannot find '%s'\n", word);
+				}
 				ptr = next;
 			} while (next);
 		}
