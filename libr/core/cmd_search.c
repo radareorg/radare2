@@ -664,8 +664,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 					// The two loops are distinct for performance reason
 					if (mode == 'l') {
-						hit = r_list_get_top(hitlist);
-						r_cons_printf ("0x%08"PFMT64x": ", hit->addr);
+						hit = r_list_get_top (hitlist);
+						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x":",
+								from+i, hit->addr);
 						r_list_foreach (hitlist, iter, hit) {
 							r_core_read_at (core, hit->addr, buf, hit->len);
 							r_asm_set_pc (core->assembler, hit->addr);
@@ -675,7 +676,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 							r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 							free (buf_asm);
 						}
-					} else
+					} else {
 						r_list_foreach (hitlist, iter, hit) {
 							r_core_read_at (core, hit->addr, buf, hit->len);
 							r_asm_set_pc (core->assembler, hit->addr);
@@ -690,6 +691,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 							free (buf_asm);
 							free (buf_hex);
 						}
+					}
 					r_cons_newline ();
 				}
 			}
