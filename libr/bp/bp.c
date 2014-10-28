@@ -100,6 +100,15 @@ R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set) {
 	return NULL;
 }
 
+R_API int r_bp_enable_all(RBreakpoint *bp, int set) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	r_list_foreach (bp->bps, iter, b) {
+		b->enabled = set;
+	}
+	return R_TRUE;
+}
+
 R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 	// TODO: implement
 	return bp->stepcont;
@@ -195,6 +204,14 @@ R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 	return R_FALSE;
 }
 
+R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	r_list_foreach (bp->bps, iter, b) {
+		b->trace = set;
+	}
+	return R_TRUE;
+}
 // TODO: deprecate
 R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;

@@ -108,7 +108,9 @@ R_API int r_bp_list(RBreakpoint *bp, int rad);
 /* bp item attribs setters */
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
+R_API int r_bp_set_trace_all(RBreakpoint *bp, int set);
 R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set);
+R_API int r_bp_enable_all(RBreakpoint *bp, int set);
 
 /* index api */
 R_API int r_bp_del_index(RBreakpoint *bp, int idx);

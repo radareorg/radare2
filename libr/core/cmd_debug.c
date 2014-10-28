@@ -885,11 +885,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 't':
 		switch (input[2]) {
 		case 'e':
-			if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE))
+			for (p=input+3; *p==' ';p++);
+			if (*p == '*') {
+				r_bp_set_trace_all(core->dbg->bp,R_TRUE);
+			} else	if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE))
 				eprintf ("Cannot set tracepoint\n");
 			break;
 		case 'd':
-			if (!r_bp_set_trace (core->dbg->bp, addr, R_FALSE))
+			for (p=input+3; *p==' ';p++);
+			if (*p == '*') {
+				r_bp_set_trace_all(core->dbg->bp,R_FALSE);
+			} else if (!r_bp_set_trace (core->dbg->bp, addr, R_FALSE))
 				eprintf ("Cannot unset tracepoint\n");
 			break;
 		case 's':
@@ -956,10 +962,16 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 0);
 		break;
 	case 'e':
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 1);
+		for (p=input+2; *p==' ';p++);
+		if (*p == '*') {
+			r_bp_enable_all (core->dbg->bp,R_TRUE);
+		} else r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), R_TRUE);
 		break;
 	case 'd':
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 0);
+		for (p=input+2; *p==' ';p++);
+		if (*p == '*') {
+			r_bp_enable_all (core->dbg->bp,R_FALSE);
+		} r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), R_FALSE);
 		break;
 	case 'h':
 		if (input[2]==' ') {
@@ -997,7 +1009,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		case 'e': // "dbie"
 			{
 				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-				if (bpi) { bpi->enabled = R_FALSE; }
+				if (bpi) { bpi->enabled = R_TRUE; }
 				else { eprintf ("Cannot unset tracepoint\n"); }
 			}
 			break;
