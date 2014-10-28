@@ -176,10 +176,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
-#define R_NEWS0(x,y) (x*)memset (malloc(sizeof(x)*y), 0, sizeof(x)*y);
+#define R_NEWS0(x,y) (x*)calloc(sizeof(x),y)
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
-#define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
+#define R_NEW(x) (x*)malloc(sizeof(x))
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')

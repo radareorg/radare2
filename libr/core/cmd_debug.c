@@ -877,18 +877,47 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	const char *p;
 	RList *list;
 	ut64 addr;
+	p = strchr (input, ' ');
+	if (p) {
+		addr = r_num_math (core->num, p+1);
+	} else addr = 0;
 	switch (input[1]) {
 	case 't':
-		addr = UT64_MAX;
-		if (input[2]==' ' && input[3])
-			addr = r_num_math (core->num, input+2);
-		i = 0;
-		list = r_debug_frames (core->dbg, addr);
-		r_list_foreach (list, iter, frame) {
-			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
-				i++, frame->addr, frame->size);
+		switch (input[2]) {
+		case 'e':
+			if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE))
+				eprintf ("Cannot set tracepoint\n");
+			break;
+		case 'd':
+			if (!r_bp_set_trace (core->dbg->bp, addr, R_FALSE))
+				eprintf ("Cannot unset tracepoint\n");
+			break;
+		case 's':
+			{
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+			if (bpi) {
+				bpi->trace = !!!bpi->trace;
+			} else {
+				eprintf ("Cannot unset tracepoint\n");
+			}
+			}
+			break;
+		case 0:
+			addr = UT64_MAX;
+			if (input[2]==' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
+					i++, frame->addr, frame->size);
+			}
+			r_list_purge (list);
+			break;
+		default:
+			eprintf ("See db?\n");
+			break;
 		}
-		r_list_purge (list);
 		break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
@@ -951,6 +980,68 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			} else eprintf ("Can't place a breakpoint here. No mapped memory\n");
 		}
 		break;
+	case 'i':
+		switch (input[2]) {
+		case 0: // "dbi"
+			{
+			int i = 0;
+			for (i=0;i<core->dbg->bp->bps_idx_count;i++) {
+				RBreakpointItem *bpi = core->dbg->bp->bps_idx[i];
+				if (bpi) {
+					r_cons_printf ("%d 0x%08"PFMT64x" E:%d T:%d\n",
+						i, bpi->addr, bpi->enabled, bpi->trace);
+				}
+			}
+			}
+			break;
+		case 'e': // "dbie"
+			{
+				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+				if (bpi) { bpi->enabled = R_FALSE; }
+				else { eprintf ("Cannot unset tracepoint\n"); }
+			}
+			break;
+		case 'd': // "dbid"
+			{
+				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+				if (bpi) { bpi->enabled = R_FALSE; }
+				else { eprintf ("Cannot unset tracepoint\n"); }
+			}
+			break;
+		case 's': // "dbis"
+			{
+				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+				if (bpi) { bpi->enabled = !!!bpi->enabled; }
+				else { eprintf ("Cannot unset tracepoint\n"); }
+			}
+			break;
+		case 't': // "dbite" "dbitd" ...
+			switch (input[3]) {
+			case 'e':
+				{
+					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+					if (bpi) { bpi->trace = R_TRUE; }
+					else { eprintf ("Cannot unset tracepoint\n"); }
+				}
+				break;
+			case 'd':
+				{
+					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+					if (bpi) { bpi->trace = R_FALSE; }
+					else { eprintf ("Cannot unset tracepoint\n"); }
+				}
+				break;
+			case 's':
+				{
+					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+					if (bpi) { bpi->trace = !!!bpi->trace; }
+					else { eprintf ("Cannot unset tracepoint\n"); }
+				}
+				break;
+			}
+			break;
+		}
+		break;
 	case '?':
 	default:{
 			const char* help_msg[] = {
@@ -963,8 +1054,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				"dbc", " <address> <cmd>", "Run command when breakpoint is hit",
 				"dbd", " <address>", "Disable breakpoint",
 				"dbe", " <address>", "Enable breakpoint",
+				"dbs", " <address>", "Toggle breakpoint",
+
+				"dbte", " <address>", "Enable Breakpoint Trace",
+				"dbtd", " <address>", "Disable Breakpoint Trace",
+				"dbts", " <address>", "Swap Breakpoint Trace",
+				//
+				"dbi", "", "List breakpoint indexes",
+				"dbie", " <index>", "Enable breakpoint by index",
+				"dbid", " <index>", "Disable breakpoint by index",
+				"dbis", " <index>", "Swap Nth breakpoint",
+				"dbite", " <index>", "Enable breakpoint Trace by index",
+				"dbitd", " <index>", "Disable breakpoint Trace by index",
+				"dbits", " <index>", "Swap Nth breakpoint trace",
+				//
 				"dbh", " x86", "Set/list breakpoint plugin handlers",
-				"dbs", " <address>", "Toggle breakpoint\n",
 				NULL};
 		r_core_cmd_help (core, help_msg);
 		}

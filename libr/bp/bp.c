@@ -15,28 +15,24 @@ static void r_bp_item_free (RBreakpointItem *b) {
 }
 
 R_API RBreakpoint *r_bp_new() {
+	RBreakpoint *bp = R_NEW0 (RBreakpoint);
 	RBreakpointPlugin *static_plugin;
-	RBreakpoint *bp = R_NEW (RBreakpoint);
-	if (bp) {
-		int i;
-		bp->cur = NULL;
-		bp->nbps = 0;
-		bp->trace_bp = R_FALSE;
-		bp->stepcont = R_BP_CONT_NORMAL;
-		bp->breakpoint = NULL;
-		bp->endian = 0; // little by default
-		bp->traces = r_bp_traptrace_new ();
-		bp->printf = (PrintfCallback)printf;
-		bp->bps = r_list_newf ((RListFree)r_bp_item_free);
-		bp->plugins = r_list_newf ((RListFree)free);
-		for (i=0; bp_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RBreakpointPlugin);
-			memcpy (static_plugin, bp_static_plugins[i],
-				sizeof (RBreakpointPlugin));
-			r_bp_plugin_add (bp, static_plugin);
-		}
-		memset (&bp->iob, 0, sizeof (bp->iob));
+	int i;
+	if (!bp) return NULL;
+	bp->bps_idx_count = 16;
+	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
+	bp->stepcont = R_BP_CONT_NORMAL;
+	bp->traces = r_bp_traptrace_new ();
+	bp->printf = (PrintfCallback)printf;
+	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
+	bp->plugins = r_list_newf ((RListFree)free);
+	for (i=0; bp_static_plugins[i]; i++) {
+		static_plugin = R_NEW (RBreakpointPlugin);
+		memcpy (static_plugin, bp_static_plugins[i],
+			sizeof (RBreakpointPlugin));
+		r_bp_plugin_add (bp, static_plugin);
 	}
+	memset (&bp->iob, 0, sizeof (bp->iob));
 	return bp;
 }
 
@@ -96,13 +92,10 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 }
 
 R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set) {
-	RListIter *iter;
-	RBreakpointItem *b;
-	r_list_foreach(bp->bps, iter, b) {
-		if (addr >= b->addr && addr <= b->addr+b->size) {
-			b->enabled = set;
-			return b;
-		}
+	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
+	if (b) {
+		b->enabled = set;
+		return b;
 	}
 	return NULL;
 }
@@ -116,17 +109,19 @@ R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
 	RBreakpointItem *b;
+	if (addr == UT64_MAX || size<1)
+		return NULL;
 	if (r_bp_get_in (bp, addr, rwx)) {
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
-	b = R_NEW0 (RBreakpointItem);
+	b = r_bp_item_new (bp);
 	b->addr = addr;
 	b->size = size;
 	b->enabled = R_TRUE;
 	b->hw = hw;
 	if (!hw) {
-		b->bbytes = malloc (size+16);
+		b->bbytes = calloc (size+16, 1);
 		if (obytes) {
 			b->obytes = malloc (size);
 			memcpy (b->obytes, obytes, size);
@@ -151,7 +146,7 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	return R_FALSE;
 }
 
-R_API RBreakpoint* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
+R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	RBreakpointItem *item;
 	ut8 *bytes;
 	if (size<1)
@@ -191,30 +186,14 @@ R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	return R_FALSE;
 }
 
-// TODO: rename or drop?
-// TODO: use a r_bp_item instead of address
-// TODO: we can just drop it.. its just b->trace = R_TRUE or so..
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
-	RListIter *iter;
-	RBreakpointItem *b;
-	r_list_foreach (bp->bps, iter, b) {
-		if (addr >= b->addr && addr <= b->addr+b->size) {
-			b->trace = set;
-			return R_TRUE;
-		}
+	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
+	if (b) {
+		b->trace = set;
+		return R_TRUE;
 	}
 	return R_FALSE;
 }
-
-#if 0
-// TODO: rename or remove
-R_API int r_bp_set_trace_bp(RBreakpoint *bp, ut64 addr, int set)
-{
-	bp->trace_all = set;
-	bp->trace_bp = addr;
-	return R_TRUE;
-}
-#endif
 
 // TODO: deprecate
 R_API int r_bp_list(RBreakpoint *bp, int rad) {
@@ -236,4 +215,38 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		n++;
 	}
 	return n;
+}
+
+R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
+	int i, j;
+	/* find empty slot */
+	for (i=0; i<bp->bps_idx_count; i++) {
+		if (!bp->bps_idx[i]) {
+			goto return_slot;
+		}
+	}
+	/* allocate new slot */
+	bp->bps_idx_count += 16; // alocate space for 16 more bps
+	bp->bps_idx = realloc (bp->bps_idx, bp->bps_idx_count*sizeof(RBreakpointItem*));
+	for (j=i;j<bp->bps_idx_count;j++) 
+		bp->bps_idx[j] = NULL;
+	return_slot:
+	/* empty slot */
+	return (bp->bps_idx[i] = R_NEW0 (RBreakpointItem));
+}
+
+R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
+	if (idx>=0 && idx<bp->bps_idx_count)
+		return bp->bps_idx[idx];
+	return NULL;
+}
+
+R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
+	if (idx>=0 && idx<bp->bps_idx_count) {
+		r_list_delete_data (bp->bps, bp->bps_idx[idx]);
+		free (bp->bps_idx[idx]);
+		bp->bps_idx[idx] = NULL;
+		return R_TRUE;
+	}
+	return R_FALSE;
 }

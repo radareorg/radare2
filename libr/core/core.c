@@ -564,8 +564,8 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 // TODO: return string instead of printing it. reuse from 'drr'
 R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	ut64 type;
-	int bits = core->assembler->bits;
-	RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+	//int bits = core->assembler->bits;
+	//RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 	RAnalFunction *fcn;
 	RFlagItem *fi;
 	fi = r_flag_get_i (core->flags, value);

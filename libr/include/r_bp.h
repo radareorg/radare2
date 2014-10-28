@@ -57,19 +57,20 @@ typedef struct r_bp_item_t {
 } RBreakpointItem;
 
 typedef struct r_bp_t {
-	int trace_all;
-	ut64 trace_bp;
-	int nbps;
+	void *user;
 	int stepcont;
 	int endian;
 	RIOBind iob; // compile time dependency
 	RBreakpointPlugin *cur;
-	RList *bps;
-	RList *traces;
+	RList *traces; // XXX
 	RList *plugins;
 	PrintfCallback printf;
 	RBreakpointCallback breakpoint;
-	void *user;
+	/* storage of breakpoints */
+	int nbps;
+	RList *bps; // list of breakpoints
+	RBreakpointItem **bps_idx;
+	int bps_idx_count;
 } RBreakpoint;
 
 enum {
@@ -103,12 +104,16 @@ R_API void r_bp_plugin_list(RBreakpoint *bp);
 R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int rwx);
 // deprecate?
 R_API int r_bp_list(RBreakpoint *bp, int rad);
+
+/* bp item attribs setters */
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
-
-// deprecate and use r_bp_get_at/->trace ?
-//R_API int r_bp_set_trace_bp(RBreakpoint *bp, ut64 addr, int set);
 R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set);
+
+/* index api */
+R_API int r_bp_del_index(RBreakpoint *bp, int idx);
+R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx);
+R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp);
 
 R_API RBreakpointItem *r_bp_get_at (RBreakpoint *bp, ut64 addr);
 R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int rwx);
