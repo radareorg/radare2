@@ -546,9 +546,10 @@ reloadNodes(core);
 		updateSeek (can, &N, w, h, 0);
 		break;
 	case '?':
-		r_cons_clear00();
+		r_cons_clear00 ();
 		r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-			" hjkl - move node\n"
+		" .    - center graph to the current node\n"
+		" hjkl - move node\n"
 		" asdw - scroll canvas\n"
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
@@ -556,10 +557,11 @@ reloadNodes(core);
 		" O    - toggle disasm mode\n"
 		" u    - select previous node\n"
 		" V    - toggle basicblock / call graphs\n"
+		" x/X  - jump to xref/ref\n"
 		" z/Z  - step / step over\n"
 		" R    - relayout\n");
-		r_cons_flush();
-		r_cons_any_key();
+		r_cons_flush ();
+		r_cons_any_key ();
 		break;
 	case 'R':
 	case 'r': Layout_depth (nodes, edges); break;
