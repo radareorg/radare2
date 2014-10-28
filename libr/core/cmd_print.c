@@ -114,6 +114,8 @@ static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
 	"Examples:","","",
+	"pf", "?", "Show this help",
+	"pf?", "fmt", "Show format of that stored one",
 	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
 	"pf", " {integer}bifc", "Print integer times the following format (bifc)",
@@ -172,8 +174,22 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		flag = JSONOUTPUT;
 		break;
 	case '?':
-		_input++;
-		print_format_help (core);
+		_input+=2;
+		if (*_input) {
+			RListIter *iter;
+			RStrHT *sht = core->print->formats;
+			int *i;
+			r_list_foreach (sht->ls, iter, i) {
+				int idx = ((int)(size_t)i)-1;
+				const char *key = r_strpool_get (sht->sp, idx);
+				if (!strcmp (_input, key)) {
+					const char *val = r_strht_get (core->print->formats, key);
+					r_cons_printf ("%s\n", val);
+				}
+			}
+		} else {
+			print_format_help (core);
+		}
 		return;
 	}
 
