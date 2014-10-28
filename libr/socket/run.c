@@ -141,8 +141,11 @@ static char *getstr(const char *src) {
 	case '!':
 		return r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
 	case ':':
-		// hexpairs
-		ret = strdup (src);
+		if (src[1]=='!') {
+			ret = r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
+		} else {
+			ret = strdup (src);
+		}
 		len = r_hex_str2bin (src+1, (ut8*)ret);
 		if (len>0) {
 			ret[len] = 0;
@@ -284,8 +287,9 @@ R_API const char *r_run_help() {
 	"# arg2=hello\n"
 	"# arg3=\"hello\\nworld\"\n"
 	"# arg4=:048490184058104849\n"
-	"# arg5=@arg.txt\n"
-	"# arg6=@300@ABCD\n"
+	"# arg5=:!ragg2 -p n50 -d 10:0x8048123\n"
+	"# arg6=@arg.txt\n"
+	"# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
 	"# system=r2 -\n"
 	"# aslr=no\n"
 	"setenv=FOO=BAR\n"
