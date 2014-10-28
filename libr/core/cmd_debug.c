@@ -831,7 +831,7 @@ free (rf);
 
 static int checkbpcallback(RCore *core) {
 	ut64 pc = r_debug_reg_get (core->dbg, "pc");
-	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, pc);
+	RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
 	if (bpi) {
 		const char *cmdbp = r_config_get (core->config, "cmd.bp");
 		if (bpi->data)
@@ -848,7 +848,7 @@ static int bypassbp(RCore *core) {
 	ut64 addr;
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 	addr = r_debug_reg_get (core->dbg, "pc");
-	bpi = r_bp_get (core->dbg->bp, addr);
+	bpi = r_bp_get_at (core->dbg->bp, addr);
 	if (!bpi) return R_FALSE;
 	/* XXX 2 if libr/debug/debug.c:226 is enabled */
 	r_debug_step (core->dbg, 1);
@@ -899,7 +899,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'c':
 		addr = r_num_math (core->num, input+2);
-		RBreakpointItem *bpi = r_bp_get (core->dbg->bp, addr);
+		RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
 			char *arg = strchr (input+2, ' ');
 			if (arg)
@@ -915,7 +915,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 's':
 		addr = r_num_math (core->num, input+2);
-		RBreakpointItem *bp = r_bp_get (core->dbg->bp, addr);
+		RBreakpointItem *bp = r_bp_get_at (core->dbg->bp, addr);
 		if (bp) {
 			//bp->enabled = !bp->enabled;
 			r_bp_del (core->dbg->bp, addr);

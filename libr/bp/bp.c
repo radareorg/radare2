@@ -74,7 +74,7 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 	return 0;
 }
 
-R_API RBreakpointItem *r_bp_get(RBreakpoint *bp, ut64 addr) {
+R_API RBreakpointItem *r_bp_get_at(RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach(bp->bps, iter, b)
@@ -83,7 +83,7 @@ R_API RBreakpointItem *r_bp_get(RBreakpoint *bp, ut64 addr) {
 	return NULL;
 }
 
-R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx) {
+R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
@@ -116,7 +116,7 @@ R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
 	RBreakpointItem *b;
-	if (r_bp_at_addr (bp, addr, rwx)) {
+	if (r_bp_get_in (bp, addr, rwx)) {
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}

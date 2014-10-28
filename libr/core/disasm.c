@@ -658,8 +658,7 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index+ds->asmop.size);
-
-	void *p = r_bp_get (core->dbg->bp, ds->at);
+	void *p = r_bp_get_at (core->dbg->bp, ds->at);
 	r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
 }
 

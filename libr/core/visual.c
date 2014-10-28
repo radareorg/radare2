@@ -1246,7 +1246,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'b':
 		{
  		ut64 addr = curset? core->offset + cursor : core->offset;
-		RBreakpointItem *bp = r_bp_get (core->dbg->bp, addr);
+		RBreakpointItem *bp = r_bp_get_at (core->dbg->bp, addr);
 		if (bp) {
 			r_bp_del (core->dbg->bp, addr);
 		} else {

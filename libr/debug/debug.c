@@ -549,7 +549,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		return R_FALSE;
 
 	// Check if there was another breakpoint set at addr
-	has_bp = r_bp_at_addr (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
+	has_bp = r_bp_get_in (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
 	if (!has_bp)
 		r_bp_add_sw (dbg->bp, addr, dbg->bpsize, R_BP_PROT_EXEC);
 
