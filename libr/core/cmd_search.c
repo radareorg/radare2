@@ -628,6 +628,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			}
 			if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i) > 0) {
 				r_asm_set_pc (core->assembler, from+i);
+				/// XXX isnt the analop alrady disassembling?
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
 				if (!ret)
 					continue;
@@ -648,6 +649,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_cons_printf("{\"opcodes\":[");
 					r_list_foreach (hitlist, iter, hit) {
 						r_core_read_at (core, hit->addr, buf, hit->len);
+						r_asm_set_pc (core->assembler, hit->addr);
 						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 						r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 						size += hit->len;
@@ -666,6 +668,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 						r_cons_printf ("0x%08"PFMT64x": ", hit->addr);
 						r_list_foreach (hitlist, iter, hit) {
 							r_core_read_at (core, hit->addr, buf, hit->len);
+							r_asm_set_pc (core->assembler, hit->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 							buf_asm = r_print_colorize_opcode (asmop.buf_asm, 
 								core->cons->pal.reg, core->cons->pal.num);
@@ -675,6 +678,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					} else
 						r_list_foreach (hitlist, iter, hit) {
 							r_core_read_at (core, hit->addr, buf, hit->len);
+							r_asm_set_pc (core->assembler, hit->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 							buf_asm = r_print_colorize_opcode (asmop.buf_asm, 
 								core->cons->pal.reg, core->cons->pal.num);

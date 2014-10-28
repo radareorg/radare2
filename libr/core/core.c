@@ -598,8 +598,17 @@ R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 			r_cons_printf (" %sR%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_WRITE)
 			r_cons_printf (" %sW%s", c, cend);
-		if (type & R_ANAL_ADDR_TYPE_EXEC)
+		if (type & R_ANAL_ADDR_TYPE_EXEC) {
 			r_cons_printf (" %sX%s", c, cend);
+			{
+				RAsmOp op;
+				ut8 buf[32];
+				r_io_read_at (core->io, value, buf, sizeof (buf));
+				r_asm_set_pc (core->assembler, value);
+				r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
+				r_cons_printf (" '%s'", op.buf_asm);
+			}
+		}
 	}
 	return NULL;
 }
