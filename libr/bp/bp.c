@@ -95,7 +95,7 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 	return NULL;
 }
 
-R_API struct r_bp_item_t *r_bp_enable(RBreakpoint *bp, ut64 addr, int set) {
+R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach(bp->bps, iter, b) {
@@ -120,20 +120,12 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
-	b = R_NEW (RBreakpointItem);
-	b->pids[0] = 0; /* for any pid */
+	b = R_NEW0 (RBreakpointItem);
 	b->addr = addr;
-	b->data = NULL;
 	b->size = size;
 	b->enabled = R_TRUE;
 	b->hw = hw;
-	b->trace = 0;
-
-	if (hw) {
-		b->bbytes = NULL;
-		b->obytes = NULL;
-		b->recoil = 0;
-	} else {
+	if (!hw) {
 		b->bbytes = malloc (size+16);
 		if (obytes) {
 			b->obytes = malloc (size);
@@ -149,7 +141,6 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		}
 		b->recoil = ret;
 	}
-
 	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;
@@ -160,7 +151,7 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	return R_FALSE;
 }
 
-R_API struct r_bp_item_t *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
+R_API RBreakpoint* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	RBreakpointItem *item;
 	ut8 *bytes;
 	if (size<1)
@@ -176,7 +167,7 @@ R_API struct r_bp_item_t *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int 
 	return item;
 }
 
-R_API struct r_bp_item_t *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
+R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, rwx);
 }
 
