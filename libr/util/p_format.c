@@ -93,7 +93,8 @@ static void r_print_format_byte(const RPrint* p, int endian, int mustset,
 	if (mustset) {
 		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (!json)
+			p->printf ("0x%08"PFMT64x" = ", seeki);
 		if (size==-1)
 			if (json)
 				p->printf ("%d", buf[i]);
@@ -127,7 +128,8 @@ static void r_print_format_char(const RPrint* p, int endian, int mustset,
 	if (mustset) {
 		realprintf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
 	} else {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (!json)
+			p->printf ("0x%08"PFMT64x" = ", seeki);
 		if (size==-1)
 			if (json)
 				p->printf ("\"%c\"", buf[i]);
@@ -156,9 +158,10 @@ static void r_print_format_char(const RPrint* p, int endian, int mustset,
 	}
 }
 
-static int r_print_format_ptrstring(const RPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64, int json) {
+static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64, int json) {
 	ut8 buffer[255];
-	p->printf ("0x%08"PFMT64x" = ", seeki);
+	if (!json)
+		p->printf ("0x%08"PFMT64x" = ", seeki);
 	if (p->iob.read_at) {
 		if (is64 == 1)
 			p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer)-8);
@@ -727,7 +730,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case '.': // skip 1 byte
 				if (size == -1) i++;
 				else
-					while (size--) i++;
+					i+=size;
 				continue;
 			case 'p': // pointer reference
 				tmp = (p->bits == 64)? 'q': 'x';
@@ -887,13 +890,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
+					if (json)
+						p->printf ("%d,\"string\":\"", seeki);
+					else
+						p->printf ("0x%08"PFMT64x" = ", seeki);
 					for (; ((size || size==-1) && buf[i]) && i<len; i++) {
 						if (IS_PRINTABLE (buf[i]))
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
 						size -= (size==-1) ? 0 : 1;
 					}
+					if (json) p->printf ("\"}");
 				}
 				if (size == -1)
 					i++;
@@ -920,11 +927,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					while (size--) i+=2;
 				break;
 			case 's':
-				if (r_print_format_ptrstring (p, seeki, addr64, addr, 0, json) == 0)
+				if (r_print_format_string (p, seeki, addr64, addr, 0, json) == 0)
 					i += (size==-1) ? 4 : 4*size;
 				break;
 			case 'S':
-				if (r_print_format_ptrstring (p, seeki, addr64, addr, 1, json) == 0)
+				if (r_print_format_string (p, seeki, addr64, addr, 1, json) == 0)
 					i += (size==-1) ? 8 : 8*size;
 				break;
 			case 'B': // resolve bitfield
@@ -947,13 +954,16 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				structname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
-				p->printf ("0x%08"PFMT64x" = ", seeki);
+				if (!json)
+					p->printf ("0x%08"PFMT64x" = ", seeki);
 				if (p->get_bitfield)
 					bitfield = p->get_bitfield (p->user, structname, addr);
 				if (bitfield && *bitfield) {
-					p->printf (" %s (bitfield) = %s\n", name, bitfield);
+					if (json) p->printf ("\"%s\"}", bitfield);
+					else p->printf (" %s (bitfield) = %s\n", name, bitfield);
 				} else {
-					p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
+					if (json) p->printf ("\"`tb %s 0x%x`\"}", structname, addr);
+					else p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
 							name, structname, addr);
 				}
 				i+=(size==-1)?1:size;
@@ -982,14 +992,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				enumname++;
 				if (name) *(name++) = '\0';
 				else eprintf ("No ')'\n");
-				p->printf ("0x%08"PFMT64x" = ", seeki);
+				if (!json)
+					p->printf ("0x%08"PFMT64x" = ", seeki);
 				if (p->get_enumname)
 					enumvalue = p->get_enumname (p->user, enumname, addr);
 				if (enumvalue && *enumvalue) {
-					p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
+					if (json) p->printf ("\"%s\"}", enumname);
+					else p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
 							name, addr, enumvalue);
 				} else {
-					p->printf (" %s (enum) = `te %s 0x%x`\n",
+					if (json) p->printf ("\"`te %s 0x%x`\"}", enumname, addr);
+					else p->printf (" %s (enum) = `te %s 0x%x`\n",
 							name, enumname, addr);
 				}
 				i+=(size==-1)?1:size;
@@ -1040,7 +1053,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							buf+i, len, structname, slide, json);
 						i+= (isptr) ? 4 : s;
 					}
-					p->printf ("]");
+					p->printf ("]]}");
 				}
 				oldslide = slide;
 				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
