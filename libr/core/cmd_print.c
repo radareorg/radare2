@@ -1872,7 +1872,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '2':
-		if (input[2] == '?')
+		if (input[1] == '?')
 			r_cons_printf(	"Usage: p2 [number of bytes representing tiles]\n"
 					"NOTE: Only full tiles will be printed\n");
 		else
