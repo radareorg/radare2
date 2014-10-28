@@ -1146,7 +1146,7 @@ static int cmd_anal(void *data, const char *input) {
 			if (len>0)
 				r_core_anal_bytes (core, buf, len, 0, 0);
 			free (buf);
-		} else eprintf ("Usage: ab [hexpair-bytes]\n");
+		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
 		break;
 	case 'i': // "ai"
 		switch (input[1]) {
