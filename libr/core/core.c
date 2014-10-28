@@ -608,6 +608,19 @@ R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 				r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
 				r_cons_printf (" '%s'", op.buf_asm);
 			}
+			/* get library name */
+			{
+				RDebugMap *map;
+				RListIter *iter;
+				r_list_foreach (core->dbg->maps, iter, map) {
+					if ((value >=map->addr) && (value<map->addr_end)) {
+						const char *lastslash = r_str_lchr (map->name, '/');
+						r_cons_printf (" '%s'", lastslash?
+							lastslash+1:map->name);
+						break;
+					}
+				}
+			}
 		}
 	}
 	return NULL;
