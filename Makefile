@@ -74,6 +74,7 @@ clean:
 	for a in shlr libr binr ; do (cd $$a ; ${MAKE} clean) ; done
 
 distclean mrproper:
+	-rm -f `find . -type f -name *.d`
 	for a in libr binr shlr ; do ( cd $$a ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
