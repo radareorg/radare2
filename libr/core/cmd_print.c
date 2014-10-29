@@ -1673,7 +1673,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'm': //pm
 		if (input[1]=='?') {
-			r_cons_printf ("Usage: pm [file|directory]\n"
+			r_cons_printf ("|Usage: pm [file|directory]\n"
 				"| r_magic will use given file/dir as reference\n"
 				"| output of those magic can contain expressions like:\n"
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
