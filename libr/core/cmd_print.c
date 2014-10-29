@@ -1163,6 +1163,9 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_puts (c->buf_asm);
 				r_asm_code_free (c);
 			} else eprintf ("Invalid hexstr\n");
+		} else if (input[1]=='?') {
+			r_cons_printf("Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad) or"
+										"esil (pae) from hexpairs\n");
 		} else {
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
@@ -1174,6 +1177,9 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'b': { //pb
+	if (input[1]=='?')
+		r_cons_printf("Usage: p[bB] [len]       bitstream of N bytes\n");
+	else {
 		ut32 n;
 		int i, c;
 		char buf[32];
@@ -1194,15 +1200,21 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		}
+	}
 		break;
 	case 'B': { //pB
-		const int size = len*8;
-		char *buf = malloc (size+1);
-		if (buf) {
-			r_str_bits (buf, core->block, size, NULL);
-			r_cons_printf ("%s\n", buf);
-			free (buf);
-		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+		if (input[1]=='?') {
+			r_cons_printf("Usage: p[bB] [len]       bitstream of N bytes\n");
+		}
+		else {
+			const int size = len*8;
+			char *buf = malloc (size+1);
+			if (buf) {
+				r_str_bits (buf, core->block, size, NULL);
+				r_cons_printf ("%s\n", buf);
+				free (buf);
+			} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+		}
 		}
 		break;
 	case 'I': // "pI"
@@ -1221,6 +1233,10 @@ static int cmd_print(void *data, const char *input) {
 				}
 			case 'd': //pId is the same as pDi
 				pdi (core, 0, l, 0);
+				break;
+			case '?':
+				r_cons_printf("Usage: p[iI][df] [len]   print N instructions/bytes"
+				 							"(f=func) (see pi? and pdi)\n");
 				break;
 			default:
 				r_core_print_disasm_instructions (core, l, 0);
@@ -1669,9 +1685,15 @@ static int cmd_print(void *data, const char *input) {
 		} else r_core_magic (core, input+1, R_TRUE);
 		break;
 	case 'u': //pu
+		if (input[1]=='?') {
+			r_cons_printf("Usage: pu[w] [len]       print N url"
+										"encoded bytes (w=wide)\n");
+		}
+		else {
 		r_print_string (core->print, core->offset, core->block, len,
 			R_PRINT_STRING_URLENCODE |
 			((input[1]=='w')?R_PRINT_STRING_WIDE:0));
+		}
 		break;
 	case 'c': //pc
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
@@ -1903,7 +1925,10 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '8':
-		r_print_bytes (core->print, core->block, len, "%02x");
+		if (input[1] == '?')
+			r_cons_printf("Usage: p8 [len]          8bit hexpair list of bytes\n");
+		else
+		  r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f':
 		cmd_print_format (core, input, len);
