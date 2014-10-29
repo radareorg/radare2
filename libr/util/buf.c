@@ -4,19 +4,7 @@
 #include <r_util.h>
 #include <r_io.h>
 
-#if 0
-
-TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
-
-/* TODO: the basic object lifecycle must be simplified */
-struct r_class_t {
-	// new/free are implicit
-	.init = &r_buf_init,
-	.fini = &r_buf_fini,
-} r_buf_class;
-
-#define r_buf_init(x) r_buf_class->init
-#endif
+// TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
 
 R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
@@ -62,6 +50,20 @@ R_API RBuffer *r_buf_file (const char *file) {
 	if (b->buf) return b;
 	r_buf_free (b);
 	return NULL; /* we just freed b, don't return it */
+}
+
+R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
+	switch (whence) {
+	case 0: b->cur = b->base + addr; break;
+	case 1: b->cur = b->cur + addr; break;
+	case 2: b->cur = b->base + b->length + addr; break;
+	}
+	/* avoid out-of-bounds */
+	if (b->cur<b->base)
+		b->cur = b->base;
+	if ((b->cur-b->base)>b->length)
+		b->cur = b->base;
+	return (int)b->cur;
 }
 
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
@@ -170,7 +172,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	int end;
 	if (!b || b->empty) return 0;
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
-	if (len<1 || dst == NULL || addr > b->length)
+	if (len<1 || dst == NULL || addr <0 || addr > b->length)
 		return -1;
  	end = (int)(addr+len);
 	if (end > b->length)

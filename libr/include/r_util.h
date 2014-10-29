@@ -91,7 +91,7 @@ typedef struct r_mmap_t {
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
-	int cur;
+	ut64 cur;
 	ut64 base;
 	RMmap *mmap;
 	ut8 empty;
@@ -282,6 +282,7 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
 #define r_buf_read(a,b,c) r_buf_read_at(a,R_BUF_CUR,b,c)
 #define r_buf_write(a,b,c) r_buf_write_at(a,R_BUF_CUR,b,c)
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
+R_API int r_buf_seek (RBuffer *b, st64 addr, int whence);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
