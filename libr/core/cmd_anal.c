@@ -437,13 +437,17 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (ptr);
 		 }
 		break;
-	case 'o':
+	case 'o': // "afo"
 		 {
+			RAnalFunction *fcn;
 			ut64 addr = core->offset;
 			if (input[2]==' ')
-				addr = r_num_math (core->num, input+2);
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
-				addr, R_ANAL_FCN_TYPE_NULL);
+				addr = r_num_math (core->num, input+3);
+			if (addr == 0LL) {
+				fcn = r_anal_fcn_find_name (core->anal, input+3);
+			} else {
+				fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+			}
 			if (fcn) r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
 		 }
 		break;
