@@ -456,9 +456,11 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
+	ut64 pc;
 	int ret = R_FALSE;
 	if (!dbg)
 		return R_FALSE;
+repeat:
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 	if (dbg->h && dbg->h->cont) {
@@ -467,7 +469,22 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		dbg->signum = 0;
 		r_debug_wait (dbg);
 		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
-		r_debug_recoil (dbg);
+		//r_debug_recoil (dbg);
+		if (r_debug_recoil (dbg) || dbg->reason == R_DBG_REASON_BP) {
+			/* check if cur bp demands tracing or not */
+			pc=r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+			RBreakpointItem *b = r_bp_get_at (dbg->bp, pc);
+			if (b) {
+				/* check if cur bp demands tracing or not */
+				if (b->trace) {
+					eprintf("hit tracepoit at: %"PFMT64x"\n",pc);
+					r_debug_step (dbg, 1);
+					goto repeat;
+				}
+				eprintf("hit breakpoint at: %"PFMT64x"\n",pc);
+			}
+		}
+
 #if 0
 #if __UNIX__
 		/* XXX Uh? */
