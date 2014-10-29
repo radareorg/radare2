@@ -412,12 +412,19 @@ R_API int r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
 R_API void r_egg_finalize(REgg *egg) {
 	RBuffer *b;
 	RListIter *iter;
+	if (!egg->bin->buf)
+		egg->bin = r_buf_new ();
 	r_list_foreach (egg->patches, iter, b) {
-		if (b->length+b->cur > egg->bin->length) {
-			eprintf ("Fuck this shit. Cant patch outside\n");
+		if (b->cur <0) {
+			r_buf_append_bytes (egg->bin, b->buf, b->length);
+		} else {
+			// TODO: use r_buf_cpy_buf or what
+			if (b->length+b->cur > egg->bin->length) {
+				eprintf ("Fuck this shit. Cant patch outside\n");
+				return;
+			}
+			memcpy (egg->bin->buf + b->cur, b->buf, b->length);
 		}
-		// TODO: use r_buf_cpy_buf or what
-		memcpy (egg->bin->buf + b->cur, b->buf, b->length);
 	}
 }
 

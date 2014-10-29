@@ -28,6 +28,8 @@ static int usage (int v) {
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
 	"                 NTAS : same as above, but at the end\n"
+	" -n [dword]      append 32bit number (4 bytes)\n"
+	" -N [dword]      append 64bit number (8 bytes)\n"
 	" -P [size]       prepend debrujn pattern\n"
 	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
@@ -99,6 +101,7 @@ int main(int argc, char **argv) {
 	int show_hex = 1;
 	int show_asm = 0;
 	int show_raw = 0;
+	int append = 0;
 	int show_str = 0;
 	char *shellcode = NULL;
 	char *encoder = NULL;
@@ -110,7 +113,9 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:z")) != -1) {
+	//egg->bin = r_buf_new ();
+
+        while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:z")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -144,6 +149,16 @@ int main(int argc, char **argv) {
 				} else eprintf ("Missing colon in -w\n");
 			}
 			break;
+		case 'n': {
+			ut32 n = r_num_math (NULL, optarg);
+			append = 1;
+			r_egg_patch (egg, -1, (const ut8*)&n, 4);
+			} break;
+		case 'N': {
+			ut64 n = r_num_math (NULL, optarg);
+			r_egg_patch (egg, -1, (const ut8*)&n, 8);
+			append = 1;
+			} break;
 		case 'd':
 			{
 			ut32 off, n;
@@ -241,7 +256,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern) {
+	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append) {
 		return usage (0);
 	} else file = argv[optind];
 
@@ -345,6 +360,9 @@ int main(int argc, char **argv) {
 
 		if (pattern)
 			r_egg_pattern (egg, r_num_math (NULL, pattern));
+		if (!egg->bin) {
+			egg->bin = r_buf_new ();
+		}
 
 		if (!(b = r_egg_get_bin (egg))) {
 			eprintf ("r_egg_get_bin: invalid egg :(\n");
@@ -353,7 +371,7 @@ int main(int argc, char **argv) {
 		r_egg_finalize (egg); // apply patches
 		if (show_execute)
 			return r_egg_run (egg);
-
+		b = r_egg_get_bin (egg);
 		if (show_raw) {
 			write (1, b->buf, b->length);
 		} else {
