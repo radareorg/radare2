@@ -1205,16 +1205,15 @@ static int cmd_print(void *data, const char *input) {
 	case 'B': { //pB
 		if (input[1]=='?') {
 			r_cons_printf("| Usage: p[bB] [len]       bitstream of N bytes\n");
-		}
-		else {
-			const int size = len*8;
-			char *buf = malloc (size+1);
-			if (buf) {
-				r_str_bits (buf, core->block, size, NULL);
-				r_cons_printf ("%s\n", buf);
-				free (buf);
-			} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
-		}
+		}	else {
+				const int size = len*8;
+				char *buf = malloc (size+1);
+				if (buf) {
+					r_str_bits (buf, core->block, size, NULL);
+					r_cons_printf ("%s\n", buf);
+					free (buf);
+				} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+			}
 		}
 		break;
 	case 'I': // "pI"
@@ -1674,7 +1673,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'm': //pm
 		if (input[1]=='?') {
-			r_cons_printf ("|Usage: pm [file|directory]\n"
+			r_cons_printf ("| Usage: pm [file|directory]\n"
 				"| r_magic will use given file/dir as reference\n"
 				"| output of those magic can contain expressions like:\n"
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
@@ -1688,11 +1687,10 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1]=='?') {
 			r_cons_printf("| Usage: pu[w] [len]       print N url"
 										"encoded bytes (w=wide)\n");
-		}
-		else {
-		r_print_string (core->print, core->offset, core->block, len,
-			R_PRINT_STRING_URLENCODE |
-			((input[1]=='w')?R_PRINT_STRING_WIDE:0));
+		}	else {
+				r_print_string (core->print, core->offset, core->block, len,
+				R_PRINT_STRING_URLENCODE |
+				((input[1]=='w')?R_PRINT_STRING_WIDE:0));
 		}
 		break;
 	case 'c': //pc
@@ -1936,53 +1934,49 @@ static int cmd_print(void *data, const char *input) {
 	case 'k':
 		if (input[1] == '?') {
 			r_cons_printf("| Usage: pk [len]       print key in randomart");
-		}
-		else {
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
-			else {
-			char *s = r_print_randomart (core->block, len, core->offset);
-			r_cons_printf ("%s\n", s);
-			free (s);
-			}
+		}	else {
+				if (len > core->blocksize) {
+					len = core->blocksize;
+			} else {
+					char *s = r_print_randomart (core->block, len, core->offset);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
 		}
 		break;
 	case 'K':
 		if (input[1] == '?') {
 			r_cons_printf("| Usage: pK [len]       print key in randomart mosaic");
-		}
-		else {
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
-			else {
-				int w, h;
-				RConsCanvas *c;
-				w = r_cons_get_size (&h);
-				ut64 offset0 = core->offset;
-				int cols = (w/20);
-				int rows = (h/12);
-				int i, j;
-				char *s;
-				if (rows<1) rows = 1;
-				c = r_cons_canvas_new (w, rows*11);
-				for (i = 0; i<rows; i++) {
-					for (j = 0; j<cols; j++) {
-						r_cons_canvas_gotoxy (c, j*20, i*11);
-						core->offset += len;
-						r_core_read_at (core, core->offset, core->block, len);
-						s = r_print_randomart (core->block, len, core->offset);
-						r_cons_canvas_write (c, s);
-						free (s);
+		}	else {
+				if (len > core->blocksize) {
+					len = core->blocksize;
+				}	else {
+						int w, h;
+						RConsCanvas *c;
+						w = r_cons_get_size (&h);
+						ut64 offset0 = core->offset;
+						int cols = (w/20);
+						int rows = (h/12);
+						int i, j;
+						char *s;
+						if (rows<1) rows = 1;
+						c = r_cons_canvas_new (w, rows*11);
+						for (i = 0; i<rows; i++) {
+							for (j = 0; j<cols; j++) {
+								r_cons_canvas_gotoxy (c, j*20, i*11);
+								core->offset += len;
+								r_core_read_at (core, core->offset, core->block, len);
+								s = r_print_randomart (core->block, len, core->offset);
+								r_cons_canvas_write (c, s);
+								free (s);
+							}
+						}
+						r_cons_canvas_print (c);
+						r_cons_canvas_free (c);
+						r_core_read_at (core, offset0, core->block, len);
+						core->offset = offset0;
+						}
 					}
-				}
-				r_cons_canvas_print (c);
-				r_cons_canvas_free (c);
-				r_core_read_at (core, offset0, core->block, len);
-				core->offset = offset0;
-			}
-		}
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
