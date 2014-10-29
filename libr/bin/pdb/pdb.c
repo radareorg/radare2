@@ -68,6 +68,7 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/,
 	}
 
 	init_r_stream_file (&(pdb_stream->stream_file), buf, pages, pages_amount, size, page_size);
+
 	pdb_stream->free_ = free_pdb_stream;
 
 	return 1;
@@ -76,6 +77,7 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/,
 ///////////////////////////////////////////////////////////////////////////////
 static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
 	int bytes_read = r_buf_read(pdb->buf, (unsigned char *)var, 4);
+
 	if (bytes_read != 4) {
 		eprintf ("error while reading from file [%s]", var_name);
 		return 0;
@@ -415,7 +417,6 @@ static int pdb7_parse(R_PDB *pdb) {
 		goto error;
 	}
 
-//	bytes_read = fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
 	bytes_read = r_buf_read(pdb->buf, (unsigned char *)root_index_pages, 4 * num_root_index_pages);
 	//fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
 	if (bytes_read != 4 * num_root_index_pages) {
