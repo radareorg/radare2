@@ -112,7 +112,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
-	"| Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
+	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
 	"Examples:","","",
 	"pf", "?", "Show this help",
 	"pf?", "fmt", "Show format of that stored one",
