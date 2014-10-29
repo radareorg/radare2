@@ -699,9 +699,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
-		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afj", " [addr|fcn.name]", "show function(s) information in JSON",
+		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
+		 "afo", " [fcn.name]", "show address for the function named like this",
 		 "afn", " name [addr]", "rename name for function at address (change flag too)",
 		 "afna", "", "suggest automatic name for current offset",
 		 "afs", " [addr] [fcnsign]", "get/set function signature at current address",
@@ -712,18 +713,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		 break;
 	default:
-		{
 		// first undefine
 		//r_core_anal_undefine (core, core->offset);
 		/* resize function if overlaps */
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn)
-				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
-		}
-		r_core_anal_fcn (core, core->offset, UT64_MAX,
-			R_ANAL_REF_TYPE_NULL,
-				r_config_get_i (core->config, "anal.depth"));
+			if (fcn) r_anal_fcn_resize (fcn, core->offset - fcn->addr);
+			r_core_anal_fcn (core, core->offset, UT64_MAX,
+				R_ANAL_REF_TYPE_NULL, r_config_get_i (core->config, "anal.depth"));
 		}
 	}
 	return R_TRUE;
