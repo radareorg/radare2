@@ -1934,13 +1934,18 @@ static int cmd_print(void *data, const char *input) {
 		cmd_print_format (core, input, len);
 		break;
 	case 'k':
-		{
-		char *s = r_print_randomart (core->block, core->blocksize, core->offset);
-		r_cons_printf ("%s\n", s);
-		free (s);
+		if (input[1] == '?')
+			r_cons_printf("Usage: pk [len]       print key in randomart");
+		else {
+			char *s = r_print_randomart (core->block, core->blocksize, core->offset);
+			r_cons_printf ("%s\n", s);
+			free (s);
 		}
 		break;
 	case 'K':
+	if (input[1] == '?')
+		r_cons_printf("Usage: pK [len]       print key in randomart mosaic");
+	else {
 		{
 		int w, h;
 		RConsCanvas *c;
@@ -1955,18 +1960,19 @@ static int cmd_print(void *data, const char *input) {
 		for (i = 0; i<rows; i++) {
 			for (j = 0; j<cols; j++) {
 				r_cons_canvas_gotoxy (c, j*20, i*11);
-				core->offset += core->blocksize;
-				r_core_read_at (core, core->offset, core->block, core->blocksize);
-				s = r_print_randomart (core->block, core->blocksize, core->offset);
+				core->offset += len;
+				r_core_read_at (core, core->offset, core->block, len);
+				s = r_print_randomart (core->block, len, core->offset);
 				r_cons_canvas_write (c, s);
 				free (s);
 			}
 		}
 		r_cons_canvas_print (c);
 		r_cons_canvas_free (c);
-		r_core_read_at (core, offset0, core->block, core->blocksize);
+		r_core_read_at (core, offset0, core->block, len);
 		core->offset = offset0;
 		}
+	}
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
