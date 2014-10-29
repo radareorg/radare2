@@ -112,7 +112,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
-	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
+	"| Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
 	"Examples:","","",
 	"pf", "?", "Show this help",
 	"pf?", "fmt", "Show format of that stored one",
@@ -197,7 +197,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	// "pfo" // open formatted thing
 	if (input[1]=='o') { // "pfo"
 		if (input[2] == '?') {
-			eprintf ("Usage: pfo [format-file]\n"
+			eprintf ("| Usage: pfo [format-file]\n"
 			" ~/.config/radare2/format\n"
 			" "R2_DATDIR"/radare2/"R2_VERSION"/format/\n");
 		} else if (input[2] == ' ') {
@@ -940,7 +940,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (mode) {
 		case '?':{
 			const char* help_msg[] = {
-				"Usage:", "p%%[jh] [pieces]", "bar|json|histogram blocks",
+				"| Usage:", "p%%[jh] [pieces]", "bar|json|histogram blocks",
 				"pv", "", "show ascii-art bar of metadata in file boundaries",
 				"pvj", "", "show json format",
 				"pvh", "", "show histogram analysis of metadata per block",
@@ -1062,7 +1062,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':{ // bars
 			const char* help_msg[] = {
-			"Usage:", "p=[bep?] [num-of-blocks]", "show entropy/printable chars/chars bars",
+			"| Usage:", "p=[bep?] [num-of-blocks]", "show entropy/printable chars/chars bars",
 			"p=", "", "print bytes of current block in bars",
 			"p=", "b", "same as above",
 			"p=", "e", "print entropy for each filesize/blocksize",
@@ -1164,7 +1164,7 @@ static int cmd_print(void *data, const char *input) {
 				r_asm_code_free (c);
 			} else eprintf ("Invalid hexstr\n");
 		} else if (input[1]=='?') {
-			r_cons_printf("Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad) or"
+			r_cons_printf("| Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad) or"
 										"esil (pae) from hexpairs\n");
 		} else {
 			RAsmCode *acode;
@@ -1178,7 +1178,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'b': { //pb
 	if (input[1]=='?')
-		r_cons_printf("Usage: p[bB] [len]       bitstream of N bytes\n");
+		r_cons_printf("| Usage: p[bB] [len]       bitstream of N bytes\n");
 	else {
 		ut32 n;
 		int i, c;
@@ -1204,7 +1204,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'B': { //pB
 		if (input[1]=='?') {
-			r_cons_printf("Usage: p[bB] [len]       bitstream of N bytes\n");
+			r_cons_printf("| Usage: p[bB] [len]       bitstream of N bytes\n");
 		}
 		else {
 			const int size = len*8;
@@ -1235,7 +1235,7 @@ static int cmd_print(void *data, const char *input) {
 				pdi (core, 0, l, 0);
 				break;
 			case '?':
-				r_cons_printf("Usage: p[iI][df] [len]   print N instructions/bytes"
+				r_cons_printf("| Usage: p[iI][df] [len]   print N instructions/bytes"
 				 							"(f=func) (see pi? and pdi)\n");
 				break;
 			default:
@@ -1245,7 +1245,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'i': // pi
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: pi[defj] [num]\n");
+			r_cons_printf ("| Usage: pi[defj] [num]\n");
 			break;
 		case 'j': //pij is the same as pdj
 			cmd_pdj (core, input+2);
@@ -1483,7 +1483,7 @@ static int cmd_print(void *data, const char *input) {
 		case '?': //pd?
 			processed_cmd = R_TRUE;
 			const char* help_msg[] = {
-				"Usage:", "p[dD][fil] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
+				"| Usage:", "p[dD][fil] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
 				"NOTE:", "len", "parameter can be negative",
 				"pda", "", "disassemble all possible opcodes (byte per byte)",
 				"pdj", "", "disassemble to json",
@@ -1555,7 +1555,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':{
 			const char* help_msg[] = {
-				"Usage:", "ps[zpw] [N]", "Print String",
+				"| Usage:", "ps[zpw] [N]", "Print String",
 				"ps", "", "print string",
 				"psi", "", "print string inside curseek",
 				"psb", "", "print strings in current block",
@@ -1686,7 +1686,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'u': //pu
 		if (input[1]=='?') {
-			r_cons_printf("Usage: pu[w] [len]       print N url"
+			r_cons_printf("| Usage: pu[w] [len]       print N url"
 										"encoded bytes (w=wide)\n");
 		}
 		else {
@@ -1701,7 +1701,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'r': //pr
 		switch (input[1]) {
 		case '?':
-			eprintf("Usage: prl: print raw with lines offsets\n");
+			eprintf("| Usage: prl: print raw with lines offsets\n");
 			break;
 		case 'l':
 			r_print_raw (core->print, core->block, len, 1);
@@ -1727,7 +1727,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?':{
 			const char* help_msg[] = {
-				"Usage:", "px[afoswqWqQ][f]", " # Print heXadecimal",
+				"| Usage:", "px[afoswqWqQ][f]", " # Print heXadecimal",
 				"px",  "", "show hexdump",
 				"px/", "", "same as x/ in gdb (help x)",
 				"pxa", "", "show annotated hexdump",
@@ -1895,7 +1895,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '2':
 		if (input[1] == '?')
-			r_cons_printf(	"Usage: p2 [number of bytes representing tiles]\n"
+			r_cons_printf(	"| Usage: p2 [number of bytes representing tiles]\n"
 					"NOTE: Only full tiles will be printed\n");
 		else
 			r_print_2bpp_tiles(core->print, core->block, len/16);
@@ -1913,7 +1913,7 @@ static int cmd_print(void *data, const char *input) {
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
 		case '?':
-			eprintf ("Usage: p6[ed] [len]    base 64 encode/decode\n");
+			eprintf ("| Usage: p6[ed] [len]    base 64 encode/decode\n");
 			break;
 		case 'e':
 		default:
@@ -1926,7 +1926,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '8':
 		if (input[1] == '?')
-			r_cons_printf("Usage: p8 [len]          8bit hexpair list of bytes\n");
+			r_cons_printf("| Usage: p8 [len]          8bit hexpair list of bytes\n");
 		else
 		  r_print_bytes (core->print, core->block, len, "%02x");
 		break;
@@ -1934,45 +1934,55 @@ static int cmd_print(void *data, const char *input) {
 		cmd_print_format (core, input, len);
 		break;
 	case 'k':
-		if (input[1] == '?')
-			r_cons_printf("Usage: pk [len]       print key in randomart");
+		if (input[1] == '?') {
+			r_cons_printf("| Usage: pk [len]       print key in randomart");
+		}
 		else {
-			char *s = r_print_randomart (core->block, core->blocksize, core->offset);
+			if (len > core->blocksize) {
+				len = core->blocksize;
+			}
+			else {
+			char *s = r_print_randomart (core->block, len, core->offset);
 			r_cons_printf ("%s\n", s);
 			free (s);
+			}
 		}
 		break;
 	case 'K':
-	if (input[1] == '?')
-		r_cons_printf("Usage: pK [len]       print key in randomart mosaic");
-	else {
-		{
-		int w, h;
-		RConsCanvas *c;
-		w = r_cons_get_size (&h);
-		ut64 offset0 = core->offset;
-		int cols = (w/20);
-		int rows = (h/12);
-		int i, j;
-		char *s;
-		if (rows<1) rows = 1;
-		c = r_cons_canvas_new (w, rows*11);
-		for (i = 0; i<rows; i++) {
-			for (j = 0; j<cols; j++) {
-				r_cons_canvas_gotoxy (c, j*20, i*11);
-				core->offset += len;
-				r_core_read_at (core, core->offset, core->block, len);
-				s = r_print_randomart (core->block, len, core->offset);
-				r_cons_canvas_write (c, s);
-				free (s);
+		if (input[1] == '?') {
+			r_cons_printf("| Usage: pK [len]       print key in randomart mosaic");
+		}
+		else {
+			if (len > core->blocksize) {
+				len = core->blocksize;
+			}
+			else {
+				int w, h;
+				RConsCanvas *c;
+				w = r_cons_get_size (&h);
+				ut64 offset0 = core->offset;
+				int cols = (w/20);
+				int rows = (h/12);
+				int i, j;
+				char *s;
+				if (rows<1) rows = 1;
+				c = r_cons_canvas_new (w, rows*11);
+				for (i = 0; i<rows; i++) {
+					for (j = 0; j<cols; j++) {
+						r_cons_canvas_gotoxy (c, j*20, i*11);
+						core->offset += len;
+						r_core_read_at (core, core->offset, core->block, len);
+						s = r_print_randomart (core->block, len, core->offset);
+						r_cons_canvas_write (c, s);
+						free (s);
+					}
+				}
+				r_cons_canvas_print (c);
+				r_cons_canvas_free (c);
+				r_core_read_at (core, offset0, core->block, len);
+				core->offset = offset0;
 			}
 		}
-		r_cons_canvas_print (c);
-		r_cons_canvas_free (c);
-		r_core_read_at (core, offset0, core->block, len);
-		core->offset = offset0;
-		}
-	}
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
@@ -2009,7 +2019,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?':{
 			const char* help_msg[] = {
-			"Usage: pt", "[dn]", "print timestamps",
+			"| Usage: pt", "[dn]", "print timestamps",
 			"pt", "", "print unix time (32 bit `cfg.big_endian`",
 			"ptd","", "print dos time (32 bit `cfg.big_endian`",
 			"ptn","", "print ntfs time (64 bit `cfg.big_endian`",
@@ -2022,7 +2032,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'z':
 		if (input[1]=='?') {
 			const char *help_msg[] = {
-			"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
+			"| Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
 			"e ","zoom.maxsz","max size of block",
 			"e ","zoom.from","start address",
 			"e ","zoom.to","end address",
@@ -2069,7 +2079,7 @@ static int cmd_print(void *data, const char *input) {
 	default:
 	{
 		const char* help_msg[] = {
-		"Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
+		"| Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
 		"p=","[bep?] [blks]","show entropy/printable chars/chars bars",
 		"p2"," [len]","8x8 2bpp-tiles",
 		"p6","[de] [len]", "base64 decode/encode",
