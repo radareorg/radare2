@@ -43,8 +43,7 @@ static int cmd_eval(void *data, const char *input) {
 	case 'c':
 		switch (input[1]) {
 		case 'h': // echo
-			p = strchr (input, ' ');
-			if (p) {
+			if (( p = strchr (input, ' ') )) {
 				r_cons_strcat (p+1);
 				r_cons_newline ();
 			}
@@ -52,27 +51,26 @@ static int cmd_eval(void *data, const char *input) {
 		case 'd':
 			r_cons_pal_init (NULL);
 			break;
-		case '?':
-{
-		const char *helpmsg[] = {
+		case '?': {
+			const char *helpmsg[] = {
 			"Usage ec[s?] [key][[=| ]fg] [bg]","","",
 			"ec","","list all color keys",
 			"ec*","","same as above, but using r2 commands",
 			"ecd","","set default palette",
 			"ecr","","set random palette",
 			"ecs","","show a colorful palette",
-			"ecf"," dark|white","load white color scheme template",
+			"eco"," dark|white","load white color scheme template",
 			"ec"," prompt red","change color of prompt",
 			""," ","",
 			"colors:","","rgb:000, red, green, blue, ...",
 			"e scr.rgbcolor","=1|0","for 256 color cube (boolean)",
 			"e scr.truecolor","=1|0","for 256*256*256 colors (boolean)",
 			"$DATADIR/radare2/cons","","~/.config/radare2/cons ./",
-		NULL};
-		r_core_cmd_help (core, helpmsg);
-}
+			NULL};
+			r_core_cmd_help (core, helpmsg);
+			}
 			break;
-		case 'f':
+		case 'o': // "eco"
 			if (input[2] == ' ') {
 				char *home, path[512];
 				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input+3);
@@ -82,7 +80,7 @@ static int cmd_eval(void *data, const char *input) {
 				if (!r_core_cmd_file (core, home))
 					if (!r_core_cmd_file (core, path))
 						if (!r_core_cmd_file (core, input+3))
-							eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
+							eprintf ("eco: cannot open colorscheme profile (%s)\n", path);
 				free (home);
 			} else {
 				RList *files;
@@ -130,8 +128,7 @@ static int cmd_eval(void *data, const char *input) {
 	case 'e':
 		if (input[1]==' ') {
 			char *p;
-			const char *val;
-			const char *input2 = strchr (input+2, ' ');
+			const char *val, *input2 = strchr (input+2, ' ');
 			if (input2) input2++; else input2 = input+2;
 			val = r_config_get (core->config, input2);
 			p = r_core_editor (core, val);
