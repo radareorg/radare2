@@ -20,29 +20,24 @@ static void r_core_file_info (RCore *core, int mode) {
 			"\"os\":\"%s\","
 			"\"arch\":\"%s\","
 			"\"bits\":%d,"
-			"\"endian\":\"%s\","
 			, STR(info->type)
 			, STR(info->os)
 			, STR(info->machine)
-			, info->bits
-			, info->big_endian? "big": "little");
+			, info->bits);
 			break;
 		default:
 		r_cons_printf ("type\t%s\n"
 			"os\t%s\n"
 			"arch\t%s\n"
 			"bits\t%d\n"
-			"endian\t%s\n"
 			, STR(info->type)
 			, STR(info->os)
 			, STR(info->machine)
-			, info->bits
-			, info->big_endian? "big": "little");
+			, info->bits);
 			break;
 		}
 	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (cf && mode == R_CORE_BIN_JSON) {
-		r_cons_printf ("\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
@@ -64,7 +59,6 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("}");
 	} else if (cf) {
 		//r_cons_printf ("# Core file info\n");
-		r_cons_printf ("file\t%s\n", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			r_cons_printf ("fd\t%d\n", cf->desc->fd);

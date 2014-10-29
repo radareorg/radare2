@@ -348,7 +348,6 @@ static int bin_info (RCore *r, int mode) {
 			// if type is 'fs' show something different?
 			//r_cons_printf ("# File info\n");
 			r_cons_printf ("file\t%s\n"
-					"type\t%s\n"
 					"pic\t%s\n"
 					"canary\t%s\n"
 					"nx\t%s\n"
@@ -359,8 +358,6 @@ static int bin_info (RCore *r, int mode) {
 					"lang\t%s\n"
 					"arch\t%s\n"
 					"bits\t%i\n"
-					"machine\t%s\n"
-					"os\t%s\n"
 					"subsys\t%s\n"
 					"endian\t%s\n"
 					"strip\t%s\n"
@@ -369,14 +366,14 @@ static int bin_info (RCore *r, int mode) {
 					"lsyms\t%s\n"
 					"relocs\t%s\n"
 					"rpath\t%s\n",
-					info->file, info->type,
+					info->file,
 					r_str_bool (info->has_pi),
 					r_str_bool (info->has_canary),
 					r_str_bool (info->has_nx),
 					r_str_bool (info->has_crypto),
 					r_str_bool (info->has_va),
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
-					info->arch, info->bits, info->machine, info->os,
+					info->arch, info->bits,
 					info->subsystem, info->big_endian? "big": "little",
 					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info),
 					r_str_bool (r_bin_is_static (r->bin)),
