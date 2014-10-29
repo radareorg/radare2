@@ -1935,48 +1935,42 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_cons_printf("|Usage: pk [len]       print key in randomart");
 		} else {
-				if (len > core->blocksize) {
-					len = core->blocksize;
-			} else {
-					char *s = r_print_randomart (core->block, len, core->offset);
-					r_cons_printf ("%s\n", s);
-					free (s);
-				}
-		}
+				len = len > core->blocksize ? core->blocksize : len;
+				char *s = r_print_randomart (core->block, len, core->offset);
+				r_cons_printf ("%s\n", s);
+				free (s);
+			}
 		break;
 	case 'K':
 		if (input[1] == '?') {
 			r_cons_printf("|Usage: pK [len]       print key in randomart mosaic");
 		} else {
-				if (len > core->blocksize) {
-					len = core->blocksize;
-				} else {
-						int w, h;
-						RConsCanvas *c;
-						w = r_cons_get_size (&h);
-						ut64 offset0 = core->offset;
-						int cols = (w/20);
-						int rows = (h/12);
-						int i, j;
-						char *s;
-						if (rows<1) rows = 1;
-						c = r_cons_canvas_new (w, rows*11);
-						for (i = 0; i<rows; i++) {
-							for (j = 0; j<cols; j++) {
-								r_cons_canvas_gotoxy (c, j*20, i*11);
-								core->offset += len;
-								r_core_read_at (core, core->offset, core->block, len);
-								s = r_print_randomart (core->block, len, core->offset);
-								r_cons_canvas_write (c, s);
-								free (s);
-							}
-						}
-						r_cons_canvas_print (c);
-						r_cons_canvas_free (c);
-						r_core_read_at (core, offset0, core->block, len);
-						core->offset = offset0;
-						}
+				len = len > core->blocksize ? core->blocksize : len;
+				int w, h;
+				RConsCanvas *c;
+				w = r_cons_get_size (&h);
+				ut64 offset0 = core->offset;
+				int cols = (w/20);
+				int rows = (h/12);
+				int i, j;
+				char *s;
+				if (rows<1) rows = 1;
+				c = r_cons_canvas_new (w, rows*11);
+				for (i = 0; i<rows; i++) {
+					for (j = 0; j<cols; j++) {
+						r_cons_canvas_gotoxy (c, j*20, i*11);
+						core->offset += len;
+						r_core_read_at (core, core->offset, core->block, len);
+						s = r_print_randomart (core->block, len, core->offset);
+						r_cons_canvas_write (c, s);
+						free (s);
 					}
+				}
+				r_cons_canvas_print (c);
+				r_cons_canvas_free (c);
+				r_core_read_at (core, offset0, core->block, len);
+				core->offset = offset0;
+			}
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
