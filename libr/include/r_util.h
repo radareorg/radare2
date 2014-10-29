@@ -263,8 +263,8 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 
 #define R_BUF_CUR UT64_MAX
-R_API RBuffer *r_buf_from_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new();
+R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
@@ -279,6 +279,8 @@ R_API int r_buf_append_ut16(RBuffer *b, ut16 n);
 R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API char *r_buf_to_string(RBuffer *b);
 R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
+#define r_buf_read(a,b,c) r_buf_read_at(a,R_BUF_CUR,b,c)
+#define r_buf_write(a,b,c) r_buf_write_at(a,R_BUF_CUR,b,c)
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);

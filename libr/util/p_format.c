@@ -654,7 +654,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (oldprintf)
 						p->printf = oldprintf;
 					if (idx<nargs && tmp != 'e' && isptr == 0) {
-						char *name = r_str_word_get0 (args, idx);
+						const char *name = r_str_word_get0 (args, idx);
 						if (ISSTRUCT || tmp=='E' || tmp=='B') {
 							if (*name == '(') {
 								name = strchr (name, ')')+1;

@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
 #include <r_asm.h>
 #include <r_debug.h>
 #undef R_API
-#define R_API static
+#define R_API static inline
 #include "bfvm.c"
 
 typedef struct {
