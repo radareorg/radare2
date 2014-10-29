@@ -4,11 +4,11 @@
 /// size = -1 (default value)
 /// pages_size = 0x1000 (default value)
 ////////////////////////////////////////////////////////////////////////////////
-int init_r_stream_file(R_STREAM_FILE *stream_file, FILE *fp, int *pages,
+int init_r_stream_file(R_STREAM_FILE *stream_file, RBuffer *buf, int *pages,
 							  int pages_amount, int size, int page_size)
 {
 	stream_file->error = 0;
-	stream_file->fp = fp;
+	stream_file->buf = buf;
 	stream_file->pages = pages;
 	stream_file->pages_amount = pages_amount;
 	stream_file->page_size = page_size;
@@ -42,9 +42,11 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
 	for (i = start_indx; i < end_indx; i++) {
 //		tmp = stream_file->pages[i];
 		page_offset = stream_file->pages[i] * stream_file->page_size;
-		fseek(stream_file->fp, page_offset, SEEK_SET);
+		stream_file->buf->cur = page_offset;
+		r_buf_read_at(stream_file->buf, page_offset, res, stream_file->page_size);
+//		fseek(stream_file->fp, page_offset, SEEK_SET);
 //		curr_pos = ftell(stream_file->fp);
-		fread(res, stream_file->page_size, 1, stream_file->fp);
+//		fread(res, stream_file->page_size, 1, stream_file->fp);
 		res += stream_file->page_size;
 	}
 }

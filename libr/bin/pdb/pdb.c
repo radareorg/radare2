@@ -53,9 +53,9 @@ static void free_pdb_stream(void *stream) {
 /// size - default value = -1
 /// page_size - default value = 0x1000
 ///////////////////////////////////////////////////////////////////////////////
-static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, FILE *fp, int *pages,
+static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/, int *pages,
 		int pages_amount, int index, int size, int page_size) {
-	pdb_stream->fp = fp;
+	pdb_stream->buf = buf;
 	pdb_stream->pages = pages;
 	pdb_stream->indx = index;
 	pdb_stream->page_size = page_size;
@@ -67,20 +67,20 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, FILE *fp, int *pages,
 		pdb_stream->size = size;
 	}
 
-	init_r_stream_file (&(pdb_stream->stream_file), fp, pages, pages_amount, size, page_size);
+	init_r_stream_file (&(pdb_stream->stream_file), buf, pages, pages_amount, size, page_size);
 	pdb_stream->free_ = free_pdb_stream;
 
 	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int read_int_var(char *var_name, int *var, FILE *fp) {
-	int bytes_read = fread(var, 4, 1, fp);
-	if (bytes_read != 1) {
+static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
+	int bytes_read = r_buf_read(pdb->buf, (unsigned char *)var, 4);
+	if (bytes_read != 4) {
 		eprintf ("error while reading from file [%s]", var_name);
 		return 0;
 	}
-	return 1;
+	return bytes_read;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -112,7 +112,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	R_PDB7_ROOT_STREAM *root_stream7;
 
 	pdb->root_stream = (R_PDB7_ROOT_STREAM *) malloc(sizeof(R_PDB7_ROOT_STREAM));
-	init_r_pdb_stream(&pdb->root_stream->pdb_stream, pdb->fp, root_page_list, pages_amount,
+	init_r_pdb_stream(&pdb->root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount,
 					  indx, root_size, page_size);
 
 	root_stream7 = pdb->root_stream;
@@ -307,7 +307,7 @@ static int pdb_read_root(R_PDB *pdb) {
 	it = r_list_iterator(root_stream->streams_list);
 	while (r_list_iter_next(it)) {
 		page = (SPage*) r_list_iter_get(it);
-		init_r_stream_file(&stream_file, pdb->fp, (int *)page->stream_pages,
+		init_r_stream_file(&stream_file, pdb->buf, (int *)page->stream_pages,
 						   page->num_pages/*root_stream->pdb_stream.pages_amount*/,
 						   page->stream_size,
 						   root_stream->pdb_stream.page_size);
@@ -347,7 +347,7 @@ static int pdb_read_root(R_PDB *pdb) {
 			}
 
 			pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
-			init_r_pdb_stream(pdb_stream, pdb->fp, (int *)page->stream_pages,
+			init_r_pdb_stream(pdb_stream, pdb->buf, (int *)page->stream_pages,
 							  root_stream->pdb_stream.pages_amount, i,
 							  page->stream_size,
 							  root_stream->pdb_stream.page_size);
@@ -383,21 +383,21 @@ static int pdb7_parse(R_PDB *pdb) {
 	void *p_tmp;
 	int i = 0;
 
-	bytes_read = fread (signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
+	bytes_read = r_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		eprintf ("error while reading PDB7_SIGNATURE\n");
 		goto error;
 	}
 
-	if (!read_int_var ("page_size", &page_size, pdb->fp))
+	if (!read_int_var ("page_size", &page_size, pdb))
 		goto error;
-	if (!read_int_var ("alloc_tbl_ptr", &alloc_tbl_ptr, pdb->fp))
+	if (!read_int_var ("alloc_tbl_ptr", &alloc_tbl_ptr, pdb))
 		goto error;
-	if (!read_int_var ("num_file_pages", &num_file_pages, pdb->fp))
+	if (!read_int_var ("num_file_pages", &num_file_pages, pdb))
 		goto error;
-	if (!read_int_var ("root_size", &root_size, pdb->fp))
+	if (!read_int_var ("root_size", &root_size, pdb))
 		goto error;
-	if (!read_int_var("reserved", &reserved, pdb->fp))
+	if (!read_int_var("reserved", &reserved, pdb))
 		goto error;
 
 	// FIXME: why they is not equal ????
@@ -415,8 +415,10 @@ static int pdb7_parse(R_PDB *pdb) {
 		goto error;
 	}
 
-	bytes_read = fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
-	if (bytes_read != num_root_index_pages) {
+//	bytes_read = fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
+	bytes_read = r_buf_read(pdb->buf, (unsigned char *)root_index_pages, 4 * num_root_index_pages);
+	//fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
+	if (bytes_read != 4 * num_root_index_pages) {
 		eprintf ("error while reading root_index_pages\n");
 		goto error;
 	}
@@ -429,8 +431,8 @@ static int pdb7_parse(R_PDB *pdb) {
 
 	p_tmp = root_page_data;
 	for (i = 0; i < num_root_index_pages; i++) {
-		fseek(pdb->fp, root_index_pages[i] * page_size, SEEK_SET);
-		fread(p_tmp, page_size, 1, pdb->fp);
+		r_buf_seek(pdb->buf, root_index_pages[i] * page_size, 0);
+		r_buf_read(pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
 	}
 
@@ -551,7 +553,11 @@ static void finish_pdb_parse(R_PDB *pdb)
 	if (pdb->stream_map)
 		free(pdb->stream_map);
 
-	fclose(pdb->fp);
+	if (pdb->buf) {
+		free(pdb->buf);
+	}
+
+//	fclose(pdb->fp);
 //	printf("finish_pdb_parse()\n");
 }
 
@@ -688,12 +694,12 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 	if (!pdb->printf)
 		pdb->printf = (PrintfCallback)printf;
 
-	// TODO: Reimplement using RBuffer here
-	pdb->fp = r_sandbox_fopen (filename, "rb");
-	if (!pdb->fp) {
-		eprintf ("file %s can not be open\n", filename);
-		goto error;
-	}
+	pdb->buf = r_buf_file(filename);
+//	pdb->fp = r_sandbox_fopen (filename, "rb");
+//	if (!pdb->fp) {
+//		eprintf ("file %s can not be open\n", filename);
+//		goto error;
+//	}
 
 	signature = (char *)malloc (PDB7_SIGNATURE_LEN);
 	if (!signature) {
@@ -701,13 +707,13 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 		goto error;
 	}
 
-	bytes_read = fread (signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
+	bytes_read = r_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		eprintf ("file reading error\n");
 		goto error;
 	}
 
-	fseek (pdb->fp, 0, SEEK_SET);
+	r_buf_seek(pdb->buf, 0, 0);
 
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;

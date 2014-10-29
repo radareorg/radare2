@@ -64,7 +64,8 @@
 }
 
 typedef struct R_STREAM_FILE_{
-	FILE *fp;
+//	FILE *fp;
+	RBuffer *buf;
 	int *pages;
 	int page_size;
 	int pages_amount;
@@ -583,7 +584,8 @@ typedef struct {
 } SPage;
 
 typedef struct {
-	FILE *fp;
+//	FILE *fp;
+	RBuffer *buf;
 	int *pages;
 	int pages_amount;
 	int indx;
