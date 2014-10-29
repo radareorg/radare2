@@ -14,7 +14,7 @@ static int allwrite(BufferOp op, int fd, const char *buf, ut32 len) {
 	int w;
 	while (len > 0) {
 		w = op (fd, buf, len);
-		if (w < 0)
+		if (w != len)
 			return 0;
 		buf += w;
 		len -= w;

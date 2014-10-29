@@ -15,8 +15,10 @@ typedef struct {
 } StrBuf;
 
 static StrBuf* strbuf_new() {
-	return calloc (sizeof(StrBuf),1);
+	return calloc (sizeof (StrBuf), 1);
 }
+
+#define NEWLINE_AFTER_QUERY 1
 
 static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	int len = strlen (str);
@@ -30,10 +32,12 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	}
 	memcpy (sb->buf+sb->len, str, len);
 	sb->len += len;
+#if NEWLINE_AFTER_QUERY
 	if (nl) {
 		sb->buf[sb->len++] = '\n';
 		len++;
 	}
+#endif
 	sb->buf[sb->len] = 0;
 	return sb;
 }

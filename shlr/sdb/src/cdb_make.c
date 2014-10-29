@@ -112,7 +112,7 @@ int cdb_make_finish(struct cdb_make *c) {
 			memsize = u;
 	}
 	memsize += c->numentries; /* no overflow possible up to now */
-	u = (ut32) 0 - (ut32) 1; // TODO: use UT32_MAX here
+	u = UT32_MAX;
 	u /= sizeof (struct cdb_hp);
 	if (memsize > u) return 0;
 

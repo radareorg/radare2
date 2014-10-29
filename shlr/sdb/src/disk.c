@@ -49,7 +49,7 @@ SDB_API int sdb_disk_create (Sdb* s) {
 	if (!str) return 0;
 	memcpy (str, s->dir, nlen+1);
 	r_sys_rmkdir (str);
-	memcpy (str+nlen, ".tmp", 4);
+	memcpy (str+nlen, ".tmp", 5);
 	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, SDB_MODE);
 	if (s->fdump == -1) {
 		eprintf ("sdb: Cannot open '%s' for writing.\n", str);
