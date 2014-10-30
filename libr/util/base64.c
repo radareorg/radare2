@@ -59,4 +59,5 @@ R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len) {
 	for (in=out=0; in<len; in+=3,out+=4)
 		b64_encode (bin+in, (char*)bout+out,
 			(len-in)>3?3:len-in);
+	bout[out] = 0;
 }
