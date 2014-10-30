@@ -1177,30 +1177,30 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'b': { //pb
-	if (input[1]=='?')
-		r_cons_printf("|Usage: p[bB] [len]       bitstream of N bytes\n");
-	else {
-		ut32 n;
-		int i, c;
-		char buf[32];
+		if (input[1]=='?') {
+			r_cons_printf("|Usage: p[bB] [len]       bitstream of N bytes\n");
+		} else {
+			ut32 n;
+			int i, c;
+			char buf[32];
 #define P(x) (IS_PRINTABLE(x)?x:'.')
 #define SPLIT_BITS(x) memmove (x+5, x+4, 5); x[4]=0
-		for (i=c=0; i<len; i++,c++) {
-			if (c==0) r_print_offset (core->print, core->offset+i, 0, 0);
-			r_str_bits (buf, core->block+i, 8, NULL);
-			SPLIT_BITS (buf);
-			r_cons_printf ("%s.%s  ", buf, buf+5);
-			if (c==3) {
-				const ut8 *b = core->block + i-3;
-				#define K(x) (b[3-x]<<(8*x))
-				n = K (0) | K (1) | K (2) | K (3);
-				r_cons_printf ("0x%08x  %c%c%c%c\n",
-					n, P (b[0]), P (b[1]), P (b[2]), P (b[3]));
-				c = -1;
+			for (i=c=0; i<len; i++,c++) {
+				if (c==0) r_print_offset (core->print, core->offset+i, 0, 0);
+				r_str_bits (buf, core->block+i, 8, NULL);
+				SPLIT_BITS (buf);
+				r_cons_printf ("%s.%s  ", buf, buf+5);
+				if (c==3) {
+					const ut8 *b = core->block + i-3;
+					#define K(x) (b[3-x]<<(8*x))
+					n = K (0) | K (1) | K (2) | K (3);
+					r_cons_printf ("0x%08x  %c%c%c%c\n",
+						n, P (b[0]), P (b[1]), P (b[2]), P (b[3]));
+					c = -1;
+				}
+			}
 			}
 		}
-		}
-	}
 		break;
 	case 'B': { //pB
 		if (input[1]=='?') {
@@ -1904,17 +1904,27 @@ static int cmd_print(void *data, const char *input) {
 		memset (buf, 0, malen);
 		switch (input[1]) {
 		case 'd':
-			if (r_base64_decode (buf, (const char *)core->block, len))
-				r_cons_printf ("%s\n", buf);
+			if (input[2] == '?')
+				r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
+			else if (r_base64_decode (buf, (const char *)core->block, len))
+				r_cons_printf ("%s", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
 		case '?':
 			r_cons_printf ("|Usage: p6[ed] [len]    base 64 encode/decode\n");
 			break;
 		case 'e':
+			if (input[2] == '?') {
+				r_cons_printf ("|Usage: p6e [len]    base 64 encode\n");
+				break;
+			} else {
+				len = len > core->blocksize ? core->blocksize : len;
+				r_base64_encode (buf, core->block, len);
+				r_cons_printf ("%s", buf);
+			}
+			break;
 		default:
-			r_base64_encode (buf, core->block, len); //core->blocksize);
-			r_cons_printf ("%s\n", buf);
+			r_cons_printf ("|Usage: p6[ed] [len]    base 64 encode/decode\n");
 			break;
 		}
 		free (buf);
@@ -1930,7 +1940,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'k':
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: pk [len]       print key in randomart");
+			r_cons_printf("|Usage: pk [len]       print key in randomart\n");
 		} else {
 			len = len > core->blocksize ? core->blocksize : len;
 			char *s = r_print_randomart (core->block, len, core->offset);
@@ -1940,7 +1950,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K':
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: pK [len]       print key in randomart mosaic");
+			r_cons_printf("|Usage: pK [len]       print key in randomart mosaic\n");
 		} else {
 			len = len > core->blocksize ? core->blocksize : len;
 			int w, h;
