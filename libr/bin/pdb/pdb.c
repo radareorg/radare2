@@ -55,7 +55,6 @@ static void free_pdb_stream(void *stream) {
 ///////////////////////////////////////////////////////////////////////////////
 static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/, int *pages,
 		int pages_amount, int index, int size, int page_size) {
-//	pdb_stream->fp = fp;
 	pdb_stream->buf = buf;
 	pdb_stream->pages = pages;
 	pdb_stream->indx = index;
@@ -68,16 +67,15 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/,
 		pdb_stream->size = size;
 	}
 
-	init_r_stream_file (&(pdb_stream->stream_file), buf/*fp*/, pages, pages_amount, size, page_size);
+	init_r_stream_file (&(pdb_stream->stream_file), buf, pages, pages_amount, size, page_size);
 	pdb_stream->free_ = free_pdb_stream;
 
 	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int read_int_var(char *var_name, int *var, R_PDB *pdb/*FILE *fp*/) {
-//	int bytes_read = fread(var, 4, 1, fp);
-	int bytes_read = r_buf_read_at(pdb->buf, pdb->buf->cur, var, 4);
+static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
+	int bytes_read = r_buf_read(pdb->buf, (unsigned char *)var, 4);
 	if (bytes_read != 4) {
 		eprintf ("error while reading from file [%s]", var_name);
 		return 0;
@@ -385,8 +383,7 @@ static int pdb7_parse(R_PDB *pdb) {
 	void *p_tmp;
 	int i = 0;
 
-	bytes_read = r_buf_read_at(pdb->buf, pdb->buf->cur, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
-//	bytes_read = fread (signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
+	bytes_read = r_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		eprintf ("error while reading PDB7_SIGNATURE\n");
 		goto error;
@@ -419,7 +416,7 @@ static int pdb7_parse(R_PDB *pdb) {
 	}
 
 //	bytes_read = fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
-	bytes_read = r_buf_read_at(pdb->buf, pdb->buf->cur, (unsigned char *)root_index_pages, 4 * num_root_index_pages);
+	bytes_read = r_buf_read(pdb->buf, (unsigned char *)root_index_pages, 4 * num_root_index_pages);
 	//fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
 	if (bytes_read != 4 * num_root_index_pages) {
 		eprintf ("error while reading root_index_pages\n");
@@ -434,10 +431,8 @@ static int pdb7_parse(R_PDB *pdb) {
 
 	p_tmp = root_page_data;
 	for (i = 0; i < num_root_index_pages; i++) {
-//		fseek(pdb->fp, root_index_pages[i] * page_size, SEEK_SET);
-//		fread(p_tmp, page_size, 1, pdb->fp);
-		pdb->buf->cur = 0;
-		r_buf_read_at(pdb->buf, root_index_pages[i] * page_size, p_tmp, page_size);
+		r_buf_seek(pdb->buf, root_index_pages[i] * page_size, 0);
+		r_buf_read(pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
 	}
 
@@ -699,7 +694,6 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 	if (!pdb->printf)
 		pdb->printf = (PrintfCallback)printf;
 
-	// TODO: Reimplement using RBuffer here
 	pdb->buf = r_buf_file(filename);
 //	pdb->fp = r_sandbox_fopen (filename, "rb");
 //	if (!pdb->fp) {
@@ -713,15 +707,13 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 		goto error;
 	}
 
-//	bytes_read = fread (signature, 1, PDB7_SIGNATURE_LEN, pdb->fp);
-	bytes_read = r_buf_read_at(pdb->buf, 0, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
+	bytes_read = r_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		eprintf ("file reading error\n");
 		goto error;
 	}
 
-	pdb->buf->cur = 0;
-//	fseek (pdb->fp, 0, SEEK_SET);
+	r_buf_seek(pdb->buf, 0, 0);
 
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;
