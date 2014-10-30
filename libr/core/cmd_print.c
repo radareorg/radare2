@@ -1143,26 +1143,34 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'a': //pa
 		if (input[1]=='e') {
-			int ret, bufsz;
-			RAnalOp aop = {0};
-			const char *str;
-			char *buf = strdup (input+2);
-			bufsz = r_hex_str2bin (buf, (ut8*)buf);
-			ret = r_anal_op (core->anal, &aop, core->offset,
-				(const ut8*)buf, bufsz);
-			if (ret>0) {
-				str = R_STRBUF_SAFEGET (&aop.esil);
-				r_cons_printf ("%s\n", str);
+			if (input[2]=='?') {
+				r_cons_printf("|Usage: pae [hex]       assemble esil from hexpairs\n");
+			} else {
+				int ret, bufsz;
+				RAnalOp aop = {0};
+				const char *str;
+				char *buf = strdup (input+2);
+				bufsz = r_hex_str2bin (buf, (ut8*)buf);
+				ret = r_anal_op (core->anal, &aop, core->offset,
+					(const ut8*)buf, bufsz);
+				if (ret>0) {
+					str = R_STRBUF_SAFEGET (&aop.esil);
+					r_cons_printf ("%s\n", str);
+				}
+				r_anal_op_fini (&aop);
 			}
-			r_anal_op_fini (&aop);
 		} else if (input[1]=='d') {
-			RAsmCode *c;
-			r_asm_set_pc (core->assembler, core->offset);
-			c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
-			if (c) {
-				r_cons_puts (c->buf_asm);
-				r_asm_code_free (c);
-			} else eprintf ("Invalid hexstr\n");
+			if (input[2]=='?') {
+				r_cons_printf("|Usage: pad [asm]       disasm\n");
+			} else {
+				RAsmCode *c;
+				r_asm_set_pc (core->assembler, core->offset);
+				c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
+				if (c) {
+					r_cons_puts (c->buf_asm);
+					r_asm_code_free (c);
+				} else eprintf ("Invalid hexstr\n");
+			}
 		} else if (input[1]=='?') {
 			r_cons_printf("|Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad) or"
 										"esil (pae) from hexpairs\n");
