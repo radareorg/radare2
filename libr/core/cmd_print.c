@@ -1917,11 +1917,10 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				r_cons_printf ("|Usage: p6e [len]    base 64 encode\n");
 				break;
-			}
-			else {
-				len = len > core->blocksize ? core->blocksize : len;
-				r_base64_encode (buf, core->block, len);
-				r_cons_printf ("%s", buf);
+			}	else {
+					len = len > core->blocksize ? core->blocksize : len;
+					r_base64_encode (buf, core->block, len);
+					r_cons_printf ("%s", buf);
 			}
 			break;
 		default:
