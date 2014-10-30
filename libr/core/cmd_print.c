@@ -1144,7 +1144,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'a': //pa
 		if (input[1]=='e') {
 			if (input[2]=='?') {
-				r_cons_printf("|Usage: pae assemble esil from hexpairs\n");
+				r_cons_printf("|Usage: pae [hex]       assemble esil from hexpairs\n");
 			} else {
 				int ret, bufsz;
 				RAnalOp aop = {0};
@@ -1161,7 +1161,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		} else if (input[1]=='d') {
 			if (input[2]=='?') {
-				r_cons_printf("|Usage: pad [hex|asm] disasm\n");
+				r_cons_printf("|Usage: pad [asm]       disasm\n");
 			} else {
 				RAsmCode *c;
 				r_asm_set_pc (core->assembler, core->offset);
