@@ -1907,7 +1907,7 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?')
 				r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
 			else if (r_base64_decode (buf, (const char *)core->block, len))
-					r_cons_printf ("%s", buf);
+				r_cons_printf ("%s", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
 		case '?':
