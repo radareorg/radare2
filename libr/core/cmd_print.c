@@ -1919,6 +1919,7 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 			else {
+				len = len > core->blocksize ? core->blocksize : len;
 				r_base64_encode (buf, core->block, len); //core->blocksize);
 				r_cons_printf ("%s\n", buf);
 			}
