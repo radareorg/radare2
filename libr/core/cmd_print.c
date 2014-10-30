@@ -1921,7 +1921,7 @@ static int cmd_print(void *data, const char *input) {
 			else {
 				len = len > core->blocksize ? core->blocksize : len;
 				r_base64_encode (buf, core->block, len);
-				r_cons_printf ("%s\n", buf);
+				r_cons_printf ("%s", buf);
 			}
 			break;
 		default:
