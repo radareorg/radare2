@@ -1930,7 +1930,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'k':
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: pk [len]       print key in randomart");
+			r_cons_printf("|Usage: pk [len]       print key in randomart\n");
 		} else {
 			len = len > core->blocksize ? core->blocksize : len;
 			char *s = r_print_randomart (core->block, len, core->offset);
@@ -1940,7 +1940,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K':
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: pK [len]       print key in randomart mosaic");
+			r_cons_printf("|Usage: pK [len]       print key in randomart mosaic\n");
 		} else {
 			len = len > core->blocksize ? core->blocksize : len;
 			int w, h;
