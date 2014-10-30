@@ -457,6 +457,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	ut64 pc;
+	char *out = NULL;
 	int ret = R_FALSE;
 	if (!dbg)
 		return R_FALSE;
@@ -472,19 +473,25 @@ repeat:
 		//r_debug_recoil (dbg);
 		if (r_debug_recoil (dbg) || dbg->reason == R_DBG_REASON_BP) {
 			/* check if cur bp demands tracing or not */
-			pc=r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 			RBreakpointItem *b = r_bp_get_at (dbg->bp, pc);
 			if (b) {
 				/* check if cur bp demands tracing or not */
 				if (b->trace) {
 					eprintf("hit tracepoit at: %"PFMT64x"\n",pc);
+				} else {
+					eprintf("hit breakpoint at: %"PFMT64x"\n",pc);
+				}
+				// TODO: delegate this to RCore.bphit(RCore, RBreakopintItem)
+				if (dbg->corebind.core && dbg->corebind.bphit) {
+					dbg->corebind.bphit (dbg->corebind.core, b);
+				}
+				if (b->trace) {
 					r_debug_step (dbg, 1);
 					goto repeat;
 				}
-				eprintf("hit breakpoint at: %"PFMT64x"\n",pc);
 			}
 		}
-
 #if 0
 #if __UNIX__
 		/* XXX Uh? */

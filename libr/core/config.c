@@ -600,6 +600,12 @@ static int cb_scrhighlight(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_screcho(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->echo = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_scrint(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->is_interactive = node->i_value;
@@ -1015,6 +1021,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.fgets", "false", cb_scrfgets);
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
+	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
 	SETPREF("scr.colorops", "true", "Colorize in numbers/registers in opcodes");
 #if __ANDROID__
 	SETPREF("scr.responsive", "true", "Auto-adjust Visual depending on screen (disable asm.bytes and other)");

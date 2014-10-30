@@ -12,6 +12,7 @@
 #include <r_syscall.h>
 #include "list.h"
 
+#include "r_bind.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -155,6 +156,7 @@ typedef struct r_debug_t {
 	RList *maps_user; // <RDebugMap>
 	RGraph *graph;
 	Sdb *sgnls;
+	RCoreBind corebind;
 #if __WINDOWS__
 	HANDLE process_handle;
 #endif

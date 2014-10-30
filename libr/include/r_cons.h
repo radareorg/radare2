@@ -125,6 +125,7 @@ typedef struct r_cons_t {
 	int is_interactive;
 	int lines;
 	int rows;
+	int echo; // dump to stdout in realtime
 	int fps;
 	int columns;
 	int force_rows;

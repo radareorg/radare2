@@ -128,6 +128,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	b->addr = addr;
 	b->size = size;
 	b->enabled = R_TRUE;
+	b->rwx = rwx;
 	b->hw = hw;
 	if (!hw) {
 		b->bbytes = calloc (size+16, 1);

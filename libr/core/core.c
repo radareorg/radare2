@@ -11,6 +11,26 @@
 
 R_LIB_VERSION(r_core);
 
+static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
+	const char *cmdbp;
+	int oecho = core->cons->echo; // should be configurable by user?
+	core->cons->echo = 1; // should be configurable by user?
+	cmdbp = r_config_get (core->config, "cmd.bp");
+	if (cmdbp && *cmdbp)
+		r_core_cmd0 (core, cmdbp);
+	r_core_cmd0 (core, bpi->data);
+	core->cons->echo = oecho;
+}
+
+R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
+	bnd->core = core;
+	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
+	bnd->cmd = (RCoreCmd)r_core_cmd0;
+	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
+	bnd->puts = (RCorePuts)r_cons_strcat;
+	return R_TRUE;
+}
+
 R_API RCore *r_core_ncast(ut64 p) {
 	return (RCore*)(size_t)p;
 }
@@ -759,6 +779,7 @@ R_API int r_core_init(RCore *core) {
 	core->offset = 0LL;
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (R_TRUE);
+	r_core_bind (core, &core->dbg->corebind);
 	core->dbg->graph->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz

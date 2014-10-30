@@ -541,6 +541,7 @@ typedef struct r_anal_t {
 	double diff_thfcn;
 	RIOBind iob;
 	RFlagBind flb;
+	RBinBind binb; // Set only from core when an analysis plugin is called.
 	int decode;
 	int eobjmp; // option
 	RList *types;
@@ -553,7 +554,6 @@ typedef struct r_anal_t {
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	PrintfCallback printf;
-	RBinBind binb; // Set only from core when an analysis plugin is called.
 //moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_refs;

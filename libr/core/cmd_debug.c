@@ -1006,6 +1006,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			}
 			break;
+		case 'c': // "dbic"
+			{
+				const char *cmd = strchr (input+3, ' ');
+				if (cmd) {
+					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
+					if (bpi) { bpi->data = strdup (cmd+1); }
+					else { eprintf ("Cannot set command\n"); }
+				} else {
+					eprintf ("|Usage: dbic # cmd\n");
+				}
+			}
+			break;
 		case 'e': // "dbie"
 			{
 				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
@@ -1060,19 +1072,20 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				"Usage: db", "", " # Breakpoints commands",
 				"db", "", "List breakpoints",
 				"db", " sym.main", "Add breakpoint into sym.main",
-				"db", " <address>", "Add breakpoint",
-				"db", " -<address>", "Remove breakpoint",
+				"db", " <addr>", "Add breakpoint",
+				"db", " -<addr>", "Remove breakpoint",
 				// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-				"dbc", " <address> <cmd>", "Run command when breakpoint is hit",
-				"dbd", " <address>", "Disable breakpoint",
-				"dbe", " <address>", "Enable breakpoint",
-				"dbs", " <address>", "Toggle breakpoint",
+				"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
+				"dbd", " <addr>", "Disable breakpoint",
+				"dbe", " <addr>", "Enable breakpoint",
+				"dbs", " <addr>", "Toggle breakpoint",
 
-				"dbte", " <address>", "Enable Breakpoint Trace",
-				"dbtd", " <address>", "Disable Breakpoint Trace",
-				"dbts", " <address>", "Swap Breakpoint Trace",
+				"dbte", " <addr>", "Enable Breakpoint Trace",
+				"dbtd", " <addr>", "Disable Breakpoint Trace",
+				"dbts", " <addr>", "Swap Breakpoint Trace",
 				//
 				"dbi", "", "List breakpoint indexes",
+				"dbic", " <index> <cmd>", "Run command at breakpoint index",
 				"dbie", " <index>", "Enable breakpoint by index",
 				"dbid", " <index>", "Disable breakpoint by index",
 				"dbis", " <index>", "Swap Nth breakpoint",

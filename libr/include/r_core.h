@@ -3,6 +3,7 @@
 #ifndef R2_CORE_H
 #define R2_CORE_H
 
+
 #include "r_types.h"
 #include "r_magic.h"
 #include "r_io.h"
@@ -27,6 +28,7 @@
 #include "r_socket.h"
 #include "r_util.h"
 #include "r_crypto.h"
+#include "r_bind.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,6 +147,8 @@ typedef struct r_core_t {
 	ut8 switch_file_view;
 	Sdb *sdb;
 } RCore;
+
+R_API int r_core_bind(RCore *core, RCoreBind *bnd);
 
 typedef struct r_core_cmpwatch_t {
 	ut64 addr;
