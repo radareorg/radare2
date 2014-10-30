@@ -930,7 +930,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("dbg.bpsize", 1, &cb_dbgbpsize, "Specify size of software breakpoints");
 #endif
 	SETCB("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");
-	SETCB("dbg.trace.tag", "0xff", &cb_tracetag, "Set trace tag");
+	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Set trace tag");
 
 	/* cmd */
 	if (r_file_exists ("/usr/bin/xdot"))

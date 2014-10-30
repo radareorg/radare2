@@ -318,7 +318,6 @@ static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunct
 			core->reflines2 = r_anal_reflines_fcn_get (core->anal,
 					fcn, -1, ds->linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
-
 }
 
 static void handle_deinit_ds (RCore *core, RDisasmState *ds) {
@@ -468,7 +467,6 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 		if (hint->arch) {
 			if (!hint_arch) hint_arch = strdup (
 				r_config_get (core->config, "asm.arch"));
-//eprintf ("ST ARCH\n");
 			r_config_set (core->config, "asm.arch", hint->arch);
 		}
 		/* bits */

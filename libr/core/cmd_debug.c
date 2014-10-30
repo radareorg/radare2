@@ -1114,6 +1114,8 @@ static void r_core_debug_trace_calls (RCore *core) {
 		RAnalOp aop;
 		if (r_cons_singleton ()->breaked)
 			break;
+		if (r_debug_is_dead (core->dbg))
+			break;
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 		addr = r_debug_reg_get (core->dbg, "pc");
@@ -1251,10 +1253,13 @@ static int cmd_debug(void *data, const char *input) {
 
 	switch (input[0]) {
 	case 't':
+// TODO: define ranges? to display only some traces, allow to scroll on this disasm? ~.. ?
 		switch (input[1]) {
 		case '?': {
 			const char * help_message[] = {
 				"Usage: dt", "", "Trace commands",
+				"dt", "", "List all traces ",
+				"dtd", "", "List all traced disassembled",
 				"dtc", "", "Trace call/ret",
 				"dtg", "", "Graph call/ret trace",
 				"dtr", "", "Reset traces (instruction//cals)",
@@ -1263,12 +1268,16 @@ static int cmd_debug(void *data, const char *input) {
 			r_core_cmd_help (core, help_message);
 			}
 			break;
-		case 'c':
+		case 'c': // "dtc"
 			if (r_debug_is_dead (core->dbg))
 				eprintf ("No process to debug.");
 			else r_core_debug_trace_calls (core);
 			break;
-		case 'g':
+		case 'd':
+			// TODO: reimplement using the api
+			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
+			break;
+		case 'g': // "dtg"
 			dot_r_graph_traverse (core, core->dbg->graph);
 			break;
 		case 'r':

@@ -2,6 +2,8 @@
 
 #include <r_debug.h>
 
+// DO IT WITH SDB
+
 R_API RDebugTrace *r_debug_trace_new () {
 	RDebugTrace *t = R_NEW (RDebugTrace);
 	t->tag = 1; // UT32_MAX;
@@ -36,7 +38,9 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	if ((ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1))) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
-		if (addr)
+		if (!addr) {
+			return R_FALSE;
+		}
 		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
 			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
 				if (oldpc!=0LL)
@@ -56,7 +60,6 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 }
 
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
-	/* TODO: handle opcode size .. warn when jumping in the middle of instructions */
 	int tag = dbg->trace->tag;
 	RListIter *iter;
 	RDebugTracepoint *trace;
@@ -95,8 +98,6 @@ static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 	return ret;
 }
 
-/* sort insert, or separated sort function ? */
-/* TODO: detect if inner opcode */
 R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	RDebugTracepoint *tp;
 	int tag = dbg->trace->tag;
@@ -105,13 +106,12 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	r_anal_trace_bb (dbg->anal, addr);
 	tp = r_debug_trace_get (dbg, addr);
 	if (!tp) {
-		tp = R_NEW (RDebugTracepoint);
-		memset (tp, 0, sizeof (RDebugTracepoint));
+		tp = R_NEW0 (RDebugTracepoint);
 		tp->stamp = r_sys_now ();
 		tp->addr = addr;
 		tp->tags = tag;
 		tp->size = size;
-		tp->count = dbg->trace->count++;
+		tp->count = ++dbg->trace->count;
 		tp->times = 1;
 		r_list_append (dbg->trace->traces, tp);
 	} else tp->times++;
