@@ -140,6 +140,7 @@ static void print_format_help(RCore *core) {
 	"        ", "i", "%%i integer value (4 bytes)",
 	"        ", "w", "word (2 bytes unsigned short in hex)",
 	"        ", "q", "quadword (8 bytes)",
+	"        ", "t", "UNIX timestamp (4 bytes)",
 	"        ", "p", "pointer reference (2, 4 or 8 bytes)",
 	"        ", "T", "show Ten first bytes of buffer",
 	"        ", "d", "0x%%08x hexadecimal value (4 bytes)",
