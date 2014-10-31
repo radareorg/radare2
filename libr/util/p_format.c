@@ -180,6 +180,46 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 	return 0;
 }
 
+static void r_print_format_time(const RPrint* p, int endian, int mustset,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size, int json) {
+	ut64 addr;
+	updateAddr (buf, i, endian, &addr, NULL);
+	if (mustset) {
+		realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else {
+		char *time = strdup(ctime((time_t*)&addr));
+		*(time+24) = '\0';
+		if (!json)
+			p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (size==-1)
+			if (json)
+				p->printf ("\"%s\"", time);
+			else
+				p->printf ("%s", time);
+		else {
+			if (json)
+				p->printf ("[ \"%s\"", time);
+			else
+				p->printf ("[ %s", time);
+			size--;
+			i+=4;
+			while (size--) {
+				updateAddr (buf, i, endian, &addr, NULL);
+				time = strdup(ctime((time_t*)&addr));
+				*(time+24) = '\0';
+				if (json)
+					p->printf (", \"%s\"", time);
+				else
+					p->printf (", %s", time);
+				i+=4;
+			}
+			p->printf (" ]");
+		}
+		free (time);
+		if (json) p->printf ("}");
+	}
+}
+
 // TODO: support unsigned int?
 static void r_print_format_hex(const RPrint* p, int endian, int mustset,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size, int json) {
@@ -814,22 +854,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else
 			/* format chars */
 			switch (tmp) {
-#if 0
 			case 't':
-				/* unix timestamp */
-				D cons_printf("0x%08x = ", config.seek+i);
-				{
-				/* dirty hack */
-				int oldfmt = last_print_format;
-				ut64 old = config.seek;
-				radare_seek(config.seek+i, SEEK_SET);
-				radare_read(0);
-				print_data(config.seek+i, "8", buf+i, 4, FMT_TIME_UNIX);
-				last_print_format=oldfmt;
-				radare_seek(old, SEEK_SET);
-				}
+				r_print_format_time(p, endian, MUSTSET, setval, seeki, buf, i, size, json);
+				i+= (size==-1) ? 4 : 4*size;
 				break;
-#endif
 			case 'q':
 				r_print_format_quadword(p, endian, MUSTSET, setval, seeki, buf, i, size, json);
 				i += (size==-1) ? 8 : 8*size;
