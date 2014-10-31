@@ -458,11 +458,13 @@ static RList* relocs(RBinFile *arch) {
 	r_list_free (imports (arch));
 
 #if 1
+	/*
 	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got")) == -1 &&
 		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt")) == -1) 
 	{
 		return ret;
 	}
+	*/
 	if (arch->o) {
 		if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->o->bin_obj)))
 			return ret;

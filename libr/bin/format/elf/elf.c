@@ -760,151 +760,148 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return ret;
 }
 
-struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	struct r_bin_elf_reloc_t *ret = NULL;
-	Elf_(Sym) *sym = NULL;
-	Elf_(Rela) *rel = NULL;
-	ut64 got_addr, got_offset;
-	char *strtab = NULL, rel_fmt[] = "2i";
-	char *tmp_ptr =  NULL;
-	int i, j, nrel, tsize, nsym;
-
-	if (!bin->shdr || !bin->strtab)
-		return NULL;
-	if ((got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
-		(got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
-			got_offset = 0;
-	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
-		(got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1)
-			got_offset = 0;
-	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
-		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
-
-			/* Bad sh_link ! */
-			if (bin->shdr[i].sh_link >= bin->ehdr.e_shnum)
-				continue;
-
-			bin->strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-			tsize = bin->strtab_section? bin->strtab_section->sh_size: 0;
-			if (!tsize) continue;
-			tmp_ptr = strtab;
-			if ((strtab = (char *)malloc (8+tsize)) == NULL) {
-				perror ("malloc (syms strtab)");
-				free (sym);
-				free (strtab);
-				return NULL;
-			} else {
-				if (tmp_ptr) free (tmp_ptr);
-			}
-			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, tsize) == -1) {
-				eprintf ("Warning: read (syms strtab)\n");
-				free (sym);
-				free (strtab);
-				return NULL;
-			}
-			if (bin->shdr[i].sh_size > bin->size) {
-				eprintf ("Warning: alloc (invalid shsize)\n");
-				free (sym);
-				free (strtab);
-				return NULL;
-			}
-			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) { // LEAKS
-				perror ("malloc (syms)");
-				free (strtab);
-				return NULL;
-			}
-			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
-			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
-#if R_BIN_ELF64
-					bin->endian?"I2cS2L":"i2cs2l",
-#else
-					bin->endian?"3I2cS":"3i2cs",
-#endif
-					nsym) == -1) {
-				eprintf ("Warning: read (sym)\n");
-				free (sym);
-				free (strtab);
-				return NULL;
-			}
-		}
+static size_t Elf_(r_bin_elf_get_relocs_num)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	size_t i, ret = 0;
+	const char *sh_name;
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		const char *sh_name = &bin->strtab[bin->shdr[i].sh_name];
+		sh_name = &bin->strtab[bin->shdr[i].sh_name];
+
 		if (bin->shdr[i].sh_name > bin->strtab_size) {
 			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
-				bin->shdr[i].sh_name, (ut64) bin->strtab_size);
+					bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
 		}
-		if (!strcmp (sh_name, ".rel.plt")) {
-			tsize = sizeof (Elf_(Rel));
-			rel_fmt[0] = '2';
-		} else if (!strcmp (sh_name, ".rela.plt")) {
-			tsize = sizeof (Elf_(Rela));
-			rel_fmt[0] = '3';
-		} else if (!strcmp (sh_name, ".rela.text")) {
-			// TODO: Implement this method somehow
-			// those types are not supported yet
-			tsize = sizeof (Elf_(Rela));
-			rel_fmt[0] = '3';
-		} else continue;
 
-		rel_fmt[1] =
-#if R_BIN_ELF64
-			bin->endian?'L':'l';
-#else
-			bin->endian?'I':'i';
-#endif
 
-		if (tsize <1) // NOTE(eddyb) UNREACHABLE.
-			return ret; // -1 ?
-
-		nrel = ((int)bin->shdr[i].sh_size / (int)tsize);
-		ut32 relsz = (ut32) (int)(nrel+1) * (int)sizeof (Elf_(Rela));
-		if ((rel = (Elf_(Rela)*)malloc (relsz)) == NULL) {
-			perror ("malloc (rel)");
-			free (sym);
-			free (strtab);
-			return NULL;
+		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
+			ret += bin->ehdr.e_ident[EI_CLASS] == 1 ? (bin->shdr[i].sh_size) / (sizeof (ut32) * 3) :
+							(bin->shdr[i].sh_size) / (sizeof (ut64) * 3);
+		} else if (!strncmp (sh_name, ".rel.", strlen (".rel."))) {
+			ret += bin->ehdr.e_ident[EI_CLASS] == 1 ? (bin->shdr[i].sh_size) / (sizeof (ut32) * 2) :
+							(bin->shdr[i].sh_size) / (sizeof (ut64) * 2);
 		}
-
-		for (j = nrel = 0; j < (int)bin->shdr[i].sh_size; j += tsize, nrel++) {
-			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j,
-					(ut8*)&rel[nrel], rel_fmt, 1) == -1) {
-				eprintf ("Warning: read (rel)\n");
-				free (rel);
-				free (strtab);
-				free (sym);
-				return NULL;
-			}
-			if (tsize < sizeof (Elf_(Rela)))
-				rel[nrel].r_addend = 0;
-		}
-		if ((ret = (struct r_bin_elf_reloc_t *)malloc ( (nrel+1) *
-				sizeof (struct r_bin_elf_reloc_t))) == NULL) {
-			perror ("malloc (reloc)");
-			free (rel);
-			free (sym);
-			free (strtab);
-			return NULL;
-		}
-		j = 0;
-		if (sym) {
-			for (j=0; j < nrel; j++) {
-				ret[j].sym = ELF_R_SYM (rel[j].r_info);
-				ret[j].type = ELF_R_TYPE (rel[j].r_info);
-				ret[j].offset = rel[j].r_offset-got_addr+got_offset; // HACK FIXME(eddyb) there has to be a better way of getting the offset (for relocs outside GOT).
-				ret[j].rva = rel[j].r_offset - bin->baddr;
-				ret[j].addend = rel[j].r_addend;
-				ret[j].is_rela = tsize == sizeof (Elf_(Rela));
-				ret[j].last = 0;
-			}
-		}
-		ret[j].last = 1;
-		break;
 	}
-	free (rel);
-	free (strtab);
-	free (sym);
+
+	return ret;
+}
+
+static int Elf_(r_bin_elf_read_reloc)(struct Elf_(r_bin_elf_obj_t) *bin,
+		struct r_bin_elf_reloc_t *r, int is_rela, ut64 offset)
+{
+	char *fmt;
+	st64 l1, l2, l3;
+	st32 i1, i2, i3;
+
+
+	if (bin->ehdr.e_ident[EI_CLASS] == 1) {
+		fmt = bin->endian ? "I" : "i";
+		if (r_buf_fread_at (bin->b, offset, (ut8*)&i1, fmt, 1) == -1) {
+			eprintf ("Error reading r_offset\n");
+			return -1;
+		}
+		if (r_buf_fread_at (bin->b, offset + sizeof (ut32), (ut8*)&i2, fmt, 1) == -1) {
+			eprintf ("Error reading r_info\n");
+			return -1;
+		}
+		if (is_rela && (r_buf_fread_at (bin->b, offset + sizeof (ut32) * 2, (ut8*)&i3, fmt, 1) == -1)) {
+			eprintf ("Error reading r_addend\n");
+			return -1;
+		}
+
+		r->is_rela = is_rela;
+		r->offset = i1;
+		r->type = ELF32_R_TYPE(i2);
+		r->sym = ELF32_R_SYM(i2);
+		r->last = 0;
+		if (is_rela)
+			r->addend = i3;
+
+		return is_rela ? sizeof (ut32) * 3 : sizeof (ut32) * 2;
+	} else {
+		fmt = bin->endian ? "L" : "l";
+		if (r_buf_fread_at (bin->b, offset, (ut8*)&l1, fmt, 1) == -1) {
+			eprintf ("Error reading r_offset\n");
+			return -1;
+		}
+		if (r_buf_fread_at (bin->b, offset + sizeof (ut64), (ut8*)&l2, fmt, 1) == -1) {
+			eprintf ("Error reading r_info\n");
+			return -1;
+		}
+		if (is_rela && (r_buf_fread_at (bin->b, offset + 2 * sizeof (ut64), (ut8*)&l3, fmt, 1) == -1)) {
+			eprintf ("Error reading r_addend\n");
+			return -1;
+		}
+
+		r->is_rela = is_rela;
+		r->offset = l1;
+		r->type = ELF64_R_TYPE(l2);
+		r->sym = ELF64_R_SYM(l2);
+		r->last = 0;
+		if (is_rela)
+			r->addend = l3;
+
+		return is_rela ? sizeof (ut64) * 3 : sizeof (ut64) * 2;
+	}
+}
+
+struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int res;
+	const char *sh_name;
+	size_t reloc_num = 0;
+	size_t i, offset, j, rel;
+	struct r_bin_elf_reloc_t *ret = NULL;
+
+	if (!bin || !bin->shdr || !bin->strtab)
+		return NULL;
+
+	reloc_num = Elf_(r_bin_elf_get_relocs_num)(bin);
+
+	if (!reloc_num)
+		return NULL;
+
+	ret = (struct r_bin_elf_reloc_t*)malloc(sizeof (struct r_bin_reloc_t) * (reloc_num + 1));
+
+	if (!ret)
+		return NULL;
+
+	for (i = 0, rel = 0; i < bin->ehdr.e_shnum; i++) {
+		/*
+		if (bin->shdr[i].sh_type != (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM))
+			continue;
+		*/
+
+		sh_name = &bin->strtab[bin->shdr[i].sh_name];
+
+
+		if (bin->shdr[i].sh_name > bin->strtab_size) {
+			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
+					bin->shdr[i].sh_name, (ut64) bin->strtab_size);
+			continue;
+		}
+
+		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
+			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
+				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 1, bin->shdr[i].sh_offset + j);
+				ret[rel].rva = ret[rel].offset - bin->baddr;
+				if (res < 0)
+					break;
+				rel++;
+			}
+		} else if (!strncmp (sh_name, ".rel.", strlen (".rel."))) {
+			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
+				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 0, bin->shdr[i].sh_offset + j);
+				ret[rel].rva = ret[rel].offset - bin->baddr;
+				if (res < 0)
+					break;
+				rel++;
+			}
+		}
+	}
+
+	ret[rel].last = 1;
+
+
 	return ret;
 }
 

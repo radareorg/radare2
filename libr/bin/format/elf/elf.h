@@ -42,6 +42,7 @@ typedef struct r_bin_elf_reloc_t {
 	st64 addend;
 	ut64 offset;
 	ut64 rva;
+	ut16 section;
 	int last;
 } RBinElfReloc;
 
