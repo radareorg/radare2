@@ -913,7 +913,8 @@ static int cmd_print(void *data, const char *input) {
 	case 'w': //pw
 		if (input[1]=='n') {
 			cmd_print_pwn(core);
-		} else {
+		}
+		else if (input[1]=='d') {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
@@ -921,6 +922,8 @@ static int cmd_print(void *data, const char *input) {
 					free (cwd);
 				}
 			}
+		} else {
+			r_cons_printf("| pwd               display current working directory\n");
 		}
 		break;
 	case 'v': //pv
