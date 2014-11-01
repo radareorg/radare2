@@ -122,6 +122,7 @@ static void print_format_help(RCore *core) {
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
 	"pfo", "", "List all format files",
 	"pfo", " elf32", "Load the elf32 format definition file",
+	"pfs", " format_name", "Print the size of the format in bytes",
 	"pf.", "", "List all formats",
 	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
 	"pf",  " obj=xxdz prev next size name", "Same as above",
@@ -174,6 +175,19 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		_input++;
 		flag = JSONOUTPUT;
 		break;
+	case 's':
+		{
+		const char *val = NULL;
+		_input+=2;
+		while (*_input==' ') _input++;
+		val = r_strht_get (core->print->formats, _input);
+		if (val != NULL)
+			r_cons_printf ("%d bytes\n", r_print_format_struct_size (strdup(val), core->print));
+		else {
+			eprintf ("Struct %s not defined\nUsage: pfs struct_name\n", _input);
+		}
+		}
+		return;
 	case '?':
 		_input+=2;
 		if (*_input) {
