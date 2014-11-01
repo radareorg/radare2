@@ -379,14 +379,18 @@ R_API int r_core_block_read(RCore *core, int next) {
 	return r_io_read_at (core->io, core->offset+((next)?core->blocksize:0), core->block, core->blocksize);
 }
 
-R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
-	if (!core->io || !core->file || !core->file->desc || size<1)
+R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size)
+{
+	if (!core->io || !core->file || !core->file->desc || size<1) {
+		memset (buf, 0xff, size);				//memset (buf, 0xff, size * sizeof(ut8)) ?
 		return R_FALSE;
+	}
 	r_io_use_desc (core->io, core->file->desc);
 	return r_io_read_at (core->io, addr, buf, size);
 }
 
-R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
+R_API int r_core_is_valid_offset (RCore *core, ut64 offset)
+{
 	if (!core) {
 		eprintf ("r_core_is_valid_offset: core is NULL\n");
 		r_sys_backtrace ();
