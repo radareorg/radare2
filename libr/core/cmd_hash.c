@@ -154,6 +154,10 @@ static int cmd_hash(void *data, const char *input) {
 		return R_TRUE;
 		}
 	case '!': {
+		if (!core || !core->config || r_config_get_i(core->config, "cfg.sandbox")) {
+			eprintf ("nice try\n");
+			return R_FALSE;
+		}
 		const char *lang = input+1;
 		if (*lang=='/') {
 			const char *ptr = lang+1;
