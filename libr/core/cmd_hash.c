@@ -137,8 +137,46 @@ static void algolist(int mode) {
 	if (!mode) r_cons_newline ();
 }
 
+static int cmd_hash_bang (RCore *core, const char *input) {
+	char *p;
+	const char *lang = input+1;
+	if (r_sandbox_enable (0)) {
+		eprintf ("hashbang disabled in sandbox mode\n");
+		return R_FALSE;
+	}
+	if (*lang=='/') {
+		const char *ptr = lang+1;
+		while (*lang) {
+			if (*lang=='/')
+				ptr = lang+1;
+			lang++;
+		}
+		RLangPlugin *p = r_lang_get_by_extension (core->lang, ptr);
+		if (p && p->name) lang = p->name;
+	}
+	if (*lang==' ') {
+		RLangPlugin *p = r_lang_get_by_extension (core->lang, input+2);
+		if (p && p->name) lang = p->name;
+	} else if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
+		r_lang_list (core->lang);
+		return R_TRUE;
+	}
+	p = strchr (input, ' ');
+	if (p) *p=0;
+	// TODO: set argv here
+	if (r_lang_use (core->lang, lang)) {
+		r_lang_setup (core->lang);
+		if (p) r_lang_run_file (core->lang, p+1);
+		else r_lang_prompt (core->lang);
+	} else {
+		if (!p || *p==' ')
+			eprintf ("Invalid hashbang. See '#!' for help.\n");
+	}
+	return R_TRUE;
+}
+
 static int cmd_hash(void *data, const char *input) {
-	char *p, algo[32];
+	char algo[32];
 	RCore *core = (RCore *)data;
 	ut32 osize = 0, len = core->blocksize;
 	const char *ptr;
@@ -153,37 +191,8 @@ static int cmd_hash(void *data, const char *input) {
 		algolist (1);
 		return R_TRUE;
 		}
-	case '!': {
-		const char *lang = input+1;
-		if (*lang=='/') {
-			const char *ptr = lang+1;
-			while (*lang) {
-				if (*lang=='/')
-					ptr = lang+1;
-				lang++;
-			}
-			RLangPlugin *p = r_lang_get_by_extension (core->lang, ptr);
-			if (p && p->name) lang = p->name;
-		}
-		if (*lang==' ') {
-			RLangPlugin *p = r_lang_get_by_extension (core->lang, input+2);
-			if (p && p->name) lang = p->name;
-		} else if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
-			r_lang_list (core->lang);
-			return R_TRUE;
-		}
-		p = strchr (input, ' ');
-		if (p) *p=0;
-		// TODO: set argv here
-		if (r_lang_use (core->lang, lang)) {
-			r_lang_setup (core->lang);
-			if (p) r_lang_run_file (core->lang, p+1);
-			else r_lang_prompt (core->lang);
-		} else
-		if (!p || *p==' ')
-			eprintf ("Invalid hashbang. See '#!' for help.\n");
-		return R_TRUE;
-	}
+	case '!':
+		return cmd_hash_bang (core, input);
 	}
 
 	ptr = strchr (input, ' ');

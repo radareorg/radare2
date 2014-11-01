@@ -429,7 +429,8 @@ static int cmd_write(void *data, const char *input) {
 		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;
-	case 't':
+	case 't': {
+		st64 sz = core->blocksize;
 		if (*str == '?') {
 			eprintf ("Usage: wt file [size]\n");
 			return 0;
@@ -441,13 +442,18 @@ static int cmd_write(void *data, const char *input) {
 		}  else filename = str+1;
 		tmp = strchr (str+1, ' ');
 		if (tmp) {
-			st64 sz = (st64) r_num_math (core->num, tmp+1);
+			sz = (st64) r_num_math (core->num, tmp+1);
 			*tmp = 0;
 			if (sz<1) eprintf ("Invalid length\n");
 			else r_core_dump (core, filename, core->offset, (ut64)sz);
-		} else r_file_dump (filename, core->block, core->blocksize);
-		eprintf ("Dumped %d bytes from 0x%08"PFMT64x" into %s\n",
+		} else {
+			if (!r_file_dump (filename, core->block, core->blocksize)) {
+				sz = 0;
+			} else sz = core->blocksize;
+		}
+		eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
 			sz, core->offset, filename);
+		}
 		break;
 	case 'f':
 		arg = (const char *)(input+((input[1]==' ')?2:1));
