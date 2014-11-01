@@ -5,6 +5,8 @@
 #include <capstone.h>
 #include <x86.h>
 
+#define USE_ITER_API 1
+
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
 #endif
@@ -14,7 +16,10 @@
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle;
-	cs_insn *insn;
+#if USE_ITER_API
+	static
+#endif
+	cs_insn *insn = NULL;
 	int mode = (a->bits==64)? CS_MODE_64: 
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
@@ -29,7 +34,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
+#if USE_ITER_API
+		{
+			size_t size = len;
+			if (insn == NULL)
+				insn = cs_malloc (handle);
+			n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&addr, insn);
+		}
+#else
 		n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+#endif
 		if (n<1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
@@ -257,7 +271,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			}
 		}
+#if !USE_ITER_API
 		cs_free (insn, n);
+#endif
 		cs_close (&handle);
 	}
 	return op->size;
