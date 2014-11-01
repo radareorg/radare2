@@ -361,10 +361,14 @@ static void r_core_graph_refresh (RCore *core) {
 		Edge_print (can, a, b, edges[i].nth);
 	}
 	for (i=0; i<n_nodes; i++) {
-		Node_print (can, &nodes[i], i==curnode);
+		if (i != curnode) {
+			Node_print (can, &nodes[i], i==curnode);
+		}
 	}
 	// redraw current node to make it appear on top
-	Node_print (can, &nodes[curnode], 1);
+	if (curnode >= 0 && curnode < n_nodes) {
+		Node_print (can, &nodes[curnode], 1);
+	}
 
 	G (-can->sx, -can->sy);
 	snprintf (title, sizeof (title)-1,
