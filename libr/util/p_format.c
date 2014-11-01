@@ -474,12 +474,12 @@ static void r_print_format_word(const RPrint* p, int endian, int mustset,
 }
 
 // XXX: this is very incomplete. must be updated to handle all format chars
-int r_print_format_struct_size(const char *fmt, RPrint *p) {
-	char *end = strchr (fmt, ' '), *args;
+int r_print_format_struct_size(const char *f, RPrint *p) {
+	char *format=strdup(f);
+	char *end = strchr(format, ' '), *args, *o = format, *fmt = format;
 	int size = 0, tabsize=0, i, idx=0;
-	if (!end) {
+	if (!end)
 		return -1;
-	}
 	*end = 0;
 	args = strdup (end+1);
 	r_str_word_set0 (args);
@@ -562,6 +562,7 @@ int r_print_format_struct_size(const char *fmt, RPrint *p) {
 		}
 		idx++;
 	}
+	free (o);
 	free (args);
 	return size;
 }
