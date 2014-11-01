@@ -144,7 +144,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				free (bptr);
 				return ret;
 			}
-			free(bptr);
+			free (bptr);
 			break;
 		case 'c': return r_cons_get_size (NULL);
 		case 'r': { int rows; r_cons_get_size (&rows); return rows; }
@@ -817,6 +817,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
+	r_core_task_join (c);
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	r_io_free (c->io);

@@ -641,7 +641,8 @@ static int cmd_thread(void *data, const char *input) {
 	}
 	switch (input[0]) {
 	case '\0':
-		r_core_task_list (core, 0);
+	case 'j':
+		r_core_task_list (core, *input);
 		break;
 	case '&':
 		if (input[1]=='&') {
@@ -685,16 +686,18 @@ static int cmd_thread(void *data, const char *input) {
 		const char* help_msg[] = {
 			"Usage:", "&[-|<cmd>]", "Manage tasks",
 			"&", "", "list all running threads",
+			"&j", "", "list all running threads (in JSON)",
 			"&?", "", "show this help",
 			"&+", " aa", "push to the task list",
 			"&-", " 1", "delete task #1",
-			"&", " aa", "run analysis in background",
 			"&", "-*", "delete all threads",
+			"&", " aa", "run analysis in background",
 			"&", " &&", "run all tasks in background",
 			"&&", "", "run all pendings tasks (and join threads)",
 			"&&&", "", "run all pendings tasks until ^C",
 			"","","TODO: last command should honor asm.bits", 
 			NULL};
+		// TODO: integrate with =h& and bg anal/string/searchs/..
 		r_core_cmd_help (core, help_msg);
 		}
 		break;
@@ -702,6 +705,7 @@ static int cmd_thread(void *data, const char *input) {
 		{
 		RCoreTask *task = r_core_task_add (core, r_core_task_new (core, input+1, (RCoreTaskCallback)task_finished, core));
 		RThread *th = r_th_new (taskbgrun, task, 0);
+		task->msg->th = th;
 		//r_core_cmd0 (core, task->msg->text);
 		//r_core_task_del (core, task->id);
 		}

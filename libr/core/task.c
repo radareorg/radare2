@@ -5,11 +5,12 @@
 R_API void r_core_task_list (RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
+	if (mode=='j') r_cons_printf("[");
 	r_list_foreach (core->tasks, iter, task) {
-		switch(mode) {
+		switch (mode) {
 		case 'j':
-			r_cons_printf ("{\"id\":%d,\"status\":\"%c\",\"text\":\"%s\"\n",
-				task->id, task->state, task->msg->text);
+			r_cons_printf ("{\"id\":%d,\"status\":\"%c\",\"text\":\"%s\"}%s",
+				task->id, task->state, task->msg->text, iter->n?",":"");
 			break;
 		default:
 			r_cons_printf ("%d %c %s\n", task->id, task->state, task->msg->text);
@@ -18,6 +19,15 @@ R_API void r_core_task_list (RCore *core, int mode) {
 			}
 			break;
 		}
+	}
+	if (mode=='j') r_cons_printf("]\n");
+}
+
+R_API void r_core_task_join (RCore *core) {
+	RCoreTask *task;
+	RListIter *iter;
+	r_list_foreach_prev (core->tasks, iter, task) {
+		r_th_wait (task->msg->th);
 	}
 }
 
