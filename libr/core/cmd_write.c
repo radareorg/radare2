@@ -446,11 +446,8 @@ static int cmd_write(void *data, const char *input) {
 			if (sz<1) eprintf ("Invalid length\n");
 			else r_core_dump (core, filename, core->offset, (ut64)sz);
 		} else r_file_dump (filename, core->block, core->blocksize);
-		eprintf ("Dump %d bytes from 0x%08"PFMT64x" into %s\n",
-			core->blocksize, core->offset, filename);
-		break;
-	case 'T':
-		eprintf ("TODO: wT // why?\n");
+		eprintf ("Dumped %d bytes from 0x%08"PFMT64x" into %s\n",
+			sz, core->offset, filename);
 		break;
 	case 'f':
 		arg = (const char *)(input+((input[1]==' ')?2:1));

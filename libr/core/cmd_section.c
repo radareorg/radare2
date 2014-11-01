@@ -11,6 +11,7 @@ static int cmd_section(void *data, const char *input) {
 		"Sa","[-] [arch] [bits] [[off]]","Specify arch and bits for given section",
 		"Sd"," [file]","dump current section to a file (see dmd)",
 		"Sl"," [file]","load contents of file into current section (see dml)",
+		"Sj","","list sections in JSON (alias for iSj)",
 		"Sr"," [name]","rename section on current seek",
 		"S"," off va sz vsz name rwx","add new section (if(!vsz)vsz=sz)",
 		"S-","[id|0xoff|*]","remove this section definition",
@@ -20,6 +21,9 @@ static int cmd_section(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg);
 // TODO: add command to resize current section
+		break;
+	case 'j':
+		r_core_cmd0 (core, "iSj");
 		break;
 	case 'a':
 		switch (input[1]) {
