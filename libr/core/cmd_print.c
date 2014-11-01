@@ -179,13 +179,25 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		{
 		const char *val = NULL;
 		_input+=2;
-		while (*_input==' ') _input++;
-		val = r_strht_get (core->print->formats, _input);
-		if (val != NULL)
-			r_cons_printf ("%d bytes\n", r_print_format_struct_size (strdup(val), core->print));
-		else {
-			eprintf ("Struct %s not defined\nUsage: pfs struct_name\n", _input);
+		if (*_input == '.') {
+			_input++;
+			val = r_strht_get (core->print->formats, _input);
+			if (val != NULL)
+				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print));
+			else {
+				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+			}
+		} else if (*_input == ' ') {
+			while (*_input == ' ' && *_input != '\0') _input++;
+			if (_input != '\0')
+				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print));
+			else {
+				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+			}
+		} else {
+			eprintf ("Usage: pfs.struct_name | pfs format\n");
 		}
+
 		}
 		return;
 	case '?':
