@@ -1582,6 +1582,7 @@ static void handle_print_refptr (RCore *core, RDisasmState *ds) {
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	int ret, idx = 0, i;
 	int continueoninvbreak = (len == l) && invbreak;
+	int dorepeat = 1;
 	RAnalFunction *f = NULL;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
@@ -1660,8 +1661,10 @@ toro:
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
 			idx+=ds->oplen,i++, ds->index+=ds->oplen, ds->lines++) {
 		ds->at = ds->addr + idx;
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->breaked) {
+			dorepeat = 0;
 			break;
+		}
 
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -1801,7 +1804,7 @@ toro:
 
 #if HASRETRY
 	//if (!ds->cbytes && idx>=len) {// && (invbreak && !ds->lastfail)) {
-	if (!ds->cbytes && ds->lines<ds->l) {
+	if (!ds->cbytes && ds->lines<ds->l && dorepeat) {
 	retry:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);
@@ -1842,6 +1845,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
+eprintf ("DISASSM\n");
 
 	if (!nb_bytes) {
 		nb_bytes = core->blocksize;
@@ -1876,9 +1880,12 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	if (ds->l == 0)
 		ds->l = ds->len;
 
+	r_cons_break (NULL, NULL);
 	for (i=j=0; i<bs && i<ds->len && j<ds->l; i+=ret, j++) {
 		ds->at = core->offset +i;
 		r_core_seek_archbits (core, ds->at);
+		if (r_cons_singleton ()->breaked)
+			break;
 		if (ds->hint) {
 			r_anal_hint_free (ds->hint);
 			ds->hint = NULL;
@@ -1948,6 +1955,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			ds->hint = NULL;
 		}
 	}
+	r_cons_break_end ();
 	if (ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
