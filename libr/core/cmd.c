@@ -611,13 +611,106 @@ static int cmd_resize(void *data, const char *input) {
 
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
-	int ret;
 	if (core->http_up)
 		return R_FALSE;
 	if (!r_config_get_i (core->config, "scr.interactive"))
 		return R_FALSE;
-	ret = r_core_visual ((RCore *)data, input);
-	return ret;
+	return r_core_visual ((RCore *)data, input);
+}
+
+static int task_finished(void *user, void *data) {
+	eprintf ("TASK FINISHED\n");
+	return 0;
+}
+
+static int taskbgrun(RThread *th) {
+	RCoreTask *task = th->user;
+	RCore *core = task->core;
+	char *res = r_core_cmd_str (core, task->msg->text);
+	task->msg->res = res;
+	eprintf ("Task %d finished\n", task->id);
+	return 0;
+// TODO: run callback and pass result
+}
+
+static int cmd_thread(void *data, const char *input) {
+	RCore *core = (RCore*) data;
+	if (r_sandbox_enable (0)) {
+		eprintf ("This command is disabled in sandbox mode\n");
+		return 0;
+	}
+	switch (input[0]) {
+	case '\0':
+		r_core_task_list (core, 0);
+		break;
+	case '&':
+		if (input[1]=='&') {
+			// wait until ^C
+		} else {
+			int tid = r_num_math (core->num, input+1);
+			if (tid) {
+				RCoreTask *task = r_core_task_get (core, tid);
+				if (task) {
+					//r_core_task_join (core, task);
+				} else eprintf ("Cannot find task\n");
+			} else {
+				r_core_task_run (core, NULL);
+			}
+		}
+		break;
+	case '=': {
+		int tid = r_num_math (core->num, input+1);
+		if (tid) {
+			RCoreTask *task = r_core_task_get (core, tid);
+			if (task) {
+				r_cons_printf ("Task %d Status %c\n", task->id, task->state);
+				r_cons_printf ("%s\n", task->msg->text);
+			} else eprintf ("Cannot find task\n");
+		} else {
+			r_core_task_list (core, 1);
+		}}
+		break;
+	case '+':
+		r_core_task_add (core, r_core_task_new (core, input+1, (RCoreTaskCallback)task_finished, core));
+		break;
+	case '-':
+		if (input[1]=='*') {
+			r_core_task_del (core, -1);
+		} else {
+			r_core_task_del (core, r_num_math (core->num, input+1));
+		}
+		break;
+	case '?':
+		{
+		const char* help_msg[] = {
+			"Usage:", "&[-|<cmd>]", "Manage tasks",
+			"&", "", "list all running threads",
+			"&?", "", "show this help",
+			"&+", " aa", "push to the task list",
+			"&-", " 1", "delete task #1",
+			"&", " aa", "run analysis in background",
+			"&", "-*", "delete all threads",
+			"&", " &&", "run all tasks in background",
+			"&&", "", "run all pendings tasks (and join threads)",
+			"&&&", "", "run all pendings tasks until ^C",
+			"","","TODO: last command should honor asm.bits", 
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		}
+		break;
+	case ' ':
+		{
+		RCoreTask *task = r_core_task_add (core, r_core_task_new (core, input+1, (RCoreTaskCallback)task_finished, core));
+		RThread *th = r_th_new (taskbgrun, task, 0);
+		//r_core_cmd0 (core, task->msg->text);
+		//r_core_task_del (core, task->id);
+		}
+		break;
+	default:
+		eprintf ("&?\n");
+		break;
+	}
+	return 0;
 }
 
 static int cmd_pointer(void *data, const char *input) {
@@ -1693,6 +1786,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
 	r_cmd_add (core->rcmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (core->rcmd, "*",        "pointer read/write", &cmd_pointer);
+	r_cmd_add (core->rcmd, "&",        "threading capabilities", &cmd_thread);
 	r_cmd_add (core->rcmd, "%",        "short version of 'env' command", &cmd_env);
 	r_cmd_add (core->rcmd, "!",        "run system command", &cmd_system);
 	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);

@@ -9,7 +9,7 @@ DEPS+=r_reg r_search r_syscall r_diff r_socket r_fs r_magic
 OBJS=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o graph.o
 OBJS+=hack.o vasm.o patch.o bin.o log.o syscmd.o rtr.o cmd_api.o
 OBJS+=anal.o project.o gdiff.o asm.o vmenus.o disasm.o plugin.o
-OBJS+=help.o
+OBJS+=help.o task.o
 
 CFLAGS+=-DCORELIB
 LDFLAGS+=${DL_LIBS}

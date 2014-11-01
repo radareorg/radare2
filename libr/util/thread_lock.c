@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_th.h>
 
 /* locks/mutex/sems */
 
-R_API struct r_th_lock_t *r_th_lock_new() {
+R_API RThreadLock *r_th_lock_new() {
 	RThreadLock *thl = R_NEW(RThreadLock);
 	if (thl) {
 		thl->refs = 0;
@@ -18,7 +18,7 @@ R_API struct r_th_lock_t *r_th_lock_new() {
 	return thl;
 }
 
-R_API int r_th_lock_wait(struct r_th_lock_t *thl) {
+R_API int r_th_lock_wait(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	r_th_lock_enter (thl);
 	r_th_lock_enter (thl); // locks here
@@ -31,20 +31,20 @@ R_API int r_th_lock_wait(struct r_th_lock_t *thl) {
 	return 0;
 }
 
-R_API int r_th_lock_enter(struct r_th_lock_t *thl) {
+R_API int r_th_lock_enter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	pthread_mutex_lock(&thl->lock);
 #elif __WIN32__
-	EnterCriticalSection(&thl->lock);
+	EnterCriticalSection (&thl->lock);
 #endif
 	return ++thl->refs;
 }
 
-R_API int r_th_lock_leave(struct r_th_lock_t *thl) {
+R_API int r_th_lock_leave(RThreadLock *thl) {
 #if HAVE_PTHREAD
-	pthread_mutex_unlock(&thl->lock);
+	pthread_mutex_unlock (&thl->lock);
 #elif __WIN32__
-	LeaveCriticalSection(&thl->lock);
+	LeaveCriticalSection (&thl->lock);
 	//ReleaseSemaphore (thl->lock, 1, NULL);
 #endif
 	if (thl->refs>0)
@@ -52,12 +52,12 @@ R_API int r_th_lock_leave(struct r_th_lock_t *thl) {
 	return thl->refs;
 }
 
-R_API int r_th_lock_check(struct r_th_lock_t *thl) {
+R_API int r_th_lock_check(RThreadLock *thl) {
 //w32 // TryEnterCriticalSection(&thl->lock);
 	return thl->refs;
 }
 
-R_API void *r_th_lock_free(struct r_th_lock_t *thl) {
+R_API void *r_th_lock_free(RThreadLock *thl) {
 	if (thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);
@@ -65,7 +65,7 @@ R_API void *r_th_lock_free(struct r_th_lock_t *thl) {
 		DeleteCriticalSection (&thl->lock);
 		CloseHandle (thl->lock);
 #endif
-		free(thl);
+		free (thl);
 	}
 	return NULL;
 }

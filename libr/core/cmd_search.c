@@ -853,11 +853,11 @@ static int cmd_search(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 		} else r_core_search_rop (core, from, to, 0, input+1);
 		return R_TRUE;
-	case 'r':
-		if (input[param_offset-1]==' ')
+	case 'r': // "/r"
+		if (input[param_offset-1]==' ') {
 			r_core_anal_search (core, from, to,
 				r_num_math (core->num, input+2));
-		else r_core_anal_search (core, from, to, core->offset);
+		} else r_core_anal_search (core, from, to, core->offset);
 		break;
 	case 'a': {
 		char *kwd;

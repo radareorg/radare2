@@ -684,6 +684,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
+	core->tasks = r_list_new ();
 	core->watchers = r_list_new ();
 	core->watchers->free = (RListFree)r_core_cmpwatch_free;
 	core->scriptstack = r_list_new ();

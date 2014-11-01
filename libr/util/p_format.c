@@ -540,7 +540,8 @@ int r_print_format_struct_size(const char *f, RPrint *p) {
 				break;
 			case '?':
 				{
-				char *endname = NULL, *format = NULL, *structname = NULL;
+				const char *format = NULL;
+				char *endname = NULL, *structname = NULL;
 				structname = strdup(r_str_word_get0 (args, idx));
 				if (*structname == '(') {
 					endname = strchr (structname, ')');
@@ -549,9 +550,9 @@ int r_print_format_struct_size(const char *f, RPrint *p) {
 					free(structname);
 					break;
 				}
-				if (endname!=NULL) *endname = '\0';
+				if (endname) *endname = '\0';
 				format = r_strht_get (p->formats, structname+1);
-				size += tabsize*r_print_format_struct_size (format, p);
+				size += tabsize * r_print_format_struct_size (format, p);
 				free (structname);
 				break;
 				}

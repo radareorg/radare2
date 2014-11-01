@@ -64,6 +64,17 @@ R_API int r_th_lock_check(RThreadLock *thl);
 R_API int r_th_lock_enter(RThreadLock *thl);
 R_API int r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
+
+typedef struct r_thread_msg_t {
+	char *text;
+	char done;
+	char *res;
+	RThread *th;
+} RThreadMsg;
+
+R_API RThreadMsg* r_th_msg_new (const char *cmd, void *cb);
+R_API void r_th_msg_free (RThreadMsg* msg);
+
 #endif
 
 #ifdef __cplusplus

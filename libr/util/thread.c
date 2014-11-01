@@ -112,3 +112,17 @@ R_API void *r_th_free(struct r_th_t *th) {
 	free (th);
 	return NULL;
 }
+
+#if 0
+
+// Thread Pipes
+typedef struct r_th_pipe_t {
+	RList *msglist;
+	RThread *th;
+	//RThreadLock *lock;
+} RThreadPipe;
+
+r_th_pipe_new();
+
+#endif
+

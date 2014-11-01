@@ -143,6 +143,7 @@ typedef struct r_core_t {
 	int zerosep;
 	RList *watchers;
 	RList *scriptstack;
+	RList *tasks;
 	int cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
@@ -455,6 +456,28 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
+
+/* tasks */
+
+typedef void (*RCoreTaskCallback)(void *user, char *out);
+
+typedef struct r_core_task_t {
+	int id;
+	char state;
+	void *user;
+	RCore *core;
+	RThreadMsg *msg;
+	RCoreTaskCallback cb;
+} RCoreTask;
+
+R_API RCoreTask *r_core_task_get (RCore *core, int id);
+R_API void r_core_task_list (RCore *core, int mode);
+R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
+R_API void r_core_task_run(RCore *core, RCoreTask *_task);
+R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task);
+R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
+R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
+R_API int r_core_task_del (RCore *core, int id);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
