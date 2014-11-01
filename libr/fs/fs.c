@@ -6,6 +6,10 @@
 #include <errno.h>
 #include "../../shlr/grub/include/grub/msdos_partition.h"
 
+#ifndef DISABLE_GRUB
+#define DISABLE_GRUB 0
+#endif
+
 R_LIB_VERSION(r_fs);
 
 static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
@@ -396,7 +400,7 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 #include "../../shlr/grub/include/grubfs.h"
 RList *list = NULL;
 
-#ifndef DISABLE_GRUB
+#if !DISABLE_GRUB
 static int parhook (struct grub_disk *disk, struct grub_partition *par, void *closure) {
 	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);
 	p->type = par->msdostype;
@@ -406,8 +410,7 @@ static int parhook (struct grub_disk *disk, struct grub_partition *par, void *cl
 #endif
 
 static RFSPartitionType partitions[] = {
-#ifndef DISABLE_GRUB
-#if 0
+#if !DISABLE_GRUB
 	{ "msdos", &grub_msdos_partition_map },
 	{ "apple", &grub_apple_partition_map },
 	{ "sun", &grub_sun_partition_map },
@@ -415,7 +418,6 @@ static RFSPartitionType partitions[] = {
 	{ "amiga", &grub_amiga_partition_map },
 	{ "bsdlabel", &grub_bsdlabel_partition_map },
 	{ "gpt", &grub_gpt_partition_map },
-#endif
 #endif
 // XXX: In BURG all bsd partition map are in bsdlabel
 	//{ "openbsdlabel", &grub_openbsd_partition_map },
@@ -446,7 +448,7 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	if (gpm) {
 		list = r_list_new ();
 		list->free = (RListFree)r_fs_partition_free;
-#ifndef DISABLE_GRUB
+#if !DISABLE_GRUB
 		grubfs_bind_io (NULL, 0);
 		struct grub_disk *disk = grubfs_disk (&fs->iob);
 		gpm->iterate (disk, parhook, 0);

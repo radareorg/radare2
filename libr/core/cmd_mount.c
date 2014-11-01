@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2014 // pancake */
+
 static int cmd_mount(void *data, const char *_input) {
 	ut64 off = 0;
 	char *input, *oinput, *ptr, *ptr2;
