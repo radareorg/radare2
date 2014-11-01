@@ -91,7 +91,7 @@ typedef struct r_mmap_t {
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
-	ut64 cur;
+	st64 cur;
 	ut64 base;
 	RMmap *mmap;
 	ut8 empty;
