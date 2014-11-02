@@ -48,6 +48,7 @@ typedef struct r_disam_options_t {
 	int varsub;
 	int show_lines;
 	int linesright;
+	int tracespace;
 	int show_indent;
 	int show_dwarf;
 	int show_linescall;
@@ -225,6 +226,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
+	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	ds->show_linescall = r_config_get_i (core->config, "asm.linescall");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
@@ -991,9 +993,9 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 				core->screen_bounds = ds->at;
 		}
 	 }
-	if (ds->show_offset)
-		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
-						ds->show_offseg);
+	 if (ds->show_offset)
+		 r_print_offset (core->print, ds->at, (ds->at==ds->dest),
+				 ds->show_offseg);
 }
 
 static void handle_print_op_size (RCore *core, RDisasmState *ds) {
@@ -1005,6 +1007,13 @@ static void handle_print_trace (RCore *core, RDisasmState *ds) {
 	if (ds->show_trace) {
 		RDebugTracepoint *tp = r_debug_trace_get (core->dbg, ds->at);
 		r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
+		if (tp && ds->tracespace) {
+			char spaces [32];
+			int times = R_MIN (tp->times, 30); // limit to 30
+			memset (spaces, ' ', sizeof (spaces));
+			spaces[times] = 0;
+			r_cons_strcat (spaces);
+		}
 	}
 }
 
