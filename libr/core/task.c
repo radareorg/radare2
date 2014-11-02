@@ -13,7 +13,8 @@ R_API void r_core_task_list (RCore *core, int mode) {
 				task->id, task->state, task->msg->text, iter->n?",":"");
 			break;
 		default:
-			r_cons_printf ("%d %c %s\n", task->id, task->state, task->msg->text);
+			r_cons_printf ("Task %d Status %c Command %s\n",
+					task->id, task->state, task->msg->text);
 			if (mode == 1) {
 				r_cons_printf ("%s", task->msg->res);
 			}
@@ -23,11 +24,16 @@ R_API void r_core_task_list (RCore *core, int mode) {
 	if (mode=='j') r_cons_printf("]\n");
 }
 
-R_API void r_core_task_join (RCore *core) {
-	RCoreTask *task;
+R_API void r_core_task_join (RCore *core, RCoreTask *task) {
 	RListIter *iter;
-	r_list_foreach_prev (core->tasks, iter, task) {
+	if( task) {
+		r_cons_break (NULL, NULL);
 		r_th_wait (task->msg->th);
+		r_cons_break_end ();
+	} else {
+		r_list_foreach_prev (core->tasks, iter, task) {
+			r_th_wait (task->msg->th);
+		}
 	}
 }
 

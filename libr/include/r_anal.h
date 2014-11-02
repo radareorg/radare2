@@ -527,6 +527,7 @@ typedef struct r_anal_t {
 	int lineswidth; // wtf
 	int big_endian;
 	int split; // used only from core
+	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
 	int nopskip; // skip nops at the begining of functions
 	void *user;
 	RList *fcns;

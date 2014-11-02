@@ -817,7 +817,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
-	r_core_task_join (c);
+	r_core_task_join (c, NULL);
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	r_io_free (c->io);

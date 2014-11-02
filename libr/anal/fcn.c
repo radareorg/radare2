@@ -219,6 +219,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		int adjust;
 		int un_idx; // delay.un_idx
 	} delay = {0};
+	if (anal->sleep)
+		r_sys_usleep (anal->sleep);
 
 	if (depth<1) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP

@@ -630,8 +630,8 @@ static int taskbgrun(RThread *th) {
 	char *res = r_core_cmd_str (core, task->msg->text);
 	task->msg->res = res;
 	eprintf ("Task %d finished\n", task->id);
-	return 0;
 // TODO: run callback and pass result
+	return 0;
 }
 
 static int cmd_thread(void *data, const char *input) {
@@ -653,7 +653,7 @@ static int cmd_thread(void *data, const char *input) {
 			if (tid) {
 				RCoreTask *task = r_core_task_get (core, tid);
 				if (task) {
-					//r_core_task_join (core, task);
+					r_core_task_join (core, task);
 				} else eprintf ("Cannot find task\n");
 			} else {
 				r_core_task_run (core, NULL);
@@ -665,8 +665,10 @@ static int cmd_thread(void *data, const char *input) {
 		if (tid) {
 			RCoreTask *task = r_core_task_get (core, tid);
 			if (task) {
-				r_cons_printf ("Task %d Status %c\n", task->id, task->state);
-				r_cons_printf ("%s\n", task->msg->text);
+				r_cons_printf ("Task %d Status %c Command %s\n",
+					task->id, task->state, task->msg->text);
+				if (task->msg->res)
+					r_cons_printf ("%s\n", task->msg->res);
 			} else eprintf ("Cannot find task\n");
 		} else {
 			r_core_task_list (core, 1);
@@ -687,6 +689,8 @@ static int cmd_thread(void *data, const char *input) {
 		const char* help_msg[] = {
 			"Usage:", "&[-|<cmd>]", "Manage tasks",
 			"&", "", "list all running threads",
+			"&=", "", "show output of all tasks",
+			"&=", " 3", "show output of task 3",
 			"&j", "", "list all running threads (in JSON)",
 			"&?", "", "show this help",
 			"&+", " aa", "push to the task list",
@@ -697,6 +701,7 @@ static int cmd_thread(void *data, const char *input) {
 			"&&", "", "run all pendings tasks (and join threads)",
 			"&&&", "", "run all pendings tasks until ^C",
 			"","","TODO: last command should honor asm.bits", 
+			"","","WARN: this feature is very experimental. Use it with caution", 
 			NULL};
 		// TODO: integrate with =h& and bg anal/string/searchs/..
 		r_core_cmd_help (core, help_msg);
@@ -704,11 +709,20 @@ static int cmd_thread(void *data, const char *input) {
 		break;
 	case ' ':
 		{
-		RCoreTask *task = r_core_task_add (core, r_core_task_new (core, input+1, (RCoreTaskCallback)task_finished, core));
-		RThread *th = r_th_new (taskbgrun, task, 0);
-		task->msg->th = th;
-		//r_core_cmd0 (core, task->msg->text);
-		//r_core_task_del (core, task->id);
+			int tid = r_num_math (core->num, input+1);
+			if (tid) {
+				RCoreTask *task = r_core_task_get (core, tid);
+				if (task) {
+					r_core_task_join (core, task);
+				} else eprintf ("Cannot find task\n");
+			} else {
+				RCoreTask *task = r_core_task_add (core, r_core_task_new (
+							core, input+1, (RCoreTaskCallback)task_finished, core));
+				RThread *th = r_th_new (taskbgrun, task, 0);
+				task->msg->th = th;
+			}
+			//r_core_cmd0 (core, task->msg->text);
+			//r_core_task_del (core, task->id);
 		}
 		break;
 	default:
