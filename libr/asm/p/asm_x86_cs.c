@@ -98,26 +98,26 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 #if USE_ITER_API
-{
-	size_t size = len;
-if (insn == NULL)
-	insn = cs_malloc (cd);
-	n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
-}
+	{
+		size_t size = len;
+		if (insn == NULL)
+			insn = cs_malloc (cd);
+		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
+		op->size = size;
+	}
 #else
+	op->size = 1;
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
-	if (n>0) {
-		if (insn->size>0) {
-			char *ptrstr;
-			op->size = insn->size;
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-					insn->mnemonic, insn->op_str[0]?" ":"",
-					insn->op_str);
-			ptrstr = strstr (op->buf_asm, "ptr ");
-			if (ptrstr) {
-				memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
-			}
+	if (n>0 && insn->size>0) {
+		char *ptrstr;
+		op->size = insn->size;
+		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
+				insn->mnemonic, insn->op_str[0]?" ":"",
+				insn->op_str);
+		ptrstr = strstr (op->buf_asm, "ptr ");
+		if (ptrstr) {
+			memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
 		}
 	}
 #if !USE_ITER_API

@@ -1854,7 +1854,6 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
-eprintf ("DISASSM\n");
 
 	if (!nb_bytes) {
 		nb_bytes = core->blocksize;
