@@ -841,6 +841,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax"); // DEPRECATED ?
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
+	SETPREF("asm.cyclespace", "false", "Indent instructions depending on cpu-cycles");
 	SETPREF("asm.cycles", "false", "Show cpu-cycles taken by instruction at disassembly");
 	SETI("asm.tabs", 0, "Use tabs in disassembly");
 	SETPREF("asm.trace", "false", "Show execution traces for each opcode");
