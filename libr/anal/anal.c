@@ -233,6 +233,8 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter, *iter2;
+#define OLD 0
+#if OLD
 	r_list_foreach (anal->fcns, iter, fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
@@ -241,6 +243,17 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 			}
 		}
 	}
+#else
+	fcni = r_anal_get_fcn_in (anal, addr, 0);
+	if (fcni) {
+		r_list_foreach (fcni->bbs, iter2, bbi) {
+			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
+				bbi->traced = R_TRUE;
+				break;
+			}
+		}
+	}
+#endif
 }
 
 R_API RList* r_anal_get_fcns (RAnal *anal) { return anal->fcns; }

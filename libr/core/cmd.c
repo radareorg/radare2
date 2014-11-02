@@ -626,6 +626,7 @@ static int task_finished(void *user, void *data) {
 static int taskbgrun(RThread *th) {
 	RCoreTask *task = th->user;
 	RCore *core = task->core;
+	close(2); // no stderr
 	char *res = r_core_cmd_str (core, task->msg->text);
 	task->msg->res = res;
 	eprintf ("Task %d finished\n", task->id);

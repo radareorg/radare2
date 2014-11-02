@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_debug.h>
+
+#define R_DEBUG_SDB_TRACES 1
 
 // DO IT WITH SDB
 
@@ -11,6 +13,7 @@ R_API RDebugTrace *r_debug_trace_new () {
 	t->enabled = R_FALSE;
 	t->traces = r_list_new ();
 	t->traces->free = free;
+	t->db = sdb_new0 ();
 	return t;
 }
 
@@ -19,6 +22,7 @@ R_API void r_debug_trace_free (RDebug *dbg) {
 		return;
 	r_list_purge (dbg->trace->traces);
 	free (dbg->trace->traces);
+	sdb_free (dbg->trace->db);
 	free (dbg->trace);
 	dbg->trace = NULL;
 }
@@ -60,15 +64,22 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 }
 
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
+	Sdb *db = dbg->trace->db;
 	int tag = dbg->trace->tag;
-	RListIter *iter;
 	RDebugTracepoint *trace;
+#if R_DEBUG_SDB_TRACES
+	trace = (RDebugTracepoint*)(void*)(size_t)sdb_num_get (db,
+		sdb_fmt (0, "trace.%d.%"PFMT64x, tag, addr), NULL);
+	return trace;
+#else
+	RListIter *iter;
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (tag != 0 && !(dbg->trace->tag & (1<<tag)))
 			continue;
 		if (trace->addr == addr)
 			return trace;
 	}
+#endif
 	return NULL;
 }
 
@@ -114,6 +125,10 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 		tp->count = ++dbg->trace->count;
 		tp->times = 1;
 		r_list_append (dbg->trace->traces, tp);
+#if R_DEBUG_SDB_TRACES
+		sdb_num_set (dbg->trace->db, sdb_fmt (0, "trace.%d.%"PFMT64x, tag, addr),
+			(ut64)(size_t)tp, 0);
+#endif
 	} else tp->times++;
 	return tp;
 }
@@ -121,6 +136,10 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 R_API void r_debug_trace_reset (RDebug *dbg) {
 	RDebugTrace *t = dbg->trace;
 	r_list_purge (t->traces);
+#if R_DEBUG_SDB_TRACES
+	sdb_free (t->db);
+	t->db = sdb_new0 ();
+#endif
 	t->traces = r_list_new ();
 	t->traces->free = free;
 }

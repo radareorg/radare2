@@ -1130,7 +1130,7 @@ static void r_core_debug_trace_calls (RCore *core) {
 				r_debug_step (core->dbg, 1);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 				addr = r_debug_reg_get (core->dbg, "pc");
-				eprintf ("0x%08"PFMT64x" ucall. computation may fail\n", addr);
+				//eprintf ("0x%08"PFMT64x" ucall. computation may fail\n", addr);
 				r_graph_push (core->dbg->graph, addr, NULL);
 				// TODO: push pc+aop.length into the call path stack
 				break;
