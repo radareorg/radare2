@@ -576,7 +576,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		fh->map = r_core_file_get_next_map (r, fh, flags, current_loadaddr);
 
 		if (!fh->map) {
-			r_core_file_free(fh);
+			r_core_file_free (fh);
 			if (!strcmp (suppress_warning, "false"))
 				eprintf("Unable to load file due to failed mapping.\n");
 			continue;
@@ -677,15 +677,21 @@ R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (cf)
+	if (!cf || !cf->core)
+		return;
+	if (cf) {
 		res = r_core_files_free (cf->core, cf);
-	if (!res && cf->alive) {
+	}
+	//if (!res && cf && cf->alive) {
+	if (res && cf && cf->alive) {
 		// double free libr/io/io.c:70 performs free
-		RIO *io = (RIO*)(cf->desc ? cf->desc->io : NULL);
-
-		if (io && cf->map) r_io_map_del_all (io, cf->map->fd);
-		if (io) r_io_close ((RIO *) io, cf->desc);
-
+		RIO *io = NULL;
+		if (cf) {
+			io = (RIO*)(cf->desc ? cf->desc->io : NULL);
+			return;
+			if (cf->map) r_io_map_del_all (io, cf->map->fd);
+			r_io_close ((RIO *) io, cf->desc);
+		}
 		r_bin_file_deref_by_bind (&cf->binb);
 		free (cf);
 	}

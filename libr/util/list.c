@@ -73,7 +73,6 @@ R_API void r_list_free (RList *list) {
 	}
 }
 
-
 R_API boolt r_list_delete_data (RList *list, void *ptr) {
 	void *p;
 	RListIter *iter;
