@@ -43,7 +43,8 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
 //		tmp = stream_file->pages[i];
 		page_offset = stream_file->pages[i] * stream_file->page_size;
 		stream_file->buf->cur = page_offset;
-		r_buf_read_at(stream_file->buf, page_offset, res, stream_file->page_size);
+		r_buf_read_at(stream_file->buf, page_offset,
+			(ut8*)res, stream_file->page_size);
 //		fseek(stream_file->fp, page_offset, SEEK_SET);
 //		curr_pos = ftell(stream_file->fp);
 //		fread(res, stream_file->page_size, 1, stream_file->fp);

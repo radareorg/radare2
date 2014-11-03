@@ -43,6 +43,8 @@ static void r_core_file_info (RCore *core, int mode) {
 	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (cf && mode == R_CORE_BIN_JSON) {
 		r_cons_printf ("\"file\":\"%s\"", fn);
+		if (cf->desc->referer)
+			r_cons_printf ("\"referer\":\"%s\"", cf->desc->referer);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
@@ -65,6 +67,8 @@ static void r_core_file_info (RCore *core, int mode) {
 	} else if (cf) {
 		//r_cons_printf ("# Core file info\n");
 		r_cons_printf ("file\t%s\n", fn);
+		if (cf->desc->referer)
+			r_cons_printf ("referer\t%s\n", cf->desc->referer);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			r_cons_printf ("fd\t%d\n", cf->desc->fd);

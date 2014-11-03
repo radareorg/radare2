@@ -240,9 +240,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		return NULL;
 	}
-	riom = R_NEW (RIOMach);
+	riom = R_NEW0 (RIOMach);
 	riom->pid = pid;
 	riom->task = task;
+	// sleep 1s to get proper path (program name instead of ls) (racy)
+	r_sys_sleep (1);
 	pidpath = r_sys_pid_to_path (pid);
 	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
 		pidpath, rw | R_IO_EXEC, mode, riom);

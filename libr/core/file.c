@@ -30,16 +30,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			ofilepath = odesc->uri;
 		}
 	}
+
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
 		return R_FALSE;
 	}
+#if 0
 	if (isdebug) {
 		// if its in debugger mode we have to respawn a new process
 		// instead of reattaching
 		free (ofilepath);
 		ofilepath = r_str_newf ("dbg://%s", odesc->name);
 	}
+#endif
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
 		free (ofilepath);
@@ -57,9 +60,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			perm = 4; //R_IO_READ;
 		}
 	}
-	if (ofilepath) {
-		path = strdup (ofilepath);
-	} else {
+	if (!ofilepath) {
 		eprintf ("Unknown file path");
 		return R_FALSE;
 	}
@@ -72,6 +73,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 	// closing the file to make sure there are no collisions
 	// when the new memory maps are created.
+	path = strdup (ofilepath);
+	obinfilepath = strdup(ofilepath);
+
 	file = r_core_file_open (core, path, perm, baddr);
 	if (file) {
 		int had_rbin_info = 0;
@@ -141,7 +145,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free (obinfilepath);
-	free (ofilepath);
+	//free (ofilepath);
 	free (path);
 	return ret;
 }
@@ -689,6 +693,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 }
 
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
+	int ret;
 	RIODesc *desc = fh && fh->desc? fh->desc : NULL;
 	RCoreFile *prev_cf = r && r->file != fh ? r->file : NULL;
 
@@ -713,7 +718,10 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	/* delete filedescriptor from io descs here */
 	r_io_desc_del (r->io, fh->desc->fd);
 
-	int ret = r_list_delete_data (r->files, fh);
+	// AVOID DOUBLE FREE HERE
+	r->files->free = NULL;
+
+	ret = r_list_delete_data (r->files, fh);
 	if (ret) {
 		if (!prev_cf && r_list_length (r->files) > 0)
 			prev_cf = (RCoreFile *) r_list_get_n (r->files, 0);

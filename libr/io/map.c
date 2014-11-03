@@ -169,10 +169,12 @@ R_API int r_io_map_del_all(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter, *tmp;
 	ut8 deleted = R_FALSE;
-	r_list_foreach_safe (io->maps, iter, tmp, map) {
-		if (fd==-1 || map->fd==fd) {
-			r_list_delete (io->maps, iter);
-			deleted = R_TRUE;
+	if (io && io->maps) {
+		r_list_foreach_safe (io->maps, iter, tmp, map) {
+			if (fd==-1 || map->fd==fd) {
+				r_list_delete (io->maps, iter);
+				deleted = R_TRUE;
+			}
 		}
 	}
 	return deleted;

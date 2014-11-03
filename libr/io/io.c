@@ -103,12 +103,13 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	RIOPlugin *plugin;
 	RIODesc *desc = NULL;
 	char *uri = strdup (_uri);
+	char *redir = NULL;
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri, 0);
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
-				desc->referer = uri;
+				redir = uri;
 				uri = strdup (io->redirect);
 				r_io_redirect (io, NULL);
 				continue;
@@ -117,6 +118,8 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				if (desc->fd != -1)
 					r_io_plugin_open (io, desc->fd, plugin);
 				desc->uri = uri;
+				//desc->name = strdup (uri);
+				desc->referer = redir;
 			}
 		}
 		break;

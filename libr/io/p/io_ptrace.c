@@ -189,6 +189,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
 			pidpath = r_sys_pid_to_path (pid);
+			// sleep 1s to get proper path (racy)
+			r_sys_sleep (1);
 			desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
 				pidpath, rw | R_IO_EXEC, mode, riop);
 			free (pidpath);

@@ -457,7 +457,6 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	ut64 pc;
-	char *out = NULL;
 	int ret = R_FALSE;
 	if (!dbg)
 		return R_FALSE;

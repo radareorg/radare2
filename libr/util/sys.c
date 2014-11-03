@@ -611,6 +611,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return NULL;
 #elif __APPLE__
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+	pathbuf[0] = 0;
 	int ret = proc_pidpath (pid, pathbuf, sizeof (pathbuf));
 	if (ret <= 0)
 		return NULL;

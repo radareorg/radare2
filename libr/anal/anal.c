@@ -245,8 +245,9 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
-	RListIter *iter, *iter2;
+	RListIter *iter2;
 #define OLD 0
+	RListIter *iter;
 #if OLD
 	r_list_foreach (anal->fcns, iter, fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {

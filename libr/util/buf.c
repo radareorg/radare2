@@ -172,7 +172,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	int end;
 	if (!b || b->empty) return 0;
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
-	if (len<1 || dst == NULL || addr <0 || addr > b->length)
+	if (len<1 || dst == NULL || addr > b->length)
 		return -1;
  	end = (int)(addr+len);
 	if (end > b->length)
