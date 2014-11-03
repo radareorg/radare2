@@ -49,7 +49,7 @@ eprintf ("%d   :   %02x %02x %02x %02x\n",
 		break;
 	case 16:
 		if (regset->arena->size-off-2>=0) {
-			memcpy (&v16, regset->arena->bytes+off, 2);
+			r_mem_copyendian ((ut8*)&v16, (ut8*)regset->arena->bytes+off, 2, !reg->big_endian);
 			ret = v16;
 		}
 		break;
@@ -63,13 +63,13 @@ off,
 		(regset->arena->bytes[off+3]));
 #endif
 		if (off+4<=regset->arena->size) {
-			memcpy (&v32, regset->arena->bytes+off, 4);
+			r_mem_copyendian ((ut8*)&v32, (ut8*)regset->arena->bytes+off, 4, !reg->big_endian);
 			ret = v32;
 		} else eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
 		if (regset->arena->bytes && (off+8<=regset->arena->size))
-			memcpy (&ret, regset->arena->bytes+off, 8);
+			r_mem_copyendian ((ut8*)&ret, (ut8*)regset->arena->bytes+off, 8, !reg->big_endian);
 		else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	default:
@@ -91,9 +91,9 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		return R_FALSE;
 	}
 	switch (item->size) {
-	case 64: v64 = (ut64)value; src = (ut8*)&v64; break;
-	case 32: v32 = (ut32)value; src = (ut8*)&v32; break;
-	case 16: v16 = (ut16)value; src = (ut8*)&v16; break;
+	case 64: r_mem_copyendian ( (ut8*)&v64, (ut8*)&value, 8, !reg->big_endian); src = (ut8*)&v64; break;
+	case 32: r_mem_copyendian ( (ut8*)&v32, (ut8*)&value, 4, !reg->big_endian); src = (ut8*)&v32; break;
+	case 16: r_mem_copyendian ( (ut8*)&v16, (ut8*)&value, 2, !reg->big_endian); src = (ut8*)&v16; break;
 	case 8:  v8  = (ut8)value;  src = (ut8*)&v8;  break;
 	case 1:
 		if (value) {
