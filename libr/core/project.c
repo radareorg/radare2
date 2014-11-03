@@ -77,7 +77,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 	}
 	r_core_project_init (core);
 	r_anal_project_save (core->anal, prj);
-	fd = r_sandbox_open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
+	fd = r_sandbox_open (prj, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
 	if (fd != -1) {
 		fdold = r_cons_singleton ()->fdout;
 		r_cons_singleton ()->fdout = fd;
