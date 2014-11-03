@@ -472,7 +472,7 @@ static RList* relocs(RBinFile *arch) {
 		for (i = 0; !relocs[i].last; i++) {
 			if (!(ptr = reloc_convert (arch->o->bin_obj,
 					&relocs[i], got_addr)))
-				break;
+				continue;
 			r_list_append (ret, ptr);
 		}
 		free (relocs);
