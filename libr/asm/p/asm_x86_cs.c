@@ -97,16 +97,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #endif
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
+	op->size = 1;
 #if USE_ITER_API
 	{
 		size_t size = len;
 		if (insn == NULL)
 			insn = cs_malloc (cd);
+		insn->size = 1;
+		memset (insn, 0, sizeof(cd));
 		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
-		op->size = size;
 	}
 #else
-	op->size = 1;
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
 	if (n>0 && insn->size>0) {
