@@ -1525,7 +1525,38 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	} else handle_print_as_string (core, ds);
 }
 
+// TODO: Use sdb in rbin to accelerate this
+// we shuold use aligned reloc addresses instead of iterating all of them
+static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
+	RList *list;
+	RBinReloc *r;
+	RListIter *iter;
+	if (size<1 || addr == UT64_MAX) return NULL;
+	list = r_bin_get_relocs (core->bin);
+#if 0
+addr       addr+size
+|__._______|
+   |
+   reloc
+#endif
+	r_list_foreach (list, iter, r) {
+		if ((r->vaddr >= addr) && (r->vaddr<(addr+size)))
+			return r;
+	}
+	return NULL;
+}
+
+static void handle_print_relocs (RCore *core, RDisasmState *ds) {
+	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+	if (rel) {
+		if (rel->import) 
+			r_cons_printf ("  ;  RELOC %d %s", rel->type, rel->import->name);
+		else r_cons_printf ("  ;  RELOC %d ", rel->type);
+	}
+}
+
 static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
+	handle_print_relocs (core, ds);
 	if (ds->show_comments && ds->show_comment_right && ds->comment) {
 		int c = r_cons_get_column ();
 		if (c<ds->ocols)
@@ -1683,7 +1714,7 @@ toro:
 
 	r_cons_break (NULL, NULL);
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
-			idx+=ds->oplen,i++, ds->index+=ds->oplen, ds->lines++) {
+			idx += ds->oplen,i++, ds->index += ds->oplen, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
