@@ -89,6 +89,7 @@ typedef struct r_reg_t {
 	int iters;
 	int bits;
 	int size;
+	int big_endian;
 } RReg;
 
 typedef struct r_reg_flags_t {

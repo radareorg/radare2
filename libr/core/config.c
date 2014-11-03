@@ -286,6 +286,7 @@ static int cb_bigendian(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->big_endian = node->i_value;
 	core->anal->big_endian = node->i_value;
+	core->anal->reg->big_endian = node->i_value;
 	core->print->big_endian = node->i_value;
 	return R_TRUE;
 }

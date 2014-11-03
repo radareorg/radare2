@@ -203,6 +203,7 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 	anal->big_endian = bigend;
+	anal->reg->big_endian = bigend;
 	return R_TRUE;
 }
 
