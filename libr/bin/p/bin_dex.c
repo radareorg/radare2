@@ -501,13 +501,13 @@ static RList* classes (RBinFile *arch) {
 	int i, len;
 	char *name = NULL;
 
-	if (!(ret = r_list_new ()))
-		return NULL;
-	ret->free = (RListFree)__r_bin_class_free;
 	if (bin->header.class_size>bin->size) {
 		eprintf ("Too many classes %d\n", bin->header.class_size);
 		return NULL;
 	}
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = (RListFree)__r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
 		// ETOOSLOW
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
