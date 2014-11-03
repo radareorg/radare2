@@ -849,7 +849,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	int res;
 	const char *sh_name;
 	size_t reloc_num = 0;
-	size_t i, offset, j, rel;
+	size_t i, j, rel;
 	struct r_bin_elf_reloc_t *ret = NULL;
 
 	if (!bin || !bin->shdr || !bin->strtab)
@@ -883,7 +883,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
 				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 1, bin->shdr[i].sh_offset + j);
-				ret[rel].rva = ret[rel].offset - bin->baddr;
+				ret[rel].rva = ret[rel].offset;
+				ret[rel].offset = ret[rel].offset - bin->baddr;
 				if (res < 0)
 					break;
 				rel++;
@@ -891,7 +892,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		} else if (!strncmp (sh_name, ".rel.", strlen (".rel."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
 				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 0, bin->shdr[i].sh_offset + j);
-				ret[rel].rva = ret[rel].offset - bin->baddr;
+				ret[rel].rva = ret[rel].offset;
+				ret[rel].offset = ret[rel].offset - bin->baddr;
 				if (res < 0)
 					break;
 				rel++;
