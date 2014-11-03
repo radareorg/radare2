@@ -434,6 +434,8 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 							// TODO: filter \n and so on :)
 							strncpy (name, t, sizeof (name)-1);
 							r_core_read_at (core, addr, (ut8*)name, sizeof (name)-1);
+							if (n < sizeof(name))
+								name[n] = '\0';
 							break;
 						default:
 							fi = r_flag_get_i (core->flags, addr);
