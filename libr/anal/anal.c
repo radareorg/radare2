@@ -45,11 +45,24 @@ static void r_anal_type_init(RAnal *anal) {
 	sdb_set (D, "type.const char*", "*z", 0);
 }
 
+R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
+	free (anal->limit);
+	anal->limit = R_NEW0 (RAnalRange);
+	anal->limit->from = from;
+	anal->limit->to = to;
+}
+
+R_API void r_anal_unset_limits(RAnal *anal) {
+	free (anal->limit);
+	anal->limit = NULL;
+}
+
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
+	anal->limit = NULL;
 	anal->nopskip = R_TRUE; // skip nops in code analysis
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);

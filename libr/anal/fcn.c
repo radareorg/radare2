@@ -238,6 +238,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		" (fcn 0x%08llx)\n", addr, fcn->addr);
 
 	while (idx < len) {
+		if (anal->limit) {
+			if ((addr+idx)<anal->limit->from || (addr+idx+1)>anal->limit->to)
+				break;
+		}
 repeat:
 		r_anal_op_fini (&op);
 		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {

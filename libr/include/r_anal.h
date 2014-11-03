@@ -51,6 +51,10 @@ typedef struct r_anal_meta_item_t {
 	char *str;
 } RAnalMetaItem;
 
+typedef struct r_anal_range_t {
+	ut64 from;
+	ut64 to;
+} RAnalRange;
 /* CPARSE stuff */
 
 #define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
@@ -549,6 +553,7 @@ typedef struct r_anal_t {
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
+	RAnalRange *limit;
 	//struct list_head anals; // TODO: Reimplement with RList
 	RList *plugins;
 	Sdb *sdb_xrefs;
@@ -1272,6 +1277,9 @@ R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *nam
 R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr);
 R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad);
 
+/* limits */
+R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to);
+R_API void r_anal_unset_limits(RAnal *anal);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;

@@ -791,6 +791,27 @@ static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 	return 1;
 }
 
+static int cb_anal_from(RCore *core, RConfigNode *node) {
+	if (r_config_get_i (core->config, "anal.limits")) {
+		r_anal_set_limits (core->anal, 
+				r_config_get_i (core->config, "anal.from"),
+				r_config_get_i (core->config, "anal.to"));
+	}
+	return 1;
+}
+
+static int cb_anal_limits(void *user, RConfigNode *node) {
+	RCore *core = (RCore*)user;
+	if (node->i_value) {
+		r_anal_set_limits (core->anal, 
+				r_config_get_i (core->config, "anal.from"),
+				r_config_get_i (core->config, "anal.to"));
+	} else {
+		r_anal_unset_limits (core->anal);
+	}
+	return 1;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -800,6 +821,10 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->num = core->num;
 
 	/* anal */
+	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Obey anal.from and anal.to ranges");
+	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Minimum address in the anal.limits range");
+	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Last address to be analized (see anal.limits)");
+
 	SETCB("anal.eobjmp", "true", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep some usecs before analyzing more. Avoid 100% cpu usage");
