@@ -412,6 +412,10 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 							core->blocksize, p+1, -1, NULL);
 			}
 			if (type == 's') {
+				/* This is kept for compatibility with old projects.
+				 * Somewhat broken, but project will get corrected on
+				 * save and reload.
+				 */
 				p = strchr (t, ' ');
 				if (p)
 					addr = r_num_math (core->num, p+1);
@@ -488,17 +492,17 @@ static int cmd_meta(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage:", "C[-LCvsdfm?] [...]", " # Metadata management",
 				"C*", "", "list meta info in r2 commands",
-				"C-", " [len] [@][ addr]", "delete metadata at given address range",
+				"C-", " [len] [[@]addr]", "delete metadata at given address range",
 				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
-				"CC", "[-] [comment-text]", "add/remove comment",
-				"CC!", "", "edit comment with $EDITOR",
-				"CCa", "[-at]|[at] [text]", "add/remove comment at given address",
-				"CCu", " [comment-text]", "add unique comment",
-				"Cs", "[-] [size] [[addr]]", "add string",
+				"CC", "[-] [comment-text] [@addr]", "add/remove comment",
+				"CC!", " [@addr]", "edit comment with $EDITOR",
+				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
+				"CCu", " [comment-text] [@addr]", "add unique comment",
+				"Cs", "[-] [size] [@addr]", "add string",
 				"Ch", "[-] [size] [@addr]", "hide data",
-				"Cd", "[-] [size]", "hexdump data",
-				"Cf", "[-] [sz] [fmt..]", "format memory (see pf?)",
-				"Cm", "[-] [sz] [fmt..]", "magic parse (see pm?)",
+				"Cd", "[-] [size] [@addr]", "hexdump data",
+				"Cf", "[-] [sz] [fmt..] [@addr]", "format memory (see pf?)",
+				"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			}
