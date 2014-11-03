@@ -491,17 +491,6 @@ R_API void r_cons_printf(const char *format, ...) {
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
 		va_end (ap);
-		if (written>0) {
-			if (written>size) {
-				palloc (written);
-				size += written;
-				va_start (ap, format);
-				written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
-				va_end (ap);
-			}
-			if (written>0)
-				I.buffer[I.buffer_len+written] = 0;
-		}
 		if (written>=size) { /* not all bytes were written */
 			palloc (written);
 			va_start (ap, format);
