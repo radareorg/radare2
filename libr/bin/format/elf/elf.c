@@ -851,6 +851,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	size_t reloc_num = 0;
 	size_t i, j, rel;
 	struct r_bin_elf_reloc_t *ret = NULL;
+	Elf_(Shdr)* section_text = NULL;
+	ut64 section_text_offset = 0LL;
 
 	if (!bin || !bin->shdr || !bin->strtab)
 		return NULL;
@@ -860,30 +862,34 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	if (!reloc_num)
 		return NULL;
 
-	ret = (struct r_bin_elf_reloc_t*)malloc(sizeof (struct r_bin_reloc_t) * (reloc_num + 1));
+	ret = (struct r_bin_elf_reloc_t*)calloc (sizeof (RBinReloc) , (reloc_num + 1));
 
 	if (!ret)
 		return NULL;
+	section_text = Elf_(r_bin_elf_get_section_by_name)(bin, ".text");
+	if (section_text) {
+		section_text_offset = section_text->sh_offset;
+	}
 
+	// TODO: check boundaries for e_shnum and filesize
 	for (i = 0, rel = 0; i < bin->ehdr.e_shnum; i++) {
 		/*
 		if (bin->shdr[i].sh_type != (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM))
 			continue;
 		*/
 
-		sh_name = &bin->strtab[bin->shdr[i].sh_name];
-
-
 		if (bin->shdr[i].sh_name > bin->strtab_size) {
 			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
 					bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
 		}
+		// TODO: check boundaries!!!
+		sh_name = &bin->strtab[bin->shdr[i].sh_name];
 
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
 				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 1, bin->shdr[i].sh_offset + j);
-				ret[rel].rva = ret[rel].offset;
+				ret[rel].rva = ret[rel].offset + section_text_offset;
 				ret[rel].offset = ret[rel].offset - bin->baddr;
 				if (res < 0)
 					break;
