@@ -264,12 +264,14 @@ R_API const char *r_meta_type_to_string(int type) {
 
 static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 	char *pstr, *str = r_str_escape (d->str);
-	if (str) {
+	if (str || d->type == 'd') {
 		if (d->type=='s' && !*str) {
 			free (str);
 			return;
 		}
-		if (d->type != 'C') {
+		if (!str)
+			pstr = "";
+		else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
 		} else pstr = d->str;
@@ -285,17 +287,37 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 		case 1:
 		case '*':
 		default:
-			if (d->type == 'C') {
+			switch (d->type) {
+			case 'C':
 				a->printf ("\"%s %s\" @ 0x%08"PFMT64x"\n",
 					r_meta_type_to_string (d->type), pstr, d->from);
-			} else {
+				break;
+			case 'h': /* hidden */
+			case 's': /* string */
+				a->printf ("%s %d @ 0x%08"PFMT64x" # %s\n",
+					r_meta_type_to_string (d->type),
+					d->size, d->from, pstr);
+				break;
+			case 'd': /* data */
+				a->printf ("%s %d @ 0x%08"PFMT64x"\n",
+					r_meta_type_to_string (d->type),
+					d->size, d->from);
+				break;
+			case 'm': /* magic */
+			case 'f': /* formatted */
+				a->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
+					r_meta_type_to_string (d->type),
+					d->size, pstr, d->from);
+				break;
+			default:
 				a->printf ("%s %d 0x%08"PFMT64x" # %s\n",
 					r_meta_type_to_string (d->type),
 					d->size, d->from, pstr);
 			}
 			break;
 		}
-		free (str);
+		if (str)
+			free (str);
 	}
 }
 
