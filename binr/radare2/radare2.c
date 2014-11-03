@@ -95,6 +95,8 @@ static int main_help(int line) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-\n");
 	if (line != 1) printf (
+		" --           Open radare2 on an empty file\n"
+		" -            Equivalent of 'r2 malloc://512'\n"
 		" -0           Print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aa' command to analyze all referenced code\n"
@@ -307,7 +309,7 @@ int main(int argc, char **argv, char **envp) {
 				debug = 2;
 				debugbackend = optarg;
 				break;
-			case 'e': r_config_eval (r.config, optarg); 
+			case 'e': r_config_eval (r.config, optarg);
 				  r_list_append (evals, optarg); break;
 			case 'f': fullfile = 1; break;
 			case 'h': help++; break;
