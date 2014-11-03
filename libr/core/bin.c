@@ -604,6 +604,8 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	RBinReloc *reloc;
 	int i = 0;
 
+	va = 1; // XXX relocs always vaddr?
+
 	if ((relocs = r_bin_get_relocs (r->bin)) == NULL)
 		return R_FALSE;
 
@@ -632,7 +634,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			demname = NULL;
 			if (reloc->import && reloc->import->name[0]) {
 				snprintf (str, R_FLAG_NAME_SIZE,
-					"reloc.%s", reloc->import->name);
+					"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
 				if (r_config_get_i (r->config, "bin.demangle"))
 					demname = r_bin_demangle (r->bin->cur, str); //reloc->import->name);
 				r_name_filter (str, 0);
@@ -661,7 +663,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 				if (reloc->import) {
 					char *str = strdup (reloc->import->name);
 					r_str_replace_char (str, '$', '_');
-					r_cons_printf ("f reloc.%s @ 0x%08"PFMT64x"\n", str, addr);
+					r_cons_printf ("f reloc.%s_%d @ 0x%08"PFMT64x"\n", str, (int)(addr&0xff), addr);
 					free (str);
 				} else {
 					// TODO(eddyb) implement constant relocs.
@@ -672,7 +674,6 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
 				ut64 addr = va? reloc->vaddr: reloc->paddr;
-addr = reloc->vaddr;
 				r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
 					addr, reloc->paddr, bin_reloc_type_name (reloc));
 				if (reloc->import && reloc->import->name[0])
