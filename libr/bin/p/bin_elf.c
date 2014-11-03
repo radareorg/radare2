@@ -402,6 +402,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	case EM_X86_64: switch (rel->type) {
 		case R_X86_64_NONE:	break; // malloc then free. meh. then again, there's no real world use for _NONE.
 		case R_X86_64_64:	ADD(64, 0);
+		case R_X86_64_PLT32:	ADD(32,-P /* +L */);
+		case R_X86_64_GOT32:	ADD(32, GOT);
 		case R_X86_64_PC32:	ADD(32,-P);
 		case R_X86_64_GLOB_DAT:	SET(64);
 		case R_X86_64_JUMP_SLOT:SET(64);
@@ -412,6 +414,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_PC16:	ADD(16,-P);
 		case R_X86_64_8:	ADD(8,  0);
 		case R_X86_64_PC8:	ADD(8, -P);
+		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
 		default: eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
 		}
 		break;
