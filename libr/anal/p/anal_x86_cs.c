@@ -24,10 +24,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
 	int n, ret = cs_open (CS_ARCH_X86, mode, &handle);
+	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
 	op->ptr = op->val = UT64_MAX;
+	op->src[0] = NULL;
+	op->src[1] = NULL;
 	op->size = 0;
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
@@ -97,12 +100,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				switch (INSOP(0).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(0).mem.disp;
+					if (INSOP(0).mem.base == X86_REG_RIP) {
+						op->ptr += addr + insn->size;
+					}
 				default:
 					break;
 				}
 				switch (INSOP(1).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(1).mem.disp;
+					if (INSOP(1).mem.base == X86_REG_RIP) {
+						op->ptr += addr + insn->size;
+					}
 				default:
 					break;
 				}
