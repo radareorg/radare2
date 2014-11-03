@@ -61,13 +61,9 @@ R_API void r_io_desc_free(RIODesc *desc) {
 	}
 	if (desc->plugin && desc->plugin->close)
 		desc->plugin->close (desc);
-	if (desc->name) {
-		free (desc->name);
-		desc->name = NULL;
-	}
-	if (desc->uri) {
-		R_FREE (desc->uri);
-	}
+	R_FREE (desc->name);
+	R_FREE (desc->uri);
+	R_FREE (desc->referer);
 	free (desc);
 }
 
@@ -108,7 +104,7 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 }
 
 R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset) {
-	if (!desc)
+	if (!io || !desc)
 		return UT64_MAX;
 	if (!desc->plugin)
 		return (ut64)lseek (desc->fd, offset, SEEK_SET);

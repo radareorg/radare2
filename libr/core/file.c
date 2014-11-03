@@ -20,10 +20,16 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	RBinFile *bf = (ofile && ofile->desc) ?
 		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
-	char *ofilepath = odesc ? strdup (odesc->uri) : NULL;
-	char *obinfilepath = bf ? strdup (bf->file) : NULL;
+	char *ofilepath, *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = R_FALSE;
 	ut64 origoff = core->offset;
+	if (odesc) {
+		if (odesc->referer) {
+			ofilepath = odesc->referer;
+		} else if (odesc->uri) {
+			ofilepath = odesc->uri;
+		}
+	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
 		return R_FALSE;

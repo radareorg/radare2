@@ -108,7 +108,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
-				free (uri);
+				desc->referer = uri;
 				uri = strdup (io->redirect);
 				r_io_redirect (io, NULL);
 				continue;
