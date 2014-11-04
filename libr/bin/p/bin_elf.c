@@ -369,12 +369,13 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		return r;
 
 	r->import = NULL;
+	r->symbol = NULL;
 	r->addend = rel->addend;
 	if (rel->sym) {
 		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym])
 			r->import = bin->imports_by_ord[rel->sym];
 		else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym])
-			r->addend += B + bin->symbols_by_ord[rel->sym]->vaddr;
+			r->symbol = bin->symbols_by_ord[rel->sym];
 	}
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
