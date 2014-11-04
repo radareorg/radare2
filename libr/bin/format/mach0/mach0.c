@@ -753,7 +753,7 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 		return NULL;
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
 		idx = bin->dysymtab.iundefsym +i;
-		if (idx<0 || idx>bin->nsymtab) {
+		if (idx<0 || idx>=bin->nsymtab) {
 			eprintf ("WARNING: Imports index out of bounds. Ignoring relocs\n");
 			free (imports);
 			return NULL;
