@@ -120,7 +120,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 		return -1;
 
 	while (needle < to) {
-		rc = r_utf8_decode (&buf[needle], NULL);
+		rc = r_utf8_decode (buf+needle, to-needle, NULL);
 		if (!rc) {
 			needle++;
 			continue;
@@ -149,7 +149,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 				r = buf[needle+1] << 8 | buf[needle];
 				rc = 2;
 			} else {
-				rc = r_utf8_decode (&buf[needle], &r);
+				rc = r_utf8_decode (buf+needle, needle-to, &r);
 				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
 			}
 

@@ -191,20 +191,19 @@ static const struct { ut32 from, to; } nonprintable_ranges[] = {
 static const int nonprintable_ranges_count = sizeof (nonprintable_ranges) / sizeof (nonprintable_ranges[0]);
 
 /* Convert an UTF-8 buf into a unicode RRune */
-R_API int r_utf8_decode (const ut8 *ptr, RRune *ch) {
-	if (ptr[0] < 0x80) {
+R_API int r_utf8_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
+	if (ptrlen<1)
+		return 0;
+	if (ptrlen>0 && ptr[0] < 0x80) {
 		if (ch) *ch = (ut32)ptr[0];
 		return 1;
-	}
-	else if ((ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
+	} else if (ptrlen>1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
 		if (ch) *ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		return 2;
-	}
-	else if ((ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
+	} else if (ptrlen>2 && (ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
 		if (ch) *ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		return 3;
-	}
-	else if ((ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
+	} else if (ptrlen>3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
 		if (ch) *ch = (ptr[0] & 0xf) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		return 4;
 	}
