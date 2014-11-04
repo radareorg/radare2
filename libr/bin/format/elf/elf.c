@@ -761,18 +761,36 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static size_t Elf_(r_bin_elf_get_relocs_num)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int nidx;
 	size_t i, ret = 0;
 	const char *sh_name;
 
-	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		sh_name = &bin->strtab[bin->shdr[i].sh_name];
+	if (bin->shdr == NULL) {
+		return 0;
+	}
 
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		nidx = bin->shdr[i].sh_name;
+
+		if (nidx < 0 || !bin->shstrtab_section ||
+			!bin->shstrtab_section->sh_size || nidx > bin->shstrtab_section->sh_size) {
+			continue;
+		} else if (!bin->shstrtab || !(bin->shdr[i].sh_name > 0) || !(bin->shdr[i].sh_name + 8 < bin->shstrtab_size)) {
+			continue;
+		}
+		if (bin->shdr[i].sh_link >= bin->ehdr.e_shnum) {
+			continue;
+		}
 		if (bin->shdr[i].sh_name > bin->strtab_size) {
 			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
 					bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
 		}
 
+		sh_name = &bin->strtab[bin->shdr[i].sh_name];
+
+		if (!sh_name)
+			continue;
 
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			ret += bin->ehdr.e_ident[EI_CLASS] == 1 ? (bin->shdr[i].sh_size) / (sizeof (ut32) * 3) :
@@ -846,7 +864,7 @@ static int Elf_(r_bin_elf_read_reloc)(struct Elf_(r_bin_elf_obj_t) *bin,
 }
 
 struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	int res;
+	int nidx, res;
 	const char *sh_name;
 	size_t reloc_num = 0;
 	size_t i, j, rel;
@@ -873,18 +891,28 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 
 	// TODO: check boundaries for e_shnum and filesize
 	for (i = 0, rel = 0; i < bin->ehdr.e_shnum && rel < reloc_num ; i++) {
-		/*
-		if (bin->shdr[i].sh_type != (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM))
-			continue;
-		*/
+		nidx = bin->shdr[i].sh_name;
 
+		if (nidx < 0 || !bin->shstrtab_section ||
+			!bin->shstrtab_section->sh_size || nidx > bin->shstrtab_section->sh_size) {
+			continue;
+		} else if (!bin->shstrtab || !(bin->shdr[i].sh_name > 0) || !(bin->shdr[i].sh_name + 8 < bin->shstrtab_size)) {
+			continue;
+		}
+		if (bin->shdr[i].sh_link >= bin->ehdr.e_shnum) {
+			continue;
+		}
 		if (bin->shdr[i].sh_name > bin->strtab_size) {
 			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
 					bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
 		}
-		// TODO: check boundaries!!!
+
 		sh_name = &bin->strtab[bin->shdr[i].sh_name];
+		// TODO: check boundaries!!!
+
+		if (!sh_name)
+			continue;
 
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
