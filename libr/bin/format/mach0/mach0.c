@@ -707,6 +707,8 @@ static int MACH0_(r_bin_mach0_parse_import_ptr)(struct MACH0_(r_bin_mach0_obj_t)
 	ut32 stype;
 
 	wordsize = MACH0_(r_bin_mach0_get_bits)(bin) / 8;
+	if (idx<0 || idx>= bin->nsymtab)
+		return 0;
 	if ((bin->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
 		stype = S_LAZY_SYMBOL_POINTERS;
 	else stype = S_NON_LAZY_SYMBOL_POINTERS;
@@ -900,7 +902,7 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 					break;
 				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 					seg_idx = imm;
-					if (seg_idx > bin->nsegs )
+					if (seg_idx<0 || seg_idx > bin->nsegs )
 						eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has unexistent segment %d\n", seg_idx);
 					addr = bin->segs[seg_idx].vmaddr + ULEB();
 					break;
