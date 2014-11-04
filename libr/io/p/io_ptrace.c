@@ -187,6 +187,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
+#if 1
 			{
 				char *pidpath = NULL;
 				if (io->referer && !strncmp (io->referer, "dbg://", 6)) {
@@ -194,6 +195,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 					if (atoi (io->referer+6)) {
 						pidpath = r_sys_pid_to_path (pid);
 						eprintf ("PIDPATH: %s\n", pidpath);
+					} else {
+						pidpath = strdup (io->referer+6);
 					}
 				}
 				if (!pidpath) {
@@ -201,9 +204,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				}
 				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
 						pidpath, rw | R_IO_EXEC, mode, riop);
-
 				free (pidpath);
 			}
+#else
+			{	
+				char *pidpath = strdup ("/bin/ls"); //io->referer); //filer_sys_pid_to_path (pid);
+				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
+						pidpath, rw | R_IO_EXEC, mode, riop);
+				free (pidpath);
+			}
+#endif
 			return desc;
 		}
 	}
