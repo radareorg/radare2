@@ -131,7 +131,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	root_stream7->num_streams = num_streams;
 
 	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
-	if (tmp_data_max_size <= 0) {
+	if (num_streams<0 || tmp_data_max_size <= 0) {
 		eprintf ("too much amount of streams\n"
 			   "curremt pdb file is not correct\n");
 		return 0;
