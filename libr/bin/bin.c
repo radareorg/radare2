@@ -146,8 +146,12 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 			RRune r;
 
 			if (str_type == R_STRING_TYPE_WIDE) {
-				r = buf[needle+1] << 8 | buf[needle];
-				rc = 2;
+				if (needle+1<to) {
+					r = buf[needle+1] << 8 | buf[needle];
+					rc = 2;
+				} else {
+					break;
+				}
 			} else {
 				rc = r_utf8_decode (buf+needle, needle-to, &r);
 				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
