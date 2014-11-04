@@ -5,7 +5,9 @@
 #include <r_util.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 
-static void my_io_redirect (RIO *io, const char *file) {
+static void my_io_redirect (RIO *io, const char *ref, const char *file) {
+	free (io->referer);
+	io->referer = ref? strdup (ref): NULL;
 	free (io->redirect);
 	io->redirect = file? strdup (file): NULL;
 }
@@ -262,14 +264,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);
 #endif
-			my_io_redirect (io, uri);
+			my_io_redirect (io, file, uri);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			my_io_redirect (io, uri);
+			my_io_redirect (io, file, uri);
 		}
 		return NULL;
 	}
-	my_io_redirect (io, NULL);
+	my_io_redirect (io, file, NULL);
 	return NULL;
 }
 

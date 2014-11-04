@@ -158,7 +158,6 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	char *pidpath;
 	int ret = -1;
 	if (__plugin_open (io, file,0)) {
 		int pid = atoi (file+9);
@@ -188,12 +187,23 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
-			pidpath = r_sys_pid_to_path (pid);
-			// sleep 1s to get proper path (racy)
-			//r_sys_sleep (1);
-			desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
-				pidpath, rw | R_IO_EXEC, mode, riop);
-			free (pidpath);
+			{
+				char *pidpath = NULL;
+				if (io->referer && !strncmp (io->referer, "dbg://", 6)) {
+					// if it's a pid attach try to resolve real path
+					if (atoi (io->referer+6)) {
+						pidpath = r_sys_pid_to_path (pid);
+						eprintf ("PIDPATH: %s\n", pidpath);
+					}
+				}
+				if (!pidpath) {
+					pidpath = strdup (file);
+				}
+				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
+						pidpath, rw | R_IO_EXEC, mode, riop);
+
+				free (pidpath);
+			}
 			return desc;
 		}
 	}

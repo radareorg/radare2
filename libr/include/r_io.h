@@ -118,6 +118,7 @@ typedef struct r_io_t {
 	int raised;
 	int va;
 	int raw;
+	char *referer;
 	char *redirect;
 	/* write mask */
 	void (*printf)(const char *str, ...);
