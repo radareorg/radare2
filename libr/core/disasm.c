@@ -1551,6 +1551,8 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 	if (rel) {
 		if (rel->import) 
 			r_cons_printf ("  ;  RELOC %d %s", rel->type, rel->import->name);
+		else if (rel->symbol)
+			r_cons_printf ("  ;  RELOC %d %s", rel->type, rel->symbol->name);
 		else r_cons_printf ("  ;  RELOC %d ", rel->type);
 	}
 }

@@ -303,6 +303,7 @@ typedef struct r_bin_import_t {
 typedef struct r_bin_reloc_t {
 	ut8 type;
 	ut8 additive;
+	RBinSymbol *symbol;
 	RBinImport *import;
 	st64 addend;
 	ut64 vaddr;
