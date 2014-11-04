@@ -9,15 +9,6 @@
 
 static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name);
 
-static inline int __strnlen(const char *str, int len) {
-	int l = 0;
-	while (*str && --len) {
-		str++;
-		l++;
-	}
-	return l+1;
-}
-
 static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut8 e_ident[EI_NIDENT];
 	int len;
@@ -1184,7 +1175,7 @@ if (
 					free (strtab);
 					return NULL;
 				}
-				len = __strnlen (&strtab[sym[k].st_name], ELF_STRING_LENGTH-1);
+				len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 				memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
