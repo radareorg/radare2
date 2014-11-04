@@ -862,7 +862,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	if (!reloc_num)
 		return NULL;
 
-	ret = (struct r_bin_elf_reloc_t*)calloc (sizeof (RBinReloc) , (reloc_num + 1));
+	ret = (struct r_bin_elf_reloc_t*)calloc (sizeof (struct r_bin_elf_reloc_t) , (reloc_num + 1));
 
 	if (!ret)
 		return NULL;
@@ -872,7 +872,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	}
 
 	// TODO: check boundaries for e_shnum and filesize
-	for (i = 0, rel = 0; i < bin->ehdr.e_shnum; i++) {
+	for (i = 0, rel = 0; i < bin->ehdr.e_shnum && rel < reloc_num ; i++) {
 		/*
 		if (bin->shdr[i].sh_type != (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM))
 			continue;

@@ -397,6 +397,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_386_PC16:     ADD(16,-P);
 		case R_386_8:        ADD(8,  0);
 		case R_386_PC8:      ADD(8, -P);
+		case R_386_COPY:     ADD(64, 0); // XXX: copy symbol at runtime
 		default: eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
 		}
 		break;
