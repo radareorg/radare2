@@ -142,7 +142,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 		str_start = needle;
 
 		/* Eat a whole C string */
-		for (rc = i = 0; i < sizeof (tmp) - 2 && needle < to; i += rc) {
+		for (rc = i = 0; i < sizeof (tmp) - 3 && needle < to; i += rc) {
 			RRune r;
 
 			if (str_type == R_STRING_TYPE_WIDE) {
@@ -183,20 +183,20 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 		tmp[i++] = '\0';
 
 		if (runes >= min) {
-if (list) {
-			RBinString *new = R_NEW0 (RBinString);
-			new->type = str_type;
-			new->length = runes;
-			new->size = needle - str_start;
-			new->ordinal = count++;
-			new->paddr = new->vaddr = str_start;
-			if (i < sizeof (new->string))
-				memcpy (new->string, tmp, i);
-			r_list_append (list, new);
-} else {
-	// DUMP TO STDOUT. raw dumping for rabin2 -zzz
-	printf ("0x%08"PFMT64x" %s\n", str_start, tmp);
-}
+			if (list) {
+				RBinString *new = R_NEW0 (RBinString);
+				new->type = str_type;
+				new->length = runes;
+				new->size = needle - str_start;
+				new->ordinal = count++;
+				new->paddr = new->vaddr = str_start;
+				if (i < sizeof (new->string))
+					memcpy (new->string, tmp, i);
+				r_list_append (list, new);
+			} else {
+				// DUMP TO STDOUT. raw dumping for rabin2 -zzz
+				printf ("0x%08"PFMT64x" %s\n", str_start, tmp);
+			}
 		}
 	}
 
