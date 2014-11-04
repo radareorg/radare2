@@ -1527,9 +1527,16 @@ static RList * r_cmd_java_get_bin_obj_list(RAnal *anal) {
 }
 
 static RBinJavaObj * r_cmd_java_get_bin_obj(RAnal *anal) {
-	RBin *b = anal->binb.bin;
-	RBinPlugin *plugin = b->cur->o->plugin;
-	ut8 is_java = (plugin  && strcmp (plugin->name, "java") == 0) ? 1 : 0;
+	RBin *b;
+	int is_java;
+	RBinPlugin *plugin;
+	if (!anal || !anal->binb.bin)
+		return NULL;
+	b = anal->binb.bin;
+	if (!b->cur || !b->cur->o)
+		return NULL;
+	plugin = b->cur->o->plugin;
+	is_java = (plugin  && strcmp (plugin->name, "java") == 0) ? 1 : 0;
 	return is_java ? b->cur->o->bin_obj : NULL;
 }
 
