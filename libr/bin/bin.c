@@ -370,11 +370,11 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->imports) o->imports = cp->imports (binfile);
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
+	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	if (cp->relocs) o->relocs = cp->relocs (binfile);
 	if (cp->sections) o->sections = cp->sections (binfile);
 	if (cp->strings) o->strings = cp->strings (binfile);
 	else o->strings = get_strings (binfile, minlen, 0);
-	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	if (cp->classes) o->classes = cp->classes (binfile);
 	if (cp->lines) o->lines = cp->lines (binfile);
 	if (cp->get_sdb) o->kv = cp->get_sdb (o);
