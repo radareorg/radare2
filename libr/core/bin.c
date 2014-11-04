@@ -492,7 +492,6 @@ static int bin_pdb (RCore *core, int mode) {
 static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	if (!binmain) return R_FALSE;
-
 	baddr = 0LL; // This is broken, just to make t.formats/elf/main happy
 	if ((mode & R_CORE_BIN_SIMPLE) || mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("%"PFMT64d, va? (baddr+binmain->vaddr):binmain->paddr);

@@ -1038,6 +1038,15 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	Elf_(Shdr) *strtab_section;
 	Elf_(Sym) *sym;
 	char *strtab;
+	Elf_(Shdr)* section_text = NULL;
+	ut64 section_text_offset = 0LL;
+
+	if (bin->ehdr.e_type== ET_REL) {
+		section_text = Elf_(r_bin_elf_get_section_by_name)(bin, ".text");
+		if (section_text) {
+			section_text_offset = section_text->sh_offset;
+		}
+	}
 
 	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
 		return NULL;
@@ -1049,6 +1058,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			data_offset = 0;
 	}
 	shdr_size = bin->ehdr.e_shnum * sizeof (Elf_(Shdr));
+
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 #define BUGGY 0
 #if BUGGY
@@ -1136,6 +1146,8 @@ if (
 				}
 #endif
 				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+				if (section_text) 
+					ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");

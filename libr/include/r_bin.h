@@ -134,7 +134,6 @@ typedef struct r_bin_object_t {
 } RBinObject;
 
 // XXX: this is a copy of RBinObject
-// TODO: rename RBinFile to RBinFile
 typedef struct r_bin_file_t {
 	char *file;
 	int fd;
