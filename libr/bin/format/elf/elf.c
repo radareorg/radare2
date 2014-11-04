@@ -1205,7 +1205,7 @@ if (
 			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 				bin->imports_by_ord_size = nsym;
 				bin->imports_by_ord = (RBinImport**)calloc (nsym, sizeof (RBinImport*));
-			} else if (type == R_BIN_ELF_SYMBOLS && !bin->imports_by_ord_size) {
+			} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size) {
 				bin->symbols_by_ord_size = nsym;
 				bin->symbols_by_ord = (RBinSymbol**)calloc (nsym, sizeof (RBinSymbol*));
 			} else break;
