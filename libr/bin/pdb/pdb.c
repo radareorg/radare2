@@ -95,36 +95,38 @@ static int count_pages(int length, int page_size) {
 ///////////////////////////////////////////////////////////////////////////////
 static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
 		EStream indx, int root_size, int page_size) {
-	int num_streams = 0;
-	char *data = 0;
-	char *tmp_data = 0;
-	int num_pages = 0;
-	int i = 0;
-	int *sizes = 0;
-	int stream_size = 0;
-	int pos = 0;
 	R_PDB_STREAM *pdb_stream = 0;
-	int data_size = 0;
 	int tmp_data_max_size = 0;
+	char *data_end = NULL;
+	char *tmp_data = NULL;
+	int stream_size = 0;
+	int num_streams = 0;
+	int *sizes = NULL;
+	int num_pages = 0;
+	int data_size = 0;
+	char *data = NULL;
+	int i = 0;
+	int pos = 0;
 
 	char *tmp;
 
 	R_PDB7_ROOT_STREAM *root_stream7;
 
-	pdb->root_stream = (R_PDB7_ROOT_STREAM *) malloc(sizeof(R_PDB7_ROOT_STREAM));
+	pdb->root_stream = R_NEW0 (R_PDB7_ROOT_STREAM);
 	init_r_pdb_stream(&pdb->root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount,
 					  indx, root_size, page_size);
 
 	root_stream7 = pdb->root_stream;
 	pdb_stream = &(root_stream7->pdb_stream);
 
-	stream_file_get_size(&pdb_stream->stream_file, &data_size);
-	data = (char *) malloc(data_size);
+	stream_file_get_size (&pdb_stream->stream_file, &data_size);
+	data = (char *) calloc (1, data_size);
 	stream_file_get_data(&pdb_stream->stream_file, data);
 
 	num_streams = *(int *)data;
 	tmp_data = data;
 	tmp_data += 4;
+	data_end = data + data_size;
 
 	root_stream7->num_streams = num_streams;
 
@@ -169,7 +171,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		// TODO: cache that num_pages * 4, its used 4 times
 		tmp = (char *) calloc (num_pages, 4);
 		memset(tmp, 0, num_pages * 4);
-		page = (SPage *) malloc (sizeof (SPage));
+		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
 			memcpy (tmp, tmp_data + pos, num_pages * 4);
 			pos += num_pages * 4;
@@ -224,7 +226,7 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 	stream_file_read (stream, 8, (char *)&tmp->/*data.*/guid.data4);
 	stream_file_read (stream, 4, (char *)&tmp->/*data.*/cb_names);
 
-	tmp->/*data.*/names = (char *) malloc(tmp->/*data.*/cb_names);
+	tmp->/*data.*/names = (char *) calloc(1, tmp->/*data.*/cb_names);
 	stream_file_read (stream, tmp->/*data.*/cb_names, tmp->/*data.*/names);
 }
 
@@ -237,7 +239,7 @@ static void free_info_stream(void *stream) {
 ///////////////////////////////////////////////////////////////////////////////
 #define ADD_INDX_TO_LIST(list, index, stream_size, stream_type, free_func, parse_func) { \
 	if (index != -1) { \
-		SStreamParseFunc *stream_parse_func = (SStreamParseFunc *) malloc(sizeof(SStreamParseFunc)); \
+		SStreamParseFunc *stream_parse_func = R_NEW0(SStreamParseFunc); \
 		stream_parse_func->indx = (index); \
 		stream_parse_func->type = (stream_type); \
 		stream_parse_func->parse_stream = (parse_func); \
@@ -315,20 +317,20 @@ static int pdb_read_root(R_PDB *pdb) {
 		//TODO: rewrite for style like for streams from dbg stream
 		//      look default
 		case ePDB_STREAM_PDB:
-			pdb_info_stream = (SPDBInfoStream *) malloc(sizeof(SPDBInfoStream));
+			pdb_info_stream = R_NEW0 (SPDBInfoStream);
 			pdb_info_stream->free_ = free_info_stream;
 			parse_pdb_info_stream(pdb_info_stream, &stream_file);
 			r_list_append(pList, pdb_info_stream);
 			break;
 		case ePDB_STREAM_TPI:
-			tpi_stream = (STpiStream *) malloc(sizeof(STpiStream));
+			tpi_stream = R_NEW0 (STpiStream);
 			init_tpi_stream(tpi_stream);
 			parse_tpi_stream(tpi_stream, &stream_file);
 			r_list_append(pList, tpi_stream);
 			break;
 		case ePDB_STREAM_DBI:
 		{
-			SDbiStream *dbi_stream = (SDbiStream *) malloc(sizeof(SDbiStream));
+			SDbiStream *dbi_stream = R_NEW0 (SDbiStream);
 			init_dbi_stream(dbi_stream);
 			parse_dbi_stream(dbi_stream, &stream_file);
 			r_list_append(pList, dbi_stream);
@@ -346,7 +348,7 @@ static int pdb_read_root(R_PDB *pdb) {
 				}
 			}
 
-			pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
+			pdb_stream = R_NEW0 (R_PDB_STREAM);
 			init_r_pdb_stream(pdb_stream, pdb->buf, (int *)page->stream_pages,
 							  root_stream->pdb_stream.pages_amount, i,
 							  page->stream_size,
@@ -423,7 +425,7 @@ static int pdb7_parse(R_PDB *pdb) {
 		goto error;
 	}
 
-	root_page_data = (int *)malloc(page_size * num_root_index_pages);
+	root_page_data = (int *)calloc(page_size, num_root_index_pages);
 	if (!root_page_data) {
 		eprintf ("error memory allocation of root_page_data\n");
 		goto error;
@@ -479,6 +481,8 @@ static void finish_pdb_parse(R_PDB *pdb)
 	RListIter *it;
 	SPage *page = 0;
 
+	if (!p)
+		return;
 	it = r_list_iterator(p->streams_list);
 	while (r_list_iter_next(it)) {
 		page = (SPage *) r_list_iter_get(it);
@@ -701,7 +705,7 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 //		goto error;
 //	}
 
-	signature = (char *)malloc (PDB7_SIGNATURE_LEN);
+	signature = (char *)calloc (1, PDB7_SIGNATURE_LEN);
 	if (!signature) {
 		eprintf ("memory allocation error\n");
 		goto error;
