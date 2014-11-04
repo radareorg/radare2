@@ -521,7 +521,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
 	int ret = 0;
 	// TODO handle rwx and conditions
-	if (type == R_FALSE) { // set bp
+	if (type != R_FALSE) { // set bp
 		if (hw) {
 			ret = gdbr_set_hwbp (desc, addr, "");
 		} else {
