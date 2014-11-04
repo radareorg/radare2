@@ -245,8 +245,13 @@ static int cb_asmlineswidth(void *user, void *data) {
 static int cb_asmos(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
-	RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
-	RConfigNode *node = (RConfigNode*) data;
+	RConfigNode *asmarch, *node = (RConfigNode*) data;
+
+	if (*node->value=='?') {
+		r_cons_printf ("dos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
+		return 0;
+	}
+	asmarch = r_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
 		r_syscall_setup (core->anal->syscall, asmarch->value,
 				node->value, core->anal->bits);
