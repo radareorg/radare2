@@ -204,9 +204,16 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			sects[j].sh_name = name_buf->length;
 			r_buf_append_bytes (name_buf, (const ut8*)".strtab", 8);
 			sects[j].sh_type = SHT_STRTAB;
-			sects[j].sh_addr = strtab->d_un.d_val;
-			sects[j].sh_offset = strtab->d_un.d_ptr - bin->baddr;
-			sects[j].sh_size = strsz->d_un.d_val;
+			if (strtab) {
+				sects[j].sh_addr = strtab->d_un.d_val;
+				sects[j].sh_offset = strtab->d_un.d_ptr - bin->baddr;
+			} else {
+				sects[j].sh_addr = 0;
+				sects[j].sh_offset = 0;
+			}
+			if (strsz) {
+				sects[j].sh_size = strsz->d_un.d_val;
+			}
 
 			j++;
 		}
@@ -222,15 +229,20 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			sects[j].sh_name = name_buf->length;
 			r_buf_append_bytes (name_buf, (const ut8*)".symtab", 8);
 			sects[j].sh_type = SHT_SYMTAB;
-			sects[j].sh_addr = symtab->d_un.d_val;
-			sects[j].sh_offset = symtab->d_un.d_ptr - bin->baddr;
+			if (symtab) {
+				sects[j].sh_addr = symtab->d_un.d_val;
+				sects[j].sh_offset = symtab->d_un.d_ptr - bin->baddr;
+			} else {
+				sects[j].sh_addr = 0;
+				sects[j].sh_offset = 0;
+			}
 			sects[j].sh_size = sizeof (Elf_(Sym)) * symcount;
 
 			j++;
 		}
 
-		bin->shstrtab = r_buf_free_to_string (name_buf);
 		bin->shstrtab_size = r_buf_size (name_buf);
+		bin->shstrtab = r_buf_free_to_string (name_buf);
 		bin->shdr = sects;
 		bin->ehdr.e_shnum = j;
 
