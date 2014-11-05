@@ -143,15 +143,17 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		if (type) {
 			clas = strdup (sym+2);
 			name = strchr (clas, ' ');
-			if (name) *name++ = 0;
-			name = strdup (name);
-			for (i=0; name[i]; i++) {
-				if (name[i]==']') {
-					name[i] = 0;
-				} else
-				if (name[i]==':') {
-					nargs++;
-					name[i] = 0;
+			if (name) {
+				*name++ = 0;
+				name = strdup (name);
+				for (i=0; name[i]; i++) {
+					if (name[i]==']') {
+						name[i] = 0;
+					} else
+					if (name[i]==':') {
+						nargs++;
+						name[i] = 0;
+					}
 				}
 			}
 		}
@@ -191,10 +193,12 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 						strcat (args, ", ");
 				}
 			} else args = strdup ("");
-			ret = malloc (strlen (type)+strlen (name)+
-				strlen(clas)+strlen(args)+15);
-			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
-			if (binfile) r_bin_class_add_method (binfile, clas, name, nargs);
+				if (type && name && *name) {
+				ret = malloc (strlen (type)+strlen (name)+
+					strlen(clas)+strlen(args)+15);
+				sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
+				if (binfile) r_bin_class_add_method (binfile, clas, name, nargs);
+			}
 		}
 	}
 	free (clas);
