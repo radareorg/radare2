@@ -142,7 +142,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if(!shdr_size)
 		return R_FALSE;
 
-	if ((bin->shdr = malloc (shdr_size)) == NULL) {
+	if ((bin->shdr = calloc (1, shdr_size)) == NULL) {
 		perror ("malloc (shdr)");
 		return R_FALSE;
 	}
@@ -181,7 +181,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->shstrtab_size =
 		bin->strtab_size = bin->strtab_section->sh_size;
 
-	if ((bin->strtab = malloc (bin->strtab_size)) == NULL) {
+	if ((bin->strtab = calloc (1,bin->strtab_size)) == NULL) {
 		perror ("malloc");
 		bin->shstrtab = NULL;
 		return R_FALSE;
@@ -293,7 +293,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 
 	nrel = (ut32)((int)rel_shdr->sh_size / (int)tsize);
 	int relsz = (int)nrel * sizeof (Elf_(Rel));
-	if (relsz<1 || (rel = malloc (relsz)) == NULL) {
+	if (relsz<1 || (rel = calloc (1,relsz)) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
 	}
@@ -740,7 +740,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			for (j = 0; j < ndyn; j++)
 				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
 					free (ret);
-					if ((ret = malloc (ELF_STRING_LENGTH)) == NULL) {
+					if ((ret = calloc (1,ELF_STRING_LENGTH)) == NULL) {
 						perror ("malloc (rpath)");
 						free (dyn);
 						return NULL;
@@ -1018,7 +1018,7 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	char unknown_s[20], invalid_s[20];
 	int i, nidx, unknown_c=0, invalid_c=0;
 
-	if ((ret = malloc ((bin->ehdr.e_shnum + 1) * sizeof (struct r_bin_elf_section_t))) == NULL)
+	if ((ret = calloc ((bin->ehdr.e_shnum + 1), sizeof (struct r_bin_elf_section_t))) == NULL)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (bin->shdr == NULL) {
@@ -1085,7 +1085,10 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 		if ((data_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".rodata")) == -1)
 			data_offset = 0;
 	}
-	shdr_size = bin->ehdr.e_shnum * sizeof (Elf_(Shdr));
+	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
+		return R_FALSE;
+	if (shdr_size+8>bin->size)
+		return R_FALSE;
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 #define BUGGY 0
@@ -1111,7 +1114,7 @@ if (
 				/* oops. we have no strtab, skip */
 				continue;
 			}
-			if ((strtab = (char *)malloc (8+strtab_section->sh_size)) == NULL) {
+			if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
 				eprintf ("malloc (syms strtab)");
 				return NULL;
 			}
@@ -1120,7 +1123,7 @@ if (
 				return NULL;
 			}
 
-			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
+			if ((sym = (Elf_(Sym) *)calloc (1,1+bin->shdr[i].sh_size)) == NULL) {
 				eprintf ("malloc (syms)");
 				free (ret);
 				free (strtab);
@@ -1248,7 +1251,7 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 	int i = 0, j;
 	if (!bin)
 		return NULL;
-	if ((ret = malloc ((bin->ehdr.e_phnum+3 + 1) *
+	if ((ret = calloc ((bin->ehdr.e_phnum+3 + 1),
 			sizeof (struct r_bin_elf_field_t))) == NULL)
 		return NULL;
 	strncpy (ret[i].name, "ehdr", ELF_STRING_LENGTH);
