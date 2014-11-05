@@ -296,21 +296,22 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			return R_FALSE;
 		}
 	}
-	
-	// Try using the DYNAMIC headers to get the strtab section
-	// but only if the binary has no section headers
-	dyn_strtab = Elf_(r_bin_elf_seek_dyn_tag) (bin, DT_STRTAB);
-	dyn_strsz = Elf_(r_bin_elf_seek_dyn_tag) (bin, DT_STRSZ);
 
-	if (!bin->ehdr.e_shnum && dyn_strtab && dyn_strsz) {
-		off = dyn_strtab->d_un.d_val - bin->baddr;
-		size = dyn_strsz->d_un.d_val;
-	} else {
-		Elf_(Shdr) *sh = Elf_(r_bin_elf_get_section_by_name) (bin, ".strtab");
-		if (!sh) {
-			eprintf ("Warning: strtab section not found\n");
+	Elf_(Shdr) *sh = Elf_(r_bin_elf_get_section_by_name) (bin, ".strtab");
+	if (!sh) {
+		// Try using the DYNAMIC headers to get the strtab section
+		// but only if the binary has no section headers
+		dyn_strtab = Elf_(r_bin_elf_seek_dyn_tag) (bin, DT_STRTAB);
+		dyn_strsz = Elf_(r_bin_elf_seek_dyn_tag) (bin, DT_STRSZ);
+
+		if (dyn_strtab && dyn_strsz) {
+			off = dyn_strtab->d_un.d_val - bin->baddr;
+			size = dyn_strsz->d_un.d_val;
+		} else {
+			eprintf ("Could not find a suitable strtab section\n");
 			return R_FALSE;
 		}
+	} else {
 		off = sh->sh_offset;
 		size = sh->sh_size;
 	}
