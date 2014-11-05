@@ -525,8 +525,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dro", "", "Show previous (old) values of registers",
 				"drp", " <file>", "Load register metadata file",
 				"drp", "", "Display current register profile",
-				"drs", "[?]", "Stack register states",
+				"drs", " [?]", "Stack register states",
 				"drt", "", "Show all register types",
+				"drx", "", "Show all debug registers",
+				"drx", " number addr len rwx", "Modify hardware breakpoint",
+				"drx-", "number", "Clear hardware breakpoint",
 				".dr", "*", "Include common register values in flags",
 				".dr", "-", "Unflag all registers",
 				NULL
