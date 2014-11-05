@@ -1257,7 +1257,11 @@ if (
 					free (sym);
 					return NULL;
 				}
-				strncpy (ret[ret_ctr].name, &bin->strtab[sym[k].st_name], ELF_STRING_LENGTH);
+				if (bin->strtab) {
+					strncpy (ret[ret_ctr].name, bin->strtab+sym[k].st_name, ELF_STRING_LENGTH);
+				} else {
+					sprintf (ret[ret_ctr].name, "unk%d", j);
+				}
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
 				#define s_bind(x) snprintf (ret[ret_ctr].bind, ELF_STRING_LENGTH, x);

@@ -188,7 +188,7 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	return sdb_array_set (s, "includedirs", idx, incl, 0);
 }
 
-static const ut8 *r_bin_dwarf_parse_lnp_header(
+static const ut8 *r_bin_dwarf_parse_lnp_header (
 		RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 		RBinDwarfLNPHeader *hdr, FILE *f)
 {
@@ -214,6 +214,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 		hdr->header_length = READ (buf, ut32);
 	}
 
+	if (buf_end-buf < 8) return NULL;
 	hdr->min_inst_len = READ (buf, ut8);
 	//hdr->max_ops_per_inst = READ (buf, ut8);
 	hdr->default_is_stmt = READ (buf, ut8);
@@ -284,7 +285,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
-							allocated_id = malloc(strlen(comp_dir) +
+							allocated_id = calloc(1,strlen(comp_dir) +
 									strlen(include_dir) + 8);
 							snprintf(allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
 									"%s/%s/", comp_dir, include_dir);
@@ -299,7 +300,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 
 				size_t namelen = len + (include_dir?strlen (include_dir):0) + 8;
 
-				hdr->file_names[count].name = malloc (sizeof(char) * namelen);
+				hdr->file_names[count].name = calloc (sizeof(char), namelen);
 				snprintf (hdr->file_names[count].name, namelen - 1, "%s/%s", include_dir, filename);
 				hdr->file_names[count].name[namelen - 1] = '\0';
 
@@ -604,7 +605,7 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 	const ut8 *buf, *buf_end;
 	ut8 opcode, ext_opcode;
 
-	if (!a || !obuf)
+	if (!a || !obuf || len<8)
 		return NULL;
 	buf = obuf;
 	buf_end = obuf + len;
@@ -1437,13 +1438,13 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		debug_str = getsection (a, "debug_str");
 		if (debug_str) {
 			debug_str_len = debug_str->size;
-			debug_str_buf = malloc (debug_str_len);
+			debug_str_buf = calloc (1, debug_str_len);
 			r_buf_read_at (binfile->buf, debug_str->paddr,
 					debug_str_buf, debug_str_len);
 		}
 
 		len = section->size;
-		buf = malloc (len);
+		buf = calloc (1,len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len, mode);
@@ -1464,7 +1465,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 	if (binfile && section) {
 		RList *list = r_list_new ();
 		len = section->size;
-		buf = malloc (len);
+		buf = calloc (1,len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 		free (buf);
@@ -1482,7 +1483,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 	if (binfile && section) {
 		len = section->size;
 		if (len==0) return NULL;
-		buf = malloc (len);
+		buf = calloc (1,len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (mode == R_CORE_BIN_PRINT) {
 			r_bin_dwarf_parse_aranges_raw (buf, len, stdout);
@@ -1503,7 +1504,7 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode) {
 
 	if (binfile && section) {
 		len = section->size;
-		buf = malloc (len);
+		buf = calloc (1,len);
 		r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		da = r_bin_dwarf_parse_abbrev_raw (buf, len, mode);
 		free (buf);
