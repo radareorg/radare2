@@ -1059,7 +1059,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_lib_t *ret = NULL;
 	Elf_(Dyn) *dyn = NULL;
-	int i, j;
+	int i, j, off;
 
 	if (!bin || !bin->phdr || !bin->strtab)
 		return NULL;
@@ -1068,13 +1068,16 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 
 	for (i = 0; i < bin->dyn_entries; i++) {
 		if (bin->dyn_buf[i].d_tag == DT_NEEDED) {
+			off = bin->dyn_buf[i].d_un.d_val;
+			if (off<0 || off > bin->strtab_size)
+				break;
 			ret = realloc (ret, (j+1) * sizeof (struct r_bin_elf_lib_t));
 			if (ret == NULL) {
 				perror ("realloc (libs)");
 				free (dyn);
 				return NULL;
 			}
-			strncpy (ret[j].name, bin->strtab + bin->dyn_buf[i].d_un.d_val, ELF_STRING_LENGTH);
+			strncpy (ret[j].name, bin->strtab + off, ELF_STRING_LENGTH);
 			ret[j].last = R_FALSE;
 			if (ret[j].name[0])
 				j++;
