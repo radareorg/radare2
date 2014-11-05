@@ -1316,6 +1316,9 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 	RBinJavaField *method;
 	if (bin == NULL)
 		return NULL;
+	if (offset+8>=len) {
+		return NULL;
+	}
 	method = (RBinJavaField *) R_NEW0(RBinJavaField);
 	if (method == NULL) {
 		eprintf ("Unable to allocate memory for method information\n");
@@ -1415,6 +1418,9 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 	RBinJavaField *field;
 	if (bin == NULL)
 		return NULL;
+	if (offset+8>=len) {
+		return NULL;
+	}
 	field = (RBinJavaField *) R_NEW0(RBinJavaField);
 	if (field == NULL) {
 		eprintf ("Unable to allocate memory for field information\n");
@@ -1930,7 +1936,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 	ut8* buffer = NULL;
 	const ut8* a_buf = offset + buf;
 	ut8 attr_idx_len = 6;
-	if (offset > len) {
+	if (offset +6 > len) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute offset "
 			"(0x%"PFMT64x") > len  of remaining bytes (0x%"PFMT64x").\n", offset, len);
 		return attr;
@@ -2115,6 +2121,8 @@ R_API ut64 r_bin_java_parse_attrs (RBinJavaObj *bin, const ut64 offset, const ut
 	int i = 0;
 	ut64 adv = 0;
 	const ut8 * a_buf = buf + offset;
+	if (offset+8>=len)
+		return UT64_MAX;
 	r_list_free ( bin->attrs_list);
 	bin->attrs_list = r_list_newf (r_bin_java_attribute_free);
 	bin->attrs_offset = offset;
