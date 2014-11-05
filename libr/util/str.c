@@ -895,7 +895,8 @@ R_API int r_str_ansi_len(const char *str) {
 R_API int r_str_nlen(const char *str, int n) {
 	int len = 0;
 	if (str) {
-		while (IS_PRINTABLE (*str) && n>0) {
+		//while (IS_PRINTABLE (*str) && n>0) {
+		while (*str && n>0) {
 			len++;
 			str++;
 			n--;

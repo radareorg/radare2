@@ -153,7 +153,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 					break;
 				}
 			} else {
-				rc = r_utf8_decode (buf+needle, needle-to, &r);
+				rc = r_utf8_decode (buf+needle, to-needle, &r);
 				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
 			}
 
