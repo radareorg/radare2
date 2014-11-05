@@ -119,8 +119,8 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			bin->dyn_buf = malloc (bin->phdr[i].p_filesz);
-			r_buf_read_at (bin->b, bin->phdr[i].p_offset, bin->dyn_buf, bin->phdr[i].p_filesz);
+			bin->dyn_buf = calloc (1, bin->phdr[i].p_filesz);
+			r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)bin->dyn_buf, bin->phdr[i].p_filesz);
 			bin->dyn_entries = bin->phdr[i].p_filesz / sizeof (Elf_(Dyn));
 		}
 	}
@@ -178,7 +178,7 @@ static int r_bin_elf_get_symbols_count (struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut32 shdr_size;
-	int len, i;
+	int len;
 
 	if (bin->shdr) 
 		return R_TRUE;
@@ -197,7 +197,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			sects = realloc (sects, (j + 1) * sizeof (Elf_(Shdr)));
 
 			sects[j].sh_name = name_buf->length;
-			r_buf_append_bytes (name_buf, ".strtab", 8);
+			r_buf_append_bytes (name_buf, (const ut8*)".strtab", 8);
 			sects[j].sh_type = SHT_STRTAB;
 			sects[j].sh_addr = strtab->d_un.d_val;
 			sects[j].sh_offset = strtab->d_un.d_ptr - bin->baddr;
@@ -215,7 +215,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			sects = realloc (sects, (j + 1) * sizeof (Elf_(Shdr)));
 
 			sects[j].sh_name = name_buf->length;
-			r_buf_append_bytes (name_buf, ".symtab", 8);
+			r_buf_append_bytes (name_buf, (const ut8*)".symtab", 8);
 			sects[j].sh_type = SHT_SYMTAB;
 			sects[j].sh_addr = symtab->d_un.d_val;
 			sects[j].sh_offset = symtab->d_un.d_ptr - bin->baddr;
@@ -338,7 +338,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	sdb_num_set (bin->kv, "elf_strtab.size", size, 0);
 
 	if (r_buf_read_at (bin->b, off, (ut8*)bin->strtab, size) < 0) {
-		eprintf ("Warning: read (strtab) at 0x%"PFMT64x"\n", off);
+		eprintf ("Warning: read (strtab) at 0x%"PFMT64x"\n", (ut64)off);
 		free (bin->strtab);
 		bin->strtab = NULL;
 		return R_FALSE;
@@ -1141,7 +1141,8 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 }
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
-	int shdr_size, tsize, nsym, ret_ctr, i, j, k;
+	ut32 shdr_size;
+	int tsize, nsym, ret_ctr, i, j, k;
 	ut64 sym_offset = 0, data_offset = 0, toffset;
 	struct r_bin_elf_symbol_t *ret = NULL;
 	Elf_(Sym) *sym;
