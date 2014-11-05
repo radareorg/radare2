@@ -83,8 +83,13 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 		eprintf ("Invalid DRX index (0-4)\n");
 		return R_FALSE;
 	}
-	if (rwx<0 || rwx>3)
-		rwx = 0; // defaults to X
+	switch (rwx) {
+		case 1: rwx=0; break;
+		case 2: rwx=1; break;
+		case 4: rwx=2; break;
+		default:
+			rwx=0;
+	}
 	switch (len) {
 	case 1: len = 0; break;
 	case 2: len = 1<<2; break;
@@ -97,15 +102,18 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	I386_DR_SET_RW_LEN (control, n, len|rwx);
 	if (global) {
 		I386_DR_GLOBAL_ENABLE (control, n);
-  		control |= DR_GLOBAL_SLOWDOWN;
+  		//control |= DR_GLOBAL_SLOWDOWN;
 	} else {
 		I386_DR_LOCAL_ENABLE (control, n);
-  		control |= DR_LOCAL_SLOWDOWN; // XXX: This is wrong
+  		//control |= DR_LOCAL_SLOWDOWN; // XXX: This is wrong
 	}
   	control &= I386_DR_CONTROL_MASK;
 	drx[n] = addr;
+//eprintf ("drx[DR_CONTROL] = %x \n", drx[DR_CONTROL]);	
 	drx[DR_CONTROL] = control;
-eprintf ("SET 7 %x\n", control);
+//eprintf ("CONTROL = %x\n", control);
+
+
 	return R_TRUE;
 }
 
