@@ -120,6 +120,11 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			bin->dyn_buf = calloc (1, 1+bin->phdr[i].p_filesz);
+			if (!bin->dyn_buf) {
+				eprintf ("Cannot allocate %d phdr[%d].p_filesz\n", bin->phdr[i].p_filesz, i);
+				R_FREE (bin->phdr);
+				return R_FALSE;
+			}
 			r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)bin->dyn_buf, bin->phdr[i].p_filesz);
 			bin->dyn_entries = bin->phdr[i].p_filesz / sizeof (Elf_(Dyn));
 		}
@@ -1296,7 +1301,11 @@ if (
 						sprintf (ret[ret_ctr].name, "unk%d", j);
 					}
 				} else {
-					strncpy (ret[ret_ctr].name, &bin->shstrtab[nidx], ELF_STRING_LENGTH);
+					if (nidx<0 || nidx>=bin->shstrtab_size) {
+						sprintf (ret[ret_ctr].name, "unk%d", j);
+					} else {
+						strncpy (ret[ret_ctr].name, bin->shstrtab+nidx, ELF_STRING_LENGTH);
+					}
 				}
 
 				ret[ret_ctr].ordinal = k;
