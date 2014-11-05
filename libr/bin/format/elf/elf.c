@@ -119,7 +119,7 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			bin->dyn_buf = calloc (1, bin->phdr[i].p_filesz);
+			bin->dyn_buf = calloc (1, 1+bin->phdr[i].p_filesz);
 			r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)bin->dyn_buf, bin->phdr[i].p_filesz);
 			bin->dyn_entries = bin->phdr[i].p_filesz / sizeof (Elf_(Dyn));
 		}
@@ -238,7 +238,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if(!shdr_size)
 		return R_FALSE;
 
-	if ((bin->shdr = calloc (1, shdr_size)) == NULL) {
+	if ((bin->shdr = calloc (1, 1+shdr_size)) == NULL) {
 		perror ("malloc (shdr)");
 		return R_FALSE;
 	}
@@ -281,7 +281,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 		bin->shstrtab_size = bin->shstrtab_section->sh_size;
 
-		if ((bin->shstrtab = calloc (1, bin->shstrtab_size)) == NULL) {
+		if ((bin->shstrtab = calloc (1, 1+bin->shstrtab_size)) == NULL) {
 			perror ("calloc");
 			bin->shstrtab = NULL;
 			return R_FALSE;
@@ -328,7 +328,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	bin->strtab_size = size;
 
-	if ((bin->strtab = calloc (1, bin->strtab_size)) == NULL) {
+	if ((bin->strtab = calloc (1, 1+bin->strtab_size)) == NULL) {
 		perror ("calloc");
 		bin->strtab = NULL;
 		return R_FALSE;
@@ -442,7 +442,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 
 	nrel = (ut32)((int)rel_shdr->sh_size / (int)tsize);
 	int relsz = (int)nrel * sizeof (Elf_(Rel));
-	if (relsz<1 || (rel = calloc (1,relsz)) == NULL) {
+	if (relsz<1 || (rel = calloc (1, relsz)) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
 	}
@@ -1278,7 +1278,7 @@ if (
 				if (section_text) 
 					ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name+10 > bin->strtab_size) {
+				if (sym[k].st_name+1 > bin->strtab_size) {
 					eprintf ("Warning: index out of strtab range\n");
 					free (ret);
 					free (sym);
