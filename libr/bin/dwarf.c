@@ -1260,6 +1260,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		if (!abbr_code) {
 			cu->dies[cu->length].abbrev_code = 0;
 			cu->length++;
+			buf++;
 			continue;
 		}
 
@@ -1370,8 +1371,10 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 	while (buf < buf_end) {
 		offset = buf - obuf;
 		buf = r_uleb128 (buf, -1, &tmp);
-		if (!tmp)
+		if (!tmp) {
+			buf++;
 			continue;
+		}
 
 		if (da->length == da->capacity)
 			r_bin_dwarf_expand_debug_abbrev(da);
