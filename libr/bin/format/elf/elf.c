@@ -1217,6 +1217,7 @@ if (
 				return NULL;
 			}
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof (Elf_(Sym)), k++) {
+				int nidx;
 				if (k == 0)
 					continue;
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
@@ -1230,6 +1231,30 @@ if (
 					//int idx = sym[k].st_shndx;
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
+				} else if (ELF_ST_TYPE(sym[k].st_info == STT_SECTION)) {
+					Elf_(Section) sect = sym[k].st_shndx;
+
+					if (sect >= bin->ehdr.e_shnum)
+						continue;
+
+					if (bin->shdr == NULL)
+						continue;
+
+					nidx = bin->shdr[sect].sh_name;
+
+					if (nidx < 0 || !bin->shstrtab_section ||
+						!bin->shstrtab_section->sh_size ||
+						nidx > bin->shstrtab_section->sh_size) {
+						continue;
+					} else {
+						if (bin->shstrtab && (bin->shdr[sect].sh_name > 0) &&
+							(bin->shdr[sect].sh_name + 8 < bin->strtab_size)) {
+							tsize = sym[k].st_size;
+							toffset = (ut64)sym[k].st_value;
+							sym[k].st_name = nidx;
+						} else continue;
+					}
+					//printf ("Section %d\n", sym[k].st_shndx);
 				} else continue;
 				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
 					perror ("realloc (symbols|imports)");
@@ -1259,11 +1284,18 @@ if (
 					free (sym);
 					return NULL;
 				}
-				if (bin->strtab) {
-					strncpy (ret[ret_ctr].name, bin->strtab+sym[k].st_name, ELF_STRING_LENGTH);
+
+				//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
+				if (ELF_ST_TYPE(sym[k].st_info) != STT_SECTION) {
+					if (bin->strtab) {
+						strncpy (ret[ret_ctr].name, bin->strtab+sym[k].st_name, ELF_STRING_LENGTH);
+					} else {
+						sprintf (ret[ret_ctr].name, "unk%d", j);
+					}
 				} else {
-					sprintf (ret[ret_ctr].name, "unk%d", j);
+					strncpy (ret[ret_ctr].name, &bin->shstrtab[nidx], ELF_STRING_LENGTH);
 				}
+
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
 				#define s_bind(x) snprintf (ret[ret_ctr].bind, ELF_STRING_LENGTH, x);
