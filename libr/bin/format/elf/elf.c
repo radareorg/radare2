@@ -1060,7 +1060,8 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 }
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
-	int shdr_size, tsize, nsym, ret_ctr, i, j, k, len;
+	ut32 shdr_size;
+	int tsize, nsym, ret_ctr, i, j, k, len;
 	ut64 sym_offset = 0, data_offset = 0, toffset;
 	struct r_bin_elf_symbol_t *ret = NULL;
 	Elf_(Shdr) *strtab_section;
@@ -1105,11 +1106,16 @@ if (
          if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
                 (type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
 #endif
-			if (bin->shdr[i].sh_link > shdr_size) {
+			if (bin->shdr[i].sh_link < 1) {
 				/* oops. fix out of range pointers */
 				continue;
 			}
-			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
+			// hack to avoid asan cry
+			if (bin->shdr[i].sh_link+0xff>= shdr_size) {
+				/* oops. fix out of range pointers */
+				continue;
+			}
+			strtab_section = bin->shdr+bin->shdr[i].sh_link;
 			if (!strtab_section) {
 				/* oops. we have no strtab, skip */
 				continue;

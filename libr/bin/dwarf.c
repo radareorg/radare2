@@ -1120,7 +1120,6 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf,
 					(unsigned)hdr->pointer_size);
 			return NULL;
 		}
-
 		break;
 
 	case DW_FORM_block2:
