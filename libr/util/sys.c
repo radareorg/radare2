@@ -10,6 +10,7 @@
 #if __APPLE__
 #include <errno.h>
 #include <execinfo.h>
+#include <crt_externs.h>
 # ifndef PROC_PIDPATHINFO_MAXSIZE
 #  define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void * buffer, ut32 buffersize);
@@ -636,8 +637,7 @@ static char** env = NULL;
 
 R_API char **r_sys_get_environ () {
 #if __APPLE__
-	extern char **environ;
-	env = environ;
+	env = *_NSGetEnviron();
 #endif
 	// return environ if available??
 	if (!env)
