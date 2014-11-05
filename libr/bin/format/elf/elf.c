@@ -854,7 +854,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dy = NULL;
 	char *ret;
 
-	if (!bin->strtab)
+	if (!bin || !bin->strtab)
 		return NULL;
 
 	dy = Elf_(r_bin_elf_seek_dyn_tag) (bin, DT_RPATH);
@@ -1149,6 +1149,8 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	Elf_(Shdr)* section_text = NULL;
 	ut64 section_text_offset = 0LL;
 
+	if (!bin)
+		return NULL;
 	if (bin->ehdr.e_type== ET_REL) {
 		section_text = Elf_(r_bin_elf_get_section_by_name)(bin, ".text");
 		if (section_text) {
