@@ -21,6 +21,7 @@
 #define IFDBG  if(DO_THE_DBG)
 #define IFINT  if(0)
 
+#define MAX_CPITEMS 8192
 
 R_API char * U(r_bin_java_unmangle_method)(const char *flags, const char *name, const char *params, const char *r_value);
 R_API int r_bin_java_is_fm_type_private( RBinJavaField *fm_type);
@@ -1672,7 +1673,7 @@ R_API char* r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJava
 	*/
 	if (bin == NULL)
 		return NULL;
-	return r_bin_java_get_item_name_from_cp_item_list (bin->cp_list, obj);
+	return r_bin_java_get_item_name_from_cp_item_list (bin->cp_list, obj, MAX_CPITEMS);
 }
 
 R_API char* r_bin_java_get_item_desc_from_bin_cp_list (RBinJavaObj *bin, RBinJavaCPTypeObj *obj) {
@@ -1685,7 +1686,7 @@ R_API char* r_bin_java_get_item_desc_from_bin_cp_list (RBinJavaObj *bin, RBinJav
 	*/
 	if (bin == NULL)
 		return NULL;
-	return r_bin_java_get_item_desc_from_cp_item_list (bin->cp_list, obj);
+	return r_bin_java_get_item_desc_from_cp_item_list (bin->cp_list, obj, MAX_CPITEMS);
 }
 
 R_API char* r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx) {
@@ -1753,7 +1754,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_cp_item_list (RList *cp_list, 
 	return item;
 }
 
-R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJavaCPTypeObj *obj) {
+R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
 	/*
 		Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 		return the actual descriptor string.
@@ -1761,7 +1762,7 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 		@param obj object to look up the name for
 		@rvalue ut8* (user frees) or NULL
 	*/
-	if(obj == NULL || cp_list == NULL)
+	if(obj == NULL || cp_list == NULL || depth <0)
 		return NULL;
 	switch(obj->tag) {
 		case R_BIN_JAVA_CP_NAMEANDTYPE:
@@ -1773,7 +1774,7 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 		case R_BIN_JAVA_CP_METHODREF:
 			obj = r_bin_java_get_item_from_cp_item_list (cp_list, obj->info.cp_method.name_and_type_idx);
-			return r_bin_java_get_item_name_from_cp_item_list (cp_list, obj);
+			return r_bin_java_get_item_name_from_cp_item_list (cp_list, obj, depth-1);
 		default:
 			return NULL;
 	}
@@ -1790,16 +1791,16 @@ R_API char* r_bin_java_get_name_from_cp_item_list (RList *cp_list, ut64 idx) {
 	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list (cp_list, idx);
 	if (cp_list == NULL)
 		return NULL;
-	return r_bin_java_get_item_name_from_cp_item_list (cp_list, obj);
+	return r_bin_java_get_item_name_from_cp_item_list (cp_list, obj, MAX_CPITEMS);
 }
 
-R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJavaCPTypeObj *obj) {
+R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
 	/*
 		Given a constant poool object FieldRef, MethodRef, or InterfaceMethodRef
 		return the actual descriptor string.
 		@rvalue ut8* (user frees) or NULL
 	*/
-	if(obj == NULL || cp_list == NULL)
+	if(obj == NULL || cp_list == NULL || depth<0)
 		return NULL;
 	switch(obj->tag) {
 		case R_BIN_JAVA_CP_NAMEANDTYPE:
@@ -1809,7 +1810,7 @@ R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJava
 		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 		case R_BIN_JAVA_CP_METHODREF:
 			obj = r_bin_java_get_item_from_cp_item_list (cp_list, obj->info.cp_method.name_and_type_idx);
-			return r_bin_java_get_item_desc_from_cp_item_list (cp_list, obj);
+			return r_bin_java_get_item_desc_from_cp_item_list (cp_list, obj, depth-1);
 		default:
 			return NULL;
 	}
@@ -1824,7 +1825,7 @@ R_API char* r_bin_java_get_desc_from_cp_item_list (RList *cp_list, ut64 idx) {
 	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list (cp_list, idx);
 	if (cp_list == NULL)
 		return NULL;
-	return r_bin_java_get_item_desc_from_cp_item_list (cp_list, obj);
+	return r_bin_java_get_item_desc_from_cp_item_list (cp_list, obj, MAX_CPITEMS);
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField *method) {

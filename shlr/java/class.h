@@ -874,8 +874,8 @@ R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
 R_API char* r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx);
 R_API ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx);
 R_API char* r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx);
-R_API char* r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj);
-R_API char* r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj);
+R_API char* r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth);
+R_API char* r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth);
 
 
 
