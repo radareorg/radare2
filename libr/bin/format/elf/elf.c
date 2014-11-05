@@ -388,7 +388,7 @@ static Elf_(Shdr)* Elf_(r_bin_elf_get_section_by_name)(struct Elf_(r_bin_elf_obj
 	if (!bin || !bin->shdr || !bin->shstrtab)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if(!UT32_SUB(&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
+		if (!UT32_SUB(&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
 			continue;
 		if (!strncmp (&bin->shstrtab[bin->shdr[i].sh_name], section_name, cur_strtab_len))
 			return &bin->shdr[i];
@@ -870,6 +870,9 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return NULL;
 	}
 
+	if (dy->d_un.d_val >= bin->strtab_size)
+		return NULL;
+
 	strncpy (ret, bin->strtab + dy->d_un.d_val, ELF_STRING_LENGTH);
 
 	return ret;
@@ -896,7 +899,7 @@ static size_t Elf_(r_bin_elf_get_relocs_num)(struct Elf_(r_bin_elf_obj_t) *bin) 
 		if (bin->shdr[i].sh_link >= bin->ehdr.e_shnum) {
 			continue;
 		}
-		if (bin->shdr[i].sh_name > bin->strtab_size) {
+		if (bin->shdr[i].sh_name >= bin->strtab_size) {
 			// eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
 					// bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
