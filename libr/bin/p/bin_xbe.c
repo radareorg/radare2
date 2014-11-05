@@ -126,6 +126,10 @@ static RList* sections(RBinFile *arch) {
 	ret->free = free;
 
 	sect = calloc (obj->header->sections, sizeof (xbe_section));
+	if (!sect) {
+		free (ret);
+		return NULL;
+	}
 
 	r_buf_read_at (arch->buf, obj->header->sechdr_addr - obj->header->base,
 		(ut8 *)sect, sizeof (xbe_section)*obj->header->sections);

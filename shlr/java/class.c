@@ -1588,7 +1588,9 @@ R_API RBinJavaInterfaceInfo* r_bin_java_read_next_interface_item(RBinJavaObj *bi
 	ut8 idx[2] = {0};
 	RBinJavaInterfaceInfo *interface_obj;
 	const ut8 * if_buf = buf + offset;
-	memcpy (idx, if_buf, 2);
+	if (offset+2>=len)
+		return NULL;
+	memcpy (&idx, if_buf, 2);
 	interface_obj = r_bin_java_interface_new (bin, if_buf, len-offset);
 	if (interface_obj) {
 		interface_obj->file_offset = offset;
@@ -2094,6 +2096,8 @@ R_API ut64 r_bin_java_parse_fields (RBinJavaObj *bin, const ut64 offset, const u
 	r_list_free (bin->fields_list);
 	bin->fields_list = r_list_newf (r_bin_java_fmtype_free);
 	bin->fields_offset = offset;
+	if (offset+2>=len)
+		return UT64_MAX;
 	bin->fields_count = R_BIN_JAVA_USHORT (fm_buf, 0);
 	adv += 2;
 	IFDBG eprintf ("Fields count: %d 0x%"PFMT64x"\n", bin->fields_count, bin->fields_offset);
