@@ -429,7 +429,7 @@ static int autocomplete(RLine *line) {
 			RConfigNode *bt;
 			RListIter *iter;
 			r_list_foreach (core->config->nodes, iter, bt) {
-				if (!memcmp (bt->name, line->buffer.data+m, n)) {
+				if (!strncmp (bt->name, line->buffer.data+m, n)) {
 					tmp_argv[i++] = bt->name;
 					if (i==TMP_ARGV_SZ)
 						break;
