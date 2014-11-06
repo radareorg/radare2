@@ -103,6 +103,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
 					}
+				default:
 					break;
 				}
 				switch (INSOP(1).type) {

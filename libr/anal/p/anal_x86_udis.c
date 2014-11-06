@@ -254,6 +254,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		case UD_OP_IMM:
 			op->ptr = getval (&u.operand[0]);
+		default:
 			break;
 		}
 		switch (u.operand[1].type) {
@@ -279,6 +280,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		case UD_OP_IMM:
 			op->ptr = getval (&u.operand[0]);
+		default:
 			break;
 		}
 		break;

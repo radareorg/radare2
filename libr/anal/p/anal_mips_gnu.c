@@ -23,8 +23,8 @@ static const char* mips_reg_decode(unsigned reg_num)
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len) {
 	unsigned int opcode;
 	ut8 b[4];
-	// WIP char buf[10]; int reg;
-	int family, optype, oplen = (anal->bits==16)?2:4;
+	// WIP char buf[10]; int reg; int family;
+	int optype, oplen = (anal->bits==16)?2:4;
 
 	if (op == NULL)
 		return oplen;
@@ -148,7 +148,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		//	eprintf ("%llx %d\n", addr, optype);
 			break;
 		}
-		family = 'R';
+		//family = 'R';
 	} else 
 	if ((optype & 0x3e) == 2) {
 #if 0
@@ -194,7 +194,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			r_strbuf_setf (&op->esil, "lr=pc+4,pc=0x%08x", address);
 			break;
 		}
-		family = 'J';
+		//family = 'J';
 	} else 
 	if ((optype & 0x10) == 0x1c) {
 #if 0
@@ -217,7 +217,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		int fd = (b[2]&7)+(b[3]>>6);
 #endif
 		int fun = (b[3]&63);
-		family = 'C';
+		//family = 'C';
 		switch (fun) {
 		case 0: // mtc1
 			break;
@@ -309,7 +309,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		case 57: // swc1
 			break;
 		}
-		family = 'I';
+		//family = 'I';
 	}
 
 #if 0
