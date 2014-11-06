@@ -1613,7 +1613,7 @@ count = R_MIN (count, len);
 					i += word;
 					break;
 				case R_ANAL_DATA_TYPE_STRING:
-					buf[len] = 0;
+					buf[len-1] = 0;
 					i += strlen ((const char*)buf+i)+1;
 					break;
 				default:
