@@ -147,7 +147,8 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width) {
 		r_list_foreach (io->sections, iter, s) {
 			if (io->va) {
 				io->printf ("%02d%c 0x%08"PFMT64x" |", i,
-						(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
+						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
+						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
 						s->vaddr);
 			} else {
 				io->printf ("%02d%c 0x%08"PFMT64x" |", i,
