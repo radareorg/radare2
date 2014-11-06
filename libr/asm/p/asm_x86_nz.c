@@ -466,8 +466,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else
 		if (!strcmp (op, "call")) {
 			if (arg[0] == '[' && arg[strlen (arg)-1] == ']') {
+				if (getreg (arg+4) != 0xff) {
+					eprintf ("Cannot use reg here\n");
+					return -1;
+				}
 				if (!memcmp (arg+1, "rip", 3)) {
-					ut64 dst = r_num_math (NULL, arg+4);
+					ut64 dst = r_num_math (a->num, arg+4);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
 					data[l++] = 0xff;
@@ -478,7 +482,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					data[l++] = ptr[3];
 					return l;
 				} else {
-					ut64 dst = r_num_math (NULL, arg+1);
+					ut64 dst = r_num_math (a->num, arg+1);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
 					if (dst != 0) {
@@ -493,26 +497,30 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					return -1;
 				}
 			} else {
-				ut64 dst = r_num_math (NULL, arg);
-				ut32 addr = dst;
-				ut8 *ptr = (ut8 *)&addr;
-
-				if (dst == 0 && *arg != '0') {
+				int reg = getreg (arg);
+				if (reg != 0xff) {
 					data[l++] = '\xff';
 					data[l] = getreg (arg) | 0xd0;
 					if (data[l] == 0xff)
 						return 0;
 					l++;
 					return l;
-				}
-				addr = addr - offset - 5;
+				} else {
+					ut64 dst = r_num_math (a->num, arg);
+					ut32 addr = dst;
+					ut8 *ptr = (ut8 *)&addr;
 
-				data[l++] = 0xe8;
-				data[l++] = ptr[0];
-				data[l++] = ptr[1];
-				data[l++] = ptr[2];
-				data[l++] = ptr[3];
-				return l;
+					if (dst == 0 && *arg != '0') {
+					}
+					addr = addr - offset - 5;
+
+					data[l++] = 0xe8;
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+					return l;
+				}
 			}
 		} else if (!strcmp (op, "inc")) {
 			if (arg[0]=='r') {
