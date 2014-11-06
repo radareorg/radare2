@@ -1487,17 +1487,52 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 /* convert numeric value in opcode to ascii char or number */
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
-	if (p != UT64_MAX && p) {
-		char msg[32];
+	if (p == UT64_MAX) {
+		/* do nothing */
+	} else if (((st64)p)>0) {
+		const char *kind;
+		char msg[64];
 		RFlagItem *f;
-		int bsz = len - idx;
-		const char *kind = r_anal_data_kind (core->anal, p, ds->buf, bsz);
-		*msg = 0;
-		if (kind && !strcmp (kind, "text")) {
-			*msg = '"';
-			snprintf (msg+1, sizeof (msg)-2, "%d", idx);
-			strcat (msg, "\"");
+
+		memset (msg, 0, sizeof (msg));
+		r_io_read_at (core->io, p, (ut8*)msg, sizeof (msg)-1);
+		msg[sizeof (msg)-1] = 0;
+
+		if (ds->analop.refptr) {
+			ut64 *num = (ut64*)msg;
+			st64 n = *num;
+			st32 n32;
+			// TODO: make this more complete
+			switch (ds->analop.refptr) {
+			case 1: n &= UT8_MAX; break;
+			case 2: n &= UT16_MAX; break;
+			case 4: n &= UT32_MAX; break;
+			case 8: n &= UT64_MAX; break;
+			}
+			n32 = n;
+			if (n32>-512 && n32 <512) {
+				r_cons_printf (" ; [:%d]=%"PFMT64d, ds->analop.refptr, n);
+			} else {
+				r_cons_printf (" ; [:%d]=0x%"PFMT64x, ds->analop.refptr, n);
+			}
 		}
+		kind = r_anal_data_kind (core->anal, p, msg, sizeof (msg)-1);
+		if (kind) {
+			if (!strcmp (kind, "text")) {
+				r_str_filter (msg, 0);
+				if (*msg) {
+					r_cons_printf (" ; \"%s\" %llx", msg, p);
+				}
+			} else if (!strcmp (kind, "invalid")){
+				int *n = (int*)&p;
+				if (*n>-0xfff && *n < 0xfff)
+					r_cons_printf (" ; %d", *n);
+			} else {
+				r_cons_printf (" ; %s", kind);
+			}
+			// TODO: check for more data kinds
+		}
+		*msg = 0;
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_cons_printf (" ; %s", f->name);
@@ -1550,10 +1585,10 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		if (rel->import) 
-			r_cons_printf ("  ;  RELOC %d %s", rel->type, rel->import->name);
+			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->import->name);
 		else if (rel->symbol)
-			r_cons_printf ("  ;  RELOC %d %s", rel->type, rel->symbol->name);
-		else r_cons_printf ("  ;  RELOC %d ", rel->type);
+			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->symbol->name);
+		else r_cons_printf ("  ; RELOC %d ", rel->type);
 	}
 }
 
@@ -1822,11 +1857,15 @@ toro:
 		handle_print_core_vmode (core, ds);
 		handle_print_cc_update (core, ds);
 		handle_print_op_push_info (core, ds);
+#if 1
+		handle_print_ptr (core, ds, len, idx);
+#else
 		if (ds->analop.refptr) {
 			handle_print_refptr (core, ds);
 		} else {
 			handle_print_ptr (core, ds, len, idx);
 		}
+#endif
 		handle_print_comments_right (core, ds);
 		if ( !(ds->show_comments &&
 			   ds->show_comment_right &&
@@ -2257,10 +2296,11 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_cc_update (core, ds);
 			handle_print_op_push_info (core, ds);
 			/*if (ds->analop.refptr) {
-					handle_print_refptr (core, ds);
+				handle_print_refptr (core, ds);
 			} else {
-					handle_print_ptr (core, ds, len, idx);
+				handle_print_ptr (core, ds, len, idx);
 			}*/
+			handle_print_ptr (core, ds, len, idx);
 			handle_print_comments_right (core, ds);
 			if ( !(ds->show_comments && ds->show_comment_right &&
 					ds->show_comment_right && ds->comment))

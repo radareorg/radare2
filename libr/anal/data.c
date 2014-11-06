@@ -277,6 +277,8 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 	RAnalData *data;
 	int word = a->bits /8;
 	for (i = j = 0; i<len; j++) {
+		if (str && !buf[i])
+			str ++;
 		data = r_anal_data (a, addr+i, buf+i, len-i);
 		if (data == NULL) {
 			i+= word;
@@ -306,10 +308,12 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 		}
 		r_anal_data_free (data);
         }
+//eprintf ("%d %d %d %d\n", inv, unk, num, str);
 	if (j<1) return "unknown";
 	if ((inv*100/j)>60) return "invalid";
 	if ((unk*100/j)>60) return "code";
 	if ((num*100/j)>60) return "code";
+//return "text";
 	if ((str*100/j)>40) return "text";
 	return "data";
 }

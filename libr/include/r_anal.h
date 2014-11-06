@@ -622,7 +622,7 @@ typedef struct r_anal_op_t {
 	st64 ptr;       /* reference to memory */ /* XXX signed? */
 	ut64 val;       /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */
-	int refptr;
+	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // XXX deprecate

@@ -230,6 +230,57 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Itest:
 	case UD_Icmp:
 		op->type = R_ANAL_OP_TYPE_CMP;
+		// TODO: support 2nd parameter too?
+		switch (u.operand[0].type) {
+		case UD_OP_MEM:
+			op->refptr = u.operand[0].size /8;
+			switch (u.operand[0].base) {
+			case UD_R_RIP:
+				// Self modifying code? relative local vars
+				delta = u.operand[0].lval.uword;
+				op->ptr = addr + oplen + delta;
+				break;
+			case UD_R_RBP:
+				op->stackop = R_ANAL_STACK_SET;
+				op->ptr = getval (&u.operand[0]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
+				op->ptr = (st64)((char)u.operand[0].lval.sbyte); //getval (&u.operand[0]);
+				// if positive = arg
+				// if negative = var
+				break;
+			default:
+				op->ptr = getval (&u.operand[0]);
+				break;
+			}
+			break;
+		case UD_OP_IMM:
+			op->ptr = getval (&u.operand[0]);
+			break;
+		}
+		switch (u.operand[1].type) {
+		case UD_OP_MEM:
+			op->refptr = u.operand[0].size /8;
+			switch (u.operand[1].base) {
+			case UD_R_RIP:
+				// Self modifying code? relative local vars
+				delta = u.operand[1].lval.uword;
+				op->ptr = addr + oplen + delta;
+				break;
+			case UD_R_RBP:
+				op->stackop = R_ANAL_STACK_SET;
+				op->ptr = getval (&u.operand[1]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
+				op->ptr = (st64)((char)u.operand[1].lval.sbyte); //getval (&u.operand[0]);
+				// if positive = arg
+				// if negative = var
+				break;
+			default:
+				op->ptr = getval (&u.operand[1]);
+				break;
+			}
+			break;
+		case UD_OP_IMM:
+			op->ptr = getval (&u.operand[0]);
+			break;
+		}
 		break;
 	case UD_Isalc: // ??
 		// al = cf
@@ -272,7 +323,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->type = R_ANAL_OP_TYPE_MOV;
 		switch (u.operand[0].type) {
 		case UD_OP_MEM:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->refptr = u.operand[0].size/8;
 			switch (u.operand[0].base) {
 			case UD_R_RIP:
 				// Self modifying code? relative local vars
@@ -280,13 +331,11 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				op->ptr = addr + oplen + delta;
 				break;
 			case UD_R_RBP:
-				{
-				       op->stackop = R_ANAL_STACK_SET;
-				       op->ptr = getval (&u.operand[0]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
-				       op->ptr = (st64)((char)u.operand[0].lval.sbyte); //getval (&u.operand[0]);
-					// if positive = arg
-					// if negative = var
-				}
+				op->stackop = R_ANAL_STACK_SET;
+				op->ptr = getval (&u.operand[0]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
+				op->ptr = (st64)((char)u.operand[0].lval.sbyte); //getval (&u.operand[0]);
+				// if positive = arg
+				// if negative = var
 				break;
 			default:
 				/* nothing to do here yet */
@@ -297,20 +346,18 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		default:
 			switch (u.operand[1].type) {
 			case UD_OP_MEM:
-				op->type = R_ANAL_OP_TYPE_MOV;
+				op->refptr = u.operand[1].size /8;
 				switch (u.operand[1].base) {
 				case UD_R_RIP:
 					delta = u.operand[1].lval.uword;
 					op->ptr = addr + oplen + delta;
 					break;
 				case UD_R_RBP:
-					{
-					       op->stackop = R_ANAL_STACK_GET;
-					       op->ptr = getval (&u.operand[1]);
-					       op->ptr = (st64)((char)u.operand[1].lval.sbyte); //getval (&u.operand[0]);
-						// if positive = arg
-						// if negative = var
-					}
+					op->stackop = R_ANAL_STACK_GET;
+					op->ptr = getval (&u.operand[1]);
+					op->ptr = (st64)((char)u.operand[1].lval.sbyte); //getval (&u.operand[0]);
+					// if positive = arg
+					// if negative = var
 					break;
 				default:
 					/* nothing to do here yet */
@@ -319,7 +366,6 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				}
 				break;
 			default:
-				op->type = R_ANAL_OP_TYPE_MOV;
 				op->ptr = getval (&u.operand[1]);
 				// XX
 				break;

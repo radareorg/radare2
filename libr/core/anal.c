@@ -129,9 +129,6 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		if (!failed_sequence)
 			types |= R_ANAL_ADDR_TYPE_SEQUENCE;
 	}
-
-
-
 	return types;
 }
 
