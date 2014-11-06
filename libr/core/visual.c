@@ -1416,6 +1416,11 @@ static void r_core_visual_refresh (RCore *core) {
 	cons->blankline = R_TRUE;
 
 	if (r_config_get_i (core->config, "scr.responsive")) {
+		if (w<78) {
+			r_config_set_i (core->config, "asm.cmtright", 0);
+		} else {
+			r_config_set_i (core->config, "asm.cmtright", 1);
+		}
 		if (w<68) {
 			r_config_set_i (core->config, "hex.cols", w/5.2);
 		} else {
