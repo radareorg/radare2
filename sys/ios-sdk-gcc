@@ -1,12 +1,13 @@
 #!/bin/sh
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 
+CWD=`dirname $0`
 if [ -z "${CPU}" ]; then
 	CPU=armv7
 	#CPU=arm64
 fi
 if [ -z "${IOSVER}" ]; then
-	IOSVER=7.1
+	IOSVER=8.1
 fi
 
 DEVROOT=/Applications/Xcode.app/Contents/Developer
@@ -20,20 +21,24 @@ export PATH=${DEVROOT}/usr/bin:${SDKROOT}/Developer/usr/bin:${PATH}
 CC=${DEVROOT}/usr/bin/gcc
 LD=${CC}
 CFLAGS="${CFLAGS} -arch ${CPU}"
+if [ -z "${IOSINC}" ]; then
+	IOSINC=${CWD}/ios-include
+	IOSINC=/Users/pancake/prg/radare2/sys/ios-include
+fi
 if [ -n "${IOSINC}" ]; then
-CFLAGS="${CFLAGS} -I${IOSINC}"
+	CFLAGS="${CFLAGS} -I${IOSINC}"
 fi
 CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
-CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
+#CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
 LDFLAGS="-L ${IOSROOT}/usr/lib/system ${LDFLAGS}"
 LDFLAGS="-L ${IOSROOT}//usr/lib/ ${LDFLAGS}"
 
 # Workaround
-if [ ! -e ${IOSROOT}/usr/lib/system/libcrypto.dylib ]; then
-sudo cp \
-	${IOSROOT}/usr/lib/system/libcorecrypto.dylib \
-	${IOSROOT}/usr/lib/system/libcrypto.dylib
-fi
+#if [ ! -e ${IOSROOT}/usr/lib/system/libcrypto.dylib ]; then
+#sudo cp \
+#	${IOSROOT}/usr/lib/system/libcorecrypto.dylib \
+#	${IOSROOT}/usr/lib/system/libcrypto.dylib
+#fi
 
 # arm64
 ${CC} ${CFLAGS} ${LDFLAGS} $@

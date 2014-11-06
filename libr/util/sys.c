@@ -10,7 +10,9 @@
 #if __APPLE__
 #include <errno.h>
 #include <execinfo.h>
-#include <crt_externs.h>
+// iOS dont have this we cant hardcode
+// #include <crt_externs.h>
+extern char ***_NSGetEnviron(void);
 # ifndef PROC_PIDPATHINFO_MAXSIZE
 #  define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void * buffer, ut32 buffersize);

@@ -5,7 +5,8 @@ endif
 
 # OSX 10.7 (lion)
 ifeq (${OSTYPE},darwin)
-LDFLAGS+=-lcrypto
+#LDFLAGS+=-lcrypto
+# IOS doesnt allows to link against libcrypto
 endif
 # on solaris only
 ifeq (${OSTYPE},solaris)
