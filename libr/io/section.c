@@ -122,13 +122,16 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 }
 
 /* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
-R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
+R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width) {
 	RListIter *iter;
 	RIOSection *s;
 	ut64 min = -1;
 	ut64 max = -1;
 	ut64 mul;
-	int j, i, width = 30; //config.width-30;
+	int j, i;
+	width -= 52;
+	if (width<1)
+		width = 30;
 
 	seek = (io->va || io->debug) ? r_io_section_vaddr_to_offset (io, seek) : seek;
 	r_list_foreach (io->sections, iter, s) {
@@ -142,8 +145,15 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	if (min != -1 && mul != 0) {
 		i = 0;
 		r_list_foreach (io->sections, iter, s) {
-			io->printf ("%02d%c 0x%08"PFMT64x" |",
-				i, (seek>=s->offset && seek<s->offset+s->size)?'*':' ', s->offset);
+			if (io->va) {
+				io->printf ("%02d%c 0x%08"PFMT64x" |", i,
+						(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
+						s->vaddr);
+			} else {
+				io->printf ("%02d%c 0x%08"PFMT64x" |", i,
+						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
+						s->offset);
+			}
 			for (j=0; j<width; j++) {
 				ut64 pos = min + (j*mul);
 				ut64 npos = min + ((j+1)*mul);
@@ -151,8 +161,13 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 					io->printf ("#");
 				else io->printf ("-");
 			}
-			io->printf ("| 0x%08"PFMT64x" %s %s\n", s->offset+s->size, 
-				r_str_rwx_i (s->rwx), s->name);
+			if (io->va) {
+				io->printf ("| 0x%08"PFMT64x" %s %s\n", s->vaddr+s->size, 
+					r_str_rwx_i (s->rwx), s->name);
+			} else {
+				io->printf ("| 0x%08"PFMT64x" %s %s\n", s->offset+s->size, 
+					r_str_rwx_i (s->rwx), s->name);
+			}
 			i++;
 		}
 		/* current seek */

@@ -7,7 +7,7 @@ static int cmd_section(void *data, const char *input) {
 		"S","","list sections",
 		"S.","","show current section name",
 		"S*","","list sections (in radare commands)",
-		"S=","","list sections (in nice ascii-art bars)",
+		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
 		"Sa","[-] [arch] [bits] [[off]]","Specify arch and bits for given section",
 		"Sd"," [file]","dump current section to a file (see dmd)",
 		"Sl"," [file]","load contents of file into current section (see dml)",
@@ -210,7 +210,7 @@ static int cmd_section(void *data, const char *input) {
 		}
 		break;
 	case '=':
-		r_io_section_list_visual (core->io, core->offset, core->blocksize);
+		r_io_section_list_visual (core->io, core->offset, core->blocksize, r_cons_get_size (NULL));
 		break;
 	case '.':
 		{

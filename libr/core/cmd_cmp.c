@@ -432,7 +432,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			}
 		break;
-	case 'v':
+	case 'v': // "cv"
 		{
 		int sz = input[1];
 		if (sz== ' ') {
@@ -464,7 +464,12 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		default:
 		case '?':
-			eprintf ("Usage: cv[1248] [num]\n");
+			eprintf ("Usage: cv[1248] [num]\n"
+			"Show offset if current value equals to the one specified\n"
+			" /v 18312   # serch for a known value\n"
+			" dc\n"
+			" cv4 18312 @@ hit*\n"
+			" dc\n");
 			break;
 		}
 		}
@@ -472,16 +477,15 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'l':
 		if (strchr (input, 'f')) {
 			r_cons_flush();
-		} else
-			if (!strchr (input, '0')) {
-				r_cons_clear ();
+		} else if (!strchr (input, '0')) {
+			r_cons_clear ();
 #if 0
-				write (1, "\x1b[2J", 4);
-				write (1, "\x1b[0;0H", 6);
-				write (1, "\x1b[0m", 4);
+			write (1, "\x1b[2J", 4);
+			write (1, "\x1b[0;0H", 6);
+			write (1, "\x1b[0m", 4);
 #endif
-				//r_cons_clear();
-			}
+			//r_cons_clear();
+		}
 		r_cons_gotoxy (0, 0);
 		//		r_cons_flush ();
 		break;
