@@ -67,26 +67,34 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 			}
 		}
 	} else {
+		int _rwx = -1;
 		RIOSection *ios;
 		RListIter *iter;
 		// sections
 		r_list_foreach (core->io->sections, iter, ios) {
 			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {
-				// TODO: we shuold identify which maps come from the program or other
+				// sections overlap, so we want to get the one with lower perms
+				if (_rwx != -1) {
+					_rwx = R_MIN (_rwx, ios->rwx);
+				} else {
+					_rwx = ios->rwx;
+				}
+				// TODO: we should identify which maps come from the program or other
 				//types |= R_ANAL_ADDR_TYPE_PROGRAM;
-				if (ios->rwx & R_IO_EXEC)
-					types |= R_ANAL_ADDR_TYPE_EXEC;
-				if (ios->rwx & R_IO_READ)
-					types |= R_ANAL_ADDR_TYPE_READ;
-				if (ios->rwx & R_IO_WRITE)
-					types |= R_ANAL_ADDR_TYPE_WRITE;
-				// find function
+				// find function those sections should be created by hand or esil init
 				if (strstr (ios->name, "heap"))
 					types |= R_ANAL_ADDR_TYPE_HEAP;
 				if (strstr (ios->name, "stack"))
 					types |= R_ANAL_ADDR_TYPE_STACK;
-		//		break;
 			}
+		}
+		if (_rwx != -1) {
+			if (_rwx & R_IO_EXEC)
+				types |= R_ANAL_ADDR_TYPE_EXEC;
+			if (_rwx & R_IO_READ)
+				types |= R_ANAL_ADDR_TYPE_READ;
+			if (_rwx & R_IO_WRITE)
+				types |= R_ANAL_ADDR_TYPE_WRITE;
 		}
 	}
 
