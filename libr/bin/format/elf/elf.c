@@ -121,7 +121,8 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			bin->dyn_buf = calloc (1, 1+bin->phdr[i].p_filesz);
 			if (!bin->dyn_buf) {
-				eprintf ("Cannot allocate %d phdr[%d].p_filesz\n", bin->phdr[i].p_filesz, i);
+				eprintf ("Cannot allocate %d phdr[%d].p_filesz\n", 
+						(int)bin->phdr[i].p_filesz, (int)i);
 				R_FREE (bin->phdr);
 				return R_FALSE;
 			}
@@ -150,8 +151,7 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return R_TRUE;
 }
 
-typedef struct 
-{
+typedef struct {
 	Elf32_Word nbucket;
 	Elf32_Word nchain;
 } Elf_Hash;
@@ -188,7 +188,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->shdr) 
 		return R_TRUE;
 
-	if (!bin->ehdr.e_shnum && bin->dyn_entries) {
+	if (bin->ehdr.e_shnum<1 && bin->dyn_entries>0) {
 		int j = 0;
 		RBuffer *name_buf = r_buf_new ();
 		Elf_(Shdr) *sects = NULL;
@@ -294,8 +294,8 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		if (!bin->shdr[bin->ehdr.e_shstrndx].sh_size)
 			return R_FALSE;
 
+		// stores the names of the sections
 		bin->shstrtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
-
 		bin->shstrtab_size = bin->shstrtab_section->sh_size;
 
 		if ((bin->shstrtab = calloc (1, 1+bin->shstrtab_size)) == NULL) {
@@ -324,6 +324,8 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		size = dyn_strsz->d_un.d_val;
 	} else {
 		Elf_(Shdr) *sh = Elf_(r_bin_elf_get_section_by_name) (bin, ".strtab");
+		// XXX uncomment the next line to fix import names bug
+		// Elf_(Shdr) *sh = Elf_(r_bin_elf_get_section_by_name) (bin, ".dynstr");
 		if (!sh) {
 			// Try using the DYNAMIC headers to get the strtab section
 			// but only if the binary has no section headers
@@ -405,7 +407,7 @@ static Elf_(Shdr)* Elf_(r_bin_elf_get_section_by_name)(struct Elf_(r_bin_elf_obj
 	if (!bin || !bin->shdr || !bin->shstrtab)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (!UT32_SUB(&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
+		if (!UT32_SUB (&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
 			continue;
 		if (!strncmp (&bin->shstrtab[bin->shdr[i].sh_name], section_name, cur_strtab_len))
 			return &bin->shdr[i];
@@ -414,22 +416,14 @@ static Elf_(Shdr)* Elf_(r_bin_elf_get_section_by_name)(struct Elf_(r_bin_elf_obj
 }
 
 static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
-	Elf_(Shdr)* shdr;
-
-	shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
-
-	if (!shdr)
-		return -1;
+	Elf_(Shdr)* shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
+	if (!shdr) return -1;
 	return (ut64)shdr->sh_offset;
 }
 
 ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
-	Elf_(Shdr)* shdr;
-
-	shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
-
-	if (!shdr)
-		return -1;
+	Elf_(Shdr)* shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
+	if (!shdr) return -1;
 	return (ut64)shdr->sh_addr;
 }
 
@@ -880,7 +874,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!dy)
 		return NULL;
 
-	ret = malloc (ELF_STRING_LENGTH);
+	ret = calloc (1, ELF_STRING_LENGTH);
 
 	if (!ret) {
 		perror ("malloc (ret)");
@@ -1069,10 +1063,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			}
 		}
 	}
-
 	ret[rel].last = 1;
-
-
 	return ret;
 }
 
@@ -1111,7 +1102,6 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 		return NULL;
 	}
 	ret[j].last = R_TRUE;
-
 	return ret;
 }
 
@@ -1207,18 +1197,7 @@ if (
          if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
                 (type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
 #endif
-#if 0
-			if (bin->shdr[i].sh_link < 1) {
-				/* oops. fix out of range pointers */
-				continue;
-			}
-			// hack to avoid asan cry
-			if (bin->shdr[i].sh_link+0xff>= shdr_size) {
-				/* oops. fix out of range pointers */
-				continue;
-			}
-#endif
-			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
+			if ((sym = (Elf_(Sym) *)calloc (1, 1+bin->shdr[i].sh_size)) == NULL) {
 				eprintf ("malloc (syms)");
 				free (ret);
 				return NULL;
@@ -1237,7 +1216,7 @@ if (
 				return NULL;
 			}
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof (Elf_(Sym)), k++) {
-				int nidx;
+				int nidx = 0;
 				if (k == 0)
 					continue;
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
@@ -1253,6 +1232,7 @@ if (
 					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
 				} else if (ELF_ST_TYPE(sym[k].st_info == STT_SECTION)) {
 					Elf_(Section) sect = sym[k].st_shndx;
+// use dynsym here
 
 					if (sect >= bin->ehdr.e_shnum)
 						continue;
@@ -1267,8 +1247,7 @@ if (
 						nidx > bin->shstrtab_section->sh_size) {
 						continue;
 					} else {
-						if (bin->shstrtab && (bin->shdr[sect].sh_name > 0) &&
-							(bin->shdr[sect].sh_name + 8 < bin->strtab_size)) {
+						if (bin->shstrtab && nidx>0 && (nidx + 8 < bin->strtab_size)) {
 							tsize = sym[k].st_size;
 							toffset = (ut64)sym[k].st_value;
 							sym[k].st_name = nidx;
@@ -1308,22 +1287,24 @@ if (
 				//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 				if (ELF_ST_TYPE(sym[k].st_info) != STT_SECTION) {
 					if (bin->strtab) {
-						strncpy (ret[ret_ctr].name, bin->strtab+sym[k].st_name, ELF_STRING_LENGTH);
+						// sometimes the name can be wrong :?
+						strncpy (ret[ret_ctr].name, bin->strtab+sym[k].st_name,
+							ELF_STRING_LENGTH-1);
 					} else {
 						sprintf (ret[ret_ctr].name, "unk%d", j);
 					}
 				} else {
-					if (nidx<0 || nidx>=bin->shstrtab_size) {
-						sprintf (ret[ret_ctr].name, "unk%d", j);
+					if (nidx>=0 && nidx<bin->shstrtab_size) {
+						strncpy (ret[ret_ctr].name, bin->shstrtab+nidx, ELF_STRING_LENGTH-1);
 					} else {
-						strncpy (ret[ret_ctr].name, bin->shstrtab+nidx, ELF_STRING_LENGTH);
+						sprintf (ret[ret_ctr].name, "unk%d", j);
 					}
 				}
 
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
 				#define s_bind(x) snprintf (ret[ret_ctr].bind, ELF_STRING_LENGTH, x);
-				switch (ELF_ST_BIND(sym[k].st_info)) {
+				switch (ELF_ST_BIND (sym[k].st_info)) {
 				case STB_LOCAL:  s_bind ("LOCAL"); break;
 				case STB_GLOBAL: s_bind ("GLOBAL"); break;
 				case STB_NUM:    s_bind ("NUM"); break;

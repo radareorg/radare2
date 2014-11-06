@@ -291,13 +291,12 @@ static RList* symbols(RBinFile *arch) {
 				vaddr = paddr + base;
 			}
 		}
-//bin->baddr + symbol[i].offset;
 		if (!symbol[i].size)
 			continue;
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		// TODO(eddyb) make a better distinction between imports and other symbols.
-		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "imp.%s", symbol[i].name);
+		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
