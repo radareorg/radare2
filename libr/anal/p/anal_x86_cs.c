@@ -103,7 +103,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
 					}
-				default:
 					break;
 				}
 				switch (INSOP(1).type) {
@@ -112,6 +111,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					if (INSOP(1).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
 					}
+					break;
+				case X86_OP_IMM:
+					op->ptr = INSOP(1).imm;
+					break;
 				default:
 					break;
 				}
