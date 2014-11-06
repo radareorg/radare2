@@ -243,7 +243,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
-		r_core_seek (core, addr, R_FALSE);
+		r_core_seek (core, addr, R_TRUE);
 		r_core_cmd (core, cmdhit, 0);
 		r_core_seek (core, here, R_TRUE);
 	}
