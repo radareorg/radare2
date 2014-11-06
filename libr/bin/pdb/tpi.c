@@ -2028,6 +2028,7 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, unsigned char *leaf_data, u
 	lf_arglist->arg_type = (unsigned int *) malloc(lf_arglist->count * 4);
 	memcpy(lf_arglist->arg_type, leaf_data, lf_arglist->count * 4);
 	leaf_data += (lf_arglist->count * 4);
+	*read_bytes += (lf_arglist->count * 4);
 
 	PEEK_READ(*read_bytes, 1, len, lf_arglist->pad, leaf_data, unsigned char);
 	PAD_ALIGN(lf_arglist->pad, *read_bytes, leaf_data, len);
@@ -2127,6 +2128,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 	lf_vtshape->vt_descriptors = (char *) malloc(size);
 	memcpy(lf_vtshape->vt_descriptors, leaf_data, size);
 	leaf_data += size;
+	*read_bytes += size;
 
 	PEEK_READ(*read_bytes, 1, len, lf_vtshape->pad, leaf_data, unsigned char);
 	PAD_ALIGN(lf_vtshape->pad, *read_bytes, leaf_data, len);
