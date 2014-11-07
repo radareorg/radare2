@@ -6,7 +6,6 @@
 
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	int i, size;
-
 	if (!dbg || !dbg->reg || !dbg->h)
 		return R_FALSE;
 
@@ -44,8 +43,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			free (buf);
 		}
 		// Continue the syncronization or just stop if it was asked only for a single type of regs 
-	} while(i++ < R_REG_TYPE_LAST && type != R_REG_TYPE_ALL);
-
+	} while(i++ < R_REG_TYPE_LAST && type == R_REG_TYPE_ALL);
 	return R_TRUE;
 }
 

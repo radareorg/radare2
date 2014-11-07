@@ -36,10 +36,9 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 	return debug_os_read_at (fd->data, buf, len, io->off);
 }
 
-static int w32dbg_write_at(RIODesc *fd, const ut8 *buf, int len, ut64 addr) {
+static int w32dbg_write_at(RIOW32Dbg *dbg, const ut8 *buf, int len, ut64 addr) {
 	DWORD ret;
-	RIOW32Dbg *dbg = fd->data;
-        return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
+    return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
 
 static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {

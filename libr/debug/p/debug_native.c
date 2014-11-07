@@ -304,13 +304,12 @@ static int r_debug_native_step(RDebug *dbg) {
 	int pid = dbg->pid;
 #if __WINDOWS__
 	/* set TRAP flag */
-/*
 	CONTEXT regs __attribute__ ((aligned (16)));
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
-*/
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	r_debug_native_continue (dbg, pid, dbg->tid, dbg->signum);
+	ret=R_TRUE;
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
@@ -437,7 +436,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		eprintf ("debug_contp: error\n");
 		return R_FALSE;
 	}
-	return R_TRUE;
+	return tid;
 #elif __APPLE__
 #if __arm__
 	int i, ret, status;
@@ -1112,7 +1111,15 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		} else eprintf ("There are no threads!\n");
 		return sizeof (R_DEBUG_REG_T);
 #else
-		eprintf ("TODO: add support for write DRX registers\n");
+		//eprintf ("TODO: No support for write DRX registers\n");
+		#if __WINDOWS__
+		int tid = dbg->tid;
+		int pid = dbg->pid;
+		CONTEXT ctx __attribute__((aligned (16)));
+		memcpy (&ctx, buf, sizeof (CONTEXT));
+		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
+		#endif
 		return R_FALSE;
 #endif
 #else // i386/x86-64
