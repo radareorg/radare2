@@ -276,7 +276,7 @@ R_API int r_debug_wait(RDebug *dbg) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->signum);
 			const char *name = r_debug_signal_resolve_i (dbg, dbg->signum);
-			if (strcmp ("SIGTRAP", name))
+			if (name && strcmp ("SIGTRAP", name))
 				r_cons_printf ("[+] signal %d aka %s received\n",
 					dbg->signum, name);
 			if (what & R_DBG_SIGNAL_SKIP) {
