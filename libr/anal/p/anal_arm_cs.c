@@ -7,8 +7,10 @@
 #include "esil.h"
 
 #define REG(x) cs_reg_name (*handle, insn->detail->arm.operands[x].reg)
+#define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) insn->detail->arm.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base)
+#define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define MEMINDEX(x) insn->detail->arm.operands[x].mem.index
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 // TODO scale and disp
@@ -121,11 +123,20 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM_INS_LDR:
 		if (MEMDISP(1)<0) {
-		r_strbuf_appendf (&op->esil, "%s,%d,-,[4],%s,=",
-			MEMBASE(1), -MEMDISP(1), REG(0));
+			r_strbuf_appendf (&op->esil, "%s,%d,-,[4],%s,=",
+				MEMBASE(1), -MEMDISP(1), REG(0));
+			if (REGBASE(1) == ARM_REG_PC) {
+				op->ptr = addr + 8 - MEMDISP(1);
+				op->refptr = 4;
+			}
 		} else {
-		r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
-			MEMBASE(1), MEMDISP(1), REG(0));
+			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
+				MEMBASE(1), MEMDISP(1), REG(0));
+			if (REGBASE(1) == ARM_REG_PC) {
+				op->ptr = addr + 8 + MEMDISP(1);
+				op->refptr = 4;
+			}
+			op->refptr = 4;
 		}
 		break;
 	case ARM_INS_LDRB:
@@ -149,8 +160,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = (a->bits==16)? 2: 4;
 	op->delay = 0;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
+	op->jump = op->fail = -1;
+	op->ptr = op->val = -1;
+	op->refptr = 0;
 	r_strbuf_init (&op->esil);
 	if (ret == CS_ERR_OK) {
 		n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
@@ -162,7 +174,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case ARM_INS_POP:
 			case ARM_INS_LDM:
 				op->type = R_ANAL_OP_TYPE_POP;
-
 				for (i = 0; i < insn->detail->arm.op_count; i++) {
 					if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 							insn->detail->arm.operands[i].reg == ARM_REG_PC) {

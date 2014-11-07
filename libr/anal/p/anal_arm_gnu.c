@@ -41,6 +41,8 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	arm_set_thumb (arminsn, R_TRUE);
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
+	op->jump = op->fail = -1;
+	op->ptr = op->val = -1;
 	op->delay = 0;
 	op->size = arm_disasm_one_insn (arminsn);
 	op->jump = arminsn->jmp;
@@ -168,6 +170,8 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	arm_set_thumb (arminsn, R_FALSE);
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
+	op->jump = op->fail = -1;
+	op->ptr = op->val = -1;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
@@ -249,37 +253,31 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			//op->ptr = 4+addr+b[0]; // sure? :)
 			//op->ptrptr = R_TRUE;
 		}
-	} else
-//eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
-	// 0x0001B4D8,           1eff2fe1        bx    lr
-	if (b[3]==0xe2 && b[2]==0x8d && b[1]==0xd0) {
+		//eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
+		// 0x0001B4D8,           1eff2fe1        bx    lr
+	} else if (b[3]==0xe2 && b[2]==0x8d && b[1]==0xd0) {
 		// ADD SP, SP, ...
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->stackop = R_ANAL_STACK_INC;
 		op->val = -b[0];
-	} else
-	if (b[3]==0xe2 && b[2]==0x4d && b[1]==0xd0) {
+	} else if (b[3]==0xe2 && b[2]==0x4d && b[1]==0xd0) {
 		// SUB SP, SP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
 		op->val = b[0];
-	} else
-	if (b[3]==0xe2 && b[2]==0x4c && b[1]==0xb0) {
+	} else if (b[3]==0xe2 && b[2]==0x4c && b[1]==0xb0) {
 		// SUB SP, FP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
 		op->val = -b[0];
-	} else
-	if (b[3]==0xe2 && b[2]==0x4b && b[1]==0xd0) {
+	} else if (b[3]==0xe2 && b[2]==0x4b && b[1]==0xd0) {
 		// SUB SP, IP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
 		op->val = -b[0];
-	} else
-	if ( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr
+	} else if ( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr
 		op->type = R_ANAL_OP_TYPE_RET;
-	} else
-	if ((code[i] & ARM_DTX_LOAD)) { //IS_LOAD(code[i])) {
+	} else if ((code[i] & ARM_DTX_LOAD)) { //IS_LOAD(code[i])) {
 		ut32 ptr = 0;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (b[2]==0x1b) {
@@ -301,23 +299,17 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	if (IS_LOAD (code[i])) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->refptr = 4;
 	}
-	if  (
-(( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
-) && ((code[i]&0xffffff00) == 0xe12fff00))
-||
-	IS_EXITPOINT (code[i])) {
+	if  ( (( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)) && ((code[i]&0xffffff00) == 0xe12fff00)) || IS_EXITPOINT (code[i])) {
 //if (IS_EXITPOINT (code[i])) {
 		b=data;
 		branch_dst_addr = disarm_branch_offset (addr, b[0] | (b[1]<<8) | (b[2]<<16)); //code[i]&0x00FFFFFF);
 		op->ptr = 0;
-if (
-( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
-) && ((code[i]&0xffffff00) == 0xe12fff00)
-) {
-		op->type = R_ANAL_OP_TYPE_UJMP;
-} else
-		if (IS_BRANCHL (code[i])) {
+		if ((((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20))
+				&& ((code[i]&0xffffff00) == 0xe12fff00)) {
+			op->type = R_ANAL_OP_TYPE_UJMP;
+		} else if (IS_BRANCHL (code[i])) {
 			if (IS_BRANCH (code[i])) {
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->jump = branch_dst_addr;
