@@ -2145,8 +2145,10 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
 	unsigned int read_bytes = 0;
 
 	stream_file_read(stream, 2, (char *)&type->length);
+	if (type->length<1)
+		return 0;
 	leaf_data = (unsigned char *) malloc(type->length);
-	stream_file_read(stream, type->length, (char *)leaf_data);
+	stream_file_read (stream, type->length, (char *)leaf_data);
 	type->type_data.leaf_type = *(unsigned short *)leaf_data;
 	read_bytes += 2;
 	switch (type->type_data.leaf_type) {
