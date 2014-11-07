@@ -126,15 +126,35 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			r_strbuf_appendf (&op->esil, "%s,%d,-,[4],%s,=",
 				MEMBASE(1), -MEMDISP(1), REG(0));
 			if (REGBASE(1) == ARM_REG_PC) {
-				op->ptr = addr + 8 - MEMDISP(1);
-				op->refptr = 4;
+				if (a->bits==32) {
+					op->ptr = addr + 8 - MEMDISP(1);
+					op->refptr = 4;
+				} else if (a->bits==16) {
+					if ( (addr % 4) == 0 ) {
+						op->ptr = addr + 4 - MEMDISP(1);
+						op->refptr = 4;
+					} else {
+						op->ptr = addr + 2 - MEMDISP(1);
+						op->refptr = 4;
+					}
+				}
 			}
 		} else {
 			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
 				MEMBASE(1), MEMDISP(1), REG(0));
 			if (REGBASE(1) == ARM_REG_PC) {
-				op->ptr = addr + 8 + MEMDISP(1);
-				op->refptr = 4;
+				if (a->bits==32) {
+					op->ptr = addr + 8 + MEMDISP(1);
+					op->refptr = 4;
+				} else if (a->bits==16) {
+					if ( (addr % 4) == 0 ) {
+						op->ptr = addr + 4 + MEMDISP(1);
+						op->refptr = 4;
+					} else {
+						op->ptr = addr + 2 + MEMDISP(1);
+						op->refptr = 4;
+					}
+				}
 			}
 			op->refptr = 4;
 		}
