@@ -717,7 +717,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							*p++ = 0;
 							ut8 *ptr = (ut8*)&n;
 							if (n>127 || n<-127 || r2==4) {
-								data[l++] = 0x80 | getreg (arg)<<3 | getreg (arg2);
+								if (!strcmp (arg2, "rip")) {
+									// the rip exception
+									data[l++] = 0x5 + (getreg(arg)<<3);
+								} else {
+									data[l++] = 0x80 | getreg (arg)<<3 | getreg (arg2);
+								}
 								if (r2==4)
 									data[l++] = 0x24; // THE ESP EXCEPTION
 								data[l++] = ptr[0];
