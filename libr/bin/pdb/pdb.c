@@ -174,7 +174,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 			R_FREE(sizes);
 			eprintf("warning: looks like there is not correct values "
 				   "of stream size in pdb file\n");
-			break;
+			return 0;
 		}
 
 		// TODO: cache that num_pages * 4, its used 4 times
