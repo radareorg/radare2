@@ -166,7 +166,8 @@ static int cmd_open(void *data, const char *input) {
 	case '-':
 		if (!r_core_file_close_fd (core, atoi (input+1)))
 			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
-		r_core_block_read (core, 0);
+		// uninit deref
+		//r_core_block_read (core, 0);
 		break;
 	case 'm':
 		switch (input[1]) {

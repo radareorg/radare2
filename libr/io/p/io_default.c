@@ -224,11 +224,9 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 }
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	RIOMMapFileObj *mmo;
 	if (!fd || !fd->data)
 		return -1;
-	mmo = fd->data;
-	return r_io_def_mmap_seek(io, mmo, offset, whence);
+	return r_io_def_mmap_seek (io, (RIOMMapFileObj *)fd->data, offset, whence);
 }
 
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {

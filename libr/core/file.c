@@ -688,12 +688,11 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		RIO *io = NULL;
 		if (cf) {
 			io = (RIO*)(cf->desc ? cf->desc->io : NULL);
-			return;
+			r_bin_file_deref_by_bind (&cf->binb);
 			if (cf->map) r_io_map_del_all (io, cf->map->fd);
 			r_io_close ((RIO *) io, cf->desc);
+			free (cf);
 		}
-		r_bin_file_deref_by_bind (&cf->binb);
-		free (cf);
 	}
 	cf = NULL;
 }
@@ -830,6 +829,9 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 	r_list_foreach (core->files, iter, file) {
 		if (file->desc->fd == fd) {
 			r_core_file_close (core, file);
+			if (file == core->file) {
+				core->file = NULL; // deref
+			}
 #if 0
 			if (r_list_empty (core->files))
 				core->file = NULL;
