@@ -1283,7 +1283,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_print_disasm_instructions (core, l, 0);
 		}
 		break;
-	case 'i': // pi
+	case 'i': // "pi"
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("|Usage: pi[defj] [num]\n");

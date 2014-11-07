@@ -2060,6 +2060,7 @@ static int cmd_anal(void *data, const char *input) {
 			"aF", "", "same as above, but using graph.depth=1",
 			"ag", "[?acgdlf]", "output Graphviz code",
 			"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
+			"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 			"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
 			"ap", "", "find and analyze function preludes",
 			"ar", "", "like 'dr' but for the esil vm. (registers)",

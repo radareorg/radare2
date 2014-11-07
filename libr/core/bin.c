@@ -1041,6 +1041,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 			ut64 addr = rva (r->bin, va, section->paddr, section->vaddr, baddr, laddr);
 			if (!secbase || (section->vaddr && section->vaddr <secbase)) // ??
 				secbase = section->vaddr;
+#if LOAD_BSS_MALLOC
 			if (!strcmp (section->name, ".bss")) {
 				// check if there's already a file opened there
 				int loaded = 0;
@@ -1056,6 +1057,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 							section->vsize, section->vaddr);
 				}
 			}
+#endif
 			r_name_filter (section->name, 128);
 			snprintf (str, sizeof(str)-1, "section.%s", section->name);
 			r_flag_set (r->flags, str, addr, section->size, 0);

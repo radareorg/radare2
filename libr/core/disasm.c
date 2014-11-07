@@ -268,7 +268,6 @@ static RDisasmState * handle_init_ds (RCore * core) {
 		ds->show_flags = 0;
 	}
 
-
 	if (r_config_get_i (core->config, "asm.linesstyle"))
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_STYLE;
 	if (r_config_get_i (core->config, "asm.lineswide"))
@@ -383,7 +382,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
-	char *asm_str = colorize_asm_string(core, ds);
+	char *asm_str = colorize_asm_string (core, ds);
 
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
@@ -2027,8 +2026,34 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 				}
-			} else
-			if (ds->decode) {
+			} else if (ds->filter) {
+				char *asm_str = colorize_asm_string (core, ds);
+				int ofs = core->parser->flagspace;
+				int fs = ds->flagspace_ports;
+				if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
+					core->parser->notin_flagspace = -1;
+					core->parser->flagspace = fs;
+				} else {
+					if (fs != -1) {
+						core->parser->notin_flagspace = fs;
+						core->parser->flagspace = fs;
+					} else {
+						core->parser->notin_flagspace = -1;
+						core->parser->flagspace = -1;
+					}
+				}
+#if 1
+				r_parse_filter (core->parser, core->flags,
+						asm_str, ds->str, sizeof (ds->str));
+				core->parser->flagspace = ofs;
+				free (ds->opstr);
+				ds->opstr = strdup (ds->str);
+#else
+				ds->opstr = strdup (asm_str);
+#endif
+				core->parser->flagspace = ofs; // ???
+				free (asm_str);
+			} else if (ds->decode) {
 				free (ds->opstr);
 				r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
