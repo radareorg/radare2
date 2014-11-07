@@ -25,25 +25,25 @@ int init_r_stream_file(R_STREAM_FILE *stream_file, RBuffer *buf, int *pages,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx,
-								   int end_indx, char *res)
-{
+static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, int end_indx, char *res) {
 	int i;
 	int page_offset;
 //	int tmp;
 //	char buffer[1024];
 
-	if ((end_indx - start_indx) > stream_file->end)
-	{
+	if ((end_indx - start_indx) > stream_file->end) {
 		stream_file->error = READ_PAGE_FAIL;
 		return;
 	}
+	end_indx = R_MIN (end_indx, stream_file->pages_amount);
 
 	for (i = start_indx; i < end_indx; i++) {
 //		tmp = stream_file->pages[i];
 		page_offset = stream_file->pages[i] * stream_file->page_size;
+		if (page_offset<1)
+			return;
 		stream_file->buf->cur = page_offset;
-		r_buf_read_at(stream_file->buf, page_offset,
+		r_buf_read_at (stream_file->buf, page_offset,
 			(ut8*)res, stream_file->page_size);
 //		fseek(stream_file->fp, page_offset, SEEK_SET);
 //		curr_pos = ftell(stream_file->fp);

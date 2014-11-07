@@ -75,7 +75,7 @@ static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_hea
 	READ(read_bytes, 4, max_len, dbi_ex_header->opened, data, unsigned int);
 
 	before_read_bytes = read_bytes;
-	read_bytes += parse_ssymbol_range(data, max_len, &dbi_ex_header->range);
+	read_bytes += parse_ssymbol_range (data, max_len, &dbi_ex_header->range);
 	data += (read_bytes - before_read_bytes);
 
 	READ(read_bytes, 2, max_len, dbi_ex_header->flags, data, unsigned short);
