@@ -33,6 +33,7 @@ static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
+eprintf ("DIV\n");
 	if (v.d) n.d /= v.d; else n.d = 0;
 	if (v.n) n.n /= v.n; else n.n = 0;
 	return n;
@@ -82,8 +83,8 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 		} else
 		if (nc->curr_tok == RNCDIV) {
 			RNumCalcValue d = prim (num, nc, 1);
-			if (!d.d) {
-				//error (num, nc, "divide by 0");
+			if (!d.d || !d.n) {
+				num->dbz = 1;
 				return d;
 			}
 			left = Ndiv (left, d);
@@ -313,10 +314,12 @@ R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	RNumCalc *nc, nc_local;
 	if (!str || !*str)
 		return 0LL;
-
-	if (num == NULL)
+	if (num) {
+		nc = &num->nc;
+		num->dbz = 0;
+	} else {
 		nc = &nc_local;
-	else nc = &num->nc;
+	}
 
 	/* init */
 	nc->curr_tok = RNCPRINT;

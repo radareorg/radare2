@@ -145,6 +145,7 @@ typedef struct r_num_t {
 	ut64 value;
 	double fvalue;
 	void *userptr;
+	int dbz; /// division by zero happened
 	RNumCalc nc;
 } RNum;
 

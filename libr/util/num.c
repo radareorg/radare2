@@ -175,12 +175,15 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	return ret;
 }
 
-R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
+#if !R_NUM_USE_CALC
+static ut64 r_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	switch (op) {
 	case '+': return a+b;
 	case '-': return a-b;
 	case '*': return a*b;
-	case '/': return b?a/b:0;
+	case '/':
+		if (!b && num) num->dbz = 1;
+		return b?a/b:0;
 	case '&': return a&b;
 	case '|': return a|b;
 	case '^': return a^b;
@@ -188,22 +191,21 @@ R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
 	return b;
 }
 
-#if !R_NUM_USE_CALC
 R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op = 0;
 	for (i=0; s[i]; i++) {
 		switch (s[i]) {
+		case '/':
 		case '+':
 		case '-':
 		case '*':
-		case '/':
 		case '&':
 		case '^':
 		case '|':
 			nop = s[i]; s[i] = '\0';
-			ret = r_num_op (op, ret, r_num_get (num, p));
+			ret = r_num_op (num, op, ret, r_num_get (num, p));
 			op = s[i] = nop; p = s + i + 1;
 			break;
 		}
@@ -218,6 +220,9 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	const char *err = NULL;
 	if (!str) return 0LL;
 	//if (!str || !*str) return 0LL;
+	if (num) {
+		num->dbz = 0;
+	}
 	ret = r_num_calc (num, str, &err);
 	if (err) eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
 	else if (num) num->value = ret;

@@ -113,6 +113,9 @@ static int cmd_help(void *data, const char *input) {
 			float f;
 
 			n = r_num_math (core->num, input+1);
+			if (core->num->dbz) {
+				eprintf ("RNum ERROR: Division by Zero\n");
+			}
 			asnum  = r_num_as_string (NULL, n);
 			n32 = (ut32)n;
 			memcpy (&f, &n32, sizeof (f));
@@ -136,6 +139,9 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
+		if (core->num->dbz) {
+			eprintf ("RNum ERROR: Division by Zero\n");
+		}
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
@@ -435,11 +441,16 @@ static int cmd_help(void *data, const char *input) {
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			return 0;
-		} else
-		if (input[1]) {
-			if (core->num->value)
+		} else if (input[1]) {
+			if (core->num->value) {
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("%"PFMT64d"\n", core->num->value);
+			}
+		} else {
+			if (core->num->dbz) {
+				eprintf ("RNum ERROR: Division by Zero\n");
+			}
+			r_cons_printf ("%"PFMT64d"\n", core->num->value);
+		}
 		break;
 	case '\0':
 	default:{
