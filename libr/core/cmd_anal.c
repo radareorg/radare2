@@ -262,6 +262,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 				r_cons_printf ("\"jump\":%"PFMT64d",", op.jump);
 			if (hint && hint->fail != UT64_MAX)
 				op.fail = hint->fail;
+			if (op.refptr != -1)
+				r_cons_printf ("\"refptr\":%d", op.refptr);
 			if (op.fail != UT64_MAX)
 				r_cons_printf ("\"fail\":%"PFMT64d",", op.fail);
 
@@ -293,6 +295,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 				printline ("val","0x%08"PFMT64x"\n", op.val);
 			if (op.ptr != UT64_MAX)
 				printline ("ptr","0x%08"PFMT64x"\n", op.ptr);
+			if (op.refptr != -1)
+				printline ("refptr","%d\n", op.refptr);
 			printline ("size", "%d\n", size);
 			printline ("type","%s\n", r_anal_optype_to_string (op.type));
 			if (*R_STRBUF_SAFEGET (&op.esil))

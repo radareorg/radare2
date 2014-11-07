@@ -7,6 +7,7 @@
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
+#define OPERAND(x) insn->detail->mips.operands[x]
 #define REG(x) cs_reg_name (*handle, insn->detail->mips.operands[x].reg)
 #define IMM(x) insn->detail->mips.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
@@ -233,6 +234,24 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_LDR:
 	case MIPS_INS_LDXC1:
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->refptr = 4;
+		switch (OPERAND(1).type) {
+		case MIPS_OP_MEM:
+			if (OPERAND(1).mem.base == MIPS_REG_GP) {
+				op->ptr = a->gp + OPERAND(1).mem.disp;
+				op->refptr = 4;
+			}
+			break;
+		case MIPS_OP_IMM:
+			op->ptr = OPERAND(1).imm;
+			break;
+		case MIPS_OP_REG:
+			// wtf?
+			break;
+		default:
+			break;
+		}
+		// TODO: fill
 		break;
 	case MIPS_INS_SW:
 	case MIPS_INS_SWC1:

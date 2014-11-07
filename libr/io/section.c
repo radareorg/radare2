@@ -2,6 +2,9 @@
 
 #include "r_io.h"
 
+// no link dep
+#include <r_cons.h>
+
 R_API void r_io_section_init(RIO *io) {
 	io->next_section_id = 0;
 	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
@@ -122,13 +125,12 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 }
 
 /* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
-R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width) {
+R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
+	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
 	RIOSection *s;
-	ut64 min = -1;
-	ut64 max = -1;
-	ut64 mul;
 	int j, i;
+
 	width -= 52;
 	if (width<1)
 		width = 30;
@@ -143,17 +145,32 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width) {
 
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
+		const char * color = "", *color_end = "";
 		i = 0;
 		r_list_foreach (io->sections, iter, s) {
+			if (use_color) {
+				color_end = Color_RESET;
+				if (s->rwx & 1) { // exec bit
+					color = Color_GREEN;
+				} else if (s->rwx & 2) { // write bit
+					color = Color_RED;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
 			if (io->va) {
-				io->printf ("%02d%c 0x%08"PFMT64x" |", i,
+				io->printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
 						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
 						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
-						s->vaddr);
+						color, s->vaddr, color_end);
 			} else {
-				io->printf ("%02d%c 0x%08"PFMT64x" |", i,
+				io->printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
 						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
-						s->offset);
+						color, s->vaddr, color_end);
 			}
 			for (j=0; j<width; j++) {
 				ut64 pos = min + (j*mul);
@@ -163,10 +180,12 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width) {
 				else io->printf ("-");
 			}
 			if (io->va) {
-				io->printf ("| 0x%08"PFMT64x" %s %s\n", s->vaddr+s->size, 
+				io->printf ("| %s0x%08"PFMT64x"%s %s %s\n", 
+					color, s->vaddr+s->size, color_end,
 					r_str_rwx_i (s->rwx), s->name);
 			} else {
-				io->printf ("| 0x%08"PFMT64x" %s %s\n", s->offset+s->size, 
+				io->printf ("| %s0x%08"PFMT64x"%s %s %s\n",
+					color, s->offset+s->size, color_end,
 					r_str_rwx_i (s->rwx), s->name);
 			}
 			i++;

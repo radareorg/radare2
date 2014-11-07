@@ -1041,6 +1041,21 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 			ut64 addr = rva (r->bin, va, section->paddr, section->vaddr, baddr, laddr);
 			if (!secbase || (section->vaddr && section->vaddr <secbase)) // ??
 				secbase = section->vaddr;
+			if (!strcmp (section->name, ".bss")) {
+				// check if there's already a file opened there
+				int loaded = 0;
+				RListIter *iter;
+				RIOMap *m;
+				r_list_foreach (r->io->maps, iter, m) {
+					if (m->from == section->vaddr) {
+						loaded = 1;
+					}
+				}
+				if (!loaded) {
+					r_core_cmdf (r, "on malloc://%d 0x%"PFMT64x" # bss\n",
+							section->vsize, section->vaddr);
+				}
+			}
 			r_name_filter (section->name, 128);
 			snprintf (str, sizeof(str)-1, "section.%s", section->name);
 			r_flag_set (r->flags, str, addr, section->size, 0);
@@ -1093,6 +1108,10 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 					r_cons_printf ("%s\n", section->name);
 			} else {
 				if (mode) {
+					if (!strcmp (section->name, ".bss")) {
+						r_cons_printf ("on malloc://%d 0x%"PFMT64x" # bss\n",
+								section->vsize, section->vaddr);
+					}
 					r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 						section->paddr, addr, section->size, section->vsize,
 						section->name, (int)section->srwx);

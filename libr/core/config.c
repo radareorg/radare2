@@ -797,6 +797,10 @@ static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 	return 1;
 }
 
+static int cb_anal_gp(RCore *core, RConfigNode *node) {
+	core->anal->gp = node->i_value;
+	return 1;
+}
 static int cb_anal_from(RCore *core, RConfigNode *node) {
 	if (r_config_get_i (core->config, "anal.limits")) {
 		r_anal_set_limits (core->anal, 
@@ -827,6 +831,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->num = core->num;
 
 	/* anal */
+	SETICB("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (mips)");
 	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Obey anal.from and anal.to ranges");
 	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Minimum address in the anal.limits range");
 	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Last address to be analized (see anal.limits)");

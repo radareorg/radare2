@@ -65,7 +65,8 @@ R_API RAnal *r_anal_new() {
 	anal->limit = NULL;
 	anal->nopskip = R_TRUE; // skip nops in code analysis
 	anal->decode = R_TRUE; // slow slow if not used
-	anal->sdb = sdb_new (NULL, NULL, 0);
+	anal->gp = 0LL;
+	anal->sdb = sdb_new0 ();
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
@@ -248,8 +249,8 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalFunction *fcni;
 	RListIter *iter2;
 #define OLD 0
-	RListIter *iter;
 #if OLD
+	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {

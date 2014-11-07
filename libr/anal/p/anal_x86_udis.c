@@ -237,7 +237,13 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			switch (u.operand[0].base) {
 			case UD_R_RIP:
 				// Self modifying code? relative local vars
-				delta = u.operand[0].lval.uword;
+				switch (u.operand[1].size) {
+				case  8: 
+				case 16:
+				case 32: delta = u.operand[1].lval.udword; break;
+				case 64: delta = u.operand[1].lval.uqword; break;
+				default: delta = u.operand[1].lval.udword; break;
+				}
 				op->ptr = addr + oplen + delta;
 				break;
 			case UD_R_RBP:
@@ -329,7 +335,15 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			switch (u.operand[0].base) {
 			case UD_R_RIP:
 				// Self modifying code? relative local vars
-				delta = u.operand[0].lval.uword;
+				// op->type == 9
+				//switch (op->size) {
+				switch (u.operand[0].size) {
+				case  8: 
+				case 16:
+				case 32: delta = u.operand[0].lval.udword; break;
+				case 64: delta = u.operand[0].lval.uqword; break;
+				default: delta = u.operand[0].lval.udword; break;
+				}
 				op->ptr = addr + oplen + delta;
 				break;
 			case UD_R_RBP:
@@ -351,7 +365,13 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				op->refptr = u.operand[1].size /8;
 				switch (u.operand[1].base) {
 				case UD_R_RIP:
-					delta = u.operand[1].lval.uword;
+					switch (u.operand[1].size) {
+					case  8: 
+					case 16:
+					case 32: delta = u.operand[1].lval.udword; break;
+					case 64: delta = u.operand[1].lval.uqword; break;
+					default: delta = u.operand[1].lval.udword; break;
+					}
 					op->ptr = addr + oplen + delta;
 					break;
 				case UD_R_RBP:
@@ -372,6 +392,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				// XX
 				break;
 			}
+			break;
 		}
 		op->stackptr = regsz;
 		break;

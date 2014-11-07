@@ -100,23 +100,26 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				switch (INSOP(0).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(0).mem.disp;
+					op->refptr = INSOP(0).size;
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
 					}
-				default:
 					break;
-				}
-				switch (INSOP(1).type) {
-				case X86_OP_MEM:
-					op->ptr = INSOP(1).mem.disp;
-					if (INSOP(1).mem.base == X86_REG_RIP) {
-						op->ptr += addr + insn->size;
+				default:
+					switch (INSOP(1).type) {
+					case X86_OP_MEM:
+						op->ptr = INSOP(1).mem.disp;
+						op->refptr = INSOP(1).size;
+						if (INSOP(1).mem.base == X86_REG_RIP) {
+							op->ptr += addr + insn->size;
+						}
+						break;
+					case X86_OP_IMM:
+						op->ptr = INSOP(1).imm;
+						break;
+					default:
+						break;
 					}
-					break;
-				case X86_OP_IMM:
-					op->ptr = INSOP(1).imm;
-					break;
-				default:
 					break;
 				}
 				break;
@@ -131,6 +134,31 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_CMPSS:
 			case X86_INS_TEST:
 				op->type = R_ANAL_OP_TYPE_CMP;
+				switch (INSOP(0).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(0).mem.disp;
+					op->refptr = INSOP(0).size;
+					if (INSOP(0).mem.base == X86_REG_RIP) {
+						op->ptr += addr + insn->size;
+					}
+					break;
+				default:
+					break;
+				}
+				switch (INSOP(1).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(1).mem.disp;
+					op->refptr = INSOP(1).size;
+					if (INSOP(1).mem.base == X86_REG_RIP) {
+						op->ptr += addr + insn->size;
+					}
+					break;
+				case X86_OP_IMM:
+					op->ptr = INSOP(1).imm;
+					break;
+				default:
+					break;
+				}
 				break;
 			case X86_INS_LEA:
 				op->type = R_ANAL_OP_TYPE_LEA;

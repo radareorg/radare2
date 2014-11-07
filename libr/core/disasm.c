@@ -1510,25 +1510,27 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			case 8: n &= UT64_MAX; break;
 			}
 			n32 = n;
-			if (n32>-512 && n32 <512) {
+			if (n==UT32_MAX || n==UT64_MAX) {
+				r_cons_printf (" ; [:%d]=-1", ds->analop.refptr);
+			} else if (n == n32 && (n32>-512 && n32 <512)) {
 				r_cons_printf (" ; [:%d]=%"PFMT64d, ds->analop.refptr, n);
 			} else {
 				r_cons_printf (" ; [:%d]=0x%"PFMT64x, ds->analop.refptr, n);
 			}
 		}
-		kind = r_anal_data_kind (core->anal, p, msg, sizeof (msg)-1);
+		kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, sizeof (msg)-1);
 		if (kind) {
 			if (!strcmp (kind, "text")) {
 				r_str_filter (msg, 0);
 				if (*msg) {
-					r_cons_printf (" ; \"%s\" %llx", msg, p);
+					r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
 				}
 			} else if (!strcmp (kind, "invalid")){
 				int *n = (int*)&p;
 				if (*n>-0xfff && *n < 0xfff)
 					r_cons_printf (" ; %d", *n);
 			} else {
-				r_cons_printf (" ; %s", kind);
+				//r_cons_printf (" ; %s", kind);
 			}
 			// TODO: check for more data kinds
 		}

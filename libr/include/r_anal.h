@@ -534,6 +534,7 @@ typedef struct r_anal_t {
 	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
 	int nopskip; // skip nops at the begining of functions
 	void *user;
+	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
 	RList *fcns;
 	RListRange *fcnstore;
 	RList *refs;
