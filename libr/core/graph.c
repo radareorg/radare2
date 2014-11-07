@@ -529,11 +529,11 @@ reloadNodes(core);
 		break;
 	case 'z':
 		r_core_cmd0 (core, "ds;.dr*");
-		reloadNodes(core);
+		reloadNodes (core);
 		break;
 	case 'Z':
 		r_core_cmd0 (core, "dso;.dr*");
-		reloadNodes(core);
+		reloadNodes (core);
 		break;
 	case 'x':
 		if (r_core_visual_xrefs_x (core))
@@ -558,6 +558,7 @@ reloadNodes(core);
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
 		" t/f  - follow true/false edges\n"
+		" C    - toggle scr.color\n"
 		" O    - toggle disasm mode\n"
 		" u    - select previous node\n"
 		" V    - toggle basicblock / call graphs\n"
@@ -620,6 +621,11 @@ reloadNodes(core);
 		core->vmode = R_FALSE;
 		r_core_visual_prompt_input (core);
 		core->vmode = R_TRUE;
+		break;
+	case 'C':
+		r_config_swap (core->config, "scr.color");
+		// refresh graph
+		reloadNodes (core);
 		break;
 	case 'q':
 		goto beach;

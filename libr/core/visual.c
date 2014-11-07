@@ -869,7 +869,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'V':
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
-		} else r_core_visual_graph (core, NULL);
+		} else {
+			int ocolor = r_config_get_i (core->config, "scr.color");
+			r_config_set_i (core->config, "scr.color", !!!ocolor);
+			r_core_visual_graph (core, NULL);
+			r_config_set_i (core->config, "scr.color", ocolor);
+		}
 		break;
 	case 'v':
 		r_core_visual_anal (core);
