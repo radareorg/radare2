@@ -74,11 +74,13 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res)
 		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
 		(void)off_end; // hack for remove unused warning
 		pdata = (char *) malloc(stream_file->page_size * (pn_end + 1 - pn_start));
+		if (!pdata)
+			return;
 		tmp = pdata;
 		stream_file_read_pages(stream_file, pn_start, pn_end + 1, tmp);
 		stream_file->pos += size;
 		memcpy(res, pdata + off_start, size);
-		free(pdata);
+		free (pdata);
 	}
 }
 
