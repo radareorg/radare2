@@ -2139,8 +2139,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
-{
+static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	unsigned char *leaf_data;
 	unsigned int read_bytes = 0;
 
@@ -2215,17 +2214,16 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type)
 		PARSE_LF(SLF_VTSHAPE, lf_vtshape);
 		break;
 	default:
-		printf("parse_tpi_stremas(): unsupported leaf type\n");
+		printf("parse_tpi_streams(): unsupported leaf type\n");
 		break;
 	}
 
-	free(leaf_data);
+	free (leaf_data);
 	return read_bytes;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
-{
+int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 	int i;
 	SType *type = 0;
 	STpiStream *tpi_stream = (STpiStream *) parsed_pdb_stream;
@@ -2242,10 +2240,11 @@ void parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream)
 		type->type_data.type_info = 0;
 		type->type_data.leaf_type = eLF_MAX;
 		init_stype_info(&type->type_data);
-		parse_tpi_stypes(stream, type);
+		if (!parse_tpi_stypes(stream, type))
+			return 0;
 		r_list_append(tpi_stream->types, type);
 	}
-
+	return 1;
 	// Postprocessing...
 }
 
