@@ -576,7 +576,7 @@ static void finish_pdb_parse(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_types(R_PDB *pdb) {
+static void print_types(R_PDB *pdb, int mode) {
 //	printf("print_types()\n");
 	char *name;
 	int val = 0;
@@ -612,7 +612,12 @@ static void print_types(R_PDB *pdb) {
 			// val for STRUCT or UNION mean size
 			if (tf->get_val)
 				tf->get_val(tf, &val);
-			pdb->printf ("%s: size 0x%x\n", name, val);
+			//pdb->printf ("%s: size 0x%x\n", name, val);
+			switch (mode) {
+			case 0: pdb->printf ("%s: size 0x%x\n", name, val); break;
+			case 1: pdb->printf ("pf.%s size_0x%x\n", name, val); break;
+			case 2: break; // JSON TODO
+			}
 
 			if (tf->get_members)
 				tf->get_members(tf, &ptmp);
@@ -625,10 +630,20 @@ static void print_types(R_PDB *pdb) {
 					tf->get_val(tf, &offset);
 				else
 					offset = 0;
-				pdb->printf ("  0x%x: %s type:", offset, name);
+				switch (mode) {
+				case 0:
+					pdb->printf ("  0x%x: %s type:", offset, name);
+					break;
+				case 1: pdb->printf ("# 0x%x: %s type:", offset, name); break;
+				case 2: break; // TODO JSON
+				}
 				if (tf->get_print_type)
 					tf->get_print_type(tf, &name);
-				pdb->printf ("%s\n", name);
+				switch (mode) {
+				case 0: pdb->printf ("%s\n", name); break;
+				case 1: pdb->printf ("# %s\n", name); break;
+				case 2: break; // TODO JSON
+				}
 				free (name);
 			}
 		}
@@ -636,7 +651,7 @@ static void print_types(R_PDB *pdb) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_gvars(R_PDB *pdb, int img_base) {
+static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	RList *l = 0;
 	RListIter *it = 0;
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0 ,
@@ -685,10 +700,32 @@ static void print_gvars(R_PDB *pdb, int img_base) {
 		gdata = (SGlobal *) r_list_iter_get(it);
 		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
-			pdb->printf ("%s, 0x%x, %d, %s\n", gdata->name.name,
-				img_base + omap_remap((omap) ? (omap->stream) : 0,
-				gdata->offset + sctn_header->virtual_address),
-				gdata->symtype, sctn_header->name);
+			char *name = r_name_filter (gdata->name.name, 0);
+			switch (format) {
+			case 2:
+			case 'j':
+				// TODO: json format
+				break;
+			case 1:
+			case '*':
+			case 'r':
+				pdb->printf ("f pdb.%s = 0x%"PFMT64x" # %d %s\n",
+						gdata->name.name,
+						(ut64)(img_base + omap_remap((omap) ? (omap->stream) : 0,
+							gdata->offset + sctn_header->virtual_address)),
+						gdata->symtype, sctn_header->name);
+				break;
+			case 0:
+			default:
+				pdb->printf ("0x%08"PFMT64x"  %d  %s  %s\n",
+					(ut64) (img_base + omap_remap((omap) ? (omap->stream) : 0,
+						gdata->offset + sctn_header->virtual_address)),
+					gdata->symtype,
+					sctn_header->name,
+					gdata->name.name);
+				break;
+			}
+			// TODO: implement MSVC C++ name demangle
 		} else {
 			eprintf ("Skipping %s, segment %d does not exist\n",
 				   gdata->name.name, (gdata->segment -1));

@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 			pdb.print_types(&pdb);
 			break;
 		case 'g':
-			pdb.print_gvars(&pdb, *(int *)optarg);
+			pdb.print_gvars(&pdb, 0, 'r'); //*(int *)optarg);
 			break;
 		default:
 			print_usage();

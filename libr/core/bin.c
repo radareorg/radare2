@@ -464,7 +464,7 @@ static int bin_dwarf (RCore *core, int mode) {
 	return R_TRUE;
 }
 
-static int bin_pdb (RCore *core, int mode) {
+static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 	R_PDB pdb = {0};
 
 	pdb.printf = r_cons_printf;
@@ -479,11 +479,13 @@ static int bin_pdb (RCore *core, int mode) {
 		return R_FALSE;
 	}
 
-	r_cons_printf ("Types:\n");
-	pdb.print_types (&pdb);
+	//r_cons_printf ("Types:\n");
+	if (mode ==0)
+		pdb.print_types (&pdb, mode);
+// default base address?	loadaddr = 0x400000;
 
-	r_cons_printf ("\nGlobals:\n");
-	pdb.print_gvars (&pdb, 0x0);
+	//r_cons_printf ("\nGlobals:\n");
+	pdb.print_gvars (&pdb, baddr, mode);
 	pdb.finish_pdb_parse (&pdb);
 
 	return R_TRUE;
@@ -1355,7 +1357,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_DWARF))
 		ret &= bin_dwarf (core, mode);
 	if ((action & R_CORE_BIN_ACC_PDB))
-		ret &= bin_pdb (core, mode);
+		ret &= bin_pdb (core, loadaddr, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
 		ret &= bin_entry (core, mode, baseaddr, loadaddr, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
