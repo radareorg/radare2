@@ -1,5 +1,5 @@
 #CC=arm-linux-androideabi-gcc
-CC=ndk-gcc
+CC=ndk-gcc -fPIC -pie -fPIE
 #RANLIB=ndk-ranlib
 USERCC=ndk-gcc
 RANLIB=arm-linux-androideabi-ranlib

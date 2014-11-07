@@ -57,6 +57,7 @@ if [ -z "${NDK_BINS}" ]; then
 fi
 CFLAGS="--sysroot=${PLATFORM_ROOT}"
 CFLAGS="${CFLAGS} -I${PLATFORM_PATH}/include"
+CFLAGS="${CFLAGS} -pie -fPIC"
 LDFLAGS=-L${PLATFORM_PATH}/lib
 #LDFLAGS="${LDFLAGS} -nostdlib"
 #LDFLAGS="${LDFLAGS} -lc -ldl"
