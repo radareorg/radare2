@@ -1,3 +1,4 @@
+
 #include "tpi.h"
 
 #include "stream_file.h"
@@ -840,30 +841,24 @@ static void free_sval(SVal *val)
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr;
 		scstr = (SCString *) val->name_or_val;
-		free(scstr->name);
-		free(val->name_or_val);
-		scstr->name = 0;
-		val->name_or_val = 0;
+		R_FREE(scstr->name);
+		R_FREE(val->name_or_val);
 	} else {
 		switch (val->value_or_type) {
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
 			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
-			free(lf_ulong->name.name);
-			free(val->name_or_val);
-			lf_ulong->name.name = 0;
-			val->name_or_val = 0;
+			R_FREE(lf_ulong->name.name);
+			R_FREE(val->name_or_val);
 			break;
 		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
 			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
-			free(lf_ushort->name.name);
-			free(val->name_or_val);
-			lf_ushort->name.name = 0;
-			val->name_or_val = 0;
+			R_FREE(lf_ushort->name.name);
+			R_FREE(val->name_or_val);
 			break;
 		}
 		default:
@@ -2028,6 +2023,7 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, unsigned char *leaf_data, u
 	lf_arglist->arg_type = (unsigned int *) malloc(lf_arglist->count * 4);
 	memcpy(lf_arglist->arg_type, leaf_data, lf_arglist->count * 4);
 	leaf_data += (lf_arglist->count * 4);
+	*read_bytes += (lf_arglist->count * 4);
 
 	PEEK_READ(*read_bytes, 1, len, lf_arglist->pad, leaf_data, unsigned char);
 	PAD_ALIGN(lf_arglist->pad, *read_bytes, leaf_data, len);
@@ -2127,6 +2123,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 	lf_vtshape->vt_descriptors = (char *) malloc(size);
 	memcpy(lf_vtshape->vt_descriptors, leaf_data, size);
 	leaf_data += size;
+	*read_bytes += size;
 
 	PEEK_READ(*read_bytes, 1, len, lf_vtshape->pad, leaf_data, unsigned char);
 	PAD_ALIGN(lf_vtshape->pad, *read_bytes, leaf_data, len);
