@@ -2026,6 +2026,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 				}
+#if 1
 			} else if (ds->filter) {
 				char *asm_str = colorize_asm_string (core, ds);
 				int ofs = core->parser->flagspace;
@@ -2053,6 +2054,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 #endif
 				core->parser->flagspace = ofs; // ???
 				free (asm_str);
+#endif
 			} else if (ds->decode) {
 				free (ds->opstr);
 				r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);

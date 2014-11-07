@@ -1387,25 +1387,51 @@ R_API const char *r_str_closer_chr (const char *b, const char *s) {
 	return NULL;
 }
 
+
+#if 0
+R_API int r_str_bounds(const char *str, int *h) {
+        int W = 0, H = 0;
+        int cw = 0;
+       if (!str)
+               return W;
+       while (*str) {
+               if (*str=='\n') {
+                       H++;
+                       if (cw>W)
+                               W = cw;
+                       cw = 0;
+                }
+               str++;
+               cw++;
+        }
+       if (*str == '\n') // skip last newline
+               H--;
+       if (h) *h = H;
+        return W;
+}
+
+#else
 R_API int r_str_bounds(const char *_str, int *h) {
 	char *ostr, *str, *ptr;
 	int W = 0, H = 0;
 	int cw = 0;
 	
-	if (str) {
+	if (_str) {
 		ptr = str = ostr = strdup (_str);
 		while (*str) {
 			if (*str=='\n') {
 				H++;
 				*str = 0;
+				cw = (size_t)(str-ptr);
 				cw = r_str_ansi_len (ptr);
 				if (cw>W)
 					W = cw;
+				*str = '\n';
 				cw = 0;
 				ptr = str+1;
 			}
 			str++;
-			//cw++;
+			cw++;
 		}
 		if (*str == '\n') // skip last newline
 			H--;
@@ -1414,6 +1440,7 @@ R_API int r_str_bounds(const char *_str, int *h) {
 	}
 	return W;
 }
+#endif
 
 R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
 	char *ret = strdup (str);
