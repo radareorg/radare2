@@ -132,10 +132,12 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
 	if (tmp_data_max_size> data_size) {
+		R_FREE(data);
 		eprintf ("invalid max tmp data size\n");
 		return 0;
 	}
 	if (num_streams<0 || tmp_data_max_size <= 0) {
+		R_FREE(data);
 		eprintf ("too much amount of streams\n"
 			   "curremt pdb file is not correct\n");
 		return 0;
@@ -143,6 +145,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	sizes = (int *) calloc (num_streams, 4);
 	if (!sizes) {
+		R_FREE(data);
 		eprintf ("too much amount of streams\n"
 			   "current pdb file is not correct\n");
 		return 0;
@@ -167,6 +170,8 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		num_pages = count_pages(sizes[i], page_size);
 
 		if ((pos + num_pages) > tmp_data_max_size) {
+			R_FREE(data);
+			R_FREE(sizes);
 			eprintf("warning: looks like there is not correct values "
 				   "of stream size in pdb file\n");
 			break;
