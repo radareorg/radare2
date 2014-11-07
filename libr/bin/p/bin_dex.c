@@ -547,7 +547,8 @@ static RList* classes (RBinFile *arch) {
 		if (entry.source_file >= bin->size) {
 			continue;
 		}
-		if (entry.source_file<0 || entry.source_file >= bin->header.strings_size)
+		// unsigned if (entry.source_file<0 || entry.source_file >= bin->header.strings_size)
+		if (entry.source_file >= bin->header.strings_size)
 			continue;
 		r_buf_read_at (bin->b, bin->strings[entry.source_file],
 				(ut8*)name, len);

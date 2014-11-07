@@ -104,7 +104,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (insn == NULL)
 			insn = cs_malloc (cd);
 		insn->size = 1;
-		memset (insn, 0, sizeof(cd));
+		memset (insn, 0, cd);
 		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
 	}
 #else

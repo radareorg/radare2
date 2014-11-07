@@ -20,7 +20,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	RBinFile *bf = (ofile && ofile->desc) ?
 		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
-	char *ofilepath, *obinfilepath = bf ? strdup (bf->file) : NULL;
+	char *ofilepath = NULL, *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = R_FALSE;
 	ut64 origoff = core->offset;
 	if (odesc) {
@@ -657,6 +657,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);
+		free (fh);
 		fh = NULL;
 		if (!strcmp (suppress_warning, "false"))
 			eprintf("Unable to load file due to failed mapping.\n");
@@ -688,8 +689,11 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		RIO *io = NULL;
 		if (cf) {
 			io = (RIO*)(cf->desc ? cf->desc->io : NULL);
+			if (cf->map) {
+				r_io_map_del_all (io, cf->map->fd);
+				cf->map = NULL;
+			}
 			r_bin_file_deref_by_bind (&cf->binb);
-			if (cf->map) r_io_map_del_all (io, cf->map->fd);
 			r_io_close ((RIO *) io, cf->desc);
 			free (cf);
 		}

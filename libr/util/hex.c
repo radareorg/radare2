@@ -116,11 +116,11 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 
 	if (!in || !*in)
 		return 0;
-	if (!memcmp (in, "0x", 2))
+	if (!strncmp (in, "0x", 2))
 		in += 2;
 	if (!out) {
 		outbuf = 1;
-		out = malloc (strlen (in));
+		out = malloc (strlen (in)+1);
 	}
 	for (ptr = in; ; ptr++) {
 		/* comments */
