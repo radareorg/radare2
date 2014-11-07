@@ -193,6 +193,8 @@ static int cmd_help(void *data, const char *input) {
 			"0", "", "alias for 's 0'",
 			"0x", "addr", "alias for 's 0x..'",
 			"#", "cmd", "if # is a number repeat the command # times",
+			"/*", "", "start multiline comment",
+			"*/", "", "end multiline comment",
 			".", "cmd", "execute output of command as r2 script",
 			".:", "8080", "wait for commands on port 8080",
 			".!", "rabin2 -re $FILE", "run command output as r2 script",

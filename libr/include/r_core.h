@@ -147,6 +147,7 @@ typedef struct r_core_t {
 	int cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
+	int incomment;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
