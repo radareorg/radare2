@@ -1,3 +1,4 @@
+
 #include "tpi.h"
 
 #include "stream_file.h"
@@ -840,30 +841,24 @@ static void free_sval(SVal *val)
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr;
 		scstr = (SCString *) val->name_or_val;
-		scstr->name = 0;
-		val->name_or_val = 0;
-		free(scstr->name);
-		free(val->name_or_val);
+		R_FREE(scstr->name);
+		R_FREE(val->name_or_val);
 	} else {
 		switch (val->value_or_type) {
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
 			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
-			lf_ulong->name.name = 0;
-			val->name_or_val = 0;
-			free(lf_ulong->name.name);
-			free(val->name_or_val);
+			R_FREE(lf_ulong->name.name);
+			R_FREE(val->name_or_val);
 			break;
 		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
 			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
-			lf_ushort->name.name = 0;
-			val->name_or_val = 0;
-			free(lf_ushort->name.name);
-			free(val->name_or_val);
+			R_FREE(lf_ushort->name.name);
+			R_FREE(val->name_or_val);
 			break;
 		}
 		default:
