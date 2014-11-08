@@ -1445,9 +1445,9 @@ R_API void r_core_visual_define (RCore *core) {
 		for (i = 0; i < n; i++)
 			if (!name[4+i])
 				name[4+i]='_';
+		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)name+4);
 		r_name_filter(name, n+10);
 		r_flag_set (core->flags, name, off, n, 0);
-		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)p);
 		free (name);
 		}
 		break;
