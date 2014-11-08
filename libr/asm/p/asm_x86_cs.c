@@ -5,7 +5,7 @@
 #include <capstone.h>
 
 #define USE_CUSTOM_ALLOC 0
-#define USE_ITER_API 1
+#define USE_ITER_API 0
 
 #if USE_CUSTOM_ALLOC
 static int bufi = 0;
