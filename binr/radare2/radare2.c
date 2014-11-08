@@ -725,15 +725,23 @@ int main(int argc, char **argv, char **envp) {
 #else
 			r_core_prompt_loop (&r);
 #endif
+			ret = r.num->value;
+			if (ret != -1 && r_config_get_i (r.config, "scr.interactive")) {
 				if (debug) {
-				if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-					if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-						r_debug_kill (r.dbg, 0, R_FALSE, 9); // KILL
-				} else continue;
+					if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+						if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+							r_debug_kill (r.dbg, 0, R_FALSE, 9); // KILL
+					} else continue;
+				}
+				prj = r_config_get (r.config, "file.project");
+				if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+					r_core_project_save (&r, prj);
+			} else {
+				// r_core_project_save (&r, prj);
+				if (debug) {
+					r_debug_kill (r.dbg, 0, R_FALSE, 9); // KILL
+				}
 			}
-			prj = r_config_get (r.config, "file.project");
-			if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
-				r_core_project_save (&r, prj);
 			break;
 		}
 	}

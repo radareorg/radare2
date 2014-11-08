@@ -14,8 +14,10 @@ static int cmd_quit(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;
-	case ' ':
 	case '!':
+		core->num->value = -1;
+		return -2;
+	case ' ':
 		input++;
 	case '\0':
 		// TODO
