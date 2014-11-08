@@ -380,6 +380,19 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	free (ptr);
 	return R_TRUE;
 }
+static int setFunctionName(RCore *core, ut64 off, const char *name) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
+			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
+	if (!fcn)
+		return 0;
+	//r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
+	//	 fcn->name, name, off);
+	r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
+			fcn->name, name, off);
+	free (fcn->name);
+	fcn->name = strdup (name);
+	return 1;
+}
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	switch (input[1]) {
@@ -551,7 +564,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (name);
 			}
 		} else {
-			 RAnalFunction *fcn;
 			 ut64 off = core->offset;
 			 char *p, *name = strdup (input+3);
 			 if ((p=strchr (name, ' '))) {
@@ -559,16 +571,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				 off = r_num_math (core->num, p);
 			 }
 			 if (*name) {
-				 fcn = r_anal_get_fcn_in (core->anal, off,
-					 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
-				 if (fcn) {
-					 //r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
-					//	 fcn->name, name, off);
-					 r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
-						 fcn->name, name, off);
-					 free (fcn->name);
-					 fcn->name = strdup (name);
-				 } else eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
+				 if (!setFunctionName (core, off, name))
+					 eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
 				 free (name);
 			 } else {
 				 eprintf ("Usage: afn newname [off]   # set new name to given function\n");
@@ -692,7 +696,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case '?':{ // "af?"
 		 const char* help_msg[] = {
 		 "Usage:", "af", "",
-		 "af", " @[addr]", "analyze functions (start at addr)",
+		 "af", " [name] ([addr]) (@ [addr])", "analyze functions (start at addr)",
 		 "af+", " addr size name [type] [diff]", "add function",
 		 "af-", " [addr]", "clean all function analysis data (or function at addr)",
 		 "af*", "", "output radare commands",
@@ -716,15 +720,35 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 r_core_cmd_help (core, help_msg);
 		}
 		 break;
-	default:
-		// first undefine
-		//r_core_anal_undefine (core, core->offset);
-		/* resize function if overlaps */
+	default: 
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) r_anal_fcn_resize (fcn, core->offset - fcn->addr);
-			r_core_anal_fcn (core, core->offset, UT64_MAX,
-				R_ANAL_REF_TYPE_NULL, r_config_get_i (core->config, "anal.depth"));
+			char *uaddr = NULL, *name = NULL;
+			int depth = r_config_get_i (core->config, "anal.depth");
+			RAnalFunction *fcn;
+			ut64 addr = core->offset;
+
+			// first undefine
+			if (input[1]==' ') {
+				name = strdup (input+2);
+				uaddr = strchr (name+1, ' ');
+				if (uaddr) {
+					*uaddr++ = 0;
+					addr = r_num_math (core->num, uaddr);
+				}
+				//depth = 1; // or 1?
+				// disable hasnext
+			}
+			//r_core_anal_undefine (core, core->offset);
+			/* resize function if overlaps */
+			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) r_anal_fcn_resize (fcn, addr - fcn->addr);
+			r_core_anal_fcn (core, addr, UT64_MAX,
+				R_ANAL_REF_TYPE_NULL, depth);
+			if (name && *name) {
+				if (!setFunctionName (core, addr, name))
+					eprintf ("Cannot find function '%s' at 0x%08"PFMT64x"\n", name, addr);
+			}
+			free (name);
 		}
 	}
 	return R_TRUE;
