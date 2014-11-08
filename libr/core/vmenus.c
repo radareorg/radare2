@@ -1421,6 +1421,7 @@ R_API void r_core_visual_define (RCore *core) {
 			name = malloc (n+10);
 			strcpy (name, "str.");
 			strncpy (name+4, (const char *)p+ntotal, n);
+			r_name_filter(name, n+10);
 			r_flag_set (core->flags, name, off+ntotal, n, 0);
 			r_meta_add (core->anal, R_META_TYPE_STRING,
 				off+ntotal, off+n+ntotal, (const char *)p+ntotal);
@@ -1430,14 +1431,25 @@ R_API void r_core_visual_define (RCore *core) {
 		} while (ntotal<core->blocksize);
 		break;
 	case 's':
+		{
+		int i;
 		// TODO: r_core_cmd0 (core, "Cz");
-		n = r_str_nlen ((const char*)p, plen)+1;
+		if (core->print->ocur != -1)
+			n = plen;
+		else
+			n = r_str_nlen ((const char*)p, plen)+1;
 		name = malloc (n+10);
 		strcpy (name, "str.");
-		strncpy (name+4, (const char *)p, n);
+		memcpy (name+4, (const char *)p, n);
+		name[4+n] = '\0';
+		for (i = 0; i < n; i++)
+			if (!name[4+i])
+				name[4+i]='_';
+		r_name_filter(name, n+10);
 		r_flag_set (core->flags, name, off, n, 0);
 		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)p);
 		free (name);
+		}
 		break;
 	case 'd': // TODO: check
 		r_meta_cleanup (core->anal, off, off+plen);
