@@ -1418,17 +1418,20 @@ R_API void r_core_visual_define (RCore *core) {
 	case 'S':
 		do {
 			n = r_str_nlen ((const char*)p+ntotal, plen-ntotal)+1;
+			if (n<2) break;
+			if (p[ntotal + n - 1])
+				break; // Not a \0 terminated string
 			name = malloc (n+10);
 			strcpy (name, "str.");
-			strncpy (name+4, (const char *)p+ntotal, n);
+			memcpy (name+4, (const char *)p+ntotal, n);
+			name[4+n] = '\0';
+			r_meta_add (core->anal, R_META_TYPE_STRING,
+				off+ntotal, off+n+ntotal, (const char *)name+4);
 			r_name_filter(name, n+10);
 			r_flag_set (core->flags, name, off+ntotal, n, 0);
-			r_meta_add (core->anal, R_META_TYPE_STRING,
-				off+ntotal, off+n+ntotal, (const char *)p+ntotal);
 			free (name);
-			if (n<2) break;
 			ntotal+= n;
-		} while (ntotal<core->blocksize);
+		} while (ntotal<plen);
 		break;
 	case 's':
 		{
