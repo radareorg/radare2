@@ -97,7 +97,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		EStream indx, int root_size, int page_size) {
 	R_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
-	char *tmp_data = NULL;
+	char *tmp_data = NULL, *data_end;
 	int stream_size = 0;
 	int num_streams = 0;
 	int *sizes = NULL;
@@ -129,6 +129,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	root_stream7->num_streams = num_streams;
 
 	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
+	data_end = data + tmp_data_max_size;
 	if (tmp_data_max_size> data_size) {
 		R_FREE(data);
 		eprintf ("invalid max tmp data size\n");
@@ -149,7 +150,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		return 0;
 	}
 
-	for (i = 0; i < num_streams; i++) {
+	for (i = 0; i < num_streams && (tmp_data+4 < data_end); i++) {
 		stream_size = *(int *)(tmp_data);
 		tmp_data += 4;
 		if (stream_size == UT32_MAX)
@@ -165,7 +166,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	RList *pList = root_stream7->streams_list;
 	SPage *page = 0;
 	for (i = 0; i < num_streams; i++) {
-		num_pages = count_pages(sizes[i], page_size);
+		num_pages = count_pages (sizes[i], page_size);
 
 		if ((pos + num_pages) > tmp_data_max_size) {
 			R_FREE(data);
@@ -180,6 +181,14 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		memset(tmp, 0, num_pages * 4);
 		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
+			if ((pos+(num_pages*4)) > tmp_data_max_size) {
+				eprintf ("data overrun by num_pages\n");
+				R_FREE (data);
+				R_FREE (sizes);
+				R_FREE (tmp);
+				R_FREE (page);
+				return 0;
+			}
 			memcpy (tmp, tmp_data + pos, num_pages * 4);
 			pos += num_pages * 4;
 //			sprintf(tmp_file_name, "%s%d", "/root/test.pdb", i);
