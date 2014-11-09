@@ -11,12 +11,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode, n, ret = -1;
 	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (a->cpu) {
-		if (!strcmp (a->cpu, "n64")) {
-			mode |= CS_MODE_64;
-		} else
-		if (!strcmp (a->cpu, "micro")) {
+	if (a->cpu && *a->cpu) {
+		if (!strcmp (a->cpu, "gp64")) {
+			mode |= CS_MODE_MIPSGP64;
+		} else if (!strcmp (a->cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
+		} else if (!strcmp (a->cpu, "r6")) {
+			mode |= CS_MODE_MIPS32R6;
+		} else if (!strcmp (a->cpu, "v3")) {
+			mode |= CS_MODE_MIPS3;
+		} else {
+			eprintf ("Invalid CPU selected: gp64, micro, r6, v3\n");
 		}
 	}
 	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
@@ -61,7 +66,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.desc = "Capstone MIPS disassembler",
 	.license = "BSD",
 	.arch = "mips",
-	.cpus = "n64,micro",
+	.cpus = "gp64,micro,r6,v3",
 	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
