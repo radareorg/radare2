@@ -54,7 +54,7 @@ R_API int r_name_filter(char *name, int maxlen) {
 		}
 		if (!r_name_validate_char (*name)) {
 			*name = '_';
-			r_str_ccpy (name, name+1, 0);
+	//		r_str_ccpy (name, name+1, 0);
 			//name--;
 		}
 	}

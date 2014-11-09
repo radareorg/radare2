@@ -17,11 +17,12 @@ static int cmd_quit(void *data, const char *input) {
 	case '!':
 		core->num->value = -1;
 		return -2;
-	case ' ':
-		input++;
 	case '\0':
-		// TODO
+		core->num->value = 0LL;
+		return -2;
 	default:
+		if (*input == ' ')
+			input++;
 		r_line_hist_save (R2_HOMEDIR"/history");
 		if (*input)
 			r_num_math (core->num, input);

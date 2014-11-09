@@ -657,7 +657,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);
-		free (fh);
 		fh = NULL;
 		if (!strcmp (suppress_warning, "false"))
 			eprintf("Unable to load file due to failed mapping.\n");
