@@ -29,6 +29,7 @@
 #if __UNIX__
 #include <sys/resource.h>
 #include <signal.h>
+#include <grp.h>
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
 #endif
@@ -441,6 +442,9 @@ R_API int r_run_start(RRunProfile *p) {
 		chdir("/");
 	}
 	if (p->_setuid) {
+		ret = setgroups(0, NULL);
+		if (ret < 0)
+			return 1;
 		ret = setuid (atoi (p->_setuid));
 		if (ret < 0)
 			return 1;
