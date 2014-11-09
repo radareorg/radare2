@@ -1460,14 +1460,22 @@ static int cmd_print(void *data, const char *input) {
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-				if (f && input[2] == 'j') {
+				if (f && input[2] == 'j') { // "pdfj"
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);
 					r_cons_printf (",\"size\":%d", f->size);
 					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
 					r_cons_printf (",\"ops\":");
 					// instructions are all outputted as a json list
-					r_core_cmdf (core, "pDj %d @ 0x%"PFMT64x, f->size, f->addr);
+					{
+						ut8 *buf = malloc (f->size);
+						if (buf) {
+							r_io_read_at (core->io, f->addr, buf, f->size);
+							r_core_print_disasm_json (core, f->addr, buf, f->size, 0);
+							r_cons_newline ();
+							free (buf);
+						} else eprintf ("cannot allocate %d bytes\n", f->size);
+					}
 					//close function json
 					r_cons_printf ("}");
 					pd_result = 0;
