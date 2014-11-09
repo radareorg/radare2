@@ -571,7 +571,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, ch
 	const char *fmt;
 	int flag = (slide>=STRUCTFLAG)?SEEFLAG:-1;
 	flag = (json)?JSONOUTPUT:flag;
-	if ((slide%STRUCTPTR) > NESTDEPTH) {
+	if ((slide%STRUCTPTR) > NESTDEPTH || slide/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
@@ -585,6 +585,9 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, ch
 	return r_print_format_struct_size(fmt, p);
 }
 
+#define MUSTSET (setval && elem == idx)
+#define MUSTSEE (elem == -1 || elem == idx)
+#define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *fmt, int elem, const char *setval) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
@@ -695,9 +698,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			if (!json && otimes>1)
 				p->printf ("   ");
-#define MUSTSET (setval && elem == idx)
-#define MUSTSEE (elem == -1 || elem == idx)
-#define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 			if ((MUSTSEE && !flag)) {
 				if (!(MUSTSET)) {
 					if (oldprintf)
