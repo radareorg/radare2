@@ -111,10 +111,15 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 	strncpy (op, str, sizeof (op)-1);
 	arg = strstr (op, "dword ptr");
-	if (arg) strcpy (arg, arg+strlen ("dword ptr"));
+	if (arg) {
+		const int dword_len = strlen ("dword ptr");
+		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
+	}
 	arg = strstr (op, "dword ");
-	if (arg) strcpy (arg, arg+strlen ("dword "));
-	else arg = strchr (op, ' ');
+	if (arg) {
+		const int dword_len = strlen ("dword ");
+		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
+	} else arg = strchr (op, ' ');
 
 	if (!memcmp (op, "rep ", 4)) {
 		data[l++] = 0xf3;
@@ -1004,6 +1009,25 @@ return -1;
 			return l;
 		} else if (!strcmp (op, "jmp")) {
 			if (arg[0] == '[' && arg[strlen (arg)-1] == ']') {
+				ut8 reg = getreg (arg+1);
+				if (reg != 0xff) {
+					char *plus = strchr (arg+1, '+');
+					if (!plus) plus = strchr (arg+1, '-');
+					if (plus) { // "jmp [reg+off]"
+						int delta = getnum(a, plus+1);
+						ut8 *ptr = (ut8 *)&delta;
+						data[l++] = 0xff;
+						data[l++] = 0xa0 | reg;
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
+					} else { // "jmp [reg]"
+						data[l++] = 0xff;
+						data[l++] = 0x20 | reg;
+					}
+					return l;
+				} else
 				if (!memcmp (arg+1, "rip", 3)) {
 					ut64 dst = getnum (a, arg+4);
 					ut32 addr = dst;
