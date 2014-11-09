@@ -97,7 +97,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		EStream indx, int root_size, int page_size) {
 	R_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
-	char *data_end = NULL;
 	char *tmp_data = NULL;
 	int stream_size = 0;
 	int num_streams = 0;
@@ -126,7 +125,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	num_streams = *(int *)data;
 	tmp_data = data;
 	tmp_data += 4;
-	data_end = data + data_size;
 
 	root_stream7->num_streams = num_streams;
 
@@ -700,7 +698,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		gdata = (SGlobal *) r_list_iter_get(it);
 		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
-			char *name = r_name_filter (gdata->name.name, 0);
+			char *name = r_name_filter2 (gdata->name.name);
 			switch (format) {
 			case 2:
 			case 'j':
@@ -710,7 +708,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			case '*':
 			case 'r':
 				pdb->printf ("f pdb.%s = 0x%"PFMT64x" # %d %s\n",
-						gdata->name.name,
+						name,
 						(ut64)(img_base + omap_remap((omap) ? (omap->stream) : 0,
 							gdata->offset + sctn_header->virtual_address)),
 						gdata->symtype, sctn_header->name);
@@ -720,12 +718,11 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 				pdb->printf ("0x%08"PFMT64x"  %d  %s  %s\n",
 					(ut64) (img_base + omap_remap((omap) ? (omap->stream) : 0,
 						gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype,
-					sctn_header->name,
-					gdata->name.name);
+					gdata->symtype, sctn_header->name, gdata->name.name);
 				break;
 			}
 			// TODO: implement MSVC C++ name demangle
+			free (name);
 		} else {
 			eprintf ("Skipping %s, segment %d does not exist\n",
 				   gdata->name.name, (gdata->segment -1));

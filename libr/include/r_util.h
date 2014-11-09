@@ -353,6 +353,7 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
 
 R_API int r_name_check(const char *name);
 R_API int r_name_filter(char *name, int len);
+R_API char *r_name_filter2(const char *name);
 
 R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
 R_API int r_base64_decode(ut8 *bout, const char *bin, int len);
