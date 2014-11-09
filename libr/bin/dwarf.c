@@ -1439,13 +1439,23 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		if (debug_str) {
 			debug_str_len = debug_str->size;
 			debug_str_buf = calloc (1, debug_str_len);
-			r_buf_read_at (binfile->buf, debug_str->paddr,
+			ret = r_buf_read_at (binfile->buf, debug_str->paddr,
 					debug_str_buf, debug_str_len);
+			if (!ret) {
+				free (debug_str_buf);
+				return NULL;
+			}
 		}
 
 		len = section->size;
 		buf = calloc (1,len);
-		r_buf_read_at (binfile->buf, section->paddr, buf, len);
+		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
+
+		if (!ret) {
+			free (debug_str_buf);
+			free (buf);
+			return NULL;
+		}
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len, mode);
 		if (debug_str_buf) {
@@ -1459,14 +1469,18 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 	ut8 *buf;
-	int len;
+	int len, ret;
 	RBinSection *section = getsection (a, "debug_line");
 	RBinFile *binfile = a ? a->cur: NULL;
 	if (binfile && section) {
 		RList *list = r_list_new ();
 		len = section->size;
 		buf = calloc (1,len);
-		r_buf_read_at (binfile->buf, section->paddr, buf, len);
+		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
+		if (!ret) {
+			free (buf);
+			return NULL;
+		}
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 		free (buf);
 		return list;
@@ -1476,6 +1490,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 
 R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 	ut8 *buf;
+	int ret;
 	size_t len;
 	RBinSection *section = getsection (a, "debug_aranges");
 	RBinFile *binfile = a ? a->cur: NULL;
@@ -1484,7 +1499,13 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 		len = section->size;
 		if (len==0) return NULL;
 		buf = calloc (1,len);
-		r_buf_read_at (binfile->buf, section->paddr, buf, len);
+		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
+
+		if (!ret) {
+			free (buf);
+			return NULL;
+		}
+
 		if (mode == R_CORE_BIN_PRINT) {
 			r_bin_dwarf_parse_aranges_raw (buf, len, stdout);
 		} else {
