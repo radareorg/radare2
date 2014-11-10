@@ -583,7 +583,170 @@ static void finish_pdb_parse(R_PDB *pdb)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void pdb_printf(ELeafType lt, char *name, int val, int mode) {
+	switch (mode) {
+	case 0:
+
+		break;
+	default:
+		break;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void pdb_pf(R_PDB *pdb) {
+	char *field1; // command field
+	char *field2 = 0; // name field
+	char *field3 = 0; // format for struct
+	char **field4 = 0; // members names
+	char sym = ' ';
+	int i = 0;
+
+	int members_amount = 0;
+	char *name;
+	int val = 0;
+	int offset = 0;
+	SType *t = 0;
+	STypeInfo *tf = 0;
+	RListIter *it = 0, *it2 = 0;
+	RList *plist = pdb->pdb_streams, *ptmp;
+	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
+	ELeafType lt = eLF_MAX;
+
+	if (!tpi_stream) {
+		eprintf ("there is no tpi stream in current pdb\n");
+		return;
+	}
+
+	it = r_list_iterator(tpi_stream->types);
+	while (r_list_iter_next(it)) {
+		i = 0;
+		members_amount = 0;
+		val = 0;
+		t = (SType *) r_list_iter_get(it);
+		tf = &t->type_data;
+		lt = tf->leaf_type;
+		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION)
+			|| (tf->leaf_type == eLF_ENUM)) {
+
+			if (tf->is_fwdref) {
+				tf->is_fwdref(tf, &val);
+				if (val == 1) {
+					continue;
+				}
+			}
+
+			if (tf->get_name)
+				tf->get_name(tf, &name);
+			if (tf->get_val)
+				tf->get_val(tf, &val);
+
+			switch (lt) {
+			case eLF_STRUCTURE:
+			case eLF_UNION:
+				field1 = (char *) malloc(strlen("pf") + 1);
+				strcpy(field1, "pf");
+				break;
+			case eLF_ENUM:
+				field1 = (char *) malloc(strlen("\"td enum") + 1);
+				strcpy(field1, "\"td enum");
+				break;
+			default:
+				goto err;
+				break;
+			}
+
+			field2 = (char *) malloc(strlen(name) + 1);
+			strcpy(field2, name);
+
+			if (tf->get_members)
+				tf->get_members(tf, &ptmp);
+
+			it2 = r_list_iterator(ptmp);
+			while (r_list_iter_next(it2)) {
+				tf = (STypeInfo *) r_list_iter_get(it2);
+				members_amount++;
+			}
+
+			if (!members_amount) {
+				goto err;
+			}
+			field3 = (char *) malloc(members_amount);
+			memset(field3, 0, members_amount);
+
+			field4 = (char **) malloc(sizeof *field4 * members_amount);
+			for(i = 0; i < members_amount; i++) {
+				field4[i] = 0;
+			}
+
+			i = 0;
+			it2 = r_list_iterator(ptmp);
+			while (r_list_iter_next(it2)) {
+				tf = (STypeInfo *) r_list_iter_get(it2);
+				if (tf->get_name)
+					tf->get_name(tf, &name);
+				if (tf->get_val)
+					tf->get_val(tf, &offset);
+				else
+					offset = 0;
+
+				switch (lt) {
+				case eLF_STRUCTURE:
+				case eLF_UNION:
+					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
+					strcpy(field4[i], name);
+					break;
+				case eLF_ENUM:
+					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
+					sprintf(field4[i], "%s=%08X", name, offset);
+					break;
+				default:
+					break;
+				}
+
+				i++;
+			}
+
+			pdb->printf("%s %s ", field1, field2);
+			if (lt != eLF_ENUM) {
+				pdb->printf("%s ", field3);
+			} else {
+				pdb->printf("%c ", '{');
+			}
+
+			sym = (lt == eLF_ENUM) ? ',' : ' ';
+			for (i = 0; i < members_amount; i++) {
+				pdb->printf("%s", field4[i]);
+				if ((i + 1) != members_amount) {
+					pdb->printf("%c", sym);
+				}
+			}
+
+			if (lt == eLF_ENUM) {
+				pdb->printf(" };\"\n");
+			} else {
+				pdb->printf("\n");
+			}
+
+err:
+			R_FREE(field1);
+			R_FREE(field2);
+			R_FREE(field3);
+
+			for (i = 0; i < members_amount; i++) {
+				R_FREE(field4[i]);
+			}
+			R_FREE(field4);
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void print_types(R_PDB *pdb, int mode) {
+
+	pdb_pf(pdb);
+	return;
+
 //	printf("print_types()\n");
 	char *name;
 	int val = 0;
