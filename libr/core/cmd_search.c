@@ -6,6 +6,7 @@ static int searchshow = 0;
 static int searchhits = 0;
 static int maplist = 0;
 static int json = 0;
+static int first_hit = 0;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
@@ -214,7 +215,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 
 		if (json) {
-			if (searchhits > 1) r_cons_printf(",");
+			if (!first_hit) r_cons_printf(",");
 			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}", 
 					base_addr + addr, kw->kwidx, str);
 		} else {
@@ -226,7 +227,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		free (str);
 	} else if (kw) {
 		if (json) {
-			if (searchhits > 1) r_cons_printf(",");
+			if (!first_hit) r_cons_printf(",");
 			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"len\":%d}", 
 					base_addr + addr, kw->kwidx, kw->keyword_length);
 		} else {
@@ -236,6 +237,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 					kw->kwidx, kw->count, kw->keyword_length, addr);
 		}
 	}
+	if (first_hit)
+		first_hit = R_FALSE;
 	if (searchflags) {
 		char flag[64];
 		snprintf (flag, sizeof (flag), "%s%d_%d", searchprefix, kw->kwidx, kw->count);
@@ -749,6 +752,7 @@ static int cmd_search(void *data, const char *input) {
 
 	c = 0;
 	json = R_FALSE;
+	first_hit = 1;
 	//core->search->n_kws = 0;
 	maplist = R_FALSE;
 	__from = r_config_get_i (core->config, "search.from");
