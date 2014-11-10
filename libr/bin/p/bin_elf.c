@@ -361,7 +361,7 @@ static RList* libs(RBinFile *arch) {
 static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
 	RBinReloc *r = NULL;
 	ut64 B, P;
-	char *str;
+	//char *str;
 
 	if (!bin || !rel) return NULL;
 	B = bin->baddr;
@@ -399,7 +399,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_386_8:        ADD(8,  0);
 		case R_386_PC8:      ADD(8, -P);
 		case R_386_COPY:     ADD(64, 0); // XXX: copy symbol at runtime
-		default: eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
+		default: break; //eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
 		}
 		break;
 	case EM_X86_64: switch (rel->type) {
@@ -419,7 +419,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_PC8:	ADD(8, -P);
 		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
 		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
-		default: eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
+		default: break; ////eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
 		}
 		break;
 	case EM_ARM: switch (rel->type) {
@@ -433,14 +433,16 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_ARM_JUMP_SLOT:	ADD(32, 0);
 		case R_ARM_RELATIVE:	ADD(32, B);
 		case R_ARM_GOTOFF:	ADD(32,-GOT);
-		default: eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
+		default: break; ////eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
 		}
 		break;
-	default:
+	default: break;
+#if 0
 		if (!(str = Elf_(r_bin_elf_get_machine_name) (bin)))
 			break;
 		eprintf("TODO(eddyb): uninmplemented ELF reloc_convert for %s\n", str);
 		free(str);
+#endif
 	}
 
 	#undef SET
