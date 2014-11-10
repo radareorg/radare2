@@ -298,6 +298,8 @@ static int bbNodes (RCore *core, RAnalFunction *fcn, Node **n) {
 		return 0;
 	i = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX)
+			continue;
 		if (simple_mode) {
 			nodes[i].text = r_core_cmd_strf (core,
 					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);

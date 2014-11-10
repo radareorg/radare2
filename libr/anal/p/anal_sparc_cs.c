@@ -11,6 +11,7 @@
 
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 #define INSOP(n) insn->detail->sparc.operands[n]
+#define INSCC insn->detail->sparc.cc
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle;
@@ -23,6 +24,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = 0;
 	op->delay = 0;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->val = UT64_MAX;
+	op->ptr = UT64_MAX;
 	r_strbuf_init (&op->esil);
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -33,6 +38,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else {
 			op->size = insn->size;
 			switch (insn->id) {
+			case SPARC_INS_MOV:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
 			case SPARC_INS_RETT:
 				op->type = R_ANAL_OP_TYPE_RET;
 				break;
@@ -40,8 +48,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_UNK;
 				break;
 			case SPARC_INS_CALL:
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = INSOP(0).imm;
+				switch (INSOP(0).type) {
+				case SPARC_OP_MEM:
+					// TODO
+					break;
+				case SPARC_OP_REG:
+					op->type = R_ANAL_OP_TYPE_UCALL;
+					break;
+				default:
+					op->type = R_ANAL_OP_TYPE_CALL;
+					op->jump = INSOP(0).imm;
+					break;
+				}
 				break;
 			case SPARC_INS_NOP:
 				op->type = R_ANAL_OP_TYPE_NOP;
@@ -88,9 +106,25 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case SPARC_INS_BRLZ:
 			case SPARC_INS_BRNZ:
 			case SPARC_INS_BRZ:
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = INSOP(0).imm;
-				op->fail = UT64_MAX;
+				switch (INSOP(0).type) {
+				case SPARC_OP_REG:
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					if (INSCC != SPARC_CC_ICC_N) // never
+						op->jump = INSOP(1).imm;
+					if (INSCC != SPARC_CC_ICC_A) // always
+						op->fail = addr+4;
+					break;
+				case SPARC_OP_IMM:
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					if (INSCC != SPARC_CC_ICC_N) // never
+						op->jump = INSOP(0).imm;
+					if (INSCC != SPARC_CC_ICC_A) // always
+						op->fail = addr+4;
+					break;
+				default:
+					// MEM?
+					break;
+				}
 				break;
 			case SPARC_INS_FHSUBD:
 			case SPARC_INS_FHSUBS:
