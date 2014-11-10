@@ -1,6 +1,6 @@
 OBJ_SPARC_CS=anal_sparc_cs.o
 
-include p/capstone.mk
+include ${CURDIR}capstone.mk
 
 STATIC_OBJ+=$(OBJ_SPARC_CS)
 TARGET_SPARC_CS=anal_sparc_cs.${EXT_SO}

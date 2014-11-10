@@ -76,8 +76,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-RAsmPlugin r_asm_plugin_sparc = {
-	.name = "sparc",
+RAsmPlugin r_asm_plugin_sparc_gnu = {
+	.name = "sparc.gnu",
 	.arch = "sparc",
 	.bits = 32|64,
 	.license = "GPL3",
@@ -91,6 +91,6 @@ RAsmPlugin r_asm_plugin_sparc = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_sparc
+	.data = &r_asm_plugin_sparc_gnu
 };
 #endif

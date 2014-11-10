@@ -41,7 +41,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 RAsmPlugin r_asm_plugin_sparc_cs = {
-	.name = "sparc.cs",
+	.name = "sparc",
 	.desc = "Capstone SPARC disassembler",
 	.license = "BSD",
 	.arch = "sparc",

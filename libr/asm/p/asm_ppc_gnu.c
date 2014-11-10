@@ -57,8 +57,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return 0;
 }
 
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
-	static struct disassemble_info disasm_obj;
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj;
+	op->buf_asm[0]='\0';
 	if (len<4)
 		return -1;
 	buf_global = op->buf_asm;
@@ -77,7 +78,6 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	op->buf_asm[0]='\0';
 	if (a->big_endian)
 		op->size = print_insn_big_powerpc((bfd_vma)Offset, &disasm_obj);
 	else op->size = print_insn_little_powerpc((bfd_vma)Offset, &disasm_obj);
@@ -88,7 +88,7 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 	return op->size;
 }
 
-RAsmPlugin r_asm_plugin_ppc = {
+RAsmPlugin r_asm_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.arch = "ppc",
 	.license = "GPL3",
@@ -103,6 +103,6 @@ RAsmPlugin r_asm_plugin_ppc = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_ppc
+	.data = &r_asm_plugin_ppc_gnu
 };
 #endif

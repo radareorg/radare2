@@ -1,6 +1,6 @@
 OBJ_X86_CS=anal_x86_cs.o
 
-include p/capstone.mk
+include ${CURDIR}capstone.mk
 
 STATIC_OBJ+=$(OBJ_X86_CS)
 

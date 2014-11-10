@@ -8,6 +8,8 @@ CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
 
+CURDIR=p/
+
 include p/capstone.mk
 LDFLAGS+=$(CS_LDFLAGS)
 LDFLAGS+=$(SHLR)/java/libr_java.a

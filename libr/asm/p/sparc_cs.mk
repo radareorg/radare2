@@ -1,6 +1,6 @@
 OBJ_SPARCCS=asm_sparc_cs.o
 
-include p/capstone.mk
+include ${CURDIR}capstone.mk
 
 STATIC_OBJ+=${OBJ_SPARCCS}
 SHARED_OBJ+=${SHARED_SPARCCS}

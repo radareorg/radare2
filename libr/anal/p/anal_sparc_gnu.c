@@ -695,8 +695,8 @@ static int set_reg_profile(RAnal *anal)
 }
 
 
-RAnalPlugin r_anal_plugin_sparc = {
-	.name = "sparc",
+RAnalPlugin r_anal_plugin_sparc_gnu = {
+	.name = "sparc.gnu",
 	.desc = "SPARC analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_SPARC,
@@ -715,6 +715,6 @@ RAnalPlugin r_anal_plugin_sparc = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_sparc
+	.data = &r_anal_plugin_sparc_gnu
 };
 #endif
