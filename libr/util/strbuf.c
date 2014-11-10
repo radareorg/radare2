@@ -94,6 +94,7 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	return ret;
 }
 
+// TODO: rename to tostring()
 R_API char *r_strbuf_get(RStrBuf *sb) {
 	if (sb) {
 		if (sb->ptr)
