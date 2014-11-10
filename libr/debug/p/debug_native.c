@@ -95,6 +95,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #include <sys/fcntl.h>
 #include <sys/proc.h>
 
+// G3
 #if __POWERPC__
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -104,19 +105,35 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #define R_DEBUG_REG_T ppc_thread_state_t
 #define R_DEBUG_STATE_T PPC_THREAD_STATE
 #define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
+
+// iPhone5
+#elif __aarch64
+ #include <mach/aarch64/thread_status.h>
+ #ifndef AARCH64_THREAD_STATE
+ #define AARCH64_THREAD_STATE                1
+ #endif
+ #ifndef AARCH64_THREAD_STATE64
+ #define AARCH64_THREAD_STATE64              6
+ #endif
+ #define R_DEBUG_REG_T aarch64_thread_state_t
+ #define R_DEBUG_STATE_T AARCH64_THREAD_STATE
+ #define R_DEBUG_STATE_SZ AARCH64_THREAD_STATE_COUNT
+
+// iPhone
 #elif __arm
-#include <mach/arm/thread_status.h>
-#ifndef ARM_THREAD_STATE
-#define ARM_THREAD_STATE                1
-#endif
-#ifndef ARM_THREAD_STATE64
-#define ARM_THREAD_STATE64              6
-#endif
-#define R_DEBUG_REG_T arm_thread_state_t
-#define R_DEBUG_STATE_T ARM_THREAD_STATE
-#define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
+ #include <mach/arm/thread_status.h>
+ #ifndef ARM_THREAD_STATE
+ #define ARM_THREAD_STATE                1
+ #endif
+ #ifndef ARM_THREAD_STATE64
+ #define ARM_THREAD_STATE64              6
+ #endif
+ #define R_DEBUG_REG_T arm_thread_state_t
+ #define R_DEBUG_STATE_T ARM_THREAD_STATE
+ #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
 #else
 
+// iMac
 /* x86 32/64 */
 #include <mach/i386/thread_status.h>
 #include <sys/ucontext.h>
@@ -222,12 +239,25 @@ struct user_regs_struct_x86_32 {
 };
 
 #ifdef __ANDROID__
-// #if __arm__
-# define R_DEBUG_REG_T struct pt_regs
+ #if __arm64__ || __aarch64__
+# define R_DEBUG_REG_T struct user_pt_regs
+#undef PTRACE_GETREGS
+#define PTRACE_GETREGS PTRACE_GETREGSET
+#undef PTRACE_SETREGS
+#define PTRACE_SETREGS PTRACE_SETREGSET
+ #else
+ # define R_DEBUG_REG_T struct pt_regs
+ #endif
 #else
 #include <sys/user.h>
 # if __i386__ || __x86_64__
 # define R_DEBUG_REG_T struct user_regs_struct
+# elif __arm64__ || __aarch64__
+# define R_DEBUG_REG_T struct user_pt_regs
+#undef PTRACE_GETREGS
+#define PTRACE_GETREGS PTRACE_GETREGSET
+#undef PTRACE_SETREGS
+#define PTRACE_SETREGS PTRACE_SETREGSET
 # elif __arm__
 # define R_DEBUG_REG_T struct user_regs
 # elif __mips__
@@ -937,7 +967,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			}
 			break;
 		}
-#elif __arm__ || __arm64__
+#elif __arm__ || __arm64__ || __aarch64__
 		if (dbg->bits==R_SYS_BITS_64) {
 			ret = thread_get_state (inferior_threads[tid],
 				ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
@@ -2031,6 +2061,10 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.canstep = 1,
 #elif __arm__
 	.bits = R_SYS_BITS_32,
+	.arch = R_ASM_ARCH_ARM,
+	.canstep = 0, // XXX it's 1 on some platforms...
+#elif __aarch64__
+	.bits = R_SYS_BITS_64,
 	.arch = R_ASM_ARCH_ARM,
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __mips__

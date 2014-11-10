@@ -13,6 +13,7 @@ LIBAR=librz.a
 all: $(LIBAR)
 
 $(LIBAR): zip/libr_zip.a
+	echo PENE
 	${CC_AR} zlib/*.o zip/*.o
 
 zip/libr_zip.a: zlib/libr_z.a

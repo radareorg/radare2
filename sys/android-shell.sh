@@ -6,11 +6,21 @@ if [ -n "$1" ]; then
 	shift
 fi
 case "${NDK_ARCH}" in
-arm|mips|x86)
+mips|x86)
 	export NDK_ARCH
 	;;
+aarch64)
+	export NDK_ARCH
+	AR=aarch64-linux-android-ar
+	RANLIB=aarch64-linux-android-ranlib
+	;;
+arm)
+	export NDK_ARCH
+	AR=arm-linux-androideabi-ar
+	RANLIB=arm-linux-androideabi-ranlib
+	;;
 *)
-	echo "Usage: $0 [arm|mips|x86]"
+	echo "Usage: $0 [aarch64|arm|mips|x86]"
 	exit 1
 	;;
 esac
@@ -46,10 +56,12 @@ fi
 
 TOOLCHAIN_MIPS=`ls ${NDK}/toolchains/ |grep "^mips" |sort |head -n 1`
 TOOLCHAIN_ARM=`ls ${NDK}/toolchains/ |grep "^arm" |sort |head -n 1`
+TOOLCHAIN_AARCH64=`ls ${NDK}/toolchains/ |grep "^aarch64" |sort |head -n 1`
 TOOLCHAIN_X86=`ls ${NDK}/toolchains/ |grep "^x86" |sort |head -n 1`
 
 NDKPATH_MIPS=`echo ${NDK}/toolchains/${TOOLCHAIN_MIPS}/prebuilt/${OS}-x86*/bin/`
 NDKPATH_ARM=`echo ${NDK}/toolchains/${TOOLCHAIN_ARM}/prebuilt/${OS}-x86*/bin/`
+NDKPATH_AARCH64=`echo ${NDK}/toolchains/${TOOLCHAIN_AARCH64}/prebuilt/${OS}-x86*/bin/`
 NDKPATH_X86=`echo ${NDK}/toolchains/${TOOLCHAIN_X86}/prebuilt/${OS}-x86*/bin/`
 
 # r7b
@@ -58,7 +70,7 @@ NDKPATH_X86=`echo ${NDK}/toolchains/${TOOLCHAIN_X86}/prebuilt/${OS}-x86*/bin/`
 #CFLAGS=-I${INCDIR}
 #echo $NDKPATH_ARM
 
-PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS}:$PATH
+PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS}:${NDKPATH_AARCH64}:$PATH
 export PATH
 export CFLAGS
 export NDK
@@ -70,9 +82,7 @@ CC=ndk-gcc
 PS1="[r2-android-${NDK_ARCH}]> "
 export CC
 export PS1
-AR=arm-linux-androideabi-ar
 export AR
-RANLIB=arm-linux-androideabi-ranlib
 export RANLIB
 A=$@
 if [ -n "$A" ]; then

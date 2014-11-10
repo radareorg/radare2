@@ -20,10 +20,19 @@ case "$1" in
 	STATIC_BUILD=0
 	STRIP=arm-eabi-strip
 	;;
+"aarch64")
+	NDK_ARCH=aarch64
+	STATIC_BUILD=0
+	STRIP=aarch64-linux-android-strip
+	;;
 "x86")
 	NDK_ARCH=x86
 	STATIC_BUILD=0
 	STRIP=strip
+	;;
+aarch64-static|static-aarch64)
+	NDK_ARCH=aarch64
+	STATIC_BUILD=1
 	;;
 arm-static|static-arm)
 	NDK_ARCH=arm
@@ -40,7 +49,7 @@ mips-static|static-mips)
 	STRIP=mips-linux-android-strip
 	;;
 ""|"-h")
-	echo "Usage: android-build.sh [arm|x86|mips][-static]"
+	echo "Usage: android-build.sh [arm|aarch64|x86|mips][-static]"
 	exit 1
 	;;
 *)

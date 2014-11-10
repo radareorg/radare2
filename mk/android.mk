@@ -2,12 +2,21 @@
 CC=ndk-gcc -fPIC -pie -fPIE
 #RANLIB=ndk-ranlib
 USERCC=ndk-gcc
-RANLIB=arm-linux-androideabi-ranlib
+ifeq (${ARCH},)
+# arm32
+ARCH=arm
+#RANLIB=${ARCH}-linux-androideabi-ranlib
+#CC_AR=${ARCH}-linux-androideabi-ar -r ${LIBAR}
+
+# aarch64
+ARCH=aarch64
+RANLIB=${ARCH}-linux-android-ranlib
+CC_AR=${ARCH}-linux-android-ar -r ${LIBAR}
+endif
 ONELIB=0
 OSTYPE=android
 LINK=
 #CC_AR=ndk-ar -r ${LIBAR}
-CC_AR=arm-linux-androideabi-ar -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o
