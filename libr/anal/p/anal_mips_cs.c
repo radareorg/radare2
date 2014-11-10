@@ -134,6 +134,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_FSUB:
 	case MIPS_INS_SUB:
+	case MIPS_INS_SUBU:
+	case MIPS_INS_DSUB:
+	case MIPS_INS_DSUBU:
 		{
 		const char *arg0 = ARG(0);
 		const char *arg1 = ARG(1);
@@ -294,8 +297,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case MIPS_INS_SUB:
 	case MIPS_INS_SUBV:
+	case MIPS_INS_SUBVI:
 	case MIPS_INS_DSUBU:
 	case MIPS_INS_FSUB:
+	case MIPS_INS_FMSUB:
+	case MIPS_INS_SUBU:
+	case MIPS_INS_DSUB:
+	case MIPS_INS_SUBS_S:
+	case MIPS_INS_SUBS_U:
+	case MIPS_INS_SUBUH:
+	case MIPS_INS_SUBUH_R:
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
@@ -421,7 +432,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 RAnalPlugin r_anal_plugin_mips_cs = {
-	.name = "mips.cs",
+	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
 	.esil = R_TRUE,

@@ -520,7 +520,7 @@ static int mips_set_reg_profile(RAnal* anal){
 }
 
 struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
-	.name = "mips",
+	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_MIPS,

@@ -20,8 +20,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			mode |= CS_MODE_MIPS32R6;
 		} else if (!strcmp (a->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
-		} else {
-			eprintf ("Invalid CPU selected: gp64, micro, r6, v3\n");
 		}
 	}
 	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
@@ -62,7 +60,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 }
 
 RAsmPlugin r_asm_plugin_mips_cs = {
-	.name = "mips.cs",
+	.name = "mips",
 	.desc = "Capstone MIPS disassembler",
 	.license = "BSD",
 	.arch = "mips",
