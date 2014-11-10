@@ -1301,7 +1301,7 @@ extern RAnalPlugin r_anal_plugin_mips_gnu;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_dalvik;
 extern RAnalPlugin r_anal_plugin_sh;
-extern RAnalPlugin r_anal_plugin_sparc;
+extern RAnalPlugin r_anal_plugin_sparc_gnu;
 extern RAnalPlugin r_anal_plugin_bf;
 extern RAnalPlugin r_anal_plugin_m68k;
 extern RAnalPlugin r_anal_plugin_z80;
