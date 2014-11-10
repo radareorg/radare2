@@ -14,6 +14,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret = cs_open (CS_ARCH_PPC, mode, &handle);
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->ptr = op->val = UT64_MAX;
 	op->size = 4;
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -82,6 +85,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_BA:
 			case PPC_INS_BC:
 				op->type = R_ANAL_OP_TYPE_JMP;
+				op->jump = insn->detail->ppc.operands[0].imm;
+				op->fail = addr+4;
 				break;
 			case PPC_INS_XOR:
 			case PPC_INS_XORI:
