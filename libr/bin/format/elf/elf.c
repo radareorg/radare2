@@ -139,7 +139,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
 		return R_FALSE;
 
-	if (!shdr_size)
+	if (shdr_size<1)
 		return R_FALSE;
 
 	if ((bin->shdr = calloc (1, shdr_size+1)) == NULL) {
@@ -1111,11 +1111,11 @@ if (
 				continue;
 			}
 			// hack to avoid asan cry
-			if (bin->shdr[i].sh_link+0xff>= shdr_size) {
+			if ((bin->shdr[i].sh_link*sizeof(Elf_(Shdr)))>= shdr_size) {
 				/* oops. fix out of range pointers */
 				continue;
 			}
-			strtab_section = bin->shdr+bin->shdr[i].sh_link;
+			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
 			if (!strtab_section) {
 				/* oops. we have no strtab, skip */
 				continue;

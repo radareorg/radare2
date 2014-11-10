@@ -215,7 +215,7 @@ r2.cmds = function(cmds, cb) {
 }
 
 function _internal_cmd(c, cb) {
-  if (r2cmd) {
+  if (typeof (r2cmd) != 'undefined') {
     hascmd = r2cmd;
   }
   if (hascmd) {
