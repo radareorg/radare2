@@ -1497,7 +1497,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 
 		memset (msg, 0, sizeof (msg));
 		r_io_read_at (core->io, p, (ut8*)msg, sizeof (msg)-1);
-		msg[sizeof (msg)-1] = 0;
+		if (!IS_PRINTABLE (*msg))
+			*msg = 0;
+		else msg[sizeof (msg)-1] = 0;
 
 		if (ds->analop.refptr) {
 			ut64 *num = (ut64*)msg;
@@ -1519,26 +1521,14 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				r_cons_printf (" ; [:%d]=0x%"PFMT64x, ds->analop.refptr, n);
 			}
 		}
-		kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, sizeof (msg)-1);
-		if (kind) {
-			if (!strcmp (kind, "text")) {
-				r_str_filter (msg, 0);
-				if (*msg) {
-					r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
-				}
-			} else if (!strcmp (kind, "invalid")){
-				int *n = (int*)&p;
-				if (*n>-0xfff && *n < 0xfff)
-					r_cons_printf (" ; %d", *n);
-			} else {
-				//r_cons_printf (" ; %s", kind);
-			}
-			// TODO: check for more data kinds
-		}
-		*msg = 0;
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
-			r_cons_printf (" ; %s", f->name);
+			r_str_filter (msg, 0);
+			if (*msg) {
+				r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
+			} else {
+				r_cons_printf (" ; %s", f->name);
+			}
 		} else {
 			if (p==UT64_MAX || p==UT32_MAX) {
 				r_cons_printf (" ; -1", p);
@@ -1554,10 +1544,28 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					} else {
 						r_cons_printf (" ; var %d", (int)-p);
 					}
+#if 0
 				} else {
 					r_cons_printf (" ; %s%s0x%08"PFMT64x" ",
 						msg, msg[0]?" ":"", p);
+#endif
 				}
+			}
+			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, sizeof (msg)-1);
+			if (kind) {
+				if (!strcmp (kind, "text")) {
+					r_str_filter (msg, 0);
+					if (*msg) {
+						r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
+					}
+				} else if (!strcmp (kind, "invalid")){
+					int *n = (int*)&p;
+					if (*n>-0xfff && *n < 0xfff)
+						r_cons_printf (" ; %d", *n);
+				} else {
+					//r_cons_printf (" ; %s", kind);
+				}
+				// TODO: check for more data kinds
 			}
 		}
 	} else handle_print_as_string (core, ds);
