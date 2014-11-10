@@ -161,7 +161,7 @@ extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_mips_gnu;
 extern RAsmPlugin r_asm_plugin_mips_cs;
-extern RAsmPlugin r_asm_plugin_x86;
+extern RAsmPlugin r_asm_plugin_x86_udis;
 extern RAsmPlugin r_asm_plugin_x86_as;
 extern RAsmPlugin r_asm_plugin_x86_nz;
 extern RAsmPlugin r_asm_plugin_x86_olly;

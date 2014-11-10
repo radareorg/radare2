@@ -66,7 +66,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return opsize;
 }
 
-RAsmPlugin r_asm_plugin_x86 = {
+RAsmPlugin r_asm_plugin_x86_udis = {
 	.name = "x86.udis",
 	.desc = "udis86 x86-16,32,64",
 	.arch = "x86",
@@ -82,6 +82,6 @@ RAsmPlugin r_asm_plugin_x86 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86
+	.data = &r_asm_plugin_x86_udis
 };
 #endif
