@@ -3,6 +3,20 @@ CC=ndk-gcc -fPIC -pie -fPIE
 #RANLIB=ndk-ranlib
 USERCC=ndk-gcc
 ARCH=arm
+
+ifeq (${NDK_ARCH},x86)
+# mips
+ARCH2=i686
+RANLIB=${ARCH2}-linux-android-ranlib
+CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
+endif
+ifeq (${NDK_ARCH},mips)
+# mips
+ARCH=mips
+RANLIB=${ARCH}-linux-android-ranlib
+CC_AR=${ARCH}-linux-android-ar -r ${LIBAR}
+endif
+
 ifeq (${NDK_ARCH},arm)
 # arm32
 ARCH=arm

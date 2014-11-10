@@ -3,7 +3,7 @@
 BUILD=1
 PREFIX="/data/data/org.radare.installer/radare2"
 if [ -z "${NDK}" ]; then
-	echo "use ./android-{arm|mips|x86}.sh"
+	echo "use ./android-{arm|aarch64|mips|x86}.sh"
 	exit 1
 fi
 
