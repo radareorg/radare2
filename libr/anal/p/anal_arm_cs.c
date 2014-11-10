@@ -365,7 +365,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 RAnalPlugin r_anal_plugin_arm_cs = {
-	.name = "arm.cs",
+	.name = "arm",
 	.desc = "Capstone ARM analyzer",
 	.license = "BSD",
 	.esil = R_TRUE,
