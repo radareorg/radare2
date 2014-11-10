@@ -480,7 +480,7 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 	}
 
 	//r_cons_printf ("Types:\n");
-	if (mode ==0)
+//	if (mode ==0)
 		pdb.print_types (&pdb, mode);
 // default base address?	loadaddr = 0x400000;
 
