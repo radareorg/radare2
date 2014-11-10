@@ -364,6 +364,8 @@ R_API void r_cons_flush() {
 				r_cons_reset ();
 				return;
 			}
+			// fix | more | less problem
+			r_cons_set_raw (1);
 		}
 	}
 	if (tee&&*tee) {
