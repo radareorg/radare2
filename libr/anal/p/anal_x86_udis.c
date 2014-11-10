@@ -750,7 +750,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 struct r_anal_plugin_t r_anal_plugin_x86_udis = {
-	.name = "x86",
+	.name = "x86.udis",
 	.desc = "X86 analysis plugin (udis86 backend)",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,

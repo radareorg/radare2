@@ -143,20 +143,20 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					}
 					break;
 				default:
-					break;
-				}
-				switch (INSOP(1).type) {
-				case X86_OP_MEM:
-					op->ptr = INSOP(1).mem.disp;
-					op->refptr = INSOP(1).size;
-					if (INSOP(1).mem.base == X86_REG_RIP) {
-						op->ptr += addr + insn->size;
+					switch (INSOP(1).type) {
+					case X86_OP_MEM:
+						op->ptr = INSOP(1).mem.disp;
+						op->refptr = INSOP(1).size;
+						if (INSOP(1).mem.base == X86_REG_RIP) {
+							op->ptr += addr + insn->size;
+						}
+						break;
+					case X86_OP_IMM:
+						op->ptr = INSOP(1).imm;
+						break;
+					default:
+						break;
 					}
-					break;
-				case X86_OP_IMM:
-					op->ptr = INSOP(1).imm;
-					break;
-				default:
 					break;
 				}
 				break;
@@ -321,7 +321,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 RAnalPlugin r_anal_plugin_x86_cs = {
-	.name = "x86.cs",
+	.name = "x86",
 	.desc = "Capstone X86 analysis",
 	.esil = R_TRUE,
 	.license = "BSD",
