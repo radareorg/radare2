@@ -11,5 +11,6 @@ TARGET_PPCCS=asm_ppc_cs.${EXT_SO}
 ALL_TARGETS+=${TARGET_PPCCS}
 
 ${TARGET_PPCCS}: ${OBJ_PPCCS}
-	${CC} $(call libname,asm_ppc) ${LDFLAGS} ${CFLAGS} \
-		-o ${TARGET_PPCCS} ${OBJ_PPCCS} ${SHARED2_PPCCS}
+	${CC} -o ${TARGET_PPCCS} ${OBJ_PPCCS} \
+		$(call libname,asm_ppc_cs) ${LDFLAGS} ${CFLAGS} \
+		${SHARED2_PPCCS} ${CS_LDFLAGS}
