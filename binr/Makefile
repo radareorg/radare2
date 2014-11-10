@@ -10,7 +10,9 @@ PFX=$(call rmdblslash,${DESTDIR}/${PREFIX})
 BFX=$(call rmdblslash,${DESTDIR}/${BINDIR})
 LFX=$(call rmdblslash,${DESTDIR}/${LIBDIR})
 
-BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent ranal2
+BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
+# this command needs more love to bring it back
+#BINS+=ranal2
 
 all: preload
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} all) || exit 1; done
