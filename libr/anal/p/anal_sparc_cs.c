@@ -36,9 +36,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case SPARC_INS_RETT:
 				op->type = R_ANAL_OP_TYPE_RET;
 				break;
+			case SPARC_INS_UNIMP:
+				op->type = R_ANAL_OP_TYPE_UNK;
+				break;
 			case SPARC_INS_CALL:
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->jump = INSOP(0).imm;
+				break;
+			case SPARC_INS_NOP:
+				op->type = R_ANAL_OP_TYPE_NOP;
 				break;
 			case SPARC_INS_CMP:
 				op->type = R_ANAL_OP_TYPE_CMP;
@@ -48,6 +54,34 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				op->jump = INSOP(0).imm;
 				break;
+			case SPARC_INS_LDD:
+			case SPARC_INS_LD:
+			case SPARC_INS_LDQ:
+			case SPARC_INS_LDSB:
+			case SPARC_INS_LDSH:
+			case SPARC_INS_LDSW:
+			case SPARC_INS_LDUB:
+			case SPARC_INS_LDUH:
+			case SPARC_INS_LDX:
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				break;
+			case SPARC_INS_STBAR:
+			case SPARC_INS_STB:
+			case SPARC_INS_STD:
+			case SPARC_INS_ST:
+			case SPARC_INS_STH:
+			case SPARC_INS_STQ:
+			case SPARC_INS_STX:
+				op->type = R_ANAL_OP_TYPE_STORE;
+				break;
+			case SPARC_INS_ORCC:
+			case SPARC_INS_ORNCC:
+			case SPARC_INS_ORN:
+			case SPARC_INS_OR:
+				op->type = R_ANAL_OP_TYPE_OR;
+				break;
+			case SPARC_INS_B:
+			case SPARC_INS_BMASK:
 			case SPARC_INS_BRGEZ:
 			case SPARC_INS_BRGZ:
 			case SPARC_INS_BRLEZ:

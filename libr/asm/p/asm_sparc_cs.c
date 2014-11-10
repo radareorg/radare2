@@ -9,7 +9,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode, n, ret = -1;
 	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (a->cpu) {
+	if (a->cpu && *a->cpu) {
 		if (!strcmp (a->cpu, "v9")) {
 			mode |= CS_MODE_V9;
 		}
