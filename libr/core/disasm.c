@@ -173,10 +173,10 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds);
 static void handle_print_dwarf (RCore *core, RDisasmState *ds);
 static void handle_print_asmop_payload (RCore *core, RDisasmState *ds);
 static void handle_print_op_push_info (RCore *core, RDisasmState *ds);
-static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
+//static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
 static void handle_print_comments_right (RCore *core, RDisasmState *ds);
-static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 );
-static void handle_print_refptr (RCore *core, RDisasmState *ds);
+//static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 );
+//static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx);
 
 static int cmpaddr (void *_a, void *_b) {
@@ -1470,6 +1470,7 @@ static void handle_print_op_push_info (RCore *core, RDisasmState *ds){
 	}
 }
 
+#if 0
 static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4) {
 	ut64 ret = 0;
 	if (core->assembler->bits==64) {
@@ -1482,6 +1483,7 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 	}
 	return ret;
 }
+#endif
 
 /* convert numeric value in opcode to ascii char or number */
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
@@ -1611,6 +1613,7 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	}
 }
 
+#if 0
 static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 ) {
 	RAnalMetaItem *mi2 = r_meta_find (core->anal, word8,
 		R_META_TYPE_ANY, R_META_WHERE_HERE);
@@ -1642,6 +1645,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 				word8, ds->analop.ptr);
 	}
 }
+#endif
 
 static void handle_print_as_string(RCore *core, RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
@@ -1651,6 +1655,7 @@ static void handle_print_as_string(RCore *core, RDisasmState *ds) {
 	free (str);
 }
 
+#if 0
 static void handle_print_refptr (RCore *core, RDisasmState *ds) {
 	ut64 word8 = 0;
 	ut32 word4 = 0;
@@ -1670,6 +1675,7 @@ static void handle_print_refptr (RCore *core, RDisasmState *ds) {
 		}
 	}
 }
+#endif
 
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
