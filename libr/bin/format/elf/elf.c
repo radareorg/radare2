@@ -134,15 +134,15 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut32 shdr_size;
 	int len;
 
-	if (bin->shdr) return R_TRUE;
+	if (!bin || bin->shdr) return R_TRUE;
 
-	if(!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
+	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
 		return R_FALSE;
 
-	if(!shdr_size)
+	if (!shdr_size)
 		return R_FALSE;
 
-	if ((bin->shdr = calloc (1, shdr_size)) == NULL) {
+	if ((bin->shdr = calloc (1, shdr_size+1)) == NULL) {
 		perror ("malloc (shdr)");
 		return R_FALSE;
 	}
@@ -181,7 +181,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->shstrtab_size =
 		bin->strtab_size = bin->strtab_section->sh_size;
 
-	if ((bin->strtab = calloc (1,bin->strtab_size)) == NULL) {
+	if ((bin->strtab = calloc (1, bin->strtab_size+1)) == NULL) {
 		perror ("malloc");
 		bin->shstrtab = NULL;
 		return R_FALSE;
@@ -293,7 +293,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 
 	nrel = (ut32)((int)rel_shdr->sh_size / (int)tsize);
 	int relsz = (int)nrel * sizeof (Elf_(Rel));
-	if (relsz<1 || (rel = calloc (1,relsz)) == NULL) {
+	if (relsz<1 || (rel = calloc (1, relsz)) == NULL) {
 		perror ("malloc (rel)");
 		return -1;
 	}
@@ -1124,7 +1124,8 @@ if (
 				eprintf ("malloc (syms strtab)");
 				return NULL;
 			}
-			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
+			if (r_buf_read_at (bin->b, strtab_section->sh_offset,
+					(ut8*)strtab, strtab_section->sh_size) == -1) {
 				eprintf ("Warning: read (syms strtab)\n");
 				return NULL;
 			}
@@ -1186,7 +1187,7 @@ if (
 				if (section_text) 
 					ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name > strtab_section->sh_size) {
+				if (sym[k].st_name+1 > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");
 					free (ret);
 					free (sym);
