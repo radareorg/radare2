@@ -43,7 +43,9 @@ R_API RMagic* r_magic_new(int flags) {
 }
 
 R_API void r_magic_free(RMagic* m) {
+#if !USE_LIB_MAGIC
 	free (m->magic);
+#endif
 	if (m) magic_close (m);
 }
 

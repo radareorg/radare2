@@ -2,12 +2,15 @@
 CC=ndk-gcc -fPIC -pie -fPIE
 #RANLIB=ndk-ranlib
 USERCC=ndk-gcc
-ifeq (${ARCH},)
+ARCH=arm
+ifeq (${NDK_ARCH},arm)
 # arm32
 ARCH=arm
-#RANLIB=${ARCH}-linux-androideabi-ranlib
-#CC_AR=${ARCH}-linux-androideabi-ar -r ${LIBAR}
+RANLIB=${ARCH}-linux-androideabi-ranlib
+CC_AR=${ARCH}-linux-androideabi-ar -r ${LIBAR}
+endif
 
+ifeq (${NDK_ARCH},aarch64)
 # aarch64
 ARCH=aarch64
 RANLIB=${ARCH}-linux-android-ranlib
