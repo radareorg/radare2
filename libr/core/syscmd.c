@@ -2,20 +2,24 @@
 
 #include <r_core.h>
 
-static void showfile(const int nth, const char *name, int minusl) {
+#define FMT_RAW  1
+#define FMT_JSON 2
+
+
+static void showfile(const int nth, const char *fpath, const char *name, int printfmt) {
 	struct stat sb;
-	const char *n = name;
+	const char *n = fpath;
 	char *nn, *u_rwx = "";
 	int sz = r_file_size (n);
 	int perm, isdir, uid = 0, gid = 0;
 	int fch = '-';
-	if (!strncmp (name, "./", 2))
-		name = name+2;
+	if (!strncmp (fpath, "./", 2))
+		fpath = fpath+2;
 	if (r_file_is_directory (n)) {
-		nn = r_str_concat (strdup (name), "/");
+		nn = r_str_concat (strdup (fpath), "/");
 		isdir = 1;
 	} else {
-		nn = strdup (name);
+		nn = strdup (fpath);
 		isdir = 0;
 	}
 	if (!*nn) {
@@ -23,7 +27,7 @@ static void showfile(const int nth, const char *name, int minusl) {
 		return;
 	}
 	perm = isdir? 0755: 0644;
-	if (!minusl) {
+	if (!printfmt) {
 		r_cons_printf ("%18s%s", nn, (nth%4)?"  ":"\n");
 		free (nn);
 		return;
@@ -56,12 +60,19 @@ static void showfile(const int nth, const char *name, int minusl) {
 #else
 	fch = isdir? 'd': '-';
 #endif
-	r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n",
+	if (printfmt == FMT_RAW) {
+		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n",
 		isdir?'d':fch,
 		      u_rwx,
 		      r_str_rwx_i ((perm>>3)&7),
 		      r_str_rwx_i (perm&7),
 		      uid, gid, sz, nn);
+	} else if (printfmt == FMT_JSON) {
+		if (nth > 0) r_cons_printf(",");
+		r_cons_printf("{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
+			"\"gid\":%d,\"perm\":%d,\"isdir\":%s}",
+			name, sz, uid, gid, perm, isdir?"true":"false");
+	}
 	free (nn);
 	free(u_rwx);
 }
@@ -69,7 +80,7 @@ static void showfile(const int nth, const char *name, int minusl) {
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
 R_API void r_core_syscmd_ls(const char *input) {
 	const char *path = ".";
-	int minusl = 0;
+	int printfmt = 0;
 	RListIter *iter;
 	RList *files;
 	char *name;
@@ -79,9 +90,9 @@ R_API void r_core_syscmd_ls(const char *input) {
 		return;
 	}
 	if (input[1]==' ') {
-		if (!strncmp (input+2, "-l", 2)) {
+		if ((!strncmp (input+2, "-l", 2)) || (!strncmp (input+2, "-j", 2))) {
 			if (input[3]) {
-				minusl = 1;
+				printfmt = (input[3] == 'j') ? FMT_JSON : FMT_RAW;
 				path = input+4;
 				while (*path==' ') path++;
 				if (!*path) path = ".";
@@ -89,20 +100,25 @@ R_API void r_core_syscmd_ls(const char *input) {
 		} else path = input+2;
 	}
 	if (r_file_is_regular (path)) {
-		showfile (0, path, minusl);
+		showfile (0, path, path, printfmt);
 		return;
 	}
 	files = r_sys_dir (path);
 
-	dir = r_str_concat (strdup (path), "/");
+	if (path[strlen(path)-1] == '/')
+		dir = strdup (path);
+	else
+		dir = r_str_concat (strdup (path), "/");
 	int nth = 0;
+	if (printfmt == FMT_JSON) r_cons_printf("[");
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_concat (strdup (dir), name);
 		if (!n) break;
-		if (*n) showfile (nth, n, minusl);
+		if (*n) showfile (nth, n, name, printfmt);
 		free (n);
 		nth++;
 	}
+	if (printfmt == FMT_JSON) r_cons_printf("]");
 	free (dir);
 	r_list_free (files);
 }
