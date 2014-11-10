@@ -150,7 +150,8 @@ if [ "`uname`" = Darwin ]; then
 jmp _main"
 else
 	OBJCOPY=objcopy
-	CFLAGS="-fPIC -fPIE -pie"
+	CFLAGS="-fPIC -fPIE -pie -fpic"
+	LDFLAGS="-fPIC -fPIE -pie -fpic"
 	SHDR="
 .section .text
 .globl  main
@@ -199,6 +200,7 @@ if [ "$D" ]; then
 	echo "${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F"
 fi
 rm -f $F.bin
+# echo ${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F > /dev/stderr
 ${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F || fail
 echo "${SHDR}" > $F.s
 cat $F.tmp \
