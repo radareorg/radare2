@@ -259,6 +259,11 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	if (!b) return 0;
+	if (addr+len > b->length) {
+		len = b->length - addr;
+		if (len<0)
+			return 0;
+	}
 	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
 }
 

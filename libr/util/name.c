@@ -64,7 +64,6 @@ R_API int r_name_filter(char *name, int maxlen) {
 R_API char *r_name_filter2(const char *name) {
 	int i;
 	char *res;
-	const char *begin = name;
 	while (!IS_PRINTABLE (*name))
 		name++;
 	res = strdup (name);

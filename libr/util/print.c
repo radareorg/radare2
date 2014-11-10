@@ -205,7 +205,6 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	if (!IS_PRINTABLE (ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
 	r_print_cursor (p, idx, 1);
-	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p && p->flags & R_PRINT_FLAGS_COLOR) {
 #define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
 		char *color_0x00 = P(b0x00): Color_GREEN;
