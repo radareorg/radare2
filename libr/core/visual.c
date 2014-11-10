@@ -982,6 +982,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (core->printidx == 1 || core->printidx == 2) {
 				cols = r_asm_disassemble (core->assembler,
 					&op, core->block, 32);
+				if (cols<1) cols = op.size;
 				if (cols<1) cols = 1;
 #if 0
 				cols = core->inc;
