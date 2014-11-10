@@ -42,11 +42,16 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 		cs_free (insn, n);
 	}
-	return op->size;
+	if (op->size==4) {
+		op->size = 4;
+		return op->size;
+	}
+	op->size = 4;
+	return -1;
 }
 
 RAsmPlugin r_asm_plugin_ppc_cs = {
-	.name = "ppc.cs",
+	.name = "ppc",
 	.desc = "Capstone PowerPC disassembler",
 	.license = "BSD",
 	.arch = "ppc",

@@ -173,7 +173,7 @@ extern RAsmPlugin r_asm_plugin_armthumb;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_csr;
 extern RAsmPlugin r_asm_plugin_m68k;
-extern RAsmPlugin r_asm_plugin_ppc;
+extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_sparc;
 extern RAsmPlugin r_asm_plugin_psosvm;

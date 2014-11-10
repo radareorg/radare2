@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -137,8 +137,8 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-struct r_anal_plugin_t r_anal_plugin_ppc = {
-	.name = "ppc",
+struct r_anal_plugin_t r_anal_plugin_ppc_gnu = {
+	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_PPC,
@@ -157,7 +157,7 @@ struct r_anal_plugin_t r_anal_plugin_ppc = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_ppc
+	.data = &r_anal_plugin_ppc_gnu
 };
 #endif
 

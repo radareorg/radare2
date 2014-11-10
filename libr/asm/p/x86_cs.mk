@@ -2,7 +2,7 @@
 
 OBJ_X86CS=asm_x86_cs.o
 
-include p/capstone.mk
+include ${CURDIR}capstone.mk
 
 # SHARED2_X86CS=$(addprefix ../,${SHARED_X86CS})
 

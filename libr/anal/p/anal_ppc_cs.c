@@ -13,7 +13,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret = cs_open (CS_ARCH_PPC, mode, &handle);
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_NULL;
-	op->size = 0;
+	op->size = 4;
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
@@ -30,7 +30,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 RAnalPlugin r_anal_plugin_ppc_cs = {
-	.name = "ppc.cs",
+	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
 	.license = "BSD",
 	.arch = R_SYS_ARCH_PPC,
