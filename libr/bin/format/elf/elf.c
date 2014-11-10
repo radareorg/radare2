@@ -880,7 +880,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	if (!reloc_num)
 		return NULL;
 
-	ret = (struct r_bin_elf_reloc_t*)calloc (sizeof (struct r_bin_elf_reloc_t) , (reloc_num + 1));
+	ret = (struct r_bin_elf_reloc_t*)calloc (sizeof (struct r_bin_elf_reloc_t),
+		(reloc_num + 2));
 
 	if (!ret)
 		return NULL;
@@ -936,7 +937,6 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	}
 
 	ret[rel].last = 1;
-
 
 	return ret;
 }
