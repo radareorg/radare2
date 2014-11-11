@@ -660,7 +660,7 @@ static void build_format_flags(char *type, int pos, char *res_field) {
 			break;
 		case eStructState:
 			res_field[pos] = '?';
-			break;
+			return;
 		case eUnsignedState:
 			if (res_field[pos] == 'p') {
 				return;
@@ -712,10 +712,12 @@ static void build_format_flags(char *type, int pos, char *res_field) {
 		case eArrayState:
 			res_field[pos] = 'p';
 			return;
-			break;
 		default:
-			if (strcmp(tmp, "to"))
-//				printf("unkown state\n");
+			if ((strcmp(tmp, "to")))
+				printf("unkown state\n");
+			// TODO: unknown arglist, onemethod, mfunction, void, proc, union
+			//		bitfield, double, _LARGE_INTEGER, _ULARGE_INTEGER,
+			//		_IMAGE_SECTION_HEADER::<unnamed-type-Misc>
 			res_field[pos] = 'A';
 			break;
 		}
