@@ -53,7 +53,7 @@ mips-static|static-mips)
 	STATIC_BUILD=1
 	STRIP=mips-linux-android-strip
 	;;
-mips64-static|static-mips)
+mips64-static|static-mips64)
 	NDK_ARCH=mips64
 	# XXX: by default we should build all libs as .a but link binary dinamically
 	STATIC_BUILD=1

@@ -10,6 +10,7 @@ ARCH2=i686
 RANLIB=${ARCH2}-linux-android-ranlib
 CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
 endif
+
 ifeq (${NDK_ARCH},mips)
 # mips
 ARCH2=mipsel

@@ -73,7 +73,16 @@ fi
 CFLAGS="--sysroot=${PLATFORM_ROOT}"
 CFLAGS="${CFLAGS} -I${PLATFORM_PATH}/include"
 CFLAGS="${CFLAGS} -pie -fPIC"
-LDFLAGS=-L${PLATFORM_PATH}/lib
+
+case "${ARCH}" in
+mips64)
+	LDFLAGS=-L${PLATFORM_PATH}/lib64
+	;;
+*)
+	LDFLAGS=-L${PLATFORM_PATH}/lib
+	;;
+esac
+
 #LDFLAGS="${LDFLAGS} -nostdlib"
 #LDFLAGS="${LDFLAGS} -lc -ldl"
 #LDFLAGS="${LDFLAGS} -Wl,-dynamic-linker=/system/bin/linker"

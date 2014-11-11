@@ -80,7 +80,7 @@ NDKPATH_X86=`echo ${NDK}/toolchains/${TOOLCHAIN_X86}/prebuilt/${OS}-x86*/bin/`
 #CFLAGS=-I${INCDIR}
 #echo $NDKPATH_ARM
 
-PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS}:${NDKPATH_AARCH64}:${NDKPATH_MIPS64}:$PATH
+PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
 export PATH
 export CFLAGS
 export NDK
