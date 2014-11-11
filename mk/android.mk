@@ -14,8 +14,8 @@ endif
 ifeq (${NDK_ARCH},mips)
 # mips
 ARCH2=mipsel
-RANLIB=${ARCH2}-linux-androideabi-ranlib
-CC_AR=${ARCH2}-linux-androideabi-ar -r ${LIBAR}
+RANLIB=${ARCH2}-linux-android-ranlib
+CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
 endif
 
 ifeq (${NDK_ARCH},mips64)
