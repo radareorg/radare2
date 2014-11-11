@@ -1544,11 +1544,12 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					} else {
 						r_cons_printf (" ; var %d", (int)-p);
 					}
-#if 0
 				} else {
-					r_cons_printf (" ; %s%s0x%08"PFMT64x" ",
-						msg, msg[0]?" ":"", p);
-#endif
+					if (r_core_anal_address (core, p) & R_ANAL_ADDR_TYPE_ASCII) {
+						r_str_filter (msg, 0);
+						r_cons_printf (" ; \"%s\"%s0x%08"PFMT64x" ",
+							msg, msg[0]?" ":"", p);
+					}
 				}
 			}
 			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, sizeof (msg)-1);
