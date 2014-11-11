@@ -84,6 +84,7 @@ PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH
 export PATH
 export CFLAGS
 export NDK
+export NDK_ARCH
 [ -z "${SHELL}" ] && SHELL=sh
 SHELL=sh
 cp ${ROOT}/ndk-gcc ${NDK}

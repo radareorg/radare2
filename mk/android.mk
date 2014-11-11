@@ -17,6 +17,13 @@ RANLIB=${ARCH2}-linux-androideabi-ranlib
 CC_AR=${ARCH2}-linux-androideabi-ar -r ${LIBAR}
 endif
 
+ifeq (${NDK_ARCH},mips64)
+# mips
+ARCH2=mips64el
+RANLIB=${ARCH2}-linux-android-ranlib
+CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
+endif
+
 ifeq (${NDK_ARCH},arm)
 # arm32
 ARCH=arm
