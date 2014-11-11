@@ -14,10 +14,10 @@ static void print_base_type(EBASE_TYPES base_type, char **name)
 		*name = "pointer to long";
 		break;
 	case eT_32PRCHAR:
-		*name = "pointer to unsgined char";
+		*name = "pointer to unsigned char";
 		break;
 	case eT_32PUCHAR:
-		*name = "pointer to unsgined char";
+		*name = "pointer to unsigned char";
 		break;
 	case eT_32PULONG:
 		*name = "pointer to unsigned long";
@@ -84,6 +84,9 @@ static void print_base_type(EBASE_TYPES base_type, char **name)
 		break;
 	case eT_VOID:
 		*name = "void";
+		break;
+	case eT_32PWCHAR:
+		*name = "pointer to wchar";
 		break;
 	default:
 		*name = "unsupported base type";

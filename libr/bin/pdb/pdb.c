@@ -593,6 +593,139 @@ static void pdb_printf(ELeafType lt, char *name, int val, int mode) {
 	}
 }
 
+typedef enum EStates {
+	ePointerState,
+	eStructState,
+	eMemberState,
+	eUnsignedState,
+	eTypeNameState,
+	eShortState,
+	eLongState,
+	eCharState,
+	eModifierState,
+	eEnumState,
+	eArrayState,
+	eStateMax
+} EStates;
+
+///////////////////////////////////////////////////////////////////////////////
+static EStates convert_to_state(char *cstate) {
+	EStates state = eStateMax;
+
+	if (strstr(cstate, "member")) {
+		state = eMemberState;
+	} else if (strstr(cstate, "pointer")) {
+		state = ePointerState;
+	} else if (strstr(cstate, "struct")) {
+		state = eStructState;
+	} else if (strstr(cstate, "unsigned")) {
+		state = eUnsignedState;
+	} else if (strstr(cstate, "short")) {
+		state = eShortState;
+	} else if (strstr(cstate, "long")) {
+		state = eLongState;
+	} else if (strstr(cstate, "char")) {
+		state = eCharState;
+	} else if (strstr(cstate, "modifier")) {
+		state = eModifierState;
+	} else if (strstr(cstate, "enum")) {
+		state = eEnumState;
+	} else if (strstr(cstate, "array")) {
+		state = eArrayState;
+	}
+
+	return state;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void build_format_flags(char *type, int pos, char *res_field) {
+	EStates curr_state;
+	char *tmp = 0;
+	char buf[5];
+	int buf_indx = 0;
+
+	memset(buf, 0, 5);
+
+	tmp = strtok(type, " ");
+	while (tmp != NULL) {
+		curr_state = convert_to_state(tmp);
+		switch (curr_state) {
+		case eMemberState:
+			break;
+		case ePointerState:
+			if (res_field[pos] == 'p') {
+				return;
+			}
+			res_field[pos] = 'p';
+			break;
+		case eStructState:
+			res_field[pos] = '?';
+			break;
+		case eUnsignedState:
+			if (res_field[pos] == 'p') {
+				return;
+			}
+			res_field[pos] = 'u';
+			break;
+		case eShortState:
+			// TODO: where is short??
+			//		where is unsigned not in hex??
+			//  w word (2 bytes unsigned short in hex)
+			if (res_field[pos] == 'p') {
+				return;
+			} else if (res_field[pos] == 'u') {
+				res_field[pos] = 'w';
+			} else {
+				res_field[pos] = 'w';
+			}
+			return;
+		case eCharState:
+			if (res_field[pos] == 'p') {
+				return;
+			} else if (res_field[pos] == 'u') {
+				res_field[pos] = 'b';
+			} else {
+				res_field[pos] = 'c';
+			}
+			return;
+		case eLongState:
+			if (res_field[pos] == 'p') {
+				return;
+			} else if (res_field[pos] == 'u') {
+				res_field[pos] = 'i';
+			} else {
+				res_field[pos] = 'i';
+			}
+			return;
+		case eModifierState:
+			if (res_field[pos] == 'p') {
+				return;
+			}
+			res_field[pos] = 'w';
+			break;
+		case eEnumState:
+			if (res_field[pos] == 'p') {
+				return;
+			}
+			res_field[pos] = 'i';
+			break;
+		case eArrayState:
+			res_field[pos] = 'p';
+			return;
+			break;
+		default:
+			if (strcmp(tmp, "to"))
+//				printf("unkown state\n");
+			res_field[pos] = 'A';
+			break;
+		}
+
+		tmp = strtok(NULL, " ");
+	}
+
+	return;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static void pdb_pf(R_PDB *pdb) {
 	char *field1; // command field
@@ -601,6 +734,7 @@ static void pdb_pf(R_PDB *pdb) {
 	char **field4 = 0; // members names
 	char sym = ' ';
 	int i = 0;
+	int pos = 0;
 
 	int members_amount = 0;
 	char *name;
@@ -620,6 +754,7 @@ static void pdb_pf(R_PDB *pdb) {
 
 	it = r_list_iterator(tpi_stream->types);
 	while (r_list_iter_next(it)) {
+		pos = 0;
 		i = 0;
 		members_amount = 0;
 		val = 0;
@@ -671,8 +806,8 @@ static void pdb_pf(R_PDB *pdb) {
 			if (!members_amount) {
 				goto err;
 			}
-			field3 = (char *) malloc(members_amount);
-			memset(field3, 0, members_amount);
+			field3 = (char *) malloc(members_amount+1);
+			memset(field3, 0, members_amount+1);
 
 			field4 = (char **) malloc(sizeof *field4 * members_amount);
 			for(i = 0; i < members_amount; i++) {
@@ -695,6 +830,11 @@ static void pdb_pf(R_PDB *pdb) {
 				case eLF_UNION:
 					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
 					strcpy(field4[i], name);
+					if (tf->get_print_type)
+						tf->get_print_type(tf, &name);
+					build_format_flags(name, pos, field3);
+					pos++;
+					free(name);
 					break;
 				case eLF_ENUM:
 					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
