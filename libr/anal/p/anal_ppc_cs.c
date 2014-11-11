@@ -13,7 +13,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	mode = CS_MODE_BIG_ENDIAN;
 	int n, ret = cs_open (CS_ARCH_PPC, mode, &handle);
 	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_NULL;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
 	op->ptr = op->val = UT64_MAX;
@@ -27,6 +27,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else {
 			op->size = insn->size;
 			switch (insn->id) {
+			case PPC_INS_LI:
+			case PPC_INS_LIS:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
 			case PPC_INS_SC:
 				op->type = R_ANAL_OP_TYPE_SWI;
 				break;
@@ -69,6 +73,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_LHBRX:
 			case PPC_INS_LHZ:
 			case PPC_INS_LHZU:
+			case PPC_INS_LWA:
+			case PPC_INS_LWARX:
+			case PPC_INS_LWAUX:
+			case PPC_INS_LWAX:
+			case PPC_INS_LWBRX:
+			case PPC_INS_LWZ:
+			case PPC_INS_LWZU:
+			case PPC_INS_LWZUX:
+			case PPC_INS_LWZX:
+
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				break;
 			case PPC_INS_ADD:
@@ -86,7 +100,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_BC:
 				op->type = R_ANAL_OP_TYPE_JMP;
 				op->jump = insn->detail->ppc.operands[0].imm;
-				op->fail = addr+4;
+				switch (insn->detail->ppc.operands[0].type) {
+				case PPC_OP_CRX:
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					op->jump = insn->detail->ppc.operands[1].imm;
+					op->fail = addr+4;
+					break;
+				case PPC_OP_REG:
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					op->jump = insn->detail->ppc.operands[1].imm;
+					op->fail = addr+4;
+					//op->type = R_ANAL_OP_TYPE_UJMP;
+					break;
+				}
 				break;
 			case PPC_INS_XOR:
 			case PPC_INS_XORI:
