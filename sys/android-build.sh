@@ -3,7 +3,7 @@
 BUILD=1
 PREFIX="/data/data/org.radare.installer/radare2"
 if [ -z "${NDK}" ]; then
-	echo "use ./android-{arm|aarch64|mips|x86}.sh"
+	echo "use ./android-{arm|aarch64|mips|mips64|x86}.sh"
 	exit 1
 fi
 
@@ -14,6 +14,11 @@ case "$1" in
 	NDK_ARCH=mips
 	STATIC_BUILD=0
 	STRIP=mips-linux-android-strip
+	;;
+"mips64")
+	NDK_ARCH=mips64
+	STATIC_BUILD=0
+	STRIP=mips64el-linux-android-strip
 	;;
 "arm")
 	NDK_ARCH=arm
@@ -48,8 +53,14 @@ mips-static|static-mips)
 	STATIC_BUILD=1
 	STRIP=mips-linux-android-strip
 	;;
+mips64-static|static-mips)
+	NDK_ARCH=mips64
+	# XXX: by default we should build all libs as .a but link binary dinamically
+	STATIC_BUILD=1
+	STRIP=mips64el-linux-android-strip
+	;;
 ""|"-h")
-	echo "Usage: android-build.sh [arm|aarch64|x86|mips][-static]"
+	echo "Usage: android-build.sh [arm|aarch64|x86|mips|mips64][-static]"
 	exit 1
 	;;
 *)
