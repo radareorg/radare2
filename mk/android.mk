@@ -12,9 +12,9 @@ CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
 endif
 ifeq (${NDK_ARCH},mips)
 # mips
-ARCH=mips
-RANLIB=${ARCH}-linux-android-ranlib
-CC_AR=${ARCH}-linux-android-ar -r ${LIBAR}
+ARCH2=mipsel
+RANLIB=${ARCH2}-linux-android-ranlib
+CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
 endif
 
 ifeq (${NDK_ARCH},arm)
