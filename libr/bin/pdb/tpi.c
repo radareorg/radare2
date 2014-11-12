@@ -1437,8 +1437,7 @@ static void get_member_print_type(void *type, char **name)
 		strcat(*name, tmp_name);
 
 	if (need_to_free) {
-		free(tmp_name);
-		tmp_name = 0;
+		R_FREE(tmp_name);
 	}
 }
 

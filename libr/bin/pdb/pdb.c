@@ -582,17 +582,6 @@ static void finish_pdb_parse(R_PDB *pdb)
 //	printf("finish_pdb_parse()\n");
 }
 
-///////////////////////////////////////////////////////////////////////////////
-static void pdb_printf(ELeafType lt, char *name, int val, int mode) {
-	switch (mode) {
-	case 0:
-
-		break;
-	default:
-		break;
-	}
-}
-
 typedef enum EStates {
 	ePointerState,
 	eStructState,
@@ -651,13 +640,13 @@ static EStates convert_to_state(char *cstate) {
 
 ///////////////////////////////////////////////////////////////////////////////
 /// TODO: rewrite this ?!
-static int build_format_flags(char *type, int pos, char *res_field, char **name_field) {
+static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, char **name_field) {
 	EStates curr_state;
-	char *tmp = 0, *tmp1 = 0;
+	char *tmp = 0;/*, *tmp1 = 0;*/
 	char *name = 0;
 
-	tmp1 = (char *) malloc(strlen(type) + 1);
-	strcpy(tmp1, type);
+//	tmp1 = (char *) malloc(strlen(type) + 1);
+//	strcpy(tmp1, type);
 
 	tmp = strtok(type, " ");
 	while (tmp != NULL) {
@@ -769,8 +758,7 @@ static int build_format_flags(char *type, int pos, char *res_field, char **name_
 					(!strcmp(tmp, "arglist"))) {
 				break;
 			} else {
-				printf("there is no support for type \"%s\" in PF structs\n", tmp);
-				// TODO: unknown union
+				pdb->printf("there is no support for type \"%s\" in PF structs\n", tmp);
 				res_field[pos] = 'A';
 				return 0;
 			}
@@ -781,165 +769,6 @@ static int build_format_flags(char *type, int pos, char *res_field, char **name_
 	}
 
 	return 1;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-/// TODO: rewrite this ?!
-static void pdb_pf(R_PDB *pdb) {
-	char *field1; // command field
-	char *field2 = 0; // name field
-	char *field3 = 0; // format for struct
-	char **field4 = 0; // members names
-	char sym = ' ';
-	int i = 0;
-	int pos = 0;
-	char *type = 0;
-
-	int members_amount = 0;
-	char *name;
-	int val = 0;
-	int offset = 0;
-	SType *t = 0;
-	STypeInfo *tf = 0;
-	RListIter *it = 0, *it2 = 0;
-	RList *plist = pdb->pdb_streams, *ptmp;
-	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
-	ELeafType lt = eLF_MAX;
-
-	if (!tpi_stream) {
-		eprintf ("there is no tpi stream in current pdb\n");
-		return;
-	}
-
-	it = r_list_iterator(tpi_stream->types);
-	while (r_list_iter_next(it)) {
-		pos = 0;
-		i = 0;
-		members_amount = 0;
-		val = 0;
-		t = (SType *) r_list_iter_get(it);
-		tf = &t->type_data;
-		lt = tf->leaf_type;
-		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION)
-			|| (tf->leaf_type == eLF_ENUM)) {
-
-			if (tf->is_fwdref) {
-				tf->is_fwdref(tf, &val);
-				if (val == 1) {
-					continue;
-				}
-			}
-
-			if (tf->get_name)
-				tf->get_name(tf, &name);
-			if (tf->get_val)
-				tf->get_val(tf, &val);
-
-			switch (lt) {
-			case eLF_STRUCTURE:
-			case eLF_UNION:
-				field1 = (char *) malloc(strlen("pf") + 1);
-				strcpy(field1, "pf");
-				break;
-			case eLF_ENUM:
-				field1 = (char *) malloc(strlen("\"td enum") + 1);
-				strcpy(field1, "\"td enum");
-				break;
-			default:
-				goto err;
-				break;
-			}
-
-			field2 = (char *) malloc(strlen(name) + 1);
-			strcpy(field2, name);
-
-			if (tf->get_members)
-				tf->get_members(tf, &ptmp);
-
-			it2 = r_list_iterator(ptmp);
-			while (r_list_iter_next(it2)) {
-				tf = (STypeInfo *) r_list_iter_get(it2);
-				members_amount++;
-			}
-
-			if (!members_amount) {
-				goto err;
-			}
-			field3 = (char *) malloc(members_amount+1);
-			memset(field3, 0, members_amount+1);
-
-			field4 = (char **) malloc(sizeof *field4 * members_amount);
-			for(i = 0; i < members_amount; i++) {
-				field4[i] = 0;
-			}
-
-			i = 0;
-			it2 = r_list_iterator(ptmp);
-			while (r_list_iter_next(it2)) {
-				tf = (STypeInfo *) r_list_iter_get(it2);
-				if (tf->get_name)
-					tf->get_name(tf, &name);
-				if (tf->get_val)
-					tf->get_val(tf, &offset);
-				else
-					offset = 0;
-
-				switch (lt) {
-				case eLF_STRUCTURE:
-				case eLF_UNION:
-					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
-					strcpy(field4[i], name);
-					if (tf->get_print_type)
-						tf->get_print_type(tf, &type);
-					if (build_format_flags(type, pos, field3, &field4[i]) == 0) {
-						goto err;
-					}
-					pos++;
-					free(type);
-					break;
-				case eLF_ENUM:
-					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
-					sprintf(field4[i], "%s=%08X", name, offset);
-					break;
-				default:
-					break;
-				}
-
-				i++;
-			}
-
-			pdb->printf("%s %s ", field1, field2);
-			if (lt != eLF_ENUM) {
-				pdb->printf("%s ", field3);
-			} else {
-				pdb->printf("%c ", '{');
-			}
-
-			sym = (lt == eLF_ENUM) ? ',' : ' ';
-			for (i = 0; i < members_amount; i++) {
-				pdb->printf("%s", field4[i]);
-				if ((i + 1) != members_amount) {
-					pdb->printf("%c", sym);
-				}
-			}
-
-			if (lt == eLF_ENUM) {
-				pdb->printf(" };\"\n");
-			} else {
-				pdb->printf("\n");
-			}
-
-err:
-			R_FREE(field1);
-			R_FREE(field2);
-			R_FREE(field3);
-
-			for (i = 0; i < members_amount; i++) {
-				R_FREE(field4[i]);
-			}
-			R_FREE(field4);
-		}
-	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -966,28 +795,30 @@ void build_name_field(char *name, char **name_field) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void build_flags_format_and_members_field(ELeafType *lt, char *name,
-										  char *type, int i, int pos,
-										  char **format_flags_field,
-										  char **members_field) {
-//	switch (lt) {
-//	case eLF_STRUCTURE:
-//	case eLF_UNION:
-//		field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
-//		strcpy(field4[i], name);
-//		if (build_format_flags(type, pos, field3, &field4[i]) == 0) {
-//			goto err;
-//		}
-//		pos++;
-//		free(type);
-//		break;
-//	case eLF_ENUM:
-//		field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
-//		sprintf(field4[i], "%s=%08X", name, offset);
-//		break;
-//	default:
-//		break;
-//	}
+int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name,
+										char *type, int i, int *pos,
+										int offset,
+										char *format_flags_field,
+										char **members_field) {
+	switch (lt) {
+	case eLF_STRUCTURE:
+	case eLF_UNION:
+		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
+		strcpy(members_field[i], name);
+		if (build_format_flags(pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
+			return 0;
+		}
+		*pos = *pos + 1;
+		break;
+	case eLF_ENUM:
+		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
+		sprintf(members_field[i], "%s=%08X", name, offset);
+		break;
+	default:
+		return 0;
+	}
+
+	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -997,12 +828,11 @@ int alloc_format_flag_and_member_fields(RList *ptmp,
 										char ***members_name_field) {
 	int i = 0;
 	RListIter *it2 = 0;
-	STypeInfo *tf = 0;
 	int size = 0;
 
 	it2 = r_list_iterator(ptmp);
 	while (r_list_iter_next(it2)) {
-		tf = (STypeInfo *) r_list_iter_get(it2);
+		(void)r_list_iter_get(it2);
 		*members_amount = *members_amount + 1;
 	}
 
@@ -1018,15 +848,12 @@ int alloc_format_flag_and_member_fields(RList *ptmp,
 	for(i = 0; i < *members_amount; i++) {
 		(*members_name_field)[i] = 0;
 	}
-//	*members_name_field = tmp;
+
 	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void print_types(R_PDB *pdb, int mode) {
-
-//	pdb_pf(pdb);
-//	return;
 	ELeafType lt = eLF_MAX;
 	char *command_field = 0;
 	char *name_field = 0;
@@ -1035,7 +862,8 @@ static void print_types(R_PDB *pdb, int mode) {
 	char *type = 0;
 	int members_amount = 0;
 	int i = 0;
-
+	int pos = 0;
+	char sym = ' ';
 
 	char *name;
 	int val = 0;
@@ -1053,6 +881,9 @@ static void print_types(R_PDB *pdb, int mode) {
 
 	it = r_list_iterator(tpi_stream->types);
 	while (r_list_iter_next(it)) {
+		pos = 0;
+		i = 0;
+		members_amount = 0;
 		val = 0;
 		t = (SType *) r_list_iter_get(it);
 		tf = &t->type_data;
@@ -1081,9 +912,9 @@ static void print_types(R_PDB *pdb, int mode) {
 				build_command_field(lt, &command_field);
 				build_name_field(name, &name_field);
 				if (!alloc_format_flag_and_member_fields(ptmp,
-														 &flags_format_field,
-														 &members_amount,
-														 &members_name_field)) {
+														&flags_format_field,
+														&members_amount,
+														&members_name_field)) {
 					goto err;
 				}
 				break;
@@ -1107,24 +938,56 @@ static void print_types(R_PDB *pdb, int mode) {
 					pdb->printf ("%s\n", type);
 					break;
 				case 1:
-					pdb->printf ("# 0x%x: %s type:", offset, name);
-					pdb->printf ("# %s\n", type);
+					if (!build_flags_format_and_members_field(pdb, lt, name, type,
+															i, &pos, offset,
+															flags_format_field,
+															members_name_field)) {
+						R_FREE(type);
+						goto err;
+					}
 					break;
 				case 2: break; // TODO JSON
 				}
-				free (type);
+
+				R_FREE(type);
+				i++;
 			}
-err:		R_FREE(command_field);
-			R_FREE(name_field);
-			R_FREE(flags_format_field);
-			for (i = 0; i < members_amount; i++) {
-				R_FREE(members_name_field[i]);
+
+			if (mode == 1) {
+				pdb->printf("%s %s ", command_field, name_field);
+				if (lt != eLF_ENUM) {
+					pdb->printf("%s ", flags_format_field);
+				} else {
+					pdb->printf("%c ", '{');
+				}
+
+				sym = (lt == eLF_ENUM) ? ',' : ' ';
+				for (i = 0; i < members_amount; i++) {
+					pdb->printf("%s", members_name_field[i]);
+					if ((i + 1) != members_amount) {
+						pdb->printf("%c", sym);
+					}
+				}
+
+				if (lt == eLF_ENUM) {
+					pdb->printf(" };\"\n");
+				} else {
+					pdb->printf("\n");
+				}
 			}
-			R_FREE(members_name_field);
+
+err:
+			if (mode == 1) {
+				R_FREE(command_field);
+				R_FREE(name_field);
+				R_FREE(flags_format_field);
+				for (i = 0; i < members_amount; i++) {
+					R_FREE(members_name_field[i]);
+				}
+				R_FREE(members_name_field);
+			}
 		}
 	}
-
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////
