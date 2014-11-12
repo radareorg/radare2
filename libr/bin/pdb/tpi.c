@@ -1143,6 +1143,7 @@ static void get_bitfield_print_type(void *type, char **name)
 	int name_len = 0;
 	int need_to_free = 1;
 	int base_type = 0;
+	SLF_BITFIELD *bitfeild_info = (SLF_BITFIELD *)ti->type_info;
 
 	base_type = ti->get_base_type(ti, (void **)&t);
 	if (!t) {
@@ -1156,11 +1157,14 @@ static void get_bitfield_print_type(void *type, char **name)
 	name_len = strlen("bitfield ");
 	if (tmp_name)
 		name_len += strlen(tmp_name);
-	*name = (char *) malloc(name_len + 1);
+	name_len += 4;
+	*name = (char *) malloc(name_len + 1 + 1);
 	// name[name_len] = '\0';
-	strcpy(*name, "bitfield ");
-	if (tmp_name)
-		strcat(*name, tmp_name);
+	if (tmp_name) {
+		sprintf(*name, "%s %s : %d", "bitfield", tmp_name, (int)bitfeild_info->length);
+	} else {
+		sprintf(*name, "%s : %d", "bitfield", (int)bitfeild_info->length);
+	}
 
 	if (need_to_free)
 		free(tmp_name);
@@ -1320,10 +1324,10 @@ static void get_vtshape_print_type(void *type, char **name)
 {
 	int name_len = 0;
 
-	name_len = strlen("mfunction");
+	name_len = strlen("vtshape");
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
-	strcpy(*name, "mfunction");
+	strcpy(*name, "vthape");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1368,12 +1372,12 @@ static void get_nesttype_print_type(void *type, char **name)
 		ti->get_print_type(ti, &tmp_name);
 	}
 
-	name_len = strlen("arglist ");
+	name_len = strlen("nesttype ");
 	if (tmp_name)
 		name_len += strlen(tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	// name[name_len] = '\0';
-	strcpy(*name, "arglist ");
+	strcpy(*name, "nesttype ");
 	if (tmp_name)
 		strcat(*name, tmp_name);
 

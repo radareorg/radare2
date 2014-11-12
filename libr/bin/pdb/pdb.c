@@ -605,6 +605,10 @@ typedef enum EStates {
 	eModifierState,
 	eEnumState,
 	eArrayState,
+	eOneMethodState,
+	eVoidState,
+	eDoubleState,
+	eBitfieldState,
 	eStateMax
 } EStates;
 
@@ -632,19 +636,28 @@ static EStates convert_to_state(char *cstate) {
 		state = eEnumState;
 	} else if (strstr(cstate, "array")) {
 		state = eArrayState;
+	} else if (strstr(cstate, "onemethod")) {
+		state = eOneMethodState;
+	} else if (strstr(cstate, "void")) {
+		state = eVoidState;
+	} else if (strstr(cstate, "double")) {
+		state = eDoubleState;
+	} else if (strstr(cstate, "bitfield")) {
+		state = eBitfieldState;
 	}
 
 	return state;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void build_format_flags(char *type, int pos, char *res_field) {
+/// TODO: rewrite this ?!
+static int build_format_flags(char *type, int pos, char *res_field, char **name_field) {
 	EStates curr_state;
-	char *tmp = 0;
-	char buf[5];
-	int buf_indx = 0;
+	char *tmp = 0, *tmp1 = 0;
+	char *name = 0;
 
-	memset(buf, 0, 5);
+	tmp1 = (char *) malloc(strlen(type) + 1);
+	strcpy(tmp1, type);
 
 	tmp = strtok(type, " ");
 	while (tmp != NULL) {
@@ -654,16 +667,23 @@ static void build_format_flags(char *type, int pos, char *res_field) {
 			break;
 		case ePointerState:
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			}
 			res_field[pos] = 'p';
 			break;
 		case eStructState:
 			res_field[pos] = '?';
-			return;
+			tmp = strtok(NULL, " ");
+			name = (char *) malloc(strlen(tmp) + strlen(*name_field) + 1 + 2);
+			strcpy(name, tmp);
+			sprintf(name, "(%s)%s", tmp, *name_field);
+			free(*name_field);
+			*name_field = name;
+
+			return 1;
 		case eUnsignedState:
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			}
 			res_field[pos] = 'u';
 			break;
@@ -672,63 +692,99 @@ static void build_format_flags(char *type, int pos, char *res_field) {
 			//		where is unsigned not in hex??
 			//  w word (2 bytes unsigned short in hex)
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			} else if (res_field[pos] == 'u') {
 				res_field[pos] = 'w';
 			} else {
 				res_field[pos] = 'w';
 			}
-			return;
+			return 1;
 		case eCharState:
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			} else if (res_field[pos] == 'u') {
 				res_field[pos] = 'b';
 			} else {
 				res_field[pos] = 'c';
 			}
-			return;
+			return 1;
 		case eLongState:
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			} else if (res_field[pos] == 'u') {
 				res_field[pos] = 'i';
 			} else {
 				res_field[pos] = 'i';
 			}
-			return;
+			return 1;
 		case eModifierState:
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			}
 			res_field[pos] = 'w';
 			break;
 		case eEnumState:
 			if (res_field[pos] == 'p') {
-				return;
+				return 1;
 			}
-			res_field[pos] = 'i';
-			break;
+
+			res_field[pos] = 'E';
+			tmp = strtok(NULL, " ");
+			name = (char *) malloc(strlen(tmp) + strlen(*name_field) + 1 + 2);
+			strcpy(name, tmp);
+			sprintf(name, "(%s)%s", tmp, *name_field);
+			free(*name_field);
+			*name_field = name;
+
+			return 1;
 		case eArrayState:
 			res_field[pos] = 'p';
-			return;
+			return 1;
+//		case eDoubleState:
+//			// TODO: what is the flag for double in pf??
+//			res_field[pos] = 'q';
+//			return 1;
+		case eBitfieldState:
+			res_field[pos] = 'B';
+			tmp = strtok(NULL, " ");
+			name = (char *) malloc(strlen(tmp) + strlen(*name_field) + 1 + 2);
+			strcpy(name, tmp);
+			sprintf(name, "(%s)%s", tmp, *name_field);
+			free(*name_field);
+			*name_field = name;
+			return 1;
+		case eOneMethodState:
+			res_field[pos] = 'p';
+			return 1;
+		case eVoidState:
+			// this state can be just if it is void*
+			res_field[pos] = 'p';
+			return 1;
 		default:
-			if ((strcmp(tmp, "to")))
-				printf("unkown state\n");
-			// TODO: unknown arglist, onemethod, mfunction, void, proc, union
-			//		bitfield, double, _LARGE_INTEGER, _ULARGE_INTEGER,
-			//		_IMAGE_SECTION_HEADER::<unnamed-type-Misc>
-			res_field[pos] = 'A';
+			if ((	(!strcmp(tmp, "to"))) ||
+					(!strcmp(tmp, "nesttype")) ||
+					(!strcmp(tmp, "mfunction")) ||
+					(!strcmp(tmp, "proc")) ||
+					(!strcmp(tmp, "nesttype")) ||
+					(!strcmp(tmp, "arglist"))) {
+				break;
+			} else {
+				printf("there is no support for type \"%s\" in PF structs\n", tmp);
+				// TODO: unknown union
+				res_field[pos] = 'A';
+				return 0;
+			}
 			break;
 		}
 
 		tmp = strtok(NULL, " ");
 	}
 
-	return;
+	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/// TODO: rewrite this ?!
 static void pdb_pf(R_PDB *pdb) {
 	char *field1; // command field
 	char *field2 = 0; // name field
@@ -737,6 +793,7 @@ static void pdb_pf(R_PDB *pdb) {
 	char sym = ' ';
 	int i = 0;
 	int pos = 0;
+	char *type = 0;
 
 	int members_amount = 0;
 	char *name;
@@ -833,10 +890,12 @@ static void pdb_pf(R_PDB *pdb) {
 					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
 					strcpy(field4[i], name);
 					if (tf->get_print_type)
-						tf->get_print_type(tf, &name);
-					build_format_flags(name, pos, field3);
+						tf->get_print_type(tf, &type);
+					if (build_format_flags(type, pos, field3, &field4[i]) == 0) {
+						goto err;
+					}
 					pos++;
-					free(name);
+					free(type);
 					break;
 				case eLF_ENUM:
 					field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
@@ -884,12 +943,100 @@ err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+void build_command_field(ELeafType lt, char **command_field) {
+	switch (lt) {
+	case eLF_STRUCTURE:
+	case eLF_UNION:
+		*command_field = (char *) malloc(strlen("pf") + 1);
+		strcpy(*command_field, "pf");
+		break;
+	case eLF_ENUM:
+		*command_field = (char *) malloc(strlen("\"td enum") + 1);
+		strcpy(*command_field, "\"td enum");
+		break;
+	default:
+		break;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void build_name_field(char *name, char **name_field) {
+	*name_field = (char *) malloc(strlen(name) + 1);
+	strcpy(*name_field, name);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void build_flags_format_and_members_field(ELeafType *lt, char *name,
+										  char *type, int i, int pos,
+										  char **format_flags_field,
+										  char **members_field) {
+//	switch (lt) {
+//	case eLF_STRUCTURE:
+//	case eLF_UNION:
+//		field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
+//		strcpy(field4[i], name);
+//		if (build_format_flags(type, pos, field3, &field4[i]) == 0) {
+//			goto err;
+//		}
+//		pos++;
+//		free(type);
+//		break;
+//	case eLF_ENUM:
+//		field4[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
+//		sprintf(field4[i], "%s=%08X", name, offset);
+//		break;
+//	default:
+//		break;
+//	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+int alloc_format_flag_and_member_fields(RList *ptmp,
+										char **flags_format_field,
+										int *members_amount,
+										char ***members_name_field) {
+	int i = 0;
+	RListIter *it2 = 0;
+	STypeInfo *tf = 0;
+	int size = 0;
+
+	it2 = r_list_iterator(ptmp);
+	while (r_list_iter_next(it2)) {
+		tf = (STypeInfo *) r_list_iter_get(it2);
+		*members_amount = *members_amount + 1;
+	}
+
+	if (!*members_amount) {
+		return 0;
+	}
+
+	*flags_format_field = (char *) malloc(*members_amount + 1);
+	memset(*flags_format_field, 0, *members_amount + 1);
+
+	size = sizeof *members_name_field * (*members_amount);
+	*members_name_field = (char **) malloc(size);
+	for(i = 0; i < *members_amount; i++) {
+		(*members_name_field)[i] = 0;
+	}
+//	*members_name_field = tmp;
+	return 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void print_types(R_PDB *pdb, int mode) {
 
-	pdb_pf(pdb);
-	return;
+//	pdb_pf(pdb);
+//	return;
+	ELeafType lt = eLF_MAX;
+	char *command_field = 0;
+	char *name_field = 0;
+	char *flags_format_field = 0; // format for struct
+	char **members_name_field = 0;
+	char *type = 0;
+	int members_amount = 0;
+	int i = 0;
 
-//	printf("print_types()\n");
+
 	char *name;
 	int val = 0;
 	int offset = 0;
@@ -909,6 +1056,7 @@ static void print_types(R_PDB *pdb, int mode) {
 		val = 0;
 		t = (SType *) r_list_iter_get(it);
 		tf = &t->type_data;
+		lt = tf->leaf_type;
 		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION)
 			|| (tf->leaf_type == eLF_ENUM)) {
 
@@ -924,15 +1072,24 @@ static void print_types(R_PDB *pdb, int mode) {
 			// val for STRUCT or UNION mean size
 			if (tf->get_val)
 				tf->get_val(tf, &val);
+			if (tf->get_members)
+				tf->get_members(tf, &ptmp);
 			//pdb->printf ("%s: size 0x%x\n", name, val);
 			switch (mode) {
 			case 0: pdb->printf ("%s: size 0x%x\n", name, val); break;
-			case 1: pdb->printf ("pf.%s size_0x%x\n", name, val); break;
+			case 1:
+				build_command_field(lt, &command_field);
+				build_name_field(name, &name_field);
+				if (!alloc_format_flag_and_member_fields(ptmp,
+														 &flags_format_field,
+														 &members_amount,
+														 &members_name_field)) {
+					goto err;
+				}
+				break;
 			case 2: break; // JSON TODO
 			}
 
-			if (tf->get_members)
-				tf->get_members(tf, &ptmp);
 			it2 = r_list_iterator(ptmp);
 			while (r_list_iter_next(it2)) {
 				tf = (STypeInfo *) r_list_iter_get(it2);
@@ -942,24 +1099,32 @@ static void print_types(R_PDB *pdb, int mode) {
 					tf->get_val(tf, &offset);
 				else
 					offset = 0;
+				if (tf->get_print_type)
+					tf->get_print_type(tf, &type);
 				switch (mode) {
 				case 0:
 					pdb->printf ("  0x%x: %s type:", offset, name);
+					pdb->printf ("%s\n", type);
 					break;
-				case 1: pdb->printf ("# 0x%x: %s type:", offset, name); break;
+				case 1:
+					pdb->printf ("# 0x%x: %s type:", offset, name);
+					pdb->printf ("# %s\n", type);
+					break;
 				case 2: break; // TODO JSON
 				}
-				if (tf->get_print_type)
-					tf->get_print_type(tf, &name);
-				switch (mode) {
-				case 0: pdb->printf ("%s\n", name); break;
-				case 1: pdb->printf ("# %s\n", name); break;
-				case 2: break; // TODO JSON
-				}
-				free (name);
+				free (type);
 			}
+err:		R_FREE(command_field);
+			R_FREE(name_field);
+			R_FREE(flags_format_field);
+			for (i = 0; i < members_amount; i++) {
+				R_FREE(members_name_field[i]);
+			}
+			R_FREE(members_name_field);
 		}
 	}
+
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
