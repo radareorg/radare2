@@ -4,48 +4,17 @@
 #include <r_lib.h>
 #include <capstone.h>
 
-#define USE_CUSTOM_ALLOC 0
-#define USE_ITER_API 0
-
-#if USE_CUSTOM_ALLOC
-static int bufi = 0;
-static char buf[65535];
-
-#define D if(0)
-
-static void *my_malloc(size_t s) {
-	char *ret;
-	D printf ("MALLOC %d / %d\n", (int)s, bufi);
-	ret = buf+bufi;
-	bufi += (s*3);
-	if (bufi>sizeof (buf)) {
-		eprintf ("MALLOC FAIL\n");
-		return NULL;
-	}
-	return ret;
-}
-
-static void *my_calloc(size_t c, size_t s) {
-	ut8 *p = my_malloc (c*s);
-	memset (p, 0, c*s);
-	return p;
-}
-
-static void *my_realloc(void *p, size_t s) {
-	if (!p) return my_malloc (s);
-	D eprintf ("REALLOC %p %d\n", p, (int)s);
-	return p;
-}
-
-static void my_free(void *p) {
-	D eprintf ("FREE %d bytes\n", bufi);
-	D printf ("FREE %p\n", p);
-}
-#endif
+#define USE_ITER_API 1
 
 static csh cd = 0;
+static int n = 0;
+static cs_insn *insn = NULL;
 
 static int the_end(void *p) {
+#if !USE_ITER_API
+	cs_free (insn, n);
+	insn = NULL;
+#endif
 	if (cd) {
 		cs_close (&cd);
 		cd = 0;
@@ -55,28 +24,13 @@ static int the_end(void *p) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
-	int mode, n, ret;
+	int mode, ret;
 	ut64 off = a->pc;
-#if USE_ITER_API
-	static
-#endif
-	cs_insn* insn = NULL;
 
 	mode = (a->bits==64)? CS_MODE_64: 
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
 	if (cd && mode != omode) {
-	//if (cd) {
-#if USE_CUSTOM_ALLOC
-		bufi = 0;
-		cs_opt_mem mem = {
-			.malloc = &malloc,
-			.calloc = &calloc,
-			.realloc = &realloc,
-			.free = &free
-		};
-		cs_option (cd, CS_OPT_MEM, (size_t)&mem);
-#endif
 		cs_close (&cd);
 		cd = 0;
 	}
@@ -85,16 +39,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_X86, mode, &cd);
 		if (ret) return 0;
-#if USE_CUSTOM_ALLOC
-		bufi = 0;
-		cs_opt_mem mem = {
-			.malloc = &my_malloc,
-			.calloc = &my_calloc,
-			.realloc = &my_realloc,
-			.free = &my_free
-		};
-		cs_option (cd, CS_OPT_MEM, (size_t)&mem);
-#endif
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	op->size = 1;
@@ -104,7 +48,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (insn == NULL)
 			insn = cs_malloc (cd);
 		insn->size = 1;
-		memset (insn, 0, cd);
+		memset (insn, 0, insn->size);
 		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
 	}
 #else
@@ -121,11 +65,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
 		}
 	}
-#if !USE_ITER_API
+#if USE_ITER_API
+	/* do nothing because it should be allocated once and freed in the_end */
+#else
 	cs_free (insn, n);
-#endif
-#if USE_CUSTOM_ALLOC
-	bufi = 0;
+	insn = NULL;
 #endif
 	return op->size;
 }
