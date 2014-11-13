@@ -39,10 +39,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		// capstone-next
 #if USE_ITER_API
 		{
+			ut64 naddr = addr;
 			size_t size = len;
 			if (insn == NULL)
 				insn = cs_malloc (handle);
-			n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&addr, insn);
+			n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&naddr, insn);
 		}
 #else
 		n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
