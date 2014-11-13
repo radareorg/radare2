@@ -1552,6 +1552,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			case 4: n &= UT32_MAX; break;
 			case 8: n &= UT64_MAX; break;
 			}
+			r_mem_copyendian ((ut8*)&n, (ut8*)&n, ds->analop.refptr, !core->assembler->big_endian);
 			n32 = n;
 			
 			handle_comment_align (core, ds);
