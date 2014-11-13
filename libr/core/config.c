@@ -293,6 +293,7 @@ static int cb_bigendian(void *user, void *data) {
 	core->anal->big_endian = node->i_value;
 	core->anal->reg->big_endian = node->i_value;
 	core->print->big_endian = node->i_value;
+	core->io->big_endian = node->i_value;
 	return R_TRUE;
 }
 

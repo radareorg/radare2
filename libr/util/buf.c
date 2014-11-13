@@ -180,7 +180,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (write)
 		dst += addr;
 	else src += addr;
-	memmove (dst, src, len);
+	r_mem_copyendian (dst, src, len, !b->big_endian);
 	b->cur = addr + len;
 	return len;
 }
