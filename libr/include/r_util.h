@@ -95,6 +95,7 @@ typedef struct r_buf_t {
 	ut64 base;
 	RMmap *mmap;
 	ut8 empty;
+	int big_endian;
 } RBuffer;
 
 /* r_cache */

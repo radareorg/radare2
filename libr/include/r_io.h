@@ -145,6 +145,7 @@ typedef struct r_io_t {
 	int ff;
 	int autofd;
 	char *runprofile;
+	int big_endian;
 } RIO;
 
 typedef struct r_io_plugin_t {

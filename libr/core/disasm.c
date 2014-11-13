@@ -1535,13 +1535,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		char msg[64];
 		RFlagItem *f;
 
-		memset (msg, 0, sizeof (msg));
-		r_io_read_at (core->io, p, (ut8*)msg, sizeof (msg)-1);
-		if (!IS_PRINTABLE (*msg))
-			*msg = 0;
-		else msg[sizeof (msg)-1] = 0;
-
 		if (ds->analop.refptr) {
+			memset (msg, 0, ds->analop.refptr);
+			r_io_read_at (core->io, p, (ut8*)msg, ds->analop.refptr);
 			ut64 *num = (ut64*)msg;
 			st64 n = *num;
 			st32 n32;
@@ -1565,10 +1561,20 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			} else {
 				r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x, p, ds->analop.refptr, n);
 			}
+			f = r_flag_get_i (core->flags, n);
+			if (f) {
+				r_cons_printf (" ; %s", f->name);
+			}
 			if (ds->show_color)
 				r_cons_printf (Color_RESET);
 		}
 		handle_comment_align (core, ds);
+		memset (msg, 0, sizeof (msg));
+		r_io_read_at (core->io, p, (ut8*)msg, sizeof (msg)-1);
+		if (!IS_PRINTABLE (*msg))
+			*msg = 0;
+		else msg[sizeof (msg)-1] = 0;
+
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);

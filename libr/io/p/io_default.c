@@ -155,6 +155,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	if (mmo->buf->length < io->off)
 		io->off = mmo->buf->length;
+	mmo->buf->big_endian=io->big_endian;
 	return r_buf_read_at (mmo->buf, io->off, buf, count);
 }
 
