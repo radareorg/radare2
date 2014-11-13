@@ -175,6 +175,34 @@ int analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 	return oaddr;
 }
 
+static ut64 getFunctionSize(Sdb *db) {
+#if 1
+	ut64 min = sdb_num_get (db, Fmin (addr), NULL);
+	ut64 max = sdb_num_get (db, Fmax (addr), NULL);
+#else
+	ut64 min, max;
+	char *c, *bbs = sdb_get (db, "bbs", NULL);
+	int first = 1;
+	sdb_aforeach (c, bbs) {
+		ut64 addr = sdb_atoi (c);
+		ut64 addr_end = sdb_num_get (db, Fbb(addr), NULL);
+		if (first) {
+			min = addr;
+			max = addr_end;
+			first = 0;
+		} else {
+			if (addr<min)
+				min = addr;
+			if (addr_end>max)
+				max = addr_end;
+		}
+		sdb_aforeach_next (c);
+	}
+	free (bbs);
+#endif
+	return max-min;
+}
+
 static int analyzeFunction (RCore *core, ut64 addr) {
 	Sdb *db = sdb_new0 ();
 	if (!db) {
@@ -230,33 +258,7 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 	eprintf ("bbs: %s\n", sdb_const_get (db, "bbs", NULL));
 
 	// fcnfit to get fcn size
-	{
-#if 1
-		ut64 min = sdb_num_get (db, Fmin (addr), NULL);
-		ut64 max = sdb_num_get (db, Fmax (addr), NULL);
-#else
-		ut64 min, max;
-		char *c, *bbs = sdb_get (db, "bbs", NULL);
-		int first = 1;
-		sdb_aforeach (c, bbs) {
-			ut64 addr = sdb_atoi (c);
-			ut64 addr_end = sdb_num_get (db, Fbb(addr), NULL);
-			if (first) {
-				min = addr;
-				max = addr_end;
-				first = 0;
-			} else {
-				if (addr<min)
-					min = addr;
-				if (addr_end>max)
-					max = addr_end;
-			}
-			sdb_aforeach_next (c);
-		}
-		free (bbs);
-#endif
-		sdb_num_set (db, "size", max-min, 0);
-	}
+	sdb_num_set (db, "size", getFunctionSize (db), 0);
 	r_cons_printf ("af+ 0x%08"PFMT64x" %d fcn2.0x%08"PFMT64x"\n",
 			sdb_num_get (db, "addr", NULL),
 			(int)sdb_num_get (db, "size", NULL),
@@ -299,6 +301,17 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 		sdb_num_set (db, "size", max-min, 0);
 	}
 	eprintf ("size: %s\n", sdb_const_get (db, "size", NULL));
+	// analyze next calls
+	{
+		char *c, *calls = sdb_get (db, "calls", NULL);
+		int first = 1;
+		sdb_aforeach (c, calls) {
+			ut64 addr = sdb_atoi (c);
+			r_cons_printf ("a2f @ 0x%"PFMT64x"\n", addr);
+			sdb_aforeach_next (c);
+		}
+		free (calls);
+	}
 	sdb_free (db);
 	return R_TRUE;
 }
