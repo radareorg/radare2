@@ -1301,7 +1301,12 @@ static void handle_print_color_reset (RCore *core, RDisasmState *ds) {
 static int handle_print_middle (RCore *core, RDisasmState *ds, int ret ){
 	if (ds->middle != 0) {
 		ret -= ds->middle;
+		handle_comment_align (core, ds);
+		if (ds->show_color)
+			r_cons_strcat (ds->pal_comment);
 		r_cons_printf (" ;  *middle* %d", ret);
+		if (ds->show_color)
+			r_cons_strcat (Color_RESET);
 	}
 	return ret;
 }
@@ -1339,7 +1344,7 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 						if (ds->show_color)
 							r_cons_strcat (ds->color_fname);
 						// TODO: handle somehow ordinals import
-				handle_comment_align (core, ds);
+						handle_comment_align (core, ds);
 						r_cons_printf (" ; (imp.%s)", rel->import->name);
 						handle_print_color_reset (core, ds);
 					}
@@ -1375,6 +1380,9 @@ static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
+			handle_comment_align (core, ds);
+			if (ds->show_color)
+				r_cons_strcat (ds->pal_comment);
 			if (ds->counter<9) {
 				int found = 0;
 				for (i=0; i<ds->counter+1; i++) {
@@ -1388,6 +1396,8 @@ static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
 				core->asmqjmps[i] = ds->analop.jump;
 				r_cons_printf (" ;[%d]", i);
 			} else r_cons_strcat (" ;[?]");
+			if (ds->show_color)
+				r_cons_strcat (Color_RESET);
 			break;
 		}
 	}
@@ -1451,8 +1461,10 @@ static void handle_comment_align (RCore *core, RDisasmState *ds) {
 		int cols = r_cons_get_size (NULL);
 		int ansilen = r_str_ansi_len (ll);
 		if (cmtcol+10>=cols) {
+#if 0
 			r_cons_newline ();
 			r_cons_memset (' ', 10);
+#endif
 		} else if (ansilen < cmtcol) {
 			int len = cmtcol - ansilen;
 			if (len < cols)
@@ -1543,6 +1555,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			n32 = n;
 			
 			handle_comment_align (core, ds);
+			if (ds->show_color) {
+				r_cons_printf (ds->pal_comment);
+			}
 			if (n==UT32_MAX || n==UT64_MAX) {
 				r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 			} else if (n == n32 && (n32>-512 && n32 <512)) {
@@ -1550,16 +1565,23 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			} else {
 				r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x, p, ds->analop.refptr, n);
 			}
+			if (ds->show_color)
+				r_cons_printf (Color_RESET);
 		}
 		handle_comment_align (core, ds);
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
+			if (ds->show_color) {
+				r_cons_printf ("%s", ds->pal_comment);
+			}
 			if (*msg) {
 				r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
 			} else {
 				r_cons_printf (" ; %s", f->name);
 			}
+			if (ds->show_color)
+				r_cons_printf (Color_RESET);
 		} else {
 			if (p==UT64_MAX || p==UT32_MAX) {
 				r_cons_printf (" ; -1", p);
@@ -1588,12 +1610,21 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				if (!strcmp (kind, "text")) {
 					r_str_filter (msg, 0);
 					if (*msg) {
+						if (ds->show_color)
+							r_cons_printf (ds->pal_comment);
 						r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
+						if (ds->show_color)
+							r_cons_printf (Color_RESET);
 					}
 				} else if (!strcmp (kind, "invalid")){
 					int *n = (int*)&p;
-					if (*n>-0xfff && *n < 0xfff)
+					if (*n>-0xfff && *n < 0xfff) {
+						if (ds->show_color)
+							r_cons_printf (ds->pal_comment);
 						r_cons_printf (" ; %d", *n);
+						if (ds->show_color)
+							r_cons_printf (Color_RESET);
+					}
 				} else {
 					//r_cons_printf (" ; %s", kind);
 				}
@@ -1641,7 +1672,7 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 		handle_comment_align (core, ds);
 		if (ds->show_color)
 			r_cons_strcat (ds->color_comment);
-		r_cons_strcat ("  ; ");
+		r_cons_strcat (" ; ");
 		//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 		r_cons_strcat (ds->comment);
 		if (ds->show_color)
@@ -1689,7 +1720,11 @@ static void handle_print_as_string(RCore *core, RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
 	if (str) {
 		handle_comment_align (core, ds);
-		r_cons_printf (" ; \"%s\"", str);
+		if (ds->show_color) {
+			r_cons_printf (" %s; \"%s\""Color_RESET, ds->pal_comment, str);
+		} else {
+			r_cons_printf (" ; \"%s\"", str);
+		}
 	}
 	free (str);
 }

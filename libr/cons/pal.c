@@ -14,7 +14,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.call = Color_BGREEN;
 	cons->pal.cjmp = Color_GREEN;
 	cons->pal.cmp = Color_CYAN;
-	cons->pal.comment = Color_BLUE;
+	cons->pal.comment = Color_CYAN; // blue
 	cons->pal.creg = Color_CYAN;
 	cons->pal.flag = Color_CYAN;
 	cons->pal.fline = Color_CYAN;
