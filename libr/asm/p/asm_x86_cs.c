@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <capstone.h>
 
-#define USE_ITER_API 1
+#define USE_ITER_API 0
 
 static csh cd = 0;
 static int n = 0;

@@ -170,12 +170,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	csh handle;
-	cs_insn *insn;
+	csh handle = 0;
+	cs_insn *insn = NULL;
 	int mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
-	int i, n, ret = (a->bits==64)?
-	cs_open (CS_ARCH_ARM64, mode, &handle):
-	cs_open (CS_ARCH_ARM, mode, &handle);
+	int i, n, ret;
+	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+
+	ret = (a->bits==64)?
+		cs_open (CS_ARCH_ARM64, mode, &handle):
+		cs_open (CS_ARCH_ARM, mode, &handle);
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = (a->bits==16)? 2: 4;

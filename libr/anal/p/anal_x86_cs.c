@@ -5,7 +5,7 @@
 #include <capstone.h>
 #include <x86.h>
 
-#define USE_ITER_API 1
+#define USE_ITER_API 0
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported

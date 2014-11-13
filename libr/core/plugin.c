@@ -17,10 +17,10 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 		if (plugin && plugin->deinit) {
 			plugin->deinit (cmd, NULL);
 		}
-		r_list_pop(cmd->plist);
+		r_list_pop (cmd->plist);
 	}
-	if (!r_list_empty(cmd->plist))
-		r_list_pop(cmd->plist);
+	if (!r_list_empty (cmd->plist))
+		r_list_pop (cmd->plist);
 	return R_TRUE;
 }
 
