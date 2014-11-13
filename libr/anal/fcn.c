@@ -521,6 +521,7 @@ fcn.<offset>.bbs
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
 	int append = 0;
 	RAnalFunction *fcn;
+//eprintf ("f+ 0x%llx %d (%s)\n", addr, size, name);
 	if (size<1)
 		return R_FALSE;
 	fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);

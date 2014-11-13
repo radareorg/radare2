@@ -329,7 +329,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 }
 
 static int anal_fcn_add_bb (RCore *core, const char *input) {
-	char *ptr = strdup(input);
+	// fcn_addr bb_addr bb_size [jump] [fail]
+	char *ptr;
 	const char *ptr2 = NULL;
 	ut64 fcnaddr = -1LL, addr = -1LL;
 	ut64 size = 0LL;
@@ -338,6 +339,9 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	int type = R_ANAL_BB_TYPE_NULL;
 	RAnalFunction *fcn = NULL;
 	RAnalDiff *diff = NULL;
+
+	while (*input==' ') input++;
+	ptr = strdup (input);
 
 	switch (r_str_word_set0 (ptr)) {
 	case 7:
@@ -380,6 +384,7 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	free (ptr);
 	return R_TRUE;
 }
+
 static int setFunctionName(RCore *core, ut64 off, const char *name) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
@@ -546,15 +551,24 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "afb"
-		 if (input[2] == 'b') {
-			 anal_fcn_add_bb (core, input+3);
-		 } else {
+		switch (input[2]) {
+		case 'b': // "afbb"
+		case '+': // "afb+"
+			anal_fcn_add_bb (core, input+3);
+			break;
+		case '?':
+			eprintf ("Usage: afb+ or afbb or afb\n");
+			break;
+		default:
+			{
 			 RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
 				 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			 if (fcn) fcn->bits = atoi (input+3);
 			 else eprintf ("Cannot find function to set bits\n");
-		 }
-		 break;
+			}
+			break;
+		}
+		break;
 	case 'n': // "afn"
 		if (input[2]=='a') { // afna autoname
 			char *name = r_core_anal_fcn_autoname (core, core->offset);
@@ -703,7 +717,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
 		 "afb", " 16", "set current function as thumb",
-		 "afbb", " fcnaddr addr size name [type] [diff]", "add bb to function @ fcnaddr",
+		 "afbb", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add bb to function @ fcnaddr",
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",

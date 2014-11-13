@@ -27,6 +27,27 @@ static ut64 sdb_array_get_closer_num (Sdb *db, const char *key, ut64 addr) {
 }
 #define Fbb(x) sdb_fmt(0,"bb.%"PFMT64x,x)
 #define FbbTo(x) sdb_fmt(0,"bb.%"PFMT64x".to",x)
+#define Fmin(x) "min"
+#define Fmax(x) "max"
+
+// TODO: move into sdb, and use CAS
+static int sdb_num_min(Sdb *db, const char *k, ut64 n) {
+	ut64 a = sdb_num_get (db, k, NULL);
+	if (n<a || !a) {
+		sdb_num_set (db, k, n, 0);
+		return 1;
+	}
+	return 0;
+}
+
+static int sdb_num_max(Sdb *db, const char *k, ut64 n) {
+	ut64 a = sdb_num_get (db, k, NULL);
+	if (n>a || !a) {
+		sdb_num_set (db, k, n, 0);
+		return 1;
+	}
+	return 0;
+}
 
 static int bbAdd (Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	ut64 last, addr = sdb_array_get_closer_num (db, "bbs", from);
@@ -54,6 +75,8 @@ eprintf ("ADD NEW BB %llx\n", from);
 			sdb_array_set_num (db, FbbTo(from), 0, jump, 0);
 		if (fail != UT64_MAX)
 			sdb_array_set_num (db, FbbTo(from), 1, fail, 0);
+		sdb_num_min (db, "min", from);
+		sdb_num_max (db, "max", to);
 	}
 	return 0;
 }
@@ -78,7 +101,7 @@ int analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 	for (;;) {
 		op = r_core_anal_op (core, addr + cur);
 		if (!op) {
-			eprintf ("Cannot analyze opcode at %d\n", addr+cur);
+			eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 			return R_FALSE;
 		}
 		eprintf ("0x%08"PFMT64x"  %s\n", addr + cur, op->mnemonic);
@@ -205,13 +228,49 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 	eprintf ("ujmps: %s\n", sdb_const_get (db, "ujmps", NULL));
 	eprintf ("rets: %s\n", sdb_const_get (db, "rets", NULL));
 	eprintf ("bbs: %s\n", sdb_const_get (db, "bbs", NULL));
+
+	// fcnfit to get fcn size
 	{
+#if 1
+		ut64 min = sdb_num_get (db, Fmin (addr), NULL);
+		ut64 max = sdb_num_get (db, Fmax (addr), NULL);
+#else
 		ut64 min, max;
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
 		int first = 1;
 		sdb_aforeach (c, bbs) {
 			ut64 addr = sdb_atoi (c);
-			ut64 addr_end = sdb_num_get (db, sdb_fmt(0, "bb.%"PFMT64x, addr), NULL);
+			ut64 addr_end = sdb_num_get (db, Fbb(addr), NULL);
+			if (first) {
+				min = addr;
+				max = addr_end;
+				first = 0;
+			} else {
+				if (addr<min)
+					min = addr;
+				if (addr_end>max)
+					max = addr_end;
+			}
+			sdb_aforeach_next (c);
+		}
+		free (bbs);
+#endif
+		sdb_num_set (db, "size", max-min, 0);
+	}
+	r_cons_printf ("af+ 0x%08"PFMT64x" %d fcn2.0x%08"PFMT64x"\n",
+			sdb_num_get (db, "addr", NULL),
+			(int)sdb_num_get (db, "size", NULL),
+			sdb_num_get (db, "addr", NULL)
+		      );
+	// list bbs
+	{
+		ut64 min, max;
+		char *c, *bbs = sdb_get (db, "bbs", NULL);
+		int first = 1;
+		sdb_aforeach (c, bbs) {
+			ut64 jump, fail;
+			ut64 addr = sdb_atoi (c);
+			ut64 addr_end = sdb_num_get (db, Fbb(addr), NULL);
 			if (first) {
 				min = addr;
 				max = addr_end;
@@ -224,18 +283,21 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 			}
 			// check if call destination is inside the function boundaries
 			eprintf ("BB 0x%08"PFMT64x" - 0x%08"PFMT64x"  %d\n",
-				addr, addr_end, addr_end-addr);
+				addr, addr_end, (int)(addr_end-addr));
 			eprintf ("  -> %s\n", sdb_const_get (db, FbbTo (addr), 0));
+			r_cons_printf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d",
+				sdb_num_get (db, "addr", NULL),
+				addr, (int)(addr_end-addr)); 
+			jump = sdb_array_get_num (db, FbbTo(addr), 0, NULL);
+			fail = sdb_array_get_num (db, FbbTo(addr), 1, NULL);
+			if (jump || fail)
+				r_cons_printf (" 0x%"PFMT64x" 0x%"PFMT64x"\n", jump, fail);
+			else r_cons_newline ();
 			sdb_aforeach_next (c);
 		}
 		free (bbs);
 		sdb_num_set (db, "size", max-min, 0);
 	}
-	r_cons_printf ("af+ 0x%08"PFMT64x" %d fcn2.0x%08"PFMT64x,
-			sdb_num_get (db, "addr", NULL),
-			sdb_num_get (db, "size", NULL),
-			sdb_num_get (db, "addr", NULL)
-		      );
 	eprintf ("size: %s\n", sdb_const_get (db, "size", NULL));
 	sdb_free (db);
 	return R_TRUE;

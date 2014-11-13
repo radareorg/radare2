@@ -1460,7 +1460,7 @@ static void handle_comment_align (RCore *core, RDisasmState *ds) {
 	if (ll) {
 		int cols = r_cons_get_size (NULL);
 		int ansilen = r_str_ansi_len (ll);
-		if (cmtcol+10>=cols) {
+		if (cmtcol+16>=cols) {
 #if 0
 			r_cons_newline ();
 			r_cons_memset (' ', 10);
