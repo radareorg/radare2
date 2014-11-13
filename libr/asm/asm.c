@@ -307,6 +307,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->size = 4;
 	if (len<1)
 		return 0;
+	// on mips/arm/sparc .. use word size
+	sprintf (op->buf_asm,".byte 0x%02x %d", buf[0], len);
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
 	oplen = r_asm_op_get_size (op);

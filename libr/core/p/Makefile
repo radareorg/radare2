@@ -20,7 +20,7 @@ LDFLAGS+=${LINK}
 foo: all
 
 ALL_TARGETS=
-PLUGS=java.mk
+PLUGS=java.mk anal.mk
 
 include $(PLUGS)
 

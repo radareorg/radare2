@@ -763,3 +763,15 @@ R_API void r_cons_highlight (const char *word) {
 		I.highlight = NULL;
 	}
 }
+
+R_API char *r_cons_lastline () {
+	char *b = I.buffer+I.buffer_len;
+	while (b >I.buffer) {
+		if (*b=='\n') {
+			b++;
+			break;
+		}
+		b--;
+	}
+	return b;
+}

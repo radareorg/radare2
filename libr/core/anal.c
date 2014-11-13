@@ -205,7 +205,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	{
 		RAsmOp asmop;
 		r_asm_set_pc (core->assembler, addr);
-		if (r_asm_disassemble (core->assembler, &asmop, buf, len)>0) {
+		if (r_asm_disassemble (core->assembler, &asmop, ptr, len)>0) {
 			op.mnemonic = strdup (asmop.buf_asm);
 		}
 	}

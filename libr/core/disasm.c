@@ -63,6 +63,7 @@ typedef struct r_disam_options_t {
 	int show_flags;
 	int show_bytes;
 	int show_comments;
+	int cmtcol;
 	int show_fcnlines;
 	int show_cmtflgrefs;
 	int show_cycles;
@@ -139,6 +140,7 @@ typedef struct r_disam_options_t {
 } RDisasmState;
 
 static void handle_reflines_init (RCore *core, RDisasmState *ds);
+static void handle_comment_align (RCore *core, RDisasmState *ds);
 static RDisasmState * handle_init_ds (RCore * core);
 static void handle_set_pre (RDisasmState *ds, const char * str);
 static void handle_build_op_str (RCore *core, RDisasmState *ds);
@@ -242,6 +244,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
+	ds->cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
@@ -936,6 +939,7 @@ static void handle_control_flow_comments (RCore * core, RDisasmState *ds) {
 			item = r_flag_get_i (core->flags, ds->analop.jump);
 			if (item && item->comment) {
 				if (ds->show_color) r_cons_strcat (ds->pal_comment);
+				handle_comment_align (core, ds);
 				r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
 				handle_print_color_reset(core, ds);
 			}
@@ -1335,6 +1339,7 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 						if (ds->show_color)
 							r_cons_strcat (ds->color_fname);
 						// TODO: handle somehow ordinals import
+				handle_comment_align (core, ds);
 						r_cons_printf (" ; (imp.%s)", rel->import->name);
 						handle_print_color_reset (core, ds);
 					}
@@ -1354,6 +1359,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 			if (f && !strstr (ds->opstr, f->name)) {
 				if (ds->show_color)
 					r_cons_strcat (ds->color_fname);
+				handle_comment_align (core, ds);
 				r_cons_printf (" ; (%s)", f->name);
 				handle_print_color_reset (core, ds);
 			}
@@ -1434,6 +1440,27 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 	}
 }
 
+// align for comment
+static void handle_comment_align (RCore *core, RDisasmState *ds) {
+	const int cmtcol = ds->cmtcol;
+	char *ll;
+	if (!ds->show_comment_right_default)
+		return;
+	ll = r_cons_lastline ();
+	if (ll) {
+		int cols = r_cons_get_size (NULL);
+		int ansilen = r_str_ansi_len (ll);
+		if (cmtcol+10>=cols) {
+			r_cons_newline ();
+			r_cons_memset (' ', 10);
+		} else if (ansilen < cmtcol) {
+			int len = cmtcol - ansilen;
+			if (len < cols)
+				r_cons_memset (' ', cmtcol-ansilen);
+		}
+	}
+}
+
 static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 	if (ds->show_dwarf) {
 		ds->sl = r_bin_addr2text (core->bin, ds->at);
@@ -1442,6 +1469,7 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
 				handle_set_pre (ds, "  ");
+				handle_comment_align (core, ds);
 				if (ds->show_color)
 					r_cons_printf ("%s  ; %s"Color_RESET"%s",
 							ds->pal_comment, ds->sl, ds->pre);
@@ -1513,14 +1541,17 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			case 8: n &= UT64_MAX; break;
 			}
 			n32 = n;
+			
+			handle_comment_align (core, ds);
 			if (n==UT32_MAX || n==UT64_MAX) {
-				r_cons_printf (" ; [:%d]=-1", ds->analop.refptr);
+				r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 			} else if (n == n32 && (n32>-512 && n32 <512)) {
-				r_cons_printf (" ; [:%d]=%"PFMT64d, ds->analop.refptr, n);
+				r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 			} else {
-				r_cons_printf (" ; [:%d]=0x%"PFMT64x, ds->analop.refptr, n);
+				r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x, p, ds->analop.refptr, n);
 			}
 		}
+		handle_comment_align (core, ds);
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
@@ -1607,9 +1638,7 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	handle_print_relocs (core, ds);
 	if (ds->show_comments && ds->show_comment_right && ds->comment) {
-		int c = r_cons_get_column ();
-		if (c<ds->ocols)
-			r_cons_memset (' ', ds->ocols-c);
+		handle_comment_align (core, ds);
 		if (ds->show_color)
 			r_cons_strcat (ds->color_comment);
 		r_cons_strcat ("  ; ");
@@ -1659,6 +1688,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 static void handle_print_as_string(RCore *core, RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
 	if (str) {
+		handle_comment_align (core, ds);
 		r_cons_printf (" ; \"%s\"", str);
 	}
 	free (str);
