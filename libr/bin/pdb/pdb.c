@@ -642,11 +642,14 @@ static EStates convert_to_state(char *cstate) {
 /// TODO: rewrite this ?!
 static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, char **name_field) {
 	EStates curr_state;
-	char *tmp = 0;/*, *tmp1 = 0;*/
+	char *tmp = 0/*;*/, *tmp1 = 0;
 	char *name = 0;
 
-//	tmp1 = (char *) malloc(strlen(type) + 1);
-//	strcpy(tmp1, type);
+	tmp1 = (char *) malloc(strlen(type) + 1);
+	strcpy(tmp1, type);
+	if (strcmp(tmp1, "nesttype union _TP_CALLBACK_ENVIRON_V1::<unnamed-type-u>)") == 0) {
+		tmp1 = 0;
+	}
 
 	tmp = strtok(type, " ");
 	while (tmp != NULL) {
@@ -726,9 +729,6 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			*name_field = name;
 
 			return 1;
-		case eArrayState:
-			res_field[pos] = 'p';
-			return 1;
 //		case eDoubleState:
 //			// TODO: what is the flag for double in pf??
 //			res_field[pos] = 'q';
@@ -742,11 +742,9 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			free(*name_field);
 			*name_field = name;
 			return 1;
-		case eOneMethodState:
-			res_field[pos] = 'p';
-			return 1;
 		case eVoidState:
-			// this state can be just if it is void*
+		case eArrayState:
+		case eOneMethodState:
 			res_field[pos] = 'p';
 			return 1;
 		default:
@@ -762,7 +760,6 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 				res_field[pos] = 'A';
 				return 0;
 			}
-			break;
 		}
 
 		tmp = strtok(NULL, " ");
@@ -853,6 +850,7 @@ int alloc_format_flag_and_member_fields(RList *ptmp,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// TODO: need refactor
 static void print_types(R_PDB *pdb, int mode) {
 	ELeafType lt = eLF_MAX;
 	char *command_field = 0;
