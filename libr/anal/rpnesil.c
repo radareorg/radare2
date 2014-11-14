@@ -75,6 +75,7 @@ static int esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!ret && esil->mem_read) {
 		ret = esil->mem_read (esil, addr, buf, len);
 	}
+	r_mem_copyendian (buf, buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
 		for (i=0;i<len;i++)
@@ -94,6 +95,7 @@ static int esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) 
 	int i, ret = 0;
 	if (!buf || !esil)
 		return 0;
+	r_mem_copyendian ((ut8*)buf, (ut8*)buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
 		eprintf ("0x%08"PFMT64x" <W ", addr);
 		for (i=0;i<len;i++)
