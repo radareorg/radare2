@@ -12,8 +12,10 @@ static cs_insn *insn = NULL;
 
 static int the_end(void *p) {
 #if !USE_ITER_API
-	cs_free (insn, n);
-	insn = NULL;
+	if (insn) {
+		cs_free (insn, n);
+		insn = NULL;
+	}
 #endif
 	if (cd) {
 		cs_close (&cd);

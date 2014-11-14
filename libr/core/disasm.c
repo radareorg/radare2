@@ -1537,9 +1537,6 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 
 		memset (msg, 0, sizeof (msg));
 		r_io_read_at (core->io, p, (ut8*)msg, sizeof (msg)-1);
-		if (!IS_PRINTABLE (*msg))
-			*msg = 0;
-		else msg[sizeof (msg)-1] = 0;
 
 		if (ds->analop.refptr) {
 			ut64 *num = (ut64*)msg;
@@ -1564,11 +1561,20 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			} else if (n == n32 && (n32>-512 && n32 <512)) {
 				r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 			} else {
-				r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x, p, ds->analop.refptr, n);
+				const char *flag = "";
+				f = r_flag_get_i (core->flags, n);
+				if (f) flag = f->name;
+				r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
+					p, ds->analop.refptr, n, flag);
 			}
 			if (ds->show_color)
 				r_cons_printf (Color_RESET);
 		}
+#if 1
+		if (!IS_PRINTABLE (*msg))
+			*msg = 0;
+		else msg[sizeof (msg)-1] = 0;
+#endif
 		handle_comment_align (core, ds);
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
@@ -1601,8 +1607,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				} else {
 					if (r_core_anal_address (core, p) & R_ANAL_ADDR_TYPE_ASCII) {
 						r_str_filter (msg, 0);
-						r_cons_printf (" ; \"%s\"%s0x%08"PFMT64x" ",
-							msg, msg[0]?" ":"", p);
+						if (*msg)
+							r_cons_printf (" ; \"%s\" 0x%08"PFMT64x" ",
+									msg, p);
 					}
 				}
 			}

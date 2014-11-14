@@ -1391,7 +1391,7 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	}
 	if (depth < 1)
 		return R_FALSE;
-	if (core->bin && core->bin->cur->o && core->bin->cur->o->info) {
+	if (core->bin && core->bin->cur && core->bin->cur->o && core->bin->cur->o->info) {
 		endian = core->bin->cur->o->info->big_endian;
 	} else endian = CPU_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);
@@ -1418,6 +1418,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	if (ref==0LL)
 		eprintf ("Null reference search is not supported\n");
 	else
+r_cons_break (NULL, NULL);
 	if (core->blocksize>OPSZ) {
 		if(bckwrds){
 			if(from + core->blocksize > to){
@@ -1467,6 +1468,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			}else at += core->blocksize - OPSZ;
 		}
 	} else eprintf ("error: block size too small\n");
+r_cons_break_end ();
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;

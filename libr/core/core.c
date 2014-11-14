@@ -103,7 +103,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) *ok = 1;
-		ut64 num = 0;
+		ut32 num = 0;
 		switch (refsz) {
 		case 8:
 		case 4:
