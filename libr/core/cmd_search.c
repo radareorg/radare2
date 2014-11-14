@@ -205,7 +205,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (json) {
 				strcpy (str, "0x");
 				p=str+2;
-			} 
+			}
 			for (i=0; i<len; i++) {
 				sprintf (p, "%02x", buf[i]);
 				p += 2;
@@ -216,7 +216,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 		if (json) {
 			if (!first_hit) r_cons_printf(",");
-			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}", 
+			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}",
 					base_addr + addr, kw->kwidx, str);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
@@ -228,7 +228,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	} else if (kw) {
 		if (json) {
 			if (!first_hit) r_cons_printf(",");
-			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"len\":%d}", 
+			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"len\":%d}",
 					base_addr + addr, kw->kwidx, kw->keyword_length);
 		} else {
 			if (searchflags)
@@ -477,7 +477,7 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 }
 
 //TODO: follow unconditional jumps
-static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep) {
+static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, RRegex* rx) {
 	RAnalOp aop;
 	RAsmOp asmop;
 	const char* start, *end;
@@ -487,12 +487,15 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
 	const ut8 crop = r_config_get_i (core->config, "search.conditionalrop");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	boolt valid = 0;
+	int grep_find;
+	int search_hit;
 
 	if (grep) {
 		start = grep;
 		end = strstr (grep, ",");
-		if (!end) // We filter on a single opcode, so no ","
+		if (!end) { // We filter on a single opcode, so no ","
 			end = start + strlen (grep);
+		}
 	}
 
 	while (nb_instr < max_instr) {
@@ -511,9 +514,15 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			//Move on to the next instruction
 			idx += aop.size;
 			addr += aop.size;
+			if (rx) {
+				grep_find = r_regex_exec(rx, asmop.buf_asm, 0, 0, 0);
+				search_hit = (end && grep && (grep_find < 1));
+			} else {
+				search_hit = (end && grep && !strncasecmp (asmop.buf_asm, start, end - start));
+			}
 
 			//Handle (possible) grep
-			if (end && grep && !strncasecmp (asmop.buf_asm, start, end - start)) {
+			if (search_hit) {
 				if (end[0] == ',') { // fields are comma-seperated
 					start = end + 1; // skip the comma
 					end = strstr (start, ",");
@@ -554,7 +563,7 @@ ret:
 	return hitlist;
 }
 
-static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep) {
+static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep, int regexp) {
 	int i=0, end=0, mode=0, increment=1, ret;
 	int delta = 0;
 	RAsmOp asmop;
@@ -570,6 +579,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	boolt json_first = 1;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
+	RRegex* rx = NULL;
+	char* gregexp;
+	const char* gstart, *gend;
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
 		increment = 4;
@@ -587,6 +599,17 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	else // No grep
 		grep = NULL;
 
+	// Deal with the grep guy.
+	if (grep && regexp) {
+		gstart = grep;
+		gend = strstr (grep, ",");
+		if (!gend) { // We filter on a single opcode, so no ","
+			gend = gstart + strlen (grep);
+		}
+		gregexp = calloc(gend - gstart + 1, sizeof(char));
+		memcpy(gregexp, grep, gend - gstart);
+		rx = r_regex_new(gregexp, "");
+	}
 
 	smode = r_config_get (core->config, "search.in");
 	if (!strncmp(smode, "dbg.", 4) || !strncmp(smode, "io.sections", 11))
@@ -635,8 +658,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
 				if (!ret)
 					continue;
-
-				hitlist = construct_rop_gadget (core, from+i, buf, i, grep);
+				hitlist = construct_rop_gadget (core, from+i, buf, i, grep, rx);
 				if (!hitlist)
 					continue;
 
@@ -674,7 +696,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 							r_core_read_at (core, hit->addr, buf, hit->len);
 							r_asm_set_pc (core->assembler, hit->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-							buf_asm = r_print_colorize_opcode (asmop.buf_asm, 
+							buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 								core->cons->pal.reg, core->cons->pal.num);
 							r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 							free (buf_asm);
@@ -684,12 +706,12 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 							r_core_read_at (core, hit->addr, buf, hit->len);
 							r_asm_set_pc (core->assembler, hit->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-							buf_asm = r_print_colorize_opcode (asmop.buf_asm, 
+							buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 								core->cons->pal.reg, core->cons->pal.num);
-							buf_hex = r_print_colorize_opcode (asmop.buf_hex, 
+							buf_hex = r_print_colorize_opcode (asmop.buf_hex,
 								core->cons->pal.reg, core->cons->pal.num);
 							otype = r_print_color_op_type (core->print, analop.type);
-							r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n", 
+							r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n",
 								hit->addr, otype, buf_hex, buf_asm, Color_RESET);
 							free (buf_asm);
 							free (buf_hex);
@@ -710,6 +732,13 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		list->free = free;
 		r_list_free (list);
 		list = NULL;
+	}
+
+	if (rx) {
+		r_regex_free(rx);
+	}
+	if (gregexp) {
+		free(gregexp);
 	}
 
 	return R_TRUE;
@@ -851,11 +880,14 @@ static int cmd_search(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage: /R", "", "Search for ROP gadgets",
 				"/R", " [filter-by-string]" , "Show gadgets",
+				"/R/", " [filter-by-string]" , "Show gadgets [regular expression]",
 				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
 				"/Rj", " [filter-by-string]", "JSON output",
 				NULL};
 			r_core_cmd_help (core, help_msg);
-		} else r_core_search_rop (core, from, to, 0, input+1);
+		} else if (input[1] == '/') {
+			r_core_search_rop (core, from, to, 0, input+1, 1);
+		} else r_core_search_rop (core, from, to, 0, input+1, 0);
 		return R_TRUE;
 	case 'r': // "/r"
 		if (input[param_offset-1]==' ') {
@@ -1038,7 +1070,7 @@ static int cmd_search(void *data, const char *input) {
 		inp = strdup (input+1+ignorecase+json);
 		len = r_str_unescape (inp);
 		if (!json) {
-			eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", 
+			eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ",
 				len, from, to);
 			for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
 			eprintf ("\n");
@@ -1210,7 +1242,7 @@ r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 					if (json) {
 						if (count > 0) r_cons_printf (",");
 						r_cons_printf (
-							"{\"offset\":%"PFMT64d",\"len\":%d,\"code\":\"%s\"}", 
+							"{\"offset\":%"PFMT64d",\"len\":%d,\"code\":\"%s\"}",
 							hit->addr, hit->len, hit->code);
 					} else {
 						r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
