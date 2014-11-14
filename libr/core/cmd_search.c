@@ -487,7 +487,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
 	const ut8 crop = r_config_get_i (core->config, "search.conditionalrop");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	boolt valid = 0;
-	RSearch *rs; // = r_search_new (R_SEARCH_REGEXP);
+	RSearch *rs;
 	char* gregexp;
 	int grep_find;
 
