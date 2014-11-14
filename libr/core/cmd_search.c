@@ -496,13 +496,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		end = strstr (grep, ",");
 		if (!end) // We filter on a single opcode, so no ","
 			end = start + strlen (grep);
-	}
-
-	if (!grep) {
-		gregexp = calloc(2, sizeof(char));
-		gregexp[0] = '.';
-	} else {
-		gregexp = calloc(end - start + 2, sizeof(char));
+		gregexp = calloc(end - start + 1, sizeof(char));
 		memcpy(gregexp, grep, end - start);
 	}
 
@@ -522,12 +516,13 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			//Move on to the next instruction
 			idx += aop.size;
 			addr += aop.size;
-
-			rs = r_search_new (R_SEARCH_REGEXP);
-			r_search_kw_add(rs, /* Search for the gadget but with case insensitive on */
-									r_search_keyword_new_str(gregexp, "i", NULL, 0));
-			r_search_begin (rs);
-			grep_find = r_search_update_i (rs, 0LL, asmop.buf_asm, strlen((const char*)gregexp));
+			if (grep) {
+				rs = r_search_new (R_SEARCH_REGEXP);
+				r_search_kw_add(rs, /* Search for the gadget but with case insensitive on */
+								r_search_keyword_new_str(gregexp, "i", NULL, 0));
+				r_search_begin (rs);
+				grep_find = r_search_update_i (rs, 0LL, asmop.buf_asm, strlen(gregexp));
+			}
 
 			//Handle (possible) grep
 			if (end && grep && grep_find) {
@@ -538,8 +533,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 				} else
 					end = NULL;
 			}
-
-			rs = r_search_free (rs);
+			if (grep) {
+				rs = r_search_free (rs);
+			}
 
 			switch (aop.type) { // end of the gadget
 				case R_ANAL_OP_TYPE_TRAP:
@@ -568,8 +564,10 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 ret:
 	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
-		free(gregexp);
 		return NULL;
+	}
+	if (grep) {
+		free(gregexp);
 	}
 	return hitlist;
 }
