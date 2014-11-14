@@ -487,12 +487,22 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
 	const ut8 crop = r_config_get_i (core->config, "search.conditionalrop");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	boolt valid = 0;
+	RSearch *rs; // = r_search_new (R_SEARCH_REGEXP);
+	char* gregexp;
 
 	if (grep) {
 		start = grep;
 		end = strstr (grep, ",");
 		if (!end) // We filter on a single opcode, so no ","
 			end = start + strlen (grep);
+	}
+
+	if (!grep) {
+	gregexp = calloc(2, sizeof(char));
+	gregexp[0] = '.';
+	} else {
+		gregexp = calloc(end - start + 2, sizeof(char));
+		memcpy(gregexp, grep, end - start);
 	}
 
 	while (nb_instr < max_instr) {
@@ -512,15 +522,23 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			idx += aop.size;
 			addr += aop.size;
 
+			rs = r_search_new (R_SEARCH_REGEXP);
+			r_search_kw_add(rs, /* Search for the gadget but with case insensitive on */
+									r_search_keyword_new_str(gregexp, "i", NULL, 0));
+			r_search_begin (rs);
+			int grep_find = r_search_update_i (rs, 0LL, asmop.buf_asm, strlen((const char*)gregexp));
+
 			//Handle (possible) grep
-			if (end && grep && !strncasecmp (asmop.buf_asm, start, end - start)) {
+			if (end && grep && grep_find) {
 				if (end[0] == ',') { // fields are comma-seperated
-					start = end + 1; // skip the comma
+					start = end + 2; // skip the comma
 					end = strstr (start, ",");
 					end = end?end: start + strlen(start); //latest field?
 				} else
 					end = NULL;
 			}
+
+      		rs = r_search_free (rs);
 
 			switch (aop.type) { // end of the gadget
 				case R_ANAL_OP_TYPE_TRAP:
@@ -549,6 +567,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 ret:
 	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
+		free(gregexp);
 		return NULL;
 	}
 	return hitlist;
