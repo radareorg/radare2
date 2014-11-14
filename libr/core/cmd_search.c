@@ -489,6 +489,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	boolt valid = 0;
 	RSearch *rs; // = r_search_new (R_SEARCH_REGEXP);
 	char* gregexp;
+	int grep_find;
 
 	if (grep) {
 		start = grep;
@@ -498,8 +499,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	}
 
 	if (!grep) {
-	gregexp = calloc(2, sizeof(char));
-	gregexp[0] = '.';
+		gregexp = calloc(2, sizeof(char));
+		gregexp[0] = '.';
 	} else {
 		gregexp = calloc(end - start + 2, sizeof(char));
 		memcpy(gregexp, grep, end - start);
@@ -526,12 +527,12 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			r_search_kw_add(rs, /* Search for the gadget but with case insensitive on */
 									r_search_keyword_new_str(gregexp, "i", NULL, 0));
 			r_search_begin (rs);
-			int grep_find = r_search_update_i (rs, 0LL, asmop.buf_asm, strlen((const char*)gregexp));
+			grep_find = r_search_update_i (rs, 0LL, asmop.buf_asm, strlen((const char*)gregexp));
 
 			//Handle (possible) grep
 			if (end && grep && grep_find) {
 				if (end[0] == ',') { // fields are comma-seperated
-					start = end + 2; // skip the comma
+					start = end + 1; // skip the comma
 					end = strstr (start, ",");
 					end = end?end: start + strlen(start); //latest field?
 				} else
