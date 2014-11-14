@@ -182,7 +182,7 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 
 R_API RAsm *r_asm_free(RAsm *a) {
 	if (a) {
-		if (a->cur) {
+		if (a->cur && a->cur->user) {
 			a->cur->fini (a->cur->user);
 		}
 		if (a->plugins) {
