@@ -856,7 +856,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch referece");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
-	SETI("asm.cmtcol", 80, "Align comments at column 60");
+	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");

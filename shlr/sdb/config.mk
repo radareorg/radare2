@@ -1,7 +1,7 @@
 DESTDIR?=
 PREFIX?=/usr
 
-SDBVER=0.9.1
+SDBVER=0.9.2
 
 INSTALL?=install
 

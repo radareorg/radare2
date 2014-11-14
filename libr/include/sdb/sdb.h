@@ -118,6 +118,8 @@ int  sdb_num_set  (Sdb* s, const char *key, ut64 v, ut32 cas);
 int  sdb_num_add  (Sdb *s, const char *key, ut64 v, ut32 cas);
 ut64 sdb_num_inc  (Sdb* s, const char *key, ut64 n, ut32 cas);
 ut64 sdb_num_dec  (Sdb* s, const char *key, ut64 n, ut32 cas);
+int  sdb_num_min  (Sdb* s, const char *key, ut64 v, ut32 cas);
+int  sdb_num_max  (Sdb* s, const char *key, ut64 v, ut32 cas);
 
 typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
 int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);

@@ -8,7 +8,7 @@ VAPIDIR=$(PFX)/share/vala/vapi/
 MANDIR=${PFX}/share/man/man1
 MKDIR=mkdir
 
-all: src/sdb-version.h
+all: pkgconfig src/sdb-version.h
 	${MAKE} -C src
 	${MAKE} -C memcache
 ifneq (${HAVE_VALA},)
@@ -16,9 +16,12 @@ ifneq (${HAVE_VALA},)
 	cd ${VALADIR}/types && ${MAKE}
 endif
 
-.PHONY: test sdb.js
+.PHONY: test sdb.js pkgconfig
 test:
 	${MAKE} -C test
+
+pkgconfig:
+	-${MAKE} -C pkgconfig
 
 src/sdb-version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb-version.h
@@ -57,9 +60,10 @@ install-dirs:
 INCFILES=src/sdb.h src/sdb-version.h src/cdb.h src/ht.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 
-install: install-dirs
+install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${MANDIR}
 	$(INSTALL_LIB) src/libsdb.${SOEXT} ${PFX}/lib
+	$(INSTALL_DATA) src/libsdb.a ${PFX}/lib
 	-if [ "$(SOEXT)" != "$(SOVER)" ]; then \
 	cd $(PFX)/lib ; \
 	mv libsdb.$(SOEXT) libsdb.$(SOVER) ; \
@@ -71,8 +75,8 @@ fi
 	$(INSTALL_DATA) memcache/mcsdb.h ${PFX}/include/sdb
 	$(INSTALL_PROGRAM) memcache/mcsdbd ${PFX}/bin
 	$(INSTALL_PROGRAM) memcache/mcsdbc ${PFX}/bin
-	$(INSTALL_DATA) ${VALADIR}/sdb.pc ${PFX}/lib/pkgconfig
-	$(INSTALL_DATA) ${VALADIR}/mcsdb.pc ${PFX}/lib/pkgconfig
+	$(INSTALL_DATA) pkgconfig/sdb.pc ${PFX}/lib/pkgconfig
+	$(INSTALL_DATA) pkgconfig/mcsdb.pc ${PFX}/lib/pkgconfig
 ifneq (${HAVE_VALA},)
 	$(INSTALL_DATA) ${VALADIR}/sdb.vapi ${PFX}/share/vala/vapi
 	$(INSTALL_DATA) ${VALADIR}/mcsdb.vapi ${PFX}/share/vala/vapi

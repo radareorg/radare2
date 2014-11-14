@@ -30,25 +30,6 @@ static ut64 sdb_array_get_closer_num (Sdb *db, const char *key, ut64 addr) {
 #define Fmin(x) "min"
 #define Fmax(x) "max"
 
-// TODO: move into sdb, and use CAS
-static int sdb_num_min(Sdb *db, const char *k, ut64 n) {
-	ut64 a = sdb_num_get (db, k, NULL);
-	if (n<a || !a) {
-		sdb_num_set (db, k, n, 0);
-		return 1;
-	}
-	return 0;
-}
-
-static int sdb_num_max(Sdb *db, const char *k, ut64 n) {
-	ut64 a = sdb_num_get (db, k, NULL);
-	if (n>a || !a) {
-		sdb_num_set (db, k, n, 0);
-		return 1;
-	}
-	return 0;
-}
-
 static int bbAdd (Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	ut64 last, addr = sdb_array_get_closer_num (db, "bbs", from);
 	int add = 1;
@@ -75,8 +56,8 @@ eprintf ("ADD NEW BB %llx\n", from);
 			sdb_array_set_num (db, FbbTo(from), 0, jump, 0);
 		if (fail != UT64_MAX)
 			sdb_array_set_num (db, FbbTo(from), 1, fail, 0);
-		sdb_num_min (db, "min", from);
-		sdb_num_max (db, "max", to);
+		sdb_num_min (db, "min", from, 0);
+		sdb_num_max (db, "max", to, 0);
 	}
 	return 0;
 }
@@ -304,7 +285,6 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 	// analyze next calls
 	{
 		char *c, *calls = sdb_get (db, "calls", NULL);
-		int first = 1;
 		sdb_aforeach (c, calls) {
 			ut64 addr = sdb_atoi (c);
 			r_cons_printf ("a2f @ 0x%"PFMT64x"\n", addr);
