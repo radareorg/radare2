@@ -25,7 +25,7 @@ DPTR = 16 bit pointer to data
 PSW1 - status word register
 
 Bit 7	Bit 6	Bit 5	Bit 4	Bit 3	Bit 2	Bit 1	Bit 0
-CY	AC	N	RS1	RS0	OV	Z	—
+CY	AC	N	RS1	RS0	OV	Z	-
 
 The following table describes the status bits in the PSW:
 

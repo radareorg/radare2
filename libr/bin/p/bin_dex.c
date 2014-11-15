@@ -323,6 +323,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	bin->header.strings_size = R_MIN (bin->header.strings_size, bin->size);
 
 	if (bin->header.strings_size > bin->size) {
+		free (methods);
 		eprintf ("Invalid strings size\n");
 		return R_FALSE;
 	}

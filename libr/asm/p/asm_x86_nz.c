@@ -110,6 +110,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	int l = 0;
 
 	strncpy (op, str, sizeof (op)-1);
+	op[sizeof (op)-1] = '\0';
 	arg = strstr (op, "dword ptr");
 	if (arg) {
 		const int dword_len = strlen ("dword ptr");
