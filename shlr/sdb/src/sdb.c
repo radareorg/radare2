@@ -335,11 +335,16 @@ SDB_API void sdb_reset (Sdb* s) {
 // TODO: too many allocs here. use slices
 SDB_API SdbKv* sdb_kv_new (const char *k, const char *v) {
 	SdbKv *kv;
-	int vl = v?strlen (v)+1:0;
+	int vl;
 	if (!sdb_check_key (k))
 		return NULL;
-	if (!sdb_check_value (v))
-		return NULL;
+	if (v) {
+		if (!sdb_check_value (v))
+			return NULL;
+		vl = strlen (v)+1;
+	} else {
+		vl = 0;
+	}
 	kv = R_NEW (SdbKv);
 	strncpy (kv->key, k, sizeof (kv->key)-1);
 	kv->value_len = vl;
@@ -483,13 +488,16 @@ SDB_API int sdb_sync (Sdb* s) {
 		return 0;
 // TODO: use sdb_foreach here
 	sdb_dump_begin (s);
+	/* iterate over all keys in disk database */
 	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
 		ut32 hash = sdb_hash (k);
+		/* find that key in the memory storage */
 		SdbHashEntry *hte = ht_search (s->ht, hash);
 		if (hte) {
 			kv = (SdbKv*)hte->data;
 			if (*kv->value) {
-				sdb_disk_insert (s, kv->key, kv->value);
+				/* asume k = kv->key */
+				sdb_disk_insert (s, k, kv->value);
 			}
 			// XXX: This fails if key is dupped
 			//else printf ("remove (%s)\n", kv->key);

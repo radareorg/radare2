@@ -649,7 +649,7 @@ SDB_API int sdb_query (Sdb *s, const char *cmd) {
 		if (*out) puts (out);
 		if (out != buf)
 			free (out);
-	} 
+	}
 	return must_save;
 }
 
