@@ -403,7 +403,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	char *pcmd, cmd[R_CMD_MAXLEN];
 	const char *arg = args;
 
-	for (*cmd=i=j=0; ptr[j] && j<R_CMD_MAXLEN; i++,j++) {
+	for (*cmd=i=j=0; j<R_CMD_MAXLEN && ptr[j]; i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;

@@ -931,7 +931,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						p->printf ("%d,\"string\":\"", seeki);
 					else
 						p->printf ("0x%08"PFMT64x" = ", seeki);
-					for (; ((size || size==-1) && buf[i]) && i<len; i++) {
+					for (; i<len && ((size || size==-1) && buf[i]) ; i++) {
 						if (IS_PRINTABLE (buf[i]))
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
@@ -951,7 +951,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
-					for (; ((size || size==-1) && buf[i]) && i<len; i+=2) {
+					for (; i<len && ((size || size==-1) && buf[i]) ; i+=2) {
 						if (IS_PRINTABLE (buf[i]))
 							p->printf ("%c", buf[i]);
 						else p->printf (".");
