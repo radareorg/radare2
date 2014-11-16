@@ -792,7 +792,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	int i, j;
 	char buf[128];
 	ArmOpcode aop = {.off = off};
-	for (i=j=0; str[i] && i<sizeof (buf)-1; i++, j++) {
+	for (i=j=0; i<sizeof (buf)-1 && str[i]; i++, j++) {
 		if (str[j]=='#') { i--; continue; }
 		buf[i] = tolower (str[j]);
 	}

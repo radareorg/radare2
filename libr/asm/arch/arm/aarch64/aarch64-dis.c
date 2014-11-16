@@ -1218,8 +1218,8 @@ decode_sizeq (aarch64_inst *inst)
   if (debug_dump)
     {
       int i;
-      for (i = 0; candidates[i] != AARCH64_OPND_QLF_NIL
-	   && i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
+      for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM
+	   && candidates[i] != AARCH64_OPND_QLF_NIL; ++i)
 	DEBUG_TRACE ("qualifier %d: %s", i,
 		     aarch64_get_qualifier_name(candidates[i]));
       DEBUG_TRACE ("%d, %d", (int)value, (int)mask);
