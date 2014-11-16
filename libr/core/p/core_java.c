@@ -1027,7 +1027,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 		IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
 		sz = cur_fsz < init_size ? cur_fsz : init_size;
-		while (sz <= cur_fsz && sz <= max_size) {
+		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
 			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
 			// check the return read on the read
