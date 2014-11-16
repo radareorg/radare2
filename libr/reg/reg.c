@@ -113,7 +113,7 @@ R_API RReg *r_reg_new() {
 
 R_API int r_reg_type_by_name(const char *str) {
 	int i;
-	for (i=0; types[i] && i<R_REG_TYPE_LAST; i++)
+	for (i=0; i<R_REG_TYPE_LAST && types[i]; i++)
 		if (!strcmp (types[i], str))
 			return i;
 	if (!strcmp (str, "all"))

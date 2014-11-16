@@ -945,7 +945,7 @@ R_API int r_str_ansi_filter(char *str, int len) {
 
 R_API void r_str_filter_zeroline(char *str, int len) {
 	int i;
-	for (i=0; str[i] && i<len; i++) {
+	for (i=0; i<len && str[i]; i++) {
 		if (str[i]=='\n' || str[i]=='\r')
 			break;
 		if (!IS_PRINTABLE (str[i]))

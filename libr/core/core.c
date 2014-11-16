@@ -431,7 +431,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else {
 			int i, j;
-			for (i=j=0; radare_argv[i] && i<CMDS; i++)
+			for (i=j=0; i<CMDS && radare_argv[i]; i++)
 				if (!strncmp (radare_argv[i], line->buffer.data,
 						line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
@@ -441,7 +441,7 @@ static int autocomplete(RLine *line) {
 		}
 	} else {
 		int i,j;
-		for (i=j=0; radare_argv[i] && i<CMDS; i++)
+		for (i=j=0; i<CMDS && radare_argv[i]; i++)
 			if (!memcmp (radare_argv[i], line->buffer.data,
 					line->buffer.index))
 				tmp_argv[j++] = radare_argv[i];

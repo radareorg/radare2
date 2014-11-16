@@ -97,7 +97,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			region2[2+l] = 0;
 		}
 		perm = 0;
-		for (i = 0; perms[i] && i < 4; i++)
+		for (i = 0; i < 4 && perms[i]; i++)
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;
