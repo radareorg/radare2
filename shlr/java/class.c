@@ -8615,7 +8615,7 @@ R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size){
 	int res = R_FALSE;
 	ut64 bin_size = UT64_MAX;
 	if (!bin) return bin_size;
-	if (r_bin_java_load_bin (bin, bytes, size))
+	if (r_bin_java_load_bin (bin, bytes, size) == R_TRUE)
 		bin_size = bin->calc_size;
 	r_bin_java_free (bin);
 	R_BIN_JAVA_GLOBAL_BIN = cur_bin;
