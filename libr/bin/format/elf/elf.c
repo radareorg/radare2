@@ -1070,6 +1070,9 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	Elf_(Shdr)* section_text = NULL;
 	ut64 section_text_offset = 0LL;
 
+	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
+		return NULL;
+
 	if (bin->ehdr.e_type== ET_REL) {
 		section_text = Elf_(r_bin_elf_get_section_by_name)(bin, ".text");
 		if (section_text) {
@@ -1077,8 +1080,6 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 		}
 	}
 
-	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
-		return NULL;
 	if (bin->ehdr.e_type == ET_REL) {
 		// XXX: we must obey shndx here
 		if ((sym_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".text")) == -1)

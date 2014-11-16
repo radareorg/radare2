@@ -1443,7 +1443,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 					debug_str_buf, debug_str_len);
 			if (!ret) {
 				free (debug_str_buf);
-				return NULL;
+				return R_FALSE;
 			}
 		}
 
@@ -1454,7 +1454,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		if (!ret) {
 			free (debug_str_buf);
 			free (buf);
-			return NULL;
+			return R_FALSE;
 		}
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len, mode);
