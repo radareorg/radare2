@@ -250,9 +250,10 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 		
 		/* Find comma */
 		int cn = 0;
-		while (param[cn] != ','
+		while (cn < 256
+                        && param[cn] != ','
 			&& param[cn] != '\n'
-			&& param[cn] != 0 && cn < 256)
+			&& param[cn] != 0)
 			cn++;
 			
 		if (param[cn] == ',') {

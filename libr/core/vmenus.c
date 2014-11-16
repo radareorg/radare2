@@ -1291,6 +1291,8 @@ R_API void r_core_visual_define (RCore *core) {
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
+		," j    merge down (join this and next functions)"
+		," k    merge up (join this and previous function)"
 		," h    highlight word"
 		," q    quit/cancel operation"
 		," r    rename function"
@@ -1409,6 +1411,13 @@ R_API void r_core_visual_define (RCore *core) {
 		}
 		}
 		break;
+	case 'j':
+		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, here);
+		break;
+	case 'k':
+		eprintf ("TODO: merge up\n");
+		r_cons_any_key ();
+		break;
 	case 'h': // "Vdh"
 		r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, here);
 		break;
@@ -1427,10 +1436,10 @@ R_API void r_core_visual_define (RCore *core) {
 			name[4+n] = '\0';
 			r_meta_add (core->anal, R_META_TYPE_STRING,
 				off+ntotal, off+n+ntotal, (const char *)name+4);
-			r_name_filter(name, n+10);
+			r_name_filter (name, n+10);
 			r_flag_set (core->flags, name, off+ntotal, n, 0);
 			free (name);
-			ntotal+= n;
+			ntotal += n;
 		} while (ntotal<plen);
 		break;
 	case 's':
@@ -1439,8 +1448,7 @@ R_API void r_core_visual_define (RCore *core) {
 		// TODO: r_core_cmd0 (core, "Cz");
 		if (core->print->ocur != -1)
 			n = plen;
-		else
-			n = r_str_nlen ((const char*)p, plen)+1;
+		else n = r_str_nlen ((const char*)p, plen)+1;
 		name = malloc (n+10);
 		strcpy (name, "str.");
 		memcpy (name+4, (const char *)p, n);
@@ -1449,7 +1457,7 @@ R_API void r_core_visual_define (RCore *core) {
 			if (!name[4+i])
 				name[4+i]='_';
 		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)name+4);
-		r_name_filter(name, n+10);
+		r_name_filter (name, n+10);
 		r_flag_set (core->flags, name, off, n, 0);
 		free (name);
 		}

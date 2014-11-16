@@ -90,7 +90,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_JALR:
 	case MIPS_INS_JALRC:
 	case MIPS_INS_BLTZAL: // Branch on less than zero and link
-		r_strbuf_appendf (&op->esil, "pc,8,+,lr,=,%s,pc,=", ARG(0));
+		r_strbuf_appendf (&op->esil, "pc,8,+,ra,=,%s,pc,=", ARG(0));
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
@@ -167,8 +167,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case MIPS_INS_LI:
-	case MIPS_INS_LUI:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", IMM(1), ARG(0));
+		break;
+	case MIPS_INS_LUI:
+		r_strbuf_appendf (&op->esil, "0x%"PFMT64x"0000,%s,=", IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LB:
 		r_strbuf_appendf (&op->esil, "%s,[1],%s,=",

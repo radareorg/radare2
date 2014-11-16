@@ -1016,7 +1016,6 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 	ut64 res_size = UT64_MAX,
 		 cur_fsz = r_io_desc_size (core->io, r_core_file_cur (core)->desc);
 	ut8 *buf = NULL;
-	ut32 max_size = (8096 << 16);
 	ut32 init_size = (1 << 16);
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 	addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
@@ -1027,7 +1026,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 		IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
 		sz = cur_fsz < init_size ? cur_fsz : init_size;
-		while (sz <= cur_fsz && sz <= max_size) {
+		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
 			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
 			// check the return read on the read
@@ -1062,7 +1061,6 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 	ut64 res_size = UT64_MAX;
 	ut8 *buf = NULL;
 	ut32 cur_fsz =  r_io_desc_size (core->io, r_core_file_cur (core)->desc);
-	ut32 max_size = (8096 << 16);
 	ut64 sz = UT64_MAX;
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 	ut64 addr = UT64_MAX;
@@ -1074,7 +1072,7 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 		IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
 
-		while (sz <= cur_fsz && !(sz <= max_size)) {
+		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
 			ut64 r_sz = r_core_read_at (core, addr, buf, sz);
 			// check the return read on the read

@@ -1876,3 +1876,67 @@ R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 	if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
 	r_anal_fcn_del (core->anal, off);
 }
+
+/* Join function at addr2 into function at addr */
+// addr use to be core->offset
+R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
+	RListIter *iter;
+	ut64 min = 0;
+	ut64 max = 0;
+	int first = 1;
+	RAnalBlock *bb;
+	RAnalFunction *f1 = r_anal_get_fcn_at (core->anal, addr, 0);
+	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr2, 0);
+	if (!f1 || !f2) {
+		eprintf ("Cant find function\n");
+		return;
+	}
+	// join all basic blocks from f1 into f2 if they are not
+	// delete f2
+	eprintf ("Merge %llx into %llx\n", addr, addr2);
+#if 0
+	min = f1->addr;
+	max = f1->size;
+#endif
+	r_list_foreach (f1->bbs, iter, bb) {
+		if (first) {
+			min = bb->addr;
+			max = bb->addr + bb->size;
+			first = 0;
+		} else {
+			if (bb->addr < min)
+				min = bb->addr;
+			if (bb->addr + bb->size > max)
+				max = bb->addr + bb->size;
+		}
+	}
+	r_list_foreach (f2->bbs, iter, bb) {
+		if (first) {
+			min = bb->addr;
+			max = bb->addr + bb->size;
+			first = 0;
+		} else {
+			if (bb->addr < min)
+				min = bb->addr;
+			if (bb->addr + bb->size > max)
+				max = bb->addr + bb->size;
+		}
+		r_list_append (f1->bbs, bb);
+	}
+// TODO: import data/code/refs
+	// update size
+	f1->addr = R_MIN (addr, addr2);
+	f1->size = max-min;
+	// resize
+	f2->bbs = NULL;
+	r_list_delete_data (core->anal->fcns, f2);
+}
+
+R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
+	RListIter *iter;
+	RAnalFunction *f;
+	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr, 0);
+
+	r_list_foreach (core->anal->fcns, iter, f) {
+	}
+}

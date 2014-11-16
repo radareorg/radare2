@@ -502,6 +502,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			  } else eprintf("No function defined at 0x%08"PFMT64x"\n", addr);
 		  }
 		 break;
+	case 'm': // "afm" - merge two functions
+		r_core_anal_fcn_merge (core,
+			core->offset, r_num_math (core->num, input+2));
+		break;
 	case 'a': // "afa"
 	case 'A': // "afA"
 	case 'v': // "afv"

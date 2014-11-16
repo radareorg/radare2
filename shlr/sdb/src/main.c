@@ -7,6 +7,10 @@
 #include <fcntl.h>
 #include "sdb.h"
 
+#define MODE_ZERO '0'
+#define MODE_JSON 'j'
+#define MODE_DFLT 0
+
 static int save = 0;
 static Sdb *s = NULL;
 
@@ -50,24 +54,21 @@ static int sdb_dump (const char *db, int fmt) {
 	if (!s) return 1;
 	sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 	sdb_dump_begin (s);
-	if (fmt=='j')
+	if (fmt==MODE_JSON)
 		printf ("{");
 	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
 		switch (fmt) {
-		case 'j':
+		case MODE_JSON:
 			if (!strcmp (v, "true") || !strcmp (v, "false")) {
 				printf ("%s\"%s\":%s", comma, k, v);
-			} else
-			if (sdb_isnum (v)) {
+			} else if (sdb_isnum (v)) {
 				printf ("%s\"%s\":%llu", comma, k, sdb_atoi (v));
-			} else
-			if (*v=='{' || *v=='[') {
+			} else if (*v=='{' || *v=='[') {
 				printf ("%s\"%s\":%s", comma, k, v);
-			} else
-				printf ("%s\"%s\":\"%s\"", comma, k, v);
+			} else printf ("%s\"%s\":\"%s\"", comma, k, v);
 			comma = ",";
 			break;
-		case '0':
+		case MODE_ZERO:
 			printf ("%s=%s", k, v);
 			break;
 		default:
@@ -87,12 +88,15 @@ static int sdb_dump (const char *db, int fmt) {
 		free (k);
 		free (v);
 	}
-	if (fmt=='0') {
+	switch (fmt) {
+	case MODE_ZERO:
 		fflush (stdout);
 		write (1, "", 1);
-	}
-	if (fmt=='j')
+		break;
+	case MODE_JSON:
 		printf ("}\n");
+		break;
+	}
 	sdb_free (s);
 	return 0;
 }
@@ -146,6 +150,11 @@ static int createdb(const char *f, const char **args, int nargs) {
 static void showusage(int o) {
 	printf ("usage: sdb [-0hjv|-d A B] [-|db] "
 		"[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
+	if (o==2) {
+		printf ("  -0      terminate results with \\x00\n");
+		printf ("  -j      output in json\n");
+		exit (0);
+	}
 	exit (o);
 }
 
@@ -186,8 +195,9 @@ static int dbdiff (const char *a, const char *b) {
 
 int main(int argc, const char **argv) {
 	char *line;
-	int i, zero = 0;
+	int i, ret, fmt = MODE_DFLT;
 	int db0 = 1, argi = 1;
+	int interactive = 0;
 
 	/* terminate flags */
 	if (argc<2) showusage (1);
@@ -197,62 +207,65 @@ int main(int argc, const char **argv) {
 		showusage (0);
 	}
 	if (!strcmp (argv[1], "-v")) showversion ();
-	if (!strcmp (argv[1], "-h")) showusage (0);
+	if (!strcmp (argv[1], "-h")) showusage (2);
 	if (!strcmp (argv[1], "-j")) {
 		if (argc>2)
-			return sdb_dump (argv[db0], 'j');
-		printf ("Missing database filename after -j\n");
+			return sdb_dump (argv[db0+1], MODE_JSON);
+		eprintf ("Missing database filename after -j\n");
 		return 1;
 	}
 
 	/* flags */
 	if (!strcmp (argv[argi], "-0")) {
-		zero = '0';
+		fmt = MODE_ZERO;
 		db0++;
 		argi++;
 	}
 	if (!strcmp (argv[argi], "-")) {
+		/* no database */
 		argv[argi] = "";
 		if (argc == db0+1) {
+			interactive = 1;
+			/* if no argument passed */
 			argv[argi] = "-";
 			argc++;
 			argi++;
 		}
 	}
 	if (argc-1 == db0)
-		return sdb_dump (argv[db0], zero);
+		return sdb_dump (argv[db0], fmt);
 #if USE_MMAN
 	signal (SIGINT, terminate);
 	signal (SIGHUP, syncronize);
 #endif
-	if (!strcmp (argv[db0+1], "=")) {
-		return createdb (argv[db0], argv+db0+2, argc-(db0+2));
-	}
-	if (!strcmp (argv[db0+1], "-")) {
+	ret = 0;
+	if (interactive || !strcmp (argv[db0+1], "-")) {
 		if ((s = sdb_new (NULL, argv[db0], 0))) {
 			save |= insertkeys (s, argv+3, argc-3, '-');
 			sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 			for (;(line = stdin_gets ());) {
 				save |= sdb_query (s, line);
-				if (zero) {
+				if (fmt) {
 					fflush (stdout);
 					write (1, "", 1);
 				}
 				free (line);
 			}
 		}
+	} else if (!strcmp (argv[db0+1], "=")) {
+		ret = createdb (argv[db0], argv+db0+2, argc-(db0+2));
 	} else {
 		s = sdb_new (NULL, argv[db0], 0);
 		if (!s) return 1;
 		sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 		for (i=db0+1; i<argc; i++) {
 			save |= sdb_query (s, argv[i]);
-			if (zero) {
+			if (fmt) {
 				fflush (stdout);
 				write (1, "", 1);
 			}
 		}
 	}
 	terminate (0);
-	return 0;
+	return ret;
 }

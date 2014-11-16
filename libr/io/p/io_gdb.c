@@ -58,6 +58,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	RIOGdb *riog;
 	strncpy (host, file+6, sizeof (host)-1);
+	host [sizeof(host)-1] = '\0';
 	port = strchr (host , ':');
 	if (!port) {
 		eprintf ("Port not specified. Please use gdb://[host]:[port]\n");

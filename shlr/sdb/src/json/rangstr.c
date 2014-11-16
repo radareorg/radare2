@@ -79,7 +79,7 @@ int rangstr_cmp (Rangstr *a, Rangstr *b) {
 
 int rangstr_find (Rangstr* a, char ch) {
 	size_t i = a->f;
-	while (a->p[i] && i<a->t && a->p[i] != ch) i++;
+	while (i<a->t && a->p[i] && a->p[i] != ch) i++;
 	return a->p[i]? (int)i: -1;
 }
 

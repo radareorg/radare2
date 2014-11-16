@@ -642,14 +642,8 @@ static EStates convert_to_state(char *cstate) {
 /// TODO: rewrite this ?!
 static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, char **name_field) {
 	EStates curr_state;
-	char *tmp = 0/*;*/, *tmp1 = 0;
+	char *tmp = 0;
 	char *name = 0;
-
-	tmp1 = (char *) malloc(strlen(type) + 1);
-	strcpy(tmp1, type);
-	if (strcmp(tmp1, "nesttype union _TP_CALLBACK_ENVIRON_V1::<unnamed-type-u>)") == 0) {
-		tmp1 = 0;
-	}
 
 	tmp = strtok(type, " ");
 	while (tmp != NULL) {

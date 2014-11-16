@@ -30,7 +30,7 @@ ifeq ($(CC),cc)
 CFLAGS+=$(shell gcc -v 2>&1 | grep -q LLVM && echo '-Wno-initializer-overrides')
 endif
 CFLAGS+=-Wall
-CFLAGS+=-O3
+#CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
 CFLAGS+=-g
 LDFLAGS+=-g
