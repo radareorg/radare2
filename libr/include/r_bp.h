@@ -37,9 +37,6 @@ typedef struct r_bp_plugin_t {
 	RBreakpointArch *bps;
 } RBreakpointPlugin;
 
-// XXX: type is add() or del()
-typedef int (*RBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
-
 typedef struct r_bp_item_t {
 	ut64 addr;
 	int size; /* size of breakpoint area */
@@ -53,8 +50,9 @@ typedef struct r_bp_item_t {
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
 	char *data;
-	RBreakpointCallback callback; // per-bp callback
 } RBreakpointItem;
+
+typedef int (*RBreakpointCallback)(RBreakpointItem *bp, int set, void *user);
 
 typedef struct r_bp_t {
 	void *user;

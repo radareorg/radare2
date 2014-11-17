@@ -518,24 +518,23 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
-	int ret = 0;
+static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
+	int ret;
+
+	if (!bp)
+		return R_FALSE;
+
 	// TODO handle rwx and conditions
-	if (type != R_FALSE) { // set bp
-		if (hw) {
-			ret = gdbr_set_hwbp (desc, addr, "");
-		} else {
-			ret = gdbr_set_bp (desc, addr, "");
-		}
-	} else { // unset bp
-		if (hw) {
-			ret = gdbr_remove_hwbp (desc, addr);
-		} else {
-			ret = gdbr_remove_bp (desc, addr);
-		}
-	}
-	if (ret) return R_FALSE;
-	return R_TRUE;
+	if (set)
+		ret = bp->hw?
+			gdbr_set_hwbp (desc, bp->addr, ""):
+			gdbr_set_bp (desc, bp->addr, "");
+	else
+		ret = bp->hw?
+			gdbr_remove_hwbp (desc, bp->addr):
+			gdbr_remove_bp (desc, bp->addr);
+
+	return ret? R_FALSE: R_TRUE;
 }
 
 struct r_debug_plugin_t r_debug_plugin_gdb = {

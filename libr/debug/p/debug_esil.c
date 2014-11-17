@@ -100,7 +100,7 @@ static char *r_debug_esil_reg_profile(RDebug *dbg) {
 	);
 }
 
-static int r_debug_esil_breakpoint (void *user, int type, ut64 addr, int hw, int rwx) {
+static int r_debug_esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	//r_io_system (dbg->iob.io, "db");
 	return R_FALSE;
 }

@@ -24,6 +24,7 @@ R_API RLang *r_lang_new() {
 		lang->langs->free = (RListFree)r_lang_plugin_free;
 		lang->defs = r_list_new ();
 		lang->defs->free = (RListFree)r_lang_def_free;
+		lang->printf = (PrintfCallback)printf;
 		r_lang_add (lang, &r_lang_plugin_c);
 		r_lang_add (lang, &r_lang_plugin_vala);
 	}
@@ -111,10 +112,12 @@ R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
 R_API int r_lang_list(RLang *lang) {
 	RListIter *iter;
 	RLangPlugin *h;
+	if (!lang)
+		return R_FALSE;
 	r_list_foreach (lang->langs, iter, h) {
-		printf (" %s: %s\n", h->name, h->desc);
+		lang->printf ("%s: %s\n", h->name, h->desc);
 	}
-	return R_FALSE;
+	return R_TRUE;
 }
 
 R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {

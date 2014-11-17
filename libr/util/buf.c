@@ -265,14 +265,16 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	pa = addr - b->base;
 	if (pa<0)
 		return 0;
-	if (addr-b->base+len > b->length) return 0;
-#if 0
+#if 1
 	if (pa+len > b->length) {
 		len = b->length - pa;
 		if (len<0)
 			return 0;
 		memset (buf+pa, 0xff, len);
 	}
+#else
+	/* if we avoid partial reads it breaks stuff */
+	if (addr-b->base+len > b->length) return 0;
 #endif
 	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
 }

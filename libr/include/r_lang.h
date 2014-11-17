@@ -15,6 +15,7 @@ typedef struct r_lang_t {
 	void *user;
 	RList *defs;
 	RList *langs;
+	PrintfCallback printf;
 } RLang;
 
 typedef struct r_lang_plugin_t {

@@ -729,6 +729,7 @@ R_API int r_core_init(RCore *core) {
 		return R_FALSE;
 	}
 	core->lang = r_lang_new ();
+	core->lang->printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->assembler = r_asm_new ();
