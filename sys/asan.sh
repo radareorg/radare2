@@ -5,8 +5,8 @@ echo 'int main(){return 0;}' > .a.c
 [ -z "${CC}" ] && CC=gcc
 ${CC} ${CFLAGS} ${LDFLAGS} -o .a.out .a.c
 RET=$?
-rm -rf .a.out .a.c
-if [ $? != 0 ]; then
+rm -f .a.out .a.c
+if [ $RET != 0 ]; then
 	echo "Your compiler doesn't supports ASAN."
 	exit 1
 fi
