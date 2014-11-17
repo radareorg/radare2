@@ -59,7 +59,7 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 	RBreakpointItem *b;
 
 	r_list_foreach (bp->bps, iter, b) {
-		if (bp->breakpoint && bp->breakpoint (bp->user, set, b->addr, b->hw, b->rwx))
+		if (bp->breakpoint && bp->breakpoint (b, set, bp->user))
 			continue;
 		/* write obytes from every breakpoint in r_bp if not handled by plugin */
 		if (set) {

@@ -1819,13 +1819,19 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 	return R_FALSE;
 }
 
-static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
+static int r_debug_native_bp(RBreakpointItem *bp, int set, void *user) {
+	if (!bp)
+		return R_FALSE;
+
 #if __i386__ || __x86_64__
 	RDebug *dbg = user;
-	if (hw) {
-		if (add) return drx_add (dbg, addr, rwx);
-		return drx_del (dbg, addr, rwx);
-	}
+
+	if (!bp->hw)
+		return R_FALSE;
+
+	return set?
+		drx_add (dbg, bp->addr, bp->rwx):
+		drx_del (dbg, bp->addr, bp->rwx);
 #endif
 	return R_FALSE;
 }
