@@ -26,6 +26,9 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	if (p) {
 		*p = 0;
 		libname = strdup (p+1);
+		if (*file!='/') {
+			strcpy (srcdir, ".");
+		}
 	} else {
 		libname = strdup (file);
 		strcpy (srcdir, ".");
