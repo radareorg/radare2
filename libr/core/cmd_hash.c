@@ -166,8 +166,13 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 	// TODO: set argv here
 	if (r_lang_use (core->lang, lang)) {
 		r_lang_setup (core->lang);
-		if (p) r_lang_run_file (core->lang, p+1);
-		else r_lang_prompt (core->lang);
+		if (p) {
+			r_lang_run_file (core->lang, p+1);
+		} else {
+			if (r_config_get_i (core->config, "scr.interactive")) {
+				r_lang_prompt (core->lang);
+			} else eprintf ("Cannot enter into the rlang prompt in non-interactive mode\n");
+		}
 	} else {
 		if (!p || *p==' ')
 			eprintf ("Invalid hashbang. See '#!' for help.\n");

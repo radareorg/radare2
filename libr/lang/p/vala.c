@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 pancake */
+/* radare - LGPL - Copyright 2011-2014 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -9,7 +9,7 @@
 static int lang_vala_file(RLang *lang, const char *file) {
 	void *lib;
 	char *p, name[512], buf[512];
-	char *vapidir;
+	char *vapidir, *srcdir, *libname;
 
 	if (strlen (file)>500)
 		return R_FALSE;
@@ -21,25 +21,38 @@ static int lang_vala_file(RLang *lang, const char *file) {
 		return R_FALSE;
 	}
 
+	srcdir = strdup (file);
+	p = (char*)r_str_lchr (srcdir, '/');
+	if (p) {
+		*p = 0;
+		libname = strdup (p+1);
+	} else {
+		libname = strdup (file);
+		strcpy (srcdir, ".");
+	}
 	vapidir = r_sys_getenv ("VAPIDIR");
 	if (vapidir) {
 		if (*vapidir) {
-			snprintf (buf, sizeof (buf), "valac --vapidir=%s --pkg r_core -C %s",
-				vapidir, name);
+			snprintf (buf, sizeof (buf)-1, "valac -d %s --vapidir=%s --pkg r_core -C %s",
+				srcdir, vapidir, name);
 		}
 		free (vapidir);
-	} else sprintf (buf, "valac --pkg r_core -C %s", name);
+	} else snprintf (buf, sizeof(buf)-1, "valac -d %s --pkg r_core -C %s", srcdir, name);
+	free (srcdir);
 	if (system (buf) != 0)
 		return R_FALSE;
 	p = strstr (name, ".vala"); if (p) *p=0;
 	p = strstr (name, ".gs"); if (p) *p=0;
 	// TODO: use CC environ if possible
 	snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s."R_LIB_EXT
-		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, name);
-	if (system (buf) != 0)
+		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, libname);
+	if (system (buf) != 0) {
+		free (libname);
 		return R_FALSE;
+	}
 
-	snprintf (buf, sizeof (buf), "./lib%s."R_LIB_EXT, name);
+	snprintf (buf, sizeof (buf), "./lib%s."R_LIB_EXT, libname);
+	free (libname);
 	lib = r_lib_dl_open (buf);
 	if (lib!= NULL) {
 		void (*fcn)(RCore *);
