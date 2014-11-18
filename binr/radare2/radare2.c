@@ -93,10 +93,11 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 static int main_help(int line) {
 	if (line<2)
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-\n");
+			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-|--|=\n");
 	if (line != 1) printf (
 		" --           Open radare2 on an empty file\n"
 		" -            Equivalent of 'r2 malloc://512'\n"
+		" =            Read file from stdin (use -i and -c to run cmds)\n"
 		" -0           Print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aa' command to analyze all referenced code\n"
@@ -424,7 +425,29 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmd0 (&r, "aa");
 		}
 	}
-	if (strcmp (argv[optind-1], "--")) {
+	if (!strcmp (argv[optind], "=")) {
+		int sz;
+		/* stdin/batch mode */
+		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
+		close (0);
+		if (sz>0) {
+			char path[1024];
+			snprintf (path, sizeof (path)-1, "malloc://%d", sz);
+			fh = r_core_file_open (&r, path, perms, mapaddr);
+			if (fh) {
+				r_io_write_at (r.io, 0, buf, sz);
+				r_core_block_read (&r, 0);
+				free (buf);
+				// TODO: load rbin thing
+			} else {
+				eprintf ("Cannot open %s\n", path);
+				return 1;
+			}
+		} else {
+			eprintf ("Cannot slurp from stdin\n");
+			return 1;
+		}
+	} else if (strcmp (argv[optind-1], "--")) {
 		if (debug) {
 			r_config_set (r.config, "search.in", "raw"); // implicit?
 			r_config_set (r.config, "io.va", "false"); // implicit?
