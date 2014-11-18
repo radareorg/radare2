@@ -163,7 +163,7 @@ static RList* libs(RBinFile *arch) {
 	xbe_lib lib;
 	RList *ret;
 	char *s;
-	int i;
+	int i, off;
 
 	if (!arch || !arch->o)
 		return NULL;
@@ -171,13 +171,21 @@ static RList* libs(RBinFile *arch) {
 	ret = r_list_new ();
 	if (!ret) return NULL;
 	ret->free = free;
-	r_buf_read_at (arch->buf, obj->header->kernel_lib_addr - obj->header->base,
-		(ut8 *)&lib, sizeof(xbe_lib));
+	if ( obj->header->kernel_lib_addr < obj->header->base) {
+		off = 0;
+	} else {
+		off = obj->header->kernel_lib_addr - obj->header->base;
+	}
+	r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) r_list_append (ret, s);
 
-	r_buf_read_at (arch->buf, obj->header->xapi_lib_addr - obj->header->base,
-		(ut8 *)&lib, sizeof(xbe_lib));
+	if ( obj->header->xapi_lib_addr < obj->header->base) {
+		off = 0;
+	} else {
+		off = obj->header->xapi_lib_addr - obj->header->base;
+	}
+	r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) r_list_append (ret, s);
 

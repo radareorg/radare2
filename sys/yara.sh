@@ -18,5 +18,5 @@ cd yara || exit 1
 git reset --hard 880c268ce0b98046a476784c412d9e91573c8a08
 sh bootstrap.sh
 ./configure --prefix=${PREFIX} || exit 1
-${MAKE} || exit 1
+${MAKE} CFLAGS=-DYYDEBUG=0 || exit 1
 exec ${SUDO} ${MAKE} install
