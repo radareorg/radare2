@@ -1536,6 +1536,8 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 /* convert numeric value in opcode to ascii char or number */
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
+	int aligned = 0;
+#define DOALIGN() if (!aligned) { handle_comment_align (core, ds); aligned = 1; }
 	if (!ds->show_comments)
 		return;
 	if (p == UT64_MAX) {
@@ -1585,13 +1587,14 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			*msg = 0;
 		else msg[sizeof (msg)-1] = 0;
 #endif
-		handle_comment_align (core, ds);
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
 			if (ds->show_color) {
+				DOALIGN();
 				r_cons_printf ("%s", ds->pal_comment);
 			}
+			DOALIGN();
 			if (*msg) {
 				r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
 			} else {
@@ -1601,13 +1604,16 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				r_cons_printf (Color_RESET);
 		} else {
 			if (p==UT64_MAX || p==UT32_MAX) {
+				DOALIGN();
 				r_cons_printf (" ; -1", p);
 			} else if (p>='!' && p<='~') {
+				DOALIGN();
 				r_cons_printf (" ; '%c'", p);
 			} else if (p>10) {
 				if ((st64)p<0) {
 					// resolve local var if possible
 					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)p);
+					DOALIGN();
 					if (v) {
 						r_cons_printf (" ; var %s", v->name);
 						r_anal_var_free (v);
@@ -1617,9 +1623,11 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				} else {
 					if (r_core_anal_address (core, p) & R_ANAL_ADDR_TYPE_ASCII) {
 						r_str_filter (msg, 0);
-						if (*msg)
+						if (*msg) {
+							DOALIGN();
 							r_cons_printf (" ; \"%s\" 0x%08"PFMT64x" ",
 									msg, p);
+						}
 					}
 				}
 			}
@@ -1630,6 +1638,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					if (*msg) {
 						if (ds->show_color)
 							r_cons_printf (ds->pal_comment);
+						DOALIGN();
 						r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
 						if (ds->show_color)
 							r_cons_printf (Color_RESET);
@@ -1639,6 +1648,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					if (*n>-0xfff && *n < 0xfff) {
 						if (ds->show_color)
 							r_cons_printf (ds->pal_comment);
+						DOALIGN();
 						r_cons_printf (" ; %d", *n);
 						if (ds->show_color)
 							r_cons_printf (Color_RESET);

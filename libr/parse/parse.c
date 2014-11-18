@@ -107,7 +107,13 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	int x86 = (p&&p->cur&&p->cur->name)?
 		(strstr (p->cur->name, "x86")? 1: 0): 0;
 	if (!data || !p) return 0;
+#if FILTER_DWORD
+	ptr2 = strstr (ptr, "dword ");
+	if (ptr2)
+		memmove (ptr2, ptr2+6, strlen (ptr2+6)+1);
+#endif
 	ptr2 = NULL;
+// remove "dword" ?
 	while ((ptr = strstr (ptr, "0x"))) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
 		else for (ptr2 = ptr; *ptr2 && ((*ptr2=='\x1b')||!isseparator (*ptr2)); ptr2++);
