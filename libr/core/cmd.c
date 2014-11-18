@@ -1769,6 +1769,7 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 		break;
 	case 'p': // print
 	case 'x':
+	case '$':
 		r_core_cmd0 (core, next? "s++": "s--");
 		r_core_cmd0 (core, core->lastcmd);
 		break;
