@@ -1374,6 +1374,8 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 
 static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
 	int i;
+	if (!ds->show_comments)
+		return;
 	if (core->vmode) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
@@ -1407,6 +1409,8 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 	// declare static since this variable is reused locally, and needs to maintain
 	// state
 	static RAnalCC cc = {0};
+	if (!ds->show_comments)
+		return;
 	if (!r_anal_cc_update (core->anal, &cc, &ds->analop)) {
 		if (ds->show_functions) {
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -1528,6 +1532,8 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 /* convert numeric value in opcode to ascii char or number */
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
+	if (!ds->show_comments)
+		return;
 	if (p == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p)>0) {
