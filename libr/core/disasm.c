@@ -573,18 +573,20 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	// Show xrefs
 	if (ds->show_xrefs) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		RList *xrefs;
 		RAnalRef *refi;
 		RListIter *iter;
-
-		/* show xrefs */
 		int count = 0;
+
+		if (!ds->show_comments)
+			return;
+		/* show xrefs */
 		xrefs = r_anal_xref_get (core->anal, ds->at);
 		if (!xrefs)
 			return;
 
 		if (r_list_length (xrefs)> ds->maxrefs) {
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 			beginline (core, ds, f);
 			r_cons_printf ("%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 			r_list_foreach (xrefs, iter, refi) {
@@ -1355,6 +1357,8 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 	RAnalFunction *f;
+	if (!ds->show_comments)
+		return;
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 	        //case R_ANAL_OP_TYPE_CJMP:

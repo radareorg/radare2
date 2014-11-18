@@ -60,6 +60,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 		eprintf ("r_io_vread: wrong usage; len is smaller than 0. len: %i\n", len);
 		return R_FAIL;
 	}
+eprintf ("VREAD %llx\n", vaddr);
 	sections = r_io_section_get_in_vaddr_range (io, vaddr, vaddr+len);
 	if (!r_list_empty (sections)) {						//check if there is any section
 		ranges = r_list_new();
