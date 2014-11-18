@@ -1521,7 +1521,7 @@ static int cmd_print(void *data, const char *input) {
 				for (i=j=0; i<core->blocksize && j<l; i+=ret,j++ ) {
 					ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i);
 					if (r_cons_singleton ()->breaked) break;
-					printf ("%d\n", ret);
+					r_cons_printf ("%d\n", ret);
 					if (ret<1) ret = 1;
 				}
 				r_cons_break_end ();
@@ -1535,6 +1535,12 @@ static int cmd_print(void *data, const char *input) {
 			} else cmd_pdj (core, input+2);
 			r_cons_newline ();
 			pd_result = 0;
+			break;
+		case 0:
+			/* "pd" -> will disassemble blocksize/4 instructions */
+			if (*input=='d') {
+				l/=4;
+			}
 			break;
 		case '?': // "pd?"
 			processed_cmd = R_TRUE;
@@ -1589,8 +1595,10 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);
 					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
+					//core->num->value = r_core_print_disasm (core->print,
+					//	core, addr, block, l*10, l, 0, 0);
 					core->num->value = r_core_print_disasm (core->print,
-						core, addr, block, l*10, l, 0, 0);
+							core, addr, block, l*10, l, 0, 0);
 				}
 			}
 			free (block);
