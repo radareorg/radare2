@@ -6,4 +6,4 @@ TARGET_I4004=asm_i4004.${EXT_SO}
 ALL_TARGETS+=${TARGET_I4004}
 
 ${TARGET_I4004}: ${OBJ_I4004}
-	${CC} ${call libname,asm_i4004} ${CFLAGS} -o ${TARGET_i4004} ${OBJ_I4004}
+	${CC} $(call libname,asm_i4004) ${CFLAGS} ${OBJ_I4004} -o ${TARGET_I4004}
