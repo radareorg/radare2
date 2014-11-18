@@ -13,14 +13,16 @@ static RCorePlugin *cmd_static_plugins[] = { R_CORE_STATIC_PLUGINS };
 R_API int r_core_plugin_deinit(RCmd *cmd) {
 	RListIter *iter;
 	RCorePlugin *plugin;
+	if (!cmd->plist)
+		return R_FALSE;
 	r_list_foreach (cmd->plist, iter, plugin) {
 		if (plugin && plugin->deinit) {
 			plugin->deinit (cmd, NULL);
 		}
-		r_list_pop (cmd->plist);
 	}
-	if (!r_list_empty (cmd->plist))
-		r_list_pop (cmd->plist);
+	/* empty the list */
+	r_list_free (cmd->plist);
+	cmd->plist = NULL;
 	return R_TRUE;
 }
 
@@ -34,7 +36,7 @@ R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 
 R_API int r_core_plugin_init(RCmd *cmd) {
 	int i;
-	cmd->plist = r_list_newf (free);
+	cmd->plist = r_list_newf (NULL); // memleak or dblfree
 	for (i=0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
 			eprintf ("Error loading cmd plugin\n");

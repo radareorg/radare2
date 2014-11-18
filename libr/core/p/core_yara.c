@@ -475,8 +475,10 @@ static int r_cmd_yara_init(const RCore* core) {
 
 static int r_cmd_yara_deinit(){
 	if (r_yr_initialize != NULL) {
-		r_yr_compiler_destroy(compiler);
-		r_yr_finalize();
+		if (r_yr_compiler_destroy)
+			r_yr_compiler_destroy (compiler);
+		if (r_yr_finalize)
+			r_yr_finalize();
 		r_yr_initialize = NULL;
 		r_lib_dl_close (libyara);
 	}
