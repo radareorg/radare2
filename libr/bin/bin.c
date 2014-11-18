@@ -508,22 +508,34 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
 	if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
+		int fail = 1;
+		/* get file path from desc name */
+		/* - asume path+exec have no space in path */
+		char *filepath, *foo = strdup (desc->name);
+		filepath = strchr (foo, ' ');
+		if (filepath) *filepath = 0;
+		filepath = r_file_path (foo);
+
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a fixed size.
 		// if there is no fixed size or its MAXED, there is no way to definitively
 		// load the bin-properly.  Many of the plugins require all content and are not
 		// stream based loaders
 		// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
-		RIODesc *tdesc = iob->desc_open (io, desc->name, R_IO_READ, 0); //desc->flags, R_IO_READ);
-		if (!tdesc) return R_FALSE;
-		file_sz = iob->desc_size (io, tdesc);
-		if (file_sz == UT64_MAX) {
+		RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
+		if (tdesc) {
+			file_sz = iob->desc_size (io, tdesc);
+			if (file_sz != UT64_MAX) {
+				sz = R_MIN (file_sz, sz);
+				buf_bytes = iob->desc_read (io, tdesc, &sz);
+				fail = 0;
+			}
 			iob->desc_close (io, tdesc);
-			return R_FALSE;
 		}
-		sz = R_MIN (file_sz, sz);
-		buf_bytes = iob->desc_read (io, tdesc, &sz);
-		iob->desc_close (io, tdesc);
+		free (foo);
+		free (filepath);
+		if (fail)
+			return R_FALSE;
 	} else if (sz != UT64_MAX) {
 		sz = R_MIN (file_sz, sz);
 		buf_bytes = iob->desc_read (io, desc, &sz);

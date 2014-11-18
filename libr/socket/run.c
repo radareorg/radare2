@@ -558,8 +558,14 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 	if (p->_program) {
 		if (!r_file_exists (p->_program)) {
-			eprintf ("rarun2: %s: file not found\n", p->_program);
-			return 1;
+			char *progpath = r_file_path (p->_program);
+			if (progpath && *progpath) {
+				free (p->_program);
+				p->_program = progpath;
+			} else {
+				eprintf ("rarun2: %s: file not found\n", p->_program);
+				return 1;
+			}
 		}
 		// XXX HACK close all non-tty fds
 		{ int i; for (i=3; i<10; i++) close (i); }
