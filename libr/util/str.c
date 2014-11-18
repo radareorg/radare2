@@ -117,8 +117,8 @@ R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
 /**
  * function: r_str_bits_from_num
  * 
-
  */
+#if 0
 R_API ut64 r_str_bits_from_string(const char *buf, int len, const char *bitz) {
 	/* return the numberic value associated to a string (rflags) */
 	int i, j;
@@ -139,6 +139,7 @@ R_API ut64 r_str_bits_from_string(const char *buf, int len, const char *bitz) {
 	strout[j] = 0;
 	return j;
 }
+#endif
 
 /* int c; ret = hex2int(&c, 'c'); */
 static int hex2int (ut8 *val, ut8 c) {
