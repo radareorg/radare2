@@ -797,16 +797,25 @@ free (rf);
 			regname = r_reg_get_name (core->dbg->reg,
 				r_reg_get_name_idx (string));
 			if (!regname)
-				regname= string;
+				regname = string;
 			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
 			if (r) {
-				r_cons_printf ("0x%08"PFMT64x" ->", str,
-					r_reg_get_value (core->dbg->reg, r));
-				r_reg_set_value (core->dbg->reg, r,
-					r_num_math (core->num, arg+1));
-				r_debug_reg_sync (core->dbg, -1, R_TRUE);
-				r_cons_printf ("0x%08"PFMT64x"\n",
-					r_reg_get_value (core->dbg->reg, r));
+				if (r->flags) {
+					r_cons_printf ("0x%08"PFMT64x" ->",
+							r_reg_get_value (core->dbg->reg, r));
+					r_reg_set_bvalue (core->dbg->reg, r, arg+1);
+					r_debug_reg_sync (core->dbg, -1, R_TRUE);
+					r_cons_printf ("0x%08"PFMT64x"\n",
+							r_reg_get_value (core->dbg->reg, r));
+				} else {
+					r_cons_printf ("0x%08"PFMT64x" ->", str,
+							r_reg_get_value (core->dbg->reg, r));
+					r_reg_set_value (core->dbg->reg, r,
+							r_num_math (core->num, arg+1));
+					r_debug_reg_sync (core->dbg, -1, R_TRUE);
+					r_cons_printf ("0x%08"PFMT64x"\n",
+							r_reg_get_value (core->dbg->reg, r));
+				}
 			} else eprintf ("Unknown register '%s'\n", string);
 			free (string);
 			return;

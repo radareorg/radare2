@@ -136,6 +136,7 @@ R_API float r_reg_get_fvalue(RReg *reg, RRegItem *item);
 R_API int r_reg_set_fvalue(RReg *reg, RRegItem *item, float value);
 R_API ut64 r_reg_get_pvalue(RReg *reg, RRegItem *item, int packidx);
 R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item);
+R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str);
 R_API int r_reg_set_pvalue(RReg *reg, RRegItem *item, ut64 value, int packidx);
 
 /* byte arena */

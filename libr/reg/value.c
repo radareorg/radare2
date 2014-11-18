@@ -122,6 +122,17 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	return R_FALSE;
 }
 
+R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
+	ut64 num;
+	if (!item->flags)
+		return UT64_MAX;
+	num = r_str_bits_from_string (str, item->flags);
+	if (num == UT64_MAX) 
+		r_reg_set_value (reg, item, r_num_math (NULL, str));
+	else r_reg_set_value (reg, item, num);
+	return num;
+}
+
 R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 	char *out;
 	ut64 num;
