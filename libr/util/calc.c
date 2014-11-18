@@ -83,7 +83,7 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 		} else
 		if (nc->curr_tok == RNCDIV) {
 			RNumCalcValue d = prim (num, nc, 1);
-			if (!d.d || !d.n) {
+			if (num != NULL && (!d.d || !d.n)) {
 				num->dbz = 1;
 				return d;
 			}
