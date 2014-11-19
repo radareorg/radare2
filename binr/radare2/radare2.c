@@ -669,6 +669,10 @@ int main(int argc, char **argv, char **envp) {
 		if (r_file_exists (global_rc))
 			(void)r_core_run_script (&r, global_rc);
 	}
+	if (do_analysis) {
+		r_core_cmd0 (&r, "aa");
+		r_cons_flush ();
+	}
 	/* run -i flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
@@ -682,10 +686,6 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Cannot open '%s'\n", cmdfile[i]);
 		if (ret<0 || (ret==0 && quiet))
 			return 0;
-	}
-	if (do_analysis) {
-		r_core_cmd0 (&r, "aa");
-		r_cons_flush ();
 	}
 /////
 	r_list_foreach (cmds, iter, cmdn) {
