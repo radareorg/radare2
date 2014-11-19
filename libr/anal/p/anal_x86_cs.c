@@ -97,6 +97,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_MOVD:
 			case X86_INS_MOVQ:
 			case X86_INS_MOVDQ2Q:
+				{
 				op->type = R_ANAL_OP_TYPE_MOV;
 				switch (INSOP(0).type) {
 				case X86_OP_MEM:
@@ -106,22 +107,22 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						op->ptr += addr + insn->size;
 					}
 					break;
-				default:
-					switch (INSOP(1).type) {
-					case X86_OP_MEM:
-						op->ptr = INSOP(1).mem.disp;
-						op->refptr = INSOP(1).size;
-						if (INSOP(1).mem.base == X86_REG_RIP) {
-							op->ptr += addr + insn->size;
-						}
-						break;
-					case X86_OP_IMM:
-						op->ptr = INSOP(1).imm;
-						break;
-					default:
-						break;
+				}
+				switch (INSOP(1).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(1).mem.disp;
+					op->refptr = INSOP(1).size;
+					if (INSOP(1).mem.base == X86_REG_RIP) {
+						op->ptr += addr + insn->size;
 					}
 					break;
+				case X86_OP_IMM:
+					if (INSOP(1).imm > 10)
+						op->ptr = INSOP(1).imm;
+					break;
+				default:
+					break;
+				}
 				}
 				break;
 			case X86_INS_CMP:
