@@ -1933,10 +1933,13 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 }
 
 R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
+#if 0
+	// TODO
 	RListIter *iter;
 	RAnalFunction *f;
-	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr, 0);
+	//RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr, 0);
 
 	r_list_foreach (core->anal->fcns, iter, f) {
 	}
+#endif
 }

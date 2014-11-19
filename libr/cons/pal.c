@@ -257,11 +257,27 @@ R_API void r_cons_pal_list (int rad) {
 	RConsPalette *pal = &(r_cons_singleton ()->pal);
 	ut8 *p = (ut8*)pal;
 	ut8 r, g, b;
-	char **color, rgbstr[32];;
+	char **color, rgbstr[32];
+	const char *hasnext;
 	int i;
+	if (rad=='j')
+		r_cons_printf ("{");
 	for (i=0; keys[i].name; i++) {
 		color = (char**)(p + keys[i].off);
-		if (rad) {
+		switch (rad) {
+		case 'j':
+			r = g = b = 0;
+			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
+			rgbstr[0] = 0;
+			r_cons_rgb_str (rgbstr, r, g, b, 0);
+			if (keys[i+1].name) hasnext = ",";
+			else hasnext = "";
+			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
+				keys[i].name, r, g, b, hasnext);
+			break;
+		case '*':
+		case 'r':
+		case 1:
 			r = g = b = 0;
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			rgbstr[0] = 0;
@@ -271,9 +287,13 @@ R_API void r_cons_pal_list (int rad) {
 			b >>= 4;
 			r_cons_printf ("ec %s rgb:%x%x%x\n",
 				keys[i].name, r, g, b);
-		} else
-		r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
+			break;
+		default:
+			r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
+		}
 	}
+	if (rad=='j')
+		r_cons_printf ("}\n");
 }
 
 R_API int r_cons_pal_set (const char *key, const char *val) {

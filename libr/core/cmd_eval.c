@@ -20,8 +20,7 @@ static int cmd_eval(void *data, const char *input) {
 					e++;
 				}
 			}
-		} else
-		if (strlen (input)>3) {
+		} else if (strlen (input)>3) {
 			char *v, *k = strdup (input+3);
 			if (!k) break;
 			v = strchr (k, '=');
@@ -59,6 +58,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ecd","","set default palette",
 			"ecr","","set random palette",
 			"ecs","","show a colorful palette",
+			"ecj","","show palette in JSON",
 			"eco"," dark|white","load white color scheme template",
 			"ec"," prompt red","change color of prompt",
 			""," ","",
@@ -106,6 +106,7 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		case 's': r_cons_pal_show (); break;
 		case '*': r_cons_pal_list (1); break;
+		case 'j': r_cons_pal_list ('j'); break;
 		case '\0': r_cons_pal_list (0); break;
 		case 'r': r_cons_pal_random (); break;
 		default: {
