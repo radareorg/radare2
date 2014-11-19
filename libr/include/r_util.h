@@ -592,7 +592,7 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
 #endif
 
 /* uleb */
-R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v);
+R_API const ut8 *r_uleb128 (const ut8 *data, ut64 *v);
 R_API const ut8 *r_leb128 (const ut8 *data, st64 *v);
 #endif
 
