@@ -2237,6 +2237,10 @@ static int runword (RAnalEsil *esil, const char *word) {
 			return op (esil);
 		}
 	}
+	if (!*word) {
+		// skip empty words
+		return;
+	}
 	// push value
 	if (!r_anal_esil_push (esil, word)) {
 		eprintf ("ESIL stack is full\n");
