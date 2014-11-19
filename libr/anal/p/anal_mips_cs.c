@@ -366,7 +366,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_BGEZALC:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->delay = 1;
-		op->jump = IMM(0);
+		if (OPERAND(0).type == MIPS_OP_IMM) {
+			op->jump = IMM(0);
+		} else if (OPERAND(1).type == MIPS_OP_IMM) {
+			op->jump = IMM(1);
+		} else if (OPERAND(2).type == MIPS_OP_IMM) {
+			op->jump = IMM(2);
+		}
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
