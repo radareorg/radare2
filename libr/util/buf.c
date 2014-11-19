@@ -260,8 +260,9 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
 	if (!b) return 0;
-	if (addr == UT64_MAX)
-		return 0;
+#if R_BUF_CUR != UT64_MAX
+#error R_BUF_CUR must be UT64_MAX
+#endif
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
 	if (addr < b->base)

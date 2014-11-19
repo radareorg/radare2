@@ -42,8 +42,10 @@ static int lang_vala_file(RLang *lang, const char *file) {
 		free (vapidir);
 	} else snprintf (buf, sizeof(buf)-1, "valac -d %s --pkg r_core -C %s", srcdir, name);
 	free (srcdir);
-	if (system (buf) != 0)
+	if (system (buf) != 0) {
+		free (libname);
 		return R_FALSE;
+	}
 	p = strstr (name, ".vala"); if (p) *p=0;
 	p = strstr (name, ".gs"); if (p) *p=0;
 	// TODO: use CC environ if possible

@@ -563,6 +563,7 @@ R_API int r_run_start(RRunProfile *p) {
 				free (p->_program);
 				p->_program = progpath;
 			} else {
+				free (progpath);
 				eprintf ("rarun2: %s: file not found\n", p->_program);
 				return 1;
 			}
