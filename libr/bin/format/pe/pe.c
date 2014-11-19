@@ -99,6 +99,9 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 		return 0;
 
 	do {
+		if (import_ordinal >= UT16_MAX) {
+			break;
+		}
 		if (r_buf_read_at (bin->b, off + i * sizeof (PE_DWord),
 				(ut8*)&import_table, sizeof (PE_DWord)) == -1) {
 			eprintf("Error: read (import table)\n");
