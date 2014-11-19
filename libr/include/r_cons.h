@@ -332,6 +332,7 @@ R_API int r_cons_is_utf8();
 
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
+R_API int r_cons_controlz(int ch);
 R_API int  r_cons_readchar();
 R_API void r_cons_any_key();
 R_API int  r_cons_eof();

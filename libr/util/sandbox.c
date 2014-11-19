@@ -31,7 +31,7 @@ R_API int r_sandbox_check_path (const char *path) {
         if (path[0]=='.' && path[1]=='.' && (path[2]=='\0' || path[2]=='/')) return 0;
 
 	// Or does it have .. in some other position?
-	for (p = strstr(path, "/.."); p; p = strstr(p, "/.."))
+	for (p = strstr (path, "/.."); p; p = strstr(p, "/.."))
 		if (p[3] == '\0' || p[3] == '/') return 0;
 
 	// Absolute paths are forbidden.
@@ -149,4 +149,15 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	if (!path || (r_sandbox_enable (0) && !r_sandbox_check_path (path)))
 		return NULL;
 	return opendir (path);
+}
+
+R_API int r_sys_stop () {
+	if (enabled) return R_FALSE;
+	int pid = r_sys_getpid ();
+#ifndef SIGSTOP
+#define SIGSTOP 19
+#endif
+	if (!r_sandbox_kill (pid, SIGSTOP))
+		return R_TRUE;
+	return R_FALSE;
 }

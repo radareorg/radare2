@@ -69,6 +69,8 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 		ret = read (0, s+len, 1);
 		if (ret==-1)
 			return 0;
+		s[len] = r_cons_controlz (s[len]);
+		if (!s[len]) return 1; // ^z
 		if (s[len] < 28)
 			return s[0]?1:0;
 		if (ret == 1) {
@@ -87,6 +89,7 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
+	int ret;
 #if __WINDOWS__
 	BOOL ret;
 	DWORD mode, out;
@@ -105,10 +108,12 @@ do_it_again:
 	SetConsoleMode (h, mode);
 #else
 	do {
-		int ret = read (0, buf, 1);
+		buf[0] = 0;
+		ret = read (0, buf, 1);
+		buf[0] = r_cons_controlz (buf[0]);
 		// VTE HOME/END support
 		if (buf[0]==79) {
-			if (read (0,buf,1) != 1)
+			if (read (0, buf, 1) != 1)
 				return -1;
 			if (buf[0]==70) {
 				return 5;
@@ -118,12 +123,8 @@ do_it_again:
 			return 0;
 		}
 		if (ret == -1) return 0; // read no char
-		if (ret == 0) return -1; // eof
+		if (!buf[0] || ret == 0) return -1; // eof
 		// TODO: add support for other invalid chars
-		if (*buf==0x1a) { // ^Z
-			kill (getpid (), SIGSTOP);
-			buf[0] = 0;
-		}
 		if (*buf==0xc2 || *buf==0xc3) {
 			read (0, buf+1, 1);
 			*buf = '\0';

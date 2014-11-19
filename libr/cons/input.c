@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -21,6 +21,18 @@ static int is_fd_ready(int fd) {
 	return !FD_ISSET (0, &rfds);
 }
 #endif
+
+R_API int r_cons_controlz(int ch) {
+#if __UNIX__
+	if (ch == 0x1a) {
+		r_cons_set_raw (0);
+		r_cons_show_cursor (1);
+		r_sys_stop ();
+		return 0;
+	}
+#endif
+	return ch;
+}
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
 	if (ch != 0x1b)
@@ -189,6 +201,7 @@ R_API void r_cons_any_key() {
 
 R_API int r_cons_readchar() {
 	char buf[2];
+	buf[0] = -1;
 #if __WINDOWS__
 	BOOL ret;
 	DWORD out;
@@ -196,19 +209,17 @@ R_API int r_cons_readchar() {
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
-	buf[0] = -1;
 	ret = ReadConsole (h, buf, 1, &out, NULL);
 	if (!ret)
 		return -1;
 	SetConsoleMode (h, mode);
 #else
 	r_cons_set_raw (1);
-	buf[0] = -1;
 	if (read (0, buf, 1)==-1)
 		return -1;
 	r_cons_set_raw (0);
 #endif
-	return buf[0];
+	return r_cons_controlz (buf[0]);
 }
 
 R_API int r_cons_yesno(int def, const char *fmt, ...) {
