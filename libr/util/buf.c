@@ -268,10 +268,10 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		return 0;
 	pa = addr - b->base;
 	if (pa+len > b->length) {
+		memset (buf, 0xff, len);
 		len = b->length - pa;
 		if (len<0)
 			return 0;
-		memset (buf, 0xff, len);
 	}
 	// must be +pa, but maybe its missused?
 	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, R_FALSE);

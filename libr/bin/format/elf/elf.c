@@ -268,7 +268,7 @@ ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const c
 }
 
 static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
-	Elf_(Rel) *rel;
+	Elf_(Rel) *rel = NULL;
 	Elf_(Shdr) *rel_shdr;
 	Elf_(Addr) plt_sym_addr;
 	ut64 got_addr, got_offset;
@@ -315,10 +315,15 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		}
 
 		if (ELF_R_SYM (rel[k].r_info) == sym) {
-			if (r_buf_read_at (bin->b, rel[k].r_offset-got_addr+got_offset,
-					   (ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
-				eprintf ("Warning: read (got)\n");
-				break;
+			int of = rel[k].r_offset-got_addr+got_offset;
+			if (of+sizeof(Elf_(Addr)) >= bin->b->length) {
+				// do nothing
+			} else {
+				if (r_buf_read_at (bin->b, of,
+						(ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
+					eprintf ("Warning: read (got)\n");
+					break;
+				}
 			}
 			plt_sym_addr -= 6;
 			break;
