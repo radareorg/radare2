@@ -60,12 +60,16 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_setf (&op->esil, ",");
 		break;
 	case MIPS_INS_SW:
-		r_strbuf_appendf (&op->esil, "%s,%s=[4]",
+		r_strbuf_appendf (&op->esil, "%s,%s,=[4]",
 			ARG(0), ARG(1));
 		break;
 	case MIPS_INS_SWC1:
 	case MIPS_INS_SWC2:
 		r_strbuf_setf (&op->esil, "%s,$", ARG(1));
+		break;
+	case MIPS_INS_SB:
+		r_strbuf_appendf (&op->esil, "%s,%s,=[1]",
+			ARG(0), ARG(1));
 		break;
 	case MIPS_INS_CMP:
 	case MIPS_INS_CMPU:
@@ -130,7 +134,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_MOVF:
 	case MIPS_INS_MOVT:
 	case MIPS_INS_MOVZ:
-		r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
+		if (REG(0)[0]!='z'){
+			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
+		} else {
+			r_strbuf_appendf (&op->esil, "}");
+		}
 		break;
 	case MIPS_INS_FSUB:
 	case MIPS_INS_SUB:
@@ -194,6 +202,17 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_LDC2:
 		r_strbuf_appendf (&op->esil, "%s,[4],%s,=",
 			ARG(1), REG(0));
+		break;
+	case MIPS_INS_AND:
+		{
+		const char *arg0 = ARG(0);
+		const char *arg1 = ARG(1);
+		const char *arg2 = ARG(2);
+		if (!strcmp (arg0, arg1))
+			r_strbuf_appendf (&op->esil, "%s,%s,&=", ARG(2), ARG(1));
+		else r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=",
+			arg2, arg1, arg0);
+		}
 		break;
 	}
 	return 0;
@@ -353,14 +372,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_J:
 	case MIPS_INS_B:
 	case MIPS_INS_BZ:
-	case MIPS_INS_BNE:
+	case MIPS_INS_BEQ:
 	case MIPS_INS_BNZ:
+	case MIPS_INS_BNE:
 	case MIPS_INS_BEQZ:
 	case MIPS_INS_BNEG:
 	case MIPS_INS_BNEGI:
 	case MIPS_INS_BNEZ:
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
+	case MIPS_INS_BLTZ:
 	case MIPS_INS_BGEZ:
 	case MIPS_INS_BGEZC:
 	case MIPS_INS_BGEZALC:
