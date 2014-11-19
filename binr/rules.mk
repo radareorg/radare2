@@ -11,7 +11,7 @@ EXT_EXE=.js
 endif
 
 ifeq ($(USE_RPATH),1)
-LDFLAGS+=-Wl,-R${PREFIX}/lib
+LDFLAGS+=-Wl,-rpath "${PREFIX}/lib"
 endif
 
 OBJ+=${BIN}.o
