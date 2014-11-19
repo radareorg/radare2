@@ -35,11 +35,12 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			int bufsize = dbg->reg->size;
 			ut8 *buf = malloc (bufsize);
 			size = dbg->h->reg_read (dbg, i, buf, dbg->reg->size);
-			if (!size) {
+			if (size < 0) {
 				eprintf ("r_debug_reg: error reading registers\n");
 				return R_FALSE;
 			}
-			r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
+			if (size)
+				r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
 			free (buf);
 		}
 		// Continue the syncronization or just stop if it was asked only for a single type of regs 

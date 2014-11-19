@@ -5,30 +5,37 @@
 /* non-endian safe - used for raw mapping with system registers */
 R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 	RRegArena *arena;
-	int i, sz, osize;
+	int i, sz, pos;
 	ut8 *buf;
+
 	if (size)
 		*size = 0;
-	if (type == -1) {
-		/* serialize ALL register types in a single buffer */
-		// owned buffer is returned
-		osize = sz = 0;
-		buf = malloc (8);
-		for (i=0; i<R_REG_TYPE_LAST; i++) {
-			arena = reg->regset[i].arena;
-			sz += arena->size;
-			buf = realloc (buf, sz);
-			if (!buf) break;
-			memcpy (buf+osize, arena->bytes, arena->size);
-			osize = sz;
+
+	// Serialize all the register types in a heap-allocated buffer
+	if (type == R_REG_TYPE_ALL) {
+		buf = malloc (reg->size);
+		pos = 0;
+
+		if (!buf)
+			return NULL;
+
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			memcpy (buf + pos, arena->bytes, arena->size);
+			pos += arena->size;
 		}
+
+		if (pos != reg->size)
+			return NULL;
+
 		if (size)
-			*size = sz;
+			*size = reg->size;
+
 		return buf;
 	}
 
 	if (type < 0 || type > (R_REG_TYPE_LAST-1))
 		return NULL;
+
 	sz = reg->regset[type].arena->size;
 	if (size)
 		*size = sz;
@@ -126,33 +133,40 @@ R_API int r_reg_fit_arena(RReg *reg) {
 	RRegArena *arena;
 	RListIter *iter;
 	RRegItem *r;
-	int size, i, newsize;
+	int size, i;
 
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		arena = reg->regset[i].arena;
-		newsize = 0;
+
+		size = 0;
+
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			//int regsize_in_bytes = r->size / 8;
-			// XXX: bits2bytes doesnt seems to work fine 
-			size = BITS2BYTES (r->offset+r->size);
-			newsize = R_MAX (size, newsize);
+			size += r->size;
 		}
-		if (newsize<1) {
+
+		if (size&7)
+			size += 8 - (size&7);
+
+		// The size is specified in bits
+		size /= 8;
+
+		if (size < 1) {
 			free (arena->bytes);
 			arena->bytes = NULL;
 			arena->size = 0;
 		} else {
-			ut8 *buf = realloc (arena->bytes, newsize);
+			ut8 *buf = realloc (arena->bytes, size);
 			if (!buf) {
 				arena->bytes = NULL;
 				arena->size = 0;
 			} else {
-				arena->size = newsize;
+				arena->size = size;
 				arena->bytes = buf;
 				memset (arena->bytes, 0, arena->size);
 			}
 		}
 	}
+
 	return R_TRUE;
 }
 
