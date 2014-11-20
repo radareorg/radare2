@@ -2277,10 +2277,50 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_cons_printf ("]");
 		}
 		if (analop.jump != UT64_MAX ) {
-			r_cons_printf (",\"next\":%"PFMT64d, analop.jump);
+			r_cons_printf (",\"jump\":%"PFMT64d, analop.jump);
 			if (analop.fail != UT64_MAX)
 				r_cons_printf (",\"fail\":%"PFMT64d, analop.fail);
 		}
+		/* add flags */
+		{
+			const RList *flags = r_flag_get_list (core->flags, at);
+			RFlagItem *flag;
+			RListIter *iter;
+			if (flags && !r_list_empty (flags)) {
+				r_cons_printf (",\"flags\":[");
+				r_list_foreach (flags, iter, flag) {
+					r_cons_printf ("%s\"%s\"", iter->p?",":"",flag->name);
+				}
+				r_cons_printf ("]");
+			}
+		}
+		/* add comments */
+		{
+			// TODO: slow because we are decoding and encoding b64
+			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
+			if (comment) {
+				char *b64comment = sdb_encode ((const ut8*)comment, -1);
+				r_cons_printf (",\"comment\":\"%s\"", b64comment);
+				free (comment);
+				free (b64comment);
+			}
+		}
+		/* add xrefs */
+		{
+			RAnalRef *ref;
+			RListIter *iter;
+			RList *xrefs = r_anal_xref_get (core->anal, at);
+			if (xrefs && !r_list_empty (xrefs)) {
+				r_cons_printf (",\"xrefs\":[");
+				r_list_foreach (xrefs, iter, ref) {
+					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\"}",
+							iter->p?",":"", ref->addr, 
+						r_anal_xrefs_type_tostring (ref->type));
+				}
+				r_cons_printf ("]");
+			}
+		}
+
 		r_cons_printf ("}");
 		i += oplen;
 		line++;

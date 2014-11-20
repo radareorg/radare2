@@ -193,6 +193,10 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	return oitem;
 }
 
+R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
+	return r_hashtable64_lookup (f->ht_off, off);
+}
+
 #define R_FLAG_TEST 0
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list = r_hashtable64_lookup (f->ht_off, off);

@@ -468,6 +468,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 		for (j=0; j<nb_cols; j++) {
 			setcolor = R_TRUE;
+			free (note[j]);
 			note[j] = NULL;
 
 			// collect comments
