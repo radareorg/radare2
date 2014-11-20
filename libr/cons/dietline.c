@@ -26,8 +26,10 @@ static inline int is_valid_char (unsigned char ch) {
 	switch (ch) {
 	//case 0: // wat
 	case 1: // ^a
+	case 2: // ^b -> emacs left
 	case 4: // ^d
 	case 5: // ^e
+	case 6: // ^f -> emacs right
 	case 8: // backspace
 	case 9: // tab
 	case 10: // newline
@@ -447,6 +449,21 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 1: // ^A
 			I.buffer.index = 0;
 			break;
+		case 2: // ^b // emacs left
+#if USE_UTF8
+								 {
+									 char *s = I.buffer.data+I.buffer.index-1;
+									 utflen = 1;
+									 while (s>I.buffer.data && (*s & 0xc0) == 0x80) {
+										 utflen++;
+										 s--;
+									 }
+								 }
+								 I.buffer.index = I.buffer.index? I.buffer.index-utflen: 0;
+#else
+								 I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+#endif
+			break;
 		case 5: // ^E
 		        if (prev == 24) { // ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
@@ -484,6 +501,23 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 10: // ^J -- ignore
 			return I.buffer.data;
 		case 11: // ^K -- ignore
+			break;
+		case 6: // ^f // emacs right
+#if USE_UTF8
+								 {
+									 char *s = I.buffer.data+I.buffer.index+1;
+									 utflen = 1;
+									 while ((*s & 0xc0) == 0x80) {
+										 utflen++;
+										 s++;
+									 }
+									 I.buffer.index = I.buffer.index<I.buffer.length?
+										 I.buffer.index+utflen: I.buffer.length;
+								 }
+#else
+								 I.buffer.index = I.buffer.index<I.buffer.length?
+									 I.buffer.index+1: I.buffer.length;
+#endif
 			break;
 		case 12: // ^L -- right
 			I.buffer.index = (I.buffer.index<I.buffer.length)?
