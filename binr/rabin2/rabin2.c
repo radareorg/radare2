@@ -25,8 +25,8 @@
 #define ACTION_CREATE    0x08000
 #define ACTION_CLASSES   0x10000
 #define ACTION_DWARF     0x20000
-#define ACTION_PDB       0x30000
 #define ACTION_SIZE      0x40000
+#define ACTION_PDB       0x80000
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
