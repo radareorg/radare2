@@ -1,5 +1,8 @@
 #!/bin/sh
 
+. ./sys/CONFIG
+[ -z "${PREFIX}" ] && PREFIX=/usr
+
 # find root
 cd `dirname $PWD/$0`
 
@@ -15,4 +18,4 @@ fi
 
 make clean
 make
-sudo make install
+sudo make install PREFIX=${PREFIX}
