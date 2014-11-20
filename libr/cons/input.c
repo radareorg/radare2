@@ -35,6 +35,15 @@ R_API int r_cons_controlz(int ch) {
 }
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
+	/* emacs */
+	switch ((ut8)ch) {
+	case 0xc3: r_cons_readchar(); ch='K'; break; // emacs repag (alt + v)
+	case 0x16: ch='J'; break; // emacs avpag (ctrl + v)
+	case 0x10: ch='k'; break; // emacs up (ctrl + p)
+	case 0x0e: ch='j'; break; // emacs down (ctrl + n)
+	case 0x06: ch='l'; break; // emacs right (ctrl + f)
+	case 0x02: ch='h'; break; // emacs left (ctrl + b)
+	}
 	if (ch != 0x1b)
 		return ch;
 	ch = r_cons_readchar ();
