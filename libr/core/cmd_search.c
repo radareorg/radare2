@@ -599,6 +599,17 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	else // No grep
 		grep = NULL;
 
+	// Deal with the grep guy.
+	if (grep && regexp) {
+		gstart = grep;
+		gend = strstr (grep, ",");
+		if (!gend) { // We filter on a single opcode, so no ","
+			gend = gstart + strlen (grep);
+		}
+		gregexp = calloc(gend - gstart + 1, sizeof(char));
+		memcpy(gregexp, grep, gend - gstart);
+		rx = r_regex_new(gregexp, "");
+	}
 
 	smode = r_config_get (core->config, "search.in");
 	if (!strncmp(smode, "dbg.", 4) || !strncmp(smode, "io.sections", 11))
@@ -647,22 +658,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
 				if (!ret)
 					continue;
-				// Deal with the grep guy.
-				if (grep && regexp) {
-					gstart = grep;
-					gend = strstr (grep, ",");
-					if (!gend) { // We filter on a single opcode, so no ","
-						gend = gstart + strlen (grep);
-					}
-					gregexp = calloc(gend - gstart + 1, sizeof(char));
-					memcpy(gregexp, grep, gend - gstart);
-					rx = r_regex_new(gregexp, "");
-				}
 				hitlist = construct_rop_gadget (core, from+i, buf, i, grep, rx);
-				if (rx) {
-					r_regex_free(rx);
-					free(gregexp);
-				}
 				if (!hitlist)
 					continue;
 
@@ -736,6 +732,13 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		list->free = free;
 		r_list_free (list);
 		list = NULL;
+	}
+
+	if (rx) {
+		r_regex_free(rx);
+	}
+	if (gregexp) {
+		free(gregexp);
 	}
 
 	return R_TRUE;
