@@ -938,7 +938,7 @@ static void print_types(R_PDB *pdb, int mode) {
 						goto err;
 					}
 					break;
-				case 2: break; // TODO JSON
+				case 8: break; // JSON
 				}
 
 				R_FREE(type);
