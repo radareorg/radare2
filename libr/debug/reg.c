@@ -187,17 +187,26 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 	return (ri!=NULL);
 }
 
-R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name) {
+R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
+	// ignores errors
+	return r_debug_reg_get_err(dbg, name, NULL);
+}
+
+R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
 	RRegItem *ri = NULL;
 	ut64 ret = 0LL;
 	int role = r_reg_get_name_idx (name);
 	const char *pname = name;
-	if (!dbg || !dbg->reg)
-		return R_FALSE;
+	if (err) *err = 0;
+	if (!dbg || !dbg->reg) {
+		if (err) *err = 1;
+		return UT64_MAX;
+	}
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 		if (name == NULL || *name == '\0') {
 			eprintf ("No debug register profile defined for '%s'.\n", pname);
+			if (err) *err = 1;
 			return UT64_MAX;
 		}
 	}
