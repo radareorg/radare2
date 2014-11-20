@@ -2216,15 +2216,15 @@ static int runword (RAnalEsil *esil, const char *word) {
 		}
 	}
 #else
-        if (esil->skip) {
-               if (!strcmp (word, "}"))
-                        esil->skip = 0;
-               return 0;
-        } else {
-                if (!strcmp (word, "}{")) {
-                        esil->skip = 1;
-                       return 0;
-                }
+	if (esil->skip) {
+		if (!strcmp (word, "}"))
+			esil->skip = 0;
+		return 0;
+	} else {
+		if (!strcmp (word, "}{")) {
+			esil->skip = 1;
+			return 0;
+		}
 	}
 #endif
 	if (iscommand (esil, word, &op)) {
@@ -2237,9 +2237,9 @@ static int runword (RAnalEsil *esil, const char *word) {
 			return op (esil);
 		}
 	}
-	if (!*word) {
+	if (!*word || *word==',') {
 		// skip empty words
-		return;
+		return 1;
 	}
 	// push value
 	if (!r_anal_esil_push (esil, word)) {
@@ -2265,7 +2265,15 @@ static const char *gotoWord(const char *str, int n) {
 	return NULL;
 }
 
+/** evaluate an esil word and return the action to perform
+ * 0: continue running the
+ * 1: stop execution
+ * 2: continue in loop
+ * 3: normal continuation
+ */
 static int evalWord (RAnalEsil *esil, const char *ostr, const char **str) {
+	if (*str[0] && *str[1]==',')
+		return 2;
 	if (esil->repeat)
 		return 0;
 	if (esil->parse_goto != -1) {
@@ -2295,7 +2303,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	if (!esil)
 		return 0;
 	esil->trap = 0;
-	loop:
+loop:
 	esil->repeat = 0;
 	esil->skip = 0;
 	esil->parse_goto = -1;
