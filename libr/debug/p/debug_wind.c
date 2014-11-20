@@ -1,3 +1,18 @@
+// Copyright (c) 2014, The Lemon Man, All rights reserved.
+
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library.
+
 #include <r_asm.h>
 #include <r_debug.h>
 #include <wind.h>
@@ -17,10 +32,7 @@ static int r_debug_wind_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	if (!ret || size != ret)
 		return -1;
 
-	if (!r_reg_set_bytes (dbg->reg, R_REG_TYPE_ALL, buf, ret)) {
-		// Re-enable this when r2 
-		// return -1;
-	}
+	r_reg_set_bytes (dbg->reg, R_REG_TYPE_ALL, buf, ret);
 
 	// Report as if no register has been written as we've already updated the arena here
 	return 0;
@@ -72,6 +84,8 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 		free(pkt);
 	}
 
+	dbg->pid = 1 + wind_get_cpu(wctx);
+
 	return R_TRUE;
 }
 
@@ -81,7 +95,7 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data)
 		return R_FALSE;
 
-	if (strcmp(desc->plugin->name, "pipe"))
+	if (strncmp(desc->plugin->name, "windbg", 6))
 		return R_FALSE;
 
 	if (dbg->arch != R_SYS_ARCH_X86)
@@ -102,7 +116,7 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	wind_read_ver(wctx);
 
 	// Make r_debug_is_dead happy
-	dbg->pid = pid;
+	dbg->pid = 1 + wind_get_cpu(wctx);
 
 	return R_TRUE;
 }
@@ -137,22 +151,43 @@ static int r_debug_wind_init(RDebug *dbg) {
 	return R_TRUE;
 }
 
+static RList *get_cpus (int unused) {
+	RList *ret;
+	RDebugPid *entry;
+	int i;
+
+	ret = r_list_newf (free);
+	if (!ret)
+		return NULL;
+
+	for (i = 0; i < wind_get_cpus(wctx); i++) {
+		entry = R_NEW0 (RDebugPid);
+		entry->pid = i + 1;
+		r_list_append(ret, entry);
+	}
+
+	return ret;
+}
+
+static int set_cpu (int cpu, int unused) {
+	if (cpu < 1 || cpu > wind_get_cpus(wctx))
+		return R_FALSE;
+	return wind_set_cpu(wctx, cpu - 1);
+}
+
 struct r_debug_plugin_t r_debug_plugin_wind = {
 	.name = "wind",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.pids = get_cpus,
+	.select = set_cpu,
 	.step = r_debug_wind_step,
 	.init = r_debug_wind_init,
 	.cont = r_debug_wind_continue,
 	.attach = &r_debug_wind_attach,
 	.detach = &r_debug_wind_detach,
 	.wait = &r_debug_wind_wait,
-	.pids = NULL,
-	.tids = NULL,
-	.threads = NULL,
-	.kill = NULL,
-	.frames = NULL,
-	.map_get = NULL,
 	.breakpoint = &r_debug_wind_breakpoint,
 	.reg_read = &r_debug_wind_reg_read,
 	.reg_write = &r_debug_wind_reg_write,

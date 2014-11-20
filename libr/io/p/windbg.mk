@@ -1,8 +1,8 @@
-OBJ_PIPE=io_pipe.o
+OBJ_WINDBG=io_windbg.o
 
-STATIC_OBJ+=${OBJ_PIPE}
-TARGET_PIPE=io_pipe.${EXT_SO}
-ALL_TARGETS+=${TARGET_PIPE}
+STATIC_OBJ+=${OBJ_WINDBG}
+TARGET_WINDBG=io_windbg.${EXT_SO}
+ALL_TARGETS+=${TARGET_WINDBG}
 
 LIB_PATH=$(SHLR)/wind
 CFLAGS+=-I$(SHLR)/wind
@@ -16,6 +16,6 @@ LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L.. -lr_io
 endif
 
-${TARGET_PIPE}: ${OBJ_PIPE}
-	${CC} $(call libname,io_pipe) ${OBJ_PIPE} ${CFLAGS} \
+${TARGET_WINDBG}: ${OBJ_WINDBG}
+	${CC} $(call libname,io_windbg) ${OBJ_WINDBG} ${CFLAGS} \
 		${LINKFLAGS} ${LDFLAGS_LIB} $(LDFLAGS)

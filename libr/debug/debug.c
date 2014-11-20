@@ -233,13 +233,18 @@ R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 }
 
 R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
-	if (!tid) tid = pid;
+	if (tid < 0)
+		tid = pid;
+
 	if (pid != dbg->pid || tid != dbg->tid)
 		eprintf ("r_debug_select: %d %d\n", pid, tid);
+
+	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))
+		return R_FALSE;
+
 	dbg->pid = pid;
-	if (tid == -1)
-		tid = dbg->pid;
 	dbg->tid = tid;
+
 	return R_TRUE;
 }
 

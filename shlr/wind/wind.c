@@ -5,15 +5,17 @@
 #include "wind.h"
 #include "kd.h"
 
+// #define WIND_LOG 0
+
 #define LOG_PKT(p) \
 { \
 	eprintf("Leader\t: %08x\nType\t: %08x\nLenght\t: %08x\nID\t: %08x\nCheck\t: %08x [%s]\n", \
 		(p)->leader, \
 		(p)->type, \
-		(p)->lenght, \
+		(p)->length, \
 		(p)->id, \
 		(p)->checksum, \
-		(kd_data_checksum((p)->data, (p)->lenght) == (p)->checksum)?"Ok":"Wrong" \
+		(kd_data_checksum((p)->data, (p)->length) == (p)->checksum)?"Ok":"Wrong" \
 	); \
 }
 #define LOG_REQ(r) \
@@ -23,6 +25,36 @@
 		(r)->cpu, \
 		(r)->ret \
 	); \
+}
+
+struct _wind_ctx_t {
+	void *io_ptr;
+	int seq_id;
+	int syncd;
+	int cpu_count;
+	int cpu;
+};
+
+int
+wind_get_cpus (wind_ctx_t *ctx) {
+	if (!ctx)
+		return -1;
+	return ctx->cpu_count;
+}
+
+int
+wind_set_cpu (wind_ctx_t *ctx, int cpu) {
+	if (!ctx || cpu > ctx->cpu_count)
+		return R_FALSE;
+	ctx->cpu = cpu;
+	return R_TRUE;
+}
+
+int
+wind_get_cpu (wind_ctx_t *ctx) {
+	if (!ctx)
+		return -1;
+	return ctx->cpu;
 }
 
 wind_ctx_t *
@@ -63,7 +95,7 @@ dump_stc (kd_packet_t *p) {
 		eprintf("\tAddr   : %016llx\n", stc->exception.ex_addr);
 	}
 
-	// r_print_hexdump(NULL, 0, stc, p->lenght, 16, 16);
+	// r_print_hexdump(NULL, 0, stc, p->length, 16, 16);
 }
 
 static int
@@ -73,8 +105,6 @@ do_io_reply (wind_ctx_t *ctx, kd_packet_t *pkt)
 	int ret;
 
 	(void)pkt;
-
-	printf("%s@%s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 
 	memset(&ioc, 0, sizeof(kd_ioc_t));
 
@@ -88,11 +118,15 @@ do_io_reply (wind_ctx_t *ctx, kd_packet_t *pkt)
 	if (ret != KD_E_OK)
 		return R_FALSE;
 
+#ifdef WIND_LOG
 	eprintf("Waiting for io_reply ack...\n");
+#endif
 	ret = wind_wait_packet(ctx, KD_PACKET_TYPE_ACK, NULL);
 	if (ret != KD_E_OK)
 		return R_FALSE;
+#ifdef WIND_LOG
 	eprintf("Ack received, restore flow\n");
+#endif
 
 	return R_TRUE;
 }
@@ -170,16 +204,20 @@ wind_read_ver (wind_ctx_t *ctx) {
 	/* LOG_REQ(rr); */
 
 	if (rr->ret) {
+#ifdef WIND_LOG
 		eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+#endif
 		free(pkt);
 		return R_FALSE;
 	}
 
+#ifdef WIND_LOG
 	eprintf("Protocol version : %i.%i\n", rr->r_ver.proto_major, rr->r_ver.proto_minor);
 	eprintf("Flags : %08x\n", rr->r_ver.flags);
 	eprintf("Machine : %08x\n", rr->r_ver.machine);
 	eprintf("Module list : %016llx\n", rr->r_ver.mod_addr);
 	eprintf("Kernel : %016llx\n", rr->r_ver.dbg_addr);
+#endif
 
 #if 0
 	ut32 ptr, base;
@@ -217,7 +255,7 @@ wind_read_ver (wind_ctx_t *ctx) {
 #if 0
 
 	struct unis {
-		ut16 lenght;
+		ut16 length;
 		ut16 max;
 		ut32 ptr;
 	} __attribute__((packed));
@@ -248,12 +286,12 @@ wind_read_ver (wind_ctx_t *ctx) {
 		eprintf("prev : %08x\n", m.lo_list.prev);
 		eprintf("base : %08x\n", base);
 
-		char tmp[m.fname.lenght + 1];
-		wind_read_at(ctx->io_ptr, tmp, m.fname.ptr, m.fname.lenght);
-		tmp[m.fname.lenght] = '\0';
+		char tmp[m.fname.length + 1];
+		wind_read_at(ctx->io_ptr, tmp, m.fname.ptr, m.fname.length);
+		tmp[m.fname.length] = '\0';
 
 		int i;
-		for (i = 0; i < m.fname.lenght; i+=2)
+		for (i = 0; i < m.fname.length; i+=2)
 			eprintf("%c", tmp[i]);
 		eprintf("\n");
 
@@ -322,7 +360,9 @@ wind_continue (wind_ctx_t *ctx) {
 	req.ret = 0x10001;
 	req.r_cont.reason = 0x10001;
 
+#ifdef WIND_LOG
 	printf("Sending continue...\n");
+#endif
 
 	ret = kd_send_data_packet(ctx->io_ptr, KD_PACKET_TYPE_MANIP, (ctx->seq_id ^= 1), (ut8 *)&req,
 			sizeof(kd_req_t), NULL, 0);
@@ -333,7 +373,9 @@ wind_continue (wind_ctx_t *ctx) {
 	if (ret != KD_E_OK)
 		return R_FALSE;
 
+#ifdef WIND_LOG
 	printf("Done!\n");
+#endif
 
 	return R_TRUE;
 }
@@ -354,7 +396,9 @@ wind_write_reg (wind_ctx_t *ctx, ut8 *buf, int size) {
 
 	req.r_ctx.flags = 0x1003F;
 
+#ifdef WIND_LOG
 	eprintf("Regwrite() size : %x\n", size);
+#endif
 
 	// *((ut32 *)buf) = 0x0001003F;
 
@@ -377,7 +421,9 @@ wind_write_reg (wind_ctx_t *ctx, ut8 *buf, int size) {
 	// LOG_REQ(rr);
 
 	if (rr->ret) {
+#ifdef WIND_LOG
 		eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+#endif
 		free(pkt);
 		return R_FALSE;
 	}
@@ -423,14 +469,16 @@ wind_read_reg (wind_ctx_t *ctx, ut8 *buf, int size) {
 	// eprintf("Context tag : %08x\n", *((ut32 *)rr->data));
 
 	if (rr->ret) {
+#ifdef WIND_LOG
 		eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+#endif
 		free(pkt);
 		return R_FALSE;
 	}
 
 	// memset(buf, 0, size);
-	// r_print_hexdump(NULL, 0, rr->data, pkt->lenght - sizeof(kd_req_t), 16, 16);
-	// eprintf("reg() size %i (%i)\n", pkt->lenght - sizeof(kd_req_t), size);
+	// r_print_hexdump(NULL, 0, rr->data, pkt->length - sizeof(kd_req_t), 16, 16);
+	// eprintf("reg() size %i (%i)\n", pkt->length - sizeof(kd_req_t), size);
 	memcpy(buf, rr->data, size);
 
 	free(pkt);
@@ -476,7 +524,9 @@ wind_bkpt (wind_ctx_t *ctx, const ut64 addr, const int set, const int hw, int *h
 	// LOG_REQ(rr);
 
 	if (rr->ret) {
+#ifdef WIND_LOG
 		eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+#endif
 		free(pkt);
 		return R_FALSE;
 	}
@@ -505,7 +555,7 @@ wind_read_at (wind_ctx_t *ctx, ut8 *buf, const ut64 offset, const int count) {
 	req.cpu = ctx->cpu;
 
 	req.r_mem.addr = offset;
-	req.r_mem.lenght = R_MIN(count, KD_MAX_PAYLOAD);
+	req.r_mem.length = R_MIN(count, KD_MAX_PAYLOAD);
 
 	ret = kd_send_data_packet(ctx->io_ptr, KD_PACKET_TYPE_MANIP, (ctx->seq_id ^= 1), (ut8 *)&req,
 			sizeof(kd_req_t), NULL, 0);
@@ -527,7 +577,9 @@ wind_read_at (wind_ctx_t *ctx, ut8 *buf, const ut64 offset, const int count) {
 	// eprintf("read @ %08x : %08x\n", offset, rr->r_mem.read);
 
 	if (rr->ret) {
+#ifdef WIND_LOG
 		eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+#endif
 		free(pkt);
 		return R_FALSE;
 	}
@@ -562,7 +614,7 @@ wind_write_at (wind_ctx_t *ctx, ut8 *buf, const ut64 offset, const int count) {
 	req.cpu = ctx->cpu;
 
 	req.r_mem.addr = offset;
-	req.r_mem.lenght = payload;
+	req.r_mem.length = payload;
 
 	ret = kd_send_data_packet(ctx->io_ptr, KD_PACKET_TYPE_MANIP, (ctx->seq_id ^= 1), (ut8 *)&req,
 			sizeof(kd_req_t), buf, payload);
@@ -583,7 +635,9 @@ wind_write_at (wind_ctx_t *ctx, ut8 *buf, const ut64 offset, const int count) {
 	// LOG_REQ(rr);
 
 	if (rr->ret) {
+#ifdef WIND_LOG
 		eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+#endif
 		free(pkt);
 		return R_FALSE;
 	}

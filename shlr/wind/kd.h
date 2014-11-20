@@ -1,3 +1,20 @@
+// Copyright (c) 2014, The Lemon Man, All rights reserved.
+
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library.
+
+// Some documentation of the data structures has been kindly ripped off ReactOS project.
+
 #ifndef KD_H
 #define KD_H
 
@@ -46,7 +63,7 @@ typedef struct kd_req_t {
 	union {
 		struct {
 			ut64 addr;
-			ut32 lenght;
+			ut32 length;
 			ut32 read;
 		} __attribute__((packed)) r_mem;
 		struct {
@@ -120,7 +137,7 @@ typedef struct kd_ioc_t {
 typedef struct kd_packet_t {
 	ut32 leader;
 	ut16 type;
-	ut16 lenght;
+	ut16 length;
 	ut32 id;
 	ut32 checksum;
 	ut8 data[0];
