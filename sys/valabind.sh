@@ -1,10 +1,10 @@
 #!/bin/sh
 
-. ./sys/CONFIG
 [ -z "${PREFIX}" ] && PREFIX=/usr
 
 # find root
 cd `dirname $PWD/$0`
+. ./CONFIG
 
 mkdir  _work
 cd _work || exit 1
