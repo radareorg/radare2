@@ -91,11 +91,12 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
-	int ret;
 #if __WINDOWS__
 	BOOL ret;
 	DWORD mode, out;
 	HANDLE h;
+#else
+	int ret;
 #endif
 
 do_it_again:
@@ -130,7 +131,7 @@ do_it_again:
 		if (*buf==0xc2 || *buf==0xc3) {
 			read (0, buf+1, 1);
 			*buf = '\0';
-		}	
+		}
 	} while (*buf == '\0');
 #endif
 #if ONLY_VALID_CHARS
