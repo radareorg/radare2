@@ -873,7 +873,7 @@ static void print_types(R_PDB *pdb, int mode) {
 	}
 
 	if (mode == 8) {
-		pdb->printf("{\"%s\": [", "types");
+		pdb->printf("{\"%s\":[","types");
 	}
 
 	it = r_list_iterator(tpi_stream->types);
@@ -896,7 +896,7 @@ static void print_types(R_PDB *pdb, int mode) {
 			}
 
 			if ((mode == 8) && (is_first == 0)) {
-				pdb->printf(", ");
+				pdb->printf(",");
 			}
 
 			is_first = 0;
@@ -977,7 +977,7 @@ static void print_types(R_PDB *pdb, int mode) {
 					case eLF_STRUCTURE:
 					case eLF_UNION:
 						pdb->printf("{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":%d}",
-									"member_type", type + strlen("(member)") - 1,
+									"member_type", type + strlen("(member)") + 1,
 									"member_name", name, "offset", offset);
 						break;
 					default:
