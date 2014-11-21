@@ -296,7 +296,7 @@ RIOPlugin r_io_plugin_debug = {
 struct r_io_plugin_t r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
-	.debug = (void *)1,
+	.debug = (void *)(size_t)1,
 };
 #endif // DEBUGGER
 
