@@ -1095,7 +1095,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			switch (format) {
 			case 2:
 			case 8: // JSON
-				pdb->printf("{\"%s\":0x%08"PFMT64x",\"%s\":%d,\"%s\":\"%s\",\"%s\":\"%s\"}",
+				pdb->printf("{\"%s\":%d,\"%s\":%d,\"%s\":\"%s\",\"%s\":\"%s\"}",
 							"address", (ut64)(img_base + omap_remap((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 							"symtype", gdata->symtype,
 							"section_name", sctn_header->name,
