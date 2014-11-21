@@ -580,7 +580,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	RRegex* rx = NULL;
-	char* gregexp;
+	char* gregexp = NULL;
 	const char* gstart, *gend;
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
