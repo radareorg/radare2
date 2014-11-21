@@ -1246,6 +1246,8 @@ static const char * unparse_inheritance (vm_inherit_t i) {
         }
 }
 
+extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
+
 // TODO: move to p/native/darwin.c
 // TODO: this loop MUST be cleaned up
 static RList *darwin_dbg_maps (RDebug *dbg) {
@@ -1284,6 +1286,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 		int done = 0;
 
 		address = prev_address + prev_size;
+		print = 0;
 
 		if (prev_size==0)
 			break;
@@ -1312,13 +1315,21 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				|| (info.reserved != prev_info.reserved))
 			print = 1;
 
+//#if __OSX_AVAILABLE_STARTING(__MAC_10_5, __IPHONE_2_0)
+		 {
+			char module_name[1024];
+			module_name[0] = 0;
+			int ret = proc_regionfilename (dbg->pid, address, module_name, sizeof (module_name));
+			module_name[ret] = 0;
+
 		#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
-		if (print) {
-			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s",
+		if (print && size>0 && prev_info.inheritance != VM_INHERIT_SHARE) {
+			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s %s",
 					r_str_rwx_i (xwr2rwx (prev_info.max_protection)), i,
 					unparse_inheritance (prev_info.inheritance),
 					prev_info.shared ? "shar" : "priv",
-					prev_info.reserved ? "reserved" : "not-reserved");
+					prev_info.reserved ? "reserved" : "not-reserved",
+					module_name);
 			// TODO: MAPS can have min and max protection rules
 			// :: prev_info.max_protection
 			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
@@ -1329,6 +1340,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 			}
 			r_list_append (list, mr);
 		}
+}
 #if 0
 		if (1==0 && rest) { /* XXX never pritn this info here */
 			addr = 0LL;
