@@ -300,7 +300,7 @@ RIOPlugin r_io_plugin_mach = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
-	.debug = (void*)(size_t)1
+	.isdbg = R_TRUE
 };
 
 #else

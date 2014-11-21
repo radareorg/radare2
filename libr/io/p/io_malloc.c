@@ -34,7 +34,6 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 }
 
-
 static int __resize(RIO *io, RIODesc *fd, ut64 count) {
 	ut8 * new_buf = NULL;
 	if (fd == NULL || fd->data == NULL || count == 0)

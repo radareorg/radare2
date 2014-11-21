@@ -120,13 +120,7 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.system = __system,
 	.init = __init,
 	.write = __write,
-	.debug = (void*)(size_t)1
-        //void *widget;
-/*
-        struct debug_t *debug;
-        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
-	int fds[R_IO_NFDS];
-*/
+	.isdbg = R_TRUE
 };
 #else
 struct r_io_plugin_t r_io_plugin_w32dbg = {

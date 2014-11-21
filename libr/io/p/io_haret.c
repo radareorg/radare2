@@ -135,7 +135,7 @@ RIOPlugin r_io_plugin_haret = {
 	.lseek = haret__lseek,
 	.write = haret__write,
 	.close = haret__close,
-	.plugin_open = haret__plugin_open,
+	.plugin_open = haret__plugin_open
 };
 
 #ifndef CORELIB

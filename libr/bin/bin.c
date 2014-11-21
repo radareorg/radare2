@@ -441,7 +441,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	buf_bytes = NULL;
 
 	sz = iob->desc_size (io, desc);
-	if (sz == UT64_MAX && desc->plugin && desc->plugin->debug ) {
+	if (sz == UT64_MAX && desc->plugin && desc->plugin->isdbg) {
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a fixed size.
 		// if there is no fixed size or its MAXED, there is no way to definitively
@@ -501,7 +501,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	RBinXtrPlugin *xtr;
 	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	ut8 is_debugger = desc && desc->plugin && desc->plugin->debug;
+	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
 
 	if (!io || !desc) return R_FALSE;
 

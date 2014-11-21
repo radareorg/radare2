@@ -463,7 +463,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ( (desc->plugin && desc->plugin->debug) \
+		if ( (desc->plugin && desc->plugin->isdbg) \
 				|| r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, loadaddr, filenameuri);
 		} else {

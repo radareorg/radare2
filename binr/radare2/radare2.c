@@ -157,7 +157,7 @@ static void list_io_plugins(RIO *io) {
 		// read, write, debug, proxy
 		str[0] = 'r';
 		str[1] = il->plugin->write? 'w': '_';
-		str[2] = il->plugin->debug? 'd': '_';
+		str[2] = il->plugin->isdbg? 'd': '_';
 		str[3] = 0;
 		printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
 			il->plugin->desc, il->plugin->license);
@@ -611,7 +611,7 @@ int main(int argc, char **argv, char **envp) {
 		(void)r_core_bin_update_arch_bits (&r);
 
 		debug = r.file && r.file->desc && r.file->desc->plugin && \
-			r.file->desc->plugin->debug != NULL;
+			r.file->desc->plugin->isdbg;
 		if (debug) {
 			r_core_setup_debugger (&r, debugbackend);
 		}

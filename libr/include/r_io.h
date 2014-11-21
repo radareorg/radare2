@@ -156,7 +156,7 @@ typedef struct r_io_plugin_t {
 	int (*listener)(RIODesc *io);
 	int (*init)();
 	RIOUndo undo;
-	struct r_debug_t *debug;
+	int isdbg;
 	int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	int (*system)(RIO *io, RIODesc *fd, const char *);
 	RIODesc* (*open)(RIO *io, const char *, int rw, int mode);

@@ -284,7 +284,7 @@ RIOPlugin r_io_plugin_debug = {
         .plugin_open = __plugin_open,
 	.lseek = NULL,
 	.system = NULL,
-	.debug = (void *)(size_t)1,
+	.isdbg = R_TRUE,
         //void *widget;
 /*
         struct debug_t *debug;

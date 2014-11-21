@@ -122,6 +122,6 @@ RIOPlugin r_io_plugin_gdb = {
 	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
-	.debug = (void *)(size_t)1,
+	.isdbg = R_TRUE
 };
 
