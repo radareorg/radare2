@@ -76,7 +76,7 @@ struct {
 };
 
 static inline ut8 rgbnum (const char ch) {
-	ut8 r;
+	ut8 r = 0;
 	r_hex_to_byte (&r, ch);
 	return r*16;
 }
@@ -268,10 +268,7 @@ R_API void r_cons_pal_list (int rad) {
 		case 'j':
 			r = g = b = 0;
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
-			rgbstr[0] = 0;
-			r_cons_rgb_str (rgbstr, r, g, b, 0);
-			if (keys[i+1].name) hasnext = ",";
-			else hasnext = "";
+			hasnext = (keys[i+1].name)?",":"";
 			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
 				keys[i].name, r, g, b, hasnext);
 			break;
