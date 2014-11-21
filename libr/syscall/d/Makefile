@@ -33,8 +33,14 @@ linux-x86-32.sdb: linux-x86-32
 %.sdb:%
 ifneq ($(SILENT),)
 	@echo "SDB $<"
-endif
+	@rm -f $<.sdb
+	@${SHELL} gen.sh < $< | ${SDB} $<.sdb =
+	@test -f $<.sdb
+else
+	rm -f $<.sdb
 	${SHELL} gen.sh < $< | ${SDB} $<.sdb =
+	test -f $<.sdb
+endif
 
 clean:
 	rm -f *.sdb
