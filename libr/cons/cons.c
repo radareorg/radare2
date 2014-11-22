@@ -332,7 +332,7 @@ R_API const char *r_cons_get_buffer() {
 
 R_API void r_cons_filter() {
 	/* grep*/
-	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1 || I.grep.less)
+	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1 || I.grep.less || I.grep.json)
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 	/* html */
 	/* TODO */
@@ -489,7 +489,7 @@ R_API void r_cons_printf(const char *format, ...) {
 	if (I.null) return;
 	if (strchr (format, '%')) {
 		palloc (MOAR);
-		size = I.buffer_sz-I.buffer_len; /* remaining space in I.buffer */
+		size = I.buffer_sz-I.buffer_len-1; /* remaining space in I.buffer */
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
 		va_end (ap);
