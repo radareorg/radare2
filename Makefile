@@ -70,7 +70,7 @@ w32dist:
 	rm -f radare2-w32-${VERSION}.zip
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
-clean:
+clean: rmd
 	for a in shlr libr binr ; do (cd $$a ; ${MAKE} clean) ; done
 
 distclean mrproper:
@@ -116,6 +116,10 @@ install: install-doc install-man install-www
 	cp -fr shlr/yara/ "$(YARADIR)"
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
+
+# Remove make .d files. fixes build when .c files are removed
+rmd:
+	rm -vf `find . -type f -iname *.d`
 
 install-www:
 	rm -rf $(call rmdblslash,${DESTDIR}/${WWWROOT})
@@ -181,8 +185,7 @@ purge-dev:
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
 
-purge-syms:
-	# XXX: this must be in purge-sym ?
+strip:
 	-for a in ${R2BINS} ; do ${STRIP} -s ${DESTDIR}/${BINDIR}/$$a 2> /dev/null ; done
 	-for a in ${DESTDIR}/${LIBDIR}/libr_*.${EXT_SO} \
 		${DESTDIR}/${LIBDIR}/libr2.${EXT_SO} ; do ${STRIP} -s $$a ; done
@@ -228,5 +231,5 @@ tests:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean distclean mrproper install symstall uninstall deinstall
+.PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png
