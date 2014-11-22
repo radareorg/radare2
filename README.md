@@ -62,14 +62,14 @@ To build the bindings you need latest valabind, g++ and swig2.
 
 # Install
 
-Easiest way to install radare2 from git is by running
+The easiest way to install radare2 from git is by running
 the following command:
 
     $ sys/install.sh
 
 # Uninstall
 
-In case of poluted filesystem you can uninstall current
+In case of a polluted filesystem you can uninstall the current
 version or remove all previous installations:
 
     $ make uninstall
@@ -84,7 +84,7 @@ build the bindings for Python, LUA, etc..
 APIs are defined in vapi files which are then translated
 to swig interfaces, nodejs-ffi or other and then compiled.
 
-Easiest way to install the python bindings is to run:
+The easiest way to install the python bindings is to run:
 
     $ sys/python.sh
 
@@ -92,7 +92,7 @@ If you want to use the NodeJS bindings just do:
 
     $ npm install radare2.js
 
-You may like to specify the installed version of radare2:
+To specify the installed version of radare2:
 
     $ npm install radare2.js@0.9.2
 
@@ -107,7 +107,7 @@ There is a test suite that can be retrieved by running:
 There is no formal documentation of r2 yet. Not all commands
 are compatible with radare1, so the best way to learn how to
 do stuff in r2 is by reading the examples from the web and
-appending '?' to every command you are interested on.
+appending '?' to every command you are interested in.
 
 Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
