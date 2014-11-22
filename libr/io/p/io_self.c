@@ -3,6 +3,7 @@
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_cons.h>
 
 #if __APPLE__
 #include <mach/vm_map.h>
@@ -57,11 +58,11 @@ static int update_self_regions(int pid) {
 	rc = task_for_pid (mach_task_self(),pid, &task);
 	if (rc) {
 		eprintf ("task_for_pid failed\n");
-		return 0;
+		return R_FALSE;
 	}
 	macosx_debug_regions (task, (size_t)1, 1000);
-	io->va = R_TRUE; // nop
 
+	return R_TRUE;
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -71,7 +72,7 @@ static int update_self_regions(int pid) {
 	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
 	if (!fd)
-		return 0;
+		return R_FALSE;
 
 	while (!feof (fd)) {
 		line[0]='\0';
@@ -112,6 +113,7 @@ static int update_self_regions(int pid) {
 	return R_TRUE;
 #else
 	#warning not yet implemented for this platform
+	return R_FALSE;
 #endif
 }
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
@@ -120,6 +122,7 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
+	io->va = R_TRUE; // nop
 	ret = update_self_regions (pid);
 	if (ret) {
 		return r_io_desc_new (&r_io_plugin_self,
