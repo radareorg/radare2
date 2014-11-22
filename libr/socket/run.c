@@ -218,6 +218,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	if (!strcmp (b, "program")) p->_args[0] = p->_program = strdup (e);
 	else if (!strcmp (b, "system")) p->_system = strdup (e);
 	else if (!strcmp (b, "aslr")) p->_aslr = parseBool (e);
+	else if (!strcmp (b, "pid")) p->_pid = atoi (e);
 	else if (!strcmp (b, "connect")) p->_connect = strdup (e);
 	else if (!strcmp (b, "listen")) p->_listen = strdup (e);
 	else if (!strcmp (b, "stdout")) p->_stdout = strdup (e);
@@ -300,6 +301,7 @@ R_API const char *r_run_help() {
 	"# connect=localhost:8080\n"
 	"# listen=8080\n"
 	"# bits=32\n"
+	"# pid=0\n"
 	"# #sleep=0\n"
 	"# #maxfd=0\n"
 	"# #maxproc=0\n"
@@ -554,6 +556,9 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 #endif
 	if (p->_system) {
+		if (p->_pid) {
+			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+		}
 		exit (r_sys_cmd (p->_system));
 	}
 	if (p->_program) {
@@ -571,6 +576,14 @@ R_API int r_run_start(RRunProfile *p) {
 		// XXX HACK close all non-tty fds
 		{ int i; for (i=3; i<10; i++) close (i); }
 		// TODO: use posix_spawn
+		if (p->_setgid) {
+			ret = setgid (atoi (p->_setgid));
+			if (ret < 0)
+				return 1;
+		}
+		if (p->_pid) {
+			eprintf ("PID: %d\n", getpid ());
+		}
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 	return 0;
