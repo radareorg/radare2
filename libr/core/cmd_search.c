@@ -477,7 +477,7 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 }
 
 //TODO: follow unconditional jumps
-static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, RRegex* rx) {
+static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, int regex, RList* rx_list) {
 	RAnalOp aop;
 	RAsmOp asmop;
 	const char* start, *end;
@@ -489,12 +489,20 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	boolt valid = 0;
 	int grep_find;
 	int search_hit;
+	RRegex* rx = NULL;
+	int count = 0;
 
 	if (grep) {
 		start = grep;
-		end = strstr (grep, ",");
-		if (!end) { // We filter on a single opcode, so no ","
+		end = strstr (grep, "#");
+		if (!end) { // We filter on a single opcode, so no "#"
 			end = start + strlen (grep);
+		}
+		if (regex) {
+			// get the first regexp.
+			if (r_list_length(rx_list) > 0) {
+				rx = r_list_get_n(rx_list, count++);
+			}
 		}
 	}
 
@@ -523,12 +531,13 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 
 			//Handle (possible) grep
 			if (search_hit) {
-				if (end[0] == ',') { // fields are comma-seperated
-					start = end + 1; // skip the comma
-					end = strstr (start, ",");
+				if (end[0] == '#') { // fields are octothorpe-seperated
+					start = end + 1; // skip the #
+					end = strstr (start, "#");
 					end = end?end: start + strlen(start); //latest field?
 				} else
 					end = NULL;
+				if (regex) rx = r_list_get_n(rx_list, count++);
 			}
 
 			switch (aop.type) { // end of the gadget
@@ -579,9 +588,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	boolt json_first = 1;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
+	RList/*<RRegex>*/ *rx_list = NULL;
 	RRegex* rx = NULL;
-	char* gregexp = NULL;
-	const char* gstart, *gend;
+	char* tok, *gregexp = NULL;
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
 		increment = 4;
@@ -601,14 +610,15 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	// Deal with the grep guy.
 	if (grep && regexp) {
-		gstart = grep;
-		gend = strstr (grep, ",");
-		if (!gend) { // We filter on a single opcode, so no ","
-			gend = gstart + strlen (grep);
+		if (!rx_list) rx_list = r_list_newf(free);
+		gregexp = calloc(strlen(grep) + 1, sizeof(char));
+		memcpy(gregexp, grep, strlen(grep));
+		tok = strtok(gregexp, "#");
+		while (tok) {
+			rx = r_regex_new(gregexp, "");
+			r_list_append(rx_list, rx);
+			tok = strtok(NULL, "#");
 		}
-		gregexp = calloc(gend - gstart + 1, sizeof(char));
-		memcpy(gregexp, grep, gend - gstart);
-		rx = r_regex_new(gregexp, "");
 	}
 
 	smode = r_config_get (core->config, "search.in");
@@ -664,7 +674,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
 				if (!ret)
 					continue;
-				hitlist = construct_rop_gadget (core, from+i, buf, i, grep, rx);
+				hitlist = construct_rop_gadget (core, from+i, buf, i, grep, regexp, rx_list);
 				if (!hitlist)
 					continue;
 
@@ -740,8 +750,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		list = NULL;
 	}
 
-	if (rx) {
-		r_regex_free(rx);
+	if (rx_list) {
+		r_list_free(rx_list);
+		rx_list = NULL;
 	}
 	if (gregexp) {
 		free(gregexp);
