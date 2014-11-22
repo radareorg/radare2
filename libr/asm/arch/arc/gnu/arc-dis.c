@@ -119,7 +119,6 @@ typedef enum
 	  is_limm++;				\
 	  field##isReg = 0;			\
 	  PUT_NEXT_WORD_IN (field);		\
-	  limm_value = field;			\
 	}					\
       else if (field > 60)			\
 	{					\
@@ -486,7 +485,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
   int fieldAisReg = 1, fieldBisReg = 1, fieldCisReg = 1;
   int fieldA, fieldB, fieldC = 0;
   int flag = 0, cond = 0, is_shimm = 0, is_limm = 0;
-  long limm_value = 0;
   int signExtend = 0, addrWriteBack = 0, directMem = 0;
   int is_linked = 0;
   int offset = 0;

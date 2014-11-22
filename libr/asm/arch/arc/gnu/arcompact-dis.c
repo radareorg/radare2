@@ -159,7 +159,6 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 	  is_limm++;				\
 	  field##isReg = 0;			\
 	  PUT_NEXT_WORD_IN(field);		\
-	  limm_value = field;			\
 	}					\
 	}
 
@@ -347,14 +346,12 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
   char *bp;
   const char *p;
   int size, leading_zero, regMap[2];
-  long auxNum;
   va_list ap;
 
   va_start(ap,format);
   bp = buf;
   *bp = 0;
   p = format;
-  auxNum = -1;
   regMap[0] = 0;
   regMap[1] = 0;
   while (1)
@@ -665,7 +662,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
   int fieldAisReg=1, fieldBisReg=1, fieldCisReg=1;
   int fieldA=0, fieldB=0, fieldC=0;
   int flag=0, cond=0, is_shimm=0, is_limm=0;
-  long limm_value=0;
   int signExtend=0, addrWriteBack=0, directMem=0;
   int is_linked=0;
   int offset=0;
@@ -3932,7 +3928,7 @@ arcAnalyzeInstr
   /* disassemble */
   bytes = dsmOneArcInst(address, (void *)&s, info);
   /* We print max bytes for instruction */
-  info->bytes_per_line = 8;
+  info->bytes_per_line = bytes;
   return s;
 }
 

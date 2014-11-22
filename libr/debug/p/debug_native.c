@@ -1464,7 +1464,7 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	map = r_debug_map_get (dbg, (ut64)base);
 	return map;
 #else
-#warning malloc not implemented for this platform
+	// malloc not implemented for this platform
 	return NULL;
 #endif
 }
@@ -1490,7 +1490,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	}
 	return R_TRUE;
 #else
-#warning mdealloc not implemented for this platform
+    // mdealloc not implemented for this platform
 	return R_FALSE;
 #endif
 }
@@ -2049,10 +2049,10 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	}
 	return R_TRUE;
 #elif __linux__
-#warning mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
+    // mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
 	return R_FALSE;
 #else
-#warning mprotect not implemented for this platform
+    // mprotect not implemented for this platform
 	return R_FALSE;
 #endif
 }
