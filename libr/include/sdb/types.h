@@ -10,10 +10,12 @@
 #undef eprintf
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 
+#ifndef SDB_API
 #if defined(__GNUC__)
 #define SDB_API __attribute__((visibility("default")))
 #else
 #define SDB_API
+#endif
 #endif
 
 #if MINGW || __MINGW32__ || __MINGW64__

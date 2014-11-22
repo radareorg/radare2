@@ -2,22 +2,24 @@
 
 #include <r_cons.h>
 #include <r_util.h>
-
+#define sdb_json_indent r_cons_json_indent
 #include "../../shlr/sdb/src/json/indent.c"
 
 R_API void r_cons_grep_help() {
 	eprintf (
-"Usage: [command]~[modifier][word,word][[column][:line]\n"
-" modifiers\n"
-"   &  all words must match to grep the line\n"
-"   ^  words must be placed at the beginning of line\n"
-"   !  negate grep\n"
-"   ?  count number of matching lines\n"
-"   {} json indentation\n"
-" examples:\n"
-"   i~:0   # show fist line o 'i' output\n"
-"   pd~mov # disasm and grep for mov\n"
-"   pi~[0] # show only opcode\n"
+"|Usage: [command]~[modifier][word,word][[column][:line]\n"
+"| modifiers\n"
+"|   &    all words must match to grep the line\n"
+"|   ^    words must be placed at the beginning of line\n"
+"|   !    negate grep\n"
+"|   ?    count number of matching lines\n"
+"|   ..   internal 'less'\n"
+"|   {}   json indentation\n"
+"|   {}.. less json indentation\n"
+"| examples:\n"
+"|   i~:0   # show fist line o 'i' output\n"
+"|   pd~mov # disasm and grep for mov\n"
+"|   pi~[0] # show only opcode\n"
 	);
 }
 
