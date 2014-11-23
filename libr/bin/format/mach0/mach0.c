@@ -18,7 +18,7 @@ static ut64 addr_to_offset(struct MACH0_(obj_t)* bin, ut64 addr) {
 	ut64 segment_base, segment_size;
 	int i;
 
-	if (!bin->sects)
+	if (!bin->segs)
 		return 0;
 
 	for (i = 0; i < bin->nsegs; i++) {
