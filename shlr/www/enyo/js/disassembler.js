@@ -11,10 +11,10 @@ enyo.kind ({
   data: null,
   draggable: false,
   components: [
-      {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
-      {tag: "div", content: "^", name: "less_button", classes: "moreless", ontap: "less"},
+      // {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
+      // {tag: "div", content: "^", name: "less_button", classes: "moreless", ontap: "less"},
       {tag: "div", allowHtml: true, name: "text", content: "..", style:"margin-left:5px;margin-right:5px"},
-      {tag: "div", content: "v", name: "more_button", classes: "moreless", ontap: "more"},
+      // {tag: "div", content: "v", name: "more_button", classes: "moreless", ontap: "more"},
       {kind: enyo.Signals, onkeypress: "handleKeyPress"},
   ],
   handlers: {ontap: "handleTap"},
@@ -204,17 +204,17 @@ enyo.kind ({
   rbox: null,
   display_graph: function() {
     this.display = "graph";
-    this.$.colorbar.hide();
-    this.$.less_button.hide();
-    this.$.more_button.hide();
+    // this.$.colorbar.hide();
+    // this.$.less_button.hide();
+    // this.$.more_button.hide();
     var panel = document.getElementById("radareApp_mp_pageDisassembler");
     panel.className = panel.className.replace("ec_background", "ec_alt_background");
   },
   display_flat: function() {
     this.display = "flat";
-    this.$.colorbar.show();
-    this.$.less_button.show();
-    this.$.more_button.show();
+    // this.$.colorbar.show();
+    // this.$.less_button.show();
+    // this.$.more_button.show();
     var panel = document.getElementById("radareApp_mp_pageDisassembler");
     panel.className = panel.className.replace("ec_alt_background", "ec_background");
   },
@@ -255,11 +255,12 @@ enyo.kind ({
       this.display = display;
       r2.restore_asm_config();
     }
-    if (this.display === "flat") {
+    else if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -0.5*this.block, this.block, function(x) {
-        x = render_instructions(x);
-        text.setContent(x);
+        text.setContent("<div id='flat_canvas' class='flatcanvas ec_background'></div>");
+        render_instructions(x);
+        // text.setContent(x);
       });
     }
     this.selected = get_element_by_address(addr);
@@ -298,7 +299,7 @@ enyo.kind ({
       }
       // console.log (y);
 
-// TODO: use canvas api for faster rendering and smaller dom
+      // TODO: use canvas api for faster rendering and smaller dom
       var c = "<table class='colorbar'>"+
           "<tr valign=top style='height:8px;border-spacing:0'>";
       var colors = {

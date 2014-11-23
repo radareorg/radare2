@@ -1,5 +1,7 @@
 .bbcanvas { float: left; }
 
+.flatcanvas { float: left; }
+
 .insaddr {
   min-width: 7em;
   display: inline-block;
@@ -30,6 +32,11 @@
 .basicblock {
   border: 1px solid;
   padding: 5px;
+  position: absolute;
+}
+
+.instructionbox {
+  margin-left: 100px;
   position: absolute;
 }
 
@@ -70,6 +77,8 @@ input:focus {outline: none; }
 .ec_mov {color: rgb(127,127,127);}
 .ec_num {color: rgb(127,127,0);}
 
+.ec_jmp_line {color: orange;}
+.ec_cjmp_line {color: yellow;}
 .ec_dataoffset {color: rgb(136,136,0);}
 .ec_background {background-color: rgb(10,10,10); }
 .ec_alt_background {background-color: rgb(39,39,39); }

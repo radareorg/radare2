@@ -115,7 +115,7 @@ function render_graph(x) {
   } catch (e) {
     console.log("Cannot parse JSON data");
   }
-  // try {
+  try {
     if (obj[0] === undefined) return false;
     if (obj[0].blocks === undefined) return false;
     var graph = new BBGraph();
@@ -165,31 +165,183 @@ function render_graph(x) {
     }
     graph.render();
     return true;
-  // } catch (e) {
-  //   console.log("Error generating bb graph");
-  // }
+  } catch (e) {
+    console.log("Error generating bb graph");
+  }
 }
 
 function render_instructions(instructions) {
-  var html = '<div class="ec_background">';
+  var outergbox = document.createElement('div');
+  outergbox.id = 'outergbox';
+  var flatcanvas = document.getElementById("flat_canvas");
+  flatcanvas.innerHTML = "";
+  var gbox = document.createElement('div');
+  gbox.id = 'gbox';
+  gbox.className = name;
+  outergbox.appendChild(gbox);
+  flatcanvas.appendChild(outergbox);
+
+  var flatcanvas_rect = getOffsetRect(flatcanvas);
+
+
+  var accumulated_heigth = flatcanvas_rect.top;
+  var lines = [];
+  var targets = {};
+  var first_address = instructions[0].offset;
+  var last_address = instructions[instructions.length - 1].offset;
+  console.log("last_address " + last_address);
   for (var i in instructions) {
     var ins = instructions[i];
+
+    if ((ins.type == "jmp" || ins.type == "cjmp") && ins.jump !== undefined && ins.jump !== null) {
+      var line = {};
+      line.from = ins.offset;
+      if (last_address < ins.jump) {
+        line.to_end = false;
+        line.to = last_address;
+      } else if (first_address > ins.jump) {
+        line.to_end = false;
+        line.to = first_address;
+      } else {
+        line.to_end = true;
+        line.to = ins.jump;
+      }
+      if (ins.type == "jmp") {
+        line.color = r2ui.colors[".ec_jmp_line"];
+        line.dashed = false;
+      } else if (ins.type == "cjmp") {
+        line.color = r2ui.colors[".ec_cjmp_line"];
+        line.dashed = true;
+      }
+      line.to_start = true;
+      lines[lines.length] = line;
+      if (targets[line.to] === undefined) {
+        targets[line.to] = 0;
+      }
+    }
+
     ins.offset = "0x" + ins.offset.toString(16);
     if (ins.comment === undefined || ins.comment === null) ins.comment = "";
     else {
       ins.comment = atob(ins.comment);
     }
-    html += html_for_instruction(ins);
+    var dom = document.createElement('div');
+    dom.className = "instructionbox";
+    dom.style.top = accumulated_heigth + "px";
+    dom.innerHTML = html_for_instruction(ins);
+
+    gbox.appendChild(dom);
+    var instruction_rect = getOffsetRect(dom);
+    var instruction_heigth = instruction_rect.bottom - instruction_rect.top;
+    accumulated_heigth += instruction_heigth;
   }
-  html += "</div>";
-  return html;
+
+  var canvas = document.createElement("canvas");
+  canvas.width = 2500;
+  canvas.height = accumulated_heigth + 100;
+  canvas.id = "fcanvas";
+  gbox.appendChild(canvas);
+  var ctx = canvas.getContext("2d");
+  if (!ctx.setLineDash) {
+    // For browsers that dont support dashed lines
+    ctx.setLineDash = function () {};
+  }
+  var num_targets = countProperties(targets);
+  var num_assigned_paths = 0;
+  var lines_width = 100;
+  for (var l in lines) {
+    var line = lines[l];
+    var from = "0x" + line.from.toString(16);
+    var to = "0x" + line.to.toString(16);
+
+    if (targets[line.to] === 0) {
+      // No path assigned for target, assigning a new one
+      targets[line.to] = (num_targets - num_assigned_paths - 1)*(90/(num_targets+1));
+      num_assigned_paths += 1;
+    }
+    var from_element = get_element_by_address(from);
+    var to_element = get_element_by_address(to);
+
+    if (from_element !== null && from_element !== undefined && to_element !== undefined && to_element !== null) {
+      var x = targets[line.to];
+      var from_rect = getOffsetRect(from_element);
+      var y0 = (from_rect.top + from_rect.bottom) / 2;
+      var to_rect = getOffsetRect(to_element);
+      var y1 = (to_rect.top + to_rect.bottom) / 2;
+
+      // main line
+      ctx.beginPath();
+      ctx.moveTo(x, y0);
+      ctx.lineTo(x, y1);
+      ctx.strokeStyle = line.color;
+      if (line.dashed) ctx.setLineDash([2,3]);
+      ctx.stroke();
+
+      if (line.to_start) {
+        // horizontal line at start
+        ctx.beginPath();
+        ctx.moveTo(x, y0);
+        ctx.lineTo(lines_width - 5, y0);
+        ctx.strokeStyle = line.color;
+        if (line.dashed) ctx.setLineDash([2,3]);
+        ctx.stroke();
+
+        // circle
+        ctx.beginPath();
+        ctx.arc(lines_width - 5 - 2, y0, 2, 0, 2 * Math.PI, false);
+        ctx.fillStyle = line.color;
+        ctx.fill();
+      }
+
+      if (line.to_end) {
+        // horizontal line at end
+        ctx.beginPath();
+        ctx.moveTo(x, y1);
+        ctx.lineTo(lines_width - 5, y1);
+        ctx.strokeStyle = line.color;
+        if (line.dashed) ctx.setLineDash([2,3]);
+        ctx.stroke();
+
+        // arrow
+        ctx.beginPath();
+        ctx.moveTo(lines_width - 5, y1);
+        ctx.lineTo(lines_width - 10, y1-5);
+        ctx.lineTo(lines_width - 10, y1+5);
+        ctx.lineWidth = 1;
+        ctx.fillStyle = line.color;
+        ctx.fill();
+      }
+    }
+
+  }
 }
 
-// meter xrefs addr,type (DATA)  ; DATA XREF from 0x00400b4d (entry0)
-// type2_num ??
-// type_num ??
-// jump y fail for xrefs
-// comments right or above
+function getOffsetRect(elem) {
+    var box = elem.getBoundingClientRect();
+
+    var bar = document.getElementById("radareApp_mp_toolbar");
+    var barrect = bar.getBoundingClientRect();
+
+    var body = document.body;
+    var docElem = document.documentElement;
+    var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+    var clientTop = docElem.clientTop || body.clientTop || 0;
+    var top  = box.top - barrect.bottom - 10; //+ scrollTop - clientTop;
+    var bottom  = box.bottom - barrect.bottom - 10;//+  scrollTop - clientTop;
+
+    return {top: Math.round(top), bottom: Math.round(bottom)};
+}
+
+function countProperties(obj) {
+  var count = 0;
+  for(var prop in obj) {
+    if(obj.hasOwnProperty(prop)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
 function html_for_instruction(ins) {
   var idump = '<div class="instruction">';
   var address = ins.offset;
@@ -242,6 +394,7 @@ function html_for_instruction(ins) {
     if (contains(bin, ins.type)) ins.type = "bin";
     if (ins.type == "ill") ins.type = "invalid";
     if (ins.type == "null") ins.type = "invalid";
+    if (ins.type == "undefined") ins.type = "invalid";
     if (ins.type == "ujmp") ins.type = "jmp";
     if (ins.type == "ucall") ins.type = "call";
     if (ins.type == "lea") ins.type = "mov";
@@ -421,7 +574,7 @@ Element.prototype.documentOffsetTop = function () {
 };
 
 function scroll_to_address(address) {
-  elements = document.getElementsByClassName("addr_" + address);
+  var elements = document.getElementsByClassName("insaddr addr_" + address);
   if (elements.length == 1) {
     var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
     top = Math.max(0,top);

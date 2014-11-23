@@ -3,12 +3,13 @@ var r2ui = {};
 r2ui.history = [];
 r2ui.history_idx = 0;
 
+r2ui.colors = {};
+
 r2ui.load_colors = function () {
   // change css on the fly!
-  var colors = {};
   r2.cmdj("ecj", function(x) {
     for (var i in x) {
-      colors[".ec_" + i] = "rgb(" + String(x[i]) + ")";
+      r2ui.colors[".ec_" + i] = "rgb(" + String(x[i]) + ")";
     }
   });
   for (var k in document.styleSheets) {
@@ -19,9 +20,11 @@ r2ui.load_colors = function () {
       if (myrules[j].selectorText !== undefined && myrules[j].selectorText !== null) {
         if (myrules[j].selectorText.toLowerCase().indexOf(".ec_") === 0) {
           var sel = myrules[j].selectorText.toLowerCase();
-          var color = colors[sel];
+          var color = r2ui.colors[sel];
           if (color !== undefined && color !== null) {
             myrules[j].style.color = color;
+          } else {
+            r2ui.colors[sel] = myrules[j].style.color;
           }
         }
       }
