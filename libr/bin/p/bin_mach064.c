@@ -175,7 +175,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(r_bin_mach0_get_main) (arch->o->bin_obj);
+		addr = MACH0_(get_main) (arch->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
 		ret->paddr = ret->vaddr = addr;
