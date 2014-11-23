@@ -55,12 +55,13 @@ static int i4004_get_ins_len (ut8 hex) {
 	return ret;
 }
 
-#define BUF_ASM op->buf_asm, sizeof (op->buf_asm)-1
-
 static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 	int rlen = i4004_get_ins_len (*buf);
 	ut8 low = (*buf & 0xf);
 	ut8 high = (*buf & 0xf0)>>4;
+	char *buf_asm = op->buf_asm;
+	size_t buf_asm_size = sizeof(op->buf_asm)-1;
+
 	if (rlen > len)	return op->size = 0;
 	switch (high) {
 		case 0:
@@ -68,45 +69,45 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 			else strcpy (op->buf_asm, "nop");
 			break;
 		case 1:
-			snprintf (BUF_ASM, "jcn %d 0x%02x", low, buf[1]);
+			snprintf (buf_asm, buf_asm_size, "jcn %d 0x%02x", low, buf[1]);
 			break;
 		case 2:
 			if (rlen == 1)
-				snprintf (BUF_ASM, "scr r%d", (low & 0xe));
-			else	snprintf (BUF_ASM, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
+				snprintf (buf_asm, buf_asm_size, "scr r%d", (low & 0xe));
+			else	snprintf (buf_asm, buf_asm_size, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 			break;
 		case 3:
-			snprintf (BUF_ASM, "fin r%d", (low & 0xe));
+			snprintf (buf_asm, buf_asm_size, "fin r%d", (low & 0xe));
 			break;
 		case 4:
-			snprintf (BUF_ASM, "jun %03x", ((ut16)(low<<8) | buf[1]));
+			snprintf (buf_asm, buf_asm_size, "jun %03x", ((ut16)(low<<8) | buf[1]));
 			break;
 		case 5:
-			snprintf (BUF_ASM, "jms %03x", ((ut16)(low<<8) | buf[1]));
+			snprintf (buf_asm, buf_asm_size, "jms %03x", ((ut16)(low<<8) | buf[1]));
 			break;
 		case 6:
-			snprintf (BUF_ASM, "inc r%d", low);
+			snprintf (buf_asm, buf_asm_size, "inc r%d", low);
 			break;
 		case 7:
-			snprintf (BUF_ASM, "isz r%d, 0x%02x", low, buf[1]);
+			snprintf (buf_asm, buf_asm_size, "isz r%d, 0x%02x", low, buf[1]);
 			break;
 		case 8:
-			snprintf (BUF_ASM, "add r%d", low);
+			snprintf (buf_asm, buf_asm_size, "add r%d", low);
 			break;
 		case 9:
-			snprintf (BUF_ASM, "sub r%d", low);
+			snprintf (buf_asm, buf_asm_size, "sub r%d", low);
 			break;
 		case 10:
-			snprintf (BUF_ASM, "ld r%d", low);
+			snprintf (buf_asm, buf_asm_size, "ld r%d", low);
 			break;
 		case 11:
-			snprintf (BUF_ASM, "xch r%d", low);
+			snprintf (buf_asm, buf_asm_size, "xch r%d", low);
 			break;
 		case 12:
-			snprintf (BUF_ASM, "bbl %d", low);
+			snprintf (buf_asm, buf_asm_size, "bbl %d", low);
 			break;
 		case 13:
-			snprintf (BUF_ASM, "ldm %d", low);
+			snprintf (buf_asm, buf_asm_size, "ldm %d", low);
 			break;
 		case 14:
 			strcpy (op->buf_asm, i4004_e[low]);
