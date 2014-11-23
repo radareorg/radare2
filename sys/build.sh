@@ -33,6 +33,11 @@ if [ $? = 0 ]; then
 	export CC
 fi
 
+pkg-config --atleast-version=3.0 capstone 2>/dev/null
+if [ $? = 0 ]; then
+	CFGARG="${CFGARG} --with-syscapstone"
+fi
+
 # build
 ${MAKE} mrproper > /dev/null 2>&1
 if [ -d shlr/capstone/.git ]; then
