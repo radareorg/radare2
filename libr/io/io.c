@@ -605,9 +605,6 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			buf += ret;
 		}
 	}
-		if (1) { //io->history) {
-			r_io_cache_write (io, io->off, buf, len);
-		}
 
 	/* TODO: implement IO cache here. to avoid dupping work on vm for example */
 
