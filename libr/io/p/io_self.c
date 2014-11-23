@@ -90,6 +90,8 @@ static int update_self_regions(int pid) {
 			l = strlen (pos_c);
 			memcpy (region2+2, pos_c, l);
 			region2[2+l] = 0;
+		} else {
+			region2[0] = 0;
 		}
 		perm = 0;
 		for (i = 0; i < 4 && perms[i]; i++)
