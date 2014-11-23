@@ -1,20 +1,26 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
+#define sdb_json_indent r_cons_json_indent
+#define sdb_json_unindent r_cons_json_unindent
+#include "../../shlr/sdb/src/json/indent.c"
 
 R_API void r_cons_grep_help() {
 	eprintf (
-"Usage: [command]~[modifier][word,word][[column][:line]\n"
-" modifiers\n"
-"   &  all words must match to grep the line\n"
-"   ^  words must be placed at the beginning of line\n"
-"   !  negate grep\n"
-"   ?  count number of matching lines\n"
-" examples:\n"
-"   i~:0   # show fist line o 'i' output\n"
-"   pd~mov # disasm and grep for mov\n"
-"   pi~[0] # show only opcode\n"
+"|Usage: [command]~[modifier][word,word][[column][:line]\n"
+"| modifiers\n"
+"|   &    all words must match to grep the line\n"
+"|   ^    words must be placed at the beginning of line\n"
+"|   !    negate grep\n"
+"|   ?    count number of matching lines\n"
+"|   ..   internal 'less'\n"
+"|   {}   json indentation\n"
+"|   {}.. less json indentation\n"
+"| examples:\n"
+"|   i~:0   # show fist line o 'i' output\n"
+"|   pd~mov # disasm and grep for mov\n"
+"|   pi~[0] # show only opcode\n"
 	);
 }
 
@@ -35,6 +41,7 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.amp = 0;
 	cons->grep.end = 0;
 	cons->grep.less = 0;
+	cons->grep.json = 0;
 	cons->grep.line = -1;
 	cons->grep.begin = 0;
 	cons->grep.counter = 0;
@@ -47,6 +54,16 @@ R_API void r_cons_grep(const char *str) {
 		case '.':
 			if (str[1]=='.') {
 				cons->grep.less = 1;
+				return;
+			}
+			str++;
+			break;
+		case '{':
+			if (str[1]=='}') {
+				cons->grep.json = 1;
+				if (!strncmp (str, "{}..", 4))
+					cons->grep.less = 1;
+				str++;
 				return;
 			}
 			str++;
@@ -136,6 +153,19 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
+	if (cons->grep.json) {
+		char *out = sdb_json_indent (buf);
+		free (cons->buffer);
+		cons->buffer = out;
+		cons->buffer_len = strlen (out);
+		cons->buffer_sz = cons->buffer_len +1;
+		cons->grep.json = 0;
+		if (cons->grep.less) {
+			cons->grep.less = 0;
+			r_cons_less (cons->buffer);
+		}
+		return 3;
+	}
 	if (cons->grep.less) {
 		cons->grep.less = 0;
 		r_cons_less (buf);
@@ -155,7 +185,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	out = tbuf = calloc (1, len);
 	tline = malloc (len);
 	cons->lines = 0;
-	while (in-buf<len) {
+	while ((int)(size_t)(in-buf)<len) {
 		p = strchr (in, '\n');
 		if (!p) {
 			free (tbuf);

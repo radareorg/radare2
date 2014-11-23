@@ -59,6 +59,7 @@ typedef struct r_disam_options_t {
 	int adistrick;
 	int asm_demangle;
 	int show_offset;
+	int show_section;
 	int show_offseg;
 	int show_flags;
 	int show_bytes;
@@ -239,6 +240,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
+	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -958,6 +960,12 @@ static void handle_print_lines_right (RCore *core, RDisasmState *ds){
 	}
 }
 static void handle_print_lines_left (RCore *core, RDisasmState *ds){
+	if (ds->show_section) {
+		RIOSection *s = r_io_section_vget (core->io, ds->at);
+		if (s) {
+			r_cons_printf ("%10s ", s->name);
+		}
+	}
 	if (!ds->linesright && ds->show_lines && ds->line) {
 		if (ds->show_color) {
 // XXX line is too long wtf
@@ -996,20 +1004,20 @@ static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_offset (RCore *core, RDisasmState *ds) {
-	 if (core->screen_bounds) {
+	if (core->screen_bounds) {
 		int r, R;
 		(void)r_cons_get_size (&R);
 		(void)r_cons_get_cursor (&r);
 		//r_cons_printf ("(%d,%d)/(%d,%d) ", r,c, R, C);
 		if (r+1>=R) {
-		//	r_cons_printf ("LAST (0x%llx)\n", ds->at);
+			//	r_cons_printf ("LAST (0x%llx)\n", ds->at);
 			if (core->screen_bounds == 1LL)
 				core->screen_bounds = ds->at;
 		}
-	 }
-	 if (ds->show_offset)
-		 r_print_offset (core->print, ds->at, (ds->at==ds->dest),
-				 ds->show_offseg);
+	}
+	if (ds->show_offset)
+		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
+				ds->show_offseg);
 }
 
 static void handle_print_op_size (RCore *core, RDisasmState *ds) {

@@ -47,6 +47,7 @@ typedef struct r_cons_grep_t {
 	char *str;
 	int counter;
 	int less;
+	int json;
 	int line;
 	int tokenfrom;
 	int tokento;

@@ -516,7 +516,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				} else {
 					append (ebytes, Color_INVERT);
-					append (echars, Color_INVERT);
 				}
 			}
 			here = R_MIN ((i * nb_cols) + j, core->blocksize);

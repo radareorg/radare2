@@ -26,6 +26,9 @@ install:
 	${INSTALL_SCRIPT} ragg2/ragg2-cc "${BFX}/ragg2-cc"
 	-cd "${BFX}" && rm -f r2 ; ln -fs radare2 r2
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "$(LFX)"
+	-cd "$(LFX)" && \
+		mv libr2.$(EXT_SO) libr2.$(EXT_SO).$(VERSION) && \
+		ln -fs libr2.$(EXT_SO).$(VERSION) libr2.$(EXT_SO)
 
 symstall install-symlink:
 	mkdir -p "${BFX}"
@@ -33,6 +36,9 @@ symstall install-symlink:
 	ln -fs "${BTOP}/ragg2/ragg2-cc" "${BFX}/ragg2-cc"
 	-ln -fs "${PFX}/bin/radare2" "${BFX}/r2"
 	-ln -fs "${BTOP}/preload/libr2.$(EXT_SO)" "${LFX}/libr2.$(EXT_SO)"
+	-cd "$(LFX)" && \
+		mv libr2.$(EXT_SO) libr2.$(EXT_SO).$(VERSION) && \
+		ln -fs libr2.$(EXT_SO).$(VERSION) libr2.$(EXT_SO)
 
 deinstall uninstall:
 	for a in ${BINS} ; do rm -f "${BFX}/$$a" ; done

@@ -639,13 +639,19 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		delta = to - from;
 		if (delta < 1) {
 			delta = from - to;
-			if (delta < 1)
+			if (delta < 1) {
+				if (rx) r_regex_free(rx);
+				if (gregexp) free(gregexp);
 				return R_FALSE;
+			}
 		}
 
 		buf = malloc (delta);
-		if (!buf)
+		if (!buf) {
+			if (rx) r_regex_free(rx);
+			if (gregexp) free(gregexp);
 			return -1;
+		}
 
 		for (i=0; i < delta - 32; i+=increment) {
 			if (i >= end) { // read by chunk of 4k

@@ -553,7 +553,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 				continue;
 
 			free (next_module_function->name);
-			next_module_function->name = r_str_newf("flirt.%s", strdup (flirt_func->name));
+			next_module_function->name = r_str_newf("flirt.%s", flirt_func->name);
 			anal->flb.set (anal->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function->size, 0);
 
@@ -786,19 +786,19 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 			if (buf_eof || buf_err) goto err_exit;
 		}
 
-		for (i = 0; current_byte >= 0x20; i++) {
-			if (i == R_FLIRT_NAME_MAX) {
-				eprintf("Function name too long\n");
-				function->name[R_FLIRT_NAME_MAX - 1] = '\0';
-				break;
-			}
-
+		for (i = 0; current_byte >= 0x20 && i < R_FLIRT_NAME_MAX; i++) {
 			function->name[i] = current_byte;
 			current_byte = read_byte(b);
 			if (buf_eof || buf_err) goto err_exit;
 		}
 
-		function->name[i] = '\0';
+		if (i == R_FLIRT_NAME_MAX) {
+			eprintf("Function name too long\n");
+			function->name[R_FLIRT_NAME_MAX - 1] = '\0';
+		} else {
+			function->name[i] = '\0';
+		}
+
 #if DEBUG
 		eprintf("%04X:%s ", function->offset, function->name);
 #endif

@@ -3,6 +3,7 @@
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_cons.h>
 
 #if __APPLE__
 #include <mach/vm_map.h>
@@ -23,6 +24,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max);
 #define PERM_EXEC 1
 
 typedef struct {
+	char *name;
 	ut64 from;
 	ut64 to;
 	int perm;
@@ -47,12 +49,7 @@ static int self_in_section(ut64 addr, int *left, int *perm) {
 	return R_FALSE;
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!strncmp (file, "self://", 7));
-}
-
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	int pid = getpid ();
+static int update_self_regions(int pid) {
 	self_sections_count = 0;
 
 #if __APPLE__
@@ -61,13 +58,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	rc = task_for_pid (mach_task_self(),pid, &task);
 	if (rc) {
 		eprintf ("task_for_pid failed\n");
-		return NULL;
+		return R_FALSE;
 	}
 	macosx_debug_regions (task, (size_t)1, 1000);
-	io->va = R_TRUE; // nop
-	return r_io_desc_new (&r_io_plugin_self,
-		pid, file, rw, mode, NULL);
 
+	return R_TRUE;
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -77,7 +72,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
 	if (!fd)
-		return NULL;
+		return R_FALSE;
 
 	while (!feof (fd)) {
 		line[0]='\0';
@@ -95,6 +90,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			l = strlen (pos_c);
 			memcpy (region2+2, pos_c, l);
 			region2[2+l] = 0;
+		} else {
+			region2[0] = 0;
 		}
 		perm = 0;
 		for (i = 0; i < 4 && perms[i]; i++)
@@ -105,6 +102,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 		self_sections[self_sections_count].from = r_num_get (NULL, region);
 		self_sections[self_sections_count].to = r_num_get (NULL, region2);
+		self_sections[self_sections_count].name = strdup (path);
 
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
@@ -113,11 +111,25 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			continue;
 	}
 	fclose (fd);
-	return r_io_desc_new (&r_io_plugin_self,
-		pid, file, rw, mode, NULL);
+
+	return R_TRUE;
 #else
 	#warning not yet implemented for this platform
+	return R_FALSE;
 #endif
+}
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
+	return (!strncmp (file, "self://", 7));
+}
+
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	int ret, pid = getpid ();
+	io->va = R_TRUE; // nop
+	ret = update_self_regions (pid);
+	if (ret) {
+		return r_io_desc_new (&r_io_plugin_self,
+			pid, file, rw, mode, NULL);
+	}
 	return NULL;
 }
 
@@ -162,6 +174,25 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
+static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (!strcmp (cmd, "pid")) {
+		eprintf ("%d\n", fd->fd);
+	}else if (!strcmp (cmd, "maps")) {
+		int i;
+		for (i =0; i<self_sections_count ;i++) {
+			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
+				self_sections[i].from, self_sections[i].to,
+				r_str_rwx_i (self_sections[i].perm),
+				self_sections[i].name);
+		}
+	} else {
+		eprintf ("|Usage: \n");
+		eprintf ("| =!pid     show getpid()\n");
+		eprintf ("| =!maps    show map regions\n");
+	}
+	return 0;
+}
+
 struct r_io_plugin_t r_io_plugin_self = {
 	.name = "self",
 	.desc = "read memory from myself using 'self://'",
@@ -171,6 +202,7 @@ struct r_io_plugin_t r_io_plugin_self = {
 	.read = __read,
 	.plugin_open = __plugin_open,
 	.lseek = __lseek,
+	.system = __system,
 	.write = __write,
 };
 
@@ -183,6 +215,9 @@ struct r_lib_struct_t radare_plugin = {
 
 #if __APPLE__
 // taken from vmmap.c ios clone
+// XXX. this code is dupped in libr/debug/p/debug_native.c
+// but this one looks better, the other one seems to work too.
+// TODO: unify that implementation in a single reusable place
 void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;
 
@@ -202,7 +237,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 		(vm_region_info_t) &info, &count, &object_name);
 
 	if (kret) {
-		printf ("mach_vm_region: Error %d - %s", kret, mach_error_string(kret));
+		eprintf ("mach_vm_region: Error %d - %s", kret, mach_error_string(kret));
 		return;
 	}
 	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_t));
@@ -244,7 +279,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 
 			}
 			if (kret != KERN_SUCCESS) {
-				fprintf (stderr,"mach_vm_region failed for address %p - Error: %x\n",
+				eprintf ("mach_vm_region failed for address %p - Error: %x\n",
 					(void*)(size_t)address, kret);
 				size = 0;
 				if (address >= 0x4000000) return;
@@ -278,7 +313,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "M"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
 			/* End Quick hack */
-			printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
+			r_cons_printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
 				(void*)(size_t)(prev_address),
 			       (void*)(size_t)(prev_address + prev_size),
 			       print_size,
@@ -295,9 +330,9 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 			self_sections_count++;
 
 			if (nsubregions > 1)
-				printf (" (%d sub-regions)", nsubregions);
+				r_cons_printf (" (%d sub-regions)", nsubregions);
 
-			printf ("\n");
+			r_cons_printf ("\n");
 
 			prev_address = address;
 			prev_size = size;
@@ -311,7 +346,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 		}
 
 		if ((max > 0) && (num_printed >= max)) {
-			printf ("Max %d num_printed %d\n", max, num_printed);
+			eprintf ("Max %d num_printed %d\n", max, num_printed);
 			done = 1;
 		}
 		if (done)

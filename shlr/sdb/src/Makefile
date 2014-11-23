@@ -14,6 +14,8 @@ all: ${BIN}
 	${MAKE} static
 	${MAKE} shared
 
+json.o: json/api.c json/js0n.c json/path.c json/rangstr.c json/indent.c
+
 install:
 	$(MAKE) -C .. install
 

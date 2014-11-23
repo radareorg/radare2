@@ -111,6 +111,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->jump = insn->detail->ppc.operands[1].imm;
 					op->fail = addr+4;
 					//op->type = R_ANAL_OP_TYPE_UJMP;
+				default:
 					break;
 				}
 				break;
