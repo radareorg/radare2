@@ -346,6 +346,7 @@ static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin
 
 static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct load_command lc = {0, 0};
+	boolt is_first_thread = R_TRUE;
 	ut64 off = 0LL;
 	int i, len;
 
@@ -439,17 +440,31 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				ut64 eo;
 				ut64 ss;
 			} ep = {0};
+
+			if (!is_first_thread) {
+				eprintf("Error: LC_MAIN with other threads\n");
+				return R_FALSE;
+			}
+
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
 				bin->endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
 			sdb_num_set (bin->kv, "entry0", ep.eo, 0);
 			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
+
+			is_first_thread = R_FALSE;
 			}
 			break;
 		case LC_UNIXTHREAD:
+			if (!is_first_thread) {
+				eprintf("Error: LC_UNIXTHREAD with other threads\n");
+				return R_FALSE;
+			}
 		case LC_THREAD:
 			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
 				return R_FALSE;
+
+			is_first_thread = R_FALSE;
 			break;
 		case LC_LOAD_DYLIB:
 			bin->nlibs++;
