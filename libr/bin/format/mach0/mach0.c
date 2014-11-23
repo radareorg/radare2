@@ -229,7 +229,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off, boolt is_first_thread) {
+static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct load_command *lc, ut64 off, boolt is_first_thread) {
 	ut64 ptr_thread, pc, pc_offset;
 	ut32 flavor, count;
 	int len;
@@ -322,6 +322,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	}
 
 	if (is_first_thread) {
+		bin->main_cmd = *lc;
 		bin->entry = pc;
 		sdb_num_set (bin->kv, "mach0.entry.offset", pc_offset, 0);
 	}
@@ -472,10 +473,8 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				eprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return R_FALSE;
 			}
-
-			bin->main_cmd = lc;
 		case LC_THREAD:
-			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off, is_first_thread))
+			if (!MACH0_(r_bin_mach0_parse_thread)(bin, &lc, off, is_first_thread))
 				return R_FALSE;
 
 			is_first_thread = R_FALSE;
