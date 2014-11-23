@@ -286,8 +286,7 @@ R_API RIODesc *r_io_use_fd (RIO *io, int fd) {
 	return desc;
 }
 
-#if !USE_P_API
-static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
+R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	int bytes_read = 0;
 	const char *read_from = NULL;
 	if (io->desc && io->desc->plugin && io->desc->plugin->read){
@@ -309,7 +308,6 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	}
 	return bytes_read;
 }
-#endif
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
@@ -605,9 +603,6 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			buf += ret;
 		}
 	}
-		if (1) { //io->history) {
-			r_io_cache_write (io, io->off, buf, len);
-		}
 
 	/* TODO: implement IO cache here. to avoid dupping work on vm for example */
 
