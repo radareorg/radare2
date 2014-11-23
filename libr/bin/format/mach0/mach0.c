@@ -5,31 +5,12 @@
 #include <r_util.h>
 #include "mach0.h"
 
-static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
-	ut64 section_base, section_size;
-	int i;
+static ut64 entry_to_offset(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin->main_cmd.cmd == LC_MAIN)
+		return bin->entry;
+	else if (bin->main_cmd.cmd == LC_UNIXTHREAD)
+		return bin->entry - bin->baddr;
 
-	if (!bin->sects)
-		return 0;
-	/* align addr to lower denominator */
-	if (bin->nsects>0) {
-		for (i = 0; i < bin->nsects; i++) {
-			if (bin->sects[i].addr<1)
-				continue;
-			if (addr<bin->sects[i].addr) {
-				addr = bin->sects[i].addr & 0xffffffffFFFF0000;
-			}
-		}
-	}
-	for (i = 0; i < bin->nsects; i++) {
-		section_base = (ut64)bin->sects[i].addr;
-		section_size = (ut64)bin->sects[i].size;
-		if (addr >= section_base && addr < section_base + section_size) {
-			if (bin->sects[i].offset == 0)
-				continue;
-			return bin->sects[i].addr; //offset + (addr - section_base);
-		}
-	}
 	return 0;
 }
 
@@ -248,79 +229,109 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
-	int len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
-		bin->endian?"4I":"4i", 1);
-	if (len == -1) {
-		eprintf ("Error: read (thread)\n");
-		return R_FALSE;
-	}
+static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct load_command *lc, ut64 off, boolt is_first_thread) {
+	ut64 ptr_thread, pc, pc_offset;
+	ut32 flavor, count;
+	int len;
+
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
+		bin->endian?"2I":"2i", 1);
+	if (len == -1)
+		goto wrong_read;
+
+	len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+		(ut8*)&flavor, bin->endian?"1I":"1i", 1);
+	if (len == -1)
+		goto wrong_read;
+
+	// TODO: use count for checks
+	len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command) + sizeof(flavor),
+		(ut8*)&count, bin->endian?"1I":"1i", 1);
+	if (len == -1)
+		goto wrong_read;
+
+	ptr_thread = off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(count);
+
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
-		switch (bin->thread.flavor) {
+		switch (flavor) {
 		case X86_THREAD_STATE32:
-			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_32)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.x86_32.eip;
-			sdb_num_set (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
-				r_offsetof (struct x86_thread_state32, eip), 0);
+
+			pc = bin->thread_state.x86_32.eip;
+			pc_offset = ptr_thread + r_offsetof(struct x86_thread_state32, eip);
 			break;
 		case X86_THREAD_STATE64:
-			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_64)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.x86_64.rip;
-			sdb_num_set (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
-				r_offsetof (struct x86_thread_state64, rip), 0);
+			pc = bin->thread_state.x86_64.rip;
+			pc_offset = ptr_thread + r_offsetof(struct x86_thread_state64, rip);
 			break;
 		//default: eprintf ("Unknown type\n");
 		}
 		break;
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
-		if (bin->thread.flavor == X86_THREAD_STATE32) {
-			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+		if (flavor == X86_THREAD_STATE32) {
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_32)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.ppc_32.srr0;
-		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
-			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+			pc = bin->thread_state.ppc_32.srr0;
+			pc_offset = ptr_thread + r_offsetof(struct ppc_thread_state32, srr0);
+		} else if (flavor == X86_THREAD_STATE64) {
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.ppc_64.srr0;
+			pc = bin->thread_state.ppc_64.srr0;
+			pc_offset = ptr_thread + r_offsetof(struct ppc_thread_state64, srr0);
 		}
 		break;
 	case CPU_TYPE_ARM:
-		if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command),
+		if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_32, bin->endian?"17I":"17i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
 		}
-		bin->entry = bin->thread_state.arm_32.r15;
+		pc = bin->thread_state.arm_32.r15;
+		pc_offset = ptr_thread + r_offsetof(struct arm_thread_state32, r15);
 		break;
 	case CPU_TYPE_ARM64:
-		if ((len = r_buf_fread_at(bin->b, off + sizeof (struct thread_command),
+		if ((len = r_buf_fread_at(bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_64, bin->endian?"34LI1I":"34Li1i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
 		}
-		bin->entry = bin->thread_state.arm_64.pc;
+		pc = bin->thread_state.arm_64.pc;
+		pc_offset = ptr_thread + r_offsetof(struct arm_thread_state64, pc);
 		break;
 	default:
 		eprintf ("Error: read (unknown thread state structure)\n");
 		return R_FALSE;
 	}
+
+	if (is_first_thread) {
+		bin->main_cmd = *lc;
+		bin->entry = pc;
+		sdb_num_set (bin->kv, "mach0.entry.offset", pc_offset, 0);
+	}
+
 	return R_TRUE;
+
+wrong_read:
+	eprintf("Error: read (thread)\n");
+	return R_FALSE;
 }
 
 static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
@@ -346,6 +357,7 @@ static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin
 
 static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct load_command lc = {0, 0};
+	boolt is_first_thread = R_TRUE;
 	ut64 off = 0LL;
 	int i, len;
 
@@ -439,17 +451,33 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				ut64 eo;
 				ut64 ss;
 			} ep = {0};
+
+			if (!is_first_thread) {
+				eprintf("Error: LC_MAIN with other threads\n");
+				return R_FALSE;
+			}
+
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
 				bin->endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
-			sdb_num_set (bin->kv, "entry0", ep.eo, 0);
+			bin->main_cmd = lc;
+
+			sdb_num_set (bin->kv, "mach0.entry.offset", off+8, 0);
 			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
+
+			is_first_thread = R_FALSE;
 			}
 			break;
 		case LC_UNIXTHREAD:
-		case LC_THREAD:
-			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
+			if (!is_first_thread) {
+				eprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return R_FALSE;
+			}
+		case LC_THREAD:
+			if (!MACH0_(r_bin_mach0_parse_thread)(bin, &lc, off, is_first_thread))
+				return R_FALSE;
+
+			is_first_thread = R_FALSE;
 			break;
 		case LC_LOAD_DYLIB:
 			bin->nlibs++;
@@ -481,6 +509,8 @@ static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	}
 	if (!MACH0_(r_bin_mach0_init_items)(bin))
 		eprintf ("Warning: Cannot initialize items\n");
+
+	bin->baddr = MACH0_(r_bin_mach0_get_baddr)(bin);
 	return R_TRUE;
 }
 
@@ -981,15 +1011,13 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		return NULL;
 	if (!(entry = calloc (1, sizeof (struct r_bin_mach0_addr_t))))
 		return NULL;
-	// hack to bypass this test
-	bin->entry = 0LL;
+
 	if (bin->entry) {
-		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
-		entry->addr = bin->entry;
-		return entry;
+		entry->offset = entry_to_offset(bin);
+		entry->addr = entry->offset + bin->baddr;
 	}
-	//entry->addr = 0LL;
-	if (!bin->entry || (entry->offset==0)) {
+
+	if (!bin->entry || entry->offset == 0) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
 		for (i = 0; i < bin->nsects; i++) {
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
@@ -1003,6 +1031,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		}
 		bin->entry = entry->addr;
 	}
+
 	return entry;
 }
 
@@ -1024,21 +1053,16 @@ struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0
 }
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
-	if (bin->entry) {
-		ut64 baddr = MACH0_(r_bin_mach0_vaddr_to_baddr)(bin, bin->entry);
-#if 0
-		eprintf ("ENTRY  %llx\n", bin->entry);
-		eprintf ("OFFSET %llx\n", MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry));
-		eprintf ("PADDR  %llx\n", baddr);
-	//	ut64 paddr = bin->entry - MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
-#endif
-		if (bin->entry>baddr)
-			return baddr;
-		//baddr -= bin->entry;
-		return baddr;
-	}
-//	return 0x0000000100000000;
-	return 0LL;
+	int i;
+
+	if (bin->hdr.filetype != MH_EXECUTE)
+		return 0;
+
+	for (i = 0; i < bin->nsegs; ++i)
+		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0)
+			return bin->segs[i].vmaddr;
+
+	return 0;
 }
 
 char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
@@ -1266,6 +1290,10 @@ ut64 MACH0_(r_bin_mach0_get_main)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 			break;
 		}
 	free (symbols);
+
+	if (!addr && bin->main_cmd.cmd == LC_MAIN)
+		addr = bin->entry + bin->baddr;
+
 	if (!addr) {
 		ut8 b[128];
 		ut64 entry = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);

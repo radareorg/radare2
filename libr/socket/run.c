@@ -573,6 +573,7 @@ R_API int r_run_start(RRunProfile *p) {
 				return 1;
 			}
 		}
+#if __UNIX__
 		// XXX HACK close all non-tty fds
 		{ int i; for (i=3; i<10; i++) close (i); }
 		// TODO: use posix_spawn
@@ -584,6 +585,7 @@ R_API int r_run_start(RRunProfile *p) {
 		if (p->_pid) {
 			eprintf ("PID: %d\n", getpid ());
 		}
+#endif
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 	return 0;

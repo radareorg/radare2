@@ -3,6 +3,7 @@
 #include <r_cons.h>
 #include <r_util.h>
 #define sdb_json_indent r_cons_json_indent
+#define sdb_json_unindent r_cons_json_unindent
 #include "../../shlr/sdb/src/json/indent.c"
 
 R_API void r_cons_grep_help() {
