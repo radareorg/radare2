@@ -15,18 +15,17 @@ static ut64 entry_to_offset(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 }
 
 static ut64 MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
-	ut64 section_base, section_size;
+	ut64 segment_base, segment_size;
 	int i;
 
 	if (!bin->sects)
 		return 0;
-	for (i = 0; i < bin->nsects; i++) {
-		section_base = (ut64)bin->sects[i].addr;
-		section_size = (ut64)bin->sects[i].size;
-		if (addr >= section_base && addr < section_base + section_size) {
-			if (bin->sects[i].offset == 0)
-				return 0;
-			return bin->sects[i].offset + (addr - section_base);
+
+	for (i = 0; i < bin->nsegs; i++) {
+		segment_base = (ut64)bin->segs[i].vmaddr;
+		segment_size = (ut64)bin->segs[i].vmsize;
+		if (addr >= segment_base && addr < segment_base + segment_size) {
+			return bin->segs[i].fileoff + (addr - segment_base);
 		}
 	}
 	return 0;
