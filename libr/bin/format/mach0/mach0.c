@@ -248,8 +248,8 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
-	ut64 ptr_thread;
+static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off, boolt is_first_thread) {
+	ut64 ptr_thread, pc, pc_offset;
 	ut32 flavor, count;
 	int len;
 
@@ -282,9 +282,8 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				return R_FALSE;
 			}
 
-			bin->entry = bin->thread_state.x86_32.eip;
-			sdb_num_set (bin->kv, "mach0.entry.offset", ptr_thread +
-				r_offsetof (struct x86_thread_state32, eip), 0);
+			pc = bin->thread_state.x86_32.eip;
+			pc_offset = ptr_thread + r_offsetof(struct x86_thread_state32, eip);
 			break;
 		case X86_THREAD_STATE64:
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
@@ -292,9 +291,8 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				eprintf ("Error: read (thread state x86_64)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.x86_64.rip;
-			sdb_num_set (bin->kv, "mach0.entry.offset", ptr_thread +
-				r_offsetof (struct x86_thread_state64, rip), 0);
+			pc = bin->thread_state.x86_64.rip;
+			pc_offset = ptr_thread + r_offsetof(struct x86_thread_state64, rip);
 			break;
 		//default: eprintf ("Unknown type\n");
 		}
@@ -307,14 +305,16 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				eprintf ("Error: read (thread state ppc_32)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.ppc_32.srr0;
+			pc = bin->thread_state.ppc_32.srr0;
+			pc_offset = ptr_thread + r_offsetof(struct ppc_thread_state32, srr0);
 		} else if (flavor == X86_THREAD_STATE64) {
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
 			}
-			bin->entry = bin->thread_state.ppc_64.srr0;
+			pc = bin->thread_state.ppc_64.srr0;
+			pc_offset = ptr_thread + r_offsetof(struct ppc_thread_state64, srr0);
 		}
 		break;
 	case CPU_TYPE_ARM:
@@ -323,7 +323,8 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
 		}
-		bin->entry = bin->thread_state.arm_32.r15;
+		pc = bin->thread_state.arm_32.r15;
+		pc_offset = ptr_thread + r_offsetof(struct arm_thread_state32, r15);
 		break;
 	case CPU_TYPE_ARM64:
 		if ((len = r_buf_fread_at(bin->b, ptr_thread,
@@ -331,11 +332,17 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
 		}
-		bin->entry = bin->thread_state.arm_64.pc;
+		pc = bin->thread_state.arm_64.pc;
+		pc_offset = ptr_thread + r_offsetof(struct arm_thread_state64, pc);
 		break;
 	default:
 		eprintf ("Error: read (unknown thread state structure)\n");
 		return R_FALSE;
+	}
+
+	if (is_first_thread) {
+		bin->entry = pc;
+		sdb_num_set (bin->kv, "mach0.entry.offset", pc_offset, 0);
 	}
 
 	return R_TRUE;
@@ -483,7 +490,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				return R_FALSE;
 			}
 		case LC_THREAD:
-			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
+			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off, is_first_thread))
 				return R_FALSE;
 
 			is_first_thread = R_FALSE;
