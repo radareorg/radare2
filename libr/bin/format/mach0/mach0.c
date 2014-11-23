@@ -33,6 +33,15 @@ static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)*
 	return 0;
 }
 
+static ut64 entry_to_offset(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	if (bin->main_cmd.cmd == LC_MAIN)
+		return bin->entry;
+	else if (bin->main_cmd.cmd == LC_UNIXTHREAD)
+		return bin->entry - bin->baddr;
+
+	return 0;
+}
+
 static ut64 MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
 	ut64 section_base, section_size;
 	int i;
@@ -478,6 +487,8 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
 				bin->endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
+			bin->main_cmd = lc;
+
 			sdb_num_set (bin->kv, "mach0.entry.offset", off+8, 0);
 			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
 
@@ -489,6 +500,8 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				eprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return R_FALSE;
 			}
+
+			bin->main_cmd = lc;
 		case LC_THREAD:
 			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off, is_first_thread))
 				return R_FALSE;
@@ -525,6 +538,8 @@ static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	}
 	if (!MACH0_(r_bin_mach0_init_items)(bin))
 		eprintf ("Warning: Cannot initialize items\n");
+
+	bin->baddr = MACH0_(r_bin_mach0_get_baddr)(bin);
 	return R_TRUE;
 }
 
@@ -1025,15 +1040,13 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		return NULL;
 	if (!(entry = calloc (1, sizeof (struct r_bin_mach0_addr_t))))
 		return NULL;
-	// hack to bypass this test
-	bin->entry = 0LL;
+
 	if (bin->entry) {
-		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
-		entry->addr = bin->entry;
-		return entry;
+		entry->offset = entry_to_offset(bin);
+		entry->addr = entry->offset + bin->baddr;
 	}
-	//entry->addr = 0LL;
-	if (!bin->entry || (entry->offset==0)) {
+
+	if (!bin->entry || entry->offset == 0) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
 		for (i = 0; i < bin->nsects; i++) {
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
@@ -1047,6 +1060,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		}
 		bin->entry = entry->addr;
 	}
+
 	return entry;
 }
 

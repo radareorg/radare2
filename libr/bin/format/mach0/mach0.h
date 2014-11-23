@@ -72,6 +72,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	size_t imports_by_ord_size;
 
 	struct dysymtab_command dysymtab;
+	struct load_command main_cmd;
 	struct dyld_info_command *dyld_info;
 	struct dylib_table_of_contents* toc;
 	int ntoc;
