@@ -15,41 +15,49 @@ enyo.kind ({
       // {tag: "div", content: "^", name: "less_button", classes: "moreless", ontap: "less"},
       {tag: "div", allowHtml: true, name: "text", content: "..", style:"margin-left:5px;margin-right:5px"},
       // {tag: "div", content: "v", name: "more_button", classes: "moreless", ontap: "more"},
-      {kind: enyo.Signals, onkeypress: "handleKeyPress"},
+      {kind: enyo.Signals, onkeypress: "handleKeyPress"}
   ],
-  handlers: {ontap: "handleTap"},
-
+  handlers: {ontap: "handleTap", ondblclick: "handleDoubleClick"},
+  handleDoubleClick: function (inSender, inEvent) {
+    if (inEvent.target.className.indexOf(" addr ") > -1 && inEvent.target.className.indexOf("insaddr") === -1) {
+      this.handleTap(inSender, inEvent);
+      this.goToAddress();
+      inEvent.preventDefault();
+      return true;
+    }
+  },
   handleKeyPress: function(inSender, inEvent) {
-    // console.log(inEvent.charCode);
+    var key = inEvent.keyCode;
+    // console.log(key);
     // Spacebar Switch flat and graph views
-    if (inEvent.charCode === 32) {
+    if (key === 32) {
       if (this.display === "flat") this.display_graph();
       else this.display_flat();
       var addr = r2ui.history_last();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
     // h Seek to previous address in history
-    if (inEvent.charCode === 104) {
+    if (key === 104) {
       var addr = r2ui.history_prev();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
     // l Seek to next address in history
-    if (inEvent.charCode === 108) {
+    if (key === 108) {
       var addr = r2ui.history_next();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
     // j Seek to next Instruction
-    if (inEvent.charCode === 106) {
+    if (key === 106) {
       var addr = r2ui.next_instruction();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, true);
     }
     // k Seek to previous instruction
-    if (inEvent.charCode === 107) {
+    if (key === 107) {
       var addr = r2ui.prev_instruction();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, true);
     }
     // c Define function
-    if (inEvent.charCode === 99) {
+    if (key === 99) {
       var msg = prompt ('Function name?');
       r2.cmd("af " + msg, function() {
         r2.update_flags();
@@ -57,23 +65,23 @@ enyo.kind ({
       });
     }
     // d Clear function metadata
-    if (inEvent.charCode === 100) {
+    if (key === 100) {
       r2.cmd("af-", function() {
         r2.update_flags();
         r2ui.seek("$$", false);
       });
     }
     // g Go to address
-    if (inEvent.charCode === 103) {
+    if (key === 103) {
       r2ui.opendis(prompt('Go to'));
     }
     // ; Add comment
-    if (inEvent.charCode === 59) {
+    if (key === 59) {
       r2.cmd('CC ' + prompt('Comment'));
       r2ui.seek('$$',false);
     }
     // n Rename
-    if (inEvent.charCode === 110) {
+    if (key === 110) {
       if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
         this.renaming = this.selected;
         this.renameOldValue = this.selected.innerHTML;
@@ -91,52 +99,22 @@ enyo.kind ({
       }
     }
     // esc
-    if (inEvent.charCode === 27 || inEvent.charCode === 0) {
-      console.log("ESC");
+    if (key === 27) {
       // Esc belongs to renaming
       if(this.renaming !== null) {
         this.renaming.innerHTML = this.renameOldValue;
         this.renaming = null;
+      } else {
+        // go back in history
+        var addr = r2ui.history_prev();
+        if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
       }
     }
     // enter
-    if (inEvent.charCode === 13) {
-
+    if (key === 13) {
       // Enter means go to address
-      if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
-        var address = get_address_from_class(this.selected);
-        if (this.selected.className.indexOf("ec_dataoffset") > -1) {
-          // address is located in not executable memory, switching to hex view
-          r2ui.openpage(address, 2);
-          return;
-        }
-        if (address !== undefined && address !== null) {
-          address = address_canonicalize(address);
-          if (this.display === "flat") {
-            r2ui.seek(address, true);
-          } else {
-            // check if address belong to current function //
-            r2.cmdj("pdfj", function(x) {
-              if (x !== null && x !== undefined) {
-                var ops = x.ops;
-                var found = false;
-                for (var i in ops) {
-                  if (ops[i].offset === parseInt(address,16)) {
-                    found = true;
-                  }
-                }
-                if (found) {
-                  r2ui.seek_in_graph(address, true);
-                } else {
-                  r2ui.seek(address, true);
-                }
-              }
-            });
-          }
-        }
-      }
+      this.goToAddress();
     }
-
   },
   handleTap: function(inSender, inEvent) {
     if (inEvent.target.className.indexOf(" addr ") > -1) {
@@ -148,6 +126,40 @@ enyo.kind ({
       // If instruction address, add address to history
       if (inEvent.target.className.indexOf("insaddr") === 0) {
         r2ui.seek(address, true);
+      }
+    }
+  },
+  goToAddress: function() {
+    if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
+      var address = get_address_from_class(this.selected);
+      if (this.selected.className.indexOf("ec_dataoffset") > -1) {
+        // address is located in not executable memory, switching to hex view
+        r2ui.openpage(address, 2);
+        return;
+      }
+      if (address !== undefined && address !== null) {
+        address = address_canonicalize(address);
+        if (this.display === "flat") {
+          r2ui.seek(address, true);
+        } else {
+          // check if address belong to current function //
+          r2.cmdj("pdfj", function(x) {
+            if (x !== null && x !== undefined) {
+              var ops = x.ops;
+              var found = false;
+              for (var i in ops) {
+                if (ops[i].offset === parseInt(address,16)) {
+                  found = true;
+                }
+              }
+              if (found) {
+                r2ui.seek_in_graph(address, true);
+              } else {
+                r2ui.seek(address, true);
+              }
+            }
+          });
+        }
       }
     }
   },

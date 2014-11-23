@@ -189,7 +189,6 @@ function render_instructions(instructions) {
   var targets = {};
   var first_address = instructions[0].offset;
   var last_address = instructions[instructions.length - 1].offset;
-  console.log("last_address " + last_address);
   for (var i in instructions) {
     var ins = instructions[i];
 
@@ -348,6 +347,7 @@ function html_for_instruction(ins) {
   var show_flags = true; // Move these to the settings panel
   var show_bytes = true;
   var show_xrefs = true;
+  var cmtright = false;
   var flags;
   if (ins.flags !== undefined && ins.flags !== null) {
     flags = ins.flags.join(";");
@@ -362,6 +362,9 @@ function html_for_instruction(ins) {
 
   if (show_flags && flags !== "" && flags !== undefined && flags !== null) {
     idump += '<div class="ec_flag flags_' + address_canonicalize(ins.offset) + '">;-- ' + escapeHTML(flags) + ':</div> ';
+  }
+  if (ins.comment && !cmtright) {
+    idump += '<div class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '">; ' + escapeHTML(ins.comment) + '</div>';
   }
   if (show_xrefs) {
     if (ins.xrefs !== undefined && ins.xrefs !== null && ins.xrefs.length > 0) {
@@ -403,8 +406,8 @@ function html_for_instruction(ins) {
   } else {
     idump += '<div class="instructiondesc">' + highlight_instruction(ins.opcode, true) + '</div> ';
   }
-  if (ins.comment) {
-    idump += '<span class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '">' + escapeHTML(ins.comment) + '</span>';
+  if (ins.comment && cmtright) {
+    idump += '<span class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
   }
   idump += '</div>';
   return idump;
@@ -584,7 +587,6 @@ function scroll_to_address(address) {
 
 function scroll_to_element(element) {
   var top = element.documentOffsetTop() - ( window.innerHeight / 2 );
-  console.log(top);
   top = Math.max(0,top);
   r2ui._dis.scrollTo(0,top);
 }
