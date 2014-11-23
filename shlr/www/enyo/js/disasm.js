@@ -115,7 +115,7 @@ function render_graph(x) {
   } catch (e) {
     console.log("Cannot parse JSON data");
   }
-  try {
+  // try {
     if (obj[0] === undefined) return false;
     if (obj[0].blocks === undefined) return false;
     var graph = new BBGraph();
@@ -165,9 +165,9 @@ function render_graph(x) {
     }
     graph.render();
     return true;
-  } catch (e) {
-    console.log("Error generating bb graph");
-  }
+  // } catch (e) {
+  //   console.log("Error generating bb graph");
+  // }
 }
 
 function render_instructions(instructions) {
@@ -182,7 +182,7 @@ function render_instructions(instructions) {
   flatcanvas.appendChild(outergbox);
 
   var flatcanvas_rect = getOffsetRect(flatcanvas);
-
+  var asm_lines = toBoolean(r2.settings["asm.lines"]);
 
   var accumulated_heigth = flatcanvas_rect.top;
   var lines = [];
@@ -225,7 +225,8 @@ function render_instructions(instructions) {
       ins.comment = atob(ins.comment);
     }
     var dom = document.createElement('div');
-    dom.className = "instructionbox";
+    if (asm_lines) dom.className = "instructionbox lines";
+    else dom.className = "instructionbox";
     dom.style.top = accumulated_heigth + "px";
     dom.innerHTML = html_for_instruction(ins);
 
@@ -235,83 +236,84 @@ function render_instructions(instructions) {
     accumulated_heigth += instruction_heigth;
   }
 
-  var canvas = document.createElement("canvas");
-  canvas.width = 2500;
-  canvas.height = accumulated_heigth + 100;
-  canvas.id = "fcanvas";
-  gbox.appendChild(canvas);
-  var ctx = canvas.getContext("2d");
-  if (!ctx.setLineDash) {
-    // For browsers that dont support dashed lines
-    ctx.setLineDash = function () {};
-  }
-  var num_targets = countProperties(targets);
-  var num_assigned_paths = 0;
-  var lines_width = 100;
-  for (var l in lines) {
-    var line = lines[l];
-    var from = "0x" + line.from.toString(16);
-    var to = "0x" + line.to.toString(16);
-
-    if (targets[line.to] === 0) {
-      // No path assigned for target, assigning a new one
-      targets[line.to] = (num_targets - num_assigned_paths - 1)*(90/(num_targets+1));
-      num_assigned_paths += 1;
+  if (asm_lines) {
+    var canvas = document.createElement("canvas");
+    canvas.width = 2500;
+    canvas.height = accumulated_heigth + 100;
+    canvas.id = "fcanvas";
+    gbox.appendChild(canvas);
+    var ctx = canvas.getContext("2d");
+    if (!ctx.setLineDash) {
+      // For browsers that dont support dashed lines
+      ctx.setLineDash = function () {};
     }
-    var from_element = get_element_by_address(from);
-    var to_element = get_element_by_address(to);
+    var num_targets = countProperties(targets);
+    var num_assigned_paths = 0;
+    var lines_width = 100;
+    for (var l in lines) {
+      var line = lines[l];
+      var from = "0x" + line.from.toString(16);
+      var to = "0x" + line.to.toString(16);
 
-    if (from_element !== null && from_element !== undefined && to_element !== undefined && to_element !== null) {
-      var x = targets[line.to];
-      var from_rect = getOffsetRect(from_element);
-      var y0 = (from_rect.top + from_rect.bottom) / 2;
-      var to_rect = getOffsetRect(to_element);
-      var y1 = (to_rect.top + to_rect.bottom) / 2;
+      if (targets[line.to] === 0) {
+        // No path assigned for target, assigning a new one
+        targets[line.to] = (num_targets - num_assigned_paths - 1)*(90/(num_targets+1));
+        num_assigned_paths += 1;
+      }
+      var from_element = get_element_by_address(from);
+      var to_element = get_element_by_address(to);
 
-      // main line
-      ctx.beginPath();
-      ctx.moveTo(x, y0);
-      ctx.lineTo(x, y1);
-      ctx.strokeStyle = line.color;
-      if (line.dashed) ctx.setLineDash([2,3]);
-      ctx.stroke();
+      if (from_element !== null && from_element !== undefined && to_element !== undefined && to_element !== null) {
+        var x = targets[line.to];
+        var from_rect = getOffsetRect(from_element);
+        var y0 = (from_rect.top + from_rect.bottom) / 2;
+        var to_rect = getOffsetRect(to_element);
+        var y1 = (to_rect.top + to_rect.bottom) / 2;
 
-      if (line.to_start) {
-        // horizontal line at start
+        // main line
         ctx.beginPath();
         ctx.moveTo(x, y0);
-        ctx.lineTo(lines_width - 5, y0);
+        ctx.lineTo(x, y1);
         ctx.strokeStyle = line.color;
         if (line.dashed) ctx.setLineDash([2,3]);
         ctx.stroke();
 
-        // circle
-        ctx.beginPath();
-        ctx.arc(lines_width - 5 - 2, y0, 2, 0, 2 * Math.PI, false);
-        ctx.fillStyle = line.color;
-        ctx.fill();
-      }
+        if (line.to_start) {
+          // horizontal line at start
+          ctx.beginPath();
+          ctx.moveTo(x, y0);
+          ctx.lineTo(lines_width - 5, y0);
+          ctx.strokeStyle = line.color;
+          if (line.dashed) ctx.setLineDash([2,3]);
+          ctx.stroke();
 
-      if (line.to_end) {
-        // horizontal line at end
-        ctx.beginPath();
-        ctx.moveTo(x, y1);
-        ctx.lineTo(lines_width - 5, y1);
-        ctx.strokeStyle = line.color;
-        if (line.dashed) ctx.setLineDash([2,3]);
-        ctx.stroke();
+          // circle
+          ctx.beginPath();
+          ctx.arc(lines_width - 5 - 2, y0, 2, 0, 2 * Math.PI, false);
+          ctx.fillStyle = line.color;
+          ctx.fill();
+        }
 
-        // arrow
-        ctx.beginPath();
-        ctx.moveTo(lines_width - 5, y1);
-        ctx.lineTo(lines_width - 10, y1-5);
-        ctx.lineTo(lines_width - 10, y1+5);
-        ctx.lineWidth = 1;
-        ctx.fillStyle = line.color;
-        ctx.fill();
+        if (line.to_end) {
+          // horizontal line at end
+          ctx.beginPath();
+          ctx.moveTo(x, y1);
+          ctx.lineTo(lines_width - 5, y1);
+          ctx.strokeStyle = line.color;
+          if (line.dashed) ctx.setLineDash([2,3]);
+          ctx.stroke();
+
+          // arrow
+          ctx.beginPath();
+          ctx.moveTo(lines_width - 5, y1);
+          ctx.lineTo(lines_width - 10, y1-5);
+          ctx.lineTo(lines_width - 10, y1+5);
+          ctx.lineWidth = 1;
+          ctx.fillStyle = line.color;
+          ctx.fill();
+        }
       }
     }
-
   }
 }
 
@@ -341,32 +343,34 @@ function countProperties(obj) {
   return count;
 }
 
+function toBoolean(str) {
+  if (str === "true") return true;
+  else if (str === "false") return false;
+  else return undefined;
+}
+
 function html_for_instruction(ins) {
   var idump = '<div class="instruction">';
   var address = ins.offset;
-  var show_flags = true; // Move these to the settings panel
-  var show_bytes = true;
-  var show_xrefs = true;
-  var cmtright = false;
-  var flags;
-  if (ins.flags !== undefined && ins.flags !== null) {
-    flags = ins.flags.join(";");
-  } else {
-    flags = r2.get_flag_names(address_canonicalize(ins.offset)).join(";");
-  }
-  // Experimental: Problem is when an address is bound to many flags
-  // var replace_flags = false;
-  // if (replace_flags) {
-  //   if (flags.length > 0) address = flags.join(";");
-  // }
+  var asm_flags = toBoolean(r2.settings["asm.flags"]);
+  var asm_bytes = toBoolean(r2.settings["asm.bytes"]);
+  var asm_offset = toBoolean(r2.settings["asm.offset"]);
+  var asm_xrefs = toBoolean(r2.settings["asm.xrefs"]);
+  var asm_cmtright = toBoolean(r2.settings["asm.cmtright"]);
 
-  if (show_flags && flags !== "" && flags !== undefined && flags !== null) {
-    idump += '<div class="ec_flag flags_' + address_canonicalize(ins.offset) + '">;-- ' + escapeHTML(flags) + ':</div> ';
+  if (asm_flags) {
+    var flags;
+    if (ins.flags !== undefined && ins.flags !== null) {
+      flags = ins.flags.join(";");
+    } else {
+      flags = r2.get_flag_names(address_canonicalize(ins.offset)).join(";");
+    }
+    if (flags !== "" && flags !== undefined && flags !== null) idump += '<div class="ec_flag flags_' + address_canonicalize(ins.offset) + '">;-- ' + escapeHTML(flags) + ':</div> ';
   }
-  if (ins.comment && !cmtright) {
+  if (ins.comment && !asm_cmtright) {
     idump += '<div class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '">; ' + escapeHTML(ins.comment) + '</div>';
   }
-  if (show_xrefs) {
+  if (asm_xrefs) {
     if (ins.xrefs !== undefined && ins.xrefs !== null && ins.xrefs.length > 0) {
       var xrefs = "";
       for (var i in ins.xrefs) {
@@ -380,8 +384,12 @@ function html_for_instruction(ins) {
 
     }
   }
-  idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
-  if (show_bytes) {
+
+  if (asm_offset) idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
+  else idump += '<span class="insaddr hidden datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
+
+
+  if (asm_bytes) {
     if (ins.bytes !== undefined && ins.bytes !== null && ins.bytes !== "") {
       var dorep = function(a) {
         if (a=="00") return '<span class="ec_b0x00">00</span>';
@@ -406,7 +414,7 @@ function html_for_instruction(ins) {
   } else {
     idump += '<div class="instructiondesc">' + highlight_instruction(ins.opcode, true) + '</div> ';
   }
-  if (ins.comment && cmtright) {
+  if (ins.comment && asm_cmtright) {
     idump += '<span class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
   }
   idump += '</div>';

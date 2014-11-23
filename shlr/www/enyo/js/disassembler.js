@@ -293,6 +293,7 @@ enyo.kind ({
     r2.analAll();
     r2.load_mmap();
     r2ui.load_colors();
+    r2.load_settings();
 
   },
   rendered: function() {

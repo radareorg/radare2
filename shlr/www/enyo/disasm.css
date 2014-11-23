@@ -36,7 +36,6 @@
 }
 
 .instructionbox {
-  margin-left: 100px;
   position: absolute;
 }
 
@@ -87,3 +86,6 @@ input:focus {outline: none; }
 .autohighlight { background-color: #8AFF77 !important; }
 .autohighlighti { background-color: #8AFF77; }
 
+.hidden {visibility: hidden; display:none;}
+
+.lines {margin-left: 100px;}

@@ -88,6 +88,18 @@ enyo.kind ({
         {kind: "onyx.ToggleButton", name: "toggle_offset" },
       ]}
       ,{kind: "onyx.InputDecorator",components: [
+        {tag: "p", content: "Show flags", classes:"rowline", ontap: "nextPanel"},
+        {kind: "onyx.ToggleButton", name: "toggle_flags" },
+      ]}
+      ,{kind: "onyx.InputDecorator",components: [
+        {tag: "p", content: "Show xrefs", classes:"rowline", ontap: "nextPanel"},
+        {kind: "onyx.ToggleButton", name: "toggle_xrefs" },
+      ]}
+      ,{kind: "onyx.InputDecorator",components: [
+        {tag: "p", content: "Show comments on right", classes:"rowline", ontap: "nextPanel"},
+        {kind: "onyx.ToggleButton", name: "toggle_cmtright" },
+      ]}
+      ,{kind: "onyx.InputDecorator",components: [
         {tag: "p", content: "Show lines", classes:"rowline", ontap: "nextPanel"},
         {kind: "onyx.ToggleButton", name: "toggle_lines" },
       ]}
@@ -112,8 +124,20 @@ enyo.kind ({
     r2.cmd ("e asm.pseudo", function (x) {
       self.$.toggle_pseudo.setActive (x[0] == 't');
     });
+    r2.cmd ("e asm.flags", function (x) {
+      self.$.toggle_flags.setActive (x[0] == 't');
+    });
+    r2.cmd ("e asm.xrefs", function (x) {
+      self.$.toggle_xrefs.setActive (x[0] == 't');
+    });
+    r2.cmd ("e asm.cmtright", function (x) {
+      self.$.toggle_cmtright.setActive (x[0] == 't');
+    });
     r2.cmd ("e asm.offset", function (x) {
       self.$.toggle_offset.setActive (x[0] == 't');
+    });
+    r2.cmd ("e asm.lines", function (x) {
+      self.$.toggle_lines.setActive (x[0] == 't');
     });
   },
   create: function () {
@@ -121,19 +145,37 @@ enyo.kind ({
     this.load ();
   },
   save: function() {
+    var show_offset = this.$.toggle_offset.active;
     var arch = this.$.arch.selected.content;
     var bits = this.$.bits.selected.content;
     var show_bytes = this.$.toggle_bytes.active;
     var show_pseudo = this.$.toggle_pseudo.active;
-    var show_offset = this.$.toggle_offset.active;
+    var show_flags = this.$.toggle_flags.active;
+    var show_lines = this.$.toggle_lines.active;
+    var show_xrefs = this.$.toggle_xrefs.active;
+    var comments_on_right = this.$.toggle_cmtright.active;
     var twopanels = this.$.twopanels.active;
     r2.cmds ([
+      "e asm.offset="+show_offset,
       "e asm.arch="+arch,
       "e asm.bits="+bits,
+      "e asm.lines="+show_lines,
       "e asm.bytes="+show_bytes,
-      "e asm.offset="+show_offset,
+      "e asm.flags="+show_flags,
+      "e asm.xrefs="+show_xrefs,
+      "e asm.cmtright="+comments_on_right,
       "e asm.pseudo="+show_pseudo
     ]);
+    r2.settings = {
+      "asm.arch":arch,
+      "asm.bits":bits,
+      "asm.bytes":show_bytes,
+      "asm.flags":show_flags,
+      "asm.xrefs":show_xrefs,
+      "asm.cmtright":comments_on_right,
+      "asm.lines":show_lines,
+      "asm.pseudo":show_pseudo
+    }
     if (twopanels) {
       window.parent.location ="/enyo/two";
     } else {
