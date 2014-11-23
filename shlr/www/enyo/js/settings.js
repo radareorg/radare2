@@ -139,7 +139,7 @@ enyo.kind ({
     } else {
       window.parent.location ="/enyo/";
     }
-    r2ui.seek ("$$", true);
+    r2ui.seek("$$", false);
   },
   reset: function() {
     this.load ();
