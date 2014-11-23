@@ -2,7 +2,6 @@ enyo.kind ({
   name: "LeftPanel",
   classes: "onyx-toolbar",
   kind: "Scroller",
-  fit: true,
   /* touch:true, */
   style: "width: 200px;height:100%;margin:0px;",
   accelerated: true,
