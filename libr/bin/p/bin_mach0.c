@@ -60,9 +60,6 @@ static ut64 baddr(RBinFile *arch) {
 
 	bin = arch->o->bin_obj;
 
-	if (bin->hdr.filetype != MH_EXECUTE)
-		return 0;
-
 	return MACH0_(r_bin_mach0_get_baddr)(bin);
 }
 
