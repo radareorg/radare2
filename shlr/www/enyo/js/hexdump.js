@@ -32,7 +32,7 @@ enyo.kind ({
     r2.get_hexdump (this.base+"-"+this.min, this.block, function (x) {
       x = css (r2.filter_asm (x, "px"));
       var oldy = r2ui._hex.getScrollBounds().height;
-      text.setContent (x+text.getContent());
+      text.setContent ("<div class='enyo-selectable'>" + x + text.getContent() + "</div>");
       var newy = r2ui._hex.getScrollBounds().height;
       r2ui._hex.scrollTo (0, newy-oldy);
     });
@@ -42,7 +42,7 @@ enyo.kind ({
     this.max += this.block;
     r2.get_hexdump (this.base+"+"+this.max, this.block, function (x) {
       x = docss (r2.filter_asm (x, "px"));
-      text.setContent (text.getContent() + x);
+      text.setContent ("<div class='enyo-selectable'>" + text.getContent() + x + "</div>");
     });
   },
   seek: function(addr) {
@@ -51,19 +51,19 @@ enyo.kind ({
     this.min = this.max = 0;
     r2.get_hexdump (addr, this.block, function (x) {
       x = docss (r2.filter_asm (x, "px"));
-      text.setContent (x);
+      text.setContent ("<div class='enyo-selectable'>" + x + "</div>");
     });
     this.colorbar_create ();
   },
   create: function() {
     this.inherited (arguments);
- //   this.$.list.setCount (this.data.length) ;
+    // this.$.list.setCount (this.data.length) ;
     var text = this.$.text;
     this.seek ("entry0");
     r2ui._hex = this;
-    r2ui.history_push ("entry0");
+    // r2ui.history_push("entry0");
 
-    this.colorbar_create ();
+    this.colorbar_create();
     //this.refresh ();
   },
   setupItem: function (inSender, inIndex) {
@@ -80,7 +80,7 @@ enyo.kind ({
         alert (e);
         return;
       }
-      console.log (y);
+      // console.log (y);
 
 // TODO: use canvas api for faster rendering and smaller dom
       var c = "<table class='colorbar'><tr valign=top style='height:20px;border-spacing:0'>";
@@ -102,7 +102,7 @@ enyo.kind ({
           var r = "<table height="+HEIGHT+" style='color:black;border-spacing:0px'>";
           var count = 0;
           for (var k in colors) {
-            if (block[k]) 
+            if (block[k])
               count++;
           }
 	  count++; // avoid 0div wtf
@@ -110,7 +110,7 @@ enyo.kind ({
           var h = HEIGHT / count;
           for (var k in colors) {
             var color = colors[k];
-            if (block[k]) 
+            if (block[k])
               r += "<tr><td style='width:"+WIDTH+"px;background-color:"
                   + colors[k]+"'><div style='width:"+WIDTH+"px;overflow:"
                   + "hidden;height:"+h+"px'>&nbsp;</div></td></tr>";

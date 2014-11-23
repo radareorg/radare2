@@ -84,7 +84,7 @@ color: black;
 
 .r2panel {
   color: black !important;
-  background-color:#b0b0b0;
+  /*background-color:#b0b0b0;*/
 /*  padding-left:8px; */
 }
 
@@ -95,7 +95,7 @@ color: black;
  border: 0px;
  height: 16px;
  background-color: black;
- width: 380px; 
+ width: 380px;
  max-width:100%;
  margin:0px;
 }
@@ -126,5 +126,6 @@ margin-top:0px;
 }
 
 pre {
-  font-size:13px; 
+  font-size:13px;
 }
+
