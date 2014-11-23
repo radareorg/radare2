@@ -778,7 +778,7 @@ struct dylinker_command {
 struct thread_command {
 	ut32	cmd;		/* LC_THREAD or  LC_UNIXTHREAD */
 	ut32	cmdsize;	/* total size of this command */
-	ut32	flavor;		/* flavor of thread state */
+	/* ut32	flavor;		   flavor of thread state */
 	/* ut32 count		   count of longs in thread state */
 	/* struct XXX_thread_state state   thread state for this flavor */
 	/* ... */

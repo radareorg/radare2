@@ -249,34 +249,51 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 }
 
 static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
-	int len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
-		bin->endian?"4I":"4i", 1);
-	if (len == -1) {
-		eprintf ("Error: read (thread)\n");
-		return R_FALSE;
-	}
+	ut64 ptr_thread;
+	ut32 flavor, count;
+	int len;
+
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
+		bin->endian?"2I":"2i", 1);
+	if (len == -1)
+		goto wrong_read;
+
+	len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+		(ut8*)&flavor, bin->endian?"1I":"1i", 1);
+	if (len == -1)
+		goto wrong_read;
+
+	// TODO: use count for checks
+	len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command) + sizeof(flavor),
+		(ut8*)&count, bin->endian?"1I":"1i", 1);
+	if (len == -1)
+		goto wrong_read;
+
+	ptr_thread = off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(count);
+
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
-		switch (bin->thread.flavor) {
+		switch (flavor) {
 		case X86_THREAD_STATE32:
-			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_32)\n");
 				return R_FALSE;
 			}
+
 			bin->entry = bin->thread_state.x86_32.eip;
-			sdb_num_set (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
+			sdb_num_set (bin->kv, "mach0.entry.offset", ptr_thread +
 				r_offsetof (struct x86_thread_state32, eip), 0);
 			break;
 		case X86_THREAD_STATE64:
-			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_64)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_64.rip;
-			sdb_num_set (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
+			sdb_num_set (bin->kv, "mach0.entry.offset", ptr_thread +
 				r_offsetof (struct x86_thread_state64, rip), 0);
 			break;
 		//default: eprintf ("Unknown type\n");
@@ -284,15 +301,15 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		break;
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
-		if (bin->thread.flavor == X86_THREAD_STATE32) {
-			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+		if (flavor == X86_THREAD_STATE32) {
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_32)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.ppc_32.srr0;
-		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
-			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+		} else if (flavor == X86_THREAD_STATE64) {
+			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
@@ -301,7 +318,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		}
 		break;
 	case CPU_TYPE_ARM:
-		if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command),
+		if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_32, bin->endian?"17I":"17i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
@@ -309,7 +326,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		bin->entry = bin->thread_state.arm_32.r15;
 		break;
 	case CPU_TYPE_ARM64:
-		if ((len = r_buf_fread_at(bin->b, off + sizeof (struct thread_command),
+		if ((len = r_buf_fread_at(bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_64, bin->endian?"34LI1I":"34Li1i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
@@ -320,7 +337,12 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		eprintf ("Error: read (unknown thread state structure)\n");
 		return R_FALSE;
 	}
+
 	return R_TRUE;
+
+wrong_read:
+	eprintf("Error: read (thread)\n");
+	return R_FALSE;
 }
 
 static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
