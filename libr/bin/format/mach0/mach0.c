@@ -1061,21 +1061,12 @@ struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0
 }
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
-	if (bin->entry) {
-		ut64 baddr = MACH0_(r_bin_mach0_vaddr_to_baddr)(bin, bin->entry);
-#if 0
-		eprintf ("ENTRY  %llx\n", bin->entry);
-		eprintf ("OFFSET %llx\n", MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry));
-		eprintf ("PADDR  %llx\n", baddr);
-	//	ut64 paddr = bin->entry - MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
-#endif
-		if (bin->entry>baddr)
-			return baddr;
-		//baddr -= bin->entry;
-		return baddr;
-	}
-//	return 0x0000000100000000;
-	return 0LL;
+	int i;
+	for (i = 0; i < bin->nsegs; ++i)
+		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0)
+			return bin->segs[i].vmaddr;
+
+	return 0;
 }
 
 char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
