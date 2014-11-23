@@ -183,6 +183,7 @@ function render_instructions(instructions) {
 
   var flatcanvas_rect = getOffsetRect(flatcanvas);
   var asm_lines = toBoolean(r2.settings["asm.lines"]);
+  var asm_offset = toBoolean(r2.settings["asm.offset"]);
 
   var accumulated_heigth = flatcanvas_rect.top;
   var lines = [];
@@ -235,6 +236,7 @@ function render_instructions(instructions) {
     var instruction_heigth = instruction_rect.bottom - instruction_rect.top;
     accumulated_heigth += instruction_heigth;
   }
+
 
   if (asm_lines) {
     var canvas = document.createElement("canvas");
@@ -315,6 +317,12 @@ function render_instructions(instructions) {
       }
     }
   }
+  if (!asm_offset) {
+    var elements = document.getElementsByClassName("insaddr");
+    for (var j in elements) {
+      if (elements[j].style) elements[j].style.display="none";
+    }
+  }
 }
 
 function getOffsetRect(elem) {
@@ -354,7 +362,6 @@ function html_for_instruction(ins) {
   var address = ins.offset;
   var asm_flags = toBoolean(r2.settings["asm.flags"]);
   var asm_bytes = toBoolean(r2.settings["asm.bytes"]);
-  var asm_offset = toBoolean(r2.settings["asm.offset"]);
   var asm_xrefs = toBoolean(r2.settings["asm.xrefs"]);
   var asm_cmtright = toBoolean(r2.settings["asm.cmtright"]);
 
@@ -385,8 +392,7 @@ function html_for_instruction(ins) {
     }
   }
 
-  if (asm_offset) idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
-  else idump += '<span class="insaddr hidden datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
+  idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
 
 
   if (asm_bytes) {
