@@ -1291,6 +1291,10 @@ ut64 MACH0_(r_bin_mach0_get_main)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 			break;
 		}
 	free (symbols);
+
+	if (!addr && bin->main_cmd.cmd == LC_MAIN)
+		addr = bin->entry + bin->baddr;
+
 	if (!addr) {
 		ut8 b[128];
 		ut64 entry = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
