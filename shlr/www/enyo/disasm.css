@@ -78,22 +78,3 @@ input:focus {outline: none; }
 .autohighlight { background-color: #8AFF77 !important; }
 .autohighlighti { background-color: #8AFF77; }
 
-
-.outer-box {
-    height: 200px;
-    border: 2px solid orange;
-    padding: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    margin-top: 3px;
-    margin-bottom: 3px;
-}
-
-.inner-box {
-    height: 70px;
-    border: 2px solid lightblue;
-    padding: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    margin: 2px;
-}
