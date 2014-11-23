@@ -5,34 +5,6 @@
 #include <r_util.h>
 #include "mach0.h"
 
-static ut64 MACH0_(r_bin_mach0_vaddr_to_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
-	ut64 section_base, section_size;
-	int i;
-
-	if (!bin->sects)
-		return 0;
-	/* align addr to lower denominator */
-	if (bin->nsects>0) {
-		for (i = 0; i < bin->nsects; i++) {
-			if (bin->sects[i].addr<1)
-				continue;
-			if (addr<bin->sects[i].addr) {
-				addr = bin->sects[i].addr & 0xffffffffFFFF0000;
-			}
-		}
-	}
-	for (i = 0; i < bin->nsects; i++) {
-		section_base = (ut64)bin->sects[i].addr;
-		section_size = (ut64)bin->sects[i].size;
-		if (addr >= section_base && addr < section_base + section_size) {
-			if (bin->sects[i].offset == 0)
-				continue;
-			return bin->sects[i].addr; //offset + (addr - section_base);
-		}
-	}
-	return 0;
-}
-
 static ut64 entry_to_offset(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	if (bin->main_cmd.cmd == LC_MAIN)
 		return bin->entry;
