@@ -1083,6 +1083,10 @@ struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	int i;
+
+	if (bin->hdr.filetype != MH_EXECUTE)
+		return 0;
+
 	for (i = 0; i < bin->nsegs; ++i)
 		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0)
 			return bin->segs[i].vmaddr;
