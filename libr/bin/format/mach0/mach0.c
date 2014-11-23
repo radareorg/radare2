@@ -478,7 +478,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
 				bin->endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
-			sdb_num_set (bin->kv, "entry0", ep.eo, 0);
+			sdb_num_set (bin->kv, "mach0.entry.offset", off+8, 0);
 			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
 
 			is_first_thread = R_FALSE;
