@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 pancake */
+/* radare - LGPL - Copyright 2011-2014 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -9,6 +9,7 @@
 static int lang_c_file(RLang *lang, const char *file) {
 	void *lib;
 	char *cc, *p, name[512], buf[512];
+	const char *libpath, *libname;
 
 	if (strlen (file) > (sizeof(name)-10))
 		return R_FALSE;
@@ -20,17 +21,28 @@ static int lang_c_file(RLang *lang, const char *file) {
 		return R_FALSE;
 	}
 
+{
+	char *a = (char*)r_str_lchr (name, '/');
+	if (a) {
+		*a = 0;
+		libpath = name;
+		libname = a+1;
+	} else {
+		libpath = ".";
+		libname = name;
+	}
+}
 	p = strstr (name, ".c"); if (p) *p=0;
 	cc = r_sys_getenv ("CC");
 	if (!cc || !*cc)
 		cc = strdup ("gcc");
-	snprintf (buf, sizeof (buf), "%s -fPIC -shared %s -o lib%s."R_LIB_EXT
-		" $(pkg-config --cflags --libs r_core)", cc, file, name);
+	snprintf (buf, sizeof (buf), "%s -fPIC -shared %s -o %s/lib%s."R_LIB_EXT
+		" $(pkg-config --cflags --libs r_core)", cc, file, libpath, libname);
 	free (cc);
 	if (system (buf) != 0)
 		return R_FALSE;
 
-	snprintf (buf, sizeof (buf), "./lib%s."R_LIB_EXT, name);
+	snprintf (buf, sizeof (buf), "%s/lib%s."R_LIB_EXT, libpath, libname);
 	lib = r_lib_dl_open (buf);
 	if (lib!= NULL) {
 		void (*fcn)(RCore *);
