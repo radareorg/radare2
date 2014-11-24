@@ -57,7 +57,6 @@ What do you want to debug today?
 Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
 Enhace your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
-Use e file.id=true and e file.flag=true in your ~/.radare2rc to get symbols, strings, .. when loading
 Emulate the base address of a file with e file.baddr.
 Bindiff two files with '$ bdiff /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
