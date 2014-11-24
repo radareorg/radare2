@@ -4,6 +4,7 @@ enyo.kind ({
   tag: "div",
   classes:"ec_background",
   style:"margin:0px;",
+  draggable: false,
   data: null,
   components: [
       // {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
