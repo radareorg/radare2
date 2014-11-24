@@ -6,12 +6,15 @@
 #include "mach0.h"
 
 static ut64 entry_to_offset(struct MACH0_(obj_t)* bin) {
-	if (bin->main_cmd.cmd == LC_MAIN)
-		return bin->entry;
-	else if (bin->main_cmd.cmd == LC_UNIXTHREAD)
-		return bin->entry - bin->baddr;
-
-	return 0;
+	switch (bin->main_cmd.cmd) {
+		case LC_MAIN:
+			return bin->entry;
+		case LC_UNIXTHREAD:
+		case LC_THREAD:
+			return bin->entry - bin->baddr;
+		default:
+			return 0;
+	}
 }
 
 static ut64 addr_to_offset(struct MACH0_(obj_t)* bin, ut64 addr) {
