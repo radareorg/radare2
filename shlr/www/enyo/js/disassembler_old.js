@@ -26,7 +26,7 @@ enyo.kind ({
     r2.get_disasm (this.base+"-"+this.min, this.block, function (x) {
       x = docss (r2.filter_asm (x, "pd"));
       var oldy = r2ui._dis.getScrollBounds().height;
-      text.setContent (x+text.getContent());
+      text.setContent ("<div class='enyo-selectable'>" + x + text.getContent() + "</div>");
       var newy = r2ui._dis.getScrollBounds().height;
       r2ui._dis.scrollTo (0, newy-oldy);
     });
@@ -36,7 +36,7 @@ enyo.kind ({
     this.max += this.block;
     r2.get_disasm (this.base+"+"+this.max, this.block, function (x) {
       x = docss (r2.filter_asm (x, "pd"));
-      text.setContent (text.getContent() + x);
+      text.setContent ("<div class='enyo-selectable'>" + text.getContent() + x + "</div>");
     });
   },
   seek: function(addr) {
@@ -45,7 +45,7 @@ enyo.kind ({
     this.min = this.max = 0;
     r2.get_disasm (addr, this.block, function (x) {
       x = docss (r2.filter_asm (x, "pd"));
-      text.setContent (x);
+      text.setContent("<div class='enyo-selectable'>" + x + "</div>");
     });
     //this.colorbar_create ();
   },
