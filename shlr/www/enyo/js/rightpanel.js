@@ -8,7 +8,7 @@ function makelist(x) {
 
 enyo.kind ({
   name: "RightPanel",
-  style:"background-color:#404040;",
+  style:"width: 200px;height:100%;margin:0px;background-color:#404040;",
   classes: "onyx-toolbar",
   kind: "FittableRows",
   ra: null,
@@ -48,7 +48,7 @@ enyo.kind ({
       {tag: "pre", style:"font-size:14px", allowHtml:true, name: "output", content:".." }
     ]}
   ],
-  toggleScroll: function() { 
+  toggleScroll: function() {
     var is_visible = this.$.menu.getShowing ();
     this.$.scroll.setShowing (is_visible);
   },

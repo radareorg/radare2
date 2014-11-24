@@ -3,6 +3,7 @@ enyo.kind ({
   kind: "Panels",
   classes: "panels enyo-unselectable",
   realtimeFit: true,
+  fit: true,
   arrangerKind: "CollapsingArranger",
   components: [
     { name: "lp", kind: "LeftPanel" },

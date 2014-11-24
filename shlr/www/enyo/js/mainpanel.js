@@ -190,19 +190,7 @@ enyo.kind ({
       fit:true,
       draggable: false,
       realtimeFit: true,
-      components: [
-        // {kind:"DisassemblerOld", name: "pageDisassembler"},
-        // {kind:"Assembler", name:"pageAssembler"},
-        // {kind:"Hexdump", name: "pageHexdump"},
-        // {kind:"Graph", name: "pageGraph"},
-        // {kind:"Search", name: "pageSearch"},
-        // {kind:"Console", name: "pageConsole"},
-        // {kind:"Debugger", name: "pageDebugger"},
-        // {kind:"Logs", name: "pageLogs"},
-        // {kind:"Script", name: "pageScript"},
-        // {kind:"Settings", name:"pageSettings"},
-        // {kind:"About", name: "pageAbout"},
-    ]}
+      components: []}
   ],
   create: function() {
     this.inherited(arguments);

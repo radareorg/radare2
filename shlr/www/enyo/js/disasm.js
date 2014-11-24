@@ -44,6 +44,7 @@ BBGraph.prototype.render = function() {
     dot += 'N' + this.edges[j].from + ' -> N' + this.edges[j].to + ' [color=' + this.edges[j].color + ', headport=n, tailport=s]' + ";\n";
   }
   dot += "}";
+  console.log(dot);
   var gdot = Viz(dot, format="dot", engine="dot", options=null);
   var i;
   var resp = gdot.split('\n').join("").split(";");
@@ -272,7 +273,7 @@ function render_instructions(instructions) {
         var to_rect = getOffsetRect(to_element);
         var y1 = (to_rect.top + to_rect.bottom) / 2;
         if (line.to == instructions[0].offset) {
-          y1 = getTopOffset();
+          y1 = 0;
         }
 
         // main line
@@ -326,11 +327,6 @@ function render_instructions(instructions) {
       if (elements[j].style) elements[j].style.display="none";
     }
   }
-}
-function getTopOffset() {
-  var bar = document.getElementById("radareApp_mp_toolbar");
-  var barrect = bar.getBoundingClientRect();
-  return barrect.bottom + 10;
 }
 
 function getOffsetRect(elem) {

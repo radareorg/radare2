@@ -216,18 +216,12 @@ enyo.kind ({
   rbox: null,
   display_graph: function() {
     this.display = "graph";
-    // this.$.colorbar.hide();
-    // this.$.less_button.hide();
-    // this.$.more_button.hide();
-    var panel = document.getElementById("radareApp_mp_pageDisassembler");
+    var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
     if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_background", "ec_alt_background");
   },
   display_flat: function() {
     this.display = "flat";
-    // this.$.colorbar.show();
-    // this.$.less_button.show();
-    // this.$.more_button.show();
-    var panel = document.getElementById("radareApp_mp_pageDisassembler");
+    var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
     if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_alt_background", "ec_background");
   },
   less: function() {
