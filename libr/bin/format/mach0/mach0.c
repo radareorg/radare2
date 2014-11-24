@@ -5,13 +5,13 @@
 #include <r_util.h>
 #include "mach0.h"
 
-static ut64 entry_to_offset(struct MACH0_(obj_t)* bin) {
+static ut64 entry_to_vaddr(struct MACH0_(obj_t)* bin) {
 	switch (bin->main_cmd.cmd) {
 		case LC_MAIN:
-			return bin->entry;
+			return bin->entry + bin->baddr;
 		case LC_UNIXTHREAD:
 		case LC_THREAD:
-			return bin->entry - bin->baddr;
+			return bin->entry;
 		default:
 			return 0;
 	}
@@ -1015,8 +1015,8 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 		return NULL;
 
 	if (bin->entry) {
-		entry->offset = entry_to_offset(bin);
-		entry->addr = entry->offset + bin->baddr;
+		entry->addr = entry_to_vaddr(bin);
+		entry->offset = addr_to_offset(bin, entry->addr);
 	}
 
 	if (!bin->entry || entry->offset == 0) {
