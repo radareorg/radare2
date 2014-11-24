@@ -1,7 +1,3 @@
-// function docss(x) {
-//   return '<font color=black>'+x+'</font>';
-// }
-
 enyo.kind ({
   name: "Disassembler",
   kind: "Scroller",
@@ -9,12 +5,9 @@ enyo.kind ({
   classes:"ec_background",
   style:"margin:0px;",
   data: null,
-  draggable: false,
   components: [
       // {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
-      // {tag: "div", content: "^", name: "less_button", classes: "moreless", ontap: "less"},
       {tag: "div", allowHtml: true, name: "text", content: "..", style:"margin-left:5px;margin-right:5px"},
-      // {tag: "div", content: "v", name: "more_button", classes: "moreless", ontap: "more"},
       {kind: enyo.Signals, onkeypress: "handleKeyPress"}
   ],
   handlers: {ontap: "handleTap", ondblclick: "handleDoubleClick"},

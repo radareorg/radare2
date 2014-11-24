@@ -8,7 +8,7 @@ function makelist(x) {
 
 enyo.kind ({
   name: "RightPanel",
-  style:"width: 200px;height:100%;margin:0px;background-color:#404040;",
+  style:"background-color:#404040;",
   classes: "onyx-toolbar",
   kind: "FittableRows",
   ra: null,

@@ -80,8 +80,8 @@ enyo.kind ({
       ]}
       ,{tag: "h2", content: "Disassembly" },
       {kind: "onyx.InputDecorator", components: [
-        {tag: "p", content: "Use old view (pd)", classes:"rowline", ontap: "nextPanel"},
-        {kind: "onyx.ToggleButton", name: "use_old_view"},
+        {tag: "p", content: "Show new view", classes:"rowline", ontap: "nextPanel"},
+        {kind: "onyx.ToggleButton", name: "use_new_view"},
       ]},
       {kind: "onyx.InputDecorator", components: [
         {tag: "p", content: "Show bytes", classes:"rowline", ontap: "nextPanel"},
@@ -145,7 +145,7 @@ enyo.kind ({
     });
     var mode = readCookie('r2_view_mode');
     if (!mode) mode = "old";
-    self.$.use_old_view.setActive(mode == "old");
+    self.$.use_new_view.setActive(mode == "new");
   },
 
   create: function () {
@@ -153,7 +153,7 @@ enyo.kind ({
     this.load();
   },
   save: function() {
-    var use_old_view = this.$.use_old_view.active;
+    var use_new_view = this.$.use_new_view.active;
     var show_offset = this.$.toggle_offset.active;
     var arch = this.$.arch.selected.content;
     var bits = this.$.bits.selected.content;
@@ -176,7 +176,7 @@ enyo.kind ({
       "e asm.pseudo="+show_pseudo
     ]);
     r2.settings = {
-      "use_old_view": use_old_view,
+      "use_new_view": use_new_view,
       "asm.arch":arch,
       "asm.bits":bits,
       "asm.bytes":show_bytes,
@@ -187,8 +187,8 @@ enyo.kind ({
       "asm.pseudo":show_pseudo
     }
 
-    if (use_old_view) createCookie('r2_view_mode', "old",7);
-    else createCookie('r2_view_mode', "new",7);
+    if (use_new_view) createCookie('r2_view_mode', "new", 7);
+    else createCookie('r2_view_mode', "old", 7);
 
     if (twopanels) {
       window.parent.location ="/enyo/two";
