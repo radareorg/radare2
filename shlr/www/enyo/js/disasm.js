@@ -44,7 +44,6 @@ BBGraph.prototype.render = function() {
     dot += 'N' + this.edges[j].from + ' -> N' + this.edges[j].to + ' [color=' + this.edges[j].color + ', headport=n, tailport=s]' + ";\n";
   }
   dot += "}";
-  console.log(dot);
   var gdot = Viz(dot, format="dot", engine="dot", options=null);
   var i;
   var resp = gdot.split('\n').join("").split(";");

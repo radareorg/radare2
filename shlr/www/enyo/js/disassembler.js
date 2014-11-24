@@ -21,8 +21,8 @@ enyo.kind ({
     }
   },
   handleKeyPress: function(inSender, inEvent) {
-    var key = inEvent.keyCode;
-    // console.log(key);
+    var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
+    console.log(key);
     // Spacebar Switch flat and graph views
     if (key === 32) {
       if (this.display === "flat") this.display_graph();

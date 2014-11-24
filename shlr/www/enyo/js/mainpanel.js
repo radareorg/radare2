@@ -195,6 +195,8 @@ enyo.kind ({
   create: function() {
     this.inherited(arguments);
 
+    r2.load_settings();
+
     var mode = readCookie('r2_view_mode');
     if (!mode) mode = "old";
 
