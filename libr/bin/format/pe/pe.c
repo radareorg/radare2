@@ -257,13 +257,12 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	shsz = bufsz = num * srsz;
 	if (bufsz<1 || bufsz>bin->size)
 		return NULL;
-	buf = malloc (bufsz);
+	buf = calloc (num, srsz);
 	if (!buf)
 		return NULL;
 	exports_sz = sizeof (struct r_bin_pe_export_t)*num;
 	if (exports) {
 		int osz = sz;
-		exports[sz].last = 0;
 		sz += exports_sz;
 		exports = realloc (exports, sz);
 		if (!exports) {
