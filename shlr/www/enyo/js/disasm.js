@@ -151,7 +151,7 @@ function render_graph(x) {
       }
       var dom = document.createElement('div');
       dom.id = "bb_" + addr;
-      dom.className = "basicblock ec_background ec_border";
+      dom.className = "basicblock enyo-selectable ec_background ec_border";
       dom.innerHTML = idump;
       graph.addVertex(addr, cnt, dom);
       if (bb.fail > 0) {
@@ -226,7 +226,7 @@ function render_instructions(instructions) {
       ins.comment = atob(ins.comment);
     }
     var dom = document.createElement('div');
-    if (asm_lines) dom.className = "instructionbox lines";
+    if (asm_lines) dom.className = "instructionbox enyo-selectable lines";
     else dom.className = "instructionbox";
     dom.style.top = accumulated_heigth + "px";
     dom.innerHTML = html_for_instruction(ins);
@@ -361,7 +361,7 @@ function toBoolean(str) {
 }
 
 function html_for_instruction(ins) {
-  var idump = '<div class="instruction">';
+  var idump = '<div class="instruction enyo-selectable">';
   var address = ins.offset;
   var asm_flags = (r2.settings["asm.flags"]);
   var asm_bytes = (r2.settings["asm.bytes"]);

@@ -210,7 +210,6 @@ r2.get_address_type = function(address) {
 r2.settings = {};
 
 r2.load_settings = function() {
-
   r2.cmd ("e asm.arch", function(x) {r2.settings['asm.arch'] = toBoolean(x.trim());});
   r2.cmd ("e asm.bits", function(x) {r2.settings['asm.bits'] = toBoolean(x.trim());});
   r2.cmd ("e asm.bytes", function(x) {r2.settings['asm.bytes'] = toBoolean(x.trim());});
@@ -220,6 +219,8 @@ r2.load_settings = function() {
   r2.cmd ("e asm.xrefs", function(x) {r2.settings['asm.xrefs'] = toBoolean(x.trim());});
   r2.cmd ("e asm.cmtright", function(x) {r2.settings['asm.cmtright'] = toBoolean(x.trim());});
   r2.cmd ("e asm.pseudo", function(x) {r2.settings['asm.pseudo'] = toBoolean(x.trim());});
+  console.log("Loading settings from r2");
+  console.log(r2.settings);
 }
 
 

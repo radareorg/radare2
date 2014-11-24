@@ -247,7 +247,7 @@ enyo.kind ({
       r2.store_asm_config();
       r2.cmd("e asm.bytes = false; e asm.flags = false; e asm.functions = false; e asm.lines = false; e asm.xrefs = false; e asm.cmtright = true; e asm.pseudo = false", function (x) {
         r2.cmd ("agj " + addr, function(x) {
-          text.setContent("<div id='bb_canvas' class='bbcanvas ec_background'></div>");
+          text.setContent("<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>");
           // If render fails (address does not belong to function) then switch to flat view
           if (render_graph(x) === false) display = "flat";
         });
@@ -258,7 +258,7 @@ enyo.kind ({
     else if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -0.5*this.block, this.block, function(x) {
-        text.setContent("<div id='flat_canvas' class='flatcanvas ec_background'></div>");
+        text.setContent("<div id='flat_canvas' class='flatcanvas enyo-selectable ec_background'></div>");
         render_instructions(x);
         // text.setContent(x);
       });
@@ -281,7 +281,6 @@ enyo.kind ({
     r2.analAll();
     r2.load_mmap();
     r2ui.load_colors();
-    r2.load_settings();
 
   },
   rendered: function() {
