@@ -220,7 +220,7 @@ enyo.kind ({
     // this.$.less_button.hide();
     // this.$.more_button.hide();
     var panel = document.getElementById("radareApp_mp_pageDisassembler");
-    panel.className = panel.className.replace("ec_background", "ec_alt_background");
+    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_background", "ec_alt_background");
   },
   display_flat: function() {
     this.display = "flat";
@@ -228,7 +228,7 @@ enyo.kind ({
     // this.$.less_button.show();
     // this.$.more_button.show();
     var panel = document.getElementById("radareApp_mp_pageDisassembler");
-    panel.className = panel.className.replace("ec_alt_background", "ec_background");
+    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_alt_background", "ec_background");
   },
   less: function() {
     var text = this.$.text;

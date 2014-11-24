@@ -185,23 +185,59 @@ enyo.kind ({
 */
     ]},
     ]},
-    {kind: "Panels", name:"panels", fit:true, draggable: false,
-        realtimeFit: true, components: [
-      {kind:"Disassembler", name: "pageDisassembler"},
-      {kind:"Assembler", name:"pageAssembler"},
-      {kind:"Hexdump", name: "pageHexdump"},
-      {kind:"Graph", name: "pageGraph"},
-      {kind:"Search", name: "pageSearch"},
-      {kind:"Console", name: "pageConsole"},
-      {kind:"Debugger", name: "pageDebugger"},
-      {kind:"Logs", name: "pageLogs"},
-      {kind:"Script", name: "pageScript"},
-      {kind:"Settings", name:"pageSettings"},
-      {kind:"About", name: "pageAbout"},
+    {kind: "Panels",
+      name:"panels",
+      fit:true,
+      draggable: false,
+      realtimeFit: true,
+      components: [
+        // {kind:"DisassemblerOld", name: "pageDisassembler"},
+        // {kind:"Assembler", name:"pageAssembler"},
+        // {kind:"Hexdump", name: "pageHexdump"},
+        // {kind:"Graph", name: "pageGraph"},
+        // {kind:"Search", name: "pageSearch"},
+        // {kind:"Console", name: "pageConsole"},
+        // {kind:"Debugger", name: "pageDebugger"},
+        // {kind:"Logs", name: "pageLogs"},
+        // {kind:"Script", name: "pageScript"},
+        // {kind:"Settings", name:"pageSettings"},
+        // {kind:"About", name: "pageAbout"},
     ]}
   ],
   create: function() {
     this.inherited(arguments);
+
+    var mode = readCookie('r2_view_mode');
+    if (!mode) mode = "old";
+
+    if (mode === "old") this.$.panels.createComponents([
+        {kind:"DisassemblerOld", name: "pageDisassembler"},
+        {kind:"Assembler", name:"pageAssembler"},
+        {kind:"Hexdump", name: "pageHexdump"},
+        {kind:"Graph", name: "pageGraph"},
+        {kind:"Search", name: "pageSearch"},
+        {kind:"Console", name: "pageConsole"},
+        {kind:"Debugger", name: "pageDebugger"},
+        {kind:"Logs", name: "pageLogs"},
+        {kind:"Script", name: "pageScript"},
+        {kind:"Settings", name:"pageSettings"},
+        {kind:"About", name: "pageAbout"},
+    ]);
+    else this.$.panels.createComponents([
+        {kind:"Disassembler", name: "pageDisassembler"},
+        {kind:"Assembler", name:"pageAssembler"},
+        {kind:"Hexdump", name: "pageHexdump"},
+        {kind:"Graph", name: "pageGraph"},
+        {kind:"Search", name: "pageSearch"},
+        {kind:"Console", name: "pageConsole"},
+        {kind:"Debugger", name: "pageDebugger"},
+        {kind:"Logs", name: "pageLogs"},
+        {kind:"Script", name: "pageScript"},
+        {kind:"Settings", name:"pageSettings"},
+        {kind:"About", name: "pageAbout"},
+    ]);
+    this.render();
+
     r2ui.panels = this.$.panels;
        //this.$.panels.setArrangerKind ("CardArranger");
       // if (enyo.Panels.isScreenNarrow()) {

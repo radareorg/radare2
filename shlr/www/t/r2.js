@@ -210,15 +210,16 @@ r2.get_address_type = function(address) {
 r2.settings = {};
 
 r2.load_settings = function() {
-  r2.cmd ("e asm.arch", function(x) {r2.settings['asm.arch'] = x.trim();});
-  r2.cmd ("e asm.bits", function(x) {r2.settings['asm.bits'] = x.trim();});
-  r2.cmd ("e asm.bytes", function(x) {r2.settings['asm.bytes'] = x.trim();});
-  r2.cmd ("e asm.flags", function(x) {r2.settings['asm.flags'] = x.trim();});
-  r2.cmd ("e asm.offset", function(x) {r2.settings['asm.offset'] = x.trim();});
-  r2.cmd ("e asm.lines", function(x) {r2.settings['asm.lines'] = x.trim();});
-  r2.cmd ("e asm.xrefs", function(x) {r2.settings['asm.xrefs'] = x.trim();});
-  r2.cmd ("e asm.cmtright", function(x) {r2.settings['asm.cmtright'] = x.trim();});
-  r2.cmd ("e asm.pseudo", function(x) {r2.settings['asm.pseudo'] = x.trim();});
+
+  r2.cmd ("e asm.arch", function(x) {r2.settings['asm.arch'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.bits", function(x) {r2.settings['asm.bits'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.bytes", function(x) {r2.settings['asm.bytes'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.flags", function(x) {r2.settings['asm.flags'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.offset", function(x) {r2.settings['asm.offset'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.lines", function(x) {r2.settings['asm.lines'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.xrefs", function(x) {r2.settings['asm.xrefs'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.cmtright", function(x) {r2.settings['asm.cmtright'] = toBoolean(x.trim());});
+  r2.cmd ("e asm.pseudo", function(x) {r2.settings['asm.pseudo'] = toBoolean(x.trim());});
 }
 
 

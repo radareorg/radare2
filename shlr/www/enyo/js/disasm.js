@@ -182,8 +182,8 @@ function render_instructions(instructions) {
   flatcanvas.appendChild(outergbox);
 
   var flatcanvas_rect = getOffsetRect(flatcanvas);
-  var asm_lines = toBoolean(r2.settings["asm.lines"]);
-  var asm_offset = toBoolean(r2.settings["asm.offset"]);
+  var asm_lines = (r2.settings["asm.lines"]);
+  var asm_offset = (r2.settings["asm.offset"]);
 
   var accumulated_heigth = flatcanvas_rect.top;
   var lines = [];
@@ -271,6 +271,9 @@ function render_instructions(instructions) {
         var y0 = (from_rect.top + from_rect.bottom) / 2;
         var to_rect = getOffsetRect(to_element);
         var y1 = (to_rect.top + to_rect.bottom) / 2;
+        if (line.to == instructions[0].offset) {
+          y1 = getTopOffset();
+        }
 
         // main line
         ctx.beginPath();
@@ -324,6 +327,11 @@ function render_instructions(instructions) {
     }
   }
 }
+function getTopOffset() {
+  var bar = document.getElementById("radareApp_mp_toolbar");
+  var barrect = bar.getBoundingClientRect();
+  return barrect.bottom + 10;
+}
 
 function getOffsetRect(elem) {
     var box = elem.getBoundingClientRect();
@@ -360,10 +368,10 @@ function toBoolean(str) {
 function html_for_instruction(ins) {
   var idump = '<div class="instruction">';
   var address = ins.offset;
-  var asm_flags = toBoolean(r2.settings["asm.flags"]);
-  var asm_bytes = toBoolean(r2.settings["asm.bytes"]);
-  var asm_xrefs = toBoolean(r2.settings["asm.xrefs"]);
-  var asm_cmtright = toBoolean(r2.settings["asm.cmtright"]);
+  var asm_flags = (r2.settings["asm.flags"]);
+  var asm_bytes = (r2.settings["asm.bytes"]);
+  var asm_xrefs = (r2.settings["asm.xrefs"]);
+  var asm_cmtright = (r2.settings["asm.cmtright"]);
 
   if (asm_flags) {
     var flags;
@@ -642,4 +650,31 @@ function contains(a, obj) {
 
 function handleInputTextChange() {
   r2ui._dis.handleInputTextChange();
+}
+
+// Cookies
+
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name,"",-1);
 }
