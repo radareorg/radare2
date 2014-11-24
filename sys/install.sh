@@ -9,7 +9,7 @@ cd `dirname $PWD/$0` ; cd ..
 
 # update
 if [ -d .git ]; then
-	git branch | grep ^\* | grep -q master
+	git branch | grep "^\* master" > /dev/null
 	if [ $? = 0 ]; then
 		echo "WARNING: Updating from remote repository"
 		git pull
