@@ -769,10 +769,13 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// this is unnecessary if its contiguous
 		r_io_read_at (core->io, at+delta, buf, ANALBS);
 #endif
-		if (!core->io->raw) {
-			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta))
+#if 1
+		if (core->io->va && !core->io->raw) {
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta)) {
 				goto error;
+			}
 		}
+#endif
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
