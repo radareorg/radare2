@@ -1520,15 +1520,20 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 		if (len<30) len = 30-len;
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
+				char *line = strdup (ds->sl);
+				r_str_replace_char (line, '\t', ' ');
+				r_str_replace_char (line, '\x1b', ' ');
+				r_str_replace_char (line, '\r', ' ');
+				r_str_replace_char (line, '\n', '\x00');
 				handle_set_pre (ds, "  ");
 				handle_comment_align (core, ds);
 				if (ds->show_color)
-					r_cons_printf ("%s  ; %s"Color_RESET"%s",
-							ds->pal_comment, ds->sl, ds->pre);
-				else r_cons_printf ("  ; %s%s", ds->sl, ds->pre);
+					r_cons_printf ("%s  ; %s"Color_RESET, ds->pal_comment, line);
+				else r_cons_printf ("  ; %s", line);
 				free (ds->osl);
 				ds->osl = ds->sl;
 				ds->sl = NULL;
+				free (line);
 			}
 		}
 	}

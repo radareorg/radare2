@@ -7,7 +7,7 @@
 #define FCN_DEPTH 16
 
 #define JMP_IS_EOB 1
-#define JMP_IS_EOB_RANGE 512
+#define JMP_IS_EOB_RANGE 32
 #define CALL_IS_EOB 0
 
 // 64KB max size
@@ -414,7 +414,17 @@ repeat:
 #endif
 			}
 #endif
-}
+		} else {
+			/* if not eobjmp. a jump will break the function if jumps before the begining of the function */
+			if (op.jump < fcn->addr) {
+				if (!overlapped) {
+					bb->jump = op.jump;
+					bb->fail = UT64_MAX;
+				}
+				FITFCNSZ();
+				return R_ANAL_RET_END;
+			}
+		}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			#define recurseAt(x) \

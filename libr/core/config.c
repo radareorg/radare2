@@ -844,7 +844,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Minimum address in the anal.limits range");
 	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Last address to be analized (see anal.limits)");
 
-	SETCB("anal.eobjmp", "true", &cb_analeobjmp, "jmp is end of block mode (option)");
+	SETCB("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep some usecs before analyzing more. Avoid 100% cpu usage");
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
