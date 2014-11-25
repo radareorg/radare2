@@ -306,7 +306,7 @@ static int autocomplete(RLine *line) {
 				r_list_foreach (list, iter, str) {
 					if (*str == '.')
 						continue;
-					if (!p || !*p || !memcmp (str, p, n)) {
+					if (!p || !*p || !strncmp (str, p, n)) {
 						snprintf (buf, sizeof (buf), "%s%s%s",
 							path, strlen (path)>1?"/":"", str);
 						tmp_argv[i++] = strdup (buf);
