@@ -15,6 +15,7 @@ enyo.kind ({
     this.$.RadareApp.setIndex (1);
   },
   create: function() {
+      r2.load_settings();
       this.inherited (arguments);
       var data = [
         { name: "Disassembler", active: true },
