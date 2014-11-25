@@ -2,7 +2,7 @@ enyo.kind ({
   name: "Console",
   kind: "Scroller",
   classes: "r2panel",
-  style: "padding-left:7px",
+  style: "background-color:#c0c0c0;padding-left:7px",
   components: [
     {tag: "form", attributes: {action:"javascript:#"}, components: [
       {kind: "FittableRows", fit: true, classes: "fittable-sample-shadow", components: [

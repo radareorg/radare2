@@ -48,7 +48,7 @@ enyo.kind ({
       {tag: "pre", style:"font-size:14px", allowHtml:true, name: "output", content:".." }
     ]}
   ],
-  toggleScroll: function() { 
+  toggleScroll: function() {
     var is_visible = this.$.menu.getShowing ();
     this.$.scroll.setShowing (is_visible);
   },
