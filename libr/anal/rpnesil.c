@@ -967,7 +967,7 @@ static int esil_sub (RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
-			r_anal_esil_pushnum (esil, d-s);
+			r_anal_esil_pushnum (esil, s-d);
 			ret = R_TRUE;
 		} else {
 			eprintf ("esil_sub: invalid parameters");
