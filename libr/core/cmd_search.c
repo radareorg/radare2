@@ -494,8 +494,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 
 	if (grep) {
 		start = grep;
-		end = strstr (grep, "#");
-		if (!end) { // We filter on a single opcode, so no "#"
+		end = strstr (grep, ";");
+		if (!end) { // We filter on a single opcode, so no ";"
 			end = start + strlen (grep);
 		}
 		if (regex) {
@@ -531,9 +531,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 
 			//Handle (possible) grep
 			if (search_hit) {
-				if (end[0] == '#') { // fields are octothorpe-seperated
-					start = end + 1; // skip the #
-					end = strstr (start, "#");
+				if (end[0] == ';') { // fields are semicolon-seperated
+					start = end + 1; // skip the ;
+					end = strstr (start, ";");
 					end = end?end: start + strlen(start); //latest field?
 				} else
 					end = NULL;
@@ -613,11 +613,11 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (!rx_list) rx_list = r_list_newf(free);
 		gregexp = calloc(strlen(grep) + 1, sizeof(char));
 		memcpy(gregexp, grep, strlen(grep));
-		tok = strtok(gregexp, "#");
+		tok = strtok(gregexp, ";");
 		while (tok) {
 			rx = r_regex_new(gregexp, "");
 			r_list_append(rx_list, rx);
-			tok = strtok(NULL, "#");
+			tok = strtok(NULL, ";");
 		}
 	}
 
