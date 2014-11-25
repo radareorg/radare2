@@ -232,7 +232,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 }
 
 static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, boolt is_first_thread) {
-	ut64 ptr_thread, pc, pc_offset;
+	ut64 ptr_thread, pc = UT64_MAX, pc_offset = UT64_MAX;
 	ut32 flavor, count;
 	int len;
 
@@ -325,8 +325,10 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 
 	if (is_first_thread) {
 		bin->main_cmd = *lc;
-		bin->entry = pc;
-		sdb_num_set (bin->kv, "mach0.entry.offset", pc_offset, 0);
+		if (pc != UT64_MAX)
+			bin->entry = pc;
+		if (pc_offset != UT64_MAX)
+			sdb_num_set (bin->kv, "mach0.entry.offset", pc_offset, 0);
 	}
 
 	return R_TRUE;
