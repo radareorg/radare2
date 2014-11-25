@@ -63,7 +63,6 @@ BBGraph.prototype.render = function() {
       var color = resp[i].substr(resp[i].indexOf('color=')+6).split(',')[0];
       var posstr = resp[i].substr(resp[i].indexOf('pos="')+7).split('"')[0].split(' ');
       var pos = [];
-      if (posstr.length > 5) continue;
       // get origin(x,y) and dest(x,y)
       for (var k=0; k<(posstr.length); k++) {
         var to = posstr[k].split(',');
