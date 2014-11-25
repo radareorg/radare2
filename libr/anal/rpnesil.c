@@ -78,7 +78,7 @@ static int esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_mem_copyendian (buf, buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
-		for (i=0;i<len;i++)
+		for (i=0; i<len; i++)
 			eprintf ("%02x", buf[i]);
 		eprintf ("\n");
 	}
@@ -181,7 +181,9 @@ R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str) {
 	}
 	if (!strncmp (str, "0x", 2))
 		return R_ANAL_ESIL_PARM_NUM;
-	for (i = 0; i < len; i++)
+	if (!((str[0] >= '0' && str[0] <= '9')||str[0]=='-'))
+		goto not_a_number;
+	for (i = 1; i < len; i++)
 		if (!(str[i] >= '0' && str[i] <= '9'))
 			goto not_a_number;
 	return R_ANAL_ESIL_PARM_NUM;
@@ -357,6 +359,7 @@ static int esil_negeq(RAnalEsil *esil) {
 		eprintf ("esil_negeq: empty stack\n");
 	}
 	free (src);
+	//r_anal_esil_pushnum (esil, ret);
 	return ret;
 }
 
@@ -524,6 +527,8 @@ static int esil_cmp(RAnalEsil *esil) {
 	}
 	free (dst);
 	free (src);
+
+	//r_anal_esil_pushnum (esil, ret);
 	return ret;
 }
 
@@ -605,7 +610,7 @@ static int esil_lsl(RAnalEsil *esil) {
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (dst && esil_reg_read (esil, dst, &num)) {
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			num <<= num2;
 			r_anal_esil_pushnum (esil, num);
@@ -1033,13 +1038,10 @@ static int esil_poke1(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, addr;
 	ut8 num1;
-eprintf ("POKE ONE!\n");
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &num)) {
-eprintf ("POKE TWO!\n");
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
-eprintf ("PIKA THREE!\n");
 			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 				esil_mem_read (esil, addr, &num1, 1);
 				esil->old = num1;
@@ -2193,40 +2195,26 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 static int runword (RAnalEsil *esil, const char *word) {
 	RAnalEsilOp op = NULL;
 	esil->parse_goto_count--;
+
 	if (esil->parse_goto_count<1) {
 		eprintf ("ESIL infinite loop detected\n");
 		esil->trap = 1; // INTERNAL ERROR
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return 0;
 	}
-#if NEWSHIT
-// seems wrong :D
-	if (esil->skip) {
-		if (!strcmp (word, "}{")) {
-			esil->skip = 0;
-			return 1;
-		} else if (!strcmp (word, "}")) {
-			esil->skip = 0;
-			return 1;
-		}
-	} else {
-		if (!strcmp (word, "}{")) {
-			esil->skip = 1;
-			return 1;
-		}
+
+//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
+	if (!strcmp (word, "}{")) {
+		esil->skip = esil->skip? 0: 1;
+		return 1;
+	} else if (!strcmp (word, "}")) {
+		esil->skip = 0;
+		return 1;
 	}
-#else
 	if (esil->skip) {
-		if (!strcmp (word, "}"))
-			esil->skip = 0;
-		return 0;
-	} else {
-		if (!strcmp (word, "}{")) {
-			esil->skip = 1;
-			return 0;
-		}
+		return 1;
 	}
-#endif
+
 	if (iscommand (esil, word, &op)) {
 		// run action
 		if (op) {

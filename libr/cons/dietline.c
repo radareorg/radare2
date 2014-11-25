@@ -397,6 +397,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
+	r_cons_singleton()->breaked = R_FALSE;
 	for (;;) {
 #if 0
 		if (I.echo) {
@@ -486,6 +487,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				eprintf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
+			r_cons_singleton()->breaked = R_TRUE;
 			goto _end;
 		case 4: // ^D
 			if (!I.buffer.data[0]) { /* eof */

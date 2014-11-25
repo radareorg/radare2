@@ -7,7 +7,7 @@
 #define FCN_DEPTH 16
 
 #define JMP_IS_EOB 1
-#define JMP_IS_EOB_RANGE 512
+#define JMP_IS_EOB_RANGE 32
 #define CALL_IS_EOB 0
 
 // 64KB max size
@@ -414,7 +414,17 @@ repeat:
 #endif
 			}
 #endif
-}
+		} else {
+			/* if not eobjmp. a jump will break the function if jumps before the begining of the function */
+			if (op.jump < fcn->addr) {
+				if (!overlapped) {
+					bb->jump = op.jump;
+					bb->fail = UT64_MAX;
+				}
+				FITFCNSZ();
+				return R_ANAL_RET_END;
+			}
+		}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			#define recurseAt(x) \
@@ -533,7 +543,11 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	fcn->addr = addr;
 	fcn->size = size;
 	free (fcn->name);
-	fcn->name = strdup (name);
+	if (!name || !strncmp (name, "fcn.", 4)) {
+		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
+	} else {
+		fcn->name = strdup (name);
+	}
 	fcn->type = type;
 	if (diff) {
 		fcn->diff->type = diff->type;

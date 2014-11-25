@@ -494,6 +494,13 @@ static int cb_ioenforce(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_iosectonly(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->sectonly = node->i_value? 1: 0;
+	return R_TRUE;
+}
+
 static int cb_iobuffer(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -801,6 +808,7 @@ static int cb_anal_gp(RCore *core, RConfigNode *node) {
 	core->anal->gp = node->i_value;
 	return 1;
 }
+
 static int cb_anal_from(RCore *core, RConfigNode *node) {
 	if (r_config_get_i (core->config, "anal.limits")) {
 		r_anal_set_limits (core->anal, 
@@ -836,12 +844,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Minimum address in the anal.limits range");
 	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Last address to be analized (see anal.limits)");
 
-	SETCB("anal.eobjmp", "true", &cb_analeobjmp, "jmp is end of block mode (option)");
+	SETCB("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep some usecs before analyzing more. Avoid 100% cpu usage");
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
-	SETCB("anal.nopskip", "false", &cb_analnopskip, "Skip nops at the begining of functions");
+	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the begining of functions");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
@@ -857,6 +865,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch referece");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
+	SETPREF("asm.calls", "true", "Show calling convention calls as comments in disasm");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
@@ -1136,6 +1145,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
+	SETCB("io.sectonly", "false", &cb_iosectonly, "Only read from sections (if any)");
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");

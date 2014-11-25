@@ -137,7 +137,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		if (REG(0)[0]!='z'){
 			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
 		} else {
-			r_strbuf_appendf (&op->esil, "}");
+			r_strbuf_appendf (&op->esil, ",");
 		}
 		break;
 	case MIPS_INS_FSUB:
@@ -157,7 +157,23 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	/** signed -- sets overflow flag */
 	case MIPS_INS_ADD:
+		{
+		if (REG(0)[0]!='z'){
+			r_strbuf_appendf (&op->esil, "32,%s,%s,+,>>,0,>,?{,$$,}{,%s,%s,+,%s,=,}",
+					ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+		} else {
+			r_strbuf_appendf (&op->esil, ",");
+		}
+		}
+		break;
 	case MIPS_INS_ADDI:
+		if (REG(0)[0]!='z'){
+			r_strbuf_appendf (&op->esil, "32,%s,0xffffffff,&,%s,+,>>,0,>,?{,$$,}{,%s,%s,+,%s,=,}",
+					ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+		} else {
+			r_strbuf_appendf (&op->esil, ",");
+		}
+		break;
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
 	/** unsigned */
@@ -168,10 +184,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		const char *arg0 = ARG(0);
 		const char *arg1 = ARG(1);
 		const char *arg2 = ARG(2);
-		if (!strcmp (arg0, arg1))
-			r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(1));
-		else r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-			arg2, arg1, arg0);
+		if (REG(0)[0]!='z'){
+			if (!strcmp (arg0, arg1))
+				r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(1));
+			else r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+					arg2, arg1, arg0);
+		} else {
+			r_strbuf_appendf (&op->esil, ",");
+		}
 		}
 		break;
 	case MIPS_INS_LI:

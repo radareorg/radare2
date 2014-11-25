@@ -286,8 +286,7 @@ R_API RIODesc *r_io_use_fd (RIO *io, int fd) {
 	return desc;
 }
 
-#if !USE_P_API
-static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
+R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	int bytes_read = 0;
 	const char *read_from = NULL;
 	if (io->desc && io->desc->plugin && io->desc->plugin->read){
@@ -309,7 +308,6 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	}
 	return bytes_read;
 }
-#endif
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	int ret;
@@ -363,6 +361,22 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
+	if (io->sectonly && !r_list_empty (io->sections)) {
+		if (!r_io_section_exists_for_vaddr (io, addr)) {
+			// find next sec
+			memset (buf, 0xff, len);
+			ut64 next = r_io_section_next (io, addr);
+			if (next < (addr+len)) {
+				int delta = (next-addr);
+				addr = next;
+				len -= delta;
+				buf += delta;
+			} else next = 0;
+			if (!next)
+				return 0;
+		}
+	}
+
 	if (io->raw) {
 		if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
 			memset (buf, 0xff, len);
@@ -404,7 +418,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			next_sec = r_io_section_get_first_in_vaddr_range (io, addr+w, addr+len+w);
 			next_sec_addr = next_sec ? next_sec->offset : UT64_MAX;
 
-			if (!next_sec){
+			if (!next_sec) {
 				next_map = r_io_map_get_first_map_in_range (io, addr+w, addr+len+w);
 				next_map_addr = next_map ? next_map->from : UT64_MAX;
 				if (len <= next_map_addr-addr) next_map_addr = UT64_MAX;
@@ -605,9 +619,6 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			buf += ret;
 		}
 	}
-		if (1) { //io->history) {
-			r_io_cache_write (io, io->off, buf, len);
-		}
 
 	/* TODO: implement IO cache here. to avoid dupping work on vm for example */
 
@@ -889,8 +900,7 @@ R_API void r_io_set_raw(RIO *io, int raw) {
 }
 
 //checks if reading at offset or writting to offset is reasonable
-R_API int r_io_is_valid_offset (RIO *io, ut64 offset)
-{
+R_API int r_io_is_valid_offset (RIO *io, ut64 offset) {
 	if (!io) {
 		eprintf ("r_io_is_valid_offset: io is NULL\n");
 		r_sys_backtrace ();

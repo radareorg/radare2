@@ -769,10 +769,13 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// this is unnecessary if its contiguous
 		r_io_read_at (core->io, at+delta, buf, ANALBS);
 #endif
-		if (!core->io->raw) {
-			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta))
+#if 1
+		if (core->io->va && !core->io->raw) {
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta)) {
 				goto error;
+			}
 		}
+#endif
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -814,7 +817,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				fcn->name = r_str_newf ("%s.%08"PFMT64x,
 						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
-						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
+						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", fcn->addr);
 				/* Add flag */
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name,
@@ -840,12 +843,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					goto error;
 				}
 				ref->addr = from;
-				ref->at = at;
+				ref->at = fcn->addr;
 				ref->type = reftype;
 				r_list_append (fcn->xrefs, ref);
 #endif
 // XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
-				r_anal_xrefs_set (core->anal, reftype, from, at);
+				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
 			}
 			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);

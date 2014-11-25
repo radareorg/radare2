@@ -50,8 +50,12 @@ static void cmd_debug_reg(RCore *core, const char *str);
 
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
+	if (core->cons->breaked) {
+		core->cons->breaked = R_FALSE;
+		return 0;
+	}
 	if (!core->cmdrepeat) return 0;
-	r_core_cmd_repeat (core, 1);
+	r_core_cmd_repeat (core, R_TRUE);
 	return 1;
 }
 
