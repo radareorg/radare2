@@ -23,6 +23,10 @@ enyo.kind ({
   handleKeyPress: function(inSender, inEvent) {
     var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
     // console.log(key);
+    // show help
+    if (key === 63) {
+      r2ui.mp.showPopup();
+    }
     // Spacebar Switch flat and graph views
     if (key === 32) {
       if (this.display === "flat") this.display_graph();
@@ -196,7 +200,14 @@ enyo.kind ({
         }
       }
       r2.update_flags();
-      r2ui.seek("$$", false, false);
+      if (this.selected.className.indexOf("insaddr") === 0) {
+        var address = get_address_from_class(this.selected);
+        r2ui.seek(address, false);
+      } else {
+        var address = get_address_from_class(this.selected.parentNode.parentNode.firstChild);
+        r2ui.seek(address, false);
+
+      }
     }
   },
   min: 0,

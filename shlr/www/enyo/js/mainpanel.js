@@ -134,7 +134,7 @@ enyo.kind ({
   },
   /* widgets dom */
   components: [
-    {kind: "onyx.Toolbar", components: [
+    {kind: "onyx.Toolbar", name: "toolbar", components: [
     //{kind: "onyx.MoreToolbar", components: [
       {kind: "onyx.Button", content: "[", ontap: "openSidebar", classes: "top" },
       {kind: "onyx.Button", content: "]", ontap: "openSidebar2", classes: "top" },
@@ -179,10 +179,14 @@ enyo.kind ({
           {content: "Opcode", ontap: 'wrOpcode'},
         ]}
       ]},
-/*
-          {kind: "onyx.Button", content: "Add", ontap: "addPanel"},
-          {kind: "onyx.Button", content: "Delete", ontap: "deletePanel"}
-*/
+      {kind: "onyx.PickerDecorator", classes: "top", components: [
+        {kind: "onyx.Button", name: "helpButton", content: "?", ontap: "showPopup"},
+        {name: "basicPopup", kind: "onyx.Popup", floating: true, centered: true,
+            style: "padding: 10px", components: [
+                {name: "popupContent", allowHtml: true, content: ".."}
+            ]
+        }
+      ]},
     ]},
     ]},
     {kind: "Panels",
@@ -192,13 +196,17 @@ enyo.kind ({
       realtimeFit: true,
       components: []}
   ],
+  showPopup: function(inSender, inEvent) {
+    this.$.basicPopup.show();
+  },
   create: function() {
     this.inherited(arguments);
 
     var mode = readCookie('r2_view_mode');
     if (!mode) mode = "old";
 
-    if (mode === "old") this.$.panels.createComponents([
+    if (mode === "old") {
+      this.$.panels.createComponents([
         {kind:"DisassemblerOld", name: "pageDisassembler"},
         {kind:"Assembler", name:"pageAssembler"},
         {kind:"Hexdump", name: "pageHexdump"},
@@ -210,8 +218,10 @@ enyo.kind ({
         {kind:"Script", name: "pageScript"},
         {kind:"Settings", name:"pageSettings"},
         {kind:"About", name: "pageAbout"},
-    ]);
-    else this.$.panels.createComponents([
+      ]);
+      this.$.helpButton.hide();
+    } else {
+      this.$.panels.createComponents([
         {kind:"Disassembler", name: "pageDisassembler"},
         {kind:"Assembler", name:"pageAssembler"},
         {kind:"Hexdump", name: "pageHexdump"},
@@ -223,12 +233,23 @@ enyo.kind ({
         {kind:"Script", name: "pageScript"},
         {kind:"Settings", name:"pageSettings"},
         {kind:"About", name: "pageAbout"},
-    ]);
-    this.render();
+      ]);
+      var helpMsg = "<table class='help'>" +
+      "<tr><td>h,l</td><td>Move back and forth in history</td></tr>" +
+      "<tr><td>j,k</td><td>Move to next or previous instruction</td></tr>" +
+      "<tr><td>g</td><td>Go to address</td></tr>" +
+      "<tr><td>n</td><td>Rename</td></tr>" +
+      "<tr><td>c</td><td>Define function at current address</td></tr>" +
+      "<tr><td>d</td><td>Remove function metadata for current address</td></tr>" +
+      "<tr><td>enter</td><td>When address is selected, go to address</td></tr>" +
+      "<tr><td>;</td><td>Add comment</td></tr>" +
+      "<tr><td>?</td><td>Display this help</td></tr>" +
+      "</table>";
 
+      this.$.popupContent.setContent(helpMsg);
+    }
+    this.render();
     r2ui.panels = this.$.panels;
-       //this.$.panels.setArrangerKind ("CardArranger");
-      // if (enyo.Panels.isScreenNarrow()) {
     this.$.panels.setIndex(0);
   },
   ra: null,
