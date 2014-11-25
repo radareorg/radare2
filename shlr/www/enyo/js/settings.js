@@ -123,27 +123,13 @@ enyo.kind ({
   load: function() {
     var self = this;
     self.$.twopanels.setActive (document.referrer.indexOf ("/two") != -1);
-    r2.cmd ("e asm.bytes", function (x) {
-      self.$.toggle_bytes.setActive (x[0] == 't');
-    });
-    r2.cmd ("e asm.pseudo", function (x) {
-      self.$.toggle_pseudo.setActive (x[0] == 't');
-    });
-    r2.cmd ("e asm.flags", function (x) {
-      self.$.toggle_flags.setActive (x[0] == 't');
-    });
-    r2.cmd ("e asm.xrefs", function (x) {
-      self.$.toggle_xrefs.setActive (x[0] == 't');
-    });
-    r2.cmd ("e asm.cmtright", function (x) {
-      self.$.toggle_cmtright.setActive (x[0] == 't');
-    });
-    r2.cmd ("e asm.offset", function (x) {
-      self.$.toggle_offset.setActive (x[0] == 't');
-    });
-    r2.cmd ("e asm.lines", function (x) {
-      self.$.toggle_lines.setActive (x[0] == 't');
-    });
+    self.$.toggle_bytes.setActive(r2.settings['asm.bytes']);
+    self.$.toggle_pseudo.setActive(r2.settings['asm.pseudo']);
+    self.$.toggle_flags.setActive(r2.settings['asm.flags']);
+    self.$.toggle_xrefs.setActive(r2.settings['asm.xrefs']);
+    self.$.toggle_cmtright.setActive(r2.settings['asm.cmtright']);
+    self.$.toggle_offset.setActive(r2.settings['asm.offset']);
+    self.$.toggle_lines.setActive(r2.settings['asm.lines']);
     var mode = readCookie('r2_view_mode');
     if (!mode) mode = "old";
     self.$.use_new_view.setActive(mode == "new");
