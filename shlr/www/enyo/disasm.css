@@ -1,0 +1,91 @@
+.bbcanvas { float: left; }
+
+.flatcanvas { float: left; }
+
+.insaddr {
+  min-width: 7em;
+  display: inline-block;
+}
+
+#outergbox {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.instruction {
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.instructiondesc {
+  display: inline-block;
+}
+
+.data {
+  text-align: right;
+  min-width: 18px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.basicblock {
+  border: 1px solid;
+  padding: 5px;
+  position: absolute;
+}
+
+.instructionbox {
+  position: absolute;
+}
+
+#gbox {
+  position: relative;
+  margin: 10px;
+}
+
+.bytes {
+  display: inline-block;
+  width: 170px;
+}
+
+input:focus {outline: none; }
+
+.ec_comment {color: rgb(0,127,127);}
+.ec_fname {color: rgb(127,0,0);}
+.ec_flag {color: rgb(0,127,127);}
+.ec_offset {color: rgb(0,127,0);}
+.ec_other {color: rgb(127,127,127);} /* byte color bu default */
+.ec_b0x00 {color: rgb(0,127,0);}
+.ec_b0x7f {color: rgb(0,127,127);}
+.ec_b0xff {color: rgb(127,0,0);}
+.ec_math {color: rgb(127,127,0);}
+.ec_bin {color: rgb(127,127,0);}
+.ec_push {color: rgb(127,0,127);}
+.ec_pop {color: rgb(255,0,255);}
+.ec_jmp {color: rgb(0,127,0);}
+.ec_cjmp {color: rgb(0,127,0);}
+.ec_call {color: rgb(0,255,0);}
+.ec_nop {color: rgb(0,0,127);}
+.ec_ret {color: rgb(127,0,0);}
+.ec_trap {color: rgb(255,0,0);}
+.ec_invalid {color: rgb(255,0,0);}
+.ec_cmp {color: rgb(0,127,127);}
+.ec_reg {color: rgb(0,127,127);} /* (also applies to qword, brackets, etc) */
+.ec_creg {color: rgb(0,127,127);}
+.ec_mov {color: rgb(127,127,127);}
+.ec_num {color: rgb(127,127,0);}
+
+.ec_jmp_line {color: orange;}
+.ec_cjmp_line {color: yellow;}
+.ec_dataoffset {color: rgb(136,136,0);}
+.ec_background {background-color: rgb(10,10,10); }
+.ec_alt_background {background-color: rgb(39,39,39); }
+.ec_border {border-color: #3a3a3a; }
+
+.autohighlight { background-color: #8AFF77 !important; }
+.autohighlighti { background-color: #8AFF77; }
+
+.hidden {display:none;}
+
+.lines {margin-left: 100px;}

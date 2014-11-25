@@ -16,6 +16,8 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 	RListIter *iter, *iter2;
 	int i;
 
+	if (!c || !c2)
+		return R_FALSE;
 	for (i = 0; i < 2; i++) {
 		if (anal_all)
 			r_core_anal_all (cores[i]);

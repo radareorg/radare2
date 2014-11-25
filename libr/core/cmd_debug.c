@@ -1128,8 +1128,10 @@ static void r_core_debug_trace_calls (RCore *core) {
 			break;
 		if (r_debug_is_dead (core->dbg))
 			break;
-		r_debug_step (core->dbg, 1);
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		if (!r_debug_step (core->dbg, 1))
+			break;
+		if (!r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
+			break;
 		addr = r_debug_reg_get (core->dbg, "pc");
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));

@@ -3,8 +3,9 @@ enyo.kind ({
   kind: "Panels",
   classes: "panels enyo-unselectable",
   realtimeFit: true,
+  fit: true,
   arrangerKind: "CollapsingArranger",
-  components: [ 
+  components: [
     { name: "lp", kind: "LeftPanel" },
     { name: "mp", kind: "MainPanel" },
     { name: "rp", kind: "RightPanel" },
@@ -14,6 +15,7 @@ enyo.kind ({
     this.$.RadareApp.setIndex (1);
   },
   create: function() {
+      r2.load_settings();
       this.inherited (arguments);
       var data = [
         { name: "Disassembler", active: true },
@@ -30,8 +32,8 @@ enyo.kind ({
       ];
       this.$.lp.data = data;
       this.$.mp.data = data;
-      r2ui.ra = 
-      this.$.mp.ra = 
+      r2ui.ra =
+      this.$.mp.ra =
       this.$.lp.ra =
       this.$.rp.ra = this;
       var mp = this.$.mp;

@@ -23,7 +23,7 @@ enyo.kind ({
     if (inEvent.keyCode === 13) {
       var off = this.$.input.getValue ();
      // this.$.input.setValue ("");
-      r2ui.opendis (off);
+      r2ui.opendis(off);
     }
   },
   /* menu actions */
@@ -31,43 +31,46 @@ enyo.kind ({
    var msg = prompt ('New name?', '');
    if(msg)
      r2.cmd("afr "+msg, function() {
-       r2ui.seek ("$$", true);
+       r2ui.seek("$$", false);
      });
   },
   goComment: function() {
    var msg = prompt ('Comment?', '');
    if(msg)
      r2.cmd("CC "+msg, function() {
-       r2ui.seek ("$$", true);
+       r2ui.seek("$$", false);
      });
   },
   goFlag: function() {
    var msg = prompt ('Flag name?', '');
    if(msg)
      r2.cmd("f "+msg, function() {
-       r2ui.seek ("$$", true);
+       r2.update_flags();
+       r2ui.seek("$$", false);
      });
   },
   goUnflag: function() {
    r2.cmd("f-$$", function() {
-     r2ui.seek ("$$", true);
+     r2.update_flags();
+     r2ui.seek("$$", false);
    });
   },
   goAnalyze: function() {
    r2.cmd("af", function() {
-   r2ui.seek ("$$", true);
+    r2.update_flags();
+    r2ui.seek("$$", false);
    });
   },
   goCopy: function() {
    var msg = prompt ('How many bytes?', '');
    if(msg && msg>0)
      r2.cmd("y "+msg, function() {
-       r2ui.seek ("$$", true);
+       r2ui.seek("$$", false);
      });
   },
   goPaste: function() {
    r2.cmd("yy", function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   /*-- write */
@@ -75,28 +78,28 @@ enyo.kind ({
    var msg = prompt ('Text', '');
    if(msg)
    r2.cmd("w "+msg, function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   wrOpcode: function() {
    var msg = prompt ('Opcode', '');
    if(msg)
    r2.cmd ("wa "+msg, function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   wrFile: function() {
    var msg = prompt ('Filename', '');
    if(msg)
    r2.cmd("wf "+msg, function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   wrHex: function() {
    var msg = prompt ('Hexpair', '');
    if(msg)
    r2.cmd("wx "+msg, function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   /* -- convert */
@@ -104,19 +107,19 @@ enyo.kind ({
    var msg = prompt ('How many bytes?', '');
    if(msg)
    r2.cmd("y "+msg, function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   coString: function() {
    r2.cmd("Cz", function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   coData: function() {
    var msg = prompt ('How many bytes?', '');
    if(msg)
    r2.cmd("Cd "+msg, function() {
-     r2ui.seek ("$$", true);
+     r2ui.seek("$$", false);
    });
   },
   setTitle: function (title) {
@@ -131,16 +134,17 @@ enyo.kind ({
   },
   /* widgets dom */
   components: [
-    {kind: "onyx.Toolbar", components: [
+    {kind: "onyx.Toolbar", name: "toolbar", components: [
     //{kind: "onyx.MoreToolbar", components: [
       {kind: "onyx.Button", content: "[", ontap: "openSidebar", classes: "top" },
       {kind: "onyx.Button", content: "]", ontap: "openSidebar2", classes: "top" },
-    {name: "title", tag: "h2", content: "Assembler", classes: "topbox", style: "visibility:hidden;" },
-    {name: "extra", tag: "div", classes: "topbox", components: [
-//style: "position:absolute;top:0px;left:48px;scroll:overflow;visibility:visible", components: [
-/*
-          {kind: "onyx.Button", content: "]", ontap: "openSidebar2", style: "padding:4px"},
-*/
+      // {kind: "onyx.Button", content: "C", ontap: "openConsole", classes: "top" },
+      {name: "title", tag: "h2", content: "Assembler", classes: "topbox", style: "visibility:hidden;" },
+      {name: "extra", tag: "div", classes: "topbox", components: [
+      //style: "position:absolute;top:0px;left:48px;scroll:overflow;visibility:visible", components: [
+      /*
+                {kind: "onyx.Button", content: "]", ontap: "openSidebar2", style: "padding:4px"},
+      */
         {kind: "onyx.PickerDecorator", classes: "top", components: [
           {kind: "onyx.Button", content: "Actions"},
           {kind: "onyx.Picker", components: [
@@ -153,54 +157,99 @@ enyo.kind ({
             {content: "Paste", ontap: "goPaste"}
           ]}
         ]},
-        {kind: "onyx.Button", content: "<", ontap: "prevSeek", classes: "top", style: "top:10px" },
-        {kind: "onyx.Button", content: ">", ontap: "nextSeek", classes: "top", style: "top:10px" },
-        {kind: "onyx.InputDecorator", style: "width: 200px;top:10px", classes: "top", components: [
-          {kind: "onyx.Input", name:"input", value: 'entry0', onchange: "gotoSeek", onkeydown:"inputKey" }
-        ]},
-          {kind: "onyx.PickerDecorator", classes: "top", components: [
-            {kind: "onyx.Button", content: "Convert"},
-            {kind: "onyx.Picker", components: [
-              {content: "Data", ontap: 'coData'},
-              {content: "Code", ontap: 'coCode'},
-              {content: "String", ontap: 'coString'},
-            ]}
-          ]},
-          {kind: "onyx.PickerDecorator", classes: "top", components: [
-            {kind: "onyx.Button", content: "Write"},
-            {kind: "onyx.Picker", components: [
-              {content: "File", ontap: 'wrFile'},
-              {content: "Hexpair", ontap: 'wrHex'},
-              {content: "String", ontap: 'wrString'},
-              {content: "Opcode", ontap: 'wrOpcode'},
-            ]}
-          ]},
-/*
-          {kind: "onyx.Button", content: "Add", ontap: "addPanel"},
-          {kind: "onyx.Button", content: "Delete", ontap: "deletePanel"}
-*/
+      {kind: "onyx.Button", content: "<", ontap: "prevSeek", classes: "top", style: "top:10px" },
+      {kind: "onyx.Button", content: ">", ontap: "nextSeek", classes: "top", style: "top:10px" },
+      {kind: "onyx.InputDecorator", style: "width: 200px;top:10px", classes: "top", components: [
+        {kind: "onyx.Input", name:"input", value: 'entry0', onchange: "gotoSeek", onkeydown:"inputKey" }
+      ]},
+      {kind: "onyx.PickerDecorator", classes: "top", components: [
+        {kind: "onyx.Button", content: "Convert"},
+        {kind: "onyx.Picker", components: [
+          {content: "Data", ontap: 'coData'},
+          {content: "Code", ontap: 'coCode'},
+          {content: "String", ontap: 'coString'},
+        ]}
+      ]},
+      {kind: "onyx.PickerDecorator", classes: "top", components: [
+        {kind: "onyx.Button", content: "Write"},
+        {kind: "onyx.Picker", components: [
+          {content: "File", ontap: 'wrFile'},
+          {content: "Hexpair", ontap: 'wrHex'},
+          {content: "String", ontap: 'wrString'},
+          {content: "Opcode", ontap: 'wrOpcode'},
+        ]}
+      ]},
+      {kind: "onyx.PickerDecorator", classes: "top", components: [
+        {kind: "onyx.Button", name: "helpButton", content: "?", ontap: "showPopup"},
+        {name: "basicPopup", kind: "onyx.Popup", floating: true, centered: true,
+            style: "padding: 10px", components: [
+                {name: "popupContent", allowHtml: true, content: ".."}
+            ]
+        }
+      ]},
     ]},
     ]},
-    {kind: "Panels", name:"panels", fit:true, draggable: false,
-        realtimeFit: true, components: [
-      {kind:"Disassembler", name: "pageDisassembler"},
-      {kind:"Assembler", name:"pageAssembler"},
-      {kind:"Hexdump", name: "pageHexdump"},
-      {kind:"Graph", name: "pageGraph"},
-      {kind:"Search", name: "pageSearch"},
-      {kind:"Console", name: "pageConsole"},
-      {kind:"Debugger", name: "pageDebugger"},
-      {kind:"Logs", name: "pageLogs"},
-      {kind:"Script", name: "pageScript"},
-      {kind:"Settings", name:"pageSettings"},
-      {kind:"About", name: "pageAbout"},
-    ]}
+    {kind: "Panels",
+      name:"panels",
+      fit:true,
+      draggable: false,
+      realtimeFit: true,
+      components: []}
   ],
+  showPopup: function(inSender, inEvent) {
+    this.$.basicPopup.show();
+  },
   create: function() {
     this.inherited(arguments);
+
+    var mode = readCookie('r2_view_mode');
+    if (!mode) mode = "old";
+
+    if (mode === "old") {
+      this.$.panels.createComponents([
+        {kind:"DisassemblerOld", name: "pageDisassembler"},
+        {kind:"Assembler", name:"pageAssembler"},
+        {kind:"Hexdump", name: "pageHexdump"},
+        {kind:"Graph", name: "pageGraph"},
+        {kind:"Search", name: "pageSearch"},
+        {kind:"Console", name: "pageConsole"},
+        {kind:"Debugger", name: "pageDebugger"},
+        {kind:"Logs", name: "pageLogs"},
+        {kind:"Script", name: "pageScript"},
+        {kind:"Settings", name:"pageSettings"},
+        {kind:"About", name: "pageAbout"},
+      ]);
+      this.$.helpButton.hide();
+    } else {
+      this.$.panels.createComponents([
+        {kind:"Disassembler", name: "pageDisassembler"},
+        {kind:"Assembler", name:"pageAssembler"},
+        {kind:"Hexdump", name: "pageHexdump"},
+        {kind:"Graph", name: "pageGraph"},
+        {kind:"Search", name: "pageSearch"},
+        {kind:"Console", name: "pageConsole"},
+        {kind:"Debugger", name: "pageDebugger"},
+        {kind:"Logs", name: "pageLogs"},
+        {kind:"Script", name: "pageScript"},
+        {kind:"Settings", name:"pageSettings"},
+        {kind:"About", name: "pageAbout"},
+      ]);
+      var helpMsg = "<table class='help'>" +
+      "<tr><td>h,l</td><td>Move back and forth in history</td></tr>" +
+      "<tr><td>j,k</td><td>Move to next or previous instruction</td></tr>" +
+      "<tr><td>g</td><td>Go to address</td></tr>" +
+      "<tr><td>n</td><td>Rename</td></tr>" +
+      "<tr><td>c</td><td>Define function at current address</td></tr>" +
+      "<tr><td>d</td><td>Remove function metadata for current address</td></tr>" +
+      "<tr><td>enter</td><td>When address is selected, go to address</td></tr>" +
+      "<tr><td>;</td><td>Add comment</td></tr>" +
+      "<tr><td>?</td><td>Display this help</td></tr>" +
+      "</table>";
+
+      this.$.popupContent.setContent(helpMsg);
+    }
+    this.render();
     r2ui.panels = this.$.panels;
-       //this.$.panels.setArrangerKind ("CardArranger");
-      // if (enyo.Panels.isScreenNarrow()) {
     this.$.panels.setIndex(0);
   },
   ra: null,
@@ -235,7 +284,7 @@ enyo.kind ({
         sp.setIndex (idx);
         return;
     }
-    eval ("var x = this.$.page"+idx);
+    eval("var x = this.$.page"+idx);
     switch (r) {
       case 0:
       case 2:
@@ -250,15 +299,16 @@ enyo.kind ({
   },
   seekStack: [],
   nextSeek: function() {
-    var addr = r2ui.history_next ()
+    var addr = r2ui.history_next();
     if (!addr) return;
-    r2ui.seek (addr, true);
+    r2ui.seek(addr, false);
     //alert ("nxt "+addr);
   },
   prevSeek: function() {
-    var addr = r2ui.history_prev()
+    var addr = r2ui.history_prev();
     if (!addr) return;
-    r2ui.seek (addr, true); //r2ui.history_prev (), true);
+    r2ui.seek(addr, false);
+    //r2ui.history_prev (), true);
     //alert ("pop "+addr);
   },
   gotoSeek: function() {

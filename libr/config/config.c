@@ -406,6 +406,7 @@ R_API RConfig *r_config_clone (RConfig *cfg) {
 		c->n_nodes++;
 	}
 	c->lock = cfg->lock;
+	c->printf = cfg->printf;
 	return c;
 }
 
