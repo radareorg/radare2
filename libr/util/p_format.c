@@ -480,8 +480,12 @@ int r_print_format_struct_size(const char *f, RPrint *p) {
 	int size = 0, tabsize=0, i, idx=0;
 	if (!end && !(end = strchr (o, '\0')))
 		return -1;
-	*end = 0;
-	args = strdup (end+1);
+	if (*end) {
+		*end = 0;
+		args = strdup (end+1);
+	} else {
+		args = strdup ("");
+	}
 	r_str_word_set0 (args);
 	for (i=0; i<strlen (fmt); i++) {
 		if (fmt[i] == '[') {
@@ -1080,18 +1084,18 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 				if (size == -1) {
 					s = r_print_format_struct (p, seeki,
-						buf+i, len, structname, slide, json);
+						buf+i, len-i, structname, slide, json);
 					i+= (isptr) ? 4 : s;
 				} else {
 					p->printf ("[\n");
 					s = r_print_format_struct (p, seeki,
-						buf+i, len, structname, slide, json);
+						buf+i, len-i, structname, slide, json);
 					i+= (isptr) ? 4 : s;
 					size--;
 					while (size--) {
 						p->printf (",\n");
 						s = r_print_format_struct (p, seeki,
-							buf+i, len, structname, slide, json);
+							buf+i, len-i, structname, slide, json);
 						i+= (isptr) ? 4 : s;
 					}
 					if (json) p->printf ("]]}");
