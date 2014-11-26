@@ -80,6 +80,13 @@ static int cb_analsleep(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_analmaxrefs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->maxreflines = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_analnopskip (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -855,6 +862,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
+	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
