@@ -421,10 +421,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		} else {
 			int depth = 1;
 			ut64 a, b;
+			const char *c;
 			a = r_config_get_i (core->config, "anal.from");
 			b = r_config_get_i (core->config, "anal.to");
+			c = r_config_get (core->config, "anal.limits");
 			r_config_set_i (core->config, "anal.from", addr);
 			r_config_set_i (core->config, "anal.to", addr_end);
+			r_config_set (core->config, "anal.limits", "true");
 
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) r_anal_fcn_resize (fcn, addr_end-addr);
@@ -435,6 +438,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 			r_config_set_i (core->config, "anal.from", a);
 			r_config_set_i (core->config, "anal.to", b);
+			r_config_set (core->config, "anal.limits", c?c:"");
 		}
 		}
 		break;
