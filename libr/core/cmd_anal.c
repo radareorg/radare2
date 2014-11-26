@@ -412,6 +412,32 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_anal_fcn_del (core->anal, addr);
 		 }
 		break;
+	case 'u':
+		{
+		ut64 addr = core->offset;
+		ut64 addr_end = r_num_math (core->num, input+2);
+		if (addr_end< addr) {
+			eprintf ("Invalid address ranges\n");
+		} else {
+			int depth = 1;
+			ut64 a, b;
+			a = r_config_get_i (core->config, "anal.from");
+			b = r_config_get_i (core->config, "anal.to");
+			r_config_set_i (core->config, "anal.from", addr);
+			r_config_set_i (core->config, "anal.to", addr_end);
+
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) r_anal_fcn_resize (fcn, addr_end-addr);
+			r_core_anal_fcn (core, addr, UT64_MAX,
+					R_ANAL_REF_TYPE_NULL, depth);
+			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) r_anal_fcn_resize (fcn, addr_end-addr);
+
+			r_config_set_i (core->config, "anal.from", a);
+			r_config_set_i (core->config, "anal.to", b);
+		}
+		}
+		break;
 	case '+':
 		 {
 			char *ptr = strdup (input+3);
