@@ -343,6 +343,18 @@ static void dietime (int sig) {
 	exit(0);
 }
 
+static void activateDieTime (RCore *core) {
+	int dt = r_config_get_i (core->config, "http.dietime");
+	if (dt>0) {
+#if __UNIX__
+		signal (SIGALRM, dietime);
+		alarm (dt);
+#else
+		eprintf ("http.dietime only works on *nix systems\n");
+#endif
+	}
+}
+
 // return 1 on error
 static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	char buf[32];
@@ -397,7 +409,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	core->http_up = R_TRUE;
 
 	ut64 newoff, origoff = core->offset;
-	int dt, newblksz, origblksz = core->blocksize;
+	int newblksz, origblksz = core->blocksize;
 	ut8 *newblk, *origblk = core->block;
 
 	newblk = malloc (core->blocksize);
@@ -426,15 +438,8 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 // backup and restore offset and blocksize
 		
 		/* this is blocking */
+		activateDieTime (core);
 		rs = r_socket_http_accept (s, timeout);
-		if ((dt = r_config_get_i (core->config, "http.dietime"))>0) {
-#if __UNIX__
-			signal (SIGALRM, dietime);
-			alarm (dt);
-#else
-			eprintf ("http.dietime only works on *nix systems\n");
-#endif
-		}
 
 		origoff = core->offset;
 		origblk = core->block;
