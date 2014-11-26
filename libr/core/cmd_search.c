@@ -1529,7 +1529,7 @@ static int cmd_search(void *data, const char *input) {
 			"/a", " jmp eax", "assemble opcode and search its bytes",
 			"/b", "", "search backwards",
 			"/B", "", "search recognized RBin headers",
-			"/c", " jmp [esp]", "search for asm code (see search.asmstr)",
+			"/c", " jmp [esp]", "search for asm code",
 			"/C", "[ae]", "search for crypto materials",
 			"/d", " 101112", "search for a deltified sequence of bytes",
 			"/e", " /E.F/i", "match regular expression",
@@ -1554,7 +1554,6 @@ static int cmd_search(void *data, const char *input) {
 			"e", " search.align = 4", "only catch aligned search hits",
 			"e", " search.from = 0", "start address",
 			"e", " search.to = 0", "end address",
-			"e", " search.asmstr = 0", "search string instead of assembly",
 			"e", " search.flags = true", "if enabled store flags on keyword hits",
 			NULL};
 		r_core_cmd_help (core, help_msg);
