@@ -19,11 +19,11 @@ logfile() {
 
 getcpu() {
 	uname -a
-	cat /proc/cpuinfo | grep "model name" | head -n1
+	grep "model name" /proc/cpuinfo | head -n1
 	printf "cpus: "
-	cat /proc/cpuinfo | grep processor | tail -n 1 | awk '{print $3}'
+	grep processor /proc/cpuinfo | tail -n 1 | awk '{print $3}'
 	printf "bogomips: "
-	cat /proc/cpuinfo | grep bogomips | tail -n 1 | awk '{print $3}'
+	grep bogomips /proc/cpuinfo | tail -n 1 | awk '{print $3}'
 }
 
 mkdir -p farm/log
