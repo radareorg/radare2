@@ -44,7 +44,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 	int i, ret = R_FALSE;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
-	int off = 0;
+
 	if (len<0 || !buf)
 		return R_FALSE;
 
@@ -63,14 +63,9 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 				arena->size = 0;
 				return R_FALSE;
 			}
-			memset (arena->bytes, 0, arena->size);
-			memcpy (arena->bytes, buf+off,
-				R_MIN (len-off, arena->size));
-			off += arena->size;
-			if (off>len) {
-				ret = R_FALSE;
-				break;
-			}
+			if (arena->size < len)
+				return R_FALSE;
+			memcpy (arena->bytes, buf, len);
 		}
 	} else {
 		if (type >= 0 && type <= (R_REG_TYPE_LAST-1)) {
