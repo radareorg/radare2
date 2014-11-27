@@ -73,6 +73,13 @@ static int cb_analeobjmp(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_analafterjmp(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->afterjmp = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_analsleep(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -852,6 +859,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Last address to be analized (see anal.limits)");
 
 	SETCB("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
+	SETCB("anal.afterjmp", "false", &cb_analafterjmp, "continue analysis after jmp/ujmp");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep some usecs before analyzing more. Avoid 100% cpu usage");
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");

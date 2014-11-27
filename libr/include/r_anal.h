@@ -550,6 +550,7 @@ typedef struct r_anal_t {
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 	int decode;
 	int eobjmp; // option
+	int afterjmp; // continue analysis after jmp eax or forward jmp // option
 	int maxreflines;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;

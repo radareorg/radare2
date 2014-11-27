@@ -203,6 +203,7 @@ static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
 
 #define gotoBeach(x) ret=x;goto beach;
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
+	int continue_after_jump = anal->afterjmp;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END;
@@ -371,6 +372,9 @@ repeat:
 #endif
 			}
 		}
+			#define recurseAt(x) \
+				anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
+				ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_NOP:
 			if (anal->nopskip) {
@@ -387,6 +391,10 @@ repeat:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
 			}
+			if (continue_after_jump) {
+			recurseAt (op.jump);
+			recurseAt (op.fail);
+} else {
 		// This code seems to break #1519
 		if (anal->eobjmp) {
 #if JMP_IS_EOB
@@ -425,11 +433,9 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 		}
+}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			#define recurseAt(x) \
-				anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
-				ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -456,8 +462,10 @@ repeat:
 #endif
 			break;
 		//case R_ANAL_OP_TYPE_HLT:
-		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
+			if (continue_after_jump)
+				break;
+		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_RET:
 			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
 				addr+delay.un_idx-oplen, overlapped,
