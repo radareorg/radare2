@@ -12,7 +12,7 @@ static ut64 num_callback (RNum *user, const char *name, int *ok) {
 	RList *list;
 
 	if (ok) *ok = 0;
-	
+
 	list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
@@ -342,8 +342,8 @@ R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *re
 		return R_FALSE;
 	/* original name. maybe do some char mangling : printable*/
 	/* filtered name : typable */
-	strncpy (item->realname, realname, R_FLAG_NAME_SIZE);
-	strncpy (item->name, name, R_FLAG_NAME_SIZE);
+	strncpy (item->realname, realname, R_FLAG_NAME_SIZE - 1);
+	strncpy (item->name, name, R_FLAG_NAME_SIZE - 1);
 	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
 	memmove (item->name, r_str_chop (item->name), len);
 	r_name_filter (item->name, 0);

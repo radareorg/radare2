@@ -1244,7 +1244,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
 			binfile->o = obj;
 			obj->info = R_NEW0 (RBinInfo);
-			strcpy (obj->info->arch, arch);
+			strncpy (obj->info->arch, arch, R_BIN_SIZEOF_STRINGS);
 			obj->info->bits = bits;
 		}
 	}
