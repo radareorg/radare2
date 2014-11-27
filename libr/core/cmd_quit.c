@@ -19,6 +19,7 @@ static int cmd_quit(void *data, const char *input) {
 		return -2;
 	case '\0':
 		core->num->value = 0LL;
+		r_line_hist_save (R2_HOMEDIR"/history");
 		return -2;
 	default:
 		if (*input == ' ')
