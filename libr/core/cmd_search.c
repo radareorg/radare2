@@ -651,7 +651,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		maplist = R_TRUE;
 	}
 
-
 	if (json)
 		r_cons_printf ("[");
 
@@ -664,16 +663,18 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (delta < 1) {
 			delta = from - to;
 			if (delta < 1) {
-				if (rx) r_regex_free(rx);
-				if (gregexp) free(gregexp);
+				r_regex_free (rx);
+				free (gregexp);
+				r_list_free (rx_list);
 				return R_FALSE;
 			}
 		}
 
 		buf = malloc (delta);
 		if (!buf) {
-			if (rx) r_regex_free(rx);
-			if (gregexp) free(gregexp);
+			r_regex_free (rx);
+			free (gregexp);
+			r_list_free (rx_list);
 			return -1;
 		}
 
@@ -688,7 +689,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
 				if (!ret)
 					continue;
-				hitlist = construct_rop_gadget (core, from+i, buf, i, grep, regexp, rx_list);
+				hitlist = construct_rop_gadget (core, from+i, buf,
+					i, grep, regexp, rx_list);
 				if (!hitlist)
 					continue;
 
@@ -751,7 +753,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				}
 			}
 		}
-
 		free (buf);
 	}
 
@@ -764,13 +765,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		list = NULL;
 	}
 
-	if (rx_list) {
-		r_list_free(rx_list);
-		rx_list = NULL;
-	}
-	if (gregexp) {
-		free(gregexp);
-	}
+	r_list_free (rx_list);
+	free (gregexp);
 
 	return R_TRUE;
 }

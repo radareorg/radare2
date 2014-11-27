@@ -1,7 +1,7 @@
 #CC=arm-linux-androideabi-gcc
 CC=ndk-gcc -fPIC -pie -fPIE
 #RANLIB=ndk-ranlib
-USERCC=ndk-gcc
+USERCC=ndk-gcc -fPIC -pie -fPIE
 ARCH=arm
 
 ifeq (${NDK_ARCH},x86)
