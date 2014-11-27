@@ -664,7 +664,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (delta < 1) {
 			delta = from - to;
 			if (delta < 1) {
-				if (rx) r_regex_free(rx);
+				if (rx_list) r_list_free(rx_list);
 				if (gregexp) free(gregexp);
 				return R_FALSE;
 			}
@@ -672,7 +672,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 		buf = malloc (delta);
 		if (!buf) {
-			if (rx) r_regex_free(rx);
+			if (rx) r_list_free(rx_list);
 			if (gregexp) free(gregexp);
 			return -1;
 		}
