@@ -176,13 +176,14 @@ static int r_line_hist_down() {
 	I.buffer.index = 0;
 	if (!I.history.data)
 		inithist ();
-	if (I.history.index<I.history.size) {
-		if (I.history.data[I.history.index+1] == NULL) {
+	if (I.history.index<I.history.size
+	    && I.history.data[I.history.index]) {
+		I.history.index++;
+		if (I.history.data[I.history.index] == NULL) {
 			I.buffer.data[0]='\0';
 			I.buffer.index = I.buffer.length = 0;
 			return 0;
 		}
-		I.history.index++;
 		if (I.history.data[I.history.index]) {
 			strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE-1);
 			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
