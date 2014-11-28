@@ -407,8 +407,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 	}
 	traceflags |= PTRACE_O_TRACEEXIT;
 	if (ptrace (PTRACE_SETOPTIONS, pid, 0, traceflags) == -1) {
-		perror ("ptrace_setoptions");
-		return -1;
+		/* ignore ptrace-options errors */
 	}
 #endif
 	if (pid == dbg->pid)
