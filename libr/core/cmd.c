@@ -889,7 +889,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	return ret;
 }
 
-static int r_core_cmd_subst_i(RCore *core, char *cmd);
+static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int ret = 0, rep = atoi (cmd);
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
@@ -920,7 +920,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	while (rep-- && *cmd) {
-		ret = r_core_cmd_subst_i (core, cmd);
+		ret = r_core_cmd_subst_i (core, cmd, colon);
 		if (ret && *cmd=='q')
 			goto beach;
 	}
@@ -945,7 +945,7 @@ static char *find_eoq (char *p) {
 	return p;
 }
 
-static int r_core_cmd_subst_i(RCore *core, char *cmd) {
+static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	const char *quotestr = "`";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
@@ -1032,7 +1032,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	//ptr = strrchr (cmd, ';');
 	if (*cmd!='#') {
 		ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
-		if (ptr) {
+		if (colon && ptr) {
 			int ret ;
 			*ptr = '\0';
 			if (r_core_cmd_subst (core, cmd) == -1)
