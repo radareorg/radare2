@@ -81,8 +81,8 @@ static RList *strings(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	PebbleAppInfo pai = {0};
-	if (!r_buf_read_at (arch->buf, 0, &pai, sizeof(pai))) {
+	PebbleAppInfo pai;
+	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
@@ -109,8 +109,8 @@ static RList* sections(RBinFile *arch) {
 	ut64 textsize = UT64_MAX;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	PebbleAppInfo pai = {0};
-	if (!r_buf_read_at (arch->buf, 0, &pai, sizeof(pai))) {
+	PebbleAppInfo pai;
+	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
@@ -175,8 +175,8 @@ static RList* relocs(RBinFile *arch) {
 static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr = NULL;
 	RList *ret;
-	PebbleAppInfo pai = {0};
-	if (!r_buf_read_at (arch->buf, 0, &pai, sizeof(pai))) {
+	PebbleAppInfo pai;
+	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
