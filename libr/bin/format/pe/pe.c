@@ -7,6 +7,34 @@
 #include <r_util.h>
 #include "pe.h"
 
+struct SCV_NB10_HEADER;
+typedef struct {
+	ut8 signature[4];
+	ut32 offset;
+	ut32 timestamp;
+	ut32 age;
+	ut8 *file_name;
+
+	void (*free)(struct SCV_NB10_HEADER *cv_nb10_header);
+} SCV_NB10_HEADER;
+
+typedef struct {
+	ut32 data1;
+	ut16 data2;
+	ut16 data3;
+	ut8 data4[8];
+} SGUID;
+
+struct SCV_RSDS_HEADER;
+typedef struct {
+	ut8 signature[4];
+	SGUID guid;
+	ut32 age;
+	ut8 *file_name;
+
+	void (*free)(struct SCV_RSDS_HEADER *rsds_hdr);
+} SCV_RSDS_HEADER;
+
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_addr_t *entry;
 	ut8 b[512];
@@ -795,6 +823,140 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
 		return 0LL;
 	return (ut64)bin->nt_headers->optional_header.ImageBase;
+}
+
+static void free_rsdr_hdr(SCV_RSDS_HEADER *rsds_hdr) {
+	R_FREE(rsds_hdr->file_name);
+}
+
+static void init_rsdr_hdr(SCV_RSDS_HEADER *rsds_hdr) {
+	memset(rsds_hdr->signature, 0, 4);
+	memset(&rsds_hdr->guid, 0, sizeof(SGUID));
+	rsds_hdr->age = 0;
+	rsds_hdr->file_name = 0;
+	rsds_hdr->free = (void (*)(struct SCV_RSDS_HEADER *)) free_rsdr_hdr;
+}
+
+static void free_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
+	R_FREE(cv_nb10_header->file_name);
+}
+
+static void init_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
+	memset(cv_nb10_header->signature, 0, 4);
+	cv_nb10_header->offset = 0;
+	cv_nb10_header->timestamp = 0;
+	cv_nb10_header->age = 0;
+	cv_nb10_header->file_name = 0;
+	cv_nb10_header->free = (void (*)(struct SCV_NB10_HEADER *)) free_cv_nb10_header;
+}
+
+static void get_rsds(ut8 *dbg_data, SCV_RSDS_HEADER *res) {
+	ut32 file_name_size = 0;
+	st8 *tmp = 0;
+
+	tmp = (st8 *)dbg_data + (4 + sizeof(SGUID) + 4);
+	file_name_size = strlen(tmp);
+	res->file_name = (ut8 *) malloc(file_name_size + 1);
+	memcpy(res, dbg_data, 4 + sizeof(SGUID) + 4);
+	strcpy((st8 *)res->file_name, tmp);
+}
+
+static void get_nb10(ut8 *dbg_data, SCV_NB10_HEADER *res) {
+	ut32 file_name_size = 0;
+	st8 *tmp = 0;
+
+	tmp = (st8 *)dbg_data + 16;
+	file_name_size = strlen(tmp);
+	res->file_name = (ut8 *) malloc(file_name_size + 1);
+	memcpy(res, dbg_data, 16);
+	strcpy((st8 *)res->file_name, tmp);
+}
+
+static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *dbg_data, SDebugInfo *res) {
+	int i = 0;
+
+	switch (dbg_dir_entry->Type) {
+	case IMAGE_DEBUG_TYPE_CODEVIEW:
+		if (strncmp((char *)dbg_data, "RSDS", 4) == 0) {
+			SCV_RSDS_HEADER rsds_hdr;
+
+			init_rsdr_hdr(&rsds_hdr);
+			memset(res->guidstr, 0, 33);
+			memset(res->file_name,0, 255);
+
+			get_rsds(dbg_data, &rsds_hdr);
+			sprintf((st8 *) res->guidstr, "%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
+					rsds_hdr.guid.data1,
+					rsds_hdr.guid.data2,
+					rsds_hdr.guid.data3,
+					rsds_hdr.guid.data4[0],
+					rsds_hdr.guid.data4[1],
+					rsds_hdr.guid.data4[2],
+					rsds_hdr.guid.data4[3],
+					rsds_hdr.guid.data4[4],
+					rsds_hdr.guid.data4[5],
+					rsds_hdr.guid.data4[6],
+					rsds_hdr.guid.data4[7],
+					rsds_hdr.age);
+
+			if (strlen((st8 *)rsds_hdr.file_name) < 255) {
+				strcpy((st8 *)res->file_name, (st8 *)rsds_hdr.file_name);
+			}
+
+			rsds_hdr.free((struct SCV_RSDS_HEADER *)&rsds_hdr);
+		} else if (strncmp((char *)dbg_data, "NB10", 4) == 0) {
+			SCV_NB10_HEADER nb10_hdr;
+
+			init_cv_nb10_header(&nb10_hdr);
+			memset(res->guidstr, 0, 33);
+			memset(res->file_name,0, 255);
+
+			get_nb10(dbg_data, &nb10_hdr);
+
+			sprintf((st8 *) res->guidstr, "%x%x",
+					nb10_hdr.timestamp,
+					nb10_hdr.age);
+
+			if (strlen((st8 *)nb10_hdr.file_name) < 255) {
+				strcpy((st8 *)res->file_name, (st8 *)nb10_hdr.file_name);
+			}
+
+			nb10_hdr.free((struct SCV_NB10_HEADER *)&nb10_hdr);
+		} else {
+			eprintf("CodeView section not NB10 or RSDS\n");
+			return 0;
+		}
+
+		break;
+	default:
+		eprintf("get_debug_info(): not supported type\n");
+		return 0;
+	}
+
+	while (i < 33) {
+		res->guidstr[i] = toupper(res->guidstr[i]);
+		i++;
+	}
+
+	return 1;
+}
+
+int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *res) {
+	PE_(image_debug_directory_entry) *img_dbg_dir_entry = NULL;
+	PE_(image_data_directory) *dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
+	PE_DWord dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
+	ut8 *dbg_data = 0;
+	int result = 0;
+
+	img_dbg_dir_entry = (PE_(image_debug_directory_entry)*)(bin->b->buf + dbg_dir_offset);
+
+	dbg_data = (ut8 *) malloc(img_dbg_dir_entry->SizeOfData);
+	r_buf_read_at(bin->b, img_dbg_dir_entry->PointerToRawData, dbg_data, img_dbg_dir_entry->SizeOfData);
+
+	result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
+
+	R_FREE(dbg_data);
+	return result;
 }
 
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin) {

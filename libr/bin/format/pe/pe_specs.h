@@ -114,7 +114,8 @@ typedef struct {
 #define IMAGE_DLLCHARACTERISTICS_GUARD_CF  		0x4000
 #define IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE  0x8000
 
-
+#define IMAGE_DEBUG_TYPE_CODEVIEW 2
+#define IMAGE_DEBUG_TYPE_MISC 4
 
 typedef struct {
 	ut16 Machine;
@@ -299,5 +300,16 @@ typedef struct {
 	Pe64_image_file_header file_header;
 	Pe64_image_optional_header optional_header;
 } Pe64_image_nt_headers;
+
+typedef struct {
+	ut32 Characteristics;
+	ut32 TimeDateStamp;
+	ut16 MajorVersion;
+	ut16 MinorVersion;
+	ut32 Type;
+	ut32 SizeOfData;
+	ut32 AddressOfRawData;
+	ut32 PointerToRawData;
+} Pe32_image_debug_directory_entry, Pe64_image_debug_directory_entry;
 
 #endif
