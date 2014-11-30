@@ -467,6 +467,7 @@ extern RBinPlugin r_bin_plugin_p9;
 extern RBinPlugin r_bin_plugin_pe;
 extern RBinPlugin r_bin_plugin_mz;
 extern RBinPlugin r_bin_plugin_pe64;
+extern RBinPlugin r_bin_plugin_pebble;
 extern RBinPlugin r_bin_plugin_bios;
 extern RBinPlugin r_bin_plugin_bf;
 extern RBinPlugin r_bin_plugin_te;
