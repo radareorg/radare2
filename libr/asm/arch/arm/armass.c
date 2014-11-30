@@ -88,7 +88,7 @@ static ArmOp ops[] = {
 	{ "orr", 0x0, TYPE_ARI },
 	{ "bic", 0x0, TYPE_ARI },
 
-	{ "cmp", 0x4001, TYPE_TST },
+	{ "cmp", 0x5001, TYPE_TST },
 	{ "swp", 0xe1, TYPE_SWP },
 	{ "cmn", 0x0, TYPE_TST },
 	{ "teq", 0x0, TYPE_TST },
@@ -133,7 +133,7 @@ static int getshift_unused (const char *s) {
 	for (i=0; shifts[i]; i++)
 		if (!strcmp (s, shifts[i]))
 			return i * 0x20;
-	return 0; 
+	return 0;
 }
 #endif
 
@@ -280,7 +280,7 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	if (!strcmp (ao->op, "pop") && ao->a[0]) {
 		ao->o = 0xbc;
 		if (*ao->a[0]++=='{') {
-			// XXX: inverse order? 
+			// XXX: inverse order?
 			for (j=0; j<16; j++) {
 				if (ao->a[j] && *ao->a[j]) {
 					getrange (ao->a[j]); // XXX filter regname string
