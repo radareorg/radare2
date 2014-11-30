@@ -797,6 +797,23 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return (ut64)bin->nt_headers->optional_header.ImageBase;
 }
 
+// TODO:
+// caller must free memory...
+ut8* PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin) {
+	PE_(image_debug_directory) *img_dbg_dir = NULL;
+	PE_(image_data_directory) *dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
+	PE_DWord dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
+	st64 curr_off = 0;
+	ut8 *dbg_data = 0;
+
+	img_dbg_dir = (PE_(image_debug_directory)*)(bin->b->buf + dbg_dir_offset);
+
+	dbg_data = (ut8 *) malloc(img_dbg_dir->SizeOfData);
+	r_buf_read_at(bin->b, img_dbg_dir->PointerToRawData, dbg_data, img_dbg_dir->SizeOfData);
+
+	return dbg_data;
+}
+
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH + 1];
@@ -805,6 +822,9 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	PE_DWord import_func_name_offset;
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
+
+	// TODO: remove this line
+	PE_(r_bin_pe_get_debug_data)(bin);
 
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
