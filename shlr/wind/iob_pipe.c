@@ -3,76 +3,43 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <errno.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include "transport.h"
 
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-struct qemu_pipe_t {
-	int in, out;
-};
-
 void *iob_pipe_open (const char *path) {
-	char pipe_in[256], pipe_out[256]; 
-	int in_fd, out_fd;
-	struct qemu_pipe_t *ret;
+	int sock;
+	struct sockaddr_un sa;
 
-	snprintf(pipe_in, sizeof(pipe_in), "%s.in", path);
-	snprintf(pipe_out, sizeof(pipe_out), "%s.out", path);
-
-	in_fd = open(pipe_in, O_WRONLY | O_BINARY);
-	out_fd = open(pipe_out, O_RDONLY | O_BINARY);
-
-	if (in_fd < 0 || out_fd < 0) {
-		close(in_fd);
-		close(out_fd);
+	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (sock < 0) {
+		perror("socket");
 		return 0;
 	}
 
-	ret = malloc(sizeof(struct qemu_pipe_t));
-	if (!ret) {
-		close(in_fd);
-		close(out_fd);
+	memset(&sa, 0, sizeof(struct sockaddr_un));
+
+	sa.sun_family = AF_UNIX;
+	strncpy(sa.sun_path, path, sizeof(sa.sun_path));
+
+	if (connect(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) < 0) {
+		perror("bind");
 		return 0;
 	}
 
-	ret->in = in_fd;
-	ret->out = out_fd;
-
-	return (void *)ret;
+	return (void *)sock;
 }
 
 int iob_pipe_close (void *p) {
-	struct qemu_pipe_t *ptr = (struct qemu_pipe_t *)p;
-
-	if (!ptr)
-		return E_ERROR;
-
-	close(ptr->in);
-	close(ptr->out);
-
-	free(ptr);
-
-	return E_OK;
+	close((int)p);
 }
 
 int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
-	struct qemu_pipe_t *ptr = (struct qemu_pipe_t *)p;
-
-	if (!ptr)
-		return E_ERROR;
-
-	return read(ptr->out, buf, count);
+	return recv((int)p, buf, count, 0);
 }
 
 int iob_pipe_write (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
-	struct qemu_pipe_t *ptr = (struct qemu_pipe_t *)p;
-
-	if (!ptr)
-		return E_ERROR;
-
-	return write(ptr->in, buf, count);
+	return send((int)p, buf, count, 0);
 }
 
 io_backend_t iob_pipe = {

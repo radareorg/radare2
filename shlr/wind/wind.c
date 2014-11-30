@@ -29,14 +29,15 @@ enum {
 };
 
 enum {
-	E_ActiveProcessLinks,	// Eprocess
-	E_UniqueProcessId,		// Eprocess
-	E_Peb,					// Eprocess
-	E_ImageFileName,		// Eprocess
-	E_VadRoot,				// Eprocess
-	P_OSCSDVersion,			// Peb
-	P_ImageBaseAddress,		// Peb
-	P_DirectoryTableBase,	// Pcb
+	E_ActiveProcessLinks,	// EPROCESS
+	E_UniqueProcessId,		// EPROCESS
+	E_Peb,					// EPROCESS
+	E_ImageFileName,		// EPROCESS
+	E_VadRoot,				// EPROCESS
+	P_DirectoryTableBase,	// PCB
+	P_ImageBaseAddress,		// PEB
+	P_ProcessParameters,	// PEB
+	R_ImagePathName,		// RTL_USER_PROCESS_PARAMETERS
 	O_Max,
 };
 
@@ -50,40 +51,28 @@ typedef struct {
 	int f[O_Max];
 } Profile;
 
-Profile WXPSP2x86 = {
-	2600, 2, 32, O_FLAG_XPVAD,
-	{ 0x0088,0x0084,0x01b0,0x0174,0x011c,0x00ae,0x0008,0x0018 },
-};
-Profile WXPSP1x64 = {
-	3790, 1, 64, 0,
-	{ 0xe0, 0xd8, 0x2c0, 0x268, 0x398, 0x122, 0x10, 0x28 },
-};
-Profile W7SP0x86 = {
-	7601, 0, 32, 0,
-	{ 0x00b8,0x00b4,0x01a8,0x016c,0x0278,0x00ae,0x0008,0x0018 },
-};
-Profile W7SP0x64 = {
-	7601, 0, 64, 0,
-	{ 0x0188,0x0180,0x0338,0x02e0,0x0448,0x0122,0x0010,0x0028 },
-};
-Profile W7SP1x86 = {
-	7601, 1, 32, 0,
-	{ 0x00b8,0x00b4,0x01a8,0x016c,0x0278,0x00ae,0x0008,0x0018 },
-};
-Profile W7SP1x64 = {
-	7601, 1, 64, 0,
-	{ 0x0188,0x0180,0x0338,0x02e0,0x0448,0x0122,0x0010,0x0028 },
-};
-
 #define O_(n) ctx->os_profile->f[n]
 
+#include "profiles.h"
+
 Profile *p_table[] = {
-	&WXPSP2x86,
-	&WXPSP1x64,
-	&W7SP0x86,
-	&W7SP0x64,
-	&W7SP1x86,
-	&W7SP1x64,
+	&XP_SP2_X86,
+	&XP_SP3_X86,
+	&WIN7_SP0_X86,
+	&WIN7_SP1_X86,
+	&WIN7_SP0_X64,
+	&WIN7_SP1_X64,
+	&VISTA_SP0_X86,
+	&VISTA_SP0_X64,
+	&VISTA_SP1_X86,
+	&VISTA_SP1_X64,
+	&VISTA_SP2_X86,
+	&VISTA_SP2_X64,
+	&WIN2003_SP0_X86,
+	&WIN2003_SP1_X86,
+	&WIN2003_SP1_X64,
+	&WIN2003_SP2_X86,
+	&WIN2003_SP2_X64,
 	NULL,
 };
 
