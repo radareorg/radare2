@@ -1,4 +1,4 @@
-#include <r_util.h>
+#include <stdio.h>
 #include "transport.h"
 
 extern io_backend_t iob_pipe;
@@ -16,7 +16,7 @@ int iob_select (const char *name) {
     iob = io_backends[0];
     
     if (!iob)
-        return R_FALSE;
+        return 0;
 
     if (sel_backend && sel_backend->deinit)
         sel_backend->deinit();
@@ -26,7 +26,7 @@ int iob_select (const char *name) {
     if (sel_backend->init)
         sel_backend->init();
 
-    return R_TRUE;
+    return 1;
 }
 
 void *iob_open (const char *path) {
@@ -47,8 +47,8 @@ int iob_config (void *fp, void *cfg) {
     return sel_backend->config(fp, cfg);
 }
 
-int iob_write (void *fp, ut8 *buf, const ut32 buf_len) {
-    ut32 done;
+int iob_write (void *fp, uint8_t *buf, const uint32_t buf_len) {
+    uint32_t done;
 
     if (!sel_backend)
         return E_NOIF;
@@ -59,8 +59,8 @@ int iob_write (void *fp, ut8 *buf, const ut32 buf_len) {
     return done;
 }
 
-int iob_read (void *fp, ut8 *buf, const ut32 buf_len) {
-    ut32 done;
+int iob_read (void *fp, uint8_t *buf, const uint32_t buf_len) {
+    uint32_t done;
 
     if (!sel_backend)
         return E_NOIF;

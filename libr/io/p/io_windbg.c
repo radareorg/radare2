@@ -25,7 +25,7 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	void *io_ctx;
-	wind_ctx_t *ctx;
+	WindCtx *ctx;
 	char *transport, *args;
 
 	if (!__plugin_open (io, file, 0))
@@ -54,6 +54,13 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd)
 		return -1;
 
+	if (wind_get_target(fd->data)) {
+		ut64 va;
+		if (!wind_va_to_pa(fd->data, io->off, &va))
+			return -1;
+		return wind_write_at_phys(fd->data, buf, va, count);
+	}
+
 	return wind_write_at(fd->data, buf, io->off, count);
 }
 
@@ -64,6 +71,13 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd)
 		return -1;
+
+	if (wind_get_target(fd->data)) {
+		ut64 va;
+		if (!wind_va_to_pa(fd->data, io->off, &va))
+			return -1;
+		return wind_read_at_phys(fd->data, buf, va, count);
+	}
 
 	return wind_read_at(fd->data, buf, io->off, count);
 }

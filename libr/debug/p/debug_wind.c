@@ -18,7 +18,7 @@
 #include <wind.h>
 #include <kd.h>
 
-static wind_ctx_t *wctx = NULL;
+static WindCtx *wctx = NULL;
 
 static int r_debug_wind_step (RDebug *dbg) {
 	return R_TRUE;
@@ -48,7 +48,7 @@ static int r_debug_wind_reg_write(RDebug *dbg, int type, const ut8 *buf, int siz
 	if (!dbg->reg)
 		return R_FALSE;
 
-	arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size); 
+	arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
 		eprintf ("Could not retrieve the register arena!\n");
 		return R_FALSE;
@@ -76,6 +76,7 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 
 		// Handle exceptions only
 		if (stc->state == 0x3030) {
+			wind_set_cpu(wctx, stc->cpu);
 			free(pkt);
 			dbg->reason = R_DBG_REASON_INT;
 			break;
@@ -84,7 +85,7 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 		free(pkt);
 	}
 
-	dbg->pid = 1 + wind_get_cpu(wctx);
+	// TODO : Set the faulty process as target
 
 	return R_TRUE;
 }
@@ -101,7 +102,7 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	if (dbg->arch != R_SYS_ARCH_X86)
 		return R_FALSE;
 
-	wctx = (wind_ctx_t *)desc->data;
+	wctx = (WindCtx *)desc->data;
 
 	if (!wctx)
 		return R_FALSE;
@@ -113,10 +114,13 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	wind_read_ver(wctx);
+	if (!wind_read_ver(wctx)) {
+		wind_ctx_free(wctx);
+		return NULL;
+	}
 
 	// Make r_debug_is_dead happy
-	dbg->pid = 1 + wind_get_cpu(wctx);
+	dbg->pid = 0;
 
 	return R_TRUE;
 }
@@ -127,12 +131,14 @@ static int r_debug_wind_detach (int pid) {
 
 static char *r_debug_wind_reg_profile(RDebug *dbg) {
 	if (dbg->arch != R_SYS_ARCH_X86)
-		return R_FALSE;
+		return NULL;
 
 	if (dbg->bits == R_SYS_BITS_32)
 #include "native/reg-w32.h"
 	if (dbg->bits == R_SYS_BITS_64)
 #include "native/reg-w64.h"
+
+	return NULL;
 }
 
 static int r_debug_wind_breakpoint (RBreakpointItem *bp, int set, void *user) {
@@ -151,28 +157,49 @@ static int r_debug_wind_init(RDebug *dbg) {
 	return R_TRUE;
 }
 
-static RList *get_cpus (int unused) {
-	RList *ret;
+static RList *r_debug_wind_pids (int pid) {
+	RList *ret, *pids;
 	RDebugPid *entry;
-	int i;
+	RListIter *it;
+	WindProc *p;
 
 	ret = r_list_newf (free);
 	if (!ret)
 		return NULL;
 
-	for (i = 0; i < wind_get_cpus(wctx); i++) {
-		entry = R_NEW0 (RDebugPid);
-		entry->pid = i + 1;
-		r_list_append(ret, entry);
+	pids = wind_list_process(wctx);
+	if (!pids)
+		return ret;
+
+	r_list_foreach(pids, it, p) {
+		r_list_append (ret, r_debug_pid_new (p->name, p->uniqueid, 's', 0));
 	}
+
+	// r_list_free (pids);
 
 	return ret;
 }
 
-static int set_cpu (int cpu, int unused) {
-	if (cpu < 1 || cpu > wind_get_cpus(wctx))
+static int r_debug_wind_select (int pid, int tid) {
+	int ret;
+	uint32_t old;
+	ut64 base;
+
+	old = wind_get_target (wctx);
+
+	ret = wind_set_target (wctx, pid);
+	if (!ret)
 		return R_FALSE;
-	return wind_set_cpu(wctx, cpu - 1);
+
+	base = wind_get_target_base (wctx);
+	if (!base) {
+		wind_set_target (wctx, old);
+		return R_FALSE;
+	}
+
+	eprintf ("Process base is 0x%"PFMT64x"\n", base);
+
+	return R_TRUE;
 }
 
 struct r_debug_plugin_t r_debug_plugin_wind = {
@@ -180,8 +207,8 @@ struct r_debug_plugin_t r_debug_plugin_wind = {
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.pids = get_cpus,
-	.select = set_cpu,
+	.pids = r_debug_wind_pids,
+	.select = r_debug_wind_select,
 	.step = r_debug_wind_step,
 	.init = r_debug_wind_init,
 	.cont = r_debug_wind_continue,

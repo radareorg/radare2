@@ -13,11 +13,12 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library.
 
+#include <stdio.h>
 #include "transport.h"
 #include "kd.h"
 
-ut32 kd_data_checksum (const ut8 *buf, const ut64 buf_len) {
-	ut32 i, acc;
+uint32_t kd_data_checksum (const uint8_t *buf, const uint64_t buf_len) {
+	uint32_t i, acc;
 
 	if (!buf || !buf_len)
 		return 0;
@@ -28,45 +29,45 @@ ut32 kd_data_checksum (const ut8 *buf, const ut64 buf_len) {
 	return acc;
 }
 
-int kd_send_ctrl_packet (void *fp, const ut32 type, const ut32 id) {
+int kd_send_ctrl_packet (void *fp, const uint32_t type, const uint32_t id) {
 	kd_packet_t pkt;
 
 	pkt.leader = KD_PACKET_CTRL;
-	pkt.lenght = 0;
+	pkt.length = 0;
 	pkt.checksum = 0;
 	pkt.id = id;
 	pkt.type = type;
 
-	if (iob_write(fp, (ut8 *)&pkt, sizeof(kd_packet_t)) < 0)
+	if (iob_write(fp, (uint8_t *)&pkt, sizeof(kd_packet_t)) < 0)
 		return KD_E_IOERR;
 
 	return KD_E_OK;
 }
 
-int kd_send_data_packet (void *fp, const ut32 type, const ut32 id, const ut8 *req, 
-		const int req_len, const ut8 *buf, const ut32 buf_len) {
+int kd_send_data_packet (void *fp, const uint32_t type, const uint32_t id, const uint8_t *req, 
+		const int req_len, const uint8_t *buf, const uint32_t buf_len) {
 	kd_packet_t pkt;
 
 	if (req_len + buf_len > KD_MAX_PAYLOAD)
 		return KD_E_MALFORMED;
 
 	pkt.leader = KD_PACKET_DATA;
-	pkt.lenght = req_len + buf_len;
+	pkt.length = req_len + buf_len;
 	pkt.checksum = kd_data_checksum(req, req_len) +
 			kd_data_checksum(buf, buf_len);
 	pkt.id = id;
 	pkt.type = type;
 
-	if (iob_write(fp, (ut8 *)&pkt, sizeof(kd_packet_t)) < 0)
+	if (iob_write(fp, (uint8_t *)&pkt, sizeof(kd_packet_t)) < 0)
 		return KD_E_IOERR;
 
-	if (iob_write(fp, (ut8 *)req, req_len) < 0)
+	if (iob_write(fp, (uint8_t *)req, req_len) < 0)
 		return KD_E_IOERR;
 
-	if (buf && iob_write(fp, (ut8 *)buf, buf_len) < 0)
+	if (buf && iob_write(fp, (uint8_t *)buf, buf_len) < 0)
 		return KD_E_IOERR;
 
-	if (iob_write(fp, (ut8 *)"\xAA", 1) < 0)
+	if (iob_write(fp, (uint8_t *)"\xAA", 1) < 0)
 		return KD_E_IOERR;
 
 	return KD_E_OK;
@@ -74,11 +75,11 @@ int kd_send_data_packet (void *fp, const ut32 type, const ut32 id, const ut8 *re
 
 int kd_read_packet (void *fp, kd_packet_t **p) {
 	kd_packet_t pkt;
-	ut8 *buf;
+	uint8_t *buf;
 
 	*p = NULL;
 
-	if (iob_read(fp, (ut8 *)&pkt, sizeof(kd_packet_t)) < 0)
+	if (iob_read(fp, (uint8_t *)&pkt, sizeof(kd_packet_t)) < 0)
 		return KD_E_IOERR;
 
 	if (!kd_packet_is_valid(&pkt)) {
@@ -86,21 +87,21 @@ int kd_read_packet (void *fp, kd_packet_t **p) {
 		return KD_E_MALFORMED;
 	}
 
-	buf = malloc(sizeof(kd_packet_t) + pkt.lenght);
+	buf = malloc(sizeof(kd_packet_t) + pkt.length);
 	memcpy(buf, &pkt, sizeof(kd_packet_t));
 
-	if (pkt.lenght)
-		iob_read(fp, (ut8 *)buf + sizeof(kd_packet_t), pkt.lenght);
+	if (pkt.length)
+		iob_read(fp, (uint8_t *)buf + sizeof(kd_packet_t), pkt.length);
 
-	if (pkt.checksum != kd_data_checksum(buf + sizeof(kd_packet_t), pkt.lenght)) {
+	if (pkt.checksum != kd_data_checksum(buf + sizeof(kd_packet_t), pkt.length)) {
 		printf("Checksum mismatch!\n");
 		free(buf);
 		return KD_E_MALFORMED;
 	}
 
 	if (pkt.leader == KD_PACKET_DATA) {
-		ut8 trailer;
-		iob_read(fp, (ut8 *)&trailer, 1);
+		uint8_t trailer;
+		iob_read(fp, (uint8_t *)&trailer, 1);
 
 		if (trailer != 0xAA) {
 			printf("Missing trailer 0xAA\n");

@@ -16,23 +16,37 @@
 #ifndef _WIND_H_
 #define _WIND_H_
 
+#include <stdint.h>
 #include "kd.h"
 
-typedef struct _wind_ctx_t wind_ctx_t;
+typedef struct _WindCtx WindCtx;
+
+typedef struct WindProc {
+	uint32_t uniqueid;
+	uint64_t vadroot;
+	uint64_t dir_base_table;
+	uint64_t peb;
+	char name[17];
+} WindProc;
 
 // grep -e "^wind_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
-int wind_get_cpus (wind_ctx_t *ctx);
-int wind_set_cpu (wind_ctx_t *ctx, int cpu);
-int wind_get_cpu (wind_ctx_t *ctx);
-wind_ctx_t * wind_ctx_new (void *io_ptr);
-void wind_ctx_free (wind_ctx_t *ctx);
-int wind_wait_packet (wind_ctx_t *ctx, const ut32 type, kd_packet_t **p);
-int wind_sync (wind_ctx_t *ctx);
-int wind_read_ver (wind_ctx_t *ctx);
-int wind_continue (wind_ctx_t *ctx);
-int wind_write_reg (wind_ctx_t *ctx, ut8 *buf, int size);
-int wind_read_reg (wind_ctx_t *ctx, ut8 *buf, int size);
-int wind_bkpt (wind_ctx_t *ctx, const ut64 addr, const int set, const int hw, int *handle);
-int wind_read_at (wind_ctx_t *ctx, ut8 *buf, const ut64 offset, const int count);
-int wind_write_at (wind_ctx_t *ctx, ut8 *buf, const ut64 offset, const int count);
+uint64_t wind_get_target_base (WindCtx *ctx);
+RList *wind_list_process (WindCtx *ctx);
+int wind_get_cpus (WindCtx *ctx);
+int wind_set_cpu (WindCtx *ctx, int cpu);
+int wind_get_cpu (WindCtx *ctx);
+WindCtx * wind_ctx_new (void *io_ptr);
+void wind_ctx_free (WindCtx *ctx);
+int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p);
+int wind_sync (WindCtx *ctx);
+int wind_read_ver (WindCtx *ctx);
+int wind_continue (WindCtx *ctx);
+int wind_write_reg (WindCtx *ctx, uint8_t *buf, int size);
+int wind_read_reg (WindCtx *ctx, uint8_t *buf, int size);
+int wind_query_mem (WindCtx *ctx, const uint64_t addr, int *address_space, int *flags);
+int wind_bkpt (WindCtx *ctx, const uint64_t addr, const int set, const int hw, int *handle);
+int wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
+int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
+int wind_write_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
+int wind_write_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
 #endif

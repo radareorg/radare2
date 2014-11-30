@@ -54,93 +54,98 @@ enum {
 #define DBGKD_VERS_FLAG_PTR64	0x0004
 
 typedef struct kd_req_t {
-	ut32 req;
-	ut16 cpu_level;
-	ut16 cpu;
-	ut32 ret;
+	uint32_t req;
+	uint16_t cpu_level;
+	uint16_t cpu;
+	uint32_t ret;
 	// Pad to 16-byte boundary (?)
-	ut32 pad;
+	uint32_t pad;
 	union {
 		struct {
-			ut64 addr;
-			ut32 length;
-			ut32 read;
+			uint64_t addr;
+			uint32_t length;
+			uint32_t read;
 		} __attribute__((packed)) r_mem;
 		struct {
-			ut16 major;
-			ut16 minor;
-			ut8  proto_major;
-			ut8  proto_minor;
-			ut16 flags;
-			ut16 machine;
-			ut8  misc[6];
-			ut64 kernel_base;
-			ut64 mod_addr;
-			ut64 dbg_addr;
+			uint16_t major;
+			uint16_t minor;
+			uint8_t  proto_major;
+			uint8_t  proto_minor;
+			uint16_t flags;
+			uint16_t machine;
+			uint8_t  misc[6];
+			uint64_t kernel_base;
+			uint64_t mod_addr;
+			uint64_t dbg_addr;
 		} __attribute__((packed)) r_ver;
 		struct {
-			ut32 reason;
-			ut32 ctrl_set[4];
+			uint32_t reason;
 		} r_cont;
 		struct {
-			ut64 addr;
-			ut32 handle;
+			uint64_t addr;
+			uint32_t handle;
 		} r_set_bp;
 		struct {
-			ut32 handle;
+			uint32_t handle;
 		} r_del_bp;
 		struct {
-			ut64 addr;
-			ut32 flags;
+			uint64_t addr;
+			uint32_t flags;
 		} r_set_ibp;
 		struct {
-			ut64 addr;
-			ut32 flags;
-			ut32 calls;
+			uint64_t addr;
+			uint32_t flags;
+			uint32_t calls;
 		} r_get_ibp;
 		struct {
-			ut32 flags;
+			uint32_t flags;
 		} r_ctx;
+		struct {
+			uint64_t addr;
+			uint64_t reserved;
+			uint32_t address_space;
+			uint32_t flags;
+		} r_query_mem;
 
 		// Pad the struct to 56 bytes
-		ut8 raw[40];
+		uint8_t raw[40];
 	};
-	ut8 data[0];
+	uint8_t data[0];
 } __attribute__((packed)) kd_req_t;
 
 #define KD_EXC_BKPT 0x80000003
 
 typedef struct kd_stc_64 {
-	ut32 state;
-	ut16 cpu_level;
-	ut16 cpu;
-	ut32 cpu_count;
-	ut32 pad1;
-	ut64 kthread;
-	ut64 pc;
+	uint32_t state;
+	uint16_t cpu_level;
+	uint16_t cpu;
+	uint32_t cpu_count;
+	uint32_t pad1;
+	uint64_t kthread;
+	uint64_t pc;
 	union {
 		struct {
-			ut32 code;
-			ut32 flags;
-			ut64 ex_record;
-			ut64 ex_addr;
+			uint32_t code;
+			uint32_t flags;
+			uint64_t ex_record;
+			uint64_t ex_addr;
 		} __attribute__((packed)) exception;
 	};
 } __attribute__((packed)) kd_stc_64;
 
 typedef struct kd_ioc_t {
-	ut32 req;
-	ut32 ret;
-	ut64 pad[7];
+	uint32_t req;
+	uint32_t ret;
+	uint64_t pad[7];
 } kd_ioc_t;
 
 typedef struct kd_packet_t {
-	ut32 leader;
-	ut16 type;
-	ut16 length;
-	ut32 id;
-	ut32 checksum;
-	ut8 data[0];
+	uint32_t leader;
+	uint16_t type;
+	uint16_t length;
+	uint32_t id;
+	uint32_t checksum;
+	uint8_t data[0];
 } __attribute__((packed)) kd_packet_t;
 
 // Compile time assertions macros taken from :
@@ -153,14 +158,14 @@ ct_assert(sizeof(kd_packet_t)==16);
 ct_assert(sizeof(kd_req_t)==56);
 ct_assert(sizeof(kd_ioc_t)==64);
 
-int kd_send_ctrl_packet (void *fp, const ut32 type, const ut32 id);
-int kd_send_data_packet (void *fp, const ut32 type, const ut32 id, const ut8 *req, const int req_len, const ut8 *buf, const ut32 buf_len);
+int kd_send_ctrl_packet (void *fp, const uint32_t type, const uint32_t id);
+int kd_send_data_packet (void *fp, const uint32_t type, const uint32_t id, const uint8_t *req, const int req_len, const uint8_t *buf, const uint32_t buf_len);
 
 int kd_read_packet (void *fp, kd_packet_t **p);
 
 int kd_packet_is_valid (const kd_packet_t *p);
 int kd_packet_is_ack (const kd_packet_t *p);
 
-ut32 kd_data_checksum (const ut8 *buf, const ut64 buf_len);
+uint32_t kd_data_checksum (const uint8_t *buf, const uint64_t buf_len);
 
 #endif
