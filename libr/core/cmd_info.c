@@ -12,6 +12,8 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("{");
 	if (mode == R_CORE_BIN_RADARE)
 		return;
+	if (mode == R_CORE_BIN_SIMPLE)
+		return;
 	if (info) {
 		fn = info->file;
 		switch (mode) {
@@ -26,6 +28,9 @@ static void r_core_file_info (RCore *core, int mode) {
 			, STR(info->machine)
 			, info->bits
 			, info->big_endian? "big": "little");
+			break;
+		case R_CORE_BIN_SIMPLE:
+			// nothing here
 			break;
 		default:
 		r_cons_printf ("type\t%s\n"
@@ -63,7 +68,7 @@ static void r_core_file_info (RCore *core, int mode) {
 					plugin->name);
 		}
 		r_cons_printf ("}");
-	} else if (cf) {
+	} else if (cf && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
 		r_cons_printf ("file\t%s\n", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
@@ -115,6 +120,8 @@ static int cmd_info(void *data, const char *input) {
 		mode = R_CORE_BIN_RADARE;
 	if (strchr (input, 'j'))
 		mode = R_CORE_BIN_JSON;
+	if (strchr (input, 'q'))
+		mode = R_CORE_BIN_SIMPLE;
 
 	if (mode == R_CORE_BIN_JSON) {
 		if (strlen (input+1)>1)
@@ -204,6 +211,9 @@ static int cmd_info(void *data, const char *input) {
 				case '*':
 					ret = r_sys_cmd_strf ("rabin2 -rzz '%s'", core->file->desc->name);
 					break;
+				case 'q':
+					ret = r_sys_cmd_strf ("rabin2 -qzz '%s'", core->file->desc->name);
+					break;
 				case 'j':
 					ret = r_sys_cmd_strf ("rabin2 -jzz '%s'", core->file->desc->name);
 					break;
@@ -267,6 +277,10 @@ static int cmd_info(void *data, const char *input) {
 		case '*':
 			mode = R_CORE_BIN_RADARE;
 			goto done;
+		case 'q':
+			mode = R_CORE_BIN_SIMPLE;
+			cmd_info_bin (core, offset, va, mode);
+			goto done;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
 			cmd_info_bin (core, offset, va, mode);
@@ -277,6 +291,8 @@ static int cmd_info(void *data, const char *input) {
 		}
 		input++;
 		if (!strcmp (input, "j"))
+			break;
+		if (!strcmp (input, "q"))
 			break;
 	}
 done:
