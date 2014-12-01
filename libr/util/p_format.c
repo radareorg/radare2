@@ -162,6 +162,7 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 	ut8 buffer[255];
 	if (!json)
 		p->printf ("0x%08"PFMT64x" = ", seeki);
+	buffer[0] = 0;
 	if (p->iob.read_at) {
 		if (is64 == 1)
 			p->iob.read_at (p->iob.io, addr64, buffer, sizeof (buffer)-8);
@@ -171,9 +172,9 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 		printf ("(cannot read memory)\n");
 		return -1;
 	}
-	if (json)
-		p->printf ("%d,\"string\":\"%s\"}", seeki, addr);
-	else {
+	if (json) {
+		p->printf ("%d,\"string\":\"%s\"}", seeki, buffer);
+	} else {
 		p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
 		p->printf ("%s", buffer);
 	}
