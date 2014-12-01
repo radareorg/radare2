@@ -214,7 +214,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_core_cmdf (core, "=!pid %d", core->dbg->pid);
 		break;
 	case 'f':
-		r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
+		if (core->file && core->file->desc) {
+			r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
+		}
 		break;
 	case '=':
 		r_debug_select (core->dbg,
