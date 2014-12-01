@@ -43,6 +43,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (ret) return 0;
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
+	if (a->syntax == R_ASM_SYNTAX_ATT)
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	op->size = 1;
 #if USE_ITER_API
 	{
