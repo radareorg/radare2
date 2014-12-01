@@ -830,10 +830,7 @@ static void free_rsdr_hdr(SCV_RSDS_HEADER *rsds_hdr) {
 }
 
 static void init_rsdr_hdr(SCV_RSDS_HEADER *rsds_hdr) {
-	memset(rsds_hdr->signature, 0, 4);
-	memset(&rsds_hdr->guid, 0, sizeof(SGUID));
-	rsds_hdr->age = 0;
-	rsds_hdr->file_name = 0;
+	memset (rsds_hdr, 0, sizeof (SCV_RSDS_HEADER));
 	rsds_hdr->free = (void (*)(struct SCV_RSDS_HEADER *)) free_rsdr_hdr;
 }
 
@@ -842,37 +839,24 @@ static void free_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
 }
 
 static void init_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
-	memset(cv_nb10_header->signature, 0, 4);
-	cv_nb10_header->offset = 0;
-	cv_nb10_header->timestamp = 0;
-	cv_nb10_header->age = 0;
-	cv_nb10_header->file_name = 0;
+	memset (cv_nb10_header, 0, sizeof (SCV_NB10_HEADER));
 	cv_nb10_header->free = (void (*)(struct SCV_NB10_HEADER *)) free_cv_nb10_header;
 }
 
 static void get_rsds(ut8 *dbg_data, SCV_RSDS_HEADER *res) {
-	ut32 file_name_size = 0;
-	st8 *tmp = 0;
-
-	tmp = (st8 *)dbg_data + (4 + sizeof(SGUID) + 4);
-	file_name_size = strlen(tmp);
-	res->file_name = (ut8 *) malloc(file_name_size + 1);
-	memcpy(res, dbg_data, 4 + sizeof(SGUID) + 4);
-	strcpy((st8 *)res->file_name, tmp);
+	const int rsds_sz = 4 + sizeof (SGUID) + 4;
+	memcpy(res, dbg_data, rsds_sz);
+	res->file_name = (ut8 *)strdup ((const char *)dbg_data + rsds_sz);
 }
 
 static void get_nb10(ut8 *dbg_data, SCV_NB10_HEADER *res) {
-	ut32 file_name_size = 0;
-	st8 *tmp = 0;
-
-	tmp = (st8 *)dbg_data + 16;
-	file_name_size = strlen(tmp);
-	res->file_name = (ut8 *) malloc(file_name_size + 1);
-	memcpy(res, dbg_data, 16);
-	strcpy((st8 *)res->file_name, tmp);
+	const int nb10sz = 16;
+	memcpy(res, dbg_data, nb10sz);
+	res->file_name = (ut8 *)strdup ((const char *)dbg_data + nb10sz);
 }
 
 static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *dbg_data, SDebugInfo *res) {
+#define SIZEOF_FILE_NAME 255
 	int i = 0;
 
 	switch (dbg_dir_entry->Type) {
@@ -882,7 +866,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 
 			init_rsdr_hdr(&rsds_hdr);
 			memset(res->guidstr, 0, 33);
-			memset(res->file_name,0, 255);
+			memset(res->file_name, 0, SIZEOF_FILE_NAME);
 
 			get_rsds(dbg_data, &rsds_hdr);
 			sprintf((st8 *) res->guidstr, "%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
@@ -899,7 +883,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 					rsds_hdr.guid.data4[7],
 					rsds_hdr.age);
 
-			if (strlen((st8 *)rsds_hdr.file_name) < 255) {
+			if (strlen((st8 *)rsds_hdr.file_name) < SIZEOF_FILE_NAME) {
 				strcpy((st8 *)res->file_name, (st8 *)rsds_hdr.file_name);
 			}
 
@@ -909,15 +893,14 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 
 			init_cv_nb10_header(&nb10_hdr);
 			memset(res->guidstr, 0, 33);
-			memset(res->file_name,0, 255);
+			memset(res->file_name, 0, 255);
 
 			get_nb10(dbg_data, &nb10_hdr);
 
-			sprintf((st8 *) res->guidstr, "%x%x",
-					nb10_hdr.timestamp,
-					nb10_hdr.age);
+			snprintf((st8 *) res->guidstr, sizeof (res->guidstr), "%x%x",
+				nb10_hdr.timestamp, nb10_hdr.age);
 
-			if (strlen((st8 *)nb10_hdr.file_name) < 255) {
+			if (strlen((st8 *)nb10_hdr.file_name) < SIZEOF_FILE_NAME) {
 				strcpy((st8 *)res->file_name, (st8 *)nb10_hdr.file_name);
 			}
 
