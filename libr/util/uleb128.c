@@ -2,12 +2,18 @@
 
 /* dex/dwarf uleb128 implementation */
 
-R_API const ut8 *r_uleb128 (const ut8 *data, ut64 *v) {
+R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v) {
 	ut8 c;
 	ut64 s, sum = 0;
-	if (data) {
+	const ut8 *data_end;
+	if (datalen==-1) {
+		// WARNING; possible overflow
+		datalen = 0xffff;
+	}
+	data_end = data + datalen;
+	if (data && datalen>0) {
 		if (*data) {
-			for (s = 0; ; s += 7) {
+			for (s = 0; data<data_end; s += 7) {
 				c = *(data++) & 0xff;
 				sum |= ((ut32) (c&0x7f) << s);
 				if (!(c&0x80)) break;

@@ -51,7 +51,10 @@ static ut64 baddr(RBinFile *arch) {
 }
 
 static char *flagname (const char *class, const char *method) {
-	char *p, *str, *s = malloc (strlen (class) + strlen (method)+2);
+	char *p, *str, *s;
+	if (!class || !method)
+		return NULL;
+	s = malloc (strlen (class) + strlen (method)+2);
 	str = s;
 	p = (char*)r_str_lchr (class, '$');
 	if (!p) p = (char *)r_str_lchr (class, '/');
@@ -235,9 +238,13 @@ static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 	const ut8 buf[128], *buf2;
 	ut64 len;
 	int uleblen;
+	if (idx<0)
+		return NULL;
+	if (idx>=bin->header.strings_size)
+		return NULL;
 	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 8);
 	len = dex_read_uleb128 (buf);
-	buf2 = r_uleb128 (buf, &len);
+	buf2 = r_uleb128 (buf, -1, &len);
 	uleblen = (size_t)(buf2 - buf);
 	// XXX what about 0 length strings?
 	if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
@@ -254,10 +261,10 @@ static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 /* TODO: check boundaries */
 static char *dex_method_name (RBinDexObj *bin, int idx) {
 	int tid;
-	if (idx<0 || idx>bin->header.method_size)
+	if (idx<0 || idx>=bin->header.method_size)
 		return NULL;
 	tid = bin->methods[idx].name_id;
-	if (tid<0 || tid>bin->header.strings_size)
+	if (tid<0 || tid>=bin->header.strings_size)
 		return NULL;
 	return get_string (bin, tid);
 }
@@ -267,6 +274,8 @@ static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 	if (!bin || !c || !bin->types)
 		return NULL;
 	cid = c->super_class;
+	if (cid<0 || cid >= bin->header.types_size)
+		return NULL;
 	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
 	return get_string (bin, tid);
@@ -277,6 +286,8 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 	if (!bin || !c || !bin->types)
 		return NULL;
 	cid = c->super_class;
+	if (cid<0 || cid >= bin->header.types_size)
+		return NULL;
 	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
 	return get_string (bin, tid);
@@ -286,7 +297,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	int *methods;
 	int i, j;
 	char *name;
-	const ut8 *p;
+	const ut8 *p, *p_end;
 
 	// doublecheck??
 	if (bin->methods_list)
@@ -317,6 +328,11 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		return R_FALSE;
 	}
 
+	if (bin->header.strings_size > bin->size) {
+		eprintf ("Invalid strings size\n");
+		return R_FALSE;
+	}
+
 	dprintf ("Walking %d classes\n", bin->header.class_size);
 	if (bin->classes)
 	for (i=0; i<bin->header.class_size; i++) {
@@ -333,19 +349,20 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 // sdb_queryf ("class.%s.super=%s", super_name)
 // sdb_queryf ("class.%s.methods=%d", class_name, DM);
 		p = r_buf_get_at (arch->buf, c->class_data_offset, NULL);
+		p_end = p + (arch->buf->length - c->class_data_offset);
 		/* data header */
 		{
 			ut64 SF, IF, DM, VM;
-			p = r_uleb128 (p, &SF);
-			p = r_uleb128 (p, &IF);
-			p = r_uleb128 (p, &DM);
-			p = r_uleb128 (p, &VM);
+			p = r_uleb128 (p, p_end-p, &SF);
+			p = r_uleb128 (p, p_end-p, &IF);
+			p = r_uleb128 (p, p_end-p, &DM);
+			p = r_uleb128 (p, p_end-p, &VM);
 			dprintf ("  static fields: %u\n", (ut32)SF);
 			/* static fields */
 			for (j=0; j<SF; j++) {
 				ut64 FI, FA;
-				p = r_uleb128 (p, &FI);
-				p = r_uleb128 (p, &FA);
+				p = r_uleb128 (p, p_end-p, &FI);
+				p = r_uleb128 (p, p_end-p, &FA);
 				dprintf ("    field_idx: %u\n", (ut32)FI);
 				dprintf ("    field access_flags: %u\n", (ut32)FA);
 			}
@@ -353,8 +370,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			dprintf ("  instance fields: %u\n", (ut32)IF);
 			for (j=0; j<IF; j++) {
 				ut64 FI, FA;
-				p = r_uleb128 (p, &FI);
-				p = r_uleb128 (p, &FA);
+				p = r_uleb128 (p, -1, &FI);
+				p = r_uleb128 (p, -1, &FA);
 				dprintf ("    field_idx: %u,\n", (ut32)FI);
 				dprintf ("    field access_flags: %u,\n", (ut32)FA);
 			}
@@ -363,9 +380,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			for (j=0; j<DM; j++) {
 				char *method_name, *flag_name;
 				ut64 MI, MA, MC;
-				p = r_uleb128 (p, &MI);
-				p = r_uleb128 (p, &MA);
-				p = r_uleb128 (p, &MC);
+				p = r_uleb128 (p, -1, &MI);
+				p = r_uleb128 (p, -1, &MA);
+				p = r_uleb128 (p, -1, &MC);
 
 				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
@@ -381,7 +398,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
 				dprintf ("      code_offset: 0x%x },\n", (ut32)MC);
 				/* add symbol */
-				{
+				if (flag_name && *flag_name) {
 					RBinSymbol *sym = R_NEW0 (RBinSymbol);
 					strncpy (sym->name, flag_name, R_BIN_SIZEOF_STRINGS);
 					strcpy (sym->type, "FUNC");
@@ -395,9 +412,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			dprintf ("  virtual methods: %u\n", (ut32)VM);
 			for (j=0; j<VM; j++) {
 				ut64 MI, MA, MC;
-				p = r_uleb128 (p, &MI);
-				p = r_uleb128 (p, &MA);
-				p = r_uleb128 (p, &MC);
+				p = r_uleb128 (p, -1, &MI);
+				p = r_uleb128 (p, -1, &MA);
+				p = r_uleb128 (p, -1, &MC);
 
 				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (bin->code_from>MC) bin->code_from = MC;
@@ -422,7 +439,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		if (!methods[i]) {
 			char *method_name = dex_method_name (bin, i);
 			dprintf ("import %d (%s)\n", i, method_name);
-			{
+			if (method_name && *method_name) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
 				strcpy (sym->type, "FUNC");

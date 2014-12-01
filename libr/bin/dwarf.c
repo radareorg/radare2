@@ -193,6 +193,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		RBinDwarfLNPHeader *hdr, FILE *f)
 {
 	int i;
+	Sdb *s;
 	size_t count;
 	const ut8 *tmp_buf = NULL;
 
@@ -203,7 +204,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		hdr->unit_length.part2 = READ (buf, ut32);
 	}
 
-	Sdb *s = sdb_new (NULL, NULL, 0);
+	s = sdb_new (NULL, NULL, 0);
 
 	hdr->version = READ (buf, ut16);
 
@@ -270,9 +271,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 				break;
 			}
 			buf += len + 1;
-			buf = r_uleb128 (buf, &id_idx);
-			buf = r_uleb128 (buf, &mod_time);
-			buf = r_uleb128 (buf, &file_len);
+			buf = r_uleb128 (buf, buf_end-buf, &id_idx);
+			buf = r_uleb128 (buf, buf_end-buf, &mod_time);
+			buf = r_uleb128 (buf, buf_end-buf, &file_len);
 
 
 			if (i) {
@@ -419,10 +420,10 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		buf += (strlen (filename) + 1);
 		ut64 dir_idx;
-		buf = r_uleb128 (buf, &dir_idx);
+		buf = r_uleb128 (buf, -1, &dir_idx);
 		break;
 	case DW_LNE_set_discriminator:
-		buf = r_uleb128(buf, &addr);
+		buf = r_uleb128(buf, -1, &addr);
 		if (f) {
 			fprintf(f, "set Discriminator to %lld\n", addr);
 		}
@@ -513,7 +514,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		regs->basic_block = DWARF_FALSE;
 		break;
 	case DW_LNS_advance_pc:
-		buf = r_uleb128 (buf, &addr);
+		buf = r_uleb128 (buf, -1, &addr);
 		regs->address += addr * hdr->min_inst_len;
 
 		if (f) {
@@ -529,14 +530,14 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 		break;
 	case DW_LNS_set_file:
-		buf = r_uleb128 (buf, &addr);
+		buf = r_uleb128 (buf, -1, &addr);
 		if (f) {
 			fprintf(f, "Set file to %lld\n", addr);
 		}
 		regs->file = addr;
 		break;
 	case DW_LNS_set_column:
-		buf = r_uleb128(buf, &addr);
+		buf = r_uleb128(buf, -1, &addr);
 		if (f) {
 			fprintf(f, "Set column to %lld\n", addr);
 		}
@@ -583,7 +584,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 		break;
 	case DW_LNS_set_isa:
-		buf = r_uleb128(buf, &addr);
+		buf = r_uleb128(buf, -1, &addr);
 		regs->isa = addr;
 		if (f) {
 			fprintf(f, "set_isa\n");
@@ -1160,7 +1161,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf,
 		break;
 
 	case DW_FORM_block:
-		buf = r_uleb128 (buf, &value->encoding.block.length);
+		buf = r_uleb128 (buf, -1, &value->encoding.block.length);
 
 		value->encoding.block.data = calloc(sizeof(ut8),
 				value->encoding.block.length);
@@ -1202,7 +1203,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf,
 		break;
 
 	case DW_FORM_udata:
-		buf = r_uleb128 (buf, &value->encoding.data);
+		buf = r_uleb128 (buf, -1, &value->encoding.data);
 		break;
 
 	case DW_FORM_ref_addr:
@@ -1248,7 +1249,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		if (cu->length && cu->capacity == cu->length)
 			r_bin_dwarf_expand_cu (cu);
 
-		buf = r_uleb128 (buf, &abbr_code);
+		buf = r_uleb128 (buf, -1, &abbr_code);
 
 		if (abbr_code > da->length) {
 			return NULL;
@@ -1369,7 +1370,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 
 	while (buf < buf_end) {
 		offset = buf - obuf;
-		buf = r_uleb128(buf, &tmp);
+		buf = r_uleb128 (buf, -1, &tmp);
 		if (!tmp)
 			continue;
 
@@ -1381,7 +1382,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 		r_bin_dwarf_init_abbrev_decl(tmpdecl);
 
 		tmpdecl->code = tmp;
-		buf = r_uleb128(buf, &tmp);
+		buf = r_uleb128 (buf, -1, &tmp);
 		tmpdecl->tag = tmp;
 
 		tmpdecl->offset = offset;
@@ -1391,8 +1392,8 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 			if (tmpdecl->length == tmpdecl->capacity)
 				r_bin_dwarf_expand_abbrev_decl(tmpdecl);
 
-			buf = r_uleb128(buf, &spec1);
-			buf = r_uleb128(buf, &spec2);
+			buf = r_uleb128(buf, -1, &spec1);
+			buf = r_uleb128(buf, -1, &spec2);
 
 			tmpdecl->specs[tmpdecl->length].attr_name = spec1;
 			tmpdecl->specs[tmpdecl->length].attr_form = spec2;
