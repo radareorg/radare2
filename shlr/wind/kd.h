@@ -80,6 +80,10 @@ typedef struct kd_req_t {
 		} __attribute__((packed)) r_ver;
 		struct {
 			uint32_t reason;
+			uint32_t tf;
+			uint32_t dr7;
+			uint32_t css;
+			uint32_t cse;
 		} r_cont;
 		struct {
 			uint64_t addr;

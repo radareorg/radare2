@@ -210,8 +210,7 @@ void
 wind_ctx_free (WindCtx *ctx) {
 	if (!ctx)
 		return;
-	if (ctx->plist_cache)
-		r_list_free(ctx->plist_cache);
+	r_list_free(ctx->plist_cache);
 	iob_close(ctx->io_ptr);
 	free(ctx);
 }
@@ -236,8 +235,6 @@ dump_stc (kd_packet_t *p) {
 		fprintf(stderr, "\tRecord : %016llx\n", stc->exception.ex_record);
 		fprintf(stderr, "\tAddr   : %016llx\n", stc->exception.ex_addr);
 	}
-
-	// r_print_hexdump(NULL, 0, stc, p->length, 16, 16);
 }
 
 static int
@@ -252,8 +249,6 @@ do_io_reply (WindCtx *ctx, kd_packet_t *pkt)
 
 	ioc.req = 0x3430;
 	ioc.ret = KD_RET_ENOENT;
-
-	// r_print_hexdump(NULL, 0, &ioc, sizeof(ioc), 16, 16);
 
 	ret = kd_send_data_packet(ctx->io_ptr, KD_PACKET_TYPE_IO, (ctx->seq_id ^= 1), (uint8_t *)&ioc,
 			sizeof(kd_ioc_t), NULL, 0);
@@ -687,8 +682,9 @@ wind_continue (WindCtx *ctx) {
 	req.req = 0x313C;
 	req.cpu = ctx->cpu;
 
-	req.ret = 0x10001;
 	req.r_cont.reason = 0x10001;
+	// The meaning of 0x400 is unknown, but Windows doesn't behave like suggested by ReactOS source
+	req.r_cont.tf = 0x400;
 
 #ifdef WIND_LOG
 	printf("Sending continue...\n");
@@ -703,6 +699,7 @@ wind_continue (WindCtx *ctx) {
 	if (ret != KD_E_OK)
 		return 0;
 
+	r_list_free(ctx->plist_cache);
 	ctx->plist_cache = NULL;
 #ifdef WIND_LOG
 	printf("Done!\n");
