@@ -273,7 +273,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 			r_cons_printf ("\"stack\":%d,", r_anal_stackop_tostring (op.stackop));
 			r_cons_printf ("\"cond\":%d,",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
-			r_cons_printf ("\"family\":%d}", op.family);
+			r_cons_printf ("\"family\":\"%s\"}", r_anal_op_family_to_string (op.family));
 		} else {
 #define printline(k,fmt,arg) {\
 	if (use_color) r_cons_printf ("%s%s: "Color_RESET, color, k); \
@@ -313,7 +313,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 
 			printline ("stack","%s\n", r_anal_stackop_tostring (op.stackop));
 			printline ("cond","%d\n", (op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
-			printline ("family","%d\n", op.family);
+			printline ("family","%s\n", r_anal_op_family_to_string (op.family));
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);

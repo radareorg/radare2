@@ -338,7 +338,7 @@ enum {
 // anal
 enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = 0,
-	R_ANAL_OP_FAMILY_CPU,  /* normal cpu insturction */
+	R_ANAL_OP_FAMILY_CPU,  /* normal cpu instruction */
 	R_ANAL_OP_FAMILY_FPU,  /* fpu (floating point) */
 	R_ANAL_OP_FAMILY_MMX,  /* multimedia instruction (packed data) */
 	R_ANAL_OP_FAMILY_PRIV, /* priviledged instruction */
@@ -958,6 +958,7 @@ R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API char *r_anal_type_to_str(RAnal *a, const char *name);
 R_API char *r_anal_optype_to_string(int t);
+R_API const char *r_anal_op_family_to_string (int n);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value);

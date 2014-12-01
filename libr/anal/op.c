@@ -346,3 +346,18 @@ R_API const char *r_anal_stackop_tostring (int s) {
 	}
 	return "unk";
 }
+
+R_API const char *r_anal_op_family_to_string (int n) {
+	static char num[32];
+	switch (n) {
+	case R_ANAL_OP_FAMILY_UNKNOWN: return "unknown";
+	case R_ANAL_OP_FAMILY_CPU: return "cpu";
+	case R_ANAL_OP_FAMILY_FPU: return "fpu";
+	case R_ANAL_OP_FAMILY_MMX: return "mmx";
+	case R_ANAL_OP_FAMILY_PRIV: return "priv";
+	default:
+		snprintf (num, sizeof(num), "%d", n);
+		break;
+	}
+	return num;
+}
