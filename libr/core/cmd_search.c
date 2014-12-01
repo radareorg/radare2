@@ -663,16 +663,16 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (delta < 1) {
 			delta = from - to;
 			if (delta < 1) {
-				if (gregexp) free (gregexp);
-				if (rx_list) r_list_free (rx_list);
+				free (gregexp);
+				r_list_free (rx_list);
 				return R_FALSE;
 			}
 		}
 
 		buf = malloc (delta);
 		if (!buf) {
-			if (gregexp) free (gregexp);
-			if (rx_list) r_list_free (rx_list);
+			free (gregexp);
+			r_list_free (rx_list);
 			return -1;
 		}
 
