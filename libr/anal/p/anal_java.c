@@ -12,14 +12,9 @@
 
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
-#if 0
-#include "../../../shlr/java/ops.c"
-#include "../../../shlr/java/code.c"
-#include "../../../shlr/java/class.c"
-#endif
 
 #ifdef IFDBG
-#undef IFDBG
+#define dprintf eprintf
 #endif
 
 #define DO_THE_DBG 0
@@ -240,10 +235,12 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
-					bb->jump = bb->jumpbb->addr;
+					if (bb->jumpbb)
+						bb->jump = bb->jumpbb->addr;
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
-					bb->jump = bb->jumpbb->addr;
+					if (bb->jumpbb)
+						bb->jump = bb->jumpbb->addr;
 				}
 
 				if (state->done == 1) {
