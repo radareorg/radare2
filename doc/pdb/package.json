@@ -1,0 +1,37 @@
+{
+  "name": "r2-pdb-dl",
+  "version": "0.1.0",
+  "description": "Download PDB files for a given program",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/radare/radare2.git"
+  },
+  "dependencies": {
+    "node-curl": "*"
+  },
+  "files": [
+    "index.js"
+  ],
+  "keywords": [
+    "radare",
+    "radare2",
+    "pdb",
+    "r2",
+    "reversing",
+    "disassembler",
+    "hexadecimal",
+    "editor",
+    "exploit",
+    "exploiting"
+  ],
+  "author": {
+    "name": "inisider",
+    "email": "inisider@gmail.com"
+  },
+  "license": "LGPLv3",
+  "bugs": {
+    "url": "https://github.com/radare/radare2/issues"
+  },
+  "homepage": "http://www.radare.org"
+}
