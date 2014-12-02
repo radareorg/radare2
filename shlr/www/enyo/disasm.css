@@ -85,11 +85,11 @@ input:focus {outline: none; }
 .ec_mov {color: rgb(127,127,127);}
 .ec_num {color: rgb(127,127,0);}
 
-.ec_cflow {color: yellow;}
+.ec_cflow {color: rgb(255,255,0);}
 .ec_dataoffset {color: rgb(136,136,0);}
 .ec_background {background-color: rgb(20,20,20); }
 .ec_alt_background {background-color: rgb(40,40,40); }
-.ec_border {border-color: #3a3a3a; }
+.ec_border {border-color: rgb(50,50,50); }
 
 .autohighlight { background-color: #8AFF77 !important; }
 .autohighlighti { background-color: #8AFF77; }

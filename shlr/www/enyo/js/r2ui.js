@@ -24,7 +24,9 @@ r2ui.load_colors = function () {
           if (color !== undefined && color !== null) {
             myrules[j].style.color = color;
           } else {
-            r2ui.colors[sel] = myrules[j].style.color;
+            if (sel == ".ec_background" || sel == ".ec_alt_background") r2ui.colors[sel] = myrules[j].style.backgroundColor;
+            else if (sel == ".ec_border") r2ui.colors[sel] = myrules[j].style.borderColor;
+            else r2ui.colors[sel] = myrules[j].style.color;
           }
         }
       }
