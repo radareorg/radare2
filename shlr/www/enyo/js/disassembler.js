@@ -46,13 +46,59 @@ enyo.kind ({
     }
     // j Seek to next Instruction
     if (key === 106) {
-      var addr = r2ui.next_instruction();
-      if (addr !== undefined && addr !== null) r2ui.seek(addr, true);
+      var get_more_instructions = false;
+      if ($(this.selected).hasClass("insaddr")) {
+        var next_instruction;
+        if (this.display == "flat") {
+          next_instruction = $(this.selected).closest(".instructionbox").next().find('.insaddr')[0];
+          if ($("#gbox .instructionbox").index( $(this.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) get_more_instructions = true;
+        }
+        if (this.display == "graph") {
+          var next_instruction = $(this.selected).closest(".instruction").next().find('.insaddr')[0];
+          if (next_instruction === undefined || next_instruction === null) {
+            next_instruction = $(this.selected).closest(".basicblock").next().find('.insaddr')[0];
+          }
+        }
+
+        // if (next_instruction === null || next_instruction === undefined) return;
+        var address = get_address_from_class(next_instruction);
+        if (get_more_instructions) {
+          r2ui.seek(address, false);
+        } else {
+          r2ui.history_push(address);
+          this.selected = next_instruction;
+          this.selected_offset = address;
+        }
+        rehighlight_iaddress(address);
+        scroll_to_address(address);
+      }
     }
     // k Seek to previous instruction
     if (key === 107) {
-      var addr = r2ui.prev_instruction();
-      if (addr !== undefined && addr !== null) r2ui.seek(addr, true);
+      var get_more_instructions = false;
+      if ($(this.selected).hasClass("insaddr")) {
+        var prev_instruction;
+        if (this.display == "flat") {
+          prev_instruction = $(this.selected).closest(".instructionbox").prev().find('.insaddr')[0];
+          if ($("#gbox .instructionbox").index( $(this.selected).closest(".instructionbox")[0]) < 10) get_more_instructions = true;
+        }
+        if (this.display == "graph") {
+          var prev_instruction = $(this.selected).closest(".instruction").prev().find('.insaddr')[0];
+          if (prev_instruction === undefined || prev_instruction === null) {
+            prev_instruction = $(this.selected).closest(".basicblock").prev().find('.insaddr').last()[0];
+          }
+        }
+        var address = get_address_from_class(prev_instruction);
+        if (get_more_instructions) {
+          r2ui.seek(address, false);
+        } else {
+          r2ui.history_push(address);
+          this.selected = prev_instruction;
+          this.selected_offset = address;
+        }
+        rehighlight_iaddress(address);
+        scroll_to_address(address);
+      }
     }
     // c Define function
     if (key === 99) {
@@ -172,11 +218,12 @@ enyo.kind ({
       this.renaming = null;
 
       var renamed = false;
+      var offset = this.selected_offset;
       // If current offset is the beggining of a function, rename it with afr
       r2.cmdj("pdfj", function(x) {
         if (x !== null && x !== undefined) {
-          if (x.addr === this.selected_offset) {
-            r2.cmd("afn " + msg, function() {
+          if ("0x" + x.addr.toString(16) === offset) {
+            r2.cmd("afn " + new_value, function() {
               renamed = true;
              });
           }
