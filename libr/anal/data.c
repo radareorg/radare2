@@ -48,6 +48,7 @@ static int is_invalid (const ut8 *buf, int size) {
 	return (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size))? 1: 0;
 }
 
+#define USE_IS_VALID_OFFSET 1
 static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	ut64 n;
 	ut8 buf2[32];
@@ -56,7 +57,10 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 		size = sizeof (buf2);
 	n = r_mem_get_num (buf, size, endian);
 	if (!n) return 1; // null pointer
-
+#if USE_IS_VALID_OFFSET
+	int r = iob->is_valid_offset (iob->io, n);
+	return r? n: 0LL;
+#else 
 	// optimization to ignore very low and very high pointers
 	// this makes disasm 5x faster, but can result in some false positives
 	// we should compare with current offset, to avoid
@@ -67,6 +71,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	ret = iob->read_at (iob->io, n, buf2, size);
 	if (ret != size) return 0;
 	return is_invalid (buf2, size)? 0: n;
+#endif
 }
 
 static int is_bin(const ut8 *buf, int size) {
