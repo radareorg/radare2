@@ -372,7 +372,7 @@ function _internal_cmd(c, cb) {
       return hascmd (c, cb);
     }
   } else {
-    Ajax ('GET', r2.root + "/cmd/" + encodeURI (c), '', function(x) {
+    Ajax ('GET', r2.root + "/cmd/" + encodeURI(c), '', function(x) {
       if (cb) {
         cb (x);
       }

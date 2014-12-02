@@ -53,7 +53,9 @@ BBGraph.prototype.render = function() {
   var canvas = document.createElement("canvas");
   canvas.width = fnum(gdata[2])+100;
   canvas.height = fnum(gdata[3])+100;
-  canvas.id = "gcanvas";
+  canvas.id = "canvas";
+  canvas.setAttribute("tabindex", "1");
+  canvas.setAttribute("style", "outline: none;");
   gbox.appendChild(canvas);
   var ctx = canvas.getContext("2d");
   for (i = 2; true; i++) {
@@ -206,10 +208,10 @@ function render_instructions(instructions) {
         line.to = ins.jump;
       }
       if (ins.type == "jmp") {
-        line.color = r2ui.colors[".ec_jmp_line"];
+        line.color = r2ui.colors[".ec_flow"];
         line.dashed = false;
       } else if (ins.type == "cjmp") {
-        line.color = r2ui.colors[".ec_cjmp_line"];
+        line.color = r2ui.colors[".ec_cflow"];
         line.dashed = true;
       }
       line.to_start = true;
@@ -241,7 +243,9 @@ function render_instructions(instructions) {
     var canvas = document.createElement("canvas");
     canvas.width = 2500;
     canvas.height = accumulated_heigth + 100;
-    canvas.id = "fcanvas";
+    canvas.id = "canvas";
+    canvas.setAttribute("tabindex", "1");
+    canvas.setAttribute("style", "outline: none;");
     gbox.appendChild(canvas);
     var ctx = canvas.getContext("2d");
     if (!ctx.setLineDash) {

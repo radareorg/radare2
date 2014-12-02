@@ -1,0 +1,225 @@
+/*
+ * Default Layout Theme
+ *
+ * Created for jquery.layout
+ *
+ * Copyright (c) 2010
+ *   Fabrizio Balliano (http://www.fabrizioballiano.net)
+ *   Kevin Dalman (http://allpro.net)
+ *
+ * Dual licensed under the GPL (http://www.gnu.org/licenses/gpl.html)
+ * and MIT (http://www.opensource.org/licenses/mit-license.php) licenses.
+ *
+ * Last Updated: 2010-02-10
+ * NOTE: For best code readability, view this with a fixed-space font and tabs equal to 4-chars
+ */
+
+/*
+ *	DEFAULT FONT
+ *	Just to make demo-pages look better - not actually relevant to Layout!
+ */
+body {
+	font-family: Geneva, Arial, Helvetica, sans-serif;
+	font-size:   100%;
+	*font-size:  80%;
+}
+
+/*
+ *	PANES & CONTENT-DIVs
+ */
+.ui-layout-pane { /* all 'panes' */
+	background:	#FFF;
+	border:		1px solid #BBB;
+	padding:	10px;
+	overflow:	auto;
+	/* DO NOT add scrolling (or padding) to 'panes' that have a content-div,
+	   otherwise you may get double-scrollbars - on the pane AND on the content-div
+	   - use ui-layout-wrapper class if pane has a content-div
+	   - use ui-layout-container if pane has an inner-layout
+	*/
+	}
+	/* (scrolling) content-div inside pane allows for fixed header(s) and/or footer(s) */
+	.ui-layout-content {
+		padding:	10px;
+		position:	relative; /* contain floated or positioned elements */
+		overflow:	auto; /* add scrolling to content-div */
+	}
+
+/*
+ *	UTILITY CLASSES
+ *	Must come AFTER pane-class above so will override
+ *	These classes are NOT auto-generated and are NOT used by Layout
+ */
+.layout-child-container,
+.layout-content-container {
+	padding:	0;
+	overflow:	hidden;
+}
+.layout-child-container {
+	border:		0; /* remove border because inner-layout-panes probably have borders */
+}
+.layout-scroll {
+	overflow:	auto;
+}
+.layout-hide {
+	display:	none;
+}
+
+/*
+ *	RESIZER-BARS
+ */
+.ui-layout-resizer	{ /* all 'resizer-bars' */
+	background:		#DDD;
+	border:			1px solid #BBB;
+	border-width:	0;
+	}
+	.ui-layout-resizer-drag {		/* REAL resizer while resize in progress */
+	}
+	.ui-layout-resizer-hover	{	/* affects both open and closed states */
+	}
+	/* NOTE: It looks best when 'hover' and 'dragging' are set to the same color,
+		otherwise color shifts while dragging when bar can't keep up with mouse */
+	.ui-layout-resizer-open-hover ,	/* hover-color to 'resize' */
+	.ui-layout-resizer-dragging {	/* resizer beging 'dragging' */
+		background: #C4E1A4;
+	}
+	.ui-layout-resizer-dragging {	/* CLONED resizer being dragged */
+		border: 	 1px solid #BBB;
+	}
+	.ui-layout-resizer-north-dragging,
+	.ui-layout-resizer-south-dragging {
+		border-width:	1px 0;
+	}
+	.ui-layout-resizer-west-dragging,
+	.ui-layout-resizer-east-dragging {
+		border-width:	0 1px;
+	}
+	/* NOTE: Add a 'dragging-limit' color to provide visual feedback when resizer hits min/max size limits */
+	.ui-layout-resizer-dragging-limit {	/* CLONED resizer at min or max size-limit */
+		background: #E1A4A4; /* red */
+	}
+
+	.ui-layout-resizer-closed-hover	{ /* hover-color to 'slide open' */
+		background: #EBD5AA;
+	}
+	.ui-layout-resizer-sliding {	/* resizer when pane is 'slid open' */
+		opacity: .10; /* show only a slight shadow */
+		filter:  alpha(opacity=10);
+		}
+		.ui-layout-resizer-sliding-hover {	/* sliding resizer - hover */
+			opacity: 1.00; /* on-hover, show the resizer-bar normally */
+			filter:  alpha(opacity=100);
+		}
+		/* sliding resizer - add 'outside-border' to resizer on-hover
+		 * this sample illustrates how to target specific panes and states */
+		.ui-layout-resizer-north-sliding-hover	{ border-bottom-width:	1px; }
+		.ui-layout-resizer-south-sliding-hover	{ border-top-width:		1px; }
+		.ui-layout-resizer-west-sliding-hover	{ border-right-width:	1px; }
+		.ui-layout-resizer-east-sliding-hover	{ border-left-width:	1px; }
+
+/*
+ *	TOGGLER-BUTTONS
+ */
+.ui-layout-toggler {
+	border: 1px solid #BBB; /* match pane-border */
+	background-color: #BBB;
+	}
+	.ui-layout-resizer-hover .ui-layout-toggler {
+		opacity: .60;
+		filter:  alpha(opacity=60);
+	}
+	.ui-layout-toggler-hover , /* need when NOT resizable */
+	.ui-layout-resizer-hover .ui-layout-toggler-hover { /* need specificity when IS resizable */
+		background-color: #FC6;
+		opacity: 1.00;
+		filter:  alpha(opacity=100);
+	}
+	.ui-layout-toggler-north ,
+	.ui-layout-toggler-south {
+		border-width: 0 1px; /* left/right borders */
+	}
+	.ui-layout-toggler-west ,
+	.ui-layout-toggler-east {
+		border-width: 1px 0; /* top/bottom borders */
+	}
+	/* hide the toggler-button when the pane is 'slid open' */
+	.ui-layout-resizer-sliding  .ui-layout-toggler {
+		display: none;
+	}
+	/*
+	 *	style the text we put INSIDE the togglers
+	 */
+	.ui-layout-toggler .content {
+		color:			#666;
+		font-size:		12px;
+		font-weight:	bold;
+		width:			100%;
+		padding-bottom:	0.35ex; /* to 'vertically center' text inside text-span */
+	}
+
+/*
+ *	PANE-MASKS
+ *	these styles are hard-coded on mask elems, but are also
+ *	included here as !important to ensure will overrides any generic styles
+ */
+.ui-layout-mask {
+	border:		none !important;
+	padding:	0 !important;
+	margin:		0 !important;
+	overflow:	hidden !important;
+	position:	absolute !important;
+	opacity:	0 !important;
+	filter:		Alpha(Opacity="0") !important;
+}
+.ui-layout-mask-inside-pane { /* masks always inside pane EXCEPT when pane is an iframe */
+	top:		0 !important;
+	left:		0 !important;
+	width:		100% !important;
+	height:		100% !important;
+}
+div.ui-layout-mask {}		/* standard mask for iframes */
+iframe.ui-layout-mask {}	/* extra mask for objects/applets */
+
+/*
+ *	Default printing styles
+ */
+@media print {
+	/*
+	 *	Unless you want to print the layout as it appears onscreen,
+	 *	these html/body styles are needed to allow the content to 'flow'
+	 */
+	html {
+		height:		auto !important;
+		overflow:	visible !important;
+	}
+	body.ui-layout-container {
+		position:	static !important;
+		top:		auto !important;
+		bottom:		auto !important;
+		left:		auto !important;
+		right:		auto !important;
+		/* only IE6 has container width & height set by Layout */
+		_width:		auto !important;
+		_height:	auto !important;
+	}
+	.ui-layout-resizer, .ui-layout-toggler {
+		display:	none !important;
+	}
+	/*
+	 *	Default pane print styles disables positioning, borders and backgrounds.
+	 *	You can modify these styles however it suit your needs.
+	 */
+	.ui-layout-pane {
+		border:		none !important;
+		background:	 transparent !important;
+		position:	relative !important;
+		top:		auto !important;
+		bottom:		auto !important;
+		left:		auto !important;
+		right:		auto !important;
+		width:		auto !important;
+		height:		auto !important;
+		overflow:	visible !important;
+	}
+}
+

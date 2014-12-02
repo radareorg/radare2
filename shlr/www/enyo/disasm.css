@@ -51,6 +51,15 @@
 
 input:focus {outline: none; }
 
+.ec_fline {color: rgb(0,127,127);}
+.ec_help {color: rgb(0,127,127);}
+.ec_args {color: rgb(0,127,127);}
+.ec_label {color: rgb(0,127,127);}
+.ec_flow {color: rgb(0,127,127);}
+.ec_prompt {color: rgb(0,127,127);}
+.ec_input {color: rgb(0,127,127);}
+.ec_btext {color: rgb(0,127,127);}
+.ec_swi {color: rgb(0,127,127);}
 .ec_comment {color: rgb(0,127,127);}
 .ec_fname {color: rgb(127,0,0);}
 .ec_flag {color: rgb(0,127,127);}
@@ -76,11 +85,10 @@ input:focus {outline: none; }
 .ec_mov {color: rgb(127,127,127);}
 .ec_num {color: rgb(127,127,0);}
 
-.ec_jmp_line {color: orange;}
-.ec_cjmp_line {color: yellow;}
+.ec_cflow {color: yellow;}
 .ec_dataoffset {color: rgb(136,136,0);}
-.ec_background {background-color: rgb(10,10,10); }
-.ec_alt_background {background-color: rgb(39,39,39); }
+.ec_background {background-color: rgb(20,20,20); }
+.ec_alt_background {background-color: rgb(40,40,40); }
 .ec_border {border-color: #3a3a3a; }
 
 .autohighlight { background-color: #8AFF77 !important; }

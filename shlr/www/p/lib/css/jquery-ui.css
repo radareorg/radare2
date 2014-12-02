@@ -1,0 +1,66 @@
+
+.ui-menu {
+	list-style: none;
+	padding: 0;
+	/*margin: 50px 50px;*/
+	display: block;
+	outline: none;
+	background: #c0c0c0;
+	width: 200px;
+	border: 1px solid #AAA;
+	color: #222;
+	z-index: 100;
+}
+
+
+.ui-menu .ui-menu {
+	position: absolute;
+
+}
+.ui-menu .ui-menu-item {
+	font-family: monospace;
+	position: relative;
+	margin: 0;
+	padding: 3px 1em 3px .4em;
+	cursor: pointer;
+	min-height: 0; /* support: IE7 */
+}
+.ui-menu .ui-menu-item:hover {
+	font-family: monospace;
+	position: relative;
+	margin: 0;
+	background: yellow;
+	padding: 3px 1em 3px .4em;
+	cursor: pointer;
+	min-height: 0; /* support: IE7 */
+}
+
+.ui-menu .ui-menu-item a {
+	color: #555555;
+	text-decoration: none;
+	outline: none;
+}
+
+.ui-menu .ui-menu-item a:visited {
+	color: #555555;
+	text-decoration: none;
+	outline: none;
+}
+
+.ui-menu .ui-menu-divider {
+	margin: 5px 0;
+	height: 0;
+	font-size: 0;
+	line-height: 0;
+	border-width: 1px 0 0 0;
+}
+.ui-menu .ui-state-focus,
+.ui-menu .ui-state-active {
+	margin: -1px;
+}
+
+.ui-menu kbd {
+    padding-left: 1em;
+    float: right;
+}
+
