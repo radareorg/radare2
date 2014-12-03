@@ -30,7 +30,10 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	ut8 buf[1024];
 	int size, sz = sizeof (buf);
 
+	r_cons_break (NULL, NULL);
 	while (from <to) {
+		if (r_cons_singleton()->breaked)
+			break;
 		r_io_read_at (core->io, from, buf, sz);
 		plug = r_bin_get_binplugin_by_bytes (core->bin, buf, sz);
 		if (plug) {
@@ -42,12 +45,13 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 					core->file->desc, 0, 0, 0, core->offset,
 					plug->name, 4096);
 				size = plug->size (core->bin->cur);
-				if (size)
+				if (size>0)
 					r_cons_printf ("size %d\n", size);
 			}
 		}
 		from ++;
 	}
+	r_cons_break_end ();
 }
 
 static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
@@ -1524,7 +1528,7 @@ static int cmd_search(void *data, const char *input) {
 			"/b", "", "search backwards",
 			"/B", "", "search recognized RBin headers",
 			"/c", " jmp [esp]", "search for asm code",
-			"/C", "[ae]", "search for crypto materials",
+			"/C", "[ar]", "search for crypto materials",
 			"/d", " 101112", "search for a deltified sequence of bytes",
 			"/e", " /E.F/i", "match regular expression",
 			"/E", " esil-expr", "offset matching given esil expressions %%= here ",
