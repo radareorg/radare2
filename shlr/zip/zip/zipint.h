@@ -492,5 +492,16 @@ void _zip_write2(zip_uint16_t, FILE *);
 void _zip_write4(zip_uint32_t, FILE *);
 void _zip_write8(zip_uint64_t, FILE *);
 
+// hackaround for portability
+#include <ctype.h> // for tolower
+static inline int __strcasecmp(const char *s1, const char *s2) {
+	int c1, c2;
+	for(;;) {
+		c1 = tolower ( (unsigned char) *s1++ );
+		c2 = tolower ( (unsigned char) *s2++ );
+		if (c1 == 0 || c1 != c2)
+			return c1 - c2;
+	}
+}
 
 #endif /* zipint.h */

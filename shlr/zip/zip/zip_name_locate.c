@@ -37,6 +37,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
+#include <ctype.h>
 
 #include "zipint.h"
 
@@ -65,7 +66,7 @@ _zip_name_locate(struct zip *za, const char *fname, zip_flags_t flags, struct zi
 	return -1;
     }
 
-    cmp = (flags & ZIP_FL_NOCASE) ? strcasecmp : strcmp;
+    cmp = (flags & ZIP_FL_NOCASE) ? __strcasecmp : strcmp;
 
     for (i=0; i<za->nentry; i++) {
 	fn = _zip_get_name(za, i, flags, error);

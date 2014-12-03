@@ -662,5 +662,5 @@ _zip_torrentzip_cmp(const void *a, const void *b)
     else if (bname == NULL)
 	return 1;
 
-    return strcasecmp(aname, bname);
+    return __strcasecmp(aname, bname);
 }
