@@ -75,12 +75,10 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 		if (!s[len]) return 1; // ^z
 		if (s[len] < 28)
 			return s[0]?1:0;
-		if (ret == 1) {
-			if (is_valid_char (s[len]))
-				return s[0]?1:0;
-			if ((s[len] & 0xc0) != 0x80) continue;
-			if (len>0) break;
-		} else return 0;
+		if (is_valid_char (s[len]))
+			return s[0]?1:0;
+		if ((s[len] & 0xc0) != 0x80) continue;
+		if (len>0) break;
 	}
 	len++;
 	s[len] = 0;

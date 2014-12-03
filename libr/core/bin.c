@@ -2,6 +2,19 @@
 
 #include <r_core.h>
 
+// dup from cmd_info
+#define PAIR_WIDTH 9
+static void pair(const char *a, const char *b) {
+	char ws[16];
+	int al = strlen (a);
+	if (!b) b = "";
+	memset (ws, ' ', sizeof (ws));
+	al = PAIR_WIDTH-al;
+	if (al<0) al = 0;
+	ws[al] = 0;
+	r_cons_printf ("%s%s%s\n", a, ws, b);
+}
+
 #define STR(x) (x)?(x):""
 // XXX - this may lead to conflicts with set by name
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
@@ -351,43 +364,28 @@ static int bin_info (RCore *r, int mode) {
 		} else {
 			// if type is 'fs' show something different?
 			//r_cons_printf ("# File info\n");
-			r_cons_printf ("file\t%s\n"
-					"type\t%s\n"
-					"pic\t%s\n"
-					"canary\t%s\n"
-					"nx\t%s\n"
-					"crypto\t%s\n"
-					"has_va\t%s\n"
-					"root\t%s\n"
-					"class\t%s\n"
-					"lang\t%s\n"
-					"arch\t%s\n"
-					"bits\t%i\n"
-					"machine\t%s\n"
-					"os\t%s\n"
-					"subsys\t%s\n"
-					"endian\t%s\n"
-					"strip\t%s\n"
-					"static\t%s\n"
-					"linenum\t%s\n"
-					"lsyms\t%s\n"
-					"relocs\t%s\n"
-					"rpath\t%s\n",
-					info->file, info->type,
-					r_str_bool (info->has_pi),
-					r_str_bool (info->has_canary),
-					r_str_bool (info->has_nx),
-					r_str_bool (info->has_crypto),
-					r_str_bool (info->has_va),
-					info->rclass, info->bclass, info->lang?info->lang:"unknown",
-					info->arch, info->bits, info->machine, info->os,
-					info->subsystem, info->big_endian? "big": "little",
-					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info),
-					r_str_bool (r_bin_is_static (r->bin)),
-					r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info),
-					r_str_bool (R_BIN_DBG_SYMS &info->dbg_info),
-					r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info),
-					info->rpath);
+			pair ("file", info->file);
+			pair ("type", info->type);
+			pair ("pic", r_str_bool (info->has_pi));
+			pair ("canary", r_str_bool (info->has_canary));
+			pair ("nx", r_str_bool (info->has_nx));
+			pair ("crypto", r_str_bool (info->has_crypto));
+			pair ("va", r_str_bool (info->has_va));
+			pair ("root", info->rclass);
+			pair ("class", info->bclass);
+			pair ("lang", info->lang? info->lang: "unknown");
+			pair ("arch", info->arch);
+			pair ("bits", sdb_fmt (0, "%d", info->bits));
+			pair ("machine", info->machine);
+			pair ("os", info->os);
+			pair ("subsys", info->subsystem);
+			pair ("endian", info->big_endian? "big": "little");
+			pair ("strip", r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
+			pair ("static", r_str_bool (r_bin_is_static (r->bin)));
+			pair ("linenum", r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info));
+			pair ("lsyms", r_str_bool (R_BIN_DBG_SYMS &info->dbg_info));
+			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
+			pair ("rpath", info->rpath);
 			for (i=0; info->sum[i].type; i++) {
 				int len;
 				//ut8 *sum = &info; // XXX

@@ -194,6 +194,32 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_CLC:
 			case X86_INS_STC:
 				break;
+			// cmov
+			case X86_INS_CMOVA:
+			case X86_INS_CMOVAE:
+			case X86_INS_CMOVB:
+			case X86_INS_CMOVBE:
+			case X86_INS_FCMOVBE:
+			case X86_INS_FCMOVB:
+			case X86_INS_CMOVE:
+			case X86_INS_FCMOVE:
+			case X86_INS_CMOVG:
+			case X86_INS_CMOVGE:
+			case X86_INS_CMOVL:
+			case X86_INS_CMOVLE:
+			case X86_INS_FCMOVNBE:
+			case X86_INS_FCMOVNB:
+			case X86_INS_CMOVNE:
+			case X86_INS_FCMOVNE:
+			case X86_INS_CMOVNO:
+			case X86_INS_CMOVNP:
+			case X86_INS_FCMOVNU:
+			case X86_INS_CMOVNS:
+			case X86_INS_CMOVO:
+			case X86_INS_CMOVP:
+			case X86_INS_FCMOVU:
+			case X86_INS_CMOVS:
+			// mov
 			case X86_INS_MOV:
 			case X86_INS_MOVZX:
 			case X86_INS_MOVABS:
@@ -219,13 +245,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
 					}
-					if (a->decode && insn->detail) {
+					if (a->decode) {
 						esilprintf (op, "%s,%s",
 								getarg (insn, 1, 0),
 								getarg (insn, 0, 1));
 					}
+					break;
 				default:
-					if (a->decode && insn->detail) {
+					if (a->decode) {
 						esilprintf (op, "%s,%s,=",
 								getarg (insn, 1, 0),
 								getarg (insn, 0, 0));
@@ -253,7 +280,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_SHLD:
 			case X86_INS_SHLX:
 				op->type = R_ANAL_OP_TYPE_SHL;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,<<=,cz,%%z,zf,=", src, dst);
@@ -264,7 +291,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_SAR:
 			case X86_INS_SARX:
 				op->type = R_ANAL_OP_TYPE_SAR;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,>>=,%%z,zf,=", src, dst);
@@ -275,7 +302,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_SAL:
 			case X86_INS_SALC:
 				op->type = R_ANAL_OP_TYPE_SAL;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,<<=,%%z,zf,=", src, dst);
@@ -287,7 +314,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_SHRD:
 			case X86_INS_SHRX:
 				op->type = R_ANAL_OP_TYPE_SHR;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,>>=,cz,%%z,zf,=", src, dst);
@@ -306,7 +333,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_CMPSS:
 			case X86_INS_TEST:
 				op->type = R_ANAL_OP_TYPE_CMP;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op,  "%s,%s,==,%%z,zf,=", dst, src);
@@ -341,7 +368,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_LEA:
 				op->type = R_ANAL_OP_TYPE_LEA;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 0, 0);
 					char *dst = getarg (insn, 1, 2);
 					esilprintf (op, "%s,%s,=", dst, src);
@@ -387,7 +414,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_POPCNT:
 				op->type = R_ANAL_OP_TYPE_POP;
 				if (a->decode) {
-					char *dst = getarg(insn, 0, 0);
+					char *dst = getarg (insn, 0, 0);
 					esilprintf (op,
 						"%s,[%d],%s,=,%d,%s,+=",
 						sp, rs, dst, rs, sp);
@@ -527,7 +554,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_JMP:
 			case X86_INS_LJMP:
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,=", src, pc);
 					free (src);
@@ -563,7 +590,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_PXOR:
 			case X86_INS_XOR:
 				op->type = R_ANAL_OP_TYPE_XOR;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,^=", dst, src);
@@ -573,7 +600,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_OR:
 				op->type = R_ANAL_OP_TYPE_OR;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,|=", dst, src);
@@ -592,7 +619,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_PSUBUSB:
 			case X86_INS_PSUBUSW:
 				op->type = R_ANAL_OP_TYPE_SUB;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,-=,%%c,cf,=,%%z,zf,=,%%s,sf,=,%%o,of,=", src, dst); // TODO: update flags
@@ -607,7 +634,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_ANDNPD:
 			case X86_INS_ANDNPS:
 				op->type = R_ANAL_OP_TYPE_AND;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,&=", dst, src);
@@ -617,13 +644,27 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_DIV:
 				op->type = R_ANAL_OP_TYPE_DIV;
+				if (a->decode) {
+					char *src = getarg (insn, 1, 0);
+					char *dst = getarg (insn, 0, 0);
+					esilprintf (op, "%s,%s,/=", dst, src);
+					free (src);
+					free (dst);
+				}
 				break;
 			case X86_INS_MUL:
 				op->type = R_ANAL_OP_TYPE_MUL;
+				if (a->decode) {
+					char *src = getarg (insn, 1, 0);
+					char *dst = getarg (insn, 0, 0);
+					esilprintf (op, "%s,%s,*=", dst, src);
+					free (src);
+					free (dst);
+				}
 				break;
 			case X86_INS_INC:
 				op->type = R_ANAL_OP_TYPE_ADD;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "1,%s,+=", dst);
 					free (dst);
@@ -633,7 +674,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_FADD:
 			case X86_INS_ADDPD:
 				op->type = R_ANAL_OP_TYPE_ADD;
-				if (a->decode && insn->detail) {
+				if (a->decode) {
 					char *src = getarg (insn, 1, 0);
 					char *dst = getarg (insn, 0, 0);
 					esilprintf (op, "%s,%s,+=", dst, src);

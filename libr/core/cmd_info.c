@@ -1,5 +1,17 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+#define PAIR_WIDTH 9
+static void pair(const char *a, const char *b) {
+	char ws[16];
+	int al = strlen (a);
+	if (!b) b = "";
+	memset (ws, ' ', sizeof (ws));
+	al = PAIR_WIDTH-al;
+	if (al<0) al = 0;
+	ws[al] = 0;
+	r_cons_printf ("%s%s%s\n", a, ws, b);
+}
+
 #define STR(x) (x)?(x):""
 static void r_core_file_info (RCore *core, int mode) {
 	const char *fn = NULL;
@@ -18,7 +30,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		fn = info->file;
 		switch (mode) {
 		case R_CORE_BIN_JSON:
-		r_cons_printf ("\"type\":\"%s\","
+			r_cons_printf ("\"type\":\"%s\","
 			"\"os\":\"%s\","
 			"\"arch\":\"%s\","
 			"\"bits\":%d,"
@@ -29,20 +41,12 @@ static void r_core_file_info (RCore *core, int mode) {
 			, info->bits
 			, info->big_endian? "big": "little");
 			break;
-		case R_CORE_BIN_SIMPLE:
-			// nothing here
-			break;
 		default:
-		r_cons_printf ("type\t%s\n"
-			"os\t%s\n"
-			"arch\t%s\n"
-			"bits\t%d\n"
-			"endian\t%s\n"
-			, STR(info->type)
-			, STR(info->os)
-			, STR(info->machine)
-			, info->bits
-			, info->big_endian? "big": "little");
+			pair ("type", info->type);
+			pair ("os", info->os);
+			pair ("arch", info->machine);
+			pair ("bits", sdb_fmt (0, "%d", info->bits));
+			pair ("endian", info->big_endian? "big": "little");
 			break;
 		}
 	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
@@ -70,23 +74,21 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("}");
 	} else if (cf && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
-		r_cons_printf ("file\t%s\n", fn);
+		pair ("file", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			if (cf->desc->referer && *cf->desc->referer)
-				r_cons_printf ("referer\t%s\n", cf->desc->referer);
-			r_cons_printf ("fd\t%d\n", cf->desc->fd);
-			r_cons_printf ("size\t0x%"PFMT64x"\n", r_io_desc_size (core->io, cf->desc));
-			r_cons_printf ("mode\t%s\n", r_str_rwx_i (cf->desc->flags & 7 ));
-			r_cons_printf ("uri\t%s\n", cf->desc->uri);
+				pair ("referer", cf->desc->referer);
+			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
+			pair ("size", sdb_fmt (0,"0x%"PFMT64x, r_io_desc_size (core->io, cf->desc)));
+			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
+			pair ("uri", cf->desc->uri);
 		}
-		r_cons_printf ("block\t0x%x\n", core->blocksize);
+		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
 		if (binfile && binfile->curxtr)
-			r_cons_printf ("packet\t%s\n",
-				binfile->curxtr->name);
+			pair ("packet", binfile->curxtr->name);
 		if (plugin)
-			r_cons_printf ("format\t%s\n",
-				plugin->name);
+			pair ("format", plugin->name);
 	}
 }
 
