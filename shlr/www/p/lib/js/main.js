@@ -82,17 +82,11 @@ $(document).ready( function() {
       console_history_idx++;
       if (console_history_idx > console_history.length - 1) console_history_idx = console_history.length;
       inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
-      // $("#command")[0].setSelectionRange(inEvent.target.value.length, inEvent.target.value.length);
-      // console.log(inEvent.target.value.length);
-      // $("#command")[0].focus();
     }
     if (key === 38) {
       console_history_idx--;
       if (console_history_idx < 0) console_history_idx = 0;
       inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
-      // console.log(inEvent.target.value.length);
-      // $("#command")[0].setSelectionRange(inEvent.target.value.length, inEvent.target.value.length);
-      // $("#command")[0].focus();
     }
   });
 
@@ -113,10 +107,22 @@ $(document).ready( function() {
         return {my: "left+100 top-10", at: "left bottom", of: ui.target};
       },
       beforeOpen: function(event, ui) {
-        var target = ui.target[0];
-        if (target.className.indexOf("insaddr") !== 0) {
+        if (ui.target.hasClass('insaddr')) {
+          $(document).contextmenu("showEntry", "define", true);
+          $(document).contextmenu("showEntry", "undefine", true);
+          $(document).contextmenu("showEntry", "comment", true);
+          $(document).contextmenu("showEntry", "rename", true);
+        } else {
           $(document).contextmenu("showEntry", "define", false);
           $(document).contextmenu("showEntry", "undefine", false);
+          $(document).contextmenu("showEntry", "comment", false);
+          $(document).contextmenu("showEntry", "rename", true);
+        }
+        if (ui.target.hasClass('reloc') || ui.target.hasClass('symbol')) {
+          $(document).contextmenu("showEntry", "define", false);
+          $(document).contextmenu("showEntry", "undefine", false);
+          $(document).contextmenu("showEntry", "comment", false);
+          $(document).contextmenu("showEntry", "rename", false);
         }
       },
       select: function(event, ui) {
