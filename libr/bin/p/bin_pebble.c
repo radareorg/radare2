@@ -10,8 +10,8 @@
 #define APP_NAME_BYTES 32
 #define COMPANY_NAME_BYTES 32
 typedef struct __attribute__((__packed__)) {
-	uint8_t major; //!< "compatibility" version number
-	uint8_t minor;
+	ut8 major; //!< "compatibility" version number
+	ut8 minor;
 } Version;
 
 typedef struct __attribute__((__packed__)) {
@@ -19,17 +19,17 @@ typedef struct __attribute__((__packed__)) {
 	Version struct_version;           //!< version of this structure's format
 	Version sdk_version;              //!< version of the SDK used to build this app
 	Version app_version;              //!< version of the app
-	uint16_t size;                    //!< size of the app binary, including this metadata but not the reloc table
-	uint32_t offset;                  //!< The entry point of this executable
-	uint32_t crc;                     //!< CRC of the app data only, ie, not including this struct or the reloc table at the end
+	ut16 size;                    //!< size of the app binary, including this metadata but not the reloc table
+	ut32 offset;                  //!< The entry point of this executable
+	ut32 crc;                     //!< CRC of the app data only, ie, not including this struct or the reloc table at the end
 	char name[APP_NAME_BYTES];        //!< Name to display on the menu
 	char company[COMPANY_NAME_BYTES]; //!< Name of the maker of this app
-	uint32_t icon_resource_id;        //!< Resource ID within this app's bank to use as a 32x32 icon
-	uint32_t sym_table_addr;          //!< The system will poke the sdk's symbol table address into this field on load
-	uint32_t flags;                   //!< Bitwise OR of PebbleAppFlags
-	uint32_t reloc_list_start;        //!< The offset of the address relocation list
-	uint32_t num_reloc_entries;       //!< The number of entries in the address relocation list
-	uint8_t uuid[16];
+	ut32 icon_resource_id;        //!< Resource ID within this app's bank to use as a 32x32 icon
+	ut32 sym_table_addr;          //!< The system will poke the sdk's symbol table address into this field on load
+	ut32 flags;                   //!< Bitwise OR of PebbleAppFlags
+	ut32 reloc_list_start;        //!< The offset of the address relocation list
+	ut32 num_reloc_entries;       //!< The number of entries in the address relocation list
+	ut8 uuid[16];
 } PebbleAppInfo;
 
 static Sdb* get_sdb (RBinObject *o) {
