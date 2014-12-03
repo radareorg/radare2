@@ -69,7 +69,7 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	for (len = 0; len+2<slen; len++) {
 		s[len] = 0;
 		ret = read (0, s+len, 1);
-		if (ret==-1)
+		if (ret!=1)
 			return 0;
 		s[len] = r_cons_controlz (s[len]);
 		if (!s[len]) return 1; // ^z
@@ -380,7 +380,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	I.buffer.data[0] = '\0';
 	if (I.contents) {
 		strncpy (I.buffer.data, I.contents, R_LINE_BUFSIZE-1);
-        I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
+		I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	}
 	if (I.disable) {
