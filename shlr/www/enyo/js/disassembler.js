@@ -247,14 +247,14 @@ enyo.kind ({
         }
       }
       r2.update_flags();
+      var address = null;
       if (this.selected.className.indexOf("insaddr") === 0) {
-        var address = get_address_from_class(this.selected);
-        r2ui.seek(address, false);
+        address = get_address_from_class(this.selected);
       } else {
-        var address = get_address_from_class(this.selected.parentNode.parentNode.firstChild);
-        r2ui.seek(address, false);
-
+        address = get_address_from_class(this.selected.parentNode.parentNode.firstChild);
       }
+      if (address !== null) r2ui.seek(address, false);
+      else r2ui.seek("$$", false);
     }
   },
   min: 0,
