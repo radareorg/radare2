@@ -1528,7 +1528,7 @@ static int cmd_search(void *data, const char *input) {
 			"/b", "", "search backwards",
 			"/B", "", "search recognized RBin headers",
 			"/c", " jmp [esp]", "search for asm code",
-			"/C", "[ae]", "search for crypto materials",
+			"/C", "[ar]", "search for crypto materials",
 			"/d", " 101112", "search for a deltified sequence of bytes",
 			"/e", " /E.F/i", "match regular expression",
 			"/E", " esil-expr", "offset matching given esil expressions %%= here ",
