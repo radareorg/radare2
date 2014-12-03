@@ -732,10 +732,15 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 	imports = r_bin_get_imports (r->bin);
 
 	if (mode & R_CORE_BIN_JSON) {
+		ut64 addr;
 		r_cons_printf ("[");
-		r_list_foreach (imports, iter, import)
-			r_cons_printf ("%s{\"name\":\"%s\"}",
-				iter->p?",":"", import->name);
+		r_list_foreach (imports, iter, import) {
+			if (name && strcmp (import->name, name))
+				continue;
+			addr = impaddr (r->bin, va, baddr, import->name);
+			r_cons_printf ("%s{\"name\":\"%s\", \"plt\":%"PFMT64d"}",
+				iter->p?",":"", import->name, addr);
+		}
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
@@ -1153,7 +1158,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 						char *chkstr;
 						ut8 *data = malloc (section->size);
 						ut32 datalen = section->size;
-						// VA READ IS BROKEN? 
+						// VA READ IS BROKEN?
 						r_io_pread (r->io, section->paddr, data, datalen);
 						chkstr = r_hash_to_string (NULL, chksum, data, datalen);
 						free (data);

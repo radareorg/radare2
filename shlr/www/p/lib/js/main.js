@@ -3,6 +3,11 @@ var myLayout;
 $(document).ready( function() {
   // create tabs FIRST so elems are correct size BEFORE Layout measures them
   $("#main_panel").tabs({
+    select: function( event, ui ) {
+      if(ui.tab.innerText == "Entropy") r2ui._ent.render();
+      if(ui.tab.innerText == "Strings") r2ui._str.render();
+      if(ui.tab.innerText == "Settings") r2ui._set.render();
+    },
     activate: function( event, ui ) {
       r2ui.seek("$$", false);
       scroll_to_element(r2ui._dis.selected);
@@ -34,7 +39,13 @@ $(document).ready( function() {
   // Create panels
 	var disasm_panel = new DisasmPanel();
 	var hex_panel = new HexPanel();
+  var entropy_panel = new EntropyPanel();
+  var strings_panel = new StringsPanel();
+  var settings_panel = new SettingsPanel();
+  r2ui._ent = entropy_panel;
 	r2ui._dis = disasm_panel;
+  r2ui._str = strings_panel;
+  r2ui._set = settings_panel;
 	r2ui._hex = hex_panel;
 
   // For enyo compatibility
@@ -119,6 +130,12 @@ $(document).ready( function() {
           $(document).contextmenu("showEntry", "rename", true);
         }
         if (ui.target.hasClass('reloc') || ui.target.hasClass('symbol')) {
+          $(document).contextmenu("showEntry", "define", false);
+          $(document).contextmenu("showEntry", "undefine", false);
+          $(document).contextmenu("showEntry", "comment", false);
+          $(document).contextmenu("showEntry", "rename", false);
+        }
+        if (ui.target.hasClass('import')) {
           $(document).contextmenu("showEntry", "define", false);
           $(document).contextmenu("showEntry", "undefine", false);
           $(document).contextmenu("showEntry", "comment", false);
@@ -338,7 +355,8 @@ function do_rename(element, inEvent) {
   var address = get_address_from_class(element);
   if ($(element).hasClass("addr") && $(element).hasClass("flag")) {
      var space = "*";
-     if ($(element).hasClass("symbol")) space = "functions";
+     if ($(element).hasClass("function")) space = "functions";
+     if ($(element).hasClass("import")) space = "functions";
      if ($(element).hasClass("symbol")) space = "symbols";
      if ($(element).hasClass("reloc")) space = "relocs";
      if ($(element).hasClass("section")) space = "sections";
@@ -407,37 +425,34 @@ function do_define(element) {
 }
 
 function rename(offset, old_value, new_value, space) {
-  var renamed = false;
-  // If current offset is the beggining of a function, rename it with afr
-  r2.cmdj("pdfj @ " + offset, function(x) {
-    if (x !== null && x !== undefined) {
-      if ("0x" + x.addr.toString(16) === offset) {
-        console.log("rename function");
-        r2.cmd("afn " + new_value + " " + offset, function() {
-          renamed = true;
-        });
-      }
-    }
-  });
-  // Otherwise just add a flag
   if (space === undefined) space = "functions";
-  // r2.cmd("fs " + space + ";f~"+old_value, function(x) {
-  //   console.log(x.length);
-  // });
-  if (!renamed) {
-    if (new_value !== "" && old_value !== "") {
-      var cmd = "fs " + space + ";fr " + old_value + " " + new_value;
-      console.log(cmd);
-      r2.cmd(cmd, function() {});
-    } else if (new_value === "" && old_value !== "") {
-      var cmd = "fs " + space + ";f-@" + offset;
-      console.log(cmd);
-      r2.cmd(cmd, function() {});
-    } else if (new_value !== "" && old_value === "") {
-      var cmd = "fs " + space + ";f " + new_value + " @ " + offset;
-      console.log(cmd);
-      r2.cmd(cmd, function() {});
-    }
+  if (space == "functions") {
+    // If current offset is the beggining of a function, rename it with afr
+    r2.cmdj("pdfj @ " + offset, function(x) {
+      if (x !== null && x !== undefined) {
+        if ("0x" + x.addr.toString(16) === offset) {
+          r2.cmd("afn " + new_value + " " + offset, function() {
+            console.log("rename function");
+            r2.update_flags();
+            return;
+          });
+        }
+      }
+    });
+  }
+  // Otherwise just add a flag
+  if (new_value !== "" && old_value !== "") {
+    var cmd = "fs " + space + ";fr " + old_value + " " + new_value;
+    console.log(cmd);
+    r2.cmd(cmd, function() {});
+  } else if (new_value === "" && old_value !== "") {
+    var cmd = "fs " + space + ";f-@" + offset;
+    console.log(cmd);
+    r2.cmd(cmd, function() {});
+  } else if (new_value !== "" && old_value === "") {
+    var cmd = "fs " + space + ";f " + new_value + " @ " + offset;
+    console.log(cmd);
+    r2.cmd(cmd, function() {});
   }
   r2.update_flags();
 }
@@ -531,14 +546,13 @@ function update_binary_details() {
   r2.cmdj("isj", function(x) {
     render_symbols(x);
   });
-  // <div id="strings"></div>
-  r2.cmdj("izj", function(x) {
-    render_strings(x);
-  });
   // <div id="functions"></div>
-  // <div id="imports"></div>
   r2.cmdj("afj", function(x) {
     render_functions(x);
+  });
+  // <div id="imports"></div>
+  r2.cmdj("iij", function(x) {
+    render_imports(x);
   });
   // <div id="relocs"></div>
   r2.cmdj("irj", function(x) {
@@ -563,27 +577,23 @@ function update_binary_details() {
 
 function render_functions(functions) {
   // TODO: Sometimes undefined is printed
+  var imports = null;
+  r2.cmdj("iij", function(x) {
+    imports = x;
+  });
+
+
   var fcn_data = [];
-  var imp_data = [];
   for (var i in functions) {
     var f = functions[i];
-    if (f.type == "sym" && f.name !== undefined) {
-      var id = {
-        label: "<span class='flag import addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
-        children: [ {label: "offset: " + "0x" + f.offset.toString(16)}, {label: "size: " + f.size} ] };
-      if (f.callrefs.length > 0) {
-        var xrefs = {label: "xrefs:", children: []};
-        for (var j in f.callrefs) {
-          xrefs.children[xrefs.children.length] = "0x" + f.callrefs[j].addr.toString(16) + " (" + (f.callrefs[j].type == "C"? "call":"jump") + ")";
-        }
-        id.children[fd.children.length] = xrefs;
-      }
-      imp_data[fcn_data.length] = id;
-    }
-    if (f.type == "fcn" && f.name !== undefined) {
+    if (f.name !== undefined) {
+      var is_import = false;
+      for (var k in imports) if (f.offset === imports[k].plt) is_import = true;
+      if (is_import) continue;
       var fd = {
         label: "<span class='flag function addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
-        children: [{label: "offset: " + "0x" + f.offset.toString(16)},  {label: "size: " + f.size} ] };
+        children: [{label: "offset: " + "0x" + f.offset.toString(16)},  {label: "size: " + f.size} ]
+      };
       if (f.callrefs.length > 0) {
         var xrefs = {label: "xrefs:", children: []};
         for (var j in f.callrefs) {
@@ -594,11 +604,27 @@ function render_functions(functions) {
       fcn_data[fcn_data.length] = fd;
     }
   }
-  $('#imports').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#functions').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
-  $('#imports').tree('loadData', imp_data);
   $('#functions').tree('loadData', fcn_data);
 }
+
+function render_imports(imports) {
+  var imp_data = [];
+  for (var i in imports) {
+    var f = imports[i];
+    if (f.name !== undefined) {
+      var id = {
+        label: "<span class='flag import addr addr_" + "0x" + f.plt.toString(16) + "'>" + f.name + "</span>",
+        children: [ {label: "plt: " + "0x" + f.plt.toString(16)}, {label: "ord: " + i} ]
+      };
+      imp_data[imp_data.length] = id;
+    }
+  }
+  $('#imports').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
+  $('#imports').tree('loadData', imp_data);
+}
+
+
 function render_symbols(symbols) {
   var data = [];
   for (var i in symbols) {
@@ -633,24 +659,6 @@ function render_flags(flags) {
   }
   $('#flags').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#flags').tree('loadData', data);
-}
-function render_strings(strings) {
-  var data = [];
-  for (var i in strings) {
-    var f = strings[i];
-    var fd = {
-      label: f.string,
-      children: [
-        {label: "vaddr: " + "0x" + f.vaddr.toString(16)},
-        {label: "paddr: " + "0x" + f.paddr.toString(16)},
-        {label: "length: " + f.length},
-        {label: "type: " + f.type}
-      ]
-    };
-    data[data.length] = fd;
-  }
-  $('#strings').tree({data: [],selectable: false,slide: false,useContextMenu: false});
-  $('#strings').tree('loadData', data);
 }
 function render_sections(sections) {
   var data = [];
