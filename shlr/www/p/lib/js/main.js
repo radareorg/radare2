@@ -71,17 +71,28 @@ $(document).ready( function() {
       scroll_to_element(r2ui._dis.selected);
     }
   });
+  $('input').bind('keydown', function(e){
+      if(e.keyCode == '38' || e.keyCode == '40'){
+          e.preventDefault();
+      }
+  });
   $("#command").keydown(function( inEvent ) {
     var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
     if (key === 40) {
       console_history_idx++;
       if (console_history_idx > console_history.length - 1) console_history_idx = console_history.length;
       inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
+      // $("#command")[0].setSelectionRange(inEvent.target.value.length, inEvent.target.value.length);
+      // console.log(inEvent.target.value.length);
+      // $("#command")[0].focus();
     }
     if (key === 38) {
       console_history_idx--;
       if (console_history_idx < 0) console_history_idx = 0;
       inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
+      // console.log(inEvent.target.value.length);
+      // $("#command")[0].setSelectionRange(inEvent.target.value.length, inEvent.target.value.length);
+      // $("#command")[0].focus();
     }
   });
 
@@ -136,6 +147,7 @@ $(document).ready( function() {
 function scroll_to_element(element) {
   var top = Math.max(0,element.documentOffsetTop() - ( window.innerHeight / 2 ));
   $('#center_panel').scrollTo(top, {axis: 'y'});
+  r2ui._dis.scroll_offset = top;
 }
 
 function scroll_to_address(address) {
@@ -144,7 +156,15 @@ function scroll_to_address(address) {
     var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
     top = Math.max(0,top);
     $('#center_panel').scrollTo(top, {axis: 'y'});
+    r2ui._dis.scroll_offset = top;
   }
+}
+
+function store_scroll_offset() {
+  r2ui._dis.scroll_offset = $('#center_panel').scrollTop();
+}
+function scroll_to_last_offset() {
+  if (r2ui._dis.scroll_offset !== null) $('#center_panel').scrollTo(r2ui._dis.scroll_offset, {axis: 'y'});
 }
 
 function rehighlight_iaddress(address) {
@@ -288,7 +308,6 @@ function handleKeypress(inEvent) {
 }
 
 function do_jumpto(address) {
-
   var element = $('.insaddr.addr_' + address);
   if (element.length > 0) {
     r2ui.history_push(address);
@@ -310,8 +329,21 @@ function do_goto() {
 }
 
 function do_rename(element, inEvent) {
-  if (r2ui._dis.renaming === null && element !== null && (element.className.indexOf(" addr ") ) -1) {
-    var address = get_address_from_class(element);
+  var address = get_address_from_class(element);
+  if ($(element).hasClass("addr") && $(element).hasClass("flag")) {
+     var space = "*";
+     if ($(element).hasClass("symbol")) space = "functions";
+     if ($(element).hasClass("symbol")) space = "symbols";
+     if ($(element).hasClass("reloc")) space = "relocs";
+     if ($(element).hasClass("section")) space = "sections";
+     if ($(element).hasClass("string")) space = "strings";
+     var old_value = $(element).html();
+     rename(address, old_value, prompt('New name', old_value), space);
+     store_scroll_offset();
+     r2ui.seek("$$", false);
+     scroll_to_last_offset();
+     document.getElementById("canvas").focus();
+  } else if (r2ui._dis.renaming === null && element !== null && $(element).hasClass("addr")) {
     r2ui._dis.selected = element;
     r2ui._dis.selected_offset = address;
     r2ui._dis.renaming = element;
@@ -321,14 +353,21 @@ function do_rename(element, inEvent) {
     r2ui._dis.rbox.setAttribute("id", "rename");
     r2ui._dis.rbox.setAttribute("style", "border-width: 0;padding: 0;");
     r2ui._dis.rbox.setAttribute("onChange", "handleInputTextChange()");
-    r2ui._dis.rbox.setAttribute("value", "");
+    if ($(element).hasClass('insaddr')) {
+      var value = get_offset_flag(address);
+      r2ui._dis.rbox.setAttribute("value",value);
+      r2ui._dis.rbox.setSelectionRange(value.length, value.length);
+    } else {
+      r2ui._dis.rbox.setAttribute("value", r2ui._dis.renameOldValue);
+      r2ui._dis.rbox.setSelectionRange(r2ui._dis.renameOldValue.length, r2ui._dis.renameOldValue.length);
+    }
     r2ui._dis.renaming.innerHTML = "";
     r2ui._dis.renaming.appendChild(r2ui._dis.rbox);
     setTimeout('r2ui._dis.rbox.focus();', 200);
     inEvent.returnValue=false;
     inEvent.preventDefault();
-    update_binary_details();
   }
+  update_binary_details();
 }
 
 function do_comment(element) {
@@ -359,6 +398,99 @@ function do_define(element) {
   r2ui.seek(address, false);
   scroll_to_address(address);
   document.getElementById("canvas").focus();
+}
+
+function rename(offset, old_value, new_value, space) {
+  var renamed = false;
+  // If current offset is the beggining of a function, rename it with afr
+  r2.cmdj("pdfj @ " + offset, function(x) {
+    if (x !== null && x !== undefined) {
+      if ("0x" + x.addr.toString(16) === offset) {
+        console.log("rename function");
+        r2.cmd("afn " + new_value + " " + offset, function() {
+          renamed = true;
+        });
+      }
+    }
+  });
+  // Otherwise just add a flag
+  if (space === undefined) space = "functions";
+  // r2.cmd("fs " + space + ";f~"+old_value, function(x) {
+  //   console.log(x.length);
+  // });
+  if (!renamed) {
+    if (new_value !== "" && old_value !== "") {
+      var cmd = "fs " + space + ";fr " + old_value + " " + new_value;
+      console.log(cmd);
+      r2.cmd(cmd, function() {});
+    } else if (new_value === "" && old_value !== "") {
+      var cmd = "fs " + space + ";f-@" + offset;
+      console.log(cmd);
+      r2.cmd(cmd, function() {});
+    } else if (new_value !== "" && old_value === "") {
+      var cmd = "fs " + space + ";f " + new_value + " @ " + offset;
+      console.log(cmd);
+      r2.cmd(cmd, function() {});
+    }
+  }
+  r2.update_flags();
+}
+
+function get_offset_flag(offset) {
+  var old_value = "";
+  r2.cmdj("fs offsets;fj", function(x) {
+    for (var i in x) {
+      if ("0x" + x[i].offset.toString(16) == offset) {
+        old_value = x[i].name;
+        break;
+      }
+    }
+  });
+  return old_value;
+}
+
+function get_symbol_flag(symbol) {
+  var full_name = symbol;
+  var found = false;
+  r2.cmdj("fs symbols;fj", function(x) {
+    for (var i in x) {
+      if (x[i].name == symbol) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      for (var i in x) {
+        if (x[i].name == "sym." + symbol) {
+          full_name = "sym." + symbol;
+          break;
+        }
+      }
+    }
+  });
+  return full_name;
+}
+
+function get_reloc_flag(reloc) {
+  var full_name = reloc;
+  var found = false;
+  r2.cmdj("fs relocs;fj", function(x) {
+    for (var i in x) {
+      if (x[i].name == reloc) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      for (var i in x) {
+        if (x[i].name == "reloc." + reloc) {
+          full_name = "reloc." + reloc;
+          break;
+        }
+      }
+    }
+  });
+  return full_name;
 }
 
 function handleClick(inEvent) {
@@ -407,6 +539,7 @@ function update_binary_details() {
     render_relocs(x);
   });
   // <div id="flags"></div>
+  // TODO: replace with individual fetches of spaces so we can add a class saying what type of flag it is (for renaming)
   r2.cmdj("fs *;fj", function(x) {
     render_flags(x);
   });
@@ -423,13 +556,14 @@ function update_binary_details() {
 
 
 function render_functions(functions) {
+  // TODO: Sometimes undefined is printed
   var fcn_data = [];
   var imp_data = [];
   for (var i in functions) {
     var f = functions[i];
-    if (f.type == "sym") {
+    if (f.type == "sym" && f.name !== undefined) {
       var id = {
-        label: "<span class='function addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
+        label: "<span class='flag import addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
         children: [ {label: "offset: " + "0x" + f.offset.toString(16)}, {label: "size: " + f.size} ] };
       if (f.callrefs.length > 0) {
         var xrefs = {label: "xrefs:", children: []};
@@ -440,9 +574,9 @@ function render_functions(functions) {
       }
       imp_data[fcn_data.length] = id;
     }
-    if (f.type == "fcn") {
+    if (f.type == "fcn" && f.name !== undefined) {
       var fd = {
-        label: "<span class='function addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
+        label: "<span class='flag function addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
         children: [{label: "offset: " + "0x" + f.offset.toString(16)},  {label: "size: " + f.size} ] };
       if (f.callrefs.length > 0) {
         var xrefs = {label: "xrefs:", children: []};
@@ -464,7 +598,7 @@ function render_symbols(symbols) {
   for (var i in symbols) {
     var s = symbols[i];
     var sd = {
-      label: "<span class='symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + s.name + "</span>",
+      label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + get_symbol_flag(s.name) + "</span>",
       children: [ {label: "offset: " + "0x" + s.addr.toString(16)}, {label: "size: " + s.size} ] };
     data[data.length] = sd;
   }
@@ -475,7 +609,7 @@ function render_relocs(relocs) {
   for (var i in relocs) {
     var r = relocs[i];
     var rd = {
-      label: "<span class='reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + r.name + "</span>",
+      label: "<span class='flag reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + get_reloc_flag(r.name) + "</span>",
       children: [ {label: "offset: " + "0x" + r.vaddr.toString(16)}, {label: "type: " + r.type} ] };
     data[data.length] = rd;
   }
@@ -487,7 +621,7 @@ function render_flags(flags) {
   for (var i in flags) {
     var f = flags[i];
     var fd = {
-      label: "<span class='reloc addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
+      label: "<span class='flag addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
       children: [ {label: "offset: " + "0x" + f.offset.toString(16)}, {label: "size: " + f.size} ] };
     data[data.length] = fd;
   }

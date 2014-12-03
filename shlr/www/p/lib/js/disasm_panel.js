@@ -11,6 +11,7 @@ var DisasmPanel = function () {
   this.renameOldValue = "";
   this.rbox = null;
   this.panel = $("#disasm_tab")[0];
+  this.scroll_offset = null;
 };
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
@@ -70,44 +71,18 @@ DisasmPanel.prototype.goToAddress = function() {
 };
 DisasmPanel.prototype.handleInputTextChange = function() {
   if (this.renaming !== null && this.rbox.value.length > 0) {
-    // Enter belongs to renaming
-    var new_value = this.rbox.value;
-    this.renaming.innerHTML = new_value;
-    renaming = null;
-
-    this.renaming.innerHTML = this.renameOldValue;
-    this.renaming = null;
-
-    var renamed = false;
-    var offset = this.selected_offset;
-    // If current offset is the beggining of a function, rename it with afr
-    r2.cmdj("pdfj", function(x) {
-      if (x !== null && x !== undefined) {
-        if ("0x" + x.addr.toString(16) === offset) {
-          r2.cmd("afn " + new_value, function() {
-            renamed = true;
-           });
-        }
-      }
-    });
-    // Otherwise just add a flag
-    if (!renamed) {
-      var labels = '';
-      r2.cmd("fs functions;f@" + this.selected_offset + "~[2]", function(x) {
-        labels = x.trim().replace('\n', ';');
-      });
-      if (new_value) {
-        var cmd = "fs functions;f-@" + this.selected_offset + ";f+" + new_value + "@" + this.selected_offset + ";";
-        r2.cmd(cmd, function() {});
-      } else {
-        r2.cmd("f-@" + this.selected_offset, function() {});
-      }
+    if ($(this.selected).hasClass('insaddr')) {
+      var old_value = get_offset_flag(r2ui._dis.selected_offset);
+      rename(r2ui._dis.selected_offset, old_value, this.rbox.value, "offsets");
+    } else {
+      // TODO, try to recognize other spaces
+      var old_value = r2ui._dis.renameOldValue;
+      rename(r2ui._dis.selected_offset, old_value, r2ui._dis.rbox.value, "*");
     }
-    r2.update_flags();
-
     var instruction;
     if (this.display == "flat") instruction = $(this.selected).closest(".instructionbox").find('.insaddr')[0];
     if (this.display == "graph") instruction = $(this.selected).closest(".instruction").find('.insaddr')[0];
+    this.renaming = null;
     var address = get_address_from_class(instruction);
     update_binary_details();
     r2ui.seek(address, false);
