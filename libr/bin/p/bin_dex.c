@@ -244,7 +244,7 @@ static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 		return NULL;
 	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 8);
 	len = dex_read_uleb128 (buf);
-	buf2 = r_uleb128 (buf, -1, &len);
+	buf2 = r_uleb128 (buf, ST32_MAX, &len);
 	uleblen = (size_t)(buf2 - buf);
 	// XXX what about 0 length strings?
 	if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
@@ -370,8 +370,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			dprintf ("  instance fields: %u\n", (ut32)IF);
 			for (j=0; j<IF; j++) {
 				ut64 FI, FA;
-				p = r_uleb128 (p, -1, &FI);
-				p = r_uleb128 (p, -1, &FA);
+				p = r_uleb128 (p, ST32_MAX, &FI);
+				p = r_uleb128 (p, ST32_MAX, &FA);
 				dprintf ("    field_idx: %u,\n", (ut32)FI);
 				dprintf ("    field access_flags: %u,\n", (ut32)FA);
 			}
@@ -380,9 +380,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			for (j=0; j<DM; j++) {
 				char *method_name, *flag_name;
 				ut64 MI, MA, MC;
-				p = r_uleb128 (p, -1, &MI);
-				p = r_uleb128 (p, -1, &MA);
-				p = r_uleb128 (p, -1, &MC);
+				p = r_uleb128 (p, ST32_MAX, &MI);
+				p = r_uleb128 (p, ST32_MAX, &MA);
+				p = r_uleb128 (p, ST32_MAX, &MC);
 
 				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
@@ -412,9 +412,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			dprintf ("  virtual methods: %u\n", (ut32)VM);
 			for (j=0; j<VM; j++) {
 				ut64 MI, MA, MC;
-				p = r_uleb128 (p, -1, &MI);
-				p = r_uleb128 (p, -1, &MA);
-				p = r_uleb128 (p, -1, &MC);
+				p = r_uleb128 (p, ST32_MAX, &MI);
+				p = r_uleb128 (p, ST32_MAX, &MA);
+				p = r_uleb128 (p, ST32_MAX, &MC);
 
 				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (bin->code_from>MC) bin->code_from = MC;

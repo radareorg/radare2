@@ -6,9 +6,12 @@ R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
-	if (datalen==-1) {
+	if (datalen==ST32_MAX) {
 		// WARNING; possible overflow
 		datalen = 0xffff;
+	} else
+	if (datalen<0) {
+		return NULL;
 	}
 	data_end = data + datalen;
 	if (data && datalen>0) {
