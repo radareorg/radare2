@@ -489,9 +489,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
-		(ptr = strchr (tokens[ctr], ';')) ||
+		ctr < R_ASM_BUFSIZE - 1 &&
+		((ptr = strchr (tokens[ctr], ';')) ||
 		(ptr = strchr (tokens[ctr], '\n')) ||
-		(ptr = strchr (tokens[ctr], '\r'));
+		(ptr = strchr (tokens[ctr], '\r')));
 		tokens[++ctr] = ptr+1) {
 			*ptr = '\0';
 	}
