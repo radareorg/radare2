@@ -94,7 +94,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 					p = strdup (pos);
 					for (j=0; p[j]; j++) {
 						if (strchr (buf, p[j]))
-							p[j] = toupper (p[j]);
+							p[j] = toupper ((unsigned char)p[j]);
 					}
 					r_cons_printf (" %c %s\n", first?'-':' ', p);
 					free (p);

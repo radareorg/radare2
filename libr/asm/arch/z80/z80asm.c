@@ -111,7 +111,7 @@ static void printerr (int error, const char *fmt, ...) {
 
 /* skip over spaces in string */
 static const char * delspc (const char *ptr) {
-	while (*ptr && isspace (*ptr))
+	while (*ptr && isspace ((const unsigned char)*ptr))
 		ptr++;
 	if (*ptr == ';')
 		ptr = "";
@@ -184,7 +184,7 @@ static int indx (const char **ptr, const char **list, int error, const char **ex
 
 			++check;
 		}
-		if (*check || (isalnum (check[-1]) && isalnum (input[0])))
+		if (*check || (isalnum ((const unsigned char)check[-1]) && isalnum ((const unsigned char)input[0])))
 			continue;
 		if (had_expr) {
 			input = delspc (input);

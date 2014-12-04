@@ -179,7 +179,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c!=':' && c!='.' && !isalnum (c)) {
+		if (c!=':' && c!='.' && !isalnum ((unsigned char)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}
@@ -220,7 +220,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	char ch = 0, c = 0;
 
 	do { if (!cin_get (num, nc, &ch)) return nc->curr_tok = RNCEND;
-	} while (ch!='\n' && isspace (ch));
+	} while (ch!='\n' && isspace ((unsigned char)ch));
 
 	switch (ch) {
 	case 0:
@@ -282,7 +282,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 				}
 				nc->string_value[i++] = ch;
 			} else {
-				while (cin_get (num, nc, &ch) && isvalidchar (ch)) {
+				while (cin_get (num, nc, &ch) && isvalidchar ((unsigned char)ch)) {
 					if (i>=R_NUMCALC_STRSZ) {
 						error (num, nc, "string too long");
 						return 0;

@@ -1338,7 +1338,7 @@ static int cmd_search(void *data, const char *input) {
 			str = malloc ((len+1)*2);
 			for (p2=input+strstart, p=str; *p2; p+=2, p2++) {
 				if (ignorecase)
-					p[0] = tolower(*p2);
+					p[0] = tolower((const unsigned char)*p2);
 				else
 					p[0] = *p2;
 				p[1] = 0;

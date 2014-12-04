@@ -58,8 +58,8 @@ strupr (a)
 
   while (*a != '\0')
     {
-      if (islower (*a))
-	*a = toupper (*a);
+      if (islower ((unsigned char)*a))
+	*a = toupper ((unsigned char)*a);
       ++a;
     }
 
@@ -69,8 +69,8 @@ strupr (a)
 char * strlwr (char *a) {
 	char *ret = a;
 	while (*a != '\0') {
-		if (isupper (*a))
-			*a = tolower (*a);
+		if (isupper ((unsigned char)*a))
+			*a = tolower ((unsigned char)*a);
 		++a;
 	}
 	return ret;
@@ -1282,4 +1282,3 @@ ulong Disasm(const unsigned char *src,ulong srcsize,ulong srcip,
   };
   return (srcsize-size);               // Returns number of recognized bytes
 };
-

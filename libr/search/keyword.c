@@ -117,7 +117,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 	RSearchKeyword *kw;
 	int i = 0, start, length;
 
-	while (isspace(str[i]))
+	while (isspace((const unsigned char)str[i]))
 		i++;
 
 	if (str[i++] != '/')
@@ -164,5 +164,3 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 
 	return kw;
 }
-
-

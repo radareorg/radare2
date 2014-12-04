@@ -48,7 +48,7 @@ rd_number (const char **p, const char **endp, int base)
 	     "(string=%s).\n", stack[sp].line, addr, base, *p);
   num[base] = '\0';
   *p = delspc (*p);
-  while (**p && (c = strchr (num, tolower (**p))))
+  while (**p && (c = strchr (num, tolower ((const unsigned char)**p))))
     {
       i = c - num;
       if (verbose >= 7)
@@ -83,7 +83,7 @@ rd_otherbasenumber (const char **p, int *valid, int print_errors)
 	printerr (1, "unexpected end of line after `@'\n");
       return 0;
     }
-  if (**p == '0' || !isalnum (**p))
+  if (**p == '0' || !isalnum ((const unsigned char)**p))
     {
       if (valid)
 	*valid = 0;
@@ -93,8 +93,8 @@ rd_otherbasenumber (const char **p, int *valid, int print_errors)
     }
   c = **p;
   (*p)++;
-  if (isalpha (**p))
-    return rd_number (p, NULL, tolower (c) - 'a' + 1);
+  if (isalpha ((const unsigned char)**p))
+    return rd_number (p, NULL, tolower ((unsigned char)c) - 'a' + 1);
   return rd_number (p, NULL, c - '0' + 1);
 }
 
@@ -189,7 +189,7 @@ check_label (struct label *labels, const char **p, struct label **ret,
   const char *c;
   unsigned s2;
   *p = delspc (*p);
-  for (c = *p; isalnum (*c) || *c == '_' || *c == '.'; ++c)
+  for (c = *p; isalnum ((const unsigned char)*c) || *c == '_' || *c == '.'; ++c)
     {
     }
   s2 = c - *p;

@@ -561,9 +561,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 #define SYMBOL "text"
 #define SYMLEN sizeof(SYMBOL)
 					char *p = strstr(marray[i].mp->desc, "text");
-					if (p && (p == marray[i].mp->desc || isspace(p[-1])) &&
+					if (p && (p == marray[i].mp->desc || isspace((unsigned char)p[-1])) &&
 					    (p + SYMLEN - marray[i].mp->desc == MAXstring ||
-					     (p[SYMLEN] == '\0' || isspace(p[SYMLEN])))) {
+					     (p[SYMLEN] == '\0' || isspace((unsigned char)p[SYMLEN])))) {
 						(void)fprintf(stderr,
 							      "*** Possible binary test for text type\n");
 					}

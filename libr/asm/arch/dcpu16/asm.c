@@ -50,7 +50,7 @@ static void clean_line(char* oline, const char* line) {
 			
 			/* Convert to upper case */
 			if (current_char >= 'a' && current_char <= 'z')
-				current_char = toupper (current_char);
+				current_char = toupper ((unsigned char)current_char);
 				
 			/* Place in cleaned line */
 			oline[n] = current_char;

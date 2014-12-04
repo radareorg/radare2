@@ -1327,7 +1327,7 @@ ignore:
 		offstr = r_str_trim_head (ptr+1);
 
 		addr = r_num_math (core->num, offstr);
-                if (isalpha (ptr[1]) && addr== 0) {
+                if (isalpha ((unsigned char)ptr[1]) && addr== 0) {
                         if (!r_flag_get (core->flags, ptr+1)) {
                                 eprintf ("Invalid address (%s)\n", ptr+1);
                                 return R_FALSE;

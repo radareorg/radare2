@@ -101,7 +101,7 @@ R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
 			if (i>0 && (i%8)==0)
 				buf++;
 	                if (*buf&(1<<(i%8)))
-				strout[j++] = toupper (bitz[i]);
+				strout[j++] = toupper ((const unsigned char)bitz[i]);
 		}
 	} else {
 		for (i=j=0; i<len; i++) {
@@ -122,8 +122,8 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	ut64 out = 0LL;
 	/* return the numberic value associated to a string (rflags) */
 	for (; *buf; buf++) {
-		char *ch = strchr (bitz, toupper (*buf));
-		if (!ch) ch = strchr (bitz, tolower (*buf));
+		char *ch = strchr (bitz, toupper ((const unsigned char)*buf));
+		if (!ch) ch = strchr (bitz, tolower ((const unsigned char)*buf));
 		if (ch) {
 			int bit = (int)(size_t)(ch - bitz);
 			out |= (ut64)(1LL << bit);
@@ -202,10 +202,10 @@ R_API void r_str_case(char *str, int up) {
 	if (up) {
 		char oc = 0;
 		for (; *str; oc = *str++)
-			*str = (*str=='x' && oc=='0') ? 'x': toupper (*str);
+			*str = (*str=='x' && oc=='0') ? 'x': toupper ((unsigned char)*str);
 	} else
 		for (; *str; str++)
-			*str = tolower (*str);
+			*str = tolower ((unsigned char)*str);
 }
 
 R_API char *r_str_home(const char *str) {

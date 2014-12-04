@@ -244,7 +244,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				break;
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; isgraph (*p) && i < sizeof(tmp) - 1;)
+			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof(tmp) - 1;)
 				tmp[i++] = *p++;
 			tmp[i] = '\0';
 			// Limit the number of tokens 
