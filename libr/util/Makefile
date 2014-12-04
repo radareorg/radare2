@@ -36,4 +36,11 @@ LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
 
+# NetBSD 7.0 ships with backtrace(3) in -lexecinfo
+ifeq (${BUILD_OS},netbsd)
+ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
+  LDFLAGS+=-lexecinfo
+endif
+endif
+
 include ../rules.mk
