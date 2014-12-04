@@ -316,9 +316,10 @@ arcExtMap_instName (int opcode, int insn, int *flags)
       /* 16-bit instructions.  */
       if (0x08 <= opcode && opcode <= 0x0b)
 	{
-	  unsigned char I, b, c, i;
+	  /* I - set but not used */
+	  unsigned char /* I, */ b, c, i;
 
-	  I = (insn & 0xf800) >> 11;
+	  /* I = (insn & 0xf800) >> 11; */
 	  b = (insn & 0x0700) >> 8;
 	  c = (insn & 0x00e0) >> 5;
 	  i = (insn & 0x001f);
@@ -331,10 +332,11 @@ arcExtMap_instName (int opcode, int insn, int *flags)
       /* 32-bit instructions.  */
       else
 	{
-	  unsigned char P, M, I, A, B;
+	  /* P, M - set but not used */
+	  unsigned char /* P, M, */ I, A, B;
 
-	  P = (insn & 0x00c00000) >> 22;
-	  M = (insn & 0x00000020);
+	  /* P = (insn & 0x00c00000) >> 22; */
+	  /* M = (insn & 0x00000020); */
 	  I = (insn & 0x003f0000) >> 16;
 	  A = (insn & 0x0000003f);
 	  B = ((insn & 0x07000000) >> 24) | ((insn & 0x00007000) >> 9);
