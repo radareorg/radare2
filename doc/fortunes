@@ -7,7 +7,6 @@ Choose your architecture by typing: 'e asm.arch=<arch>'
 Move between your search hits in visual mode using the 'f' and 'F' keys
 Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
 Everytime you run radare2, a random file is removed :)
-RADARE CUMS WITH ABSOLUTELY NO WARRANTY
 Enable asm.trace to see the tracing information inside the disassembly
 Change the registers of the child process in this way: 'dr eax=0x333'
 Deltify your life with radare2
@@ -55,7 +54,7 @@ Change the UID of the debugged process with child.uid (requires root)
 Enable full backtrace with dbg.fullbt
 What do you want to debug today?
 Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
-Enhace your graphs by increasing the size of the block and graph.depth eval variable.
+Enhance your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
 Emulate the base address of a file with e file.baddr.
 Bindiff two files with '$ bdiff /bin/true /bin/false'
@@ -67,7 +66,6 @@ Use scr.accel to browse the file faster!
 I love the smell of bugs in the morning.
 Use the 'pR' command to see the source line related to the current seek
 Analyze socket connections with the socket plugin: 'radare2 socket://www.foo.com:80'. Use 'w' to send data
-I like to suck nibbles and make hex.
 I'm in your source securing your bits.
 radare2 contributes to the One Byte Per Child fundation.
 Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
@@ -82,10 +80,8 @@ Use 'e' and 't' in Visual mode to edit configuration and track flags.
 Use 'rabin2 -rios' to get the import/export/other symbols of any binary.
 Remember to maintain your ~/.radare_history
 Microloft Visual Radare.NET 2008. Now OOXML Powered!
-Enjoy the 'two girls one backup' viral video.
 A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
 radare2 is like windows 7 but even better.
-Enlarge your radare2.
 Excellent; we can attack in any direction!
 Better than an eel in the ass.
 radare2 build farm beats the facebook one.
@@ -98,7 +94,6 @@ Use radare2! lemons included!
 Are you fucking coding me?
 rax2 -s 20e296b20ae296b220e296b20a
 Connection lost with the license server, your r2 session will terminate soon.
-I swear i didn't knew she had only 8bits!
 Set 'e bin.dwarf=true' to load dwarf information at startup.
 Rename a function using the 'afr <newname> @ <offset>' command.
 You can redefine descriptive commands in the hud file and using the 'V_' command.
@@ -127,11 +122,9 @@ I thought we were friends. :_
 Welcome back, lazy human!
 Yo dawg!
 ---8<--------------------8<------------------8<-----------------8<--- --
-I accidentally the kernel with radare2.
+I accidentally crashed the kernel with radare2.
 I endians swap.
 This page intentionally left blank.
-Sick my duck!
-Duck my sick!
 Use 'ec' to choose the colors for your disassembly palette
 Here be dragons.
 Trust no one, nor a zero. Both lie.
@@ -142,7 +135,6 @@ Charlie! We are here.
 The door is everything..
 The door controls time and space.
 The door can see into your soul.
-Undefined symbol 'r_anal_fisting'.
 I am Pentium of Borg. Division is futile. You will be approximated.
 Don't look at the code. Don't look.
 Dissasemble? No dissasemble, no dissassemble!!!!!
@@ -156,7 +148,6 @@ rm: /: Permission denied.
 That's embarrassing.
 Connection with license server failed.
 In soviet Afghanistan, you debug radare2!
-You should know that ptracing binaries younger than 18yo is illegal.
 Wow, my cat knows radare2 hotkeys better than me!
 Documentation is for weak people.
 PEBCAK ERROR: Documentation not found.
@@ -168,11 +159,9 @@ How about a nice game of chess?
 THE ONLY WINNING MOVE IS NOT TO PLAY.
 SHALL WE PLAY A GAME?
 Sudo make me a pancake.
-Bitch
 I nodejs so hard my exams.
 What a nodejs!
 Now featuring NoSQL!
-Kentucky Fried Children
 One does not simply write documentation.
 We are bleeding edge here. Can't you feel the razors?
 There's a branch for that.
@@ -183,7 +172,6 @@ It's working! Look at the door!
 This is an unacceptable milion year dungeon.
 The Hard ROP Cafe
 Please remove pregnant women, pregnant children, and pregnant pets from the monitor.
-Fill the bug. Fill it with love. With the creamy and hot sauce of love.
 If you need to escape from hell, 'e asm.arch = malbolge' might help you.
 Wait a minute! I found a bug, self-fixing... OK
 Hold on, this should never happen!
@@ -196,13 +184,11 @@ Can you stand on your head?
 I hope you segfault in hell.
 May the segfault be with you.
 I script in C, because I can.
-EXPLICIT CONTENT
 Bindings are mostly powered by tears.
 In Soviet Russia, radare2 have documentation.
 Initial frame selected; you cannot go up.
 Unk, unk, unk, unk
 Experts agree, security holes suck, and we fixed some of them!
-r2 your penis
 This is just an existentialist experiment.
 Nothing to see here. Move along.
 Select your character: RBin Wizard, Master Anal Paladin, or Assembly Wizard
@@ -229,3 +215,6 @@ I didn't said that it was working, I said that it's implemented
 Wrong argument
 Remember that word: C H A I R
 For a full list of commands see `strings /dev/urandom`
+These aren't the breakpoints you're looking for
+I'm sorry, Dave. I'm afraid I can't do that
+I'm going to make him a binary he can't refuse
