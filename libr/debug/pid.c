@@ -62,7 +62,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
-	if (dbg && dbg->h && dbg->h->pids) {
+	if (dbg && dbg->h && dbg->h->threads) {
 		list = dbg->h->threads (dbg, pid);
 		if (list == NULL)
 			return R_FALSE;
