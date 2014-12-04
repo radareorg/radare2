@@ -85,6 +85,7 @@ R_API RBinObject * r_bin_file_object_get_cur (RBinFile *binfile) {
 }
 
 R_API RBinObject * r_bin_object_get_cur (RBin *bin) {
+	if (!bin) return NULL;
 	return r_bin_file_object_get_cur (r_bin_cur (bin));
 }
 
@@ -1714,12 +1715,10 @@ R_API int r_bin_file_set_cur_by_name (RBin * bin, const char * name) {
 }
 
 R_API RBinFile * r_bin_cur (RBin *bin) {
-	if (bin) return bin->cur;
-	return NULL;
+	return bin? bin->cur: NULL;
 }
 
 R_API RBinObject * r_bin_cur_object (RBin *bin) {
 	RBinFile *binfile = r_bin_cur (bin);
-	if (binfile) return binfile->o;
-	return NULL;
+	return binfile? binfile->o: NULL;
 }

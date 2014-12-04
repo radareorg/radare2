@@ -427,6 +427,10 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			} else if (len <= next_map_addr-addr) {
 				next_sec_addr = UT64_MAX;
 			} else {
+				if (addr > next_sec_addr) {
+					/* avoid negative deltas */
+					return olen;
+				}
 				l = next_sec_addr-addr;
 			}
 
