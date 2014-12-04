@@ -288,6 +288,8 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
+	SDebugInfo di;
+	int len = 0;
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
@@ -352,6 +354,24 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->dbg_info |= R_BIN_DBG_SYMS;
 	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj))
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
+
+	if (PE_(r_bin_pe_get_debug_data)(arch->o->bin_obj, &di)) {
+		len = R_BIN_SIZEOF_STRINGS;
+		if (R_BIN_SIZEOF_STRINGS >= GUIDSTR_LEN) {
+			len = GUIDSTR_LEN;
+		} else {
+			eprintf("warning: guid is bigger than R_BIN_SIZEOF_STRINGS\n");
+		}
+		strncpy(ret->guid, (char *)di.guidstr, len);
+
+		if (R_BIN_SIZEOF_STRINGS >= DBG_FILE_NAME_LEN) {
+			len = DBG_FILE_NAME_LEN;
+		} else {
+			eprintf("waring: debug file name len os bigger then R_BIN_SIZEOF_STRINGS\n");
+		}
+		strncpy(ret->debug_file_name, (char *)di.file_name, len);
+	}
+
 	return ret;
 }
 

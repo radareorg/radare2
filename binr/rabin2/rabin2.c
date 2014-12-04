@@ -498,26 +498,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if ((action & ACTION_PDB) && (actions == 2)) {
-		DIR *dir;
-		struct dirent *entry;
-		if ((dir = opendir(argv[optind])) != NULL) {
-			while (((entry = readdir(dir)) != NULL) && (entry->d_type != 0x4)) {
-//				SDebugInfo di;
-//				cf = r_core_file_open (&core, entry->d_name, R_IO_READ, 0);
-//				PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, struct SDebugInfo *res)
-				printf("%s\n", entry->d_name);
-//				r_core_fini (&core);
-			}
-			closedir(dir);
-		} else {
-			eprintf("could not open directory\n");
-		}
-//		r_sys_cmdf("ls %s", argv[optind]);
-		r_core_fini (&core);
-		return 0;
-	}
-
 	file = argv[optind];
 	if (!query)
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
