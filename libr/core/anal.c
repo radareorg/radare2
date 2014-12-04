@@ -44,7 +44,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-				if (*map->name=='/') {
+				if (map->name && map->name[0] == '/') {
 					if (core->io && core->io->desc && core->io->desc->name && \
 							!strcmp (map->name, core->io->desc->name)) {
 						types |= R_ANAL_ADDR_TYPE_PROGRAM;
