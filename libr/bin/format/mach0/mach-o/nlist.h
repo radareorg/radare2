@@ -284,7 +284,7 @@ struct nlist_64 {
 
 /*
  * The N_ARM_THUMB_DEF bit of the n_desc field indicates that the symbol is
- * a defintion of a Thumb function.
+ * a definition of a Thumb function.
  */
 #define N_ARM_THUMB_DEF	0x0008 /* symbol is a Thumb function (ARM) */
 

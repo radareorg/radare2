@@ -295,7 +295,7 @@ struct zip_file {
 struct zip_dirent {
     zip_uint32_t changed;
     int local_extra_fields_read;		/*      whether we already read in local header extra fields */
-    int cloned;                                 /*      wether this instance is cloned, and thus shares non-changed strings */
+    int cloned;                                 /*      whether this instance is cloned, and thus shares non-changed strings */
 
     zip_uint16_t version_madeby;		/* (c)  version of creator */
     zip_uint16_t version_needed;		/* (cl) version needed to extract */

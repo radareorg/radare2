@@ -864,7 +864,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep some usecs before analyzing more. Avoid 100% cpu usage");
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
-	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the begining of functions");
+	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");

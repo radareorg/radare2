@@ -408,7 +408,7 @@ function do_define(element) {
 function rename(offset, old_value, new_value, space) {
   if (space === undefined) space = "functions";
   if (space == "functions") {
-    // If current offset is the beggining of a function, rename it with afr
+    // If current offset is the beginning of a function, rename it with afr
     r2.cmdj("pdfj @ " + offset, function(x) {
       if (x !== null && x !== undefined) {
         if ("0x" + x.addr.toString(16) === offset) {

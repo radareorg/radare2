@@ -423,7 +423,7 @@ repeat:
 			}
 #endif
 		} else {
-			/* if not eobjmp. a jump will break the function if jumps before the begining of the function */
+			/* if not eobjmp. a jump will break the function if jumps before the beginning of the function */
 			if (op.jump < fcn->addr) {
 				if (!overlapped) {
 					bb->jump = op.jump;

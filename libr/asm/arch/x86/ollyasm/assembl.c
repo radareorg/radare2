@@ -1059,7 +1059,7 @@ retrylongjump:
         case PS0:                      // Top of FPU stack (pseudooperand)
         case PS1:                      // ST(1) (pseudooperand)
         case PCX:                      // CX/ECX (pseudooperand)
-        case PDI:                      // EDI (pseudooperand in MMX extentions)
+        case PDI:                      // EDI (pseudooperand in MMX extensions)
           break;
         default:                       // Undefined type of operand
           strcpy(errtext,"Internal Assembler error");
@@ -1245,7 +1245,7 @@ retrylongjump:
             op->index>=0 && op->scale==2 &&
             op->offset>=-128 && op->offset<128 && op->anyoffset==0) {
             op->base=op->index; op->scale=1; };
-          if (op->index==GREG_ESP) {    // Reordering was unsuccessfull
+          if (op->index==GREG_ESP) {    // Reordering was unsuccessful
             strcpy(errtext,"Invalid indexing mode");
             goto error; };
           if (op->base<0) {
@@ -1298,7 +1298,7 @@ retrylongjump:
       case IMX:                        // Immediate sign-extendable byte
       case IMS:                        // Immediate byte (for shifts)
       case IM1:                        // Immediate byte
-        if (immsize==2)                // To accomodate ENTER instruction
+        if (immsize==2)                // To accommodate ENTER instruction
           immediate=(immediate & 0xFFFF) | (op->offset<<16);
         else immediate=op->offset;
         anyimm|=op->anyoffset;
@@ -1352,7 +1352,7 @@ retrylongjump:
       case PS0:                        // Top of FPU stack (pseudooperand)
       case PS1:                        // ST(1) (pseudooperand)
       case PCX:                        // CX/ECX (pseudooperand)
-      case PDI:                        // EDI (pseudooperand in MMX extentions)
+      case PDI:                        // EDI (pseudooperand in MMX extensions)
         break;                         // Simply skip preudooperands
       default:                         // Undefined type of operand
         strcpy(errtext,"Internal Assembler error");

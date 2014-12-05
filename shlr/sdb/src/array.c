@@ -167,7 +167,7 @@ SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	return sdb_array_add (s, key, v16, cas); // TODO: v10 or v16
 }
 
-// XXX: index should be supressed here? if its a set we shouldnt change the index
+// XXX: index should be suppressed here? if its a set we shouldnt change the index
 SDB_API int sdb_array_add(Sdb *s, const char *key, const char *val, ut32 cas) {
 	if (sdb_array_contains (s, key, val, NULL))
 		return 0;

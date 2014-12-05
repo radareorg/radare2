@@ -578,7 +578,7 @@
 /* The next four dynamic tags are used on Solaris.  We support them
    everywhere.	Note these values lie outside of the (new) range for
    OS specific values.	This is a deliberate special case and we
-   maintain it for backwards compatability.  */
+   maintain it for backwards compatibility.  */
 #define DT_VALRNGLO	0x6ffffd00
 #define DT_GNU_PRELINKED 0x6ffffdf5
 #define DT_GNU_CONFLICTSZ 0x6ffffdf6

@@ -42,7 +42,7 @@ point to a given physical address from a virtual one.
 #define isInMapRange(m,x)	((m->from <= x) && (x <= m->to))
 
 /* Idea: At first, get all sections in vrange, meanwhile record all unsectioned area and store it via RIORange in a list,
-read all sections via mread, resolve maps for unsectioned areas and fill the gaps. last point must allways prefere using io->desc*/
+read all sections via mread, resolve maps for unsectioned areas and fill the gaps. last point must always prefere using io->desc*/
 R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	int tmp_len = len;
 	ut8 *tmp_buf = buf;
@@ -104,7 +104,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 				r_io_mread (io, map->fd, tmp_vaddr, tmp_buf, tmp_len);	//read from maps, the ranges will adjusted in mread
 			}
 			r_list_free (maps);					//free the list for the next iteration
-			r_io_mread (io, io->desc->fd, tmp_vaddr, tmp_buf, tmp_len);	//ensure that io->desc is allways on the top
+			r_io_mread (io, io->desc->fd, tmp_vaddr, tmp_buf, tmp_len);	//ensure that io->desc is always on the top
 		}
 		r_list_free (ranges);
 	} else {
@@ -113,7 +113,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 			r_io_mread (io, map->fd, vaddr, buf, len);		//read from the maps, the ranges will be adjusted in mread
 		}
 		r_list_free (maps);						//free the list
-		r_io_mread (io, io->desc->fd, vaddr, buf, len);			//ensure that io->desc is allways on the top
+		r_io_mread (io, io->desc->fd, vaddr, buf, len);			//ensure that io->desc is always on the top
 	}
 	return R_TRUE;
 }

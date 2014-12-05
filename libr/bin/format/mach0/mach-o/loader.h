@@ -146,7 +146,7 @@ struct mach_header_64 {
 #define MH_FORCE_FLAT	0x100		/* the executable is forcing all images
 					   to use flat name space bindings */
 #define MH_NOMULTIDEFS	0x200		/* this umbrella guarantees no multiple
-					   defintions of symbols in its
+					   definitions of symbols in its
 					   sub-images so the two-level namespace
 					   hints can always be used. */
 #define MH_NOFIXPREBINDING 0x400	/* do not have dyld notify the

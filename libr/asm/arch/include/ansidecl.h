@@ -1,4 +1,4 @@
-/* ANSI and traditional C compatability macros
+/* ANSI and traditional C compatibility macros
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001
    Free Software Foundation, Inc.
    This file is part of the GNU C Library.

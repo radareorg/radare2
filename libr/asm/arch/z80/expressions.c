@@ -262,7 +262,7 @@ rd_label (const char **p, int *exists, struct label **previous, int level,
       /* not yet found */
       const char *old_p = *p;
 	  /* label does not exist, or is invalid.  This is an error if there
-	   * is no existance check.  */
+	   * is no existence check.  */
 	  if (!exists && print_errors)
 	    printerr (1, "using undefined label %.*s\n", *p - old_p, old_p);
 	  /* Return a value to discriminate between non-existing and invalid */

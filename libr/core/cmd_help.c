@@ -225,7 +225,7 @@ static int cmd_help(void *data, const char *input) {
 		const char* help_msg[] = {
 			"Usage: ?v [$.]","","",
 			"$$", "", "here (current virtual seek)",
-			"$?", "", "last comparision value",
+			"$?", "", "last comparison value",
 			"$alias", "=value", "Alias commands (simple macros)",
 			"$Cn", "", "get nth call of function",
 			"$Dn", "", "get nth data reference in function",

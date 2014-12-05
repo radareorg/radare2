@@ -549,7 +549,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 
 			//Handle (possible) grep
 			if (search_hit) {
-				if (end[0] == ';') { // fields are semicolon-seperated
+				if (end[0] == ';') { // fields are semicolon-separated
 					start = end + 1; // skip the ;
 					end = strstr (start, ";");
 					end = end?end: start + strlen(start); //latest field?

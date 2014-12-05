@@ -57,7 +57,7 @@
 #undef SS
 // Special command features.
 #define WW             0x01            // Bit W (size of operand)
-#define SS             0x02            // Bit S (sign extention of immediate)
+#define SS             0x02            // Bit S (sign extension of immediate)
 #define WS             0x03            // Bits W and S
 #define W3             0x08            // Bit W at position 3
 #define CC             0x10            // Conditional jump
@@ -134,7 +134,7 @@
 #define PS0            (PSEUDOOP+5)    // Top of FPU stack (ST(0))
 #define PS1            (PSEUDOOP+6)    // ST(1)
 #define PCX            (PSEUDOOP+7)    // CX/ECX
-#define PDI            (PSEUDOOP+8)    // EDI (in MMX extentions)
+#define PDI            (PSEUDOOP+8)    // EDI (in MMX extensions)
 
 // Errors detected during command disassembling.
 #define DAE_NOERR      0               // No error

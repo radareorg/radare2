@@ -2319,7 +2319,7 @@ print_insn_aarch64 (bfd_vma pc,
 	    n = last_mapping_sym;
 
 	  /* No mapping symbol found at this address.  Look backwards
-	     for a preceeding one.  */
+	     for a preceding one.  */
 	  for (; n >= 0; n--)
 	    {
 	      if (get_sym_code_type (info, n, &type))

@@ -36,7 +36,7 @@
 // Tuning parameters
 //**************************************
 // FORCE_NATIVE_FORMAT :
-// By default, xxHash library provides endian-independant Hash values.
+// By default, xxHash library provides endian-independent Hash values.
 // Results are therefore identical for big-endian and little-endian CPU.
 // This comes at a  performance cost for big-endian CPU, since some swapping is required to emulate little-endian format.
 // Should endian-independance be of no importance to your application, you may uncomment the #define below

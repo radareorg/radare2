@@ -1160,7 +1160,7 @@ ulong Disasm(const unsigned char *src,ulong srcsize,ulong srcip,
           DecodeST(1,1); break;
         case PCX:                      // CX/ECX (pseudooperand)
           DecodeRG(GREG_ECX,cxsize,PCX); break;
-        case PDI:                      // EDI (pseudooperand in MMX extentions)
+        case PDI:                      // EDI (pseudooperand in MMX extensions)
           DecodeRG(GREG_EDI,4,PDI); break;
         default:
           da->error=DAE_INTERN;        // Unknown argument type
