@@ -1600,7 +1600,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			}
 			r_mem_copyendian ((ut8*)&n, (ut8*)&n, ds->analop.refptr, !core->assembler->big_endian);
 			n32 = n;
-			
+
 			handle_comment_align (core, ds);
 			if (ds->show_color) {
 				r_cons_printf (ds->pal_comment);
@@ -1723,7 +1723,7 @@ addr       addr+size
 static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
-		if (rel->import) 
+		if (rel->import)
 			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->import->name);
 		else if (rel->symbol)
 			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->symbol->name);
@@ -2281,9 +2281,21 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
 
+		RDisasmState *ds;
+		ds = handle_init_ds (core);
+		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+
 		oplen = r_asm_op_get_size (&asmop);
 		r_cons_printf (i>0? ",{": "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
+		if (f) {
+			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);
+			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + f->size - oplen);
+		} else {
+			r_cons_printf (",\"fcn_addr\":0");
+			r_cons_printf (",\"fcn_last\":0");
+		}
 		r_cons_printf (",\"size\":%d", oplen);
 		escaped_str = r_str_escape(asmop.buf_asm);
 		r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
@@ -2351,7 +2363,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_cons_printf (",\"xrefs\":[");
 				r_list_foreach (xrefs, iter, ref) {
 					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\"}",
-							iter->p?",":"", ref->addr, 
+							iter->p?",":"", ref->addr,
 						r_anal_xrefs_type_tostring (ref->type));
 				}
 				r_cons_printf ("]");

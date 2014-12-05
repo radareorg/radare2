@@ -190,19 +190,6 @@ function scroll_to_last_offset() {
   if (r2ui._dis.scroll_offset !== null) $('#center_panel').scrollTo(r2ui._dis.scroll_offset, {axis: 'y'});
 }
 
-function rehighlight_iaddress(address) {
-  $('.autohighlighti').removeClass('autohighlighti');
-  $('.addr_' + address).addClass('autohighlighti');
-}
-
-function getOffsetRect(elem) {
-    var box = elem.getBoundingClientRect();
-    var offset = $('#gbox').offset().top;
-    var top  = box.top - offset;
-    var bottom  = box.bottom - offset;
-    return {top: Math.round(top), bottom: Math.round(bottom)};
-}
-
 // key handler
 function handleKeypress(inEvent) {
 	var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
@@ -221,7 +208,7 @@ function handleKeypress(inEvent) {
     if (address !== undefined && address !== null) {
       if (r2ui._dis.display === "flat") r2ui._dis.display_graph();
       else if (r2ui._dis.display === "graph") r2ui._dis.display_flat();
-      r2ui.seek(address, true);
+      address = r2ui.seek(address, true);
       scroll_to_address(address);
       inEvent.preventDefault();
       document.getElementById("canvas").focus();
@@ -300,7 +287,7 @@ function handleKeypress(inEvent) {
 	if (key === 117) do_undefine(r2ui._dis.selected);
 
 	// g Go to address
-	if (key === 103) do_goto();
+	if (key === 103) do_jumpto(prompt('Go to'));
 
 	// ; Add comment
 	if (key === 59) do_comment(r2ui._dis.selected);
@@ -334,20 +321,14 @@ function do_jumpto(address) {
   var element = $('.insaddr.addr_' + address);
   if (element.length > 0) {
     r2ui.history_push(address);
-    render_history();
     r2ui._dis.selected = element;
     r2ui._dis.selected_offset = address;
+    render_history();
   } else {
-    r2ui.seek(address, true);
+    address = r2ui.seek(address, true);
   }
   rehighlight_iaddress(address);
   scroll_to_address(address);
-  document.getElementById("canvas").focus();
-}
-
-function do_goto() {
-  r2ui.opendis(prompt('Go to'));
-  scroll_to_element(r2ui._dis.selected);
   document.getElementById("canvas").focus();
 }
 
@@ -457,63 +438,6 @@ function rename(offset, old_value, new_value, space) {
   r2.update_flags();
 }
 
-function get_offset_flag(offset) {
-  var old_value = "";
-  r2.cmdj("fs offsets;fj", function(x) {
-    for (var i in x) {
-      if ("0x" + x[i].offset.toString(16) == offset) {
-        old_value = x[i].name;
-        break;
-      }
-    }
-  });
-  return old_value;
-}
-
-function get_symbol_flag(symbol) {
-  var full_name = symbol;
-  var found = false;
-  r2.cmdj("fs symbols;fj", function(x) {
-    for (var i in x) {
-      if (x[i].name == symbol) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      for (var i in x) {
-        if (x[i].name == "sym." + symbol) {
-          full_name = "sym." + symbol;
-          break;
-        }
-      }
-    }
-  });
-  return full_name;
-}
-
-function get_reloc_flag(reloc) {
-  var full_name = reloc;
-  var found = false;
-  r2.cmdj("fs relocs;fj", function(x) {
-    for (var i in x) {
-      if (x[i].name == reloc) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      for (var i in x) {
-        if (x[i].name == "reloc." + reloc) {
-          full_name = "reloc." + reloc;
-          break;
-        }
-      }
-    }
-  });
-  return full_name;
-}
-
 function handleClick(inEvent) {
   if ($(inEvent.target).hasClass('addr')) {
     var address = get_address_from_class(inEvent.target);
@@ -538,10 +462,7 @@ function handleDoubleClick (inEvent) {
   document.getElementById("canvas").focus();
 }
 
-
-// METHOD to UPDATE all LATERAL Information
 function update_binary_details() {
-
   // <div id="symbols"></div>
   r2.cmdj("isj", function(x) {
     render_symbols(x);
@@ -574,15 +495,12 @@ function update_binary_details() {
   render_history();
 }
 
-
 function render_functions(functions) {
   // TODO: Sometimes undefined is printed
   var imports = null;
   r2.cmdj("iij", function(x) {
     imports = x;
   });
-
-
   var fcn_data = [];
   for (var i in functions) {
     var f = functions[i];

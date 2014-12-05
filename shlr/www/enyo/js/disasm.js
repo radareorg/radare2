@@ -116,7 +116,7 @@ function render_graph(x) {
   } catch (e) {
     console.log("Cannot parse JSON data");
   }
-  // try {
+  try {
     if (obj[0] === undefined) return false;
     if (obj[0].blocks === undefined) return false;
     var graph = new BBGraph();
@@ -124,31 +124,16 @@ function render_graph(x) {
       var bb = obj[0].blocks[bn];
       if (bb.length === 0) continue;
       var addr = bb.offset;
-      var lines = bb.code.split('\n');
-      var cnt = lines.length;
+      var cnt = bb.ops.length;
       var idump = "";
-      for (var i = 0; i < cnt; i++) {
-        var line = lines[i];
-        if (line !== "") {
-          // Prepare an instruction object
-          var ins = {};
-          ins.offset = line.split(' ')[0];
-          if (ins.offset.indexOf("0x") !== 0) continue;
-          ins.comment = "";
-          ins.bytes = "";
-          ins.type = "mov";
-          var opcode_idx = line.indexOf(' ');
-          var colon_idx = line.indexOf(';');
-          if (colon_idx > 0) {
-            ins.opcode = line.substring(opcode_idx,colon_idx).trim();
-            ins.comment = line.substring(colon_idx + 1).trim();
-          } else {
-            ins.opcode = line.substring(opcode_idx).trim();
-          }
-          if (ins.opcode === "") continue;
-
-          idump += html_for_instruction(ins);
+      for (var i in bb.ops) {
+        var ins = bb.ops[i];
+        ins.offset = "0x" + ins.offset.toString(16);
+        if (ins.comment === undefined || ins.comment === null) ins.comment = "";
+        else {
+          ins.comment = atob(ins.comment);
         }
+        idump += html_for_instruction(ins);
       }
       var dom = document.createElement('div');
       dom.id = "bb_" + addr;
@@ -166,9 +151,10 @@ function render_graph(x) {
     }
     graph.render();
     return true;
-  // } catch (e) {
-  //   console.log("Error generating bb graph");
-  // }
+  } catch (e) {
+    console.log("Error generating bb graph");
+    return false;
+  }
 }
 
 function render_instructions(instructions) {
@@ -333,17 +319,9 @@ function render_instructions(instructions) {
 
 function getOffsetRect(elem) {
     var box = elem.getBoundingClientRect();
-
-    var bar = document.getElementById("radareApp_mp_toolbar");
-    var barrect = bar.getBoundingClientRect();
-
-    var body = document.body;
-    var docElem = document.documentElement;
-    var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
-    var clientTop = docElem.clientTop || body.clientTop || 0;
-    var top  = box.top - barrect.bottom - 10; //+ scrollTop - clientTop;
-    var bottom  = box.bottom - barrect.bottom - 10;//+  scrollTop - clientTop;
-
+    var offset = $('#gbox').offset().top;
+    var top  = box.top - offset;
+    var bottom  = box.bottom - offset;
     return {top: Math.round(top), bottom: Math.round(bottom)};
 }
 
@@ -371,6 +349,9 @@ function html_for_instruction(ins) {
   var asm_xrefs = (r2.settings["asm.xrefs"]);
   var asm_cmtright = (r2.settings["asm.cmtright"]);
 
+  if (ins.offset === "0x"+ins.fcn_addr.toString(16) && r2ui._dis.display == "flat") {
+    idump += '<div class="ec_flow">; -----------------------------------------------------------</div>';
+  }
   if (asm_flags) {
     var flags;
     if (ins.flags !== undefined && ins.flags !== null) {
@@ -399,7 +380,6 @@ function html_for_instruction(ins) {
   }
 
   idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
-
 
   if (asm_bytes) {
     if (ins.bytes !== undefined && ins.bytes !== null && ins.bytes !== "") {
@@ -434,12 +414,7 @@ function html_for_instruction(ins) {
 }
 
 var math = ["add", "sub", "mul", "imul", "div", "idiv", "neg", "adc", "sbb", "inc", "dec", ".byte"];
-var invalid = [".byte", "insb", "outsd"];// this is just as a workaround for the agj problem
 var bin = ["xor", "and", "or", "not"];
-var jmps = ["jmp"];
-var cjmps = ["je", "jne", "jg", "jge", "jl", "jle", "ja", "jae", "jb", "jbe", "jo", "jno", "jc", "jnc", "js", "jns", "jz", "jnz"];
-var calls = ["call"];
-var movs = ["mov", "lea"];
 var regs = ["EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "EIP", "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "RIP"];
 
 var escapeHTML = (function () {
@@ -501,39 +476,7 @@ function highlight_instruction(line, instruction) {
       return reps[a];
     }
   }
-  ret = ret.replace(new RegExp(re, "g"), dorep);
-
-  // highlight opcode
-  if (instruction) {
-    var j = 0;
-    for (j = 0; j < ret.length; j++) {
-      if (ret[j] == ' ' || ret[j] == '\t') {
-        break;
-      }
-    }
-    var op = ret.substr(0, j);
-
-    var rest = ret.substr(j);
-
-    // WORKAROUND until agj returns structured data:
-    var klass = "";
-    if (contains(math, op)) klass = "ec_math";
-    if (contains(bin, op)) klass = "ec_bin";
-    if (contains(invalid, op)) klass = "invalid";
-    if (contains(jmps, op)) klass = "ec_jmp";
-    if (contains(cjmps, op)) klass = "ec_cjmp";
-    if (contains(calls, op)) klass = "ec_call";
-    if (contains(movs, op)) klass = "ec_mov";
-    if (op == "push") klass = "ec_push";
-    if (op == "pop") klass = "ec_pop";
-    if (op == "nop") klass = "ec_nop";
-    if (op == "ret") klass = "ec_ret";
-    if (op == "cmp") klass = "ec_cmp";
-    // WORKAROUND
-
-    ret = '<span class="op ' + klass + '">' + op + '</span>' + rest;
-  }
-  return ret;
+  return ret.replace(new RegExp(re, "g"), dorep);
 }
 
 function hex2(a) {
@@ -576,14 +519,8 @@ function get_address_from_class(t, type) {
 }
 
 function rehighlight_iaddress(address) {
-  var elements = document.getElementsByClassName("autohighlighti");
-  for (var i = 0; i < elements.length; i++) {
-    removeClass("autohighlighti", elements[i]);
-  }
-  elements = document.getElementsByClassName("addr_" + address);
-  for (var j = 0; j < elements.length; j++) {
-    addClass("autohighlighti", elements[j]);
-  }
+  $('.autohighlighti').removeClass('autohighlighti');
+  $('.addr_' + address).addClass('autohighlighti');
 }
 
 function get_element_by_address(address) {
@@ -611,23 +548,6 @@ function scroll_to_element(element) {
   r2ui._dis.scrollTo(0,top);
 }
 
-function addClass( classname, element ) {
-    var cn = element.className;
-    if( cn.indexOf( classname ) != -1 ) {
-      return;
-    }
-    if( cn !== '' ) {
-      classname = ' '+classname;
-    }
-    element.className = cn+classname;
-}
-
-function removeClass( classname, element ) {
-    var cn = element.className;
-    var rxp = new RegExp( "\\s?\\b"+classname+"\\b", "g" );
-    cn = cn.replace( rxp, '' );
-    element.className = cn;
-}
 
 function address_canonicalize(s) {
   s = s.substr(2);
@@ -648,6 +568,63 @@ function contains(a, obj) {
 
 function handleInputTextChange() {
   r2ui._dis.handleInputTextChange();
+}
+
+function get_offset_flag(offset) {
+  var old_value = "";
+  r2.cmdj("fs offsets;fj", function(x) {
+    for (var i in x) {
+      if ("0x" + x[i].offset.toString(16) == offset) {
+        old_value = x[i].name;
+        break;
+      }
+    }
+  });
+  return old_value;
+}
+
+function get_symbol_flag(symbol) {
+  var full_name = symbol;
+  var found = false;
+  r2.cmdj("fs symbols;fj", function(x) {
+    for (var i in x) {
+      if (x[i].name == symbol) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      for (var i in x) {
+        if (x[i].name == "sym." + symbol) {
+          full_name = "sym." + symbol;
+          break;
+        }
+      }
+    }
+  });
+  return full_name;
+}
+
+function get_reloc_flag(reloc) {
+  var full_name = reloc;
+  var found = false;
+  r2.cmdj("fs relocs;fj", function(x) {
+    for (var i in x) {
+      if (x[i].name == reloc) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      for (var i in x) {
+        if (x[i].name == "reloc." + reloc) {
+          full_name = "reloc." + reloc;
+          break;
+        }
+      }
+    }
+  });
+  return full_name;
 }
 
 // Cookies
