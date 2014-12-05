@@ -137,36 +137,38 @@ static int var_cmd(RCore *core, const char *str) {
 }
 #endif
 
+static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) {
+	int i;
+	for (i=0; i<core->blocksize; i+=element_size) {
+		ut32 n;
+		memcpy (&n, core->block+i, sizeof(ut32));
+		if (n>=a && n<=b) {
+			if (element_size == 4)
+				r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
+			else
+				r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
+
+			r_cons_printf ("Cd %u @ 0x%"PFMT64x":%u\n", element_size, core->offset+i, element_size);
+			// TODO: add data xrefs
+		}
+	}
+}
+
 static void cmd_anal_trampoline (RCore *core, const char *input) {
-	int i, bits = r_config_get_i (core->config, "asm.bits");
+	int bits = r_config_get_i (core->config, "asm.bits");
 	char *p, *inp = strdup (input);
 	p = strchr (inp, ' ');
 	if (p) *p=0;
 	ut64 a = r_num_math (core->num, inp);
 	ut64 b = p?r_num_math (core->num, p+1):0;
 	free (inp);
+
 	switch (bits) {
 	case 32:
-		for (i=0; i<core->blocksize; i+=4) {
-			ut32 n;
-			memcpy (&n, core->block+i, sizeof(ut32));
-			if (n>=a && n<=b) {
-				r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
-				r_cons_printf ("Cd 4 @ 0x%"PFMT64x":4\n", core->offset+i);
-				// TODO: add data xrefs
-			}
-		}
+		print_trampolines(core, a, b, 4);
 		break;
 	case 64:
-		for (i=0; i<core->blocksize; i+=8) {
-			ut32 n;
-			memcpy (&n, core->block+i, sizeof(ut32));
-			if (n>=a && n<=b) {
-				r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
-				r_cons_printf ("Cd 8 @ 0x%"PFMT64x":8\n", core->offset+i);
-				// TODO: add data xrefs
-			}
-		}
+		print_trampolines(core, a, b, 8);
 		break;
 	}
 }
