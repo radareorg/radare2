@@ -212,7 +212,7 @@ static void cmd_syscall_do(RCore *core, int num) {
 	r_cons_printf (")\n");
 }
 
-static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int fmt) {
+static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	int ret, i, j, idx, size;
 	RAsmOp asmop;
 	RAnalOp op;
@@ -1400,7 +1400,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				len = l = core->blocksize;
 				count = 1;
 			}
-			r_core_anal_bytes (core, core->block, len, count, 'j');
+			core_anal_bytes (core, core->block, len, count, 'j');
 		}
 		break;
 #if DEPRECATED
@@ -1443,7 +1443,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				len = l = core->blocksize;
 				count = 1;
 			}
-			r_core_anal_bytes (core, core->block, len, count, 0);
+			core_anal_bytes (core, core->block, len, count, 0);
 		}
 	}
 }
@@ -2016,7 +2016,7 @@ static int cmd_anal(void *data, const char *input) {
 			ut8 *buf = malloc (strlen (input)+1);
 			len = r_hex_str2bin (input+2, buf);
 			if (len>0)
-				r_core_anal_bytes (core, buf, len, 0, 0);
+				core_anal_bytes (core, buf, len, 0, 0);
 			free (buf);
 		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
 		break;
