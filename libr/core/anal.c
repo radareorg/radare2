@@ -386,10 +386,14 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				r_cons_printf (",\"jump\":%"PFMT64d, bbi->jump);
 			if (bbi->fail != -1)
 				r_cons_printf (",\"fail\":%"PFMT64d, bbi->fail);
-			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
-				str = r_str_replace (str, "\\ ", "\\\\ ", 1);
-				r_cons_printf (",\"code\":\"%s\"", str);
-				free (str);
+			r_cons_printf (",\"ops\":");
+			{
+				ut8 *buf = malloc (bbi->size);
+				if (buf) {
+					r_io_read_at (core->io, bbi->addr, buf, bbi->size);
+					r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
+					free (buf);
+				} else eprintf ("cannot allocate %d bytes\n", bbi->size);
 			}
 			r_cons_printf ("}");
 			continue;

@@ -127,6 +127,7 @@ enyo.kind ({
     // n Rename
     if (key === 110) {
       if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
+        var address = get_address_from_class(this.selected);
         this.renaming = this.selected;
         this.renameOldValue = this.selected.innerHTML;
         this.rbox = document.createElement('input');
@@ -134,7 +135,14 @@ enyo.kind ({
         this.rbox.setAttribute("id", "rename");
         this.rbox.setAttribute("style", "border-width: 0;padding: 0;");
         this.rbox.setAttribute("onChange", "handleInputTextChange()");
-        this.rbox.setAttribute("value", "");
+        if (this.selected.className.indexOf("insaddr") > -1) {
+          var value = get_offset_flag(address);
+          this.rbox.setAttribute("value",value);
+          this.rbox.setSelectionRange(value.length, value.length);
+        } else {
+          this.rbox.setAttribute("value", this.renameOldValue);
+          this.rbox.setSelectionRange(this.renameOldValue.length, this.renameOldValue.length);
+        }
         this.renaming.innerHTML = "";
         this.renaming.appendChild(this.rbox);
         this.rbox.focus();
@@ -237,10 +245,6 @@ enyo.kind ({
         });
         if (new_value) {
           var cmd = "fs functions;f-@" + this.selected_offset + ";f+" + new_value + "@" + this.selected_offset + ";";
-          // labels = new_value.split(";");
-          // for (var i in labels) {
-          //   if (labels[i] !== "") cmd += "f+" + labels[i] + "@$$;";
-          // }
           r2.cmd(cmd, function() {});
         } else {
           r2.cmd("f-@" + this.selected_offset, function() {});
@@ -299,26 +303,21 @@ enyo.kind ({
   },
   seek: function(addr, scroll) {
     var text = this.$.text;
+    var error = false;
     if (this.display === "graph") {
-      var display = "graph";
       text.setContent("");
-      r2.store_asm_config();
-      r2.cmd("e asm.bytes = false; e asm.flags = false; e asm.functions = false; e asm.lines = false; e asm.xrefs = false; e asm.cmtright = true; e asm.pseudo = false", function (x) {
-        r2.cmd ("agj " + addr, function(x) {
-          text.setContent("<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>");
-          // If render fails (address does not belong to function) then switch to flat view
-          if (render_graph(x) === false) display = "flat";
-        });
+      r2.cmd ("agj " + addr, function(x) {
+        text.setContent("<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>");
+        // If render fails (address does not belong to function) then switch to flat view
+        if (render_graph(x) === false) error = true;
       });
-      this.display = display;
-      r2.restore_asm_config();
     }
-    else if (this.display === "flat") {
+    if (error) this.display_flat();
+    if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -0.5*this.block, this.block, function(x) {
         text.setContent("<div id='flat_canvas' class='flatcanvas enyo-selectable ec_background'></div>");
         render_instructions(x);
-        // text.setContent(x);
       });
     }
     this.selected = get_element_by_address(addr);

@@ -15,22 +15,17 @@ var DisasmPanel = function () {
 };
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
+    var error = false;
     if (this.display === "graph") {
-      var display = "graph";
       panel.innerHTML = "";
-      r2.store_asm_config();
-      r2.cmd("e asm.bytes = false; e asm.flags = false; e asm.functions = false; e asm.lines = false; e asm.xrefs = false; e asm.cmtright = true; e asm.pseudo = false", function (x) {
-        r2.cmd ("agj " + addr, function(x) {
-          panel.innerHTML = "<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>";
-          // If render fails (address does not belong to function) then switch to flat view
-          if (render_graph(x) === false) display = "flat";
-        });
+      r2.cmd("agj " + addr, function(x) {
+        panel.innerHTML = "<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>";
+        // If render fails (address does not belong to function) then switch to flat view
+        if (render_graph(x) === false) error = true;
       });
-
-      this.display = display;
-      r2.restore_asm_config();
     }
-    else if (this.display === "flat") {
+    if (error) this.display_flat();
+    if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -0.5*this.block, this.block, function(x) {
         panel.innerHTML = "<div id='flat_canvas' class='flatcanvas enyo-selectable ec_background'></div>";

@@ -120,10 +120,9 @@ r2ui.seek = function (addr, push, scroll) {
 
   r2.cmd ("s " + addr, function () {
     r2ui._dis.seek(addr, scroll);
-    //r2ui._dis.scrollTo (0, 0);
     r2ui._hex.seek(addr, scroll);
-    // r2ui._hex.scrollTo(0, 0);
   });
+  return addr;
 }
 
 r2ui.seek_in_graph = function (addr, push) {
