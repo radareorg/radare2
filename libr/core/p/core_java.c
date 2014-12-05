@@ -678,17 +678,17 @@ static int r_cmd_is_object_descriptor (const char *name, ut32 name_len) {
 }
 
 static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
-	ut32 num_occurences = 0, i = 0;
+	ut32 num_occurrences = 0, i = 0;
 	char * result = NULL, *p_result = NULL;
 
-	num_occurences = r_cmd_get_num_classname_str_occ (buffer, s_old);
+	num_occurrences = r_cmd_get_num_classname_str_occ (buffer, s_old);
 	*res_len = 0;
-	if (num_occurences > 0 && replace_len > 0 && s_old) {
+	if (num_occurrences > 0 && replace_len > 0 && s_old) {
 		ut32 consumed = 0;
 		const char * next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
 		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
-		result = malloc (num_occurences*replace_len + buf_len);
-		memset (result, 0, num_occurences*replace_len + buf_len);
+		result = malloc (num_occurrences*replace_len + buf_len);
+		memset (result, 0, num_occurrences*replace_len + buf_len);
 		p_result = result;
 		while (next && consumed < buf_len) {
 			// replace up to next
@@ -793,7 +793,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 		ut16 len = 0;
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8 &&
 			cp_obj->info.cp_utf8.length && cp_obj->info.cp_utf8.length >= class_name_len-1) {
-			ut32 num_occurences = 0;
+			ut32 num_occurrences = 0;
 			ut64 addr = cp_obj->file_offset + cp_obj->loadaddr;
 			buffer = r_bin_java_cp_get_idx_bytes (obj, idx, &buffer_sz);
 
@@ -803,9 +803,9 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 			memcpy (name, buffer+3, len);
 			name[len] = 0;
 
-			num_occurences = r_cmd_get_num_classname_str_occ (name, class_name);
+			num_occurrences = r_cmd_get_num_classname_str_occ (name, class_name);
 
-			if (num_occurences > 0) {
+			if (num_occurrences > 0) {
 				// perform inplace replacement
 				ut32 res_len = 0;
 				char * result = NULL;

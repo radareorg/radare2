@@ -195,7 +195,7 @@ static inline u_long read32(short *p) {
 
 R_IPI m68k_word *M68k_Disassemble(struct DisasmPara_68k *dp)
 /* Disassemble M68k instruction and return a pointer to the next */
-/* instruction, or NULL if an error occured. */
+/* instruction, or NULL if an error occurred. */
 {
   u_short opc;
   dis_func_t *func;
@@ -2797,7 +2797,7 @@ static void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int d
           bd == 3 ? SIZE_LONG :
           SIZE_BYTE);
       if (od && !ISBITSET(ext,6) && !ISBITSET(ext,2)) 
-        /* Pre-indexed and not supressing index */
+        /* Pre-indexed and not suppressing index */
         addchar(',');
       else if (od && ISBITSET(ext,2)) {
         /* Post-indexed */

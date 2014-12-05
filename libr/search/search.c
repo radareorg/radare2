@@ -219,7 +219,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 			offset += match_pos + kw->keyword_length;
 			kw->count++;
 			count++;
-			/* Stop at the first occurence */
+			/* Stop at the first occurrence */
 			if (s->inverse)
 				return -1;
 		}

@@ -4595,10 +4595,10 @@ parse_disassembler_options (char *options)
     {
       parse_arm_disassembler_option (options);
 
-      /* Skip forward to next seperator.  */
+      /* Skip forward to next separator.  */
       while ((*options) && (! ISSPACE (*options)) && (*options != ','))
 	++ options;
-      /* Skip forward past seperators.  */
+      /* Skip forward past separators.  */
       while (ISSPACE (*options) || (*options == ','))
 	++ options;      
     }

@@ -227,7 +227,7 @@ enyo.kind ({
 
       var renamed = false;
       var offset = this.selected_offset;
-      // If current offset is the beggining of a function, rename it with afr
+      // If current offset is the beginning of a function, rename it with afr
       r2.cmdj("pdfj", function(x) {
         if (x !== null && x !== undefined) {
           if ("0x" + x.addr.toString(16) === offset) {

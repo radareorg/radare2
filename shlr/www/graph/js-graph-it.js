@@ -52,7 +52,7 @@ var elementToMove;
 var blocksToMove;
 
 /**
- * this variable stores the orginal z-index of the object being dragged in order
+ * this variable stores the original z-index of the object being dragged in order
  * to restore it upon drop.
  */ 
 var originalZIndex;

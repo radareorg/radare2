@@ -371,7 +371,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 
 // > pxa
 /* In this function, most of the buffers have 4 times
- * the required lenght. This is because we supports colours,
+ * the required length. This is because we supports colours,
  * that are 4 chars long. */
 #define append(x,y) { strcat (x,y);x += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
@@ -481,7 +481,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 			// collect flags
 			flag = r_flag_get_i (core->flags, addr+j);
-			if (flag) { // Begining of a flag
+			if (flag) { // Beginning of a flag
 				if (flagsz) {
 					fend = addr + flagsz; //core->blocksize;
 				} else {

@@ -93,7 +93,7 @@ int analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_NOP:
-			/* If placed at the begining..just skip them */
+			/* If placed at the beginning..just skip them */
 			if (cur == 0) {
 				eprintf ("NOPSKIP %d\n", op->size);
 				oaddr += op->size;

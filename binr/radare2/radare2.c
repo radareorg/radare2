@@ -651,7 +651,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_list_free (evals);
 #endif
-		// no flagspace selected by default the begining
+		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
 		/* load <file>.r2 */
 		{
@@ -721,7 +721,7 @@ int main(int argc, char **argv, char **envp) {
 		if (seek != UT64_MAX)
 			r_core_seek (&r, seek, 1);
 
-		// no flagspace selected by default the begining
+		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
 		for (;;) {
 			r.zerosep = zerosep;

@@ -135,7 +135,7 @@ typedef struct r_socket_rap_server_t {
 	rap_server_cmd system;
 	rap_server_cmd cmd;
 	rap_server_close close;
-	void *user;					//Allways first arg for callbacks
+	void *user;					//Always first arg for callbacks
 } RSocketRapServer;
 
 R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port);
