@@ -266,7 +266,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		while (buf+1<buf_end) {
 			const char *filename = (const char *)buf;
 			ut64 id_idx, mod_time, file_len;
-			size_t len = strnlen (filename, (size_t)(buf_end-buf));
+			size_t namelen, len = strnlen (filename, (size_t)(buf_end-buf));
 
 			if (!len) {
 				buf++;
@@ -303,25 +303,26 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 						include_dir = "./";
 				}
 
-				size_t namelen = len + (include_dir?strlen (include_dir):0) + 8;
+				namelen = len + (include_dir?strlen (include_dir):0) + 8;
 
-				hdr->file_names[count].name = calloc (sizeof(char), namelen);
-				snprintf (hdr->file_names[count].name, namelen - 1, "%s/%s", include_dir, filename);
-				hdr->file_names[count].name[namelen - 1] = '\0';
-
-				if (allocated_id)
-					free (allocated_id);
-
-				hdr->file_names[count].id_idx = id_idx;
-				hdr->file_names[count].mod_time = mod_time;
-				hdr->file_names[count].file_len = file_len;
+				if (hdr->file_names) {
+					hdr->file_names[count].name = calloc (sizeof(char), namelen);
+					snprintf (hdr->file_names[count].name, namelen - 1,
+						"%s/%s", include_dir, filename);
+					hdr->file_names[count].name[namelen - 1] = '\0';
+					if (allocated_id)
+						free (allocated_id);
+					hdr->file_names[count].id_idx = id_idx;
+					hdr->file_names[count].mod_time = mod_time;
+					hdr->file_names[count].file_len = file_len;
+				}
 			}
 			count++;
 			if (f && i) {
-				fprintf(f, "FILE (%s)\n", filename);
-				fprintf(f, "| dir idx %"PFMT64d"\n", id_idx);
-				fprintf(f, "| lastmod %"PFMT64d"\n", mod_time);
-				fprintf(f, "| filelen %"PFMT64d"\n", file_len);
+				fprintf (f, "FILE (%s)\n", filename);
+				fprintf (f, "| dir idx %"PFMT64d"\n", id_idx);
+				fprintf (f, "| lastmod %"PFMT64d"\n", mod_time);
+				fprintf (f, "| filelen %"PFMT64d"\n", file_len);
 			}
 		}
 		if (i == 0) {
@@ -1453,7 +1454,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		}
 
 		len = section->size;
-		if (len > UT32_MAX || len <1) {
+		if (len > (UT32_MAX>>1) || len <1) {
 			free (debug_str_buf);
 			return R_FALSE;
 		}
