@@ -1223,82 +1223,77 @@ static void cmd_anal_info(RCore *core, const char *input) {
 }
 
 static void cmd_anal_esil(RCore *core, const char *input) {
+	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
+	int romem = r_config_get_i (core->config, "esil.romem");
+	int stats = r_config_get_i (core->config, "esil.stats");
+	ut64 until_addr = UT64_MAX;
+	const char *until_expr = NULL;
 
 	switch (input[0]) {
 	case 'r':
 		// 'aer' is an alias for 'ar'
 		cmd_anal_reg(core, input+1);
 	case ' ':
-		{
-			RAnalEsil *esil = core->anal->esil;
-			int romem = r_config_get_i (core->config, "esil.romem");
-			int stats = r_config_get_i (core->config, "esil.stats");
-			//r_anal_esil_eval (core->anal, input+1);
-			if (!esil) {
-				esil = r_anal_esil_new ();
-				r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
-				core->anal->esil = esil;
-			}
+		//r_anal_esil_eval (core->anal, input+1);
+		if (!esil) {
+			esil = r_anal_esil_new ();
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
-			esil = core->anal->esil;
-			r_anal_esil_set_offset (esil, core->offset);
-			r_anal_esil_parse (esil, input+1);
-			r_anal_esil_dumpstack (esil);
-			r_anal_esil_stack_free (esil);
+			core->anal->esil = esil;
 		}
+		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+		esil = core->anal->esil;
+		r_anal_esil_set_offset (esil, core->offset);
+		r_anal_esil_parse (esil, input+1);
+		r_anal_esil_dumpstack (esil);
+		r_anal_esil_stack_free (esil);
 		break;
-	case 's': // "aes" "aesu" "aesue"
+	case 's':
+		// "aes" "aesu" "aesue"
 		// aes -> single step
 		// aesu -> until address
 		// aesue -> until esil expression
-		if (input[1]=='u') {
-			if (input[2]=='e') {
-				esil_step (core, UT64_MAX, input+3);
-			} else {
-				esil_step (core, r_num_math (core->num, input+2), NULL);
-			}
-		} else {
-			esil_step (core, UT64_MAX, NULL);
-		}
+		if (input[1] == 'u' && input[2] == 'e')
+			until_expr = input + 3;
+		else if (input[1] == 'u')
+			until_addr = r_num_math(core->num, input + 2);
+
+		esil_step(core, until_addr, until_expr);
 		break;
 	case 'c':
 		// aec  -> continue until ^C
 		// aecu -> until address
 		// aecue -> until esil expression
-		if (input[1]=='u') {
-			if (input[2]=='e') {
-				esil_step (core, UT64_MAX, input+3);
-			} else {
-				esil_step (core, r_num_math (core->num, input+2), NULL);
-			}
-		} else {
-			esil_step (core, UT64_MAX, "0");
-		}
+		if (input[1] == 'u' && input[2] == 'e')
+			until_expr = input + 3;
+		else if (input[1] == 'u')
+			until_addr = r_num_math(core->num, input + 2);
+		else
+			until_expr = "0";
+
+		esil_step(core, until_addr, until_expr);
 		break;
 	case 'd':
-		if (core->anal->esil)
-			r_anal_esil_free (core->anal->esil);
+		if (esil)
+			r_anal_esil_free (esil);
 		core->anal->esil = NULL;
 		break;
 	case 'i':
-		if (core->anal->esil)
-			r_anal_esil_free (core->anal->esil);
+		if (esil)
+			r_anal_esil_free (esil);
 		// reinitialize
 		core->anal->esil = r_anal_esil_new ();
-		{
-			int romem = r_config_get_i (core->config, "esil.romem");
-			int stats = r_config_get_i (core->config, "esil.stats");
-			r_anal_esil_setup (core->anal->esil, core->anal, romem, stats); // setup io
-		}
+		romem = r_config_get_i (core->config, "esil.romem");
+		stats = r_config_get_i (core->config, "esil.stats");
+		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 		break;
 	case 'k':
 		switch (input[1]) {
 			case '\0':
 				input = "123*";
 			case ' ':
-				if (core && core->anal && core->anal->esil && core->anal->esil->stats) {
-					char *out = sdb_querys (core->anal->esil->stats, NULL, 0, input+2);
+				if (core && core->anal && esil && esil->stats) {
+					char *out = sdb_querys (esil->stats, NULL, 0, input+2);
 					if (out) {
 						r_cons_printf ("%s\n", out);
 						free (out);
@@ -1306,7 +1301,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				} else eprintf ("esil.stats is empty. Run 'aei'\n");
 				break;
 			case '-':
-				sdb_reset (core->anal->esil->stats);
+				sdb_reset (esil->stats);
 				break;
 		}
 		break;
@@ -1335,9 +1330,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 						ret = r_anal_op (core->anal, &op, addr, buf, 32); // read overflow
 						if (ret) {
 							r_reg_setv (core->anal->reg, "pc", pc);
-							r_anal_esil_parse (core->anal->esil, R_STRBUF_SAFEGET (&op.esil));
-							r_anal_esil_dumpstack (core->anal->esil);
-							r_anal_esil_stack_free (core->anal->esil);
+							r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+							r_anal_esil_dumpstack (esil);
+							r_anal_esil_stack_free (esil);
 							pc += op.size;
 						} else {
 							pc += 4; // XXX
@@ -1452,12 +1447,16 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
+	RSyscallItem *si;
+	RListIter *iter;
+	RList *list;
+
 	switch (input[0]) {
 	case 'l': // "asl"
 		if (input[1] == ' ') {
 			int n = atoi (input+2);
 			if (n>0) {
-				RSyscallItem *si = r_syscall_get (core->anal->syscall, n, -1);
+				si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si) r_cons_printf ("%s\n", si->name);
 				else eprintf ("Unknown syscall number\n");
 			} else {
@@ -1466,9 +1465,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				else eprintf ("Unknown syscall name\n");
 			}
 		} else {
-			RSyscallItem *si;
-			RListIter *iter;
-			RList *list = r_syscall_list (core->anal->syscall);
+			list = r_syscall_list (core->anal->syscall);
 			r_list_foreach (list, iter, si) {
 				r_cons_printf ("%s = 0x%02x.%d\n",
 						si->name, si->swi, si->num);
@@ -1477,20 +1474,16 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "asj"
-		{
-			RSyscallItem *si;
-			RListIter *iter;
-			RList *list = r_syscall_list (core->anal->syscall);
-			r_cons_printf ("[");
-			r_list_foreach (list, iter, si) {
-				r_cons_printf ("{\"name\":\"%s\","
-						"\"swi\":\"%d\",\"num\":\"%d\"}",
-						si->name, si->swi, si->num);
-				if (iter->n) r_cons_printf (",");
-			}
-			r_cons_printf ("]\n");
-			r_list_free (list);
+		list = r_syscall_list (core->anal->syscall);
+		r_cons_printf ("[");
+		r_list_foreach (list, iter, si) {
+			r_cons_printf ("{\"name\":\"%s\","
+					"\"swi\":\"%d\",\"num\":\"%d\"}",
+					si->name, si->swi, si->num);
+			if (iter->n) r_cons_printf (",");
 		}
+		r_cons_printf ("]\n");
+		r_list_free (list);
 		// JSON support
 		break;
 	case '\0':
@@ -1832,24 +1825,22 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 }
 
 static void cmd_anal_graph(RCore *core, const char *input) {
+	RList *list;
+
 	switch (input[0]) {
 	case 't':
-		{
-			int n = 0;
-			RList *list = r_core_anal_graph_to (core,
-					r_num_math (core->num, input+1), n);
-			if (list) {
-				RListIter *iter, *iter2;
-				RList *list2;
-				RAnalBlock *bb;
-				r_list_foreach (list, iter, list2) {
-					r_list_foreach (list2, iter2, bb) {
-						r_cons_printf ("-> 0x%08"PFMT64x"\n", bb->addr);
-					}
+		list = r_core_anal_graph_to (core, r_num_math (core->num, input+1), 0);
+		if (list) {
+			RListIter *iter, *iter2;
+			RList *list2;
+			RAnalBlock *bb;
+			r_list_foreach (list, iter, list2) {
+				r_list_foreach (list2, iter2, bb) {
+					r_cons_printf ("-> 0x%08"PFMT64x"\n", bb->addr);
 				}
-				r_list_purge (list);
-				free (list);
 			}
+			r_list_purge (list);
+			free (list);
 		}
 		break;
 	case 'c':
