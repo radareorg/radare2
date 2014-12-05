@@ -1206,15 +1206,15 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 }
 
 static void cmd_anal_info(RCore *core, const char *input) {
-	switch (input[1]) {
+	switch (input[0]) {
 	case '?':
 		eprintf ("Usage: ai @ rsp\n");
 		break;
 	case ' ':
-		cmd_address_info (core, input+1, 0);
+		cmd_address_info (core, input, 0);
 		break;
 	case 'j': // "aij"
-		cmd_address_info (core, input+2, 'j');
+		cmd_address_info (core, input+1, 'j');
 		break;
 	default:
 		cmd_address_info (core, NULL, 0);
@@ -1225,16 +1225,16 @@ static void cmd_anal_info(RCore *core, const char *input) {
 static void cmd_anal_esil(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 
-	switch (input[1]) {
+	switch (input[0]) {
 	case 'r':
 		// 'aer' is an alias for 'ar'
-		cmd_anal_reg(core, input+2);
+		cmd_anal_reg(core, input+1);
 	case ' ':
 		{
 			RAnalEsil *esil = core->anal->esil;
 			int romem = r_config_get_i (core->config, "esil.romem");
 			int stats = r_config_get_i (core->config, "esil.stats");
-			//r_anal_esil_eval (core->anal, input+2);
+			//r_anal_esil_eval (core->anal, input+1);
 			if (!esil) {
 				esil = r_anal_esil_new ();
 				r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
@@ -1243,7 +1243,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 			esil = core->anal->esil;
 			r_anal_esil_set_offset (esil, core->offset);
-			r_anal_esil_parse (esil, input+2);
+			r_anal_esil_parse (esil, input+1);
 			r_anal_esil_dumpstack (esil);
 			r_anal_esil_stack_free (esil);
 		}
@@ -1252,11 +1252,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		// aes -> single step
 		// aesu -> until address
 		// aesue -> until esil expression
-		if (input[2]=='u') {
-			if (input[3]=='e') {
-				esil_step (core, UT64_MAX, input+4);
+		if (input[1]=='u') {
+			if (input[2]=='e') {
+				esil_step (core, UT64_MAX, input+3);
 			} else {
-				esil_step (core, r_num_math (core->num, input+3), NULL);
+				esil_step (core, r_num_math (core->num, input+2), NULL);
 			}
 		} else {
 			esil_step (core, UT64_MAX, NULL);
@@ -1266,11 +1266,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		// aec  -> continue until ^C
 		// aecu -> until address
 		// aecue -> until esil expression
-		if (input[2]=='u') {
-			if (input[3]=='e') {
-				esil_step (core, UT64_MAX, input+4);
+		if (input[1]=='u') {
+			if (input[2]=='e') {
+				esil_step (core, UT64_MAX, input+3);
 			} else {
-				esil_step (core, r_num_math (core->num, input+3), NULL);
+				esil_step (core, r_num_math (core->num, input+2), NULL);
 			}
 		} else {
 			esil_step (core, UT64_MAX, "0");
@@ -1293,12 +1293,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'k':
-		switch (input[2]) {
+		switch (input[1]) {
 			case '\0':
 				input = "123*";
 			case ' ':
 				if (core && core->anal && core->anal->esil && core->anal->esil->stats) {
-					char *out = sdb_querys (core->anal->esil->stats, NULL, 0, input+3);
+					char *out = sdb_querys (core->anal->esil->stats, NULL, 0, input+2);
 					if (out) {
 						r_cons_printf ("%s\n", out);
 						free (out);
@@ -1375,7 +1375,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
 
-	switch (input [1]) {
+	switch (input[0]) {
 	case '?':
 		{
 			const char* help_msg[] = {
@@ -1392,8 +1392,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'j':
 		{
 			int count = 0;
-			if (input[2] && input[3]) {
-				l = (int) r_num_get (core->num, input+2);
+			if (input[1] && input[2]) {
+				l = (int) r_num_get (core->num, input+1);
 				if (l>0) count = l;
 				if (l>tbs) {
 					r_core_block_size (core, l*4);
@@ -1408,8 +1408,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 #if DEPRECATED
 	case 's':
-		if (input[2]==' ') {
-			char *esil = strdup (input+2);
+		if (input[1]==' ') {
+			char *esil = strdup (input+1);
 			char *o = r_anal_esil_to_sdb (esil);
 			// do stuff
 			if (o&&*o) r_cons_printf ("%s\n", o);
@@ -1435,8 +1435,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	default:
 		{
 			int count = 0;
-			if (input[0] && input[1]) {
-				l = (int) r_num_get (core->num, input+2);
+			if (input[0]) {
+				l = (int) r_num_get (core->num, input+1);
 				if (l>0) count = l;
 				if (l>tbs) {
 					r_core_block_size (core, l*4);
@@ -1452,16 +1452,16 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
-	switch (input[1]) {
+	switch (input[0]) {
 	case 'l': // "asl"
-		if (input[2] == ' ') {
-			int n = atoi (input+3);
+		if (input[1] == ' ') {
+			int n = atoi (input+2);
 			if (n>0) {
 				RSyscallItem *si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si) r_cons_printf ("%s\n", si->name);
 				else eprintf ("Unknown syscall number\n");
 			} else {
-				int n = r_syscall_get_num (core->anal->syscall, input+3);
+				int n = r_syscall_get_num (core->anal->syscall, input+2);
 				if (n != -1) r_cons_printf ("%d\n", n);
 				else eprintf ("Unknown syscall name\n");
 			}
@@ -1500,11 +1500,11 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		cmd_syscall_do (core, (int)r_num_get (core->num, input+2));
+		cmd_syscall_do (core, (int)r_num_get (core->num, input+1));
 		break;
 	case 'k': // "ask"
 		{
-			char *out = sdb_querys (core->anal->syscall->db, NULL, 0, input+3);
+			char *out = sdb_querys (core->anal->syscall->db, NULL, 0, input+2);
 			if (out) {
 				r_cons_printf ("%s\n", out);
 				free (out);
@@ -1533,19 +1533,19 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 static boolt cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 
-	switch (input[1]) {
+	switch (input[0]) {
 	case '-':
-		r_anal_ref_del (core->anal, r_num_math (core->num, input+2), core->offset);
+		r_anal_ref_del (core->anal, r_num_math (core->num, input+1), core->offset);
 		break;
 	case 'k':
-		if (input[2]==' ') {
-			sdb_query (core->anal->sdb_xrefs, input+3);
+		if (input[1]==' ') {
+			sdb_query (core->anal->sdb_xrefs, input+2);
 		} else eprintf ("|ERROR| Usage: axk [query]\n");
 		break;
 	case '\0':
 	case 'j':
 	case '*':
-		r_core_anal_ref_list (core, input[1]);
+		r_core_anal_ref_list (core, input[0]);
 		break;
 	case 't':
 		{
@@ -1564,10 +1564,10 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 			}
 			list = r_anal_xrefs_get (core->anal, addr);
 			if (list) {
-				if (input[2] == 'q') { // "axtq"
+				if (input[1] == 'q') { // "axtq"
 					r_list_foreach (list, iter, ref)
 						r_cons_printf ("0x%"PFMT64x"\n", ref->addr);
-				} else if (input[2] == 'j') { // "axtj"
+				} else if (input[1] == 'j') { // "axtj"
 					r_cons_printf("[");
 					r_list_foreach (list, iter, ref) {
 						r_core_read_at (core, ref->addr, buf, 12);
@@ -1581,7 +1581,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 					}
 					r_cons_printf("]");
 					r_cons_newline();
-				} else if (input[2] == '*') { // axt*
+				} else if (input[1] == '*') { // axt*
 					// TODO: implement multi-line comments
 					r_list_foreach (list, iter, ref)
 						r_cons_printf ("CCa 0x%"PFMT64x" \"XREF from 0x%"PFMT64x"\n",
@@ -1625,10 +1625,10 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 			}
 			list = r_anal_xrefs_get_from (core->anal, addr);
 			if (list) {
-				if (input[2] == 'q') { // axfq
+				if (input[1] == 'q') { // axfq
 					r_list_foreach (list, iter, ref)
 						r_cons_printf ("0x%"PFMT64x"\n", ref->at);
-				} else if (input[2] == 'j') { // axfj
+				} else if (input[1] == 'j') { // axfj
 					r_cons_printf("[");
 					r_list_foreach (list, iter, ref) {
 						r_core_read_at (core, ref->at, buf, 12);
@@ -1638,7 +1638,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 								ref->at, ref->type, asmop.buf_asm, iter->n?",":"");
 					}
 					r_cons_printf ("]\n");
-				} else if (input[2] == '*') { // axf*
+				} else if (input[1] == '*') { // axf*
 					// TODO: implement multi-line comments
 					r_list_foreach (list, iter, ref)
 						r_cons_printf ("CCa 0x%"PFMT64x" \"XREF from 0x%"PFMT64x"\n",
@@ -1663,14 +1663,14 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		break;
 	case 'F':
 		// WTF
-		find_refs (core, input+2);
+		find_refs (core, input+1);
 		break;
 	case 'C':
 	case 'c':
 	case 'd':
 	case ' ':
 		{
-			char *ptr = strdup (r_str_trim_head ((char*)input+2));
+			char *ptr = strdup (r_str_trim_head ((char*)input+1));
 			int n = r_str_word_set0 (ptr);
 			ut64 at = core->offset;
 			ut64 addr = UT64_MAX;
@@ -1684,7 +1684,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 					free (ptr);
 					return R_FALSE;
 			}
-			r_anal_ref_add (core->anal, addr, at, input[1]);
+			r_anal_ref_add (core->anal, addr, at, input[0]);
 			free (ptr);
 		}
 		break;
@@ -1715,10 +1715,10 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 }
 
 static void cmd_anal_hint(RCore *core, const char *input) {
-	switch (input[1]) {
+	switch (input[0]) {
 	case '?':
-		if (input[2]) {
-			//ut64 addr = r_num_math (core->num, input+2);
+		if (input[1]) {
+			//ut64 addr = r_num_math (core->num, input+1);
 			eprintf ("TODO: show hint\n");
 		} else {
 			const char* help_msg[] = {
@@ -1761,9 +1761,9 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	   r_anal_hint_free (hint);
 	   */
 	case 'a': // set arch
-		if (input[2]) {
+		if (input[1]) {
 			int i;
-			char *ptr = strdup (input+3);
+			char *ptr = strdup (input+2);
 			i = r_str_word_set0 (ptr);
 			if (i==2)
 				r_num_math (core->num, r_str_word_get0 (ptr, 1));
@@ -1773,8 +1773,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else eprintf("Missing argument\n");
 		break;
 	case 'b': // set bits
-		if (input[2]) {
-			char *ptr = strdup (input+3);
+		if (input[1]) {
+			char *ptr = strdup (input+2);
 			int bits;
 			int i = r_str_word_set0 (ptr);
 			if (i==2)
@@ -1786,38 +1786,38 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'c':
 		r_anal_hint_set_jump (core->anal, core->offset,
-				r_num_math (core->num, input+2));
+				r_num_math (core->num, input+1));
 		break;
 	case 'f':
 		r_anal_hint_set_fail (core->anal, core->offset,
-				r_num_math (core->num, input+2));
+				r_num_math (core->num, input+1));
 		break;
 	case 's': // set size (opcode length)
-		r_anal_hint_set_size (core->anal, core->offset, atoi (input+2));
+		r_anal_hint_set_size (core->anal, core->offset, atoi (input+1));
 		break;
 	case 'o': // set opcode string
-		r_anal_hint_set_opcode (core->anal, core->offset, input+2);
+		r_anal_hint_set_opcode (core->anal, core->offset, input+1);
 		break;
 	case 'e': // set ESIL string
-		r_anal_hint_set_esil (core->anal, core->offset, input+2);
+		r_anal_hint_set_esil (core->anal, core->offset, input+1);
 		break;
 #if TODO
 	case 'e': // set endian
-		r_anal_hint_set_opcode (core->anal, core->offset, atoi (input+2));
+		r_anal_hint_set_opcode (core->anal, core->offset, atoi (input+1));
 		break;
 #endif
 	case 'p':
-		r_anal_hint_set_pointer (core->anal, core->offset, r_num_math (core->num, input+2));
+		r_anal_hint_set_pointer (core->anal, core->offset, r_num_math (core->num, input+1));
 		break;
 	case '*':
 	case 'j':
 	case '\0':
-		r_core_anal_hint_list (core->anal, input[1]);
+		r_core_anal_hint_list (core->anal, input[0]);
 		break;
 	case '-':
-		if (input[2]) {
+		if (input[1]) {
 			int i;
-			char *ptr = strdup (input+2);
+			char *ptr = strdup (input+1);
 			ut64 addr;
 			int size = 1;
 			i = r_str_word_set0 (ptr);
@@ -1832,12 +1832,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 }
 
 static void cmd_anal_graph(RCore *core, const char *input) {
-	switch (input[1]) {
+	switch (input[0]) {
 	case 't':
 		{
 			int n = 0;
 			RList *list = r_core_anal_graph_to (core,
-					r_num_math (core->num, input+2), n);
+					r_num_math (core->num, input+1), n);
 			if (list) {
 				RListIter *iter, *iter2;
 				RList *list2;
@@ -1853,22 +1853,22 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'c':
-		r_core_anal_refs (core, r_num_math (core->num, input+2), input[2]=='j'? 2: 1);
+		r_core_anal_refs (core, r_num_math (core->num, input+1), input[1]=='j'? 2: 1);
 		break;
 	case 'j':
-		r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_JSON);
+		r_core_anal_graph (core, r_num_math (core->num, input+1), R_CORE_ANAL_JSON);
 		break;
 	case 'k':
-		r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_KEYVALUE);
+		r_core_anal_graph (core, r_num_math (core->num, input+1), R_CORE_ANAL_KEYVALUE);
 		break;
 	case 'l':
-		r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHLINES);
+		r_core_anal_graph (core, r_num_math (core->num, input+1), R_CORE_ANAL_GRAPHLINES);
 		break;
 	case 'a':
-		r_core_anal_graph (core, r_num_math (core->num, input+2), 0);
+		r_core_anal_graph (core, r_num_math (core->num, input+1), 0);
 		break;
 	case 'd':
-		r_core_anal_graph (core, r_num_math (core->num, input+2),
+		r_core_anal_graph (core, r_num_math (core->num, input+1),
 				R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 		break;
 	case 'v':
@@ -1886,7 +1886,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 			r_cons_flush ();
 			int fd = r_cons_pipe_open (tmp, 0);
-			r_core_cmdf (core, "ag%s", input+2);
+			r_core_cmdf (core, "ag%s", input+1);
 			if (is_html==2)
 				r_config_set (core->config, "scr.html", "false");
 			r_cons_flush ();
@@ -1930,7 +1930,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 	const char *ptr;
 	ut64 addr = core->offset;
 
-	switch (input[1]) {
+	switch (input[0]) {
 	case '?':
 		{
 			const char* help_msg[] = {
@@ -1954,10 +1954,10 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		break;
 	case 'a':
 		eprintf ("NOTE: Ensure given addresses are in 0x%%08"PFMT64x" format\n");
-		r_debug_trace_at (core->dbg, input+2);
+		r_debug_trace_at (core->dbg, input+1);
 		break;
 	case 't':
-		r_debug_trace_tag (core->dbg, atoi (input+2));
+		r_debug_trace_tag (core->dbg, atoi (input+1));
 		break;
 	case 'd':
 		//trace_show (2, trace_tag_get());
@@ -1968,7 +1968,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
 		break;
 	case '+':
-		ptr = input+3;
+		ptr = input+2;
 		addr = r_num_math (core->num, ptr);
 		ptr = strchr (ptr, ' ');
 		if (ptr != NULL) {
@@ -1988,7 +1988,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 	case ' ':
 		{
 			RDebugTracepoint *t = r_debug_trace_get (core->dbg,
-					r_num_math (core->num, input+1));
+					r_num_math (core->num, input));
 			if (t != NULL) {
 				r_cons_printf ("offset = 0x%"PFMT64x"\n", t->addr);
 				r_cons_printf ("opsize = %d\n", t->size);
@@ -2028,16 +2028,16 @@ static int cmd_anal(void *data, const char *input) {
 		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
 		break;
 	case 'i': // "ai"
-		cmd_anal_info(core, input);
+		cmd_anal_info(core, input+1);
 		break;
 	case 'r':
 		cmd_anal_reg (core, input+1);
 		break;
 	case 'e':
-		cmd_anal_esil(core, input);
+		cmd_anal_esil(core, input+1);
 		break;
 	case 'o':
-		cmd_anal_opcode(core, input);
+		cmd_anal_opcode(core, input+1);
 		break;
 	case 'F':
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
@@ -2048,16 +2048,16 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'g':
-		cmd_anal_graph(core, input);
+		cmd_anal_graph(core, input+1);
 		break;
 	case 't':
-		cmd_anal_trace(core, input);
+		cmd_anal_trace(core, input+1);
 		break;
 	case 's': // "as"
-		cmd_anal_syscall(core, input);
+		cmd_anal_syscall(core, input+1);
 		break;
 	case 'x':
-		if (!cmd_anal_refs(core, input))
+		if (!cmd_anal_refs(core, input+1))
 			return R_FALSE;
 		break;
 	case 'a':
@@ -2165,7 +2165,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'h':
-		cmd_anal_hint(core, input);
+		cmd_anal_hint(core, input+1);
 		break;
 	case '!':
 		//eprintf("Trying analysis command extension.\n");
