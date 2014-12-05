@@ -52,7 +52,6 @@ static int is_invalid (const ut8 *buf, int size) {
 static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	ut64 n;
 	ut8 buf2[32];
-	int ret;
 	if (size > sizeof (buf2))
 		size = sizeof (buf2);
 	n = r_mem_get_num (buf, size, endian);
@@ -68,8 +67,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	if (n<0x1000) return 0; // probably wrong
 	if (n>0xffffffffffffLL) return 0; // probably wrong
 
-	ret = iob->read_at (iob->io, n, buf2, size);
-	if (ret != size) return 0;
+	if (iob->read_at (iob->io, n, buf2, size) != size) return 0;
 	return is_invalid (buf2, size)? 0: n;
 #endif
 }
