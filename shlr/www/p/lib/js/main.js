@@ -34,7 +34,7 @@ $(document).ready( function() {
 	r2.load_mmap();
 	r2ui.load_colors();
 	r2.load_settings();
-  update_binary_details();
+  load_binary_details();
 
   // Create panels
 	var disasm_panel = new DisasmPanel();
@@ -118,34 +118,92 @@ $(document).ready( function() {
         return {my: "left+100 top-10", at: "left bottom", of: ui.target};
       },
       beforeOpen: function(event, ui) {
+        var address = get_address_from_class(ui.target[0]);
+        var xrefs_to = [];
+        var xrefs_from = [];
+        var xrefto_submenu = null;
+        var xreffrom_submenu = null;
+        r2.cmd("axf @" + address, function(x){
+          var lines = x.split('\n');
+          for (var l in lines) {
+            if (lines[l] !== "") xrefs_to[xrefs_to.length] = lines[l];
+          }
+        });
+        if (xrefs_to.length > 0) {
+          $(document).contextmenu("showEntry", "xrefs_to", true);
+          var refs = [];
+          for (var r in xrefs_to) {
+            var addr = xrefs_to[r].split(' ')[1];
+            var type = xrefs_to[r].split(' ')[0];
+            refs[refs.length] = {title: addr + "<kbd>" + type + "</kbd>", cmd: "jumpto_" + addr};
+          }
+          var xrefto_submenu = {title: "xrefs to", children: refs};
+        }
+        r2.cmd("axt @" + address, function(x){
+          var lines = x.split('\n');
+          for (var l in lines) {
+            if (lines[l] !== "") xrefs_from[xrefs_from.length] = lines[l];
+          }
+        });
+        if (xrefs_from.length > 0) {
+          $(document).contextmenu("showEntry", "xrefs_from", true);
+          var refs = [];
+          for (var r in xrefs_from) {
+            var addr = xrefs_from[r].split(' ')[1];
+            var type = xrefs_from[r].split(' ')[0];
+            refs[refs.length] = {title: addr + "<kbd>" + type + "</kbd>", cmd: "jumpto_" + addr};
+          }
+          var xreffrom_submenu = {title: "xrefs from", children: refs};
+        }
+        var menu = [
+            {title: "jump to address<kbd>g</kbd>", cmd: "goto"},
+            {title: "rename<kbd>n</kbd>", cmd: "rename"},
+            {title: "add comment<kbd>;</kbd>", cmd: "comment"},
+            {title: "code<kbd>c</kbd>", cmd: "define"},
+            {title: "undefine<kbd>u</kbd>", cmd: "undefine"}
+        ];
+        if (xreffrom_submenu !== null || xrefto_submenu !== null) {
+          if (xrefto_submenu !== null) menu[menu.length] = xrefto_submenu;
+          if (xreffrom_submenu !== null) menu[menu.length] = xreffrom_submenu;
+        }
+        $(document).contextmenu("replaceMenu", menu);
+
+        r2.cmdj("pdj 1 @" + address, function(x) {
+          if(x) {
+            if(x[0].fcn_addr == x[0].offset) {
+              $(document).contextmenu("showEntry", "define", false);
+              $(document).contextmenu("showEntry", "undefine", true);
+            } else {
+              $(document).contextmenu("showEntry", "define", true);
+              $(document).contextmenu("showEntry", "undefine", false);
+            }
+          }
+        });
+
         if (ui.target.hasClass('insaddr')) {
-          $(document).contextmenu("showEntry", "define", true);
-          $(document).contextmenu("showEntry", "undefine", true);
           $(document).contextmenu("showEntry", "comment", true);
           $(document).contextmenu("showEntry", "rename", true);
         } else {
-          $(document).contextmenu("showEntry", "define", false);
-          $(document).contextmenu("showEntry", "undefine", false);
           $(document).contextmenu("showEntry", "comment", false);
           $(document).contextmenu("showEntry", "rename", true);
-        }
-        if (ui.target.hasClass('reloc') || ui.target.hasClass('symbol')) {
           $(document).contextmenu("showEntry", "define", false);
           $(document).contextmenu("showEntry", "undefine", false);
+        }
+        if (ui.target.hasClass('reloc') || ui.target.hasClass('symbol') || ui.target.hasClass('import')) {
           $(document).contextmenu("showEntry", "comment", false);
           $(document).contextmenu("showEntry", "rename", false);
-        }
-        if (ui.target.hasClass('import')) {
           $(document).contextmenu("showEntry", "define", false);
           $(document).contextmenu("showEntry", "undefine", false);
-          $(document).contextmenu("showEntry", "comment", false);
-          $(document).contextmenu("showEntry", "rename", false);
         }
       },
       select: function(event, ui) {
         $(document).contextmenu("close");
         var target = ui.target[0];
         var address = get_address_from_class(target);
+        if (ui.cmd.indexOf("jumpto_") == 0) {
+          address = ui.cmd.substring(ui.cmd.indexOf("jumpto_") + 7);
+          do_jumpto(address);
+        }
         if (ui.cmd  == "goto") do_goto();
         if (ui.cmd  == "comment") do_comment(target);
         if (ui.cmd  == "rename") do_rename(target, event);
@@ -462,7 +520,7 @@ function handleDoubleClick (inEvent) {
   document.getElementById("canvas").focus();
 }
 
-function update_binary_details() {
+function load_binary_details() {
   // <div id="symbols"></div>
   r2.cmdj("isj", function(x) {
     render_symbols(x);
@@ -491,6 +549,31 @@ function update_binary_details() {
   // <div id="sections"></div>
   r2.cmdj("iSj", function(x) {
     render_sections(x);
+  });
+  render_history();
+}
+
+function update_binary_details() {
+  // <div id="symbols"></div>
+  r2.cmdj("isj", function(x) {
+    render_symbols(x);
+  });
+  // <div id="functions"></div>
+  r2.cmdj("afj", function(x) {
+    render_functions(x);
+  });
+  // <div id="imports"></div>
+  r2.cmdj("iij", function(x) {
+    render_imports(x);
+  });
+  // <div id="relocs"></div>
+  r2.cmdj("irj", function(x) {
+    render_relocs(x);
+  });
+  // <div id="flags"></div>
+  // TODO: replace with individual fetches of spaces so we can add a class saying what type of flag it is (for renaming)
+  r2.cmdj("fs *;fj", function(x) {
+    render_flags(x);
   });
   render_history();
 }
@@ -601,8 +684,11 @@ function render_history(){
   var html = "<div>";
   for (var i in r2ui.history) {
     if (i > r2ui.history_idx - 10 && i < r2ui.history_idx + 5) {
-      if (i == r2ui.history_idx - 1) html += "&gt;  <span class='history_idx'>" + r2ui.history[i] + "</span>";
-      else html += "&gt; " + r2ui.history[i];
+      var flag = r2.get_flag_names(r2ui.history[i]);
+      if (flag.length > 0) flag = flag[0];
+      else flag = r2ui.history[i];
+      if (i == r2ui.history_idx - 1) html += " &gt; <span class='history history_idx addr addr_" + r2ui.history[i] + "'>" + flag + "</span>";
+      else html += " &gt;  <span class='history addr addr_" + r2ui.history[i] + "'>" + flag + "</span>";
     }
   }
   html += "</div>";
