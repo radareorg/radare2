@@ -12,19 +12,41 @@ static int gs (int rgb) {
 
 static int rgb(int r, int g, int b) {
 	const double k = (256.0/6.0);
-	r = R_DIM (r/k, 0, 6);
-	g = R_DIM (g/k, 0, 6);
-	b = R_DIM (b/k, 0, 6);
-	return 16 + (r*36) + (g*6) + b;
+	int grey = 0;
+	if (r > 0 && r < 255 && r == g && r == b) grey = 1;
+	if (grey > 0) {
+		return 232 + (int)r*3/33.0;
+	} else {
+		r = R_DIM (r/k, 0, 6);
+		g = R_DIM (g/k, 0, 6);
+		b = R_DIM (b/k, 0, 6);
+		return 16 + (r*36) + (g*6) + b;
+	}
 }
 
 static void unrgb(int color, int *r, int *g, int *b) {
-	const double k = (256.0/6.0);
-	int R, G, B;
-	color -= 16;
-	B = (color/1) & 7; if (b) *b = (B*k); color -= B;
-	G = (color/6) & 7; if (g) *g = (G*k); color -= G;
-	R = (color/36)& 7; if (r) *r = (R*k); color -= R;
+	if (color > 16 && color < 232) {
+		for (int rc = 0; rc < 256; rc+=51) {
+			for (int gc = 0; gc < 256; gc+=51) {
+				for (int bc = 0; bc < 256; bc+=51) {
+					int i = rgb(rc, gc, bc);
+					if(color == i) {
+						*r = rc; *g = gc; *b = bc;
+						return;
+					}
+				}
+			}
+		}
+	} else if(color > 231 && color < 256) {
+		*r = *g = *b = (int)(color - 232)*33.0/3;
+		return;
+	}
+	// const double k = (256.0/6.0);
+	// int R, G, B;
+	// color -= 16;
+	// B = (color/1) & 7; if (b) *b = (B*k); color -= B;
+	// G = (color/6) & 7; if (g) *g = (G*k); color -= G;
+	// R = (color/36)& 7; if (r) *r = (R*k); color -= R;
 }
 
 static inline void rgbinit(int r, int g, int b) {
@@ -105,7 +127,7 @@ R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
 		break;
 	case 2: // 16M - xterm only
-		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, 
+		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg,
 			r&0xff, g&0xff, b&0xff);
 		break;
 	case 0: // ansi 16 colors

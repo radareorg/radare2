@@ -47,6 +47,12 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.ai_seq = Color_MAGENTA;
 	cons->pal.ai_ascii = Color_YELLOW;
 
+	cons->pal.cflow = Color_YELLOW;
+	cons->pal.dataoffset = Color_YELLOW;
+	cons->pal.background = Color_BLACK;
+	cons->pal.alt_background = Color_GRAY;
+	cons->pal.border = Color_BGGRAY;
+
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
 	cons->pal.list[2] = strdup (Color_BGREEN);
@@ -178,6 +184,12 @@ static struct {
 	{ "ai_exec", r_offsetof (RConsPalette, ai_exec) },
 	{ "ai_seq", r_offsetof (RConsPalette, ai_seq) },
 	{ "ai_ascii", r_offsetof (RConsPalette, ai_ascii) },
+
+	{ "cflow", r_offsetof (RConsPalette, cflow) },
+	{ "dataoffset", r_offsetof (RConsPalette, dataoffset) },
+	{ "background", r_offsetof (RConsPalette, background) },
+	{ "alt_background", r_offsetof (RConsPalette, alt_background) },
+	{ "border", r_offsetof (RConsPalette, border) },
 	{ NULL, 0 }
 };
 
@@ -222,9 +234,9 @@ R_API void r_cons_pal_show () {
 				int r = i*16;
 				int g = j*16;
 				int b = k*16;
-				if ((i<6) && (j<5) ) 
+				if ((i<6) && (j<5) )
 					strcpy (fg, Color_WHITE);
-				//if (i<2 && j<6 && k<13) 
+				//if (i<2 && j<6 && k<13)
 				else r_cons_rgb_str (fg, 0, 0, 0, 0);
 				r_cons_rgb_str (bg, r, g, b, 1);
 				r_cons_printf ("%s%s  rgb:%x%x%x  "Color_RESET,

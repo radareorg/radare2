@@ -22,7 +22,9 @@ r2ui.load_colors = function () {
           var sel = myrules[j].selectorText.toLowerCase();
           var color = r2ui.colors[sel];
           if (color !== undefined && color !== null) {
-            myrules[j].style.color = color;
+            if (sel == ".ec_background" || sel == ".ec_alt_background") myrules[j].style.backgroundColor = color;
+            else if (sel == ".ec_border") myrules[j].style.borderColor = color;
+            else myrules[j].style.color = color;
           } else {
             if (sel == ".ec_background" || sel == ".ec_alt_background") r2ui.colors[sel] = myrules[j].style.backgroundColor;
             else if (sel == ".ec_border") r2ui.colors[sel] = myrules[j].style.borderColor;

@@ -100,7 +100,10 @@ r2ui.load_colors();
 var props = Object.keys(r2ui.colors);
 for (var j in props) {
 	var prop = props[j].replace('.ec_','');
-	$('.tmp_' + prop).css('color', r2ui.colors[props[j]]);
+	if (prop == "background") $('.tmp_' + prop).css('background-color', r2ui.colors[props[j]]);
+	else if (prop == "alt_background") $('.tmp_' + prop).css('background-color', r2ui.colors[props[j]]);
+	else if (prop == "border") $('.tmp_' + prop).css('border-color', r2ui.colors[props[j]]);
+	else $('.tmp_' + prop).css('color', r2ui.colors[props[j]]);
 }
 
 var defaults = {
@@ -110,8 +113,8 @@ var defaults = {
     change: function(color) {
     	var prop = this.id.replace('_picker','');
     	if (prop == "background") $('.tmp_' + prop).css('background-color', color);
-    	if (prop == "alt_background") $('.tmp_' + prop).css('background-color', color);
-    	if (prop == "border") $('.tmp_' + prop).css('border-color', color);
+    	else if (prop == "alt_background") $('.tmp_' + prop).css('background-color', color);
+    	else if (prop == "border") $('.tmp_' + prop).css('border-color', color);
         else $('.tmp_' + prop).css('color', color);
         r2.cmd("ec " + prop + " rgb:" + String(color).replace('#',''));
         r2ui.load_colors();
