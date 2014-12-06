@@ -23,7 +23,7 @@ h3 {
 
 </head>
 
-<body class='tmp_background'>
+<body class='tmp_gui_background'>
 <table style=width:100%>
 <tr>
 <td width="85%" valign=top>
@@ -100,7 +100,10 @@ r2ui.load_colors();
 var props = Object.keys(r2ui.colors);
 for (var j in props) {
 	var prop = props[j].replace('.ec_','');
-	$('.tmp_' + prop).css('color', r2ui.colors[props[j]]);
+	if (prop == "gui_background") $('.tmp_' + prop).css('background-color', r2ui.colors[props[j]]);
+	else if (prop == "gui_alt_background") $('.tmp_' + prop).css('background-color', r2ui.colors[props[j]]);
+	else if (prop == "gui_border") $('.tmp_' + prop).css('border-color', r2ui.colors[props[j]]);
+	else $('.tmp_' + prop).css('color', r2ui.colors[props[j]]);
 }
 
 var defaults = {
@@ -109,11 +112,11 @@ var defaults = {
     preferredFormat: "hex3",
     change: function(color) {
     	var prop = this.id.replace('_picker','');
-    	if (prop == "background") $('.tmp_' + prop).css('background-color', color);
-    	if (prop == "alt_background") $('.tmp_' + prop).css('background-color', color);
-    	if (prop == "border") $('.tmp_' + prop).css('border-color', color);
+    	if (prop == "gui_background") $('.tmp_' + prop).css('background-color', color);
+    	else if (prop == "gui_alt_background") $('.tmp_' + prop).css('background-color', color);
+    	else if (prop == "gui_border") $('.tmp_' + prop).css('border-color', color);
         else $('.tmp_' + prop).css('color', color);
-        r2.cmd("ec " + prop + " rgb:" + String(color).replace('#',''));
+        r2.cmd("ec " + prop.replace("gui_", "gui.") + " rgb:" + String(color).replace('#',''));
         r2ui.load_colors();
     },
     palette: [["#000","#030","#060","#090","#0c0","#0f0"],["#003","#033","#063","#093","#0c3","#0f3"],["#006","#036","#066","#096","#0c6","#0f6"],["#009","#039","#069","#099","#0c9","#0f9"],
@@ -127,7 +130,7 @@ var defaults = {
     		  ["#f06","#f36","#f66","#f96","#fc6","#ff6"],["#f09","#f39","#f69","#f99","#fc9","#ff9"],["#f0c","#f3c","#f6c","#f9c","#fcc","#ffc"],["#f0f","#f3f","#f6f","#f9f","#fcf","#fff"]]
 };
 
-var props = ['comment', 'fname', 'fline', 'help', 'args', 'flag', 'label', 'flow', 'prompt' , 'offset', 'input' , 'other', 'b0x00' , 'b0x7f' , 'b0xff', 'math', 'bin', 'btext', 'push', 'pop', 'jmp', 'cjmp', 'call', 'nop', 'ret', 'trap', 'swi', 'cmp', 'reg', 'creg', 'num', 'mov', 'background', 'alt_background', 'cflow', 'dataoffset', 'border'];
+var props = ['comment', 'fname', 'fline', 'help', 'args', 'flag', 'label', 'flow', 'prompt' , 'offset', 'input' , 'other', 'b0x00' , 'b0x7f' , 'b0xff', 'math', 'bin', 'btext', 'push', 'pop', 'jmp', 'cjmp', 'call', 'nop', 'ret', 'trap', 'swi', 'cmp', 'reg', 'creg', 'num', 'mov', 'gui_background', 'gui_alt_background', 'gui_cflow', 'gui_dataoffset', 'gui_border'];
 
 var rows = "";
 for (var i in props) rows += '<tr><td><div class="color_label">' + props[i] + ': </div></td><td><input class="picker" type="text" id="' + props[i] + '_picker"></input></td></tr>';

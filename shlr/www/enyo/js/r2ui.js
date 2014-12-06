@@ -9,7 +9,7 @@ r2ui.load_colors = function () {
   // change css on the fly!
   r2.cmdj("ecj", function(x) {
     for (var i in x) {
-      r2ui.colors[".ec_" + i] = "rgb(" + String(x[i]) + ")";
+      r2ui.colors[".ec_" + i.replace("gui.","gui_")] = "rgb(" + String(x[i]) + ")";
     }
   });
   for (var k in document.styleSheets) {
@@ -19,13 +19,15 @@ r2ui.load_colors = function () {
     for (var j in myrules) {
       if (myrules[j].selectorText !== undefined && myrules[j].selectorText !== null) {
         if (myrules[j].selectorText.toLowerCase().indexOf(".ec_") === 0) {
-          var sel = myrules[j].selectorText.toLowerCase();
+          var sel = myrules[j].selectorText.toLowerCase().replace("gui.","gui_");
           var color = r2ui.colors[sel];
           if (color !== undefined && color !== null) {
-            myrules[j].style.color = color;
+            if (sel == ".ec_gui_background" || sel == ".ec_gui_alt_background") myrules[j].style.backgroundColor = color;
+            else if (sel == ".ec_border") myrules[j].style.borderColor = color;
+            else myrules[j].style.color = color;
           } else {
-            if (sel == ".ec_background" || sel == ".ec_alt_background") r2ui.colors[sel] = myrules[j].style.backgroundColor;
-            else if (sel == ".ec_border") r2ui.colors[sel] = myrules[j].style.borderColor;
+            if (sel == ".ec_gui_background" || sel == ".ec_gui_alt_background") r2ui.colors[sel] = myrules[j].style.backgroundColor;
+            else if (sel == ".ec_gui_border") r2ui.colors[sel] = myrules[j].style.borderColor;
             else r2ui.colors[sel] = myrules[j].style.color;
           }
         }

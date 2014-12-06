@@ -6,7 +6,6 @@
 
 #if __WIN32__ || __CYGWIN__ || MINGW32
 #warning No support for windows yet
-#error pene
 #else
 
 #include <fcntl.h>
