@@ -287,6 +287,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		}
 		break;
+	case MIPS_INS_SLTIU:
+		{
+		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,<,?{%s,1,=,}{,%s,0,=,}",
+					ARG(1), ARG(2), ARG(0), ARG(0));
+		}
+		break;
 	}
 	return 0;
 }
