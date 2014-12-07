@@ -1,5 +1,6 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
+include ../../shlr/zip/deps.mk
 SHLR?=$(shell pwd)/..
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
@@ -31,7 +32,7 @@ libr_java.a: ${OBJS}
 
 out: ${OBJS} main.o
 	${CC} ${LDFLAGS} ${CFLAGS} -I. ${OBJS} main.o \
-		-lr_util ${SHLR}/sdb/src/libsdb.a -o out 
+		-lr_util ${SHLR}/sdb/src/libsdb.a ${LINK} -o out 
 
 clean:
 	rm -f ${OBJS} main.o a.out libr_java.a out
