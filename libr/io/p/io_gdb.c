@@ -114,6 +114,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_gdb = {
 	//void *plugin;
 	.name = "gdb",
+	.license = "LGPL3",
 	.desc = "Attach to gdbserver, 'qemu -s', gdb://localhost:1234",
 	.open = __open,
 	.close = __close,

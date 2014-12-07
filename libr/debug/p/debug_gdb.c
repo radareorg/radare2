@@ -540,7 +540,7 @@ static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
-	.license = "LGPL3";
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH | R_SYS_ARCH_MIPS,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = NULL,
