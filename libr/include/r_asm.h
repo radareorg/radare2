@@ -206,6 +206,7 @@ extern RAsmPlugin r_asm_plugin_spc700;
 extern RAsmPlugin r_asm_plugin_propeller;
 extern RAsmPlugin r_asm_plugin_msp430;
 extern RAsmPlugin r_asm_plugin_i4004;
+extern RAsmPlugin r_asm_plugin_cris_gnu;
 #endif
 
 #ifdef __cplusplus
