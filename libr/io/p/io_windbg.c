@@ -17,6 +17,17 @@
 #include <r_lib.h>
 #include <r_socket.h>
 #include <r_util.h>
+
+#if __WINDOWS__
+#warning WinDBG support not yet ready for Windows
+
+RIOPlugin r_io_plugin_windbg = {
+	.name = "windbg",
+	.desc = "Attach to a KD debugger (not supported on Windows)",
+	.license = "LGPL3",
+};
+#else
+
 #include <wind.h>
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
@@ -100,3 +111,4 @@ RIOPlugin r_io_plugin_windbg = {
 	.isdbg = R_TRUE,
 };
 
+#endif

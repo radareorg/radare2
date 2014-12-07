@@ -600,7 +600,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		}
 
 		// walk backwards by one instruction
-		IFDBG eprintf(" current_instr_addr: 0x%"PFMT64x" current_instr_len: %d next_instr_addr: 0x%04llx \n",
+		IFDBG eprintf(" current_instr_addr: 0x%"PFMT64x" current_instr_len: %d next_instr_addr: 0x%04"PFMT64x"\n",
 			current_instr_addr, current_instr_len, next_buf_pos);
 		IFDBG eprintf(" hit count: %d \n", hit_count );
 		current_instr_addr -= 1;

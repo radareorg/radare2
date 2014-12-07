@@ -247,7 +247,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 	i = 0;
 	while (buf+1 < buf_end) {
 		int maxlen = R_MIN ((size_t)(buf_end-buf), 0xfff);
-		int len = strnlen((const char*)buf, maxlen);
+		int len = r_str_nlen((const char*)buf, maxlen);
 		if (len<1 || len >= 0xfff) {
 			buf += 1;
 			break;
@@ -266,7 +266,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		while (buf+1<buf_end) {
 			const char *filename = (const char *)buf;
 			ut64 id_idx, mod_time, file_len;
-			size_t namelen, len = strnlen (filename, (size_t)(buf_end-buf));
+			size_t namelen, len = r_str_nlen (filename, (size_t)(buf_end-buf));
 
 			if (!len) {
 				buf++;
