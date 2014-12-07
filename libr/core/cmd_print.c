@@ -1825,6 +1825,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'W':
 			for (i=0; i<len; i+=4) {
 				ut32 *p = (ut32*)((ut8*)core->block+i);
+				r_mem_copyendian((ut8*)p, (ut8*)p, 4, !core->print->big_endian);
 				r_cons_printf ("0x%08"PFMT64x" 0x%08x\n", core->offset+i, *p);
 			}
 			break;
