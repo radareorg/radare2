@@ -1092,9 +1092,14 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%llx\n", (ut64)addr);
 	}
+	if (core->anal->esil->delay)
+		addr=core->anal->esil->delay_addr;
 	r_io_read_at (core->io, addr, code, sizeof (code));
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+	core->anal->esil->delay = op.delay;
+	if (core->anal->esil->delay)
+		core->anal->esil->delay_addr=addr+op.size;
 #if 0
 eprintf ("RET %d\n", ret);
 eprintf ("ADDR 0x%llx\n", addr);

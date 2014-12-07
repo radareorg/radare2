@@ -810,6 +810,8 @@ typedef struct r_anal_esil_t {
 	int debug;
 	ut64 flags;
 	ut64 offset;
+	int delay;
+	ut64 delay_addr;
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
 // parity flag?
