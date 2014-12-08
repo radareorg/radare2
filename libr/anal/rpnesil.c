@@ -140,7 +140,7 @@ static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 	return ((esil->cur & mask(bit)) < (esil->old & mask(bit)));
 }
 
-static int esil_internal_parrity_check (RAnalEsil *esil) {
+static int esil_internal_parity_check (RAnalEsil *esil) {
 	int i, bits = 0;
 	ut64 mask = 1;
 	for (i=0; i<64; i++) {
@@ -219,7 +219,7 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 		break;
 		//case 'o':						//overflow
 	case 'p':						//parity
-		*num = esil_internal_parrity_check (esil);
+		*num = esil_internal_parity_check (esil);
 		break;
 	case 'r':
 		*num = esil->anal->bits/8;
