@@ -13,10 +13,20 @@ debug Windows kernels without depending on Windows capabilities.
 
 ------8<--------------8<------------------8<------------------------
 
-Enable WinDBG support on Windows like this:
+Enable WinDBG support on Windows Vista and higher like this:
 
     bcdedit /debug on
     bcdedit /dbgsettings serial debugport:1 baudrate:115200
+
+Or like this for Windows XP:
+    Open boot.ini and add /debug /debugport=COM1 /baudrate=115200:
+    
+    [boot loader]
+    timeout=30
+    default=multi(0)disk(0)rdisk(0)partition(1)\WINDOWS
+    [operating systems]
+    multi(0)disk(0)rdisk(0)partition(1)\WINDOWS="Debugging with Cable" /fastdetect /debug /debugport=COM1 /baudrate=57600
+ 
 
 Configure the VirtualBox Machine like this:
 
