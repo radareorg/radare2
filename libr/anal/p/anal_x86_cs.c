@@ -94,7 +94,6 @@ static char *getarg(cs_insn *insn, int n, int set) {
 		const char *index =  cs_x86_regnames[op.mem.index];
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
-		
 		if (scale>1) {
 			if (set>1) {
 				snprintf (buf, sizeof (buf),
@@ -131,10 +130,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static
 #endif
 	cs_insn *insn = NULL;
-	int mode = (a->bits==64)? CS_MODE_64: 
+	int mode = (a->bits==64)? CS_MODE_64:
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
 	int n, ret = cs_open (CS_ARCH_X86, mode, &handle);
+	int regsz = 4;
+	switch (a->bits) {
+	case 64: regsz = 8; break;
+	case 16: regsz = 2; break;
+	default:
+	case 32: regsz = 4; break;
+	}
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->jump = UT64_MAX;
@@ -244,6 +250,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->refptr = INSOP(0).size;
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
+					} else if (INSOP(0).mem.base == X86_REG_RBP) {
+						op->stackop = R_ANAL_STACK_SET;
+						op->stackptr = regsz;
 					}
 					if (a->decode) {
 						esilprintf (op, "%s,%s",
@@ -265,6 +274,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->refptr = INSOP(1).size;
 					if (INSOP(1).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
+					} else if (INSOP(1).mem.base == X86_REG_RBP) {
+						op->stackop = R_ANAL_STACK_GET;
+						op->stackptr = regsz;
 					}
 					break;
 				case X86_OP_IMM:
@@ -346,6 +358,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->refptr = INSOP(0).size;
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
+					} else if (INSOP(0).mem.base == X86_REG_RBP) {
+						op->stackop = R_ANAL_STACK_SET;
+						op->stackptr = regsz;
 					}
 					break;
 				default:
@@ -355,6 +370,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						op->refptr = INSOP(1).size;
 						if (INSOP(1).mem.base == X86_REG_RIP) {
 							op->ptr += addr + insn->size;
+						} else if (INSOP(1).mem.base == X86_REG_RBP) {
+							op->stackop = R_ANAL_STACK_SET;
+							op->stackptr = regsz;
 						}
 						break;
 					case X86_OP_IMM:
@@ -399,6 +417,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				default:
 					break;
 				}
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = regsz;
 				break;
 			case X86_INS_LEAVE:
 				op->type = R_ANAL_OP_TYPE_POP;
@@ -406,6 +426,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					esilprintf (op, "%s,%s,=,%s,[%d],%s,%d,%s,-=",
 						bp, sp, sp, rs, bp, rs, sp);
 				}
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -regsz;
 				break;
 			case X86_INS_POP:
 			case X86_INS_POPAW:
@@ -420,6 +442,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						sp, rs, dst, rs, sp);
 					free (dst);
 				}
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -regsz;
 				break;
 			case X86_INS_RET:
 			case X86_INS_RETF:
@@ -431,6 +455,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode)
 					esilprintf (op, "%s,[%d],%s,=,%d,%s,+=",
 						sp, rs, pc, rs, sp);
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -regsz;
 				break;
 			case X86_INS_INT1:
 			case X86_INS_INT3:
@@ -626,6 +652,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					free (src);
 					free (dst);
 				}
+				if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
+					if (INSOP(0).reg == X86_REG_RSP) {
+						op->stackop = R_ANAL_STACK_INC;
+						op->stackptr = INSOP(1).imm;
+					}
+				}
 				break;
 			case X86_INS_AND:
 			case X86_INS_ANDN:
@@ -680,6 +712,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					esilprintf (op, "%s,%s,+=", dst, src);
 					free (src);
 					free (dst);
+				}
+				if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
+					if (INSOP(0).reg == X86_REG_RSP) {
+						op->stackop = R_ANAL_STACK_INC;
+						op->stackptr = -INSOP(1).imm;
+					}
 				}
 				break;
 			}
