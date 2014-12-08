@@ -25,23 +25,26 @@ var walk = function(dir, done) {
 };
 
 var downloader = function(currentValue, index, array) {
-    console.log(currentValue);  
+    var saved_guid_and_dbg_fname = [];
     var spawn = require('child_process').spawn,
     ls = spawn('rabin2', ['-I', currentValue]);
 
-    ls.stdout.on('data', function (data) {
-      console.log(data.toString());
-      
-      /*
-	data.toString().split('\r').map(function (str) { 
-	var parts = str.split(' ');
-	console.log(parts[0]); // key
-	console.log(parts[1]); // value
-    */
-      
+    ls.stdout.on('data', function (data) {     
+	data.toString().split('\n').map(function (str) {
+	  var curr_guid = '';
+	  var curr_dbg_fname = '';
+	  var parts = str.split(' ');
+	  
+	  if (parts[0].indexOf("guid") != -1) {
+	    curr_guid = parts[0].substring("guid".length).trim();
+	    console.log(curr_guid);
+	  } else if (parts[0].indexOf("dbg_fname") != -1) {
+	    curr_dbg_fname = parts[0].substring("dbg_fname".length).trim();
+	    console.log(curr_dbg_fname);
+	    //saved_guid_and_dbg_fname.push({ "guid" : curr_guid, "dbg_fname" : curr_dbg_fname});
+	  }
+	});
     });
-
-   /* });*/
 };
 
 walk("/home/inisider/Downloads/dlls", function(err, results) {
