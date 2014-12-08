@@ -2260,7 +2260,7 @@ static const char *gotoWord(const char *str, int n) {
  * 3: normal continuation
  */
 static int evalWord (RAnalEsil *esil, const char *ostr, const char **str) {
-	if (*str[0] && *str[1]==',')
+	if ((*str)[0] && (*str)[1]==',')
 		return 2;
 	if (esil->repeat)
 		return 0;
