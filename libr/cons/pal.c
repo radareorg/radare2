@@ -47,11 +47,11 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.ai_seq = Color_MAGENTA;
 	cons->pal.ai_ascii = Color_YELLOW;
 
-	cons->pal.cflow = Color_YELLOW;
-	cons->pal.dataoffset = Color_YELLOW;
-	cons->pal.background = Color_BLACK;
-	cons->pal.alt_background = Color_GRAY;
-	cons->pal.border = Color_BGGRAY;
+	cons->pal.gui_cflow = Color_YELLOW;
+	cons->pal.gui_dataoffset = Color_YELLOW;
+	cons->pal.gui_background = Color_BLACK;
+	cons->pal.gui_alt_background = Color_GRAY;
+	cons->pal.gui_border = Color_BGGRAY;
 
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
@@ -185,11 +185,11 @@ static struct {
 	{ "ai_seq", r_offsetof (RConsPalette, ai_seq) },
 	{ "ai_ascii", r_offsetof (RConsPalette, ai_ascii) },
 
-	{ "cflow", r_offsetof (RConsPalette, cflow) },
-	{ "dataoffset", r_offsetof (RConsPalette, dataoffset) },
-	{ "background", r_offsetof (RConsPalette, background) },
-	{ "alt_background", r_offsetof (RConsPalette, alt_background) },
-	{ "border", r_offsetof (RConsPalette, border) },
+	{ "gui.cflow", r_offsetof (RConsPalette, gui_cflow) },
+	{ "gui.dataoffset", r_offsetof (RConsPalette, gui_dataoffset) },
+	{ "gui.background", r_offsetof (RConsPalette, gui_background) },
+	{ "gui.alt_background", r_offsetof (RConsPalette, gui_alt_background) },
+	{ "gui.border", r_offsetof (RConsPalette, gui_border) },
 	{ NULL, 0 }
 };
 

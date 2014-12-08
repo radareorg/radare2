@@ -114,11 +114,11 @@ typedef struct r_disam_options_t {
 	const char *color_num;
 	const char *color_mov;
 	const char *color_invalid;
-	const char *color_cflow;
-	const char *color_dataoffset;
-	const char *color_background;
-	const char *color_alt_background;
-	const char *color_border;
+	const char *color_gui_cflow;
+	const char *color_gui_dataoffset;
+	const char *color_gui_background;
+	const char *color_gui_alt_background;
+	const char *color_gui_border;
 
 	RAnalHint *hint;
 	RPrint *p;
@@ -235,11 +235,11 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_num = P(num): Color_YELLOW;
 	ds->color_mov = P(mov): Color_WHITE;
 	ds->color_invalid = P(invalid): Color_BRED;
-	ds->color_cflow = P(cflow): Color_YELLOW;
-	ds->color_dataoffset = P(dataoffset): Color_YELLOW;
-	ds->color_background = P(background): Color_BLACK;
-	ds->color_alt_background = P(alt_background): Color_GRAY;
-	ds->color_border = P(border): Color_BGGRAY;
+	ds->color_gui_cflow = P(gui_cflow): Color_YELLOW;
+	ds->color_gui_dataoffset = P(gui_dataoffset): Color_YELLOW;
+	ds->color_gui_background = P(gui_background): Color_BLACK;
+	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
+	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
