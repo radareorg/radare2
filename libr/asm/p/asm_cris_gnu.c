@@ -57,6 +57,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return 0;
 }
 
+//static int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_info *info);
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	op->buf_asm[0]='\0';
@@ -64,7 +67,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -78,9 +81,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	if (a->big_endian)
-		op->size = print_insn_big_powerpc((bfd_vma)Offset, &disasm_obj);
-	else op->size = print_insn_little_powerpc((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
 
 	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);

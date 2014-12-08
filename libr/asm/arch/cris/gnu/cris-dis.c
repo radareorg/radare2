@@ -102,7 +102,7 @@ static int cris_constraint
 /* Parse disassembler options and store state in info.  FIXME: For the
    time being, we abuse static variables.  */
 
-static bfd_boolean
+bfd_boolean
 cris_parse_disassembler_options (disassemble_info *info,
 				 enum cris_disass_family distype)
 {
@@ -1389,7 +1389,7 @@ print_with_operands (const struct cris_opcode *opcodep,
    length of the instruction, in bytes.  Prefix register names with `$' if
    WITH_REG_PREFIX.  */
 
-static int
+int
 print_insn_cris_generic (bfd_vma memaddr,
 			 disassemble_info *info,
 			 bfd_boolean with_reg_prefix)
@@ -1602,7 +1602,7 @@ print_insn_crisv32_with_register_prefix (bfd_vma vma,
 /* Disassemble, prefixing register names with `$'.
    Common v10 and v32 subset.  */
 
-static int
+int
 print_insn_crisv10_v32_with_register_prefix (bfd_vma vma,
 					     disassemble_info *info)
 {
@@ -1626,7 +1626,7 @@ print_insn_cris_without_register_prefix (bfd_vma vma,
 
 /* Disassemble, no prefixes on register names.  CRIS v32.  */
 
-static int
+int
 print_insn_crisv32_without_register_prefix (bfd_vma vma,
 					    disassemble_info *info)
 {
@@ -1639,7 +1639,7 @@ print_insn_crisv32_without_register_prefix (bfd_vma vma,
 /* Disassemble, no prefixes on register names.
    Common v10 and v32 subset.  */
 
-static int
+int
 print_insn_crisv10_v32_without_register_prefix (bfd_vma vma,
 						disassemble_info *info)
 {
