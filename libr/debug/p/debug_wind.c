@@ -111,12 +111,12 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	if (!wind_sync(wctx)) {
 		eprintf("Could not connect to windbg\n");
 		wind_ctx_free(wctx);
-		return NULL;
+		return R_FALSE;
 	}
 
 	if (!wind_read_ver(wctx)) {
 		wind_ctx_free(wctx);
-		return NULL;
+		return R_FALSE;
 	}
 
 	// Make r_debug_is_dead happy
@@ -142,7 +142,7 @@ static char *r_debug_wind_reg_profile(RDebug *dbg) {
 }
 
 static int r_debug_wind_breakpoint (RBreakpointItem *bp, int set, void *user) {
-	int *tag, ret;
+	int *tag;
 
 	if (!bp)
 		return R_FALSE;
@@ -159,7 +159,6 @@ static int r_debug_wind_init(RDebug *dbg) {
 
 static RList *r_debug_wind_pids (int pid) {
 	RList *ret, *pids;
-	RDebugPid *entry;
 	RListIter *it;
 	WindProc *p;
 

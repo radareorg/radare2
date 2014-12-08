@@ -1,5 +1,14 @@
 /* radare - LGPL - Copyright 2014 - pancake */
 
+#if 0
+
+Documentation
+-------------
+http://developer.axis.com/old/documentation/hw/etraxfs/des_ref/des_ref.pdf
+http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
+
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -14,7 +23,7 @@
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
-static unsigned char bytes[4];
+static unsigned char bytes[8];
 
 static int cris_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
@@ -59,9 +68,13 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 //static int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
 int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_info *info);
+bfd_boolean cris_parse_disassembler_options (disassemble_info *info, int distype);
+int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
+	int mode = 2;
+
 	op->buf_asm[0]='\0';
 	if (len<4)
 		return -1;
@@ -81,8 +94,25 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-cris_parse_disassembler_options (&disasm_obj, 2); // v32
-	op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+	if (a->cpu && *a->cpu) {
+		if (!strcmp (a->cpu, "v10+v32")) {
+			mode = 1;
+		} else
+		if (!strcmp (a->cpu, "v10")) {
+			mode = 0;
+		} else
+		if (!strcmp (a->cpu, "v32")) {
+			mode = 2;
+		} else mode = 2;
+	} else mode = 2;
+	cris_parse_disassembler_options (&disasm_obj, mode);
+	if (a->syntax == R_ASM_SYNTAX_ATT) {
+		op->size = print_insn_crisv10_v32_with_register_prefix (
+			(bfd_vma)Offset, &disasm_obj);
+	} else {
+		op->size = print_insn_crisv10_v32_without_register_prefix (
+			(bfd_vma)Offset, &disasm_obj);
+	}
 
 	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
@@ -93,6 +123,7 @@ cris_parse_disassembler_options (&disasm_obj, 2); // v32
 RAsmPlugin r_asm_plugin_cris_gnu = {
 	.name = "cris",
 	.arch = "cris",
+	.cpus = "v10,v32,v10+v32",
 	.license = "GPL3",
 	.bits = 32,
 	.desc = "Axis Communications 32-bit embedded processor",

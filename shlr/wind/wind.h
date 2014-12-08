@@ -31,6 +31,8 @@ typedef struct WindProc {
 
 // grep -e "^wind_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
 uint64_t wind_get_target_base (WindCtx *ctx);
+uint32_t wind_get_target (WindCtx *ctx);
+int wind_set_target (WindCtx *ctx, uint32_t pid);
 RList *wind_list_process (WindCtx *ctx);
 int wind_get_cpus (WindCtx *ctx);
 int wind_set_cpu (WindCtx *ctx, int cpu);
@@ -49,4 +51,5 @@ int wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int c
 int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
 int wind_write_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
 int wind_write_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
+int wind_va_to_pa (WindCtx *ctx, uint64_t va, uint64_t *pa);
 #endif

@@ -53,7 +53,7 @@ int iob_config (void *fp, void *cfg) {
 	return sel_backend->config(fp, cfg);
 }
 
-int iob_write (void *fp, uint8_t *buf, const uint32_t buf_len) {
+int iob_write (void *fp, const uint8_t *buf, const uint32_t buf_len) {
 	uint32_t done;
 
 	if (!sel_backend)

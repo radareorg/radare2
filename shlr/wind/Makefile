@@ -14,7 +14,7 @@ all: libr_wind.a
 
 libr_wind.a: $(OBJS)
 	rm -f libr_wind.a
-	${CC_AR} libr_wind.a $(OBJS)
+	${CC_AR} $(OBJS)
 
 clean:
 	rm -f $(OBJS) libr_wind.a 

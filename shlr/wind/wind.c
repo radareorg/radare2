@@ -17,8 +17,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <malloc.h>
 #include <r_list.h>
+#include "transport.h"
 #include "wind.h"
 #include "kd.h"
 
@@ -338,7 +338,8 @@ wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
 	end = ((entry.end_vpn + 1) << 12) - 1;
 	prot = (entry.flags >> 24)&0x1F;
 
-	eprintf ("Start 0x%016llx End 0x%016llx Prot 0x%08llx\n", start, end, prot);
+	eprintf ("Start 0x%016"PFMT64x" End 0x%016"PFMT64x" Prot 0x%08"PFMT64x"\n",
+		(uint64_t)start, (uint64_t)end, (uint64_t)prot);
 
 	if (entry.left)
 		wind_walk_vadtree(ctx, entry.left, address);
@@ -403,7 +404,7 @@ wind_list_process (WindCtx *ctx) {
 
 		WindProc *proc = calloc(1, sizeof(WindProc));
 
-		strcpy(proc->name, buf);
+		strcpy(proc->name, (const char *)buf);
 		proc->vadroot = vadroot;
 		proc->uniqueid = uniqueid;
 		proc->dir_base_table = dir_base_table;
@@ -636,7 +637,7 @@ wind_sync (WindCtx *ctx) {
 		return 0;
 
 	// Send the breakin packet
-	iob_write(ctx->io_ptr, "b", 1);
+	iob_write(ctx->io_ptr, (const uint8_t*)"b", 1);
 
 	// Reset the host
 	ret = kd_send_ctrl_packet(ctx->io_ptr, KD_PACKET_TYPE_RESET, 0);

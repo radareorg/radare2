@@ -1,26 +1,27 @@
 // Copyright (c) 2014, The Lemon Man, All rights reserved. LGPLv3
 
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #if __WIN32__ || __CYGWIN__ || MINGW32
 #warning No support for windows yet
+#error pene
 #else
 
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include "transport.h"
 
-void *iob_pipe_open (const char *path) {
+static void *iob_pipe_open (const char *path) {
 	int sock;
 	struct sockaddr_un sa;
 
 	sock = socket (AF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0) {
-		perror("socket");
+	if (sock == -1) {
+		perror ("socket");
 		return 0;
 	}
 
@@ -28,25 +29,23 @@ void *iob_pipe_open (const char *path) {
 
 	sa.sun_family = AF_UNIX;
 	strncpy (sa.sun_path, path, sizeof(sa.sun_path));
-
-	if (connect(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) < 0) {
-		perror("bind");
+	if (connect(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
+		perror ("connect");
 		return 0;
 	}
-
-	return (void *)sock;
+	return (void *)(size_t)sock;
 }
 
-int iob_pipe_close (void *p) {
-	close((int)p);
+static int iob_pipe_close (void *p) {
+	return close ((int)(size_t)p);
 }
 
-int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
-	return recv((int)p, buf, count, 0);
+static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
+	return recv((int)(size_t)p, buf, count, 0);
 }
 
-int iob_pipe_write (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
-	return send((int)p, buf, count, 0);
+static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
+	return send((int)(size_t)p, buf, count, 0);
 }
 
 io_backend_t iob_pipe = {
