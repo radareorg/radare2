@@ -1794,13 +1794,15 @@ static int cmd_print(void *data, const char *input) {
 				"px",  "", "show hexdump",
 				"px/", "", "same as x/ in gdb (help x)",
 				"pxa", "", "show annotated hexdump",
+				"pxd", "", "show decimal dump (32bit)",
 				"pxe", "", "emoji hexdump! :)",
 				"pxf", "", "show hexdump of current function",
 				"pxl", "", "display N lines (rows) of hexdump",
 				"pxo", "", "show octal dump",
 				"pxq", "", "show hexadecimal quad-words dump (64bit)",
-				"pxs", "", "show hexadecimal in sparse mode",
 				"pxQ", "", "same as above, but one per line",
+				"pxr", "", "show hexadecimal, {asm.bits} words",
+				"pxs", "", "show hexadecimal in sparse mode",
 				"pxw", "", "show hexadecimal words dump (32bit)",
 				"pxW", "", "same as above, but one per line",
 				NULL};
@@ -1816,17 +1818,14 @@ static int cmd_print(void *data, const char *input) {
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
 			break;
 		case 'd':
-			r_print_hexdump (core->print, core->offset,
-				core->block, len, 10, 4);
+			r_print_hexdump (core->print, core->offset, core->block, len, 10, 4);
 			break;
 		case 'w':
 			r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
 			break;
 		case 'W':
 			for (i=0; i<len; i+=4) {
-				ut32 *p = (ut32*)((ut8*)core->block+i);
-				r_mem_copyendian((ut8*)p, (ut8*)p, 4, !core->print->big_endian);
-				r_cons_printf ("0x%08"PFMT64x" 0x%08x\n", core->offset+i, *p);
+				r_print_hexdump(core->print, core->offset+i, core->block+i, 1, 32, 4);
 			}
 			break;
 		case 'r':
@@ -1845,16 +1844,13 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'Q':
 			for (i=0; i<len; i+=8) {
-				ut64 *p = (ut64*)core->block+i;
-				r_cons_printf ("0x%08"PFMT64x" 0x%016"PFMT64x"\n",
-					core->offset+i, *p);
+				r_print_hexdump(core->print, core->offset+i, core->block+i, 1, 64, 8);
 			}
 			break;
 		case 's':
 			core->print->flags |= R_PRINT_FLAGS_SPARSE;
-			r_print_hexdump (core->print, core->offset,
-				core->block, len, 16, 1);
-			core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SPARSE));
+			r_print_hexdump (core->print, core->offset, core->block, len, 16, 1);
+			core->print->flags &= ~R_PRINT_FLAGS_SPARSE;
 			break;
 		case 'e':
 			{
@@ -1947,8 +1943,7 @@ static int cmd_print(void *data, const char *input) {
 				 ut64 from = r_config_get_i (core->config, "diff.from");
 				 ut64 to = r_config_get_i (core->config, "diff.to");
 				 if (from == to && from == 0) {
-					 r_print_hexdump (core->print, core->offset,
-						core->block, len, 16, 1);
+					 r_print_hexdump (core->print, core->offset, core->block, len, 16, 1);
 				 } else {
 					 r_core_print_cmp (core, from, to);
 				 }
