@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 #define LITTLE_BIT 2
 
+/* disassemble 1 opcode (16bits), take care of endianness if info->flags&LITTLE_BIT*/
 static int 
 print_insn_shx (memaddr, info)
      bfd_vma memaddr;
@@ -379,7 +380,7 @@ print_insn_shl (memaddr, info)
 }
 
 int 
-print_insn_sh (memaddr, info)
+print_insn_shb (memaddr, info)
      bfd_vma memaddr;
      struct disassemble_info *info;
 {
