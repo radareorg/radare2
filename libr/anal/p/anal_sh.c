@@ -433,12 +433,10 @@ static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
  * routines defined in first_nibble_decode table
  */
 static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	//TODO Check if we must do big or little endian. Also fix in RAsm
-	ut8 b;
+	ut8 op_MSB,op_LSB;
 	int ret;
 	if (data == NULL)
 		return 0;
-	b = data[1]; //First byte, little endian
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -447,7 +445,9 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 
 	op->size = 2;
 
-	ret =  first_nibble_decode[(b>>4) & 0x0F](anal, op, *((ut16 *)data));
+	op_MSB = (anal->big_endian)? data[0]:data[1];
+	op_LSB = (anal->big_endian)? data[1]:data[0];
+	ret =  first_nibble_decode[(op_MSB>>4) & 0x0F](anal, op, (ut16)(op_MSB<<16 | op_LSB));
 	return ret;
 }
 
