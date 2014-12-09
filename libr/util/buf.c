@@ -265,7 +265,7 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 #endif
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
-	if (addr < b->base)
+	if (addr < b->base || len<1)
 		return 0;
 	pa = addr - b->base;
 	if (pa+len > b->length) {

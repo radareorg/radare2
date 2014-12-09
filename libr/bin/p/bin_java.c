@@ -17,7 +17,7 @@ static int check_bytes(const ut8 *buf, ut64 length);
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
-static  int init(void *user) {
+static int init(void *user) {
 	IFDBG_BIN_JAVA eprintf ("Calling plugin init = %d.\n", DB?1:0);
 	if (!DB) {
 		IFDBG_BIN_JAVA eprintf ("plugin DB beeing initted.\n");
@@ -168,7 +168,6 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
 	int off, ret = R_FALSE;
 	int version = 0;
 
@@ -176,10 +175,12 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
 		memcpy (&off, buf+4*sizeof(int), sizeof(int));
 		version = buf[6] | (buf[7] <<8);
-		if (version <1024) // IT's A MACH0!
-			return R_FALSE;
-		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-		ret = R_TRUE;
+		if (version>1024) {
+			r_mem_copyendian ((ut8*)&off,
+				(ut8*)&off, sizeof(int),
+				!LIL_ENDIAN);
+			ret = R_TRUE;
+		}
 	}
 	return ret;
 }

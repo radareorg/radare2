@@ -320,10 +320,9 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
 	if (buf && length >= 4) {
 		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
+				!memcmp (buf, "\xfe\xed\xfa\xce", 4))
 			return R_TRUE;
 	}
 	return R_FALSE;
