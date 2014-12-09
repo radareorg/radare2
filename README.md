@@ -13,6 +13,10 @@
 
 [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416)
 
+# Issues and Pull Requests statistics
+
+[![Throughput Graph](https://graphs.waffle.io/radare/radare2/throughput.svg)](https://waffle.io/radare/radare2/metrics) 
+
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
