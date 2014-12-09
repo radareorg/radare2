@@ -220,7 +220,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 #endif
 	op->size = opsize;
-	op->delay = 1;
+	//op->delay = 1;
 	return opsize;
 }
 

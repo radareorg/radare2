@@ -88,11 +88,6 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			break;
 		case 7: // srav
 			break;
-		case 9: // jalr
-			//eprintf ("%llx jalr\n", addr);
-			op->type = R_ANAL_OP_TYPE_UCALL;
-			op->delay = 1;
-			break;
 		case 8: // jr
 			//eprintf ("%llx jr\n", addr);
 			// TODO: check return value or gtfo
@@ -101,6 +96,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			} else {
 				op->type = R_ANAL_OP_TYPE_JMP;
 			}
+			op->delay = 1;
+			break;
+		case 9: // jalr
+			//eprintf ("%llx jalr\n", addr);
+			op->type = R_ANAL_OP_TYPE_UCALL;
 			op->delay = 1;
 			break;
 		case 12: // syscall
@@ -307,6 +307,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		case 43: // sw
 		case 49: // lwc1
 		case 57: // swc1
+			break;
+		case 29: // jalx
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = addr + 4*((b[3] | b[2]<<8 | b[1]<<16));
+			op->fail = addr + 8;
+			op->delay = 1;
 			break;
 		}
 		//family = 'I';

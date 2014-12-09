@@ -998,9 +998,9 @@ print_insn_args (const char *d,
 	  info->target = (((pc + 4) & ~(bfd_vma) 0x0fffffff)
 			  | (((l >> OP_SH_TARGET) & OP_MASK_TARGET) << 2));
 	  /* For gdb disassembler, force odd address on jalx.  */
-	  if (info->flavour == bfd_target_unknown_flavour
-	      && strcmp (opp->name, "jalx") == 0)
-	    info->target |= 1;
+	  //if (info->flavour == bfd_target_unknown_flavour
+	   //   && strcmp (opp->name, "jalx") == 0)
+	    //info->target |= 1;
 	  (*info->print_address_func) (info->target, info);
 	  break;
 
