@@ -59,8 +59,7 @@ R_API void r_anal_esil_free (RAnalEsil *esil) {
 	r_anal_esil_stack_free (esil);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini)
 		esil->anal->cur->esil_fini (esil);
-	// XXX fix freeing invalid memory wtf
-	// free (esil);
+	free (esil);
 }
 
 static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {

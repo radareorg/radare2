@@ -1244,9 +1244,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil) {
-			esil = r_anal_esil_new ();
-			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
-			core->anal->esil = esil;
+			core->anal->esil = esil = r_anal_esil_new ();
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 		esil = core->anal->esil;
@@ -1285,7 +1283,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'i':
 		r_anal_esil_free (esil);
 		// reinitialize
-		core->anal->esil = r_anal_esil_new ();
+		esil = core->anal->esil = r_anal_esil_new ();
 		romem = r_config_get_i (core->config, "esil.romem");
 		stats = r_config_get_i (core->config, "esil.stats");
 		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
