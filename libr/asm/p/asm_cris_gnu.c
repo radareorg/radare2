@@ -105,7 +105,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			mode = 2;
 		} else mode = 2;
 	} else mode = 2;
-	cris_parse_disassembler_options (&disasm_obj, mode);
+	(void)cris_parse_disassembler_options (&disasm_obj, mode);
 	if (a->syntax == R_ASM_SYNTAX_ATT) {
 		op->size = print_insn_crisv10_v32_with_register_prefix (
 			(bfd_vma)Offset, &disasm_obj);

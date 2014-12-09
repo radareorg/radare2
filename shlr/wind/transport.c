@@ -59,8 +59,11 @@ int iob_write (void *fp, const uint8_t *buf, const uint32_t buf_len) {
 	if (!sel_backend)
 		return E_NOIF;
 
-	for (done = 0; done < buf_len;)
-		done += sel_backend->write(fp, buf + done, buf_len - done, 100);
+	for (done = 0; done < buf_len;) {
+		int ret = sel_backend->write(fp, buf + done, buf_len - done, 100);
+		if (ret<1) break;
+		done += ret;
+	}
 
 	return done;
 }
@@ -71,8 +74,11 @@ int iob_read (void *fp, uint8_t *buf, const uint32_t buf_len) {
 	if (!sel_backend)
 		return E_NOIF;
 
-	for (done = 0; done < buf_len;)
-		done += sel_backend->read(fp, buf + done, buf_len - done, 100);
+	for (done = 0; done < buf_len;) {
+		int ret = sel_backend->read(fp, buf + done, buf_len - done, 100);
+		if (ret<1) break;
+		done += ret;
+	}
 
 	return done;
 }

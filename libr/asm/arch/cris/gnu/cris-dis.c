@@ -1332,6 +1332,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	const struct cris_spec_reg *sregp
 	  = spec_reg_info ((insn >> 12) & 15, disdata->distype);
 
+if (sregp) {
 	if (sregp->name == NULL)
 	  /* Should have been caught as a non-match eariler.  */
 	  *tp++ = '?';
@@ -1342,6 +1343,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	    strcpy (tp, sregp->name);
 	    tp += strlen (tp);
 	  }
+}
       }
       break;
 

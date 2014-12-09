@@ -28,8 +28,10 @@ static void *iob_pipe_open (const char *path) {
 
 	sa.sun_family = AF_UNIX;
 	strncpy (sa.sun_path, path, sizeof(sa.sun_path));
-	if (connect(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
+	sa.sun_path[sizeof (sa.sun_path)-1] = 0;
+	if (connect (sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
 		perror ("connect");
+		close (sock);
 		return 0;
 	}
 	return (void *)(size_t)sock;

@@ -69,19 +69,20 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 	kd_packet_t *pkt;
 	kd_stc_64 *stc;
 
-	while (1) {
-		wind_wait_packet(wctx, KD_PACKET_TYPE_STATE_CHANGE, &pkt);
+	for (;;) {
+		int ret = wind_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE, &pkt);
+		if (ret != KD_E_OK || !pkt)
+			break;
 
 		stc = (kd_stc_64 *)pkt->data;
 
 		// Handle exceptions only
 		if (stc->state == 0x3030) {
-			wind_set_cpu(wctx, stc->cpu);
-			free(pkt);
+			wind_set_cpu (wctx, stc->cpu);
+			free (pkt);
 			dbg->reason = R_DBG_REASON_INT;
 			break;
-		} else wind_continue(wctx);
-
+		} else wind_continue (wctx);
 		free(pkt);
 	}
 

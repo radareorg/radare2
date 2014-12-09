@@ -43,9 +43,11 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
 			free (buf);
 		}
-		break;
+		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
+		//   break;
+
 		// Continue the syncronization or just stop if it was asked only for a single type of regs 
-	} while(i++ < R_REG_TYPE_LAST && type == R_REG_TYPE_ALL);
+	} while ((type==R_REG_TYPE_ALL) && (i++ < R_REG_TYPE_LAST));
 	return R_TRUE;
 }
 

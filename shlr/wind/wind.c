@@ -303,7 +303,12 @@ int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		return ret;
 	}
 
-	p? *p = pkt: free(pkt);
+	if (p) {
+		*p = pkt;
+	} else {
+		free (pkt);
+		*p = 0;
+	}
 
 	return KD_E_OK;
 }
@@ -320,11 +325,11 @@ typedef struct {
 
 int
 wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
-	mmvad_short entry;
+	mmvad_short entry = {0};
 	uint64_t start, end;
 	int prot;
 
-	if (!wind_read_at(ctx, (uint8_t *)&entry, address - 0x4, sizeof(mmvad_short))) {
+	if (wind_read_at(ctx, (uint8_t *)&entry, address - 0x4, sizeof(mmvad_short)) != sizeof (mmvad_short)) {
 		fprintf(stderr, "%llx Could not read the node!\n", address);
 		return 0;
 	}
@@ -637,7 +642,8 @@ wind_sync (WindCtx *ctx) {
 		return 0;
 
 	// Send the breakin packet
-	iob_write(ctx->io_ptr, (const uint8_t*)"b", 1);
+	if (iob_write (ctx->io_ptr, (const uint8_t*)"b", 1) != 1)
+		return 0;
 
 	// Reset the host
 	ret = kd_send_ctrl_packet(ctx->io_ptr, KD_PACKET_TYPE_RESET, 0);
@@ -688,22 +694,22 @@ wind_continue (WindCtx *ctx) {
 	req.r_cont.tf = 0x400;
 
 #ifdef WIND_LOG
-	printf("Sending continue...\n");
+	fprintf (stderr, "Sending continue...\n");
 #endif
 
-	ret = kd_send_data_packet(ctx->io_ptr, KD_PACKET_TYPE_MANIP, (ctx->seq_id ^= 1), (uint8_t *)&req,
-			sizeof(kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_MANIP, (ctx->seq_id ^= 1), (uint8_t *)&req,
+			sizeof (kd_req_t), NULL, 0);
 	if (ret != KD_E_OK)
 		return 0;
 
-	ret = wind_wait_packet(ctx, KD_PACKET_TYPE_ACK, NULL);
+	ret = wind_wait_packet (ctx, KD_PACKET_TYPE_ACK, NULL);
 	if (ret != KD_E_OK)
 		return 0;
 
-	r_list_free(ctx->plist_cache);
+	r_list_free (ctx->plist_cache);
 	ctx->plist_cache = NULL;
 #ifdef WIND_LOG
-	printf("Done!\n");
+	fprintf (stderr, "Done!\n");
 #endif
 
 	return 1;
