@@ -2373,6 +2373,8 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 }
 
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats) {
+	if (!esil)
+		return R_FALSE;
 	// register callbacks using this anal module.
 	// this is: set
 	esil->debug = 1;

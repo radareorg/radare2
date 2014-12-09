@@ -72,6 +72,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case 0xf2:
 		case 0x0b:
+		case 0x72:
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
 		case 0x05:
@@ -80,6 +81,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			}
 			break;
 		case 0x01:
+		case 0x02:
 		case 0xc2:
 		case 0xf5:
 		case 0x91:
@@ -111,6 +113,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0xa2:
 		case 0x2f:
 		case 0x8b:
+		case 0x1b:
+		case 0xaa:
+		case 0xa6:
+		case 0xb6:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0xe0:
@@ -123,6 +129,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0x10:
 		case 0x30:
 		case 0x20:
+		case 0x2d:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = addr + buf[0];
 			op->fail = addr + 2; // delay slot here?
