@@ -132,8 +132,10 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	a->sdb = NULL;
 	r_syscall_free (a->syscall);
 	sdb_ns_free (a->sdb);
-	if (a->esil)
+	if (a->esil) {
 		r_anal_esil_free (a->esil);
+		a->esil = NULL;
+	}
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	memset (a, 0, sizeof (RAnal));
 	free (a);

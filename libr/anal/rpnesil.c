@@ -21,6 +21,7 @@ static inline ut64 mask (int bits) {
 
 R_API RAnalEsil *r_anal_esil_new() {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
+	if (!esil) return NULL;
 	esil->parse_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->parse_goto_count = esil->parse_goto_limit;
 	esil->ops = sdb_new0 ();
@@ -51,14 +52,15 @@ R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 off) {
 R_API void r_anal_esil_free (RAnalEsil *esil) {
 	if (!esil)
 		return;
+	sdb_free (esil->ops);
+	esil->ops = NULL;
+	sdb_free (esil->stats);
+	esil->stats = NULL;
 	r_anal_esil_stack_free (esil);
-	if (esil->ops)
-		sdb_free (esil->ops);
-	if (esil->stats)
-		sdb_free (esil->stats);
-	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_init && esil->anal->cur->esil_fini)
+	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini)
 		esil->anal->cur->esil_fini (esil);
-	free (esil);
+	// XXX fix freeing invalid memory wtf
+	// free (esil);
 }
 
 static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -2352,7 +2354,7 @@ R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
 	int i;
 	if (esil) {
 		for (i=0; i<esil->stackptr; i++)
-			free (esil->stack[i]);
+			R_FREE (esil->stack[i]);
 		esil->stackptr = 0;
 	}
 }
