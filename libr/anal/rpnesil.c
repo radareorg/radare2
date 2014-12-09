@@ -49,6 +49,8 @@ R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 off) {
 }
 
 R_API void r_anal_esil_free (RAnalEsil *esil) {
+	if (!esil)
+		return;
 	r_anal_esil_stack_free (esil);
 	if (esil->ops)
 		sdb_free (esil->ops);
@@ -2348,14 +2350,18 @@ repeat:
 
 R_API void  r_anal_esil_stack_free (RAnalEsil *esil) {
 	int i;
-	for (i=0; i<esil->stackptr; i++)
-		free (esil->stack[i]);
-	esil->stackptr = 0;
+	if (esil) {
+		for (i=0; i<esil->stackptr; i++)
+			free (esil->stack[i]);
+		esil->stackptr = 0;
+	}
 }
 
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 	char *popped;
 	int ret;
+	if (!esil)
+		return R_FALSE;
 	while (*str==' ') str++; // use proper string chop?
 	ret = r_anal_esil_parse (esil, str);
 	popped = r_anal_esil_pop (esil);
