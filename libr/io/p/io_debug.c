@@ -5,6 +5,8 @@
 #include <r_util.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 
+#define USE_RARUN 0
+
 static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 	free (io->referer);
 	io->referer = ref? strdup (ref): NULL;
@@ -194,7 +196,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			r_sys_perror ("ptrace-traceme");
 			exit (MAGIC_EXIT);
 		}
-		{
+		if (io->runprofile && *(io->runprofile)) {
 			char *expr = NULL;
 			int i;
 			RRunProfile *rp = r_run_new (NULL);
@@ -218,8 +220,66 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			r_run_start (rp);
 			r_run_free (rp);
 			// double free wtf
-		//	r_str_argv_free (argv);
+			//	r_str_argv_free (argv);
 			exit (1);
+		} else {
+			// TODO: Add support to redirect filedescriptors
+			// TODO: Configure process environment
+			argv = r_str_argv (cmd, NULL);
+
+#if __APPLE__
+			 {
+#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
+				ut32 ps_flags = POSIX_SPAWN_SETEXEC;
+				posix_spawnattr_t attr = {0};
+				size_t copied = 1;
+				cpu_type_t cpu;
+				pid_t p = -1;
+				int ret;
+
+				int useASLR = 1;
+				posix_spawnattr_init (&attr);
+				if (useASLR != -1) {
+					if (useASLR) {
+						// enable aslr if not enabled? really?
+					} else {
+						ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+					}
+				}
+				(void)posix_spawnattr_setflags (&attr, ps_flags);
+#if __i386__ || __x86_64__
+				cpu = CPU_TYPE_I386;
+				if (bits == 64)
+					cpu |= CPU_ARCH_ABI64;
+#else
+				cpu = CPU_TYPE_ANY;
+#endif
+				posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
+				ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
+				switch (ret) {
+				case 0:
+					eprintf ("Success\n");
+					break;
+				case 22:
+					eprintf ("posix_spawnp: Invalid argument\n");
+					break;
+				case 86:
+					eprintf ("Unsupported architecture\n");
+					break;
+				default:
+					eprintf ("posix_spawnp: unknown error %d\n", ret);
+					perror ("posix_spawnp");
+					break;
+				}
+				/* only required if no SETEXEC called
+				   if (p != -1)
+				   wait (p);
+				 */
+				exit (MAGIC_EXIT); /* error */
+			 }
+#else
+			execvp (argv[0], argv);
+#endif
 		}
 		perror ("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
