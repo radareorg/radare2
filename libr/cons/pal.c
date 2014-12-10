@@ -81,17 +81,19 @@ struct {
 	{ NULL, NULL, NULL }
 };
 
-static inline ut8 rgbnum (const char ch) {
-	ut8 r = 0;
-	r_hex_to_byte (&r, ch);
-	return r*16;
+static inline ut8 rgbnum (const char ch, const char cl) {
+	ut8 h = 0;
+	ut8 l = 0;
+	r_hex_to_byte (&h, ch);
+	r_hex_to_byte (&l, cl);
+	return h*16+l;
 }
 
 R_API void r_cons_pal_random() {
 	RCons *cons = r_cons_singleton ();
 	ut8 r, g, b;
 	char val[32];
-        const char *k;
+	const char *k;
 	int i;
 	for (i=0;;i++) {
 		k = r_cons_pal_get_i (i);
@@ -111,31 +113,29 @@ R_API char *r_cons_pal_parse(const char *str) {
 	int i;
 	ut8 r, g, b;
 	char out[128];
-	char *s = strdup (str);
-	char *p = strchr (s+1, ' ');
+	char *s = r_str_trim_head_tail (strdup (str));
+	r_str_split (s, ' ');
+	int length = strlen (s);
 	out[0] = 0;
-	if (p) *p++ = 0;
 	if (!strcmp (str, "random")) {
 		free (s);
 		return r_cons_color_random (0);
 	}
 	if (!strncmp (s, "rgb:", 4)) {
-		r = rgbnum (s[4]);
-		g = rgbnum (s[5]);
-		b = rgbnum (s[6]);
+		if (length == 7) {
+			r = rgbnum (s[4],s[4]);
+			g = rgbnum (s[5],s[5]);
+			b = rgbnum (s[6],s[6]);
+		} else if (length == 10) {
+			r = rgbnum(s[4],s[5]);
+			g = rgbnum(s[6],s[7]);
+			b = rgbnum(s[8],s[9]);
+		}
 		r_cons_rgb_str (out, r, g, b, 0);
-	}
-	if (p && !strncmp (p, "rgb:", 4)) {
-		r = rgbnum (p[4]);
-		g = rgbnum (p[5]);
-		b = rgbnum (p[6]);
-		r_cons_rgb_str (out+strlen (out), r, g, b, 1);
 	}
 	for (i=0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name))
 			strcat (out, colors[i].code);
-		if (p && !strcmp (p, colors[i].name))
-			strcat (out, colors[i].bgcode);
 	}
 	free (s);
 	return *out? strdup (out): NULL;
@@ -291,10 +291,10 @@ R_API void r_cons_pal_list (int rad) {
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			rgbstr[0] = 0;
 			r_cons_rgb_str (rgbstr, r, g, b, 0);
-			r >>= 4;
-			g >>= 4;
-			b >>= 4;
-			r_cons_printf ("ec %s rgb:%x%x%x\n",
+			// r >>= 4;
+			// g >>= 4;
+			// b >>= 4;
+			r_cons_printf ("ec %s rgb:%02x%02x%02x\n",
 				keys[i].name, r, g, b);
 			break;
 		default:

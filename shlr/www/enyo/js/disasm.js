@@ -137,7 +137,7 @@ function render_graph(x) {
       }
       var dom = document.createElement('div');
       dom.id = "bb_" + addr;
-      dom.className = "basicblock enyo-selectable ec_background ec_border";
+      dom.className = "basicblock enyo-selectable ec_gui_background ec_gui_border";
       dom.innerHTML = idump;
       graph.addVertex(addr, cnt, dom);
       if (bb.fail > 0) {
@@ -197,7 +197,7 @@ function render_instructions(instructions) {
         line.color = r2ui.colors[".ec_flow"];
         line.dashed = false;
       } else if (ins.type == "cjmp") {
-        line.color = r2ui.colors[".ec_cflow"];
+        line.color = r2ui.colors[".ec_gui_cflow"];
         line.dashed = true;
       }
       line.to_start = true;
@@ -349,8 +349,11 @@ function html_for_instruction(ins) {
   var asm_xrefs = (r2.settings["asm.xrefs"]);
   var asm_cmtright = (r2.settings["asm.cmtright"]);
 
-  if (ins.offset === "0x"+ins.fcn_addr.toString(16) && r2ui._dis.display == "flat") {
-    idump += '<div class="ec_flow">; -----------------------------------------------------------</div>';
+  if (ins.offset === "0x"+ins.fcn_addr.toString(16)) {
+    if (r2ui._dis.display == "flat") idump += '<div class="ec_flow">; -----------------------------------------------------------</div>';
+    r2.cmdj("afj " + ins.offset, function(x){
+      idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
+    });
   }
   if (asm_flags) {
     var flags;

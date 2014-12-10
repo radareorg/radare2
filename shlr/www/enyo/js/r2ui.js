@@ -19,11 +19,12 @@ r2ui.load_colors = function () {
     for (var j in myrules) {
       if (myrules[j].selectorText !== undefined && myrules[j].selectorText !== null) {
         if (myrules[j].selectorText.toLowerCase().indexOf(".ec_") === 0) {
-          var sel = myrules[j].selectorText.toLowerCase().replace("gui.","gui_");
+          var sel = myrules[j].selectorText; //.toLowerCase().replace("gui.","gui_");
           var color = r2ui.colors[sel];
           if (color !== undefined && color !== null) {
-            if (sel == ".ec_gui_background" || sel == ".ec_gui_alt_background") myrules[j].style.backgroundColor = color;
-            else if (sel == ".ec_border") myrules[j].style.borderColor = color;
+            if (sel == ".ec_gui_background" || sel == ".ec_gui_alt_background") {
+              myrules[j].style.backgroundColor = color;
+            } else if (sel == ".ec_border") myrules[j].style.borderColor = color;
             else myrules[j].style.color = color;
           } else {
             if (sel == ".ec_gui_background" || sel == ".ec_gui_alt_background") r2ui.colors[sel] = myrules[j].style.backgroundColor;

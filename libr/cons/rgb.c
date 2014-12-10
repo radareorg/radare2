@@ -4,7 +4,38 @@
 
 #include <r_cons.h>
 
-static void unrgb(int color, int *r, int *g, int *b);
+int color_table[256] = { 0 };
+int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+
+static void init_color_table() {
+	int i, r, g, b;
+	color_table[0] = 0x000000;
+	color_table[1] = 0x800000;
+	color_table[2] = 0x008000;
+	color_table[3] = 0x808000;
+	color_table[4] = 0x000080;
+	color_table[5] = 0x800080;
+	color_table[6] = 0x008080;
+	color_table[7] = 0xc0c0c0;
+	color_table[8] = 0x808080;
+	color_table[9] = 0xff0000;
+	color_table[10] = 0x00ff00;
+	color_table[11] = 0xffff00;
+	color_table[12] = 0x0000ff;
+	color_table[13] = 0xff00ff;
+	color_table[14] = 0x00ffff;
+	color_table[15] = 0xffffff;
+	for (i=0; i < 216; i++) {
+	    r = value_range[(i/36) % 6];
+	    g = value_range[(i/6) % 6];
+	    b = value_range[i % 6];
+	    color_table[i + 16] = ((r << 16) & 0xffffff) + ((g << 8) & 0xffff) + (b & 0xff);
+	}
+	for (i=0; i < 24; i++) {
+		r = 8 + (i * 10);
+	    color_table[i + 232] = ((r << 16) & 0xffffff) + ((r << 8) & 0xffff) + (r & 0xff);
+	}
+}
 
 static int gs (int rgb) {
 	return 232 + (double)rgb/(255/24.1);
@@ -15,7 +46,7 @@ static int rgb(int r, int g, int b) {
 	int grey = 0;
 	if (r > 0 && r < 255 && r == g && r == b) grey = 1;
 	if (grey > 0) {
-		return 232 + (int)r*3/33.0;
+		return gs(r);
 	} else {
 		r = R_DIM (r/k, 0, 6);
 		g = R_DIM (g/k, 0, 6);
@@ -25,29 +56,11 @@ static int rgb(int r, int g, int b) {
 }
 
 static void unrgb(int color, int *r, int *g, int *b) {
-	int rc, gc, bc;
-	if (color > 16 && color < 232) {
-		for (rc = 0; rc < 256; rc+=51) {
-			for (gc = 0; gc < 256; gc+=51) {
-				for (bc = 0; bc < 256; bc+=51) {
-					int i = rgb(rc, gc, bc);
-					if(color == i) {
-						*r = rc; *g = gc; *b = bc;
-						return;
-					}
-				}
-			}
-		}
-	} else if(color > 231 && color < 256) {
-		*r = *g = *b = (int)(color - 232)*33.0/3;
-		return;
-	}
-	// const double k = (256.0/6.0);
-	// int R, G, B;
-	// color -= 16;
-	// B = (color/1) & 7; if (b) *b = (B*k); color -= B;
-	// G = (color/6) & 7; if (g) *g = (G*k); color -= G;
-	// R = (color/36)& 7; if (r) *r = (R*k); color -= R;
+	if (color_table[255] == 0) init_color_table();
+	int rgb = color_table[color];
+	*r = (rgb >> 16) & 0xff;
+	*g = (rgb >> 8) & 0xff;
+	*b = rgb & 0xff;
 }
 
 static inline void rgbinit(int r, int g, int b) {
