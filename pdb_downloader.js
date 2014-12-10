@@ -9,7 +9,7 @@ const OUTPUT_FOLDER_ARG = 3;
 const SYMBOL_SERVER = 'Microsoft-Symbol-Server/6.11.0001.402';
 const DOWNLOABLE_LINK = 'http://msdl.microsoft.com/download/symbols';
 const GUID = 'guid';
-const DBG_FNAME = 'dbg_fname';
+const DBG_FNAME = 'dbg_file';
 const CURL = 'curl';
 const CABEXTRACTOR = (os.platform() != 'win32') ? 'cabextract' : 'expand';
 const RABIN = 'rabin2'
@@ -104,14 +104,8 @@ var downloader = function (currentValue, index, array) {
   var curr_dbg_fname = '';
   var saved_guid_and_dbg_fname = [];
   var spawn = require('child_process').spawn;
-  
-  try {
-    rabin2_cmd = spawn(RABIN, ['-I', currentValue]);
-  }
-  catch (e) {
-    console.log(e);
-    process.exit(1);
-  }
+
+  rabin2_cmd = spawn(RABIN, ['-I', currentValue]);
 
   // skip pdb files
   if (currentValue.indexOf('pdb') != -1) {
@@ -128,9 +122,9 @@ var downloader = function (currentValue, index, array) {
       var parts = str.split(' ');
 
       if (parts[0].indexOf(GUID) != -1) {
-	curr_guid = parts[0].substring(GUID.length).trim();
+	curr_guid = parts.pop(); //parts[0].substring(GUID.length).trim();
       } else if (parts[0].indexOf(DBG_FNAME) != -1) {
-	curr_dbg_fname = parts[0].substring(DBG_FNAME.length).trim();
+	curr_dbg_fname = parts.pop(); //[0].substring(DBG_FNAME.length).trim();
 	if (curr_guid != '' && curr_dbg_fname != '') {
 	  curl_start(curr_guid, curr_dbg_fname);
 	} else {
