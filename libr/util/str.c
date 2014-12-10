@@ -380,7 +380,8 @@ R_API const char *r_str_lchr(const char *str, char chr) {
 }
 
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
-	if (!base||!p) return NULL;
+	if (!base) return NULL;
+	if (!p) p = base + strlen (base);
 	for (; p>base; p--)
 		if (ch == *p)
 			break;

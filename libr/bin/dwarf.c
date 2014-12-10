@@ -350,8 +350,16 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 
 	if (!s || !file)
 		return;
-
-	snprintf (fileline, sizeof (fileline) - 1, "%s|%"PFMT64d, file, line);
+	{
+		const char *p = r_str_rchr (file, NULL, '/');
+		if (p) p++; else p = file;
+		//eprintf ("CL %s:%d 0x%08"PFMT64x"\n", p, (int)line, addr);
+		// XXX: this must be done in CL side, we need a list of
+		// includedirs and properly check full paths
+		if (r_file_exists (file))
+			p = file;
+		snprintf (fileline, sizeof (fileline) - 1, "%s|%"PFMT64d, p, line);
+	}
 	offset_ptr = sdb_itoa (addr, offset, 16);
 
 	if (!sdb_add (s, offset_ptr, fileline, 0)) {
@@ -380,11 +388,11 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 	if (!binfile || !obuf || !hdr || !regs) return NULL;
 
-	buf = r_leb128(buf, &op_len);
+	buf = r_leb128 (buf, &op_len);
 	opcode = *buf++;
 
 	if (f) {
-		fprintf(f, "Extended opcode %d: ", opcode);
+		fprintf (f, "Extended opcode %d: ", opcode);
 	}
 
 	switch (opcode) {
@@ -1492,6 +1500,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			return NULL;
 		}
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
+//sdb_query (binfile->sdb_addrinfo, "*");
 		free (buf);
 		return list;
 	}

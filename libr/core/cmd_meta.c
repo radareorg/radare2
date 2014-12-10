@@ -48,10 +48,16 @@ static int print_meta_offset(RCore *core, ut64 offset) {
 		line_old = line;
 		if (line >= 2)
 			line -= 2;
-		for (i = 0; i<5; i++) {
-			char *row = r_file_slurp_line (file, line+i, 0);
-			r_cons_printf ("%c %.3x  %s\n", line+i == line_old ? '>' : ' ', line+i, row);
-			free (row);
+		if (r_file_exists (file)) {
+			for (i = 0; i<5; i++) {
+				char *row = r_file_slurp_line (file, line+i, 0);
+				if (row) {
+					r_cons_printf ("%c %.3x  %s\n", line+i == line_old ? '>' : ' ', line+i, row);
+					free (row);
+				}
+			}
+		} else {
+			eprintf ("Cannot open '%s'\n", file);
 		}
 	} else {
 		eprintf ("Cannot find meta information at 0x%08"
