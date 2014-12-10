@@ -2,6 +2,7 @@ var fs = require('fs');
 var spawn = require('child_process').spawn;
 var os = require('os');
 var path = require('path');
+var curl = require('node-libcurl').Curl;
 
 const INPUT_FOLDER_ARG = 2;
 const OUTPUT_FOLDER_ARG = 3;
@@ -77,26 +78,44 @@ var curl_start = function(guid, dbg_fname) {
    
   archive_name = archive_name.substring(0, archive_name.length - 1)  + '_';  
   link_end = '/' + dbg_fname + '/' + guid + '/' + archive_name;
+
+  var stream = fs.createWriteStream(archive_name, {flags:'a'});
   
   console.log("downloading file: " + archive_name);
   
-  curl_cmd = spawn(CURL, ['-A', SYMBOL_SERVER, DOWNLOABLE_LINK + link_end, '-o', archive_name]);
-  
-  curl_cmd.on('error', function (err) {
-    console.log(CURL + 'error', err);
-    console.log('check if curl is installed'); 
-    process.exit(1);
+  var curl_ = new curl(DOWNLOABLE_LINK + link_end, {RAW:0}, function(err) {
+    console.info(this);
+    return;
+  });
+
+  curl_.setOpt('URL', DOWNLOABLE_LINK + link_end);
+  curl_.setOpt('USERAGENT', SYMBOL_SERVER);
+
+  curl_.on('data', function(chunk) {
+    stream.write(chunk);
+    return chunk.length;
   });
   
-  curl_cmd.on('exit', function (code) {
-    if (code != 0) {
-      console.log('Failed: ' + code);
-    } else {
-      console.log('File ' + archive_name + 'has been downloaded');
-      console.log('Decompress of file: ' + archive_name); 
-      extract_pdb_file(archive_name, dbg_fname);
-    }
+  curl_.on('error', function(e) {
+    console.log('File: ' + archive_name + 'has not been downloaded successfully');
+    curl_.close();
   });
+  
+  curl_.on('end', function() {
+    console.log("downloaded : " + archive_name);
+    fs.appendFile(archive_name, data, function(err) {
+      if (err) {
+	console.log('File: ' + archive_name + 'has not been saved successfully');
+      } else {
+	console.log('File ' + archive_name + 'has been downloaded and saved successfully');
+	console.log('Decompress of file: ' + archive_name);
+	extract_pdb_file(archive_name, dbg_fname);
+      }
+    });
+    this.close();
+  });
+
+  curl_.perform();
 };
 
 var downloader = function (currentValue, index, array) {
@@ -140,18 +159,23 @@ var downloader = function (currentValue, index, array) {
 IN_FOLDER = process.argv[INPUT_FOLDER_ARG];
 OUT_FOLDER = process.argv[OUTPUT_FOLDER_ARG];
 
+// TODO: does not correct work if write like if (IN_FOLDER) {
 if (IN_FOLDER === undefined || IN_FOLDER === null) {
   console.log("set please input folder");
   print_usage();
   process.exit(1);
 }
 
+// TODO: does not correct work if write like if (OUT_FOLDER) {
 if (OUT_FOLDER === undefined || OUT_FOLDER === null) {
   OUT_FOLDER = IN_FOLDER;
 }
 
 walk(IN_FOLDER, function(err, results) {
-  if (err) throw err;
+  if (err) {
+    console.log('Error while walking the directory.Error: ' + err);
+    process.exit(1);
+  }
     
   results.forEach(downloader);
 });
