@@ -99,19 +99,14 @@ var curl_start = function(guid, dbg_fname) {
   curl_.on('error', function(e) {
     console.log('File: ' + archive_name + 'has not been downloaded successfully');
     curl_.close();
+    return;
   });
   
   curl_.on('end', function() {
-    console.log("downloaded : " + archive_name);
-    fs.appendFile(archive_name, data, function(err) {
-      if (err) {
-	console.log('File: ' + archive_name + 'has not been saved successfully');
-      } else {
-	console.log('File ' + archive_name + 'has been downloaded and saved successfully');
-	console.log('Decompress of file: ' + archive_name);
-	extract_pdb_file(archive_name, dbg_fname);
-      }
-    });
+    console.log('File ' + archive_name + 'has been downloaded and saved successfully');
+    console.log('Decompress of file: ' + archive_name);
+    extract_pdb_file(archive_name, dbg_fname);
+
     this.close();
   });
 
