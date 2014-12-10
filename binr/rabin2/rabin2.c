@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <getopt.c>
 #include <r_core.h>
-
-#include <dirent.h>
-
 #include "../blob/version.c"
 
 #define ACTION_UNK       0x00000
