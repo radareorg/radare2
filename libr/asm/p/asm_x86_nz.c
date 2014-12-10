@@ -122,19 +122,34 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
 	} else arg = strchr (op, ' ');
 
+	if (!memcmp (op, "ret ", 4) || !memcmp (op, "retn ", 5)) {
+		int n = getnum (a, op+4);
+		data[l++] = 0xc2;
+		data[l++] = n & 0xff;
+		data[l++] = (n>>8) & 0xff;
+		return l;
+	}
+	if (!memcmp (op, "retf ", 5)) {
+		int n = getnum (a, op+4);
+		data[l++] = 0xca;
+		data[l++] = n & 0xff;
+		data[l++] = (n>>8) & 0xff;
+		return l;
+	}
+
 	if (!memcmp (op, "rep ", 4)) {
 		data[l++] = 0xf3;
 		memmove (op, op+4, strlen (op+4)+1);
 	}
 
-	if (!strcmp (str, "movsb")) { data[0] = 0xa4; return 1; }
-	if (!strcmp (str, "movsw")) { data[0] = 0x66; data[1] = 0xa5; return 2; }
-	if (!strcmp (str, "movsd")) { data[0] = 0xa5; return 1; }
-	if (!strcmp (str, "outsd")) { data[0] = 0x6f; return 1; }
-	if (!strcmp (str, "outsb")) { data[0] = 0x6e; return 1; }
-	if (!strcmp (str, "insb")) { data[0] = 0x6c; return 1; }
-	if (!strcmp (str, "hlt")) { data[0] = 0xf4; return 1; }
-	if (!strcmp (str, "cpuid")) { data[0] = 0xf; data[1] = 0xa2; return 2; }
+	if (!strcmp (op, "movsb")) { data[l++] = 0xa4; return l; }
+	if (!strcmp (op, "movsw")) { data[0] = 0x66; data[1] = 0xa5; return 2; }
+	if (!strcmp (op, "movsd")) { data[0] = 0xa5; return 1; }
+	if (!strcmp (op, "outsd")) { data[0] = 0x6f; return 1; }
+	if (!strcmp (op, "outsb")) { data[0] = 0x6e; return 1; }
+	if (!strcmp (op, "insb")) { data[0] = 0x6c; return 1; }
+	if (!strcmp (op, "hlt")) { data[0] = 0xf4; return 1; }
+	if (!strcmp (op, "cpuid")) { data[0] = 0xf; data[1] = 0xa2; return 2; }
 
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
@@ -1125,6 +1140,9 @@ return -1;
 		if (!strcmp (op, "syscall")) {
 			data[l++] = 0x0f;
 			data[l++] = 0x05;
+		} else
+		if (!strcmp (op, "retf")) {
+			data[l++] = 0xcb;
 		} else
 		if (!strcmp (op, "ret")) {
 			data[l++] = 0xc3;
