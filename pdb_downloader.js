@@ -1,5 +1,7 @@
 var fs = require('fs');
 var spawn = require('child_process').spawn;
+var os = require('os');
+var path = require('path');
 
 const INPUT_FOLDER_ARG = 2;
 const OUTPUT_FOLDER_ARG = 3;
@@ -9,10 +11,11 @@ const DOWNLOABLE_LINK = 'http://msdl.microsoft.com/download/symbols';
 const GUID = 'guid';
 const DBG_FNAME = 'dbg_fname';
 const CURL = 'curl';
-const CABEXTRACTOR = 'cabextract';
+const CABEXTRACTOR = (os.platform() != 'win32') ? 'cabextract' : 'expand';
 const RABIN = 'rabin2'
 var IN_FOLDER = '';
 var OUT_FOLDER = '';
+const EOL = os.EOL;
 
 var print_usage = function() {
   console.log("usage: node pdb_downloader.js INPUT_FOLDER [OUT_FOLDER]");
@@ -26,7 +29,7 @@ var walk = function (dir, done) {
     var pending = list.length;
     if (!pending) return done(null, results);
     list.forEach(function (file) {
-      file = dir + '/' + file;
+      file = path.join(dir, file);
       fs.stat(file, function (err, stat) {
         if (stat && stat.isDirectory()) {
           walk(file, function (err, res) {
@@ -42,10 +45,14 @@ var walk = function (dir, done) {
   });
 };
 
-var extract_pdb_file = function (archive_name) {
+var extract_pdb_file = function (archive_name, dbg_fname) {
   var spawn = require('child_process').spawn;
 
-  cab_extractor_cmd = spawn(CABEXTRACTOR, ['-d', OUT_FOLDER, archive_name]);
+  if (os.platform() == 'win32') {
+    cab_extractor_cmd = spawn(CABEXTRACTOR, [archive_name, OUT_FOLDER + dbg_fname]);
+  } else {
+    cab_extractor_cmd = spawn(CABEXTRACTOR, ['-d', OUT_FOLDER, archive_name]);
+  }
 
   cab_extractor_cmd.on('error', function (err) {
     console.log(CABEXTRACTOR + 'error', err);
@@ -64,16 +71,16 @@ var extract_pdb_file = function (archive_name) {
 };
 
 var curl_start = function(guid, dbg_fname) {
-  var tmp_dbg_fname = dbg_fname;
+  var archive_name = dbg_fname;
   var link_end = '';
   var spawn = require('child_process').spawn;
    
-  tmp_dbg_fname = tmp_dbg_fname.substring(0, tmp_dbg_fname.length - 1)  + '_';  
-  link_end = '/' + dbg_fname + '/' + guid + '/' + tmp_dbg_fname;
+  archive_name = archive_name.substring(0, archive_name.length - 1)  + '_';  
+  link_end = '/' + dbg_fname + '/' + guid + '/' + archive_name;
   
-  console.log("downloading file: " + tmp_dbg_fname);
+  console.log("downloading file: " + archive_name);
   
-  curl_cmd = spawn(CURL, ['-A', SYMBOL_SERVER, DOWNLOABLE_LINK + link_end, '-o', tmp_dbg_fname]);
+  curl_cmd = spawn(CURL, ['-A', SYMBOL_SERVER, DOWNLOABLE_LINK + link_end, '-o', archive_name]);
   
   curl_cmd.on('error', function (err) {
     console.log(CURL + 'error', err);
@@ -85,9 +92,9 @@ var curl_start = function(guid, dbg_fname) {
     if (code != 0) {
       console.log('Failed: ' + code);
     } else {
-      console.log('File ' + tmp_dbg_fname + 'has been downloaded');
-      console.log('Decompress of file: ' + tmp_dbg_fname); 
-      extract_pdb_file(tmp_dbg_fname);
+      console.log('File ' + archive_name + 'has been downloaded');
+      console.log('Decompress of file: ' + archive_name); 
+      extract_pdb_file(archive_name, dbg_fname);
     }
   });
 };
@@ -96,8 +103,15 @@ var downloader = function (currentValue, index, array) {
   var curr_guid = '';
   var curr_dbg_fname = '';
   var saved_guid_and_dbg_fname = [];
-  var spawn = require('child_process').spawn,
-  rabin2_cmd = spawn(RABIN, ['-I', currentValue]);
+  var spawn = require('child_process').spawn;
+  
+  try {
+    rabin2_cmd = spawn(RABIN, ['-I', currentValue]);
+  }
+  catch (e) {
+    console.log(e);
+    process.exit(1);
+  }
 
   // skip pdb files
   if (currentValue.indexOf('pdb') != -1) {
@@ -110,14 +124,20 @@ var downloader = function (currentValue, index, array) {
   });
   
   rabin2_cmd.stdout.on('data', function (data) {     
-    data.toString().split('\n').map(function (str) {
+    data.toString().split(EOL).map(function (str) {
       var parts = str.split(' ');
 
       if (parts[0].indexOf(GUID) != -1) {
 	curr_guid = parts[0].substring(GUID.length).trim();
       } else if (parts[0].indexOf(DBG_FNAME) != -1) {
 	curr_dbg_fname = parts[0].substring(DBG_FNAME.length).trim();
-	curl_start(curr_guid, curr_dbg_fname);
+	if (curr_guid != '' && curr_dbg_fname != '') {
+	  curl_start(curr_guid, curr_dbg_fname);
+	} else {
+	  console.log('there is no guid and debug file information in binary');
+	  console.log('check version of rabin2 or maybe this is not PE binary');
+	  process.exit(1);
+	}
       }
     });
   });
