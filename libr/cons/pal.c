@@ -93,7 +93,7 @@ R_API void r_cons_pal_random() {
 	RCons *cons = r_cons_singleton ();
 	ut8 r, g, b;
 	char val[32];
-        const char *k;
+		const char *k;
 	int i;
 	for (i=0;;i++) {
 		k = r_cons_pal_get_i (i);
@@ -113,45 +113,31 @@ R_API char *r_cons_pal_parse(const char *str) {
 	int i;
 	ut8 r, g, b;
 	char out[128];
-	char *s = strdup (str);
-	int length = strlen(s);
-
-	int j,k;
-    char *clean=strdup (s);
-    int leading = 1;
-    for (j = 0, k = 0; j<length; j++,k++){
-        if (s[j]!=' ') {
-            clean[k]=s[j];
-            leading = 0;
-        } else if (leading) k--;
-        else clean[k]=0;
-    }
-    clean[j]=0;
-    length = strlen(clean);
+	char *s = r_str_trim_head_tail (strdup (str));
+	r_str_split (s, ' ');
+	int length = strlen (s);
 	out[0] = 0;
 	if (!strcmp (str, "random")) {
 		free (s);
-		free (clean);
 		return r_cons_color_random (0);
 	}
-	if (!strncmp (clean, "rgb:", 4)) {
+	if (!strncmp (s, "rgb:", 4)) {
 		if (length == 7) {
-			r = rgbnum (clean[4],clean[4]);
-			g = rgbnum (clean[5],clean[5]);
-			b = rgbnum (clean[6],clean[6]);
+			r = rgbnum (s[4],s[4]);
+			g = rgbnum (s[5],s[5]);
+			b = rgbnum (s[6],s[6]);
 		} else if (length == 10) {
-			r = rgbnum(clean[4],clean[5]);
-			g = rgbnum(clean[6],clean[7]);
-			b = rgbnum(clean[8],clean[9]);
+			r = rgbnum(s[4],s[5]);
+			g = rgbnum(s[6],s[7]);
+			b = rgbnum(s[8],s[9]);
 		}
 		r_cons_rgb_str (out, r, g, b, 0);
 	}
 	for (i=0; colors[i].name; i++) {
-		if (!strcmp (clean, colors[i].name))
+		if (!strcmp (s, colors[i].name))
 			strcat (out, colors[i].code);
 	}
 	free (s);
-	free (clean);
 	return *out? strdup (out): NULL;
 }
 
