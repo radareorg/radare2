@@ -19,7 +19,7 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
     if (this.display === "graph") {
       panel.innerHTML = "";
       r2.cmd("agj " + addr, function(x) {
-        panel.innerHTML = "<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>";
+        panel.innerHTML = "<div id='bb_canvas' class='bbcanvas enyo-selectable ec_gui_background'></div>";
         // If render fails (address does not belong to function) then switch to flat view
         if (render_graph(x) === false) error = true;
       });
@@ -28,7 +28,7 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
     if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -0.5*this.block, this.block, function(x) {
-        panel.innerHTML = "<div id='flat_canvas' class='flatcanvas enyo-selectable ec_background'></div>";
+        panel.innerHTML = "<div id='flat_canvas' class='flatcanvas enyo-selectable ec_gui_background'></div>";
         render_instructions(x);
       });
     }
@@ -41,19 +41,19 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
 };
 DisasmPanel.prototype.display_graph = function() {
   this.display = "graph";
-  $("#main_panel").removeClass("ec_background");
-  $("#main_panel").addClass("ec_alt_background");
+  $("#main_panel").removeClass("ec_gui_background");
+  $("#main_panel").addClass("ec_gui_alt_background");
 };
 DisasmPanel.prototype.display_flat = function() {
   this.display = "flat";
-  $("#main_panel").removeClass("ec_alt_background");
-  $("#main_panel").addClass("ec_background");
+  $("#main_panel").removeClass("ec_gui_alt_background");
+  $("#main_panel").addClass("ec_gui_background");
 };
 DisasmPanel.prototype.goToAddress = function() {
 
   if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") > -1)) {
     var address = get_address_from_class(this.selected);
-    if (this.selected.className.indexOf("ec_dataoffset") > -1) {
+    if (this.selected.className.indexOf("ec_gui_dataoffset") > -1) {
       // address is located in not executable memory, switching to hex view
       r2ui.openpage(address, 2);
       return;

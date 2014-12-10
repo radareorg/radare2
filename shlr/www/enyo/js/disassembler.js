@@ -2,7 +2,7 @@ enyo.kind ({
   name: "Disassembler",
   kind: "Scroller",
   tag: "div",
-  classes:"ec_background",
+  classes:"ec_gui_background",
   style:"margin:0px;",
   draggable: false,
   data: null,
@@ -273,12 +273,12 @@ enyo.kind ({
   display_graph: function() {
     this.display = "graph";
     var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
-    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_background", "ec_alt_background");
+    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_background", "ec_gui_alt_background");
   },
   display_flat: function() {
     this.display = "flat";
     var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
-    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_alt_background", "ec_background");
+    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_alt_background", "ec_gui_background");
   },
   less: function() {
     var text = this.$.text;
@@ -307,7 +307,7 @@ enyo.kind ({
     if (this.display === "graph") {
       text.setContent("");
       r2.cmd ("agj " + addr, function(x) {
-        text.setContent("<div id='bb_canvas' class='bbcanvas enyo-selectable ec_background'></div>");
+        text.setContent("<div id='bb_canvas' class='bbcanvas enyo-selectable ec_gui_background'></div>");
         // If render fails (address does not belong to function) then switch to flat view
         if (render_graph(x) === false) error = true;
       });
@@ -316,7 +316,7 @@ enyo.kind ({
     if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -0.5*this.block, this.block, function(x) {
-        text.setContent("<div id='flat_canvas' class='flatcanvas enyo-selectable ec_background'></div>");
+        text.setContent("<div id='flat_canvas' class='flatcanvas enyo-selectable ec_gui_background'></div>");
         render_instructions(x);
       });
     }
