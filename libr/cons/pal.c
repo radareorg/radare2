@@ -93,7 +93,7 @@ R_API void r_cons_pal_random() {
 	RCons *cons = r_cons_singleton ();
 	ut8 r, g, b;
 	char val[32];
-		const char *k;
+	const char *k;
 	int i;
 	for (i=0;;i++) {
 		k = r_cons_pal_get_i (i);
