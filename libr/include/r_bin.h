@@ -88,6 +88,8 @@ typedef struct r_bin_info_t {
 	char os[R_BIN_SIZEOF_STRINGS+1];
 	char subsystem[R_BIN_SIZEOF_STRINGS+1];
 	char rpath[R_BIN_SIZEOF_STRINGS+1];
+	char guid[R_BIN_SIZEOF_STRINGS+1];
+	char debug_file_name[R_BIN_SIZEOF_STRINGS+1];
 	const char *lang;
 	int bits;
 	int has_va;
