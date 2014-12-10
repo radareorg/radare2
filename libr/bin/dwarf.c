@@ -190,7 +190,7 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 
 static const ut8 *r_bin_dwarf_parse_lnp_header (
 		RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-		RBinDwarfLNPHeader *hdr, FILE *f)
+		RBinDwarfLNPHeader *hdr, FILE *f, int mode)
 {
 	int i;
 	Sdb *s;
@@ -343,23 +343,28 @@ beach:
 	return buf;
 }
 
-static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line) {
+static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line, FILE *f, int mode) {
+	const char *p;
 	char fileline[128];
 	char offset[64];
 	char *offset_ptr;
 
 	if (!s || !file)
 		return;
-	{
-		const char *p = r_str_rchr (file, NULL, '/');
-		if (p) p++; else p = file;
-		//eprintf ("CL %s:%d 0x%08"PFMT64x"\n", p, (int)line, addr);
-		// XXX: this must be done in CL side, we need a list of
-		// includedirs and properly check full paths
-		if (r_file_exists (file))
-			p = file;
-		snprintf (fileline, sizeof (fileline) - 1, "%s|%"PFMT64d, p, line);
+	p = r_str_rchr (file, NULL, '/');
+	if (p) p++; else p = file;
+	// includedirs and properly check full paths
+	switch (mode) {
+	case 1:
+	case 'r':
+	case '*':
+		if (!f) f = stdout;
+		fprintf (f, "CL %s:%d 0x%08"PFMT64x"\n", p, (int)line, addr);
+		break;
 	}
+	if (r_file_exists (file))
+		p = file;
+	snprintf (fileline, sizeof (fileline) - 1, "%s|%"PFMT64d, p, line);
 	offset_ptr = sdb_itoa (addr, offset, 16);
 
 	if (!sdb_add (s, offset_ptr, fileline, 0)) {
@@ -373,7 +378,7 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 
 static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 		size_t len, const RBinDwarfLNPHeader *hdr,
-		RBinDwarfSMRegisters *regs, FILE *f)
+		RBinDwarfSMRegisters *regs, FILE *f, int mode)
 {
 	// XXX - list is an unused parameter.
 	const ut8 *buf;
@@ -403,7 +408,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 			int fnidx = regs->file - 1;
 			if (fnidx>=0 && fnidx<hdr->file_names_count) {
 				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
-						hdr->file_names[fnidx].name, regs->line);
+						hdr->file_names[fnidx].name, regs->line, f, mode);
 			}
 		}
 
@@ -457,7 +462,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 		const RBin *a, const ut8 *obuf, size_t len,
 		const RBinDwarfLNPHeader *hdr,
 		RBinDwarfSMRegisters *regs,
-		ut8 opcode, FILE *f)
+		ut8 opcode, FILE *f, int mode)
 {
 	// XXX - list is not used
 	const ut8 *buf = obuf;
@@ -486,7 +491,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 		if (idx>=0 && idx<hdr->file_names_count) {
 			add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
 					hdr->file_names[idx].name,
-					regs->line);
+					regs->line, f, mode);
 		}
 	}
 	regs->basic_block = DWARF_FALSE;
@@ -500,7 +505,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 static const ut8* r_bin_dwarf_parse_std_opcode(
 		const RBin *a, const ut8 *obuf, size_t len,
 		const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs,
-		ut8 opcode, FILE *f)
+		ut8 opcode, FILE *f, int mode)
 {
 	const ut8* buf = obuf;
 	ut64 addr = 0LL;
@@ -523,7 +528,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 				add_sdb_addrline(binfile->sdb_addrinfo,
 					regs->address,
 					hdr->file_names[fnidx].name,
-					regs->line);
+					regs->line, f, mode);
 			}
 		}
 		regs->basic_block = DWARF_FALSE;
@@ -616,7 +621,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 
 static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 		size_t len, const RBinDwarfLNPHeader *hdr,
-		RBinDwarfSMRegisters *regs, FILE *f) {
+		RBinDwarfSMRegisters *regs, FILE *f, int mode) {
 	const ut8 *buf, *buf_end;
 	ut8 opcode, ext_opcode;
 
@@ -630,13 +635,13 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 		len--;
 		if (opcode == 0) {
 			ext_opcode = *buf;
-			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f );
+			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f, mode);
 			if (ext_opcode == DW_LNE_end_sequence)
 				break;
 		} else if (opcode >= hdr->opcode_base) {
-			buf = r_bin_dwarf_parse_spec_opcode (a, buf, len, hdr, regs, opcode, f);
+			buf = r_bin_dwarf_parse_spec_opcode (a, buf, len, hdr, regs, opcode, f, mode);
 		} else {
-			buf = r_bin_dwarf_parse_std_opcode (a, buf, len, hdr, regs, opcode, f);
+			buf = r_bin_dwarf_parse_std_opcode (a, buf, len, hdr, regs, opcode, f, mode);
 		}
 		len = (int)(buf_end - buf);
 	}
@@ -674,11 +679,11 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	buf_end = obuf + len;
 	while (buf+1 < buf_end) {
 		buf_tmp = buf;
-		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f);
+		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 		if (!buf) return R_FALSE;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 		tmplen = R_MIN (len, 4+hdr.unit_length.part1);
-		r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f);
+		r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f, mode);
 		buf = buf_tmp + tmplen;
 		len = (int)(buf_end - buf);
 	}
