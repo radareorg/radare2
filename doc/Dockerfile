@@ -14,14 +14,13 @@
 # Run the docker image:
 # $ docker images
 # $ export DOCKER_IMAGE_ID= docker images | awk '{print $3}'|head -n2 | tail -n1`
-# $ docker -ti ${DOCKER_IMAGE_ID} bash
+# $ docker run -ti ${DOCKER_IMAGE_ID} bash
 #
 # Once you quit the bash session get the container id with:
 # $ docker ps -a | grep bash
 #
 # To get into that shell again just type:
-# $ docker start <containedid>
-# $ docker attach <containedid>
+# $ docker start -ai <containedid>
 #
 # To share those images:
 # $ docker export <containerid> | xz > container.xz
