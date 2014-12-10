@@ -45,6 +45,7 @@ typedef struct r_disam_options_t {
 	int decode;
 	int pseudo;
 	int filter;
+	int interactive;
 	int varsub;
 	int show_lines;
 	int linesright;
@@ -250,6 +251,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	ds->filter = r_config_get_i (core->config, "asm.filter");
+	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
@@ -282,11 +284,11 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
-	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
+	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	ds->show_comment_right = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
-	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
+	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -294,7 +296,6 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
-	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
 	}
@@ -344,14 +345,16 @@ static void handle_reflines_init (RCore *core, RDisasmState *ds) {
 
 static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
 	if (ds->show_lines) {
-			// TODO: make anal->reflines implicit
-			free (core->reflines); // TODO: leak
-			free (core->reflines2); // TODO: leak
-			core->reflines = r_anal_reflines_fcn_get (core->anal,
-					fcn, -1, ds->linesout, ds->show_linescall);
-			core->reflines2 = r_anal_reflines_fcn_get (core->anal,
-					fcn, -1, ds->linesout, 1);
-	} else core->reflines = core->reflines2 = NULL;
+		// TODO: make anal->reflines implicit
+		free (core->reflines); // TODO: leak
+		core->reflines = r_anal_reflines_fcn_get (core->anal,
+				fcn, -1, ds->linesout, ds->show_linescall);
+		free (core->reflines2); // TODO: leak
+		core->reflines2 = r_anal_reflines_fcn_get (core->anal,
+				fcn, -1, ds->linesout, 1);
+	} else {
+		core->reflines = core->reflines2 = NULL;
+	}
 }
 
 static void handle_deinit_ds (RCore *core, RDisasmState *ds) {
@@ -800,11 +803,12 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 		if (ds->comment) {
 			int linelen, maxclen = strlen (ds->comment)+5;
 			linelen = maxclen;
-			if (ds->show_comment_right_default)
-			if (ds->ocols+maxclen < core->cons->columns) {
-				if (ds->comment && *ds->comment && strlen (ds->comment)<maxclen) {
-					if (!strchr (ds->comment, '\n')) // more than one line?
-						ds->show_comment_right = 1;
+			if (ds->show_comment_right_default) {
+				if (ds->ocols+maxclen < core->cons->columns) {
+					if (ds->comment && *ds->comment && strlen (ds->comment)<maxclen) {
+						if (!strchr (ds->comment, '\n')) // more than one line?
+							ds->show_comment_right = 1;
+					}
 				}
 			}
 			if (!ds->show_comment_right) {
@@ -1511,8 +1515,9 @@ static void handle_comment_align (RCore *core, RDisasmState *ds) {
 	}
 	ll = r_cons_lastline ();
 	if (ll) {
-		int cols = r_cons_get_size (NULL);
-		int ansilen = r_str_ansi_len (ll);
+		int cols, ansilen = r_str_ansi_len (ll);
+		cols = ds->interactive ? core->cons->columns : 1024;
+		//cols = r_cons_get_size (NULL);
 		if (cmtcol+16>=cols) {
 #if 0
 			r_cons_newline ();
