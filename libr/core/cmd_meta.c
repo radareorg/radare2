@@ -158,7 +158,6 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		} else {
 			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
 		}
-
 		return 0;
 	}
 
@@ -167,59 +166,59 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	}
 
 	if (*p) {
-		ret = sscanf(p, "0x%"PFMT64x, &offset);
-		if (ret != 1) {
-			colon = strchr (p, ':');
-			if (colon) {
-				space = strchr (p, ' ');
-				if (!space) {
-					file_line = strdup (p);
-				} else if (space > colon) {
-					file_line = r_str_ndup (p, space - p);
-				} else {
-					goto error;
-				}
-
-				colon = strchr (file_line, ':');
-				if (!colon)
-					goto error;
-				*colon = '|';
-
-				while (*p != ' ')
-					p++;
-
-				while (*p == ' ')
-					p++;
-
-				if (*p != '\0') {
-					ret = sscanf (p, "0x%"PFMT64x, &offset);
-
-					if (ret != 1) {
-						eprintf ("Failed to parse addr at %s\n", p);
-						goto error;
-					}
-
-					ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
-							file_line, offset);
-
-					goto error;
-				}
-
-				if (!file_line)
-					return -1;
-
-				if (remove) {
-					remove_meta_fileline (core, file_line);
-				} else {
-					print_meta_fileline (core, file_line);
-				}
-
-				free (file_line);
-				return 0;
-			}
+		offset = r_num_math (core->num, p);
+		if (!offset)
 			offset = core->offset;
+	} else offset = core->offset;
+	colon = strchr (p, ':');
+	if (colon) {
+		space = strchr (p, ' ');
+		if (!space) {
+			file_line = strdup (p);
+		} else if (space > colon) {
+			file_line = r_str_ndup (p, space - p);
+		} else {
+			goto error;
 		}
+
+		colon = strchr (file_line, ':');
+		if (!colon)
+			goto error;
+		*colon = '|';
+
+		while (*p != ' ')
+			p++;
+
+		while (*p == ' ')
+			p++;
+
+		if (*p != '\0') {
+			ret = sscanf (p, "0x%"PFMT64x, &offset);
+
+			if (ret != 1) {
+				eprintf ("Failed to parse addr at %s\n", p);
+				goto error;
+			}
+
+			ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
+					file_line, offset);
+
+			goto error;
+		}
+
+		if (!file_line)
+			return -1;
+
+		if (remove) {
+			remove_meta_fileline (core, file_line);
+		} else {
+			print_meta_fileline (core, file_line);
+		}
+
+		free (file_line);
+		return 0;
 	}
+	offset = core->offset;
 
 	if (offset != UT64_MAX) {
 		if (remove) {
