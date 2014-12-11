@@ -259,7 +259,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
-	if (!b) return 0;
+	if (!b || !buf || len<1) return 0;
 #if R_BUF_CUR != UT64_MAX
 #error R_BUF_CUR must be UT64_MAX
 #endif
