@@ -390,6 +390,25 @@ static int bin_info (RCore *r, int mode) {
 			pair ("guid", info->guid);
 			pair ("dbg_file", info->debug_file_name);
 
+#define TMP_DBG 1
+#if TMP_DBG
+#include "../bin/pdb/pdb_downloader.h"
+			SPDBDownloader pdb_downloader;
+			SPDBDownloaderOpt opt;
+			opt.dbg_file = info->debug_file_name;
+			opt.guid = info->guid;
+			opt.symbol_server = "http://msdl.microsoft.com/download/symbols";
+			opt.user_agent = "Microsoft-Symbol-Server/6.11.0001.402";
+
+			init_pdb_downloader(&opt, &pdb_downloader);
+			if (pdb_downloader.download(&pdb_downloader) == 0) {
+				r_cons_printf("PDB file %s has not been downloaded sucessfully\n", opt.dbg_file);
+			} else {
+				r_cons_printf("PDB file %s has been downloaded sucessfully", opt.dbg_file);
+			}
+			deinit_pdb_downloader(&pdb_downloader);
+#endif
+
 			for (i=0; info->sum[i].type; i++) {
 				int len;
 				//ut8 *sum = &info; // XXX
