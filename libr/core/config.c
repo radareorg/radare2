@@ -890,6 +890,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.filter", "true", "Replace numbers in disassembly using flags containing a dot in the name in disassembly");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
+	SETPREF("asm.hex_invalid", "false", "Show hexvalue of invalid opcodes");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "If enabled show ascii-art lines at disassembly");
 	SETPREF("asm.linescall", "false", "Enable call lines");
