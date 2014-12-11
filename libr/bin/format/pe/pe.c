@@ -434,6 +434,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_DWord delay_import_dir_offset = data_dir_delay_import?
 		PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_delay_import->VirtualAddress): 0;
 	PE_(image_import_directory) *import_dir = NULL;
+	PE_(image_import_directory) *new_import_dir = NULL;
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *delay_import_dir = NULL;
 	PE_(image_delay_import_directory) *curr_delay_import_dir = NULL;
@@ -441,7 +442,6 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int delay_import_size = sizeof (PE_(image_delay_import_directory));
 	int indx = 0;
 	int count = 0;
-
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
 	/// HACK to modify import size because of begin 0.. this may report wrong info con corkami tests
@@ -473,18 +473,23 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if ( ((2+indx)*dir_size) > import_dir_size) {
 				break; //goto fail;
 			}
-			import_dir = (PE_(image_import_directory) *)realloc (
+			new_import_dir = (PE_(image_import_directory) *)realloc (
 				import_dir, ((1+indx) * dir_size));
 			if (!import_dir) {
 				r_sys_perror ("malloc (import directory)");
-				break ; //
+				free (import_dir);
+				import_dir = NULL;
+				break; //
 				//			goto fail;
 			}
+			import_dir = new_import_dir;
+			new_import_dir = NULL;
 			curr_import_dir = import_dir + (indx - 1);
 			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size,
 					(ut8*)(curr_import_dir), dir_size) == -1) {
 				eprintf ("Error: read (import directory)\n");
 				free (import_dir);
+				import_dir = NULL;
 				break; //return R_FALSE;
 			}
 			count ++;
@@ -934,12 +939,15 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 
 int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *res) {
 	PE_(image_debug_directory_entry) *img_dbg_dir_entry = NULL;
-	PE_(image_data_directory) *dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
-	PE_DWord dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
+	PE_(image_data_directory) *dbg_dir;
+	PE_DWord dbg_dir_offset;
 	ut8 *dbg_data = 0;
 	int result = 0;
-
-	if ((int)dbg_dir_offset<0)
+	if (!bin)
+		return 0;
+	dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
+	dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
+	if ((int)dbg_dir_offset<0 || dbg_dir_offset>= bin->size)
 		return R_FALSE;
 	img_dbg_dir_entry = (PE_(image_debug_directory_entry)*)(bin->b->buf + dbg_dir_offset);
 	if (img_dbg_dir_entry) {
