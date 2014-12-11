@@ -164,6 +164,8 @@ typedef struct r_debug_t {
 	int trace_forks;
 	int trace_execs;
 	int trace_clone;
+	// internal use only
+	int _mode;
 	/* TODO
 	- list of processes and their threads
 	- list of mapped memory (from /proc/XX/maps)
@@ -291,7 +293,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame);
 R_API const char *r_debug_signal_resolve_i(RDebug *dbg, int signum);
 R_API void r_debug_signal_setup(RDebug *dbg, int num, int opt);
 R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr);
-R_API void r_debug_signal_list(RDebug *dbg);
+R_API void r_debug_signal_list(RDebug *dbg, int mode);
 R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
 R_API RList *r_debug_kill_list(RDebug *dbg);
 // XXX: must be uint64 action

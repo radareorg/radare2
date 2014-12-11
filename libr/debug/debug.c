@@ -283,15 +283,7 @@ R_API int r_debug_wait(RDebug *dbg) {
 			const char *name = r_debug_signal_resolve_i (dbg, dbg->signum);
 			if (name && strcmp ("SIGTRAP", name))
 				r_cons_printf ("[+] signal %d aka %s received\n",
-					dbg->signum, name);
-			if (what & R_DBG_SIGNAL_SKIP) {
-				dbg->signum = 0;
-				// TODO: use ptrace-setsiginfo to ignore signal
-			}
-			if (what & R_DBG_SIGNAL_CONT) {
-				// XXX: support step, steptrace, continue_until_foo, etc..
-				r_debug_continue (dbg);
-			}
+						dbg->signum, name);
 		}
 	}
 	return ret;
@@ -462,7 +454,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	ut64 pc;
-	int ret = R_FALSE;
+	int retwait, ret = R_FALSE;
 	if (!dbg)
 		return R_FALSE;
 repeat:
@@ -472,7 +464,7 @@ repeat:
 		r_bp_restore (dbg->bp, R_TRUE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->signum = 0;
-		r_debug_wait (dbg);
+		retwait = r_debug_wait (dbg);
 		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
 		//r_debug_recoil (dbg);
 		if (r_debug_recoil (dbg) || dbg->reason == R_DBG_REASON_BP) {
@@ -504,6 +496,32 @@ repeat:
 #endif
 #endif
 		r_debug_select (dbg, dbg->pid, ret);
+		sig = 0; // clear continuation after signal if needed
+		if (retwait == R_DBG_REASON_SIGNAL && dbg->signum != -1) {
+			int what = r_debug_signal_what (dbg, dbg->signum);
+			if (what & R_DBG_SIGNAL_CONT) {
+				sig = dbg->signum;
+				eprintf ("Continue into the signal %d handler\n", sig);
+				goto repeat;
+			} else if (what & R_DBG_SIGNAL_SKIP) {
+				// skip signal. requires skipping one instruction
+				ut8 buf[64];
+				RAnalOp op = {0};
+				ut64 pc = r_debug_reg_get (dbg, "pc");
+				dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
+				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
+				if (op.size>0) {
+					const char *signame = r_debug_signal_resolve_i (dbg, dbg->signum);
+					r_debug_reg_set (dbg, "pc", pc+op.size);
+					eprintf ("Skip signal %d handler %s\n",
+						dbg->signum, signame);
+					goto repeat;
+				} else  {
+					ut64 pc = r_debug_reg_get (dbg, "pc");
+					eprintf ("Stalled with an exception at 0x%08"PFMT64x"\n", pc);
+				}
+			}
+		}
 	}
 	return ret;
 }

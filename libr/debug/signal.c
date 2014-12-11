@@ -61,9 +61,10 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 }
 
 static int siglistcb (void *p, const char *k, const char *v) {
-	int opt;
-	RDebug *dbg = (RDebug *)p;
 	static char key[32] = "cfg.";
+	RDebug *dbg = (RDebug *)p;
+	int mode = dbg->_mode;
+	int opt;
 	if (atoi (k)>0) {
 		strcpy (key+4, k);
 		opt = sdb_num_get (DB, key, 0);
@@ -74,13 +75,18 @@ static int siglistcb (void *p, const char *k, const char *v) {
 			if (opt & R_DBG_SIGNAL_SKIP)
 				r_cons_strcat (" skip");
 			r_cons_newline ();
-		} else r_cons_printf ("%s %s\n", k, v);
+		} else {
+			if (mode == 0)
+				r_cons_printf ("%s %s\n", k, v);
+		}
 	}
 	return 1;
 }
 
-R_API void r_debug_signal_list(RDebug *dbg) {
+R_API void r_debug_signal_list(RDebug *dbg, int mode) {
+	dbg->_mode = mode;
 	sdb_foreach (DB, siglistcb, dbg);
+	dbg->_mode = 0;
 }
 
 R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {

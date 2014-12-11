@@ -1206,16 +1206,17 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				"dk", " <signal>", "Send KILL signal to child",
 				"dk", " <signal>=1", "Set signal handler for <signal> in child",
 				"dk?", "<signal>", "Name/signum resolver",
-				"dko", " <signal> sc", "On signal Skip and CONT (default stop, always trace)",
+				"dko", " <signal>", "Reset skip or cont options for given signal",
+				"dko", " <signal> [|skip|cont]", "On signal SKIP handler or CONT into",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
 		}
 	} else if (*input=='o') {
 		char *p, *name = strdup (input+2);
+		int signum = atoi (name);
 		p = strchr (name, ' ');
 		if (p) {
-			int signum = atoi (name);
 			*p++ = 0;
 			// Actions:
 			//  - pass
@@ -1224,20 +1225,37 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
 			if (signum>0) {
 				int sigopt = 0;
-				if (strchr (p, 's')) sigopt |= R_DBG_SIGNAL_SKIP;
-				if (strchr (p, 'c')) sigopt |= R_DBG_SIGNAL_CONT;
-				r_debug_signal_setup (core->dbg, signum, sigopt);
+				if (strchr (p, 's')) {
+					r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_SKIP);
+				} else if (strchr (p, 'c')) {
+					r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_CONT);
+				} else {
+					eprintf ("Invalid option\n");
+				}
 			} else {
 				eprintf ("Invalid signal\n");
 			}
 		} else {
-			eprintf ("|Usage: dko SIGNAL sc\n"
-			"| 'SIGNAL' can be a number or a string that resolves with dk?..\n"
-			"| 'sc' stands for SKIP and CONT\n");
+			switch (input[1]) {
+			case 0:
+				r_debug_signal_list (core->dbg, 1);
+				break;
+			case '?':
+				eprintf ("|Usage: dko SIGNAL [skip|cont]\n"
+					"| 'SIGNAL' can be a number or a string that resolves with dk?..\n"
+					"| s - skip (do not enter into the signal handler\n"
+					"| c - continue into the signal handler\n"
+					"|   - no option means stop when signal is catched\n");
+				break;
+			default:
+				if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
+				r_debug_signal_setup (core->dbg, signum, 0);
+				break;
+			}
 		}
 		free (name);
 	} else if (!*input) {
-		r_debug_signal_list (core->dbg);
+		r_debug_signal_list (core->dbg, 0);
 #if 0
 		RListIter *iter;
 		RDebugSignal *ds;
