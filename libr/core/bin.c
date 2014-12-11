@@ -401,7 +401,7 @@ static int bin_info (RCore *r, int mode) {
 			opt.user_agent = "Microsoft-Symbol-Server/6.11.0001.402";
 
 			init_pdb_downloader(&opt, &pdb_downloader);
-			if (pdb_downloader.download(&pdb_downloader) == 0) {
+			if (pdb_downloader.download(&pdb_downloader) == -1) {
 				r_cons_printf("PDB file %s has not been downloaded sucessfully\n", opt.dbg_file);
 			} else {
 				r_cons_printf("PDB file %s has been downloaded sucessfully", opt.dbg_file);
