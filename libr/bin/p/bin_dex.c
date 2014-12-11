@@ -377,6 +377,10 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			}
 			/* direct methods */
 			dprintf ("  direct methods: %u\n", (ut32)DM);
+			// hardcoded DEX limit
+			if (DM>=0xffff) {
+				DM = 0xFFFF;
+			}
 			for (j=0; j<DM; j++) {
 				char *method_name, *flag_name;
 				ut64 MI, MA, MC;
