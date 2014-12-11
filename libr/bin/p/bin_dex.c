@@ -54,7 +54,7 @@ static char *flagname (const char *class, const char *method) {
 	char *p, *str, *s;
 	if (!class || !method)
 		return NULL;
-	s = malloc (strlen (class) + strlen (method)+2);
+	s = malloc (strlen (class) + strlen (method)+10);
 	str = s;
 	p = (char*)r_str_lchr (class, '$');
 	if (!p) p = (char *)r_str_lchr (class, '/');
@@ -372,8 +372,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			dprintf ("  instance fields: %u\n", (ut32)IF);
 			for (j=0; j<IF; j++) {
 				ut64 FI, FA;
-				p = r_uleb128 (p, ST32_MAX, &FI);
-				p = r_uleb128 (p, ST32_MAX, &FA);
+				p = r_uleb128 (p, p_end-p, &FI);
+				p = r_uleb128 (p, p_end-p, &FA);
 				dprintf ("    field_idx: %u,\n", (ut32)FI);
 				dprintf ("    field access_flags: %u,\n", (ut32)FA);
 			}
