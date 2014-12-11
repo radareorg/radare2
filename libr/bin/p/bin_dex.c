@@ -184,13 +184,13 @@ static RList* strings (RBinFile *arch) {
 
 	if (bin->header.strings_size>bin->size) {
 		bin->strings = NULL;
-		return R_FALSE;
+		return NULL;
 	}
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
 	for (i = 0; i < bin->header.strings_size; i++) {
-		if (!(ptr = R_NEW (RBinString)))
+		if (!(ptr = R_NEW0 (RBinString)))
 			break;
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
@@ -200,6 +200,7 @@ static RList* strings (RBinFile *arch) {
 			ptr->string[(int) len+1]='\0';
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
+			ptr->length = len;
 			ptr->ordinal = i+1;
 			r_list_append (ret, ptr);
 		} else {
@@ -416,9 +417,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			dprintf ("  virtual methods: %u\n", (ut32)VM);
 			for (j=0; j<VM; j++) {
 				ut64 MI, MA, MC;
-				p = r_uleb128 (p, ST32_MAX, &MI);
-				p = r_uleb128 (p, ST32_MAX, &MA);
-				p = r_uleb128 (p, ST32_MAX, &MC);
+				p = r_uleb128 (p, p_end-p, &MI);
+				p = r_uleb128 (p, p_end-p, &MA);
+				p = r_uleb128 (p, p_end-p, &MC);
 
 				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (bin->code_from>MC) bin->code_from = MC;
