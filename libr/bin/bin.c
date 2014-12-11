@@ -1225,7 +1225,7 @@ R_API RBin* r_bin_new() {
 	bin->binxtrs = r_list_new ();
 	bin->binxtrs->free = free;
 	for (i=0; bin_xtr_static_plugins[i]; i++) {
-		static_xtr_plugin = R_NEW (RBinXtrPlugin);
+		static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
 		r_bin_xtr_add (bin, static_xtr_plugin);
 	}

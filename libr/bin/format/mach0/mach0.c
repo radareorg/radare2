@@ -936,9 +936,13 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					break;
 				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 					seg_idx = imm;
-					if (seg_idx<0 || seg_idx > bin->nsegs )
-						eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has unexistent segment %d\n", seg_idx);
-					addr = bin->segs[seg_idx].vmaddr + ULEB();
+					if (seg_idx<0 || seg_idx >= bin->nsegs) {
+						eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
+							" has unexistent segment %d\n", seg_idx);
+						addr = 0LL;
+					} else {
+						addr = bin->segs[seg_idx].vmaddr + ULEB();
+					}
 					break;
 				case BIND_OPCODE_ADD_ADDR_ULEB:
 					addr += ULEB();

@@ -1081,8 +1081,6 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 			r_flag_set (r->flags, str, addr, section->size, 0);
 			snprintf (str, sizeof(str)-1, "section_end.%s", section->name);
 			r_flag_set (r->flags, str, addr + section->size, 0, 0);
-			r_io_section_add (r->io, section->paddr, addr, section->size,
-				section->vsize, section->srwx, section->name, 0, fd);
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
@@ -1090,15 +1088,17 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 				if (!bits) bits = info->bits;
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
-			snprintf (str, sizeof(str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
+			snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
 				PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
 				i++, addr, section->paddr, section->size, section->vsize,
-				(R_BIN_SCN_SHAREABLE &section->srwx)?'s':'-',
-				(R_BIN_SCN_READABLE &section->srwx)?'r':'-',
-				(R_BIN_SCN_WRITABLE &section->srwx)?'w':'-',
-				(R_BIN_SCN_EXECUTABLE &section->srwx)?'x':'-',
+				(R_BIN_SCN_SHAREABLE & section->srwx)?'s':'-',
+				(R_BIN_SCN_READABLE & section->srwx)?'r':'-',
+				(R_BIN_SCN_WRITABLE & section->srwx)?'w':'-',
+				(R_BIN_SCN_EXECUTABLE & section->srwx)?'x':'-',
 				section->name);
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
+			r_io_section_add (r->io, section->paddr, addr, section->size,
+				section->vsize, section->srwx, section->name, 0, fd);
 		}
 		// H -> Header fields
 		if (0) {

@@ -99,6 +99,7 @@ static RList* sections(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].size;
 		ptr->paddr = sections[i].offset + obj->boffset;
@@ -211,7 +212,7 @@ static RList* relocs(RBinFile *arch) {
 		// TODO(eddyb) filter these out earlier.
 		if (!relocs[i].addr)
 			continue;
-		if (!(ptr = R_NEW (RBinReloc)))
+		if (!(ptr = R_NEW0 (RBinReloc)))
 			break;
 		ptr->type = relocs[i].type;
 		ptr->additive = 0;
