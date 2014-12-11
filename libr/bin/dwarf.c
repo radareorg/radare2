@@ -1388,10 +1388,10 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 
 	r_bin_dwarf_init_debug_abbrev (da);
 
-	while (buf+1 < buf_end) {
+	while (buf && buf+1 < buf_end) {
 		offset = buf - obuf;
 		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
-		if (!tmp)
+		if (!buf || !tmp)
 			continue;
 
 		if (da->length == da->capacity)
