@@ -440,6 +440,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int dir_size = sizeof (PE_(image_import_directory));
 	int delay_import_size = sizeof (PE_(image_delay_import_directory));
 	int indx = 0;
+	int count = 0;
 
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
@@ -457,7 +458,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (maxidsz<0) maxidsz = 0;
 	//int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
 
-		bin->import_directory = NULL;
+	free (bin->import_directory);
+	bin->import_directory = NULL;
 	if (import_dir_paddr != 0) {
 		if (import_dir_size<1 || import_dir_size>maxidsz) {
 			eprintf ("Warning: Invalid import directory size: 0x%x\n",
@@ -465,21 +467,27 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			import_dir_size = maxidsz;
 		}
 		bin->import_directory_offset = import_dir_offset;
+		count = 0;
 		do {
 			indx++;
+			if ( ((2+indx)*dir_size) > import_dir_size) {
+				break; //goto fail;
+			}
 			import_dir = (PE_(image_import_directory) *)realloc (
 				import_dir, ((1+indx) * dir_size));
 			if (!import_dir) {
 				r_sys_perror ("malloc (import directory)");
-				goto fail;
+				break ; //
+				//			goto fail;
 			}
 			curr_import_dir = import_dir + (indx - 1);
 			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size,
 					(ut8*)(curr_import_dir), dir_size) == -1) {
 				eprintf ("Error: read (import directory)\n");
 				free (import_dir);
-				return R_FALSE;
+				break; //return R_FALSE;
 			}
+			count ++;
 		} while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0);
@@ -931,14 +939,15 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 	ut8 *dbg_data = 0;
 	int result = 0;
 
+	if ((int)dbg_dir_offset<0)
+		return R_FALSE;
 	img_dbg_dir_entry = (PE_(image_debug_directory_entry)*)(bin->b->buf + dbg_dir_offset);
-
-	dbg_data = (ut8 *) malloc(img_dbg_dir_entry->SizeOfData);
-	r_buf_read_at(bin->b, img_dbg_dir_entry->PointerToRawData, dbg_data, img_dbg_dir_entry->SizeOfData);
-
-	result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
-
-	R_FREE(dbg_data);
+	if (img_dbg_dir_entry) {
+		dbg_data = (ut8 *) malloc(img_dbg_dir_entry->SizeOfData);
+		r_buf_read_at(bin->b, img_dbg_dir_entry->PointerToRawData, dbg_data, img_dbg_dir_entry->SizeOfData);
+		result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
+		R_FREE(dbg_data);
+	}
 	return result;
 }
 
