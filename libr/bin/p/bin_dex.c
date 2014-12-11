@@ -236,16 +236,18 @@ static inline ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *si
 #endif
 
 static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
-	const ut8 buf[128], *buf2;
+	const ut8 buf[8], *buf2;
 	ut64 len;
 	int uleblen;
 	if (idx<0)
 		return NULL;
 	if (idx>=bin->header.strings_size)
 		return NULL;
-	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 8);
+	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, sizeof (buf));
 	len = dex_read_uleb128 (buf);
-	buf2 = r_uleb128 (buf, ST32_MAX, &len);
+	if (len<1)
+		return NULL;
+	buf2 = r_uleb128 (buf, sizeof (buf), &len);
 	uleblen = (size_t)(buf2 - buf);
 	if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
 		char *str = malloc (len+1);
