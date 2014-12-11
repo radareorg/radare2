@@ -5,6 +5,7 @@
 #include <getopt.c>
 #include <r_core.h>
 #include "../blob/version.c"
+#include "../../libr/bin/pdb/pdb_downloader.h"
 
 #define ACTION_UNK       0x00000
 #define ACTION_ENTRIES   0x00001
@@ -27,6 +28,7 @@
 #define ACTION_DWARF     0x20000
 #define ACTION_SIZE      0x40000
 #define ACTION_PDB       0x80000
+#define ACTION_PDB_DWNLD 0x100000
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
@@ -54,6 +56,7 @@ static int rabin_show_help(int v) {
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
 		" -P              show debug/pdb information\n"
+		" -PP             download pdb file for binary\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -k [query]      perform sdb query on loaded file\n"
@@ -440,7 +443,13 @@ int main(int argc, char **argv) {
 		case 'I': set_action (ACTION_INFO); break;
 		case 'H': set_action (ACTION_FIELDS); break;
 		case 'd': set_action (ACTION_DWARF); break;
-		case 'P': set_action (ACTION_PDB); break;
+		case 'P':
+			if (is_active(ACTION_PDB)) {
+				set_action(ACTION_PDB_DWNLD);
+			} else {
+				set_action (ACTION_PDB);
+			}
+			break;
 		case 'e': set_action (ACTION_ENTRIES); break;
 		case 'M': set_action (ACTION_MAIN); break;
 		case 'l': set_action (ACTION_LIBS); break;
@@ -659,6 +668,31 @@ int main(int argc, char **argv) {
 	filter.name = name;
 
 	r_cons_new ()->is_interactive = R_FALSE;
+
+	if (action&ACTION_PDB_DWNLD) {
+		SPDBDownloader pdb_downloader;
+		SPDBDownloaderOpt opt;
+		RBinInfo *info = r_bin_get_info(core.bin);
+		char *path = r_file_dirname(info->file);
+
+		opt.dbg_file = info->debug_file_name;
+		opt.guid = info->guid;
+		opt.symbol_server = (char *)r_config_get(core.config, "pdb.sym_srvr");
+		opt.user_agent = (char *)r_config_get(core.config, "pdb.user_agent");
+		opt.path = path;
+
+		init_pdb_downloader(&opt, &pdb_downloader);
+		if (pdb_downloader.download(&pdb_downloader) == 0) {
+			r_cons_printf("PDB file %s has not been downloaded sucessfully\n", opt.dbg_file);
+		} else {
+			r_cons_printf("PDB file %s has been downloaded sucessfully", opt.dbg_file);
+		}
+		deinit_pdb_downloader(&pdb_downloader);
+
+		free(path);
+		r_core_fini (&core);
+		return 0;
+	}
 
 #define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
 #define run_action(n,x,y) {\
