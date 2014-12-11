@@ -125,7 +125,7 @@ install: install-includes install-pkgconfig
 	@${INSTALL_DIR} "${LFX}/radare2/${VERSION}"
 	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll | grep ${EXT_SO}`; \
 	  do echo " ${LFX}/radare2/${VERSION}/$$a"; \
-	${INSTALL_DATA} "$$a" "${LFX}/radare2/${VERSION}" ; done
+	${INSTALL_LIB} "$$a" "${LFX}/radare2/${VERSION}" ; done
 	cd "${LFX}/radare2" ; ln -fs "${VERSION}" last
 
 #@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
