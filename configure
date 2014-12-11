@@ -115,7 +115,7 @@ done
 : ${INSTALL_PROGRAM:=${INSTALL} -m 755}
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
-: ${INSTALL_LIB:=${INSTALL} -c}
+: ${INSTALL_LIB:=${INSTALL} -m 755 -c}
  PKGNAME='radare2' ; VERSION='0.9.9-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
                 
