@@ -274,7 +274,11 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 #endif
 }
 
-R_API RList* r_anal_get_fcns (RAnal *anal) { return anal->fcns; }
+R_API RList* r_anal_get_fcns (RAnal *anal) {
+	// avoid received to free this thing
+	anal->fcns->free = NULL;
+	return anal->fcns;
+}
 
 R_API int r_anal_project_load(RAnal *anal, const char *prjfile) {
 	if (prjfile && *prjfile)
