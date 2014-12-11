@@ -300,12 +300,18 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		return R_FALSE;
 	}
 
-	switch ((pid=fork ())) {
+	switch ((pid = fork ())) {
 	case -1:
 		return R_FALSE;
 	case 0:
-		dup2 (sh_in[0], 0); close (sh_in[0]); close (sh_in[1]);
-		if (output) { dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]); }
+		dup2 (sh_in[0], 0);
+		close (sh_in[0]);
+		close (sh_in[1]);
+		if (output) {
+			dup2 (sh_out[1], 1);
+			close (sh_out[0]);
+			close (sh_out[1]);
+		}
 		if (sterr) dup2 (sh_err[1], 2); else close (2);
 		close (sh_err[0]); close (sh_err[1]);
 		exit (r_sandbox_system (cmd, 0));
@@ -326,6 +332,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		if (!inputptr || !*inputptr)
 			close (sh_in[1]);
 
+		// we should handle broken pipes somehow better
+		signal (SIGPIPE, SIG_IGN);
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
@@ -352,7 +360,11 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				buffer[sizeof(buffer) - 1] = '\0';
 				*sterr = r_str_concat (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
-				bytes = write (sh_in[1], inputptr, strlen (inputptr));
+				int inputptr_len = strlen (inputptr);
+				bytes = write (sh_in[1], inputptr, inputptr_len);
+				if (bytes != inputptr_len) {
+					break;
+				}
 				inputptr += bytes;
 				if (!*inputptr) {
 					close (sh_in[1]);
