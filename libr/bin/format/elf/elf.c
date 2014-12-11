@@ -448,7 +448,21 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return (ut64)((int)(buf[48+0]+(buf[48+1]<<8)+
 		(buf[48+2]<<16)+(buf[48+3]<<24)))-bin->baddr;
 	}
-	// X86
+	// X86-PIE
+	if (buf[0x1d] == 0x48) {
+		if (!memcmp (buf, "\x31\xed\x49\x89", 4)) {// linux
+			ut64 main;
+			ut32 n32, *num = (ut32 *)(buf+0x20);
+			main = entry + 0x24 + *num;
+			if (r_buf_read_at (bin->b, main, &n32, sizeof (n32)) == -1) {
+				eprintf ("Warning: read (main) 2\n");
+				return 0;
+			}
+			main = (ut64)n32;
+			return main;
+		}
+	}
+	// X86-NONPIE
 #if R_BIN_ELF64
 	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) {// openbsd
 		return (ut64)((int)(buf[157+0]+(buf[157+1]<<8)+
