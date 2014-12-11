@@ -247,12 +247,11 @@ static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 	len = dex_read_uleb128 (buf);
 	buf2 = r_uleb128 (buf, ST32_MAX, &len);
 	uleblen = (size_t)(buf2 - buf);
-	// XXX what about 0 length strings?
 	if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
 		char *str = malloc (len+1);
 		if (!str) return NULL;
 		r_buf_read_at (bin->b, (bin->strings[idx])+uleblen,
-				(ut8*)str, len+uleblen);
+				(ut8*)str, len); //uleblen);
 		str[len] = 0;
 		return str;
 	}
