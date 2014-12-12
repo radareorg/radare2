@@ -1224,7 +1224,6 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			//  - stop
 			if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
 			if (signum>0) {
-				int sigopt = 0;
 				if (strchr (p, 's')) {
 					r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_SKIP);
 				} else if (strchr (p, 'c')) {

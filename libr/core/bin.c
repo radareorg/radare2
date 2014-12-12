@@ -387,8 +387,10 @@ static int bin_info (RCore *r, int mode) {
 			pair ("lsyms", r_str_bool (R_BIN_DBG_SYMS &info->dbg_info));
 			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
 			pair ("rpath", info->rpath);
-			pair ("guid", info->guid);
-			pair ("dbg_file", info->debug_file_name);
+			if (info->guid && *info->guid)
+				pair ("guid", info->guid);
+			if (info->debug_file_name && *info->debug_file_name)
+				pair ("dbg_file", info->debug_file_name);
 
 			for (i=0; info->sum[i].type; i++) {
 				int len;
