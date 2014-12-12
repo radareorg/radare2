@@ -20,6 +20,10 @@ endif
 test:
 	${MAKE} -C test
 
+asan:
+	${MAKE} src/sdb-version.h
+	${MAKE} -C src CC="gcc -fsanitize=address" LDFLAGS=-lasan all
+
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true
 

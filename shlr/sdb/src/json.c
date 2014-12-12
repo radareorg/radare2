@@ -203,7 +203,8 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 		memcpy (str, beg[0], len[0]);
 		if (!*beg[2])
 			beg[2]--;
-		memcpy (str+len[0], beg[2], len[2]+1);
+		memcpy (str+len[0], beg[2], len[2]);
+		str[len[0]+len[2]] = 0;
 	}
 	sdb_set_owned (s, k, str, cas);
 	free (js);

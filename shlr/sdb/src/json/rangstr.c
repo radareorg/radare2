@@ -72,6 +72,9 @@ Rangstr rangstr_news (const char *s, ut16 *res, int i) {
 int rangstr_cmp (Rangstr *a, Rangstr *b) {
 	int la = a->t-a->f;
 	int lb = b->t-b->f;
+	int lbz = strlen (b->p + b->f);
+	if (lbz<lb)
+		lb = lbz;
 	if (la != lb)
 		return 1;
 	return memcmp (a->p+a->f, b->p+b->f, la);

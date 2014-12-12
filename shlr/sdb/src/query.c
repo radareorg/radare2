@@ -145,7 +145,7 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 
 SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	char *eq, *tmp, *json, *next, *quot, *arroba, *res, *cmd, *newcmd = NULL;
+	char *eq, *tmp, *json, *next, *quot, *arroba, *res, *cmd, *newcmd = NULL, *oldcmd = NULL;
 	const char *p, *q, *val = NULL;
 	StrBuf *out;
 	Sdb *s = r;
@@ -287,8 +287,10 @@ next_quote:
 
 	if (*cmd=='$') {
 		char *nc = sdb_get (s, cmd+1, 0);
-		free (newcmd);
+		free (oldcmd);
+		oldcmd = newcmd; // keep pointer for eq
 		cmd = newcmd = nc;
+//		eq = newcmd; //strchr (newcmd, '=');
 		if (!cmd) cmd = strdup ("");
 	}
 	// cmd = val
@@ -638,6 +640,7 @@ fail:
 		res = NULL;
 	}
 	free (newcmd);
+	free (oldcmd);
 	return res;
 }
 
