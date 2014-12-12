@@ -673,11 +673,12 @@ int main(int argc, char **argv) {
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info(core.bin);
-		char *basename = r_file_basename(info->file);
+		const char *basename = r_file_basename(info->file);
 
 		int basename_len = strlen(basename);
 		int all_len = strlen(info->file);
-		char *path = (char *) malloc(all_len - basename_len + 1);
+		char *path = 0;
+		path = (char *) malloc(all_len - basename_len + 1);
 		strncpy(path, info->file, all_len - basename_len);
 		path[all_len - basename_len] = '\0';
 
