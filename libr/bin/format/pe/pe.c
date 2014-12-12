@@ -475,7 +475,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			}
 			new_import_dir = (PE_(image_import_directory) *)realloc (
 				import_dir, ((1+indx) * dir_size));
-			if (!import_dir) {
+			if (!new_import_dir) {
 				r_sys_perror ("malloc (import directory)");
 				free (import_dir);
 				import_dir = NULL;
