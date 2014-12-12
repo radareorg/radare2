@@ -2235,7 +2235,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			ret = 1;
 			r_cons_printf ("invalid\n");//???\n");
 		} else {
-			if ( ds->hex_invalid && !strcmp("invalid" , ds->asmop.buf_asm) )
+			if ( ds->hex_invalid && !ds->asmop.valid)
 				r_cons_printf("0x%s\n", ds->asmop.buf_hex);
 			else
 				r_cons_printf ("%s\n", ds->opstr);
