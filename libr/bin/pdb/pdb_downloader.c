@@ -18,9 +18,14 @@ static int download(struct SPDBDownloader *pdb_downloader)
 
 	archive_name[strlen(archive_name) - 1] = '_';
 
-	abspath_to_archive_len = strlen(archive_name) + strlen(opt->path) + 1;
+	abspath_to_archive_len = strlen(archive_name) + strlen(opt->path) + 1 + 1;
 	abspath_to_archive = (char *) malloc(abspath_to_archive_len);
-	snprintf(abspath_to_archive, abspath_to_archive_len, "%s%s", opt->path, archive_name);
+
+#ifdef WIN32
+	snprintf(abspath_to_archive, abspath_to_archive_len, "%s\%s", opt->path, archive_name);
+#else
+	snprintf(abspath_to_archive, abspath_to_archive_len, "%s/%s", opt->path, archive_name);
+#endif
 
 	// curl -A %1 %2/%3/%4/%5 -o %6
 	// %1 - user_agent

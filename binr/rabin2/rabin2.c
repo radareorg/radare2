@@ -673,16 +673,7 @@ int main(int argc, char **argv) {
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info(core.bin);
-		const char *basename = r_file_basename(info->file);
-
-		// TODO: maybe there is some r2 API to get just path
-		//		from string path/bibary
-		int basename_len = strlen(basename);
-		int all_len = strlen(info->file);
-		char *path = 0;
-		path = (char *) malloc(all_len - basename_len + 1);
-		strncpy(path, info->file, all_len - basename_len);
-		path[all_len - basename_len] = '\0';
+		char *path = r_file_dirname(info->file);
 
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
