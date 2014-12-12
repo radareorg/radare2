@@ -5,7 +5,10 @@
 #include <capstone.h>
 #include <arm.h>
 #include "esil.h"
+/* arm64 */
+#define IMM64(x) insn->detail->arm64.operands[x].imm
 
+/* arm32 */
 #define REG(x) cs_reg_name (*handle, insn->detail->arm.operands[x].reg)
 #define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) insn->detail->arm.operands[x].imm
@@ -178,6 +181,144 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
+static void anop64 (RAnalOp *op, cs_insn *insn) {
+	int i;
+	ut64 addr = op->addr;
+	switch (insn->id) {
+	case ARM64_INS_SUB:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+	case ARM64_INS_ADD:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case ARM64_INS_MOV:
+	case ARM64_INS_MOVI:
+	case ARM64_INS_MOVK:
+	case ARM64_INS_MOVN:
+	case ARM64_INS_MOVZ:
+	case ARM64_INS_SMOV:
+	case ARM64_INS_UMOV:
+	case ARM64_INS_FMOV:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case ARM64_INS_CMP:
+	case ARM64_INS_TST:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case ARM64_INS_ROR:
+	case ARM64_INS_ORN:
+	case ARM64_INS_LSL:
+	case ARM64_INS_LSR:
+		break;
+	case ARM64_INS_STR:
+		//case ARM64_INS_POP:
+	case ARM64_INS_LDR:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case ARM64_INS_BL:
+	case ARM64_INS_BLR:
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = IMM64(0);
+		break;
+	case ARM64_INS_B:
+		// BX LR == RET
+		if (insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		} else if (insn->detail->arm64.cc) {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = IMM64(0);
+			op->fail = addr+op->size;
+		} else {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = IMM64(0);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void anop32 (RAnalOp *op, cs_insn *insn) {
+	ut64 addr = op->addr;
+	int i;
+	switch (insn->id) {
+	case ARM_INS_POP:
+	case ARM_INS_LDM:
+		op->type = R_ANAL_OP_TYPE_POP;
+		for (i = 0; i < insn->detail->arm.op_count; i++) {
+			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
+					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
+				if (insn->detail->arm.cc == ARM_CC_AL)
+					op->type = R_ANAL_OP_TYPE_RET;
+				else
+					op->type = R_ANAL_OP_TYPE_CRET;
+				break;
+			}
+		}
+		break;
+	case ARM_INS_SUB:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+	case ARM_INS_ADD:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		if (REGID(1)==ARM_REG_PC) {
+			op->ptr = addr + 8 + IMM(2);
+			op->refptr = 0;
+		}
+		break;
+	case ARM_INS_MOV:
+	case ARM_INS_MOVS:
+	case ARM_INS_MOVT:
+	case ARM_INS_MOVW:
+	case ARM_INS_VMOVL:
+	case ARM_INS_VMOVN:
+	case ARM_INS_VQMOVUN:
+	case ARM_INS_VQMOVN:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case ARM_INS_CMP:
+	case ARM_INS_TST:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case ARM_INS_ROR:
+	case ARM_INS_ORN:
+	case ARM_INS_LSL:
+	case ARM_INS_LSR:
+		break;
+	case ARM_INS_PUSH:
+	case ARM_INS_STR:
+		//case ARM_INS_POP:
+	case ARM_INS_LDR:
+		if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
+			op->type = R_ANAL_OP_TYPE_UJMP;
+		} else {
+			op->type = R_ANAL_OP_TYPE_LOAD;
+		}
+		break;
+	case ARM_INS_BL:
+	case ARM_INS_BLX:
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = IMM(0);
+		break;
+	case ARM_INS_B:
+	case ARM_INS_BX:
+	case ARM_INS_BXJ:
+		// BX LR == RET
+		if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		} else if (insn->detail->arm.cc) {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = IMM(0);
+			op->fail = addr+op->size;
+		} else {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = IMM(0);
+		}
+		break;
+	default:
+		break;
+	}
+}
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle = 0;
 	cs_insn *insn = NULL;
@@ -202,82 +343,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
 			op->size = insn->size;
-			switch (insn->id) {
-			case ARM_INS_POP:
-			case ARM_INS_LDM:
-				op->type = R_ANAL_OP_TYPE_POP;
-				for (i = 0; i < insn->detail->arm.op_count; i++) {
-					if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
-							insn->detail->arm.operands[i].reg == ARM_REG_PC) {
-						if (insn->detail->arm.cc == ARM_CC_AL)
-							op->type = R_ANAL_OP_TYPE_RET;
-						else
-							op->type = R_ANAL_OP_TYPE_CRET;
-						break;
-					}
-				}
-				break;
-			case ARM_INS_SUB:
-				op->type = R_ANAL_OP_TYPE_SUB;
-				break;
-			case ARM_INS_ADD:
-				op->type = R_ANAL_OP_TYPE_ADD;
-				if (REGID(1)==ARM_REG_PC) {
-					op->ptr = addr + 8 + IMM(2);
-					op->refptr = 0;
-				}
-				break;
-			case ARM_INS_MOV:
-			case ARM_INS_MOVS:
-			case ARM_INS_MOVT:
-			case ARM_INS_MOVW:
-			case ARM_INS_VMOVL:
-			case ARM_INS_VMOVN:
-			case ARM_INS_VQMOVUN:
-			case ARM_INS_VQMOVN:
-				op->type = R_ANAL_OP_TYPE_MOV;
-				break;
-			case ARM_INS_CMP:
-			case ARM_INS_TST:
-				op->type = R_ANAL_OP_TYPE_CMP;
-				break;
-			case ARM_INS_ROR:
-			case ARM_INS_ORN:
-			case ARM_INS_LSL:
-			case ARM_INS_LSR:
-				break;
-			case ARM_INS_PUSH:
-			case ARM_INS_STR:
-				//case ARM_INS_POP:
-			case ARM_INS_LDR:
-				if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
-					op->type = R_ANAL_OP_TYPE_UJMP;
-				} else {
-					op->type = R_ANAL_OP_TYPE_LOAD;
-				}
-				break;
-			case ARM_INS_BL:
-			case ARM_INS_BLX:
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = IMM(0);
-				break;
-			case ARM_INS_B:
-			case ARM_INS_BX:
-			case ARM_INS_BXJ:
-				// BX LR == RET
-				if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
-					op->type = R_ANAL_OP_TYPE_RET;
-				} else if (insn->detail->arm.cc) {
-					op->type = R_ANAL_OP_TYPE_CJMP;
-					op->jump = IMM(0);
-					op->fail = addr+op->size;
-				} else {
-					op->type = R_ANAL_OP_TYPE_JMP;
-					op->jump = IMM(0);
-				}
-				break;
-			default:
-				break;
+			if (a->bits == 64) {
+				anop64 (op, insn);
+			} else {
+				anop32 (op, insn);
 			}
 			if (a->decode) {
 				analop_esil (a, op, addr, buf, len, &handle, insn);
