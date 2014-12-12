@@ -39,10 +39,38 @@ R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 	return R_TRUE;
 }
 
+/*
+Example:
+	str = r_file_basename ("home/inisider/Downloads/user32.dll");
+	// str == user32.dll 
+*/
 R_API const char *r_file_basename (const char *path) {
-	const char *ptr = strrchr (path, '/');
-	if (ptr) path = ptr + 1;
+	const char *ptr = r_str_rchr (path, NULL, '/');
+	if (ptr) {
+		path = ptr + 1;
+	} else {
+		ptr = r_str_rchr (path, NULL, '\\');
+		if (ptr) path = ptr + 1;
+	}
 	return path;
+}
+
+/*
+Example:
+	str = r_file_basename ("home/inisider/Downloads");
+	// str == "home/inisider/Downloads"
+	free (str);
+*/
+R_API char *r_file_dirname (const char *path) {
+	char *newpath = strdup (path);
+	char *ptr = (char*)r_str_rchr (newpath, NULL, '/');
+	if (ptr) {
+		*ptr = 0;
+	} else {
+		ptr = (char*)r_str_rchr (newpath, NULL, '\\');
+		if (ptr) *ptr = 0;
+	}
+	return newpath;
 }
 
 R_API boolt r_file_is_regular(const char *str) {

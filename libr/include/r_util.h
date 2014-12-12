@@ -462,6 +462,7 @@ R_API int r_file_chmod (const char *file, const char *mod, int recursive);
 R_API char *r_file_temp (const char *prefix);
 R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
+R_API char *r_file_dirname (const char *path);
 R_API char *r_file_abspath(const char *file);
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *dstLen);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
