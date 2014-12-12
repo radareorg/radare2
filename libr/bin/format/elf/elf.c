@@ -97,7 +97,6 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		perror ("malloc (phdr)");
 		return R_FALSE;
 	}
-//eprintf ("edhr.e_phoff", bin->ehdr.e_phoff);
 	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr,
 		#if R_BIN_ELF64
 		bin->endian? "2I6L": "2i6l",
@@ -248,22 +247,14 @@ static Elf_(Shdr)* Elf_(r_bin_elf_get_section_by_name)(struct Elf_(r_bin_elf_obj
 }
 
 static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
-	Elf_(Shdr)* shdr;
-
-	shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
-
-	if (!shdr)
-		return -1;
+	Elf_(Shdr)* shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
+	if (!shdr) return UT64_MAX;
 	return (ut64)shdr->sh_offset;
 }
 
 ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
-	Elf_(Shdr)* shdr;
-
-	shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
-
-	if (!shdr)
-		return -1;
+	Elf_(Shdr)* shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
+	if (!shdr) return UT64_MAX;
 	return (ut64)shdr->sh_addr;
 }
 
@@ -354,10 +345,13 @@ int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	/* hopefully.. the first PT_LOAD is base */
-	if (bin && bin->phdr)
-		for (i = 0; i < bin->ehdr.e_phnum; i++)
-			if (bin->phdr[i].p_type == PT_LOAD)
+	if (bin && bin->phdr) {
+		for (i = 0; i < bin->ehdr.e_phnum; i++) {
+			if (bin->phdr[i].p_type == PT_LOAD) {
 				return (ut64)bin->phdr[i].p_vaddr;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -459,7 +453,10 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				return 0;
 			}
 			main = (ut64)n32;
-			baddr = (entry >> 24) << 24;
+			baddr = (bin->ehdr.e_entry >> 32) << 32;
+			if (bin->phdr) {
+				baddr = Elf_(r_bin_elf_get_baddr) (bin);
+			}
 			main += baddr;
 			return main;
 		}
@@ -678,6 +675,7 @@ static inline int noodle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
 	} else return 0;
 	return r_mem_mem (p, 64, (const ut8 *)s, strlen (s)) != NULL;
 }
+
 static inline int needle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
 	if (bin->shstrtab) {
 		ut32 len = bin->shstrtab_size;
