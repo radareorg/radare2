@@ -675,6 +675,8 @@ int main(int argc, char **argv) {
 		RBinInfo *info = r_bin_get_info(core.bin);
 		const char *basename = r_file_basename(info->file);
 
+		// TODO: maybe there is some r2 API to get just path
+		//		from string path/bibary
 		int basename_len = strlen(basename);
 		int all_len = strlen(info->file);
 		char *path = 0;
@@ -684,8 +686,8 @@ int main(int argc, char **argv) {
 
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
-		opt.symbol_server = "http://msdl.microsoft.com/download/symbols";
-		opt.user_agent = "Microsoft-Symbol-Server/6.11.0001.402";
+		opt.symbol_server = (char *)r_config_get(core.config, "pdb.sym_srvr");
+		opt.user_agent = (char *)r_config_get(core.config, "pdb.user_agent");
 		opt.path = path;
 
 		init_pdb_downloader(&opt, &pdb_downloader);

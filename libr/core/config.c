@@ -852,6 +852,10 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->printf = r_cons_printf;
 	cfg->num = core->num;
 
+	/* pdb */
+	SETPREF("pdb.user_agent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsofr symbol server");
+	SETPREF("pdb.sym_srvr", "http://msdl.microsoft.com/download/symbols", "Microsoft symbol server");
+
 	/* anal */
 	SETICB("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (mips)");
 	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Obey anal.from and anal.to ranges");
