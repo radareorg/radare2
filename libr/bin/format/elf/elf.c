@@ -459,8 +459,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				return 0;
 			}
 			main = (ut64)n32;
-			baddr = Elf_(r_bin_elf_get_baddr)(bin);
-			if (!baddr) baddr = 0x400000;
+			baddr = (entry >> 24) << 24;
 			main += baddr;
 			return main;
 		}
