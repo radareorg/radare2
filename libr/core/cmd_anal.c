@@ -1447,6 +1447,37 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_calls(RCore *core, const char *input) {
+	int minop = 1; // 4
+	ut8 buf[32];
+	RAnalOp op;
+	ut64 addr, addr_end;
+	ut64 len = r_num_math (core->num, input+1);
+	if (len > 0xffffff) {
+		eprintf ("Too big\n");
+		return;
+	}
+	if (len<1) {
+		len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+	}
+	addr = core->offset;
+	addr_end = addr + len;
+	while (addr < addr_end) {
+		r_io_read_at (core->io, addr, buf, sizeof (buf));
+		if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))) {
+			if (op.size<1)
+				op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
+			if (op.type == R_ANAL_OP_TYPE_CALL) {
+				eprintf ("af @ 0x%08"PFMT64x"\n", op.jump);
+				r_core_cmdf (core, "af@0x%08"PFMT64x, op.jump);
+			}
+		} else {
+			op.size = minop;
+		}
+		addr += op.size;
+	}
+}
+
 static void cmd_anal_syscall(RCore *core, const char *input) {
 	RSyscallItem *si;
 	RListIter *iter;
@@ -2074,6 +2105,9 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'c':
+		cmd_anal_calls (core, input + 1);
+		break;
+	case 'C':
 		{
 			char *instr_tmp = NULL;
 			int ccl = r_num_math (core->num, &input[2]);					//get cycles to look for
@@ -2171,6 +2205,8 @@ static int cmd_anal(void *data, const char *input) {
 				"Usage:", "a", "[8adefFghoprxstc] [...]",
 				"a8", " [hexpairs]", "analyze bytes",
 				"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
+				"ac", " [len]", "analyze function calls (af @@= `pi len~call[1]`",
+				"aC", " [cycles]", "analyze which op could be executed in [cycles]",
 				"ad", "", "analyze data trampoline (wip)",
 				"ad", " [from] [to]", "analyze data pointers to (from-to)",
 				"ae", " [expr]", "analyze opcode eval expression (see ao)",
@@ -2185,7 +2221,6 @@ static int cmd_anal(void *data, const char *input) {
 				"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
 				"as", " [num]", "analyze syscall using dbg.reg",
 				"at", "[trd+-%*?] [.]", "analyze execution traces",
-				"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 				//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
 				NULL
 			};
