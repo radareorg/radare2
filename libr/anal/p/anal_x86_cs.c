@@ -250,7 +250,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->refptr = INSOP(0).size;
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
-					} else if (INSOP(0).mem.base == X86_REG_RBP) {
+					} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 						op->stackop = R_ANAL_STACK_SET;
 						op->stackptr = regsz;
 					}
@@ -274,7 +274,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->refptr = INSOP(1).size;
 					if (INSOP(1).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
-					} else if (INSOP(1).mem.base == X86_REG_RBP) {
+					} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 						op->stackop = R_ANAL_STACK_GET;
 						op->stackptr = regsz;
 					}
@@ -358,7 +358,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->refptr = INSOP(0).size;
 					if (INSOP(0).mem.base == X86_REG_RIP) {
 						op->ptr += addr + insn->size;
-					} else if (INSOP(0).mem.base == X86_REG_RBP) {
+					} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 						op->stackop = R_ANAL_STACK_SET;
 						op->stackptr = regsz;
 					}
@@ -370,7 +370,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						op->refptr = INSOP(1).size;
 						if (INSOP(1).mem.base == X86_REG_RIP) {
 							op->ptr += addr + insn->size;
-						} else if (INSOP(1).mem.base == X86_REG_RBP) {
+						} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 							op->stackop = R_ANAL_STACK_SET;
 							op->stackptr = regsz;
 						}
@@ -653,7 +653,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					free (dst);
 				}
 				if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-					if (INSOP(0).reg == X86_REG_RSP) {
+					if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
 						op->stackop = R_ANAL_STACK_INC;
 						op->stackptr = INSOP(1).imm;
 					}
@@ -714,7 +714,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					free (dst);
 				}
 				if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-					if (INSOP(0).reg == X86_REG_RSP) {
+					if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
 						op->stackop = R_ANAL_STACK_INC;
 						op->stackptr = -INSOP(1).imm;
 					}

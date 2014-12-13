@@ -413,8 +413,17 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
+	if (ds->varsub) {
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
+			ds->at, R_ANAL_FCN_TYPE_NULL);
+		if (f) {
+			r_parse_varsub (core->parser, f,
+				ds->opstr, ds->strsub, sizeof (ds->strsub));
+			free (ds->opstr);
+			ds->opstr = strdup (ds->strsub);
+		}
+	}
 	char *asm_str = colorize_asm_string (core, ds);
-
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 		// TODO: Use data from code analysis..not raw ds->analop here
@@ -453,16 +462,6 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 	} else {
 		if (!ds->opstr)
 			ds->opstr = strdup (asm_str?asm_str:"");
-	}
-	if (ds->varsub) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
-			ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (f) {
-			r_parse_varsub (core->parser, f,
-				ds->opstr, ds->strsub, sizeof (ds->strsub));
-			free (ds->opstr);
-			ds->opstr = strdup (ds->strsub);
-		}
 	}
 	if (ds->use_esil) {
 		if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -591,15 +590,22 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	if (ds->show_section)
 		section = getSectionName (core, ds->at);
 	// THAT'S OK
-	if (ds->show_color) {
-		r_cons_printf ("%s%s "Color_RESET"%s%s%s"Color_RESET,ds->color_fline,
-			((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==ds->at)
-			?" ":core->cons->vline[LINE_VERT], ds->color_flow, section,
-			ds->refline2);
+	if (ds->show_functions) {
+		if (ds->show_color) {
+			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
+		} else {
+			r_cons_printf ("%s", ds->pre);
+		}
 	} else {
-		r_cons_printf ("%s %s%s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
-				&& f->addr==ds->at)?" ":core->cons->vline[LINE_VERT],
-				section, ds->refline2);
+		r_cons_printf ("  ");
+	}
+	if (ds->show_color && ds->show_lines) {
+		r_cons_printf ("%s%s%s"Color_RESET,
+			section, ds->color_flow,
+			ds->refline2);
+	} else if (ds->show_lines) {
+		r_cons_printf ("%s%s",
+			section, ds->refline2);
 	}
 }
 
@@ -705,11 +711,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	if (ds->show_functions) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
-			//TODO list from anal->sdb_fcns/fcn.0x%%x.v|a (vars/args)
 			if (f->addr == ds->at) {
-				r_core_cmdf (core, "afa @ 0x%llx", ds->at);
-				r_core_cmdf (core, "afv @ 0x%llx", ds->at);
-				//if (ds->at == f->addr)
 				char *sign = r_anal_fcn_to_string (core->anal, f);
 				if (f->type == R_ANAL_FCN_TYPE_LOC) {
 					if (ds->show_color) {
@@ -727,7 +729,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 					const char* korner;
 					const char *fmt = ds->show_color?
 						"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
-						"%s (%s) %s %d\n%s ";
+						"%s (%s) %s %d\n";
 					int corner = (f->size <= ds->analop.size)? RDWN_CORNER: LINE_VERT;
 					corner = LINE_VERT; // 99% of cases
 #if SLOW_BUT_OK
@@ -742,23 +744,53 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 						r_cons_printf (fmt, ds->color_fline, ds->pre, ds->color_fname,
 							(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-							f->name, f->size, corner);
-						r_cons_printf ("%s%s "Color_RESET,
-							ds->color_fline, korner);
+							f->name, f->size);
 					} else {
 						r_cons_printf (fmt, ds->pre,
 							(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-							f->name, f->size, korner);
+							f->name, f->size);
 					}
 				}
 				if (sign) r_cons_printf ("// %s\n", sign);
 				free (sign);
 				sign = NULL;
-				//ds->pre = "| "; // TOFIX!
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				ds->pre = r_str_concat (ds->pre, " ");
 				ds->stackptr = 0;
+				RList *args = r_anal_var_list (core->anal, f, 'a');
+				RList *vars = r_anal_var_list (core->anal, f, 'v');
+				r_list_join(vars, args);
+				RAnalVar *var;
+				RListIter *iter;
+				r_list_foreach (vars, iter, var) {
+					r_cons_printf ("%s%s %s"Color_RESET,
+						ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
+					r_cons_printf ("%s; %s %s %s @ %s%s%d"Color_RESET"\n",
+						ds->color_other,
+						var->kind=='v'?"var":"arg",
+						var->type,
+						var->name,
+						core->anal->reg->name[R_REG_NAME_BP],
+						(var->kind=='v')?"-":"+",
+						var->delta);
+				}
+			}
+		}
+	}
+}
+
+static void handle_print_pre (RCore *core, RDisasmState *ds) {
+	if (ds->show_functions) {
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		if (f) {
+			if (f->addr == ds->at) {
+				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				if (ds->show_color) {
+					r_cons_printf ("%s%s "Color_RESET, ds->color_fline, ds->pre);
+				} else {
+					r_cons_printf ("%s ", ds->pre);
+				}
 			} else if (f->addr+f->size-ds->analop.size== ds->at) {
 				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
 				if (ds->show_color) {
@@ -777,12 +809,12 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				ds->pre = r_str_concat (ds->pre, " ");
 			} else f = NULL;
-			if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
-				//ds->pre = R_LINE_BOTTOM_DCORNER" ";
-				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
-				ds->pre = r_str_concat (ds->pre, " ");
-			}
-		} else r_cons_printf ("  ");
+		}
+		if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
+			//ds->pre = R_LINE_BOTTOM_DCORNER" ";
+			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+			ds->pre = r_str_concat (ds->pre, " ");
+		}
 	}
 }
 
@@ -863,11 +895,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		RFlagItem *flag = r_flag_get_i (core->flags, ds->at);
 		if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
-			if (ds->show_lines && ds->refline) {
-				if (ds->show_color) {
-					r_cons_printf ("%s%s"Color_RESET, ds->color_flow, ds->refline2);
-				} else r_cons_printf (ds->refline);
-			}
+			beginline (core, ds, f);
 			if (ds->show_offset) r_cons_printf (";-- ");
 			if (ds->show_color) r_cons_strcat (ds->color_flag);
 			if (ds->asm_demangle) {
@@ -877,11 +905,6 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
 			}
-			//handle_set_pre (ds, "  ");
-			if (ds->show_color) {
-				r_cons_printf (Color_RESET"%s%s"Color_RESET, ds->color_fline,
-					f ? ds->pre : "  ");
-			} else r_cons_printf (f ? ds->pre : "  ");
 		}
 	}
 }
@@ -1947,7 +1970,6 @@ toro:
 				}
 			}
 		}
-		handle_show_xrefs (core, ds);
 		handle_show_comments_right (core, ds);
 		ret = perform_disassembly (core, ds, buf+idx, len-idx);
 		if (ds->retry) {
@@ -1977,13 +1999,15 @@ toro:
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
-		 {
+		{
 			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, ds->addr, 0);
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
 			}
-		 }
+		}
+		handle_show_xrefs (core, ds);
 		handle_show_flags_option (core, ds);
+		handle_print_pre (core, ds);
 		handle_print_lines_left (core, ds);
 		handle_print_offset (core, ds);
 		handle_print_op_size (core, ds);
@@ -2472,7 +2496,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			/* show type links */
 			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
-			handle_show_xrefs (core, ds);
 			handle_show_comments_right (core, ds);
 			ret = perform_disassembly (core, ds, buf+idx, len - bb_size_consumed);
 			handle_atabs_option (core, ds);
@@ -2499,7 +2522,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
 			}
+			handle_show_xrefs (core, ds);
 			handle_show_flags_option (core, ds);
+			handle_print_pre (core, ds);
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);
 			handle_print_op_size (core, ds);

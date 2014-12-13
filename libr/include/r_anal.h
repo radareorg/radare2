@@ -351,7 +351,7 @@ On x86 acording to Wikipedia
      Prefix group 1
         0xF0: LOCK prefix
         0xF2: REPNE/REPNZ prefix
-        0xF3: REP or REPE/REPZ prefix 
+        0xF3: REP or REPE/REPZ prefix
     Prefix group 2
         0x2E: CS segment override
         0x36: SS segment override
@@ -360,11 +360,11 @@ On x86 acording to Wikipedia
         0x64: FS segment override
         0x65: GS segment override
         0x2E: Branch not taken    (hinting)
-        0x3E: Branch taken 
+        0x3E: Branch taken
     Prefix group 3
-        0x66: Operand-size override prefix 
+        0x66: Operand-size override prefix
     Prefix group 4
-        0x67: Address-size override prefix 
+        0x67: Address-size override prefix
 #endif
 
 typedef enum {
@@ -443,8 +443,8 @@ typedef enum {
 
 typedef enum {
 	R_ANAL_VAR_SCOPE_NULL   = 0,
-	R_ANAL_VAR_SCOPE_GLOBAL = 0x01,
-	R_ANAL_VAR_SCOPE_LOCAL  = 0x02,
+	R_ANAL_VAR_SCOPE_GLOBAL = 0x00,
+	R_ANAL_VAR_SCOPE_LOCAL  = 0x01,
 	R_ANAL_VAR_SCOPE_ARG    = 0x04,
 	R_ANAL_VAR_SCOPE_ARGREG = 0x08,
 	R_ANAL_VAR_SCOPE_RET    = 0x10,
@@ -1181,8 +1181,8 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
     int nlines, int linesout, int linescall);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr);
-R_API int r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind, ut64 addr, int delta);
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
 R_API RAnalCC* r_anal_cc_new ();
