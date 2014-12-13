@@ -154,7 +154,7 @@ static inline int issegoff (const char *w) {
 	if (!ishexch (w[1])) return 0;
 	if (!ishexch (w[2])) return 0;
 	if (!ishexch (w[3])) return 0;
-	// : 
+	// :
 	if (!ishexch (w[5])) return 0;
 	if (!ishexch (w[6])) return 0;
 	if (!ishexch (w[7])) return 0;
@@ -164,7 +164,7 @@ static inline int issegoff (const char *w) {
 #endif
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
-	strncpy (str, data, len);
+	// strncpy (str, data, len);
 #if USE_VARSUBS
 	int i;
 	char *ptr, *ptr2;
@@ -179,7 +179,28 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 		}
 	return R_TRUE;
 #else
-	return R_FALSE;
+	RList *vars = r_anal_var_list (p->anal, f, 'v');
+	RList *args = r_anal_var_list (p->anal, f, 'a');
+	r_list_join (vars, args);
+	RAnalVar *var;
+	RListIter *iter;
+	char oldstr[64], newstr[64];
+	char *tstr = strdup (data);
+	r_list_foreach (vars, iter, var) {
+		snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			var->delta);
+		if (strstr (tstr, oldstr) != NULL) {
+			snprintf (newstr, sizeof (newstr)-1, "[%s - %s]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				var->name);
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		}
+	}
+	strncpy (str, tstr, strlen(tstr));
+	str[strlen (tstr)] = 0;
+	return R_TRUE;
 #endif
 }
 
