@@ -14,7 +14,6 @@ R_API void r_anal_hint_del (RAnal *a, ut64 addr, int size) {
 	if (size>1) {
 		eprintf ("TODO: r_anal_hint_del: in range\n");
 	} else {
-eprintf ("Unset at %llx\n", addr);
 		setf (key, "hint.0x%08"PFMT64x, addr);
 		sdb_unset (a->sdb_hints, key, 0);
 	}

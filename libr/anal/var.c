@@ -240,15 +240,14 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 }
 
 R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
-	int count = 0;
 	char *varlist;
 	RList *list = r_list_new ();
 	if (!a|| !fcn)
 		return list;
 	if (!kind) kind = 'v'; // by default show vars
-	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c", fcn->addr, kind), 0);
+	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
+		fcn->addr, kind), 0);
 	if (varlist) {
-		count = sdb_alen (varlist);
 		char *next, *ptr = varlist;
 		if (varlist && *varlist) {
 			do {

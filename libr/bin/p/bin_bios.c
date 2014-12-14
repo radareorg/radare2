@@ -90,6 +90,7 @@ static RList* sections(RBinFile *arch) {
 		return ret;
 	strcpy (ptr->name, "bootblk");
 	ptr->vsize = ptr->size = 0x10000;
+//printf ("SIZE %d\n", ptr->size);
 	ptr->paddr = arch->buf->length - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->srwx = 7;
@@ -105,7 +106,7 @@ static RList* entries(RBinFile *arch) {
 	ret->free = free;
 	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-	ptr->paddr = 0x70000;
+	ptr->paddr = 0; //0x70000;
 	ptr->vaddr = 0xffff0;
 	r_list_append (ret, ptr);
 	return ret;
