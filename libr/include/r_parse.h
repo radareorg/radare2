@@ -17,6 +17,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_parse);
 
+typedef RList* (*RAnalVarList)(RAnal *anal, RAnalFunction *fcn, int kind);
+
 typedef struct r_parse_t {
 	void *user;
 	int flagspace;
@@ -24,6 +26,7 @@ typedef struct r_parse_t {
 	struct r_parse_plugin_t *cur;
 	RAnal *anal; // weak anal ref
 	RList *parsers;
+	RAnalVarList varlist;
 } RParse;
 
 typedef struct r_parse_plugin_t {

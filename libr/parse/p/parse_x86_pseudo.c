@@ -164,7 +164,6 @@ static inline int issegoff (const char *w) {
 #endif
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
-	// strncpy (str, data, len);
 #if USE_VARSUBS
 	int i;
 	char *ptr, *ptr2;
@@ -179,13 +178,18 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 		}
 	return R_TRUE;
 #else
-	RList *vars = r_anal_var_list (p->anal, f, 'v');
-	RList *args = r_anal_var_list (p->anal, f, 'a');
-	r_list_join (vars, args);
 	RAnalVar *var;
 	RListIter *iter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
+	RList *vars, *args;
+
+	if (!p->varlist)
+		return R_FALSE;
+
+	vars = p->varlist (p->anal, f, 'v');
+	args = p->varlist (p->anal, f, 'a');
+	r_list_join (vars, args);
 	r_list_foreach (vars, iter, var) {
 		snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]",
 			p->anal->reg->name[R_REG_NAME_BP],
@@ -198,8 +202,13 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 			break;
 		}
 	}
-	strncpy (str, tstr, strlen(tstr));
-	str[strlen (tstr)] = 0;
+	if (len > strlen (tstr)) {
+		strncpy (str, tstr, strlen(tstr));
+		str[strlen (tstr)] = 0;
+	} else {
+		// TOO BIG STRING CANNOT REPLACE HERE
+	}
+	free (tstr);
 	return R_TRUE;
 #endif
 }
