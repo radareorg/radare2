@@ -494,6 +494,29 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 	return UT64_MAX;
 }
 
+static boolt is_end_gadget(const RAnalOp aop, const ut8 crop) {
+	switch(aop.type) {
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_CALL:
+		return R_TRUE;
+	}
+	if (crop) { //if conditional jumps, calls and returns should be used for the gadget-search too
+		switch (aop.type) {
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
+		case R_ANAL_OP_TYPE_CCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
+		case R_ANAL_OP_TYPE_CRET:   //i'm a condret
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, int regex, RList* rx_list) {
 	RAnalOp aop;
@@ -502,8 +525,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
 	ut8 nb_instr = 0;
-	const ut8 max_instr = r_config_get_i (core->config, "search.roplen");
-	const ut8 crop = r_config_get_i (core->config, "search.conditionalrop");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
+	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	boolt valid = 0;
 	int grep_find;
 	int search_hit;
@@ -558,26 +581,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 				if (regex) rx = r_list_get_n(rx_list, count++);
 			}
 
-			switch (aop.type) { // end of the gadget
-				case R_ANAL_OP_TYPE_TRAP:
-				case R_ANAL_OP_TYPE_RET:
-				case R_ANAL_OP_TYPE_UCALL:
-				case R_ANAL_OP_TYPE_UJMP:
-				case R_ANAL_OP_TYPE_JMP:
-				case R_ANAL_OP_TYPE_CALL:
-					valid = R_TRUE;
-					goto ret;
-			}
-			if (crop) { //if conditional jumps, calls and returns should be used for the gadget-search too
-				switch (aop.type) {
-					case R_ANAL_OP_TYPE_CJMP:
-					case R_ANAL_OP_TYPE_UCJMP:
-					case R_ANAL_OP_TYPE_CCALL:
-					case R_ANAL_OP_TYPE_UCCALL:
-					case R_ANAL_OP_TYPE_CRET:	//i'm a condret
-						valid = R_TRUE;
-						goto ret;
-				}
+			if (is_end_gadget (aop, crop)) {
+				valid = R_TRUE;
+				goto ret;
 			}
 		}
 		nb_instr++;
@@ -594,7 +600,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	int i=0, end=0, mode=0, increment=1, ret;
 	int delta = 0;
 	RAsmOp asmop;
-	RAnalOp aop;
 	ut8 *buf;
 	RIOMap *map;
 	RList* hitlist;
@@ -607,8 +612,11 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	RList/*<RRegex>*/ *rx_list = NULL;
+	RList/*<int>*/ *end_list = NULL;
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
+	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
 		increment = 4;
@@ -659,6 +667,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_cons_printf ("[");
 
 	r_list_foreach (list, itermap, map) {
+		end_list = r_list_newf(free);
 
 		from = map->from;
 		to = map->to;
@@ -677,85 +686,123 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (!buf) {
 			free (gregexp);
 			r_list_free (rx_list);
+			r_list_free(end_list);
 			return -1;
 		}
 
-		for (i=0; i < delta - 32; i+=increment) {
-			if (i >= end) { // read by chunk of 4k
-				r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
-				end = i + 2048;
+		// Find the end gadgets.
+		for (i = 0; i < delta; i += increment) {
+			RAnalOp end_gadget;
+			// Disassemble one.
+			if (r_anal_op(core->anal, &end_gadget, from+i, buf+i, delta-i) <= 0) {
+				continue;
 			}
-			if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i) > 0) {
-				r_asm_set_pc (core->assembler, from+i);
-				/// XXX isnt the analop alrady disassembling?
-				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
-				if (!ret)
-					continue;
-				hitlist = construct_rop_gadget (core, from+i, buf,
-					i, grep, regexp, rx_list);
-				if (!hitlist)
-					continue;
-
-				if (json) { // json
-					unsigned int size = 0;
-
-					//Handle comma between gadgets
-					if (json_first == 0)
-						r_cons_strcat (",");
-					else
-						json_first = 0;
-
-					r_cons_printf("{\"opcodes\":[");
-					r_list_foreach (hitlist, iter, hit) {
-						r_core_read_at (core, hit->addr, buf, hit->len);
-						r_asm_set_pc (core->assembler, hit->addr);
-						r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-						r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-						size += hit->len;
-						r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,\"opcode\":\"%s\",\"type\":\"%s\"}%s",
-								hit->addr, hit->len, asmop.buf_asm,
-								r_anal_optype_to_string (analop.type), iter->n?",":"");
-					}
-					r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
-				} else {
-					const char *otype;
-					char *buf_asm, *buf_hex;
-
-					// The two loops are distinct for performance reason
-					if (mode == 'l') {
-						hit = r_list_get_top (hitlist);
-						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x":",
-								from+i, hit->addr);
-						r_list_foreach (hitlist, iter, hit) {
-							r_core_read_at (core, hit->addr, buf, hit->len);
-							r_asm_set_pc (core->assembler, hit->addr);
-							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-							buf_asm = r_print_colorize_opcode (asmop.buf_asm,
-								core->cons->pal.reg, core->cons->pal.num);
-							r_cons_printf (" %s%s;", buf_asm, Color_RESET);
-							free (buf_asm);
-						}
+			if (is_end_gadget(end_gadget, crop)) {
+				r_list_append(end_list, &i);
+			}
+			// Right now we have a list of all of the end/stop gadgets.
+			// We can just construct gadgets from a little bit before them.
+		}
+		// If we have no end gadgets, just skip all of this search nonsense.
+		if (r_list_length(end_list) > 0) {
+			int next, idx = 0;
+			// Get the depth of rop search, should just be max_instr
+			// instructions, x86 and friends are weird length instructions, so
+			// we'll just assume 15 byte instructions.
+			int ropdepth = increment == 1 ? max_instr * 15 /* wow, x86 is long */ : max_instr * increment;
+			int* next_ptr = r_list_get_n(end_list, idx);
+			next = *next_ptr;
+			// Start at just before the first end gadget.
+			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
+				if (i >= next) {
+					// We've exhausted the first end-gadget section,
+					// move to the next one.
+					++idx;
+					if (r_list_get_n(end_list, idx)) {
+						next_ptr = r_list_get_n(end_list, idx);
+						next = *next_ptr;
+						i = next - ropdepth;
 					} else {
+						break;
+					}
+				}
+				if (i >= end) { // read by chunk of 4k
+					r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
+					end = i + 2048;
+				}
+				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
+				if (ret) {
+					r_asm_set_pc (core->assembler, from+i);
+					hitlist = construct_rop_gadget (core, from+i, buf,
+							i, grep, regexp, rx_list);
+					if (!hitlist)
+						continue;
+
+					if (json) { // json
+						unsigned int size = 0;
+
+						//Handle comma between gadgets
+						if (json_first == 0)
+							r_cons_strcat (",");
+						else
+							json_first = 0;
+
+						r_cons_printf("{\"opcodes\":[");
 						r_list_foreach (hitlist, iter, hit) {
 							r_core_read_at (core, hit->addr, buf, hit->len);
 							r_asm_set_pc (core->assembler, hit->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-							buf_asm = r_print_colorize_opcode (asmop.buf_asm,
-								core->cons->pal.reg, core->cons->pal.num);
-							buf_hex = r_print_colorize_opcode (asmop.buf_hex,
-								core->cons->pal.reg, core->cons->pal.num);
-							otype = r_print_color_op_type (core->print, analop.type);
-							r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n",
-								hit->addr, otype, buf_hex, buf_asm, Color_RESET);
-							free (buf_asm);
-							free (buf_hex);
+							r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
+							size += hit->len;
+							r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,\"opcode\":\"%s\",\"type\":\"%s\"}%s",
+									hit->addr, hit->len, asmop.buf_asm,
+									r_anal_optype_to_string (analop.type), iter->n?",":"");
 						}
+						r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+					} else {
+						const char *otype;
+						char *buf_asm, *buf_hex;
+
+						// The two loops are distinct for performance reason
+						if (mode == 'l') {
+							// Print gadgets in a 'linear manner', each sequence
+							// on one line.
+							hit = r_list_get_top (hitlist);
+							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x":",
+									from+i, hit->addr);
+							r_list_foreach (hitlist, iter, hit) {
+								r_core_read_at (core, hit->addr, buf, hit->len);
+								r_asm_set_pc (core->assembler, hit->addr);
+								r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+								buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+										core->cons->pal.reg, core->cons->pal.num);
+								r_cons_printf (" %s%s;", buf_asm, Color_RESET);
+								free (buf_asm);
+							}
+						} else {
+							// Print gadgets with new instruction on a new line.
+							r_list_foreach (hitlist, iter, hit) {
+								r_core_read_at (core, hit->addr, buf, hit->len);
+								r_asm_set_pc (core->assembler, hit->addr);
+								r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+								buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+										core->cons->pal.reg, core->cons->pal.num);
+								buf_hex = r_print_colorize_opcode (asmop.buf_hex,
+										core->cons->pal.reg, core->cons->pal.num);
+								otype = r_print_color_op_type (core->print, analop.type);
+								r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n",
+										hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+								free (buf_asm);
+								free (buf_hex);
+							}
+						}
+						r_cons_newline ();
 					}
-					r_cons_newline ();
 				}
 			}
 		}
 		free (buf);
+		r_list_free(end_list);
 	}
 
 	if (json)
@@ -768,6 +815,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	}
 
 	r_list_free (rx_list);
+	r_list_free (end_list);
 	free (gregexp);
 
 	return R_TRUE;
