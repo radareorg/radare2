@@ -1158,10 +1158,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
 	SETI("search.kwidx", 0, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
-	SETI("search.roplen", 5, "Maximum number of instructions for a ROP Gadget");
 	SETPREF("search.show", "true", "Show search results while found (disable if lot of hits)");
 	SETI("search.to", -1, "Search end address");
-	SETPREF("search.conditionalrop", "false", "Use conditional jump, calls and returns for ropsearch too");
+
+	/* rop */
+	SETI("rop.len", 5, "Maximum number of instructions for a ROP Gadget");
+	SETPREF("rop.conditional", "false", "Use conditional jump, calls and returns for ropsearch too");
 
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
