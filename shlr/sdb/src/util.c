@@ -143,9 +143,10 @@ SDB_API char *sdb_anext(char *str, char **next) {
 }
 
 SDB_API const char *sdb_const_anext(const char *str, const char **next) {
-	const char *p = strchr (str, SDB_RS);
-	const char *nxt = p? p+1: NULL;
-	if (next) *next = nxt;
+	if (next) {
+		const char *p = strchr (str, SDB_RS);
+		*next = p? p+1: NULL;
+	}
 	return str;
 }
 

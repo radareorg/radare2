@@ -122,16 +122,23 @@ R_API char *r_cons_pal_parse(const char *str) {
 		return r_cons_color_random (0);
 	}
 	if (!strncmp (s, "rgb:", 4)) {
+		int correct = 0;
 		if (length == 7) {
 			r = rgbnum (s[4],s[4]);
 			g = rgbnum (s[5],s[5]);
 			b = rgbnum (s[6],s[6]);
+			correct = 1;
 		} else if (length == 10) {
 			r = rgbnum(s[4],s[5]);
 			g = rgbnum(s[6],s[7]);
 			b = rgbnum(s[8],s[9]);
+			correct = 1;
 		}
-		r_cons_rgb_str (out, r, g, b, 0);
+		if (correct) {
+			r_cons_rgb_str (out, r, g, b, 0);
+		} else {
+			eprintf ("Invalid rgb string (%s)\n", str);
+		}
 	}
 	for (i=0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name))
