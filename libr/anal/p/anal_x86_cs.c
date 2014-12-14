@@ -91,7 +91,7 @@ static char *getarg(cs_insn *insn, int n, int set) {
 	case X86_OP_MEM:
 		{
 		const char *base = cs_x86_regnames[op.mem.base];
-		const char *index =  cs_x86_regnames[op.mem.index];
+		//const char *index =  cs_x86_regnames[op.mem.index];
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
 		if (scale>1) {

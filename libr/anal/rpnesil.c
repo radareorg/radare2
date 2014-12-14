@@ -503,13 +503,16 @@ static int esil_trap(RAnalEsil *esil) {
 				esil->trap = s;
 				esil->trap_code = d;
 				return 1;
-			} else eprintf ("FUCK\n");
-		} else eprintf ("JKWJKL\n");
+			} else eprintf ("esil_trap: missing parameter in stack\n");
+		} else eprintf ("esil_trap: missing parameter in stack\n");
 	}
 	return 0;
 }
 
 static int esil_syscall(RAnalEsil *esil) {
+	if (esil && esil->anal && esil->anal->cur && esil->anal->cur->esil_trap) {
+		return esil->anal->cur->esil_trap (esil);
+	}
 	// pop number
 	// resolve arguments and run syscall handler
 	eprintf ("SYSCALL: Not yet implemented\n");

@@ -182,7 +182,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 }
 
 static void anop64 (RAnalOp *op, cs_insn *insn) {
-	int i;
 	ut64 addr = op->addr;
 	switch (insn->id) {
 	case ARM64_INS_SUB:
@@ -323,7 +322,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle = 0;
 	cs_insn *insn = NULL;
 	int mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
-	int i, n, ret;
+	int n, ret;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
 	ret = (a->bits==64)?

@@ -935,6 +935,7 @@ typedef struct r_anal_plugin_t {
 
 	RAnalEsilCB esil_init;
 	RAnalEsilLoopCB esil_post_loop;		//cycle-counting, firing interrupts, ...
+	RAnalEsilCB esil_trap;
 	RAnalEsilCB esil_fini;
 } RAnalPlugin;
 
