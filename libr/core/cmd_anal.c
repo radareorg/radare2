@@ -378,9 +378,14 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	case 1: // get fcnaddr
 		fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 	}
-	if ((fcn = r_anal_get_fcn_in (core->anal, fcnaddr, 0)) == NULL ||
-		!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff)) {
-		//eprintf ("Error: Cannot add bb\n");
+	fcn = r_anal_get_fcn_in (core->anal, fcnaddr, 0);
+	if (fcn) {
+		int ret = r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff);
+		if (!ret) {
+			eprintf ("Cannot add basic block\n");
+		}
+	} else {
+		eprintf ("Cannot find function at 0x%"PFMT64x"\n", fcnaddr);
 	}
 	r_anal_diff_free (diff);
 	free (ptr);

@@ -17,21 +17,25 @@ static ut64 sdb_array_get_closer_num (Sdb *db, const char *key, ut64 addr) {
 		num = sdb_atoi (str);
 		if (addr == num)
 			return closer;
-		if (addr<num)
-			continue;
-		if (closer > (addr - num))
-			closer = num;
+		if (addr>=num) {
+			if (closer > (addr - num))
+				closer = num;
+		}
 		ptr = next;
 	} while (next);
 	return closer;
 }
+/*
+ bb.<addr-of-basic-block>=<end-address-of-basic-block>
+ bb.<addr-of-basic-block>.to=array,of,destination,addresses
+*/
 #define Fbb(x) sdb_fmt(0,"bb.%"PFMT64x,x)
 #define FbbTo(x) sdb_fmt(0,"bb.%"PFMT64x".to",x)
 #define Fmin(x) "min"
 #define Fmax(x) "max"
 
 static int bbAdd (Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
-	ut64 last, addr = sdb_array_get_closer_num (db, "bbs", from);
+	ut64 addr_end, addr = sdb_array_get_closer_num (db, "bbs", from);
 	int add = 1;
 	if (addr == UT64_MAX) {
 		// add = 1;
@@ -40,16 +44,27 @@ static int bbAdd (Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 		eprintf ("basic block already analyzed\n");
 		add = 0;
 	} else {
-		last = sdb_num_get (db, Fbb(addr), NULL);
-		if (last) {
-			if (from >= addr && from < last) {
+		/*
+		   from = start address of new basic block
+		   to = end address of new basic block
+		   jump = destination basic block
+		   fail = fallback jump of basic block
+		   addr = previous closer basic block start address
+		   addr_end = previous closer basic block start address
+		 */
+		addr_end = sdb_num_get (db, Fbb(addr), NULL);
+		if (addr_end) {
+			if (from >= addr && from < addr_end) {
 				eprintf ("OVERLAPS MUST SPLIT\n");
-				add = 0;
+				/* reduce current basic block to from */
+				eprintf ("Shrink basic block 0x%08"PFMT64x" to %d\n", addr, (int)(from-addr));
+				sdb_num_set (db, Fbb(addr), addr + from-addr, 0);
+				sdb_num_set (db, FbbTo(addr), from, 0);
+				//to = addr_end; // ???
 			}
 		}
 	}
 	if (add) {
-eprintf ("ADD NEW BB %llx\n", from);
 		sdb_array_add_num (db, "bbs", from, 0);
 		sdb_num_set (db, Fbb(from), to, 0);
 		if (jump != UT64_MAX)
@@ -62,7 +77,7 @@ eprintf ("ADD NEW BB %llx\n", from);
 	return 0;
 }
 
-int analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
+ut64 analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 #define addCall(x) sdb_array_add_num (db, "calls", x, 0);
 #define addUcall(x) sdb_array_add_num (db, "ucalls", x, 0);
 #define addUjmp(x) sdb_array_add_num (db, "ujmps", x, 0);
@@ -204,6 +219,8 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 		char *c, *cjmps = sdb_get (db, "cjmps", NULL);
 		sdb_aforeach (c, cjmps) {
 			ut64 addr = sdb_atoi (c);
+			if (r_cons_singleton ()->breaked)
+				break;
 			analyzeIterative (core, db, addr);
 			sdb_aforeach_next (c);
 		}
@@ -247,7 +264,7 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 		      );
 	// list bbs
 	{
-		ut64 min, max;
+		ut64 min = 0, max = 0;
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
 		int first = 1;
 		sdb_aforeach (c, bbs) {
@@ -263,6 +280,9 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 					min = addr;
 				if (addr_end>max)
 					max = addr_end;
+			}
+			if (addr >= addr_end) {
+				//addr_end = addr + 1; /// XXX recalculate the new addr_end
 			}
 			// check if call destination is inside the function boundaries
 			eprintf ("BB 0x%08"PFMT64x" - 0x%08"PFMT64x"  %d\n",

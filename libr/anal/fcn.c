@@ -667,15 +667,23 @@ R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump,
 			mid = 0;
 			break;
 		} else
-		if ((addr > bbi->addr) && \
-		(addr < bbi->addr+bbi->size))
+		if ((addr > bbi->addr) && (addr < bbi->addr+bbi->size))
 			mid = 1;
 	}
-	if (mid)
-		return R_FALSE;
+	if (mid) {
+		//eprintf ("Basic Block overlaps another one that should be shrinked\n");
+		if (bbi) {
+			/* shrink overlapped basic block */
+			bbi->size = addr - (bbi->addr);
+		}
+		//return R_FALSE;
+	}
 	if (bb == NULL) {
 		bb = appendBasicBlock (fcn, addr);
-		if (!bb) return R_FALSE;
+		if (!bb) {
+			eprintf ("appendBasicBlock failed\n");
+			return R_FALSE;
+		}
 	}
 	bb->addr = addr;
 	bb->size = size;
