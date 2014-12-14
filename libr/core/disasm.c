@@ -732,19 +732,17 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 							f->name, f->size, core->cons->vline[LINE_VERT]); // |-
 					}
 				} else {
-					const char* korner;
 					const char *fmt = ds->show_color?
 						"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
 						"%s (%s) %s %d\n";
+#if SLOW_BUT_OK
 					int corner = (f->size <= ds->analop.size)? RDWN_CORNER: LINE_VERT;
 					corner = LINE_VERT; // 99% of cases
-#if SLOW_BUT_OK
 					RFlagItem *item = r_flag_get_i (core->flags, f->addr);
 					corner = item? LINE_VERT: RDWN_CORNER;
 					if (item)
 						corner = 0;
 #endif
-					korner = ds->show_fcnlines? core->cons->vline[corner]: "";
 					handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
 					if (ds->show_color) {
 						r_cons_printf (fmt, ds->color_fline, ds->pre, ds->color_fname,

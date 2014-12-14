@@ -1119,6 +1119,7 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int inde
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int index, int xs_type, ut64 xs_addr);
 
 R_API RAnalVar *r_anal_var_new();
+R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name);
 R_API RAnalVarAccess *r_anal_var_access_new();
 R_API RList *r_anal_var_list_new();
 R_API RList *r_anal_var_access_list_new();
