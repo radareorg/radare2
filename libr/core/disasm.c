@@ -600,7 +600,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	// THAT'S OK
 	if (ds->show_functions) {
 		if (ds->show_color) {
-			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
+			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, f?ds->pre:"");
 		} else {
 			r_cons_printf ("%s", ds->pre);
 		}
@@ -655,9 +655,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		r_list_foreach (xrefs, iter, refi) {
 			if (refi->at == ds->at) {
 				RAnalFunction *fun = r_anal_get_fcn_in (
-					core->anal, refi->addr,
-					R_ANAL_FCN_TYPE_FCN |
-					R_ANAL_FCN_TYPE_ROOT);
+					core->anal, refi->addr, -1); 
 				beginline (core, ds, fun);
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
