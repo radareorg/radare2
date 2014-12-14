@@ -4,8 +4,7 @@
 #include <r_lib.h>
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	ut16 *w = (ut16*)buf;
-	int n, ret, opsize = -1;
+	int opsize = -1;
         op->type = -1;
 	opsize = 2;
 	switch (buf[0]) {

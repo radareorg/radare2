@@ -416,17 +416,22 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
+	char *asm_str;
+	if (!ds->opstr) {
+		ds->opstr = strdup (ds->asmop.buf_asm);
+	}
 	if (ds->varsub && ds->opstr) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 			ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
+			core->parser->varlist = r_anal_var_list;
 			r_parse_varsub (core->parser, f,
 				ds->opstr, ds->strsub, sizeof (ds->strsub));
 			free (ds->opstr);
 			ds->opstr = strdup (ds->strsub);
 		}
 	}
-	char *asm_str = colorize_asm_string (core, ds);
+	asm_str = colorize_asm_string (core, ds);
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 		// TODO: Use data from code analysis..not raw ds->analop here
@@ -769,7 +774,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				r_list_foreach (vars, iter, var) {
 					r_cons_printf ("%s%s %s"Color_RESET,
 						ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
-					r_cons_printf ("%s; %s %s %s @ %s%s%d"Color_RESET"\n",
+					r_cons_printf ("%s; %s %s %s @ %s%s0x%x"Color_RESET"\n",
 						ds->color_other,
 						var->kind=='v'?"var":"arg",
 						var->type,
@@ -1512,7 +1517,7 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 					ds->pre = r_str_concat (ds->pre, " ");
 				} else {
-					handle_set_pre (ds, "  ");
+					handle_set_pre (ds, "");
 				}
 
 				if (ds->show_calls) {

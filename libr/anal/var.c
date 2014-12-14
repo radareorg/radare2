@@ -288,7 +288,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind) {
 	RListIter *iter;
 	r_list_foreach (list, iter, var) {
 		if (var->kind == kind)
-			anal->printf ("%s %s %s @ %s%s%d\n",
+			anal->printf ("%s %s %s @ %s%s0x%x\n",
 				kind=='v'?"var":"arg",
 				var->type,
 				var->name,

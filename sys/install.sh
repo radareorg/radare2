@@ -8,12 +8,16 @@ gmake --help >/dev/null 2>&1
 cd `dirname $PWD/$0` ; cd ..
 
 # update
-if [ -d .git ]; then
-	git branch | grep "^\* master" > /dev/null
-	if [ $? = 0 ]; then
-		echo "WARNING: Updating from remote repository"
-		git pull
+if [ "$1" != "--without-pull" ]; then
+	if [ -d .git ]; then
+		git branch | grep "^\* master" > /dev/null
+		if [ $? = 0 ]; then
+			echo "WARNING: Updating from remote repository"
+			git pull
+		fi
 	fi
+else
+	shift
 fi
 
 [ "`id -u`" = 0 ] || SUDO=sudo
