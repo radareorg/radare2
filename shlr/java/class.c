@@ -1957,8 +1957,13 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 	//	sz, buf_offset, buf_offset+sz);
 	buffer = r_bin_java_get_attr_buf (bin, sz, offset, buf, len );
 	attr = r_bin_java_read_next_attr_from_buffer (buffer, sz, offset);
-	attr->size = sz;
 	free (buffer);
+	
+	if (!attr){
+		return NULL;
+	}
+	
+	attr->size = sz;
 	return attr;
 }
 
