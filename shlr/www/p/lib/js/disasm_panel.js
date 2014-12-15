@@ -7,6 +7,7 @@ var DisasmPanel = function () {
   this.base = "entry0";
   this.selected = null;
   this.selected_offset = null;
+  this.tmp_address = null;
   this.renaming = null;
   this.renameOldValue = "";
   this.rbox = null;
@@ -69,6 +70,11 @@ DisasmPanel.prototype.handleInputTextChange = function() {
     if ($(this.selected).hasClass('insaddr')) {
       var old_value = get_offset_flag(r2ui._dis.selected_offset);
       rename(r2ui._dis.selected_offset, old_value, this.rbox.value, "offsets");
+    } else if ($(this.selected).hasClass('faddr')) {
+      if ($(this.selected).hasClass('fvar'))
+        r2.cmd("afvn " + r2ui._dis.renameOldValue + " " + r2ui._dis.rbox.value + " @ " + r2ui._dis.selected_offset, function(x){});
+      else if ($(this.selected).hasClass('farg'))
+        r2.cmd("afan " + r2ui._dis.renameOldValue + " " + r2ui._dis.rbox.value + " @ " + r2ui._dis.selected_offset, function(x){});
     } else {
       // TODO, try to recognize other spaces
       var old_value = r2ui._dis.renameOldValue;

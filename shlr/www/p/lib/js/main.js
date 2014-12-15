@@ -266,7 +266,7 @@ function handleKeypress(inEvent) {
     if (address !== undefined && address !== null) {
       if (r2ui._dis.display === "flat") r2ui._dis.display_graph();
       else if (r2ui._dis.display === "graph") r2ui._dis.display_flat();
-      address = r2ui.seek(address, true);
+      r2ui.seek(address, true);
       scroll_to_address(address);
       inEvent.preventDefault();
       document.getElementById("canvas").focus();
@@ -383,10 +383,10 @@ function do_jumpto(address) {
     r2ui._dis.selected_offset = address;
     render_history();
   } else {
-    address = r2ui.seek(address, true);
+    r2ui.seek(address, true);
   }
-  rehighlight_iaddress(address);
-  scroll_to_address(address);
+  rehighlight_iaddress(r2ui._dis.tmp_address);
+  scroll_to_address(r2ui._dis.tmp_address);
   document.getElementById("canvas").focus();
 }
 
@@ -429,6 +429,24 @@ function do_rename(element, inEvent) {
     setTimeout('r2ui._dis.rbox.focus();', 200);
     inEvent.returnValue=false;
     inEvent.preventDefault();
+  } else if (r2ui._dis.renaming === null && element !== null && $(element).hasClass("faddr")) {
+    address = get_address_from_class(element, "faddr");
+    r2ui._dis.selected = element;
+    r2ui._dis.selected_offset = address;
+    r2ui._dis.renaming = element;
+    r2ui._dis.renameOldValue = element.innerText;
+    r2ui._dis.rbox = document.createElement('input');
+    r2ui._dis.rbox.setAttribute("type", "text");
+    r2ui._dis.rbox.setAttribute("id", "rename");
+    r2ui._dis.rbox.setAttribute("style", "border-width: 0;padding: 0;");
+    r2ui._dis.rbox.setAttribute("onChange", "handleInputTextChange()");
+    r2ui._dis.rbox.setAttribute("value", r2ui._dis.renameOldValue);
+    r2ui._dis.rbox.setSelectionRange(r2ui._dis.renameOldValue.length, r2ui._dis.renameOldValue.length);
+    r2ui._dis.renaming.innerHTML = "";
+    r2ui._dis.renaming.appendChild(r2ui._dis.rbox);
+    setTimeout('r2ui._dis.rbox.focus();', 200);
+    inEvent.returnValue=false;
+    inEvent.preventDefault();
   }
   update_binary_details();
 }
@@ -463,39 +481,6 @@ function do_define(element) {
   document.getElementById("canvas").focus();
 }
 
-function rename(offset, old_value, new_value, space) {
-  if (space === undefined) space = "functions";
-  if (space == "functions") {
-    // If current offset is the beginning of a function, rename it with afr
-    r2.cmdj("pdfj @ " + offset, function(x) {
-      if (x !== null && x !== undefined) {
-        if ("0x" + x.addr.toString(16) === offset) {
-          r2.cmd("afn " + new_value + " " + offset, function() {
-            console.log("rename function");
-            r2.update_flags();
-            return;
-          });
-        }
-      }
-    });
-  }
-  // Otherwise just add a flag
-  if (new_value !== "" && old_value !== "") {
-    var cmd = "fs " + space + ";fr " + old_value + " " + new_value;
-    console.log(cmd);
-    r2.cmd(cmd, function() {});
-  } else if (new_value === "" && old_value !== "") {
-    var cmd = "fs " + space + ";f-@" + offset;
-    console.log(cmd);
-    r2.cmd(cmd, function() {});
-  } else if (new_value !== "" && old_value === "") {
-    var cmd = "fs " + space + ";f " + new_value + " @ " + offset;
-    console.log(cmd);
-    r2.cmd(cmd, function() {});
-  }
-  r2.update_flags();
-}
-
 function handleClick(inEvent) {
   if ($(inEvent.target).hasClass('addr')) {
     var address = get_address_from_class(inEvent.target);
@@ -507,6 +492,12 @@ function handleClick(inEvent) {
       r2ui.history_push(address);
       render_history();
     }
+  } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
+    var eid = inEvent.target.id;
+    var address = get_address_from_class(inEvent.target, "faddr");
+    r2ui._dis.selected = inEvent.target;
+    r2ui._dis.selected_offset = address;
+    rehighlight_id(eid);
   }
   document.getElementById("canvas").focus();
 }

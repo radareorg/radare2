@@ -772,16 +772,29 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				RAnalVar *var;
 				RListIter *iter;
 				r_list_foreach (vars, iter, var) {
-					r_cons_printf ("%s%s %s"Color_RESET,
-						ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
-					r_cons_printf ("%s; %s %s %s @ %s%s0x%x"Color_RESET"\n",
-						ds->color_other,
-						var->kind=='v'?"var":"arg",
-						var->type,
-						var->name,
-						core->anal->reg->name[R_REG_NAME_BP],
-						(var->kind=='v')?"-":"+",
-						var->delta);
+					if (ds->show_color) {
+						r_cons_printf ("%s%s %s"Color_RESET,
+							ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
+						r_cons_printf ("%s; %s %s %s @ %s%s0x%x"Color_RESET"\n",
+							ds->color_other,
+							var->kind=='v'?"var":"arg",
+							var->type,
+							var->name,
+							core->anal->reg->name[R_REG_NAME_BP],
+							(var->kind=='v')?"-":"+",
+							var->delta);
+					} else {
+						r_cons_printf ("%s %s",
+							core->cons->vline[LINE_VERT], ds->refline2);
+						r_cons_printf ("; %s %s %s @ %s%s0x%x\n",
+							var->kind=='v'?"var":"arg",
+							var->type,
+							var->name,
+							core->anal->reg->name[R_REG_NAME_BP],
+							(var->kind=='v')?"-":"+",
+							var->delta);
+					}
+
 				}
 			}
 		}
@@ -2332,6 +2345,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		ds = handle_init_ds (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
+		if (ds->varsub && f) {
+			core->parser->varlist = r_anal_var_list;
+			r_parse_varsub (core->parser, f,
+				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
+		}
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 
 		oplen = r_asm_op_get_size (&asmop);

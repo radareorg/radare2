@@ -354,6 +354,16 @@ function html_for_instruction(ins) {
     r2.cmdj("afj " + ins.offset, function(x){
       idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
     });
+    r2.cmdj("afvj @ " + ins.offset, function(x){
+      for (var i in x) {
+        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span id='" + address_canonicalize(ins.offset) + "_" + x[i].ref + "' class='fvar ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+      }
+    });
+    r2.cmdj("afaj @ " + ins.offset, function(x){
+      for (var i in x) {
+        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span id='" + address_canonicalize(ins.offset) + "_" + x[i].ref + "' class='farg ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+      }
+    });
   }
   if (asm_flags) {
     var flags;
@@ -472,7 +482,8 @@ function highlight_instruction(line, instruction) {
         // An address representing data (memory) or code (instruction)
         return "<span class='ec_offset addr addr_" + address_canonicalize(a) + "'>" + a + "</span>";
       } else if (cl === "datamemory") {
-        return "<span class='ec_dataoffset addr addr_" + address_canonicalize(a) + "'>" + a + "</span>";
+        // return "<span class='ec_dataoffset addr addr_" + address_canonicalize(a) + "'>" + a + "</span>";
+        return "<span class='ec_dataoffset'>" + a + "</span>";
       }
     } else {
       // Not an hex value, so a register
@@ -516,14 +527,21 @@ function fnum(a) {
 
 function get_address_from_class(t, type) {
   if (type === undefined) type = "addr";
-  var l = t.className.split(" ").filter(function(x) { return x.substr(0,5) == type+"_"; });
+  var prefix = type+"_";
+  var l = t.className.split(" ").filter(function(x) { return x.substr(0,prefix.length) == type+"_"; });
   if (l.length != 1) return undefined;
   return l[0].split("_")[1].split(" ")[0];
 }
 
-function rehighlight_iaddress(address) {
+function rehighlight_iaddress(address, prefix) {
+  if (prefix === undefined) prefix = "addr";
   $('.autohighlighti').removeClass('autohighlighti');
-  $('.addr_' + address).addClass('autohighlighti');
+  $('.' + prefix + '_' + address).addClass('autohighlighti');
+}
+
+function rehighlight_id(eid) {
+  $('.autohighlighti').removeClass('autohighlighti');
+  $('#' + eid).addClass('autohighlighti');
 }
 
 function get_element_by_address(address) {
@@ -551,6 +569,34 @@ function scroll_to_element(element) {
   r2ui._dis.scrollTo(0,top);
 }
 
+function rename(offset, old_value, new_value, space) {
+  if (space === undefined) space = "functions";
+  if (space == "functions") {
+    // If current offset is the beginning of a function, rename it with afr
+    r2.cmdj("pdfj @ " + offset, function(x) {
+      if (x !== null && x !== undefined) {
+        if ("0x" + x.addr.toString(16) === offset) {
+          r2.cmd("afn " + new_value + " " + offset, function() {
+            r2.update_flags();
+            return;
+          });
+        }
+      }
+    });
+  }
+  // Otherwise just add a flag
+  if (new_value !== "" && old_value !== "") {
+    var cmd = "fs " + space + ";fr " + old_value + " " + new_value;
+    r2.cmd(cmd, function() {});
+  } else if (new_value === "" && old_value !== "") {
+    var cmd = "fs " + space + ";f-@" + offset;
+    r2.cmd(cmd, function() {});
+  } else if (new_value !== "" && old_value === "") {
+    var cmd = "fs " + space + ";f " + new_value + " @ " + offset;
+    r2.cmd(cmd, function() {});
+  }
+  r2.update_flags();
+}
 
 function address_canonicalize(s) {
   s = s.substr(2);
