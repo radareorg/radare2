@@ -148,6 +148,24 @@ enyo.kind ({
         this.rbox.focus();
         inEvent.returnValue=false;
         inEvent.preventDefault();
+      } else if (this.renaming === null && element !== null && $(element).hasClass("faddr")) {
+        var address = get_address_from_class(element, "faddr");
+        this.selected = element;
+        this.selected_offset = address;
+        this.renaming = element;
+        this.renameOldValue = element.innerText;
+        this.rbox = document.createElement('input');
+        this.rbox.setAttribute("type", "text");
+        this.rbox.setAttribute("id", "rename");
+        this.rbox.setAttribute("style", "border-width: 0;padding: 0;");
+        this.rbox.setAttribute("onChange", "handleInputTextChange()");
+        this.rbox.setAttribute("value", this.renameOldValue);
+        this.rbox.setSelectionRange(this.renameOldValue.length, this.renameOldValue.length);
+        this.renaming.innerHTML = "";
+        this.renaming.appendChild(r2ui._dis.rbox);
+        setTimeout('r2ui._dis.rbox.focus();', 200);
+        inEvent.returnValue=false;
+        inEvent.preventDefault();
       }
     }
     // esc
@@ -179,6 +197,12 @@ enyo.kind ({
       if (inEvent.target.className.indexOf("insaddr") === 0) {
         r2ui.seek(address, true);
       }
+    } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
+      var eid = inEvent.target.id;
+      var address = get_address_from_class(inEvent.target, "faddr");
+      r2ui._dis.selected = inEvent.target;
+      r2ui._dis.selected_offset = address;
+      rehighlight_id(eid);
     }
   },
   goToAddress: function() {
@@ -217,48 +241,26 @@ enyo.kind ({
   },
   handleInputTextChange: function() {
     if (this.renaming !== null && this.rbox.value.length > 0) {
-      // Enter belongs to renaming
-      var new_value = this.rbox.value;
-      this.renaming.innerHTML = new_value;
-      renaming = null;
-
-      this.renaming.innerHTML = this.renameOldValue;
-      this.renaming = null;
-
-      var renamed = false;
-      var offset = this.selected_offset;
-      // If current offset is the beginning of a function, rename it with afr
-      r2.cmdj("pdfj", function(x) {
-        if (x !== null && x !== undefined) {
-          if ("0x" + x.addr.toString(16) === offset) {
-            r2.cmd("afn " + new_value, function() {
-              renamed = true;
-             });
-          }
-        }
-      });
-      // Otherwise just add a flag
-      if (!renamed) {
-        var labels = '';
-        r2.cmd("fs functions;f@" + this.selected_offset + "~[2]", function(x) {
-          labels = x.trim().replace('\n', ';');
-        });
-        if (new_value) {
-          var cmd = "fs functions;f-@" + this.selected_offset + ";f+" + new_value + "@" + this.selected_offset + ";";
-          r2.cmd(cmd, function() {});
-        } else {
-          r2.cmd("f-@" + this.selected_offset, function() {});
-        }
-      }
-      r2.update_flags();
-      var address = null;
-      if (this.selected.className.indexOf("insaddr") === 0) {
-        address = get_address_from_class(this.selected);
+      if ($(this.selected).hasClass('insaddr')) {
+        var old_value = get_offset_flag(r2ui._dis.selected_offset);
+        rename(r2ui._dis.selected_offset, old_value, this.rbox.value, "offsets");
+      } else if ($(this.selected).hasClass('faddr')) {
+        if ($(this.selected).hasClass('fvar'))
+          r2.cmd("afvn " + r2ui._dis.renameOldValue + " " + r2ui._dis.rbox.value + " @ " + r2ui._dis.selected_offset, function(x){});
+        else if ($(this.selected).hasClass('farg'))
+          r2.cmd("afan " + r2ui._dis.renameOldValue + " " + r2ui._dis.rbox.value + " @ " + r2ui._dis.selected_offset, function(x){});
       } else {
-        address = get_address_from_class(this.selected.parentNode.parentNode.firstChild);
+        // TODO, try to recognize other spaces
+        var old_value = r2ui._dis.renameOldValue;
+        rename(r2ui._dis.selected_offset, old_value, r2ui._dis.rbox.value, "*");
       }
-      if (address !== null) r2ui.seek(address, false);
-      else r2ui.seek("$$", false);
+      var instruction;
+      if (this.display == "flat") instruction = $(this.selected).closest(".instructionbox").find('.insaddr')[0];
+      if (this.display == "graph") instruction = $(this.selected).closest(".instruction").find('.insaddr')[0];
+      this.renaming = null;
+      var address = get_address_from_class(instruction);
+      r2ui.seek(address, false);
+      scroll_to_address(address);
     }
   },
   min: 0,

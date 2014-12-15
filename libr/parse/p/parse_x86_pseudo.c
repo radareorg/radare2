@@ -191,13 +191,26 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	args = p->varlist (p->anal, f, 'a');
 	r_list_join (vars, args);
 	r_list_foreach (vars, iter, var) {
-		snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]",
+		if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
+			"[%s - %d]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			var->delta);
+		else snprintf (oldstr, sizeof (oldstr)-1,
+			"[%s - 0x%x]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			var->delta);
+		snprintf (newstr, sizeof (newstr)-1, "[%s-%s]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			var->name);
+		if (strstr (tstr, oldstr) != NULL) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		}
+		// Try with no spaces
+		snprintf (oldstr, sizeof (oldstr)-1, "[%s-0x%x]",
 			p->anal->reg->name[R_REG_NAME_BP],
 			var->delta);
 		if (strstr (tstr, oldstr) != NULL) {
-			snprintf (newstr, sizeof (newstr)-1, "[%s - %s]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				var->name);
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		}
@@ -207,6 +220,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 		str[strlen (tstr)] = 0;
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
+		return R_FALSE;
 	}
 	free (tstr);
 	return R_TRUE;
