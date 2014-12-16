@@ -797,7 +797,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 
 				}
 			}
-		}
+		} else r_cons_printf ("  ");
 	}
 }
 

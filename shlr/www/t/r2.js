@@ -78,7 +78,7 @@ function dump(obj) {
 }
 
 r2.analAll = function() {
-  r2.cmd ("e anal.hasnext=false;aa;ac", function() {});
+  r2.cmd ("aa", function() {});
 }
 
 r2.analOp = function(addr, cb) {
