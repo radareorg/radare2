@@ -689,6 +689,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free(end_list);
 			return -1;
 		}
+		r_io_read_at (core->io, from, buf, delta);
 
 		// Find the end gadgets.
 		for (i = 0; i < delta; i += increment) {
