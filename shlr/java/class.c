@@ -1971,7 +1971,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	RBinJavaAttrInfo *attr = NULL;
 	ut64 offset = 0;
 	RBinJavaAttrMetas* type_info = NULL;
-	if (sz<4)
+	if (((int)sz)<6) // why st64 when it can be int?
 		return NULL;
 	if (buffer) {
 		char* name = NULL;
