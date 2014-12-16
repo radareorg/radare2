@@ -51,28 +51,19 @@ static ut64 baddr(RBinFile *arch) {
 }
 
 static char *flagname (const char *class, const char *method) {
-	char *p, *str, *s;
+	int s_len;
+	char *p, *str, *s, *s_end;
 	if (!class || !method)
 		return NULL;
-	s = malloc (strlen (class) + strlen (method)+10);
+	s_len = strlen (class) + strlen (method)+10;
+	s = malloc (s_len);
+	if (!s) return NULL;
+	s_end = s + s_len;
 	str = s;
 	p = (char*)r_str_lchr (class, '$');
 	if (!p) p = (char *)r_str_lchr (class, '/');
-//eprintf ("D=%d (%s)\n", p, p?p:".");
 	p = (char*)r_str_rchr (class, p, '/');
-#if 1
-	//if (!p) p = class; else p--;
-//if (p) p = r_str_lchr (p, '/');
-//eprintf ("P=%d\n", p);
-#if 0
-	if (!p) {
-		char *q = r_str_lchr (p-1, '/');
-		if (q) p = q;
-	}
-#endif
-	if (p) class = p+1;
-#endif
-//eprintf ("NAME (%s)\n", class);
+	if (p && *p) class = p+1;
 	for (str=s; *class; class++) {
 		switch (*class) {
 		case '$':
