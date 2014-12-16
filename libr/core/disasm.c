@@ -2339,12 +2339,12 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		ds = handle_init_ds (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
+		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list;
 			r_parse_varsub (core->parser, f,
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
-		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 
 		oplen = r_asm_op_get_size (&asmop);
 		r_cons_printf (i>0? ",{": "{");
