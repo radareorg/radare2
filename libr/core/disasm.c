@@ -1225,7 +1225,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				break;
 			case R_META_TYPE_FORMAT:
 				r_cons_printf ("format %s {\n", mi->str);
-				r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, -1, NULL);
+				r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, -1, NULL, NULL);
 				r_cons_printf ("} %d\n", mi->size);
 				ds->oplen = ds->asmop.size = ret = (int)mi->size;
 				free (ds->line);

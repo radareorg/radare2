@@ -296,76 +296,28 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				return;
 			}
 			if (dot) {
-				// TODO: support multiple levels
 				*dot++ = 0;
+				fmt = r_strht_get (core->print->formats, name);
 				eq = strchr (dot, '=');
 				if (eq) {
-					char *res;
-					fmt = r_strht_get (core->print->formats, name);
-					// TODO: spaguettti, reuse code below.. and handle atoi() too
-					if (fmt) {
-						res = strdup (fmt);
-						*eq++ = 0;
-#if 0
-						ut64 v;
-						v = r_num_math (NULL, eq);
-						r_print_format (core->print, core->offset,
-								core->block, core->blocksize, fmt, v, eq);
-#endif
-						r_str_word_set0 (res);
-						for (i = 1; ; i++) {
-							const char *k = r_str_word_get0 (res, i);
-							if (!k || !*k) {
-								eprintf ("Unknown field '%s'\n", dot);
-								break;
-							}
-							if (!strcmp (k, dot)) {
-								r_print_format (core->print, core->offset,
-										core->block, core->blocksize, fmt, i-1, eq);
-								break;
-							}
-						}
-						free (res);
-					}
+					*eq++ = 0;
+					r_print_format (core->print, core->offset,
+							core->block, core->blocksize, fmt, 0, eq, dot);
 				} else {
-					const char *k, *fmt = r_strht_get (core->print->formats, name);
-					if (fmt) {
-						if (atoi (dot)>0 || *dot=='0') {
-							// indexed field access
-							r_print_format (core->print, core->offset,
-									core->block, core->blocksize, fmt, atoi (dot), NULL);
-						} else {
-							char *res = strdup (fmt);
-							r_str_word_set0 (res);
-							for (i = 1; ; i++) {
-								k = r_str_word_get0 (res, i);
-								if (!k || !*k) {
-									eprintf ("Unknown field '%s'\n", dot);
-									break;
-								}
-								if (!strcmp (k, dot)) {
-									r_print_format (core->print, core->offset,
-											core->block, core->blocksize, fmt, i-1, NULL);
-									break;
-								}
-							}
-							free (res);
-						}
-					} else {
-
-					}
+					r_print_format (core->print, core->offset,
+							core->block, core->blocksize, fmt, 0, NULL, dot);
 				}
 			} else {
 				const char *fmt = r_strht_get (core->print->formats, name);
 				if (fmt) {
 					r_print_format (core->print, core->offset,
-							core->block, len, fmt, flag, NULL);
+							core->block, len, fmt, flag, NULL, NULL);
 				} else eprintf ("Unknown format (%s)\n", name);
 			}
 			free (name);
 		}
 	} else r_print_format (core->print, core->offset,
-			core->block, len, input+1, flag, NULL);
+			core->block, len, input+1, flag, NULL, NULL);
 	free (input);
 }
 
