@@ -1,0 +1,19 @@
+Language: Cpp
+MaxEmptyLinesToKeep: 1
+SpaceBeforeParens: Always
+SpaceInEmptyParentheses: false
+BasedOnStyle: LLVM
+ContinuationIndentWidth: 8
+IndentCaseLabels: false
+IndentFunctionDeclarationAfterType: false
+IndentWidth: 8
+UseTab: Always
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: false
+ColumnLimit: 78
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+# This requires LLVM > 3.5
+AllowShortBlocksOnASingleLine: true
