@@ -518,15 +518,13 @@ static boolt is_end_gadget(const RAnalOp aop, const ut8 crop) {
 }
 
 //TODO: follow unconditional jumps
-static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, int regex, RList* rx_list) {
-	RAnalOp aop;
+static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, int regex, RList* rx_list, int endaddr) {
 	RAsmOp asmop;
 	const char* start, *end;
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
 	ut8 nb_instr = 0;
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
-	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	boolt valid = 0;
 	int grep_find;
 	int search_hit;
@@ -548,43 +546,39 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	}
 
 	while (nb_instr < max_instr) {
-		if (r_anal_op (core->anal, &aop, addr, buf+idx, 32) > 0) {
-			r_asm_set_pc (core->assembler, addr);
-			if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 32))
-				goto ret;
-			else if (aop.size < 1 || aop.type == R_ANAL_OP_TYPE_ILL)
-				goto ret;
+		r_asm_set_pc (core->assembler, addr);
+		if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 15))
+			goto ret;
 
-			hit = r_core_asm_hit_new ();
-			hit->addr = addr;
-			hit->len = aop.size;
-			r_list_append (hitlist, hit);
+		hit = r_core_asm_hit_new ();
+		hit->addr = addr;
+		hit->len = asmop.size;
+		r_list_append (hitlist, hit);
 
-			//Move on to the next instruction
-			idx += aop.size;
-			addr += aop.size;
-			if (rx) {
-				grep_find = r_regex_exec(rx, asmop.buf_asm, 0, 0, 0);
-				search_hit = (end && grep && (grep_find < 1));
-			} else {
-				search_hit = (end && grep && !strncasecmp (asmop.buf_asm, start, end - start));
-			}
+		//Move on to the next instruction
+		idx += asmop.size;
+		addr += asmop.size;
+		if (rx) {
+			grep_find = r_regex_exec(rx, asmop.buf_asm, 0, 0, 0);
+			search_hit = (end && grep && (grep_find < 1));
+		} else {
+			search_hit = (end && grep && !strncasecmp (asmop.buf_asm, start, end - start));
+		}
 
-			//Handle (possible) grep
-			if (search_hit) {
-				if (end[0] == ';') { // fields are semicolon-separated
-					start = end + 1; // skip the ;
-					end = strstr (start, ";");
-					end = end?end: start + strlen(start); //latest field?
-				} else
-					end = NULL;
-				if (regex) rx = r_list_get_n(rx_list, count++);
-			}
+		//Handle (possible) grep
+		if (search_hit) {
+			if (end[0] == ';') { // fields are semicolon-separated
+				start = end + 1; // skip the ;
+				end = strstr (start, ";");
+				end = end?end: start + strlen(start); //latest field?
+			} else
+				end = NULL;
+			if (regex) rx = r_list_get_n(rx_list, count++);
+		}
 
-			if (is_end_gadget (aop, crop)) {
-				valid = R_TRUE;
-				goto ret;
-			}
+		if (endaddr <= (idx - asmop.size)) {
+			valid = R_TRUE;
+			goto ret;
 		}
 		nb_instr++;
 	}
@@ -612,7 +606,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	RList/*<RRegex>*/ *rx_list = NULL;
-	RList/*<int>*/ *end_list = NULL;
+	RList/*<int>*/ *end_list = r_list_new ();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
@@ -667,7 +661,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_cons_printf ("[");
 
 	r_list_foreach (list, itermap, map) {
-		end_list = r_list_newf(free);
 
 		from = map->from;
 		to = map->to;
@@ -686,7 +679,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (!buf) {
 			free (gregexp);
 			r_list_free (rx_list);
-			r_list_free(end_list);
+			r_list_free (end_list);
 			return -1;
 		}
 		r_io_read_at (core->io, from, buf, delta);
@@ -699,29 +692,27 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				continue;
 			}
 			if (is_end_gadget(end_gadget, crop)) {
-				r_list_append(end_list, &i);
+				r_list_append(end_list, (void*)(intptr_t)i);
 			}
 			// Right now we have a list of all of the end/stop gadgets.
 			// We can just construct gadgets from a little bit before them.
 		}
+		r_list_reverse (end_list);
 		// If we have no end gadgets, just skip all of this search nonsense.
 		if (r_list_length(end_list) > 0) {
-			int next, idx = 0;
+			int next;
 			// Get the depth of rop search, should just be max_instr
 			// instructions, x86 and friends are weird length instructions, so
 			// we'll just assume 15 byte instructions.
 			int ropdepth = increment == 1 ? max_instr * 15 /* wow, x86 is long */ : max_instr * increment;
-			int* next_ptr = r_list_get_n(end_list, idx);
-			next = *next_ptr;
+			next = (intptr_t)r_list_pop (end_list);
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
 				if (i >= next) {
 					// We've exhausted the first end-gadget section,
 					// move to the next one.
-					++idx;
-					if (r_list_get_n(end_list, idx)) {
-						next_ptr = r_list_get_n(end_list, idx);
-						next = *next_ptr;
+					if (r_list_get_n(end_list, 0)) {
+						next = (intptr_t)r_list_pop (end_list);
 						i = next - ropdepth;
 					} else {
 						break;
@@ -735,7 +726,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				if (ret) {
 					r_asm_set_pc (core->assembler, from+i);
 					hitlist = construct_rop_gadget (core, from+i, buf,
-							i, grep, regexp, rx_list);
+							i, grep, regexp, rx_list, next);
 					if (!hitlist)
 						continue;
 
@@ -803,7 +794,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			}
 		}
 		free (buf);
-		r_list_free(end_list);
 	}
 
 	if (json)
