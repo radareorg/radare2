@@ -2,11 +2,11 @@ include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
 WGET?=wget
-CS_VER=2.1.2
-CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
+CS_VER=3.0
+CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
 CS_URL=https://github.com/aquynh/capstone.git
-CS_UPD=20141212
+CS_UPD=20141217
 CS_BRA=next
 CS_TIP=b53a59af53ffbd5dbe8dbcefba41a00cf4fc7469
 
