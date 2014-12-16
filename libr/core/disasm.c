@@ -604,8 +604,6 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 		} else {
 			r_cons_printf ("%s", ds->pre);
 		}
-	} else {
-		r_cons_printf ("  ");
 	}
 	if (ds->show_color && ds->show_lines) {
 		r_cons_printf ("%s%s%s"Color_RESET,
@@ -917,8 +915,8 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			if (ds->show_offset) r_cons_printf (";-- ");
 			if (ds->show_color) r_cons_strcat (ds->color_flag);
 			if (ds->asm_demangle) {
-				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
-				else r_cons_printf ("%s:\n", flag->realname);
+				if (ds->show_functions) r_cons_printf ("%s:\n  ", flag->realname);
+				else r_cons_printf ("%s:\n  ", flag->realname);
 			} else {
 				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
@@ -1526,7 +1524,7 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 					ds->pre = r_str_concat (ds->pre, " ");
 				} else {
-					handle_set_pre (ds, "");
+					handle_set_pre (ds, "  ");
 				}
 
 				if (ds->show_calls) {
