@@ -491,13 +491,51 @@ function handleClick(inEvent) {
     if ($(inEvent.target).hasClass('insaddr')) {
       r2ui.history_push(address);
       render_history();
+
+      var get_more_instructions = false;
+      var next_instruction;
+      var prev_instruction;
+      var address
+      if (r2ui._dis.display == "flat") {
+        next_instruction = $(r2ui._dis.selected).closest(".instructionbox").next().find('.insaddr')[0];
+        if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) {
+          get_more_instructions = true;
+          address = get_address_from_class(next_instruction);
+        }
+        prev_instruction = $(r2ui._dis.selected).closest(".instructionbox").prev().find('.insaddr')[0];
+        if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) < 10) {
+          get_more_instructions = true;
+          address = get_address_from_class(prev_instruction);
+        }
+      }
+      if (r2ui._dis.display == "graph") {
+        var next_instruction = $(r2ui._dis.selected).closest(".instruction").next().find('.insaddr')[0];
+        if (next_instruction === undefined || next_instruction === null) {
+          next_instruction = $(r2ui._dis.selected).closest(".basicblock").next().find('.insaddr')[0];
+        }
+        var prev_instruction = $(r2ui._dis.selected).closest(".instruction").prev().find('.insaddr')[0];
+        if (prev_instruction === undefined || prev_instruction === null) {
+          prev_instruction = $(r2ui._dis.selected).closest(".basicblock").prev().find('.insaddr').last()[0];
+        }
+      }
+      if (get_more_instructions) {
+        r2ui.seek(address, false);
+        rehighlight_iaddress(address);
+        scroll_to_address(address);
+        document.getElementById("canvas").focus();
+      }
     }
   } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
-    var eid = inEvent.target.id;
+    var eid = null;
     var address = get_address_from_class(inEvent.target, "faddr");
     r2ui._dis.selected = inEvent.target;
     r2ui._dis.selected_offset = address;
-    rehighlight_id(eid);
+    var classes = inEvent.target.className.split(' ');
+    for (var j in classes) {
+      var klass = classes[j];
+      if (klass.indexOf("id_") === 0) eid = klass.substring(3);
+    }
+    if (eid !== null) rehighlight_iaddress(eid, "id");
   }
   document.getElementById("canvas").focus();
 }

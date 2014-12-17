@@ -92,6 +92,9 @@ r2.analOp = function(addr, cb) {
   });
 }
 
+r2.varMap = [];
+r2.argMap = [];
+
 function objtostr(obj) {
   var str = "";
   for (var a in obj)
@@ -166,10 +169,11 @@ r2.get_disasm_before_after = function(offset, start, end, cb) {
   r2.cmd("pDj " + start + "@" + offset, function(x) {
     before = JSON.parse(x);
   });
-  r2.cmd("pDj " + end + "@" + offset, function(x) {
+  r2.cmd("pdj " + end + "@" + offset, function(x) {
     after = JSON.parse(x);
   });
   var opcodes = before.concat(after);
+  // cb(opcodes.splice(0,20));
   cb(opcodes);
 }
 

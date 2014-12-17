@@ -392,7 +392,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 			current_buf_pos += instrlen, at += instrlen, hit_count++) {
 			r_asm_set_pc (core->assembler, at);
 			//XXX HACK We need another way to detect invalid disasm!!
-			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid")) {
+			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid") || strstr (op.buf_asm, ".byte")) {
 				break;
 			}
 		}
