@@ -9,6 +9,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	char *q, *p;
 	const char *str;
 	int found = 0, delta = 0, adelta = 0;
+	const char *cmdhit = r_config_get (core->config, "cmd.hit");
 #define NAH 32
 
 	if (--depth<0)
@@ -63,6 +64,9 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 				*q = '\n';
 				strcpy (q+1, q+((q[2]==' ')? 3: 2));
 			}
+		if (cmdhit && *cmdhit) {
+			r_core_cmd0 (core, cmdhit);
+		}
 		// TODO: This must be a callback .. move this into RSearch?
 		r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth-depth, p);
 		r_cons_clear_line (1);
