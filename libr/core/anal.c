@@ -1536,9 +1536,12 @@ R_API int r_core_anal_all(RCore *core) {
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
 		ut64 addr = va? binmain->vaddr: binmain->paddr; // offset + va?baddr+binmain->vaddr:binmain->paddr;
 		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+#if 0
+// This will rename sym.main to 'main'. NOPE
 		/* rename function */
 		if (!item || item->offset != addr)
 			r_core_cmdf (core, "afn main 0x%08"PFMT64x, addr);
+#endif
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
