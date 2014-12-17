@@ -2131,15 +2131,15 @@ static int cmd_anal(void *data, const char *input) {
 		r_cons_break_end();
 		if (input[1] == '?') {
 			const char* help_msg[] = {
-				"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
-				"aa", " ", "alias for 'af@@ sym.*;af@entry0;.afna @@ fcn.*'",
-				"aa0", "", "do not autoname functions after aa (see afna)",
+				"Usage:", "aa[0*?]", " # see also 'af', 'ac' and 'afna'",
+				"aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
+				"aaa", "", "autoname functions after aa (see afna)",
 				"aa*", "", "print the commands that 'aa' will run",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == '*') {
-			r_cons_printf ("af @@ sym.* ; af @ entry0 ; .afna @@ fcn.*\n");
-		} else if (input[1] != '0') {
+			r_cons_printf ("af @@ sym.* ; af @ entry0\n");// ; .afna @@ fcn.*\n");
+		} else if (input[1] != 'a') {
 			r_core_cmd0 (core, ".afna @@ fcn.*");
 		}
 		break;

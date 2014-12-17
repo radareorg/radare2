@@ -165,7 +165,7 @@ static void print_format_help(RCore *core) {
 
 static void cmd_print_format (RCore *core, const char *_input, int len) {
 	char *input;
-	int i, flag = -1;
+	int flag = -1;
 	switch (_input[1]) {
 	case '*':
 		_input++;

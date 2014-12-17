@@ -1511,34 +1511,34 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 R_API int r_core_anal_all(RCore *core) {
 	RList *list;
 	RListIter *iter;
+	RFlagItem *item;
 	RAnalFunction *fcni;
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
 	ut64 baddr;
 	ut64 offset;
-	int depth =r_config_get_i (core->config, "anal.depth");
+	int depth = r_config_get_i (core->config, "anal.depth");
 	int va = core->io->va || core->io->debug;
 
 	baddr = r_bin_get_baddr (core->bin);
 	offset = r_bin_get_offset (core->bin);
 	/* Analyze Functions */
 	/* Entries */
-	{
-	RFlagItem *item = r_flag_get (core->flags, "entry0");
+	item = r_flag_get (core->flags, "entry0");
 	if (item) {
 		r_core_anal_fcn (core, item->offset, -1, R_ANAL_REF_TYPE_NULL, depth);
 		r_core_cmdf (core, "afn entry0 0x%08"PFMT64x, item->offset);
 	} else {
 		r_core_cmd0 (core, "af");
 	}
-	}
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
 		ut64 addr = va? binmain->vaddr: binmain->paddr; // offset + va?baddr+binmain->vaddr:binmain->paddr;
 		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 		/* rename function */
-		r_core_cmdf (core, "afn main 0x%08"PFMT64x, addr);
+		if (!item || item->offset != addr)
+			r_core_cmdf (core, "afn main 0x%08"PFMT64x, addr);
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
@@ -1558,7 +1558,7 @@ R_API int r_core_anal_all(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (core->cons->breaked)
 			break;
-		if (!memcmp (fcni->name, "sym.", 4) || !memcmp (fcni->name, "main", 4))
+		if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
 	}
 	return R_TRUE;
