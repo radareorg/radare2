@@ -355,14 +355,20 @@ function html_for_instruction(ins) {
       idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
     });
     r2.cmdj("afvj @ " + ins.offset, function(x){
+      var fvars = [];
       for (var i in x) {
-        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span id='" + address_canonicalize(ins.offset) + "_" + x[i].ref + "' class='fvar ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='fvar id_" + address_canonicalize(ins.offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+        fvars[fvars.length] = {name: x[i].name, id:  address_canonicalize(ins.offset) + "_" + x[i].ref};
       }
+      r2.varMap[ins.fcn_addr] = fvars;
     });
     r2.cmdj("afaj @ " + ins.offset, function(x){
+      var args = [];
       for (var i in x) {
-        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span id='" + address_canonicalize(ins.offset) + "_" + x[i].ref + "' class='farg ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='farg id_" + address_canonicalize(ins.offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+        args[args.length] = {name: x[i].name, id:  address_canonicalize(ins.offset) + "_" + x[i].ref};
       }
+      r2.argMap[ins.fcn_addr] = args;
     });
   }
   if (asm_flags) {
@@ -405,6 +411,22 @@ function html_for_instruction(ins) {
       idump += '<span class="bytes ec_other">' + bytes + '</span> ';
     }
   }
+
+  var opcode = highlight_instruction(ins.opcode, true);
+  if ((r2.varMap[ins.fcn_addr] !== null && r2.varMap[ins.fcn_addr] !== undefined && r2.varMap[ins.fcn_addr].length > 0) ||
+      (r2.argMap[ins.fcn_addr] !== null && r2.argMap[ins.fcn_addr] !== undefined && r2.argMap[ins.fcn_addr].length > 0)) {
+    for (var i in r2.varMap[ins.fcn_addr]) {
+      var var_name = r2.varMap[ins.fcn_addr][i].name;
+      var var_id = r2.varMap[ins.fcn_addr][i].id;
+      opcode = opcode.replace(var_name, "<span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(var_name) + "</span>");
+    }
+    for (var i in r2.argMap[ins.fcn_addr]) {
+      var arg_name = r2.argMap[ins.fcn_addr][i];
+      var arg_id = r2.argMap[ins.fcn_addr][i].id;
+      opcode = opcode.replace(arg_name, "<span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(var_name) + "</span>");
+    }
+  }
+
   if (ins.type !== undefined && ins.type !== null) {
     if (contains(math, ins.type)) ins.type = "math";
     if (contains(bin, ins.type)) ins.type = "bin";
@@ -414,11 +436,11 @@ function html_for_instruction(ins) {
     if (ins.type == "ujmp") ins.type = "jmp";
     if (ins.type == "ucall") ins.type = "call";
     if (ins.type == "lea") ins.type = "mov";
-
-    idump += '<div class="instructiondesc ec_' + ins.type + '">' + highlight_instruction(ins.opcode, true) + '</div> ';
+    idump += '<div class="instructiondesc ec_' + ins.type + '">' + opcode + '</div> ';
   } else {
-    idump += '<div class="instructiondesc">' + highlight_instruction(ins.opcode, true) + '</div> ';
+    idump += '<div class="instructiondesc">' + opcode + '</div> ';
   }
+
   if (ins.comment && asm_cmtright) {
     idump += '<span class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
   }

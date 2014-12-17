@@ -600,9 +600,9 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	// THAT'S OK
 	if (ds->show_functions) {
 		if (ds->show_color) {
-			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, f?ds->pre:"");
+			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, f?ds->pre:"  ");
 		} else {
-			r_cons_printf ("%s", ds->pre);
+			r_cons_printf ("%s", f?ds->pre:"  ");
 		}
 	}
 	if (ds->show_color && ds->show_lines) {
@@ -653,7 +653,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		r_list_foreach (xrefs, iter, refi) {
 			if (refi->at == ds->at) {
 				RAnalFunction *fun = r_anal_get_fcn_in (
-					core->anal, refi->addr, -1); 
+					core->anal, refi->addr, -1);
 				beginline (core, ds, fun);
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
@@ -791,7 +791,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 
 				}
 			}
-		} else r_cons_printf ("  ");
+		} //else r_cons_printf ("  ");
 	}
 }
 
@@ -824,7 +824,7 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				ds->pre = r_str_concat (ds->pre, " ");
 			} else f = NULL;
-		}
+		} else r_cons_printf ("  ");
 		if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
 			//ds->pre = R_LINE_BOTTOM_DCORNER" ";
 			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
@@ -915,8 +915,8 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			if (ds->show_offset) r_cons_printf (";-- ");
 			if (ds->show_color) r_cons_strcat (ds->color_flag);
 			if (ds->asm_demangle) {
-				if (ds->show_functions) r_cons_printf ("%s:\n  ", flag->realname);
-				else r_cons_printf ("%s:\n  ", flag->realname);
+				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
+				else r_cons_printf ("%s:\n", flag->realname);
 			} else {
 				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
@@ -2295,10 +2295,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	RAnalFunction *f;
 	int i, oplen, ret, line;
 	const ut64 old_offset = core->offset;
+	ut64 at;
+	int dis_opcodes = 0;
 	r_cons_printf ("[");
 
-	if (!nb_bytes) { // Disassemble `nb_opcodes` opcodes.
-		nb_bytes = core->blocksize;
+	if (nb_opcodes != 0) { // Disassemble `nb_opcodes` opcodes.
 		if (nb_opcodes < 0) {
 			/* Backward disassembly of `nb_opcodes` opcodes:
 			 * - We compute the new starting offset
@@ -2306,6 +2307,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			nb_opcodes = -nb_opcodes;
 			r_core_asm_bwdis_len (core, &nb_bytes, &addr, nb_opcodes);
 			r_core_read_at (core, addr, buf, nb_bytes);
+		} else {
+			// If we are disassembling a positive number of lines, enable dis_opcodes
+			// to be used to finish the loop
+			// If we are disasembling a negative number of lines, we just calculate
+			// the equivalent addr and nb_size and scan a positive number of BYTES
+			// so keep dis_opcodes = 0;
+			dis_opcodes = 1;
 		}
 	} else if (!nb_opcodes) { // Dissasemble `nb_bytes` bytes
 		if (nb_bytes < 0) {
@@ -2323,11 +2331,18 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 	// TODO: add support for anal hints
-	for (i=line=0; i<nb_bytes;) {
-		ut64 at = addr +i;
+	i=line=0;
+	do {
+		at = addr +i;
 		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
+		if (dis_opcodes == 1) {
+			// Initialize buf with first nb_bytes (32) bytes
+			r_core_read_at (core, at, buf, nb_bytes);
+			ret = r_asm_disassemble (core->assembler, &asmop, buf, nb_bytes);
+		} else {
+			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
+		}
 		if (ret<1) {
 			r_cons_printf (i>0? ",{": "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -2335,17 +2350,19 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			i++;
 			continue;
 		}
-		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
-
+		if (dis_opcodes == 1) {
+			r_anal_op (core->anal, &analop, at, buf, nb_bytes);
+		} else {
+			r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
+		}
 		ds = handle_init_ds (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
+		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list;
 			r_parse_varsub (core->parser, f,
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
-		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-
 		oplen = r_asm_op_get_size (&asmop);
 		r_cons_printf (i>0? ",{": "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -2433,9 +2450,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		r_cons_printf ("}");
 		i += oplen;
 		line++;
-		if (nb_opcodes && line>=nb_opcodes)
+		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) || (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes))
 			break;
-	}
+	} while (R_TRUE);
 	r_cons_printf ("]");
 	core->offset = old_offset;
 	return R_TRUE;
