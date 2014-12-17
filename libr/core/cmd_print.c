@@ -17,7 +17,7 @@ static void cmd_pDj (RCore *core, const char *arg) {
 
 static void cmd_pdj (RCore *core, const char *arg) {
 	int nblines = r_num_math(core->num, arg);
-	int buf[8];
+	ut8 buf[256];
 	r_core_print_disasm_json (core, core->offset, buf, sizeof(buf), nblines);
 	r_cons_newline ();
 }

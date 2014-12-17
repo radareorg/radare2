@@ -2152,7 +2152,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			r_core_asm_bwdis_len (core, &nb_bytes, &core->offset, nb_opcodes);
 			r_core_read_at (core, core->offset, core->block, nb_bytes);
 		}
-	} else if (!nb_opcodes) {
+	} else {
 		if (nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
 			core->offset -= nb_bytes;
@@ -2293,7 +2293,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	RAnalOp analop;
 	RDisasmState *ds;
 	RAnalFunction *f;
-	int i, oplen, ret, line;
+	int i, j, oplen, ret, line;
 	const ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
@@ -2314,6 +2314,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			// the equivalent addr and nb_size and scan a positive number of BYTES
 			// so keep dis_opcodes = 0;
 			dis_opcodes = 1;
+			r_core_read_at (core, addr, buf, nb_bytes);
 		}
 	} else if (!nb_opcodes) { // Dissasemble `nb_bytes` bytes
 		if (nb_bytes < 0) {
@@ -2331,30 +2332,31 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 	// TODO: add support for anal hints
-	i=line=0;
-	do {
-		at = addr +i;
+	// If using #bytes i = j
+	// If using #opcodes, j is the offset from start address. i is the
+	// offset in current disassembly buffer (256 by default)
+	i=j=line=0;
+	for (;;) {
+		at = addr + j;
 		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
-		if (dis_opcodes == 1) {
-			// Initialize buf with first nb_bytes (32) bytes
+		// 32 is the biggest opcode length in intel
+		// Make sure we have room for it
+		if (dis_opcodes == 1 && i>=nb_bytes - 32) {
+			// Read another nb_bytes bytes into buf from current offset
 			r_core_read_at (core, at, buf, nb_bytes);
-			ret = r_asm_disassemble (core->assembler, &asmop, buf, nb_bytes);
-		} else {
-			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
+			i=0;
 		}
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
 		if (ret<1) {
 			r_cons_printf (i>0? ",{": "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
 			r_cons_printf (",\"size\":1,\"type\":\"invalid\"}");
 			i++;
+			j++;
 			continue;
 		}
-		if (dis_opcodes == 1) {
-			r_anal_op (core->anal, &analop, at, buf, nb_bytes);
-		} else {
-			r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
-		}
+		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
 		ds = handle_init_ds (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -2449,10 +2451,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		r_cons_printf ("}");
 		i += oplen;
+		j += oplen;
 		line++;
 		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) || (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes))
 			break;
-	} while (R_TRUE);
+	}
 	r_cons_printf ("]");
 	core->offset = old_offset;
 	return R_TRUE;
