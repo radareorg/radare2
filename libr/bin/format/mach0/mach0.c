@@ -434,6 +434,8 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			}
 			break;
+		case LC_ENCRYPTION_INFO_64:
+			/* TODO: the struct is probably different here */
 		case LC_ENCRYPTION_INFO:
 			{
 			struct encryption_info_command eic = {0};

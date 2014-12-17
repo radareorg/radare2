@@ -282,6 +282,7 @@ struct load_command {
 #define LC_REEXPORT_DYLIB (0x1f | LC_REQ_DYLD) /* load and re-export dylib */
 #define	LC_LAZY_LOAD_DYLIB 0x20	/* delay load of dylib until first use */
 #define	LC_ENCRYPTION_INFO 0x21	/* encrypted segment information */
+#define	LC_ENCRYPTION_INFO_64 0x2c	/* encrypted segment information */
 #define	LC_DYLD_INFO 	0x22	/* compressed dyld information */
 #define	LC_DYLD_INFO_ONLY (0x22|LC_REQ_DYLD)	/* compressed dyld information only */
 #define	LC_LOAD_UPWARD_DYLIB (0x23 | LC_REQ_DYLD) /* load upward dylib */
