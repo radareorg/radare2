@@ -549,6 +549,10 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 15))
 			goto ret;
+		if (!strncasecmp (asmop.buf_asm, "invalid", strlen("invalid"))) {
+			valid = R_FALSE;
+			goto ret;
+		}
 
 		hit = r_core_asm_hit_new ();
 		hit->addr = addr;
@@ -790,6 +794,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 						}
 						r_cons_newline ();
 					}
+				}
+				if (increment != 1) {
+					i = next;
 				}
 			}
 		}
