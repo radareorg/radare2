@@ -567,7 +567,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			grep_find = r_regex_exec(rx, asmop.buf_asm, 0, 0, 0);
 			search_hit = (end && grep && (grep_find < 1));
 		} else {
-			search_hit = (end && grep && !strncasecmp (asmop.buf_asm, start, end - start));
+			search_hit = (end && grep && strstr (asmop.buf_asm, start));
 		}
 
 		//Handle (possible) grep
@@ -588,6 +588,10 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		nb_instr++;
 	}
 ret:
+	if (regex && rx) {
+		r_list_free (hitlist);
+		return NULL;
+	}
 	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
 		return NULL;
@@ -640,7 +644,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		memcpy(gregexp, grep, strlen(grep));
 		tok = strtok(gregexp, ";");
 		while (tok) {
-			rx = r_regex_new(gregexp, "");
+			rx = r_regex_new(tok, "");
 			r_list_append(rx_list, rx);
 			tok = strtok(NULL, ";");
 		}
