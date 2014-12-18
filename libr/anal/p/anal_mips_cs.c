@@ -82,10 +82,17 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SHRAV_R:
 	case MIPS_INS_SHRA:
 	case MIPS_INS_SHRA_R:
+	case MIPS_INS_SRA:
+		r_strbuf_appendf (&op->esil, "%s,%s,>>,31,%s,>>,?{,32,%s,-,%s,1,<<,1,-,<<,}{,0,},|,%s,=,",
+				ARG(2), ARG(1), ARG(1), ARG(2), ARG(2), ARG(0));
+		break;
 	case MIPS_INS_SHRL:
 		// suffix 'S' forces conditional flag to be updated
-		r_strbuf_appendf (&op->esil, "%s,%s,>>=", ARG(1), ARG(0));
+	case MIPS_INS_SRLV:
+	case MIPS_INS_SRL:
+		r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,=", ARG(2), ARG(1), ARG(0));
 		break;
+	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
 		r_strbuf_appendf (&op->esil, "%s,%s,<<,%s,=", ARG(2), ARG(1), ARG(0));
 		break;
@@ -205,6 +212,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x"0000,%s,=", IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LB:
+	case MIPS_INS_LBU:
+		//one of these is wrong
 		r_strbuf_appendf (&op->esil, "%s,[1],%s,=",
 			ARG(1), REG(0));
 		break;
@@ -277,6 +286,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			r_strbuf_appendf (&op->esil, ",");
 		}
 		}
+		break;
+	case MIPS_INS_SLTU:
+		r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(1), ARG(2), ARG(0));
 		break;
 	case MIPS_INS_SLTIU:
 		{
