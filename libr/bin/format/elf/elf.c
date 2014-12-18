@@ -445,20 +445,20 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	// X86-PIE
 	if (buf[0x1d] == 0x48 && buf[0x1e] == 0x8b) {
 		if (!memcmp (buf, "\x31\xed\x49\x89", 4)) {// linux
-			ut64 main, baddr;
+			ut64 maddr, baddr;
 			ut32 n32, *num = (ut32 *)(buf+0x20);
-			main = entry + 0x24 + *num;
-			if (r_buf_read_at (bin->b, main, (ut8*)&n32, sizeof (n32)) == -1) {
-				eprintf ("Warning: read (main) 2\n");
+			maddr = entry + 0x24 + *num;
+			if (r_buf_read_at (bin->b, maddr, (ut8*)&n32, sizeof (n32)) == -1) {
+				eprintf ("Warning: read (maddr) 2\n");
 				return 0;
 			}
-			main = (ut64)n32;
-			baddr = (bin->ehdr.e_entry >> 32) << 32;
+			maddr = (ut64)n32;
+			baddr = (bin->ehdr.e_entry >> 16) << 16;
 			if (bin->phdr) {
 				baddr = Elf_(r_bin_elf_get_baddr) (bin);
 			}
-			main += baddr;
-			return main;
+			maddr += baddr;
+			return maddr;
 		}
 	}
 	// X86-NONPIE

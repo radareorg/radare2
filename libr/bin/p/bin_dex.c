@@ -173,6 +173,8 @@ static RList* strings (RBinFile *arch) {
 	int i, len;
 	ut8 buf[6];
 
+	if (!bin->strings)
+		return NULL;
 	if (bin->header.strings_size>bin->size) {
 		bin->strings = NULL;
 		return NULL;
