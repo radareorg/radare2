@@ -605,11 +605,11 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 			r_cons_printf ("%s", f?ds->pre:"  ");
 		}
 	}
-	if (ds->show_color && ds->show_lines) {
+	if (ds->show_color && ds->show_lines && !ds->linesright) {
 		r_cons_printf ("%s%s%s"Color_RESET,
 			section, ds->color_flow,
 			ds->refline2);
-	} else if (ds->show_lines) {
+	} else if (ds->show_lines && !ds->linesright) {
 		r_cons_printf ("%s%s",
 			section, ds->refline2);
 	}
@@ -788,10 +788,9 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 							(var->kind=='v')?"-":"+",
 							var->delta);
 					}
-
 				}
 			}
-		} //else r_cons_printf ("  ");
+		}
 	}
 }
 
@@ -801,35 +800,35 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 		if (f) {
 			if (f->addr == ds->at) {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				ds->pre = r_str_concat (ds->pre, " ");
 				if (ds->show_color) {
-					r_cons_printf ("%s%s "Color_RESET, ds->color_fline, ds->pre);
+					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
 				} else {
-					r_cons_printf ("%s ", ds->pre);
+					r_cons_printf ("%s", ds->pre);
 				}
 			} else if (f->addr+f->size-ds->analop.size== ds->at) {
 				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+				ds->pre = r_str_concat (ds->pre, " ");
 				if (ds->show_color) {
-					r_cons_printf ("%s%s "Color_RESET, ds->color_fline, ds->pre);
+					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
 				} else {
-					r_cons_printf ("%s ", ds->pre);
+					r_cons_printf ("%s", ds->pre);
 				}
 			} else if (ds->at > f->addr && ds->at < f->addr+f->size-1) {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-				if (ds->show_color) {
-					r_cons_printf ("%s%s "Color_RESET, ds->color_fline, ds->pre);
-				} else {
-					r_cons_printf ("%s ", ds->pre);
-				}
-				//ds->pre = "| "; // TOFIX!
-				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				ds->pre = r_str_concat (ds->pre, " ");
+				if (ds->show_color) {
+					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
+				} else {
+					r_cons_printf ("%s", ds->pre);
+				}
 			} else f = NULL;
 		} else r_cons_printf ("  ");
-		if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
-			//ds->pre = R_LINE_BOTTOM_DCORNER" ";
-			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
-			ds->pre = r_str_concat (ds->pre, " ");
-		}
+		// if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
+		// 	//ds->pre = R_LINE_BOTTOM_DCORNER" ";
+		// 	handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+		// 	ds->pre = r_str_concat (ds->pre, " ");
+		// }
 	}
 }
 
@@ -1425,7 +1424,7 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 							r_cons_strcat (ds->color_fname);
 						// TODO: handle somehow ordinals import
 						handle_comment_align (core, ds);
-						r_cons_printf (" ; (imp.%s)", rel->import->name);
+						r_cons_printf ("  ; (imp.%s)", rel->import->name);
 						handle_print_color_reset (core, ds);
 					}
 				}
@@ -1448,7 +1447,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 					r_cons_strcat (ds->color_fname);
 				handle_comment_align (core, ds);
 				//beginline (core, ds, f);
-				r_cons_printf (" ; (%s)", f->name);
+				r_cons_printf ("  ; (%s)", f->name);
 				handle_print_color_reset (core, ds);
 			}
 			break;
@@ -1578,7 +1577,7 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 				r_str_replace_char (line, '\x1b', ' ');
 				r_str_replace_char (line, '\r', ' ');
 				r_str_replace_char (line, '\n', '\x00');
-				handle_set_pre (ds, "  ");
+				// handle_set_pre (ds, "  ");
 				handle_comment_align (core, ds);
 				if (ds->show_color)
 					r_cons_printf ("%s  ; %s"Color_RESET, ds->pal_comment, line);
@@ -1659,14 +1658,14 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				r_cons_printf (ds->pal_comment);
 			}
 			if (n==UT32_MAX || n==UT64_MAX) {
-				r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
+				r_cons_printf ("  ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 			} else if (n == n32 && (n32>-512 && n32 <512)) {
-				r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
+				r_cons_printf ("  ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 			} else {
 				const char *flag = "";
 				f = r_flag_get_i (core->flags, n);
 				if (f) flag = f->name;
-				r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
+				r_cons_printf ("  ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
 					p, ds->analop.refptr, n, flag);
 			}
 			if (ds->show_color)
