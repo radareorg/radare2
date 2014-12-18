@@ -876,13 +876,10 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 	case IMAGE_DEBUG_TYPE_CODEVIEW:
 		if (strncmp((char *)dbg_data, "RSDS", 4) == 0) {
 			SCV_RSDS_HEADER rsds_hdr;
-
-			init_rsdr_hdr(&rsds_hdr);
-			memset(res->guidstr, 0, 33);
-			memset(res->file_name, 0, SIZEOF_FILE_NAME);
-
-			get_rsds(dbg_data, &rsds_hdr);
-			sprintf((st8 *) res->guidstr, "%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
+			init_rsdr_hdr (&rsds_hdr);
+			get_rsds (dbg_data, &rsds_hdr);
+			snprintf ((st8 *) res->guidstr, 33, 
+					"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
 					rsds_hdr.guid.data1,
 					rsds_hdr.guid.data2,
 					rsds_hdr.guid.data3,
@@ -895,28 +892,17 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 					rsds_hdr.guid.data4[6],
 					rsds_hdr.guid.data4[7],
 					rsds_hdr.age);
-
-			if (strlen((st8 *)rsds_hdr.file_name) < SIZEOF_FILE_NAME) {
-				strcpy((st8 *)res->file_name, (st8 *)rsds_hdr.file_name);
-			}
-
-			rsds_hdr.free((struct SCV_RSDS_HEADER *)&rsds_hdr);
-		} else if (strncmp((char *)dbg_data, "NB10", 4) == 0) {
+			strncpy (res->file_name, rsds_hdr.file_name, SIZEOF_FILE_NAME-1);
+			res->file_name[SIZEOF_FILE_NAME] = 0;
+			rsds_hdr.free ((struct SCV_RSDS_HEADER *)&rsds_hdr);
+		} else if (strncmp((const char *)dbg_data, "NB10", 4) == 0) {
 			SCV_NB10_HEADER nb10_hdr;
-
 			init_cv_nb10_header(&nb10_hdr);
-			memset(res->guidstr, 0, 33);
-			memset(res->file_name, 0, 255);
-
 			get_nb10(dbg_data, &nb10_hdr);
-
 			snprintf((st8 *) res->guidstr, sizeof (res->guidstr), "%x%x",
 				nb10_hdr.timestamp, nb10_hdr.age);
-
-			if (strlen((st8 *)nb10_hdr.file_name) < SIZEOF_FILE_NAME) {
-				strcpy((st8 *)res->file_name, (st8 *)nb10_hdr.file_name);
-			}
-
+			strncpy (res->file_name, rsds_hdr.file_name, SIZEOF_FILE_NAME-1);
+			res->file_name[SIZEOF_FILE_NAME] = 0;
 			nb10_hdr.free((struct SCV_NB10_HEADER *)&nb10_hdr);
 		} else {
 			eprintf("CodeView section not NB10 or RSDS\n");
@@ -925,7 +911,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 
 		break;
 	default:
-		eprintf("get_debug_info(): not supported type\n");
+		//eprintf("get_debug_info(): not supported type\n");
 		return 0;
 	}
 

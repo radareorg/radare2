@@ -669,8 +669,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	if (json)
 		r_cons_printf ("[");
 
+	r_cons_break (NULL, NULL);
 	r_list_foreach (list, itermap, map) {
-
 		from = map->from;
 		to = map->to;
 
@@ -703,6 +703,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			if (is_end_gadget(end_gadget, crop)) {
 				r_list_append(end_list, (void*)(intptr_t)i);
 			}
+		if (r_cons_singleton()->breaked)
+			break;
 			// Right now we have a list of all of the end/stop gadgets.
 			// We can just construct gadgets from a little bit before them.
 		}
@@ -713,10 +715,14 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			// Get the depth of rop search, should just be max_instr
 			// instructions, x86 and friends are weird length instructions, so
 			// we'll just assume 15 byte instructions.
+			if (r_cons_singleton()->breaked)
+				break;
 			int ropdepth = increment == 1 ? max_instr * 15 /* wow, x86 is long */ : max_instr * increment;
 			next = (intptr_t)r_list_pop (end_list);
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
+				if (r_cons_singleton()->breaked)
+					break;
 				if (i >= next) {
 					// We've exhausted the first end-gadget section,
 					// move to the next one.
@@ -807,6 +813,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		}
 		free (buf);
 	}
+	if (r_cons_singleton()->breaked)
+		eprintf ("\n");
+	r_cons_break_end ();
 
 	if (json)
 		r_cons_printf ("]\n");
