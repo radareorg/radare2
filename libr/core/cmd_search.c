@@ -577,7 +577,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		}
 
 		if (endaddr <= (idx - asmop.size)) {
-			valid = R_TRUE;
+			valid = (endaddr == idx - asmop.size);
 			goto ret;
 		}
 		nb_instr++;
