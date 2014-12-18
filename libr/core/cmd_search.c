@@ -549,7 +549,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 15))
 			goto ret;
-		if (!strncasecmp (asmop.buf_asm, "invalid", strlen("invalid"))) {
+		if (!strncasecmp (asmop.buf_asm, "invalid", strlen("invalid")) ||
+				!strncasecmp (asmop.buf_asm, ".byte", strlen(".byte"))) {
 			valid = R_FALSE;
 			goto ret;
 		}
