@@ -2349,7 +2349,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
 		if (ret<1) {
-			r_cons_printf (i>0? ",{": "{");
+			r_cons_printf (j>0? ",{": "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
 			r_cons_printf (",\"size\":1,\"type\":\"invalid\"}");
 			i++;
@@ -2366,7 +2366,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
 		oplen = r_asm_op_get_size (&asmop);
-		r_cons_printf (i>0? ",{": "{");
+		r_cons_printf (j>0? ",{": "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		if (f) {
 			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);
