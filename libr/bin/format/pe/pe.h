@@ -90,8 +90,8 @@ struct PE_(r_bin_pe_obj_t) {
 #define DBG_FILE_NAME_LEN 255
 
 typedef struct SDebugInfo{
-	ut8 guidstr[GUIDSTR_LEN];
-	ut8 file_name[DBG_FILE_NAME_LEN];
+	char guidstr[GUIDSTR_LEN];
+	char file_name[DBG_FILE_NAME_LEN];
 } SDebugInfo;
 
 char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin);

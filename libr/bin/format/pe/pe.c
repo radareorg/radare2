@@ -14,7 +14,6 @@ typedef struct {
 	ut32 timestamp;
 	ut32 age;
 	ut8 *file_name;
-
 	void (*free)(struct SCV_NB10_HEADER *cv_nb10_header);
 } SCV_NB10_HEADER;
 
@@ -858,7 +857,7 @@ static void init_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
 
 static void get_rsds(ut8 *dbg_data, SCV_RSDS_HEADER *res) {
 	const int rsds_sz = 4 + sizeof (SGUID) + 4;
-	memcpy(res, dbg_data, rsds_sz);
+	memcpy (res, dbg_data, rsds_sz);
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + rsds_sz);
 }
 
@@ -879,36 +878,37 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 			init_rsdr_hdr (&rsds_hdr);
 			get_rsds (dbg_data, &rsds_hdr);
 			snprintf ((st8 *) res->guidstr, 33, 
-					"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
-					rsds_hdr.guid.data1,
-					rsds_hdr.guid.data2,
-					rsds_hdr.guid.data3,
-					rsds_hdr.guid.data4[0],
-					rsds_hdr.guid.data4[1],
-					rsds_hdr.guid.data4[2],
-					rsds_hdr.guid.data4[3],
-					rsds_hdr.guid.data4[4],
-					rsds_hdr.guid.data4[5],
-					rsds_hdr.guid.data4[6],
-					rsds_hdr.guid.data4[7],
-					rsds_hdr.age);
-			strncpy (res->file_name, rsds_hdr.file_name, SIZEOF_FILE_NAME-1);
-			res->file_name[SIZEOF_FILE_NAME] = 0;
+				"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
+				rsds_hdr.guid.data1,
+				rsds_hdr.guid.data2,
+				rsds_hdr.guid.data3,
+				rsds_hdr.guid.data4[0],
+				rsds_hdr.guid.data4[1],
+				rsds_hdr.guid.data4[2],
+				rsds_hdr.guid.data4[3],
+				rsds_hdr.guid.data4[4],
+				rsds_hdr.guid.data4[5],
+				rsds_hdr.guid.data4[6],
+				rsds_hdr.guid.data4[7],
+				rsds_hdr.age);
+			strncpy (res->file_name, (const char*)
+				rsds_hdr.file_name, sizeof (res->file_name));
+			res->file_name[sizeof (res->file_name)-1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER *)&rsds_hdr);
 		} else if (strncmp((const char *)dbg_data, "NB10", 4) == 0) {
 			SCV_NB10_HEADER nb10_hdr;
-			init_cv_nb10_header(&nb10_hdr);
-			get_nb10(dbg_data, &nb10_hdr);
-			snprintf((st8 *) res->guidstr, sizeof (res->guidstr), "%x%x",
-				nb10_hdr.timestamp, nb10_hdr.age);
-			strncpy (res->file_name, rsds_hdr.file_name, SIZEOF_FILE_NAME-1);
-			res->file_name[SIZEOF_FILE_NAME] = 0;
-			nb10_hdr.free((struct SCV_NB10_HEADER *)&nb10_hdr);
+			init_cv_nb10_header (&nb10_hdr);
+			get_nb10 (dbg_data, &nb10_hdr);
+			snprintf ((st8 *) res->guidstr, sizeof (res->guidstr),
+				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
+			strncpy (res->file_name, (const char *)
+				nb10_hdr.file_name, sizeof(res->file_name)-1);
+			res->file_name[sizeof (res->file_name)-1] = 0;
+			nb10_hdr.free ((struct SCV_NB10_HEADER *)&nb10_hdr);
 		} else {
-			eprintf("CodeView section not NB10 or RSDS\n");
+			eprintf ("CodeView section not NB10 or RSDS\n");
 			return 0;
 		}
-
 		break;
 	default:
 		//eprintf("get_debug_info(): not supported type\n");
@@ -916,7 +916,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 	}
 
 	while (i < 33) {
-		res->guidstr[i] = toupper(res->guidstr[i]);
+		res->guidstr[i] = toupper (res->guidstr[i]);
 		i++;
 	}
 
@@ -929,8 +929,7 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 	PE_DWord dbg_dir_offset;
 	ut8 *dbg_data = 0;
 	int result = 0;
-	if (!bin)
-		return 0;
+	if (!bin) return 0;
 	dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
 	dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
 	if ((int)dbg_dir_offset<0 || dbg_dir_offset>= bin->size)
@@ -964,11 +963,12 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			dll_name_offset = curr_import_dir->Name;
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
 					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-				eprintf("Error: read (magic)\n");
+				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
 			if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
-					curr_import_dir->Characteristics, curr_import_dir->FirstThunk))
+					curr_import_dir->Characteristics,
+					curr_import_dir->FirstThunk))
 				break;
 			curr_import_dir++;
 			if ((void*)curr_import_dir>= last) { 
@@ -978,7 +978,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	}
 
 	if (bin->delay_import_directory_offset < bin->size && bin->delay_import_directory_offset > 0) {
-		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(
+		curr_delay_import_dir = (PE_(image_delay_import_directory)*) (
 			bin->b->buf + bin->delay_import_directory_offset);
 
 		if (curr_delay_import_dir->Attributes == 0) {
@@ -999,8 +999,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
 					import_func_name_offset,
 					curr_delay_import_dir->DelayImportAddressTable))
-			break;
-
+				break;
 			curr_delay_import_dir++;
 		}
 	}
