@@ -11,13 +11,18 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 
 static void cmd_pDj (RCore *core, const char *arg) {
 	int bsize = r_num_math (core->num, arg);
-	ut8 *buf = malloc (bsize);
-	if (buf) {
-		r_io_read_at (core->io, core->offset, buf, bsize);
-		r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
-		free (buf);
-	} else eprintf ("cannot allocate %d bytes\n", bsize);
-	//r_core_print_disasm_json (core, core->offset, core->block, bsize, 0);
+	if (bsize <= core->blocksize) {
+		r_core_print_disasm_json (core, core->offset, core->block,
+			bsize, 0);
+	} else {
+		ut8 *buf = malloc (bsize);
+		if (buf) {
+			r_io_read_at (core->io, core->offset, buf, bsize);
+			r_core_print_disasm_json (core, core->offset, buf,
+				bsize, 0);
+			free (buf);
+		} else eprintf ("cannot allocate %d bytes\n", bsize);
+	}
 	r_cons_newline ();
 }
 
