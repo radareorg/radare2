@@ -38,6 +38,9 @@ enyo.kind ({
     if (x.name == this.oname)
       this.ra.setIndex (1);
     this.oname = x.name;
+    r2ui.selected_panel = this.oname;
+    if (this.oname === "Logs")
+       r2ui._log.connect();
     if (this.openCallback)
       this.openCallback (x.name);
   },

@@ -165,8 +165,7 @@ r2.get_disasm_after = function(offset, end, cb) {
 r2.get_disasm_before_after = function(offset, start, end, cb) {
   var before = [];
   var after = [];
-  // Get 5 more opcodes and remove them afterwards
-  r2.cmd("pDj " + start + "@" + offset, function(x) {
+  r2.cmd("pdj " + start + " @" + offset, function(x) {
     before = JSON.parse(x);
   });
   r2.cmd("pdj " + end + "@" + offset, function(x) {
@@ -479,7 +478,9 @@ r2.getTextLogger = function(obj) {
       obj.refresh (function() {
         //obj.clear ();
       });
-      setTimeout (to, n * 1000);
+      if (r2ui.selected_panel === "Logs")
+        setTimeout (to, n * 1000);
+      else console.log("Not in logs :(");
       return true;
     }
     obj.interval = setTimeout (to, n * 1000);

@@ -354,7 +354,7 @@ enyo.kind ({
     if (error) this.display_flat();
     if (this.display === "flat") {
       this.min = this.max = 0;
-      r2.get_disasm_before_after(addr, -0.5*this.block, 150, function(x) {
+      r2.get_disasm_before_after(addr, -49, 100, function(x) {
         text.setContent("<div id='flat_canvas' class='flatcanvas enyo-selectable ec_gui_background'></div>");
         render_instructions(x);
       });

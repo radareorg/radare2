@@ -352,7 +352,8 @@ function html_for_instruction(ins) {
   if (ins.offset === "0x"+ins.fcn_addr.toString(16)) {
     if (r2ui._dis.display == "flat") idump += '<div class="ec_flow">; -----------------------------------------------------------</div>';
     r2.cmdj("afj " + ins.offset, function(x){
-      idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
+      if (x !== null && x !== undefined && x.length > 0)
+        idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
     });
     r2.cmdj("afvj @ " + ins.offset, function(x){
       var fvars = [];
