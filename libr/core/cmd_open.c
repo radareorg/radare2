@@ -13,7 +13,9 @@ static int cmd_open(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0':
-		r_core_file_list (core);
+	case '*':
+	case 'j':
+		r_core_file_list (core, *input);
 		break;
 	case 'p':
 		if (r_sandbox_enable (0)) {
@@ -317,6 +319,8 @@ static int cmd_open(void *data, const char *input) {
 		const char *help_msg[] = {
 		"Usage: o","[com- ] [file] ([offset])","",
 		"o","","list opened files",
+		"o*","","list opened files in r2 commands",
+		"oj","","list opened files in JSON format",
 		"oc"," [file]","open core file, like relaunching r2",
 		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"oo","","reopen current file (kill+fork in debugger)",
