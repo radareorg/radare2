@@ -216,7 +216,7 @@ static const char *radare_argv[] = {
 	"q",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
-	"o", "o-", "x", "wf", "wF", "wt", "wp",
+	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wt", "wp",
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
@@ -257,6 +257,10 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
+		     !memcmp (line->buffer.data, "o+ ", 3) ||
+		     !memcmp (line->buffer.data, "oc ", 3) ||
+		     !memcmp (line->buffer.data, "on ", 3) ||
+		     !memcmp (line->buffer.data, "op ", 3) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
 		     !memcmp (line->buffer.data, "wf ", 3) ||
 		     !memcmp (line->buffer.data, "ls ", 3) ||

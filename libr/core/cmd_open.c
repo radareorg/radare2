@@ -15,6 +15,18 @@ static int cmd_open(void *data, const char *input) {
 	case '\0':
 		r_core_file_list (core);
 		break;
+	case 'p':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
+		if (input[1]==' ') {
+			if (r_lib_open (core->lib, input+2) == R_FAIL)
+				eprintf ("Oops\n");
+		} else {
+			eprintf ("Usage: op [r2plugin."R_LIB_EXT"]\n");
+		}
+		break;
 	case '+':
 		perms = R_IO_READ|R_IO_WRITE;
 	case 'n':
@@ -302,6 +314,7 @@ static int cmd_open(void *data, const char *input) {
 		"Usage: o","[com- ] [file] ([offset])","",
 		"o","","list opened files",
 		"oc"," [file]","open core file, like relaunching r2",
+		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
 		"o"," 4","priorize io on fd 4 (bring to front)",
