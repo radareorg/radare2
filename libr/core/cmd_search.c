@@ -520,7 +520,8 @@ static boolt is_end_gadget(const RAnalOp aop, const ut8 crop) {
 
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
-		const char* grep, int regex, RList* rx_list, int endaddr) {
+		const char* grep, int regex, RList* rx_list, int endaddr,
+		RList* badstart) {
 	RAsmOp asmop;
 	const char* start, *end;
 	RCoreAsmHit *hit = NULL;
@@ -531,6 +532,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	int grep_find;
 	int search_hit;
 	RRegex* rx = NULL;
+	RList /*<intptr_t>*/ *localbadstart = r_list_new();
+	RListIter *iter;
+	void* p;
 	int count = 0;
 
 	if (grep) {
@@ -548,6 +552,11 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	}
 
 	while (nb_instr < max_instr) {
+		if (r_list_contains (badstart, (void*)(intptr_t)idx)) {
+			valid = R_FALSE;
+			goto ret;
+		}
+		r_list_append (localbadstart, (void*)(intptr_t)idx);
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 15))
 			goto ret;
@@ -592,12 +601,18 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 ret:
 	if (regex && rx) {
 		r_list_free (hitlist);
+		r_list_free (localbadstart);
 		return NULL;
 	}
 	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
+		r_list_free (localbadstart);
 		return NULL;
 	}
+	r_list_foreach (localbadstart, iter, p) {
+		r_list_append (badstart, p);
+	}
+	r_list_free (localbadstart);
 	return hitlist;
 }
 
@@ -686,6 +701,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *arch = r_config_get (core->config, "asm.arch");
 	RList/*<RRegex>*/ *rx_list = NULL;
 	RList/*<int>*/ *end_list = r_list_new ();
+	RList /*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
@@ -821,7 +837,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_asm_set_pc (core->assembler, from+i);
 					hitlist = construct_rop_gadget (core,
 						from+i, buf, i, grep, regexp,
-						rx_list, next);
+						rx_list, next, badstart);
 					if (!hitlist)
 						continue;
 
@@ -837,6 +853,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				}
 			}
 		}
+		r_list_purge (badstart);
 		free (buf);
 	}
 	if (r_cons_singleton()->breaked)
@@ -854,6 +871,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	r_list_free (rx_list);
 	r_list_free (end_list);
+	r_list_free (badstart);
 	free (gregexp);
 
 	return R_TRUE;
