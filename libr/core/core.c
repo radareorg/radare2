@@ -733,7 +733,7 @@ R_API int r_core_init(RCore *core) {
 		return R_FALSE;
 	}
 	core->lang = r_lang_new ();
-	core->cons->editor = r_core_editor;
+	core->cons->editor = (RConsEditorCallback)r_core_editor;
 	core->cons->user = (void*)core;
 	core->lang->printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
@@ -1393,7 +1393,7 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 	int len, fd;
 	if (file) {
 		name = strdup (file);
-		fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
+		fd = r_sandbox_open (file, O_RDWR, 0644);
 	} else {
 		fd = r_file_mkstemp ("r2ed", &name);
 	}
