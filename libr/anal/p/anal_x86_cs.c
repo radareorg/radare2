@@ -458,9 +458,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = -regsz;
 				break;
+			case X86_INS_INT:
+				if (a->decode)
+					esilprintf (op, "%d,$", (int)INSOP(0).imm);
+				op->type = R_ANAL_OP_TYPE_SWI;
+				break;
 			case X86_INS_INT1:
 			case X86_INS_INT3:
-			case X86_INS_INT:
 			case X86_INS_INTO:
 			case X86_INS_VMCALL:
 			case X86_INS_VMMCALL:
@@ -488,6 +492,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case X86_INS_JNE:
 			case X86_INS_JG:
 			case X86_INS_JGE:
+			case X86_INS_LOOP:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->jump = INSOP(0).imm;
 				op->fail = addr+op->size;

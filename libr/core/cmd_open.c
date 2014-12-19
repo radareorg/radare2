@@ -47,6 +47,7 @@ static int cmd_open(void *data, const char *input) {
 				if (isn) fn++;
 				file = r_core_file_open (core, fn, perms, addr);
 				if (file) {
+					r_cons_printf ("%d\n", file->desc->fd);
 					// MUST CLEAN BEFORE LOADING
 					if (!isn)
 						r_core_bin_load (core, fn, baddr);
@@ -177,7 +178,10 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '-':
 		if (!r_core_file_close_fd (core, atoi (input+1)))
-			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
+			eprintf ("Unable to find filedescriptor %d\n",
+				atoi (input+1));
+		// hackaround to fix invalid read
+		//r_core_cmd0 (core, "oo");
 		// uninit deref
 		//r_core_block_read (core, 0);
 		break;
