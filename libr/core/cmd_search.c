@@ -666,6 +666,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 			free (buf_asm);
 			free (buf);
 		}
+		break;
 	default:
 		// Print gadgets with new instruction on a new line.
 		r_list_foreach (hitlist, iter, hit) {

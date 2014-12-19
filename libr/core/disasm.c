@@ -2337,7 +2337,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	i=j=line=0;
 	for (;;) {
 		at = addr + j;
-		char *escaped_str = NULL;
 		r_asm_set_pc (core->assembler, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
@@ -2375,8 +2374,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_cons_printf (",\"fcn_last\":0");
 		}
 		r_cons_printf (",\"size\":%d", oplen);
-		escaped_str = r_str_escape(asmop.buf_asm);
+		{
+		char *escaped_str = r_str_escape (asmop.buf_asm);
 		r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
+		free (escaped_str);
+		}
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
 		//r_cons_printf (",\"family\":\"%s\"", asmop.family);
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (analop.type));
@@ -2452,8 +2454,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		i += oplen;
 		j += oplen;
 		line++;
-		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) || (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes))
+		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) \
+			|| (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes)) {
 			break;
+		}
 	}
 	r_cons_printf ("]");
 	core->offset = old_offset;

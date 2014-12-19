@@ -1395,10 +1395,13 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
 	} else {
+		name = NULL;
 		fd = r_file_mkstemp ("r2ed", &name);
 	}
-	if (fd == -1)
+	if (fd == -1) {
+		free (name);
 		return NULL;
+	}
 	if (str) write (fd, str, strlen (str));
 	close (fd);
 
