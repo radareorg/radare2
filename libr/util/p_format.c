@@ -609,8 +609,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	
 	nexti = nargs = i = j = 0;
 
-	if (ofield && ofield != -1) field = strdup (ofield);
-	if (ofield == -1) isfield = 0;
 	if (len < 1)
 		return 0;
 	buf = malloc (len);
@@ -621,6 +619,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 	oldprintf = NULL;
 	realprintf = p->printf;
+
+	if (ofield && ofield != -1) field = strdup (ofield);
+	if (ofield == -1) isfield = 0;
 
 	while (*arg && iswhitechar (*arg)) arg++;
 
@@ -683,7 +684,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		arg = orig;
 		for (idx=0; i<len && arg<argend && *arg; arg++) {
 			int size; /* size of the array */
-			char *name = NULL, *fieldname = NULL, *fmtname = NULL, *oarg = NULL;
+			char *fieldname = NULL, *fmtname = NULL, *oarg = NULL;
 			seeki = seek+i;
 			addr = 0LL;
 			invalid = 0;
@@ -710,22 +711,27 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				char *dot = NULL;
 				if (field)
 					dot = strchr (field, '.');
-					if (dot)
-						*dot = '\0';
+				if (dot)
+					*dot = '\0';
 				oarg = fieldname = strdup(r_str_word_get0 (args, idx));
 				if (ISSTRUCT || tmp=='E' || tmp=='B') {
 					if (*fieldname == '(') {
 						fmtname = fieldname+1;
 						fieldname = strchr (fieldname, ')');
 						if (fieldname) *fieldname++ = '\0';
-						else goto beach;
+						else {
+							eprintf ("Missing closing parenthesis in format ')'\n");
+							free (oarg);
+							goto beach;
+						}
 					} else {
 						eprintf ("Missing name (%s)\n", fieldname);
+						free(oarg);
 						goto beach;
 					}
 				}
-				if ((field==NULL && ofield != -1) 
-						|| (field && !strncmp(field, fieldname, strlen(field)))) 
+				if ((field==NULL && ofield != -1)
+						|| (field && !strncmp(field, fieldname, strlen(field))))
 					isfield = 1;
 				else isfield = 0;
 				idx++;
@@ -763,6 +769,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					eprintf ("(SEGFAULT: cannot read memory at 0x%08"PFMT64x", Block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
 					p->printf("\n");
+					free (oarg);
 					goto beach;
 				}
 				}
@@ -840,7 +847,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (json)
 					p->printf ("\"NULL\"}", tmp, seek+i);
 				else
-					p->printf ("NULL");
+					p->printf ("NULL\n");
 				isptr = PTRBACK;
 			} else
 			/* format chars */
@@ -955,103 +962,65 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'B': // resolve bitfield
 				{
-				char *structname, *osn;
 				char *bitfield = NULL;
-				structname = osn = strdup (r_str_word_get0 (args, idx-1));
 				switch (size) {
 				case 1: addr &= UT8_MAX; break;
 				case 2: addr &= UT16_MAX; break;
 				case 4: addr &= UT32_MAX; break;
 				}
-				if (*structname == '(') {
-					name = strchr (structname, ')');
-				} else {
-					eprintf ("Bitfield name missing (%s)\n", structname);
-					free (structname);
-					goto beach;
-				}
-				structname++;
-				if (name) *(name++) = '\0';
-				else eprintf ("No ')'\n");
 				if (!json)
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 				if (p->get_bitfield)
-					bitfield = p->get_bitfield (p->user, structname, addr);
+					bitfield = p->get_bitfield (p->user, fmtname, addr);
 				if (bitfield && *bitfield) {
 					if (json) p->printf ("\"%s\"}", bitfield);
-					else p->printf (" %s (bitfield) = %s\n", name, bitfield);
+					else p->printf (" %s (bitfield) = %s\n", fieldname, bitfield);
 				} else {
-					if (json) p->printf ("\"`tb %s 0x%x`\"}", structname, addr);
+					if (json) p->printf ("\"`tb %s 0x%x`\"}", fmtname, addr);
 					else p->printf (" %s (bitfield) = `tb %s 0x%x`\n",
-							name, structname, addr);
+							fieldname, fmtname, addr);
 				}
 				i+=(size==-1)?1:size;
 
-				free (osn);
 				free (bitfield);
 				}
 				break;
 			case 'E': // resolve enum
 				{
-				char *enumname, *osn;
 				char *enumvalue = NULL;
-				enumname = osn = strdup (r_str_word_get0 (args, idx-1));
 				switch (size) {
 				case 1: addr &= UT8_MAX; break;
 				case 2: addr &= UT16_MAX; break;
 				case 4: addr &= UT32_MAX; break;
 				}
-				if (*enumname == '(') {
-					name = strchr (enumname, ')');
-				} else {
-					eprintf ("Enum name missing (%s)\n", enumname);
-					free (enumname);
-					goto beach;
-				}
-				enumname++;
-				if (name) *(name++) = '\0';
-				else eprintf ("No ')'\n");
 				if (!json)
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 				if (p->get_enumname)
-					enumvalue = p->get_enumname (p->user, enumname, addr);
+					enumvalue = p->get_enumname (p->user, fmtname, addr);
 				if (enumvalue && *enumvalue) {
-					if (json) p->printf ("\"%s\"}", enumname);
+					if (json) p->printf ("\"%s\"}", fmtname);
 					else p->printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
-							name, addr, enumvalue);
+							fieldname, addr, enumvalue);
 				} else {
-					if (json) p->printf ("\"`te %s 0x%x`\"}", enumname, addr);
+					if (json) p->printf ("\"`te %s 0x%x`\"}", fmtname, addr);
 					else p->printf (" %s (enum) = `te %s 0x%x`\n",
-							name, enumname, addr);
+							fieldname, fmtname, addr);
 				}
 				i+=(size==-1)?1:size;
 
-				free (osn);
 				free (enumvalue);
 				}
 				break;
 			case '?':
 				{
 				int s = 0;
-				char *structname, *osn, *nxtfield = NULL;
-				structname = osn = strdup (r_str_word_get0 (args, idx-1));
-				if (*structname == '(') {
-					name = strchr (structname, ')');
-				} else {
-					eprintf ("Struct name missing (%s)\n", structname);
-					free (structname);
-					goto beach;
-				}
-				structname++;
-				if (name) *(name++) = '\0';
-				else eprintf ("No ')'\n");
-
+				char *nxtfield = NULL;
 				if (!isfield) nxtfield = -1;
 				else if (field) nxtfield = strchr (ofield, '.');
 				if (nxtfield != -1 && nxtfield != NULL) nxtfield++;
 
 				if (MUSTSEE) {
-					p->printf ("struct<%s>\n", structname);
+					p->printf ("struct<%s>\n", fmtname);
 					if (isptr) {
 						p->printf (namefmt, "----");
 						p->printf ("\n");
@@ -1068,18 +1037,18 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 				if (size == -1) {
 					s = r_print_format_struct (p, seeki,
-						buf+i, len-i, structname, slide, json, setval, nxtfield);
+						buf+i, len-i, fmtname, slide, json, setval, nxtfield);
 					i+= (isptr) ? 4 : s;
 				} else {
 					p->printf ("[\n");
 					s = r_print_format_struct (p, seeki,
-							buf+i, len-i, structname, slide, json, setval, nxtfield);
+							buf+i, len-i, fmtname, slide, json, setval, nxtfield);
 					i+= (isptr) ? 4 : s;
 					size--;
 					while (size--) {
 						p->printf (",\n");
 						s = r_print_format_struct (p, seeki,
-							buf+i, len-i, structname, slide, json, setval, nxtfield);
+							buf+i, len-i, fmtname, slide, json, setval, nxtfield);
 						i+= (isptr) ? 4 : s;
 					}
 					if (json) p->printf ("]]}");
@@ -1091,7 +1060,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					oldslide = slide;
 					slide-=STRUCTFLAG;
 				}
-				free (osn);
 				break;
 				}
 			default:
@@ -1107,7 +1075,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (s)
 					p->printf ("*(%s)", s);
 			}
-			if (tmp != 'D' && !invalid && name==NULL && !json)
+			if (tmp != 'D' && !invalid && fmtname==NULL && !json)
 				p->printf ("\n");
 			last = tmp;
 			if (oarg)
