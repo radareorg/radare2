@@ -551,11 +551,11 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		}
 	}
 
+	if (r_list_contains (badstart, (void*)(intptr_t)idx)) {
+		valid = R_FALSE;
+		goto ret;
+	}
 	while (nb_instr < max_instr) {
-		if (r_list_contains (badstart, (void*)(intptr_t)idx)) {
-			valid = R_FALSE;
-			goto ret;
-		}
 		r_list_append (localbadstart, (void*)(intptr_t)idx);
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 15))
