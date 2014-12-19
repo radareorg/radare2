@@ -607,7 +607,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	static int slide=0, oldslide=0;
 	ut8 *buf;
 	if (!fmt)
-		return;
+		return 0;
 	argend = fmt+strlen (fmt);
 	
 	nexti = nargs = i = j = 0;
