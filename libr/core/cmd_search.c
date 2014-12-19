@@ -781,6 +781,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_list_reverse (end_list);
 		// If we have no end gadgets, just skip all of this search nonsense.
 		if (r_list_length (end_list) > 0) {
+			int prev;
 			int next, ropdepth;
 			// Get the depth of rop search, should just be max_instr
 			// instructions, x86 and friends are weird length instructions, so
@@ -791,14 +792,17 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			if (r_cons_singleton()->breaked)
 				break;
 			next = (intptr_t)r_list_pop (end_list);
+			prev = 0;
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
+				if (i < prev) i = prev;
 				if (r_cons_singleton()->breaked)
 					break;
 				if (i >= next) {
 					// We've exhausted the first end-gadget section,
 					// move to the next one.
 					if (r_list_get_n (end_list, 0)) {
+						prev = i;
 						next = (intptr_t)r_list_pop (end_list);
 						i = next - ropdepth;
 					} else {
