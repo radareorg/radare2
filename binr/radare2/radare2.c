@@ -383,6 +383,10 @@ int main(int argc, char **argv, char **envp) {
 
 	//cverify_version (0);
 	if (do_connect) {
+		if (optind>= argc) {
+			eprintf ("Missing URI for -C\n");
+			return 1;
+		}
 		const char *uri = argv[optind];
 		if (!strncmp (uri, "http://", 7))
 			r_core_cmdf (&r, "=+%s", uri);
