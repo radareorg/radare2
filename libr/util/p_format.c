@@ -598,7 +598,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *fmt, int elem, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0, isfield = 1;
 	int (*oldprintf)(const char *str, ...);
-	const char *argend = fmt+strlen (fmt);
+	const char *argend;
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
 	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = fmt;
@@ -606,6 +606,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	char namefmt[8], *field = NULL;
 	static int slide=0, oldslide=0;
 	ut8 *buf;
+	if (!fmt)
+		return;
+	argend = fmt+strlen (fmt);
 	
 	nexti = nargs = i = j = 0;
 
