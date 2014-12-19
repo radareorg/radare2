@@ -15,6 +15,9 @@ enyo.kind ({
   logger: null,
   create: function() {
     this.inherited (arguments);
+    r2ui._log = this;
+  },
+  connect: function() {
     var out = this.$.output;
     this.logger = r2.getTextLogger ().on ("message", function (msg) {
       out.setContent (out.getContent() + msg.text + "\n");

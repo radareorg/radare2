@@ -1,5 +1,7 @@
 var r2ui = {};
 
+r2ui.selected_panel = "Disassembler";
+
 r2ui.history = [];
 r2ui.history_idx = 0;
 

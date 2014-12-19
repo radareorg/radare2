@@ -2304,7 +2304,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-			r_core_asm_bwdis_len (core, &nb_bytes, &addr, nb_opcodes);
+			if (!r_core_asm_bwdis_len (core, &nb_bytes, &addr, nb_opcodes)) {
+				r_cons_printf ("]");
+				return R_FALSE;
+			}
 			r_core_read_at (core, addr, buf, nb_bytes);
 		} else {
 			// If we are disassembling a positive number of lines, enable dis_opcodes

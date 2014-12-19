@@ -11,6 +11,7 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 
 static void cmd_pDj (RCore *core, const char *arg) {
 	int bsize = r_num_math (core->num, arg);
+	if (bsize < 0) bsize = -bsize;
 	if (bsize <= core->blocksize) {
 		r_core_print_disasm_json (core, core->offset, core->block,
 			bsize, 0);
