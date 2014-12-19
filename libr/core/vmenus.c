@@ -433,7 +433,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	} else {
 // XXX: must use config_set () to run callbacks!
 		if (editor) {
-			char * buf = r_core_editor (core, node->value);
+			char * buf = r_core_editor (core, NULL, node->value);
 			node->value = r_str_dup (node->value, buf);
 			free (buf);
 		} else {

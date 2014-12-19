@@ -377,7 +377,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
 	if (I.contents) {
-		strncpy (I.buffer.data, I.contents, R_LINE_BUFSIZE-1);
+		memmove (I.buffer.data, I.contents, 
+			R_MIN (strlen (I.contents), R_LINE_BUFSIZE-1));
 		I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	}
@@ -452,17 +453,17 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 2: // ^b // emacs left
 #if USE_UTF8
-								 {
-									 char *s = I.buffer.data+I.buffer.index-1;
-									 utflen = 1;
-									 while (s>I.buffer.data && (*s & 0xc0) == 0x80) {
-										 utflen++;
-										 s--;
-									 }
-								 }
-								 I.buffer.index = I.buffer.index? I.buffer.index-utflen: 0;
+			 {
+				char *s = I.buffer.data+I.buffer.index-1;
+				utflen = 1;
+				while (s>I.buffer.data && (*s & 0xc0) == 0x80) {
+					utflen++;
+					s--;
+				}
+			 }
+			I.buffer.index = I.buffer.index? I.buffer.index-utflen: 0;
 #else
-								 I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+			I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
 #endif
 			break;
 		case 5: // ^E
@@ -506,19 +507,19 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 6: // ^f // emacs right
 #if USE_UTF8
-								 {
-									 char *s = I.buffer.data+I.buffer.index+1;
-									 utflen = 1;
-									 while ((*s & 0xc0) == 0x80) {
-										 utflen++;
-										 s++;
-									 }
-									 I.buffer.index = I.buffer.index<I.buffer.length?
-										 I.buffer.index+utflen: I.buffer.length;
-								 }
+			 {
+				char *s = I.buffer.data+I.buffer.index+1;
+				utflen = 1;
+				while ((*s & 0xc0) == 0x80) {
+					utflen++;
+					s++;
+				}
+				I.buffer.index = I.buffer.index<I.buffer.length?
+				I.buffer.index+utflen: I.buffer.length;
+			 }
 #else
-								 I.buffer.index = I.buffer.index<I.buffer.length?
-									 I.buffer.index+1: I.buffer.length;
+			I.buffer.index = I.buffer.index<I.buffer.length?
+			I.buffer.index+1: I.buffer.length;
 #endif
 			break;
 		case 12: // ^L -- right

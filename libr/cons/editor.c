@@ -66,21 +66,27 @@ static void filesave () {
 				lines[i]='\n';
 		}
 	}
-	r_file_dump (path, (const ut8*)lines, bytes);
-	eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
+	if (r_file_dump (path, (const ut8*)lines, bytes))
+		eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
+	else eprintf ("Cannot save file\n");
 	// restore back zeroes
 	nlines = r_str_split (lines, '\n');
 }
 
-R_API char *r_cons_editor (const char *file) {
+R_API char *r_cons_editor (const char *file, const char *str) {
 	char *line;
 	_n = 0;
+	if (I->editor) {
+		return I->editor (I->user, file, str);
+	}
 	free (path);
 	if (file) {
 		path = strdup (file);
+		bytes = 0;
 		lines = r_file_slurp (file, &bytes);
 		nlines = r_str_split (lines, '\n');
-		eprintf ("Loaded %d lines on %d bytes\n", nlines-1, bytes);
+		eprintf ("Loaded %d lines on %d bytes\n",
+			(nlines?(nlines-1):0), bytes);
 	} else path = NULL;
 	//r_cons_new ();
 	I->line->hist_up = up;
@@ -99,5 +105,5 @@ R_API char *r_cons_editor (const char *file) {
 	I->line->hist_up = 
 	I->line->hist_down = NULL;
 	I->line->contents = NULL;
-	return NULL;
+	return lines;
 }

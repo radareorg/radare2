@@ -132,7 +132,7 @@ static int cmd_eval(void *data, const char *input) {
 			const char *val, *input2 = strchr (input+2, ' ');
 			if (input2) input2++; else input2 = input+2;
 			val = r_config_get (core->config, input2);
-			p = r_core_editor (core, val);
+			p = r_core_editor (core, NULL, val);
 			if (p) {
 				r_str_replace_char (p, '\n', ';');
 				r_config_set (core->config, input2, p);

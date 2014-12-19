@@ -266,7 +266,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 	r_list_push (core->scriptstack, strdup (file));
 
 	if (!strcmp (file, "-")) {
-		char *out = r_core_editor (core, NULL);
+		char *out = r_core_editor (core, NULL, NULL);
 		if (out) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);

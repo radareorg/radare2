@@ -120,6 +120,8 @@ typedef struct r_cons_canvas_t {
 	int sy; // scrolly
 } RConsCanvas;
 
+typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+
 typedef struct r_cons_t {
 	RConsGrep grep;
 	char *buffer;
@@ -148,6 +150,9 @@ typedef struct r_cons_t {
 	RConsEvent event_resize;
 	void *data;
 	void *event_data;
+
+	RConsEditorCallback editor;
+	void *user; // Used by <RCore*>
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
@@ -301,7 +306,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty);
 #endif
 
 /* control */
-R_API char *r_cons_editor (const char *file);
+R_API char *r_cons_editor (const char *file, const char *str);
 R_API void r_cons_reset();
 R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();

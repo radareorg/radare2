@@ -273,7 +273,7 @@ static int r_cmd_yara_add(const RCore* core, const char* input) {
 
 	old_template = strdup(yara_rule_template);
 	do {
-		modified_template = r_core_editor (core, old_template);
+		modified_template = r_core_editor (core, NULL, old_template);
 		free(old_template);
 		if (!modified_template) {
 			eprintf("Something happened with the temp file");

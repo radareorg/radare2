@@ -10,6 +10,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_lang);
 
+
 typedef struct r_lang_t {
 	struct r_lang_plugin_t *cur;
 	void *user;

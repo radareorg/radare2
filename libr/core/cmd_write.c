@@ -211,8 +211,8 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'p':
-		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
-			char *out = r_core_editor (core, NULL);
+		if (input[1]=='-' || (input[1]==' ' && input[2]=='-')) {
+			char *out = r_core_editor (core, NULL, NULL);
 			if (out) {
 				r_core_patch (core, out);
 				free (out);
@@ -458,7 +458,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'f':
 		arg = (const char *)(input+((input[1]==' ')?2:1));
 		if (!strcmp (arg, "-")) {
-			char *out = r_core_editor (core, NULL);
+			char *out = r_core_editor (core, NULL, NULL);
 			if (out) {
 				r_io_write_at (core->io, core->offset,
 					(ut8*)out, strlen (out));
@@ -478,7 +478,7 @@ static int cmd_write(void *data, const char *input) {
 		if (!strcmp (arg, "-")) {
 			int len;
 			ut8 *out;
-			char *in = r_core_editor (core, NULL);
+			char *in = r_core_editor (core, NULL, NULL);
 			if (in) {
 				out = (ut8 *)strdup (in);
 				if (out) {

@@ -733,6 +733,8 @@ R_API int r_core_init(RCore *core) {
 		return R_FALSE;
 	}
 	core->lang = r_lang_new ();
+	core->cons->editor = r_core_editor;
+	core->cons->user = (void*)core;
 	core->lang->printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
@@ -1385,11 +1387,16 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 	return R_TRUE;
 }
 
-R_API char *r_core_editor (const RCore *core, const char *str) {
+R_API char *r_core_editor (const RCore *core, const char *file, const char *str) {
 	const char *editor;
 	char *name, *ret = NULL;
 	int len, fd;
-	fd = r_file_mkstemp ("r2ed", &name);
+	if (file) {
+		name = strdup (file);
+		fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
+	} else {
+		fd = r_file_mkstemp ("r2ed", &name);
+	}
 	if (fd == -1)
 		return NULL;
 	if (str) write (fd, str, strlen (str));
@@ -1397,13 +1404,15 @@ R_API char *r_core_editor (const RCore *core, const char *str) {
 
 	editor = r_config_get (core->config, "cfg.editor");
 	if (!editor || !*editor || !strcmp (editor, "-")) {
-		r_cons_editor (name);
+		r_cons_editor (name, NULL);
 	} else r_sys_cmdf ("%s '%s'", editor, name);
 	ret = r_file_slurp (name, &len);
 	if (ret) {
 		if (len && ret[len - 1] == '\n')
 			ret[len-1] = 0; // chop
-		r_file_rm (name);
+		if (!file) {
+			r_file_rm (name);
+		}
 	}
 	free (name);
 	return ret;

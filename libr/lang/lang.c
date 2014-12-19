@@ -17,7 +17,7 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 }
 
 R_API RLang *r_lang_new() {
-	RLang *lang = R_NEW (RLang);
+	RLang *lang = R_NEW0 (RLang);
 	if (lang) {
 		lang->user = NULL;
 		lang->langs = r_list_new ();
@@ -215,9 +215,20 @@ R_API int r_lang_prompt(RLang *lang) {
 		char *p = r_line_readline ();
 		if (!p) break;
 		r_line_hist_add (p);
-		strncpy (buf, p, sizeof(buf) - 1);
+		strncpy (buf, p, sizeof (buf) - 1);
 		if (*buf == '!') {
-			r_sandbox_system (buf+1, 1);
+			if (buf[1]) {
+				r_sandbox_system (buf+1, 1);
+			} else {
+				char *foo, *code = NULL;
+				do {
+					foo = r_cons_editor (NULL, code);
+					r_lang_run (lang, foo, 0);
+					free (code);
+					code = foo;
+				} while (r_cons_yesno ('y', "Edit again? (Y/n)"));
+				free (foo);
+			}
 			continue;
 		}
 		if (!memcmp (buf, ". ", 2)) {
@@ -236,6 +247,7 @@ R_API int r_lang_prompt(RLang *lang) {
 			RLangDef *def;
 			RListIter *iter;
 			eprintf("  ?        - show this help message\n"
+				"  !        - run $EDITOR\n"
 				"  !command - run system command\n"
 				"  . file   - interpret file\n"
 				"  q        - quit prompt\n");

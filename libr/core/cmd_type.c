@@ -151,7 +151,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *filename = input + 2;
 			if (!strcmp (filename, "-")) {
 				char *out, *tmp;
-				tmp = r_core_editor (core, "");
+				tmp = r_core_editor (core, NULL, "");
 				if (tmp) {
 					out = r_parse_c_string (tmp);
 					if (out) {
