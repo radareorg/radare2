@@ -116,7 +116,8 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
+		int blen, const ut8 *mask, int mlen) {
 	int ret;
 	ut64 at;
 	ut8 *b = (ut8 *)malloc (core->blocksize);
@@ -518,7 +519,8 @@ static boolt is_end_gadget(const RAnalOp aop, const ut8 crop) {
 }
 
 //TODO: follow unconditional jumps
-static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char* grep, int regex, RList* rx_list, int endaddr) {
+static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
+		const char* grep, int regex, RList* rx_list, int endaddr) {
 	RAsmOp asmop;
 	const char* start, *end;
 	RCoreAsmHit *hit = NULL;
@@ -549,8 +551,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf+idx, 15))
 			goto ret;
-		if (!strncasecmp (asmop.buf_asm, "invalid", strlen("invalid")) ||
-				!strncasecmp (asmop.buf_asm, ".byte", strlen(".byte"))) {
+		if (!strncasecmp (asmop.buf_asm, "invalid", strlen ("invalid")) ||
+				!strncasecmp (asmop.buf_asm, ".byte", strlen (".byte"))) {
 			valid = R_FALSE;
 			goto ret;
 		}
@@ -599,17 +601,85 @@ ret:
 	return hitlist;
 }
 
+static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) {
+	const char *otype;
+	RCoreAsmHit *hit = NULL;
+	RListIter *iter;
+	char *buf_asm, *buf_hex;
+	unsigned int size = 0;
+	RAnalOp analop;
+	RAsmOp asmop;
+
+	switch (mode) {
+	case 'j':
+		//Handle comma between gadgets
+		if (*json_first == 0)
+			r_cons_strcat (",");
+		else *json_first = 0;
+
+		r_cons_printf ("{\"opcodes\":[");
+		r_list_foreach (hitlist, iter, hit) {
+			ut8 *buf = malloc (hit->len);
+			r_core_read_at (core, hit->addr, buf, hit->len);
+			r_asm_set_pc (core->assembler, hit->addr);
+			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
+			size += hit->len;
+			r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,"
+				"\"opcode\":\"%s\",\"type\":\"%s\"}%s",
+				hit->addr, hit->len, asmop.buf_asm,
+				r_anal_optype_to_string (analop.type),
+				iter->n?",":"");
+			free (buf);
+		}
+		r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+		break;
+	case 'l':
+		// Print gadgets in a 'linear manner', each sequence
+		// on one line.
+		hit = r_list_get_top (hitlist);
+		r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x":",
+				0, hit->addr); //from+i, hit->addr);
+		r_list_foreach (hitlist, iter, hit) {
+			ut8 *buf = malloc (hit->len);
+			r_core_read_at (core, hit->addr, buf, hit->len);
+			r_asm_set_pc (core->assembler, hit->addr);
+			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+					core->cons->pal.reg, core->cons->pal.num);
+			r_cons_printf (" %s%s;", buf_asm, Color_RESET);
+			free (buf_asm);
+			free (buf);
+		}
+	default:
+		// Print gadgets with new instruction on a new line.
+		r_list_foreach (hitlist, iter, hit) {
+			ut8 *buf = malloc (hit->len);
+			r_core_read_at (core, hit->addr, buf, hit->len);
+			r_asm_set_pc (core->assembler, hit->addr);
+			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+					core->cons->pal.reg, core->cons->pal.num);
+			buf_hex = r_print_colorize_opcode (asmop.buf_hex,
+					core->cons->pal.reg, core->cons->pal.num);
+			otype = r_print_color_op_type (core->print, analop.type);
+			r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s\n",
+					hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+			free (buf_asm);
+			free (buf_hex);
+			free (buf);
+		}
+	}
+	r_cons_newline ();
+}
+
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep, int regexp) {
 	int i=0, end=0, mode=0, increment=1, ret;
 	int delta = 0;
-	RAsmOp asmop;
 	ut8 *buf;
 	RIOMap *map;
-	RList* hitlist;
 	RList/*<RIOMap>*/ *list;
-	RCoreAsmHit *hit = NULL;
-	RAnalOp analop = {0};
-	RListIter *iter = NULL;
+	RAsmOp asmop;
 	RListIter *itermap = NULL;
 	boolt json_first = 1;
 	const char *smode = r_config_get (core->config, "search.in");
@@ -639,19 +709,18 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	// Deal with the grep guy.
 	if (grep && regexp) {
-		if (!rx_list) rx_list = r_list_newf(free);
-		gregexp = calloc(strlen(grep) + 1, sizeof(char));
-		memcpy(gregexp, grep, strlen(grep));
-		tok = strtok(gregexp, ";");
+		if (!rx_list) rx_list = r_list_newf (free);
+		gregexp = strdup (grep);
+		tok = strtok (gregexp, ";");
 		while (tok) {
-			rx = r_regex_new(tok, "");
-			r_list_append(rx_list, rx);
-			tok = strtok(NULL, ";");
+			rx = r_regex_new (tok, "");
+			r_list_append (rx_list, rx);
+			tok = strtok (NULL, ";");
 		}
 	}
 
 	smode = r_config_get (core->config, "search.in");
-	if (!strncmp(smode, "dbg.", 4) || !strncmp(smode, "io.sections", 11))
+	if (!strncmp (smode, "dbg.", 4) || !strncmp (smode, "io.sections", 11))
 		list = r_core_get_boundaries (core, smode, &from, &to);
 	else
 		list = NULL;
@@ -684,7 +753,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			}
 		}
 
-		buf = malloc (delta);
+		buf = calloc (1, delta);
 		if (!buf) {
 			free (gregexp);
 			r_list_free (rx_list);
@@ -694,30 +763,33 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_io_read_at (core->io, from, buf, delta);
 
 		// Find the end gadgets.
-		for (i = 0; i < delta; i += increment) {
+		for (i = 0; i+32 < delta; i += increment) {
 			RAnalOp end_gadget;
 			// Disassemble one.
-			if (r_anal_op(core->anal, &end_gadget, from+i, buf+i, delta-i) <= 0) {
+			if (r_anal_op (core->anal, &end_gadget, from+i, buf+i,
+					delta-i) <= 0) {
 				continue;
 			}
-			if (is_end_gadget(end_gadget, crop)) {
-				r_list_append(end_list, (void*)(intptr_t)i);
+			if (is_end_gadget (end_gadget, crop)) {
+				r_list_append (end_list, (void*)(intptr_t)i);
 			}
-		if (r_cons_singleton()->breaked)
-			break;
+			if (r_cons_singleton()->breaked)
+				break;
 			// Right now we have a list of all of the end/stop gadgets.
 			// We can just construct gadgets from a little bit before them.
 		}
 		r_list_reverse (end_list);
 		// If we have no end gadgets, just skip all of this search nonsense.
-		if (r_list_length(end_list) > 0) {
-			int next;
+		if (r_list_length (end_list) > 0) {
+			int next, ropdepth;
 			// Get the depth of rop search, should just be max_instr
 			// instructions, x86 and friends are weird length instructions, so
 			// we'll just assume 15 byte instructions.
+			ropdepth = increment == 1 ?
+				max_instr * 15 /* wow, x86 is long */ :
+				max_instr * increment;
 			if (r_cons_singleton()->breaked)
 				break;
-			int ropdepth = increment == 1 ? max_instr * 15 /* wow, x86 is long */ : max_instr * increment;
 			next = (intptr_t)r_list_pop (end_list);
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
@@ -726,7 +798,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				if (i >= next) {
 					// We've exhausted the first end-gadget section,
 					// move to the next one.
-					if (r_list_get_n(end_list, 0)) {
+					if (r_list_get_n (end_list, 0)) {
 						next = (intptr_t)r_list_pop (end_list);
 						i = next - ropdepth;
 					} else {
@@ -734,78 +806,28 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					}
 				}
 				if (i >= end) { // read by chunk of 4k
-					r_core_read_at (core, from+i, buf+i, R_MIN ((delta-i), 4096));
+					r_core_read_at (core, from+i, buf+i,
+						R_MIN ((delta-i), 4096));
 					end = i + 2048;
 				}
-				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
+				ret = r_asm_disassemble (core->assembler,
+					&asmop, buf+i, delta-i);
 				if (ret) {
+					RList * hitlist;
 					r_asm_set_pc (core->assembler, from+i);
-					hitlist = construct_rop_gadget (core, from+i, buf,
-							i, grep, regexp, rx_list, next);
+					hitlist = construct_rop_gadget (core,
+						from+i, buf, i, grep, regexp,
+						rx_list, next);
 					if (!hitlist)
 						continue;
 
-					if (json) { // json
-						unsigned int size = 0;
-
-						//Handle comma between gadgets
-						if (json_first == 0)
-							r_cons_strcat (",");
-						else
-							json_first = 0;
-
-						r_cons_printf("{\"opcodes\":[");
-						r_list_foreach (hitlist, iter, hit) {
-							r_core_read_at (core, hit->addr, buf, hit->len);
-							r_asm_set_pc (core->assembler, hit->addr);
-							r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-							r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-							size += hit->len;
-							r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,\"opcode\":\"%s\",\"type\":\"%s\"}%s",
-									hit->addr, hit->len, asmop.buf_asm,
-									r_anal_optype_to_string (analop.type), iter->n?",":"");
-						}
-						r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+					if (json) {
+						print_rop (core, hitlist, 'j', &json_first);
 					} else {
-						const char *otype;
-						char *buf_asm, *buf_hex;
-
-						// The two loops are distinct for performance reason
-						if (mode == 'l') {
-							// Print gadgets in a 'linear manner', each sequence
-							// on one line.
-							hit = r_list_get_top (hitlist);
-							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x":",
-									from+i, hit->addr);
-							r_list_foreach (hitlist, iter, hit) {
-								r_core_read_at (core, hit->addr, buf, hit->len);
-								r_asm_set_pc (core->assembler, hit->addr);
-								r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-								buf_asm = r_print_colorize_opcode (asmop.buf_asm,
-										core->cons->pal.reg, core->cons->pal.num);
-								r_cons_printf (" %s%s;", buf_asm, Color_RESET);
-								free (buf_asm);
-							}
-						} else {
-							// Print gadgets with new instruction on a new line.
-							r_list_foreach (hitlist, iter, hit) {
-								r_core_read_at (core, hit->addr, buf, hit->len);
-								r_asm_set_pc (core->assembler, hit->addr);
-								r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-								buf_asm = r_print_colorize_opcode (asmop.buf_asm,
-										core->cons->pal.reg, core->cons->pal.num);
-								buf_hex = r_print_colorize_opcode (asmop.buf_hex,
-										core->cons->pal.reg, core->cons->pal.num);
-								otype = r_print_color_op_type (core->print, analop.type);
-								r_cons_printf ("  0x%08"PFMT64x" %s%16s  %s%s\n",
-										hit->addr, otype, buf_hex, buf_asm, Color_RESET);
-								free (buf_asm);
-								free (buf_hex);
-							}
-						}
-						r_cons_newline ();
+						print_rop (core, hitlist, mode, &json_first);
 					}
 				}
+
 				if (increment != 1) {
 					i = next;
 				}
