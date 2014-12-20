@@ -2,7 +2,8 @@ PDB usage
 ===================
 
 - For getting information about functions, structures, unions, enumerates etc need to:
-```` rabin2 -P some_pdb_file
+````
+rabin2 -P some_pdb_file
 For example:
 rabin2 -P Project1.pdb
 ...
@@ -24,13 +25,17 @@ TEST_STRUCT: size 0x8
 0x000192c8  0  .idata  __imp__printf
 0x000192c0  0  .idata  __imp__system
 0x000113e0  2  .text  ?test_func@@YAHHH@Z
-... ````
+...
+````
 
 - Too display all mentioned above information in json format need to do:
-```` rabin2 -Pj some_pdb_file ````
+````
+rabin2 -Pj some_pdb_file
+````
 
 - Too export information about types, functions need to do:
-```` rabin2 -Pr some_pdb_file
+````
+rabin2 -Pr some_pdb_file
 For example:
 rabin2 -P Project1.pdb
 ...
@@ -44,15 +49,17 @@ f pdb.__imp__printf = 0x192c8 # 0 .idata
 f pdb.__imp__system = 0x192c0 # 0 .idata
 f pdb._test_func__YAHHH_Z = 0x113e0 # 2 .text
 ...
-
-What to do with this look: http://radare.today/types/````
+What to do with this look: http://radare.today/types/
+````
 
 - For downloading PDB file for some binary (.exe, .dll) need to:
-```` rabin2 -PP path_to_binary
+````
+rabin2 -PP path_to_binary
 For example:
 rabin2 -PP ~/Downloads/libs/user32.dll
 % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current Dload  Upload   Total   Spent    Left  Speed
 100  336k  100  336k    0     0  34388      0  0:00:10  0:00:10 --:--:-- 38385
 Extracting cabinet: /home/inisider/Downloads/libs/user32.pd_
 extracting /home/inisider/Downloads/libs/user32.pdb
-All done, no errors. ````
+All done, no errors.
+````
