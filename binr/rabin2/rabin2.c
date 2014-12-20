@@ -67,6 +67,7 @@ static int rabin_show_help(int v) {
 		" -i              imports (symbols imported from libraries)\n"
 		" -I              binary info\n"
 		" -j              output in json\n"
+		" -k [sdb-query]  run sdb query. for example: '*'\n"
 		" -l              linked libraries\n"
 		" -L              list supported bin plugins\n"
 		" -m [addr]       show source line at addr\n"

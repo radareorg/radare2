@@ -963,6 +963,24 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 #endif
 					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size, addr);
+					 {
+						RBinFile * binfile = r_core_bin_cur (r);
+						RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+					if (plugin && plugin->name) {
+						if (!strncmp (plugin->name, "pe", 2)) {
+							char *p, *module = strdup (symbol->name);
+							p = strstr (module, ".dll_");
+							if (p) {
+								const char *symname = p+5;
+								*p = 0;
+								r_cons_printf ("k bin/pe/%s/%d=%s\n", module,
+									symbol->ordinal, symname);
+								r_cons_printf ("fr %s.dll_Ordinal_%d sym.imp.%s_%s\n",
+									module, symbol->ordinal, module, symname);
+							}
+						}
+					 }
+					 }
 				} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 						    "fwd=%s sz=%u bind=%s type=%s name=%s\n",
 						    addr, symbol->paddr,

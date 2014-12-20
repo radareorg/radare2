@@ -453,12 +453,54 @@ static int cmd_kuery(void *data, const char *input) {
 			if (out) r_cons_printf ("%s\n", out);
 		}
 		break;
+	case 'o':
+		if (input[1] == ' ') {
+			char *fn = strdup (input+2);
+			char *ns = strchr (fn, ' ');
+			if (ns) {
+				Sdb *db;
+				*ns++ = 0;
+				db = sdb_ns_path (core->sdb, ns, 1);
+				if (db) {
+					Sdb *newdb = sdb_new (NULL, fn, 0);
+					if (newdb) {
+						sdb_drain  (db, newdb);
+					} else {
+						eprintf ("Cannot open sdb '%s'\n", fn);
+					}
+				} else eprintf ("Cannot find sdb '%s'\n", ns);
+			} else eprintf ("Missing sdb namespace\n");
+			free (fn);
+		} else {
+			eprintf ("Usage: ko [file] [namepsace]\n");
+		}
+		break;
+	case 'd':
+		if (input[1] == ' ') {
+			char *fn = strdup (input+2);
+			char *ns = strchr (fn, ' ');
+			if (ns) {
+				*ns++ = 0;
+				eprintf ("NS(%s)\n", ns);
+				Sdb *db = sdb_ns_path (core->sdb, ns, 0);
+				if (db) {
+					sdb_file (db, fn);
+					sdb_sync (db);
+				} else eprintf ("Cannot find sdb '%s'\n", ns);
+			} else eprintf ("Missing sdb namespace\n");
+			free (fn);
+		} else {
+			eprintf ("Usage: kd [file] [namepsace]\n");
+		}
+		break;
 	case '?':{
 			const char* help_msg[] = {
 			"Usage:", "k[s] [key[=value]]", "Sdb Query",
 			"k", " foo=bar", "set value",
 			"k", " foo", "show value",
 			"k", "", "list keys",
+			"ko", " [file.sdb] [ns]", "open file into namespace",
+			"kd", " [file.sdb] [ns]", "dump namespace to disk",
 			"ks", " [ns]", "enter the sdb query shell",
 			"k", " anal/meta/*", "ist kv from anal > meta namespaces",
 			"k", " anal/**", "list namespaces under anal",

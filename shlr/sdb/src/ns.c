@@ -178,11 +178,7 @@ SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 		if (slash)
 			*slash = 0;
 		s = sdb_ns (s, ptr, create);
-		if (!s) {
-			free (str);
-			return NULL;
-		}
-		//s = ns->sdb;
+		if (!s) break;
 		if (slash)
 			ptr = slash+1;
 	} while (slash);
