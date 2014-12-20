@@ -62,4 +62,5 @@ rabin2 -PP ~/Downloads/libs/user32.dll
 Extracting cabinet: /home/inisider/Downloads/libs/user32.pd_
 extracting /home/inisider/Downloads/libs/user32.pdb
 All done, no errors.
+For using PDB downloader in unix like systems need to setup curl and cabextract, and for Windows just curl
 ````
