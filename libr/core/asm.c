@@ -351,6 +351,7 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RList *hits = r_core_asm_hit_list_new();
+	int buflen = len;
 	RCoreAsmHit dummy_value;
 	RAsmOp op;
 	ut8 *buf = (ut8 *)malloc (len);
@@ -397,6 +398,18 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 			}
 		}
 		if (hit_count >= n) break;
+
+		if (idx == len-1) {
+			len += buflen;
+			if (!(buf = realloc (buf, len))) {
+				if (hits) {
+					r_list_purge (hits);
+					free (hits);
+				}
+				free (buf);
+				return NULL;
+			}
+		}
 	}
 
 	if (hit_count == n) {
