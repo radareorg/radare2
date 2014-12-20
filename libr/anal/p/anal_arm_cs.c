@@ -18,7 +18,7 @@
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 // TODO scale and disp
 
-static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		sprintf (buf, "%s",
@@ -26,7 +26,15 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 				insn->detail->arm.operands[n].reg));
 		break;
 	case ARM_OP_IMM:
-		sprintf (buf, "%d", insn->detail->arm.operands[n].imm);
+		if (a->bits == 64) {
+			// 64bit only
+			sprintf (buf, "%"PFMT64d, (ut64)
+					insn->detail->arm.operands[n].imm);
+		} else {
+			// 32bit only
+			sprintf (buf, "%"PFMT64d, (ut64)(ut32)
+					insn->detail->arm.operands[n].imm);
+		}
 		break;
 	case ARM_OP_MEM:
 		// TODO
@@ -36,8 +44,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 	}
 	return buf;
 }
-
-#define ARG(x) arg(handle, insn, str[x], x)
+#define ARG(x) arg(a, handle, insn, str[x], x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int i;
@@ -307,7 +314,7 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else if (insn->detail->arm.cc) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM(0);
+			op->jump = (ut64) (ut32)IMM(0);
 			op->fail = addr+op->size;
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -333,6 +340,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->size = (a->bits==16)? 2: 4;
 	op->delay = 0;
 	op->jump = op->fail = -1;
+	op->addr = addr;
 	op->ptr = op->val = -1;
 	op->refptr = 0;
 	r_strbuf_init (&op->esil);
