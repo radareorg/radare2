@@ -400,8 +400,12 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		if (hit_count >= n) break;
 
 		if (idx == len-1) {
+			char *b;
 			len += buflen;
-			if (!(buf = realloc (buf, len))) {
+			b = realloc (buf, len);
+			if (b) {
+				buf = b;
+			} else {
 				if (hits) {
 					r_list_purge (hits);
 					free (hits);
@@ -412,7 +416,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		}
 	}
 
-	if (hit_count == n) {
+	if (hit_count <= n) {
 		at = addr - idx;
 		hit_count = 0;
 		r_asm_set_pc (core->assembler, at);
