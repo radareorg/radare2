@@ -658,6 +658,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SET)) {
 		int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 		int is_pe = 1; // TODO: optimize
+		int is_sandbox = r_sandbox_enable (0);
 		char *sdb_module = NULL;
 		RFlagItem *fi;
 		char *demname, *symname;
@@ -668,7 +669,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			ut64 addr = va? reloc->vaddr: reloc->paddr;
 			demname = NULL;
 			if (reloc->import && reloc->import->name[0]) {
-				if (is_pe && strstr (reloc->import->name, "Ordinal")) {
+				if (is_pe && !is_sandbox && strstr (reloc->import->name, "Ordinal")) {
 					const char *TOKEN = ".dll_Ordinal_";
 					char *module = strdup (reloc->import->name);
 					char *import = strstr (module, TOKEN);
@@ -687,10 +688,11 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 							if (r_file_exists (filename)) {
 								db = sdb_new (NULL, filename, 0);
 							} else {
-								filename = sdb_fmt (1,
-									R2_PREFIX"/share/radare2/"
-									R2_VERSION"/format/dll/%s.sdb",
-									module);
+#if __WINDOWS__
+								filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
+#else
+								filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", module);
+#endif
 								if (r_file_exists (filename)) {
 									db = sdb_new (NULL, filename, 0);
 								}

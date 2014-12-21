@@ -454,21 +454,27 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case 'o':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1] == ' ') {
 			char *fn = strdup (input+2);
 			char *ns = strchr (fn, ' ');
 			if (ns) {
 				Sdb *db;
 				*ns++ = 0;
-				db = sdb_ns_path (core->sdb, ns, 1);
-				if (db) {
-					Sdb *newdb = sdb_new (NULL, fn, 0);
-					if (newdb) {
-						sdb_drain  (db, newdb);
-					} else {
-						eprintf ("Cannot open sdb '%s'\n", fn);
-					}
-				} else eprintf ("Cannot find sdb '%s'\n", ns);
+				if (r_file_exists (fn)) {
+					db = sdb_ns_path (core->sdb, ns, 1);
+					if (db) {
+						Sdb *newdb = sdb_new (NULL, fn, 0);
+						if (newdb) {
+							sdb_drain  (db, newdb);
+						} else {
+							eprintf ("Cannot open sdb '%s'\n", fn);
+						}
+					} else eprintf ("Cannot find sdb '%s'\n", ns);
+				} else eprintf ("Cannot open file\n");
 			} else eprintf ("Missing sdb namespace\n");
 			free (fn);
 		} else {
@@ -476,12 +482,15 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case 'd':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1] == ' ') {
 			char *fn = strdup (input+2);
 			char *ns = strchr (fn, ' ');
 			if (ns) {
 				*ns++ = 0;
-				eprintf ("NS(%s)\n", ns);
 				Sdb *db = sdb_ns_path (core->sdb, ns, 0);
 				if (db) {
 					sdb_file (db, fn);
