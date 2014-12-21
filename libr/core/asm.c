@@ -355,12 +355,8 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RCoreAsmHit dummy_value;
 	RAsmOp op;
 	ut8 *buf = (ut8 *)malloc (len);
-	ut64 instrlen = 0,
-		 at = 0;
-
-	ut32
-	 	 idx = 0,
-	 	 hit_count = 0;
+	ut64 instrlen = 0, at = 0;
+	ut32 idx = 0, hit_count = 0;
 
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
@@ -400,7 +396,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		if (hit_count >= n) break;
 
 		if (idx == len-1) {
-			char *b;
+			ut8 *b;
 			len += buflen;
 			b = realloc (buf, len);
 			if (b) {

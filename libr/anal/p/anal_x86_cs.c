@@ -562,15 +562,25 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_CALL:
 			case X86_INS_LCALL:
-				if (INSOP(0).type==X86_OP_IMM) {
+				switch (INSOP(0).type) {
+				case X86_OP_IMM:
 					op->type = R_ANAL_OP_TYPE_CALL;
 					// TODO: what if UCALL?
 					// TODO: use imm_size
 					op->jump = INSOP(0).imm;
 					op->fail = addr+op->size;
-				} else {
+					break;
+				case X86_OP_MEM:
 					op->type = R_ANAL_OP_TYPE_UCALL;
 					op->jump = UT64_MAX;
+					if (INSOP(0).mem.base== 0) {
+						op->ptr = INSOP(0).mem.disp;
+					}
+					break;
+				default:
+					op->type = R_ANAL_OP_TYPE_UCALL;
+					op->jump = UT64_MAX;
+					break;
 				}
 				if (a->decode) {
 					esilprintf (op,

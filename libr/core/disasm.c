@@ -982,10 +982,13 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		ds->lastfail = 1;
 		strcpy (ds->asmop.buf_asm, "invalid");
 	//	sprintf (asmop.buf_hex, "%02x", buf[idx]);
+		ds->asmop.size = (ds->hint && ds->hint->size)?
+			ds->hint->size: 1;
 	} else {
 		ds->lastfail = 0;
 		ds->asmop.size = (ds->hint && ds->hint->size)?
 			ds->hint->size: r_asm_op_get_size (&ds->asmop);
+		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
 		r_parse_parse (core->parser, ds->opstr?
@@ -1028,6 +1031,7 @@ static void handle_print_lines_right (RCore *core, RDisasmState *ds){
 		} else r_cons_printf (ds->line);
 	}
 }
+
 static void handle_print_lines_left (RCore *core, RDisasmState *ds){
 	if (ds->show_section) {
 		r_cons_strcat (getSectionName (core, ds->at));
@@ -1185,27 +1189,27 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 				switch (mi->size) {
 				case 1:
-					r_cons_printf (".byte 0x%02x\n", buf[idx]);
+					r_cons_printf (".byte 0x%02x", buf[idx]);
 					break;
 				case 2:
 					{
 					ut16 *data = (ut16*)(buf+idx);
 					r_mem_copyendian((ut8*)data, (ut8*)data, 2, !core->print->big_endian);
-					r_cons_printf (".word 0x%04x\n", *data);
+					r_cons_printf (".word 0x%04x", *data);
 					}
 					break;
 				case 4:
 					{
 					ut32 *data = (ut32*)(buf+idx);
 					r_mem_copyendian((ut8*)data, (ut8*)data, 4, !core->print->big_endian);
-					r_cons_printf (".dword 0x%08x\n", *data);
+					r_cons_printf (".dword 0x%08x", *data);
 					}
 					break;
 				case 8:
 					{
 					ut64 *data = (ut64*)(buf+idx);
 					r_mem_copyendian((ut8*)data, (ut8*)data, 8, !core->print->big_endian);
-					r_cons_printf (".qword 0x%016x\n", *data);
+					r_cons_printf (".qword 0x%016x", *data);
 					}
 					break;
 				default:
@@ -2031,30 +2035,37 @@ toro:
 		handle_print_cycles (core, ds);
 		handle_print_stackptr (core, ds);
 		ret = handle_print_meta_infos (core, ds, buf, len, idx);
+#if 0
 		if (ds->mi_found) {
 			ds->mi_found = 0;
 			continue;
 		}
-		/* show cursor */
-		handle_print_show_cursor (core, ds);
-		handle_print_show_bytes (core, ds);
-		handle_print_lines_right (core, ds);
-		handle_build_op_str (core, ds);
-		handle_print_opstr (core, ds);
-		handle_print_fcn_name (core, ds);
-		handle_print_color_reset (core, ds);
-		handle_print_dwarf (core, ds);
-		ret = handle_print_middle (core, ds, ret);
-		handle_print_asmop_payload (core, ds);
-		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
-			RAsmOp ao; /* disassemble for the vm .. */
-			int os = core->assembler->syntax;
-			r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-			r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx+5);
-			r_asm_set_syntax (core->assembler, os);
+#endif
+		if (!ds->mi_found) {
+			/* show cursor */
+			handle_print_show_cursor (core, ds);
+			handle_print_show_bytes (core, ds);
+			handle_print_lines_right (core, ds);
+			handle_build_op_str (core, ds);
+			handle_print_opstr (core, ds);
+			handle_print_fcn_name (core, ds);
+			handle_print_color_reset (core, ds);
+			handle_print_dwarf (core, ds);
+			ret = handle_print_middle (core, ds, ret);
+			handle_print_asmop_payload (core, ds);
+			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
+				RAsmOp ao; /* disassemble for the vm .. */
+				int os = core->assembler->syntax;
+				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
+				r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx+5);
+				r_asm_set_syntax (core->assembler, os);
+			}
+			handle_print_core_vmode (core, ds);
+			handle_print_cc_update (core, ds);
+		} else {
+			ds->mi_found = 0;
+			//continue;
 		}
-		handle_print_core_vmode (core, ds);
-		handle_print_cc_update (core, ds);
 		handle_print_op_push_info (core, ds);
 #if 1
 		handle_print_ptr (core, ds, len, idx);
