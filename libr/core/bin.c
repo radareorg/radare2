@@ -697,14 +697,14 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 									db = sdb_new (NULL, filename, 0);
 								}
 							}
-							if (db) {
-								// ordinal-1 because we enumerate starting at 0
-								symname = resolveModuleOrdinal (db, module, ordinal-1);
-								if (symname) {
-									snprintf (reloc->import->name, 
-										sizeof (reloc->import->name),
-										"%s.%s", module, symname);
-								}
+						}
+						if (db) {
+							// ordinal-1 because we enumerate starting at 0
+							symname = resolveModuleOrdinal (db, module, ordinal-1);
+							if (symname) {
+								snprintf (reloc->import->name, 
+									sizeof (reloc->import->name),
+									"%s.%s", module, symname);
 							}
 						}
 					}
