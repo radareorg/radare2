@@ -138,40 +138,41 @@ static RList* symbols(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj)))
-		return ret;
-	for (i = 0; !symbols[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSymbol)))
-			break;
-		//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "%s", symbols[i].name);
-		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
-		ptr->size = 0;
-		ptr->vaddr = symbols[i].vaddr;
-		ptr->paddr = symbols[i].paddr;
-		ptr->ordinal = symbols[i].ordinal;
-		r_list_append (ret, ptr);
+	if ((symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj))) {
+        for (i = 0; !symbols[i].last; i++) {
+            if (!(ptr = R_NEW0 (RBinSymbol)))
+                break;
+            //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+            snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "%s", symbols[i].name);
+            strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
+            strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+            strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+            ptr->size = 0;
+            ptr->vaddr = symbols[i].vaddr;
+            ptr->paddr = symbols[i].paddr;
+            ptr->ordinal = symbols[i].ordinal;
+            r_list_append (ret, ptr);
+        }
+        free (symbols);
 	}
-	free (symbols);
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
-		return ret;
-	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSymbol)))
-			break;
-		//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", imports[i].name);
-		//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
-		ptr->size = 0;
-		ptr->vaddr = imports[i].vaddr;
-		ptr->paddr = imports[i].paddr;
-		ptr->ordinal = imports[i].ordinal;
-		r_list_append (ret, ptr);
+
+	if ((imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
+        for (i = 0; !imports[i].last; i++) {
+            if (!(ptr = R_NEW0 (RBinSymbol)))
+                break;
+            //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+            snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", imports[i].name);
+            //strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
+            strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+            strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+            ptr->size = 0;
+            ptr->vaddr = imports[i].vaddr;
+            ptr->paddr = imports[i].paddr;
+            ptr->ordinal = imports[i].ordinal;
+            r_list_append (ret, ptr);
+        }
+        free (imports);
 	}
-	free (imports);
 	return ret;
 }
 
@@ -363,7 +364,7 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_bool_set (arch->sdb, "pe.guardcf", haschr(arch, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
 	sdb_bool_set (arch->sdb, "pe.terminalserveraware", haschr(arch, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
-	
+
 	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
