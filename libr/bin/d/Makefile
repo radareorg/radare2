@@ -9,6 +9,7 @@ P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format
 all: dll/WS2_32.sdb dll/OLEAUT32.sdb
 
 clean:
+	rm -f dll/WS2_32.sdb dll/OLEAUT32.sdb
 
 .PHONY: all clean install install-symlink symstall
 

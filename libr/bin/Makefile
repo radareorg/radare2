@@ -8,6 +8,7 @@ DEPS=r_util r_db r_io r_magic
 
 pre: $(LIBSO) $(LIBAR)
 	$(MAKE) -C p
+	$(MAKE) -C d
 
 CFLAGS+=-DCORELIB -Iformat -Imangling
 
