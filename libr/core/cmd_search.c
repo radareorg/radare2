@@ -1165,7 +1165,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 
 static int cmd_search(void *data, const char *input) {
 	struct search_parameters param;
-
+	int ret = R_TRUE;
 	int i, len, dosearch = R_FALSE;
 	RCore *core = (RCore *)data;
 	int ignorecase = R_FALSE;
@@ -1175,6 +1175,12 @@ static int cmd_search(void *data, const char *input) {
 	ut32 n32;
 	ut16 n16;
 	ut8 n8;
+
+	if (core->in_search) {
+		eprintf ("Cant search from within a search\n");
+		return R_FALSE;
+	}
+	core->in_search = R_TRUE;
 
 	param.from = param.to = 0;
 	param.inverse = R_FALSE;
@@ -1196,7 +1202,8 @@ static int cmd_search(void *data, const char *input) {
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	param.mode = r_config_get (core->config, "search.in");
-	param.boundaries = r_core_get_boundaries (core, param.mode, &param.from, &param.to);
+	param.boundaries = r_core_get_boundaries (core, param.mode,
+			&param.from, &param.to);
 	param.use_mread = (!strcmp (param.mode, "maps"))? 1: 0;
 
 	if (__from != UT64_MAX) param.from = __from;
@@ -1242,7 +1249,7 @@ static int cmd_search(void *data, const char *input) {
 	}
 
 	/* Quick & dirty check for json output */
-	if(input[1] == 'j') {
+	if (input[1] == 'j') {
 		json = R_TRUE;
 		param_offset++;
 	}
@@ -1253,14 +1260,13 @@ static int cmd_search(void *data, const char *input) {
 		input++;
 		param.inverse = R_TRUE;
 		goto reread;
-		break;
 	case 'B':
 		cmd_search_bin (core, param.from, param.to);
 		break;
 	case 'b':
 		if (*(++input) == '?'){
 			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
-			return R_TRUE;
+			goto beach;
 		}
 		core->search->bckwrds = param.bckwrds = param.do_bckwrd_srch = R_TRUE;
 		/* if backward search and __to wasn't specified
@@ -1270,7 +1276,6 @@ static int cmd_search(void *data, const char *input) {
 			param.from = 0;
 		}
 		goto reread;
-		break;
 	case 'P':
 		{
 		// print the offset of the Previous opcode
@@ -1295,7 +1300,7 @@ static int cmd_search(void *data, const char *input) {
 		} else if (input[1] == '/') {
 			r_core_search_rop (core, param.from, param.to, 0, input+1, 1);
 		} else r_core_search_rop (core, param.from, param.to, 0, input+1, 0);
-		return R_TRUE;
+		goto beach;
 	case 'r': // "/r"
 		if (input[param_offset-1]==' ') {
 			r_core_anal_search (core, param.from, param.to,
@@ -1303,17 +1308,21 @@ static int cmd_search(void *data, const char *input) {
 		} else r_core_anal_search (core, param.from, param.to, core->offset);
 		break;
 	case 'a': {
-		char *kwd;
-		if (!(kwd = r_core_asm_search (core, input+param_offset, param.from, param.to)))
-			return R_FALSE;
-		r_search_reset (core->search, R_SEARCH_KEYWORD);
-		r_search_set_distance (core->search, (int)
+		char *kwd = r_core_asm_search (core, input+param_offset,
+			param.from, param.to);
+		if (kwd) {
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search,
+			r_search_kw_add (core->search,
 				r_search_keyword_new_hexmask (kwd, NULL));
-		r_search_begin (core->search);
-		free (kwd);
-		dosearch = R_TRUE;
+			r_search_begin (core->search);
+			free (kwd);
+			dosearch = R_TRUE;
+		} else {
+			ret = R_FALSE;
+			goto beach;
+		}
 		} break;
 	case 'C': {
 		dosearch = param.crypto_search = R_TRUE;
@@ -1382,7 +1391,8 @@ static int cmd_search(void *data, const char *input) {
 			ut64 vmax = r_num_math (core->num, w);
 			if (vsize>0) {
 				err = 0;
-				(void)cmd_search_value_in_range (core, param.from, param.to, vmin, vmax, vsize);
+				(void)cmd_search_value_in_range (core,
+				param.from, param.to, vmin, vmax, vsize);
 			}
 		}
 		if (err)
@@ -1439,7 +1449,7 @@ static int cmd_search(void *data, const char *input) {
 			const char *p2;
 			char *p, *str;
 			strstart = 2+json+ignorecase;
-			len = strlen(input+strstart);
+			len = strlen (input+strstart);
 			str = malloc ((len+1)*2);
 			for (p2=input+strstart, p=str; *p2; p+=2, p2++) {
 				if (ignorecase)
@@ -1468,7 +1478,8 @@ static int cmd_search(void *data, const char *input) {
 	case 'i':
 		if (input[param_offset-1]!= ' ') {
 			eprintf ("Missing ' ' after /i\n");
-			return R_FALSE;
+			ret = R_FALSE;
+			goto beach;
 		}
 		ignorecase = R_TRUE;
 	case 'j':
@@ -1519,8 +1530,7 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'E':
 		do_esil_search(core, &param, input);
-		return R_TRUE;
-		break;
+		goto beach;
 	case 'd': /* search delta key */
 		r_search_reset (core->search, R_SEARCH_DELTAKEY);
 		r_search_kw_add (core->search,
@@ -1579,7 +1589,7 @@ static int cmd_search(void *data, const char *input) {
 						eprintf ("Oops\n");
 						free (buf);
 						free (str);
-						return R_TRUE;
+						goto beach;
 					}
 					eprintf ("Repeat with chunk size %d\n", chunksize);
 					goto again;
@@ -1667,6 +1677,7 @@ static int cmd_search(void *data, const char *input) {
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch)
 		do_string_search(core, &param);
-
-	return R_TRUE;
+beach: 
+	core->in_search = R_FALSE;
+	return ret;
 }

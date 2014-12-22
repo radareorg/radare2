@@ -141,6 +141,7 @@ typedef struct r_core_t {
 	int utf8;
 	int vseek;
 	int zerosep;
+	int in_search;
 	RList *watchers;
 	RList *scriptstack;
 	RList *tasks;
