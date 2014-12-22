@@ -717,6 +717,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	char* tok, *gregexp = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
+	if (max_instr <= 0) {
+		eprintf ("ROP length (rop.len) must be greater than 0\n");
+		return R_FALSE;
+	}
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
 		increment = 4;
@@ -825,6 +829,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			prev = 0;
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
+				if (i <0) i = 0;
 				if (i < prev) i = prev;
 				if (r_cons_singleton()->breaked)
 					break;
