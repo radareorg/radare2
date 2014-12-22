@@ -124,6 +124,8 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
+	if (r_sandbox_enable (0))
+		return NULL;
 	io->va = R_TRUE; // nop
 	ret = update_self_regions (pid);
 	if (ret) {
