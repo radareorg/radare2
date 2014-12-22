@@ -179,6 +179,18 @@ purge-doc:
 	cd man ; for a in *.1 ; do rm -f "${MDR}/man1/$$a" ; done
 	rm -f ${MDR}/man1/r2.1
 
+user-wrap=echo "\#!/bin/sh" > ~/bin/$1 \
+; echo "${PWD}/env.sh ${PREFIX} $1" >> ~/bin/$1 \
+; chmod +x ~/bin/$1 ;
+
+user-install:
+	mkdir -p ~/bin
+	$(foreach mod,$(R2BINS),$(call user-wrap,$(mod)))
+
+user-uninstall:
+	$(foreach mod,$(R2BINS),rm -f ~/bin/$(mod))
+	-rmdir ~/bin
+
 purge-dev:
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*.${EXT_AR}
 	rm -f ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
