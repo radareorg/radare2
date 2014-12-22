@@ -218,18 +218,22 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		default:
 			len = kw->keyword_length; // 8 byte context
 			str = malloc ((len*2)+extra);
-			p=str;
-			memset (str, 0, len);
-			r_core_read_at (core, addr, buf, kw->keyword_length);
-			if (json) {
-				strcpy (str, "0x");
-				p=str+2;
+			if (str) {
+				p = str;
+				memset (str, 0, len);
+				r_core_read_at (core, addr, buf, kw->keyword_length);
+				if (json) {
+					strcpy (str, "0x");
+					p=str+2;
+				}
+				for (i=0; i<len; i++) {
+					sprintf (p, "%02x", buf[i]);
+					p += 2;
+				}
+				*p = 0;
+			} else {
+				eprintf ("Cannot allocate %d\n", (len*2)+extra);
 			}
-			for (i=0; i<len; i++) {
-				sprintf (p, "%02x", buf[i]);
-				p += 2;
-			}
-			*p = 0;
 			break;
 		}
 
@@ -894,7 +898,7 @@ static int esil_addrinfo(RAnalEsil *esil) {
 }
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
-	RSearchKeyword kw;
+	RSearchKeyword kw = {0};
 	if (input[1]==' ') {
 		int kwidx = r_config_get_i (core->config, "search.kwidx");
 		char *res;
@@ -1529,7 +1533,7 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case 'E':
-		do_esil_search(core, &param, input);
+		do_esil_search (core, &param, input);
 		goto beach;
 	case 'd': /* search delta key */
 		r_search_reset (core->search, R_SEARCH_DELTAKEY);
