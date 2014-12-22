@@ -1086,6 +1086,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.font", "Courier", "Font to be used by the dot graphs");
 	SETPREF("graph.offset", "false", "Show offsets in graphs");
 	SETPREF("graph.web", "false", "Display graph in web browser (VV)");
+	SETI("graph.from", UT64_MAX, "");
+	SETI("graph.to", UT64_MAX, "");
 
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");

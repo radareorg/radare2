@@ -1339,6 +1339,8 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
+	ut64 from = r_config_get_i (core->config, "graph.from");
+	ut64 to = r_config_get_i (core->config, "graph.to");
 	const char *font = r_config_get (core->config, "graph.font");
         int is_html = r_cons_singleton ()->is_html;
         int is_json = opts & R_CORE_ANAL_JSON;
@@ -1370,6 +1372,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN)
 				&& (addr == 0 || inrange (addr, fcni))) {
+			if (!addr && (from != UT64_MAX && to != UT64_MAX)) {
+				if (fcni->addr < from || fcni->addr > to) {
+					continue;
+				}
+			}
 			if (is_json && count++>0) r_cons_printf (",");
 			r_core_anal_graph_nodes (core, fcni, opts);
 			if (addr != 0) break;

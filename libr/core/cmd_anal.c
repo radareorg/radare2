@@ -2110,10 +2110,10 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'g':
-		cmd_anal_graph(core, input+1);
+		cmd_anal_graph (core, input+1);
 		break;
 	case 't':
-		cmd_anal_trace(core, input+1);
+		cmd_anal_trace (core, input+1);
 		break;
 	case 's': // "as"
 		cmd_anal_syscall(core, input+1);
