@@ -485,7 +485,7 @@ SDB_API int sdb_sync (Sdb* s) {
 	char *k, *v;
 	SdbKv *kv;
 
-	if (!sdb_disk_create (s))
+	if (!s || !sdb_disk_create (s))
 		return 0;
 // TODO: use sdb_foreach here
 	sdb_dump_begin (s);

@@ -21,7 +21,7 @@ typedef struct {
 } RIOShm;
 #define RIOSHM_FD(x) (((RIOShm*)x)->fd)
 
-#define SHMATSZ 32*1024*1024; /* 32MB : XXX not used correctly? */
+#define SHMATSZ 0x9000; // 32*1024*1024; /* 32MB : XXX not used correctly? */
 
 static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOShm *shm;
@@ -40,8 +40,13 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	shm = fd->data;
-	if (io->off > shm->size)
-		io->off = shm->size;
+	if (io->off+count >= shm->size) {
+		if (io->off > shm->size)
+			return -1;
+		count = shm->size - io->off;
+	}
+	if (count>32)
+		count = 32;
 	memcpy (buf, shm->buf+io->off , count);
         return count;
 }
