@@ -709,6 +709,8 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 						}
 					}
 					free (module);
+					r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
+					r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 				}
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
@@ -725,8 +727,6 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			} else {
 				// TODO(eddyb) implement constant relocs.
 			}
-			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
-			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
 		sdb_free (db);
 		free (sdb_module);
