@@ -396,6 +396,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				switch (INSOP(1).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(1).mem.disp;
+					op->refptr = INSOP(1).size;
+					if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
+						op->stackop = R_ANAL_STACK_GET;
+						op->stackptr = regsz;
+					}
+					break;
+				case X86_OP_IMM:
+					if (INSOP(1).imm > 10)
+						op->ptr = INSOP(1).imm;
+					break;
 				default:
 					break;
 				}
