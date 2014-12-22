@@ -352,22 +352,32 @@ static int cmd_cmp(void *data, const char *input) {
 			int diffops = 0;
 			RCore *core2;
 			char *file2 = NULL;
-			if (input[1]=='o') {
+			switch (input[1]) {
+			case 'o':
 				file2 = (char*)r_str_chop_ro (input+2);
 				r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
-			} else if (input[1]==' ') {
+				break;
+			case 'f':
+				eprintf ("TODO: agf is experimental\n");
+				r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
+				r_core_gdiff_fcn (core, core->offset,
+					r_num_math (core->num, input +2));
+				return R_FALSE;
+			case ' ':
 				file2 = (char*)r_str_chop_ro (input+2);
 				r_anal_diff_setup (core->anal, R_FALSE, -1, -1);
-			} else {
+				break;
+			default: {
 				const char * help_message[] = {
 				"Usage: cg", "", "Graph code commands",
 				"cg",  "", "Byte-per-byte code graph diff",
+				"cgf", "[fcn]", "Compare functions (curseek vs fcn)",
 				"cgo", "", "Opcode-bytes code graph diff",
 				NULL
 				};
-
 				r_core_cmd_help(core, help_message);
 				return R_FALSE;
+				}
 			}
 
 			if (!(core2 = r_core_new ())) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 - nibble<develsec.org> */
+/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -6,6 +6,22 @@
 #include <r_list.h>
 #include <r_util.h>
 #include <r_core.h>
+
+R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
+	RList *la, *lb;
+	RAnalFunction *fa = r_anal_get_fcn_at (c->anal, addr, 0);
+	RAnalFunction *fb = r_anal_get_fcn_at (c->anal, addr2, 0);
+	la = r_list_new ();
+	r_list_append (la, fa);
+	lb = r_list_new ();
+	r_list_append (lb, fb);
+
+	r_anal_diff_fcn (c->anal, la, lb);
+
+	r_list_free (la);
+	r_list_free (lb);
+	return R_FALSE;
+}
 
 /* Fingerprint functions and blocs, then diff.
  * If `anal_all` is true, analyse the whole binary before */

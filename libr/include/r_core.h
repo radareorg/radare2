@@ -346,6 +346,7 @@ R_API int r_core_bin_refresh_strings(RCore *core);
 
 /* gdiff.c */
 R_API int r_core_gdiff(RCore *core1, RCore *core2, int anal_all);
+R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
 R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_save(RCore *core, const char *file);
