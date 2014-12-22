@@ -6,10 +6,14 @@ SDB=$(call rmdblslash,$(SDBPATH)/sdb)
 
 P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format
 
-all: dll/WS2_32.sdb dll/OLEAUT32.sdb
+DLLS=WS2_32 OLEAUT32 WSOCK32 MSI CSMFPAPI
+DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
+#-include $(OBJS:.o=.d)
+
+all: $(DLL_SDB)
 
 clean:
-	rm -f dll/WS2_32.sdb dll/OLEAUT32.sdb
+	rm -f dll/*.sdb
 
 .PHONY: all clean install install-symlink symstall
 
@@ -29,11 +33,8 @@ symstall install-symlink:
 		fi ; \
 	done
 
-dll/WS2_32.sdb: dll/WS2_32.sdb.txt
-	${SDB} dll/WS2_32.sdb = < dll/WS2_32.sdb.txt
-
-dll/OLEAUT32.sdb: dll/OLEAUT32.sdb.txt
-	${SDB} dll/OLEAUT32.sdb = < dll/OLEAUT32.sdb.txt
+$(DLL_SDB):
+	$(SDB) $@ = < $@.txt
 
 uninstall:
 	rm -rf "$P"

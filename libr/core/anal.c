@@ -1422,17 +1422,18 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	if (buf==NULL)
 		return -1;
 	r_io_use_desc (core->io, core->file->desc);
-	if (ref==0LL)
+	if (ref==0LL) {
 		eprintf ("Null reference search is not supported\n");
-	else
-r_cons_break (NULL, NULL);
+		return -1;
+	}
+	r_cons_break (NULL, NULL);
 	if (core->blocksize>OPSZ) {
-		if(bckwrds){
+		if (bckwrds){
 			if(from + core->blocksize > to){
 				at = from;
 				do_bckwrd_srch = R_FALSE;
-			}else at = to - core->blocksize;
-		}else at = from;
+			} else at = to - core->blocksize;
+		} else at = from;
 		for (; (!bckwrds && at < to) || bckwrds; ) {
 			if (r_cons_singleton ()->breaked)
 				break;
@@ -1460,22 +1461,25 @@ r_cons_break (NULL, NULL);
 					}
 				} else {
 					if (op.ptr != -1 &&
-						r_core_anal_followptr (core, at+i, op.ptr, ref, R_FALSE, ptrdepth)) {
+						r_core_anal_followptr (core,
+							at+i, op.ptr, ref,
+							R_FALSE, ptrdepth)) {
 						count ++;
 					}
 				}
 			}
-			if(bckwrds){
+			if (bckwrds) {
 				if (!do_bckwrd_srch) break;
-				if (at > from + core->blocksize - OPSZ) at -= core->blocksize;
-				else {
+				if (at > from + core->blocksize - OPSZ) {
+					at -= core->blocksize;
+				} else {
 					do_bckwrd_srch = R_FALSE;
 					at = from;
 				}
-			}else at += core->blocksize - OPSZ;
+			} else at += core->blocksize - OPSZ;
 		}
 	} else eprintf ("error: block size too small\n");
-r_cons_break_end ();
+	r_cons_break_end ();
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
