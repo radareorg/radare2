@@ -1179,9 +1179,12 @@ static int cmd_search(void *data, const char *input) {
 	ut32 n32;
 	ut16 n16;
 	ut8 n8;
-
+	if (!core->io->desc) {
+		eprintf ("Can't search if we don't have an open file.\n");
+		return R_FALSE;
+	}
 	if (core->in_search) {
-		eprintf ("Cant search from within a search\n");
+		eprintf ("Can't search from within a search.\n");
 		return R_FALSE;
 	}
 	core->in_search = R_TRUE;
