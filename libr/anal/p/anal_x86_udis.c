@@ -238,7 +238,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			case UD_R_RIP:
 				// Self modifying code? relative local vars
 				switch (u.operand[1].size) {
-				case  8: 
+				case  8:
 				case 16:
 				case 32: delta = u.operand[1].lval.udword; break;
 				case 64: delta = u.operand[1].lval.uqword; break;
@@ -338,7 +338,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				// op->type == 9
 				//switch (op->size) {
 				switch (u.operand[0].size) {
-				case  8: 
+				case  8:
 				case 16:
 				case 32: delta = u.operand[0].lval.udword; break;
 				case 64: delta = u.operand[0].lval.uqword; break;
@@ -349,7 +349,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			case UD_R_RBP:
 				op->stackop = R_ANAL_STACK_SET;
 				op->ptr = getval (&u.operand[0]); //-(st64)u.operand[0].lval.sbyte; //getval (&u.operand[0]);
-				op->ptr = (st64)((char)u.operand[0].lval.sbyte); //getval (&u.operand[0]);
+				// op->ptr = (st64)((char)u.operand[0].lval.sbyte); //getval (&u.operand[0]);
 				// if positive = arg
 				// if negative = var
 				break;
@@ -366,7 +366,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				switch (u.operand[1].base) {
 				case UD_R_RIP:
 					switch (u.operand[1].size) {
-					case  8: 
+					case  8:
 					case 16:
 					case 32: delta = u.operand[1].lval.udword; break;
 					case 64: delta = u.operand[1].lval.uqword; break;
@@ -377,7 +377,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 				case UD_R_RBP:
 					op->stackop = R_ANAL_STACK_GET;
 					op->ptr = getval (&u.operand[1]);
-					op->ptr = (st64)((char)u.operand[1].lval.sbyte); //getval (&u.operand[0]);
+					// op->ptr = (st64)((char)u.operand[1].lval.sbyte); //getval (&u.operand[0]);
 					// if positive = arg
 					// if negative = var
 					break;
@@ -746,7 +746,7 @@ static int set_reg_profile(RAnal *anal) {
 		 "drx	dr7	.32	28	0\n";
 		 break;
 	}
-	return r_reg_set_profile_string (anal->reg, p); 
+	return r_reg_set_profile_string (anal->reg, p);
 }
 
 struct r_anal_plugin_t r_anal_plugin_x86_udis = {
