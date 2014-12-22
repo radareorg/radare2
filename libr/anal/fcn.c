@@ -193,7 +193,7 @@ static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
 	r_list_append (fcn->bbs, bb);
 	return bb;
 }
- //fcn->addr += n; fcn->size -= n; } else 
+//fcn->addr += n; fcn->size -= n; } else 
 #define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
 	if (n<0) { } else \
 	if (fcn->size<n)fcn->size=n; } \
@@ -382,8 +382,9 @@ repeat:
 		case R_ANAL_OP_TYPE_NOP:
 			if (anal->nopskip) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
-					//fcn->addr = bb->addr = addr + delay.un_idx;
 					fcn->addr += oplen;
+					bb->size -= oplen;
+					bb->addr += oplen;
 					idx = delay.un_idx;
 					goto repeat;
 					continue;
@@ -714,6 +715,7 @@ R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
 			r_list_append (fcn->bbs, bb);
 			bb->addr = addr+bbi->size;
+eprintf ("\nADD BB %llx\n\n", bb->addr);
 			bb->size = bbi->addr + bbi->size - addr;
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;
