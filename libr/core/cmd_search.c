@@ -217,7 +217,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		default:
 			len = kw->keyword_length; // 8 byte context
-			str = malloc ((len*2)+extra);
+			if (len>0xffff) str = NULL;
+			else str = malloc ((len*2)+extra);
 			if (str) {
 				p = str;
 				memset (str, 0, len);
@@ -972,7 +973,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	RList *hits;
 	RIOMap *map;
 
-	if (!strncmp(param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
+	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
 		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
 	else
 		param->boundaries = NULL;
