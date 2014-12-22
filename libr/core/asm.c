@@ -59,7 +59,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to
 
 #define OPSZ 8
 // TODO: add support for byte-per-byte opcode search
-R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to) {
+R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits) {
 	RCoreAsmHit *hit;
 	RAsmOp op;
 	RList *hits;
@@ -67,7 +67,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	ut8 *buf;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, ret, len;
-	int tokcount, matchcount;
+	int tokcount, matchcount, count = 0;
 
 	if (!*input)
 		return NULL;
@@ -75,7 +75,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		eprintf ("error: block size too small\n");
 		return NULL;
 	}
-	if (!(buf = (ut8 *)malloc (core->blocksize)))
+	if (!(buf = (ut8 *)calloc (core->blocksize, 1)))
 		return NULL;
 	if (!(ptr = strdup (input))) {
 		free (buf);
@@ -133,6 +133,13 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					R_FREE (code);
 					matchcount = 0;
 					idx = tidx+1;
+					if (maxhits) {
+						count ++;
+						if (count >= maxhits) {
+							eprintf ("Error: search.maxhits reached\n");
+							goto beach;
+						}
+					}
 				} else  if (matchcount == 0) {
 					tidx = idx;
 					matchcount++;

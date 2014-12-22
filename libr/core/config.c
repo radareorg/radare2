@@ -1156,6 +1156,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("search.count", 0, "Start index number at search hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETPREF("search.flags", "true", "If enabled all search results are flagged, else just printed r2 commands");
+	SETI("search.maxhits", 0, "Limit maximum number of hits (0 disable limit)");
 	SETI("search.from", -1, "Search start address");
 	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
 	SETI("search.kwidx", 0, "Store last search index count");

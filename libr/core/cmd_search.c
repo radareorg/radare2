@@ -5,6 +5,7 @@ static int searchflags = 0;
 static int searchshow = 0;
 static int searchhits = 0;
 static int maplist = 0;
+static int maxhits = 0;
 static int json = 0;
 static int first_hit = R_TRUE;
 static const char *cmdhit = NULL;
@@ -186,6 +187,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 	if (!core) {
 		eprintf ("Error: Callback has an invalid RCore.\n");
+		return R_FALSE;
+	}
+	if (maxhits && searchhits>=maxhits) {
+		eprintf ("Error: search.maxhits reached.\n");
 		return R_FALSE;
 	}
 
@@ -742,6 +747,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	}
 
 	smode = r_config_get (core->config, "search.in");
+	maxhits = r_config_get_i (core->config, "search.maxhits");
 	if (!strncmp (smode, "dbg.", 4) || !strncmp (smode, "io.sections", 11))
 		list = r_core_get_boundaries (core, smode, &from, &to);
 	else
@@ -902,6 +908,7 @@ static int esil_addrinfo(RAnalEsil *esil) {
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearchKeyword kw = {0};
+	searchhits = 0;
 	if (input[1]==' ') {
 		int kwidx = r_config_get_i (core->config, "search.kwidx");
 		char *res;
@@ -946,7 +953,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			res = r_anal_esil_pop (core->anal->esil);
 			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
 				if (nres) {
-					__cb_hit (&kw, core, addr);
+					if (!__cb_hit (&kw, core, addr))
+						break;
 					//eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
 					kw.type = 0; //R_SEARCH_TYPE_ESIL;
 					kw.kwidx = kwidx;
@@ -995,7 +1003,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		param->from = map->from;
 		param->to = map->to;
 
-		if ((hits = r_core_asm_strsearch (core, input+2, param->from, param->to))) {
+		if ((hits = r_core_asm_strsearch (core, input+2,
+				param->from, param->to, maxhits))) {
 			r_list_foreach (hits, iter, hit) {
 				if (json) {
 					if (count > 0) r_cons_printf (",");
@@ -1240,6 +1249,7 @@ static int cmd_search(void *data, const char *input) {
 		//fin = ini + s->size;
 	}
 */
+	maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
 	// TODO: get ranges from current IO section
 	/* XXX: Think how to get the section ranges here */
