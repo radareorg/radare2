@@ -573,7 +573,7 @@ int r_print_format_struct_size(const char *f, RPrint *p) {
 }
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
-		char *name, int slide, int json, char *setval, char *field) {
+		char *name, int slide, int json, const char *setval, char *field) {
 	const char *fmt;
 	int mode = (slide>=STRUCTFLAG)?SEEFLAG:-1;
 	mode = (json)?JSONOUTPUT:mode;
@@ -591,8 +591,9 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 	return r_print_format_struct_size(fmt, p);
 }
 
+#define MINUSONE ((void*)(size_t)-1)
 #define MUSTSET (setval && field && isfield && !flag && !json)
-#define MUSTSEE (ofield != -1 && (field == NULL || (setval == NULL && isfield)) && !flag && !json)
+#define MUSTSEE (ofield != MINUSONE && (field == NULL || (setval == NULL && isfield)) && !flag && !json)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *fmt, int elem, const char *setval, char *ofield) {
@@ -623,8 +624,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	oldprintf = NULL;
 	realprintf = p->printf;
 
-	if (ofield && ofield != -1) field = strdup (ofield);
-	if (ofield == -1) isfield = 0;
+	if (ofield && ofield != MINUSONE) field = strdup (ofield);
+	if (ofield == MINUSONE) isfield = 0;
 
 	while (*arg && iswhitechar (*arg)) arg++;
 
@@ -733,7 +734,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						goto beach;
 					}
 				}
-				if ((field==NULL && ofield != -1)
+				if ((field==NULL && ofield != MINUSONE)
 						|| (field && !strncmp(field, fieldname, strlen(field))))
 					isfield = 1;
 				else isfield = 0;
@@ -938,7 +939,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'Z': // zero terminated wide string
 				if (MUSTSET) {
-					if ((size = strlen(setval)) > r_wstr_clen((char*)(buf+seeki)))
+					if ((size = strlen (setval)) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
 					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
@@ -1018,9 +1019,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				{
 				int s = 0;
 				char *nxtfield = NULL;
-				if (!isfield) nxtfield = -1;
+				if (!isfield) nxtfield = MINUSONE;
 				else if (field) nxtfield = strchr (ofield, '.');
-				if (nxtfield != -1 && nxtfield != NULL) nxtfield++;
+				if (nxtfield != MINUSONE && nxtfield != NULL) nxtfield++;
 
 				if (MUSTSEE) {
 					p->printf ("struct<%s>\n", fmtname);
@@ -1040,7 +1041,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 				if (size == -1) {
 					s = r_print_format_struct (p, seeki,
-						buf+i, len-i, fmtname, slide, json, setval, nxtfield);
+						buf+i, len-i, fmtname, slide,
+						json, setval, nxtfield);
 					i+= (isptr) ? 4 : s;
 				} else {
 					p->printf ("[\n");
