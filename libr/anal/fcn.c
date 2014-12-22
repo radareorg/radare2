@@ -379,6 +379,20 @@ repeat:
 				anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
 				ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 		switch (op.type) {
+		case R_ANAL_OP_TYPE_TRAP:
+			if (anal->nopskip && buf[0]==0xcc) {
+				if ((addr + delay.un_idx-oplen) == fcn->addr) {
+					fcn->addr += oplen;
+					bb->size -= oplen;
+					bb->addr += oplen;
+					idx = delay.un_idx;
+					goto repeat;
+					continue;
+				}
+			}
+			FITFCNSZ ();
+			r_anal_op_fini (&op);
+			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_NOP:
 			if (anal->nopskip) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
@@ -396,48 +410,48 @@ repeat:
 					R_ANAL_REF_TYPE_CODE)) {
 			}
 			if (continue_after_jump) {
-			recurseAt (op.jump);
-			recurseAt (op.fail);
-} else {
-		// This code seems to break #1519
-		if (anal->eobjmp) {
-#if JMP_IS_EOB
-			if (!overlapped) {
-				bb->jump = op.jump;
-				bb->fail = UT64_MAX;
-			}
-			FITFCNSZ();
-			return R_ANAL_RET_END;
-#else
-			// hardcoded jmp size // must be checked at the end wtf?
-			// always fitfcnsz and retend
-			if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
-				/* jump inside the same function */
-				FITFCNSZ();
-				return R_ANAL_RET_END;
-#if JMP_IS_EOB_RANGE>0
+				recurseAt (op.jump);
+				recurseAt (op.fail);
 			} else {
-				if (op.jump < addr-JMP_IS_EOB_RANGE && op.jump<addr) {
-					gotoBeach (R_ANAL_RET_END);
-				}
-				if (op.jump > addr+JMP_IS_EOB_RANGE) {
-					gotoBeach (R_ANAL_RET_END);
-				}
+				// This code seems to break #1519
+				if (anal->eobjmp) {
+#if JMP_IS_EOB
+					if (!overlapped) {
+						bb->jump = op.jump;
+						bb->fail = UT64_MAX;
+					}
+					FITFCNSZ();
+					return R_ANAL_RET_END;
+#else
+					// hardcoded jmp size // must be checked at the end wtf?
+					// always fitfcnsz and retend
+					if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
+						/* jump inside the same function */
+						FITFCNSZ();
+						return R_ANAL_RET_END;
+#if JMP_IS_EOB_RANGE>0
+					} else {
+						if (op.jump < addr-JMP_IS_EOB_RANGE && op.jump<addr) {
+							gotoBeach (R_ANAL_RET_END);
+						}
+						if (op.jump > addr+JMP_IS_EOB_RANGE) {
+							gotoBeach (R_ANAL_RET_END);
+						}
 #endif
-			}
+					}
 #endif
-		} else {
-			/* if not eobjmp. a jump will break the function if jumps before the beginning of the function */
-			if (op.jump < fcn->addr) {
-				if (!overlapped) {
-					bb->jump = op.jump;
-					bb->fail = UT64_MAX;
+				} else {
+					/* if not eobjmp. a jump will break the function if jumps before the beginning of the function */
+					if (op.jump < fcn->addr) {
+						if (!overlapped) {
+							bb->jump = op.jump;
+							bb->fail = UT64_MAX;
+						}
+						FITFCNSZ();
+						return R_ANAL_RET_END;
+					}
 				}
-				FITFCNSZ();
-				return R_ANAL_RET_END;
 			}
-		}
-}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
@@ -469,7 +483,6 @@ repeat:
 		case R_ANAL_OP_TYPE_UJMP:
 			if (continue_after_jump)
 				break;
-		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_RET:
 			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
 				addr+delay.un_idx-oplen, overlapped,
