@@ -771,6 +771,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			if (delta < 1) {
 				free (gregexp);
 				r_list_free (rx_list);
+				r_list_free (badstart);
 				return R_FALSE;
 			}
 		}
@@ -780,6 +781,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			free (gregexp);
 			r_list_free (rx_list);
 			r_list_free (end_list);
+			r_list_free (badstart);
 			return -1;
 		}
 		r_io_read_at (core->io, from, buf, delta);

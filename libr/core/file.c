@@ -787,7 +787,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
 				PFMT64d",\"writable\":%s,\"size\":%d,\"overlaps\":%s}%s",
 				core->io->raised == f->desc->fd?"true":"false",
-				f->desc->fd, f->desc->uri, f->map->from,
+				f->desc->fd, f->desc->uri, from,
 				f->desc->flags & R_IO_WRITE? "true": "false",
 				r_io_desc_size (core->io, f->desc),
 				overlapped?"true":"false",

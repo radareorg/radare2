@@ -612,15 +612,15 @@ static ut8 bin_reloc_size (RBinReloc *reloc) {
 }
 
 static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
-	char res[128], *foo;
 #if 0
+	char res[128], *foo;
 	Sdb *db = sdb_ns_path (sdb, "bin/pe", 0);
 	if (!db) return NULL;
 	db = sdb_ns (db, module, 0);
 	if (!db) return NULL;
 #endif
 	Sdb *db = sdb;
-	foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	char *foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
 	if (foo && *foo) {
 		return foo;
 	}
@@ -1033,20 +1033,19 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					 {
 						RBinFile * binfile = r_core_bin_cur (r);
 						RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
-					if (plugin && plugin->name) {
-						if (!strncmp (plugin->name, "pe", 2)) {
-							char *p, *module = strdup (symbol->name);
-							p = strstr (module, ".dll_");
-							if (p) {
-								const char *symname = p+5;
-								*p = 0;
-								r_cons_printf ("k bin/pe/%s/%d=%s\n", module,
-									symbol->ordinal, symname);
-								r_cons_printf ("fr reloc.%s.dll_Ordinal_%d reloc.%s_%s\n",
-									module, symbol->ordinal, module, symname);
+						if (plugin && plugin->name) {
+							if (!strncmp (plugin->name, "pe", 2)) {
+								char *p, *module = strdup (symbol->name);
+								p = strstr (module, ".dll_");
+								if (p) {
+									const char *symname = p+5;
+									*p = 0;
+									r_cons_printf ("k bin/pe/%s/%d=%s\n", module,
+										symbol->ordinal, symname);
+								}
+								free (module);
 							}
 						}
-					 }
 					 }
 				} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 						    "fwd=%s sz=%u bind=%s type=%s name=%s\n",
