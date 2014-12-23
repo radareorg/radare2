@@ -181,6 +181,10 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'o':
 			 {
+				if (!cf) {
+					eprintf ("Core file not open\n");
+					return 0;
+				}
 				const char *fn = input[1]==' '? input+2: cf->desc->name;
 				ut64 laddr = UT64_MAX;
 				laddr = r_config_get_i (core->config, "bin.baddr");
@@ -208,6 +212,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'z':
 			if (input[1] == 'z') {
 				/* TODO: reimplement in C to avoid forks */
+				if (!core->file) {
+					eprintf ("Core file not open\n");
+					return 0;
+				}
 				char *ret;
 				switch (input[2]) {
 				case '*':
