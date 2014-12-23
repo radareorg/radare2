@@ -1431,6 +1431,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	r_io_use_desc (core->io, core->file->desc);
 	if (ref==0LL) {
 		eprintf ("Null reference search is not supported\n");
+		free (buf);
 		return -1;
 	}
 	r_cons_break (NULL, NULL);
