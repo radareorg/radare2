@@ -827,7 +827,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					return 10;
 				} else {
 					eprintf ("Error: cannot encode 64bit value in 32bit mode\n");
-return -1;
+					return -1;
 				} 
 			}
 
@@ -927,16 +927,22 @@ return -1;
 			} //else pfx = 0xc0;
 
 			arg0 = getreg (arg); // hack to make is64 work
-			if (isnum (a, arg)) {
+			if (isnum (a, arg) && argk) {
 				int num = getnum (a, arg);
-				ut8 *ptr = (ut8 *)&num;
-				data[l++] = 0x89;
-				data[l++] = (getreg (arg2)<<3) |5;
-				data[l++] = ptr[0];
-				data[l++] = ptr[1];
-				data[l++] = ptr[2];
-				data[l++] = ptr[3];
-				return l;
+				int r0 = getreg (arg2);
+				if (r0 == 0xff) {
+					return 0;
+				} else {
+					// mov [num], reg
+					ut8 *ptr = (ut8 *)&num;
+					data[l++] = 0x89;
+					data[l++] = (r0<<3) | 5;
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+					return l;
+				}
 			}
 			// mov rax, 33
 			if (a->bits==64 && *arg == 'r' && !argk) {
@@ -1006,20 +1012,24 @@ return -1;
 				data[l++] = ptr[3];
 				return l;
 			} else {
+				int r0 = getreg (arg);
 				if (a->bits==64)
 					if (*arg=='r')
 						data[l++] = 0x48;
 				data[l++] = 0x89;
+				if (r0 == 0xff) {
+					return 0;
+				}
 				if (delta) {
 					if (isnum (a, delta)){
-						data[l++] = 0x40 | getreg (arg) | getreg (arg2)<<3;
+						data[l++] = 0x40 | r0 | getreg (arg2)<<3;
 						data[l++] = getnum (a, delta);
 					} else {
 						data[l++] = getreg (arg2)<<3 | 0x4;
-						data[l++] = (getreg (delta)<<3 ) | getreg (arg);
+						data[l++] = (getreg (delta)<<3 ) | r0;
 					}
 				} else {
-					data[l++] = getreg (arg2)<<3 | getreg (arg) | pfx;
+					data[l++] = getreg (arg2)<<3 | r0 | pfx;
 				}
 			}
 			return l;
