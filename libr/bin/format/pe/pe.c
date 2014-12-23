@@ -115,12 +115,32 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 }
 #endif
 
+static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
+#if 0
+	char res[128], *foo;
+	Sdb *db = sdb_ns_path (sdb, "bin/pe", 0);
+	if (!db) return NULL;
+	db = sdb_ns (db, module, 0);
+	if (!db) return NULL;
+#endif
+	Sdb *db = sdb;
+	char *foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	if (foo && *foo) {
+		return foo;
+	} else free (foo); // should never happen
+	return NULL;
+}
+
 static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
 	char import_name[PE_NAME_LENGTH + 1], name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
 	PE_DWord import_table = 0, off = 0;
 	int i = 0;
-
+	Sdb *db = NULL;
+	char *sdb_module = NULL;
+	char *symname;
+	char *filename;
+	char *symdllname;
 	if ((off = PE_(r_bin_pe_vaddr_to_paddr)(bin, OriginalFirstThunk)) == 0 &&
 		(off = PE_(r_bin_pe_vaddr_to_paddr)(bin, FirstThunk)) == 0)
 		return 0;
@@ -138,7 +158,39 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf (import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
+				snprintf (import_name, PE_NAME_LENGTH, "qq%s_Ordinal_%i", dll_name, import_ordinal);
+				//
+				symdllname=strdup(dll_name);
+				// rip ".dll"
+				symdllname[strlen(symdllname)-4]=0;
+				if (!sdb_module || strcmp (symdllname, sdb_module)) {
+							sdb_free (db);
+							db = NULL;
+							free (sdb_module);
+							sdb_module = strdup (symdllname);
+							filename = sdb_fmt (1, "%s.sdb", symdllname);
+							if (r_file_exists (filename)) {
+								db = sdb_new (NULL, filename, 0);
+							} else {
+#if __WINDOWS__
+								filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", symdllname);
+#else
+								filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", symdllname);
+#endif
+								if (r_file_exists (filename)) {
+									db = sdb_new (NULL, filename, 0);
+								}
+							}
+						}
+						if (db) {
+							// ordinal-1 because we enumerate starting at 0
+							symname = resolveModuleOrdinal (db, symdllname, import_ordinal-1);
+							if (symname) {
+								snprintf (import_name, 
+									PE_NAME_LENGTH,
+									"%s_%s", dll_name, symname);
+							}
+						}
 			} else {
 				import_ordinal ++;
 				ut64 off = PE_(r_bin_pe_vaddr_to_paddr)(bin, import_table);

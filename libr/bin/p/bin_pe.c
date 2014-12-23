@@ -132,6 +132,7 @@ static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
+	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
 	if (!(ret = r_list_new ()))
@@ -142,7 +143,8 @@ static RList* symbols(RBinFile *arch) {
 	for (i = 0; !symbols[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
-		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+		//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "exp.%s", symbols[i].name);
 		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
@@ -153,6 +155,23 @@ static RList* symbols(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	free (symbols);
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
+		return ret;
+	for (i = 0; !imports[i].last; i++) {
+		if (!(ptr = R_NEW0 (RBinSymbol)))
+			break;
+		//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", imports[i].name);
+		//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+		ptr->size = 0;
+		ptr->vaddr = imports[i].vaddr;
+		ptr->paddr = imports[i].paddr;
+		ptr->ordinal = imports[i].ordinal;
+		r_list_append (ret, ptr);
+	}
+	free (imports);
 	return ret;
 }
 
