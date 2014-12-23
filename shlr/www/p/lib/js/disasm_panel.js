@@ -78,6 +78,7 @@ DisasmPanel.prototype.handleInputTextChange = function() {
     } else {
       // TODO, try to recognize other spaces
       var old_value = r2ui._dis.renameOldValue;
+      if (old_value.indexOf("0x") === 0) old_value = "";
       rename(r2ui._dis.selected_offset, old_value, r2ui._dis.rbox.value, "*");
     }
     var instruction;

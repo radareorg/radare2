@@ -9,15 +9,67 @@ enyo.kind ({
   components: [
       // {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
       {tag: "div", allowHtml: true, name: "text", content: "..", style:"margin-left:5px;margin-right:5px"},
-      {kind: enyo.Signals, onkeypress: "handleKeyPress"}
+      {kind: enyo.Signals,
+        onkeypress: "handleKeyPress"
+      },
+      {name: "menuPopup", kind: "onyx.Popup", floating: true, onHide:'hideContextMenu', onShow:"showContextMenu", style:"padding: 0px;",
+          style: "padding: 10px", components: [
+            {name: "menu", kind: "onyx.MenuDecorator", onSelect: "itemSelected", components: [
+              {content: "Show menu"},
+              {kind: "onyx.Menu", name: "contextMenu", components: [
+                  {content: "rename", value: "rename"},
+                  {content: "comment", value: "comment"}
+              ]}
+            ]}
+          ]
+      },
+
   ],
-  handlers: {ontap: "handleTap", ondblclick: "handleDoubleClick"},
+  handlers: {
+    ontap: "handleTap",
+    onhold: "handleHold",
+    ondblclick: "handleDoubleClick"
+  },
+  itemSelected: function (inSender, inEvent) {
+    if (inEvent.originator.content) {
+        var itemContent = inEvent.originator.content;
+        if (itemContent == "rename") {
+          this.do_rename(this.selected, inEvent);
+        } else {
+          this.do_comment(this.selected_offset);
+        }
+    }
+    this.$.menuPopup.hide();
+  },
+  handleHold: function (inSender, inEvent) {
+    this.handleTap(inSender, inEvent);
+    if (inEvent.target.className.indexOf(" addr ") > -1 || inEvent.target.className.indexOf(" faddr ") > -1) {
+      var address = get_address_from_class(inEvent.target);
+      this.selected = inEvent.target;
+      this.selected_offset = address;
+      rehighlight_iaddress(address);
+      this.showContextMenu(inEvent.pageY, inEvent.pageX);
+    }
+  },
+  showContextMenu:function(inSender, inEvent){
+
+    if((parseFloat(inSender) == parseInt(inSender)) && !isNaN(inSender) && (parseFloat(inEvent) == parseInt(inEvent)) && !isNaN(inEvent)){
+      this.$.menuPopup.addStyles('top:'+inSender+'px; left:'+inEvent+'px;padding:0px;');
+      this.$.menuPopup.show();
+      this.$.menuPopup.children[0].children[0].hide();
+      this.$.menuPopup.children[0].children[1].show();
+      this.$.menuPopup.render();
+    }
+  },
+  hideContextMenu:function(inSender,inEvent){
+  },
   handleDoubleClick: function (inSender, inEvent) {
     if (inEvent.target.className.indexOf(" addr ") > -1 && inEvent.target.className.indexOf("insaddr") === -1) {
       this.handleTap(inSender, inEvent);
       this.goToAddress();
-      inEvent.preventDefault();
-      return true;
+      // inEvent.returnValue=false;
+      // inEvent.preventDefault();
+      // return true;
     }
   },
   handleKeyPress: function(inSender, inEvent) {
@@ -25,14 +77,11 @@ enyo.kind ({
     // console.log(key);
     // show help
     if (key === 63) {
-      r2ui.mp.showPopup();
+      r2ui.mp.show_popup();
     }
     // Spacebar Switch flat and graph views
     if (key === 32) {
-      if (this.display === "flat") this.display_graph();
-      else this.display_flat();
-      var addr = r2ui.history_last();
-      if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
+      this.switch_view();
     }
     // h Seek to previous address in history
     if (key === 104) {
@@ -121,52 +170,11 @@ enyo.kind ({
     }
     // ; Add comment
     if (key === 59) {
-      r2.cmd('CC ' + prompt('Comment'));
-      r2ui.seek('$$',false);
+      this.do_comment(this.selected_offset);
     }
     // n Rename
     if (key === 110) {
-      if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
-        var address = get_address_from_class(this.selected);
-        this.renaming = this.selected;
-        this.renameOldValue = this.selected.innerHTML;
-        this.rbox = document.createElement('input');
-        this.rbox.setAttribute("type", "text");
-        this.rbox.setAttribute("id", "rename");
-        this.rbox.setAttribute("style", "border-width: 0;padding: 0;");
-        this.rbox.setAttribute("onChange", "handleInputTextChange()");
-        if (this.selected.className.indexOf("insaddr") > -1) {
-          var value = get_offset_flag(address);
-          this.rbox.setAttribute("value",value);
-          this.rbox.setSelectionRange(value.length, value.length);
-        } else {
-          this.rbox.setAttribute("value", this.renameOldValue);
-          this.rbox.setSelectionRange(this.renameOldValue.length, this.renameOldValue.length);
-        }
-        this.renaming.innerHTML = "";
-        this.renaming.appendChild(this.rbox);
-        this.rbox.focus();
-        inEvent.returnValue=false;
-        inEvent.preventDefault();
-      } else if (this.renaming === null && element !== null && $(element).hasClass("faddr")) {
-        var address = get_address_from_class(element, "faddr");
-        this.selected = element;
-        this.selected_offset = address;
-        this.renaming = element;
-        this.renameOldValue = element.innerText;
-        this.rbox = document.createElement('input');
-        this.rbox.setAttribute("type", "text");
-        this.rbox.setAttribute("id", "rename");
-        this.rbox.setAttribute("style", "border-width: 0;padding: 0;");
-        this.rbox.setAttribute("onChange", "handleInputTextChange()");
-        this.rbox.setAttribute("value", this.renameOldValue);
-        this.rbox.setSelectionRange(this.renameOldValue.length, this.renameOldValue.length);
-        this.renaming.innerHTML = "";
-        this.renaming.appendChild(r2ui._dis.rbox);
-        setTimeout('r2ui._dis.rbox.focus();', 200);
-        inEvent.returnValue=false;
-        inEvent.preventDefault();
-      }
+      this.do_rename(this.selected, inEvent);
     }
     // esc
     if (key === 27) {
@@ -187,60 +195,60 @@ enyo.kind ({
     }
   },
   handleTap: function(inSender, inEvent) {
-    if (inEvent.target.className.indexOf(" addr ") > -1) {
-      var address = get_address_from_class(inEvent.target);
-      rehighlight_iaddress(address);
-      this.selected = inEvent.target;
-      this.selected_offset = address;
+      if (inEvent.target.className.indexOf(" addr ") > -1) {
+        var address = get_address_from_class(inEvent.target);
+        rehighlight_iaddress(address);
+        this.selected = inEvent.target;
+        this.selected_offset = address;
 
-      // If instruction address, add address to history
-      if ($(inEvent.target).hasClass('insaddr')) {
-        r2ui.history_push(address);
-        var get_more_instructions = false;
-        var next_instruction;
-        var prev_instruction;
-        var address
-        if (r2ui._dis.display == "flat") {
-          next_instruction = $(r2ui._dis.selected).closest(".instructionbox").next().find('.insaddr')[0];
-          if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) {
-            get_more_instructions = true;
-            address = get_address_from_class(next_instruction);
+        // If instruction address, add address to history
+        if ($(inEvent.target).hasClass('insaddr')) {
+          r2ui.history_push(address);
+          var get_more_instructions = false;
+          var next_instruction;
+          var prev_instruction;
+          var address = get_address_from_class(inEvent.target);
+          if (r2ui._dis.display == "flat") {
+            next_instruction = $(r2ui._dis.selected).closest(".instructionbox").next().find('.insaddr')[0];
+            if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) {
+              get_more_instructions = true;
+              address = get_address_from_class(next_instruction);
+            }
+            prev_instruction = $(r2ui._dis.selected).closest(".instructionbox").prev().find('.insaddr')[0];
+            if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) < 10) {
+              get_more_instructions = true;
+              address = get_address_from_class(prev_instruction);
+            }
           }
-          prev_instruction = $(r2ui._dis.selected).closest(".instructionbox").prev().find('.insaddr')[0];
-          if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) < 10) {
-            get_more_instructions = true;
-            address = get_address_from_class(prev_instruction);
+          if (r2ui._dis.display == "graph") {
+            var next_instruction = $(r2ui._dis.selected).closest(".instruction").next().find('.insaddr')[0];
+            if (next_instruction === undefined || next_instruction === null) {
+              next_instruction = $(r2ui._dis.selected).closest(".basicblock").next().find('.insaddr')[0];
+            }
+            var prev_instruction = $(r2ui._dis.selected).closest(".instruction").prev().find('.insaddr')[0];
+            if (prev_instruction === undefined || prev_instruction === null) {
+              prev_instruction = $(r2ui._dis.selected).closest(".basicblock").prev().find('.insaddr').last()[0];
+            }
+          }
+          if (get_more_instructions) {
+            r2ui.seek(address, false);
+            rehighlight_iaddress(address);
+            scroll_to_address(address);
+            document.getElementById("canvas").focus();
           }
         }
-        if (r2ui._dis.display == "graph") {
-          var next_instruction = $(r2ui._dis.selected).closest(".instruction").next().find('.insaddr')[0];
-          if (next_instruction === undefined || next_instruction === null) {
-            next_instruction = $(r2ui._dis.selected).closest(".basicblock").next().find('.insaddr')[0];
-          }
-          var prev_instruction = $(r2ui._dis.selected).closest(".instruction").prev().find('.insaddr')[0];
-          if (prev_instruction === undefined || prev_instruction === null) {
-            prev_instruction = $(r2ui._dis.selected).closest(".basicblock").prev().find('.insaddr').last()[0];
-          }
+      } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
+        var eid = null;
+        var address = get_address_from_class(inEvent.target, "faddr");
+        r2ui._dis.selected = inEvent.target;
+        r2ui._dis.selected_offset = address;
+        var classes = inEvent.target.className.split(' ');
+        for (var j in classes) {
+          var klass = classes[j];
+          if (klass.indexOf("id_") === 0) eid = klass.substring(3);
         }
-        if (get_more_instructions) {
-          r2ui.seek(address, false);
-          rehighlight_iaddress(address);
-          scroll_to_address(address);
-          document.getElementById("canvas").focus();
-        }
+        if (eid !== null) rehighlight_iaddress(eid, "id");
       }
-    } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
-      var eid = null;
-      var address = get_address_from_class(inEvent.target, "faddr");
-      r2ui._dis.selected = inEvent.target;
-      r2ui._dis.selected_offset = address;
-      var classes = inEvent.target.className.split(' ');
-      for (var j in classes) {
-        var klass = classes[j];
-        if (klass.indexOf("id_") === 0) eid = klass.substring(3);
-      }
-      if (eid !== null) rehighlight_iaddress(eid, "id");
-    }
   },
   goToAddress: function() {
     if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
@@ -289,6 +297,7 @@ enyo.kind ({
       } else {
         // TODO, try to recognize other spaces
         var old_value = r2ui._dis.renameOldValue;
+        if (old_value.indexOf("0x") === 0) old_value = "";
         rename(r2ui._dis.selected_offset, old_value, r2ui._dis.rbox.value, "*");
       }
       var instruction;
@@ -309,6 +318,58 @@ enyo.kind ({
   renaming: null,
   renameOldValue: "",
   rbox: null,
+  do_comment: function(address) {
+    r2.cmd('CC- ' + " @ " + address + ';CC ' + prompt('Comment')  + " @ " + address);
+    r2ui.seek(address, false);
+    scroll_to_address(address);
+  },
+  do_rename: function(element, inEvent) {
+    if (this.renaming === null && this.selected !== null && this.selected.className.indexOf(" addr ") > -1) {
+      var address = get_address_from_class(this.selected);
+      this.renaming = this.selected;
+      this.renameOldValue = this.selected.innerHTML;
+      this.rbox = document.createElement('input');
+      this.rbox.setAttribute("type", "text");
+      this.rbox.setAttribute("id", "rename");
+      this.rbox.setAttribute("style", "border-width: 0;padding: 0;");
+      this.rbox.setAttribute("onChange", "handleInputTextChange()");
+      if (this.selected.className.indexOf("insaddr") > -1) {
+        var value = get_offset_flag(address);
+        this.rbox.setAttribute("value",value);
+        this.rbox.setSelectionRange(value.length, value.length);
+      } else {
+        this.rbox.setAttribute("value", this.renameOldValue);
+        this.rbox.setSelectionRange(this.renameOldValue.length, this.renameOldValue.length);
+      }
+      this.renaming.innerHTML = "";
+      this.renaming.appendChild(this.rbox);
+      setTimeout('r2ui._dis.rbox.focus();', 200);
+    } else if (this.renaming === null && element !== null && $(element).hasClass("faddr")) {
+      var address = get_address_from_class(element, "faddr");
+      this.selected = element;
+      this.selected_offset = address;
+      this.renaming = element;
+      this.renameOldValue = element.innerText;
+      this.rbox = document.createElement('input');
+      this.rbox.setAttribute("type", "text");
+      this.rbox.setAttribute("id", "rename");
+      this.rbox.setAttribute("style", "border-width: 0;padding: 0;");
+      this.rbox.setAttribute("onChange", "handleInputTextChange()");
+      this.rbox.setAttribute("value", this.renameOldValue);
+      this.rbox.setSelectionRange(this.renameOldValue.length, this.renameOldValue.length);
+      this.renaming.innerHTML = "";
+      this.renaming.appendChild(r2ui._dis.rbox);
+      setTimeout('r2ui._dis.rbox.focus();', 200);
+    }
+
+
+  },
+  switch_view: function() {
+    if (this.display === "flat") this.display_graph();
+    else this.display_flat();
+    var addr = r2ui.history_last();
+    if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
+  },
   display_graph: function() {
     this.display = "graph";
     var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");

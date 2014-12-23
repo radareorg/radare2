@@ -47,6 +47,7 @@ enyo.kind ({
       x = docss (r2.filter_asm (x, "pd"));
       text.setContent("<div class='enyo-selectable'>" + x + "</div>");
     });
+    this.scrollTo (0, 0);
     //this.colorbar_create ();
   },
   create: function() {
