@@ -523,10 +523,6 @@ function handleClick(inEvent) {
         rehighlight_iaddress(address);
         scroll_to_address(address);
       }
-    } else { //if ($(inEvent.target).hasClass('function')) {
-      r2ui.seek(address, false);
-      rehighlight_iaddress(address);
-      scroll_to_address(address);
     }
   } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
     var eid = null;
@@ -545,11 +541,9 @@ function handleClick(inEvent) {
 
 function handleDoubleClick (inEvent) {
   if ($(inEvent.target).hasClass('addr') && !$(inEvent.target).hasClass('insaddr')) {
-    handleClick(inEvent);
-    // r2ui._dis.goToAddress();
-    inEvent.preventDefault();
+    var address = get_address_from_class(inEvent.target);
+    do_jumpto(address);
   }
-  document.getElementById("canvas").focus();
 }
 
 function load_binary_details() {

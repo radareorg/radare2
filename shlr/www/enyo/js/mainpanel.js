@@ -146,8 +146,8 @@ enyo.kind ({
                 {kind: "onyx.Button", content: "]", ontap: "openSidebar2", style: "padding:4px"},
       */
         {kind: "onyx.PickerDecorator", classes: "top", components: [
-          {kind: "onyx.Button", content: "Actions"},
-          {kind: "onyx.Picker", components: [
+          {kind: "onyx.Button",  name: "actionsButton", content: "Actions"},
+          {kind: "onyx.Picker", name: "actionsPicker", components: [
             {content: "Analyze", ontap: "goAnalyze"},
             {content: "Rename", ontap: "goRename"},
             {content: "Comment", ontap: "goComment"},
@@ -180,7 +180,10 @@ enyo.kind ({
         ]}
       ]},
       {kind: "onyx.PickerDecorator", classes: "top", components: [
-        {kind: "onyx.Button", name: "helpButton", content: "?", ontap: "showPopup"},
+        {kind: "onyx.Button", name: "switchButton", content: "Switch View", ontap: "switch_view"}
+      ]},
+      {kind: "onyx.PickerDecorator", classes: "top", components: [
+        {kind: "onyx.Button", name: "helpButton", content: "?", ontap: "show_popup"},
         {name: "basicPopup", kind: "onyx.Popup", floating: true, centered: true,
             style: "padding: 10px", components: [
                 {name: "popupContent", allowHtml: true, content: ".."}
@@ -196,8 +199,11 @@ enyo.kind ({
       realtimeFit: true,
       components: []}
   ],
-  showPopup: function(inSender, inEvent) {
+  show_popup: function(inSender, inEvent) {
     this.$.basicPopup.show();
+  },
+  switch_view: function(inSender, inEvent) {
+    r2ui._dis.switch_view();
   },
   create: function() {
     this.inherited(arguments);
@@ -220,6 +226,7 @@ enyo.kind ({
         {kind:"About", name: "pageAbout"},
       ]);
       this.$.helpButton.hide();
+      this.$.switchButton.hide();
     } else {
       this.$.panels.createComponents([
         {kind:"Disassembler", name: "pageDisassembler"},
@@ -318,7 +325,8 @@ enyo.kind ({
         alert (x);
       });
     } else {
-      this.seekStack.push ();
+      r2ui.seek(addr);
+      // this.seekStack.push ();
     }
 /*
       var sp = this.$.panels;

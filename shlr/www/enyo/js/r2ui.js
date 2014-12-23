@@ -113,7 +113,7 @@ r2ui.seek = function (addr, push, scroll) {
     if (a !== null) {
       addr = address_canonicalize(a);
     } else {
-      r2.cmd("s", function(x) {
+      r2.cmd("s " + addr + ";s", function(x) {
         addr = address_canonicalize(x.replace('\n',''));
       });
     }

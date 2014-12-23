@@ -642,6 +642,10 @@ function handleInputTextChange() {
   r2ui._dis.handleInputTextChange();
 }
 
+function show_contextMenu(x,y) {
+  r2ui._dis.showContextMenu(x,y);
+}
+
 function get_offset_flag(offset) {
   var old_value = "";
   r2.cmdj("fs offsets;fj", function(x) {
