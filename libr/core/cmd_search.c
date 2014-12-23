@@ -805,6 +805,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				continue;
 			}
 			if (is_end_gadget (end_gadget, crop)) {
+				if (maxhits && r_list_length (end_list) >= maxhits) {
+					// limit number of high level rop gadget results
+					break;
+				}
 				r_list_append (end_list, (void*)(intptr_t)i);
 			}
 			if (r_cons_singleton()->breaked)
