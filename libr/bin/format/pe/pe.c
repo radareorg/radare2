@@ -929,7 +929,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 			SCV_RSDS_HEADER rsds_hdr;
 			init_rsdr_hdr (&rsds_hdr);
 			get_rsds (dbg_data, &rsds_hdr);
-			snprintf ((st8 *) res->guidstr, 33, 
+			snprintf ((st8 *) res->guidstr, GUIDSTR_LEN,
 				"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
 				rsds_hdr.guid.data1,
 				rsds_hdr.guid.data2,

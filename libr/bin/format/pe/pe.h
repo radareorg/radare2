@@ -86,7 +86,7 @@ struct PE_(r_bin_pe_obj_t) {
 	Sdb *kv;
 };
 
-#define GUIDSTR_LEN 33
+#define GUIDSTR_LEN 34
 #define DBG_FILE_NAME_LEN 255
 
 typedef struct SDebugInfo{

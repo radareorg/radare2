@@ -686,7 +686,7 @@ int main(int argc, char **argv) {
 		if (pdb_downloader.download(&pdb_downloader) == 0) {
 			r_cons_printf("PDB file %s has not been downloaded sucessfully\n", opt.dbg_file);
 		} else {
-			r_cons_printf("PDB file %s has been downloaded sucessfully", opt.dbg_file);
+			r_cons_printf("PDB file %s has been downloaded sucessfully\n", opt.dbg_file);
 		}
 		deinit_pdb_downloader(&pdb_downloader);
 
