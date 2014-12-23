@@ -307,7 +307,7 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	SDebugInfo di;
+	SDebugInfo di = {0};
 	int len = 0;
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
