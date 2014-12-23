@@ -485,6 +485,18 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 	if (mode == R_CORE_BIN_JSON)
 		r_cons_printf("[");
 
+	switch (mode) {
+	case R_CORE_BIN_JSON:
+		mode = 'j';
+		break;
+	case 1:
+		mode = 'r';
+		break;
+	default:
+		mode = 'd'; // default
+		break;
+	}
+
 	pdb.print_types (&pdb, mode);
 
 	if (mode == R_CORE_BIN_JSON)
