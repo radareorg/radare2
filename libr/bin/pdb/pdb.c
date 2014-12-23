@@ -1073,7 +1073,8 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		return;
 	}
 
-	pdb->printf("{\"%s\":[","gvars");
+	if (format == 8)
+		pdb->printf("{\"%s\":[","gvars");
 
 	gsym_data_stream = (SGDATAStream *) gsym->stream;
 	if ((omap != 0) && (sctns_orig != 0)) {
@@ -1126,7 +1127,8 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		}
 	}
 
-	pdb->printf("]}");
+	if (format == 8)
+		pdb->printf("]}");
 }
 
 ///////////////////////////////////////////////////////////////////////////////

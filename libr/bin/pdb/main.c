@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'f':
 			pdb_file = optarg;
-			strcpy(&pdb.file_name, optarg);
+			strcpy (&pdb.file_name, optarg);
 			if (!init_pdb_parser(&pdb)) {
 				printf("initialization error of pdb parser\n");
 				return 0;
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 			pdb.pdb_parse(&pdb);
 			break;
 		case 't':
-			pdb.print_types(&pdb);
+			pdb.print_types(&pdb, 0);
 			break;
 		case 'g':
 			pdb.print_gvars(&pdb, 0, 'r'); //*(int *)optarg);
