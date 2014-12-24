@@ -175,6 +175,7 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"IOVA", "", "is io.va true? virtual addressing (1,0)",
 	"BLOCK", "", "TODO: dump current block to tmp file", 
 	"BYTES", "", "TODO: variable with bytes in curblock",
+	"PDB_SERVER", "", "e pdb.server",
 	NULL
 	};
 	r_core_cmd_help (core, help_msg);
@@ -212,6 +213,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 		r_sys_setenv ("BYTES", s);
 		free (s);
 	}
+	r_sys_setenv ("PDB_SERVER", r_config_get (core->config, "pdb.server"));
 	if (core->file && core->file->desc && core->file->desc->name) {
 		r_sys_setenv ("FILE", core->file->desc->name);
 		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size (core->io, core->file->desc));

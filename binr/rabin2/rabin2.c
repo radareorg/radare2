@@ -671,14 +671,16 @@ int main(int argc, char **argv) {
 	r_cons_new ()->is_interactive = R_FALSE;
 
 	if (action&ACTION_PDB_DWNLD) {
+		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info(core.bin);
 		char *path = r_file_dirname(info->file);
-
+		if (env_pdbserver && *env_pdbserver)
+			r_config_set (core.config, "pdb.server", env_pdbserver);
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
-		opt.symbol_server = (char *)r_config_get(core.config, "pdb.sym_srvr");
+		opt.symbol_server = (char *)r_config_get(core.config, "pdb.server");
 		opt.user_agent = (char *)r_config_get(core.config, "pdb.user_agent");
 		opt.path = path;
 
