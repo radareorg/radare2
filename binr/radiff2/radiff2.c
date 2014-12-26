@@ -15,6 +15,7 @@ static ut32 count = 0;
 static int showcount = 0;
 static int useva = R_TRUE;
 static int delta = 0;
+static int showbare = R_FALSE;
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i, rad = (int)(size_t)user;
@@ -77,6 +78,7 @@ static int show_help(int v) {
 		"  -c         count of changes\n"
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
 		"  -d         use delta diffing\n"
+		"  -f         print bare addresses only (diff.bare=1)\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
 		"  -O         code diffing with opcode bytes only\n"
 		"  -p         use physical addressing (io.va=0)\n"
@@ -136,7 +138,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "a:b:Cpg:Orhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "a:b:Cfpg:Orhcdsvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -159,6 +161,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'C':
 			mode = MODE_CODE;
+			break;
+		case 'f':
+			showbare = R_TRUE;
 			break;
 		case 'O':
 			diffops = 1;
@@ -208,6 +213,10 @@ int main(int argc, char **argv) {
 		if (bits) {
 			r_config_set_i (c->config, "asm.bits", bits);
 			r_config_set_i (c2->config, "asm.bits", bits);
+		}
+		if (showbare) {
+			r_config_set_i (c->config, "diff.bare", showbare);
+			r_config_set_i (c2->config, "diff.bare", showbare);
 		}
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
