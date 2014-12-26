@@ -55,7 +55,13 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 }
 
 /* copypasta from radiff2 */
-static void diffrow(ut64 addr, const char *name, int maxnamelen, ut64 addr2, const char *name2, const char *match, double dist) {
+static void diffrow(ut64 addr, const char *name, int maxnamelen, ut64 addr2, const char *name2, const char *match, double dist, int bare) {
+	if (bare) {
+		if (addr2 == UT64_MAX || name2 == NULL)
+			printf ("0x%016"PFMT64x" |%8s  (%f)\n", addr, match, dist);
+		else printf ("0x%016"PFMT64x" |%8s  (%f) | 0x%016"PFMT64x"\n", addr, match, dist, addr2);
+		return;
+	}
 	if (addr2 == UT64_MAX || name2 == NULL)
 		printf ("%*s  0x%"PFMT64x" |%8s  (%f)\n",
 			maxnamelen, name, addr, match, dist);
@@ -70,6 +76,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         RList *fcns = r_anal_get_fcns (c->anal);
         int maxnamelen = 0;
         int len;
+        int bare = r_config_get_i (c->config, "diff.bare") || r_config_get_i (c2->config, "diff.bare");
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen(f->name)) > maxnamelen)
                         maxnamelen = len;
@@ -96,7 +103,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                         }
                         diffrow (f->addr, f->name, maxnamelen,
 				f->diff->addr, f->diff->name,
-				match, f->diff->dist);
+				match, f->diff->dist, bare);
                         break;
                 }
         }
@@ -108,7 +115,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                         if (f->diff->type == R_ANAL_DIFF_TYPE_NULL)
                                 diffrow (f->addr, f->name, maxnamelen,
 					f->diff->addr, f->diff->name,
-					"NEW", f->diff->dist);
+					"NEW", f->diff->dist, bare);
                 }
         }
 }
