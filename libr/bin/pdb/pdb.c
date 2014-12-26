@@ -746,7 +746,6 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 					(!strcmp(tmp, "nesttype")) ||
 					(!strcmp(tmp, "mfunction")) ||
 					(!strcmp(tmp, "proc")) ||
-					(!strcmp(tmp, "nesttype")) ||
 					(!strcmp(tmp, "arglist"))) {
 				break;
 			} else {

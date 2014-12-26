@@ -394,7 +394,7 @@ arcExtMap_instName (int opcode, int insn, int *flags)
 const char *
 arcExtMap_coreRegName (int regnum)
 {
-  if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CONDITION_CODE)
+  if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER)
     return NULL;
   return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].name;
 }
@@ -404,7 +404,7 @@ arcExtMap_coreRegName (int regnum)
 enum ExtReadWrite
 arcExtMap_coreReadWrite (int regnum)
 {
-  if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CONDITION_CODE)
+  if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER)
     return REG_INVALID;
   return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].rw;
 }
