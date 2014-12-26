@@ -499,11 +499,11 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 
 	pdb.print_types (&pdb, mode);
 
-	if (mode == R_CORE_BIN_JSON)
-		r_cons_printf(",");
+	if (mode == 'j')
+		r_cons_printf (",");
 	pdb.print_gvars (&pdb, baddr, mode);
-	if (mode == R_CORE_BIN_JSON)
-		r_cons_printf("]");
+	if (mode == 'j')
+		r_cons_printf ("]");
 	pdb.finish_pdb_parse (&pdb);
 
 	return R_TRUE;
