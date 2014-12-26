@@ -2627,7 +2627,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_ptr (core, ds, len, idx);
 			handle_print_comments_right (core, ds);
 			if ( !(ds->show_comments && ds->show_comment_right &&
-					ds->show_comment_right && ds->comment))
+					ds->comment))
 				r_cons_newline ();
 
 			if (ds->line) {

@@ -323,11 +323,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		return R_FALSE;
 	}
 
-	if (bin->header.strings_size > bin->size) {
-		eprintf ("Invalid strings size\n");
-		return R_FALSE;
-	}
-
 	dprintf ("Walking %d classes\n", bin->header.class_size);
 	if (bin->classes)
 	for (i=0; i<bin->header.class_size; i++) {

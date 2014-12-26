@@ -199,20 +199,6 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 				str = ptr + 1;
 				continue;
 			} else
-			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
-				// \x1b[0;0H
-				/** clear screen if gotoxy **/
-				if (empty) {
-					// fill row here
-					fill_tail(cols, lines);
-				}
-				w32_gotoxy (0, 0);
-				lines = 0;
-				esc = 0;
-				ptr += 3;
-				str = ptr + 1;
-				continue;
-			} else
 			if (ptr[0]=='0'&&(ptr[1]=='m' || ptr [1]=='K')) {
 				SetConsoleTextAttribute (hConsole, 1|2|4|8);
 				fg = 1|2|4|8;
