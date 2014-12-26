@@ -146,10 +146,12 @@ static int rax (char *str, int len, int last) {
 			return !use_stdin ();
 		return R_TRUE;
 	}
-	if (*str=='q')
-		return R_FALSE;
-	if (*str=='h' || *str=='?')
-		return help ();
+	if (!flags) {
+		if (*str=='q')
+			return R_FALSE;
+		if (*str=='h' || *str=='?')
+			return help ();
+	}
 	dotherax:
 	
 	if (flags & 1) { // -s
