@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "a:b:Cfpg:Orhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "a:b:Cnpg:Orhcdsvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
 		case 'C':
 			mode = MODE_CODE;
 			break;
-		case 'f':
+		case 'n':
 			showbare = R_TRUE;
 			break;
 		case 'O':
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 		c = opencore (file);
 		if (!c) eprintf ("Cannot open '%s'\n", file);
 		c2 = opencore (file2);
-		if (!c||!c2) {
+		if (!c || !c2) {
 			eprintf ("Cannot open '%s'\n", file2);
 			return 1;
 		}
@@ -214,10 +214,8 @@ int main(int argc, char **argv) {
 			r_config_set_i (c->config, "asm.bits", bits);
 			r_config_set_i (c2->config, "asm.bits", bits);
 		}
-		if (showbare) {
-			r_config_set_i (c->config, "diff.bare", showbare);
-			r_config_set_i (c2->config, "diff.bare", showbare);
-		}
+		r_config_set_i (c->config, "diff.bare", showbare);
+		r_config_set_i (c2->config, "diff.bare", showbare);
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		if (mode == MODE_GRAPH) {
