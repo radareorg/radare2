@@ -375,8 +375,13 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		return 2;
 	} else
 	if (!strcmp (ao->op, "bl")) {
+		int reg = getreg (ao->a[0]);
 		ao->o = 0x47;
-		ao->o |= getnum (ao->a[0])<<8;
+		if (reg == -1) {
+			ao->o |= getnum (ao->a[0])<<8;
+		} else {
+			return 0;
+		}
 		// XXX: length = 4
 		return 4;
 	} else
@@ -490,7 +495,7 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 				if (getreg (ao->a[2]) == -1) {
 					int ret = getnum (ao->a[2]);
 					if (ret%4) {
-						fprintf (stderr, "ldr index must be aligned to 4");
+						eprintf ("ldr index must be aligned to 4");
 						return 0;
 					}
 					ao->o = 0x90 + (0xf & getreg (ao->a[0]));
@@ -675,14 +680,14 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 					// TODO: control if branch out of range
 					ret = (getnum(ao->a[0])-(int)ao->off-8)/4;
 					if (ret >= 0x00800000 || ret < (int)0xff800000) {
-						printf("Branch into out of range\n");
+						eprintf("Branch into out of range\n");
 						return 0;
 					}
 					ao->o |= ((ret>>16)&0xff)<<8;
 					ao->o |= ((ret>>8)&0xff)<<16;
 					ao->o |= ((ret)&0xff)<<24;
 				} else {
-					printf("This branch does not accept reg as arg\n");
+					eprintf("This branch does not accept reg as arg\n");
 					return 0;
 				}
 				break;
@@ -696,7 +701,7 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				break;
 			case TYPE_BRR:
 				if ((ret = getreg(ao->a[0])) == -1) {
-					printf("This branch does not accept off as arg\n");
+					eprintf("This branch does not accept off as arg\n");
 					return 0;
 				} else ao->o |= (getreg (ao->a[0])<<24);
 				break;

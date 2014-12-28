@@ -380,6 +380,13 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	}
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
+	// if object file
+	if (bin->ehdr.e_type == ET_REL) {
+		ut64 text;
+		if ((text = Elf_ (r_bin_elf_get_section_offset) (bin, ".text")) != -1) {
+			r->vaddr += text;
+		}
+	}
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = !rel->is_rela; return r
@@ -433,7 +440,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_ARM_JUMP_SLOT:	ADD(32, 0);
 		case R_ARM_RELATIVE:	ADD(32, B);
 		case R_ARM_GOTOFF:	ADD(32,-GOT);
-		default: break; ////eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
+		default: ADD(32,GOT); break; // reg relocations
+		 ////eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
 		}
 		break;
 	default: break;
