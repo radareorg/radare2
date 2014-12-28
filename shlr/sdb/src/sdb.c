@@ -88,8 +88,10 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	cdb_init (&s->db, s->fd);
 	return s;
 fail:
-	close (s->fd);
-	s->fd = -1;
+	if (s->fd != -1) {
+		close (s->fd);
+		s->fd = -1;
+	}
 	free (s->dir);
 	free (s->name);
 	free (s->path);
