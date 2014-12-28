@@ -1116,6 +1116,7 @@ static int cmd_print(void *data, const char *input) {
 			p = malloc (core->blocksize);
 			if (!p) {
 				eprintf ("Error: failed to malloc memory");
+                                free(ptr);
 				return R_FALSE;
 			}
 			for (i=0; i<psz; i++) {

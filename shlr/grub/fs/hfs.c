@@ -693,8 +693,11 @@ node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
                             (type == 0) ? GRUB_HFS_CNID_CAT : GRUB_HFS_CNID_EXT,
 			    idx / (data->blksz / nodesize), 0);
       blk += (idx % (data->blksz / nodesize));
-      if (grub_errno)
+      if (grub_errno) {
+        free (node.rawnode);
+        free (node.offsets);
 	return grub_errno;
+      }
 
       if (grub_disk_read (data->disk, blk, 0,
 			      sizeof (node), &node)) {
