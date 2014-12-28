@@ -184,8 +184,10 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	char *tstr = strdup (data);
 	RList *vars, *args;
 
-	if (!p->varlist)
+	if (!p->varlist) {
+                free(tstr);
 		return R_FALSE;
+        }
 
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
