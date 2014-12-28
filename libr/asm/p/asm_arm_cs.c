@@ -15,6 +15,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	else
 		mode |= CS_MODE_LITTLE_ENDIAN;
 
+	if (a->cpu && strstr (a->cpu, "m"))
+		mode |= CS_MODE_MCLASS;
+	if (a->cpu && strstr (a->cpu, "v8"))
+		mode |= CS_MODE_V8;
 	op->size = 4;
 	op->buf_asm[0] = 0;
 	ret = (a->bits==64)?
@@ -55,6 +59,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
+	.cpus = "v8,cortex-m",
 	.license = "BSD",
 	.arch = "arm",
 	.bits = 16|32|64,

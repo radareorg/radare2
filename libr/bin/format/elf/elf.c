@@ -7,8 +7,6 @@
 #include <r_util.h>
 #include "elf.h"
 
-static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name);
-
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
 	while (IS_PRINTABLE(*str) && --len) {
@@ -246,7 +244,7 @@ static Elf_(Shdr)* Elf_(r_bin_elf_get_section_by_name)(struct Elf_(r_bin_elf_obj
 	return NULL;
 }
 
-static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
+ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	Elf_(Shdr)* shdr = Elf_(r_bin_elf_get_section_by_name)(bin, section_name);
 	if (!shdr) return UT64_MAX;
 	return (ut64)shdr->sh_offset;
@@ -937,18 +935,22 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
-				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 1, bin->shdr[i].sh_offset + j);
+				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel],
+					1, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset + section_text_offset;
 				ret[rel].offset = ret[rel].offset - bin->baddr;
+				ret[rel].last = 0;
 				if (res < 0)
 					break;
 				rel++;
 			}
 		} else if (!strncmp (sh_name, ".rel.", strlen (".rel."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
-				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel], 0, bin->shdr[i].sh_offset + j);
+				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel],
+					0, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset;
 				ret[rel].offset = ret[rel].offset - bin->baddr;
+				ret[rel].last = 0;
 				if (res < 0)
 					break;
 				rel++;
