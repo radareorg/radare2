@@ -496,7 +496,7 @@ SDB_API int sdb_sync (Sdb* s) {
 		SdbHashEntry *hte = ht_search (s->ht, hash);
 		if (hte) {
 			kv = (SdbKv*)hte->data;
-			if (*kv->value) {
+			if (kv && *kv->value) {
 				/* asume k = kv->key */
 				sdb_disk_insert (s, k, kv->value);
 			}
@@ -505,7 +505,7 @@ SDB_API int sdb_sync (Sdb* s) {
 			ls_delete (s->ht->list, hte->iter);
 			hte->iter = NULL;
 			ht_delete_entry (s->ht, hte);
-		} else if (*v) {
+		} else if (v && *v) {
 			sdb_disk_insert (s, k, v);
 		}
 		free (k);
@@ -559,6 +559,8 @@ SDB_API SdbKv *sdb_dump_next (Sdb* s) {
 // TODO: make it static? internal api?
 SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 	ut32 vlen = 0, klen = 0;
+	if (key) *key = NULL;
+	if (value) *value = NULL;
 	if (_vlen)
 		*_vlen = 0;
 	if (s->fd==-1)
