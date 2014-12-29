@@ -1561,8 +1561,6 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);
 					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					//core->num->value = r_core_print_disasm (core->print,
-					//	core, addr, block, l*10, l, 0, 0);
 					core->num->value = r_core_print_disasm (core->print,
 							core, addr, block, l*10, l, 0, 0);
 				}
