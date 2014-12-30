@@ -14,7 +14,7 @@ $(OUT):
 sync:
 	rm -rf tmp
 	mkdir -p tmp
-	git clone git://github.com/radare/udis86.git
+	git clone --depth 1 git://github.com/radare/udis86.git
 	cd udis86/libudis86 ; ${PYTHON} ../scripts/ud_itab.py ../docs/x86/optable.xml .
 	cp -f udis86/libudis86/*.[ch] .
 	rm -rf udis86
