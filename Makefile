@@ -237,7 +237,7 @@ tests:
 	@if [ -d $(R2R) ]; then \
 		cd $(R2R) ; git clean -xdf ; git pull ; \
 	else \
-		git clone ${R2R_URL} $(R2R); \
+		git clone --depth 1 ${R2R_URL} $(R2R); \
 	fi
 	cd $(R2R) ; ${MAKE}
 
