@@ -69,7 +69,7 @@ libwind:
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
-	git clone ${SDB_URL} sdb.vc
+	git clone --depth 1 ${SDB_URL} sdb.vc
 	mkdir -p sdb
 	cp -rf ${SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
@@ -103,7 +103,7 @@ HFILES+=elf.h libtcc.h config.h i386-tok.h
 .PHONY: sdb-sync sync-sdb sdbclean
 tcc-sync sync-tcc:
 	rm -rf _
-	git clone git://repo.or.cz/tinycc.git _
+	git clone --depth 1 git://repo.or.cz/tinycc.git _
 	cd _ ; ./configure --prefix=${PREFIX}
 	mkdir -p tcc
 	for a in ${CFILES} ${HFILES} ; do cp -f _/$$a tcc ; done
