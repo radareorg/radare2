@@ -1288,6 +1288,8 @@ static int cmd_print(void *data, const char *input) {
 		ut32 new_bits = -1;
 		ut64 use_blocksize = core->blocksize;
 		int segoff, old_bits, pos = 0;
+		int pdseek = R_FALSE;
+		int seekto = 0;
 		ut8 settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		char *new_arch = NULL, *old_arch = NULL;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
@@ -1502,6 +1504,9 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_newline ();
 			pd_result = 0;
 			break;
+		case 'z':
+			pdseek = R_TRUE;
+			// intentional fallthrough
 		case 0:
 			/* "pd" -> will disassemble blocksize/4 instructions */
 			if (*input=='d') {
@@ -1511,8 +1516,8 @@ static int cmd_print(void *data, const char *input) {
 		case '?': // "pd?"
 			processed_cmd = R_TRUE;
 			const char* help_msg[] = {
-				"Usage:", "p[dD][fil] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
-				"NOTE:", "len", "parameter can be negative",
+				"Usage:", "p[dD][ajbrfilsz] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
+				"NOTE: ", "len", "parameter can be negative",
 				"pda", "", "disassemble all possible opcodes (byte per byte)",
 				"pdj", "", "disassemble to json",
 				"pdb", "", "disassemble basic block",
@@ -1521,6 +1526,7 @@ static int cmd_print(void *data, const char *input) {
 				"pdi", "", "like 'pi', with offset and bytes",
 				"pdl", "", "show instruction sizes",
 				"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
+				"pdz", "", "auto seek to end of disassembly after completion if possible (like gdb)",
 				NULL};
 				r_core_cmd_help (core, help_msg);
 			pd_result = 0;
@@ -1537,12 +1543,14 @@ static int cmd_print(void *data, const char *input) {
 						r_core_read_at (core, addr-l, block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
+						seekto = addr-l;
 					} else { //pd
 						int instr_len;
 						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
 						r_core_read_at (core, addr, block, instr_len);
 						core->num->value = r_core_print_disasm (core->print,
 								core, addr, block, instr_len, l, 0, 1);
+						seekto = addr; // seek backwards, so if we have pdz then seek to start
 					}
 				}
 			} else {
@@ -1561,15 +1569,19 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);
 					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					//core->num->value = r_core_print_disasm (core->print,
-					//	core, addr, block, l*10, l, 0, 0);
 					core->num->value = r_core_print_disasm (core->print,
 							core, addr, block, l*10, l, 0, 0);
 				}
+				seekto = addr + core->num->value;
 			}
 			free (block);
 		}
 		core->offset = current_offset;
+		if (pdseek && seekto != 0) {
+			r_io_sundo_push (core->io, core->offset);
+			r_core_seek (core, seekto, 1);
+			r_core_block_read (core, 0);
+		}
 		// change back asm setting is they were changed
 		if (settings_changed)
 			set_asm_configs (core, old_arch, old_bits, segoff);
@@ -2114,7 +2126,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
-			 "p","[dD][lf] [l]","disassemble N opcodes/bytes (see pd?)",
+			 "p","[dD][ajbrfilsz] [len] [arch] [bits] @ [addr]","disassemble N opcodes/bytes (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
 			 "p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
 			 "pm"," [magic]","print libmagic data (pm? for more information)",
