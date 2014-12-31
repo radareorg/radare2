@@ -2254,7 +2254,7 @@ static int cmd_anal(void *data, const char *input) {
 				"ad", " [from] [to]", "analyze data pointers to (from-to)",
 				"ae", " [expr]", "analyze opcode eval expression (see ao)",
 				"af", "[rnbcsl?+-*]", "analyze Functions",
-				"aF", "", "same as above, but using graph.depth=1",
+				"aF", "", "same as above, but using anal.depth=1",
 				"ag", "[?acgdlf]", "output Graphviz code",
 				"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
 				"ai", " [addr]", "address information (show perms, stack, heap, ...)",
