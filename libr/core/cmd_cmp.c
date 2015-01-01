@@ -216,6 +216,74 @@ static void cmd_cmp_watcher (RCore *core, const char *input) {
 	}
 }
 
+static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
+	int i, j, iseq;
+	char colpad[80];
+	int cols = r_config_get_i (core->config, "hex.cols") * 2;
+	RAsmOp op, op2;
+	ut64 off = r_num_math (core->num, input);
+	ut8 *buf = malloc (core->blocksize);
+	r_core_read_at (core, off, buf, core->blocksize);
+	switch (mode) {
+	case 'c': // columns
+		for (i=0; i< core->blocksize && j<core->blocksize; ) {
+			// dis A
+			r_asm_set_pc (core->assembler, core->offset+i);
+			(void)r_asm_disassemble (core->assembler, &op,
+				core->block+i, core->blocksize-i);
+
+			// dis B
+			r_asm_set_pc (core->assembler, off+i);
+			(void)r_asm_disassemble (core->assembler, &op2,
+				buf+j, core->blocksize-j);
+
+			// show output
+			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
+			memset (colpad, ' ', sizeof(colpad));
+			colpad[cols-strlen(op.buf_asm)] = 0;
+			r_cons_printf (" 0x%08"PFMT64x"  %s %s",
+				core->offset +i, op.buf_asm, colpad);
+			r_cons_printf ("%c 0x%08"PFMT64x"  %s\n",
+				iseq?'=':'!', off+j, op2.buf_asm);
+			if (op.size<1) op.size =1;
+			i+= op.size;
+			if (op2.size<1) op2.size =1;
+			j+= op2.size;
+		}
+		break;
+	case 'u': // unified
+		for (i=0; i< core->blocksize && j<core->blocksize; ) {
+			// dis A
+			r_asm_set_pc (core->assembler, core->offset+i);
+			(void)r_asm_disassemble (core->assembler, &op,
+				core->block+i, core->blocksize-i);
+
+			// dis B
+			r_asm_set_pc (core->assembler, off+i);
+			(void)r_asm_disassemble (core->assembler, &op2,
+				buf+j, core->blocksize-j);
+
+			// show output
+			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
+			if (iseq) {
+				r_cons_printf (" 0x%08"PFMT64x"  %s\n",
+					core->offset +i, op.buf_asm);
+			} else {
+				r_cons_printf ("-0x%08"PFMT64x"  %s\n",
+					core->offset +i, op.buf_asm);
+				r_cons_printf ("+0x%08"PFMT64x"  %s\n",
+					off+j, op2.buf_asm);
+			}
+			if (op.size<1) op.size =1;
+			i+= op.size;
+			if (op2.size<1) op2.size =1;
+			j+= op2.size;
+		}
+		break;
+	}
+	return 0;
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	RCore *core = data;
 	ut64 val = UT64_MAX;
@@ -227,12 +295,8 @@ static int cmd_cmp(void *data, const char *input) {
 	FILE *fd;
 
 	switch (*input) {
-	case 'a':
-		r_core_syscmd_cat (input+1);
-		break;
-	case 'w':
-		cmd_cmp_watcher (core, input+1);
-		break;
+	case 'a': r_core_syscmd_cat (input+1); break;
+	case 'w': cmd_cmp_watcher (core, input+1); break;
 	case ' ':
 		val = radare_compare (core, core->block, (ut8*)input+1,
 			strlen (input+1)+1);
@@ -317,24 +381,10 @@ static int cmd_cmp(void *data, const char *input) {
 		v64 = (ut64) r_num_math (core->num, input+1);
 		val = radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
 		break;
-#if 0
 	case 'c':
-		radare_compare_code (
-			r_num_math (core->num, input+1),
-				    core->block, core->blocksize);
-		break;
-	case 'D':
-		 { // XXX ugly hack
-			char cmd[1024];
-			sprintf (cmd, "radiff -b %s %s", ".curblock", input+2);
-			r_file_dump (".curblock", config.block, config.block_size);
-			radare_system(cmd);
-			unlink(".curblock");
-		 }
-		break;
-#endif
-	case 'c':
-		 {
+		if (input[1] == 'd') {
+			cmd_cmp_disasm (core, input+2, 'c');
+		} else {
 			int col = core->cons->columns>123;
 			ut8 *b = malloc (core->blocksize);
 			ut64 addr = r_num_math (core->num, input+2);
@@ -343,9 +393,9 @@ static int cmd_cmp(void *data, const char *input) {
 			memset (b, 0xff, core->blocksize);
 			r_core_read_at (core, addr, b, core->blocksize);
 			r_print_hexdiff (core->print, core->offset, core->block,
-				addr, b, core->blocksize, col);
+					addr, b, core->blocksize, col);
 			free (b);
-		 }
+		}
 		break;
 	case 'g':
 		 { // XXX: this is broken
@@ -406,17 +456,23 @@ static int cmd_cmp(void *data, const char *input) {
 		 }
 		break;
 	case 'u':
-		if (input[1] == ' ') {
-			ut64 off = r_num_math (core->num, input+1);
-			radare_compare_unified (core, core->offset, off,
+		switch (input[1]) {
+		case ' ':
+			radare_compare_unified (core, core->offset,
+				r_num_math (core->num, input+1),
 				core->blocksize);
-		} else {
+			break;
+		case 'd':
+			cmd_cmp_disasm (core, input+2, 'u');
+			break;
+		default: {
 			const char* help_msg[] = {
 			"Usage: cu",  " [offset]", "# Creates a unified hex patch",
 			"cu", " $$+1 > p", "Compare current seek and +1",
+			"cud", " $$+1 > p", "Compare disasm current seek and +1",
 			"wu", " p", "Apply unified hex patch",
 			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg); }
 		}
 		break;
 	case '?':{
@@ -427,12 +483,14 @@ static int cmd_cmp(void *data, const char *input) {
 				"c8", " [value]", "Compare a quadword from a math expression",
 				"cat", " [file]", "Show contents of file (see pwd, ls)",
 				"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
+				"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
 				//"cc", " [offset]", "code bindiff current block against offset"
 				//"cD", " [file]", "like above, but using radiff -b",
 				"cf", " [file]", "Compare contents of file at current seek",
 				"cg", "[o] [file]","Graphdiff current file and [file]",
 				"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 				"cu", " [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
+				"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 				"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
 				"cw", "[us?] [...]", "Compare memory watchers",
 				"cx", " [hexpair]", "Compare hexpair string",
