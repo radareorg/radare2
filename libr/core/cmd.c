@@ -1825,7 +1825,15 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 	case 'p': // print
 	case 'x':
 	case '$':
-		r_core_cmd0 (core, next? "s++": "s--");
+		if (next) {
+			r_core_seek (core, core->offset + core->blocksize, 1);
+		} else {
+			if (core->blocksize > core->offset) {
+				r_core_seek (core, 0, 1);
+			} else {
+				r_core_seek (core, core->offset - core->blocksize, 1);
+			}
+		}
 		r_core_cmd0 (core, core->lastcmd);
 		break;
 	}
