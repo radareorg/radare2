@@ -1511,8 +1511,9 @@ static int cmd_print(void *data, const char *input) {
 		case '?': // "pd?"
 			processed_cmd = R_TRUE;
 			const char* help_msg[] = {
-				"Usage:", "p[dD][fil] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
-				"NOTE:", "len", "parameter can be negative",
+				"Usage:", "p[dD][ajbrfils] [len] [arch] [bits] @ [addr]", " # Print Disassembly",
+				"NOTE: ", "len", "parameter can be negative",
+				"NOTE: ", "", "Pressing ENTER on empty command will repeat last pd command and also seek to end of disassembled range.",
 				"pda", "", "disassemble all possible opcodes (byte per byte)",
 				"pdj", "", "disassemble to json",
 				"pdb", "", "disassemble basic block",
@@ -1561,8 +1562,6 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);
 					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					//core->num->value = r_core_print_disasm (core->print,
-					//	core, addr, block, l*10, l, 0, 0);
 					core->num->value = r_core_print_disasm (core->print,
 							core, addr, block, l*10, l, 0, 0);
 				}
@@ -2114,7 +2113,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
-			 "p","[dD][lf] [l]","disassemble N opcodes/bytes (see pd?)",
+			 "p","[dD][ajbrfils] [len] [arch] [bits] @ [addr]","disassemble N opcodes/bytes (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
 			 "p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
 			 "pm"," [magic]","print libmagic data (pm? for more information)",
