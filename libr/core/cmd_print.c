@@ -1419,7 +1419,10 @@ static int cmd_print(void *data, const char *input) {
 						free (block);
 						pd_result = 0;
 					}
-				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				} else {
+					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+					core->num->value = 2;
+				}
 			}
 			break;
 		case 'f': // "pdf"
@@ -1472,6 +1475,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 					processed_cmd = R_TRUE;
+					core->num->value = 2;
 				}
 			}
 			l = 0;
