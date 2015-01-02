@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HAS_MAIN 1
+#define HAS_MAIN 0
 
 // $ echo "..." | xcrun swift-demangle
 
