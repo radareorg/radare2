@@ -84,7 +84,11 @@ static char *getarg(cs_insn *insn, int n, int set) {
 		break;
 	case X86_OP_REG:
 		// TODO: control boundaries
-		return strdup (cs_x86_regnames[op.reg]);
+		if (op.reg < (sizeof(cs_x86_regnames) / sizeof(*cs_x86_regnames))) {
+			return strdup (cs_x86_regnames[op.reg]);
+		} else {
+			return NULL;
+		}
 	case X86_OP_IMM:
 		snprintf (buf, sizeof (buf), "%"PFMT64d, (ut64)op.imm);
 		return strdup (buf);
