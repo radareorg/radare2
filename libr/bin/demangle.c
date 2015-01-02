@@ -208,6 +208,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 }
 
 R_API int r_bin_demangle_type (const char *str) {
+	if (!str || !*str)
+		return R_BIN_NM_NONE;
 	if (!strcmp (str, "swift"))
 		return R_BIN_NM_SWIFT;
 	if (!strcmp (str, "objc"))
