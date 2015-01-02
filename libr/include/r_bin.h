@@ -45,6 +45,7 @@ enum {
 	R_BIN_NM_JAVA = 1,
 	R_BIN_NM_CXX = 2,
 	R_BIN_NM_OBJC= 3,
+	R_BIN_NM_SWIFT = 4,
 	R_BIN_NM_ANY = -1,
 };
 

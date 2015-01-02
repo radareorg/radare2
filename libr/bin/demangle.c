@@ -208,19 +208,27 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 }
 
 R_API int r_bin_demangle_type (const char *str) {
-	// XXX: add
-	return R_BIN_NM_CXX;
+	if (!strcmp (str, "swift"))
+		return R_BIN_NM_SWIFT;
+	if (!strcmp (str, "objc"))
+		return R_BIN_NM_OBJC;
+	if (!strcmp (str, "cxx"))
+		return R_BIN_NM_CXX;
+	return R_BIN_NM_NONE;
 }
+
+extern char *r_bin_demangle_swift(const char *s);
 
 R_API char *r_bin_demangle (RBinFile *binfile, const char *str) {
 	int type;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->demangle_type)
 		type = plugin->demangle_type (str);
-	else type = r_bin_demangle_type (str);
+	else type = r_bin_demangle_type (binfile->o->info->lang);
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
+	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str);
 	}
 	return NULL;
 }
