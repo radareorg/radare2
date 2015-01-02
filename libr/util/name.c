@@ -9,6 +9,7 @@ static int r_name_validate_char(const char ch) {
 	if ((ch>='a' && ch<='z') || (ch>='A' && ch<='Z') || (ch>='0' && ch<='9'))
 		return R_TRUE;
 	switch (ch) {
+	case ':':
 	case '.':
 	case '_':
 		return R_TRUE;

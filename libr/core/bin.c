@@ -719,9 +719,8 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 				}
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
-					//"reloc.%s", reloc->import->name);
 				if (bin_demangle)
-					demname = r_bin_demangle (r->bin->cur, str); //reloc->import->name);
+					demname = r_bin_demangle (r->bin->cur, str);
 				r_name_filter (str, 0);
 				//r_str_replace_char (str, '$', '_');
 				fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
@@ -826,7 +825,9 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		// TODO(eddyb) use the logic below for symbols that are imports.
-		/*r_flag_space_set (r->flags, "imports");
+#if 0
+		char str[1024];
+		r_flag_space_set (r->flags, "imports");
 		r_list_foreach (imports, iter, import) {
 			r_name_filter (import->name, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "imp.%s", import->name);
@@ -846,7 +847,8 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 						import->size, dname);
 				free (dname);
 			}
-		}*/
+		}
+#endif
 	} else {
 		ut64 addr;
 		if (mode) r_cons_printf ("fs imports\n");
@@ -890,13 +892,14 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 }
 
 static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64 at, const char *name) {
+	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinInfo *info = r_bin_get_info (r->bin);
+	int is_arm = info && !strcmp (info->arch, "arm");
 	char str[R_FLAG_NAME_SIZE];
 	RList *symbols;
 	RListIter *iter;
 	RBinSymbol *symbol;
 	int i = 0;
-	int is_arm = info && !strcmp (info->arch, "arm");
 
 	symbols = r_bin_get_symbols (r->bin);
 
@@ -944,11 +947,13 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 			}
 
 			demname = NULL;
-			if (r_config_get_i (r->config, "bin.demangle"))
+			if (bin_demangle) {
 				demname = r_bin_demangle (r->bin->cur, name);
+			}
 			r_name_filter (name, 80);
 			if (!demname)
-				demname = strdup (name);
+				demname = name;
+
 			if (cname) {
 				RFlagItem *fi = NULL;
 				char * comment = NULL;
@@ -964,16 +969,24 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					fi = NULL;
 				}
 				// set the new sym.[cname].[name] with comment
-				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, demname);
+				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
 				fi = r_flag_set (r->flags, str, addr, symbol->size, 0);
+
 				if (comment) {
 					r_flag_item_set_comment (fi, comment);
 					free (comment);
 				}
 			} else {
-				const char *flagname = sdb_fmt (0, "sym.%s", name);
-				RFlagItem *fi = r_flag_set (r->flags, flagname, addr, symbol->size, 0);
-				r_flag_item_set_name (fi, flagname, sdb_fmt (1,"sym.%s", demname));
+				RFlagItem *fi;
+				const char *pfx = "sym";
+				char *flagname = sdb_fmt (0, "%s.%s", pfx, demname);
+				r_name_filter (flagname, 0);
+				fi = r_flag_set (r->flags, flagname, addr, symbol->size, 0);
+				if (fi) {
+					r_flag_item_set_name (fi, flagname, sdb_fmt (1,"sym.%s", demname));
+				} else {
+					eprintf ("Cant create flag (%s)\n", flagname);
+				}
 			}
 			if (demname != name) {
 				R_FREE (demname);
