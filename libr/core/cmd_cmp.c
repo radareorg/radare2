@@ -226,7 +226,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	r_core_read_at (core, off, buf, core->blocksize);
 	switch (mode) {
 	case 'c': // columns
-		for (i=0; i< core->blocksize && j<core->blocksize; ) {
+		for (i=j=0; i<core->blocksize && j<core->blocksize; ) {
 			// dis A
 			r_asm_set_pc (core->assembler, core->offset+i);
 			(void)r_asm_disassemble (core->assembler, &op,
@@ -252,7 +252,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 		}
 		break;
 	case 'u': // unified
-		for (i=0; i< core->blocksize && j<core->blocksize; ) {
+		for (i=j=0; i< core->blocksize && j<core->blocksize; ) {
 			// dis A
 			r_asm_set_pc (core->assembler, core->offset+i);
 			(void)r_asm_disassemble (core->assembler, &op,

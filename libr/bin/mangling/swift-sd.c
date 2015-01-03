@@ -98,6 +98,7 @@ static const char *findret(const char *s) {
 #endif
 
 char *r_bin_demangle_swift(const char *s) {
+#define STRCAT_BOUNDS(x) if ((x+2+strlen (out))>sizeof (out)) break;
 	char out[8192];
 	int i, len, is_generic = 0;;
 	int is_first = 1;
@@ -135,6 +136,7 @@ char *r_bin_demangle_swift(const char *s) {
 			// push string
 			if (*out)
 				strcat (out, ".");
+			STRCAT_BOUNDS (len);
 			strcat (out, getstring (q, len));
 		}
 		p = resolve (flags, q, &attr);
@@ -163,18 +165,23 @@ char *r_bin_demangle_swift(const char *s) {
 			resolve (types, q+len, &attr2);
 //			printf ("Field Type: %s\n", attr2);
 
-			if (name && *name) {
-				strcat (out, ".");
-				strcat (out, name);
-			}
-			if (attr && *attr) {
-				strcat (out, ".");
-				strcat (out, attr);
-			}
-			if (attr2 && *attr2) {
-				strcat (out, "__");
-				strcat (out, attr2);
-			}
+			do {
+				if (name && *name) {
+					strcat (out, ".");
+					STRCAT_BOUNDS (strlen (name));
+					strcat (out, name);
+				}
+				if (attr && *attr) {
+					strcat (out, ".");
+					STRCAT_BOUNDS (strlen (attr));
+					strcat (out, attr);
+				}
+				if (attr2 && *attr2) {
+					strcat (out, "__");
+					STRCAT_BOUNDS (strlen (attr2));
+					strcat (out, attr2);
+				}
+			} while (0);
 		} else {
 			/* parse function parameters here */
 			// type len value
@@ -219,6 +226,7 @@ q+=3;
 							//printf ("RETURN TYPE %s\n", attr);
 		//					printf ("RET %s\n", attr);
 							strcat (out, " -> ");
+							STRCAT_BOUNDS (strlen (attr));
 							strcat (out, attr);
 							break;
 						}
@@ -234,8 +242,10 @@ q+=3;
 							}
 							//printf ("ISLAST (%s)\n", q+len);
 							is_last = q[len];
+							STRCAT_BOUNDS (strlen (attr));
 							strcat (out, attr);
 							strcat (out, " ");
+							STRCAT_BOUNDS (strlen (s));
 							strcat (out, s);
 							if (is_last) {
 								strcat (out, is_generic?">":")");
@@ -245,6 +255,7 @@ q+=3;
 							}
 						} else {
 							strcat (out, " -> ");
+							STRCAT_BOUNDS (strlen (attr));
 							strcat (out, attr);
 
 						}
@@ -261,7 +272,7 @@ q+=3;
 	} else {
 		//printf ("Unsupported type: %c\n", *p);
 	}
-	if (out && *out) {
+	if (*out) {
 		char *p, *outstr = strdup (out);
 		p = outstr;
 		for (;;) {
