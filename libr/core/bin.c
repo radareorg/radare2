@@ -50,7 +50,7 @@ static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 lad
 			return vaddr;
 		return paddr + laddr;
 	}
-	return vaddr;
+	return vaddr + laddr;
 }
 
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
@@ -1096,8 +1096,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 		i = 0;
 		r_list_foreach (sections, iter, section) {
 			ut64 addr = rva (r->bin, va, section->paddr, section->vaddr, baddr, laddr);
-			if (va)
-				delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section->vaddr);
+			if (va) delta = section->vaddr - r_bin_get_vaddr (r->bin, baddr, section->paddr, section->vaddr);
+			else delta = 0;
 			//ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->paddr,
 			//	section->vaddr): section->paddr;
 			if (chksum) {
@@ -1223,7 +1223,6 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut6
 
 		r_list_foreach (sections, iter, section) {
 			ut64 addr = rva (r->bin, va, section->paddr, section->vaddr, baddr, laddr);
-			addr = section->vaddr; // this line fixes rbin_bios
 			if (name && strcmp (section->name, name))
 				continue;
 			r_name_filter (section->name, sizeof (section->name));
