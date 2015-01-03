@@ -222,7 +222,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
 	RAsmOp op, op2;
 	ut64 off = r_num_math (core->num, input);
-	ut8 *buf = malloc (core->blocksize);
+	ut8 *buf = calloc (core->blocksize, 1);
 	r_core_read_at (core, off, buf, core->blocksize);
 	switch (mode) {
 	case 'c': // columns
