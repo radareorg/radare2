@@ -217,13 +217,14 @@ static void cmd_cmp_watcher (RCore *core, const char *input) {
 }
 
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
+	RAsmOp op, op2;
 	int i, j, iseq;
 	char colpad[80];
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
-	RAsmOp op, op2;
 	ut64 off = r_num_math (core->num, input);
-	ut8 *buf = calloc (core->blocksize, 1);
-	r_core_read_at (core, off, buf, core->blocksize);
+	ut8 *buf = calloc (core->blocksize+32, 1);
+	if (!buf) return R_FALSE;
+	r_core_read_at (core, off, buf, core->blocksize+32);
 	switch (mode) {
 	case 'c': // columns
 		for (i=j=0; i<core->blocksize && j<core->blocksize; ) {
@@ -240,7 +241,11 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 			// show output
 			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
 			memset (colpad, ' ', sizeof(colpad));
-			colpad[cols-strlen(op.buf_asm)] = 0;
+			{
+			int pos = strlen (op.buf_asm);
+			pos = (pos>cols)? 0: cols-pos;
+			colpad[pos] = 0;
+			}
 			r_cons_printf (" 0x%08"PFMT64x"  %s %s",
 				core->offset +i, op.buf_asm, colpad);
 			r_cons_printf ("%c 0x%08"PFMT64x"  %s\n",
