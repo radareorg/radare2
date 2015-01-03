@@ -1,4 +1,11 @@
 PYTHON_VERSION=2.7
 PYTHON=python${PYTHON_VERSION}
 
-#TODO: PREFIX=/usr
+[ -z "${PREFIX}" ] && PREFIX=/usr
+ID=`id -u` 
+if [ "$ID" = 0 ]; then
+	SUDO=
+else
+	SUDO=sudo
+fi
+[ -n "${NOSUDO}" ] && SUDO=
