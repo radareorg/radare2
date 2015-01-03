@@ -220,6 +220,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	RAsmOp op, op2;
 	int i, j, iseq;
 	char colpad[80];
+	int hascolor = r_config_get_i (core->config, "scr.color");
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
 	ut64 off = r_num_math (core->num, input);
 	ut8 *buf = calloc (core->blocksize+32, 1);
@@ -246,10 +247,16 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 			pos = (pos>cols)? 0: cols-pos;
 			colpad[pos] = 0;
 			}
+			if (hascolor) {
+				r_cons_printf (iseq?Color_GREEN:Color_RED);
+			}
 			r_cons_printf (" 0x%08"PFMT64x"  %s %s",
 				core->offset +i, op.buf_asm, colpad);
 			r_cons_printf ("%c 0x%08"PFMT64x"  %s\n",
 				iseq?'=':'!', off+j, op2.buf_asm);
+			if (hascolor) {
+				r_cons_printf (Color_RESET);
+			}
 			if (op.size<1) op.size =1;
 			i+= op.size;
 			if (op2.size<1) op2.size =1;
@@ -274,10 +281,16 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				r_cons_printf (" 0x%08"PFMT64x"  %s\n",
 					core->offset +i, op.buf_asm);
 			} else {
+				if (hascolor)
+					r_cons_printf (Color_RED);
 				r_cons_printf ("-0x%08"PFMT64x"  %s\n",
 					core->offset +i, op.buf_asm);
+				if (hascolor)
+					r_cons_printf (Color_GREEN);
 				r_cons_printf ("+0x%08"PFMT64x"  %s\n",
 					off+j, op2.buf_asm);
+				if (hascolor)
+					r_cons_printf (Color_RESET);
 			}
 			if (op.size<1) op.size =1;
 			i+= op.size;
