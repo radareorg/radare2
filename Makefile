@@ -9,7 +9,6 @@ DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
-YARADIR=$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/yara)
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
@@ -113,7 +112,6 @@ install: install-doc install-man install-www
 	mkdir -p "${DLIBDIR}/radare2/${VERSION}/hud"
 	cp -f doc/hud "${DLIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p $(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)
-	cp -fr shlr/yara/ "$(YARADIR)"
 	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
@@ -161,8 +159,6 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	ln -fs "${PWD}/libr/lang/p/radare.lua" \
 		"${DLIBDIR}/radare2/${VERSION}/radare.lua"
 	mkdir -p "$(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)"
-	rm -rf "$(YARADIR)"
-	ln -fs "${PWD}/shlr/yara/" "$(YARADIR)"
 	sys/ldconfig.sh
 
 deinstall uninstall:
