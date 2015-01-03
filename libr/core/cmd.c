@@ -1592,7 +1592,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 			const char* help_msg[] = {
 				"Usage:", ":[plugin] [args]", "",
 				":", "", "list RCore plugins",
-				":yara", "", "run yara plugin",
+				":java", "", "run java plugin",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			return 0;

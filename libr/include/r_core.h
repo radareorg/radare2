@@ -487,7 +487,6 @@ R_API void r_core_task_join (RCore *core, RCoreTask *task);
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_anal;
-extern RCorePlugin r_core_plugin_yara;
 
 #endif
 
