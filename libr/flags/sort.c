@@ -32,7 +32,7 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 				fi = flag;
 				it_elem = iter;
 				changes = 1;
-			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) <= 0) {
+			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
 				fi = flag;
 				it_elem = iter;
 				changes = 1;
