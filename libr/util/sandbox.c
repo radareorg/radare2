@@ -27,6 +27,8 @@ R_API int r_sandbox_check_path (const char *path) {
 		while (*path == '/') path++;
 	}
 
+	// ./ path is not allowed
+        if (path[0]=='.' && path[1]=='/') return 0;
 	// Properly check for directrory traversal using "..". First, does it start with a .. part?
         if (path[0]=='.' && path[1]=='.' && (path[2]=='\0' || path[2]=='/')) return 0;
 
@@ -146,8 +148,12 @@ R_API int r_sandbox_kill(int pid, int sig) {
 }
 
 R_API DIR* r_sandbox_opendir (const char *path) {
-	if (!path || (r_sandbox_enable (0) && !r_sandbox_check_path (path)))
+	if (!path)
 		return NULL;
+	if (r_sandbox_enable (0)) {
+		if (path && !r_sandbox_check_path (path))
+			return NULL;
+	}
 	return opendir (path);
 }
 

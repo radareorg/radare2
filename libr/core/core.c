@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -233,6 +233,7 @@ static const char *radare_argv[] = {
 #define TMP_ARGV_SZ 256
 static const char *tmp_argv[TMP_ARGV_SZ];
 static int autocomplete(RLine *line) {
+	int pfree = 0;
 	RCore *core = line->user;
 	RListIter *iter;
 	RFlagItem *flag;
@@ -276,7 +277,7 @@ static int autocomplete(RLine *line) {
 		     !memcmp (line->buffer.data, "/m ", 3)) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS
 			char *str, *p, *path;
-			int n = 0, i = 0;
+			int n = 0, i = 0, isroot = 0, iscwd = 0;
 			RList *list;
 			int sdelta = (line->buffer.data[1]==' ')? 2:
 				(line->buffer.data[2]==' ')? 3:
@@ -286,33 +287,66 @@ static int autocomplete(RLine *line) {
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
-				if (p==path) path = strdup ("/");
-				else if (p!=path+1) *p = 0;
-				p++;
-			}
-			if (p) { if (*p) n = strlen (p); else p = ""; }
-			if (*path=='~') {
-				char *lala = r_str_home (path+1);
+				if (p==path) { // ^/
+					isroot = 1;
+					*p = 0;
+					p++;
+				} else if (p==path+1) { // ^./
+					*p = 0;
+					iscwd=1;
+					p++;
+				} else { // *
+					*p = 0;
+					p++;
+				}
+			} else {
+				iscwd=1;
+				pfree = 1;
+				p = strdup (path);
 				free (path);
-				path = lala;
-			} else if (*path!='.' && *path!='/') {
-				char *o = malloc (strlen (path)+4);
-				memcpy (o, "./", 3);
-				p = o+3;
-				n = strlen (path);
-				memcpy (o+3, path, strlen (path)+1);
-				free (path);
-				path = o;
+				path = strdup ("."); //./");
 			}
- 			list = p? r_sys_dir (path): NULL;
+			if (pfree) {
+				if (p) {
+					if (*p) {
+						n = strlen (p);
+					} else {
+						free (p);
+						p = strdup ("");
+					}
+				}
+			} else {
+				if (p) { if (*p) n = strlen (p); else p = ""; }
+			}
+			if (iscwd) {
+				list = r_sys_dir("./");
+			} else if (isroot) {
+				list = r_sys_dir("/");
+			} else {
+				if (*path=='~') { // if implicit home
+					char *lala = r_str_home (path+1);
+					free (path);
+					path = lala;
+				} else if (*path!='.' && *path!='/') { // ifnot@home
+					char *o = malloc (strlen (path)+4);
+					memcpy (o, "./", 2);
+					p = o+2;
+					n = strlen (path);
+					memcpy (o+2, path, strlen (path)+1);
+					free (path);
+					path = o;
+				}
+				list = p? r_sys_dir (path): NULL;
+			}
 			if (list) {
+				int isroot = !strcmp (path, "/");
 				char buf[4096];
 				r_list_foreach (list, iter, str) {
-					if (*str == '.')
+					if (*str == '.') // also list hidden files
 						continue;
 					if (!p || !*p || !strncmp (str, p, n)) {
 						snprintf (buf, sizeof (buf), "%s%s%s",
-							path, strlen (path)>1?"/":"", str);
+							path, isroot?"":"/",str);
 						tmp_argv[i++] = strdup (buf);
 						if (i==TMP_ARGV_SZ) {
 							i--;
@@ -322,12 +356,13 @@ static int autocomplete(RLine *line) {
 				}
 				r_list_purge (list);
 				free (list);
-			} else eprintf ("\nInvalid directory\n");
+			} else eprintf ("\nInvalid directory (%s)\n", path);
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 			free (path);
-			//free (p);
+			if (pfree)
+				free (p);
 		} else
 		if((!memcmp (line->buffer.data, ".(", 2))  ||
 		   (!memcmp (line->buffer.data, "(-", 2))) {
