@@ -3,12 +3,27 @@ enyo.kind ({
   kind: "Scroller",
   tag: "div",
   classes:"ec_gui_background",
-  style:"margin:0px;",
+  style:"margin:0px;position: relative;",
   draggable: false,
   data: null,
   components: [
       // {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
-      {tag: "div", allowHtml: true, name: "text", content: "..", style:"margin-left:5px;margin-right:5px"},
+      {
+        tag: "div",
+        allowHtml: true,
+        draggable: false,
+        name: "minimap",
+        style : "width:200px ;height:200 ; position: fixed; top : 0; left:650px",
+        id: "minimap"
+      },
+      {
+        tag: "div",
+        draggable: false,
+        allowHtml: true,
+        name: "text",
+        content: "..",
+        style:"margin-left:5px;margin-right:5px;"
+      },
       {kind: enyo.Signals,
         onkeypress: "handleKeyPress"
       },
@@ -43,7 +58,7 @@ enyo.kind ({
   },
   handleHold: function (inSender, inEvent) {
     this.handleTap(inSender, inEvent);
-    if (inEvent.target.className.indexOf(" addr ") > -1 || inEvent.target.className.indexOf(" faddr ") > -1) {
+    if (typeof inEvent.target.className === "string" && (inEvent.target.className.indexOf(" addr ") > -1 || inEvent.target.className.indexOf(" faddr ") > -1)) {
       var address = get_address_from_class(inEvent.target);
       this.selected = inEvent.target;
       this.selected_offset = address;
@@ -74,7 +89,7 @@ enyo.kind ({
   },
   handleKeyPress: function(inSender, inEvent) {
     var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
-    // console.log(key);
+    console.log(key);
     // show help
     if (key === 63) {
       r2ui.mp.show_popup();
@@ -195,6 +210,7 @@ enyo.kind ({
     }
   },
   handleTap: function(inSender, inEvent) {
+    if (typeof inEvent.target.className === 'string') {
       if (inEvent.target.className.indexOf(" addr ") > -1) {
         var address = get_address_from_class(inEvent.target);
         rehighlight_iaddress(address);
@@ -249,6 +265,7 @@ enyo.kind ({
         }
         if (eid !== null) rehighlight_iaddress(eid, "id");
       }
+    }
   },
   goToAddress: function() {
     if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") ) -1) {
@@ -379,6 +396,7 @@ enyo.kind ({
     this.display = "flat";
     var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
     if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_alt_background", "ec_gui_background");
+    $('#minimap')[0].innerHTML = "";
   },
   less: function() {
     var text = this.$.text;
@@ -405,18 +423,20 @@ enyo.kind ({
     var text = this.$.text;
     var error = false;
     if (this.display === "graph") {
+      this.$.minimap.show();
       text.setContent("");
       r2.cmd ("agj " + addr, function(x) {
-        text.setContent("<div id='bb_canvas' class='bbcanvas enyo-selectable ec_gui_background'></div>");
-        // If render fails (address does not belong to function) then switch to flat view
+        // <div id='bb_minimap'></div>
+        text.setContent("<div id='center_panel' style='overflow: auto;'><div id='canvas' class='canvas enyo-selectable ec_gui_background'></div></div>");
         if (render_graph(x) === false) error = true;
       });
     }
     if (error) this.display_flat();
     if (this.display === "flat") {
+      this.$.minimap.hide();
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -49, 100, function(x) {
-        text.setContent("<div id='flat_canvas' class='flatcanvas enyo-selectable ec_gui_background'></div>");
+        text.setContent("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
         render_instructions(x);
       });
     }

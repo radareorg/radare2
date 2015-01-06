@@ -11,7 +11,6 @@ $(document).ready( function() {
     activate: function( event, ui ) {
       r2ui.seek("$$", false);
       scroll_to_element(r2ui._dis.selected);
-      document.getElementById("canvas").focus();
     }
   });
 
@@ -212,17 +211,15 @@ $(document).ready( function() {
       }
   });
 
-  // Install keyboard and mosuse handlers
-  $("#main_panel").keypress(handleKeypress);
-  $("#main_panel").click(handleClick);
+  // Install keyboard and mouse handlers
+  $(document).keypress(handleKeypress);
+  $(document).click(handleClick);
   $(document).dblclick(handleDoubleClick);
 
   // Show disasm panel and seek to entrypoint
 	disasm_panel.display_flat();
 	r2ui.seek(disasm_panel.base,true);
 	scroll_to_element(r2ui._dis.selected);
-  document.getElementById("canvas").focus();
-
 });
 
 function scroll_to_element(element) {
@@ -253,11 +250,10 @@ function handleKeypress(inEvent) {
 	var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
 
   // console.log(key);
+  if ($(inEvent.target).prop("tagName") === "INPUT") {
+    return;
+  };
 
-	// show help
-	if (key === 63) {
-	  // r2ui.mp.showPopup();
-	}
   if (r2ui._dis.renaming !== null) return;
 
 	// Spacebar Switch flat and graph views
@@ -269,7 +265,6 @@ function handleKeypress(inEvent) {
       r2ui.seek(address, true);
       scroll_to_address(address);
       inEvent.preventDefault();
-      document.getElementById("canvas").focus();
     }
 	}
 	// h Seek to previous address in history
@@ -306,7 +301,6 @@ function handleKeypress(inEvent) {
       }
       rehighlight_iaddress(address);
       scroll_to_address(address);
-      document.getElementById("canvas").focus();
     }
 	}
 	// k Seek to previous instruction
@@ -335,7 +329,6 @@ function handleKeypress(inEvent) {
       }
       rehighlight_iaddress(address);
       scroll_to_address(address);
-      document.getElementById("canvas").focus();
     }
 	}
 	// c Define function
@@ -365,13 +358,10 @@ function handleKeypress(inEvent) {
 	    if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
 	    scroll_to_address(addr);
 	  }
-    document.getElementById("canvas").focus();
 	}
 	// enter
 	if (key === 13) {
-	  // Enter go to address
 	  r2ui._dis.goToAddress();
-    document.getElementById("canvas").focus();
 	}
 }
 
@@ -387,7 +377,6 @@ function do_jumpto(address) {
   }
   rehighlight_iaddress(r2ui._dis.tmp_address);
   scroll_to_address(r2ui._dis.tmp_address);
-  document.getElementById("canvas").focus();
 }
 
 function do_rename(element, inEvent) {
@@ -405,7 +394,6 @@ function do_rename(element, inEvent) {
      store_scroll_offset();
      r2ui.seek("$$", false);
      scroll_to_last_offset();
-     document.getElementById("canvas").focus();
   } else if (r2ui._dis.renaming === null && element !== null && $(element).hasClass("addr")) {
     r2ui._dis.selected = element;
     r2ui._dis.selected_offset = address;
@@ -456,7 +444,6 @@ function do_comment(element) {
   r2.cmd('CC ' + prompt('Comment')  + " @ " + address);
   r2ui.seek(address, false);
   scroll_to_address(address);
-  document.getElementById("canvas").focus();
 }
 
 function do_undefine(element) {
@@ -467,7 +454,6 @@ function do_undefine(element) {
   if (r2ui._dis.display == "graph") r2ui._dis.display_flat();
   r2ui.seek(address, false);
   scroll_to_address(address);
-  document.getElementById("canvas").focus();
 }
 
 function do_define(element) {
@@ -478,7 +464,6 @@ function do_define(element) {
   update_binary_details();
   r2ui.seek(address, false);
   scroll_to_address(address);
-  document.getElementById("canvas").focus();
 }
 
 function handleClick(inEvent) {
@@ -495,7 +480,7 @@ function handleClick(inEvent) {
       var get_more_instructions = false;
       var next_instruction;
       var prev_instruction;
-      var address
+      var address;
       if (r2ui._dis.display == "flat") {
         next_instruction = $(r2ui._dis.selected).closest(".instructionbox").next().find('.insaddr')[0];
         if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) {
@@ -536,7 +521,6 @@ function handleClick(inEvent) {
     }
     if (eid !== null) rehighlight_iaddress(eid, "id");
   }
-  document.getElementById("canvas").focus();
 }
 
 function handleDoubleClick (inEvent) {
