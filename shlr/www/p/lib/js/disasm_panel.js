@@ -20,7 +20,7 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
     if (this.display === "graph") {
       panel.innerHTML = "";
       r2.cmd("agj " + addr, function(x) {
-        panel.innerHTML = "<div id='bb_canvas' class='bbcanvas enyo-selectable ec_gui_background'></div>";
+        panel.innerHTML = "<div id='minimap'></div></div><div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>";
         // If render fails (address does not belong to function) then switch to flat view
         if (render_graph(x) === false) error = true;
       });
@@ -29,7 +29,7 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
     if (this.display === "flat") {
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -49, 100, function(x) {
-        panel.innerHTML = "<div id='flat_canvas' class='flatcanvas enyo-selectable ec_gui_background'></div>";
+        panel.innerHTML = "<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>";
         render_instructions(x);
       });
     }
@@ -38,17 +38,18 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
 
     render_history();
     rehighlight_iaddress(addr);
-
 };
 DisasmPanel.prototype.display_graph = function() {
   this.display = "graph";
   $("#main_panel").removeClass("ec_gui_background");
   $("#main_panel").addClass("ec_gui_alt_background");
+  if ($('#minimap').length) $('#minimap')[0].innerHTML = "";
 };
 DisasmPanel.prototype.display_flat = function() {
   this.display = "flat";
   $("#main_panel").removeClass("ec_gui_alt_background");
   $("#main_panel").addClass("ec_gui_background");
+  if ($('#minimap').length) $('#minimap')[0].innerHTML = "";
 };
 DisasmPanel.prototype.goToAddress = function() {
 
@@ -89,6 +90,5 @@ DisasmPanel.prototype.handleInputTextChange = function() {
     update_binary_details();
     r2ui.seek(address, false);
     scroll_to_address(address);
-    document.getElementById("canvas").focus();
   }
 };

@@ -29,12 +29,6 @@
   padding-bottom: 0px;
 }
 
-.basicblock {
-  border: 1px solid;
-  padding: 5px;
-  position: absolute;
-}
-
 .instructionbox {
   position: absolute;
 }
@@ -97,3 +91,66 @@ input:focus {outline: none; }
 .hidden {display:none;}
 
 .lines {margin-left: 100px;}
+
+.basicblock {
+  border: 1px solid;
+  padding: 5px;
+  position: absolute;
+  pointer-events: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+svg rect {
+  border: 5px solid yellow;
+}
+
+.basicblock .instruction,
+.basicblock input {
+   pointer-events: auto;
+}
+
+#canvas {
+  position: relative;
+  display: inline-block;
+  background: transparent;
+}
+
+#canvas svg,
+#minimap svg {
+  background: transparent;
+}
+
+#minimap svg .link,
+#canvas svg .link {
+  pointer-events: none;
+}
+
+#minimap  {
+  border: 1px solid gray;
+  position:absolute;
+  width:200px;
+  height:200px;
+  z-index: 2;
+}
+
+#minimap .basicblock {
+  display: none;
+}
+
+#canvas #minimap_area {
+  display: none;
+}
+
+#minimap_area {
+  border: 1px solid gray;
+  position:absolute;
+  background: gray;
+  opacity: 0.4;
+  filter: alpha(opacity=40); /* For IE8 and earlier */
+}
+
+#radareApp_mp_panels_pageDisassembler {
+  padding: 10px;
+}

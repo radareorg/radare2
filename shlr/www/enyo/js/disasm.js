@@ -1,6 +1,39 @@
 var BBGraph = function () {
   this.vertices = {};
   this.edges = [];
+  this.elements = [];
+  this.links = [];
+
+  joint.shapes.html = {};
+  joint.shapes.html.Element = joint.shapes.basic.Rect.extend({
+      defaults: joint.util.deepSupplement({
+          type: 'html.Element',
+          attrs: {
+              rect: { stroke: 'black', fill: r2ui.colors[".ec_gui_alt_background"] }
+          }
+      }, joint.shapes.basic.Rect.prototype.defaults)
+  });
+
+  joint.shapes.html.ElementView = joint.dia.ElementView.extend({
+      initialize: function() {
+          _.bindAll(this, 'updateBox');
+          joint.dia.ElementView.prototype.initialize.apply(this, arguments);
+          this.$box = $(_.template(this.model.get('html'))());
+          this.$box.find('input,select').on('mousedown click', function(evt) { evt.stopPropagation(); });
+          this.model.on('change', this.updateBox, this);
+          this.updateBox();
+      },
+      render: function() {
+          joint.dia.ElementView.prototype.render.apply(this, arguments);
+          this.paper.$el.prepend(this.$box);
+          this.updateBox();
+          return this;
+      },
+      updateBox: function() {
+          var bbox = this.model.getBBox();
+          this.$box.css({ width: bbox.width, height: bbox.height, left: bbox.x, top: bbox.y + 7, transform: 'rotate(' + (this.model.get('angle') || 0) + 'deg)' });
+      },
+  });
 };
 BBGraph.prototype.addVertex = function(addr, vlen, dom) {
   if (this.vertices[addr] === undefined) {
@@ -12,20 +45,44 @@ BBGraph.prototype.addVertex = function(addr, vlen, dom) {
     this.vertices[addr].len = vlen;
     this.vertices[addr].rendered = dom;
   }
-};
+}
 BBGraph.prototype.addEdge = function(v1, v2, color) {
   this.addVertex(v1);
   this.addVertex(v2);
   this.edges.push({'from': v1, 'to': v2, 'color': color});
   this.vertices[v1].children.push(v2);
   this.vertices[v2].parents.push(v1);
+}
+BBGraph.prototype.makeElement = function(addr, width, height, html) {
+  this.elements.push(new joint.shapes.html.Element({
+      id: String(addr),
+      size: { width: width, height: height },
+      html: html
+  }));
+};
+BBGraph.prototype.makeLink = function(v1, v2, color) {
+  this.links.push(new joint.dia.Link({
+      source: { id: String(v1) },
+      target: { id: String(v2) },
+      attrs: {
+          '.marker-target': {
+              d: 'M 4 0 L 0 2 L 4 4 z',
+              fill: color,
+              stroke: color
+          },
+          '.connection': {
+              'stroke-width': 3,
+              stroke: color
+          }
+      },
+      smooth: true
+  }));
 };
 BBGraph.prototype.render = function() {
   var name = Object.keys(this.vertices).toString();
-  var dot = "digraph graphname {\n";
   var outergbox = document.createElement('div');
   outergbox.id = 'outergbox';
-  var bbcanvas = document.getElementById("bb_canvas");
+  var bbcanvas = document.getElementById("canvas");
   var gbox = document.createElement('div');
   gbox.id = 'gbox';
   gbox.className = name;
@@ -35,79 +92,85 @@ BBGraph.prototype.render = function() {
     var r = this.vertices[addr].rendered;
     if (r !== undefined) {
       gbox.appendChild(r);
-      var width = (r.offsetWidth * 1.0) / 72.0;
-      var height = (r.offsetHeight * 1.0) / 72.0;
-      dot += 'N' + addr + ' [width="' + width + '", height="' + height + '", shape="box"];\n';
+      this.makeElement(addr, r.offsetWidth, r.offsetHeight, r.outerHTML);
     }
   }
   for (var j = 0; j < this.edges.length; j++) {
-    dot += 'N' + this.edges[j].from + ' -> N' + this.edges[j].to + ' [color=' + this.edges[j].color + ', headport=n, tailport=s]' + ";\n";
+    this.makeLink(this.edges[j].from, this.edges[j].to, this.edges[j].color);
   }
-  dot += "}";
-  var gdot = Viz(dot, format="dot", engine="dot", options=null);
-  var i;
-  var resp = gdot.split('\n').join("").split(";");
-  var gdata = resp[0].split('"')[1].split(',');
-  gbox.style.width = fnum(gdata[2])+10;
-  gbox.style.height = fnum(gdata[3])+10;
-  var canvas = document.createElement("canvas");
-  canvas.width = fnum(gdata[2])+100;
-  canvas.height = fnum(gdata[3])+100;
-  canvas.id = "canvas";
-  canvas.setAttribute("tabindex", "1");
-  canvas.setAttribute("style", "outline: none;");
-  gbox.appendChild(canvas);
-  var ctx = canvas.getContext("2d");
-  for (i = 2; true; i++) {
-    if (resp[i].indexOf('}') != -1) break;
-    else if (resp[i].indexOf('->') != -1) {
-      // this is an edge (->), get color and pos
-      var color = resp[i].substr(resp[i].indexOf('color=')+6).split(',')[0];
-      var posstr = resp[i].substr(resp[i].indexOf('pos="')+7).split('"')[0].split(' ');
-      var pos = [];
-      // get origin(x,y) and dest(x,y)
-      for (var k=0; k<(posstr.length); k++) {
-        var to = posstr[k].split(',');
-        pos.push({x:parseFloat(to[0]), y:fnum(gdata[3]) - parseFloat(to[1])});
-      }
-      // draw spline. pos[0] is end,  pos[1] is start
-      ctx.beginPath();
-      ctx.moveTo(pos[1].x, pos[1].y);
-      for (var h=2; h<pos.length; h+=3) {
-        ctx.bezierCurveTo(pos[h].x, pos[h].y, pos[h+1].x, pos[h+1].y, pos[h+2].x, pos[h+2].y);
-      }
-      ctx.lineTo(pos[0].x, pos[0].y);
-      if (pos[1].y < pos[0].y) {
-        ctx.lineWidth = 1;
-      } else {
-        ctx.lineWidth = 2;
-      }
-      ctx.strokeStyle = color;
-      ctx.stroke();
-      //draw arrow
-      ctx.beginPath();
-      ctx.moveTo(pos[0].x, pos[0].y);
-      ctx.lineTo(pos[0].x-5, pos[0].y-10);
-      ctx.lineTo(pos[0].x+5, pos[0].y-10);
-      ctx.lineWidth = 1;
-      ctx.fillStyle = color;
-      ctx.fill();
-    } else {
-      // this is a vertex
-      var vaddr = resp[i].trim().split(' ')[0].split('N')[1];
-      var vpos = resp[i].slice(resp[i].indexOf('pos=')).split('"')[1].split(',');
-      var vr = this.vertices[vaddr.trim()].rendered;
-      if (vr !== undefined) {
-        var left = fnum(vpos[0]) - (vr.offsetWidth/2);
-        var top = fnum(gdata[3]) - (fnum(vpos[1]) + (vr.offsetHeight/2));
-        vr.style.left = left + "px";
-        vr.style.top = top + "px";
-      }
+  $("#outergbox").remove();
+
+  this.makeElement("minimap_area", 100, 100, "<div id='minimap_area'>");
+
+  var items = this.elements.concat(this.links);
+  var width = $("#center_panel").width();
+  var graph = new joint.dia.Graph();
+  var paper = new joint.dia.Paper({
+      el: $('#canvas'),
+      gridSize: 1,
+      width: width,
+      height: 6000,
+      model: graph,
+  });
+  var minimap_width = 200;
+  var minimap_heigh = 200;
+  $('#minimap')[0].innerHTML = "";
+  $('#minimap')[0].innerHTML = "";
+  var minimap = new joint.dia.Paper({
+      el: $('#minimap'),
+      gridSize: 1,
+      width: minimap_width,
+      height: minimap_heigh,
+      model: graph
+  });
+  graph.resetCells(items);
+  joint.layout.DirectedGraph.layout(graph, {
+      nodeSep: 150,
+      edgeSep: 180,
+      rankDir: "TB"
+  });
+
+  $("#minimap .basicblock").remove();
+  graph.getCell("minimap_area").attr({rect: { stroke: "transparent"}});
+
+  var svg_width = $('#canvas svg')[0].getBBox().width;
+  var svg_height = $('#canvas svg')[0].getBBox().height;
+  var ws = Math.ceil(svg_width/minimap_width);
+  var hs = Math.ceil(svg_height/minimap_heigh);
+  var scale = 1/Math.max(ws, hs);
+  var delta = 0;
+  if (hs > ws) delta = (minimap_width/2) - ws/2;
+  minimap.scale(scale);
+  minimap.setOrigin(delta,0);
+  // minimap.$el.css('pointer-events', 'none');
+
+  function update_minimap() {
+    if ($(this).scrollTop() > svg_height) return;
+    $("#minimap_area").width($(this).width()*scale);
+    $("#minimap_area").height($(this).height()*scale);
+    $("#minimap_area").css("top", $(this).scrollTop()*scale);
+    $("#minimap_area").css("left", delta + $(this).scrollLeft()*scale);
+    if ($("#radareApp_mp").length) {
+      $("#minimap").css("display", "none");
+      $("#minimap").css("left", $(this).scrollLeft() + $("#radareApp_mp").width() - minimap_width - $("#radareApp_mp").position().left);
+      $("#minimap").css("top",  $(this).scrollTop());
+      $("#minimap").css("display", "block");
+    } else if ($("#main_panel").length){
+      $("#minimap").css("left", $(this).scrollLeft() + $("#main_panel").width() - minimap_width);
+      $("#minimap").css("top",  $(this).scrollTop());
     }
   }
-  return;
-};
 
+  if ($("#radareApp_mp").length) {
+    $("#minimap").css("left", $("#radareApp_mp").width() - minimap_width - $("#radareApp_mp").position().left);
+    $("#minimap").css("top",  $("#center_panel").position().top);
+    $("#radareApp_mp_panels_pageDisassembler").bind('scroll', update_minimap);
+  } else if ($("#main_panel").length){
+    $("#minimap").css("left", $("#main_panel").width() - minimap_width);
+    $("#minimap").css("top",  $("#center_panel").position().top - 40);
+    $("#center_panel").bind('scroll', update_minimap);
+  }
+};
 
 function render_graph(x) {
   var obj;
@@ -116,51 +179,46 @@ function render_graph(x) {
   } catch (e) {
     console.log("Cannot parse JSON data");
   }
-  try {
-    if (obj[0] === undefined) return false;
-    if (obj[0].blocks === undefined) return false;
-    var graph = new BBGraph();
-    for (var bn = 0; bn < obj[0].blocks.length; bn++) {
-      var bb = obj[0].blocks[bn];
-      if (bb.length === 0) continue;
-      var addr = bb.offset;
-      var cnt = bb.ops.length;
-      var idump = "";
-      for (var i in bb.ops) {
-        var ins = bb.ops[i];
-        ins.offset = "0x" + ins.offset.toString(16);
-        if (ins.comment === undefined || ins.comment === null) ins.comment = "";
-        else {
-          ins.comment = atob(ins.comment);
-        }
-        idump += html_for_instruction(ins);
+  if (obj[0] === undefined) return false;
+  if (obj[0].blocks === undefined) return false;
+  var graph = new BBGraph();
+  for (var bn = 0; bn < obj[0].blocks.length; bn++) {
+    var bb = obj[0].blocks[bn];
+    if (bb.length === 0) continue;
+    var addr = bb.offset;
+    var cnt = bb.ops.length;
+    var idump = "";
+    for (var i in bb.ops) {
+      var ins = bb.ops[i];
+      ins.offset = "0x" + ins.offset.toString(16);
+      if (ins.comment === undefined || ins.comment === null) ins.comment = "";
+      else {
+        ins.comment = atob(ins.comment);
       }
-      var dom = document.createElement('div');
-      dom.id = "bb_" + addr;
-      dom.className = "basicblock enyo-selectable ec_gui_background ec_gui_border";
-      dom.innerHTML = idump;
-      graph.addVertex(addr, cnt, dom);
-      if (bb.fail > 0) {
-        graph.addEdge(addr, bb.fail, "red");
-        if (bb.jump > 0) {
-          graph.addEdge(addr, bb.jump, "green");
-        }
-      } else if (bb.jump > 0) {
-        graph.addEdge(addr, bb.jump, "blue");
-      }
+      idump += html_for_instruction(ins);
     }
-    graph.render();
-    return true;
-  } catch (e) {
-    console.log("Error generating bb graph");
-    return false;
+    var dom = document.createElement('div');
+    dom.id = "bb_" + addr;
+    dom.className = "basicblock enyo-selectable ec_gui_background ec_gui_border";
+    dom.innerHTML = idump;
+    graph.addVertex(addr, cnt, dom);
+    if (bb.fail > 0) {
+      graph.addEdge(addr, bb.fail, "red");
+      if (bb.jump > 0) {
+        graph.addEdge(addr, bb.jump, "green");
+      }
+    } else if (bb.jump > 0) {
+      graph.addEdge(addr, bb.jump, "blue");
+    }
   }
+  graph.render();
+  return true;
 }
 
 function render_instructions(instructions) {
   var outergbox = document.createElement('div');
   outergbox.id = 'outergbox';
-  var flatcanvas = document.getElementById("flat_canvas");
+  var flatcanvas = document.getElementById("canvas");
   flatcanvas.innerHTML = "";
   var gbox = document.createElement('div');
   gbox.id = 'gbox';
@@ -229,7 +287,7 @@ function render_instructions(instructions) {
     var canvas = document.createElement("canvas");
     canvas.width = 2500;
     canvas.height = accumulated_heigth + 100;
-    canvas.id = "canvas";
+    canvas.id = "linecanvas";
     canvas.setAttribute("tabindex", "1");
     canvas.setAttribute("style", "outline: none;");
     gbox.appendChild(canvas);
@@ -568,7 +626,7 @@ function rehighlight_id(eid) {
 }
 
 function get_element_by_address(address) {
-  var elements = document.getElementsByClassName("insaddr addr_" + address);
+  var elements = $(".insaddr.addr_" + address);
   if (elements.length === 1) return elements[0];
   else return null;
 }
@@ -578,7 +636,7 @@ Element.prototype.documentOffsetTop = function () {
 };
 
 function scroll_to_address(address) {
-  var elements = document.getElementsByClassName("insaddr addr_" + address);
+  var elements = $(".insaddr.addr_" + address);
   if (elements.length == 1) {
     var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
     top = Math.max(0,top);
