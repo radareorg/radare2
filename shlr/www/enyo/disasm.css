@@ -127,6 +127,10 @@ svg rect {
   pointer-events: none;
 }
 
+#minimap svg .connection {
+  stroke-width: 5;
+}
+
 #minimap  {
   border: 1px solid gray;
   position:absolute;
@@ -141,6 +145,11 @@ svg rect {
 
 #canvas #minimap_area {
   display: none;
+  z-index: 0;
+}
+
+#canvas #minimap_area svg {
+  stroke: transparent;
 }
 
 #minimap_area {

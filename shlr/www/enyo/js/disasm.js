@@ -19,7 +19,7 @@ var BBGraph = function () {
           _.bindAll(this, 'updateBox');
           joint.dia.ElementView.prototype.initialize.apply(this, arguments);
           this.$box = $(_.template(this.model.get('html'))());
-          this.$box.find('input,select').on('mousedown click', function(evt) { evt.stopPropagation(); });
+          this.$box.find('input').on('mousedown click', function(evt) { evt.stopPropagation(); });
           this.model.on('change', this.updateBox, this);
           this.updateBox();
       },
@@ -29,10 +29,11 @@ var BBGraph = function () {
           this.updateBox();
           return this;
       },
-      updateBox: function() {
-          var bbox = this.model.getBBox();
-          this.$box.css({ width: bbox.width, height: bbox.height, left: bbox.x, top: bbox.y + 7, transform: 'rotate(' + (this.model.get('angle') || 0) + 'deg)' });
-      },
+      updateBox: function(event) {
+        // move the html mask when moving the svg rect
+        var bbox = this.model.getBBox();
+        this.$box.css({ width: bbox.width, height: bbox.height, left: bbox.x, top: bbox.y + 7});
+      }
   });
 };
 BBGraph.prototype.addVertex = function(addr, vlen, dom) {
@@ -71,7 +72,7 @@ BBGraph.prototype.makeLink = function(v1, v2, color) {
               stroke: color
           },
           '.connection': {
-              'stroke-width': 3,
+              'stroke-width': 1,
               stroke: color
           }
       },
@@ -100,7 +101,7 @@ BBGraph.prototype.render = function() {
   }
   $("#outergbox").remove();
 
-  this.makeElement("minimap_area", 100, 100, "<div id='minimap_area'>");
+  this.makeElement("minimap_area", 1, 1, "<div id='minimap_area'>");
 
   var items = this.elements.concat(this.links);
   var width = $("#center_panel").width();
@@ -108,7 +109,7 @@ BBGraph.prototype.render = function() {
   var paper = new joint.dia.Paper({
       el: $('#canvas'),
       gridSize: 1,
-      width: width,
+      width: 6000,
       height: 6000,
       model: graph,
   });
@@ -124,13 +125,19 @@ BBGraph.prototype.render = function() {
       model: graph
   });
   graph.resetCells(items);
-  joint.layout.DirectedGraph.layout(graph, {
-      nodeSep: 150,
-      edgeSep: 180,
-      rankDir: "TB"
-  });
 
+  // render graph
+  joint.layout.DirectedGraph.layout(graph);
+
+  r2ui.graph = graph;
+
+  // reposition graph
+  reposition_graph();
+
+  // remove html mask in minimap since its not scaled
   $("#minimap .basicblock").remove();
+
+  // make minimap rect transparent
   graph.getCell("minimap_area").attr({rect: { stroke: "transparent"}});
 
   var svg_width = $('#canvas svg')[0].getBBox().width;
@@ -150,28 +157,75 @@ BBGraph.prototype.render = function() {
     $("#minimap_area").height($(this).height()*scale);
     $("#minimap_area").css("top", $(this).scrollTop()*scale);
     $("#minimap_area").css("left", delta + $(this).scrollLeft()*scale);
+    // enyo layout
     if ($("#radareApp_mp").length) {
       $("#minimap").css("display", "none");
       $("#minimap").css("left", $(this).scrollLeft() + $("#radareApp_mp").width() - minimap_width - $("#radareApp_mp").position().left);
       $("#minimap").css("top",  $(this).scrollTop());
       $("#minimap").css("display", "block");
+    // panel layout
     } else if ($("#main_panel").length){
       $("#minimap").css("left", $(this).scrollLeft() + $("#main_panel").width() - minimap_width);
       $("#minimap").css("top",  $(this).scrollTop());
     }
+
   }
 
+  // enyo layout
   if ($("#radareApp_mp").length) {
     $("#minimap").css("left", $("#radareApp_mp").width() - minimap_width - $("#radareApp_mp").position().left);
     $("#minimap").css("top",  $("#center_panel").position().top);
     $("#radareApp_mp_panels_pageDisassembler").bind('scroll', update_minimap);
+  // panel layout
   } else if ($("#main_panel").length){
     $("#minimap").css("left", $("#main_panel").width() - minimap_width);
     $("#minimap").css("top",  $("#center_panel").position().top - 40);
     $("#center_panel").bind('scroll', update_minimap);
   }
+
+  function update_BB(model) {
+    var bbox = model.attributes.position;
+    var id = String(model.prop("id"));
+    if (model !== undefined && id !== "minimap_area") {
+      var color = null;
+      var bb = null;
+      if (r2ui.basic_blocks[id] !== undefined && r2ui.basic_blocks[id] !== null) {
+        bb = r2ui.basic_blocks[id];
+        bb.x = bbox.x;
+        bb.y = bbox.y;
+      } else {
+        bb = {x:bbox.x, y:bbox.y};
+      }
+      r2ui.basic_blocks[id] = bb;
+    }
+  }
+
+  var bbs = r2ui.graph.getElements();
+  for (var i in bbs) {
+    bbs[i].on("change:position", update_BB, this);
+  }
 };
 
+function reposition_graph() {
+  var bbs = r2ui.graph.getElements();
+  var bb_offsets = Object.keys(r2ui.basic_blocks);
+  for (var i in bbs) {
+    found = false;
+    for (var j in bb_offsets) {
+      var offset = String(bb_offsets[j]);
+      if (bbs[i].prop("id") === offset) {
+        found = true;
+        bbs[i].translate(r2ui.basic_blocks[offset].x - bbs[i].prop("position").x, r2ui.basic_blocks[offset].y - bbs[i].prop("position").y);
+        var color = r2ui.basic_blocks[offset].color;
+        if (color !== null && color !== undefined) bbs[i].attr('rect/fill', color);
+      }
+    }
+    if (!found) {
+      r2ui.basic_blocks[bbs[i].prop("id")] = {x:bbs[i].prop("position").x, y:bbs[i].prop("position").y, color:"transparent"};
+    }
+  }
+}
+var flag = 0;
 function render_graph(x) {
   var obj;
   try {
@@ -212,6 +266,35 @@ function render_graph(x) {
     }
   }
   graph.render();
+
+  var element = $("#canvas svg g .element");
+  element.on("mousedown", function(event){
+      flag = 0;
+  });
+  element.on("mousemove", function(event){
+      flag = 1;
+  });
+  element.on("mouseup", function(event){
+    if(flag === 0){
+      var id = event.target.parentNode.parentNode.parentNode.getAttribute("model-id");
+      if (id !== "minimap_area") {
+        var color = null;
+        var bb = null;
+        if (r2ui.basic_blocks[id] !== undefined && r2ui.basic_blocks[id] !== null) {
+          bb = r2ui.basic_blocks[id];
+          if (bb.color === "red") bb.color = "transparent";
+          else bb.color = "red";
+          r2ui.basic_blocks[id] = bb;
+        }
+        reposition_graph();
+      }
+    }
+    // else if(flag === 1){
+    //     console.log("drag");
+    // }
+  });
+
+
   return true;
 }
 
