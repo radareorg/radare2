@@ -50,8 +50,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.gui_cflow = Color_YELLOW;
 	cons->pal.gui_dataoffset = Color_YELLOW;
 	cons->pal.gui_background = Color_BLACK;
-	cons->pal.gui_alt_background = Color_GRAY;
-	cons->pal.gui_border = Color_BGGRAY;
+	cons->pal.gui_alt_background = Color_WHITE;
+	cons->pal.gui_border = Color_BLACK;
 
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);

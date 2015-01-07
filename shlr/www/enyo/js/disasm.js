@@ -9,7 +9,7 @@ var BBGraph = function () {
       defaults: joint.util.deepSupplement({
           type: 'html.Element',
           attrs: {
-              rect: { stroke: 'black', fill: r2ui.colors[".ec_gui_alt_background"] }
+              rect: { stroke: r2ui.colors[".ec_gui_border"], fill: r2ui.colors[".ec_gui_alt_background"] }
           }
       }, joint.shapes.basic.Rect.prototype.defaults)
   });
@@ -32,7 +32,7 @@ var BBGraph = function () {
       updateBox: function(event) {
         // move the html mask when moving the svg rect
         var bbox = this.model.getBBox();
-        this.$box.css({ width: bbox.width, height: bbox.height, left: bbox.x, top: bbox.y + 7});
+        this.$box.css({ width: bbox.width + 2, height: bbox.height, left: bbox.x - 1, top: bbox.y + 7});
       }
   });
 };
@@ -289,9 +289,6 @@ function render_graph(x) {
         reposition_graph();
       }
     }
-    // else if(flag === 1){
-    //     console.log("drag");
-    // }
   });
 
 
