@@ -168,6 +168,8 @@ BBGraph.prototype.render = function() {
       $("#minimap").css("left", $(this).scrollLeft() + $("#main_panel").width() - minimap_width);
       $("#minimap").css("top",  $(this).scrollTop());
     }
+    $("#minimap").css("border", "1px solid " + r2ui.colors['.ec_gui_background']);
+    $("#minimap_area").css("background", r2ui.colors['.ec_gui_background']);
 
   }
 
@@ -204,6 +206,7 @@ BBGraph.prototype.render = function() {
   for (var i in bbs) {
     bbs[i].on("change:position", update_BB, this);
   }
+  update_minimap();
 };
 
 function reposition_graph() {
