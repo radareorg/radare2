@@ -39,6 +39,9 @@ r2ui.load_colors = function () {
   }
 }
 
+r2ui.basic_blocks = {};
+r2ui.graph = null;
+
 r2ui.history_push = function (x) {
   // console.log("history push");
   if (x != r2ui.history_last()) {
