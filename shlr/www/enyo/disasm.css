@@ -128,7 +128,7 @@ input:focus {outline: none; }
 }
 
 #minimap  {
-  border: 1px solid gray;
+  border: 1px solid black;
   position:absolute;
   width:200px;
   height:200px;
@@ -149,11 +149,11 @@ input:focus {outline: none; }
 }
 
 #minimap_area {
-  border: 1px solid gray;
+  border: 1px solid black;
   position:absolute;
-  background: gray;
-  opacity: 0.4;
-  filter: alpha(opacity=40); /* For IE8 and earlier */
+  background: black;
+  opacity: 0.2;
+  filter: alpha(opacity=20); /* For IE8 and earlier */
 }
 
 #radareApp_mp_panels_pageDisassembler {
