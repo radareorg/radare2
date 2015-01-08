@@ -41,6 +41,14 @@ BBGraph.prototype.addVertex = function(addr, vlen, dom) {
     this.vertices[addr] = {};
     this.vertices[addr].parents = [];
     this.vertices[addr].children = [];
+    if (vlen === undefined) {
+      this.vertices[addr].len = 1;
+      var dom = document.createElement('div');
+      dom.id = "bb_" + addr;
+      dom.className = "basicblock enyo-selectable ec_gui_background ec_gui_border";
+      dom.innerHTML = "<div class='instruction enyo-selectable'><span class='insaddr datainstruction ec_offset addr addr_0x" + addr.toString(16) + "' >0x" + addr.toString(16) + "</span></div>";
+      this.vertices[addr].rendered = dom;
+    }
   }
   if (vlen !== undefined) {
     this.vertices[addr].len = vlen;
@@ -103,6 +111,8 @@ BBGraph.prototype.render = function() {
 
   this.makeElement("minimap_area", 1, 1, "<div id='minimap_area'>");
 
+
+
   var items = this.elements.concat(this.links);
   var width = $("#center_panel").width();
   var graph = new joint.dia.Graph();
@@ -146,7 +156,7 @@ BBGraph.prototype.render = function() {
   var hs = Math.ceil(svg_height/minimap_heigh);
   var scale = 1/Math.max(ws, hs);
   var delta = 0;
-  if (hs > ws) delta = (minimap_width/2) - ws/2;
+  if (hs > ws) delta = (minimap_width/2) - svg_width*scale/2;
   minimap.scale(scale);
   minimap.setOrigin(delta,0);
   // minimap.$el.css('pointer-events', 'none');
