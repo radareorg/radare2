@@ -864,6 +864,9 @@ static int cmd_print(void *data, const char *input) {
 				if (l>0) {
 					len = l;
 					if (l>tbs) {
+						if (input[0] == 'x' && input[1] == 'l') {
+							l *= core->print->cols;
+						}
 						if (!r_core_block_size (core, l)) {
 							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 								*input, input+2);
