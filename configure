@@ -22,8 +22,6 @@ DEBUGGER=1
 USE_MAGIC=0
 USE_CAPSTONE=0
 USE_ZIP=0
-HAVE_LIBVERSION=1
-HAVE_EWF=1
 WANT_OPENSSL=0
 USE_RPATH=0
 HAVE_LILEND=0
@@ -167,8 +165,6 @@ Optional Features:
   --with-sysmagic        force to use system's magic 
   --with-syscapstone     force to use system-wide capstone 
   --with-syszip          force to use system's libzip and zlib 
-  --without-libversion   disable version library builds 
-  --without-ewf          disable EWF dependency 
   --with-openssl         build with openssl if possible 
   --with-rpath           use rpath to build 
   --with-little-endian   force little endian 
@@ -232,8 +228,8 @@ echo "VERSION:   0.9.9-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic"
-echo "PKG-CONFIG:  capstone libewf openssl"
-echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-syscapstone --with-syszip --without-libversion --without-ewf --with-openssl --with-rpath --with-little-endian --with-big-endian --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx"
+echo "PKG-CONFIG:  capstone openssl"
+echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-syscapstone --with-syszip --with-openssl --with-rpath --with-little-endian --with-big-endian --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx"
 	exit 0
 	;;
 --cache-file) 
@@ -282,8 +278,6 @@ echo "FLAGS:     --enable-cparse --disable-debugger --with-sysmagic --with-sysca
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--with-syscapstone") USE_CAPSTONE="1"; ;;
 "--with-syszip") USE_ZIP="1"; ;;
-"--without-libversion") HAVE_LIBVERSION="0"; ;;
-"--without-ewf") HAVE_EWF="0"; ;;
 "--with-openssl") WANT_OPENSSL="1"; ;;
 "--with-rpath") USE_RPATH="1"; ;;
 "--with-little-endian") HAVE_LILEND="1"; ;;
@@ -310,7 +304,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C CPARSE DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC USE_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_EWF EWF_CFLAGS EWF_LDFLAGS HAVE_PKGCFG_LIBEWF HAVE_LIBVERSION HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH HAVE_LILEND HAVE_BIGEND HAVE_LIB_LUA5_1 USERCC USEROSTYPE WITHPIC WITHNONPIC LIBVERSION"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C CPARSE DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC USE_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH HAVE_LILEND HAVE_BIGEND HAVE_LIB_LUA5_1 USERCC USEROSTYPE WITHPIC WITHNONPIC LIBVERSION"
 
 create_environ
 
@@ -419,22 +413,6 @@ LIBZIP="-lrz"; fi
 else
 USE_LIB_ZIP="0"
 LIBZIP="-lrz"; fi
-check_library HAVE_LIB_EWF ewf 0 
-printf 'checking pkg-config flags for libewf... '
-tmp=`pkg-config --cflags libewf 2>/dev/null`
-if [ '!' $? = 0 ]; then echo no ; HAVE_PKGCFG_LIBEWF=0; 
-else 
-EWF_CFLAGS=$tmp; 
-tmp=`pkg-config --libs libewf 2>/dev/null`
-if [ $? = 0 ]; then 
-echo yes; HAVE_PKGCFG_LIBEWF=1; 
-EWF_LDFLAGS=$tmp; fi; fi
-if [ "$HAVE_PKGCFG_LIBEWF" = "1" ]; then
-HAVE_LIB_EWF="1"
-else
-HAVE_LIB_EWF="0"; fi
-if [ "$HAVE_EWF" = "0" ]; then
-HAVE_LIB_EWF="0"; fi
 HAVE_LIB_GMP="0"
 HAVE_GMP="0"
 check_library HAVE_LIB_SSL ssl 0 
