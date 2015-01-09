@@ -661,7 +661,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			 }
 			 if (*name) {
 				 if (!setFunctionName (core, off, name))
-					 eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
+					 eprintf ("Cannot find function '%s' at 0x%08"PFMT64x"\n", name, off);
 				 free (name);
 			 } else {
 				 eprintf ("Usage: afn newname [off]   # set new name to given function\n");
@@ -699,7 +699,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						 // TODO: check if destination is outside the function boundaries
 					 }
 				 }
-			 } else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
+			 } else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			 if (name) {
 				 free (name);
 			 }

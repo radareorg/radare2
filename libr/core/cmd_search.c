@@ -1093,7 +1093,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				fd = core->io->desc->fd;
 			}
 			if (!json)
-				eprintf ("# %d [0x%llx-0x%llx]\n", fd, param->from, param->to);
+				eprintf ("# %d [0x%"PFMT64x"-0x%"PFMT64x"]\n", fd, param->from, param->to);
 
 			if (param->bckwrds) {
 				if (param->to < param->from + bufsz) {
@@ -1312,8 +1312,8 @@ static int cmd_search(void *data, const char *input) {
 		ut64 off = core->offset;
 		r_core_read_at (core, off-16, buf, 32);
 		off = findprevopsz (core, off, buf + 16);
-		if (json) r_cons_printf ("[%llu]", off);
-		else r_cons_printf ("0x%08llx\n", off);
+		if (json) r_cons_printf ("[%"PFMT64u"]", off);
+		else r_cons_printf ("0x%08"PFMT64x"\n", off);
 		}
 		break;
 	case 'R':
