@@ -438,7 +438,7 @@ static int cmd_cmp(void *data, const char *input) {
 			default: {
 				const char * help_message[] = {
 				"Usage: cg", "", "Graph code commands",
-				"cg",  "", "Byte-per-byte code graph diff",
+				"cg",  "", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
 				"cgf", "[fcn]", "Compare functions (curseek vs fcn)",
 				"cgo", "", "Opcode-bytes code graph diff",
 				NULL
