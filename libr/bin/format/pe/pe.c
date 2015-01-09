@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 nibble, pancake, inisider */
+/* radare - LGPL - Copyright 2008-2015 nibble, pancake, inisider */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1004,6 +1004,8 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	PE_DWord import_func_name_offset;
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
+	if (!bin)
+		return NULL;
 
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
