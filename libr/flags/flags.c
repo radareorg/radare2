@@ -81,7 +81,7 @@ R_API void r_flag_list(RFlag *f, int rad) {
 	case 'j': {
 		int first = 1;
 		r_cons_printf ("[");
-		r_list_foreach_prev (f->flags, iter, flag) {
+		r_list_foreach (f->flags, iter, flag) {
 			if ((f->space_idx != -1) && (flag->space != f->space_idx))
 				continue;
 			r_cons_printf ("%s{\"name\":\"%s\",\"size\":\"%"PFMT64d"\",",
@@ -101,7 +101,7 @@ R_API void r_flag_list(RFlag *f, int rad) {
 		break;
 	case 1:
 	case '*':
-		 r_list_foreach_prev (f->flags, iter, flag) {
+		 r_list_foreach (f->flags, iter, flag) {
 			 if ((f->space_idx != -1) && (flag->space != f->space_idx))
 				 continue;
 			 if (fs == -1 || flag->space != fs) {
@@ -124,7 +124,7 @@ R_API void r_flag_list(RFlag *f, int rad) {
 		 }
 		 break;
 	case 'n': // show original name
-		 r_list_foreach_prev (f->flags, iter, flag) {
+		 r_list_foreach (f->flags, iter, flag) {
 			 if ((f->space_idx != -1) && (flag->space != f->space_idx))
 				 continue;
 			 if (flag->alias) {
@@ -137,7 +137,7 @@ R_API void r_flag_list(RFlag *f, int rad) {
 		 }
 		 break;
 	default:
-		 r_list_foreach_prev (f->flags, iter, flag) {
+		 r_list_foreach (f->flags, iter, flag) {
 			 if ((f->space_idx != -1) && (flag->space != f->space_idx))
 				 continue;
 			 if (flag->alias) {

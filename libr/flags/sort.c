@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2015 pancake */
+
 #include <r_flags.h>
 
 /* compare names */
@@ -32,7 +33,7 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 				fi = flag;
 				it_elem = iter;
 				changes = 1;
-			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) <= 0) {
+			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
 				fi = flag;
 				it_elem = iter;
 				changes = 1;
