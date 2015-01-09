@@ -221,117 +221,129 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	int i, onscreen;
 	switch (style) {
-		// vertical arrow line
-	case 0: //
+	case 0:
 		if (G (x, y))
 			W ("v");
 		if (G (x2, y2))
 			W ("V");
-		if (x==x2) {
-			int min = R_MIN (y,y2)+1;
-			int max = R_MAX (y,y2);
-			for (i=min; i<max; i++) {
-				if (G (x,i))
+		break;
+	case 1:
+		if (G (x, y))
+			W ("t"); //\\");
+		if (G (x2, y2))
+			W ("\\");
+		break;
+	case 2:
+		if (G (x, y))
+			W ("f");
+		if (G (x2, y2))
+			W ("/");
+		break;
+	}
+	if (x==x2) {
+		int min = R_MIN (y,y2)+1;
+		int max = R_MAX (y,y2);
+		for (i=min; i<max; i++) {
+			if (G (x,i))
+				W ("|");
+		}
+	} else {
+		// --
+		// TODO: find if there's any collision in this line
+		int hl = R_ABS (y-y2) / 2;
+		int hl2 = R_ABS (y-y2)-hl;
+		hl--;
+		if (y2 > (y+1)) {
+			for (i=0;i<hl;i++) {
+				if (G (x,y+i+1))
 					W ("|");
 			}
-		} else {
-			// --
-			// TODO: find if there's any collision in this line
-			int hl = R_ABS (y-y2) / 2;
-			int hl2 = R_ABS (y-y2)-hl;
-			hl--;
-			if (y2 > (y+1)) {
-				for (i=0;i<hl;i++) {
-					if (G (x,y+i+1))
-						W ("|");
-				}
-				for (i=0;i<hl2;i++) {
-					if (G (x2, y+hl+i+1))
-						W ("|");
-				}
-				int w = R_ABS (x-x2);
-				char *row = malloc (w+2);
-				if (x>x2) {
-					w++;
-					row[0] = '.';
-					if (w>2)
-						memset (row+1, '-', w-2);
-					row[w-1] = '\'';
-					row[w] = 0;
-					onscreen = G (x2+w,y+hl+1);
-					i = G (x2, y+hl+1);
-					if (!onscreen)
-						onscreen = i;
-				} else {
-					row[0] = '`';
-					if (w>1)
-						memset (row+1, '-', w-1);
-					row[w] = '.';
-					row[w+1] = 0;
-					onscreen = G (x+w,y+1+hl);
-					i = G (x,y+1+hl);
-					if (!onscreen)
-						onscreen = i;
-				}
-				if (onscreen)
-					W (row);
-				free (row);
-			} else  {
-				int minx = R_MIN (x, x2);
-				//if (y >= y2) {
-				int rl = R_ABS (x-x2)/2;
-				int rl2 = R_ABS (x-x2)-rl+1;
-				int vl = (R_ABS(y-y2))+1;
-				if (y+1==y2)
-					vl--;
-
-				for (i=0;i<vl; i++) {
-					if (G (minx+rl,y2+i))
-						W ("|");
-				}
-
-				int w = rl;
-				char *row = malloc (w+1);
-				if (x>x2) {
-					row[0] = '.';
-					if (w>2)
-						memset (row+1, '-', w-2);
-					if (w>0)
-						row[w-1] = '.';
-					row[w] = 0;
-					onscreen = G (x2,y2-1);
-				} else {
-					row[0] = '`';
-					if (w>2)
-						memset (row+1, '-', w-2);
-					if (w>0)
-						row[w-1] = '\'';
-					row[w] = 0;
-					onscreen = G (x+1,y+1);
-				}
-				if (onscreen)
-					W (row);
-				w = rl2;
-				free (row);
-				row = malloc (rl2+1);
-				if (x>x2) {
-					row[0] = '`';
+			for (i=0;i<hl2;i++) {
+				if (G (x2, y+hl+i+1))
+					W ("|");
+			}
+			int w = R_ABS (x-x2);
+			char *row = malloc (w+2);
+			if (x>x2) {
+				w++;
+				row[0] = '.';
+				if (w>2)
 					memset (row+1, '-', w-2);
-					row[w-1] = '\'';
-					row[w] = 0;
-					onscreen = G (x2+rl, y+1);
-				} else {
-					row[0] = '.';
+				row[w-1] = '\'';
+				row[w] = 0;
+				onscreen = G (x2+w,y+hl+1);
+				i = G (x2, y+hl+1);
+				if (!onscreen)
+					onscreen = i;
+			} else {
+				row[0] = '`';
+				row[0] = '\'';
+				if (w>1)
+					memset (row+1, '-', w-1);
+				row[w] = '.';
+				row[w+1] = 0;
+				onscreen = G (x+w,y+1+hl);
+				i = G (x,y+1+hl);
+				if (!onscreen)
+					onscreen = i;
+			}
+			if (onscreen)
+				W (row);
+			free (row);
+		} else  {
+			int minx = R_MIN (x, x2);
+			//if (y >= y2) 
+			int rl = R_ABS (x-x2)/2;
+			int rl2 = R_ABS (x-x2)-rl+1;
+			int vl = (R_ABS(y-y2))+1;
+			if (y+1==y2)
+				vl--;
+
+			for (i=0;i<vl; i++) {
+				if (G (minx+rl,y2+i))
+					W ("|");
+			}
+
+			int w = rl;
+			char *row = malloc (w+1);
+			if (x>x2) {
+				row[0] = '.';
+				if (w>2)
 					memset (row+1, '-', w-2);
+				if (w>0)
 					row[w-1] = '.';
-					row[w] = 0;
-					onscreen = G (x+rl, y2-1);
-				}
-				if (onscreen)
-					W (row);
-				free (row);
+				row[w] = 0;
+				onscreen = G (x2,y2-1);
+			} else {
+				row[0] = '`';
+				if (w>2)
+					memset (row+1, '-', w-2);
+				if (w>0)
+					row[w-1] = '\'';
+				row[w] = 0;
+				onscreen = G (x+1,y+1);
 			}
+			if (onscreen)
+				W (row);
+			w = rl2;
+			free (row);
+			row = malloc (rl2+1);
+			if (x>x2) {
+				row[0] = '`';
+				memset (row+1, '-', w-2);
+				row[w-1] = '\'';
+				row[w] = 0;
+				onscreen = G (x2+rl, y+1);
+			} else {
+				row[0] = '.';
+				memset (row+1, '-', w-2);
+				row[w-1] = '.';
+				row[w] = 0;
+				onscreen = G (x+rl, y2-1);
 			}
-		break;
+			if (onscreen)
+				W (row);
+			free (row);
+		}
 	}
 }

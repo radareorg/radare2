@@ -1,13 +1,14 @@
 /* Copyright radare2 2014 - Author: pancake */
 
 #include <r_core.h>
+int small_nodes = 0;
 int simple_mode = 1;
 static void reloadNodes(RCore *core) ;
 #define OS_SIZE 128
-	struct {
-		int nodes[OS_SIZE];
-		int size;
-	} ostack;
+struct {
+	int nodes[OS_SIZE];
+	int size;
+} ostack;
 
 // TODO: handle mouse wheel
 
@@ -48,10 +49,29 @@ static Edge edges[] = {
 #define W(x) r_cons_canvas_write (can, x)
 #define B(x,y,w,h) r_cons_canvas_box(can, x,y,w,h)
 #define L(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,0)
+#define L1(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,1)
+#define L2(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(can, x,y,x2,y2,c,0)
 
 static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	char title[128];
+
+	if (small_nodes) {
+		if (!G (n->x+2, n->y-1))
+			return;
+		if (cur) {
+			W("[_@@_]");
+			G (-can->sx, -can->sy+2);
+			snprintf (title, sizeof (title)-1,
+				"0x%08"PFMT64x":", n->addr);
+			W (title);
+			G (-can->sx, -can->sy+3);
+			W (n->text);
+		} else {
+			W("[____]");
+		}
+		return;
+	}
 
 	if (!can)
 		return;
@@ -94,7 +114,15 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	y = a->y + a->h;
 	x2 = b->x + xinc;
 	y2 = b->y;
-	L (x, y, x2, y2);
+	if (small_nodes) {
+		if (nth) {
+			L2 (x, y, x2, y2);
+		} else {
+			L1 (x, y, x2, y2);
+		}
+	} else {
+		L (x, y, x2, y2);
+	}
 }
 
 static int Edge_node(Edge *edges, int cur, int nth) {
@@ -495,9 +523,9 @@ repeat:
 		}
 		break;
 	case 'O':
-// free nodes or leak
-simple_mode = !!!simple_mode;
-reloadNodes(core);
+		// free nodes or leak
+		simple_mode = !!!simple_mode;
+		reloadNodes(core);
 		break;
 	case 'V':
 		callgraph = !!!callgraph;
@@ -555,12 +583,13 @@ reloadNodes(core);
 		r_cons_clear00 ();
 		r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 		" .    - center graph to the current node\n"
+		" C    - toggle scr.color\n"
 		" hjkl - move node\n"
 		" asdw - scroll canvas\n"
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
 		" t/f  - follow true/false edges\n"
-		" C    - toggle scr.color\n"
+		" n    - toggle mini-graph\n"
 		" O    - toggle disasm mode\n"
 		" u    - select previous node\n"
 		" V    - toggle basicblock / call graphs\n"
@@ -590,6 +619,11 @@ reloadNodes(core);
 	case 'S': can->sy += 5; break;
 	case 'A': can->sx -= 5; break;
 	case 'D': can->sx += 5; break;
+		break;
+	case 'n':
+		small_nodes = small_nodes ? 0: 1;
+		reloadNodes (core);
+		//Layout_depth (nodes, edges);
 		break;
 	case 'u':
 		curnode = OS_POP(); // wtf double push ?
