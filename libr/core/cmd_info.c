@@ -24,11 +24,13 @@ static int demangle_internal(const char *lang, const char *s) {
 	     eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
 	     return 1;
 	}
-	if (res && *res) {
-		printf ("%s\n", res);
+	if (res) {
+		if (*res)
+			printf ("%s\n", res);
+		free (res);
 		return 0;
 	}
-	free (res);
+	return 1;
 }
 
 static int demangle(RCore *core, const char *s) {
