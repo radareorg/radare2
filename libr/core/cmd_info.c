@@ -307,6 +307,7 @@ static int cmd_info(void *data, const char *input) {
 				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 				"ic", "", "List classes",
 				"id", "", "Debug information (source lines)",
+				"iD", "lang symname", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",
 				"ih", "", "Headers",
 				"ii", "", "Imports",
