@@ -330,6 +330,8 @@ static int bin_info (RCore *r, int mode) {
 			r_config_set (r->config, "asm.arch", info->arch);
 			r_core_cmdf (r, "m /root %s 0", info->arch);
 		} else {
+			if (info->lang)
+				r_config_set (r->config, "bin.lang", info->lang);
 			r_config_set (r->config, "asm.os", info->os);
 			r_config_set (r->config, "asm.arch", info->arch);
 			r_config_set (r->config, "anal.arch", info->arch);
@@ -350,6 +352,7 @@ static int bin_info (RCore *r, int mode) {
 				//int has_va = (!strcmp (info->rclass, "elf-object"))? 0: 1;
 				//if (!strcmp (info->type, "REL"))...relocatable object..
 				r_cons_printf (
+					"e bin.lang=%s\n"
 					"e file.type=%s\n"
 					"e cfg.bigendian=%s\n"
 					"e asm.os=%s\n"
@@ -357,6 +360,7 @@ static int bin_info (RCore *r, int mode) {
 					"e anal.arch=%s\n"
 					"e asm.bits=%i\n"
 					"e asm.dwarf=%s\n",
+					info->lang? info->lang: "",
 					info->rclass, r_str_bool (info->big_endian), info->os,
 					info->arch, info->arch, info->bits,
 					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
@@ -662,6 +666,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		int bin_demangle = r_config_get_i (r->config, "bin.demangle");
+		const char *lang = r_config_get (r->config, "bin.lang");
 		int is_pe = 1; // TODO: optimize
 		int is_sandbox = r_sandbox_enable (0);
 		char *sdb_module = NULL;
@@ -720,7 +725,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
 				if (bin_demangle)
-					demname = r_bin_demangle (r->bin->cur, str);
+					demname = r_bin_demangle (r->bin->cur, lang, str);
 				r_name_filter (str, 0);
 				//r_str_replace_char (str, '$', '_');
 				fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
@@ -893,6 +898,7 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 
 static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64 at, const char *name) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	const char *lang = r_config_get (r->config, "bin.lang");
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int is_arm = info && !strcmp (info->arch, "arm");
 	char str[R_FLAG_NAME_SIZE];
@@ -948,7 +954,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 
 			demname = NULL;
 			if (bin_demangle) {
-				demname = r_bin_demangle (r->bin->cur, name);
+				demname = r_bin_demangle (r->bin->cur, lang, name);
 			}
 			r_name_filter (name, 80);
 			if (!demname)
@@ -998,7 +1004,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					addr + symbol->size, name);
 			}
 #endif
-			dname = r_bin_demangle (r->bin->cur, symbol->name);
+			dname = r_bin_demangle (r->bin->cur, lang, symbol->name);
 			if (dname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
 						addr, symbol->size, dname);
@@ -1023,7 +1029,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					r_cons_printf ("%s\n", symbol->name);
 			} else {
 				if (mode) {
-					char *mn = r_bin_demangle (r->bin->cur, symbol->name);
+					char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
 					if (mn) {
 						//r_name_filter (mn, strlen (mn));
 						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",

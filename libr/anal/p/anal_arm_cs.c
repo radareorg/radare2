@@ -217,7 +217,9 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LSR:
 		break;
 	case ARM64_INS_STR:
-		//case ARM64_INS_POP:
+		op->type = R_ANAL_OP_TYPE_STORE;
+// 0x00008160    04202de5     str r2, [sp, -4]!
+		break;
 	case ARM64_INS_LDR:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
@@ -294,6 +296,8 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	case ARM_INS_PUSH:
 	case ARM_INS_STR:
 		//case ARM_INS_POP:
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
 	case ARM_INS_LDR:
 		if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;

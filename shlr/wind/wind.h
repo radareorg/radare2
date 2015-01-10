@@ -43,13 +43,13 @@ int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p);
 int wind_sync (WindCtx *ctx);
 int wind_read_ver (WindCtx *ctx);
 int wind_continue (WindCtx *ctx);
-int wind_write_reg (WindCtx *ctx, uint8_t *buf, int size);
+int wind_write_reg (WindCtx *ctx, const uint8_t *buf, int size);
 int wind_read_reg (WindCtx *ctx, uint8_t *buf, int size);
 int wind_query_mem (WindCtx *ctx, const uint64_t addr, int *address_space, int *flags);
 int wind_bkpt (WindCtx *ctx, const uint64_t addr, const int set, const int hw, int *handle);
 int wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
 int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
-int wind_write_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
-int wind_write_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
+int wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count);
+int wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count);
 int wind_va_to_pa (WindCtx *ctx, uint64_t va, uint64_t *pa);
 #endif

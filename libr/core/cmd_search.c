@@ -283,8 +283,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
-
 static int c = 0;
+
 static inline void print_search_progress(ut64 at, ut64 to, int n) {
 	if ((++c%64) || (json))
 		return;

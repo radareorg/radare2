@@ -1,4 +1,4 @@
-.Dd Sep 30, 2014
+.Dd Jan 10, 2015
 .Dt RABIN2 1
 .Sh NAME
 .Nm RABIN2
@@ -10,6 +10,7 @@
 .Op Fl b Ar bits
 .Op Fl B Ar addr
 .Op Fl c Ar fmt:C:[D]
+.Op Fl D Ar lang
 .Op Fl f Ar subbin
 .Op Fl k Ar query
 .Op Fl K Ar algo
@@ -38,6 +39,8 @@ Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpai
 List classes
 .It Fl d
 Show debug/dwarf information
+.It Fl D Ar lang symbolname
+Demangle symbol name for lang
 .It Fl e
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin

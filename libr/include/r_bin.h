@@ -383,10 +383,11 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
 R_API ut64 r_bin_get_boffset(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
 
-R_API char* r_bin_demangle(RBinFile *binfile, const char *str);
+R_API char* r_bin_demangle(RBinFile *binfile, const char *lang, const char *str);
 R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
+R_API char *r_bin_demangle_swift(const char *s);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API int r_bin_lang_objc(RBinFile *binfile);
 R_API int r_bin_lang_cxx(RBinFile *binfile);

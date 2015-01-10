@@ -716,7 +716,7 @@ wind_continue (WindCtx *ctx) {
 }
 
 int
-wind_write_reg (WindCtx *ctx, uint8_t *buf, int size) {
+wind_write_reg (WindCtx *ctx, const uint8_t *buf, int size) {
 	kd_packet_t *pkt;
 	kd_req_t req;
 	int ret;
@@ -1029,7 +1029,7 @@ wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count
 }
 
 int
-wind_write_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count) {
+wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req;
 	int ret;
@@ -1082,7 +1082,7 @@ wind_write_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int coun
 }
 
 int
-wind_write_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count) {
+wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req;
 	int ret;

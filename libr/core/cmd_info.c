@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #define PAIR_WIDTH 9
 static void pair(const char *a, const char *b) {
@@ -6,10 +6,46 @@ static void pair(const char *a, const char *b) {
 	int al = strlen (a);
 	if (!b) b = "";
 	memset (ws, ' ', sizeof (ws));
-	al = PAIR_WIDTH-al;
+	al = PAIR_WIDTH - al;
 	if (al<0) al = 0;
 	ws[al] = 0;
 	r_cons_printf ("%s%s%s\n", a, ws, b);
+}
+
+static int demangle_internal(const char *lang, const char *s) {
+	char *res = NULL;
+	int type = r_bin_demangle_type (lang);
+	switch (type) {
+	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (s); break;
+	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
+	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
+	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s); break;
+	default:
+	     eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+	     return 1;
+	}
+	if (res && *res) {
+		printf ("%s\n", res);
+		return 0;
+	}
+	free (res);
+}
+
+static int demangle(RCore *core, const char *s) {
+	char *p, *q;
+	const char *ss = strchr (s, ' ');
+	if (!*s) return 0;
+	if (!ss) {
+		const char *lang = r_config_get (core->config, "bin.lang");
+		demangle_internal (lang, s);
+		return 1;
+	}
+	p = strdup (s);
+	q = p + (ss-s);
+	*q = 0;
+	demangle_internal (p, q+1);
+	free (p);
+	return 1;
 }
 
 #define STR(x) (x)?(x):""
@@ -112,18 +148,18 @@ static int cmd_info(void *data, const char *input) {
 	ut64 offset = r_bin_get_offset (core->bin);
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
-
-	int va = core->io->va || core->io->debug;
+	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
 	Sdb *db;
 
-	if (strchr (input, '*'))
-		mode = R_CORE_BIN_RADARE;
-	if (strchr (input, 'j'))
-		mode = R_CORE_BIN_JSON;
-	if (strchr (input, 'q'))
-		mode = R_CORE_BIN_SIMPLE;
+	for (i = 0; i<2; i++) {
+		switch (input[i]) {
+		case '*': mode = R_CORE_BIN_RADARE; break;
+		case 'j': mode = R_CORE_BIN_JSON; break;
+		case 'q': mode = R_CORE_BIN_SIMPLE; break;
+		}
+	}
 
 	if (mode == R_CORE_BIN_JSON) {
 		if (strlen (input+1)>1)
@@ -242,6 +278,11 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'c':
 		case 'C': RBININFO ("classes", R_CORE_BIN_ACC_CLASSES); break;
+		case 'D':
+			if (input[1]!=' ' || !demangle (core, input+2)) {
+				eprintf ("|Usage: iD lang symbolname\n");
+			}
+			return 0;
 		case 'a':
 			{
 				switch (mode) {

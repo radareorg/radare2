@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,13 +39,14 @@ static char* file = NULL;
 static char *name = NULL;
 static int rw = R_FALSE;
 static int va = R_TRUE;
+static const char *do_demangle = NULL;
 static ut64 at = 0LL;
 static RLib *l;
 
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-ACdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
 		"              [-B addr] [-c F:C:D] [-f str] [-m addr] [-n str] [-N m:M]\n"
-		"              [-o str] [-O str] [-k query] file\n");
+		"              [-o str] [-O str] [-k query] [-D lang symname] | file>\n");
 	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
 		" -A              list archs\n"
@@ -55,6 +56,7 @@ static int rabin_show_help(int v) {
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
+		" -D name         demangle symbol name\n"
 		" -P              show debug/pdb information\n"
 		" -PP             download pdb file for binary\n"
 		" -e              entrypoint\n"
@@ -386,7 +388,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:Ck:K:dMm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgqAf:a:B:b:c:Ck:K:dD:Mm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -446,11 +448,12 @@ int main(int argc, char **argv) {
 		case 'd': set_action (ACTION_DWARF); break;
 		case 'P':
 			if (is_active(ACTION_PDB)) {
-				set_action(ACTION_PDB_DWNLD);
+				set_action (ACTION_PDB_DWNLD);
 			} else {
 				set_action (ACTION_PDB);
 			}
 			break;
+		case 'D': do_demangle = argv[optind]; break;
 		case 'e': set_action (ACTION_ENTRIES); break;
 		case 'M': set_action (ACTION_MAIN); break;
 		case 'l': set_action (ACTION_LIBS); break;
@@ -499,13 +502,38 @@ int main(int argc, char **argv) {
 			} break;
 		//case 'V': return blob_version ("rabin2");
 		case 'h':
-				r_core_fini (&core);
-				return rabin_show_help (1);
+			  r_core_fini (&core);
+			  return rabin_show_help (1);
 		default: action |= ACTION_HELP;
 		}
 	}
 
-	file = argv[optind];
+	if (do_demangle) {
+		char *res = NULL;
+		int type;
+		if ((argc-optind)<2) {
+			return rabin_show_help (0);
+		}
+		type = r_bin_demangle_type (do_demangle);
+		file = argv[optind +1];
+		switch (type) {
+		case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
+		case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
+		case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
+		case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
+		default:
+			eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+			return 1;
+		}
+		if (res && *res) {
+			printf ("%s\n", res);
+			return 0;
+		}
+		free (res);
+		//eprintf ("%s\n", file);
+		return 1;
+	}
+	file = argv[optind ];
 	if (!query)
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
 		r_core_fini (&core);
