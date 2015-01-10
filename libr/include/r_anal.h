@@ -624,6 +624,7 @@ typedef struct r_anal_op_t {
 	ut32 selector;  /* segment selector */
 	st64 ptr;       /* reference to memory */ /* XXX signed? */
 	ut64 val;       /* reference to value */ /* XXX signed? */
+	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
 	RAnalValue *src[3];

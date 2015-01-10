@@ -379,6 +379,24 @@ repeat:
 				anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
 				ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 		switch (op.type) {
+		case R_ANAL_OP_TYPE_ILL:
+			if (anal->nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
+				if ((addr + delay.un_idx-oplen) == fcn->addr) {
+					fcn->addr += oplen;
+					bb->size -= oplen;
+					bb->addr += oplen;
+					idx = delay.un_idx;
+					goto repeat;
+				} else {
+					// sa
+					bb->size -= oplen;
+					op.type = R_ANAL_OP_TYPE_RET;
+				}
+			}
+			FITFCNSZ ();
+			r_anal_op_fini (&op);
+			gotoBeach (R_ANAL_RET_END);
+			break;
 		case R_ANAL_OP_TYPE_TRAP:
 			if (anal->nopskip && buf[0]==0xcc) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
