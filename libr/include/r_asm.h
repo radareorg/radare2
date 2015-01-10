@@ -60,6 +60,7 @@ enum {
 typedef struct r_asm_op_t {
 	int size; // instruction size
 	int payload; // size of payload (opsize = (size-payload))
+	int valid;
 	// But this is pretty slow..so maybe we should add some accessors
 	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];

@@ -90,6 +90,7 @@ typedef struct r_disam_options_t {
 	int show_utf8;
 	int lines;
 	int oplen;
+	int hex_invalid;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -243,6 +244,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
+	ds->hex_invalid = r_config_get_i (core->config, "asm.hex_invalid");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->colorop = r_config_get_i (core->config, "scr.colorops");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
@@ -2279,7 +2281,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			ret = 1;
 			r_cons_printf ("invalid\n");//???\n");
 		} else {
-			r_cons_printf ("%s\n", ds->opstr);
+			if ( ds->hex_invalid && !ds->asmop.valid)
+				r_cons_printf("0x%s\n", ds->asmop.buf_hex);
+			else
+				r_cons_printf ("%s\n", ds->opstr);
 			free (ds->opstr);
 			ds->opstr = NULL;
 		}

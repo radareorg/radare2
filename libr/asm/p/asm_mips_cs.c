@@ -37,7 +37,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = 4;
 		ret = -1;
 		goto beach;
-	} else ret = 4;
+	} else {
+		op->valid = 1;
+		ret = 4;
+	}
 	if (insn->size<1)
 		goto beach;
 	op->size = insn->size;
