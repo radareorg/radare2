@@ -14,8 +14,11 @@
 #define IMM(x) insn->detail->arm.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base)
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
+#define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 #define MEMINDEX(x) insn->detail->arm.operands[x].mem.index
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
+#define MEMDISP64(x) insn->detail->arm64.operands[x].mem.disp
+#define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
 // TODO scale and disp
 
 static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
@@ -218,10 +221,22 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_STR:
 		op->type = R_ANAL_OP_TYPE_STORE;
-// 0x00008160    04202de5     str r2, [sp, -4]!
+		if (REGBASE64(1) == ARM64_REG_X29) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = -MEMDISP64(1);
+		}
 		break;
 	case ARM64_INS_LDR:
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		if (REGBASE64(1) == ARM64_REG_X29) {
+			op->stackop = R_ANAL_STACK_GET;
+			op->stackptr = 0;
+			op->ptr = MEMDISP64(1);
+		}
+		break;
+	case ARM64_INS_RET:
+		op->type = R_ANAL_OP_TYPE_RET;
 		break;
 	case ARM64_INS_BL:
 	case ARM64_INS_BLR:
@@ -266,6 +281,13 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM_INS_SUB:
 		op->type = R_ANAL_OP_TYPE_SUB;
+		if (ISREG(0)) {
+			if (REGID(0) == ARM_REG_SP) {
+// 0x00008254    10d04de2     sub sp, sp, 0x10
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = IMM (2);
+			}
+		}
 		break;
 	case ARM_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -293,16 +315,29 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	case ARM_INS_LSL:
 	case ARM_INS_LSR:
 		break;
+		//case ARM_INS_POP:
 	case ARM_INS_PUSH:
 	case ARM_INS_STR:
-		//case ARM_INS_POP:
 		op->type = R_ANAL_OP_TYPE_STORE;
+// 0x00008160    04202de5     str r2, [sp, -4]!
+// 0x000082a0    28000be5     str r0, [fp, -0x28]
+		if (REGBASE(1) == ARM_REG_FP) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = MEMDISP(1);
+		}
 		break;
 	case ARM_INS_LDR:
+// 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
+		}
+		if (REGBASE(1) == ARM_REG_FP) {
+			op->stackop = R_ANAL_STACK_GET;
+			op->stackptr = 0;
+			op->ptr = MEMDISP(1);
 		}
 		break;
 	case ARM_INS_BL:
@@ -401,7 +436,8 @@ static int set_reg_profile(RAnal *anal) {
 			"gpr	r17	.32	68	0\n"
 		:
 			"=pc	pc\n"
-			"=sp	sp\n" // XXX
+			"=sp	sp\n"
+			"=bp	x29\n"
 			"=a0	x0\n"
 			"=a1	x1\n"
 			"=a2	x2\n"

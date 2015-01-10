@@ -1,6 +1,7 @@
 return strdup (
 "=pc	pc\n"
-"=sp	sp\n" // XXX
+"=bp	x29\n"
+"=sp	sp\n"
 "=a0	x0\n"
 "=a1	x1\n"
 "=a2	x2\n"
