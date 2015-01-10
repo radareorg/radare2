@@ -109,7 +109,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	for (i=0; ; i++) {
 		line = getrow (s, &n);
 		p = prefixline (c, &left);
-		slen = R_MIN (left, strlen (line));
+		slen = R_MIN (left-1, strlen (line));
 		if (slen<1)
 			break;
 		if (!G (c->x-c->sx+slen, c->y-c->sy)) {
