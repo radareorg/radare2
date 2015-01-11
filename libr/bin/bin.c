@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble, dso */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble, dso */
 
 // TODO: dlopen library and show address
 
@@ -971,9 +971,14 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 		binfile_created = R_TRUE;
 	}
 
-	if (pluginname) plugin = r_bin_get_binplugin_by_name (bin, pluginname);
-	if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
-	if (!plugin) plugin = r_bin_get_binplugin_any (bin);
+	if (bin->force) {
+		plugin = r_bin_get_binplugin_by_name (bin, bin->force);
+	}
+	if (plugin == NULL) {
+		if (pluginname) plugin = r_bin_get_binplugin_by_name (bin, pluginname);
+		if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
+		if (!plugin) plugin = r_bin_get_binplugin_any (bin);
+	}
 
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
@@ -1025,6 +1030,7 @@ R_API void* r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
 
 	bin->file = NULL;
+	free (bin->force);
 	//r_bin_free_bin_files (bin);
 	r_list_free (bin->binfiles);
 	r_list_free (bin->binxtrs);
@@ -1213,6 +1219,7 @@ R_API RBin* r_bin_new() {
 	RBinXtrPlugin *static_xtr_plugin;
 	RBin *bin = R_NEW0 (RBin);
 	if (!bin) return NULL;
+	bin->force = NULL;
 	bin->sdb = sdb_new0 ();
 	bin->printf = (PrintfCallback)printf;
 	bin->plugins = r_list_new();
@@ -1725,4 +1732,11 @@ R_API RBinFile * r_bin_cur (RBin *bin) {
 R_API RBinObject * r_bin_cur_object (RBin *bin) {
 	RBinFile *binfile = r_bin_cur (bin);
 	return binfile? binfile->o: NULL;
+}
+
+R_API void r_bin_force_plugin (RBin *bin, const char *name) {
+	free (bin->force);
+	if (name && *name) {
+		bin->force = strdup (name);
+	} else bin->force = NULL;
 }

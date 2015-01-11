@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2015 - nibble, pancake */
 
 #ifndef R2_BIN_H
 #define R2_BIN_H
@@ -177,6 +177,7 @@ typedef struct r_bin_t {
 	PrintfCallback printf;
 	int loadany;
 	RIOBind iob;
+	char *force;
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -444,8 +445,7 @@ R_API RBinFile * r_bin_file_find_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_bin_file_find_by_name_n (RBin * bin, const char * name, int idx);
 R_API int r_bin_file_set_cur_binfile (RBin * bin, RBinFile *bf);
 R_API RBinPlugin * r_bin_file_cur_plugin (RBinFile *binfile);
-
-
+R_API void r_bin_force_plugin (RBin *bin, const char *pname);
 
 /* dbginfo.c */
 R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);

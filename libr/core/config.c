@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_core.h>
 
@@ -282,6 +282,13 @@ static int cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 	// TODO: control error and restore old value (return false?) show errormsg?
 	//return R_TRUE;
+}
+
+static int cb_binforce(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	r_bin_force_plugin (core->bin, node->value);
+	return R_TRUE;
 }
 
 static int cb_asmsyntax(void *user, void *data) {
@@ -928,6 +935,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
+	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
 	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");
 #if 0

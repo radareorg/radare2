@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #define USE_THREADS 1
 
@@ -95,10 +95,10 @@ static int main_help(int line) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-|--|=\n");
 	if (line != 1) printf (
-		" --           Open radare2 on an empty file\n"
-		" -            Equivalent of 'r2 malloc://512'\n"
-		" =            Read file from stdin (use -i and -c to run cmds)\n"
-		" -0           Print \\x00 after init and every command\n"
+		" --           open radare2 on an empty file\n"
+		" -            equivalent of 'r2 malloc://512'\n"
+		" =            read file from stdin (use -i and -c to run cmds)\n"
+		" -0           print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
@@ -109,6 +109,7 @@ static int main_help(int line) {
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
+		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
 		" -i [file]    run script file\n"
 		" -k [kernel]  set asm.os variable for asm and anal\n"
@@ -220,6 +221,7 @@ int main(int argc, char **argv, char **envp) {
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
+	const char *forcebin = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
 	int quiet = R_FALSE;
@@ -269,7 +271,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "0ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
+	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
 #if USE_THREADS
 "t"
 #endif
@@ -313,6 +315,7 @@ int main(int argc, char **argv, char **envp) {
 			case 'e': r_config_eval (r.config, optarg);
 				  r_list_append (evals, optarg); break;
 			case 'f': fullfile = 1; break;
+			case 'F': forcebin = optarg; break;
 			case 'h': help++; break;
 			case 'i':
 				if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
@@ -380,14 +383,15 @@ int main(int argc, char **argv, char **envp) {
 		argc = 2;
 		argv[1] = "-";
 	}
+	r_bin_force_plugin (r.bin, forcebin);
 
 	//cverify_version (0);
 	if (do_connect) {
-		if (optind>= argc) {
+		const char *uri = argv[optind];
+		if (optind >= argc) {
 			eprintf ("Missing URI for -C\n");
 			return 1;
 		}
-		const char *uri = argv[optind];
 		if (!strncmp (uri, "http://", 7))
 			r_core_cmdf (&r, "=+%s", uri);
 		else r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);

@@ -57,10 +57,9 @@ static int rabin_show_help(int v) {
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
 		" -D name         demangle symbol name\n"
-		" -P              show debug/pdb information\n"
-		" -PP             download pdb file for binary\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
+		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -k [query]      perform sdb query on loaded file\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -g              same as -SMRevsiz (show all info)\n"
@@ -79,6 +78,8 @@ static int rabin_show_help(int v) {
 		" -o [str]        output file/folder for write operations (out by default)\n"
 		" -O [str]        write/extract operations (-O help)\n"
 		" -p              show physical addresses\n"
+		" -P              show debug/pdb information\n"
+		" -PP             download pdb file for binary\n"
 		" -q              be quiet, just show fewer data\n"
 		" -r              radare output\n"
 		" -R              relocations\n"
@@ -365,6 +366,7 @@ int main(int argc, char **argv) {
 	char *ptr, *arch = NULL, *arch_name = NULL;
 	const char *op = NULL;
 	const char *chksum = NULL;
+	const char *forcebin = NULL;
 	RCoreBinFilter filter;
 	RCore core;
 	RCoreFile *cf = NULL;
@@ -388,7 +390,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgqAf:a:B:b:c:Ck:K:dD:Mm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:b:c:Ck:K:dD:Mm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -423,6 +425,7 @@ int main(int argc, char **argv) {
 		case 'K': chksum = optarg; break;
 		case 'C': set_action (ACTION_CLASSES); break;
 		case 'f': if (optarg) arch_name = strdup (optarg); break;
+		case 'F': forcebin = optarg; break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
 		case 'm':
 			at = r_num_math (NULL, optarg);
@@ -586,9 +589,9 @@ int main(int argc, char **argv) {
 		b = r_bin_create (bin, code, codelen, data, datalen);
 		if (b) {
 			if (r_file_dump (file, b->buf, b->length)) {
-				eprintf ("dumped %d bytes in '%s'\n", b->length, file);
+				eprintf ("Dumped %d bytes in '%s'\n", b->length, file);
 				r_file_chmod (file, "+x", 0);
-			} else eprintf ("error dumping into a.out\n");
+			} else eprintf ("Error dumping into a.out\n");
 			r_buf_free (b);
 		} else eprintf ("Cannot create binary for this format '%s'.\n", create);
 		r_core_fini (&core);
@@ -607,6 +610,7 @@ int main(int argc, char **argv) {
 	}
 
 	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
+	r_bin_force_plugin (bin, forcebin);
 	if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 		if (!r_bin_load (bin, file, laddr, 0, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open file\n");
