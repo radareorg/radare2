@@ -90,6 +90,8 @@ typedef struct r_disam_options_t {
 	int show_utf8;
 	int lines;
 	int oplen;
+	int varxs;
+	int vars;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -253,6 +255,8 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
+	ds->vars = r_config_get_i (core->config, "asm.vars");
+	ds->varxs = r_config_get_i (core->config, "asm.varxs");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
@@ -760,33 +764,35 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				ds->pre = r_str_concat (ds->pre, " ");
 				ds->stackptr = 0;
-				RList *args = r_anal_var_list (core->anal, f, 'a');
-				RList *vars = r_anal_var_list (core->anal, f, 'v');
-				r_list_join(vars, args);
-				RAnalVar *var;
-				RListIter *iter;
-				r_list_foreach (vars, iter, var) {
-					if (ds->show_color) {
-						r_cons_printf ("%s%s %s"Color_RESET,
-							ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
-						r_cons_printf ("%s; %s %s %s @ %s%s0x%x"Color_RESET"\n",
-							ds->color_other,
-							var->kind=='v'?"var":"arg",
-							var->type,
-							var->name,
-							core->anal->reg->name[R_REG_NAME_BP],
-							(var->kind=='v')?"-":"+",
-							var->delta);
-					} else {
-						r_cons_printf ("%s %s",
-							core->cons->vline[LINE_VERT], ds->refline2);
-						r_cons_printf ("; %s %s %s @ %s%s0x%x\n",
-							var->kind=='v'?"var":"arg",
-							var->type,
-							var->name,
-							core->anal->reg->name[R_REG_NAME_BP],
-							(var->kind=='v')?"-":"+",
-							var->delta);
+				if (ds->vars) {
+					RList *args = r_anal_var_list (core->anal, f, 'a');
+					RList *vars = r_anal_var_list (core->anal, f, 'v');
+					r_list_join(vars, args);
+					RAnalVar *var;
+					RListIter *iter;
+					r_list_foreach (vars, iter, var) {
+						if (ds->show_color) {
+							r_cons_printf ("%s%s %s"Color_RESET,
+									ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
+							r_cons_printf ("%s; %s %s %s @ %s%s0x%x"Color_RESET"\n",
+									ds->color_other,
+									var->kind=='v'?"var":"arg",
+									var->type,
+									var->name,
+									core->anal->reg->name[R_REG_NAME_BP],
+									(var->kind=='v')?"-":"+",
+									var->delta);
+						} else {
+							r_cons_printf ("%s %s",
+									core->cons->vline[LINE_VERT], ds->refline2);
+							r_cons_printf ("; %s %s %s @ %s%s0x%x\n",
+									var->kind=='v'?"var":"arg",
+									var->type,
+									var->name,
+									core->anal->reg->name[R_REG_NAME_BP],
+									(var->kind=='v')?"-":"+",
+									var->delta);
+						}
 					}
 				}
 			}
@@ -1596,6 +1602,27 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_asmop_payload (RCore *core, RDisasmState *ds) {
+	if (ds->varxs) {
+		// XXX asume analop is filled
+		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+		int v = ds->analop.ptr;
+		switch (ds->analop.stackop) {
+			case R_ANAL_STACK_GET:
+				if (v<0) {
+					r_cons_printf (" ; local.get %d", -v);
+				} else {
+					r_cons_printf (" ; arg.get %d", v);
+				}
+				break;
+			case R_ANAL_STACK_SET:
+				if (v<0) {
+					r_cons_printf (" ; local.set %d", -v);
+				} else {
+					r_cons_printf (" ; arg.set %d", v);
+				}
+				break;
+		}
+	}
 	if (ds->asmop.payload != 0)
 		r_cons_printf ("\n; .. payload of %d bytes", ds->asmop.payload);
 }
@@ -2277,7 +2304,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		if (ret<1) {
 			err = 1;
 			ret = 1;
-			r_cons_printf ("invalid\n");//???\n");
+			r_cons_printf ("invalid\n");
 		} else {
 			r_cons_printf ("%s\n", ds->opstr);
 			free (ds->opstr);
