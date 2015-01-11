@@ -243,12 +243,14 @@ static int cmd_help(void *data, const char *input) {
 			"$l", "", "opcode length",
 			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
 			"$p", "", "getpid()",
+			"$P", "", "pid of children (only in debug)",
 			"$o", "", "here (current disk io offset)",
 			"$s", "", "file size",
 			"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 			"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
-			"${ev}", "", "get value of eval config variable", //TODO: use ?k too
-			"RNum", "", " $variables usable in math expressions",
+			"${ev}", "", "get value of eval config variable",
+			"$k{kv}", "", "get value of an sdb query value",
+			"RNum", "", "$variables usable in math expressions",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}

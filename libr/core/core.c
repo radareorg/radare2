@@ -125,6 +125,30 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str+2);
+		case 'k':
+			if (str[2]=='{') {
+				bptr = strdup (str+3);
+				ptr = strchr (bptr, '}');
+				if (ptr != NULL) {
+					char *out;
+					ut64 ret = 0LL;
+					ptr[0] = '\0';
+					out = sdb_querys (core->sdb, NULL, 0, bptr);
+					// XXX avoid recursivity here
+					if (strstr (out, "$k{")) {
+						eprintf ("Recursivity is not permitted here\n");
+					} else {
+						ret = r_num_math (core->num, out);
+					}
+					free (bptr);
+					free (out);
+					return ret;
+				}
+				free (bptr);
+			} else {
+				eprintf ("Expected '{' after 'k'.\n");
+			}
+			break;
 		case '{':
 			bptr = strdup (str+2);
 			ptr = strchr (bptr, '}');
@@ -142,6 +166,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
 		case 'p': return r_sys_getpid ();
+		case 'P': return (core->dbg->pid>0)? core->dbg->pid: 0;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
 		case 'v': return op.val; // immediate value
