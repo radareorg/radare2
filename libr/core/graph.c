@@ -1,4 +1,4 @@
-/* Copyright radare2 2014 - Author: pancake */
+/* Copyright radare2 2014-2015 - Author: pancake */
 
 #include <r_core.h>
 int small_nodes = 0;
@@ -63,11 +63,11 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 			return;
 		if (cur) {
 			W("[_@@_]");
-			G (-can->sx, -can->sy+2);
+			(void)G (-can->sx, -can->sy+2);
 			snprintf (title, sizeof (title)-1,
 				"0x%08"PFMT64x":", n->addr);
 			W (title);
-			G (-can->sx, -can->sy+3);
+			(void)G (-can->sx, -can->sy+3);
 			W (n->text);
 		} else {
 			W("[____]");
@@ -113,7 +113,7 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	}
 	if (G (n->x+1, n->y+1))
 		W (title); // delta_x
-	G (n->x+2+delta_x, n->y+2);
+	(void)G (n->x+2+delta_x, n->y+2);
 	//if (
 // TODO: temporary crop depending on out of screen offsets
 	{
