@@ -55,7 +55,7 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		ret = R_FALSE;
 	}
 	if (x <0) {
-		c->x = 0;
+		//c->x = 0;
 		ret = R_FALSE;
 	}
 	if (y <0) {
@@ -99,7 +99,7 @@ static char *prefixline(RConsCanvas *c, int *left) {
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
-	int left, slen, i;
+	int left, slen, i, linenum = 0;
 	char *p, *s, *str;
 	char *line, *n;
 
@@ -110,8 +110,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		line = getrow (s, &n);
 		p = prefixline (c, &left);
 		slen = R_MIN (left-1, strlen (line));
-		if (slen<1)
+		if (slen<1) {
 			break;
+		}
 		if (!G (c->x-c->sx+slen, c->y-c->sy)) {
 			// TODO : chop slen
 			slen = (c->w - (c->x-c->sx));
@@ -119,13 +120,20 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 				break;
 			continue;
 		}
+// top border skipping lines
+//if ((c->y-1-c->sy)<-40) {
+//	continue;
+//}
+int delta = 0;
 		if (!G (c->x-c->sx-slen, c->y-c->sy))
 			continue;
-		memcpy (p, line, slen);
+		memcpy (p, line+delta, slen-delta);
 		if (!n) break;
 		s = n;
-		if (!G (c->x-c->sx, c->y+1-c->sy))
+		if (!G (c->x-c->sx, c->y+1-c->sy)) {
 			break;
+		}
+		linenum ++;
 	}
 	free (str);
 }

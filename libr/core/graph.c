@@ -55,6 +55,8 @@ static Edge edges[] = {
 
 static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	char title[128];
+	int delta_x = 0;
+	int delta_y = 0;
 
 	if (small_nodes) {
 		if (!G (n->x+2, n->y-1))
@@ -89,6 +91,16 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 			return;
 	}
 #endif
+	{
+		int x = n->x + can->sx;
+		int y = n->y + can->sy;
+		if (x<-2) {
+			delta_x = -x-2;
+		}
+		if (y<-1) {
+			delta_y = -y-2;
+		}
+	}
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
@@ -102,9 +114,16 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	G (n->x+2, n->y+2);
 	//if (
 // TODO: temporary crop depending on out of screen offsets
-	//n->text = r_str_crop (n->text, 1,1,4,4);
-		W (n->text);
-	//}
+	{
+		char *text = r_str_crop (n->text,
+			delta_x, delta_y, 9999, 9999);
+		if (text) {
+			W (text);
+			free (text);
+		} else {
+			W (n->text);
+		}
+	}
 	if (G (n->x+1, n->y+1))
 		W (title);
 	B (n->x, n->y, n->w, n->h);
