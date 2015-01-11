@@ -4,15 +4,9 @@
     |__\__|_|__|___/__|__|_\__\___\ |____(_)____/
 
 
-0.9.8
-=====
---> add test * pdr doesnt works well with antidisasm tricks
-* option to disable aslr in rarun2?
 * rafind2 : add support for unicode/widestring search
-* .dr- # documented... but not working
 * libr/debug/p/drx.c <- not used .. debug must have a hw reg api for drx and gpio
 * ah -> add hint to define calls that do not return
-* continue execution until condition happen (reg, mem, ..)
 * rabin2 -x should not work on non-fatmach0 files
 * foldable stuff .. was in r1..redo?
 * cmp rip+xx -> not resolved wtf
@@ -20,11 +14,9 @@
   - analyze the destination address of each call destination
 * integrate dwarf parser with disassembler and debugger
 * step back .. log all state changes on every debugger stop
-* show analized functions in 'aa' -> discuss
 * timeout for code analysis (check timestamp)
   - add analysis points continuation, so 'aa' can be used progressively
 * Allow to seek to branch N like in visual, but from cmdline
-* Colorize multiple ranges of chars in hexdump -- cparse
 * refactor vmenus.c -> refresh function must be redefined for each menu
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
@@ -56,9 +48,8 @@ BUGS
   - shellforge.. and review current shellcodes :?
 * rasm2 must support binary creation help message or so..
   - rabin2 integration must be easier
-* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 
-* Add support for classes in c++, objc binaries
+* Add support for classes in c++, objc, java, swift binaries
   - command to add new classes
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
@@ -80,8 +71,6 @@ BUGS
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
   - set prompt, set line, fgets
   - strict width in visual
-* REFACTOR of disasm loop XDDDDD -1 (r2<1.0 plzz)
-  - arch dependent anal code must be removed from disasm loop +1
 
 nibble
 ------
@@ -136,14 +125,7 @@ Assembler
   - So one can change from one arch to another with a pointer
   - Cool for defining ranges of memory
 
-* r_io
-  - We need a way to get the underlying file which responds
-    to the read call (this way we can know which library
-    lives at a specified offset. (is this already done?)
-
 * radare2
-  - Use r_bin with r_io to get symbols
-    - The offset to read will define the module to analyze and retrieve syms
   - Import msdn doc as comments
 
 RDB
@@ -164,7 +146,7 @@ RSearch
   - Enable/disable nested hits? (discuss+ implement in parent app?)
     - Just skip bytes until end of keyword
 * AES/RSA Key finding
-  http://citp.princeton.edu/memory/code/ <- implement this stuff in r2
+  http://citp.princeton.edu/memory/code/ <- implement this
 
 
 Binaries
@@ -221,7 +203,6 @@ pancake
 * fork/clone child . inject code to create new threads or pids
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
   - already done..must find better names probably
-* rarc2 allows to compile invalid code like calling puts() out of context
 * Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..

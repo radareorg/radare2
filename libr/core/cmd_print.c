@@ -1199,7 +1199,7 @@ static int cmd_print(void *data, const char *input) {
 #define P(x) (IS_PRINTABLE(x)?x:'.')
 #define SPLIT_BITS(x) memmove (x+5, x+4, 5); x[4]=0
 			for (i=c=0; i<len; i++,c++) {
-				if (c==0) r_print_offset (core->print, core->offset+i, 0, 0);
+				if (c==0) r_print_offset (core->print, core->offset+i, 0, 0, 0);
 				r_str_bits (buf, core->block+i, 8, NULL);
 				SPLIT_BITS (buf);
 				r_cons_printf ("%s.%s  ", buf, buf+5);
@@ -2148,29 +2148,49 @@ static int cmd_hexdump(void *data, const char *input) {
 	return cmd_print (data, input-1);
 }
 
+static int lenof (ut64 off, int two) {
+	char buf[64];
+	buf[0] = 0;
+	if (two) snprintf (buf, sizeof (buf), "+0x%"PFMT64x, off);
+	else snprintf (buf, sizeof (buf), "0x%08"PFMT64x, off);
+
+	return strlen (buf);
+}
 // TODO : move to r_util? .. depends on r_cons...
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt) {
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta) {
 	int show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
 		if (invert)
 			r_cons_invert (R_TRUE, R_TRUE);
-		if (opt) {
+		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
 			s = (off-a)>>4;
 			r_cons_printf ("%s%04x:%04x"Color_RESET,
 				k, s&0xFFFF, a&0xFFFF);
-		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+		} else {
+			int sz = lenof (off, 0);
+			int sz2 = lenof (delta, 1);
+			const char *pad = r_str_pad (' ', sz-sz2);
+			if (delta>0) {
+				r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+			} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+		}
 		r_cons_puts (" ");
 	} else {
-		if (opt) {
+		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
 			s = (off-a)>>4;
 			r_cons_printf ("%04x:%04x", s&0xFFFF, a&0xFFFF);
 		} else {
-			r_cons_printf ("0x%08"PFMT64x" ", off);
+			int sz = lenof (off, 0);
+			int sz2 = lenof (delta, 1);
+			const char *pad = r_str_pad (' ', sz-5-sz2-3);
+			if (delta>0) {
+				r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+			} else r_cons_printf ("0x%08"PFMT64x" ", off);
 		}
 	}
 }

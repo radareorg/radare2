@@ -64,6 +64,7 @@ typedef struct r_disam_options_t {
 	int show_offseg;
 	int show_flags;
 	int show_bytes;
+	int show_reladdr;
 	int show_comments;
 	int cmtcol;
 	int show_fcnlines;
@@ -275,6 +276,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->show_reladdr = r_config_get_i (core->config, "asm.reladdr");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
@@ -1091,9 +1093,13 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 				core->screen_bounds = ds->at;
 		}
 	}
-	if (ds->show_offset)
+	if (ds->show_offset) {
+		int delta = 0;
+		if (ds->show_reladdr) 
+			delta = ds->at - core->offset;
 		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
-				ds->show_offseg);
+				ds->show_offseg, delta);
+	}
 }
 
 static void handle_print_op_size (RCore *core, RDisasmState *ds) {
