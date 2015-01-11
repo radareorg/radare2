@@ -103,7 +103,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	char *p, *s, *str;
 	char *line, *n;
 
-	if (!c || !_s)
+	if (!c || !_s || !*_s)
 		return;
 	str = s = strdup (_s);
 	for (i=0; ; i++) {
@@ -118,6 +118,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			slen = (c->w - (c->x-c->sx));
 			if (slen<1)
 				break;
+		s = n;
 			continue;
 		}
 // top border skipping lines
