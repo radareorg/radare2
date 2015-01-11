@@ -75,7 +75,9 @@ static char *getptr(RConsCanvas *c, int *left) {
 #endif
 
 static char *getrow (char *p, char **n) {
-	char *q = strchr (p, '\n');
+	char *q;
+	if (!p) return NULL;
+	q = strchr (p, '\n');
 	if (n) *n = NULL;
 	if (q) {
 		*q = 0;
@@ -108,6 +110,8 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	str = s = strdup (_s);
 	for (i=0; ; i++) {
 		line = getrow (s, &n);
+		if (!line)
+			break;
 		p = prefixline (c, &left);
 		slen = R_MIN (left-1, strlen (line));
 		if (slen<1) {
@@ -126,7 +130,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 //	continue;
 //}
 int delta = 0;
-		if (!G (c->x-c->sx-slen, c->y-c->sy))
+int x = c->x - c->sx -slen;
+if (x<0) x=0;
+		if (!G (x, c->y-c->sy))
 			continue;
 		memcpy (p, line+delta, slen-delta);
 		if (!n) break;
