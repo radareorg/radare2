@@ -181,6 +181,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			op->refptr = 4;
 		}
 		break;
+	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
@@ -366,6 +367,7 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM_INS_LDR:
+	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
@@ -447,7 +449,7 @@ static int set_reg_profile(RAnal *anal) {
 	char *p = (anal->bits != 64) ?
 			"=pc	r15\n"
 			"=sp	r14\n" // XXX
-			"=bp	r14\n" // XXX
+			"=bp	fp\n" // XXX
 			"=a0	r0\n"
 			"=a1	r1\n"
 			"=a2	r2\n"

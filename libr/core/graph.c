@@ -79,6 +79,7 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	n->w += 4;
 	n->h += 3;
 	n->w = R_MAX (18, n->w);
+#if SHOW_OUT_OF_SCREEN_NODES
 	{
 		int x = n->x + can->sx;
 		int y = n->y + n->h + can->sy;
@@ -87,6 +88,7 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 		if (y<0 || y> can->h)
 			return;
 	}
+#endif
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
@@ -97,11 +99,12 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	}
 	if (G (n->x+1, n->y+1))
 		W (title);
-	if (G (n->x+2, n->y+2)) {
+	G (n->x+2, n->y+2);
+	//if (
 // TODO: temporary crop depending on out of screen offsets
-//n->text = r_str_crop (n->text, 1,1,4,4);
+	//n->text = r_str_crop (n->text, 1,1,4,4);
 		W (n->text);
-	}
+	//}
 	if (G (n->x+1, n->y+1))
 		W (title);
 	B (n->x, n->y, n->w, n->h);
