@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,8 +23,11 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "out",  "io[1] = 2"},
 		{ "cmp",  "cmp 1, 2"},
 		{ "test", "cmp 1, 2"},
+		{ "nop",  ""},
+		{ "setne",  "1 = ne"},
 		{ "lea",  "1 = 2"},
 		{ "mov",  "1 = 2"},
+		{ "movzx",  "1 = 2"},
 		{ "cmovl","ifnot zf,1 = 2"},
 		{ "xor",  "1 ^= 2"},
 		{ "and",  "1 &= 2"},
@@ -32,6 +35,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "add",  "1 += 2"},
 		{ "sub",  "1 -= 2"},
 		{ "mul",  "1 *= 2"},
+		{ "sar",  "1 >>= 2"},
+		{ "shr",  "1 >>>= 2"},
+		{ "sal",  "1 <<= 2"},
+		{ "shl",  "1 <<<= 2"},
 		{ "div",  "1 /= 2"},
 		{ "call", "call 1"},
 		{ "jmp",  "goto 1"},
