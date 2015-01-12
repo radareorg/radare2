@@ -43,7 +43,11 @@ enyo.kind ({
   handlers: {
     ontap: "handleTap",
     onhold: "handleHold",
-    ondblclick: "handleDoubleClick"
+    ondblclick: "handleDoubleClick",
+    onTransitionFinish: "handleTransitionFinish",
+  },
+  handleTransitionFinish: function() {
+    if (r2ui._dis.display == "graph" && r2ui._dis.minimap) update_minimap();
   },
   itemSelected: function (inSender, inEvent) {
     if (inEvent.originator.content) {
@@ -87,9 +91,10 @@ enyo.kind ({
       // return true;
     }
   },
+
   handleKeyPress: function(inSender, inEvent) {
     var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
-    console.log(key);
+    // console.log(key);
     // show help
     if (key === 63) {
       r2ui.mp.show_popup();
@@ -108,6 +113,7 @@ enyo.kind ({
       var addr = r2ui.history_next();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
+    if (key === 109 && r2ui._dis.display == "graph") toogle_minimap();
     // j Seek to next Instruction
     if (key === 106) {
       var get_more_instructions = false;
@@ -335,6 +341,7 @@ enyo.kind ({
   renaming: null,
   renameOldValue: "",
   rbox: null,
+  minimap:true,
   do_comment: function(address) {
     r2.cmd('CC- ' + " @ " + address + ';CC ' + prompt('Comment')  + " @ " + address);
     r2ui.seek(address, false);
@@ -459,6 +466,10 @@ enyo.kind ({
     r2.load_mmap();
     r2ui.load_colors();
 
+  },
+  resizeHandler: function() {
+    this.inherited(arguments);
+    if (r2ui._dis.display == "graph" && r2ui._dis.minimap) update_minimap();
   },
   rendered: function() {
     this.inherited(arguments);

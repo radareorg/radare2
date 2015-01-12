@@ -12,6 +12,12 @@ enyo.kind ({
     { name: "rp", kind: "RightPanel" },
     { kind: enyo.Signals, onkeypress: "handleKeyPress" }
   ],
+  handlers: {
+    onTransitionFinish: "handleTransitionFinish"
+  },
+  handleTransitionFinish: function() {
+    if (r2ui._dis.display == "graph" && r2ui._dis.minimap) update_minimap();
+  },
   setPanel0: function () {
     this.$.RadareApp.setIndex (1);
   },
