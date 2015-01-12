@@ -4,9 +4,9 @@ $(document).ready( function() {
   // create tabs FIRST so elems are correct size BEFORE Layout measures them
   $("#main_panel").tabs({
     select: function( event, ui ) {
-      if(ui.tab.innerText == "Entropy") r2ui._ent.render();
-      if(ui.tab.innerText == "Strings") r2ui._str.render();
-      if(ui.tab.innerText == "Settings") r2ui._set.render();
+      if(ui.tab.innerHTML.indexOf("Entropy")) r2ui._ent.render();
+      if(ui.tab.innerHTML.indexOf("Strings")) r2ui._str.render();
+      if(ui.tab.innerHTML.indexOf("Settings")) r2ui._set.render();
     },
     activate: function( event, ui ) {
       r2ui.seek("$$", false);
@@ -400,7 +400,7 @@ function do_jumpto(address) {
 
 function do_randomcolors(element, inEvent) {
   r2.cmd ('ecr', function() {
-    r2ui.load_colors ();                                                     
+    r2ui.load_colors ();
   });
 }
 
