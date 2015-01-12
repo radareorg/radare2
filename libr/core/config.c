@@ -912,7 +912,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF("asm.offset", "true", "Show offsets at disassembly");
-	SETPREF("asm.reladdr", "false", "Show delta offsets instead of absolute address in disasm");
+	SETPREF("asm.reloff", "false", "Show delta offsets instead of absolute address in disasm");
 	SETPREF("asm.section", "false", "Show section name before offset");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax"); // DEPRECATED ?
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");

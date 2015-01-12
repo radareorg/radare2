@@ -64,7 +64,7 @@ typedef struct r_disam_options_t {
 	int show_offseg;
 	int show_flags;
 	int show_bytes;
-	int show_reladdr;
+	int show_reloff;
 	int show_comments;
 	int cmtcol;
 	int show_fcnlines;
@@ -124,6 +124,7 @@ typedef struct r_disam_options_t {
 	const char *color_gui_alt_background;
 	const char *color_gui_border;
 
+	RFlagItem *lastflag;
 	RAnalHint *hint;
 	RPrint *p;
 
@@ -212,7 +213,7 @@ static const char *getSectionName (RCore *core, ut64 addr) {
 }
 
 static RDisasmState * handle_init_ds (RCore * core) {
-	RDisasmState * ds = R_NEW0(RDisasmState);
+	RDisasmState *ds = R_NEW0 (RDisasmState);
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 	ds->color_comment = P(comment): Color_CYAN;
@@ -276,7 +277,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
-	ds->show_reladdr = r_config_get_i (core->config, "asm.reladdr");
+	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
@@ -1095,8 +1096,19 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 	}
 	if (ds->show_offset) {
 		int delta = 0;
-		if (ds->show_reladdr) 
-			delta = ds->at - core->offset;
+		if (ds->show_reloff) {
+			RFlagItem *fi = r_flag_get_i (core->flags, ds->at);
+			if (fi) ds->lastflag = fi;
+			if (ds->lastflag) {
+				if (ds->lastflag->offset == ds->at) {
+					delta = 0;
+				} else {
+					delta = ds->at - ds->lastflag->offset;
+				}
+			} else {
+				delta = ds->at - core->offset;
+			}
+		}
 		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
 				ds->show_offseg, delta);
 	}
