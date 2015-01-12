@@ -119,7 +119,8 @@ $(document).ready( function() {
           {title: "rename<kbd>n</kbd>", cmd: "rename"},
           {title: "add comment<kbd>;</kbd>", cmd: "comment"},
           {title: "code<kbd>c</kbd>", cmd: "define"},
-          {title: "undefine<kbd>u</kbd>", cmd: "undefine"}
+          {title: "undefine<kbd>u</kbd>", cmd: "undefine"},
+          {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"}
       ],
       preventSelect: true,
       preventContextMenuForPopup: true,
@@ -170,7 +171,8 @@ $(document).ready( function() {
             {title: "rename<kbd>n</kbd>", cmd: "rename"},
             {title: "add comment<kbd>;</kbd>", cmd: "comment"},
             {title: "code<kbd>c</kbd>", cmd: "define"},
-            {title: "undefine<kbd>u</kbd>", cmd: "undefine"}
+            {title: "undefine<kbd>u</kbd>", cmd: "undefine"},
+            {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"}
         ];
         if (xreffrom_submenu !== null || xrefto_submenu !== null) {
           if (xrefto_submenu !== null) menu[menu.length] = xrefto_submenu;
@@ -214,11 +216,14 @@ $(document).ready( function() {
           address = ui.cmd.substring(ui.cmd.indexOf("jumpto_") + 7);
           do_jumpto(address);
         }
-        if (ui.cmd  == "goto") do_goto();
-        if (ui.cmd  == "comment") do_comment(target);
-        if (ui.cmd  == "rename") do_rename(target, event);
-        if (ui.cmd  == "define") do_define(target);
-        if (ui.cmd  == "undefine") do_undefine(target);
+        switch (ui.cmd) {
+	case "goto": do_goto(); break;
+        case "comment": do_comment(target); break;
+        case "rename": do_rename(target, event); break;
+        case "define": do_define(target); break;
+        case "undefine": do_undefine(target); break;
+        case "randomcolors": do_randomcolors(target); break;
+        }
       }
   });
 
@@ -391,6 +396,12 @@ function do_jumpto(address) {
   }
   rehighlight_iaddress(r2ui._dis.tmp_address);
   scroll_to_address(r2ui._dis.tmp_address);
+}
+
+function do_randomcolors(element, inEvent) {
+  r2.cmd ('ecr', function() {
+    r2ui.load_colors ();                                                     
+  });
 }
 
 function do_rename(element, inEvent) {
