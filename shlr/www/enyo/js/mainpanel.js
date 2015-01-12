@@ -250,6 +250,7 @@ enyo.kind ({
       "<tr><td>d</td><td>Remove function metadata for current address</td></tr>" +
       "<tr><td>enter</td><td>When address is selected, go to address</td></tr>" +
       "<tr><td>;</td><td>Add comment</td></tr>" +
+      "<tr><td>m</td>Toggle minimap</td></tr>" +
       "<tr><td>?</td><td>Display this help</td></tr>" +
       "</table>";
 
