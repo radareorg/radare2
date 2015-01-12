@@ -153,7 +153,7 @@ BBGraph.prototype.render = function() {
   var svg_width = $('#canvas svg')[0].getBBox().width;
   var svg_height = $('#canvas svg')[0].getBBox().height;
   // update paper size with these values
-  paper.setDimensions(2000, svg_height);
+  //paper.setDimensions(svg_width, svg_height);
   var ws = Math.ceil(svg_width/minimap_width);
   var hs = Math.ceil(svg_height/minimap_heigh);
   var scale = 1/Math.max(ws, hs);

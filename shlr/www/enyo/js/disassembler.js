@@ -13,7 +13,7 @@ enyo.kind ({
         allowHtml: true,
         draggable: false,
         name: "minimap",
-        style : "width:200px ;height:200 ; position: fixed; top : 0; left:650px",
+        style : "width:200px; height:200px; position:fixed; top:0; right 0px",
         id: "minimap"
       },
       {
@@ -22,7 +22,7 @@ enyo.kind ({
         allowHtml: true,
         name: "text",
         content: "..",
-        style:"margin-left:5px;margin-right:5px;"
+        style:"margin-right:5px;width:100%;height:100%"
       },
       {kind: enyo.Signals,
         onkeypress: "handleKeyPress"
@@ -38,7 +38,6 @@ enyo.kind ({
             ]}
           ]
       },
-
   ],
   handlers: {
     ontap: "handleTap",
@@ -385,8 +384,6 @@ enyo.kind ({
       this.renaming.appendChild(r2ui._dis.rbox);
       setTimeout('r2ui._dis.rbox.focus();', 200);
     }
-
-
   },
   switch_view: function() {
     if (this.display === "flat") this.display_graph();
@@ -397,11 +394,15 @@ enyo.kind ({
   display_graph: function() {
     this.display = "graph";
     var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
+//panel.style="width:100%;height:100%";
+    //document.getElementById("canvas").style="width:100%;height:100%";
     if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_background", "ec_gui_alt_background");
   },
   display_flat: function() {
     this.display = "flat";
     var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
+//panel.style="width:100%;height:100%";
+//    document.getElementById("canvas").style="width:100%;height:100%";
     if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_alt_background", "ec_gui_background");
     $('#minimap')[0].innerHTML = "";
   },
@@ -434,7 +435,7 @@ enyo.kind ({
       text.setContent("");
       r2.cmd ("agj " + addr, function(x) {
         // <div id='bb_minimap'></div>
-        text.setContent("<div id='center_panel' style='overflow: auto;'><div id='canvas' class='canvas enyo-selectable ec_gui_background'></div></div>");
+        text.setContent("<div id='center_panel' style='width:100%;height:100%;overflow: auto;'><div id='canvas' class='canvas enyo-selectable ec_gui_background'></div></div>");
         if (render_graph(x) === false) error = true;
       });
     }

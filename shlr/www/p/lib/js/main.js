@@ -58,28 +58,38 @@ $(document).ready( function() {
   var console_history = [];
   var console_history_idx = 0;
 
+  function inColor(x) {
+    return "e scr.color=true;"+x+";e scr.color=false";
+  }
   // Handle commands in console
   $("#command").keypress(function( inEvent ) {
     var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
     if (key === 13) {
       var cmd = inEvent.target.value.trim();
+      var reloadUI = cmd == '';
+
       console_history[console_history.length] = cmd;
       console_history_idx += 1;
-      r2.cmd(cmd, function(x) {
-        var old_value = $("#cmd_output").text();
-        $("#cmd_output").html(old_value + "\n> " + cmd + "\n" + x );
-        $('#cmd_output').scrollTo($('#cmd_output')[0].scrollHeight);
-
-      });
-      if (cmd.indexOf("s ") === 0) {
-        r2ui.history_push(r2ui._dis.selected_offset);
+      /* empty input reloads UI */
+      if (cmd != '') {
+        r2.cmd(inColor(cmd), function(x) {
+          var old_value = $("#cmd_output").text();
+          $("#cmd_output").html(old_value + "\n> " + cmd + "\n" + x );
+          $('#cmd_output').scrollTo($('#cmd_output')[0].scrollHeight);
+        });
+        if (cmd.indexOf("s ") === 0) {
+          r2ui.history_push(r2ui._dis.selected_offset);
+        }
       }
-      r2.load_settings();
-      r2ui.load_colors();
-      update_binary_details();
       inEvent.target.value = "";
-      r2ui.seek("$$", false);
-      scroll_to_element(r2ui._dis.selected);
+      /* if command starts with :, do not reload */
+      if (reloadUI) {
+        r2.load_settings();
+        r2ui.load_colors();
+        update_binary_details();
+        r2ui.seek("$$", false);
+        scroll_to_element(r2ui._dis.selected);
+      }
     }
   });
   $('input').bind('keydown', function(e){
