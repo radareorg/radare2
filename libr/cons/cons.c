@@ -578,7 +578,12 @@ R_API int r_cons_get_cursor(int *rows) {
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
-#if EMSCRIPTEN
+#if __WINDOWS__
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
+	I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+#elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;
 #elif __UNIX__
