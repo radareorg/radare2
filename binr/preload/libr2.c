@@ -6,13 +6,12 @@
 
 static RCore *core = NULL;
 
+#if __UNIX__
 static void sigusr1(int s) {
 	RCoreFile *fd = r_core_file_open (core, "self://", R_IO_RW, 0);
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);
 }
-
-#if __UNIX__
 static void _libwrap_init() __attribute__ ((constructor));
 static void _libwrap_init() {
 	signal (SIGUSR1, sigusr1);

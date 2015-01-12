@@ -282,8 +282,8 @@ R_API int r_debug_wait(RDebug *dbg) {
 			int what = r_debug_signal_what (dbg, dbg->signum);
 			const char *name = r_debug_signal_resolve_i (dbg, dbg->signum);
 			if (name && strcmp ("SIGTRAP", name))
-				r_cons_printf ("[+] signal %d aka %s received\n",
-						dbg->signum, name);
+				r_cons_printf ("[+] signal %d aka %s received %d\n",
+						dbg->signum, name, what);
 		}
 	}
 	return ret;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_core.h>
 
@@ -7,7 +7,9 @@
 
 
 static void showfile(const int nth, const char *fpath, const char *name, int printfmt) {
+#if __UNIX__
 	struct stat sb;
+#endif
 	const char *n = fpath;
 	char *nn, *u_rwx = "";
 	int sz = r_file_size (n);

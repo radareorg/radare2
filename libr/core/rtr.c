@@ -338,10 +338,12 @@ typedef struct {
 	const char *path;
 } HttpThread;
 
+#if __UNIX__
 static void dietime (int sig) {
 	eprintf ("It's Die Time!\n");
-	exit(0);
+	exit (0);
 }
+#endif
 
 static void activateDieTime (RCore *core) {
 	int dt = r_config_get_i (core->config, "http.dietime");
