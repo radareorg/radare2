@@ -864,6 +864,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("pdb.server", "http://msdl.microsoft.com/download/symbols", "Microsoft symbol server");
 
 	/* anal */
+	SETPREF("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (mips)");
 	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Obey anal.from and anal.to ranges");
 	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Minimum address in the anal.limits range");

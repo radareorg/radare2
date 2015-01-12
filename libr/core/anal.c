@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -643,6 +643,10 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		next = realloc (next, sizeof (ut64)*(1+nexti)); \
 		next[nexti] = (x); \
 		nexti++; \
+	}
+	if (r_config_get_i (core->config, "anal.a2f")) {
+		r_core_cmd0 (core, ".a2f");
+		return 0;
 	}
 	if (use_esil) {
 		return r_core_anal_esil_fcn (core, at, from, reftype, depth);
