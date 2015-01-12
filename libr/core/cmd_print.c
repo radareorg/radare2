@@ -1421,7 +1421,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-					core->num->value = 2;
+					core->num->value = -1;
 				}
 			}
 			break;
@@ -1475,7 +1475,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 					processed_cmd = R_TRUE;
-					core->num->value = 2;
+					core->num->value = -1;
 				}
 			}
 			l = 0;
