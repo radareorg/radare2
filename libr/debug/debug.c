@@ -607,7 +607,8 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		if (pc == addr)
 			break;
-
+		if (r_bp_get_at (dbg->bp, pc))
+                        break;
 		r_debug_continue (dbg);
 	}
 
