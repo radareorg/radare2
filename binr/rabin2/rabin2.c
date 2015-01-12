@@ -56,7 +56,7 @@ static int rabin_show_help(int v) {
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
-		" -D name         demangle symbol name\n"
+		" -D lang name    demangle symbol name\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
