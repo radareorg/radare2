@@ -111,18 +111,17 @@ BBGraph.prototype.render = function() {
 
   this.makeElement("minimap_area", 1, 1, "<div id='minimap_area'>");
 
-
-
   var items = this.elements.concat(this.links);
   var width = $("#center_panel").width();
   var graph = new joint.dia.Graph();
   var paper = new joint.dia.Paper({
       el: $('#canvas'),
       gridSize: 1,
-      width: 6000,
+      width: 2000,
       height: 6000,
       model: graph,
   });
+
   var minimap_width = 200;
   var minimap_heigh = 200;
   $('#minimap')[0].innerHTML = "";
@@ -134,6 +133,7 @@ BBGraph.prototype.render = function() {
       height: minimap_heigh,
       model: graph
   });
+
   graph.resetCells(items);
 
   // render graph
@@ -152,6 +152,8 @@ BBGraph.prototype.render = function() {
 
   var svg_width = $('#canvas svg')[0].getBBox().width;
   var svg_height = $('#canvas svg')[0].getBBox().height;
+  // update paper size with these values
+  paper.setDimensions(2000, svg_height);
   var ws = Math.ceil(svg_width/minimap_width);
   var hs = Math.ceil(svg_height/minimap_heigh);
   var scale = 1/Math.max(ws, hs);
@@ -160,28 +162,6 @@ BBGraph.prototype.render = function() {
   minimap.scale(scale);
   minimap.setOrigin(delta,0);
   // minimap.$el.css('pointer-events', 'none');
-
-  function update_minimap() {
-    if ($(this).scrollTop() > svg_height) return;
-    $("#minimap_area").width($(this).width()*scale);
-    $("#minimap_area").height($(this).height()*scale);
-    $("#minimap_area").css("top", $(this).scrollTop()*scale);
-    $("#minimap_area").css("left", delta + $(this).scrollLeft()*scale);
-    // enyo layout
-    if ($("#radareApp_mp").length) {
-      $("#minimap").css("display", "none");
-      $("#minimap").css("left", $(this).scrollLeft() + $("#radareApp_mp").width() - minimap_width - $("#radareApp_mp").position().left);
-      $("#minimap").css("top",  $(this).scrollTop());
-      $("#minimap").css("display", "block");
-    // panel layout
-    } else if ($("#main_panel").length){
-      $("#minimap").css("left", $(this).scrollLeft() + $("#main_panel").width() - minimap_width);
-      $("#minimap").css("top",  $(this).scrollTop());
-    }
-    $("#minimap").css("border", "1px solid " + r2ui.colors['.ec_gui_background']);
-    $("#minimap_area").css("background", r2ui.colors['.ec_gui_background']);
-
-  }
 
   // enyo layout
   if ($("#radareApp_mp").length) {
@@ -216,8 +196,67 @@ BBGraph.prototype.render = function() {
   for (var i in bbs) {
     bbs[i].on("change:position", update_BB, this);
   }
-  update_minimap();
+
+  if (r2ui._dis.minimap) update_minimap();
+  else {
+    $("#minimap").hide();
+  }
 };
+
+function toogle_minimap() {
+  if (r2ui._dis.minimap) {
+    r2ui._dis.minimap = false;
+    r2ui.seek(r2ui._dis.selected_offset, false);
+    $('#minimap').hide();
+  } else {
+    r2ui._dis.minimap = true;
+    r2ui.seek(r2ui._dis.selected_offset, false);
+    $('#minimap').show();
+  }
+};
+
+function update_minimap() {
+  if (r2ui._dis.minimap && $('#canvas svg').length) {
+    var minimap_width = 200;
+    var minimap_height = 200;
+    var svg_width = $('#canvas svg')[0].getBBox().width;
+    var svg_height = $('#canvas svg')[0].getBBox().height;
+    var ws = Math.ceil(svg_width/minimap_width);
+    var hs = Math.ceil(svg_height/minimap_height);
+    var scale = 1/Math.max(ws, hs);
+    var delta = 0;
+    if (hs > ws) delta = (minimap_width/2) - svg_width*scale/2;
+    var el = null;
+    // enyo layout
+    if ($("#radareApp_mp").length) {
+      el = $('#radareApp_mp_panels_pageDisassembler');
+    // panel layout
+    } else if ($("#main_panel").length){
+      el = $('#center_panel');
+    }
+    if (el.scrollTop() < svg_height) {
+      $("#minimap_area").width(el.width()*scale);
+      $("#minimap_area").height(el.height()*scale);
+      if (el.scrollTop()*scale <= minimap_height - el.height()*scale) {
+        $("#minimap_area").css("top", el.scrollTop()*scale);
+        $("#minimap_area").css("left", delta + el.scrollLeft()*scale);
+      }
+    }
+    // enyo layout
+    if ($("#radareApp_mp").length) {
+      $("#minimap").css("display", "none");
+      $("#minimap").css("left", el.scrollLeft() + el.width() - minimap_width - $("#radareApp_mp").position().left + 2 * el.css("padding").replace('px',''));
+      $("#minimap").css("top",  el.scrollTop());
+      $("#minimap").css("display", "block");
+    // panel layout
+    } else if ($("#main_panel").length){
+      $("#minimap").css("left", el.scrollLeft() + $("#main_panel").width() - minimap_width);
+      $("#minimap").css("top",  el.scrollTop());
+    }
+    $("#minimap").css("border", "1px solid " + r2ui.colors['.ec_gui_background']);
+    $("#minimap_area").css("background", r2ui.colors['.ec_gui_background']);
+  }
+}
 
 function reposition_graph() {
   var bbs = r2ui.graph.getElements();
@@ -234,7 +273,7 @@ function reposition_graph() {
       }
     }
     if (!found) {
-      r2ui.basic_blocks[bbs[i].prop("id")] = {x:bbs[i].prop("position").x, y:bbs[i].prop("position").y, color:"transparent"};
+      r2ui.basic_blocks[bbs[i].prop("id")] = {x:bbs[i].prop("position").x, y:bbs[i].prop("position").y, color:r2ui.colors['.ec_gui_alt_background']};
     }
   }
 }
@@ -295,7 +334,7 @@ function render_graph(x) {
         var bb = null;
         if (r2ui.basic_blocks[id] !== undefined && r2ui.basic_blocks[id] !== null) {
           bb = r2ui.basic_blocks[id];
-          if (bb.color === "red") bb.color = "transparent";
+          if (bb.color === "red") bb.color = r2ui.colors['.ec_gui_alt_background'];
           else bb.color = "red";
           r2ui.basic_blocks[id] = bb;
         }
@@ -711,6 +750,7 @@ function rehighlight_iaddress(address, prefix) {
   if (prefix === undefined) prefix = "addr";
   $('.autohighlighti').removeClass('autohighlighti');
   $('.' + prefix + '_' + address).addClass('autohighlighti');
+  if (prefix === "addr") r2.cmd ("s " + address, function () {});
 }
 
 function rehighlight_id(eid) {

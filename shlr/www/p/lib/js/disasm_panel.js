@@ -1,4 +1,4 @@
-// DISASSEMBLKER PANEL
+// DISASSEMBLER PANEL
 var DisasmPanel = function () {
   this.display = "flat";
   this.min = 0;
@@ -13,6 +13,7 @@ var DisasmPanel = function () {
   this.rbox = null;
   this.panel = $("#disasm_tab")[0];
   this.scroll_offset = null;
+  this.minimap = true;
 };
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
@@ -52,7 +53,6 @@ DisasmPanel.prototype.display_flat = function() {
   if ($('#minimap').length) $('#minimap')[0].innerHTML = "";
 };
 DisasmPanel.prototype.goToAddress = function() {
-
   if (this.renaming === null && this.selected !== null && (this.selected.className.indexOf(" addr ") > -1)) {
     var address = get_address_from_class(this.selected);
     if (this.selected.className.indexOf("ec_gui_dataoffset") > -1) {

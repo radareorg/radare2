@@ -20,6 +20,7 @@ $(document).ready( function() {
 		east__size:			200,
     south__size:    200,
     north__resizable: false,
+    center__onresize: function () {if (r2ui._dis.display == "graph" && r2ui._dis.minimap) update_minimap();},
 		west__onresize:		$.layout.callbacks.resizePaneAccordions,
 		east__onresize:		$.layout.callbacks.resizePaneAccordions
 	});
@@ -267,6 +268,9 @@ function handleKeypress(inEvent) {
       inEvent.preventDefault();
     }
 	}
+
+  if (key === 109 && r2ui._dis.display == "graph") toogle_minimap();
+
 	// h Seek to previous address in history
 	if (key === 104) do_jumpto(r2ui.history_prev());
 

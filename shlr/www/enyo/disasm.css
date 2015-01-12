@@ -133,6 +133,9 @@ input:focus {outline: none; }
   width:200px;
   height:200px;
   z-index: 2;
+  background: #999;
+  opacity: 0.8;
+  filter: alpha(opacity=80); /* For IE8 and earlier */
 }
 
 #minimap .basicblock {
