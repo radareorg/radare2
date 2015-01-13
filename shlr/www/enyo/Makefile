@@ -5,9 +5,6 @@ node_modules/.bin/uglifyjs:
 	mkdir -p node_modules
 	npm install uglify-js
 
-upload:
-	rsync --safe-links -avz * radare.org:/srv/http/lolcathostorg/b/
-
 debug:
 	cat js/*.js > index.js
 
