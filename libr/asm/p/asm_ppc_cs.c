@@ -16,11 +16,13 @@ static int the_end(void *p) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
-	int mode, n, ret;
+	int mode = 0, n, ret;
 	ut64 off = a->pc;
 	cs_insn* insn;
 
-	mode = CS_MODE_BIG_ENDIAN;
+	if (a->big_endian) {
+		mode = CS_MODE_BIG_ENDIAN;
+	}
 	if (handle && mode != omode) {
 		cs_close (&handle);
 		handle = 0;
