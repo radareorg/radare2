@@ -16,7 +16,7 @@ J+=lib/js/settings_panel.js
 J+=lib/js/main.js
 
 all:
-	cat $(J) | $(UGLY) > index.js
+	cat $(J) | $(UGLY) > index.js || cat $(J) > index.js
 
 indent:
 	jsfmt -w lib/js/*.js

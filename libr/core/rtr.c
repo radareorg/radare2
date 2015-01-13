@@ -365,11 +365,18 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	int iport, timeout = r_config_get_i (core->config, "http.timeout");
 	const char *port = r_config_get (core->config, "http.port");
-	char *allow = (char *)r_config_get (core->config, "http.allow");
+	const char *allow = r_config_get (core->config, "http.allow");
+	const char *httpui = r_config_get (core->config, "http.ui");
 
 	if (path && atoi (path)) {
 		port = path;
 		path = NULL;
+	} else {
+		if (!strcmp (httpui, "p")
+		|| !strcmp (httpui, "enyo")
+		|| !strcmp (httpui, "t")) {
+			path = httpui;
+		}
 	}
 
 	if (!strcmp (port, "0")) {
