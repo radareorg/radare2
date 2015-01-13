@@ -134,11 +134,13 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					ut64 ret = 0LL;
 					ptr[0] = '\0';
 					out = sdb_querys (core->sdb, NULL, 0, bptr);
-					// XXX avoid recursivity here
-					if (strstr (out, "$k{")) {
-						eprintf ("Recursivity is not permitted here\n");
-					} else {
-						ret = r_num_math (core->num, out);
+					if (out && *out) {
+						// XXX avoid recursivity here
+						if (strstr (out, "$k{")) {
+							eprintf ("Recursivity is not permitted here\n");
+						} else {
+							ret = r_num_math (core->num, out);
+						}
 					}
 					free (bptr);
 					free (out);

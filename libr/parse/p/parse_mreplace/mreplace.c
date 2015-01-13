@@ -28,12 +28,13 @@
 #define CHECKS_CHUNCK_COUNT 6
 
 int matchs(const char *string, char *pattern) {
-	int status;
+	int status = 0;
 	RRegex *re = r_regex_new (pattern, "");
-	if (r_regex_comp (re, pattern, R_REGEX_EXTENDED|R_REGEX_NOSUB) != 0) return(0); 
-	status = r_regex_exec (re, string, (size_t) 0, NULL, 0);
-	r_regex_free(re);
-	return status?0:1;
+	if (r_regex_comp (re, pattern, R_REGEX_EXTENDED|R_REGEX_NOSUB) == 0) {
+		status = r_regex_exec (re, string, (size_t) 0, NULL, 0)? 1: 0;
+	}
+	r_regex_free (re);
+	return status;
 }
 
 void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
@@ -85,19 +86,21 @@ char *mreplace(char *string, char *se,char *rep) {
 #endif
 	re = r_regex_new ("", 0);
 
-	if(r_regex_comp(re, search->address, R_REGEX_EXTENDED) != 0) 
-		if(r_regex_comp(re, search->address, R_REGEX_EXTENDED<<1)) 	noMatch=1;
-	if((status = r_regex_exec(re, string, nmatch, pm, 0))) 		noMatch=1;
-
-	if(noMatch){
-		memFree(temp);
-		memFree(search);
+	if (r_regex_comp(re, search->address, R_REGEX_EXTENDED) != 0) 
+		if(r_regex_comp(re, search->address, R_REGEX_EXTENDED<<1))
+			noMatch=1;
+	if ((status = r_regex_exec(re, string, nmatch, pm, 0)))
+		noMatch=1;
+	if (noMatch) {
+		memFree (temp);
+		memFree (search);
+		r_regex_free (re);
 		return (char*)string; 
 	}
 
-	found  = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
-	ffound = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
-	while(!status){
+	found  = memReserve (INPUTLINE_BUFFER_REPLACE_SIZE);
+	ffound = memReserve (INPUTLINE_BUFFER_REPLACE_SIZE);
+	while (!status) {
 		offset=strlen(temp->address)-strlen(string);
 		snprintf(found->address, INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
 				(int)(size_t)(pm[0].rm_eo - pm[0].rm_so), &string[pm[0].rm_so]);//,&string[pm[0].rm_so]);
@@ -139,6 +142,7 @@ char *mreplace(char *string, char *se,char *rep) {
 	memFree(search);
 	memFree(found);
 	memFree(ffound);
+	r_regex_free (re);
 	return res;
 }
 
