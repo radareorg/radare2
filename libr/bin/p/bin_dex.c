@@ -52,13 +52,12 @@ static ut64 baddr(RBinFile *arch) {
 
 static char *flagname (const char *class, const char *method) {
 	int s_len;
-	char *p, *str, *s, *s_end;
+	char *p, *str, *s;
 	if (!class || !method)
 		return NULL;
 	s_len = strlen (class) + strlen (method)+10;
 	s = malloc (s_len);
 	if (!s) return NULL;
-	s_end = s + s_len;
 	str = s;
 	p = (char*)r_str_lchr (class, '$');
 	if (!p) p = (char *)r_str_lchr (class, '/');
