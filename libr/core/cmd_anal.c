@@ -2045,7 +2045,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		break;
 	case '-':
 		r_debug_trace_free (core->dbg);
-		core->dbg->trace = r_debug_trace_new (core->dbg);
+		core->dbg->trace = r_debug_trace_new ();
 		break;
 	case ' ':
 		{

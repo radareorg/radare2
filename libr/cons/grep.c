@@ -162,13 +162,13 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		cons->grep.json = 0;
 		if (cons->grep.less) {
 			cons->grep.less = 0;
-			r_cons_less (cons->buffer);
+			r_cons_less_str (cons->buffer);
 		}
 		return 3;
 	}
 	if (cons->grep.less) {
 		cons->grep.less = 0;
-		r_cons_less (buf);
+		r_cons_less_str (buf);
 		buf[0] = 0;
 		cons->buffer_len = 0;
 		if (cons->buffer)

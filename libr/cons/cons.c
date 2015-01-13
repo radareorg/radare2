@@ -215,7 +215,7 @@ R_API RCons *r_cons_new () {
 
 R_API RCons *r_cons_free () {
 	if (I.line) {
-		r_line_free (I.line);
+		r_line_free ();
 		I.line = NULL;
 	}
 	if (I.buffer) {
