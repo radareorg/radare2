@@ -9,6 +9,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
+#define MD5_CTX R_MD5_CTX
+
 /* hashing */
 typedef struct {
 	ut32 state[4];

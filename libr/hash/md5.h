@@ -9,7 +9,7 @@
  */
 
 #ifndef PROTOTYPES
-#define PROTOTYPES 0
+#define PROTOTYPES 1
 #endif
 
 /* POINTER defines a generic pointer type */
@@ -74,6 +74,6 @@ typedef struct {
 
 void MD5Init PROTO_LIST ((MD5_CTX *));
 void MD5Update PROTO_LIST
-  ((MD5_CTX *, unsigned char *, unsigned int));
+  ((MD5_CTX *, const unsigned char *, unsigned int));
 void MD5Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
 

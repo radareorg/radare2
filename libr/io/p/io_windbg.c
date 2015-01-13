@@ -17,6 +17,7 @@
 #include <r_lib.h>
 #include <r_socket.h>
 #include <r_util.h>
+#include <transport.h>
 
 #if __WINDOWS__
 #warning WinDBG support not yet ready for Windows
