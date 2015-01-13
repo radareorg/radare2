@@ -302,6 +302,15 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	return len;
 }
 
+static const char *gethtmlrgb(const char *str) {
+	static char buf[32];
+	ut8 r, g, b;
+	r = g = b = 0;
+	r_cons_rgb_parse (str, &r, &g, &b, 0);
+	sprintf (buf, "#%02x%02x%02x", r, g, b);
+	return buf;
+}
+
 static const char *gethtmlcolor(const char ptrch, const char *def) {
 	switch (ptrch) {
 	case '0': return "#000"; // BLACK
@@ -351,7 +360,7 @@ R_API int r_cons_html_print(const char *ptr) {
 			}
 			esc = 2;
 			continue;
-		} else 
+		} else
 		if (esc == 2) {
 			// TODO: use dword comparison here
 			if (ptr[0]=='2' && ptr[1]=='J') {
@@ -360,6 +369,14 @@ R_API int r_cons_html_print(const char *ptr) {
 				esc = 0;
 				str = ptr;
 				continue;
+			} else
+			if (!strncmp (ptr, "38;5;", 5)) {
+				char *end = strchr (ptr, 'm');
+				printf ("<font color='%s'>", gethtmlrgb (ptr));
+				fflush (stdout);
+				ptr = end;
+				str = ptr + 1;
+				esc = 0;
 			} else
 			if (ptr[0]=='0' && ptr[1]==';' && ptr[2]=='0') {
 				r_cons_gotoxy (0, 0);

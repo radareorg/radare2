@@ -87,7 +87,8 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	//const double k = (256/6);
 	if (!p) return 0;
 	if (*p==0x1b) p++;
-	if (*p!='[') return 0;
+	//if (*p!='[') return 0;
+	if (*p!='[') p--;
 	switch (p[1]) {
 	case '1': bold=255; p+=2; break;
 	case '3': isbg=0; break;
@@ -99,7 +100,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 			int x, y, z;
 			int n = atoi (p+6);
 			unrgb (n, &x, &y, &z);
-			SETRGB (x,y,z);
+			SETRGB (x, y, z);
 		} else {
 			/* truecolor */
 			p += 6;
