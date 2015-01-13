@@ -20,9 +20,10 @@ enyo.kind ({
         tag: "div",
         draggable: false,
         allowHtml: true,
-        name: "text",
-        content: "..",
-        style:"margin-right:5px;width:100%;height:100%"
+        name: "panel",
+        content: "<div id='main_panel' class='ui-layout-center ec_gui_background'><div id='center_panel'></div></div>"
+                 + "<div class='ui-layout-south' style='display: none;background-color:rgb(20,20,20);'><pre id='cmd_output' class='ui-layout-content'></pre><div><input id='command' type='text' value=''/></div></div>",
+        style:"margin-right:5px;width:100%;height:100%",
       },
       {kind: enyo.Signals,
         onkeypress: "handleKeyPress"
@@ -348,6 +349,8 @@ enyo.kind ({
   renameOldValue: "",
   rbox: null,
   minimap:true,
+  console_history: [],
+  console_history_idx: 0,
   do_comment: function(address) {
     r2.cmd('CC- ' + " @ " + address + ';CC ' + prompt('Comment')  + " @ " + address);
     r2ui.seek(address, false);
@@ -400,49 +403,40 @@ enyo.kind ({
   },
   display_graph: function() {
     this.display = "graph";
-    var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
-//panel.style="width:100%;height:100%";
-    //document.getElementById("canvas").style="width:100%;height:100%";
-    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_background", "ec_gui_alt_background");
+    $("#main_panel").removeClass("ec_gui_background");
+    $("#main_panel").addClass("ec_gui_alt_background");
   },
   display_flat: function() {
     this.display = "flat";
-    var panel = document.getElementById("radareApp_mp_panels_pageDisassembler");
-//panel.style="width:100%;height:100%";
-//    document.getElementById("canvas").style="width:100%;height:100%";
-    if (panel !== undefined && panel !== null) panel.className = panel.className.replace("ec_gui_alt_background", "ec_gui_background");
-    $('#minimap')[0].innerHTML = "";
+    $("#main_panel.ui-layout-pane").removeClass("ec_gui_alt_background");
+    $("#main_panel.ui-layout-pane").addClass("ec_gui_background");
   },
   less: function() {
-    var text = this.$.text;
     this.min += this.block;
     r2.get_disasm_before(this.base + "-" + this.min, this.block, function(x) {
       x = render_instructions(x);
       var oldy = r2ui._dis.getScrollBounds().height;
-      text.setContent(x+text.getContent());
+      $("#center_panel").html(x+text.getContent());
       var newy = r2ui._dis.getScrollBounds().height;
       r2ui._dis.scrollTo(0, newy-oldy);
     });
     rehighlight_iaddress(this.base);
   },
   more: function() {
-    var text = this.$.text;
     this.max += this.block;
     r2.get_disasm_after(this.base + "+" + this.max, this.block, function(x) {
       x = render_instructions(x);
-      text.setContent(text.getContent() + x);
+      $("#center_panel").html(text.getContent() + x);
     });
     rehighlight_iaddress(this.base);
   },
   seek: function(addr, scroll) {
-    var text = this.$.text;
     var error = false;
     if (this.display === "graph") {
       this.$.minimap.show();
-      text.setContent("");
+      $("#center_panel").html("");
       r2.cmd ("agj " + addr, function(x) {
-        // <div id='bb_minimap'></div>
-        text.setContent("<div id='center_panel' style='width:100%;height:100%;overflow: auto;'><div id='canvas' class='canvas enyo-selectable ec_gui_background'></div></div>");
+        $("#center_panel").html("<div id='center_panel' style='width:100%;height:100%;overflow: auto;'><div id='canvas' class='canvas enyo-selectable ec_gui_background'></div></div>");
         if (render_graph(x) === false) error = true;
       });
     }
@@ -451,7 +445,7 @@ enyo.kind ({
       this.$.minimap.hide();
       this.min = this.max = 0;
       r2.get_disasm_before_after(addr, -49, 100, function(x) {
-        text.setContent("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+        $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
         render_instructions(x);
       });
     }
@@ -473,7 +467,6 @@ enyo.kind ({
     r2.analAll();
     r2.load_mmap();
     r2ui.load_colors();
-
   },
   resizeHandler: function() {
     this.inherited(arguments);
@@ -481,62 +474,112 @@ enyo.kind ({
   },
   rendered: function() {
     this.inherited(arguments);
+    myLayout = $('#radareApp_mp_panels_pageDisassembler_panel').layout({
+      south__size:    200,
+    });
     this.display_flat();
     r2ui.seek(this.base,true);
-  },
-  colorbar_create: function () {
-    var self = this;
-    r2.cmd ("pvj 24", function(x) {
-      try {
-        var y = JSON.parse (x);
-      } catch (e) {
-        alert (e);
-        return;
-      }
-      // console.log (y);
 
-      // TODO: use canvas api for faster rendering and smaller dom
-      var c = "<table class='colorbar'>"+
-          "<tr valign=top style='height:8px;border-spacing:0'>";
-      var colors = {
-        flags: "#c0c0c0",
-        comments: "yellow",
-        functions: "#5050f0",
-        strings: "orange",
-      };
-      var off = "";
-      var WIDTH = '100%';
-      var HEIGHT = 16;
-      for (var i=0; i< y.blocks.length; i++) {
-        var block = y.blocks[i];
-        var r = "<div style='overflow:hidden;width:12px;'>____</div>";
-        if (block.offset) {  // Object.keys(block).length>1) {
-          var r = "<table width='width:100%' height="+HEIGHT+" style='border-spacing:0px'>";
-          var count = 0;
-          for (var k in colors)
-            if (block[k])
-              count++;
-	  count++; // avoid 0div wtf
-	  if (count==1) break;
-          var h = HEIGHT / count;
-          for (var k in colors) {
-            var color = colors[k];
-            if (block[k])
-              r += "<tr><td class='colorbar_item' style='background-color:"
-                  + colors[k]+"'><div style='width:12px;overflow:"
-                  + "hidden;height:"+h+"px'>____</div></td></tr>";
+    var console_history = this.console_history;
+    var console_history_idx = this.console_history_idx;
+
+    // Handle commands in console
+    $("#command").keypress(function( inEvent ) {
+      var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
+      if (key === 13) {
+        var cmd = inEvent.target.value.trim();
+        var reloadUI = cmd == '';
+
+        console_history[console_history.length] = cmd;
+        console_history_idx += 1;
+        /* empty input reloads UI */
+        if (cmd != '') {
+          r2.cmd(inColor(cmd), function(x) {
+            var old_value = $("#cmd_output").text();
+            $("#cmd_output").html(old_value + "\n> " + cmd + "\n" + x );
+            $('#cmd_output').scrollTo($('#cmd_output')[0].scrollHeight);
+          });
+          if (cmd.indexOf("s ") === 0) {
+            r2ui.history_push(r2ui._dis.selected_offset);
           }
-          r += "</table>";
-          off = "0x"+block.offset.toString (16);
-        } else {
-          off = "0x"+(y.from + (y.blocksize * i)).toString (16);
         }
-        c += "<td onclick='r2ui.seek("+off+",true)' title='"+off
-              + "' style='height:"+HEIGHT+"px' "
-	      + "width=15px>"+r+"</td>";
+        inEvent.target.value = "";
+        /* if command starts with :, do not reload */
+        if (reloadUI) {
+          r2.load_settings();
+          r2ui.load_colors();
+          r2ui.seek("$$", false);
+          scroll_to_element(r2ui._dis.selected);
+        }
       }
-      c += "</tr></table>";
-      self.$.colorbar.setContent (c);
     });
-  }
+    $("#command").keydown(function( inEvent ) {
+      var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
+      if (key === 40) {
+        console_history_idx++;
+        if (console_history_idx > console_history.length - 1) console_history_idx = console_history.length;
+        inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
+      }
+      if (key === 38) {
+        console_history_idx--;
+        if (console_history_idx < 0) console_history_idx = 0;
+        inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
+      }
+    });
+  },
+  // colorbar_create: function () {
+  //   var self = this;
+  //   r2.cmd ("pvj 24", function(x) {
+  //     try {
+  //       var y = JSON.parse (x);
+  //     } catch (e) {
+  //       alert (e);
+  //       return;
+  //     }
+  //     // console.log (y);
+
+  //     // TODO: use canvas api for faster rendering and smaller dom
+  //     var c = "<table class='colorbar'>"+
+  //         "<tr valign=top style='height:8px;border-spacing:0'>";
+  //     var colors = {
+  //       flags: "#c0c0c0",
+  //       comments: "yellow",
+  //       functions: "#5050f0",
+  //       strings: "orange",
+  //     };
+  //     var off = "";
+  //     var WIDTH = '100%';
+  //     var HEIGHT = 16;
+  //     for (var i=0; i< y.blocks.length; i++) {
+  //       var block = y.blocks[i];
+  //       var r = "<div style='overflow:hidden;width:12px;'>____</div>";
+  //       if (block.offset) {  // Object.keys(block).length>1) {
+  //         var r = "<table width='width:100%' height="+HEIGHT+" style='border-spacing:0px'>";
+  //         var count = 0;
+  //         for (var k in colors)
+  //           if (block[k])
+  //             count++;
+	 //  count++; // avoid 0div wtf
+	 //  if (count==1) break;
+  //         var h = HEIGHT / count;
+  //         for (var k in colors) {
+  //           var color = colors[k];
+  //           if (block[k])
+  //             r += "<tr><td class='colorbar_item' style='background-color:"
+  //                 + colors[k]+"'><div style='width:12px;overflow:"
+  //                 + "hidden;height:"+h+"px'>____</div></td></tr>";
+  //         }
+  //         r += "</table>";
+  //         off = "0x"+block.offset.toString (16);
+  //       } else {
+  //         off = "0x"+(y.from + (y.blocksize * i)).toString (16);
+  //       }
+  //       c += "<td onclick='r2ui.seek("+off+",true)' title='"+off
+  //             + "' style='height:"+HEIGHT+"px' "
+	 //      + "width=15px>"+r+"</td>";
+  //     }
+  //     c += "</tr></table>";
+  //     self.$.colorbar.setContent (c);
+  //   });
+  // }
 });

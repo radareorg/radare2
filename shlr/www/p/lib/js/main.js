@@ -58,9 +58,6 @@ $(document).ready( function() {
   var console_history = [];
   var console_history_idx = 0;
 
-  function inColor(x) {
-    return "e scr.color=true;"+x+";e scr.color=false";
-  }
   // Handle commands in console
   $("#command").keypress(function( inEvent ) {
     var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
@@ -92,6 +89,7 @@ $(document).ready( function() {
       }
     }
   });
+
   $('input').bind('keydown', function(e){
       if(e.keyCode == '38' || e.keyCode == '40'){
           e.preventDefault();

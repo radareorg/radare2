@@ -153,7 +153,7 @@ BBGraph.prototype.render = function() {
   var svg_width = $('#canvas svg')[0].getBBox().width;
   var svg_height = $('#canvas svg')[0].getBBox().height;
   // update paper size with these values
-  //paper.setDimensions(svg_width, svg_height);
+  paper.setDimensions(svg_width, svg_height);
   var ws = Math.ceil(svg_width/minimap_width);
   var hs = Math.ceil(svg_height/minimap_heigh);
   var scale = 1/Math.max(ws, hs);
@@ -165,9 +165,9 @@ BBGraph.prototype.render = function() {
 
   // enyo layout
   if ($("#radareApp_mp").length) {
-    $("#minimap").css("left", $("#radareApp_mp").width() - minimap_width - $("#radareApp_mp").position().left);
+    $("#minimap").css("left", $("#main_panel").width() - minimap_width - $("#main_panel").position().left);
     $("#minimap").css("top",  $("#center_panel").position().top);
-    $("#radareApp_mp_panels_pageDisassembler").bind('scroll', update_minimap);
+    $("#main_panel").bind('scroll', update_minimap);
   // panel layout
   } else if ($("#main_panel").length){
     $("#minimap").css("left", $("#main_panel").width() - minimap_width);
@@ -197,8 +197,22 @@ BBGraph.prototype.render = function() {
     bbs[i].on("change:position", update_BB, this);
   }
 
-  if (r2ui._dis.minimap) update_minimap();
-  else {
+  if (r2ui._dis.minimap) {
+    update_minimap();
+
+    $("#minimap_area").draggable({
+      containment: "parent",
+      stop: function( event, ui ) {
+        var delta_x = ui.position.left/scale;
+        var delta_y = ui.position.top/scale;
+        if (delta_x < 0) delta_x = 0;
+        if (delta_y < 0) delta_y = 0;
+        if ($("#radareApp_mp").length) $("#main_panel").scrollTo({ top:delta_y, left:delta_x - delta/scale } );
+        else $('#center_panel').scrollTo({ top:delta_y, left:delta_x - delta/scale } );
+      }
+    });
+
+  } else {
     $("#minimap").hide();
   }
 };
@@ -229,7 +243,7 @@ function update_minimap() {
     var el = null;
     // enyo layout
     if ($("#radareApp_mp").length) {
-      el = $('#radareApp_mp_panels_pageDisassembler');
+      el = $('#main_panel');
     // panel layout
     } else if ($("#main_panel").length){
       el = $('#center_panel');
@@ -237,11 +251,11 @@ function update_minimap() {
     if (el.scrollTop() < svg_height) {
       $("#minimap_area").width(el.width()*scale);
       $("#minimap_area").height(el.height()*scale);
-      if (el.scrollTop()*scale <= minimap_height - el.height()*scale) {
+      if (el.scrollTop()*scale <= minimap_height - el.height()*scale)
         $("#minimap_area").css("top", el.scrollTop()*scale);
-        $("#minimap_area").css("left", delta + el.scrollLeft()*scale);
-      }
+      $("#minimap_area").css("left", delta + el.scrollLeft()*scale);
     }
+    el = $('#center_panel');
     // enyo layout
     if ($("#radareApp_mp").length) {
       $("#minimap").css("display", "none");
@@ -256,18 +270,6 @@ function update_minimap() {
     $("#minimap").css("border", "1px solid " + r2ui.colors['.ec_gui_background']);
     $("#minimap_area").css("background", r2ui.colors['.ec_gui_background']);
   }
-
-  $("#minimap_area").draggable({
-    containment: "parent",
-    stop: function( event, ui ) {
-      var delta_x = ui.position.left/scale;
-      var delta_y = ui.position.top/scale;
-      if (delta_x < 0) delta_x = 0;
-      if (delta_y < 0) delta_y = 0;
-      if ($("#radareApp_mp").length) $("#center_panel").scrollTo({ top:delta_y, left:delta_x - delta/scale } );
-      else el.scrollTo({ top:delta_y, left:delta_x - delta/scale } );
-    }
-  });
 }
 
 function reposition_graph() {
@@ -366,7 +368,7 @@ function render_instructions(instructions) {
   flatcanvas.innerHTML = "";
   var gbox = document.createElement('div');
   gbox.id = 'gbox';
-  gbox.className = name;
+  gbox.className = 'ec_gui_background';
   outergbox.appendChild(gbox);
   flatcanvas.appendChild(outergbox);
 
@@ -785,14 +787,16 @@ function scroll_to_address(address) {
   if (elements.length == 1) {
     var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
     top = Math.max(0,top);
-    r2ui._dis.scrollTo(0,top);
+    $("#main_panel").scrollTo({'top':top, 'left':0});
+    // r2ui._dis.scrollTo(0,top);
   }
 }
 
 function scroll_to_element(element) {
   var top = element.documentOffsetTop() - ( window.innerHeight / 2 );
   top = Math.max(0,top);
-  r2ui._dis.scrollTo(0,top);
+  $("#main_panel").scrollTo({'top':top, 'left':0});
+  // r2ui._dis.scrollTo(0,top);
 }
 
 function rename(offset, old_value, new_value, space) {
@@ -937,4 +941,8 @@ function do_randomcolors(element, inEvent) {
   r2.cmd ('ecr', function() {
     r2ui.load_colors ();
   });
+}
+
+function inColor(x) {
+  return "e scr.color=true;"+x+";e scr.color=false";
 }

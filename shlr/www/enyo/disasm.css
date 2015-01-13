@@ -111,8 +111,9 @@ input:focus {outline: none; }
   position: relative;
   display: inline-block;
   background: transparent;
-width:100%;
-height:100%;
+  width:100%;
+  height:100%;
+  margin:10px;
 }
 
 #canvas svg,
@@ -164,3 +165,8 @@ height:100%;
 #radareApp_mp_panels_pageDisassembler {
   padding: 0px;
 }
+
+#main_panel {
+  overflow: auto;
+}
+
