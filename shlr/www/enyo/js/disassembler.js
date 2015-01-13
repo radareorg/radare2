@@ -33,7 +33,8 @@ enyo.kind ({
               {content: "Show menu"},
               {kind: "onyx.Menu", name: "contextMenu", components: [
                   {content: "rename", value: "rename"},
-                  {content: "comment", value: "comment"}
+                  {content: "comment", value: "comment"},
+                  {content: "random colors", value: "do_randomcolors"}
               ]}
             ]}
           ]
@@ -51,11 +52,15 @@ enyo.kind ({
   itemSelected: function (inSender, inEvent) {
     if (inEvent.originator.content) {
         var itemContent = inEvent.originator.content;
+        console.log(itemContent);
         if (itemContent == "rename") {
           this.do_rename(this.selected, inEvent);
-        } else {
+        } else if (itemContent == "comment") {
           this.do_comment(this.selected_offset);
+        } else if (itemContent == "random colors") {
+          do_randomcolors();
         }
+
     }
     this.$.menuPopup.hide();
   },
@@ -92,29 +97,36 @@ enyo.kind ({
   },
 
   handleKeyPress: function(inSender, inEvent) {
-    var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
-    // console.log(key);
+    var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
+    var key = String.fromCharCode(keynum);
+    console.log(key);
+
     // show help
-    if (key === 63) {
+    if (key === '?') {
       r2ui.mp.show_popup();
     }
+
+    if (key === 'm' && r2ui._dis.display == "graph") toogle_minimap();
+
+    if (key === 'R') do_randomcolors();
+
     // Spacebar Switch flat and graph views
-    if (key === 32) {
+    if (key === ' ') {
       this.switch_view();
     }
     // h Seek to previous address in history
-    if (key === 104) {
+    if (key === 'h') {
       var addr = r2ui.history_prev();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
     // l Seek to next address in history
-    if (key === 108) {
+    if (key === 'l') {
       var addr = r2ui.history_next();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
     if (key === 109 && r2ui._dis.display == "graph") toogle_minimap();
     // j Seek to next Instruction
-    if (key === 106) {
+    if (key === 'j') {
       var get_more_instructions = false;
       if ($(this.selected).hasClass("insaddr")) {
         var next_instruction;
@@ -143,7 +155,7 @@ enyo.kind ({
       }
     }
     // k Seek to previous instruction
-    if (key === 107) {
+    if (key === 'k') {
       var get_more_instructions = false;
       if ($(this.selected).hasClass("insaddr")) {
         var prev_instruction;
@@ -170,7 +182,7 @@ enyo.kind ({
       }
     }
     // c Define function
-    if (key === 99) {
+    if (key === 'c') {
       var msg = prompt ('Function name?');
       r2.cmd("af " + msg, function() {
         r2.update_flags();
@@ -178,22 +190,22 @@ enyo.kind ({
       });
     }
     // d Clear function metadata
-    if (key === 100) {
+    if (key === 'd') {
       r2.cmd("af-", function() {
         r2.update_flags();
         r2ui.seek("$$", false);
       });
     }
     // g Go to address
-    if (key === 103) {
+    if (key === 'g') {
       r2ui.opendis(prompt('Go to'));
     }
     // ; Add comment
-    if (key === 59) {
+    if (key === ';') {
       this.do_comment(this.selected_offset);
     }
     // n Rename
-    if (key === 110) {
+    if (key === 'n') {
       this.do_rename(this.selected, inEvent);
     }
     // esc

@@ -38,12 +38,6 @@
 </head>
 <body>
 
-<!-- NORTH -->
-<div id="radareApp_mp_toolbar" class="ui-layout-north ui-widget-content" style="display: none;background-color:rgb(20,20,20);color: white;text-align: left;font-family: monospace;">
-<img src="rlogo-inv.png" border="0">
-	
-</div>
-
 <!-- SOUTH -->
 <div class="ui-layout-south ui-widget-content ui-state-error" style="display: none;background-color:rgb(20,20,20);">
 	<pre id="cmd_output" class="ui-layout-content">
@@ -76,17 +70,22 @@
 
 <!-- WEST -->
 <div class="ui-layout-west" style="color:rgb(127,127,127);background-color:rgb(20,20,20);display: none;">
-	<div id="accordion1" class="basic">
-		<h3>Functions</h3>
-		<div id="functions"></div>
-		<h3>Symbols</h3>
-		<div id="symbols"></div>
-		<h3>Relocs</h3>
-		<div id="relocs"></div>
-		<h3>Imports</h3>
-		<div id="imports"></div>
-		<h3>Flags</h3>
-		<div id="flags"></div>
+	<div class="ui-layout-north">
+		<img src="rlogo-inv.png" border="0"><span style="color:white;"> radare2</span>
+	</div>
+	<div class="ui-layout-center">
+		<div id="accordion1" class="basic">
+			<h3>Functions</h3>
+			<div id="functions"></div>
+			<h3>Symbols</h3>
+			<div id="symbols"></div>
+			<h3>Relocs</h3>
+			<div id="relocs"></div>
+			<h3>Imports</h3>
+			<div id="imports"></div>
+			<h3>Flags</h3>
+			<div id="flags"></div>
+		</div>
 	</div>
 </div>
 
@@ -98,6 +97,8 @@
 			<div id="information"></div>
 			<h3>Sections</h3>
 			<div id="sections"></div>
+			<h3>Bookmarks</h3>
+			<div id="bookmarks"></div>
 		</div>
 	</div>
 </div>
