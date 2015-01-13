@@ -28,7 +28,6 @@ body {
  *	PANES & CONTENT-DIVs
  */
 .ui-layout-pane { /* all 'panes' */
-	background:	#FFF;
 	border:		1px solid #BBB;
 	padding:	10px;
 	overflow:	auto;
