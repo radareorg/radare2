@@ -8,7 +8,7 @@ CS_TAR=
 CS_URL=https://github.com/aquynh/capstone.git
 CS_UPD=20150101
 CS_BRA=next
-CS_TIP=4de9de683d9f33c1f901b4d63c0f006b85473f2c
+CS_TIP=911990671f79d3cb94bf70931953e6bf8e35b0bb
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
