@@ -24,7 +24,7 @@ $(document).ready( function() {
 		west__onresize:		$.layout.callbacks.resizePaneAccordions,
 		east__onresize:		$.layout.callbacks.resizePaneAccordions
 	});
-  myLayout.disableClosable("north", true);
+  // myLayout.disableClosable("north", true);
 	$("#accordion1").accordion({ heightStyle:  "fill" });
 	$("#accordion2").accordion({ heightStyle:  "fill" });
 
@@ -263,8 +263,8 @@ function scroll_to_last_offset() {
 
 // key handler
 function handleKeypress(inEvent) {
-	var key = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
-
+	var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
+  var key = String.fromCharCode(keynum);
   // console.log(key);
   if ($(inEvent.target).prop("tagName") === "INPUT") {
     return;
@@ -273,7 +273,7 @@ function handleKeypress(inEvent) {
   if (r2ui._dis.renaming !== null) return;
 
 	// Spacebar Switch flat and graph views
-	if (key === 32) {
+	if (key === ' ') {
     var address = get_address_from_class(r2ui._dis.selected);
     if (address !== undefined && address !== null) {
       if (r2ui._dis.display === "flat") r2ui._dis.display_graph();
@@ -284,16 +284,16 @@ function handleKeypress(inEvent) {
     }
 	}
 
-  if (key === 109 && r2ui._dis.display == "graph") toogle_minimap();
+  if (key === 'm' && r2ui._dis.display == "graph") toogle_minimap();
 
 	// h Seek to previous address in history
-	if (key === 104) do_jumpto(r2ui.history_prev());
+	if (key === 'h') do_jumpto(r2ui.history_prev());
 
 	// l Seek to next address in history
-	if (key === 108) do_jumpto(r2ui.history_next());
+	if (key === 'l') do_jumpto(r2ui.history_next());
 
 	// j Seek to next Instruction
-	if (key === 106) {
+	if (key === 'j') {
     var get_more_instructions = false;
     if ($(r2ui._dis.selected).hasClass("insaddr")) {
       var next_instruction;
@@ -323,7 +323,7 @@ function handleKeypress(inEvent) {
     }
 	}
 	// k Seek to previous instruction
-	if (key === 107) {
+	if (key === 'k') {
     var get_more_instructions = false;
     if ($(r2ui._dis.selected).hasClass("insaddr")) {
       var prev_instruction;
@@ -351,22 +351,24 @@ function handleKeypress(inEvent) {
     }
 	}
 	// c Define function
-	if (key === 99) do_define(r2ui._dis.selected);
+	if (key === 'c') do_define(r2ui._dis.selected);
 
 	// u Clear function metadata
-	if (key === 117) do_undefine(r2ui._dis.selected);
+	if (key === 'u') do_undefine(r2ui._dis.selected);
 
 	// g Go to address
-	if (key === 103) do_jumpto(prompt('Go to'));
+	if (key === 'g') do_jumpto(prompt('Go to'));
 
 	// ; Add comment
-	if (key === 59) do_comment(r2ui._dis.selected);
+	if (key === ';') do_comment(r2ui._dis.selected);
 
 	// n Rename
-	if (key === 110) do_rename(r2ui._dis.selected, inEvent);
+	if (key === 'n') do_rename(r2ui._dis.selected, inEvent);
+
+  if (key === 'R') do_randomcolors();
 
 	// esc
-	if (key === 27) {
+	if (keynum === 27) {
 	  // Esc belongs to renaming
 	  if(r2ui._dis.renaming !== null) {
 	    r2ui._dis.renaming.innerHTML = r2ui._dis.renameOldValue;
@@ -379,7 +381,7 @@ function handleKeypress(inEvent) {
 	  }
 	}
 	// enter
-	if (key === 13) {
+	if (keynum === 13) {
 	  r2ui._dis.goToAddress();
 	}
 }
@@ -396,12 +398,6 @@ function do_jumpto(address) {
   }
   rehighlight_iaddress(r2ui._dis.tmp_address);
   scroll_to_address(r2ui._dis.tmp_address);
-}
-
-function do_randomcolors(element, inEvent) {
-  r2.cmd ('ecr', function() {
-    r2ui.load_colors ();
-  });
 }
 
 function do_rename(element, inEvent) {
