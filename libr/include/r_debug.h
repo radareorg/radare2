@@ -312,7 +312,7 @@ R_API int r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo);
 /* memory */
 R_API RDebugMap *r_debug_map_alloc(RDebug *dbg, ut64 addr, int size);
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
-R_API RList *r_debug_map_list_new();
+R_API RList *r_debug_map_list_new(void);
 R_API void r_debug_map_list_free(RList *maps);
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
 R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user);
@@ -361,7 +361,7 @@ R_API void r_debug_trace_at (RDebug *dbg, const char *str);
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr);
 R_API void r_debug_trace_list (RDebug *dbg, int mode);
 R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size);
-R_API RDebugTrace *r_debug_trace_new ();
+R_API RDebugTrace *r_debug_trace_new (void);
 R_API void r_debug_trace_free (RDebug *dbg);
 R_API int r_debug_trace_tag (RDebug *dbg, int tag);
 R_API int r_debug_child_fork (RDebug *dbg);

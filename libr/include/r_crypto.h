@@ -50,7 +50,7 @@ typedef struct r_crypto_plugin_t {
 R_API RCrypto *r_crypto_init(RCrypto *cry, int hard);
 R_API RCrypto *r_crypto_as_new(RCrypto *cry);
 R_API int r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
-R_API RCrypto *r_crypto_new();
+R_API RCrypto *r_crypto_new(void);
 R_API RCrypto *r_crypto_free(RCrypto *cry);
 R_API int r_crypto_use(RCrypto *cry, const char *algo);
 R_API int r_crypto_set_key(RCrypto *cry, const ut8* key, int mode, int direction);

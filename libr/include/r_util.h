@@ -223,7 +223,7 @@ typedef struct r_graph_t {
 R_API RGraphNode *r_graph_node_new (ut64 addr, void *data);
 R_API void r_graph_node_free (RGraphNode *n);
 R_API void r_graph_traverse(RGraph *t);
-R_API RGraph * r_graph_new ();
+R_API RGraph * r_graph_new (void);
 R_API void r_graph_free (RGraph* t);
 R_API RGraphNode* r_graph_get_current (RGraph *t, ut64 addr);
 R_API RGraphNode* r_graph_get_node (RGraph *t, ut64 addr, boolt c);
@@ -264,7 +264,7 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 
 #define R_BUF_CUR UT64_MAX
-R_API RBuffer *r_buf_new();
+R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
@@ -301,7 +301,7 @@ R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
 
 /* FACTORY POOL */
-R_API RPoolFactory *r_poolfactory_instance();
+R_API RPoolFactory *r_poolfactory_instance(void);
 R_API void r_poolfactory_init (int limit);
 R_API RPoolFactory* r_poolfactory_new(int limit);
 R_API void *r_poolfactory_alloc(RPoolFactory *pf, int nodesize);
@@ -309,7 +309,7 @@ R_API void r_poolfactory_stats(RPoolFactory *pf);
 R_API void r_poolfactory_free(RPoolFactory *pf);
 
 R_API int r_mem_count(const ut8 **addr);
-R_API RCache* r_cache_new();
+R_API RCache* r_cache_new(void);
 R_API void r_cache_free(RCache *c);
 R_API const ut8* r_cache_get(RCache *c, ut64 addr, int *len);
 R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len);
@@ -336,7 +336,7 @@ R_API ut64 r_num_get(RNum *num, const char *str);
 R_API int r_num_to_bits(char *out, ut64 num);
 R_API int r_num_to_trits(char *out, ut64 num);	//Rename this please
 R_API int r_num_rand(int max);
-R_API void r_num_irand();
+R_API void r_num_irand(void);
 R_API ut16 r_num_ntohs (ut16 foo);
 R_API int r_is_valid_input_num_value(RNum *num, const char *input_value);
 R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
@@ -480,19 +480,19 @@ R_API boolt r_file_exists(const char *str);
 R_API boolt r_file_fexists(const char *fmt, ...);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
-R_API char *r_file_tmpdir();
+R_API char *r_file_tmpdir(void);
 
 #define ON_WINDOWS_OS 0xA
 #define ON_NIX_OS 0xB
 
-R_API int r_what_os_am_i ();
+R_API int r_what_os_am_i (void);
 
 
-R_API ut64 r_sys_now();
-R_API int r_sys_stop ();
+R_API ut64 r_sys_now(void);
+R_API int r_sys_stop (void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
-R_API int r_sys_getpid();
+R_API int r_sys_getpid(void);
 R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
@@ -511,7 +511,7 @@ R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API char *r_sys_whoami (char *buf);
-R_API char *r_sys_getdir();
+R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
@@ -542,7 +542,7 @@ R_API void r_log_file(const char *str);
 R_API void r_log_progress(const char *str, int percent);
 
 /* Ranges */
-R_API RRange *r_range_new();
+R_API RRange *r_range_new(void);
 R_API RRange *r_range_new_from_string(const char *string);
 R_API RRange *r_range_free(RRange *r);
 R_API RRangeItem *r_range_item_get(RRange *r, ut64 addr);
@@ -655,7 +655,7 @@ typedef struct r_strht_t {
 	RList *ls;
 } RStrHT;
 
-R_API RStrHT *r_strht_new();
+R_API RStrHT *r_strht_new(void);
 R_API void r_strht_free(RStrHT *s);
 R_API const char *r_strht_get(RStrHT *s, const char *key);
 R_API int r_strht_set(RStrHT *s, const char *key, const char *val);
@@ -680,7 +680,7 @@ R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
 
-R_API char **r_sys_get_environ ();
+R_API char **r_sys_get_environ (void);
 R_API void r_sys_set_environ (char **e);
 
 

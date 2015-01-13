@@ -288,14 +288,14 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace);
 
-R_API RCons *r_cons_new ();
-R_API RCons *r_cons_singleton ();
-R_API RCons *r_cons_free ();
-R_API char *r_cons_lastline ();
+R_API RCons *r_cons_new (void);
+R_API RCons *r_cons_singleton (void);
+R_API RCons *r_cons_free (void);
+R_API char *r_cons_lastline (void);
 
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break(RConsBreak cb, void *user);
-R_API void r_cons_break_end();
+R_API void r_cons_break_end(void);
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
@@ -307,22 +307,22 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 
 /* control */
 R_API char *r_cons_editor (const char *file, const char *str);
-R_API void r_cons_reset();
-R_API void r_cons_reset_colors();
-R_API void r_cons_print_clear();
-R_API void r_cons_zero();
+R_API void r_cons_reset(void);
+R_API void r_cons_reset_colors(void);
+R_API void r_cons_print_clear(void);
+R_API void r_cons_zero(void);
 R_API void r_cons_highlight (const char *word);
-R_API void r_cons_clear();
-R_API void r_cons_clear00();
+R_API void r_cons_clear(void);
+R_API void r_cons_clear00(void);
 R_API void r_cons_clear_line(int err);
-R_API void r_cons_fill_line();
+R_API void r_cons_fill_line(void);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
 R_API void r_cons_show_cursor (int cursor);
 R_API void r_cons_set_raw(int b);
 R_API void r_cons_set_interactive(int b);
-R_API void r_cons_set_last_interactive();
+R_API void r_cons_set_last_interactive(void);
 
 /* output */
 R_API void r_cons_printf(const char *format, ...);
@@ -330,35 +330,35 @@ R_API void r_cons_strcat(const char *str);
 #define r_cons_puts(x) r_cons_strcat(x)
 R_API void r_cons_strcat_justify (const char *str, int j, char c);
 R_API void r_cons_memcat(const char *str, int len);
-R_API void r_cons_newline();
-R_API void r_cons_filter();
-R_API void r_cons_flush();
+R_API void r_cons_newline(void);
+R_API void r_cons_filter(void);
+R_API void r_cons_flush(void);
 R_API void r_cons_less_str(const char *str);
-R_API void r_cons_less();
-R_API void r_cons_2048();
+R_API void r_cons_less(void);
+R_API void r_cons_2048(void);
 R_API void r_cons_memset(char ch, int len);
-R_API void r_cons_visual_flush();
+R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write (char *buffer);
-R_API int r_cons_is_utf8();
+R_API int r_cons_is_utf8(void);
 
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API int r_cons_controlz(int ch);
-R_API int  r_cons_readchar();
-R_API void r_cons_any_key();
-R_API int  r_cons_eof();
+R_API int  r_cons_readchar(void);
+R_API void r_cons_any_key(void);
+R_API int  r_cons_eof(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set (const char *key, const char *val);
 R_API void r_cons_pal_init(const char *foo);
 R_API char *r_cons_pal_parse(const char *str);
-R_API void r_cons_pal_random();
+R_API void r_cons_pal_random(void);
 R_API const char *r_cons_pal_get (const char *key);
 R_API const char *r_cons_pal_get_i (int n);
 R_API const char *r_cons_pal_get_color(int n);
 R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg);
 R_API void r_cons_pal_list (int rad);
-R_API void r_cons_pal_show ();
+R_API void r_cons_pal_show (void);
 R_API int r_cons_get_size(int *rows);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
@@ -371,7 +371,7 @@ R_API char *r_cons_hud_path(const char *path, int dir);
 R_API char *r_cons_hud_string(const char *s);
 R_API char *r_cons_hud_file(const char *f);
 
-R_API const char *r_cons_get_buffer();
+R_API const char *r_cons_get_buffer(void);
 R_API void r_cons_grep(const char *str);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API int r_cons_grepbuf(char *buf, int len);
@@ -440,22 +440,22 @@ struct r_line_t {
 
 #ifdef R_API
 
-R_API RLine *r_line_new();
-R_API RLine *r_line_singleton();
-R_API void r_line_free();
-R_API char *r_line_get_prompt ();
+R_API RLine *r_line_new(void);
+R_API RLine *r_line_singleton(void);
+R_API void r_line_free(void);
+R_API char *r_line_get_prompt (void);
 R_API void r_line_set_prompt(const char *prompt);
 
 typedef int (RLineReadCallback) (void *user, const char *line);
-R_API char *r_line_readline();
+R_API char *r_line_readline(void);
 R_API char *r_line_readline_cb(RLineReadCallback cb, void *user);
 
 R_API int r_line_hist_load(const char *file);
 R_API int r_line_hist_add(const char *line);
 R_API int r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void (*cb)(const char*));
-R_API void r_line_label_show();
-R_API int r_line_hist_list();
+R_API void r_line_label_show(void);
+R_API int r_line_hist_list(void);
 R_API const char *r_line_hist_get(int n);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))

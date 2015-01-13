@@ -120,7 +120,7 @@ typedef struct r_asm_plugin_t {
 
 #ifdef R_API
 /* asm.c */
-R_API RAsm *r_asm_new();
+R_API RAsm *r_asm_new(void);
 #define r_asm_op_free free
 R_API RAsm *r_asm_free(RAsm *a);
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -146,7 +146,7 @@ R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
 
 /* code.c */
-R_API RAsmCode *r_asm_code_new();
+R_API RAsmCode *r_asm_code_new(void);
 R_API void* r_asm_code_free(RAsmCode *acode);
 R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);

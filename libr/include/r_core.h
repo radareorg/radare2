@@ -170,7 +170,7 @@ R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(RCore *core);
-R_API RCore *r_core_new();
+R_API RCore *r_core_new(void);
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);
 R_API RCore *r_core_ncast(ut64 p);
@@ -315,8 +315,8 @@ typedef struct r_core_asm_hit {
 
 R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args);
 R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, ...);
-R_API RCoreAsmHit *r_core_asm_hit_new();
-R_API RList *r_core_asm_hit_list_new();
+R_API RCoreAsmHit *r_core_asm_hit_new(void);
+R_API RList *r_core_asm_hit_list_new(void);
 R_API void r_core_asm_hit_free(void *_hit);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits);
@@ -433,7 +433,7 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
 /* logs */
 R_API void r_core_log_free(RCoreLog *log);
 R_API void r_core_log_init (RCoreLog *log);
-R_API RCoreLog *r_core_log_new ();
+R_API RCoreLog *r_core_log_new (void);
 R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);

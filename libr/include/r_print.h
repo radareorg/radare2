@@ -66,12 +66,12 @@ typedef struct r_print_t {
 
 #ifdef R_API
 /* RConsBreak handlers */
-R_API int r_print_is_interrupted();
+R_API int r_print_is_interrupted(void);
 R_API void r_print_set_interrupt(int i);
 
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
-R_API RPrint *r_print_new();
+R_API RPrint *r_print_new(void);
 R_API RPrint *r_print_free(RPrint *p);
 R_API int r_print_mute(RPrint *p, int x);
 R_API void r_print_set_flags(RPrint *p, int _flags);

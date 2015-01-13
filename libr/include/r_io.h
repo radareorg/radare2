@@ -267,7 +267,7 @@ typedef struct r_io_range_t {
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))
 
 /* io/plugin.c */
-R_API RIO *r_io_new();
+R_API RIO *r_io_new(void);
 R_API RIO *r_io_free(RIO *io);
 R_API void r_io_set_raw(RIO *io, int raw);
 R_API int r_io_plugin_init(RIO *io);

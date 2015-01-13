@@ -119,7 +119,7 @@ typedef struct r_egg_lang_t {
 } REggLang;
 
 #ifdef R_API
-R_API REgg *r_egg_new ();
+R_API REgg *r_egg_new (void);
 R_API char *r_egg_to_string (REgg *egg);
 R_API void r_egg_free (REgg *egg);
 R_API int r_egg_add (REgg *a, REggPlugin *foo);

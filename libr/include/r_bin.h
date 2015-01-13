@@ -419,7 +419,7 @@ R_API int r_bin_is_static (RBin *bin);
 R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
-R_API RBin* r_bin_new();
+R_API RBin* r_bin_new(void);
 R_API void r_bin_iobind(RBin *bin, RIO *io);
 R_API RBinFile * r_bin_cur (RBin *bin);
 R_API RBinObject * r_bin_cur_object (RBin *bin);

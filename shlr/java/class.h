@@ -921,7 +921,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(RBinJavaObj *bin, ut16 name
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
 
-R_API RBinClass* r_bin_java_allocate_r_bin_class();
+R_API RBinClass* r_bin_java_allocate_r_bin_class(void);
 R_API RList *r_bin_java_get_classes(RBinJavaObj *bin);
 R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
@@ -934,7 +934,7 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
 R_API const RBinJavaObj* r_bin_java_get_bin_obj(const char *name);
 R_API int r_bin_java_update_file (const char *key, RBinJavaObj *bin_obj);
 R_API RBinJavaObj * r_bin_java_get_sdb_bin_obj(const char * filename);
-R_API RList * r_bin_java_get_bin_obj_list();
+R_API RList * r_bin_java_get_bin_obj_list(void);
 R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj);
 R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin_obj);
 R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin);
@@ -955,9 +955,9 @@ R_API ut16 U(r_bin_java_calculate_method_access_value)(const char * access_flags
 R_API ut16 U(r_bin_java_calculate_field_access_value)(const char * access_flags_str);
 R_API ut16 U(r_bin_java_calculate_class_access_value)(const char * access_flags_str);
 
-R_API RList * U(retrieve_all_method_access_string_and_value)();
-R_API RList * U(retrieve_all_field_access_string_and_value)();
-R_API RList * U(retrieve_all_class_access_string_and_value)();
+R_API RList * U(retrieve_all_method_access_string_and_value)(void);
+R_API RList * U(retrieve_all_field_access_string_and_value)(void);
+R_API RList * U(retrieve_all_class_access_string_and_value)(void);
 R_API char * retrieve_method_access_string(ut16 flags);
 R_API char * retrieve_field_access_string(ut16 flags);
 R_API char * retrieve_class_method_access_string(ut16 flags);

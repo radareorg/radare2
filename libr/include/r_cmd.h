@@ -92,7 +92,7 @@ R_API int r_core_plugin_check(RCmd *cmd, const char *a0);
 R_API int r_core_plugin_deinit(RCmd *cmd);
 
 /* review api */
-R_API RCmd *r_cmd_new();
+R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_set_data(RCmd *cmd, void *data);
 R_API int r_cmd_add(RCmd *cmd, const char *command, const char *desc, r_cmd_callback(callback));

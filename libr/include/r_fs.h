@@ -53,8 +53,8 @@ typedef struct r_fs_plugin_t {
 	boolt (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
-	void (*init)();
-	void (*fini)();
+	void (*init)(void);
+	void (*fini)(void);
 	int (*mount)(RFSRoot *root);
 	void (*umount)(RFSRoot *root);
 } RFSPlugin;
@@ -87,7 +87,7 @@ enum {
 };
 
 #ifdef R_API
-R_API RFS *r_fs_new();
+R_API RFS *r_fs_new(void);
 R_API void r_fs_view(RFS* fs, int view);
 R_API void r_fs_free(RFS* fs);
 R_API void r_fs_add(RFS *fs, RFSPlugin *p);
@@ -116,7 +116,7 @@ R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
 R_API void r_fs_partition_free(RFSPartition *p);
 R_API const char *r_fs_partition_type(const char *part, int type);
 R_API const char *r_fs_partition_type_get(int n);
-R_API int r_fs_partition_get_size(); // WTF. wrong function name
+R_API int r_fs_partition_get_size(void); // WTF. wrong function name
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;

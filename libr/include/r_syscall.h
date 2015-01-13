@@ -73,7 +73,7 @@ typedef struct r_syscall_arch_plugin_t {
 R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s);
 R_API void r_syscall_item_free(RSyscallItem *si);
 
-R_API RSyscall *r_syscall_new();
+R_API RSyscall *r_syscall_new(void);
 R_API void r_syscall_free(RSyscall *ctx);
 R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int bits);
 R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);

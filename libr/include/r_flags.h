@@ -75,7 +75,7 @@ typedef struct r_flag_bind_t {
 R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
 
 #ifdef R_API
-R_API RFlag * r_flag_new();
+R_API RFlag * r_flag_new(void);
 R_API RFlag * r_flag_free(RFlag *f);
 R_API void r_flag_list(RFlag *f, int rad);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);

@@ -88,7 +88,7 @@ typedef struct r_bp_trace_t {
 } RBreakpointTrace;
 
 #ifdef R_API
-R_API RBreakpoint *r_bp_new();
+R_API RBreakpoint *r_bp_new(void);
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
@@ -136,7 +136,7 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to);
 R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from);
 R_API void r_bp_traptrace_list(RBreakpoint *bp);
 R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
-R_API RList *r_bp_traptrace_new();
+R_API RList *r_bp_traptrace_new(void);
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 
 /* plugin pointers */
