@@ -256,6 +256,18 @@ function update_minimap() {
     $("#minimap").css("border", "1px solid " + r2ui.colors['.ec_gui_background']);
     $("#minimap_area").css("background", r2ui.colors['.ec_gui_background']);
   }
+
+  $("#minimap_area").draggable({
+    containment: "parent",
+    stop: function( event, ui ) {
+      var delta_x = ui.position.left/scale;
+      var delta_y = ui.position.top/scale;
+      if (delta_x < 0) delta_x = 0;
+      if (delta_y < 0) delta_y = 0;
+      if ($("#radareApp_mp").length) $("#center_panel").scrollTo({ top:delta_y, left:delta_x - delta/scale } );
+      else el.scrollTo({ top:delta_y, left:delta_x - delta/scale } );
+    }
+  });
 }
 
 function reposition_graph() {
@@ -919,4 +931,10 @@ function readCookie(name) {
 
 function eraseCookie(name) {
     createCookie(name,"",-1);
+}
+
+function do_randomcolors(element, inEvent) {
+  r2.cmd ('ecr', function() {
+    r2ui.load_colors ();
+  });
 }
