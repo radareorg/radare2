@@ -385,11 +385,12 @@ static Edge *edges = NULL;
 static int n_nodes = 0;
 static int n_edges = 0;
 static int callgraph = 0;
+static int instep = 0;
 
 static void r_core_graph_refresh (RCore *core) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
-	if (core->io->debug) {
+	if (instep && core->io->debug) {
 		r_core_cmd0 (core, "sr pc");
 		{
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -427,9 +428,8 @@ static void r_core_graph_refresh (RCore *core) {
 	G (-can->sx, -can->sy);
 	snprintf (title, sizeof (title)-1,
 		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s",
-		fcn->addr, 
-ostack.size,
-fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
+		fcn->addr, ostack.size, fcn->name,
+		n_nodes, n_edges, callgraph?"CG":"BB");
 	W (title);
 
 	r_cons_canvas_print (can);
@@ -445,7 +445,7 @@ fcn->name, n_nodes, n_edges, callgraph?"CG":"BB");
 }
 
 static void reloadNodes(RCore *core) {
-int i;
+	int i;
 	n_nodes = bbNodes (core, fcn, &nodes);
 	if (!nodes) {
 		free (can);
@@ -459,7 +459,7 @@ int i;
 		Node_print (can, &nodes[i], i==curnode);
 	}
 	Layout_depth (nodes, edges);
-// update edges too maybe..
+	// update edges too maybe..
 }
 
 static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
@@ -582,10 +582,12 @@ repeat:
 		}
 		break;
 	case 'z':
+		instep = 1;
 		r_core_cmd0 (core, "ds;.dr*");
 		reloadNodes (core);
 		break;
 	case 'Z':
+		instep = 1;
 		r_core_cmd0 (core, "dso;.dr*");
 		reloadNodes (core);
 		break;
@@ -655,6 +657,7 @@ repeat:
 		break;
 	case '.':
 		updateSeek (can, &N, w, h, 1);
+		instep = 1;
 		break;
 	case 't':
 		cn = Edge_node (edges, curnode, 0);
