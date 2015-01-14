@@ -425,6 +425,19 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return 0;
 	}
 	// TODO: Use arch to identify arch before memcmp's
+	// ARM
+	ut64 text = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
+	ut64 text_end = text + bin->size;
+	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
+		// endian stuff here
+		ut32 *addr = buf+0x34;
+		/*
+		   0x00012000    00b0a0e3     mov fp, 0
+		   0x00012004    00e0a0e3     mov lr, 0
+		*/
+		if (*addr > text && *addr < (text_end))
+			return *addr - bin->baddr;
+	}
 
 	// MIPS
 	/* get .got, calculate offset of main symbol */
