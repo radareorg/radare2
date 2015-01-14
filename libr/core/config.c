@@ -804,7 +804,7 @@ static int cb_searchin(void *user, void *data) {
 		r_cons_printf ("raw\nblock\nfile\nio.maps\nio.maprange\nio.section\n" \
 							"io.sections\nio.sections.write\nio.sections.exec\n" \
 							"dbg.stack\ndbg.heap\ndbg.map\ndbg.maps\n"\
-							"dbg.maps.exec\ndbg.maps.write\n");
+							"dbg.maps.exec\ndbg.maps.write\nanal.fcn\nanal.bb\n");
  		return R_FALSE;
  	}
  	return R_TRUE;
