@@ -515,6 +515,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	//printf ("prewait\n");
 	if (pid==-1)
 		return R_DBG_REASON_UNKNOWN;
+	// XXX: this is blocking, ^C will be ignored
 	ret = waitpid (pid, &status, 0);
 	//printf ("status=%d (return=%d)\n", status, ret);
 	// TODO: switch status and handle reasons here
@@ -881,6 +882,8 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 // TODO: add flag for type
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int pid = dbg->pid;
+	if (size<1)
+		return R_FALSE;
 #if __WINDOWS__
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
@@ -919,10 +922,13 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
         unsigned int gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
 
+#if 0
+	// if uncommented, it will break x86-32 debugging from x86-64 (ios simulator f.ex)
 	if (size<sizeof (R_DEBUG_REG_T)) {
 		eprintf ("Small buffer passed to r_debug_read\n");
 		return R_FALSE;
 	}
+#endif
         ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
         if (ret != KERN_SUCCESS) {
                 return R_FALSE;

@@ -1,6 +1,9 @@
 include ../../../global.mk
 F=
 F+= dos-x86-16
+F+= ios-x86-32
+F+= ios-arm-32
+F+= ios-arm-64
 F+= linux-x86-32
 F+= linux-x86-64
 F+= linux-arm-32

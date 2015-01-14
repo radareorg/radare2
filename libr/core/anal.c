@@ -99,11 +99,11 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	}
 
 	// check if it's ascii
-	int not_ascii = 0;
 	if (addr != 0) {
+		int not_ascii = 0;
 		int i, failed_sequence, dir, on;
 		for (i=0; i<8; i++) {
-			ut8 n = (addr>> (i*8)) & 0xff;
+			ut8 n = (addr >> (i*8)) & 0xff;
 			if (n && !IS_PRINTABLE (n))
 				not_ascii = 1;
 		}
@@ -1619,7 +1619,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	char *str;
         int i, j;
 
-count = R_MIN (count, len);
+	count = R_MIN (count, len);
 	//if (addr != core->offset) {
 		buf = malloc (len);
 		if (buf == NULL)

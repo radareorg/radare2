@@ -782,6 +782,28 @@ free (rf);
 					r_cons_printf (" %sW%s", c, cend);
 				if (type & R_ANAL_ADDR_TYPE_EXEC)
 					r_cons_printf (" %sX%s", c, cend);
+				{
+					int ret, len = 0;
+					int is_text = 0;
+					ut8 buf[128];
+					buf[0]=0;
+					ret = r_io_read_at (core->io, value, buf, sizeof(buf));
+					if (ret && buf[0] && buf[0] != 0xff)
+					for (i=0; i<sizeof(buf)-1; i++) {
+						if (buf[i]==0) {
+							is_text = len;
+							break;
+						}
+						if (!IS_PRINTABLE(buf[i])) {
+							is_text = 0;
+							break;
+						}
+						len++;
+					}
+					if (is_text) {
+						r_cons_printf (" \"%s\"", buf);
+					}
+				}	
 			}
 			r_cons_newline ();
 		}
