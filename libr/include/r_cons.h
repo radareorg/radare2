@@ -167,6 +167,7 @@ typedef struct r_cons_t {
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
+	int is_wine;
 	RConsPalette pal;
 	struct r_line_t *line;
 	const char **vline;

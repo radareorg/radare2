@@ -164,6 +164,7 @@ R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
 	I.highlight = NULL;
 	I.event_interrupt = NULL;
+	I.is_wine = -1;
 	I.fps = 0;
 	I.blankline = R_TRUE;
 	I.teefile = NULL;

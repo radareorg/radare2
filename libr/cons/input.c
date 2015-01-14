@@ -2,6 +2,11 @@
 
 #include <r_cons.h>
 #include <string.h>
+#if __WINDOWS__
+#include <conio.h>
+#endif
+
+#define I r_cons_singleton()
 
 #if 0 
 //__UNIX__
@@ -208,6 +213,31 @@ R_API void r_cons_any_key() {
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 
+#if __WINDOWS__
+static char getwinkey() {
+	char i=0;
+	int res=0;
+	for(i=8; i <= 255; i++) {
+		res = GetAsyncKeyState (i);
+		if (res & 0x7FFF) {
+			switch (i) {
+			case 33: return 'K';
+			case 34: return 'J';
+			case 37: return 'h';
+			case 38: return 'k';
+			case 39: return 'l';
+			case 40: return 'j';
+			default:
+				if (i>=0x30 && i<=0x5a)
+					return '1';
+				else return '2';
+			}
+		}
+	}
+	return '2';
+}
+
+#endif
 R_API int r_cons_readchar() {
 	char buf[2];
 	buf[0] = -1;
@@ -215,10 +245,26 @@ R_API int r_cons_readchar() {
 	BOOL ret;
 	DWORD out;
 	DWORD mode;
+	char b;
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
-	ret = ReadConsole (h, buf, 1, &out, NULL);
+ignore:
+	if (!I->is_wine) {
+		while (!_kbhit ());
+		b = getwinkey ();
+		if (b=='2')
+			goto ignore;
+		else if (b=='1') 
+			ret = ReadConsole (h, buf, 1, &out, NULL);
+		else {
+			buf[0]=b;
+			ret=1;
+		}
+	} else {
+		ret = ReadConsole (h, buf, 1, &out, NULL);
+	}
+	FlushConsoleInputBuffer(h);
 	if (!ret)
 		return -1;
 	SetConsoleMode (h, mode);

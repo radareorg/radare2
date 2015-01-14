@@ -1,9 +1,9 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+
 #include <r_cons.h>
+#define I r_cons_singleton()
 
 #if __WINDOWS__
-static int is_wine = -1;
-
 static void fill_tail (int cols, int lines) {
 	/* fill the rest of screen */
 	lines++; // hack
@@ -25,7 +25,7 @@ static void w32_clear() {
 	const COORD startCoords = { 0, 0 };
 	DWORD dummy;
 
-	if (is_wine) {
+	if (I->is_wine==1) {
 		write (1, "\x1b[0;0H", 6);
 		write (1, "\x1b[0m", 4);
 		write (1, "\x1b[2J", 4);
@@ -44,7 +44,7 @@ void w32_gotoxy(int x, int y) {
         COORD coord;
         coord.X = x;
         coord.Y = y;
-	if (is_wine) {
+	if (I->is_wine==1) {
 		write (1, "\x1b[0;0H", 6);
 	}
         if (!hStdout)
@@ -73,8 +73,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 	int inv = 0;
 	int linelen = 0;
 	int lines, cols = r_cons_get_size (&lines);
-	if (is_wine==-1) {
-		is_wine = r_file_is_directory ("/proc")? 1: 0;
+	if (I->is_wine==-1) {
+		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
 	}
 
 	if (len<0)
