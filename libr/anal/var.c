@@ -296,5 +296,5 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind) {
 				var->delta
 			);
 	}
-	r_free_list (list);
+	r_list_free (list);
 }
