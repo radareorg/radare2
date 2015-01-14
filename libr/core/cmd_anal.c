@@ -98,6 +98,7 @@ static int var_cmd(RCore *core, const char *str) {
 			const char kind = (char) type;
 			r_str_split(old_name, ' ');
 			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, kind, old_name, new_name);
+			free (old_name);
 			goto end;
 		case 'j':
 			list = r_anal_var_list (core->anal, fcn, type);
@@ -1723,6 +1724,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 				}
 				r_list_free (list);
 			}
+			free (buf_asm);
 		}
 		break;
 	case 'F':

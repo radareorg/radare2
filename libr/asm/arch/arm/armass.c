@@ -117,7 +117,7 @@ static char *getrange(char *s) {
 			*p=0;
 		}
 		if (*s=='[' || *s==']')
-			strcpy (s, s+1);
+			memmove (s, s+1, strlen (s+1));
 		if (*s=='}')
 			*s=0;
 		s++;

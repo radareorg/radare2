@@ -505,8 +505,8 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 	return UT64_MAX;
 }
 
-static boolt is_end_gadget(const RAnalOp aop, const ut8 crop) {
-	switch(aop.type) {
+static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
+	switch(aop->type) {
 	case R_ANAL_OP_TYPE_TRAP:
 	case R_ANAL_OP_TYPE_RET:
 	case R_ANAL_OP_TYPE_UCALL:
@@ -516,7 +516,7 @@ static boolt is_end_gadget(const RAnalOp aop, const ut8 crop) {
 		return R_TRUE;
 	}
 	if (crop) { //if conditional jumps, calls and returns should be used for the gadget-search too
-		switch (aop.type) {
+		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
 		case R_ANAL_OP_TYPE_CCALL:
@@ -704,7 +704,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	int delta = 0;
 	ut8 *buf;
 	RIOMap *map;
-	RList/*<RIOMap>*/ *list;
+	RList/*<RIOMap>*/ *list = NULL;
 	RAsmOp asmop;
 	RListIter *itermap = NULL;
 	boolt json_first = 1;
@@ -718,6 +718,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	if (max_instr <= 0) {
+		r_list_free (badstart);
+		r_list_free (end_list);
 		eprintf ("ROP length (rop.len) must be greater than 0\n");
 		return R_FALSE;
 	}
@@ -781,6 +783,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			if (delta < 1) {
 				free (gregexp);
 				r_list_free (rx_list);
+				r_list_free (end_list);
 				r_list_free (badstart);
 				return R_FALSE;
 			}
@@ -804,7 +807,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					delta-i) <= 0) {
 				continue;
 			}
-			if (is_end_gadget (end_gadget, crop)) {
+			if (is_end_gadget (&end_gadget, crop)) {
 				if (maxhits && r_list_length (end_list) >= maxhits) {
 					// limit number of high level rop gadget results
 					break;

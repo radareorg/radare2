@@ -797,6 +797,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 									var->delta);
 						}
 					}
+					r_list_free (vars);
+					r_list_free (args);
 				}
 			}
 		}
@@ -2506,6 +2508,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 						r_anal_xrefs_type_tostring (ref->type));
 				}
 				r_cons_printf ("]");
+				r_list_free (xrefs);
 			}
 		}
 

@@ -164,8 +164,11 @@ R_API char *r_file_path(const char *bin) {
 R_API char *r_stdin_slurp (int *sz) {
 #define BS 1024
 #if __UNIX__
-	int i, ret, newfd = dup(0);
-	char *buf = malloc (BS);
+	int i, ret, newfd;
+	char *buf;
+	if (!(newfd = dup(0)))
+		return NULL;
+	buf = malloc (BS);
 	for (i=ret=0;;i+=ret) {
 		buf = realloc (buf, i+BS);
 		ret = read (0, buf+i, BS);

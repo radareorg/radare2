@@ -11,7 +11,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 	struct stat sb;
 #endif
 	const char *n = fpath;
-	char *nn, *u_rwx = "";
+	char *nn, *u_rwx = NULL;
 	int sz = r_file_size (n);
 	int perm, isdir, uid = 0, gid = 0;
 	int fch = '-';

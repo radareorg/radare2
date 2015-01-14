@@ -205,6 +205,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 		str[strlen (tstr)] = 0;
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
+		free (tstr);
 		return R_FALSE;
 	}
 	free (tstr);

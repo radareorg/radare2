@@ -1325,7 +1325,7 @@ R_API void r_core_visual_define (RCore *core) {
 			r_cons_flush ();
 			r_line_set_prompt ("format: ");
 			strcpy (cmd, "Cf 0 ");
-			if (r_cons_fgets (cmd+5, sizeof (cmd)-4, 0, NULL) > 0) {
+			if (r_cons_fgets (cmd+5, sizeof (cmd)-6, 0, NULL) > 0) {
 				r_core_cmd (core, cmd, 0);
 				r_cons_set_raw (1);
 				r_cons_show_cursor (R_FALSE);
