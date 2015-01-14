@@ -370,6 +370,39 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 			*to = r_io_size (core->io);
 		}
 	} else
+	if (!strcmp (mode, "anal.fcn") || !strcmp (mode, "anal.bb")) {
+		if (core->io->va) {
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				*from = f->addr;
+				*to = f->addr + f->size;
+
+				/* Search only inside the basic block */
+				if (!strcmp (mode, "anal.bb")) {
+					RListIter *iter;
+					struct r_anal_bb_t *bb;
+
+					r_list_foreach (f->bbs, iter, bb) {
+						*from = core->offset;
+						if ((*from >= bb->addr) && (*from < (bb->addr+bb->size))) {
+							*from = bb->addr;
+							*to = bb->addr + bb->size;
+							break;
+						}
+					}
+				}
+			} else {
+				eprintf("WARNING: search.in = ( anal.bb | anal.fcn )" \
+					"requires to seek into a valid function\n");
+				*from = core->offset;
+				*to = core->offset+1;
+			}
+		} else {
+			*from = core->offset;
+			*to = r_io_size (core->io);
+		}
+	} else
 	if (!strncmp (mode, "io.sections", sizeof("io.sections")-1)) {
 		if (core->io->va) {
 			int mask = 0;
