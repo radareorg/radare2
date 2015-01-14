@@ -510,7 +510,9 @@ static int esil_trap(RAnalEsil *esil) {
 }
 
 static int esil_syscall(RAnalEsil *esil) {
-	if (esil && esil->anal && esil->anal->cur && esil->anal->cur->esil_trap) {
+	if (!esil)
+		return -1;
+	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_trap) {
 		return esil->anal->cur->esil_trap (esil);
 	}
 	// pop number

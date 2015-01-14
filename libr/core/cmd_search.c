@@ -61,8 +61,10 @@ static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
 	int i, align = core->search->align;
 	int hitctr = 0;
 #define cbhit(y) \
-	r_cons_printf ("f hit0_%d = 0x%"PFMT64x"\n", hitctr, y);\
-	hitctr++;
+	do { \
+	r_cons_printf ("f hit0_%d = 0x%"PFMT64x"\n", hitctr, y); \
+	hitctr++; \
+	} while (0);
 
 	if (vmin >= vmax) {
 		eprintf ("Error: vmin must be lower than vmax\n");
@@ -431,7 +433,7 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 
 					if (stack && strstr(map->name, "stack"))
 						add = 1;
-					else if ((heap && (map->perm | R_IO_WRITE)) && \
+					else if ((heap && (map->perm & R_IO_WRITE)) && \
 							strstr(map->name, "heap"))
 						add = 1;
 
@@ -657,7 +659,8 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 				iter->n?",":"");
 			free (buf);
 		}
-		r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+		if (hit)
+			r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
 		break;
 	case 'l':
 		// Print gadgets in a 'linear manner', each sequence
