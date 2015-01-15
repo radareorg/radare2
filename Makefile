@@ -64,7 +64,7 @@ w32dist:
 	mkdir -p w32dist/include/libr
 	cp libr/include/*.h w32dist/include/libr
 	#mkdir -p w32dist/include/libr/sflib
-	cp -f doc/fortunes w32dist/share/doc/radare2
+	cp -f doc/fortunes.* w32dist/share/doc/radare2
 	mv w32dist radare2-w32-${VERSION}
 	rm -f radare2-w32-${VERSION}.zip
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
