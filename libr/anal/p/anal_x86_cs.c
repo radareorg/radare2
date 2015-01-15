@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -36,30 +36,54 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 		return strdup (buf);
 	case X86_OP_MEM:
 		{
-		const char *base = cs_reg_name (handle, op.reg);
+		const char *base = cs_reg_name (handle, op.mem.base);
 		//const char *index =  cs_x86_regnames[op.mem.index];
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
+		if (!base) base = "(null)";
 		if (scale>1) {
 			if (set>1) {
-				snprintf (buf, sizeof (buf),
+				if (disp) {
+					snprintf (buf, sizeof (buf),
 						"%s,%d,+,%d,*",
 						base, (int)disp, scale);
+				} else {
+					snprintf (buf, sizeof (buf),
+						"%s,%d,*",
+						base, scale);
+				}
 			} else {
-				snprintf (buf, sizeof (buf),
+				if (disp) {
+					snprintf (buf, sizeof (buf),
 						"%s,%d,+,%d,*,[%d]",
 						base, (int)disp, scale, op.size);
+				} else {
+					snprintf (buf, sizeof (buf),
+						"%s,%d,*,[%d]",
+						base, scale, op.size);
+				}
 			}
 		} else {
 			if (set>1) {
-				snprintf (buf, sizeof (buf),
+				if (disp) {
+					snprintf (buf, sizeof (buf),
 						"%s,%d,+",
 						base, (int)disp);
+				} else {
+					snprintf (buf, sizeof (buf),
+						"%s", base);
+				}
 			} else {
-				snprintf (buf, sizeof (buf),
+				if (disp) {
+					snprintf (buf, sizeof (buf),
 						"%s,%d,+,%s[%d]",
 						base, (int)disp,
 						set?"=":"", op.size);
+				} else {
+					snprintf (buf, sizeof (buf),
+						"%s,%s[%d]",
+						base, set?"=":"", op.size);
+				}
 			}
 		}
 		}
@@ -529,7 +553,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				case X86_OP_MEM:
 					op->type = R_ANAL_OP_TYPE_UCALL;
 					op->jump = UT64_MAX;
-					if (INSOP(0).mem.base== 0) {
+					if (INSOP(0).mem.base == 0) {
 						op->ptr = INSOP(0).mem.disp;
 					}
 					break;
@@ -543,10 +567,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 							"%d,%s,+,"
 							"%d,%s,-=,%s,"
 							"=[],"
-							"%"PFMT64d",%s,=",
+							"%s,%s,=",
 							op->size, pc,
 							rs, sp, sp,
-							op->jump, pc);
+							getarg(handle, insn, 0, 1), pc);
 				}
 				break;
 			case X86_INS_JMP:
