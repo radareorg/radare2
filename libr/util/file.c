@@ -304,18 +304,34 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 }
 
 R_API char *r_file_slurp_random_line(const char *file) {
+  int i = 0;
+  return r_file_slurp_random_line_count(file, &i);
+}
+
+R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
+	/* Reservoir Sampling */
 	char *ptr = NULL, *str;
-	int sz, i, lines = 0;
+	int sz, i, lines, selection = -1;
 	struct timeval tv;
+	int start = *line;
 
 	if ((str = r_file_slurp (file, &sz))) {
 		gettimeofday (&tv,NULL);
 		srand (getpid()+tv.tv_usec);
-		for (i=0; str[i]; i++)
-			if (str[i]=='\n')
-				lines++;
+		for (i=0; str[i]; i++) {
+			if (str[i]=='\n') {
+				if (rand() % (++(*line)) == 0) {
+					selection = (*line - 1);  /* The line we want. */
+				}
+			}
+		}
+		if ((selection < start) || (selection == -1)) {
+			free (str);
+			return NULL;
+		} else {
+			lines = selection - start;
+		}
 		if (lines>0) {
-			lines = (rand()%lines);
 			for (i=0; str[i] && lines; i++)
 				if (str[i]=='\n')
 					lines--;

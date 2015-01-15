@@ -346,8 +346,30 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'o':
 		{ // TODO: use file.fortunes // can be dangerous in sandbox mode
-			char *file = R2_PREFIX"/share/doc/radare2/fortunes";
-			char *line = r_file_slurp_random_line (file);
+			char *fortunes_tips = R2_PREFIX"/share/doc/radare2/fortunes.tips";
+			char *fortunes_fun = R2_PREFIX"/share/doc/radare2/fortunes.fun";
+			char *fortunes_nsfw = R2_PREFIX"/share/doc/radare2/fortunes.nsfw";
+			char *types = (char *)r_config_get(core->config, "cfg.fortunetype");
+			char *line = NULL, *templine = NULL;
+			int i = 0;
+			if (strstr(types, "tips")) {
+				templine = r_file_slurp_random_line_count (fortunes_tips, &i);
+				line = templine;
+			}
+			if (strstr(types, "fun")) {
+				templine = r_file_slurp_random_line_count (fortunes_fun, &i);
+				if (templine) {
+					free (line);
+					line = templine;
+				}
+			}
+			if (strstr(types, "nsfw")) {
+				templine = r_file_slurp_random_line_count (fortunes_nsfw, &i);
+				if (templine) {
+					free (line);
+					line = templine;
+				}
+			}
 			if (line) {
 				r_cons_printf (" -- %s\n", line);
 				free (line);
