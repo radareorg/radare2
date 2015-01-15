@@ -1343,7 +1343,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 	}
 
 	ptr++;
-	if (check_format_type(ptr, file_formats[m->type]) == -1) {
+	if (ptr && check_format_type(ptr, file_formats[m->type]) == -1) {
 		/*
 		 * TODO: this error message is unhelpful if the format
 		 * string is not one character long

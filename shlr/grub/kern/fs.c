@@ -224,7 +224,7 @@ grub_fs_blocklist_rw (int write, grub_file_t file, char *buf, grub_size_t len)
 	  if (offset + size > p->length)
 	    size = p->length - offset;
 
-	  if ((write) ?
+	  if (buf && (write) ?
 	       grub_disk_write (file->device->disk, 0, p->offset + offset,
 				size, buf) :
 	       grub_disk_read_ex (file->device->disk, 0, p->offset + offset,

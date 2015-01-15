@@ -910,6 +910,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	case RTR_PROT_RAP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+			r_socket_free(fd);
 			return;
 		}
 		eprintf ("Connected to %s at port %s\n", host, port);
@@ -925,6 +926,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, core->assembler->big_endian);
 		if (buf[0] != (char)(RTR_RAP_OPEN|RTR_RAP_REPLY) || i<= 0) {
 			eprintf ("Error: Wrong reply\n");
+			r_socket_free(fd);
 			return;
 		}
 		eprintf ("ok\n");
@@ -933,6 +935,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
+			r_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;
@@ -942,6 +945,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+			r_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;
