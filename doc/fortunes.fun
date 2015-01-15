@@ -27,7 +27,6 @@ Wait a moment..
 Don't do this.
 No such file or directory.
 Default scripting languages are NodeJS and Python.
-Are you fucking coding me?
 -bash: r2: command not found
 Press any key to continue...
 Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
