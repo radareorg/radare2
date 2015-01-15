@@ -1317,7 +1317,7 @@ static int cmd_search(void *data, const char *input) {
 	}
 
 	/* Quick & dirty check for json output */
-	if (input[1] == 'j') {
+	if ((input[1] == 'j') && (input[0] != ' ')) {
 		json = R_TRUE;
 		param_offset++;
 	}
