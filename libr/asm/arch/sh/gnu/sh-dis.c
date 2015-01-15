@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #define STATIC_TABLE
 #define DEFINE_TABLE
 
@@ -27,10 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #define LITTLE_BIT 2
 
 /* disassemble 1 opcode (16bits), take care of endianness if info->flags&LITTLE_BIT*/
-static int 
-print_insn_shx (memaddr, info)
-     bfd_vma memaddr;
-     struct disassemble_info *info;
+static int
+print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 {
   fprintf_ftype fprintf_fn = info->fprintf_func;
   void *stream = info->stream;
@@ -42,13 +41,13 @@ print_insn_shx (memaddr, info)
 
   status = info->read_memory_func (memaddr, insn, 2, info);
 
-  if (status != 0) 
+  if (status != 0)
     {
       info->memory_error_func (status, memaddr, info);
       return -1;
     }
 
-  if (info->flags & LITTLE_BIT) 
+  if (info->flags & LITTLE_BIT)
     {
       nibs[0] = (insn[1] >> 4) & 0xf;
       nibs[1] = insn[1] & 0xf;
@@ -56,7 +55,7 @@ print_insn_shx (memaddr, info)
       nibs[2] = (insn[0] >> 4) & 0xf;
       nibs[3] = insn[0] & 0xf;
     }
-  else 
+  else
     {
       nibs[0] = (insn[0] >> 4) & 0xf;
       nibs[1] = insn[0] & 0xf;
@@ -65,21 +64,21 @@ print_insn_shx (memaddr, info)
       nibs[3] = insn[1] & 0xf;
     }
 
-  for (op = sh_table; op->name; op++) 
+  for (op = sh_table; op->name; op++)
     {
       int n;
       int imm = 0;
       int rn = 0;
       int rm = 0;
       int rb = 0;
-      int disp_pc;
+      int disp_pc=0;
       bfd_vma disp_pc_addr = 0;
 
       for (n = 0; n < 4; n++)
 	{
 	  int i = op->nibbles[n];
 
-	  if (i < 16) 
+	  if (i < 16)
 	    {
 	      if (nibs[n] == i)
 		continue;
@@ -88,7 +87,7 @@ print_insn_shx (memaddr, info)
 	  switch (i)
 	    {
 	    case BRANCH_8:
-	      imm = (nibs[2] << 4) | (nibs[3]);	  
+	      imm = (nibs[2] << 4) | (nibs[3]);
 	      if (imm & 0x80)
 		imm |= ~0xff;
 	      imm = ((char)imm) * 2 + 4 ;
@@ -126,7 +125,7 @@ print_insn_shx (memaddr, info)
 	      imm = ((nibs[2] << 4) | nibs[3]) <<2;
 	      goto ok;
 	    case DISP_8:
-	      imm = (nibs[2] << 4) | (nibs[3]);	  
+	      imm = (nibs[2] << 4) | (nibs[3]);
 	      goto ok;
 	    case DISP_4:
 	      imm = nibs[3];
@@ -143,7 +142,7 @@ print_insn_shx (memaddr, info)
 	      break;
 	    case REG_B:
 	      rb = nibs[n] & 0x07;
-	      break;	
+	      break;
 	    default:
 	      fprintf(stderr, "sh-dis: abort");
 	      return 0;
@@ -152,15 +151,14 @@ print_insn_shx (memaddr, info)
 
     ok:
       fprintf_fn (stream,"%s\t", op->name);
-      disp_pc = 0;
-      for (n = 0; n < 3 && op->arg[n] != A_END; n++) 
+      for (n = 0; n < 3 && op->arg[n] != A_END; n++)
 	{
 	  if (n && op->arg[1] != A_END)
 	    fprintf_fn (stream, ",");
-	  switch (op->arg[n]) 
+	  switch (op->arg[n])
 	    {
 	    case A_IMM:
-	      fprintf_fn (stream, "#%d", (char)(imm));
+	      fprintf_fn (stream, "0x%02X", (char)(imm));
 	      break;
 	    case A_R0:
 	      fprintf_fn (stream, "r0");
@@ -169,31 +167,31 @@ print_insn_shx (memaddr, info)
 	      fprintf_fn (stream, "r%d", rn);
 	      break;
 	    case A_INC_N:
-	      fprintf_fn (stream, "@r%d+", rn);	
+	      fprintf_fn (stream, "@r%d+", rn);
 	      break;
 	    case A_DEC_N:
-	      fprintf_fn (stream, "@-r%d", rn);	
+	      fprintf_fn (stream, "@-r%d", rn);
 	      break;
 	    case A_IND_N:
-	      fprintf_fn (stream, "@r%d", rn);	
+	      fprintf_fn (stream, "@r%d", rn);
 	      break;
 	    case A_DISP_REG_N:
-	      fprintf_fn (stream, "@(%d,r%d)", imm, rn);	
+	      fprintf_fn (stream, "@(0x%X,r%d)", imm, rn);
 	      break;
 	    case A_REG_M:
 	      fprintf_fn (stream, "r%d", rm);
 	      break;
 	    case A_INC_M:
-	      fprintf_fn (stream, "@r%d+", rm);	
+	      fprintf_fn (stream, "@r%d+", rm);
 	      break;
 	    case A_DEC_M:
-	      fprintf_fn (stream, "@-r%d", rm);	
+	      fprintf_fn (stream, "@-r%d", rm);
 	      break;
 	    case A_IND_M:
-	      fprintf_fn (stream, "@r%d", rm);	
+	      fprintf_fn (stream, "@r%d", rm);
 	      break;
 	    case A_DISP_REG_M:
-	      fprintf_fn (stream, "@(%d,r%d)", imm, rm);	
+	      fprintf_fn (stream, "@(0x%X,r%d)", imm, rm);
 	      break;
 	    case A_REG_B:
 	      fprintf_fn (stream, "r%d_bank", rb);
@@ -201,16 +199,16 @@ print_insn_shx (memaddr, info)
 	    case A_DISP_PC:
 	      disp_pc = 1;
 	      disp_pc_addr = imm + 4 + (memaddr & relmask);
-	      (*info->print_address_func) (disp_pc_addr, info);
+	      fprintf_fn(stream, "@(0x%X,PC)",imm);
 	      break;
 	    case A_IND_R0_REG_N:
 	      fprintf_fn (stream, "@(r0,r%d)", rn);
-	      break; 
+	      break;
 	    case A_IND_R0_REG_M:
 	      fprintf_fn (stream, "@(r0,r%d)", rm);
-	      break; 
+	      break;
 	    case A_DISP_GBR:
-	      fprintf_fn (stream, "@(%d,gbr)",imm);
+	      fprintf_fn (stream, "@(0x%X,gbr)",imm);
 	      break;
 	    case A_R0_GBR:
 	      fprintf_fn (stream, "@(r0,gbr)");
@@ -312,7 +310,7 @@ print_insn_shx (memaddr, info)
       if (!(info->flags & 1)
 	  && (op->name[0] == 'j'
 	      || (op->name[0] == 'b'
-		  && (op->name[1] == 'r' 
+		  && (op->name[1] == 'r'
 		      || op->name[1] == 's'))
 	      || (op->name[0] == 'r' && op->name[1] == 't')
 	      || (op->name[0] == 'b' && op->name[2] == '.')))
@@ -335,42 +333,37 @@ print_insn_shx (memaddr, info)
 	    size = 2;
 	  else
 	    size = 4;
-	  status = info->read_memory_func (disp_pc_addr, bytes, size, info);
-	  if (status == 0)
-	    {
-	      unsigned int val;
 
-	      if (size == 2)
-		{
-		  if ((info->flags & LITTLE_BIT) != 0)
-		    val = bfd_getl16 (bytes);
-		  else
-		    val = bfd_getb16 (bytes);
-		}
-	      else
-		{
-		  if ((info->flags & LITTLE_BIT) != 0)
-		    val = bfd_getl32 (bytes);
-		  else
-		    val = bfd_getb32 (bytes);
-		}
-	      fprintf_fn (stream, "\t! 0x%x", val);
-	    }
+	    //read_memory_func() is broken on ALL GNU disassemblers ! see libr/asm/p/asm_sh.c
+	  status = info->read_memory_func (disp_pc_addr, bytes, size, info);
+	  if (status != 0) {
+			info->memory_error_func (status, memaddr, info);
+			return -1;
+	  }
+	    	uint32_t val;
+
+			if (size == 2) {
+				val=(info->flags & LITTLE_BIT)? bfd_getl16 (bytes):bfd_getb16 (bytes);
+				//(disp,PC) reads are always sign extended
+				val= (val&0x8000)? (val | 0xFFFF0000):(val & 0x0000FFFF);
+			} else {
+				val=(info->flags & LITTLE_BIT)? bfd_getl32 (bytes):bfd_getb32 (bytes);
+			}
+			// XXX this will not work until read_memory_func() is fixed.
+			//fprintf_fn (stream, "\t;[0x%X]=0x%X", (unsigned int) disp_pc_addr, val);
 	}
 
       return 2;
     fail:
       ;
 
-    }
-  fprintf_fn (stream, ".word 0x%x%x%x%x", nibs[0], nibs[1], nibs[2], nibs[3]);
+    }	//for
+  fprintf_fn (stream, ".word 0x%X%X%X%X", nibs[0], nibs[1], nibs[2], nibs[3]);
   return 2;
 }
 
-int 
-print_insn_shl (memaddr, info)
-     bfd_vma memaddr;
-     struct disassemble_info *info;
+int
+print_insn_shl (bfd_vma memaddr, struct disassemble_info *info)
 {
   int r;
 
@@ -379,10 +372,8 @@ print_insn_shl (memaddr, info)
   return r;
 }
 
-int 
-print_insn_shb (memaddr, info)
-     bfd_vma memaddr;
-     struct disassemble_info *info;
+int
+print_insn_shb (bfd_vma memaddr, struct disassemble_info *info)
 {
   int r;
 
