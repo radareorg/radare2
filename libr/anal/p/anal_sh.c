@@ -42,14 +42,16 @@
 //Macros for different instruction types
 
 #define IS_CLRT(x)			x == 0x0008
-#define IS_SETT(x)			x == 0x0018
-#define IS_CLRMAC(x)		x == 0x0028
 #define IS_NOP(x)			x == 0x0009
-#define IS_RTE(x)			x == 0x002b
 #define IS_RTS(x)			x == 0x000b
-#define IS_SLEEP(x)			x == 0x001b
+#define IS_SETT(x)			x == 0x0018
 #define IS_DIV0U(x)			x == 0x0019
+#define IS_SLEEP(x)			x == 0x001b
+#define IS_CLRMAC(x)		x == 0x0028
+#define IS_RTE(x)			x == 0x002b
+//#define IS_CLRS(x)
 
+#define IS_STCSR1(x)		(((x) & 0xF0CF) == 0x0002)		//mask stc Rn,{SR,GBR,VBR,SSR}
 #define IS_BSRF(x)			(x & 0xf0ff) == 0x0003
 #define IS_BRAF(x)			(((x) & 0xf0ff) == 0x0023)
 #define IS_MOVB_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0004)
@@ -60,7 +62,11 @@
 #define IS_MOVW_R0REL_TO_REG(x)		(((x) & 0xF00F) == 0x000D)
 #define IS_MOVL_R0REL_TO_REG(x)		(((x) & 0xF00F) == 0x000E)
 //#define IS_MACL(x)		(((x) & 0xF00F) == 0x000F) //complicated !
-#define IS_MOVT(x)		(((x) & 0xF0FF) == 0x0029)
+#define IS_MOVT(x)			(((x) & 0xF0FF) == 0x0029)
+#define IS_STSMAC(x)		(((x) & 0xF0EF) == 0x000A)		//mask sts Rn, MAC*
+#define IS_STSPR(x)			(((x) & 0xF0FF) == 0x002A)
+//#define IS_STSFPUL(x)		(((x) & 0xF0FF) == 0x005A)		//FP*: todo maybe someday
+//#define IS_STSFPSCR(x)		(((x) & 0xF0FF) == 0x006A)
 
 #define IS_MOVB_REG_TO_REGREF(x)	(((x) & 0xF00F) == 0x2000)
 #define IS_MOVW_REG_TO_REGREF(x)	(((x) & 0xF00F) == 0x2001)
@@ -69,15 +75,15 @@
 #define IS_PUSHB(x)			(((x) & 0xF00F) == 0x2004)
 #define IS_PUSHW(x)			(((x) & 0xF00F) == 0x2005)
 #define IS_PUSHL(x)			(((x) & 0xF00F) == 0x2006)
-//#define IS_DIV0S(x)		(((x) & 0xF00F) == 0x2007)	//todo
+#define IS_DIV0S(x)		(((x) & 0xF00F) == 0x2007)
 #define IS_TSTRR(x)			(((x) & 0xF00F) == 0x2008)
 #define IS_AND_REGS(x)			(((x) & 0xF00F) == 0x2009)
 #define IS_XOR_REGS(x)			(((x) & 0xF00F) == 0x200A)
 #define IS_OR_REGS(x)			(((x) & 0xF00F) == 0x200B)
 #define IS_CMPSTR(x)			(((x) & 0xF00F) == 0x200C)
 #define IS_XTRCT(x)			(((x) & 0xF00F) == 0x200D)
-//#define IS_MULUW(x)			(((x) & 0xF00F) == 0x200E)	//todo
-//#define IS_MULSW(x)			(((x) & 0xF00F) == 0x200F)	//todo
+#define IS_MULUW(x)			(((x) & 0xF00F) == 0x200E)
+#define IS_MULSW(x)			(((x) & 0xF00F) == 0x200F)
 
 
 #define IS_CMPEQ(x)			(((x) & 0xF00F) == 0x3000)
@@ -87,9 +93,9 @@
 #define IS_CMPHI(x)			(((x) & 0xF00F) == 0x3006)
 #define IS_CMPGT(x)			(((x) & 0xF00F) == 0x3007)
 
-//#define IS_DIV1(x)			(((x) & 0xF00F) == 0x3004)	//todo
-//#define IS_DMULU(x)			(((x) & 0xF00F) == 0x3005)	//todo
-//#define IS_DMULS(x)			(((x) & 0xF00F) == 0x300D)	//todo
+#define IS_DIV1(x)			(((x) & 0xF00F) == 0x3004)
+#define IS_DMULU(x)			(((x) & 0xF00F) == 0x3005)
+#define IS_DMULS(x)			(((x) & 0xF00F) == 0x300D)
 
 #define IS_SUB(x)			(((x) & 0xF00F) == 0x3008)
 //#define invalid?(x)			(((x) & 0xF00F) == 0x3009)
@@ -327,7 +333,19 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){
 		//op->dst = //TODO: figure out how to set MACL + MACH
 	} else if (IS_SLEEP(code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
+	} else if (IS_STSMAC(code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
+	} else if (IS_STCSR1(code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
+		//todo: plug in src
+	} else if (IS_STSPR(code)) {	//0000nnnn00101010 sts PR,<REG_N>
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
+		//todo: plug in src
 	}
+
 
 	//TODO Check missing insns, specially STC might be interesting 
 	return op->size;
@@ -385,6 +403,14 @@ static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code){
 		op->src[1] = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 		op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 		//todo: add details ?
+	} else if (IS_DIV0S(code)) {
+		op->type = R_ANAL_OP_TYPE_DIV;
+		//todo: add details?
+	} else if (IS_MULUW(code) || IS_MULSW(code)) {	//0010nnnnmmmm111_ mul{s,u}.w <REG_M>,<REG_N>
+		op->type = R_ANAL_OP_TYPE_MUL;
+		op->src[0] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
+		op->src[1] = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
+		//todo: dest=MACL
 	}
 
 	return op->size;
@@ -407,6 +433,16 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 		op->src[1] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
+	} else if (IS_DIV1(code)) {
+		op->type = R_ANAL_OP_TYPE_DIV;
+		op->src[0] = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
+		op->src[1] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
+		//todo: dest ?
+	} else if (IS_DMULU(code) || IS_DMULS(code)) {
+		op->type = R_ANAL_OP_TYPE_MUL;
+		op->src[0] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
+		op->src[1] = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
+		//todo: dest=MACL,MACH
 	}
 	return op->size;
 }
