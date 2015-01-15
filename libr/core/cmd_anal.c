@@ -1720,11 +1720,11 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 								core->cons->pal.num);
 						r_cons_printf ("%c 0x%"PFMT64x" %s\n",
 								ref->type, ref->at, buf_asm);
+						free (buf_asm);
 					}
 				}
 				r_list_free (list);
 			}
-			free (buf_asm);
 		}
 		break;
 	case 'F':

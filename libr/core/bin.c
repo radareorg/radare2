@@ -176,10 +176,9 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			ut64 vaddr = r_bin_get_vaddr (bin, baddr,
 				string->vaddr, string->paddr);
 			ut64 paddr = string->paddr;
-			q = strdup (string->string);
-			if (maxstr && string->length>maxstr) {
+			if (maxstr && string->length>maxstr)
 				continue;
-			}
+			q = strdup (string->string);
 			for (p=q; *p; p++) {
 				if (*p=='"') *p = '\'';
 				if (*p=='\\') *p = '/';

@@ -821,6 +821,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				r_list_free (rx_list);
 				r_list_free (end_list);
 				r_list_free (badstart);
+				r_list_free (list);
 				return R_FALSE;
 			}
 		}
@@ -831,6 +832,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free (rx_list);
 			r_list_free (end_list);
 			r_list_free (badstart);
+			r_list_free (list);
 			return -1;
 		}
 		r_io_read_at (core->io, from, buf, delta);

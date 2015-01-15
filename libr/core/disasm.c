@@ -2508,8 +2508,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 						r_anal_xrefs_type_tostring (ref->type));
 				}
 				r_cons_printf ("]");
-				r_list_free (xrefs);
 			}
+			r_list_free (xrefs);
 		}
 
 		r_cons_printf ("}");

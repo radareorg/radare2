@@ -272,6 +272,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			}
 			r_list_free (files);
 		}
+		free (input);
 		return;
 	}
 	/* syntax aliasing bridge for 'pf foo=xxd' -> 'pf.foo xxd' */

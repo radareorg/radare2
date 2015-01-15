@@ -764,6 +764,7 @@ R_API void r_cons_highlight (const char *word) {
 			I.buffer = res;
 			I.buffer_len = I.buffer_sz = strlen (res);
 		}
+		free (rword);
 	} else {
 		free (I.highlight);
 		I.highlight = NULL;
