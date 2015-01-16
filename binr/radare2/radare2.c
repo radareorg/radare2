@@ -767,6 +767,7 @@ int main(int argc, char **argv, char **envp) {
 				prj = r_config_get (r.config, "file.project");
 				if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
 					r_core_project_save (&r, prj);
+				r_line_hist_save (R2_HOMEDIR"/history");
 			} else {
 				// r_core_project_save (&r, prj);
 				if (debug) {
