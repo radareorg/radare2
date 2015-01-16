@@ -127,3 +127,9 @@ Remember that word: C H A I R
 what happens in #radare, stays in #radare
 For a full list of commands see `strings /dev/urandom`
 Good morning, pal *<:-)
+Of course r2 runs FreeBSD
+Reverser by Birth, r2 by Choice
+Radare2, what else?
+This incident will be reported
+command not found: calc.exe
+See you at the defcon CTF
