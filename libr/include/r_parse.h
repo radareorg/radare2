@@ -38,6 +38,7 @@ typedef struct r_parse_plugin_t {
 	int (*assemble)(RParse *p, char *data, char *str);
 	int (*filter)(RParse *p, RFlag *f, char *data, char *str, int len);
 	int (*varsub)(RParse *p, RAnalFunction *f, char *data, char *str, int len);
+	int (*replace)(int argc, const char *argv[], char *newstr);
 	struct list_head list;
 } RParsePlugin;
 

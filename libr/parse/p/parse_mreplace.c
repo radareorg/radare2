@@ -17,11 +17,39 @@ struct mreplace_t {
 };
 
 static int parse(RParse *p, const char *data, char *str) {
-	struct mreplace_t *sdata = (struct mreplace_t*)data;
+	const struct mreplace_t *sdata = (struct mreplace_t*)data;
 	char *buf = treplace (sdata->data, sdata->search, sdata->replace);
 	memcpy (str, buf, R_PARSE_STRLEN);
 	free (buf);
 	return R_TRUE;
+}
+
+static int assemble(RParse *p, char *data, char *str) {
+	char *ptr = strchr (str, '=');
+	if (ptr) {
+		*ptr = '\0';
+		sprintf (data, "mov %s, %s", str, ptr+1);
+	} else strcpy (data, str);
+	return R_TRUE;
+}
+
+static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+#if USE_VARSUBS
+	char *ptr, *ptr2;
+	int i;
+	strncpy (str, data, len);
+	for (i = 0; i < R_ANAL_VARSUBS; i++)
+		if (f->varsubs[i].pat[0] != '\0' && f->varsubs[i].sub[0] != '\0' &&
+			(ptr = strstr (data, f->varsubs[i].pat))) {
+				*ptr = '\0';
+				ptr2 = ptr + strlen (f->varsubs[i].pat);
+				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
+		}
+	return R_TRUE;
+#else
+	strncpy (str, data, len);
+	return R_FALSE;
+#endif
 }
 
 struct r_parse_plugin_t r_parse_plugin_mreplace = {
@@ -29,9 +57,10 @@ struct r_parse_plugin_t r_parse_plugin_mreplace = {
 	.desc = "mreplace parsing plugin",
 	.init = NULL,
 	.fini = NULL,
-	.parse = parse,
-	.assemble = NULL,
-	.filter = NULL
+	.parse = &parse,
+	.assemble = &assemble,
+	.varsub = &varsub,
+	.filter = NULL,
 };
 
 #else

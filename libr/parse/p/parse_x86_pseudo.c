@@ -144,17 +144,6 @@ static int parse(RParse *p, const char *data, char *str) {
 	return R_TRUE;
 }
 
-static int assemble(RParse *p, char *data, char *str) {
-	char *ptr;
-	printf ("assembling '%s' to generate real asm code\n", str);
-	ptr = strchr (str, '=');
-	if (ptr) {
-		*ptr = '\0';
-		sprintf (data, "mov %s, %s", str, ptr+1);
-	} else strcpy (data, str);
-	return R_TRUE;
-}
-
 #if 0
 static inline int ishexch (char c) {
 	if (c>=0 && c<=9) return 1;
@@ -248,8 +237,7 @@ struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
 	.desc = "X86 pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
-	.parse = parse,
-	.assemble = &assemble,
+	.parse = &parse,
 	.filter = NULL,
 	.varsub = &varsub,
 };
