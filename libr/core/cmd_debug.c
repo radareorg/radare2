@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static int checkbpcallback(RCore *core);
 
@@ -100,6 +100,41 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
 			eprintf ("ESIL BREAK!\n");
 			break;
+		}
+	}
+	return R_TRUE;
+}
+
+static int step_until_inst(RCore *core, const char *instr) {
+	RAsmOp asmop;
+	ut8 buf[32];
+	ut64 pc;
+	int ret;
+
+	instr = r_str_chop_ro (instr);
+	if (!core || !instr|| !core->dbg) {
+		eprintf ("Wrong state\n");
+		return R_FALSE;
+	}
+	for (;;) {
+		r_debug_step (core->dbg, 1);
+		r_debug_reg_sync (core->dbg, -1, 0);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
+		/* TODO: disassemble instruction and strstr */
+		pc = r_debug_reg_get (core->dbg, "pc");
+		r_asm_set_pc (core->assembler, pc);
+		// TODO: speedup if instructions are in the same block as the previous
+		r_io_read_at (core->io, pc, buf, sizeof (buf));
+		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
+		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.buf_asm);
+		if (ret>0) {
+			if (strstr (asmop.buf_asm, instr)) {
+				eprintf ("Stop.\n");
+				break;
+			}
 		}
 	}
 	return R_TRUE;
@@ -1417,6 +1452,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dsp", "", "Step into program (skip libs)",
 				"dss", " <num>", "Skip <num> step instructions",
 				"dsu", " <address>", "Step until address",
+				"dsui", " <instr>", "Step until an instruction that matches `instr`",
 				"dsue", " <esil>", "Step until esil expression matches",
 				NULL
 			};
@@ -1450,11 +1486,21 @@ static int cmd_debug(void *data, const char *input) {
 			step_until_eof (core);
 			break;
 		case 'u':
-			if (input[2]=='e') {
+			switch (input[2]) {
+			case 'i':
+				step_until_inst (core, input+3);
+				break;
+			case 'e':
 				step_until_esil (core, input+3);
-			} else {
+				break;
+			case ' ':
 				r_reg_arena_swap (core->dbg->reg, R_TRUE);
 				step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
+				break;
+			default: 
+				eprintf ("Usage: dsu[ei] [arg]  . step until address ' ',"
+						" 'e'sil or 'i'nstruction matching\n");
+				break;
 			}
 			break;
 		case 'p':
