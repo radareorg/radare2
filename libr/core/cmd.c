@@ -873,8 +873,7 @@ static int cmd_system(void *data, const char *input) {
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
-	int fds[2];
-	int stdout_fd;
+	int stdout_fd, si, fds[2];
 #endif
 	int olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
@@ -883,6 +882,8 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
 		return -1;
 	}
+	si = r_config_get_i (core->config, "scr.interactive");
+	r_config_set_i (core->config, "scr.interactive", 0);
 	if (!r_config_get_i (core->config, "scr.pipecolor")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
@@ -937,6 +938,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #endif
 	if (pipecolor != -1)
 		r_config_set_i (core->config, "scr.color", pipecolor);
+	r_config_set_i (core->config, "scr.interactive", si);
 	return ret;
 }
 
@@ -963,6 +965,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		if (!*cmd) goto beach;
 	}
 	if (rep<1) rep = 1;
+	// XXX if output is a pipe then we dont want to be interactive
 	if (rep>INTERACTIVE_MAX_REP) {
 		if (r_config_get_i (core->config, "scr.interactive")) {
 			if (!r_cons_yesno ('n',
