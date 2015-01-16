@@ -699,8 +699,8 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 		// Print gadgets in a 'linear manner', each sequence
 		// on one line.
 		hit = r_list_get_top (hitlist);
-		r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x":",
-				0, hit->addr); //from+i, hit->addr);
+		r_cons_printf ("0x%08"PFMT64x":",
+				((RCoreAsmHit *)hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
 			r_core_read_at (core, hit->addr, buf, hit->len);
@@ -732,7 +732,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 			free (buf);
 		}
 	}
-	r_cons_newline ();
+	if (mode != 'j') r_cons_newline ();
 }
 
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep, int regexp) {
