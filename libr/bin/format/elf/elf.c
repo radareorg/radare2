@@ -430,7 +430,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 text_end = text + bin->size;
 	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
 		// endian stuff here
-		ut32 *addr = buf+0x34;
+		ut32 *addr = (ut32*)(buf+0x34);
 		/*
 		   0x00012000    00b0a0e3     mov fp, 0
 		   0x00012004    00e0a0e3     mov lr, 0
@@ -1096,7 +1096,7 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
-	int tsize, nsym, ret_ctr, i, j, k, len;
+	int tsize, nsym, ret_ctr, i, j, k, len, newsize;
 	ut64 sym_offset = 0, data_offset = 0, toffset;
 	struct r_bin_elf_symbol_t *ret = NULL;
 	Elf_(Shdr) *strtab_section;
@@ -1166,13 +1166,20 @@ if (
 				return NULL;
 			}
 
-			if ((sym = (Elf_(Sym) *)calloc (1,1+bin->shdr[i].sh_size)) == NULL) {
-				eprintf ("malloc (syms)");
+			newsize = 1+bin->shdr[i].sh_size;
+			if (newsize<0 || newsize > bin->size) {
+				eprintf ("invalid shdr %d size\n", i);
 				free (ret);
 				free (strtab);
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
+			if ((sym = (Elf_(Sym) *)calloc (nsym, newsize)) == NULL) {
+				eprintf ("calloc (syms)");
+				free (ret);
+				free (strtab);
+				return NULL;
+			}
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
 #if R_BIN_ELF64
 					bin->endian? "I2cS2L": "i2cs2l",
