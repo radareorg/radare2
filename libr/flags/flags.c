@@ -197,6 +197,18 @@ R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
 	return r_hashtable64_lookup (f->ht_off, off);
 }
 
+R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
+	RFlagItem *fi;
+	RListIter *iter;
+	const RList *list = r_flag_get_list (f, off);
+	char *p = NULL;
+	r_list_foreach (list, iter, fi) {
+		p = r_str_concatf (p, "%s%s",
+			fi->realname, iter->n?",":":");
+	}
+	return p;
+}
+
 #define R_FLAG_TEST 0
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list = r_hashtable64_lookup (f->ht_off, off);

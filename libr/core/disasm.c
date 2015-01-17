@@ -918,7 +918,25 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 
 static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 	if (ds->show_flags) {
+		const char *endch;
+		RFlagItem *flag;
+		RListIter *iter;
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		const RList /*RFlagList*/ *flaglist = r_flag_get_list (core->flags, ds->at);
+		r_list_foreach (flaglist, iter, flag) {
+			beginline (core, ds, f);
+			if (ds->show_offset) r_cons_printf (";-- ");
+			if (ds->show_color) r_cons_strcat (ds->color_flag);
+			endch = (iter->n)? ", ": ":\n";
+			if (ds->asm_demangle) {
+				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
+				else r_cons_printf ("%s%s", flag->realname, endch);
+			} else {
+				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
+				else r_cons_printf ("%s%s", flag->name, endch);
+			}
+		}
+#if 0
 		RFlagItem *flag = r_flag_get_i (core->flags, ds->at);
 		if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
 			beginline (core, ds, f);
@@ -932,6 +950,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 				else r_cons_printf ("%s:\n", flag->name);
 			}
 		}
+#endif
 	}
 }
 
@@ -1326,17 +1345,18 @@ static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) 
 
 static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 	char *nstr, *str = NULL, pad[64];
-	RFlagItem *flag = NULL;
+	char *flagstr = NULL;
 	char extra[64];
 	int j,k;
 	if (!ds->show_bytes)
 		return;
 	strcpy (extra, " ");
-	if (ds->show_flag_in_bytes)
-		flag = r_flag_get_i (core->flags, ds->at); // TODO: cache this into ds->flag ?
-	if (flag) {
-		str = strdup (flag->name);
-		k = ds->nb-strlen (str)-1;
+	if (ds->show_flag_in_bytes) {
+		flagstr = r_flag_get_liststr (core->flags, ds->at);
+	}
+	if (flagstr) {
+		str = flagstr;
+		k = ds->nb-strlen (flagstr)-1;
 		if (k<0) k = 0;
 		for (j=0; j<k; j++)
 			pad[j] = ' ';
