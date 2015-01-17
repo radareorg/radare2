@@ -1165,6 +1165,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETCB("scr.utf8", "false", &cb_utf8, "Show UTF-8 characters instead of ANSI");
 #endif
+	SETPREF("scr.histsave", "true", "Always save history on exit");
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
