@@ -415,17 +415,17 @@ static int cmd_cmp(void *data, const char *input) {
 			free (b);
 		}
 		break;
-	case 'g':
+	case 'g': // "cg"
 		 { // XXX: this is broken
 			int diffops = 0;
 			RCore *core2;
 			char *file2 = NULL;
 			switch (input[1]) {
-			case 'o':
+			case 'o': // "cgo"
 				file2 = (char*)r_str_chop_ro (input+2);
 				r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
 				break;
-			case 'f':
+			case 'f': // "cgf"
 				eprintf ("TODO: agf is experimental\n");
 				r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
 				r_core_gdiff_fcn (core, core->offset,
@@ -470,6 +470,8 @@ static int cmd_cmp(void *data, const char *input) {
 				r_config_get_i (core->config, "bin.baddr"));
 			r_core_gdiff (core, core2, 1);
 			r_core_diff_show (core, core2);
+			/* exchange a segfault with a memleak */
+			core2->config = NULL;
 			r_core_free (core2);
 		 }
 		break;

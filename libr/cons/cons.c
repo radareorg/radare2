@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_cons.h>
 #include <r_print.h>
@@ -350,8 +350,7 @@ R_API void r_cons_flush() {
 	r_cons_filter ();
 	if (I.is_interactive) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (I.pager && *(I.pager)
-				&& I.buffer_len > 0
+		if (I.pager && *I.pager && I.buffer_len > 0
 				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
 			I.buffer[I.buffer_len-1] = 0;
 			r_sys_cmd_str_full (I.pager, I.buffer, NULL, NULL, NULL);
