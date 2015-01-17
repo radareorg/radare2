@@ -291,6 +291,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // echo
 		for (input++; *input==' '; input++);
+		// TODO: replace all ${flagname} by its value in hexa
 		r_cons_printf ("%s\n", input);
 		break;
 	case 's': // sequence from to step

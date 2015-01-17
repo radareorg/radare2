@@ -944,8 +944,9 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
-	int ret = 0, rep = atoi (cmd);
+	int ret = 0, rep = atoi (cmd), orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
+	const char *cmdrep = NULL;
 	cmd = r_str_trim_head_tail (icmd);
 	if (!icmd || !strncmp (cmd, "# ", 2))
 		goto beach;
@@ -973,10 +974,22 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				goto beach;
 		}
 	}
+	// TODO: store in core->cmdtimes to speedup ?
+	cmdrep = r_config_get (core->config, "cmd.times");
+	orep = rep;
 	while (rep-- && *cmd) {
 		ret = r_core_cmd_subst_i (core, cmd, colon);
 		if (ret && *cmd=='q')
 			goto beach;
+		if (cmdrep && *cmdrep) {
+			if (orep>1) {
+				// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
+				r_cons_flush ();
+				// XXX: we must inport register flags in C
+				r_core_cmd0 (core, ".dr*");
+				r_core_cmd0 (core, cmdrep);
+			}
+		}
 	}
 	if (colon && colon[1]) {
 		for (++colon; *colon==';'; colon++);

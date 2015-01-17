@@ -61,6 +61,10 @@ static void dot_r_graph_traverse(RCore *core, RGraph *t) {
 	r_cons_printf ("}\n");
 }
 
+/* TODO: refactor all those step_until* function into a single one
+ * TODO: handle when the process is dead
+ * TODO: handle ^C */
+
 static int checkbpcallback(RCore *core) ;
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "pc");
@@ -72,7 +76,12 @@ static int step_until(RCore *core, ut64 addr) {
 		eprintf ("Cannot continue until address 0\n");
 		return R_FALSE;
 	}
+	r_cons_break (NULL, NULL);
 	do {
+		if (r_cons_singleton ()->breaked)
+			break;
+		if (r_debug_is_dead (core->dbg))
+			break;
 		r_debug_step (core->dbg, 1);
 		if (checkbpcallback (core)) {
 			eprintf ("Interrupted by a breakpoint\n");
@@ -81,6 +90,7 @@ static int step_until(RCore *core, ut64 addr) {
 		off = r_debug_reg_get (core->dbg, "pc");
 		// check breakpoint here
 	} while (off != addr);
+	r_cons_break_end();
 	return R_TRUE;
 }
 
@@ -90,7 +100,12 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 		eprintf ("Not initialized %p. Run 'aei' first.\n", core->anal->esil);
 		return R_FALSE;
 	}
+	r_cons_break (NULL, NULL);
 	for (;;) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		if (r_debug_is_dead (core->dbg))
+			break;
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, -1, 0);
 		if (checkbpcallback (core)) {
@@ -102,6 +117,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 			break;
 		}
 	}
+	r_cons_break_end();
 	return R_TRUE;
 }
 
@@ -116,7 +132,12 @@ static int step_until_inst(RCore *core, const char *instr) {
 		eprintf ("Wrong state\n");
 		return R_FALSE;
 	}
+	r_cons_break (NULL, NULL);
 	for (;;) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		if (r_debug_is_dead (core->dbg))
+			break;
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, -1, 0);
 		if (checkbpcallback (core)) {
@@ -137,13 +158,55 @@ static int step_until_inst(RCore *core, const char *instr) {
 			}
 		}
 	}
+	r_cons_break_end();
+	return R_TRUE;
+}
+
+static int step_until_flag(RCore *core, const char *instr) {
+	const RList *list;
+	RListIter *iter;
+	RFlagItem *f;
+	ut64 pc;
+
+	instr = r_str_chop_ro (instr);
+	if (!core || !instr|| !core->dbg) {
+		eprintf ("Wrong state\n");
+		return R_FALSE;
+	}
+	r_cons_break (NULL, NULL);
+	for (;;) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		if (r_debug_is_dead (core->dbg))
+			break;
+		r_debug_step (core->dbg, 1);
+		r_debug_reg_sync (core->dbg, -1, 0);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
+		pc = r_debug_reg_get (core->dbg, "pc");
+		list = r_flag_get_list (core->flags, pc);
+		r_list_foreach (list, iter, f) {
+			if (!instr|| !*instr || strstr(f->realname, instr)) {
+				r_cons_printf ("[ 0x%08"PFMT64x" ] %s\n",
+					f->offset, f->realname);
+				goto beach;
+			}
+		}
+	}
+beach:
+	r_cons_break_end();
 	return R_TRUE;
 }
 
 /* until end of frame */
 static int step_until_eof(RCore *core) {
 	ut64 off, now = r_debug_reg_get (core->dbg, "sp");
+	r_cons_break (NULL, NULL);
 	do {
+		if (r_cons_singleton ()->breaked)
+			break;
 		if (!r_debug_step (core->dbg, 1))
 			break;
 		if (checkbpcallback (core)) {
@@ -153,6 +216,7 @@ static int step_until_eof(RCore *core) {
 		off = r_debug_reg_get (core->dbg, "sp");
 		// check breakpoint here
 	} while (off <= now);
+	r_cons_break_end();
 	return R_TRUE;
 }
 
@@ -1454,6 +1518,7 @@ static int cmd_debug(void *data, const char *input) {
 				"dsu", " <address>", "Step until address",
 				"dsui", " <instr>", "Step until an instruction that matches `instr`",
 				"dsue", " <esil>", "Step until esil expression matches",
+				"dsuf", " <flag>", "Step until pc == flag matching name",
 				NULL
 			};
 
@@ -1487,6 +1552,9 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'u':
 			switch (input[2]) {
+			case 'f':
+				step_until_flag (core, input+3);
+				break;
 			case 'i':
 				step_until_inst (core, input+3);
 				break;
@@ -1498,8 +1566,8 @@ static int cmd_debug(void *data, const char *input) {
 				step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
 				break;
 			default: 
-				eprintf ("Usage: dsu[ei] [arg]  . step until address ' ',"
-						" 'e'sil or 'i'nstruction matching\n");
+				eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
+						" 'f'lag, 'e'sil or 'i'nstruction matching\n");
 				break;
 			}
 			break;

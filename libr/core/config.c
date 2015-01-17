@@ -1041,6 +1041,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Command to executed every breakpoint hit");
+	SETPREF("cmd.times", "", "Command to run on every repeated command (number prefix)");
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF("cmd.gprompt", "", "Graph visual prompt commands");
