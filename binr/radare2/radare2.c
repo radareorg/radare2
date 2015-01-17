@@ -767,7 +767,6 @@ int main(int argc, char **argv, char **envp) {
 				prj = r_config_get (r.config, "file.project");
 				if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
 					r_core_project_save (&r, prj);
-				r_line_hist_save (R2_HOMEDIR"/history");
 			} else {
 				// r_core_project_save (&r, prj);
 				if (debug) {
@@ -777,6 +776,15 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		}
 	}
+#if __UNIX__
+	if (isatty(0)) {
+#endif
+		 if (r_config_get_i(r.config, "scr.histsave") &&
+				r_config_get_i(r.config, "scr.interactive"))
+			r_line_hist_save (R2_HOMEDIR"/history");
+#if __UNIX__
+	}
+#endif
 	// TODO: kill thread
 
 	/* capture return value */

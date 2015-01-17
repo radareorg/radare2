@@ -3,9 +3,10 @@
 static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char* help_msg[] = {
-		"Usage:",  "q[!] [retval]", "",
+		"Usage:",  "q[!][!] [retval]", "",
 		"q","","quit program",
 		"q!","","force quit (no questions)",
+		"q!!","","force quit without saving history",
 		"q"," 1","quit with return value 1",
 		"q"," a-b","quit with return value a-b",
 		NULL};
@@ -15,6 +16,8 @@ static int cmd_quit(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		break;
 	case '!':
+		if (input[1] == '!')
+			r_config_set (core->config, "scr.histsave", "false");
 		core->num->value = -1;
 		return -2;
 	case '\0':
