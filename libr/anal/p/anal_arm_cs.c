@@ -22,6 +22,7 @@
 // TODO scale and disp
 
 static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
+	buf[0] = 0;
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		sprintf (buf, "%s",
