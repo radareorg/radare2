@@ -18,6 +18,8 @@ include ${STATIC_BIN_XTR_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o dbginfo.o bin_write.o demangle.o dwarf.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
+OBJS+=mangling/demangler.o
+OBJS+=mangling/microsoft_demangle.o
 OBJS+=mangling/objc.o mangling/cxx.o
 OBJS+=mangling/swift.o mangling/swift-sd.o
 OBJS+=pdb/pdb_downloader.o pdb/omap.o pdb/pe.o pdb/gdata.o pdb/fpo.o pdb/dbi.o pdb/tpi.o pdb/stream_file.o pdb/pdb.o

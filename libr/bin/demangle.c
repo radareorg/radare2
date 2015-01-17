@@ -3,6 +3,9 @@
 #include <r_bin.h>
 #include <cxx/demangle.h>
 
+//TODO: mangler_branch: remove?
+#include "mangling/demangler.h"
+
 // http://code.google.com/p/smali/wiki/TypesMethodsAndFields
 R_API char *r_bin_demangle_java(const char *str) {
 	const char *w = NULL;
@@ -97,6 +100,15 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 		}
 	}
 	out = cplus_demangle_v3 (str, flags);
+
+	// TODO: mangler_branch: remove, just for testing now
+	SDemangler *mangler = 0;
+	char *demangled_name = 0;
+	create_demangler(&mangler);
+	if (init_demangler(mangler, str) == eDemanglerErrOK) {
+		mangler->demangle(mangler, &demangled_name);
+	}
+	free_demangler(mangler);
 
 	if (out)
 		r_str_replace_char (out, ' ', 0);
