@@ -639,7 +639,12 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 		buf = data;
 	}
 
-	r_io_map_select (io, io->off);
+	// this makes a double sub, so we restore the io->off
+	{
+		ut64 addr = io->off;
+		r_io_map_select (io, io->off);
+		io->off = addr;
+	}
 
 	if (io->plugin) {
 		if (io->plugin->write) {
