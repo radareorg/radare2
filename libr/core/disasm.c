@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -1117,18 +1117,28 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 		}
 	}
 	if (ds->show_offset) {
+		static RFlagItem sfi = {{0}};
+		RFlagItem *fi;
 		int delta = 0;
 		if (ds->show_reloff) {
-			RFlagItem *fi = r_flag_get_i (core->flags, ds->at);
-			if (fi) ds->lastflag = fi;
-			if (ds->lastflag) {
-				if (ds->lastflag->offset == ds->at) {
-					delta = 0;
-				} else {
-					delta = ds->at - ds->lastflag->offset;
-				}
+			RAnalFunction *f = r_anal_get_fcn_at (core->anal,
+					ds->at, R_ANAL_FCN_TYPE_NULL);
+			if (f) {
+				delta = ds->at - f->addr;
+				sfi.offset = f->addr;
+				ds->lastflag = &sfi;
 			} else {
-				delta = ds->at - core->offset;
+				fi = r_flag_get_i (core->flags, ds->at);
+				if (fi) ds->lastflag = fi;
+				if (ds->lastflag) {
+					if (ds->lastflag->offset == ds->at) {
+						delta = 0;
+					} else {
+						delta = ds->at - ds->lastflag->offset;
+					}
+				} else {
+					delta = ds->at - core->offset;
+				}
 			}
 		}
 		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
