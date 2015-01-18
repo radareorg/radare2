@@ -9,10 +9,8 @@ static const char* findBreakChar(const char *s) {
 	return s;
 }
 static char *filter_flags(RCore *core, const char *msg) {
-	RFlagItem *item;
-	const char *dollar;
-	char *buf = NULL;
-	char *end, *word;
+	const char *dollar, *end;
+	char *word, *buf = NULL;
 	for (;;) {
 		dollar = strchr (msg, '$');
 		if (!dollar)
@@ -36,13 +34,11 @@ static char *filter_flags(RCore *core, const char *msg) {
 			word = r_str_newlen (dollar+1, end-dollar-1);
 		}
 		if (end && word) {
-			item = r_flag_get (core->flags, word);
-			if (item) {
-				char num[32];
-				snprintf (num, sizeof (num),
-					"0x%08"PFMT64x, item->offset);
-				buf = r_str_concat (buf, num);
-			}
+			ut64 val = r_num_math (core->num, word);
+			char num[32];
+			snprintf (num, sizeof (num),
+				"0x%"PFMT64x, val); //item->offset);
+			buf = r_str_concat (buf, num);
 			msg = end;
 		} else break;
 		free (word);
