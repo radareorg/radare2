@@ -21,6 +21,14 @@ static EManglingType get_mangling_type(char *sym)
 		goto get_mangling_type_err;
 	}
 
+	switch (*sym) {
+	case '?':
+		mangling_type = eManglingMicrosoft;
+		break;
+	default:
+		break;
+	}
+
 get_mangling_type_err:
 	return mangling_type;
 }
