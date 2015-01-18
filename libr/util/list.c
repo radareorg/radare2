@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
@@ -114,13 +114,19 @@ R_API void r_list_split_iter (RList *list, RListIter *iter) {
 }
 
 //Warning: free functions must be compatible
+#define r_list_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
 R_API void r_list_join (RList *list1, RList *list2) {
+	if (!list1 || !list2)
+		return;
+	if (r_list_empty (list2))
+		return;
 	if (list1->tail == NULL) {
 		list1->tail = list2->head;
 	} else if (list2->head != NULL) {
 		list1->tail->n = list2->head;
 		list2->head->p = list1->tail;
 	}
+	list2->head = list2->tail = NULL;
 }
 
 R_API RList *r_list_new() {

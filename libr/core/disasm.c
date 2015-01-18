@@ -770,7 +770,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				if (ds->vars) {
 					RList *args = r_anal_var_list (core->anal, f, 'a');
 					RList *vars = r_anal_var_list (core->anal, f, 'v');
-					r_list_join(vars, args);
+					r_list_join (vars, args);
 					RAnalVar *var;
 					RListIter *iter;
 					r_list_foreach (vars, iter, var) {
@@ -798,7 +798,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 						}
 					}
 					r_list_free (vars);
-					r_list_free (args);
+					// no need to free args, because its already joined
+					// r_list_free (args);
 				}
 			}
 		}

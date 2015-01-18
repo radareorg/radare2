@@ -1492,7 +1492,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	ut8 buf[32];
 	RAnalOp op;
 	ut64 addr, addr_end;
-	ut64 len = r_num_math (core->num, input+1);
+	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
 		eprintf ("Too big\n");
 		return;
