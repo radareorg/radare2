@@ -1,4 +1,55 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
+
+static const char* findBreakChar(const char *s) {
+	while (*s) {
+		if (!r_name_validate_char (*s))
+			break;
+		s++;
+	}
+	return s;
+}
+static char *filter_flags(RCore *core, const char *msg) {
+	RFlagItem *item;
+	const char *dollar;
+	char *buf = NULL;
+	char *end, *word;
+	for (;;) {
+		dollar = strchr (msg, '$');
+		if (!dollar)
+			break;
+		buf = r_str_concatlen (buf, msg, dollar-msg);
+		if (dollar[1]=='{') {
+			// find }
+			end = strchr (dollar+2, '}');
+			if (end) {
+				word = r_str_newlen (dollar+2, end-dollar-2);
+				end++;
+			} else {
+				msg = dollar+1;
+				buf = r_str_concat (buf, "$");
+				continue;
+			}
+		} else {
+			end = findBreakChar (dollar+1);
+			if (!end)
+				end = dollar+strlen (dollar);
+			word = r_str_newlen (dollar+1, end-dollar-1);
+		}
+		if (end && word) {
+			item = r_flag_get (core->flags, word);
+			if (item) {
+				char num[32];
+				snprintf (num, sizeof (num),
+					"0x%08"PFMT64x, item->offset);
+				buf = r_str_concat (buf, num);
+			}
+			msg = end;
+		} else break;
+		free (word);
+	}
+	buf = r_str_concat (buf, msg);
+	return buf;
+}
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -290,9 +341,13 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'e': // echo
-		for (input++; *input==' '; input++);
+		{
+		const char *msg = r_str_chop_ro (input+1);
+		char *newmsg = filter_flags (core, msg);
 		// TODO: replace all ${flagname} by its value in hexa
-		r_cons_printf ("%s\n", input);
+		r_cons_printf ("%s\n", newmsg);
+		free (newmsg);
+		}
 		break;
 	case 's': // sequence from to step
 		{
@@ -301,11 +356,11 @@ static int cmd_help(void *data, const char *input) {
 		for (input++; *input==' '; input++);
 		p = strchr (input, ' ');
 		if (p) {
-			*p='\0';
+			*p = '\0';
 			from = r_num_math (core->num, input);
 			p2 = strchr (p+1, ' ');
 			if (p2) {
-				*p2='\0';
+				*p2 = '\0';
 				step = r_num_math (core->num, p2+1);
 			} else step = 1;
 			to = r_num_math (core->num, p+1);

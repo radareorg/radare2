@@ -409,9 +409,19 @@ R_API const char *r_str_chop_ro(const char *str) {
 	if (str) while (*str && iswhitechar (*str)) str++; return str;
 }
 
-R_API char *r_str_new(char *str) {
+R_API char *r_str_new(const char *str) {
 	if (!str) return NULL;
 	return strdup (str);
+}
+
+R_API char *r_str_newlen(const char *str, int len) {
+	char *buf;
+	if (len<1)
+		return NULL;
+	buf = malloc (len+1);
+	memcpy (buf, str, len);
+	buf[len] = 0;
+	return buf;
 }
 
 R_API char *r_str_newf(const char *fmt, ...) {
@@ -519,7 +529,7 @@ R_API char *r_str_trim(char *str) {
 	for (ptr=str, i=0;str[i]; i++)
 		if (!iswhitechar (str[i]))
 			*ptr++ = str[i];
-	*ptr='\0';
+	*ptr = '\0';
 	return str;
 }
 
@@ -628,6 +638,14 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 	memmove (ptr, string, slen);
 	return ptr;
 }
+
+R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
+	char *ret, *msg = r_str_newlen (string, slen);
+	ret = r_str_concat (ptr, msg);
+	free (msg);
+	return ret;
+}
+
 /*
  * first argument must be allocated
  * return: the pointer ptr resized to string size.

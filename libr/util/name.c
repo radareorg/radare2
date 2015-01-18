@@ -5,7 +5,7 @@
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
 /* TODO: use a whitelist :) */
-static int r_name_validate_char(const char ch) {
+R_API int r_name_validate_char(const char ch) {
 	if ((ch>='a' && ch<='z') || (ch>='A' && ch<='Z') || (ch>='0' && ch<='9'))
 		return R_TRUE;
 	switch (ch) {
