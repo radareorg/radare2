@@ -1,4 +1,4 @@
-FILES=x86 arm ppc z80
+FILES=x86 arm ppc z80 mips
 F_SDB=$(addsuffix .sdb,${FILES})
 SDB=../../../shlr/sdb/sdb
 include ../../../config-user.mk
@@ -11,7 +11,7 @@ all: ${F_SDB}
 clean:
 	rm -f *.sdb
 
-.PHONY: all clean install install-symlink symstall
+.PHONY: all clean install install-symlink symstall uninstall
 
 # XXX rmdblslash not defined, but doesnt warns about it
 #OPDIR=$(call rmdblslash,${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes)
