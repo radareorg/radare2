@@ -30,7 +30,8 @@ EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	unsigned int limit_len = 0;
 	unsigned int i = 1;
 
-	unsigned int len = IMPOSSIBLE_LEN;
+	unsigned int len = 0;
+	int tmp_len = 0;
 
 	EObjectType object_type = eObjectTypeMax;
 	char *tmp = 0;
@@ -38,103 +39,67 @@ EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	RList/*<char*>*/ *names_l = r_list_new();
 	RListIter *it;
 
+	char *rest_of_sym = 0;
 	char *curr_pos = 0;
 	char *prev_pos = 0;
 
 	memset(var_name, 0, MICROSOFT_NAME_LEN);
 
-	prev_pos = sym;
-	curr_pos = strchr(sym, '@');
+	rest_of_sym = strstr(sym, "@@");
+	tmp_len = rest_of_sym - sym + 1;	// +1 - need to account for the
+										// trailing '@'
+										// each (class)(namespace)name
+										// end with '@'
 
-	if (curr_pos) {
-		// get variable name length
-		len = curr_pos - prev_pos;
+	if (!rest_of_sym) {
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_mangled_name_err;
 	}
 
-	while (curr_pos != NULL) {
-		// firstly it is going variable name, so need to get max length of
-		// variable name; further it is going just class name or namespace, so
-		// need to check the max length of class_namespace.
-		if (i <= amount_of_elements) {
-			limit_len = limit_len_arr[i - 1];
-		}
-
-		// if len is zero in first step of cycle it means that variable name
-		// has zero length, that is impossible.
-		// len MUST be equal to zero JUST in case when there is end of list
-		// with class name or namespace, OR in case when there is no class name
-		// or namespace for this variable
-		// so if we are here and len is 0, it is mean that that it was
-		// situation like: ?name@@classname|namepace@@ that is not impossible
-		if (len == 0) {
-			err = eDemanglerErrUncorrectMangledSymbol;
-			goto parse_microsoft_mangled_name_err;
-		}
-
+	prev_pos = sym;
+	curr_pos = strchr(sym, '@');
+	while (tmp_len != 0) {
 		len = curr_pos - prev_pos;
 
-		if ((len >= limit_len)) {
+		// TODO:maybe add check of name correctness? like name can not start
+		//		with number
+		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
 			err = eDemanglerErrUncorrectMangledSymbol;
 			goto parse_microsoft_mangled_name_err;
 		}
 
-		switch (i) {
-		case 1: // variable name
-			memcpy(var_name, prev_pos, len);
-			break;
-		default:
-			// names of class names | namespaces | etc
-			tmp = (char *) malloc(len + 1);
-			memset(tmp, '\0', len + 1);
-			memcpy(tmp, prev_pos, len);
-			r_list_append(names_l, tmp);
-			break;
-		}
+		tmp = (char *) malloc(len + 1);
+		tmp[len] = '\0';
+		memcpy(tmp, prev_pos, len);
 
-		i++;
+		r_list_append(names_l, tmp);
+
+		tmp_len -= (len + 1);
 		prev_pos = curr_pos + 1;
 		curr_pos = strchr(curr_pos + 1, '@');
 	}
 
-	// if len is equal to IMPOSSIBLE_LEN, than it means that there is no '@' in
-	// mangled symbol, that is impossible situation, so go away
-	// if len is not 0, than it mean that name of variable length name is 0,
-	// and this is not possible situation
-	// len = 0 is correct cause at after the last name or class name or
-	// namespace name, or there is not class name or namespace name,
-	// it is going @@
-	if ((len != 0) || (len == IMPOSSIBLE_LEN)) {
-		err = eDemanglerErrUncorrectMangledSymbol;
-		goto parse_microsoft_mangled_name_err;
-	}
-
-	curr_pos = prev_pos;
-
-	switch (*curr_pos - '0') {
+	curr_pos++;
+	object_type = *curr_pos - '0';
+	switch (object_type) {
 	case eObjectTypeStaticClassMember:
-		object_type = eObjectTypeStaticClassMember;
-
-		// length < 1 can be just in situation like:
-		// ?name@@...
-		// this situation is impossible because class member need to have
-		// class name
+		// at least need to be 2 items
+		// first variable name, second - class name
 		if (r_list_length(names_l) < 1) {
 			err = eDemanglerErrUncorrectMangledSymbol;
-			goto parse_microsoft_mangled_name_err;
 		}
 		break;
 	case eObjectTypeGlobal:
-		object_type = eObjectTypeGlobal;
 		break;
-
 	default:
 		err = eDemanglerErrUncorrectMangledSymbol;
+		break;
+	}
+
+	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;
 	}
 
-	curr_pos++;
-
-	// TODO: add parsing of <type> and <storage class>
 
 	err = eDemanglerErrUnsupportedMangling;
 
