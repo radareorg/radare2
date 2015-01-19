@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_cons.h>
 
@@ -104,6 +104,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	int left, slen, i, linenum = 0;
 	char *p, *s, *str;
 	char *line, *n;
+	int x, delta;
 
 	if (!c || !_s || !*_s)
 		return;
@@ -122,17 +123,13 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			slen = (c->w - (c->x-c->sx));
 			if (slen<1)
 				break;
-		s = n;
+			s = n;
 			continue;
 		}
-// top border skipping lines
-//if ((c->y-1-c->sy)<-40) {
-//	continue;
-//}
-int delta = 0;
-int x = c->x - c->sx -slen;
-if (x<0) x=0;
-		if (!G (x, c->y-c->sy))
+		delta = 0;
+		x = c->x - c->sx - slen;
+		// if (x<0) x = 0;
+		if (!G (x, c->y - c->sy))
 			continue;
 		memcpy (p, line+delta, slen-delta);
 		if (!n) break;
