@@ -15,13 +15,70 @@ typedef enum EObjectType {
 } EObjectType;
 
 ///////////////////////////////////////////////////////////////////////////////
+static EDemanglerErr get_type_code_string(	char *sym,
+											int *amount_of_read_chars,
+											char **str_type_code)
+{
+#define COPY_STR_TYPE(case_val, str_type) { \
+	case case_val: \
+		*str_type_code = (char *) malloc(strlen(str_type) + 1); \
+		strncpy(*str_type_code, str_type, strlen(str_type) + 1); \
+		finish_parsing = 1; \
+		break; \
+}
+
+	EDemanglerErr err = eDemanglerErrOK;
+	char *tmp_sym = sym;
+	int finish_parsing = 0;
+
+	*str_type_code = 0;
+	*amount_of_read_chars = 0;
+
+	while (finish_parsing != 1) {
+		if (*tmp_sym == '\0') {
+			err = eDemanglerErrUncorrectMangledSymbol;
+			goto get_type_code_string_err;
+		}
+
+		switch (*tmp_sym) {
+			COPY_STR_TYPE('D', "char");
+			COPY_STR_TYPE('C', "signed char");
+			COPY_STR_TYPE('E', "unsigned char");
+			COPY_STR_TYPE('F', "short int");
+			COPY_STR_TYPE('G', "unsigned short int");
+			COPY_STR_TYPE('H', "int");
+			COPY_STR_TYPE('I', "unsigned int");
+			COPY_STR_TYPE('J', "long int");
+			COPY_STR_TYPE('K', "unsinged long int");
+			COPY_STR_TYPE('M', "float");
+			COPY_STR_TYPE('N', "double");
+			COPY_STR_TYPE('O', "long double");
+			COPY_STR_TYPE('Z', "varargs ...");
+		default:
+			err = eDemanglerErrUnsupportedMangling;
+			break;
+		}
+
+		if (err != eDemanglerErrOK) {
+			goto get_type_code_string_err;
+		}
+
+		(*amount_of_read_chars)++;
+		tmp_sym++;
+	}
+
+get_type_code_string_err:
+	return err;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /// public mangled name of global object:
 /// <public name> ::= ?<name>@[<namespace>@](0->inf)@3<type><storage class>
 /// mangled name of a static class member object:
 /// <public name> ::= ?<name>@[<classname>@](1->inf)@2<type><storage class>
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr parse_microsoft_mangled_name(	char *sym,
-											char **demangled_name)
+static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
+													char **demangled_name)
 {
 	EDemanglerErr err = eDemanglerErrOK;
 	unsigned int limit_len_arr[] = { MICROSOFT_NAME_LEN,
@@ -99,6 +156,17 @@ EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;
 	}
+
+	curr_pos++;
+	i = 0;
+	err = get_type_code_string(curr_pos, &i, &tmp);
+	if (err != eDemanglerErrOK) {
+		R_FREE(tmp);
+		goto parse_microsoft_mangled_name_err;
+	}
+	// do something with tmp
+	printf("%s\n", tmp);
+	R_FREE(tmp);
 
 
 	err = eDemanglerErrUnsupportedMangling;
