@@ -40,49 +40,62 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 		//const char *index =  cs_x86_regnames[op.mem.index];
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
-		if (!base) base = "(null)";
 		if (scale>1) {
 			if (set>1) {
-				if (disp) {
-					snprintf (buf, sizeof (buf),
-						"%s,%d,+,%d,*",
-						base, (int)disp, scale);
+				if (base) {
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%s,%d,+,%d,*", base, (int)disp, scale);
+					} else {
+						snprintf (buf, sizeof (buf), "%s,%d,*", base, scale);
+					}
 				} else {
-					snprintf (buf, sizeof (buf),
-						"%s,%d,*",
-						base, scale);
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%d,%d,*,[%d]", (int)disp, scale, op.size);
+					} else {
+						snprintf (buf, sizeof (buf), "%d,[%d]", scale, op.size);
+					}
 				}
 			} else {
-				if (disp) {
-					snprintf (buf, sizeof (buf),
-						"%s,%d,+,%d,*,[%d]",
-						base, (int)disp, scale, op.size);
+				if (base) {
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%s,%d,+,%d,*,[%d]", base, (int)disp, scale, op.size);
+					} else {
+						snprintf (buf, sizeof (buf), "%s,%d,*,[%d]", base, scale, op.size);
+					}
 				} else {
-					snprintf (buf, sizeof (buf),
-						"%s,%d,*,[%d]",
-						base, scale, op.size);
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%d,%d,*,[%d]", (int)disp, scale, op.size);
+					} else {
+						snprintf (buf, sizeof (buf), "%d,[%d]", scale, op.size);
+					}
 				}
 			}
 		} else {
 			if (set>1) {
-				if (disp) {
-					snprintf (buf, sizeof (buf),
-						"%s,%d,+",
-						base, (int)disp);
+				if (base) {
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%s,%d,+", base, (int)disp);
+					} else {
+						snprintf (buf, sizeof (buf), "%s", base);
+					}
 				} else {
-					snprintf (buf, sizeof (buf),
-						"%s", base);
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%d", (int)disp);
+					}
 				}
 			} else {
-				if (disp) {
-					snprintf (buf, sizeof (buf),
-						"%s,%d,+,%s[%d]",
-						base, (int)disp,
-						set?"=":"", op.size);
+				if (base) {
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%s,%d,+,%s[%d]", base, (int)disp, set?"=":"", op.size);
+					} else {
+						snprintf (buf, sizeof (buf), "%s,%s[%d]", base, set?"=":"", op.size);
+					}
 				} else {
-					snprintf (buf, sizeof (buf),
-						"%s,%s[%d]",
-						base, set?"=":"", op.size);
+					if (disp) {
+						snprintf (buf, sizeof (buf), "%d,%s[%d]", (int)disp, set?"=":"", op.size);
+					} else {
+						snprintf (buf, sizeof (buf), "%s,[%d]", set?"=":"", op.size);
+					}
 				}
 			}
 		}
@@ -571,7 +584,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 							"%s,%s,=",
 							op->size, pc,
 							rs, sp, sp,
-							getarg(handle, insn, 0, 1), pc);
+							getarg (handle, insn, 0, 1), pc);
 				}
 				break;
 			case X86_INS_JMP:
