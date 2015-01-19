@@ -1,12 +1,12 @@
 /* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
 
 #include "sdb.h"
-#if __WINDOWS__
-#define GETTIMEOFDAY 1
-#include <sys/time.h>
-#else
+#if __linux__
 #define GETTIMEOFDAY 0
 #include <time.h>
+#else
+#define GETTIMEOFDAY 1
+#include <sys/time.h>
 #endif
 
 // XXX deprecate or wtf? who uses this??
