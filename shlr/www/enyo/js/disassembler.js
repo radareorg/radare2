@@ -4,21 +4,18 @@ enyo.kind ({
   tag: "div",
   classes:"ec_gui_background",
   style:"margin:0px;position: relative;",
-  draggable: false,
   data: null,
   components: [
       // {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
       {
         tag: "div",
         allowHtml: true,
-        draggable: false,
         name: "minimap",
         style : "width:200px; height:200px; position:fixed; top:0; right 0px",
         id: "minimap"
       },
       {
         tag: "div",
-        draggable: false,
         allowHtml: true,
         name: "panel",
         content: "<div id='main_panel' class='ui-layout-center ec_gui_background'><div id='center_panel'></div></div>"
