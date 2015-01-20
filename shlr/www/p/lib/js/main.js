@@ -660,7 +660,8 @@ function render_symbols(symbols) {
   for (var i in symbols) {
     var s = symbols[i];
     var sd = {
-      label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + get_symbol_flag(s.name) + "</span>",
+      label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + s.name + "</span>",
+      // label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + get_symbol_flag(s.name) + "</span>",
       children: [ {label: "offset: " + "0x" + s.addr.toString(16)}, {label: "size: " + s.size} ] };
     data[data.length] = sd;
   }
@@ -671,7 +672,8 @@ function render_relocs(relocs) {
   for (var i in relocs) {
     var r = relocs[i];
     var rd = {
-      label: "<span class='flag reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + get_reloc_flag(r.name) + "</span>",
+      label: "<span class='flag reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + r.name + "</span>",
+      // label: "<span class='flag reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + get_reloc_flag(r.name) + "</span>",
       children: [ {label: "offset: " + "0x" + r.vaddr.toString(16)}, {label: "type: " + r.type} ] };
     data[data.length] = rd;
   }

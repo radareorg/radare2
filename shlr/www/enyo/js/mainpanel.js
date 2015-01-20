@@ -195,7 +195,6 @@ enyo.kind ({
     {kind: "Panels",
       name:"panels",
       fit:true,
-      draggable: false,
       realtimeFit: true,
       components: []}
   ],
