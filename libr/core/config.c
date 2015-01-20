@@ -1087,7 +1087,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("http.root", R2_WWWROOT, "HTTP root directory");
 #endif
 	SETPREF("http.port", "9090", "Port to listen for http connections");
+#if __ANDROID__ || __IPHONE_2_0
 	SETPREF("http.ui", "enyo", "Select default webui (enyo, p, t)");
+#else
+	SETPREF("http.ui", "p", "Select default webui (enyo, p, t)");
+#endif
 	SETPREF("http.sandbox", "false", "Sandbox the http");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds if no data sent");
 	SETI("http.dietime", 0, "Kill myself after N seconds after the last client connected");
