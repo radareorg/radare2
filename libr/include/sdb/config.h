@@ -2,6 +2,8 @@
 #define CONFIG_H
 
 #define SDB_KEYSIZE 32
+/* only available on linux, and some distros require -lrt */
+#define USE_MONOTONIC_CLOCK 0
 
 #if SDB_KEYSIZE == 32
 #define SDB_KT ut32

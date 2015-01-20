@@ -1,11 +1,10 @@
 /* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
 
 #include "sdb.h"
-#if __linux__
-#define GETTIMEOFDAY 0
+
+#if USE_MONOTONIC_CLOCK
 #include <time.h>
 #else
-#define GETTIMEOFDAY 1
 #include <sys/time.h>
 #endif
 
@@ -157,37 +156,36 @@ SDB_API const char *sdb_const_anext(const char *str, const char **next) {
 }
 
 SDB_API ut64 sdb_now () {
-#if GETTIMEOFDAY
-	struct timeval now;
-	if (!gettimeofday (&now, NULL))
-		return now.tv_sec;
-#else
+#if USE_MONOTINIC_CLOCK
 	struct timespec ts;
 	if (!clock_gettime (CLOCK_MONOTONIC, &ts))
 		return ts.tv_sec;
+#else
+	struct timeval now;
+	if (!gettimeofday (&now, NULL))
+		return now.tv_sec;
 #endif
 	return 0LL;
 }
 
 SDB_API ut64 sdb_unow () {
-	ut64 x;
-#if GETTIMEOFDAY
-        struct timeval now;
-        if (!gettimeofday (&now, NULL)) {
-		x = now.tv_sec;
-		x <<= 32;
-		x += now.tv_usec;
-	} else x = 0LL;
-	return x;
-#else
+	ut64 x = 0LL;
+#if USE_MONOTONIC_CLOCK
 	struct timespec ts;
 	if (!clock_gettime (CLOCK_MONOTONIC, &ts)) {
 		x = ts.tv_sec;
 		x <<= 32;
 		x += ts.tv_nsec/1000;
-	} else x = 0LL;
-	return x;
+	}
+#else
+        struct timeval now;
+        if (!gettimeofday (&now, NULL)) {
+		x = now.tv_sec;
+		x <<= 32;
+		x += now.tv_usec;
+	}
 #endif
+	return x;
 }
 
 SDB_API int sdb_isnum (const char *s) {
