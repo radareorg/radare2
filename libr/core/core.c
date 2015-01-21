@@ -767,9 +767,8 @@ R_API int r_core_init(RCore *core) {
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
 	/* initialize libraries */
-	core->cons = r_cons_singleton ();
+	core->cons = r_cons_new ();
 	if (singleton) {
-		r_cons_new ();
 		core->cons = r_cons_singleton ();
 		if (core->cons->line) {
 			core->cons->line->user = core;
