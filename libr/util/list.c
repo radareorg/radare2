@@ -115,11 +115,11 @@ R_API void r_list_split_iter (RList *list, RListIter *iter) {
 
 //Warning: free functions must be compatible
 #define r_list_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
-R_API void r_list_join (RList *list1, RList *list2) {
+R_API int r_list_join (RList *list1, RList *list2) {
 	if (!list1 || !list2)
-		return;
+		return 0;
 	if (r_list_empty (list2))
-		return;
+		return 0;
 	if (list1->tail == NULL) {
 		list1->tail = list2->head;
 	} else if (list2->head != NULL) {
@@ -127,6 +127,8 @@ R_API void r_list_join (RList *list1, RList *list2) {
 		list2->head->p = list1->tail;
 	}
 	list2->head = list2->tail = NULL;
+	/* the caller must free list2 */
+	return 1;
 }
 
 R_API RList *r_list_new() {

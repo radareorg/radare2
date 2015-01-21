@@ -798,8 +798,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 						}
 					}
 					r_list_free (vars);
-					// no need to free args, because its already joined
-					// r_list_free (args);
+					// it's already empty, but rlist instance is still there
+					r_list_free (args);
 				}
 			}
 		}
