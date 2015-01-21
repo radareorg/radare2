@@ -171,6 +171,7 @@ typedef struct r_cons_t {
 	RConsPalette pal;
 	struct r_line_t *line;
 	const char **vline;
+	int refcnt;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

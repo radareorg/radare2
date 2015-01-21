@@ -161,6 +161,9 @@ R_API int r_cons_enable_mouse (const int enable) {
 }
 
 R_API RCons *r_cons_new () {
+	I.refcnt++;
+	if (I.refcnt != 1)
+		return &I;
 	I.line = r_line_new ();
 	I.highlight = NULL;
 	I.event_interrupt = NULL;
@@ -215,6 +218,9 @@ R_API RCons *r_cons_new () {
 }
 
 R_API RCons *r_cons_free () {
+	I.refcnt--;
+	if (I.refcnt != 0)
+		return NULL;
 	if (I.line) {
 		r_line_free ();
 		I.line = NULL;
