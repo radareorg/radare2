@@ -5,14 +5,39 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-static char *r_core_project_file(RCore *core, const char *file) {
-	if (*file != '/') {
-		char *ret = r_file_abspath (r_config_get (
-			core->config, "dir.projects"));
-		ret = r_str_concat (ret, "/");
-		return r_str_concat (ret, file);
+static int is_valid_project_name (const char *name) {
+	int i;
+	for (i=0; name[i]; i++) {
+		if (name[i] >= 'a' && name[i] <= 'z')
+			continue;
+		if (name[i] >= 'A' && name[i] <= 'Z')
+			continue;
+		if (name[i] >= '0' && name[i] <= '9')
+			continue;
+		return 0;
 	}
-	return strdup (file);
+	return 1;
+}
+
+static char *r_core_project_file(RCore *core, const char *file) {
+	const char *magic = "# r2 rdb project file";
+	char *data, *prjfile;
+	if (*file != '/') {
+		if (!is_valid_project_name (file))
+			return NULL;
+		prjfile = r_file_abspath (r_config_get (
+			core->config, "dir.projects"));
+		prjfile = r_str_concat (prjfile, "/");
+		prjfile = r_str_concat (prjfile, file);
+	} else prjfile = strdup (file);
+	data = r_file_slurp (prjfile, NULL);
+	if (data) {
+		if (strncmp (data, magic, strlen (magic))) {
+			R_FREE (prjfile);
+		}
+	}
+	free (data);
+	return prjfile;
 }
 
 static int r_core_project_init(RCore *core) {
@@ -28,6 +53,8 @@ static int r_core_is_project(RCore *core, const char *name) {
 	int ret = 0;
 	if (name && *name && *name!='.') {
 		char *path = r_core_project_file (core, name);
+		if (!path)
+			return 0;
 		path = r_str_concat (path, ".d");
 		if (r_file_is_directory (path))
 			ret = 1;
@@ -69,12 +96,56 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
+R_API int r_core_project_delete(RCore *core, const char *prjfile) {
+	char *path;
+	if (r_sandbox_enable (0)) {
+		eprintf ("Cant delete project in sandbox mode\n");
+		return 0;
+	}
+	path = r_core_project_file (core, prjfile);
+	if (!path) {
+		eprintf ("Invalid project name '%s'\n", prjfile);
+		return R_FALSE;
+	}
+	if (r_core_is_project (core, prjfile)) {
+		// rm project file
+		r_file_rm (path);
+		eprintf ("rm %s\n", path);
+		path = r_str_concat (path, ".d");
+		if (r_file_is_directory (path)) {
+			char *f;
+			RListIter *iter;
+			RList *files = r_sys_dir (path);
+			r_list_foreach (files, iter, f) {
+				char *filepath = r_str_concat (strdup (path), "/");
+				filepath =r_str_concat (filepath, f);
+				if (r_file_is_directory (filepath))
+					continue;
+				eprintf ("rm %s\n", filepath);
+				r_file_rm (filepath);
+				free (filepath);
+			}
+			r_file_rm (path);
+			eprintf ("rm %s\n", path);
+			r_list_free (files);
+		}
+		// TODO: remove .d directory (BEWARE OF ROOT RIMRAFS!)
+		// TODO: r_file_rmrf (path);
+	}
+	free (path);
+	return 0;
+}
+
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int ret;
 	char *prj;
 	if (!prjfile || !*prjfile)
 		return R_FALSE;
 	prj = r_core_project_file (core, prjfile);
+	if (!prj) {
+		eprintf ("Invalid project name '%s'\n", prjfile);
+		return R_FALSE;
+	}
 	ret = r_core_cmd_file (core, prj);
 	r_anal_project_load (core->anal, prjfile);
 	free (prj);
@@ -82,8 +153,13 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 }
 
 R_API char *r_core_project_info(RCore *core, const char *prjfile) {
+	FILE *fd;
 	char buf[256], *file = NULL, *prj = r_core_project_file (core, prjfile);
-	FILE *fd = prj? r_sandbox_fopen (prj, "r"): NULL;
+	if (!prj) {
+		eprintf ("Invalid project name '%s'\n", prjfile);
+		return R_FALSE;
+	}
+	fd = prj? r_sandbox_fopen (prj, "r"): NULL;
 	for (;fd;) {
 		fgets (buf, sizeof (buf), fd);
 		if (feof (fd))
@@ -115,6 +191,10 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		return R_FALSE;
 
 	prj = r_core_project_file (core, file);
+	if (!prj) {
+		eprintf ("Invalid project name '%s'\n", file);
+		return R_FALSE;
+	}
 	if (r_file_is_directory (prj)) {
 		eprintf ("Error: Target is a directory\n");
 		free (prj);

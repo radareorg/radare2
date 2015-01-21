@@ -14,9 +14,14 @@ static int cmd_project(void *data, const char *input) {
 	case 'l':
 		r_core_project_list (core, input[1]);
 		break;
+	case 'd':
+		r_core_project_delete (core, file);
+		break;
 	case 's':
-		r_core_project_save (core, file);
-		r_config_set (core->config, "file.project", file);
+		if (r_core_project_save (core, file)) {
+			r_config_set (core->config, "file.project", file);
+			r_cons_printf ("%s\n", file);
+		}
 		break;
 	case 'i':
 //		if (r_file_is_regular (file))
@@ -27,6 +32,7 @@ static int cmd_project(void *data, const char *input) {
 		"Usage:", "P[?osi] [file]", "Project management",
 		"Po", " [file]", "open project",
 		"Ps", " [file]", "save project",
+		"Pd", " [file]", "delete project",
 		"Pi", " [file]", "show project information",
 		"Pl", "", "list all projects",
 		"NOTE:", "", "See 'e file.project'",

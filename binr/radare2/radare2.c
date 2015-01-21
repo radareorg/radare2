@@ -328,29 +328,7 @@ int main(int argc, char **argv, char **envp) {
 			case 'n': run_anal --; break;
 			case 'N': run_rc = 0; break;
 			case 'p':
-				if (*optarg == '-') {
-					char *path, repath[128];
-					snprintf (repath, sizeof (repath),
-						R2_HOMEDIR"/projects/%s.d", optarg+1);
-					path = r_str_home (repath);
-					if (r_file_exists (path)) {
-						if (r_file_rmrf (path) == R_FALSE) {
-							eprintf ("Unable to recursively remove %s\n", path);
-							free (path);
-							return 1;
-						}
-						path [strlen (path)-2] = 0;
-						if (r_file_rm (path) == R_FALSE) {
-							eprintf ("Unable to remove %s\n", path);
-							free (path);
-							return 1;
-						}
-						free (path);
-						return 0;
-					}
-					eprintf ("Can't find project '%s'\n", optarg+1);
-					return 1;
-				} else	r_config_set (r.config, "file.project", optarg);
+				r_config_set (r.config, "file.project", optarg);
 				break;
 			case 'P': patchfile = optarg; break;
 			case 'q':
@@ -758,6 +736,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 			ret = r.num->value;
 			if (ret != -1 && r_config_get_i (r.config, "scr.interactive")) {
+				char *question;
 				if (debug) {
 					if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 						if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
@@ -765,8 +744,10 @@ int main(int argc, char **argv, char **envp) {
 					} else continue;
 				}
 				prj = r_config_get (r.config, "file.project");
-				if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+				question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
+				if (prj && *prj && r_cons_yesno ('y', question))
 					r_core_project_save (&r, prj);
+				free (question);
 			} else {
 				// r_core_project_save (&r, prj);
 				if (debug) {

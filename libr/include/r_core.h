@@ -349,6 +349,7 @@ R_API int r_core_gdiff(RCore *core1, RCore *core2, int anal_all);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
 R_API int r_core_project_open(RCore *core, const char *file);
+R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);
 R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
