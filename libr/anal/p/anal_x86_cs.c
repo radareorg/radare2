@@ -20,6 +20,7 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 	cs_x86_op op;
 	if (!insn->detail)
 		return NULL;
+	buf[0] = 0;
 #if 0
 	if (n<0 || n>INSOPS)
 		return NULL;
