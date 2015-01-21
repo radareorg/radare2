@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -10,6 +10,9 @@ static int cmd_project(void *data, const char *input) {
 	case 'o':
 	//	if (r_file_is_regular (file))
 		r_core_project_open (core, file);
+		break;
+	case 'l':
+		r_core_project_list (core, input[1]);
 		break;
 	case 's':
 		r_core_project_save (core, file);
@@ -25,6 +28,7 @@ static int cmd_project(void *data, const char *input) {
 		"Po", " [file]", "open project",
 		"Ps", " [file]", "save project",
 		"Pi", " [file]", "show project information",
+		"Pl", "", "list all projects",
 		"NOTE:", "", "See 'e file.project'",
 		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
 		NULL};

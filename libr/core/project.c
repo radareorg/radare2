@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -22,6 +22,51 @@ static int r_core_project_init(RCore *core) {
 	if (!ret) eprintf ("Cannot mkdir dir.projects\n");
 	free (prjdir);
 	return ret;
+}
+
+static int r_core_is_project(RCore *core, const char *name) {
+	int ret = 0;
+	if (name && *name && *name!='.') {
+		char *path = r_core_project_file (core, name);
+		path = r_str_concat (path, ".d");
+		if (r_file_is_directory (path))
+			ret = 1;
+		free (path);
+	}
+	return ret;
+}
+
+R_API int r_core_project_list(RCore *core, int mode) {
+	RListIter *iter;
+	RList *list;
+	int isfirst = 1;
+	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	if (!path)
+		return 0;
+	list = r_sys_dir (path);
+	switch (mode) {
+	case 'j':
+		r_cons_printf ("[");
+		r_list_foreach (list, iter, foo) {
+			// todo. escape string
+			if (r_core_is_project (core, foo)) {
+				r_cons_printf ("%s\"%s\"",
+					isfirst?"":",", foo);
+				isfirst = 0;
+			}
+		}
+		r_cons_printf ("]\n");
+		break;
+	default:
+		r_list_foreach (list, iter, foo) {
+			if (r_core_is_project (core, foo))
+				r_cons_printf ("%s\n", foo);
+		}
+		break;
+	}
+	r_list_free (list);
+	free (path);
+	return 0;
 }
 
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
