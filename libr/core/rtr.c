@@ -557,8 +557,14 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				} else {
 					char *out, *cmd = rs->path+5;
 					r_str_uri_decode (cmd);
-					// eprintf ("CMD (%s)\n", cmd);
-					out = r_core_cmd_str_pipe (core, cmd);
+					if (*cmd == ':') {
+						/* commands in /cmd/: starting with : do not show any output */
+						r_core_cmd0 (core, cmd+1);
+						out = NULL;
+					} else {
+						// eprintf ("CMD (%s)\n", cmd);
+						out = r_core_cmd_str_pipe (core, cmd);
+					}
 					// eprintf ("\nOUT LEN = %d\n", strlen (out));
 					if (out) {
 						char *res = r_str_uri_encode (out);
