@@ -1,5 +1,30 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+
+static void showhelp(RCore *core) {
+	const char* help_msg[] = {
+		"Usage:", "c[?dfx] [argument]", " # Compare",
+		"c", " [string]", "Compare a plain with escaped chars string",
+		"c4", " [value]", "Compare a doubleword from a math expression",
+		"c8", " [value]", "Compare a quadword from a math expression",
+		"cat", " [file]", "Show contents of file (see pwd, ls)",
+		"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
+		"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
+		//"cc", " [offset]", "code bindiff current block against offset"
+		//"cD", " [file]", "like above, but using radiff -b",
+		"cf", " [file]", "Compare contents of file at current seek",
+		"cg", "[o] [file]","Graphdiff current file and [file]",
+		"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
+		"cu", " [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
+		"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
+		"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
+		"cw", "[us?] [...]", "Compare memory watchers",
+		"cx", " [hexpair]", "Compare hexpair string",
+		"cX", " [addr]", "Like 'cc' but using hexdiff output",
+		NULL
+	};
+	r_core_cmd_help (core, help_msg);
+}
 R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);
@@ -495,30 +520,8 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg); }
 		}
 		break;
-	case '?':{
-			const char* help_msg[] = {
-				"Usage:", "c[?dfx] [argument]", " # Compare",
-				"c", " [string]", "Compare a plain with escaped chars string",
-				"c4", " [value]", "Compare a doubleword from a math expression",
-				"c8", " [value]", "Compare a quadword from a math expression",
-				"cat", " [file]", "Show contents of file (see pwd, ls)",
-				"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
-				"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
-				//"cc", " [offset]", "code bindiff current block against offset"
-				//"cD", " [file]", "like above, but using radiff -b",
-				"cf", " [file]", "Compare contents of file at current seek",
-				"cg", "[o] [file]","Graphdiff current file and [file]",
-				"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
-				"cu", " [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
-				"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-				"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
-				"cw", "[us?] [...]", "Compare memory watchers",
-				"cx", " [hexpair]", "Compare hexpair string",
-				"cX", " [addr]", "Like 'cc' but using hexdiff output",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-			}
+	case '?':
+		showhelp (core);
 		break;
 	case 'v': // "cv"
 		{
@@ -578,7 +581,7 @@ static int cmd_cmp(void *data, const char *input) {
 		//		r_cons_flush ();
 		break;
 	default:
-		eprintf ("Invalid use of c. See c? for help.\n");
+		showhelp (core);
 	}
 	if (val != UT64_MAX)
 		core->num->value = val;
