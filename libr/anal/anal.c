@@ -319,3 +319,22 @@ R_API int r_anal_op_is_eob (RAnalOp *op) {
 	}
 	return 0;
 }
+
+R_API int r_anal_purge (RAnal *anal) {
+	sdb_reset (anal->sdb_fcns);
+	sdb_reset (anal->sdb_meta);
+	sdb_reset (anal->sdb_hints);
+	sdb_reset (anal->sdb_xrefs);
+	sdb_reset (anal->sdb_types);
+	r_list_free (anal->fcns);
+	anal->fcns = r_anal_fcn_list_new ();
+#if USE_NEW_FCN_STORE
+	r_listrange_free (anal->fcnstore);
+	anal->fcnstore = r_listrange_new ();
+#endif
+	r_list_free (anal->refs);
+	anal->refs = r_anal_ref_list_new ();
+	r_list_free (anal->types);
+	anal->types = r_anal_type_list_new ();
+	return 0;
+}

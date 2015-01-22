@@ -790,7 +790,7 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
-			r_io_map_del_all (io, nfd);
+			r_io_map_del (io, -1);
 			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, nfd, io->plugin);
 			if (io->plugin && io->plugin->close)
@@ -800,6 +800,24 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 	}
 	io->desc = cur;
 	return R_FALSE;
+}
+
+R_API int r_io_close_all (RIO *io) {
+	// LOT OF MEMLEAKS HERE
+	if (!io) return 0;
+	r_cache_free (io->buffer);
+	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
+	io->write_mask_fd = -1;
+	io->ff = 1;
+	io->raised = -1;
+	io->autofd = R_TRUE;
+	r_io_map_del (io, -1);
+	r_io_desc_del (io, -1);
+	r_io_section_rm_all (io, -1);
+	r_io_undo_init (io);
+	r_io_cache_reset (io, 0);
+//	r_io_plugin_init (io);
+	return 1;
 }
 
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {

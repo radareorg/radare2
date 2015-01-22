@@ -9,7 +9,12 @@ static int cmd_project(void *data, const char *input) {
 	switch (input[0]) {
 	case 'o':
 	//	if (r_file_is_regular (file))
-		r_core_project_open (core, file);
+		if (input[1]) {
+			r_core_project_open (core, file);
+		} else {
+			if (file && *file)
+				r_cons_printf ("%s\n", file);
+		}
 		break;
 	case 'l':
 		r_core_project_list (core, input[1]);

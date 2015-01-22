@@ -873,9 +873,9 @@ static int cmd_system(void *data, const char *input) {
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
-	int stdout_fd, si, fds[2];
+	int stdout_fd, fds[2];
 #endif
-	int olen, ret = -1, pipecolor = -1;
+	int si, olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
 
 	if (r_sandbox_enable (0)) {

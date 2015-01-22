@@ -137,8 +137,9 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
-	int ret;
-	char *prj;
+int askuser = 1;
+	int ret, close_current_session = 1;
+	char *prj, *filepath;
 	if (!prjfile || !*prjfile)
 		return R_FALSE;
 	prj = r_core_project_file (core, prjfile);
@@ -146,8 +147,58 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
 		return R_FALSE;
 	}
+	filepath = r_core_project_info (core, prj);
+	//eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
+	/* if it is not an URI */
+	if (!strstr (filepath, "://")) {
+		/* check if path exists */
+		if (!r_file_exists (filepath)) {
+			eprintf ("Cannot find file '%s'\n", filepath);
+			free (prj);
+			free (filepath);
+			return R_FALSE;
+		}
+	}
+	if (!strcmp (prjfile, r_config_get (core->config, "file.project"))) {
+		eprintf ("Reloading project\n");
+		askuser = 0;
+#if 0
+		free (prj);
+		free (filepath);
+		return R_FALSE;
+#endif
+	}
+	if (askuser) {
+		if (r_config_get_i (core->config, "scr.interactive")) {
+			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
+		}
+	}
+	if (close_current_session) {
+		RCoreFile *fh;
+		// delete
+		r_core_file_close_fd (core, -1);
+		r_io_close_all (core->io);
+		r_anal_purge (core->anal);
+		r_flag_unset_all (core->flags);
+		r_bin_file_delete_all (core->bin);
+		// open new file
+		// TODO: handle read/read-write mode
+		// TODO: handle mapaddr (io.maps are not saved in projects yet)
+		fh = r_core_file_open (core, filepath, 0, 0);
+		if (!fh) {
+			eprintf ("Cannot open file '%s'\n", filepath);
+			free (filepath);
+			free (prj);
+			return R_FALSE;
+		}
+		// TODO: handle load bin info or not
+		// TODO: handle base address
+		r_core_bin_load (core, filepath, UT64_MAX);
+	}
 	ret = r_core_cmd_file (core, prj);
 	r_anal_project_load (core->anal, prjfile);
+	r_core_cmd0 (core, "s entry0");
+	free (filepath);
 	free (prj);
 	return ret;
 }
@@ -157,7 +208,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	char buf[256], *file = NULL, *prj = r_core_project_file (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
-		return R_FALSE;
+		return NULL;
 	}
 	fd = prj? r_sandbox_fopen (prj, "r"): NULL;
 	for (;fd;) {

@@ -81,7 +81,7 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 	RIODesc *d;
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (io->files, iter, d) {
-		if (d->fd == fd) {
+		if (d->fd == fd || fd == -1) {
 			r_io_desc_free (d);
 			iter->data = NULL; // enforce free
 			r_list_delete (io->files, iter);

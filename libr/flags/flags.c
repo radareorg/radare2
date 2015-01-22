@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include <r_flags.h>
 #include <r_util.h>
@@ -414,7 +414,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 	r_list_foreach (f->flags, iter, flag) {
 		if ((f->space_idx != -1) && (flag->space != f->space_idx))
 			continue;
-		if (r_str_glob (flag->name, glob)) {
+		if (!glob || r_str_glob (flag->name, glob)) {
 			it.n = iter->n;
 			r_flag_unset (f, flag->name, flag);
 			iter = &it;
@@ -422,6 +422,23 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 		}
 	}
 	return n;
+}
+
+R_API void r_flag_unset_all (RFlag *f) {
+	f->space_idx = -1;
+	f->space_idx2 = -1;
+
+	// --- seems buggy and slow r_flag_unset_glob (f, NULL);
+	r_list_free (f->flags);
+	f->flags = r_list_new ();
+	f->flags->free = (RListFree) r_flag_item_free;
+
+	r_hashtable64_free (f->ht_name);
+	f->ht_name = r_hashtable64_new ();
+	r_hashtable64_free (f->ht_off);
+	f->ht_off = r_hashtable64_new ();
+
+	r_flag_space_unset (f, NULL);
 }
 
 static void unflag(RFlag *f, ut64 namehash) {

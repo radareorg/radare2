@@ -144,9 +144,13 @@ static int cmd_open(void *data, const char *input) {
 					}
 					r_core_bin_raise (core, -1, binobj_num);
 					break;
-				case '-':
-					if (!r_bin_file_delete (core->bin, r_num_math (core->num, input+2))) {
-						eprintf ("Cant find an RBinFile associated with that fd.\n");
+				case '-': // "ob-"
+					if (input[2] == '*') {
+						r_cons_printf ("[i] Deleted %d binfiles\n", r_bin_file_delete_all (core->bin));
+					} else {
+						if (!r_bin_file_delete (core->bin, r_num_math (core->num, input+2))) {
+							eprintf ("Cant find an RBinFile associated with that fd.\n");
+						}
 					}
 					break;
 				case 'd': // backward compat, must be deleted
@@ -179,9 +183,32 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case '-':
-		if (!r_core_file_close_fd (core, atoi (input+1)))
-			eprintf ("Unable to find filedescriptor %d\n",
-				atoi (input+1));
+		switch (input[1]) {
+		case '*':
+			r_core_file_close_fd (core, -1);
+			r_io_close_all (core->io);
+			r_bin_file_delete_all (core->bin);
+			break;
+		case '-':
+			eprintf ("All core files, io, anal and flags info purged.\n");
+			r_core_file_close_fd (core, -1);
+			r_io_close_all (core->io);
+			r_bin_file_delete_all (core->bin);
+
+			// TODO: Move to a-- ?
+			r_anal_purge (core->anal);
+			// TODO: Move to f-- ?
+			r_flag_unset_all (core->flags);
+			// TODO: rbin?
+			break;
+		case ' ':
+			if (!r_core_file_close_fd (core, atoi (input+1)))
+				eprintf ("Unable to find filedescriptor %d\n",
+						atoi (input+1));
+			break;
+		default:
+			eprintf ("Usage: ob-# or ob-*, where # is the filedescriptor number\n");
+		}
 		// hackaround to fix invalid read
 		//r_core_cmd0 (core, "oo");
 		// uninit deref
@@ -327,6 +354,8 @@ static int cmd_open(void *data, const char *input) {
 		"oo","+","reopen current file in read-write",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
+		"o-","*","close all opened files",
+		"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 		"o"," /bin/ls","open /bin/ls file in read-only",
 		"o","+/bin/ls","open /bin/ls file in read-write mode",
 		"o"," /bin/ls 0x4000","map file at 0x4000",

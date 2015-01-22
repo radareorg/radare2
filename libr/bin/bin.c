@@ -1641,6 +1641,19 @@ R_API ut64 r_bin_get_size (RBin *bin) {
 	return UT64_MAX;
 }
 
+R_API int r_bin_file_delete_all(RBin *bin) {
+	RListIter *iter, *iter2;
+	RBinFile *bf;
+	int counter = 0;
+	if (bin) {
+		r_list_foreach_safe (bin->binfiles, iter, iter2, bf) {
+			r_list_delete (bin->binfiles, iter);
+			counter++;
+		}
+	}
+	return counter;
+}
+
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd) {
 	RListIter *iter;
 	RBinFile *bf;

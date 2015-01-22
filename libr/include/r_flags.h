@@ -85,6 +85,7 @@ R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p);
 R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p);
+R_API void r_flag_unset_all (RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);
 R_API int r_flag_sort(RFlag *f, int namesort);
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname);
@@ -102,6 +103,7 @@ R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
 R_API int r_flag_space_get(RFlag *f, const char *name);
 R_API const char *r_flag_space_get_i(RFlag *f, int idx);
 R_API int r_flag_space_set(RFlag *f, const char *name);
+R_API int r_flag_space_unset (RFlag *f, const char *fs);
 R_API int r_flag_space_list(RFlag *f, int mode);
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
 #endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static void flagbars(RCore *core) {
 	int total = 0;
@@ -176,7 +176,9 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case '-':
-		if (input[1]) {
+		if (input[1]=='-') {
+			r_flag_unset_all (core->flags);
+		} else if (input[1]) {
 			const char *flagname = input+1;
 			while (*flagname==' ') flagname++;
 			if (*flagname=='.') {
@@ -263,6 +265,13 @@ static int cmd_flag(void *data, const char *input) {
 			if (input[2]==' ')
 				r_flag_space_rename (core->flags, NULL, input+2);
 			else eprintf ("Usage: fsr [newname]\n");
+			break;
+		case '-':
+			if (input[2]=='*') {
+				r_flag_space_unset (core->flags, NULL);
+			} else {
+				r_flag_space_unset (core->flags, input+3);
+			}
 			break;
 		case 'j':
 		case '\0':
@@ -439,6 +448,7 @@ static int cmd_flag(void *data, const char *input) {
 		"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
 		"f"," name 12 33 [cmt]","same as above + optional comment",
 		"f-",".blah@fcn.foo","delete local label from function at current seek (also f.-)",
+		"f--","","delete all flags and flagspaces (deinit)",
 		"f+","name 12 @ 33","like above but creates new one if doesnt exist",
 		"f-","name","remove flag 'name'",
 		"f-","@addr","remove flag at address expression",
@@ -461,6 +471,8 @@ static int cmd_flag(void *data, const char *input) {
 		"fs","","display flagspaces",
 		"fs"," *","select all flagspaces",
 		"fs"," flagspace","select flagspace or create if it doesn't exist",
+		"fs","-flagspace","remove flagspace",
+		"fs","-*","remove all flagspaces",
 		"fsm"," [addr]","move flags at given address to the current flagspace",
 		"fsr"," newname","rename selected flagspace",
 		"fS","[on]","sort flags by offset or name",

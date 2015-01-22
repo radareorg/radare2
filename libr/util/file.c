@@ -409,7 +409,7 @@ R_API boolt r_file_rm(const char *file) {
 	if (r_sandbox_enable (0)) return R_FALSE;
 	if (r_file_is_directory (file)) {
 #if __WINDOWS__
-		return (DeleteDirectory (file)==0)? R_TRUE: R_FALSE;
+		return (RemoveDirectory (file)==0)? R_TRUE: R_FALSE;
 #else
 		return (rmdir (file)==0)? R_TRUE: R_FALSE;
 #endif
@@ -424,7 +424,7 @@ R_API boolt r_file_rm(const char *file) {
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
 #if __WINDOWS__
-	HANDLE fm, fh;
+	HANDLE fh;
 	if (r_sandbox_enable (0)) return -1;
 	fh = CreateFile (file, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -435,6 +435,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	}
 // no need to overengineer the file write more
 #if 0
+	HANDLE fm;
 	fm = CreateFileMapping (fh, NULL,
 		PAGE_READWRITE, 0, 0, NULL);
 	if (fm == NULL) {

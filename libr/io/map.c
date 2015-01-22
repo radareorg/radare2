@@ -82,9 +82,11 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 R_API RIOMap *r_io_map_resolve(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
-		if (map->fd == fd)
-			return map;
+	if (io && io->maps) {
+		r_list_foreach (io->maps, iter, map) {
+			if (map->fd == fd)
+				return map;
+		}
 	}
 	return NULL;
 }
@@ -154,18 +156,6 @@ R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr)
 }
 
 R_API int r_io_map_del(RIO *io, int fd) {
-	RIOMap *map;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
-		if (fd==-1 || map->fd==fd) {
-			r_list_delete (io->maps, iter);
-			return R_TRUE;
-		}
-	}
-	return R_FALSE;
-}
-
-R_API int r_io_map_del_all(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter, *tmp;
 	ut8 deleted = R_FALSE;

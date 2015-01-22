@@ -80,7 +80,7 @@ R_API int r_io_section_rm_all (RIO *io, int fd) {
 	if (!io || !io->sections)
 		return R_FALSE;
 	r_list_foreach_safe (io->sections, iter, ator, section) {
-		if (section->fd == fd)
+		if (section->fd == fd || fd == -1)
 			r_list_delete (io->sections, iter);
 	}
 	return R_TRUE;

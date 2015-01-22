@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_flags.h>
 #include <r_cons.h>
@@ -54,6 +54,32 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 		}
 	}
 	return f->space_idx;
+}
+
+R_API int r_flag_space_unset (RFlag *f, const char *fs) {
+	RListIter *iter;
+	RFlagItem *fi;
+	int i, count = 0;
+	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+		if (!f->spaces[i]) continue;
+		if (!fs || !strcmp (fs, f->spaces[i])) {
+			if (f->space_idx == i) {
+				f->space_idx = -1;
+			}
+			if (f->space_idx2 == i) {
+				f->space_idx2 = -1;
+			}
+			R_FREE (f->spaces[i]);
+			// remove all flags space references
+			r_list_foreach (f->flags, iter, fi) {
+				if (fi->space == i) {
+					fi->space = -1;
+				}
+			}
+			count++;
+		}
+	}
+	return count;
 }
 
 R_API int r_flag_space_list(RFlag *f, int mode) {
