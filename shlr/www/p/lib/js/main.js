@@ -7,6 +7,7 @@ $(document).ready( function() {
       if(ui.tab.innerHTML.indexOf("Entropy")) r2ui._ent.render();
       if(ui.tab.innerHTML.indexOf("Strings")) r2ui._str.render();
       if(ui.tab.innerHTML.indexOf("Settings")) r2ui._set.render();
+      if(ui.tab.innerHTML.indexOf("Projects")) r2ui._prj.render();
     },
     activate: function( event, ui ) {
       r2ui.seek("$$", false);
@@ -42,11 +43,13 @@ $(document).ready( function() {
   var entropy_panel = new EntropyPanel();
   var strings_panel = new StringsPanel();
   var settings_panel = new SettingsPanel();
+  var projects_panel = new ProjectsPanel();
   r2ui._ent = entropy_panel;
 	r2ui._dis = disasm_panel;
   r2ui._str = strings_panel;
   r2ui._set = settings_panel;
 	r2ui._hex = hex_panel;
+  r2ui._prj = projects_panel;
 
   // For enyo compatibility
 	r2ui.ra = {};
