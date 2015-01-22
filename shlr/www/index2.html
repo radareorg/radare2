@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="language" content="en" />
+
+	<title>radare2</title>
+
+	<script type="text/javascript" src="./p/lib/js/jquery-1.9.0.js"></script>
+	<script type="text/javascript" src="./enyo/js/r2.js"></script>
+
+	<style>
+		.circular, .circular img{
+			background: white;
+			width: 75px;
+			height: 75px;
+			-webkit-border-radius: 30px; /* Saf3+, Chrome */
+			border-radius: 30px; /* Opera 10.5, IE 9 */
+		}
+		#title, #button {
+			margin-top: 20px;
+			color: white;
+		}
+		.layout_value{
+			padding-left: 5px;
+		}
+		.highlight {
+			background: #808080 ;
+		}
+	</style>
+</head>
+<body style="background: rgb(90,90,90); color: white; font-family: monospace;">
+	<div id="content" align="center">
+		<div class="circular" id="logo"><img src="r2.svg" onerror="this.onerror=null; this.src='./enyo/icon.png'"></div>
+		<div id="title"><h1>radare2</h1></div>
+		<div id="fortune"></div>
+		<table>
+			<tr>
+				<td>Recent projects: </td>
+				<td><div id="recent"></div></td>
+			</tr>
+			<tr>
+				<td>File: </td>
+				<td><div id="openfile"></div></td>
+			</tr>
+			<tr>
+				<td>Layout: </td>
+				<td>
+					<div id="layout">
+						<select id="dropdown">
+						  <option value="p">panels (desktop)</option>
+						  <option value="enyo">enyo (mobile)</option>
+						  <option value="t">tiles (legacy)</option>
+						</select>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<div id="button">
+			<input id="submit" type="submit" value="Start awesomeness !!!" />
+		</div>
+	</div>
+	<script>
+		var filename = "";
+		var layout = "";
+		var project = "";
+		var fortune = "";
+
+		$(document).ready( function() {
+			r2.cmdj("Plj", function(x) {
+			  var html = "<ul>";
+			  for (var i in x) {
+			  	var filename = x[i].trim();
+				html += "<li class='layout_value' id='" + filename + "'>" + filename + "</li>";
+			  }
+			  html += "</ul>";
+			  $("#recent").html(html);
+			});
+
+			r2.cmd("e http.ui", function(x) {
+			  layout = x.trim();
+			  $("select#dropdown").val(layout);
+			});
+
+			r2.cmdj("oj", function(x) {
+				if(x) {
+				  if(x[0].uri.indexOf("malloc://") !== -1) {
+					$("#openfile").html('<input type="file" id="filename" name="filename">');
+				  } else {
+				  	$("#openfile").html(x[0].uri);
+				  	filename = x[0].uri;
+				  }
+				}
+			});
+
+			r2.cmd("fortune", function(x) {
+				$("#fortune").html("<q><i>" + x + "</i></q>");
+			});
+
+			$('#filename').on('change', function(){
+				filename = $('#filename').val();
+			});
+
+			$('.layout_value').on('click', function(){
+				project = this.id;
+				$('.highlight').removeClass('highlight');
+				$("#" + project).addClass('highlight');
+			});
+
+			$('#dropdown').on('change', function(){
+				layout = $(this).val();
+				r2.cmd(":e http.ui=" + layout, function(x) {});
+			});
+
+			$('#submit').on('click', function(){
+				if (project !== "" && layout !== "") {
+					r2.cmd("Po " + project, function(x) {});
+					window.location.assign("./" + layout);
+				} else if (filename !== "" && layout !== "") {
+					window.location.assign("./" + layout);
+				} else {
+					alert("Choose file and layout");
+				}
+			});
+		});
+	</script>
+</body>
+</html>
