@@ -56,6 +56,26 @@ static int cmd_help(void *data, const char *input) {
 	RList *tmp;
 
 	switch (input[0]) {
+	case ':':
+		{
+		RListIter *iter;
+		RCorePlugin *cp;
+		if (input[1]=='?') {
+			const char* help_msg[] = {
+				"Usage:", ":[plugin] [args]", "",
+				":", "", "list RCore plugins",
+				":java", "", "run java plugin",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			return 0;
+		}
+		if (input[1])
+			return r_core_cmd0 (core, input+1);
+		r_list_foreach (core->rcmd->plist, iter, cp) {
+			r_cons_printf ("%s: %s\n", cp->name, cp->desc);
+		}
+	}
+		break;
 	case 'r':
 		{ // TODO : Add support for 64bit random numbers
 		ut64 b = 0;
@@ -547,6 +567,7 @@ static int cmd_help(void *data, const char *input) {
 		"?[??]","[expr]", "Help or evaluate math expression",
 		"?$?", "", "Show available '$' variables and aliases",
 		"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
+		"?:?", "", "List and manage core plugins",
 		NULL
 		};
 		r_cons_printf("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
