@@ -722,7 +722,6 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
 }
 
 R_API int r_core_init(RCore *core) {
-	static int singleton = R_TRUE;
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->zerosep = R_FALSE;
@@ -767,9 +766,8 @@ R_API int r_core_init(RCore *core) {
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
 	/* initialize libraries */
-	core->cons = r_cons_singleton ();
-	if (singleton) {
-		r_cons_new ();
+	core->cons = r_cons_new ();
+	if (core->cons->refcnt == 1) {
 		core->cons = r_cons_singleton ();
 		if (core->cons->line) {
 			core->cons->line->user = core;
@@ -783,7 +781,6 @@ R_API int r_core_init(RCore *core) {
 #endif
 		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (R2_HOMEDIR"/history");
-		singleton = R_FALSE;
 	}
 	core->print->cons = core->cons;
 	core->cons->num = core->num;
