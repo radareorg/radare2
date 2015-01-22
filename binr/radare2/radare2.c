@@ -119,7 +119,7 @@ static int main_help(int line) {
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
-		" -p [prj]     set project file\n"
+		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
 		" -S           start r2 in sandbox mode\n"

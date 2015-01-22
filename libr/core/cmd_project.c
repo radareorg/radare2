@@ -7,6 +7,13 @@ static int cmd_project(void *data, const char *input) {
 	if (*arg==' ') arg++;
 	file = input[1]?arg:str;
 	switch (input[0]) {
+	case 'c':
+		if (!input[1]) {
+			eprintf ("TODO: Show project saving script to console\n");
+		} else if (input[1]==' ') {
+			r_core_project_cat (core, input+2);
+		} else eprintf ("Usage: Pc [prjname]\n");
+		break;
 	case 'o':
 	//	if (r_file_is_regular (file))
 		if (input[1]) {
@@ -39,6 +46,8 @@ static int cmd_project(void *data, const char *input) {
 		"Ps", " [file]", "save project",
 		"Pd", " [file]", "delete project",
 		"Pi", " [file]", "show project information",
+		"Pc", " [file]", "show project script to console",
+		"Pc", "", "show what will be saved in the project script",
 		"Pl", "", "list all projects",
 		"NOTE:", "", "See 'e file.project'",
 		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",

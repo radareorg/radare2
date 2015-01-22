@@ -63,6 +63,19 @@ static int r_core_is_project(RCore *core, const char *name) {
 	return ret;
 }
 
+R_API int r_core_project_cat(RCore *core, const char *name) {
+	char *path = r_core_project_file (core, name);
+	if (path) {
+		char *data = r_file_slurp (path, NULL);
+		if (data) {
+			r_cons_printf ("%s\n", data);
+			free (data);
+		}
+	}
+	free (path);
+	return 0;
+}
+
 R_API int r_core_project_list(RCore *core, int mode) {
 	RListIter *iter;
 	RList *list;
