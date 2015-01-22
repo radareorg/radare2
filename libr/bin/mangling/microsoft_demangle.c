@@ -18,16 +18,17 @@ typedef enum EObjectType {
 // State machine for parsing type codes data types
 ///////////////////////////////////////////////////////////////////////////////
 typedef enum ETCStateMachineErr {
-	ETCStateMachineErrOK,
-	ETCStateMachineErrUncorrectTypeCode,
-	ETCStateMachineErrUnsupportedTypeCode,
-	ETCStateMachineErrMax
+	eTCStateMachineErrOK,
+	eTCStateMachineErrUncorrectTypeCode,
+	eTCStateMachineErrUnsupportedTypeCode,
+	eTCStateMachineErrAlloc,
+	eTCStateMachineErrMax
 } ETCStateMachineErr;
 
 typedef enum ETCState { // TC - type code
-	eTCStateStart = 0,
-	eTCStateEnd,
-	eTCStateMax
+	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD, eTCStateC,
+	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
+	eTCStateM, eTCStateZ, eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -46,11 +47,29 @@ typedef struct SStateInfo {
 	ETCStateMachineErr err;
 } SStateInfo;
 
-static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str);
+#define DECL_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str);
+DECL_STATE_ACTION(start)
+DECL_STATE_ACTION(X)
+DECL_STATE_ACTION(N)
+DECL_STATE_ACTION(D)
+DECL_STATE_ACTION(C)
+DECL_STATE_ACTION(E)
+DECL_STATE_ACTION(F)
+DECL_STATE_ACTION(G)
+DECL_STATE_ACTION(H)
+DECL_STATE_ACTION(I)
+DECL_STATE_ACTION(J)
+DECL_STATE_ACTION(K)
+DECL_STATE_ACTION(M)
+DECL_STATE_ACTION(Z)
+#undef DECL_STATE_ACTION
 
+#define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
-	tc_state_start, NULL
+	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
+	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z)
 };
+#undef NAME
 ///////////////////////////////////////////////////////////////////////////////
 // End of data types for state machine which parse type codes
 ///////////////////////////////////////////////////////////////////////////////
@@ -65,25 +84,119 @@ static void run_state(	SStateInfo *state_info,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+int copy_string(STypeCodeStr *type_code_str, char *str_for_copy)
+{
+	int res = 1; // all is OK
+	int str_for_copy_len = strlen(str_for_copy);
+	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
+	char *dst = 0;
+
+	if (free_space > str_for_copy_len) {
+		type_code_str->type_str_len =
+				(type_code_str->type_str_len +  str_for_copy_len) >> 1;
+		type_code_str->type_str = (char *) realloc(	type_code_str->type_str,
+													type_code_str->type_str_len);
+		if (type_code_str->type_str == NULL) {
+			res = 0;
+			goto copy_string_err;
+		}
+	}
+
+	dst = type_code_str->type_str + type_code_str->curr_pos;
+	strncpy(dst, str_for_copy, str_for_copy_len);
+	type_code_str->curr_pos += str_for_copy_len;
+	type_code_str->type_str[type_code_str->curr_pos] = '\0';
+
+copy_string_err:
+	return res;
+}
+
+#define DEF_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str)
+#define GO_TO_NEXT_STATE(state, new_state) { \
+	state->amount_of_read_chars++; \
+	state->state = eTCStateEnd; \
+}
+#define ONE_LETTER_ACTIION(action, type) \
+	static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str) \
+	{ \
+		if (copy_string(type_code_str, type) == 0) { \
+			state->err = eTCStateMachineErrAlloc; \
+		} \
+		GO_TO_NEXT_STATE(state, eTCStateEnd) \
+	} \
+
+ONE_LETTER_ACTIION(X, "void")
+ONE_LETTER_ACTIION(D, "char")
+ONE_LETTER_ACTIION(C, "signed char")
+ONE_LETTER_ACTIION(E, "unsigned char")
+ONE_LETTER_ACTIION(F, "short int")
+ONE_LETTER_ACTIION(G, "unsigned short int")
+ONE_LETTER_ACTIION(H, "int")
+ONE_LETTER_ACTIION(I, "unsinged int")
+ONE_LETTER_ACTIION(J, "long int")
+ONE_LETTER_ACTIION(K, "unsigned long int")
+ONE_LETTER_ACTIION(M, "float")
+ONE_LETTER_ACTIION(N, "double")
+ONE_LETTER_ACTIION(Z, "varargs ...")
+
+#undef ONE_LETTER_ACTION
+#undef GO_TO_NEXT_STATE
+#undef DEF_STATE_ACTION
+
+///////////////////////////////////////////////////////////////////////////////
 static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 {
+#define SINGLEQUOTED_X 'X'
+#define SINGLEQUOTED_D 'D'
+#define SINGLEQUOTED_C 'C'
+#define SINGLEQUOTED_E 'E'
+#define SINGLEQUOTED_F 'F'
+#define SINGLEQUOTED_G 'G'
+#define SINGLEQUOTED_H 'H'
+#define SINGLEQUOTED_I 'I'
+#define SINGLEQUOTED_J 'J'
+#define SINGLEQUOTED_K 'K'
+#define SINGLEQUOTED_M 'M'
+#define SINGLEQUOTED_N 'N'
+#define SINGLEQUOTED_Z 'Z'
+
+#define CHAR_WITH_QUOTES(letter) (SINGLEQUOTED_##letter)
+
+#define ONE_LETTER_STATE(letter) \
+	case CHAR_WITH_QUOTES(letter): \
+		state->state = eTCState##letter; \
+		break; \
+
 	state->amount_of_read_chars++;
 
 	switch (*(state->buff_for_parsing)) {
-	case 'X': case 'N': case 'D': case 'C': case 'E': case 'F': case 'G':
-	case 'H': case 'I': case 'J': case 'K': case '_': case 'M': case 'R':
-	case 'O': case 'T': case 'U': case 'Z': case 'P': case 'Q': case 'W':
+	ONE_LETTER_STATE(X)
+	ONE_LETTER_STATE(D)
+	ONE_LETTER_STATE(C)
+	ONE_LETTER_STATE(E)
+	ONE_LETTER_STATE(F)
+	ONE_LETTER_STATE(G)
+	ONE_LETTER_STATE(H)
+	ONE_LETTER_STATE(I)
+	ONE_LETTER_STATE(J)
+	ONE_LETTER_STATE(K)
+	ONE_LETTER_STATE(M)
+	ONE_LETTER_STATE(N)
+	ONE_LETTER_STATE(Z)
+	case '_': case 'R':
+	case 'O': case 'T': case 'U': case 'P': case 'Q': case 'W':
 	case 'S': case 'A': case 'V':
 		state->state = eTCStateEnd;
-		state->err =ETCStateMachineErrUnsupportedTypeCode;
+		state->err = eTCStateMachineErrUnsupportedTypeCode;
 		break;
 	default:
 		eprintf("[uncorrect type] error while parsing type\n");
 
 		state->state = eTCStateEnd;
-		state->err = ETCStateMachineErrUncorrectTypeCode;
+		state->err = eTCStateMachineErrUncorrectTypeCode;
 		break;
 	}
+#undef ONE_LETTER_STATE
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -92,7 +205,7 @@ static void init_state_struct(SStateInfo *state, char *buff_for_parsing)
 	state->state = eTCStateStart;
 	state->buff_for_parsing = buff_for_parsing;
 	state->amount_of_read_chars = 0;
-	state->err = ETCStateMachineErrOK;
+	state->err = eTCStateMachineErrOK;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -108,8 +221,8 @@ static int init_type_code_str_struct(STypeCodeStr *type_coder_str)
 		res = 0;
 	}
 
-	type_coder_str->curr_pos = strlen("unknown_type");
-	strncpy(type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);
+	type_coder_str->curr_pos = 0; // strlen("unknown type");
+//	strncpy(type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);
 
 	return res;
 #undef TYPE_STR_LEN
@@ -147,14 +260,14 @@ static EDemanglerErr get_type_code_string(	char *sym,
 	while (state.state != eTCStateEnd) {
 		run_state(&state, &type_code_str);
 
-		if (state.err != ETCStateMachineErrOK) {
+		if (state.err != eTCStateMachineErrOK) {
 			*str_type_code = 0;
 			*amount_of_read_chars = 0;
 			switch (state.err) {
-			case ETCStateMachineErrUncorrectTypeCode:
+			case eTCStateMachineErrUncorrectTypeCode:
 				err = eDemanglerErrUncorrectMangledSymbol;
 				break;
-			case ETCStateMachineErrUnsupportedTypeCode:
+			case eTCStateMachineErrUnsupportedTypeCode:
 				err = eDemanglerErrUnsupportedMangling;
 			default:
 				break;
