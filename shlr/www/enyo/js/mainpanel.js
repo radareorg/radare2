@@ -180,6 +180,9 @@ enyo.kind ({
         ]}
       ]},
       {kind: "onyx.PickerDecorator", classes: "top", components: [
+        {kind: "onyx.Button", name: "saveButton", content: "Save", ontap: "save_project"}
+      ]},
+      {kind: "onyx.PickerDecorator", classes: "top", components: [
         {kind: "onyx.Button", name: "switchButton", content: "Switch View", ontap: "switch_view"}
       ]},
       {kind: "onyx.PickerDecorator", classes: "top", components: [
@@ -203,6 +206,11 @@ enyo.kind ({
   },
   switch_view: function(inSender, inEvent) {
     r2ui._dis.switch_view();
+  },
+  save_project: function(inSender, inEvent) {
+    var project_name = prompt("Project Name:", r2.project_name);
+    r2.cmd (":Ps " + project_name, function (x){});
+    r2.project_name = project_name;
   },
   create: function() {
     this.inherited(arguments);

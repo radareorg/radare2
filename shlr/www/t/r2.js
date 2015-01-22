@@ -54,6 +54,7 @@ if (typeof (module) !== 'undefined') {
   }
 }
 
+r2.project_name = "";
 
 r2.plugin = function() {
   console.error ("r2.plugin is not available in this environment");
