@@ -7,6 +7,7 @@ all: ${F_SDB}
 
 %.sdb:%
 	${SDB} $<.sdb = < $<
+	test -f $<.sdb
 
 clean:
 	rm -f *.sdb
