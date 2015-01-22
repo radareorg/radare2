@@ -15,59 +15,160 @@ typedef enum EObjectType {
 } EObjectType;
 
 ///////////////////////////////////////////////////////////////////////////////
-static EDemanglerErr get_type_code_string(	char *sym,
-											int *amount_of_read_chars,
-											char **str_type_code)
+// State machine for parsing type codes data types
+///////////////////////////////////////////////////////////////////////////////
+typedef enum ETCStateMachineErr {
+	ETCStateMachineErrOK,
+	ETCStateMachineErrUncorrectTypeCode,
+	ETCStateMachineErrUnsupportedTypeCode,
+	ETCStateMachineErrMax
+} ETCStateMachineErr;
+
+typedef enum ETCState { // TC - type code
+	eTCStateStart = 0,
+	eTCStateEnd,
+	eTCStateMax
+} ETCState;
+
+typedef struct STypeCodeStr {
+	char *type_str;
+	int type_str_len;
+	int curr_pos;
+} STypeCodeStr;
+
+struct SStateInfo;
+typedef void (*state_func)(struct SStateInfo *, STypeCodeStr *type_code_str);
+
+typedef struct SStateInfo {
+	ETCState state;
+	char *buff_for_parsing;
+	int amount_of_read_chars;
+	ETCStateMachineErr err;
+} SStateInfo;
+
+static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str);
+
+static state_func const state_table[eTCStateMax] = {
+	tc_state_start, NULL
+};
+///////////////////////////////////////////////////////////////////////////////
+// End of data types for state machine which parse type codes
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// State machine for parsing type codes functions
+///////////////////////////////////////////////////////////////////////////////
+static void run_state(	SStateInfo *state_info,
+						STypeCodeStr *type_code_str)
 {
-#define COPY_STR_TYPE(case_val, str_type) { \
-	case case_val: \
-		*str_type_code = (char *) malloc(strlen(str_type) + 1); \
-		strncpy(*str_type_code, str_type, strlen(str_type) + 1); \
-		finish_parsing = 1; \
-		break; \
+	state_table[state_info->state](state_info, type_code_str);
 }
 
-	EDemanglerErr err = eDemanglerErrOK;
-	char *tmp_sym = sym;
-	int finish_parsing = 0;
+///////////////////////////////////////////////////////////////////////////////
+static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
+{
+	state->amount_of_read_chars++;
 
-	*str_type_code = 0;
-	*amount_of_read_chars = 0;
+	switch (*(state->buff_for_parsing)) {
+	case 'X': case 'N': case 'D': case 'C': case 'E': case 'F': case 'G':
+	case 'H': case 'I': case 'J': case 'K': case '_': case 'M': case 'R':
+	case 'O': case 'T': case 'U': case 'Z': case 'P': case 'Q': case 'W':
+	case 'S': case 'A': case 'V':
+		state->state = eTCStateEnd;
+		state->err =ETCStateMachineErrUnsupportedTypeCode;
+		break;
+	default:
+		eprintf("[uncorrect type] error while parsing type\n");
 
-	while (finish_parsing != 1) {
-		if (*tmp_sym == '\0') {
-			err = eDemanglerErrUncorrectMangledSymbol;
-			goto get_type_code_string_err;
-		}
+		state->state = eTCStateEnd;
+		state->err = ETCStateMachineErrUncorrectTypeCode;
+		break;
+	}
+}
 
-		switch (*tmp_sym) {
-			COPY_STR_TYPE('D', "char");
-			COPY_STR_TYPE('C', "signed char");
-			COPY_STR_TYPE('E', "unsigned char");
-			COPY_STR_TYPE('F', "short int");
-			COPY_STR_TYPE('G', "unsigned short int");
-			COPY_STR_TYPE('H', "int");
-			COPY_STR_TYPE('I', "unsigned int");
-			COPY_STR_TYPE('J', "long int");
-			COPY_STR_TYPE('K', "unsinged long int");
-			COPY_STR_TYPE('M', "float");
-			COPY_STR_TYPE('N', "double");
-			COPY_STR_TYPE('O', "long double");
-			COPY_STR_TYPE('Z', "varargs ...");
-		default:
-			err = eDemanglerErrUnsupportedMangling;
-			break;
-		}
+///////////////////////////////////////////////////////////////////////////////
+static void init_state_struct(SStateInfo *state, char *buff_for_parsing)
+{
+	state->state = eTCStateStart;
+	state->buff_for_parsing = buff_for_parsing;
+	state->amount_of_read_chars = 0;
+	state->err = ETCStateMachineErrOK;
+}
 
-		if (err != eDemanglerErrOK) {
-			goto get_type_code_string_err;
-		}
+///////////////////////////////////////////////////////////////////////////////
+static int init_type_code_str_struct(STypeCodeStr *type_coder_str)
+{
+#define TYPE_STR_LEN 1024
+	int res = 1; // 1 - initialization finish with success, else - 0
 
-		(*amount_of_read_chars)++;
-		tmp_sym++;
+	type_coder_str->type_str_len = TYPE_STR_LEN;
+
+	type_coder_str->type_str = (char *) malloc(TYPE_STR_LEN * sizeof(char));
+	if (type_coder_str->type_str == NULL) {
+		res = 0;
 	}
 
+	type_coder_str->curr_pos = strlen("unknown_type");
+	strncpy(type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);
+
+	return res;
+#undef TYPE_STR_LEN
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static void free_type_code_str_struct(STypeCodeStr *type_code_str)
+{
+	R_FREE(type_code_str->type_str);
+	type_code_str->type_str_len = 0;
+}
+///////////////////////////////////////////////////////////////////////////////
+// End of machine functions for parsting type codes
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+static EDemanglerErr get_type_code_string(	char *sym,
+											unsigned int *amount_of_read_chars,
+											char **str_type_code)
+{
+	EDemanglerErr err = eDemanglerErrOK;
+	char *tmp_sym = sym;
+	STypeCodeStr type_code_str;
+	SStateInfo state;
+
+	if (!init_type_code_str_struct(&type_code_str)) {
+		err = eDemanglerErrMemoryAllocation;
+		goto get_type_code_string_err;
+	}
+
+	init_state_struct(&state, tmp_sym);
+
+	while (state.state != eTCStateEnd) {
+		run_state(&state, &type_code_str);
+
+		if (state.err != ETCStateMachineErrOK) {
+			*str_type_code = 0;
+			*amount_of_read_chars = 0;
+			switch (state.err) {
+			case ETCStateMachineErrUncorrectTypeCode:
+				err = eDemanglerErrUncorrectMangledSymbol;
+				break;
+			case ETCStateMachineErrUnsupportedTypeCode:
+				err = eDemanglerErrUnsupportedMangling;
+			default:
+				break;
+			}
+
+			goto get_type_code_string_err;
+		}
+	}
+
+	*str_type_code = strdup(type_code_str.type_str);
+	*amount_of_read_chars = state.amount_of_read_chars;
+
 get_type_code_string_err:
+	free_type_code_str_struct(&type_code_str);
 	return err;
 }
 
@@ -167,7 +268,6 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	// do something with tmp
 	printf("%s\n", tmp);
 	R_FREE(tmp);
-
 
 	err = eDemanglerErrUnsupportedMangling;
 
