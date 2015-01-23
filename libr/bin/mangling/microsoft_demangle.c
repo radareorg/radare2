@@ -28,7 +28,8 @@ typedef enum ETCStateMachineErr {
 typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD, eTCStateC,
 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
-	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateMax
+	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW,
+	eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -46,6 +47,11 @@ typedef struct SStateInfo {
 	int amount_of_read_chars;
 	ETCStateMachineErr err;
 } SStateInfo;
+
+typedef struct SStrInfo {
+	char *str_ptr;
+	int len;
+} SStrInfo;
 
 #define DECL_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str);
 DECL_STATE_ACTION(start)
@@ -65,13 +71,14 @@ DECL_STATE_ACTION(Z)
 DECL_STATE_ACTION(_)
 DECL_STATE_ACTION(T)
 DECL_STATE_ACTION(U)
+DECL_STATE_ACTION(W)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
 	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
-	NAME(T), NAME(U)
+	NAME(T), NAME(U), NAME(W)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,10 +95,10 @@ static void run_state(	SStateInfo *state_info,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int copy_string(STypeCodeStr *type_code_str, char *str_for_copy)
+int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int copy_len)
 {
 	int res = 1; // all is OK
-	int str_for_copy_len = strlen(str_for_copy);
+	int str_for_copy_len = (copy_len == 0) ? strlen(str_for_copy) : copy_len;
 	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 	char *dst = 0;
 
@@ -142,7 +149,7 @@ copy_string_err:
 #define ONE_LETTER_ACTIION(action, type) \
 	static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str) \
 	{ \
-		if (copy_string(type_code_str, type) == 0) { \
+		if (copy_string(type_code_str, type, 0) == 0) { \
 			state->err = eTCStateMachineErrAlloc; \
 		} \
 		GO_TO_NEXT_STATE(state, eTCStateEnd) \
@@ -167,7 +174,7 @@ DEF_STATE_ACTION(_)
 {
 #define PROCESS_CASE(letter, type_str) \
 	case CHAR_WITH_QUOTES(letter): \
-		copy_string(type_code_str, type_str); \
+		copy_string(type_code_str, type_str, 0); \
 		break;
 
 	switch(*(state->buff_for_parsing)) {
@@ -193,7 +200,7 @@ DEF_STATE_ACTION(T)
 	check_len = strlen(case_string); \
 	if ((check_len < buff_len) && \
 		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
-		copy_string(type_code_str, type_str); \
+		copy_string(type_code_str, type_str, 0); \
 		state->amount_of_read_chars += check_len + 2; \
 		return; \
 	} \
@@ -219,8 +226,8 @@ DEF_STATE_ACTION(T)
 		tmp[check_len] = '\0';
 
 		memcpy(tmp, state->buff_for_parsing, check_len);
-		copy_string(type_code_str, "union ");
-		copy_string(type_code_str, tmp);
+		copy_string(type_code_str, "union ", 0);
+		copy_string(type_code_str, tmp, 0);
 		R_FREE(tmp);
 		state->amount_of_read_chars += check_len + 2;
 		return;
@@ -237,8 +244,9 @@ DEF_STATE_ACTION(U)
 	check_len = strlen(case_string); \
 	if ((check_len < buff_len) && \
 		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
-		copy_string(type_code_str, type_str); \
+		copy_string(type_code_str, type_str, 0); \
 		state->amount_of_read_chars += check_len + 2; \
+		state->buff_for_parsing += check_len + 2; \
 		return; \
 	} \
 }
@@ -259,15 +267,90 @@ DEF_STATE_ACTION(U)
 		tmp[check_len] = '\0';
 
 		memcpy(tmp, state->buff_for_parsing, check_len);
-		copy_string(type_code_str, "struct ");
-		copy_string(type_code_str, tmp);
+		copy_string(type_code_str, "struct ", 0);
+		copy_string(type_code_str, tmp, 0);
 		R_FREE(tmp);
 		state->amount_of_read_chars += check_len + 2;
+		state->buff_for_parsing += check_len + 2;
 		return;
 	}
 
 	state->err = eTCStateMachineErrUncorrectTypeCode;
 #undef PROCESS_CASE
+}
+
+///////////////////////////////////////////////////////////////////////////////
+DEF_STATE_ACTION(W)
+{
+	//W4X@@ -> enum X, W4X@Y@@ -> enum Y::X
+	int tmp_len = 0;
+	int len = 0, save_len = 0;
+
+	char *buf = state->buff_for_parsing;
+	int amount_processed_bytes = state->amount_of_read_chars;
+	char *curr_pos, *prev_pos, *tmp;
+
+	RList/* <SStrInfo*> */ *names_l = 0;
+	RListIter *it = 0;
+	SStrInfo *str_info = 0;
+
+	state->state = eTCStateEnd;
+
+	if (*buf != '4') {
+		state->err = eTCStateMachineErrUncorrectTypeCode;
+	}
+
+	buf++;
+	amount_processed_bytes++;
+
+	curr_pos = strstr(buf, "@@");
+	if (!curr_pos) {
+		state->err = eTCStateMachineErrUncorrectTypeCode;
+		return;
+	}
+
+	names_l = r_list_new();
+
+	copy_string(type_code_str, "enum ", 0);
+	save_len = tmp_len = curr_pos - buf;
+
+	prev_pos = buf;
+	curr_pos = strchr(buf, '@');
+	while (tmp_len != -1) {
+		len = curr_pos - prev_pos;
+
+		// TODO:maybe add check of name correctness? like name can not start
+		//		with number
+		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
+			state->err = eTCStateMachineErrUncorrectTypeCode;
+			goto tc_state_W_err;
+		}
+
+		str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
+		str_info->str_ptr = prev_pos;
+		str_info->len = len;
+
+		r_list_append(names_l, str_info);
+
+		tmp_len -= (len + 1);
+		prev_pos = curr_pos + 1;
+		curr_pos = strchr(curr_pos + 1, '@');
+	}
+
+tc_state_W_err:
+	tmp_len = r_list_length(names_l);
+	it = r_list_iterator (names_l);
+	r_list_foreach_prev (names_l, it, str_info) {
+		copy_string(type_code_str, str_info->str_ptr, str_info->len);
+
+		if (--tmp_len)
+			copy_string(type_code_str, "::", 0);
+		free(str_info);
+	}
+	r_list_free(names_l);
+
+	state->amount_of_read_chars = (amount_processed_bytes + save_len + 2);
+	state->buff_for_parsing = (buf + save_len + 2);
 }
 
 #undef ONE_LETTER_ACTION
@@ -299,8 +382,9 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(_)
 	ONE_LETTER_STATE(T)
 	ONE_LETTER_STATE(U)
+	ONE_LETTER_STATE(W)
 	case 'R': case ' ':
-	case 'O': case 'P': case 'Q': case 'W':
+	case 'O': case 'P': case 'Q':
 	case 'S': case 'A': case 'V':
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
