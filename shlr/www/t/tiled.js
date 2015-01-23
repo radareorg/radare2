@@ -252,7 +252,19 @@ f.mw = false;
 			obj_title.className = 'frame_title';
 			obj_title.id = 'frame_'+name;
 			var d = document.createElement ('div');
-			d.style.backgroundColor = '#d0a090';
+			d.style.backgroundColor = '#c0c0c0';
+			d.style['overflow-x'] = 'hidden';
+
+			var x = document.createElement ('a');
+			x.innerHTML = "[x]";
+			x.href='#';
+			(function (self,name) {
+				 x.onclick = function() {
+					 //alert ("clicked "+name);
+					 self.del_frame (name);
+				 }
+			})(this,name);
+			d.appendChild (x);
 
 			var b2 = document.createElement ('a');
 			b2.innerHTML = "[r]";
@@ -291,11 +303,19 @@ f.mw = false;
 			a.href='#';
 			d.appendChild (a);
 
+/*
+			var inp = document.createElement ('input');
+			inp.value = "entry0";
+			inp.href='#';
+			d.appendChild (inp);
+*/
+
 			obj_title.appendChild (d);
 			(function (self,name) {
 				 a.onclick = function() {
 					 //alert ("clicked "+name);
-					 self.del_frame (name);
+var newname = prompt ("title");
+			//		 self.del_frame (name);
 				 }
 			})(this,name);
 		if (typeof (update) === 'string') {
@@ -397,7 +417,7 @@ f.mw = false;
 		obj.style.left = 0;
 		obj.style.width = w;
 		obj.style.height = h;
-		obj.style.backgroundColor = '#a0a0a0';
+		obj.style.backgroundColor = '#202020';
 		this.tile ();
 	}
 }

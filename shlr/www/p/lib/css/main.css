@@ -171,6 +171,7 @@ h3, h4 { /* Headers & Footer in Center & East panes */
 	border-width:	0 0 1px;
 	padding:		7px 10px;
 	margin:			0;
+	cursor: pointer;
 	font-weight:  normal;
 }
 

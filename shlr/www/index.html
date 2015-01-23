@@ -1,5 +1,232 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta HTTP-EQUIV="REFRESH" content="0; url=/enyo"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=false" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="language" content="en" />
+
+	<title>radare2 webui</title>
+
+	<script type="text/javascript" src="./p/lib/js/jquery-1.9.0.js"></script>
+	<script type="text/javascript" src="./enyo/js/r2.js"></script>
+
+	<style>
+		.circular, .circular {
+			background: white;
+			width: 100%;
+		}
+		#title, #button {
+			margin-top: 20px;
+			color: white;
+		}
+		.layout_value{
+			padding-left: 5px;
+			cursor:pointer;
+		}
+		.highlight {
+			background: #80f080 ;
+			color:black;
+font-weight:bold;
+		}
+li {
+margin-left:-20px;
+}
+input, ul, select {
+border:3px solid black;
+background-color: #606060;
+color: #f0f0f0;
+}
+hr {
+visibility:hidden;
+size: 0 solid black;
+width:100%;
+color:#707070;
+}
+img{
+cursor:pointer;
+}
+	</style>
 </head>
+<body style="background: rgb(30,30,30); margin:0px;color: white; font-family: monospace;">
+	<div id="content" align="center">
+		<div class="circular" id="logo"><img style="" width="100px" src="r2.svg" onerror="this.onerror=null; this.src='./enyo/icon.png'"></div>
+		<!-- <div id="title"><h1>radare2</h1></div> -->
+		<br />
+		<div style="cursor:pointer" id="fortune"></div></a>
+<hr size=1 />
+<h2>Current Project</h2>
+		<table>
+			<tr>
+				<td>CurrentProject: </td>
+				<td><div class="layout_value" id="openproject"></div></td>
+			</tr>
+			<tr>
+				<td>CurrentFile: </td>
+				<td><div class="layout_value" id="openfile"></div></td>
+			</tr>
+			<tr>
+				<td>OtherProjects: </td>
+				<td><div id="recent"></div></td>
+			</tr>
+			<tr>
+				<td>Layout: </td>
+				<td>
+					<div id="layout">
+						<select id="dropdown">
+						  <option value="p">panels (desktop)</option>
+						  <option value="enyo">enyo (mobile)</option>
+						  <option value="t">tiles (legacy)</option>
+						</select>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<div id="button">
+			<input id="delete" type="submit" value="Delete" />
+			<input id="saveas" type="submit" value="Save As" />
+			<input id="save" type="submit" value="Save" />
+			<input id="submit" type="submit" value="Open" />
+		</div>
+<br />
+<hr size=1 />
+<h2>Files</h2>
+		<div id="button">
+			<input id="newfile_path" type="input" value=""/>
+			<input id="newfile" type="submit" value="Open File ..." />
+		</div>
+		<div id="button">
+<form action="/up/test.bin" enctype="multipart/form-data" method="post">
+<input type="file" name="file" />
+<input type="submit" value="Upload" />
+</form>
+		</div>
+<br /><br />
+	</div>
+	<script>
+		var filename = "";
+		var layout = "";
+		var project = "";
+		var fortune = "";
+
+		$("#fortune").on ('click', function() {
+			r2.cmd("fortune", function(x) {
+				$("#fortune").html("<q><i>" + x + "</i></q>");
+			});
+		});
+		$(document).ready( function() {
+			function updateProjectList() {
+				window.location.assign("/");
+			}
+				r2.cmdj("Plj", function(x) {
+					var html = "<ul>";
+					for (var i in x) {
+						var filename = x[i].trim();
+						html += "<li class='layout_value' id='" + filename + "'>" + filename + "</li>";
+					}
+					html += "</ul>";
+					$("#recent").html(html);
+				});
+
+			r2.cmd("e http.ui", function(x) {
+			  layout = x.trim();
+			  $("select#dropdown").val(layout);
+			});
+
+			r2.cmdj("oj", function(x) {
+				if(x) {
+				  if(x[0].uri.indexOf("malloc://") !== -1) {
+					$("#openfile").html('<input type="file" id="filename" name="filename">');
+				  } else {
+				  	$("#openfile").html(x[0].uri);
+				  	filename = x[0].uri;
+				  }
+				}
+			});
+			r2.cmd ("Po", function(x) {
+				$("#openproject").html (x);
+			});
+
+			r2.cmd("fortune", function(x) {
+				$("#fortune").html("<q><i>" + x + "</i></q>");
+			});
+
+			$('#filename').on('change', function(){
+				filename = $('#filename').val();
+			});
+
+			$('.layout_value').on('click', function(){
+				$('.highlight').removeClass('highlight');
+				project = this.id;
+				$("#" + project).addClass('highlight');
+				switch (project) {
+				case "openfile":
+				case "openproject":
+					project = "";
+					break;
+				}
+			});
+
+			$('#dropdown').on('change', function(){
+				layout = $(this).val();
+				r2.cmd(":e http.ui=" + layout, function(x) {});
+			});
+
+			$('#logo').on('click', function() {
+				window.location.assign("./" + layout);
+			})
+			$('#saveas').on('click', function() {
+				var prjname = prompt ("Project Name", project);
+				if (prjname) {
+					r2.cmd ("Ps "+prjname, function() {
+						updateProjectList ();
+					})
+				}
+			});
+			$('#save').on('click', function(){
+				var prjname = prompt ("Project Name");
+				if (prjname) {
+					r2.cmd ("Po", function (x) {
+						if (!x) {
+							x = prompt ("Project Name");
+						}
+						if (x) {
+							r2.cmd ("Ps "+x, function() {
+								updateProjectList ();
+							});
+
+						}
+					});
+				}});
+			$('#delete').on('click', function() {
+				if (project != "") {
+					r2.cmd ("Pd "+project, function () {
+						updateProjectList ();
+						alert ("Project "+project+" deleted");
+						project = "";
+					});
+				} else {
+					alert ("First select a project");
+				}
+			});
+			$('#newfile').on('click', function(){
+				var path =  $('#newfile_path').val();
+				r2.cmd(":e file.project=;o--;o "+path,function() {
+					window.location.assign("./" + layout);
+				});
+			});
+			$('#submit').on('click', function(){
+				if (project == "openfile" || project == "openproject") { // if curfile selected
+					window.location.assign("./" + layout);
+				} else if (project !== "" && layout !== "") {
+					r2.cmd("Po " + project, function(x) {});
+					window.location.assign("./" + layout);
+				} else if (filename !== "" && layout !== "") {
+					window.location.assign("./" + layout);
+				} else {
+					alert("Choose file and layout");
+				}
+			});
+		});
+	</script>
+</body>
 </html>

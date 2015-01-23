@@ -150,7 +150,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
-int askuser = 1;
+	int askuser = 1;
 	int ret, close_current_session = 1;
 	char *prj, *filepath;
 	if (!prjfile || !*prjfile)
@@ -163,6 +163,11 @@ int askuser = 1;
 	filepath = r_core_project_info (core, prj);
 	//eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
 	/* if it is not an URI */
+	if (!filepath) {
+		eprintf ("Cannot retrieve information for project '%s'\n", prj);
+		free (prj);
+		return R_FALSE;
+	}
 	if (!strstr (filepath, "://")) {
 		/* check if path exists */
 		if (!r_file_exists (filepath)) {

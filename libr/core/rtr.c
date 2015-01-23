@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2014 - pancake, nibble */
+/* radare - Copyright 2009-2015 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -504,7 +504,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			if (r_file_is_directory (rs->path))
 				dir = strdup (rs->path);
 		if (!strcmp (rs->method, "GET")) {
-			if (!strncmp (rs->path, "/up", 3)) {
+			if (!strncmp (rs->path, "/up/", 4)) {
 				if (r_config_get_i (core->config, "http.upget")) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
 					if (!rs->path[3] || (rs->path[3]=='/'&&!rs->path[4])) {
@@ -557,6 +557,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				} else {
 					char *out, *cmd = rs->path+5;
 					r_str_uri_decode (cmd);
+					r_config_set (core->config, "scr.interactive", "false");
 					if (*cmd == ':') {
 						/* commands in /cmd/: starting with : do not show any output */
 						r_core_cmd0 (core, cmd+1);

@@ -133,3 +133,5 @@ Radare2, what else?
 This incident will be reported
 command not found: calc.exe
 See you at the defcon CTF
+Don't waste your time
+WASTED

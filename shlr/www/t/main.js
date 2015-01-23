@@ -109,9 +109,24 @@ window.onload = function() {
 				code.style.width = obj.style.width - pos[0];
 			}
 		},null, function() {
-			r2.cmd ("px 1024", function (x) {
+			r2.cmd ("e scr.color=true;e scr.html=true;px 1024", function (x) {
 				_(n+"_code").innerHTML="<pre>"+x+"</pre>";
 			});
+		});
+	}
+	function newNotesFrame() {
+		var n = t.defname ('notes');
+		var disasmbody = "<div id='"+n+"_notes' class='frame_body'><textarea style='width:100%;height:100%'></textarea></div>";
+		t.new_frame (n, disasmbody, function(obj) {
+			var code = _(n+'_notes');
+			if (code) { 
+				var top = code.style.offsetTop;
+				var pos = findPos (code);
+				code.style.height = obj.offsetHeight - pos[1]+20;
+				code.style.width = obj.style.width - pos[0];
+			}
+		}, null, function () {
+			/* nothing */
 		});
 	}
 	function newDisasmFrame() {
@@ -126,7 +141,7 @@ window.onload = function() {
 				code.style.width = obj.style.width - pos[0];
 			}
 		}, null, function () {
-			r2.cmd ("pd 512", function (x) {
+			r2.cmd ("e scr.color=false;pd 512", function (x) {
 				_(n+"_code").innerHTML="<pre>"+x+"</pre>";
 			});
 		});
@@ -153,6 +168,7 @@ window.onload = function() {
 	_('open-fla').onclick = function() { newFlagsFrame(); }
 	_('open-hlp').onclick = function() { newHelpFrame(); }
 	_('open-con').onclick = function() { newConsoleFrame(); }
+	_('open-not').onclick = function() { newNotesFrame(); }
 	_('add-column').onclick = function() {
 		addPanel ("right");
 	}

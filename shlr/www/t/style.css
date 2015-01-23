@@ -1,4 +1,17 @@
+img {
+	border: 0px;
+}
 
+p {
+	margin:0px;
+	border:0px;
+}
+textarea {
+	background-color: #203040;
+	color:white;
+	border:0px;
+	padding:5px;
+}
 a {
 	color: black;
 }
@@ -17,7 +30,7 @@ iframe {
 	border: 1px solid black;
 	height:100%;
 	background-color:#506070;
-	color: #e0d0c0;
+	color: #e0e0e0;
 }
 .frame_title {
 	background-color:black;
@@ -39,13 +52,14 @@ iframe {
 	height:100%;
 	background-color:blue;
 	border-top:5px;
-	font-size:14px;
+	font-size:12px;
 	font-family:monospace;
 }
 input {
-	width: 100%;
 	border: 1px solid black;
-	background-color: #404040;
+	text-align:right;
+	background-color: rgba(0,0,0,0.3);
+	overflow:hidden;
 	color: white;
 	font-family: monospace;
 }
@@ -54,4 +68,10 @@ h2 {
 color:black;
 border:0px;
 margin:10px;
+}
+.minibut {
+	text-decoration: none;
+	font-weight: bold;
+font-family: monospace;
+	color: #a0a0f0;
 }
