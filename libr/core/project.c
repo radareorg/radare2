@@ -132,10 +132,10 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			r_list_foreach (files, iter, f) {
 				char *filepath = r_str_concat (strdup (path), "/");
 				filepath =r_str_concat (filepath, f);
-				if (r_file_is_directory (filepath))
-					continue;
-				eprintf ("rm %s\n", filepath);
-				r_file_rm (filepath);
+				if (!r_file_is_directory (filepath)) {
+					eprintf ("rm %s\n", filepath);
+					r_file_rm (filepath);
+				}
 				free (filepath);
 			}
 			r_file_rm (path);
@@ -228,7 +228,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
 		return NULL;
 	}
-	fd = prj? r_sandbox_fopen (prj, "r"): NULL;
+	fd = r_sandbox_fopen (prj, "r");
 	for (;fd;) {
 		fgets (buf, sizeof (buf), fd);
 		if (feof (fd))
