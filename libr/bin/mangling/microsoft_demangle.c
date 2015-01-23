@@ -28,7 +28,7 @@ typedef enum ETCStateMachineErr {
 typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD, eTCStateC,
 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
-	eTCStateM, eTCStateZ, eTCStateMax
+	eTCStateM, eTCStateZ, eTCState_, eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -62,12 +62,13 @@ DECL_STATE_ACTION(J)
 DECL_STATE_ACTION(K)
 DECL_STATE_ACTION(M)
 DECL_STATE_ACTION(Z)
+DECL_STATE_ACTION(_)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
-	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z)
+	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -111,6 +112,24 @@ copy_string_err:
 	return res;
 }
 
+#define SINGLEQUOTED_X 'X'
+#define SINGLEQUOTED_D 'D'
+#define SINGLEQUOTED_C 'C'
+#define SINGLEQUOTED_E 'E'
+#define SINGLEQUOTED_F 'F'
+#define SINGLEQUOTED_G 'G'
+#define SINGLEQUOTED_H 'H'
+#define SINGLEQUOTED_I 'I'
+#define SINGLEQUOTED_J 'J'
+#define SINGLEQUOTED_K 'K'
+#define SINGLEQUOTED_M 'M'
+#define SINGLEQUOTED_N 'N'
+#define SINGLEQUOTED_T 'T'
+#define SINGLEQUOTED_Z 'Z'
+#define SINGLEQUOTED_W 'W'
+#define SINGLEQUOTED__ '_'
+#define CHAR_WITH_QUOTES(letter) (SINGLEQUOTED_##letter)
+
 #define DEF_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str)
 #define GO_TO_NEXT_STATE(state, new_state) { \
 	state->amount_of_read_chars++; \
@@ -139,6 +158,28 @@ ONE_LETTER_ACTIION(M, "float")
 ONE_LETTER_ACTIION(N, "double")
 ONE_LETTER_ACTIION(Z, "varargs ...")
 
+DEF_STATE_ACTION(_)
+{
+#define PROCESS_CASE(letter, type_str) \
+	case CHAR_WITH_QUOTES(letter): \
+		copy_string(type_code_str, type_str); \
+		break;
+
+	switch(*(state->buff_for_parsing)) {
+		PROCESS_CASE(J, "long long(__int64)")
+		PROCESS_CASE(K, "unsigned long long(unsigned __int64)")
+		PROCESS_CASE(T, "long double(80 bit precision)")
+		PROCESS_CASE(Z, "unsigned long long(unsigned __int64)")
+		PROCESS_CASE(W, "wchar_t")
+		default:
+			state->err = eTCStateMachineErrUncorrectTypeCode;
+			break;
+	}
+
+	state->state = eTCStateEnd;
+#undef PROCESS_CASE
+}
+
 #undef ONE_LETTER_ACTION
 #undef GO_TO_NEXT_STATE
 #undef DEF_STATE_ACTION
@@ -146,28 +187,10 @@ ONE_LETTER_ACTIION(Z, "varargs ...")
 ///////////////////////////////////////////////////////////////////////////////
 static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 {
-#define SINGLEQUOTED_X 'X'
-#define SINGLEQUOTED_D 'D'
-#define SINGLEQUOTED_C 'C'
-#define SINGLEQUOTED_E 'E'
-#define SINGLEQUOTED_F 'F'
-#define SINGLEQUOTED_G 'G'
-#define SINGLEQUOTED_H 'H'
-#define SINGLEQUOTED_I 'I'
-#define SINGLEQUOTED_J 'J'
-#define SINGLEQUOTED_K 'K'
-#define SINGLEQUOTED_M 'M'
-#define SINGLEQUOTED_N 'N'
-#define SINGLEQUOTED_Z 'Z'
-
-#define CHAR_WITH_QUOTES(letter) (SINGLEQUOTED_##letter)
-
 #define ONE_LETTER_STATE(letter) \
 	case CHAR_WITH_QUOTES(letter): \
 		state->state = eTCState##letter; \
 		break; \
-
-	state->amount_of_read_chars++;
 
 	switch (*(state->buff_for_parsing)) {
 	ONE_LETTER_STATE(X)
@@ -183,7 +206,8 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(M)
 	ONE_LETTER_STATE(N)
 	ONE_LETTER_STATE(Z)
-	case '_': case 'R':
+	ONE_LETTER_STATE(_)
+	case 'R': case ' ':
 	case 'O': case 'T': case 'U': case 'P': case 'Q': case 'W':
 	case 'S': case 'A': case 'V':
 		state->state = eTCStateEnd;
@@ -196,6 +220,9 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 		state->err = eTCStateMachineErrUncorrectTypeCode;
 		break;
 	}
+
+	state->amount_of_read_chars++;
+	state->buff_for_parsing++;
 #undef ONE_LETTER_STATE
 }
 
