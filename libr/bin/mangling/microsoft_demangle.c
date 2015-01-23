@@ -28,7 +28,7 @@ typedef enum ETCStateMachineErr {
 typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD, eTCStateC,
 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
-	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateMax
+	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -64,13 +64,14 @@ DECL_STATE_ACTION(M)
 DECL_STATE_ACTION(Z)
 DECL_STATE_ACTION(_)
 DECL_STATE_ACTION(T)
+DECL_STATE_ACTION(U)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
 	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
-	NAME(T)
+	NAME(T), NAME(U)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,6 +115,7 @@ copy_string_err:
 	return res;
 }
 
+#define SINGLEQUOTED_U 'U'
 #define SINGLEQUOTED_X 'X'
 #define SINGLEQUOTED_D 'D'
 #define SINGLEQUOTED_C 'C'
@@ -172,7 +174,7 @@ DEF_STATE_ACTION(_)
 		PROCESS_CASE(J, "long long(__int64)")
 		PROCESS_CASE(K, "unsigned long long(unsigned __int64)")
 		PROCESS_CASE(T, "long double(80 bit precision)")
-		PROCESS_CASE(Z, "unsigned long long(unsigned __int64)")
+		PROCESS_CASE(Z, "long double(64 bit precision)")
 		PROCESS_CASE(W, "wchar_t")
 		default:
 			state->err = eTCStateMachineErrUncorrectTypeCode;
@@ -192,7 +194,7 @@ DEF_STATE_ACTION(T)
 	if ((check_len < buff_len) && \
 		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
 		copy_string(type_code_str, type_str); \
-		state->amount_of_read_chars += check_len; \
+		state->amount_of_read_chars += check_len + 2; \
 		return; \
 	} \
 }
@@ -212,7 +214,7 @@ DEF_STATE_ACTION(T)
 	PROCESS_CASE("__m512i@@", "__m512i");
 
 	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
-	if ((check_len) && (check_len < buff_len)) {
+	if ((check_len > 0) && (check_len < buff_len)) {
 		tmp = (char *) malloc(check_len + 1);
 		tmp[check_len] = '\0';
 
@@ -220,7 +222,47 @@ DEF_STATE_ACTION(T)
 		copy_string(type_code_str, "union ");
 		copy_string(type_code_str, tmp);
 		R_FREE(tmp);
-		state->amount_of_read_chars += check_len;
+		state->amount_of_read_chars += check_len + 2;
+		return;
+	}
+
+	state->err = eTCStateMachineErrUncorrectTypeCode;
+#undef PROCESS_CASE
+}
+
+///////////////////////////////////////////////////////////////////////////////
+DEF_STATE_ACTION(U)
+{
+#define PROCESS_CASE(case_string, type_str) { \
+	check_len = strlen(case_string); \
+	if ((check_len < buff_len) && \
+		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
+		copy_string(type_code_str, type_str); \
+		state->amount_of_read_chars += check_len + 2; \
+		return; \
+	} \
+}
+
+	int buff_len = strlen(state->buff_for_parsing);
+	int check_len = 0;
+	char *tmp = 0;
+
+	state->state = eTCStateEnd;
+
+	PROCESS_CASE("__m128d@@", "__m128d");
+	PROCESS_CASE("__m256d@@", "__m256d");
+	PROCESS_CASE("__m512d@@", "__m512d");
+
+	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
+	if ((check_len > 0) && (check_len < buff_len)) {
+		tmp = (char *) malloc(check_len + 1);
+		tmp[check_len] = '\0';
+
+		memcpy(tmp, state->buff_for_parsing, check_len);
+		copy_string(type_code_str, "struct ");
+		copy_string(type_code_str, tmp);
+		R_FREE(tmp);
+		state->amount_of_read_chars += check_len + 2;
 		return;
 	}
 
@@ -256,8 +298,9 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(Z)
 	ONE_LETTER_STATE(_)
 	ONE_LETTER_STATE(T)
+	ONE_LETTER_STATE(U)
 	case 'R': case ' ':
-	case 'O': case 'U': case 'P': case 'Q': case 'W':
+	case 'O': case 'P': case 'Q': case 'W':
 	case 'S': case 'A': case 'V':
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
