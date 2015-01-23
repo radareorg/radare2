@@ -28,7 +28,7 @@ typedef enum ETCStateMachineErr {
 typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD, eTCStateC,
 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
-	eTCStateM, eTCStateZ, eTCState_, eTCStateMax
+	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -63,12 +63,14 @@ DECL_STATE_ACTION(K)
 DECL_STATE_ACTION(M)
 DECL_STATE_ACTION(Z)
 DECL_STATE_ACTION(_)
+DECL_STATE_ACTION(T)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
-	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_)
+	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
+	NAME(T)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,6 +160,7 @@ ONE_LETTER_ACTIION(M, "float")
 ONE_LETTER_ACTIION(N, "double")
 ONE_LETTER_ACTIION(Z, "varargs ...")
 
+///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(_)
 {
 #define PROCESS_CASE(letter, type_str) \
@@ -176,7 +179,52 @@ DEF_STATE_ACTION(_)
 			break;
 	}
 
+	state->amount_of_read_chars++;
 	state->state = eTCStateEnd;
+#undef PROCESS_CASE
+}
+
+///////////////////////////////////////////////////////////////////////////////
+DEF_STATE_ACTION(T)
+{
+#define PROCESS_CASE(case_string, type_str) { \
+	check_len = strlen(case_string); \
+	if ((check_len < buff_len) && \
+		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
+		copy_string(type_code_str, type_str); \
+		state->amount_of_read_chars += check_len; \
+		return; \
+	} \
+}
+
+	int buff_len = strlen(state->buff_for_parsing);
+	int check_len = 0;
+	char *tmp = 0;
+
+	state->state = eTCStateEnd;
+
+	PROCESS_CASE("__m64@@", "__m64");
+	PROCESS_CASE("__m128@@", "__m128");
+	PROCESS_CASE("__m128i@@", "__m128i");
+	PROCESS_CASE("__m256@@", "__m256");
+	PROCESS_CASE("__m256i@@", "__m256i");
+	PROCESS_CASE("__m512@@", "__m512");
+	PROCESS_CASE("__m512i@@", "__m512i");
+
+	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
+	if ((check_len) && (check_len < buff_len)) {
+		tmp = (char *) malloc(check_len + 1);
+		tmp[check_len] = '\0';
+
+		memcpy(tmp, state->buff_for_parsing, check_len);
+		copy_string(type_code_str, "union ");
+		copy_string(type_code_str, tmp);
+		R_FREE(tmp);
+		state->amount_of_read_chars += check_len;
+		return;
+	}
+
+	state->err = eTCStateMachineErrUncorrectTypeCode;
 #undef PROCESS_CASE
 }
 
@@ -207,8 +255,9 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(N)
 	ONE_LETTER_STATE(Z)
 	ONE_LETTER_STATE(_)
+	ONE_LETTER_STATE(T)
 	case 'R': case ' ':
-	case 'O': case 'T': case 'U': case 'P': case 'Q': case 'W':
+	case 'O': case 'U': case 'P': case 'Q': case 'W':
 	case 'S': case 'A': case 'V':
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
@@ -247,6 +296,8 @@ static int init_type_code_str_struct(STypeCodeStr *type_coder_str)
 	if (type_coder_str->type_str == NULL) {
 		res = 0;
 	}
+
+	memset(type_coder_str->type_str, 0, TYPE_STR_LEN * sizeof(char));
 
 	type_coder_str->curr_pos = 0; // strlen("unknown type");
 //	strncpy(type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);
