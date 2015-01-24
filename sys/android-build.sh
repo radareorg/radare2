@@ -133,12 +133,11 @@ cd ../..
 
 chmod +x "${HERE}/${D}/${PREFIX}/bin/"*
 find ${D}/${PREFIX}/share/radare2/*/www
-# TODO: remove unused files like include files and so on
+# Remove development files
 rm -f ${HERE}/${D}/${PREFIX}/lib/radare2/*/*.so
 rm -f ${HERE}/${D}/${PREFIX}/lib/*.a
 rm -rf ${HERE}/${D}/${PREFIX}/share/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
-rm -rf ${HERE}/${D}/${PREFIX}/doc
 eval `grep ^VERSION= ${HERE}/config-user.mk`
 #WWWROOT="/data/data/org.radare.installer/radare2/share/radare2/${VERSION}/www"
 #ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
