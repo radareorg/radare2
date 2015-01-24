@@ -3,6 +3,9 @@
 BUILD=1
 PREFIX="/data/data/org.radare.installer/radare2"
 
+type pax
+[ $? != 0 ] && exit 1
+
 cd `dirname $PWD/$0` ; cd ..
 
 case "$1" in
@@ -149,14 +152,18 @@ eval `grep ^VERSION= ${HERE}/config-user.mk`
 #cp -rf ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
 #chmod -R o+rx ${HERE}/${D}/data/data/org.radare.installer/www
 cd ${D}
-tar --help| grep -q GNU
-if [ $? = 0 ]; then
-	echo tar -czv -H oldgnu -f ../$D.tar.gz data
-	tar -czv -H oldgnu -f ../$D.tar.gz data
-else
-	echo tar -czovf ../$D.tar.gz data
-	tar -czovf ../$D.tar.gz data
-fi
+#sltar -c data | gzip > ../$D.tar.gz
+pax -w <<< data | gzip > ../$D.tar.gz
+
+#	tar --help| grep -q GNU
+#	if [ $? = 0 ]; then
+#		echo tar -czv -H oldgnu -f ../$D.tar.gz data
+#		tar -czv -H oldgnu -f ../$D.tar.gz data
+#	else
+#		echo tar -czovf ../$D.tar.gz data
+#		tar -czovf ../$D.tar.gz data
+#	fi
+
 cd ..
 D2=`git log HEAD 2>/dev/null|head -n1|awk '{print $2}'|cut -c 1-8`
 if [ -n "$D2" ]; then
