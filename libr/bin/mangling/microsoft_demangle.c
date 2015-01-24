@@ -28,7 +28,7 @@ typedef enum ETCStateMachineErr {
 typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD,
 	eTCStateC, 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
-	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW,
+	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW, eTCStateV,
 	eTCStateMax
 } ETCState;
 
@@ -72,13 +72,14 @@ DECL_STATE_ACTION(_)
 DECL_STATE_ACTION(T)
 DECL_STATE_ACTION(U)
 DECL_STATE_ACTION(W)
+DECL_STATE_ACTION(V)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
 	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
-	NAME(T), NAME(U), NAME(W)
+	NAME(T), NAME(U), NAME(W), NAME(V)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,6 +124,12 @@ copy_string_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/// \brief get_namespace_and_name
+/// \param buf Current buffer position with mangled name
+/// \param type_code_str String with got name and namespaces
+/// \param amount_of_names Amount of names that was in list
+/// \return Return amount of processed chars
+///
 int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 							int *amount_of_names)
 {
@@ -198,6 +205,7 @@ get_namespace_and_name_err:
 #define SINGLEQUOTED_T 'T'
 #define SINGLEQUOTED_Z 'Z'
 #define SINGLEQUOTED_W 'W'
+#define SINGLEQUOTED_V 'V'
 #define SINGLEQUOTED__ '_'
 #define CHAR_WITH_QUOTES(letter) (SINGLEQUOTED_##letter)
 
@@ -282,14 +290,11 @@ DEF_STATE_ACTION(T)
 
 	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
 	if ((check_len > 0) && (check_len < buff_len)) {
-		tmp = (char *) malloc(check_len + 1);
-		tmp[check_len] = '\0';
-
 		memcpy(tmp, state->buff_for_parsing, check_len);
 		copy_string(type_code_str, "union ", 0);
-		copy_string(type_code_str, tmp, 0);
-		R_FREE(tmp);
+		copy_string(type_code_str, state->buff_for_parsing, check_len);
 		state->amount_of_read_chars += check_len + 2;
+		state->buff_for_parsing += check_len + 2;
 		return;
 	}
 
@@ -323,13 +328,8 @@ DEF_STATE_ACTION(U)
 
 	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
 	if ((check_len > 0) && (check_len < buff_len)) {
-		tmp = (char *) malloc(check_len + 1);
-		tmp[check_len] = '\0';
-
-		memcpy(tmp, state->buff_for_parsing, check_len);
 		copy_string(type_code_str, "struct ", 0);
-		copy_string(type_code_str, tmp, 0);
-		R_FREE(tmp);
+		copy_string(type_code_str, state->buff_for_parsing, check_len);
 		state->amount_of_read_chars += check_len + 2;
 		state->buff_for_parsing += check_len + 2;
 		return;
@@ -356,6 +356,24 @@ DEF_STATE_ACTION(W)
 	copy_string(type_code_str, "enum ", 0);
 	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
 
+	if (len) {
+		state->amount_of_read_chars += len + 2; // cause and with @@ and they
+												// need to be skipped
+		state->buff_for_parsing += len + 2;
+	} else {
+		state->err = eTCStateMachineErrUncorrectTypeCode;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+DEF_STATE_ACTION(V)
+{
+	// VX@@ -> class X
+	int len = 0;
+	state->state = eTCStateEnd;
+
+	copy_string(type_code_str, "class ", 0);
+	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
 	if (len) {
 		state->amount_of_read_chars += len + 2; // cause and with @@ and they
 												// need to be skipped
@@ -395,9 +413,10 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(T)
 	ONE_LETTER_STATE(U)
 	ONE_LETTER_STATE(W)
+	ONE_LETTER_STATE(V)
 	case 'R': case ' ':
 	case 'O': case 'P': case 'Q':
-	case 'S': case 'A': case 'V':
+	case 'S': case 'A':
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
 		break;
