@@ -20,6 +20,15 @@
 # endif
 # include <sys/wait.h>
 # include <signal.h>
+
+#define __REAL_ANDROID__ 0
+#ifdef __ANDROID__
+#ifndef PTRACE_INTERRUPT
+#undef __REAL_ANDROID__
+#define __REAL_ANDROID__ 1
+#endif
+#endif
+
 #endif
 
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
@@ -238,29 +247,33 @@ struct user_regs_struct_x86_32 {
   ut32 xcs; ut32 eflags; ut32 esp; ut32 xss;
 };
 
-#ifdef __ANDROID__
+#if __REAL_ANDROID__
+
  #if __arm64__ || __aarch64__
-# define R_DEBUG_REG_T struct user_pt_regs
-#undef PTRACE_GETREGS
-#define PTRACE_GETREGS PTRACE_GETREGSET
-#undef PTRACE_SETREGS
-#define PTRACE_SETREGS PTRACE_SETREGSET
+ # define R_DEBUG_REG_T struct user_pt_regs
+ # undef PTRACE_GETREGS
+ # define PTRACE_GETREGS PTRACE_GETREGSET
+ # undef PTRACE_SETREGS
+ #define PTRACE_SETREGS PTRACE_SETREGSET
  #else
  # define R_DEBUG_REG_T struct pt_regs
  #endif
+
 #else
+
 #include <sys/user.h>
 # if __i386__ || __x86_64__
-# define R_DEBUG_REG_T struct user_regs_struct
+#   define R_DEBUG_REG_T struct user_regs_struct
 # elif __arm64__ || __aarch64__
-# define R_DEBUG_REG_T struct user_pt_regs
-#undef PTRACE_GETREGS
-#define PTRACE_GETREGS PTRACE_GETREGSET
-#undef PTRACE_SETREGS
-#define PTRACE_SETREGS PTRACE_SETREGSET
+#   define R_DEBUG_REG_T struct user_pt_regs
+#   undef PTRACE_GETREGS
+#   define PTRACE_GETREGS PTRACE_GETREGSET
+#   undef PTRACE_SETREGS
+#   define PTRACE_SETREGS PTRACE_SETREGSET
 # elif __arm__
-# define R_DEBUG_REG_T struct user_regs
+#   define R_DEBUG_REG_T struct user_regs
 # elif __mips__
+
 #include <sys/ucontext.h>
 typedef ut64 mips64_regs_t [274];
 # define R_DEBUG_REG_T mips64_regs_t
@@ -1007,7 +1020,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
-#ifndef __ANDROID__
+#if !__REAL_ANDROID__
 	{
 		int i;
 		for (i=0; i<8; i++) { // DR0-DR7
@@ -1072,7 +1085,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			(caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 // XXX: this android check is only for arm
-#ifndef __ANDROID__
+#if !__REAL_ANDROID__
 		{
 		int i;
 		long *val = (long*)buf;

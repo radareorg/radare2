@@ -17,14 +17,14 @@ PREFIX=/usr
 if [ -n "$1" ]; then
 	PREFIX="$1"
 fi
-DOBUILD=$1
-if [ -n "${DOBUILD}" ]; then
+DOBUILD=1
+if [ 1 = "${DOBUILD}" ]; then
 	# build
 	if [ -f config-user.mk ]; then
 		${MAKE} mrproper > /dev/null 2>&1
 	fi
 	export CFLAGS="-fPIC -pie -D__ANDROID__=1"
 	./configure-plugins
-	./configure --prefix=$PREFIX --with-nonpic --without-pic && \
+	./configure --prefix=$PREFIX --with-nonpic --without-pic
 fi
 ${MAKE} -j 8

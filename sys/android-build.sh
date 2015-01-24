@@ -113,7 +113,7 @@ INSTALL_PROGRAM=`grep INSTALL_DATA config-user.mk|cut -d = -f 2`
 make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
 
 make purge-dev DESTDIR=${PWD}/${D} STRIP="${STRIP}"
-make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
+#make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
 rm -rf ${PWD}/${D}/share
 rm -rf ${PWD}/${D}/include
 rm -rf ${PWD}/${D}/lib/pkgconfig
@@ -129,6 +129,10 @@ HERE=${PWD}
 cd binr/blob
 make STATIC_BUILD=1 || exit 1
 make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
+mkdir -p ${HERE}/${D}/${PREFIX}/projects
+:> ${HERE}/${D}/${PREFIX}/projects/.empty
+mkdir -p ${HERE}/${D}/${PREFIX}/tmp
+:> ${HERE}/${D}/${PREFIX}/tmp/.empty
 cd ../..
 
 chmod +x "${HERE}/${D}/${PREFIX}/bin/"*
