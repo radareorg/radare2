@@ -23,5 +23,5 @@ if [ -f config-user.mk ]; then
 fi
 export CFLAGS="-fPIC -pie"
 ./configure-plugins
-./configure --prefix=$PREFIX --without-ewf --with-nonpic --without-pic && \
+./configure --prefix=$PREFIX --with-nonpic --without-pic && \
 ${MAKE} -j 8
