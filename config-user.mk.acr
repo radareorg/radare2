@@ -68,7 +68,7 @@ LIBZIP=@LIBZIP@
 SSL_CFLAGS=@SSL_CFLAGS@
 SSL_LDFLAGS=@SSL_LDFLAGS@
 
-GIT_TIP=$(shell (git log HEAD^..HEAD 2>&1 || echo HEAD) |head -n1|cut -d ' ' -f2)
+GIT_TIP=$(shell (git rev-parse HEAD 2>/dev/null || echo HEAD ))
 GIT_TAP=$(shell (git describe --tags 2>/dev/null || echo ${VERSION} ))
 
 # cache compiler flags at configure time #
