@@ -1095,6 +1095,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("http.sandbox", "false", "Sandbox the http");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds if no data sent");
 	SETI("http.dietime", 0, "Kill myself after N seconds after the last client connected");
+	SETPREF("http.verbose", "true", "Show http server logs to stdout");
 	SETPREF("http.upget", "false", "/up/ can be GET, not only POST");
 	SETPREF("http.upload", "false", "Dnable file POST uploads in /up/<filename>");
 	SETPREF("http.uri", "", "Base uri to remote host proxy host");

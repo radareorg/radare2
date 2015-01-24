@@ -367,6 +367,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
+	char *dir;
 
 	if (path && atoi (path)) {
 		port = path;
@@ -498,8 +499,13 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			r_socket_http_close (rs);
 			continue;
 		}
-		char *dir = NULL;
+		dir = NULL;
 
+		if (r_config_get_i (core->config, "http.verbose")) {
+			char *peer = r_socket_to_string (rs->s);
+			eprintf ("[HTTP] %s %s\n", peer, rs->path);
+			free (peer);
+		}
 		if (r_config_get_i (core->config, "http.dirlist"))
 			if (r_file_is_directory (rs->path))
 				dir = strdup (rs->path);
