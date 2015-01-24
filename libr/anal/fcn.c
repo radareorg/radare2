@@ -419,7 +419,6 @@ repeat:
 					bb->addr += oplen;
 					idx = delay.un_idx;
 					goto repeat;
-					continue;
 				}
 			}
 			break;

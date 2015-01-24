@@ -389,6 +389,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
 	if (!r_socket_listen (s, port, NULL)) {
+		r_socket_free (s);
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
 	}

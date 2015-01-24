@@ -400,6 +400,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	size += payload; // XXX
 	// align to 2
 	op->size = size;
+	free (strasm);
 	return size;
 }
 
