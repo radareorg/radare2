@@ -528,7 +528,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (core && core->bin && core->bin->cur && core->bin->cur->o && \
+			if (core->bin && core->bin->cur && core->bin->cur->o && \
 					((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 					(libname != NULL && (strstr (map->name, libname))))) {
 				RBinObject *o = core->bin->cur->o;

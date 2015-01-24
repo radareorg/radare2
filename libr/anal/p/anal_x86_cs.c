@@ -578,14 +578,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					break;
 				}
 				if (a->decode) {
+					char* arg = getarg (handle, insn, 0, 1);
 					esilprintf (op,
 							"%d,%s,+,"
 							"%d,%s,-=,%s,"
 							"=[],"
 							"%s,%s,=",
 							op->size, pc,
-							rs, sp, sp,
-							getarg (handle, insn, 0, 1), pc);
+							rs, sp, sp, arg, pc);
+					free (arg);
 				}
 				break;
 			case X86_INS_JMP:

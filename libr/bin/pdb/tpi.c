@@ -923,8 +923,7 @@ static void free_lf_fieldlist(void *type)
 		if (type_info->type_info) {
 			free(type_info->type_info);
 		}
-		if (type_info)
-			free(type_info);
+		free(type_info);
 	}
 	r_list_free(lf_fieldlist->substructs);
 }
@@ -2246,8 +2245,10 @@ int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 		type->type_data.type_info = 0;
 		type->type_data.leaf_type = eLF_MAX;
 		init_stype_info(&type->type_data);
-		if (!parse_tpi_stypes(stream, type))
+		if (!parse_tpi_stypes(stream, type)) {
+			free (type);
 			return 0;
+		}
 		r_list_append(tpi_stream->types, type);
 	}
 	return 1;

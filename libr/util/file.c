@@ -166,7 +166,7 @@ R_API char *r_stdin_slurp (int *sz) {
 #if __UNIX__
 	int i, ret, newfd;
 	char *buf;
-	if (!(newfd = dup(0)))
+	if ((newfd = dup(0)) <= 0)
 		return NULL;
 	buf = malloc (BS);
 	for (i=ret=0;;i+=ret) {

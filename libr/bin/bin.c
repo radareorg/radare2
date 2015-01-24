@@ -251,7 +251,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 
 static int is_data_section(RBinFile *a, RBinSection *s) {
 	RBinObject *o = a->o;
-	if (o && o->info && o->info->bclass) {
+	if (o && o->info && o->info->bclass[0] != '\0') {
 		if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
 			return 1;
 		if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data") && !strstr (s->name, "rel")) // LINUX
@@ -1256,7 +1256,8 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
 			binfile->o = obj;
 			obj->info = R_NEW0 (RBinInfo);
-			strcpy (obj->info->arch, arch);
+			strncpy (obj->info->arch, arch, sizeof (obj->info->arch)-1);
+			obj->info->arch[sizeof (obj->info->arch)-1] = '\0';
 			obj->info->bits = bits;
 		}
 	}

@@ -1664,6 +1664,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 							buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
 									core->cons->pal.num);
 							r_cons_printf ("%c 0x%"PFMT64x" %s\n", ref->type, ref->addr, buf_asm);
+							free (buf_asm);
 						} else {
 							r_cons_printf ("%c 0x%"PFMT64x" %s\n", ref->type, ref->addr, str);
 						}

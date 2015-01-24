@@ -927,12 +927,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	if (json)
 		r_cons_printf ("]\n");
 
-	if (maplist) {
-		list->free = free;
-		r_list_free (list);
-		list = NULL;
-	}
-
+	r_list_free (list);
 	r_list_free (rx_list);
 	r_list_free (end_list);
 	r_list_free (badstart);

@@ -3226,10 +3226,10 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		cur_location = buf_offset+offset;
-		exc_entry = R_NEW0(RBinJavaExceptionEntry);
-		exc_entry->file_offset = cur_location;
 		if (cur_location>sz)
 			return attr;
+		exc_entry = R_NEW0(RBinJavaExceptionEntry);
+		exc_entry->file_offset = cur_location;
 		exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		exc_entry->end_pc = R_BIN_JAVA_USHORT (buffer,offset);
