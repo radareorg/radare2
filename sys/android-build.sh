@@ -2,10 +2,6 @@
 
 BUILD=1
 PREFIX="/data/data/org.radare.installer/radare2"
-if [ -z "${NDK}" ]; then
-	echo "use ./android-{arm|aarch64|mips|mips64|x86}.sh"
-	exit 1
-fi
 
 cd `dirname $PWD/$0` ; cd ..
 
@@ -59,8 +55,13 @@ mips64-static|static-mips64)
 	STATIC_BUILD=1
 	STRIP=mips64el-linux-android-strip
 	;;
+local)
+	BUILD=0
+	sys/static.sh ${PREFIX}
+	NDK_ARCH=local
+	;;
 ""|"-h")
-	echo "Usage: android-build.sh [arm|aarch64|x86|mips|mips64][-static]"
+	echo "Usage: android-build.sh [local|arm|aarch64|x86|mips|mips64][-static]"
 	exit 1
 	;;
 *)
@@ -84,21 +85,25 @@ echo "Using NDK_ARCH: ${NDK_ARCH}"
 echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 
 if [ "${BUILD}" = 1 ]; then
-# start build
-sleep 2
+	if [ -z "${NDK}" ]; then
+		echo "Missing NDK env var. Use ./android-{arm|aarch64|mips|mips64|x86}.sh"
+		exit 1
+	fi
+	# start build
+	sleep 2
 
-make mrproper
-if [ $STATIC_BUILD = 1 ]; then
-	CFGFLAGS="--without-pic --with-nonpic"
-fi
-# dup
-echo ./configure --with-compiler=android \
-	--with-ostype=android --without-ewf \
-	--prefix=${PREFIX} ${CFGFLAGS}
+	make mrproper
+	if [ $STATIC_BUILD = 1 ]; then
+		CFGFLAGS="--without-pic --with-nonpic"
+	fi
+	# dup
+	echo ./configure --with-compiler=android \
+		--with-ostype=android --without-ewf \
+		--prefix=${PREFIX} ${CFGFLAGS}
 
-./configure --with-compiler=android --with-ostype=android \
-	--without-ewf --prefix=${PREFIX} ${CFGFLAGS} || exit 1
-make -s -j 4 || exit 1
+	./configure --with-compiler=android --with-ostype=android \
+		--prefix=${PREFIX} ${CFGFLAGS} || exit 1
+	make -s -j 4 || exit 1
 fi
 rm -rf $D
 mkdir -p $D
@@ -127,15 +132,15 @@ make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
 cd ../..
 
 chmod +x "${HERE}/${D}/${PREFIX}/bin/"*
-
+find ${D}/${PREFIX}/share/radare2/*/www
 # TODO: remove unused files like include files and so on
 rm -f ${HERE}/${D}/${PREFIX}/lib/radare2/*/*.so
 rm -f ${HERE}/${D}/${PREFIX}/lib/*.a
-rm -f ${HERE}/${D}/${PREFIX}/share/radare2/*/www/*/node_modules
+rm -rf ${HERE}/${D}/${PREFIX}/share/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 rm -rf ${HERE}/${D}/${PREFIX}/doc
 eval `grep ^VERSION= ${HERE}/config-user.mk`
-WWWROOT="/data/data/org.radare.installer/radare2/share/radare2/${VERSION}/www"
+#WWWROOT="/data/data/org.radare.installer/radare2/share/radare2/${VERSION}/www"
 #ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
 #cp -rf ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
 #chmod -R o+rx ${HERE}/${D}/data/data/org.radare.installer/www

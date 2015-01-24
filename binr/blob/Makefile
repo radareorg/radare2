@@ -6,6 +6,11 @@ BINS2=radare2 ${BINS}
 
 include ../../config-user.mk
 
+ifneq (${OSTYPE},linux)
+LDFLAGS+=-lpthread
+LDFLAGS+=-ldl
+endif
+
 CFLAGS=-I ../../libr/include/
 CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
 CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"

@@ -27,6 +27,9 @@ LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/wind/libr_wind.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/java/libr_java.a
+ifneq (${OSTYPE},linux)
+LDFLAGS+=-lpthread
+endif
 ifneq (${OSTYPE},haiku)
 LDFLAGS+=-lm
 endif

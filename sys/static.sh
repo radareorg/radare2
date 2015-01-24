@@ -13,11 +13,15 @@ if [ $? = 0 ]; then
 	CC="ccache ${CC}"
 	export CC
 fi
-
+PREFIX=/usr
+if [ -n "$1" ]; then
+	PREFIX="$1"
+fi
 # build
 if [ -f config-user.mk ]; then
 	${MAKE} mrproper > /dev/null 2>&1
 fi
+export CFLAGS="-fPIC -pie"
 ./configure-plugins
-./configure --prefix=/usr --without-ewf --with-nonpic --without-pic && \
-${MAKE} -j 4
+./configure --prefix=$PREFIX --without-ewf --with-nonpic --without-pic && \
+${MAKE} -j 8
