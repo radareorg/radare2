@@ -26,8 +26,8 @@ typedef enum ETCStateMachineErr {
 } ETCStateMachineErr;
 
 typedef enum ETCState { // TC - type code
-	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD, eTCStateC,
-	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
+	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD,
+	eTCStateC, 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
 	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW,
 	eTCStateMax
 } ETCState;
@@ -120,6 +120,66 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 
 copy_string_err:
 	return res;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
+							int *amount_of_names)
+{
+	char *curr_pos = 0, *prev_pos = 0;
+
+	RList /* <SStrInfo *> */ *names_l = 0;
+	RListIter *it = 0;
+	SStrInfo *str_info = 0;
+
+	int len = 0, read_len = 0, tmp_len = 0;
+
+	curr_pos = strstr(buf, "@@");
+	if (!curr_pos) {
+		goto get_namespace_and_name_err;
+	}
+
+	names_l = r_list_new();
+
+	read_len = tmp_len = curr_pos - buf;
+
+	prev_pos = buf;
+	curr_pos = strchr(buf, '@');
+	while (tmp_len != -1) {
+		len = curr_pos - prev_pos;
+
+		// TODO:maybe add check of name correctness? like name can not start
+		//		with number
+		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
+			goto get_namespace_and_name_err;
+		}
+
+		str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
+		str_info->str_ptr = prev_pos;
+		str_info->len = len;
+
+		r_list_append(names_l, str_info);
+
+		tmp_len -= (len + 1);
+		prev_pos = curr_pos + 1;
+		curr_pos = strchr(curr_pos + 1, '@');
+	}
+
+get_namespace_and_name_err:
+	tmp_len = r_list_length(names_l);
+	if (amount_of_names)
+		*amount_of_names = tmp_len;
+	it = r_list_iterator (names_l);
+	r_list_foreach_prev (names_l, it, str_info) {
+		copy_string(type_code_str, str_info->str_ptr, str_info->len);
+
+		if (--tmp_len)
+			copy_string(type_code_str, "::", 0);
+		free(str_info);
+	}
+	r_list_free(names_l);
+
+	return read_len;
 }
 
 #define SINGLEQUOTED_U 'U'
@@ -283,74 +343,26 @@ DEF_STATE_ACTION(U)
 DEF_STATE_ACTION(W)
 {
 	//W4X@@ -> enum X, W4X@Y@@ -> enum Y::X
-	int tmp_len = 0;
-	int len = 0, save_len = 0;
-
-	char *buf = state->buff_for_parsing;
-	int amount_processed_bytes = state->amount_of_read_chars;
-	char *curr_pos, *prev_pos, *tmp;
-
-	RList/* <SStrInfo*> */ *names_l = 0;
-	RListIter *it = 0;
-	SStrInfo *str_info = 0;
-
+	int len = 0;
 	state->state = eTCStateEnd;
 
-	if (*buf != '4') {
+	if (*state->buff_for_parsing != '4') {
 		state->err = eTCStateMachineErrUncorrectTypeCode;
 	}
 
-	buf++;
-	amount_processed_bytes++;
-
-	curr_pos = strstr(buf, "@@");
-	if (!curr_pos) {
-		state->err = eTCStateMachineErrUncorrectTypeCode;
-		return;
-	}
-
-	names_l = r_list_new();
+	state->buff_for_parsing++;
+	state->amount_of_read_chars++;
 
 	copy_string(type_code_str, "enum ", 0);
-	save_len = tmp_len = curr_pos - buf;
+	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
 
-	prev_pos = buf;
-	curr_pos = strchr(buf, '@');
-	while (tmp_len != -1) {
-		len = curr_pos - prev_pos;
-
-		// TODO:maybe add check of name correctness? like name can not start
-		//		with number
-		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
-			state->err = eTCStateMachineErrUncorrectTypeCode;
-			goto tc_state_W_err;
-		}
-
-		str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
-		str_info->str_ptr = prev_pos;
-		str_info->len = len;
-
-		r_list_append(names_l, str_info);
-
-		tmp_len -= (len + 1);
-		prev_pos = curr_pos + 1;
-		curr_pos = strchr(curr_pos + 1, '@');
+	if (len) {
+		state->amount_of_read_chars += len + 2; // cause and with @@ and they
+												// need to be skipped
+		state->buff_for_parsing += len + 2;
+	} else {
+		state->err = eTCStateMachineErrUncorrectTypeCode;
 	}
-
-tc_state_W_err:
-	tmp_len = r_list_length(names_l);
-	it = r_list_iterator (names_l);
-	r_list_foreach_prev (names_l, it, str_info) {
-		copy_string(type_code_str, str_info->str_ptr, str_info->len);
-
-		if (--tmp_len)
-			copy_string(type_code_str, "::", 0);
-		free(str_info);
-	}
-	r_list_free(names_l);
-
-	state->amount_of_read_chars = (amount_processed_bytes + save_len + 2);
-	state->buff_for_parsing = (buf + save_len + 2);
 }
 
 #undef ONE_LETTER_ACTION
@@ -499,69 +511,35 @@ get_type_code_string_err:
 static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 													char **demangled_name)
 {
+	STypeCodeStr type_code_str;
 	EDemanglerErr err = eDemanglerErrOK;
-	unsigned int limit_len_arr[] = { MICROSOFT_NAME_LEN,
-									 MICROSOFR_CLASS_NAMESPACE_LEN };
-	unsigned int amount_of_elements = sizeof(limit_len_arr) / sizeof(unsigned int);
-	unsigned int limit_len = 0;
-	unsigned int i = 1;
-
-	unsigned int len = 0;
-	int tmp_len = 0;
-
 	EObjectType object_type = eObjectTypeMax;
+
+	unsigned int i = 0;
+	unsigned int len = 0;
+
+	char *curr_pos = sym;
 	char *tmp = 0;
-	char var_name[MICROSOFT_NAME_LEN];
-	RList/*<char*>*/ *names_l = r_list_new();
-	RListIter *it;
 
-	char *rest_of_sym = 0;
-	char *curr_pos = 0;
-	char *prev_pos = 0;
+	if (!init_type_code_str_struct(&type_code_str)) {
+		err = eDemanglerErrMemoryAllocation;
+		goto parse_microsoft_mangled_name_err;
+	}
 
-	memset(var_name, 0, MICROSOFT_NAME_LEN);
-
-	rest_of_sym = strstr(sym, "@@");
-	tmp_len = rest_of_sym - sym + 1;	// +1 - need to account for the
-										// trailing '@'
-										// each (class)(namespace)name
-										// end with '@'
-
-	if (!rest_of_sym) {
+	len = get_namespace_and_name(curr_pos, &type_code_str, (int*)&i);
+	if (!len) {
 		err = eDemanglerErrUncorrectMangledSymbol;
 		goto parse_microsoft_mangled_name_err;
 	}
 
-	prev_pos = sym;
-	curr_pos = strchr(sym, '@');
-	while (tmp_len != 0) {
-		len = curr_pos - prev_pos;
+	curr_pos += len + 2;
 
-		// TODO:maybe add check of name correctness? like name can not start
-		//		with number
-		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
-			err = eDemanglerErrUncorrectMangledSymbol;
-			goto parse_microsoft_mangled_name_err;
-		}
-
-		tmp = (char *) malloc(len + 1);
-		tmp[len] = '\0';
-		memcpy(tmp, prev_pos, len);
-
-		r_list_append(names_l, tmp);
-
-		tmp_len -= (len + 1);
-		prev_pos = curr_pos + 1;
-		curr_pos = strchr(curr_pos + 1, '@');
-	}
-
-	curr_pos++;
 	object_type = *curr_pos - '0';
 	switch (object_type) {
 	case eObjectTypeStaticClassMember:
 		// at least need to be 2 items
 		// first variable name, second - class name
-		if (r_list_length(names_l) < 1) {
+		if (i < 2) {
 			err = eDemanglerErrUncorrectMangledSymbol;
 		}
 		break;
@@ -587,16 +565,11 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	printf("%s\n", tmp);
 	R_FREE(tmp);
 
+	printf("%s\n", type_code_str.type_str);
 	err = eDemanglerErrUnsupportedMangling;
 
 parse_microsoft_mangled_name_err:
-	it = r_list_iterator (names_l);
-	r_list_foreach (names_l, it, tmp) {
-		printf("%s\n", tmp);
-		free(tmp);
-	}
-
-	r_list_free(names_l);
+	free_type_code_str_struct(&type_code_str);
 	return err;
 }
 
