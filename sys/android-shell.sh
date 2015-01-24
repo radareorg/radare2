@@ -5,6 +5,7 @@ if [ -n "$1" ]; then
 	NDK_ARCH="$1"
 	shift
 fi
+export ANDROID=1
 case "${NDK_ARCH}" in
 mips64)
 	AR=mips64el-linux-android-ar
@@ -26,6 +27,9 @@ arm)
 	export NDK_ARCH
 	AR=arm-linux-androideabi-ar
 	RANLIB=arm-linux-androideabi-ranlib
+	;;
+local)
+	export ANDROID=1
 	;;
 *)
 	echo "Usage: $0 [aarch64|arm|mips|mips64|x86]"

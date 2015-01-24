@@ -89,8 +89,9 @@ if [ "${BUILD}" = 1 ]; then
 		echo "Missing NDK env var. Use ./android-{arm|aarch64|mips|mips64|x86}.sh"
 		exit 1
 	fi
+	export ANDROID=1
 	# start build
-	sleep 2
+	sleep 1
 
 	make mrproper
 	if [ $STATIC_BUILD = 1 ]; then

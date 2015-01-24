@@ -6,9 +6,11 @@ BINS2=radare2 ${BINS}
 
 include ../../config-user.mk
 
+ifneq (${ANDROID},1)
 ifneq (${OSTYPE},linux)
 LDFLAGS+=-lpthread
 LDFLAGS+=-ldl
+endif
 endif
 
 CFLAGS=-I ../../libr/include/
