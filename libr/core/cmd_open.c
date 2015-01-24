@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -15,7 +15,7 @@ static int cmd_open(void *data, const char *input) {
 	case '\0':
 	case '*':
 	case 'j':
-		r_core_file_list (core, *input);
+		r_core_file_list (core, (int)(*input));
 		break;
 	case 'p':
 		if (r_sandbox_enable (0)) {

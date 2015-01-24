@@ -789,22 +789,22 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
 				PFMT64d",\"writable\":%s,\"size\":%d,\"overlaps\":%s}%s",
 				core->io->raised == f->desc->fd?"true":"false",
-				f->desc->fd, f->desc->uri, from,
+				(int)f->desc->fd, f->desc->uri, (ut64)from,
 				f->desc->flags & R_IO_WRITE? "true": "false",
-				r_io_desc_size (core->io, f->desc),
+				(int)r_io_desc_size (core->io, f->desc),
 				overlapped?"true":"false",
 				iter->n? ",":"");
 			break;
 		case '*':
 		case 'r':
-			r_cons_printf ("o %s 0x%llx\n", f->desc->uri, from);
+			r_cons_printf ("o %s 0x%"PFMT64x"\n", f->desc->uri, (ut64)from);
 			break;
 		default:
 			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%d %s\n",
 					core->io->raised == f->desc->fd?'*':'-',
-					f->desc->fd, f->desc->uri, from,
+					(int)f->desc->fd, f->desc->uri, (ut64)from,
 					f->desc->flags & R_IO_WRITE? "rw": "r",
-					r_io_desc_size (core->io, f->desc),
+					(ut32)r_io_desc_size (core->io, f->desc),
 					overlapped?"overlaps":"");
 			break;
 		}
