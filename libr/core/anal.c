@@ -1104,13 +1104,14 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
-	ut64 addr = r_num_math (core->num, input+1);
+	ut64 addr;
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalRef *refi;
 	RAnalVar *vari;
 	int first, bbs, count = 0;
 
+ 	addr = r_num_math (core->num, *input? input+1: input);
 	if (rad==2) {
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
@@ -1127,7 +1128,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 #define infun(x,y) (y>=x->addr&&y<(x->addr+x->size))
 	r_list_foreach (core->anal->fcns, iter, fcn)
 		if (((input == NULL || *input == '\0') && fcn->type!=R_ANAL_FCN_TYPE_LOC)
-			 || infun (fcn, addr) || !strcmp (fcn->name, input+1)) {
+			 || infun (fcn, addr) || !strcmp (fcn->name, *input?input+1:input)) {
 			count++;
 			if (rad=='j') {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
