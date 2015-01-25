@@ -1167,6 +1167,8 @@ if (
 			if (r_buf_read_at (bin->b, strtab_section->sh_offset,
 					(ut8*)strtab, strtab_section->sh_size) == -1) {
 				eprintf ("Warning: read (syms strtab)\n");
+				free (ret);
+				free (strtab);
 				return NULL;
 			}
 

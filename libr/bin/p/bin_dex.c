@@ -564,9 +564,9 @@ static RList* classes (RBinFile *arch) {
 		dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
 		dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
 		dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
+		free (name);
 }
 	}
-	free (name);
 	return ret;
 }
 

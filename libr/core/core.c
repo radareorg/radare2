@@ -1343,7 +1343,10 @@ reaccept:
 				r_mem_copyendian ((ut8*)&i, buf, 4, !LE);
 				if (i>0&&i<RMT_MAX) {
 					ptr = (ut8 *) malloc (i+7);
-					if (!ptr) return R_FALSE;
+					if (!ptr) {
+						r_socket_close (c);
+						return R_FALSE;
+					}
 					ptr[5]='!';
 					r_socket_read_block (c, ptr+6, i);
 					ptr[6+i]='\0';
