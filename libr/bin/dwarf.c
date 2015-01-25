@@ -238,6 +238,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 	hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
 
 	for (i = 1; i <= hdr->opcode_base - 1; i++) {
+		if (buf+2>buf_end) break;
 		hdr->std_opcode_lengths[i] = READ (buf, ut8);
 		if (f) {
 			fprintf(f, " op %d %d\n", i, hdr->std_opcode_lengths[i]);
@@ -1496,15 +1497,18 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 	RBinSection *section = getsection (a, "debug_line");
 	RBinFile *binfile = a ? a->cur: NULL;
 	if (binfile && section) {
-		RList *list = r_list_new ();
+		RList *list;
 		len = section->size;
-		buf = calloc (1,len);
+		if (len<1) {
+			return NULL;
+		}
+		buf = calloc (1, len);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (!ret) {
-			r_list_free (list);
 			free (buf);
 			return NULL;
 		}
+		list = r_list_new (); // always return empty list wtf
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 //sdb_query (binfile->sdb_addrinfo, "*");
 		free (buf);
@@ -1522,8 +1526,8 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 
 	if (binfile && section) {
 		len = section->size;
-		if (len==0) return NULL;
-		buf = calloc (1,len);
+		if (len<1 || len > ST32_MAX) return NULL;
+		buf = calloc (1, len);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
 
 		if (!ret) {

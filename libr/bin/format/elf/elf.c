@@ -1156,6 +1156,10 @@ if (
 				/* oops. we have no strtab, skip */
 				continue;
 			}
+			if (strtab_section->sh_size> ST32_MAX) {
+				eprintf ("size (syms strtab)");
+				return NULL;
+			}
 			if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
 				eprintf ("malloc (syms strtab)");
 				return NULL;

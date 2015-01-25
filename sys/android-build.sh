@@ -153,7 +153,7 @@ eval `grep ^VERSION= ${HERE}/config-user.mk`
 #chmod -R o+rx ${HERE}/${D}/data/data/org.radare.installer/www
 cd ${D}
 #sltar -c data | gzip > ../$D.tar.gz
-pax -w <<< data | gzip > ../$D.tar.gz
+pax -w data | gzip > ../$D.tar.gz
 
 #	tar --help| grep -q GNU
 #	if [ $? = 0 ]; then
