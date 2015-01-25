@@ -1820,10 +1820,11 @@ static int cmd_print(void *data, const char *input) {
 			r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
 			break;
 		case 'Q':
-			for (i=0; i<len; i+=8) {
-				ut64 *p = (ut64*)core->block+i;
+			// TODO. show if flag name, or inside function
+			for (i=0; i+8<len; i+=8) {
+				ut64 *p = (ut64*)(core->block+i);
 				r_cons_printf ("0x%08"PFMT64x" 0x%016"PFMT64x"\n",
-					core->offset+i, *p);
+					(ut64)core->offset+i, *p);
 			}
 			break;
 		case 's':
