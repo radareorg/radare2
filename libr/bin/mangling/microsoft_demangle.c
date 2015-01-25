@@ -27,9 +27,9 @@ typedef enum ETCStateMachineErr {
 
 typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD,
-	eTCStateC, 	eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
+	eTCStateC, eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
 	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW, eTCStateV,
-	eTCStateMax
+	eTCStateO, eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -73,13 +73,14 @@ DECL_STATE_ACTION(T)
 DECL_STATE_ACTION(U)
 DECL_STATE_ACTION(W)
 DECL_STATE_ACTION(V)
+DECL_STATE_ACTION(O)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
 	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
-	NAME(T), NAME(U), NAME(W), NAME(V)
+	NAME(T), NAME(U), NAME(W), NAME(V), NAME(O)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -206,12 +207,14 @@ get_namespace_and_name_err:
 #define SINGLEQUOTED_Z 'Z'
 #define SINGLEQUOTED_W 'W'
 #define SINGLEQUOTED_V 'V'
+#define SINGLEQUOTED_O 'O'
 #define SINGLEQUOTED__ '_'
 #define CHAR_WITH_QUOTES(letter) (SINGLEQUOTED_##letter)
 
 #define DEF_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str)
 #define GO_TO_NEXT_STATE(state, new_state) { \
 	state->amount_of_read_chars++; \
+	state->buff_for_parsing++; \
 	state->state = eTCStateEnd; \
 }
 #define ONE_LETTER_ACTIION(action, type) \
@@ -236,6 +239,7 @@ ONE_LETTER_ACTIION(K, "unsigned long int")
 ONE_LETTER_ACTIION(M, "float")
 ONE_LETTER_ACTIION(N, "double")
 ONE_LETTER_ACTIION(Z, "varargs ...")
+ONE_LETTER_ACTIION(O, "long double")
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(_)
@@ -251,12 +255,14 @@ DEF_STATE_ACTION(_)
 		PROCESS_CASE(T, "long double(80 bit precision)")
 		PROCESS_CASE(Z, "long double(64 bit precision)")
 		PROCESS_CASE(W, "wchar_t")
+		PROCESS_CASE(N, "bool")
 		default:
 			state->err = eTCStateMachineErrUncorrectTypeCode;
 			break;
 	}
 
 	state->amount_of_read_chars++;
+	state->buff_for_parsing++;
 	state->state = eTCStateEnd;
 #undef PROCESS_CASE
 }
@@ -318,7 +324,6 @@ DEF_STATE_ACTION(U)
 
 	int buff_len = strlen(state->buff_for_parsing);
 	int check_len = 0;
-	char *tmp = 0;
 
 	state->state = eTCStateEnd;
 
@@ -414,8 +419,9 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(U)
 	ONE_LETTER_STATE(W)
 	ONE_LETTER_STATE(V)
-	case 'R': case ' ':
-	case 'O': case 'P': case 'Q':
+	ONE_LETTER_STATE(O)
+	case 'R':
+	case 'P': case 'Q':
 	case 'S': case 'A':
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
