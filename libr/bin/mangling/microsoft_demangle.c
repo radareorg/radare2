@@ -29,7 +29,7 @@ typedef enum ETCState { // TC - type code
 	eTCStateStart = 0, eTCStateEnd, eTCStateH, eTCStateX, eTCStateN, eTCStateD,
 	eTCStateC, eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
 	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW, eTCStateV,
-	eTCStateO, eTCStateMax
+	eTCStateO, eTCStateS, eTCStateMax
 } ETCState;
 
 typedef struct STypeCodeStr {
@@ -74,13 +74,14 @@ DECL_STATE_ACTION(U)
 DECL_STATE_ACTION(W)
 DECL_STATE_ACTION(V)
 DECL_STATE_ACTION(O)
+DECL_STATE_ACTION(S)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
 	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
 	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
-	NAME(T), NAME(U), NAME(W), NAME(V), NAME(O)
+	NAME(T), NAME(U), NAME(W), NAME(V), NAME(O), NAME(S)
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -90,6 +91,13 @@ static state_func const state_table[eTCStateMax] = {
 ///////////////////////////////////////////////////////////////////////////////
 // State machine for parsing type codes functions
 ///////////////////////////////////////////////////////////////////////////////
+
+static EDemanglerErr get_type_code_string(	char *sym,
+											unsigned int *amount_of_read_chars,
+											char **str_type_code);
+static int init_type_code_str_struct(STypeCodeStr *type_coder_str);
+static void free_type_code_str_struct(STypeCodeStr *type_code_str);
+
 static void run_state(	SStateInfo *state_info,
 						STypeCodeStr *type_code_str)
 {
@@ -208,6 +216,7 @@ get_namespace_and_name_err:
 #define SINGLEQUOTED_W 'W'
 #define SINGLEQUOTED_V 'V'
 #define SINGLEQUOTED_O 'O'
+#define SINGLEQUOTED_S 'S'
 #define SINGLEQUOTED__ '_'
 #define CHAR_WITH_QUOTES(letter) (SINGLEQUOTED_##letter)
 
@@ -388,6 +397,64 @@ DEF_STATE_ACTION(V)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
+DEF_STATE_ACTION(S)
+{
+	// SEAX -> X * const volatile
+	unsigned int i = 0;
+	EDemanglerErr err = eDemanglerErrOK;
+	char *tmp = 0;
+	STypeCodeStr tmp_str;
+	int flag__ptr64 = 0;
+
+	state->state = eTCStateEnd;
+
+	if (!init_type_code_str_struct(&tmp_str)) {
+		state->err = eTCStateMachineErrAlloc;
+		return;
+	}
+
+	if (*state->buff_for_parsing == 'E') {
+		flag__ptr64 = 1;
+		state->amount_of_read_chars++;
+		state->buff_for_parsing++;
+	}
+
+	switch (*state->buff_for_parsing++) {
+	case 'A':
+		break;
+	case 'B':
+		copy_string(&tmp_str, "const", 0);
+		break;
+	case 'C':
+		copy_string(&tmp_str, "volatile", 0);
+		break;
+	case 'D':
+		copy_string(&tmp_str, "const volatile", 0);
+		break;
+	default:
+		state->err = eTCStateMachineErrUnsupportedTypeCode;
+		break;
+	}
+
+	copy_string(&tmp_str, " const volatile ", 0);
+	if (flag__ptr64) {
+		copy_string(&tmp_str, "* __ptr64 ", 0);
+	}
+
+	err = get_type_code_string(state->buff_for_parsing, &i, &tmp);
+	if (err != eDemanglerErrOK) {
+		state->err = eTCStateMachineErrUnsupportedTypeCode;
+		R_FREE(tmp);
+	}
+
+	copy_string(type_code_str, tmp, 0);
+	copy_string(type_code_str, tmp_str.type_str, tmp_str.curr_pos);
+
+	R_FREE(tmp);
+	free_type_code_str_struct(&tmp_str);
+}
+
 #undef ONE_LETTER_ACTION
 #undef GO_TO_NEXT_STATE
 #undef DEF_STATE_ACTION
@@ -420,9 +487,10 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 	ONE_LETTER_STATE(W)
 	ONE_LETTER_STATE(V)
 	ONE_LETTER_STATE(O)
+	ONE_LETTER_STATE(S)
 	case 'R':
 	case 'P': case 'Q':
-	case 'S': case 'A':
+	case 'A':
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
 		break;
@@ -479,8 +547,6 @@ static void free_type_code_str_struct(STypeCodeStr *type_code_str)
 ///////////////////////////////////////////////////////////////////////////////
 // End of machine functions for parsting type codes
 ///////////////////////////////////////////////////////////////////////////////
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 static EDemanglerErr get_type_code_string(	char *sym,
