@@ -30,7 +30,6 @@ if true ; then
 make clean
 ./configure --prefix=${PREFIX} --with-ostype=darwin \
 	--with-compiler=ios-sdk --target=arm-unknown-darwin \
-	--without-libversion --without-ewf
 fi
 
 if [ $? = 0 ]; then
