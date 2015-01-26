@@ -13,6 +13,7 @@ function findPos(obj) {
 }
 
 window.onload = function() {
+	var position = "right";
 	var t = new Tiled ('canvas');
 	var ctr = 0;
 	function newHelpFrame() {
@@ -63,7 +64,7 @@ window.onload = function() {
 				flags.style.height = obj.offsetHeight - pos[1]+20;
 				flags.style.width = obj.style.width - pos[0];
 			}
-		}, null, function () {
+		}, position, function () {
 				var input = _(n+"_input");
 				input.onkeyup = function (ev) {
 				if (ev.keyCode == 13) {
@@ -95,11 +96,11 @@ window.onload = function() {
 				flags.style.height = obj.offsetHeight - pos[1]+20;
 				flags.style.width = obj.style.width - pos[0];
 			}
-		});
+		}, position);
 	}
 	function newHexdumpFrame () {
 		var n = t.defname ("hexdump");
-		var msgbody = "<div id='"+n+"_code' class='frame_body'></div>";
+		var msgbody = "<div id='"+n+"_hexdump' class='frame_body'></div>";
 		t.new_frame (n, msgbody, function(obj) {
 			var code = _(n+'code');
 			if (code) { 
@@ -108,10 +109,54 @@ window.onload = function() {
 				code.style.height = obj.offsetHeight - pos[1]+20;
 				code.style.width = obj.style.width - pos[0];
 			}
-		},null, function() {
-			r2.cmd ("e scr.color=true;e scr.html=true;px 1024", function (x) {
-				_(n+"_code").innerHTML="<pre>"+x+"</pre>";
-			});
+		}, position, function(frame, nf) {
+			//frame = frame.curframe[0];
+frame = nf;
+			function calc() {
+				var off = frame.offset || 0;
+				r2.cmd ("px 1024 @ "+off, function (x) {
+					var id_prev = n + '_hexdump_hex_prev';
+					var id_next = n + '_hexdump_hex_next';
+					var id_goto = n + '_hexdump_hex_goto';
+					_(n+"_hexdump").innerHTML=
+						"<br /><center><a class=link href='#' id="+id_prev+">[PREV]</a>"
+						+"<a class=link href='#' id="+id_goto+">[GOTO]</a>"
+						+"<a class=link href='#' id="+id_next+">[NEXT]</a></center>"
+						+"<pre>"+x+"</pre>"
+					;
+					//var q = document.getElementById(n+'_hexdump_hex_prev');
+					var q = document.getElementById(id_prev);
+					q.onclick = function() {
+						frame.offset = frame.offset | 0;
+						frame.offset -= 512;
+						frame.refresh ();
+					}
+					var q = document.getElementById(id_next);
+					q.onclick = function() {
+						frame.offset = frame.offset | 0;
+						frame.offset += 512;
+						frame.refresh ();
+					}
+					var q = document.getElementById(id_goto);
+					q.onclick = function() {
+						var newoff = prompt ("Goto");
+						if (newoff) {
+							r2.cmd ("?v "+newoff, function(val) {
+								frame.offset = +val | 0;
+								frame.refresh ();
+							});
+						}
+					}
+				});
+			}
+			if (!frame.offset) {
+				r2.cmd ("?v entry0", function(val) {
+					frame.offset = +val;
+					calc (frame);
+				});
+			} else {
+				calc (frame);
+			}
 		});
 	}
 	function newNotesFrame() {
@@ -125,8 +170,27 @@ window.onload = function() {
 				code.style.height = obj.offsetHeight - pos[1]+20;
 				code.style.width = obj.style.width - pos[0];
 			}
-		}, null, function () {
+		}, position, function () {
 			/* nothing */
+		});
+	}
+	function newSettingsFrame() {
+		var n = t.defname ('settings');
+		var settbody = "<div id='"+n+"_settings' class='frame_body'>"
+			+"<input type=button value=RandomColors>"
+			+"</div>";
+		t.new_frame (n, settbody, function(obj) {
+			var code = _(n+'_settings');
+			if (code) { 
+				var top = code.style.offsetTop;
+				var pos = findPos (code);
+				code.style.height = "100%"; //obj.offsetHeight - pos[1]+20;
+				code.style.width = obj.style.width - pos[0];
+			}
+		}, position, function () {
+			r2.cmd ("e??", function (x) {
+				_(n+"_settings").innerHTML="<pre>"+x+"</pre>";
+			});
 		});
 	}
 	function newDisasmFrame() {
@@ -137,17 +201,50 @@ window.onload = function() {
 			if (code) { 
 				var top = code.style.offsetTop;
 				var pos = findPos (code);
-				code.style.height = obj.offsetHeight - pos[1]+20;
+				code.style.height = "100%"; //obj.offsetHeight - pos[1]+20;
 				code.style.width = obj.style.width - pos[0];
 			}
-		}, null, function () {
-			r2.cmd ("e scr.color=false;pd 512", function (x) {
-				_(n+"_code").innerHTML="<pre>"+x+"</pre>";
+		}, position, function (frame, nf) {
+			frame = frame.curframe[0];
+frame = nf;
+			var off = frame.offset || "entry0";
+			r2.cmd ("pd 200 @ "+off, function (x) {
+				var id_prev = n + '_code_prev';
+				var id_next = n + '_code_next';
+				var id_goto = n + '_code_goto';
+				_(n+"_code").innerHTML=
+					"<br /><center><a class=link href='#' id="+id_prev+">[PREV]</a>"
+					+"<a class=link href='#' id="+id_goto+">[GOTO]</a>"
+					+"<a class=link href='#' id="+id_next+">[NEXT]</a></center>"
+					+"<pre>"+x+"</pre>";
+				var q = document.getElementById(id_prev);
+				q.onclick = function() {
+					frame.offset = frame.offset | 0;
+					frame.offset -= 512;
+					frame.refresh ();
+				}
+				var q = document.getElementById(id_next);
+				q.onclick = function() {
+					frame.offset = frame.offset | 0;
+					frame.offset += 512;
+					frame.refresh ();
+				}
+				var q = document.getElementById(id_goto);
+				q.onclick = function() {
+					var newoff = prompt ("Goto");
+					if (newoff) {
+						r2.cmd ("?v "+newoff, function(val) {
+							frame.offset = +val | 0;
+							frame.refresh ();
+						});
+					}
+				}
 			});
 		});
 	}
 	function addPanel (pos) {
 		ctr++;
+		position = pos;
 		t.new_frame ('window_'+ctr, "<div id='div_"+ctr+"'><a href='#' id='cmd_"+ctr+"'>cmd</a><input></input></div>", pos);
 		t.run ();
 		t.update = function() {
@@ -162,6 +259,8 @@ window.onload = function() {
 			t.update ();
 		}
 	}
+	_('settings').onclick = function() { newSettingsFrame (); }
+	_('refresh').onclick = function() { t.update_all(); }
 	_('maximize').onclick = function() { t.maximize = !!!t.maximize; t.run(); }
 	_('open-hex').onclick = function() { newHexdumpFrame(); }
 	_('open-dis').onclick = function() { newDisasmFrame(); }
@@ -174,6 +273,7 @@ window.onload = function() {
 	}
 	_('add-row').onclick = function() {
 		ctr++;
+		position = "bottom";
 		t.new_frame ('window_'+ctr, "<div id='div_"+ctr+"'><a href='#' id='cmd_"+ctr+"'>cmd</a></div>", "bottom");
 //		t.frames[0].push (t.frames.pop ()[0]);
 		t.run();

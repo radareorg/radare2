@@ -18,6 +18,10 @@ a {
 a:hover {
 	color: white;
 }
+
+.link {
+	color:white;
+}
 html, body {
 	overflow:hidden;
 }
@@ -35,7 +39,7 @@ iframe {
 .frame_title {
 	background-color:black;
 	color:white;
-	padding-top:5px;
+	padding:0px;
 	top:0px;
 	height:20px;
 	font-family: monospace;
@@ -65,9 +69,9 @@ input {
 }
 h2 {
 	padding:0px;
-color:black;
-border:0px;
-margin:10px;
+	color:black;
+	border:0px;
+	margin:10px;
 }
 .minibut {
 	text-decoration: none;

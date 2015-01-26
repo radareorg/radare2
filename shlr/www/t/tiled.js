@@ -103,12 +103,17 @@ f.obj.style.zIndex = 99999+this.ctr2++;
 				} else {
 					height = (h-topmargin)/rows;
 				}
+				height = 0|height;
 				f.obj.style.position = 'absolute';
 				f.obj.style.top = mtop;
 				f.obj.style.left = left;
 				// TODO: add proportions
 				f.obj.style.width = width;
+				if (row==0) {
+					height-=22;
+				}
 				f.obj.style.height = height;
+
 				//f.obj.style.backgroundColor = "green";
 				if (f.update)
 					f.update (f.obj);
@@ -193,9 +198,11 @@ f.obj.style.zIndex = 99999+this.ctr2++;
 			if (row<=this.frames[col].length) {
 				row++;
 				var f = this.frames[col][row];
-				this.select_frame (f.name);
-				this.curframe = [f,col,row];
-				this.run();
+				if (f) {
+					this.select_frame (f.name);
+					this.curframe = [f,col,row];
+					this.run();
+				}
 			}
 			break;
 		case 'left':
@@ -203,19 +210,26 @@ f.obj.style.zIndex = 99999+this.ctr2++;
 			if (col>0) {
 				col--;
 				var f = this.frames[col][0];
-				this.select_frame (f.name);
-				this.curframe = [f,col,0];
-				this.run();
+				if (f) {
+					this.select_frame (f.name);
+					this.curframe = [f,col,0];
+					this.run();
+				}
 			}
 			break;
 		case 'right':
 			var col = +this.curframe[1];
+			if (col>=this.frames.length-1)
+				col = -1;
 			if (col<this.frames.length) {
 				col++;
-				var f = this.frames[col][0];
-				this.select_frame (f.name);
-				this.curframe = [f,col,0];
-				this.run();
+				var f = this.frames[col]
+				if (f) f = f[0];
+				if (f) {
+					this.select_frame (f.name);
+					this.curframe = [f,col,0];
+					this.run();
+				}
 			}
 			break;
 		}
@@ -248,6 +262,7 @@ f.mw = false;
 	this.new_frame = function(name, body, update, pos, cb) {
 		var nf = {};
 		nf.name = name = name || this.defname ();
+
 			var obj_title = document.createElement ('div');
 			obj_title.className = 'frame_title';
 			obj_title.id = 'frame_'+name;
@@ -270,6 +285,7 @@ f.mw = false;
 			b2.innerHTML = "[r]";
 			b2.href='#';
 			b2.ival = null;
+			var self = this;
 			b2.onclick = function (x) {
 				// TODO : toggle auto refresh
 				if (b2.ival) {
@@ -279,9 +295,9 @@ f.mw = false;
 				} else {
 					b2.innerHTML = "[R]";
 					if (cb) {
-						cb (this);
+						cb (self, nf);
 						b2.ival = setInterval (function () {
-							cb (this);
+							cb (self, nf);
 						}, 1000);
 					}
 				}
@@ -291,12 +307,13 @@ f.mw = false;
 			var b = document.createElement ('a');
 			b.innerHTML = "[@] ";
 			b.href='#';
-			b.onclick = function (x) {
+			b.onclick = nf.refresh = function (x) {
 				if (cb) {
-					cb (this);
+					cb (self, nf);
 				}
 			}
 			d.appendChild (b);
+//nf.offset = "entry0"; //0x404981;
 
 			var a = document.createElement ('a');
 			a.innerHTML = name;
@@ -314,7 +331,7 @@ f.mw = false;
 			(function (self,name) {
 				 a.onclick = function() {
 					 //alert ("clicked "+name);
-var newname = prompt ("title");
+					 var newname = prompt ("title");
 			//		 self.del_frame (name);
 				 }
 			})(this,name);
@@ -353,7 +370,7 @@ var newname = prompt ("title");
 		}
 		this.select_frame (name);
 		if (cb) {
-			cb (this);
+			cb (self, nf);
 		}
 		(function (self, name) {
 			var f = _('frame_'+name);
@@ -366,6 +383,13 @@ var newname = prompt ("title");
 			}
 		})(this, name);
 		return nf;
+	}
+	this.update_all = function() {
+		for (var col in this.frames) {
+			for (var row in this.frames[col]) {
+				this.frames[col][row].refresh ();
+			}
+		}
 	}
 	this.del_frame = function (name) {
 		var prev = undefined;
