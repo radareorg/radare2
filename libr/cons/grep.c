@@ -334,6 +334,7 @@ R_API int r_cons_html_print(const char *ptr) {
 	int len = 0;
 	int inv = 0;
 	int tmp;
+	int tag_font = 0;
 
 	if (!ptr)
 		return 0;
@@ -372,7 +373,12 @@ R_API int r_cons_html_print(const char *ptr) {
 			} else
 			if (!strncmp (ptr, "38;5;", 5)) {
 				char *end = strchr (ptr, 'm');
+				if (tag_font) {
+					printf ("</font>");
+					tag_font = 0;
+				}
 				printf ("<font color='%s'>", gethtmlrgb (ptr));
+				tag_font = 1;
 				fflush (stdout);
 				ptr = end;
 				str = ptr + 1;
@@ -399,7 +405,12 @@ R_API int r_cons_html_print(const char *ptr) {
 				// reset color
 			} else
 			if (ptr[0]=='3' && ptr[2]=='m') {
+				if (tag_font) {
+					printf ("</font>");
+					tag_font = 0;
+				}
 				printf ("<font color='%s'>", gethtmlcolor (ptr[1], inv?"#fff":"#000"));
+				tag_font = 1;
 				fflush(stdout);
 				ptr = ptr + 1;
 				str = ptr + 2;
