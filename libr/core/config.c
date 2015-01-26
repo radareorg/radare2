@@ -964,7 +964,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%d:%m:%Y %H:%M:%S %z)");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "set/unset the debugger mode");
 	p = r_sys_getenv ("EDITOR");
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	r_config_set (cfg, "cfg.editor", p? p: "notepad");
 #else
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
@@ -1153,7 +1153,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.rows", "0", &cb_scrrows, "Set the rows number");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe console output to file if not empty");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	r_config_set_cb (cfg, "scr.rgbcolor", "false", &cb_rgbcolors);
 #else
 	r_config_set_cb (cfg, "scr.rgbcolor", "true", &cb_rgbcolors);
