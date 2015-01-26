@@ -911,8 +911,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	if (!reloc_num)
 		return NULL;
 
-	ret = (struct r_bin_elf_reloc_t*)calloc (sizeof (struct r_bin_elf_reloc_t),
-		(reloc_num + 2));
+	ret = (struct r_bin_elf_reloc_t*)calloc ((size_t)reloc_num+2, sizeof (struct r_bin_elf_reloc_t));
 
 	if (!ret)
 		return NULL;
@@ -946,6 +945,10 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if (!sh_name)
 			continue;
 
+		if (bin->shdr[i].sh_size > bin->b->length) {
+			eprintf ("Ignore section with invalid shsize\n");
+			continue;
+		}
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
 				res = Elf_(r_bin_elf_read_reloc)(bin, &ret[rel],
