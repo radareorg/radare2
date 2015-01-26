@@ -16,7 +16,7 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
@@ -153,7 +153,7 @@ typedef struct r_cons_t {
 
 	RConsEditorCallback editor;
 	void *user; // Used by <RCore*>
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	LPDWORD term_raw, term_buf;

@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 #include <signal.h>
 #endif
 
@@ -23,7 +23,7 @@ static void break_signal(int sig) {
 }
 
 static inline void r_cons_write (const char *buf, int len) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	r_cons_w32_print ((unsigned char *)buf, len, 0);
 #else
 	if (write (I.fdout, buf, len) == -1) {
@@ -110,7 +110,7 @@ R_API void r_cons_break(void (*cb)(void *u), void *user) {
 	I.breaked = R_FALSE;
 	I.event_interrupt = cb;
 	I.data = user;
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	signal (SIGINT, break_signal);
 #endif
 // TODO: add support for w32 ^C
@@ -119,12 +119,12 @@ R_API void r_cons_break(void (*cb)(void *u), void *user) {
 R_API void r_cons_break_end() {
 	I.breaked = R_FALSE;
 	r_print_set_interrupted (I.breaked);
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	signal (SIGINT, SIG_IGN);
 #endif
 }
 
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
@@ -133,7 +133,7 @@ static BOOL __w32_control(DWORD type) {
 	}
 	return R_FALSE;
 }
-#elif __UNIX__
+#elif __UNIX__ || __CYGWIN__
 static void resize (int sig) {
 	if (I.event_resize)
 		I.event_resize (I.event_data);
@@ -142,7 +142,7 @@ static void resize (int sig) {
 
 // http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
 R_API int r_cons_enable_mouse (const int enable) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 // TODO: this sequence must be flushed, so maybe we should not use the rcons buffer api
 	int enabled = I.mouse;
 	if ((I.mouse = enable)) {
@@ -192,7 +192,7 @@ R_API RCons *r_cons_new () {
 	I.null = 0;
 #if EMSCRIPTEN
 	/* do nothing here :? */
-#elif __UNIX__
+#elif __UNIX__ || __CYGWIN__
 	tcgetattr (0, &I.term_buf);
 	memcpy (&I.term_raw, &I.term_buf, sizeof (I.term_raw));
 	I.term_raw.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
@@ -400,7 +400,7 @@ R_API void r_cons_visual_flush() {
 	r_cons_highlight (I.highlight);
 	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 		r_cons_w32_print ((const ut8*)I.buffer, I.buffer_len, 1);
 #else
 		r_cons_visual_write (I.buffer);
@@ -584,7 +584,7 @@ R_API int r_cons_get_cursor(int *rows) {
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
@@ -592,7 +592,7 @@ R_API int r_cons_get_size(int *rows) {
 #elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;
-#elif __UNIX__
+#elif __UNIX__ && __CYGWIN__
 	struct winsize win;
 	// use stdin as reference?
 	//if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
@@ -649,7 +649,7 @@ R_API int r_cons_get_size(int *rows) {
 }
 
 R_API void r_cons_show_cursor (int cursor) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	// TODO
 #else
 	if (cursor) write (1, "\x1b[?25h", 6);
@@ -676,7 +676,7 @@ R_API void r_cons_set_raw(int is_raw) {
 			return;
 #if EMSCRIPTEN
 	/* do nothing here */
-#elif __UNIX__
+#elif __UNIX__ || __CYGWIN__
 	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
 	else tcsetattr (0, TCSANOW, &I.term_buf);
 #elif __WINDOWS__
@@ -700,7 +700,7 @@ R_API void r_cons_invert(int set, int color) {
   rmcup: enable terminal scrolling (normal mode)
 */
 R_API void r_cons_set_cup(int enable) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	if (enable) {
 		const char *code =
 			"\x1b[?1049h" // xterm

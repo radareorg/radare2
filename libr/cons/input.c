@@ -2,13 +2,13 @@
 
 #include <r_cons.h>
 #include <string.h>
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__ && !MINGW32
 #include <conio.h>
 #endif
 
 #define I r_cons_singleton()
 
-#if 0 
+#if 0
 //__UNIX__
 #include <poll.h>
 static int is_fd_ready(int fd) {
@@ -213,7 +213,7 @@ R_API void r_cons_any_key() {
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__ && !MINGW32
 static char getwinkey() {
 	char i=0;
 	int res=0;
@@ -241,7 +241,7 @@ static char getwinkey() {
 R_API int r_cons_readchar() {
 	char buf[2];
 	buf[0] = -1;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__ && !MINGW32
 	BOOL ret;
 	DWORD out;
 	DWORD mode;
