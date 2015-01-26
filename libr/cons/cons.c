@@ -592,7 +592,7 @@ R_API int r_cons_get_size(int *rows) {
 #elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;
-#elif __UNIX__ && __CYGWIN__
+#elif __UNIX__ || __CYGWIN__
 	struct winsize win;
 	// use stdin as reference?
 	//if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
