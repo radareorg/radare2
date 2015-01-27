@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+#include "r_util.h"
+
 static void find_refs(RCore *core, const char *glob) {
 	char cmd[128];
 	ut64 curseek = core->offset;
@@ -266,14 +268,23 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 		r_asm_set_pc (core->assembler, addr);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		ret = r_anal_op (core->anal, &op, core->offset+idx, buf + idx, len-idx);
-		if (ret<1) {
+		if (ret<1 && fmt!='d') {
 			eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
 				core->offset+idx, buf[idx],
 				buf[idx+1], buf[idx+2]);
 			break;
 		}
 		size = (hint&&hint->size)? hint->size: op.size;
-		if (fmt =='j') {
+		if (fmt=='d') {
+			char *opname = strdup (asmop.buf_asm);
+			r_str_split (opname, ' ');
+			char *d = r_asm_describe (core->assembler, opname);
+			if (d && *d) {
+				r_cons_printf ("%s: %s\n", opname, d);
+				free (d);
+			} else r_cons_printf ("Unknown opcode\n");
+			free(opname);
+		} else if (fmt=='j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
 			if (hint && hint->opcode)
 				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
