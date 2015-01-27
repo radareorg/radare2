@@ -13,4 +13,5 @@ LINKFLAGS+=-L.. -lr_io
 endif
 
 ${TARGET_MALLOC}: ${OBJ_MALLOC}
-	${CC_LIB} $(call libname,io_malloc) ${CFLAGS} -o ${TARGET_MALLOC} ${OBJ_MALLOC} ${LINKFLAGS}
+	${CC_LIB} $(call libname,io_malloc) ${CFLAGS} -o ${TARGET_MALLOC} \
+		${LDFLAGS} ${OBJ_MALLOC} ${LINKFLAGS}

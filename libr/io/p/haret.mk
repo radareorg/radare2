@@ -19,4 +19,4 @@ LINKFLAGS+=${SSL_LDFLAGS}
 endif
 
 ${TARGET_HARET}: ${OBJ_HARET}
-	${CC} $(call libname,io_haret) ${CFLAGS} ${OBJ_HARET} ${LINKFLAGS}
+	${CC} $(call libname,io_haret) ${CFLAGS} $(LDFLAGS) ${OBJ_HARET} ${LINKFLAGS}

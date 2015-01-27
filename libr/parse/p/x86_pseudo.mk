@@ -7,4 +7,5 @@ LIBDEPS=-L../../util -lr_util
 LIBDEPS+=-L../../flags -lr_flags
 
 ${TARGET_X86PSEUDO}: ${OBJ_X86PSEUDO}
-	${CC} $(call libname,parse_x86_pseudo) ${LIBDEPS} -shared ${CFLAGS} -o ${TARGET_X86PSEUDO} ${OBJ_X86PSEUDO}
+	${CC} $(call libname,parse_x86_pseudo) ${LIBDEPS} $(LDFLAGS) \
+		-shared ${CFLAGS} -o ${TARGET_X86PSEUDO} ${OBJ_X86PSEUDO}

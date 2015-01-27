@@ -21,5 +21,5 @@ LINKFLAGS+=${SSL_LDFLAGS}
 endif
 
 ${TARGET_IODBG}: ${OBJ_IODBG}
-	${CC} $(call libname,io_debug) ${CFLAGS} ${LDFLAGS_LIB} \
+	${CC} $(call libname,io_debug) ${CFLAGS} ${LDFLAGS_LIB} $(LDFLAGS) \
 		${LINKFLAGS} ${LDFLAGS_LINKPATH}.. ${OBJ_IODBG} -L.. -lr_io

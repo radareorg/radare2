@@ -6,6 +6,6 @@ ALL_TARGETS+=${TARGET_PROCPID}
 
 ${TARGET_PROCPID}: ${OBJ_PROCPID}
 	${CC} $(call libname,io_procpid) \
-		${CFLAGS} ${LDFLAGS_LIB} \
+		${CFLAGS} ${LDFLAGS_LIB} $(LDFLAGS) \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
 		${LDFLAGS_LINKPATH}.. -L.. -lr_io ${OBJ_PROCPID}

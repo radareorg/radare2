@@ -13,4 +13,5 @@ LINKFLAGS+=-L.. -lr_io
 endif
 
 ${TARGET_SHM}: ${OBJ_SHM}
-	${CC_LIB} $(call libname,io_shm) ${CFLAGS} -o ${TARGET_SHM} ${OBJ_SHM} ${LINKFLAGS}
+	${CC_LIB} $(call libname,io_shm) ${CFLAGS} $(LDFLAGS) \
+		-o ${TARGET_SHM} ${OBJ_SHM} ${LINKFLAGS}
