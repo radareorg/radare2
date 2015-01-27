@@ -124,6 +124,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	}
 }
 
+
 /* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
 R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
 	ut64 mul, min = -1, max = -1;

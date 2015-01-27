@@ -12,6 +12,10 @@ static int cmd_open(void *data, const char *input) {
 	char *ptr;
 
 	switch (*input) {
+	case '=':
+		r_io_desc_list_visual (core->io, core->offset, core->blocksize,
+			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		break;
 	case '\0':
 	case '*':
 	case 'j':
