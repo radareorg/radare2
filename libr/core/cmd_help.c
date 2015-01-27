@@ -120,13 +120,16 @@ static int cmd_help(void *data, const char *input) {
 		r_list_free (tmp);
 		break;
 	case 'd':
-		if (input[1]==' '){
+		if (input[1]=='.'){
+			int cur = R_MAX(core->print->cur, 0);
+			core_anal_bytes(core, core->block + cur, core->blocksize, 1, 'd');
+		} else if (input[1]==' '){
 			char *d = r_asm_describe (core->assembler, input+2);
 			if (d && *d) {
 				r_cons_printf ("%s\n", d);
 				free (d);
 			} else eprintf ("Unknown opcode\n");
-		} else eprintf ("Use: ?d [opcode]    to get the description of the opcode\n");
+		} else eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
 		break;
 	case 'h':
 		if (input[1]==' ') {
@@ -494,7 +497,7 @@ static int cmd_help(void *data, const char *input) {
 			"?_", " hudfile", "load hud menu with given file",
 			"?b", " [num]", "show binary value of number",
 			"?b64[-]", " [str]", "encode/decode in base64",
-			"?d", " opcode", "describe opcode for asm.arch",
+			"?d[.]", " opcode", "describe opcode for asm.arch",
 			"?e", " string", "echo string",
 			"?f", " [num] [str]", "map each bit of the number as flag string index",
 			"?h", " [str]", "calculate hash for given string",
