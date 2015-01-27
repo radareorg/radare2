@@ -81,11 +81,11 @@ static RList *sections(RBinFile *arch) {
 
 	if (obj && obj->scn_hdrs)
 	for (i = 0; i < obj->hdr.f_nscns; i++) {
-		ptr = R_NEW0 (RBinSection);
-
 		coffname = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
 		if (!coffname)
 			return NULL;
+
+		ptr = R_NEW0 (RBinSection);
 		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS); 
 
 		ptr->size = obj->scn_hdrs[i].s_size;

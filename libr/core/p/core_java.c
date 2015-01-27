@@ -1642,6 +1642,7 @@ static int r_cmd_java_print_field_num_name (RBinJavaObj *obj) {
 	r_list_foreach (the_list, iter, str) {
 		r_cons_printf ("%s\n", str);
 	}
+	r_list_free (the_list);
 	return R_TRUE;
 }
 
@@ -1652,6 +1653,7 @@ static int r_cmd_java_print_method_num_name (RBinJavaObj *obj) {
 	r_list_foreach (the_list, iter, str) {
 		r_cons_printf ("%s\n", str);
 	}
+	r_list_free (the_list);
 	return R_TRUE;
 }
 

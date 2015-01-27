@@ -203,7 +203,7 @@ static RList* libs(RBinFile *arch) {
 
 static RList* symbols(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
-	RList *ret = r_list_new();
+	RList *ret;
 	int i, found = R_FALSE;
 	ut32 thunk_addr[XBE_MAX_THUNK];
 	ut32 kt_addr;
@@ -214,6 +214,7 @@ static RList* symbols(RBinFile *arch) {
 
 	obj = arch->o->bin_obj;
 	kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
+	ret = r_list_new();
 	ret->free = free;
 
 //eprintf ("VA %llx  %llx\n", sym->paddr, sym->vaddr);

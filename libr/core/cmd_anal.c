@@ -701,9 +701,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					 }
 				 }
 			 } else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-			 if (name) {
-				 free (name);
-			 }
+			free (name);
 		  }
 		 break;
 #endif

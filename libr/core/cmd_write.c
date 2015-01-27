@@ -415,6 +415,7 @@ static int cmd_write(void *data, const char *input) {
 			//if (!r_config_get_i (core->config, "io.cache"))
 			//	eprintf ("[warning] e io.cache must be true\n");
 			r_io_cache_list (core->io, R_FALSE);
+			free (ostr);
 			break;
 		}
 		break;

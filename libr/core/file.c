@@ -62,6 +62,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 	if (!ofilepath) {
 		eprintf ("Unknown file path");
+		free (obinfilepath);
 		return R_FALSE;
 	}
 
