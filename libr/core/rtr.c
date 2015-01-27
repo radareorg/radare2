@@ -882,6 +882,8 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						for (;;) {
 							r_line_set_prompt (prompt2);
 							res = r_line_readline ();
+							if (!res || !*res || !strcmp (res, "exit"))
+								break;
 							ptr = r_str_uri_encode (res);
 
 							snprintf (uri, sizeof (uri), "http://%s:%s/%s!%s",
@@ -897,8 +899,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 								free (str);
 							}
 						}
-					}
-					if (str[0]=='V') {
+					} else if (str[0]=='V') {
 						if (str[1]==' ') {
 							rtr_visual (core, T, str+1);
 						} else {
