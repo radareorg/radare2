@@ -858,7 +858,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	switch (proto) {
 	case RTR_PROT_HTTP:
 		{
-			char uri[1024], prompt[64];
+			char uri[1024], prompt[64], prompt2[64];
 			int len;
 			char *str, *res, *ptr;
 			int flen = strlen (file);
@@ -872,11 +872,32 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				}
 				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
 						host, port, file);
+				snprintf (prompt2, sizeof(prompt2), "[%s:%s]$ ", host, port);
 				for (;;) {
 					r_line_set_prompt (prompt);
 					str = r_line_readline ();
 					if (!str || !*str) break;
 					if (*str == 'q') break;
+					if (!strcmp (str, "!sh")) {
+						for (;;) {
+							r_line_set_prompt (prompt2);
+							res = r_line_readline ();
+							ptr = r_str_uri_encode (res);
+
+							snprintf (uri, sizeof (uri), "http://%s:%s/%s!%s",
+									host, port, file, res);
+							str = r_socket_http_get (uri, NULL, &len);
+							if (str) {
+								str[len] = 0;
+								res = strstr (str, "\n\n");
+								if (res) res = strstr (res+1, "\n\n");
+								if (res) res += 2; else res = str;
+								printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
+								r_line_hist_add (str);
+								free (str);
+							}
+						}
+					}
 					if (str[0]=='V') {
 						if (str[1]==' ') {
 							rtr_visual (core, T, str+1);
