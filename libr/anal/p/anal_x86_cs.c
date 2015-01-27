@@ -495,13 +495,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					char *dst = getarg (handle, insn, 0, 2);
 					switch (insn->id) {
 					case X86_INS_JL:
-						esilprintf (op, "of,sf,^,?{,%s,%s,}", dst, pc);
+						esilprintf (op, "of,sf,^,?{,%s,%s,=,}", dst, pc);
 						break;
 					case X86_INS_JLE:
 						esilprintf (op, "of,sf,^,zf,|,%s,%s,=", dst, pc);
 						break;
 					case X86_INS_JA:
-						esilprintf (op, "cf,!,zf,!,&,?{,%s,%s,}",dst, pc);
+						esilprintf (op, "cf,!,zf,!,&,?{,%s,%s,=,}",dst, pc);
 						break;
 					case X86_INS_JAE:
 						esilprintf (op, "cf,?{,%s,%s,=,}", dst, pc);
@@ -513,13 +513,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						esilprintf (op, "of,?{,%s,%s,=,}", dst, pc);
 						break;
 					case X86_INS_JNO:
-						esilprintf (op, "of,!,?{,%s,%s,}", dst, pc);
+						esilprintf (op, "of,!,?{,%s,%s,=,}", dst, pc);
 						break;
 					case X86_INS_JE:
 						esilprintf (op, "zf,?{,%s,%s,=,}", dst, pc);
 						break;
 					case X86_INS_JGE:
-						esilprintf (op, "of,!,sf,^,?{,%s,%s,}", dst, pc);
+						esilprintf (op, "of,!,sf,^,?{,%s,%s,=,}", dst, pc);
 						break;
 					case X86_INS_JNE:
 						esilprintf (op, "zf,!,?{,%s,%s,=,}", dst, pc);

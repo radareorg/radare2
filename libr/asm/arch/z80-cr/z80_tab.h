@@ -1,8 +1,9 @@
 /* radare - LGPL - Copyright 2014-2015 - condret */
 
-#ifndef NULL
-#define NULL 0
+#ifdef NULL
+#undef NULL
 #endif
+#define NULL 0
 
 enum{
 	Z80_OP_UNK = 1,
