@@ -108,6 +108,9 @@ R_API RReg *r_reg_new() {
 		reg->regset[i].arena = arena;
 		//r_list_append (reg->regset[i].pool, arena);
 	}
+	/* swap arena back and forth to avoid lost reg sets */
+	r_reg_arena_swap (reg, R_FALSE);
+	r_reg_arena_swap (reg, R_FALSE);
 	return reg;
 }
 
@@ -128,10 +131,9 @@ static const char *parse_alias (RReg *reg, char **tok, const int n) {
 	if (n != 2)
 		return "Invalid syntax";
 
-	role = r_reg_get_name_idx(tok[0] + 1);
-	return r_reg_set_name(reg, role, tok[1]) ?
-		NULL :
-		"Invalid alias";
+	role = r_reg_get_name_idx (tok[0] + 1);
+	return r_reg_set_name (reg, role, tok[1]) ?
+		NULL : "Invalid alias";
 }
 
 // Sizes prepended with a dot are expressed in bits
@@ -266,13 +268,14 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				free(tok[i]);
 			// Warn the user if something went wrong
 			if (r) {
-				eprintf("%s: Parse error @ line %d (%s)\n", __FUNCTION__, l, r);
+				eprintf("%s: Parse error @ line %d (%s)\n",
+					__FUNCTION__, l, r);
 				// Clean up
 				r_reg_free_internal (reg);
 				return R_FALSE;
 			}
 		}
-	} while(*p++);
+	} while (*p++);
 
 	// Align to byte boundary if needed
 	if (reg->size&7)
@@ -336,7 +339,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
 			if (r->name && !strcmp (r->name, name)) {
 				return r;
-	}
+			}
 		}
 	}
 	return NULL;

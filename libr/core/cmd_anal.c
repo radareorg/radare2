@@ -1269,6 +1269,101 @@ static void cmd_anal_info(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_esil_stack (RCore *core, const char *input) {
+	ut64 curoff = core->offset;
+	ut64 stack_addr = 0x1f0000;
+	ut64 stack_size = 0xf0000;
+	ut64 stack_ptr = stack_addr+(stack_size/2);
+	const char *sp;
+	RCoreFile *cf;
+	RFlagItem *fi;
+	char uri[32];
+	if (*input=='?') {
+		eprintf ("Usage: [stackaddr] [stacksize] [stackptr]\n");
+		eprintf ("Default: 0x100000 0xf0000 0x1e0000\n");
+		return;
+	}
+
+	// arguments aeis [space] [size] [address]
+	{
+	char *s = strdup (input);
+	int args = r_str_word_set0 (s);
+	if (args>0) {
+		ut64 fsz = r_io_size (core->io);
+		stack_addr = r_num_math (core->num,
+			r_str_word_get0 (s, 0));
+		if (stack_addr<fsz) {
+			stack_addr = fsz + (fsz%0xf000);
+			stack_addr = 0x1000000;
+		}
+		if (args>1) {
+			stack_size = r_num_math (core->num,
+				r_str_word_get0 (s, 1));
+			if (args>2) {
+				stack_ptr = r_num_math (core->num,
+					r_str_word_get0 (s, 2));
+			}
+		}
+		if (stack_size<1)
+			stack_size = 0xf0000;
+		if (stack_ptr<stack_addr) {
+			stack_ptr = stack_addr + (stack_size/2);
+		}
+		if (stack_ptr >= stack_addr+stack_size) {
+			stack_ptr = stack_addr + stack_size;
+		}
+	}
+	free (s);
+	}
+
+	fi = r_flag_get (core->flags, "stack_fd");
+	if (fi) {
+		cf = r_core_file_get_by_fd (core, fi->offset);
+		r_core_file_close (core, cf);
+		r_flag_unset (core->flags, "stack", NULL);
+		r_flag_unset (core->flags, "stack_fd", NULL);
+		if (*input=='-') {
+			eprintf ("Deinitialize\n");
+			return;
+		}
+	}
+	if (*input=='-') {
+		eprintf ("Cannot deinitialize twice\n");
+		return;
+	}
+	sp = r_reg_get_name (core->anal->reg,
+		r_reg_get_name_idx ("sp"));
+	if (!sp) {
+		eprintf ("Unknown stack pointer register\n");
+		sp = "esp";
+	}
+	{
+	snprintf (uri, sizeof (uri), "malloc://%d", (int)stack_size);
+	cf = r_core_file_open (core, uri, R_IO_RW, stack_addr);
+	if (cf) {
+		r_flag_set (core->flags, "stack_fd", cf->desc->fd, 1, 0);
+		r_flag_set (core->flags, "stack", stack_addr, 1, 0);
+		r_flag_set (core->flags, "stack_ptr", stack_ptr, 1, 0);
+		r_reg_setv (core->anal->reg, sp, stack_ptr);
+		r_reg_setv (core->dbg->reg, sp, stack_ptr);
+	}
+	}
+	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
+	//	PFMT64x"`", stack_size, stack_addr);
+	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
+	//r_core_cmdf (core, "dr %s=0x%08"PFMT64x, sp, stack_ptr);
+	//r_debug_reg_set (core->dbg, sp, stack_ptr);
+	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
+	//r_core_cmdf (core, "f %s=%s", sp, sp);
+	r_core_seek (core, curoff, 0);
+	/* stack */
+	eprintf ("ADDR 0x%08"PFMT64x"\n", stack_addr);
+	eprintf ("PTR 0x%08"PFMT64x"\n", stack_ptr);
+	eprintf ("SZ 0x%08"PFMT64x"\n", stack_size);
+	eprintf ("GET SP = 0x%x\n", (int)
+		r_reg_getv (core->anal->reg, sp));
+}
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -1280,7 +1375,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'r':
 		// 'aer' is an alias for 'ar'
-		cmd_anal_reg(core, input+1);
+		cmd_anal_reg (core, input+1);
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil) {
@@ -1303,7 +1398,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		else if (input[1] == 'u')
 			until_addr = r_num_math(core->num, input + 2);
 
-		esil_step(core, until_addr, until_expr);
+		esil_step (core, until_addr, until_expr);
 		break;
 	case 'c':
 		// aec  -> continue until ^C
@@ -1321,12 +1416,21 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		core->anal->esil = NULL;
 		break;
 	case 'i':
-		r_anal_esil_free (esil);
-		// reinitialize
-		esil = core->anal->esil = r_anal_esil_new ();
-		romem = r_config_get_i (core->config, "esil.romem");
-		stats = r_config_get_i (core->config, "esil.stats");
-		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+		switch (input [1]) {
+		case 's':
+			cmd_esil_stack (core, input+2);
+			break;
+		case '?':
+			cmd_esil_stack (core, "?");
+		case 0:
+			r_anal_esil_free (esil);
+			// reinitialize
+			esil = core->anal->esil = r_anal_esil_new ();
+			romem = r_config_get_i (core->config, "esil.romem");
+			stats = r_config_get_i (core->config, "esil.stats");
+			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+			break;
+		}
 		break;
 	case 'k':
 		switch (input[1]) {
@@ -1388,6 +1492,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			const char* help_msg[] = {
 				"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
 				"aei", "", "initialize ESIL VM state",
+				"aeis", "", "initialize ESIL VM stack (aeis- remove)",
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
 				"aef", " [addr]", "emulate function",
