@@ -23,6 +23,11 @@ typedef struct r_fs_t {
 	void *ptr;
 } RFS;
 
+
+typedef struct r_fs_partition_plugin_t {
+	const char *name;
+} RFSPartitionPlugin;
+
 typedef struct r_fs_file_t {
 	char *name;
 	char *path;
@@ -73,9 +78,12 @@ typedef struct r_fs_partition_t {
 #define R_FS_FILE_TYPE_SPECIAL 's'
 #define R_FS_FILE_TYPE_MOUNT 'm'
 
+typedef int (*RFSPartitionIterator)(void *disk, void *ptr, void *user);
 typedef struct r_fs_partition_type_t {
 	const char *name;
-	void *ptr;
+	void *ptr; // grub_msdos_partition_map
+	RFSPartitionIterator iterate;
+	//RFSPartitionIterator parhook;
 } RFSPartitionType;
 #define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RFSPartitionType)-1)
 

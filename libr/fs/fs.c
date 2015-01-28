@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare2 - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_fs.h>
 #include "../config.h"
@@ -6,8 +6,8 @@
 #include <errno.h>
 #include "../../shlr/grub/include/grub/msdos_partition.h"
 
-#ifndef DISABLE_GRUB
-#define DISABLE_GRUB 0
+#ifndef USE_GRUB
+#define USE_GRUB 1
 #endif
 
 R_LIB_VERSION(r_fs);
@@ -398,20 +398,34 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 
 // TODO: move into grubfs
 #include "../../shlr/grub/include/grubfs.h"
-RList *list = NULL;
 
-#if !DISABLE_GRUB
-static int parhook (struct grub_disk *disk, struct grub_partition *par, void *closure) {
-	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);
+#if USE_GRUB
+static int grub_parhook (void *disk, struct grub_partition *par, void *closure) {
+	RList *list = (RList*)closure;
+	RFSPartition *p = r_fs_partition_new (
+		r_list_length (list),
+		par->start*512, 512*par->len);
 	p->type = par->msdostype;
 	r_list_append (list, p);
 	return 0;
 }
 #endif
 
+static int fs_parhook (void *disk, void *ptr, void *closure) {
+	RFSPartition *par = ptr;
+	RList *list = (RList*)closure;
+	r_list_append (list, par);
+	return 0;
+}
+
+#include "p/part_dos.c"
+
 static RFSPartitionType partitions[] = {
-#if !DISABLE_GRUB
-	{ "msdos", &grub_msdos_partition_map },
+	/* LGPL code */
+	{ "dos", &fs_part_dos, fs_parhook },
+#if USE_GRUB
+	/* WARNING GPL code */
+	{ "msdos", (void*)&grub_msdos_partition_map, (void*)grub_parhook },
 	{ "apple", &grub_apple_partition_map },
 	{ "sun", &grub_sun_partition_map },
 	{ "sunpc", &grub_sun_pc_partition_map },
@@ -437,22 +451,31 @@ R_API int r_fs_partition_get_size () {
 }
 
 R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
-	int i;
-	struct grub_partition_map *gpm = NULL;
+	int i, cur = -1;
 	for (i=0; partitions[i].name; i++) {
 		if (!strcmp (ptype, partitions[i].name)) {
-			gpm = partitions[i].ptr;
+			cur = i;
 			break;
 		}
 	}
-	if (gpm) {
-		list = r_list_new ();
+	if (cur != -1) {
+		void *disk = NULL;
+		RList *list = r_list_new ();
 		list->free = (RListFree)r_fs_partition_free;
-#if !DISABLE_GRUB
-		grubfs_bind_io (NULL, 0);
-		struct grub_disk *disk = grubfs_disk (&fs->iob);
-		gpm->iterate (disk, parhook, 0);
+		if (partitions[i].iterate == (void*)&grub_parhook) {
+#if USE_GRUB
+			struct grub_partition_map *gpt = partitions[i].ptr;
+			grubfs_bind_io (NULL, 0);
+			disk = (void*)grubfs_disk (&fs->iob);
+			if (gpt) {
+				gpt->iterate (disk,
+					(void*)partitions[i].iterate, list);
+			}
 #endif
+		} else {
+			RFSPartitionIterator iterate = partitions[i].ptr;
+			iterate (fs, partitions[i].iterate, list); //grub_parhook, list);
+		}
 		return list;
 	}
 	if (ptype && *ptype)
