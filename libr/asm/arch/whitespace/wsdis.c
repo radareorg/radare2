@@ -109,7 +109,7 @@ WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len)
 {
 	const ut8 *ptr;
 	ptr = get_ws_next_token(buf, len);
-	while(ptr && *ptr!=token) {
+	while(ptr && *ptr!=token && (len > 0)) {
 		len = len - (ptr - buf);
 		ptr = get_ws_next_token(ptr + 1, len - 1);
 	}
