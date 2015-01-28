@@ -1266,7 +1266,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 	ut64 abbr_code;
 	size_t i;
 
-	while (buf < buf_end) {
+	while (buf < buf_end && buf >= obuf) {
 		if (cu->length && cu->capacity == cu->length)
 			r_bin_dwarf_expand_cu (cu);
 
