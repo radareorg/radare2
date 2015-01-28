@@ -935,6 +935,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.bytespace", "false", "Separate hex bytes with a whitespace");
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
+	SETPREF("asm.fcncalls", "true", "Show functions calls");
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");

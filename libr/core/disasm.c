@@ -74,6 +74,7 @@ typedef struct r_disam_options_t {
 	int show_stackptr;
 	int show_xrefs;
 	int show_functions;
+	int show_fcncalls;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -287,6 +288,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
+	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
@@ -1553,6 +1555,8 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 	// state
 	static RAnalCC cc = {0};
 	if (!ds->show_comments)
+		return;
+	if (!ds->show_fcncalls)
 		return;
 	if (!r_anal_cc_update (core->anal, &cc, &ds->analop)) {
 		if (ds->show_functions) {
