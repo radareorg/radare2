@@ -194,15 +194,9 @@ R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int us
 					io->printf ("#");
 				else io->printf ("-");
 			}
-			if (io->va) {
-				io->printf ("| %s0x%08"PFMT64x"%s %s %d\n", 
-					color, s->to, color_end,
-					r_str_rwx_i (s->flags), s->fd);
-			} else {
-				io->printf ("| %s0x%08"PFMT64x"%s %s %d\n",
-					color, s->to, color_end,
-					r_str_rwx_i (s->flags), s->fd);
-			}
+			io->printf ("| %s0x%08"PFMT64x"%s %s %d\n", 
+				color, s->to, color_end,
+				r_str_rwx_i (s->flags), s->fd);
 			i++;
 		}
 		/* current seek */

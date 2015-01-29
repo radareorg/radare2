@@ -1431,6 +1431,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case '?':
 			cmd_esil_stack (core, "?");
+			break;
 		case 0:
 			r_anal_esil_free (esil);
 			// reinitialize

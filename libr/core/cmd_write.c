@@ -415,7 +415,6 @@ static int cmd_write(void *data, const char *input) {
 			//if (!r_config_get_i (core->config, "io.cache"))
 			//	eprintf ("[warning] e io.cache must be true\n");
 			r_io_cache_list (core->io, R_FALSE);
-			free (ostr);
 			break;
 		}
 		break;
@@ -709,7 +708,7 @@ static int cmd_write(void *data, const char *input) {
 						"Usage: 'woe from-to step'\n");
 					else r_cons_printf (
 						"Usage: 'wo%c 00 11 22'\n", input[1]);
-					free (ostr);
+					R_FREE (ostr);
 					return 0;
 				}
 			case '2':
@@ -838,11 +837,11 @@ static int cmd_write(void *data, const char *input) {
 			"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
                         NULL
                         };
-                        r_core_cmd_help(core, help_msg);
+                        r_core_cmd_help (core, help_msg);
         }
 		break;
 	}
-	free (ostr);
+	R_FREE (ostr);
 	return 0;
 }
 

@@ -693,6 +693,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 			file = r_list_get_n (list, dir);
 			if (file && file->type != 'd')
 				r_core_cmdf (core, "px @ 0x%"PFMT64x"!64", file->off);
+			r_list_free (list);
 			*str='\0';
 		}
 		r_cons_flush ();
@@ -744,6 +745,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 						r_cons_flush ();
 						r_cons_any_key ();
 					}
+					r_list_free (list);
 				} else if (mode == 2){
 					r_str_chop_path (path);
 					strncat (path, "/", sizeof (path)-strlen (path)-1);
