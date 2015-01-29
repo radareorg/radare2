@@ -377,11 +377,13 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 }
 
 static int anal_fcn_list_bb (RCore *core, const char *input) {
+	RDebugTracepoint *tp = NULL;
+	RAnalFunction *fcn;
+	RListIter *iter;
+	RAnalBlock *b;
 	int mode = 0;
 	ut64 addr;
-	RAnalBlock *b;
-	RListIter *iter;
-	RAnalFunction *fcn;
+
 	if (*input && (input[1]==' ' || !input[1])) {
 		if (*input == 'r')
 			mode = '*';
@@ -417,8 +419,11 @@ static int anal_fcn_list_bb (RCore *core, const char *input) {
 			r_cons_printf ("%"PFMT64d"%s", b->addr, iter->n?",":"");
 			break;
 		default:
-			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d",
-				b->addr, b->addr + b->size, b->size);
+			tp = r_debug_trace_get (core->dbg, b->addr);
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02X:%04X %d",
+				b->addr, b->addr + b->size,
+				tp?tp->times:0, tp?tp->count:0,
+				b->size);
 			if (b->jump != UT64_MAX) {
 				r_cons_printf (" j 0x%08"PFMT64x, b->jump);
 			}
