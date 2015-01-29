@@ -209,7 +209,7 @@ static RList* symbols(RBinFile *arch) {
 	ut32 kt_addr;
 	xbe_section sect;
 
-	if (!ret || !arch || !arch->o)
+	if (!arch || !arch->o)
 		return NULL;
 
 	obj = arch->o->bin_obj;
