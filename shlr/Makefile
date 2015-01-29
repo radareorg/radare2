@@ -40,6 +40,7 @@ clean mrproper:
 	cd wind && $(MAKE) clean
 	rm -f sdb/src/.sdb sdb/sdb
 	cd sdb && $(MAKE) clean
+	rm -f sdb/sdb
 	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
 
 $(SDBLIB) sdb/sdb:
@@ -47,12 +48,12 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; $(MAKE) clean
 	cd sdb ; \
 		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} CFLAGS="-fPIC ${HOST_CFLAGS} -g" && \
+		$(MAKE) CC=${HOST_CC} CFLAGS="-fPIC ${HOST_CFLAGS} -Wno-initializer-overrides -g" && \
 		cp -f src/sdb src/.sdb
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
-		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
+		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS} -Wno-initializer-overrides" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 	cp -f sdb/src/.sdb sdb/sdb
 
