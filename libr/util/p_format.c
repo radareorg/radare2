@@ -577,7 +577,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 	const char *fmt;
 	int mode = (slide>=STRUCTFLAG)?SEEFLAG:-1;
 	mode = (json)?JSONOUTPUT:mode;
-	if ((slide%STRUCTPTR) > NESTDEPTH || slide/STRUCTPTR > NESTDEPTH) {
+	if ((slide%STRUCTPTR) > NESTDEPTH || (slide%STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
@@ -610,7 +610,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!fmt)
 		return 0;
 	argend = fmt+strlen (fmt);
-	
+
 	nexti = nargs = i = j = 0;
 
 	if (len < 1)
@@ -670,7 +670,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 #define ISPOINTED ((slide%STRUCTFLAG)/STRUCTPTR<=(oldslide%STRUCTFLAG)/STRUCTPTR)
 #define ISNESTED ((slide%STRUCTPTR)<=(oldslide%STRUCTPTR))
 	if (json && slide==0) p->printf("[");
-	
+
 	/* go format */
 	i = 0;
 	if (!times)
@@ -765,7 +765,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->printf ("(*0x%"PFMT64x") ", addr);
 				if (addr == 0) isptr = NULLPTR;
 				else isptr = PTRBACK;
-				if (/*addr<(b+len) && addr>=b && */p->iob.read_at) { /* The test was here to avoid segfault in the next line, 
+				if (/*addr<(b+len) && addr>=b && */p->iob.read_at) { /* The test was here to avoid segfault in the next line,
 						but len make it doesnt work... */
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
 					updateAddr (buf, i, endian, &addr, &addr64);
@@ -817,15 +817,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				tmp = (p->bits == 64)? 'q': 'x';
 				break;
 			}
+			/* flags */
 			if (flag && isptr != NULLPTR) {
 				if (tmp == '?') {
-					realprintf ("f %s_", fmtname);
+					realprintf ("f %s.%s_", fmtname, fieldname);
 				} else if (tmp == 'E') {
 					realprintf ("f %s=0x%08"PFMT64x"\n", fieldname, seeki);
-				} else if (slide>0 && idx==0) {
+				} else if (slide/STRUCTFLAG>0 && idx==1) {
 					realprintf ("%s=0x%08"PFMT64x"\n", fieldname, seeki);
 				} else realprintf ("f %s=0x%08"PFMT64x"\n", fieldname , seeki);
 			}
+			/* json */
 			if (json) {
 				if (oldprintf)
 					p->printf = oldprintf;
