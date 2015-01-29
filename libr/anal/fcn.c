@@ -115,7 +115,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	r_list_append (fcn->refs, ref);
 #endif
 #if FCN_SDB
-	sdb_add (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x".name"), fcn->name, 0);
+	sdb_add (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x".name", fcn->addr), fcn->name, 0);
 	// encode the name in base64 ?
 	sdb_num_add (DB, sdb_fmt (0, "fcn.name.%s", fcn->name), fcn->addr, 0);
 	sdb_array_add_num (DB,

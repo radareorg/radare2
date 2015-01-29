@@ -395,6 +395,9 @@ static int cmd_flag(void *data, const char *input) {
 				*new = 0;
 				new++;
 				item = r_flag_get (core->flags, old);
+				if (!item && !strncmp (old, "fcn.", 4)) {
+					item = r_flag_get (core->flags, old+4);
+				}
 			} else {
 				new = old;
 				item = r_flag_get_i (core->flags, core->offset);
@@ -402,7 +405,9 @@ static int cmd_flag(void *data, const char *input) {
 			if (item) {
 				if (!r_flag_rename (core->flags, item, new))
 					eprintf ("Invalid name\n");
-			} else eprintf ("Cannot find flag\n");
+			} else {
+				eprintf ("Cannot find flag (%s)\n", old);
+			}
 		}
 		break;
 	case 'n':

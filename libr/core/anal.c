@@ -754,6 +754,13 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	fcn->addr = at;
 	fcn->size = 0;
 	fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+if (0) {
+	RFlagItem *item = r_flag_get_i (core->flags, at);
+	if (item) {
+		free (fcn->name);
+		fcn->name = strdup (item->name);
+	}
+}
 	if (!(buf = malloc (ANALBS))) { //core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -802,6 +809,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 		}
 		//at = fcn->addr;
+#if 1
 		 {
 			RFlagItem *f = r_flag_get_i (core->flags, fcn->addr);
 			free (fcn->name);
@@ -811,21 +819,25 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 			}
 		 }
+#endif
 // HACK
 		//r_anal_fcn_insert (core->anal, fcn);
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			RFlagItem *f = r_flag_get_i2 (core->flags, fcn->addr);
+			RFlagItem *f = r_flag_get_i (core->flags, fcn->addr);
 			free (fcn->name);
 			if (f) { /* Check if it's already flagged */
-				fcn->name = strdup (f->name); // memleak here?
+				fcn->name = strdup (f->name);
+			//	fcn->name = r_str_newf ("fcn.%s", f->name);
 			} else {
+#if 1
 				fcn->name = r_str_newf ("%s.%08"PFMT64x,
 						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", fcn->addr);
+#endif
 				/* Add flag */
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name,
