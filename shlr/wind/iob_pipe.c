@@ -5,7 +5,40 @@
 #include <unistd.h>
 
 #if __WIN32__ || __CYGWIN__ || MINGW32
-#warning No support for windows yet
+#include <windows.h>
+#include <fcntl.h>
+#include "transport.h"
+
+static void *iob_pipe_open (const char *path) {
+	HANDLE hPipe;
+	hPipe = CreateFile (path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	eprintf ("iob_pipe_open: invocado %s\n", path);
+	if (hPipe != INVALID_HANDLE_VALUE) {
+		return (void *)(HANDLE)hPipe;
+	} else {
+		perror ("pipe");
+	}
+	return NULL;
+}
+
+static int iob_pipe_close (void *p) {
+	return CloseHandle (p);
+}
+
+static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
+	DWORD c = 0;
+	if (!ReadFile (p, buf, count, &c, NULL))
+		return -1;
+	return c;
+}
+
+static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
+	DWORD cbWrited = 0;
+	if (!WriteFile (p, buf, count, &cbWrited, NULL))
+		return -1;
+	return cbWrited;
+}
+
 #else
 
 #include <fcntl.h>
@@ -49,6 +82,8 @@ static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, co
 	return send((int)(size_t)p, buf, count, 0);
 }
 
+#endif
+
 io_backend_t iob_pipe = {
 	.name = "pipe",
 	.init = NULL,
@@ -59,4 +94,3 @@ io_backend_t iob_pipe = {
 	.read = &iob_pipe_read,
 	.write = &iob_pipe_write,
 };
-#endif

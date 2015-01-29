@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+#ifndef HAVE_EPRINTF
+#include <stdio.h>
+#define eprintf(x,y...) fprintf(stderr,x,##y)
+#define HAVE_EPRINTF 1
+#endif
+
 enum {
     E_OK = 0,
     E_TIMEOUT = -1,

@@ -18,17 +18,6 @@
 #include <r_socket.h>
 #include <r_util.h>
 #include <transport.h>
-
-#if __WINDOWS__
-#warning WinDBG support not yet ready for Windows
-
-RIOPlugin r_io_plugin_windbg = {
-	.name = "windbg",
-	.desc = "Attach to a KD debugger (not supported on Windows)",
-	.license = "LGPL3",
-};
-#else
-
 #include <wind.h>
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
@@ -42,14 +31,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0))
 		return NULL;
 
-	if (!iob_select("pipe")) {
+	if (!iob_select ("pipe")) {
 		eprintf("Could not initialize the IO backend\n");
 		return NULL;
 	}
 
 	io_ctx = iob_open (file + 9);
 	if (!io_ctx) {
-		eprintf("Could not open the pipe\n");
+		eprintf ("Could not open the pipe\n");
 		return NULL;
 	}
 
@@ -67,9 +56,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 	if (wind_get_target(fd->data)) {
 		uint64_t va;
-		if (!wind_va_to_pa(fd->data, io->off, &va))
+		if (!wind_va_to_pa (fd->data, io->off, &va))
 			return -1;
-		return wind_write_at_phys(fd->data, buf, va, count);
+		return wind_write_at_phys (fd->data, buf, va, count);
 	}
 
 	return wind_write_at (fd->data, buf, io->off, count);
@@ -110,5 +99,3 @@ RIOPlugin r_io_plugin_windbg = {
 	.lseek = __lseek,
 	.isdbg = R_TRUE,
 };
-
-#endif

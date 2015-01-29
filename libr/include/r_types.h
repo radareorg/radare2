@@ -211,7 +211,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
   { char buf[128];snprintf(buf,sizeof(buf),"%s:%d %s",file,line,str);perror(buf); }
 #define perror(x) _perror(x,__FILE__,__LINE__)
 
+#ifndef HAVE_EPRINTF
 #define eprintf(x,y...) fprintf(stderr,x,##y)
+#define HAVE_EPRINTF 1
+#endif
 
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
