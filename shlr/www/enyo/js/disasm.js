@@ -938,7 +938,7 @@ function eraseCookie(name) {
 }
 
 function do_randomcolors(element, inEvent) {
-  r2.cmd ('ecr', function() {
+  r2.cmd ('ecr;ec gui.background rgb:000', function() {
     r2ui.load_colors ();
   });
 }
