@@ -6,6 +6,11 @@
 #define SETICB(w,x,y,z) r_config_node_desc(r_config_set_i_cb(cfg,w,x,y), z);
 #define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
+#if LIL_ENDIAN
+#define CFG_BIGENDIAN "false"
+#else
+#define CFG_BIGENDIAN "true"
+#endif
 
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
@@ -953,10 +958,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
 	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");
-#if 0
-	r_config_set (cfg, "asm.offseg", "false");
-	r_config_desc (cfg, "asm.offseg", "Show offsets as in 16 bit segment addressing mode");
-#endif
 
 	/* bin */
 	SETI("bin.baddr", 0, "Base address where the bin isn loaded");
@@ -968,11 +969,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 
 	/* cfg */
-#if LIL_ENDIAN
-	r_config_set_cb (cfg, "cfg.bigendian", "false", &cb_bigendian);
-#else
-	r_config_set_cb (cfg, "cfg.bigendian", "true", &cb_bigendian);
-#endif
+	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);
 	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
 	SETCB("cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%d:%m:%Y %H:%M:%S %z)");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "set/unset the debugger mode");
@@ -983,10 +980,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
 #endif
 	free (p);
-	 {
-		char username[128];
-		SETPREF("cfg.user", r_sys_whoami (username), "Set current username/pid");
-	 }
+	SETPREF("cfg.user", r_sys_whoami (buf), "Set current username/pid");
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	SETPREF("cfg.fortunes", "true", "If enabled show tips at start");
 	SETPREF("cfg.fortunetype", "tips,fun", "Type of fortunes to show tips,fun,nsfw");

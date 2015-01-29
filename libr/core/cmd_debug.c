@@ -265,8 +265,23 @@ static int step_line(RCore *core, int times) {
 }
 
 static void cmd_debug_pid(RCore *core, const char *input) {
-	const char *ptr;
 	int pid, sig;
+	const char *ptr, *help_msg[] = {
+		"Usage:", "dp", " # Process commands",
+		"dp", "", "List current pid and childrens",
+		"dp", " <pid>", "List children of pid",
+		"dp*", "", "List all attachable pids",
+		"dp=", "<pid>", "Select pid",
+		"dpa", " <pid>", "Attach and select pid",
+		"dpe", "", "Show path to executable",
+		"dpf", "", "Attach to pid like file fd // HACK",
+		"dpk", " <pid> <signal>", "Send signal to process",
+		"dpn", "", "Create new process (fork)",
+		"dpnt", "", "Create new thread (clone)",
+		"dpt", "", "List threads of current pid",
+		"dpt", " <pid>", "List threads of process",
+		"dpt=", "<thread>", "Attach to thread",
+		NULL};
 	switch (input[1]) {
 	case 'k':
 		/* stop, print, pass -- just use flags*/
@@ -341,25 +356,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_debug_pid_list (core->dbg,
 			(int) R_MAX (0, (int)r_num_math (core->num, input+2)), 0);
 		break;
-	case '?': {
-			const char* help_msg[] = {
-				"Usage:", "dp", " # Process commands",
-				"dp", "", "List current pid and childrens",
-				"dp", " <pid>", "List children of pid",
-				"dp*", "", "List all attachable pids",
-				"dp=", "<pid>", "Select pid",
-				"dpa", " <pid>", "Attach and select pid",
-				"dpe", "", "Show path to executable",
-				"dpf", "", "Attach to pid like file fd // HACK",
-				"dpk", " <pid> <signal>", "Send signal to process",
-				"dpn", "", "Create new process (fork)",
-				"dpnt", "", "Create new thread (clone)",
-				"dpt", "", "List threads of current pid",
-				"dpt", " <pid>", "List threads of process",
-				"dpt=", "<thread>", "Attach to thread",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg);
 		break;
 	default:
 		eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
@@ -408,30 +406,29 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 }
 
 static int cmd_debug_map(RCore *core, const char *input) {
+	const char* help_msg[] = {
+		"Usage:", "dm", " # Memory maps commands",
+		"dm", "", "List memory maps of target process",
+		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+		"dm*", "", "List memmaps in radare commands",
+		"dm-", "<address>", "Deallocate memory map of <address>",
+		"dmd", " [file]", "Dump current debug map region to a file (from-to.dmp) (see Sd)",
+		"dmi", " [addr|libname] [symname]", "List symbols of target lib",
+		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
+		"dmj", "", "List memmaps in JSON format",
+		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
+		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
+		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
+		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
+		NULL};
 	char file[128];
 	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr = core->offset;
 
 	switch (input[0]) {
-	case '?': {
-			const char* help_msg[] = {
-			"Usage:", "dm", " # Memory maps commands",
-			"dm", "", "List memory maps of target process",
-			"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
-			"dm*", "", "List memmaps in radare commands",
-			"dm-", "<address>", "Deallocate memory map of <address>",
-			"dmd", " [file]", "Dump current debug map region to a file (from-to.dmp) (see Sd)",
-			"dmi", " [addr|libname] [symname]", "List symbols of target lib",
-			"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
-			"dmj", "", "List memmaps in JSON format",
-			"dml", " <file>", "Load contents of file into the current map region (see Sl)",
-			"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
-			//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-			"TODO:", "", "map files in process memory. (dmf file @ [addr])",
-			NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg);
 		break;
 	case 'p':
 		if (input[1] == ' ') {
@@ -1010,6 +1007,34 @@ static void static_debug_stop(void *u) {
 }
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
+	RBreakpointItem *bpi;
+	const char* help_msg[] = {
+		"Usage: db", "", " # Breakpoints commands",
+		"db", "", "List breakpoints",
+		"db", " sym.main", "Add breakpoint into sym.main",
+		"db", " <addr>", "Add breakpoint",
+		"db", " -<addr>", "Remove breakpoint",
+		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
+		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
+		"dbd", " <addr>", "Disable breakpoint",
+		"dbe", " <addr>", "Enable breakpoint",
+		"dbs", " <addr>", "Toggle breakpoint",
+
+		"dbte", " <addr>", "Enable Breakpoint Trace",
+		"dbtd", " <addr>", "Disable Breakpoint Trace",
+		"dbts", " <addr>", "Swap Breakpoint Trace",
+		//
+		"dbi", "", "List breakpoint indexes",
+		"dbic", " <index> <cmd>", "Run command at breakpoint index",
+		"dbie", " <index>", "Enable breakpoint by index",
+		"dbid", " <index>", "Disable breakpoint by index",
+		"dbis", " <index>", "Swap Nth breakpoint",
+		"dbite", " <index>", "Enable breakpoint Trace by index",
+		"dbitd", " <index>", "Disable breakpoint Trace by index",
+		"dbits", " <index>", "Swap Nth breakpoint trace",
+		//
+		"dbh", " x86", "Set/list breakpoint plugin handlers",
+		NULL};
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
 	RListIter *iter;
@@ -1017,9 +1042,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	RList *list;
 	ut64 addr;
 	p = strchr (input, ' ');
-	if (p) {
-		addr = r_num_math (core->num, p+1);
-	} else addr = 0;
+	addr = p? r_num_math (core->num, p+1): 0LL;
+
 	switch (input[1]) {
 	case 't':
 		switch (input[2]) {
@@ -1038,13 +1062,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot unset tracepoint\n");
 			break;
 		case 's':
-			{
-			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+			bpi = r_bp_get_at (core->dbg->bp, addr);
 			if (bpi) {
 				bpi->trace = !!!bpi->trace;
 			} else {
 				eprintf ("Cannot unset tracepoint\n");
-			}
 			}
 			break;
 		case 0:
@@ -1073,7 +1095,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'c':
 		addr = r_num_math (core->num, input+2);
-		RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
 			char *arg = strchr (input+2, ' ');
 			if (arg)
@@ -1089,14 +1111,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 's':
 		addr = r_num_math (core->num, input+2);
-		RBreakpointItem *bp = r_bp_get_at (core->dbg->bp, addr);
-		if (bp) {
+		bpi = r_bp_get_at (core->dbg->bp, addr);
+		if (bpi) {
 			//bp->enabled = !bp->enabled;
 			r_bp_del (core->dbg->bp, addr);
 		} else {
-			if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+			if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			else bpi = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input+2);
 		}
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 0);
 		break;
@@ -1125,117 +1147,71 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			addr = r_num_math (core->num, input+2);
 			if (validAddress (core, addr)) {
-				if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-				else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-				if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+				if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				else bpi = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input+2);
 			} else eprintf ("Can't place a breakpoint here. No mapped memory\n");
 		}
 		break;
 	case 'i':
 		switch (input[2]) {
 		case 0: // "dbi"
-			{
-			int i = 0;
 			for (i=0;i<core->dbg->bp->bps_idx_count;i++) {
-				RBreakpointItem *bpi = core->dbg->bp->bps_idx[i];
-				if (bpi) {
+				if ((bpi = core->dbg->bp->bps_idx[i])) {
 					r_cons_printf ("%d 0x%08"PFMT64x" E:%d T:%d\n",
 						i, bpi->addr, bpi->enabled, bpi->trace);
 				}
 			}
-			}
 			break;
 		case 'c': // "dbic"
-			{
-				const char *cmd = strchr (input+3, ' ');
-				if (cmd) {
-					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-					if (bpi) { bpi->data = strdup (cmd+1); }
-					else { eprintf ("Cannot set command\n"); }
-				} else {
-					eprintf ("|Usage: dbic # cmd\n");
-				}
+			p = strchr (input+3, ' ');
+			if (p) {
+				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+					bpi->data = strdup (p+1);
+				} else eprintf ("Cannot set command\n");
+			} else {
+				eprintf ("|Usage: dbic # cmd\n");
 			}
 			break;
 		case 'e': // "dbie"
-			{
-				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-				if (bpi) { bpi->enabled = R_TRUE; }
-				else { eprintf ("Cannot unset tracepoint\n"); }
-			}
+			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+				bpi->enabled = R_TRUE;
+			} else eprintf ("Cannot unset tracepoint\n");
 			break;
 		case 'd': // "dbid"
-			{
-				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-				if (bpi) { bpi->enabled = R_FALSE; }
-				else { eprintf ("Cannot unset tracepoint\n"); }
-			}
+			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+				bpi->enabled = R_FALSE;
+			} else eprintf ("Cannot unset tracepoint\n");
 			break;
 		case 's': // "dbis"
-			{
-				RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-				if (bpi) { bpi->enabled = !!!bpi->enabled; }
-				else { eprintf ("Cannot unset tracepoint\n"); }
-			}
+			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+				bpi->enabled = !!!bpi->enabled;
+			} else eprintf ("Cannot unset tracepoint\n");
 			break;
 		case 't': // "dbite" "dbitd" ...
 			switch (input[3]) {
 			case 'e':
-				{
-					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-					if (bpi) { bpi->trace = R_TRUE; }
-					else { eprintf ("Cannot unset tracepoint\n"); }
-				}
+				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+					bpi->trace = R_TRUE; 
+				} else eprintf ("Cannot unset tracepoint\n");
 				break;
 			case 'd':
-				{
-					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-					if (bpi) { bpi->trace = R_FALSE; }
-					else { eprintf ("Cannot unset tracepoint\n"); }
-				}
+				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+					bpi->trace = R_FALSE;
+				} else eprintf ("Cannot unset tracepoint\n");
 				break;
 			case 's':
-				{
-					RBreakpointItem *bpi = r_bp_get_index (core->dbg->bp, addr);
-					if (bpi) { bpi->trace = !!!bpi->trace; }
-					else { eprintf ("Cannot unset tracepoint\n"); }
-				}
+				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+					bpi->trace = !!!bpi->trace;
+				} else eprintf ("Cannot unset tracepoint\n");
 				break;
 			}
 			break;
 		}
 		break;
 	case '?':
-	default:{
-			const char* help_msg[] = {
-				"Usage: db", "", " # Breakpoints commands",
-				"db", "", "List breakpoints",
-				"db", " sym.main", "Add breakpoint into sym.main",
-				"db", " <addr>", "Add breakpoint",
-				"db", " -<addr>", "Remove breakpoint",
-				// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-				"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
-				"dbd", " <addr>", "Disable breakpoint",
-				"dbe", " <addr>", "Enable breakpoint",
-				"dbs", " <addr>", "Toggle breakpoint",
-
-				"dbte", " <addr>", "Enable Breakpoint Trace",
-				"dbtd", " <addr>", "Disable Breakpoint Trace",
-				"dbts", " <addr>", "Swap Breakpoint Trace",
-				//
-				"dbi", "", "List breakpoint indexes",
-				"dbic", " <index> <cmd>", "Run command at breakpoint index",
-				"dbie", " <index>", "Enable breakpoint by index",
-				"dbid", " <index>", "Disable breakpoint by index",
-				"dbis", " <index>", "Swap Nth breakpoint",
-				"dbite", " <index>", "Enable breakpoint Trace by index",
-				"dbitd", " <index>", "Disable breakpoint Trace by index",
-				"dbits", " <index>", "Swap Nth breakpoint trace",
-				//
-				"dbh", " x86", "Set/list breakpoint plugin handlers",
-				NULL};
+	default:
 		r_core_cmd_help (core, help_msg);
-		}
 		break;
 	}
 }
