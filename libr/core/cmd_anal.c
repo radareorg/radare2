@@ -376,6 +376,63 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 	}
 }
 
+static int anal_fcn_list_bb (RCore *core, const char *input) {
+	int mode = 0;
+	ut64 addr;
+	RAnalBlock *b;
+	RListIter *iter;
+	RAnalFunction *fcn;
+	if (*input && (input[1]==' ' || !input[1])) {
+		mode = *input;
+		input++;
+	}
+	if (input && *input) {
+		addr = r_num_math (core->num, input);
+	} else {
+		addr = core->offset;
+	}
+	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	if (!fcn)
+		return R_FALSE;
+	switch (mode) {
+	case 'j':
+		r_cons_printf ("[");
+		break;
+	case '*':
+		r_cons_printf ("fs blocks\n");
+		break;
+	}
+	r_list_foreach (fcn->bbs, iter, b) {
+		switch (mode) {
+		case '*':
+			r_cons_printf ("f bb_%08"PFMT64x" = 0x%08"PFMT64x"\n",
+				b->addr, b->addr);
+			break;
+		case 'q':
+			r_cons_printf ("0x%08"PFMT64x"\n", b->addr);
+			break;
+		case 'j':
+			r_cons_printf ("%"PFMT64d"%s", b->addr, iter->n?",":"");
+			break;
+		default:
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d",
+				b->addr, b->addr + b->size, b->size);
+			if (b->jump != UT64_MAX) {
+				r_cons_printf (" j 0x%08"PFMT64x, b->jump);
+			}
+			if (b->fail != UT64_MAX) {
+				r_cons_printf (" f 0x%08"PFMT64x, b->fail);
+			}
+			r_cons_newline ();
+			break;
+		}
+	}
+	if (mode=='j') {
+		r_cons_printf ("]");
+	}
+	return R_TRUE;
+}
+
 static int anal_fcn_add_bb (RCore *core, const char *input) {
 	// fcn_addr bb_addr bb_size [jump] [fail]
 	char *ptr;
@@ -639,20 +696,26 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'b': // "afb"
 		switch (input[2]) {
-		case 'b': // "afbb"
+		case 'b': // "afbb" -> maybe move to 'afb' ? and make current <afb bits> to be `afB` ?
+			anal_fcn_list_bb (core, input+3);
+			break;
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input+3);
 			break;
-		case '?':
-			eprintf ("Usage: afb+ or afbb or afb\n");
-			break;
-		default:
+		case ' ':
 			{
 			 RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
 				 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			 if (fcn) fcn->bits = atoi (input+3);
 			 else eprintf ("Cannot find function to set bits\n");
 			}
+			break;
+		default:
+		case '?':
+			eprintf ("Usage: afb+ or afbb or afb\n"
+			" afb [bits]   - define asm.bits for given function\n"
+			" afbb [addr]  - list basic blocks of function (see afbbq, afbbj, afbb*)\n"
+			" afb+ fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))  add bb to function @ fcnaddr\n");
 			break;
 		}
 		break;
@@ -802,7 +865,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
 		 "afb", " 16", "set current function as thumb",
-		 "afbb", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add bb to function @ fcnaddr",
+		 "afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add bb to function @ fcnaddr",
+		 "afbb", " [addr]", "List basic blocks of given function",
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
