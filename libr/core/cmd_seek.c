@@ -15,13 +15,15 @@ static int prevopsz (RCore *core, ut64 addr) {
 			buf+i, sizeof (buf)-i);
 		if (!ret) continue;
 		len = op.size;
-		r_anal_op_fini (&op); // XXX
 		if (len<1) continue;
 		i += len-1;
-		if (target == base+i+1)
+		if (target == base+i+1) {
+			r_anal_op_fini (&op); // XXX
 			return len;
+		}
+		r_anal_op_fini (&op); // XXX
 	}
-	return 4;
+	return 1;
 }
 
 static int cmd_seek(void *data, const char *input) {
@@ -235,15 +237,17 @@ static int cmd_seek(void *data, const char *input) {
 				ret = r_anal_op (core->anal, &op,
 						core->offset, core->block, core->blocksize);
 				if (ret<1) ret = 1;
+				r_core_seek_delta (core, -ret);
 				val += ret;
-			} else
-			for (val=i=0; i<n; i++) {
-				ret = r_anal_op (core->anal, &op,
-						core->offset, core->block, core->blocksize);
-				if (ret<1)
-					ret = 1;
-				r_core_seek_delta (core, ret);
-				val += ret;
+			} else { 
+				for (val=i=0; i<n; i++) {
+					ret = r_anal_op (core->anal, &op,
+							core->offset, core->block, core->blocksize);
+					if (ret<1)
+						ret = 1;
+					r_core_seek_delta (core, ret);
+					val += ret;
+				}
 			}
 			core->num->value = val;
 			}
