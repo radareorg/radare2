@@ -332,6 +332,7 @@ static int cb_cfgdebug(void *user, void *data) {
 		core->io->debug = node->i_value;
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
+		core->bin->is_debugger = R_TRUE;
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
@@ -339,7 +340,10 @@ static int cb_cfgdebug(void *user, void *data) {
 			r_debug_select (core->dbg, core->file->desc->fd,
 					core->file->desc->fd);
 		}
-	} else if (core->dbg) r_debug_use (core->dbg, NULL);
+	} else {
+		if (core->dbg) r_debug_use (core->dbg, NULL);
+		core->bin->is_debugger = R_FALSE;
+	}
 	r_config_set (core->config, "io.raw", "true");
 	return R_TRUE;
 }

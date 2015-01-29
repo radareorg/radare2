@@ -35,6 +35,7 @@ static char* output = NULL;
 static char* create = NULL;
 static int rad = R_FALSE;
 static ut64 laddr = 0LL;
+static ut64 baddr = 0LL;
 static char* file = NULL;
 static char *name = NULL;
 static int rw = R_FALSE;
@@ -52,6 +53,7 @@ static int rabin_show_help(int v) {
 		" -A              list archs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
+		" -G [addr]       load address . offset to header\n"
 		" -B [addr]       override base address (pie bins)\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
@@ -390,7 +392,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:b:c:Ck:K:dD:Mm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:c:Ck:K:dD:Mm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -485,10 +487,13 @@ int main(int argc, char **argv) {
 		case 'r': rad = R_TRUE; break;
 		case 'v': return blob_version ("rabin2");
 		case 'L': r_bin_list (bin); return 1;
-		case 'B':
+		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == 0LL)
 				va = R_FALSE;
+			break;
+		case 'B':
+			baddr = r_num_math (NULL, optarg);
 			break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
@@ -617,6 +622,10 @@ int main(int argc, char **argv) {
 			r_core_fini (&core);
 			return 1;
 		}
+	}
+	if (baddr != 0LL) {
+		bin->cur->o->baddr = baddr;
+		//bin->cur->o->baddr = laddr;
 	}
 	if (rawstr == 2) {
 		rawstr = R_FALSE;

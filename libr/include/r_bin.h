@@ -178,6 +178,7 @@ typedef struct r_bin_t {
 	int loadany;
 	RIOBind iob;
 	char *force;
+	int is_debugger;
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);

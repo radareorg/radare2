@@ -237,8 +237,8 @@ int main(int argc, char **argv, char **envp) {
 		r_sys_crash_handler ("gdb --pid %d");
 
 	if (argc<2) {
-		r_list_free(cmds);
-		r_list_free(evals);
+		r_list_free (cmds);
+		r_list_free (evals);
 		return main_help (1);
 	}
 	if (argc==2 && !strcmp (argv[1], "-p")) {
@@ -529,8 +529,15 @@ int main(int argc, char **argv, char **envp) {
 
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
-								if (!r_core_bin_load (&r, filepath, baddr))
-									r_config_set (r.config, "io.va", "false");
+								{
+									if (r_core_bin_load (&r, filepath, 0)) {
+										RBinFile *file = r_bin_cur (r.bin);
+										// use_baddr
+										file->o->baddr = baddr;
+									} else {
+										r_config_set (r.config, "io.va", "false");
+									}
+								}
 							}
 						} else {
 							if (run_anal<0) {

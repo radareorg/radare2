@@ -117,7 +117,7 @@ Now with more better English!
 All your base are belong to r2
 Ask not what r2 can do for you - ask what you can do for r2
 Try with ASAN, and be amazed
-bash: r3: command not found :D
+bash: r3: command not found
 R2 loves everyone, even Java coders, but less than others
 It's not a bug, it's a work in progress
 Stop swearing!

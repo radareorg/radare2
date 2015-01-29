@@ -502,7 +502,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob ? iob->get_io(iob) : NULL;
 	RListIter *it;
-	ut8* buf_bytes;
+	ut8* buf_bytes = NULL;
 	RBinXtrPlugin *xtr;
 	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
@@ -512,6 +512,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
+#if 1
+if (r_list_length (bin->binfiles)==0) {
 	if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
 		int fail = 1;
 		/* get file path from desc name */
@@ -528,6 +530,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		// stream based loaders
 		// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
 		RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
+eprintf ("Asuming filepath %s\n", filepath);
 		if (tdesc) {
 			file_sz = iob->desc_size (io, tdesc);
 			if (file_sz != UT64_MAX) {
@@ -541,11 +544,16 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		free (filepath);
 		if (fail)
 			return R_FALSE;
-	} else if (sz != UT64_MAX) {
-		sz = R_MIN (file_sz, sz);
-		buf_bytes = iob->desc_read (io, desc, &sz);
-	} else {
+	}
+} else
+#endif
+	if (sz == UT64_MAX)
 		return R_FALSE;
+	sz = R_MIN (file_sz, sz);
+
+	if (!buf_bytes) {
+		iob->desc_seek (io, desc, baseaddr);
+		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
 
 	if (!name) {
@@ -574,6 +582,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 						desc->name, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
 						desc->fd, bin->rawstr);
+					binfile->o->baddr = baseaddr;
 				}
 				xtr = NULL;
 			}
@@ -581,9 +590,13 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	}
 
 	if (!binfile) {
+//eprintf ("LOAD BINFILE FROM BYTE %lld b=0x%08llx l=0x%08llx\n", sz, baseaddr, loadaddr);
 		binfile = r_bin_file_new_from_bytes (bin, desc->name,
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
+		/* hack to force baseaddr, looks like rbinfilenewfrombytes() ignores the value */
+		if (binfile && binfile->o)
+			binfile->o->baddr = baseaddr;
 	}
 
 	if (binfile) return r_bin_file_set_cur_binfile (bin, binfile);
@@ -1625,6 +1638,11 @@ R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	if (!bin || !bin->cur)
 		return UT64_MAX;
+
+	if (1 || bin->is_debugger) {
+		if (baddr) 
+			return baddr + paddr;
+	}
 	// autodetect thumb
 	if (bin->cur->o && bin->cur->o->info) {
 		if (!strcmp (bin->cur->o->info->arch, "arm")) {

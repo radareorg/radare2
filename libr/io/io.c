@@ -892,7 +892,7 @@ R_API void r_io_sort_maps (RIO *io) {
 
 // THIS IS pread.. a weird one
 static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
-	ut8 *buf_bytes = NULL;
+	ut8 *buf = NULL;
 	ut64 off = 0;
 
 	if (!io || !desc || !out_sz)
@@ -900,23 +900,24 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 
 	if (*out_sz == UT64_MAX)
 		*out_sz = r_io_desc_size (io, desc);
-
+	if (*out_sz == 0x8000000) {
+		*out_sz = 1024 * 1024 * 1; // 2MB
+	}
 	off = io->off;
 
+	if (*out_sz == UT64_MAX) return buf;
 
-	if (*out_sz == UT64_MAX) return buf_bytes;
-
-	buf_bytes = malloc (*out_sz);
+	buf = malloc (*out_sz);
 
 	if (desc->plugin && desc->plugin->read) {
-		if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, *out_sz)) {
-			free (buf_bytes);
+		if (!buf || !desc->plugin->read (io, desc, buf, *out_sz)) {
+			free (buf);
 			io->off = off;
 			return R_FALSE;
 		}
 	}
 	io->off = off;
-	return buf_bytes;
+	return buf;
 }
 
 static RIO * r_io_bind_get_io(RIOBind *bnd) {

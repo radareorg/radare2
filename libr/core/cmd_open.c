@@ -21,6 +21,20 @@ static int cmd_open(void *data, const char *input) {
 	case 'j':
 		r_core_file_list (core, (int)(*input));
 		break;
+	case 'a':
+		{
+			RListIter *iter;
+			RCoreFile *file;
+			ut64 addr = r_num_math (core->num, input+1);
+			eprintf ("OP 0x%"PFMT64x"\n", addr);
+			r_list_foreach (core->files, iter, file) {
+				r_bin_load_io (
+					core->bin, file->desc, //r_core_file_cur (core)->desc, //core->file->desc,
+					addr, 0, 0); //, addr, "membin");
+			}
+			//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
+		}
+		break;
 	case 'p':
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
@@ -133,6 +147,7 @@ static int cmd_open(void *data, const char *input) {
 
 					r_core_bin_raise (core, binfile_num, -1);
 					break;
+				case ' ':
 				case 'o':
 					value = *(input+2) ? input+3 : NULL;
 					if (!value) {
@@ -175,6 +190,7 @@ static int cmd_open(void *data, const char *input) {
 					const char* help_msg[] = {
 						"Usage:", "ob", " # List open binary files backed by fd",
 						"ob", "", "List opened binfiles and bin objects",
+						"ob", " [binfile #]", "Same as obo.",
 						"obb", " [binfile #]", "Prioritize by binfile number with current selected object",
 						"ob-", " [binfile #]", "Delete binfile",
 						"obd", " [binobject #]", "Delete binfile object numbers, if more than 1 object is loaded",
