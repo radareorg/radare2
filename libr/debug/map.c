@@ -32,14 +32,20 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		break;
 	case '*':
 		r_list_foreach (dbg->maps, iter, map) {
-			dbg->printf ("f map.%s.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-				map->name, r_str_rwx_i (map->perm),
-				map->addr_end - map->addr, map->addr);
+			char *name = r_str_newf ("%s.%s", map->name,
+				r_str_rwx_i (map->perm));
+			r_name_filter (name, 0);
+			dbg->printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+				name, map->addr_end - map->addr, map->addr);
+			free (name);
 		}
 		r_list_foreach (dbg->maps_user, iter, map) {
-			dbg->printf ("f map.%s.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-				map->name, r_str_rwx_i (map->perm),
-				map->addr_end - map->addr, map->addr);
+			char *name = r_str_newf ("%s.%s", map->name,
+				r_str_rwx_i (map->perm));
+			r_name_filter (name, 0);
+			dbg->printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+				name, map->addr_end - map->addr, map->addr);
+			free (name);
 		}
 		break;
 	default:

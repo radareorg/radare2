@@ -174,7 +174,7 @@ static int rabin_delegate(RThread *th) {
 		ptr = cmd;
 		if (ptr)
 			do {
-				if (th) r_th_lock_enter(th->user);
+				if (th) r_th_lock_enter (th->user);
 				nptr = strchr (ptr, '\n');
 				if (nptr) *nptr = 0;
 				r_core_cmd (&r, ptr, 0);
@@ -496,6 +496,7 @@ int main(int argc, char **argv, char **envp) {
 						if (obj && obj->info)
 							eprintf ("bits %d\n", obj->info->bits);
 					}
+					r_core_cmd0 (&r, ".dm*");
 				}
 			}
 		}

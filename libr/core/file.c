@@ -140,6 +140,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 	r_core_seek (core, origoff, 1);
 	if (isdebug) {
+		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd0 (core, "sr pc");
 	}
