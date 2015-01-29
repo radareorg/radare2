@@ -383,7 +383,9 @@ static int anal_fcn_list_bb (RCore *core, const char *input) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	if (*input && (input[1]==' ' || !input[1])) {
-		mode = *input;
+		if (*input == 'r')
+			mode = '*';
+		else	mode = *input;
 		input++;
 	}
 	if (input && *input) {
@@ -405,8 +407,8 @@ static int anal_fcn_list_bb (RCore *core, const char *input) {
 	r_list_foreach (fcn->bbs, iter, b) {
 		switch (mode) {
 		case '*':
-			r_cons_printf ("f bb_%08"PFMT64x" = 0x%08"PFMT64x"\n",
-				b->addr, b->addr);
+			r_cons_printf ("f bb.%05"PFMT64x" = 0x%08"PFMT64x"\n",
+				b->addr & 0xFFFFF, b->addr);
 			break;
 		case 'q':
 			r_cons_printf ("0x%08"PFMT64x"\n", b->addr);
@@ -694,27 +696,34 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case 'B': // "afB" // set function bits
+		if (input[2] == ' ') {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
+				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (fcn) fcn->bits = atoi (input+3);
+			else eprintf ("Cannot find function to set bits\n");
+		} else {
+			eprintf ("Usage: afB [bits]\n");
+		}
+		break;
 	case 'b': // "afb"
 		switch (input[2]) {
-		case 'b': // "afbb" -> maybe move to 'afb' ? and make current <afb bits> to be `afB` ?
-			anal_fcn_list_bb (core, input+3);
+		case 0:
+		case ' ':
+		case 'q':
+		case 'r':
+		case '*':
+		case 'j':
+			anal_fcn_list_bb (core, input+2);
 			break;
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input+3);
 			break;
-		case ' ':
-			{
-			 RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
-				 R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-			 if (fcn) fcn->bits = atoi (input+3);
-			 else eprintf ("Cannot find function to set bits\n");
-			}
-			break;
 		default:
 		case '?':
 			eprintf ("Usage: afb+ or afbb or afb\n"
-			" afb [bits]   - define asm.bits for given function\n"
-			" afbb [addr]  - list basic blocks of function (see afbbq, afbbj, afbb*)\n"
+			" afB [bits]  - define asm.bits for given function\n"
+			" afb [addr]  - list basic blocks of function (see afbq, afbj, afb*)\n"
 			" afb+ fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))  add bb to function @ fcnaddr\n");
 			break;
 		}
@@ -864,9 +873,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "af*", "", "output radare commands",
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
-		 "afb", " 16", "set current function as thumb",
 		 "afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add bb to function @ fcnaddr",
-		 "afbb", " [addr]", "List basic blocks of given function",
+		 "afb", " [addr]", "List basic blocks of given function",
+		 "afB", " 16", "set current function as thumb (change asm.bits)",
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
