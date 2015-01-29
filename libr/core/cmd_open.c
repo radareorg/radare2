@@ -25,8 +25,10 @@ static int cmd_open(void *data, const char *input) {
 		{
 			RListIter *iter;
 			RCoreFile *file;
-			ut64 addr = r_num_math (core->num, input+1);
-			eprintf ("OP 0x%"PFMT64x"\n", addr);
+			ut64 addr = core->offset;
+			if (input[1]) {
+				addr = r_num_math (core->num, input+1);
+			}
 			r_list_foreach (core->files, iter, file) {
 				r_bin_load_io (
 					core->bin, file->desc, //r_core_file_cur (core)->desc, //core->file->desc,
@@ -367,6 +369,7 @@ static int cmd_open(void *data, const char *input) {
 		"Usage: o","[com- ] [file] ([offset])","",
 		"o","","list opened files",
 		"o*","","list opened files in r2 commands",
+		"oa"," [addr]","Open bin info from the given address",
 		"oj","","list opened files in JSON format",
 		"oc"," [file]","open core file, like relaunching r2",
 		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
