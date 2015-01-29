@@ -411,11 +411,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					esilprintf (op,  "%d,%s,-=,%s,%s,=[%d]", rs, sp, dst, sp, rs);
 					free (dst);
 				}
-				op->type = R_ANAL_OP_TYPE_PUSH;
 				switch (INSOP(0).type) {
 				case X86_OP_IMM:
 					op->ptr = INSOP(0).imm;
+					op->type = R_ANAL_OP_TYPE_PUSH;
 				default:
+					op->type = R_ANAL_OP_TYPE_UPUSH;
 					break;
 				}
 				op->stackop = R_ANAL_STACK_INC;
