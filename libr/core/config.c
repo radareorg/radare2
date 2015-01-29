@@ -101,6 +101,13 @@ static int cb_analnopskip (void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_analbbsplit (void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->bbsplit = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -881,6 +888,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
+	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");

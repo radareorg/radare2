@@ -229,10 +229,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	if (depth<1) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
+
+#if 1
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-	if (bbget (fcn, addr)) {
+#endif
+	bb = bbget (fcn, addr);
+	if (bb) {
+		r_anal_fcn_split_bb (fcn, bb, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
@@ -375,9 +380,9 @@ repeat:
 #endif
 			}
 		}
-			#define recurseAt(x) \
-				anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
-				ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
+		#define recurseAt(x) \
+			anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
+			ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_ILL:
 			if (anal->nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
@@ -423,6 +428,15 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+if (anal->bbsplit) {
+			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			if (!overlapped) {
+				bb->jump = op.jump;
+				bb->fail = UT64_MAX;
+			}
+			recurseAt (op.jump);
+			gotoBeach (ret);
+} else {
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
 			}
@@ -469,6 +483,7 @@ repeat:
 					}
 				}
 			}
+}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
@@ -732,20 +747,23 @@ R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump,
 }
 
 // TODO: rename fcn_bb_split()
+// bb seems to be ignored
 R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
 #if R_ANAL_BB_HAS_OPS
 	RAnalOp *opi;
 #endif
 	RListIter *iter;
+	if (addr == UT64_MAX)
+		return 0;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (addr == bbi->addr)
 			return R_ANAL_RET_DUP;
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
-			r_list_append (fcn->bbs, bb);
-			bb->addr = addr+bbi->size;
-eprintf ("\nADD BB %llx\n\n", bb->addr);
+			bb = appendBasicBlock (fcn, addr);
+			//r_list_append (fcn->bbs, bb);
+			//bb->addr = addr+bbi->size;
 			bb->size = bbi->addr + bbi->size - addr;
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;
