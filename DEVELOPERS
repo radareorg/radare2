@@ -20,7 +20,7 @@ that use the libraries.
 It is possible to generate PIC/nonPIC builds of the libraries and also
 to create a single static library, so you can use a single library
 archive (.a) to link your programs and get your programs using radare
-framework libraries without depending on them.(See sys/static.sh)
+framework libraries without depending on them. See doc/static for more info.
 
 The following presentation gives a good overview of the libraries:
 
