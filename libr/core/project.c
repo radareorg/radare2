@@ -8,6 +8,11 @@
 static int is_valid_project_name (const char *name) {
 	int i;
 	for (i=0; name[i]; i++) {
+		switch (name[i]) {
+		case '_':
+		case ':':
+			continue;
+		}
 		if (name[i] >= 'a' && name[i] <= 'z')
 			continue;
 		if (name[i] >= 'A' && name[i] <= 'Z')
