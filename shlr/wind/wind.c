@@ -307,7 +307,6 @@ int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		*p = pkt;
 	} else {
 		free (pkt);
-		*p = 0;
 	}
 
 	return KD_E_OK;

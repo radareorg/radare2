@@ -14,7 +14,7 @@ static io_backend_t *io_backends[] = {
 	NULL,
 };
 
-static io_backend_t *sel_backend = NULL;
+static io_backend_t *sel_backend = &iob_pipe;
 
 int iob_select (const char *name) {
 	io_backend_t *iob;
