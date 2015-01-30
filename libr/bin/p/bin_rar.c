@@ -141,7 +141,10 @@ static RBinInfo* info(RBinFile *arch) {
 
 	int bits = 32; // Default value
 
-	if (!ret || !buf || sz < 0x30) return NULL;
+	if (!ret || !buf || sz < 0x30) {
+		R_FREE (ret);
+		return NULL;
+	}
 
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);

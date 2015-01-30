@@ -122,7 +122,7 @@ gen_operand(struct ud* u, struct ud_operand* op)
 extern void 
 ud_translate_att(struct ud *u)
 {
-  int size = 0;
+  //int size = 0;
   int star = 0;
 
   /* check if P_OSO prefix is used */
@@ -192,6 +192,7 @@ ud_translate_att(struct ud *u)
     ud_asmprintf(u, "%s", ud_lookup_mnemonic(u->mnemonic));
   }
 
+  /*
   if (size == 8) {
     ud_asmprintf(u, "b");
   } else if (size == 16) {
@@ -199,6 +200,7 @@ ud_translate_att(struct ud *u)
   } else if (size == 64) {
     ud_asmprintf(u, "q");
   }
+  */
 
   if (star) {
     ud_asmprintf(u, " *");

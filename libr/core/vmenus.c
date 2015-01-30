@@ -700,7 +700,10 @@ R_API void r_core_visual_mounts (RCore *core) {
 
 		/* Ask for option */
 		ch = r_cons_readchar ();
-		if (ch==-1||ch==4) return;
+		if (ch==-1||ch==4){
+			free (root);
+			return;
+		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 			case '/':
@@ -730,8 +733,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 					p = r_fs_partition_type (n, part->type);
 					if (p) {
 						if (r_fs_mount (core->fs, p, "/root", part->start)) {
-							if (root)
-								free (root);
+							free (root);
 							root = strdup ("/root");
 							strncpy (path, root, sizeof (path)-1);
 							mode = 2;

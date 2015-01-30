@@ -433,6 +433,7 @@ static int cmd_write(void *data, const char *input) {
 		st64 sz = core->blocksize;
 		if (*str == '?') {
 			eprintf ("Usage: wt file [size]\n");
+			free (ostr);
 			return 0;
 		} else
 		if (*str != ' ') {

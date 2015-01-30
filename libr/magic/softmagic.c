@@ -518,6 +518,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		file_magerror(ms, "invalid m->type (%d) in mprint()", m->type);
 		return -1;
 	}
+	free (buf);
 	return(t);
 }
 
