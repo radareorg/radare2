@@ -756,7 +756,7 @@ free (rf);
 			break;
 		}
 		break;
-	case 's':
+	case 's': // "drs"
 		switch (str[1]) {
 		case '-':
 			r_reg_arena_pop (core->dbg->reg);
@@ -783,7 +783,7 @@ free (rf);
 			break;
 		}
 		break;
-	case 'p':
+	case 'p': // "drp"
 		if (!str[1]) {
 			if (core->dbg->reg->reg_profile_str) {
 				//core->anal->reg = core->dbg->reg;
@@ -792,7 +792,7 @@ free (rf);
 			} else eprintf ("No register profile defined. Try 'dr.'\n");
 		} else r_reg_set_profile (core->dbg->reg, str+2);
 		break;
-	case 't':
+	case 't': // "drt"
 		for (i=0; (name=r_reg_get_type (i)); i++)
 			r_cons_printf ("%s\n", name);
 		break;
@@ -1374,11 +1374,312 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 	}
 }
 
-static int cmd_debug(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	int i, times=0, follow=0;
+static int cmd_debug_continue (RCore *core, const char *input) {
+	int pid, old_pid;
 	ut64 addr;
 	char *ptr;
+	const char * help_message[] = {
+		"Usage: dc", "", "Execution continuation commands",
+		"dc", "", "Continue execution of all children",
+		"dc", " <pid>", "Continue execution of pid",
+		"dc", "[-pid]", "Stop execution of pid",
+		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
+		"dcc", "", "Continue until call (use step into)",
+		"dccu", "", "Continue until unknown call (call reg)",
+		"dcf", "", "Continue until fork (TODO)",
+		"dck", " <signal> <pid>", "Continue sending signal to process",
+		"dco", " <num>", "Step over <num> instructions",
+		"dcp", "", "Continue until program code (mapped io section)",
+		"dcr", "", "Continue until ret (uses step over)",
+		"dcs", " <num>", "Continue until syscall",
+		"dct", " <len>", "Traptrace from curseek to len, no argument to list",
+		"dcu", " [addr]", "Continue until address",
+		"dcu", " <address> [end]", "Continue until given address range",
+		/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
+		/*"TODO: same for only user/libs side, to avoid steping into libs",*/
+		/*"TODO: support for threads?",*/
+		NULL
+	};
+	// TODO: we must use this for step 'ds' too maybe...
+	switch (input[1]) {
+	case '?':
+		r_core_cmd_help (core, help_message);
+		break;
+	case 'a':
+		eprintf ("TODO: dca\n");
+		break;
+	case 'f':
+		eprintf ("[+] Running 'dcs vfork' behind the scenes...\n");
+		// we should stop in fork and vfork syscalls
+		//TODO: multiple syscalls not handled yet
+		// r_core_cmd0 (core, "dcs vfork fork");
+		r_core_cmd0 (core, "dcs vfork fork");
+		break;
+	case 'c':
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		if (input[2] == 'u') {
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+		} else {
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+		}
+		checkbpcallback (core);
+		break;
+	case 'r':
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+		checkbpcallback (core);
+		break;
+	case 'k':
+		// select pid and r_debug_continue_kill (core->dbg,
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		ptr = strchr (input+3, ' ');
+		if (ptr) {
+			bypassbp (core);
+			int old_pid = core->dbg->pid;
+			int old_tid = core->dbg->tid;
+			int pid = atoi (ptr+1);
+			int tid = pid; // XXX
+			*ptr = 0;
+			r_debug_select (core->dbg, pid, tid);
+			r_debug_continue_kill (core->dbg, atoi (input+2));
+			r_debug_select (core->dbg, old_pid, old_tid);
+		} else r_debug_continue_kill (core->dbg, atoi (input+2));
+		checkbpcallback (core);
+		break;
+	case 's':
+		switch (input[2]) {
+		case '*':
+			cmd_debug_cont_syscall (core, "-1");
+			break;
+		case ' ':
+			cmd_debug_cont_syscall (core, input+3);
+			break;
+		case '\0':
+			cmd_debug_cont_syscall (core, NULL);
+			break;
+		default:
+		case '?':
+			eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+			eprintf ("|dcs         : continue until next syscall\n");
+			eprintf ("|dcs mmap    : continue until next call to mmap\n");
+			eprintf ("|dcs*        : trace all syscalls (strace)\n");
+			eprintf ("|dcs?        : show this help\n");
+			break;
+		}
+		break;
+	case 'p':
+		{ // XXX: this is very slow
+			RIOSection *s;
+			ut64 pc;
+			int n = 0;
+			int t = core->dbg->trace->enabled;
+			core->dbg->trace->enabled = 0;
+			r_cons_break (static_debug_stop, core->dbg);
+			do {
+				r_debug_step (core->dbg, 1);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+				pc = r_debug_reg_get (core->dbg, "pc");
+				eprintf (" %d %"PFMT64x"\r", n++, pc);
+				s = r_io_section_vget (core->io, pc);
+				if (r_cons_singleton ()->breaked)
+					break;
+			} while (!s);
+			eprintf ("\n");
+			core->dbg->trace->enabled = t;
+			r_cons_break_end();
+			return 1;
+		}
+	case 'u':
+		if (input[2] != ' ') {
+			eprintf ("|Usage: dcu <address>\n");
+			return 1;
+		}
+		ptr = strchr (input+3, ' ');
+// TODO : handle ^C here
+		if (ptr) { // TODO: put '\0' in *ptr to avoid
+			ut64 from, to, pc;
+			from = r_num_math (core->num, input+3);
+			to = r_num_math (core->num, ptr+1);
+			do {
+				r_debug_step (core->dbg, 1);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+				pc = r_debug_reg_get (core->dbg, "pc");
+				eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
+						from, pc, to);
+			} while (pc < from || pc > to);
+			return 1;
+		}
+		addr = r_num_math (core->num, input+2);
+		if (addr) {
+			eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
+			bypassbp (core);
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			r_debug_continue (core->dbg);
+			checkbpcallback (core);
+			r_bp_del (core->dbg->bp, addr);
+		} else eprintf ("Cannot continue until address 0\n");
+		break;
+	case ' ':
+		old_pid = core->dbg->pid;
+		pid = atoi (input+2);
+		bypassbp (core);
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_debug_select (core->dbg, pid, core->dbg->tid);
+		r_debug_continue (core->dbg);
+		r_debug_select (core->dbg, old_pid, core->dbg->tid);
+		checkbpcallback (core);
+		break;
+	case 't':
+		cmd_debug_backtrace (core, input+2);
+		break;
+	default:
+		bypassbp (core);
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_debug_continue (core->dbg);
+		checkbpcallback (core);
+	}
+	return 0;
+}
+
+static void cmd_debug_step (RCore *core, const char *input) {
+	ut64 addr;
+	ut8 buf[64];
+	RAnalOp aop;
+	int i, times;
+	const char * help_message[] = {
+		"Usage: ds", "", "Step commands",
+		"ds", "", "Step one instruction",
+		"ds", " <num>", "Step <num> instructions",
+		"dsf", "", "Step until end of frame",
+		"dsi", " <cond>", "Continue until condition matches",
+		"dsl", "", "Step one source line",
+		"dsl", " <num>", "Step <num> source lines",
+		"dso", " <num>", "Step over <num> instructions",
+		"dsp", "", "Step into program (skip libs)",
+		"dss", " <num>", "Skip <num> step instructions",
+		"dsu", " <address>", "Step until address",
+		"dsui", " <instr>", "Step until an instruction that matches `instr`",
+		"dsue", " <esil>", "Step until esil expression matches",
+		"dsuf", " <flag>", "Step until pc == flag matching name",
+		NULL
+	};
+	if (strlen (input) > 2)
+		times = atoi (input+2);
+	if (times<1) times = 1;
+	switch (input[1]) {
+	case '?':
+		  r_core_cmd_help (core, help_message);
+		  break;
+	case 'i':
+		  if (input[2] == ' ') {
+			  int n = 0;
+			  r_cons_break (static_debug_stop, core->dbg);
+			  do {
+				  if (r_cons_singleton ()->breaked)
+					  break;
+				  r_debug_step (core->dbg, 1);
+				  if (r_debug_is_dead (core->dbg))
+					  break;
+				  if (checkbpcallback (core)) {
+					  eprintf ("Interrupted by a breakpoint\n");
+					  break;
+				  }
+				  r_core_cmd0 (core, ".dr*");
+				  n++;
+			  } while (!r_num_conditional (core->num, input+3));
+			  eprintf ("Stopped after %d instructions\n", n);
+		  } else eprintf ("Missing argument\n");
+		  break;
+	case 'f':
+		  step_until_eof (core);
+		  break;
+	case 'u':
+		  switch (input[2]) {
+		  case 'f':
+			  step_until_flag (core, input+3);
+			  break;
+		  case 'i':
+			  step_until_inst (core, input+3);
+			  break;
+		  case 'e':
+			  step_until_esil (core, input+3);
+			  break;
+		  case ' ':
+			  r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			  step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
+			  break;
+		  default: 
+			  eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
+					  " 'f'lag, 'e'sil or 'i'nstruction matching\n");
+			  break;
+		  }
+		  break;
+	case 'p':
+		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		  for (i=0; i<times; i++) {
+			  ut8 buf[64];
+			  ut64 addr;
+			  RAnalOp aop;
+			  r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			  addr = r_debug_reg_get (core->dbg, "pc");
+			  r_io_read_at (core->io, addr, buf, sizeof (buf));
+			  r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+			  if (aop.type == R_ANAL_OP_TYPE_CALL) {
+				  RIOSection *s = r_io_section_vget (core->io, aop.jump);
+				  if (!s) {
+					  r_debug_step_over (core->dbg, times);
+					  continue;
+				  }
+			  }
+			  r_debug_step (core->dbg, 1);
+			  if (checkbpcallback (core)) {
+				  eprintf ("Interrupted by a breakpoint\n");
+				  break;
+			  }
+		  }
+		  break;
+	case 's':
+		  addr = r_debug_reg_get (core->dbg, "pc");
+		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		  for (i=0; i<times; i++) {
+			  r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			  r_io_read_at (core->io, addr, buf, sizeof (buf));
+			  r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+			  if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+				  eprintf ("Don't know how to skip this instruction\n");
+				  break;
+			  }
+			  addr += aop.size;
+		  }
+		  r_debug_reg_set (core->dbg, "pc", addr);
+		  break;
+	case 'o':
+		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		  r_debug_step_over (core->dbg, times);
+		  if (checkbpcallback (core)) {
+			  eprintf ("Interrupted by a breakpoint\n");
+			  break;
+		  }
+		  break;
+	case 'l':
+		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		  step_line (core, times);
+		  break;
+	default:
+		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		  r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		  r_debug_step (core->dbg, times);
+		  if (checkbpcallback (core)) {
+			  eprintf ("Interrupted by a breakpoint\n");
+			  break;
+		  }
+	}
+}
+
+static int cmd_debug(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	int follow = 0;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -1475,142 +1776,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 's':
-		if (strlen (input) > 2)
-			times = atoi (input+2);
-		if (times<1) times = 1;
-		switch (input[1]) {
-		case '?': {
-			const char * help_message[] = {
-				"Usage: ds", "", "Step commands",
-				"ds", "", "Step one instruction",
-				"ds", " <num>", "Step <num> instructions",
-				"dsf", "", "Step until end of frame",
-				"dsi", " <cond>", "Continue until condition matches",
-				"dsl", "", "Step one source line",
-				"dsl", " <num>", "Step <num> source lines",
-				"dso", " <num>", "Step over <num> instructions",
-				"dsp", "", "Step into program (skip libs)",
-				"dss", " <num>", "Skip <num> step instructions",
-				"dsu", " <address>", "Step until address",
-				"dsui", " <instr>", "Step until an instruction that matches `instr`",
-				"dsue", " <esil>", "Step until esil expression matches",
-				"dsuf", " <flag>", "Step until pc == flag matching name",
-				NULL
-			};
-
-			r_core_cmd_help (core, help_message);
-			}
-			break;
-		case 'i':
-			if (input[2] == ' ') {
-				int n = 0;
-				r_cons_break (static_debug_stop, core->dbg);
-				do {
-					if (r_cons_singleton ()->breaked)
-						break;
-					r_debug_step (core->dbg, 1);
-					if (r_debug_is_dead (core->dbg))
-						break;
-					if (checkbpcallback (core)) {
-						eprintf ("Interrupted by a breakpoint\n");
-						break;
-					}
-					r_core_cmd0 (core, ".dr*");
-					n++;
-				} while (!r_num_conditional (core->num, input+3));
-				eprintf ("Stopped after %d instructions\n", n);
-			} else {
-				eprintf ("Missing argument\n");
-			}
-			break;
-		case 'f':
-			step_until_eof (core);
-			break;
-		case 'u':
-			switch (input[2]) {
-			case 'f':
-				step_until_flag (core, input+3);
-				break;
-			case 'i':
-				step_until_inst (core, input+3);
-				break;
-			case 'e':
-				step_until_esil (core, input+3);
-				break;
-			case ' ':
-				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
-				break;
-			default: 
-				eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
-						" 'f'lag, 'e'sil or 'i'nstruction matching\n");
-				break;
-			}
-			break;
-		case 'p':
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			for (i=0; i<times; i++) {
-				ut8 buf[64];
-				ut64 addr;
-				RAnalOp aop;
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				addr = r_debug_reg_get (core->dbg, "pc");
-				r_io_read_at (core->io, addr, buf, sizeof (buf));
-				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-				if (aop.type == R_ANAL_OP_TYPE_CALL) {
-					RIOSection *s = r_io_section_vget (core->io, aop.jump);
-					if (!s) {
-						r_debug_step_over (core->dbg, times);
-						continue;
-					}
-				}
-				r_debug_step (core->dbg, 1);
-				if (checkbpcallback (core)) {
-					eprintf ("Interrupted by a breakpoint\n");
-					break;
-				}
-			}
-			break;
-		case 's':
-			{
-			ut64 addr = r_debug_reg_get (core->dbg, "pc");
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			for (i=0; i<times; i++) {
-				ut8 buf[64];
-				RAnalOp aop;
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				r_io_read_at (core->io, addr, buf, sizeof (buf));
-				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-					eprintf ("Don't know how to skip this instruction\n");
-					break;
-				}
-				addr += aop.size;
-			}
-			r_debug_reg_set (core->dbg, "pc", addr);
-			}
-			break;
-		case 'o':
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			r_debug_step_over (core->dbg, times);
-			if (checkbpcallback (core)) {
-				eprintf ("Interrupted by a breakpoint\n");
-				break;
-			}
-			break;
-		case 'l':
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			step_line (core, times);
-			break;
-		default:
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-			r_debug_step (core->dbg, times);
-			if (checkbpcallback (core)) {
-				eprintf ("Interrupted by a breakpoint\n");
-				break;
-			}
-		}
+		cmd_debug_step (core, input);
 		follow = r_config_get_i (core->config, "dbg.follow");
 		break;
 	case 'b':
@@ -1619,180 +1785,16 @@ static int cmd_debug(void *data, const char *input) {
 	case 'H':
 		eprintf ("TODO: transplant process\n");
 		break;
-	case 'c':
-		// TODO: we must use this for step 'ds' too maybe...
+	case 'c': // "dc"
 		r_cons_break (static_debug_stop, core->dbg);
-		switch (input[1]) {
-		case '?': {
-				const char * help_message[] = {
-				"Usage: dc", "", "Execution continuation commands",
-				"dc", "", "Continue execution of all children",
-				"dc", " <pid>", "Continue execution of pid",
-				"dc", "[-pid]", "Stop execution of pid",
-				"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
-				"dcc", "", "Continue until call (use step into)",
-				"dccu", "", "Continue until unknown call (call reg)",
-				"dcf", "", "Continue until fork (TODO)",
-				"dck", " <signal> <pid>", "Continue sending signal to process",
-				"dco", " <num>", "Step over <num> instructions",
-				"dcp", "", "Continue until program code (mapped io section)",
-				"dcr", "", "Continue until ret (uses step over)",
-				"dcs", " <num>", "Continue until syscall",
-				"dct", " <len>", "Traptrace from curseek to len, no argument to list",
-				"dcu", " [addr]", "Continue until address",
-				"dcu", " <address> [end]", "Continue until given address range",
-				/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
-				/*"TODO: same for only user/libs side, to avoid steping into libs",*/
-				/*"TODO: support for threads?",*/
-				NULL
-				};
-
-				r_core_cmd_help (core, help_message);
-				}
-			break;
-		case 'a':
-			eprintf ("TODO: dca\n");
-			break;
-		case 'f':
-			eprintf ("[+] Running 'dcs vfork' behind the scenes...\n");
-			// we should stop in fork and vfork syscalls
-			//TODO: multiple syscalls not handled yet
-			// r_core_cmd0 (core, "dcs vfork fork");
-			r_core_cmd0 (core, "dcs vfork fork");
-			break;
-		case 'c':
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			if (input[2] == 'u') {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
-			} else {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
-			}
-			checkbpcallback (core);
-			break;
-		case 'r':
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
-			checkbpcallback (core);
-			break;
-		case 'k':
-			// select pid and r_debug_continue_kill (core->dbg,
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			ptr = strchr (input+3, ' ');
-			if (ptr) {
-				bypassbp (core);
-				int old_pid = core->dbg->pid;
-				int old_tid = core->dbg->tid;
-				int pid = atoi (ptr+1);
-				int tid = pid; // XXX
-				*ptr = 0;
-				r_debug_select (core->dbg, pid, tid);
-				r_debug_continue_kill (core->dbg, atoi (input+2));
-				r_debug_select (core->dbg, old_pid, old_tid);
-			} else r_debug_continue_kill (core->dbg, atoi (input+2));
-			checkbpcallback (core);
-			break;
-		case 's':
-			switch (input[2]) {
-			case '*':
-				cmd_debug_cont_syscall (core, "-1");
-				break;
-			case ' ':
-				cmd_debug_cont_syscall (core, input+3);
-				break;
-			case '\0':
-				cmd_debug_cont_syscall (core, NULL);
-				break;
-			default:
-			case '?':
-				eprintf ("|Usage: dcs [syscall-name-or-number]\n");
-				eprintf ("|dcs         : continue until next syscall\n");
-				eprintf ("|dcs mmap    : continue until next call to mmap\n");
-				eprintf ("|dcs*        : trace all syscalls (strace)\n");
-				eprintf ("|dcs?        : show this help\n");
-				break;
-			}
-			break;
-		case 'p':
-			{ // XXX: this is very slow
-				RIOSection *s;
-				ut64 pc;
-				int n = 0;
-				int t = core->dbg->trace->enabled;
-				core->dbg->trace->enabled = 0;
-				r_cons_break (static_debug_stop, core->dbg);
-				do {
-					r_debug_step (core->dbg, 1);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-					pc = r_debug_reg_get (core->dbg, "pc");
-					eprintf (" %d %"PFMT64x"\r", n++, pc);
-					s = r_io_section_vget (core->io, pc);
-					if (r_cons_singleton ()->breaked)
-						break;
-				} while (!s);
-				eprintf ("\n");
-				core->dbg->trace->enabled = t;
-				r_cons_break_end();
-				return 1;
-			}
-		case 'u':
-			if (input[2] != ' ') {
-				eprintf ("|Usage: dcu <address>\n");
-				return 1;
-			}
-			ptr = strchr (input+3, ' ');
-// TODO : handle ^C here
-			if (ptr) { // TODO: put '\0' in *ptr to avoid
-				ut64 from, to, pc;
-				from = r_num_math (core->num, input+3);
-				to = r_num_math (core->num, ptr+1);
-				do {
-					r_debug_step (core->dbg, 1);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-					pc = r_debug_reg_get (core->dbg, "pc");
-					eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
-							from, pc, to);
-				} while (pc < from || pc > to);
-				return 1;
-			}
-			addr = r_num_math (core->num, input+2);
-			if (addr) {
-				eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
-				bypassbp (core);
-				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-				r_debug_continue (core->dbg);
-				checkbpcallback (core);
-				r_bp_del (core->dbg->bp, addr);
-			} else eprintf ("Cannot continue until address 0\n");
-			break;
-		case ' ':
-			{
-				int old_pid = core->dbg->pid;
-				int pid = atoi (input+2);
-				bypassbp (core);
-				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				r_debug_select (core->dbg, pid, core->dbg->tid);
-				r_debug_continue (core->dbg);
-				r_debug_select (core->dbg, old_pid, core->dbg->tid);
-				checkbpcallback (core);
-			}
-			break;
-		case 't':
-			cmd_debug_backtrace (core, input+2);
-			break;
-		default:
-			bypassbp (core);
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			r_debug_continue (core->dbg);
-			checkbpcallback (core);
-		}
+		(void)cmd_debug_continue (core, input);
 		follow = r_config_get_i (core->config, "dbg.follow");
-		r_cons_break_end();
+		r_cons_break_end ();
 		break;
-	case 'm':
+	case 'm': // "dm"
 		cmd_debug_map (core, input+1);
 		break;
-	case 'r':
+	case 'r': // "dr"
 		if (core->io->debug || input[1]=='?') {
 			cmd_debug_reg (core, input+1);
 		} else {

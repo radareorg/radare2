@@ -1458,6 +1458,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	int stats = r_config_get_i (core->config, "esil.stats");
 	ut64 until_addr = UT64_MAX;
 	const char *until_expr = NULL;
+	RAnalOp *op;
 
 	switch (input[0]) {
 	case 'r':
@@ -1476,16 +1477,33 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		r_anal_esil_stack_free (esil);
 		break;
 	case 's':
-		// "aes" "aesu" "aesue"
+		// "aes" "aeso" "aesu" "aesue"
 		// aes -> single step
+		// aeso -> single step over
 		// aesu -> until address
 		// aesue -> until esil expression
-		if (input[1] == 'u' && input[2] == 'e')
-			until_expr = input + 3;
-		else if (input[1] == 'u')
-			until_addr = r_num_math(core->num, input + 2);
-
-		esil_step (core, until_addr, until_expr);
+		switch (input[1]) {
+		case 'u':
+			if (input[2] == 'e') {
+				until_expr = input + 3;
+			} else {
+				until_addr = r_num_math (core->num, input + 2);
+			}
+			esil_step (core, until_addr, until_expr);
+			break;
+		case 'o':
+			// step over
+			op = r_core_anal_op (core, addr);
+			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
+				until_addr = addr + op->size;
+			}
+			esil_step (core, until_addr, until_expr);
+			r_anal_op_free (op);
+			break;
+		default:
+			esil_step (core, until_addr, until_expr);
+			break;
+		}
 		break;
 	case 'c':
 		// aec  -> continue until ^C
@@ -1715,17 +1733,28 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	RSyscallItem *si;
 	RListIter *iter;
 	RList *list;
+	char *out;
+	int n;
+	const char* help_msg[] = {
+		"Usage: as[ljk?]", "", "syscall name <-> number utility",
+		"as", "", "show current syscall and arguments",
+		"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
+		"asj", "", "list of syscalls in JSON",
+		"asl", "", "list of syscalls by asm.os and asm.arch",
+		"asl", " close", "returns the syscall number for close",
+		"asl", " 4", "returns the name of the syscall number 4",
+		"ask", " [query]", "perform syscall/ queries",
+		NULL};
 
 	switch (input[0]) {
 	case 'l': // "asl"
 		if (input[1] == ' ') {
-			int n = atoi (input+2);
-			if (n>0) {
+			if ((n = atoi (input+2))>0) {
 				si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si) r_cons_printf ("%s\n", si->name);
 				else eprintf ("Unknown syscall number\n");
 			} else {
-				int n = r_syscall_get_num (core->anal->syscall, input+2);
+				n = r_syscall_get_num (core->anal->syscall, input+2);
 				if (n != -1) r_cons_printf ("%d\n", n);
 				else eprintf ("Unknown syscall name\n");
 			}
@@ -1752,45 +1781,43 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		{
-			int a0 = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX
-			cmd_syscall_do (core, a0);
-		}
+		n = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX
+		cmd_syscall_do (core, n);
 		break;
 	case ' ':
 		cmd_syscall_do (core, (int)r_num_get (core->num, input+1));
 		break;
 	case 'k': // "ask"
-		{
-			char *out = sdb_querys (core->anal->syscall->db, NULL, 0, input+2);
-			if (out) {
-				r_cons_printf ("%s\n", out);
-				free (out);
-			}
+		out = sdb_querys (core->anal->syscall->db, NULL, 0, input+2);
+		if (out) {
+			r_cons_printf ("%s\n", out);
+			free (out);
 		}
 		break;
 	default:
 	case '?':
-		{
-			const char* help_msg[] = {
-				"Usage: as[l?]\n"
-					"as", "", "display syscall and arguments",
-				"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
-				"asj", "", "list of syscalls in JSON",
-				"asl", "", "list of syscalls by asm.os and asm.arch",
-				"asl", " close", "returns the syscall number for close",
-				"asl", " 4", "returns the name of the syscall number 4",
-				"ask", " [query]", "perform syscall/ queries",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg);
 		break;
 	}
 }
 
 static boolt cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
-
+	const char* help_msg[] = {
+		"Usage:", "ax[?d-l*]", " # see also 'afx?'",
+		"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
+		"axc", " addr [at]", "add code jmp ref // unused?",
+		"axC", " addr [at]", "add code call ref",
+		"axd", " addr [at]", "add data ref",
+		"axj", "", "list refs in json format",
+		"axF", " [flg-glob]", "find data/code references of flags",
+		"axt", " [addr]", "find data/code references to this address",
+		"axf", " [addr]", "find data/code references from this address",
+		"ax-", " [at]", "clean all refs (or refs from addr)",
+		"ax", "", "list refs",
+		"axk", " [query]", "perform sdb query",
+		"ax*", "", "output radare commands",
+		NULL };
 	switch (input[0]) {
 	case '-':
 		r_anal_ref_del (core->anal, r_num_math (core->num, input+1), core->offset);
@@ -1922,7 +1949,6 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		}
 		break;
 	case 'F':
-		// WTF
 		find_refs (core, input+1);
 		break;
 	case 'C':
@@ -1950,76 +1976,57 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		break;
 	default:
 	case '?':
-		{
-			const char* help_msg[] = {
-				"Usage:", "ax[?d-l*]", " # see also 'afx?'",
-				"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
-				"axc", " addr [at]", "add code jmp ref // unused?",
-				"axC", " addr [at]", "add code call ref",
-				"axd", " addr [at]", "add data ref",
-				"axj", "", "list refs in json format",
-				"axF", " [flg-glob]", "find data/code references of flags",
-				"axt", " [addr]", "find data/code references to this address",
-				"axf", " [addr]", "find data/code references from this address",
-				"ax-", " [at]", "clean all refs (or refs from addr)",
-				"ax", "", "list refs",
-				"axk", " [query]", "perform sdb query",
-				"ax*", "", "output radare commands",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg);
 		break;
 	}
 
 	return R_TRUE;
 }
+/*
+   in core/disasm we call
+   R_API int r_core_hint(RCore *core, ut64 addr) {
+	   static int hint_bits = 0;
+	   RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+	   if (hint->bits) {
+		   if (!hint_bits)
+		   hint_bits = core->assembler->bits;
+		   r_config_set_i (core->config, "asm.bits", hint->bits);
+	   } else if (hint_bits) {
+		   r_config_set_i (core->config, "asm.bits", hint_bits);
+		   hint_bits = 0;
+	   }
+	   if (hint->arch)
+		   r_config_set (core->config, "asm.arch", hint->arch);
+	   if (hint->length)
+		   force_instruction_length = hint->length;
+	   r_anal_hint_free (hint);
+  }
+ */
 
 static void cmd_anal_hint(RCore *core, const char *input) {
+	const char* help_msg[] = {
+		"Usage:", "ah[lba-]", "Analysis Hints",
+		"ah?", "", "show this help",
+		"ah?", " offset", "show hint of given offset",
+		"ah", "", "list hints in human-readable format",
+		"ah-", "", "remove all hints",
+		"ah-", " offset [size]", "remove hints at given offset",
+		"ah*", " offset", "list hints in radare commands format",
+		"aha", " ppc 51", "set arch for a range of N bytes",
+		"ahb", " 16 @ $$",  "force 16bit for current instruction",
+		"ahc", " 0x804804", "override call/jump address",
+		"ahf", " 0x804840", "override fallback address for call",
+		"ahs", " 4", "set opcode size=4",
+		"aho", " foo a0,33", "replace opcode string",
+		"ahe", " eax+=3", "set vm analysis string",
+		NULL };
 	switch (input[0]) {
 	case '?':
 		if (input[1]) {
 			//ut64 addr = r_num_math (core->num, input+1);
 			eprintf ("TODO: show hint\n");
-		} else {
-			const char* help_msg[] = {
-				"Usage:", "ah[lba-]", "Analysis Hints",
-				"ah?", "", "show this help",
-				"ah?", " offset", "show hint of given offset",
-				"ah", "", "list hints in human-readable format",
-				"ah-", "", "remove all hints",
-				"ah-", " offset [size]", "remove hints at given offset",
-				"ah*", " offset", "list hints in radare commands format",
-				"aha", " ppc 51", "set arch for a range of N bytes",
-				"ahb", " 16 @ $$",  "force 16bit for current instruction",
-				"ahc", " 0x804804", "override call/jump address",
-				"ahf", " 0x804840", "override fallback address for call",
-				"ahs", " 4", "set opcode size=4",
-				"aho", " foo a0,33", "replace opcode string",
-				"ahe", " eax+=3", "set vm analysis string",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
+		} else r_core_cmd_help (core, help_msg);
 		break;
-	/*
-	   in core/disasm we call
-	   R_API int r_core_hint(RCore *core, ut64 addr) {
-	   static int hint_bits = 0;
-	   RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-	   if (hint->bits) {
-	   if (!hint_bits)
-	   hint_bits = core->assembler->bits;
-	   r_config_set_i (core->config, "asm.bits", hint->bits);
-	   } else if (hint_bits) {
-	   r_config_set_i (core->config, "asm.bits", hint_bits);
-	   hint_bits = 0;
-	   }
-	   if (hint->arch)
-	   r_config_set (core->config, "asm.arch", hint->arch);
-	   if (hint->length)
-	   force_instruction_length = hint->length;
-	   r_anal_hint_free (hint);
-	   */
 	case 'a': // set arch
 		if (input[1]) {
 			int i;
@@ -2093,6 +2100,20 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 
 static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
+	const char *arg;
+	const char* help_msg[] = {
+		"Usage:", "ag[?f]", "Graphiz Code",
+		"ag", " [addr]", "output graphviz code (bb at addr and children)",
+		"agj", " [addr]", "idem, but in JSON format",
+		"agk", " [addr]", "idem, but in SDB key-value format",
+		"aga", " [addr]", "idem, but only addresses",
+		"agc", " [addr]", "output graphviz call graph of function",
+		"agd", " [fcn name]", "output graphviz code of diffed function",
+		"agl", " [fcn name]",  "output graphviz code using meta-data",
+		"agt", " [addr]", "find paths from current offset to given address",
+		"agfl", " [fcn name]", "output graphviz code of function using meta-data",
+		"agv", "[acdltfl] [a]", "view function using graphviz",
+		NULL};
 
 	switch (input[0]) {
 	case 't':
@@ -2156,59 +2177,41 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 #endif
 		break;
 	case '?':
-		{
-			const char* help_msg[] = {
-				"Usage:", "ag[?f]", "Graphiz Code",
-				"ag", " [addr]", "output graphviz code (bb at addr and children)",
-				"agj", " [addr]", "idem, but in JSON format",
-				"agk", " [addr]", "idem, but in SDB key-value format",
-				"aga", " [addr]", "idem, but only addresses",
-				"agc", " [addr]", "output graphviz call graph of function",
-				"agd", " [fcn name]", "output graphviz code of diffed function",
-				"agl", " [fcn name]",  "output graphviz code using meta-data",
-				"agt", " [addr]", "find paths from current offset to given address",
-				"agfl", " [fcn name]", "output graphviz code of function using meta-data",
-				"agv", "[acdltfl] [a]", "view function using graphviz",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
+		r_core_cmd_help (core, help_msg);
 		break;
 	default:
-		{
-			const char *arg = strchr (input, ' ');
-			if (arg) arg++;
-			r_core_anal_graph (core, r_num_math (core->num, arg),
-					R_CORE_ANAL_GRAPHBODY);
-		}
+		arg = strchr (input, ' ');
+		if (arg) arg++;
+		r_core_anal_graph (core, r_num_math (core->num, arg),
+				R_CORE_ANAL_GRAPHBODY);
 		break;
 	}
 }
 
 static void cmd_anal_trace(RCore *core, const char *input)  {
+	RDebugTracepoint *t;
 	const char *ptr;
 	ut64 addr = core->offset;
+	const char* help_msg[] = {
+		"Usage:", "at", "[*] [addr]",
+		"at", "", "list all traced opcode ranges",
+		"at-", "", "reset the tracing information",
+		"at*", "", "list all traced opcode offsets",
+		"at+", " [addr] [times]", "add trace for address N times",
+		"at", " [addr]", "show trace info at address",
+		"att", " [tag]", "select trace tag (no arg unsets)",
+		"at%", "", "TODO",
+		"ata", " 0x804020 ...", "only trace given addresses",
+		"atr", "", "show traces as range commands (ar+)",
+		"atd", "", "show disassembly trace",
+		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
+		NULL
+	};
 
 	switch (input[0]) {
 	case '?':
-		{
-			const char* help_msg[] = {
-				"Usage:", "at", "[*] [addr]",
-				"at", "", "list all traced opcode ranges",
-				"at-", "", "reset the tracing information",
-				"at*", "", "list all traced opcode offsets",
-				"at+", " [addr] [times]", "add trace for address N times",
-				"at", " [addr]", "show trace info at address",
-				"att", " [tag]", "select trace tag (no arg unsets)",
-				"at%", "", "TODO",
-				"ata", " 0x804020 ...", "only trace given addresses",
-				"atr", "", "show traces as range commands (ar+)",
-				"atd", "", "show disassembly trace",
-				"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-			eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
-		}
+		r_core_cmd_help (core, help_msg);
+		eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
 		break;
 	case 'a':
 		eprintf ("NOTE: Ensure given addresses are in 0x%%08"PFMT64x" format\n");
@@ -2224,6 +2227,10 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 	case 'D':
 		// XXX: not yet tested..and rsc dwarf-traces comes from r1
 		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
+		break;
+	case 'r':
+		eprintf ("TODO\n");
+		//trace_show(-1, trace_tag_get());
 		break;
 	case '+':
 		ptr = input+2;
@@ -2244,24 +2251,17 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		core->dbg->trace = r_debug_trace_new ();
 		break;
 	case ' ':
-		{
-			RDebugTracepoint *t = r_debug_trace_get (core->dbg,
-					r_num_math (core->num, input));
-			if (t != NULL) {
-				r_cons_printf ("offset = 0x%"PFMT64x"\n", t->addr);
-				r_cons_printf ("opsize = %d\n", t->size);
-				r_cons_printf ("times = %d\n", t->times);
-				r_cons_printf ("count = %d\n", t->count);
-				//TODO cons_printf("time = %d\n", t->tm);
-			}
+		if ((t = r_debug_trace_get (core->dbg,
+				r_num_math (core->num, input)))) {
+			r_cons_printf ("offset = 0x%"PFMT64x"\n", t->addr);
+			r_cons_printf ("opsize = %d\n", t->size);
+			r_cons_printf ("times = %d\n", t->times);
+			r_cons_printf ("count = %d\n", t->count);
+			//TODO cons_printf("time = %d\n", t->tm);
 		}
 		break;
 	case '*':
 		r_debug_trace_list (core->dbg, 1);
-		break;
-	case 'r':
-		eprintf ("TODO\n");
-		//trace_show(-1, trace_tag_get());
 		break;
 	default:
 		r_debug_trace_list (core->dbg, 0);
@@ -2269,8 +2269,45 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 }
 
 static int cmd_anal(void *data, const char *input) {
+	const char *r;
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
+	const char* help_msg_ad[] = {
+		"Usage:",  "ad", "[kt] [...]",
+		"ad", " [N] [D]","analyze N data words at D depth",
+		"adt", "", "analyze data trampolines (wip)",
+		"adk", "", "analyze data kind (code, text, data, invalid, ...)",
+		NULL
+	};
+	const char* help_msg_aa[] = {
+		"Usage:", "aa[0*?]", " # see also 'af', 'ac' and 'afna'",
+		"aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
+		"aaa", "", "autoname functions after aa (see afna)",
+		"aa*", "", "print the commands that 'aa' will run",
+		NULL};
+	const char* help_msg[] = {
+		"Usage:", "a", "[8adefFghoprxstc] [...]",
+		"a8", " [hexpairs]", "analyze bytes",
+		"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
+		"ac", " [len]", "analyze function calls (af @@= `pi len~call[1]`",
+		"aC", " [cycles]", "analyze which op could be executed in [cycles]",
+		"ad", "", "analyze data trampoline (wip)",
+		"ad", " [from] [to]", "analyze data pointers to (from-to)",
+		"ae", " [expr]", "analyze opcode eval expression (see ao)",
+		"af", "[rnbcsl?+-*]", "analyze Functions",
+		"aF", "", "same as above, but using anal.depth=1",
+		"ag", "[?acgdlf]", "output Graphviz code",
+		"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
+		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
+		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
+		"ap", "", "find and analyze function preludes",
+		"ar", "", "like 'dr' but for the esil vm. (registers)",
+		"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
+		"as", " [num]", "analyze syscall using dbg.reg",
+		"at", "[trd+-%*?] [.]", "analyze execution traces",
+		//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
+		NULL
+	};
 
 	r_cons_break (NULL, NULL);
 
@@ -2285,23 +2322,16 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
 		break;
-	case 'i': // "ai"
-		cmd_anal_info(core, input+1);
-		break;
-	case 'r':
-		cmd_anal_reg (core, input+1);
-		break;
-	case 'e':
-		cmd_anal_esil(core, input+1);
-		break;
-	case 'o':
-		cmd_anal_opcode(core, input+1);
-		break;
+	case 'i': cmd_anal_info (core, input+1); break; // "ai"
+	case 'r': cmd_anal_reg (core, input+1); break; // "ar"
+	case 'e': cmd_anal_esil (core, input+1); break; // "ae"
+	case 'o': cmd_anal_opcode (core, input+1); break;
 	case 'F':
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'f':
 		if (!cmd_anal_fcn (core, input)) {
+			r_cons_break_end ();
 			return R_FALSE;
 		}
 		break;
@@ -2315,8 +2345,10 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_syscall(core, input+1);
 		break;
 	case 'x':
-		if (!cmd_anal_refs(core, input+1))
+		if (!cmd_anal_refs (core, input+1)) {
+			r_cons_break_end ();
 			return R_FALSE;
+		}
 		break;
 	case 'a':
 		r_cons_break (NULL, NULL);
@@ -2326,20 +2358,10 @@ static int cmd_anal(void *data, const char *input) {
 		r_cons_clear_line (1);
 		r_cons_break_end();
 		switch (input[1]) {
-		case '?': {
-			const char* help_msg[] = {
-			  "Usage:", "aa[0*?]", " # see also 'af', 'ac' and 'afna'",
-			  "aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
-			  "aaa", "", "autoname functions after aa (see afna)",
-			  "aa*", "", "print the commands that 'aa' will run",
-			  NULL};
-			r_core_cmd_help (core, help_msg); }
-			break;
+		case '?': r_core_cmd_help (core, help_msg_aa); break;
+		case 'a': r_core_cmd0 (core, ".afna @@ fcn.*"); break;
 		case '*':
 			r_cons_printf ("af @@ sym.* ; af @ entry0\n");// ; .afna @@ fcn.*\n");
-			break;
-		case 'a':
-			r_core_cmd0 (core, ".afna @@ fcn.*");
 			break;
 		}
 		break;
@@ -2349,8 +2371,8 @@ static int cmd_anal(void *data, const char *input) {
 	case 'C':
 		{
 			char *instr_tmp = NULL;
-			int ccl = r_num_math (core->num, &input[2]);					//get cycles to look for
-			int cr = r_config_get_i (core->config, "asm.cmtright");				//make stuff look nice
+			int ccl = r_num_math (core->num, &input[2]); //get cycles to look for
+			int cr = r_config_get_i (core->config, "asm.cmtright");
 			int fun = r_config_get_i (core->config, "asm.functions");
 			int li = r_config_get_i (core->config, "asm.lines");
 			int xr = r_config_get_i (core->config, "asm.xrefs");
@@ -2362,7 +2384,7 @@ static int cmd_anal(void *data, const char *input) {
 			RListIter *iter;
 			RAnalCycleHook *hook;
 			r_cons_break (NULL, NULL);
-			hooks = r_core_anal_cycles (core, ccl);						//analyse
+			hooks = r_core_anal_cycles (core, ccl); //analyse
 			r_cons_break_end ();
 			r_cons_clear_line (1);
 			r_list_foreach (hooks, iter, hook) {
@@ -2372,7 +2394,7 @@ static int cmd_anal(void *data, const char *input) {
 				free (instr_tmp);
 			}
 			r_list_free (hooks);
-			r_config_set_i (core->config, "asm.cmtright", cr);				//reset settings
+			r_config_set_i (core->config, "asm.cmtright", cr); //reset settings
 			r_config_set_i (core->config, "asm.functions", fun);
 			r_config_set_i (core->config, "asm.lines", li);
 			r_config_set_i (core->config, "asm.xrefs", xr);
@@ -2403,29 +2425,15 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'k':
-			{
-				const char *r = r_anal_data_kind (core->anal,
-						core->offset, core->block, core->blocksize);
-				r_cons_printf ("%s\n", r);
-			}
+			r = r_anal_data_kind (core->anal,
+					core->offset, core->block, core->blocksize);
+			r_cons_printf ("%s\n", r);
 			break;
 		case '\0':
-			{
-				//int word = core->assembler->bits / 8;
-				r_core_anal_data (core, core->offset, 2+(core->blocksize/4), 1);
-			}
+			r_core_anal_data (core, core->offset, 2+(core->blocksize/4), 1);
 			break;
 		default:
-			{
-				const char* help_msg[] = {
-					"Usage:",  "ad", "[kt] [...]",
-					"ad", " [N] [D]","analyze N data words at D depth",
-					"adt", "", "analyze data trampolines (wip)",
-					"adk", "", "analyze data kind (code, text, data, invalid, ...)",
-					NULL
-				};
-				r_core_cmd_help (core, help_msg);
-			}
+			r_core_cmd_help (core, help_msg_ad);
 			break;
 		}
 		break;
@@ -2433,43 +2441,17 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_hint(core, input+1);
 		break;
 	case '!':
-		//eprintf("Trying analysis command extension.\n");
 		if (core->anal && core->anal->cur && core->anal->cur->cmd_ext)
 			return core->anal->cur->cmd_ext (core->anal, input+1);
 		else r_cons_printf ("No plugins for this analysis plugin\n");
 		break;
 	default:
-		{
-			const char* help_msg[] = {
-				"Usage:", "a", "[8adefFghoprxstc] [...]",
-				"a8", " [hexpairs]", "analyze bytes",
-				"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-				"ac", " [len]", "analyze function calls (af @@= `pi len~call[1]`",
-				"aC", " [cycles]", "analyze which op could be executed in [cycles]",
-				"ad", "", "analyze data trampoline (wip)",
-				"ad", " [from] [to]", "analyze data pointers to (from-to)",
-				"ae", " [expr]", "analyze opcode eval expression (see ao)",
-				"af", "[rnbcsl?+-*]", "analyze Functions",
-				"aF", "", "same as above, but using anal.depth=1",
-				"ag", "[?acgdlf]", "output Graphviz code",
-				"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
-				"ai", " [addr]", "address information (show perms, stack, heap, ...)",
-				"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
-				"ap", "", "find and analyze function preludes",
-				"ar", "", "like 'dr' but for the esil vm. (registers)",
-				"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
-				"as", " [num]", "analyze syscall using dbg.reg",
-				"at", "[trd+-%*?] [.]", "analyze execution traces",
-				//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-			r_cons_printf ("Examples:\n"
-					" f ts @ `S*~text:0[3]`; f t @ section..text\n"
-					" f ds @ `S*~data:0[3]`; f d @ section..data\n"
-					" .ad t t+ts @ d:ds\n",
-					NULL);
-		}
+		r_core_cmd_help (core, help_msg);
+		r_cons_printf ("Examples:\n"
+				" f ts @ `S*~text:0[3]`; f t @ section..text\n"
+				" f ds @ `S*~data:0[3]`; f d @ section..data\n"
+				" .ad t t+ts @ d:ds\n",
+				NULL);
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -2481,4 +2463,3 @@ static int cmd_anal(void *data, const char *input) {
 	r_cons_break_end();
 	return 0;
 }
-

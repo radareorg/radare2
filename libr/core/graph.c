@@ -583,12 +583,16 @@ repeat:
 		break;
 	case 'z':
 		instep = 1;
-		r_core_cmd0 (core, "ds;.dr*");
+		if (r_config_get_i (core->config, "cfg.debug"))
+			r_core_cmd0 (core, "ds;.dr*");
+		else r_core_cmd0 (core, "aes;.dr*");
 		reloadNodes (core);
 		break;
 	case 'Z':
 		instep = 1;
-		r_core_cmd0 (core, "dso;.dr*");
+		if (r_config_get_i (core->config, "cfg.debug"))
+			r_core_cmd0 (core, "dso;.dr*");
+		else r_core_cmd0 (core, "aeso;.dr*");
 		reloadNodes (core);
 		break;
 	case 'x':
