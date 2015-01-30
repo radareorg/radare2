@@ -478,6 +478,8 @@ repeat:
 				} else {
 					eprintf("hit breakpoint at: %"PFMT64x"\n",pc);
 				}
+				if (dbg->trace->enabled)
+					r_debug_trace_pc (dbg);
 				// TODO: delegate this to RCore.bphit(RCore, RBreakopintItem)
 				if (dbg->corebind.core && dbg->corebind.bphit) {
 					dbg->corebind.bphit (dbg->corebind.core, b);
