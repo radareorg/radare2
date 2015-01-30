@@ -578,7 +578,11 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		break;
 	case DW_LNS_const_add_pc:
 		adj_opcode = 255 - hdr->opcode_base;
-		op_advance = adj_opcode / hdr->line_range;
+		if (hdr->line_range>0) {
+			op_advance = adj_opcode / hdr->line_range;
+		} else {
+			op_advance = 0;
+		}
 		regs->address += op_advance;
 		if (f) {
 			fprintf(f, "Advance PC by constant %"PFMT64d" to 0x%"PFMT64x"\n",
