@@ -361,7 +361,10 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	int buflen = len;
 	RCoreAsmHit dummy_value;
 	RAsmOp op;
-	ut8 *buf = (ut8 *)malloc (len);
+	// len = n * 32;
+	// if (n > core->blocksize) n = core->blocksize;
+	ut8 *buf = (ut8 *)malloc(len);
+
 	ut64 instrlen = 0, at = 0;
 	ut32 idx = 0, hit_count = 0;
 
@@ -390,7 +393,6 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		if (r_cons_singleton ()->breaked) break;
 		at = addr - idx; hit_count = 0;
 		// XXX - buf here. at may be greater than addr if near boundary.
-
 		for (current_buf_pos = len - idx, hit_count = 0;
 			current_buf_pos < len && hit_count <= n;
 			current_buf_pos += instrlen, at += instrlen, hit_count++) {
@@ -401,6 +403,8 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 			}
 		}
 		if (hit_count >= n) break;
+
+		if (len > 32 * n) break;
 
 		if (idx == len-1) {
 			ut8 *b;
@@ -418,8 +422,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 			}
 		}
 	}
-
-	if (hit_count <= n) {
+	// if (hit_count <= n) {
 		at = addr - idx;
 		hit_count = 0;
 		r_asm_set_pc (core->assembler, at);
@@ -427,9 +430,8 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 			instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
 			add_hit_to_hits(hits, at, instrlen, R_TRUE);
 			at += instrlen;
-		}
+		// }
 	}
-
 	r_asm_set_pc (core->assembler, addr);
 	free (buf);
 	return hits;
@@ -654,6 +656,8 @@ R_API ut32 r_core_asm_bwdis_len (RCore* core, int* instr_len, ut64* start_addr, 
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
 	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
+	if (instr_len)
+		*instr_len = 0;
 	if (hits && r_list_length (hits) > 0) {
 		ut32 instr_run = 0;
 
