@@ -1050,14 +1050,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		case 'e':
 			for (p=input+3; *p==' ';p++);
 			if (*p == '*') {
-				r_bp_set_trace_all(core->dbg->bp,R_TRUE);
+				r_bp_set_trace_all (core->dbg->bp,R_TRUE);
 			} else	if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE))
 				eprintf ("Cannot set tracepoint\n");
 			break;
 		case 'd':
 			for (p=input+3; *p==' ';p++);
 			if (*p == '*') {
-				r_bp_set_trace_all(core->dbg->bp,R_FALSE);
+				r_bp_set_trace_all (core->dbg->bp,R_FALSE);
 			} else if (!r_bp_set_trace (core->dbg->bp, addr, R_FALSE))
 				eprintf ("Cannot unset tracepoint\n");
 			break;

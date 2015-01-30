@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, TheLemonMan */
+/* radare - LGPL - Copyright 2009-2015 - pancake, TheLemonMan */
 
 #include <r_debug.h>
 #include <r_anal.h>
@@ -54,7 +54,7 @@ static int r_debug_recoil(RDebug *dbg) {
 }
 
 R_API RDebug *r_debug_new(int hard) {
-	RDebug *dbg = R_NEW (RDebug);
+	RDebug *dbg = R_NEW0 (RDebug);
 	if (dbg) {
 		// R_SYS_ARCH
 		dbg->arch = r_sys_arch_id (R_SYS_ARCH); // 0 is native by default

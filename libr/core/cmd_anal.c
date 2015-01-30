@@ -1220,13 +1220,13 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		//eprintf ("PC=0x%llx\n", (ut64)addr);
 	}
 	if (core->anal->esil->delay)
-		addr=core->anal->esil->delay_addr;
+		addr = core->anal->esil->delay_addr;
 	r_io_read_at (core->io, addr, code, sizeof (code));
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	core->anal->esil->delay = op.delay;
 	if (core->anal->esil->delay)
-		core->anal->esil->delay_addr=addr+op.size;
+		core->anal->esil->delay_addr = addr+op.size;
 #if 0
 eprintf ("RET %d\n", ret);
 eprintf ("ADDR 0x%llx\n", addr);
@@ -1257,6 +1257,12 @@ sleep (1);
 		if (op.size<1)
 			op.size = 1; // avoid inverted stepping
 		r_reg_setv (core->anal->reg, name, addr + op.size);
+	}
+	if (core->dbg->trace->enabled) {
+		RReg *reg = core->dbg->reg;
+		core->dbg->reg = core->anal->reg;
+		r_debug_trace_pc (core->dbg);
+		core->dbg->reg = reg;
 	}
 	// check addr
 	if (until_addr != UT64_MAX) {
