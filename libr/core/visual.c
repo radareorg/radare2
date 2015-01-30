@@ -625,7 +625,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '=':
 		{ // TODO: edit
-		char *buf = NULL;
+		const char *buf = NULL;
 #define I core->cons
 		const char *cmd = r_config_get (core->config, "cmd.vprompt");
 		r_line_set_prompt ("cmd.vprompt> ");
@@ -638,7 +638,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '|':
 		{ // TODO: edit
-		char *buf = NULL;
+		const char *buf = NULL;
 #define I core->cons
 		const char *cmd = r_config_get (core->config, "cmd.cprompt");
 		r_line_set_prompt ("cmd.cprompt> ");

@@ -81,7 +81,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	ut64 ret = 0;
 
 	if (ok) *ok = R_FALSE;
-	if (*str=='[') {
+	switch (*str) {
+	case '[':
+{
 		ut64 n;
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
 		const char *p = NULL;
@@ -116,8 +118,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
 			return 0LL;
 		}
-	} else
-	if (str[0]=='$') {
+}
+		break;
+	case '$':
 		if (ok) *ok = 1;
 		// TODO: group analop-dependant vars after a char, so i can filter
 		r_anal_op (core->anal, &op, core->offset,
@@ -198,19 +201,19 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			return fcn? fcn->size: 0;
 		}
-	} else
-	if (*str>'A') {
+		break;
+	case 'A':
 #if 0
 		ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
 		if (addr != 0) {
 			ret = addr;
 		} else {
 #endif
-			if ((flag = r_flag_get (core->flags, str))) {
-				ret = flag->offset;
-				if (ok) *ok = R_TRUE;
-			}
-//		}
+		if ((flag = r_flag_get (core->flags, str))) {
+			ret = flag->offset;
+			if (ok) *ok = R_TRUE;
+		}
+		break;
 	}
 
 	return ret;
@@ -519,18 +522,16 @@ static int autocomplete(RLine *line) {
 }
 
 R_API int r_core_fgets(char *buf, int len) {
-	/* TODO: link against dietline if possible for autocompletion */
-	char *ptr;
+	const char *ptr;
 	RLine *rli = r_line_singleton ();
 	buf[0]='\0';
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
-	ptr = r_line_readline (); //CMDS, radare_argv);
+	ptr = r_line_readline ();
 	if (ptr == NULL)
 		return -1;
 	strncpy (buf, ptr, len);
-	//free(ptr); // XXX leak
 	return strlen (buf)+1;
 }
 /*-----------------------------------*/

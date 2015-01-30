@@ -358,11 +358,11 @@ R_API void r_line_autocomplete() {
 	fflush (stdout);
 }
 
-R_API char *r_line_readline() {
+R_API const char *r_line_readline() {
 	return r_line_readline_cb (NULL, NULL);
 }
 
-R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
+R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int columns = r_cons_get_size (NULL)-2;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;

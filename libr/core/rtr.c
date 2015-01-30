@@ -860,7 +860,8 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		{
 			char uri[1024], prompt[64], prompt2[64];
 			int len;
-			char *str, *res, *ptr;
+			const char* res;
+			char *str, *ptr;
 			int flen = strlen (file);
 			int is_visual = (file[flen-1]== 'V')?1:0;
 			int is_valid = (file[flen-(is_visual?2:1)] == '/')?1:0;
@@ -875,10 +876,10 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				snprintf (prompt2, sizeof(prompt2), "[%s:%s]$ ", host, port);
 				for (;;) {
 					r_line_set_prompt (prompt);
-					str = r_line_readline ();
-					if (!str || !*str) break;
-					if (*str == 'q') break;
-					if (!strcmp (str, "!sh")) {
+					res = r_line_readline ();
+					if (!res || !*res) break;
+					if (*res == 'q') break;
+					if (!strcmp (res, "!sh")) {
 						for (;;) {
 							r_line_set_prompt (prompt2);
 							res = r_line_readline ();
@@ -901,20 +902,20 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 							}
 							free (ptr);
 						}
-					} else if (str[0]=='V') {
-						if (str[1]==' ') {
-							rtr_visual (core, T, str+1);
+					} else if (res[0]=='V') {
+						if (res[1]==' ') {
+							rtr_visual (core, T, res+1);
 						} else {
 							rtr_visual (core, T, NULL);
 						}
-					} else if (!strcmp (str, "TT")) {
+					} else if (!strcmp (res, "TT")) {
 						rtr_textlog_chat (core, T);
 					} else {
-						ptr = r_str_uri_encode (str);
-						if (ptr) str = ptr;
+						ptr = r_str_uri_encode (res);
+						if (ptr) res = ptr;
 						snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
-								host, port, file, str);
-						if (ptr == str) free (ptr);
+								host, port, file, res);
+						if (ptr == res) free (ptr);
 						str = r_socket_http_get (uri, NULL, &len);
 						if (str) {
 							str[len] = 0;

@@ -226,7 +226,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			// TODO: Add support to redirect filedescriptors
 			// TODO: Configure process environment
 			argv = r_str_argv (cmd, NULL);
-
 #if __APPLE__
 			 {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100

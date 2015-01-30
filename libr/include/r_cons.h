@@ -449,8 +449,8 @@ R_API char *r_line_get_prompt (void);
 R_API void r_line_set_prompt(const char *prompt);
 
 typedef int (RLineReadCallback) (void *user, const char *line);
-R_API char *r_line_readline(void);
-R_API char *r_line_readline_cb(RLineReadCallback cb, void *user);
+R_API const char *r_line_readline(void);
+R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user);
 
 R_API int r_line_hist_load(const char *file);
 R_API int r_line_hist_add(const char *line);

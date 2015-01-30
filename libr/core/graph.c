@@ -535,13 +535,12 @@ repeat:
 	case '=':
 	case '|':
 		{ // TODO: edit
-		char *buf = NULL;
+		const char *buf = NULL;
 #define I core->cons
 		const char *cmd = r_config_get (core->config, "cmd.gprompt");
 		r_line_set_prompt ("cmd.gprompt> ");
 		I->line->contents = strdup (cmd);
 		buf = r_line_readline ();
-//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 		I->line->contents = NULL;
 		r_config_set (core->config, "cmd.gprompt", buf);
 		}
