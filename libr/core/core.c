@@ -536,7 +536,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	if (ptr == NULL)
 		return -1;
 	strncpy (buf, ptr, len);
-	buf[len] = 0;
+	buf[len-1] = 0;
 	return strlen (buf)+1;
 }
 /*-----------------------------------*/
