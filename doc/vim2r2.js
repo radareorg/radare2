@@ -11,7 +11,7 @@
 #
 # Using Duktape
 # -------------
-#  $ r2 -qc 'k colors=/usr/share/vim/vim74/colors/slate.vim' -i vim2r2.js --
+#  $ r2 -qi vim2r2.js -k colors=/usr/share/vim/vim74/colors/slate.vim --
 */
 
 var DEBUG = false; //true;
