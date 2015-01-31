@@ -634,9 +634,17 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default: r_core_anal_fcn_list (core, input+2, 0); break;
 		}
 		break;
-	case 'l': r_core_anal_fcn_list (core, input, 2); break; // "afl"
-	case '*': r_core_anal_fcn_list (core, input+2, 1); break; // "af*"
-	case 'j': r_core_anal_fcn_list (core, input+2, 'j'); break; // "afj"
+	case 'l': // "afl"
+		switch (input[2]) {
+		case 'j': r_core_anal_fcn_list (core, NULL, 'j'); break; // "aflj"
+		case '*': r_core_anal_fcn_list (core, NULL, '*'); break; // "afl*"
+		default: r_core_anal_fcn_list (core, NULL, 0); break; // "afl"
+		}
+		break;
+	case 'j':
+		// alias for 'aflj'
+		r_core_anal_fcn_list (core, NULL, 'j'); break; // "afj"
+		break;
 	case 's': { // "afs"
 			  ut64 addr;
 			  RAnalFunction *f;

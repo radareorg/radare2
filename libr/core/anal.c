@@ -386,6 +386,13 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				r_cons_printf (",\"jump\":%"PFMT64d, bbi->jump);
 			if (bbi->fail != -1)
 				r_cons_printf (",\"fail\":%"PFMT64d, bbi->fail);
+			{
+				RDebugTracepoint *t = r_debug_trace_get (core->dbg, bbi->addr);
+				if (t) {
+					r_cons_printf (",\"trace\":{\"count\":%d,\"times\":%d}",
+						t->count, t->times);
+				}
+			}
 			r_cons_printf (",\"ops\":");
 			{
 				ut8 *buf = malloc (bbi->size);
@@ -1127,7 +1134,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	RAnalVar *vari;
 	int first, bbs, count = 0;
 
- 	addr = r_num_math (core->num, *input? input+1: input);
+	if (input && *input) {
+ 		addr = r_num_math (core->num, *input? input+1: input);
+	} else {
+		addr = core->offset;
+	}
 	if (rad==2) {
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
@@ -1142,8 +1153,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		r_cons_printf ("[");
 	}
 #define infun(x,y) (y>=x->addr&&y<(x->addr+x->size))
-	r_list_foreach (core->anal->fcns, iter, fcn)
-		if (((input == NULL || *input == '\0') && fcn->type!=R_ANAL_FCN_TYPE_LOC)
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if ((!input) // || (( !*input && fcn->type!=R_ANAL_FCN_TYPE_LOC)
 			 || infun (fcn, addr) || !strcmp (fcn->name, *input?input+1:input)) {
 			count++;
 			if (rad=='j') {
@@ -1287,6 +1298,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_newline ();
 			}
 		}
+	}
 	if (rad == 'j')  {
 		r_cons_printf ("]\n");
 	}
