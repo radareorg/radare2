@@ -112,12 +112,13 @@ static int main_help(int line) {
 		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
 		" -i [file]    run script file\n"
-		" -k [kernel]  set asm.os variable for asm and anal\n"
+		" -k [k=v]     perform sdb query into core->sdb\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
 		" -m [addr]    map file at given address\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
+		" -o [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
@@ -271,7 +272,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
+	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
 #if USE_THREADS
 "t"
 #endif
@@ -321,7 +322,16 @@ int main(int argc, char **argv, char **envp) {
 				if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
 					cmdfile[cmdfilei++] = optarg;
 				break;
-			case 'k': asmos = optarg; break;
+			case 'k': 
+				{
+					char *out = sdb_querys (r.sdb, NULL, 0, optarg);
+					if (out&& *out) {
+						r_cons_printf ("%s\n", out);
+					}
+					free (out);
+				}
+				break;
+			case 'o': asmos = optarg; break;
 			case 'l': r_lib_open (r.lib, optarg); break;
 			case 'L': list_io_plugins (r.io); return 0;
 			case 'm': mapaddr = r_num_math (r.num, optarg); break;
