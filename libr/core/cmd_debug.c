@@ -1546,7 +1546,7 @@ static void cmd_debug_step (RCore *core, const char *input) {
 	ut64 addr;
 	ut8 buf[64];
 	RAnalOp aop;
-	int i, times;
+	int i, times = 1;
 	const char * help_message[] = {
 		"Usage: ds", "", "Step commands",
 		"ds", "", "Step one instruction",

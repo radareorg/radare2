@@ -415,6 +415,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				case X86_OP_IMM:
 					op->ptr = INSOP(0).imm;
 					op->type = R_ANAL_OP_TYPE_PUSH;
+					break;
 				default:
 					op->type = R_ANAL_OP_TYPE_UPUSH;
 					break;

@@ -524,6 +524,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	struct r_anal_bb_t *bb = NULL, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
+	int rc = R_TRUE;
 	ut8 *buf = NULL;
 	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
 	int split = core->anal->split;
@@ -539,7 +540,8 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	}
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
 		goto error;
-	} else if (ret == R_ANAL_RET_NEW) { /* New bb */
+	}
+	if (ret == R_ANAL_RET_NEW) { /* New bb */
 		// XXX: use static buffer size of 512 or so
 		if (!(buf = malloc (ANALBS))) //core->blocksize)))
 			goto error;
@@ -575,15 +577,17 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				}
 			}
 		} while (bblen != R_ANAL_RET_END);
+		free (buf);
+		return R_TRUE;
 	}
-
-	free (buf);
-	return R_TRUE;
+	goto fin;
 error:
+	rc = R_FALSE;
+fin:
 	r_list_delete_data (fcn->bbs, bb);
 	r_anal_bb_free (bb);
 	free (buf);
-	return R_FALSE;
+	return rc;
 }
 
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
