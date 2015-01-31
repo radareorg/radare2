@@ -1183,7 +1183,7 @@ if (
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
-			if ((sym = (Elf_(Sym) *)calloc (nsym, newsize)) == NULL) {
+			if ((sym = (Elf_(Sym) *)calloc (nsym, sizeof(Elf_(Sym)))) == NULL) {
 				eprintf ("calloc (syms)");
 				free (ret);
 				free (strtab);
