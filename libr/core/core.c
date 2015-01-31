@@ -202,16 +202,20 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return fcn? fcn->size: 0;
 		}
 		break;
-	case 'A':
+	default:
+		if (*str>'A') {
 #if 0
-		ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
-		if (addr != 0) {
-			ret = addr;
-		} else {
+			ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
+			if (addr != 0) {
+				ret = addr;
+			} else {
+				...
+			}
 #endif
-		if ((flag = r_flag_get (core->flags, str))) {
-			ret = flag->offset;
-			if (ok) *ok = R_TRUE;
+			if ((flag = r_flag_get (core->flags, str))) {
+				ret = flag->offset;
+				if (ok) *ok = R_TRUE;
+			}
 		}
 		break;
 	}
@@ -524,7 +528,7 @@ static int autocomplete(RLine *line) {
 R_API int r_core_fgets(char *buf, int len) {
 	const char *ptr;
 	RLine *rli = r_line_singleton ();
-	buf[0]='\0';
+	buf[0] = '\0';
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
@@ -532,6 +536,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	if (ptr == NULL)
 		return -1;
 	strncpy (buf, ptr, len);
+	buf[len] = 0;
 	return strlen (buf)+1;
 }
 /*-----------------------------------*/
