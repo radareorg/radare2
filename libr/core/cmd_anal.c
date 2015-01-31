@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include "r_util.h"
 
@@ -376,6 +376,12 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 	}
 }
 
+static int bb_cmp(void *a, void *b) {
+	RAnalBlock *ba = a;
+	RAnalBlock *bb = b;
+	return ba->addr - bb->addr;
+}
+
 static int anal_fcn_list_bb (RCore *core, const char *input) {
 	RDebugTracepoint *tp = NULL;
 	RAnalFunction *fcn;
@@ -406,6 +412,7 @@ static int anal_fcn_list_bb (RCore *core, const char *input) {
 		r_cons_printf ("fs blocks\n");
 		break;
 	}
+	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
 		switch (mode) {
 		case '*':
