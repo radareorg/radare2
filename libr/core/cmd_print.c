@@ -1800,9 +1800,30 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'W':
 			for (i=0; i<len; i+=4) {
-				ut32 *p = (ut32*)((ut8*)core->block+i);
-				r_mem_copyendian((ut8*)p, (ut8*)p, 4, !core->print->big_endian);
-				r_cons_printf ("0x%08"PFMT64x" 0x%08x\n", core->offset+i, *p);
+				const char *a, *b;
+				char *fn;
+				RPrint *p = core->print;
+				RFlagItem *f;
+				ut32 *v = (ut32*)((ut8*)core->block+i);
+				r_mem_copyendian ((ut8*)v, (ut8*)v, 4, !core->print->big_endian);
+
+				if (p && p->colorfor) {
+					a = p->colorfor (p->user, *v);
+					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+				} else { a = b = ""; }
+				f = r_flag_get_at (core->flags, *v);
+				fn = NULL;
+				if (f) {
+					st64 delta = (*v - f->offset);
+					if (delta>=0 && delta<8192) {
+						if (*v == f->offset) {
+							fn = strdup (f->name);
+						} else fn = r_str_newf ("%s+%d", f->name, *v-f->offset);
+					}
+				}
+				r_cons_printf ("0x%08"PFMT64x" %s0x%016"PFMT64x"%s %s\n",
+					(ut64)core->offset+i, a, (ut64)*v, b, fn? fn: "");
+				free (fn);
 			}
 			break;
 		case 'r':
@@ -1822,9 +1843,28 @@ static int cmd_print(void *data, const char *input) {
 		case 'Q':
 			// TODO. show if flag name, or inside function
 			for (i=0; i+8<len; i+=8) {
-				ut64 *p = (ut64*)(core->block+i);
-				r_cons_printf ("0x%08"PFMT64x" 0x%016"PFMT64x"\n",
-					(ut64)core->offset+i, *p);
+				const char *a, *b;
+				char *fn;
+				RPrint *p = core->print;
+				RFlagItem *f;
+				ut64 *v = (ut64*)(core->block+i);
+				if (p && p->colorfor) {
+					a = p->colorfor (p->user, *v);
+					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+				} else { a = b = ""; }
+				f = r_flag_get_at (core->flags, *v);
+				fn = NULL;
+				if (f) {
+					st64 delta = (*v - f->offset);
+					if (delta>=0 && delta<8192) {
+						if (*v == f->offset) {
+							fn = strdup (f->name);
+						} else fn = r_str_newf ("%s+%d", f->name, *v-f->offset);
+					}
+				}
+				r_cons_printf ("0x%08"PFMT64x" %s0x%016"PFMT64x"%s %s\n",
+					(ut64)core->offset+i, a, *v, b, fn? fn: "");
+				free (fn);
 			}
 			break;
 		case 's':
