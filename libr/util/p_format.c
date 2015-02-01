@@ -913,14 +913,29 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'z': // zero terminated string
 				if (MUSTSET) {
-					int buflen = strlen ((const char *)buf);
-					if (buflen>seeki) {
-						buflen = strlen ((const char *)buf+seeki);
+					int buflen = strlen ((const char *)buf+seeki), vallen = strlen(setval);
+					char *newstring, *ons;
+					newstring = ons = strdup(setval);
+					if ((newstring[0] == '\"' && newstring[vallen-1] == '\"')
+							|| (newstring[0] == '\'' && newstring[vallen-1] == '\'')) {
+						newstring[vallen-1] = '\0';
+						newstring++;
+						vallen-=2;
 					}
-					if (strlen (setval) > buflen) {
-						eprintf ("Warning: new string is longer than previous one \n");
+					if (vallen > buflen) {
+						eprintf ("Warning: new string is longer than previous one\n");
 					}
-					realprintf ("w %s @ 0x%08"PFMT64x"\n", setval, seeki);
+					realprintf ("wx ");
+					for (i=0;i<vallen;i++) {
+						if (i < vallen-3 && newstring[i] == '\\' && newstring[i+1] == 'x') {
+							realprintf ("%c%c", newstring[i+2], newstring[i+3]);
+							i+=3;
+						} else {
+							realprintf ("%2x", newstring[i]);
+						}
+					}
+					realprintf (" @ 0x%08"PFMT64x"\n", seeki);
+					free(ons);
 				} else {
 					if (json)
 						p->printf ("%d,\"string\":\"", seeki);
@@ -941,9 +956,19 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'Z': // zero terminated wide string
 				if (MUSTSET) {
+					int vallen = strlen(setval);
+					char *newstring, *ons;
+					newstring = ons = strdup(setval);
+					if ((newstring[0] == '\"' && newstring[vallen-1] == '\"')
+							|| (newstring[0] == '\'' && newstring[vallen-1] == '\'')) {
+						newstring[vallen-1] = '\0';
+						newstring++;
+						vallen-=2;
+					}
 					if ((size = strlen (setval)) > r_wstr_clen((char*)(buf+seeki)))
 						eprintf ("Warning: new string is longer than previous one\n");
-					realprintf ("ww %s @ 0x%08"PFMT64x"\n", setval, seeki);
+					realprintf ("ww %s @ 0x%08"PFMT64x"\n", newstring, seeki);
+					free(ons);
 				} else {
 					p->printf ("0x%08"PFMT64x" = ", seeki);
 					for (; i<len && ((size || size==-1) && buf[i]) ; i+=2) {
