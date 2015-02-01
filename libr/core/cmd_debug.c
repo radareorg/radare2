@@ -1014,6 +1014,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"db", " sym.main", "Add breakpoint into sym.main",
 		"db", " <addr>", "Add breakpoint",
 		"db", " -<addr>", "Remove breakpoint",
+		"dbj", "", "List breakpoints in JSON format",
 		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
 		"dbd", " <addr>", "Disable breakpoint",
@@ -1086,6 +1087,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
 	case '-':

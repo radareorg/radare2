@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2014 - pancake */
+/* radare2 - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_bp.h>
 #include "../config.h"
@@ -218,10 +218,15 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
+	if (rad=='j') {
+		bp->printf ("[");
+	}
 	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
-		bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
-			b->addr, b->addr+b->size, b->size,
+		switch (rad) {
+		case 0:
+			bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
+				b->addr, b->addr+b->size, b->size,
 			(b->rwx & R_BP_PROT_READ)? 'r': '-',
 			(b->rwx & R_BP_PROT_WRITE)? 'w': '-',
 			(b->rwx & R_BP_PROT_EXEC)? 'x': '-',
@@ -229,8 +234,34 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			b->trace? "trace": "break",
 			b->enabled? "enabled": "disabled",
 			b->data? b->data: "");
+			break;
+		case 1:
+		case 'r':
+		case '*':
+			// TODO: add command, tracing, enable, ..
+			bp->printf ("db 0x%08"PFMT64x"\n", b->addr);
+			//b->trace? "trace": "break",
+			//b->enabled? "enabled": "disabled",
+			// b->data? b->data: "");
+			break;
+		case 'j':
+			bp->printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\"prot\":\"%c%c%c\",\"hw\":%s,\"trace\":%s,\"enabled\":%s,\"data\":\"%s\"}",
+				iter->p? ",":"",
+				b->addr, b->size,
+				(b->rwx & R_BP_PROT_READ)? 'r': '-',
+				(b->rwx & R_BP_PROT_WRITE)? 'w': '-',
+				(b->rwx & R_BP_PROT_EXEC)? 'x': '-',
+				b->hw? "true": "false",
+				b->trace? "true": "false",
+				b->enabled? "true": "false",
+				b->data? b->data: "");
+			break;
+		}
 		/* TODO: Show list of pids and trace points, conditionals */
 		n++;
+	}
+	if (rad=='j') {
+		bp->printf ("]\n");
 	}
 	return n;
 }
