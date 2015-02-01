@@ -3,6 +3,7 @@ var BBGraph = function () {
   this.edges = [];
   this.elements = [];
   this.links = [];
+  this.fcn_offset = 0;
 
   joint.shapes.html = {};
   joint.shapes.html.Element = joint.shapes.basic.Rect.extend({
@@ -175,27 +176,24 @@ BBGraph.prototype.render = function() {
     $("#center_panel").bind('scroll', update_minimap);
   }
 
-  function update_BB(model) {
+  paper.on( "cell:pointerup", function( cellview, evt, x, y)  {
+    var model = cellview.model;
     var bbox = model.attributes.position;
     var id = String(model.prop("id"));
     if (model !== undefined && id !== "minimap_area") {
       var color = null;
-      var bb = null;
-      if (r2ui.basic_blocks[id] !== undefined && r2ui.basic_blocks[id] !== null) {
-        bb = r2ui.basic_blocks[id];
-        bb.x = bbox.x;
-        bb.y = bbox.y;
-      } else {
-        bb = {x:bbox.x, y:bbox.y};
+      var bb = r2ui.get_fcn_BB(r2ui.current_fcn_offset, id);
+      if (bb !== undefined && bb !== null) {
+        if (bb.x != String(bbox.x) || bb.y != String(bbox.y)) {
+          bb.x = bbox.x;
+          bb.y = bbox.y;
+          r2ui.update_fcn_BB(r2ui.current_fcn_offset, id, bb);
+        }
+      } else  if (bb !== undefined && bb !== null) {
+        r2ui.update_fcn_BB(r2ui.current_fcn_offset, id, {x:bbox.x, y:bbox.y});
       }
-      r2ui.basic_blocks[id] = bb;
     }
-  }
-
-  var bbs = r2ui.graph.getElements();
-  for (var i in bbs) {
-    bbs[i].on("change:position", update_BB, this);
-  }
+  });
 
   if (r2ui._dis.minimap) {
     update_minimap();
@@ -217,7 +215,7 @@ BBGraph.prototype.render = function() {
   }
 };
 
-function toogle_minimap() {
+function toggle_minimap() {
   if (r2ui._dis.minimap) {
     r2ui._dis.minimap = false;
     r2ui.seek(r2ui._dis.selected_offset, false);
@@ -274,21 +272,25 @@ function update_minimap() {
 
 function reposition_graph() {
   var bbs = r2ui.graph.getElements();
-  var bb_offsets = Object.keys(r2ui.basic_blocks);
+  var blocks = r2ui.get_fcn_BBs(r2ui.current_fcn_offset);
+  var bb_offsets = Object.keys(blocks);
   for (var i in bbs) {
     found = false;
     for (var j in bb_offsets) {
       var offset = String(bb_offsets[j]);
+      var bb = blocks[offset];
       if (bbs[i].prop("id") === offset) {
         found = true;
-        bbs[i].translate(r2ui.basic_blocks[offset].x - bbs[i].prop("position").x, r2ui.basic_blocks[offset].y - bbs[i].prop("position").y);
-        var color = r2ui.basic_blocks[offset].color;
+        if (bb.x !== "null" && bb.y !== "null") {
+          bbs[i].translate(bb.x - bbs[i].prop("position").x, bb.y - bbs[i].prop("position").y);
+        }
+        var color = bb.color;
         if (color !== null && color !== undefined) bbs[i].attr('rect/fill', color);
       }
     }
-    if (!found) {
-      r2ui.basic_blocks[bbs[i].prop("id")] = {x:bbs[i].prop("position").x, y:bbs[i].prop("position").y, color:r2ui.colors['.ec_gui_alt_background']};
-    }
+    // if (!found) {
+    //   r2ui.update_fcn_BB(r2ui.current_fcn_offset, bbs[i].prop("id"), {x:bbs[i].prop("position").x, y:bbs[i].prop("position").y, color:r2ui.colors['.ec_gui_alt_background']});
+    // }
   }
 }
 var flag = 0;
@@ -302,10 +304,23 @@ function render_graph(x) {
   if (obj[0] === undefined) return false;
   if (obj[0].blocks === undefined) return false;
   var graph = new BBGraph();
+  r2ui.current_fcn_offset = obj[0].blocks[0].ops[0].offset;
+
   for (var bn = 0; bn < obj[0].blocks.length; bn++) {
     var bb = obj[0].blocks[bn];
-    if (bb.length === 0) continue;
     var addr = bb.offset;
+    if (bb['trace'] !== undefined) {
+      var bbinfo = r2ui.get_fcn_BB(r2ui.current_fcn_offset, addr);
+      if (bbinfo !== undefined) {
+        if (bbinfo.color !== "red")
+          bbinfo.color = "#7592DF";
+      } else {
+        bbinfo = {x:null, y:null, color:"#7592DF"};
+      }
+      r2ui.update_fcn_BB(r2ui.current_fcn_offset, addr, bbinfo);
+    }
+    if (bb.length === 0) continue;
+
     var cnt = bb.ops.length;
     var idump = "";
     for (var i in bb.ops) {
@@ -345,19 +360,18 @@ function render_graph(x) {
       var id = event.target.parentNode.parentNode.parentNode.getAttribute("model-id");
       if (id !== "minimap_area") {
         var color = null;
-        var bb = null;
-        if (r2ui.basic_blocks[id] !== undefined && r2ui.basic_blocks[id] !== null) {
-          bb = r2ui.basic_blocks[id];
+        var bb = r2ui.get_fcn_BB(r2ui.current_fcn_offset, id);
+        if (bb !== undefined && bb !== null) {
           if (bb.color === "red") bb.color = r2ui.colors['.ec_gui_alt_background'];
           else bb.color = "red";
-          r2ui.basic_blocks[id] = bb;
+        } else {
+          bb = {x:null, y:null, color:"red"};
         }
+        r2ui.update_fcn_BB(r2ui.current_fcn_offset, id, bb);
         reposition_graph();
       }
     }
   });
-
-
   return true;
 }
 
@@ -639,6 +653,8 @@ function html_for_instruction(ins) {
     if (ins.type == "null") ins.type = "invalid";
     if (ins.type == "undefined") ins.type = "invalid";
     if (ins.type == "ujmp") ins.type = "jmp";
+    if (ins.type == "upush") ins.type = "push";
+    if (ins.type == "upop") ins.type = "pop";
     if (ins.type == "ucall") ins.type = "call";
     if (ins.type == "lea") ins.type = "mov";
     idump += '<div class="instructiondesc ec_' + ins.type + '">' + opcode + '</div> ';

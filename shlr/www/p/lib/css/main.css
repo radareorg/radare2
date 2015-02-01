@@ -215,3 +215,14 @@ p {
 #information {
 	margin-left: 10px;
 }
+
+#cmd_input {
+  position: relative;
+}
+#cmd_input > label {
+  position: absolute;
+  top: 5px;
+  bottom: 0;
+  right: 30px;
+  width: 0%;
+}

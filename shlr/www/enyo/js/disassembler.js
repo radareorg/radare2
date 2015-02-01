@@ -114,7 +114,7 @@ enyo.kind ({
       var addr = r2ui.history_next();
       if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
     }
-    if (key === 'm' && r2ui._dis.display == "graph") toogle_minimap();
+    if (key === 'm' && r2ui._dis.display == "graph") toggle_minimap();
     // j Seek to next Instruction
     if (key === 'j') {
       var get_more_instructions = false;

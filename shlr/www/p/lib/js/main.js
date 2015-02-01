@@ -72,18 +72,25 @@ $(document).ready( function() {
       console_history_idx += 1;
       /* empty input reloads UI */
       if (cmd != '') {
-        r2.cmd(inColor(cmd), function(x) {
+        if (r2ui.console_lang == "r2") {
+          r2.cmd(inColor(cmd), function(x) {
+            var old_value = $("#cmd_output").text();
+            $("#cmd_output").html(old_value + "\n> " + cmd + "\n" + x );
+            $('#cmd_output').scrollTo($('#cmd_output')[0].scrollHeight);
+          });
+          if (cmd.indexOf("s ") === 0) {
+            r2ui.history_push(r2ui._dis.selected_offset);
+          }
+        } else if (r2ui.console_lang == "js") {
+          x = eval(cmd);
           var old_value = $("#cmd_output").text();
           $("#cmd_output").html(old_value + "\n> " + cmd + "\n" + x );
           $('#cmd_output').scrollTo($('#cmd_output')[0].scrollHeight);
-        });
-        if (cmd.indexOf("s ") === 0) {
-          r2ui.history_push(r2ui._dis.selected_offset);
         }
       }
       inEvent.target.value = "";
       /* if command starts with :, do not reload */
-      if (reloadUI) {
+      if (reloadUI && r2ui.console_lang == "r2") {
         r2.load_settings();
         r2ui.load_colors();
         update_binary_details();
@@ -111,7 +118,6 @@ $(document).ready( function() {
       inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
     }
   });
-
   // Context menu for addresses:
   $(document).contextmenu({
       delegate: ".addr",
@@ -121,9 +127,11 @@ $(document).ready( function() {
           {title: "add comment<kbd>;</kbd>", cmd: "comment"},
           {title: "code<kbd>c</kbd>", cmd: "define"},
           {title: "undefine<kbd>u</kbd>", cmd: "undefine"},
-          {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"}
+          {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"},
+          {title: "switch disasm/graph<kbd>s</kbd>", cmd: "switchview"}
       ],
       preventSelect: true,
+      taphold: true,
       preventContextMenuForPopup: true,
       show: false,
       position: function(event, ui){
@@ -173,7 +181,8 @@ $(document).ready( function() {
             {title: "add comment<kbd>;</kbd>", cmd: "comment"},
             {title: "code<kbd>c</kbd>", cmd: "define"},
             {title: "undefine<kbd>u</kbd>", cmd: "undefine"},
-            {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"}
+            {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"},
+            {title: "switch disasm/graph<kbd>s</kbd>", cmd: "switchview"}
         ];
         if (xreffrom_submenu !== null || xrefto_submenu !== null) {
           if (xrefto_submenu !== null) menu[menu.length] = xrefto_submenu;
@@ -208,6 +217,10 @@ $(document).ready( function() {
           $(document).contextmenu("showEntry", "define", false);
           $(document).contextmenu("showEntry", "undefine", false);
         }
+        // Context manu on disasm panel
+        if (!$.contains($("#disasm_tab")[0], ui.target[0])) {
+          $(document).contextmenu("showEntry", "switchview", false);
+        }
       },
       select: function(event, ui) {
         $(document).contextmenu("close");
@@ -218,14 +231,34 @@ $(document).ready( function() {
           do_jumpto(address);
         }
         switch (ui.cmd) {
-	case "goto": do_goto(); break;
-        case "comment": do_comment(target); break;
-        case "rename": do_rename(target, event); break;
-        case "define": do_define(target); break;
-        case "undefine": do_undefine(target); break;
-        case "randomcolors": do_randomcolors(target); break;
+  	      case "goto": do_goto(); break;
+          case "comment": do_comment(target); break;
+          case "rename": do_rename(target, event); break;
+          case "define": do_define(target); break;
+          case "undefine": do_undefine(target); break;
+          case "randomcolors": do_randomcolors(target); break;
+          case "switchview": do_switchview(target); break;
         }
       }
+  });
+
+  // Console menu
+  $("#console_panel").contextmenu({
+    menu: [
+      {title: "clear buffer<kbd></kbd>", cmd: "clearbuffer"},
+      {title: "switch r2/JS<kbd>s</kbd>", cmd: "switchlang"}
+    ],
+    preventSelect: true,
+    taphold: true,
+    preventContextMenuForPopup: true,
+    show: false,
+    select: function(event, ui) {
+      $(document).contextmenu("close");
+      switch (ui.cmd) {
+        case "clearbuffer": $("#cmd_output").html(""); break;
+        case "switchlang": r2ui.toggle_console_lang(); break;
+      }
+    }
   });
 
   // Install keyboard and mouse handlers
@@ -275,17 +308,11 @@ function handleKeypress(inEvent) {
 
 	// Spacebar Switch flat and graph views
 	if (key === ' ') {
-    var address = get_address_from_class(r2ui._dis.selected);
-    if (address !== undefined && address !== null) {
-      if (r2ui._dis.display === "flat") r2ui._dis.display_graph();
-      else if (r2ui._dis.display === "graph") r2ui._dis.display_flat();
-      r2ui.seek(address, true);
-      scroll_to_address(address);
-      inEvent.preventDefault();
-    }
-	}
+    do_switchview();
+    inEvent.preventDefault();
+  }
 
-  if (key === 'm' && r2ui._dis.display == "graph") toogle_minimap();
+  if (key === 'm' && r2ui._dis.display == "graph") toggle_minimap();
 
 	// h Seek to previous address in history
 	if (key === 'h') do_jumpto(r2ui.history_prev());
@@ -385,6 +412,16 @@ function handleKeypress(inEvent) {
 	if (keynum === 13) {
 	  r2ui._dis.goToAddress();
 	}
+}
+
+function do_switchview() {
+    var address = get_address_from_class(r2ui._dis.selected);
+    if (address !== undefined && address !== null) {
+      if (r2ui._dis.display === "flat") r2ui._dis.display_graph();
+      else if (r2ui._dis.display === "graph") r2ui._dis.display_flat();
+      r2ui.seek(address, true);
+      scroll_to_address(address);
+    }
 }
 
 function do_jumpto(address) {
