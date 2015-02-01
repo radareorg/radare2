@@ -1550,11 +1550,17 @@ static int cmd_print(void *data, const char *input) {
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
 					} else { //pd
+						const int bs = core->blocksize;
 						int instr_len;
 						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
-						r_core_read_at (core, addr, block, instr_len);
+						ut32 prevaddr = core->offset;
+						r_core_seek(core, addr, R_TRUE);
+						block = realloc (block, R_MAX(instr_len, bs));
+						memcpy (block, core->block, bs);
+						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block, instr_len, l, 0, 1);
+								core, addr, block, instr_len, l, 0, 0);
+						r_core_seek(core, prevaddr, R_TRUE);
 					}
 				}
 			} else {
