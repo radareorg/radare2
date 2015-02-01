@@ -365,7 +365,7 @@ function render_graph(x) {
           if (bb.color === "red") bb.color = r2ui.colors['.ec_gui_alt_background'];
           else bb.color = "red";
         } else {
-          bb = {x:null, y:null, color:"red"};
+          bb = {x:"null", y:"null", color:"red"};
         }
         r2ui.update_fcn_BB(r2ui.current_fcn_offset, id, bb);
         reposition_graph();
