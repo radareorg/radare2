@@ -37,21 +37,85 @@ r2ui.load_colors = function () {
       }
     }
   }
-}
+};
 
 r2ui.basic_blocks = {};
+r2ui.use_sdb = false;
+r2ui.get_fcn_BB = function(fcn_offset, bb_offset) {
+  if (r2ui.use_sdb) {
+    var path = "webui/graph/" + fcn_offset + "/" + bb_offset;
+    var bb = undefined;
+    r2.cmd("k " + path, function(x) {
+      var lines = decodeURIComponent(x).split("\n");
+      for (var l in lines) {
+        var line = lines[l];
+        if (line !== "") {
+          bb = {};
+          var props = line.split(",");
+          bb.x = props[0];
+          bb.y = props[1];
+          if (props[2] == "" || props[2] === undefined) props[2] = "transparent";
+          bb.color = props[2].replace(/\*\*/g, ",");
+        }
+      }
+    });
+    return bb;
+  } else {
+    return r2ui.basic_blocks[bb_offset];
+  }
+};
+r2ui.get_fcn_BBs = function(fcn_offset) {
+  if (r2ui.use_sdb) {
+    var path = "webui/graph/" + fcn_offset + "/*";
+    var BBs = {};
+    r2.cmd("k " + path, function(x) {
+      var lines = decodeURIComponent(x).split("\n");
+      for (var l in lines) {
+        var line = lines[l];
+        if (line !== "") {
+          offset = line.split("=")[0];
+          line = line.split("=")[1];
+          var bb = {};
+          var props = line.split(",");
+          bb.x = props[0];
+          bb.y = props[1];
+          if (props[2] == "" || props[2] === undefined) props[2] = "transparent";
+          bb.color = props[2].replace(/\*\*/g, ",");
+          BBs[offset] = bb;
+        }
+      }
+    });
+    return BBs;
+  } else {
+    return r2ui.basic_blocks;
+  }
+};
+r2ui.update_fcn_BB = function(fcn_offset, bb_offset, bbinfo) {
+  if (r2ui.use_sdb) {
+    var path = "webui/graph/" + fcn_offset + "/" + bb_offset;
+    if (bbinfo.color === undefined) bbinfo.color = "transparent";
+    var value = bbinfo.x + "," + bbinfo.y + "," + bbinfo.color.replace(/,/g, "**");
+    r2.cmd("k " + path + "=" + encodeURIComponent(value), function(x) { });
+  } else {
+    r2ui.basic_blocks[bb_offset] = bbinfo;
+  }
+};
+r2ui.current_fcn_offset = null;
 r2ui.graph = null;
+r2ui.console_lang = "r2";
+r2ui.toggle_console_lang = function() {
+  if (r2ui.console_lang == "r2") r2ui.console_lang = "js";
+  else if (r2ui.console_lang == "js") r2ui.console_lang = "r2";
+  $("#cmd_input > label").html(r2ui.console_lang);
+};
 
 r2ui.history_push = function (x) {
-  // console.log("history push");
   if (x != r2ui.history_last()) {
     if (r2ui.history_idx != r2ui.history.length)
       r2ui.history = r2ui.history.splice (0,r2ui.history_idx);
     r2ui.history_idx++;
-    //alert ("push "+x);
     r2ui.history.push (x);
   }
-  // console.log(r2ui.history_idx + "/" + r2ui.history.length);
 }
 
 r2ui.history_pop = function () {

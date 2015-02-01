@@ -27,6 +27,7 @@
 	<script type="text/javascript" src="./lib/js/jquery-1.9.0.js"></script>
 	<script type="text/javascript" src="./lib/js/jquery-ui-latest.js"></script>
 	<script type="text/javascript" src="./lib/js/jquery.onoff.js"></script>
+	<script type="text/javascript" src="./lib/js/taphold.js"></script>
 	<script type="text/javascript" src="./lib/js/jquery.ui-contextmenu.js"></script>
 	<script type="text/javascript" src="./lib/js/jquery.layout-latest.js"></script>
 	<script type="text/javascript" src="./lib/js/tree.jquery.js"></script>
@@ -43,11 +44,12 @@
 <body>
 
 <!-- SOUTH -->
-<div class="ui-layout-south ui-widget-content ui-state-error" style="display: none;background-color:rgb(20,20,20);">
-	<pre id="cmd_output" class="ui-layout-content">
+<div id="console_panel" class="ui-layout-south ui-widget-content ui-state-error" style="display: none;background-color:rgb(20,20,20);">
+	<pre id="cmd_output" class="ui-layout-content cmdconsole">
 	</pre>
-	<div>
-	<input id="command" type="text" value=""/>
+	<div id="cmd_input">
+		<input id="command" class="cmdconsole" type="text" value=""/>
+		<label for="command">r2</label>
 	</div>
 </div>
 
