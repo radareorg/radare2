@@ -301,8 +301,8 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			const char *fmt;
 			char *name = strdup (input+2);
 			char *space = strchr (name, ' ');
-			char *eq, *dot = strchr (name, '.');
-			if (space) {
+			char *eq = strchr (name, '='), *dot = strchr (name, '.');
+			if (space && (eq == NULL || space < eq)) {
 				*space++ = 0;
 				//printf ("SET (%s)(%s)\n", name, space);
 				r_strht_set (core->print->formats, name, space);
