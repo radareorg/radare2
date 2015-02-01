@@ -348,6 +348,11 @@ R_API int r_cons_html_print(const char *ptr) {
 			tmp = (int) (size_t) (ptr-str);
 			if (write (1, str, tmp) != tmp)
 				eprintf ("r_cons_html_print: write: error\n");
+			if (tag_font) {
+				printf ("</font>");
+				fflush(stdout);
+				tag_font = 0;
+			}
 			str = ptr + 1;
 			continue;
 		}
@@ -365,7 +370,8 @@ R_API int r_cons_html_print(const char *ptr) {
 		if (esc == 2) {
 			// TODO: use dword comparison here
 			if (ptr[0]=='2' && ptr[1]=='J') {
-				printf ("<hr />\n"); fflush(stdout);
+				printf ("<hr />\n");
+				fflush(stdout);
 				ptr++;
 				esc = 0;
 				str = ptr;
@@ -373,13 +379,9 @@ R_API int r_cons_html_print(const char *ptr) {
 			} else
 			if (!strncmp (ptr, "38;5;", 5)) {
 				char *end = strchr (ptr, 'm');
-				if (tag_font) {
-					printf ("</font>");
-					tag_font = 0;
-				}
 				printf ("<font color='%s'>", gethtmlrgb (ptr));
-				tag_font = 1;
 				fflush (stdout);
+				tag_font = 1;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
@@ -405,13 +407,9 @@ R_API int r_cons_html_print(const char *ptr) {
 				// reset color
 			} else
 			if (ptr[0]=='3' && ptr[2]=='m') {
-				if (tag_font) {
-					printf ("</font>");
-					tag_font = 0;
-				}
 				printf ("<font color='%s'>", gethtmlcolor (ptr[1], inv?"#fff":"#000"));
-				tag_font = 1;
 				fflush(stdout);
+				tag_font = 1;
 				ptr = ptr + 1;
 				str = ptr + 2;
 				esc = 0;
