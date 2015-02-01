@@ -240,16 +240,20 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						op->stackptr = regsz;
 					}
 					if (a->decode) {
-						esilprintf (op, "%s,%s",
-								getarg (handle, insn, 1, 0),
-								getarg (handle, insn, 0, 1));
+						char *src = getarg (handle, insn, 1, 0);
+						char *dst = getarg (handle, insn, 0, 1);
+						esilprintf (op, "%s,%s", src, dst);
+						free (src);
+						free (dst);
 					}
 					break;
 				default:
 					if (a->decode) {
-						esilprintf (op, "%s,%s,=",
-								getarg (handle, insn, 1, 0),
-								getarg (handle, insn, 0, 0));
+						char *src = getarg (handle, insn, 1, 0);
+						char *dst = getarg (handle, insn, 0, 0);
+						esilprintf (op, "%s,%s,=", src, dst);
+						free (src);
+						free (dst);
 					}
 					break;
 				}
