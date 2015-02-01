@@ -21,9 +21,11 @@ window.onload = function() {
 		function newthing(name) {
 			// TODO: disas_code id
 			setTimeout (function () {
-				r2.cmd ("fs *;f", function (x) {
-					document.getElementById(name+"_flags").innerHTML="<pre>"+x+"</pre>";
-				});
+				document.getElementById("randomcolors").onclick = function() {
+					r2.cmd ("ecr", function () {
+						t.update_all ();
+					});
+				}
 			}, 1);
 			const hlpmsg = "This is the new and experimental tiled webui for r2\n\n"
 			+"Press the 'alt' key and the following key:\n\n"
@@ -35,6 +37,9 @@ window.onload = function() {
 			+"  .    - toggle maximize mode\n"
 			+"  -    - horizontal split\n"
 			+"  |    - vertical split\n"
+			+"\n"
+			//+"Blocksize <input type=''></input><br />"
+			+"<input type='button' id='randomcolors' value='randomcolors'></input>"
 			return "<h2>Help</h2>"
 			+"<div id='"+name+"_help' style='background-color:#304050;overflow:scroll;height:100%'><pre>"+hlpmsg+"</div>";
 		}
@@ -65,15 +70,90 @@ window.onload = function() {
 				flags.style.width = obj.style.width - pos[0];
 			}
 		}, position, function () {
-				var input = _(n+"_input");
-				input.onkeyup = function (ev) {
-				if (ev.keyCode == 13) {
-					r2.cmd (input.value, function(x) {
-							_(n+"_output").innerHTML = "<pre>"+x+"</pre>";
-							input.value = "";
-						});
-					}
+			var input = _(n+"_input");
+			input.onkeyup = function (ev) {
+			if (ev.keyCode == 13) {
+				r2.cmd (input.value, function(x) {
+						_(n+"_output").innerHTML = "<pre>"+x+"</pre>";
+						input.value = "";
+					});
 				}
+			}
+		});
+	}
+	function newDebugFrame() {
+		var name = "debug";
+		var n = t.defname (name);
+		var fillFrame = function () {
+			// TODO: list breakpoints with `dbj`
+			r2.cmdj ("drj", function (regs) {
+				r2.cmd ("pxQ@rsp", function (pxQ) {
+					r2.cmd ("dbt", function (dbt) {
+						r2.cmd ("dm", function (maps) { // TODO: use dmj
+							var _ = function (x) { return document.getElementById(x); }
+							setTimeout(function() {
+								function updateAll() { t.update_all (); }
+								_('dbg-step').onclick = function() {
+									r2.cmd ("ds;.dr*", updateAll ());
+								}
+								_('dbg-over').onclick = function() {
+									r2.cmd ("dso;.dr*", updateAll ());
+								}
+								_('dbg-skip').onclick = function() {
+									r2.cmd ("dss;.dr*", updateAll ());
+								}
+								_('dbg-cont').onclick = function() {
+									r2.cmd ("dc;.dr*", updateAll ());
+								}
+								_('dbg-until').onclick = function() {
+									var until = prompt ("Until");
+									if (until) {
+										r2.cmd ("dcu "+until+";.dr*", updateAll ());
+									}
+								}
+							},1);
+							var str = '';
+							str += " <a id='dbg-step' href='#'>[step]</a>";
+							str += " <a id='dbg-over' href='#'>[over]</a>";
+							str += " <a id='dbg-skip' href='#'>[skip]</a>";
+							str += " <a id='dbg-cont' href='#'>[cont]</a>";
+							str += " <a id='dbg-until' href='#'>[until]</a>";
+							str +="<hr />Registers</hr>";
+							str += '<table>';
+							for (var r in regs) {
+								var v = "0x"+(+regs[r]).toString (16);
+
+								str += "<tr><td>"+
+								r+"</td><td>"+
+								"<a href=#>"+v+"</a></td></tr>";
+							}
+							str += '</table>';
+							str += "<hr />Backtrace:<pre>"+dbt+"</pre>";
+							str += "<hr />Stack:<pre>"+pxQ+"</pre>";
+							str += "<hr />Maps:<pre>"+maps+"</pre>";
+							document.getElementById(name+"_frame").innerHTML=str;
+						});
+					});
+				});
+			});
+		}
+		function newthing() {
+			return "<h2>Debug</h2>"
+			+"<div id='"+name+"_frame' class='frame_body'></div>";
+		}
+		t.new_frame (n, newthing (n), function(obj) {
+			var flags = _(n+'_frame');
+			if (flags) { 
+				var top = flags.style.offsetTop;
+				var pos = findPos (flags);
+				flags.style.height = obj.offsetHeight - pos[1]+20;
+				flags.style.width = obj.style.width - pos[0];
+			}
+		}, position, function (){
+			try {
+				fillFrame ();
+			} catch (e) {
+			}
 		});
 	}
 	function newFlagsFrame () {
@@ -234,8 +314,10 @@ frame = nf;
 					var newoff = prompt ("Goto");
 					if (newoff) {
 						r2.cmd ("?v "+newoff, function(val) {
-							frame.offset = +val | 0;
-							frame.refresh ();
+							if (val) {
+								frame.offset = newoff;
+								frame.refresh ();
+							}
 						});
 					}
 				}
@@ -265,6 +347,7 @@ frame = nf;
 	_('open-hex').onclick = function() { newHexdumpFrame(); }
 	_('open-dis').onclick = function() { newDisasmFrame(); }
 	_('open-fla').onclick = function() { newFlagsFrame(); }
+	_('open-dbg').onclick = function() { newDebugFrame(); }
 	_('open-hlp').onclick = function() { newHelpFrame(); }
 	_('open-con').onclick = function() { newConsoleFrame(); }
 	_('open-not').onclick = function() { newNotesFrame(); }
