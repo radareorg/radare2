@@ -1411,6 +1411,8 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 		tmpdecl->tag = tmp;
 
 		tmpdecl->offset = offset;
+		if (buf>=buf_end)
+			break;
 		has_children = READ (buf, ut8);
 		tmpdecl->has_children = has_children;
 		do {

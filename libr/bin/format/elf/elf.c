@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2015 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -974,7 +974,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		}
 	}
 
-	ret[rel].last = 1;
+	ret[reloc_num].last = 1;
 
 	return ret;
 }
