@@ -135,3 +135,4 @@ command not found: calc.exe
 See you at the defcon CTF
 Don't waste your time
 WASTED
+getdruid to get eclectic uid

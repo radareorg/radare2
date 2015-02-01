@@ -499,7 +499,7 @@ static int autocomplete(RLine *line) {
 						break;
 				}
 			}
-			tmp_argv[i] = NULL;
+			tmp_argv[R_MIN(i, sizeof(tmp_argv)-1)] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else {
