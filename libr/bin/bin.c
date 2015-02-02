@@ -599,6 +599,8 @@ eprintf ("Asuming filepath %s\n", filepath);
 			binfile->o->baddr = baseaddr;
 	}
 
+	free (buf_bytes);
+
 	if (binfile) return r_bin_file_set_cur_binfile (bin, binfile);
 	return R_FALSE;
 }
@@ -854,6 +856,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		if (!o->bin_obj) {
 			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
 				plugin->name);
+			sdb_free(o->kv);
 			free (o);
 			return NULL;
 		}
@@ -870,6 +873,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		} else binfile->o = old_o;
 		o->obj_size = sz;
 	} else {
+		sdb_free(o->kv);
 		free (o);
 		return NULL;
 	}
