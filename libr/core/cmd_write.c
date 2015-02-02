@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	ut64 ret, orig;
@@ -9,8 +9,7 @@ static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	} else {
 		ret = orig & (~(val));
 	}
-	r_core_write_at (core, core->offset,
-		(const ut8*)&ret, sizeof (ret));
+	r_core_write_at (core, core->offset, (const ut8*)&ret, sizeof (ret));
 }
 
 static void cmd_write_inc(RCore *core, int size, st64 num) {
@@ -28,6 +27,143 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
         r_core_write_at (core, core->offset, core->block, size);
 }
 
+static void cmd_write_op (RCore *core, const char *input) {
+	ut8 *buf;
+	int len;
+	const char* help_msg[] = {
+		"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
+		"wow"," [val]", "==  write looped value (alias for 'wb')",
+		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
+		"wos"," [val]", "-=  substraction",
+		"wom"," [val]", "*=  multiply",
+		"wod"," [val]", "/=  divide",
+		"woe"," [from-to] [step]","..  create sequence",
+		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+		"woo"," [val]","|=  or",
+		"woA"," [val]","&=  and",
+		"woR","","random bytes (alias for 'wr $b')",
+		"wor"," [val]", ">>= shift right",
+		"wol"," [val]","<<= shift left",
+		"wo2"," [val]","2=  2 byte endian swap",
+		"wo4"," [val]", " 4=  4 byte endian swap",
+		"woD"," [len]","De Bruijn Pattern (syntax woD length @ addr)",
+		"woO"," [len]", "De Bruijn Pattern Offset (syntax: woO value)",
+		NULL
+	};
+	if (!input[0])
+		return;
+	switch (input[1]) {
+	case 'a':
+	case 's':
+	case 'e':
+	case 'A':
+	case 'x':
+	case 'r':
+	case 'l':
+	case 'm':
+	case 'd':
+	case 'o':
+	case 'w':
+		if (input[2]!=' ') {
+			if (input[1]=='e') r_cons_printf ("Usage: 'woe from-to step'\n");
+			else r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
+			return;
+		}
+	case '2':
+	case '4':
+		r_core_write_op (core, input+3, input[1]);
+		r_core_block_read (core, 0);
+		break;
+	case 'R':
+		r_core_cmd0 (core, "wr $b");
+		break;
+	case 'n':
+		r_core_write_op (core, "ff", 'x');
+		r_core_block_read (core, 0);
+		break;
+	case 'D':
+		len = (int)(input[2]==' ')?
+			r_num_math (core->num, input + 2): core->blocksize;
+		if (len > 0) {
+			buf = (ut8*)r_debruijn_pattern (len, 0, NULL); //debruijn_charset);
+			if (buf) {
+				r_core_write_at (core, core->offset, buf, len);
+				free (buf);
+			} else {
+				eprintf ("Couldn't generate pattern of length %d\n", len);
+			}
+		}
+		break;
+	case 'O':
+		len = (int)(input[2]==' ')?
+			r_num_math (core->num, input + 2): core->blocksize;
+		core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
+		r_cons_printf ("%d\n", core->num->value);
+		break;
+	case '\0':
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg);
+		break;
+	}
+}
+
+#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
+static void cmd_write_value (RCore *core, const char *input) {
+	int type = 0;
+	ut8 addr1;
+	ut16 addr2;
+	ut32 addr4, addr4_;
+	ut64 addr8, off;
+	int wseek = r_config_get_i (core->config, "cfg.wseek");
+
+	switch (input[1]) {
+	case '?':
+		r_cons_printf ("|Usage: wv[size] [value]    # write value of given size\n"
+				"| wv1 234      # write one byte with this value\n"
+				"| wv 0x834002  # write dword with this value\n"
+				"|Supported sizes are: 1, 2, 4, 8\n");
+		return;
+	case '1': type = 1; break;
+	case '2': type = 2; break;
+	case '4': type = 4; break;
+	case '8': type = 8; break;
+	}
+	off = r_num_math (core->num, input+2);
+	r_io_use_desc (core->io, core->file->desc);
+	r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	if (type == 0)
+		type = (off&UT64_32U)? 8: 4;
+	switch (type) {
+	case 1:
+		addr1 = (ut8)off;
+		r_io_write (core->io, (const ut8 *)&addr1, 1);
+		WSEEK (core, 1);
+		break;
+	case 2:
+		addr2 = (ut16)off;
+		r_io_write (core->io, (const ut8 *)&addr2, 2);
+		WSEEK (core, 2);
+		break;
+	case 4:
+		addr4_ = (ut32)off;
+		//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
+		//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
+		memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
+		r_io_write (core->io, (const ut8 *)&addr4, 4);
+		WSEEK (core, 4);
+		break;
+	case 8:
+		/* 8 byte addr */
+		memcpy ((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
+		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
+		r_io_write (core->io, (const ut8 *)&addr8, 8);
+		WSEEK (core, 8);
+		break;
+	}
+	r_core_block_read (core, 0);
+}
+
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len = strlen (input);
@@ -38,6 +174,32 @@ static int cmd_write(void *data, const char *input) {
 	ut64 off;
 	ut8 *buf;
 	st64 num;
+	const char* help_msg[] = {
+		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
+		"w","[1248][+-][n]","increment/decrement byte,word..",
+		"w"," foobar","write string 'foobar'",
+		"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
+		"waf"," file","assemble file and write bytes",
+		"wA"," r 0","alter/modify opcode at current seek (see wA?)",
+		"wb"," 010203","fill current block with cyclic hexpairs",
+		"wc","","list all write changes",
+		"wc","[ir*?]","write cache undo/commit/reset/list (io.cache)",
+		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
+		"we","[nNsxX] [arg]","extend write operations (insert instead of replace)",
+		"wf"," -|file","write contents of file at current offset",
+		"wF"," -|file","write contents of hexpairs file here",
+		"wh"," r2","whereis/which shell command",
+		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
+		"wo?"," hex","write in block with operation. 'wo?' fmi",
+		"wp"," -|file","apply radare patch file. See wp? fmi",
+		"wr"," 10","write 10 random bytes",
+		"ws"," pstring","write 1 byte for length and then the string",
+		"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
+		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
+		"wx"," 9090","write two intel nops",
+		"wv"," eip+34","write 32-64 bit value",
+		NULL
+	};
 
 	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
@@ -636,141 +798,10 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		{
-			int type = 0;
-			ut8 addr1;
-			ut16 addr2;
-			ut32 addr4, addr4_;
-			ut64 addr8;
-
-			switch (input[1]) {
-			case '?':
-				r_cons_printf ("|Usage: wv[size] [value]    # write value of given size\n"
-					"|  wv1 234      # write one byte with this value\n"
-					"|  wv 0x834002  # write dword with this value\n"
-					"|Supported sizes are: 1, 2, 4, 8\n");
-				free (ostr);
-				return 0;
-			case '1': type = 1; break;
-			case '2': type = 2; break;
-			case '4': type = 4; break;
-			case '8': type = 8; break;
-			}
-			off = r_num_math (core->num, input+2);
-			r_io_use_desc (core->io, core->file->desc);
-			r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
-			if (type == 0)
-				type = (off&UT64_32U)? 8: 4;
-			switch (type) {
-			case 1:
-				addr1 = (ut8)off;
-				r_io_write (core->io, (const ut8 *)&addr1, 1);
-				WSEEK (core, 1);
-				break;
-			case 2:
-				addr2 = (ut16)off;
-				r_io_write (core->io, (const ut8 *)&addr2, 2);
-				WSEEK (core, 2);
-				break;
-			case 4:
-				addr4_ = (ut32)off;
-				//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
-				//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
-				memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-				r_io_write (core->io, (const ut8 *)&addr4, 4);
-				WSEEK (core, 4);
-				break;
-			case 8:
-				/* 8 byte addr */
-				memcpy ((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
-			//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
-				r_io_write (core->io, (const ut8 *)&addr8, 8);
-				WSEEK (core, 8);
-				break;
-			}
-			r_core_block_read (core, 0);
-		}
+		cmd_write_value (core, input);
 		break;
 	case 'o':
-		switch (input[1]) {
-			case 'a':
-			case 's':
-			case 'e':
-			case 'A':
-			case 'x':
-			case 'r':
-			case 'l':
-			case 'm':
-			case 'd':
-			case 'o':
-			case 'w':
-				if (input[2]!=' ') {
-					if (input[1]=='e') r_cons_printf (
-						"Usage: 'woe from-to step'\n");
-					else r_cons_printf (
-						"Usage: 'wo%c 00 11 22'\n", input[1]);
-					R_FREE (ostr);
-					return 0;
-				}
-			case '2':
-			case '4':
-				r_core_write_op (core, input+3, input[1]);
-				r_core_block_read (core, 0);
-				break;
-			case 'R':
-				r_core_cmd0 (core, "wr $b");
-				break;
-			case 'n':
-				r_core_write_op (core, "ff", 'x');
-				r_core_block_read (core, 0);
-				break;
-			case 'D':
-				len = (int)(input[2]==' ')?
-					r_num_math (core->num, input + 2): core->blocksize;
-				if (len > 0) {
-					buf = (ut8*)r_debruijn_pattern (len, 0, NULL); //debruijn_charset);
-					if (buf) {
-						r_core_write_at (core, core->offset, buf, len);
-						free (buf);
-					} else {
-						eprintf ("Couldn't generate pattern of length %d\n", len);
-					}
-				}
-				break;
-			case 'O':
-				len = (int)(input[2]==' ')?
-					r_num_math (core->num, input + 2): core->blocksize;
-				core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
-				r_cons_printf ("%d\n", core->num->value);
-				break;
-			case '\0':
-			case '?':
-			default:
-				{
-					const char* help_msg[] = {
-						"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[:bsize]",
-						"wow"," [val]", "==  write looped value (alias for 'wb')",
-						"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-						"wos"," [val]", "-=  substraction",
-						"wom"," [val]", "*=  multiply",
-						"wod"," [val]", "/=  divide",
-						"woe"," [from-to] [step]","..  create sequence",
-						"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
-						"woo"," [val]","|=  or",
-						"woA"," [val]","&=  and",
-						"woR","","random bytes (alias for 'wr $b')",
-						"wor"," [val]", ">>= shift right",
-						"wol"," [val]","<<= shift left",
-						"wo2"," [val]","2=  2 byte endian swap",
-						"wo4"," [val]", " 4=  4 byte endian swap",
-						"woD"," [len]","De Bruijn Pattern (syntax woD length @ addr)",
-						"woO"," [len]", "De Bruijn Pattern Offset (syntax: woO value)",
-						NULL
-					};
-					r_core_cmd_help(core, help_msg);
-				}
-				break;
-		}
+		cmd_write_op (core, input);
 		break;
 	case 'd':
 		if (input[1]==' ') {
@@ -789,18 +820,15 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
 		break;
 	case 's':
-		{
-			ut8 ulen;
-			len = r_str_unescape (str+1);
-			if (len>255) {
-				eprintf ("Too large\n");
-			} else {
-				ulen = (ut8)len;
-				r_core_write_at (core, core->offset, &ulen, 1);
-				r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
-				WSEEK (core, len);
-				r_core_block_read (core, 0);
-			}
+		len = r_str_unescape (str+1);
+		if (len>255) {
+			eprintf ("Too large\n");
+		} else {
+			ut8 ulen = (ut8)len;
+			r_core_write_at (core, core->offset, &ulen, 1);
+			r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
+			WSEEK (core, len);
+			r_core_block_read (core, 0);
 		}
 		break;
 	default:
@@ -812,34 +840,8 @@ static int cmd_write(void *data, const char *input) {
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core, 0);
 		} else {
-
-                const char* help_msg[] = {
-			"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
-			"wc","","list all write changes",
-			"w","[1248][+-][n]","increment/decrement byte,word..",
-			"w"," foobar","write string 'foobar'",
-			"wh"," r2","whereis/which shell command",
-			"wr"," 10","write 10 random bytes",
-			"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-			"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
-			"waf"," file","assemble file and write bytes",
-			"wA"," r 0","alter/modify opcode at current seek (see wA?)",
-			"wb"," 010203","fill current block with cyclic hexpairs",
-			"wc","[ir*?]","write cache undo/commit/reset/list (io.cache)",
-			"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
-			"wx"," 9090","write two intel nops",
-			"wv"," eip+34","write 32-64 bit value",
-			"wo?"," hex","write in block with operation. 'wo?' fmi",
-			"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
-			"ws"," pstring","write 1 byte for length and then the string",
-			"wf"," -|file","write contents of file at current offset",
-			"wF"," -|file","write contents of hexpairs file here",
-			"wp"," -|file","apply radare patch file. See wp? fmi",
-			"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
-                        NULL
-                        };
-                        r_core_cmd_help (core, help_msg);
-        }
+			r_core_cmd_help (core, help_msg);
+		}
 		break;
 	}
 	R_FREE (ostr);
