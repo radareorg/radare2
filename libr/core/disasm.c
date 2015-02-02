@@ -1719,11 +1719,10 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		/* do nothing */
 	} else if (((st64)p)>0) {
 		const char *kind;
-		char msg[64];
+		char *msg = calloc(sizeof(char), len);
 		RFlagItem *f;
 
-		memset (msg, 0, sizeof (msg));
-		r_io_read_at (core->io, p, (ut8*)msg, sizeof (msg)-1);
+		r_io_read_at (core->io, p, (ut8*)msg, len-1);
 
 		if (ds->analop.refptr) {
 			ut64 *num = (ut64*)msg;
@@ -1760,7 +1759,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 #if 1
 		if (!IS_PRINTABLE (*msg))
 			*msg = 0;
-		else msg[sizeof (msg)-1] = 0;
+		else msg[len-1] = 0;
 #endif
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
@@ -1806,7 +1805,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					}
 				}
 			}
-			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, sizeof (msg)-1);
+			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, len-1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
 					r_str_filter (msg, 0);
@@ -1834,6 +1833,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				// TODO: check for more data kinds
 			}
 		}
+		free(msg);
 	} else handle_print_as_string (core, ds);
 }
 
