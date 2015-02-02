@@ -358,8 +358,6 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RList *hits = r_core_asm_hit_list_new();
-	int buflen = len;
-	RCoreAsmHit dummy_value;
 	RAsmOp op;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
@@ -367,8 +365,8 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 
 	ut64 instrlen = 0, at = 0;
 	ut32 idx = 0, hit_count = 0;
-
-	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
+	int numinstr, asmlen, ii;
+	RAsmCode *c;
 
 	if (hits == NULL || buf == NULL ){
 		if (hits) {
@@ -388,49 +386,32 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		return NULL;
 	}
 
-	for (idx = 1; idx < len; idx++) {
-		ut32 current_buf_pos;
+	for (idx = 1; idx < len; ++idx) {
 		if (r_cons_singleton ()->breaked) break;
 		at = addr - idx; hit_count = 0;
-		// XXX - buf here. at may be greater than addr if near boundary.
-		for (current_buf_pos = len - idx, hit_count = 0;
-			current_buf_pos < len && hit_count <= n;
-			current_buf_pos += instrlen, at += instrlen, hit_count++) {
-			r_asm_set_pc (core->assembler, at);
-			//XXX HACK We need another way to detect invalid disasm!!
-			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid") || strstr (op.buf_asm, ".byte")) {
-				break;
-			}
+		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
+		if (strstr(c->buf_asm, "invalid") || strstr(c->buf_asm, ".byte")) {
+			r_asm_code_free(c);
+			continue;
 		}
-		if (hit_count >= n) break;
-
-		if (len > 32 * n) break;
-
-		if (idx == len-1) {
-			ut8 *b;
-			len += buflen;
-			b = realloc (buf, len);
-			if (b) {
-				buf = b;
-			} else {
-				if (hits) {
-					r_list_purge (hits);
-					free (hits);
-				}
-				free (buf);
-				return NULL;
-			}
+		numinstr = 0;
+		asmlen = strlen(c->buf_asm);
+		for(ii = 0; ii < asmlen; ++ii) {
+			if (c->buf_asm[ii] == '\n') ++numinstr;
+		}
+		r_asm_code_free(c);
+		if (numinstr >= n || idx > 32 * n) {
+			break;
 		}
 	}
-	// if (hit_count <= n) {
-		at = addr - idx;
-		hit_count = 0;
-		r_asm_set_pc (core->assembler, at);
-		for ( hit_count = 0; hit_count < n; hit_count++) {
-			instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
-			add_hit_to_hits(hits, at, instrlen, R_TRUE);
-			at += instrlen;
-		// }
+	at = addr - idx;
+	hit_count = 0;
+	r_asm_set_pc (core->assembler, at);
+	at = addr-idx;
+	for ( hit_count = 0; hit_count < n; hit_count++) {
+		instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
+		add_hit_to_hits(hits, at, instrlen, R_TRUE);
+		at += instrlen;
 	}
 	r_asm_set_pc (core->assembler, addr);
 	free (buf);
