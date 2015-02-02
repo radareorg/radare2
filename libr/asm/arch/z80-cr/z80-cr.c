@@ -155,7 +155,7 @@ ut8 z80_ed_branch_index_res (ut8 hex) {
 
 static int z80OpLength (const ut8 *buf, int len) {
 	z80_opcode *op;
-	int type, ret = 0;
+	int type = 0, ret = 0;
 	if (len < 1)
 		return 0;
 	op = z80_op;
@@ -210,24 +210,24 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 			cb_tab = (char **) z_op[buf[0]].op_moar;
 			sprintf (op->buf_asm, "%s", cb_tab[buf[1]]);
 			return ret;
-		case Z80_OP_UNK ^ Z80_ENC1:
+		case Z80_OP_UNK^Z80_ENC1:
 			z_op = (z80_opcode *)z_op[buf[0]].op_moar;
 			res = z80_ed_branch_index_res (buf[1]);
 			if (z_op[res].type == Z80_OP16)
 				sprintf (op->buf_asm, "%s", z_op[res].name);
-			if (z_op[res].type == Z80_OP16^Z80_ARG16)
+			if (z_op[res].type == (Z80_OP16^Z80_ARG16))
 				sprintf (op->buf_asm, z_op[res].name, buf[2]+(buf[3]<<8));
 			return ret;
-		case Z80_OP_UNK ^ Z80_ENC0:
+		case Z80_OP_UNK^Z80_ENC0:
 			z_op = (z80_opcode *)z_op[buf[0]].op_moar;
 			res = z80_fddd_branch_index_res (buf[1]);
 			if (z_op[res].type == Z80_OP16)
 				sprintf (op->buf_asm, "%s", z_op[res].name);
-			if (z_op[res].type == Z80_OP16^Z80_ARG16)
+			if (z_op[res].type == (Z80_OP16^Z80_ARG16))
 				sprintf (op->buf_asm, z_op[res].name, buf[2]+(buf[3]<<8));
-			if (z_op[res].type == Z80_OP16^Z80_ARG8, Z80_ARG16)
+			if (z_op[res].type == (Z80_OP16^Z80_ARG8))
 				sprintf (op->buf_asm, z_op[res].name, buf[2], buf[3]);
-			if (z_op[res].type == Z80_OP24^Z80_ARG8) {
+			if (z_op[res].type == (Z80_OP24^Z80_ARG8)) {
 				cb_tab = (char **) z_op[res].op_moar;
 				sprintf (op->buf_asm, cb_tab[buf[3]], buf[2]);
 			}
