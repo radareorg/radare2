@@ -11,7 +11,7 @@ MAJOR=0
 MINOR=1
 #CFLAGS=-Wall -g -O0 -ggdb # -std=gnu11
 LD=$(CC)
-LDFLAGS=-L ${LIBR}/socket -lr_socket
+LDFLAGS=-L${LIBR}/socket -lr_socket
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 
