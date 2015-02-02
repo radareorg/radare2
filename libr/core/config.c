@@ -521,6 +521,13 @@ static int cb_hexstride(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_search_kwidx(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->search->n_kws = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_ioenforce(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1192,7 +1199,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("search.maxhits", 0, "Limit maximum number of hits (0 disable limit)");
 	SETI("search.from", -1, "Search start address");
 	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
-	SETI("search.kwidx", 0, "Store last search index count");
+	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETPREF("search.show", "true", "Show search results while found (disable if lot of hits)");
 	SETI("search.to", -1, "Search end address");
