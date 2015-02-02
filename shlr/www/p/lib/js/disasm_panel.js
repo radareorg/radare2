@@ -14,6 +14,7 @@ var DisasmPanel = function () {
   this.panel = $("#disasm_tab")[0];
   this.scroll_offset = null;
   this.minimap = true;
+  this.scrolling = false;
 };
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
