@@ -112,6 +112,9 @@
     margin-top: -10px;
 }
 
+.ui-tabs .ui-tabs-panel {
+	padding: 1em 0em;
+}
 
 .entry {
 	font-size:		0.8em;
