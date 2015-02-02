@@ -271,8 +271,9 @@ $(document).ready( function() {
 	r2ui.seek(disasm_panel.base,true);
 	scroll_to_element(r2ui._dis.selected);
 
-  $("#center_panel").scroll(function() {
-    if (r2ui._dis.display == "flat") {
+  $("#center_panel").scroll(function(event) {
+    if (r2ui._dis.display == "flat" && !r2ui._dis.scrolling) {
+      r2ui._dis.scrolling = true;
       if ($("#center_panel").scrollTop() === 0) {
         var addr = get_address_from_class($("#gbox .instructionbox").first().find("span")[0]);
         // console.log("get more instructions from " + addr);
@@ -291,6 +292,7 @@ $(document).ready( function() {
           scroll_to_address(addr);
         });
       }
+      r2ui._dis.scrolling = false;
     }
   });
 
