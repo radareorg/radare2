@@ -270,6 +270,30 @@ $(document).ready( function() {
 	disasm_panel.display_flat();
 	r2ui.seek(disasm_panel.base,true);
 	scroll_to_element(r2ui._dis.selected);
+
+  $("#center_panel").scroll(function() {
+    if (r2ui._dis.display == "flat") {
+      if ($("#center_panel").scrollTop() === 0) {
+        var addr = get_address_from_class($("#gbox .instructionbox").first().find("span")[0]);
+        // console.log("get more instructions from " + addr);
+        r2.get_disasm_before_after(addr, -120, 80, function(x) {
+          $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+          render_instructions(x);
+          scroll_to_address(addr);
+        });
+      }
+      if ($("#center_panel").scrollTop() > $("#gbox").height() - $("#center_panel").height() - 10) {
+        var addr = get_address_from_class($("#gbox .instructionbox").last().find("span")[0]);
+        // console.log("get more instructions from " + addr);
+        r2.get_disasm_before_after(addr, -80, 120, function(x) {
+          $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+          render_instructions(x);
+          scroll_to_address(addr);
+        });
+      }
+    }
+  });
+
 });
 
 function scroll_to_element(element) {

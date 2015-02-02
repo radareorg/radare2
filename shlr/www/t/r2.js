@@ -173,7 +173,6 @@ r2.get_disasm_before_after = function(offset, start, end, cb) {
     after = JSON.parse(x);
   });
   var opcodes = before.concat(after);
-  // cb(opcodes.splice(0,20));
   cb(opcodes);
 }
 

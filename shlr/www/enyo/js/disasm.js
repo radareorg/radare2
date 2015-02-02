@@ -445,8 +445,8 @@ function render_instructions(instructions) {
 
   if (asm_lines) {
     var canvas = document.createElement("canvas");
-    canvas.width = 2500;
-    canvas.height = accumulated_heigth + 100;
+    canvas.width = 500;
+    canvas.height = accumulated_heigth;
     canvas.id = "linecanvas";
     canvas.setAttribute("tabindex", "1");
     canvas.setAttribute("style", "outline: none;");
