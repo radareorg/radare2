@@ -306,13 +306,13 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	int i, idx, len, qi;
-	char *str = NULL, foo[32], *q, *ret = NULL;
+	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
 
 	delta += stackfixed; // XXX can be problematic
 	if (_str == NULL)
 		return NULL; /* fix segfault, but not badparsing */
 	/* XXX memory leak */
- 	ret = str = strdup (skipspaces (_str));
+	ret = str = oldstr = strdup (skipspaces (_str));
 	//if (num || str[0]=='0') { sprintf(out, "$%d", num); ret = out; }
 	if ( (q = strchr (str, ':')) ) {
 		*q = '\0';
@@ -379,7 +379,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
 	//free ((void *)_str);
-	free (str);
+	free (oldstr);
 	return ret? strdup (ret): NULL; // memleak or wtf
 }
 
