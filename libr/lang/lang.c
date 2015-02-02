@@ -185,6 +185,7 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
 R_API int r_lang_prompt(RLang *lang) {
 	char buf[1024];
+	const char *p;
 
 	if (lang->cur == NULL)
 		return R_FALSE;
@@ -199,12 +200,13 @@ R_API int r_lang_prompt(RLang *lang) {
 	RLineCompletion oc = line->completion;
 	RLineCompletion ocnull = {0};
 	char *prompt = strdup (line->prompt);  
+
 	line->completion = ocnull;
 	line->history = histnull;
 	/* foo */
 	for (;;) {
 	snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
-	r_line_set_prompt (buf);
+		r_line_set_prompt (buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
@@ -212,7 +214,7 @@ R_API int r_lang_prompt(RLang *lang) {
 		if (feof (stdin)) break;
 		if (*buf) buf[strlen (buf)-1]='\0';
 #endif
-		char *p = r_line_readline ();
+		p = r_line_readline ();
 		if (!p) break;
 		r_line_hist_add (p);
 		strncpy (buf, p, sizeof (buf) - 1);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_cons.h>
 #define I r_cons_singleton()
@@ -74,7 +74,7 @@ static void filesave () {
 }
 
 R_API char *r_cons_editor (const char *file, const char *str) {
-	char *line;
+	const char *line;
 	_n = 0;
 	if (I->editor) {
 		return I->editor (I->user, file, str);
@@ -88,7 +88,6 @@ R_API char *r_cons_editor (const char *file, const char *str) {
 		eprintf ("Loaded %d lines on %d bytes\n",
 			(nlines?(nlines-1):0), bytes);
 	} else path = NULL;
-	//r_cons_new ();
 	I->line->hist_up = up;
 	I->line->hist_down = down;
 	I->line->contents = I->line->buffer.data;
