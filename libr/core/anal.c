@@ -1141,7 +1141,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	}
 	if (rad==2) {
 		r_list_foreach (core->anal->fcns, iter, fcn) {
-			if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
+			if (input[0] && input[1] && input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
 				continue;
 			bbs = r_list_length (fcn->bbs);
 			r_cons_printf ("0x%08"PFMT64x"  %"PFMT64d"  %d  %s\n",
