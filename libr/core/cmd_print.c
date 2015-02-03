@@ -178,15 +178,15 @@ static void print_format_help(RCore *core) {
 
 static void cmd_print_format (RCore *core, const char *_input, int len) {
 	char *input;
-	int flag = -1;
+	int mode = R_PRINT_MUSTSEE;
 	switch (_input[1]) {
 	case '*':
 		_input++;
-		flag = SEEFLAG;
+		mode = R_PRINT_SEEFLAGS;
 		break;
 	case 'j':
 		_input++;
-		flag = JSONOUTPUT;
+		mode = R_PRINT_JSON;
 		break;
 	case 's':
 		{
@@ -210,7 +210,6 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		} else {
 			eprintf ("Usage: pfs.struct_name | pfs format\n");
 		}
-
 		}
 		return;
 	case '?':
@@ -315,23 +314,24 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				eq = strchr (dot, '=');
 				if (eq) {
 					*eq++ = 0;
+					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->offset,
-							core->block, core->blocksize, fmt, 0, eq, dot);
+							core->block, core->blocksize, fmt, mode, eq, dot);
 				} else {
 					r_print_format (core->print, core->offset,
-							core->block, core->blocksize, fmt, 0, NULL, dot);
+							core->block, core->blocksize, fmt, mode, NULL, dot);
 				}
 			} else {
 				const char *fmt = r_strht_get (core->print->formats, name);
 				if (fmt) {
 					r_print_format (core->print, core->offset,
-							core->block, len, fmt, flag, NULL, NULL);
+							core->block, len, fmt, mode, NULL, NULL);
 				} else eprintf ("Unknown format (%s)\n", name);
 			}
 			free (name);
 		}
 	} else r_print_format (core->print, core->offset,
-			core->block, len, input+1, flag, NULL, NULL);
+			core->block, len, input+1, mode, NULL, NULL);
 	free (input);
 }
 
