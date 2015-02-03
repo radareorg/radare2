@@ -233,13 +233,14 @@ static int cmd_seek(void *data, const char *input) {
 			int val=0, ret, i, n = r_num_math (core->num, input+1);
 			if (n==0) n = 1;
 			if (n<0) {
-				int ret = prevopsz (core, n);
-				ret = r_anal_op (core->anal, &op,
-						core->offset, core->block, core->blocksize);
-				if (ret<1) ret = 1;
-				r_core_seek_delta (core, -ret);
+				const int bs = core->blocksize;
+				int instr_len;
+				ut64 addr = core->offset;
+				int numinstr = n * -1;
+				ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
+				r_core_seek (core, addr, R_TRUE);
 				val += ret;
-			} else { 
+			} else {
 				for (val=i=0; i<n; i++) {
 					ret = r_anal_op (core->anal, &op,
 							core->offset, core->block, core->blocksize);
