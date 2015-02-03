@@ -943,6 +943,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				free (str);
 			} else eprintf ("HTTP connection has failed\n");
 			// do not add connection. wtf
+			r_socket_free(fd);
 			return;
 		}
 		break;

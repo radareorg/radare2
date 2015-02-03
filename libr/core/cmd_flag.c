@@ -87,6 +87,7 @@ static int cmd_flag(void *data, const char *input) {
 	case 'a':
 		if (input[1]==' '){
 			RFlagItem *fi;
+			R_FREE (str);
 			str = strdup (input+2);
 			ptr = strchr (str, '=');
 			if (!ptr)

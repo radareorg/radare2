@@ -709,6 +709,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 			case '/':
 				root = strdup ("/");
 				strncpy (path, root, sizeof (path)-1);
+				R_FREE (root);
 				mode = 2;
 				break;
 			case 'l':

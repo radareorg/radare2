@@ -306,9 +306,9 @@ enum
 static st64
 get_immed_sgnext(const ut64 insn, const ut8 nbit)
 {
-  const ut64 mask = ~((1 << (nbit + 1)) - 1);
+  const ut64 mask = ~(((ut64)1 << (nbit + 1)) - 1);
   return (st64) ((insn & ~mask)
-		 | (((insn & (1 << nbit)) >> nbit) * mask));
+		 | (((insn & ((ut64)1 << nbit)) >> nbit) * mask));
 }
 
 static RAnalValue *

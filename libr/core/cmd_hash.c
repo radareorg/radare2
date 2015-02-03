@@ -124,7 +124,7 @@ static void algolist(int mode) {
 	int i;
 	r_cons_printf ("| ");
 	for (i=0; ; i++) {
-		bits = 1<<i;
+		bits = ((ut64)1)<<i;
 		name = r_hash_name (bits);
 		if (!name||!*name) break;
 		if (mode) {
