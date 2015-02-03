@@ -91,6 +91,11 @@ R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 #define SEEFLAG -2
 #define JSONOUTPUT -3
+#define R_PRINT_MUSTSEE 1
+#define R_PRINT_ISFIELD (1<<1)
+#define R_PRINT_SEEFLAGS (1<<2)
+#define R_PRINT_JSON (1<<3)
+#define R_PRINT_MUSTSET (1<<4)
 R_API int r_print_format_struct_size(const char *format, RPrint *p);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API int r_print_format_length (const char *fmt);
