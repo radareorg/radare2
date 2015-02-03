@@ -544,7 +544,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
 
-
 	list_fds = r_io_open_many (r->io, file, flags, 0644);
 
 	if (!list_fds || r_list_length (list_fds) == 0 ) {

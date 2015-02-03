@@ -555,7 +555,7 @@ typedef struct {
 
 typedef struct {
 	ut64 address;
-	const char *file;
+	char *file;
 	unsigned int line;
 	unsigned int column;
 } RBinDwarfRow;

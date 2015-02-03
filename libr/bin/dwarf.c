@@ -1497,13 +1497,28 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 	return R_FALSE;
 }
 
+static RBinDwarfRow *r_bin_dwarf_row_new (ut64 addr, const char *file, int line, int col) {
+	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
+	row->file = strdup (file);
+	row->address = addr;
+	row->line = line;
+	row->column = 0;
+	return row;
+}
+
+static void r_bin_dwarf_row_free (void *p) {
+	RBinDwarfRow *row = (RBinDwarfRow*)p;
+	free (row->file);
+	free (row);
+}
+
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 	ut8 *buf;
+	RList *list = NULL;
 	int len, ret;
 	RBinSection *section = getsection (a, "debug_line");
 	RBinFile *binfile = a ? a->cur: NULL;
 	if (binfile && section) {
-		RList *list;
 		len = section->size;
 		if (len<1) {
 			return NULL;
@@ -1515,12 +1530,31 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			return NULL;
 		}
 		list = r_list_new (); // always return empty list wtf
+		list->free = r_bin_dwarf_row_free;
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
-//sdb_query (binfile->sdb_addrinfo, "*");
+		// k bin/cur/addrinfo/*
+		SdbListIter *iter;
+		SdbKv *kv;
+		ls_foreach (binfile->sdb_addrinfo->ht->list, iter, kv) {
+			if (!strncmp (kv->key, "0x", 2)) {
+				ut64 addr;
+				RBinDwarfRow *row;
+				int line;
+				char *file = strdup (kv->value);
+				char *tok = strchr (file, '|');
+				if (tok) {
+					*tok++ = 0;
+					line = atoi (tok);
+					addr = r_num_math (NULL, kv->key);
+					row = r_bin_dwarf_row_new (addr, file, line, 0);
+					r_list_append (list, row);
+				}
+				free (file);
+			}
+		}
 		free (buf);
-		return list;
 	}
-	return NULL;
+	return list;
 }
 
 R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {

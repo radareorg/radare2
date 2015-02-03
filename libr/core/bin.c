@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2015 - earada, pancake */
 
 #include <r_core.h>
 
@@ -435,6 +435,7 @@ static int bin_dwarf (RCore *core, int mode) {
 			r_bin_dwarf_parse_info (da, core->bin, mode);
 			r_bin_dwarf_parse_aranges (core->bin, mode);
 			list = r_bin_dwarf_parse_line (core->bin, mode);
+eprintf ("LIST %d\n", r_list_length (list));
 			r_bin_dwarf_free_debug_abbrev (da);
 			free (da);
 		}
@@ -446,8 +447,7 @@ static int bin_dwarf (RCore *core, int mode) {
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
 			const char *path = row->file;
-			char *line = r_file_slurp_line (
-					path, row->line-1, 0);
+			char *line = r_file_slurp_line (path, row->line-1, 0);
 			if (line) {
 				r_str_filter (line, strlen (line));
 				line = r_str_replace (line, "\"", "\\\"", 1);
@@ -455,8 +455,10 @@ static int bin_dwarf (RCore *core, int mode) {
 			}
 			// TODO: implement internal : if ((mode & R_CORE_BIN_SET)) {
 			if ((mode & R_CORE_BIN_SET)) {
-				r_core_cmdf (core, "\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
-						row->file, row->line, line?line:"", row->address);
+				char *cmt = r_str_newf ("%s:%d  %s", row->file, row->line, line?line:"");
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+						row->address, cmt);
+				free (cmt);
 			} else r_cons_printf ("\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
 				row->file, row->line, line?line:"", row->address);
 			free (line);
@@ -465,8 +467,8 @@ static int bin_dwarf (RCore *core, int mode) {
 		}
         }
 	r_cons_break_end ();
-	r_list_purge (list);
-	free (list);
+	//r_list_purge (list);
+	r_list_free (list);
 	return R_TRUE;
 }
 
