@@ -14,7 +14,7 @@ var DisasmPanel = function () {
   this.panel = $("#disasm_tab")[0];
   this.scroll_offset = null;
   this.minimap = true;
-  this.scrolling = false;
+  this.instructions = [];
 };
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
@@ -30,9 +30,10 @@ DisasmPanel.prototype.seek = function(addr, scroll) {
     if (error) this.display_flat();
     if (this.display === "flat") {
       this.min = this.max = 0;
-      r2.get_disasm_before_after(addr, -49, 50, function(x) {
+      r2.get_disasm_before_after(addr, -100, 100, function(x) {
         panel.innerHTML = "<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>";
-        render_instructions(x);
+        r2ui._dis.instructions = x;
+        render_instructions(r2ui._dis.instructions);
       });
     }
     this.selected = get_element_by_address(addr);

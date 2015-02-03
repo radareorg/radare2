@@ -271,30 +271,7 @@ $(document).ready( function() {
 	r2ui.seek(disasm_panel.base,true);
 	scroll_to_element(r2ui._dis.selected);
 
-  $("#center_panel").scroll(function(event) {
-    if (r2ui._dis.display == "flat" && !r2ui._dis.scrolling) {
-      r2ui._dis.scrolling = true;
-      if ($("#center_panel").scrollTop() === 0) {
-        var addr = get_address_from_class($("#gbox .instructionbox").first().find("span")[0]);
-        // console.log("get more instructions from " + addr);
-        r2.get_disasm_before_after(addr, -120, 80, function(x) {
-          $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
-          render_instructions(x);
-          scroll_to_address(addr);
-        });
-      }
-      if ($("#center_panel").scrollTop() > $("#gbox").height() - $("#center_panel").height() - 10) {
-        var addr = get_address_from_class($("#gbox .instructionbox").last().find("span")[0]);
-        // console.log("get more instructions from " + addr);
-        r2.get_disasm_before_after(addr, -80, 120, function(x) {
-          $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
-          render_instructions(x);
-          scroll_to_address(addr);
-        });
-      }
-      r2ui._dis.scrolling = false;
-    }
-  });
+  $("#center_panel").scroll(on_scroll);
 
 });
 
@@ -305,13 +282,11 @@ function scroll_to_element(element) {
 }
 
 function scroll_to_address(address) {
-  var elements = document.getElementsByClassName("insaddr addr_" + address);
-  if (elements.length == 1) {
-    var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
-    top = Math.max(0,top);
-    $('#center_panel').scrollTo(top, {axis: 'y'});
-    r2ui._dis.scroll_offset = top;
-  }
+  var elements = $(".insaddr.addr_" + address);
+  var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
+  top = Math.max(0,top);
+  $('#center_panel').scrollTo(top, {axis: 'y'});
+  r2ui._dis.scroll_offset = top;
 }
 
 function store_scroll_offset() {

@@ -32,6 +32,7 @@ enyo.kind ({
               {kind: "onyx.Menu", name: "contextMenu", components: [
                   {content: "rename", value: "rename"},
                   {content: "comment", value: "comment"},
+                  {content: "switch view", value: "do_switchview"},
                   {content: "random colors", value: "do_randomcolors"}
               ]}
             ]}
@@ -56,6 +57,8 @@ enyo.kind ({
           this.do_comment(this.selected_offset);
         } else if (itemContent == "random colors") {
           do_randomcolors();
+        } else if (itemContent == "switch view") {
+          this.switch_view();
         }
     }
     this.$.menuPopup.hide();
@@ -86,9 +89,6 @@ enyo.kind ({
     if (inEvent.target.className.indexOf(" addr ") > -1 && inEvent.target.className.indexOf("insaddr") === -1) {
       this.handleTap(inSender, inEvent);
       this.goToAddress();
-      // inEvent.returnValue=false;
-      // inEvent.preventDefault();
-      // return true;
     }
   },
 
@@ -348,6 +348,7 @@ enyo.kind ({
   minimap:true,
   console_history: [],
   console_history_idx: 0,
+  instructions: [],
   do_comment: function(address) {
     r2.cmd('CC- ' + " @ " + address + ';CC ' + prompt('Comment')  + " @ " + address);
     r2ui.seek(address, false);
@@ -408,25 +409,25 @@ enyo.kind ({
     $("#main_panel.ui-layout-pane").removeClass("ec_gui_alt_background");
     $("#main_panel.ui-layout-pane").addClass("ec_gui_background");
   },
-  less: function() {
-    this.min += this.block;
-    r2.get_disasm_before(this.base + "-" + this.min, this.block, function(x) {
-      x = render_instructions(x);
-      var oldy = r2ui._dis.getScrollBounds().height;
-      $("#center_panel").html(x+text.getContent());
-      var newy = r2ui._dis.getScrollBounds().height;
-      r2ui._dis.scrollTo(0, newy-oldy);
-    });
-    rehighlight_iaddress(this.base);
-  },
-  more: function() {
-    this.max += this.block;
-    r2.get_disasm_after(this.base + "+" + this.max, this.block, function(x) {
-      x = render_instructions(x);
-      $("#center_panel").html(text.getContent() + x);
-    });
-    rehighlight_iaddress(this.base);
-  },
+  // less: function() {
+  //   this.min += this.block;
+  //   r2.get_disasm_before(this.base + "-" + this.min, this.block, function(x) {
+  //     x = render_instructions(x);
+  //     var oldy = r2ui._dis.getScrollBounds().height;
+  //     $("#center_panel").html(x+text.getContent());
+  //     var newy = r2ui._dis.getScrollBounds().height;
+  //     r2ui._dis.scrollTo(0, newy-oldy);
+  //   });
+  //   rehighlight_iaddress(this.base);
+  // },
+  // more: function() {
+  //   this.max += this.block;
+  //   r2.get_disasm_after(this.base + "+" + this.max, this.block, function(x) {
+  //     x = render_instructions(x);
+  //     $("#center_panel").html(text.getContent() + x);
+  //   });
+  //   rehighlight_iaddress(this.base);
+  // },
   seek: function(addr, scroll) {
     var error = false;
     if (this.display === "graph") {
@@ -439,11 +440,13 @@ enyo.kind ({
     }
     if (error) this.display_flat();
     if (this.display === "flat") {
+      $("#main_panel").scroll(on_scroll);
       this.$.minimap.hide();
       this.min = this.max = 0;
-      r2.get_disasm_before_after(addr, -49, 100, function(x) {
+      r2.get_disasm_before_after(addr, -100, 100, function(x) {
         $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
-        render_instructions(x);
+        r2ui._dis.instructions = x;
+        render_instructions(r2ui._dis.instructions);
       });
     }
     this.selected = get_element_by_address(addr);
