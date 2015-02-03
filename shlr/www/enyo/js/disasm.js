@@ -325,7 +325,7 @@ function render_graph(x) {
     var idump = "";
     for (var i in bb.ops) {
       var ins = bb.ops[i];
-      ins.offset = "0x" + ins.offset.toString(16);
+      // ins.offset = "0x" + ins.offset.toString(16);
       if (ins.comment === undefined || ins.comment === null) ins.comment = "";
       else {
         ins.comment = atob(ins.comment);
@@ -425,7 +425,7 @@ function render_instructions(instructions) {
       }
     }
 
-    ins.offset = "0x" + ins.offset.toString(16);
+    // ins.offset = "0x" + ins.offset.toString(16);
     if (ins.comment === undefined || ins.comment === null) ins.comment = "";
     else {
       ins.comment = atob(ins.comment);
@@ -561,31 +561,32 @@ function toBoolean(str) {
 
 function html_for_instruction(ins) {
   var idump = '<div class="instruction enyo-selectable">';
-  var address = ins.offset;
+  var offset = "0x" + ins.offset.toString(16);
+  var address = offset;
   var asm_flags = (r2.settings["asm.flags"]);
   var asm_bytes = (r2.settings["asm.bytes"]);
   var asm_xrefs = (r2.settings["asm.xrefs"]);
   var asm_cmtright = (r2.settings["asm.cmtright"]);
 
-  if (ins.offset === "0x"+ins.fcn_addr.toString(16)) {
+  if (offset === "0x"+ins.fcn_addr.toString(16)) {
     if (r2ui._dis.display == "flat") idump += '<div class="ec_flow">; -----------------------------------------------------------</div>';
-    r2.cmdj("afij " + ins.offset, function(x){
+    r2.cmdj("afij " + offset, function(x){
       if (x !== null && x !== undefined && x.length > 0)
         idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
     });
-    r2.cmdj("afvj @ " + ins.offset, function(x){
+    r2.cmdj("afvj @ " + offset, function(x){
       var fvars = [];
       for (var i in x) {
-        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='fvar id_" + address_canonicalize(ins.offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
-        fvars[fvars.length] = {name: x[i].name, id:  address_canonicalize(ins.offset) + "_" + x[i].ref};
+        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+        fvars[fvars.length] = {name: x[i].name, id:  address_canonicalize(offset) + "_" + x[i].ref};
       }
       r2.varMap[ins.fcn_addr] = fvars;
     });
-    r2.cmdj("afaj @ " + ins.offset, function(x){
+    r2.cmdj("afaj @ " + offset, function(x){
       var args = [];
       for (var i in x) {
-        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='farg id_" + address_canonicalize(ins.offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
-        args[args.length] = {name: x[i].name, id:  address_canonicalize(ins.offset) + "_" + x[i].ref};
+        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='farg id_" + address_canonicalize(offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
+        args[args.length] = {name: x[i].name, id:  address_canonicalize(offset) + "_" + x[i].ref};
       }
       r2.argMap[ins.fcn_addr] = args;
     });
@@ -595,12 +596,12 @@ function html_for_instruction(ins) {
     if (ins.flags !== undefined && ins.flags !== null) {
       flags = ins.flags.join(";");
     } else {
-      flags = r2.get_flag_names(address_canonicalize(ins.offset)).join(";");
+      flags = r2.get_flag_names(address_canonicalize(offset)).join(";");
     }
-    if (flags !== "" && flags !== undefined && flags !== null) idump += '<div class="ec_flag flags_' + address_canonicalize(ins.offset) + '">;-- ' + escapeHTML(flags) + ':</div> ';
+    if (flags !== "" && flags !== undefined && flags !== null) idump += '<div class="ec_flag flags_' + address_canonicalize(offset) + '">;-- ' + escapeHTML(flags) + ':</div> ';
   }
   if (ins.comment && !asm_cmtright) {
-    idump += '<div class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '">; ' + escapeHTML(ins.comment) + '</div>';
+    idump += '<div class="comment ec_comment comment_' + address_canonicalize(offset) + '">; ' + escapeHTML(ins.comment) + '</div>';
   }
   if (asm_xrefs) {
     if (ins.xrefs !== undefined && ins.xrefs !== null && ins.xrefs.length > 0) {
@@ -608,16 +609,16 @@ function html_for_instruction(ins) {
       for (var i in ins.xrefs) {
         var xref = ins.xrefs[i];
         var name = '';
-        var offset = "0x"+xref.addr.toString(16);
-        if (r2.get_flag_names(address_canonicalize(offset)).length > 0) name = ' (' + r2.get_flag_names(address_canonicalize(offset)).join(";") + ')';
+        var xrefoffset = "0x"+xref.addr.toString(16);
+        if (r2.get_flag_names(address_canonicalize(xrefoffset)).length > 0) name = ' (' + r2.get_flag_names(address_canonicalize(xrefoffset)).join(";") + ')';
         idump += '<div class="ec_flag xrefs">; ' + xref.type.toUpperCase() + ' XREF from ' +
-        '<span class="offset addr addr_' + address_canonicalize(offset) + '">' + offset + '</span> ' +  name + '</div> ';
+        '<span class="offset addr addr_' + address_canonicalize(xrefoffset) + '">' + xrefoffset + '</span> ' +  name + '</div> ';
       }
 
     }
   }
 
-  idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(ins.offset) + '">' + address + '</span> ';
+  idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(offset) + '">' + address + '</span> ';
 
   if (asm_bytes) {
     if (ins.bytes !== undefined && ins.bytes !== null && ins.bytes !== "") {
@@ -637,12 +638,12 @@ function html_for_instruction(ins) {
     for (var i in r2.varMap[ins.fcn_addr]) {
       var var_name = r2.varMap[ins.fcn_addr][i].name;
       var var_id = r2.varMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(var_name, "<span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(var_name) + "</span>");
+      opcode = opcode.replace(var_name, "<span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span>");
     }
     for (var i in r2.argMap[ins.fcn_addr]) {
       var arg_name = r2.argMap[ins.fcn_addr][i];
       var arg_id = r2.argMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(arg_name, "<span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(ins.offset) + "'>" + escapeHTML(var_name) + "</span>");
+      opcode = opcode.replace(arg_name, "<span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span>");
     }
   }
 
@@ -663,7 +664,7 @@ function html_for_instruction(ins) {
   }
 
   if (ins.comment && asm_cmtright) {
-    idump += '<span class="comment ec_comment comment_' + address_canonicalize(ins.offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
+    idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
   }
   idump += '</div>';
   return idump;
@@ -800,11 +801,62 @@ Element.prototype.documentOffsetTop = function () {
 
 function scroll_to_address(address) {
   var elements = $(".insaddr.addr_" + address);
-  if (elements.length == 1) {
-    var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
-    top = Math.max(0,top);
-    $("#main_panel").scrollTo({'top':top, 'left':0});
-    // r2ui._dis.scrollTo(0,top);
+  var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
+  top = Math.max(0,top);
+  $("#main_panel").scrollTo({'top':top, 'left':0});
+}
+
+function on_scroll(event) {
+  if (r2ui._dis.display == "flat") {
+
+    var scroll_offset = null;
+    var top_offset = null;
+    // enyo layout
+    if ($("#radareApp_mp").length) {
+      scroll_offset = $("#main_panel").scrollTop();
+      top_offset = $("#gbox").height() - $("#main_panel").height() - 10;
+    // panel layout
+    } else {
+      scroll_offset = $("#center_panel").scrollTop();
+      top_offset = $("#gbox").height() - $("#center_panel").height() - 10;
+    }
+
+    if (scroll_offset === 0 ) {
+      $("#center_panel").scroll(null);
+      var addr = "0x" + r2ui._dis.instructions[0].offset.toString(16);
+      r2.get_disasm_before(addr, 100, function(x) {
+        r2ui._dis.instructions = x.concat(r2ui._dis.instructions);
+      });
+      // enyo layout
+      if ($("#radareApp_mp").length) {
+        $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+      // panel layout
+      } else {
+        $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+      }
+      render_instructions(r2ui._dis.instructions);
+      scroll_to_address(addr);
+      rehighlight_iaddress(r2ui._dis.selected_offset);
+      $("#center_panel").scroll(on_scroll);
+    }
+    if (scroll_offset > top_offset) {
+      $("#center_panel").scroll(null);
+      var addr = "0x" + r2ui._dis.instructions[r2ui._dis.instructions.length-1].offset.toString(16);
+      r2.get_disasm_after(addr, 100, function(x) {
+        r2ui._dis.instructions = r2ui._dis.instructions.slice(0, -1).concat(x);
+      });
+      // enyo layout
+      if ($("#radareApp_mp").length) {
+        $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+      // panel layout
+      } else {
+        $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+      }
+      render_instructions(r2ui._dis.instructions);
+      scroll_to_address(addr);
+      rehighlight_iaddress(r2ui._dis.selected_offset);
+      $("#center_panel").scroll(on_scroll);
+    }
   }
 }
 

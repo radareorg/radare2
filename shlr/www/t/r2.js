@@ -148,8 +148,7 @@ r2.get_disasm = function(offset, length, cb) {
 
 r2.get_disasm_before = function(offset, start, cb) {
   var before = [];
-  // Get 5 more opcodes and remove them afterwards
-  r2.cmd("pDj " + start + "@" + offset, function(x) {
+  r2.cmd("pdj -" + start + "@" + offset, function(x) {
     before = JSON.parse(x);
   });
   cb(before);
@@ -157,7 +156,7 @@ r2.get_disasm_before = function(offset, start, cb) {
 
 r2.get_disasm_after = function(offset, end, cb) {
   var after = [];
-  r2.cmd("pDj " + end + "@" + offset, function(x) {
+  r2.cmd("pdj " + end + "@" + offset, function(x) {
     after = JSON.parse(x);
   });
   cb(after);
