@@ -840,7 +840,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 		// Find the end gadgets.
 		for (i = 0; i+32 < delta; i += increment) {
-			RAnalOp end_gadget;
+			RAnalOp end_gadget = {0};
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from+i, buf+i,
 					delta-i) <= 0) {
