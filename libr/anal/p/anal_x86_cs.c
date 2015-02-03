@@ -336,7 +336,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op,  "%s,%s,==,%%z,zf,=", dst, src);
+				esilprintf (op,  "%s,%s,==,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -641,7 +641,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,^=", dst, src);
+				esilprintf (op, "%s,%s,^=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -651,7 +651,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,|=", dst, src);
+				esilprintf (op, "%s,%s,|=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -691,7 +691,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,&=", dst, src);
+				esilprintf (op, "%s,%s,&=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -701,7 +701,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,/=", dst, src);
+				esilprintf (op, "%s,%s,/=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -711,7 +711,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,*=", dst, src);
+				esilprintf (op, "%s,%s,*=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -731,7 +731,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,+=", dst, src);
+				esilprintf (op, "%s,%s,+=", src, dst);
 				free (src);
 				free (dst);
 			}
