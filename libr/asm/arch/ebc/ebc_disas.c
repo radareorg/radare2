@@ -792,10 +792,10 @@ static int decode_movn(const uint8_t *bytes, ebc_command_t *cmd)
 static int decode_movi(const uint8_t *bytes, ebc_command_t *cmd)
 {
 	int ret = 2;
-	char p1, p2;
+	char p1 = 0, p2 = 0;
 	char indx[32] = {0};
 	char op1[32];
-	unsigned long immed;
+	unsigned long immed = 0;
 
 	switch (bytes[0] >> 6) {
 		case 0:
@@ -882,7 +882,7 @@ static int decode_movin(const uint8_t *bytes, ebc_command_t *cmd)
 	char indx2[32] = {0};
 	char op1[32];
 	char sign;
-	ebc_index_t idx;
+	ebc_index_t idx = {0};
 
 	switch (bytes[0] >> 6) {
 		case 0:
@@ -945,11 +945,11 @@ static int decode_movin(const uint8_t *bytes, ebc_command_t *cmd)
 static int decode_movrel(const uint8_t *bytes, ebc_command_t *cmd)
 {
 	int ret = 2;
-	char p1;
+	char p1 = 0;
 	char op1[32];
 	char indx[32] = {0};
-	unsigned long immed;
-	unsigned formathex;
+	unsigned long immed = 0;
+	unsigned formathex = 0;
 
 	switch (bytes[0] >> 6) {
 		case 0:

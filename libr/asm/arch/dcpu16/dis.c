@@ -117,7 +117,7 @@ static int instrGetCycles(const op* o) {
 }
 
 int dcpu16_disasm(char *out, const ut16* inp, int len, int *cost) {
-	op o;
+	op o = { .code = {0}, .b = {0}, .n = {0} };
 	int delta = instrGet (inp[0], &o, inp[1], inp[2]);
 	if (cost) *cost = instrGetCycles(&o) + ((o.b.opcode >= 0xc)?1:0);
 	instrPrint (out, &o);

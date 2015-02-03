@@ -705,15 +705,16 @@ int Decodeaddress(ulong addr,char *symb,int nsymb,char *comment) {
 // Decodes and prints 32-bit float f into string s (which must be at least 16
 // bytes long). Returns resulting length of the string.
 int Printfloat4(char *s,float f) {
+  void *F = &f;
   int k;
-  if (*(ulong *)&f==0x7F800000L)
+  if (*(ulong *)F==(ulong)0x7F800000L)
     k=sprintf(s,"+INF 7F800000");
-  else if (*(ulong *)&f==0xFF800000L)
+  else if (*(ulong *)F==0xFF800000L)
     k=sprintf(s,"-INF FF800000");
-  else if ((*(ulong *)&f & 0xFF800000L)==0x7F800000L)
-    k=sprintf(s,"+NAN "LFMT08,*(ulong *)&f);
-  else if ((*(ulong *)&f & 0xFF800000L)==0xFF800000L)
-    k=sprintf(s,"-NAN "LFMT08,*(ulong *)&f);
+  else if ((*(ulong *)F & 0xFF800000L)==0x7F800000L)
+    k=sprintf(s,"+NAN "LFMT08,*(ulong *)F);
+  else if ((*(ulong *)F & 0xFF800000L)==0xFF800000L)
+    k=sprintf(s,"-NAN "LFMT08,*(ulong *)F);
 #if 0
   else if (f==0.0)                     // By default, 0 is printed without
     k=sprintf(s,"0.0");                // decimal point, which I don't want.
@@ -727,9 +728,10 @@ int Printfloat4(char *s,float f) {
 // Returns resulting length of the string.
 int Printfloat8(char *s,double d) {
   int k;
+  void *D = &d;
   ulong lod,hid;
-  lod=((ulong *)&d)[0];
-  hid=((ulong *)&d)[1];
+  lod=((ulong *)D)[0];
+  hid=((ulong *)D)[1];
   if (lod==0 && hid==0x7F800000L)
     k=sprintf(s,"+INF 7F800000 00000000");
   else if (lod==0 && hid==0xFF800000L)

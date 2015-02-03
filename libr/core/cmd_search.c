@@ -568,7 +568,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		const char* grep, int regex, RList* rx_list, int endaddr,
 		RList* badstart) {
 	RAsmOp asmop;
-	const char* start, *end;
+	const char* start = NULL, *end = NULL;
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
 	ut8 nb_instr = 0;

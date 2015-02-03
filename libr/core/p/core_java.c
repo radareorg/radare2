@@ -655,7 +655,7 @@ static char * r_cmd_replace_name_def (const char *s_new, ut32 replace_len, const
 static int r_cmd_is_object_descriptor (const char *name, ut32 name_len) {
 
 	int found_L = R_FALSE, found_Semi = R_FALSE;
-	ut32 idx = 0, L_pos, Semi_pos;
+	ut32 idx = 0, L_pos = 0, Semi_pos = 0;
 	const char *p_name = name;
 
 	for (idx = 0, L_pos = 0; idx < name_len; idx++,p_name++) {

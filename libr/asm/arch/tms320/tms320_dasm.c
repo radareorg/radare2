@@ -903,13 +903,13 @@ void decode_addressing_modes(tms320_dasm_t * dasm)
 
 		if (field_value(dasm, AAAAAAAI) & 1) {
 			if (strstr(tmp, "k16")) {
-				substitute(tmp, "k16", "0x%04X", be16(*(ut16 *)(dasm->stream + dasm->length)));
+				substitute(tmp, "k16", "0x%04X", be16(*(ut16 *)(&dasm->stream + dasm->length)));
 				dasm->length += 2;
 			} else if (strstr(tmp, "k23")) {
-				substitute(tmp, "k23", "0x%06X", be24(*(ut32 *)(dasm->stream + dasm->length) & 0x7FFFFF));
+				substitute(tmp, "k23", "0x%06X", be24(*(ut32 *)(&dasm->stream + dasm->length) & 0x7FFFFF));
 				dasm->length += 3;
 			} else if (strstr(tmp, "K16")) {
-				substitute(tmp, "K16", "0x%04X", be16(*(ut16 *)(dasm->stream + dasm->length)));
+				substitute(tmp, "K16", "0x%04X", be16(*(ut16 *)(&dasm->stream + dasm->length)));
 				dasm->length += 2;
 			}
 
