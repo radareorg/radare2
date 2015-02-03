@@ -125,8 +125,8 @@ BBGraph.prototype.render = function() {
 
   var minimap_width = 200;
   var minimap_heigh = 200;
-  $('#minimap')[0].innerHTML = "";
-  $('#minimap')[0].innerHTML = "";
+  $('#minimap').html("");
+  $('#minimap').html("");
   var minimap = new joint.dia.Paper({
       el: $('#minimap'),
       gridSize: 1,

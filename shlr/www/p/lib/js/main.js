@@ -278,7 +278,7 @@ $(document).ready( function() {
         var addr = get_address_from_class($("#gbox .instructionbox").first().find("span")[0]);
         // console.log("get more instructions from " + addr);
         r2.get_disasm_before_after(addr, -120, 80, function(x) {
-          $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+          $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
           render_instructions(x);
           scroll_to_address(addr);
         });
@@ -287,7 +287,7 @@ $(document).ready( function() {
         var addr = get_address_from_class($("#gbox .instructionbox").last().find("span")[0]);
         // console.log("get more instructions from " + addr);
         r2.get_disasm_before_after(addr, -80, 120, function(x) {
-          $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+          $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
           render_instructions(x);
           scroll_to_address(addr);
         });
