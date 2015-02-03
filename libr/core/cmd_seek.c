@@ -1,31 +1,5 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
-// XXX DUP
-#define OPDELTA 32
-static int prevopsz (RCore *core, ut64 addr) {
-	ut64 target = addr;
-	ut64 base = target-OPDELTA;
-	int len, ret, i;
-	ut8 buf[OPDELTA*2];
-	RAnalOp op;
-
-	r_core_read_at (core, base, buf, sizeof (buf));
-	for (i=0; i<sizeof (buf); i++) {
-		ret = r_anal_op (core->anal, &op, base+i,
-			buf+i, sizeof (buf)-i);
-		if (!ret) continue;
-		len = op.size;
-		if (len<1) continue;
-		i += len-1;
-		if (target == base+i+1) {
-			r_anal_op_fini (&op); // XXX
-			return len;
-		}
-		r_anal_op_fini (&op); // XXX
-	}
-	return 1;
-}
-
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *cmd, *p;

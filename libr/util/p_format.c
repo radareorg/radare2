@@ -1055,7 +1055,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case 'z': // zero terminated string
 				r_print_format_nulltermstring (p, len, endian, mode, setval, seeki, buf, i, size);
 				if (size == -1)
-					i+=strlen(buf+i)+1;
+					i+=strlen((char*)buf+i)+1;
 				else
 					while (size--) i++;
 				break;
