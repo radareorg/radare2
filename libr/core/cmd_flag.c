@@ -43,6 +43,7 @@ static void flagbars_dos(RCore *core) {
 }
 
 static int cmd_flag(void *data, const char *input) {
+	static int flagenum = 0;
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;
@@ -53,6 +54,23 @@ static int cmd_flag(void *data, const char *input) {
 	if (*input)
 		str = strdup (input+1);
 	switch (*input) {
+	case 'e':
+		switch (input[1]) {
+		case ' ':
+			ptr = r_str_newf ("%s.%d", input+2, flagenum);
+			(void)r_flag_set (core->flags, ptr,
+					core->offset, 1, 0);
+			flagenum++;
+			free (ptr);
+			break;
+		case '-':
+			flagenum = 0;
+			break;
+		default:
+			eprintf ("|Usage: fe[-| name] @@= 1 2 3 4\n");
+			break;
+		}
+		break;
 	case '=': // "f="
 		switch (input[1]) {
 		case '=':
@@ -464,6 +482,8 @@ static int cmd_flag(void *data, const char *input) {
 		"fc"," [name] [color]","set color for given flag",
 		"fC"," [name] [cmt]","set comment for given flag",
 		"fd"," addr","return flag+delta",
+		"fe-","","resets the enumerator counter",
+		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
 		"fl"," [flagname]","show flag length (size)",
