@@ -667,7 +667,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	RListIter *iter;
 	char *buf_asm, *buf_hex;
 	unsigned int size = 0;
-	RAnalOp analop;
+	RAnalOp analop = {0};
 	RAsmOp asmop;
 
 	switch (mode) {
@@ -720,6 +720,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 			r_core_read_at (core, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 			buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 					core->cons->pal.reg, core->cons->pal.num);
 			buf_hex = r_print_colorize_opcode (asmop.buf_hex,

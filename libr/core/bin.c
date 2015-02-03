@@ -435,7 +435,6 @@ static int bin_dwarf (RCore *core, int mode) {
 			r_bin_dwarf_parse_info (da, core->bin, mode);
 			r_bin_dwarf_parse_aranges (core->bin, mode);
 			list = r_bin_dwarf_parse_line (core->bin, mode);
-eprintf ("LIST %d\n", r_list_length (list));
 			r_bin_dwarf_free_debug_abbrev (da);
 			free (da);
 		}

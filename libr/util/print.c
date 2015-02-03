@@ -1084,7 +1084,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 	if (j+20 >= opcode_sz) {
 		char *t_o = o;
 		/* o = malloc (opcode_sz+21); */
-		memcpy (o, t_o, opcode_sz);
+		memmove (o, t_o, opcode_sz);
 		opcode_sz += 21;
 		/* free (t_o); */
 	}
