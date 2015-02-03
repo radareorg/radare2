@@ -233,7 +233,6 @@ static int cmd_seek(void *data, const char *input) {
 			int val=0, ret, i, n = r_num_math (core->num, input+1);
 			if (n==0) n = 1;
 			if (n<0) {
-				const int bs = core->blocksize;
 				int instr_len;
 				ut64 addr = core->offset;
 				int numinstr = n * -1;
