@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -1589,6 +1589,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		return R_FALSE;
 	}
 	if (!strncmp (cstr, "/*", 2)) {
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		core->incomment = R_TRUE;
 	} else if (!strncmp (cstr, "*/", 2)) {
 		core->incomment = R_FALSE;
