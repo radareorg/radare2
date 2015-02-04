@@ -81,12 +81,10 @@ struct {
 	{ NULL, NULL, NULL }
 };
 
-static inline ut8 rgbnum (const char ch, const char cl) {
-	ut8 h = 0;
-	ut8 l = 0;
-	r_hex_to_byte (&h, ch);
-	r_hex_to_byte (&l, cl);
-	return h*16+l;
+static inline ut8 rgbnum (const char ch) {
+	ut8 r = 0;
+	r_hex_to_byte (&r, ch);
+	return r*16;
 }
 
 R_API void r_cons_pal_random() {
@@ -113,36 +111,31 @@ R_API char *r_cons_pal_parse(const char *str) {
 	int i;
 	ut8 r, g, b;
 	char out[128];
-	char *s = r_str_trim_head_tail (strdup (str));
-	r_str_split (s, ' ');
-	int length = strlen (s);
+	char *s = strdup (str);
+	char *p = strchr (s+1, ' ');
 	out[0] = 0;
+	if (p) *p++ = 0;
 	if (!strcmp (str, "random")) {
 		free (s);
 		return r_cons_color_random (0);
 	}
 	if (!strncmp (s, "rgb:", 4)) {
-		int correct = 0;
-		if (length == 7) {
-			r = rgbnum (s[4],s[4]);
-			g = rgbnum (s[5],s[5]);
-			b = rgbnum (s[6],s[6]);
-			correct = 1;
-		} else if (length == 10) {
-			r = rgbnum(s[4],s[5]);
-			g = rgbnum(s[6],s[7]);
-			b = rgbnum(s[8],s[9]);
-			correct = 1;
-		}
-		if (correct) {
-			r_cons_rgb_str (out, r, g, b, 0);
-		} else {
-			eprintf ("Invalid rgb string (%s)\n", str);
-		}
+		r = rgbnum (s[4]);
+		g = rgbnum (s[5]);
+		b = rgbnum (s[6]);
+		r_cons_rgb_str (out, r, g, b, 0);
+	}
+	if (p && !strncmp (p, "rgb:", 4)) {
+		r = rgbnum (p[4]);
+		g = rgbnum (p[5]);
+		b = rgbnum (p[6]);
+		r_cons_rgb_str (out+strlen (out), r, g, b, 1);
 	}
 	for (i=0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name))
 			strcat (out, colors[i].code);
+		if (p && !strcmp (p, colors[i].name))
+			strcat (out, colors[i].bgcode);
 	}
 	free (s);
 	return *out? strdup (out): NULL;
@@ -298,11 +291,11 @@ R_API void r_cons_pal_list (int rad) {
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			rgbstr[0] = 0;
 			r_cons_rgb_str (rgbstr, r, g, b, 0);
-			// r >>= 4;
-			// g >>= 4;
-			// b >>= 4;
-			r_cons_printf ("ec %s rgb:%02x%02x%02x\n",
-				keys[i].name, r, g, b);
+			r >>= 4;
+			g >>= 4;
+			b >>= 4;
+			r_cons_printf ("ec %s rgb:%x%x%x\n",
+				keys[i].name, r&0xf, g&0xf, b&0xf);
 			break;
 		default:
 			r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);

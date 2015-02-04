@@ -61,6 +61,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ecj","","show palette in JSON",
 			"eco"," dark|white","load white color scheme template",
 			"ec"," prompt red","change color of prompt",
+			"ec"," prompt red blue","change color and background of prompt",
 			""," ","",
 			"colors:","","rgb:000, red, green, blue, ...",
 			"e scr.rgbcolor","=1|0","for 256 color cube (boolean)",
