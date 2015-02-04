@@ -1125,7 +1125,6 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	}
 }
 
-
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr;
 	RListIter *iter, *iter2;
@@ -1158,8 +1157,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			 || infun (fcn, addr) || !strcmp (fcn->name, *input?input+1:input)) {
 			count++;
 			if (rad=='q') {
-				r_cons_printf ("0x%08"PFMT64x"  %d  %s\n",
-						fcn->addr, fcn->size, fcn->name);
+				r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",
+						fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
 			} else
 			if (rad=='j') {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
