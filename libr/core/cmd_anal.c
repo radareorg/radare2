@@ -629,6 +629,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'i': // "afi"
 		switch (input[2]) {
+		case '?': eprintf ("Usage: afi[j*] <addr>\n"); break;
 		case 'j': r_core_anal_fcn_list (core, input+3, 'j'); break; // "afij"
 		case '*': r_core_anal_fcn_list (core, input+3, 1); break; // "afi*"
 		default: r_core_anal_fcn_list (core, input+2, 0); break;
@@ -636,9 +637,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
+		case '?': eprintf ("Usage: afl[j*] <addr>\n"); break;
 		case 'j': r_core_anal_fcn_list (core, NULL, 'j'); break; // "aflj"
 		case '*': r_core_anal_fcn_list (core, NULL, '*'); break; // "afl*"
-		default: r_core_anal_fcn_list (core, NULL, 0); break; // "afl"
+		case 'a': r_core_anal_fcn_list (core, NULL, 'a'); break; // "afla"
+		default: r_core_anal_fcn_list (core, NULL, 'q'); break; // "afl"
 		}
 		break;
 	case '*':

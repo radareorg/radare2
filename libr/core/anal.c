@@ -1157,6 +1157,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		if ((!input) // || (( !*input && fcn->type!=R_ANAL_FCN_TYPE_LOC)
 			 || infun (fcn, addr) || !strcmp (fcn->name, *input?input+1:input)) {
 			count++;
+			if (rad=='q') {
+				r_cons_printf ("0x%08"PFMT64x"  %d  %s\n",
+						fcn->addr, fcn->size, fcn->name);
+			} else
 			if (rad=='j') {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 						count>1? ",":"", fcn->addr, fcn->name, fcn->size);
