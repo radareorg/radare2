@@ -319,14 +319,14 @@ static int cmd_open(void *data, const char *input) {
 	case 'b':
 		cmd_open_bin (core, input);
 		break;
-	case '-':
+	case '-': // o-
 		switch (input[1]) {
-		case '*':
+		case '*': // "o-*"
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
 			break;
-		case '-':
+		case '-': // "o--"
 			eprintf ("All core files, io, anal and flags info purged.\n");
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
@@ -338,13 +338,13 @@ static int cmd_open(void *data, const char *input) {
 			r_flag_unset_all (core->flags);
 			// TODO: rbin?
 			break;
-		case ' ':
+		default:
 			if (!r_core_file_close_fd (core, atoi (input+1)))
 				eprintf ("Unable to find filedescriptor %d\n",
 						atoi (input+1));
 			break;
-		default:
-			eprintf ("Usage: ob-# or ob-*, where # is the filedescriptor number\n");
+		case '?':
+			eprintf ("Usage: o-# or o-*, where # is the filedescriptor number\n");
 		}
 		// hackaround to fix invalid read
 		//r_core_cmd0 (core, "oo");
