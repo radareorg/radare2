@@ -26,6 +26,7 @@ static ut8 *buf = NULL;
 static char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
+static int widestr = 0;
 static struct r_print_t *pr = NULL;
 static RList *keywords;
 
@@ -48,7 +49,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-Xnzhv] [-b sz] [-f/t from/to] [-[m|s|e] str] [-x hex] file ..\n", argv0);
+	printf ("Usage: %s [-Xnzhv] [-b sz] [-f/t from/to] [-[m|s|S|e] str] [-x hex] file ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -h         show this help\n"
@@ -60,6 +61,7 @@ static int show_help(char *argv0, int line) {
 	" -n         do not stop on read errors\n"
 
 	" -s [str]   search for a specific string (can be used multiple times)\n"
+	" -S [str]   search for a specific wide string (can be used multiple times)\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -e [regex] search for regular expression string matches\n"
 	" -m [str]   set a binary mask to be applied on keywords\n"
@@ -99,9 +101,12 @@ static int rafind_open(char *file) {
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
-			r_search_kw_add (rs, (hexstr)?
-				r_search_keyword_new_hex (kw, mask, NULL) :
-				r_search_keyword_new_str (kw, mask, NULL, 0));
+			if (hexstr)
+				r_search_kw_add (rs, r_search_keyword_new_hex (kw, mask, NULL));
+			else if (widestr)
+				r_search_kw_add (rs, r_search_keyword_new_wide (kw, mask, NULL, 0));
+			else
+				r_search_kw_add (rs, r_search_keyword_new_str (kw, mask, NULL, 0));
 		}
 	} else if (mode == R_SEARCH_STRING) {
 		r_search_kw_add (rs,
@@ -141,7 +146,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhvZ")) != -1) {
+	while ((c = getopt(argc, argv, "e:b:m:s:S:x:Xzf:t:rnhvZ")) != -1) {
 		switch (c) {
 		case 'r':
 			rad = 1;
@@ -157,7 +162,14 @@ int main(int argc, char **argv) {
 		case 's':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
+			widestr = 0;
 			r_list_append (keywords, optarg);
+			break;
+		case 'S':
+			mode = R_SEARCH_KEYWORD;
+			hexstr = 0;
+			widestr = 1;
+			r_list_append(keywords, optarg);
 			break;
 		case 'b':
 			bsize = r_num_math (NULL, optarg);
@@ -165,6 +177,7 @@ int main(int argc, char **argv) {
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 1;
+			widestr = 0;
 			r_list_append (keywords, optarg);
 			break;
 		case 'm':

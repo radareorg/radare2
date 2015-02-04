@@ -53,6 +53,46 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 	return kw;
 }
 
+R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, int ignore_case)
+{
+	RSearchKeyword *kw;
+	int len;
+	const char *p2;
+	char *p, *str;
+	ut8 *bmbuf = NULL;
+	int bmlen = 0;
+
+	if (bmstr) {
+		bmbuf = malloc (strlen (bmstr)+1);
+		if (!bmbuf) return NULL;
+		bmlen = r_hex_str2bin (bmstr, bmbuf);
+		if (bmlen < 1) {
+			free(bmbuf);
+			bmbuf = NULL;
+		}
+	}
+
+	len = strlen(kwbuf);
+	str = malloc((len+1)*2);
+	for (p2=kwbuf, p=str; *p2; p+=2, p2++)
+	{
+		if (ignore_case)
+			p[0] = tolower((const unsigned char)*p2);
+		else
+			p[0] = *p2;
+		p[1] = 0;
+	}
+
+	kw = r_search_keyword_new ((ut8 *)str, len*2, bmbuf,
+		bmlen, data);
+	free(str);
+	if (kw) {
+		kw->icase = ignore_case;
+	}
+	free(bmbuf);
+	return kw;
+}
+
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data) {
 	RSearchKeyword *kw;
 	ut8 *kwbuf, *bmbuf;
