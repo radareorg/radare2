@@ -749,7 +749,7 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, cons
 		RList *xtr_data_list = xtr->extractall_from_bytes (bytes, sz);
 		if (xtr_data_list){
 			if (!r_bin_files_populate_from_xtrlist (bin, bf, baseaddr, loadaddr, xtr_data_list))
-				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
+				eprintf ("Error: failed to load the Extracted Objects with %s for %s.\n", xtr->name, bf->file);
 		}
 		r_list_free (xtr_data_list);
 	} else if (xtr && xtr->extract_from_bytes) {
@@ -757,7 +757,7 @@ static RBinFile * r_bin_file_xtr_load_bytes (RBin *bin, RBinXtrPlugin *xtr, cons
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bytes, sz, idx);
 		if (xtr_data){
 			if (r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
-				eprintf ("Error: failed to load the Extracted Objects with %s for %s.", xtr->name, bf->file);
+				eprintf ("Error: failed to load the Extracted Objects with %s for %s.\n", xtr->name, bf->file);
 		}
 		r_bin_xtrdata_free (xtr_data);
 	}

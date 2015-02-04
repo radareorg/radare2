@@ -24,7 +24,9 @@ static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = MACH0_(new_buf) (tbuf);
-	sdb_ns_set (sdb, "info", res->kv);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 	r_buf_free (tbuf);
 	return res;
 }
