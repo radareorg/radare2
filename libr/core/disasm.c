@@ -1218,10 +1218,10 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				out = r_str_escape (mi->str);
 				if (ds->show_color)
 					r_cons_printf ("    .string "Color_YELLOW"\"%s\""
-						Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
+						Color_RESET" ; len=%"PFMT64d"", out, mi->size);
 				else
-					r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d
-						"\n", out, mi->size);
+					r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d,
+						out, mi->size);
 				free (out);
 				delta = ds->at-mi->from;
 				ds->oplen = mi->size-delta;
@@ -1234,7 +1234,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				ds->mi_found = 1;
 				break;
 			case R_META_TYPE_HIDE:
-				r_cons_printf ("(%d bytes hidden)\n", mi->size);
+				r_cons_printf ("(%d bytes hidden)", mi->size);
 				ds->asmop.size = mi->size;
 				ds->oplen = mi->size;
 				ds->mi_found = 1;
