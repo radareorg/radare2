@@ -406,16 +406,60 @@ DEF_STATE_ACTION(V)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
+char* get_num(SStateInfo *state)
+{
+	char *ptr = 0;
+	if (*state->buff_for_parsing >= '0' && *state->buff_for_parsing <= '8') {
+		ptr = (char *) malloc(2);
+		ptr[0] = *state->buff_for_parsing + 1;
+		ptr[1] = '\0';
+		state->buff_for_parsing++;
+		state->amount_of_read_chars++;
+	} else if (*state->buff_for_parsing == '9') {
+		ptr = (char *) malloc(3);
+		ptr[0] = '1';
+		ptr[1] = '0';
+		ptr[2] = '\0';
+		state->buff_for_parsing++;
+		state->amount_of_read_chars++;
+	} else if (*state->buff_for_parsing >= 'A' && *state->buff_for_parsing <= 'P') {
+		int ret = 0;
+
+		while (*state->buff_for_parsing >= 'A' && *state->buff_for_parsing <= 'P') {
+			ret *= 16;
+			ret += *state->buff_for_parsing - 'A';
+			state->buff_for_parsing++;
+			state->amount_of_read_chars++;
+		}
+
+		if (*state->buff_for_parsing != '@')
+			return ptr;
+
+		ptr = (char *)malloc(16);
+		sprintf(ptr, "%u", ret);
+		state->buff_for_parsing++;
+		state->amount_of_read_chars++;
+	}
+
+	return ptr;
+}
+
 #define MODIFIER(modifier_str) { \
 	unsigned int i = 0; \
 	EDemanglerErr err = eDemanglerErrOK; \
 	char *tmp = 0; \
 	STypeCodeStr tmp_str; \
+	STypeCodeStr modifier; \
 	int flag__ptr64 = 0; \
 \
 	state->state = eTCStateEnd; \
 \
 	if (!init_type_code_str_struct(&tmp_str)) { \
+		state->err = eTCStateMachineErrAlloc; \
+		return; \
+	} \
+	if (!init_type_code_str_struct(&modifier)) { \
 		state->err = eTCStateMachineErrAlloc; \
 		return; \
 	} \
@@ -430,22 +474,49 @@ DEF_STATE_ACTION(V)
 	case 'A': \
 		break; \
 	case 'B': \
-		copy_string(&tmp_str, " const", 0); \
+		copy_string(&modifier, " const", 0); \
 		break; \
 	case 'C': \
-		copy_string(&tmp_str, " volatile", 0); \
+		copy_string(&modifier, " volatile", 0); \
 		break; \
 	case 'D': \
-		copy_string(&tmp_str, " const volatile", 0); \
+		copy_string(&modifier, " const volatile", 0); \
 		break; \
 	default: \
 		state->err = eTCStateMachineErrUnsupportedTypeCode; \
 		break; \
 	} \
 \
-	copy_string(&tmp_str, modifier_str, 0); \
-	if (flag__ptr64) { \
-		copy_string(&tmp_str, " __ptr64 ", 0); \
+	if (*state->buff_for_parsing == 'Y') { \
+		char *n1; \
+		int num; \
+\
+		state->buff_for_parsing++; \
+		if (!(n1 = get_num(state))) { \
+			goto MODIFIER_err; \
+		} \
+		num = atoi(n1); \
+\
+		copy_string(&tmp_str, "(", 0); \
+		copy_string(&tmp_str,modifier.type_str, modifier.curr_pos); \
+		copy_string(&tmp_str, modifier_str, 0); \
+		copy_string(&tmp_str, ")", 0); \
+\
+		while (num--) { \
+			copy_string(&tmp_str, "[", 0); \
+			copy_string(&tmp_str, get_num(state), 0); \
+			copy_string(&tmp_str, "]", 0); \
+		} \
+\
+		R_FREE(n1); \
+	} \
+\
+	if (tmp_str.curr_pos == 0) { \
+		copy_string(&tmp_str, modifier.type_str, modifier.curr_pos); \
+		copy_string(&tmp_str, modifier_str, 0); \
+		if (flag__ptr64) { \
+			copy_string(&tmp_str, " __ptr64 ", 0); \
+		} \
 	} \
 \
 	err = get_type_code_string(state->buff_for_parsing, &i, &tmp); \
@@ -457,8 +528,10 @@ DEF_STATE_ACTION(V)
 	copy_string(type_code_str, tmp, 0); \
 	copy_string(type_code_str, tmp_str.type_str, tmp_str.curr_pos); \
 \
+MODIFIER_err: \
 	R_FREE(tmp); \
 	free_type_code_str_struct(&tmp_str); \
+	free_type_code_str_struct(&modifier); \
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -470,6 +543,12 @@ DEF_STATE_ACTION(S)
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(P)
 {
+	// function pointer
+	if (*state->buff_for_parsing == '6') {
+		state->err = eTCStateMachineErrUnsupportedTypeCode;
+		return;
+	}
+
 	MODIFIER(" *");
 }
 
