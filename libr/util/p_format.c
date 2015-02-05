@@ -628,10 +628,10 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 }
 
 // XXX: this is very incomplete. must be updated to handle all format chars
-int r_print_format_struct_size(const char *f, RPrint *p) {
+int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	char *o = strdup(f);
 	char *end = strchr (o, ' '), *args, *fmt = o;
-	int size = 0, tabsize=0, i, idx=0;
+	int size = 0, tabsize=0, i, idx=0, biggest = 0;
 	if (!end && !(end = strchr (o, '\0')))
 		return -1;
 	if (*end) {
@@ -640,6 +640,13 @@ int r_print_format_struct_size(const char *f, RPrint *p) {
 	} else {
 		args = strdup ("");
 	}
+	if (fmt[0] == '0') {
+		mode |= R_PRINT_UNIONMODE;
+		fmt++;
+	} else {
+		mode &= ~R_PRINT_UNIONMODE;
+	}
+
 	r_str_word_set0 (args);
 	for (i=0; i<strlen (fmt); i++) {
 		if (fmt[i] == '[') {
@@ -710,19 +717,26 @@ int r_print_format_struct_size(const char *f, RPrint *p) {
 				}
 				if (endname) *endname = '\0';
 				format = r_strht_get (p->formats, structname+1);
-				size += tabsize * r_print_format_struct_size (format, p);
 				free (structname);
-				break;
+				size += tabsize * r_print_format_struct_size (format, p, mode);
 				}
+				break;
 				// TODO continue list
 			default:
 				break;
 		}
 		idx++;
+		if (mode & R_PRINT_UNIONMODE) {
+			if (size > biggest) biggest = size;
+			size = 0;
+		}
 	}
 	free (o);
 	free (args);
-	return size;
+	if (mode & R_PRINT_UNIONMODE)
+		return biggest;
+	else
+		return size;
 }
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
@@ -739,7 +753,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 		return 0;
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
-	return r_print_format_struct_size(fmt, p);
+	return r_print_format_struct_size(fmt, p, mode);
 }
 
 #define MINUSONE ((void*)(size_t)-1)
@@ -818,6 +832,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 #define ISPOINTED ((slide%STRUCTFLAG)/STRUCTPTR<=(oldslide%STRUCTFLAG)/STRUCTPTR)
 #define ISNESTED ((slide%STRUCTPTR)<=(oldslide%STRUCTPTR))
 	if (mode == R_PRINT_JSON && slide==0) p->printf("[");
+	if (arg[0] == '0') {
+		mode |= R_PRINT_UNIONMODE;
+		arg++;
+	} else {
+		mode &= ~R_PRINT_UNIONMODE;
+	}
 
 	/* go format */
 	i = 0;
@@ -837,6 +857,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		for (idx=0; i<len && arg<argend && *arg; arg++) {
 			int size; /* size of the array */
 			char *fieldname = NULL, *fmtname = NULL, *oarg = NULL;
+			if (mode & R_PRINT_UNIONMODE) {
+				i = 0;
+			}
 			seeki = seek+i;
 			addr = 0LL;
 			invalid = 0;
