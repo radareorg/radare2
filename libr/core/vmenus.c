@@ -617,7 +617,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 R_API void r_core_visual_mounts (RCore *core) {
 	RList *list = NULL;
-	RFSRoot *fsroot;
+	RFSRoot *fsroot = NULL;
 	RListIter *iter;
 	RFSFile *file;
 	RFSPartition *part;
@@ -664,7 +664,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 			i = 0;
 			r_cons_printf ("Mountpoints:\n\n");
 			r_list_foreach (core->fs->roots, iter, fsroot) {
-				if ((option-delta <= i) && (i <= option+delta)) {
+				if (fsroot && (option-delta <= i) && (i <= option+delta)) {
 					r_cons_printf ("%s %s\n", (option == i)?" > ":"   ",
 							fsroot->path);
 				}
@@ -842,13 +842,13 @@ R_API void r_core_visual_mounts (RCore *core) {
 					return;
 				break;
 			case 'g':
-				if (mode == 2){
+				if (mode == 2) {
 					r_str_chop_path (path);
 					str = path + strlen (path);
 					strncat (path, "/", sizeof (path)-strlen (path)-1);
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
-					if (file) {
+					if (file && root) {
 						strncat (path, file->name, sizeof (path)-strlen (path)-1);
 						r_str_chop_path (path);
 						if (memcmp (root, path, strlen (root)-1))
