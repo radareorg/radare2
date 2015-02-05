@@ -1161,10 +1161,14 @@ if (
 			}
 			if (strtab_section->sh_size> ST32_MAX) {
 				eprintf ("size (syms strtab)");
+				free (ret);
+				free (strtab);
 				return NULL;
 			}
 			if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
 				eprintf ("malloc (syms strtab)");
+				free (ret);
+				free (strtab);
 				return NULL;
 			}
 			if (r_buf_read_at (bin->b, strtab_section->sh_offset,
@@ -1219,6 +1223,7 @@ if (
 				} else continue;
 				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
 					perror ("realloc (symbols|imports)");
+					free (sym);
 					return NULL;
 				}
 #if 0
@@ -1302,6 +1307,7 @@ if (
 			} else break;
 		}
 	}
+	free (strtab);
 	return ret;
 }
 
