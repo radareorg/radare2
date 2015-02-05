@@ -272,13 +272,23 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					int r = getreg (arg);
 					if (d<127 && d>-127) {
 						data[l++] = 0x83;
-						data[l++] = 0x40 | getreg (arg); // XXX: hardcoded
+						if (r != 4)
+							data[l++] = 0x40 | r; // XXX: hardcoded
+						else {
+							data[l++] = 0x44;
+							data[l++] = 0x20 | r;
+						}
 						data[l++] = getnum (a, delta+1);
 						data[l++] = getnum (a, arg2);
 					} else {
 						ut8 *ptr = (ut8 *)&d;
 						data[l++] = 0x83;
-						data[l++] = 0x80|r;
+						if (r != 4)
+							data[l++] = 0x80 | r;
+						else {
+							data[l++] = 0x84;
+							data[l++] = 0x20 | r;
+						}
 
 						data[l++] = ptr[0];
 						data[l++] = ptr[1];
@@ -333,13 +343,23 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					int r = getreg (arg);
 					if (d<127 && d>-127) {
 						data[l++] = 0x83;
-						data[l++] = 0x6d; // XXX hardcoded
+						if (r != 4)
+							data[l++] = 0x68 | r; // XXX: hardcoded
+						else {
+							data[l++] = 0x6C;
+							data[l++] = 0x20 | r;
+						}
 						data[l++] = d;
 						data[l++] = n;
 					} else {
 						ut8 *ptr = (ut8 *)&d;
 						data[l++] = 0x81;
-						data[l++] = 0xa8|r;
+						if (r != 4)
+							data[l++] = 0xA8 | r;
+						else {
+							data[l++] = 0xAC;
+							data[l++] = 0x20 | r;
+						}
 
 						data[l++] = ptr[0];
 						data[l++] = ptr[1];
