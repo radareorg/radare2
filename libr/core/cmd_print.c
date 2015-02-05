@@ -125,11 +125,12 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
-	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
+	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
 	"Examples:","","",
 	"pf", "?", "Show this help",
 	"pf?", "fmt", "Show format of that stored one",
 	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
+	"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
 	"pf", " {integer}bifc", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
@@ -166,7 +167,7 @@ static void print_format_help(RCore *core) {
 	"        ", "Z", "\\0 terminated wide string",
 	"        ", "s", "32bit pointer to string (4 bytes)",
 	"        ", "S", "64bit pointer to string (8 bytes)",
-	//" t - unix timestamp string\n",
+	"        ", "t", "unix timestamp string",
 	"        ", "?", "data structure `pf ? (struct_type)struct_name`",
 	"        ", "*", "next char is pointer (honors asm.bits)",
 	"        ", "+", "toggle show flags for each offset",
@@ -196,14 +197,14 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			_input++;
 			val = r_strht_get (core->print->formats, _input);
 			if (val != NULL)
-				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print));
+				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print, mode));
 			else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') _input++;
 			if (_input != '\0')
-				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print));
+				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print, mode));
 			else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}

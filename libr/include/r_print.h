@@ -96,7 +96,8 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 #define R_PRINT_SEEFLAGS (1<<2)
 #define R_PRINT_JSON (1<<3)
 #define R_PRINT_MUSTSET (1<<4)
-R_API int r_print_format_struct_size(const char *format, RPrint *p);
+#define R_PRINT_UNIONMODE (1<<5)
+R_API int r_print_format_struct_size(const char *format, RPrint *p, int mode);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API int r_print_format_length (const char *fmt);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int delta);
