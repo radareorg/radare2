@@ -97,9 +97,8 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			*new_name++ = 0;
 			char *old_name = strdup (str);
-			const char kind = (char) type;
 			r_str_split(old_name, ' ');
-			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, kind, old_name, new_name);
+			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, (char)type, old_name, new_name);
 			free (old_name);
 			goto end;
 		case 'j':
@@ -122,12 +121,11 @@ static int var_cmd(RCore *core, const char *str) {
 			if (str[2]!='\0') {
 				if (fcn != NULL) {
 					int rw = 0; // 0 = read, 1 = write
-					char kind = type;
 					RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-						kind, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
+						(char)type, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
 					if (var != NULL) {
 						int scope = (str[1]=='g')?0: 1;
-						r_anal_var_access (core->anal, fcn->addr, kind,
+						r_anal_var_access (core->anal, fcn->addr, (char)type,
 							scope, atoi (str+2), rw, core->offset);
 						//return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
 						r_anal_var_free (var);

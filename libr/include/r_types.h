@@ -108,7 +108,7 @@ extern "C" {
 #endif
 
 #define R_LIB_VERSION_HEADER(x) \
-const char *x##_version();
+const char *x##_version()
 #define R_LIB_VERSION(x) \
 const char *x##_version () { return "" GIT_TAP; }
 
