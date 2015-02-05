@@ -437,9 +437,9 @@ Opcode opcodes[] = {
 	// 0x66: operand size prefix
 	// 0x67: address size prefix
 	{"push", {OT_IMMEDIATE | OT_DWORD}, 1, {0x68}},
-	{"imul", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD, OT_IMMEDIATE | OT_DWORD}, 1, {0x69}}, // ?
+	{"imul", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD, OT_IMMEDIATE | OT_DWORD}, 1, {0x69}},
 	{"push", {OT_IMMEDIATE | OT_BYTE}, 1, {0x6A}},
-	{"imul", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD, OT_IMMEDIATE | OT_BYTE}, 1, {0x6B}}, // ?
+	{"imul", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD, OT_IMMEDIATE | OT_BYTE}, 1, {0x6B}},
 	{"insb", {}, 1, {0x6C}},
 	{"ins", {}, 1, {0x6D}}, {"insd", {}, 1, {0x6D}},
 	{"insw", {}, 2, {0x66, 0x6D}},
@@ -483,10 +483,10 @@ Opcode opcodes[] = {
 	// 0x80 -- 0x83: immediate group 1
 	// 0x84, 0x85: TODO: test
 	// 0x86, 0x87: TODO: xchg
-	{"mov", {OT_GPREG | OT_BYTE, OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x88}},
-	{"mov", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 1, {0x89}},
-	{"mov", {OT_GPREG | OT_MEMORY | OT_BYTE, OT_GPREG | OT_BYTE}, 1, {0x8A}},
-	{"mov", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 1, {0x8B}},
+	{"mov", {OT_GPREG | OT_MEMORY | OT_BYTE, OT_GPREG | OT_BYTE}, 1, {0x88}},
+	{"mov", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 1, {0x89}},
+	{"mov", {OT_GPREG | OT_BYTE, OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x8A}},
+	{"mov", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 1, {0x8B}},
 	{"mov", {OT_MEMORY | OT_WORD, OT_SEGMENTREG | OT_WORD}, 1, {0x8C}}, // ?
 	{"lea", {OT_GPREG | OT_DWORD, OT_MEMORY | OT_DWORD}, 1, {0x8D}},	// allow all sizes?
 	{"mov", {OT_SEGMENTREG | OT_WORD, OT_MEMORY | OT_WORD}, 1, {0x8E}}, // ?
