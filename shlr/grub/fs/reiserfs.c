@@ -39,15 +39,8 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 
-#define MIN(a, b) \
-  ({ typeof (a) _a = (a); \
-     typeof (b) _b = (b); \
-     _a < _b ? _a : _b; })
-
-#define MAX(a, b) \
-  ({ typeof (a) _a = (a); \
-     typeof (b) _b = (b); \
-     _a > _b ? _a : _b; })
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #define REISERFS_SUPER_BLOCK_OFFSET 0x10000
 #define REISERFS_MAGIC_LEN 12

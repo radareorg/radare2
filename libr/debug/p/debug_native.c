@@ -2017,7 +2017,9 @@ static RList *r_debug_desc_native_list (int pid) {
 			type = perm = 0;
 			if (stat (file, &st) != -1) {
 				type  = st.st_mode & S_IFIFO  ? 'P':
+#ifdef S_IFSOCK
 					st.st_mode & S_IFSOCK ? 'S':
+#endif
 					st.st_mode & S_IFCHR  ? 'C':'-';
 			}
 			if (lstat(path, &st) != -1) {
