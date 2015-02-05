@@ -483,13 +483,11 @@ typedef struct dis_buffer dis_buffer_t;
 #define DB_STGY_PROC 0  /*@@@*/
 #define DB_STGY_ANY 0  /*@@@*/
 
+#include <r_types.h>
 /* common Unix typedefs used in m68k_disasm.c */
-#define u_char unsigned char
-#define u_short unsigned short
-#define u_int unsigned int
-#define u_long unsigned long
-typedef unsigned long vm68k_offset_t;
-typedef unsigned long db_expr_t; /*@@@*/
+#define ut32i ut32
+typedef ut32 vm68k_offset_t;
+typedef ut32 db_expr_t; /*@@@*/
 typedef const char *db_sym_t;  /*@@@*/
 
 

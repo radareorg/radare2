@@ -741,7 +741,8 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 		char *name, int slide, int mode, const char *setval, char *field) {
-	const char *fmt, namefmt[8];
+	const char *fmt;
+	char namefmt[8];
 	if ((slide%STRUCTPTR) > NESTDEPTH || (slide%STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
