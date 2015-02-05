@@ -932,7 +932,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 	// Parse operands
 	int op_ind = 0;
-	x86newTokenType ttype = TT_SPECIAL;
+	x86newTokenType ttype = getToken(str, &pos, &nextpos);
 	while (op_ind < 3 && ttype != TT_EOF) {
 		// Read operand
 		pos += parseOperand(str + pos, &operands[op_ind++]);
