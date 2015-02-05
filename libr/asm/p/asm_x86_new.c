@@ -131,7 +131,7 @@ static x86newTokenType getToken(const char *str, int *begin, int *end) {
 	}
 	else if (isalpha(str[*begin])) {   // word token
 		*end = *begin;
-		while (isalpha(str[*end]))
+		while (isalnum(str[*end]))
 			++(*end);
 		return TT_WORD;
 	}
