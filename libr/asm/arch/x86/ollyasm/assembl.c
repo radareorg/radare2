@@ -1114,9 +1114,14 @@ retrylongjump:
   segment=SEG_UNDEF;                   // Necessary segment prefix
   jmpsize=0;                           // No relative jumps
   memset(tcode,0,sizeof(tcode));
-  *(ulong *)tcode=pd->code & pd->mask;
-  memset(tmask,0,sizeof(tmask));
-  *(ulong *)tmask=pd->mask;
+  // Fix weak aliasing
+  {
+    unsigned int *word = (unsigned int*)&tcode;
+    unsigned int *mask = (unsigned int*)&tmask;
+    *(ulong *)word = pd->code & pd->mask;
+    memset(tmask, 0, sizeof(tmask));
+    *(ulong *)mask = pd->mask;
+  }
   i=pd->len-1;                         // Last byte of command itself
   if (rep) i++;                        // REPxx prefixes count as extra byte
   // In some cases at least one operand must have explicit size declaration (as

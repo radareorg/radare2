@@ -72,14 +72,14 @@
  *       Christian E. Hopps.
  */
 
-#ifndef R_IPI
-#define R_IPI
-#endif
-
 #define M68K_DISASM_C
 #include <stdio.h>
 #include <string.h>
 #include "m68k_disasm.h"
+
+#ifndef R_IPI
+#define R_IPI
+#endif
 
 static void get_modregstr (dis_buffer_t *, int, int, int, int);
 static void get_immed (dis_buffer_t *, int);
@@ -192,10 +192,6 @@ static inline ut32 read32(short *p) {
          ((ut32)*((ut8 *)p+2))<<8 | (ut32)*((ut8 *)p+3);
 }
 
-#ifdef R_IPI
-#undef R_IPI
-#endif
-#define R_IPI
 R_IPI m68k_word *M68k_Disassemble(struct DisasmPara_68k *dp)
 /* Disassemble M68k instruction and return a pointer to the next */
 /* instruction, or NULL if an error occurred. */
@@ -3022,7 +3018,7 @@ static void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
 {
   char *symname = NULL;
   ut32 nv = 0;
-  size_t diff = INT_MAX;
+  ut32i diff = INT_MAX;
 
   if (dbuf == NULL)
     return;
@@ -3053,7 +3049,7 @@ static void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
 
 static void print_addr(dis_buffer_t *dbuf, ut32 addr)
 {
-  size_t diff = INT_MAX;
+  ut32i diff = INT_MAX;
   char *symname = NULL;
         
   if (dbuf->dp->find_symbol) {

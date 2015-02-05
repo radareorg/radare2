@@ -37,6 +37,8 @@
 #include "r_hash.h"
 #include "sha2.h"
 
+#define WEAK_ALIASING 0
+
 /*
  * ASSERT NOTE:
  * Some sanity checking code is included using assert().  On my FreeBSD
@@ -613,7 +615,14 @@ void SHA256_Final(sha2_byte digest[], R_SHA256_CTX* context) {
 			*context->buffer = 0x80;
 		}
 		/* Set the bit count: */
+#if WEAK_ALIASING
 		*(sha2_word64*)&context->buffer[SHA256_SHORT_BLOCK_LENGTH] = context->bitcount;
+#else
+		{
+			sha2_word64 *p = (sha2_word64*)((ut8*)context->buffer+SHA256_SHORT_BLOCK_LENGTH);
+			*p = (sha2_word64)context->bitcount;
+		}
+#endif
 
 		/* Final transform: */
 		SHA256_Transform(context, (sha2_word32*)context->buffer);
@@ -930,8 +939,17 @@ void SHA512_Last(R_SHA512_CTX* context) {
 		*context->buffer = 0x80;
 	}
 	/* Store the length of input data (in bits): */
+#if WEAK_ALIASING
 	*(sha2_word64*)&context->buffer[SHA512_SHORT_BLOCK_LENGTH] = context->bitcount[1];
 	*(sha2_word64*)&context->buffer[SHA512_SHORT_BLOCK_LENGTH+8] = context->bitcount[0];
+#else
+	{
+		sha2_word64 *p = (sha2_word64*)((ut8*)context->buffer+SHA256_SHORT_BLOCK_LENGTH);
+		*p = (sha2_word64)context->bitcount[1];
+		p = (sha2_word64*)((ut8*)context->buffer+SHA256_SHORT_BLOCK_LENGTH+8);
+		*p = (sha2_word64)context->bitcount[0];
+	}
+#endif
 
 	/* Final transform: */
 	SHA512_Transform(context, (sha2_word64*)context->buffer);

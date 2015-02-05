@@ -46,6 +46,9 @@
 #ifndef M68K_DISASM_H
 #define M68K_DISASM_H
 
+#include <r_types.h>
+#define ut32i ut32
+
 /* version/revision */
 #define M68KDISASM_VER 0
 #define M68KDISASM_REV 4
@@ -437,7 +440,7 @@ struct DisasmPara_68k {
   int radix;                    /* base 2, 8, 10, 16 ... */
 /* call-back functions for symbolic debugger support */
   unsigned long (*get_areg)(int);  /* returns current value of reg. An */
-  char *(*find_symbol)(unsigned long,unsigned long *);
+  char *(*find_symbol)(ut32, ut32i *);
                                 /* finds closest symbol to addr and */
                                 /*  returns (positive) difference and name */
 /* changed by disassembler: */
@@ -483,9 +486,7 @@ typedef struct dis_buffer dis_buffer_t;
 #define DB_STGY_PROC 0  /*@@@*/
 #define DB_STGY_ANY 0  /*@@@*/
 
-#include <r_types.h>
 /* common Unix typedefs used in m68k_disasm.c */
-#define ut32i ut32
 typedef ut32 vm68k_offset_t;
 typedef ut32 db_expr_t; /*@@@*/
 typedef const char *db_sym_t;  /*@@@*/
