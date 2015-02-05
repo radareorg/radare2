@@ -225,7 +225,7 @@ function toggle_minimap() {
     r2ui.seek(r2ui._dis.selected_offset, false);
     $('#minimap').show();
   }
-};
+}
 
 function update_minimap() {
   if (r2ui._dis.minimap && $('#canvas svg').length) {
@@ -806,56 +806,52 @@ function scroll_to_address(address) {
   $("#main_panel").scrollTo({'top':top, 'left':0});
 }
 
+function has_scrollbar(divnode) {
+  if(divnode.scrollHeight > divnode.clientHeight) return true;
+  return false;
+}
+
 function on_scroll(event) {
   if (r2ui._dis.display == "flat") {
-
     var scroll_offset = null;
     var top_offset = null;
+    var addr = null;
     // enyo layout
     if ($("#radareApp_mp").length) {
       scroll_offset = $("#main_panel").scrollTop();
       top_offset = $("#gbox").height() - $("#main_panel").height() - 10;
+      container_element = $("#center_panel");
     // panel layout
     } else {
       scroll_offset = $("#center_panel").scrollTop();
       top_offset = $("#gbox").height() - $("#center_panel").height() - 10;
+      container_element = $("#disasm_tab");
     }
-
-    if (scroll_offset === 0 ) {
-      $("#center_panel").scroll(null);
-      var addr = "0x" + r2ui._dis.instructions[0].offset.toString(16);
-      r2.get_disasm_before(addr, 100, function(x) {
-        r2ui._dis.instructions = x.concat(r2ui._dis.instructions);
-      });
-      // enyo layout
-      if ($("#radareApp_mp").length) {
-        $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
-      // panel layout
-      } else {
-        $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+    if (has_scrollbar($('#center_panel')[0])) {
+      if (scroll_offset === 0 ) {
+        $("#center_panel").scroll(null);
+        addr = "0x" + r2ui._dis.instructions[0].offset.toString(16);
+        r2.get_disasm_before(addr, 100, function(x) {
+          r2ui._dis.instructions = x.concat(r2ui._dis.instructions);
+        });
+        container_element.html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+        render_instructions(r2ui._dis.instructions);
+        scroll_to_address(addr);
+        rehighlight_iaddress(r2ui._dis.selected_offset);
+        $("#center_panel").scroll(on_scroll);
       }
-      render_instructions(r2ui._dis.instructions);
-      scroll_to_address(addr);
-      rehighlight_iaddress(r2ui._dis.selected_offset);
-      $("#center_panel").scroll(on_scroll);
-    }
-    if (scroll_offset > top_offset) {
-      $("#center_panel").scroll(null);
-      var addr = "0x" + r2ui._dis.instructions[r2ui._dis.instructions.length-1].offset.toString(16);
-      r2.get_disasm_after(addr, 100, function(x) {
-        r2ui._dis.instructions = r2ui._dis.instructions.slice(0, -1).concat(x);
-      });
-      // enyo layout
-      if ($("#radareApp_mp").length) {
-        $("#center_panel").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
-      // panel layout
-      } else {
-        $("#disasm_tab").html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+      if (scroll_offset > top_offset) {
+        $("#center_panel").scroll(null);
+        addr = "0x" + r2ui._dis.instructions[r2ui._dis.instructions.length-1].offset.toString(16);
+        r2.get_disasm_after(addr, 100, function(x) {
+          r2ui._dis.instructions = r2ui._dis.instructions.slice(0, -1).concat(x);
+        });
+        container_element.html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
+        render_instructions(r2ui._dis.instructions);
+        scroll_to_address(addr);
+        rehighlight_iaddress(r2ui._dis.selected_offset);
+        $("#center_panel").scroll(on_scroll);
       }
-      render_instructions(r2ui._dis.instructions);
-      scroll_to_address(addr);
-      rehighlight_iaddress(r2ui._dis.selected_offset);
-      $("#center_panel").scroll(on_scroll);
     }
   }
 }
@@ -1014,3 +1010,4 @@ function do_randomcolors(element, inEvent) {
 function inColor(x) {
   return "e scr.color=true;"+x+";e scr.color=false";
 }
+
