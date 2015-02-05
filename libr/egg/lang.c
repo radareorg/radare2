@@ -349,8 +349,10 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				/* TODO: return size of syscall */
 				if (callname) {
 					for (i=0; i<nsyscalls; i++)
-						if (!strcmp (syscalls[i].name, callname))
+						if (!strcmp (syscalls[i].name, callname)) {
+							free (oldstr);
 							return syscalls[i].arg;
+						}
 					eprintf ("Unknown arg for syscall '%s'\n", callname);
 				} else eprintf ("NO CALLNAME '%s'\n", callname);
 			}

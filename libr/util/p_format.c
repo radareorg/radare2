@@ -792,8 +792,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	memcpy (buf, b, len);
 	endian = p->big_endian;
 
-	p->printf = p->printf;
-
 	if (ofield && ofield != MINUSONE) field = strdup (ofield);
 
 	while (*arg && iswhitechar (*arg)) arg++;
