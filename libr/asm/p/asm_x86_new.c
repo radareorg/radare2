@@ -32,9 +32,10 @@
 #define OT_MEMORY      (1 << 0)
 #define OT_IMMEDIATE   (1 << 4)
 #define OT_JMPADDRESS  (1 << 5)
-// OT_IMMEDIATE | OT_MEMORY are written like memory operands in assembly, but
+#define OT_MEMADDRESS  (1 << 6)
+// OT_MEMORY | OT_MEMADDRESS are written like memory operands in assembly, but
 // encoded as immediates. Jump distances shall have an extra flag OT_JMPADDRESS
-// because they are relative to the offset
+// because they are relative to the offset.
 
 // Register types - by default, we allow all registers
 #define OT_REGALL   (0xff << REGMASK_SHIFT)
@@ -520,8 +521,8 @@ Opcode opcodes[] = {
 	{"lahf", {}, 1, {0x9F}},
 
 	/////// 0xA_ ///////
-	{"mov", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_MEMORY | OT_IMMEDIATE | OT_BYTE}, 1, {0xA0}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_MEMORY | OT_IMMEDIATE | OT_DWORD}, 1, {0xA1}},
+	{"mov", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_MEMORY | OT_MEMADDRESS | OT_BYTE}, 1, {0xA0}},
+	{"mov", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_MEMORY | OT_MEMADDRESS | OT_DWORD}, 1, {0xA1}},
 	// 0xA2 -- 0xA3
 	{"movsb", {}, 1, {0xA4}},
 	{"movsd", {}, 1, {0xA5}},
@@ -739,7 +740,7 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 		// If operand can point to memory, it must be encoded via RM and SIB
 		// That is, if it isn't just a plain address.
 		// TODO: what about two register-only operands?
-		if (opcode_ptr->op[op_ind] & OT_MEMORY && !(opcode_ptr->op[op_ind] & OT_IMMEDIATE)) {
+		if (opcode_ptr->op[op_ind] & OT_MEMORY && !(opcode_ptr->op[op_ind] & (OT_IMMEDIATE | OT_MEMADDRESS))) {
 			regmem_op = &operands[op_ind];
 			continue;
 		}
@@ -887,14 +888,14 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 
 	// Write immediate(s), if required.
 	for (op_ind = 0; op_ind < 3; ++op_ind)
-		if (opcode_ptr->op[op_ind] & OT_IMMEDIATE) {
+		if (opcode_ptr->op[op_ind] & (OT_IMMEDIATE | OT_MEMADDRESS)) {
 			// Careful: the following is a slight HACK and wouldn't work for TBYTE
 			// immediates. (If there were any...)
 			int i;
 			int len = opcode_ptr->op[op_ind] >> OPSIZE_SHIFT;
 
 			// For memory address immediates: the value is somewhere else
-			if (opcode_ptr->op[op_ind] & OT_MEMORY) {
+			if (opcode_ptr->op[op_ind] & OT_MEMADDRESS) {
 				operands[op_ind].immediate = operands[op_ind].offset;
 				len = 4; // TODO: real address length
 			}
