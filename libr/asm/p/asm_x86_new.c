@@ -847,6 +847,9 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 				if (regmem_op->scale[0] == 1 && regmem_op->scale[1] == 0 && regmem_op->regs[0] != 4) {
 					rm = regmem_op->regs[0];
 				}
+				else if (regmem_op->scale[0] == 0) {  // Special case: [0x0]
+					rm = 5;
+				}
 				else {      // Otherwise, we need a SIB byte
 					if (regmem_op->scale[1] == 0) {
 						if (regmem_op->scale[0] != 1)
@@ -873,15 +876,16 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 		if (mod != 3 && rm == 4)
 			data[l++] = make_SIB(scale, index, base);
 
-		if (regmem_op->type & OT_MEMORY && regmem_op->offset) {
+		if (regmem_op->type & OT_MEMORY && (mod > 0 || (mod == 0 && rm == 5))) {
 			if (mod == 1) {
 				data[l++] = *(ut8 *)&regmem_op->offset;
 			}
 			else {
-				data[l++] = *((ut8 *)&regmem_op->offset + 0);
-				data[l++] = *((ut8 *)&regmem_op->offset + 1);
-				data[l++] = *((ut8 *)&regmem_op->offset + 2);
-				data[l++] = *((ut8 *)&regmem_op->offset + 3);
+				ut8 *offset_ptr = (ut8 *)&regmem_op->offset;
+				data[l++] = *(offset_ptr + 0);
+				data[l++] = *(offset_ptr + 1);
+				data[l++] = *(offset_ptr + 2);
+				data[l++] = *(offset_ptr + 3);
 			}
 		}
 	}
