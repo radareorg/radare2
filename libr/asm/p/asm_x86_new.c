@@ -794,7 +794,7 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 				return 0;
 
 			// Which components do we have?
-			if (regmem_op->offset) {
+			if (regmem_op->offset || regmem_op->regs[0] == X86R_EBP) {
 				if (regmem_op->scale[0] == 0) {
 					mod = 0;
 					rm = 5;
