@@ -113,13 +113,13 @@ typedef enum tokentype_t {
 	TT_DECIMAL,
 	TT_HEXADECIMAL,
 	TT_SPECIAL
-} TokenType;
+} x86newTokenType;
 
 /**
  * Get the next token in str, starting at *begin. Write the index of the first
  * character after the token to *end. Return the type of the token.
  */
-static TokenType getToken(const char *str, int *begin, int *end) {
+static x86newTokenType getToken(const char *str, int *begin, int *end) {
 	// Skip whitespace
 	while (isspace(str[*begin]))
 		++(*begin);
@@ -136,7 +136,7 @@ static TokenType getToken(const char *str, int *begin, int *end) {
 		return TT_WORD;
 	}
 	else if (isdigit(str[*begin])) {   // number token
-		TokenType type = TT_DECIMAL;
+		x86newTokenType type = TT_DECIMAL;
 		if (str[*begin] == '0' && str[*begin + 1] == 'x') {
 			*begin += 2;
 			type = TT_HEXADECIMAL;
@@ -190,7 +190,7 @@ static Register parseReg(const char *str, int len, ut32 *type) {
 /**
  * Read decimal or hexadecimal number.
  */
-static ut64 readNumber(const char *str, TokenType type) {
+static ut64 readNumber(const char *str, x86newTokenType type) {
 	return strtol(str, 0, type == TT_DECIMAL ? 10 : 16);
 }
 
@@ -198,7 +198,7 @@ static ut64 readNumber(const char *str, TokenType type) {
 static int parseOperand(const char *str, Operand *op) {
 	int pos;
 	int nextpos = 0;
-	TokenType last_type;
+	x86newTokenType last_type;
 	int size_token = 1;
 
 	// Reset type
@@ -933,7 +933,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 	// Parse operands
 	int op_ind = 0;
-	TokenType ttype = TT_SPECIAL;
+	x86newTokenType ttype = TT_SPECIAL;
 	while (op_ind < 3 && ttype != TT_EOF) {
 		// Read operand
 		pos += parseOperand(str + pos, &operands[op_ind++]);

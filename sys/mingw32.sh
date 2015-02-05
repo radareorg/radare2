@@ -9,7 +9,7 @@ MAKE_JOBS=8
 OLD_LDFLAGS="${LDFLAGS}"
 unset LDFLAGS
 
-CFGFLAGS="--without-ewf --with-ostype=windows"
+CFGFLAGS="--with-ostype=windows"
 
 type i686-pc-mingw32-gcc >/dev/null 2>&1
 if [ $? = 0 ]; then
