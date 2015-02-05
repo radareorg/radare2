@@ -398,6 +398,7 @@ DEF_STATE_ACTION(V)
 	copy_string(type_code_str, "class ", 0);
 	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
 	if (len) {
+		copy_string(type_code_str, " ", 0);
 		state->amount_of_read_chars += len + 2; // cause and with @@ and they
 												// need to be skipped
 		state->buff_for_parsing += len + 2;
@@ -763,17 +764,18 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	i = 0;
 	err = get_type_code_string(curr_pos, &i, &tmp);
 	if (err != eDemanglerErrOK) {
-		R_FREE(tmp);
 		goto parse_microsoft_mangled_name_err;
 	}
-	// do something with tmp
-	printf("%s\n", tmp);
-	R_FREE(tmp);
 
-	printf("%s\n", type_code_str.type_str);
-	err = eDemanglerErrUnsupportedMangling;
+	i = strlen(tmp);
+	len = strlen(type_code_str.type_str);
+	*demangled_name = (char *) malloc(i + len + 1);
+	memset(*demangled_name, 0, i + len + 1);
+	memcpy(*demangled_name, tmp, i);
+	memcpy(*demangled_name + i, type_code_str.type_str, type_code_str.curr_pos);
 
 parse_microsoft_mangled_name_err:
+	R_FREE(tmp);
 	free_type_code_str_struct(&type_code_str);
 	return err;
 }
