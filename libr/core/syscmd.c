@@ -56,7 +56,9 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 			case S_IFBLK: fch = 'b'; break;
 			case S_IFLNK: fch = 'l'; break;
 			case S_IFIFO: fch = 'p'; break;
+#ifdef S_IFSOCK
 			case S_IFSOCK: fch = 's'; break;
+#endif
 			}
 	}
 #else
