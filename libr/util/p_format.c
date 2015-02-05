@@ -741,16 +741,23 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 		char *name, int slide, int mode, const char *setval, char *field) {
-	const char *fmt;
+	const char *fmt, namefmt[8];
 	if ((slide%STRUCTPTR) > NESTDEPTH || (slide%STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
-	//if (mode) p->printf = p->printf;
 	fmt = r_strht_get (p->formats, name);
 	if (!fmt || !*fmt) {
 		eprintf ("Undefined struct '%s'.\n", name);
 		return 0;
+	}
+	if (MUSTSEE) {
+		snprintf (namefmt, sizeof (namefmt), "%%%ds", 10+6*slide%STRUCTPTR);
+		if (fmt[0] == '0')
+			p->printf (namefmt, "union");
+		else
+			p->printf (namefmt, "struct");
+		p->printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
 	return r_print_format_struct_size(fmt, p, mode);
@@ -1113,13 +1120,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				else if (field) nxtfield = strchr (ofield, '.');
 				if (nxtfield != MINUSONE && nxtfield != NULL) nxtfield++;
 
-				if (MUSTSEE) {
-					p->printf ("struct<%s>\n", fmtname);
-					if (isptr) {
-						p->printf (namefmt, "----");
-						p->printf ("\n");
-					}
-				}
+				if (MUSTSEE)
+					p->printf ("\n");
 				if (MUSTSEEJSON) {
 					if (isptr)
 						p->printf ("%d},", seeki);
