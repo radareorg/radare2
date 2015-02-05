@@ -870,7 +870,8 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 		if (mod != 3 && rm == 4)
 			data[l++] = make_SIB(scale, index, base);
 
-		if (regmem_op->type & OT_MEMORY && (mod > 0 || (mod == 0 && rm == 5))) {
+		if (regmem_op->type & OT_MEMORY &&
+				(mod > 0 || (mod == 0 && rm == 5) || (mod == 0 && rm == 4 && base == 5))) {
 			if (mod == 1) {
 				data[l++] = *(ut8 *)&regmem_op->offset;
 			}
