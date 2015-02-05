@@ -111,8 +111,7 @@ typedef struct operand_t {
 typedef enum tokentype_t {
 	TT_EOF,
 	TT_WORD,
-	TT_DECIMAL,
-	TT_HEXADECIMAL,
+	TT_NUMBER,
 	TT_SPECIAL
 } x86newTokenType;
 
@@ -137,16 +136,10 @@ static x86newTokenType getToken(const char *str, int *begin, int *end) {
 		return TT_WORD;
 	}
 	else if (isdigit(str[*begin])) {   // number token
-		x86newTokenType type = TT_DECIMAL;
-		if (str[*begin] == '0' && str[*begin + 1] == 'x') {
-			*begin += 2;
-			type = TT_HEXADECIMAL;
-		}
-
 		*end = *begin;
 		while (isalnum(str[*end]))     // accept alphanumeric characters, because hex.
 			++(*end);
-		return type;
+		return TT_NUMBER;
 	}
 	else {                             // special character: [, ], +, *, ...
 		*end = *begin + 1;
@@ -192,7 +185,8 @@ static Register parseReg(const char *str, int len, ut32 *type) {
  * Read decimal or hexadecimal number.
  */
 static ut64 readNumber(const char *str, x86newTokenType type) {
-	return strtol(str, 0, type == TT_DECIMAL ? 10 : 16);
+	int hex = (str[0] == '0' && str[1] == 'x');
+	return strtol(str + 2*hex, 0, hex ? 16 : 10);
 }
 
 // Parse operand
