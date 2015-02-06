@@ -2150,7 +2150,7 @@ toro:
 		}
 		handle_print_op_push_info (core, ds);
 #if 1
-		handle_print_ptr (core, ds, len, idx);
+		handle_print_ptr (core, ds, len+256, idx);
 #else
 		if (ds->analop.refptr) {
 			handle_print_refptr (core, ds);
