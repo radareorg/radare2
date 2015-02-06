@@ -116,6 +116,19 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 //		R_FREE(demangled_name);
 	}
 
+	if (!out) {
+		// TODO: mangler_branch: remove, just for testing now
+		SDemangler *mangler = 0;
+//		char *demangled_name = 0;
+		create_demangler(&mangler);
+		if (init_demangler(mangler, (char *)str) == eDemanglerErrOK) {
+			// TODO: where out need to be free ????
+			mangler->demangle(mangler, &out/*demangled_name*/);
+		}
+		free_demangler(mangler);
+//		R_FREE(demangled_name);
+	}
+
 	return out;
 }
 
