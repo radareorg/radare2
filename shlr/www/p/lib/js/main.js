@@ -682,6 +682,7 @@ function render_imports(imports) {
   var imp_data = [];
   for (var i in imports) {
     var f = imports[i];
+    f.name = decodeURI (f.name);
     if (f.name !== undefined) {
       var id = {
         label: "<span class='flag import addr addr_" + "0x" + f.plt.toString(16) + "'>" + f.name + "</span>",
@@ -699,6 +700,7 @@ function render_symbols(symbols) {
   var data = [];
   for (var i in symbols) {
     var s = symbols[i];
+    s.name = decodeURI (s.name);
     var sd = {
       label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + s.name + "</span>",
       // label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + get_symbol_flag(s.name) + "</span>",

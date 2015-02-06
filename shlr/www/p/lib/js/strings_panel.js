@@ -9,6 +9,7 @@ StringsPanel.prototype.render = function() {
 	  var data = [];
 	    for (var i in strings) {
 	      var f = strings[i];
+              f.string = decodeURI (f.string);
 	      var fd = {
 	        label: f.string,
 	        children: [
