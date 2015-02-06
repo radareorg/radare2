@@ -251,7 +251,7 @@ ONE_LETTER_ACTIION(E, "unsigned char")
 ONE_LETTER_ACTIION(F, "short int")
 ONE_LETTER_ACTIION(G, "unsigned short int")
 ONE_LETTER_ACTIION(H, "int")
-ONE_LETTER_ACTIION(I, "unsinged int")
+ONE_LETTER_ACTIION(I, "unsigned int")
 ONE_LETTER_ACTIION(J, "long int")
 ONE_LETTER_ACTIION(K, "unsigned long int")
 ONE_LETTER_ACTIION(M, "float")
@@ -300,7 +300,6 @@ DEF_STATE_ACTION(T)
 
 	int buff_len = strlen(state->buff_for_parsing);
 	int check_len = 0;
-	char *tmp = 0;
 
 	state->state = eTCStateEnd;
 
@@ -314,7 +313,6 @@ DEF_STATE_ACTION(T)
 
 	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
 	if ((check_len > 0) && (check_len < buff_len)) {
-		memcpy(tmp, state->buff_for_parsing, check_len);
 		copy_string(type_code_str, "union ", 0);
 		copy_string(type_code_str, state->buff_for_parsing, check_len);
 		state->amount_of_read_chars += check_len + 2;
@@ -398,7 +396,6 @@ DEF_STATE_ACTION(V)
 	copy_string(type_code_str, "class ", 0);
 	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
 	if (len) {
-		copy_string(type_code_str, " ", 0);
 		state->amount_of_read_chars += len + 2; // cause and with @@ and they
 												// need to be skipped
 		state->buff_for_parsing += len + 2;
@@ -498,8 +495,9 @@ char* get_num(SStateInfo *state)
 		} \
 		num = atoi(n1); \
 \
+		copy_string(&tmp_str, " ", 0); \
 		copy_string(&tmp_str, "(", 0); \
-		copy_string(&tmp_str,modifier.type_str, modifier.curr_pos); \
+		copy_string(&tmp_str, modifier.type_str, modifier.curr_pos); \
 		copy_string(&tmp_str, modifier_str, 0); \
 		copy_string(&tmp_str, ")", 0); \
 \
@@ -513,10 +511,11 @@ char* get_num(SStateInfo *state)
 	} \
 \
 	if (tmp_str.curr_pos == 0) { \
+		copy_string(&tmp_str, " ", 0); \
 		copy_string(&tmp_str, modifier.type_str, modifier.curr_pos); \
 		copy_string(&tmp_str, modifier_str, 0); \
 		if (flag__ptr64) { \
-			copy_string(&tmp_str, " __ptr64 ", 0); \
+			copy_string(&tmp_str, " __ptr64", 0); \
 		} \
 	} \
 \
@@ -550,7 +549,7 @@ DEF_STATE_ACTION(P)
 		return;
 	}
 
-	MODIFIER(" *");
+	MODIFIER("*");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -769,10 +768,11 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	i = strlen(tmp);
 	len = strlen(type_code_str.type_str);
-	*demangled_name = (char *) malloc(i + len + 1);
-	memset(*demangled_name, 0, i + len + 1);
+	*demangled_name = (char *) malloc(i + len + 1 + 1);
+	memset(*demangled_name, 0, i + len + 1 + 1);
 	memcpy(*demangled_name, tmp, i);
-	memcpy(*demangled_name + i, type_code_str.type_str, type_code_str.curr_pos);
+	memcpy(*demangled_name + i, " ", 1);
+	memcpy(*demangled_name + i + 1, type_code_str.type_str, type_code_str.curr_pos);
 
 parse_microsoft_mangled_name_err:
 	R_FREE(tmp);
