@@ -1102,9 +1102,9 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	int tsize, nsym, ret_ctr, i, j, k, len, newsize;
 	ut64 sym_offset = 0, data_offset = 0, toffset;
 	struct r_bin_elf_symbol_t *ret = NULL;
-	Elf_(Shdr) *strtab_section;
-	Elf_(Sym) *sym;
-	char *strtab;
+	Elf_(Shdr) *strtab_section = NULL;
+	Elf_(Sym) *sym = NULL;
+	char *strtab = NULL;
 	Elf_(Shdr)* section_text = NULL;
 	ut64 section_text_offset = 0LL;
 
@@ -1159,7 +1159,7 @@ if (
 				/* oops. we have no strtab, skip */
 				continue;
 			}
-			if (strtab_section->sh_size> ST32_MAX) {
+			if (strtab_section->sh_size > ST32_MAX) {
 				eprintf ("size (syms strtab)");
 				free (ret);
 				free (strtab);
@@ -1286,7 +1286,7 @@ if (
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
-			free(sym);
+			free (sym);
 			sym = NULL;
 			{
 			ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
