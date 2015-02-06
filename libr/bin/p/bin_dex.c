@@ -226,15 +226,10 @@ static inline ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *si
 	return off;
 }
 #endif
-
-static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
+static char *getstr (RBinDexObj *bin, int idx) {
 	const ut8 buf[8], *buf2;
 	ut64 len;
 	int uleblen;
-	if (idx<0)
-		return NULL;
-	if (idx>=bin->header.strings_size)
-		return NULL;
 	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, sizeof (buf));
 	len = dex_read_uleb128 (buf);
 	if (len<1)
@@ -252,15 +247,35 @@ static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 	return NULL;
 }
 
+static char *get_string (RBinDexObj *bin, int cid, int idx) {
+	char *c_name, *m_name, *res;
+	if (idx<0)
+		return NULL;
+	if (idx<0 || idx>=bin->header.strings_size)
+		return NULL;
+	if (cid<0 || cid>=bin->header.strings_size)
+		return NULL;
+
+	c_name = getstr (bin, cid);
+	m_name = getstr (bin, idx);
+	res = r_str_newf ("%s.%s", c_name, m_name);
+	free (c_name);
+	free (m_name);
+	return res;
+}
+
 /* TODO: check boundaries */
 static char *dex_method_name (RBinDexObj *bin, int idx) {
-	int tid;
+	int tid, cid;
 	if (idx<0 || idx>=bin->header.method_size)
 		return NULL;
 	tid = bin->methods[idx].name_id;
-	if (tid<0 || tid>=bin->header.strings_size)
+	cid = bin->methods[idx].class_id;
+	if (cid<0 || cid >= bin->header.strings_size)
 		return NULL;
-	return get_string (bin, tid);
+	if (tid<0 || tid >= bin->header.strings_size)
+		return NULL;
+	return get_string (bin, cid, tid);
 }
 
 static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
@@ -272,7 +287,7 @@ static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 		return NULL;
 	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
-	return get_string (bin, tid);
+	return get_string (bin, cid, tid);
 }
 
 static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
@@ -284,7 +299,7 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 		return NULL;
 	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
-	return get_string (bin, tid);
+	return get_string (bin, cid, tid);
 }
 
 static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
@@ -665,7 +680,7 @@ static RList* sections(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		ut64 sz = arch ? r_buf_size (arch->buf): 0;
+		//ut64 sz = arch ? r_buf_size (arch->buf): 0;
 		strcpy (ptr->name, "data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
 		if (ptr->vaddr > arch->buf->length) {
