@@ -912,6 +912,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (symbols, iter, symbol) {
+			char *str = r_str_uri_encode (symbol->name);
 			ut64 at = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
 			ut64 vaddr = rva (r->bin, 1, symbol->paddr, symbol->vaddr, baddr, laddr);
 			r_cons_printf ("%s{\"name\":\"%s\","
@@ -919,8 +920,9 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				"\"addr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				iter->p?",":"", symbol->name, symbol->size,
+				iter->p?",":"", str, symbol->size,
 				at, vaddr, symbol->paddr);
+			free (str);
 		}
 		r_cons_printf ("]");
 	} else
