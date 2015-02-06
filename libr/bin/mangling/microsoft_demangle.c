@@ -55,6 +55,7 @@ typedef struct SStrInfo {
 
 #define DECL_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str);
 DECL_STATE_ACTION(start)
+DECL_STATE_ACTION(end)
 DECL_STATE_ACTION(X)
 DECL_STATE_ACTION(N)
 DECL_STATE_ACTION(D)
@@ -83,7 +84,7 @@ DECL_STATE_ACTION(A)
 
 #define NAME(action) tc_state_##action
 static state_func const state_table[eTCStateMax] = {
-	NAME(start), NULL, NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
+	NAME(start), NAME(end) , NAME(H), NAME(X), NAME(N), NAME(D), NAME(C), NAME(E),
 	NAME(F), NAME(G), NAME(I), NAME(J), NAME(K), NAME(M), NAME(Z), NAME(_),
 	NAME(T), NAME(U), NAME(W), NAME(V), NAME(O), NAME(S), NAME(P), NAME(R),
 	NAME(Q), NAME(A)
@@ -241,7 +242,7 @@ get_namespace_and_name_err:
 		if (copy_string(type_code_str, type, 0) == 0) { \
 			state->err = eTCStateMachineErrAlloc; \
 		} \
-		GO_TO_NEXT_STATE(state, eTCStateEnd) \
+		state->state = eTCStateEnd; \
 	} \
 
 ONE_LETTER_ACTIION(X, "void")
@@ -293,7 +294,8 @@ DEF_STATE_ACTION(T)
 	if ((check_len < buff_len) && \
 		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
 		copy_string(type_code_str, type_str, 0); \
-		state->amount_of_read_chars += check_len + 2; \
+		state->buff_for_parsing += check_len; \
+		state->amount_of_read_chars += check_len; \
 		return; \
 	} \
 }
@@ -332,8 +334,8 @@ DEF_STATE_ACTION(U)
 	if ((check_len < buff_len) && \
 		(strncmp(state->buff_for_parsing, case_string, check_len) == 0)) { \
 		copy_string(type_code_str, type_str, 0); \
-		state->amount_of_read_chars += check_len + 2; \
-		state->buff_for_parsing += check_len + 2; \
+		state->amount_of_read_chars += check_len; \
+		state->buff_for_parsing += check_len; \
 		return; \
 	} \
 }
@@ -472,28 +474,32 @@ char* get_num(SStateInfo *state)
 	case 'A': \
 		break; \
 	case 'B': \
-		copy_string(&modifier, " const", 0); \
+		copy_string(&modifier, "const ", 0); \
 		break; \
 	case 'C': \
-		copy_string(&modifier, " volatile", 0); \
+		copy_string(&modifier, "volatile ", 0); \
 		break; \
 	case 'D': \
-		copy_string(&modifier, " const volatile", 0); \
+		copy_string(&modifier, "const volatile ", 0); \
 		break; \
 	default: \
 		state->err = eTCStateMachineErrUnsupportedTypeCode; \
 		break; \
 	} \
 \
+	state->amount_of_read_chars++;\
+\
 	if (*state->buff_for_parsing == 'Y') { \
 		char *n1; \
 		int num; \
 \
 		state->buff_for_parsing++; \
+		state->amount_of_read_chars++; \
 		if (!(n1 = get_num(state))) { \
 			goto MODIFIER_err; \
 		} \
 		num = atoi(n1); \
+		R_FREE(n1); \
 \
 		copy_string(&tmp_str, " ", 0); \
 		copy_string(&tmp_str, "(", 0); \
@@ -502,12 +508,12 @@ char* get_num(SStateInfo *state)
 		copy_string(&tmp_str, ")", 0); \
 \
 		while (num--) { \
+			n1 = get_num(state); \
 			copy_string(&tmp_str, "[", 0); \
-			copy_string(&tmp_str, get_num(state), 0); \
+			copy_string(&tmp_str, n1, 0); \
 			copy_string(&tmp_str, "]", 0); \
+			R_FREE(n1); \
 		} \
-\
-		R_FREE(n1); \
 	} \
 \
 	if (tmp_str.curr_pos == 0) { \
@@ -522,9 +528,11 @@ char* get_num(SStateInfo *state)
 	err = get_type_code_string(state->buff_for_parsing, &i, &tmp); \
 	if (err != eDemanglerErrOK) { \
 		state->err = eTCStateMachineErrUnsupportedTypeCode; \
-		R_FREE(tmp); \
+		goto MODIFIER_err; \
 	} \
 \
+	state->amount_of_read_chars += i; \
+	state->buff_for_parsing += i; \
 	copy_string(type_code_str, tmp, 0); \
 	copy_string(type_code_str, tmp_str.type_str, tmp_str.curr_pos); \
 \
@@ -537,7 +545,7 @@ MODIFIER_err: \
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(S)
 {
-	MODIFIER(" * const volatile");
+	MODIFIER("* const volatile");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -555,19 +563,19 @@ DEF_STATE_ACTION(P)
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(R)
 {
-	MODIFIER(" * volatile");
+	MODIFIER("* volatile");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(Q)
 {
-	MODIFIER(" * const");
+	MODIFIER("* const");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(A)
 {
-	MODIFIER(" &");
+	MODIFIER("&");
 }
 
 #undef MODIFIER
@@ -622,6 +630,12 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static void tc_state_end(SStateInfo *state, STypeCodeStr *type_code_str)
+{
+	return;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static void init_state_struct(SStateInfo *state, char *buff_for_parsing)
 {
 	state->state = eTCStateStart;
@@ -668,7 +682,7 @@ static EDemanglerErr get_type_code_string(	char *sym,
 											char **str_type_code)
 {
 	EDemanglerErr err = eDemanglerErrOK;
-	char *tmp_sym = sym;
+	char *tmp_sym = strdup(sym);
 	STypeCodeStr type_code_str;
 	SStateInfo state;
 
@@ -703,6 +717,7 @@ static EDemanglerErr get_type_code_string(	char *sym,
 	*amount_of_read_chars = state.amount_of_read_chars;
 
 get_type_code_string_err:
+	R_FREE(tmp_sym);
 	free_type_code_str_struct(&type_code_str);
 	return err;
 }
@@ -725,6 +740,8 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	char *curr_pos = sym;
 	char *tmp = 0;
+	char *ptr64 = 0;
+	char *storage_class = 0;
 
 	if (!init_type_code_str_struct(&type_code_str)) {
 		err = eDemanglerErrMemoryAllocation;
@@ -766,13 +783,55 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		goto parse_microsoft_mangled_name_err;
 	}
 
-	i = strlen(tmp);
-	len = strlen(type_code_str.type_str);
-	*demangled_name = (char *) malloc(i + len + 1 + 1);
-	memset(*demangled_name, 0, i + len + 1 + 1);
-	memcpy(*demangled_name, tmp, i);
-	memcpy(*demangled_name + i, " ", 1);
-	memcpy(*demangled_name + i + 1, type_code_str.type_str, type_code_str.curr_pos);
+	curr_pos += i;
+
+	i = strlen(curr_pos);
+	if (!i || i > 2) {
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_mangled_name_err;
+	}
+
+	if (i == 2) {
+		if (*curr_pos != 'E') {
+			err = eDemanglerErrUncorrectMangledSymbol;
+			goto parse_microsoft_mangled_name_err;
+		}
+		ptr64 = "__ptr64";
+		curr_pos++;
+	}
+
+#define SET_STORAGE_CLASS(letter, storage_class_str) { \
+	case letter: \
+		storage_class = storage_class_str; \
+		break; \
+}
+
+	switch (*curr_pos) {
+	SET_STORAGE_CLASS('A', 0);
+	SET_STORAGE_CLASS('B', "const");
+	SET_STORAGE_CLASS('C', "volatile");
+	SET_STORAGE_CLASS('D', "const volatile");
+	default:
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_mangled_name_err;
+	}
+#undef SET_STORAGE_CLASS
+
+	if (err == eDemanglerErrOK) {
+		if (!ptr64) {
+			if (!storage_class) {
+				*demangled_name = r_str_newf("%s %s", tmp, type_code_str.type_str);
+			} else {
+				*demangled_name = r_str_newf("%s %s %s", tmp, storage_class,type_code_str.type_str);
+			}
+		} else {
+			if (!storage_class) {
+				*demangled_name = r_str_newf("%s %s %s", tmp, ptr64, type_code_str.type_str);
+			} else {
+				*demangled_name = r_str_newf("%s %s %s %s", tmp, storage_class, ptr64, type_code_str.type_str);
+			}
+		}
+	}
 
 parse_microsoft_mangled_name_err:
 	R_FREE(tmp);
