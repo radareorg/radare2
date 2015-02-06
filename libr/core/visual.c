@@ -1339,8 +1339,8 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
-	char pos[512], foo[512], bar[512];
-	int scrcols;
+	char pos[512], foo[512], bar[512], pcs[32];
+	int scrcols, pc;
 	if (!oldpc) oldpc = core->offset;
 	/* automatic block size */
 	if (autoblocksize)
@@ -1399,14 +1399,28 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[10] = '.'; // chop cmdfmt
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
+	{
+		ut64 sz = r_io_size (core->io);
+		ut64 pa = r_io_section_vaddr_to_offset (core->io, core->offset);
+		if (sz == UT64_MAX) {
+			pcs[0] = 0;
+		} else {
+			if (pa>sz) {
+				pc = 0;
+			} else {
+				pc = ( pa * 100 ) / sz;
+			}
+			sprintf (pcs, "%d%% ", pc);
+		}
+	}
 	if (curset)
-		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d (0x%x:%d=%d)]> %s %s\n",
-				core->offset, core->blocksize,
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %s%d (0x%x:%d=%d)]> %s %s\n",
+				core->offset, pcs, core->blocksize,
 				cursor, ocursor, ocursor==-1?1:R_ABS (cursor-ocursor)+1,
 				bar, pos);
 	else
-		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n",
-			core->offset, core->blocksize, filename, bar, pos);
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %s%d %s]> %s %s\n",
+			core->offset, pcs, core->blocksize, filename, bar, pos);
 	r_cons_printf (foo);
 	if (color) r_cons_strcat (Color_RESET);
 }
