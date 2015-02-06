@@ -436,8 +436,10 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 			core->parser->varlist = r_anal_var_list;
 			r_parse_varsub (core->parser, f,
 				ds->opstr, ds->strsub, sizeof (ds->strsub));
-			free (ds->opstr);
-			ds->opstr = strdup (ds->strsub);
+			if (ds->strsub && *ds->strsub) {
+				free (ds->opstr);
+				ds->opstr = strdup (ds->strsub);
+			}
 		}
 	}
 	asm_str = colorize_asm_string (core, ds);
