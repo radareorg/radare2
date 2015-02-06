@@ -101,10 +101,9 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 	}
 	out = cplus_demangle_v3 (str, flags);
 
-	if (out)
+	if (out) {
 		r_str_replace_char (out, ' ', 0);
-
-	if (!out) {
+	} else {
 		// TODO: mangler_branch: remove, just for testing now
 		SDemangler *mangler = 0;
 //		char *demangled_name = 0;

@@ -5,7 +5,7 @@
 #
 # From: David Necas <yeti@physics.muni.cz>
 # often the module starts with a multiline string
-0	string		"""	a python script text executable
+# 0	string		"""	a python script text executable
 # MAGIC as specified in Python/import.c (1.5 to 2.3.0a)
 # 20121  ( YEAR - 1995 ) + MONTH  + DAY (little endian followed by "\r\n"
 0	belong		0x994e0d0a	python 1.5/1.6 byte-compiled

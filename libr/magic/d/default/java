@@ -12,15 +12,15 @@
 
 0	belong		0xfeedfeed	Java KeyStore
 !:mime	application/x-java-keystore
-0	belong		0xcececece	Java JCE KeyStore
-!:mime	application/x-java-jce-keystore
+# 0	belong		0xcececece	Java JCE KeyStore
+# !:mime	application/x-java-jce-keystore
 
 # Dalvik .dex format. http://retrodev.com/android/dexformat.html
 # From <mkf@google.com> "Mike Fleming"
 0	string	dex\n
->0	regex	dex\n[0-9][0-9][0-9]\0	Dalvik dex file
+>0	regex	dex\n[0-9][0-9][0-9]\0	Dalvik DEX file
 >4	string	>000			version %s
 0	string	dey\n
->0	regex	dey\n[0-9][0-9][0-9]\0	Dalvik dex file (optimized for host)
+>0	regex	dey\n[0-9][0-9][0-9]\0	Dalvik ODEX file (optimized for host)
 >4	string	>000			version %s
 

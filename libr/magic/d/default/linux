@@ -22,8 +22,8 @@
 0	lelong		0x006400cc	Linux/i386 demand-paged executable (QMAGIC)
 >16	lelong		0		\b, stripped
 #
-0	string		\007\001\000	Linux/i386 object file
->20	lelong		>0x1020		\b, DLL library
+# 0	string		\007\001\000	Linux/i386 object file
+# >20	lelong		>0x1020		\b, DLL library
 #
 # 0	string		\01\03\020\20	Minix-386 impure executable
 # >28	long		!0		not stripped
@@ -126,19 +126,19 @@
 >0x1e6		belong		0x454c4b53	ELKS Kernel
 >0x1e6		belong		!0x454c4b53	style boot sector
 
-0	lelong&0xFF00FFFF 0x4000301	Linux-8086 executable
->2	byte&0x01	!0		\b, unmapped zero page
->2	byte&0x20	0		\b, impure
->2	byte&0x20	!0
->>2	byte&0x10	!0		\b, A_EXEC
->2	byte&0x02	!0		\b, A_PAL
->2	byte&0x04	!0		\b, A_NSYM
->2	byte&0x08	!0		\b, A_STAND
->2	byte&0x40	!0		\b, A_PURE
->2	byte&0x80	!0		\b, A_TOVLY
->28     long            !0              \b, not stripped
->37	string		.		
->>36	string		>\0		\b, libc version %s
+# 0	lelong&0xFF00FFFF 0x4000301	Linux-8086 executable
+# >2	byte&0x01	!0		\b, unmapped zero page
+# >2	byte&0x20	0		\b, impure
+# >2	byte&0x20	!0
+# >>2	byte&0x10	!0		\b, A_EXEC
+# >2	byte&0x02	!0		\b, A_PAL
+# >2	byte&0x04	!0		\b, A_NSYM
+# >2	byte&0x08	!0		\b, A_STAND
+# >2	byte&0x40	!0		\b, A_PURE
+# >2	byte&0x80	!0		\b, A_TOVLY
+# >28     long            !0              \b, not stripped
+# >37	string		.		
+# >>36	string		>\0		\b, libc version %s
 
 # 0	lelong&0xFF00FFFF 0x10000301	ld86 I80386 executable
 # 0	lelong&0xFF00FFFF 0xB000301	ld86 M68K executable

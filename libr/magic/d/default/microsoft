@@ -377,16 +377,16 @@
 
 # Winamp .avs
 #0	string	Nullsoft\ AVS\ Preset\ \060\056\061\032	A plug in for Winamp ms-windows Freeware media player
-0	string	Nullsoft\ AVS\ Preset\ 	Winamp plug in
+#0	string	Nullsoft\ AVS\ Preset\ 	Winamp plug in
 
 # Hyper terminal:
-0	string	HyperTerminal\ 	hyperterm
->15	string	1.0\ --\ HyperTerminal\ data\ file	MS-windows Hyperterminal
+#0	string	HyperTerminal\ 	hyperterm
+#>15	string	1.0\ --\ HyperTerminal\ data\ file	MS-windows Hyperterminal
 
 # Windows Metafont .WMF
-0       string  \327\315\306\232        ms-windows metafont .wmf
-0       string  \002\000\011\000        ms-windows metafont .wmf
-0       string  \001\000\011\000        ms-windows metafont .wmf
+#0       string  \327\315\306\232        ms-windows metafont .wmf
+#0       string  \002\000\011\000        ms-windows metafont .wmf
+#0       string  \001\000\011\000        ms-windows metafont .wmf
 
 #tz3 files whatever that is (MS Works files)
 0	string	\003\001\001\004\070\001\000\000	tz3 ms-works file
@@ -443,7 +443,7 @@
 
 
 # recycled/info the windows trash bin index
-9	string	\000\000\000\030\001\000\000\000 MS Windows recycled bin info
+# 9	string	\000\000\000\030\001\000\000\000 MS Windows recycled bin info
 
 
 ##### put in Either Magic/font or Magic/news
