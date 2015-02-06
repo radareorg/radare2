@@ -299,5 +299,5 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"+iput-object-volatile", 4, fmtopvAvBtCCCC},
 	{"+sget-object-volatile", 4, fmtopvAAtBBBB},
 	{"+sput-object-volatile", 4, fmtopvAAtBBBB},
-	{"DEPRECATED", 2, fmtop}
+	{"invalid", 2, fmtop}
 };

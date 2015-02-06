@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2015 - pancake */
+
 #include <r_types.h>
 #include <r_util.h>
 #include "dex.h"
@@ -36,18 +38,18 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 			bin->header.class_size * sizeof (struct dex_class_t));
 //{ ut8 *b = (ut8*)&bin->methods; eprintf ("CLASS %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]); }
 	/* methods */
-	bin->methods = (struct dex_method_t *) malloc (bin->header.method_size *
-			sizeof (struct dex_method_t) + 1);
+	bin->methods = (struct dex_method_t *) calloc (bin->header.method_size *
+			sizeof (struct dex_method_t) + 1, 1);
 	r_buf_read_at (bin->b, bin->header.method_offset, (ut8*)bin->methods,
 			bin->header.method_size * sizeof (struct dex_method_t));
 	/* types */
-	bin->types = (struct dex_type_t *) malloc (bin->header.types_size *
-			sizeof (struct dex_type_t) + 1);
+	bin->types = (struct dex_type_t *) calloc (bin->header.types_size *
+			sizeof (struct dex_type_t) + 1, 1);
 	r_buf_read_at (bin->b, bin->header.types_offset, (ut8*)bin->types,
 			bin->header.types_size * sizeof (struct dex_type_t));
 	/* fields */
-	bin->fields = (struct dex_field_t *) malloc (bin->header.fields_size *
-			sizeof (struct dex_field_t) + 1);
+	bin->fields = (struct dex_field_t *) calloc (bin->header.fields_size *
+			sizeof (struct dex_field_t) + 1, 1);
 	r_buf_read_at (bin->b, bin->header.fields_offset, (ut8*)bin->fields,
 			bin->header.fields_size * sizeof (struct dex_field_t));
 	return bin;

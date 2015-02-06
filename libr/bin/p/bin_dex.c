@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -396,7 +396,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 					strncpy (sym->name, flag_name, R_BIN_SIZEOF_STRINGS);
 					strcpy (sym->type, "FUNC");
 					sym->paddr = sym->vaddr = MC;
-					r_list_append (bin->methods_list, sym);
+					if (MC>0) /* avoid methods at 0 paddr */
+						r_list_append (bin->methods_list, sym);
 				}
 				free (method_name);
 				free (flag_name);
@@ -410,8 +411,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				p = r_uleb128 (p, p_end-p, &MC);
 
 				if (MI<bin->header.method_size) methods[MI] = 1;
-				if (bin->code_from>MC) bin->code_from = MC;
-				if (bin->code_to<MC) bin->code_to = MC;
+				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
+				if (MC>0 && bin->code_to<MC) bin->code_to = MC;
 
 				name = dex_method_name (bin, MI);
 				dprintf ("    method name: %s\n", name);
@@ -641,24 +642,34 @@ static RList* sections(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "code");
-		ptr->size = bin->code_to-bin->code_from; //ptr->vsize = fsymsz;
-		ptr->paddr= bin->code_from; //ptr->vaddr = fsym;
-		ptr->srwx = 4|1;
-		r_list_append (ret, ptr);
-	}
-	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "constpool");
-		ptr->size = ptr->vsize = fsym;
+		strcpy (ptr->name, "header");
+		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
 		ptr->srwx = 4;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
+		strcpy (ptr->name, "constpool");
+		ptr->size = ptr->vsize = fsym;
+		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
+		ptr->srwx = 4;
+		r_list_append (ret, ptr);
+	}
+	if ((ptr = R_NEW0 (RBinSection))) {
+		strcpy (ptr->name, "code");
+		ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
+		ptr->size = bin->code_to - ptr->paddr;
+		ptr->srwx = 4|1;
+		r_list_append (ret, ptr);
+	}
+	if ((ptr = R_NEW0 (RBinSection))) {
+		ut64 sz = arch ? r_buf_size (arch->buf): 0;
 		strcpy (ptr->name, "data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
-		if (arch->buf->length > ptr->vaddr) {
+		if (ptr->vaddr > arch->buf->length) {
+			ptr->paddr = ptr->vaddr = bin->code_to;
 			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
 		} else {
 			ptr->size = ptr->vsize = ptr->vaddr - arch->buf->length;
