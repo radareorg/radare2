@@ -1,11 +1,11 @@
-.Dd Sep 30, 2014
+.Dd Feb 6, 2015
 .Dt RAHASH2 1
 .Sh NAME
 .Nm hasher2
 .Nd block based hashing utility
 .Sh SYNOPSIS
 .Nm hasher2
-.Op Fl dDheBrkv
+.Op Fl BdDehjrkv
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
 .Op Fl s Ar string
@@ -37,6 +37,8 @@ Decode base64 string or file
 Use little endian to display checksums
 .It Fl i Ar iters
 Apply the hash Iters times to itself+seed
+.It Fl j
+Show output in JSON (see -r)
 .It Fl B
 Show per-block hash
 .It Fl k

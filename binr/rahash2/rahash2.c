@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +44,7 @@ static void do_hash_seed(const char *seed) {
 	}
 }
 
-static void do_hash_hexprint (const ut8 *c, int len, int ule) {
+static void do_hash_hexprint (const ut8 *c, int len, int ule, int rad) {
 	int i;
 	if (ule) {
 		for (i=len-1; i>=0; i--)
@@ -53,7 +53,8 @@ static void do_hash_hexprint (const ut8 *c, int len, int ule) {
 		for (i=0; i<len; i++)
 			printf ("%02x", c[i]);
 	}
-	printf ("\n");
+	if (rad != 'j')
+		printf ("\n");
 }
 
 static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
@@ -65,11 +66,16 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 		if (!quiet)
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ",
 				from, to, hname);
-		do_hash_hexprint (c, dlen, ule);
+		do_hash_hexprint (c, dlen, ule, rad);
 		break;
 	case 1:
 		printf ("e file.%s=", hname);
-		do_hash_hexprint (c, dlen, ule);
+		do_hash_hexprint (c, dlen, ule, rad);
+		break;
+	case 'j':
+		printf ("{\"name\":\"%s\",\"hash\":\"", hname);
+		do_hash_hexprint (c, dlen, ule, rad);
+		printf ("\"}");
 		break;
 	default:
 		o = r_print_randomart (c, dlen, from);
@@ -109,7 +115,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
 	RHash *ctx;
 	ut8 *buf;
-	int i;
+	int i, first = 1;
 	if (algobit == R_HASH_NONE) {
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
@@ -135,12 +141,19 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		return 1;
 	ctx = r_hash_new (R_TRUE, algobit);
 
+	if (rad == 'j')
+		printf ("[");
 	if (incremental) {
 		for (i=1; i<0x800000; i<<=1) {
 			if (algobit & i) {
 				int hashbit = i & algobit;
 				int dlen = r_hash_size (hashbit);
 				r_hash_do_begin (ctx, i);
+				if (first) {
+					first = 0;
+				} else {
+					printf (",");
+				}
 				if (s.buf && s.prefix) {
 					do_hash_internal (ctx,
 						hashbit, s.buf, s.len, rad, 0, ule);
@@ -160,7 +173,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					r_hash_do_spice (ctx, i, iterations, _s);
 				if (!*r_hash_name (i))
 					continue;
-				if (!quiet)
+				if (!quiet && rad != 'j')
 					printf ("%s: ", file);
 				do_hash_print (ctx, i, dlen, rad, ule);
 			}
@@ -191,6 +204,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 			}
 		}
 	}
+	if (rad == 'j')
+		printf ("]\n");
 	r_hash_free (ctx);
 	free (buf);
 	return 0;
@@ -238,7 +253,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "dDrvea:i:S:s:b:nBhf:t:kLq")) != -1) {
+	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:b:nBhf:t:kLq")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i': iterations = atoi (optarg);
@@ -247,6 +262,7 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 			break;
+		case 'j': rad = 'j'; break;
 		case 'S': seed = optarg; break;
 		case 'n': numblocks = 1; break;
 		case 'd': b64mode = 1; break;
