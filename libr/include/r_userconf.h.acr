@@ -1,6 +1,8 @@
 #ifndef R2_CONFIGURE_H
 #define R2_CONFIGURE_H
 
+#include "r_version.h"
+
 #ifdef LIL_ENDIAN
 #undef LIL_ENDIAN
 #endif

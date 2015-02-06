@@ -9,6 +9,7 @@ DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
+R2VC=$(shell git rev-list --all | wc -l)
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
@@ -23,13 +24,18 @@ CZ=gzip -f
 endif
 PWD=$(shell pwd)
 
-all: plugins.cfg
+all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util
 	${MAKE} -C libr/socket
 	${MAKE} -C shlr
 	${MAKE} -C libr
 	${MAKE} -C binr
+
+.PHONY: libr/include/r_version.h
+libr/include/r_version.h:
+	echo "#define R2_VERSION_COMMIT $(R2VC)" > $@.tmp
+	cmp $@.tmp $@ || mv $@.tmp $@
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \

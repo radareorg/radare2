@@ -327,8 +327,8 @@ static int cmd_help(void *data, const char *input) {
 		return R_TRUE;
 	case 'V':
 		if (!strcmp (R2_VERSION, GIT_TAP))
-			r_cons_printf ("%s\n", R2_VERSION);
-		else r_cons_printf ("%s aka %s\n", R2_VERSION, GIT_TAP);
+			r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
+		else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, GIT_TAP, R2_VERSION_COMMIT);
 		break;
 	case 'l':
 		for (input++; input[0]==' '; input++);
