@@ -10,7 +10,7 @@ StringsPanel.prototype.render = function() {
 	    for (var i in strings) {
 	      var f = strings[i];
 	      var fd = {
-	        label: f.string,
+	        label: decodeURIComponent(f.string),
 	        children: [
 	          {label: "vaddr: " + "0x" + f.vaddr.toString(16)},
 	          {label: "paddr: " + "0x" + f.paddr.toString(16)},
