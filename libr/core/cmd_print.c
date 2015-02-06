@@ -303,9 +303,13 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '='), *dot = strchr (name, '.');
 			if (space && (eq == NULL || space < eq)) {
+				char *fields = NULL;
 				*space++ = 0;
-				//printf ("SET (%s)(%s)\n", name, space);
-				r_strht_set (core->print->formats, name, space);
+				fields = strchr (space, ' ');
+				if (strchr (name, '.') != NULL || (fields != NULL && strchr(fields, '.') != NULL))
+					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
+				else
+					r_strht_set (core->print->formats, name, space);
 				free (input);
 				return;
 			}

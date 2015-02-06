@@ -580,10 +580,8 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
-		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
-			r_list_free (list);
+		if (!strcmp (buf, "q") || !strcmp (buf, "exit"))
 			return R_TRUE;
-		}
 		if (buf[0]=='!') {
 			r_sandbox_system (buf+1, 1);
 		} else
