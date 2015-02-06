@@ -122,7 +122,7 @@ R_API RBinFile * r_core_bin_cur (RCore *core) {
 }
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
-	char *p, *q, str[R_FLAG_NAME_SIZE];
+	char *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
 	int hasstr, minstr, maxstr, rawstr;
 	RBinString *string;
@@ -178,11 +178,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			ut64 paddr = string->paddr;
 			if (maxstr && string->length>maxstr)
 				continue;
-			q = strdup (string->string);
-			for (p=q; *p; p++) {
-				if (*p=='"') *p = '\'';
-				if (*p=='\\') *p = '/';
-			}
+			q = r_str_uri_encode (string->string);
 			if (string->length>minstr) {
 				r_cons_printf ("%s{\"vaddr\":%"PFMT64d
 				",\"paddr\":%"PFMT64d
