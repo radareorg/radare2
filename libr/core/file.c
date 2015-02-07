@@ -785,7 +785,6 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			from = 0LL;
 			overlapped = R_FALSE;
 		}
-		if (!f->desc->uri) continue;
 		switch (mode) {
 		case 'j':
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
