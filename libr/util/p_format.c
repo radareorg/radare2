@@ -1270,7 +1270,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				} else {
 					p->printf ("[\n");
 					while (size--) {
-						eprintf ("elem: %d\n", elem);
 						if (elem == -1 || elem == 0) {
 							mode |= R_PRINT_MUSTSEE;
 							if (elem == 0) elem = -2;
