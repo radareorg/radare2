@@ -124,7 +124,6 @@ static x86newTokenType getToken(const char *str, int *begin, int *end) {
 	while (isspace(str[*begin]))
 		++(*begin);
 
-
 	if (!str[*begin]) {                // null byte
 		*end = *begin;
 		return TT_EOF;
@@ -918,13 +917,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	ut64 offset = a->pc;
 	ut8 *data = ao->buf;
 	int pos = 0, nextpos;
-
+	x86newTokenType ttype;
 	char mnemonic[12];
-	int mnemonic_len;
+	int op_ind, mnemonic_len;
+	Opcode *opcode_ptr;
 	Operand operands[3];
 
 	// Parse mnemonic
-	getToken(str, &pos, &nextpos);
+	(void)getToken(str, &pos, &nextpos);
 	mnemonic_len = (nextpos - pos < sizeof(mnemonic) - 1) ?
 	                nextpos - pos : sizeof(mnemonic) - 1;
 	strncpy(mnemonic, str + pos, mnemonic_len);
@@ -932,8 +932,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	pos = nextpos;
 
 	// Parse operands
-	int op_ind = 0;
-	x86newTokenType ttype = getToken(str, &pos, &nextpos);
+	op_ind = 0;
+	ttype = getToken(str, &pos, &nextpos);
 	while (op_ind < 3 && ttype != TT_EOF) {
 		// Read operand
 		pos += parseOperand(str + pos, &operands[op_ind++]);
@@ -948,7 +948,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		operands[op_ind].type = 0;
 
 	// Try to assemble: walk through table and find fitting instruction
-	Opcode *opcode_ptr;
 	for (opcode_ptr = opcodes; opcode_ptr - opcodes < sizeof(opcodes) / sizeof(Opcode); ++opcode_ptr) {
 		// Mnemonic match?
 		if (strncasecmp(mnemonic, opcode_ptr->mnemonic, strlen(mnemonic)))

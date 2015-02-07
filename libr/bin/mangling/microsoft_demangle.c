@@ -655,9 +655,9 @@ static int init_type_code_str_struct(STypeCodeStr *type_coder_str)
 	type_coder_str->type_str = (char *) malloc(TYPE_STR_LEN * sizeof(char));
 	if (type_coder_str->type_str == NULL) {
 		res = 0;
+		return 0;
 	}
-
-	memset(type_coder_str->type_str, 0, TYPE_STR_LEN * sizeof(char));
+	memset (type_coder_str->type_str, 0, TYPE_STR_LEN * sizeof(char));
 
 	type_coder_str->curr_pos = 0; // strlen("unknown type");
 //	strncpy(type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);
@@ -843,15 +843,17 @@ parse_microsoft_mangled_name_err:
 EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 {
 	EDemanglerErr err = eDemanglerErrOK;
-	char *sym = demangler->symbol;
+	char *sym;
 
 	// TODO: maybe get by default some sym_len and check it?
-	unsigned int sym_len = strlen(sym);
+	unsigned int sym_len;
 
-	if (demangler == 0) {
+	if (!demangler || !demangled_name) {
 		err = eDemanglerErrMemoryAllocation;
 		goto microsoft_demangle_err;
 	}
+	sym = demangler->symbol;
+	sym_len = strlen (sym);
 
 	if (sym[sym_len - 1] == 'Z') {
 		err = eDemanglerErrUnsupportedMangling;

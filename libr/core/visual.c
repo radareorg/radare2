@@ -1405,7 +1405,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;
 		} else {
-			if (pa>sz) {
+			if (!sz || pa>sz) {
 				pc = 0;
 			} else {
 				pc = ( pa * 100 ) / sz;

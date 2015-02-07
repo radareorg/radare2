@@ -633,7 +633,8 @@ R_API void r_core_visual_mounts (RCore *core) {
 		/* Show */
 		if (mode == 0) {
 			if (list) {
-				r_list_free(list);
+				r_list_free (list);
+				list = NULL;
 			}
 			r_cons_printf ("Press '/' to navigate the root filesystem.\nPartitions:\n\n");
 			n = r_fs_partition_type_get (partition);

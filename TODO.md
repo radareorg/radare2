@@ -4,7 +4,6 @@
     |__\__|_|__|___/__|__|_\__\___\ |____(_)____/
 
 
-* rafind2 : add support for unicode/widestring search
 * libr/debug/p/drx.c <- not used .. debug must have a hw reg api for drx and gpio
 * ah -> add hint to define calls that do not return
 * rabin2 -x should not work on non-fatmach0 files

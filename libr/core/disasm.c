@@ -35,7 +35,7 @@ static const char* r_vline_u[] = {
 // TODO: what about using bit shifting and enum for keys? see libr/util/bitmap.c
 // the problem of this is that the fields will be more opaque to bindings, but we will earn some bits
 typedef struct r_disam_options_t {
-	char str[2048], strsub[2048];
+	char str[1024], strsub[1024];
 	int use_esil;
 	int show_color;
 	int colorop;
@@ -436,7 +436,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 			core->parser->varlist = r_anal_var_list;
 			r_parse_varsub (core->parser, f,
 				ds->opstr, ds->strsub, sizeof (ds->strsub));
-			if (ds->strsub && *ds->strsub) {
+			if (*ds->strsub) {
 				free (ds->opstr);
 				ds->opstr = strdup (ds->strsub);
 			}
