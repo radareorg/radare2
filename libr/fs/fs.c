@@ -6,8 +6,10 @@
 #include <errno.h>
 #include "../../shlr/grub/include/grub/msdos_partition.h"
 
+#if WITH_GPL
 #ifndef USE_GRUB
 #define USE_GRUB 1
+#endif
 #endif
 
 R_LIB_VERSION(r_fs);
@@ -459,11 +461,10 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 		}
 	}
 	if (cur != -1) {
-		void *disk = NULL;
-		RList *list = r_list_new ();
-		list->free = (RListFree)r_fs_partition_free;
-		if (partitions[i].iterate == (void*)&grub_parhook) {
+		RList *list = r_list_newf ((RListFree)r_fs_partition_free);
 #if USE_GRUB
+		void *disk = NULL;
+		if (partitions[i].iterate == (void*)&grub_parhook) {
 			struct grub_partition_map *gpt = partitions[i].ptr;
 			grubfs_bind_io (NULL, 0);
 			disk = (void*)grubfs_disk (&fs->iob);
@@ -472,8 +473,10 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 					(void*)partitions[i].iterate, list);
 			}
 			grubfs_free (disk);
-#endif
 		} else {
+#else
+		{
+#endif
 			RFSPartitionIterator iterate = partitions[i].ptr;
 			iterate (fs, partitions[i].iterate, list); //grub_parhook, list);
 		}

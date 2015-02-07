@@ -29,8 +29,8 @@ load () {
     echo "configure-plugins: Loading $cfg .."
     . $cfg
   else
-    echo "configure-plugins: Loading plugins.def.cfg .."
-    . ./plugins.def.cfg
+    echo "configure-plugins: Loading $1 .."
+    . "$1" #plugins.def.cfg
   fi
 }
 
@@ -154,15 +154,17 @@ make_shared () {
 
 make_ () { : ; }
 
-load
 
 MODE=""
 DONOTHING=0
+DEFCFG=./plugins.def.cfg
+
 while : ; do
   [ -z "$1" ] && break
   case "$1" in
   "--static") MODE=static ; ;;
   "--shared") MODE=shared ; ;;
+  "--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
   "--list") sort_vars ; list ; ;;
   "-n") DONOTHING=1 ; ;;
   "-h"|"--help") help ; ;;
@@ -171,6 +173,7 @@ while : ; do
   shift
 done
 
+load ${DEFCFG}
 sort_vars
 
 [ ${DONOTHING} = 0 ] && generate

@@ -132,9 +132,9 @@ If you notice any misfeature, issue, error, problem or you just
 don't know how to do something which is supposed to be covered
 by this framework.
 
-You should report it in our web page in the 'bugs' section.
+You should report it into the github issues page.
 
-   http://www.radare.org/
+   https://github.com/radare/radare2/issues
 
 Otherwise, if you are looking for some more feedback I will
 encourage you to send an email to any of the emails enumerated
@@ -143,6 +143,11 @@ in the AUTHORS file.
 Anyway, if you want to get even more feedback and discuss this
 in a public place we have a mailing list where many other
 people may help in order to find a solution.
+
+The issues page of Github contains a list of all the bugs that
+have been reported classified with labels by difficulty, type,
+milestone, etc. it is a good place to start if you are looking
+to contribute.
 
 CONTRIBUTING WITH PATCHES
 -------------------------

@@ -33,6 +33,8 @@
 #define HAVE_LIB_EWF @HAVE_LIB_EWF@
 #endif
 
+#define WITH_GPL @WITH_GPL@
+
 #define R2_WWWROOT "@DATADIR@/radare2/@VERSION@/www"
 
 #endif

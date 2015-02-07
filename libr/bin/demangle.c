@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_bin.h>
 #include <cxx/demangle.h>
@@ -80,7 +80,10 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 	char *out;
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
-	int i, flags = DMGL_NO_OPTS;
+	int i;
+#if WITH_GPL
+	int flags = DMGL_NO_OPTS;
+#endif
 	const char *prefixes[] = {
 		"__symbol_stub1_",
 		"reloc.",
@@ -99,7 +102,12 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 			}
 		}
 	}
+#if WITH_GPL
 	out = cplus_demangle_v3 (str, flags);
+#else
+	/* TODO: implement a non-gpl alternative to c++v3 demangler */
+	out = NULL;
+#endif
 
 	if (out) {
 		r_str_replace_char (out, ' ', 0);
