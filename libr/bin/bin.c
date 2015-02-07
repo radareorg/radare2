@@ -852,7 +852,9 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->baddr = baseaddr;
 	// XXX more checking will be needed here
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
-		o->bin_obj = plugin->load_bytes (bytes+offset, sz-offset, loadaddr, sdb);
+		ut64 bsz = bytes_sz - offset;
+		if (sz<bsz) bsz = sz;
+		o->bin_obj = plugin->load_bytes (bytes+offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
 			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
 				plugin->name);
