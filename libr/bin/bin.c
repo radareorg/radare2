@@ -1645,7 +1645,7 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	if (!bin || !bin->cur)
 		return UT64_MAX;
 
-	if (1 || bin->is_debugger) {
+	if (bin->is_debugger) {
 		if (baddr) 
 			return baddr + paddr;
 	}
