@@ -35,8 +35,8 @@ static int *splitlines (char *s, int *lines_count) {
 
 R_API void r_cons_less_str(const char *str) {
 	int lines_count;
-	int h, ch, to, ui = 1, from = 0;
-	char *p = strdup (str);
+	int h, ch, to, ui = 1, from = 0, l;
+	char *p = strdup (str), *str_src, *found;
 	int *lines = splitlines (p, &lines_count);
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
@@ -61,6 +61,16 @@ R_API void r_cons_less_str(const char *str) {
 		case 'J': from+=h; break;
 		case 'k': if (from>0) from--; break;
 		case 'K': from = (from>=h)? from-h: 0;
+			break;
+		case '/':
+			r_line_set_prompt("/");
+			str_src = r_line_readline();
+			l = from < lines_count ? from : 0;
+			for(; l < lines_count; l++){
+				if((found = strstr(p + lines[l], str_src)))
+					break;
+			}
+			if(found) from = l;
 			break;
 		}
 	}
