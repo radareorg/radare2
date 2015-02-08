@@ -1063,7 +1063,6 @@ parse_microsoft_mangled_name_err:
 EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 {
 	EDemanglerErr err = eDemanglerErrOK;
-	char *sym;
 
 	// TODO: maybe get by default some sym_len and check it?
 
@@ -1071,8 +1070,6 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 		err = eDemanglerErrMemoryAllocation;
 		goto microsoft_demangle_err;
 	}
-	sym = demangler->symbol;
-	sym_len = strlen (sym);
 
 	err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
 
