@@ -140,6 +140,9 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 	if (out) {
 		r_str_replace_char (out, ' ', 0);
 	} else {
+//		str = "??$MyTemplateFunction@VClass1@@@Class1@@QAEXPAV0@@Z";
+//		str = "?xyz@?$abc@V?$def@H@@PAX@@YAXXZ";
+//		str = "?xyz@?$abc@V?$def@H@@PAXV?$test@H@@@@YAXXZ";
 		// TODO: mangler_branch: remove, just for testing now
 		SDemangler *mangler = 0;
 //		char *demangled_name = 0;
