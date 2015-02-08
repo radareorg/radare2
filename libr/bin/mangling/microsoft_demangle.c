@@ -156,12 +156,101 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 	int len = 0, read_len = 0, tmp_len = 0;
 
+	names_l = r_list_new();
+
+#define SET_OPERATOR_CODE(str) { \
+	str_info = (SStrInfo *) malloc(sizeof(SStrInfo)); \
+	str_info->len = strlen(str); \
+	str_info->str_ptr = str; \
+	r_list_append(names_l, str_info); \
+}
+
+	// C++ operator code (one character, or two if the first is '_')
+	if (*buf == '?') {
+		switch (*++buf)
+		{
+		case '0': SET_OPERATOR_CODE("ctor"); break;
+		case '1': SET_OPERATOR_CODE("dtor"); break;
+		case '2': SET_OPERATOR_CODE("operator new"); break;
+		case '3': SET_OPERATOR_CODE("operator delete"); break;
+		case '4': SET_OPERATOR_CODE("operator ="); break;
+		case '5': SET_OPERATOR_CODE("operator >>"); break;
+		case '6': SET_OPERATOR_CODE("operator <<"); break;
+		case '7': SET_OPERATOR_CODE("operator !"); break;
+		case '8': SET_OPERATOR_CODE("operator =="); break;
+		case '9': SET_OPERATOR_CODE("operator !="); break;
+		case 'A': SET_OPERATOR_CODE("operator []"); break;
+		case 'C': SET_OPERATOR_CODE("operator ->"); break;
+		case 'D': SET_OPERATOR_CODE("operator *"); break;
+		case 'E': SET_OPERATOR_CODE("operator ++"); break;
+		case 'F': SET_OPERATOR_CODE("operator --"); break;
+		case 'G': SET_OPERATOR_CODE("operator -"); break;
+		case 'H': SET_OPERATOR_CODE("operator +"); break;
+		case 'I': SET_OPERATOR_CODE("operator &"); break;
+		case 'J': SET_OPERATOR_CODE("operator ->*"); break;
+		case 'K': SET_OPERATOR_CODE("operator /"); break;
+		case 'L': SET_OPERATOR_CODE("operator %"); break;
+		case 'M': SET_OPERATOR_CODE("operator <"); break;
+		case 'N': SET_OPERATOR_CODE("operator <="); break;
+		case 'O': SET_OPERATOR_CODE("operator >"); break;
+		case 'P': SET_OPERATOR_CODE("operator >="); break;
+		case 'Q': SET_OPERATOR_CODE("operator ,"); break;
+		case 'R': SET_OPERATOR_CODE("operator ()"); break;
+		case 'S': SET_OPERATOR_CODE("operator ~"); break;
+		case 'T': SET_OPERATOR_CODE("operator ^"); break;
+		case 'U': SET_OPERATOR_CODE("operator |"); break;
+		case 'V': SET_OPERATOR_CODE("operator &"); break;
+		case 'W': SET_OPERATOR_CODE("operator ||"); break;
+		case 'X': SET_OPERATOR_CODE("operator *="); break;
+		case 'Y': SET_OPERATOR_CODE("operator +="); break;
+		case 'Z': SET_OPERATOR_CODE("operator -="); break;
+		case '_':
+			switch (*++buf)
+			{
+			case '0': SET_OPERATOR_CODE("operator /="); break;
+			case '1': SET_OPERATOR_CODE("operator %="); break;
+			case '2': SET_OPERATOR_CODE("operator >>="); break;
+			case '3': SET_OPERATOR_CODE("operator <<="); break;
+			case '4': SET_OPERATOR_CODE("operator &="); break;
+			case '5': SET_OPERATOR_CODE("operator |="); break;
+			case '6': SET_OPERATOR_CODE("operator ^="); break;
+			case '7': SET_OPERATOR_CODE("vftable"); break;
+			case '8': SET_OPERATOR_CODE("vbtable"); break;
+			case '9': SET_OPERATOR_CODE("vcall"); break;
+			case 'A': SET_OPERATOR_CODE("typeof"); break;
+			case 'B': SET_OPERATOR_CODE("local_static_guard"); break;
+			case 'C': SET_OPERATOR_CODE("string"); break;
+			case 'D': SET_OPERATOR_CODE("vbase_dtor"); break;
+			case 'E': SET_OPERATOR_CODE("vector_dtor"); break;
+			case 'G': SET_OPERATOR_CODE("scalar_dtor"); break;
+			case 'H': SET_OPERATOR_CODE("vector_ctor_iter"); break;
+			case 'I': SET_OPERATOR_CODE("vector_dtor_iter"); break;
+			case 'J': SET_OPERATOR_CODE("vector_vbase_ctor_iter"); break;
+			case 'L': SET_OPERATOR_CODE("eh_vector_ctor_iter"); break;
+			case 'M': SET_OPERATOR_CODE("eh_vector_dtor_iter"); break;
+			case 'N': SET_OPERATOR_CODE("eh_vector_vbase_ctor_iter"); break;
+			case 'O': SET_OPERATOR_CODE("copy_ctor_closure"); break;
+			case 'S': SET_OPERATOR_CODE("local_vftable"); break;
+			case 'T': SET_OPERATOR_CODE("local_vftable_ctor_closure"); break;
+			case 'U': SET_OPERATOR_CODE("operator new[]"); break;
+			case 'V': SET_OPERATOR_CODE("operator delete[]"); break;
+			case 'X': SET_OPERATOR_CODE("placement_new_closure"); break;
+			case 'Y': SET_OPERATOR_CODE("placement_delete_closure"); break;
+			default:
+				return 0;
+			}
+		break;
+		default:
+			return 0;
+		}
+		buf++;
+	}
+#undef SET_OPERATOR_CODE
+
 	curr_pos = strstr(buf, "@@");
 	if (!curr_pos) {
 		goto get_namespace_and_name_err;
 	}
-
-	names_l = r_list_new();
 
 	read_len = tmp_len = curr_pos - buf;
 
@@ -855,11 +944,11 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 	sym = demangler->symbol;
 	sym_len = strlen (sym);
 
-	if (sym[sym_len - 1] == 'Z') {
-		err = eDemanglerErrUnsupportedMangling;
-	} else {
+//	if (sym[sym_len - 1] == 'Z') {
+//		err = eDemanglerErrUnsupportedMangling;
+//	} else {
 		err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
-	}
+//	}
 
 microsoft_demangle_err:
 	return err;
