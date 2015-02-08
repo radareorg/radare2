@@ -167,6 +167,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 	// C++ operator code (one character, or two if the first is '_')
 	if (*buf == '?') {
+		read_len++;
 		switch (*++buf)
 		{
 		case '0': SET_OPERATOR_CODE("ctor"); break;
@@ -239,11 +240,13 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			default:
 				return 0;
 			}
+			read_len++;
 		break;
 		default:
 			return 0;
 		}
 		buf++;
+		read_len++;
 	}
 #undef SET_OPERATOR_CODE
 
@@ -252,7 +255,8 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		goto get_namespace_and_name_err;
 	}
 
-	read_len = tmp_len = curr_pos - buf;
+	tmp_len = curr_pos - buf;
+	read_len += tmp_len;
 
 	prev_pos = buf;
 	curr_pos = strchr(buf, '@');
@@ -824,6 +828,9 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	EDemanglerErr err = eDemanglerErrOK;
 	EObjectType object_type = eObjectTypeMax;
 
+	int is_implicit_this_pointer = 0;
+	int is_static = 0;
+
 	unsigned int i = 0;
 	unsigned int len = 0;
 
@@ -845,81 +852,205 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	curr_pos += len + 2;
 
-	object_type = *curr_pos - '0';
-	switch (object_type) {
-	case eObjectTypeStaticClassMember:
-		// at least need to be 2 items
-		// first variable name, second - class name
-		if (i < 2) {
-			err = eDemanglerErrUncorrectMangledSymbol;
+	// Function/Data type and access level
+	switch(*curr_pos++)
+	{
+	// Data
+	case '0' : // Private static member
+	case '1' : // Protected static member
+	case '2' : // Public static member
+	case '3' : // Normal variable
+	case '4' : // Normal variable
+		i = 0;
+		err = get_type_code_string(curr_pos, &i, &tmp);
+		if (err != eDemanglerErrOK) {
+			goto parse_microsoft_mangled_name_err;
 		}
-		break;
-	case eObjectTypeGlobal:
-		break;
-	default:
-		err = eDemanglerErrUncorrectMangledSymbol;
-		break;
-	}
 
-	if (err != eDemanglerErrOK) {
-		goto parse_microsoft_mangled_name_err;
-	}
+		curr_pos += i;
 
-	curr_pos++;
-	i = 0;
-	err = get_type_code_string(curr_pos, &i, &tmp);
-	if (err != eDemanglerErrOK) {
-		goto parse_microsoft_mangled_name_err;
-	}
-
-	curr_pos += i;
-
-	i = strlen(curr_pos);
-	if (!i || i > 2) {
-		err = eDemanglerErrUncorrectMangledSymbol;
-		goto parse_microsoft_mangled_name_err;
-	}
-
-	if (i == 2) {
-		if (*curr_pos != 'E') {
+		i = strlen(curr_pos);
+		if (!i || i > 2) {
 			err = eDemanglerErrUncorrectMangledSymbol;
 			goto parse_microsoft_mangled_name_err;
 		}
-		ptr64 = "__ptr64";
-		curr_pos++;
-	}
 
-#define SET_STORAGE_CLASS(letter, storage_class_str) { \
-	case letter: \
-		storage_class = storage_class_str; \
-		break; \
-}
-
-	switch (*curr_pos) {
-	SET_STORAGE_CLASS('A', 0);
-	SET_STORAGE_CLASS('B', "const");
-	SET_STORAGE_CLASS('C', "volatile");
-	SET_STORAGE_CLASS('D', "const volatile");
-	default:
-		err = eDemanglerErrUncorrectMangledSymbol;
-		goto parse_microsoft_mangled_name_err;
-	}
-#undef SET_STORAGE_CLASS
-
-	if (err == eDemanglerErrOK) {
-		if (!ptr64) {
-			if (!storage_class) {
-				*demangled_name = r_str_newf("%s %s", tmp, type_code_str.type_str);
-			} else {
-				*demangled_name = r_str_newf("%s %s %s", tmp, storage_class,type_code_str.type_str);
+		if (i == 2) {
+			if (*curr_pos != 'E') {
+				err = eDemanglerErrUncorrectMangledSymbol;
+				goto parse_microsoft_mangled_name_err;
 			}
-		} else {
-			if (!storage_class) {
-				*demangled_name = r_str_newf("%s %s %s", tmp, ptr64, type_code_str.type_str);
+			ptr64 = "__ptr64";
+			curr_pos++;
+		}
+
+	#define SET_STORAGE_CLASS(letter, storage_class_str) { \
+		case letter: \
+			storage_class = storage_class_str; \
+			break; \
+	}
+
+		switch (*curr_pos) {
+		SET_STORAGE_CLASS('A', 0);
+		SET_STORAGE_CLASS('B', "const");
+		SET_STORAGE_CLASS('C', "volatile");
+		SET_STORAGE_CLASS('D', "const volatile");
+		default:
+			err = eDemanglerErrUncorrectMangledSymbol;
+			goto parse_microsoft_mangled_name_err;
+		}
+	#undef SET_STORAGE_CLASS
+
+		if (err == eDemanglerErrOK) {
+			if (!ptr64) {
+				if (!storage_class) {
+					*demangled_name = r_str_newf("%s %s", tmp, type_code_str.type_str);
+				} else {
+					*demangled_name = r_str_newf("%s %s %s", tmp, storage_class,type_code_str.type_str);
+				}
 			} else {
-				*demangled_name = r_str_newf("%s %s %s %s", tmp, storage_class, ptr64, type_code_str.type_str);
+				if (!storage_class) {
+					*demangled_name = r_str_newf("%s %s %s", tmp, ptr64, type_code_str.type_str);
+				} else {
+					*demangled_name = r_str_newf("%s %s %s %s", tmp, storage_class, ptr64, type_code_str.type_str);
+				}
 			}
 		}
+		break;
+
+	case '6' : // compiler generated static
+	case '7' : // compiler generated static
+		err = eDemanglerErrUnsupportedMangling;
+		break;
+
+	/* Functions */
+	case 'E' : // private virtual
+	case 'F' : // private virtual
+	case 'M' : // protected virtual
+	case 'N' : // protected virtual
+	case 'U' : // public virtual
+	case 'V' : // public virtual
+	case 'A' : // private
+	case 'B' : // private
+	case 'I' : // protected
+	case 'J' : // protected
+	case 'Q' : // public
+	case 'R' : // public
+		is_implicit_this_pointer = 1;
+		break;
+	case 'C' : // private: static
+	case 'D' : // private: static
+	case 'K' : // protected: static
+	case 'L' : // protected: static
+	case 'S' : // public: static
+	case 'T' : // public: static
+		is_static = 1;
+		break;
+	case 'Y' : // near
+	case 'Z' : // far
+		break;
+	default:
+		err = eDemanglerErrUncorrectMangledSymbol;
+	}
+
+	if (err != eDemanglerErrOK) {
+		goto parse_microsoft_mangled_name_err;
+	}
+
+	// member function access code
+	if (is_implicit_this_pointer) {
+		switch (*curr_pos++)
+		{
+		case 'A': break; // non-const
+		case 'B': break; // const
+		case 'C': break; // volatile
+		case 'D': break; // const volatile
+		default:
+			err = eDemanglerErrUncorrectMangledSymbol;
+			break;
+		}
+	}
+
+	if (err != eDemanglerErrOK) {
+		goto parse_microsoft_mangled_name_err;
+	}
+
+	// Calling convention
+	switch (*curr_pos++) {
+		case 'A': // __cdecl
+		case 'B': // __cdecl __declspec(dllexport)
+		case 'C': // __pascal
+		case 'D': // __pascal __declspec(dllexport)
+		case 'E': // __thiscall
+		case 'F': // __thiscall __declspec(dllexport)
+		case 'G': // __stdcall
+		case 'H': // __stdcall __declspec(dllexport)
+		case 'I': // __fastcall
+		case 'J': // __fastcall __declspec(dllexport)
+		case 'K': // default (none given)
+		break;
+		default:
+			err = eDemanglerErrUncorrectMangledSymbol;
+			break;
+	}
+
+	if (err != eDemanglerErrOK) {
+		goto parse_microsoft_mangled_name_err;
+	}
+
+	// get storage class code for return
+	if (*curr_pos == '?') {
+		switch (*++curr_pos) {
+		case 'A': // default
+		case 'B': // const
+		case 'C': // volatile
+		case 'D': // const volatile
+			break;
+		default:
+			err = eDemanglerErrUnsupportedMangling;
+			goto parse_microsoft_mangled_name_err;
+		}
+	}
+
+	// Return type, or @ if 'void'
+	if (*curr_pos == '@') {
+		// void
+		curr_pos++;
+	}
+	else {
+		i = 0;
+		err = get_type_code_string(curr_pos, &i, &tmp);
+		if (err != eDemanglerErrOK) {
+			goto parse_microsoft_mangled_name_err;
+		}
+
+		curr_pos += i;
+	}
+
+	// Function arguments
+	while (*curr_pos && *curr_pos != 'Z')
+	{
+		if (*curr_pos != '@') {
+			err = get_type_code_string(curr_pos, &i, &tmp);
+			if (err != eDemanglerErrOK) {
+				goto parse_microsoft_mangled_name_err;
+			}
+			curr_pos += i;
+
+			if (strncmp(tmp, "void", 4) == 0) {
+				// arguments list is void
+				break;
+			}
+		} else {
+			curr_pos++;
+		}
+	}
+
+	while (*curr_pos == '@')
+		curr_pos++;
+
+	if (*curr_pos != 'Z') {
+		err = eDemanglerErrUncorrectMangledSymbol;
 	}
 
 parse_microsoft_mangled_name_err:
@@ -935,7 +1066,6 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 	char *sym;
 
 	// TODO: maybe get by default some sym_len and check it?
-	unsigned int sym_len;
 
 	if (!demangler || !demangled_name) {
 		err = eDemanglerErrMemoryAllocation;
@@ -944,11 +1074,7 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 	sym = demangler->symbol;
 	sym_len = strlen (sym);
 
-//	if (sym[sym_len - 1] == 'Z') {
-//		err = eDemanglerErrUnsupportedMangling;
-//	} else {
-		err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
-//	}
+	err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
 
 microsoft_demangle_err:
 	return err;
