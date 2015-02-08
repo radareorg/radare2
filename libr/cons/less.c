@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2014 - pancake */
 
 #include <r_cons.h>
+#include <r_regex.h>		/* less / regex search */
 
 static void printpage (const char *line, int *index, int from, int to) {
 	int i;
@@ -35,8 +36,10 @@ static int *splitlines (char *s, int *lines_count) {
 
 R_API void r_cons_less_str(const char *str) {
 	int lines_count;
-	int h, ch, to, ui = 1, from = 0;
-	char *p = strdup (str);
+	RRegex *rx = NULL;
+	RRegexMatch m;
+	int h, ch, to, ui = 1, from = 0, l, fnd;
+	char *p = strdup (str), *sreg;
 	int *lines = splitlines (p, &lines_count);
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
@@ -62,8 +65,26 @@ R_API void r_cons_less_str(const char *str) {
 		case 'k': if (from>0) from--; break;
 		case 'K': from = (from>=h)? from-h: 0;
 			break;
+		case '/': 	/* search */
+			r_line_set_prompt("/");
+			sreg = r_line_readline();
+			from = R_MIN(lines_count - 1, from);
+			/* repeat last search if empty string is provided */
+			if(sreg[0]){
+				if(rx) r_regex_free(rx);
+				rx = r_regex_new(sreg, "");
+			}
+			if(!rx) break;
+			for(l = from; l < lines_count; l++){
+				m.rm_so = lines[l];
+				m.rm_eo = strlen(p + lines[l]);
+				fnd = r_regex_exec(rx, p + lines[l], 1, &m, 0);
+				if(!fnd) break;
+			}
+			if(!fnd) from = l;
 		}
 	}
+	if(rx) r_regex_free(rx);
 	free (lines);
 	free (p);
 	r_cons_set_raw (R_FALSE);
