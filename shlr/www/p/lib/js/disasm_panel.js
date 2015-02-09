@@ -72,7 +72,15 @@ DisasmPanel.prototype.handleInputTextChange = function() {
   if (this.renaming !== null && this.rbox.value.length > 0) {
     if ($(this.selected).hasClass('insaddr')) {
       var old_value = get_offset_flag(r2ui._dis.selected_offset);
-      rename(r2ui._dis.selected_offset, old_value, this.rbox.value, "offsets");
+      var type = "offsets";
+      r2.cmdj("afij @ " + r2ui._dis.selected_offset, function(x) {
+        if (x !== null && x !== undefined) {
+          if ("0x" + x[0].offset.toString(16) === r2ui._dis.selected_offset) {
+            type = "functions";
+          }
+        }
+      });
+      rename(r2ui._dis.selected_offset, old_value, this.rbox.value, type);
     } else if ($(this.selected).hasClass('faddr')) {
       if ($(this.selected).hasClass('fvar'))
         r2.cmd("afvn " + r2ui._dis.renameOldValue + " " + r2ui._dis.rbox.value + " @ " + r2ui._dis.selected_offset, function(x){});

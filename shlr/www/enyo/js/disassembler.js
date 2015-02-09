@@ -315,7 +315,15 @@ enyo.kind ({
     if (this.renaming !== null && this.rbox.value.length > 0) {
       if ($(this.selected).hasClass('insaddr')) {
         var old_value = get_offset_flag(r2ui._dis.selected_offset);
-        rename(r2ui._dis.selected_offset, old_value, this.rbox.value, "offsets");
+        var type = "offsets";
+        r2.cmdj("afij @ " + r2ui._dis.selected_offset, function(x) {
+          if (x !== null && x !== undefined) {
+            if ("0x" + x[0].offset.toString(16) === r2ui._dis.selected_offset) {
+              type = "functions";
+            }
+          }
+        });
+        rename(r2ui._dis.selected_offset, old_value, this.rbox.value, type);
       } else if ($(this.selected).hasClass('faddr')) {
         if ($(this.selected).hasClass('fvar'))
           r2.cmd("afvn " + r2ui._dis.renameOldValue + " " + r2ui._dis.rbox.value + " @ " + r2ui._dis.selected_offset, function(x){});
@@ -559,8 +567,8 @@ enyo.kind ({
   //         for (var k in colors)
   //           if (block[k])
   //             count++;
-	 //  count++; // avoid 0div wtf
-	 //  if (count==1) break;
+   //  count++; // avoid 0div wtf
+   //  if (count==1) break;
   //         var h = HEIGHT / count;
   //         for (var k in colors) {
   //           var color = colors[k];
@@ -576,7 +584,7 @@ enyo.kind ({
   //       }
   //       c += "<td onclick='r2ui.seek("+off+",true)' title='"+off
   //             + "' style='height:"+HEIGHT+"px' "
-	 //      + "width=15px>"+r+"</td>";
+   //      + "width=15px>"+r+"</td>";
   //     }
   //     c += "</tr></table>";
   //     self.$.colorbar.setContent (c);
