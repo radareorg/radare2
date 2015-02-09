@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -1219,7 +1219,7 @@ R_API char *r_str_uri_encode (const char *s) {
 			*d++ = *s;
 		} else {
 			*d++ = '%';
-			sprintf (ch, "%02x", (unsigned char)*s);
+			sprintf (ch, "%02x", 0xff & ((ut8)*s));
 			*d++ = ch[0];
 			*d++ = ch[1];
 		}

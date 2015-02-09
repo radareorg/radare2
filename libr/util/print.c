@@ -287,7 +287,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
                 break;
 	case 'J':
 		{
-		       ut8 *out = malloc (len*3);
+		       char *out = malloc (len*3);
 		       p->printf ("var buffer = new Buffer(\"");
 		       out[0] = 0;
 		       r_base64_encode (out, buf, len);
