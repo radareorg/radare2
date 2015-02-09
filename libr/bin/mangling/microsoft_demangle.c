@@ -120,7 +120,7 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 
 	if (free_space > str_for_copy_len) {
 		type_code_str->type_str_len =
-				(type_code_str->type_str_len +  str_for_copy_len) >> 1;
+				((type_code_str->type_str_len +  str_for_copy_len) << 1) + 1;
 		type_code_str->type_str = (char *) realloc(	type_code_str->type_str,
 													type_code_str->type_str_len);
 		if (type_code_str->type_str == NULL) {
@@ -825,11 +825,20 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 													char **demangled_name)
 {
 	STypeCodeStr type_code_str;
+	STypeCodeStr func_str;
 	EDemanglerErr err = eDemanglerErrOK;
-	EObjectType object_type = eObjectTypeMax;
 
 	int is_implicit_this_pointer = 0;
 	int is_static = 0;
+
+	char *access_modifier = 0;
+	char *memb_func_access_code = 0;
+	char *call_conv = 0;
+	char *storage_class_code_for_ret = 0;
+	char *ret_type = 0;
+	RList /* <char *> */ *func_args = 0;
+	RListIter *it = 0;
+	SStrInfo *str_arg = 0;
 
 	unsigned int i = 0;
 	unsigned int len = 0;
@@ -916,42 +925,45 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 				}
 			}
 		}
-		break;
+		goto parse_microsoft_mangled_name_err;
 
 	case '6' : // compiler generated static
 	case '7' : // compiler generated static
 		err = eDemanglerErrUnsupportedMangling;
 		break;
 
+#define SET_ACCESS_MODIFIER(letter, flag_set, modifier_str) { \
+	case letter: \
+		access_modifier = modifier_str; \
+		flag_set = 1; \
+		break; \
+}
 	/* Functions */
-	case 'E' : // private virtual
-	case 'F' : // private virtual
-	case 'M' : // protected virtual
-	case 'N' : // protected virtual
-	case 'U' : // public virtual
-	case 'V' : // public virtual
-	case 'A' : // private
-	case 'B' : // private
-	case 'I' : // protected
-	case 'J' : // protected
-	case 'Q' : // public
-	case 'R' : // public
-		is_implicit_this_pointer = 1;
-		break;
-	case 'C' : // private: static
-	case 'D' : // private: static
-	case 'K' : // protected: static
-	case 'L' : // protected: static
-	case 'S' : // public: static
-	case 'T' : // public: static
-		is_static = 1;
-		break;
+	SET_ACCESS_MODIFIER('E', is_implicit_this_pointer, "private virtual");
+	SET_ACCESS_MODIFIER('F', is_implicit_this_pointer, "private virtual");
+	SET_ACCESS_MODIFIER('M', is_implicit_this_pointer, "protected virtual");
+	SET_ACCESS_MODIFIER('N', is_implicit_this_pointer, "protected virtual");
+	SET_ACCESS_MODIFIER('U', is_implicit_this_pointer, "public virtual");
+	SET_ACCESS_MODIFIER('V', is_implicit_this_pointer, "public virtual");
+	SET_ACCESS_MODIFIER('A', is_implicit_this_pointer, "private");
+	SET_ACCESS_MODIFIER('B', is_implicit_this_pointer, "private");
+	SET_ACCESS_MODIFIER('I', is_implicit_this_pointer, "protected");
+	SET_ACCESS_MODIFIER('J', is_implicit_this_pointer, "protected");
+	SET_ACCESS_MODIFIER('Q', is_implicit_this_pointer, "public");
+	SET_ACCESS_MODIFIER('R', is_implicit_this_pointer, "public");
+	SET_ACCESS_MODIFIER('C', is_static, "private: static");
+	SET_ACCESS_MODIFIER('D', is_static, "private: static");
+	SET_ACCESS_MODIFIER('K', is_static, "protected: static");
+	SET_ACCESS_MODIFIER('L', is_static, "protected: static");
+	SET_ACCESS_MODIFIER('S', is_static, "public: static");
+	SET_ACCESS_MODIFIER('T', is_static, "public: static");
 	case 'Y' : // near
 	case 'Z' : // far
 		break;
 	default:
 		err = eDemanglerErrUncorrectMangledSymbol;
 	}
+#undef SET_ACCESS_MODIFIER
 
 	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;
@@ -962,9 +974,9 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		switch (*curr_pos++)
 		{
 		case 'A': break; // non-const
-		case 'B': break; // const
-		case 'C': break; // volatile
-		case 'D': break; // const volatile
+		case 'B': memb_func_access_code = "const"; break;
+		case 'C': memb_func_access_code = "volatile"; break;
+		case 'D': memb_func_access_code = "const volatile"; break;
 		default:
 			err = eDemanglerErrUncorrectMangledSymbol;
 			break;
@@ -977,18 +989,17 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	// Calling convention
 	switch (*curr_pos++) {
-		case 'A': // __cdecl
-		case 'B': // __cdecl __declspec(dllexport)
-		case 'C': // __pascal
-		case 'D': // __pascal __declspec(dllexport)
-		case 'E': // __thiscall
-		case 'F': // __thiscall __declspec(dllexport)
-		case 'G': // __stdcall
-		case 'H': // __stdcall __declspec(dllexport)
-		case 'I': // __fastcall
-		case 'J': // __fastcall __declspec(dllexport)
-		case 'K': // default (none given)
-		break;
+		case 'A': call_conv = "__cdecl"; break;
+		case 'B': call_conv = "__cdecl __declspec(dllexport)"; break;
+		case 'C': call_conv = "__pascal"; break;
+		case 'D': call_conv = "__pascal __declspec(dllexport)"; break;
+		case 'E': call_conv = "__thiscall"; break;
+		case 'F': call_conv = "__thiscall __declspec(dllexport)"; break;
+		case 'G': call_conv = "__stdcall"; break;
+		case 'H': call_conv = "__stdcall __declspec(dllexport)"; break;
+		case 'I': call_conv = "__fastcall"; break;
+		case 'J': call_conv = "__fastcall __declspec(dllexport)"; break;
+		case 'K': call_conv = "default (none given)"; break;
 		default:
 			err = eDemanglerErrUncorrectMangledSymbol;
 			break;
@@ -1001,11 +1012,10 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	// get storage class code for return
 	if (*curr_pos == '?') {
 		switch (*++curr_pos) {
-		case 'A': // default
-		case 'B': // const
-		case 'C': // volatile
-		case 'D': // const volatile
-			break;
+		case 'A': break; // default
+		case 'B': storage_class_code_for_ret = "const"; break;
+		case 'C': storage_class_code_for_ret = "volatile"; break;
+		case 'D': storage_class_code_for_ret = "const volatile"; break;
 		default:
 			err = eDemanglerErrUnsupportedMangling;
 			goto parse_microsoft_mangled_name_err;
@@ -1014,18 +1024,20 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	// Return type, or @ if 'void'
 	if (*curr_pos == '@') {
-		// void
+		ret_type = "void";
 		curr_pos++;
 	}
 	else {
 		i = 0;
-		err = get_type_code_string(curr_pos, &i, &tmp);
+		err = get_type_code_string(curr_pos, &i, &ret_type);
 		if (err != eDemanglerErrOK) {
 			goto parse_microsoft_mangled_name_err;
 		}
 
 		curr_pos += i;
 	}
+
+	func_args = r_list_new();
 
 	// Function arguments
 	while (*curr_pos && *curr_pos != 'Z')
@@ -1036,6 +1048,12 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 				goto parse_microsoft_mangled_name_err;
 			}
 			curr_pos += i;
+
+			str_arg = (SStrInfo *) malloc(sizeof(SStrInfo));
+			str_arg->str_ptr = tmp;
+			str_arg->len = i;
+
+			r_list_append(func_args, str_arg);
 
 			if (strncmp(tmp, "void", 4) == 0) {
 				// arguments list is void
@@ -1053,9 +1071,52 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		err = eDemanglerErrUncorrectMangledSymbol;
 	}
 
+	if (!init_type_code_str_struct(&func_str)) {
+		err = eDemanglerErrMemoryAllocation;
+		goto parse_microsoft_mangled_name_err;
+	}
+
+	if (storage_class_code_for_ret) {
+		copy_string(&func_str, storage_class_code_for_ret, 0);
+		copy_string(&func_str, " ", 0);
+	}
+
+	if (ret_type) {
+		copy_string(&func_str, ret_type, 0);
+		copy_string(&func_str, " ", 0);
+	}
+
+	if (call_conv) {
+		copy_string(&func_str, call_conv, 0);
+		copy_string(&func_str, " ", 0);
+	}
+
+	if (type_code_str.type_str) {
+		copy_string(&func_str, type_code_str.type_str, type_code_str.curr_pos);
+	}
+
+	if (r_list_length(func_args)) {
+		copy_string(&func_str, "(", 0);
+		i = r_list_length(func_args);
+		it = r_list_iterator (func_args);
+		r_list_foreach_prev (func_args, it, str_arg) {
+			copy_string(&func_str, str_arg->str_ptr, 0);
+			if (--i)
+				copy_string(&func_str, ", ", 0);
+			free(str_arg);
+		}
+		copy_string(&func_str, ")", 0);
+	}
+
+	// TODO: where to free??
+	*demangled_name = strdup(func_str.type_str);
+
 parse_microsoft_mangled_name_err:
 	R_FREE(tmp);
+	R_FREE(ret_type);
 	free_type_code_str_struct(&type_code_str);
+	free_type_code_str_struct(&func_str);
+	r_list_free(func_args);
 	return err;
 }
 
