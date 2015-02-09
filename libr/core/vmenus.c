@@ -1305,6 +1305,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," h    highlight word"
 		," q    quit/cancel operation"
 		," r    rename function"
+		," R    find references /r"
 		," s    set string"
 		," S    set strings in current block"
 		," u    undefine metadata here"
@@ -1432,6 +1433,10 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'r': // "Vdr"
 		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, here);
+		break;
+	case 'R': // "VdR"
+		eprintf ("Finding references to 0x%08"PFMT64x" ...\n", here);
+		r_core_cmdf (core, "./r 0x%08"PFMT64x" @ $S", here);
 		break;
 	case 'S':
 		do {
