@@ -812,7 +812,7 @@ function has_scrollbar(divnode) {
 }
 
 function on_scroll(event) {
-  if (r2ui._dis.display == "flat") {
+  if (r2ui._dis.display == "flatDISABLED") {
     var scroll_offset = null;
     var top_offset = null;
     var addr = null;
@@ -830,6 +830,7 @@ function on_scroll(event) {
     if (has_scrollbar($('#center_panel')[0])) {
       if (scroll_offset === 0 ) {
         $("#center_panel").scroll(null);
+        // console.log("Scroll en top", scroll_offset, top_offset)
         addr = "0x" + r2ui._dis.instructions[0].offset.toString(16);
         r2.get_disasm_before(addr, 100, function(x) {
           r2ui._dis.instructions = x.concat(r2ui._dis.instructions);
@@ -842,6 +843,7 @@ function on_scroll(event) {
       }
       if (scroll_offset > top_offset) {
         $("#center_panel").scroll(null);
+        // console.log("Scroll en top", scroll_offset, top_offset)
         addr = "0x" + r2ui._dis.instructions[r2ui._dis.instructions.length-1].offset.toString(16);
         r2.get_disasm_after(addr, 100, function(x) {
           r2ui._dis.instructions = r2ui._dis.instructions.slice(0, -1).concat(x);

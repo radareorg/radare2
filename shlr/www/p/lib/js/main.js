@@ -15,48 +15,48 @@ $(document).ready( function() {
     }
   });
 
-	// Layout
-	myLayout = $('body').layout({
-		west__size:			200,
-		east__size:			200,
+  // Layout
+  myLayout = $('body').layout({
+    west__size:     200,
+    east__size:     200,
     south__size:    200,
     north__resizable: false,
     center__onresize: function () {if (r2ui._dis.display == "graph" && r2ui._dis.minimap) update_minimap();},
-		west__onresize:		$.layout.callbacks.resizePaneAccordions,
-		east__onresize:		$.layout.callbacks.resizePaneAccordions
-	});
+    west__onresize:   $.layout.callbacks.resizePaneAccordions,
+    east__onresize:   $.layout.callbacks.resizePaneAccordions
+  });
   // myLayout.disableClosable("north", true);
-	$("#accordion1").accordion({ heightStyle:  "fill" });
-	$("#accordion2").accordion({ heightStyle:  "fill" });
+  $("#accordion1").accordion({ heightStyle:  "fill" });
+  $("#accordion2").accordion({ heightStyle:  "fill" });
 
   // Boot r2 analysis, settings, ....
-	r2.update_flags();
-	r2.analAll();
-	r2.load_mmap();
-	r2ui.load_colors();
-	r2.load_settings();
+  r2.update_flags();
+  r2.analAll();
+  r2.load_mmap();
+  r2ui.load_colors();
+  r2.load_settings();
   load_binary_details();
 
   // Create panels
-	var disasm_panel = new DisasmPanel();
-	var hex_panel = new HexPanel();
+  var disasm_panel = new DisasmPanel();
+  var hex_panel = new HexPanel();
   var entropy_panel = new EntropyPanel();
   var strings_panel = new StringsPanel();
   var settings_panel = new SettingsPanel();
   var projects_panel = new ProjectsPanel();
   r2ui._ent = entropy_panel;
-	r2ui._dis = disasm_panel;
+  r2ui._dis = disasm_panel;
   r2ui._str = strings_panel;
   r2ui._set = settings_panel;
-	r2ui._hex = hex_panel;
+  r2ui._hex = hex_panel;
   r2ui._prj = projects_panel;
 
   // For enyo compatibility
-	r2ui.ra = {};
+  r2ui.ra = {};
   r2ui.mp = {};
-	r2ui.ra.getIndex = function() {};
-	r2ui.ra.setIndex = function() {};
-	r2ui.mp.openPage = function() {};
+  r2ui.ra.getIndex = function() {};
+  r2ui.ra.setIndex = function() {};
+  r2ui.mp.openPage = function() {};
 
   var console_history = [];
   var console_history_idx = 0;
@@ -231,7 +231,7 @@ $(document).ready( function() {
           do_jumpto(address);
         }
         switch (ui.cmd) {
-  	      case "goto": do_goto(); break;
+          case "goto": do_goto(); break;
           case "comment": do_comment(target); break;
           case "rename": do_rename(target, event); break;
           case "define": do_define(target); break;
@@ -267,9 +267,9 @@ $(document).ready( function() {
   $(document).dblclick(handleDoubleClick);
 
   // Show disasm panel and seek to entrypoint
-	disasm_panel.display_flat();
-	r2ui.seek(disasm_panel.base,true);
-	scroll_to_element(r2ui._dis.selected);
+  disasm_panel.display_flat();
+  r2ui.seek(disasm_panel.base,true);
+  scroll_to_element(r2ui._dis.selected);
 
   $("#center_panel").scroll(on_scroll);
 
@@ -298,7 +298,7 @@ function scroll_to_last_offset() {
 
 // key handler
 function handleKeypress(inEvent) {
-	var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
+  var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
   var key = String.fromCharCode(keynum);
   // console.log(key);
   if ($(inEvent.target).prop("tagName") === "INPUT") {
@@ -307,22 +307,22 @@ function handleKeypress(inEvent) {
 
   if (r2ui._dis.renaming !== null) return;
 
-	// Spacebar Switch flat and graph views
-	if (key === ' ') {
+  // Spacebar Switch flat and graph views
+  if (key === ' ') {
     do_switchview();
     inEvent.preventDefault();
   }
 
   if (key === 'm' && r2ui._dis.display == "graph") toggle_minimap();
 
-	// h Seek to previous address in history
-	if (key === 'h') do_jumpto(r2ui.history_prev());
+  // h Seek to previous address in history
+  if (key === 'h') do_jumpto(r2ui.history_prev());
 
-	// l Seek to next address in history
-	if (key === 'l') do_jumpto(r2ui.history_next());
+  // l Seek to next address in history
+  if (key === 'l') do_jumpto(r2ui.history_next());
 
-	// j Seek to next Instruction
-	if (key === 'j') {
+  // j Seek to next Instruction
+  if (key === 'j') {
     var get_more_instructions = false;
     if ($(r2ui._dis.selected).hasClass("insaddr")) {
       var next_instruction;
@@ -350,9 +350,9 @@ function handleKeypress(inEvent) {
       rehighlight_iaddress(address);
       scroll_to_address(address);
     }
-	}
-	// k Seek to previous instruction
-	if (key === 'k') {
+  }
+  // k Seek to previous instruction
+  if (key === 'k') {
     var get_more_instructions = false;
     if ($(r2ui._dis.selected).hasClass("insaddr")) {
       var prev_instruction;
@@ -378,41 +378,41 @@ function handleKeypress(inEvent) {
       rehighlight_iaddress(address);
       scroll_to_address(address);
     }
-	}
-	// c Define function
-	if (key === 'c') do_define(r2ui._dis.selected);
+  }
+  // c Define function
+  if (key === 'c') do_define(r2ui._dis.selected);
 
-	// u Clear function metadata
-	if (key === 'u') do_undefine(r2ui._dis.selected);
+  // u Clear function metadata
+  if (key === 'u') do_undefine(r2ui._dis.selected);
 
-	// g Go to address
-	if (key === 'g') do_jumpto(prompt('Go to'));
+  // g Go to address
+  if (key === 'g') do_jumpto(prompt('Go to'));
 
-	// ; Add comment
-	if (key === ';') do_comment(r2ui._dis.selected);
+  // ; Add comment
+  if (key === ';') do_comment(r2ui._dis.selected);
 
-	// n Rename
-	if (key === 'n') do_rename(r2ui._dis.selected, inEvent);
+  // n Rename
+  if (key === 'n') do_rename(r2ui._dis.selected, inEvent);
 
   if (key === 'R') do_randomcolors();
 
-	// esc
-	if (keynum === 27) {
-	  // Esc belongs to renaming
-	  if(r2ui._dis.renaming !== null) {
-	    r2ui._dis.renaming.innerHTML = r2ui._dis.renameOldValue;
-	    r2ui._dis.renaming = null;
-	  } else {
-	    // go back in history
-	    var addr = r2ui.history_prev();
-	    if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
-	    scroll_to_address(addr);
-	  }
-	}
-	// enter
-	if (keynum === 13) {
-	  r2ui._dis.goToAddress();
-	}
+  // esc
+  if (keynum === 27) {
+    // Esc belongs to renaming
+    if(r2ui._dis.renaming !== null) {
+      r2ui._dis.renaming.innerHTML = r2ui._dis.renameOldValue;
+      r2ui._dis.renaming = null;
+    } else {
+      // go back in history
+      var addr = r2ui.history_prev();
+      if (addr !== undefined && addr !== null) r2ui.seek(addr, false);
+      scroll_to_address(addr);
+    }
+  }
+  // enter
+  if (keynum === 13) {
+    r2ui._dis.goToAddress();
+  }
 }
 
 function do_switchview() {
@@ -429,14 +429,14 @@ function do_jumpto(address) {
   var element = $('.insaddr.addr_' + address);
   if (element.length > 0) {
     r2ui.history_push(address);
-    r2ui._dis.selected = element;
+    r2ui._dis.selected = element[0];
     r2ui._dis.selected_offset = address;
     render_history();
   } else {
     r2ui.seek(address, true);
   }
-  rehighlight_iaddress(r2ui._dis.tmp_address);
-  scroll_to_address(r2ui._dis.tmp_address);
+  rehighlight_iaddress(address);
+  scroll_to_address(address);
 }
 
 function do_rename(element, inEvent) {
