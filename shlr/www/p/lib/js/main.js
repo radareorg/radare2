@@ -4,14 +4,16 @@ $(document).ready( function() {
   // create tabs FIRST so elems are correct size BEFORE Layout measures them
   $("#main_panel").tabs({
     select: function( event, ui ) {
-      if(ui.tab.innerHTML.indexOf("Entropy")) r2ui._ent.render();
-      if(ui.tab.innerHTML.indexOf("Strings")) r2ui._str.render();
-      if(ui.tab.innerHTML.indexOf("Settings")) r2ui._set.render();
-      if(ui.tab.innerHTML.indexOf("Projects")) r2ui._prj.render();
+      if (ui.tab.innerHTML.indexOf("Entropy") > -1) r2ui._ent.render();
+      else if(ui.tab.innerHTML.indexOf("Strings") > -1) r2ui._str.render();
+      else if(ui.tab.innerHTML.indexOf("Settings") > -1) r2ui._set.render();
+      else if(ui.tab.innerHTML.indexOf("Projects") > -1) r2ui._prj.render();
     },
     activate: function( event, ui ) {
-      r2ui.seek("$$", false);
-      scroll_to_element(r2ui._dis.selected);
+      if ( ui.newTab[0].innerHTML.indexOf("Hex") > -1 || ui.newTab[0].innerHTML.indexOf("Disas") > -1 ) {
+        r2ui.seek("$$", false);
+        scroll_to_element(r2ui._dis.selected);
+      }
     }
   });
 
@@ -301,6 +303,10 @@ function handleKeypress(inEvent) {
   var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
   var key = String.fromCharCode(keynum);
   // console.log(key);
+
+  var ctrlDown = evt.ctrlKey||evt.metaKey; // Mac support
+  if (ctrlDown && evt.altKey) return true;
+
   if ($(inEvent.target).prop("tagName") === "INPUT") {
     return;
   };
@@ -386,7 +392,10 @@ function handleKeypress(inEvent) {
   if (key === 'u') do_undefine(r2ui._dis.selected);
 
   // g Go to address
-  if (key === 'g') do_jumpto(prompt('Go to'));
+  if (key === 'g') {
+    var a = prompt('Go to');
+    if (a !== null) do_jumpto(a);
+  }
 
   // ; Add comment
   if (key === ';') do_comment(r2ui._dis.selected);
@@ -450,10 +459,13 @@ function do_rename(element, inEvent) {
      if ($(element).hasClass("section")) space = "sections";
      if ($(element).hasClass("string")) space = "strings";
      var old_value = $(element).html();
-     rename(address, old_value, prompt('New name', old_value), space);
-     store_scroll_offset();
-     r2ui.seek("$$", false);
-     scroll_to_last_offset();
+     var new_name = prompt('New name', old_value);
+     if (new_name !== null) {
+       rename(address, old_value, new_name, space);
+       store_scroll_offset();
+       r2ui.seek("$$", false);
+       scroll_to_last_offset();
+     }
   } else if (r2ui._dis.renaming === null && element !== null && $(element).hasClass("addr")) {
     r2ui._dis.selected = element;
     r2ui._dis.selected_offset = address;
@@ -501,9 +513,12 @@ function do_rename(element, inEvent) {
 
 function do_comment(element) {
   var address = get_address_from_class(element);
-  r2.cmd('CC ' + prompt('Comment')  + " @ " + address);
-  r2ui.seek(address, false);
-  scroll_to_address(address);
+  var c =  prompt('Comment');
+  if (c !== null) {
+    r2.cmd('CC ' + c  + " @ " + address);
+    r2ui.seek(address, false);
+    scroll_to_address(address);
+  }
 }
 
 function do_undefine(element) {
@@ -519,11 +534,13 @@ function do_undefine(element) {
 function do_define(element) {
   var address = get_address_from_class(element);
   var msg = prompt ('Function name?');
-  r2.cmd("af " + msg + " @ " + address);
-  r2.update_flags();
-  update_binary_details();
-  r2ui.seek(address, false);
-  scroll_to_address(address);
+  if (msg !== null) {
+    r2.cmd("af " + msg + " @ " + address);
+    r2.update_flags();
+    update_binary_details();
+    r2ui.seek(address, false);
+    scroll_to_address(address);
+  }
 }
 
 function handleClick(inEvent) {
@@ -677,6 +694,7 @@ function render_functions(functions) {
   }
   $('#functions').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#functions').tree('loadData', fcn_data);
+  $('#functions_label').html("Functions <span class='right_label'>" + fcn_data.length + "</span>");
 }
 
 function render_imports(imports) {
@@ -694,6 +712,7 @@ function render_imports(imports) {
   }
   $('#imports').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#imports').tree('loadData', imp_data);
+  $('#imports_label').html("Imports <span class='right_label'>" + imp_data.length + "</span>");
 }
 
 
@@ -709,6 +728,7 @@ function render_symbols(symbols) {
     data[data.length] = sd;
   }
   $('#symbols').tree({data: data,selectable: false,slide: false,useContextMenu: false, autoEscape: false});
+  $('#symbols_label').html("Symbols <span class='right_label'>" + data.length + "</span>");
 }
 function render_relocs(relocs) {
   var data = [];
@@ -722,6 +742,7 @@ function render_relocs(relocs) {
   }
   $('#relocs').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#relocs').tree('loadData', data);
+  $('#relocs_label').html("Relocs <span class='right_label'>" + data.length + "</span>");
 }
 function render_flags(flags) {
   var data = [];
@@ -734,6 +755,7 @@ function render_flags(flags) {
   }
   $('#flags').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#flags').tree('loadData', data);
+  $('#flags_label').html("Flags <span class='right_label'>" + data.length + "</span>");
 }
 function render_sections(sections) {
   var data = [];
@@ -753,6 +775,7 @@ function render_sections(sections) {
   }
   $('#sections').tree({data: [],selectable: false,slide: false,useContextMenu: false});
   $('#sections').tree('loadData', data);
+  $('#sections_label').html("Sections <span class='right_label'>" + data.length + "</span>");
 }
 function render_history(){
   var html = "<div>";

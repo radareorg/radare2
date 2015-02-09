@@ -129,3 +129,6 @@ pre {
   font-size:13px;
 }
 
+.addr {
+  -moz-user-select: text;
+}

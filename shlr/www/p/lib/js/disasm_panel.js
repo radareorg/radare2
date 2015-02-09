@@ -15,6 +15,7 @@ var DisasmPanel = function () {
   this.scroll_offset = null;
   this.minimap = true;
   this.instructions = [];
+  this.scrolling = false;
 };
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
