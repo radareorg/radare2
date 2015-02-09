@@ -8,7 +8,7 @@ R_LIB_VERSION (r_io);
 
 // XXX: this is buggy. must use seek+read
 #define USE_CACHE 1
-// the new io is buggy
+// the new io is buggy	//liar
 #define USE_NEW_IO 0
 #define DO_THE_IO_DBG 0
 #define IO_IFDBG if (DO_THE_IO_DBG == 1)
@@ -356,9 +356,9 @@ int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
 }
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-#if USE_NEW_IO
-	return r_io_read_cr (io, addr, buf, len);
-#else
+	if (io && io->vio)
+		return r_io_read_cr (io, addr, buf, len);
+
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
@@ -524,7 +524,6 @@ if (len>0) {
 //break;
 	}
 	return olen;
-#endif
 }
 
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
@@ -947,20 +946,24 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset) {
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
-	switch (io->va) {
-		case 0:
-			return (offset < r_io_size (io));
-#if USE_NEW_IO
-		case 1:
-			return r_io_map_exists_for_offset (io, offset);
-		case 2:
-			return (r_io_map_exists_for_offset (io, offset) ||
-				r_io_section_exists_for_vaddr (io, offset));
-#else
-		case 1:
-			return (r_io_map_exists_for_offset (io, offset) ||
-				r_io_section_exists_for_vaddr (io, offset));
-#endif
+	if (io->vio) {
+		switch (io->va) {
+			case 0:
+				return (offset < r_io_size (io));
+			case 1:
+				return r_io_map_exists_for_offset (io, offset);
+			case 2:
+				return (r_io_map_exists_for_offset (io, offset) ||
+					r_io_section_exists_for_vaddr (io, offset));
+		}
+	} else {
+		switch (io->va) {
+			case 0:
+				return (offset < r_io_size (io));
+			case 1:
+				return (r_io_map_exists_for_offset (io, offset) ||
+					r_io_section_exists_for_vaddr (io, offset));
+		}
 	}
 	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
 	r_sys_backtrace ();

@@ -609,6 +609,13 @@ static int cb_ioautofd(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_iovio(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->vio = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1220,6 +1227,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.va", "true", &cb_iova, "If enabled virtual address layout can be used");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
 	SETCB("io.autofd", "true", &cb_ioautofd, "change fd when opening new file automatically");
+	SETCB("io.vio", "false", &cb_iovio, "enable this for testing the new vio (reading only)");
 
 	/* file */
 	SETPREF("file.analyze", "false", "Analyze file on load. Same as r2 -c aa ..");
