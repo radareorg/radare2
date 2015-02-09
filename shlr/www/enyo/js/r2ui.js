@@ -194,7 +194,7 @@ r2ui.seek = function (addr, push, scroll) {
     r2ui._dis.seek(addr, scroll);
     r2ui._hex.seek(addr, scroll);
   });
-  if (r2ui._dis.tmp_address !== undefined) r2ui._dis.tmp_address = addr;
+  // if (r2ui._dis.tmp_address !== undefined) r2ui._dis.tmp_address = addr;
 }
 
 r2ui.seek_in_graph = function (addr, push) {

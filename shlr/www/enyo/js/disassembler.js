@@ -96,6 +96,10 @@ enyo.kind ({
     var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
     var key = String.fromCharCode(keynum);
     // console.log(key);
+
+    var ctrlDown = evt.ctrlKey||evt.metaKey; // Mac support
+    if (ctrlDown && evt.altKey) return true;
+
     // show help
     if (key === '?') {
       r2ui.mp.show_popup();
@@ -174,10 +178,12 @@ enyo.kind ({
     // c Define function
     if (key === 'c') {
       var msg = prompt ('Function name?');
-      r2.cmd("af " + msg, function() {
-        r2.update_flags();
-        r2ui.seek("$$", false);
-      });
+      if (msg !== null) {
+        r2.cmd("af " + msg, function() {
+          r2.update_flags();
+          r2ui.seek("$$", false);
+        });
+      }
     }
     // d Clear function metadata
     if (key === 'd') {
@@ -188,7 +194,8 @@ enyo.kind ({
     }
     // g Go to address
     if (key === 'g') {
-      r2ui.opendis(prompt('Go to'));
+      var a = prompt('Go to');
+      if (a !== null) r2ui.opendis(a);
     }
     // ; Add comment
     if (key === ';') {
@@ -357,10 +364,14 @@ enyo.kind ({
   console_history: [],
   console_history_idx: 0,
   instructions: [],
+  scrolling: false,
   do_comment: function(address) {
-    r2.cmd('CC- ' + " @ " + address + ';CC ' + prompt('Comment')  + " @ " + address);
-    r2ui.seek(address, false);
-    scroll_to_address(address);
+    var c = prompt('Comment');
+    if (c !== null) {
+      r2.cmd('CC- ' + " @ " + address + ';CC ' + c + " @ " + address);
+      r2ui.seek(address, false);
+      scroll_to_address(address);
+    }
   },
   do_rename: function(element, inEvent) {
     if (this.renaming === null && this.selected !== null && this.selected.className.indexOf(" addr ") > -1) {

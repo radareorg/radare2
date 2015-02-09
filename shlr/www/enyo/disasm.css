@@ -170,3 +170,7 @@ input:focus {outline: none; }
   overflow: auto;
 }
 
+.right_label {
+  float: right;
+}
+
