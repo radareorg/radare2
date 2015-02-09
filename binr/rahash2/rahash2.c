@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
 		case 1: // encode
 			{
 			int binlen = strlen (hashstr);
-			ut8 *out = malloc (((binlen+1)*4)/3);
+			char *out = malloc (((binlen+1)*4)/3);
 			if (out) {
 				r_base64_encode (out, (const ut8*)hashstr, binlen);
 				printf ("%s\n", out);
@@ -310,7 +310,7 @@ int main(int argc, char **argv) {
 			{
 			ut8 *out = malloc (INSIZE);
 			if (out) {
-				int outlen = r_base64_decode (out, hashstr, strlen (hashstr));
+				int outlen = r_base64_decode (out, (const char *)hashstr, strlen (hashstr));
 				write (1, out, outlen);
 				free (out);
 			}
@@ -368,7 +368,8 @@ int main(int argc, char **argv) {
 		case 1: // encode
 			{
 			int binlen;
-			ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
+			char *out;
+			ut8 *bin = (ut8*)r_file_slurp (argv[i], &binlen);
 			if (!bin) {
 				eprintf ("Cannot open file\n");
 				continue;
