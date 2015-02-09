@@ -1244,7 +1244,7 @@ if (
 				if (section_text) 
 					ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name<0 || sym[k].st_name > strtab_section->sh_size) {
+				if (sym[k].st_name > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");
 					free (ret);
 					free (sym);

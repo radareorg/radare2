@@ -39,7 +39,8 @@ R_API void r_cons_less_str(const char *str) {
 	RRegex *rx = NULL;
 	RRegexMatch m;
 	int h, ch, to, ui = 1, from = 0, l, fnd;
-	char *p = strdup (str), *sreg;
+	const char *sreg;
+	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
