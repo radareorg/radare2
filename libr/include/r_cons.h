@@ -109,6 +109,12 @@ typedef struct r_cons_palette_t {
 
 typedef void (*RConsEvent)(void *);
 
+typedef struct r_cons_canvas_attr_t {
+	//TODO add support for 256 colors.
+	int x,y;//Location of the attribute
+	char * a;
+} RConsCanvasAttr;
+
 typedef struct r_cons_canvas_t {
 	int w;
 	int h;
@@ -116,6 +122,8 @@ typedef struct r_cons_canvas_t {
 	int y;
 	char *b;
 	int blen;
+	RConsCanvasAttr * attrs;// all the different attributes
+	int attrslen;
 	int sx; // scrollx
 	int sy; // scrolly
 } RConsCanvas;
@@ -283,6 +291,7 @@ R_API void r_cons_canvas_free (RConsCanvas *c);
 R_API void r_cons_canvas_clear (RConsCanvas *c);
 R_API void r_cons_canvas_print(RConsCanvas *c);
 R_API char *r_cons_canvas_to_string(RConsCanvas *c);
+R_API void r_cons_canvas_attr(RConsCanvas *c,const char * attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h);
