@@ -278,22 +278,15 @@ $(document).ready( function() {
 
   // Project notes
   r2.cmdj("Pnj", function(x){
-    // TODO: Handle when project does not exist
-    // TODO: remove keyhandlers from pnotes
-    if (x !== null) {
-      console.log(x);
-      var notes = atob(x);
-      $("#pnotes").html(notes);
-    }
+    if (x !== null) $("#pnotes").html(atob(x));
   });
-  $("#pnotes").bind("keydown", function(x) {
-    r2ui.project_notes = $("#pnotes").val();
-    setTimeout("save_project_notes();", 3000);
+  $("#pnotes").donetyping(function() {
+    r2.cmd("Pnj " + btoa($("#pnotes").val()));
+    r2.cmd("Po", function(x) {
+      if (x === "") alert("Notes won't be persited until a project is opened. Use Project's tab or 'Ps name' to save current project");
+    });
   });
-
 });
-
-
 
 function scroll_to_element(element) {
   if (element === undefined) return;
@@ -324,11 +317,8 @@ function handleKeypress(inEvent) {
   var key = String.fromCharCode(keynum);
   // console.log(key);
 
-  if (inEvent.ctrlKey||inEvent.metaKey) return true;
-
-  if ($(inEvent.target).prop("tagName") === "INPUT") {
-    return;
-  };
+  if (inEvent.ctrlKey||inEvent.metaKey) return;
+  if ($(inEvent.target).prop("tagName") === "INPUT" || $(inEvent.target).prop("tagName") === "TEXTAREA") return;
 
   if (r2ui._dis.renaming !== null) return;
 

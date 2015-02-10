@@ -97,7 +97,9 @@ enyo.kind ({
     var key = String.fromCharCode(keynum);
     // console.log(key);
 
-    if (inEvent.ctrlKey||inEvent.metaKey) return true;
+    if (inEvent.ctrlKey||inEvent.metaKey) return;
+    if ($(inEvent.target).prop("tagName") === "INPUT" || $(inEvent.target).prop("tagName") === "TEXTAREA") return;
+
 
     // show help
     if (key === '?') {

@@ -1025,9 +1025,4 @@ function inColor(x) {
   return "e scr.color=true;"+x+";e scr.color=false";
 }
 
-function save_project_notes() {
-  if ($("#pnotes").val() === r2ui.project_notes) {
-    console.log("Saving " + r2ui.project_notes);
-    r2.cmd("Pnj " + btoa(r2ui.project_notes));
-  }
-}
+
