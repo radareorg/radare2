@@ -2079,18 +2079,20 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
-			printf ("\r8");
+			printf (input[1]=='j'? "\r{\"8\":\"":"\r8");
 			for (len=0; len<l; len++)
 				printf ("=");
-			printf ("D");
+			printf (input[1]=='j'? "D\"}":"D");
 			r_sys_usleep (100000);
 			fflush (stdout);
 		}
+		if (input[1]=='j') printf (",{\"");
 		for (l=0; l<3; l++) {
 			printf ("~");
 			fflush (stdout);
-			r_sys_usleep (100000);
+			if (input[1]!='j') r_sys_usleep (100000);
 		}
+		if (input[1]=='j') printf ("\"}");
 		printf ("\n");
 		break;
 	case 't':

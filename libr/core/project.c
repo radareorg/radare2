@@ -323,3 +323,12 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 	free (prj);
 	return ret;
 }
+
+R_API char *r_core_project_notes_file (RCore *core, const char *file) {
+	char *notes_txt;
+	const char *prjdir = r_config_get (core->config, "dir.projects");
+	char *prjpath = r_file_abspath (prjdir);
+	notes_txt = r_str_newf ("%s/%s.d/notes.txt", prjpath, file);
+	free (prjpath);
+	return notes_txt;
+}

@@ -3,7 +3,8 @@
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *file, *arg = input+1;
-	char *str = strdup (r_config_get (core->config, "file.project"));
+	const char *fileproject = r_config_get (core->config, "file.project");
+	char *str = strdup (fileproject);
 	if (*arg==' ') arg++;
 	file = input[1]?arg:str;
 	switch (input[0]) {
@@ -35,6 +36,124 @@ static int cmd_project(void *data, const char *input) {
 			r_cons_printf ("%s\n", file);
 		}
 		break;
+	case 'n':
+		if (!fileproject || !*fileproject) {
+			eprintf ("No project\n");
+		} else
+		switch (input[1]) {
+		case '-':
+			/* remove lines containing specific words */
+			{
+			char *str = r_core_project_notes_file (core, fileproject);
+			char *data = r_file_slurp (str, NULL);
+			FILE *fd = r_sandbox_fopen (str, "w");
+			if (!fd) {
+				eprintf ("Cannot open %s\n", str);
+			} else {
+				int del = 0;
+				if (data) {
+					char *ptr, *nl;
+					for (ptr = data; ptr; ptr = nl)  {
+						nl = strchr (ptr, '\n');
+						if (nl) {
+							*nl++ = 0;
+							if (strstr (ptr, input+2)) {
+								del ++;
+							} else {
+								fprintf (fd, "%s\n", ptr);
+							}
+						}
+					}
+					free (data);
+				}
+				fclose (fd);
+				free (str);
+				if (del>0) {
+					eprintf ("Deleted %d lines\n", del);
+				}
+			}
+			}
+			break;
+		case ' ':
+			if (input[2]=='-') {
+				char *str = r_core_project_notes_file (core, fileproject);
+				// edit with cfg.editor
+				const char *editor = r_config_get (core->config, "cfg.editor");
+				if (str && *str && editor && *editor)
+					r_sys_cmdf ("%s %s", editor, str);
+				else eprintf ("No cfg.editor configured\n");
+				free (str);
+			} else {
+				//char *str = r_core_project_notes_file (core, fileproject);
+				// append line to project notes
+				char *str = r_core_project_notes_file (core, fileproject);
+				char *data = r_file_slurp (str, NULL);
+				FILE *fd = r_sandbox_fopen (str, "a");
+				if (fd) {
+					fprintf (fd, "%s\n", input+2);
+					fclose (fd);
+				}
+				free (str);
+				free (data);
+			}
+			break;
+		case 'j':
+			if (!input[2]) {
+				int len = 0;
+				/* get base64 string */
+				char *str = r_core_project_notes_file (core, fileproject);
+				if (str) {
+					char *data = r_file_slurp (str, &len);
+					char *res = r_base64_encode_dyn (data, len);
+					if (res) {
+						r_cons_printf ("%s\n", res);
+						free (res);
+					}
+					free (data);
+					free (str);
+				}
+			} else if (input[2] == ' ') {
+				/* set base64 string */
+				ut8 *data = r_base64_decode_dyn (input+3, 0);
+				if (data) {
+					char *str = r_core_project_notes_file (core, fileproject);
+					if (str) {
+						r_file_dump (str, data, strlen ((const char*)data));
+						free (str);
+					}
+					free (data);
+				}
+			} else {
+				eprintf ("Usage: `Pnj` or `Pnj ...`\n");
+			}
+			break;
+		case 0:
+			{
+			char *str = r_core_project_notes_file (core, fileproject);
+			char *data = r_file_slurp (str, NULL);
+			if (data) {
+				r_cons_printf ("%s\n", data);
+				free (data);
+			}
+			free (str);
+			}
+			break;
+		case '?':
+			{
+				const char* help_msg[] = {
+					"Usage:", "Pn[j-?] [...]", "Project Notes",
+					"Pn", "", "show project notes",
+					"Pn", " -", "edit notes with cfg.editor",
+					"Pn-", "", "delete notes",
+					"Pn-", "str", "delete lines matching /str/ in notes",
+					"Pnj", "", "show notes in base64",
+					"Pnj", " [base64]", "set notes in base64",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			}
+			break;
+		}
+		break;
 	case 'i':
 //		if (r_file_is_regular (file))
 		free (r_core_project_info (core, file));
@@ -42,13 +161,16 @@ static int cmd_project(void *data, const char *input) {
 	default: {
 		const char* help_msg[] = {
 		"Usage:", "P[?osi] [file]", "Project management",
-		"Po", " [file]", "open project",
-		"Ps", " [file]", "save project",
+		"Pc", "", "show what will be saved in the project script",
+		"Pc", " [file]", "show project script to console",
 		"Pd", " [file]", "delete project",
 		"Pi", " [file]", "show project information",
-		"Pc", " [file]", "show project script to console",
-		"Pc", "", "show what will be saved in the project script",
 		"Pl", "", "list all projects",
+		"Pn", "[j]", "show project notes (Pnj for json)",
+		"Pn", " [base64]", "set notes text",
+		"Pn", " -", "edit notes with cfg.editor",
+		"Po", " [file]", "open project",
+		"Ps", " [file]", "save project",
 		"NOTE:", "", "See 'e file.project'",
 		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
 		NULL};
