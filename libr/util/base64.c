@@ -52,6 +52,15 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 	return (in != out)? out: 0;
 }
 
+R_API ut8 *r_base64_decode_dyn(const char *in, int len) {
+	ut8 *bout;
+	if (!in) return NULL;
+	if (len<1) len = strlen (in)+1;
+	bout = malloc (len);
+	r_base64_decode (bout, in, len);
+	return bout;
+}
+
 R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 	int in, out;
 	if (len<1)
@@ -66,8 +75,8 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 R_API char *r_base64_encode_dyn(const char *str, int len) {
 	char *bout;
 	int in, out;
-	if (len<1)
-		len = strlen (str) +1;
+	if (!str) return NULL;
+	if (len<1) len = strlen (str) +1;
 	bout = malloc ((len * 4)+1);
 	for (in=out=0; in<len; in+=3,out+=4)
 		b64_encode ((const ut8*)str+in, (char*)bout+out,
