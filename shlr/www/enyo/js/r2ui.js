@@ -101,7 +101,6 @@ r2ui.update_fcn_BB = function(fcn_offset, bb_offset, bbinfo) {
   }
 };
 
-r2ui.project_notes = "";
 r2ui.current_fcn_offset = null;
 r2ui.graph = null;
 r2ui.console_lang = "r2";
