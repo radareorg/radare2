@@ -5,8 +5,19 @@
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
+#define GWC(x,y,s) do{\
+	if(r_cons_canvas_gotoxy(c,x,y)){\
+		if(color)\
+			r_cons_canvas_attr(c,color);\
+		r_cons_canvas_write(c,s);\
+		if(color && r_cons_canvas_gotoxy(c,x+1,y))\
+			r_cons_canvas_attr(c,Color_RESET);\
+	}\
+}while(0)
+
 R_API void r_cons_canvas_free (RConsCanvas *c) {
 	free (c->b);
+	free (c->attrs);
 	free (c);
 }
 
@@ -17,6 +28,10 @@ R_API void r_cons_canvas_clear (RConsCanvas *c) {
 		c->b[c->blen] = 0;
 		for (y = 0; y<c->h; y++)
 			c->b[ y * c->w ] = '\n';
+		if(c->attrs){
+			c->attrslen=0;
+			memset (c->attrs, 0, sizeof(*c->attrs)*c->blen);
+		}
 	}
 }
 
@@ -31,6 +46,14 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 	c->blen = (w+1)*h;
 	c->b = malloc (c->blen+1);
 	if (!c->b) {
+		free (c);
+		return NULL;
+	}
+	c->attrslen = 0;
+	c->attrs = calloc(sizeof(*c->attrs),c->blen+1);
+	if (!c->attrs) {
+		if (c->b)
+			free (c->b);
 		free (c);
 		return NULL;
 	}
@@ -100,6 +123,24 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
+R_API void r_cons_canvas_attr(RConsCanvas *c, const char * attr){
+	int i;
+	//check to make sure we don't have an attr in the same place
+	for( i = 0; i<c->attrslen; i++){
+		if( (c->attrs[c->attrslen].x == c->x) &&
+		    (c->attrs[c->attrslen].y == c->y) ){
+			c->attrs[i].x = c->x;
+			c->attrs[i].y = c->y;
+			c->attrs[i].a = (char *) attr;
+		}
+	}
+
+	c->attrs[c->attrslen].x = c->x;
+	c->attrs[c->attrslen].y = c->y;
+	c->attrs[c->attrslen].a = (char *) attr;
+	c->attrslen++;
+}
+
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	int left, slen, i, linenum = 0;
 	char *p, *s, *str;
@@ -143,15 +184,22 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 }
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
-	int x, y, olen = 0;
+	int x, y, i = 0, olen = 0;
 	char *o, *b;
 	if (!c) return NULL;
 	b = c->b;
-	o = malloc (c->w*(c->h+1));
+	o = calloc (sizeof(char), (c->w*(c->h+1))+(c->attrslen*10));
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
 			int p = x + (y*c->w);
+			if (x == c->attrs[i].x && y == c->attrs[i].y){
+				if(i<c->attrslen && c->attrs[i].a){
+					strcat(o,c->attrs[i].a);
+					olen+=strlen(c->attrs[i].a);
+					i++;
+				}
+			}
 			if (!b[p] || b[p]=='\n')
 				break;
 			o[olen++] = b[p];
@@ -176,6 +224,8 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);
 	if (!b) return R_FALSE;
+	c->attrs = realloc(c->attrs,sizeof(*c->attrs)*blen+1);
+	if (!c->attrs) return R_FALSE;
 	c->blen = blen;
 	c->b = b;
 	c->w = w;
@@ -232,32 +282,32 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	int i, onscreen;
+	char *c1="v", *c2="V";
+	char *color=NULL;
 	switch (style) {
 	case 0:
-		if (G (x, y))
-			W ("v");
-		if (G (x2, y2))
-			W ("V");
+		color=Color_BLUE;
+		c1="v";
+		c2="V";
 		break;
 	case 1:
-		if (G (x, y))
-			W ("t"); //\\");
-		if (G (x2, y2))
-			W ("\\");
+		color=Color_GREEN;
+		c1="t";
+		c2="\\";
 		break;
 	case 2:
-		if (G (x, y))
-			W ("f");
-		if (G (x2, y2))
-			W ("/");
+		color=Color_RED;
+		c1="f";
+		c2="/";
 		break;
 	}
+	GWC(x,y,c1);
+	GWC(x2,y2,c2);
 	if (x==x2) {
 		int min = R_MIN (y,y2)+1;
 		int max = R_MAX (y,y2);
 		for (i=min; i<max; i++) {
-			if (G (x,i))
-				W ("|");
+			GWC(x,i,"|");
 		}
 	} else {
 		// --
@@ -267,12 +317,10 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 		hl--;
 		if (y2 > (y+1)) {
 			for (i=0;i<hl;i++) {
-				if (G (x,y+i+1))
-					W ("|");
+				GWC(x,y+i+1,"|");
 			}
 			for (i=0;i<hl2;i++) {
-				if (G (x2, y+hl+i+1))
-					W ("|");
+				GWC(x2,y+hl+i+1,"|");
 			}
 			int w = R_ABS (x-x2);
 			char *row = malloc (w+2);
@@ -289,7 +337,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 					onscreen = i;
 			} else {
 				row[0] = '`';
-				row[0] = '\'';
+				row[0] = '\'';//wtf?
 				if (w>1)
 					memset (row+1, '-', w-1);
 				row[w] = '.';
@@ -299,8 +347,13 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 				if (!onscreen)
 					onscreen = i;
 			}
-			if (onscreen)
+			if (onscreen){
+				if(color)
+					r_cons_canvas_attr(c,color);
 				W (row);
+				if(color && G(c->x+1,c->y))
+					r_cons_canvas_attr(c,Color_RESET);
+			}
 			free (row);
 		} else  {
 			int minx = R_MIN (x, x2);
@@ -312,8 +365,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 				vl--;
 
 			for (i=0;i<vl; i++) {
-				if (G (minx+rl,y2+i))
-					W ("|");
+				GWC(minx+rl,y2+i,"|");
 			}
 
 			int w = rl;
@@ -335,8 +387,13 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 				row[w] = 0;
 				onscreen = G (x+1,y+1);
 			}
-			if (onscreen)
+			if (onscreen){
+				if(color)
+					r_cons_canvas_attr(c,color);
 				W (row);
+				if(color && G(c->x+1,c->y))
+					r_cons_canvas_attr(c,Color_RESET);
+			}
 			w = rl2;
 			free (row);
 			row = malloc (rl2+1);
@@ -353,8 +410,13 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 				row[w] = 0;
 				onscreen = G (x+rl, y2-1);
 			}
-			if (onscreen)
+			if (onscreen){
+				if(color)
+					r_cons_canvas_attr(c,color);
 				W (row);
+				if(color && G(c->x+1,c->y))
+					r_cons_canvas_attr(c,Color_RESET);
+			}
 			free (row);
 		}
 	}
