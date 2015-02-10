@@ -11,7 +11,7 @@ HexPanel.prototype.seek = function(addr, scroll) {
 	this.min = this.max = 0;
 	r2.cmd (inColor("px " + this.block + "@" + addr), function (x) {
 	  x = render_hexdump(x);
-	  $("#hex_tab").html("<div style='overflow: scroll;padding-left: 30px;'><pre id='hexdump' style='color:rgb(127,127,127);''>" + x + "</pre></div>");
+	  $("#hex_tab").html("<div style='padding-left: 30px;'><pre id='hexdump' style='color:rgb(127,127,127);''>" + x + "</pre></div>");
 	});
 };
 HexPanel.prototype.scrollTo = function(x,y) {

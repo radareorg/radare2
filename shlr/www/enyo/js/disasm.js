@@ -573,26 +573,28 @@ function html_for_instruction(ins) {
 
   if (offset === "0x"+ins.fcn_addr.toString(16)) {
     if (r2ui._dis.display == "flat") idump += '<div class="ec_flow">; -----------------------------------------------------------</div>';
-    r2.cmdj("afij " + offset, function(x){
-      if (x !== null && x !== undefined && x.length > 0)
-        idump += '<div class="ec_fname">(fcn) ' + x[0].name + '</div>';
+    var results;
+    var cmd = "afij " + offset + ";afvj " + offset + ";afaj " + offset;
+    r2.cmd(cmd, function(x){
+      results = x.split("\n");
     });
-    r2.cmdj("afvj @ " + offset, function(x){
-      var fvars = [];
-      for (var i in x) {
-        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
-        fvars[fvars.length] = {name: x[i].name, id:  address_canonicalize(offset) + "_" + x[i].ref};
-      }
-      r2.varMap[ins.fcn_addr] = fvars;
-    });
-    r2.cmdj("afaj @ " + offset, function(x){
-      var args = [];
-      for (var i in x) {
-        idump += '<div class="ec_flag">; ' + x[i].kind + " " + x[i].type  + " <span class='farg id_" + address_canonicalize(offset) + "_" + x[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(x[i].name) + "</span> @ " + x[i].ref + '</div>';
-        args[args.length] = {name: x[i].name, id:  address_canonicalize(offset) + "_" + x[i].ref};
-      }
-      r2.argMap[ins.fcn_addr] = args;
-    });
+    var info = JSON.parse(results[0]);
+    if (info !== null && info !== undefined && info.length > 0)
+      idump += '<div class="ec_fname">(fcn) ' + info[0].name + '</div>';
+    var vars = JSON.parse(results[1]);
+    var fvars = [];
+    for (var i in vars) {
+      idump += '<div class="ec_flag">; ' + vars[i].kind + " " + results[1][i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + results[1][i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(results[1][i].name) + "</span> @ " + results[1][i].ref + '</div>';
+      fvars[fvars.length] = {name: results[1][i].name, id:  address_canonicalize(offset) + "_" + results[1][i].ref};
+    }
+    r2.varMap[ins.fcn_addr] = fvars;
+    var args = JSON.parse(results[2]);
+    var fargs = [];
+    for (var i in args) {
+      idump += '<div class="ec_flag">; ' + args[i].kind + " " + args[i].type  + " <span class='farg id_" + address_canonicalize(offset) + "_" + args[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(args[i].name) + "</span> @ " + args[i].ref + '</div>';
+      fargs[fargs.length] = {name: args[i].name, id:  address_canonicalize(offset) + "_" + args[i].ref};
+    }
+    r2.argMap[ins.fcn_addr] = fargs;
   }
   if (asm_flags) {
     var flags;
@@ -820,10 +822,11 @@ function has_scrollbar(divnode) {
 }
 
 function on_scroll(event) {
+  // console.log($(event.target).scrollTop());
   if (!r2ui._dis.scrolling) {
     var enyo = $("#radareApp").length ? true : false;
     var panel_disas = false;
-    if (!enyo) panel_disas =$( "#main_panel" ).tabs( "option", "active" ) == 0? true : false;
+    if (!enyo) panel_disas = $("#main_panel").tabs("option", "active") === 0 ? true : false;
     r2ui._dis.scrolling = true;
     if (r2ui._dis.display == "flat" && (enyo || panel_disas)) {
       var scroll_offset = null;
@@ -849,8 +852,7 @@ function on_scroll(event) {
           render_instructions(r2ui._dis.instructions);
           scroll_to_address(addr);
           rehighlight_iaddress(r2ui._dis.selected_offset);
-        }
-        if (scroll_offset > top_offset) {
+        } else if (scroll_offset > top_offset) {
           // console.log("Scroll en top", scroll_offset, top_offset)
           addr = "0x" + r2ui._dis.instructions[r2ui._dis.instructions.length-1].offset.toString(16);
           r2.get_disasm_after(addr, 100, function(x) {
@@ -864,6 +866,7 @@ function on_scroll(event) {
       }
     }
     r2ui._dis.scrolling = false;
+    event.preventDefault();
   }
 }
 
@@ -1022,3 +1025,9 @@ function inColor(x) {
   return "e scr.color=true;"+x+";e scr.color=false";
 }
 
+function save_project_notes() {
+  if ($("#pnotes").val() === r2ui.project_notes) {
+    console.log("Saving " + r2ui.project_notes);
+    r2.cmd("Pnj " + btoa(r2ui.project_notes));
+  }
+}

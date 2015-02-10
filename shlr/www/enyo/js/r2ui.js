@@ -100,6 +100,8 @@ r2ui.update_fcn_BB = function(fcn_offset, bb_offset, bbinfo) {
     r2ui.basic_blocks[bb_offset] = bbinfo;
   }
 };
+
+r2ui.project_notes = "";
 r2ui.current_fcn_offset = null;
 r2ui.graph = null;
 r2ui.console_lang = "r2";
@@ -172,6 +174,7 @@ r2ui.prev_instruction = function() {
 }
 
 r2ui.seek = function (addr, push, scroll) {
+  if (addr === undefined) return;
   // Resolve flag in case we dont have an address
   if (addr.indexOf("0x") === 0) {
     addr = address_canonicalize(addr);
