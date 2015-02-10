@@ -170,8 +170,8 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		read_len++;
 		switch (*++buf)
 		{
-		case '0': SET_OPERATOR_CODE("ctor"); break;
-		case '1': SET_OPERATOR_CODE("dtor"); break;
+		case '0': SET_OPERATOR_CODE("constructor"); break;
+		case '1': SET_OPERATOR_CODE("~destructor"); break;
 		case '2': SET_OPERATOR_CODE("operator new"); break;
 		case '3': SET_OPERATOR_CODE("operator delete"); break;
 		case '4': SET_OPERATOR_CODE("operator ="); break;
@@ -762,7 +762,8 @@ static int init_type_code_str_struct(STypeCodeStr *type_coder_str)
 ///////////////////////////////////////////////////////////////////////////////
 static void free_type_code_str_struct(STypeCodeStr *type_code_str)
 {
-	R_FREE(type_code_str->type_str);
+	if (type_code_str->type_str)
+		R_FREE(type_code_str->type_str);
 	type_code_str->type_str_len = 0;
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -836,6 +837,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	char *call_conv = 0;
 	char *storage_class_code_for_ret = 0;
 	char *ret_type = 0;
+	char *__ptr64 = 0;
 	RList /* <char *> */ *func_args = 0;
 	RListIter *it = 0;
 	SStrInfo *str_arg = 0;
@@ -847,6 +849,11 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	char *tmp = 0;
 	char *ptr64 = 0;
 	char *storage_class = 0;
+
+	if (!init_type_code_str_struct(&func_str)) {
+		err = eDemanglerErrMemoryAllocation;
+		goto parse_microsoft_mangled_name_err;
+	}
 
 	if (!init_type_code_str_struct(&type_code_str)) {
 		err = eDemanglerErrMemoryAllocation;
@@ -969,6 +976,12 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		goto parse_microsoft_mangled_name_err;
 	}
 
+	// TODO: what?????
+	if (*curr_pos == 'E') {
+		__ptr64 = "__ptr64";
+		curr_pos++;
+	}
+
 	// member function access code
 	if (is_implicit_this_pointer) {
 		switch (*curr_pos++)
@@ -1024,7 +1037,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	// Return type, or @ if 'void'
 	if (*curr_pos == '@') {
-		ret_type = "void";
+		ret_type = strdup("void");
 		curr_pos++;
 	}
 	else {
@@ -1071,9 +1084,13 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		err = eDemanglerErrUncorrectMangledSymbol;
 	}
 
-	if (!init_type_code_str_struct(&func_str)) {
-		err = eDemanglerErrMemoryAllocation;
-		goto parse_microsoft_mangled_name_err;
+	if (access_modifier) {
+		copy_string(&func_str, access_modifier, 0);
+		if (strstr(access_modifier, "static") == NULL) {
+			copy_string(&func_str, ": ", 0);
+		} else {
+			copy_string(&func_str, " ", 0);
+		}
 	}
 
 	if (storage_class_code_for_ret) {
@@ -1106,6 +1123,11 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 			free(str_arg);
 		}
 		copy_string(&func_str, ")", 0);
+	}
+
+	if (__ptr64) {
+		copy_string(&func_str, " ", 0);
+		copy_string(&func_str, __ptr64, 0);
 	}
 
 	// TODO: where to free??
