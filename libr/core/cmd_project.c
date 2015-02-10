@@ -115,11 +115,11 @@ static int cmd_project(void *data, const char *input) {
 			} else if (input[2] == ' ') {
 				/* set base64 string */
 				int len = 0;
-				ut8 *data = r_base64_decode_dyn (input+2, 0);
+				ut8 *data = r_base64_decode_dyn (input+3, 0);
 				if (data) {
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
-						r_file_dump (str, data, len);
+						r_file_dump (str, data, strlen ((const char*)data));
 						free (str);
 					}
 					free (data);
