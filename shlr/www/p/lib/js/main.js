@@ -273,17 +273,37 @@ $(document).ready( function() {
   r2ui.seek(disasm_panel.base,true);
   scroll_to_element(r2ui._dis.selected);
 
+  // Infinite scroll
   $("#center_panel").scroll(on_scroll);
+
+  // Project notes
+  r2.cmdj("Pnj", function(x){
+    // TODO: Handle when project does not exist
+    // TODO: remove keyhandlers from pnotes
+    if (x !== null) {
+      console.log(x);
+      var notes = atob(x);
+      $("#pnotes").html(notes);
+    }
+  });
+  $("#pnotes").bind("keydown", function(x) {
+    r2ui.project_notes = $("#pnotes").val();
+    setTimeout("save_project_notes();", 3000);
+  });
 
 });
 
+
+
 function scroll_to_element(element) {
+  if (element === undefined) return;
   var top = Math.max(0,element.documentOffsetTop() - ( window.innerHeight / 2 ));
   $('#center_panel').scrollTo(top, {axis: 'y'});
   r2ui._dis.scroll_offset = top;
 }
 
 function scroll_to_address(address) {
+  if (address === undefined) return;
   var elements = $(".insaddr.addr_" + address);
   var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
   top = Math.max(0,top);
@@ -304,8 +324,7 @@ function handleKeypress(inEvent) {
   var key = String.fromCharCode(keynum);
   // console.log(key);
 
-  var ctrlDown = evt.ctrlKey||evt.metaKey; // Mac support
-  if (ctrlDown && evt.altKey) return true;
+  if (inEvent.ctrlKey||inEvent.metaKey) return true;
 
   if ($(inEvent.target).prop("tagName") === "INPUT") {
     return;
@@ -544,48 +563,55 @@ function do_define(element) {
 }
 
 function handleClick(inEvent) {
-  if ($(inEvent.target).hasClass('addr')) {
-    var address = get_address_from_class(inEvent.target);
-    r2ui._dis.selected = inEvent.target;
-    r2ui._dis.selected_offset = address;
-    rehighlight_iaddress(address);
-    // If instruction address, add address to history
-    if ($(inEvent.target).hasClass('insaddr')) {
-      r2ui.history_push(address);
-      render_history();
 
-      var get_more_instructions = false;
-      var next_instruction;
-      var prev_instruction;
-      var address;
-      if (r2ui._dis.display == "flat") {
-        next_instruction = $(r2ui._dis.selected).closest(".instructionbox").next().find('.insaddr')[0];
-        if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) {
-          get_more_instructions = true;
-          address = get_address_from_class(next_instruction);
-        }
-        prev_instruction = $(r2ui._dis.selected).closest(".instructionbox").prev().find('.insaddr')[0];
-        if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) < 10) {
-          get_more_instructions = true;
-          address = get_address_from_class(prev_instruction);
-        }
-      }
-      if (r2ui._dis.display == "graph") {
-        var next_instruction = $(r2ui._dis.selected).closest(".instruction").next().find('.insaddr')[0];
-        if (next_instruction === undefined || next_instruction === null) {
-          next_instruction = $(r2ui._dis.selected).closest(".basicblock").next().find('.insaddr')[0];
-        }
-        var prev_instruction = $(r2ui._dis.selected).closest(".instruction").prev().find('.insaddr')[0];
-        if (prev_instruction === undefined || prev_instruction === null) {
-          prev_instruction = $(r2ui._dis.selected).closest(".basicblock").prev().find('.insaddr').last()[0];
-        }
-      }
-      if (get_more_instructions) {
-        r2ui.seek(address, false);
+  if ($(inEvent.target).hasClass('addr')) {
+      if ($(inEvent.target).hasClass('history')) {
+        var idx = inEvent.target.className.split(" ").filter(function(x) { return x.substr(0,"history_idx_".length) == "history_idx_"; });
+        idx = String(idx).split("_")[2];
+        r2ui.history_idx = idx;
+        do_jumpto(r2ui.history[idx]);
+      } 
+      // If instruction address, add address to history
+      else if ($(inEvent.target).hasClass('insaddr')) {
+        var address = get_address_from_class(inEvent.target);
+        r2ui._dis.selected = inEvent.target;
+        r2ui._dis.selected_offset = address;
         rehighlight_iaddress(address);
-        scroll_to_address(address);
+
+        r2ui.history_push(address);
+        render_history();
+        var get_more_instructions = false;
+        var next_instruction;
+        var prev_instruction;
+        var address;
+        if (r2ui._dis.display == "flat") {
+          next_instruction = $(r2ui._dis.selected).closest(".instructionbox").next().find('.insaddr')[0];
+          if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) > $("#gbox .instructionbox").length - 10) {
+            get_more_instructions = true;
+            address = get_address_from_class(next_instruction);
+          }
+          prev_instruction = $(r2ui._dis.selected).closest(".instructionbox").prev().find('.insaddr')[0];
+          if ($("#gbox .instructionbox").index( $(r2ui._dis.selected).closest(".instructionbox")[0]) < 10) {
+            get_more_instructions = true;
+            address = get_address_from_class(prev_instruction);
+          }
+        }
+        if (r2ui._dis.display == "graph") {
+          var next_instruction = $(r2ui._dis.selected).closest(".instruction").next().find('.insaddr')[0];
+          if (next_instruction === undefined || next_instruction === null) {
+            next_instruction = $(r2ui._dis.selected).closest(".basicblock").next().find('.insaddr')[0];
+          }
+          var prev_instruction = $(r2ui._dis.selected).closest(".instruction").prev().find('.insaddr')[0];
+          if (prev_instruction === undefined || prev_instruction === null) {
+            prev_instruction = $(r2ui._dis.selected).closest(".basicblock").prev().find('.insaddr').last()[0];
+          }
+        }
+        if (get_more_instructions) {
+          r2ui.seek(address, false);
+          rehighlight_iaddress(address);
+          scroll_to_address(address);
+        }
       }
-    }
   } else if ($(inEvent.target).hasClass('fvar') || $(inEvent.target).hasClass('farg')) {
     var eid = null;
     var address = get_address_from_class(inEvent.target, "faddr");
@@ -784,8 +810,8 @@ function render_history(){
       var flag = r2.get_flag_names(r2ui.history[i]);
       if (flag.length > 0) flag = flag[0];
       else flag = r2ui.history[i];
-      if (i == r2ui.history_idx - 1) html += " &gt; <span class='history history_idx addr addr_" + r2ui.history[i] + "'>" + flag + "</span>";
-      else html += " &gt;  <span class='history addr addr_" + r2ui.history[i] + "'>" + flag + "</span>";
+      if (i == r2ui.history_idx - 1) html += " &gt; <span class='history history_idx addr addr_" + r2ui.history[i] + " history_idx_" + i + "'>" + flag + "</span>";
+      else html += " &gt;  <span class='history addr addr_" + r2ui.history[i] + " history_idx_" + i + "'>" + flag + "</span>";
     }
   }
   html += "</div>";

@@ -97,8 +97,7 @@ enyo.kind ({
     var key = String.fromCharCode(keynum);
     // console.log(key);
 
-    var ctrlDown = evt.ctrlKey||evt.metaKey; // Mac support
-    if (ctrlDown && evt.altKey) return true;
+    if (inEvent.ctrlKey||inEvent.metaKey) return true;
 
     // show help
     if (key === '?') {
