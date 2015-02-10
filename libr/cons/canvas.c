@@ -4,7 +4,7 @@
 
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
-
+/*TODO GWC should be inline*/
 #define GWC(x,y,s) do{\
 	if(r_cons_canvas_gotoxy(c,x,y)){\
 		if(color)\
@@ -188,7 +188,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	char *o, *b;
 	if (!c) return NULL;
 	b = c->b;
-	o = calloc (sizeof(char), (c->w*(c->h+1))+(c->attrslen*10));
+	o = calloc (sizeof(char), (c->w*(c->h+1))+(c->attrslen*10));//TODO ew.
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
