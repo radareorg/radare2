@@ -141,8 +141,7 @@ encourage you to send an email to any of the emails enumerated
 in the AUTHORS file.
 
 Anyway, if you want to get even more feedback and discuss this
-in a public place we have a mailing list where many other
-people may help in order to find a solution.
+in a public place: join the #radare channel on irc.freenode.net
 
 The issues page of Github contains a list of all the bugs that
 have been reported classified with labels by difficulty, type,
