@@ -1156,6 +1156,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("scr.responsive", "false", "Auto-adjust Visual depending on screen (disable asm.bytes and other)");
 #endif
 	SETPREF("scr.wheel", "true", "Enable the use of mouse wheel in visual mode");
+	SETI("scr.wheelspeed", 1, "mouse wheel speed");
 	// DEPRECATED: USES hex.cols now SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
 	SETICB("scr.rows", 0, &cb_rows, "Force specific console rows (height)");

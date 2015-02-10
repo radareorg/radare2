@@ -150,6 +150,7 @@ typedef struct r_cons_t {
 	RConsEvent event_resize;
 	void *data;
 	void *event_data;
+	int mouse_event;
 
 	RConsEditorCallback editor;
 	void *user; // Used by <RCore*>

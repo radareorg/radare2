@@ -533,9 +533,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	ut64 offset = core->offset;
 	char buf[4096];
 	int i, ret, offscreen, cols = core->print->cols, delta = 0;
+	int wheelspeed;
+
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
+	
+	if (r_cons_singleton()->mouse_event) {
+		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
+	} else {
+		wheelspeed = 1;
+	}
 
 	// do we need hotkeys for data references? not only calls?
 	if (ch>='0'&& ch<='9') {
@@ -556,15 +564,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	switch (ch) {
 	case 0x0d:
 		{
+			RAnalOp *op;
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel)
 				r_cons_enable_mouse (R_TRUE);
-			RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
-			if (op) {
-				if (op->type == R_ANAL_OP_TYPE_JMP	||
-						op->type == R_ANAL_OP_TYPE_CJMP ||
-						op->type == R_ANAL_OP_TYPE_CALL ||
-						op->type == R_ANAL_OP_TYPE_CCALL) {
+			do {
+				op = r_core_anal_op (core, core->offset+cursor);
+				if (op) {
+					if (op->type == R_ANAL_OP_TYPE_JMP	||
+							op->type == R_ANAL_OP_TYPE_CJMP ||
+							op->type == R_ANAL_OP_TYPE_CALL ||
+							op->type == R_ANAL_OP_TYPE_CCALL) {
 						if (curset) {
 							int delta = R_ABS ((st64)op->jump-(st64)offset);
 							if ( op->jump < core->offset || op->jump > last_printed_address) {
@@ -576,11 +586,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							}
 						} else {
 							r_io_sundo_push (core->io, offset);
-							r_core_visual_seek_animation(core, op->jump);
+							r_core_visual_seek_animation (core, op->jump);
 						}
 					}
-			}
-			r_anal_op_free (op);
+				}
+				r_anal_op_free (op);
+			} while (--wheelspeed>0);
 		}
 		break;
 	case 90: // shift+tab
@@ -979,23 +990,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				}
 			}
 		} else {
-			if (core->printidx == 1 || core->printidx == 2) {
-				cols = r_asm_disassemble (core->assembler,
-					&op, core->block, 32);
-				if (cols<1) cols = op.size;
-				if (cols<1) cols = 1;
-#if 0
-				cols = core->inc;
-				//cols = r_asm_disassemble (core->assembler,
-				//	&op, core->block+cursor, 32);
-				core->asmsteps[core->curasmstep].offset = core->offset+cols;
-				core->asmsteps[core->curasmstep].cols = cols;
-				if (core->curasmstep < R_CORE_ASMSTEPS-1)
-					core->curasmstep++;
-				else core->curasmstep = 0;
-#endif
+			int times = wheelspeed;
+			if (times<1) times = 1;
+			while (times--) {
+				if (core->printidx == 1 || core->printidx == 2) {
+					cols = r_asm_disassemble (core->assembler,
+							&op, core->block, 32);
+					if (cols<1) cols = op.size;
+					if (cols<1) cols = 1;
+				}
+				r_core_seek (core, core->offset+cols, 1);
 			}
-			r_core_seek (core, core->offset+cols, 1);
 		}
 		break;
 	case 'J':
@@ -1038,12 +1043,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				}
 			}
 		} else {
-			if (core->printidx == 1 || core->printidx == 2) {
-				cols = prevopsz (core, core->offset);
+			int times = wheelspeed;
+			if (times<1) times = 1;
+			while (times--) {
+				if (core->printidx == 1 || core->printidx == 2) {
+					cols = prevopsz (core, core->offset);
+				}
+				if (core->offset >= cols)
+					r_core_seek (core, core->offset-cols, 1);
+				else r_core_seek (core, 0, 1);
 			}
-			if (core->offset >= cols)
-				r_core_seek (core, core->offset-cols, 1);
-			else r_core_seek (core, 0, 1);
 		}
 		break;
 	case 'K':
@@ -1453,6 +1462,8 @@ static void r_core_visual_refresh (RCore *core) {
 		}
 		if (w>80) {
 			r_config_set_i (core->config, "asm.lineswidth", 14);
+			r_config_set_i (core->config, "asm.lineswidth", w-(w/1.2));
+			r_config_set_i (core->config, "asm.cmtcol", w-(w/2.5));
 		} else {
 			r_config_set_i (core->config, "asm.lineswidth", 7);
 		}

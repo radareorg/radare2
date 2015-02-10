@@ -40,6 +40,7 @@ R_API int r_cons_controlz(int ch) {
 }
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
+	I->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3: r_cons_readchar(); ch='K'; break; // emacs repag (alt + v)
@@ -151,6 +152,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			} else
 			if (ch >= 64 + 32) {
 				/* Grab wheel events only */
+				I->mouse_event = 1;
 				ch = "kj"[(ch - (64 + 32))&1];
 			} else {
 				// temporary disable the mouse wheel to allow select
