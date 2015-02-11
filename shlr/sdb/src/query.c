@@ -670,7 +670,7 @@ SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {
 	do {
 		o = strchr (p, '\n');
 		if (o) *o = 0;
-		sdb_query (s, p);
+		(void)sdb_query (s, p);
 		if (o) p = o+1;
 	} while (o);
 	free (op);
