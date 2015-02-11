@@ -163,9 +163,14 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			return NULL;
 		if (is_ssl) {
 			if (file && *file) {
-				if (!r_socket_listen (rior->fd, port, file))
+				if (!r_socket_listen (rior->fd, port, file)) {
+					free (rior);
 					return NULL;
-			} else return NULL;
+				}
+			} else {
+				free (rior);
+				return NULL;
+			}
 		} else {
 			if (!r_socket_listen (rior->fd, port, NULL))
 				return NULL;

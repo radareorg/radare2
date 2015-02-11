@@ -1987,7 +1987,7 @@ static RList *r_debug_desc_native_list (int pid) {
 	int type, perm;
 	int len, len2;
 	struct stat st;
-	DIR *dd;
+	DIR *dd = NULL;
 
 	snprintf (path, sizeof (path), "/proc/%i/fd/", pid);
 	if (!(dd = opendir (path))) {
@@ -2034,8 +2034,8 @@ static RList *r_debug_desc_native_list (int pid) {
 				break;
 			r_list_append (ret, desc);
 		}
-		closedir(dd);
 	}
+	closedir(dd);
 #endif
 	return ret;
 }

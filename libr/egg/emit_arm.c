@@ -194,6 +194,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	r_egg_printf (egg, "  cmp %s, "R_AX"\n", p);
 	// if (context>0)
 	r_egg_printf (egg, "  %s %s\n", op, dst);
+	free (p);
 }
 
 static void emit_load(REgg *egg, const char *dst, int sz) {

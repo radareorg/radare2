@@ -124,7 +124,8 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case fmtopvAAcBBBBBBBBBBBBBBBB:
 			vA = (int) buf[1];
-			long long int lB = buf[9]|(buf[8]<<8)|(buf[7]<<16)|(buf[6]<<24)|
+			long long int lB = (long long int)buf[9]|((long long int)buf[8]<<8)|
+				((long long int)buf[7]<<16)|((long long int)buf[6]<<24)|
 				((long long int)buf[5]<<32)|((long long int)buf[4]<<40)|
 				((long long int)buf[3]<<48)|((long long int)buf[2]<<56);
 			sprintf (str, " v%i, 0x%"PFMT64x, vA, lB);

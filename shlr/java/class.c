@@ -7772,7 +7772,6 @@ R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin) {
 	char *new_str;
 	if (!bin || !the_list) return the_list;
 	r_list_foreach ( the_list, iter, new_str) {
-		if (new_str == NULL) continue;
 		while ( *new_str ) {
 			if (*new_str == '/') *new_str = '.';
 			new_str ++;

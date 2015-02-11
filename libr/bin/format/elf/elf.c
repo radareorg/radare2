@@ -1292,6 +1292,7 @@ if (
 			ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
 			if (!p) {
 				free (ret);
+				free (strtab);
 				return NULL;
 			}
 			ret = (struct r_bin_elf_symbol_t *) p;

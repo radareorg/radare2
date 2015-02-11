@@ -354,6 +354,7 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr
 			IFDBG eprintf (" - Visiting 0x%04"PFMT64x" for analysis.\n", *paddr64);
 			jmp_list = r_anal_ex_perform_analysis ( anal, state, *paddr64 );
 			list_length = r_list_length (jmp_list);
+			r_list_free (jmp_list);
 			if ( list_length > 0) {
 				IFDBG eprintf (" - Found %"PFMT64d" more basic blocks missed on the initial pass.\n", *paddr64);
 			}
