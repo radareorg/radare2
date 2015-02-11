@@ -483,6 +483,7 @@ static int cmd_help(void *data, const char *input) {
 			const char* help_msg[] = {
 			"Usage: ?[?[?]] expression", "", "",
 			"?", " eip-0x804800", "show hex and dec result for this math expr",
+			"?:", "", "list core cmd plugins",
 			"?!", " [cmd]", "? != 0",
 			"?+", " [cmd]", "? > 0",
 			"?-", " [cmd]", "? < 0",
