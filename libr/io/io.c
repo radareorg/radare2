@@ -356,12 +356,12 @@ int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
 }
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	if (io && io->vio)
-		return r_io_read_cr (io, addr, buf, len);
-
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
+	if (!io) return 0;
+	if (io->vio)
+		return r_io_read_cr (io, addr, buf, len);
 	if (io->sectonly && !r_list_empty (io->sections)) {
 		if (!r_io_section_exists_for_vaddr (io, addr)) {
 			// find next sec
