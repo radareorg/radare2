@@ -453,8 +453,8 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		}
 		if (!n) n++;
 		addr_end = addr + n;
-		if (!r_meta_add (core->anal, type, addr, addr_end, name))
-			free (t);
+		r_meta_add (core->anal, type, addr, addr_end, name);
+		free (t);
 		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	default:

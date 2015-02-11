@@ -33,6 +33,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
+		free (obinfilepath);
 		return R_FALSE;
 	}
 #if 0

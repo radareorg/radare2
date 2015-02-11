@@ -492,6 +492,7 @@ st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
 		if(*next_ins_pos != two_ins) {
 			//ins_res = strcat_dup(ins_res, " P-tag problem", 1);
 			err_code = -1;
+			free (ins_res);
 			return NULL;
 		}
 	} else {
