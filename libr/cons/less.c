@@ -3,12 +3,23 @@
 #include <r_cons.h>
 #include <r_regex.h>		/* less / regex search */
 
-static void printpage (const char *line, int *index, int from, int to) {
+static void printpage (const char *line, int *index,
+		       RRegexMatch *ms, int from, int to) {
 	int i;
+	const char *laddr;
 	r_cons_clear00 ();
 	for (i=from; i<to; i++) {
 // TODO: chop column width, clear lines
-		r_cons_printf ("%s\n", line+index[i]);
+		laddr = line + index[i];
+		if(!ms[i].rm_eo) r_cons_printf ("%s\n", laddr);
+		else {		/* highlight a match */
+			r_cons_memcat(laddr, ms[i].rm_so);
+			r_cons_invert(R_TRUE, R_TRUE);
+			r_cons_memcat(laddr + ms[i].rm_so,
+				      ms[i].rm_eo - ms[i].rm_so);
+			r_cons_invert(R_FALSE, R_TRUE);
+			r_cons_printf ("%s\n", laddr + ms[i].rm_eo);
+		}
 	}
 	r_cons_flush ();
 }
@@ -34,14 +45,48 @@ static int *splitlines (char *s, int *lines_count) {
 	return lines;
 }
 
+static int next_match(int from, RRegexMatch *ms, int lcount){
+	int l;
+	if(from > lcount - 2) return from;
+	for(l = from + 1; l < lcount; l++){
+		if(ms[l].rm_eo) return l;
+	}
+	return from;
+}
+
+static int prev_match(int from, RRegexMatch *ms){
+	int l;
+	if(from < 1) return from;
+	for(l = from - 1; l > 0; l--){
+		if(ms[l].rm_eo) return l;
+	}
+	return from;
+}
+
+/* find all matches, ms[i] will contain match offsets relative to start
+ * of string number i! */
+static int all_matches(const char *s, RRegex *rx, RRegexMatch *ms,
+		       int *lines, int lcount){
+	int l, fnd, f = R_FALSE;
+	RRegexMatch m;
+	for(l = 0; l < lcount; l++){
+		fnd = r_regex_exec(rx, s + lines[l], 1, &m, 0);
+		if(!fnd){
+			ms[l] = m;
+			f = R_TRUE;
+		}
+	}
+	return f;
+}
+
 R_API void r_cons_less_str(const char *str) {
 	int lines_count;
 	RRegex *rx = NULL;
-	RRegexMatch m;
-	int h, ch, to, ui = 1, from = 0, l, fnd;
+	int h, ch, to, ui = 1, from = 0;
 	const char *sreg;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
+	RRegexMatch *ms = calloc(lines_count, sizeof(RRegexMatch));
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
 	r_cons_reset ();
@@ -51,7 +96,7 @@ R_API void r_cons_less_str(const char *str) {
 		to = R_MIN (lines_count, from+h);
 		if (from+3>lines_count)
 			from = lines_count-3;
-		printpage (p, lines, from, to);
+		printpage (p, lines, ms, from, to);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
@@ -71,18 +116,26 @@ R_API void r_cons_less_str(const char *str) {
 			sreg = r_line_readline();
 			from = R_MIN(lines_count - 1, from);
 			/* repeat last search if empty string is provided */
-			if(sreg[0]){
+			if(sreg[0]){ /* prepare for a new search */
 				if(rx) r_regex_free(rx);
 				rx = r_regex_new(sreg, "");
+				memset (ms, 0, lines_count*sizeof(RRegexMatch));
+			} else { /* we got an empty string */
+				from = next_match(from, ms, lines_count);
+				break;
 			}
 			if(!rx) break;
-			for(l = from; l < lines_count; l++){
-				m.rm_so = lines[l];
-				m.rm_eo = strlen(p + lines[l]);
-				fnd = r_regex_exec(rx, p + lines[l], 1, &m, 0);
-				if(!fnd) break;
-			}
-			if(!fnd) from = l;
+			/* find all occurences */
+			if(all_matches(p, rx, ms, lines, lines_count))
+				from = next_match(from, ms, lines_count);
+			break;
+		case 'n': 	/* next match */
+			/* search already performed */
+			if(rx) from = next_match(from, ms, lines_count);
+			break;
+		case 'p': 	/* previous match */
+			if(rx) from = prev_match(from, ms);
+			break;
 		}
 	}
 	if(rx) r_regex_free(rx);
