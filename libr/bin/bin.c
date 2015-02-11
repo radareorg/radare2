@@ -308,6 +308,8 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		return R_BIN_NM_OBJC;
 	if (r_bin_lang_cxx (binfile))
 		return R_BIN_NM_CXX;
+	if (r_bin_lang_dlang (binfile))
+		return R_BIN_NM_DLANG;
 	return R_BIN_NM_NONE;
 }
 
@@ -1013,6 +1015,7 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 	return bf;
 }
 
+// rename to r_bin_plugin_add like the rest
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;

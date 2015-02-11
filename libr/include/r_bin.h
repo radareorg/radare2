@@ -46,6 +46,7 @@ enum {
 	R_BIN_NM_CXX = 2,
 	R_BIN_NM_OBJC= 3,
 	R_BIN_NM_SWIFT = 4,
+	R_BIN_NM_DLANG = 5,
 	R_BIN_NM_ANY = -1,
 };
 
@@ -246,6 +247,7 @@ typedef struct r_bin_plugin_t {
 	int (*get_offset)(RBinFile *arch, int type, int idx);
 	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+	char* (*demangle)(const char *str);
 	/* default value if not specified by user */
 	int minstrlen;
 	void *user;
@@ -394,6 +396,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API int r_bin_lang_objc(RBinFile *binfile);
 R_API int r_bin_lang_swift(RBinFile *binfile);
 R_API int r_bin_lang_cxx(RBinFile *binfile);
+R_API int r_bin_lang_dlang(RBinFile *binfile);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
@@ -464,6 +467,9 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 
 R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut64 sz);
+
+R_API void r_bin_demangle_list(RBin *bin);
+R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
