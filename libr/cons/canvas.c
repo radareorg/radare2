@@ -4,16 +4,6 @@
 
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
-/*TODO GWC should be inline*/
-#define GWC(x,y,s) do{\
-	if(r_cons_canvas_gotoxy(c,x,y)){\
-		if(color)\
-			r_cons_canvas_attr(c,color);\
-		r_cons_canvas_write(c,s);\
-		if(color && r_cons_canvas_gotoxy(c,x+1,y))\
-			r_cons_canvas_attr(c,Color_RESET);\
-	}\
-}while(0)
 
 R_API void r_cons_canvas_free (RConsCanvas *c) {
 	free (c->b);
@@ -52,8 +42,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 	c->attrslen = 0;
 	c->attrs = calloc(sizeof(*c->attrs),c->blen+1);
 	if (!c->attrs) {
-		if (c->b)
-			free (c->b);
+		free (c->b);
 		free (c);
 		return NULL;
 	}
@@ -183,12 +172,20 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	free (str);
 }
 
+R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, char * s){
+	//TODO FIXME move the color away from here
+	if(r_cons_canvas_gotoxy(c,x,y)){
+		r_cons_canvas_write(c,s);
+	}
+}
+
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, i = 0, olen = 0;
 	char *o, *b;
 	if (!c) return NULL;
 	b = c->b;
-	o = calloc (sizeof(char), (c->w*(c->h+1))+(c->attrslen*10));//TODO ew.
+	o = calloc (sizeof(char),
+			(c->w*(c->h+1))+(c->attrslen*CONS_MAX_ATTR_SZ)); 
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
@@ -281,7 +278,7 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 }
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
-	int i, onscreen;
+	char *chizzle;//my nizzle
 	char *c1="v", *c2="V";
 	char *color=NULL;
 	switch (style) {
@@ -301,123 +298,51 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 		c2="/";
 		break;
 	}
-	GWC(x,y,c1);
-	GWC(x2,y2,c2);
-	if (x==x2) {
-		int min = R_MIN (y,y2)+1;
-		int max = R_MAX (y,y2);
-		for (i=min; i<max; i++) {
-			GWC(x,i,"|");
+	r_cons_canvas_goto_write(c,x,y,c1);
+	r_cons_canvas_goto_write(c,x2,y2,c2);
+	if(y2<y){
+		int tmp = y2;
+		y2=y;
+		y=tmp;
+		tmp=x2;
+		x2=x;
+		x=tmp;
+	}
+	int dx = abs(x2-x);
+        int dy = abs(y2-y);
+	int sx = x<x2 ? 1 : -1;
+	int sy = y<y2 ? 1 : -1;
+	int err = (dx>dy?dx:-dy)/2;
+	int e2;
+	// TODO: find if there's any collision in this line
+	while(!(x==x2&&y==y2)){
+		e2 = err;
+		if(e2>-dx){
+			chizzle="_";
+			err-=dy;
+			x+=sx;
 		}
-	} else {
-		// --
-		// TODO: find if there's any collision in this line
-		int hl = R_ABS (y-y2) / 2;
-		int hl2 = R_ABS (y-y2)-hl;
-		hl--;
-		if (y2 > (y+1)) {
-			for (i=0;i<hl;i++) {
-				GWC(x,y+i+1,"|");
+		if(e2<dy){
+			chizzle="|";
+			err+=dx;
+			y+=sy;
+		}
+		if((e2<dy) && (e2>-dx)){
+			if(sy>0){
+				chizzle=(sx>0)?"\\":"/";
+			}else{
+				chizzle=(sx>0)?"/":"\\";
 			}
-			for (i=0;i<hl2;i++) {
-				GWC(x2,y+hl+i+1,"|");
-			}
-			int w = R_ABS (x-x2);
-			char *row = malloc (w+2);
-			if (x>x2) {
-				w++;
-				row[0] = '.';
-				if (w>2)
-					memset (row+1, '-', w-2);
-				row[w-1] = '\'';
-				row[w] = 0;
-				onscreen = G (x2+w,y+hl+1);
-				i = G (x2, y+hl+1);
-				if (!onscreen)
-					onscreen = i;
-			} else {
-				row[0] = '`';
-				row[0] = '\'';//wtf?
-				if (w>1)
-					memset (row+1, '-', w-1);
-				row[w] = '.';
-				row[w+1] = 0;
-				onscreen = G (x+w,y+1+hl);
-				i = G (x,y+1+hl);
-				if (!onscreen)
-					onscreen = i;
-			}
-			if (onscreen){
-				if(color)
-					r_cons_canvas_attr(c,color);
-				W (row);
-				if(color && G(c->x+1,c->y))
-					r_cons_canvas_attr(c,Color_RESET);
-			}
-			free (row);
-		} else  {
-			int minx = R_MIN (x, x2);
-			//if (y >= y2) 
-			int rl = R_ABS (x-x2)/2;
-			int rl2 = R_ABS (x-x2)-rl+1;
-			int vl = (R_ABS(y-y2))+1;
-			if (y+1==y2)
-				vl--;
-
-			for (i=0;i<vl; i++) {
-				GWC(minx+rl,y2+i,"|");
-			}
-
-			int w = rl;
-			char *row = malloc (w+1);
-			if (x>x2) {
-				row[0] = '.';
-				if (w>2)
-					memset (row+1, '-', w-2);
-				if (w>0)
-					row[w-1] = '.';
-				row[w] = 0;
-				onscreen = G (x2,y2-1);
-			} else {
-				row[0] = '`';
-				if (w>2)
-					memset (row+1, '-', w-2);
-				if (w>0)
-					row[w-1] = '\'';
-				row[w] = 0;
-				onscreen = G (x+1,y+1);
-			}
-			if (onscreen){
-				if(color)
-					r_cons_canvas_attr(c,color);
-				W (row);
-				if(color && G(c->x+1,c->y))
-					r_cons_canvas_attr(c,Color_RESET);
-			}
-			w = rl2;
-			free (row);
-			row = malloc (rl2+1);
-			if (x>x2) {
-				row[0] = '`';
-				memset (row+1, '-', w-2);
-				row[w-1] = '\'';
-				row[w] = 0;
-				onscreen = G (x2+rl, y+1);
-			} else {
-				row[0] = '.';
-				memset (row+1, '-', w-2);
-				row[w-1] = '.';
-				row[w] = 0;
-				onscreen = G (x+rl, y2-1);
-			}
-			if (onscreen){
-				if(color)
-					r_cons_canvas_attr(c,color);
-				W (row);
-				if(color && G(c->x+1,c->y))
-					r_cons_canvas_attr(c,Color_RESET);
-			}
-			free (row);
+		}
+		if(!(x==x2&&y==y2)){
+			int i = (strcmp(chizzle,"_")&&sy<0) ? 1 : 0;
+			if(!r_cons_canvas_gotoxy(c,x,y-i))
+				continue;
+			if(color)
+				r_cons_canvas_attr(c,color);
+			r_cons_canvas_goto_write(c,x,y-i,chizzle);
+			if(color && r_cons_canvas_gotoxy(c,x+1,y))
+				r_cons_canvas_attr(c,Color_RESET);
 		}
 	}
 }
