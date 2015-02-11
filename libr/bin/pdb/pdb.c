@@ -341,8 +341,10 @@ static int pdb_read_root(R_PDB *pdb) {
 		case ePDB_STREAM_TPI:
 			tpi_stream = R_NEW0 (STpiStream);
 			init_tpi_stream(tpi_stream);
-			if (!parse_tpi_stream(tpi_stream, &stream_file))
+			if (!parse_tpi_stream(tpi_stream, &stream_file)) {
+				free (tpi_stream);
 				return 0;
+			}
 			r_list_append(pList, tpi_stream);
 			break;
 		case ePDB_STREAM_DBI:

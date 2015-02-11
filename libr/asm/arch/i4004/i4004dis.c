@@ -83,8 +83,14 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 		case 11: snprintf (basm, basz, "xch r%d", low); break;
 		case 12: snprintf (basm, basz, "bbl %d", low); break;
 		case 13: snprintf (basm, basz, "ldm %d", low); break;
-		case 14: strcpy (basm, i4004_e[low]); break;
-		case 15: strcpy (basm, i4004_f[low]); break;
+		case 14:
+				strncpy (basm, i4004_e[low], basz);
+				basm[basz] = '\0';
+				break;
+		case 15:
+				strncpy (basm, i4004_f[low], basz);
+				basm[basz] = '\0';
+				break;
 	}
 	return op->size = rlen;
 }

@@ -626,6 +626,7 @@ R_API int dso_json_dict_insert_key_obj (DsoJsonObj *dict, DsoJsonObj *key, DsoJs
 		r_list_append (the_list, entry);
 		res = R_TRUE;
 	}
+	free (value);
 	return res;
 }
 
