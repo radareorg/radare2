@@ -91,7 +91,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 };
 
 extern const char *ARM_group_name(csh handle, unsigned int id);
-extern const char *ARM64_group_name(csh handle, unsigned int id);
+extern const char *AArch64_group_name(csh handle, unsigned int id);
 
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
@@ -111,7 +111,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 		if (id<128) continue;
 		if (a->bits == 64) {
 			// AARCH64
-			name = ARM64_group_name (cd, id);
+			name = AArch64_group_name (cd, id);
 		} else {
 			// ARM
 			name = ARM_group_name (cd, id);
