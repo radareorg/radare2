@@ -659,6 +659,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 				} else count++;
 			}
 			r_cons_newline ();
+			r_list_free (xrefs);
 			return;
 		}
 		r_list_foreach (xrefs, iter, refi) {

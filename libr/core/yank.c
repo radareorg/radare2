@@ -296,6 +296,7 @@ R_API int r_core_yank_hud_file (RCore *core, const char *input) {
 	buf = r_cons_hud_file (input);
 	len = buf ? strlen ((const char*)buf) + 1 : 0;
 	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	free (buf);
 	return res;
 }
 

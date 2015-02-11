@@ -71,7 +71,7 @@ static RList* sections(RBinFile *arch) {
 		return NULL;
 	}
 
-	strncpy (ptr9->name, "arm9", 4);
+	strncpy (ptr9->name, "arm9", 5);
 	ptr9->size = loaded_header.arm9_size;
 	ptr9->vsize = loaded_header.arm9_size;
 	ptr9->paddr = loaded_header.arm9_rom_offset;
@@ -79,7 +79,7 @@ static RList* sections(RBinFile *arch) {
 	ptr9->srwx = r_str_rwx ("rwx");
 	r_list_append (ret, ptr9);
 
-	strncpy (ptr7->name, "arm7", 4);
+	strncpy (ptr7->name, "arm7", 5);
 	ptr7->size = loaded_header.arm7_size;
 	ptr7->vsize = loaded_header.arm7_size;
 	ptr7->paddr = loaded_header.arm7_rom_offset;

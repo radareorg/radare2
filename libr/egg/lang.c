@@ -142,6 +142,7 @@ R_API void r_egg_lang_include_path (REgg *egg, const char *path) {
 	char *env = r_sys_getenv (R_EGG_INCDIR_ENV);
 	if (!env || !*env) {
 		r_egg_lang_include_init (egg);
+		free (env);
 		env = r_sys_getenv (R_EGG_INCDIR_ENV);
 		tmp_ptr = env;
 	}
@@ -843,6 +844,7 @@ static void rcc_next(REgg *egg) {
 		if (dstvar) {
 			if (mode != NAKED) {
 				*buf = 0;
+				free (str);
 				str = r_egg_mkvar (egg, buf, dstvar, 0);
 				if (*buf == 0)
 					eprintf ("Cannot resolve variable '%s'\n", dstvar);

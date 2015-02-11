@@ -253,7 +253,6 @@ static int cb_asmfeatures(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value=='?') {
-		int i;
 		if (core && core->assembler && core->assembler->cur) {
 			if (core->assembler->cur->features) {
 				char *feat = strdup (core->assembler->cur->features);
