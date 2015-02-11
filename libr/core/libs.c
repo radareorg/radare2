@@ -52,6 +52,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, getenv (R_LIB_ENV));
 	if (where & R_CORE_LOADLIBS_HOME) {
 		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
+		// eprintf ("OPENDIR (%s)\n", homeplugindir);
 		r_lib_opendir (core->lib, homeplugindir);
 		free (homeplugindir);
 	}

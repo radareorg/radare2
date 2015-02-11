@@ -12,7 +12,7 @@ static void pair(const char *a, const char *b) {
 	r_cons_printf ("%s%s%s\n", a, ws, b);
 }
 
-static int demangle_internal(const char *lang, const char *s) {
+static int demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
@@ -20,9 +20,10 @@ static int demangle_internal(const char *lang, const char *s) {
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s); break;
+	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	default:
-	     eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-	     return 1;
+		r_bin_demangle_list (core->bin);
+		return 1;
 	}
 	if (res) {
 		if (*res)
@@ -39,13 +40,13 @@ static int demangle(RCore *core, const char *s) {
 	if (!*s) return 0;
 	if (!ss) {
 		const char *lang = r_config_get (core->config, "bin.lang");
-		demangle_internal (lang, s);
+		demangle_internal (core, lang, s);
 		return 1;
 	}
 	p = strdup (s);
 	q = p + (ss-s);
 	*q = 0;
-	demangle_internal (p, q+1);
+	demangle_internal (core, p, q+1);
 	free (p);
 	return 1;
 }

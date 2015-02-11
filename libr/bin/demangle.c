@@ -6,6 +6,34 @@
 //TODO: mangler_branch: remove?
 #include "mangling/demangler.h"
 
+R_API void r_bin_demangle_list(RBin *bin) {
+	const char *langs[] = { "cxx", "java", "objc", "swift", NULL };
+	RBinPlugin *plugin;
+	RListIter *it;
+	int i;
+	if (!bin) return;
+	for (i=0; langs[i]; i++) {
+		eprintf ("%s\n", langs[i]);
+	}
+	r_list_foreach (bin->plugins, it, plugin) {
+		if (plugin->demangle) {
+			eprintf ("%s\n", plugin->name);
+		}
+	}
+}
+
+R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) {
+	RBinPlugin *plugin;
+	RListIter *it;
+	if (!bin || !name || !str) return NULL;
+	r_list_foreach (bin->plugins, it, plugin) {
+		if (plugin->demangle) {
+			return plugin->demangle (str);
+		}
+	}
+	return NULL;
+}
+
 // http://code.google.com/p/smali/wiki/TypesMethodsAndFields
 R_API char *r_bin_demangle_java(const char *str) {
 	const char *w = NULL;
@@ -241,6 +269,8 @@ R_API int r_bin_demangle_type (const char *str) {
 		return R_BIN_NM_OBJC;
 	if (!strcmp (str, "cxx"))
 		return R_BIN_NM_CXX;
+	if (!strcmp (str, "dlang"))
+		return R_BIN_NM_DLANG;
 	return R_BIN_NM_NONE;
 }
 
@@ -262,12 +292,14 @@ R_API int r_bin_lang_type(RBinFile *binfile, const char *def) {
 }
 
 R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str) {
+	RBin *bin = binfile->rbin;
 	int type = r_bin_lang_type (binfile, def);
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str);
+	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}
 	return NULL;
 }

@@ -173,6 +173,7 @@ R_API RCons *r_cons_new () {
 	I.teefile = NULL;
 	I.fix_columns = 0;
 	I.fix_rows = 0;
+	I.mouse_event = 0;
 	I.force_rows = 0;
 	I.force_columns = 0;
 	I.event_resize = NULL;
@@ -296,7 +297,7 @@ R_API void r_cons_clear_line(int std_err) {
 	if (I.columns<sizeof (white))
 		white[I.columns-1] = 0;
 	else white[sizeof (white)-1] = 0; // HACK
-	fprintf (std_err? stderr:stdout, "\r%s\r", white);
+	fprintf (std_err? stderr: stdout, "\r%s\r", white);
 #else
 	fprintf (std_err? stderr: stdout,"\x1b[0K\r");
 #endif
