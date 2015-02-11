@@ -147,6 +147,14 @@ static x86newTokenType getToken(const char *str, int *begin, int *end) {
 }
 
 /**
+ * Read decimal or hexadecimal number.
+ */
+static ut64 readNumber(const char *str) {
+	int hex = (str[0] == '0' && str[1] == 'x');
+	return strtol(str + 2*hex, 0, hex ? 16 : 10);
+}
+
+/**
  * Get the register denoted by str[0]..str[len-1].
  */
 static Register parseReg(const char *str, int len, ut32 *type) {
@@ -178,14 +186,7 @@ static Register parseReg(const char *str, int len, ut32 *type) {
 			return i;
 		} */
 	return X86R_UNDEFINED;
-}
 
-/**
- * Read decimal or hexadecimal number.
- */
-static ut64 readNumber(const char *str, x86newTokenType type) {
-	int hex = (str[0] == '0' && str[1] == 'x');
-	return strtol(str + 2*hex, 0, hex ? 16 : 10);
 }
 
 // Parse operand
@@ -267,7 +268,7 @@ static int parseOperand(const char *str, Operand *op) {
 					op->type = 0;	// Make the result invalid
 			}
 			else {
-				ut64 read = readNumber(str + pos, last_type);
+				ut64 read = readNumber(str + pos);
 				temp *= read;
 			}
 		}
@@ -278,7 +279,7 @@ static int parseOperand(const char *str, Operand *op) {
 	else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
 		op->type = OT_IMMEDIATE;
-		op->immediate = readNumber(str + pos, last_type);
+		op->immediate = readNumber(str + pos);
 	}
 
 	return nextpos;
