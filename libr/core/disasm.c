@@ -2201,7 +2201,7 @@ toro:
 		if (ds->tries>0) {
 			//ds->addr += idx;
 			if (r_core_read_at (core, ds->addr, buf, len) ) {
-				idx = 0;
+			//	idx = 0;
 				goto toro;
 			}
 		}

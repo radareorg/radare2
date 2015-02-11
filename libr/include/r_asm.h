@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -17,7 +17,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_OPCODES_PATH R2_LIBDIR "/radare2/" R2_VERSION "/opcodes"
 // XXX too big!
-#define R_ASM_BUFSIZE 512
+#define R_ASM_BUFSIZE 256
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
@@ -98,6 +98,7 @@ typedef struct r_asm_t {
 	Sdb *pair;
 	RSyscall *syscall;
 	RNum *num;
+	char *features;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -116,6 +117,7 @@ typedef struct r_asm_plugin_t {
 	int (*assemble)(RAsm *a, RAsmOp *op, const char *buf);
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
+	const char *features;
 } RAsmPlugin;
 
 #ifdef R_API

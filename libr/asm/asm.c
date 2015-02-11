@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -129,6 +129,7 @@ R_API RAsm *r_asm_new() {
 	a->num = NULL;
 	a->user = NULL;
 	a->cur = NULL;
+	a->features = NULL;
 	a->binb.bin = NULL;
 	a->bits = 32;
 	a->cpu = NULL;
@@ -314,6 +315,9 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	sprintf (op->buf_asm,".byte 0x%02x %d", buf[0], len);
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
+	// avoid undefined behaviour
+	if (ret<0)
+		ret = 0;
 	oplen = r_asm_op_get_size (op);
 	oplen = op->size;
 	if (oplen>len) oplen = len;
