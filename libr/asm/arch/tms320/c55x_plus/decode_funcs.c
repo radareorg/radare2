@@ -189,7 +189,7 @@ st8 *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 				case 26:
 				case 27:
 					idx = get_ins_part(ins_pos, 2);
-					if(*ret_len)
+					if(ret_len)
 						*ret_len = 2;
 
 					if(type == 24) {
