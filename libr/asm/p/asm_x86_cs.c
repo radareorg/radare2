@@ -24,6 +24,8 @@ static int the_end(void *p) {
 	return R_TRUE;
 }
 
+static int check_features(RAsm *a, cs_insn *insn);
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, ret;
@@ -41,6 +43,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_X86, mode, &cd);
 		if (ret) return 0;
+	}
+	if (a->features && *a->features) {
+		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
+	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	if (a->syntax == R_ASM_SYNTAX_ATT)
@@ -58,7 +64,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #else
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
-	if (n>0 && insn->size>0) {
+	op->size = 0;
+	if (a->features && *a->features) {
+		if (!check_features (a, insn)) {
+			op->size = insn->size;
+			strcpy (op->buf_asm, "illegal");
+		}
+	}
+	if (op->size==0 && n>0 && insn->size>0) {
 		char *ptrstr;
 		op->size = insn->size;
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
@@ -87,8 +100,35 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 	.init = NULL,
 	.fini = the_end,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
+		"f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
+		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
+
+
+extern const char *X86_group_name(csh handle, unsigned int id);
+
+static int check_features(RAsm *a, cs_insn *insn) {
+	const char *name;
+	int i;
+	if (!insn || !insn->detail)
+		return 1;
+	for (i=0; i< insn->detail->groups_count; i++) {
+		int id = insn->detail->groups[i];
+		if (id<128) continue;
+		if (id == X86_GRP_MODE32)
+			continue;
+		if (id == X86_GRP_MODE64)
+			continue;
+		name = X86_group_name (cd, id);
+		if (!name) return 1;
+		if (name && !strstr (a->features, name)) {
+			return 0;
+		}
+	}
+	return 1;
+}
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {

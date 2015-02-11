@@ -10,7 +10,7 @@ BIN=sdb${EXEXT}
 
 .PHONY: all static shared clean
 
-all: ${BIN}
+all: ${BIN} sdb-version.h
 	${MAKE} static
 	${MAKE} shared
 

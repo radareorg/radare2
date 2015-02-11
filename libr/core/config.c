@@ -249,6 +249,30 @@ static int cb_asmbits(void *user, void *data) {
 	return ret;
 }
 
+static int cb_asmfeatures(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (*node->value=='?') {
+		int i;
+		if (core && core->assembler && core->assembler->cur) {
+			if (core->assembler->cur->features) {
+				char *feat = strdup (core->assembler->cur->features);
+				r_str_replace_char (feat, ',','\n');
+				r_cons_printf ("%s\n", feat);
+				free (feat);
+			}
+		}
+		return 0;
+	}
+	free (core->assembler->features);
+	if (node->value && node->value[0]) {
+		core->assembler->features = strdup (node->value);
+	} else {
+		core->assembler->features = NULL;
+	}
+	return 1;
+}
+
 static int cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -958,6 +982,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be usedd by asm");
+	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
 	SETCB("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
