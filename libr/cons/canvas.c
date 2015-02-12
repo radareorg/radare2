@@ -46,6 +46,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 		free (c);
 		return NULL;
 	}
+	c->attr=Color_RESET;
 	c->w = w;
 	c->h = h;
 	c->x = c->y = 0;
@@ -112,21 +113,20 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
-R_API void r_cons_canvas_attr(RConsCanvas *c, const char * attr){
+static void stamp_attr(RConsCanvas *c){
 	int i;
-	//check to make sure we don't have an attr in the same place
+	//check to make sure we don't have two attrs in the same place
 	for( i = 0; i<c->attrslen; i++){
-		if( (c->attrs[c->attrslen].x == c->x) &&
-		    (c->attrs[c->attrslen].y == c->y) ){
-			c->attrs[i].x = c->x;
-			c->attrs[i].y = c->y;
-			c->attrs[i].a = (char *) attr;
+		if( (c->attrs[i].x == c->x) &&
+		    (c->attrs[i].y == c->y) ){
+			c->attrs[i].a = c->attr;
+			return;
 		}
 	}
 
 	c->attrs[c->attrslen].x = c->x;
 	c->attrs[c->attrslen].y = c->y;
-	c->attrs[c->attrslen].a = (char *) attr;
+	c->attrs[c->attrslen].a = c->attr;
 	c->attrslen++;
 }
 
@@ -161,31 +161,32 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		// if (x<0) x = 0;
 		if (!G (x, c->y - c->sy))
 			continue;
+		stamp_attr(c);
 		memcpy (p, line+delta, slen-delta);
 		if (!n) break;
 		s = n;
-		if (!G (c->x-c->sx, c->y+1-c->sy)) {
+		if (!G (c->x-c->sx, c->y+1 - c->sy)) 
 			break;
-		}
 		linenum ++;
 	}
 	free (str);
 }
 
 R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, char * s){
-	//TODO FIXME move the color away from here
-	if(r_cons_canvas_gotoxy(c,x,y)){
+	if(r_cons_canvas_gotoxy(c,x,y))
 		r_cons_canvas_write(c,s);
-	}
 }
 
+
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
+	fprintf(stderr,"\nTO_STRING;\n");//DEBUG
+	fprintf(stderr,"\nc->attrslen: %i\n",c->attrslen);//DEBUG
 	int x, y, i = 0, olen = 0;
 	char *o, *b;
 	if (!c) return NULL;
 	b = c->b;
 	o = calloc (sizeof(char),
-			(c->w*(c->h+1))+(c->attrslen*CONS_MAX_ATTR_SZ)); 
+			  (c->w*(c->h+1))+(c->attrslen*CONS_MAX_ATTR_SZ)); 
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
@@ -194,6 +195,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 				if(i<c->attrslen && c->attrs[i].a){
 					strcat(o,c->attrs[i].a);
 					olen+=strlen(c->attrs[i].a);
+					fprintf(stderr,"\nattrat:%i,%i\n",x,y);//DEBUG
 					i++;
 				}
 			}
@@ -203,13 +205,14 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		}
 		o[olen++] = '\n';
 	}
-	o[olen] = 0;
+	o[olen] = '\0';
 	return o;
 }
 
 R_API void r_cons_canvas_print(RConsCanvas *c) {
 	char *o = r_cons_canvas_to_string (c);
 	if (o) {
+		fprintf(stderr,"\nCANVAS_TRACE:\n%s",o);//DEBUG
 		r_cons_strcat (o);
 		free (o);
 	}
@@ -246,7 +249,9 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
 	memset (row+1, '-', w-2);
 	row[w-1] = roundcorners?'.':corner;
 	row[w] = 0;
-	if (G(x, y)) W(row);
+	if (G(x, y)) {
+		W(row);
+	}
 	if (G(x, y+h-1)) {
 		row[0] = roundcorners?'\'':corner;
 		row[w-1] = roundcorners?'\'':corner;
@@ -278,22 +283,20 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 }
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
-	char *chizzle;//my nizzle
 	char *c1="v", *c2="V";
-	char *color=NULL;
 	switch (style) {
 	case 0:
-		color=Color_BLUE;
-		c1="v";
+		c->attr=Color_BLUE;
+		c1="v"; 
 		c2="V";
 		break;
 	case 1:
-		color=Color_GREEN;
+		c->attr=Color_GREEN;
 		c1="t";
 		c2="\\";
 		break;
 	case 2:
-		color=Color_RED;
+		c->attr=Color_RED;
 		c1="f";
 		c2="/";
 		break;
@@ -308,6 +311,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 		x2=x;
 		x=tmp;
 	}
+	char chizzle;//my nizzle
 	int dx = abs(x2-x);
         int dy = abs(y2-y);
 	int sx = x<x2 ? 1 : -1;
@@ -318,31 +322,26 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 	while(!(x==x2&&y==y2)){
 		e2 = err;
 		if(e2>-dx){
-			chizzle="_";
+			chizzle='_';
 			err-=dy;
 			x+=sx;
 		}
 		if(e2<dy){
-			chizzle="|";
+			chizzle='|';
 			err+=dx;
 			y+=sy;
 		}
 		if((e2<dy) && (e2>-dx)){
 			if(sy>0){
-				chizzle=(sx>0)?"\\":"/";
+				chizzle=(sx>0)?'\\':'/';
 			}else{
-				chizzle=(sx>0)?"/":"\\";
+				chizzle=(sx>0)?'/':'\\';
 			}
 		}
 		if(!(x==x2&&y==y2)){
-			int i = (strcmp(chizzle,"_")&&sy<0) ? 1 : 0;
-			if(!r_cons_canvas_gotoxy(c,x,y-i))
-				continue;
-			if(color)
-				r_cons_canvas_attr(c,color);
-			r_cons_canvas_goto_write(c,x,y-i,chizzle);
-			if(color && r_cons_canvas_gotoxy(c,x+1,y))
-				r_cons_canvas_attr(c,Color_RESET);
+			int i = (chizzle=='_'&&sy<0) ? 1 : 0;
+			r_cons_canvas_goto_write(c,x,y-i,&chizzle);
 		}
 	}
+	c->attr=Color_RESET;
 }
