@@ -89,6 +89,7 @@ static void visual_help() {
 	"Visual mode help:\n"
 	" ?        show this help or manpage in cursor mode\n"
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
+	" %        in cursor mode moves cursor to the next matching pair\n"
 	" @        set cmd.vprompt to run commands before the visual prompt\n"
 	" !        run r2048 game\n"
 	" _        enter the hud\n"
@@ -299,6 +300,36 @@ static void setdiff (RCore *core) {
 	r_config_set (core->config, "diff.to", to);
 }
 
+static void findPair (RCore *core) {
+	ut8 buf[256];
+	int len, d = cursor+1;
+	int delta = 0;
+	const ut8 *p, *q;
+	const char *keys = "{}[]()<>";
+	ut8 ch = core->block[cursor];
+
+	p = (const ut8*)strchr (keys, ch);
+	if (p) {
+		delta = (size_t)(p-(const ut8*)keys);
+		ch = (delta%2)? p[-1]: p[1];
+	}
+	len = 1;
+	buf[0] = ch;
+
+	q = r_mem_mem (core->block+d, core->blocksize-d,
+		(const ut8*)buf, len);
+	if (!q) {
+		q = r_mem_mem (core->block, R_MIN (core->blocksize, d),
+			(const ut8*)buf, len);
+	}
+	if (q) {
+		cursor = (int)(size_t)(q-core->block);
+		if (len>1) {
+			ocursor = cursor+len-1;
+		} else ocursor = -1;
+		showcursor (core, R_TRUE);
+	}
+}
 // TODO: integrate in '/' command with search.inblock ?
 static void visual_search (RCore *core) {
 	const ut8 *p;
@@ -1129,6 +1160,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'P':
 		setprintmode (core, -1);
+		break;
+	case '%':
+		if (curset) {
+			findPair (core);
+		} else {
+			/* do nothing? */
+		}
 		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar ());
