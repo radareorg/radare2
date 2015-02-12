@@ -797,16 +797,16 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 			reg_op = &operands[op_ind];
 	}
 
+	// If our opcode requires a spec field, then we might have to move an operand
+	if (opcode_ptr->special && regmem_op == 0) {
+		regmem_op = reg_op;
+		reg_op = 0;
+	}
+
 	// Are there any operands we have to encode?
 	if (regmem_op && (opcode_ptr->special || reg_op)) {
 		ut8 mod = 0, spec = 0, rm = 0;
 		ut8 scale = 0, index = 0, base = 0;
-
-		// If our opcode requires a spec field, then we might have to move an operand
-		if (opcode_ptr->special && regmem_op == 0) {
-			regmem_op = reg_op;
-			reg_op = 0;
-		}
 
 		// Write spec
 		if (opcode_ptr->special)
