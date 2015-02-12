@@ -1430,7 +1430,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	else
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %s%d %s]> %s %s\n",
 			core->offset, pcs, core->blocksize, filename, bar, pos);
-	r_cons_printf (foo);
+	r_cons_printf ("%s", foo);
 	if (color) r_cons_strcat (Color_RESET);
 }
 
