@@ -663,6 +663,8 @@ function html_for_instruction(ins) {
     if (ins.type == "upop") ins.type = "pop";
     if (ins.type == "ucall") ins.type = "call";
     if (ins.type == "lea") ins.type = "mov";
+    // Add default color if we failed to identify op type
+    if (!contains(known_types, ins.type)) ins.type = "other";
     idump += '<div class="instructiondesc ec_' + ins.type + '">' + opcode + '</div> ';
   } else {
     idump += '<div class="instructiondesc">' + opcode + '</div> ';
@@ -683,6 +685,7 @@ function html_for_instruction(ins) {
 var math = ["add", "sub", "mul", "imul", "div", "idiv", "neg", "adc", "sbb", "inc", "dec", ".byte"];
 var bin = ["xor", "and", "or", "not"];
 var regs = ["EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "EIP", "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "RIP"];
+var known_types = ["fline","help","args","label","flow","prompt","input","btext","swi","comment","fname","flag","offset","other","b0x00","b0x7f","b0xff","math","bin","push","pop","jmp","cjmp","call","nop","ret","trap","invalid","cmp","reg","creg","mov","num"];
 
 var escapeHTML = (function () {
   'use strict';

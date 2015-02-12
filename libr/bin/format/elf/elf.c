@@ -564,7 +564,7 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_68K:         return strdup ("Motorola m68k family");
 	case EM_88K:         return strdup ("Motorola m88k family");
 	case EM_860:         return strdup ("Intel 80860");
-	case EM_MIPS:        return strdup ("MIPS R3000 big-endian");
+	case EM_MIPS:        return strdup ("MIPS R3000");
 	case EM_S370:        return strdup ("IBM System/370");
 	case EM_MIPS_RS3_LE: return strdup ("MIPS R3000 little-endian");
 	case EM_PARISC:      return strdup ("HPPA");

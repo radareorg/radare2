@@ -17,7 +17,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	else
 		mode |= CS_MODE_LITTLE_ENDIAN;
 
-	if (a->cpu && strstr (a->cpu, "m"))
+	// replace this with the asm.features?
+	if (a->cpu && strstr (a->cpu, "mclass"))
 		mode |= CS_MODE_MCLASS;
 	if (a->cpu && strstr (a->cpu, "v8"))
 		mode |= CS_MODE_V8;

@@ -47,7 +47,7 @@ static int download(struct SPDBDownloader *pd) {
 			opt->guid,
 			archive_name,
 			abspath_to_archive);
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	{
 	const char *cabextractor = "expand";
 	const char *format = "%s %s %s";
