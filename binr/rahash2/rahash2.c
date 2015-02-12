@@ -149,10 +149,12 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				int hashbit = i & algobit;
 				int dlen = r_hash_size (hashbit);
 				r_hash_do_begin (ctx, i);
-				if (first) {
-					first = 0;
-				} else {
-					printf (",");
+				if (rad == 'j') {
+					if (first) {
+						first = 0;
+					} else {
+						printf (",");
+					}
 				}
 				if (s.buf && s.prefix) {
 					do_hash_internal (ctx,
