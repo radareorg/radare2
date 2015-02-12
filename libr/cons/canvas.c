@@ -113,30 +113,36 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
-static char * attr_at(RConsCanvas *c,int x,int y){
+static char ** attr_at(RConsCanvas *c,int x,int y){
 	int i;
 	for( i = 0; i< c->attrslen; i++){
 		if( (c->attrs[i].x == x) && (c->attrs[i].y == y) ){
-			fprintf(stderr,"[%i] %i==%i && %i==%i\n",i,
-					c->attrs[i].x,c->x,
-					c->attrs[i].y ,c->y);//DEBUG
-			return c->attrs[i].a;
+			return &c->attrs[i].a;
 		}
 	}
 	return NULL;
 }
-static void stamp_attr(RConsCanvas *c){
-	char * s = attr_at(c,c->x,c->y);
+
+static void stamp_attr(RConsCanvas *c,int length){
+	int i;
+	char ** s;
+	s = attr_at(c,c->x,c->y);
+
 	if(s){
 		//If theres already an attr there, just replace it.
-		s = c->attr;
-		return;
+		*s = c->attr;
+	}else{
+		c->attrs[c->attrslen].x = c->x;
+		c->attrs[c->attrslen].y = c->y;
+		c->attrs[c->attrslen].a = c->attr;
+		c->attrslen++;
 	}
 
-	c->attrs[c->attrslen].x = c->x;
-	c->attrs[c->attrslen].y = c->y;
-	c->attrs[c->attrslen].a = c->attr;
-	c->attrslen++;
+	for(i=0;i<length;i++){
+		s = attr_at(c,c->x+i,c->y);
+		if(s)
+			*s = c->attr;
+	}
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
@@ -170,7 +176,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		// if (x<0) x = 0;
 		if (!G (x, c->y - c->sy))
 			continue;
-		stamp_attr(c);
+		stamp_attr(c,slen);
 		memcpy (p, line+delta, slen-delta);
 		if (!n) break;
 		s = n;
@@ -199,7 +205,7 @@ void attrs_debug(RConsCanvas *c){
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
-	char *o, *b, *atr;
+	char *o, *b, **atr;
 	if (!c) return NULL;
 	b = c->b;
 	o = calloc (sizeof(char),
@@ -209,8 +215,8 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		for (x = 0; x<c->w; x++) {
 			atr=attr_at(c,x,y);
 			if(atr) {
-				strcat(o,atr);
-				olen+=strlen(atr);
+				strcat(o,*atr);
+				olen+=strlen(*atr);
 			}
 			int p = x + (y*c->w);
 			if (!b[p] || b[p]=='\n')
@@ -219,7 +225,6 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		}
 		o[olen++] = '\n';
 	}
-	attrs_debug(c);//DEBUG
 	o[olen] = '\0';
 	return o;
 }
