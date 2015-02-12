@@ -119,7 +119,7 @@ typedef enum tokentype_t {
  * Get the next token in str, starting at *begin. Write the index of the first
  * character after the token to *end. Return the type of the token.
  */
-static x86newTokenType getToken(const char *str, int *begin, int *end) {
+static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
 	while (isspace(str[*begin]))
 		++(*begin);
@@ -157,7 +157,7 @@ static ut64 readNumber(const char *str) {
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(const char *str, int *pos, ut32 *type) {
+static Register parseReg(const char *str, size_t *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
@@ -166,7 +166,7 @@ static Register parseReg(const char *str, int *pos, ut32 *type) {
 //	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
 
 	// Get token (especially the length)
-	int nextpos, length;
+	size_t nextpos, length;
 	const char *token;
 	getToken(str, pos, &nextpos);
 	token = str + *pos;
@@ -234,8 +234,7 @@ static Register parseReg(const char *str, int *pos, ut32 *type) {
 
 // Parse operand
 static int parseOperand(const char *str, Operand *op) {
-	int pos;
-	int nextpos = 0;
+	size_t pos, nextpos = 0;
 	x86newTokenType last_type;
 	int size_token = 1;
 
@@ -770,7 +769,7 @@ static ut8 translate_scale(int scale) {
  * Assemble instruction from table with the given operands.
  */
 static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
-	int l;
+	size_t l;
 	int op_ind;
 
 	// Write opcode
@@ -968,7 +967,7 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	ut64 offset = a->pc;
 	ut8 *data = ao->buf;
-	int pos = 0, nextpos;
+	size_t pos = 0, nextpos;
 	x86newTokenType ttype;
 	char mnemonic[12];
 	int op_ind, mnemonic_len;
