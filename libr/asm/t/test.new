@@ -52,6 +52,11 @@ asm_test 'fadd st(0), dword ptr [edx]' d802
 asm_test 'fadd st(0), qword ptr [edx]' dc02
 asm_test 'fadd st(1), st(0)' dcc1
 
+# XMM registers
+asm_test 'movups xmm(0), xmm(5)' 0f10c5
+asm_test 'movups xmm(3), oword ptr [esi]' 0f101e
+asm_test 'movups oword ptr [esi], xmm(7)' 0f113e
+
 # complex
 asm_test 'imul eax, ecx, 21' 6bc115
 asm_test 'imul eax, ecx, 0x12345' 69c145230100
