@@ -33,7 +33,7 @@ enum v850_cmd_opcodes {
 	V850_SLDH	= 0x20,
 	V850_SSTH	= 0x24,
 	V850_SLDW	= 0x28,
-	V850_SSTW	= 0x28,
+	V850_SSTW	= 0x29,
 	V850_BCOND	= 0x2C,
 	V850_BCOND2	= 0x2D,
 	V850_BCOND3	= 0x2E,
