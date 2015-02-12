@@ -544,7 +544,8 @@ int main(int argc, char **argv, char **envp) {
 									if (r_core_bin_load (&r, filepath, 0)) {
 										RBinFile *file = r_bin_cur (r.bin);
 										// use_baddr
-										file->o->baddr = baddr;
+										if (file && file->o)
+											file->o->baddr = baddr;
 									} else {
 										r_config_set (r.config, "io.va", "false");
 									}

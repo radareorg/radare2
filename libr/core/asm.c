@@ -634,13 +634,13 @@ R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, 
 /* Compute the len and the starting address
  * when disassembling `nb` opcodes backward. */
 R_API ut32 r_core_asm_bwdis_len (RCore* core, int* instr_len, ut64* start_addr, ut32 nb) {
+	ut32 instr_run = 0;
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
 	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
 	if (instr_len)
 		*instr_len = 0;
 	if (hits && r_list_length (hits) > 0) {
-		ut32 instr_run = 0;
 
 		hit = r_list_get_bottom(hits);
 		if (start_addr)
@@ -649,12 +649,10 @@ R_API ut32 r_core_asm_bwdis_len (RCore* core, int* instr_len, ut64* start_addr, 
 		r_list_foreach (hits, iter, hit)
 			instr_run += hit->len;
 
-		r_list_free (hits);
-
 		if (instr_len)
 			*instr_len = instr_run;
-		return instr_run;
 	}
-	return 0;
+	r_list_free (hits);
+	return instr_run;
 }
 

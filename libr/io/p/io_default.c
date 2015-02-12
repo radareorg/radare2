@@ -101,8 +101,10 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 		mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
 	else mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
 
-	if (mmo->fd == -1)
+	if (mmo->fd == -1) {
+		free (mmo);
 		return NULL;
+	}
 
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
 		mmo->rawio = 1;

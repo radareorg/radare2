@@ -382,7 +382,6 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
 	//free ((void *)_str);
-	free (oldstr);
 	return ret? strdup (ret): NULL; // memleak or wtf
 }
 

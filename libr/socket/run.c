@@ -329,7 +329,7 @@ static void parseinput (char *s) {
 	while (*s++) {
 		if (s[0]=='\\' && s[1]=='n') {
 			*s = '\n';
-			strcpy (s+1, s+2);
+			memmove (s+1, s+2, strlen (s+2));
 		}
 	}
 }
