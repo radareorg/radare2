@@ -29,7 +29,7 @@ export CFLAGS=-O2
 if true ; then
 make clean
 ./configure --prefix=${PREFIX} --with-ostype=darwin \
-	--with-compiler=ios-sdk --target=arm-unknown-darwin \
+	--with-compiler=ios-sdk --target=arm-unknown-darwin
 fi
 
 if [ $? = 0 ]; then
