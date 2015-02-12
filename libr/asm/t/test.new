@@ -19,6 +19,7 @@ asm_test 'fsin' d9fe
 asm_test 'pushad' 60
 asm_test 'aaa' 37
 asm_test 'stc' f9
+asm_test 'ret' c3
 asm_test 'rep stosd' f3ab
 
 # single byte with implicit operands
@@ -31,6 +32,7 @@ asm_test 'out dx, al' ee
 
 # immediate operands
 asm_test 'int 0xab' cdab
+asm_test 'ret 0x1234' c23412
 asm_test 'mov eax, 0' b800000000
 asm_test 'mov edx, 0x12345678' ba78563412
 asm_test 'out 0x23, al' e623

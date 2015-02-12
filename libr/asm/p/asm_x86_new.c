@@ -958,7 +958,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		for (op_ind = 0; op_ind < 3; ++op_ind) {
 			// Check if the flags of the operand are contained in the set of
 			// allowed flags for that operand.
-			if ((opcode_ptr->op[op_ind] & operands[op_ind].type) != operands[op_ind].type)
+			if ((opcode_ptr->op[op_ind] & operands[op_ind].type) != operands[op_ind].type
+					|| (opcode_ptr->op[op_ind] && !operands[op_ind].type))
 				break;
 		}
 
