@@ -155,9 +155,9 @@ static ut64 readNumber(const char *str) {
 }
 
 /**
- * Get the register denoted by str[0]..str[len-1].
+ * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(const char *str, int len, ut32 *type) {
+static Register parseReg(const char *str, int *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
@@ -165,28 +165,71 @@ static Register parseReg(const char *str, int len, ut32 *type) {
 	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
 //	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
 
-	for (i=0; regs[i]; i++)
-		if (!strncasecmp (regs[i], str, len)) {
-			*type = (OT_GPREG & OT_REG(i)) | OT_DWORD;
-			return i;
-		}
-	for (i=0; regs8[i]; i++)
-		if (!strncasecmp (regs8[i], str, len)) {
-			*type = (OT_GPREG & OT_REG(i)) | OT_BYTE;
-			return i;
-		}
-	for (i=0; regs16[i]; i++)
-		if (!strncasecmp (regs16[i], str, len)) {
-			*type = (OT_GPREG & OT_REG(i)) | OT_WORD;
-			return i;
-		}
-/*	for (i=0; regs64[i]; i++)
-		if (!strncasecmp (regs64[i], str, len)) {
-			*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
-			return i;
-		} */
-	return X86R_UNDEFINED;
+	// Get token (especially the length)
+	int nextpos, length;
+	const char *token;
+	getToken(str, pos, &nextpos);
+	token = str + *pos;
+	length = nextpos - *pos;
+	*pos = nextpos;
 
+	// General purpose registers
+	if (length == 3 && token[0] == 'e')
+		for (i=0; regs[i]; i++)
+			if (!strncasecmp (regs[i], token, length)) {
+				*type = (OT_GPREG & OT_REG(i)) | OT_DWORD;
+				return i;
+			}
+	if (length == 2 && (token[1] == 'l' || token[1] == 'h'))
+		for (i=0; regs8[i]; i++)
+			if (!strncasecmp (regs8[i], token, length)) {
+				*type = (OT_GPREG & OT_REG(i)) | OT_BYTE;
+				return i;
+			}
+	if (length == 2)
+		for (i=0; regs16[i]; i++)
+			if (!strncasecmp (regs16[i], token, length)) {
+				*type = (OT_GPREG & OT_REG(i)) | OT_WORD;
+				return i;
+			}
+/*	if (token[0] == 'r')
+		for (i=0; regs64[i]; i++)
+			if (!strncasecmp (regs64[i], token, length)) {
+				*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
+				return i;
+			} */
+
+	// Numbered registers
+	if (!strncasecmp ("st", token, length))
+		*type = (OT_FPUREG & ~OT_REGALL);
+	if (!strncasecmp ("mm", token, length))
+		*type = (OT_REGMMX & ~OT_REGALL);
+	if (!strncasecmp ("xmm", token, length))
+		*type = (OT_REGXMM & ~OT_REGALL);
+
+	// Now read number, possibly with parantheses
+	if (*type & (OT_FPUREG | OT_REGMMX | OT_REGXMM) & ~OT_REGALL) {
+		Register reg = X86R_UNDEFINED;
+
+		// pass by '(',if there is one
+		if (getToken(str, pos, &nextpos) == TT_SPECIAL && str[*pos] == '(')
+			*pos = nextpos;
+
+		// read number
+		if (getToken(str, pos, &nextpos) != TT_NUMBER ||
+				(reg = readNumber(str + *pos)) > 7)
+			eprintf("Too large register index!");
+		*pos = nextpos;
+
+		// pass by ')'
+		if (getToken(str, pos, &nextpos) == TT_SPECIAL && str[*pos] == ')')
+			*pos = nextpos;
+
+		*type |= (OT_REG(reg) & ~(0xff << REGTYPE_SHIFT));
+		return reg;
+	}
+
+	return X86R_UNDEFINED;
 }
 
 // Parse operand
@@ -261,9 +304,16 @@ static int parseOperand(const char *str, Operand *op) {
 			}
 			else if (last_type == TT_WORD) {
 				ut32 reg_type;
+
+				// We can't multiply registers
 				if (reg != X86R_UNDEFINED)
 					op->type = 0;	// Make the result invalid
-				reg = parseReg(str + pos, nextpos - pos, &reg_type);
+
+				// Reset nextpos: parseReg wants to parse from the beginning
+				nextpos = pos;
+				reg = parseReg(str, &nextpos, &reg_type);
+
+				// Addressing only via general purpose registers
 				if (!(reg_type & OT_GPREG))
 					op->type = 0;	// Make the result invalid
 			}
@@ -274,7 +324,8 @@ static int parseOperand(const char *str, Operand *op) {
 		}
 	}
 	else if (last_type == TT_WORD) {   // register
-		op->reg = parseReg(str + pos, nextpos - pos, &op->type);
+		nextpos = pos;
+		op->reg = parseReg(str, &nextpos, &op->type);
 	}
 	else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
