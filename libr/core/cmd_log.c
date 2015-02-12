@@ -95,7 +95,9 @@ static int cmd_log(void *data, const char *input) {
 		}
 		break;
 	case 'T':
-		textlog_chat (core);
+		if (r_config_get_i (core->config, "scr.interactive")) {
+			textlog_chat (core);
+		} else eprintf ("Only available when the screen is interactive\n");
 		break;
 	case 'p':
 		switch (input[1]) {
