@@ -5,9 +5,9 @@
 // The dlang-demangler is written in D and available at radare2-extras
 
 static int is_dlang_symbol (const char *name) {
-	if (!strncmp (name, "_D2", 2)) 
+	if (!strncmp (name, "_D2", 3)) 
 		return 1;
-	if (!strncmp (name, "_D4", 2))
+	if (!strncmp (name, "_D4", 3))
 		return 1;
 	return 0;
 }
