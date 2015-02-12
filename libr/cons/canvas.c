@@ -232,7 +232,6 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 R_API void r_cons_canvas_print(RConsCanvas *c) {
 	char *o = r_cons_canvas_to_string (c);
 	if (o) {
-		fprintf(stderr,"\nCANVAS:\n%s",o);
 		r_cons_strcat (o);
 		free (o);
 	}
