@@ -113,15 +113,24 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
-static void stamp_attr(RConsCanvas *c){
+static char * attr_at(RConsCanvas *c,int x,int y){
 	int i;
-	//check to make sure we don't have two attrs in the same place
-	for( i = 0; i<c->attrslen; i++){
-		if( (c->attrs[i].x == c->x) &&
-		    (c->attrs[i].y == c->y) ){
-			c->attrs[i].a = c->attr;
-			return;
+	for( i = 0; i< c->attrslen; i++){
+		if( (c->attrs[i].x == x) && (c->attrs[i].y == y) ){
+			fprintf(stderr,"[%i] %i==%i && %i==%i\n",i,
+					c->attrs[i].x,c->x,
+					c->attrs[i].y ,c->y);//DEBUG
+			return c->attrs[i].a;
 		}
+	}
+	return NULL;
+}
+static void stamp_attr(RConsCanvas *c){
+	char * s = attr_at(c,c->x,c->y);
+	if(s){
+		//If theres already an attr there, just replace it.
+		s = c->attr;
+		return;
 	}
 
 	c->attrs[c->attrslen].x = c->x;
@@ -177,34 +186,40 @@ R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, char * s){
 		r_cons_canvas_write(c,s);
 }
 
+void attrs_debug(RConsCanvas *c){
+	int i;
+	fprintf(stderr,"\nc->attrslen: %i\n",c->attrslen);
+	for(i=0;i<c->attrslen;i++){
+		fprintf(stderr,"attrs[%i]: %i,%i a:%s\n",i,
+				c->attrs[i].x,
+				c->attrs[i].y,
+				c->attrs[i].a);
+	}
+}
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
-	fprintf(stderr,"\nTO_STRING;\n");//DEBUG
-	fprintf(stderr,"\nc->attrslen: %i\n",c->attrslen);//DEBUG
-	int x, y, i = 0, olen = 0;
-	char *o, *b;
+	int x, y, olen = 0;
+	char *o, *b, *atr;
 	if (!c) return NULL;
 	b = c->b;
 	o = calloc (sizeof(char),
-			  (c->w*(c->h+1))+(c->attrslen*CONS_MAX_ATTR_SZ)); 
+			  (c->w*(c->h+1))*(CONS_MAX_ATTR_SZ));
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
-			int p = x + (y*c->w);
-			if (x == c->attrs[i].x && y == c->attrs[i].y){
-				if(i<c->attrslen && c->attrs[i].a){
-					strcat(o,c->attrs[i].a);
-					olen+=strlen(c->attrs[i].a);
-					fprintf(stderr,"\nattrat:%i,%i\n",x,y);//DEBUG
-					i++;
-				}
+			atr=attr_at(c,x,y);
+			if(atr) {
+				strcat(o,atr);
+				olen+=strlen(atr);
 			}
+			int p = x + (y*c->w);
 			if (!b[p] || b[p]=='\n')
 				break;
 			o[olen++] = b[p];
 		}
 		o[olen++] = '\n';
 	}
+	attrs_debug(c);//DEBUG
 	o[olen] = '\0';
 	return o;
 }
@@ -212,7 +227,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 R_API void r_cons_canvas_print(RConsCanvas *c) {
 	char *o = r_cons_canvas_to_string (c);
 	if (o) {
-		fprintf(stderr,"\nCANVAS_TRACE:\n%s",o);//DEBUG
+		fprintf(stderr,"\nCANVAS:\n%s",o);
 		r_cons_strcat (o);
 		free (o);
 	}
