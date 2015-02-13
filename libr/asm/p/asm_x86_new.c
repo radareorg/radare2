@@ -357,6 +357,10 @@ typedef struct opcode_t {
 #define SPECIAL_MASK 0x00000007
 
 Opcode opcodes[] = {
+	//////////////////////
+	// ONE BYTE OPCODES //
+	//////////////////////
+
 	/////// 0x0_ ///////
 	{"add", {OT_GPREG | OT_MEMORY | OT_BYTE, OT_GPREG | OT_BYTE}, 1, {0x00}},
 	{"add", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 1, {0x01}},
@@ -663,18 +667,324 @@ Opcode opcodes[] = {
 	// 0xFE: group 4
 	// 0xFF: group 5
 
-	// TWO BYTE OPCODES
+	//////////////////////
+	// TWO BYTE OPCODES //
+	//////////////////////
 
 	/////// 0x0F 0x0_ ///////
+	// 0x0F 0x00: group 6
+	// 0x0F 0x01: group 7
+	{"lar", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x02}},
+	{"lsl", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x03}},
+	// 0x0F 0x04-0x05: reserved
 	{"clts", {}, 2, {0x0F, 0x06}},
+	// 0x0F 0x07: reserved
+	{"invd", {}, 2, {0x0F, 0x08}},
 	{"wbinvd", {}, 2, {0x0F, 0x09}},
-	// ...
+	// 0x0F 0x0A: reserved
+	{"ud2", {}, 2, {0x0F, 0x0B}},
+	// 0x0F 0x0C: reserved
+	{"prefetch", {}, 2, {0x0F, 0x0D}},
+	{"femms", {}, 2, {0x0F, 0x0E}},
+	// 0x0F 0x0F: 3DNow! prefix
+
+	/////// 0x0F 0x1_ ///////
 	{"movups", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x10}},
 	{"movups", {OT_REGXMM | OT_MEMORY | OT_OWORD, OT_REGXMM | OT_OWORD}, 2, {0x0F, 0x11}},
-	// ...
+	{"movlps", {OT_REGXMM | OT_QWORD, OT_REGXMM | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x12}},
+	{"movlps", {OT_REGXMM | OT_MEMORY | OT_QWORD, OT_REGXMM | OT_QWORD}, 2, {0x0F, 0x13}},
+	{"unpcklps", {OT_REGXMM | OT_QWORD, OT_REGXMM | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x14}},
+	{"unpckhps", {OT_REGXMM | OT_QWORD, OT_REGXMM | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x15}},
+	{"movhps", {OT_REGXMM | OT_QWORD, OT_REGXMM | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x16}},
+	{"movhps", {OT_REGXMM | OT_MEMORY | OT_QWORD, OT_REGXMM | OT_QWORD}, 2, {0x0F, 0x17}},
+	// 0x0F 0x18: group 16
+	// 0x0F 0x19-0x1F: reserved
+
+	/////// 0x0F 0x2_ ///////
 	{"mov", {OT_CONTROLREG, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x20}},
-	// ...
-	// many more
+	{"mov", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_DEBUGREG}, 2, {0x0F, 0x21}},
+	{"mov", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_CONTROLREG}, 2, {0x0F, 0x22}},
+	{"mov", {OT_DEBUGREG, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x23}},
+	// 0x0F 0x24-0x27: reserved
+	{"movaps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x28}},
+	{"movaps", {OT_REGXMM | OT_MEMORY | OT_OWORD, OT_REGXMM | OT_OWORD}, 2, {0x0F, 0x29}},
+	{"cvtpi2ps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x2A}},
+	{"movntps", {OT_MEMORY | OT_OWORD, OT_REGXMM | OT_OWORD}, 2, {0x0F, 0x2B}},
+	{"cvttps2pi", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x2C}},
+	{"cvtps2pi", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x2D}},
+	{"ucomiss", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x2E}},
+	{"comiss", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x2F}},
+
+	/////// 0x0F 0x3_ ///////
+	{"wrmsr", {}, 2, {0x0F, 0x30}},
+	{"rdtsc", {}, 2, {0x0F, 0x31}},
+	{"rdmsr", {}, 2, {0x0F, 0x32}},
+	{"rdpmc", {}, 2, {0x0F, 0x33}},
+	{"sysenter", {}, 2, {0x0F, 0x34}},
+	{"sysexit", {}, 2, {0x0F, 0x35}},
+	// 0x0F 0x36-0x3F: reserved
+
+	/////// 0x0F 0x4_ ///////
+	{"cmovo", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x40}},
+	{"cmovno", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x41}},
+	{"cmovb", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x42}},
+	{"cmovnae", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x42}},
+	{"cmovc", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x42}},
+	{"cmovnb", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x43}},
+	{"cmovae", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x43}},
+	{"cmovnc", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x43}},
+	{"cmovz", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x44}},
+	{"cmove", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x44}},
+	{"cmovnz", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x45}},
+	{"cmovne", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x45}},
+	{"cmovbe", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x46}},
+	{"cmovna", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x46}},
+	{"cmovnbe", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x47}},
+	{"cmova", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x47}},
+	{"cmovs", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x48}},
+	{"cmovns", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x49}},
+	{"cmovp", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4A}},
+	{"cmovpe", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4A}},
+	{"cmovnp", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4B}},
+	{"cmovpo", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4B}},
+	{"cmovl", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4C}},
+	{"cmovnge", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4C}},
+	{"cmovnl", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4D}},
+	{"cmovge", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4D}},
+	{"cmovle", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4E}},
+	{"cmovng", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4E}},
+	{"cmovnle", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4F}},
+	{"cmovg", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0x4F}},
+
+	/////// 0x0F 0x5_ ///////
+	{"movmskps", {OT_GPREG | OT_DWORD, OT_REGXMM | OT_OWORD}, 2, {0x0F, 0x50}},
+	{"sqrtps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x51}},
+	{"rsqrtps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x52}},
+	{"rcpps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x53}},
+	{"andps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x54}},
+	{"andnps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x55}},
+	{"orps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x56}},
+	{"xorps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x57}},
+	{"addps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x58}},
+	{"mulps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x59}},
+	{"cvtps2pd", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x5A}},
+	{"cvtdq2ps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x5B}},
+	{"subps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x5C}},
+	{"minps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x5D}},
+	{"divps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x5E}},
+	{"maxps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD}, 2, {0x0F, 0x5F}},
+
+	/////// 0x0F 0x6_ ///////
+	{"punpcklbw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x60}},
+	{"punpcklwd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x61}},
+	{"punpckldq", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x62}},
+	{"packsswb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x63}},
+	{"pcmpgtb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x64}},
+	{"pcmpgtw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x65}},
+	{"pcmpgtd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x66}},
+	{"packuswb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x67}},
+	{"punpckhbw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x68}},
+	{"punpckhwd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x69}},
+	{"punpckhdq", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x6A}},
+	{"packssdw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x6B}},
+	// 0x0F 0x6C-0x6D: reserved
+	{"movd", {OT_REGMMX | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0x6E}},
+	{"movq", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x6F}},
+
+	/////// 0x0F 0x7_ ///////
+	{"pshufw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD, OT_IMMEDIATE | OT_BYTE}, 2, {0x0F, 0x70}},
+	// 0x0F 0x71: group 12
+	// 0x0F 0x72: group 13
+	// 0x0F 0x73: group 14
+	{"pcmpeqb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x74}},
+	{"pcmpeqw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x75}},
+	{"pcmpeqd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0x76}},
+	{"emms", {}, 2, {0x0F, 0x77}},
+	// 0x0F 0x77-0x7D: MMX UD TODO: what is that?
+	{"movd", {OT_GPREG | OT_DWORD, OT_REGMMX | OT_DWORD}, 2, {0x0F, 0x7E}},
+	{"movq", {OT_REGMMX | OT_MEMORY | OT_QWORD, OT_REGMMX | OT_QWORD}, 2, {0x0F, 0x7F}},
+
+	/////// 0x0F 0x8_ ///////
+	{"jo", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x80}},
+	{"jno", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x81}},
+	{"jb", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
+	{"jnae", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
+	{"jc", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
+	{"jnb", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
+	{"jae", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
+	{"jnc", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
+	{"jz", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x84}},
+	{"je", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x84}},
+	{"jnz", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x85}},
+	{"jne", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x85}},
+	{"jbe", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x86}},
+	{"jna", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x86}},
+	{"jnbe", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x87}},
+	{"ja", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x87}},
+	{"js", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x88}},
+	{"jns", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x89}},
+	{"jp", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8A}},
+	{"jpe", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8A}},
+	{"jnp", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8B}},
+	{"jpo", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8B}},
+	{"jl", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8C}},
+	{"jnge", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8C}},
+	{"jnl", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8D}},
+	{"jge", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8D}},
+	{"jle", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8E}},
+	{"jng", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8E}},
+	{"jnle", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8F}},
+	{"jg", {OT_IMMEDIATE | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8F}},
+
+	/////// 0x0F 0x9_ ///////
+	// TODO: what is the value of spec for these instructions?
+	{"seto", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x90}},
+	{"setno", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x91}},
+	{"setb", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x92}},
+	{"setnae", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x92}},
+	{"setc", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x92}},
+	{"setnb", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x93}},
+	{"setae", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x93}},
+	{"setnc", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x93}},
+	{"setz", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x94}},
+	{"sete", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x94}},
+	{"setnz", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x95}},
+	{"setne", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x95}},
+	{"setbe", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x96}},
+	{"setna", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x96}},
+	{"setnbe", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x97}},
+	{"seta", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x97}},
+	{"sets", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x98}},
+	{"setns", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x99}},
+	{"setp", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9A}},
+	{"setpe", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9A}},
+	{"setnp", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9B}},
+	{"setpo", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9B}},
+	{"setl", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9C}},
+	{"setnge", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9C}},
+	{"setnl", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9D}},
+	{"setge", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9D}},
+	{"setle", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9E}},
+	{"setng", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9E}},
+	{"setnle", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9F}},
+	{"setg", {OT_GPREG | OT_MEMORY | OT_BYTE}, 1, {0x0F, 0x9F}},
+
+	/////// 0x0F 0xA_ ///////
+	{"push", {(OT_SEGMENTREG & OT_REG(X86R_FS))}, 2, {0x0F, 0xA0}},
+	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_FS))}, 2, {0x0F, 0xA1}},
+	{"cpuid", {}, 2, {0x0F, 0xA2}},
+	{"bt", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xA3}},
+	{"shld", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD, OT_IMMEDIATE | OT_BYTE}, 2, {0x0F, 0xA4}},
+	{"shld", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD, (OT_GPREG & OT_REG(X86R_CL)) | OT_BYTE}, 2, {0x0F, 0xA5}},
+	// 0x0F 0xA6-0xA7: reserved
+	{"push", {(OT_SEGMENTREG & OT_REG(X86R_GS))}, 2, {0x0F, 0xA8}},
+	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_GS))}, 2, {0x0F, 0xA9}},
+	{"rsm", {}, 2, {0x0F, 0xAA}},
+	{"bts", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xAB}},
+	{"shrd", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD, OT_IMMEDIATE | OT_BYTE}, 2, {0x0F, 0xAC}},
+	{"shrd", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD, (OT_GPREG & OT_REG(X86R_CL)) | OT_BYTE}, 2, {0x0F, 0xAD}},
+	// 0x0F 0xAE: group 15
+	{"imul", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0xAF}}, // ?
+
+	/////// 0x0F 0xB_ ///////
+	{"cmpxchg", {OT_GPREG | OT_MEMORY | OT_BYTE, OT_GPREG | OT_BYTE}, 2, {0x0F, 0xB0}},
+	{"cmpxchg", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xB1}},
+	{"lss", {OT_GPREG | OT_DWORD, OT_MEMORY}, 2, {0x0F, 0xB2}},
+	{"btr", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xB3}},
+	{"lfs", {OT_GPREG | OT_DWORD, OT_MEMORY}, 2, {0x0F, 0xB4}},
+	{"lgs", {OT_GPREG | OT_DWORD, OT_MEMORY}, 2, {0x0F, 0xB5}},
+	{"movzx", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_BYTE}, 2, {0x0F, 0xB6}},
+	{"movzx", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_WORD}, 2, {0x0F, 0xB7}},
+	// 0x0F 0xB8: reserved
+	// 0x0F 0xB9: group 10
+	// 0x0F 0xBA: group 8
+	{"btc", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xBB}},
+	{"bsf", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0xBC}},
+	{"bsr", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_DWORD}, 2, {0x0F, 0xBD}},
+	{"movsx", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_BYTE}, 2, {0x0F, 0xBE}},
+	{"movsx", {OT_GPREG | OT_DWORD, OT_GPREG | OT_MEMORY | OT_WORD}, 2, {0x0F, 0xBF}},
+
+	/////// 0x0F 0xC_ ///////
+	{"xadd", {OT_GPREG | OT_MEMORY | OT_BYTE, OT_GPREG | OT_BYTE}, 2, {0x0F, 0xC0}},
+	{"xadd", {OT_GPREG | OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xC1}},
+	{"cmpps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD, OT_IMMEDIATE | OT_BYTE}, 2, {0x0F, 0xC2}},
+	{"movnti", {OT_MEMORY | OT_DWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xC3}},
+	{"pinsrw", {OT_REGMMX | OT_QWORD, OT_GPREG | OT_DWORD}, 2, {0x0F, 0xC4}},	// Will the operands be in the right order?
+	{"pextrw", {OT_GPREG | OT_DWORD, OT_REGMMX | OT_QWORD}, 2, {0x0F, 0xC5}},	// Will the operands be in the right order?
+	{"shufps", {OT_REGXMM | OT_OWORD, OT_REGXMM | OT_MEMORY | OT_OWORD, OT_IMMEDIATE | OT_BYTE}, 2, {0x0F, 0xC6}},
+	// 0x0F 0xB7: group 9
+	{"bswap", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 2, {0x0F, 0xC8}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 2, {0x0F, 0xC9}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 2, {0x0F, 0xCA}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 2, {0x0F, 0xCB}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 2, {0x0F, 0xCC}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 2, {0x0F, 0xCD}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 2, {0x0F, 0xCE}},
+	{"bswap", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 2, {0x0F, 0xCF}},
+
+	/////// 0x0F 0xD_ ///////
+	// 0x0F 0xD0: reserved
+	{"psrlw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xD1}},
+	{"psrld", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xD2}},
+	{"psrlq", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xD3}},
+	// 0x0F 0xD4: reserved
+	{"pmulw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xD5}},
+	// 0x0F 0xD6: reserved
+	{"pmovmskb", {OT_GPREG | OT_DWORD, OT_REGMMX | OT_QWORD}, 2, {0x0F, 0xD7}},
+	{"psubusb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xD8}},
+	{"psubusw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xD9}},
+	{"pminub", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xDA}},
+	{"pand", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xDB}},
+	{"paddusb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xDC}},
+	{"paddusw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xDD}},
+	{"pmaxub", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xDE}},
+	{"pandn", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xDF}},
+
+	/////// 0x0F 0xE_ ///////
+	{"pavgb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE0}},
+	{"psraw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE1}},
+	{"psrad", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE2}},
+	{"pavgw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE3}},
+	{"pmulhuw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE4}},
+	{"pmulhw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE5}},
+	// 0x0F 0xE6: reserved
+	{"movntq", {OT_MEMORY | OT_QWORD, OT_REGMMX | OT_QWORD}, 2, {0x0F, 0xE7}},
+	{"psubsb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE8}},
+	{"psubsw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xE9}},
+	{"pminsw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xEA}},
+	{"por", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xEB}},
+	{"paddsb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xEC}},
+	{"paddsw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xED}},
+	{"pmaxsw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xEE}},
+	{"pxor", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xEF}},
+
+	/////// 0x0F 0xF_ ///////
+	// 0x0F 0xF0: reserved
+	{"psllw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF1}},
+	{"pslld", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF2}},
+	{"pshllq", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF3}},
+	// 0x0F 0xF4: reserved
+	{"pmaddwd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF5}},
+	{"psadbw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF6}},
+	{"maskmovq", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_QWORD}, 2, {0x0F, 0xF7}},
+	{"psubb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF8}},
+	{"psubw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xF9}},
+	{"psubd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xFA}},
+	// 0x0F 0xFB: reserved
+	{"paddb", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xFC}},
+	{"paddw", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xFD}},
+	{"paddd", {OT_REGMMX | OT_QWORD, OT_REGMMX | OT_MEMORY | OT_QWORD}, 2, {0x0F, 0xFE}},
+	// 0x0F 0xFF: reserved
+
+	////////////////////////
+	// THREE BYTE OPCODES //
+	////////////////////////
+
+	// TODO
+
+	///////////////////////////////////////////
+	// OPERATIONS WITH ADDITIONAL SPEC FIELD //
+	///////////////////////////////////////////
 
 	// IMMEDIATE GROUP 1
 	{"add", {OT_GPREG | OT_MEMORY | OT_BYTE, OT_IMMEDIATE | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 0},
@@ -709,7 +1019,9 @@ Opcode opcodes[] = {
 	// SHIFT GROUP 2
 	// TODO
 
-	// FPU OPERATIONS
+	////////////////////
+	// FPU OPERATIONS //
+	////////////////////
 	{"fadd", {(OT_FPUREG & OT_REG(0)) | OT_FPUSIZE, OT_FPUREG | OT_MEMORY | OT_DWORD}, 1, {0xD8}, SPECIAL_SPEC + 0},
 	// ...
 
