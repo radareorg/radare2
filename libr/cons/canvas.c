@@ -114,6 +114,7 @@ static char *prefixline(RConsCanvas *c, int *left) {
 }
 
 static char ** attr_at(RConsCanvas *c,int x,int y){
+	//TODO this guy is 91% of our usage. needs to be optimized
 	int i;
 	for( i = 0; i< c->attrslen; i++){
 		if( (c->attrs[i].x == x) && (c->attrs[i].y == y) ){
@@ -338,29 +339,29 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 	int err = (dx>dy?dx:-dy)/2;
 	int e2;
 	// TODO: find if there's any collision in this line
-	while(!(x==x2&&y==y2)){
-		e2 = err;
-		if(e2>-dx){
-			chizzle='_';
-			err-=dy;
-			x+=sx;
+loop:
+	e2 = err;
+	if(e2>-dx){
+		chizzle='_';
+		err-=dy;
+		x+=sx;
+	}
+	if(e2<dy){
+		chizzle='|';
+		err+=dx;
+		y+=sy;
+	}
+	if((e2<dy) && (e2>-dx)){
+		if(sy>0){
+			chizzle=(sx>0)?'\\':'/';
+		}else{
+			chizzle=(sx>0)?'/':'\\';
 		}
-		if(e2<dy){
-			chizzle='|';
-			err+=dx;
-			y+=sy;
-		}
-		if((e2<dy) && (e2>-dx)){
-			if(sy>0){
-				chizzle=(sx>0)?'\\':'/';
-			}else{
-				chizzle=(sx>0)?'/':'\\';
-			}
-		}
-		if(!(x==x2&&y==y2)){
-			int i = (chizzle=='_'&&sy<0) ? 1 : 0;
-			r_cons_canvas_goto_write(c,x,y-i,&chizzle);
-		}
+	}
+	if(!(x==x2&&y==y2)){
+		int i = (chizzle=='_'&&sy<0) ? 1 : 0;
+		r_cons_canvas_goto_write(c,x,y-i,&chizzle);
+		goto loop;
 	}
 	c->attr=Color_RESET;
 }
