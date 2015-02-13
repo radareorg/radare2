@@ -39,4 +39,5 @@ beq=beq $s,$t,C, goes to the instruction at the specified address if two registe
 bneq=goes to the instruction at the specified address if two registers are not equal.
 j=unconditionally jumps to the instruction at the specified address
 jr=jumps to the address contained in the specified register
+jraddiusp=increment stackpointer and jump to ra register
 jal=used to call a subroutine, $31 holds the return address; returning from a subroutine is done by: jr $31. Return address is PC + 8, not PC + 4 due to the use of a branch delay slot which forces the instruction after the jump to be executed
