@@ -21,6 +21,7 @@ asm_test 'aaa' 37
 asm_test 'stc' f9
 asm_test 'ret' c3
 asm_test 'rep stosd' f3ab
+asm_test 'rdtsc' 0f31
 
 # single byte with implicit operands
 asm_test 'pop ecx' 59
@@ -29,6 +30,7 @@ asm_test 'xchg eax, eax' 90
 asm_test 'xchg eax, edx' 92
 asm_test 'in eax, dx' ed
 asm_test 'out dx, al' ee
+asm_test 'bswap esi' 0fce
 
 # immediate operands
 asm_test 'int 0xab' cdab
@@ -52,14 +54,25 @@ asm_test 'fadd st(0), dword ptr [edx]' d802
 asm_test 'fadd st(0), qword ptr [edx]' dc02
 asm_test 'fadd st(1), st(0)' dcc1
 
+# MMX registers
+asm_test 'pcmpgtw mm(3), mm(7)' 0f65df
+asm_test 'punpckldq mm(3), qword ptr [edx+4*eax]' 0f621c82
+
 # XMM registers
 asm_test 'movups xmm(0), xmm(5)' 0f10c5
 asm_test 'movups xmm(3), oword ptr [esi]' 0f101e
 asm_test 'movups oword ptr [esi], xmm(7)' 0f113e
 
+# Mix of registers / register-only operations
+asm_test 'movd ebx, mm(2)' 0f7ed3
+asm_test 'movmskps edx, xmm(5)' 0f50d5
+asm_test 'pinsrw mm(3), eax, 3' 0fc4d803
+asm_test 'pextrw edx, mm(5), 1' 0fc5d501
+
 # complex
 asm_test 'imul eax, ecx, 21' 6bc115
 asm_test 'imul eax, ecx, 0x12345' 69c145230100
+asm_test 'shufps xmm(3), xmm(5), 0xab' 0fc6ddab
 
 # MEMORY operands
 # Immediates
