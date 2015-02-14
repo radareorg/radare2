@@ -7,6 +7,7 @@
 
 R_API void r_cons_canvas_free (RConsCanvas *c) {
 	free (c->b);
+	free (c->attrs);
 	free (c);
 }
 
@@ -17,6 +18,10 @@ R_API void r_cons_canvas_clear (RConsCanvas *c) {
 		c->b[c->blen] = 0;
 		for (y = 0; y<c->h; y++)
 			c->b[ y * c->w ] = '\n';
+		if(c->attrs){
+			c->attrslen=0;
+			memset (c->attrs, 0, sizeof(*c->attrs)*c->blen);
+		}
 	}
 }
 
@@ -34,6 +39,14 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 		free (c);
 		return NULL;
 	}
+	c->attrslen = 0;
+	c->attrs = calloc(sizeof(*c->attrs),c->blen+1);
+	if (!c->attrs) {
+		free (c->b);
+		free (c);
+		return NULL;
+	}
+	c->attr=Color_RESET;
 	c->w = w;
 	c->h = h;
 	c->x = c->y = 0;
@@ -100,6 +113,51 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
+static char ** attr_at(RConsCanvas *c,int loc){
+	if(c->attrslen==0) return NULL;
+	int i;
+	for(i=0;i<(c->attrslen);i++){
+		if(c->attrs[i].loc == loc)
+			return &c->attrs[i].a;
+	}
+	return NULL;
+}
+
+static void sort_attrs(RConsCanvas *c){
+	int i,j;
+	RConsCanvasAttr value;
+	for(i = 1; i < c->attrslen; i++){
+		value = c->attrs[i];
+		for (j = i-1; j>=0 && c->attrs[j].loc>value.loc; j--){
+			c->attrs[j+1] = c->attrs[j];
+		}
+		c->attrs[j+1] = value;
+	}
+}
+
+static void stamp_attr(RConsCanvas *c,int length){
+	int i;
+	char ** s;
+	int loc = c->x + (c->y*c->w);
+	s = attr_at(c,loc);
+
+	if(s){
+		//If theres already an attr there, just replace it.
+		*s = c->attr;
+	}else{
+		c->attrs[c->attrslen].loc = loc;
+		c->attrs[c->attrslen].a = c->attr;
+		c->attrslen++;
+		sort_attrs(c);
+	}
+
+	for(i=0;i<length;i++){
+		s = attr_at(c,loc+i);
+		if(s)
+			*s = c->attr;
+	}
+}
+
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	int left, slen, i, linenum = 0;
 	char *p, *s, *str;
@@ -131,34 +189,45 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		// if (x<0) x = 0;
 		if (!G (x, c->y - c->sy))
 			continue;
+		stamp_attr(c,slen);
 		memcpy (p, line+delta, slen-delta);
 		if (!n) break;
 		s = n;
-		if (!G (c->x-c->sx, c->y+1-c->sy)) {
+		if (!G (c->x-c->sx, c->y+1 - c->sy)) 
 			break;
-		}
 		linenum ++;
 	}
 	free (str);
 }
 
+R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, char * s){
+	if(r_cons_canvas_gotoxy(c,x,y))
+		r_cons_canvas_write(c,s);
+}
+
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
-	char *o, *b;
+	char *o, *b, **atr;
 	if (!c) return NULL;
 	b = c->b;
-	o = malloc (c->w*(c->h+1));
+	o = calloc (sizeof(char),
+			  (c->w*(c->h+1))*(CONS_MAX_ATTR_SZ));
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
 			int p = x + (y*c->w);
+			atr=attr_at(c,p);
+			if(atr) {
+				strcat(o,*atr);
+				olen+=strlen(*atr);
+			}
 			if (!b[p] || b[p]=='\n')
 				break;
 			o[olen++] = b[p];
 		}
 		o[olen++] = '\n';
 	}
-	o[olen] = 0;
+	o[olen] = '\0';
 	return o;
 }
 
@@ -176,6 +245,8 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);
 	if (!b) return R_FALSE;
+	c->attrs = realloc(c->attrs,sizeof(*c->attrs)*blen+1);
+	if (!c->attrs) return R_FALSE;
 	c->blen = blen;
 	c->b = b;
 	c->w = w;
@@ -199,7 +270,9 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h) {
 	memset (row+1, '-', w-2);
 	row[w-1] = roundcorners?'.':corner;
 	row[w] = 0;
-	if (G(x, y)) W(row);
+	if (G(x, y)) {
+		W(row);
+	}
 	if (G(x, y+h-1)) {
 		row[0] = roundcorners?'\'':corner;
 		row[w-1] = roundcorners?'\'':corner;
@@ -231,131 +304,65 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 }
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
-	int i, onscreen;
+	char *c1="v", *c2="V";
 	switch (style) {
 	case 0:
-		if (G (x, y))
-			W ("v");
-		if (G (x2, y2))
-			W ("V");
+		c->attr=Color_BLUE;
+		c1="v"; 
+		c2="V";
 		break;
 	case 1:
-		if (G (x, y))
-			W ("t"); //\\");
-		if (G (x2, y2))
-			W ("\\");
+		c->attr=Color_GREEN;
+		c1="t";
+		c2="\\";
 		break;
 	case 2:
-		if (G (x, y))
-			W ("f");
-		if (G (x2, y2))
-			W ("/");
+		c->attr=Color_RED;
+		c1="f";
+		c2="/";
 		break;
 	}
-	if (x==x2) {
-		int min = R_MIN (y,y2)+1;
-		int max = R_MAX (y,y2);
-		for (i=min; i<max; i++) {
-			if (G (x,i))
-				W ("|");
-		}
-	} else {
-		// --
-		// TODO: find if there's any collision in this line
-		int hl = R_ABS (y-y2) / 2;
-		int hl2 = R_ABS (y-y2)-hl;
-		hl--;
-		if (y2 > (y+1)) {
-			for (i=0;i<hl;i++) {
-				if (G (x,y+i+1))
-					W ("|");
-			}
-			for (i=0;i<hl2;i++) {
-				if (G (x2, y+hl+i+1))
-					W ("|");
-			}
-			int w = R_ABS (x-x2);
-			char *row = malloc (w+2);
-			if (x>x2) {
-				w++;
-				row[0] = '.';
-				if (w>2)
-					memset (row+1, '-', w-2);
-				row[w-1] = '\'';
-				row[w] = 0;
-				onscreen = G (x2+w,y+hl+1);
-				i = G (x2, y+hl+1);
-				if (!onscreen)
-					onscreen = i;
-			} else {
-				row[0] = '`';
-				row[0] = '\'';
-				if (w>1)
-					memset (row+1, '-', w-1);
-				row[w] = '.';
-				row[w+1] = 0;
-				onscreen = G (x+w,y+1+hl);
-				i = G (x,y+1+hl);
-				if (!onscreen)
-					onscreen = i;
-			}
-			if (onscreen)
-				W (row);
-			free (row);
-		} else  {
-			int minx = R_MIN (x, x2);
-			//if (y >= y2) 
-			int rl = R_ABS (x-x2)/2;
-			int rl2 = R_ABS (x-x2)-rl+1;
-			int vl = (R_ABS(y-y2))+1;
-			if (y+1==y2)
-				vl--;
-
-			for (i=0;i<vl; i++) {
-				if (G (minx+rl,y2+i))
-					W ("|");
-			}
-
-			int w = rl;
-			char *row = malloc (w+1);
-			if (x>x2) {
-				row[0] = '.';
-				if (w>2)
-					memset (row+1, '-', w-2);
-				if (w>0)
-					row[w-1] = '.';
-				row[w] = 0;
-				onscreen = G (x2,y2-1);
-			} else {
-				row[0] = '`';
-				if (w>2)
-					memset (row+1, '-', w-2);
-				if (w>0)
-					row[w-1] = '\'';
-				row[w] = 0;
-				onscreen = G (x+1,y+1);
-			}
-			if (onscreen)
-				W (row);
-			w = rl2;
-			free (row);
-			row = malloc (rl2+1);
-			if (x>x2) {
-				row[0] = '`';
-				memset (row+1, '-', w-2);
-				row[w-1] = '\'';
-				row[w] = 0;
-				onscreen = G (x2+rl, y+1);
-			} else {
-				row[0] = '.';
-				memset (row+1, '-', w-2);
-				row[w-1] = '.';
-				row[w] = 0;
-				onscreen = G (x+rl, y2-1);
-			}
-			if (onscreen)
-				W (row);
-			free (row);
+	r_cons_canvas_goto_write(c,x,y,c1);
+	r_cons_canvas_goto_write(c,x2,y2,c2);
+	if(y2<y){
+		int tmp = y2;
+		y2=y;
+		y=tmp;
+		tmp=x2;
+		x2=x;
+		x=tmp;
+	}
+	char chizzle;//my nizzle
+	int dx = abs(x2-x);
+        int dy = abs(y2-y);
+	int sx = x<x2 ? 1 : -1;
+	int sy = y<y2 ? 1 : -1;
+	int err = (dx>dy?dx:-dy)/2;
+	int e2;
+	// TODO: find if there's any collision in this line
+loop:
+	e2 = err;
+	if(e2>-dx){
+		chizzle='_';
+		err-=dy;
+		x+=sx;
+	}
+	if(e2<dy){
+		chizzle='|';
+		err+=dx;
+		y+=sy;
+	}
+	if((e2<dy) && (e2>-dx)){
+		if(sy>0){
+			chizzle=(sx>0)?'\\':'/';
+		}else{
+			chizzle=(sx>0)?'/':'\\';
 		}
 	}
+	if(!(x==x2&&y==y2)){
+		int i = (chizzle=='_'&&sy<0) ? 1 : 0;
+		r_cons_canvas_goto_write(c,x,y-i,&chizzle);
+		goto loop;
+	}
+	c->attr=Color_RESET;
 }
