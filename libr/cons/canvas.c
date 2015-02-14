@@ -31,6 +31,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 		return NULL;
 	c = R_NEW0 (RConsCanvas);
 	if (!c) return NULL;
+	c->color = 0;
 	c->sx = 0;
 	c->sy = 0;
 	c->blen = (w+1)*h;
@@ -114,6 +115,8 @@ static char *prefixline(RConsCanvas *c, int *left) {
 }
 
 static char ** attr_at(RConsCanvas *c,int loc){
+	if (!c->color)
+		return NULL;
 	if(c->attrslen==0) return NULL;
 	int i;
 	for(i=0;i<(c->attrslen);i++){

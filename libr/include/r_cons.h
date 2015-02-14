@@ -128,6 +128,7 @@ typedef struct r_cons_canvas_t {
 	int attrslen;
 	int sx; // scrollx
 	int sy; // scrolly
+	int color;
 } RConsCanvas;
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
