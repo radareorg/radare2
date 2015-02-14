@@ -133,7 +133,7 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 
 static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	int x, y, x2, y2;
-	int xinc = 3+(nth*3);
+	int xinc = 3+((nth+1)*2);
 	x = a->x + xinc;
 	y = a->y + a->h;
 	x2 = b->x + xinc;
