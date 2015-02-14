@@ -112,7 +112,7 @@ typedef void (*RConsEvent)(void *);
 #define CONS_MAX_ATTR_SZ 15
 typedef struct r_cons_canvas_attr_t {
 	//TODO add support for 256 colors.
-	int x,y;//Location of the attribute
+	int loc;
 	char * a;
 } RConsCanvasAttr;
 

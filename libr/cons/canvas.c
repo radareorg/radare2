@@ -113,34 +113,57 @@ static char *prefixline(RConsCanvas *c, int *left) {
 	return p+x;
 }
 
-static char ** attr_at(RConsCanvas *c,int x,int y){
-	//TODO this guy is 91% of our usage. needs to be optimized
-	int i;
-	for( i = 0; i< c->attrslen; i++){
-		if( (c->attrs[i].x == x) && (c->attrs[i].y == y) ){
-			return &c->attrs[i].a;
-		}
+static char ** attr_at(RConsCanvas *c,int loc){
+	fprintf(stderr,"\nattrlen:%i\n",c->attrslen);//DEBUG
+	if(c->attrslen==0) return NULL;
+	int i,j,delta;
+	j = (c->attrslen/2);
+	for(i=2;i<(c->attrslen) && (j>0 && j<c->attrslen);i++){
+		if(c->attrs[j].loc == loc)
+			return &c->attrs[j].a;
+		delta =(int) 1+(c->attrslen/(i*i));
+		if(delta==0)
+			delta=1;
+		fprintf(stderr,"i:%i j:%i c.loc:%i loc:%i d:%i \n",i,j,c->attrs[j].loc,loc,delta);//DEBUG
+		//WTF? even with delta =1 its not changing???
+		if(c->attrs[j].loc > loc)
+			j-=delta;
+		if(c->attrs[j].loc < loc)
+			j+=delta;
 	}
 	return NULL;
+}
+
+static void sort_attrs(RConsCanvas *c){
+	int i,j;
+	RConsCanvasAttr value;
+	for(i = 1; i < c->attrslen; i++){
+		value = c->attrs[i];
+		for (j = i-1; j>=0 && c->attrs[j].loc>value.loc; j--){
+			c->attrs[j+1] = c->attrs[j];
+		}
+		c->attrs[j+1] = value;
+	}
 }
 
 static void stamp_attr(RConsCanvas *c,int length){
 	int i;
 	char ** s;
-	s = attr_at(c,c->x,c->y);
+	int loc = c->x + (c->y*c->w);
+	s = attr_at(c,loc);
 
 	if(s){
 		//If theres already an attr there, just replace it.
 		*s = c->attr;
 	}else{
-		c->attrs[c->attrslen].x = c->x;
-		c->attrs[c->attrslen].y = c->y;
+		c->attrs[c->attrslen].loc = loc;
 		c->attrs[c->attrslen].a = c->attr;
 		c->attrslen++;
+		sort_attrs(c);
 	}
 
 	for(i=0;i<length;i++){
-		s = attr_at(c,c->x+i,c->y);
+		s = attr_at(c,loc+i);
 		if(s)
 			*s = c->attr;
 	}
@@ -193,17 +216,6 @@ R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, char * s){
 		r_cons_canvas_write(c,s);
 }
 
-void attrs_debug(RConsCanvas *c){
-	int i;
-	fprintf(stderr,"\nc->attrslen: %i\n",c->attrslen);
-	for(i=0;i<c->attrslen;i++){
-		fprintf(stderr,"attrs[%i]: %i,%i a:%s\n",i,
-				c->attrs[i].x,
-				c->attrs[i].y,
-				c->attrs[i].a);
-	}
-}
-
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
 	char *o, *b, **atr;
@@ -214,12 +226,12 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	if (!o) return NULL;
 	for (y = 0; y<c->h; y++) {
 		for (x = 0; x<c->w; x++) {
-			atr=attr_at(c,x,y);
+			int p = x + (y*c->w);
+			atr=attr_at(c,p);
 			if(atr) {
 				strcat(o,*atr);
 				olen+=strlen(*atr);
 			}
-			int p = x + (y*c->w);
 			if (!b[p] || b[p]=='\n')
 				break;
 			o[olen++] = b[p];
