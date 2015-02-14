@@ -332,7 +332,7 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 		x2=x;
 		x=tmp;
 	}
-	char chizzle;//my nizzle
+	char chizzle[2] = {0}; // = '.';//my nizzle
 	int dx = abs(x2-x);
         int dy = abs(y2-y);
 	int sx = x<x2 ? 1 : -1;
@@ -343,25 +343,25 @@ R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int
 loop:
 	e2 = err;
 	if(e2>-dx){
-		chizzle='_';
+		*chizzle='_';
 		err-=dy;
 		x+=sx;
 	}
 	if(e2<dy){
-		chizzle='|';
+		*chizzle='|';
 		err+=dx;
 		y+=sy;
 	}
 	if((e2<dy) && (e2>-dx)){
 		if(sy>0){
-			chizzle=(sx>0)?'\\':'/';
+			*chizzle=(sx>0)?'\\':'/';
 		}else{
-			chizzle=(sx>0)?'/':'\\';
+			*chizzle=(sx>0)?'/':'\\';
 		}
 	}
 	if(!(x==x2&&y==y2)){
-		int i = (chizzle=='_'&&sy<0) ? 1 : 0;
-		r_cons_canvas_goto_write(c,x,y-i,&chizzle);
+		int i = (*chizzle=='_'&&sy<0) ? 1 : 0;
+		r_cons_canvas_goto_write(c,x,y-i,chizzle);
 		goto loop;
 	}
 	c->attr=Color_RESET;
