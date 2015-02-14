@@ -119,6 +119,9 @@ R_API void r_print_set_interrupted(int i);
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);
 R_API int r_print_pack7bit(const char *src, char *dest);
+R_API char *r_print_stereogram_bytes(const ut8 *buf, int len);
+R_API char *r_print_stereogram(const char *bump, int w, int h);
+R_API void r_print_stereogram_print(RPrint *p, const char *buf);
 #endif
 
 #ifdef __cplusplus
