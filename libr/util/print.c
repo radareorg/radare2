@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_anal.h"
 #include "r_cons.h"
@@ -29,6 +29,114 @@ R_API int r_print_mute(RPrint *p, int x) {
 		return 1;
 	}
 	return 0;
+}
+
+static int r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
+	static char data[32768]; // ???
+	const char *string = "Az+|.-=/^@_pT";
+	const int string_len = strlen (string);
+
+	if (!bump || !out)
+		return 0;
+	int x, y, s, l = 0, l2 = 0, ch;
+	int skip = 7;
+	int i, bumpi = 0, outi = 0;
+	for (y = 0; bump[bumpi] && outi<size; y++) {
+		l = l2 = 0;
+		for (x = 0; bump[bumpi] && outi<size && x<w; x++) {
+			ch = string[x%string_len];
+			if (!l && x > skip) {
+				s = bump[bumpi++];
+				if (s >= '0' && s <='9') {
+					s = '0' - s;
+				} else switch (s) {
+				case 0: bumpi--; /* passthru */
+				case '\n': s = 0; l = 1; break;
+				case ' ': s = 0; break;
+				default: s = -2; break;
+				}
+			} else {
+				s = 0;
+			}
+			s += skip;
+			s = x - s;
+			if (s>=0)
+				ch = data[s];
+			if (!ch) ch = *string;
+			data[x] = ch;
+			if (outi<size) {
+				out[outi++] = ch;
+			} else break;
+		}
+		out[outi++] = '\n';
+		s = 'a';
+		while (!l && s != '\n') {
+			s = bump[bumpi++];
+			if (!s) {
+				bumpi--;
+				break;
+			}
+		}
+	}
+	out[outi] = 0;
+	return 1;
+}
+
+R_API char *r_print_stereogram(const char *bump, int w, int h) {
+	ut64 size;
+	char *out;
+	if (w<1 || h<1)
+		return NULL;
+	size = w * h*2;
+	if (size>UT32_MAX) {
+		return NULL;
+	}
+	out = calloc (1, size * 2);
+	if (!out) {
+		return NULL;
+	}
+	//eprintf ("%s\n", bump);
+	(void)r_print_stereogram_private (bump, w, h, out, size);
+	return out;
+}
+
+#define STEREOGRAM_IN_COLOR 1
+R_API char *r_print_stereogram_bytes(const ut8 *buf, int len) {
+	int i, bumpi;
+	char *ret, *bump;
+	int scr_width = 80;
+	int rows, cols, size;
+	if (!buf || len<1)
+		return NULL;
+
+	//scr_width = r_cons_get_size (NULL) -10;
+	cols = scr_width;
+	rows = len / cols;
+
+	size = (2+cols) * rows;
+	bump = malloc (size+1); //(cols+2) * rows);
+	for (i = bumpi = 0; bumpi < size && i < len; i++) {
+		int v = buf[i] / 26;
+		if (i && !(i%scr_width))
+			bump[bumpi++] = '\n';
+		bump[bumpi++] = '0' + v;
+	}
+	bump[bumpi] = 0;
+	ret = r_print_stereogram (bump, cols, rows);
+	return ret;
+}
+
+R_API void r_print_stereogram_print(const char *ret, int color) {
+	int i;
+	if (!ret) return;
+	if (color) {
+		for (i=0;ret[i]; i++) {
+			r_cons_printf ("\x1b[%dm%c", 30+(ret[i]%8), ret[i]);
+		}
+		r_cons_printf ("\x1b[0m\n");
+	} else {
+		r_cons_printf ("%s\n", ret);
+	}
 }
 
 R_API RPrint *r_print_new() {

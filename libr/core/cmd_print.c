@@ -1763,6 +1763,22 @@ static int cmd_print(void *data, const char *input) {
 			r_print_raw (core->print, core->block, len, 0);
 		}
 		break;
+	case '3': // "p3" [file]
+		if (input[1]==' ') {
+			const int usecolor = r_config_get_i (core->config, "scr.color");
+			char *data = r_file_slurp (input+2, NULL);
+			char *res = r_print_stereogram (data, 78, 20);
+			r_print_stereogram_print (res, usecolor);
+			//if (data) eprintf ("%s\n", data);
+			free (res);
+			free (data);
+		} else {
+			const int usecolor = r_config_get_i (core->config, "scr.color");
+			char *res = r_print_stereogram_bytes (core->block, core->blocksize);
+			r_print_stereogram_print (res, usecolor);
+			free (res);
+		}
+		break;
 	case 'x': // "px"
 		{
 		int show_offset = r_config_get_i (core->config, "asm.offset");
