@@ -138,14 +138,10 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	y = a->y + a->h;
 	x2 = b->x + xinc;
 	y2 = b->y;
-	if (small_nodes) {
-		if (nth) {
-			L2 (x, y, x2, y2);
-		} else {
-			L1 (x, y, x2, y2);
-		}
-	} else {
-		L (x, y, x2, y2);
+	switch (nth) {
+	case 0: L1 (x, y, x2, y2); break;
+	case 1: L2 (x, y, x2, y2); break;
+	case -1: L (x, y, x2, y2); break;
 	}
 }
 
@@ -387,6 +383,16 @@ static int n_edges = 0;
 static int callgraph = 0;
 static int instep = 0;
 
+static int edgesFrom (int n) {
+	int i, count = 0;
+	for (i=0; edges[i].nth != -1; i++) {
+		if (edges[i].from == n) {
+			count++;
+		}
+	}
+	return count;
+}
+
 static void r_core_graph_refresh (RCore *core) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
@@ -413,7 +419,11 @@ static void r_core_graph_refresh (RCore *core) {
 			continue;
 		Node *a = &nodes[edges[i].from];
 		Node *b = &nodes[edges[i].to];
-		Edge_print (can, a, b, edges[i].nth);
+		int nth = edges[i].nth;
+		if (edgesFrom (edges[i].from) == 1) {
+			nth = -1; // blue line
+		}
+		Edge_print (can, a, b, nth);
 	}
 	for (i=0; i<n_nodes; i++) {
 		if (i != curnode) {
@@ -695,7 +705,7 @@ repeat:
 		can->color = !!!can->color; 
 		//r_config_swap (core->config, "scr.color");
 		// refresh graph
-		reloadNodes (core);
+	//	reloadNodes (core);
 		break;
 	case 'q':
 		goto beach;
