@@ -114,22 +114,11 @@ static char *prefixline(RConsCanvas *c, int *left) {
 }
 
 static char ** attr_at(RConsCanvas *c,int loc){
-	fprintf(stderr,"\nattrlen:%i\n",c->attrslen);//DEBUG
 	if(c->attrslen==0) return NULL;
-	int i,j,delta;
-	j = (c->attrslen/2);
-	for(i=2;i<(c->attrslen) && (j>0 && j<c->attrslen);i++){
-		if(c->attrs[j].loc == loc)
-			return &c->attrs[j].a;
-		delta =(int) 1+(c->attrslen/(i*i));
-		if(delta==0)
-			delta=1;
-		fprintf(stderr,"i:%i j:%i c.loc:%i loc:%i d:%i \n",i,j,c->attrs[j].loc,loc,delta);//DEBUG
-		//WTF? even with delta =1 its not changing???
-		if(c->attrs[j].loc > loc)
-			j-=delta;
-		if(c->attrs[j].loc < loc)
-			j+=delta;
+	int i;
+	for(i=0;i<(c->attrslen);i++){
+		if(c->attrs[i].loc == loc)
+			return &c->attrs[i].a;
 	}
 	return NULL;
 }
