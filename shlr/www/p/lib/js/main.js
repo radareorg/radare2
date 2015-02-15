@@ -682,7 +682,6 @@ function update_binary_details() {
 }
 
 function render_functions(functions) {
-  // TODO: Sometimes undefined is printed
   var imports = null;
   r2.cmdj("iij", function(x) {
     imports = x;
@@ -695,6 +694,7 @@ function render_functions(functions) {
       for (var k in imports) if (f.offset === imports[k].plt) is_import = true;
       if (is_import) continue;
       var fd = {
+        offset: f.offset,
         label: "<span class='flag function addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
         children: [{label: "offset: " + "0x" + f.offset.toString(16)},  {label: "size: " + f.size} ]
       };
@@ -708,6 +708,7 @@ function render_functions(functions) {
       fcn_data[fcn_data.length] = fd;
     }
   }
+  fcn_data = fcn_data.sort(function(a,b) {return a.offset - b.offset;});
   $('#functions').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#functions').tree('loadData', fcn_data);
   $('#functions_label').html("Functions <span class='right_label'>" + fcn_data.length + "</span>");
@@ -738,11 +739,12 @@ function render_symbols(symbols) {
     var s = symbols[i];
     s.name = decodeURI (s.name);
     var sd = {
+      offset: s.addr,
       label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + s.name + "</span>",
-      // label: "<span class='flag symbol addr addr_" + "0x" + s.addr.toString(16) + "'>" + get_symbol_flag(s.name) + "</span>",
       children: [ {label: "offset: " + "0x" + s.addr.toString(16)}, {label: "size: " + s.size} ] };
     data[data.length] = sd;
   }
+  data = data.sort(function(a,b) {return a.offset - b.offset;});
   $('#symbols').tree({data: data,selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#symbols_label').html("Symbols <span class='right_label'>" + data.length + "</span>");
 }
@@ -751,11 +753,12 @@ function render_relocs(relocs) {
   for (var i in relocs) {
     var r = relocs[i];
     var rd = {
+      offset: r.vaddr,
       label: "<span class='flag reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + r.name + "</span>",
-      // label: "<span class='flag reloc addr addr_" + "0x" + r.vaddr.toString(16) + "'>" + get_reloc_flag(r.name) + "</span>",
       children: [ {label: "offset: " + "0x" + r.vaddr.toString(16)}, {label: "type: " + r.type} ] };
     data[data.length] = rd;
   }
+  data = data.sort(function(a,b) {return a.offset - b.offset;});
   $('#relocs').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#relocs').tree('loadData', data);
   $('#relocs_label').html("Relocs <span class='right_label'>" + data.length + "</span>");
@@ -765,10 +768,12 @@ function render_flags(flags) {
   for (var i in flags) {
     var f = flags[i];
     var fd = {
+      offset: f.offset,
       label: "<span class='flag addr addr_" + "0x" + f.offset.toString(16) + "'>" + f.name + "</span>",
       children: [ {label: "offset: " + "0x" + f.offset.toString(16)}, {label: "size: " + f.size} ] };
     data[data.length] = fd;
   }
+  data = data.sort(function(a,b) {return a.offset - b.offset;});
   $('#flags').tree({data: [],selectable: false,slide: false,useContextMenu: false, autoEscape: false});
   $('#flags').tree('loadData', data);
   $('#flags_label').html("Flags <span class='right_label'>" + data.length + "</span>");
@@ -778,6 +783,7 @@ function render_sections(sections) {
   for (var i in sections) {
     var f = sections[i];
     var fd = {
+      offset: f.paddr,
       label: "0x" + f.addr.toString(16) + ": " + f.name,
       children: [
         {label: "vaddr: " + "0x" + f.vaddr.toString(16)},
@@ -789,6 +795,7 @@ function render_sections(sections) {
     };
     data[data.length] = fd;
   }
+  data = data.sort(function(a,b) {return a.offset - b.offset;});
   $('#sections').tree({data: [],selectable: false,slide: false,useContextMenu: false});
   $('#sections').tree('loadData', data);
   $('#sections_label').html("Sections <span class='right_label'>" + data.length + "</span>");
