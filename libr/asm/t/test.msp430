@@ -12,6 +12,5 @@ asm_test() {
 # Basic
 asm_test 3041 'ret ;'
 
-# Compact and long form
-asm_test cb930000 'cmp.b #0, 0x0(r11);'
-asm_test fb903b000000 'cmp.b #0, 0x0(r11);'
+# Long form
+asm_test fb903b000000 'cmp.b #0x3b, 0x0(r11);'
