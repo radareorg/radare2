@@ -1,0 +1,17 @@
+#!/bin/bash
+asm_test() {
+	disas=`rasm2 -d -amsp430 $1 | tr "\\n" ";"`
+	printf "Disassembled $1 to $disas\n"
+	if [ "$disas" = "$2" ]; then
+		echo -e "\x1b[32mOK\x1b[0m ($disas)"
+	else
+		echo -e "\x1b[31mFAILED\x1b[0m ($disas), expected $2"
+	fi
+}
+
+# Basic
+asm_test 3041 'ret ;'
+
+# Compact and long form
+asm_test cb930000 'cmp.b #0, 0x0(r11);'
+asm_test fb903b000000 'cmp.b #0, 0x0(r11);'
