@@ -118,10 +118,38 @@ static char ** attr_at(RConsCanvas *c,int loc){
 	if (!c->color)
 		return NULL;
 	if(c->attrslen==0) return NULL;
-	int i;
+	int i,j=(c->attrslen/2);
+	//int k;
 	for(i=0;i<(c->attrslen);i++){
-		if(c->attrs[i].loc == loc)
-			return &c->attrs[i].a;
+		if(c->attrs[j].loc == loc)
+			return &c->attrs[j].a;
+		if(c->attrs[j].loc < loc){
+			j++;
+			/*
+			k=c->attrslen/(2+(i*i));
+			if(k==0)
+				j++;
+			else
+				j+=k;
+			*/
+			if(j>=c->attrslen)
+				break;
+			if(c->attrs[j].loc > loc)
+				break;
+		}else if(c->attrs[j].loc > loc){
+			j--;
+			/*
+			k=c->attrslen/(2+(i*i));
+			if(k==0)
+				j--;
+			else
+				j+=k;
+			*/
+			if(j<=0)
+				break;
+			if(c->attrs[j].loc < loc)
+				break;
+		}
 	}
 	return NULL;
 }
