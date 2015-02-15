@@ -47,7 +47,9 @@ static Edge edges[] = {
 
 #define G(x,y) r_cons_canvas_gotoxy (can, x, y)
 #define W(x) r_cons_canvas_write (can, x)
-#define B(x,y,w,h) r_cons_canvas_box(can, x,y,w,h)
+#define B(x,y,w,h) r_cons_canvas_box(can, x,y,w,h,NULL)
+#define B1(x,y,w,h) r_cons_canvas_box(can, x,y,w,h,Color_BLUE)
+#define B2(x,y,w,h) r_cons_canvas_box(can, x,y,w,h,Color_MAGENTA)
 #define L(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,0)
 #define L1(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,1)
 #define L2(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,2)
@@ -128,7 +130,13 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	}
 	if (G (n->x+1, n->y+1))
 		W (title);
-	B (n->x, n->y, n->w, n->h);
+	// TODO: check if node is traced or not and hsow proper color
+	// This info must be stored inside Node* from RCore*
+	if (cur) {
+		B1 (n->x, n->y, n->w, n->h);
+	} else {
+		B (n->x, n->y, n->w, n->h);
+	}
 }
 
 static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {

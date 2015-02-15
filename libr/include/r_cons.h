@@ -113,7 +113,7 @@ typedef void (*RConsEvent)(void *);
 typedef struct r_cons_canvas_attr_t {
 	//TODO add support for 256 colors.
 	int loc;
-	char * a;
+	const char * a;
 } RConsCanvasAttr;
 
 typedef struct r_cons_canvas_t {
@@ -123,7 +123,7 @@ typedef struct r_cons_canvas_t {
 	int y;
 	char *b;
 	int blen;
-	char * attr;//The current attr (inserted on each write)
+	const char * attr;//The current attr (inserted on each write)
 	RConsCanvasAttr * attrs;// all the different attributes
 	int attrslen;
 	int sx; // scrollx
@@ -300,7 +300,7 @@ R_API void r_cons_canvas_attr(RConsCanvas *c,const char * attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
 R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, const char * s);
-R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h);
+R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color);
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style);
 R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, int style);
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, int style);
