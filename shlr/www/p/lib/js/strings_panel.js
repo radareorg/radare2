@@ -10,6 +10,7 @@ StringsPanel.prototype.render = function() {
 	    for (var i in strings) {
 	      var f = strings[i];
 	      var fd = {
+	      	offset: f.paddr,
 	        label: atob(f.string),
 	        children: [
 	          {label: "vaddr: " + "0x" + f.vaddr.toString(16)},
@@ -20,6 +21,7 @@ StringsPanel.prototype.render = function() {
 	      };
 	      data[data.length] = fd;
 	    }
+	    data = data.sort(function(a,b) {return a.offset - b.offset;});
 	    $('#strings').tree({data: [],selectable: false,slide: false,useContextMenu: false});
 	    $('#strings').tree('loadData', data);
 	});
