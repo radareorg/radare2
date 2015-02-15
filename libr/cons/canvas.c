@@ -230,11 +230,6 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	free (str);
 }
 
-R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, const char * s){
-	if(r_cons_canvas_gotoxy(c,x,y))
-		r_cons_canvas_write(c,s);
-}
-
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
 	char *o, *b;

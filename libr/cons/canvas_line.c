@@ -4,27 +4,34 @@
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
-R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
-	const char *c1="v", *c2="V";
+static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, int style){
 	switch (style) {
 	case 0:
 		c->attr=Color_BLUE;
-		c1="v"; 
-		c2="V";
+		if (G (x, y))
+			W ("v");
+		if (G (x2, y2))
+			W ("V");
 		break;
 	case 1:
 		c->attr=Color_GREEN;
-		c1="t";
-		c2="\\";
+		if (G (x, y))
+			W ("t"); //\\");
+		if (G (x2, y2))
+			W ("\\");
 		break;
 	case 2:
 		c->attr=Color_RED;
-		c1="f";
-		c2="/";
+		if (G (x, y))
+			W ("f");
+		if (G (x2, y2))
+			W ("/");
 		break;
 	}
-	r_cons_canvas_goto_write (c,x,y,c1);
-	r_cons_canvas_goto_write (c,x2,y2,c2);
+}
+
+R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
+	apply_line_style(c,x,y,x2,y2,style);
 	if(y2<y){
 		int tmp = y2;
 		y2=y;
@@ -62,7 +69,8 @@ loop:
 	}
 	if(!(x==x2&&y==y2)){
 		int i = (*chizzle=='_'&&sy<0) ? 1 : 0;
-		r_cons_canvas_goto_write(c,x,y-i,chizzle);
+		if(G(x,y-i))
+			W(chizzle);
 		goto loop;
 	}
 	c->attr=Color_RESET;
@@ -70,29 +78,7 @@ loop:
 
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	int i, onscreen;
-	switch (style) {
-	case 0:
-		c->attr=Color_BLUE;
-		if (G (x, y))
-			W ("v");
-		if (G (x2, y2))
-			W ("V");
-		break;
-	case 1:
-		c->attr=Color_GREEN;
-		if (G (x, y))
-			W ("t"); //\\");
-		if (G (x2, y2))
-			W ("\\");
-		break;
-	case 2:
-		c->attr=Color_RED;
-		if (G (x, y))
-			W ("f");
-		if (G (x2, y2))
-			W ("/");
-		break;
-	}
+	apply_line_style(c,x,y,x2,y2,style);
 	if (x==x2) {
 		int min = R_MIN (y,y2)+1;
 		int max = R_MAX (y,y2);
