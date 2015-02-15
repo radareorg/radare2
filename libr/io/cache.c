@@ -135,7 +135,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (ret>0) {
 				da = ret;
 				db = 0;
-				l = c->size-da;
+				l = c->size;
 			} else if (ret<0) {
 				da = 0;
 				db = -ret;
@@ -145,7 +145,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 				db = 0;
 				l = c->size;
 			}
-			if (l>len) l = len;
+			if ((l+da)>len) l = len-da;					//say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
 			if (l<1) l = 1; // XXX: fail
 			else memcpy (buf+da, c->data+db, l);
 		}

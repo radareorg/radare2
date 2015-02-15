@@ -703,7 +703,7 @@ static int cb_screcho(void *user, void *data) {
 
 static int cb_scrint(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value && r_sandbox_enable (node->i_value)) {
+	if (node->i_value && r_sandbox_enable (0)) {
 		return R_FALSE;
 	}
 	r_cons_singleton()->is_interactive = node->i_value;

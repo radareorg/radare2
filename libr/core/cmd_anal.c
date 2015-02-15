@@ -870,7 +870,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					   if (fcn) {
 						   r_anal_fcn_xref_del (core->anal, fcn, a, b, -1);
 					   } else eprintf ("Cannot del reference to non-function\n");
-				   } else eprintf ("Usage: afr- [src] [dst]\n");
+				   } else eprintf ("Usage: afx- [src] [dst]\n");
 				   free (mi);
 			   }
 			  break;
@@ -898,7 +898,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "af*", "", "output radare commands",
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
-		 "afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add bb to function @ fcnaddr",
+		 "afb+", " fa a sz [j] [f] ([t]( [d]))","add bb to function @ fcnaddr",
 		 "afb", " [addr]", "List basic blocks of given function",
 		 "afB", " 16", "set current function as thumb (change asm.bits)",
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",

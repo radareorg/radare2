@@ -669,6 +669,8 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
+	if (io && io->cached)
+		return r_io_cache_write (io, addr, buf, len);
 	(void)r_io_seek (io, addr, R_IO_SEEK_SET);
 	// errors on seek are checked and ignored here //
 	return r_io_write (io, buf, len);

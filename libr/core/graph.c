@@ -133,19 +133,15 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 
 static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	int x, y, x2, y2;
-	int xinc = 3+(nth*3);
+	int xinc = 3+((nth+1)*2);
 	x = a->x + xinc;
 	y = a->y + a->h;
 	x2 = b->x + xinc;
 	y2 = b->y;
-	if (small_nodes) {
-		if (nth) {
-			L2 (x, y, x2, y2);
-		} else {
-			L1 (x, y, x2, y2);
-		}
-	} else {
-		L (x, y, x2, y2);
+	switch (nth) {
+	case 0: L1 (x, y, x2, y2); break;
+	case 1: L2 (x, y, x2, y2); break;
+	case -1: L (x, y, x2, y2); break;
 	}
 }
 
@@ -387,6 +383,16 @@ static int n_edges = 0;
 static int callgraph = 0;
 static int instep = 0;
 
+static int edgesFrom (int n) {
+	int i, count = 0;
+	for (i=0; edges[i].nth != -1; i++) {
+		if (edges[i].from == n) {
+			count++;
+		}
+	}
+	return count;
+}
+
 static void r_core_graph_refresh (RCore *core) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
@@ -413,7 +419,11 @@ static void r_core_graph_refresh (RCore *core) {
 			continue;
 		Node *a = &nodes[edges[i].from];
 		Node *b = &nodes[edges[i].to];
-		Edge_print (can, a, b, edges[i].nth);
+		int nth = edges[i].nth;
+		if (edgesFrom (edges[i].from) == 1) {
+			nth = -1; // blue line
+		}
+		Edge_print (can, a, b, nth);
 	}
 	for (i=0; i<n_nodes; i++) {
 		if (i != curnode) {
@@ -504,11 +514,14 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w-1, h-1);
+	can->color = r_config_get_i (core->config, "scr.color");
+	// disable colors in disasm because canvas doesnt supports ansi text yet
+	r_config_set_i (core->config, "scr.color", 0);
+	//can->color = 0; 
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return R_FALSE;
 	}
-
 #if 0
 	n_nodes = bbNodes (core, fcn, &nodes);
 	if (!nodes) {
@@ -689,9 +702,10 @@ repeat:
 		core->vmode = R_TRUE;
 		break;
 	case 'C':
-		r_config_swap (core->config, "scr.color");
+		can->color = !!!can->color; 
+		//r_config_swap (core->config, "scr.color");
 		// refresh graph
-		reloadNodes (core);
+	//	reloadNodes (core);
 		break;
 	case 'q':
 		goto beach;

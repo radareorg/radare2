@@ -632,7 +632,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 
 		/* Show */
 		if (mode == 0) {
-			if (list) {
+			if (list && r_list_length(list) > 0) {
 				r_list_free (list);
 				list = NULL;
 			}

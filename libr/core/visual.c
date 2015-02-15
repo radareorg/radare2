@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include "r_core.h"
 
@@ -60,7 +60,6 @@ static int r_core_visual_hud(RCore *core) {
 	r_cons_clear ();
 	if (res) {
 		p = strchr (res, '\t');
-		core->printidx = 1;
 		r_cons_printf ("%s\n", res);
 		r_cons_flush ();
 		if (p) r_core_cmd0 (core, p+1);
@@ -89,6 +88,7 @@ static void visual_help() {
 	"Visual mode help:\n"
 	" ?        show this help or manpage in cursor mode\n"
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
+	" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 	" @        set cmd.vprompt to run commands before the visual prompt\n"
 	" !        run r2048 game\n"
 	" _        enter the hud\n"
@@ -101,7 +101,7 @@ static void visual_help() {
 	" /*+-[]   change block size, [] = resize hex.cols\n"
 	" >||<     seek aligned to block size\n"
 	" a/A      (a)ssemble code, visual (A)ssembler\n"
-	" b/B      toggle breakpoint / automatic block size\n"
+	" b        toggle breakpoint\n"
 	" c/C      toggle (c)ursor and (C)olors\n"
 	" d[f?]    define function, data, code, ..\n"
 	" D        enter visual diff mode (set diff.from/to)\n"
@@ -124,7 +124,8 @@ static void visual_help() {
 	" T        enter textlog chat console (TT)\n"
 	" uU       undo/redo seek\n"
 	" v        visual code analysis menu\n"
-	" V/W      (V)iew graph using cmd.graph (agv?), open (W)ebUI\n"
+	" V        (V)iew graph using cmd.graph (agv?)\n"
+	" wW       seek cursor to next/prev word\n"
 	" xX       show xrefs/refs of current function from/to data/code\n"
 	" yY       copy and paste selection\n"
 	" z        toggle zoom mode\n"
@@ -297,6 +298,99 @@ static void setdiff (RCore *core) {
 	r_config_set (core->config, "diff.from", from);
 	prompt_read ("diff to: ", to, sizeof (to));
 	r_config_set (core->config, "diff.to", to);
+}
+
+static void findPair (RCore *core) {
+	ut8 buf[256];
+	int i, len, d = cursor+1;
+	int delta = 0;
+	const ut8 *p, *q = NULL;
+	const char *keys = "{}[]()<>";
+	ut8 ch = core->block[cursor];
+
+	p = (const ut8*)strchr (keys, ch);
+	if (p) {
+		delta = (size_t)(p-(const ut8*)keys);
+		ch = (delta%2)? p[-1]: p[1];
+	}
+	len = 1;
+	buf[0] = ch;
+
+	if (p && (delta%2)) {
+		for (i = d-1; i>=0; i--) {
+			if (core->block[i] == ch) {
+				q = core->block + i;
+				break;
+			}
+		}
+	} else {
+		q = r_mem_mem (core->block+d, core->blocksize-d,
+				(const ut8*)buf, len);
+		if (!q) {
+			q = r_mem_mem (core->block, R_MIN (core->blocksize, d),
+					(const ut8*)buf, len);
+		}
+	}
+	if (q) {
+		cursor = (int)(size_t)(q-core->block);
+		ocursor = -1;
+		showcursor (core, R_TRUE);
+	}
+}
+
+static void findNextWord (RCore *core) {
+	int i, d = curset? cursor: 0;
+	for (i = d+1; i<core->blocksize; i++) {
+		switch (core->block[i]) {
+		case ' ':
+		case '.':
+		case '\t':
+		case '\n':
+			if (curset) {
+				cursor = i+1;
+				ocursor = -1;
+				showcursor (core, R_TRUE);
+			} else {
+				r_core_seek (core, core->offset + i + 1, 1);
+			}
+			return;
+		}
+	}
+}
+
+static int isSpace (char ch) {
+	switch (ch) {
+	case ' ':
+	case '.':
+	case ',':
+	case '\t':
+	case '\n':
+		return 1;
+	}
+	return 0;
+}
+
+static void findPrevWord (RCore *core) {
+	int i = curset? cursor: 0;
+	while (i>1) {
+		if (isSpace (core->block[i]))
+			i--;
+		else if (isSpace (core->block[i-1]))
+			i-=2;
+		else break;
+	}
+	for (; i>=0; i--) {
+		if (isSpace (core->block[i])) {
+			if (curset) {
+				cursor = i+1;
+				ocursor = -1;
+				showcursor (core, R_TRUE);
+			} else {
+				// r_core_seek (core, core->offset + i + 1, 1);
+			}
+			break;
+		}
+	}
 }
 
 // TODO: integrate in '/' command with search.inblock ?
@@ -874,15 +968,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'r':
 		r_core_visual_comments (core);
 		break;
-	case 'W':
-		r_core_cmd0 (core, "=H");
-		break;
 	case 'V':
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			int ocolor = r_config_get_i (core->config, "scr.color");
-			r_config_set_i (core->config, "scr.color", !!!ocolor);
 			r_core_visual_graph (core, NULL);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
@@ -1130,6 +1220,25 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'P':
 		setprintmode (core, -1);
 		break;
+	case '%':
+		if (curset) {
+			findPair (core);
+		} else {
+			/* do nothing? */
+			autoblocksize = !autoblocksize;
+			if (autoblocksize)
+				obs = core->blocksize;
+			else r_core_block_size (core, obs);
+			r_cons_clear ();
+		}
+		break;
+	case 'w':
+		findNextWord (core);
+		break;
+	case 'W':
+		findPrevWord (core);
+		//r_core_cmd0 (core, "=H");
+		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar ());
 		break;
@@ -1271,13 +1380,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'O':
 		r_core_cmd0 (core, "e!asm.esil");
-		break;
-	case 'B':
-		autoblocksize = !autoblocksize;
-		if (autoblocksize)
-			obs = core->blocksize;
-		else r_core_block_size (core, obs);
-		r_cons_clear ();
 		break;
 	case 'u':
 		{
