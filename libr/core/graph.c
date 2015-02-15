@@ -138,6 +138,10 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	y = a->y + a->h;
 	x2 = b->x + xinc;
 	y2 = b->y;
+	if (a == b) {
+		x2 = a->x;
+		y2 = y - 3;
+	}
 	switch (nth) {
 	case 0: L1 (x, y, x2, y2); break;
 	case 1: L2 (x, y, x2, y2); break;
@@ -514,6 +518,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w-1, h-1);
+	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
@@ -631,6 +636,7 @@ repeat:
 		" tab  - select next node\n"
 		" TAB  - select previous node\n"
 		" t/f  - follow true/false edges\n"
+		" e    - toggle edge-lines style (diagonal/square)\n"
 		" n    - toggle mini-graph\n"
 		" O    - toggle disasm mode\n"
 		" u    - select previous node\n"
@@ -661,6 +667,9 @@ repeat:
 	case 'S': can->sy += 5; break;
 	case 'A': can->sx -= 5; break;
 	case 'D': can->sx += 5; break;
+		break;
+	case 'e':
+		can->linemode = !!!can->linemode;
 		break;
 	case 'n':
 		small_nodes = small_nodes ? 0: 1;

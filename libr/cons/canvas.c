@@ -20,7 +20,7 @@ R_API void r_cons_canvas_clear (RConsCanvas *c) {
 			c->b[ y * c->w ] = '\n';
 		if(c->attrs){
 			c->attrslen=0;
-			memset (c->attrs, 0, sizeof(*c->attrs)*c->blen);
+			memset (c->attrs, 0, sizeof (*c->attrs)*c->blen);
 		}
 	}
 }
@@ -231,7 +231,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	free (str);
 }
 
-R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, char * s){
+R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, const char * s){
 	if(r_cons_canvas_gotoxy(c,x,y))
 		r_cons_canvas_write(c,s);
 }
@@ -335,65 +335,10 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 }
 
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
-	char *c1="v", *c2="V";
-	switch (style) {
-	case 0:
-		c->attr=Color_BLUE;
-		c1="v"; 
-		c2="V";
-		break;
-	case 1:
-		c->attr=Color_GREEN;
-		c1="t";
-		c2="\\";
-		break;
-	case 2:
-		c->attr=Color_RED;
-		c1="f";
-		c2="/";
-		break;
+	if (c->linemode) {
+		r_cons_canvas_line_square (c, x, y, x2, y2, style);
+		return;
+	} else {
+		r_cons_canvas_line_diagonal (c, x, y, x2, y2, style);
 	}
-	r_cons_canvas_goto_write(c,x,y,c1);
-	r_cons_canvas_goto_write(c,x2,y2,c2);
-	if(y2<y){
-		int tmp = y2;
-		y2=y;
-		y=tmp;
-		tmp=x2;
-		x2=x;
-		x=tmp;
-	}
-	char chizzle[2] = {0}; // = '.';//my nizzle
-	int dx = abs(x2-x);
-        int dy = abs(y2-y);
-	int sx = x<x2 ? 1 : -1;
-	int sy = y<y2 ? 1 : -1;
-	int err = (dx>dy?dx:-dy)/2;
-	int e2;
-	// TODO: find if there's any collision in this line
-loop:
-	e2 = err;
-	if(e2>-dx){
-		*chizzle='_';
-		err-=dy;
-		x+=sx;
-	}
-	if(e2<dy){
-		*chizzle='|';
-		err+=dx;
-		y+=sy;
-	}
-	if((e2<dy) && (e2>-dx)){
-		if(sy>0){
-			*chizzle=(sx>0)?'\\':'/';
-		}else{
-			*chizzle=(sx>0)?'/':'\\';
-		}
-	}
-	if(!(x==x2&&y==y2)){
-		int i = (*chizzle=='_'&&sy<0) ? 1 : 0;
-		r_cons_canvas_goto_write(c,x,y-i,chizzle);
-		goto loop;
-	}
-	c->attr=Color_RESET;
 }
