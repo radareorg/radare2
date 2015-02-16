@@ -155,26 +155,36 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	mmo = fd->data;
 	if (!mmo)
 		return -1;
-	if (fd->obsz) {
-		char *a_buf;
-		ssize_t a_count;
-		// only do aligned reads in aligned offsets
-		const int aligned = 512; // XXX obey fd->obsz? or it may be too slow? 128K..
-		ut64 a_off = (io->off >> 9 ) << 9; //- (io->off & aligned);
-		int a_delta = io->off - a_off;
-		a_count = ((count + aligned)>>9)<<9;
-		a_buf = malloc (a_count);
-		if (a_buf) {
-			memset (a_buf, 0xff, a_count);
-			lseek (mmo->fd, a_off, SEEK_SET);
-			(void)read (mmo->fd, a_buf, a_count);
-			memcpy (buf, a_buf+a_delta, count);
-		} else {
-			memset (buf, 0xff, count);
-		}
-		return count;
-	}
 	if (mmo->rawio) {
+		if (fd->obsz) {
+			char *a_buf;
+			ssize_t a_count;
+			// only do aligned reads in aligned offsets
+			const int aligned = fd->obsz; //512; // XXX obey fd->obsz? or it may be too slow? 128K..
+			//ut64 a_off = (io->off >> 9 ) << 9; //- (io->off & aligned);
+			ut64 a_off = io->off - (io->off % aligned); //(io->off >> 9 ) << 9; //- (io->off & aligned);
+			int a_delta = io->off - a_off;
+			if (a_delta<0) {
+				memset (buf, 0xff, count);
+				return -1;
+			}
+			a_count = count + (aligned-(count%aligned));
+
+			a_buf = malloc (a_count+aligned);
+			if (a_buf) {
+				int i;
+				memset (a_buf, 0xff, a_count+aligned);
+				lseek (mmo->fd, a_off, SEEK_SET);
+				for (i=0; i< a_count ; i+= aligned) {
+					(void)read (mmo->fd, a_buf+i, aligned);//a_count);
+				}
+				memcpy (buf, a_buf+a_delta, count);
+			} else {
+				memset (buf, 0xff, count);
+			}
+			free (a_buf);
+			return count;
+		}
 		return read (mmo->fd, buf, count);
 	}
 	if (mmo->buf->length < io->off)
@@ -190,6 +200,47 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	if (!fd || !fd->data || !buf) return -1;
 
 	mmo = fd->data;
+	if (!mmo)
+		return -1;
+	if (mmo->rawio) {
+		if (fd->obsz) {
+			char *a_buf;
+			ssize_t a_count;
+			// only do aligned reads in aligned offsets
+			const int aligned = fd->obsz; //512; // XXX obey fd->obsz? or it may be too slow? 128K..
+			//ut64 a_off = (io->off >> 9 ) << 9; //- (io->off & aligned);
+			ut64 a_off = io->off - (io->off % aligned); //(io->off >> 9 ) << 9; //- (io->off & aligned);
+			int a_delta = io->off - a_off;
+			if (a_delta<0) {
+				memset (buf, 0xff, count);
+				return -1;
+			}
+			a_count = count + (aligned-(count%aligned));
+
+			a_buf = malloc (a_count+aligned);
+			if (a_buf) {
+				int i;
+				memset (a_buf, 0xff, a_count+aligned);
+				for (i=0; i< a_count ; i+= aligned) {
+					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
+					(void)read (mmo->fd, a_buf+i, aligned);
+				}
+				memcpy (a_buf+a_delta, buf, count);
+				for (i=0; i< a_count ; i+= aligned) {
+					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
+					(void)write (mmo->fd, a_buf+i, aligned);
+				}
+			} else {
+				memset (buf, 0xff, count);
+			}
+			free (a_buf);
+			return count;
+		}
+		if (lseek (fd->fd, addr, 0) < 0)
+			return -1;
+		len = write (fd->fd, buf, count);
+		return len;
+	}
 
 	if (mmo && mmo->buf) {
 		if (!(mmo->flags & R_IO_WRITE)) return -1;
