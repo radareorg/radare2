@@ -2446,6 +2446,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_core_read_at (core, at, buf, nb_bytes);
 			i=0;
 		}
+		if (i>=nb_bytes) {
+			break;
+		}
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
 		if (ret<1) {
 			r_cons_printf (j>0? ",{": "{");
