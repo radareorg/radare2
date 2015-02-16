@@ -1322,3 +1322,5 @@ microsoft_demangle_err:
 	r_list_free(abbr_types);
 	return err;
 }
+
+#undef GET_USER_DEF_TYPE_NAME
