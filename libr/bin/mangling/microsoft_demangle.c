@@ -1155,6 +1155,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 			err = eDemanglerErrUnsupportedMangling;
 			goto parse_microsoft_mangled_name_err;
 		}
+		curr_pos++;
 	}
 
 	// Return type, or @ if 'void'
