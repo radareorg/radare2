@@ -64,6 +64,7 @@ typedef struct r_io_desc_t {
 	int fd;
 	int flags;
 	int state;
+	int obsz; // optimal block size
 	char *uri;
 	char *referer;
 	char *name;

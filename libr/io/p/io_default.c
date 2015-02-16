@@ -147,11 +147,33 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		// in this case we fallback reopening in raw mode
 		return -1;
 	}
+
 	if (io->off==UT64_MAX) {
 		memset (buf, 0xff, count);
 		return count;
 	}
 	mmo = fd->data;
+	if (!mmo)
+		return -1;
+	if (fd->obsz) {
+		char *a_buf;
+		ssize_t a_count;
+		// only do aligned reads in aligned offsets
+		const int aligned = 512; // XXX obey fd->obsz? or it may be too slow? 128K..
+		ut64 a_off = (io->off >> 9 ) << 9; //- (io->off & aligned);
+		int a_delta = io->off - a_off;
+		a_count = ((count + aligned)>>9)<<9;
+		a_buf = malloc (a_count);
+		if (a_buf) {
+			memset (a_buf, 0xff, a_count);
+			lseek (mmo->fd, a_off, SEEK_SET);
+			(void)read (mmo->fd, a_buf, a_count);
+			memcpy (buf, a_buf+a_delta, count);
+		} else {
+			memset (buf, 0xff, count);
+		}
+		return count;
+	}
 	if (mmo->rawio) {
 		return read (mmo->fd, buf, count);
 	}
