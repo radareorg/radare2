@@ -11,6 +11,7 @@
 
 // TODO: it will be good to change this to some kind of map data structure
 static RList *abbr_types = 0;
+static RList *abbr_names = 0;
 
 typedef enum EObjectType {
 	eObjectTypeStaticClassMember = 2,
@@ -153,7 +154,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 							int *amount_of_names)
 {
 	char *curr_pos = 0, *prev_pos = 0;
-
+	char *tmp = 0;
 	RList /* <SStrInfo *> */ *names_l = 0;
 	RListIter *it = 0;
 	SStrInfo *str_info = 0;
@@ -266,6 +267,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 	curr_pos = strchr(buf, '@');
 	while (tmp_len != -1) {
 		len = curr_pos - prev_pos;
+		tmp = prev_pos;
 
 		// TODO:maybe add check of name correctness? like name can not start
 		//		with number
@@ -273,8 +275,21 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			goto get_namespace_and_name_err;
 		}
 
+		if (isdigit(*tmp)) {
+			tmp = r_list_get_n(abbr_names, *tmp - '0');
+			if (!tmp) {
+				goto get_namespace_and_name_err;
+			}
+			len = strlen(tmp);
+		} else {
+			tmp = (char *) malloc(len + 1);
+			memset(tmp, 0, len + 1);
+			memcpy(tmp, prev_pos, len);
+			r_list_append(abbr_names, tmp);
+		}
+
 		str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
-		str_info->str_ptr = prev_pos;
+		str_info->str_ptr = tmp;
 		str_info->len = len;
 
 		r_list_append(names_l, str_info);
@@ -384,6 +399,33 @@ DEF_STATE_ACTION(_)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// isdigit need to check is it need to do deabbreviation of names
+// +2 -> skipp @@  ( the end of class, union,...
+// or +2 -> skip abbreviated_num + '@'
+#define GET_USER_DEF_TYPE_NAME(data_struct_str) { \
+	copy_string(type_code_str, data_struct_str, 0); \
+	if (isdigit(*state->buff_for_parsing)) { \
+		char *tmp = r_list_get_n(abbr_names, *state->buff_for_parsing - '0'); \
+		if (!tmp) { \
+			state->err = eTCStateMachineErrUncorrectTypeCode; \
+			return; \
+		} \
+		copy_string(type_code_str, tmp, 0); \
+		state->amount_of_read_chars += 2; \
+		state->buff_for_parsing += 2; \
+		return; \
+	} \
+\
+	check_len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0); \
+	if (check_len) { \
+		state->amount_of_read_chars += check_len + 2; \
+		state->buff_for_parsing += check_len + 2; \
+	} else { \
+		state->err = eTCStateMachineErrUncorrectTypeCode; \
+	} \
+}
+
+///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(T)
 {
 #define PROCESS_CASE(case_string, type_str) { \
@@ -410,16 +452,7 @@ DEF_STATE_ACTION(T)
 	PROCESS_CASE("__m512@@", "__m512");
 	PROCESS_CASE("__m512i@@", "__m512i");
 
-	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
-	if ((check_len > 0) && (check_len < buff_len)) {
-		copy_string(type_code_str, "union ", 0);
-		copy_string(type_code_str, state->buff_for_parsing, check_len);
-		state->amount_of_read_chars += check_len + 2;
-		state->buff_for_parsing += check_len + 2;
-		return;
-	}
-
-	state->err = eTCStateMachineErrUncorrectTypeCode;
+	GET_USER_DEF_TYPE_NAME("union ");
 #undef PROCESS_CASE
 }
 
@@ -446,16 +479,7 @@ DEF_STATE_ACTION(U)
 	PROCESS_CASE("__m256d@@", "__m256d");
 	PROCESS_CASE("__m512d@@", "__m512d");
 
-	check_len = strstr(state->buff_for_parsing, "@@") - state->buff_for_parsing;
-	if ((check_len > 0) && (check_len < buff_len)) {
-		copy_string(type_code_str, "struct ", 0);
-		copy_string(type_code_str, state->buff_for_parsing, check_len);
-		state->amount_of_read_chars += check_len + 2;
-		state->buff_for_parsing += check_len + 2;
-		return;
-	}
-
-	state->err = eTCStateMachineErrUncorrectTypeCode;
+	GET_USER_DEF_TYPE_NAME("struct ");
 #undef PROCESS_CASE
 }
 
@@ -463,7 +487,7 @@ DEF_STATE_ACTION(U)
 DEF_STATE_ACTION(W)
 {
 	//W4X@@ -> enum X, W4X@Y@@ -> enum Y::X
-	int len = 0;
+	int check_len = 0;
 	state->state = eTCStateEnd;
 
 	if (*state->buff_for_parsing != '4') {
@@ -473,34 +497,17 @@ DEF_STATE_ACTION(W)
 	state->buff_for_parsing++;
 	state->amount_of_read_chars++;
 
-	copy_string(type_code_str, "enum ", 0);
-	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
-
-	if (len) {
-		state->amount_of_read_chars += len + 2; // cause and with @@ and they
-												// need to be skipped
-		state->buff_for_parsing += len + 2;
-	} else {
-		state->err = eTCStateMachineErrUncorrectTypeCode;
-	}
+	GET_USER_DEF_TYPE_NAME("enum ");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(V)
 {
 	// VX@@ -> class X
-	int len = 0;
+	int check_len = 0;
 	state->state = eTCStateEnd;
 
-	copy_string(type_code_str, "class ", 0);
-	len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0);
-	if (len) {
-		state->amount_of_read_chars += len + 2; // cause and with @@ and they
-												// need to be skipped
-		state->buff_for_parsing += len + 2;
-	} else {
-		state->err = eTCStateMachineErrUncorrectTypeCode;
-	}
+	GET_USER_DEF_TYPE_NAME("class ");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1287,11 +1294,12 @@ parse_microsoft_mangled_name_err:
 EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 {
 	EDemanglerErr err = eDemanglerErrOK;
-//	RListIter *it = 0;
-//	char *tmp = 0;
+	RListIter *it = 0;
+	char *tmp = 0;
 
 	// TODO: need refactor... maybe remove the static variable somewhere?
 	abbr_types = r_list_new();
+	abbr_names = r_list_new();
 
 	if (!demangler || !demangled_name) {
 		err = eDemanglerErrMemoryAllocation;
@@ -1305,6 +1313,11 @@ microsoft_demangle_err:
 //	r_list_foreach (abbr_types, it, tmp) {
 ////		R_FREE(tmp);
 //	}
+	it = r_list_iterator (abbr_names);
+	r_list_foreach (abbr_names, it, tmp) {
+		R_FREE(tmp);
+	}
+	r_list_free(abbr_names);
 	r_list_free(abbr_types);
 	return err;
 }
