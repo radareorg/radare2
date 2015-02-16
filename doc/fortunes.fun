@@ -137,3 +137,6 @@ Don't waste your time
 WASTED
 getdruid to get eclectic uid
 Welcome to "IDA - the roguelike"
+255 shades of (truecolor) grey
+When you sold that exploit, what they really bought, was your silence.
+Greetings, human.
