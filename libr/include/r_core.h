@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
-
 
 #include "r_types.h"
 #include "r_magic.h"

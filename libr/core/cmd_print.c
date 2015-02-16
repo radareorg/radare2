@@ -1803,11 +1803,13 @@ static int cmd_print(void *data, const char *input) {
 				"pxa", "", "show annotated hexdump",
 				"pxe", "", "emoji hexdump! :)",
 				"pxf", "", "show hexdump of current function",
+				"pxh", "", "show hexadecimal half-words dump (16bit)",
+				"pxH", "", "same as above, but one per line",
 				"pxl", "", "display N lines (rows) of hexdump",
 				"pxo", "", "show octal dump",
 				"pxq", "", "show hexadecimal quad-words dump (64bit)",
-				"pxs", "", "show hexadecimal in sparse mode",
 				"pxQ", "", "same as above, but one per line",
+				"pxs", "", "show hexadecimal in sparse mode",
 				"pxw", "", "show hexadecimal words dump (32bit)",
 				"pxW", "", "same as above, but one per line",
 				NULL};
@@ -1852,7 +1854,7 @@ static int cmd_print(void *data, const char *input) {
 						} else fn = r_str_newf ("%s+%d", f->name, *v-f->offset);
 					}
 				}
-				r_cons_printf ("0x%08"PFMT64x" %s0x%016"PFMT64x"%s %s\n",
+				r_cons_printf ("0x%08"PFMT64x" %s0x%08"PFMT64x"%s %s\n",
 					(ut64)core->offset+i, a, (ut64)*v, b, fn? fn: "");
 				free (fn);
 			}
@@ -1868,6 +1870,38 @@ static int cmd_print(void *data, const char *input) {
 			core->print->cols = ocols;
 			}
 			break;
+		case 'h':
+			r_print_hexdump (core->print, core->offset, core->block, len, 32, 2);
+			break;
+		case 'H':
+			for (i=0; i+2<len; i+=2) {
+				const char *a, *b;
+				char *fn;
+				RPrint *p = core->print;
+				RFlagItem *f;
+				ut64 v;
+				r_mem_copyendian ((ut8*)&v,
+					(const ut8*)(ut64*)(core->block+i), 2,
+					!core->assembler->big_endian);
+				if (p && p->colorfor) {
+					a = p->colorfor (p->user, v);
+					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+				} else { a = b = ""; }
+				f = r_flag_get_at (core->flags, v);
+				fn = NULL;
+				if (f) {
+					st64 delta = (v - f->offset);
+					if (delta>=0 && delta<8192) {
+						if (v == f->offset) {
+							fn = strdup (f->name);
+						} else fn = r_str_newf ("%s+%d", f->name, v-f->offset);
+					}
+				}
+				r_cons_printf ("0x%08"PFMT64x" %s0x%04"PFMT64x"%s %s\n",
+					(ut64)core->offset+i, a, v, b, fn? fn: "");
+				free (fn);
+			}
+			break;
 		case 'q':
 			r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
 			break;
@@ -1878,23 +1912,26 @@ static int cmd_print(void *data, const char *input) {
 				char *fn;
 				RPrint *p = core->print;
 				RFlagItem *f;
-				ut64 *v = (ut64*)(core->block+i);
+				ut64 v;
+				r_mem_copyendian ((ut8*)&v,
+					(const ut8*)(ut64*)(core->block+i), 8,
+					!core->assembler->big_endian);
 				if (p && p->colorfor) {
-					a = p->colorfor (p->user, *v);
+					a = p->colorfor (p->user, v);
 					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
 				} else { a = b = ""; }
-				f = r_flag_get_at (core->flags, *v);
+				f = r_flag_get_at (core->flags, v);
 				fn = NULL;
 				if (f) {
-					st64 delta = (*v - f->offset);
+					st64 delta = (v - f->offset);
 					if (delta>=0 && delta<8192) {
-						if (*v == f->offset) {
+						if (v == f->offset) {
 							fn = strdup (f->name);
-						} else fn = r_str_newf ("%s+%d", f->name, *v-f->offset);
+						} else fn = r_str_newf ("%s+%d", f->name, v-f->offset);
 					}
 				}
 				r_cons_printf ("0x%08"PFMT64x" %s0x%016"PFMT64x"%s %s\n",
-					(ut64)core->offset+i, a, *v, b, fn? fn: "");
+					(ut64)core->offset+i, a, v, b, fn? fn: "");
 				free (fn);
 			}
 			break;

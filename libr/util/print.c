@@ -560,7 +560,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	// TODO: Use base to change %03o and so on
-	if ((base<32) && use_header) {
+	if ((base<32 && step != 2) && use_header) {
 		ut32 opad = (ut32)(addr >> 32);
 		{ // XXX: use r_print_addr_header
 			int i, delta;
@@ -627,6 +627,21 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				continue;
 			}
 			if (p && base==32) {
+if (step==2) {
+				ut16 n = 0;
+				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
+				r_print_cursor (p, j, 1);
+
+				// stub for colors
+				if (p && p->colorfor) {
+					a = p->colorfor (p->user, n);
+					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+				} else { a = b = ""; }
+
+				printfmt ("%s0x%04x%s ", a, n, b);
+				r_print_cursor (p, j, 0);
+				j += 1;
+} else {
 				ut32 n = 0;
 				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
 				r_print_cursor (p, j, 1);
@@ -640,6 +655,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ("%s0x%08x%s ", a, n, b);
 				r_print_cursor (p, j, 0);
 				j += 3;
+}
 			} else
 			if (p && base==64) {
 				ut64 x = 0LL;
