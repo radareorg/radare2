@@ -653,6 +653,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 					i++;
 				}
 				r_list_free (list);
+				list = NULL;
 			} else r_cons_printf ("Cannot read partition\n");
 		} else if (mode == 1) {
 			r_cons_printf ("Types:\n\n");
@@ -686,6 +687,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 					}
 					r_cons_printf ("\n");
 					r_list_free (list);
+					list = NULL;
 				} else r_cons_printf ("Cannot open '%s' directory\n", root);
 			} else r_cons_printf ("Root undefined\n");
 		}
@@ -698,6 +700,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 			if (file && file->type != 'd')
 				r_core_cmdf (core, "px @ 0x%"PFMT64x"!64", file->off);
 			r_list_free (list);
+			list = NULL;
 			*str='\0';
 		}
 		r_cons_flush ();
@@ -753,6 +756,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 						r_cons_any_key ();
 					}
 					r_list_free (list);
+					list = NULL;
 				} else if (mode == 2){
 					r_str_chop_path (path);
 					strncat (path, "/", sizeof (path)-strlen (path)-1);

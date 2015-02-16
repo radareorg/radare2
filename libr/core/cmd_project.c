@@ -57,21 +57,19 @@ static int cmd_project(void *data, const char *input) {
 						nl = strchr (ptr, '\n');
 						if (nl) {
 							*nl++ = 0;
-							if (strstr (ptr, input+2)) {
-								del ++;
-							} else {
+							if (strstr (ptr, input+2))
+								del++;
+							else
 								fprintf (fd, "%s\n", ptr);
-							}
 						}
 					}
-					free (data);
 				}
-				fclose (fd);
-				free (str);
-				if (del>0) {
+				if (del>0)
 					eprintf ("Deleted %d lines\n", del);
-				}
 			}
+			free (data);
+			fclose (fd);
+			free (str);
 			}
 			break;
 		case ' ':

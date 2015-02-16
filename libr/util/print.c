@@ -87,7 +87,7 @@ R_API char *r_print_stereogram(const char *bump, int w, int h) {
 	char *out;
 	if (w<1 || h<1)
 		return NULL;
-	size = w * h*2;
+	size = w * (ut64)h * 2;
 	if (size>UT32_MAX) {
 		return NULL;
 	}
@@ -123,12 +123,13 @@ R_API char *r_print_stereogram_bytes(const ut8 *buf, int len) {
 	}
 	bump[bumpi] = 0;
 	ret = r_print_stereogram (bump, cols, rows);
+	free (bump);
 	return ret;
 }
 
 R_API void r_print_stereogram_print(RPrint *p, const char *ret) { 
 	int i;
-	int use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): 0;
+	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (!ret) return;
 	if (use_color) {
 		for (i=0; ret[i]; i++) {
