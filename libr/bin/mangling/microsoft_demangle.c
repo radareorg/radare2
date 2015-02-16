@@ -1309,10 +1309,10 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name)
 	err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
 
 microsoft_demangle_err:
-//	it = r_list_iterator (abbr_types);
-//	r_list_foreach (abbr_types, it, tmp) {
-////		R_FREE(tmp);
-//	}
+	it = r_list_iterator (abbr_types);
+	r_list_foreach (abbr_types, it, tmp) {
+		R_FREE(tmp);
+	}
 	it = r_list_iterator (abbr_names);
 	r_list_foreach (abbr_names, it, tmp) {
 		R_FREE(tmp);
