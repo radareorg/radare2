@@ -178,6 +178,7 @@ static int cmd_write(void *data, const char *input) {
 		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
 		"w","[1248][+-][n]","increment/decrement byte,word..",
 		"w"," foobar","write string 'foobar'",
+		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 		"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
 		"waf"," file","assemble file and write bytes",
 		"wA"," r 0","alter/modify opcode at current seek (see wA?)",
@@ -238,6 +239,58 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
 		}
 		break;
+	case '6':
+		{
+		int fail = 0;
+		if(input[2] != ' ') {
+			fail = 1;
+		}
+		ut8 *buf;
+		int len;
+		const char *str = input + 3;
+		int str_len = strlen(str) + 1;
+		if(!fail) {
+			switch(input[1]) {
+			case 'd':
+				buf = malloc(str_len);
+				len = r_base64_decode(buf, str, 0);
+				if(len == 0) {
+					free(buf);
+					fail = 1;
+				}
+				break;
+			case 'e':
+				{
+				ut8 *bin_buf = malloc(str_len);
+				int bin_len = r_hex_str2bin(str, bin_buf);
+				if(bin_len == 0) {
+					free(bin_buf);
+					fail = 1;
+				} else {
+					buf = malloc(str_len * 4 + 1);
+					len = r_base64_encode((char *)buf, bin_buf, bin_len);
+					if(len == 0) {
+						free(buf);
+						fail = 1;
+					}
+				}
+				break;
+				}
+			default:
+				fail = 1;
+				break;
+			}
+		}
+		if(!fail) {
+			r_core_write_at (core, core->offset, buf, len);
+			WSEEK (core, len);
+			r_core_block_read (core, 0);
+			free(buf);
+		} else {
+			eprintf ("Usage: w6[de] base64/hex\n");
+		}
+		break;
+		}
 	case 'h':
 		{
 		char *p = strchr (input, ' ');
