@@ -413,6 +413,8 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 
 		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num); free(s1);
 		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num); free(s2);
+		if (!scol1) scol1 = strdup ("");
+		if (!scol2) scol1 = strdup ("");
 
 		source = malloc (strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
 		sprintf (source, "%s||%s", scol1, scol2);
