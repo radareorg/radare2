@@ -2396,17 +2396,24 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	int dis_opcodes = 0;
 	r_cons_printf ("[");
 
-	if (nb_opcodes != 0) { // Disassemble `nb_opcodes` opcodes.
+	if (nb_opcodes) { // Disassemble `nb_opcodes` opcodes.
 		if (nb_opcodes < 0) {
+			int count, nbytes = 0;
 			/* Backward disassembly of `nb_opcodes` opcodes:
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-			if (!r_core_asm_bwdis_len (core, &nb_bytes, &addr, nb_opcodes)) {
+			if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
 				r_cons_printf ("]");
 				return R_FALSE;
 			}
-			r_core_read_at (core, addr, buf, nb_bytes);
+			count = R_MIN (nb_bytes, nbytes);
+			if (count>0) {
+				r_core_read_at (core, addr, buf, count);
+				r_core_read_at (core, addr+count, buf+count, nb_bytes-count);
+			} else {
+				memset (buf, 0xff, nb_bytes);
+			}
 		} else {
 			// If we are disassembling a positive number of lines, enable dis_opcodes
 			// to be used to finish the loop
@@ -2416,7 +2423,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			dis_opcodes = 1;
 			r_core_read_at (core, addr, buf, nb_bytes);
 		}
-	} else if (!nb_opcodes) { // Dissasemble `nb_bytes` bytes
+	} else { // Dissasemble `nb_bytes` bytes
 		if (nb_bytes < 0) {
 			//Backward disassembly of `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
