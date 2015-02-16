@@ -35,7 +35,7 @@ all: plugins.cfg libr/include/r_version.h
 .PHONY: libr/include/r_version.h
 libr/include/r_version.h:
 	echo "#define R2_VERSION_COMMIT $(R2VC)" > $@.tmp
-	cmp $@.tmp $@ || mv $@.tmp $@
+	cmp $@.tmp $@ 2> /dev/null || mv $@.tmp $@
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
