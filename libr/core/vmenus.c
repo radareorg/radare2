@@ -1307,6 +1307,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
 		," h    highlight word"
+		," m    manpage for current call"
 		," q    quit/cancel operation"
 		," r    rename function"
 		," R    find references /r"
@@ -1353,6 +1354,33 @@ R_API void r_core_visual_define (RCore *core) {
 	case 'b':
 		r_meta_cleanup (core->anal, off, off+1);
 		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+1, "");
+		break;
+	case 'm':
+		{
+			char *man = NULL;
+			/* check for manpage */
+			RAnalOp *op = r_core_anal_op (core, off);
+			if (op) {
+				if (op->jump != UT64_MAX) {
+					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
+					if (item) {
+						const char *ptr = r_str_lchr (item->name, '.');
+						if (ptr)
+							man = strdup (ptr+1);
+					}
+				}
+				r_anal_op_free (op);
+			}
+			if (man) {
+				char *p = strstr (man, "INODE");
+				if (p) *p = 0;
+				r_cons_clear();
+				r_cons_flush();
+				r_sys_cmdf ("man %s", man);
+				free (man);
+			}
+			r_cons_any_key ();
+		}
 		break;
 	case 'C':
 		{
