@@ -1,2 +1,4 @@
-0	string	BEGIN PGP PRIVATE KEY BLOCK	PGP Private key
-0	string	BEGIN PGP PUBLIC KEY BLOCK	PGP Public key
+0	string	BEGIN\ PGP\ PRIVATE\ KEY\ BLOCK	PGP Private key
+0	string	BEGIN\ PGP\ PUBLIC\ KEY\ BLOCK	PGP Public key
+0	string	BEGIN\ PRIVATE\ KEY	PGP Private key
+0	string	BEGIN\ PUBLIC\ KEY	Public key
