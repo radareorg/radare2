@@ -151,6 +151,10 @@ int get_template(char *buf, SStrInfo *str_info)
 	char *str_type_code = 0;
 	char *tmp = strstr(buf, "@");
 	STypeCodeStr type_code_str;
+	RListIter *it = 0;
+	RList *saved_abbr_names = abbr_names;	// save current abbr names, this
+											// need templates doesnot take
+											// part in abbreviation shcemes
 
 	if (!tmp) {
 		goto get_template_err;
@@ -159,6 +163,8 @@ int get_template(char *buf, SStrInfo *str_info)
 	if (!init_type_code_str_struct(&type_code_str)) {
 		goto get_template_err;
 	}
+
+	abbr_names = r_list_new();
 
 	// get/copy template len/name
 	len += (tmp - buf + 1);
@@ -196,6 +202,13 @@ int get_template(char *buf, SStrInfo *str_info)
 	str_info->len = type_code_str.curr_pos;
 
 	get_template_err:
+	it = r_list_iterator (abbr_names);
+	r_list_foreach (abbr_names, it, tmp) {
+		R_FREE(tmp);
+	}
+	r_list_free(abbr_names);
+	abbr_names = saved_abbr_names; // restore global list with name abbr.
+
 	//    will be free at a caller function
 	//    free_type_code_str_struct(&type_code_str);
 	return len;
@@ -330,6 +343,8 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 	prev_pos = buf;
 	curr_pos = strchr(buf, '@');
 
+	// hack for nested templates
+	// think about how better to fix this...
 	len = curr_pos - prev_pos;
 	if (len == 0) {
 		goto get_namespace_and_name_err;
@@ -351,7 +366,6 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 		// check is it teamplate???
 		if ((*tmp == '?') && (*(tmp + 1) == '$')) {
-			// need to add +2...
 			int i = 0;
 			str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
 			i = get_template(tmp + 2, str_info);
