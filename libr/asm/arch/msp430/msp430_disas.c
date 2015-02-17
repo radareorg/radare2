@@ -137,7 +137,7 @@ static int decode_emulation (ut16 instr, ut16 dst, struct msp430_cmd *cmd)
 	} else if (opcode == MSP430_ADD && as == 2 && get_src (instr) == MSP430_R3) {
 		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
 				get_bw (instr) ? "incd.b" : "incd");
-		remove_second_operand (cmd);
+		remove_first_operand (cmd);
 	} else if (opcode == MSP430_XOR && as == 3 && get_src (instr) != MSP430_R3
 			&& get_src (instr) != MSP430_SR && (dst == 0xFFFF || dst == 0xFF)) {
 		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
@@ -285,7 +285,8 @@ static int decode_addressing_mode (ut16 instr, ut16 dst, ut16 op2, struct msp430
 				ret = 4;
 			break;
 		case MSP430_SR:
-			if (as == 1 && get_src (instr) == 2) {
+			if ((as == 1 || as == 3) && (get_src (instr) == MSP430_PC
+					|| get_src (instr) == 2)) {
 				snprintf (dstbuf, 15, ", &0x%04x", op2);
 				ret = 6;
 			} else {
@@ -294,8 +295,7 @@ static int decode_addressing_mode (ut16 instr, ut16 dst, ut16 op2, struct msp430
 			}
 			break;
 		default:
-			if (as == 1 && get_src (instr) != 0 && get_src (instr) != 2
-					&& get_src (instr) != 3) {
+			if ((as == 1 || as == 3) && get_src (instr) == MSP430_PC) {
 				snprintf (dstbuf, 15, ", 0x%x(r%d)", op2, get_dst (instr));
 				ret = 6;
 			} else {
