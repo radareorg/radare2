@@ -1152,7 +1152,8 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	unsigned char buf[4097];
-	RSocket *ch, *s;
+	RSocket *ch = NULL;
+	RSocket *s;
 	int i, ret;
 	char *str;
 
@@ -1193,6 +1194,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		if (r_cons_singleton()->breaked)
 			break;
 		r_socket_close (ch);
+		r_socket_free(ch);
 		r_cons_break_end ();
 	}
 	r_socket_free(s);

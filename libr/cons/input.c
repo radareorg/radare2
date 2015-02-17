@@ -62,7 +62,6 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = r_cons_readchar ();
 		ch = 0xf1 + (ch&0xf);
 		break;
-	case 0:
 	case '[': // function keys (2)
 		ch = r_cons_readchar ();
 		switch (ch) {

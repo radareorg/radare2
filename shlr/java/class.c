@@ -4182,8 +4182,6 @@ R_API RBinJavaStackMapFrame* r_bin_java_build_stack_frame_from_local_variable_ta
 	r_list_foreach_safe (attr->info.local_variable_table_attr.local_variable_table, iter, iter_tmp, lvattr) {
 		ut32 pos = 0;
 		ut8 value = 'N';
-		if ( lvattr == NULL)
-			continue;
 		// knock the array Types
 		while (lvattr->descriptor[pos] == '[') {
 			pos ++;
@@ -4227,10 +4225,7 @@ R_API ut64 r_bin_java_stack_map_table_attr_calc_size(RBinJavaAttrInfo* attr) {
 	if (attr) {
 		//attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 		size += 6;
-		if (attr == NULL) {
-			// TODO eprintf
-			return size;
-		}
+
 		//IFDBG r_bin_java_print_source_code_file_attr_summary(attr);
 		// Current spec does not call for variable sizes.
 		//attr->info.stack_map_table_attr.number_of_entries = R_BIN_JAVA_USHORT (buffer, offset);
@@ -5980,7 +5975,7 @@ R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_
 	RBinJavaElementValue *ev_element=NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	char* name;
-	if(ev_element == NULL) {
+	if(element_value == NULL) {
 		eprintf ("Attempting to print an invalid RBinJavaElementValuePair *pair.\n");
 		return;
 	}
@@ -7041,9 +7036,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(RBinJavaObj *bin, ut16 name
 	RListIter *iter, *iter_tmp;
 	RBinJavaCPTypeObj *res= NULL, *obj = NULL;
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, obj) {
-		if (obj == NULL) {
-			continue;
-		} else if (obj->tag == R_BIN_JAVA_CP_FIELDREF &&
+		if (obj->tag == R_BIN_JAVA_CP_FIELDREF &&
 				obj->info.cp_field.name_and_type_idx == name_and_type_idx) {
 			res = obj;
 			break;

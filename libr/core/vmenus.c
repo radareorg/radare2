@@ -257,20 +257,17 @@ R_API int r_core_visual_trackflags(RCore *core) {
 
 R_API int r_core_visual_comments (RCore *core) {
 	char cmd[512], *p = NULL;
-	int mode = 0;
 	int delta = 7;
 	int i, ch, option = 0;
 	int format = 0;
 	int found = 0;
 	ut64 from = 0, size = 0;
 
-// XXX: mode is always 0, remove useless code
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
 		i = 0;
 		found = 0;
-		mode = 0;
 #undef DB
 #define DB core->anal->sdb_meta
 				ut64 addr;
@@ -291,7 +288,6 @@ R_API int r_core_visual_comments (RCore *core) {
 							if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 								r_str_sanitize (str);
 								if (option==i) {
-									mode = 0;
 									found = 1;
 									from = addr;
 									size = 1; // XXX: remove this thing size for comments is useless d->size;
@@ -316,19 +312,6 @@ R_API int r_core_visual_comments (RCore *core) {
 			continue;
 		}
 		r_cons_newline ();
-#if 0
-		r_list_foreach (core->anal->fcns, iter, fcn) {
-			if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-				if (option==i) {
-					mode = 1;
-					from = fcn->addr;
-					size = fcn->size;
-				}
-				r_cons_printf("  %c .. %s\n", (option==i)?'>':' ', fcn->name);
-			}
-			i++;
-		}
-#endif
 
 		switch (format) {
 		case 0: sprintf (cmd, "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
@@ -349,12 +332,8 @@ R_API int r_core_visual_comments (RCore *core) {
 			//TODO
 			break;
 		case 'd':
-			if (mode == 0) {
-				if (p) r_meta_del (core->anal, R_META_TYPE_ANY, from, size, p);
-			} else {
-				r_anal_fcn_del_locs (core->anal, from);
-				r_anal_fcn_del (core->anal, from);
-			}
+			if (p)
+				r_meta_del (core->anal, R_META_TYPE_ANY, from, size, p);
 			break;
 		case 'P':
 			if (--format<0)
