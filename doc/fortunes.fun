@@ -1,3 +1,4 @@
+No disassemble!!!
 Everytime you run radare2, a random file is removed :)
 Deltify your life with radare2
 In soviet russia, radare2 debugs you!
