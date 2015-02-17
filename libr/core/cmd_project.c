@@ -63,12 +63,12 @@ static int cmd_project(void *data, const char *input) {
 								fprintf (fd, "%s\n", ptr);
 						}
 					}
+					free (data);
 				}
 				if (del>0)
 					eprintf ("Deleted %d lines\n", del);
+				fclose (fd);
 			}
-			free (data);
-			fclose (fd);
 			free (str);
 			}
 			break;

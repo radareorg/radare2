@@ -1569,7 +1569,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case '\0':
 			input = "123*";
 		case ' ':
-			if (core && core->anal && esil && esil->stats) {
+			if (esil->stats) {
 				char *out = sdb_querys (esil->stats, NULL, 0, input+2);
 				if (out) {
 					r_cons_printf ("%s\n", out);

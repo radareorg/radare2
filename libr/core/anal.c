@@ -59,9 +59,9 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 				if (map->perm & R_IO_WRITE)
 					types |= R_ANAL_ADDR_TYPE_WRITE;
 				// find function
-				if (strstr (map->name, "heap"))
+				if (map->name && strstr (map->name, "heap"))
 					types |= R_ANAL_ADDR_TYPE_HEAP;
-				if (strstr (map->name, "stack"))
+				if (map->name && strstr (map->name, "stack"))
 					types |= R_ANAL_ADDR_TYPE_STACK;
 				break;
 			}

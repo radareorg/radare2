@@ -388,7 +388,7 @@ static int bin_info (RCore *r, int mode) {
 			pair ("rpath", info->rpath);
 			if (info->guid[0] != '\0')
 				pair ("guid", info->guid);
-			if (info->debug_file_name && *(info->debug_file_name))
+			if (info->debug_file_name[0] != '\0')
 				pair ("dbg_file", info->debug_file_name);
 
 			for (i=0; info->sum[i].type; i++) {

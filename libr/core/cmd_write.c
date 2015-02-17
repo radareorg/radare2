@@ -274,6 +274,7 @@ static int cmd_write(void *data, const char *input) {
 						fail = 1;
 					}
 				}
+				free (bin_buf);
 				break;
 				}
 			default:

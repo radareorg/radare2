@@ -156,7 +156,7 @@ static const char ** attr_at(RConsCanvas *c,int loc){
 static void sort_attrs(RConsCanvas *c) {
 	int i,j;
 	RConsCanvasAttr value;
-	for(i = 1; i < c->attrslen; i++) {
+	for (i = 1; i < c->attrslen; i++) {
 		value = c->attrs[i];
 		for (j = i-1; j>=0 && c->attrs[j].loc>value.loc; j--) {
 			c->attrs[j+1] = c->attrs[j];
@@ -168,13 +168,13 @@ static void sort_attrs(RConsCanvas *c) {
 static void stamp_attr(RConsCanvas *c,int length){
 	int i;
 	const char ** s;
-	int loc = c->x + (c->y*c->w);
-	s = attr_at(c,loc);
+	const int loc = c->x + (c->y * c->w);
+	s = attr_at(c, loc);
 
-	if(s){
+	if (s) {
 		//If theres already an attr there, just replace it.
 		*s = c->attr;
-	}else{
+	} else {
 		c->attrs[c->attrslen].loc = loc;
 		c->attrs[c->attrslen].a = c->attr;
 		c->attrslen++;
@@ -232,20 +232,21 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	int x, y, olen = 0;
-	char *o, *b;
+	char *o;
+	const char* b;
 	const char**atr;
 	if (!c) return NULL;
 	b = c->b;
 	o = calloc (sizeof(char),
-			  (c->w*(c->h+1))*(CONS_MAX_ATTR_SZ));
+			  (c->w * (c->h + 1)) * (CONS_MAX_ATTR_SZ));
 	if (!o) return NULL;
-	for (y = 0; y<c->h; y++) {
+	for (y = 0; y < c->h; y++) {
 		for (x = 0; x<c->w; x++) {
-			int p = x + (y*c->w);
-			atr=attr_at(c,p);
+			const int p = x + (y * c->w);
+			atr = attr_at (c,p);
 			if(atr) {
-				strcat(o,*atr);
-				olen+=strlen(*atr);
+				strcat (o, *atr);
+				olen += strlen (*atr);
 			}
 			if (!b[p] || b[p]=='\n')
 				break;
@@ -266,7 +267,7 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
-	int blen = (w+1)*h;
+	const int blen = (w+1) * h;
 	char *b = NULL;
 	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);

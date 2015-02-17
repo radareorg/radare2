@@ -1037,6 +1037,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					char *end = strchr (field, ']');
 					if (end == NULL) {
 						eprintf ("Missing closing bracket\n");
+						free(oarg);
 						goto beach;
 					}
 					*end = '\0';
@@ -1326,7 +1327,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 beach:
 	free (buf);
 	free (field);
-	if (args)
-		free (args);
+	free (args);
 	return i;
 }
