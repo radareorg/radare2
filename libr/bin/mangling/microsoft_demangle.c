@@ -144,6 +144,64 @@ copy_string_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+int get_template(char *buf, SStrInfo *str_info)
+{
+	int len = 0;
+	unsigned int i = 0;
+	char *str_type_code = 0;
+	char *tmp = strstr(buf, "@");
+	STypeCodeStr type_code_str;
+
+	if (!tmp) {
+		goto get_template_err;
+	}
+
+	if (!init_type_code_str_struct(&type_code_str)) {
+		goto get_template_err;
+	}
+
+	// get/copy template len/name
+	len += (tmp - buf + 1);
+	copy_string(&type_code_str, buf, len - 1);
+	buf += len;
+
+	if (*buf != '@') {
+		copy_string(&type_code_str, "<", 0);
+	}
+
+	// get identifier
+	while (*buf != '@') {
+		if (i) {
+			copy_string(&type_code_str, ", ", 0);
+		}
+
+		get_type_code_string(buf, &i, &str_type_code);
+		copy_string(&type_code_str, str_type_code, 0);
+
+		buf += i;
+		len += i;
+		R_FREE(str_type_code);
+	}
+
+	if (*buf != '@') {
+		len = 0;
+		goto get_template_err;
+	}
+
+	copy_string(&type_code_str, ">", 0);
+	buf++;
+	len++;
+
+	str_info->str_ptr = type_code_str.type_str;
+	str_info->len = type_code_str.curr_pos;
+
+	get_template_err:
+	//    will be free at a caller function
+	//    free_type_code_str_struct(&type_code_str);
+	return len;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /// \brief get_namespace_and_name
 /// \param buf Current buffer position with mangled name
 /// \param type_code_str String with got name and namespaces
@@ -210,6 +268,20 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		case 'X': SET_OPERATOR_CODE("operator*="); break;
 		case 'Y': SET_OPERATOR_CODE("operator+="); break;
 		case 'Z': SET_OPERATOR_CODE("operator-="); break;
+		case '$':
+		{
+			int i = 0;
+			str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
+			i = get_template(buf + 1, str_info);
+			if (!i) {
+				R_FREE(str_info);
+				goto get_namespace_and_name_err;
+			}
+			r_list_append(names_l, str_info);
+			buf += i;
+			read_len += i;
+			break;
+		}
 		case '_':
 			switch (*++buf)
 			{
@@ -255,19 +327,21 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 	}
 #undef SET_OPERATOR_CODE
 
-	curr_pos = strstr(buf, "@@");
-	if (!curr_pos) {
+	prev_pos = buf;
+	curr_pos = strchr(buf, '@');
+
+	len = curr_pos - prev_pos;
+	if (len == 0) {
 		goto get_namespace_and_name_err;
 	}
 
-	tmp_len = curr_pos - buf;
-	read_len += tmp_len;
-
-	prev_pos = buf;
-	curr_pos = strchr(buf, '@');
-	while (tmp_len != -1) {
+	while (curr_pos != NULL) {
 		len = curr_pos - prev_pos;
 		tmp = prev_pos;
+
+		if ((len == 0) && (*(curr_pos) == '@')) {
+			break;
+		}
 
 		// TODO:maybe add check of name correctness? like name can not start
 		//		with number
@@ -275,12 +349,32 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			goto get_namespace_and_name_err;
 		}
 
+		// check is it teamplate???
+		if ((*tmp == '?') && (*(tmp + 1) == '$')) {
+			// need to add +2...
+			int i = 0;
+			str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
+			i = get_template(tmp + 2, str_info);
+			if (!i) {
+				R_FREE(str_info);
+				goto get_namespace_and_name_err;
+			}
+			r_list_append(names_l, str_info);
+
+			prev_pos = tmp + i + 2;
+			curr_pos = strchr(prev_pos, '@');
+			read_len += (i + 2);
+//			if (curr_pos)
+//				read_len++;
+			continue;
+		}
+
 		if (isdigit(*tmp)) {
 			tmp = r_list_get_n(abbr_names, *tmp - '0');
 			if (!tmp) {
 				goto get_namespace_and_name_err;
 			}
-			len = strlen(tmp);
+			len = strlen(tmp); // maybe 2??
 		} else {
 			tmp = (char *) malloc(len + 1);
 			memset(tmp, 0, len + 1);
@@ -294,9 +388,11 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 		r_list_append(names_l, str_info);
 
-		tmp_len -= (len + 1);
+		read_len += len;
 		prev_pos = curr_pos + 1;
 		curr_pos = strchr(curr_pos + 1, '@');
+		if (curr_pos)
+			read_len++;
 	}
 
 get_namespace_and_name_err:
@@ -411,15 +507,15 @@ DEF_STATE_ACTION(_)
 			return; \
 		} \
 		copy_string(type_code_str, tmp, 0); \
-		state->amount_of_read_chars += 2; \
-		state->buff_for_parsing += 2; \
+		state->amount_of_read_chars += 1; \
+		state->buff_for_parsing += 1; \
 		return; \
 	} \
 \
 	check_len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0); \
 	if (check_len) { \
-		state->amount_of_read_chars += check_len + 2; \
-		state->buff_for_parsing += check_len + 2; \
+		state->amount_of_read_chars += check_len + 1; \
+		state->buff_for_parsing += check_len + 1; \
 	} else { \
 		state->err = eTCStateMachineErrUncorrectTypeCode; \
 	} \
@@ -988,7 +1084,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		goto parse_microsoft_mangled_name_err;
 	}
 
-	curr_pos += len + 2;
+	curr_pos += len + 1;
 
 	// Function/Data type and access level
 	switch(*curr_pos++)
