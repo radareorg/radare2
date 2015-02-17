@@ -106,7 +106,7 @@ static void visual_help() {
 	" d[f?]    define function, data, code, ..\n"
 	" D        enter visual diff mode (set diff.from/to)\n"
 	" e        edit eval configuration variables\n"
-	" f/F      set/unset flag\n"
+	" f/F      set/unset or browse flags. f- to unset, F to browse, ..\n"
 	" gG       go seek to begin and end of file (0-$s)\n"
 	" hjkl     move around (or HJKL) (left-down-up-right)\n"
 	" i        insert hex or string (in hexdump) use tab to toggle\n"
@@ -120,7 +120,6 @@ static void visual_help() {
 	" r        browse anal info and comments\n"
 	" R        randomize color palette (ecr)\n"
 	" sS       step / step over\n"
-	" t        track flags (browse symbols, functions..)\n"
 	" T        enter textlog chat console (TT)\n"
 	" uU       undo/redo seek\n"
 	" v        visual code analysis menu\n"
@@ -819,15 +818,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				min = max = cursor;
 			}
 			range = max-min+1;
-			if (*n=='.') {
+			if (!strcmp (n, "-")) {
+				r_flag_unset_i (core->flags, core->offset + cursor, NULL);
+			} else if (*n=='.') {
 				if (n[1]=='-') {
 					//unset
 					r_core_cmdf (core, "f.-%s@0x%"PFMT64x, n+1, core->offset+min);
 				} else {
 					r_core_cmdf (core, "f.%s@0x%"PFMT64x, n+1, core->offset+min);
 				}
-			} else
-			if (*n=='-') {
+			} else if (*n=='-') {
 				if (*n) r_flag_unset (core->flags, n+1, NULL);
 			} else {
 				if (range<1) range = 1;
@@ -844,9 +844,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (r_config_get_i (core->config, "scr.interactive"))
 				r_core_cmd0 (core, "TT");
 		}
-		break;
-	case 'F':
-		r_flag_unset_i (core->flags, core->offset + cursor, NULL);
 		break;
 	case 'n':
 		r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
@@ -956,7 +953,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			break;
 		}
 		break;
-	case 't':
+	case 'F':
 		r_core_visual_trackflags (core);
 		break;
 	case 'x':
