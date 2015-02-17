@@ -14,7 +14,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 	ret = msp430_decode_command (buf, &cmd);
 
 	if (ret > 0) {
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
+		if (cmd.operands[0]) {
+			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
+		} else {
+			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", cmd.instr, cmd.operands);
+		}
 	}
 
 	op->size = ret;
