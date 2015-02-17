@@ -1,6 +1,8 @@
 /* Copyright radare2 2014-2015 - Author: pancake */
 
 #include <r_core.h>
+static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
+int mousemode = 0;
 int small_nodes = 0;
 int simple_mode = 1;
 static void reloadNodes(RCore *core) ;
@@ -449,9 +451,10 @@ static void r_core_graph_refresh (RCore *core) {
 
 	G (-can->sx, -can->sy);
 	snprintf (title, sizeof (title)-1,
-		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s",
+		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
 		fcn->addr, ostack.size, fcn->name,
-		n_nodes, n_edges, callgraph?"CG":"BB");
+		n_nodes, n_edges, callgraph?"CG":"BB",
+		mousemodes[mousemode]);
 	W (title);
 
 	r_cons_canvas_print (can);
@@ -511,12 +514,14 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 #define OS_INIT() ostack.size = 0; ostack.nodes[0] = 0;
 #define OS_PUSH(x) if (ostack.size<OS_SIZE) {ostack.nodes[++ostack.size]=x;}
 #define OS_POP() ((ostack.size>0)? ostack.nodes[--ostack.size]:0)
-	int key, cn;
+	int wheelspeed;
+	int okey, key, cn, wheel;
 	int i, w, h;
 	n_nodes = n_edges = 0;
 	nodes = NULL;
 	edges = NULL;
 	callgraph = 0;
+	mousemode = 0;
 
 	OS_INIT();
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -553,9 +558,18 @@ repeat:
 	core->cons->event_resize = \
 		(RConsEvent)r_core_graph_refresh;
 	r_core_graph_refresh (core);
+	wheel = r_config_get_i (core->config, "scr.wheel");
+	if (wheel)
+		r_cons_enable_mouse (R_TRUE);
 
 	// r_core_graph_inputhandle()
-	key = r_cons_readchar ();
+	okey = r_cons_readchar ();
+	key = r_cons_arrow_to_hjkl (okey);
+	if (r_cons_singleton()->mouse_event) {
+		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
+	} else {
+		wheelspeed = 1;
+	}
 
 	switch (key) {
 	case '=':
@@ -614,11 +628,22 @@ repeat:
 		reloadNodes (core);
 		break;
 	case 'Z':
-		instep = 1;
-		if (r_config_get_i (core->config, "cfg.debug"))
-			r_core_cmd0 (core, "dso;.dr*");
-		else r_core_cmd0 (core, "aeso;.dr*");
-		reloadNodes (core);
+		if (okey == 27) {
+			// shift tab
+			curnode--;
+			if (curnode < 0) {
+				for (curnode=0; nodes[curnode].text; curnode++) {
+					/* do nothing */
+				}
+			}
+		} else {
+			// 'Z'
+			instep = 1;
+			if (r_config_get_i (core->config, "cfg.debug"))
+				r_core_cmd0 (core, "dso;.dr*");
+			else r_core_cmd0 (core, "aeso;.dr*");
+			reloadNodes (core);
+		}
 		break;
 	case 'x':
 		if (r_core_visual_xrefs_x (core))
@@ -657,8 +682,56 @@ repeat:
 		break;
 	case 'R':
 	case 'r': Layout_depth (nodes, edges); break;
-	case 'j': N.y++; break;
-	case 'k': N.y--; break;
+	case 'j':
+		if (r_cons_singleton()->mouse_event) {
+			switch (mousemode) {
+			case 0: // canvas-y
+				can->sy += wheelspeed;
+				break;
+			case 1: // canvas-x
+				can->sx += wheelspeed;
+				break;
+			case 2: // node-y
+				N.y += wheelspeed;
+				break;
+			case 3: // node-x
+				N.x += wheelspeed;
+				break;
+			}
+		} else {
+			N.y++;
+		}
+		break;
+	case 'k':
+		if (r_cons_singleton()->mouse_event) {
+			switch (mousemode) {
+			case 0: // canvas-y
+				can->sy -= wheelspeed;
+				break;
+			case 1: // canvas-x
+				can->sx -= wheelspeed;
+				break;
+			case 2: // node-y
+				N.y -= wheelspeed;
+				break;
+			case 3: // node-x
+				N.x -= wheelspeed;
+				break;
+			}
+		} else {
+			N.y--;
+		}
+		break;
+	case 'm':
+		mousemode++;
+		if (!mousemodes[mousemode])
+			mousemode = 0;
+		break;
+	case 'M':
+		mousemode--;
+		if (mousemode<0)
+			mousemode = 3;
+		break;
 	case 'h': N.x--; break;
 	case 'l': N.x++; break;
 	case 'J': N.y+=5; break;
