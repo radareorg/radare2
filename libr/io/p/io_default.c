@@ -174,7 +174,10 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			if (a_buf) {
 				int i;
 				memset (a_buf, 0xff, a_count+aligned);
-				lseek (mmo->fd, a_off, SEEK_SET);
+				if (lseek (mmo->fd, a_off, SEEK_SET) < 0) {
+					free (a_buf);
+					return -1;
+				}
 				for (i=0; i< a_count ; i+= aligned) {
 					(void)read (mmo->fd, a_buf+i, aligned);//a_count);
 				}

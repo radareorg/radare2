@@ -252,7 +252,8 @@ static int cb_asmbits(void *user, void *data) {
 static int cb_asmfeatures(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value=='?') {
+
+	if (*node->value == '?') {
 		if (core && core->assembler && core->assembler->cur) {
 			if (core->assembler->cur->features) {
 				char *feat = strdup (core->assembler->cur->features);
@@ -263,12 +264,13 @@ static int cb_asmfeatures(void *user, void *data) {
 		}
 		return 0;
 	}
+
 	free (core->assembler->features);
-	if (node->value && node->value[0]) {
+	core->assembler->features = NULL;
+
+	if (node->value[0])
 		core->assembler->features = strdup (node->value);
-	} else {
-		core->assembler->features = NULL;
-	}
+
 	return 1;
 }
 
