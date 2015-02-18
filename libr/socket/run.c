@@ -219,6 +219,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "system")) p->_system = strdup (e);
 	else if (!strcmp (b, "aslr")) p->_aslr = parseBool (e);
 	else if (!strcmp (b, "pid")) p->_pid = atoi (e);
+	else if (!strcmp (b, "pidfile")) p->_pidfile = strdup (e);
 	else if (!strcmp (b, "connect")) p->_connect = strdup (e);
 	else if (!strcmp (b, "listen")) p->_listen = strdup (e);
 	else if (!strcmp (b, "stdout")) p->_stdout = strdup (e);
@@ -302,6 +303,7 @@ R_API const char *r_run_help() {
 	"# listen=8080\n"
 	"# bits=32\n"
 	"# pid=0\n"
+	"# pidfile=/tmp/foo.pid\n"
 	"# #sleep=0\n"
 	"# #maxfd=0\n"
 	"# #maxproc=0\n"
@@ -584,6 +586,11 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 		if (p->_pid) {
 			eprintf ("PID: %d\n", getpid ());
+		}
+		if (p->_pidfile) {
+			char pidstr[32];
+			snprintf (pidstr, sizeof (pidstr), "%d\n", getpid ());
+			r_file_dump (p->_pidfile, (const ut8*)pidstr, strlen (pidstr));
 		}
 #endif
 		exit (execv (p->_program, (char* const*)p->_args));

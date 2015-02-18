@@ -160,6 +160,7 @@ typedef struct r_run_profile_t {
 	char *_preload;
 	int _bits;
 	int _pid;
+	char *_pidfile;
 	int _r2preload;
 	int _docore;
 	int _aslr;
