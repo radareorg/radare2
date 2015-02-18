@@ -264,7 +264,6 @@ static int cmd_write(void *data, const char *input) {
 				ut8 *bin_buf = malloc(str_len);
 				int bin_len = r_hex_str2bin(str, bin_buf);
 				if(bin_len == 0) {
-					free(bin_buf);
 					fail = 1;
 				} else {
 					buf = malloc(str_len * 4 + 1);

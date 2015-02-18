@@ -530,7 +530,8 @@ static RList* classes (RBinFile *arch) {
 	struct dex_class_t entry;
 	RList *ret = NULL;
 	RBinClass *class;
-	int i, len;
+	int i;
+	const int len = 100;
 	char *name = NULL;
 
 	if (bin->header.class_size>bin->size) {
@@ -547,7 +548,7 @@ static RList* classes (RBinFile *arch) {
 				sizeof (struct dex_class_t));
 		// TODO: implement sections.. each section specifies a class boundary
 {
-		len = 100;
+		free (name);
 		name = malloc (len);
 		if (!name) {
 			dprintf ("error malloc string length %d\n", len);
@@ -580,9 +581,9 @@ static RList* classes (RBinFile *arch) {
 		dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
 		dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
 		dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
-		free (name);
 }
 	}
+	free (name);
 	return ret;
 }
 

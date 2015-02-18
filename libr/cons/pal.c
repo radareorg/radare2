@@ -133,9 +133,9 @@ R_API char *r_cons_pal_parse(const char *str) {
 	}
 	for (i=0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name))
-			strcat (out, colors[i].code);
+			strncat (out, colors[i].code, sizeof(out)-strlen(out)-1);
 		if (p && !strcmp (p, colors[i].name))
-			strcat (out, colors[i].bgcode);
+			strncat (out, colors[i].bgcode, sizeof(out)-strlen(out)-1);
 	}
 	free (s);
 	return *out? strdup (out): NULL;

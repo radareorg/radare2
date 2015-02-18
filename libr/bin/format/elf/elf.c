@@ -1223,6 +1223,7 @@ if (
 				} else continue;
 				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
 					perror ("realloc (symbols|imports)");
+					free (strtab);
 					free (sym);
 					return NULL;
 				}

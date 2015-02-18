@@ -1559,8 +1559,6 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 	}
 	java_constant_info = &R_BIN_JAVA_CP_METAS[tag];
 	if (java_constant_info->tag == 0 || java_constant_info->tag == 2 ) {
-		if (java_obj)
-			java_obj->file_offset = offset;
 		return java_obj;
 	}
 	buf_sz += java_constant_info->len;
