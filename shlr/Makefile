@@ -6,9 +6,9 @@ CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
 CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150211
+CS_UPD=20150219
 CS_BRA=next
-CS_TIP=4363911eb4acd98e68e316fef5fe9258061fddeb
+CS_TIP=ced9a6ed92cb71a2f77285cb3587791613711500
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
