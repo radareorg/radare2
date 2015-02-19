@@ -466,6 +466,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		buf_bytes = iob->desc_read (io, tdesc, &len_bytes);
 		iob->desc_close (io, tdesc);
 	} else if (sz == UT64_MAX || sz>(64*1024*1024)) {// too big, probably wrong
+		eprintf ("Too big\n");
 		return R_FALSE;
 	} else {
 		buf_bytes = iob->desc_read (io, desc, &len_bytes);
@@ -482,7 +483,6 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *) r_list_get_n (the_obj_list, 0);
-
 		res = r_bin_load_io_at_offset_as (bin, desc, baseaddr,
 				old_o->loadaddr, 0, old_o->boffset, NULL);
 	} else {
@@ -516,6 +516,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
+	if (sz == 0)
+		sz = file_sz;
 #if 1
 if (r_list_length (bin->binfiles)==0) {
 	if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
@@ -534,7 +536,7 @@ if (r_list_length (bin->binfiles)==0) {
 		// stream based loaders
 		// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
 		RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
-eprintf ("Asuming filepath %s\n", filepath);
+		eprintf ("Asuming filepath %s\n", filepath);
 		if (tdesc) {
 			file_sz = iob->desc_size (io, tdesc);
 			if (file_sz != UT64_MAX) {
@@ -614,7 +616,7 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB (MIN_LOAD_SIZE)
 	// if it fails, the whole file is loaded.
-	const ut64 MAX_LOAD_SIZE = 128 * (1 << 10 << 10);
+	const ut64 MAX_LOAD_SIZE = 0; //0xfffff; //128 * (1 << 10 << 10);
 	int res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
 		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
 	if (res)

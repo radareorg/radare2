@@ -170,7 +170,12 @@ R_API char *r_stdin_slurp (int *sz) {
 		return NULL;
 	buf = malloc (BS);
 	for (i=ret=0;;i+=ret) {
-		buf = realloc (buf, i+BS);
+		char *new = realloc (buf, i+BS);
+		if (!new) {
+			eprintf ("Cannot realloc to %d\n", i+BS);
+			break;
+		}
+		buf = new;
 		ret = read (0, buf+i, BS);
 		if (ret<1)
 			break;
