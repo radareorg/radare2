@@ -115,38 +115,28 @@ static char *prefixline(RConsCanvas *c, int *left) {
 }
 
 static const char ** attr_at(RConsCanvas *c,int loc){
-	int i, j;
+	int i, j, delta;
 	if (!c->color || c->attrslen==0)
 		return NULL;
 	j = c->attrslen / 2;
+	delta = c->attrslen / 2;
 	for (i=0; i<(c->attrslen); i++){
+		delta/=2;
+		if(delta == 0)
+			delta=1;
 		if (c->attrs[j].loc == loc)
 			return &c->attrs[j].a;
 		if(c->attrs[j].loc < loc) {
-			j++;
-			/*
-			k=c->attrslen/(2+(i*i));
-			if(k==0)
-				j++;
-			else
-				j+=k;
-			*/
+			j+=delta;
 			if(j>=c->attrslen)
 				break;
-			if(c->attrs[j].loc > loc)
+			if(c->attrs[j].loc > loc && delta==1)
 				break;
 		} else if(c->attrs[j].loc > loc) {
-			j--;
-			/*
-			k=c->attrslen/(2+(i*i));
-			if(k==0)
-				j--;
-			else
-				j+=k;
-			*/
+			j-=delta;
 			if(j<=0)
 				break;
-			if(c->attrs[j].loc < loc)
+			if(c->attrs[j].loc < loc && delta==1)
 				break;
 		}
 	}
