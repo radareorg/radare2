@@ -68,6 +68,7 @@ static int cmd_project(void *data, const char *input) {
 				}
 				if (del>0)
 					eprintf ("Deleted %d lines\n", del);
+        free (str);
 				fclose (fd);
 			}
 			}
