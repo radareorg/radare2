@@ -665,7 +665,7 @@ char* get_num(SStateInfo *state)
 	char *tmp = 0; \
 	STypeCodeStr tmp_str; \
 	STypeCodeStr modifier; \
-	int flag__ptr64 = 0; \
+	int flag__64ptr = 0; \
 \
 	state->state = eTCStateEnd; \
 \
@@ -679,7 +679,7 @@ char* get_num(SStateInfo *state)
 	} \
 \
 	if (*state->buff_for_parsing == 'E') { \
-		flag__ptr64 = 1; \
+		flag__64ptr = 1; \
 		state->amount_of_read_chars++; \
 		state->buff_for_parsing++; \
 	} \
@@ -734,8 +734,8 @@ char* get_num(SStateInfo *state)
 		copy_string(&tmp_str, " ", 0); \
 		copy_string(&tmp_str, modifier.type_str, modifier.curr_pos); \
 		copy_string(&tmp_str, modifier_str, 0); \
-		if (flag__ptr64) { \
-			copy_string(&tmp_str, " __ptr64", 0); \
+		if (flag__64ptr) { \
+			copy_string(&tmp_str, " __64ptr", 0); \
 		} \
 	} \
 \
@@ -1069,7 +1069,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	char *call_conv = 0;
 	char *storage_class_code_for_ret = 0;
 	char *ret_type = 0;
-	char *__ptr64 = 0;
+	char *__64ptr = 0;
 	RList /* <char *> */ *func_args = 0;
 	RListIter *it = 0;
 	SStrInfo *str_arg = 0;
@@ -1128,7 +1128,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 				err = eDemanglerErrUncorrectMangledSymbol;
 				goto parse_microsoft_mangled_name_err;
 			}
-			ptr64 = "__ptr64";
+			ptr64 = "__64ptr";
 			curr_pos++;
 		}
 
@@ -1210,7 +1210,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	// TODO: what?????
 	if (*curr_pos == 'E') {
-		__ptr64 = "__ptr64";
+		__64ptr = "__64ptr";
 		curr_pos++;
 	}
 
@@ -1385,9 +1385,9 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		copy_string(&func_str, ")", 0);
 	}
 
-	if (__ptr64) {
+	if (__64ptr) {
 		copy_string(&func_str, " ", 0);
-		copy_string(&func_str, __ptr64, 0);
+		copy_string(&func_str, __64ptr, 0);
 	}
 
 	// TODO: where to free??
