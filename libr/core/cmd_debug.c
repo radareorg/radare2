@@ -783,6 +783,11 @@ free (rf);
 			break;
 		}
 		break;
+	case 'm': // "drm"
+		r_cons_printf("aki andamos otra vez\n");
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, R_FALSE);
+		//r_debug_drx_list (core->dbg);
+		break;
 	case 'p': // "drp"
 		if (!str[1]) {
 			if (core->dbg->reg->reg_profile_str) {

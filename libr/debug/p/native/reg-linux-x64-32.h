@@ -74,5 +74,36 @@ return strdup (
 //"drx	dr5	.32	20	0\n"
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n"
+
+
+"fpu    cwd .16 0   0\n"
+"fpu    swd .16 2   0\n"
+"fpu    twd .16 4   0\n"
+"fpu    fop .16 6   0\n"
+"fpu    fip .32 8   0\n"
+"fpu    fcs .32 12  0\n"
+"fpu    foo .32 16  0\n"
+"fpu    fos .32 20  0\n"
+"fpu    mxcsr .32 24  0\n"
+"fpu    reserved .32 28  0\n"
+
+
+"fpu    st0 .64 32  0\n"
+"fpu    st1 .64 48  0\n"
+"fpu    st2 .64 64  0\n"
+"fpu    st3 .64 80  0\n"
+"fpu    st4 .64 96  0\n"
+"fpu    st5 .64 112  0\n"
+"fpu    st6 .64 128  0\n"
+"fpu    st7 .64 144  0\n"
+
+"fpu    xm0 .64 160  0\n"
+"fpu    xm1 .64 176  0\n"
+"fpu    xm2 .64 192  0\n"
+"fpu    xm3 .64 208  0\n"
+"fpu    xm4 .64 224  0\n"
+"fpu    xm5 .64 240  0\n"
+"fpu    xm6 .64 256  0\n"
+"fpu    xm7 .64 272  0\n"
 );
 

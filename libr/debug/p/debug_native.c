@@ -891,10 +891,12 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 #endif
 	return list;
 }
+
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int pid = dbg->pid;
+	int tid = dbg->tid;
 	if (size<1)
 		return R_FALSE;
 #if __WINDOWS__
@@ -1038,6 +1040,67 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #endif
 		return R_TRUE;
 		break;
+	case R_REG_TYPE_FPU:
+	case R_REG_TYPE_MMX:
+	case R_REG_TYPE_XMM:
+#if __x86_64__ || __i386__
+		{
+			int ret1 = 0;
+			struct user_fpregs_struct regs1;
+		if (type == R_REG_TYPE_MMX) {
+			int i;
+#if __x86_64__
+			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &regs1);
+			eprintf ("cwd = 0x%04x  ; control   ", regs1.cwd);
+			eprintf ("swd = 0x%04x  ; status\n", regs1.swd);
+			eprintf ("ftw = 0x%04x              ", regs1.ftw);
+			eprintf ("fop = 0x%04x\n", regs1.fop);
+			eprintf ("rip = 0x%016"PFMT64x"  ", regs1.rip);
+			eprintf ("rdp = 0x%016"PFMT64x"\n", regs1.rdp);
+			eprintf ("mxcsr = 0x%08x        ", regs1.mxcsr);
+			eprintf ("mxcr_mask = 0x%08x\n", regs1.mxcr_mask);
+			#define FADDR ((double*)&regs1.st_space[i*4])
+			for(i=0;i<8;i++) {
+				ut16 *a = (ut16*)&regs1.xmm_space;
+				ut64 *b = (ut64 *)&regs1.st_space[i*4];
+				a = a + (i * 4);
+				eprintf ("mm%d = %04x %04x %04x %04x    ",
+					i, (int)a[0], (int)a[1], (int)a[2], (int)a[3]);
+				eprintf ("st%d = %lg (0x%08llx)\n", i, *FADDR, *b);
+			}
+#elif __i386__
+#warning No MMX for linux32 yet
+			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &regs1);
+			eprintf ("cwd = 0x%04lx  ; control   ", regs1.cwd);
+			eprintf ("swd = 0x%04lx  ; status\n", regs1.swd);
+			eprintf ("twd = 0x%04lx              ", regs1.twd);
+			eprintf ("fip = 0x%04lx              ", regs1.fip);
+			eprintf ("fcs = 0x%04lx              ", regs1.fcs);
+			eprintf ("foo = 0x%04lx              ", regs1.foo);
+			eprintf ("fos = 0x%04lx              ", regs1.fos);
+			#define FADDR ((double*)&regs1.st_space[i*4])
+			for (i=0; i<8; i++) {
+				ut32 *ptr = (ut32*)&regs1.st_space[i*4];
+				ut64 n = *ptr;
+				eprintf ("st%d = %lg (0x%08llx)\n", i, (double)(n), n);
+			}
+#endif
+		}
+			if (ret1 != 0) {
+				// if perror here says 'no such process' and the
+				// process exists still.. is because there's a
+				// missing call to 'wait'. and the process is not
+				// yet available to accept more ptrace queries.
+				return R_FALSE;
+			}
+			if (sizeof (regs1) < size) {
+				size = sizeof (regs1);
+			}
+			memcpy (buf, &regs1, size);
+			return sizeof (regs1);
+		}
+#endif
+		break;
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
@@ -1051,10 +1114,13 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		ret = ptrace(PT_GETREGS, pid, (caddr_t)&regs, 0);
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
+
 #else
 		/* linux-{arm/x86/x64} */
 		ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
-#endif
+        ////////////////////////////////////////////////
+  
+        //////////////////////////////////
 		if (ret != 0) {
 			// if perror here says 'no such process' and the
 			// process exists still.. is because there's a
@@ -1069,6 +1135,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		}
 		break;
 	}
+#endif 
 	return R_TRUE;
 #else
 #warning dbg-native not supported for this platform
