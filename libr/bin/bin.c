@@ -310,6 +310,8 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		return R_BIN_NM_CXX;
 	if (r_bin_lang_dlang (binfile))
 		return R_BIN_NM_DLANG;
+	if (r_bin_lang_msvc (binfile))
+		return R_BIN_NM_MSVC;
 	return R_BIN_NM_NONE;
 }
 
