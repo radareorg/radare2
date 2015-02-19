@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - inisider */
+
 #include "microsoft_demangle.h"
 #include <ctype.h>
 #include <r_cons.h>
@@ -1227,6 +1229,15 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 			break;
 		}
 	}
+
+	// currently does not use because I can not find real example of
+	// where to use this
+	// just read in http://www.agner.org/optimize/calling_conventions.pdf
+	// that this is possible
+	// when some find the case where it is used please remove this (void)*
+	// lines
+	(void)is_static;
+	(void)memb_func_access_code;
 
 	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;

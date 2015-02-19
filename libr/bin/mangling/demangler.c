@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - inisider */
+
 #include "demangler.h"
 #include <stdlib.h>
 

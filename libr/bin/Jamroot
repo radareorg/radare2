@@ -1,6 +1,7 @@
 OBJS = bin.c bin_write.c demangle.c dwarf.c dbginfo.c ;
 OBJS += mangling/cxx/cp-demangle.c ;
-OBJS += mangling/objc.c mangling/cxx.c ;
+OBJS += mangling/objc.c mangling/cxx.c;
+OBJS += mangling/msvc.c;
 
 OBJS += p/bin_fs.c ;
 OBJS += p/bin_bf.c ;
