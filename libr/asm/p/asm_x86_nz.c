@@ -704,6 +704,50 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			}
 			eprintf ("Invalid pop syntax\n");
 			return 0;
+		} else if (!strcmp (op, "or")) {
+			int pfx, arg0;
+			if (*arg=='[') {
+				arg++;
+				pfx = 0;
+			} else pfx = 0xc0;
+			arg0 = getreg (arg);
+			if (a->bits==64) {
+				if (*arg=='r')
+					data[l++] = 0x48;
+				data[l++] = 0x09;
+				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
+			} else {
+				data[l++] = 0x09;
+				if (isnum (a, arg2)) {
+					data[l++] = arg0 | 0xf0;
+					data[l++] = getnum (a, arg2);
+				} else {
+					data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
+				}
+			}
+			return l;
+		} else if (!strcmp (op, "and")) {
+			int pfx, arg0;
+			if (*arg=='[') {
+				arg++;
+				pfx = 0;
+			} else pfx = 0xc0;
+			arg0 = getreg (arg);
+			if (a->bits==64) {
+				if (*arg=='r')
+					data[l++] = 0x48;
+				data[l++] = 0x21;
+				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
+			} else {
+				data[l++] = 0x21;
+				if (isnum (a, arg2)) {
+					data[l++] = arg0 | 0xf0;
+					data[l++] = getnum (a, arg2);
+				} else {
+					data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
+				}
+			}
+			return l;
 		} else if (!strcmp (op, "xor")) {
 			int pfx, arg0;
 			if (*arg=='[') {
