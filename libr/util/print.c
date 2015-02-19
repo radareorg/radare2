@@ -208,10 +208,10 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 		int to = p->cur;
 		r_num_minmax_swap_i (&from, &to);
 		if (cur>=from && cur<=to)
-			p->printf ("%s", R_CONS_INVERT (set, 1)); //r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
+			p->printf ("%s", R_CONS_INVERT (set, 1));
 	} else
 	if (cur==p->cur)
-		p->printf ("%s", R_CONS_INVERT (set, 1)); //r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
+		p->printf ("%s", R_CONS_INVERT (set, 1));
 }
 
 R_API void r_print_addr(RPrint *p, ut64 addr) {
@@ -793,14 +793,33 @@ R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 	}
 }
 
-R_API void r_print_raw(RPrint *p, const ut8* buf, int len, int offlines) {
-	if (offlines) {
+R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines) {
+	if (offlines==2) {
+		int i, j, cols = p->cols * 4;
+		char ch;
+		for (i=0; i<len; i+=cols) {
+			p->printf ("0x%08x  ", addr+i);
+			for (j = 0; j<cols; j++) {
+				if ((i+j)>=len)
+					break;
+				ch = buf[i + j];
+				if (p->cur_enabled) {
+					r_print_cursor (p, i+j, 1);
+					p->printf ("%c", IS_PRINTABLE (ch)? ch: ' ');
+					r_print_cursor (p, i+j, 0);
+				} else {
+					p->printf ("%c", IS_PRINTABLE (ch)? ch: ' ');
+				}
+			}
+			p->printf ("\n");
+		}
+	} else if (offlines) {
 		const ut8 *o, *q;
 		int mustbreak = 0, linenum = 1;
 		o = q = buf;
 		do {
 			p->printf ("%d 0x%08x ", linenum,
-				(int)(size_t)(q-buf));
+				addr + (int)(size_t)(q-buf));
 			for (;*q && *q != '\n'; q++);
 			if (!*q)
 				mustbreak = 1;

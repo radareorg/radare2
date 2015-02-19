@@ -84,7 +84,7 @@ R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt);
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size);
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
-R_API void r_print_raw(RPrint *p, const ut8* buf, int len, int offlines);
+R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
 R_API void r_print_cursor(RPrint *p, int cur, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);

@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
-/*#include <r_anal_ex.h>*/
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
@@ -1747,16 +1746,21 @@ static int cmd_print(void *data, const char *input) {
 	case 'c': //pc
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
 		break;
-	case 'r': //pr
+	case 'r': // "pr"
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: prl: print raw with lines offsets\n");
+			r_cons_printf ("|Usage: prl/prx [size]\n");
+			r_cons_printf ("| prl: print raw with lines offsets\n");
+			r_cons_printf ("| prx: printable chars with real offset (hyew)\n");
 			break;
-		case 'l':
-			r_print_raw (core->print, core->block, len, 1);
+		case 'l': // "prl"
+			r_print_raw (core->print, core->offset, core->block, len, 1);
+			break;
+		case 'x': // "prx"
+			r_print_raw (core->print, core->offset, core->block, len, 2);
 			break;
 		default:
-			r_print_raw (core->print, core->block, len, 0);
+			r_print_raw (core->print, core->offset, core->block, len, 0);
 		}
 		break;
 	case '3': // "p3" [file]
@@ -2226,6 +2230,7 @@ static int cmd_print(void *data, const char *input) {
 			 "Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
 			 "p=","[bep?] [blks]","show entropy/printable chars/chars bars",
 			 "p2"," [len]","8x8 2bpp-tiles",
+			 "p3"," [file]","print stereogram (3D)",
 			 "p6","[de] [len]", "base64 decode/encode",
 			 "p8"," [len]","8bit hexpair list of bytes",
 			 "pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
@@ -2235,7 +2240,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
 			 "p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
 			 "pm"," [magic]","print libmagic data (pm? for more information)",
-			 "pr"," [len]","print N raw bytes",
+			 "pr","[lx] [len]","print N raw bytes (in lines or hexblocks)",
 			 "p","[kK] [len]","print key in randomart (K is for mosaic)",
 			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
 			 "pt","[dn?] [len]","print different timestamps",
