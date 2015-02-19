@@ -215,6 +215,7 @@ R_API int r_cons_is_utf8() {
 	if (cursor_position (fd, &row2, &col2))
 		return 0;
 	write (1, "\r    \r", 6);
+	close(fd);
 	return ((col2-col)==2);
 }
 #else

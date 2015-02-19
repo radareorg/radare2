@@ -753,7 +753,7 @@ static void rcc_next(REgg *egg) {
 		ptr = strchr (callname, '=');
 		if (ptr) {
 			*ptr = '\0';
-			ocn = ptr+1;
+			//ocn = ptr+1; // what is the point of this?
 		}
 		ocn = skipspaces (callname);
 		str = r_egg_mkvar (egg, buf, ocn, 0);

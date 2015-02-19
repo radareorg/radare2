@@ -197,8 +197,10 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 				tv.tv_sec = 1; //timeout;
 				tv.tv_usec = 0;
 
-				if (r_socket_is_connected (s))
+				if (r_socket_is_connected (s)) {
+					freeaddrinfo (res);
 					return R_TRUE;
+				}
 				if (select (s->fd + 1, NULL, NULL, &errset, &tv) == 1) {
 					int so_error;
 					socklen_t len = sizeof so_error;

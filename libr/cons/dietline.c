@@ -851,7 +851,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					i = I.buffer.index-cols;
 					if (i>sizeof (I.buffer.data)) {
 						i = sizeof(I.buffer.data)-1;
-						len = 1;
 					}
 				} else i = 0;
 				len = I.buffer.index;

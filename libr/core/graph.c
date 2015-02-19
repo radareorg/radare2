@@ -449,7 +449,7 @@ static void r_core_graph_refresh (RCore *core) {
 		Node_print (can, &nodes[curnode], 1);
 	}
 
-	G (-can->sx, -can->sy);
+	(void)G (-can->sx, -can->sy);
 	snprintf (title, sizeof (title)-1,
 		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
 		fcn->addr, ostack.size, fcn->name,
