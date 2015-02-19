@@ -847,9 +847,9 @@ function on_scroll(event) {
       if (has_scrollbar($('#center_panel')[0])) {
         if (scroll_offset === 0 ) {
           addr = "0x" + r2ui._dis.instructions[0].offset.toString(16);
-          console.log("Scroll en top", scroll_offset, top_offset, addr);
+          // console.log("Scroll en top", scroll_offset, top_offset, addr);
           r2.get_disasm_before(addr, 50, function(x) {
-            console.log(x.length);
+            // console.log(x.length);
             r2ui._dis.instructions = x.concat(r2ui._dis.instructions);
           });
           container_element.html("<div id='canvas' class='canvas enyo-selectable ec_gui_background'></div>");
