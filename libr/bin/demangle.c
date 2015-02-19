@@ -7,7 +7,7 @@
 #include "mangling/demangler.h"
 
 R_API void r_bin_demangle_list(RBin *bin) {
-	const char *langs[] = { "cxx", "java", "objc", "swift", NULL };
+	const char *langs[] = { "cxx", "java", "objc", "swift", "dlang", "msvc", NULL };
 	RBinPlugin *plugin;
 	RListIter *it;
 	int i;
