@@ -1679,29 +1679,6 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			core_anal_bytes (core, core->block, len, count, 'j');
 		}
 		break;
-#if DEPRECATED
-	case 's':
-		if (input[1]==' ') {
-			char *esil = strdup (input+1);
-			char *o = r_anal_esil_to_sdb (esil);
-			// do stuff
-			if (o&&*o) r_cons_printf ("%s\n", o);
-			free (o);
-			free (esil);
-		} else {
-			RAnalOp *op = r_core_op_anal (core, addr);
-			if (op != NULL) {
-				char *esil = strdup (R_STRBUF_SAFEGET (&op->esil));
-				char *o = r_anal_esil_to_sdb (esil);
-				if (o&&*o) r_cons_printf ("%s\n", o);
-				// do stuff
-				free (esil);
-				free (o);
-				r_anal_op_free (op);
-			}
-		}
-		break;
-#endif
 	case 'e':
 		eprintf ("TODO: See 'ae' command\n");
 		break;
