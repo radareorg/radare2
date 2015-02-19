@@ -6,7 +6,7 @@ static void find_refs(RCore *core, const char *glob) {
 	char cmd[128];
 	ut64 curseek = core->offset;
 	while (*glob==' ') glob++;
-	if (!glob || !*glob)
+	if (!*glob)
 		glob = "str.";
 	if (*glob == '?') {
 		eprintf ("Usage: arf [flag-str-filter]\n");

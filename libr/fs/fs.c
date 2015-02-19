@@ -635,8 +635,8 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				if (root) strncpy (str, root, sizeof (str)-1);
 				else str[0] = 0;
 			} else strncpy (str, path, sizeof (str)-1);
-			strcat (str, "/");
-			strcat (str, input);
+			strncat (str, "/", sizeof (str) - strlen (str) - 1);
+			strncat (str, input, sizeof (str) -strlen (str) - 1);
 			file = r_fs_open (fs, str);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);

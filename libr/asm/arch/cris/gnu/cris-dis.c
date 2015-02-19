@@ -851,7 +851,7 @@ print_with_operands (const struct cris_opcode *opcodep,
       case 'n':
 	{
 	  /* Like N but pc-relative to the start of the insn.  */
-	  unsigned long number
+	  unsigned long long number
 	    = (buffer[2] + buffer[3] * 256 + buffer[4] * 65536
 	       + buffer[5] * 0x1000000 + addr);
 

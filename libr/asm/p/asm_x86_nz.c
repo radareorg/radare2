@@ -120,7 +120,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	if (arg) {
 		const int dword_len = strlen ("dword ");
 		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
-	} else arg = strchr (op, ' ');
+	}
 
 	if (!memcmp (op, "ret ", 4) || !memcmp (op, "retn ", 5)) {
 		int n = getnum (a, op+4);

@@ -379,8 +379,12 @@ int gdbr_disconnect(libgdbr_t* g) {
 }
 
 int gdbr_read_registers(libgdbr_t* g) {
-	send_command (g, CMD_READREGS);
-	if ( read_packet (g) > 0) {
+	int ret = -1;
+	ret = send_command (g, CMD_READREGS);
+	if (ret < 0)
+		return ret;
+
+	if (read_packet (g) > 0) {
 		parse_packet (g, 0);
 		return handle_g (g);
 	}

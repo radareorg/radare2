@@ -315,6 +315,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 						}
 					}
 				}
+				r_list_free (jmp_list);
 				if (encountered_stop) state->done = 1;
 			}
 
