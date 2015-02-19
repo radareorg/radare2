@@ -104,6 +104,20 @@ R_API char *r_bin_demangle_java(const char *str) {
 	return ret;
 }
 
+R_API char *r_bin_demangle_msvc(const char *str)
+{
+	char *out;
+	SDemangler *mangler = 0;
+
+	create_demangler(&mangler);
+	if (init_demangler(mangler, (char *)str) == eDemanglerErrOK) {
+		mangler->demangle(mangler, &out/*demangled_name*/);
+	}
+	free_demangler(mangler);
+
+	return out;
+}
+
 R_API char *r_bin_demangle_cxx(const char *str) {
 	char *out;
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
@@ -139,20 +153,6 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 
 	if (out) {
 		r_str_replace_char (out, ' ', 0);
-	} else {
-//		str = "??$MyTemplateFunction@VClass1@@@Class1@@QAEXPAV0@@Z";
-//		str = "?xyz@?$abc@V?$def@H@@PAX@@YAXXZ";
-//		str = "?xyz@?$abc@V?$def@H@@PAXV?$test@H@@@@YAXXZ";
-		// TODO: mangler_branch: remove, just for testing now
-		SDemangler *mangler = 0;
-//		char *demangled_name = 0;
-		create_demangler(&mangler);
-		if (init_demangler(mangler, (char *)str) == eDemanglerErrOK) {
-			// TODO: where out need to be free ????
-			mangler->demangle(mangler, &out/*demangled_name*/);
-		}
-		free_demangler(mangler);
-//		R_FREE(demangled_name);
 	}
 
 	return out;
@@ -274,6 +274,8 @@ R_API int r_bin_demangle_type (const char *str) {
 		return R_BIN_NM_CXX;
 	if (!strcmp (str, "dlang"))
 		return R_BIN_NM_DLANG;
+	if (!strcmp (str, "msvc"))
+		return R_BIN_NM_MSVC;
 	return R_BIN_NM_NONE;
 }
 

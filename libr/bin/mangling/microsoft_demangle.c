@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - inisider */
+
 #include "microsoft_demangle.h"
 #include <ctype.h>
 #include <r_cons.h>
@@ -388,7 +390,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			if (!tmp) {
 				goto get_namespace_and_name_err;
 			}
-			len = strlen(tmp); // maybe 2??
+			len = 1;
 		} else {
 			tmp = (char *) malloc(len + 1);
 			memset(tmp, 0, len + 1);
@@ -398,7 +400,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 		str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
 		str_info->str_ptr = tmp;
-		str_info->len = len;
+		str_info->len = strlen(tmp);
 
 		r_list_append(names_l, str_info);
 
@@ -735,7 +737,7 @@ char* get_num(SStateInfo *state)
 		copy_string(&tmp_str, modifier.type_str, modifier.curr_pos); \
 		copy_string(&tmp_str, modifier_str, 0); \
 		if (flag__64ptr) { \
-			copy_string(&tmp_str, " __64ptr", 0); \
+			copy_string(&tmp_str, " __ptr64", 0); \
 		} \
 	} \
 \
@@ -1128,7 +1130,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 				err = eDemanglerErrUncorrectMangledSymbol;
 				goto parse_microsoft_mangled_name_err;
 			}
-			ptr64 = "__64ptr";
+			ptr64 = "__ptr64";
 			curr_pos++;
 		}
 
@@ -1210,7 +1212,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 
 	// TODO: what?????
 	if (*curr_pos == 'E') {
-		__64ptr = "__64ptr";
+		__64ptr = "__ptr64";
 		curr_pos++;
 	}
 
@@ -1227,6 +1229,15 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 			break;
 		}
 	}
+
+	// currently does not use because I can not find real example of
+	// where to use this
+	// just read in http://www.agner.org/optimize/calling_conventions.pdf
+	// that this is possible
+	// when some find the case where it is used please remove this (void)*
+	// lines
+	(void)is_static;
+	(void)memb_func_access_code;
 
 	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;
@@ -1390,7 +1401,7 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		copy_string(&func_str, __64ptr, 0);
 	}
 
-	// TODO: where to free??
+	// need to be free by user
 	*demangled_name = strdup(func_str.type_str);
 
 parse_microsoft_mangled_name_err:
