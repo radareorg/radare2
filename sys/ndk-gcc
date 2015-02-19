@@ -24,11 +24,11 @@ aarch64)
 	ARCH2=arm64
 	;;
 arm)
-	ANDROID_SDK_VERSION=14
+	ANDROID_SDK_VERSION=21
 	NDKPFX=${ARCH}-linux-androideabi
 	;;
 mips)
-	ANDROID_SDK_VERSION=9 #mips
+	ANDROID_SDK_VERSION=21 #mips
 	NDKPFX=mipsel-linux-android
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then
@@ -44,7 +44,7 @@ mips64)
 	fi
 	;;
 x86)
-	ANDROID_SDK_VERSION=9 #x86
+	ANDROID_SDK_VERSION=21 #x86
 	NDKPFX=i686-android-linux
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then
