@@ -75,6 +75,7 @@ static char * build_str_from_str_list_for_iterable (RList *the_list) {
 			commas--;
 		}
 	}
+	r_list_free (str_list);
 	return res;
 }
 static int get_type (DsoJsonObj *y) {
@@ -755,7 +756,7 @@ R_API DsoJsonObj * dso_json_str_new_from_str_len (const char *str, unsigned int 
 	DsoJsonObj *x = dso_json_str_new ();
 	DsoJsonStr * dsoStr = x->val._str;
 	allocDsoStr (dsoStr, len);
-	if (dsoStr) memcpy (dsoStr->data, str, dsoStr->len);
+	memcpy (dsoStr->data, str, dsoStr->len);
 	return x;
 }
 

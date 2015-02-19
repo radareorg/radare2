@@ -44,12 +44,12 @@ static int cmd_project(void *data, const char *input) {
 		case '-':
 			/* remove lines containing specific words */
 			{
-			char *str = r_core_project_notes_file (core, fileproject);
-			char *data = r_file_slurp (str, NULL);
 			FILE *fd = r_sandbox_fopen (str, "w");
 			if (!fd) {
 				eprintf ("Cannot open %s\n", str);
 			} else {
+				char *str = r_core_project_notes_file (core, fileproject);
+				char *data = r_file_slurp (str, NULL);
 				int del = 0;
 				if (data) {
 					char *ptr, *nl;
@@ -64,12 +64,12 @@ static int cmd_project(void *data, const char *input) {
 						}
 					}
 					free (data);
+					free (str);
 				}
 				if (del>0)
 					eprintf ("Deleted %d lines\n", del);
 				fclose (fd);
 			}
-			free (str);
 			}
 			break;
 		case ' ':

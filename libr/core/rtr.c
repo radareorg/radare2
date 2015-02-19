@@ -467,7 +467,6 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
 
 		if (!rs) {
-			if (!s) break;
 			r_sys_usleep (100);
 			continue;
 		}

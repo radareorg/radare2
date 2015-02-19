@@ -936,14 +936,10 @@ static int cmd_print(void *data, const char *input) {
 		w = len? len: core->print->cols * 4;
 		if (mode == 'j') r_cons_strcat ("{");
 		off = core->offset;
-		for (i=0; i<10; i++) total[i] = 0;
-		{
-		RList* list = r_core_get_boundaries (core, "file", &from, &to);
-		if (from && to && list)
-			r_list_free (list);
-		}
-		piece = (to-from) / w;
-		if (piece<1) piece = 1;
+		for (i=0; i<10; i++)
+			total[i] = 0;
+		r_list_free (r_core_get_boundaries (core, "file", &from, &to));
+		piece = R_MAX((to - from) / w, 1);
 		as = r_core_anal_get_stats (core, from, to, piece);
 		//eprintf ("RANGE = %llx %llx\n", from, to);
 		switch (mode) {
