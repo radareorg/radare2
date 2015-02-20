@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2014 - pancake */
+/* Copyright (C) 2008-2015 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -661,6 +661,26 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			data[l++] = ptr[2];
 			data[l++] = ptr[3];
 			return 5;
+		} else if (!strcmp (op, "div")) {
+			int pfx = 0xf0;
+			int arg0 = getreg (arg);
+			if (arg0 == 0xff)
+				return -1;
+			if (*arg == 'r')
+				data[l++] = 0x48;
+			data[l++] = 0xf7;
+			data[l++] = arg0 | pfx;
+			return l;
+		} else if (!strcmp (op, "mul")) {
+			int pfx = 0xe0;
+			int arg0 = getreg (arg);
+			if (arg0 == 0xff)
+				return -1;
+			if (*arg == 'r')
+				data[l++] = 0x48;
+			data[l++] = 0xf7;
+			data[l++] = arg0 | pfx;
+			return l;
 		} else if (!strcmp (op, "pop")) {
 			char *delta;
 			ut64 dst;

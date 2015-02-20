@@ -949,7 +949,6 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
                 return R_FALSE;
         }
 
-	int tid = dbg->tid;
 	if (tid <0 || tid>=inferior_thread_count) {
 		dbg->tid = tid = dbg->pid;
 	}
