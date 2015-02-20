@@ -144,7 +144,7 @@ R_API void r_print_stereogram_print(RPrint *p, const char *ret) {
 R_API RPrint *r_print_new() {
 	RPrint *p = R_NEW0 (RPrint);
 	if (!p) return NULL;
-	strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
+	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %z");
 	r_io_bind_init (p->iob);
 	p->pairs = R_TRUE;
 	p->printf = printf;

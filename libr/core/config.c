@@ -1014,7 +1014,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* cfg */
 	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);
 	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
-	SETCB("cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%d:%m:%Y %H:%M:%S %z)");
+	SETCB("cfg.datefmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "set/unset the debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__ && !__CYGWIN__
