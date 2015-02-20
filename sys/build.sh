@@ -35,7 +35,17 @@ fi
 
 pkg-config --atleast-version=3.0 capstone 2>/dev/null
 if [ $? = 0 ]; then
-	CFGARG="${CFGARG} --with-syscapstone"
+	echo '#include <capstone.h>' > .a.c
+	echo 'int main() {return 0;}' >> .a.c
+	gcc `pkg-config --cflags --libs capstone` -o .a.out .a.c
+	if [ $? = 0 ]; then
+		CFGARG="${CFGARG} --with-syscapstone"
+	else
+		echo
+		echo "** WARNING ** capstone pkg-config is wrongly installed."
+		echo
+	fi
+	rm -f .a.c .a.out
 fi
 
 # build
