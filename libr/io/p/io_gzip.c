@@ -91,7 +91,8 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 		r_offset = (offset <= RIOMALLOC_SZ (fd)) ? offset : RIOMALLOC_SZ (fd);
 		break;
 	case SEEK_CUR:
-		r_offset = (RIOMALLOC_OFF (fd) + offset <= RIOMALLOC_SZ (fd)) ? RIOMALLOC_OFF (fd) + offset : RIOMALLOC_SZ (fd);
+		r_offset = (RIOMALLOC_OFF (fd) + offset <= RIOMALLOC_SZ (fd)) ?
+			RIOMALLOC_OFF (fd) + offset : RIOMALLOC_SZ (fd);
 		break;
 	case SEEK_END:
 		r_offset = RIOMALLOC_SZ (fd);

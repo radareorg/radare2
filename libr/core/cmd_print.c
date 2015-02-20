@@ -1752,12 +1752,26 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("|Usage: prl/prx [size]\n");
 			r_cons_printf ("| prl: print raw with lines offsets\n");
 			r_cons_printf ("| prx: printable chars with real offset (hyew)\n");
+			r_cons_printf ("| prg: print raw gunzipped block\n");
 			break;
 		case 'l': // "prl"
 			r_print_raw (core->print, core->offset, core->block, len, 1);
 			break;
 		case 'x': // "prx"
 			r_print_raw (core->print, core->offset, core->block, len, 2);
+			break;
+		case 'g': // "prg" // gunzip
+			{
+				int sz, outlen = 0;
+				ut8 *in, *out;
+				in = core->block;
+				sz = core->blocksize;
+				out = r_inflate (in, sz, &outlen);
+				if (out) {
+					r_cons_memcat ((const char*)out, outlen);
+				}
+				free (out);
+			}
 			break;
 		default:
 			r_print_raw (core->print, core->offset, core->block, len, 0);
@@ -2240,7 +2254,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
 			 "p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
 			 "pm"," [magic]","print libmagic data (pm? for more information)",
-			 "pr","[lx] [len]","print N raw bytes (in lines or hexblocks)",
+			 "pr","[glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
 			 "p","[kK] [len]","print key in randomart (K is for mosaic)",
 			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
 			 "pt","[dn?] [len]","print different timestamps",
