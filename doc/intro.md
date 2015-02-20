@@ -39,7 +39,7 @@ e asm.pseudo = true
 e cmd.stack = true
 
 # Solarized theme
-ecf solarized
+eco solarized
 
 # Use UTF-8 to show cool arrows that do not look like crap :)
 e scr.utf8 = true
