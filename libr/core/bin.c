@@ -562,6 +562,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 		r_list_foreach (entries, iter, entry) {
 			ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
 			if (at == 0) at = entry->vaddr;
+			r_flag_space_set (r->flags, "symbols");
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
 			r_flag_set (r->flags, str, at, 1, 0);
 		}
