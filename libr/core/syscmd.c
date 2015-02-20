@@ -65,7 +65,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_RAW) {
-		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n",
+		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 		isdir?'d':fch,
 		      u_rwx,
 		      r_str_rwx_i ((perm>>3)&7),
@@ -78,7 +78,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 			name, sz, uid, gid, perm, isdir?"true":"false");
 	}
 	free (nn);
-	free(u_rwx);
+	free (u_rwx);
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
@@ -109,12 +109,12 @@ R_API void r_core_syscmd_ls(const char *input) {
 	}
 	files = r_sys_dir (path);
 
-	if (path[strlen(path)-1] == '/')
+	if (path[strlen (path)-1] == '/')
 		dir = strdup (path);
 	else
 		dir = r_str_concat (strdup (path), "/");
 	int nth = 0;
-	if (printfmt == FMT_JSON) r_cons_printf("[");
+	if (printfmt == FMT_JSON) r_cons_printf ("[");
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_concat (strdup (dir), name);
 		if (!n) break;
@@ -122,7 +122,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 		free (n);
 		nth++;
 	}
-	if (printfmt == FMT_JSON) r_cons_printf("]");
+	if (printfmt == FMT_JSON) r_cons_printf ("]");
 	free (dir);
 	r_list_free (files);
 }

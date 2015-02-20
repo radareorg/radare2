@@ -1481,9 +1481,10 @@ ST_FUNC void preprocess(int is_bof)
             if (tcc_open(s1, buf1) < 0)
 include_trynext:
                 continue;
+	    fprintf (stderr, "#include \"%s\"\n", buf1);
 
 #ifdef INC_DEBUG
-            printf("%s: including %s\n", file->prev->filename, file->filename);
+            fprintf(stderr, "%s: including %s\n", file->prev->filename, file->filename);
 #endif
             /* update target deps */
             dynarray_add((void ***)&s1->target_deps, &s1->nb_target_deps,
@@ -1494,7 +1495,40 @@ include_trynext:
             ch = file->buf_ptr[0];
             goto the_end;
         }
-        tcc_error("include file '%s' not found", buf);
+	/* load include file from the same directory as the parent */
+	{
+		char filepath[1024];
+		int filepath_len;
+		char *e = file->filename + strlen (file->filename);
+		while (e>file->filename) {
+			if (*e=='/') {
+				break;
+			}
+			e--;
+		}
+		filepath_len = R_MIN ((size_t)(e - file->filename)+1, sizeof (filepath));
+		memcpy (filepath, file->filename, filepath_len);
+		strcpy (filepath+filepath_len, buf);
+		if (tcc_open (s1, filepath) < 0) {
+			snprintf (filepath, sizeof (filepath),
+				"/usr/include/%s", buf);
+			if (tcc_open (s1, filepath) < 0) {
+				tcc_error ("include file '%s' not found", filepath);
+			} else {
+				fprintf (stderr, "#include \"%s\"\n", filepath);
+				++s1->include_stack_ptr;
+				tok_flags |= TOK_FLAG_BOF | TOK_FLAG_BOL;
+				ch = file->buf_ptr[0];
+				goto the_end;
+			}
+		} else {
+			fprintf (stderr, "#include \"%s\"\n", filepath);
+			++s1->include_stack_ptr;
+			tok_flags |= TOK_FLAG_BOF | TOK_FLAG_BOL;
+			ch = file->buf_ptr[0];
+			goto the_end;
+		}
+	}
 include_done:
         break;
     case TOK_IFNDEF:
