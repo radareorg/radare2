@@ -7,8 +7,6 @@
 
 #include "../arch/z80-cr/z80-cr.c"
 
-
-
 static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass (op, buf, len);
 }

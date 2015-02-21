@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "z80_tab.h"
 
-ut8 z80_fddd_branch_index_res (ut8 hex)
+static ut8 z80_fddd_branch_index_res (ut8 hex)
 {
 	switch (hex) {
 		case 0x9:
@@ -125,7 +125,7 @@ ut8 z80_fddd_branch_index_res (ut8 hex)
 	return 0x56;
 }
 
-ut8 z80_ed_branch_index_res (ut8 hex) {
+static ut8 z80_ed_branch_index_res (ut8 hex) {
 	if (hex > 0x39 && 0x4c > hex)
 		return hex-0x40;
 	if (hex == 0x4d)
@@ -234,16 +234,3 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 	}
 	return ret;
 }
-
-
-/*
-int main () {
-	RAsmOp rop;
-	ut8 buf[5];
-	buf[0] = 0xfd;
-	buf[1] = 0xcb;
-	z80Disass (&rop, buf, 5);
-	printf ("%s\n", rop.buf_asm);
-	return 1;
-}
-*/

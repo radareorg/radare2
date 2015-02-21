@@ -12,9 +12,11 @@
 static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	char out[32];
 	int ilen = z80dis (0, data, out, len);
+
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+
 	switch (data[0]) {
 		case 0x00:
 			op->type = R_ANAL_OP_TYPE_NOP;
@@ -135,7 +137,6 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		case 0xfa:
 			op->type = R_ANAL_OP_TYPE_JMP; // jmpz
 			break;
-			
 		case 0xc7:				//rst 0
 			op->jump = 0x00;
 			op->fail = addr + ilen;
