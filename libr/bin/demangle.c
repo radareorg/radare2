@@ -106,7 +106,7 @@ R_API char *r_bin_demangle_java(const char *str) {
 
 R_API char *r_bin_demangle_msvc(const char *str)
 {
-	char *out;
+	char *out = NULL;
 	SDemangler *mangler = 0;
 
 	create_demangler(&mangler);

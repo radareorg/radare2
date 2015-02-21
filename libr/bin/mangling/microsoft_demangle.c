@@ -330,11 +330,13 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			case 'X': SET_OPERATOR_CODE("placement_new_closure"); break;
 			case 'Y': SET_OPERATOR_CODE("placement_delete_closure"); break;
 			default:
+				r_list_free (names_l);
 				return 0;
 			}
 			read_len++;
 		break;
 		default:
+			r_list_free (names_l);
 			return 0;
 		}
 		buf++;
