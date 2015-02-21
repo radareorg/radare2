@@ -1506,7 +1506,7 @@ include_trynext:
 			}
 			e--;
 		}
-		filepath_len = R_MIN ((size_t)(e - file->filename)+1, sizeof (filepath));
+		filepath_len = R_MIN ((size_t)(e - file->filename)+1, sizeof (filepath) - 1);
 		memcpy (filepath, file->filename, filepath_len);
 		strcpy (filepath+filepath_len, buf);
 		if (tcc_open (s1, filepath) < 0) {
