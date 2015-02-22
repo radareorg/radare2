@@ -387,7 +387,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			continue;
 		}
 
-		if (isdigit(*tmp)) {
+		if (isdigit((int)*tmp)) {
 			tmp = r_list_get_n(abbr_names, *tmp - '0');
 			if (!tmp) {
 				goto get_namespace_and_name_err;
@@ -518,7 +518,7 @@ DEF_STATE_ACTION(_)
 // or +2 -> skip abbreviated_num + '@'
 #define GET_USER_DEF_TYPE_NAME(data_struct_str) { \
 	copy_string(type_code_str, data_struct_str, 0); \
-	if (isdigit(*state->buff_for_parsing)) { \
+	if (isdigit((int)*state->buff_for_parsing)) { \
 		char *tmp = r_list_get_n(abbr_names, *state->buff_for_parsing - '0'); \
 		if (!tmp) { \
 			state->err = eTCStateMachineErrUncorrectTypeCode; \
@@ -770,7 +770,7 @@ DEF_STATE_ACTION(S)
 DEF_STATE_ACTION(P)
 {
 	// function pointer
-	if (isdigit(*state->buff_for_parsing)) {
+	if (isdigit((int)*state->buff_for_parsing)) {
 		if (*state->buff_for_parsing++ == '6') {
 			char *call_conv = 0;
 			char *ret_type = 0;
