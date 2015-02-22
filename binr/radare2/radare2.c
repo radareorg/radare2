@@ -497,13 +497,10 @@ int main(int argc, char **argv, char **envp) {
 #endif
 
 				optind++;
-				if (optind <argc)
-					file = r_str_concat (file, " ");
 				while (optind < argc) {
+					file = r_str_concat (file, " ");
 					file = r_str_concat (file, argv[optind]);
 					optind++;
-					if (optind<argc)
-						file = r_str_concat (file, " ");
 				}
 				{
 					char *diskfile = strstr (file, "://");
