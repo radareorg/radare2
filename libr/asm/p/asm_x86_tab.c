@@ -1360,9 +1360,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	return write_asm(data, opcode_ptr, operands);
 }
 
-RAsmPlugin r_asm_plugin_x86_new = {
-	.name = "x86.new",
-	.desc = "x86 handmade new assembler",
+RAsmPlugin r_asm_plugin_x86_tab = {
+	.name = "x86.tab",
+	.desc = "x86 table lookup assembler",
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 32,		// maybe later: 16, 64
@@ -1376,6 +1376,6 @@ RAsmPlugin r_asm_plugin_x86_new = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86_new
+	.data = &r_asm_plugin_x86_tab
 };
 #endif
