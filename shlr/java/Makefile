@@ -1,6 +1,6 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
-include ../../shlr/zip/deps.mk
+include ../../zip/deps.mk
 SHLR?=$(shell pwd)/..
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')

@@ -1,3 +1,4 @@
+include ../global.mk
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
