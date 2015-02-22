@@ -25,12 +25,7 @@ else
 endif
 endif
 
-ifeq ($(USE_LIB_ZIP),1)
-  LINK+=$(LIBZIP)
-else
-  LINK+=$(SHLR)/zip/librz.a
-endif
-CFLAGS+=-I$(SHLR)/zip/include
+include $(SHLR)/zip/deps.mk
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}

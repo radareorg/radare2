@@ -1,5 +1,6 @@
 BINR_PROGRAM=1
 include ../../libr/config.mk
+include ../../shlr/zip/deps.mk
 
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
 CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" 
@@ -22,7 +23,6 @@ ifeq ($(WITHNONPIC),1)
 LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.a ; done )
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/grub/libgrubfs.a
-LDFLAGS+=../../shlr/zip/librz.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/wind/libr_wind.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
