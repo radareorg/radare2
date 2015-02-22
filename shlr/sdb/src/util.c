@@ -45,6 +45,7 @@ SDB_API ut32 sdb_hash(const char *s) {
 }
 
 // assert (sizeof (s)>64)
+// XXX if s is null, the returned pointer cant be freed!!
 SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	static const char* lookup = "0123456789abcdef";
 	const int imax = 62;
