@@ -74,9 +74,7 @@ SDB_API ut64 sdb_atoi(const char *s) {
 	ut64 ret;
 	if (!s || *s=='-')
 		return 0LL;
-	ret = !strncmp (s, "0x", 2)?
-		strtoull (s+2, &p, 16):
-		strtoull (s, &p, 10);
+	ret = strtoull (s, &p, 0);
 	if (!p) return 0LL;
 	return ret;
 }
