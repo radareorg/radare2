@@ -470,17 +470,33 @@ int main(int argc, char **argv, char **envp) {
 				}
 			} else {
 				const char *f = argv[optind];
-				char *ptr;
 				is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 				if (!is_gdb) file = strdup ("dbg://");
+#if __UNIX__
 				/* implicit ./ to make unix behave like windows */
-				if (*f=='.' && f[1]=='/') {
-					ptr = strdup (argv[optind]);
-				} else if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
-					ptr = r_str_prefix (strdup (argv[optind]), "./");
-				} else	ptr = r_file_path (argv[optind]);
+				{
+					char *path;
+					if (strchr (f, '/') != NULL) {
+						// f is a path
+						path = strdup (f);
+					}
+					else {
+						// f is a filename
+						if (r_file_exists (f)) {
+							path = r_str_prefix (strdup (f), "./");
+						}
+						else {
+							path = r_file_path (f);
+						}
+					}
+					file = r_str_concat (file, path);
+					free (path);
+				}
+#else
+				file = r_str_concat (file, f);
+#endif
+
 				optind++;
-				file = r_str_concat (file, ptr);
 				if (optind <argc)
 					file = r_str_concat (file, " ");
 				while (optind < argc) {
