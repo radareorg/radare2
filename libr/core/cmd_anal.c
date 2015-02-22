@@ -1490,13 +1490,13 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'r':
 		// 'aer' is an alias for 'ar'
 		cmd_anal_reg (core, input+1);
+		break;
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil) {
 			core->anal->esil = esil = r_anal_esil_new ();
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
-		esil = core->anal->esil;
 		r_anal_esil_set_offset (esil, core->offset);
 		r_anal_esil_parse (esil, input+1);
 		r_anal_esil_dumpstack (esil);
@@ -1542,11 +1542,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		else until_expr = "0";
 		esil_step (core, until_addr, until_expr);
 		break;
-	case 'd':
+	case 'd': // "aed"
 		r_anal_esil_free (esil);
 		core->anal->esil = NULL;
 		break;
-	case 'i':
+	case 'i': // "aei"
 		switch (input [1]) {
 		case 's':
 			cmd_esil_stack (core, input+2);
@@ -2202,6 +2202,9 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		"at*", "", "list all traced opcode offsets",
 		"at+", " [addr] [times]", "add trace for address N times",
 		"at", " [addr]", "show trace info at address",
+		"ate", "", "show esil trace logs (anal.trace)",
+		"ate", " [idx]", "show commands to restore to this trace index",
+		"ate", "-", "clear esil trace logs",
 		"att", " [tag]", "select trace tag (no arg unsets)",
 		"at%", "", "TODO",
 		"ata", " 0x804020 ...", "only trace given addresses",
@@ -2212,6 +2215,64 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 	};
 
 	switch (input[0]) {
+	case 'e': // "ate"
+		if (!core->anal->esil) {
+			int romem = r_config_get_i (core->config, "esil.romem");
+			int stats = r_config_get_i (core->config, "esil.stats");
+			core->anal->esil = r_anal_esil_new ();
+			r_anal_esil_setup (core->anal->esil,	
+				core->anal, romem, stats);
+		}
+		switch (input[1]) {
+		case 0:
+			r_anal_esil_trace_list (core->anal->esil);
+			break;
+		case 'i':
+			{
+				RAnalOp *op;
+				ut64 addr = r_num_math (core->num, input +2);
+				if (!addr) addr = core->offset;
+				op = r_core_anal_op (core, addr);
+				r_anal_esil_trace (core->anal->esil, op); 
+				r_anal_op_free (op);
+			}
+			break;
+		case '-':
+			if (!strcmp (input+2, "*")) {
+				if (core->anal->esil) {
+					sdb_free (core->anal->esil->db_trace);
+					core->anal->esil->db_trace = sdb_new0 ();
+				}
+			} else {
+				eprintf ("TODO: ate- cant delete specific logs. Use ate-*\n");
+			}
+			break;
+		case ' ':
+			{
+				int idx = atoi (input+2);	
+				r_anal_esil_trace_show (
+					core->anal->esil, idx);
+			}
+			break;
+		case 'k':
+			if (input[2]== ' ') {
+				char *s = sdb_querys (core->anal->esil->db_trace,
+					NULL, 0, input+3);
+				r_cons_printf ("%s\n", s);
+				free (s);
+			} else {
+				eprintf ("Usage: atek [query]\n");
+			}
+			break;
+		default:
+			eprintf ("|Usage: ate[ilk] [-arg]\n"
+			"| ate           esil trace log single instruction\n"
+			"| ate idx       show commands for that index log\n"
+			"| ate-*         delete all esil traces\n"
+			"| atei          esil trace log single instruction\n"
+			"| atek  [sdbq]  esil trace log single instruction\n");
+		}
+		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		eprintf ("Current Tag: %d\n", core->dbg->trace->tag);

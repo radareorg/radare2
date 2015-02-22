@@ -600,8 +600,7 @@ static inline void gb_anal_cb_sla (RReg *reg, RAnalOp *op, const ut8 data)						
 	else	r_strbuf_setf (&op->esil, "1,%s,<<=,%%c7,C,=,%s,%s,=,%%z,Z,=,0,H,=0,N,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);	// %s,%s,= is a HACK for %%z
 }
 
-static inline void gb_anal_cb_sra (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_cb_sra (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;
@@ -612,8 +611,7 @@ static inline void gb_anal_cb_sra (RReg *reg, RAnalOp *op, const ut8 data)
 	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,0x80,%s,&,1,%s,>>,|,%s=,%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 }
 
-static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;
@@ -624,8 +622,7 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data)
 	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,1,%s,>>=,%%z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7]);
 }
 
-static int gb_custom_daa (RAnalEsil *esil)
-{
+static int gb_custom_daa (RAnalEsil *esil) {
 	ut8 a, H, C, Z;
 	if (!esil || !esil->anal || !esil->anal->reg)
 		return R_FALSE;
@@ -1430,8 +1427,7 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int esil_gb_init (RAnalEsil *esil)
-{
+static int esil_gb_init (RAnalEsil *esil) {
 	GBUser *user = R_NEW0 (GBUser);
 	r_anal_esil_set_op (esil, "daa", gb_custom_daa);
 	if (user) {
@@ -1440,14 +1436,13 @@ static int esil_gb_init (RAnalEsil *esil)
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
 		}
-		esil->user = user;
+		esil->cb.user = user;
 	}
 	return R_TRUE;
 }
 
-static int esil_gb_fini (RAnalEsil *esil)
-{
-	R_FREE (esil->user);
+static int esil_gb_fini (RAnalEsil *esil) {
+	R_FREE (esil->cb.user);
 	return R_TRUE;
 }
 

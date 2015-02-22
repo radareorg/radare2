@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_debug.h>
 
@@ -47,8 +47,14 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 		}
 		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
 			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
-				if (oldpc!=0LL)
+				if (oldpc!=0LL) {
+					if (dbg->anal->esil) {
+						if (dbg->anal->trace) {
+							r_anal_esil_trace (dbg->anal->esil, &op);
+						}
+					}
 					r_debug_trace_add (dbg, oldpc, op.size);
+				}
 				oldpc = addr;
 				return R_TRUE;
 			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);

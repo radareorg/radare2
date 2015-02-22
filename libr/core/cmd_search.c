@@ -938,7 +938,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 }
 
 static int esil_addrinfo(RAnalEsil *esil) {
-	RCore *core = (RCore*)esil->user;
+	RCore *core = (RCore*)esil->cb.user;
 	ut64 num = 0;
 	char *src = r_anal_esil_pop (esil);
 	if (src && *src && r_anal_esil_get_parm (esil, src, &num)) {
@@ -963,7 +963,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		if (!core->anal->esil)
 			core->anal->esil = r_anal_esil_new ();
 		/* hook addrinfo */
-		core->anal->esil->user = core;
+		core->anal->esil->cb.user = core;
 		r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo);
 		/* hook addrinfo */
 		r_anal_esil_setup (core->anal->esil, core->anal, 1, 0);

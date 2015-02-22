@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2015 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -72,11 +72,11 @@ static int esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	int i, ret = 0;
 	if (!buf || !esil)
 		return 0;
-	if (esil->hook_mem_read) {
-		ret = esil->hook_mem_read (esil, addr, buf, len);
+	if (esil->cb.hook_mem_read) {
+		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
 	}
-	if (!ret && esil->mem_read) {
-		ret = esil->mem_read (esil, addr, buf, len);
+	if (!ret && esil->cb.mem_read) {
+		ret = esil->cb.mem_read (esil, addr, buf, len);
 	}
 	r_mem_copyendian (buf, buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
@@ -105,11 +105,11 @@ static int esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) 
 			eprintf ("%02x", buf[i]);
 		eprintf ("\n");
 	}
-	if (esil->hook_mem_write) {
-		ret = esil->hook_mem_write (esil, addr, buf, len);
+	if (esil->cb.hook_mem_write) {
+		ret = esil->cb.hook_mem_write (esil, addr, buf, len);
 	}
-	if (!ret && esil->mem_write) {
-		ret = esil->mem_write (esil, addr, buf, len);
+	if (!ret && esil->cb.mem_write) {
+		ret = esil->cb.mem_write (esil, addr, buf, len);
 	}
 	return ret;
 }
@@ -200,8 +200,8 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 	ut8 bit;
 	if (!str)
 		return R_FALSE;
-	if (esil->hook_flag_read) {
-		int ret = esil->hook_flag_read (esil, str+1, num);
+	if (esil->cb.hook_flag_read) {
+		int ret = esil->cb.hook_flag_read (esil, str+1, num);
 		if (ret)
 			return R_TRUE;
 	}
@@ -278,13 +278,13 @@ static int esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 	if (esil->debug) {
 		eprintf ("%s=0x%"PFMT64x"\n", dst, num);
 	}
-	if (esil->hook_reg_write) {
-		ret = esil->hook_reg_write (esil, dst, num);
+	if (esil->cb.hook_reg_write) {
+		ret = esil->cb.hook_reg_write (esil, dst, num);
 		if (!ret)
 			return ret;
 	}
-	if (esil->reg_write) {
-		return esil->reg_write (esil, dst, num);
+	if (esil->cb.reg_write) {
+		return esil->cb.reg_write (esil, dst, num);
 	}
 	return ret;
 }
@@ -293,11 +293,11 @@ static int esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num) {
 	int ret = 0;
 	if (num)
 		*num = 0LL;
-	if (esil->hook_reg_read) {
-		ret = esil->hook_reg_read (esil, regname, num);
+	if (esil->cb.hook_reg_read) {
+		ret = esil->cb.hook_reg_read (esil, regname, num);
 	}
-	if (!ret && esil->reg_read) {
-		ret = esil->reg_read (esil, regname, num);
+	if (!ret && esil->cb.reg_read) {
+		ret = esil->cb.reg_read (esil, regname, num);
 	}
 	if (ret && num && esil->debug) {
 		eprintf ("%s=0x%"PFMT64x"\n", regname, *num);
@@ -2226,8 +2226,8 @@ static int runword (RAnalEsil *esil, const char *word) {
 	if (iscommand (esil, word, &op)) {
 		// run action
 		if (op) {
-			if (esil->hook_command) {
-				if (esil->hook_command (esil, word))
+			if (esil->cb.hook_command) {
+				if (esil->cb.hook_command (esil, word))
 					return 1; // XXX cannot return != 1
 			}
 			return op (esil);
@@ -2395,10 +2395,10 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 	esil->trap_code = 0;
 	//esil->user = NULL;
 
-	esil->reg_read = internal_esil_reg_read;
-	esil->reg_write = internal_esil_reg_write;
-	esil->mem_read = internal_esil_mem_read;
-	esil->mem_write = internal_esil_mem_write;
+	esil->cb.reg_read = internal_esil_reg_read;
+	esil->cb.reg_write = internal_esil_reg_write;
+	esil->cb.mem_read = internal_esil_mem_read;
+	esil->cb.mem_write = internal_esil_mem_write;
 
 	r_anal_esil_mem_ro (esil, romem);
 	r_anal_esil_stats (esil, stats);

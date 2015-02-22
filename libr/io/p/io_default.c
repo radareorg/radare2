@@ -215,7 +215,6 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 			ut64 a_off = io->off - (io->off % aligned); //(io->off >> 9 ) << 9; //- (io->off & aligned);
 			int a_delta = io->off - a_off;
 			if (a_delta<0) {
-				memset (buf, 0xff, count);
 				return -1;
 			}
 			a_count = count + (aligned-(count%aligned));
@@ -233,8 +232,6 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
 					(void)write (mmo->fd, a_buf+i, aligned);
 				}
-			} else {
-				memset (buf, 0xff, count);
 			}
 			free (a_buf);
 			return count;

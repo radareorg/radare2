@@ -553,6 +553,7 @@ typedef struct r_anal_t {
 	int bbsplit;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
 	int maxreflines;
+	int trace;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
@@ -797,8 +798,22 @@ enum {
 #define ESIL_INTERNAL_PREFIX	'%'		//must be a char
 #define ESIL struct r_anal_esil_t
 
-typedef struct r_anal_esil_t {
+typedef struct r_anal_esil_callbacks_t {
 	void *user;
+	/* callbacks */
+	int (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
+	int (*hook_command)(ESIL *esil, const char *op);
+	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
+	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
+	int (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
+	int (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
+	int (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res);
+	int (*reg_read)(ESIL *esil, const char *name, ut64 *res);
+	int (*hook_reg_write)(ESIL *esil, const char *name, ut64 val);
+	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
+} RAnalEsilCallbacks;
+
+typedef struct r_anal_esil_t {
 	RAnal *anal;
 	char *stack[32];
 	int stackptr;
@@ -823,17 +838,9 @@ typedef struct r_anal_esil_t {
 	Sdb *ops;
 	/* deep esil parsing fills this */
 	Sdb *stats;
-	/* callbacks */
-	int (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
-	int (*hook_command)(ESIL *esil, const char *op);
-	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	int (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	int (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	int (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res);
-	int (*reg_read)(ESIL *esil, const char *name, ut64 *res);
-	int (*hook_reg_write)(ESIL *esil, const char *name, ut64 val);
-	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
+	Sdb *db_trace;
+	int trace_idx;
+	RAnalEsilCallbacks cb;
 } RAnalEsil;
 
 #undef ESIL
@@ -1012,8 +1019,10 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-
 R_API RAnalEsil *r_anal_esil_new(void);
+R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
+R_API void r_anal_esil_trace_list (RAnalEsil *esil);
+R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx);
 R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 addr);
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
 R_API void r_anal_esil_free (RAnalEsil *esil);
