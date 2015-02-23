@@ -1,7 +1,8 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
-include ../../shlr/zip/deps.mk
 SHLR?=$(shell pwd)/..
+include ../../global.mk
+include $(SHLR)/zip/deps.mk
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)

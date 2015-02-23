@@ -1,9 +1,0 @@
-OBJ_X86_NEW=asm_x86_new.o
-
-STATIC_OBJ+=${OBJ_X86_NEW}
-TARGET_X86_NEW=asm_x86_new.${EXT_SO}
-
-ALL_TARGETS+=${TARGET_X86_NEW}
-
-${TARGET_X86_NEW}: ${OBJ_X86_NEW}
-	${CC} $(call libname,asm_x86_new) ${LDFLAGS} ${CFLAGS} -o ${TARGET_X86_NEW} ${OBJ_X86_NEW}

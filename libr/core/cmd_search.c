@@ -886,6 +886,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 						prev = i;
 						next = (intptr_t)r_list_pop (end_list);
 						i = next - ropdepth;
+						if (i <0) i = 0;
 					} else {
 						break;
 					}

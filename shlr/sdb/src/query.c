@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -161,13 +161,16 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	} else {
 		if (len<1 || !buf) {
 			bufset = 1;
-			buf = malloc ((len=64));
+			buf = malloc ((len = 64));
 		}
 		cmd = buf;
 	}
 	// if cmd is null, we take buf as cmd
 	next = NULL;
 repeat:
+	/* skip spaces */
+	while (*cmd && (*cmd == ' ' || *cmd == '\t'))
+		cmd++;
 	s = r;
 	p = cmd;
 	eq = NULL;
@@ -176,7 +179,7 @@ repeat:
 	quot = NULL;
 	json = NULL;
 	if (next) *next = ';';
-	if (*p=='%') {
+	if (*p == '%') {
 		encode = 1;
 		cmd++;
 		p++;
@@ -197,7 +200,7 @@ repeat:
 		d = 0;
 	}
 	if (!is_ref) {
-		next = strchr (val?val:cmd, ';'); //val?val:cmd, ';');
+		next = strchr (val? val: cmd, ';');
 	}
 	//if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
@@ -318,7 +321,40 @@ next_quote:
 		if (!buf)
 			buf = strdup ("");
 		*buf = 0;
-		if (val) {
+		if (cmd[1]=='[') {
+			const char *eb = strchr (cmd, ']');
+			int idx = sdb_atoi (cmd+2);
+			/* +[idx]key=n */
+			/* -[idx]key=n */
+			ut64 curnum = sdb_array_get_num (s,
+				eb+1, idx, 0);
+			if (eq) {
+				/* +[idx]key=n  -->  key[idx] += n */
+				/* -[idx]key=n  -->  key[idx] -= n */
+				st64 n = sdb_atoi (eq);
+				if (*cmd=='+') {
+					curnum += n;
+				} else if (*cmd=='-') {
+					curnum -= n;
+				} else {
+					// never happens
+				}
+				sdb_array_set_num (s, eb+1, idx, curnum, 0);
+			} else {
+				/* +[idx]key    -->  key[idx] + 1 */
+				/* -[idx]key    -->  key[idx] - 1 */
+				char *nstr, numstr[32];
+				if (*cmd=='+') {
+					curnum ++;
+				} else if (*cmd=='-') {
+					curnum --;
+				} else {
+					// never happens
+				}
+				nstr = sdb_itoa (curnum, numstr, 10);
+				strbuf_append (out, nstr, 1);
+			}
+		} else if (val) {
 			if (sdb_isnum (val)) {
 				int op = *cmd;
 				if (*val=='-') {

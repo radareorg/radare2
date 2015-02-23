@@ -140,22 +140,22 @@ typedef enum tokentype_t {
  */
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
-	while (isspace(str[*begin]))
+	while (isspace((int)str[*begin]))
 		++(*begin);
 
 	if (!str[*begin]) {                // null byte
 		*end = *begin;
 		return TT_EOF;
 	}
-	else if (isalpha(str[*begin])) {   // word token
+	else if (isalpha((int)str[*begin])) {   // word token
 		*end = *begin;
-		while (isalnum(str[*end]))
+		while (isalnum((int)str[*end]))
 			++(*end);
 		return TT_WORD;
 	}
-	else if (isdigit(str[*begin])) {   // number token
+	else if (isdigit((int)str[*begin])) {   // number token
 		*end = *begin;
-		while (isalnum(str[*end]))     // accept alphanumeric characters, because hex.
+		while (isalnum((int)str[*end]))     // accept alphanumeric characters, because hex.
 			++(*end);
 		return TT_NUMBER;
 	}
@@ -1360,9 +1360,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	return write_asm(data, opcode_ptr, operands);
 }
 
-RAsmPlugin r_asm_plugin_x86_new = {
-	.name = "x86.new",
-	.desc = "x86 handmade new assembler",
+RAsmPlugin r_asm_plugin_x86_tab = {
+	.name = "x86.tab",
+	.desc = "x86 table lookup assembler",
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 32,		// maybe later: 16, 64
@@ -1376,6 +1376,6 @@ RAsmPlugin r_asm_plugin_x86_new = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86_new
+	.data = &r_asm_plugin_x86_tab
 };
 #endif

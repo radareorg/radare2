@@ -60,6 +60,7 @@
 #define ut8 unsigned char
 #define ut32 unsigned int
 #define ut64 unsigned long long
+#define st64 long long
 #define boolt int
 // TODO: deprecate R_NEW
 #define R_NEW(x) (x*)malloc(sizeof(x))

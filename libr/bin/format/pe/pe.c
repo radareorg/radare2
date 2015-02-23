@@ -968,7 +968,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 	}
 
 	while (i < 33) {
-		res->guidstr[i] = toupper (res->guidstr[i]);
+		res->guidstr[i] = toupper ((int)res->guidstr[i]);
 		i++;
 	}
 

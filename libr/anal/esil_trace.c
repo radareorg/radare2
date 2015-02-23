@@ -7,22 +7,43 @@
 #define KEYAT(x,y) sdb_fmt (0, "%d."x".0x%"PFMT64x, esil->trace_idx, y)
 #define KEYREG(x,y) sdb_fmt (0, "%d."x".%s", esil->trace_idx, y)
 
+static int ocbs_set = R_FALSE;
+static RAnalEsilCallbacks ocbs = {0};
+
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
+	int ret = 0;
 	ut64 val = 0LL;
+	if (*name=='0') {
+		eprintf ("Register not found in profile\n");
+		return 0;
+	}
 	if (esil->cb.reg_read) {
 		(void)esil->cb.reg_read (esil, name, &val);
 	}
 	eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
 	sdb_array_add (DB, KEY ("reg.read"), name, 0);
 	sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
-	return 0;
+	if (ocbs.hook_reg_read) {
+		RAnalEsilCallbacks cbs = esil->cb;
+		esil->cb = ocbs;
+		ret = ocbs.hook_reg_read (esil, name, res);
+		esil->cb = cbs;
+	}
+	return ret;
 }
 
 static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
+	int ret = 0;
 	eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, val);
 	sdb_array_add (DB, KEY ("reg.write"), name, 0);
 	sdb_num_set (DB, KEYREG ("reg.write", name), val, 0);
-	return 0;
+	if (ocbs.hook_reg_write) {
+		RAnalEsilCallbacks cbs = esil->cb;
+		esil->cb = ocbs;
+		ret = ocbs.hook_reg_write (esil, name, val);
+		esil->cb = cbs;
+	}
+	return ret;
 }
 
 static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -37,23 +58,40 @@ static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	free (hexbuf);
 
 	eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
+	if (ocbs.hook_mem_read) {
+		RAnalEsilCallbacks cbs = esil->cb;
+		esil->cb = ocbs;
+		ret = ocbs.hook_mem_read (esil, addr, buf, len);
+		esil->cb = cbs;
+	}
 	return ret;
 }
 
 static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int ret = 0;
 	char *hexbuf = malloc ((1+len)*3);
 	sdb_array_add_num (DB, KEY ("mem.write"), addr, 0);
 	r_hex_bin2str (buf, len, hexbuf);
 	sdb_set (DB, KEYAT ("mem.write.data", addr), hexbuf, 0);
 	free (hexbuf);
 	eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
-	return 0;
+	if (ocbs.hook_mem_write) {
+		RAnalEsilCallbacks cbs = esil->cb;
+		esil->cb = ocbs;
+		ret = ocbs.hook_mem_write (esil, addr, buf, len);
+		esil->cb = cbs;
+	}
+	return ret;
 }
 
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	const char *expr = r_strbuf_get (&op->esil);
 	int esil_debug = esil->debug;
-	RAnalEsilCallbacks ocbs = esil->cb;
+	if (ocbs_set) {
+		eprintf ("cannot call recursively\n");
+	}
+	ocbs = esil->cb;
+	ocbs_set = R_TRUE;
 	if (!DB) DB = sdb_new0 ();
 
 	sdb_num_set (DB, "idx", esil->trace_idx, 0);
@@ -74,6 +112,7 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	r_anal_esil_parse (esil, expr);
 	/* restore hooks */
 	esil->cb = ocbs;
+	ocbs_set = R_FALSE;
 	esil->debug = esil_debug;
 	esil->trace_idx ++;
 }

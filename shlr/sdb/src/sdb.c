@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -36,7 +36,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	s->refs = 1;
 	if (path && !*path)
 		path = NULL;
-	if (name && *name) {
+	if (name && *name && strcmp (name, "-")) {
 		if (path && *path) {
 			int plen = strlen (path);
 			int nlen = strlen (name);

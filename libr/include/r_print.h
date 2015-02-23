@@ -18,6 +18,7 @@ extern "C" {
 #define R_PRINT_FLAGS_SEGOFF  0x00000020
 #define R_PRINT_FLAGS_OFFSET  0x00000040
 #define R_PRINT_FLAGS_REFS    0x00000080
+#define R_PRINT_FLAGS_DIFFOUT 0x00000100 /* only show different rows in `cc` hexdiffing */
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);

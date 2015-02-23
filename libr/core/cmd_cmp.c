@@ -9,6 +9,7 @@ static void showhelp(RCore *core) {
 		"c8", " [value]", "Compare a quadword from a math expression",
 		"cat", " [file]", "Show contents of file (see pwd, ls)",
 		"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
+		"ccc", " [at] [(at)]", "Same as above, but only showing different lines",
 		"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
 		//"cc", " [offset]", "code bindiff current block against offset"
 		//"cD", " [file]", "like above, but using radiff -b",
@@ -424,20 +425,28 @@ static int cmd_cmp(void *data, const char *input) {
 		v64 = (ut64) r_num_math (core->num, input+1);
 		val = radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
 		break;
-	case 'c':
+	case 'c': // "cc"
 		if (input[1] == 'd') {
 			cmd_cmp_disasm (core, input+2, 'c');
 		} else {
+			ut32 oflags = core->print->flags;
+			ut64 addr;
+			if (input[1]=='c') { // "ccc"
+				core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
+				addr = r_num_math (core->num, input+3);
+			} else {
+				addr = r_num_math (core->num, input+2);
+			}
 			int col = core->cons->columns>123;
 			ut8 *b = malloc (core->blocksize);
-			ut64 addr = r_num_math (core->num, input+2);
-			if (b == NULL)
-				return R_FALSE;
-			memset (b, 0xff, core->blocksize);
-			r_core_read_at (core, addr, b, core->blocksize);
-			r_print_hexdiff (core->print, core->offset, core->block,
-					addr, b, core->blocksize, col);
-			free (b);
+			if (b != NULL) {
+				memset (b, 0xff, core->blocksize);
+				r_core_read_at (core, addr, b, core->blocksize);
+				r_print_hexdiff (core->print, core->offset, core->block,
+						addr, b, core->blocksize, col);
+				free (b);
+			}
+			core->print->flags = oflags;
 		}
 		break;
 	case 'g': // "cg"

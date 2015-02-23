@@ -600,34 +600,49 @@ R_API int r_is_heap (void *p) {
 	return (((ut64)(size_t)p) == mask);
 }
 
-#if __WINDOWS__
-static DWORD WINAPI (*gpifn) (HANDLE, LPTSTR, DWORD);
-#endif
-
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	HANDLE psapi = LoadLibrary ("psapi.dll");
-	if (!psapi) {
-		eprintf ("Error getting the handle to psapi.dll\n");
+	DWORD WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
+	DWORD WINAPI (*GetProcessImageFileNameA) (HANDLE, LPTSTR, DWORD);
+	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
+	if (!kernel32) {
+		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
-	gpifn = GetProcAddress (psapi, "GetProcessImageFileNameA");
-	if (!gpifn) {
-		eprintf ("Error getting the address of GetProcessImageFileNameA\n");
-		return NULL;
+	QueryFullProcessImageNameA = GetProcAddress (kernel32, "QueryFullProcessImageNameA");
+	if (!QueryFullProcessImageNameA) {
+		// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
+		HANDLE psapi = LoadLibrary ("Psapi.dll");
+		if (!psapi) {
+			eprintf ("Error getting the handle to Psapi.dll\n");
+			return NULL;
+		}
+		GetProcessImageFileNameA = GetProcAddress (psapi, "GetProcessImageFileNameA");
+		if (!GetProcessImageFileNameA) {
+			eprintf ("Error getting the address of GetProcessImageFileNameA\n");
+			return NULL;
+		}
 	}
 	HANDLE handle = NULL;
 	TCHAR filename[MAX_PATH];
+	DWORD maxlength = MAX_PATH;
 	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (handle != NULL) {
-		if (gpifn (handle, filename, MAX_PATH) == 0) {
-			eprintf("Error calling GetProcessImageFileNameA\n");
-			CloseHandle (handle);
-			return NULL;
+		if (QueryFullProcessImageNameA) {
+			if (QueryFullProcessImageNameA (handle, 0, filename, &maxlength) == 0) {
+				eprintf("Error calling QueryFullProcessImageNameA\n");
+				CloseHandle (handle);
+				return NULL;
+			}
 		} else {
-			CloseHandle (handle);
-			return strdup (filename);
+			if (GetProcessImageFileNameA (handle, filename, maxlength) == 0) {
+				eprintf("Error calling GetProcessImageFileNameA\n");
+				CloseHandle (handle);
+				return NULL;
+			}
 		}
+		CloseHandle (handle);
+		return strdup (filename);
 	}
 	return NULL;
 #elif __APPLE__
