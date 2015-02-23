@@ -5,6 +5,7 @@ BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2
 BINS2=radare2 ${BINS}
 
 include ../../config-user.mk
+include ../../shlr/zip/deps.mk
 
 ifneq (${ANDROID},1)
 ifneq (${OSTYPE},linux)
@@ -49,7 +50,6 @@ LDFLAGS+=../../libr/socket/libr_socket.a
 LDFLAGS+=../../shlr/grub/libgrubfs.a
 LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
-LDFLAGS+=../../shlr/zip/librz.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
 LDFLAGS+=../../shlr/wind/libr_wind.a
 LDFLAGS+=../../shlr/java/libr_java.a
