@@ -146,6 +146,13 @@ static int cb_analsplit(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_analrecont(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->recont = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
@@ -952,6 +959,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
+	SETCB("anal.recont", "false", &cb_analrecont, "Split functions into basic blocks in analysis.");
 	SETCB("anal.trace", "false", &cb_anal_trace, "Record esil trace in log database");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");

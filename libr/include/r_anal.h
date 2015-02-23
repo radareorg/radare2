@@ -552,6 +552,7 @@ typedef struct r_anal_t {
 	int eobjmp; // option
 	int bbsplit;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
+	int recont; // continue on recurse analysis mode
 	int maxreflines;
 	int trace;
 	RList *types;

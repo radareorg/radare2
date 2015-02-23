@@ -238,6 +238,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	bb = bbget (fcn, addr);
 	if (bb) {
 		r_anal_fcn_split_bb (fcn, bb, addr);
+		if (anal->recont)
+			return R_ANAL_RET_END;
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
