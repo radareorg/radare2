@@ -109,6 +109,16 @@ typedef struct r_debug_desc_t {
 	ut64 off;
 } RDebugDesc;
 
+typedef struct r_debug_snap_t {
+	ut64 addr;
+	ut64 addr_end;
+	ut8 *data;
+	ut32 size;
+	ut64 timestamp;
+	ut32 crc;
+	char *comment;
+} RDebugSnap;
+
 typedef struct r_debug_trace_t {
 	RList *traces;
 	int count;
@@ -155,6 +165,7 @@ typedef struct r_debug_t {
 	RIOBind iob;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
+	RList *snaps; // <RDebugSnap>
 	RGraph *graph;
 	Sdb *sgnls;
 	RCoreBind corebind;
@@ -370,6 +381,14 @@ R_API int r_debug_child_clone (RDebug *dbg);
 R_API void r_debug_drx_list (RDebug *dbg);
 R_API int r_debug_drx_set (RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g);
 R_API int r_debug_drx_unset (RDebug *dbg, int idx);
+
+/* snap */
+R_API void r_debug_snap_free (void *snap);
+R_API int r_debug_snap_delete(RDebug *dbg, int idx);
+R_API void r_debug_snap_list(RDebug *dbg, int idx);
+R_API int r_debug_snap_diff(RDebug *dbg, int idx);
+R_API int r_debug_snap(RDebug *dbg, ut64 addr);
+R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

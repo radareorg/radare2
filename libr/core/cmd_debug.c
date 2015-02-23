@@ -405,6 +405,73 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 	}
 }
 
+static int __r_debug_snap_diff(RCore *core, int idx) {
+	ut32 count = 0;
+	RDebug *dbg = core->dbg;
+	ut32 oflags = core->print->flags;
+	int col = core->cons->columns>123;
+	RDebugSnap *snap;
+	RListIter *iter;
+	core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (count == idx) {
+			ut8 *b = malloc (snap->size);
+			if (!b) {
+				eprintf ("Cannot allocate snapshot\n");
+				continue;
+			}
+			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);	
+                        r_print_hexdiff (core->print,
+				snap->addr, snap->data,
+				snap->addr, b,
+				snap->size, col);
+                        free (b);
+		}
+		count ++;
+	}
+	core->print->flags = oflags;
+	return 0;
+}
+
+static int cmd_debug_map_snapshot(RCore *core, const char *input) {
+	const char* help_msg[] = {
+		"Usage:", "dms", " # Memory map snapshots",
+		"dms", "", "List memory snapshots",
+		"dms", " addr", "take snapshot with given id of map at address",
+		"dms", "-id", "delete memory snapshot",
+		"dmsC", " id comment", "add comment for given snapshot",
+		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
+		// TODO: dmsj - for json
+		NULL
+	};
+	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg);
+		break;
+	case '-':
+		if (input[1]=='*') {
+			r_debug_snap_delete (core->dbg, -1);
+		} else {
+			r_debug_snap_delete (core->dbg, r_num_math (core->num, input+1));
+		}
+		break;
+	case ' ':
+		r_debug_snap (core->dbg, r_num_math (core->num, input+1));
+		break;
+	case 'C':
+		r_debug_snap_comment (core->dbg, atoi (input+1), strchr (input, ' '));
+		break;
+	case 'd':
+		__r_debug_snap_diff (core, atoi (input+1));
+		break;
+	case 0:
+		// list memory snapshots
+		r_debug_snap_list (core->dbg, -1);
+		break;
+	}
+	return 0;
+}
+
 static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dm", " # Memory maps commands",
@@ -418,6 +485,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmj", "", "List memmaps in JSON format",
 		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
 		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
+		"dms", " <id> <mapaddr>", "take memory snapshot",
+		"dms-", " <id> <mapaddr>", "restore memory snapshot",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 		NULL};
@@ -427,6 +496,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 
 	switch (input[0]) {
+	case 's':
+		cmd_debug_map_snapshot (core, input+1);
+		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;

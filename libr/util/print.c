@@ -738,12 +738,15 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 	ut8 *a, *b;
 	char linediff, fmt[64];
 	int color = p->flags & R_PRINT_FLAGS_COLOR;
+	int diffskip = p->flags & R_PRINT_FLAGS_DIFFOUT;
 	int i, j, min;
 	a = M (_a, len); if (!a) return;
 	b = M (_b, len); if (!b) { free (a); return; }
 	for (i =0 ; i<len; i+=16) {
 		min = R_MIN (16, len-i);
 		linediff = (memcmp (a+i, b+i, min))?'!':'|';
+		if (diffskip && linediff == '|')
+			continue;
 		p->printf ("0x%08"PFMT64x" ", aa+i);
 		for (j=0; j<min; j++) {
 			*fmt = color; 
@@ -752,7 +755,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 			r_print_cursor (p, i+j, 0);
 		}
 		p->printf (" ");
-		for (j=0;j<min;j++) {
+		for (j=0; j<min; j++) {
 			*fmt = color; 
 			r_print_cursor (p, i+j, 1);
 			p->printf ("%s", CD (a, b));
@@ -760,7 +763,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		}
 		if (scndcol) {
 			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
-			for (j=0;j<min;j++) {
+			for (j=0; j<min; j++) {
 				*fmt = color; 
 				r_print_cursor (p, i+j, 1);
 				p->printf (BD (b, a));
