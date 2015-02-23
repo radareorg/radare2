@@ -581,11 +581,16 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 				ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
 				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
 				r_cons_printf ("s entry%i\n", i);
-			} else r_cons_printf ("vaddr=0x%08"PFMT64x
+			} else {
+				if (!baddr) {
+					baddr = vaddr - paddr;
+				}
+				r_cons_printf ("vaddr=0x%08"PFMT64x
 					" paddr=0x%08"PFMT64x
 					" baddr=0x%08"PFMT64x
 					" laddr=0x%08"PFMT64x"\n",
 					vaddr, paddr, baddr, laddr);
+			}
 			i++;
 		}
 		if (!mode) r_cons_printf ("\n%i entrypoints\n", i);
