@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_util.h"
 #define R_NUM_USE_CALC 1
@@ -79,6 +79,7 @@ R_API void r_num_free(RNum *num) {
 
 R_API char *r_num_units(char *buf, ut64 num) {
 	char unit;
+	int tnum;
 	double fnum = num;
 	if (!buf) buf = malloc (32);
 	//if (num>TB) { unit = 'T'; fnum = num/TB; } else
@@ -86,7 +87,12 @@ R_API char *r_num_units(char *buf, ut64 num) {
 	if (num>MB) { unit = 'M'; fnum = fnum/MB; } else
 	if (num>KB) { unit = 'K'; fnum = fnum/KB; } else
 		{ unit = 0; fnum = num; }
-	snprintf (buf, 31, "%.1f%c", fnum, unit);
+	tnum = (int)((double)(fnum - (int)fnum)*10);
+	if (tnum) {
+		snprintf (buf, 31, "%.1f%c", fnum, unit);
+	} else {
+		snprintf (buf, 31, "%.0f%c", fnum, unit);
+	}
 	return buf;
 }
 

@@ -1,9 +1,11 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_debug.h>
 #include <r_list.h>
 
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
+	const char *fmtstr;
+	char buf[128];
 	int notfirst = R_FALSE;
 	RListIter *iter;
 	RDebugMap *map;
@@ -49,16 +51,24 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		}
 		break;
 	default:
+		fmtstr = dbg->bits& R_SYS_BITS_64?
+			"sys %04s 0x%016"PFMT64x" %c 0x%016"PFMT64x" %c %s %s\n":
+			"sys %04s 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s\n";
 		r_list_foreach (dbg->maps, iter, map) {
-			dbg->printf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s\n",
-				map->addr, (addr>=map->addr && addr<map->addr_end)?'*':'-',
-				map->addr_end, map->user?'u':'s', r_str_rwx_i (map->perm), map->name);
+			r_num_units (buf, map->size);
+			dbg->printf (fmtstr,
+				buf, map->addr, (addr>=map->addr && addr<map->addr_end)?'*':'-',
+				map->addr_end, map->user?'u':'s',
+				r_str_rwx_i (map->perm), map->name, buf);
 		}
+		fmtstr = dbg->bits& R_SYS_BITS_64?
+			"usr %04s 0x%016"PFMT64x" - 0x%016"PFMT64x" %c %x %s\n":
+			"usr %04s 0x%08"PFMT64x" - 0x%08"PFMT64x" %c %x %s\n";
 		r_list_foreach (dbg->maps_user, iter, map) {
-			dbg->printf ("usr 0x%08"PFMT64x" - 0x%08"PFMT64x" %c %x %s\n",
-				map->addr, map->addr_end,
-				map->user?'u':'s',
-				map->perm, map->name);
+			r_num_units (buf, map->size);
+			dbg->printf ("usr %04s 0x%016"PFMT64x" - 0x%016"PFMT64x" %c %x %s\n",
+				buf, map->addr, map->addr_end,
+				map->user?'u':'s', map->perm, map->name);
 		}
 		break;
 	}
