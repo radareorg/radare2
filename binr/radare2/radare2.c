@@ -475,7 +475,7 @@ int main(int argc, char **argv, char **envp) {
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
 				{
-					char *path;
+					char *path, *escaped_path;
 					if (strchr (f, '/') != NULL) {
 						// f is a path
 						path = strdup (f);
@@ -489,17 +489,25 @@ int main(int argc, char **argv, char **envp) {
 							path = r_file_path (f);
 						}
 					}
-					file = r_str_concat (file, path);
+					escaped_path = r_str_arg_escape (path);
+					file = r_str_concat (file, escaped_path);
+					free (escaped_path);
 					free (path);
 				}
 #else
-				file = r_str_concat (file, f);
+				{
+					char *escaped_path = r_str_arg_escape (f);
+					file = r_str_concat (file, escaped_path);
+					free (escaped_path);
+				}
 #endif
 
 				optind++;
 				while (optind < argc) {
+					char *escaped_arg = r_str_arg_escape (argv[optind]);
 					file = r_str_concat (file, " ");
-					file = r_str_concat (file, argv[optind]);
+					file = r_str_concat (file, escaped_arg);
+					free (escaped_arg);
 					optind++;
 				}
 				{
