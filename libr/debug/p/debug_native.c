@@ -1042,6 +1042,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	case R_REG_TYPE_FPU:
 	case R_REG_TYPE_MMX:
 	case R_REG_TYPE_XMM:
+#if __linux__
 #if __x86_64__ || __i386__
 		{
 			int ret1 = 0;
@@ -1098,6 +1099,9 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			memcpy (buf, &regs1, size);
 			return sizeof (regs1);
 		}
+#endif
+#else
+#warning not implemented for this platform
 #endif
 		break;
 	case R_REG_TYPE_SEG:
