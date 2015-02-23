@@ -391,6 +391,7 @@ R_API int r_str_rwx(const char *str);
 R_API int r_str_replace_char (char *s, int a, int b);
 R_API const char *r_str_rwx_i(int rwx);
 R_API void r_str_writef(int fd, const char *fmt, ...);
+R_API char *r_str_arg_escape (const char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(const char *str);

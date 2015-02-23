@@ -104,14 +104,56 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	if (!*cmd)
 		return -1;
 	setup_tokens ();
-        /* TODO: with args */
-        if (!CreateProcess (cmd, NULL,
+
+	char **argv = r_str_argv (cmd, NULL);
+	// We need to build a command line with quoted argument and escaped quotes
+	int cmd_len = 0;
+	int i = 0;
+	while (argv[i]) {
+		char *current = argv[i];
+		int quote_count = 0;
+		while ((current = strchr (current, '"')))
+			quote_count ++;
+		cmd_len += strlen (argv[i]);
+		cmd_len += quote_count; // The quotes will add one backslash each
+		cmd_len += 2; // Add two enclosing quotes;
+		i++;
+	}
+	cmd_len += i-1; // Add argc-1 spaces
+
+	char *cmdline = malloc ((cmd_len + 1) * sizeof (char));
+	int cmd_i = 0; // Next character to write in cmdline
+	i = 0;
+	while (argv[i]) {
+		if (i != 0)
+			cmdline[cmd_i++] = ' ';
+
+		cmdline[cmd_i++] = '"';
+		
+		int arg_i = 0; // Index of current character in orginal argument
+		while (argv[i][arg_i]) {
+			char c = argv[i][arg_i];
+			if (c == '"') {
+				cmdline[cmd_i++] = '\\';
+			}
+			cmdline[cmd_i++] = c;
+			arg_i++;
+		}
+
+		cmdline[cmd_i++] = '"';
+		i++;
+	}
+	cmdline[cmd_i] = '\0';
+
+        if (!CreateProcess (argv[0], cmdline,
                         NULL, NULL, FALSE,
                         CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
                         NULL, NULL, &si, &pi)) {
                 r_sys_perror ("CreateProcess");
                 return -1;
         }
+	free (cmdline);
+	r_str_argv_free (argv);
 
         /* get process id and thread id */
         pid = pi.dwProcessId;

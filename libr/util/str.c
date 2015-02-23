@@ -1037,60 +1037,137 @@ R_API int r_str_glob (const char *str, const char *glob) {
 	return R_FALSE; // statement never reached
 }
 
-// XXX: remove this limit .. use realloc
-#define MAXARG 128
-R_API char **r_str_argv(const char *_str, int *_argc) {
-	int argc = 0;
-	int escape = 0;
-	int quote = 0;
-	char **argv = NULL, *optr = NULL, *ptr = NULL, *str = strdup (_str);
+// Escape the string arg so that it is parsed as a single argument by r_str_argv
+R_API char *r_str_arg_escape (const char *arg) {
+	char *str;
+	int dest_i = 0, src_i = 0;
 
-	if (!str) return NULL;
-	argv = (char **)malloc (MAXARG*sizeof(char*));
-	optr = ptr = (char *)r_str_chop_ro (str);
-	for (; *ptr && argc < (MAXARG - 2); ptr++) {
-		switch (*ptr) {
+	if (!arg)
+		return NULL;
+	
+	str = malloc ((2 * strlen (arg) + 1) * sizeof (char)); // Worse case when every character need to be escaped
+	for (src_i = 0; arg[src_i] != '\0'; src_i++) {
+		char c = arg[src_i];
+		switch (c) {
 		case '\'':
 		case '"':
-			if (escape) {
-				escape = 0;
-				memmove (ptr, ptr+1, strlen (ptr+1)+1);
-			} else {
-				if (quote) {
-					*ptr = '\0';
-					argv[argc++] = strdup (optr);
-					optr = ptr+1;
-					quote = 0;
-				} else {
-					quote = *ptr;
-					optr = ptr+1;
-				}
-			}
-			break;
 		case '\\':
-			escape = 1;
-			break;
 		case ' ':
-			if (!escape && !quote) {
-				*ptr = '\0';
-				if (*optr) {
-					argv[argc++] = strdup (optr);
-					optr = ptr+1;
-				}
-			}
-			break;
+			str[dest_i++] = '\\';
+		
 		default:
-			escape = 0;
-			break;
+			str[dest_i++] = c;
 		}
 	}
-	if (*optr)
-		argv[argc++] = strdup (optr);
+	str[dest_i] = '\0';
+	return realloc (str, (strlen(str)+1) * sizeof (char));
+}
+
+R_API char **r_str_argv(const char *cmdline, int *_argc) {
+	int argc = 0;
+	int argv_len = 128; // Begin with that, argv will reallocated if necessary
+	char **argv;
+	char *args; // Working buffer for writing unescaped args
+	int cmdline_current = 0; // Current character index in _cmdline
+	int args_current = 0; // Current character index in  args
+	int arg_begin = 0; // Index of the first character of the current argument in args
+
+	if (!cmdline)
+		return NULL;
+
+	argv = malloc (argv_len * sizeof (char *));
+	args = malloc (strlen (cmdline) * sizeof (char *)); // Unescaped args will be shorter, so strlen (cmdline) will be enough
+	do { 
+		// States for parsing args
+		int escaped = 0;
+		int singlequoted = 0;
+		int doublequoted = 0;
+
+		// Seek the beginning of next argument (skip whitespaces)
+		while (cmdline[cmdline_current] != '\0' && iswhitechar (cmdline[cmdline_current]))
+			cmdline_current++;
+
+		if (cmdline[cmdline_current] == '\0')
+			break; // No more arguments
+
+		// Read the argument
+		while (1) {
+			char c = cmdline[cmdline_current];
+			int end_of_current_arg = 0;
+
+			if (escaped) {
+				switch (c) {
+				case '\'':
+				case '"':
+				case ' ':
+				case '\\':
+					args[args_current++] = c;
+					break;
+
+				case '\0':
+					args[args_current++] = '\\';
+					end_of_current_arg = 1;
+					break;
+
+				default:
+					args[args_current++] = '\\';
+					args[args_current++] = c;
+				}
+				escaped = 0;
+			}
+			else {
+				switch (c) { 
+				case '\'':
+					if (doublequoted)
+						args[args_current++] = c;
+					else
+						singlequoted = !singlequoted;
+					break;
+
+				case '"':
+					if (singlequoted)
+						args[args_current++] = c;
+					else
+						doublequoted = !doublequoted;
+					break;
+
+				case '\\':
+					escaped = 1;
+					break;
+
+				case ' ':
+					if (singlequoted || doublequoted)
+						args[args_current++] = c;
+					else
+						end_of_current_arg = 1;
+					break;
+
+				case '\0':
+					end_of_current_arg = 1;
+					break;
+
+				default:
+					args[args_current++] = c;
+				}
+			}
+			if (end_of_current_arg)
+				break;
+			cmdline_current++;
+		}
+
+		args[args_current++] = '\0';
+		argv[argc++] = strdup (&args[arg_begin]);
+		if (argc >= argv_len) {
+			argv_len *= 2;
+			argv = realloc (argv, argv_len * sizeof (char *));
+		}
+		arg_begin = args_current;
+	} while (cmdline[cmdline_current++] != '\0');
 	argv[argc] = NULL;
+	argv = realloc (argv, (argc+1) * sizeof (char *));
 	if (_argc)
 		*_argc = argc;
-
-	free (str);
+	free (args);
 	return argv;
 }
 
