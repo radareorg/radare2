@@ -18,9 +18,10 @@ clean:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
+	@echo "[i] Installing bin format files"
 	rm -rf "$P"
 	mkdir -p "$P"
-	cp -f * "$P"
+	-cp -f * "$P"
 	mkdir -p "$P/dll"
 	cp -f dll/*.sdb "$P"
 

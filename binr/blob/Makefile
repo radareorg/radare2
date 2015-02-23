@@ -4,6 +4,7 @@ DESTDIR?=/
 BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2
 BINS2=radare2 ${BINS}
 
+SHLR=../../shlr
 include ../../config-user.mk
 include ../../shlr/zip/deps.mk
 
@@ -79,6 +80,7 @@ LDFLAGS+=-L../../libr/debug -lr_debug
 LDFLAGS+=-L../../libr/search -lr_search
 LDFLAGS+=-L../../libr/config -lr_config
 endif
+LDFLAGS+=${LINK}
 
 all: symlinks
 

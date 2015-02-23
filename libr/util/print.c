@@ -245,7 +245,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *color_0x00, *color_0x7f, *color_0xff, *color_text, *color_other;
+	const char *color_0x00 = "", *color_0x7f = "", *color_0xff = "", *color_text = "", *color_other = "";
 	int bs = p->bytespace;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */
