@@ -516,6 +516,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
+	/* Fix OSX/iOS debugger -- needs review for proper fix */
+	if (!file_sz || file_sz == UT64_MAX)
+		file_sz = 2*1024*1024; // 2MB
 	if (sz == 0)
 		sz = file_sz;
 #if 1
