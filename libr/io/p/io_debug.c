@@ -286,11 +286,15 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return 0; // invalid pid // if exit is overriden.. :)
 	default:
 		/* XXX: clean this dirty code */
-                ret = wait (&status);
-		if (ret != pid)
-			eprintf ("Wait event received by different pid %d\n", ret);
-                if (WIFSTOPPED (status))
-                        eprintf ("Process with PID %d started...\n", (int)pid);
+		do {
+                	ret = wait (&status);
+			if (ret == -1)
+				return -1;
+			if (ret != pid)
+				eprintf ("Wait event received by different pid %d\n", ret);
+		} while (ret!=pid);
+		if (WIFSTOPPED (status))
+			eprintf ("Process with PID %d started...\n", (int)pid);
 		if (WEXITSTATUS (status) == MAGIC_EXIT)
 			pid = -1;
 		// XXX kill (pid, SIGSTOP);
