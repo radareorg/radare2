@@ -1118,9 +1118,13 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 
-#else
+#elif __linux__ && !__powerpc__
 		/* linux-{arm/x86/x64} */
 		ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
+#else
+#warning not implemented for this platform
+		ret = 1;
+#endif
         ////////////////////////////////////////////////
   
         //////////////////////////////////
@@ -1138,7 +1142,6 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		}
 		break;
 	}
-#endif 
 	return R_TRUE;
 #else
 #warning dbg-native not supported for this platform
