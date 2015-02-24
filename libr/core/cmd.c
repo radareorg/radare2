@@ -18,6 +18,7 @@
 #include <r_core.h>
 #include <r_anal.h>
 
+#include <stdint.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdarg.h>
