@@ -337,7 +337,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					char *src = getarg (handle, insn, 1, 0);
 					char *dst = getarg (handle, insn, 0, 1);
-					esilprintf (op, "%s,%s,&,0,==,%%z,zf,=", src, dst);
+					esilprintf (op, "%s,%s,&,0,==,%%z,zf,=,%%p,pf,=,%d,%s,%s,&,%d,1,<<,&,>>,sf,=,0,cf,=,0,of,=",
+						src, dst, ((INSOP(0).size*8)-1), src, dst, ((INSOP(0).size*8)-1));	//that shiftload is for the signature-flag
 					free (src);
 					free (dst);
 				}
