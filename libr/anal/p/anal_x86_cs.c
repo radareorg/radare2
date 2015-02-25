@@ -332,13 +332,24 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_CMPSB:
 		case X86_INS_CMPSS:
 		case X86_INS_TEST:
-			op->type = R_ANAL_OP_TYPE_CMP;
-			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0);
-				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op,  "%s,%s,==,%%z,zf,=", src, dst);
-				free (src);
-				free (dst);
+			if (insn->id == X86_INS_TEST) {
+				op->type = R_ANAL_OP_TYPE_ACMP;					//compare via and
+				if (a->decode) {
+					char *src = getarg (handle, insn, 1, 0);
+					char *dst = getarg (handle, insn, 0, 1);
+					esilprintf (op, "%s,%s,&,0,==,%%z,zf,=", src, dst);
+					free (src);
+					free (dst);
+				}
+			} else {
+				op->type = R_ANAL_OP_TYPE_CMP;
+				if (a->decode) {
+					char *src = getarg (handle, insn, 1, 0);
+					char *dst = getarg (handle, insn, 0, 0);
+					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=", src, dst, (INSOP(0).size*8));
+					free (src);
+					free (dst);
+				}
 			}
 			switch (INSOP(0).type) {
 			case X86_OP_MEM:
@@ -551,7 +562,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					esilprintf (op, "pf,!,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JBE:
-					esilprintf (op, "zf,cf,&,?{,%s,%s,=,}", dst, pc);
+					esilprintf (op, "zf,cf,|,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JCXZ:
 					esilprintf (op, "cx,!,?{,%s,%s,=,}", dst, pc);
