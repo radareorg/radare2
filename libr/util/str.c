@@ -1104,16 +1104,14 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 				case '"':
 				case ' ':
 				case '\\':
-					escaped = 0;
 					args[args_current++] = c;
 					break;
 
 				default:
-					// Invalid escaped character
-					// TODO: do something appropriate (like signaling the error)
-					// Do nothing (skip the character) (this is not appropriate)
-					escaped = 0;
+					args[args_current++] = '\\';
+					args[args_current++] = c;
 				}
+				escaped = 0;
 			}
 			else {
 				switch (c) { 
