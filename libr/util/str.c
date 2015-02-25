@@ -1095,25 +1095,25 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 			char c = cmdline[cmdline_current];
 			int end_of_current_arg = 0;
 
-			if (c == '\0') // End of the argument
-				break;
-
 			if (escaped) {
 				switch (c) {
 				case '\'':
 				case '"':
 				case ' ':
 				case '\\':
-					escaped = 0;
 					args[args_current++] = c;
 					break;
 
+				case '\0':
+					args[args_current++] = '\\';
+					end_of_current_arg = 1;
+					break;
+
 				default:
-					// Invalid escaped character
-					// TODO: do something appropriate (like signaling the error)
-					// Do nothing (skip the character) (this is not appropriate)
-					escaped = 0;
+					args[args_current++] = '\\';
+					args[args_current++] = c;
 				}
+				escaped = 0;
 			}
 			else {
 				switch (c) { 
@@ -1140,6 +1140,10 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 						args[args_current++] = c;
 					else
 						end_of_current_arg = 1;
+					break;
+
+				case '\0':
+					end_of_current_arg = 1;
 					break;
 
 				default:

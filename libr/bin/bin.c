@@ -528,9 +528,7 @@ if (r_list_length (bin->binfiles)==0) {
 	if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
 		int fail = 1;
 		/* get file path from desc name */
-		char *filepath, **argv = r_str_argv (desc->name, NULL);
-		filepath = r_file_path (argv[0]);
-		r_str_argv_free (argv);
+		const char *filepath = desc->name;
 
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a fixed size.
@@ -549,7 +547,6 @@ if (r_list_length (bin->binfiles)==0) {
 			}
 			iob->desc_close (io, tdesc);
 		}
-		free (filepath);
 		if (fail)
 			return R_FALSE;
 	}
