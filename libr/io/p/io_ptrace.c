@@ -196,7 +196,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 						pidpath = r_sys_pid_to_path (pid);
 						eprintf ("PIDPATH: %s\n", pidpath);
 					} else {
-						pidpath = strdup (io->referer+6);
+						char **argv = r_str_argv (&io->referer[6], NULL);
+						pidpath = r_file_path (argv[0]);
+						r_str_argv_free (argv);
 					}
 				}
 				if (!pidpath) {
