@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -216,7 +216,7 @@ static RList* sections(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch);
 static RList* symbols(RBinFile *arch) {
-	int i;
+	int i, bin_bits;
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 	RBinSymbol *ptr = NULL;
@@ -245,6 +245,7 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 
+	bin_bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
@@ -272,6 +273,19 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
+
+		/* detect thumb */
+		ptr->bits = bin_bits;
+		if (bin->ehdr.e_machine == EM_ARM) {
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+				ptr->bits = 16;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+				ptr->bits = 16;
+			}
+		}
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
@@ -305,6 +319,17 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
+		ptr->bits = bin_bits;
+		if (bin->ehdr.e_machine == EM_ARM) {
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+				ptr->bits = 16;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+				ptr->bits = 16;
+			}
+		}
 		r_list_append (ret, ptr);
 	}
 	free (symbol);

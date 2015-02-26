@@ -951,7 +951,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 			// XXX - need something to handle overloaded symbols (e.g. methods)
 			// void add (int i, int j);
 			// void add (float i, int j);
-			is_thumb = (is_arm && va && symbol->vaddr &1);
+			is_thumb = (is_arm && va && symbol->bits == 16); //vaddr &1);
 			if (is_thumb) {
 				r_anal_hint_set_bits (r->anal, addr, 16);
 			}
@@ -1025,7 +1025,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 		}
 
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->paddr, symbol->vaddr): symbol->paddr;
+ 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->paddr, symbol->vaddr): symbol->paddr;
 			if (name && strcmp (symbol->name, name))
 				continue;
 			if (at) {

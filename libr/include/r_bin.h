@@ -295,7 +295,7 @@ typedef struct r_bin_symbol_t {
 	ut32 size;
 	ut32 ordinal;
 	ut32 visibility;
-	// int bits;
+	int bits;
 } RBinSymbol;
 
 typedef struct r_bin_import_t {

@@ -261,10 +261,16 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Shdr) *rel_shdr;
 	Elf_(Addr) plt_sym_addr;
 	ut64 got_addr, got_offset;
+	ut64 plt_addr, plt_offset;
 	int j, k, tsize, len, nrel;
 
 	if (!bin->shdr || !bin->strtab)
 		return -1;
+	if ((plt_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".plt")) == -1)
+		return -1;
+	if ((plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt")) == -1)
+		return -1;
+
 	if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
 		(got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
 		return -1;
@@ -302,22 +308,61 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 			eprintf ("Warning: read (rel)\n");
 			break;
 		}
+		int reloc_type = ELF_R_TYPE (rel[k].r_info);
+		int reloc_sym = ELF_R_SYM(rel[k].r_info);
 
-		if (ELF_R_SYM (rel[k].r_info) == sym) {
-			int of = rel[k].r_offset-got_addr+got_offset;
-			if (of+sizeof(Elf_(Addr)) >= bin->b->length) {
-				// do nothing
-			} else {
-				if (r_buf_read_at (bin->b, of,
-						(ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
-					eprintf ("Warning: read (got)\n");
+		if (reloc_sym == sym) {
+			int of = rel[k].r_offset;
+			of = of - got_addr + got_offset;
+			switch (bin->ehdr.e_machine) {
+			case EM_ARM:
+				switch (reloc_type) {
+				case 22:
+					{
+						plt_addr += (k*12) + 20;
+						if (plt_addr&1) {
+							// thumb symbol
+							plt_addr--;
+						}
+						return plt_addr;
+					}
+					break;
+				default:
+					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
 					break;
 				}
+				break;
+			case EM_386:
+			case EM_X86_64:
+				switch (reloc_type) {
+				case 7:
+					if (of+sizeof(Elf_(Addr)) >= bin->b->length) {
+						// do nothing
+					} else {
+						// ONLY FOR X86
+						if (r_buf_read_at (bin->b, of,
+									(ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
+							eprintf ("Warning: read (got)\n");
+							break;
+						}
+					}
+					plt_sym_addr -= 6;
+					goto done;
+					break;
+				default:
+					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
+					eprintf ("0x%llx - 0x%llx  i \n", (ut64)rel[k].r_offset, (ut64)rel[k].r_info);
+					return of;
+					break;
+				}
+				break;
+			default:
+				eprintf ("FINDUS\n");
+				break;
 			}
-			plt_sym_addr -= 6;
-			break;
 		}
 	}
+done:
 	free (rel);
 	return plt_sym_addr;
 }
