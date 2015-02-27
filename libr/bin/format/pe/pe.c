@@ -59,9 +59,9 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 		const ut32 jmp_dst = b[368] | (b[369]<<8) | (b[370]<<16) | (b[371]<<24);
 		entry->paddr += 367 + 5 + jmp_dst;
 		entry->vaddr += 367 + 5 + jmp_dst;
+		return entry;
 	}
-
-	return entry;
+	return NULL;
 }
 
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)
