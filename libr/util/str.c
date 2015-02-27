@@ -1054,9 +1054,10 @@ R_API char *r_str_arg_escape (const char *arg) {
 		case '\\':
 		case ' ':
 			str[dest_i++] = '\\';
-		
+			break;	
 		default:
 			str[dest_i++] = c;
+			break;	
 		}
 	}
 	str[dest_i] = '\0';
