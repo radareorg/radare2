@@ -1113,6 +1113,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (size == -1) i++;
 				else
 					i+=size;
+				free (oarg);
 				continue;
 			case 'p': // pointer reference
 				tmp = (p->bits == 64)? 'q': 'x';

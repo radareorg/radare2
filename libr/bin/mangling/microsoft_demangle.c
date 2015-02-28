@@ -1086,6 +1086,8 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	char *ptr64 = 0;
 	char *storage_class = 0;
 
+	type_code_str.type_str = NULL;
+
 	if (!init_type_code_str_struct(&func_str)) {
 		err = eDemanglerErrMemoryAllocation;
 		goto parse_microsoft_mangled_name_err;

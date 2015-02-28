@@ -2231,9 +2231,11 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 			{
 				RAnalOp *op;
 				ut64 addr = r_num_math (core->num, input +2);
-				if (!addr) addr = core->offset;
+				if (!addr)
+					addr = core->offset;
 				op = r_core_anal_op (core, addr);
-				r_anal_esil_trace (core->anal->esil, op); 
+				if (op)
+					r_anal_esil_trace (core->anal->esil, op);
 				r_anal_op_free (op);
 			}
 			break;

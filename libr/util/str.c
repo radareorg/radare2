@@ -1077,7 +1077,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		return NULL;
 
 	argv = malloc (argv_len * sizeof (char *));
-	args = malloc (strlen (cmdline) * sizeof (char *)); // Unescaped args will be shorter, so strlen (cmdline) will be enough
+	args = malloc (strlen (cmdline) * sizeof (char)); // Unescaped args will be shorter, so strlen (cmdline) will be enough
 	do { 
 		// States for parsing args
 		int escaped = 0;
