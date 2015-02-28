@@ -1286,7 +1286,7 @@ sleep (1);
 	}
 	// check addr
 	if (until_addr != UT64_MAX) {
-		if (addr == until_addr) {
+		if (r_reg_getv (core->anal->reg, name) == until_addr) {
 			eprintf ("ADDR BREAK\n");
 		} else goto repeat;
 	}
