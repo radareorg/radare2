@@ -296,7 +296,8 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 		port = listenport? listenport: r_config_get (
 			core->config, "http.port");
 		sock = r_socket_new (0);
-		(void)r_socket_connect (sock, "localhost",
+		(void)r_socket_connect (sock, r_config_get (
+			core->config, "http.bind"),
 			port, R_SOCKET_PROTO_TCP, timeout);
 		r_socket_free (sock);
 	}
@@ -364,6 +365,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	RSocketHTTPRequest *rs;
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	int iport, timeout = r_config_get_i (core->config, "http.timeout");
+	const char *host = r_config_get (core->config, "http.bind");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
@@ -396,8 +398,8 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	if (launch=='H') {
 		char cmd[128];
 		const char *browser = r_config_get (core->config, "http.browser");
-		snprintf (cmd, sizeof (cmd)-1, "%s http://localhost:%d/%s &",
-			browser, atoi (port), path? path:"");
+		snprintf (cmd, sizeof (cmd)-1, "%s http://%s:%d/%s &",
+			browser, host, atoi (port), path? path:"");
 		r_sys_cmd (cmd);
 	}
 
@@ -415,8 +417,8 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		r_config_set (core->config, "cfg.sandbox", "true");
 	}
 	eprintf ("Starting http server...\n");
-	eprintf ("open http://localhost:%d/\n", atoi (port));
-	eprintf ("r2 -C http://localhost:%d/cmd/\n", atoi (port));
+	eprintf ("open http://%s:%d/\n", host, atoi (port));
+	eprintf ("r2 -C http://%s:%d/cmd/\n", host, atoi (port));
 	core->http_up = R_TRUE;
 
 	ut64 newoff, origoff = core->offset;
@@ -472,7 +474,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		}
 		if (allow && *allow) {
 			int accepted = R_FALSE;
-			const char *host;
+			const char *allows_host;
 			char *p, *peer = r_socket_to_string (rs->s);
 			char *allows = strdup (allow);
 			//eprintf ("Firewall (%s)\n", allows);
@@ -480,9 +482,9 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			p = strchr (peer, ':');
 			if (p) *p = 0;
 			for (i=0; i<count; i++) {
-				host = r_str_word_get0 (allows, i);
+				allows_host = r_str_word_get0 (allows, i);
 				//eprintf ("--- (%s) (%s)\n", host, peer);
-				if (!strcmp (host, peer)) {
+				if (!strcmp (allows_host, peer)) {
 					accepted = R_TRUE;
 					break;
 				}

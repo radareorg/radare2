@@ -1155,6 +1155,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI("http.maxsize", 0, "Define maximum file size to upload");
 	SETPREF("http.public", "false", "Set to true to listen on 0.0.0.0");
+	SETPREF("http.bind", "localhost", "Host to listen for http connections");
 #if __WINDOWS__
 	SETPREF("http.root", "www", "Http root directory");
 #else
