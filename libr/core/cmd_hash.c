@@ -227,10 +227,10 @@ static int cmd_hash(void *data, const char *input) {
 	}
 
 	if (!osize) {
-		eprintf ( "Error: provided size must be size > 0\n" );
+		eprintf ("Error: provided size must be size > 0\n");
 	}
 
-	if (input[0]=='?' || handled_cmd == R_FALSE) {
+	if (*input == '?') {
 		const char *helpmsg[] = {
 		"Usage: #algo <size> @ addr", "", "",
 		" #"," comment","note the space after the sharp sign",
