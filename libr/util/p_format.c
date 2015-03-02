@@ -882,19 +882,23 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 //#define MUSTSEE (ofield != MINUSONE && (field == NULL || (setval == NULL && isfield)) && mode == R_PRINT_MUSTSEE)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
-		const char *fmt, int mode, const char *setval, char *ofield) {
+		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const char *argend;
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
-	char *args = NULL, *bracket, tmp, last = 0;
-	const char *arg = fmt;
+	char *fmt = NULL, *args = NULL, *bracket, tmp, last = 0;
+	const char *arg = NULL;
 	int viewflags = 0;
 	char namefmt[8], *field = NULL;
 	static int slide=0, oldslide=0;
 	ut8 *buf;
-	if (!fmt)
+	if (!formatname)
 		return 0;
+    fmt = r_strht_get (p->formats, formatname);
+    if (fmt == NULL)
+        fmt = formatname;
 	argend = fmt+strlen (fmt);
+    arg = fmt;
 
 	nexti = nargs = i = j = 0;
 
@@ -1119,9 +1123,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				tmp = (p->bits == 64)? 'q': 'x';
 				break;
 			}
+
 			/* flags */
 			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
-				if (tmp == '?') {
+                if (mode & R_PRINT_UNIONMODE) {
+                    p->printf ("f %s=0x%08"PFMT64x"\n", formatname, seeki);
+                    goto beach;
+                } else if (tmp == '?') {
 					p->printf ("f %s.%s_", fmtname, fieldname);
 				} else if (tmp == 'E') {
 					p->printf ("f %s=0x%08"PFMT64x"\n", fieldname, seeki);
@@ -1129,6 +1137,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->printf ("%s=0x%08"PFMT64x"\n", fieldname, seeki);
 				} else p->printf ("f %s=0x%08"PFMT64x"\n", fieldname , seeki);
 			}
+
 			/* json */
 			if (mode & R_PRINT_JSON) {
 				if (oldslide<=slide) {

@@ -283,6 +283,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		}
 	}
 	if (input[1]=='.') {
+        /* print all stored format */
 		if (input[2]=='\0') {
 			RListIter *iter;
 			RStrHT *sht = core->print->formats;
@@ -293,14 +294,15 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				const char *val = r_strht_get (core->print->formats, key);
 				r_cons_printf ("pf.%s %s\n", key, val);
 			}
+        /* delete a format */
 		} else if (input[2]=='-') {
 			if (input[3]) r_strht_del (core->print->formats, input+3);
 			else r_strht_clear (core->print->formats);
 		} else {
-			const char *fmt;
 			char *name = strdup (input+2);
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '='), *dot = strchr (name, '.');
+            /* store a new format */
 			if (space && (eq == NULL || space < eq)) {
 				char *fields = NULL;
 				*space++ = 0;
@@ -312,25 +314,25 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				free (input);
 				return;
 			}
+
+            if (r_strht_get (core->print->formats, name) == NULL)
+                eprintf ("Warning: %s is not a valid format name\n", name);
+            /* display a format */
 			if (dot) {
 				*dot++ = 0;
-				fmt = r_strht_get (core->print->formats, name);
 				eq = strchr (dot, '=');
 				if (eq) {
 					*eq++ = 0;
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->offset,
-							core->block, core->blocksize, fmt, mode, eq, dot);
+							core->block, core->blocksize, name, mode, eq, dot);
 				} else {
 					r_print_format (core->print, core->offset,
-							core->block, core->blocksize, fmt, mode, NULL, dot);
+							core->block, core->blocksize, name, mode, NULL, dot);
 				}
 			} else {
-				const char *fmt = r_strht_get (core->print->formats, name);
-				if (fmt) {
-					r_print_format (core->print, core->offset,
-							core->block, len, fmt, mode, NULL, NULL);
-				} else eprintf ("Unknown format (%s)\n", name);
+                r_print_format (core->print, core->offset,
+                        core->block, len, name, mode, NULL, NULL);
 			}
 			free (name);
 		}
