@@ -1250,8 +1250,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (size >= ARRAYINDEX_COEF) {
 					elem = size/ARRAYINDEX_COEF-1;
 					size %= ARRAYINDEX_COEF;
-				} else {
-					elem = 0;
 				}
 				if (!(mode & R_PRINT_ISFIELD)) nxtfield = MINUSONE;
 				else if (field) nxtfield = strchr (ofield, '.');
