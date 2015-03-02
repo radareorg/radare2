@@ -853,7 +853,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						i = sizeof (I.buffer.data)-1;
 					}
 				} else i = 0;
-				len = I.buffer.length-i;
+				len = I.buffer.index-i;
 				fwrite (I.buffer.data+i, 1, len, stdout);
 			}
 			fflush (stdout);
