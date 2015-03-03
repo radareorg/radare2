@@ -127,8 +127,11 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	return R_TRUE;
 }
 
-R_API char *r_anal_optype_to_string(int t) {
+R_API const char *r_anal_optype_to_string(int t) {
 	switch (t) {
+	case R_ANAL_OP_TYPE_PRIV  : return "privileged";
+	case R_ANAL_OP_TYPE_FPU   : return "fpu";
+	case R_ANAL_OP_TYPE_IO    : return "io";
 	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
 	case R_ANAL_OP_TYPE_ADD   : return "add";
 	case R_ANAL_OP_TYPE_AND   : return "and";

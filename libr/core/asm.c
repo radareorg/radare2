@@ -136,7 +136,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (maxhits) {
 						count ++;
 						if (count >= maxhits) {
-							eprintf ("Error: search.maxhits reached\n");
+							//eprintf ("Error: search.maxhits reached\n");
 							goto beach;
 						}
 					}

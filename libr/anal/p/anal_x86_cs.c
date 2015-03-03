@@ -179,6 +179,82 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_HLT:
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			break;
+		case X86_INS_FBLD:
+		case X86_INS_FBSTP:
+		case X86_INS_FCOMPP:
+		case X86_INS_FDECSTP:
+		case X86_INS_FEMMS:
+		case X86_INS_FFREE:
+		case X86_INS_FICOM:
+		case X86_INS_FICOMP:
+		case X86_INS_FINCSTP:
+		case X86_INS_FLDCW:
+		case X86_INS_FLDENV:
+		case X86_INS_FLDL2E:
+		case X86_INS_FLDL2T:
+		case X86_INS_FLDLG2:
+		case X86_INS_FLDLN2:
+		case X86_INS_FLDPI:
+		case X86_INS_FNCLEX:
+		case X86_INS_FNINIT:
+		case X86_INS_FNSTCW:
+		case X86_INS_FNSTSW:
+		case X86_INS_FPATAN:
+		case X86_INS_FPREM:
+		case X86_INS_FPREM1:
+		case X86_INS_FPTAN:
+		case X86_INS_FFREEP:
+		case X86_INS_FRNDINT:
+		case X86_INS_FRSTOR:
+		case X86_INS_FNSAVE:
+		case X86_INS_FSCALE:
+		case X86_INS_FSETPM:
+		case X86_INS_FSINCOS:
+		case X86_INS_FNSTENV:
+		case X86_INS_FXAM:
+		case X86_INS_FXRSTOR:
+		case X86_INS_FXRSTOR64:
+		case X86_INS_FXSAVE:
+		case X86_INS_FXSAVE64:
+		case X86_INS_FXTRACT:
+		case X86_INS_FYL2X:
+		case X86_INS_FYL2XP1:
+		case X86_INS_FDIV:
+		case X86_INS_FIDIV:
+		case X86_INS_FDIVP:
+		case X86_INS_FDIVR:
+		case X86_INS_FIDIVR:
+		case X86_INS_FDIVRP:
+		case X86_INS_FISTTP:
+		case X86_INS_FIST:
+		case X86_INS_FISTP:
+		case X86_INS_FLDZ:
+		case X86_INS_FLD1:
+		case X86_INS_FLD:
+		case X86_INS_FMUL:
+		case X86_INS_FIMUL:
+		case X86_INS_FMULP:
+		case X86_INS_FSQRT:
+		case X86_INS_FST:
+		case X86_INS_FSTP:
+		case X86_INS_FSTPNCE:
+		case X86_INS_FXCH:
+		case X86_INS_FSUBR:
+		case X86_INS_FISUBR:
+		case X86_INS_FSUBRP:
+		case X86_INS_FSUB:
+		case X86_INS_FISUB:
+		case X86_INS_FSUBP:
+		case X86_INS_FTST:
+		case X86_INS_FUCOMPI:
+		case X86_INS_FUCOMI:
+		case X86_INS_FUCOMPP:
+		case X86_INS_FUCOMP:
+		case X86_INS_FUCOM:
+
+			op->type = R_ANAL_OP_TYPE_FPU;
+			break;
+
 		case X86_INS_CLI:
 		case X86_INS_STI:
 		case X86_INS_CLC:

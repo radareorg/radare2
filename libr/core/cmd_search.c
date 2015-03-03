@@ -192,7 +192,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		return R_FALSE;
 	}
 	if (maxhits && searchhits>=maxhits) {
-		eprintf ("Error: search.maxhits reached.\n");
+		//eprintf ("Error: search.maxhits reached.\n");
 		return R_FALSE;
 	}
 
@@ -1023,6 +1023,65 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	r_cons_clear_line (1);
 }
 
+static void do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
+	ut64 at;
+	ut8 *buf;
+	RAnalOp aop;
+	int i, ret, bsize = core->blocksize;
+	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
+	int maxhits, count = 0;
+	if (bsize<64)
+		bsize=64;
+	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
+		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
+	else param->boundaries = NULL;
+	if (*input=='?') {
+		r_cons_printf ("Usage: /A [type]\n");
+		for (i=0; i<64; i++) {
+			const char *str = r_anal_optype_to_string (i);
+			if (!str) break;
+			if (!strcmp (str, "undefined"))
+				continue;
+			r_cons_printf ("%s\n", str);
+		}
+		return;
+	}
+	buf = malloc (bsize);
+	maxhits = (int)r_config_get_i (core->config, "search.count");
+	r_cons_break (NULL, NULL);
+	for (i=0, at = param->from; at < param->to; at++,i++) {
+		if (r_cons_singleton()->breaked)
+			break;
+		if (i>=(bsize-32)) {
+			i = 0;
+		}
+		if (i==0) {
+			r_core_read_at (core, at, buf, bsize);
+		}
+		ret = r_anal_op (core->anal, &aop, at, buf+i, bsize-i);
+		if (ret) {
+			const char *type = r_anal_optype_to_string (aop.type);
+			if (!*input || strstr (input, type)) {
+				r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+				if (searchflags) {
+					char flag[64];
+					snprintf (flag, sizeof (flag), "%s%d_%d",
+						searchprefix, kwidx, count);
+					r_flag_set (core->flags, flag, at, ret, 1);
+				}
+				count++;
+				if (maxhits && count >= maxhits)
+					break;
+			}
+			// skip instruction
+			i += ret - 1; //aop.size-1;
+			at += ret -1;
+		}
+	}
+	r_cons_break_end ();
+	free (buf);
+}
+
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
@@ -1052,15 +1111,20 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	}
 
 	if (json) r_cons_printf ("[");
+	r_cons_break (NULL, NULL);
 	r_list_foreach (param->boundaries, itermap, map) {
 		param->from = map->from;
 		param->to = map->to;
+		if (r_cons_singleton()->breaked)
+			break;
 
 		if (maxhits && count >= maxhits)
 			break;
 		if ((hits = r_core_asm_strsearch (core, input+2,
 				param->from, param->to, maxhits))) {
 			r_list_foreach (hits, iter, hit) {
+				if (r_cons_singleton()->breaked)
+					break;
 				switch (outmode) {
 				case 'j':
 					if (count > 0) r_cons_printf (",");
@@ -1089,6 +1153,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		}
 	}
 	if (json) r_cons_printf ("]");
+	r_cons_break_end ();
 
 	if (maplist) {
 		param->boundaries->free = free;
@@ -1393,6 +1458,10 @@ static int cmd_search(void *data, const char *input) {
 			r_core_anal_search (core, param.from, param.to,
 				r_num_math (core->num, input+2));
 		} else r_core_anal_search (core, param.from, param.to, core->offset);
+		break;
+	case 'A':
+		do_anal_search (core, &param, input+1);
+		dosearch = 0;
 		break;
 	case 'a': {
 		char *kwd = r_core_asm_search (core, input+param_offset,
@@ -1727,6 +1796,7 @@ static int cmd_search(void *data, const char *input) {
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 			"//", "", "repeat last search",
 			"/a", " jmp eax", "assemble opcode and search its bytes",
+			"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
 			"/b", "", "search backwards",
 			"/B", "", "search recognized RBin headers",
 			"/c", " jmp [esp]", "search for asm code",

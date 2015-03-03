@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -123,6 +123,12 @@ static int cmd_seek(void *data, const char *input) {
 			case 'z':
 			case 'm':
 			case 'c':
+			case 'A':
+			case 'e':
+			case 'E':
+			case 'i':
+			case 'R':
+			case 'r':
 			case '/':
 			case 'x':
 				r_config_set_i (core->config, "search.from", core->offset+1);
