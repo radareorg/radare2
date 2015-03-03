@@ -63,9 +63,9 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 	}
 	updateAddr (buf, i, endian, NULL, &addr64);
 	if (MUSTSET) {
-		p->printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*8:0));
 	} else if (MUSTSEE) {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*2:0));
 		p->printf ("(qword) ");
 		if (size==-1)
 			p->printf ("0x%016"PFMT64x, addr64);
@@ -114,9 +114,9 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 		size %= ARRAYINDEX_COEF;
 	}
 	if (MUSTSET) {
-		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem:0));
 	} else if (MUSTSEE) {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem:0));
 		if (size==-1)
 			p->printf ("0x%02x", buf[i]);
 		else {
@@ -162,9 +162,9 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 		size %= ARRAYINDEX_COEF;
 	}
 	if (MUSTSET) {
-		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem:0));
 	} else if (MUSTSEE) {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*2:0));
 		if (size==-1)
 			p->printf ("'%c'", IS_PRINTABLE (buf[i])?buf[i]:'.');
 		else {
@@ -210,9 +210,9 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode,
 		size %= ARRAYINDEX_COEF;
 	}
 	if (MUSTSET) {
-		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem:0));
 	} else if (MUSTSEE) {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem:0));
 		if (size==-1)
 			p->printf ("%d", buf[i]);
 		else {
@@ -282,11 +282,11 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 	}
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
-		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
 		char *timestr = strdup(ctime((time_t*)&addr));
 		*(timestr+24) = '\0';
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		if (size==-1) {
 			p->printf ("%s", timestr);
 		} else {
@@ -347,9 +347,9 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 	}
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
-		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		if (size==-1)
 			p->printf ("%"PFMT64d, addr);
 		else {
@@ -399,10 +399,10 @@ static void r_print_format_octal (const RPrint* p, int endian, int mode,
 	}
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
-		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
 		ut32 addr32 = (ut32)addr;
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		p->printf ("(octal) ");
 		if (size==-1)
 			p->printf ("0%08"PFMT64o, addr32);
@@ -456,10 +456,10 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
 	}
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
-		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
 		ut32 addr32 = (ut32)addr;
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		if (size==-1)
 			p->printf ("0x%08"PFMT64x, addr32);
 		else {
@@ -581,10 +581,10 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 	}
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
-		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else {
 		if (MUSTSEE)
-			p->printf ("0x%08"PFMT64x" = ", seeki);
+			p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		if (size==-1)
 			p->printf ("%f", (float)addr);
 		else {
@@ -618,9 +618,9 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 		addr = (*(buf+i))<<8 | (*(buf+i+1));
 	else addr = (*(buf+i+1))<<8 | (*(buf+i));
 	if (MUSTSET) {
-		p->printf ("wx %s @ 0x%08"PFMT64x"\n", setval, seeki);
+		p->printf ("wx %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*2:0));
 	} else if (MUSTSEE) {
-		p->printf ("0x%08"PFMT64x" = ", seeki);
+		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*2:0));
 		if (size==-1)
 			p->printf ("0x%04x", addr);
 		else {
@@ -938,7 +938,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut8 *buf;
 	if (!formatname)
 		return 0;
-    fmt = r_strht_get (p->formats, formatname);
+    fmt = (char*) r_strht_get (p->formats, formatname);
     if (fmt == NULL)
         fmt = formatname;
 	argend = fmt+strlen (fmt);
