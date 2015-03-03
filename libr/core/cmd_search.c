@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static int preludecnt = 0;
 static int searchflags = 0;
@@ -1026,14 +1026,20 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
-	int count = 0;
+	int count = 0, maxhits = 0;
+	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
 	RIOMap *map;
+	int outmode = input[1];
+	if (outmode != 'j')
+		json = 0;
 
 	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
 		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
 	else
 		param->boundaries = NULL;
+
+	maxhits = (int)r_config_get_i (core->config, "search.count");
 
 	if (!param->boundaries) {
 		map = R_NEW0 (RIOMap);
@@ -1050,17 +1056,31 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		param->from = map->from;
 		param->to = map->to;
 
+		if (maxhits && count >= maxhits)
+			break;
 		if ((hits = r_core_asm_strsearch (core, input+2,
 				param->from, param->to, maxhits))) {
 			r_list_foreach (hits, iter, hit) {
-				if (json) {
+				switch (outmode) {
+				case 'j':
 					if (count > 0) r_cons_printf (",");
 					r_cons_printf (
 							"{\"offset\":%"PFMT64d",\"len\":%d,\"code\":\"%s\"}",
 							hit->addr, hit->len, hit->code);
-				} else {
-					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
-							searchprefix, count, hit->addr, hit->len, hit->code);
+					break;
+				case '*':
+					r_cons_printf ("f %s%d_%i = 0x%08"PFMT64x"\n",
+							searchprefix, kwidx, count, hit->addr);
+					break;
+				default:
+					r_cons_printf ("0x%08"PFMT64x"   # %i: %s\n",
+							hit->addr, hit->len, hit->code);
+					break;
+				}
+				if (searchflags) {
+					char flag[64];
+					snprintf (flag, sizeof (flag), "%s%d_%d", searchprefix, kwidx, count);
+					r_flag_set (core->flags, flag, hit->addr, hit->len, 1);
 				}
 				count++;
 			}
@@ -1628,7 +1648,7 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'c': /* search asm */
-		do_asm_search(core, &param, input);
+		do_asm_search (core, &param, input);
 		dosearch = 0;
 		break;
 	case '+':
@@ -1728,7 +1748,7 @@ static int cmd_search(void *data, const char *input) {
 			"/x"," ff0033", "search for hex string",
 			"/x"," ff43 ffd0", "search for hexpair with mask",
 			"/z"," min max", "search for strings of given size",
-			"\nConfiguration:", "", "",
+			"\nConfiguration:", "", " (type `e??search.` for a complete list)",
 			"e", " cmd.hit = x", "command to execute on every search hit",
 			"e", " search.in = ?", "specify where to search stuff (depends on .from/.to)",
 			"e", " search.align = 4", "only catch aligned search hits",

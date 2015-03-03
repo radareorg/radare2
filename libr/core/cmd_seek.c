@@ -110,16 +110,31 @@ static int cmd_seek(void *data, const char *input) {
 		case '/':
 			{
 			const char *pfx = r_config_get (core->config, "search.prefix");
+			ut64 from = r_config_get_i (core->config, "search.from");
 //kwidx cfg var is ignored
 			int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 			if (kwidx<0) kwidx = 0;
 			switch (input[1]) {
 			case ' ':
+			case 'v':
+			case 'V':
+			case 'w':
+			case 'W':
+			case 'z':
+			case 'm':
+			case 'c':
+			case '/':
 			case 'x':
+				r_config_set_i (core->config, "search.from", core->offset+1);
 				r_config_set_i (core->config, "search.count", 1);
-				r_core_cmdf (core, "s+1; p8 ; .%s;s-1;s %s%d_0;f-%s%d_0",
+				r_core_cmdf (core, "s+1; %s; s-1; s %s%d_0; f-%s%d_0",
 					input, pfx, kwidx, pfx, kwidx, pfx, kwidx);
+				r_config_set_i (core->config, "search.from", from);
 				r_config_set_i (core->config, "search.count", 0);
+				break;
+			case '?':
+				eprintf ("Usage: s/.. arg.\n");
+				r_cons_printf ("/?\n");
 				break;
 			default:
 				eprintf ("unknown search method\n");
