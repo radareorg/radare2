@@ -81,7 +81,7 @@ static RBinInfo* info(RBinFile *arch) {
 	r_buf_read_at (arch->buf, 0xa0, rom_info, 16);
 	strncpy (ret->file, (char *) rom_info, 12);
 	strncpy (ret->type, (char *) &rom_info[12], 4);
-	strncpy (ret->machine, "Gameboy Advanced", sizeof (ret->machine)-1);
+	strncpy (ret->machine, "Game Boy Advance", sizeof (ret->machine)-1);
 	strncpy (ret->os, "any", sizeof (ret->os)-1);
 	strcpy (ret->arch, "arm");
 	ret->has_va = 1;
@@ -93,7 +93,7 @@ static RBinInfo* info(RBinFile *arch) {
 
 struct r_bin_plugin_t r_bin_plugin_ningba = {
 	.name = "ningba",
-	.desc = "Gameboy Advanced format r_bin plugin",
+	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
