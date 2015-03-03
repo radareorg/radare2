@@ -669,6 +669,9 @@ function html_for_instruction(ins) {
   } else {
     idump += '<div class="instructiondesc">' + opcode + '</div> ';
   }
+  if (ins.ptr_info) {
+    idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '">' + escapeHTML(ins.ptr_info) + '</span>';
+  }
 
   if (ins.comment && asm_cmtright) {
     idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';

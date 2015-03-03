@@ -2496,6 +2496,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		// wanted the numerical values of the type information
 		r_cons_printf (",\"type_num\":%"PFMT64d, analop.type);
 		r_cons_printf (",\"type2_num\":%"PFMT64d, analop.type2);
+
+		if (analop.refptr) {
+			ds->analop = analop;
+			r_cons_printf (",\"ptr_info\":\"");
+			handle_print_ptr (core, ds, nb_bytes+256, j);
+			r_cons_printf ("\"");
+		}
+
 		// handle switch statements
 		if (analop.switch_op && r_list_length (analop.switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
