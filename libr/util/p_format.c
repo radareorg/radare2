@@ -118,14 +118,12 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 	} else if (MUSTSEE) {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		if (size==-1)
-			p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
-				IS_PRINTABLE (buf[i])?buf[i]:'.');
+			p->printf ("0x%02x", buf[i]);
 		else {
 			p->printf ("[ ");
 			while (size--) {
 				if (elem == -1 || elem == 0) {
-					p->printf ("%d ; 0x%02x ; '%c'", buf[i], buf[i],
-						IS_PRINTABLE (buf[i])?buf[i]:'.');
+					p->printf ("0x%02x", buf[i]);
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
@@ -168,14 +166,12 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 	} else if (MUSTSEE) {
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		if (size==-1)
-			p->printf (" %d ; '%c'", buf[i], buf[i], buf[i],
-				IS_PRINTABLE (buf[i])?buf[i]:'.');
+			p->printf ("'%c'", IS_PRINTABLE (buf[i])?buf[i]:'.');
 		else {
 			p->printf ("[ ");
 			while (size--) {
 				if (elem == -1 || elem == 0) {
-					p->printf ("%d ; '%c'", buf[i], buf[i], buf[i],
-						IS_PRINTABLE (buf[i])?buf[i]:'.');
+					p->printf ("'%c'", IS_PRINTABLE (buf[i])?buf[i]:'.');
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
@@ -193,6 +189,54 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 			while (size--) {
 				if (elem == -1 || elem == 0) {
 					p->printf ("\"%c\"", buf[i]);
+					if (elem == 0) elem = -2;
+				}
+				if (size != 0 && elem == -1)
+					p->printf (", ");
+				if (elem > -1) elem--;
+				i++;
+			}
+			p->printf (" ]");
+		}
+		p->printf ("}");
+	}
+}
+
+static void r_print_format_decchar(const RPrint* p, int endian, int mode,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	int elem = -1;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size/ARRAYINDEX_COEF-1;
+		size %= ARRAYINDEX_COEF;
+	}
+	if (MUSTSET) {
+		p->printf ("\"w %s\" @ 0x%08"PFMT64x"\n", setval, seeki);
+	} else if (MUSTSEE) {
+		p->printf ("0x%08"PFMT64x" = ", seeki);
+		if (size==-1)
+			p->printf ("%d", buf[i]);
+		else {
+			p->printf ("[ ");
+			while (size--) {
+				if (elem == -1 || elem == 0) {
+					p->printf ("%d", buf[i]);
+					if (elem == 0) elem = -2;
+				}
+				if (size != 0 && elem == -1)
+					p->printf (", ");
+				if (elem > -1) elem--;
+				i++;
+			}
+			p->printf (" ]");
+		}
+	} else if (MUSTSEEJSON) {
+		if (size==-1)
+			p->printf ("\"%d\"", buf[i]);
+		else {
+			p->printf ("[ ");
+			while (size--) {
+				if (elem == -1 || elem == 0) {
+					p->printf ("\"%d\"", buf[i]);
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
@@ -1177,6 +1221,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'b':
 				r_print_format_byte(p, endian, mode, setval, seeki, buf, i, size);
+				i+= (size==-1) ? 1 : size;
+				break;
+			case 'C':
+				r_print_format_decchar (p, endian, mode,
+					setval, seeki, buf, i, size);
 				i+= (size==-1) ? 1 : size;
 				break;
 			case 'c':
