@@ -315,7 +315,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				return;
 			}
 
-            if (r_strht_get (core->print->formats, name) == NULL)
+            if (strchr (name, '.') == NULL && r_strht_get (core->print->formats, name) == NULL)
                 eprintf ("Warning: %s is not a valid format name\n", name);
             /* display a format */
 			if (dot) {
