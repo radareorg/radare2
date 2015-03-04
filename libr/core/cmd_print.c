@@ -1149,7 +1149,27 @@ static int cmd_print(void *data, const char *input) {
 		if (nbsz)
 			r_core_block_size (core, obsz);
 		break;
-	case 'a': //pa
+	case 'A': // "pA"
+		{
+		ut64 from = r_config_get_i (core->config, "search.from");
+		ut64 to = r_config_get_i (core->config, "search.to");
+		int count = r_config_get_i (core->config, "search.count");
+
+		int want = r_num_math (core->num, input+1);
+		if (input[1]=='?') {
+			r_core_cmd0 (core, "/A?");
+		} else {
+			r_config_set_i (core->config, "search.count", want);
+			r_config_set_i (core->config, "search.from", core->offset);
+			r_config_set_i (core->config, "search.to", core->offset+core->blocksize);
+			r_core_cmd0 (core, "/A");
+			r_config_set_i (core->config, "search.count", count);
+			r_config_set_i (core->config, "search.from", from);
+			r_config_set_i (core->config, "search.to", to);
+		}
+		}
+		break;
+	case 'a': // "pa"
 		if (input[1]=='e') { // "pae"
 			if (input[2]=='?') {
 				r_cons_printf ("|Usage: pae [hex]       assemble esil from hexpairs\n");
@@ -2250,6 +2270,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p6","[de] [len]", "base64 decode/encode",
 			 "p8"," [len]","8bit hexpair list of bytes",
 			 "pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
+			 "pA","[n_ops]", "show n_ops address and type",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
 			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
