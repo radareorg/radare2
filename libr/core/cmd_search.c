@@ -1063,7 +1063,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			const char *type = r_anal_optype_to_string (aop.type);
 			if (!*input || strstr (input, type)) {
 				r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
-				if (searchflags) {
+				if (*input && searchflags) {
 					char flag[64];
 					snprintf (flag, sizeof (flag), "%s%d_%d",
 						searchprefix, kwidx, count);
@@ -1073,9 +1073,14 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 				if (maxhits && count >= maxhits)
 					break;
 			}
-			// skip instruction
-			i += ret - 1; //aop.size-1;
-			at += ret -1;
+			if (core->search->align>0) {
+				i += core->search->align -1;
+				at += core->search->align -1;
+			} else {
+				// skip instruction
+				i += ret - 1; //aop.size-1;
+				at += ret -1;
+			}
 		}
 	}
 	r_cons_break_end ();
