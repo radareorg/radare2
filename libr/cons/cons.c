@@ -519,6 +519,9 @@ R_API int r_cons_get_column() {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len) {
+	if (len<0 || (I.buffer_len + len)<0) {
+		return;
+	}
 	if (I.echo) {
 		write (2, str, len);
 	}
