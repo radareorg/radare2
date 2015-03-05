@@ -289,15 +289,17 @@ $(document).ready( function() {
 });
 
 function scroll_to_element(element) {
-  if (element === undefined) return;
+  if (element === undefined || element === null) return;
   var top = Math.max(0,element.documentOffsetTop() - ( window.innerHeight / 2 ));
   $('#center_panel').scrollTo(top, {axis: 'y'});
   r2ui._dis.scroll_offset = top;
 }
 
 function scroll_to_address(address) {
-  if (address === undefined) return;
+  if (address === undefined || address === null) return;
   var elements = $(".insaddr.addr_" + address);
+  if (elements === undefined || elements === null) return;
+  if (elements[0] === undefined || elements[0] === null) return;
   var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
   top = Math.max(0,top);
   $('#center_panel').scrollTo(top, {axis: 'y'});

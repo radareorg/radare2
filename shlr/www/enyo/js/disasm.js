@@ -694,7 +694,7 @@ var escapeHTML = (function () {
   'use strict';
   var chr = { '"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;' };
   return function (text) {
-    return text.replace(/[\"&<>]/g, function (a) { return chr[a]; });
+    return text? text.replace(/[\"&<>]/g, function (a) { return chr[a]; }): "";
   };
 }());
 
@@ -788,6 +788,7 @@ function fnum(a) {
 function get_address_from_class(t, type) {
   if (type === undefined) type = "addr";
   var prefix = type+"_";
+if (!t) return undefined;
   var l = t.className.split(" ").filter(function(x) { return x.substr(0,prefix.length) == type+"_"; });
   if (l.length != 1) return undefined;
   return l[0].split("_")[1].split(" ")[0];

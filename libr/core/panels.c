@@ -315,28 +315,18 @@ static void r_core_panels_refresh (RCore *core) {
 		strcat (title, str);
 	}
 	W (title);
-//	snprintf (title, sizeof (title)-1,
-//		"[File]  Edit  View  Tools  Debug  Analysis  Help");
 
 	snprintf (title, sizeof (title)-1,
-		"%d [0x%08"PFMT64x"]", curnode, core->offset);
+		"[0x%08"PFMT64x"]", core->offset);
 	(void)G (-can->sx + w-strlen (title)-1, -can->sy);
 	W (title);
 
 	r_cons_canvas_print (can);
-	if (1) {
-// if the command contains a
-		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
-		if (cmdv && *cmdv) {
-			r_cons_gotoxy (0,1);
-			r_core_cmd0 (core, cmdv);
-		}
-	}
 	r_cons_flush ();
 }
 
 static void reloadPanels(RCore *core) {
-	W("HELLO WORLD");
+	//W("HELLO WORLD");
 	Layout_run (panels);
 }
 
@@ -429,10 +419,13 @@ repeat:
 		r_cons_printf ("Visual Ascii Art Panels:\n"
 		" !    run r2048 game\n"
 		" .    - center graph to the current node\n"
+		" :    - run r2 command in prompt\n"
 		" hl   - toggle scr.color\n"
 		" HL   - move vertical column split\n"
 		" JK   - select prev/next panels\n"
-		" jk   - scroll/select menu\n");
+		" jk   - scroll/select menu\n"
+		" q    - quit, back to visual mode\n"
+		);
 		r_cons_flush ();
 		r_cons_any_key (NULL);
 		break;
@@ -454,13 +447,14 @@ repeat:
 		if (panels[curnode].type == PANEL_TYPE_FLOAT) {
 			if (menus_sub[menu_x][menu_y])
 				menu_y ++;
-		} else {
 		}
 		break;
 	case 'k':
-		menu_y --;
-		if (menu_y<0)
-			menu_y = 0;
+		if (panels[curnode].type == PANEL_TYPE_FLOAT) {
+			menu_y --;
+			if (menu_y<0)
+				menu_y = 0;
+		}
 		break;
 	case 'J':
 		curnode++;
