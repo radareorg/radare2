@@ -266,8 +266,11 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 static int bin_info (RCore *r, int mode) {
 	int i, j;
 	char str[R_FLAG_NAME_SIZE];
+	char size_str[21];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
+	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
+
 	if (!info) {
 		if (mode & R_CORE_BIN_JSON)
 			r_cons_printf ("{}");
@@ -386,6 +389,7 @@ static int bin_info (RCore *r, int mode) {
 			pair ("lsyms", r_str_bool (R_BIN_DBG_SYMS &info->dbg_info));
 			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
 			pair ("rpath", info->rpath);
+			pair ("size", size_str);
 			if (info->guid[0] != '\0')
 				pair ("guid", info->guid);
 			if (info->debug_file_name[0] != '\0')
