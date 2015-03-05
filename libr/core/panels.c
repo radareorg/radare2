@@ -386,10 +386,6 @@ repeat:
 	w = r_cons_get_size (&h);
 	Layout_run (panels);
 	r_core_panels_refresh (core);
-	Layout_run (panels);
-	r_core_panels_refresh (core); // FIX GLITCH
-	Layout_run (panels);
-	r_core_panels_refresh (core); // FIX GLITCH
 	wheel = r_config_get_i (core->config, "scr.wheel");
 	if (wheel)
 		r_cons_enable_mouse (R_TRUE);
