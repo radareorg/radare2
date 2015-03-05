@@ -1,5 +1,7 @@
 /* Copyright radare2 2014-2015 - Author: pancake */
 
+// pls move the typedefs into roons and rename it -> RConsPanel
+
 #include <r_core.h>
 
 typedef struct {
@@ -435,13 +437,14 @@ repeat:
 		core->vmode = R_TRUE;
 		break;
 	case 'C':
-		can->color = !!!can->color; 
+		can->color = !!!can->color;				//WTF
 		//r_config_swap (core->config, "scr.color");
 		// refresh graph
 	//	reloadPanels (core);
 		break;
 	case 'j':
-		menu_y ++;
+		if (menus_sub[menu_x][menu_y])
+			menu_y ++;
 		break;
 	case 'k':
 		menu_y --;
@@ -449,11 +452,16 @@ repeat:
 			menu_y = 0;
 		break;
 	case 'h':
-		menu_x --;
-		if (menu_x<0)menu_x = 0;
+		if (menu_x) {
+			menu_x --;
+			menu_y = 0;		//prevent some illegal reads; make valgrind happy
+		}
 		break;
 	case 'l':
-		menu_x ++;
+		if (menus[menu_x + 1]) {
+			menu_x ++;
+			menu_y = 0;
+		}
 		break;
 	case 'q':
 		goto beach;
