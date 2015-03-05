@@ -940,7 +940,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		return 0;
     fmt = (char*) r_strht_get (p->formats, formatname);
     if (fmt == NULL)
-        fmt = formatname;
+        fmt = (char*) formatname;
 	argend = fmt+strlen (fmt);
     arg = fmt;
 
