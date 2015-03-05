@@ -930,7 +930,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const char *argend;
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
-	char *fmt = NULL, *args = NULL, *bracket, tmp, last = 0;
+	const char *fmt = NULL;
+	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = NULL;
 	int viewflags = 0;
 	char namefmt[8], *field = NULL;
@@ -938,11 +939,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut8 *buf;
 	if (!formatname)
 		return 0;
-    fmt = (char*) r_strht_get (p->formats, formatname);
-    if (fmt == NULL)
-        fmt = formatname;
+	fmt = r_strht_get (p->formats, formatname);
+	if (fmt == NULL)
+		fmt = formatname;
 	argend = fmt+strlen (fmt);
-    arg = fmt;
+	arg = fmt;
 
 	nexti = nargs = i = j = 0;
 
