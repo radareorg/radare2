@@ -363,9 +363,9 @@ R_API int r_cons_is_utf8(void);
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API int r_cons_controlz(int ch);
-R_API int  r_cons_readchar(void);
-R_API void r_cons_any_key(void);
-R_API int  r_cons_eof(void);
+R_API int r_cons_readchar(void);
+R_API int r_cons_any_key(const char *msg);
+R_API int r_cons_eof(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set (const char *key, const char *val);

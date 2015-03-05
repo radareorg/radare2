@@ -435,7 +435,7 @@ static int cmd_help(void *data, const char *input) {
 			core->num->value = r_core_yank_hud_path (core, input+2, 0) == R_TRUE;
 			} break;
 		case 'k':
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			break;
 		case 'y':
 			for (input+=2; *input==' '; input++);

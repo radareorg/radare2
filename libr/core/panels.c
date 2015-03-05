@@ -426,12 +426,15 @@ repeat:
 		break;
 	case '?':
 		r_cons_clear00 ();
-		r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+		r_cons_printf ("Visual Ascii Art Panels:\n"
+		" !    run r2048 game\n"
 		" .    - center graph to the current node\n"
-		" C    - toggle scr.color\n"
-		" hjkl - move node\n");
+		" hl   - toggle scr.color\n"
+		" HL   - move vertical column split\n"
+		" JK   - select prev/next panels\n"
+		" jk   - scroll/select menu\n");
 		r_cons_flush ();
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 		break;
 	case ':':
 		core->vmode = R_FALSE;
@@ -443,6 +446,9 @@ repeat:
 		//r_config_swap (core->config, "scr.color");
 		// refresh graph
 	//	reloadPanels (core);
+		break;
+	case '!':
+		r_cons_2048 ();
 		break;
 	case 'j':
 		if (panels[curnode].type == PANEL_TYPE_FLOAT) {

@@ -117,7 +117,7 @@ TODO:
 				" sS   : step / step over\n"
 				" .    : seek entry or pc\n");
 				r_cons_flush ();
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 				break;
 			case 'i':
 				{

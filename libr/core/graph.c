@@ -678,7 +678,7 @@ repeat:
 		" z/Z  - step / step over\n"
 		" R    - relayout\n");
 		r_cons_flush ();
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 		break;
 	case 'R':
 	case 'r': Layout_depth (nodes, edges); break;

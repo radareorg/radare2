@@ -90,7 +90,7 @@ static void visual_help() {
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 	" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 	" @        set cmd.vprompt to run commands before the visual prompt\n"
-	" !        run r2048 game\n"
+	" !        enter into the visual panels mode\n"
 	" _        enter the hud\n"
 	" =        set cmd.vprompt (top row)\n"
 	" |        set cmd.cprompt (right column)\n"
@@ -208,7 +208,7 @@ R_API int r_core_visual_prompt (RCore *core) {
 		ret = R_TRUE;
 	} else {
 		ret = R_FALSE;
-		//r_cons_any_key ();
+		//r_cons_any_key (NULL);
 		r_cons_clear00 ();
 		showcursor (core, R_FALSE);
 	}
@@ -419,10 +419,10 @@ static void visual_search (RCore *core) {
 		} else ocursor = -1;
 		showcursor (core, R_TRUE);
 		eprintf ("FOUND IN %d\n", cursor);
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 	} else {
 		eprintf ("Cannot find bytes\n");
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 		r_cons_clear00 ();
 	}
 }
@@ -541,7 +541,7 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 		r_cons_printf ("[GOTO XREF]> \n");
 		if (r_list_empty (xrefs)) {
 			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (xrefs, iter, refi) {
@@ -590,7 +590,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 		r_cons_printf ("[GOTO REF]> \n");
 		if (r_list_empty (fun->refs)) {
 			r_cons_printf ("\tNo REF found at 0x%"PFMT64x"\n", core->offset);
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (fun->refs, iter, refi) {
@@ -709,7 +709,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'a':
 		if (core->file && core->file->desc && !(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			return R_TRUE;
 		}
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
@@ -754,7 +754,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case '!':
-		r_cons_2048 ();
+		r_core_visual_panels (core);
 		break;
 	case 'o':
 		visual_offset (core);
@@ -780,12 +780,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
 			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
 		} else {
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 		}
 		}
 #else
 		eprintf ("Unsupported on this platform\n");
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 #endif
 		break;
 	case 'C':
@@ -855,7 +855,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'I':
 		if (core->file && core->file->desc &&!(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			return R_TRUE;
 		}
 		showcursor (core, R_TRUE);
@@ -970,8 +970,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			int ocolor = r_config_get_i (core->config, "scr.color");
-			if (!r_core_visual_graph (core, NULL))
-				r_core_visual_panels (core, NULL);
+			r_core_visual_graph (core, NULL);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;
@@ -1252,7 +1251,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (!core->yank_buf) {
 			r_cons_strcat ("Can't paste, clipboard is empty.\n");
 			r_cons_flush ();
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else r_core_yank_paste (core, core->offset+cursor, 0);
 		break;

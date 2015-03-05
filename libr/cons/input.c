@@ -207,10 +207,14 @@ beach:
 	return ret;
 }
 
-R_API void r_cons_any_key() {
-	r_cons_strcat ("\n--press any key--\n");
+R_API int r_cons_any_key(const char *msg) {
+	if (msg && *msg) {
+		r_cons_printf ("\n-- %s --\n", msg);
+	} else {
+		r_cons_strcat ("\n--press any key--\n");
+	}
 	r_cons_flush ();
-	r_cons_readchar ();
+	return r_cons_readchar ();
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 

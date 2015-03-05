@@ -232,7 +232,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			" p/P   - rotate print format\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (R_TRUE);
@@ -246,7 +246,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (R_FALSE);
 			if (cmd[0])
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 			//cons_gotoxy(0,0);
 			r_cons_clear ();
 			continue;
@@ -382,7 +382,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			" a/d/e - add/delete/edit comment/anal symbol\n"
 			" p/P   - rotate print format\n");
 			r_cons_flush ();
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			break;
 		}
 		if (p) {
@@ -562,7 +562,7 @@ R_API void r_core_visual_config(RCore *core) {
 			" +/-   - increase/decrease numeric value (* and /, too)\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (R_TRUE);
@@ -587,7 +587,7 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (R_FALSE);
 			if (cmd[0])
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 			r_cons_clear00 ();
 			continue;
 		}
@@ -706,14 +706,14 @@ R_API void r_core_visual_mounts (RCore *core) {
 					list = r_fs_partitions (core->fs, n, 0);
 					if (!list) {
 						r_cons_printf ("Unknown partition\n");
-						r_cons_any_key ();
+						r_cons_any_key (NULL);
 						r_cons_flush ();
 						break;
 					}
 					part = r_list_get_n (list, option);
 					if (!part) {
 						r_cons_printf ("Unknown partition\n");
-						r_cons_any_key ();
+						r_cons_any_key (NULL);
 						r_cons_flush ();
 						break;
 					}
@@ -727,12 +727,12 @@ R_API void r_core_visual_mounts (RCore *core) {
 						} else {
 							r_cons_printf ("Cannot mount partition\n");
 							r_cons_flush ();
-							r_cons_any_key ();
+							r_cons_any_key (NULL);
 						}
 					} else {
 						r_cons_printf ("Unknown partition type\n");
 						r_cons_flush ();
-						r_cons_any_key ();
+						r_cons_any_key (NULL);
 					}
 					r_list_free (list);
 					list = NULL;
@@ -756,7 +756,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 					} else {
 						r_cons_printf ("Unknown file\n");
 						r_cons_flush ();
-						r_cons_any_key ();
+						r_cons_any_key (NULL);
 					}
 
 				} else if (mode == 3) {
@@ -852,7 +852,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 						} else r_cons_printf ("Cannot dump file\n");
 					} else r_cons_printf ("Cannot dump file\n");
 					r_cons_flush ();
-					r_cons_any_key ();
+					r_cons_any_key (NULL);
 					*str='\0';
 				}
 				break;
@@ -872,7 +872,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 				r_cons_printf (" :     - enter command\n");
 				r_cons_printf (" ?     - show this help\n");
 				r_cons_flush ();
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 				break;
 			case ':':
 				r_cons_show_cursor (R_TRUE);
@@ -882,7 +882,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 				r_cons_set_raw (1);
 				r_cons_show_cursor (R_FALSE);
 				r_core_cmd (core, buf, 1);
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 				break;
 		}
 	}
@@ -1087,7 +1087,7 @@ R_API void r_core_visual_anal(RCore *core) {
 				" l,ret   enter, function\n"
 			);
 			r_cons_flush ();
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			break;
 		case ':':
 			r_core_visual_prompt (core);
@@ -1358,7 +1358,7 @@ R_API void r_core_visual_define (RCore *core) {
 				r_sys_cmdf ("man %s", man);
 				free (man);
 			}
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 		}
 		break;
 	case 'C':
@@ -1376,7 +1376,7 @@ R_API void r_core_visual_define (RCore *core) {
 				}
 			} else {
 				eprintf ("Sorry. No flag here\n");
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 			}
 		}
 		break;
@@ -1396,7 +1396,7 @@ R_API void r_core_visual_define (RCore *core) {
 				}
 			} else {
 				eprintf ("Sorry. No flag here\n");
-				r_cons_any_key ();
+				r_cons_any_key (NULL);
 			}
 		}
 		break;
@@ -1437,7 +1437,7 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'k':
 		eprintf ("TODO: merge up\n");
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 		break;
 	case 'h': // "Vdh"
 		r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, here);
