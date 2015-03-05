@@ -60,6 +60,8 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (!c) return 0;
 	x += c->sx;
 	y += c->sy;
+	if (x>c->w*2) return 0;
+	if (y>c->h*2) return 0;
 	if (x >= c->w) {
 		c->x = c->w;
 		ret = R_FALSE;
@@ -281,14 +283,21 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	char corner = '=';
 
 	if (w < 0) return;
+	if (x > c->w*2) return;
+	if (y > c->h*2) return;
 
 	if (color)
 		c->attr = color;
 	row = malloc (w+1);
+	if (!row)
+		return;
 	row[0] = roundcorners?'.':corner;
-	memset (row+1, '-', w-2);
-	row[w-1] = roundcorners?'.':corner;
-	row[w] = 0;
+	if (w>2)
+		memset (row+1, '-', w-2);
+	if (w>1)
+		row[w-1] = roundcorners?'.':corner;
+	if (w>=0)
+		row[w] = 0;
 	if (G(x, y)) {
 		W(row);
 	}

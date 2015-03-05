@@ -2,9 +2,9 @@
 
 #include <r_core.h>
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
-int mousemode = 0;
-int small_nodes = 0;
-int simple_mode = 1;
+static int mousemode = 0;
+static int small_nodes = 0;
+static int simple_mode = 1;
 static void reloadNodes(RCore *core) ;
 #define OS_SIZE 128
 struct {
