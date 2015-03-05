@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <sparc.h>
+#include <capstone/capstone.h>
+#include <capstone/sparc.h>
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported

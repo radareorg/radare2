@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <arm.h>
+#include <capstone/capstone.h>
+#include <capstone/arm.h>
 #include "esil.h"
 /* arm64 */
 #define IMM64(x) insn->detail->arm64.operands[x].imm

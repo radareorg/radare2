@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <mips.h>
+#include <capstone/capstone.h>
+#include <capstone/mips.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 

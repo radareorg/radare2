@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 static int check_features(RAsm *a, cs_insn *insn);
 static csh cd;

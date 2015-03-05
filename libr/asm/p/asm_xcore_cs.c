@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;

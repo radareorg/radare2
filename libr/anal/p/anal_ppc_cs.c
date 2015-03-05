@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <ppc.h>
+#include <capstone/capstone.h>
+#include <capstone/ppc.h>
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	csh handle;

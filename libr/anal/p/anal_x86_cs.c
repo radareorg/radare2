@@ -2,8 +2,8 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <x86.h>
+#include <capstone/capstone.h>
+#include <capstone/x86.h>
 
 #define USE_ITER_API 0
 
