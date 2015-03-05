@@ -20,13 +20,14 @@ typedef struct {
 #define PANEL_TYPE_DIALOG 1
 #define PANEL_TYPE_FLOAT 2
 
+static int COLW = 40;
 static RCore *_core;
 static int n_panels = 0;
 static void reloadPanels(RCore *core) ;
 static int menu_pos = 0;
-#define OS_SIZE 128
+#define LIMIT 256
 struct {
-	int panels[OS_SIZE];
+	int panels[LIMIT];
 	int size;
 } ostack;
 
@@ -118,7 +119,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		if (cur) {
 			//F (n->x,n->y, n->w, n->h, '.');
 			snprintf (title, sizeof (title)-1,
-				"-[ %s ]-", n->text);
+				" [ %s ] ", n->text);
 		} else {
 			snprintf (title, sizeof (title)-1,
 				"   %s   ", ""); //n->text);
@@ -143,7 +144,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		free (foo);
 	} else {
 		char *text = r_str_crop (n->text,
-			delta_x, delta_y, n->w+10, n->h);
+			delta_x, delta_y, n->w+5, n->h);
 		if (text) {
 			W (text);
 			free (text);
@@ -165,7 +166,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 static void Layout_run(Panel *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
-	int colpos = w-40;
+	int colpos = w-COLW;
 
 	can->sx = 0;
 	can->sy = 0;
@@ -178,7 +179,8 @@ static void Layout_run(Panel *panels) {
 	for (i=j=0; panels[i].text; i++) {
 		switch (panels[i].type) {
 		case PANEL_TYPE_FLOAT:
-			panels[i].w = r_str_bounds (panels[i].text,
+			panels[i].w = r_str_bounds (
+				panels[i].text,
 				&panels[i].h);
 			panels[i].h += 4;
 			break;
@@ -193,10 +195,16 @@ static void Layout_run(Panel *panels) {
 				}
 				panels[i].h = h-1;
 			} else {
+				int ph = ((h-1)/(n_panels-1));
 				panels[i].x = colpos;
-				panels[i].y = 1;
+				panels[i].y = 1 + (ph*(j-1));
 				panels[i].w = w-colpos-1;
-				panels[i].h = ((h-1)/(n_panels-1));
+				if (panels[i].w<0)
+					panels[i].w = 0;
+				panels[i].h = ph;
+				if (!panels[i+1].text) {
+					panels[i].h = h - panels[i].y;
+				}
 			}
 			j++;
 		}
@@ -205,10 +213,17 @@ static void Layout_run(Panel *panels) {
 
 static int bbPanels (RCore *core, Panel **n) {
 	int i;
-	Panel *panels = calloc (sizeof (Panel), 32); //(r_list_length (fcn->bbs)+1));
+	Panel *panels = calloc (sizeof (Panel), LIMIT); //(r_list_length (fcn->bbs)+1));
 	if (!panels)
 		return 0;
 	i = 0;
+
+	panels[i].text = strdup ("");
+	panels[i].addr = core->offset;
+	panels[i].type = PANEL_TYPE_FLOAT;
+	menu_pos = i;
+	i++;
+
 	panels[i].text = strdup ("Disassembly");
 	panels[i].cmd = r_str_newf ("pd $r-2");
 	panels[i].addr = core->offset;
@@ -220,13 +235,8 @@ static int bbPanels (RCore *core, Panel **n) {
 	panels[i].addr = core->offset;
 	panels[i].type = PANEL_TYPE_FRAME;
 	i++;
-	n_panels = i;
+	n_panels = 2;
 
-	panels[i].text = strdup ("");
-	panels[i].addr = core->offset;
-	panels[i].type = PANEL_TYPE_FLOAT;
-	menu_pos = i;
-	i++;
 	free (*n);
 	*n = panels;
 	panels[i].text = NULL;
@@ -286,8 +296,6 @@ static void r_core_panels_refresh (RCore *core) {
 	}
 	if (menu_y) {
 		curnode = menu_pos;
-	} else {
-		curnode = 0;
 	}
 	// redraw current node to make it appear on top
 	if (curnode >= 0) {
@@ -299,7 +307,6 @@ static void r_core_panels_refresh (RCore *core) {
 	char str[128];
 	title[0] = 0;
 	for (i=0; menus[i]; i++) {
-
 		if (menu_x == i) {
 			snprintf (str, sizeof (title)-1, "[%s]", menus[i]);
 		} else {
@@ -312,7 +319,7 @@ static void r_core_panels_refresh (RCore *core) {
 //		"[File]  Edit  View  Tools  Debug  Analysis  Help");
 
 	snprintf (title, sizeof (title)-1,
-		"[0x%08"PFMT64x"]", core->offset);
+		"%d [0x%08"PFMT64x"]", curnode, core->offset);
 	(void)G (-can->sx + w-strlen (title)-1, -can->sy);
 	W (title);
 
@@ -335,7 +342,7 @@ static void reloadPanels(RCore *core) {
 
 R_API int r_core_visual_panels(RCore *core) {
 #define OS_INIT() ostack.size = 0; ostack.panels[0] = 0;
-#define OS_PUSH(x) if (ostack.size<OS_SIZE) {ostack.panels[++ostack.size]=x;}
+#define OS_PUSH(x) if (ostack.size<LIMIT) {ostack.panels[++ostack.size]=x;}
 #define OS_POP() ((ostack.size>0)? ostack.panels[--ostack.size]:0)
 	int wheelspeed;
 	int okey, key, wheel;
@@ -365,7 +372,6 @@ R_API int r_core_visual_panels(RCore *core) {
 		return R_FALSE;
 	}
 
-#define N panels[curnode]
 	reloadPanels (core);
 
 	asm_comments = r_config_get_i (core->config, "asm.comments");
@@ -443,24 +449,46 @@ repeat:
 	//	reloadPanels (core);
 		break;
 	case 'j':
-		if (menus_sub[menu_x][menu_y])
-			menu_y ++;
+		if (panels[curnode].type == PANEL_TYPE_FLOAT) {
+			if (menus_sub[menu_x][menu_y])
+				menu_y ++;
+		} else {
+		}
 		break;
 	case 'k':
 		menu_y --;
 		if (menu_y<0)
 			menu_y = 0;
 		break;
+	case 'J':
+		curnode++;
+		if (!panels[curnode].text) {
+			curnode--;
+		}
+		break;
+	case 'K':
+		curnode--;
+		if (curnode<0)
+			curnode = 0;
+		break;
+	case 'H':
+		COLW += 4;
+		break;
+	case 'L':
+		COLW -= 4;
+		if (COLW<0)
+			COLW=0;
+		break;
 	case 'h':
 		if (menu_x) {
 			menu_x --;
-			menu_y = 0;		//prevent some illegal reads; make valgrind happy
+			menu_y = menu_y?1:0;
 		}
 		break;
 	case 'l':
 		if (menus[menu_x + 1]) {
 			menu_x ++;
-			menu_y = 0;
+			menu_y = menu_y?1:0;
 		}
 		break;
 	case 'q':
@@ -472,7 +500,7 @@ repeat:
 		}
 		break;
 	default:
-		eprintf ("Key %d\n", key);
+		//eprintf ("Key %d\n", key);
 		//sleep (1);
 		break;
 	}
