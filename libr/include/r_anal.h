@@ -834,9 +834,10 @@ typedef struct r_anal_esil_t {
 	ut64 delay_addr;
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
-// parity flag?
+// parity flag? done with cur
 	ut64 old;	//used for carry-flagging and borrow-flagging
 	ut64 cur;	//used for carry-flagging and borrow-flagging
+	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
 	Sdb *ops;
 	/* deep esil parsing fills this */

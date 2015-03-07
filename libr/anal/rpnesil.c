@@ -78,6 +78,7 @@ static int esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
 	}
+	esil->lastsz = (len * 8) & 0xff;
 	r_mem_copyendian (buf, buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
@@ -111,6 +112,7 @@ static int esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) 
 	if (!ret && esil->cb.mem_write) {
 		ret = esil->cb.mem_write (esil, addr, buf, len);
 	}
+	esil->lastsz = (len * 8) & 0xff;
 	return ret;
 }
 
@@ -152,6 +154,12 @@ static int esil_internal_parity_check (RAnalEsil *esil) {
 		mask = (ut64)(mask>>1);						//yes, this cast is needed since every shift will produce a ut32
 	}
 	return (bits & 1);
+}
+
+static int esil_internal_signature_check (RAnalEsil *esil) {
+	if (!esil || !esil->lastsz)
+		return R_FALSE;
+	return (esil->cur & (0x1<<(esil->lastsz-1)))>>(esil->lastsz-1);
 }
 
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
@@ -227,6 +235,9 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 	case 'r':
 		*num = esil->anal->bits/8;
 		break;
+	case 's':
+		*num = esil_internal_signatur_check (esil);
+		break;
 	default:
 		return R_FALSE;
 	}
@@ -275,9 +286,13 @@ static int isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
 
 static int esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 	int ret = 0;
+	RRegItem *item;
 	if (esil->debug) {
 		eprintf ("%s=0x%"PFMT64x"\n", dst, num);
 	}
+	item = r_reg_get (esil->anal->reg, dst, -1);
+	if (item)
+		esil->lastsz = item->size & 0xff;
 	if (esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, num);
 		if (!ret)
@@ -291,8 +306,12 @@ static int esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 
 static int esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num) {
 	int ret = 0;
+	RRegItem *item;
 	if (num)
 		*num = 0LL;
+	item = r_reg_get (esil->anal->reg, regname, -1);
+	if (item)
+		esil->lastsz = item->size & 0xff;
 	if (esil->cb.hook_reg_read) {
 		ret = esil->cb.hook_reg_read (esil, regname, num);
 	}
