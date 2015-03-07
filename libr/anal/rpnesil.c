@@ -236,7 +236,7 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 		*num = esil->anal->bits/8;
 		break;
 	case 's':
-		*num = esil_internal_signatur_check (esil);
+		*num = esil_internal_signature_check (esil);
 		break;
 	default:
 		return R_FALSE;
