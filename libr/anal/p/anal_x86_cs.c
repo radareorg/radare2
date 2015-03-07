@@ -399,7 +399,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			}
 			break;
 		case X86_INS_CMP:
-		case X86_INS_VCMP:
 		case X86_INS_CMPPD:
 		case X86_INS_CMPPS:
 		case X86_INS_CMPSW:
