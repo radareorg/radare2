@@ -162,6 +162,12 @@ static int esil_internal_signature_check (RAnalEsil *esil) {
 	return (esil->cur & (0x1<<(esil->lastsz-1)))>>(esil->lastsz-1);
 }
 
+static int esil_internal_overflow_check (RAnalEsil *esil) {
+	if (!esil && esil->lastsz > 1)
+		return R_FALSE;
+	return (esil_internal_borrow_check (esil, esil->lastsz) ^ esil_internal_carry_check (esil, esil->lastsz-2));	//according to wikipedia this should work
+}															//cannot imagine any case wher both happens, maybe it's not that simple
+
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[64];
 	snprintf (str, sizeof (str)-1, "0x%"PFMT64x, num);
@@ -228,14 +234,16 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_carry_check (esil, bit);
 		break;
-		//case 'o':						//overflow
+	case 'o':						//overflow
+		*num = esil_internal_overflow_check (esil);
+		break;
 	case 'p':						//parity
 		*num = esil_internal_parity_check (esil);
 		break;
-	case 'r':
+	case 'r':						//regsize in 8-bit-bytes
 		*num = esil->anal->bits/8;
 		break;
-	case 's':
+	case 's':						//signature
 		*num = esil_internal_signature_check (esil);
 		break;
 	default:
