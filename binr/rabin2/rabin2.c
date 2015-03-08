@@ -64,7 +64,7 @@ static int rabin_show_help(int v) {
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -k [query]      perform sdb query on loaded file\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
-		" -g              same as -SMRevsiz (show all info)\n"
+		" -g              same as -SMResiz (show all info)\n"
 		" -h              this help\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -406,7 +406,6 @@ int main(int argc, char **argv) {
 			set_action (ACTION_MAIN);
 			set_action (ACTION_LIBS);
 			set_action (ACTION_RELOCS);
-			set_action (ACTION_EXTRACT);
 			break;
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
