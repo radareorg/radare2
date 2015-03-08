@@ -229,10 +229,9 @@ R_API void r_reg_arena_pop(RReg *reg) {
 R_API int r_reg_arena_push(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
-//eprintf ("PUSH %p\n", reg->regset[i].arena);
-		r_list_push (reg->regset[i].pool, reg->regset[i].arena);
 		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
 			return 0;
+		r_list_push (reg->regset[i].pool, reg->regset[i].arena);
 	}
 	return r_list_length (reg->regset[0].pool);
 }
