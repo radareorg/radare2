@@ -1019,6 +1019,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.fcncalls", "true", "Show functions calls");
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
+	SETPREF("asm.describe", "false", "Show opcode description");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
 	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");

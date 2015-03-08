@@ -56,6 +56,7 @@ typedef struct r_disam_options_t {
 	int show_linescall;
 	int show_size;
 	int show_trace;
+	int asm_describe;
 	int linesout;
 	int adistrick;
 	int asm_demangle;
@@ -273,6 +274,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->linesout = r_config_get_i (core->config, "asm.linesout");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
+	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
@@ -1875,19 +1877,39 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
+	char *desc = NULL;
 	handle_print_relocs (core, ds);
-	if (ds->show_comments && ds->show_comment_right && ds->comment) {
-		handle_comment_align (core, ds);
-		if (ds->show_color)
-			r_cons_strcat (ds->color_comment);
-		r_cons_strcat (" ; ");
-		//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
-		r_cons_strcat (ds->comment);
-		if (ds->show_color)
-			handle_print_color_reset (core, ds);
-		free (ds->comment);
-		ds->comment = NULL;
+	if (ds->asm_describe) {
+		char *op = strchr (ds->asmop.buf_asm, ' ');
+		if (op) *op = 0;
+		desc = r_asm_describe (core->assembler, ds->asmop.buf_asm);
+		if (op) *op = ' ';
 	}
+	if (ds->show_comments) {
+		if (desc) {
+			handle_comment_align (core, ds);
+			if (ds->show_color)
+				r_cons_strcat (ds->color_comment);
+			r_cons_strcat (" ; ");
+			r_cons_strcat (desc);
+		}
+		if (ds->show_comment_right && ds->comment) {
+			if (!desc) {
+				handle_comment_align (core, ds);
+				if (ds->show_color)
+					r_cons_strcat (ds->color_comment);
+				r_cons_strcat (" ; ");
+			}
+
+			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
+			r_cons_strcat (ds->comment);
+			if (ds->show_color)
+				handle_print_color_reset (core, ds);
+			free (ds->comment);
+			ds->comment = NULL;
+		}
+	}
+	free (desc);
 }
 
 #if 0
