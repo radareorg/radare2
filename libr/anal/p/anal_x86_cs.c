@@ -174,6 +174,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		switch (insn->id) {
 		case X86_INS_FNOP:
 		case X86_INS_NOP:
+		case X86_INS_PAUSE:
 			op->type = R_ANAL_OP_TYPE_NOP;
 			if (a->decode)
 				esilprintf (op, ",");
@@ -190,13 +191,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FICOM:
 		case X86_INS_FICOMP:
 		case X86_INS_FINCSTP:
-		case X86_INS_FLDCW:
-		case X86_INS_FLDENV:
-		case X86_INS_FLDL2E:
-		case X86_INS_FLDL2T:
-		case X86_INS_FLDLG2:
-		case X86_INS_FLDLN2:
-		case X86_INS_FLDPI:
 		case X86_INS_FNCLEX:
 		case X86_INS_FNINIT:
 		case X86_INS_FNSTCW:
@@ -214,23 +208,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FSINCOS:
 		case X86_INS_FNSTENV:
 		case X86_INS_FXAM:
-		case X86_INS_FXRSTOR:
-		case X86_INS_FXRSTOR64:
 		case X86_INS_FXSAVE:
 		case X86_INS_FXSAVE64:
 		case X86_INS_FXTRACT:
 		case X86_INS_FYL2X:
 		case X86_INS_FYL2XP1:
 		case X86_INS_FISTTP:
-		case X86_INS_FIST:
-		case X86_INS_FISTP:
-		case X86_INS_FLDZ:
-		case X86_INS_FLD1:
-		case X86_INS_FLD:
 		case X86_INS_FSQRT:
-		case X86_INS_FST:
-		case X86_INS_FSTP:
-		case X86_INS_FSTPNCE:
 		case X86_INS_FXCH:
 		case X86_INS_FTST:
 		case X86_INS_FUCOMPI:
@@ -239,6 +223,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FUCOMP:
 		case X86_INS_FUCOM:
 			op->type = R_ANAL_OP_TYPE_SUB;
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			break;
+		case X86_INS_FLDCW:
+		case X86_INS_FLDENV:
+		case X86_INS_FLDL2E:
+		case X86_INS_FLDL2T:
+		case X86_INS_FLDLG2:
+		case X86_INS_FLDLN2:
+		case X86_INS_FLDPI:
+		case X86_INS_FLDZ:
+		case X86_INS_FLD1:
+		case X86_INS_FLD:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			break;
+		case X86_INS_FIST:
+		case X86_INS_FISTP:
+		case X86_INS_FST:
+		case X86_INS_FSTP:
+		case X86_INS_FSTPNCE:
+		case X86_INS_FXRSTOR:
+		case X86_INS_FXRSTOR64:
+			op->type = R_ANAL_OP_TYPE_STORE;
 			op->family = R_ANAL_OP_FAMILY_FPU;
 			break;
 		case X86_INS_FDIV:
@@ -266,6 +273,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_STI:
 		case X86_INS_CLC:
 		case X86_INS_STC:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
 			break;
 		// cmov
 		case X86_INS_CMOVA:
@@ -294,6 +303,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_CMOVS:
 		// mov
 		case X86_INS_MOV:
+		case X86_INS_MOVAPS:
+		case X86_INS_MOVAPD:
 		case X86_INS_MOVZX:
 		case X86_INS_MOVABS:
 		case X86_INS_MOVHPD:
@@ -531,9 +542,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->stackptr = -regsz;
 			break;
 		case X86_INS_POP:
+		case X86_INS_POPF:
 		case X86_INS_POPAW:
 		case X86_INS_POPAL:
-		case X86_INS_POPF:
 		case X86_INS_POPCNT:
 			op->type = R_ANAL_OP_TYPE_POP;
 			if (a->decode) {
@@ -548,6 +559,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case X86_INS_RET:
 		case X86_INS_RETF:
+		case X86_INS_RETFQ:
 		case X86_INS_IRET:
 		case X86_INS_IRETD:
 		case X86_INS_IRETQ:
@@ -777,6 +789,38 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				}
 			}
 			break;
+		case X86_INS_LIDT:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			break;
+		case X86_INS_SIDT:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			break;
+		case X86_INS_RDRAND:
+		case X86_INS_RDSEED:
+		case X86_INS_RDMSR:
+		case X86_INS_RDPMC:
+		case X86_INS_RDTSC:
+		case X86_INS_RDTSCP:
+		case X86_INS_CRC32:
+		case X86_INS_SHA1MSG1:
+		case X86_INS_SHA1MSG2:
+		case X86_INS_SHA1NEXTE:
+		case X86_INS_SHA1RNDS4:
+		case X86_INS_SHA256MSG1:
+		case X86_INS_SHA256MSG2:
+		case X86_INS_SHA256RNDS2:
+		case X86_INS_AESDECLAST:
+		case X86_INS_AESDEC:
+		case X86_INS_AESENCLAST:
+		case X86_INS_AESENC:
+		case X86_INS_AESIMC:
+		case X86_INS_AESKEYGENASSIST:
+			// AES instructions
+			op->family = R_ANAL_OP_FAMILY_CRYPTO;
+			op->type = R_ANAL_OP_TYPE_MOV; // XXX
+			break;
 		case X86_INS_AND:
 		case X86_INS_ANDN:
 		case X86_INS_ANDPD:
@@ -803,6 +847,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			}
 			break;
 		case X86_INS_MUL:
+		case X86_INS_MULX:
+		case X86_INS_MULPD:
+		case X86_INS_MULPS:
+		case X86_INS_MULSD:
+		case X86_INS_MULSS:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
@@ -820,9 +869,34 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				free (dst);
 			}
 			break;
-		case X86_INS_ADD:
+		case X86_INS_PACKSSDW:
+		case X86_INS_PACKSSWB:
+		case X86_INS_PACKUSWB:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_MMX;
+			break;
+		case X86_INS_PADDB:
+		case X86_INS_PADDD:
+		case X86_INS_PADDW:
+		case X86_INS_PADDSB:
+		case X86_INS_PADDSW:
+		case X86_INS_PADDUSB:
+		case X86_INS_PADDUSW:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			op->family = R_ANAL_OP_FAMILY_MMX;
+			break;
 		case X86_INS_FADD:
+		case X86_INS_FADDP:
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			/* pass thru */
+		case X86_INS_ADD:
+		case X86_INS_ADDPS:
+		case X86_INS_ADDSD:
+		case X86_INS_ADDSS:
+		case X86_INS_ADDSUBPD:
+		case X86_INS_ADDSUBPS:
 		case X86_INS_ADDPD:
+		case X86_INS_XADD:
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);

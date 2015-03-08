@@ -338,10 +338,11 @@ enum {
 // anal
 enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = 0,
-	R_ANAL_OP_FAMILY_CPU,  /* normal cpu instruction */
-	R_ANAL_OP_FAMILY_FPU,  /* fpu (floating point) */
-	R_ANAL_OP_FAMILY_MMX,  /* multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_PRIV, /* priviledged instruction */
+	R_ANAL_OP_FAMILY_CPU,    /* normal cpu instruction */
+	R_ANAL_OP_FAMILY_FPU,    /* fpu (floating point) */
+	R_ANAL_OP_FAMILY_MMX,    /* multimedia instruction (packed data) */
+	R_ANAL_OP_FAMILY_PRIV,   /* priviledged instruction */
+	R_ANAL_OP_FAMILY_CRYPTO, /* cryptographic instructions */
 	R_ANAL_OP_FAMILY_LAST
 };
 
@@ -397,6 +398,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
 	R_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
 	R_ANAL_OP_TYPE_MOV   = 9, /* register move */
+	R_ANAL_OP_TYPE_CMOV  = 9 | R_ANAL_OP_TYPE_COND, /* conditional move */
 	R_ANAL_OP_TYPE_TRAP  = 10, /* it's a trap! */
 	R_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
