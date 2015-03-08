@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2015 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -129,8 +129,6 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 
 R_API const char *r_anal_optype_to_string(int t) {
 	switch (t) {
-	case R_ANAL_OP_TYPE_PRIV  : return "privileged";
-	case R_ANAL_OP_TYPE_FPU   : return "fpu";
 	case R_ANAL_OP_TYPE_IO    : return "io";
 	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
 	case R_ANAL_OP_TYPE_ADD   : return "add";
@@ -166,7 +164,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_STORE : return "store";
 	case R_ANAL_OP_TYPE_SUB   : return "sub";
 	case R_ANAL_OP_TYPE_SWI   : return "swi";
-	case R_ANAL_OP_TYPE_SWITCH : return "switch";
+	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
@@ -176,7 +174,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_UPUSH : return "upush";
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
 	case R_ANAL_OP_TYPE_XOR   : return "xor";
-	case R_ANAL_OP_TYPE_CASE:	return "case";
+	case R_ANAL_OP_TYPE_CASE  : return "case";
 	}
 	return "undefined";
 }

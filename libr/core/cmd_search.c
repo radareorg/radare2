@@ -1027,14 +1027,20 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut64 at;
 	ut8 *buf;
 	RAnalOp aop;
+	int chk_family = 0;
 	int i, ret, bsize = core->blocksize;
 	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
-	int maxhits, count = 0;
+	int maxhits, match, count = 0;
 	if (bsize<64)
 		bsize=64;
 	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
 		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
 	else param->boundaries = NULL;
+
+	if (*input=='f') {
+		chk_family = 1;
+		input++;
+	}
 	if (*input=='?') {
 		r_cons_printf ("Usage: /A [type]\n");
 		for (i=0; i<64; i++) {
@@ -1060,9 +1066,23 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		}
 		ret = r_anal_op (core->anal, &aop, at, buf+i, bsize-i);
 		if (ret) {
-			const char *type = r_anal_optype_to_string (aop.type);
-			if (!*input || strstr (input, type)) {
-				r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+			match = 0;
+			if (chk_family) {
+				const char *fam = r_anal_op_family_to_string (aop.family);
+				if (fam)
+				if (!*input || strstr (input, fam)) {
+					match = 1;
+					r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, fam);
+				}
+			} else {
+				const char *type = r_anal_optype_to_string (aop.type);
+				if (type)
+				if (!*input || strstr (input, type)) {
+					match = 1;
+					r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+				}
+			}
+			if (match) {
 				if (*input && searchflags) {
 					char flag[64];
 					snprintf (flag, sizeof (flag), "%s%d_%d",
@@ -1465,7 +1485,16 @@ static int cmd_search(void *data, const char *input) {
 		} else r_core_anal_search (core, param.from, param.to, core->offset);
 		break;
 	case 'A':
-		do_anal_search (core, &param, input+1);
+		switch (input[1]) {
+		case 'f':
+		case '?':
+		case ' ':
+			do_anal_search (core, &param, input+1);
+			break;
+		default:
+			do_anal_search (core, &param, "?");
+			break;
+		}
 		dosearch = 0;
 		break;
 	case 'a': {

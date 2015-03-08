@@ -1261,6 +1261,20 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		if (!strcmp (op, "popa") || !strcmp (op, "popad")) {
 			data[l++] = 0x61;
 		} else
+		if (!strcmp (op, "cli")) {
+			data[l++] = 0xfa;
+		} else
+		if (!strcmp (op, "sti")) {
+			data[l++] = 0xfb;
+		} else
+		if (!strcmp (op, "sysret")) {
+			data[l++] = 0x0f;
+			data[l++] = 0x07;
+		} else
+		if (!strcmp (op, "sysexit")) {
+			data[l++] = 0x0f;
+			data[l++] = 0x35;
+		} else
 		if (!strcmp (op, "nop")) {
 			data[l++] = 0x90;
 		}

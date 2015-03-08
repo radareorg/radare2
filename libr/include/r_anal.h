@@ -427,8 +427,10 @@ typedef enum {
 	R_ANAL_OP_TYPE_MOD   = 37,
 	R_ANAL_OP_TYPE_SWITCH = 38,
 	R_ANAL_OP_TYPE_CASE = 39,
+#if 0
 	R_ANAL_OP_TYPE_PRIV = 40, /* priviledged instruction */
 	R_ANAL_OP_TYPE_FPU = 41, /* floating point stuff */
+#endif
 } _RAnalOpType;
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -613,7 +615,8 @@ typedef struct r_anal_op_t {
 	ut64 addr;      /* address */
 	ut64 type;      /* type of opcode */
 	ut64 prefix;    /* type of opcode prefix (rep,lock,..) */
-	ut64 type2; // used by java
+	ut64 type2;	/* used by java */
+	int group;      /* is fpu, is privileged, mmx, etc */
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */

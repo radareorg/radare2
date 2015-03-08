@@ -5,6 +5,7 @@
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
 
+#define HAVE_CSGRP_PRIVILEGE 1
 #define USE_ITER_API 0
 
 #if CS_API_MAJOR < 2
@@ -160,6 +161,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		const char *bp = (a->bits==16)?"bp":
 			(a->bits==32)?"ebp":"rbp";
 		op->size = insn->size;
+		op->family = 0;
 		op->prefix = 0;
 		switch (insn->detail->x86.prefix[0]) {
 		case X86_PREFIX_REPNE:
@@ -219,42 +221,47 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FXTRACT:
 		case X86_INS_FYL2X:
 		case X86_INS_FYL2XP1:
-		case X86_INS_FDIV:
-		case X86_INS_FIDIV:
-		case X86_INS_FDIVP:
-		case X86_INS_FDIVR:
-		case X86_INS_FIDIVR:
-		case X86_INS_FDIVRP:
 		case X86_INS_FISTTP:
 		case X86_INS_FIST:
 		case X86_INS_FISTP:
 		case X86_INS_FLDZ:
 		case X86_INS_FLD1:
 		case X86_INS_FLD:
-		case X86_INS_FMUL:
-		case X86_INS_FIMUL:
-		case X86_INS_FMULP:
 		case X86_INS_FSQRT:
 		case X86_INS_FST:
 		case X86_INS_FSTP:
 		case X86_INS_FSTPNCE:
 		case X86_INS_FXCH:
-		case X86_INS_FSUBR:
-		case X86_INS_FISUBR:
-		case X86_INS_FSUBRP:
-		case X86_INS_FSUB:
-		case X86_INS_FISUB:
-		case X86_INS_FSUBP:
 		case X86_INS_FTST:
 		case X86_INS_FUCOMPI:
 		case X86_INS_FUCOMI:
 		case X86_INS_FUCOMPP:
 		case X86_INS_FUCOMP:
 		case X86_INS_FUCOM:
-
-			op->type = R_ANAL_OP_TYPE_FPU;
+			op->type = R_ANAL_OP_TYPE_SUB;
+			op->family = R_ANAL_OP_FAMILY_FPU;
 			break;
-
+		case X86_INS_FDIV:
+		case X86_INS_FIDIV:
+		case X86_INS_FDIVP:
+		case X86_INS_FDIVR:
+		case X86_INS_FIDIVR:
+		case X86_INS_FDIVRP:
+		case X86_INS_FSUBR:
+		case X86_INS_FISUBR:
+		case X86_INS_FSUBRP:
+		case X86_INS_FSUB:
+		case X86_INS_FISUB:
+		case X86_INS_FSUBP:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			break;
+		case X86_INS_FMUL:
+		case X86_INS_FIMUL:
+		case X86_INS_FMULP:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			break;
 		case X86_INS_CLI:
 		case X86_INS_STI:
 		case X86_INS_CLC:
@@ -833,9 +840,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		}
 	}
-#if !USE_ITER_API
-	cs_free (insn, n);
+//#if X86_GRP_PRIVILEGE>0
+	if (insn) {
+#if HAVE_CSGRP_PRIVILEGE
+		if (cs_insn_group (handle, insn, X86_GRP_PRIVILEGE))
+			op->family = R_ANAL_OP_FAMILY_PRIV;
 #endif
+#if !USE_ITER_API
+		cs_free (insn, n);
+#endif
+	}
 	cs_close (&handle);
 	return op->size;
 }
