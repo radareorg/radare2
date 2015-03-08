@@ -488,12 +488,6 @@ R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 
-#define ON_WINDOWS_OS 0xA
-#define ON_NIX_OS 0xB
-
-R_API int r_what_os_am_i (void);
-
-
 R_API ut64 r_sys_now(void);
 R_API int r_sys_stop (void);
 R_API char *r_sys_pid_to_path(int pid);

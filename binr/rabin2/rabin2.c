@@ -114,7 +114,7 @@ static void __sdb_prompt(Sdb *sdb) {
 	}
 }
 
-static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
+static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	ut64 boffset = o ? o->boffset : 0;
 	ut64 bin_size = o ? o->obj_size : 0;
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
@@ -133,17 +133,16 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
 
 	// XXX: Wrong for w32 (/)
 
-	if (r_what_os_am_i () == ON_NIX_OS && (ptr = strrchr (path, '/'))){
-		*ptr = '\0';
-		ptr++;
-	} else if ((ptr = strrchr (path, '\\'))) {
-		*ptr = '\0';
-		ptr++;
-	} else ptr = path;
+	ptr = strrchr (path, DIRSEP);
+	if (ptr) {
+		*ptr++ = '\0';
+	} else {
+		ptr = path;
+	}
 
 	outpath_sz = strlen (path) + 20;
 
-	if (outpath_sz)
+	if (outpath_sz > 0)
 		outpath = malloc (outpath_sz);
 
 	if (outpath)
@@ -156,7 +155,7 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
 		return R_FALSE;
 	}
 
-	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 3 + 10 + 10;
+	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 23;
 	if (outfile_sz)
 		outfile = malloc (outfile_sz);
 
@@ -165,8 +164,8 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
 			outpath, ptr, arch, bits, idx);
 
 	if (boffset > r_buf_size (bf->buf)) {
-			eprintf ("Invalid offsets\n");
-			res = R_FALSE;
+		eprintf ("Invalid offsets\n");
+		res = R_FALSE;
 	} else {
 		if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size)) {
 			eprintf ("Error extracting %s\n", outfile);
@@ -184,9 +183,9 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx ) {
 }
 
 static int rabin_extract(int all) {
+	RBinObject *obj = NULL;
 	int res = R_FALSE;
 	RBinFile *bf = r_bin_cur (bin);
-	RBinObject *obj = NULL;
 	if (!bf) return res;
 	if (all) {
 		int idx = 0;
@@ -198,7 +197,6 @@ static int rabin_extract(int all) {
 		if (!obj) return res;
 		res = extract_binobj (bf, obj, 0);
 	}
-
 	return res;
 }
 
@@ -713,7 +711,19 @@ int main(int argc, char **argv) {
 
 	r_cons_new ()->is_interactive = R_FALSE;
 
-	if (action&ACTION_PDB_DWNLD) {
+#define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
+#define run_action(n,x,y) {\
+	if (action&x) {\
+		if (isradjson) r_cons_printf ("\"%s\":",n);\
+		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr, chksum)) {\
+			if (isradjson) r_cons_printf ("false");\
+		};\
+		actions_done++;\
+		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
+	}\
+}
+	if (action & ACTION_PDB_DWNLD) {
+		int ret;
 		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
@@ -723,34 +733,25 @@ int main(int argc, char **argv) {
 			r_config_set (core.config, "pdb.server", env_pdbserver);
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
-		opt.symbol_server = (char *)r_config_get(core.config, "pdb.server");
-		opt.user_agent = (char *)r_config_get(core.config, "pdb.user_agent");
+		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
+		opt.user_agent = (char *)r_config_get (core.config, "pdb.user_agent");
 		opt.path = path;
 
-		init_pdb_downloader(&opt, &pdb_downloader);
-		if (pdb_downloader.download(&pdb_downloader) == 0) {
-			printf("PDB file %s has not been downloaded sucessfully\n", opt.dbg_file);
+		init_pdb_downloader (&opt, &pdb_downloader);
+		ret = pdb_downloader.download (&pdb_downloader);
+		if (isradjson) {
+			printf ("{\"pdb\":{\"file\":\"%s\",\"download\":%s}}\n",
+				opt.dbg_file, ret?"true":"false");
 		} else {
-			printf("PDB file %s has been downloaded sucessfully\n", opt.dbg_file);
+			printf ("PDB \"%s\" download %s\n",
+				opt.dbg_file, ret? "success": "failed");
 		}
-		deinit_pdb_downloader(&pdb_downloader);
+		deinit_pdb_downloader (&pdb_downloader);
 
-		free(path);
+		free (path);
 		r_core_fini (&core);
 		return 0;
 	}
-
-#define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
-#define run_action(n,x,y) {\
-	if (action&x) {\
-		if (isradjson) r_cons_printf ("\"%s\":",n);\
-		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr, chksum)) {\
-			if (isradjson) r_cons_printf  ("false");\
-		};\
-		actions_done++;\
-		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
-	}\
-}
 	if (isradjson) r_cons_printf ("{");
 	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("entries", ACTION_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
