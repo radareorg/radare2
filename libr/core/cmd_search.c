@@ -1042,10 +1042,14 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		input++;
 	}
 	if (*input=='?') {
-		r_cons_printf ("Usage: /A [type]\n");
+		r_cons_printf ("Usage: /A%s [type]\n", chk_family?"f":"");
 		for (i=0; i<64; i++) {
-			const char *str = r_anal_optype_to_string (i);
-			if (!str) break;
+			const char *str;
+			if (chk_family) str = r_anal_op_family_to_string (i);
+			else str = r_anal_optype_to_string (i);
+			if (chk_family && atoi (str))
+				break;
+			if (!str || !*str) break;
 			if (!strcmp (str, "undefined"))
 				continue;
 			r_cons_printf ("%s\n", str);

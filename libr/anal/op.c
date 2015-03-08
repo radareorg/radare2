@@ -358,7 +358,7 @@ R_API const char *r_anal_op_family_to_string (int n) {
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
 	default:
-		snprintf (num, sizeof(num), "%d", n);
+		snprintf (num, sizeof (num), "%d", n);
 		break;
 	}
 	return num;
