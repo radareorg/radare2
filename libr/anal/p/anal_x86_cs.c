@@ -5,7 +5,14 @@
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
 
+// TODO: when capstone-4 is released, add proper check here
+
+#if CS_NEXT_VERSION>0
 #define HAVE_CSGRP_PRIVILEGE 1
+#else
+#define HAVE_CSGRP_PRIVILEGE 0
+#endif
+
 #define USE_ITER_API 0
 
 #if CS_API_MAJOR < 2
