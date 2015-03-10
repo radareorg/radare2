@@ -85,9 +85,11 @@ R_API void r_anal_fcn_free(void *_fcn) {
 #if 0
 	r_list_free (fcn->locals);
 #endif
-	fcn->bbs->free = (RListFree)r_anal_bb_free;
-	r_list_free (fcn->bbs);
-	fcn->bbs = NULL;
+	if (fcn->bbs) {
+		fcn->bbs->free = (RListFree)r_anal_bb_free;
+		r_list_free (fcn->bbs);
+		fcn->bbs = NULL;
+	}
 
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
