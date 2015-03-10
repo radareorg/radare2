@@ -437,8 +437,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					char *src = getarg (handle, insn, 1, 0);
 					char *dst = getarg (handle, insn, 0, 0);
-					esilprintf (op, "%s,%s,&,0,==,%%z,zf,=,%%p,pf,=,%d,%s,%s,&,%d,1,<<,&,>>,sf,=,0,cf,=,0,of,=",
-						src, dst, ((INSOP(0).size*8)-1), src, dst, ((INSOP(0).size*8)-1));	//that shiftload is for the signature-flag
+					esilprintf (op, "%s,%s,&,0,==,%%z,zf,=,%%p,pf,=,%%s,sf,=,0,cf,=,0,of,=",
+						src, dst);
 					free (src);
 					free (dst);
 				}
@@ -447,8 +447,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					char *src = getarg (handle, insn, 1, 0);
 					char *dst = getarg (handle, insn, 0, 0);
-					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=,%%p,pf,=,%d,%s,%s,-,%d,1,<<,&,>>,sf,=",
-						src, dst, (INSOP(0).size*8), ((INSOP(0).size*8)-1), src, dst, ((INSOP(0).size*8)-1));
+					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=,%%p,pf,=,%%s,sf,=",
+						src, dst, (INSOP(0).size*8));
 					free (src);
 					free (dst);
 				}
@@ -755,8 +755,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,^=,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%d,%s,%d,1,<<,&,>>,sf,=",
-					src, dst, ((INSOP(0).size*8)-1), dst, ((INSOP(0).size*8)-1));
+				esilprintf (op, "%s,%s,^=,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
+					src, dst);
 				free (src);
 				free (dst);
 			}
