@@ -584,8 +584,8 @@ function html_for_instruction(ins) {
     var vars = JSON.parse(results[1]);
     var fvars = [];
     for (var i in vars) {
-      idump += '<div class="ec_flag">; ' + vars[i].kind + " " + results[1][i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + results[1][i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(results[1][i].name) + "</span> @ " + results[1][i].ref + '</div>';
-      fvars[fvars.length] = {name: results[1][i].name, id:  address_canonicalize(offset) + "_" + results[1][i].ref};
+      idump += '<div class="ec_flag">; ' + vars[i].kind + " " + vars[i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + vars[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(vars[i].name) + "</span> @ " + vars[i].ref + '</div>';
+      fvars[fvars.length] = {name: vars[i].name, id:  address_canonicalize(offset) + "_" + vars[i].ref};
     }
     r2.varMap[ins.fcn_addr] = fvars;
     var args = JSON.parse(results[2]);
