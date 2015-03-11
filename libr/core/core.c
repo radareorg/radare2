@@ -74,7 +74,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
-	char *ptr, *bptr;
+	char *ptr, *bptr, *out;
 	RFlagItem *flag;
 	RIOSection *s;
 	RAnalOp op;
@@ -129,30 +129,30 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str+2);
 		case 'k':
-			if (str[2]=='{') {
-				bptr = strdup (str+3);
-				ptr = strchr (bptr, '}');
-				if (ptr != NULL) {
-					char *out;
-					ut64 ret = 0LL;
-					ptr[0] = '\0';
-					out = sdb_querys (core->sdb, NULL, 0, bptr);
-					if (out && *out) {
-						// XXX avoid recursivity here
-						if (strstr (out, "$k{")) {
-							eprintf ("Recursivity is not permitted here\n");
-						} else {
-							ret = r_num_math (core->num, out);
-						}
-					}
-					free (bptr);
-					free (out);
-					return ret;
-				}
-				free (bptr);
-			} else {
+			if (str[2]!='{') {
 				eprintf ("Expected '{' after 'k'.\n");
+				break;
 			}
+			bptr = strdup (str+3);
+			ptr = strchr (bptr, '}');
+			if (ptr == NULL) {
+				// invalid json
+				free (bptr);
+				break;
+			}
+			*ptr = '\0';
+			ret = 0LL;
+			out = sdb_querys (core->sdb, NULL, 0, bptr);
+			if (out && *out) {
+				if (strstr (out, "$k{")) {
+					eprintf ("Recursivity is not permitted here\n");
+				} else {
+					ret = r_num_math (core->num, out);
+				}
+			}
+			free (bptr);
+			free (out);
+			return ret;
 			break;
 		case '{':
 			bptr = strdup (str+2);
@@ -575,6 +575,7 @@ static int __disasm(void *_core, ut64 addr) {
 }
 
 static void update_sdb(RCore *core) {
+	Sdb *d;
 	RBinObject *o;
 	if (!core)
 		return;
@@ -596,17 +597,16 @@ static void update_sdb(RCore *core) {
 		core->assembler->syscall->db->refs++;
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
 	}
-	{
-		Sdb *d = sdb_ns (DB, "debug", 1);
-		core->dbg->sgnls->refs++;
-		sdb_ns_set (d, "signals", core->dbg->sgnls);
-	}
+	d = sdb_ns (DB, "debug", 1);
+	core->dbg->sgnls->refs++;
+	sdb_ns_set (d, "signals", core->dbg->sgnls);
 }
 
 // dupped in cmd_type.c
 static char *getenumname(void *_core, const char *name, ut64 val) {
 	const char *isenum;
 	RCore *core = (RCore*)_core;
+
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		const char *q = sdb_fmt (0, "%s.0x%x", name, val);
@@ -619,23 +619,28 @@ static char *getenumname(void *_core, const char *name, ut64 val) {
 
 // TODO: dupped in cmd_type.c
 static char *getbitfield(void *_core, const char *name, ut64 val) {
-	const char *isenum;
+	const char *isenum, *q, *res;
+	RCore *core = (RCore*)_core;
 	char *ret = NULL;
 	int i;
-	RCore *core = (RCore*)_core;
+
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
-		int empty = 1;
+		int notFirst = 1;
 		ret = r_str_concatf (ret, "0x%08"PFMT64x" : ", val);
-		for (i=0; i< 32; i++) {
-			if (val & (1<<i)) {
-				const char *q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
-				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
-				if (!empty)
-					ret = r_str_concat (ret, " | ");
-				if (res) ret = r_str_concat (ret, res);
-				else ret = r_str_concatf (ret, "0x%x", (1<<i));
-				empty = 0;
+		for (i=0; i < 32; i++) {
+			if (!(val & (1<<i)))
+				continue;
+			q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
+			res = sdb_const_get (core->anal->sdb_types, q, 0);
+			if (notFirst) {
+				ret = r_str_concat (ret, " | ");
+				notFirst = 0;
+			}
+			if (res) {
+				ret = r_str_concat (ret, res);
+			} else {
+				ret = r_str_concatf (ret, "0x%x", (1<<i));
 			}
 		}
 	} else {

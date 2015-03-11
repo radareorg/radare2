@@ -585,7 +585,7 @@ static int cmd_bsize(void *data, const char *input) {
 			"bm", " 1M", "set max block size",
 			NULL};
 			r_core_cmd_help (core, help_msg);
-			 }
+		}
 		break;
 	default:
 		//input = r_str_clean(input);

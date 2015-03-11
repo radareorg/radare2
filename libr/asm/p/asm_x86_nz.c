@@ -466,7 +466,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				return 0;
 			}
 			if (isnum (a, arg2)) { // reg, num
-				int n = atoi (arg2);
+				int n = getnum (a, arg2);
 				if (n>127 || n<-127) {
 					ut8 *ptr = (ut8 *)&n;
 					data[l++] = 0x81;
@@ -479,7 +479,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				} else {
 					data[l++] = 0x83;
 					data[l++] = 0xc0 | arg0 | (arg1<<3);
-					data[l++] = atoi (arg2);
+					data[l++] = getnum (a, arg2);
 				}
 				return l;
 			} else // reg, reg
@@ -512,7 +512,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					return -1;
 				}
 				if (!memcmp (arg+1, "rip", 3)) {
-					ut64 dst = r_num_math (a->num, arg+4);
+					ut64 dst = getnum (a, arg+4);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
 					data[l++] = 0xff;
@@ -985,7 +985,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = getreg (arg)<<3 | r | 0x40;
 						data[l++] = 0;
 					} else data[l++] = getreg (arg) | r | 0x40;
-					data[l++] = atoi (delta) * N;
+					data[l++] = r_num_math (NULL, delta) * N;
 				} else {
 					int r = getreg (arg2);
 					if (r==4) { //ESP
@@ -1083,7 +1083,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							if (arg[1]=='h') op |= 4;
 							data[l++] = 0xc6;
 							data[l++] = op | (getreg (arg)>>1);
-							data[l++] = atoi (arg2);
+							data[l++] = getnum (a, arg2);
 							return l;
 						} else {
 							data[l++] = 0xb8 | getreg (arg);
