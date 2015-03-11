@@ -262,7 +262,6 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	r_core_init (&r);
-	r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc>1 && !strcmp (argv[1], "-")) {
@@ -364,6 +363,10 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (help>1) return main_help (2);
 	else if (help) return main_help (0);
+
+	if (r_config_get_i (r.config, "cfg.plugins")) {
+		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
+	}
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {

@@ -67,12 +67,14 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case '+':
 		op->size = countChar (buf, len, '+');
 		op->type = R_ANAL_OP_TYPE_ADD;
-		r_strbuf_setf (&op->esil, "ptr,[1],%d,+,ptr,=[1]", op->size);
+		//r_strbuf_setf (&op->esil, "%d,ptr,[1],+,ptr,=[1]", op->size);
+		r_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '-');
-		r_strbuf_setf (&op->esil, "ptr,[1],%d,-,ptr,=[1]", op->size);
+		//r_strbuf_setf (&op->esil, "%d,ptr,[1],-,ptr,=[1]", op->size);
+		r_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':
 		// print element in stack to screen

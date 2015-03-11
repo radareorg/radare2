@@ -49,13 +49,13 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 			if (set>1) {
 				if (base) {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%s,%d,+,%d,*", base, (int)disp, scale);
+						snprintf (buf, sizeof (buf), "%s,0x%x,+,%d,*", base, (int)disp, scale);
 					} else {
 						snprintf (buf, sizeof (buf), "%s,%d,*", base, scale);
 					}
 				} else {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%d,%d,*,[%d]", (int)disp, scale, op.size);
+						snprintf (buf, sizeof (buf), "%d,0x%x,*,[%d]", scale, (int)disp, op.size);
 					} else {
 						snprintf (buf, sizeof (buf), "%d,[%d]", scale, op.size);
 					}
@@ -63,13 +63,13 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 			} else {
 				if (base) {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%s,%d,+,%d,*,[%d]", base, (int)disp, scale, op.size);
+						snprintf (buf, sizeof (buf), "0x%x,%s,+,%d,*,[%d]", (int)disp, base, scale, op.size);
 					} else {
 						snprintf (buf, sizeof (buf), "%s,%d,*,[%d]", base, scale, op.size);
 					}
 				} else {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%d,%d,*,[%d]", (int)disp, scale, op.size);
+						snprintf (buf, sizeof (buf), "0x%x,%d,*,[%d]", (int)disp, scale, op.size);
 					} else {
 						snprintf (buf, sizeof (buf), "%d,[%d]", scale, op.size);
 					}
@@ -79,7 +79,12 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 			if (set>1) {
 				if (base) {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%s,%d,+", base, (int)disp);
+						int v = (int)disp;
+						if (v<0) {
+							snprintf (buf, sizeof (buf), "0x%x,%s,-", -v, base);
+						} else {
+							snprintf (buf, sizeof (buf), "0x%x,%s,+", v, base);
+						}
 					} else {
 						snprintf (buf, sizeof (buf), "%s", base);
 					}
@@ -91,13 +96,18 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 			} else {
 				if (base) {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%s,%d,+,%s[%d]", base, (int)disp, set?"=":"", op.size);
+						int v = (int)disp;
+						if (v<0) {
+							snprintf (buf, sizeof (buf), "0x%x,%s,-,%s[%d]", -(int)disp, base, set?"=":"", op.size);
+						} else {
+							snprintf (buf, sizeof (buf), "0x%x,%s,+,%s[%d]", (int)disp, base, set?"=":"", op.size);
+						}
 					} else {
 						snprintf (buf, sizeof (buf), "%s,%s[%d]", base, set?"=":"", op.size);
 					}
 				} else {
 					if (disp) {
-						snprintf (buf, sizeof (buf), "%d,%s[%d]", (int)disp, set?"=":"", op.size);
+						snprintf (buf, sizeof (buf), "0x%x,%s[%d]", (int)disp, set?"=":"", op.size);
 					} else {
 						snprintf (buf, sizeof (buf), "%s,[%d]", set?"=":"", op.size);
 					}
@@ -771,8 +781,25 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				free (dst);
 			}
 			break;
-		case X86_INS_SUB:
+		case X86_INS_INC:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			op->val = 1;
+			if (a->decode) {
+				char *src = getarg (handle, insn, 0, 0);
+				esilprintf (op, "%s,++=", src);
+				free (src);
+			}
+			break;
 		case X86_INS_DEC:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			op->val = 1;
+			if (a->decode) {
+				char *src = getarg (handle, insn, 0, 0);
+				esilprintf (op, "%s,--=", src);
+				free (src);
+			}
+			break;
+		case X86_INS_SUB:
 		case X86_INS_PSUBB:
 		case X86_INS_PSUBW:
 		case X86_INS_PSUBD:
@@ -865,14 +892,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				char *dst = getarg (handle, insn, 0, 0);
 				esilprintf (op, "%s,%s,*=", src, dst);
 				free (src);
-				free (dst);
-			}
-			break;
-		case X86_INS_INC:
-			op->type = R_ANAL_OP_TYPE_ADD;
-			if (a->decode) {
-				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "1,%s,+=", dst);
 				free (dst);
 			}
 			break;

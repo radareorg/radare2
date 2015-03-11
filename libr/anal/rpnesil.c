@@ -998,8 +998,8 @@ static int esil_inceq (RAnalEsil *esil) {
 static int esil_sub (RAnalEsil *esil) {
 	int ret = 0;
 	ut64 s = 0, d = 0;
-	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
+	char *dst = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
 			r_anal_esil_pushnum (esil, s-d);
@@ -1018,22 +1018,22 @@ static int esil_sub (RAnalEsil *esil) {
 static int esil_subeq (RAnalEsil *esil) {
 	int ret = 0;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && esil_reg_read (esil, dst, &d)) {
-			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
+	char *dst = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &s)) {
+		if (src && esil_reg_read (esil, src, &d)) {
+			if (r_anal_esil_get_parm_type (esil, dst) != R_ANAL_ESIL_PARM_INTERNAL)
 				esil->old = d;
-			esil_reg_write (esil, dst, d-s);
-			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL)
+			esil_reg_write (esil, src, d-s);
+			if (r_anal_esil_get_parm_type (esil, dst) != R_ANAL_ESIL_PARM_INTERNAL)
 				esil->cur = d-s;
 			ret = R_TRUE;
 		}
 	} else {
 		eprintf ("esil_subeq: invalid parameters\n");
 	}
-	free (src);
 	free (dst);
+	free (src);
 	return ret;
 }
 

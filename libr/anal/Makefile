@@ -32,4 +32,10 @@ OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
+test tests: tests-esil
+
+tests-esil:
+	cd ../../radare2-regressions ; \
+		sh run_tests.sh t.esil
+
 include $(LTOP)/rules.mk

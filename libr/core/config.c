@@ -1035,6 +1035,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* cfg */
 	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);
+	SETPREF("cfg.plugins", "true", "Load plugins at startup (set to false for faster startup)");
 	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
 	SETCB("cfg.datefmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "set/unset the debugger mode");
