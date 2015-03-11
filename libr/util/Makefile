@@ -39,3 +39,8 @@ endif
 endif
 
 include ../rules.mk
+
+sync-regex regex-sync:
+	-rm -rf src/
+	cvs -qd anoncvs@anoncvs.ca.openbsd.org:/cvs get -P src/lib/libc/regex
+	cp src/lib/libc/regex/* regex
