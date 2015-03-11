@@ -33,6 +33,8 @@ if [ $? = 0 ]; then
 	export CC
 fi
 
+# Set USE_R2_CAPSTONE env var to ignore syscapstone check
+if [ -z "${USE_R2_CAPSTONE}" ]; then
 pkg-config --atleast-version=3.0 capstone 2>/dev/null
 if [ $? = 0 ]; then
 	echo '#include <capstone.h>' > .a.c
@@ -46,6 +48,7 @@ if [ $? = 0 ]; then
 		echo
 	fi
 	rm -f .a.c .a.out
+fi
 fi
 
 # build
