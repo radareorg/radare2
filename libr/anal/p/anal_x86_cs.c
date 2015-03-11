@@ -473,6 +473,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
 				}
+				op->ptr = INSOP(1).imm;
 				break;
 			default:
 				switch (INSOP(1).type) {
