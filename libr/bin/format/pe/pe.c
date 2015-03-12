@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include "pe.h"
+#include <time.h>
 
 struct SCV_NB10_HEADER;
 typedef struct {
@@ -226,6 +227,8 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 }
 
 static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
+	char szTimeDateStamp[50];
+	
 	if (!(bin->dos_header = malloc(sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return R_FALSE;
@@ -301,7 +304,9 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	
 	// adding compile time to the SDB
 	sdb_num_set (bin->kv, "image_file_header.TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, 0);
-	
+	time_t ts = bin->nt_headers->file_header.TimeDateStamp;
+	sdb_set(bin->kv, "image_file_header.TimeDateStamp_string", strdup(ctime(&ts)), 0);
+
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
 			return R_FALSE;
