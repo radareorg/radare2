@@ -1561,6 +1561,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			romem = r_config_get_i (core->config, "esil.romem");
 			stats = r_config_get_i (core->config, "esil.stats");
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
 			break;
 		}
 		break;

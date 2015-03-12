@@ -492,6 +492,14 @@ static int cb_dbgbackend(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_esildebug (void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (core->anal->esil)
+		core->anal->esil->debug = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_fixrows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->fix_rows = node->i_value;
@@ -963,6 +971,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.trace", "false", &cb_anal_trace, "Record esil trace in log database");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
+
+	SETCB("esil.debug", "false", &cb_esildebug, "Show esil debug info");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
