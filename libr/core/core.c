@@ -892,7 +892,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_core_task_join (c, NULL);
 	free (c->cmdqueue);
 	free (c->lastcmd);
-	r_io_free (c->io);
+	//r_io_free (c->io);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
@@ -903,6 +903,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_list_free (c->scriptstack);
 	c->rcmd = r_cmd_free (c->rcmd);
 	c->anal = r_anal_free (c->anal);
+	r_io_free (c->io);		//must happen after anal or the esil-fini-cb might segfault
 	c->assembler = r_asm_free (c->assembler);
 	c->print = r_print_free (c->print);
 	c->bin = r_bin_free (c->bin); // XXX segfaults rabin2 -c

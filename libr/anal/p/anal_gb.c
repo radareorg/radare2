@@ -6,6 +6,8 @@
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_list.h>
+#include <r_io.h>
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_reg.h>
@@ -1429,12 +1431,14 @@ static int set_reg_profile(RAnal *anal) {
 
 static int esil_gb_init (RAnalEsil *esil) {
 	GBUser *user = R_NEW0 (GBUser);
+	user->mem = r_list_new ();
 	r_anal_esil_set_op (esil, "daa", gb_custom_daa);
 	if (user) {
 		if (esil->anal) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
+			r_list_push (user->mem, esil->anal->iob.desc_open_at (esil->anal->iob.io, "malloc://127", R_IO_RW, 0, 0xff80));	//internal ram
 		}
 		esil->cb.user = user;
 	}
@@ -1442,6 +1446,14 @@ static int esil_gb_init (RAnalEsil *esil) {
 }
 
 static int esil_gb_fini (RAnalEsil *esil) {
+	RListIter *iter;
+	RIODesc *closeme;
+	GBUser *user;
+	user = (GBUser *)esil->cb.user;
+	r_list_foreach (user->mem, iter, closeme) {
+		esil->anal->iob.desc_close (esil->anal->iob.io, closeme);
+	}
+	r_list_free (user->mem);
 	R_FREE (esil->cb.user);
 	return R_TRUE;
 }

@@ -1,6 +1,7 @@
 #ifndef GB_H
 #define GB_H
 #include <r_types.h>
+#include <r_list.h>
 
 typedef struct gb_user_t {
 	ut8 mbc_id;
@@ -9,6 +10,7 @@ typedef struct gb_user_t {
 	ut8 rombanks;
 	ut8 rambanks;
 	ut32 cycles;
+	RList *mem;
 } GBUser;
 
 enum {
