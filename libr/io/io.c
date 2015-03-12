@@ -799,7 +799,7 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
-			r_io_map_del (io, -1);
+			r_io_map_del (io, nfd);
 			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, nfd, io->plugin);
 			if (io->plugin && io->plugin->close)
@@ -840,6 +840,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->is_valid_offset = r_io_is_valid_offset;
 
 	bnd->desc_open = r_io_open_nomap;
+	bnd->desc_open_at = r_io_open_at;
 	bnd->desc_close = r_io_close;
 	bnd->desc_read = r_io_desc_read;
 	bnd->desc_size = r_io_desc_size;
