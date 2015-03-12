@@ -293,7 +293,7 @@ static void r_core_panels_refresh (RCore *core) {
 	}
 
 	if (menu_y) {
-	  curnode = menu_pos;
+		curnode = menu_pos;
 	}
 	// redraw current node to make it appear on top
 	if (curnode >= 0) {
