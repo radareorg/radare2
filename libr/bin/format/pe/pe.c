@@ -227,8 +227,6 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 }
 
 static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
-	char szTimeDateStamp[50];
-	
 	if (!(bin->dos_header = malloc(sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return R_FALSE;
