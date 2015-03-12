@@ -298,6 +298,10 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 					  " (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable"
 					  " numberOfSymbols sizeOfOptionalHeader (pe_characteristics)characteristics", 0);
 	sdb_set (bin->kv, "pe_image_data_directory.format", "xx virtualAddress size",0);
+	
+	// adding compile time to the SDB
+	sdb_num_set (bin->kv, "image_file_header.TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, 0);
+	
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
 			return R_FALSE;
