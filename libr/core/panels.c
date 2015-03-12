@@ -272,9 +272,7 @@ static void r_core_panels_refresh (RCore *core) {
 		panels[menu_pos].text = malloc(1024); //r_str_newf ("%d", menu_y);
 		panels[menu_pos].text[0] = 0;
 		int maxsub = 0;
-		for (i=0; menus_sub[i]; i++) { }
-		maxsub = i;
-		i = menu_x;
+		for (i=0; menus_sub[i]; i++) { maxsub = i; }
 		if (menu_x >= 0 && menu_x <maxsub && menus_sub[menu_x]) {
 			for (j = 0; menus_sub[menu_x][j]; j++) {
 				if (menu_y-1 == j) {
@@ -287,15 +285,15 @@ static void r_core_panels_refresh (RCore *core) {
 				strcat (panels[menu_pos].text, "        \n");
 			}
 		}
-	}
-
-	for (i=0; panels[i].text; i++) {
-		if (i != curnode) {
-			Panel_print (can, &panels[i], i==curnode);
+		for (i=0; panels[i].text; i++) {
+		  if (i != curnode) {
+		    Panel_print (can, &panels[i], i==curnode);
+		  }
 		}
 	}
+
 	if (menu_y) {
-		curnode = menu_pos;
+	  curnode = menu_pos;
 	}
 	// redraw current node to make it appear on top
 	if (curnode >= 0) {
