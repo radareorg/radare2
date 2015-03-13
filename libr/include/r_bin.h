@@ -242,6 +242,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*libs)(RBinFile *arch);
 	RList* (*relocs)(RBinFile *arch);
 	RList* (*classes)(RBinFile *arch);
+	RList* (*mem)(RBinFile *arch);
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
@@ -336,6 +337,14 @@ typedef struct r_bin_field_t {
 	ut64 paddr;
 	ut32 visibility;
 } RBinField;
+
+typedef struct r_bin_mem_t {	//new toy for esil-init
+	char name[R_BIN_SIZEOF_STRINGS+1];
+	ut64 addr;
+	int size;
+	int perms;
+	RList *mirrors;		//for mirror access; stuff here should only create new maps not new fds
+} RBinMem;
 
 typedef struct r_bin_dbginfo_t {
 	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
