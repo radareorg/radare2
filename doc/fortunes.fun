@@ -142,3 +142,4 @@ Welcome to "IDA - the roguelike"
 When you sold that exploit, what they really bought, was your silence.
 Greetings, human.
 nothing personal, just bitness
+Too old to crash

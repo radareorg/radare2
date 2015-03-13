@@ -1636,6 +1636,7 @@ static int cmd_print(void *data, const char *input) {
 				"psx", "", "show string with scaped chars",
 				"psz", "", "print zero terminated string",
 				"psp", "", "print pascal string",
+				"psu", "", "print utf16 unicode (json)",
 				"psw", "", "print wide string",
 				NULL};
 			r_core_cmd_help (core, help_msg);
@@ -1739,6 +1740,13 @@ static int cmd_print(void *data, const char *input) {
 		case ' ':
 			len = r_num_math (core->num, input+2);
 			r_print_string (core->print, core->offset, core->block, len, 0);
+			break;
+		case 'u':
+			{
+			       char *str = r_str_utf16_encode (core->block, len);
+				r_cons_printf ("%s\n", str);
+				free (str);
+			}
 			break;
 		default:
 			r_print_string (core->print, core->offset, core->block, len,

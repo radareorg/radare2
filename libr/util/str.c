@@ -1306,6 +1306,31 @@ R_API char *r_str_uri_encode (const char *s) {
 	return realloc (od, strlen (od)+1); // FIT
 }
 
+R_API char *r_str_utf16_encode (const char *s, int len) {
+	int i;
+	char ch[4], *d, *od;
+	if (!s) return NULL;
+	if (len<0) len = strlen (s);
+	od = d = malloc (1+(len*7));
+	if (!d) return NULL;
+	for (i=0; i<len; s++, i++) {
+		if ((*s>=0x20) && (*s<=126)) {
+			*d++ = *s;
+		} else {
+			*d++ = '\\';
+			*d++ = '\\';
+			*d++ = 'u';
+			*d++ = '0';
+			*d++ = '0';
+			sprintf (ch, "%02x", 0xff & ((ut8)*s));
+			*d++ = ch[0];
+			*d++ = ch[1];
+		}
+	}
+	*d = 0;
+	return realloc (od, strlen (od)+1); // FIT
+}
+
 // TODO: merge print inside rutil
 /* hack from print */
 R_API int r_print_format_length (const char *fmt) {
