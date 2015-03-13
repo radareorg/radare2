@@ -301,9 +301,13 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	sdb_set (bin->kv, "pe_image_data_directory.format", "xx virtualAddress size",0);
 	
 	// adding compile time to the SDB
-	sdb_num_set (bin->kv, "image_file_header.TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, 0);
-	time_t ts = bin->nt_headers->file_header.TimeDateStamp;
-	sdb_set(bin->kv, "image_file_header.TimeDateStamp_string", strdup(ctime(&ts)), 0);
+	{
+	time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
+	sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
+		bin->nt_headers->file_header.TimeDateStamp, 0);
+	sdb_set (bin->kv, "image_file_header.TimeDateStamp_string",
+		ctime (&ts), 0);
+	}
 
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
