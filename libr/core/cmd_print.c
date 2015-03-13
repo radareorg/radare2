@@ -1743,7 +1743,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'u':
 			{
-			       char *str = r_str_utf16_encode (core->block, len);
+			       char *str = r_str_utf16_encode (
+					(const char*)core->block, len);
 				r_cons_printf ("%s\n", str);
 				free (str);
 			}
