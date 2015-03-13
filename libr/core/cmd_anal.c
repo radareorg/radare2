@@ -1382,85 +1382,71 @@ static void cmd_anal_info(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_esil_stack (RCore *core, const char *input) {
+static void cmd_esil_mem (RCore *core, const char *input) {
 	ut64 curoff = core->offset;
-	ut64 stack_addr = 0x1f0000;
-	ut64 stack_size = 0xf0000;
-	ut64 stack_ptr = stack_addr+(stack_size/2);
-	const char *sp;
+	ut64 addr = 0x100000;
+	ut32 size = 0xf0000;
+	char name[128];
 	RCoreFile *cf;
 	RFlagItem *fi;
 	char uri[32];
+	char *s = NULL;
+	char *p;
+	int args;
 	if (*input=='?') {
-		eprintf ("Usage: [stackaddr] [stacksize] [stackptr]\n");
-		eprintf ("Default: 0x100000 0xf0000 0x1e0000\n");
+		eprintf ("Usage: [addr] [size] [name]\n");
+		eprintf ("Default: 0x100000 0xf0000\n");
 		return;
 	}
 
-	// arguments aeis [space] [size] [address]
-	{
-	char *s = strdup (input);
-	int args = r_str_word_set0 (s);
+	s = strdup (input);
+	args = r_str_word_set0 (s);
 	if (args>0) {
-		ut64 fsz = r_io_size (core->io);
-		stack_addr = r_num_math (core->num,
-			r_str_word_get0 (s, 0));
-		if (stack_addr<fsz) {
-			stack_addr = fsz + (fsz%0xf000);
-			stack_addr = 0x1000000;
-		}
+		p = strchr (input, ' ');
+		while (*p == ' ') p++;
+		addr = r_num_math (core->num, p);
 		if (args>1) {
-			stack_size = r_num_math (core->num,
-				r_str_word_get0 (s, 1));
-			if (args>2) {
-				stack_ptr = r_num_math (core->num,
-					r_str_word_get0 (s, 2));
-			}
+			p = strchr (p, ' ');
+			while (*p == ' ') p++;
+			size = (ut32)r_num_math (core->num,
+				p);
 		}
-		if (stack_size<1)
-			stack_size = 0xf0000;
-		if (stack_ptr<stack_addr) {
-			stack_ptr = stack_addr + (stack_size/2);
-		}
-		if (stack_ptr >= stack_addr+stack_size) {
-			stack_ptr = stack_addr + stack_size;
-		}
-	}
-	free (s);
+		if (size<1)
+			size = 0xf0000;
+	} else {
+		eprintf ("wrong usage, see aeim?\n");
+		free (s);
+		return;
 	}
 
-	fi = r_flag_get (core->flags, "stack_fd");
+	if (args>2) {
+		p = strchr (p, ' ');
+		while (*p == ' ') p++;
+		snprintf (name, 128, "mem.%s", p);
+	} else	snprintf (name, 128, "mem.0x%"PFMT64x"_0x%x", addr, size);
+
+	free (s);
+
+	fi = r_flag_get (core->flags, name);
 	if (fi) {
-		cf = r_core_file_get_by_fd (core, fi->offset);
-		r_core_file_close (core, cf);
-		r_flag_unset (core->flags, "stack", NULL);
-		r_flag_unset (core->flags, "stack_fd", NULL);
 		if (*input=='-') {
-			eprintf ("Deinitialize\n");
+			cf = r_core_file_get_by_fd (core, fi->offset);
+			r_core_file_close (core, cf);
+			r_flag_unset (core->flags, name, NULL);
+			eprintf ("Deinitialized %s\n", name);
 			return;
 		}
-	}
-	if (*input=='-') {
-		eprintf ("Cannot deinitialize twice\n");
+		eprintf ("Cannot create mem here, mem allready lives here");
 		return;
 	}
-	sp = r_reg_get_name (core->anal->reg,
-		r_reg_get_name_idx ("sp"));
-	if (!sp) {
-		eprintf ("Unknown stack pointer register\n");
-		sp = "esp";
+	if (*input=='-') {
+		eprintf ("Cannot deinitialize %s\n", name);
+		return;
 	}
-	{
-	snprintf (uri, sizeof (uri), "malloc://%d", (int)stack_size);
-	cf = r_core_file_open (core, uri, R_IO_RW, stack_addr);
-	if (cf) {
-		r_flag_set (core->flags, "stack_fd", cf->desc->fd, 1, 0);
-		r_flag_set (core->flags, "stack", stack_addr, 1, 0);
-		r_flag_set (core->flags, "stack_ptr", stack_ptr, 1, 0);
-		r_reg_setv (core->anal->reg, sp, stack_ptr);
-		r_reg_setv (core->dbg->reg, sp, stack_ptr);
-	}
-	}
+	snprintf (uri, sizeof (uri), "malloc://%d @ 0x%"PFMT64x"", (int)size, addr);
+	cf = r_core_file_open (core, uri, R_IO_RW, addr);
+	if (cf)
+		r_flag_set (core->flags, name, addr, size, 0);
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
@@ -1469,12 +1455,6 @@ static void cmd_esil_stack (RCore *core, const char *input) {
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
 	r_core_seek (core, curoff, 0);
-	/* stack */
-	eprintf ("ADDR 0x%08"PFMT64x"\n", stack_addr);
-	eprintf ("PTR 0x%08"PFMT64x"\n", stack_ptr);
-	eprintf ("SZ 0x%08"PFMT64x"\n", stack_size);
-	eprintf ("GET SP = 0x%x\n", (int)
-		r_reg_getv (core->anal->reg, sp));
 }
 
 static void cmd_anal_esil(RCore *core, const char *input) {
@@ -1548,11 +1528,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'i': // "aei"
 		switch (input [1]) {
-		case 's':
-			cmd_esil_stack (core, input+2);
+		case 'm':
+			cmd_esil_mem (core, input+2);
 			break;
 		case '?':
-			cmd_esil_stack (core, "?");
+			cmd_esil_mem (core, "?");
 			break;
 		case 0:
 			r_anal_esil_free (esil);
