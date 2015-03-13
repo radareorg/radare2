@@ -244,7 +244,7 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *item = r_flag_get_i (core->flags,
 				r_num_math (core->num, input+2));
 			if (item)
-				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
+				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 		} else eprintf ("Missing arguments\n");
 		break;
 #if 0
