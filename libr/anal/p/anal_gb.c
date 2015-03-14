@@ -1435,6 +1435,15 @@ static int esil_gb_init (RAnalEsil *esil) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
+			if (esil->anal->reg) {		//initial values
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "mpc", -1), 0x100);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0xfffe);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "af", -1), 0x01b0);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "bc", -1), 0x0013);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "de", -1), 0x00d8);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "hl", -1), 0x014d);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "ime", -1), R_TRUE);
+			}
 		}
 		esil->cb.user = user;
 	}
