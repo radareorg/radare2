@@ -100,7 +100,7 @@ R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd) {
 				return map;
 		}
 	}
-	return map;
+	return NULL;
 }
 
 static RList *r_io_map_get_maps_in_range_prepend(RIO *io, ut64 addr, ut64 endaddr) {
