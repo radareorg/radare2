@@ -1390,7 +1390,6 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 	RCoreFile *cf;
 	RFlagItem *fi;
 	char uri[32];
-	char *s = NULL;
 	char *p;
 	int args;
 	if (*input=='?') {
@@ -1399,33 +1398,21 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 		return;
 	}
 
-	s = strdup (input);
-	args = r_str_word_set0 (s);
-	if (args>0) {
-		p = strchr (input, ' ');
+	p = input;
+	if (p = strchr (p, ' ')) {
 		while (*p == ' ') p++;
 		addr = r_num_math (core->num, p);
-		if (args>1) {
-			p = strchr (p, ' ');
+		if (p = strchr (p, ' ')) {
 			while (*p == ' ') p++;
-			size = (ut32)r_num_math (core->num,
-				p);
-		}
-		if (size<1)
-			size = 0xf0000;
-	} else {
-		eprintf ("wrong usage, see aeim?\n");
-		free (s);
-		return;
-	}
-
-	if (args>2) {
-		p = strchr (p, ' ');
-		while (*p == ' ') p++;
-		snprintf (name, 128, "mem.%s", p);
+			size = (ut32)r_num_math (core->num, p);
+			if (size<1)
+				size = 0xf0000;
+			if (p = strchr (p, ' ')) {
+				while (*p == ' ') p++;
+				snprintf (name, 128, "mem.%s", p);
+			} else	snprintf (name, 128, "mem.0x%"PFMT64x"_0x%x", addr, size);
+		} else	snprintf (name, 128, "mem.0x%"PFMT64x"_0x%x", addr, size);
 	} else	snprintf (name, 128, "mem.0x%"PFMT64x"_0x%x", addr, size);
-
-	free (s);
 
 	fi = r_flag_get (core->flags, name);
 	if (fi) {
