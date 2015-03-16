@@ -1390,24 +1390,24 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 	RCoreFile *cf;
 	RFlagItem *fi;
 	char uri[32];
+	char nomalloc[256];
 	char *p;
-	int args;
 	if (*input=='?') {
 		eprintf ("Usage: [addr] [size] [name]\n");
 		eprintf ("Default: 0x100000 0xf0000\n");
 		return;
 	}
 
-	p = input;
-	if (p = strchr (p, ' ')) {
+	p = strncpy (nomalloc, input, 255);
+	if ((p = strchr (p, ' '))) {
 		while (*p == ' ') p++;
 		addr = r_num_math (core->num, p);
-		if (p = strchr (p, ' ')) {
+		if ((p = strchr (p, ' '))) {
 			while (*p == ' ') p++;
 			size = (ut32)r_num_math (core->num, p);
 			if (size<1)
 				size = 0xf0000;
-			if (p = strchr (p, ' ')) {
+			if ((p = strchr (p, ' '))) {
 				while (*p == ' ') p++;
 				snprintf (name, 128, "mem.%s", p);
 			} else	snprintf (name, 128, "mem.0x%"PFMT64x"_0x%x", addr, size);
