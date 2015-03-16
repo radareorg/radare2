@@ -178,8 +178,8 @@ sort_vars
 
 [ ${DONOTHING} = 0 ] && generate
 
-echo ${SHARED}
-echo ${STATIC}
+echo SHARED: ${SHARED}
+echo STATIC: ${STATIC}
 
 save
 

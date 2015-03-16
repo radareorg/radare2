@@ -11,7 +11,7 @@ ut64 num_callback(RNum *num, const char *str, int *ok) {
 	return 0;
 }
 
-int test_num(RNum *num, const char *str, ut64 okvalue) {
+static void test_num(RNum *num, const char *str, ut64 okvalue) {
 	ut64 ret;
 	printf("        %"PFMT64d" == ", okvalue);
  	ret = r_num_math(num, str);

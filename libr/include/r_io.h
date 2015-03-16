@@ -453,6 +453,7 @@ R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len);
 /* plugins */
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;
+extern RIOPlugin r_io_plugin_sparse;
 extern RIOPlugin r_io_plugin_ptrace;
 extern RIOPlugin r_io_plugin_w32dbg;
 extern RIOPlugin r_io_plugin_mach;

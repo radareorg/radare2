@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #ifndef R2_UTIL_H
 #define R2_UTIL_H
@@ -88,6 +88,16 @@ typedef struct r_mmap_t {
 #endif
 } RMmap;
 
+/* copied from RIOCache */
+typedef struct r_buf_cache_t {
+        ut64 from;
+        ut64 to;
+        int size;
+        ut8 *data;
+        ut8 *odata;
+        int written;
+} RBufferSparse;
+
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
@@ -95,6 +105,7 @@ typedef struct r_buf_t {
 	ut64 base;
 	RMmap *mmap;
 	ut8 empty;
+	RList *sparse;
 } RBuffer;
 
 /* r_cache */
@@ -264,10 +275,13 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 
 #define R_BUF_CUR UT64_MAX
+/* constructors */
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
+R_API RBuffer *r_buf_new_sparse();
+/* methods */
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_string(RBuffer *b, const char *str);
