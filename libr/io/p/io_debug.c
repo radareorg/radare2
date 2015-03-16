@@ -267,7 +267,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		} else {
 			// TODO: Add support to redirect filedescriptors
 			// TODO: Configure process environment
-			argv = r_str_argv (cmd, NULL);
+			char *_cmd = strdup (cmd);
+			argv = r_str_argv (_cmd, NULL);
 #if __APPLE__
 			 {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
@@ -321,6 +322,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #else
 			execvp (argv[0], argv);
 #endif
+			free (_cmd);
 		}
 		perror ("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
