@@ -6,7 +6,7 @@ return strdup (
 "=a0	eax\n"
 "=a1	ebx\n"
 "=a2	ecx\n"
-"=a3	edi\n"
+"=a3	edx\n"
 "=sn	oeax\n"
 "gpr	oeax	.32	44	0\n"
 "gpr	eip	.32	48	0\n"

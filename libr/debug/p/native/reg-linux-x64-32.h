@@ -6,7 +6,7 @@ return strdup (
 "=a0	eax\n"
 "=a1	ebx\n"
 "=a2	ecx\n"
-"=a3	edi\n"
+"=a3	edx\n"
 "=zf	zf\n"
 "=sf	sf\n"
 "=of	of\n"
