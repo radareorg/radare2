@@ -343,7 +343,7 @@ next_quote:
 			} else {
 				/* +[idx]key    -->  key[idx] + 1 */
 				/* -[idx]key    -->  key[idx] - 1 */
-				char *nstr, numstr[32];
+				char *nstr, numstr[128];
 				if (*cmd=='+') {
 					curnum ++;
 				} else if (*cmd=='-') {

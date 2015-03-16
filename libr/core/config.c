@@ -1135,6 +1135,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.open", "", "Command executed when file its opened");
 	SETPREF("cmd.prompt", "", "Prompt commands");
 	SETCB("cmd.repeat", "true", &cb_cmdrepeat, "Alias newline (empty command) as '..'");
+	SETPREF("cmd.fcn.new", "", "Run command when new function is analyzed");
+	SETPREF("cmd.fcn.delete", "", "Run command when a function is deleted");
+	SETPREF("cmd.fcn.rename", "", "Run command when a function is renamed");
 	SETPREF("cmd.visual", "", "Replace current print mode");
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
 

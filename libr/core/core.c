@@ -11,6 +11,46 @@
 
 R_LIB_VERSION(r_core);
 
+static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
+	RCore *core = (RCore*)_user;
+	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
+	if (cmd && *cmd) {
+		ut64 oaddr = core->offset;
+		ut64 addr = fcn->addr;
+		r_core_seek (core, addr, 1);
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, oaddr, 1);
+	}
+	return 0;
+}
+
+static int on_fcn_delete (void *_anal, void* _user, RAnalFunction *fcn) {
+	RCore *core = (RCore*)_user;
+	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
+	if (cmd && *cmd) {
+		ut64 oaddr = core->offset;
+		ut64 addr = fcn->addr;
+		r_core_seek (core, addr, 1);
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, oaddr, 1);
+	}
+	return 0;
+}
+
+static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const char *oname) {
+	RCore *core = (RCore*)_user;
+	const char *cmd = r_config_get (core->config, "cmd.fcn.rename");
+	if (cmd && *cmd) {
+// XXX: wat do with old name here?
+		ut64 oaddr = core->offset;
+		ut64 addr = fcn->addr;
+		r_core_seek (core, addr, 1);
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, oaddr, 1);
+	}
+	return 0;
+}
+
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	const char *cmdbp;
 	int oecho = core->cons->echo; // should be configurable by user?
@@ -204,6 +244,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		break;
 	default:
 		if (*str>'A') {
+			// NOTE: functions override flags
+			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, str);
+			if (fcn) {
+				if (ok) *ok = R_TRUE;
+				return fcn->addr;
+			}
 #if 0
 			ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
 			if (addr != 0) {
@@ -812,6 +858,9 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->anal->cb.on_fcn_new = on_fcn_new;
+	core->anal->cb.on_fcn_delete = on_fcn_delete;
+	core->anal->cb.on_fcn_rename = on_fcn_rename;
 	core->assembler->syscall = \
 		core->anal->syscall; // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);

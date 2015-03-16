@@ -690,32 +690,35 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_atabs_option(RCore *core, RDisasmState *ds) {
-	if (ds->atabs) {
-		int n, i = 0, comma = 0, word = 0;
-		int brackets = 0;
-		char *t, *b;
-		free (ds->opstr);
-		ds->opstr = b = malloc (strlen (ds->asmop.buf_asm)* (ds->atabs+1)*4);
-		strcpy (b, ds->asmop.buf_asm);
-		for (; *b; b++, i++) {
-			if (*b=='(' || *b=='[') brackets++;
-			if (*b==')' || *b==']') brackets--;
-			if (*b==',') comma = 1;
-			if (*b!=' ') continue;
-			if (word>0 && !comma) continue; //&& b[1]=='[') continue;
-			if (brackets>0) continue;
-			comma = 0;
-			brackets = 0;
-			n = (ds->atabs-i);
-			t = strdup (b+1); //XXX slow!
-			if (n<1) n = 1;
-			memset (b, ' ', n);
-			b += n;
-			strcpy (b, t);
-			free (t);
-			i = 0;
-			word++;
-		}
+	int n, i = 0, comma = 0, word = 0;
+	int size, brackets = 0;
+	char *t, *b;
+	if (!ds || !ds->atabs)
+		return;
+	size = strlen (ds->asmop.buf_asm)* (ds->atabs+1)*4;
+	if (size<1)
+		return;
+	free (ds->opstr);
+	ds->opstr = b = malloc (size);
+	strcpy (b, ds->asmop.buf_asm);
+	for (; *b; b++, i++) {
+		if (*b=='(' || *b=='[') brackets++;
+		if (*b==')' || *b==']') brackets--;
+		if (*b==',') comma = 1;
+		if (*b!=' ') continue;
+		if (word>0 && !comma) continue; //&& b[1]=='[') continue;
+		if (brackets>0) continue;
+		comma = 0;
+		brackets = 0;
+		n = (ds->atabs-i);
+		t = strdup (b+1); //XXX slow!
+		if (n<1) n = 1;
+		memset (b, ' ', n);
+		b += n;
+		strcpy (b, t);
+		free (t);
+		i = 0;
+		word++;
 	}
 }
 
@@ -728,90 +731,101 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
-	if (ds->show_functions) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (f) {
-			if (f->addr == ds->at) {
-				char *sign = r_anal_fcn_to_string (core->anal, f);
-				if (f->type == R_ANAL_FCN_TYPE_LOC) {
-					if (ds->show_color) {
-						r_cons_printf ("%s%s ", ds->color_fline,
-							core->cons->vline[LINE_CROSS]); // |-
-						r_cons_printf ("%s%s"Color_RESET" %d\n",
-							ds->color_floc, f->name, f->size);
-						r_cons_printf ("%s%s "Color_RESET,
-							ds->color_fline, core->cons->vline[LINE_VERT]); // |
-					} else {
-						r_cons_printf ("%s %s %d\n%s ", core->cons->vline[LINE_CROSS],
-							f->name, f->size, core->cons->vline[LINE_VERT]); // |-
-					}
-				} else {
-					const char *fmt = ds->show_color?
-						"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
-						"%s (%s) %s %d\n";
+	RAnalFunction *f;
+	char *sign;
+	if (!core || !ds || !ds->show_functions)
+		return;
+	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	if (!f) return;
+	if (f->addr != ds->at) {
+		return;
+	}
+	sign = r_anal_fcn_to_string (core->anal, f);
+	if (f->type == R_ANAL_FCN_TYPE_LOC) {
+		if (ds->show_color) {
+			r_cons_printf ("%s%s ", ds->color_fline,
+				core->cons->vline[LINE_CROSS]); // |-
+			r_cons_printf ("%s%s"Color_RESET" %d\n",
+				ds->color_floc, f->name, f->size);
+			r_cons_printf ("%s%s "Color_RESET,
+				ds->color_fline, core->cons->vline[LINE_VERT]); // |
+		} else {
+			r_cons_printf ("%s %s %d\n%s ", core->cons->vline[LINE_CROSS],
+				f->name, f->size, core->cons->vline[LINE_VERT]); // |-
+		}
+	} else {
+		const char *fmt = ds->show_color?
+			"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
+			"%s (%s) %s %d\n";
 #if SLOW_BUT_OK
-					int corner = (f->size <= ds->analop.size)? RDWN_CORNER: LINE_VERT;
-					corner = LINE_VERT; // 99% of cases
-					RFlagItem *item = r_flag_get_i (core->flags, f->addr);
-					corner = item? LINE_VERT: RDWN_CORNER;
-					if (item)
-						corner = 0;
+		int corner = (f->size <= ds->analop.size)? RDWN_CORNER: LINE_VERT;
+		corner = LINE_VERT; // 99% of cases
+		RFlagItem *item = r_flag_get_i (core->flags, f->addr);
+		corner = item? LINE_VERT: RDWN_CORNER;
+		if (item)
+			corner = 0;
 #endif
-					handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
-					if (ds->show_color) {
-						r_cons_printf (fmt, ds->color_fline, ds->pre, ds->color_fname,
-							(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
-							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-							f->name, f->size);
-					} else {
-						r_cons_printf (fmt, ds->pre,
-							(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
-							(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-							f->name, f->size);
-					}
-				}
-				if (sign) r_cons_printf ("// %s\n", sign);
-				free (sign);
-				sign = NULL;
-				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-				ds->pre = r_str_concat (ds->pre, " ");
-				ds->stackptr = 0;
-				if (ds->vars) {
-					RList *args = r_anal_var_list (core->anal, f, 'a');
-					RList *vars = r_anal_var_list (core->anal, f, 'v');
-					r_list_join (vars, args);
-					RAnalVar *var;
-					RListIter *iter;
-					r_list_foreach (vars, iter, var) {
-						if (ds->show_color) {
-							r_cons_printf ("%s%s %s"Color_RESET,
-									ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
-							r_cons_printf ("%s; %s %s %s @ %s%s0x%x"Color_RESET"\n",
-									ds->color_other,
-									var->kind=='v'?"var":"arg",
-									var->type,
-									var->name,
-									core->anal->reg->name[R_REG_NAME_BP],
-									(var->kind=='v')?"-":"+",
-									var->delta);
-						} else {
-							r_cons_printf ("%s %s",
-									core->cons->vline[LINE_VERT], ds->refline2);
-							r_cons_printf ("; %s %s %s @ %s%s0x%x\n",
-									var->kind=='v'?"var":"arg",
-									var->type,
-									var->name,
-									core->anal->reg->name[R_REG_NAME_BP],
-									(var->kind=='v')?"-":"+",
-									var->delta);
-						}
-					}
-					r_list_free (vars);
-					// it's already empty, but rlist instance is still there
-					r_list_free (args);
-				}
+		handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
+		if (ds->show_color) {
+			r_cons_printf (fmt, ds->color_fline, ds->pre, ds->color_fname,
+				(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
+				(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
+				f->name, f->size);
+		} else {
+			r_cons_printf (fmt, ds->pre,
+				(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
+				(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
+				f->name, f->size);
+		}
+	}
+	if (sign) r_cons_printf ("// %s\n", sign);
+	free (sign);
+	sign = NULL;
+	handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+	ds->pre = r_str_concat (ds->pre, " ");
+	ds->stackptr = 0;
+	if (ds->vars) {
+		char spaces[32];
+		RList *args = r_anal_var_list (core->anal, f, 'a');
+		RList *vars = r_anal_var_list (core->anal, f, 'v');
+		r_list_join (vars, args);
+		RAnalVar *var;
+		RListIter *iter;
+		// TODO: show first args, and then vars
+		r_list_foreach (vars, iter, var) {
+			int idx;
+			memset (spaces, ' ', sizeof(spaces));
+			idx = 12-strlen (var->name);
+			if (idx<0)idx = 0;
+			spaces[idx] = 0;
+			if (ds->show_color) {
+				r_cons_printf ("%s%s %s"Color_RESET,
+						ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
+				r_cons_printf ("%s; %s %s %s %s@ %s%s0x%x"Color_RESET"\n",
+						ds->color_other,
+						var->kind=='v'?"var":"arg",
+						var->type,
+						var->name,
+						spaces,
+						core->anal->reg->name[R_REG_NAME_BP],
+						(var->kind=='v')?"-":"+",
+						var->delta);
+			} else {
+				r_cons_printf ("%s %s",
+						core->cons->vline[LINE_VERT], ds->refline2);
+				r_cons_printf ("; %s %s %s %s@ %s%s0x%x\n",
+						var->kind=='v'?"var":"arg",
+						var->type,
+						var->name,
+						spaces,
+						core->anal->reg->name[R_REG_NAME_BP],
+						(var->kind=='v')?"-":"+",
+						var->delta);
 			}
 		}
+		r_list_free (vars);
+		// it's already empty, but rlist instance is still there
+		r_list_free (args);
 	}
 }
 
@@ -854,74 +868,77 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
+		int linelen, maxclen ;
+	RAnalFunction *f;
+	RFlagItem *item;
 	/* show comment at right? */
 	ds->show_comment_right = 0;
-	if (ds->show_comments) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		RFlagItem *item = r_flag_get_i (core->flags, ds->at);
-		ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
-		if (!ds->comment && item && item->comment) {
-			ds->ocomment = item->comment;
-			ds->comment = strdup (item->comment);
+	if (!ds->show_comments)
+		return;
+	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	item = r_flag_get_i (core->flags, ds->at);
+	ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
+	if (!ds->comment && item && item->comment) {
+		ds->ocomment = item->comment;
+		ds->comment = strdup (item->comment);
+	}
+	if (!ds->comment)
+		return;
+	maxclen = strlen (ds->comment)+5;
+	linelen = maxclen;
+	if (ds->show_comment_right_default) {
+		if (ds->ocols+maxclen < core->cons->columns) {
+			if (ds->comment && *ds->comment && strlen (ds->comment)<maxclen) {
+				if (!strchr (ds->comment, '\n')) // more than one line?
+					ds->show_comment_right = 1;
+			}
 		}
-		if (ds->comment) {
-			int linelen, maxclen = strlen (ds->comment)+5;
-			linelen = maxclen;
-			if (ds->show_comment_right_default) {
-				if (ds->ocols+maxclen < core->cons->columns) {
-					if (ds->comment && *ds->comment && strlen (ds->comment)<maxclen) {
-						if (!strchr (ds->comment, '\n')) // more than one line?
-							ds->show_comment_right = 1;
-					}
-				}
-			}
-			if (!ds->show_comment_right) {
-				int infun, mycols = ds->lcols;
-				if (mycols + linelen + 10 > core->cons->columns)
-					mycols = 0;
-				mycols /= 2;
-				if (ds->show_color) r_cons_strcat (ds->pal_comment);
+	}
+	if (!ds->show_comment_right) {
+		int infun, mycols = ds->lcols;
+		if (mycols + linelen + 10 > core->cons->columns)
+			mycols = 0;
+		mycols /= 2;
+		if (ds->show_color) r_cons_strcat (ds->pal_comment);
 #if OLD_COMMENTS
-				r_cons_strcat ("; ");
-				// XXX: always prefix with ; the comments
-				if (*ds->comment != ';') r_cons_strcat ("  ;  ");
-				r_cons_strcat_justify (ds->comment, mycols, ';');
+		r_cons_strcat ("; ");
+		// XXX: always prefix with ; the comments
+		if (*ds->comment != ';') r_cons_strcat ("  ;  ");
+		r_cons_strcat_justify (ds->comment, mycols, ';');
 #else
-				infun = f && (f->addr != ds->at);
-				if (infun) {
-					char *str = strdup (ds->show_color?ds->color_fline: "");
-					str = r_str_concat (str, core->cons->vline[LINE_VERT]);
-					if (ds->show_color)
-						str = r_str_concat (str, ds->color_flow);
-// color refline
-					str = r_str_concat (str, " ");
-					str = r_str_concat (str, ds->refline2);
-// color comment
-					if (ds->show_color)
-						str = r_str_concat (str, ds->color_comment);
-					str = r_str_concat (str, ";  ");
-					ds->comment = r_str_prefix_all (ds->comment, str);
-					free (str);
-				} else {
-					ds->comment = r_str_prefix_all (ds->comment, "   ;      ");
-				}
-				r_cons_strcat (ds->comment);
+		infun = f && (f->addr != ds->at);
+		if (infun) {
+			char *str = strdup (ds->show_color?ds->color_fline: "");
+			str = r_str_concat (str, core->cons->vline[LINE_VERT]);
+			if (ds->show_color)
+				str = r_str_concat (str, ds->color_flow);
+			// color refline
+			str = r_str_concat (str, " ");
+			str = r_str_concat (str, ds->refline2);
+			// color comment
+			if (ds->show_color)
+				str = r_str_concat (str, ds->color_comment);
+			str = r_str_concat (str, ";  ");
+			ds->comment = r_str_prefix_all (ds->comment, str);
+			free (str);
+		} else {
+			ds->comment = r_str_prefix_all (ds->comment, "   ;      ");
+		}
+		r_cons_strcat (ds->comment);
 #endif
-				if (ds->show_color) handle_print_color_reset (core, ds);
-				r_cons_newline ();
-				free (ds->comment);
-				ds->comment = NULL;
+		if (ds->show_color) handle_print_color_reset (core, ds);
+		r_cons_newline ();
+		free (ds->comment);
+		ds->comment = NULL;
 
-				/* flag one */
-				if (item && item->comment && ds->ocomment != item->comment) {
-					if (ds->show_color) r_cons_strcat (ds->pal_comment);
-					r_cons_newline ();
-					r_cons_strcat ("  ;  ");
-					r_cons_strcat_justify (item->comment, mycols, ';');
-					r_cons_newline ();
-					if (ds->show_color) handle_print_color_reset (core, ds);
-				}
-			}
+		/* flag one */
+		if (item && item->comment && ds->ocomment != item->comment) {
+			if (ds->show_color) r_cons_strcat (ds->pal_comment);
+			r_cons_newline ();
+			r_cons_strcat ("  ;  ");
+			r_cons_strcat_justify (item->comment, mycols, ';');
+			r_cons_newline ();
+			if (ds->show_color) handle_print_color_reset (core, ds);
 		}
 	}
 }

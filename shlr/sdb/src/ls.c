@@ -14,6 +14,19 @@ SDB_API SdbList *ls_new() {
 	return list;
 }
 
+SDB_API void ls_sort(SdbList *list, SdbListComparator cmp) {
+        SdbListIter *it, *it2;
+        for (it = list->head; it && it->data; it = it->n) {
+                for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+                        if (cmp (it->data, it2->data)>0) {
+                                void *t = it->data;
+                                it->data = it2->data;
+                                it2->data = t;
+                        }
+                }
+        }
+}
+
 SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	if (!list || !iter) return;
 	ls_split_iter (list, iter);

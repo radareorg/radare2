@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2015 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -175,17 +175,17 @@ static int bbsum(RAnalFunction *fcn) {
 }
 #endif
 
-static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
+static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb;
 #if 0
 	RListIter *iter;
+	// TODO: check if its already there
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == addr)
 			return bb;
 	}
 #endif
-	// TODO: echeck if its already there
-	bb = r_anal_bb_new();
+	bb = r_anal_bb_new ();
 	if (!bb) return NULL;
 	bb->addr = addr;
 	bb->size = 0;
@@ -193,6 +193,9 @@ static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
 	bb->fail = UT64_MAX;
 	bb->type = 0; // TODO
 	r_list_append (fcn->bbs, bb);
+	if (anal->cb.on_fcn_bb_new) {
+		anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
+	}
 	return bb;
 }
 //fcn->addr += n; fcn->size -= n; } else 
@@ -205,6 +208,20 @@ static RAnalBlock* appendBasicBlock (RAnalFunction *fcn, ut64 addr) {
 		return R_ANAL_RET_ERROR; }
 
 #define MAXBBSIZE 8096
+
+#define VARPREFIX "local"
+//#define VARPREFIX "var"
+#define ARGPREFIX "arg"
+static char *get_varname (RAnal *a, const char *pfx, int idx) {
+	char *s;
+	int word = a->bits / 8;
+	if (idx%word) {
+		s = r_str_newf ("%s_%d_%d", pfx, idx/word, R_ABS(idx%word));
+	} else {
+		s = r_str_newf ("%s_%d", pfx, idx/word);
+	}
+	return s;
+}
 
 #define gotoBeach(x) ret=x;goto beach;
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
@@ -239,13 +256,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 #endif
 	bb = bbget (fcn, addr);
 	if (bb) {
-		r_anal_fcn_split_bb (fcn, bb, addr);
+		r_anal_fcn_split_bb (anal, fcn, bb, addr);
 		if (anal->recont)
 			return R_ANAL_RET_END;
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
-	bb = appendBasicBlock (fcn, addr);
+	bb = appendBasicBlock (anal, fcn, addr);
 
 	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x
 		" (fcn 0x%08llx)\n", addr, fcn->addr);
@@ -345,27 +362,26 @@ repeat:
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
 			if ((int)op.ptr > 0) {
-				varname = r_str_newf ("arg_%x", op.ptr);
+				varname = get_varname (anal, ARGPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, op.ptr,
 						'a', NULL, anal->bits/8, varname);
 				// TODO: DIR_IN?
 			} else {
-				varname = r_str_newf ("local_%x", -op.ptr);
+				varname = get_varname (anal, VARPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, -op.ptr,
-						'v', NULL,
-						anal->bits/8, varname);
+						'v', NULL, anal->bits/8, varname);
 			}
 			free (varname);
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_GET:
 			if (((int)op.ptr) > 0) {
-				varname = r_str_newf ("arg_%x", op.ptr);
+				varname = get_varname (anal, ARGPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'a', NULL, anal->bits/8, varname);
 				r_anal_var_access (anal, fcn->addr, 'a', 0, op.ptr, 0, op.addr); //, NULL, varname, 0);
 						//R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
-				varname = r_str_newf ("local_%x", -op.ptr);
+				varname = get_varname (anal, VARPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, -op.ptr, 'v', NULL, anal->bits/8, varname);
 				r_anal_var_access (anal, fcn->addr, 'v', 0, -op.ptr, 0, -op.addr); //, 'v', NULL, varname, 0);
 						//R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
@@ -585,6 +601,9 @@ fcn.<offset>.bbs
 	sdb_set (DB, sdb_fmt (0, "fcn.0x%"PFMT64x"", "", 0));
 #endif
 	r_list_append (anal->fcns, fcn);
+	if (anal->cb.on_fcn_new) {
+		anal->cb.on_fcn_new (anal, anal->user, fcn);
+	}
 	return R_TRUE;
 }
 
@@ -660,6 +679,9 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 		RListIter *iter, *iter_tmp;
 		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
 			if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
+				if (a->cb.on_fcn_delete) {
+					a->cb.on_fcn_delete (a, a->user, fcni);
+				}
 				r_list_delete (a->fcns, iter);
 			}
 		}
@@ -705,7 +727,7 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 }
 
 /* rename RAnalFunctionBB.add() */
-R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
+R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
 	RAnalBlock *bb = NULL, *bbi;
 	RListIter *iter;
 	int mid = 0;
@@ -728,7 +750,7 @@ R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump,
 		//return R_FALSE;
 	}
 	if (bb == NULL) {
-		bb = appendBasicBlock (fcn, addr);
+		bb = appendBasicBlock (anal, fcn, addr);
 		if (!bb) {
 			eprintf ("appendBasicBlock failed\n");
 			return R_FALSE;
@@ -751,7 +773,7 @@ R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump,
 
 // TODO: rename fcn_bb_split()
 // bb seems to be ignored
-R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
+R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
 #if R_ANAL_BB_HAS_OPS
 	RAnalOp *opi;
@@ -764,7 +786,7 @@ R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 		if (addr == bbi->addr)
 			return R_ANAL_RET_DUP;
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
-			bb = appendBasicBlock (fcn, addr);
+			bb = appendBasicBlock (anal, fcn, addr);
 			//r_list_append (fcn->bbs, bb);
 			//bb->addr = addr+bbi->size;
 			bb->size = bbi->addr + bbi->size - addr;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -66,6 +66,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		char *var_def = sdb_fmt (2,"%c.%s,%d,%s", kind, type, size, name);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
+//	ls_sort (DB->ht->list, mystrcmp);
 	return R_TRUE;
 }
 

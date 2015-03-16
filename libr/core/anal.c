@@ -540,10 +540,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		return R_FALSE;
 	if (!(bb = r_anal_bb_new ()))
 		return R_FALSE;
-	if (split) ret = r_anal_fcn_split_bb (fcn, bb, at);
-	else r_list_foreach (fcn->bbs, iter, bbi) {
+	if (split) {
+		ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
+	} else {
+		r_list_foreach (fcn->bbs, iter, bbi) {
 		if (at == bbi->addr)
 			ret = R_ANAL_RET_DUP;
+		}
 	}
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
 		goto error;

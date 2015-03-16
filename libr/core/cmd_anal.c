@@ -495,7 +495,8 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_fcn_in (core->anal, fcnaddr, 0);
 	if (fcn) {
-		int ret = r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff);
+		int ret = r_anal_fcn_add_bb (core->anal, fcn, addr,
+			size, jump, fail, type, diff);
 		if (!ret) {
 			eprintf ("Cannot add basic block\n");
 		}
@@ -508,16 +509,21 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 }
 
 static int setFunctionName(RCore *core, ut64 off, const char *name) {
+	char *oname;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
-			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
+		R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
 	if (!fcn)
 		return 0;
 	//r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
 	//	 fcn->name, name, off);
 	r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
-			fcn->name, name, off);
-	free (fcn->name);
+		fcn->name, name, off);
+	oname = fcn->name;
 	fcn->name = strdup (name);
+	if (core->anal->cb.on_fcn_rename) {
+		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, oname);
+	}
+	free (oname);
 	return 1;
 }
 
@@ -538,7 +544,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		{
 		ut64 addr = core->offset;
 		ut64 addr_end = r_num_math (core->num, input+2);
-		if (addr_end< addr) {
+		if (addr_end < addr) {
 			eprintf ("Invalid address ranges\n");
 		} else {
 			int depth = 1;
@@ -1690,7 +1696,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			if (op.size<1)
 				op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
-				eprintf ("af @ 0x%08"PFMT64x"\n", op.jump);
+	//			eprintf ("af @ 0x%08"PFMT64x"\n", op.jump);
 				r_core_cmdf (core, "af@0x%08"PFMT64x, op.jump);
 			}
 		} else {
@@ -2399,7 +2405,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'c':
+	case 'c': // "ac"
 		cmd_anal_calls (core, input + 1);
 		break;
 	case 'C':

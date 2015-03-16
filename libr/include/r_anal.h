@@ -531,6 +531,17 @@ typedef struct r_anal_switch_obj_t {
 	RList *cases;
 } RAnalSwitchOp;
 
+#define RANAL void*
+//struct r_anal_t*
+#define RANAL_BLOCK void*
+//struct r_anal_bb_t*
+typedef struct r_anal_callbacks_t {
+	int (*on_fcn_new) (RANAL, void *user, RAnalFunction *fcn);
+	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
+	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
+	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
+} RAnalCallbacks;
+
 typedef struct r_anal_t {
 	char *cpu;
 	int bits;
@@ -585,6 +596,7 @@ typedef struct r_anal_t {
 #endif
 	Sdb *sdb_hints; // OK
 	//RList *hints; // XXX use better data structure here (slist?)
+	RAnalCallbacks cb;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -1063,7 +1075,8 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
 		const char *name, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
-R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size,
+R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
+		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
 
 /* locals */
@@ -1095,7 +1108,7 @@ R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
 
 
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
-R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
+R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn);
