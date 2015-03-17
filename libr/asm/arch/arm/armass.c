@@ -137,6 +137,7 @@ static int getshift_unused (const char *s) {
 }
 #endif
 
+//ret register #; -1 if failed
 static int getreg(const char *str) {
 	int i;
 	const char *aliases[] = { "sl", "fp", "ip", "sp", "lr", "pc", NULL };
@@ -155,7 +156,7 @@ static int thumb_getreg(const char *str) {
 		return -1;
 	if (*str=='r')
 		return atoi (str+1);
-	//FIXME Note that pc is only allowed un pop, lr in push in Thumb1 mode.
+	//FIXME Note that pc is only allowed in pop; lr in push in Thumb1 mode.
 	if (!strcmp (str, "pc") || !strcmp(str,"lr"))
 		return 8;
 	return -1;
@@ -365,16 +366,15 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		return 2;
 	} else
 	if (!strcmp (ao->op, "b") || !strcmp (ao->op, "b.n")) {
+			//uncond branch : PC += 4 + (delta*2)
 		int delta = getnum (ao->a[0]) - 4;
-		if (delta>=0) {
-			ut8 off = delta & 0xff;
-			ao->o = 0xe0;
-			ao->o |= off << 8;
-		} else {
-			ut8 off = (delta/2) & 0xff;
-			ao->o = 0xe7;
-			ao->o |= off << 8;
+		if ((delta < -2048) || (delta > 2046) || (delta & 1)) {
+			eprintf("branch out of range or not even\n");
+			return 0;
 		}
+		ut16 opcode = 0xe000 | ((delta / 2) & 0x7ff);	//11bit offset>>1 
+		ao->o = opcode >>8;
+		ao->o |= (opcode & 0xff)<<8;	// (ut32) ao->o holds the opcode in little-endian format !?
 		return 2;
 	} else
 	if (!strcmp (ao->op, "bx")) {
@@ -395,7 +395,12 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	} else
 	if (*ao->op == 'b') { // conditional branch
 		ao->o = 0xd0 | arm_opcode_cond (ao, 1);
-		ao->o |= getnum (ao->a[0])<<8;
+		int bdelta = getnum(ao->a[0]) -4;
+		if ((bdelta < -256) || (bdelta > 254) || (bdelta & 1)) {
+			eprintf("branch out of range or not even\n");
+			return 0;
+		}
+		ao->o |= ((bdelta/2) & 0xff) <<8;	//8bit offset >>1
 		return 2;
 	} else
 	if (!strcmp (ao->op, "mov")) {
@@ -812,8 +817,12 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	buf[i] = 0;
 	arm_opcode_parse (&aop, buf);
 	aop.off = off;
-	if (thumb <0 || thumb>1 || !assemble[thumb] (&aop, buf)) {
-	//	printf ("armass: Unknown opcode (%s)\n", buf);
+	if (thumb <0 || thumb>1) {
+		eprintf("bad bool!!\n");
+		return -1;
+	}
+	if (!assemble[thumb] (&aop, buf)) {
+		//eprintf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}
 	return aop.o;
