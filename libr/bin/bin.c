@@ -587,7 +587,9 @@ if (r_list_length (bin->binfiles)==0) {
 						desc->name, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
 						desc->fd, bin->rawstr);
-					binfile->o->baddr = baseaddr;
+					if (binfile->o) {
+						binfile->o->baddr = baseaddr;
+					}
 				}
 				xtr = NULL;
 			}
