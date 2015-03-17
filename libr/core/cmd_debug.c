@@ -420,7 +420,7 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 				eprintf ("Cannot allocate snapshot\n");
 				continue;
 			}
-			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);	
+			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);
                         r_print_hexdiff (core->print,
 				snap->addr, snap->data,
 				snap->addr, b,
@@ -704,6 +704,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drx", "", "Show all debug registers",
 				"drx", " number addr len rwx", "Modify hardware breakpoint",
 				"drx-", "number", "Clear hardware breakpoint",
+				"drm","","show fpu registers",
 				".dr", "*", "Include common register values in flags",
 				".dr", "-", "Unflag all registers",
 				NULL
@@ -975,7 +976,7 @@ free (rf);
 					if (is_text) {
 						r_cons_printf (" \"%s\"", buf);
 					}
-				}	
+				}
 			}
 			r_cons_newline ();
 		}
@@ -1270,7 +1271,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			switch (input[3]) {
 			case 'e':
 				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-					bpi->trace = R_TRUE; 
+					bpi->trace = R_TRUE;
 				} else eprintf ("Cannot unset tracepoint\n");
 				break;
 			case 'd':
@@ -1687,7 +1688,7 @@ static void cmd_debug_step (RCore *core, const char *input) {
 			  r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			  step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
 			  break;
-		  default: 
+		  default:
 			  eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
 					  " 'f'lag, 'e'sil or 'i'nstruction matching\n");
 			  break;
