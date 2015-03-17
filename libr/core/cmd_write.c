@@ -130,7 +130,9 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case '8': type = 8; break;
 	}
 	off = r_num_math (core->num, input+2);
-	r_io_use_desc (core->io, core->file->desc);
+	if (core->file) {
+		r_io_use_desc (core->io, core->file->desc);
+	}
 	r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (type == 0)
 		type = (off&UT64_32U)? 8: 4;
@@ -183,6 +185,7 @@ static int cmd_write(void *data, const char *input) {
 		"waf"," file","assemble file and write bytes",
 		"wA"," r 0","alter/modify opcode at current seek (see wA?)",
 		"wb"," 010203","fill current block with cyclic hexpairs",
+		"wB","[-]0xVALUE","set or unset bits with given value",
 		"wc","","list all write changes",
 		"wc","[ir*?]","write cache undo/commit/reset/list (io.cache)",
 		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",

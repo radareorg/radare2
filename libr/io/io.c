@@ -653,16 +653,21 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			ret = -1;
 		}
 	} else {
-		ret = write (io->desc->fd, buf, len);
+		if (io->desc) {
+			ret = write (io->desc->fd, buf, len);
+		} else ret = -1;
 	}
 	if (ret == -1) {
 		if (io->cached != 2) {
-			eprintf ("r_io_write: cannot write on fd %d\n", io->desc->fd);
+			eprintf ("r_io_write: cannot write on fd %d\n",
+				io->desc? io->desc->fd: -1);
 			r_io_cache_invalidate (io, io->off, io->off+1);
 		}
 	} else {
-		r_io_map_write_update (io, io->desc->fd, io->off, ret);
-		io->off += ret;
+		if (io->desc) {
+			r_io_map_write_update (io, io->desc->fd, io->off, ret);
+			io->off += ret;
+		}
 	}
 	free (data);
 	return ret;
