@@ -96,6 +96,7 @@ static ArmOp ops[] = {
 	{ NULL }
 };
 
+//decode str as number
 static int getnum(const char *str) {
 	if (!str)
 		return 0;
@@ -628,6 +629,23 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			ao->o |= 8+(getreg (ao->a[0]));
 			ao->o |= (getnum (ao->a[1])&0xff)<<8;
 		}
+		return 2;
+	} else
+	if (!strcmp(ao->op, "lsls") || !strcmp(ao->op, "lsrs")) {
+		ut16 opcode = 0;	//0000 xiii iiMM MDDD; ls<x>s Rd, Rm, imm5
+		if (ao->op[2]=='r') opcode=0x0800;	//lsrs
+		int Rd = getreg (ao->a[0]);
+		int Rm = getreg (ao->a[1]);
+		int a2 = getnum (ao->a[2]);
+		if ((Rd<0) || (Rd>7) || (Rm<0) || (Rm>7) ||
+				(a2==0) || (a2>32)) {
+			eprintf("illegal shift\n");	//bad regs, or imm5 out of range
+			return 0;
+		}
+		opcode |= a2 << 6;
+		opcode |= Rm << 3;
+		opcode |= Rd;
+		ao->o = (opcode >>8) | ((opcode & 0xff)<<8);
 		return 2;
 	}
 	return 0;
