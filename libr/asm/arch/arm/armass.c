@@ -638,7 +638,7 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		int Rm = getreg (ao->a[1]);
 		int a2 = getnum (ao->a[2]);
 		if ((Rd<0) || (Rd>7) || (Rm<0) || (Rm>7) ||
-				(a2==0) || (a2>32)) {
+				(a2<=0) || (a2>32)) {
 			eprintf("illegal shift\n");	//bad regs, or imm5 out of range
 			return 0;
 		}
