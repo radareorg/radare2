@@ -20,15 +20,6 @@
 # endif
 # include <sys/wait.h>
 # include <signal.h>
-
-#define __REAL_ANDROID__ 0
-#ifdef __ANDROID__
-#ifndef PTRACE_INTERRUPT
-#undef __REAL_ANDROID__
-#define __REAL_ANDROID__ 1
-#endif
-#endif
-
 #endif
 
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
@@ -247,7 +238,7 @@ struct user_regs_struct_x86_32 {
   ut32 xcs; ut32 eflags; ut32 esp; ut32 xss;
 };
 
-#if __REAL_ANDROID__
+#if __ANDROID__
 
  #if __arm64__ || __aarch64__
  # define R_DEBUG_REG_T struct user_pt_regs
@@ -902,7 +893,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #if __WINDOWS__
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (tid2handler (dbg->pid, dbg->tid), &ctx)) {
+	if (!GetThreadContext (tid2handler (pid, tid), &ctx)) {
 		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
 		return R_FALSE;
 	}
@@ -1021,7 +1012,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
-#if !__REAL_ANDROID__
+#if !__ANDROID__
 	{
 		int i;
 		for (i=0; i<8; i++) { // DR0-DR7
@@ -1050,7 +1041,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		if (type == R_REG_TYPE_FPU) {
 			int i;
 #if __x86_64__
-#if !__REAL_ANDROID__
+#if !__ANDROID__
 			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &fpregs);
 			eprintf ("---- x86-64 ----\n ");
 			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
@@ -1128,7 +1119,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			return sizeof (fpregs)
 #endif
 #elif __i386__
-#if !__REAL_ANDROID__
+#if !__ANDROID__
 			struct user_fpxregs_struct fpxregs;
 			ret1 = ptrace (PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret1==0) {
@@ -1143,22 +1134,22 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 				eprintf ("fos = 0x%08x\n", fpxregs.fos);
 				eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
 				for(i=0;i<8;i++) {
-					ut32 *a = (ut32*)&fpxregs.xmm_space;
+					ut32 *a = (ut32*)(&fpxregs.xmm_space);
+					ut64 *b = (ut64 *)(&fpxregs.st_space[i*4]);
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpxregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpxregs.st_space;
+					float *f = (float *)&fpxregs.st_space;
 					a = a + (i * 4);
 					eprintf ("xmm%d = %08x %08x %08x %08x   ",i
 							, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
-					ut64 *b = (ut64 *)&fpxregs.st_space[i*4];
-					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpxregs.st_space[i*4]), *b);
-					ut32 *c =(ut32*)&fpxregs.st_space;
-					float *f=(float *)&fpxregs.st_space;
 					c=c+(i*4);
 					f=f+(i*4);
-					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
-							,(double)*((double*)&fpxregs.st_space[i*4])
-							,*b
-							,(float) f[0]
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | %0.3f (0x%08x)\n", i
+							,(double)*((double*)(&fpxregs.st_space[i*4]))
+							,b[0]
+							,f[0]
 							,c[0]
-							,(float) f[1]
+							,f[1]
 							,c[1]
 							);
 				}
@@ -1210,20 +1201,15 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			eprintf ("foo = 0x%04lx          \n", fpregs.foo);
 			eprintf ("fos = 0x%04lx              ", fpregs.fos);
 			for(i=0;i<8;i++) {
-				ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+				ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
+				double *d = (double*)b;
 				//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
 				ut32 *c =(ut32*)&fpregs.st_space;
 				float *f=(float *)&fpregs.st_space;
 				c=c+(i*4);
 				f=f+(i*4);
-				eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
-						,(double)*((double*)&fpregs.st_space[i*4])
-						,*b
-						,(float) f[0]
-						,c[0]
-						,(float) f[1]
-						,c[1]
-						);
+				eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | %0.3f (0x%08x)\n"
+					,i ,d[0] ,b[0] ,f[0] ,c[0] ,f[1] ,c[1]);
 			}
 			if (ret1 != 0)
 				return R_FALSE;
@@ -1231,7 +1217,6 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 				size = sizeof (fpregs);
 			memcpy (buf, &fpregs, size);
 			return sizeof (fpregs);
-			}
 #endif
 #endif
 		}
@@ -1295,7 +1280,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			(caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 // XXX: this android check is only for arm
-#if !__REAL_ANDROID__
+#if !__ANDROID__
 		{
 		int i;
 		long *val = (long*)buf;

@@ -1023,7 +1023,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		}
 		arg = orig;
 		for (idx=0; i<len && arg<argend && *arg; arg++) {
-			int size, elem; /* size of the array, element of the array */
+			int size = 0, elem = 0; /* size of the array, element of the array */
 			char *fieldname = NULL, *fmtname = NULL, *oarg = NULL;
 			if (mode & R_PRINT_UNIONMODE) {
 				i = 0;
@@ -1171,10 +1171,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			/* flags */
 			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
-                if (mode & R_PRINT_UNIONMODE) {
-                    p->printf ("f %s=0x%08"PFMT64x"\n", formatname, seeki);
-                    goto beach;
-                } else if (tmp == '?') {
+				if (mode & R_PRINT_UNIONMODE) {
+					p->printf ("f %s=0x%08"PFMT64x"\n", formatname, seeki);
+					goto beach;
+				} else if (tmp == '?') {
 					p->printf ("f %s.%s_", fmtname, fieldname);
 				} else if (tmp == 'E') {
 					p->printf ("f %s=0x%08"PFMT64x"\n", fieldname, seeki);
