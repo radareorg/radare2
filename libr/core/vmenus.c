@@ -1,8 +1,214 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include "r_core.h"
 
 #define MAX_FORMAT 3
+
+// TODO: move this helper into r_cons
+static char *prompt(const char *str, const char *txt) {
+	char cmd[1024];
+	char *res = NULL;
+	char *oprompt = r_cons_singleton()->line->prompt;
+	r_cons_show_cursor (R_TRUE);
+	if (txt && *txt) {
+		free (r_cons_singleton ()->line->contents);
+		r_cons_singleton ()->line->contents = strdup (txt);
+	} else {
+		free (r_cons_singleton ()->line->contents);
+		r_cons_singleton ()->line->contents = NULL;
+	}
+	*cmd = '\0';
+	r_line_set_prompt (str);
+	if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
+		*cmd = '\0';
+	//line[strlen(line)-1]='\0';
+	if (*cmd)
+		res = strdup (cmd);
+	r_line_set_prompt (oprompt);
+	free (r_cons_singleton ()->line->contents);
+	r_cons_singleton ()->line->contents = NULL;
+	return res;
+}
+
+typedef struct {
+	RCore *core;
+	int t_idx;
+	int t_ctr;
+	const char *type;
+	char *curname;
+	char *curfmt;
+} RCoreVisualTypes;
+
+static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
+	return sdb_get (vt->core->anal->sdb_types,
+		sdb_fmt (0, "type.%s", k), 0);
+}
+
+// belongs to r_core_visual_types
+static int sdbforcb (void *p, const char *k, const char *v) {
+	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
+	if (!strcmp (v, vt->type)) {
+		if (!strcmp (vt->type, "type")) {
+			const char *pre = " ";
+			char *fmt = getformat (vt, k);
+			if (vt->t_idx == vt->t_ctr) {
+				free (vt->curname);
+				vt->curname = strdup (k);
+				free (vt->curfmt);
+				vt->curfmt = strdup (fmt);
+				pre = ">";
+			}
+			r_cons_printf (" %s pf %3s   %s\n",
+				pre, fmt, k);
+			free (fmt);
+		} else {
+			r_cons_printf (" %s %s\n",
+				(vt->t_idx == vt->t_ctr)?
+				">":" ", k);
+		}
+		vt->t_ctr ++;
+	}
+        return 1;
+}
+
+R_API int r_core_visual_types(RCore *core) {
+	RCoreVisualTypes vt = {core, 0, 0};	
+	int hit, i, j, ch;
+	int _option = 0;
+	int option = 0;
+	char *txt;
+	char cmd[1024];
+	int menu = 0;
+	int h_opt = 0;
+	const char *opts[] = {
+		"type",
+		"enum",
+		"struct",
+		"func",
+		NULL
+	};
+
+	for (j=i=0; i<R_FLAG_SPACES_MAX; i++)
+		if (core->flags->spaces[i])
+			j = 1;
+	if (j==0) menu = 1;
+	for (;;) {
+		r_cons_clear00 ();
+
+		r_cons_printf ("'q' '?' ");
+		for (i=0; opts[i]; i++) {
+			const char *fmt = (h_opt==i)?
+				"[%s] ":" %s  ";
+			r_cons_printf (fmt, opts[i]);
+		}
+		r_cons_newline ();
+		vt.t_idx = option;
+		vt.t_ctr = 0;
+		vt.type = opts[h_opt];
+                sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+
+		hit = 0;
+
+		r_cons_visual_flush ();
+		ch = r_cons_readchar ();
+		if (ch==-1||ch==4) return R_FALSE;
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'h':
+			h_opt--;
+			if (h_opt<0)
+				h_opt = 0;
+			break;
+		case 'l':
+			h_opt++;
+			if (!opts[h_opt])
+				h_opt--;
+			break;
+		case 'o':
+			 {
+				char *file = prompt ("Filename: ", NULL);
+				if (file) {
+					r_core_cmdf (core, "\"to %s\"", file);
+					free (file);
+				}
+			 }
+			break;
+		case 'j': option++; break;
+		case 'J': option += 10; break;
+		case 'k': if (--option<0) option = 0; break;
+		case 'K': option-=10; if (option<0) option = 0; break;
+		case 'b': // back
+		case 'q':
+			if (menu<=0) return R_TRUE; menu--;
+			option = _option;
+			if (menu==0) {
+				// if no flagspaces, just quit
+				for (j=i=0;i<R_FLAG_SPACES_MAX;i++)
+					if (core->flags->spaces[i])
+						j = 1;
+				if (!j) return R_TRUE;
+			}
+			break;
+		case 'a':
+			{
+				txt = prompt ("add C type: ", NULL);
+				if (txt) {
+					r_core_cmdf (core, "\"td %s\"", txt);
+					free (txt);
+				}
+			}
+		       break;
+		case 'd':
+			{
+			const char *cur = vt.curname;
+			if (cur && *cur) {
+				r_core_cmdf (core, "\"td-%s\"", cur);
+			}
+			}
+			break;
+		case ' ':
+		case '\r':
+		case '\n':
+		case 'e':
+			/* TODO: do something with this data */
+			prompt ("name: ", vt.curname);
+			prompt ("pf: ", vt.curfmt);
+			break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"Vt?: Visual Types Help:\n\n"
+			" q     - quit menu\n"
+			" j/k   - down/up keys\n"
+			" h/l   - left-right\n"
+			" a     - add new type (C syntax)\n"
+			" d     - delete current type\n"
+			" e     - edit current type\n"
+			" o     - open .h include file\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
+			break;
+		case ':':
+			r_cons_show_cursor (R_TRUE);
+			r_cons_set_raw (0);
+			cmd[0]='\0';
+			r_line_set_prompt (":> ");
+			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
+				cmd[0]='\0';
+			//line[strlen(line)-1]='\0';
+			r_core_cmd (core, cmd, 1);
+			r_cons_set_raw (1);
+			r_cons_show_cursor (R_FALSE);
+			if (cmd[0])
+				r_cons_any_key (NULL);
+			//cons_gotoxy(0,0);
+			r_cons_clear ();
+			continue;
+		}
+	}
+	return R_TRUE;
+}
 
 R_API int r_core_visual_trackflags(RCore *core) {
 	const char *fs = NULL, *fs2 = NULL;
@@ -219,7 +425,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf (
-			"\nVt: Visual Track help:\n\n"
+			"\nVF: Visual Flags help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
@@ -567,23 +773,11 @@ R_API void r_core_visual_config(RCore *core) {
 		case ':':
 			r_cons_show_cursor (R_TRUE);
 			r_cons_set_raw(0);
-/* WTF READLINE?? WE DONT USE THAT!! */
-#if HAVE_LIB_READLINE
-			{
-			char *ptr = readline(VISUAL_PROMPT);
-			if (ptr) {
-				strncpy(cmd, ptr, sizeof (cmd)-1);
-				r_core_cmd(core, cmd, 1);
-				free(ptr);
-			}
-			}
-#else
-			*cmd = '\0';
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
-				cmd[0]='\0';
-			//line[strlen(line)-1]='\0';
-			r_core_cmd (core, cmd, 1);
-#endif
+			 {
+				char *cmd = prompt (":> ", NULL);
+				r_core_cmd (core, cmd, 1);
+				free (cmd);
+			 }
 			r_cons_set_raw (1);
 			r_cons_show_cursor (R_FALSE);
 			if (cmd[0])
