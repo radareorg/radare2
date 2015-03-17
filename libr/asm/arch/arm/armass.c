@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -365,8 +365,16 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		return 2;
 	} else
 	if (!strcmp (ao->op, "b") || !strcmp (ao->op, "b.n")) {
-		ao->o = 0xe0;
-		ao->o |= getnum (ao->a[0])<<8;
+		int delta = getnum (ao->a[0]) - 4;
+		if (delta>=0) {
+			ut8 off = delta & 0xff;
+			ao->o = 0xe0;
+			ao->o |= off << 8;
+		} else {
+			ut8 off = (delta/2) & 0xff;
+			ao->o = 0xe7;
+			ao->o |= off << 8;
+		}
 		return 2;
 	} else
 	if (!strcmp (ao->op, "bx")) {
