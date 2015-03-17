@@ -1046,58 +1046,127 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #if __x86_64__ || __i386__
 		{
 			int ret1 = 0;
-			struct user_fpregs_struct regs1;
-		if (type == R_REG_TYPE_MMX) {
+			struct user_fpregs_struct fpregs;
+		if (type == R_REG_TYPE_FPU) {
 			int i;
 #if __x86_64__
-			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &regs1);
-			eprintf ("cwd = 0x%04x  ; control   ", regs1.cwd);
-			eprintf ("swd = 0x%04x  ; status\n", regs1.swd);
-			eprintf ("ftw = 0x%04x              ", regs1.ftw);
-			eprintf ("fop = 0x%04x\n", regs1.fop);
-			eprintf ("rip = 0x%016"PFMT64x"  ", regs1.rip);
-			eprintf ("rdp = 0x%016"PFMT64x"\n", regs1.rdp);
-			eprintf ("mxcsr = 0x%08x        ", regs1.mxcsr);
-			eprintf ("mxcr_mask = 0x%08x\n", regs1.mxcr_mask);
-			#define FADDR ((double*)&regs1.st_space[i*4])
-			for(i=0;i<8;i++) {
-				ut16 *a = (ut16*)&regs1.xmm_space;
-				ut64 *b = (ut64 *)&regs1.st_space[i*4];
+			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &fpregs);
+			eprintf ("---- x86-64 ----\n ");
+			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
+			eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
+			eprintf ("ftw = 0x%04x              ", fpregs.ftw);
+			eprintf ("fop = 0x%04x\n", fpregs.fop);
+			eprintf ("rip = 0x%016"PFMT64x"  ", fpregs.rip);
+			eprintf ("rdp = 0x%016"PFMT64x"\n", fpregs.rdp);
+			eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
+			eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
+			eprintf ("size = 0x%08x\n", sizeof(fpregs));
+			for(i=0;i<16;i++) {
+				ut32 *a = (ut32*)&fpregs.xmm_space;
 				a = a + (i * 4);
-				eprintf ("mm%d = %04x %04x %04x %04x    ",
-					i, (int)a[0], (int)a[1], (int)a[2], (int)a[3]);
-				eprintf ("st%d = %lg (0x%08llx)\n", i, *FADDR, *b);
+				eprintf ("xmm%d = %08x %08x %08x %08x   ",i
+						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+				if (i<8) {
+					ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpregs.st_space;
+					float *f=(float *)&fpregs.st_space;
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+							,(double)*((double*)&fpregs.st_space[i*4])
+							,*b
+							,(float) f[0]
+							,c[0]
+							,(float) f[1]
+							,c[1]
+							);
+				}
+				else
+					eprintf("\n");
 			}
+			if (ret1 != 0) {
+				return R_FALSE;
+			}
+            if (sizeof (fpregs) < size) {
+				size = sizeof (fpregs);
+			}
+            memcpy (buf, &fpregs, size);
+            return sizeof (fpregs);
 #elif __i386__
 #warning No MMX for linux32 yet
-			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &regs1);
-			eprintf ("cwd = 0x%04lx  ; control   ", regs1.cwd);
-			eprintf ("swd = 0x%04lx  ; status\n", regs1.swd);
-			eprintf ("twd = 0x%04lx              ", regs1.twd);
-			eprintf ("fip = 0x%04lx              ", regs1.fip);
-			eprintf ("fcs = 0x%04lx              ", regs1.fcs);
-			eprintf ("foo = 0x%04lx              ", regs1.foo);
-			eprintf ("fos = 0x%04lx              ", regs1.fos);
-			#define FADDR ((double*)&regs1.st_space[i*4])
-			for (i=0; i<8; i++) {
-				ut32 *ptr = (ut32*)&regs1.st_space[i*4];
-				ut64 n = *ptr;
-				eprintf ("st%d = %lg (0x%08llx)\n", i, (double)(n), n);
+			struct user_fpxregs_struct fpxregs;
+			ret1 = ptrace (PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
+			if (ret1==0) {
+				eprintf ("---- x86-32 ----\n ");
+				eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+				eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
+				eprintf ("twd = 0x%04x ", fpxregs.twd);
+				eprintf ("fop = 0x%04x\n", fpxregs.fop);
+				eprintf ("fip = 0x%08x\n", fpxregs.fip);
+				eprintf ("fcs = 0x%08x\n", fpxregs.fcs);
+				eprintf ("foo = 0x%08x\n", fpxregs.foo);
+				eprintf ("fos = 0x%08x\n", fpxregs.fos);
+				eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
+				for(i=0;i<8;i++) {
+					ut32 *a = (ut32*)&fpxregs.xmm_space;
+					a = a + (i * 4);
+					eprintf ("xmm%d = %08x %08x %08x %08x   ",i
+							, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+					ut64 *b = (ut64 *)&fpxregs.st_space[i*4];
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpxregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpxregs.st_space;
+					float *f=(float *)&fpxregs.st_space;
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+							,(double)*((double*)&fpxregs.st_space[i*4])
+							,*b
+							,(float) f[0]
+							,c[0]
+							,(float) f[1]
+							,c[1]
+							);
+				}
+				if (sizeof (fpxregs) < size)
+					size = sizeof (fpxregs);
+				memcpy (buf, &fpxregs, size);
+				return sizeof (fpxregs);
+			} else {
+				ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+				eprintf ("---- x86-32-noxmm ----\n ");
+				eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
+				eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
+				eprintf ("twd = 0x%04lx              ", fpregs.twd);
+				eprintf ("fip = 0x%04lx          \n", fpregs.fip);
+				eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
+				eprintf ("foo = 0x%04lx          \n", fpregs.foo);
+				eprintf ("fos = 0x%04lx              ", fpregs.fos);
+				for(i=0;i<8;i++) {
+					ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpregs.st_space;
+					float *f=(float *)&fpregs.st_space;
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+							,(double)*((double*)&fpregs.st_space[i*4])
+							,*b
+							,(float) f[0]
+							,c[0]
+							,(float) f[1]
+							,c[1]
+							);
+				}
+				if (ret1 != 0)
+					return R_FALSE;
+				if (sizeof (fpregs) < size)
+					size = sizeof (fpregs);
+				memcpy (buf, &fpregs, size);
+				return sizeof (fpregs);
 			}
 #endif
 		}
-			if (ret1 != 0) {
-				// if perror here says 'no such process' and the
-				// process exists still.. is because there's a
-				// missing call to 'wait'. and the process is not
-				// yet available to accept more ptrace queries.
-				return R_FALSE;
-			}
-			if (sizeof (regs1) < size) {
-				size = sizeof (regs1);
-			}
-			memcpy (buf, &regs1, size);
-			return sizeof (regs1);
 		}
 #endif
 #else

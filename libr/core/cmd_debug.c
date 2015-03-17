@@ -856,7 +856,6 @@ free (rf);
 		}
 		break;
 	case 'm': // "drm"
-		r_cons_printf("aki andamos otra vez\n");
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, R_FALSE);
 		//r_debug_drx_list (core->dbg);
 		break;

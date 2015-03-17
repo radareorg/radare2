@@ -75,18 +75,30 @@ return strdup (
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n"
 
+/*0030 struct user_fpregs_struct
+0031 {
+0032   __uint16_t        cwd;
+0033   __uint16_t        swd;
+0034   __uint16_t        ftw;
+0035   __uint16_t        fop;
+0036   __uint64_t        rip;
+0037   __uint64_t        rdp;
+0038   __uint32_t        mxcsr;
+0039   __uint32_t        mxcr_mask;
+0040   __uint32_t        st_space[32];   // 8*16 bytes for each FP-reg = 128 bytes
+0041   __uint32_t        xmm_space[64];  // 16*16 bytes for each XMM-reg = 256 bytes
+0042   __uint32_t        padding[24];
+0043 };
+*/
 
 "fpu    cwd .16 0   0\n"
 "fpu    swd .16 2   0\n"
-"fpu    twd .16 4   0\n"
+"fpu    ftw .16 4   0\n"
 "fpu    fop .16 6   0\n"
-"fpu    fip .32 8   0\n"
-"fpu    fcs .32 12  0\n"
-"fpu    foo .32 16  0\n"
-"fpu    fos .32 20  0\n"
+"fpu    frip .64 8   0\n"
+"fpu    frdp .64 16  0\n"
 "fpu    mxcsr .32 24  0\n"
-"fpu    reserved .32 28  0\n"
-
+"fpu    mxcr_mask .32 28  0\n"
 
 "fpu    st0 .64 32  0\n"
 "fpu    st1 .64 48  0\n"
@@ -97,13 +109,30 @@ return strdup (
 "fpu    st6 .64 128  0\n"
 "fpu    st7 .64 144  0\n"
 
-"fpu    xm0 .64 160  0\n"
-"fpu    xm1 .64 176  0\n"
-"fpu    xm2 .64 192  0\n"
-"fpu    xm3 .64 208  0\n"
-"fpu    xm4 .64 224  0\n"
-"fpu    xm5 .64 240  0\n"
-"fpu    xm6 .64 256  0\n"
-"fpu    xm7 .64 272  0\n"
+"fpu    xmm0h .64 160  0\n"
+"fpu    xmm0l .64 168  0\n"
+
+"fpu    xmm1h .64 176  0\n"
+"fpu    xmm1l .64 184  0\n"
+
+"fpu    xmm2h .64 192  0\n"
+"fpu    xmm2l .64 200  0\n"
+
+"fpu    xmm3h .64 208  0\n"
+"fpu    xmm3l .64 216  0\n"
+
+"fpu    xmm4h .64 224  0\n"
+"fpu    xmm4l .64 232  0\n"
+
+"fpu    xmm5h .64 240  0\n"
+"fpu    xmm5l .64 248  0\n"
+
+"fpu    xmm6h .64 256  0\n"
+"fpu    xmm6l .64 264  0\n"
+
+"fpu    xmm7h .64 272  0\n"
+"fpu    xmm7l .64 280  0\n"
+"fpu    x64-32 .64 288  0\n"
+
 );
 
