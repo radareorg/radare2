@@ -48,21 +48,21 @@ if [ -f ~/.r2androidrc ]; then
 	. ~/.r2androidrc
 	echo "Using data from ${HOME}/.r2androidrc.."
 else
-	[ -z "${SDK}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
+	#[ -z "${SDK}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
 	[ -z "${NDK}" ] && NDK=${HOME}/Downloads/android-ndk-r7b
 fi
 
-if [ ! -d "${SDK}/tools" ]; then 
-	echo "Cannot find Android SDK ${SDK}"
-	echo "Edit ~/.r2androidrc with:"
-	echo 'SDK=~/Downloads/android-sdk-$(uname)'
-	echo 'NDK=~/Downloads/android-ndk-r7b'
-	exit 1
-fi
+#if [ ! -d "${SDK}/tools" ]; then 
+#	echo "Cannot find Android SDK ${SDK}"
+#	echo "Edit ~/.r2androidrc with:"
+#	echo 'SDK=~/Downloads/android-sdk-$(uname)'
+#	echo 'NDK=~/Downloads/android-ndk-r7b'
+#	exit 1
+#fi
 if [ ! -d "${NDK}" ]; then
 	echo "Cannot find Android NDK ${NDK}"
 	echo "echo NDK=/path/to/ndk  > ~/.r2androidrc"
-	echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
+	#echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
 	exit 1
 fi
 
@@ -84,7 +84,8 @@ NDKPATH_X86=`echo ${NDK}/toolchains/${TOOLCHAIN_X86}/prebuilt/${OS}-x86*/bin/`
 #CFLAGS=-I${INCDIR}
 #echo $NDKPATH_ARM
 
-PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+#PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
 export PATH
 export CFLAGS
 export NDK
