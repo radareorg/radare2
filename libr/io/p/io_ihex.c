@@ -89,7 +89,6 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 				eprintf("ihex:fwblock error\n");
 				return -1;
 			}
-			eprintf("64k boundary: from=%lx, to=%lx, tsiz=%x\n", rbs->from, rbs->to,tsiz);	//TODO : remove dbg msg
 		}
 		//04 record (ext address)
 		if (fw04b(out, addh1) < 0) {
@@ -101,7 +100,6 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			eprintf("ihex:fwblock error\n");
 			return -1;
 		}
-		eprintf("wrote chunk @ %x, siz=%x\n", (addh1 <<16 ) | addl0, rbs->size - tsiz);	//TODO : remove dbg msg
 	}	//list_foreach
 	
 	fprintf (out, ":00000001FF\n");
