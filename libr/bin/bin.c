@@ -315,6 +315,17 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	return R_BIN_NM_NONE;
 }
 
+static void mem_free (void *data) {
+	RBinMem *mem;
+	mem = (RBinMem *)data;
+	if (mem && mem->mirrors) {
+		mem->mirrors->free = mem_free;
+		r_list_free (mem->mirrors);
+		mem->mirrors = NULL;
+	}
+	free (mem);
+}
+
 static void r_bin_object_delete_items (RBinObject *o) {
 	ut32 i = 0;
 	if (!o) return;
@@ -328,6 +339,8 @@ static void r_bin_object_delete_items (RBinObject *o) {
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
 	r_list_free (o->lines);
+	if (o->mem) o->mem->free = mem_free;
+	r_list_free (o->mem);
 
 	o->entries = NULL;
 	o->fields = NULL;
@@ -391,6 +404,7 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->classes) o->classes = cp->classes (binfile);
 	if (cp->lines) o->lines = cp->lines (binfile);
 	if (cp->get_sdb) o->kv = cp->get_sdb (o);
+	if (cp->mem) o->mem = cp->mem (binfile);
 	o->lang = r_bin_load_languages (binfile);
 	binfile->o = old_o;
 	return R_TRUE;
@@ -1206,6 +1220,11 @@ R_API RList* r_bin_get_strings(RBin *bin) {
 R_API RList* r_bin_get_symbols(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? o->symbols: NULL;
+}
+
+R_API RList* r_bin_get_mem(RBin *bin) {
+	RBinObject *o = r_bin_cur_object (bin);
+	return o? o->mem: NULL;
 }
 
 R_API int r_bin_is_big_endian (RBin *bin) {

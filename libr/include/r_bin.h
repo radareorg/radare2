@@ -129,6 +129,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
+	RList/*<??>*/ *mem;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
@@ -483,6 +484,7 @@ R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut
 R_API void r_bin_demangle_list(RBin *bin);
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 
+R_API RList *r_bin_get_mem (RBin *bin);
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
 extern RBinPlugin r_bin_plugin_fs;
