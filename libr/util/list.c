@@ -153,6 +153,7 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *new = NULL;
 	if (list && data) {
 		new = R_NEW (RListIter);
+		if (new == NULL) return new;
 		if (list->tail)
 			list->tail->n = new;
 		new->data = data;
