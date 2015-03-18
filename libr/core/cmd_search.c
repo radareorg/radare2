@@ -566,7 +566,7 @@ static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		const char* grep, int regex, RList* rx_list, int endaddr,
-		RList* badstart) {
+		RList* badstart, int branch_delay) {
 	RAsmOp asmop;
 	const char* start = NULL, *end = NULL;
 	RCoreAsmHit *hit = NULL;
@@ -658,6 +658,14 @@ ret:
 		r_list_append (badstart, p);
 	}
 	r_list_free (localbadstart);
+	//if our arch has bds then we better be including them
+	if (branch_delay) {
+		if ( !(r_list_length(hitlist) >= 2) ) {
+			r_list_free(hitlist);
+			return NULL;
+		}
+	}
+
 	return hitlist;
 }
 
@@ -736,6 +744,30 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	if (mode != 'j') r_cons_newline ();
 }
 
+
+static int has_branch_delay_slot(const char* arch) {
+	
+	if (strncmp(arch,"mips",4)) 
+		return R_TRUE;
+
+	else if (strncmp(arch, "mips", 4)) 
+		return R_TRUE;
+
+	else if (strncmp(arch,"sh",2))
+		return R_TRUE;
+
+	else if (strncmp(arch,"cris",4))
+		return R_TRUE;
+
+	else if (strncmp(arch, "HPPA", 4))
+		return R_TRUE;
+
+	//Add more arches later
+	else 
+		return R_FALSE;
+}
+				
+
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep, int regexp) {
 	int i=0, end=0, mode=0, increment=1, ret;
 	int delta = 0;
@@ -747,6 +779,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	boolt json_first = 1;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
+	int branch_delay = has_branch_delay_slot(arch);	//Whether or not we have branch delay slots
 	RList/*<RRegex>*/ *rx_list = NULL;
 	RList/*<int>*/ *end_list = r_list_new ();
 	RList /*<intptr_t>*/ *badstart = r_list_new();
@@ -851,7 +884,12 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					// limit number of high level rop gadget results
 					break;
 				}
-				r_list_append (end_list, (void*)(intptr_t)i);
+
+				//if this arch has branch delay slots, add the next instr as well
+				if ( branch_delay && (end_gadget.type != R_ANAL_OP_TYPE_TRAP) )
+					r_list_append(end_list, (void*)(intptr_t)i+increment);
+				else
+					r_list_append (end_list, (void*)(intptr_t)i);
 			}
 			if (r_cons_singleton()->breaked)
 				break;
@@ -903,7 +941,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_asm_set_pc (core->assembler, from+i);
 					hitlist = construct_rop_gadget (core,
 						from+i, buf, i, grep, regexp,
-						rx_list, next, badstart);
+						rx_list, next, badstart, branch_delay);
 					if (!hitlist)
 						continue;
 
