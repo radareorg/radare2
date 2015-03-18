@@ -22,6 +22,7 @@ static int showcount = 0;
 static int useva = R_TRUE;
 static int delta = 0;
 static int showbare = R_FALSE;
+static int json_started = 0; 
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i, diffmode = (int)(size_t)user;
@@ -51,14 +52,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			delta += (op->b_off - op->a_off);
 		}
 		return 1;
-	case JSON_MODE: 
-		printf ("{ \"offset\":\"0x%08"PFMT64x"\" , \"from\":\"", op->a_off);
-		for (i = 0;i<op->a_len;i++)
-			printf ("%02x", op->a_buf[i]);
-		printf ("\" , \"to\":\"");
-		for (i=0; i<op->b_len; i++)
-			printf ("%02x", op->b_buf[i]);
-		printf ("\" }\n");//, op->b_off);
+	case JSON_MODE:
+		if (json_started)
+			printf(",\n");
+		json_started = 1;
+		printf ("{\"offset\":[%d, %d], \"data\":[[", op->a_off, op->b_off);
+		for (i = 0;i<(op->a_len-1);i++)
+			printf ("%d,", op->a_buf[i]);
+		printf ("%d],[", op->a_len-1);
+		for (i=0; i<(op->b_len-1); i++)
+			printf ("%d,", op->b_buf[i]);
+		printf ("%d]]}", op->b_buf[op->a_len-1]);
 		return 1;
 	case NORMAL_MODE:
 	default:
@@ -283,8 +287,12 @@ int main(int argc, char **argv) {
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
+		if (diffmode == JSON_MODE)
+			printf("[");
 		r_diff_set_callback (d, &cb, (void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
+		if (diffmode == JSON_MODE)
+			printf("]\n");
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
