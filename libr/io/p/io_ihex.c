@@ -28,11 +28,10 @@ KK = 0 - (sum of all bytes)
 #include "r_io.h"
 #include "r_lib.h"
 #include "r_util.h"
+#include <limits.h>	//for INT_MAX
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-
-#define MEMSIZE 0x10000
 
 //struct Rihex : holds sparse buffer + its own fd, for internal management
 typedef struct {
@@ -209,7 +208,9 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 	int extH, extL;
 	int bc=0, type, byte, i, l;
 	ut8 sec_tmp[65536];	//buffer section beffore calling r_buf_write_at
-	ut16 sec_size=0;
+	//fugly macro to prevent an overflow of r_buf_write_at() len
+#define SEC_MAX (sizeof(sec_tmp)<INT_MAX)?sizeof(sec_tmp):INT_MAX
+	ut32 sec_size=0;
 	do {
 		l = sscanf (str, ":%02x%04x%02x", &bc, &addr_tmp, &type);
 		if (l != 3) {
@@ -230,11 +231,11 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 			cksum += type;
 
 			if ((next_addr != addr_tmp) ||
-				((sec_size + bc) > sizeof(sec_tmp))) {
-				//previous block is not contiguous ||
+				((sec_size + bc) > SEC_MAX)) {
+				//previous block is not contiguous, or
 				//section buffer is full => write a sparse chunk
 				if (sec_size) {
-					if (r_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) != sec_size) {
+					if (r_buf_write_at(rbuf, sec_start, sec_tmp, (int) sec_size) != sec_size) {
 						eprintf("sparse buffer problem, giving up\n");
 						return -1;
 					}
