@@ -1236,7 +1236,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.nkey", "hit", &cb_scrnkey, "Select the seek mode in visual");
 	SETCB("scr.pager", "", &cb_pager, "Select pager program (used if output doesn't fit on window)");
 	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes if true");
-	SETPREF("scr.fileprompt", "false", "Show/hide user prompt (used by r2 -q)");
+	SETPREF("scr.promptfile", "false", "Show/hide user prompt (used by r2 -q)");
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show/hide user prompt (used by r2 -q)");
 	SETCB("scr.rows", "0", &cb_scrrows, "Set the rows number");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe console output to file if not empty");

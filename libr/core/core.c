@@ -1004,7 +1004,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	int ret, rnv;
 	char line[4096];
 	char prompt[64];
-	const char *filename = "";
+	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 	const char *BEGIN = r->cons->pal.prompt;
 	const char *END = r->cons->pal.reset;
@@ -1019,8 +1019,10 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 	if (!r_line_singleton ()->echo)
 		*prompt = 0;
-	if (r_config_get_i (r->config, "scr.fileprompt"))
-		filename = r->io->desc->name;
+	if (r_config_get_i (r->config, "scr.promptfile")) {
+		filename = r_str_newf ("\"%s\"",
+			r_file_basename (r->io->desc->name));
+	}
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
@@ -1029,29 +1031,27 @@ R_API int r_core_prompt(RCore *r, int sync) {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				"%s%s%s[%04x:%04x]>%s ",
-				filename, *filename?" ":"",
-				BEGIN, a, b, END);
+				"%s%s[%04x:%04x]>%s ",
+				filename, BEGIN, a, b, END);
 		else
 #endif
 		snprintf (prompt, sizeof (prompt),
-			"%s%s[%04x:%04x]> ",
-			filename, *filename?" ":"",
-			a, b);
+			"%s[%04x:%04x]> ",
+			filename, a, b);
 	} else {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				"%s%s%s[0x%08"PFMT64x"]>%s ",
-				filename, *filename?" ":"",
-				BEGIN, r->offset, END);
+				"%s%s[0x%08"PFMT64x"]>%s ",
+				filename, BEGIN, r->offset, END);
 		else
 #endif
 		snprintf (prompt, sizeof (prompt),
-			"%s%s[0x%08"PFMT64x"]> ",
-			filename, *filename?" ":"",
-			r->offset);
+			"%s[0x%08"PFMT64x"]> ",
+			filename, r->offset);
 	}
+	free (filename);
+	filename = NULL;
 	r_line_set_prompt (prompt);
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) return R_CORE_CMD_EXIT; // ^D
