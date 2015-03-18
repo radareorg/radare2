@@ -1476,7 +1476,7 @@ static void bin_mem_print (RList *mems, int perms, int depth) {
 		if (mem) {
 			for (i=0; i < depth; i++)
 				r_cons_printf (" ");
-			r_cons_printf ("%8s 0x%08"PFMT64x" %d\t[%s]\n", mem->name, mem->addr, mem->size, r_str_rwx_i (mem->perms & perms));
+			r_cons_printf ("%8s addr=0x%016"PFMT64x" size=%6d perms=[%s]\n", mem->name, mem->addr, mem->size, r_str_rwx_i (mem->perms & perms));
 			if (mem->mirrors)
 				bin_mem_print (mem->mirrors, (mem->perms & perms), (depth + 1));	//sorry, but anything else would be inefficient
 		}
@@ -1486,6 +1486,8 @@ static void bin_mem_print (RList *mems, int perms, int depth) {
 static int bin_mem (RCore *r, int mode) {
 	RList *mem = NULL;
 	if (!r)	return R_FALSE;
+	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET)))
+		r_cons_printf ("[Memory]\n\n");
 	if (!(mem = r_bin_get_mem (r->bin)))
 		return R_FALSE;
 	if (mode & R_CORE_BIN_JSON) {
@@ -1493,7 +1495,6 @@ static int bin_mem (RCore *r, int mode) {
 		return R_FALSE;
 	}
 	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET))) {
-		r_cons_printf ("[Memory]\n");
 		bin_mem_print (mem, 7, 0);
 	}
 	return R_TRUE;
