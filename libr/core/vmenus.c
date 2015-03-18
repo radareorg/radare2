@@ -37,6 +37,7 @@ typedef struct {
 	const char *type;
 	char *curname;
 	char *curfmt;
+	const char *optword;
 } RCoreVisualTypes;
 
 static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
@@ -46,10 +47,46 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 
 // belongs to r_core_visual_types
 static int sdbforcb (void *p, const char *k, const char *v) {
+	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
-	if (!strcmp (v, vt->type)) {
+	if (vt->optword) {
+		if (!strcmp (vt->type, "struct")) {
+			char *s = r_str_newf ("struct.%s.", vt->optword);
+			/* enum */
+			if (!strncmp (s, k, strlen (s))) {
+				if (vt->t_idx == vt->t_ctr) {
+					free (vt->curname);
+					vt->curname = strdup (k);
+					free (vt->curfmt);
+					vt->curfmt = strdup (v);
+					pre = ">";
+				}
+				r_cons_printf (" %s %s  %s\n",
+					pre, k+strlen (s), v);
+				vt->t_ctr ++;
+			}
+			free (s);
+		} else {
+			char *s = r_str_newf ("%s.", vt->optword);
+			/* enum */
+			if (!strncmp (s, k, strlen (s))) {
+				if (!strstr (k, ".0x")) {
+					if (vt->t_idx == vt->t_ctr) {
+						free (vt->curname);
+						vt->curname = strdup (v);
+						free (vt->curfmt);
+						vt->curfmt = strdup (v);
+						pre = ">";
+					}
+					r_cons_printf (" %s %s  %s\n",
+						pre, k, v);
+					vt->t_ctr ++;
+				}
+			}
+			free (s);
+		}
+	} else if (!strcmp (v, vt->type)) {
 		if (!strcmp (vt->type, "type")) {
-			const char *pre = " ";
 			char *fmt = getformat (vt, k);
 			if (vt->t_idx == vt->t_ctr) {
 				free (vt->curname);
@@ -62,9 +99,16 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 				pre, fmt, k);
 			free (fmt);
 		} else {
+			if (vt->t_idx == vt->t_ctr) {
+				free (vt->curname);
+				vt->curname = strdup (k);
+				free (vt->curfmt);
+				vt->curfmt = strdup (v);
+				pre = ">";
+			}
 			r_cons_printf (" %s %s\n",
 				(vt->t_idx == vt->t_ctr)?
-				">":" ", k);
+			">":" ", k);
 		}
 		vt->t_ctr ++;
 	}
@@ -80,6 +124,7 @@ R_API int r_core_visual_types(RCore *core) {
 	char cmd[1024];
 	int menu = 0;
 	int h_opt = 0;
+	char *optword = NULL;
 	const char *opts[] = {
 		"type",
 		"enum",
@@ -102,9 +147,13 @@ R_API int r_core_visual_types(RCore *core) {
 			r_cons_printf (fmt, opts[i]);
 		}
 		r_cons_newline ();
+		if (optword) {
+			r_cons_printf (">> %s\n", optword);
+		}
 		vt.t_idx = option;
 		vt.t_ctr = 0;
 		vt.type = opts[h_opt];
+		vt.optword = optword;
                 sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
 
 		hit = 0;
@@ -118,11 +167,15 @@ R_API int r_core_visual_types(RCore *core) {
 			h_opt--;
 			if (h_opt<0)
 				h_opt = 0;
+			option = 0;
+			R_FREE (optword);
 			break;
 		case 'l':
 			h_opt++;
+			option = 0;
 			if (!opts[h_opt])
 				h_opt--;
+			R_FREE (optword);
 			break;
 		case 'o':
 			 {
@@ -139,6 +192,10 @@ R_API int r_core_visual_types(RCore *core) {
 		case 'K': option-=10; if (option<0) option = 0; break;
 		case 'b': // back
 		case 'q':
+			  if (optword) {
+				  R_FREE (optword);
+				  break;
+			  }
 			if (menu<=0) return R_TRUE; menu--;
 			option = _option;
 			if (menu==0) {
@@ -159,20 +216,37 @@ R_API int r_core_visual_types(RCore *core) {
 			}
 		       break;
 		case 'd':
-			{
-			const char *cur = vt.curname;
-			if (cur && *cur) {
-				r_core_cmdf (core, "\"td-%s\"", cur);
-			}
+			if (optword) {
+				/* TODO: delete field */
+			} else {
+				const char *cur = vt.curname;
+				if (cur && *cur) {
+					r_core_cmdf (core, "\"td-%s\"", cur);
+				}
 			}
 			break;
 		case ' ':
 		case '\r':
 		case '\n':
 		case 'e':
-			/* TODO: do something with this data */
-			prompt ("name: ", vt.curname);
-			prompt ("pf: ", vt.curfmt);
+			if (optword) {
+				/* TODO: edit field */
+			} else {
+				switch (h_opt) {
+				case 0: // type
+					/* TODO: do something with this data */
+					prompt ("name: ", vt.curname);
+					prompt ("pf: ", vt.curfmt);
+					break;
+				case 1: // enum
+				case 2: // struct
+					free (optword);
+					optword = strdup (vt.curname);
+					break;
+				default:
+					break;
+				}
+			}
 			break;
 		case '?':
 			r_cons_clear00 ();
