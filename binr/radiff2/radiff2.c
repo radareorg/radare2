@@ -11,6 +11,12 @@ enum {
 	MODE_COLS
 };
 
+enum mode {
+	NORMAL_MODE,
+	RADARE_MODE,
+	JSON_MODE
+};
+
 static ut32 count = 0;
 static int showcount = 0;
 static int useva = R_TRUE;
@@ -18,12 +24,13 @@ static int delta = 0;
 static int showbare = R_FALSE;
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
-	int i, rad = (int)(size_t)user;
+	int i, diffmode = (int)(size_t)user;
 	if (showcount) {
 		count++;
 		return 1;
 	}
-	if (rad) {
+	switch (diffmode) {
+	case RADARE_MODE:
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
 			for (i=0; i<op->b_len; i++)
@@ -43,7 +50,18 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			}
 			delta += (op->b_off - op->a_off);
 		}
-	} else {
+		return 1;
+	case JSON_MODE: 
+		printf ("{ \"offset\":\"0x%08"PFMT64x"\" , \"from\":\"", op->a_off);
+		for (i = 0;i<op->a_len;i++)
+			printf ("%02x", op->a_buf[i]);
+		printf ("\" , \"to\":\"");
+		for (i=0; i<op->b_len; i++)
+			printf ("%02x", op->b_buf[i]);
+		printf ("\" }\n");//, op->b_off);
+		return 1;
+	case NORMAL_MODE:
+	default:
 		printf ("0x%08"PFMT64x" ", op->a_off);
 		for (i = 0;i<op->a_len;i++)
 			printf ("%02x", op->a_buf[i]);
@@ -51,8 +69,8 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		for (i=0; i<op->b_len; i++)
 			printf ("%02x", op->b_buf[i]);
 		printf (" 0x%08"PFMT64x"\n", op->b_off);
+		return 1;
 	}
-	return 1;
 }
 
 static RCore* opencore(const char *f) {
@@ -132,13 +150,13 @@ int main(int argc, char **argv) {
 	int bits = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int o, sza, szb, rad = 0, delta = 0;
+	int o, sza, szb, diffmode = NORMAL_MODE, delta = 0;
 	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "a:b:Cnpg:Orhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "a:b:Cnpg:Ojrhcdsvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -150,7 +168,7 @@ int main(int argc, char **argv) {
 			useva = R_FALSE;
 			break;
 		case 'r':
-			rad = 1;
+			diffmode = RADARE_MODE;
 			break;
 		case 'g':
 			mode = MODE_GRAPH;
@@ -185,6 +203,9 @@ int main(int argc, char **argv) {
 		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
+		case 'j':
+			diffmode = JSON_MODE;
+			break;
 		default:
 			return show_help (0);
 		}
@@ -262,7 +283,7 @@ int main(int argc, char **argv) {
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
-		r_diff_set_callback (d, &cb, (void *)(size_t)rad);
+		r_diff_set_callback (d, &cb, (void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
 		r_diff_free (d);
 		break;
