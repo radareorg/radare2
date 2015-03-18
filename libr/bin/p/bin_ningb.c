@@ -228,6 +228,69 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
+RList *mem (RBinFile *arch) {
+	RList *ret;
+	RBinMem *m, *n;
+	if (!(ret = r_list_new()))
+		return NULL;
+	ret->free = free;
+	if (!(m = R_NEW0 (RBinMem))) {
+		r_list_free (ret);
+		return NULL;
+	}
+	strncpy (m->name, "fastram", R_BIN_SIZEOF_STRINGS);
+	m->addr = 0xff80LL;
+	m->size = 0x80;
+	m->perms = r_str_rwx ("rwx");
+	r_list_append (ret, m);
+
+	if (!(m = R_NEW0 (RBinMem)))
+		return ret;
+	strncpy (m->name, "ioports", R_BIN_SIZEOF_STRINGS);
+	m->addr = 0xff00LL;
+	m->size = 0x4c;
+	m->perms = r_str_rwx ("rwx");
+	r_list_append (ret, m);
+
+	if (!(m = R_NEW0 (RBinMem)))
+		return ret;
+	strncpy (m->name, "oam", R_BIN_SIZEOF_STRINGS);
+	m->addr = 0xfe00LL;
+	m->size = 0xa0;
+	m->perms = r_str_rwx ("rwx");
+	r_list_append (ret, m);
+
+	if (!(m = R_NEW0 (RBinMem)))
+		return ret;
+	strncpy (m->name, "videoram", R_BIN_SIZEOF_STRINGS);
+	m->addr = 0x8000LL;
+	m->size = 0x2000;
+	m->perms = r_str_rwx ("rwx");
+	r_list_append (ret, m);
+
+	if (!(m = R_NEW0 (RBinMem)))
+		return ret;
+	strncpy (m->name, "iram", R_BIN_SIZEOF_STRINGS);
+	m->addr = 0xc000LL;
+	m->size = 0x2000;
+	m->perms = r_str_rwx ("rwx");
+	r_list_append (ret, m);
+	if (!(m->mirrors = r_list_new()))
+		return ret;
+	if (!(n = R_NEW0 (RBinMem))) {
+		r_list_free (m->mirrors);
+		m->mirrors = NULL;
+		return ret;
+	}
+	strncpy (n->name, "iram_echo", R_BIN_SIZEOF_STRINGS);
+	n->addr = 0xe000LL;
+	n->size = 0x1e00;
+	n->perms = r_str_rwx ("rx");
+	r_list_append (m->mirrors, n);
+
+	return ret;
+}
+
 struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
@@ -252,6 +315,7 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
+	.mem = &mem,
 	.dbginfo = NULL,
 	.create = NULL,
 	.write = NULL,
