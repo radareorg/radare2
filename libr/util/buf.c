@@ -7,6 +7,7 @@
 // TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
 
 // copied from riocacheread
+// ret # of bytes copied
 static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
         int l, ret, da, db;
         RListIter *iter;
@@ -53,10 +54,11 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 	} else {
 		memset (s->data, 0xff, len);
 	}
-	r_list_append (l, s);
+	if (r_list_append (l, s) == NULL) return NULL;
 	return s;
 }
 
+//ret -1 if failed; # of bytes copied if success
 static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 	RBufferSparse *s;
 	RListIter *iter;
@@ -80,7 +82,7 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 			return len;
 		}
 	}
-	(void)sparse_append (l, addr, data, len);
+	if (sparse_append(l, addr, data, len) == NULL) return -1;
 	return len;
 }
 
@@ -304,7 +306,7 @@ R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	return R_TRUE;
 }
 
-//ret copied length if successful, 0 or -1 if failed
+//ret copied length if successful, -1 if failed
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
 	if (!b || b->empty)
@@ -312,13 +314,13 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (b->sparse) {
 		if (write) {
 			// create new with src + len
-			sparse_write (b->sparse, addr, src, len);
+			if (sparse_write (b->sparse, addr, src, len) <0) return -1;
 		} else {
 			// read from sparse and write into dst
 			memset (dst, 0xff, len);
-			sparse_read (b->sparse, addr, dst, len);
+			if (sparse_read (b->sparse, addr, dst, len) <0) return -1;
 		}
-		return 0;
+		return len;
 	}
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
 	if (len<1 || dst == NULL || addr > b->length)
@@ -406,7 +408,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	return b->buf+addr;
 }
 
-//ret 0 or -1 if failed; ret copied length if successful
+//ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
 	if (!b || !buf || len<1) return 0;
