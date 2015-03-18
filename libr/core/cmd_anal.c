@@ -20,13 +20,8 @@ static void find_refs(RCore *core, const char *glob) {
 	r_core_seek (core, curseek, 1);
 }
 
-#if 1
-/* TODO: Move into cmd_anal() */
 static void var_help(RCore *core, char ch) {
-	// TODO: colorize using r_core_help()
-	//const char *kind = (ch=='v')?"locals":"args";
-	if (ch=='a' || ch=='A' || ch=='v') {
-		 const char* help_msg[] = {
+	 const char* help_msg[] = {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
 		 "afa", "", "list function arguments",
 		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
@@ -43,12 +38,11 @@ static void var_help(RCore *core, char ch) {
 		 "afvg", " [idx] [addr]", "define var get reference",
 		 "afvs", " [idx] [addr]", "define var set reference",
 		 NULL};
-		 r_core_cmd_help (core, help_msg);
+	if (ch=='a' || ch=='A' || ch=='v') {
+		r_core_cmd_help (core, help_msg);
 	} else {
 		eprintf ("See afv? and afa?\n");
 	}
-
-	// TODO: fastrg == 'A'
 }
 
 static int var_cmd(RCore *core, const char *str) {
@@ -170,7 +164,6 @@ static int var_cmd(RCore *core, const char *str) {
 	free (ostr);
 	return R_TRUE;
 }
-#endif
 
 static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) {
 	int i;

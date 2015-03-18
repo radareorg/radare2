@@ -83,7 +83,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		default:
 			pair ("type", info->type);
 			pair ("os", info->os);
-			pair ("arch", info->machine);
+			pair ("machine", info->machine);
 			pair ("bits", sdb_fmt (0, "%d", info->bits));
 			pair ("endian", info->big_endian? "big": "little");
 			break;
