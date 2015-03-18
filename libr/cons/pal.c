@@ -284,6 +284,22 @@ R_API void r_cons_pal_list (int rad) {
 			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
 				keys[i].name, r, g, b, hasnext);
 			break;
+		case 'c': {
+			r = g = b = 0;
+			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
+			hasnext = (keys[i+1].name) ? "\n" : "";
+			//Need to replace the '.' char because this is not valid CSS
+			char *name = strdup(keys[i].name);
+			int j, len = strlen(name);
+			for(j=0; j < len; j++) {
+				if(name[j] == '.')
+					name[j] = '_';
+			}
+			r_cons_printf (".%s { color: rgb(%d, %d, %d); }%s",
+				name, r, g, b, hasnext);
+			free(name);
+			}
+			break;
 		case '*':
 		case 'r':
 		case 1:
