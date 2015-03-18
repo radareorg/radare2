@@ -26,6 +26,11 @@ struct search_parameters {
 	boolt rsa_search;
 };
 
+struct endlist_pair {
+	intptr_t instr_offset;
+	int delay_size;
+};
+
 static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	RBinPlugin *plug;
 	ut8 buf[1024];
@@ -565,8 +570,10 @@ static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
-		const char* grep, int regex, RList* rx_list, int endaddr,
+		const char* grep, int regex, RList* rx_list, struct endlist_pair *end_gadget,
 		RList* badstart) {
+	int endaddr = end_gadget->instr_offset;
+	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
 	const char* start = NULL, *end = NULL;
 	RCoreAsmHit *hit = NULL;
@@ -658,6 +665,11 @@ ret:
 		r_list_append (badstart, p);
 	}
 	r_list_free (localbadstart);
+	// If our arch has bds then we better be including them
+	if (branch_delay && r_list_length(hitlist) < 2) {
+		r_list_free(hitlist);
+		return NULL;
+	}
 	return hitlist;
 }
 
@@ -748,7 +760,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	RList/*<RRegex>*/ *rx_list = NULL;
-	RList/*<int>*/ *end_list = r_list_new ();
+	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
 	RList /*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
@@ -851,7 +863,19 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					// limit number of high level rop gadget results
 					break;
 				}
-				r_list_append (end_list, (void*)(intptr_t)i);
+				struct endlist_pair *epair = malloc(sizeof(struct endlist_pair));
+				// If this arch has branch delay slots, add the next instr as well
+				if (end_gadget.delay) {
+					epair->instr_offset = (intptr_t)i+increment;
+					epair->delay_size = end_gadget.delay;
+					r_list_append(end_list, (void*)(intptr_t)epair);
+					
+				}
+				else {
+					epair->instr_offset = (intptr_t)i;
+					epair->delay_size = end_gadget.delay;
+					r_list_append (end_list, (void*)epair);
+				}
 			}
 			if (r_cons_singleton()->breaked)
 				break;
@@ -871,7 +895,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				max_instr * increment;
 			if (r_cons_singleton()->breaked)
 				break;
-			next = (intptr_t)r_list_pop (end_list);
+			struct endlist_pair *end_gadget = (struct endlist_pair *)r_list_pop(end_list);
+			next = end_gadget->instr_offset;
 			prev = 0;
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
@@ -884,7 +909,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					// move to the next one.
 					if (r_list_get_n (end_list, 0)) {
 						prev = i;
-						next = (intptr_t)r_list_pop (end_list);
+						free(end_gadget);
+						end_gadget = (struct endlist_pair *)r_list_pop(end_list);
+						next = end_gadget->instr_offset;
 						i = next - ropdepth;
 						if (i <0) i = 0;
 					} else {
@@ -903,7 +930,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_asm_set_pc (core->assembler, from+i);
 					hitlist = construct_rop_gadget (core,
 						from+i, buf, i, grep, regexp,
-						rx_list, next, badstart);
+						rx_list, end_gadget, badstart);
 					if (!hitlist)
 						continue;
 
