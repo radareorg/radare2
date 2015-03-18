@@ -27,7 +27,7 @@ struct search_parameters {
 };
 
 struct endlist_pair {
-	intptr_t instr_offset;
+	int instr_offset;
 	int delay_size;
 };
 
@@ -666,7 +666,7 @@ ret:
 	}
 	r_list_free (localbadstart);
 	// If our arch has bds then we better be including them
-	if (branch_delay && r_list_length(hitlist) < 2) {
+	if (branch_delay && r_list_length(hitlist) < (1 + branch_delay)) {
 		r_list_free(hitlist);
 		return NULL;
 	}
@@ -863,10 +863,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					// limit number of high level rop gadget results
 					break;
 				}
-				struct endlist_pair *epair = malloc(sizeof(struct endlist_pair));
+				struct endlist_pair *epair = R_NEW0 (struct endlist_pair);
 				// If this arch has branch delay slots, add the next instr as well
 				if (end_gadget.delay) {
-					epair->instr_offset = (intptr_t)i+increment;
+					epair->instr_offset = i+increment;
 					epair->delay_size = end_gadget.delay;
 					r_list_append(end_list, (void*)(intptr_t)epair);
 					
