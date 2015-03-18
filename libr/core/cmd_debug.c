@@ -477,6 +477,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"Usage:", "dm", " # Memory maps commands",
 		"dm", "", "List memory maps of target process",
 		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+		"dm.", "", "Show map name of current address",
 		"dm*", "", "List memmaps in radare commands",
 		"dm-", "<address>", "Deallocate memory map of <address>",
 		"dmd", " [file]", "Dump current debug map region to a file (from-to.dmp) (see Sd)",
@@ -498,6 +499,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 's':
 		cmd_debug_map_snapshot (core, input+1);
+		break;
+	case '.':
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				r_cons_printf ("%s\n", map->name);
+				break;
+			}
+		}
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
