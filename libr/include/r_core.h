@@ -382,7 +382,8 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_ACC_DWARF	0x800
 #define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
-#define R_CORE_BIN_ACC_ALL	0xFFF
+#define R_CORE_BIN_ACC_MEM	0x4000
+#define R_CORE_BIN_ACC_ALL	0x4FFF
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;

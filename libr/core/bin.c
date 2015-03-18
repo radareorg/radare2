@@ -1466,6 +1466,39 @@ static int bin_libs (RCore *r, int mode) {
 	return R_TRUE;
 }
 
+static void bin_mem_print (RList *mems, int perms, int depth) {
+	RBinMem *mem;
+	RListIter *iter;
+	int i;
+	if (!mems)
+		return;
+	r_list_foreach (mems, iter, mem) {
+		if (mem) {
+			for (i=0; i < depth; i++)
+				r_cons_printf (" ");
+			r_cons_printf ("%8s 0x%08"PFMT64x" %d\t[%s]\n", mem->name, mem->addr, mem->size, r_str_rwx_i (mem->perms & perms));
+			if (mem->mirrors)
+				bin_mem_print (mem->mirrors, (mem->perms & perms), (depth + 1));	//sorry, but anything else would be inefficient
+		}
+	}
+}
+
+static int bin_mem (RCore *r, int mode) {
+	RList *mem = NULL;
+	if (!r)	return R_FALSE;
+	if (!(mem = r_bin_get_mem (r->bin)))
+		return R_FALSE;
+	if (mode & R_CORE_BIN_JSON) {
+		r_cons_printf ("TODO\n");
+		return R_FALSE;
+	}
+	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET))) {
+		r_cons_printf ("[Memory]\n");
+		bin_mem_print (mem, 7, 0);
+	}
+	return R_TRUE;
+}
+
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 loadaddr, const char *chksum) {
 	int ret = R_TRUE;
 	const char *name = NULL;
@@ -1510,6 +1543,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		ret &= bin_classes (core, mode);
 	if ((action & R_CORE_BIN_ACC_SIZE))
 		ret &= bin_size (core, mode);
+	if ((action & R_CORE_BIN_ACC_MEM))
+		ret &= bin_mem (core, mode);
 	return ret;
 }
 
