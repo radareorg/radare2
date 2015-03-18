@@ -59,6 +59,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ecr","","set random palette",
 			"ecs","","show a colorful palette",
 			"ecj","","show palette in JSON",
+			"ecc","","show palette in CSS",
 			"eco"," dark|white","load white color scheme template",
 			"ec"," prompt red","change color of prompt",
 			"ec"," prompt red blue","change color and background of prompt",
@@ -108,6 +109,7 @@ static int cmd_eval(void *data, const char *input) {
 		case 's': r_cons_pal_show (); break;
 		case '*': r_cons_pal_list (1); break;
 		case 'j': r_cons_pal_list ('j'); break;
+		case 'c': r_cons_pal_list ('c'); break;
 		case '\0': r_cons_pal_list (0); break;
 		case 'r': r_cons_pal_random (); break;
 		default: {
