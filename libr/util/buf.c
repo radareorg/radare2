@@ -180,18 +180,18 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 	if (b->sparse) {
 		sparse_limits (b->sparse, &min, &max);
 		switch (whence) {
-		case 0: b->cur = addr; break;
-		case 1: b->cur = b->cur + addr; break;
-		case 2: b->cur = max + addr; break; //b->base + b->length + addr; break;
+		case R_IO_SEEK_SET: b->cur = addr; break;
+		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
+		case R_IO_SEEK_END: b->cur = max + addr; break; //b->base + b->length + addr; break;
 		}
 	} else {
 		min = b->base;
 		max = b->base + b->length;
 		switch (whence) {
 		//case 0: b->cur = b->base + addr; break;
-		case 0: b->cur = addr; break;
-		case 1: b->cur = b->cur + addr; break;
-		case 2: b->cur = b->base + b->length + addr; break;
+		case R_IO_SEEK_SET: b->cur = addr; break;
+		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
+		case R_IO_SEEK_END: b->cur = b->base + b->length + addr; break;
 		}
 	}
 	/* avoid out-of-bounds */
@@ -304,6 +304,7 @@ R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	return R_TRUE;
 }
 
+//ret copied length if successful, 0 or -1 if failed
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
 	if (!b || b->empty)
@@ -317,7 +318,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 			memset (dst, 0xff, len);
 			sparse_read (b->sparse, addr, dst, len);
 		}
-		return 0;;
+		return 0;
 	}
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
 	if (len<1 || dst == NULL || addr > b->length)
@@ -405,6 +406,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	return b->buf+addr;
 }
 
+//ret 0 or -1 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
 	if (!b || !buf || len<1) return 0;
@@ -434,6 +436,7 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_FALSE);
 }
 
+//ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 	if (!b) return 0;
 	if (b->empty) {
@@ -459,7 +462,7 @@ R_API void r_buf_deinit(RBuffer *b) {
 	} else free (b->buf);
 }
 
-R_API void r_buf_free(struct r_buf_t *b) {
+R_API void r_buf_free(RBuffer *b) {
 	if (!b) return;
 	r_buf_deinit (b);
 	free (b);
