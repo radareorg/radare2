@@ -31,7 +31,6 @@ struct endlist_pair {
 	int delay_size;
 };
 
-
 static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	RBinPlugin *plug;
 	ut8 buf[1024];
@@ -666,7 +665,7 @@ ret:
 		r_list_append (badstart, p);
 	}
 	r_list_free (localbadstart);
-	//if our arch has bds then we better be including them
+	// If our arch has bds then we better be including them
 	if (branch_delay && r_list_length(hitlist) < 2) {
 		r_list_free(hitlist);
 		return NULL;
@@ -761,7 +760,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	RList/*<RRegex>*/ *rx_list = NULL;
-	RList/*<int>*/ *end_list = r_list_newf(free);
+	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
 	RList /*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
@@ -866,7 +865,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				}
 				struct endlist_pair *epair = malloc(sizeof(struct endlist_pair));
 				// If this arch has branch delay slots, add the next instr as well
-				if ( end_gadget.delay && (end_gadget.type != R_ANAL_OP_TYPE_TRAP) ) {
+				if (end_gadget.delay) {
 					epair->instr_offset = (intptr_t)i+increment;
 					epair->delay_size = end_gadget.delay;
 					r_list_append(end_list, (void*)(intptr_t)epair);
