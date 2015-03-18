@@ -1,33 +1,34 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake, fenugrec */
 
+//TODO : fix r_buf_copy return values so we can check r_buf_write_at() and r_buf_read_at() succeed !
 #include "r_io.h"
 #include "r_lib.h"
+#include "r_util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
 #define MEMSIZE 0x10000
 
+//struct Rihex : holds sparse buffer + its own fd, for internal management
 typedef struct {
 	int fd;
-	ut8 *buf;
-	ut32 size;
-} RIOMalloc;
+	RBuffer *rbuf;
+} Rihex;
 
-#define RIOHEX_FD(x) (((RIOMalloc*)x->data)->fd)
-#define RIOHEX_SZ(x) (((RIOMalloc*)x->data)->size)
-#define RIOHEX_BUF(x) (((RIOMalloc*)x->data)->buf)
+static int fw04b(FILE *fd, ut16 eaddr);
+static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, int size);
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	const char *ffffuuuu = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
-		"\xff\xff\xff\xff\xff\xff";
 	const char *pathname;
-	const ut8 *b;
-	ut8 cksum;
 	FILE *out;
-	int i, j;
-	if (fd == NULL || fd->data == NULL)
+	Rihex *rih;
+	RBufferSparse *rbs;
+	RListIter *iter;
+	
+	if (fd == NULL || fd->data == NULL || (count<=0))
 		return -1;
+	rih = fd->data;
 	pathname = fd->name + 7;
 	out = fopen (pathname, "w");
 	if (!out) {
@@ -35,63 +36,115 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	/* mem write */
-	if (io->off+count > RIOHEX_SZ (fd))
-		count -= (io->off+count-(RIOHEX_SZ (fd)));
-	if (count>0)
-		memcpy (RIOHEX_BUF (fd)+io->off, buf, count);
-	/* disk write */
-	for (i=0; i<MEMSIZE; i+=0x10) {
-		b = RIOHEX_BUF (fd)+i;
-		if (memcmp (ffffuuuu, b, 0x10)) {
-			cksum = 0x10;
-			cksum += i>>8;
-			cksum += i;
-			for (j=0; j<0x10; j++) cksum += b[j];
-			cksum = 0-cksum;
-			fprintf (out, ":10%04x00%02x%02x%02x%02x%02x%02x%02x"
-				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-				i, b[0], b[1], b[2], b[3], b[4], b[5], b[6],
-				b[7], b[8], b[9], b[10], b[11], b[12], b[13],
-				b[14], b[15], cksum);
-		}
+	if (r_buf_write_at(rih->rbuf, io->off, buf, count) <0) {
+		eprintf("ihex:write(): sparse write failed\n");
+		fclose(out);
 	}
+
+	/* disk write : process each sparse chunk */
+	//TODO : sort addresses; not sure if the r_list is already sorted?
+	r_list_foreach(rih->rbuf->sparse, iter, rbs) {
+		if ((rbs->from >65535) || (rbs->to >65535)) {
+			eprintf("ihex:write: skipping chunk with address out of range\n");
+			continue;
+		}
+		//04 record (ext address)
+		if (fw04b(out, rbs->from >> 16) < 0) {
+			eprintf("ihex:write: file error\n");
+			return -1;
+		}
+		//00 records (data)
+		if (fwblock(out, rbs->data, rbs->from, rbs->size)) {
+			eprintf("ihex:fwblock error\n");
+			return -1;
+		}
+		
+	}
+	
 	fprintf (out, ":00000001FF\n");
 	fclose (out);
-	return count;
+	return 0;
+}
+
+//write contiguous block of data to file; ret 0 if ok
+static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, int size) {
+	ut8 cks;
+	char linebuf[80];	//":xxAAAA00...\n"
+	int i,j;
+	
+	if (size <=0 || !fd || !b)
+		return -1;
+		
+	for (i=0; i<size; i+=0x10) {
+		cks = 0x10;
+		cks += (i+start_addr)>>8;
+		cks += (i+start_addr);
+		for (j=0; j<0x10; j++) cks += b[j];
+		cks = 0-cks;
+		if (fprintf (fd, ":10%04x00%02x%02x%02x%02x%02x%02x%02x"
+			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+			(i+start_addr)&0xffff, b[0], b[1], b[2], b[3], b[4], b[5], b[6],
+			b[7], b[8], b[9], b[10], b[11], b[12], b[13],
+			b[14], b[15], cks) < 0) return -1;
+		start_addr += 0x10;
+		b += 0x10;
+		if ((start_addr & 0xffff) < 0x10) {
+			//addr rollover: write ext address record
+			if (fw04b(fd, start_addr >> 16) < 0)
+				return -1;
+		}
+	}
+	if (i==size) return 0;
+	//write crumbs
+	cks = 0x10;
+	cks = 0x10;
+	cks += (i+start_addr)>>8;
+	cks += (i+start_addr);
+	for (j=0;i<size; i++, j++) {
+		cks += b[j];
+		sprintf(linebuf+3+(2*j), "%02X", b[j]);		
+	}
+	if (fprintf(fd, ":%02X%.*s\n", j, 2*j, linebuf) < 0)
+		return -1;
+	return 0;
+}
+
+//fw04b : write 04 record (extended address); ret <0 if error
+static int fw04b(FILE *fd, ut16 eaddr) {
+	ut8 cks = 0-(6+ (eaddr>>8) + (eaddr&0xff));
+	return fprintf(fd, ":02000004%04X%02X\n", eaddr, cks);
+
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	memset (buf, 0xff, count);
-	if (fd == NULL || fd->data == NULL)
+	Rihex *rih;
+	if (fd == NULL || fd->data == NULL || (count<=0))
 		return -1;
-	if (io->off>= RIOHEX_SZ (fd))
-		return -1;
-	if (io->off+count >= RIOHEX_SZ (fd))
-		count = RIOHEX_SZ (fd) - io->off;
-	memcpy (buf, RIOHEX_BUF (fd)+io->off, count);
+	rih=fd->data;
+	if (r_buf_read_at(rih->rbuf, io->off, buf, count) != count)
+		return -1;	//should never happen with a sparsebuf..
+
 	return count;
 }
 
 static int __close(RIODesc *fd) {
-	RIOMalloc *riom;
+	Rihex *rih;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
-	riom = fd->data;
-	free (riom->buf);
-	riom->buf = NULL;
-	free (fd->data);
+	rih = fd->data;
+	r_buf_free(rih->rbuf);
+	free(rih);
 	fd->data = NULL;
 	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
 static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
-	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return RIOHEX_SZ (fd);
-	}
-	return offset;
+	Rihex *rih;
+	if (fd == NULL || fd->data == NULL)
+		return -1;	//not sure if this is ok..
+	rih = fd->data;
+	return r_buf_seek(rih->rbuf, offset, whence);
 }
 
 static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
@@ -108,91 +161,193 @@ static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
   :  Start code
   1 Byte count
   2 byte Address
-  1 byte Record type (00 data 01 eof)
+  1 byte Record type (00 data, 01 eof, 02 extended seg addr, 04 extended linear addr)
   N bytes Data
   1 byte Checksum (sum 00)
 #endif
 
-// TODO: implement bin2ihex function
-static int ihex2bin(ut8 *mem, char *str) {
-	ut32 addr = 0;
-	char *eol, *ptr = str;
-	ut8 cksum, *memptr;
-	int bc, type, byte, i, l, blen = 0;
+//ihex_parsparse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
+//supported rec types : 00, 01, 02, 04
+//ret 0 if ok
+static int ihex_parsparse(RBuffer *rbuf, char *str){
+	ut32 sec_start = 0;	//addr for next section write
+	ut32 segreg = 0;	//basis for addr fields
+	int addr_tmp = 0;	//addr for record
+	ut16 next_addr = 0;	//for checking if records are sequential
+	char *eol;
+	ut8 cksum;
+	int extH, extL;
+	int bc=0, type, byte, i, l;
+	ut8 sec_tmp[65536];	//buffer section beffore calling r_buf_write_at
+	ut16 sec_size=0;
 	do {
-		l = sscanf (ptr, ":%02x%04x%02x", &bc, &addr, &type);
+		l = sscanf (str, ":%02x%04x%02x", &bc, &addr_tmp, &type);
 		if (l != 3) {
-			eprintf ("Invalid data in ihex file (%s)\n", ptr);
-			break;
+			eprintf ("Invalid data in ihex file (%s)\n", str);
+			return -1;
 		}
-		l = 1+ (l*2);
+		bc &= 0xff;
+		addr_tmp &= 0xffff;
+		type &= 0xff;
+		
 		switch (type) {
 		case 0: // DATA
-			eol = strchr (ptr+1, ':');
+			eol = strchr (str+1, ':');
 			if (eol) *eol = 0;
 			cksum = bc;
-			cksum += addr>>8;
-			cksum += addr&0xff;
+			cksum += addr_tmp>>8;
+			cksum += addr_tmp&0xff;
 			cksum += type;
-			memptr = mem + addr;
-			if ((addr+bc)>MEMSIZE)
-				bc = MEMSIZE-addr;
+
+			if ((next_addr != addr_tmp) ||
+				((sec_size + bc) > sizeof(sec_tmp))) {
+				//previous block is not contiguous ||
+				//section buffer is full => write a sparse chunk
+				if (sec_size) {
+						eprintf("rec 00: loading 0x%04x-bytes @ 0x%08x\n",sec_size, sec_start);	//TODO : remove dbg msg
+					if (r_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) <0) {
+						eprintf("sparse buffer problem, giving up\n");
+						return -1;
+					}
+				}
+				//advance cursor, reset section
+				sec_start = segreg + addr_tmp;
+				next_addr = addr_tmp;
+				sec_size = 0;
+			}
+
 			for (i=0; i<bc; i++) {
-				sscanf (ptr+9+ (i*2), "%02x", &byte);
-				memptr[i] = byte;
+				if (sscanf(str+9+ (i*2), "%02x", &byte) !=1) {
+					eprintf("unparsable data !\n");
+					return -1;
+				}
+				sec_tmp[sec_size+i] = (uint8_t) byte & 0xff;
 				cksum += byte;
 			}
+			sec_size += bc;
+			next_addr += bc;
 			if (eol) {
 				// checksum
-				sscanf (ptr+9+(i*2), "%02x", &byte);
+				if (sscanf(str+9+(i*2), "%02x", &byte) !=1) {
+					eprintf("unparsable data !\n");
+					return -1;
+				}
 				cksum += byte;
 				if (cksum != 0) {
 					ut8 fixedcksum = 0-(cksum-byte);
 					eprintf ("Checksum failed %02x (got %02x expected %02x)\n",
 						cksum, byte, fixedcksum);
+					return -1;
 				}
 				*eol = ':';
 			}
-			ptr = eol;
+			str = eol;
+			eprintf("rec 00: sec_size=0x%x, next_addr=0x%x\n", sec_size, next_addr);	//TODO : remove dbg msg
 			break;
-		case 1: // EOF
-			ptr = NULL;
+		case 1: // EOF. we don't validate checksum here
+			if (sec_size) {
+					eprintf("rec 01: loading last 0x%04x bytes @ 0x%08x\n",sec_size, sec_start);	//TODO : remove dbg msg
+				if (r_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) < 0) {
+					eprintf("sparse buffer problem, giving up. ssiz=%X, sstart=%X\n", sec_size, sec_start);
+					return -1;
+				}
+			}
+			str = NULL;
 			break;
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			ptr = strchr(ptr + 1, ':');
+		case 2:	//extended segment record
+		case 4:	//extended linear address rec
+			//both rec types are handled the same except :
+			//	new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
+			//write current section
+			if (sec_size) {
+				eprintf("rec 02/04: writing 0x%04x-bytes @ 0x%08x\n",sec_size, sec_start);	//TODO : remove dbg msg
+				if (r_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) <0) {
+					eprintf("sparse buffer problem, giving up\n");
+					return -1;
+				}
+			}
+			sec_size=0;
+			
+			eol = strchr (str+1, ':');
+			if (eol) *eol = 0;
+			cksum = bc;
+			cksum += addr_tmp>>8;
+			cksum += addr_tmp&0xff;
+			cksum += type;
+			if ((bc !=2) || (addr_tmp != 0)) {
+				eprintf("corrupt type 02/04 record!\n");
+				return -1;
+			}
+			
+			if ((sscanf(str+9+ 0, "%02x", &extH) !=1) ||
+				(sscanf(str+9+ 2, "%02x", &extL) !=1)) {
+				eprintf("unparsable data !\n");
+				return -1;
+			}
+			extH &= 0xff;
+			extL &= 0xff;
+			cksum += extH + extL;
+			
+			segreg = extH <<8 | extL;
+			
+			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31 
+			segreg = segreg << ((type==02)? 4:16);
+			next_addr = 0;
+			sec_start = segreg;
+			eprintf("rec %02d: new addr=%x\n", type, sec_start);	//TODO : remove dbg message
+		
+			if (eol) {
+				// checksum
+				sscanf (str+9+ 4, "%02x", &byte);
+				cksum += byte;
+				if (cksum != 0) {
+					ut8 fixedcksum = 0-(cksum-byte);
+					eprintf ("Checksum failed %02x (got %02x expected %02x)\n",
+						cksum, byte, fixedcksum);
+					return -1;
+				}
+				*eol = ':';
+			}
+			str = eol;
+			break;			
+		case 3:	//undefined rec. Just skip.
+		case 5:	//non-standard, sometimes "start linear adddress"
+			str = strchr(str + 1, ':');
 			break;
 		}
-	} while (ptr);
+	} while (str);
 
-	return blen;
+	return 0;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int ret;
-	RIOMalloc *mal = NULL;
+	Rihex *mal = NULL;
 	char *str = NULL;
+	
 	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname+7, NULL);
 		if (!str) return NULL;
-		mal = R_NEW (RIOMalloc);
+		mal= R_NEW (Rihex);
 		if (!mal) {
 			free (str);
 			return NULL;
 		}
 		mal->fd = -1; /* causes r_io_desc_new() to set the correct fd */
-		mal->buf = malloc (MEMSIZE);
-		if (!mal->buf) {
+		mal->rbuf = r_buf_new_sparse();
+		if (!mal->rbuf) {
 			free (str);
 			free (mal);
 			return NULL;
 		}
-		mal->size = MEMSIZE;
-		memset (mal->buf, 0xff, mal->size);
-		ret = ihex2bin (mal->buf, str);
-		if (ret) eprintf ("ihex: checksum issues?\n");
+		ret = ihex_parsparse(mal->rbuf, str);
+		if (ret) {
+			eprintf("ihex: failed to parse file\n");
+			free(str);
+			r_buf_free(mal->rbuf);
+			free(mal);
+			return NULL;
+		}
 		free (str);
 		return r_io_desc_new (&r_io_plugin_ihex,
 			mal->fd, pathname, rw, mode, mal);

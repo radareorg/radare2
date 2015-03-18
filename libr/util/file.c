@@ -187,6 +187,8 @@ R_API char *r_stdin_slurp (int *sz) {
 #endif
 }
 
+//r_file_slurp: load file *str, alloc new buffer, close file. ret &buffer
+//Caller must free(buffer)
 R_API char *r_file_slurp(const char *str, int *usz) {
 	size_t rsz;
 	char *ret;
