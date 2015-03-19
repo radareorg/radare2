@@ -12,6 +12,9 @@ var HexPanel = function () {
   this.rbox = null;
   this.address = null;
   this.scroll_offset = 0;
+  this.dragStart = 0;
+  this.dragEnd = 0;
+  this.isDragging = false;
 };
 HexPanel.prototype.scrollTo = function(x,y) {
 };
@@ -24,7 +27,7 @@ HexPanel.prototype.render = function() {
 
   $("#center_panel").scroll(on_hex_scroll);
   $(document).keypress(handle_hex_keypress);
-  $(document).dblclick(rename_dword);
+  $(document).dblclick(handle_hex_double_click);
   // $(document).click(rename_dword);
   // $(document).dblclick(handle_hex_double_click);
   // Context menu for disas addresses:
@@ -49,12 +52,6 @@ function handle_hex_keypress(inEvent) {
   var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
   var key = String.fromCharCode(keynum);
 }
-// function handle_hex_click(inEvent) {
-//  console.log(1);
-// }
-// function handle_hex_double_click(inEvent) {
-//  console.log(2);
-// }
 function scroll_to_hexaddress(address, pos) {
   if (address === undefined || address === null) return;
   var offset = 0;
@@ -172,13 +169,75 @@ HexPanel.prototype.seek = function(addr) {
   html += render_hexdump(this.lines);
   html += "</div>";
   $("#hex_tab").html(html);
-  $(document).on('dblclick','.dword', rename_dword);
-  $(document).on('mouseenter','.dword', highlight_in);
-  $(document).on('mouseleave','.dword', highlight_out);
-  $(document).on('mouseenter','.dword font', highlight_in);
-  $(document).on('mouseleave','.dword font', highlight_out);
+  $(document).on('dblclick','.dword', handle_hex_double_click);
+  // $(document).on('mouseenter','.dword', highlight_in);
+  // $(document).on('mouseleave','.dword', highlight_out);
+  // $(document).on('mouseenter','.dword font', highlight_in);
+  // $(document).on('mouseleave','.dword font', highlight_out);
+  $(document).on('mousedown','.dword', rangeMouseDown);
+  $(document).on('mousemove','.dword', rangeMouseMove);
+  $(document).on('mouseup', rangeMouseUp);
   r2ui._hex.scrolling = false;
 };
+function rangeMouseDown(e) {
+  if (isRightClick(e)) {
+    return false;
+  } else {
+    var allCells = $("span.dword");
+    r2ui._hex.dragStart = allCells.index($(this));
+    r2ui._hex.isDragging = true;
+    if (typeof e.preventDefault != 'undefined') { e.preventDefault(); }
+    document.documentElement.onselectstart = function () { return false; };
+  }
+}
+function rangeMouseUp(e) {
+  if (isRightClick(e)) {
+    return false;
+  } else {
+    var allCells = $("span.dword");
+    r2ui._hex.dragEnd = allCells.index($(this));
+    r2ui._hex.isDragging = false;
+    // if (r2ui._hex.dragEnd !== 0) {
+    //   selectRange();
+    // }
+    document.documentElement.onselectstart = function () { return true; };
+  }
+}
+function rangeMouseMove(e) {
+  if (r2ui._hex.isDragging) {
+    var allCells = $("span.dword");
+    r2ui._hex.dragEnd = allCells.index($(this));
+    selectRange();
+  }
+}
+function selectRange() {
+  $("span.dword").removeClass('autohighlighti');
+  if (r2ui._hex.dragEnd + 1 < r2ui._hex.dragStart) { // reverse select
+    var cells = $("span.dword").slice(r2ui._hex.dragEnd, r2ui._hex.dragStart + 1).addClass('autohighlighti');
+    for (var i in cells) {
+      if (cells[i].className !== undefined) {
+        var dword = cells[i].className.split(" ").filter(function(x) { return x.substr(0,"dword_".length) == "dword_"; });
+        $("." + dword).addClass('autohighlighti');
+      }
+    }
+  } else {
+    var cells = $("span.dword").slice(r2ui._hex.dragStart, r2ui._hex.dragEnd + 1);
+    for (var i in cells) {
+      if (cells[i].className !== undefined) {
+        var dword = cells[i].className.split(" ").filter(function(x) { return x.substr(0,"dword_".length) == "dword_"; });
+        $("." + dword).addClass('autohighlighti');
+      }
+    }
+  }
+}
+function isRightClick(e) {
+  if (e.which) {
+    return (e.which == 3);
+  } else if (e.button) {
+    return (e.button == 2);
+  }
+  return false;
+}
 function handleInputHexChange() {
   if (r2ui._hex.renaming !== null && r2ui._hex.rbox.value.length > 0) {
     var value = r2ui._hex.rbox.value;
@@ -204,7 +263,15 @@ function handleInputHexChange() {
     r2ui._hex.rbox = null;
   }
 }
-function rename_dword(inEvent) {
+function handle_hex_double_click(inEvent) {
+  // handle offset seek
+  if ($(inEvent.target).hasClass('hexaddr')) {
+    var address = get_address_from_class(inEvent.target, "hexaddr");
+    console.log(address);
+    r2ui._dis.selected_offset = address;
+    return;
+  }
+  // Handle renaming
   var write = true;
   r2.cmdj("ij", function(x) {
     if (x['core']['mode'].indexOf("w") == -1) {
@@ -269,7 +336,7 @@ function highlight_in(inEvent) {
   $("." + dword).addClass('autohighlighti');
 }
 function highlight_out(inEvent) {
-  $('.autohighlighti').removeClass('autohighlighti');
+  if (!r2ui._hex.isDragging) $('.autohighlighti').removeClass('autohighlighti');
 }
 function highlight_dword(inEvent) {
   if ($(inEvent.target).hasClass('dword')) {
