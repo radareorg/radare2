@@ -1,9 +1,9 @@
 #!/usr/bin/node
-// $ r2 -qc '#!pipe node ior2.js' -
+// $ r2 -qc '#!pipe node pipe-node.js' -
+
+var isMain = process.argv[1] == __filename;
 
 var fs = require ("fs");
-//var r2p = require ("r2pipe");
-
 
 function langPipe () {
 	var IN = +process.env.R2PIPE_IN;
@@ -43,12 +43,15 @@ function langPipe () {
 	return r2io;
 }
 
-
-var lp = langPipe ();
-lp.cmd ("pd 3", function (x) {
-	console.log (x);
-	lp.cmd ("px 64", function (y) {
-		lp.repl ();
+// Example:
+if (isMain) {
+	var lp = langPipe ();
+	lp.cmd ("pd 3", function (x) {
+		console.log (x);
+		lp.cmd ("px 64", function (y) {
+			lp.repl ();
+		});
 	});
-});
-
+} else {
+	module.exports = langPipe();
+}

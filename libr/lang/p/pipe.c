@@ -47,7 +47,6 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			sleep (1);
 		}
 #endif
-		//write (input[1], "", 0); // EOF
 		write (output[1], "", 1); // EOF
 		close (input[0]);
 		close (input[1]);
