@@ -35,7 +35,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else if (child == 0) {
 		/* children */
 #if 1
-		system (code);
+		r_sandbox_system (code, 1);
 #else
 		/* DEMO */
 		char buf[1024];

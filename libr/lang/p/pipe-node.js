@@ -49,6 +49,7 @@ if (isMain) {
 	lp.cmd ("pd 3", function (x) {
 		console.log (x);
 		lp.cmd ("px 64", function (y) {
+			console.log (y);
 			lp.repl ();
 		});
 	});
