@@ -21,13 +21,14 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	int child, ret;
 	int input[2];
 	int output[2];
+
+#if __UNIX__
 	pipe (input);
 	pipe (output);
 
 	env ("R2PIPE_IN", input[0]);
 	env ("R2PIPE_OUT", output[1]);
 
-#if __UNIX__
 	child = fork ();
 	if (child == -1) {
 		/* error */
