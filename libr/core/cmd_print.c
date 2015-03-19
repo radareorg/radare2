@@ -127,51 +127,75 @@ static void print_format_help(RCore *core) {
 	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
 	"Examples:","","",
 	"pf", "?", "Show this help",
-	"pf?", "fmt", "Show format of that stored one",
+	"pf", "??", "Format creqtion help",
+	"pf", "???", "Format char list",
+	"pf.", "", "List all formats",
+	"pf?", "format_name", "Show format of that stored one",
+	"pfs", " format_name", "Print the size of the format in bytes",
+	"pfo", "", "List all format files",
+	"pfo", " elf32", "Load the elf32 format definition file",
+	"pf.", "format_name", "Run stored format",
+	"pf.", "format_name.name", "Show string inside object",
+	"pf.", "format_name.size=33", "Set new value for the size field in obj",
+	"pfj.", "format_name", "Print format in JSON",
+	"pf*.", "format_name", "Display flag commands",
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
+static void print_format_help_help(RCore *core) {
+	const char* help_msg[] = {
+	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
+	"Examples:","","",
+	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
+	"pf",  " obj=xxdz prev next size name", "Same as above",
 	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
 	"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
+	"pf.", "plop ? (troll)mystruct", "Use structure troll previously defined",
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
 	"pf", " {integer}bifc", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
-	"pfo", "", "List all format files",
-	"pfo", " elf32", "Load the elf32 format definition file",
-	"pfs", " format_name", "Print the size of the format in bytes",
-	"pf.", "", "List all formats",
-	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
-	"pf",  " obj=xxdz prev next size name", "Same as above",
-	"pf.", "obj", "Run stored format",
-	"pf.", "obj.name", "Show string inside object",
-	"pf.", "obj.size=33", "Set new value for the size field in obj",
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
+static void print_format_help_help_help(RCore *core) {
+	const char* help_msg[] = {
+	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
 	"Format chars:", "", "",
-	"        ", "e", "temporally swap endian",
-	//" D - double (8 bytes)\n",
-	"        ", "f", "float value (4 bytes)",
 	"        ", "b", "byte (unsigned)",
 	"        ", "B", "resolve enum bitfield (see t?) `pf B (Bitfield_type)arg_name`",
 	"        ", "c", "char (signed byte)",
-	"        ", "E", "resolve enum name  (see t?) `pf E (Enum_type)arg_name`",
-	"        ", "X", "show n hexpairs (default n=1)",
-	"        ", "i", "%%i integer value (4 bytes)",
-	"        ", "w", "word (2 bytes unsigned short in hex)",
-	"        ", "q", "quadword (8 bytes)",
-	"        ", "t", "UNIX timestamp (4 bytes)",
-	"        ", "p", "pointer reference (2, 4 or 8 bytes)",
-	"        ", "T", "show Ten first bytes of buffer",
 	"        ", "d", "0x%%08x hexadecimal value (4 bytes)",
 	"        ", "D", "disassemble one opcode",
+	"        ", "e", "temporally swap endian",
+	"        ", "E", "resolve enum name  (see t?) `pf E (Enum_type)arg_name`",
+	"        ", "f", "float value (4 bytes)",
+	"        ", "i", "%%i integer value (4 bytes)",
 	"        ", "o", "0x%%08o octal value (4 byte)",
+	"        ", "p", "pointer reference (2, 4 or 8 bytes)",
+	"        ", "q", "quadword (8 bytes)",
+	"        ", "s", "32bit pointer to string (4 bytes)",
+	"        ", "S", "64bit pointer to string (8 bytes)",
+	"        ", "t", "UNIX timestamp (4 bytes)",
+	"        ", "T", "show Ten first bytes of buffer",
+	"        ", "w", "word (2 bytes unsigned short in hex)",
 	"        ", "x", "0x%%08x hexadecimal value and flag (fd @ addr)",
 	"        ", "X", "show formatted hexpairs",
 	"        ", "z", "\\0 terminated string",
 	"        ", "Z", "\\0 terminated wide string",
-	"        ", "s", "32bit pointer to string (4 bytes)",
-	"        ", "S", "64bit pointer to string (8 bytes)",
-	"        ", "t", "unix timestamp string",
 	"        ", "?", "data structure `pf ? (struct_type)struct_name`",
 	"        ", "*", "next char is pointer (honors asm.bits)",
 	"        ", "+", "toggle show flags for each offset",
 	"        ", ":", "skip 4 bytes",
 	"        ", ".", "skip 1 byte",
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
+static void print_format_help_help_help_help(RCore *core) {
+	const char* help_msg[] = {
+	"    STAHP IT!!!", "", "",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
@@ -215,15 +239,29 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	case '?':
 		_input+=2;
 		if (*_input) {
-			RListIter *iter;
-			RStrHT *sht = core->print->formats;
-			int *i;
-			r_list_foreach (sht->ls, iter, i) {
-				int idx = ((int)(size_t)i)-1;
-				const char *key = r_strpool_get (sht->sp, idx);
-				if (!strcmp (_input, key)) {
-					const char *val = r_strht_get (core->print->formats, key);
-					r_cons_printf ("%s\n", val);
+			if (*_input == '?') {
+				_input++;
+				if (_input && *_input == '?') {
+					_input++;
+					if (_input && *_input == '?') {
+						print_format_help_help_help_help (core);
+					} else {
+						print_format_help_help_help (core);
+					}
+				} else {
+					print_format_help_help (core);
+				}
+			} else {
+				RListIter *iter;
+				RStrHT *sht = core->print->formats;
+				int *i;
+				r_list_foreach (sht->ls, iter, i) {
+					int idx = ((int)(size_t)i)-1;
+					const char *key = r_strpool_get (sht->sp, idx);
+					if (!strcmp (_input, key)) {
+						const char *val = r_strht_get (core->print->formats, key);
+						r_cons_printf ("%s\n", val);
+					}
 				}
 			}
 		} else {
