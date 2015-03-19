@@ -224,14 +224,14 @@
 #
 #0	string		SAS		SAS
 #>8	string		x		%s
-0	string		SAS		SAS
+#0	string		SAS		SAS
 >24	string		DATA		data file
 >24	string		CATALOG		catalog
 >24	string		INDEX		data file index
 >24	string		VIEW		data view
 # sas 7+ magic from Reinhold Koch (reinhold.koch@roche.com)
 #
-0x54    string          SAS             SAS 7+
+#0x54    string          SAS             SAS 7+
 >0x9C   string          DATA            data file
 >0x9C   string          CATALOG         catalog
 >0x9C   string          INDEX           data file index
