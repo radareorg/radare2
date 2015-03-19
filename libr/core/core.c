@@ -849,6 +849,7 @@ R_API int r_core_init(RCore *core) {
 		return R_FALSE;
 	}
 	core->lang = r_lang_new ();
+	core->lang->cmd_str = r_core_cmd_str;
 	core->cons->editor = (RConsEditorCallback)r_core_editor;
 	core->cons->user = (void*)core;
 	core->lang->printf = r_cons_printf;

@@ -10,6 +10,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_lang);
 
+typedef char* (*RCoreCmdStrCallback)(void* core, const char *s);
 
 typedef struct r_lang_t {
 	struct r_lang_plugin_t *cur;
@@ -17,6 +18,7 @@ typedef struct r_lang_t {
 	RList *defs;
 	RList *langs;
 	PrintfCallback printf;
+	RCoreCmdStrCallback cmd_str;
 } RLang;
 
 typedef struct r_lang_plugin_t {

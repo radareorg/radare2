@@ -5,8 +5,9 @@
 
 R_LIB_VERSION(r_lang);
 
+#include "p/pipe.c" // hardcoded
 #include "p/vala.c" // hardcoded
-#include "p/c.c" // hardcoded
+#include "p/c.c"    // hardcoded
 
 
 static RLang *__lang = NULL;
@@ -27,6 +28,7 @@ R_API RLang *r_lang_new() {
 		lang->printf = (PrintfCallback)printf;
 		r_lang_add (lang, &r_lang_plugin_c);
 		r_lang_add (lang, &r_lang_plugin_vala);
+		r_lang_add (lang, &r_lang_plugin_pipe);
 	}
 	return lang;
 }
