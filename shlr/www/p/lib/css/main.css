@@ -155,6 +155,11 @@
 	background-color:		transparent;
 }
 
+.hex .autohighlighti {
+	background-color: yellow;
+	color: rgb(20,20,20);
+}
+
 .history_idx {
 	background-color: rgb(127,127,127) !important;
 	border-bottom: 6px solid rgb(127,127,127);
@@ -228,4 +233,30 @@ p {
   bottom: 0;
   right: 30px;
   width: 0%;
+}
+
+/*Hex panel */
+.hex {
+    font-family: monospace;
+    font-size: 10pt;
+    width: 650px;
+    height: 100%;
+}
+.hexdump {
+    float: left;
+    line-height: 20px;
+    width: 340px;
+}
+.hextext {
+    float: left;
+    line-height: 20px;
+    width: 140px;
+    color: white;
+}
+.hexoffset {
+    float: left;
+    line-height: 20px;
+    padding-right: 30px;
+    text-align: right;
+    width: 100px;
 }

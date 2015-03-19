@@ -429,7 +429,11 @@ function render_instructions(instructions) {
     // ins.offset = "0x" + ins.offset.toString(16);
     if (ins.comment === undefined || ins.comment === null) ins.comment = "";
     else {
-      ins.comment = atob(ins.comment);
+      try {
+        ins.comment = atob(ins.comment);
+      } catch(e) {
+        console.log(ins.comment);
+      }
     }
     var dom = document.createElement('div');
     if (asm_lines) dom.className = "instructionbox enyo-selectable lines";
@@ -643,12 +647,12 @@ function html_for_instruction(ins) {
     for (var i in r2.varMap[ins.fcn_addr]) {
       var var_name = r2.varMap[ins.fcn_addr][i].name;
       var var_id = r2.varMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(var_name, "<span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span>");
+      opcode = opcode.replace(" " + var_name + " ", " <span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
     }
     for (var i in r2.argMap[ins.fcn_addr]) {
       var arg_name = r2.argMap[ins.fcn_addr][i];
       var arg_id = r2.argMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(arg_name, "<span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span>");
+      opcode = opcode.replace(" " + arg_name + " ", " <span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
     }
   }
 
@@ -818,7 +822,7 @@ Element.prototype.documentOffsetTop = function () {
 
 function scroll_to_address(address) {
   var elements = $(".insaddr.addr_" + address);
-  var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
+  var top = elements[0].documentOffsetTop() - window.innerHeight / 2;
   top = Math.max(0,top);
   $("#main_panel").scrollTo({'top':top, 'left':0});
 }
