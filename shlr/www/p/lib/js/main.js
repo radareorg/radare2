@@ -11,7 +11,7 @@ $(document).ready( function() {
       else if(ui.tab.innerHTML.indexOf("Hex") > -1) r2ui._hex.render();
     },
     activate: function( event, ui ) {
-      if ( ui.newTab[0].innerHTML.indexOf("Disas") > -1 ) r2ui._dis.render();
+      if ( ui.newTab[0].innerHTML.indexOf("Disas") > -1 ) {r2ui._dis.render();}
     }
   });
 
@@ -118,7 +118,6 @@ $(document).ready( function() {
       inEvent.target.value = console_history[console_history_idx] === undefined ? "" : console_history[console_history_idx];
     }
   });
-
 
   // Console menu
   $("#console_panel").contextmenu({

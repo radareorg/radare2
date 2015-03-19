@@ -18,7 +18,8 @@ var DisasmPanel = function () {
   this.scrolling = false;
 };
 DisasmPanel.prototype.render = function() {
-  r2ui.seek("$$", false);
+
+  // r2ui.seek("$$", false);
   $("#center_panel").unbind( "click" );
   $(document).unbind( "keypress" );
   $(document).unbind( "click" );
@@ -153,9 +154,19 @@ DisasmPanel.prototype.render = function() {
 
     // Show disasm panel and seek to entrypoint
     this.display_flat();
-    r2ui.seek(this.base,true);
-    scroll_to_element(this.selected);
-
+    var addr = null;
+    if (this.selected_offset !== null) {
+      addr = this.selected_offset;
+    } else {
+      addr = this.base;
+    }
+    r2ui.seek(addr,true);
+    if (addr.indexOf("0x") === 0) {
+      addr = address_canonicalize(addr);
+    } else {
+      addr = r2.get_flag_address(addr);
+    }
+    scroll_to_address(addr);
 }
 DisasmPanel.prototype.seek = function(addr, scroll) {
     var panel = this.panel;
