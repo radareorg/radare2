@@ -142,7 +142,7 @@ static RList* symbols(RBinFile *arch)
 	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
-		if (!(ptr[i] = R_NEW (RBinSymbol))) {
+		if (!(ptr[i] = R_NEW0 (RBinSymbol))) {
 			ret->free (ret);
 			return NULL;
 		}
@@ -153,7 +153,7 @@ static RList* symbols(RBinFile *arch)
 		r_list_append (ret, ptr[i]);
 	}
 
-	if (!(ptr[8] = R_NEW (RBinSymbol)))
+	if (!(ptr[8] = R_NEW0 (RBinSymbol)))
 		return ret;
 
 	strncpy (ptr[8]->name, "Interrupt_Vblank", R_BIN_SIZEOF_STRINGS);
@@ -162,7 +162,7 @@ static RList* symbols(RBinFile *arch)
 	ptr[8]->ordinal = 8;
 	r_list_append (ret, ptr[8]);
 
-	if (!(ptr[9] = R_NEW (RBinSymbol)))
+	if (!(ptr[9] = R_NEW0 (RBinSymbol)))
 		return ret;
 
 	strncpy (ptr[9]->name, "Interrupt_LCDC-Status", R_BIN_SIZEOF_STRINGS);
@@ -171,7 +171,7 @@ static RList* symbols(RBinFile *arch)
 	ptr[9]->ordinal = 9;
 	r_list_append (ret, ptr[9]);
 
-	if (!(ptr[10] = R_NEW (RBinSymbol)))
+	if (!(ptr[10] = R_NEW0 (RBinSymbol)))
 		return ret;
 
 	strncpy(ptr[10]->name, "Interrupt_Timer-Overflow", R_BIN_SIZEOF_STRINGS);
@@ -180,7 +180,7 @@ static RList* symbols(RBinFile *arch)
 	ptr[10]->ordinal = 10;
 	r_list_append (ret, ptr[10]);
 
-	if (!(ptr[11] = R_NEW (RBinSymbol)))
+	if (!(ptr[11] = R_NEW0 (RBinSymbol)))
 		return ret;
 
 	strncpy(ptr[11]->name, "Interrupt_Serial-Transfere", R_BIN_SIZEOF_STRINGS);
@@ -189,7 +189,7 @@ static RList* symbols(RBinFile *arch)
 	ptr[11]->ordinal = 11;
 	r_list_append (ret, ptr[11]);
 
-	if (!(ptr[12] = R_NEW (RBinSymbol)))
+	if (!(ptr[12] = R_NEW0 (RBinSymbol)))
 		return ret;
 
 	strncpy (ptr[12]->name, "Interrupt_Joypad", R_BIN_SIZEOF_STRINGS);
@@ -222,7 +222,7 @@ static RBinInfo* info(RBinFile *arch) {
 	strncpy (ret->os, "any", sizeof (ret->os)-1);
 	strcpy (ret->arch, "gb");
 	ret->has_va = 1;
-	ret->bits = 8;
+	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	return ret;
