@@ -48,8 +48,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	Rihex *rih;
 	RBufferSparse *rbs;
 	RListIter *iter;
-	
-	if (fd == NULL || fd->data == NULL || (count<=0))
+
+	if (fd == NULL || fd->data == NULL || (fd->flags & R_IO_WRITE) == 0 ||(count<=0))
 		return -1;
 	rih = fd->data;
 	pathname = fd->name + 7;
@@ -73,7 +73,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		ut16 tsiz =0;
 		if (rbs->size == 0)
 			continue;
-		
+
 		if (addh0 != addh1) {
 			//we cross a 64k boundary, so write in two steps
 			//04 record (ext address)
