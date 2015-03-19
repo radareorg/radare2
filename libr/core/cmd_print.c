@@ -124,29 +124,66 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
-	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
-	"Examples:","","",
+	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"Commands:","","",
 	"pf", "?", "Show this help",
-	"pf", "??", "Format creqtion help",
-	"pf", "???", "Format char list",
+	"pf", "??", "Format characters",
+	"pf", "???", "pf usage examples",
+	"pf", " xsi foo bar cow", "format named hex str and int (see `pf??`)",
 	"pf.", "", "List all formats",
-	"pf?", "format_name", "Show format of that stored one",
-	"pfs", " format_name", "Print the size of the format in bytes",
+	"pf?", "fmt_name", "Show format of that stored one",
+	"pfs", " fmt_name", "Print the size of the format in bytes",
 	"pfo", "", "List all format files",
 	"pfo", " elf32", "Load the elf32 format definition file",
-	"pf.", "format_name", "Run stored format",
-	"pf.", "format_name.name", "Show string inside object",
-	"pf.", "format_name.size=33", "Set new value for the size field in obj",
-	"pfj.", "format_name", "Print format in JSON",
-	"pf*.", "format_name", "Display flag commands",
+	"pf.", "fmt_name", "Run stored format",
+	"pf.", "fmt_name.name", "Show string inside object",
+	"pf.", "fmt_name.size=33", "Set new value for the size field in obj",
+	"pfj.", "fmt_name", "Print format in JSON",
+	"pf*.", "fmt_name", "Display flag commands",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
 
 static void print_format_help_help(RCore *core) {
 	const char* help_msg[] = {
-	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
+	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"Format:", "", "",
+	" ", "b", "byte (unsigned)",
+	" ", "B", "resolve enum bitfield (see t?)",
+	" ", "c", "char (signed byte)",
+	" ", "d", "0x%%08x hexadecimal value (4 bytes)",
+	" ", "D", "disassemble one opcode",
+	" ", "e", "temporally swap endian",
+	" ", "E", "resolve enum name (see t?)",
+	" ", "f", "float value (4 bytes)",
+	" ", "i", "%%i integer value (4 bytes)",
+	" ", "o", "0x%%08o octal value (4 byte)",
+	" ", "p", "pointer reference (2, 4 or 8 bytes)",
+	" ", "q", "quadword (8 bytes)",
+	" ", "s", "32bit pointer to string (4 bytes)",
+	" ", "S", "64bit pointer to string (8 bytes)",
+	" ", "t", "UNIX timestamp (4 bytes)",
+	" ", "T", "show Ten first bytes of buffer",
+	" ", "w", "word (2 bytes unsigned short in hex)",
+	" ", "x", "0x%%08x hex value and flag (fd @ addr)",
+	" ", "X", "show formatted hexpairs",
+	" ", "z", "\\0 terminated string",
+	" ", "Z", "\\0 terminated wide string",
+	" ", "?", "data structure `pf ? (struct_type)struct_name`",
+	" ", "*", "next char is pointer (honors asm.bits)",
+	" ", "+", "toggle show flags for each offset",
+	" ", ":", "skip 4 bytes",
+	" ", ".", "skip 1 byte",
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
+static void print_format_help_help_help(RCore *core) {
+	const char* help_msg[] = {
+	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
 	"Examples:","","",
+	"pf", " B (BitFldType)arg_name`", "bitfield type",
+	"pf", " E (EnumType)arg_name`", "enum type",
 	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
 	"pf",  " obj=xxdz prev next size name", "Same as above",
 	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
@@ -155,40 +192,6 @@ static void print_format_help_help(RCore *core) {
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
 	"pf", " {integer}bifc", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
-	NULL};
-	r_core_cmd_help (core, help_msg);
-}
-
-static void print_format_help_help_help(RCore *core) {
-	const char* help_msg[] = {
-	"Usage:", " pf[.key[.field[=value]]|[ val]]|[times]|[0][ [size] format] [arg0 arg1 ...]", " # Define and print format strings",
-	"Format chars:", "", "",
-	"        ", "b", "byte (unsigned)",
-	"        ", "B", "resolve enum bitfield (see t?) `pf B (Bitfield_type)arg_name`",
-	"        ", "c", "char (signed byte)",
-	"        ", "d", "0x%%08x hexadecimal value (4 bytes)",
-	"        ", "D", "disassemble one opcode",
-	"        ", "e", "temporally swap endian",
-	"        ", "E", "resolve enum name  (see t?) `pf E (Enum_type)arg_name`",
-	"        ", "f", "float value (4 bytes)",
-	"        ", "i", "%%i integer value (4 bytes)",
-	"        ", "o", "0x%%08o octal value (4 byte)",
-	"        ", "p", "pointer reference (2, 4 or 8 bytes)",
-	"        ", "q", "quadword (8 bytes)",
-	"        ", "s", "32bit pointer to string (4 bytes)",
-	"        ", "S", "64bit pointer to string (8 bytes)",
-	"        ", "t", "UNIX timestamp (4 bytes)",
-	"        ", "T", "show Ten first bytes of buffer",
-	"        ", "w", "word (2 bytes unsigned short in hex)",
-	"        ", "x", "0x%%08x hexadecimal value and flag (fd @ addr)",
-	"        ", "X", "show formatted hexpairs",
-	"        ", "z", "\\0 terminated string",
-	"        ", "Z", "\\0 terminated wide string",
-	"        ", "?", "data structure `pf ? (struct_type)struct_name`",
-	"        ", "*", "next char is pointer (honors asm.bits)",
-	"        ", "+", "toggle show flags for each offset",
-	"        ", ":", "skip 4 bytes",
-	"        ", ".", "skip 1 byte",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
