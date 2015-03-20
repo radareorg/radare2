@@ -897,6 +897,28 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
 		return R_FALSE;
 	}
+	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
+#if __MINGW64__
+		eprintf("working on this ....");
+#else
+		eprintf ("cwd = 0x%08x  ; control   ", ctx.FloatSave.ControlWord);
+		eprintf ("swd = 0x%08x  ; status\n", ctx.FloatSave.StatusWord);
+		eprintf ("twd = 0x%08x ", ctx.FloatSave.TagWord);
+		eprintf ("eof = 0x%08x\n", ctx.FloatSave.ErrorOffset);
+		eprintf ("ese = 0x%08x\n", ctx.FloatSave.ErrorSelector);
+		eprintf ("dof = 0x%08x\n", ctx.FloatSave.DataOffset);
+		eprintf ("dse = 0x%08x\n", ctx.FloatSave.DataSelector);
+		eprintf ("mxcr = 0x%08x\n", ctx.ExtendedRegisters[24]);
+		for(i=0;i<8;i++) {
+			ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
+			a = a + (i * 4);
+			eprintf ("xmm%d = %08x %08x %08x %08x  ",i
+					, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+			ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
+			eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+		}
+#endif
+	}
 	if (sizeof (CONTEXT) < size)
 		size = sizeof (CONTEXT);
 #if 0

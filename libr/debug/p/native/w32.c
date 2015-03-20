@@ -298,6 +298,12 @@ static int debug_exception_event (unsigned long code) {
 	case EXCEPTION_STACK_OVERFLOW:
 		eprintf ("fatal exception\n");
 		break;
+#if __MINGW64__
+	case 0x4000001f: //STATUS_WX86_BREAKPOINT
+		eprintf("WOW64 Loaded.\n");
+		return 1;
+		break;
+#endif
 	default:
 		eprintf ("unknown exception\n");
 		break;
@@ -322,11 +328,11 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* get exception code */
 		code = de.dwDebugEventCode;
 		/* Ctrl-C? */
-		if (code == 0x2) {
+		//if (code == 0x2) {
 			// TODO: interrupted
 			//WS(event) = INT_EVENT;
-			break;
-		}
+			//break;
+		//}
 		/* set state */
 		//WS(event) = UNKNOWN_EVENT;
 		/* get kind of event */
@@ -372,7 +378,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
-			eprintf("OUTPUT_DBUG_STING\n");
+			eprintf("OUTPUT_DEBUG_STRING\n");
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			break;
@@ -383,9 +389,12 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			// XXX unknown ret = R_DBG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
-			next_event = debug_exception_event (
-				de.u.Exception.ExceptionRecord.ExceptionCode);
-			return R_DBG_REASON_TRAP;
+			next_event = debug_exception_event (de.u.Exception.ExceptionRecord.ExceptionCode);
+			if (!next_event)
+				return R_DBG_REASON_TRAP;
+			else 
+				r_debug_native_continue (dbg, pid, tid, -1);
+			break;
 		default:
 			eprintf ("Unknown event: %d\n", code);
 			return -1;
@@ -424,7 +433,7 @@ static RList *w32_dbg_maps() {
 	SIZE_T ret_len;
 	RDebugMap *mr;
 	RList *list = r_list_new ();
-
+#if !__MINGW64__	// TODO: Fix this , for win64 cant walk over all process memory, use psapi.dll to get modules
 	memset (&SysInfo, 0, sizeof (SysInfo));
 	GetSystemInfo (&SysInfo); // TODO: check return value
 	if (gmi == NULL) {
@@ -515,6 +524,7 @@ static RList *w32_dbg_maps() {
 			page += mbi.RegionSize; 
 		}
 	}
+#endif
 	return list;
 }
 
