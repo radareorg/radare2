@@ -12,8 +12,8 @@ var HexPanel = function () {
   this.rbox = null;
   this.address = null;
   this.scroll_offset = 0;
-  this.dragStart = 0;
-  this.dragEnd = 0;
+  this.dragStart = -1;
+  this.dragEnd = -1;
   this.isDragging = false;
 };
 HexPanel.prototype.scrollTo = function(x,y) {
@@ -30,23 +30,41 @@ HexPanel.prototype.render = function() {
   $(document).dblclick(handle_hex_double_click);
   // $(document).click(rename_dword);
   // $(document).dblclick(handle_hex_double_click);
-  // Context menu for disas addresses:
-  $(document).contextmenu({
-      delegate: ".addr",
-      menu: [
-          {title: "jump to address<kbd>g</kbd>", cmd: "goto"},
-          {title: "rename<kbd>n</kbd>", cmd: "rename"},
-          {title: "add comment<kbd>;</kbd>", cmd: "comment"},
-          {title: "code<kbd>c</kbd>", cmd: "define"},
-          {title: "undefine<kbd>u</kbd>", cmd: "undefine"},
-          {title: "random colors<kbd>R</kbd>", cmd: "randomcolors"},
-          {title: "switch disasm/graph<kbd>s</kbd>", cmd: "switchview"}
-      ],
-      preventSelect: true,
-      taphold: true,
-      preventContextMenuForPopup: true,
-      show: false
+  // Context menu for dwords:
+  $('#center_panel').contextmenu({
+    delegate: ".dword",
+    menu: [
+      {title: "bytes to console", cmd: "hex_menu_to_console"}
+    ],
+    preventSelect: true,
+    preventContextMenuForPopup: true,
+    show: false,
+    select: function(event, ui) {
+      $(document).contextmenu("close");
+      switch (ui.cmd) {
+        case "hex_menu_to_console": hex_menu_to_console(); break;
+      }
+    }
   });
+
+}
+function hex_menu_to_console() {
+  value = "";
+  if (r2ui._hex.dragEnd > -1 && r2ui._hex.dragStart > -1) {
+    if (r2ui._hex.dragEnd + 1 < r2ui._hex.dragStart) { // reverse select
+      var cells = $("span.dword").slice(r2ui._hex.dragEnd, r2ui._hex.dragStart + 1).addClass('autohighlighti');
+      for (var i in cells) {
+        value += uncolor_dword(cells[i].innerHTML);
+      }
+    } else {
+      var cells = $("span.dword").slice(r2ui._hex.dragStart, r2ui._hex.dragEnd + 1);
+      for (var i in cells) {
+        value += uncolor_dword(cells[i].innerHTML);
+      }
+    }
+    var old_value = $("#cmd_output").text();
+    $("#cmd_output").html(old_value + "\n" + value );
+  }
 }
 function handle_hex_keypress(inEvent) {
   var keynum = inEvent.keyCode || inEvent.charCode || inEvent.which || 0;
@@ -130,7 +148,8 @@ function color_dword(dword) {
         .replace(/(00)/gi, function(x){return "<font class='ec_b0x00'>" + x + "</font>";});
 }
 function uncolor_dword(cdword) {
-  return cdword.replace(/(<([^>]+)>)/ig,"");
+  if (cdword !== undefined && cdword !== null) return cdword.replace(/(<([^>]+)>)/ig,"");
+  else return "";
 }
 function render_hexdump(lines) {
   r2ui._hex.scrolling = true;
@@ -170,13 +189,15 @@ HexPanel.prototype.seek = function(addr) {
   html += "</div>";
   $("#hex_tab").html(html);
   $(document).on('dblclick','.dword', handle_hex_double_click);
+
   // $(document).on('mouseenter','.dword', highlight_in);
   // $(document).on('mouseleave','.dword', highlight_out);
   // $(document).on('mouseenter','.dword font', highlight_in);
   // $(document).on('mouseleave','.dword font', highlight_out);
+
   $(document).on('mousedown','.dword', rangeMouseDown);
   $(document).on('mousemove','.dword', rangeMouseMove);
-  $(document).on('mouseup', rangeMouseUp);
+  $(document).on('mouseup', '.dword', rangeMouseUp);
   r2ui._hex.scrolling = false;
 };
 function rangeMouseDown(e) {
@@ -195,11 +216,11 @@ function rangeMouseUp(e) {
     return false;
   } else {
     var allCells = $("span.dword");
-    r2ui._hex.dragEnd = allCells.index($(this));
+    r2ui._hex.dragEnd = allCells.index($(e.target));
     r2ui._hex.isDragging = false;
-    // if (r2ui._hex.dragEnd !== 0) {
-    //   selectRange();
-    // }
+    if (r2ui._hex.dragEnd > -1) {
+      selectRange();
+    }
     document.documentElement.onselectstart = function () { return true; };
   }
 }
