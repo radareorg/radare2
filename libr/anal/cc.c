@@ -180,20 +180,30 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 				r_reg_set_value (anal->reg, it, 0);
 			}
 		}
-		return R_TRUE;
+		break;
 	case R_ANAL_OP_TYPE_MOV:
 		if (op->dst && op->dst->reg) {
 			it = r_reg_get (anal->reg, op->dst->reg->name, R_REG_TYPE_GPR);
 			if (it && op->src[0])
 				r_reg_set_value (anal->reg, it, op->src[0]->imm);
 		}
-		return R_TRUE;
+		break;
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+		{
+		       const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
+		       const char *esil = r_strbuf_get (&op->esil);
+		       if (esil && strstr (esil, sp)) {
+			       cc->nargs = 0;
+		       }
+		}
+		break;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH: // add argument
 		cc->nargs ++;
 		if (cc->nargs>0 && cc->nargs < R_ANAL_CC_ARGS)
 			cc->args[cc->nargs] = op->val;
-		return R_TRUE;
+		break;
 	}
 	// must update internal stuff to recognize parm
 	return R_TRUE;
