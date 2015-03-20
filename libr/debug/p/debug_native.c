@@ -1314,6 +1314,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		}
 
 		/* TODO: thread cannot be selected */
+		if (0) // disable until fixed
 		if (inferior_thread_count>0) {
 			gp_count = ((dbg->bits == R_SYS_BITS_64))? 44:16;
 			// XXX: kinda spaguetti coz multi-arch
