@@ -53,27 +53,36 @@ android:
 	sys/android-${NDK_ARCH}.sh
 
 w32dist:
-	rm -rf radare2-w32-${VERSION} w32dist
-	mkdir w32dist
-	for a in `find libr | grep -e dll$$`; do cp $$a w32dist ; done
-	for a in `find binr | grep -e exe$$`; do cp $$a w32dist ; done
-	rm -f w32dist/plugin.dll
-	mkdir -p w32dist/www
-	cp -rf shlr/www/* w32dist/www
-	mkdir -p w32dist/radare2/${VERSION}/magic
-	cp -f libr/magic/d/default/* w32dist/radare2/${VERSION}/magic
-	mkdir -p w32dist/radare2/${VERSION}/syscall
-	cp -f libr/syscall/d/*.sdb w32dist/radare2/${VERSION}/syscall
-	mkdir -p w32dist/radare2/${VERSION}/opcodes
-	cp -f libr/asm/d/*.sdb w32dist/radare2/${VERSION}/opcodes
-	mkdir -p w32dist/share/doc/radare2
-	mkdir -p w32dist/include/libr
-	cp libr/include/*.h w32dist/include/libr
-	#mkdir -p w32dist/include/libr/sflib
-	cp -f doc/fortunes.* w32dist/share/doc/radare2
-	mv w32dist radare2-w32-${VERSION}
-	rm -f radare2-w32-${VERSION}.zip
-	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
+	${MAKE} windist WINBITS=w32
+
+w64dist:
+	${MAKE} windist WINBITS=w64
+
+WINDIST=${WINBITS}dist
+
+windist:
+	[ -n "${WINBITS}" ] || exit 1
+	rm -rf radare2-${WINBITS}-${VERSION} ${WINDIST}
+	mkdir ${WINDIST}
+	for a in `find libr | grep -e dll$$`; do cp $$a ${WINDIST} ; done
+	for a in `find binr | grep -e exe$$`; do cp $$a ${WINDIST} ; done
+	rm -f ${WINDIST}/plugin.dll
+	mkdir -p ${WINDIST}/www
+	cp -rf shlr/www/* ${WINDIST}/www
+	mkdir -p ${WINDIST}/radare2/${VERSION}/magic
+	cp -f libr/magic/d/default/* ${WINDIST}/radare2/${VERSION}/magic
+	mkdir -p ${WINDIST}/radare2/${VERSION}/syscall
+	cp -f libr/syscall/d/*.sdb ${WINDIST}/radare2/${VERSION}/syscall
+	mkdir -p ${WINDIST}/radare2/${VERSION}/opcodes
+	cp -f libr/asm/d/*.sdb ${WINDIST}/radare2/${VERSION}/opcodes
+	mkdir -p ${WINDIST}/share/doc/radare2
+	mkdir -p ${WINDIST}/include/libr
+	cp libr/include/*.h ${WINDIST}/include/libr
+	#mkdir -p ${WINDIST}/include/libr/sflib
+	cp -f doc/fortunes.* ${WINDIST}/share/doc/radare2
+	mv ${WINDIST} radare2-${WINBITS}-${VERSION}
+	rm -f radare2-${WINBITS}-${VERSION}.zip
+	zip -r radare2-${WINBITS}-${VERSION}.zip radare2-${WINBITS}-${VERSION}
 
 clean: rmd
 	for a in shlr libr binr ; do (cd $$a ; ${MAKE} clean) ; done
