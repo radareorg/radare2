@@ -1018,7 +1018,7 @@ free (rf);
 					r_cons_printf ("0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				} else {
-					r_cons_printf ("0x%08"PFMT64x" ->", str,
+					r_cons_printf ("0x%08"PFMT64x" ->",
 							r_reg_get_value (core->dbg->reg, r));
 					r_reg_set_value (core->dbg->reg, r,
 							r_num_math (core->num, arg+1));
