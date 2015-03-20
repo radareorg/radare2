@@ -895,6 +895,95 @@ static void cmd_print_pwn(const RCore* core) {
 	r_sys_cmd ("sh");
 }
 
+static int opdump(RCore *core, int len, const char *data) {
+	int show_offset = R_TRUE;
+	int cols = r_config_get_i (core->config, "hex.cols");
+	const char *bgcolor, *fgcolor;
+	ut64 i, c, end, oi;
+	RAnalOp op;
+	if (len<0 || len > core->blocksize) {
+		eprintf ("Invalid length\n");
+		return 0;
+	}
+	cols *= 2; // 16 -> 32
+	end = core->offset + len;
+	for (oi = i = c = 0; i< len; c++) {
+		bgcolor = Color_BGBLACK;
+		fgcolor = Color_WHITE;
+		if (i && !(c%cols)) {
+			show_offset = R_TRUE;
+			r_cons_printf ("  %d\n", i-oi);
+			oi = i;
+		}
+		if (show_offset) {
+			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+			show_offset = R_FALSE;
+		}
+		if (!r_anal_op (core->anal, &op, core->offset+i,
+			core->block+i, len-i)) {
+			op.type = 0;
+			bgcolor = Color_BGRED;
+			op.size = 1;
+		}
+#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_MOV:
+		case R_ANAL_OP_TYPE_CMOV:
+			bgcolor = Color_BGYELLOW;
+			fgcolor = Color_BLUE;
+			break;
+		case R_ANAL_OP_TYPE_PUSH:
+			bgcolor = Color_RED;
+			fgcolor = Color_BLUE;
+			break;
+		case R_ANAL_OP_TYPE_TRAP:
+		case R_ANAL_OP_TYPE_SWI:
+			bgcolor = Color_BGRED;
+			fgcolor = Color_BLACK;
+			break;
+		case R_ANAL_OP_TYPE_POP:
+			bgcolor = Color_BGMAGENTA;
+			fgcolor = Color_BLACK;
+			break;
+		case R_ANAL_OP_TYPE_NOP:
+			bgcolor = Color_BGBLUE;
+			fgcolor = Color_WHITE;
+			break;
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
+			bgcolor = Color_BGGREEN;
+			fgcolor = Color_BLACK;
+			break;
+		case R_ANAL_OP_TYPE_RET:
+			bgcolor = Color_BGGREEN;
+			fgcolor = Color_WHITE;
+			break;
+		case -1:
+		case R_ANAL_OP_TYPE_ILL:
+		case R_ANAL_OP_TYPE_UNK:
+			bgcolor = Color_BGRED;
+			fgcolor = Color_WHITE;
+			break;
+#if 0
+		default:
+			color = Color_BGCYAN;
+			fgcolor = Color_BLACK;
+			break;
+#endif
+		}
+		r_cons_printf ("%s%s%02x\x1b[0m", bgcolor,
+			fgcolor, (ut8)core->block[i]);//op.type);
+		if (op.size>0)
+			i += op.size;
+		else i++;
+	}
+	return R_TRUE;
+}
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -1890,6 +1979,7 @@ static int cmd_print(void *data, const char *input) {
 				"px",  "", "show hexdump",
 				"px/", "", "same as x/ in gdb (help x)",
 				"pxa", "", "show annotated hexdump",
+				"pxA", "", "show op analysis color map",
 				"pxe", "", "emoji hexdump! :)",
 				"pxf", "", "show hexdump of current function",
 				"pxh", "", "show hexadecimal half-words dump (16bit)",
@@ -1909,6 +1999,9 @@ static int cmd_print(void *data, const char *input) {
 			if (len%16)
 				len += 16-(len%16);
 			annotated_hexdump (core, input+2, len);
+			break;
+		case 'A':
+			opdump (core, len, input+1);
 			break;
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
