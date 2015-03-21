@@ -193,17 +193,26 @@ int main(int argc, char **argv) {
 	if (argc<3 || optind+2>argc)
 		return show_help (0);
 
-	file = argv[optind];
-	file2 = argv[optind+1];
+	if (optind<argc) {
+		file = argv[optind];
+	} else {
+		file = NULL;
+	}
+	
+	if (optind+1<argc) {
+		file2 = argv[optind+1];
+	} else {
+		file2 = NULL;
+	}
 
 	switch (mode) {
 	case MODE_GRAPH:
 	case MODE_CODE:
 		c = opencore (file);
-		if (!c) eprintf ("Cannot open '%s'\n", file);
+		if (!c) eprintf ("Cannot open '%s'\n", r_str_get (file));
 		c2 = opencore (file2);
 		if (!c || !c2) {
-			eprintf ("Cannot open '%s'\n", file2);
+			eprintf ("Cannot open '%s'\n", r_str_get (file2));
 			return 1;
 		}
 		if (arch) {
@@ -242,12 +251,12 @@ int main(int argc, char **argv) {
 
 	bufa = (ut8*)r_file_slurp (file, &sza);
 	if (!bufa) {
-		eprintf ("radiff2: Can not open %s\n", bufa);
+		eprintf ("radiff2: Cannot open %s\n", r_str_get ((const char *)bufa));
 		return 1;
 	}
 	bufb = (ut8*)r_file_slurp (file2, &szb);
 	if (!bufb) {
-		eprintf ("radiff2: Cannot open: %s\n", bufb);
+		eprintf ("radiff2: Cannot open: %s\n", r_str_get ((const char*)bufb));
 		free (bufa);
 		return 1;
 	}

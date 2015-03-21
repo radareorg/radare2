@@ -118,7 +118,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 
 R_API int r_core_visual_types(RCore *core) {
 	RCoreVisualTypes vt = {core, 0, 0};	
-	int hit, i, j, ch;
+	int i, j, ch;
 	int _option = 0;
 	int option = 0;
 	char *txt;
@@ -156,8 +156,6 @@ R_API int r_core_visual_types(RCore *core) {
 		vt.type = opts[h_opt];
 		vt.optword = optword;
                 sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
-
-		hit = 0;
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
@@ -713,7 +711,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 }
 
 R_API void r_core_visual_config(RCore *core) {
-	char cmd[1024], *fs = NULL, *fs2 = NULL, *desc = NULL;
+	char *fs = NULL, *fs2 = NULL, *desc = NULL;
 	int i, j, ch, hit, show;
 	int option, _option = 0;
 	RListIter *iter;

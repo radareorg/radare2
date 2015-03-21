@@ -259,17 +259,20 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
+	void *newbuf = NULL;
 	const int blen = (w+1) * h;
 	char *b = NULL;
 	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);
 	if (!b) return R_FALSE;
-	c->attrs = realloc(c->attrs, sizeof (*c->attrs)*blen+1);
-	if (!c->attrs) {
+	c->b = b;
+	newbuf = realloc (c->attrs, sizeof (*c->attrs)*blen+1);
+	if (!newbuf) {
 		free (c->b);
 		free (c->attrs);
 		return R_FALSE;
 	}
+	c->attrs = newbuf;
 	c->blen = blen;
 	c->b = b;
 	c->w = w;

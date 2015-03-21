@@ -998,24 +998,25 @@ static void free_tpi_stream(void *stream)
 {
 	STpiStream *tpi_stream = (STpiStream *)stream;
 	RListIter *it;
-	SType *type = 0;
+	SType *type = NULL;
 
 	it = r_list_iterator(tpi_stream->types);
 	while (r_list_iter_next(it)) {
-		type = (SType *) r_list_iter_get(it);
-		if (type) {
-			if (type->type_data.free_) {
-				type->type_data.free_(&type->type_data);
-				type->type_data.free_ = 0;
-			}
+		type = (SType *) r_list_iter_get (it);
+		if (!type) {
+			continue;
+		}
+		if (type->type_data.free_) {
+			type->type_data.free_(&type->type_data);
+			type->type_data.free_ = 0;
 		}
 		if (type->type_data.type_info) {
 			free(type->type_data.type_info);
 			type->type_data.free_ = 0;
 			type->type_data.type_info = 0;
 		}
-		free(type);
-		type = 0;
+		free (type);
+		type = NULL;
 	}
 	r_list_free(tpi_stream->types);
 }

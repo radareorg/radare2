@@ -491,7 +491,9 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		buf_bytes = iob->desc_read (io, desc, &len_bytes);
 	}
 
-	buf_bytes = iob->desc_read (io, desc, &sz);
+	if (!buf_bytes) {
+		buf_bytes = iob->desc_read (io, desc, &sz);
+	}
 	if (!buf_bytes) {
 		free (buf_bytes);
 		return R_FALSE;

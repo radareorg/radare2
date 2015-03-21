@@ -989,7 +989,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		sh_name = &bin->strtab[bin->shdr[i].sh_name];
 		// TODO: check boundaries!!!
 
-		if (!sh_name)
+		if (!sh_name || !*sh_name)
 			continue;
 
 		if (bin->shdr[i].sh_size > bin->b->length) {

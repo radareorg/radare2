@@ -540,7 +540,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 			if (strcmp(g->registers[i].name, reg) == 0) {
 				const uint64_t register_size = g->registers[i].size;
 				const uint64_t offset = g->registers[i].offset;
-				char* value = malloc (register_size * 2);
+				char* value = malloc ((register_size * 2)+1);
 				if (!value) {
 					free (buff);
 					return -1;
@@ -554,7 +554,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 				strcpy (value+(register_size * 2 - val_len), name_end);
 
 				for (x=0; x < register_size; x++) {
-					g->data[offset + register_size - x - 1] = hex2char(&value[x * 2]);
+					g->data[offset + register_size - x - 1] = hex2char (&value[x * 2]);
 				}
 				free(value);
 			}

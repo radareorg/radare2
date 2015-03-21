@@ -605,12 +605,14 @@ int main(int argc, char **argv) {
 		unset_action (ACTION_STRINGS);
 	}
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
-	cf = r_core_file_open (&core, file, R_IO_READ, 0);
-	fd = cf ? r_core_file_cur_fd (&core) : -1;
-	if (!cf || fd == -1) {
-		eprintf ("r_core: Cannot open file\n");
-		r_core_fini (&core);
-		return 1;
+	if (file && *file) {
+		cf = r_core_file_open (&core, file, R_IO_READ, 0);
+		fd = cf ? r_core_file_cur_fd (&core) : -1;
+		if (!cf || fd == -1) {
+			eprintf ("r_core: Cannot open file\n");
+			r_core_fini (&core);
+			return 1;
+		}
 	}
 
 	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");

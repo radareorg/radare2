@@ -22,7 +22,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->ptr = buf[2];
 		op->ptr |= buf[3]<<8;
 		op->ptr |= buf[4]<<16;
-		op->ptr |= buf[5]<<24;
+		op->ptr |= ((ut32)(0xff&buf[5]))<<24;
 		op->ptr += addr;
 		opsize = 6;
 		break;

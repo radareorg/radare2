@@ -374,8 +374,9 @@ int main (int argc, char **argv) {
 		r_num_free (num);
 		return use_stdin ();
 	}
-	for (i=1; i<argc; i++)
-		rax (argv[i], 0, (i+1)==argc);
+	for (i=1; i<argc; i++) {
+		rax (argv[i], 0, i==argc-1);
+	}
 	r_num_free (num);
 	return 0;
 }
