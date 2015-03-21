@@ -804,7 +804,8 @@ int main(int argc, char **argv, char **envp) {
 	if (isatty(0)) {
 #endif
 		 if (r_config_get_i(r.config, "scr.histsave") &&
-				r_config_get_i(r.config, "scr.interactive"))
+				r_config_get_i(r.config, "scr.interactive") &&
+				!r_sandbox_enable (0))
 			r_line_hist_save (R2_HOMEDIR"/history");
 #if __UNIX__
 	}
