@@ -830,6 +830,10 @@ static int cmd_system(void *data, const char *input) {
 	int ret = 0;
 	switch (*input) {
 	case '!':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1]) {
 			int olen;
 			char *out = NULL;
