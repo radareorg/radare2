@@ -898,7 +898,9 @@ static void cmd_print_pwn(const RCore* core) {
 static int opdump(RCore *core, int len, const char *data) {
 	int show_offset = R_TRUE;
 	int cols = r_config_get_i (core->config, "hex.cols");
-	const char *bgcolor, *fgcolor;
+	int show_color = r_config_get_i (core->config, "scr.color");
+	int show_cursor = core->print->cur_enabled;
+	const char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
 	RAnalOp op;
 	if (len<0 || len > core->blocksize) {
@@ -907,8 +909,6 @@ static int opdump(RCore *core, int len, const char *data) {
 	}
 	cols *= 2; // 16 -> 32
 	for (oi = i = c = 0; i< len; c++) {
-		bgcolor = Color_BGBLACK;
-		fgcolor = Color_WHITE;
 		if (i && !(c%cols)) {
 			show_offset = R_TRUE;
 			r_cons_printf ("  %d\n", i-oi);
@@ -918,54 +918,128 @@ static int opdump(RCore *core, int len, const char *data) {
 			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 			show_offset = R_FALSE;
 		}
-		if (!r_anal_op (core->anal, &op, core->offset+i,
-			core->block+i, len-i)) {
+		bgcolor = Color_BGBLACK;
+		fgcolor = Color_WHITE;
+		text = NULL;
+		if (!r_anal_op (core->anal, &op, core->offset+i, core->block+i, len-i)) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
 		}
 		switch (op.type) {
+		case R_ANAL_OP_TYPE_LEA:
 		case R_ANAL_OP_TYPE_MOV:
 		case R_ANAL_OP_TYPE_CMOV:
+			text = "m.";
 			bgcolor = Color_BGYELLOW;
 			fgcolor = Color_BLUE;
 			break;
 		case R_ANAL_OP_TYPE_PUSH:
 			bgcolor = Color_RED;
 			fgcolor = Color_BLUE;
+			text = "->";
+			break;
+		case R_ANAL_OP_TYPE_UPUSH:
+			bgcolor = Color_RED;
+			fgcolor = Color_BLUE;
+			text = "?>";
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_SWI:
 			bgcolor = Color_BGRED;
 			fgcolor = Color_BLACK;
+			text = "##";
 			break;
 		case R_ANAL_OP_TYPE_POP:
+			text = "<-";
 			bgcolor = Color_BGMAGENTA;
 			fgcolor = Color_BLACK;
 			break;
 		case R_ANAL_OP_TYPE_NOP:
 			bgcolor = Color_BGBLUE;
 			fgcolor = Color_WHITE;
+			text = "..";
+			break;
+		case R_ANAL_OP_TYPE_MUL:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "_*";
+			break;
+		case R_ANAL_OP_TYPE_DIV:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "_/";
+			break;
+		case R_ANAL_OP_TYPE_AND:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "_&";
+			break;
+		case R_ANAL_OP_TYPE_XOR:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "_^";
+			break;
+		case R_ANAL_OP_TYPE_OR:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "_|";
+			break;
+		case R_ANAL_OP_TYPE_SHR:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = ">>";
+			break;
+		case R_ANAL_OP_TYPE_SHL:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "<<";
+			break;
+		case R_ANAL_OP_TYPE_SUB:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "--";
+			break;
+		case R_ANAL_OP_TYPE_ADD:
+			bgcolor = Color_BGGRAY;
+			fgcolor = Color_YELLOW;
+			text = "++";
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
+			bgcolor = Color_BGGREEN;
+			fgcolor = Color_BLACK;
+			text = "_J";
+			break;
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
+			bgcolor = Color_BGGREEN;
+			fgcolor = Color_BLACK;
+			text = "cJ";
+			break;
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_UCCALL:
 			bgcolor = Color_BGGREEN;
 			fgcolor = Color_BLACK;
+			text = "_C";
+			break;
+		case R_ANAL_OP_TYPE_CMP:
+			bgcolor = Color_BGYELLOW;
+			fgcolor = Color_BLACK;
+			text = "==";
 			break;
 		case R_ANAL_OP_TYPE_RET:
 			bgcolor = Color_BGGREEN;
 			fgcolor = Color_WHITE;
+			text = "_R";
 			break;
 		case -1:
 		case R_ANAL_OP_TYPE_ILL:
 		case R_ANAL_OP_TYPE_UNK:
 			bgcolor = Color_BGRED;
 			fgcolor = Color_WHITE;
+			text = "II";
 			break;
 #if 0
 		default:
@@ -974,8 +1048,28 @@ static int opdump(RCore *core, int len, const char *data) {
 			break;
 #endif
 		}
-		r_cons_printf ("%s%s%02x\x1b[0m", bgcolor,
-			fgcolor, (ut8)core->block[i]);//op.type);
+		if (show_cursor) {
+			if (i >= core->print->cur && i < core->print->cur+op.size) 
+				r_cons_invert (1, 1);
+		}
+		if (show_color) {
+			if (!text) text = "  ";
+			//r_cons_printf ("%s%s%02x\x1b[0m", bgcolor,
+			//	fgcolor, (ut8)core->block[i]);//op.type);
+			r_cons_printf ("%s%s%s\x1b[0m", bgcolor,
+				fgcolor, text); 
+		} else {
+			if (text) {
+				r_cons_printf ("%s", text);
+			} else {
+				r_cons_printf ("  "); //%02x", (ut8)op.type);
+			}
+			if (show_cursor) {
+				if (i >= core->print->cur && i < core->print->cur+op.size) 
+					r_cons_invert (0, 1);
+			}
+		}
+
 		if (op.size>0)
 			i += op.size;
 		else i++;
@@ -1993,15 +2087,15 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			}
 			break;
-		case 'a':
+		case 'a': // "pxa"
 			if (len%16)
 				len += 16-(len%16);
 			annotated_hexdump (core, input+2, len);
 			break;
-		case 'A':
+		case 'A': // "pxA"
 			opdump (core, len, input+1);
 			break;
-		case 'o':
+		case 'o': // "pxo"
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
 			break;
 		case 'd':

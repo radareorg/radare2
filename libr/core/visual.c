@@ -2,14 +2,14 @@
 
 #include "r_core.h"
 
-#define NPF 6
+#define NPF 7
 static int blocksize = 0;
 static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
 	"x", "pd $r", 
 	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
-	"pxw", "pc", "pxa"
+	"pxw", "pc", "pxA", "pxa"
 };
 static int autoblocksize = 1;
 static int obs = 0;
@@ -490,6 +490,9 @@ static void setprintmode (RCore *core, int n) {
 	case 2:
 		core->inc = r_asm_disassemble (core->assembler,
 			&op, core->block, 32);
+		break;
+	case 5: // "pxA"
+		core->inc = 256;
 		break;
 	}
 }
@@ -1430,8 +1433,8 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	/* automatic block size */
 	if (autoblocksize)
 	switch (core->printidx) {
-	case 0:
-	case 5:
+	case 0: // x"
+	case 6: // pxa
 		scrcols = r_config_get_i (core->config, "hex.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
 		break;
@@ -1445,6 +1448,9 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	case 1: // pd
 	case 2: // pd+dbg
 		r_core_block_size (core, core->cons->rows * 5); // this is hacky
+		break;
+	case 5: // pxA
+		r_core_block_size (core, core->cons->rows * 128);
 		break;
 	}
 
