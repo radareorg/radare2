@@ -1661,6 +1661,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 			return R_FALSE;
 		memset (buf, 0xff, len);
 		r_io_read_at (core->io, addr, buf, len);
+		buf[len-1] = 0;
 	//}
 
 	for (i = j = 0; j<count; j++ ) {

@@ -427,8 +427,10 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 		ins_res = strcat_dup(ins_res, ins_aux, 2);
 		*next_ins_pos = *next_ins_pos + 1;
 	} else {
-		ins_aux = decode_ins(hash_code, ins_pos, ins_off, &ins_len_dec, &reg_len_dec, &ret_ins_bits, magic_value, two_ins, err_code);
-		if(*err_code < 0) {
+		free (ins_aux);
+		ins_aux = decode_ins(hash_code, ins_pos, ins_off, &ins_len_dec,
+			&reg_len_dec, &ret_ins_bits, magic_value, two_ins, err_code);
+		if (*err_code < 0) {
 			return NULL;
 		}
 		ins_res = strcat_dup(ins_aux, ins_res, 1);

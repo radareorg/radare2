@@ -1067,6 +1067,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						else {
 							eprintf ("Missing closing parenthesis in format ')'\n");
 							free (oarg);
+							oarg = NULL;
 							goto beach;
 						}
 					} else {
@@ -1087,6 +1088,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (end == NULL) {
 						eprintf ("Missing closing bracket\n");
 						free(oarg);
+						oarg = NULL;
 						goto beach;
 					}
 					*end = '\0';
@@ -1124,6 +1126,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							addr, b, len);
 					p->printf("\n");
 					free (oarg);
+					oarg = NULL;
 					goto beach;
 				}
 				}
@@ -1155,14 +1158,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				continue;
 			case ':': // skip 4 bytes
 				if (size == -1) i+=4;
-				else
-					while (size--) i+=4;
+				else while (size--) i+=4;
 				continue;
 			case '.': // skip 1 byte
 				if (size == -1) i++;
-				else
-					i+=size;
+				else i+=size;
 				free (oarg);
+				oarg = NULL;
 				continue;
 			case 'p': // pointer reference
 				tmp = (p->bits == 64)? 'q': 'x';
@@ -1374,6 +1376,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->printf ("\n");
 			last = tmp;
 			free (oarg);
+			oarg = NULL;
 		}
 		if (otimes>1) {
 			if (MUSTSEEJSON) p->printf ("]");

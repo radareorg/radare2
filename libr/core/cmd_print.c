@@ -899,14 +899,13 @@ static int opdump(RCore *core, int len, const char *data) {
 	int show_offset = R_TRUE;
 	int cols = r_config_get_i (core->config, "hex.cols");
 	const char *bgcolor, *fgcolor;
-	ut64 i, c, end, oi;
+	ut64 i, c, oi;
 	RAnalOp op;
 	if (len<0 || len > core->blocksize) {
 		eprintf ("Invalid length\n");
 		return 0;
 	}
 	cols *= 2; // 16 -> 32
-	end = core->offset + len;
 	for (oi = i = c = 0; i< len; c++) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
@@ -925,7 +924,6 @@ static int opdump(RCore *core, int len, const char *data) {
 			bgcolor = Color_BGRED;
 			op.size = 1;
 		}
-#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_MOV:
 		case R_ANAL_OP_TYPE_CMOV:

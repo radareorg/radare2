@@ -264,8 +264,12 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);
 	if (!b) return R_FALSE;
-	c->attrs = realloc(c->attrs,sizeof(*c->attrs)*blen+1);
-	if (!c->attrs) return R_FALSE;
+	c->attrs = realloc(c->attrs, sizeof (*c->attrs)*blen+1);
+	if (!c->attrs) {
+		free (c->b);
+		free (c->attrs);
+		return R_FALSE;
+	}
 	c->blen = blen;
 	c->b = b;
 	c->w = w;

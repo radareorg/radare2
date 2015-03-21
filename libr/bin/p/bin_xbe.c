@@ -237,7 +237,8 @@ static RList* symbols(RBinFile *arch) {
 	for (i = 0; thunk_addr[i]; i++) {
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
-			ret->free(sym);
+			ret->free (sym);
+			free (ret);
 			return NULL;
 		}
 

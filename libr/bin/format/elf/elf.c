@@ -324,6 +324,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 							// thumb symbol
 							plt_addr--;
 						}
+						free (rel);
 						return plt_addr;
 					}
 					break;
@@ -352,6 +353,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				default:
 					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
 					eprintf ("0x%llx - 0x%llx  i \n", (ut64)rel[k].r_offset, (ut64)rel[k].r_info);
+					free (rel);
 					return of;
 					break;
 				}
@@ -1210,18 +1212,20 @@ if (
 				free (strtab);
 				return NULL;
 			}
-			if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
-				eprintf ("malloc (syms strtab)");
-				free (ret);
-				free (strtab);
-				return NULL;
-			}
-			if (r_buf_read_at (bin->b, strtab_section->sh_offset,
-					(ut8*)strtab, strtab_section->sh_size) == -1) {
-				eprintf ("Warning: read (syms strtab)\n");
-				free (ret);
-				free (strtab);
-				return NULL;
+			if (!strtab) {
+				if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
+					eprintf ("malloc (syms strtab)");
+					free (ret);
+					free (strtab);
+					return NULL;
+				}
+				if (r_buf_read_at (bin->b, strtab_section->sh_offset,
+							(ut8*)strtab, strtab_section->sh_size) == -1) {
+					eprintf ("Warning: read (syms strtab)\n");
+					free (ret);
+					free (strtab);
+					return NULL;
+				}
 			}
 
 			newsize = 1+bin->shdr[i].sh_size;

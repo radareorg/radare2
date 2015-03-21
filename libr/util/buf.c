@@ -139,7 +139,7 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 R_API ut64 r_buf_size (RBuffer *b) {
 	if (!b) return 0LL;
 	if (b->sparse) {
-		ut64 max;
+		ut64 max = 0LL;
 		if (sparse_limits (b->sparse, NULL, &max)) {
 			return max; // -min
 		}
@@ -176,15 +176,18 @@ R_API RBuffer *r_buf_file (const char *file) {
 	return NULL; /* we just freed b, don't return it */
 }
 
-
 R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
-	ut64 min, max;
+	ut64 min, max = 0LL;
 	if (b->sparse) {
 		sparse_limits (b->sparse, &min, &max);
 		switch (whence) {
 		case R_IO_SEEK_SET: b->cur = addr; break;
 		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
-		case R_IO_SEEK_END: b->cur = max + addr; break; //b->base + b->length + addr; break;
+		case R_IO_SEEK_END: 
+			    if (sparse_limits (b->sparse, NULL, &max)) {
+				    return max; // -min
+			    }
+			    b->cur = max + addr; break; //b->base + b->length + addr; break;
 		}
 	} else {
 		min = b->base;

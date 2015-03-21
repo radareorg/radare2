@@ -8,7 +8,7 @@
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
 	char *res = NULL;
-	char *oprompt = r_cons_singleton()->line->prompt;
+	char *oprompt = strdup (r_cons_singleton()->line->prompt);
 	r_cons_show_cursor (R_TRUE);
 	if (txt && *txt) {
 		free (r_cons_singleton ()->line->contents);
@@ -25,6 +25,7 @@ static char *prompt(const char *str, const char *txt) {
 	if (*cmd)
 		res = strdup (cmd);
 	r_line_set_prompt (oprompt);
+	free (oprompt);
 	free (r_cons_singleton ()->line->contents);
 	r_cons_singleton ()->line->contents = NULL;
 	return res;
@@ -854,8 +855,7 @@ R_API void r_core_visual_config(RCore *core) {
 			 }
 			r_cons_set_raw (1);
 			r_cons_show_cursor (R_FALSE);
-			if (cmd[0])
-				r_cons_any_key (NULL);
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 			continue;
 		}

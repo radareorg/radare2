@@ -433,19 +433,20 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					strncpy (name, p+1, sizeof (name)-1);
 				} else
 					switch (type) {
-						case 'z':
-							type='s';
-						case 's':
-							// TODO: filter \n and so on :)
-							strncpy (name, t, sizeof (name)-1);
-							name[sizeof (name)-1] = '\0';
-							r_core_read_at (core, addr, (ut8*)name, sizeof (name)-1);
-							if (n < sizeof(name))
-								name[n] = '\0';
-							break;
-						default:
-							fi = r_flag_get_i (core->flags, addr);
-							if (fi) strncpy (name, fi->name, sizeof (name)-1);
+					case 'z':
+						type='s';
+					case 's':
+						// TODO: filter \n and so on :)
+						strncpy (name, t, sizeof (name)-1);
+						name[sizeof (name)-1] = '\0';
+						r_core_read_at (core, addr, (ut8*)name, sizeof (name)-1);
+						if (n < sizeof(name))
+							name[n] = '\0';
+						else name[sizeof (name)-1] = '\0';
+						break;
+					default:
+						fi = r_flag_get_i (core->flags, addr);
+						if (fi) strncpy (name, fi->name, sizeof (name)-1);
 					}
 			} else if (n<1) {
 				eprintf ("Invalid length %d\n", n);

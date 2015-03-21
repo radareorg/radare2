@@ -94,7 +94,7 @@ static int oc = '\n';
 static int mode = NORMAL;
 
 static char *find_include(const char *prefix, const char *file) {
-	char *pfx, *ret, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
+	char *pfx = NULL, *ret = NULL, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
 	//eprintf ("find_include (%s,%s)\n", prefix, file);
 	if (!prefix) prefix = "";
 	if (*prefix=='$') {
@@ -115,6 +115,7 @@ static char *find_include(const char *prefix, const char *file) {
 		while (str) {
 			if (ptr)
 				*ptr = 0;
+			free (ret);
 			ret = r_str_concatf (NULL, "%s/%s", pfx, file);
 			{
 				char *filepath = r_str_concatf (NULL, "%s/%s/%s", str, pfx, file);
@@ -381,8 +382,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		rcc_pushstr (egg, str, mustfilter);
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
-	//free ((void *)_str);
-	return ret? strdup (ret): NULL; // memleak or wtf
+	return ret;
 }
 
 static void rcc_fun(REgg *egg, const char *str) {
@@ -834,6 +834,7 @@ static void rcc_next(REgg *egg) {
 		if (ocn) { // Used to call .var0()
 			/* XXX: Probably buggy and wrong */
 			*buf = 0;
+			free (str);
 			str = r_egg_mkvar (egg, buf, ocn, 0);
 			if (*buf)
 				e->get_result (egg, buf);

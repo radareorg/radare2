@@ -212,10 +212,12 @@ R_API int r_cons_is_utf8() {
 	if (cursor_position(fd, &row, &col))
 		return 0;
 	write (1, "\xc3\x89\xc3\xa9", 4);
-	if (cursor_position (fd, &row2, &col2))
+	if (cursor_position (fd, &row2, &col2)) {
+		close (fd);
 		return 0;
+	}
+	close (fd);
 	write (1, "\r    \r", 6);
-	close(fd);
 	return ((col2-col)==2);
 }
 #else

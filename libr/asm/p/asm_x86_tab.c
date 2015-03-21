@@ -321,7 +321,7 @@ static int parseOperand(const char *str, Operand *op) {
 				}
 			}
 			else if (last_type == TT_WORD) {
-				ut32 reg_type;
+				ut32 reg_type = 0;
 
 				// We can't multiply registers
 				if (reg != X86R_UNDEFINED)

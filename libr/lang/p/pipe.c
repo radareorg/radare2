@@ -60,12 +60,15 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		char *res, buf[1024];
 		r_cons_break (NULL, NULL);
 		for (;;) {
-			if (r_cons_singleton ()->breaked)
+			if (r_cons_singleton ()->breaked) {
 				break;
+			}
 			memset (buf, 0, sizeof (buf));
 			ret = read (output[0], buf, sizeof (buf)-1);
-			if (ret <1 || !buf[0])
+			if (ret <1 || !buf[0]) {
 				break;
+			}
+			buf[sizeof(buf)-1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			eprintf ("%d %s\n", ret, buf);
 			if (res) {
@@ -88,6 +91,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	close (input[1]);
 	close (output[0]);
 	close (output[1]);
+	close (safe_in);
 	return R_TRUE;
 #else
 	eprintf ("Only supported on UNIX\n");

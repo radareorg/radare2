@@ -41,7 +41,7 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 static int printDisassembledInstruction(char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
-	char strOperand[128];
+	char strOperand[256];
 	*out = '\0';
 
 	/* If we just found a long instruction, there is nothing to be printed yet, since we don't

@@ -949,11 +949,10 @@ st8 *get_reg_name_4(ut32 idx)
 
 st8 *get_opers(ut8 oper_byte)
 {
-  st8 *res;
-  ut8 oper_type;
-  st8 *reg_name;
+  st8 *res = NULL;
+  ut8 oper_type = 0x00;
+  st8 *reg_name = NULL;
 
-  res = NULL;
   switch (oper_byte) {
     case 0xE0u:
       res = strdup("overflow(AC0)");
@@ -1101,6 +1100,7 @@ st8 *get_opers(ut8 oper_byte)
 			}
 			// free (reg_name); Causes segfault
 			// TODO: still can leak
+free(reg_name);
 			return res;
 		}
 		reg_name = get_reg_name_1((oper_byte & 0xF) + 128);

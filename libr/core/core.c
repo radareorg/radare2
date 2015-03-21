@@ -1021,6 +1021,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (!r_line_singleton ()->echo)
 		*prompt = 0;
 	if (r_config_get_i (r->config, "scr.promptfile")) {
+		free (filename);
 		filename = r_str_newf ("\"%s\"",
 			r_file_basename (r->io->desc->name));
 	}

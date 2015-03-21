@@ -53,7 +53,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	rih = fd->data;
 	pathname = fd->name + 7;
-	out = fopen (pathname, "w");
+	out = r_sandbox_fopen (pathname, "w");
 	if (!out) {
 		eprintf ("Cannot open '%s' for writing\n", pathname);
 		return -1;
@@ -62,6 +62,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (r_buf_write_at(rih->rbuf, io->off, buf, count) != count) {
 		eprintf("ihex:write(): sparse write failed\n");
 		fclose(out);
+		return -1;
 	}
 
 	/* disk write : process each sparse chunk */
@@ -79,6 +80,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			//04 record (ext address)
 			if (fw04b(out, addh0) < 0) {
 				eprintf("ihex:write: file error\n");
+				fclose (out);
 				return -1;
 			}
 			//00 records (data)
@@ -86,23 +88,27 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			addl0 = 0;
 			if (fwblock(out, rbs->data, rbs->from, tsiz)) {
 				eprintf("ihex:fwblock error\n");
+				fclose (out);
 				return -1;
 			}
 		}
 		//04 record (ext address)
 		if (fw04b(out, addh1) < 0) {
 			eprintf("ihex:write: file error\n");
+			fclose (out);
 			return -1;
 		}
 		//00 records (remaining data)
 		if (fwblock(out, rbs->data + tsiz, (addh1 <<16 ) | addl0, rbs->size - tsiz)) {
 			eprintf("ihex:fwblock error\n");
+			fclose (out);
 			return -1;
 		}
 	}	//list_foreach
 	
 	fprintf (out, ":00000001FF\n");
 	fclose (out);
+	out = NULL;
 	return 0;
 }
 

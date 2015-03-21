@@ -62,6 +62,7 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 		entry->vaddr += 367 + 5 + jmp_dst;
 		return entry;
 	}
+	free (entry);
 	return NULL;
 }
 
@@ -1090,7 +1091,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int index = 0;
 	int len = 0;
 	int max_libs = 20;
-	libs = calloc (max_libs, sizeof(struct r_bin_pe_lib_t));
+	libs = calloc (max_libs+1, sizeof(struct r_bin_pe_lib_t));
 	if (!libs) {
 		r_sys_perror ("malloc (libs)");
 		return NULL;

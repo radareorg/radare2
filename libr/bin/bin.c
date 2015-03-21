@@ -172,8 +172,13 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 			}
 			/* Print the escape code */
 			else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
-				tmp[i+0] = '\\';
-				tmp[i+1] = "       abtnvfr             e"[r];
+				if ((i+32) < sizeof (tmp)) {
+					tmp[i+0] = '\\';
+					tmp[i+1] = "       abtnvfr             e"[r];
+				} else {
+					// string too long
+					break;
+				}
 				rc = 2;
 				runes++;
 			}

@@ -617,9 +617,17 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				if (p) p[(p==path)?1:0]=0;
 			} else {
 				strcat (path, "/");
-				if (*input=='/')
-					strcpy (path, input);
-				else strcat (path, input);
+				if (*input=='/') {
+					strncpy (path, input, sizeof (opath)-1);
+				} else {
+					if ((strlen (path)+strlen (input))>=sizeof (path)) {
+						// overflow
+						path[0] = 0;
+					} else {
+						strcat (path, input);
+					}
+				}
+				path[sizeof(path)-1] = 0;
 			}
 			r_str_chop_path (path);
 			list = r_fs_dir (fs, path);
