@@ -1428,10 +1428,9 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512], pcs[32];
-	int scrcols, pc;
 	if (!oldpc) oldpc = core->offset;
 	/* automatic block size */
-	int hexcols = r_config_get_i (core->config, "hex.cols");
+	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize)
 	switch (core->printidx) {
 	case 0: // x"

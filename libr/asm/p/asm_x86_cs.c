@@ -107,8 +107,6 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 };
 
 
-extern const char *X86_group_name(csh handle, unsigned int id);
-
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
@@ -121,7 +119,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 			continue;
 		if (id == X86_GRP_MODE64)
 			continue;
-		name = X86_group_name (cd, id);
+		name = cs_group_name (cd, id);
 		if (!name) return 1;
 		if (name && !strstr (a->features, name)) {
 			return 0;

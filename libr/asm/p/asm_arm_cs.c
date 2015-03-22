@@ -115,9 +115,6 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 		"mulops,crc,dpvfp,v6m"
 };
 
-extern const char *ARM_group_name(csh handle, unsigned int id);
-extern const char *AArch64_group_name(csh handle, unsigned int id);
-
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
@@ -134,13 +131,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 		if (id == ARM_GRP_THUMB2)
 			continue;
 		if (id<128) continue;
-		if (a->bits == 64) {
-			// AARCH64
-			name = AArch64_group_name (cd, id);
-		} else {
-			// ARM
-			name = ARM_group_name (cd, id);
-		}
+		name = cs_group_name (cd, id);
 		if (!name) return 1;
 		if (!strstr (a->features, name)) {
 			//eprintf ("CANNOT FIND %s\n", name);
