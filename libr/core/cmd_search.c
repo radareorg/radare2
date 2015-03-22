@@ -1528,7 +1528,7 @@ static int cmd_search(void *data, const char *input) {
 		}
 		dosearch = 0;
 		break;
-	case 'a': {
+	case 'a': if (input[1]) {
 		char *kwd = r_core_asm_search (core, input+param_offset,
 			param.from, param.to);
 		if (kwd) {
@@ -1662,9 +1662,11 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
-		if (input[0]) {
-			if (input[1] == 'j' || input[2] == 'j') json = R_TRUE;
-			if (input[1] == 'i' || input[2] == 'i') ignorecase = R_TRUE;
+		if (input[1]) {
+			if (input[2]) {
+				if (input[1] == 'j' || input[2] == 'j') json = R_TRUE;
+				if (input[1] == 'i' || input[2] == 'i') ignorecase = R_TRUE;
+			}
 
 		if (input[1+json+ignorecase] == ' ') {
 			int strstart, len;

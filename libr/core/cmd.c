@@ -1176,7 +1176,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				fgets (buf, sizeof (buf)-1, stdin); // XXX use r_line ??
 				if (feof (stdin))
 					break;
-				buf[strlen (buf)-1]='\0';
+				if (*buf) buf[strlen (buf)-1]='\0';
 				ret = strlen (buf);
 				core->oobi_len += ret;
 				core->oobi = realloc (core->oobi, core->oobi_len+1);

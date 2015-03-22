@@ -130,7 +130,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case '4': type = 4; break;
 	case '8': type = 8; break;
 	}
-	if (input && *input && input[2]) {
+	if (input && input[0] && input[1] && input[2]) {
 		off = r_num_math (core->num, input+2);
 	}
 	if (core->file) {
@@ -254,11 +254,15 @@ static int cmd_write(void *data, const char *input) {
 			fail = 1;
 		}
 		ut8 *buf;
-		int len;
-		const char *str = input + 3;
-		int str_len = strlen (str) + 1;
+		int len, str_len;
+		const char *str;
+
+		if (input[1] && input[2] && input[3])
+			str = input + 3;
+		else str = "";
+		str_len = strlen (str) + 1;
 		if (!fail) {
-			switch(input[1]) {
+			switch (input[1]) {
 			case 'd':
 				buf = malloc (str_len);
 				len = r_base64_decode (buf, str, 0);

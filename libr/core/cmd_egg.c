@@ -77,7 +77,7 @@ static int cmd_egg(void *data, const char *input) {
 		}
 		break;
 	case ' ':
-		if (input[1]) {
+		if (input[1] && input[2]) {
 			r_egg_load (egg, input+2, 0);
 			if (!cmd_egg_compile (egg))
 				eprintf ("Cannot compile '%s'\n", input+2);

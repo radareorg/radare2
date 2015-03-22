@@ -347,7 +347,7 @@ static int cmd_help(void *data, const char *input) {
 			out[len] = 0;
 			r_cons_printf ("%s\n", (const char*)out);
 			free (out);
-		} else if (!memcmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
+		} else if (!strncmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;
 			for (i=0; i<bits; i++)
