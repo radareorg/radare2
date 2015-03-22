@@ -225,7 +225,7 @@ static int cmd_yank(void *data, const char *input) {
 		else if (*(input+1) == 'a' ) r_core_yank_file_all (core, input+2);
 		break;
 	case '\0':
-		r_core_yank_dump (core, r_num_math (core->num, input+1));
+		r_core_yank_dump (core, r_num_math (core->num, ""));
 		break;
 	default:{
 		const char* help_msg[] = {
@@ -1337,11 +1337,13 @@ next2:
 		for (ptr++; *ptr== ' '; ptr++);
 		ptr--;
 
-		arroba = strchr (ptr+2, '@');
+		if (ptr[0] && ptr[1] && ptr[2])
+			arroba = strchr (ptr+2, '@');
+		else arroba = NULL;
 repeat_arroba:
 		if (arroba)
 			*arroba = 0;
-		if (ptr[2]==':') {
+		if (ptr[0] && ptr[1] && ptr[2]==':') {
 			usemyblock = 1;
 			switch (ptr[1]) {
 			case 'f':

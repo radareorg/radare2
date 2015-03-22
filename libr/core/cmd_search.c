@@ -779,7 +779,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
 
 	//Options, like JSON, linear, ...
-	if (*grep != ' ') {
+	if (*grep && *grep != ' ') {
 		mode = *grep;
 		grep++;
 	}
@@ -1457,7 +1457,7 @@ static int cmd_search(void *data, const char *input) {
 	}
 
 	/* Quick & dirty check for json output */
-	if ((input[1] == 'j') && (input[0] != ' ')) {
+	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
 		json = R_TRUE;
 		param_offset++;
 	}
@@ -1662,8 +1662,9 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
-		if (input[1] == 'j' || input[2] == 'j') json = R_TRUE;
-		if (input[1] == 'i' || input[2] == 'i') ignorecase = R_TRUE;
+		if (input[0]) {
+			if (input[1] == 'j' || input[2] == 'j') json = R_TRUE;
+			if (input[1] == 'i' || input[2] == 'i') ignorecase = R_TRUE;
 
 		if (input[1+json+ignorecase] == ' ') {
 			int strstart, len;
@@ -1694,6 +1695,7 @@ static int cmd_search(void *data, const char *input) {
 				eprintf ("Invalid keyword\n");
 				break;
 			}
+		}
 		}
 		break;
 	case 'i':
@@ -1734,30 +1736,32 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'e': /* match regexp */
-		{
-		RSearchKeyword *kw;
-		kw = r_search_keyword_new_regexp (input + param_offset, NULL);
-		if (!kw) {
-			eprintf("Invalid regexp specified\n");
-			break;
-		}
-		r_search_reset (core->search, R_SEARCH_REGEXP);
-		r_search_set_distance (core->search, (int)
-			r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search, kw);
-		r_search_begin (core->search);
-		dosearch = R_TRUE;
-		}
+		if (input[1]) {
+			RSearchKeyword *kw;
+			kw = r_search_keyword_new_regexp (input + param_offset, NULL);
+			if (!kw) {
+				eprintf("Invalid regexp specified\n");
+				break;
+			}
+			r_search_reset (core->search, R_SEARCH_REGEXP);
+			r_search_set_distance (core->search, (int)
+				r_config_get_i (core->config, "search.distance"));
+			r_search_kw_add (core->search, kw);
+			r_search_begin (core->search);
+			dosearch = R_TRUE;
+		} else eprintf ("Missing regex\n");
 		break;
 	case 'E':
 		do_esil_search (core, &param, input);
 		goto beach;
 	case 'd': /* search delta key */
-		r_search_reset (core->search, R_SEARCH_DELTAKEY);
-		r_search_kw_add (core->search,
-			r_search_keyword_new_hexmask (input+param_offset, NULL));
-		r_search_begin (core->search);
-		dosearch = R_TRUE;
+		if (input[1]) {
+			r_search_reset (core->search, R_SEARCH_DELTAKEY);
+			r_search_kw_add (core->search,
+				r_search_keyword_new_hexmask (input+param_offset, NULL));
+			r_search_begin (core->search);
+			dosearch = R_TRUE;
+		} else eprintf ("Missing delta\n");
 		break;
 	case 'x': /* search hex */
 		r_search_reset (core->search, R_SEARCH_KEYWORD);

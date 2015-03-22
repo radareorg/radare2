@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
@@ -174,7 +174,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 				return R_TRUE;
 		}
 		c = cmd->cmds[(ut8)input[0]];
-		if (c && c->callback)
+		if (c && c->callback && *input)
 			ret = c->callback (cmd->data, input+1);
 		else ret = -1;
 	}
@@ -253,7 +253,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		return R_FALSE;
 	}
 
-	if (name[strlen (name)-1]==')') {
+	if (*name && name[1] && name[strlen (name)-1]==')') {
 		eprintf ("r_cmd_macro_add: missing macro body?\n");
 		free (name);
 		return -1;

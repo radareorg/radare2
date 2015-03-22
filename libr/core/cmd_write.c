@@ -114,9 +114,10 @@ static void cmd_write_value (RCore *core, const char *input) {
 	ut8 addr1;
 	ut16 addr2;
 	ut32 addr4, addr4_;
-	ut64 addr8, off;
+	ut64 addr8, off = 0LL;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 
+	if (input[0])
 	switch (input[1]) {
 	case '?':
 		r_cons_printf ("|Usage: wv[size] [value]    # write value of given size\n"
@@ -129,7 +130,9 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case '4': type = 4; break;
 	case '8': type = 8; break;
 	}
-	off = r_num_math (core->num, input+2);
+	if (input && *input && input[2]) {
+		off = r_num_math (core->num, input+2);
+	}
 	if (core->file) {
 		r_io_use_desc (core->io, core->file->desc);
 	}
@@ -207,7 +210,7 @@ static int cmd_write(void *data, const char *input) {
 
 	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
-	str = ostr = strdup (input+1);
+	str = ostr = strdup ((input&&*input)?input+1:"");
 	_fn[0] = 0;
 
 	switch (*input) {
@@ -228,9 +231,11 @@ static int cmd_write(void *data, const char *input) {
 	case '2':
 	case '4':
 	case '8':
-		if (input[1]==input[2]) {
-			num = 1;
-		} else num = r_num_math (core->num, input+2);
+		if (input[1] && input[2]) {
+			if (input[1]==input[2]) {
+				num = 1;
+			} else num = r_num_math (core->num, input+2);
+		}
 		switch (input[1]) {
 		case '+':
 			cmd_write_inc (core, *input-'0', num);
@@ -245,18 +250,18 @@ static int cmd_write(void *data, const char *input) {
 	case '6':
 		{
 		int fail = 0;
-		if(input[2] != ' ') {
+		if(input[1] && input[2] != ' ') {
 			fail = 1;
 		}
 		ut8 *buf;
 		int len;
 		const char *str = input + 3;
-		int str_len = strlen(str) + 1;
-		if(!fail) {
+		int str_len = strlen (str) + 1;
+		if (!fail) {
 			switch(input[1]) {
 			case 'd':
-				buf = malloc(str_len);
-				len = r_base64_decode(buf, str, 0);
+				buf = malloc (str_len);
+				len = r_base64_decode (buf, str, 0);
 				if(len == 0) {
 					free(buf);
 					fail = 1;
@@ -860,7 +865,7 @@ static int cmd_write(void *data, const char *input) {
 		cmd_write_op (core, input);
 		break;
 	case 'd':
-		if (input[1]==' ') {
+		if (input[1] && input[1]==' ') {
 			char *arg, *inp = strdup (input+2);
 			arg = strchr (inp, ' ');
 			if (arg) {
@@ -876,16 +881,18 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
 		break;
 	case 's':
-		len = r_str_unescape (str+1);
-		if (len>255) {
-			eprintf ("Too large\n");
-		} else {
-			ut8 ulen = (ut8)len;
-			r_core_write_at (core, core->offset, &ulen, 1);
-			r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
-			WSEEK (core, len);
-			r_core_block_read (core, 0);
-		}
+		if (str && *str && str[1]) {
+			len = r_str_unescape (str+1);
+			if (len>255) {
+				eprintf ("Too large\n");
+			} else {
+				ut8 ulen = (ut8)len;
+				r_core_write_at (core, core->offset, &ulen, 1);
+				r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
+				WSEEK (core, len);
+				r_core_block_read (core, 0);
+			}
+		} else eprintf ("Too short.\n");
 		break;
 	default:
 	case '?':

@@ -673,6 +673,9 @@ if (step==2) {
 				r_print_cursor (p, j, 0);
 				j += 7;
 			} else {
+				if (j>=len) {
+					break;
+				}
 				r_print_byte (p, fmt, j, buf[j]);
 				if (j%2 || !pairs) {
 					if (col==1) {

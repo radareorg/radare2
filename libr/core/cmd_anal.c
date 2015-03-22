@@ -2402,9 +2402,9 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_calls (core, input + 1);
 		break;
 	case 'C':
-		{
+		if (1) {
 			char *instr_tmp = NULL;
-			int ccl = r_num_math (core->num, &input[2]); //get cycles to look for
+			int ccl = input[1]? r_num_math (core->num, &input[2]):0; //get cycles to look for
 			int cr = r_config_get_i (core->config, "asm.cmtright");
 			int fun = r_config_get_i (core->config, "asm.functions");
 			int li = r_config_get_i (core->config, "asm.lines");

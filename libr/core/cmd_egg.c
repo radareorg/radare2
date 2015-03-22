@@ -77,9 +77,13 @@ static int cmd_egg(void *data, const char *input) {
 		}
 		break;
 	case ' ':
-		r_egg_load (egg, input+2, 0);
-		if (!cmd_egg_compile (egg))
-			eprintf ("Cannot compile '%s'\n", input+2);
+		if (input[1]) {
+			r_egg_load (egg, input+2, 0);
+			if (!cmd_egg_compile (egg))
+				eprintf ("Cannot compile '%s'\n", input+2);
+		} else {
+			eprintf ("wat\n");
+		}
 		break;
 	case '\0':
 		if (!cmd_egg_compile (egg))

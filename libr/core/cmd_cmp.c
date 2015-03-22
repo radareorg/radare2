@@ -435,7 +435,8 @@ static int cmd_cmp(void *data, const char *input) {
 				core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
 				addr = r_num_math (core->num, input+3);
 			} else {
-				addr = r_num_math (core->num, input+2);
+				if (*input && input[1])
+					addr = r_num_math (core->num, input+2);
 			}
 			int col = core->cons->columns>123;
 			ut8 *b = malloc (core->blocksize);

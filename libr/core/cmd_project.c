@@ -2,11 +2,11 @@
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	const char *file, *arg = input+1;
+	const char *file, *arg = (input && *input)? input+1: NULL;
 	const char *fileproject = r_config_get (core->config, "file.project");
 	char *str = strdup (fileproject);
-	if (*arg==' ') arg++;
-	file = input[1]?arg:str;
+	if (arg && *arg==' ') arg++;
+	file = (input[0] && input[1])? arg: str;
 	switch (input[0]) {
 	case 'c':
 		if (!input[1]) {

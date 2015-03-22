@@ -618,7 +618,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	RCoreFile *fh;
 	RIODesc *fd;
 
-	if (!file)
+	if (!file || !*file)
 		return NULL;
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";

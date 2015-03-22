@@ -80,7 +80,7 @@ static int __close(RIODesc *fd) {
 
 static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	ut64 r_offset = offset;
-	if (!fd->data)
+	if (!fd || !fd->data)
 		return offset;
 	switch (whence) {
 	case SEEK_SET:

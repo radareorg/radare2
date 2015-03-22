@@ -1040,7 +1040,8 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	prompt[0] = 0;
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \
+		for (rtr_n = 0; rtr_host[rtr_n].fd \
+			&& rtr_host[rtr_n].fd->fd != fd \
 			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
 	}
 

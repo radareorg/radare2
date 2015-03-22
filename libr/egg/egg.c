@@ -255,6 +255,7 @@ R_API int r_egg_compile(REgg *egg) {
 			egg->remit->init (egg);
 	}
 #endif
+	if (b && *b)
 	for (; *b; b++) {
 		r_egg_lang_parsechar (egg, *b);
 		// XXX: some parse fail errors are false positives :(

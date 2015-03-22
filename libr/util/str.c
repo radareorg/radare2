@@ -15,6 +15,8 @@ static const char *nullstr_c = "(null)";
 R_API void r_str_chop_path (char *s) {
 	char *src, *dst, *p;
 	int i = 0;
+	if (!s || !*s)
+		return;
 	dst = src = s+1;
 	while (*src) {
 		if (*(src-1) == '/' && *src == '.' && *(src+1) == '.') {
