@@ -129,9 +129,11 @@ R_API char *r_file_abspath(const char *file) {
 
 R_API char *r_file_path(const char *bin) {
 	char file[1024];
-	char *path_env = (char *)r_sys_getenv ("PATH");
+	char *path_env;
 	char *path = NULL;
 	char *str, *ptr;
+	if (!bin) return NULL;
+	path_env = (char *)r_sys_getenv ("PATH");
 	if (path_env) {
 		str = path = strdup (path_env);
 		do {

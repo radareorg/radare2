@@ -269,6 +269,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			// TODO: Configure process environment
 			char *_cmd = strdup (cmd);
 			argv = r_str_argv (_cmd, NULL);
+			if (!argv) {
+				free (_cmd);
+				return -1;
+			}
 #if __APPLE__
 			 {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
@@ -320,7 +324,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				exit (MAGIC_EXIT); /* error */
 			 }
 #else
-			execvp (argv[0], argv);
+			 if (argv && *argv) {
+				 execvp (argv[0], argv);
+			 } else {
+				 eprintf ("Invalid execvp\n");
+			 }
 #endif
 			free (_cmd);
 		}
