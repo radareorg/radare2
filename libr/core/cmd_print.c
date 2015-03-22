@@ -2329,13 +2329,25 @@ static int cmd_print(void *data, const char *input) {
 		case 'l':
 			len = core->print->cols*len;
 		default: {
+				 int restore_block_size = 0;
 				 ut64 from = r_config_get_i (core->config, "diff.from");
 				 ut64 to = r_config_get_i (core->config, "diff.to");
+				 ut64 obsz = core->blocksize;
 				 if (from == to && from == 0) {
+					 if (len != obsz) {
+						 if (!r_core_block_size (core, len)) {
+							 len = obsz;
+						 } else {
+							 restore_block_size = 1;
+						 }
+					 }
 					 r_print_hexdump (core->print, core->offset,
-						core->block, len, 16, 1);
+							 core->block, len, 16, 1);
 				 } else {
 					 r_core_print_cmp (core, from, to);
+				 }
+				 if (restore_block_size) {
+					 (void)r_core_block_size (core, obsz);
 				 }
 				 core->num->value = len;
 			 }

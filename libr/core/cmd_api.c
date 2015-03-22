@@ -173,7 +173,10 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			if (cp->call (cmd->data, input))
 				return R_TRUE;
 		}
-		c = cmd->cmds[(ut8)input[0]];
+		if (input[0] == -1) {
+			return -1;
+		}
+		c = cmd->cmds[((ut8)input[0]) & 0xff];
 		if (c && c->callback) {
 			const char *inp = (input && *input)? input+1: "";
 			ret = c->callback (cmd->data, input+1);

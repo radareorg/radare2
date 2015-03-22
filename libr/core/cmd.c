@@ -983,18 +983,22 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmdrep = r_config_get (core->config, "cmd.times");
 	orep = rep;
 	while (rep-- && *cmd) {
+		char *cr = strdup (cmdrep);
 		ret = r_core_cmd_subst_i (core, cmd, colon);
-		if (ret && *cmd=='q')
+		if (ret && *cmd=='q') {
+			free (cr);
 			goto beach;
-		if (cmdrep && *cmdrep) {
+		}
+		if (cr && *cr) {
 			if (orep>1) {
 				// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 				r_cons_flush ();
 				// XXX: we must inport register flags in C
 				r_core_cmd0 (core, ".dr*");
-				r_core_cmd0 (core, cmdrep);
+				r_core_cmd0 (core, cr);
 			}
 		}
+		free (cr);
 	}
 	if (colon && colon[1]) {
 		for (++colon; *colon==';'; colon++);

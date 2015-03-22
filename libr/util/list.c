@@ -35,6 +35,13 @@ RListIter *r_list_get_next (RListIter *list) {
 	return list->n;
 }
 
+R_API void* r_list_first(RList *list) {
+	if (list && list->head) {
+		return list->head->data;
+	}
+	return NULL;
+}
+
 R_API void r_list_init(RList *list) {
 	list->head = NULL;
 	list->tail = NULL;
