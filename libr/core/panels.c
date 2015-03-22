@@ -332,7 +332,6 @@ R_API int r_core_visual_panels(RCore *core) {
 #define OS_INIT() ostack.size = 0; ostack.panels[0] = 0;
 #define OS_PUSH(x) if (ostack.size<LIMIT) {ostack.panels[++ostack.size]=x;}
 #define OS_POP() ((ostack.size>0)? ostack.panels[--ostack.size]:0)
-	int wheelspeed;
 	int okey, key, wheel;
 	int w, h;
 	int asm_comments = 0;
@@ -381,11 +380,6 @@ repeat:
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
-	if (r_cons_singleton()->mouse_event) {
-		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
-	} else {
-		wheelspeed = 1;
-	}
 
 	switch (key) {
 	case ' ':
