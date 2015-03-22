@@ -901,15 +901,16 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #if __MINGW64__
 		eprintf("working on this ....");
 #else
-		eprintf ("cwd = 0x%08x  ; control   ", ctx.FloatSave.ControlWord);
-		eprintf ("swd = 0x%08x  ; status\n", ctx.FloatSave.StatusWord);
-		eprintf ("twd = 0x%08x ", ctx.FloatSave.TagWord);
-		eprintf ("eof = 0x%08x\n", ctx.FloatSave.ErrorOffset);
-		eprintf ("ese = 0x%08x\n", ctx.FloatSave.ErrorSelector);
-		eprintf ("dof = 0x%08x\n", ctx.FloatSave.DataOffset);
-		eprintf ("dse = 0x%08x\n", ctx.FloatSave.DataSelector);
-		eprintf ("mxcr = 0x%08x\n", ctx.ExtendedRegisters[24]);
-		for(i=0;i<8;i++) {
+		int i;
+		eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FloatSave.ControlWord);
+		eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FloatSave.StatusWord);
+		eprintf ("twd = 0x%08x ", (ut32)ctx.FloatSave.TagWord);
+		eprintf ("eof = 0x%08x\n", (ut32)ctx.FloatSave.ErrorOffset);
+		eprintf ("ese = 0x%08x\n", (ut32)ctx.FloatSave.ErrorSelector);
+		eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
+		eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
+		eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
+		for(i=0; i<8; i++) {
 			ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
 			a = a + (i * 4);
 			eprintf ("xmm%d = %08x %08x %08x %08x  ",i
