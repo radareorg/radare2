@@ -1148,6 +1148,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETI("hex.flagsz", 0, "if != 0 overrides the flag size in pxa");
 	SETICB("hex.cols", 16, &cb_hexcols, "Configure the number of columns in hexdump");
+	SETPREF("hex.onechar", "false", "Configure the number of columns in hexdump");
 	SETICB("hex.stride", 0, &cb_hexstride, "Define the line stride in hexdump (default is 0)");
 
 	/* http */

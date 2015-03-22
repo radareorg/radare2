@@ -1431,16 +1431,15 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	int scrcols, pc;
 	if (!oldpc) oldpc = core->offset;
 	/* automatic block size */
+	int hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize)
 	switch (core->printidx) {
 	case 0: // x"
 	case 6: // pxa
-		scrcols = r_config_get_i (core->config, "hex.cols");
-		r_core_block_size (core, core->cons->rows * scrcols);
+		r_core_block_size (core, core->cons->rows * hexcols);
 		break;
 	case 3: // XXX pw
-		scrcols = r_config_get_i (core->config, "hex.cols");
-		r_core_block_size (core, core->cons->rows * scrcols);
+		r_core_block_size (core, core->cons->rows * hexcols);
 		break;
 	case 4: // XXX pc
 		r_core_block_size (core, core->cons->rows * 5);
@@ -1450,7 +1449,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		r_core_block_size (core, core->cons->rows * 5); // this is hacky
 		break;
 	case 5: // pxA
-		r_core_block_size (core, core->cons->rows * 128);
+		r_core_block_size (core, hexcols * core->cons->rows * 8);
 		break;
 	}
 

@@ -791,3 +791,21 @@ R_API char *r_cons_lastline () {
 	}
 	return b;
 }
+
+/* swap color from foreground to background, returned value must be freed */
+R_API char *r_cons_swap_ground(const char *col) {
+	if (!strncmp (col, "\x1b[48;5;", 7)) {
+		/* rgb background */
+		return r_str_newf ("\x1b[38;5;%s", col+7);
+	} else if (!strncmp (col, "\x1b[38;5;", 7)) {
+		/* rgb foreground */
+		return r_str_newf ("\x1b[48;5;%s", col+7);
+	} else if (!strncmp (col, "\x1b[4", 3)) {
+		/* is background */
+		return r_str_newf ("\x1b[3%s", col+3);
+	} else if (!strncmp (col, "\x1b[3", 3)) {
+		/* is foreground */
+		return r_str_newf ("\x1b[4%s", col+3);
+	}
+	return strdup (col);
+}

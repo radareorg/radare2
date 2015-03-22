@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake */
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
@@ -26,14 +26,14 @@ static void init_color_table() {
 	color_table[14] = 0x00ffff;
 	color_table[15] = 0xffffff;
 	for (i=0; i < 216; i++) {
-	    r = value_range[(i/36) % 6];
-	    g = value_range[(i/6) % 6];
-	    b = value_range[i % 6];
-	    color_table[i + 16] = ((r << 16) & 0xffffff) + ((g << 8) & 0xffff) + (b & 0xff);
+		r = value_range[(i/36) % 6];
+		g = value_range[(i/6) % 6];
+		b = value_range[i % 6];
+		color_table[i + 16] = ((r << 16) & 0xffffff) + ((g << 8) & 0xffff) + (b & 0xff);
 	}
 	for (i=0; i < 24; i++) {
 		r = 8 + (i * 10);
-	    color_table[i + 232] = ((r << 16) & 0xffffff) + ((r << 8) & 0xffff) + (r & 0xff);
+		color_table[i + 232] = ((r << 16) & 0xffffff) + ((r << 8) & 0xffff) + (r & 0xff);
 	}
 }
 
@@ -90,9 +90,9 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	//if (*p!='[') return 0;
 	if (*p!='[') p--;
 	switch (p[1]) {
-	case '1': bold=255; p+=2; break;
-	case '3': isbg=0; break;
-	case '4': isbg=1; break;
+		case '1': bold=255; p+=2; break;
+		case '3': isbg=0; break;
+		case '4': isbg=1; break;
 	}
 #define SETRGB(x,y,z) if(r)*r=(x);if(g)*g=(y);if(b)*b=(z)
 	if (bold != 255 && strchr (p, ';')) {
@@ -118,14 +118,14 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 		/* plain ansi */
 		if (is_bg) *is_bg = isbg;
 		switch (p[2]) {
-		case '0': SETRGB (0,0,0); break;
-		case '1': SETRGB (bold,0,0); break;
-		case '2': SETRGB (0,bold,0); break;
-		case '3': SETRGB (bold,bold,0); break;
-		case '4': SETRGB (0,0,bold); break;
-		case '5': SETRGB (bold,0,bold); break;
-		case '6': SETRGB (0,bold,bold); break;
-		case '7': SETRGB (bold,bold,bold); break;
+			case '0': SETRGB (0,0,0); break;
+			case '1': SETRGB (bold,0,0); break;
+			case '2': SETRGB (0,bold,0); break;
+			case '3': SETRGB (bold,bold,0); break;
+			case '4': SETRGB (0,0,bold); break;
+			case '5': SETRGB (bold,0,bold); break;
+			case '6': SETRGB (0,bold,bold); break;
+			case '7': SETRGB (bold,bold,bold); break;
 		}
 	}
 	return 1;
@@ -138,31 +138,31 @@ R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 	if (!outstr) outstr = malloc (32);
 
 	switch (r_cons_singleton()->truecolor) {
-	case 1: // 256 color palette
-		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
-		break;
-	case 2: // 16M - xterm only
-		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg,
-			r&0xff, g&0xff, b&0xff);
-		break;
-	case 0: // ansi 16 colors
-	default:
-		{
-		int k = (r+g+b)/3;
-		r = (r>k)?1:0;
-		g = (g>k)?1:0;
-		b = (b>k)?1:0;
-		k = (r?1:0) + (g? (b?6:2): (b?4:0));
-		sprintf (outstr, "\x1b[%dm", 30+k);
-		}
-		break;
+		case 1: // 256 color palette
+			sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
+			break;
+		case 2: // 16M - xterm only
+			sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg,
+					r&0xff, g&0xff, b&0xff);
+			break;
+		case 0: // ansi 16 colors
+		default:
+			{
+				int k = (r+g+b)/3;
+				r = (r>k)?1:0;
+				g = (g>k)?1:0;
+				b = (b>k)?1:0;
+				k = (r?1:0) + (g? (b?6:2): (b?4:0));
+				sprintf (outstr, "\x1b[%dm", 30+k);
+			}
+			break;
 	}
 	return outstr;
 }
 
 R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, int is_bg) {
 #if __WINDOWS__ && !__CYGWIN__
-	#warning r_cons_rgb not yet supported on windows
+#warning r_cons_rgb not yet supported on windows
 #else
 	char outstr[64];
 	r_cons_strcat (r_cons_rgb_str (outstr, r, g, b, is_bg));
