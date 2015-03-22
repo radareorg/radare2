@@ -424,7 +424,12 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmd0 (&r, "aa");
 		}
 	}
-	if (argv[optind] && !strcmp (argv[optind], "=")) {
+	if (argv[optind] && r_file_is_directory (argv[optind])) {
+		if (chdir (argv[optind])) {
+			eprintf ("Cannot open directory\n");
+			return 1;
+		}
+	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
 		int sz;
 		/* stdin/batch mode */
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);

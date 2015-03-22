@@ -192,7 +192,7 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
 		r_io_desc_add (io, desc);
 		if (io->autofd || !io->desc)
 			r_io_use_desc (io, desc);
-	} else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
+	}// else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
 
 	return desc;
 }
