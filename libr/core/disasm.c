@@ -1332,6 +1332,8 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) {
 	RAnalValue *src;
 	switch (ds->analop.type) {
+	case R_ANAL_OP_TYPE_LENGTH:
+	case R_ANAL_OP_TYPE_CAST:
 	case R_ANAL_OP_TYPE_MOV:
 		src = ds->analop.src[0];
 		if (src && src->memref>0 && src->reg) {

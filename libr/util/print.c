@@ -1053,6 +1053,8 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_MOD:
+	case R_ANAL_OP_TYPE_LENGTH:
 		return p->cons->pal.math;
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_OR:
@@ -1070,6 +1072,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 		return p->cons->pal.jmp;
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_UCJMP:
+	case R_ANAL_OP_TYPE_SWITCH:
 		return p->cons->pal.cjmp;
 	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_ACMP:
@@ -1079,6 +1082,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_CCALL:
 		return p->cons->pal.call;
+	case R_ANAL_OP_TYPE_NEW:
 	case R_ANAL_OP_TYPE_SWI:
 		return p->cons->pal.swi;
 	case R_ANAL_OP_TYPE_ILL:
@@ -1087,6 +1091,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_CRET:
 	case R_ANAL_OP_TYPE_RET:
 		return p->cons->pal.ret;
+	case R_ANAL_OP_TYPE_CAST:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 		return p->cons->pal.mov;

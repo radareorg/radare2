@@ -429,6 +429,10 @@ typedef enum {
 	R_ANAL_OP_TYPE_MOD   = 37,
 	R_ANAL_OP_TYPE_SWITCH = 38,
 	R_ANAL_OP_TYPE_CASE = 39,
+	R_ANAL_OP_TYPE_LENGTH = 40,
+	R_ANAL_OP_TYPE_CAST = 41,
+	R_ANAL_OP_TYPE_NEW = 42,
+	//R_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	R_ANAL_OP_TYPE_PRIV = 40, /* priviledged instruction */
 	R_ANAL_OP_TYPE_FPU = 41, /* floating point stuff */

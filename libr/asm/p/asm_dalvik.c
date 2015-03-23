@@ -17,6 +17,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int size = dalvik_opcodes[i].len;
 	int payload = 0;
 
+	op->buf_asm[0] = 0;
 	if (buf[0] == 0x00) { /* nop */
 		switch (buf[1]) {
 		case 0x01: /* packed-switch-payload */
@@ -390,7 +391,8 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strncpy (op->buf_asm, strasm, sizeof (op->buf_asm)-1);
 			op->buf_asm[sizeof (op->buf_asm)-1] = 0;
 		} else {
-			op->buf_asm[0] = 0;
+			//op->buf_asm[0] = 0;
+			strcpy (op->buf_asm , "invalid");
 		}
 	} else if (len>0) {
 		strcpy (op->buf_asm, "invalid ");

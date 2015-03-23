@@ -940,6 +940,8 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
 		case R_ANAL_OP_TYPE_MOV:
+		case R_ANAL_OP_TYPE_CAST:
+		case R_ANAL_OP_TYPE_LENGTH:
 		case R_ANAL_OP_TYPE_CMOV:
 			text = "m.";
 			bgcolor = pal->mov;
@@ -953,6 +955,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_SWI:
+		case R_ANAL_OP_TYPE_NEW:
 			//bgcolor = Color_BGRED;
 			bgcolor = pal->trap; //r_cons_swap_ground (pal->trap);
 			fgcolor = Color_WHITE;
