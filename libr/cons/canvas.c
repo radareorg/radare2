@@ -289,7 +289,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	char *row = NULL;
 	char corner = '=';
 
-	if (w < 0) return;
+	if (w < 1 || h<1) return;
 	if (x > c->w*2) return;
 	if (y > c->h*2) return;
 

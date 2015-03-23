@@ -1586,15 +1586,17 @@ R_API int r_str_bounds(const char *_str, int *h) {
 #endif
 
 R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
-	char *ret = strdup (str);
-	char *r = ret;
+	char *r, *ret;
 	int ch = 0, cw = 0;
+	if (w<1 || h<1)
+		return strdup ("");
+	r = ret = strdup (str);
 	while (*str) {
-			/* crop height */
-			if (ch>=h) {
-				r--;
-				break;
-			}
+		/* crop height */
+		if (ch>=h) {
+			r--;
+			break;
+		}
 		if (*str == '\n') {
 			if (ch>=y && ch<h)
 				if (cw>=x && cw<w)
@@ -1604,13 +1606,16 @@ R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
 		} else {
 			/* crop width */
 			if (w>0 && cw>=w) {
-				*r++='\n';
+				*r++ = '\n';
 				/* skip str until newline */
 				while (*str && *str != '\n') {
 					str++;
 				}
-				if (*str=='\n')
+				if (!*str)break;
+				if (*str=='\n') {
 					str++;
+					if (!*str)break;
+				}
 				cw = 0;
 				ch++;
 			}
