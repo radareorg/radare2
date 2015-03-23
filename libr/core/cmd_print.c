@@ -1972,7 +1972,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf (",\"offset\":%"PFMT64d, core->offset);
 				r_cons_printf (",\"section\":\"%s\"", vaddr == UT64_MAX ? "unkown" : section->name);
 				r_cons_printf (",\"length\":%d", len);
-				switch (get_string_type ((const char*)core->block, len)){
+				switch (get_string_type (core->block, len)){
 					case 'w' : type = "wide" ; break;
 					case 'a' : type = "ascii"; break;
 					case 'u' : type = "utf" ; break;

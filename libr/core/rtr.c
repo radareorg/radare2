@@ -296,8 +296,8 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 		port = listenport? listenport: r_config_get (
 			core->config, "http.port");
 		sock = r_socket_new (0);
-		(void)r_socket_connect (sock, r_config_get (
-			core->config, "http.bind"),
+		(void)r_socket_connect (sock, "localhost", 
+				//r_config_get (core->config, "http.bind"),
 			port, R_SOCKET_PROTO_TCP, timeout);
 		r_socket_free (sock);
 	}
@@ -389,7 +389,29 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		port = buf;
 	}
 	s = r_socket_new (R_FALSE);
-	s->local = !r_config_get_i (core->config, "http.public");
+	{
+		const char *http_bind = r_config_get (core->config, "http.bind");
+		if (http_bind && *http_bind) {
+			if (!strcmp (http_bind, "::1")) {
+				s->local = R_TRUE;
+			} else if (!strcmp (http_bind, "localhost")) {
+				s->local = R_TRUE;
+			} else if (!strcmp (http_bind, "127.0.0.1")) {
+				s->local = R_TRUE;
+			} else if (!strcmp (http_bind, "local")) {
+				s->local = R_TRUE;
+				r_config_set (core->config, "http.bind", "localhost");
+			} else if (http_bind[0]=='0' || !strcmp (http_bind, "public")) {
+				// public
+				r_config_set (core->config, "http.bind", "0.0.0.0");
+				s->local = R_FALSE;
+			} else {
+				s->local = R_TRUE;
+			}
+		} else {
+			s->local = R_TRUE;
+		}
+	}
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
 		eprintf ("Cannot listen on http.port\n");
