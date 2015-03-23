@@ -890,7 +890,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int tid = dbg->tid;
 	if (size<1)
 		return R_FALSE;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	if (!GetThreadContext (tid2handler (pid, tid), &ctx)) {
