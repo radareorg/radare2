@@ -190,6 +190,7 @@ R_API int r_core_visual_types(RCore *core) {
 		case 'k': if (--option<0) option = 0; break;
 		case 'K': option-=10; if (option<0) option = 0; break;
 		case 'b': // back
+		case -1: // EOF
 		case 'q':
 			  if (optword) {
 				  R_FREE (optword);
