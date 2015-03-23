@@ -137,6 +137,8 @@ R_API void r_cons_2048() {
 	r_cons_flush ();
 	twok_print();
 	r_cons_printf ("\n  [r2048.score] %d\n", score );
-	while (r_cons_any_key ("Press 'q' to quit.") != 'q') {}
+	do {
+		ch = r_cons_any_key ("Press 'q' to quit.");
+	} while (ch != 'q' && ch >= 1);
 	r_cons_set_raw (0);
 }

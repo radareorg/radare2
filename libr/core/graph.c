@@ -797,6 +797,7 @@ repeat:
 		// refresh graph
 	//	reloadNodes (core);
 		break;
+	case -1: // EOF
 	case 'q':
 		goto beach;
 	case 27: // ESC

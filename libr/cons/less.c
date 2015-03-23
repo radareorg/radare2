@@ -103,6 +103,7 @@ R_API void r_cons_less_str(const char *str) {
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
 		case 'G': from = lines_count-1-h; break;
+		case -1: // EOF
 		case 'q': ui = 0; break;
 		case '\r':
 		case '\n':
