@@ -1016,7 +1016,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
-	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be usedd by asm");
+	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
 	SETCB("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");

@@ -105,10 +105,9 @@ static char *getrow (char *p, char **n) {
 static char *prefixline(RConsCanvas *c, int *left) {
 	int x;
 	char *p;
-	if (!c)
-		return NULL;
+	if (!c) return NULL;
 	p = c->b + (c->y * c->w);
-	for (x = 0; x<c->x; x++) {
+	for (x = 0; p[x] && x<c->x; x++) {
 		if (p[x] == '\n')
 			p[x] = ' ';
 	}
