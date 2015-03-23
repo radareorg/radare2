@@ -2313,17 +2313,17 @@ static int cmd_anal(void *data, const char *input) {
 		NULL
 	};
 	const char* help_msg_aa[] = {
-		"Usage:", "aa[0*?]", " # see also 'af', 'ac' and 'afna'",
+		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 		"aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
 		"aaa", "", "autoname functions after aa (see afna)",
+		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aa*", "", "print the commands that 'aa' will run",
 		NULL};
 	const char* help_msg[] = {
 		"Usage:", "a", "[8adefFghoprxstc] [...]",
 		"a8", " [hexpairs]", "analyze bytes",
 		"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-		"ac", " [len]", "analyze function calls (af @@= `pi len~call[1]`",
-		"aC", " [cycles]", "analyze which op could be executed in [cycles]",
+		"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 		"ad", "", "analyze data trampoline (wip)",
 		"ad", " [from] [to]", "analyze data pointers to (from-to)",
 		"ae", " [expr]", "analyze opcode eval expression (see ao)",
@@ -2384,24 +2384,25 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'a':
-		r_cons_break (NULL, NULL);
-		r_core_anal_all (core);
-		if (core->cons->breaked)
-			eprintf ("Interrupted\n");
-		r_cons_clear_line (1);
-		r_cons_break_end();
 		switch (input[1]) {
 		case '?': r_core_cmd_help (core, help_msg_aa); break;
-		case 'a': r_core_cmd0 (core, ".afna @@ fcn.*"); break;
-		case '*':
-			r_cons_printf ("af @@ sym.* ; af @ entry0\n");// ; .afna @@ fcn.*\n");
+		case 'c': cmd_anal_calls (core, input + 2) ; break; // "aac"
+		case '*': r_cons_printf ("af @@ sym.* ; af @ entry0\n"); break; // ; .afna @@ fcn.*\n");
+		case '\0': // "aa"
+		case 'a': 
+			r_cons_break (NULL, NULL);
+			r_core_anal_all (core);
+			if (core->cons->breaked)
+				eprintf ("Interrupted\n");
+			r_cons_clear_line (1);
+			r_cons_break_end ();
+			if (input[1] == 'a') // "aaa"
+				r_core_cmd0 (core, ".afna @@ fcn.*"); break; // "aaa"
 			break;
+		default: r_core_cmd_help (core, help_msg_aa); break;
 		}
 		break;
-	case 'c': // "ac"
-		cmd_anal_calls (core, input + 1);
-		break;
-	case 'C':
+	case 'c':
 		if (1) {
 			char *instr_tmp = NULL;
 			int ccl = input[1]? r_num_math (core->num, &input[2]):0; //get cycles to look for
