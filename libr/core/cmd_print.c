@@ -1939,27 +1939,27 @@ static int cmd_print(void *data, const char *input) {
 		case 'j':
 			{
 				char *str, *type;
-				ut64 ret;
+				ut64 vaddr;
 				RIOSection *section;
 				if (input[2] == ' ' && input[3]){
 					len = r_num_math (core->num, input+3);
 					len = R_MIN (len, core->blocksize);
 				}
-				ret = r_io_section_offset_to_vaddr (core->io, core->offset);
+				vaddr = r_io_section_offset_to_vaddr (core->io, core->offset);
 				section = core->io->section;
 				if (!section)
-					ret = UT64_MAX;
+					vaddr = UT64_MAX;
 				r_cons_printf ("{\"string\":");
 				str = r_str_utf16_encode ((const char*)core->block, len);
 				r_cons_printf ("\"%s\"", str);
-				r_cons_printf (",\"offset\":%d", core->offset);
-				r_cons_printf (",\"section\":\"%s\"", ret == UT64_MAX ? "unk" : section->name);
+				r_cons_printf (",\"offset\":%"PFMT64d, core->offset);
+				r_cons_printf (",\"section\":\"%s\"", vaddr == UT64_MAX ? "unkown" : section->name);
 				r_cons_printf (",\"length\":%d", len);
 				switch (get_string_type ((const char*)core->block, len)){
 					case 'w' : type = "wide" ; break;
 					case 'a' : type = "ascii"; break;
 					case 'u' : type = "utf" ; break;
-					default : type = "unk" ; break;
+					default : type = "unkown" ; break;
 				}
 				r_cons_printf (",\"type\":\"%s\"}", type);
 				free (str);
