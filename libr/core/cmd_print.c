@@ -1,5 +1,50 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+
+static char get_string_type (const ut8 *buf, ut64 len){
+	ut64 needle = 0;
+	int rc, i;
+	char str_type;
+
+	if (!buf)
+		return '?';
+	
+	while (needle < len){
+		rc = r_utf8_decode (buf+needle, len-needle, NULL);
+		if (!rc){
+			needle++;
+			continue;
+		}
+		if (needle+rc+2 < len &&
+				buf[needle+rc+0] == 0x00 &&
+				buf[needle+rc+1] == 0x00 &&
+				buf[needle+rc+2] == 0x00)
+			str_type = 'w';
+		else
+			str_type = 'a';
+		for (rc = i = 0; needle < len ; i+= rc){
+			RRune r;
+			if (str_type == 'w'){
+				if (needle+1 < len){
+					r = buf[needle+1] << 8 | buf[needle];
+					rc = 2;
+				}else{
+					break;
+				}
+			}else{
+				rc = r_utf8_decode (buf+needle, len-needle, &r);
+				if(rc > 1) str_type = 'u';
+			}
+			/*Invalid sequence detected*/
+			if (!rc){
+				needle++;
+				break;
+			}
+			needle += rc;
+		}
+	}
+	return str_type;
+}
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
@@ -1886,8 +1931,38 @@ static int cmd_print(void *data, const char *input) {
 				"psp", "", "print pascal string",
 				"psu", "", "print utf16 unicode (json)",
 				"psw", "", "print wide string",
+				"psj", "", "print string in JSON format",
 				NULL};
 			r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case 'j':
+			{
+				char *str, *type;
+				ut64 ret;
+				RIOSection *section;
+				if (input[2] == ' ' && input[3]){
+					len = r_num_math (core->num, input+3);
+					len = R_MIN (len, core->blocksize);
+				}
+				ret = r_io_section_offset_to_vaddr (core->io, core->offset);
+				section = core->io->section;
+				if (!section)
+					ret = UT64_MAX;
+				r_cons_printf ("{\"string\":");
+				str = r_str_utf16_encode ((const char*)core->block, len);
+				r_cons_printf ("\"%s\"", str);
+				r_cons_printf (",\"offset\":%d", core->offset);
+				r_cons_printf (",\"section\":\"%s\"", ret == UT64_MAX ? "unk" : section->name);
+				r_cons_printf (",\"length\":%d", len);
+				switch (get_string_type ((const char*)core->block, len)){
+					case 'w' : type = "wide" ; break;
+					case 'a' : type = "ascii"; break;
+					case 'u' : type = "utf" ; break;
+					default : type = "unk" ; break;
+				}
+				r_cons_printf (",\"type\":\"%s\"}", type);
+				free (str);
 			}
 			break;
 		case 'i': //psi
