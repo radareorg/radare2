@@ -480,6 +480,7 @@ repeat:
 		}
 		break;
 	case 'q':
+	case -1: // EOF
 		goto beach;
 	case 27: // ESC
 		if (r_cons_readchar () == 91) {
