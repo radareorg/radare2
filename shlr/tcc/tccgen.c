@@ -1829,6 +1829,9 @@ ST_FUNC void unary(void)
             if (tok != '(')
                 tcc_error("'%s' undeclared", get_tok_str(t, NULL));
         }
+        if (!s) {
+           tcc_error("invalid declaration '%s'", get_tok_str(t, NULL));
+        }
         if ((s->type.t & (VT_STATIC | VT_INLINE | VT_BTYPE)) ==
             (VT_STATIC | VT_INLINE | VT_FUNC)) {
             /* if referencing an inline function, then we generate a
