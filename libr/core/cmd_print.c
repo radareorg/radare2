@@ -16,9 +16,9 @@ static char get_string_type (const ut8 *buf, ut64 len){
 			continue;
 		}
 		if (needle+rc+2 < len &&
-				buf[needle+rc+0] == 0x00 &&
-				buf[needle+rc+1] == 0x00 &&
-				buf[needle+rc+2] == 0x00)
+			buf[needle+rc+0] == 0x00 &&
+			buf[needle+rc+1] == 0x00 &&
+			buf[needle+rc+2] == 0x00)
 			str_type = 'w';
 		else
 			str_type = 'a';
