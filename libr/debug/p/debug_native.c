@@ -427,7 +427,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 	ret = w32_first_thread (pid);
 #elif __CYGWIN__
 	#warning "r_debug_native_attach not supported on this platform"
-	ret -1;
+	ret = -1;
 #elif __APPLE__ || __KFBSD__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
 	if (ret!=-1)
