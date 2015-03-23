@@ -144,6 +144,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 32: regsz = 4; break;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
+	op->cycles = 1; // aprox
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;

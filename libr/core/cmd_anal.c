@@ -92,7 +92,9 @@ static int var_cmd(RCore *core, const char *str) {
 			*new_name++ = 0;
 			char *old_name = strdup (str);
 			r_str_split(old_name, ' ');
-			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, (char)type, old_name, new_name);
+			r_anal_var_rename (core->anal, fcn->addr,
+				R_ANAL_VAR_SCOPE_LOCAL, (char)type,
+				old_name, new_name);
 			free (old_name);
 			goto end;
 		case 'j':
@@ -2403,20 +2405,24 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'c':
-		if (1) {
+		if (input[1]=='?') {
+			eprintf ("Usage: ac [cycles]   # analyze instructions that fit in N cycles\n");
+		} else {
+			RList *hooks ;
+			RListIter *iter;
+			RAnalCycleHook *hook;
 			char *instr_tmp = NULL;
 			int ccl = input[1]? r_num_math (core->num, &input[2]):0; //get cycles to look for
 			int cr = r_config_get_i (core->config, "asm.cmtright");
 			int fun = r_config_get_i (core->config, "asm.functions");
 			int li = r_config_get_i (core->config, "asm.lines");
 			int xr = r_config_get_i (core->config, "asm.xrefs");
+
 			r_config_set_i (core->config, "asm.cmtright", R_TRUE);
 			r_config_set_i (core->config, "asm.functions", R_FALSE);
 			r_config_set_i (core->config, "asm.lines", R_FALSE);
 			r_config_set_i (core->config, "asm.xrefs", R_FALSE);
-			RList *hooks ;
-			RListIter *iter;
-			RAnalCycleHook *hook;
+
 			r_cons_break (NULL, NULL);
 			hooks = r_core_anal_cycles (core, ccl); //analyse
 			r_cons_break_end ();
@@ -2428,6 +2434,7 @@ static int cmd_anal(void *data, const char *input) {
 				free (instr_tmp);
 			}
 			r_list_free (hooks);
+
 			r_config_set_i (core->config, "asm.cmtright", cr); //reset settings
 			r_config_set_i (core->config, "asm.functions", fun);
 			r_config_set_i (core->config, "asm.lines", li);
