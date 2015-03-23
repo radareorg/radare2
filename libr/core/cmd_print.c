@@ -1103,6 +1103,20 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	return R_TRUE;
 }
 
+static void printraw (RCore *core, int len, int mode) {
+	int obsz = core->blocksize;
+	int restore_obsz = 0;
+	if (len != obsz) {
+		if (!r_core_block_size (core, len))
+			len = core->blocksize;
+		else restore_obsz = 1;
+	}
+	r_print_raw (core->print, core->offset, core->block, len, mode);
+	if (restore_obsz) {
+		(void)r_core_block_size (core, obsz);
+	}
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int mode, w, p, i, l, len, total[10];
@@ -2031,16 +2045,10 @@ static int cmd_print(void *data, const char *input) {
 	case 'r': // "pr"
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: prl/prx [size]\n");
+			r_cons_printf ("|Usage: pr[glx] [size]\n");
 			r_cons_printf ("| prl: print raw with lines offsets\n");
 			r_cons_printf ("| prx: printable chars with real offset (hyew)\n");
 			r_cons_printf ("| prg: print raw gunzipped block\n");
-			break;
-		case 'l': // "prl"
-			r_print_raw (core->print, core->offset, core->block, len, 1);
-			break;
-		case 'x': // "prx"
-			r_print_raw (core->print, core->offset, core->block, len, 2);
 			break;
 		case 'g': // "prg" // gunzip
 			{
@@ -2055,8 +2063,16 @@ static int cmd_print(void *data, const char *input) {
 				free (out);
 			}
 			break;
+		/* TODO: compact */
+		case 'l': // "prl"
+			printraw (core, len, 1);
+			break;
+		case 'x': // "prx"
+			printraw (core, len, 2);
+			break;
 		default:
-			r_print_raw (core->print, core->offset, core->block, len, 0);
+			printraw (core, len, 0);
+			break;
 		}
 		break;
 	case '3': // "p3" [file]

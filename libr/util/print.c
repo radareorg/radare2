@@ -821,19 +821,25 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlin
 		}
 	} else if (offlines) {
 		const ut8 *o, *q;
-		int mustbreak = 0, linenum = 1;
+		int i, mustbreak = 0, linenum = 1;
 		o = q = buf;
+		i = 0;
 		do {
 			p->printf ("%d 0x%08x ", linenum,
 				addr + (int)(size_t)(q-buf));
-			for (;*q && *q != '\n'; q++);
-			if (!*q)
+			for (; i<len && *q && *q != '\n'; q++, i++) {
+				// just loop
+			}
+			if ((i+1)>=len || !*q)
 				mustbreak = 1;
-			p->write (o, (int)(size_t)(q-o));
+			if ((q-o)>0) {
+				p->write (o, (int)(size_t)(q-o));
 
+			}
 			p->printf ("\n");
 			linenum++;
 			o = ++q;
+			i++;
 		} while (!mustbreak);
 	} else {
 		p->write (buf, len);
