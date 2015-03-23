@@ -566,7 +566,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				memmove (I.buffer.data+i,
 					I.buffer.data+I.buffer.index,
 					I.buffer.length-I.buffer.index+1);
-				I.buffer.data[i] = 0;
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = i;
 			}
