@@ -200,7 +200,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			if (*tmp != '[')
 				arg = tmp+1;
 			else arg = tmp;
-		} 
+		}
 
 		data[l++] = 0x0f;
 		for (i=0;keys[i];i++) {
@@ -564,18 +564,26 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				}
 			}
 		} else if (!strcmp (op, "inc")) {
-			if (arg[0]=='r') {
-				data[l++] = 0x48;
+			if (a->bits == 64) {
+				if (arg[0]=='r') {
+					data[l++] = 0x48;
+				}
 				data[l++] = 0xff;
 				data[l++] = 0xc0 | getreg (arg);
-			} else data[l++] = 0x40 | getreg (arg);
+			} else {
+				data[l++] = 0x40 | getreg (arg);
+			}
 			return l;
 		} else if (!strcmp (op, "dec")) {
-			if (arg[0]=='r') {
-				data[l++] = 0x48;
+			if (a->bits == 64) {
+				if (arg[0]=='r') {
+					data[l++] = 0x48;
+				}
 				data[l++] = 0xff;
 				data[l++] = 0xc8 | getreg (arg);
-			} else data[l++] = 0x48 | getreg (arg);
+			} else {
+				data[l++] = 0x48 | getreg (arg);
+			}
 			return l;
 		} else if (!strcmp (op, "push")) {
 			char *delta;
@@ -912,7 +920,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				} else {
 					eprintf ("Error: cannot encode 64bit value in 32bit mode\n");
 					return -1;
-				} 
+				}
 			}
 
 			if (!arg || !arg2) {
