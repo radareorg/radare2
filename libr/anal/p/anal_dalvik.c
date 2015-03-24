@@ -249,7 +249,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x3c: // if-gtz
 		case 0x3d: // if-lez
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = addr + sz + (short)(data[2]|data[3]<<8)*2;
+			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 			op->fail = addr + sz;
 			op->eob = 1;
 			break;
