@@ -2129,7 +2129,9 @@ toro:
 		if (core->inc == 0)
 			core->inc = ds->oplen;
 
-		r_anal_op_fini (&ds->analop);
+		if (ds->analop.mnemonic) {
+			r_anal_op_fini (&ds->analop);
+		}
 
 		if (!ds->lastfail)
 			r_anal_op (core->anal, &ds->analop, ds->at, buf+idx, (int)(len-idx));

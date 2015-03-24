@@ -24,6 +24,14 @@ R_API RList *r_anal_op_list_new() {
 }
 
 R_API void r_anal_op_fini(RAnalOp *op) {
+	if (!op) // || !op->mnemonic)
+		return;
+	if (((ut64)(size_t)op) == UT64_MAX) {
+		return;
+	}
+	if (((ut64)(size_t)op->mnemonic) == UT64_MAX) {
+		return;
+	}
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);

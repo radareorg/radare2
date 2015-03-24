@@ -20,8 +20,11 @@ R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
 
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
-	/* TODO: free RRegItem objects? */
-	free (value);
+	ut64 pval = (ut64)(size_t)value;
+	if (pval && pval != UT64_MAX) {
+		/* TODO: free RRegItem objects? */
+		free (value);
+	}
 }
 
 // mul*value+regbase+regidx+delta

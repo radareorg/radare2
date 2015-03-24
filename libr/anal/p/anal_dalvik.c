@@ -44,6 +44,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x42: // const
 		case 0x18: // const-wide
 		case 0x19: // const-wide
+		case 0x1a: // const-string
 		case 0x0c: // move-result-object // TODO: add MOVRET OP TYPE ??
 		case 0x0b: // move-result-wide
 		case 0x1c: // const-class
@@ -59,11 +60,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x88: // float-to-long
 			op->family = R_ANAL_OP_FAMILY_FPU;
 			/* pass thru */
-		case 0x8f: // int-to-short
 		case 0x81: // int-to-long
 		case 0x82: // 
 		case 0x83: // 
 		case 0x84: // 
+		case 0x8d: // int-to-byte
+		case 0x8f: // int-to-short
 		case 0x20: // instance-of
 			op->type = R_ANAL_OP_TYPE_CAST;
 			break;
@@ -247,7 +249,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x3c: // if-gtz
 		case 0x3d: // if-lez
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
+			op->jump = addr + sz + (short)(data[2]|data[3]<<8)*2;
 			op->fail = addr + sz;
 			op->eob = 1;
 			break;

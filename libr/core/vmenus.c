@@ -304,7 +304,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		r_cons_clear00 ();
 
 		if (menu) {
-			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n\n",
+			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n",
 			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
@@ -330,11 +330,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				continue;
 			}
 			if (fs2) {
+				int cols, rows = r_cons_get_size (&cols);
+				//int rows = 20;
+				rows -= 12;
 				r_cons_printf ("\n Selected: %s\n\n", fs2);
 				// Honor MAX_FORMATS here
 				switch (format) {
-				case 0: snprintf (cmd, sizeof (cmd), "px @ %s!64", fs2); core->printidx = 0; break;
-				case 1: snprintf (cmd, sizeof (cmd), "pd 12 @ %s!64", fs2); core->printidx = 1; break;
+				case 0: snprintf (cmd, sizeof (cmd), "px %d @ %s!64", rows*16, fs2); core->printidx = 0; break;
+				case 1: snprintf (cmd, sizeof (cmd), "pd %d @ %s!64", rows, fs2); core->printidx = 1; break;
 				case 2: snprintf (cmd, sizeof (cmd), "ps @ %s!64", fs2); core->printidx = 5; break;
 				case 3: strcpy (cmd, "f="); break;
 				default: format = 0; continue;
@@ -342,7 +345,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				if (*cmd) r_core_cmd (core, cmd, 0);
 			} else r_cons_printf ("(no flags)\n");
 		} else {
-			r_cons_printf ("Flag spaces:\n\n");
+			r_cons_printf ("Flag spaces:\n");
 			hit = 0;
 			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
 				if (core->flags->spaces[i]) {
@@ -380,6 +383,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		if (ch==-1||ch==4) return R_FALSE;
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
+		case 'C':
+			r_config_set_i (core->config, "scr.color", r_config_get_i (core->config, "scr.color")?0:1);
+			break;
 		case 'J': option += 10; break;
 		case 'o': r_flag_sort (core->flags, 0); break;
 		case 'n': r_flag_sort (core->flags, 1); break;
@@ -503,6 +509,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
+			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"
 			" a/d/e - add/delete/edit flag\n"
 			" +/-   - increase/decrease block size\n"

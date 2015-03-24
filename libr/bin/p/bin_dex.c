@@ -675,7 +675,7 @@ static RList* sections(RBinFile *arch) {
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "code");
-		ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
+		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->srwx = 4|1;
 		r_list_append (ret, ptr);
@@ -688,7 +688,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
 			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
 		} else {
-			ptr->size = ptr->vsize = ptr->vaddr - arch->buf->length;
+			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
 			// hacky workaround
 			dprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;
