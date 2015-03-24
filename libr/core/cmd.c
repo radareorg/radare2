@@ -1339,7 +1339,7 @@ next2:
 
 		*ptr = '\0';
 		for (ptr++; *ptr== ' '; ptr++);
-		ptr--;
+		//ptr--;
 
 		if (ptr[0] && ptr[1] && ptr[2])
 			arroba = strchr (ptr+2, '@');
@@ -1347,11 +1347,11 @@ next2:
 repeat_arroba:
 		if (arroba)
 			*arroba = 0;
-		if (ptr[0] && ptr[1] && ptr[2]==':') {
+		if (ptr[0] && ptr[1]==':' && ptr[2]) {
 			usemyblock = 1;
-			switch (ptr[1]) {
+			switch (ptr[0]) {
 			case 'f':
-				f = r_file_slurp (ptr+3, &sz);
+				f = r_file_slurp (ptr+2, &sz);
 				if (f) {
 					buf = malloc (sz);
 					if (buf) {
@@ -1370,7 +1370,7 @@ repeat_arroba:
 					eprintf ("cannot allocate\n");
 					return R_FALSE;
 				}
-				len = r_hex_str2bin (ptr+3, buf);
+				len = r_hex_str2bin (ptr+2, buf);
 				r_core_block_size (core, len);
 				memcpy (core->block, buf, core->blocksize);
 				free (buf);
@@ -1378,7 +1378,7 @@ repeat_arroba:
 			case 's':
 				len = strlen (ptr+3);
 				r_core_block_size (core, len);
-				memcpy (core->block, ptr+3, len);
+				memcpy (core->block, ptr+2, len);
 				break;
 			default:
 				goto ignore;
