@@ -1,7 +1,7 @@
-OBJ_Z80_CR=asm_z80-cr.o
+OBJ_Z80_CR=asm_z80_cr.o
 
 STATIC_OBJ+=${OBJ_Z80_CR}
-TARGET_Z80_CR=asm_z80-cr.${EXT_SO}
+TARGET_Z80_CR=asm_z80_cr.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_Z80_CR}
 
