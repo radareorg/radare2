@@ -1339,7 +1339,11 @@ next2:
 
 		*ptr = '\0';
 		for (ptr++; *ptr== ' '; ptr++);
-		//ptr--;
+		if (*ptr && ptr[1]==':') {
+			/* do nothing here */
+		} else {
+			ptr--;
+		}
 
 		if (ptr[0] && ptr[1] && ptr[2])
 			arroba = strchr (ptr+2, '@');
