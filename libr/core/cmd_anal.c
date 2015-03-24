@@ -2317,9 +2317,10 @@ static int cmd_anal(void *data, const char *input) {
 	const char* help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 		"aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
+		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
-		"aa*", "", "print the commands that 'aa' will run",
+		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		NULL};
 	const char* help_msg[] = {
 		"Usage:", "a", "[8adefFghoprxstc] [...]",
@@ -2389,7 +2390,15 @@ static int cmd_anal(void *data, const char *input) {
 		switch (input[1]) {
 		case '?': r_core_cmd_help (core, help_msg_aa); break;
 		case 'c': cmd_anal_calls (core, input + 2) ; break; // "aac"
-		case '*': r_cons_printf ("af @@ sym.* ; af @ entry0\n"); break; // ; .afna @@ fcn.*\n");
+		//case '*': r_cons_printf ("af @@ sym.* ; af @ entry0\n"); break; // ; .afna @@ fcn.*\n");
+		case '*':
+			r_core_cmd0 (core, "af @@ sym.*");
+			r_core_cmd0 (core, "af @ entry0");
+			break;
+		case 's':
+			r_core_cmd0 (core, "af @@= `isq~[0]`");
+			r_core_cmd0 (core, "af @ entry0");
+			break;
 		case '\0': // "aa"
 		case 'a': 
 			r_cons_break (NULL, NULL);
