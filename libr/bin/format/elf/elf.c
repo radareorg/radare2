@@ -488,12 +488,40 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	// MIPS
 	/* get .got, calculate offset of main symbol */
-	if (!memcmp (buf, "\x21\x00\xe0\x03\x01\x00\x11\x04\x00\x00\x00\x00", 12)) {
-		ut64 got_addr = 0LL; // TODO: get .got offset
-		short delta = (buf[28]+(buf[29]<<8));
-		// NOTE: This is the way to resolve 'gp' register
-		r_buf_read_at (bin->b, got_addr+(32734+delta), buf, 4);
-		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+	if (!memcmp (buf, "\x21\x00\xe0\x03\x01\x00\x11\x04", 8)) {
+
+		/*
+		    assuming the startup code looks like
+		        got = gp-0x7ff0
+		        got[index__libc_start_main] ( got[index_main] );
+
+		    looking for the instruction generating the first argument to find main
+		        lw a0, offset(gp)
+		*/
+
+		ut64 got_offset;
+
+		if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) != -1 ||
+		    (got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got.plt")) != -1)
+		{
+			const ut64 gp = got_offset + 0x7ff0;
+			unsigned i;
+
+			#define BUF_U32(i) ((ut32)(buf[i+0]+(buf[i+1]<<8)+(buf[i+2]<<16)+(buf[i+3]<<24)))
+
+			for (i=0; i < sizeof(buf)/sizeof(buf[0]); i+=4) {
+				const ut32 instr = BUF_U32(i);
+				if ((instr & 0xffff0000) == 0x8f840000) { // lw a0, offset(gp)
+					const short delta = instr & 0x0000ffff;
+					r_buf_read_at (bin->b, /* got_entry_offset = */ gp + delta, buf, 4);
+					return (/* main_vaddr = */ BUF_U32(0)) - bin->baddr;
+				}
+			}
+
+			#undef BUF_U32
+		}
+
+		return 0;
 	}
 	// ARM
 	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
