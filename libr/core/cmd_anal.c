@@ -304,7 +304,7 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 			if (hint && hint->fail != UT64_MAX)
 				op.fail = hint->fail;
 			if (op.refptr != -1)
-				r_cons_printf ("\"refptr\":%d", op.refptr);
+				r_cons_printf ("\"refptr\":%d,", op.refptr);
 			if (op.fail != UT64_MAX)
 				r_cons_printf ("\"fail\":%"PFMT64d",", op.fail);
 
