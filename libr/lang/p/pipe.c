@@ -12,7 +12,7 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
-	eprintf ("%s %s\n", s, a);
+//	eprintf ("%s %s\n", s, a);
 	free (a);
 }
 

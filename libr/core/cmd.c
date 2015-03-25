@@ -286,7 +286,27 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 			r_lang_use (core->lang, p->name);
 			ret = r_lang_run_file (core->lang, file);
 		} else {
-			ret = r_core_cmd_file (core, file);
+			const char *p = r_str_lchr (file, '.');
+			if (p) {
+				const char *ext = p+1;
+				/* TODO: handle this inside r_lang_pipe with new APIs */
+				if (!strcmp (ext, "js")) {
+					char *cmd = r_str_newf ("node '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
+				} else if (!strcmp (ext, "py")) {
+					char *cmd = r_str_newf ("python '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
+				}
+			}
+			if (!ret) {
+				ret = r_core_cmd_file (core, file);
+			}
 		}
 	}
 	free (r_list_pop (core->scriptstack));
