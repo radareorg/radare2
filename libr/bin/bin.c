@@ -422,6 +422,10 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	RIO *io;
 	RIODesc *desc = NULL;
 	io = (iob&&iob->get_io) ? iob->get_io(iob) : NULL;
+	if (!io) {
+		io = r_io_new ();
+		if (io) r_io_bind (io, &bin->iob);
+	}
 	if (!io) return R_FALSE;
 	bin->rawstr = rawstr;
 	desc = fd == -1 ? iob->desc_open (io, file, O_RDONLY, 0644) : iob->desc_get_by_fd (io, fd);

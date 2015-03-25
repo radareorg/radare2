@@ -296,6 +296,12 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "es6")) {
+					char *cmd = r_str_newf ("babel-node '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
 				} else if (!strcmp (ext, "py")) {
 					char *cmd = r_str_newf ("python '%s'", file);
 					r_lang_use (core->lang, "pipe");
