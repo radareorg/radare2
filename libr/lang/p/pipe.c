@@ -12,7 +12,7 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
-	eprintf ("%s %s\n", s, a);
+//	eprintf ("%s %s\n", s, a);
 	free (a);
 }
 
@@ -72,12 +72,12 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			eprintf ("%d %s\n", ret, buf);
 			if (res) {
-				write (input[1], res, strlen (res));
+				write (input[1], res, strlen (res)+1);
 				free (res);
 			} else {
 				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
+				write (input[1], "", 1); // NULL byte
 			}
-			write (input[1], "", 1); // NULL byte
 		}
 		/* workaround to avoid stdin closed */
 		if (safe_in != -1)
