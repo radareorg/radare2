@@ -1560,7 +1560,6 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'a': // "pa"
 	{
-		
 		ut32 new_bits = -1;
 		int segoff, old_bits, pos = 0;
 		ut8 settings_changed = R_FALSE;
@@ -1568,24 +1567,24 @@ static int cmd_print(void *data, const char *input) {
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		old_bits = r_config_get_i (core->config, "asm.bits");
 		segoff = r_config_get_i (core->config, "asm.segoff");
-		
-		if (input[0])
-			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
-				if (input[pos] == ' ') break;
+		if (input[1] != ' ') {
+			if (input[0])
+				for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
+					if (input[pos] == ' ') break;
 
-		if (!process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
-			// XXX - print help message
-			//return R_FALSE;
-		}
-	
-		if (new_arch == NULL) new_arch = strdup (old_arch);
-		if (new_bits == -1) new_bits = old_bits;
+			if (!process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
+				// XXX - print help message
+				//return R_FALSE;
+			}
 		
-		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
-			set_asm_configs (core, new_arch, new_bits, segoff);
-			settings_changed = R_TRUE;
+			if (new_arch == NULL) new_arch = strdup (old_arch);
+			if (new_bits == -1) new_bits = old_bits;
+			
+			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
+				set_asm_configs (core, new_arch, new_bits, segoff);
+				settings_changed = R_TRUE;
+			}
 		}
-		
 		if (input[1]=='e') { // "pae"
 			if (input[2]=='?') {
 				r_cons_printf ("|Usage: pae [hex]       assemble esil from hexpairs\n");
