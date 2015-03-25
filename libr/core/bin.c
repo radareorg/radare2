@@ -324,7 +324,7 @@ static int bin_info (RCore *r, int mode) {
 	if ((mode & R_CORE_BIN_SET)) {
 		r_config_set (r->config, "file.type", info->rclass);
 		r_config_set (r->config, "cfg.bigendian", info->big_endian?"true":"false");
-		if (!strcmp (info->rclass, "fs")) {
+		if (info->rclass && !strcmp (info->rclass, "fs")) {
 			r_config_set (r->config, "asm.arch", info->arch);
 			r_core_cmdf (r, "m /root %s 0", info->arch);
 		} else {
