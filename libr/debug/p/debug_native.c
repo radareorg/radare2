@@ -1087,7 +1087,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			eprintf ("rdp = 0x%016"PFMT64x"\n", fpregs.rdp);
 			eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
 			eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
-			eprintf ("size = 0x%08x\n", sizeof(fpregs));
+			eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
 			for(i=0;i<16;i++) {
 				ut32 *a = (ut32*)&fpregs.xmm_space;
 				a = a + (i * 4);
@@ -1349,7 +1349,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		}
 
 		/* TODO: thread cannot be selected */
-		if (0) // disable until fixed
+		if (1) return R_FALSE; // disable until fixed
 		if (inferior_thread_count>0) {
 			gp_count = ((dbg->bits == R_SYS_BITS_64))? 44:16;
 			// XXX: kinda spaguetti coz multi-arch
@@ -1387,7 +1387,9 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 				perror ("thread_set_state");
 				return R_FALSE;
 			}
-		} else eprintf ("There are no threads!\n");
+		} else {
+			eprintf ("There are no threads!\n");
+		}
 		return sizeof (R_DEBUG_REG_T);
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
