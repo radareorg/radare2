@@ -57,13 +57,25 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		if (json_started)
 			printf(",\n");
 		json_started = 1;
-		printf ("{\"offset\":[%u, %u], \"data\":[[", op->a_off, op->b_off);
+		/*printf ("{\"offset\":[%u, %u], \"from\":[", op->a_off, op->b_off);
 		for (i = 0;i<(op->a_len-1);i++)
 			printf ("%d,", op->a_buf[i]);
-		printf ("%d],[", op->a_len-1);
+		printf ("], \"to\":[");//, op->a_len-1);
 		for (i=0; i<(op->b_len-1); i++)
 			printf ("%d,", op->b_buf[i]);
-		printf ("%d]]}", op->b_buf[op->a_len-1]);
+		printf ("]}");//, op->b_buf[op->a_len-1]);*/
+		//printf ("\"changes\": [");
+		printf ("{\"offset\":\"0x%08"PFMT64x"\" ,", op->a_off);
+		//printf ("0x%08"PFMT64x" ", op->a_off);
+		printf("\"from\":\"");
+		for (i = 0;i<op->a_len;i++)
+			printf ("%02x", op->a_buf[i]);
+		printf (" \", \"to\":\"");
+		for (i=0; i<op->b_len; i++)
+			printf ("%02x", op->b_buf[i]);
+		printf (" \"}"); //,\n");
+		
+
 		return 1;
 	case NORMAL_MODE:
 	default:
