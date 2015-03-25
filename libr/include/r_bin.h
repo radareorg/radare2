@@ -81,18 +81,18 @@ typedef struct r_bin_hash_t {
 } RBinHash;
 
 typedef struct r_bin_info_t {
-	char file[R_BIN_SIZEOF_STRINGS+1];
-	char type[R_BIN_SIZEOF_STRINGS+1];
-	char bclass[R_BIN_SIZEOF_STRINGS+1];
-	char rclass[R_BIN_SIZEOF_STRINGS+1];
-	char arch[R_BIN_SIZEOF_STRINGS+1];
-	char cpu[R_BIN_SIZEOF_STRINGS+1];
-	char machine[R_BIN_SIZEOF_STRINGS+1];
-	char os[R_BIN_SIZEOF_STRINGS+1];
-	char subsystem[R_BIN_SIZEOF_STRINGS+1];
-	char rpath[R_BIN_SIZEOF_STRINGS+1];
-	char guid[R_BIN_SIZEOF_STRINGS+1];
-	char debug_file_name[R_BIN_SIZEOF_STRINGS+1];
+	char *file;
+	char *type;
+	char *bclass;
+	char *rclass;
+	char *arch;
+	char *cpu;
+	char *machine;
+	char *os;
+	char *subsystem;
+	char *rpath;
+	char *guid;
+	char *debug_file_name;
 	const char *lang;
 	int bits;
 	int has_va;
@@ -197,6 +197,7 @@ typedef struct r_bin_xtr_extract_t {
 
 R_API RBinXtrData * r_bin_xtrdata_new (void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count);
 R_API void r_bin_xtrdata_free (void /*RBinXtrData*/ *data);
+R_API void r_bin_info_free (RBinInfo *rb);
 
 typedef struct r_bin_xtr_plugin_t {
 	char *name;

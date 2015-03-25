@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -80,25 +80,25 @@ static RList *strings(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	char *p;
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-
 	RBinInfo *ret = NULL;
+	char *p;
+	const ut8 *bytes;
+	ut64 sz;
 
-	if (!arch || !bytes) 
+	if (!arch) return NULL;
+	bytes = r_buf_buffer (arch->buf);
+	if (!bytes) return NULL;
+	sz = arch ? r_buf_size (arch->buf): 0;
+
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	else if (!(ret = R_NEW0 (RBinInfo)))
-		return NULL;
-	ret->lang = NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->type, "fs", sizeof (ret->type)-1); // asm.arch
-	strncpy (ret->bclass, "1.0", sizeof (ret->bclass)-1);
-	strncpy (ret->rclass, "fs", sizeof (ret->rclass)-1); // file.type
-	strncpy (ret->os, "any", sizeof (ret->os)-1);
-	strncpy (ret->subsystem, "unknown", sizeof (ret->subsystem)-1);
-	strncpy (ret->machine, "any", sizeof (ret->machine)-1);
+	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->type = strdup ("fs");
+	ret->bclass = strdup ("1.0");
+	ret->rclass = strdup ("fs");
+	ret->os = strdup ("any");
+	ret->subsystem = strdup ("unknown");
+	ret->machine = strdup ("any");
 	p = fsname (bytes, sz);
 	strncpy (ret->arch, p, sizeof (ret->arch)-1);
 	free (p);

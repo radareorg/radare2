@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -265,29 +265,16 @@ static RBinInfo* info(RBinFile *arch) {
 
 	ret->lang = "c";
 	if (arch->file)
-		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	else *ret->file = 0;
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+		ret->file = strdup (arch->file);
 	if ((str = MACH0_(get_class) (arch->o->bin_obj))) {
-		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
+		ret->bclass = str;
 	}
-	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, MACH0_(get_os) (arch->o->bin_obj),
-		R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
-	if ((str = MACH0_(get_cputype) (arch->o->bin_obj))) {
-		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = MACH0_(get_cpusubtype) (arch->o->bin_obj))) {
-		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = MACH0_(get_filetype) (arch->o->bin_obj))) {
-		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
+	ret->rclass = strdup ("mach0");
+	ret->os = strdup (MACH0_(get_os)(arch->o->bin_obj));
+	ret->subsystem = strdup ("darwin");
+	ret->arch = MACH0_(get_cputype) (arch->o->bin_obj);
+	ret->machine = MACH0_(get_cpusubtype) (arch->o->bin_obj);
+	ret->type = MACH0_(get_filetype) (arch->o->bin_obj);
 	ret->bits = 32;
 	ret->big_endian = 0;
 	if (arch && arch->o && arch->o->bin_obj) {

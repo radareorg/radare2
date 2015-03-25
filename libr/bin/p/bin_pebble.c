@@ -89,15 +89,14 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->lang = NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->type, "pebble", sizeof (ret->type)-1); // asm.arch
-	strncpy (ret->bclass, pai.name, sizeof (ret->bclass)-1);
-	strncpy (ret->rclass, pai.company, sizeof (ret->rclass)-1); // file.type
-	strncpy (ret->os, "rtos", sizeof (ret->os)-1);
-	strncpy (ret->subsystem, "pebble", sizeof (ret->subsystem)-1);
-	strncpy (ret->machine, "watch", sizeof (ret->machine)-1);
-	strcpy (ret->arch, "arm"); // ARM THUMB ONLY
+	ret->file = strdup (arch->file);
+	ret->type = strdup ("pebble");
+	ret->bclass = strdup (pai.name);
+	ret->rclass = strdup (pai.company);
+	ret->os = strdup ("rtos");
+	ret->subsystem = strdup ("pebble");
+	ret->machine = strdup ("watch");
+	ret->arch = strdup ("arm"); // thumb only
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;

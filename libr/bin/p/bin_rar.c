@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -133,34 +133,30 @@ static RList* libs(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	const char *archstr;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	RRarBinObj *bin_obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	const ut8 *buf = bin_obj ? r_buf_buffer (bin_obj->buf) : NULL;
 	ut64 sz = arch && bin_obj ? r_buf_size (bin_obj->buf): 0;
-
 	int bits = 32; // Default value
 
 	if (!ret || !buf || sz < 0x30) {
-		R_FREE (ret);
+		free (ret);
 		return NULL;
 	}
 
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "rar", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, "rar", R_BIN_SIZEOF_STRINGS);
-	archstr = "rar";
-	strncpy (ret->arch, archstr, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->machine, archstr, R_BIN_SIZEOF_STRINGS);
+	ret->file = strdup (arch->file);
+	ret->rclass = strdup ("rar");
+	ret->os = strdup ("rar");
+	ret->arch = strdup ("rar");
+	ret->machine = strdup ("rarvm");
 	if (!memcmp (buf+0x30, RAR_CONST, 16)) {
-		strncpy (ret->subsystem, "rarvm", R_BIN_SIZEOF_STRINGS);
-		strncpy (ret->bclass, "program", R_BIN_SIZEOF_STRINGS);
-		strncpy (ret->type, "EXEC (Compressed executable)", R_BIN_SIZEOF_STRINGS);
+		ret->subsystem = strdup ("rarvm");
+		ret->bclass = strdup ("program");
+		ret->type = strdup ("EXEC (Compressed executable)");
 	} else {
-		strncpy (ret->subsystem, "archive", R_BIN_SIZEOF_STRINGS);
-		strncpy (ret->bclass, "archive", R_BIN_SIZEOF_STRINGS);
-		strncpy (ret->type, "ARCHIVE (Compressed archive)", R_BIN_SIZEOF_STRINGS);
+		ret->subsystem = strdup ("archive");
+		ret->bclass = strdup ("archive");
+		ret->type = strdup ("ARCHIVE (Compressed archive)");
 	}
 // TODO: specify if its compressed or executable
 	ret->bits = bits;

@@ -271,15 +271,14 @@ static RBinInfo* info(RBinFile *arch) {
 
 	obj = arch->o->bin_obj;
 
-
 	r_buf_read_at (arch->buf, obj->header->debug_name_addr - \
-		obj->header->base, dbg_name, sizeof(dbg_name));
-	strncpy (ret->file, (const char*)dbg_name, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->bclass, "program", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->machine, "Microsoft Xbox", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, "xbox", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, "Microsoft Xbox executable", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		obj->header->base, dbg_name, sizeof (dbg_name));
+	ret->file = strdup ((char *)dbg_name);
+	ret->bclass = strdup ("program");
+	ret->machine = strdup ("Microsoft Xbox");
+	ret->os = strdup ("xbox");
+	ret->type = strdup ("Microsoft Xbox executable");
+	ret->arch = strdup ("x86");
 	ret->has_va = 1;
 	ret->bits = 32;
 	ret->big_endian = 0;

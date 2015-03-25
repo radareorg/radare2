@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013 - 2014 - condret@runas-racer.com */
+/* radare - LGPL - 2013 - 2015 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -213,14 +213,15 @@ static RBinInfo* info(RBinFile *arch) {
 		return NULL;
 	}
 
-	ret->lang = NULL;
-	r_buf_read_at (arch->buf,0x104,rom_header,76);
+	r_buf_read_at (arch->buf, 0x104, rom_header, 76);
 	strncpy (ret->file, (const char*)&rom_header[48], 16);
-	gb_get_gbtype (ret->type,rom_header[66],rom_header[63]);
-	gb_add_cardtype (ret->type,rom_header[67]);			// XXX
-	strncpy (ret->machine, "Gameboy", sizeof (ret->machine)-1);
-	strncpy (ret->os, "any", sizeof (ret->os)-1);
-	strcpy (ret->arch, "gb");
+	ret->type = malloc (64);
+	ret->type[0] = 0;
+	gb_get_gbtype (ret->type, rom_header[66], rom_header[63]);
+	gb_add_cardtype (ret->type, rom_header[67]);			// XXX
+	ret->machine = strdup ("Gameboy");
+	ret->os = strdup ("any");
+	ret->arch = strdup ("gb");
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;

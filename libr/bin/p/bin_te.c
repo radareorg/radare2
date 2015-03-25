@@ -124,30 +124,16 @@ static RList* sections(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->bclass, "TE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "te", R_BIN_SIZEOF_STRINGS);
-	if ((str = r_bin_te_get_os (arch->o->bin_obj))) {
-		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = r_bin_te_get_arch (arch->o->bin_obj))) {
-		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = r_bin_te_get_machine (arch->o->bin_obj))) {
-		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = r_bin_te_get_subsystem (arch->o->bin_obj))) {
-		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+	ret->file = strdup (arch->file);
+	ret->bclass = strdup ("TE");
+	ret->rclass = strdup ("te");
+	ret->os = r_bin_te_get_os (arch->o->bin_obj);
+	ret->arch = r_bin_te_get_arch (arch->o->bin_obj);
+	ret->machine = r_bin_te_get_machine (arch->o->bin_obj);
+	ret->subsystem = r_bin_te_get_subsystem (arch->o->bin_obj);
+	ret->type = strdup ("EXEC (Executable file)");
 	ret->bits = r_bin_te_get_bits (arch->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;

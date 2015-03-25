@@ -116,17 +116,14 @@ static RBinInfo *info(RBinFile *arch) {
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, "DEX CLASS", R_BIN_SIZEOF_STRINGS);
+	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->type = strdup ("DEX CLASS");
 	ret->has_va = R_FALSE;
-	version = r_bin_dex_get_version (arch->o->bin_obj);
-	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS);
-	free (version);
-	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS);
-	strcpy (ret->os, "linux");
-	strcpy (ret->subsystem, "any");
-	strcpy (ret->machine, "Dalvik VM");
+	ret->bclass = r_bin_dex_get_version (arch->o->bin_obj);
+	ret->rclass = strdup ("class");
+	ret->os = strdup ("linux");
+	ret->subsystem = strdup ("any");
+	ret->machine = strdup ("Dalvik VM");
 
 	h = &ret->sum[0];
 	h->type = "sha1";
@@ -157,7 +154,7 @@ static RBinInfo *info(RBinFile *arch) {
 		}
 	}
 
-	strcpy (ret->arch, "dalvik");
+	ret->arch = strdup ("dalvik");
 	ret->lang = "java";
 	ret->bits = 32;
 	ret->big_endian = 0;

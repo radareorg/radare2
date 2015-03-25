@@ -542,51 +542,45 @@ static RBinInfo* info(RBinFile *arch) {
 		return NULL;
 	ret->lang = "c";
 	if (arch->file)
-		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+		ret->file = strdup (arch->file);
 	else *ret->file = 0;
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->o->bin_obj))) {
-		strncpy (ret->rpath, str, R_BIN_SIZEOF_STRINGS);
+		ret->rpath = strdup (str);
 		free (str);
-	} else strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+	} else ret->rpath = strdup ("NONE");
 	if (!(str = Elf_(r_bin_elf_get_file_type) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
-	strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
+	ret->type = str;
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	ret->has_canary = has_canary (arch);
-	free (str);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
-	strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
-	free (str);
+	ret->bclass = str;
 	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
-	strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
-	free (str);
+	ret->os = str;
 	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
-	strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
-	free (str);
+	ret->subsystem = str;
 	if (!(str = Elf_(r_bin_elf_get_machine_name) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
-	strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
-	free (str);
+	ret->machine = str;
 	if (!(str = Elf_(r_bin_elf_get_arch) (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
-	strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
-	free (str);
-	strncpy (ret->rclass, "elf", R_BIN_SIZEOF_STRINGS);
+	ret->arch = str;
+	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->o->bin_obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);

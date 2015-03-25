@@ -136,24 +136,18 @@ static RList* strings(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	RBinInfo *ret = NULL;
-	char *version;
-
-	if (!(ret = R_NEW0 (RBinInfo)))
-		return NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 	ret->lang = "java";
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS-1);
-	version = r_bin_java_get_version (arch->o->bin_obj);
-	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS-1);
-	free (version);
+	ret->file = strdup (arch->file);
+	ret->type = strdup ("JAVA CLASS");
+	ret->bclass = r_bin_java_get_version (arch->o->bin_obj);
 	ret->has_va = 0;
-	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->machine, "java", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->arch, "java", R_BIN_SIZEOF_STRINGS-1);
+	ret->rclass = strdup ("class");
+	ret->os = strdup ("any");
+	ret->subsystem = strdup ("any");
+	ret->machine = strdup ("jvm");
+	ret->arch = strdup ("java");
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 4 | 8; /* LineNums | Syms */

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,45 +6,31 @@
 #include <r_bin.h>
 #include <r_magic.h>
 
-static void get_filetype (RBinFile *arch, char *res, int len) {
-	ut8 test_buffer[4096] = {0};
+static char *get_filetype (RBinFile *arch) {
+	ut8 buf[4096] = {0};
+	char *res = NULL;
 	RMagic * ck;
-	if (!res || !arch)
-		return;
+	if (!arch) return NULL;
 	ck = r_magic_new (0);
-	*res = 0;
 	if (ck && arch && arch->buf) {
-		const char *tmp;
+		const char *tmp = NULL;
 		r_magic_load (ck, R_MAGIC_PATH);
-		r_buf_read_at (arch->buf, 0, test_buffer, 4096);
-		tmp = r_magic_buffer (ck, test_buffer, 4096);
-		if (tmp)
-			strncpy (res, tmp, len-1);
+		r_buf_read_at (arch->buf, 0, buf, sizeof (buf));
+		tmp = r_magic_buffer (ck, buf, sizeof (buf));
+		if (tmp) res = strdup (tmp);
 	}
 	r_magic_free (ck);
+	return res;
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	RBinInfo *ret = NULL;
-
-	if(!(ret = R_NEW0 (RBinInfo)))
-		return NULL;
-
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 	ret->lang = "";
-	if (arch->file)
-		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	else *ret->file = 0;
-
-	strncpy (ret->rpath, "", R_BIN_SIZEOF_STRINGS);
-
-	get_filetype (arch, ret->type, R_BIN_SIZEOF_STRINGS);
+	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->type = get_filetype (arch);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
-	strncpy (ret->bclass, "", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, "", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->subsystem, "", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->machine, "", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->has_va = 0;

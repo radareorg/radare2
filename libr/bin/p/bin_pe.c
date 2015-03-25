@@ -310,40 +310,21 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 static RBinInfo* info(RBinFile *arch) {
 	SDebugInfo di = {{0}};
 	int len = 0;
-	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
-	if (arch->file)
-		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	else *ret->file = 0;
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if ((str = PE_(r_bin_pe_get_class) (arch->o->bin_obj))) {
-		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	strncpy (ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
-	if ((str = PE_(r_bin_pe_get_os) (arch->o->bin_obj))) {
-		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = PE_(r_bin_pe_get_arch) (arch->o->bin_obj))) {
-		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = PE_(r_bin_pe_get_machine) (arch->o->bin_obj))) {
-		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj))) {
-		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
+	arch->file = strdup (arch->file);
+	ret->bclass = PE_(r_bin_pe_get_class) (arch->o->bin_obj);
+	ret->rclass = strdup ("pe");
+	ret->os = PE_(r_bin_pe_get_os) (arch->o->bin_obj);
+	ret->arch = PE_(r_bin_pe_get_arch) (arch->o->bin_obj);
+	ret->machine = PE_(r_bin_pe_get_machine) (arch->o->bin_obj);
+	ret->subsystem = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj);
 	if (is_dot_net (arch)) {
 		ret->lang = "msil";
 	}
 	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
-		strncpy (ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
-	else strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+		ret->type = strdup ("DLL (Dynamic Link Library)");
+	else ret->type = strdup ("EXEC (Executable file)");
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
@@ -382,14 +363,14 @@ static RBinInfo* info(RBinFile *arch) {
 		} else {
 			eprintf("warning: guid is bigger than R_BIN_SIZEOF_STRINGS\n");
 		}
-		strncpy(ret->guid, (char *)di.guidstr, len);
+		strncpy (ret->guid, (char *)di.guidstr, len);
 
 		if (R_BIN_SIZEOF_STRINGS >= DBG_FILE_NAME_LEN) {
 			len = DBG_FILE_NAME_LEN;
 		} else {
 			eprintf("waring: debug file name len os bigger then R_BIN_SIZEOF_STRINGS\n");
 		}
-		strncpy(ret->debug_file_name, (char *)di.file_name, len);
+		strncpy (ret->debug_file_name, (char *)di.file_name, len);
 	}
 
 	return ret;

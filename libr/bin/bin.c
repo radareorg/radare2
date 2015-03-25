@@ -364,9 +364,26 @@ static void r_bin_object_delete_items (RBinObject *o) {
 	}
 }
 
+R_API void r_bin_info_free (RBinInfo *rb) {
+	free (rb->file);
+	free (rb->type);
+	free (rb->bclass);
+	free (rb->rclass);
+	free (rb->arch);
+	free (rb->cpu);
+	free (rb->machine);
+	free (rb->os);
+	free (rb->subsystem);
+	free (rb->rpath);
+	free (rb->guid);
+	free (rb->debug_file_name);
+	free (rb);
+}
+
 static void r_bin_object_free (void /*RBinObject*/ *o_) {
 	RBinObject* o = o_;
 	if (!o) return;
+	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
 	free (o);
 }
@@ -1313,8 +1330,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
 			binfile->o = obj;
 			obj->info = R_NEW0 (RBinInfo);
-			strncpy (obj->info->arch, arch, sizeof (obj->info->arch)-1);
-			obj->info->arch[sizeof (obj->info->arch)-1] = '\0';
+			obj->info->arch = strdup (arch);
 			obj->info->bits = bits;
 		}
 	}

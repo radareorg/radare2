@@ -86,9 +86,9 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "anal.arch", arch);
-		if (strlen(info->cpu))
+		if (info->cpu && *info->cpu) {
 			r_config_set (r->config, "anal.cpu", info->cpu);
-		else	r_config_set (r->config, "anal.cpu", arch);
+		} else	r_config_set (r->config, "anal.cpu", arch);
 		r_asm_use (r->assembler, arch);
 
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
@@ -390,9 +390,9 @@ static int bin_info (RCore *r, int mode) {
 			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
 			pair ("rpath", info->rpath);
 			pair ("size", size_str);
-			if (info->guid[0] != '\0')
+			if (info->guid && *info->guid)
 				pair ("guid", info->guid);
-			if (info->debug_file_name[0] != '\0')
+			if (info->debug_file_name)
 				pair ("dbg_file", info->debug_file_name);
 
 			for (i=0; info->sum[i].type; i++) {

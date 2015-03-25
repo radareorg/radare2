@@ -131,15 +131,13 @@ static RBinInfo* info(RBinFile *arch) {
 
 	if ((ret = R_NEW0 (RBinInfo)) == NULL)
 		return NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->bclass, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "mz", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, "DOS", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->machine, "pc", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->subsystem, "DOS", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+	ret->file = strdup (arch->file);
+	ret->rclass = strdup ("mz");
+	ret->os = strdup ("DOS");
+	ret->arch = strdup ("x86");
+	ret->machine = strdup ("pc");
+	ret->subsystem = strdup ("DOS");
+	ret->type = strdup ("EXEC (executable file)");
 	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
