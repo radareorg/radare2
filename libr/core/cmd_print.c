@@ -150,6 +150,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 			if (r_str_contains_macro (input_two) ){
 				r_str_truncate_cmd (input_two);
 			}
+			*bits = r_num_is_valid_input (core->num, input_two) ? r_num_get_input_value (core->num, input_two): -1;
 			*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		}
 
@@ -162,6 +163,81 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 				r_str_truncate_cmd (input_one);
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
 		}
+		result = R_TRUE;
+	}
+	return result;
+}
+
+static int process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits) {
+	// input: start of the input string e.g. after the command symbols have been consumed
+	// size: hex if present, otherwise -1
+	// asm_arch: asm_arch to interpret as if present and valid, otherwise NULL;
+	// bits: bits to use if present, otherwise -1
+
+	int result = R_FALSE;
+	char *input_one = NULL, *input_two = NULL, *input_three = NULL;
+	char *str_clone = NULL,
+		 *ptr_str_clone = NULL,
+		 *trimmed_clone = NULL;
+
+	if (input == NULL || hex == NULL || asm_arch == NULL || bits == NULL) {
+		return R_FALSE;
+	}
+
+	str_clone = strdup (input);
+	trimmed_clone = r_str_trim_head_tail (str_clone);
+
+	input_one = trimmed_clone;
+
+	ptr_str_clone = strchr (trimmed_clone, ' ');
+	// terminate input_one
+	if (ptr_str_clone) {
+		*ptr_str_clone = '\0';
+		input_two = (++ptr_str_clone);
+		ptr_str_clone = strchr (input_two, ' ');
+	}
+
+	// terminate input_two
+	if (ptr_str_clone && input_two) {
+		*ptr_str_clone = '\0';
+		input_three = (++ptr_str_clone);
+		ptr_str_clone = strchr (input_three, ' ');
+	}
+
+	// terminate input_three
+	if (ptr_str_clone && input_three) {
+		*ptr_str_clone = '\0';
+		ptr_str_clone = strchr (input_three, ' ');
+	}
+
+	// command formats
+	// <hex> <arch> <bits>
+	// <hex> <arch>
+	// <hex> <bits>
+	// <hex>
+
+	// initialize
+	*hex = *asm_arch = NULL;
+	*bits = -1;
+
+	if (input_one && input_two && input_three) {
+		// <size> <arch> <bits>
+		*hex = strdup (input_one);
+		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
+		*bits = r_num_get_input_value (core->num, input_three);
+		result = R_TRUE;
+
+	} else if (input_one && input_two) {
+
+		*hex = strdup (input_one);
+		if (r_str_contains_macro (input_two) ){
+			r_str_truncate_cmd (input_two);
+		}
+		*bits = r_num_is_valid_input (core->num, input_two) ? r_num_get_input_value (core->num, input_two): -1;
+		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
+		result = R_TRUE;
+	} else if (input_one) {
+		*hex = strdup (input_one);
 		result = R_TRUE;
 	}
 	return result;
@@ -1483,6 +1559,33 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "pa"
+	{
+		
+		ut32 new_bits = -1;
+		int segoff, old_bits, pos = 0;
+		ut8 settings_changed = R_FALSE;
+		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
+		old_arch = strdup (r_config_get (core->config, "asm.arch"));
+		old_bits = r_config_get_i (core->config, "asm.bits");
+		segoff = r_config_get_i (core->config, "asm.segoff");
+		
+		if (input[0])
+			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
+				if (input[pos] == ' ') break;
+
+		if (!process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
+			// XXX - print help message
+			//return R_FALSE;
+		}
+	
+		if (new_arch == NULL) new_arch = strdup (old_arch);
+		if (new_bits == -1) new_bits = old_bits;
+		
+		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
+			set_asm_configs (core, new_arch, new_bits, segoff);
+			settings_changed = R_TRUE;
+		}
+		
 		if (input[1]=='e') { // "pae"
 			if (input[2]=='?') {
 				r_cons_printf ("|Usage: pae [hex]       assemble esil from hexpairs\n");
@@ -1490,10 +1593,10 @@ static int cmd_print(void *data, const char *input) {
 				int ret, bufsz;
 				RAnalOp aop = {0};
 				const char *str;
-				char *buf = strdup (input+2);
-				bufsz = r_hex_str2bin (buf, (ut8*)buf);
+// 				char *buf = strdup (input+2);
+				bufsz = r_hex_str2bin (hex, (ut8*)hex);
 				ret = r_anal_op (core->anal, &aop, core->offset,
-					(const ut8*)buf, bufsz);
+					(const ut8*)hex, bufsz);
 				if (ret>0) {
 					str = R_STRBUF_SAFEGET (&aop.esil);
 					r_cons_printf ("%s\n", str);
@@ -1506,7 +1609,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				RAsmCode *c;
 				r_asm_set_pc (core->assembler, core->offset);
-				c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
+				c = r_asm_mdisassemble_hexstr (core->assembler, hex);
 				if (c) {
 					r_cons_puts (c->buf_asm);
 					r_asm_code_free (c);
@@ -1524,6 +1627,11 @@ static int cmd_print(void *data, const char *input) {
 				r_asm_code_free (acode);
 			}
 		}
+		if (settings_changed)
+			set_asm_configs (core, old_arch, old_bits, segoff);
+		free (old_arch);
+		free (new_arch);
+	}
 		break;
 	case 'b': { //pb
 		if (input[1]=='?') {
@@ -1659,6 +1767,7 @@ static int cmd_print(void *data, const char *input) {
 			bw_disassemble = R_TRUE;
 			use_blocksize = -use_blocksize;
 		}
+		l = use_blocksize;
 
 		if (new_arch == NULL) new_arch = strdup (old_arch);
 		if (new_bits == -1) new_bits = old_bits;
