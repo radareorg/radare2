@@ -256,7 +256,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 
 static int is_data_section(RBinFile *a, RBinSection *s) {
 	RBinObject *o = a->o;
-	if (o && o->info && o->info->bclass[0] != '\0') {
+	if (o && o->info && o->info->bclass && *o->info->bclass) {
 		if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
 			return 1;
 		if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data") && !strstr (s->name, "rel")) // LINUX
