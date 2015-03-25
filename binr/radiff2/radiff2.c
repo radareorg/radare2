@@ -2,6 +2,7 @@
 
 #include <r_diff.h>
 #include <r_core.h>
+#include <r_hash.h>
 
 enum {
 	MODE_DIFF,
@@ -56,7 +57,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		if (json_started)
 			printf(",\n");
 		json_started = 1;
-		printf ("{\"offset\":[%d, %d], \"data\":[[", op->a_off, op->b_off);
+		printf ("{\"offset\":[%u, %u], \"data\":[[", op->a_off, op->b_off);
 		for (i = 0;i<(op->a_len-1);i++)
 			printf ("%d,", op->a_buf[i]);
 		printf ("%d],[", op->a_len-1);
@@ -144,6 +145,15 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 	}
 	if (as != bs)
 		printf ("...\n");
+}
+
+static void handle_sha256 (const ut8 *block, int len) {
+	int i = 0;
+	RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA256);
+	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
+	for (i=0; i<R_HASH_SIZE_SHA256; i++) printf ("%02x", c[i]);
+	r_cons_newline ();
+	r_hash_free (ctx);
 }
 
 int main(int argc, char **argv) {
@@ -287,12 +297,18 @@ int main(int argc, char **argv) {
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
-		if (diffmode == JSON_MODE)
-			printf("[");
+		if (diffmode == JSON_MODE) {
+			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza); 
+			handle_sha256(bufa, sza);
+			printf("\"},\n{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file2, szb);
+			handle_sha256(bufb, szb);
+			printf("\"}],\n");
+			printf("\"changes\":[");
+		}
 		r_diff_set_callback (d, &cb, (void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
 		if (diffmode == JSON_MODE)
-			printf("]\n");
+			printf("]}\n");
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
