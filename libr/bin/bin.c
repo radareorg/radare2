@@ -1343,7 +1343,8 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 	RBinInfo *info = NULL;
 	r_list_foreach (binfile->objs, iter, obj) {
 		info = obj->info;
-		if (info && (bits == info->bits) &&
+		if (info && info->arch && info->file &&
+			(bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
 			!strcmp (info->file, name)){
 			break;

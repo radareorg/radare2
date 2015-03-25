@@ -906,7 +906,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	RBinInfo *info = r_bin_get_info (r->bin);
-	int is_arm = info && !strcmp (info->arch, "arm");
+	int is_arm = info && info->arch && !strcmp (info->arch, "arm");
 	char str[R_FLAG_NAME_SIZE];
 	RList *symbols;
 	RListIter *iter;

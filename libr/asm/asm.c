@@ -241,6 +241,8 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (!a || !name)
+		return R_FALSE;
 	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, name)) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
