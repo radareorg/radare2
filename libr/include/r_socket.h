@@ -176,6 +176,7 @@ typedef struct r_run_profile_t {
 	char *_connect;
 	char *_listen;
 	int _timeout;
+    int _nice;
 } RRunProfile;
 
 R_API RRunProfile *r_run_new(const char *str);
