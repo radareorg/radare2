@@ -1691,10 +1691,16 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	data = odata = strdup (lines);
 	nl = strchr (odata, '\n');
 	if (nl) {
+		r_cons_break (NULL, NULL);
 		do {
+			if (core->cons->breaked) {
+				free (odata);
+				return ret;
+			}
 			*nl = '\0';
 			r = r_core_cmd (core, data, 0);
 			if (r == -1) {
+				data = nl+1;
 				ret = R_FALSE;
 				break;
 			}
@@ -1703,10 +1709,12 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 				if (data[1]=='!')
 					ret = -1;
 				else eprintf ("'q': quit ignored. Use 'q!'\n");
+				data = nl+1;
 				break;
 			}
 			data = nl+1;
 		} while ((nl = strchr (data, '\n')));
+		r_cons_break_end ();
 	}
 	if (data && *data)
 		r_core_cmd (core, data, 0);
