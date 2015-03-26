@@ -681,6 +681,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	RAsmOp asmop;
+	int colorize = r_config_get_i (core->config, "scr.color");
 
 	switch (mode) {
 	case 'j':
@@ -733,15 +734,20 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
-			buf_asm = r_print_colorize_opcode (asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num);
-			buf_hex = r_print_colorize_opcode (asmop.buf_hex,
-					core->cons->pal.reg, core->cons->pal.num);
-			otype = r_print_color_op_type (core->print, analop.type);
-			r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s\n",
-					hit->addr, otype, buf_hex, buf_asm, Color_RESET);
-			free (buf_asm);
-			free (buf_hex);
+			if (colorize) {
+				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+						core->cons->pal.reg, core->cons->pal.num);
+				buf_hex = r_print_colorize_opcode (asmop.buf_hex,
+						core->cons->pal.reg, core->cons->pal.num);
+				otype = r_print_color_op_type (core->print, analop.type);
+				r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s\n",
+						hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+				free (buf_asm);
+				free (buf_hex);
+			} else {
+				r_cons_printf ("  0x%08"PFMT64x" %18s  %s\n",
+						hit->addr, asmop.buf_hex, asmop.buf_asm);
+			}
 			free (buf);
 		}
 	}
