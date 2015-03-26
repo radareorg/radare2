@@ -7,13 +7,13 @@
 #include "utils.h"
 
 st8 *get_tc2_tc1(ut32 ins_bits) {
-	st8 *res = "TC1";
+	st8 *res = "tc1";
 	if (ins_bits) {
 		if (ins_bits != 1) {
 			fprintf(stderr, "Invalid instruction TC2 or TC1 (%d)\n", ins_bits);
 			return NULL;
 		}
-		res = "TC2";
+		res = "tc2";
 	}
 	return strdup (res);
 }
@@ -23,28 +23,28 @@ st8 *get_trans_reg(ut32 ins_bits) {
 
 	switch (ins_bits) {
 	case 6:
-		res = "TRN0";
+		res = "trn0";
 		break;
 	case 7:
-		res = "TRN1";
+		res = "trn1";
 		break;
 	case 4:
-		res = "TRN2";
+		res = "trn2";
 		break;
 	case 5:
-		res = "TRN3";
+		res = "trn3";
 		break;
 	case 2:
-		res = "TRN4";
+		res = "trn4";
 		break;
 	case 3:
-		res = "TRN5";
+		res = "trn5";
 		break;
 	case 0:
-		res = "TRN6";
+		res = "trn6";
 		break;
 	case 1:
-		res = "TRN7";
+		res = "trn7";
 		break;
 
 	default:
@@ -64,28 +64,28 @@ st8 *get_AR_regs_class1(ut32 ins_bits) {
 	memset (res, 0, 50);
 	switch (op) {
 	case 0:
-		sprintf(res, "*AR-%ld", (long int)ins_bits & 0xF);
+		sprintf(res, "*ar-%ld", (long int)ins_bits & 0xF);
 		break;
 	case 1:
-		sprintf(res, "*AR+%ld", (long int)ins_bits & 0xF);
+		sprintf(res, "*ar+%ld", (long int)ins_bits & 0xF);
 		break;
 	case 2:
-		sprintf(res, "*AR%ld(T0)", (long int)ins_bits & 0xF);
+		sprintf(res, "*ar%ld(t0)", (long int)ins_bits & 0xF);
 		break;
 	case 3:
-		sprintf(res, "*AR%ld", (long int)ins_bits & 0xF);
+		sprintf(res, "*ar%ld", (long int)ins_bits & 0xF);
 		break;
 	case 4:
-		sprintf(res, "*(AR%ld-T0)", (long int)ins_bits & 0xF);
+		sprintf(res, "*(ar%ld-t0)", (long int)ins_bits & 0xF);
 		break;
 	case 5:
-		sprintf(res, "*(AR%ld-T1)", (long int)ins_bits & 0xF);
+		sprintf(res, "*(ar%ld-t1)", (long int)ins_bits & 0xF);
 		break;
 	case 6:
-		sprintf(res, "*(AR%ld+T0)", (long int)ins_bits & 0xF);
+		sprintf(res, "*(ar%ld+t0)", (long int)ins_bits & 0xF);
 		break;
 	case 7:
-		sprintf(res, "*(AR%ld+T1)", (long int)ins_bits & 0xF);
+		sprintf(res, "*(ar%ld+t1)", (long int)ins_bits & 0xF);
 		break;
 	}
 	return res;
@@ -107,81 +107,81 @@ st8 *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 
 	res = (st8 *)malloc(50);
 	if(op2 == 2) {
-		if(op) sprintf(res, "*AR%ld(short(#0x%lx))",
+		if(op) sprintf(res, "*ar%ld(short(#0x%lx))",
 			(long int)reg_num, (long int)idx * op);
-		else sprintf(res, "*AR%ld", (long int)reg_num);
+		else sprintf(res, "*ar%ld", (long int)reg_num);
 	} else {
 		type = (op >> 3 | 2 * op2);
 		if(type == 6) {
 			sprintf(res, "@#0x%lx", (long int)idx * (reg_num | 16 * (op & 7)));
 
 		} else if(type == 7) {
-			sprintf(res, "*SP(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
+			sprintf(res, "*sp(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
 		} else {
 			type = idx | 16 * op;
 			switch(type) {
 				case 0:
-					sprintf(res, "*AR%ld-", (long int)reg_num);
+					sprintf(res, "*ar%ld-", (long int)reg_num);
 					break;
 				case 1:
-					sprintf(res, "*AR%ld+", (long int)reg_num);
+					sprintf(res, "*ar%ld+", (long int)reg_num);
 					break;
 				case 2:
-					sprintf(res, "*AR%ld(T0)", (long int)reg_num);
+					sprintf(res, "*ar%ld(t0)", (long int)reg_num);
 					break;
 				case 3:
-					sprintf(res, "*AR%ld(T1)", (long int)reg_num);
+					sprintf(res, "*ar%ld(t1)", (long int)reg_num);
 					break;
 				case 4:
-					sprintf(res, "*(AR%ld-T0)", (long int)reg_num);
+					sprintf(res, "*(ar%ld-t0)", (long int)reg_num);
 					break;
 				case 5:
-					sprintf(res, "*(AR%ld-T1)", (long int)reg_num);
+					sprintf(res, "*(ar%ld-t1)", (long int)reg_num);
 					break;
 				case 6:
-					sprintf(res, "*(AR%ld+T0)", (long int)reg_num);
+					sprintf(res, "*(ar%ld+t0)", (long int)reg_num);
 					break;
 				case 7:
-					sprintf(res, "*(AR%ld+T1)", (long int)reg_num);
+					sprintf(res, "*(ar%ld+t1)", (long int)reg_num);
 					break;
 				case 8:
-					sprintf(res, "*-AR%ld", (long int)reg_num);
+					sprintf(res, "*-ar%ld", (long int)reg_num);
 					break;
 				case 9:
-					sprintf(res, "*+AR%ld", (long int)reg_num);
+					sprintf(res, "*+ar%ld", (long int)reg_num);
 					break;
 				case 10:
-					sprintf(res, "*AR%ld(T2)", (long int)reg_num);
+					sprintf(res, "*ar%ld(t2)", (long int)reg_num);
 					break;
 				case 11:
-					sprintf(res, "*AR%ld(T3)", (long int)reg_num);
+					sprintf(res, "*ar%ld(t3)", (long int)reg_num);
 					break;
 				case 12:
-					sprintf(res, "*(AR%ld-T2)", (long int)reg_num);
+					sprintf(res, "*(ar%ld-t2)", (long int)reg_num);
 					break;
 				case 13:
-					sprintf(res, "*(AR%ld-T3)", (long int)reg_num);
+					sprintf(res, "*(ar%ld-t3)", (long int)reg_num);
 					break;
 				case 14:
-					sprintf(res, "*(AR%ld+T2)", (long int)reg_num);
+					sprintf(res, "*(ar%ld+t2)", (long int)reg_num);
 					break;
 				case 15:
-					sprintf(res, "*(AR%ld+T3)", (long int)reg_num);
+					sprintf(res, "*(ar%ld+t3)", (long int)reg_num);
 					break;
 				case 16:
-					sprintf(res, "*(AR%ld-T0B)", (long int)reg_num);
+					sprintf(res, "*(ar%ld-t0b)", (long int)reg_num);
 					break;
 				case 17:
-					sprintf(res, "*(AR%ld+T0B)", (long int)reg_num);
+					sprintf(res, "*(ar%ld+t0b)", (long int)reg_num);
 					break;
 				case 18:
-					sprintf(res, "*AR%ld(T0<<#1)", (long int)reg_num);
+					sprintf(res, "*ar%ld(t0<<#1)", (long int)reg_num);
 					break;
 				case 19:
-					sprintf(res, "*AR%ld(T1<<#1)", (long int)reg_num);
+					sprintf(res, "*ar%ld(t1<<#1)", (long int)reg_num);
 					break;
 				case 23:
-					sprintf(res, "*AR%ld(XAR15)", (long int)reg_num);
+					sprintf(res, "*ar%ld(xar15)", (long int)reg_num);
 					break;
 
 				case 24:
@@ -193,9 +193,9 @@ st8 *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 						*ret_len = 2;
 
 					if(type == 24) {
-						sprintf(res, "*AR%ld(#%ld)", (long int)reg_num, (long int)op * idx);
+						sprintf(res, "*ar%ld(#%ld)", (long int)reg_num, (long int)op * idx);
 					} else if(type == 25) {
-						sprintf(res, "*+AR%ld(#%ld)", (long int)reg_num, (long int)op * idx);
+						sprintf(res, "*+ar%ld(#%ld)", (long int)reg_num, (long int)op * idx);
 					} else if(type == 26) {
 						sprintf(res, "*abs16(#0x%lx)", (long int)idx);
 					} else {
@@ -212,10 +212,10 @@ st8 *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 						*ret_len = 3;
 
 					if(type == 28) {
-						sprintf(res, "*AR%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
+						sprintf(res, "*ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
 
 					} else if(type == 29) {
-						sprintf(res, "*+AR%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
+						sprintf(res, "*+ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
 					} else {
 						sprintf(res, "*(#0x%lx)", (long int)idx);
 					}
@@ -232,23 +232,23 @@ st8 *get_reg_pair(ut32 idx) {
 	st8 *res = NULL;
 
 	switch (idx) {
-	case 1: res = "AC0, AC2"; break;
-	case 2: res = "AC1, AC3"; break;
-	case 3: res = "pair(AC0), pair(AC2)"; break;
-	case 4: res = "AR0, AR1"; break;
-	case 5: res = "AR0, AR2"; break;
-	case 6: res = "AR1, AR3"; break;
-	case 7: res = "pair(AR0), pair(AR2)"; break;
-	case 9: res = "T0, T2"; break;
-	case 10: res = "T1, T3"; break;
-	case 11: res = "pair(T0), pair(T2)"; break;
-	case 21: res = "AR4, T0"; break;
-	case 22: res = "AR5, T1"; break;
-	case 23: res = "pair(AR4), pair(T0)"; break;
-	case 25: res = "AR6, T2"; break;
-	case 26: res = "AR7, T3"; break;
-	case 27: res = "pair(AR6), pair(T2)"; break;
-	case 31: res = "block(AR4), block(T0)"; break;
+	case 1: res = "ac0, ac2"; break;
+	case 2: res = "ac1, ac3"; break;
+	case 3: res = "pair(ac0), pair(ac2)"; break;
+	case 4: res = "ar0, ar1"; break;
+	case 5: res = "ar0, ar2"; break;
+	case 6: res = "ar1, ar3"; break;
+	case 7: res = "pair(ar0), pair(ar2)"; break;
+	case 9: res = "t0, t2"; break;
+	case 10: res = "t1, t3"; break;
+	case 11: res = "pair(t0), pair(t2)"; break;
+	case 21: res = "ar4, t0"; break;
+	case 22: res = "ar5, t1"; break;
+	case 23: res = "pair(ar4), pair(t0)"; break;
+	case 25: res = "ar6, t2"; break;
+	case 26: res = "ar7, t3"; break;
+	case 27: res = "pair(ar6), pair(t2)"; break;
+	case 31: res = "block(ar4), block(t0)"; break;
 	default: res = NULL;
 	}
 
@@ -262,57 +262,57 @@ st8 *get_reg_name_3(ut32 idx) {
 	st8 *res = NULL;
 
 	switch (idx) {
-	case 0: res = "AC0"; break;
-	case 1: res = "AC1"; break;
-	case 2: res = "AC2"; break;
-	case 3: res = "AC3"; break;
-	case 4: res = "AC4"; break;
-	case 5: res = "AC5"; break;
-	case 6: res = "AC6"; break;
-	case 7: res = "AC7"; break;
-	case 8: res = "AC8"; break;
-	case 9: res = "AC9"; break;
-	case 10: res = "AC10"; break;
-	case 11: res = "AC11"; break;
-	case 12: res = "AC12"; break;
-	case 13: res = "AC13"; break;
-	case 14: res = "AC14"; break;
-	case 15: res = "AC15"; break;
-	case 16: res = "AC16"; break;
-	case 17: res = "AC17"; break;
-	case 18: res = "AC18"; break;
-	case 19: res = "AC19"; break;
-	case 20: res = "AC20"; break;
-	case 21: res = "AC21"; break;
-	case 22: res = "AC22"; break;
-	case 23: res = "AC23"; break;
-	case 24: res = "AC24"; break;
-	case 25: res = "AC25"; break;
-	case 26: res = "AC26"; break;
-	case 27: res = "AC27"; break;
-	case 28: res = "AC28"; break;
-	case 29: res = "AC29"; break;
-	case 30: res = "AC30"; break;
-	case 31: res = "AC31"; break;
-	case 32: res = "XAR0"; break;
-	case 33: res = "XAR1"; break;
-	case 34: res = "XAR2"; break;
-	case 35: res = "XAR3"; break;
-	case 36: res = "XAR4"; break;
-	case 37: res = "XAR5"; break;
-	case 38: res = "XAR6"; break;
-	case 39: res = "XAR7"; break;
-	case 40: res = "XAR8"; break;
-	case 41: res = "XAR9"; break;
-	case 42: res = "XAR10"; break;
-	case 43: res = "XAR11"; break;
-	case 44: res = "XAR12"; break;
-	case 45: res = "XAR13"; break;
-	case 46: res = "XAR14"; break;
-	case 47: res = "XAR15"; break;
-	case 52: res = "XSSP"; break;
-	case 53: res = "XSP"; break;
-	case 54: res = "XDP"; break;
+	case 0: res = "ac0"; break;
+	case 1: res = "ac1"; break;
+	case 2: res = "ac2"; break;
+	case 3: res = "ac3"; break;
+	case 4: res = "ac4"; break;
+	case 5: res = "ac5"; break;
+	case 6: res = "ac6"; break;
+	case 7: res = "ac7"; break;
+	case 8: res = "ac8"; break;
+	case 9: res = "ac9"; break;
+	case 10: res = "ac10"; break;
+	case 11: res = "ac11"; break;
+	case 12: res = "ac12"; break;
+	case 13: res = "ac13"; break;
+	case 14: res = "ac14"; break;
+	case 15: res = "ac15"; break;
+	case 16: res = "ac16"; break;
+	case 17: res = "ac17"; break;
+	case 18: res = "ac18"; break;
+	case 19: res = "ac19"; break;
+	case 20: res = "ac20"; break;
+	case 21: res = "ac21"; break;
+	case 22: res = "ac22"; break;
+	case 23: res = "ac23"; break;
+	case 24: res = "ac24"; break;
+	case 25: res = "ac25"; break;
+	case 26: res = "ac26"; break;
+	case 27: res = "ac27"; break;
+	case 28: res = "ac28"; break;
+	case 29: res = "ac29"; break;
+	case 30: res = "ac30"; break;
+	case 31: res = "ac31"; break;
+	case 32: res = "xar0"; break;
+	case 33: res = "xar1"; break;
+	case 34: res = "xar2"; break;
+	case 35: res = "xar3"; break;
+	case 36: res = "xar4"; break;
+	case 37: res = "xar5"; break;
+	case 38: res = "xar6"; break;
+	case 39: res = "xar7"; break;
+	case 40: res = "xar8"; break;
+	case 41: res = "xar9"; break;
+	case 42: res = "xar10"; break;
+	case 43: res = "xar11"; break;
+	case 44: res = "xar12"; break;
+	case 45: res = "xar13"; break;
+	case 46: res = "xar14"; break;
+	case 47: res = "xar15"; break;
+	case 52: res = "xssp"; break;
+	case 53: res = "xsp"; break;
+	case 54: res = "xdp"; break;
 	default: res = NULL;
 	}
 
@@ -326,48 +326,48 @@ st8 *get_reg_name_2(ut32 idx) {
 	st8 *res = NULL;
 
 	switch (idx) {
-	case 0: res = "AR0"; break;
-	case 1: res = "AR1"; break;
-	case 2: res = "AR2"; break;
-	case 3: res = "AR3"; break;
-	case 4: res = "AR4"; break;
-	case 5: res = "AR5"; break;
-	case 6: res = "AR6"; break;
-	case 7: res = "AR7"; break;
-	case 8: res = "AR8"; break;
-	case 9: res = "AR9"; break;
-	case 10: res = "AR10"; break;
-	case 11: res = "AR11"; break;
-	case 12: res = "AR12"; break;
-	case 13: res = "AR13"; break;
-	case 14: res = "AR14"; break;
-	case 15: res = "AR15"; break;
-	case 16: res = "T0"; break;
-	case 17: res = "T1"; break;
-	case 18: res = "T2"; break;
-	case 19: res = "T3"; break;
-	case 20: res = "SSP"; break;
-	case 21: res = "SP"; break;
-	case 22: res = "DP"; break;
-	case 32: res = "XAR0"; break;
-	case 33: res = "XAR1"; break;
-	case 34: res = "XAR2"; break;
-	case 35: res = "XAR3"; break;
-	case 36: res = "XAR4"; break;
-	case 37: res = "XAR5"; break;
-	case 38: res = "XAR6"; break;
-	case 39: res = "XAR7"; break;
-	case 40: res = "XAR8"; break;
-	case 41: res = "XAR9"; break;
-	case 42: res = "XAR10"; break;
-	case 43: res = "XAR11"; break;
-	case 44: res = "XAR12"; break;
-	case 45: res = "XAR13"; break;
-	case 46: res = "XAR14"; break;
-	case 47: res = "XAR15"; break;
-	case 52: res = "XSSP"; break;
-	case 53: res = "XSP"; break;
-	case 54: res = "XDP"; break;
+	case 0: res = "ar0"; break;
+	case 1: res = "ar1"; break;
+	case 2: res = "ar2"; break;
+	case 3: res = "ar3"; break;
+	case 4: res = "ar4"; break;
+	case 5: res = "ar5"; break;
+	case 6: res = "ar6"; break;
+	case 7: res = "ar7"; break;
+	case 8: res = "ar8"; break;
+	case 9: res = "ar9"; break;
+	case 10: res = "ar10"; break;
+	case 11: res = "ar11"; break;
+	case 12: res = "ar12"; break;
+	case 13: res = "ar13"; break;
+	case 14: res = "ar14"; break;
+	case 15: res = "ar15"; break;
+	case 16: res = "t0"; break;
+	case 17: res = "t1"; break;
+	case 18: res = "t2"; break;
+	case 19: res = "t3"; break;
+	case 20: res = "ssp"; break;
+	case 21: res = "sp"; break;
+	case 22: res = "dp"; break;
+	case 32: res = "xar0"; break;
+	case 33: res = "xar1"; break;
+	case 34: res = "xar2"; break;
+	case 35: res = "xar3"; break;
+	case 36: res = "xar4"; break;
+	case 37: res = "xar5"; break;
+	case 38: res = "xar6"; break;
+	case 39: res = "xar7"; break;
+	case 40: res = "xar8"; break;
+	case 41: res = "xar9"; break;
+	case 42: res = "xar10"; break;
+	case 43: res = "xar11"; break;
+	case 44: res = "xar12"; break;
+	case 45: res = "xar13"; break;
+	case 46: res = "xar14"; break;
+	case 47: res = "xar15"; break;
+	case 52: res = "xssp"; break;
+	case 53: res = "xsp"; break;
+	case 54: res = "xdp"; break;
 	default: res = NULL;
 	}
 
@@ -381,247 +381,247 @@ st8 *get_reg_name_1(ut32 idx) {
 	st8 *res = NULL;
 
 	switch (idx) {
-	case 0: res = "AC0"; break;
-	case 1: res = "AC1"; break;
-	case 2: res = "AC2"; break;
-	case 3: res = "AC3"; break;
-	case 4: res = "AC4"; break;
-	case 5: res = "AC5"; break;
-	case 6: res = "AC6"; break;
-	case 7: res = "AC7"; break;
-	case 8: res = "AC8"; break;
-	case 9: res = "AC9"; break;
-	case 10: res = "AC10"; break;
-	case 11: res = "AC11"; break;
-	case 12: res = "AC12"; break;
-	case 13: res = "AC13"; break;
-	case 14: res = "AC14"; break;
-	case 15: res = "AC15"; break;
-	case 16: res = "AC16"; break;
-	case 17: res = "AC17"; break;
-	case 18: res = "AC18"; break;
-	case 19: res = "AC19"; break;
-	case 20: res = "AC20"; break;
-	case 21: res = "AC21"; break;
-	case 22: res = "AC22"; break;
-	case 23: res = "AC23"; break;
-	case 24: res = "AC24"; break;
-	case 25: res = "AC25"; break;
-	case 26: res = "AC26"; break;
-	case 27: res = "AC27"; break;
-	case 28: res = "AC28"; break;
-	case 29: res = "AC29"; break;
-	case 30: res = "AC30"; break;
-	case 31: res = "AC31"; break;
-	case 32: res = "AR0"; break;
-	case 33: res = "AR1"; break;
-	case 34: res = "AR2"; break;
-	case 35: res = "AR3"; break;
-	case 36: res = "AR4"; break;
-	case 37: res = "AR5"; break;
-	case 38: res = "AR6"; break;
-	case 39: res = "AR7"; break;
-	case 40: res = "AR8"; break;
-	case 41: res = "AR9"; break;
-	case 42: res = "AR10"; break;
-	case 43: res = "AR11"; break;
-	case 44: res = "AR12"; break;
-	case 45: res = "AR13"; break;
-	case 46: res = "AR14"; break;
-	case 47: res = "AR15"; break;
-	case 48: res = "T0"; break;
-	case 49: res = "T1"; break;
-	case 50: res = "T2"; break;
-	case 51: res = "T3"; break;
-	case 52: res = "SSP"; break;
-	case 53: res = "SP"; break;
-	case 54: res = "DP"; break;
-	case 56: res = "CSR"; break;
-	case 57: res = "RPTC"; break;
-	case 58: res = "BRC0"; break;
-	case 59: res = "BRC1"; break;
-	case 62: res = "CONFIG"; break;
-	case 63: res = "CPUREV"; break;
-	case 64: res = "AC0.H"; break;
-	case 65: res = "AC1.H"; break;
-	case 66: res = "AC2.H"; break;
-	case 67: res = "AC3.H"; break;
-	case 68: res = "AC4.H"; break;
-	case 69: res = "AC5.H"; break;
-	case 70: res = "AC6.H"; break;
-	case 71: res = "AC7.H"; break;
-	case 72: res = "AC8.H"; break;
-	case 73: res = "AC9.H"; break;
-	case 74: res = "AC10.H"; break;
-	case 75: res = "AC11.H"; break;
-	case 76: res = "AC12.H"; break;
-	case 77: res = "AC13.H"; break;
-	case 78: res = "AC14.H"; break;
-	case 79: res = "AC15.H"; break;
-	case 80: res = "AC16.H"; break;
-	case 81: res = "AC17.H"; break;
-	case 82: res = "AC18.H"; break;
-	case 83: res = "AC19.H"; break;
-	case 84: res = "AC20.H"; break;
-	case 85: res = "AC21.H"; break;
-	case 86: res = "AC22.H"; break;
-	case 87: res = "AC23.H"; break;
-	case 88: res = "AC24.H"; break;
-	case 89: res = "AC25.H"; break;
-	case 90: res = "AC26.H"; break;
-	case 91: res = "AC27.H"; break;
-	case 92: res = "AC28.H"; break;
-	case 93: res = "AC29.H"; break;
-	case 94: res = "AC30.H"; break;
-	case 95: res = "AC31.H"; break;
-	case 96: res = "AC0.L"; break;
-	case 97: res = "AC1.L"; break;
-	case 98: res = "AC2.L"; break;
-	case 99: res = "AC3.L"; break;
-	case 100: res = "AC4.L"; break;
-	case 101: res = "AC5.L"; break;
-	case 102: res = "AC6.L"; break;
-	case 103: res = "AC7.L"; break;
-	case 104: res = "AC8.L"; break;
-	case 105: res = "AC9.L"; break;
-	case 106: res = "AC10.L"; break;
-	case 107: res = "AC11.L"; break;
-	case 108: res = "AC12.L"; break;
-	case 109: res = "AC13.L"; break;
-	case 110: res = "AC14.L"; break;
-	case 111: res = "AC15.L"; break;
-	case 112: res = "AC16.L"; break;
-	case 113: res = "AC17.L"; break;
-	case 114: res = "AC18.L"; break;
-	case 115: res = "AC19.L"; break;
-	case 116: res = "AC20.L"; break;
-	case 117: res = "AC21.L"; break;
-	case 118: res = "AC22.L"; break;
-	case 119: res = "AC23.L"; break;
-	case 120: res = "AC24.L"; break;
-	case 121: res = "AC25.L"; break;
-	case 122: res = "AC26.L"; break;
-	case 123: res = "AC27.L"; break;
-	case 124: res = "AC28.L"; break;
-	case 125: res = "AC29.L"; break;
-	case 126: res = "AC30.L"; break;
-	case 127: res = "AC31.L"; break;
-	case 128: res = "XAR0"; break;
-	case 129: res = "XAR1"; break;
-	case 130: res = "XAR2"; break;
-	case 131: res = "XAR3"; break;
-	case 132: res = "XAR4"; break;
-	case 133: res = "XAR5"; break;
-	case 134: res = "XAR6"; break;
-	case 135: res = "XAR7"; break;
-	case 136: res = "XAR8"; break;
-	case 137: res = "XAR9"; break;
-	case 138: res = "XAR10"; break;
-	case 139: res = "XAR11"; break;
-	case 140: res = "XAR12"; break;
-	case 141: res = "XAR13"; break;
-	case 142: res = "XAR14"; break;
-	case 143: res = "XAR15"; break;
-	case 148: res = "XSSP"; break;
-	case 149: res = "XSP"; break;
-	case 150: res = "XDP"; break;
-	case 152: res = "RSA0"; break;
-	case 153: res = "RSA1"; break;
-	case 154: res = "REA0"; break;
-	case 155: res = "REA1"; break;
-	case 156: res = "DBGPADDR"; break;
-	case 157: res = "DBGPDATA"; break;
-	case 159: res = "RETA"; break;
-	case 160: res = "XAR0.H"; break;
-	case 161: res = "XAR1.H"; break;
-	case 162: res = "XAR2.H"; break;
-	case 163: res = "XAR3.H"; break;
-	case 164: res = "XAR4.H"; break;
-	case 165: res = "XAR5.H"; break;
-	case 166: res = "XAR6.H"; break;
-	case 167: res = "XAR7.H"; break;
-	case 168: res = "XAR8.H"; break;
-	case 169: res = "XAR9.H"; break;
-	case 170: res = "XAR10.H"; break;
-	case 171: res = "XAR11.H"; break;
-	case 172: res = "XAR12.H"; break;
-	case 173: res = "XAR13.H"; break;
-	case 174: res = "XAR14.H"; break;
-	case 175: res = "XAR15.H"; break;
-	case 180: res = "XSSP.H"; break;
-	case 181: res = "XSP.H"; break;
-	case 182: res = "XDP.H"; break;
-	case 183: res = "PDP"; break;
-	case 184: res = "BSA01"; break;
-	case 185: res = "BSA23"; break;
-	case 186: res = "BSA45"; break;
-	case 187: res = "BSA67"; break;
-	case 188: res = "BSAC"; break;
+	case 0: res = "ac0"; break;
+	case 1: res = "ac1"; break;
+	case 2: res = "ac2"; break;
+	case 3: res = "ac3"; break;
+	case 4: res = "ac4"; break;
+	case 5: res = "ac5"; break;
+	case 6: res = "ac6"; break;
+	case 7: res = "ac7"; break;
+	case 8: res = "ac8"; break;
+	case 9: res = "ac9"; break;
+	case 10: res = "ac10"; break;
+	case 11: res = "ac11"; break;
+	case 12: res = "ac12"; break;
+	case 13: res = "ac13"; break;
+	case 14: res = "ac14"; break;
+	case 15: res = "ac15"; break;
+	case 16: res = "ac16"; break;
+	case 17: res = "ac17"; break;
+	case 18: res = "ac18"; break;
+	case 19: res = "ac19"; break;
+	case 20: res = "ac20"; break;
+	case 21: res = "ac21"; break;
+	case 22: res = "ac22"; break;
+	case 23: res = "ac23"; break;
+	case 24: res = "ac24"; break;
+	case 25: res = "ac25"; break;
+	case 26: res = "ac26"; break;
+	case 27: res = "ac27"; break;
+	case 28: res = "ac28"; break;
+	case 29: res = "ac29"; break;
+	case 30: res = "ac30"; break;
+	case 31: res = "ac31"; break;
+	case 32: res = "ar0"; break;
+	case 33: res = "ar1"; break;
+	case 34: res = "ar2"; break;
+	case 35: res = "ar3"; break;
+	case 36: res = "ar4"; break;
+	case 37: res = "ar5"; break;
+	case 38: res = "ar6"; break;
+	case 39: res = "ar7"; break;
+	case 40: res = "ar8"; break;
+	case 41: res = "ar9"; break;
+	case 42: res = "ar10"; break;
+	case 43: res = "ar11"; break;
+	case 44: res = "ar12"; break;
+	case 45: res = "ar13"; break;
+	case 46: res = "ar14"; break;
+	case 47: res = "ar15"; break;
+	case 48: res = "t0"; break;
+	case 49: res = "t1"; break;
+	case 50: res = "t2"; break;
+	case 51: res = "t3"; break;
+	case 52: res = "ssp"; break;
+	case 53: res = "sp"; break;
+	case 54: res = "dp"; break;
+	case 56: res = "csr"; break;
+	case 57: res = "rptc"; break;
+	case 58: res = "brc0"; break;
+	case 59: res = "brc1"; break;
+	case 62: res = "config"; break;
+	case 63: res = "cpurev"; break;
+	case 64: res = "ac0.h"; break;
+	case 65: res = "ac1.h"; break;
+	case 66: res = "ac2.h"; break;
+	case 67: res = "ac3.h"; break;
+	case 68: res = "ac4.h"; break;
+	case 69: res = "ac5.h"; break;
+	case 70: res = "ac6.h"; break;
+	case 71: res = "ac7.h"; break;
+	case 72: res = "ac8.h"; break;
+	case 73: res = "ac9.h"; break;
+	case 74: res = "ac10.h"; break;
+	case 75: res = "ac11.h"; break;
+	case 76: res = "ac12.h"; break;
+	case 77: res = "ac13.h"; break;
+	case 78: res = "ac14.h"; break;
+	case 79: res = "ac15.h"; break;
+	case 80: res = "ac16.h"; break;
+	case 81: res = "ac17.h"; break;
+	case 82: res = "ac18.h"; break;
+	case 83: res = "ac19.h"; break;
+	case 84: res = "ac20.h"; break;
+	case 85: res = "ac21.h"; break;
+	case 86: res = "ac22.h"; break;
+	case 87: res = "ac23.h"; break;
+	case 88: res = "ac24.h"; break;
+	case 89: res = "ac25.h"; break;
+	case 90: res = "ac26.h"; break;
+	case 91: res = "ac27.h"; break;
+	case 92: res = "ac28.h"; break;
+	case 93: res = "ac29.h"; break;
+	case 94: res = "ac30.h"; break;
+	case 95: res = "ac31.h"; break;
+	case 96: res = "ac0.l"; break;
+	case 97: res = "ac1.l"; break;
+	case 98: res = "ac2.l"; break;
+	case 99: res = "ac3.l"; break;
+	case 100: res = "ac4.l"; break;
+	case 101: res = "ac5.l"; break;
+	case 102: res = "ac6.l"; break;
+	case 103: res = "ac7.l"; break;
+	case 104: res = "ac8.l"; break;
+	case 105: res = "ac9.l"; break;
+	case 106: res = "ac10.l"; break;
+	case 107: res = "ac11.l"; break;
+	case 108: res = "ac12.l"; break;
+	case 109: res = "ac13.l"; break;
+	case 110: res = "ac14.l"; break;
+	case 111: res = "ac15.l"; break;
+	case 112: res = "ac16.l"; break;
+	case 113: res = "ac17.l"; break;
+	case 114: res = "ac18.l"; break;
+	case 115: res = "ac19.l"; break;
+	case 116: res = "ac20.l"; break;
+	case 117: res = "ac21.l"; break;
+	case 118: res = "ac22.l"; break;
+	case 119: res = "ac23.l"; break;
+	case 120: res = "ac24.l"; break;
+	case 121: res = "ac25.l"; break;
+	case 122: res = "ac26.l"; break;
+	case 123: res = "ac27.l"; break;
+	case 124: res = "ac28.l"; break;
+	case 125: res = "ac29.l"; break;
+	case 126: res = "ac30.l"; break;
+	case 127: res = "ac31.l"; break;
+	case 128: res = "xar0"; break;
+	case 129: res = "xar1"; break;
+	case 130: res = "xar2"; break;
+	case 131: res = "xar3"; break;
+	case 132: res = "xar4"; break;
+	case 133: res = "xar5"; break;
+	case 134: res = "xar6"; break;
+	case 135: res = "xar7"; break;
+	case 136: res = "xar8"; break;
+	case 137: res = "xar9"; break;
+	case 138: res = "xar10"; break;
+	case 139: res = "xar11"; break;
+	case 140: res = "xar12"; break;
+	case 141: res = "xar13"; break;
+	case 142: res = "xar14"; break;
+	case 143: res = "xar15"; break;
+	case 148: res = "xssp"; break;
+	case 149: res = "xsp"; break;
+	case 150: res = "xdp"; break;
+	case 152: res = "rsa0"; break;
+	case 153: res = "rsa1"; break;
+	case 154: res = "rea0"; break;
+	case 155: res = "rea1"; break;
+	case 156: res = "dbgpaddr"; break;
+	case 157: res = "dbgpdata"; break;
+	case 159: res = "reta"; break;
+	case 160: res = "xar0.h"; break;
+	case 161: res = "xar1.h"; break;
+	case 162: res = "xar2.h"; break;
+	case 163: res = "xar3.h"; break;
+	case 164: res = "xar4.h"; break;
+	case 165: res = "xar5.h"; break;
+	case 166: res = "xar6.h"; break;
+	case 167: res = "xar7.h"; break;
+	case 168: res = "xar8.h"; break;
+	case 169: res = "xar9.h"; break;
+	case 170: res = "xar10.h"; break;
+	case 171: res = "xar11.h"; break;
+	case 172: res = "xar12.h"; break;
+	case 173: res = "xar13.h"; break;
+	case 174: res = "xar14.h"; break;
+	case 175: res = "xar15.h"; break;
+	case 180: res = "xssp.h"; break;
+	case 181: res = "xsp.h"; break;
+	case 182: res = "xdp.h"; break;
+	case 183: res = "pdp"; break;
+	case 184: res = "bsa01"; break;
+	case 185: res = "bsa23"; break;
+	case 186: res = "bsa45"; break;
+	case 187: res = "bsa67"; break;
+	case 188: res = "bsac"; break;
 	case 189: //res = (st8 *)&off_42FBE8;
-		res = "BKC";
+		res = "bkc";
 		break;
-	case 190: res = "BK03"; break;
-	case 191: res = "BK47"; break;
-	case 192: res = "AC0.G"; break;
-	case 193: res = "AC1.G"; break;
-	case 194: res = "AC2.G"; break;
-	case 195: res = "AC3.G"; break;
-	case 196: res = "AC4.G"; break;
-	case 197: res = "AC5.G"; break;
-	case 198: res = "AC6.G"; break;
-	case 199: res = "AC7.G"; break;
-	case 200: res = "AC8.G"; break;
-	case 201: res = "AC9.G"; break;
-	case 202: res = "AC10.G"; break;
-	case 203: res = "AC11.G"; break;
-	case 204: res = "AC12.G"; break;
-	case 205: res = "AC13.G"; break;
-	case 206: res = "AC14.G"; break;
-	case 207: res = "AC15.G"; break;
-	case 208: res = "AC16.G"; break;
-	case 209: res = "AC17.G"; break;
-	case 210: res = "AC18.G"; break;
-	case 211: res = "AC19.G"; break;
-	case 212: res = "AC20.G"; break;
-	case 213: res = "AC21.G"; break;
-	case 214: res = "AC22.G"; break;
-	case 215: res = "AC23.G"; break;
-	case 216: res = "AC24.G"; break;
-	case 217: res = "AC25.G"; break;
-	case 218: res = "AC26.G"; break;
-	case 219: res = "AC27.G"; break;
-	case 220: res = "AC28.G"; break;
-	case 221: res = "AC29.G"; break;
-	case 222: res = "AC30.G"; break;
-	case 223: res = "AC31.G"; break;
-	case 224: res = "ST0"; break;
-	case 225: res = "ST1"; break;
-	case 226: res = "ST2"; break;
-	case 227: res = "ST3"; break;
-	case 228: res = "ST0_55"; break;
-	case 229: res = "ST1_55"; break;
-	case 231: res = "ST3_55"; break;
-	case 232: res = "IER0"; break;
-	case 233: res = "IER1"; break;
-	case 234: res = "IFR0"; break;
-	case 235: res = "IFR1"; break;
-	case 236: res = "DBIER0"; break;
-	case 237: res = "DBIER1"; break;
-	case 238: res = "IVPD"; break;
-	case 239: res = "IVPH"; break;
-	case 240: res = "RSA0.H"; break;
-	case 241: res = "RSA1.H"; break;
-	case 242: res = "REA0.H"; break;
-	case 243: res = "REA1.H"; break;
-	case 244: res = "BIOS"; break;
-	case 245: res = "BRS1"; break;
-	case 246: res = "IIR"; break;
-	case 247: res = "BER"; break;
-	case 248: res = "RSA0.L"; break;
-	case 249: res = "RSA1.L"; break;
-	case 250: res = "REA0.L"; break;
-	case 251: res = "REA1.L"; break;
-	case 252: res = "TSDR"; break;
+	case 190: res = "bk03"; break;
+	case 191: res = "bk47"; break;
+	case 192: res = "ac0.g"; break;
+	case 193: res = "ac1.g"; break;
+	case 194: res = "ac2.g"; break;
+	case 195: res = "ac3.g"; break;
+	case 196: res = "ac4.g"; break;
+	case 197: res = "ac5.g"; break;
+	case 198: res = "ac6.g"; break;
+	case 199: res = "ac7.g"; break;
+	case 200: res = "ac8.g"; break;
+	case 201: res = "ac9.g"; break;
+	case 202: res = "ac10.g"; break;
+	case 203: res = "ac11.g"; break;
+	case 204: res = "ac12.g"; break;
+	case 205: res = "ac13.g"; break;
+	case 206: res = "ac14.g"; break;
+	case 207: res = "ac15.g"; break;
+	case 208: res = "ac16.g"; break;
+	case 209: res = "ac17.g"; break;
+	case 210: res = "ac18.g"; break;
+	case 211: res = "ac19.g"; break;
+	case 212: res = "ac20.g"; break;
+	case 213: res = "ac21.g"; break;
+	case 214: res = "ac22.g"; break;
+	case 215: res = "ac23.g"; break;
+	case 216: res = "ac24.g"; break;
+	case 217: res = "ac25.g"; break;
+	case 218: res = "ac26.g"; break;
+	case 219: res = "ac27.g"; break;
+	case 220: res = "ac28.g"; break;
+	case 221: res = "ac29.g"; break;
+	case 222: res = "ac30.g"; break;
+	case 223: res = "ac31.g"; break;
+	case 224: res = "st0"; break;
+	case 225: res = "st1"; break;
+	case 226: res = "st2"; break;
+	case 227: res = "st3"; break;
+	case 228: res = "st0_55"; break;
+	case 229: res = "st1_55"; break;
+	case 231: res = "st3_55"; break;
+	case 232: res = "ier0"; break;
+	case 233: res = "ier1"; break;
+	case 234: res = "ifr0"; break;
+	case 235: res = "ifr1"; break;
+	case 236: res = "dbier0"; break;
+	case 237: res = "dbier1"; break;
+	case 238: res = "ivpd"; break;
+	case 239: res = "ivph"; break;
+	case 240: res = "rsa0.h"; break;
+	case 241: res = "rsa1.h"; break;
+	case 242: res = "rea0.h"; break;
+	case 243: res = "rea1.h"; break;
+	case 244: res = "bios"; break;
+	case 245: res = "brs1"; break;
+	case 246: res = "iir"; break;
+	case 247: res = "ber"; break;
+	case 248: res = "rsa0.l"; break;
+	case 249: res = "rsa1.l"; break;
+	case 250: res = "rea0.l"; break;
+	case 251: res = "rea1.l"; break;
+	case 252: res = "tsdr"; break;
 	default: res = NULL;
 	}
 
@@ -639,205 +639,205 @@ st8 *get_status_regs_and_bits(st8 *reg_arg, int reg_bit)
   if(!strncmp(reg_arg, "ST0", 3)) {
     switch(reg_bit) {
 	case 0:
-		res = "ST0_DP07";
+		res = "st0_dp07";
 		break;
 	case 1:
-		res = "ST0_DP08";
+		res = "st0_dp08";
 		break;
 	case 2:
-		res = "ST0_DP09";
+		res = "st0_dp09";
 		break;
 	case 3:
-		res = "ST0_DP10";
+		res = "st0_dp10";
 		break;
 	case 4:
-		res = "ST0_DP11";
+		res = "st0_dp11";
 		break;
 	case 5:
-		res = "ST0_DP12";
+		res = "st0_dp12";
 		break;
 	case 6:
-		res = "ST0_DP13";
+		res = "st0_dp13";
 		break;
 	case 7:
-		res = "ST0_DP14";
+		res = "st0_dp14";
 		break;
 	case 8:
-		res = "ST0_DP15";
+		res = "st0_dp15";
 		break;
 	case 9:
-		res = "ST0_ACOV1";
+		res = "st0_acov1";
 		break;
 	case 10:
-		res = "ST0_ACOV0";
+		res = "st0_acov0";
 		break;
 	case 11:
-		res = "ST0_CARRY";
+		res = "st0_carry";
 		break;
 	case 12:
-		res = "ST0_TC2";
+		res = "st0_tc2";
 		break;
 	case 13:
-		res = "ST0_TC1";
+		res = "st0_tc1";
 		break;
 	case 14:
-		res = "ST0_ACOV3";
+		res = "st0_acov3";
 		break;
 	case 15:
-		res = "ST0_ACOV2";
+		res = "st0_acov2";
 		break;
     }
   } else if(!strncmp(reg_arg, "ST1", 3)) {
 		switch(reg_bit) {
 		case 0:
-			res = "ST1_DR2_00";
+			res = "st1_dr2_00";
 			break;
 		case 1:
-			res =  "ST1_DR2_01";
+			res =  "st1_dr2_01";
 			break;
 		case 2:
-			res = "ST1_DR2_02";
+			res = "st1_dr2_02";
 			break;
 		case 3:
-			res = "ST1_DR2_03";
+			res = "st1_dr2_03";
 			break;
 		case 4:
-			res = "ST1_DR2_04";
+			res = "st1_dr2_04";
 			break;
 		case 5:
-			res = "ST1_C54CM";
+			res = "st1_c54cm";
 			break;
 		case 6:
-			res = "ST1_FRCT";
+			res = "st1_frct";
 			break;
 		case 7:
-			res = "ST1_C16";
+			res = "st1_c16";
 			break;
 		case 8:
-			res = "ST1_SXMD";
+			res = "st1_sxmd";
 			break;
 		case 9:
-			res = "ST1_SATD";
+			res = "st1_satd";
 			break;
 		case 10:
-			res = "ST1_M40";
+			res = "st1_m40";
 			break;
 		case 11:
-			res = "ST1_INTM";
+			res = "st1_intm";
 			break;
 		case 12:
-			res = "ST1_HM";
+			res = "st1_hm";
 			break;
 		case 13:
-			res = "ST1_XF";
+			res = "st1_xf";
 			break;
 		case 14:
-			res = "ST1_CPL";
+			res = "st1_cpl";
 			break;
 		case 15:
-			res = "ST1_BRAF";
+			res = "st1_braf";
 			break;
       }
   } else if(!strncmp(reg_arg, "ST2", 3)) {
 		switch ( reg_bit ) {
 		case 0:
-			res = "ST2_AR0LC";
+			res = "st2_ar0lc";
 			break;
 		case 1:
-			res = "ST2_AR1LC";
+			res = "st2_ar1lc";
 			break;
 		case 2:
-			res = "ST2_AR2LC";
+			res = "st2_ar2lc";
 			break;
 		case 3:
-			res = "ST2_AR3LC";
+			res = "st2_ar3lc";
 			break;
 		case 4:
-			res = "ST2_AR4LC";
+			res = "st2_ar4lc";
 			break;
 		case 5:
-			res = "ST2_AR5LC";
+			res = "st2_ar5lc";
 			break;
 		case 6:
-			res = "ST2_AR6LC";
+			res = "st2_ar6lc";
 			break;
 		case 7:
-			res = "ST2_AR7LC";
+			res = "st2_ar7lc";
 			break;
 		case 8:
-			res = "ST2_CDPLC";
+			res = "st2_cdplc";
 			break;
 		case 9:
-			res = "ST2_GOVF";
+			res = "st2_govf";
 			break;
 		case 10:
-			res = "ST2_RDM";
+			res = "st2_rdm";
 			break;
 		case 11:
-			res = "ST2_EALLOW";
+			res = "st2_eallow";
 			break;
 		case 12:
-			res = "ST2_DBGM";
+			res = "st2_dbgm";
 			break;
 		case 13:
-			res = "ST2_XCND";
+			res = "st2_xcnd";
 			break;
 		case 14:
-			res = "ST2_XCNA";
+			res = "st2_xcna";
 			break;
 		case 15:
-			res = "ST2_ARMS";
+			res = "st2_arms";
 			break;
        }
   } else if (!strncmp(reg_arg, "ST3", 3)) {
 		switch (reg_bit) {
 		case 0:
-			res = "ST3_SST";
+			res = "st3_sst";
 			break;
 		case 1:
-			res = "ST3_SMUL";
+			res = "st3_smul";
 			break;
 		case 2:
-			res = "ST3_CLKOFF";
+			res = "st3_clkoff";
 			break;
 		case 3:
-			res = "ST3_BPTR";
+			res = "st3_bptr";
 			break;
 		case 4:
-			res = "ST3_AVIS";
+			res = "st3_avis";
 			break;
 		case 5:
-			res = "ST3_SATA";
+			res = "st3_sata";
 			break;
 		case 6:
-			res = "ST3_MPNMC";
+			res = "st3_mpnmc";
 			break;
 		case 7:
-			res = "ST3_CBERR";
+			res = "st3_cberr";
 			break;
 		case 8:
-			res = "ST3_HOMP";
+			res = "st3_homp";
 			break;
 		case 9:
-			res = "ST3_HOMR";
+			res = "st3_homr";
 			break;
 		case 10:
-			res = "ST3_HOMX";
+			res = "st3_homx";
 			break;
 		case 11:
-			res = "ST3_HOMY";
+			res = "st3_homy";
 			break;
 		case 12:
-			res = "ST3_HINT";
+			res = "st3_hint";
 			break;
 		case 13:
-			res = "ST3_CACLR";
+			res = "st3_caclr";
 			break;
 		case 14:
-			res = "ST3_CAEN";
+			res = "st3_caen";
 			break;
 		case 15:
-			res = "ST3_CAFRZ";
+			res = "st3_cafrz";
 			break;
         }
   }
@@ -856,88 +856,88 @@ st8 *get_reg_name_4(ut32 idx)
   switch(idx) {
 
     case 0:
-      res = "AC0";
+      res = "ac0";
       break;
     case 1:
-      res = "AC1";
+      res = "ac1";
       break;
     case 2:
-      res = "AC2";
+      res = "ac2";
       break;
     case 3:
-      res = "AC3";
+      res = "ac3";
       break;
     case 4:
-      res = "AC4";
+      res = "ac4";
       break;
     case 5:
-      res = "AC5";
+      res = "ac5";
       break;
     case 6:
-      res = "AC6";
+      res = "ac6";
       break;
     case 7:
-      res = "AC7";
+      res = "ac7";
       break;
     case 8:
-      res = "T0";
+      res = "t0";
       break;
     case 9:
-      res = "T1";
+      res = "t1";
       break;
     case 10:
-      res = "T2";
+      res = "t2";
       break;
     case 11:
-      res = "T3";
+      res = "t3";
       break;
     case 16:
-      res = "AR0";
+      res = "ar0";
       break;
     case 17:
-      res = "AR1";
+      res = "ar1";
       break;
     case 18:
-      res = "AR2";
+      res = "ar2";
       break;
     case 19:
-      res = "AR3";
+      res = "ar3";
       break;
     case 20:
-      res = "AR4";
+      res = "ar4";
       break;
     case 21:
-      res = "AR5";
+      res = "ar5";
       break;
     case 22:
-      res = "AR6";
+      res = "ar6";
       break;
     case 23:
-      res = "AR7";
+      res = "ar7";
       break;
     case 24:
-      res = "AC0.L";
+      res = "ac0.l";
       break;
     case 25:
-      res = "AC1.L";
+      res = "ac1.l";
       break;
     case 26:
-      res = "AC2.L";
+      res = "ac2.l";
       break;
     case 27:
-      res = "AC3.L";
+      res = "ac3.l";
       break;
     case 28:
-      res = "AC4.L";
+      res = "ac4.l";
       break;
     case 29:
-      res = "AC5.L";
+      res = "ac5.l";
       break;
     case 30:
-      res = "AC6.L";
+      res = "ac6.l";
       break;
     case 31:
-      res = "AC7.L";
+      res = "ac7.l";
       break;
   }
 
@@ -955,51 +955,51 @@ st8 *get_opers(ut8 oper_byte)
 
   switch (oper_byte) {
     case 0xE0u:
-      res = strdup("overflow(AC0)");
+      res = strdup("overflow(ac0)");
       break;
 
     case 0xE1u:
-      res = strdup("overflow(AC1)");
+      res = strdup("overflow(ac1)");
       break;
 
     case 0xE2u:
-      res = strdup("overflow(AC2)");
+      res = strdup("overflow(ac2)");
       break;
 
     case 0xE3u:
-      res = strdup("overflow(AC3)");
+      res = strdup("overflow(ac3)");
       break;
 
     case 0xE4u:
-      res = strdup("TC1");
+      res = strdup("tc1");
       break;
 
     case 0xE5u:
-      res = strdup("TC2");
+      res = strdup("tc2");
       break;
 
     case 0xE6u:
-      res = strdup("Carry");
+      res = strdup("carry");
       break;
 
     case 0xE7u:
-      res = strdup("overflow(GOVF)");
+      res = strdup("overflow(govf)");
       break;
 
     case 0xE8u:
-      res = strdup("TC1 & TC2");
+      res = strdup("tc1 & tc2");
       break;
 
     case 0xE9u:
-      res = strdup("TC1 & !TC2");
+      res = strdup("tc1 & !tc2");
       break;
 
     case 0xEAu:
-      res = strdup("!TC1 & TC2");
+      res = strdup("!tc1 & tc2");
       break;
 
     case 0xEBu:
-      res = strdup("!TC1 & !TC2");
+      res = strdup("!tc1 & !tc2");
       break;
 
     case 0xECu:
@@ -1011,67 +1011,67 @@ st8 *get_opers(ut8 oper_byte)
       break;
 
     case 0xF0u:
-      res = strdup("!overflow(AC0)");
+      res = strdup("!overflow(ac0)");
       break;
 
     case 0xF1u:
-      res = strdup("!overflow(AC1)");
+      res = strdup("!overflow(ac1)");
       break;
 
     case 0xF2u:
-      res = strdup("!overflow(AC2)");
+      res = strdup("!overflow(ac2)");
       break;
 
     case 0xF3u:
-      res = strdup("!overflow(AC3)");
+      res = strdup("!overflow(ac3)");
       break;
 
     case 0xF4u:
-      res = strdup("!TC1");
+      res = strdup("!tc1");
       break;
 
     case 0xF5u:
-      res = strdup("!TC2");
+      res = strdup("!tc2");
       break;
 
     case 0xF6u:
-      res = strdup("!Carry");
+      res = strdup("!carry");
       break;
 
     case 0xF7u:
-      res = strdup("!overflow(GOVF)");
+      res = strdup("!overflow(govf)");
       break;
 
     case 0xF8u:
-      res = strdup("TC1 | TC2");
+      res = strdup("tc1 | tc2");
       break;
 
     case 0xF9u:
-      res = strdup("TC1 | !TC2");
+      res = strdup("tc1 | !tc2");
       break;
 
     case 0xFAu:
-      res = strdup("!TC1 | TC2");
+      res = strdup("!tc1 | tc2");
       break;
 
     case 0xFBu:
-      res = strdup("!TC1 | !TC2");
+      res = strdup("!tc1 | !tc2");
       break;
 
     case 0xFCu:
-      res = strdup("TC1 ^ TC2");
+      res = strdup("tc1 ^ tc2");
       break;
 
     case 0xFDu:
-      res = strdup("TC1 ^ !TC2");
+      res = strdup("tc1 ^ !tc2");
       break;
 
     case 0xFEu:
-      res = strdup("!TC1 ^ TC2");
+      res = strdup("!tc1 ^ tc2");
       break;
 
     case 0xFFu:
-      res = strdup("!TC1 ^ !TC2");
+      res = strdup("!tc1 ^ !tc2");
       break;
 
 	default:
@@ -1144,10 +1144,10 @@ st8 *get_sim_reg(st8 *reg_arg, ut32 ins_bits) {
 	case 0:
 		if(reg_arg && strchr(reg_arg, 'w')) {
 			if(code == 62)
-				return strdup("SIM0");
+				return strdup("sim0");
 
 			if(code == 63)
-				return strdup("SIM0");
+				return strdup("sim0");
 		}
 		aux = get_reg_name_1(ins_bits >> 2);
 		res = strcat_dup("@", aux, 2);
