@@ -1044,23 +1044,27 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-R_API RAnalEsil *r_anal_esil_new(void);
+R_API RAnalEsil *r_anal_esil_new (void);
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
-R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx);
-R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 addr);
+R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
+R_API int r_anal_esil_set_offset (RAnalEsil *esil, ut64 addr);
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
 R_API void r_anal_esil_free (RAnalEsil *esil);
-R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str);
+R_API int r_anal_esil_parse (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil);
-R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
-R_API int r_anal_esil_push(RAnalEsil *esil, const char *str);
-R_API char *r_anal_esil_pop(RAnalEsil *esil);
+R_API int r_anal_esil_mem_read (RAnalEsil *esil, ut64 addr, ut8 *buf, int len);
+R_API int r_anal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len);
+R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num);
+R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num);
+R_API int r_anal_esil_pushnum (RAnalEsil *esil, ut64 num);
+R_API int r_anal_esil_push (RAnalEsil *esil, const char *str);
+R_API char *r_anal_esil_pop (RAnalEsil *esil);
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code);
 R_API void r_anal_esil_stack_free (RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
-R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str);
+R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
