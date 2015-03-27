@@ -858,7 +858,13 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 					r_cons_printf ("%s", ds->pre);
 				}
 			} else f = NULL;
-		} else r_cons_printf ("  ");
+		} else {
+			if (ds->show_lines) {
+				r_cons_printf ("  ");
+			} else {
+				r_cons_printf (" ");
+			}
+		}
 		// if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
 		// 	//ds->pre = R_LINE_BOTTOM_DCORNER" ";
 		// 	handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
