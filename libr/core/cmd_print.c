@@ -222,14 +222,13 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 
 	if (input_one && input_two && input_three) {
 		// <size> <arch> <bits>
-		*hex = strdup (input_one);
+		*hex = input_one;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		*bits = r_num_get_input_value (core->num, input_three);
 		result = R_TRUE;
 
 	} else if (input_one && input_two) {
-
-		*hex = strdup (input_one);
+		*hex = input_one;
 		if (r_str_contains_macro (input_two) ){
 			r_str_truncate_cmd (input_two);
 		}
@@ -237,8 +236,10 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		result = R_TRUE;
 	} else if (input_one) {
-		*hex = strdup (input_one);
+		*hex = input_one;
 		result = R_TRUE;
+	} else {
+		free (input_one);
 	}
 	return result;
 }
