@@ -1592,7 +1592,7 @@ static int cmd_search(void *data, const char *input) {
 				}
 				addr += ret-1;
 			}
-			r_cons_clear_line (0);
+			r_cons_clear_line (1);
 			r_cons_break_end ();
 		} else eprintf ("Usage: /m [file]\n");
 		r_cons_clear_line (1);
