@@ -1503,7 +1503,7 @@ extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_
 // TODO: this loop MUST be cleaned up
 static RList *darwin_dbg_maps (RDebug *dbg) {
 	RDebugMap *mr;
-	char buf[128];
+	char buf[1024];
 	int i, print;
 	kern_return_t kret;
 	vm_region_basic_info_data_64_t info, prev_info;
