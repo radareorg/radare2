@@ -30,6 +30,7 @@
 #include <sys/resource.h>
 #include <signal.h>
 #include <grp.h>
+#include <errno.h>
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
 #endif
@@ -243,6 +244,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "seteuid")) p->_seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) p->_setgid = strdup (e);
 	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
+	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
 	else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b+3);
 		if (n>=0 && n<R_RUN_PROFILE_NARGS) {
@@ -322,7 +324,8 @@ R_API const char *r_run_help() {
 	"# setuid=2000\n"
 	"# seteuid=2000\n"
 	"# setgid=2001\n"
-	"# setegid=2001\n";
+	"# setegid=2001\n"
+	"# nice=5\n";
 }
 
 #if __UNIX__
@@ -593,6 +596,20 @@ R_API int r_run_start(RRunProfile *p) {
 			r_file_dump (p->_pidfile, (const ut8*)pidstr, strlen (pidstr));
 		}
 #endif
+
+	if (p->_nice) {
+#if __UNIX__
+        errno = 0;
+        ret = nice(p->_nice);
+        if (ret == -1) {
+            if (errno != 0) {
+                return 1;
+            }
+        }
+#else
+		eprintf ("timeout not supported for this platform\n");
+#endif
+    }
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 	return 0;
