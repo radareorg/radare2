@@ -12,27 +12,22 @@ enum {
 	MODE_COLS
 };
 
-enum mode {
-	NORMAL_MODE,
-	RADARE_MODE,
-	JSON_MODE
-};
-
 static ut32 count = 0;
 static int showcount = 0;
 static int useva = R_TRUE;
 static int delta = 0;
 static int showbare = R_FALSE;
-static int json_started = 0; 
+static int json_started = 0;
+static int diffmode = 0; 
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
-	int i, diffmode = (int)(size_t)user;
+	int i; //, diffmode = (int)(size_t)user;
 	if (showcount) {
 		count++;
 		return 1;
 	}
 	switch (diffmode) {
-	case RADARE_MODE:
+	case 'r':
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
 			for (i=0; i<op->b_len; i++)
@@ -53,31 +48,20 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			delta += (op->b_off - op->a_off);
 		}
 		return 1;
-	case JSON_MODE:
+	case 'j':
 		if (json_started)
 			printf(",\n");
 		json_started = 1;
-		/*printf ("{\"offset\":[%u, %u], \"from\":[", op->a_off, op->b_off);
-		for (i = 0;i<(op->a_len-1);i++)
-			printf ("%d,", op->a_buf[i]);
-		printf ("], \"to\":[");//, op->a_len-1);
-		for (i=0; i<(op->b_len-1); i++)
-			printf ("%d,", op->b_buf[i]);
-		printf ("]}");//, op->b_buf[op->a_len-1]);*/
-		//printf ("\"changes\": [");
-		printf ("{\"offset\":\"0x%08"PFMT64x"\" ,", op->a_off);
-		//printf ("0x%08"PFMT64x" ", op->a_off);
+		printf ("{\"offset\":%d,", op->a_off);
 		printf("\"from\":\"");
 		for (i = 0;i<op->a_len;i++)
 			printf ("%02x", op->a_buf[i]);
-		printf (" \", \"to\":\"");
+		printf ("\", \"to\":\"");
 		for (i=0; i<op->b_len; i++)
 			printf ("%02x", op->b_buf[i]);
-		printf (" \"}"); //,\n");
-		
-
+		printf ("\"}"); //,\n");
 		return 1;
-	case NORMAL_MODE:
+	case 0:
 	default:
 		printf ("0x%08"PFMT64x" ", op->a_off);
 		for (i = 0;i<op->a_len;i++)
@@ -164,7 +148,6 @@ static void handle_sha256 (const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_SHA256; i++) printf ("%02x", c[i]);
-	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
@@ -176,7 +159,7 @@ int main(int argc, char **argv) {
 	int bits = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int o, sza, szb, diffmode = NORMAL_MODE, delta = 0;
+	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
 	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;
@@ -194,7 +177,7 @@ int main(int argc, char **argv) {
 			useva = R_FALSE;
 			break;
 		case 'r':
-			diffmode = RADARE_MODE;
+			diffmode = 'r';
 			break;
 		case 'g':
 			mode = MODE_GRAPH;
@@ -230,7 +213,7 @@ int main(int argc, char **argv) {
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
 		case 'j':
-			diffmode = JSON_MODE;
+			diffmode = 'j';
 			break;
 		default:
 			return show_help (0);
@@ -309,17 +292,17 @@ int main(int argc, char **argv) {
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
-		if (diffmode == JSON_MODE) {
+		if (diffmode == 'j') {
 			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza); 
-			handle_sha256(bufa, sza);
+			handle_sha256 (bufa, sza);
 			printf("\"},\n{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file2, szb);
-			handle_sha256(bufb, szb);
+			handle_sha256 (bufb, szb);
 			printf("\"}],\n");
 			printf("\"changes\":[");
 		}
-		r_diff_set_callback (d, &cb, (void *)(size_t)diffmode);
+		r_diff_set_callback (d, &cb, 0);//(void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
-		if (diffmode == JSON_MODE)
+		if (diffmode == 'j')
 			printf("]}\n");
 		r_diff_free (d);
 		break;
