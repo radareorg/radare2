@@ -340,7 +340,7 @@ static int bin_info (RCore *r, int mode) {
 		}
 	} else {
 		if (mode) {
-			if (!strcmp (info->type, "fs")) {
+			if (info->type && !strcmp (info->type, "fs")) {
 				r_cons_printf ("e file.type=fs\n");
 				r_cons_printf ("m /root %s 0\n", info->arch);
 			} else {

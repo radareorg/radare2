@@ -1616,8 +1616,8 @@ static int cmd_print(void *data, const char *input) {
 				} else eprintf ("Invalid hexstr\n");
 			}
 		} else if (input[1]=='?') {
-			r_cons_printf("|Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad) or"
-										"esil (pae) from hexpairs\n");
+			r_cons_printf("|Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad)"
+				" esil (pae) from hexpairs\n");
 		} else {
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
