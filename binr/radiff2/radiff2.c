@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -52,7 +52,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		if (json_started)
 			printf(",\n");
 		json_started = 1;
-		printf ("{\"offset\":%d,", op->a_off);
+		printf ("{\"offset\":%"PFMT64d",", op->a_off);
 		printf("\"from\":\"");
 		for (i = 0;i<op->a_len;i++)
 			printf ("%02x", op->a_buf[i]);

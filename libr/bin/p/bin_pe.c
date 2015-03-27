@@ -309,7 +309,6 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 
 static RBinInfo* info(RBinFile *arch) {
 	SDebugInfo di = {{0}};
-	int len = 0;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 	arch->file = strdup (arch->file);
@@ -357,27 +356,18 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
 
 	if (PE_(r_bin_pe_get_debug_data)(arch->o->bin_obj, &di)) {
-		len = R_BIN_SIZEOF_STRINGS;
-		if (R_BIN_SIZEOF_STRINGS >= GUIDSTR_LEN) {
-			len = GUIDSTR_LEN;
-		} else {
-			eprintf("warning: guid is bigger than R_BIN_SIZEOF_STRINGS\n");
-		}
-		strncpy (ret->guid, (char *)di.guidstr, len);
-
-		if (R_BIN_SIZEOF_STRINGS >= DBG_FILE_NAME_LEN) {
-			len = DBG_FILE_NAME_LEN;
-		} else {
-			eprintf("waring: debug file name len os bigger then R_BIN_SIZEOF_STRINGS\n");
-		}
-		strncpy (ret->debug_file_name, (char *)di.file_name, len);
+		ret->guid = malloc (GUIDSTR_LEN+1);
+		strncpy (ret->guid, di.guidstr, GUIDSTR_LEN);
+		ret->guid[GUIDSTR_LEN] = 0;
+		ret->debug_file_name = malloc (DBG_FILE_NAME_LEN+1);
+		strncpy (ret->debug_file_name, di.file_name, DBG_FILE_NAME_LEN);
+		ret->debug_file_name[DBG_FILE_NAME_LEN] = 0;
 	}
 
 	return ret;
 }
 
 static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	if (!baddr) return vaddr;
 	return baddr + vaddr;
 }
 

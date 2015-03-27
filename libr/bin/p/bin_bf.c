@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -47,7 +47,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("unknown");
 	ret->machine = strdup ("brainfuck");
-	strcpy (ret->arch, "bf");
+	ret->arch = strdup ("bf");
 	ret->has_va = 1;
 	ret->bits = 32; // 16?
 	ret->big_endian = 0;
