@@ -437,7 +437,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 	}
 }
 
-static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//load with [hl] as memref - What to do with ldd and ldi?
+static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//load with [hl] as memref
 {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
@@ -446,6 +446,10 @@ static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//lo
 	op->src[0]->absolute = R_TRUE;
 	op->dst->reg = r_reg_get (reg, regs_8[((data & 0x38)>>3)], R_REG_TYPE_GPR);
 	r_strbuf_setf (&op->esil, "hl,[1],%s,=", regs_8[((data & 0x38)>>3)]);
+	if (data == 0x3a)
+		r_strbuf_append (&op->esil, ",1,hl,-=");
+	if (data == 0x2a)
+		r_strbuf_set (&op->esil, "hl,[1],a,=,1,hl,+=");			//hack in concept
 }
 
 static inline void gb_anal_load (RReg *reg, RAnalOp *op, const ut8 *data)
@@ -494,6 +498,10 @@ static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data)
 		op->src[0]->reg = r_reg_get (reg, regs_8[((data[0] & 0x38)>>3)], R_REG_TYPE_GPR);
 		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[(data[0] & 0x38)>>3]);
 	}
+	if (data[0] == 0x32)
+		r_strbuf_append (&op->esil, ",1,hl,-=");
+	if (data[0] == 0x22)
+		r_strbuf_set (&op->esil, "a,hl,=[1],1,hl,+=");
 }
 
 static void gb_anal_store (RReg *reg, RAnalOp *op, const ut8 *data)
@@ -821,13 +829,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x0a:
 		case 0x1a:
-		case 0x2a:
-		case 0x3a:
 		case 0xf2:
 			gb_anal_load (anal->reg, op, data);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
+		case 0x2a:
+		case 0x3a:
 		case 0x46:
 		case 0x4e:
 		case 0x56:
