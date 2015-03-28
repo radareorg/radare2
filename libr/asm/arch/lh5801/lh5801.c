@@ -649,7 +649,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 /* Decodes one instruction.
  * returns -1 on invalid instructions, the length on valid instructions,
  * and 0 when decoding wasn't possible due to a too small length */
-ssize_t lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, size_t len)
+int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len)
 {
 	int fd = (buf[0] == 0xfd);
 	int type = -1;
@@ -762,7 +762,7 @@ static char *print_reg(char *buf, const struct lh5801_insn *insn)
 	return saved_buf;
 }
 
-void lh5801_print_insn(char *out, size_t size, const struct lh5801_insn *insn)
+void lh5801_print_insn(char *out, int size, const struct lh5801_insn *insn)
 {
 	const struct lh5801_insn_class_desc *iclass =
 		&lh5801_insn_class_descs[insn->iclass];
