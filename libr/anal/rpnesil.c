@@ -162,7 +162,7 @@ static int esil_internal_parity_check (RAnalEsil *esil) {
 	return (bits & 1);
 }
 
-static int esil_internal_signature_check (RAnalEsil *esil) {
+static int esil_internal_sign_check (RAnalEsil *esil) {
 	if (!esil || !esil->lastsz)						//XXX we must rethink of how we set esil->lastsz (check the src) (a,a,^=,%%z,z,= esil->lastsz will be 1 here not sizeof(a))
 		return R_FALSE;
 	return (esil->cur & (0x1<<(esil->lastsz-1)))>>(esil->lastsz-1);
@@ -249,8 +249,8 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 	case 'r':						//regsize in 8-bit-bytes
 		*num = esil->anal->bits/8;
 		break;
-	case 's':						//signature
-		*num = esil_internal_signature_check (esil);
+	case 's':						//sign
+		*num = esil_internal_sign_check (esil);
 		break;
 	default:
 		return R_FALSE;
@@ -462,7 +462,7 @@ static int esil_xoreq(RAnalEsil *esil) {
 	return ret;
 }
 
-static int esil_syscall_linux_i386(RAnalEsil *esil) {
+static int esil_interrupt_linux_i386(RAnalEsil *esil) {		//move this into a plugin
 	ut32 sn, ret = 0;
 	char *usn = r_anal_esil_pop (esil);
 	if (usn) {
@@ -532,16 +532,16 @@ static int esil_trap(RAnalEsil *esil) {
 	return 0;
 }
 
-static int esil_syscall(RAnalEsil *esil) {
+static int esil_interrupt(RAnalEsil *esil) {
 	if (!esil || !esil->anal)
 		return -1;
 	if (esil->anal->cur && esil->anal->cur->esil_trap) {
 		return esil->anal->cur->esil_trap (esil);
 	}
 	// pop number
-	// resolve arguments and run syscall handler
-	eprintf ("SYSCALL: Not yet implemented\n");
-	return esil_syscall_linux_i386 (esil);
+	// resolve arguments and run interrupt handler
+	eprintf ("INTERRUPT: Not yet implemented\n");
+	return esil_interrupt_linux_i386 (esil);
 }
 
 static int esil_cmp(RAnalEsil *esil) {
@@ -2447,7 +2447,7 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 	r_anal_esil_mem_ro (esil, romem);
 	r_anal_esil_stats (esil, stats);
 
-	r_anal_esil_set_op (esil, "$", esil_syscall);
+	r_anal_esil_set_op (esil, "$", esil_interrupt);
 	r_anal_esil_set_op (esil, "$$", esil_trap);
 	r_anal_esil_set_op (esil, "==", esil_cmp);
 	r_anal_esil_set_op (esil, "<", esil_smaller);
