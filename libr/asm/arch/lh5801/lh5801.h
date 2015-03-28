@@ -108,5 +108,5 @@ struct lh5801_insn {
 	ut8 imm[3];
 };
 
-ssize_t lh5801_decode(struct lh5801_insn *, const uint8_t *, size_t);
-void lh5801_print_insn(char *out, size_t size, const struct lh5801_insn *);
+int lh5801_decode(struct lh5801_insn *, const uint8_t *, int);
+void lh5801_print_insn(char *out, int size, const struct lh5801_insn *);
