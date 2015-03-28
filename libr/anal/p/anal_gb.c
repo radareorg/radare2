@@ -624,31 +624,36 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data) {
 
 static int gb_custom_daa (RAnalEsil *esil) {
 	ut8 a, H, C, Z;
+	ut64 n;
 	if (!esil || !esil->anal || !esil->anal->reg)
 		return R_FALSE;
-	H = r_reg_getv (esil->anal->reg, "H");
-	C = r_reg_getv (esil->anal->reg, "C");
-	a = r_reg_getv (esil->anal->reg, "a");
-	esil->old = a;
-	if (r_reg_getv (esil->anal->reg, "N")) {
+	r_anal_esil_reg_read (esil, "H", &n);
+	H = (ut8)n;
+	r_anal_esil_reg_read (esil, "C", &n);
+	C = (ut8)n;
+	r_anal_esil_reg_read (esil, "a", &n);
+	esil->old = n;
+	a = (ut8)n;
+	r_anal_esil_reg_read (esil, "N", &n);
+	if (n) {
 		if (C)
 			a = (a - 0x60) & 0xff;
-		else	r_reg_setv (esil->anal->reg, "C", 0);
+		else	r_anal_esil_reg_write (esil, "C", 0LL);
 		if (H)
 			a = (a - 0x06) & 0xff;
 	} else {
 		if (C || (a > 0x99)) {
 			a = (a + 0x60) & 0xff;
-			r_reg_setv (esil->anal->reg, "C", 1);
+			r_anal_esil_reg_write (esil, "C", 1LL);
 		}
 		if (H || ((a & 0x0f) > 0x09))
 			a += 0x06;;
 	}
 	esil->cur = a;
 	Z = (a == 0);
-	r_reg_setv (esil->anal->reg, "a", a);
-	r_reg_setv (esil->anal->reg, "Z", Z);
-	r_reg_setv (esil->anal->reg, "H", 0);
+	r_anal_esil_reg_write (esil, "a", (ut64)a);
+	r_anal_esil_reg_write (esil, "Z", (ut64)Z);
+	r_anal_esil_reg_write (esil, "H", 0LL);
 	return R_TRUE;
 }
 
