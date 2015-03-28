@@ -92,6 +92,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	close (output[0]);
 	close (output[1]);
 	close (safe_in);
+	waitpid(child, NULL, 0);
 	return R_TRUE;
 #else
 	eprintf ("Only supported on UNIX\n");
