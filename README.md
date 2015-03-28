@@ -33,7 +33,7 @@ Architectures:
 
   6502, 8051, arm, arc, avr, bf, tms320 (c54x, c55x, c55+), gameboy
   csr, dcpu16, dalvik, i8080, mips, m68k, mips, msil, snes, nios II,
-  sh, sparc, rar, powerpc, i386, x86-64, H8/300, malbolge, T8200
+  sh, sparc, rar, powerpc, i386, x86-64, H8/300, malbolge, T8200, LH5801
 
 File Formats:
 
