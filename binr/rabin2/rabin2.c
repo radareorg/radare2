@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
 	if (file && *file && action&ACTION_DLOPEN) {
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
-			printf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(addr));
+			printf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
 		} else
 			printf("Cannot open the '%s' library\n", file);
