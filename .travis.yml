@@ -19,6 +19,7 @@ env:
   - TESTS=t.asm           # (dis)assemblers
   - TESTS=t.anal          # analysis
   - TESTS=t.formats       # file formats
+  - TESTS=t.esil          # esil related
 
 # Additional depencies like capstone are downloaded by the r2 makefiles.
 install:
