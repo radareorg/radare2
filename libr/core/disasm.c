@@ -452,39 +452,40 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 		// TODO: Use data from code analysis..not raw ds->analop here
 		// if we want to get more information
 		ds->opstr = tmpopstr? tmpopstr: asm_str? strdup (asm_str): strdup ("");
-	}
-	if (ds->hint && ds->hint->opcode) {
-		free (ds->opstr);
-		ds->opstr = strdup (ds->hint->opcode);
-	}
-	if (ds->filter) {
-		int ofs = core->parser->flagspace;
-		int fs = ds->flagspace_ports;
-		if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
-			core->parser->notin_flagspace = -1;
-			core->parser->flagspace = fs;
-		} else {
-			if (fs != -1) {
-				core->parser->notin_flagspace = fs;
+	} else {
+		if (ds->hint && ds->hint->opcode) {
+			free (ds->opstr);
+			ds->opstr = strdup (ds->hint->opcode);
+		}
+		if (ds->filter) {
+			int ofs = core->parser->flagspace;
+			int fs = ds->flagspace_ports;
+			if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
+				core->parser->notin_flagspace = -1;
 				core->parser->flagspace = fs;
 			} else {
-				core->parser->notin_flagspace = -1;
-				core->parser->flagspace = -1;
+				if (fs != -1) {
+					core->parser->notin_flagspace = fs;
+					core->parser->flagspace = fs;
+				} else {
+					core->parser->notin_flagspace = -1;
+					core->parser->flagspace = -1;
+				}
 			}
-		}
 #if 1
-		r_parse_filter (core->parser, core->flags,
-			asm_str, ds->str, sizeof (ds->str));
-		core->parser->flagspace = ofs;
-		free (ds->opstr);
-		ds->opstr = strdup (ds->str);
+			r_parse_filter (core->parser, core->flags,
+				asm_str, ds->str, sizeof (ds->str));
+			core->parser->flagspace = ofs;
+			free (ds->opstr);
+			ds->opstr = strdup (ds->str);
 #else
-		ds->opstr = strdup (asm_str);
+			ds->opstr = strdup (asm_str);
 #endif
-		core->parser->flagspace = ofs; // ???
-	} else {
-		if (!ds->opstr)
-			ds->opstr = strdup (asm_str?asm_str:"");
+			core->parser->flagspace = ofs; // ???
+		} else {
+			if (!ds->opstr)
+				ds->opstr = strdup (asm_str?asm_str:"");
+		}
 	}
 	if (ds->use_esil) {
 		if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
