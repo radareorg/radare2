@@ -2639,6 +2639,27 @@ static int runword (RAnalEsil *esil, const char *word) {
 		return 0;
 	}
 
+	// Don't push anything onto stack when processing if statements
+	if (!strcmp (word, "?{") && esil->Reil) {
+		esil->Reil->skip = esil->Reil->skip? 0:1;
+		if (esil->Reil->skip) {
+			esil->Reil->cmd_count = 0;
+			memset (esil->Reil->if_buf, 0, sizeof(esil->Reil->if_buf));
+		}
+	}
+
+	if (esil->Reil && esil->Reil->skip) {
+		strncat (esil->Reil->if_buf, word, sizeof(esil->Reil->if_buf));
+		strncat (esil->Reil->if_buf, ",", sizeof(esil->Reil->if_buf));
+		if (!strcmp (word, "}"))  {
+			r_anal_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
+			r_anal_esil_parse (esil, esil->Reil->if_buf);
+			return 1;
+		}
+		if (iscommand (esil, word, &op)) esil->Reil->cmd_count++;
+		return 1;
+	}
+
 //eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp (word, "}{")) {
 		esil->skip = esil->skip? 0: 1;
@@ -2665,6 +2686,7 @@ static int runword (RAnalEsil *esil, const char *word) {
 		// skip empty words
 		return 1;
 	}
+
 	// push value
 	if (!r_anal_esil_push (esil, word)) {
 		eprintf ("ESIL stack is full\n");
