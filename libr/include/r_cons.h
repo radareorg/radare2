@@ -324,6 +324,9 @@ R_API void r_cons_pipe_close(int fd);
 R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 #endif
 
+R_API void r_cons_push();
+R_API void r_cons_pop();
+
 /* control */
 R_API char *r_cons_editor (const char *file, const char *str);
 R_API void r_cons_reset(void);

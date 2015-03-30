@@ -310,10 +310,11 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			oline = line;
 		}
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
-		r_cons_flush ();
+		r_cons_push ();
 		snprintf (cmd, sizeof (cmd), "pD %d @ 0x%08"PFMT64x,
 			bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
+		r_cons_pop ();
 	}
 	if (cmdstr) {
 		str = r_str_escape_dot (cmdstr);
@@ -428,7 +429,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->jump,
 					bbi->fail != -1 ? "green" : "blue");
-			r_cons_flush ();
+			//r_cons_flush ();
 		}
 		if (bbi->fail != -1) {
 			if (is_keva) {
@@ -440,7 +441,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 						bbi->addr, bbi->fail);
 			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
-			r_cons_flush ();
+			//r_cons_flush ();
 		}
 		if (bbi->switch_op) {
 			RAnalCaseOp *caseop;
@@ -454,7 +455,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 						bbi->addr, bbi->fail);
 			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
-			r_cons_flush ();
+			//r_cons_flush ();
 
 			r_list_foreach (bbi->switch_op->cases, iter, caseop) {
 				if (caseop) {
@@ -472,7 +473,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 							caseop->addr, caseop->jump);
 					} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 						"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
-					r_cons_flush ();
+					//r_cons_flush ();
 				}
 			}
 		}
@@ -519,7 +520,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					fcn->name, bbi->addr,
 					bbi->traced?"yellow":"lightgray", str);
 			}
-			r_cons_flush ();
+			//r_cons_flush ();
 			free (str);
 		}
 	}
@@ -1406,7 +1407,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			" fontname=\"%s\" fontsize=\"8\"];\n", font);
 	if (is_json)
 		r_cons_printf ("[");
-	r_cons_flush ();
+	//r_cons_flush ();
 #define inrange(x,f) ((x>=f->addr)&&(x<(f->addr+f->size)))
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN)
@@ -1424,7 +1425,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (!is_keva && !is_html && !is_json) r_cons_printf ("}\n");
 	if (is_json)
 		r_cons_printf ("]\n");
-	r_cons_flush ();
+	//r_cons_flush ();
 	r_config_set_i (core->config, "asm.lines", reflines);
 	r_config_set_i (core->config, "asm.bytes", bytes);
 	r_config_set_i (core->config, "asm.dwarf", dwarf);

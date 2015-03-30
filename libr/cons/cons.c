@@ -346,6 +346,31 @@ R_API void r_cons_filter() {
 	/* TODO */
 }
 
+static char *backup = NULL;
+static int backup_len = 0;
+static int backup_size = 0;
+
+R_API void r_cons_push() {
+	if (!backup) {
+		backup = malloc (I.buffer_len);
+		backup_len = I.buffer_len;
+		backup_size = I.buffer_sz;
+		memcpy (backup, I.buffer, I.buffer_len);
+		I.buffer = malloc (I.buffer_sz);
+		I.buffer_len = 0;
+	}
+}
+
+R_API void r_cons_pop() {
+	if (backup) {
+		free (I.buffer);
+		I.buffer = backup;
+		I.buffer_len = backup_len;
+		I.buffer_sz = backup_size;
+		backup = NULL;
+	}
+}
+
 R_API void r_cons_flush() {
 	const char *tee = I.teefile;
 	if (I.noflush)
