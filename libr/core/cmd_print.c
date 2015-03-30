@@ -979,42 +979,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 }
 
 static void cmd_print_pwn(const RCore* core) {
-	int i, n = r_num_rand (10);
-	ut64 num, base = r_num_get (core->num, "entry0");
-	if (!base)
-		base = 0x8048000;
-
-	eprintf ("[+] Analyzing code starting at 0x%08"PFMT64x"...\n", base);
-	r_sys_sleep (3);
-
-	eprintf ("[+] Looking for vulnerabilities...\n");
-	r_sys_sleep (3);
-
-	eprintf ("[+] Found %d bugs...\n", n);
-	for (i=0; i<n; i++) {
-		eprintf ("[+] Deeply analyzing bug %d at 0x%08"PFMT64x"...\n",
-				i, base+r_num_rand (0xffff));
-		r_sys_sleep (1);
-	}
-
-	eprintf ("[+] Finding ROP gadgets...\n");
-	n = r_num_rand (0x20);
-	num = base;
-	for (i=0; i<n; i++) {
-		num += r_num_rand (0xfff);
-		eprintf (" * 0x%08"PFMT64x" %d : %02x %02x ..\n",
-				num, r_num_rand (10),
-				r_num_rand (0xff), r_num_rand (0xff));
-		r_sys_sleep (r_num_rand (2));
-	}
-
-	eprintf ("[+] Cooking the shellcode...\n");
-	r_sys_sleep (4);
-
-	eprintf ("[+] Launching the exploit...\n");
-	r_sys_sleep (1);
-
-	r_sys_cmd ("sh");
+	eprintf ("easter egg license has expired\n");
 }
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {
@@ -1310,7 +1275,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'w': //pw
 		if (input[1]=='n') {
 			cmd_print_pwn(core);
-		}	else if (input[1]=='d') {
+		} else if (input[1]=='d') {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
@@ -2646,23 +2611,8 @@ static int cmd_print(void *data, const char *input) {
 			core->offset = offset0;
 		}
 		break;
-	case 'n': // easter penis
-		for (l=0; l<10; l++) {
-			printf (input[1]=='j'? "\r{\"8\":\"":"\r8");
-			for (len=0; len<l; len++)
-				printf ("=");
-			printf (input[1]=='j'? "D\"}":"D");
-			r_sys_usleep (100000);
-			fflush (stdout);
-		}
-		if (input[1]=='j') printf (",{\"");
-		for (l=0; l<3; l++) {
-			printf ("~");
-			fflush (stdout);
-			if (input[1]!='j') r_sys_usleep (100000);
-		}
-		if (input[1]=='j') printf ("\"}");
-		printf ("\n");
+	case 'n': // easter
+		eprintf ("easter egg license has expired\n");
 		break;
 	case 't':
 		switch (input[1]) {

@@ -797,8 +797,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		char spaces[32];
 		RList *args = r_anal_var_list (core->anal, f, 'a');
 		RList *vars = r_anal_var_list (core->anal, f, 'v');
-		r_list_sort (args, var_comparator);
-		r_list_sort (vars, var_comparator);
+		r_list_sort (args, (RListComparator)var_comparator);
+		r_list_sort (vars, (RListComparator)var_comparator);
 		r_list_join (args, vars);
 		RAnalVar *var;
 		RListIter *iter;
