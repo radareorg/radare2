@@ -1,0 +1,11 @@
+{
+  "name": "r2-express.js",
+  "version": "0.0.1",
+  "description": "Express-based webserver for radare2",
+  "author": "pancake <pancake@nopcode.org>",
+  "dependencies": {
+    "express": "4.*",
+    "r2pipe": "*"
+ },
+ "license": "MIT"
+}
