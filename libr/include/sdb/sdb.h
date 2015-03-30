@@ -21,6 +21,12 @@ extern "C" {
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
+/* Key value sizes */
+#define SDB_MIN_VALUE 1
+#define SDB_MAX_VALUE 0xffffff
+#define SDB_MIN_KEY 1
+#define SDB_MAX_KEY 0xff
+
 #define SDB_MODE 0644
 //#define SDB_MODE 0600
 
@@ -99,6 +105,7 @@ int  sdb_exists (Sdb*, const char *key);
 int  sdb_unset (Sdb*, const char *key, ut32 cas);
 int  sdb_unset_matching(Sdb *s, const char *k);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
+char *sdb_get_len (Sdb*, const char *key, int *vlen, ut32 *cas);
 const char *sdb_const_get (Sdb*, const char *key, ut32 *cas);
 const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas);
 int  sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
@@ -206,6 +213,7 @@ int sdb_array_remove_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 char *sdb_anext(char *str, char **next);
 const char *sdb_const_anext(const char *str, const char **next);
 int sdb_alen(const char *str);
+int sdb_alen_ignore_empty(const char *str);
 int sdb_array_size(Sdb* s, const char *key);
 int sdb_array_length(Sdb* s, const char *key);
 

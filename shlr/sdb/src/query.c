@@ -145,8 +145,9 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 
 SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	char *eq, *tmp, *json, *next, *quot, *arroba, *res, *cmd, *newcmd = NULL, *oldcmd = NULL;
 	const char *p, *q, *val = NULL;
+	char *eq, *tmp, *json, *next, *quot, *arroba, *res,
+		*cmd, *newcmd = NULL, *oldcmd = NULL;
 	StrBuf *out;
 	Sdb *s = r;
 	ut64 n;
@@ -394,6 +395,7 @@ next_quote:
 					if (bufset && len<0xff) {
 						free (buf);
 						buf = malloc (0xff);
+						if (!buf) goto fail;
 					}
 					bufset = 1;
 					snprintf (buf, 0xff, "0x%"ULLFMT"x", n);
@@ -404,6 +406,7 @@ next_quote:
 					if (bufset && len<0xff) {
 						free (buf);
 						buf = malloc (0xff);
+						if (!buf) goto fail;
 					}
 					bufset = 1;
 					snprintf (buf, 0xff, "%"ULLFMT"d", n);
@@ -418,19 +421,19 @@ next_quote:
 			alength = sdb_array_length (s, p);
 			if (!buf) {
 				buf = malloc (len+1);
+				if (!buf) goto fail;
 				bufset = 1;
 			}
 			w = snprintf (buf, len, "%d", alength);
 			if (w<0 || (size_t)w>len) {
 				if (bufset)
 					free (buf);
-				buf = malloc (64);
+				buf = malloc (32);
 				bufset = 1;
-				snprintf (buf, 63, "%d", alength);
+				snprintf (buf, 31, "%d", alength);
 			}
 			out_concat (buf);
-		} else
-		if (cmd[1]=='+'||cmd[1]=='-') {
+		} else if (cmd[1]=='+'||cmd[1]=='-') {
 			if (cmd[1] == cmd[2]) {
 				// stack
 #if 0
@@ -468,15 +471,17 @@ next_quote:
 						// [+]K = remove first element
 						// XXX: this is a little strange syntax to remove an item
 						ret = sdb_array_get (s, p, 0, 0);
-						if (ret && *ret)
+						if (ret && *ret) {
 							out_concat (ret);
+						}
 						// (+)foo :: remove first element
 						sdb_array_delete (s, p, 0, 0);
 					} else {
 						// [-]K = remove last element
 						ret = sdb_array_get (s, p, -1, 0);
-						if (ret && *ret)
+						if (ret && *ret) {
 							out_concat (ret);
+						}
 						// (-)foo :: remove last element
 						sdb_array_delete (s, p, -1, 0);
 					}
@@ -525,8 +530,7 @@ next_quote:
 							eprintf ("TODO: [b]foo -> get index of b key inside foo array\n");
 						//	sdb_array_dels (s, p, cmd+1, 0);
 						}
-					} else
-					if (i<0) {
+					} else if (i<0) {
 						/* [-3]foo */
 						char *tmp = sdb_array_get (s, p, -i, NULL);
 						if (tmp && *tmp) {
@@ -714,11 +718,15 @@ SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {
 }
 
 static char *slurp(const char *file) {
-	int ret, fd = open (file, O_RDONLY);
+	int ret, fd;
 	char *text;
 	long sz;
-	if (fd == -1)
+	if (!file || !*file)
 		return NULL;
+	fd = open (file, O_RDONLY);
+	if (fd == -1) {
+		return NULL;
+	}
 	sz = lseek (fd, 0, SEEK_END);
 	if (sz<0){
 		close (fd);
@@ -734,14 +742,19 @@ static char *slurp(const char *file) {
 	if (ret != sz) {
 		free (text);
 		text = NULL;
-	} else text[sz] = 0;
+	} else {
+		text[sz] = 0;
+	}
 	close (fd);
 	return text;
 }
 
 SDB_API int sdb_query_file(Sdb *s, const char* file) {
+	int ret = 0;
 	char *txt = slurp (file);
-	int ret = sdb_query_lines (s, txt);
-	free (txt);
+	if (txt) {
+		ret = sdb_query_lines (s, txt);
+		free (txt);
+	}
 	return ret;
 }

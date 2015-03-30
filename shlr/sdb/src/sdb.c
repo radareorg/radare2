@@ -32,10 +32,10 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	Sdb* s = R_NEW0 (Sdb);
 	if (!s) return NULL;
 	s->fd = -1;
-	s->dir = NULL;
 	s->refs = 1;
 	if (path && !*path)
 		path = NULL;
+
 	if (name && *name && strcmp (name, "-")) {
 		if (path && *path) {
 			int plen = strlen (path);
@@ -59,9 +59,10 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 			break;
 		}
 		if (sdb_open (s, s->dir) != -1) {
-			if (fstat (s->fd, &st) != -1)
+			if (s->fd > -1 && fstat (s->fd, &st) != -1) {
 				if ((S_IFREG & st.st_mode) != S_IFREG)
 					goto fail;
+			}
 			s->last = st.st_mtime;
 		} else {
 			s->last = sdb_now ();
@@ -194,7 +195,7 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 
 // TODO: add sdb_getf?
 
-SDB_API char *sdb_get (Sdb* s, const char *key, /*OUT*/ut32 *cas) {
+SDB_API char *sdb_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
 	ut32 hash, pos, len, keylen;
 	ut64 now = 0LL;
 	SdbKv *kv;
@@ -217,6 +218,7 @@ SDB_API char *sdb_get (Sdb* s, const char *key, /*OUT*/ut32 *cas) {
 				}
 			}
 			if (cas) *cas = kv->cas;
+			if (vlen) *vlen = kv->value_len;
 			return strdup (kv->value);
 		}
 		return NULL;
@@ -230,12 +232,18 @@ SDB_API char *sdb_get (Sdb* s, const char *key, /*OUT*/ut32 *cas) {
 		return NULL;
 	if ((len = cdb_datalen (&s->db))<1)
 		return NULL;
+	if (vlen)
+		*vlen = len;
 	if (!(buf = malloc (len+1))) // XXX too many mallocs
 		return NULL;
 	pos = cdb_datapos (&s->db);
 	cdb_read (&s->db, buf, len, pos);
 	buf[len] = 0;
 	return buf;
+}
+
+SDB_API char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
+	return sdb_get_len (s, key, NULL, cas);
 }
 
 SDB_API int sdb_unset (Sdb* s, const char *key, ut32 cas) {
@@ -246,8 +254,8 @@ SDB_API int sdb_unset (Sdb* s, const char *key, ut32 cas) {
 SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
 	// remove 'value' from current key value.
 	// TODO: cas is ignored here
-	char *p, *v = sdb_get (s, key, NULL);
-	int vlen = strlen (value);
+	int vlen;
+	char *p, *v = sdb_get_len (s, key, &vlen, NULL);
 	int mod = 0;
 	while ((p = strstr (v, value))) {
 		memmove (p, p+vlen, strlen (p+vlen)+1);
@@ -303,26 +311,29 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 SDB_API int sdb_open (Sdb *s, const char *file) {
 	if (!s) return -1;
 	if (file) {
-		char *realfile = strdup (file);
-		sdb_close (s);
-		s->fd = open (realfile, O_RDONLY|O_BINARY);
-		free (s->dir);
-		s->dir = realfile;
-	} else {
 		if (s->fd != -1) {
 			close (s->fd);
 			s->fd = -1;
 		}
-		if (s->dir) {
+		s->fd = open (file, O_RDONLY|O_BINARY);
+		if (file != s->dir) {
 			free (s->dir);
-			s->dir = NULL;
+			s->dir = strdup (file);
 		}
 	}
 	return s->fd;
 }
 
 SDB_API void sdb_close (Sdb *s) {
-	(void)sdb_open (s, NULL);
+	if (!s) return;
+	if (s->fd != -1) {
+		close (s->fd);
+		s->fd = -1;
+	}
+	if (s->dir) {
+		free (s->dir);
+		s->dir = NULL;
+	}
 }
 
 SDB_API void sdb_reset (Sdb* s) {
@@ -575,8 +586,11 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 		*_vlen = vlen;
 	if (key) {
 		*key = 0;
-		if (klen>0 && klen<0xff) {
+		if (klen>=SDB_MIN_KEY && klen<SDB_MAX_KEY) {
 			*key = malloc (klen+1);
+			if (!*key) {
+				return 0;
+			}
 			if (getbytes (s, *key, klen) == -1) {
 				free (*key);
 				*key = NULL;
@@ -587,7 +601,7 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 	}
 	if (value) {
 		*value = 0;
-		if (vlen>0 && vlen<0xffffff) {
+		if (vlen>=SDB_MIN_VALUE && vlen<SDB_MAX_VALUE) {
 			*value = malloc (vlen+10);
 			if (!*value) {
 				if (key) {
@@ -633,7 +647,7 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 			if (!cas || cas == kv->cas) {
 				kv->expire = parse_expire (expire);
 				return 1;
-			} else return 0;
+			}
 		}
 		return 0;
 	}
@@ -736,9 +750,7 @@ SDB_API void sdb_config(Sdb *s, int options) {
 }
 
 SDB_API int sdb_unlink (Sdb* s) {
-	// nullify Sdb
 	sdb_fini (s, 1);
-	// remove from disk
 	return sdb_disk_unlink (s);
 }
 
@@ -749,17 +761,6 @@ SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 	*s = *f;
 	free (f);
 }
-
-#if 0
-SDB_API void sdb_drain(Sdb *s, Sdb *f) {
-	// drain f contents into s
-	sdb_fini (s, 0);
-	memcpy (s, f, sizeof (Sdb));
-	// invalidates f, but doenst free's
-	// invalidate = close fd, free'd mem hashtable
-	memset (f, 0, sizeof (Sdb));
-}
-#endif
 
 typedef struct {
 	Sdb *sdb;
@@ -773,7 +774,6 @@ static int unset_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-// TODO: rename to sdb_unset_similar ?
 SDB_API int sdb_unset_matching(Sdb *s, const char *k) {
 	UnsetCallbackData ucd = { s, k };
 	return sdb_foreach (s, unset_cb, &ucd);

@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
 
 #include "sdb.h"
 
@@ -334,15 +334,7 @@ SDB_API int sdb_array_size(Sdb *s, const char *key) {
 
 // NOTE: ignore empty buckets
 SDB_API int sdb_array_length(Sdb *s, const char *key) {
-	int ret = 0;
-	char *val = sdb_get (s, key, 0);
-	if (val && *val) {
-		// TOO SLOW
-		sdb_array_compact (val);
-		ret = sdb_alen (val);
-	}
-	free (val);
-	return ret;
+	return sdb_alen_ignore_empty (sdb_const_get (s, key, 0));
 }
 
 SDB_API int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas) {

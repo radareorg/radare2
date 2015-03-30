@@ -87,7 +87,7 @@ static int match(struct cdb *c, const char *key, ut32 len, ut32 pos) {
 	return 1;
 }
 
-int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
+int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 	char buf[8];
 	ut32 pos;
 	int m;

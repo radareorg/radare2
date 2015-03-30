@@ -179,9 +179,8 @@ SDB_API ut64* sdb_fmt_array_num(const char *list) {
 }
 
 SDB_API char** sdb_fmt_array(const char *list) {
-	char **retp, **ret = NULL;
+	char *_s, **retp, **ret = NULL;
 	const char *next, *ptr = list;
-	char *_s;
 	if (list && *list) {
 		int len = sdb_alen (list);
 		retp = ret = (char**) malloc (2*strlen (list) +

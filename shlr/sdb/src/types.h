@@ -65,7 +65,6 @@
 // TODO: deprecate R_NEW
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
-#define R_ANEW(x) (x*)cdb_alloc(sizeof(x))
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
 #endif
