@@ -1590,6 +1590,25 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 		}
 		break;
+	case 'C':
+		// aeC = anal ESIL Convert ...
+		switch (input[1]) {
+			case 'r': 
+				{
+					// aeCr = anal ESIL Convert REIL.
+					int romem = r_config_get_i (core->config, "esil.romem");
+					int stats = r_config_get_i (core->config, "esil.stats");
+					RAnalEsil *esil = core->anal->esil;
+					if (!esil) {
+						core->anal->esil = esil = r_anal_esil_new ();
+					}
+					r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
+					r_anal_esil_set_offset (esil, core->offset);
+					r_anal_esil_parse (esil, input+2);
+					r_anal_esil_dumpstack (esil);
+					r_anal_esil_stack_free (esil);
+					break;
+				}
 	case '?':
 		if (input[1]=='?') {
 			const char* help_msg[] = {
@@ -1642,6 +1661,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"aec", "", "continue until ^C",
 				"aecu", " [addr]", "continue until address",
 				"aecue", " [esil]", "continue until esil expression match",
+				"aeC", "r [esil]", "Convert an ESIL Expression to REIL",
 				"aes", "", "perform emulated debugger step",
 				"aesu", " [addr]", "step until given address",
 				"aesue", " [esil]", "step until esil expression match",

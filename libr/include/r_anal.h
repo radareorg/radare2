@@ -822,6 +822,75 @@ enum {
 	R_ANAL_ESIL_PARM_NUM,
 };
 
+/* Constructs to convert from ESIL to REIL */
+#define FOREACHOP(GENERATE)                     \
+/* No Operation */               GENERATE(NOP)  \
+/* Unknown/Undefined */          GENERATE(UNK)  \
+/* Conditional Jump */           GENERATE(JCC)  \
+/* Store Value to register */    GENERATE(STR)  \
+/* Store value to memory */      GENERATE(STM)  \
+/* Load value from memory */     GENERATE(LDM)  \
+/* Addition */                   GENERATE(ADD)  \
+/* Subtraction */                GENERATE(SUB)  \
+/* Negation */                   GENERATE(NEG)  \
+/* Multiplication */             GENERATE(MUL)  \
+/* Division */                   GENERATE(DIV)  \
+/* Modulo */                     GENERATE(MOD)  \
+/* Signed Multiplication */      GENERATE(SMUL) \
+/* Sugned Division */            GENERATE(SDIV) \
+/* Signed Modulus */             GENERATE(SMOD) \
+/* Shift Left */                 GENERATE(SHL)  \
+/* Shift Right */                GENERATE(SHR)  \
+/* Binary and */                 GENERATE(AND)  \
+/* Binary or */                  GENERATE(OR)   \
+/* Binary xor */                 GENERATE(XOR)  \
+/* Binary not */                 GENERATE(NOT)  \
+/* Equation */                   GENERATE(EQ)   \
+/* Less Than */                  GENERATE(LT)
+
+#define MAKE_ENUM(OP) REIL_##OP,
+#define REIL_OP_STRING(STRING) #STRING,
+
+typedef enum {
+	FOREACHOP(MAKE_ENUM)
+} RAnalReilOpcode;
+
+typedef enum {
+	ARG_REG,           // CPU Register
+	ARG_TEMP,          // Temporary register used by REIL
+	ARG_CONST,         // Constant value
+	ARG_ESIL_INTERNAL, // Used to resolve ESIL internal flags
+	ARG_NONE           // Operand not used by the instruction
+} RAnalReilArgType;
+
+// Arguments to a REIL instruction.
+typedef struct r_anal_reil_arg {
+	RAnalReilArgType type; // Type of the argument
+	ut8 size;              // Size of the argument in bytes
+	char name[15];         // Name of the argument
+} RAnalReilArg;
+
+// Instruction arg1, arg2, arg3
+typedef struct r_anal_reil_inst {
+	ut64 addr;
+	ut64 seq_num; // Stores the seq number for the instrcution.
+	RAnalReilOpcode opcode;
+	RAnalReilArg *arg[3];
+} RAnalReilInst;
+
+typedef struct r_anal_reil {
+	char old[32]; // Used to compute flags.
+	char cur[32];
+	ut8 lastsz;
+	ut64 reilNextTemp;   // Used to store the index of the next REIL temp register to be used.
+	ut64 addr;           // Used for instruction sequencing. Check esil2reil.c for details.
+	ut8 seq_num;         // Incremented and used when noInc is set to 1.
+	int skip;
+	int cmd_count;
+	char if_buf[64];
+	char pc[8];
+} RAnalReil;
+
 #define ESIL_INTERNAL_PREFIX	'%'		//must be a char
 #define ESIL struct r_anal_esil_t
 
@@ -869,7 +938,10 @@ typedef struct r_anal_esil_t {
 	Sdb *db_trace;
 	int trace_idx;
 	RAnalEsilCallbacks cb;
+	RAnalReil *Reil;
 } RAnalEsil;
+
+
 
 #undef ESIL
 
@@ -1336,6 +1408,9 @@ R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad);
 /* limits */
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to);
 R_API void r_anal_unset_limits(RAnal *anal);
+
+/* ESIL to REIL */
+R_API int r_anal_esil_to_reil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
