@@ -15,8 +15,9 @@ compiler:
 # the logs shorter than 10k lines (the maximum that's displayed).
 env:
   # TODO: run t.archos, once we have Linux tests in there.
+  - TESTS=commands         # r2 commands related
   - TESTS=asm              # (dis)assemblers
-  - TESTS=tools            # esil related 
+  - TESTS=tools            # tools related 
   - TESTS=anal             # analysis
   - TESTS=formats          # file formats
   - TESTS=esil             # esil related 
