@@ -4,12 +4,12 @@
 language: c
 compiler:
   - gcc
-  - clang
+  #- clang
   # With this scarry double quotation the strings will be passed to the shell
   # still quoted, which is necessary here.
-  - '"clang -fsanitize=address"'
-  - '"clang -fsanitize=memory -fsanitize-memory-track-origins"'
-  - '"clang -fsanitize=thread"'
+  #- '"clang -fsanitize=address"'
+  #- '"clang -fsanitize=memory -fsanitize-memory-track-origins"'
+  #- '"clang -fsanitize=thread"'
 
 # Put different test categories in different jobs. This will also help keeping
 # the logs shorter than 10k lines (the maximum that's displayed).
@@ -32,10 +32,10 @@ install:
 script:
   # llvm-symbolizer isn't in PATH, so we need this.
   # (Also, YAML doesn't like underscores)
-  - export SYMBOLIZER=/usr/local/clang-3.4/bin/llvm-symbolizer
-  - export ASAN_SYMBOLIZER_PATH=$SYMBOLIZER
-  - export MSAN_SYMBOLIZER_PATH=$SYMBOLIZER
-  - 'export TSAN_OPTIONS=external_symbolizer_path=$SYMBOLIZER'
+  #- export SYMBOLIZER=/usr/local/clang-3.4/bin/llvm-symbolizer
+  #- export ASAN_SYMBOLIZER_PATH=$SYMBOLIZER
+  #- export MSAN_SYMBOLIZER_PATH=$SYMBOLIZER
+  #- 'export TSAN_OPTIONS=external_symbolizer_path=$SYMBOLIZER'
   # Limit the stack size (to 32MiB) to make ThreadSanitizer happy.
   - ulimit -s 32768
   # Now on to actually building stuff...
