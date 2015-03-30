@@ -20,7 +20,7 @@ a set of libraries and tools to work with binary files
 
 This is the rewrite of radare (1.x branch) to provide a
 framework with a set of libraries and programs to work
-with binary data.
+with binary data. 
 
 Radare project started as a forensics tool, an scriptable
 commandline hexadecimal editor able to open disk files,
