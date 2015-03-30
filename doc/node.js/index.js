@@ -47,5 +47,9 @@ function runWebServer(r) {
 if (process.env.R2PIPE_IN) {
 	var r = r2p.rlangpipe(runWebServer);
 } else {
-	var r = r2p.pipe ("/bin/ls", runWebServer);
+	var targetfile = "/bin/ls";
+	if (process.argv.length>2) {
+		targetfile = process.argv[2];
+	}
+	var r = r2p.pipe (targetfile, runWebServer);
 }
