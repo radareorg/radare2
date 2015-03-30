@@ -18,34 +18,34 @@ static const char *Aindexof(const char *str, int idx) {
 	return NULL;
 }
 
-static const char *Aconst_index(const char *str, int idx) {
-	int len = 0;
-	const char *n, *p = str;
-	for (len=0; ; len++) {
-		if (len == idx)
-			return p;
-		n = strchr (p, SDB_RS);
-		if (n) p = n+1;
-		else break;
+static int astrcmp (const char *a, const char *b) {
+	register char va = *a;
+	register char vb = *b;
+	for (;;) {
+		if (va == '\0' || va == SDB_RS) {
+			if (vb == '\0' || vb == SDB_RS)
+				return 0;
+			return -1;
+		}
+		if (vb == '\0' || vb == SDB_RS)
+			return 1;
+		if (va != vb) return (va>vb)?1:-1;
+		va = *(++a);
+		vb = *(++b);
 	}
-	return NULL;
 }
 
-static int astrcmp (const char *a, const char *b) {
-	for (;;) {
-		if (*a == '\0' || *a == SDB_RS) {
-			if (*b == '\0' || *b == SDB_RS)
-				return 0;
-			return 1;
-		}
-		if (*b == '\0' || *b == SDB_RS)
-			return 1;
-		if (*a != *b) return 1;
-		a++;
-		b++;
-	}
-	return 1;
+static inline int cstring_cmp(const void *a, const void *b) { 
+    const char **va = (const char **)a;
+    const char **vb = (const char **)b;
+    return astrcmp(*va, *vb);
 }
+
+static inline int int_cmp(const void *a, const void *b) { 
+    const int *va = (const int *)a;
+    const int *vb = (const int *)b;
+    return *va  - *vb; 
+} 
 
 SDB_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx, ut32 *cas) {
 	const char *str, *n, *p;
@@ -211,7 +211,7 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val, ut3
 		//memcpy (nstr, str, lstr+1);
 		memcpy (nstr, str, diff);
 		memcpy (ptr, val, lval+1);
-		usr = Aconst_index (str, idx+1);
+		usr = Aindexof (str, idx+1);
 		if (usr) {
 			ptr[lval] = SDB_RS;
 			strcpy (ptr+lval+1, usr);
@@ -412,5 +412,46 @@ SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 	// XXX: probably wrong
 	return strdup (end);
 #endif
+}
+
+SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
+	int lstr, j, i;
+	char *nstr, *str = sdb_get_len (s, key, &lstr, 0);
+	char **strs;
+	if (!str || !*str)
+		return;
+	strs = sdb_fmt_array (str);
+	for(i=0; strs[i]; i++);
+	qsort(strs, i, sizeof(void*), cstring_cmp);
+	nstr = str;
+	for(i=0; strs[i]; i++) {
+		j = strlen(strs[i]);
+		memcpy(nstr, strs[i], j);
+		nstr += j;
+		*(nstr++) = SDB_RS;
+	}
+	*(--nstr) = '\0';
+	sdb_set_owned(s, key, str, cas);
+	free(strs);
+	return;
+}
+
+SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
+	int lstr, i;
+	char *ret, *nstr, *str = sdb_get_len (s, key, &lstr, 0);
+	ut64 *nums;
+	if (!str || !*str)
+		return;
+	nums = sdb_fmt_array_num (str);
+	qsort(nums+1, *nums, sizeof(void*), int_cmp);
+	nstr = str;
+	for(i=0; i<*nums; i++)
+		*(nstr++)='d';
+	*nstr='\0';
+	ret = sdb_fmt_tostr(nums+1, str);
+	sdb_set_owned(s, key, ret, cas);
+	free(str);
+	free(nums);
+	return;
 }
 

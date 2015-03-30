@@ -37,8 +37,6 @@ EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 sdb.js: src/sdb-version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
 
-#json/api.c json/js0n.c json/json.c json/rangstr.c
-
 clean:
 	rm -f src/sdb-version.h
 	cd src && ${MAKE} clean
@@ -128,7 +126,6 @@ ifneq (${HAVE_VALA},)
 	cd ${VALADIR}/types && ${MAKE} symstall PFX=${PFX}
 endif
 
-
 # windows compiler prefix
 WCP=i386-mingw32
 WCP=i686-pc-mingw32
@@ -137,5 +134,12 @@ w32: src/sdb-version.h
 	cd src ; \
 	${MAKE} OS=w32 WCP=${WCP} CC=${WCP}-gcc AR=${WCP}-ar RANLIB=${WCP}-ranlib sdb.exe
 
-.PHONY: all ${VALADIR} clean dist w32
+# ios toolchain
+IOS_CC=$(shell xcrun --sdk iphoneos --find clang) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path) -arch armv7 -arch arm64
+IOS_AR=$(shell xcrun --sdk iphoneos --find ar)
+IOS_RL=$(shell xcrun --sdk iphoneos --find ranlib)
+ios: src/sdb-version.h
+	${MAKE} OS=Darwin ARCH=arm CC="${IOS_CC}" AR="${IOS_AR}" RANLIB="${IOS_RL}" HAVE_VALA= all
+
+.PHONY: all ${VALADIR} clean dist w32 ios
 .PHONY: install-dirs install uninstall deinstall symstall

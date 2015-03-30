@@ -73,29 +73,29 @@ ifeq (${OS},Darwin)
 SOEXT=dylib
 SOVER=dylib
 LDFLAGS+=-dynamic
-ifeq (${ARCH},i386)
+  ifeq (${ARCH},i386)
 #CC+=-arch i386
 CC+=-arch x86_64
-endif
+  endif
 else
-ifneq (,$(findstring CYGWIN,${OSTYPE}))
+  ifneq (,$(findstring CYGWIN,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
 SOEXT=dll
 SOVER=${SOEXT}
 LDFLAGS_SHARED?=-shared
-else
-ifneq (,$(findstring MINGW32,${OSTYPE}))
+  else
+    ifneq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 SOEXT=dll
 SOVER=${SOEXT}
-else
+    else
 CFLAGS+=-fPIC
 SOVERSION=0
 SOEXT=so
 SOVER=${SOEXT}.${SDBVER}
 LDFLAGS_SHARED?=-fPIC 
-endif
-endif
+    endif
+  endif
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)
 endif
 

@@ -204,6 +204,8 @@ int sdb_array_insert (Sdb* s, const char *key, int idx, const char *val, ut32 ca
 int sdb_array_insert_num (Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
 int sdb_array_unset (Sdb* s, const char *key, int n, ut32 cas); // leaves empty bucket
 int sdb_array_delete (Sdb* s, const char *key, int n, ut32 cas);
+void sdb_array_sort (Sdb* s, const char *key, ut32 cas);
+void sdb_array_sort_num (Sdb* s, const char *key, ut32 cas);
 // set
 int sdb_array_add (Sdb* s, const char *key, const char *val, ut32 cas);
 int sdb_array_add_num (Sdb* s, const char *key, ut64 val, ut32 cas);

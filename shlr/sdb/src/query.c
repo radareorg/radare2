@@ -179,12 +179,20 @@ repeat:
 	is_ref = 0;
 	quot = NULL;
 	json = NULL;
-	if (next) *next = ';';
+	if (*p == '#') {
+		p++;
+		next = strchr (p, ';');
+		if (next) *next = 0;
+		out_concat (sdb_fmt(0, "0x%08x\n", sdb_hash (p)));
+		if (next) *next = ';';
+		goto runNext;
+	} else
 	if (*p == '%') {
 		encode = 1;
 		cmd++;
 		p++;
 	}
+	if (next) *next = ';';
 	eq = strchr (p, '=');
 	if (eq) {
 		d = 1;
@@ -663,6 +671,7 @@ next_quote:
 			}
 		}
 	}
+runNext:
 	if (next) {
 		if (bufset) {
 			free (buf);
