@@ -282,8 +282,16 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	return list;
 }
 
+static int var_comparator (const RAnalVar *a, const RAnalVar *b){
+	//avoid NULL dereference
+	if ( a && b)
+		return a->delta > b->delta;
+	return R_FALSE;
+}
+
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind) {
 	RList *list = r_anal_var_list(anal, fcn, kind);
+	r_list_sort (list, var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
 	r_list_foreach (list, iter, var) {

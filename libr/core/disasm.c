@@ -731,6 +731,14 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 	r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
 }
 
+
+static int var_comparator (const RAnalVar *a, const RAnalVar *b){
+	//avoid NULL dereference
+	if ( a && b)
+		return a->delta > b->delta;
+	return R_FALSE;
+}
+
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	RAnalFunction *f;
 	char *sign;
@@ -789,11 +797,12 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		char spaces[32];
 		RList *args = r_anal_var_list (core->anal, f, 'a');
 		RList *vars = r_anal_var_list (core->anal, f, 'v');
-		r_list_join (vars, args);
+		r_list_sort (args, var_comparator);
+		r_list_sort (vars, var_comparator);
+		r_list_join (args, vars);
 		RAnalVar *var;
 		RListIter *iter;
-		// TODO: show first args, and then vars
-		r_list_foreach (vars, iter, var) {
+		r_list_foreach (args, iter, var) {
 			int idx;
 			memset (spaces, ' ', sizeof(spaces));
 			idx = 12-strlen (var->name);
