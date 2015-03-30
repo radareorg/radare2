@@ -15,12 +15,12 @@ compiler:
 # the logs shorter than 10k lines (the maximum that's displayed).
 env:
   # TODO: run t.archos, once we have Linux tests in there.
-  - TESTS=t               # core stuff
-  - TESTS=t.asm           # (dis)assemblers
-  - TESTS=t.anal          # analysis
-  - TESTS=t.formats       # file formats
-  - TESTS=t.esil          # esil related
-
+  - TESTS=asm              # (dis)assemblers
+  - TESTS=tools            # esil related 
+  - TESTS=anal             # analysis
+  - TESTS=formats          # file formats
+  - TESTS=esil             # esil related 
+  
 # Additional depencies like capstone are downloaded by the r2 makefiles.
 install:
   - sudo apt-get install dc # GNU dc, used by r2r.
@@ -44,4 +44,4 @@ script:
   - sudo make install
   - cd radare2-regressions
   # Run the tests, report only regressions as errors.
-  - VERBOSE=1 ./run_tests.sh $TESTS
+  - VERBOSE=1 make $TESTS
