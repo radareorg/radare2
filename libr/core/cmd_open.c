@@ -376,6 +376,10 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'c':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		// memleak? lose all settings wtf
 		// if load fails does not fallbacks to previous file
 		r_core_fini (core);
