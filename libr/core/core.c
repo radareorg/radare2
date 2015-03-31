@@ -1515,9 +1515,14 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str) {
-	const char *editor;
+	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name, *ret = NULL;
 	int len, fd;
+
+	if (!editor || !*editor) {
+		return NULL;
+	}
+
 	if (file) {
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
@@ -1532,11 +1537,13 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 	if (str) write (fd, str, strlen (str));
 	close (fd);
 
-	editor = r_config_get (core->config, "cfg.editor");
-	if (!editor || !*editor || !strcmp (editor, "-")) {
+	if (name && (!editor || !*editor || !strcmp (editor, "-"))) {
 		r_cons_editor (name, NULL);
-	} else r_sys_cmdf ("%s '%s'", editor, name);
-	ret = r_file_slurp (name, &len);
+	} else {
+		if (editor && name)
+			r_sys_cmdf ("%s '%s'", editor, name);
+	}
+	ret = name? r_file_slurp (name, &len): 0;
 	if (ret) {
 		if (len && ret[len - 1] == '\n')
 			ret[len-1] = 0; // chop

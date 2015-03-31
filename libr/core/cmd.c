@@ -1272,11 +1272,11 @@ next:
 			r_config_set_i (core->config, "scr.color", ocolor);
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
-			if (editor && *editor)
+			if (editor && *editor) {
 				r_sys_cmdf ("%s '%s'", editor, str);
-			else eprintf ("No cfg.editor configured\n");
+				r_file_rm (str);
+			} else eprintf ("No cfg.editor configured\n");
 			r_config_set_i (core->config, "scr.color", ocolor);
-			r_file_rm (str);
 			free (str);
 		}
 		return ret;
