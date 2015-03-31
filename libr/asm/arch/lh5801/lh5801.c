@@ -196,7 +196,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* dca (r) */
 		.iclass = LH5801_INSNC_DCA,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_FD_MOD,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x8c,
 	},
 	{ /* adr r */
@@ -216,25 +216,84 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* sbc (r) */
 		.iclass = LH5801_INSNC_SBC,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x01
 	},
 	{ /* sbc (0000h) */
 		.iclass = LH5801_INSNC_SBC,
-		.format = LH5801_IFMT_IMM2|LH5801_IFMT_RMEM,
+		.format = LH5801_IFMT_IMM2|LH5801_IFMT_FD_MOD,
 		.opcode = 0xa1
 	},
-	{ /* sbi a,i */
+	{ /* sbi a, 00h */
 		.iclass = LH5801_INSNC_SBI,
 		.format = LH5801_IFMT_AREG|LH5801_IFMT_IMM1,
 		.opcode = 0xb1
 	},
 	{ /* dcs (r) */
 		.iclass = LH5801_INSNC_DCS,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x0c
 	},
-
+	{ /* and (r) */
+		.iclass = LH5801_INSNC_AND,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0x09
+	},
+	{ /* and (0000h) */
+		.iclass = LH5801_INSNC_AND,
+		.format = LH5801_IFMT_IMM2|LH5801_IFMT_FD_MOD,
+		.opcode = 0xa9
+	},
+	{ /* ani a, 00h */
+		.iclass = LH5801_INSNC_ANI,
+		.format = LH5801_IFMT_IMM1|LH5801_IFMT_AREG,
+		.opcode = 0xb9
+	},
+	{ /* ani (r), 00h */
+		.iclass = LH5801_INSNC_ANI,
+		.format = LH5801_IFMT_IMM1|LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0x49
+	},
+	{ /* ani (0000h), 00h */
+		.iclass = LH5801_INSNC_ANI,
+		.format = LH5801_IFMT_IMM3|LH5801_IFMT_FD_MOD,
+		.opcode = 0xe9
+	},
+	{ /* ora (r) */
+		.iclass = LH5801_INSNC_ORA,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0x0b
+	},
+	{ /* ora (0000h) */
+		.iclass = LH5801_INSNC_ORA,
+		.format = LH5801_IFMT_IMM2|LH5801_IFMT_FD_MOD,
+		.opcode = 0xab
+	},
+	{ /* ori a, 00h */
+		.iclass = LH5801_INSNC_ORI,
+		.format = LH5801_IFMT_AREG|LH5801_IFMT_IMM1,
+		.opcode = 0xbb
+	},
+	{ /* ori (r), 00h */
+		.iclass = LH5801_INSNC_ORI,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_IMM1|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0x4b
+	},
+	{ /* ori (0000h), 00h */
+		.iclass = LH5801_INSNC_ORI,
+		.format = LH5801_IFMT_IMM3|LH5801_IFMT_FD_MOD,
+		.opcode = 0xeb
+	},
+	{ /* eor (r) */
+		.iclass = LH5801_INSNC_EOR,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0x0d
+	},
+	{ /* eor (0000h) */
+		.iclass = LH5801_INSNC_EOR,
+		.format = LH5801_IFMT_IMM2|LH5801_IFMT_FD_MOD,
+		.opcode = 0xad
+	},
 	{ /* eai 00h */
 		.iclass = LH5801_INSNC_EAI,
 		.format = LH5801_IFMT_IMM1,
@@ -292,7 +351,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* cpa (r) */
 		.iclass = LH5801_INSNC_CPA,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x07
 	},
 	{ /* cpa (0000h) */
@@ -317,7 +376,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* bit (r) */
 		.iclass = LH5801_INSNC_BIT,
-		.format = LH5801_IFMT_RREG,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x0f
 	},
 	{ /* bit (0000h) */
@@ -325,17 +384,17 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 		.format = LH5801_IFMT_IMM2|LH5801_IFMT_FD_MOD,
 		.opcode = 0xaf
 	},
-	{ /* bii a,i */
+	{ /* bii a, 00h */
 		.iclass = LH5801_INSNC_BII,
 		.format = LH5801_IFMT_AREG|LH5801_IFMT_IMM1,
 		.opcode = 0xbf
 	},
-	{ /* bii (r),i */
+	{ /* bii (r), 00h */
 		.iclass = LH5801_INSNC_BII,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_FD_MOD|LH5801_IFMT_IMM1,
-		.opcode = 0x4b
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_IMM1|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0x4d
 	},
-	{ /* bii (0000h),i */
+	{ /* bii (0000h), 00h */
 		.iclass = LH5801_INSNC_BII,
 		.format = LH5801_IFMT_IMM3|LH5801_IFMT_FD_MOD,
 		.opcode = 0xed
@@ -352,7 +411,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* lda (r) */
 		.iclass = LH5801_INSNC_LDA,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_FD_MOD,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x05,
 	},
 	{ /* lda (0000h) */
@@ -370,27 +429,26 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 		.format = LH5801_IFMT_RREG,
 		.opcode = 0x45,
 	},
-	{ /* ldi rl, i */
+	{ /* ldi rl, 00h */
 		.iclass = LH5801_INSNC_LDI,
 		.format = LH5801_IFMT_RREG|LH5801_IFMT_RLOW|LH5801_IFMT_IMM1,
 		.opcode = 0x4a,
 	},
-	{ /* ldi rh, i */
+	{ /* ldi rh, 00h */
 		.iclass = LH5801_INSNC_LDI,
 		.format = LH5801_IFMT_RREG|LH5801_IFMT_RHIGH|LH5801_IFMT_IMM1,
 		.opcode = 0x48,
 	},
-	{ /* ldi a, i */
+	{ /* ldi a, 00h */
 		.iclass = LH5801_INSNC_LDI,
 		.format = LH5801_IFMT_AREG|LH5801_IFMT_IMM1,
 		.opcode = 0xb5
 	},
-	{ /* ldi s, ij */
+	{ /* ldi s, 0000h */
 		.iclass = LH5801_INSNC_LDI,
-		.format = LH5801_IFMT_AREG|LH5801_IFMT_IMM2,
+		.format = LH5801_IFMT_SREG|LH5801_IFMT_IMM2,
 		.opcode = 0xaa
 	},
-
 	{ /* ldx r */
 		.iclass = LH5801_INSNC_LDX,
 		.format = LH5801_IFMT_FD_YES|LH5801_IFMT_RREG,
@@ -398,12 +456,12 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* ldx s */
 		.iclass = LH5801_INSNC_LDX,
-		.format = LH5801_IFMT_FD_YES,
+		.format = LH5801_IFMT_FD_YES|LH5801_IFMT_SREG,
 		.opcode = 0x48,
 	},
 	{ /* ldx p */
 		.iclass = LH5801_INSNC_LDX,
-		.format = LH5801_IFMT_FD_YES,
+		.format = LH5801_IFMT_FD_YES|LH5801_IFMT_PREG,
 		.opcode = 0x58
 	},
 	{ /* sta rl */
@@ -418,7 +476,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 	},
 	{ /* sta (r) */
 		.iclass = LH5801_INSNC_STA,
-		.format = LH5801_IFMT_RREG|LH5801_IFMT_FD_MOD,
+		.format = LH5801_IFMT_RREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0x0e
 	},
 	{ /* sta (0000h) */
@@ -492,9 +550,14 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 		.opcode = 0xf7
 	},
 	{ /* rol */
+		/* FIXME:
+		 * In the technical reference manual rol is encoded as 0xd8
+		 * (vej d8h) in one table and 0xdd (inc a) in another. The
+		 * actual encoding of rol should be used instead.
+		 */
 		.iclass = LH5801_INSNC_ROL,
 		.format = 0,
-		.opcode = 0xdb
+		.opcode = 0xdd
 	},
 	{ /* ror */
 		.iclass = LH5801_INSNC_ROR,
@@ -511,7 +574,21 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 		.format = 0,
 		.opcode = 0xd5
 	},
-
+	{ /* drl (x) */
+		.iclass = LH5801_INSNC_DRL,
+		.format = 0, //LH5801_IFMT_XREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0xd7
+	},
+	{ /* drr (x) */
+		.iclass = LH5801_INSNC_DRR,
+		.format = 0, //LH5801_IFMT_XREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.opcode = 0xd3
+	},
+	{ /* aex */
+		.iclass = LH5801_INSNC_AEX,
+		.format = 0,
+		.opcode = 0xf1
+	},
 	{ /* am0 */
 		.iclass = LH5801_INSNC_AM0,
 		.format = LH5801_IFMT_FD_YES,
@@ -632,7 +709,23 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 		.format = LH5801_IFMT_VEJ,
 		.opcode = 0xc0
 	},
-
+	{ /* vcc 00h */
+		.iclass = LH5801_INSNC_VCC,
+		.format = LH5801_IFMT_IMM1|LH5801_IFMT_COND,
+		.opcode = 0xc1
+	},
+	{ /* vmj 00h */
+		/* FIXME:
+		 * This instruction is documented in the technical reference
+		 * manual, but when decoded in the same way as bcc, it looks
+		 * like vvr (vector jump if overflow is reset).
+		 * It should be tested what the hardware does on vmj with the
+		 * overflow bit set.
+		 */
+		.iclass = LH5801_INSNC_VMJ,
+		.format = LH5801_IFMT_IMM1,
+		.opcode = 0xcd
+	},
 	{ /* rtn */
 		.iclass = LH5801_INSNC_RTN,
 		.format = 0,
@@ -668,20 +761,21 @@ int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len)
 	for (i = 0; i < ARRAY_LENGTH(lh5801_insn_descs); i++) {
 		ut8 byte = *buf;
 		unsigned fmt;
+		unsigned ifmt_reg;
 
 		desc = lh5801_insn_descs[i];
 		fmt = desc.format;
+		ifmt_reg = fmt & LH5801_IFMT_REG_MASK;
 
 		if(!lh5801_ifmt_fd_matches(fmt, fd))
 			continue;
 
-				/* HACKHACK */
 		/* Ignore instructions referencing the register number 3. */
-		if ((fmt & LH5801_IFMT_RREG) && (byte >> 4) % 4 == 3)
-			continue;		/* TODO: ^ write a macro */
+		if (ifmt_reg == LH5801_IFMT_RREG && (byte >> 4) % 4 == 3)
+			continue;
 
 		/* Reduce the opcode byte to the relevant bits */
-		if (fmt & LH5801_IFMT_RREG)
+		if (ifmt_reg == LH5801_IFMT_RREG)
 			byte &= 0xcf;	/* xxRRxxxx */
 		if (fmt & LH5801_IFMT_COND)
 			byte &= 0xf1;	/* xxxxCCCx */
@@ -750,7 +844,7 @@ static char *print_reg(char *buf, const struct lh5801_insn *insn)
 		buf[2] = '\0';
 		break;
 	case LH5801_IFMT_RMEM:
-		/* Note: LH5801_IFMT_FD_MOD is assumed here. */
+		assert(desc.format & LH5801_IFMT_FD_MOD);
 		if (insn->fd)
 			*(buf++) = '#';
 		buf[0] = '(';
@@ -758,6 +852,7 @@ static char *print_reg(char *buf, const struct lh5801_insn *insn)
 		buf[2] = ')';
 		buf[3] = '\0';
 		break;
+	default: assert(0);
 	}
 	return saved_buf;
 }
@@ -807,7 +902,6 @@ void lh5801_print_insn(char *out, int size, const struct lh5801_insn *insn)
 	case LH5801_IFMT_IMM0|LH5801_IFMT_AREG:
 	case LH5801_IFMT_IMM0|LH5801_IFMT_SREG:
 	case LH5801_IFMT_IMM0|LH5801_IFMT_PREG:
-		strcpy(out, "yo");
 		snprintf(out, size, "%s %s", mnem, print_reg(regbuf, insn));
 		break;
 	case LH5801_IFMT_IMM1:
@@ -817,16 +911,28 @@ void lh5801_print_insn(char *out, int size, const struct lh5801_insn *insn)
 	case LH5801_IFMT_IMM1|LH5801_IFMT_AREG:
 	case LH5801_IFMT_IMM1|LH5801_IFMT_SREG:
 	case LH5801_IFMT_IMM1|LH5801_IFMT_PREG:
-		snprintf(out, size, "%s %s,%02xh", mnem,
+		snprintf(out, size, "%s %s, %02xh", mnem,
 			print_reg(regbuf, insn), insn->imm[0]);
 		break;
 	case LH5801_IFMT_IMM1|LH5801_IFMT_BCH:
 		snprintf(out, size, "%s %c%02xh", mnem,
 			(insn->opcode & 0x10)? '-':'+', insn->imm[0]);
 		break;
-	case LH5801_IFMT_IMM2: /* TODO: handle immediate memory access */
-		snprintf(out, size, "%s %02x%02xh", mnem,
-			insn->imm[0], insn->imm[1]);
+	case LH5801_IFMT_IMM2:
+		if (desc.format & LH5801_IFMT_FD_MOD) {
+			snprintf(out, size, "%s %s(%02x%02xh)", mnem,
+				insn->fd? "#":"",
+				insn->imm[0], insn->imm[1]);
+		} else {
+			snprintf(out, size, "%s %02x%02xh", mnem,
+				insn->imm[0], insn->imm[1]);
+		}
+		break;
+	case LH5801_IFMT_IMM3:
+		assert(desc.format & LH5801_IFMT_FD_MOD);
+		snprintf(out, size, "%s %s(%02x%02xh), %02xh", mnem,
+			insn->fd? "#":"",
+			insn->imm[0], insn->imm[1], insn->imm[2]);
 		break;
 	default:
 		snprintf(out, size, "%s, BUG: unknown format 0x%x -> 0x%x",
