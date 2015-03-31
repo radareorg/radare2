@@ -654,10 +654,12 @@ repeat:
 			goto beach;
 		break;
 	case 9: // tab
-		curnode++;
-		if (!nodes[curnode].text)
-			curnode = 0;
-		updateSeek (can, &N, w, h, 0);
+		if (curnode+1<n_nodes) {
+			curnode++;
+			if (!nodes[curnode].text)
+				curnode = 0;
+			updateSeek (can, &N, w, h, 0);
+		}
 		break;
 	case '?':
 		r_cons_clear00 ();

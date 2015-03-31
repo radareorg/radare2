@@ -546,6 +546,8 @@ typedef struct r_anal_callbacks_t {
 	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
 } RAnalCallbacks;
 
+#define R_ANAL_ESIL_GOTO_LIMIT 4096
+
 typedef struct r_anal_t {
 	char *cpu;
 	int bits;
@@ -576,6 +578,7 @@ typedef struct r_anal_t {
 	int recont; // continue on recurse analysis mode
 	int maxreflines;
 	int trace;
+	int esil_goto_limit;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
@@ -846,7 +849,6 @@ typedef struct r_anal_esil_t {
 	int repeat;
 	int parse_stop;
 	int parse_goto;
-	int parse_goto_limit;
 	int parse_goto_count;
 	int debug;
 	ut64 flags;
@@ -1044,7 +1046,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-R_API RAnalEsil *r_anal_esil_new (void);
+R_API RAnalEsil *r_anal_esil_new ();
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);

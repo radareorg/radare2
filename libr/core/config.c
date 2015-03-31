@@ -492,6 +492,18 @@ static int cb_dbgbackend(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_gotolimit(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (r_sandbox_enable (0)) {
+		eprintf ("Cannot change gotolimit\n");
+		return R_FALSE;
+	}
+	if (core->anal->esil)
+		core->anal->esil_goto_limit = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_esildebug (void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -973,6 +985,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB("esil.debug", "false", &cb_esildebug, "Show esil debug info");
+	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per esil expression");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it

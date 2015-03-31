@@ -14,14 +14,12 @@ static inline ut64 mask (int bits) {
 }
 
 /* magic limit */
-#define R_ANAL_ESIL_GOTO_LIMIT 457
 // TODO: this must be configurable from 'e' somehow
 
 R_API RAnalEsil *r_anal_esil_new() {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) return NULL;
-	esil->parse_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
-	esil->parse_goto_count = esil->parse_goto_limit;
+	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
 	return esil;
 }
@@ -2247,7 +2245,6 @@ static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 static int runword (RAnalEsil *esil, const char *word) {
 	RAnalEsilOp op = NULL;
 	esil->parse_goto_count--;
-
 	if (esil->parse_goto_count<1) {
 		eprintf ("ESIL infinite loop detected\n");
 		esil->trap = 1; // INTERNAL ERROR
@@ -2348,7 +2345,11 @@ loop:
 	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
-	esil->parse_goto_count = esil->parse_goto_limit;
+	if (esil->anal) {
+		esil->parse_goto_count = esil->anal->esil_goto_limit;
+	} else {
+		esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
+	}
 	str = ostr;
 repeat:
 	wordi = 0;
@@ -2435,6 +2436,7 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 	// this is: set
 	esil->debug = 1;
 	esil->anal = anal;
+	esil->parse_goto_count = anal->esil_goto_limit;
 	esil->trap = 0;
 	esil->trap_code = 0;
 	//esil->user = NULL;
