@@ -482,6 +482,7 @@ char *ddcb[]={
 	"ld l, set 7, [ix+0x%02x]",
 	"set 7, [ix+0x%02x]",
 	"ld a, set 7, [ix+0x%02x]",
+	"%x\rinvalid",			//HACK
 };
 
 char *fdcb[]={				//fdcb
@@ -685,6 +686,7 @@ char *fdcb[]={				//fdcb
 	"ld l, set 7, [iy+0x%02x]",
 	"set 7, [iy+0x%02x]",
 	"ld a, set 7, [iy+0x%02x]",
+	"%x\rinvalid",					//HACK
 };
 
 

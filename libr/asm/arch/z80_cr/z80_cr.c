@@ -3,6 +3,7 @@
 #include <r_asm.h>
 #include <r_types.h>
 #include <stdio.h>
+#include <string.h>
 #include "z80_tab.h"
 
 static ut8 z80_fddd_branch_index_res (ut8 hex)
@@ -153,6 +154,32 @@ static ut8 z80_ed_branch_index_res (ut8 hex) {
 	return 0x3b;
 }
 
+static ut8 z80_op_24_branch_index_res (ut8 hex) {
+	if (hex < 0x40)
+		return hex;
+	switch (hex) {
+		case 0x46:
+			return 0x40;
+		case 0x4e:
+			return 0x41;
+		case 0x56:
+			return 0x42;
+		case 0x5e:
+			return 0x43;
+		case 0x66:
+			return 0x44;
+		case 0x6e:
+			return 0x45;
+		case 0x76:
+			return 0x46;
+		case 0x7e:
+			return 0x47;
+	}
+	if (hex > 0x7f)
+		return hex-0x38;
+	return 0xc8;
+}
+
 static int z80OpLength (const ut8 *buf, int len) {
 	z80_opcode *op;
 	int type = 0, ret = 0;
@@ -229,8 +256,10 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 				sprintf (op->buf_asm, z_op[res].name, buf[2], buf[3]);
 			if (z_op[res].type == (Z80_OP24^Z80_ARG8)) {
 				cb_tab = (char **) z_op[res].op_moar;
-				sprintf (op->buf_asm, cb_tab[buf[3]], buf[2]);
+				sprintf (op->buf_asm, cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
 			}
 	}
+	if (!strcmp (op->buf_asm, "invalid"))
+		ret = 0;
 	return ret;
 }
