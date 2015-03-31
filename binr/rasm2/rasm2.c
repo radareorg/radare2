@@ -111,8 +111,10 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 			if (*ptr!=' ' && *ptr!='\n' && *ptr!='\r')
 				if (!(++word%2)) clen++;
 		data = malloc (clen+1);
-		if (r_hex_str2bin (buf, data)==-1)
+		if (r_hex_str2bin (buf, data)<1) {
+			ret = 0;
 			goto beach;
+		}
 	}
 
 	if (!len || clen <= len)
