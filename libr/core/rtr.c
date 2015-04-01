@@ -1038,7 +1038,7 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
 		for (i = 0; i < RTR_MAX_HOSTS; i++)
-			if (rtr_host[i].fd->fd == fd) {
+			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
 				r_socket_free (rtr_host[i].fd);
 				rtr_host[i].fd = NULL;
 				if (rtr_n == i)
