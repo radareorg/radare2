@@ -15,12 +15,29 @@ compiler:
 # the logs shorter than 10k lines (the maximum that's displayed).
 env:
   # TODO: run t.archos, once we have Linux tests in there.
+ 
+  #- Analysis
+  - TESTS=anal.arm
+  - TESTS=anal.java
+  - TESTS=anal.mips
+  - TESTS=anal.others
+  - TESTS=anal.x86
+  - TESTS=anal.x86
+  - TESTS=esil
+  
+  #- Formats
+  - TESTS=format.pe
+  - TESTS=format.pe
+  - TESTS=format.pe
+  - TESTS=format.pe
+  - TESTS=format.pe
+  - TESTS=format.pe
+  
   - TESTS=commands         # r2 commands related
   - TESTS=asm              # (dis)assemblers
   - TESTS=tools            # tools related 
-  - TESTS=anal             # analysis
   - TESTS=formats          # file formats
-  - TESTS=esil             # esil related 
+
   
 # Additional depencies like capstone are downloaded by the r2 makefiles.
 install:
