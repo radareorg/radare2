@@ -999,6 +999,32 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static int x86_cs_custom_dup (RAnalEsil *esil)
+{
+	char *dup_me;
+	ut64 dup;
+	if (!esil)
+		return R_FALSE;
+	dup_me = r_anal_esil_pop (esil);
+	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
+		return R_FALSE;
+	free (dup_me);
+	return r_anal_esil_pushnum (esil, dup);
+}
+
+static int esil_x86_cs_init (RAnalEsil *esil)
+{
+	if (!esil)
+		return R_FALSE;
+	r_anal_esil_set_op (esil, "DUP", x86_cs_custom_dup);
+	return R_TRUE;
+}
+
+static int esil_x86_cs_fini (RAnalEsil *esil)
+{
+	return R_TRUE;
+}
+
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
@@ -1008,6 +1034,8 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.bits = 16|32|64,
 	.op = &analop,
 	//.set_reg_profile = &set_reg_profile,
+	.esil_init = esil_x86_cs_init,
+	.esil_fini = esil_x86_cs_fini,
 };
 
 #ifndef CORELIB
