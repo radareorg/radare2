@@ -719,10 +719,14 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 			r_core_read_at (core, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-			buf_asm = r_print_colorize_opcode (asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num);
-			r_cons_printf (" %s%s;", buf_asm, Color_RESET);
-			free (buf_asm);
+			if (colorize) {
+				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
+						core->cons->pal.reg, core->cons->pal.num);
+				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
+				free (buf_asm);
+			} else {
+				r_cons_printf (" %s;", asmop.buf_asm);
+			}
 			free (buf);
 		}
 		break;
