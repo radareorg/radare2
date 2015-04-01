@@ -183,6 +183,7 @@ static int cmd_write(void *data, const char *input) {
 		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
 		"w","[1248][+-][n]","increment/decrement byte,word..",
 		"w"," foobar","write string 'foobar'",
+		"w0"," [len]","write 'len' bytes with value 0x00",
 		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 		"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
 		"waf"," file","assemble file and write bytes",
@@ -225,6 +226,18 @@ static int cmd_write(void *data, const char *input) {
 		default:
 			eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");
 			break;
+		}
+		break;
+	case '0':
+		{
+			ut64 len = r_num_math (core->num, input+2);
+			if (len>0) {
+				ut8 *buf = calloc (1, len);
+				if (buf) {
+					r_io_write (core->io, buf, len);
+					free (buf);
+				} else eprintf ("Cannot allocate %d bytes\n", (int)len);
+			}
 		}
 		break;
 	case '1':
