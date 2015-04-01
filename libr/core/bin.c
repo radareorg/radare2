@@ -394,7 +394,12 @@ static int bin_info (RCore *r, int mode) {
 				pair ("guid", info->guid);
 			if (info->debug_file_name)
 				pair ("dbg_file", info->debug_file_name);
-
+			char *timeDateStamp_string = NULL;
+			Sdb *info_ns = sdb_ns(binfile->sdb, "info", R_FALSE);
+			if (info_ns)
+				timeDateStamp_string = sdb_get(info_ns, "image_file_header.TimeDateStamp_string", 0);
+			if (timeDateStamp_string)
+				pair ("compiled", timeDateStamp_string);
 			for (i=0; info->sum[i].type; i++) {
 				int len;
 				//ut8 *sum = &info; // XXX
