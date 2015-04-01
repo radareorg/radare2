@@ -999,6 +999,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
+#if 0
 static int x86_cs_custom_dup (RAnalEsil *esil)
 {
 	char *dup_me;
@@ -1024,6 +1025,7 @@ static int esil_x86_cs_fini (RAnalEsil *esil)
 {
 	return R_TRUE;
 }
+#endif
 
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
@@ -1034,8 +1036,8 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.bits = 16|32|64,
 	.op = &analop,
 	//.set_reg_profile = &set_reg_profile,
-	.esil_init = esil_x86_cs_init,
-	.esil_fini = esil_x86_cs_fini,
+	//.esil_init = esil_x86_cs_init,
+	//.esil_fini = esil_x86_cs_fini,
 };
 
 #ifndef CORELIB

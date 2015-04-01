@@ -2150,6 +2150,19 @@ static int esil_mem_deceq(RAnalEsil *esil) {
 	return 0;
 }
 
+static int esil_dup (RAnalEsil *esil)
+{
+	char *dup_me;
+	ut64 dup;
+	if (!esil)
+		return R_FALSE;
+	dup_me = r_anal_esil_pop (esil);
+	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
+		return R_FALSE;
+	free (dup_me);
+	return r_anal_esil_pushnum (esil, dup);
+}
+
 static int esil_smaller(RAnalEsil *esil) {		// 'src < dst' => 'src,dst,<'
 	int ret = 0;
 	ut64 s, d;
@@ -2541,6 +2554,7 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 	r_anal_esil_set_op (esil, "GOTO", esil_goto);
 	r_anal_esil_set_op (esil, "BREAK", esil_break);
 	r_anal_esil_set_op (esil, "CLEAR", esil_clear);
+	r_anal_esil_set_op (esil, "DUP", esil_dup);
 	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini)
 		return anal->cur->esil_init (esil);
 	return R_TRUE;
