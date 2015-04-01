@@ -199,6 +199,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					r_io_pread (io, j, buf, bsize);
 					from = j;
 					to = j+bsize;
+					if (to>fsize)
+						to = fsize;
 					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
 				}
 				from = ofrom;
