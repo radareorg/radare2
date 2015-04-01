@@ -453,7 +453,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					char *src = getarg (handle, insn, 1, 0);
 					char *dst = getarg (handle, insn, 0, 0);
-					esilprintf (op, "%s,%s,&,0,==,%%z,zf,=,%%p,pf,=,%%s,sf,=,0,cf,=,0,of,=",
+					esilprintf (op, "0,%s,%s,&,==,%%z,zf,=,%%p,pf,=,%%s,sf,=,0,cf,=,0,of,=",
 						src, dst);
 					free (src);
 					free (dst);
