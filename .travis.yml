@@ -26,7 +26,7 @@ env:
   
   #- Formats
   #- TESTS=format.pe
-  - TESTS=format.pdb
+  #- TESTS=format.pdb
   - TESTS=format.mangling
   - TESTS=format.msil
   - TESTS=format.elf
