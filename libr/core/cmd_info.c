@@ -120,7 +120,7 @@ static void r_core_file_info (RCore *core, int mode) {
 				pair ("referer", cf->desc->referer);
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
 			pair ("size", sdb_fmt (0,"0x%"PFMT64x, r_io_desc_size (core->io, cf->desc)));
-			pair ("blksize", sdb_fmt (0, "0x%"PFMT64x,
+			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 				(ut64)core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
 			pair ("uri", cf->desc->uri);

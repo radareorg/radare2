@@ -389,7 +389,7 @@ static int bin_info (RCore *r, int mode) {
 			pair ("lsyms", r_str_bool (R_BIN_DBG_SYMS &info->dbg_info));
 			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
 			pair ("rpath", info->rpath);
-			pair ("size", size_str);
+			pair ("binsz", size_str);
 			if (info->guid && *info->guid)
 				pair ("guid", info->guid);
 			if (info->debug_file_name)
