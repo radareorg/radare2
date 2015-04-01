@@ -37,7 +37,7 @@ char *cdb_alloc(ut32 n) {
 	if (!posix_memalign (&ret, ALIGNMENT, n))
 		return ret;
 	return NULL;
-#elif __WINDOWS__
+#elif __WINDOWS__ && !__CYGWIN__
 	return _aligned_malloc (n, ALIGNMENT);
 #else
 	return malloc (n);
