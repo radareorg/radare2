@@ -1588,10 +1588,48 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 		}
 		break;
+	case '?':
+		if (input[1]=='?') {
+			const char* help_msg[] = {
+				"Examples:", "ESIL", " examples and documentation",
+				"+", "=", "A+=B => B,A,+=",
+				"+", "", "A=A+B => B,A,+,A,=",
+				"*", "=", "A*=B => B,A,*=",
+				"/", "=", "A/=B => B,A,/=",
+				"&", "=", "and ax, bx => bx,ax,&=",
+				"|", "", "or r0, r1, r2 => r2,r1,|,r0,=",
+				"^", "=", "xor ax, bx => bx,ax,^=",
+				">>", "=", "shr ax, bx => bx,ax,>>=  # shift right",
+				"<<", "=", "shr ax, bx => bx,ax,<<=  # shift left",
+				"", "[]", "mov eax,[eax] => eax,[],eax,=",
+				"=", "[]", "mov [eax+3], 1 => 1,3,eax,+,=[]",
+				"=", "[1]", "mov byte[eax],1 => 1,eax,=[1]",
+				"=", "[8]", "mov [rax],1 => 1,rax,=[8]",
+				"$", "", "int 0x80 => 0x80,$",
+				"$$", "", "simulate a hardware trap",
+				"==", "", "pops twice, compare and update esil flags",
+				"<", "", "compare for smaller",
+				"<", "=", "compare for smaller or equal",
+				">", "", "compare for bigger",
+				">", "=", "compare bigger for or equal",
+				"?{", "", "if poped value != 0 run the block until }",
+				"POP", "", "drops last element in the esil stack",
+				"TODO", "", "the instruction is not yet esilized",
+				"STACK", "", "show contents of stack",
+				"CLEAR", "", "clears the esil stack",
+				"BREAK", "", "terminates the string parsing",
+				"GOTO", "", "jump to the Nth word poped from the stack",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
+		/* fall through */
 	default:
 		{
 			const char* help_msg[] = {
 				"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
+				"ae?", "", "show this help",
+				"ae??", "", "show ESIL help",
 				"aei", "", "initialize ESIL VM state",
 				"aeis", "", "initialize ESIL VM stack (aeis- remove)",
 				"aed", "", "deinitialize ESIL VM state",
