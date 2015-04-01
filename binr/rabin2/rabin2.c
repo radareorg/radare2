@@ -725,11 +725,16 @@ int main(int argc, char **argv) {
 }
 	if (action & ACTION_PDB_DWNLD) {
 		int ret;
-		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
+		char *file, *env_pdbserver = r_sys_getenv ("PDB_SERVER");
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
-		RBinInfo *info = r_bin_get_info(core.bin);
-		char *path = r_file_dirname(info->file);
+		RBinInfo *info = r_bin_get_info (core.bin);
+		char *path;
+		if (info->file) {
+			path = r_file_dirname (info->file);
+		} else {
+			path = strdup (".");
+		}
 		if (env_pdbserver && *env_pdbserver)
 			r_config_set (core.config, "pdb.server", env_pdbserver);
 		opt.dbg_file = info->debug_file_name;
