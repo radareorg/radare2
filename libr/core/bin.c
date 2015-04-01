@@ -263,6 +263,13 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
+static void print_compile_time(Sdb *binFileSdb) {
+	Sdb *info_ns = sdb_ns(binFileSdb, "info", R_FALSE);
+	char *timeDateStamp_string = sdb_get(info_ns, "image_file_header.TimeDateStamp_string", 0);
+	if (timeDateStamp_string)
+		pair ("compiled", timeDateStamp_string);
+}
+
 static int bin_info (RCore *r, int mode) {
 	int i, j;
 	char str[R_FLAG_NAME_SIZE];
@@ -398,6 +405,7 @@ static int bin_info (RCore *r, int mode) {
 				pair ("guid", info->guid);
 			if (info->debug_file_name)
 				pair ("dbg_file", info->debug_file_name);
+			print_compile_time(binfile->sdb);
 
 			for (i=0; info->sum[i].type; i++) {
 				int len;
