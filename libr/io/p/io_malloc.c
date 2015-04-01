@@ -19,7 +19,7 @@ typedef struct {
 #define RIOMALLOC_OFF(x) (((RIOMalloc*)x->data)->offset)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !buf || count<0 || fd->data == NULL)
 		return -1;
 	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd))
 		return -1;

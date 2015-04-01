@@ -780,6 +780,8 @@ static int esil_or(RAnalEsil *esil) {
 
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 	int i;
+	if (!esil)
+		return 0;
 	if (esil->trap) {
 		eprintf ("ESIL TRAP type %d 0x%x\n",
 			esil->trap, esil->trap_code);

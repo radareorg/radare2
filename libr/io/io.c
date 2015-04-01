@@ -359,7 +359,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
-	if (!io) return 0;
+	if (!io || !buf || len<0)
+		return 0;
 	if (io->vio)
 		return r_io_read_cr (io, addr, buf, len);
 	if (io->sectonly && !r_list_empty (io->sections)) {
