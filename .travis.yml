@@ -27,11 +27,15 @@ env:
   
   #- Formats
   - TESTS=format.pe
-  - TESTS=format.pe
-  - TESTS=format.pe
-  - TESTS=format.pe
-  - TESTS=format.pe
-  - TESTS=format.pe
+  - TESTS=format.pdb
+  - TESTS=format.mangling
+  - TESTS=format.msil
+  - TESTS=format.elf
+  - TESTS=format.java
+  - TESTS=format.dex
+  - TESTS=format.mach0
+  - TESTS=format.xbe
+  - TESTS=format.firmware
   
   - TESTS=commands         # r2 commands related
   - TESTS=asm              # (dis)assemblers
