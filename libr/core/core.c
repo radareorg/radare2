@@ -217,7 +217,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'v': return op.val; // immediate value
 		case 'l': return op.size;
 		case 'b': return core->blocksize;
-		case 's': return r_io_desc_size (core->io, core->file->desc);
+		case 's':
+			if (core->file) {
+				return r_io_desc_size (core->io, core->file->desc);
+			}
+			return 0LL;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
 			s = r_io_section_vget (core->io, core->offset);
@@ -1222,8 +1226,12 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-							R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
-						pipefd = core->file->desc->fd;
+								R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
+						if (core->file && core->file->desc) {
+							pipefd = core->file->desc->fd;
+						} else {
+							pipefd = -1;
+						}
 						eprintf ("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
