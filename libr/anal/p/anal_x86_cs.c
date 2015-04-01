@@ -640,13 +640,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					esilprintf (op, "of,sf,^,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JLE:
-					esilprintf (op, "of,sf,^,zf,|,%s,%s,=", dst, pc);
+					esilprintf (op, "of,sf,^,zf,|,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JA:
-					esilprintf (op, "cf,!,zf,!,&,?{,%s,%s,=,}",dst, pc);
+					esilprintf (op, "cf,zf,|,!,?{,%s,%s,=,}",dst, pc);
 					break;
 				case X86_INS_JAE:
-					esilprintf (op, "cf,?{,%s,%s,=,}", dst, pc);
+					esilprintf (op, "cf,!,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JB:
 					esilprintf (op, "cf,?{,%s,%s,=,}", dst, pc);
