@@ -174,6 +174,10 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("{");
 	if (!*input)
 		cmd_info_bin (core, offset, va, mode);
+	/* i* is an alias for iI* */
+	if (!strcmp (input, "*")) {
+		input = "I*";
+	}
 	while (*input) {
 		switch (*input) {
 		case 'b':

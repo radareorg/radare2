@@ -350,18 +350,22 @@ static int bin_info (RCore *r, int mode) {
 				//int has_va = (!strcmp (info->rclass, "elf-object"))? 0: 1;
 				//if (!strcmp (info->type, "REL"))...relocatable object..
 				r_cons_printf (
-					"e bin.lang=%s\n"
-					"e file.type=%s\n"
 					"e cfg.bigendian=%s\n"
-					"e asm.os=%s\n"
-					"e asm.arch=%s\n"
-					"e anal.arch=%s\n"
 					"e asm.bits=%i\n"
 					"e asm.dwarf=%s\n",
-					info->lang? info->lang: "",
-					info->rclass, r_str_bool (info->big_endian), info->os,
-					info->arch, info->arch, info->bits,
+					r_str_bool (info->big_endian),
+					info->bits,
 					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
+				if (info->lang && *info->lang)
+					r_cons_printf ( "e bin.lang=%s\n",
+						info->lang);
+				if (info->rclass && *info->rclass)
+					r_cons_printf ( "e file.type=%s\n",
+						info->rclass);
+				if (info->os)
+					r_cons_printf ("e asm.os=%s\n", info->os);
+				if (info->arch)
+					r_cons_printf ("e asm.arch=%s\n", info->arch);
 			}
 		} else {
 			// if type is 'fs' show something different?
