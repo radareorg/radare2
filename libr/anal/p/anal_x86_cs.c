@@ -43,6 +43,7 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 	case X86_OP_MEM:
 		{
 		const char *base = cs_reg_name (handle, op.mem.base);
+		const char *index = cs_reg_name (handle, op.mem.index);
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
 		if (scale>1) {
@@ -103,7 +104,13 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set) {
 							snprintf (buf, sizeof (buf), "0x%x,%s,+,%s[%d]", (int)disp, base, set?"=":"", op.size);
 						}
 					} else {
-						snprintf (buf, sizeof (buf), "%s,%s[%d]", base, set?"=":"", op.size);
+						if (index)
+							if (set)
+								snprintf (buf, sizeof (buf), "%s,%s,+,=[%d]", base, index, op.size);
+							else
+								snprintf (buf, sizeof (buf), "%s,%s,+", base, index);
+						else
+							snprintf (buf, sizeof (buf), "%s,%s[%d]", base, set?"=":"", op.size);
 					}
 				} else {
 					if (disp) {
@@ -356,11 +363,27 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->stackptr = regsz;
 				}
 				if (a->decode) {
-					char *src = getarg (handle, insn, 1, 0);
-					char *dst = getarg (handle, insn, 0, 1);
-					esilprintf (op, "%s,%s", src, dst);
-					free (src);
-					free (dst);
+					if (op->prefix & R_ANAL_OP_PREFIX_REP) {
+						int width = INSOP(0).size;
+						char *src = cs_reg_name(handle, INSOP(1).mem.base);
+						char *dst = cs_reg_name(handle, INSOP(0).mem.base);
+						const char *counter = (a->bits==16)?"cx":
+							(a->bits==32)?"ecx":"rcx";
+						esilprintf (op, "%s,!,?{,BREAK,},%s,0,+,%s,0,+,"\
+											"%s,[%d],%s,=[%d],zf,?{,%d,%s,-=,%d,%s,-=,},"\
+											"zf,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
+											"?{,9,GOTO,},%s,=,%s,=",
+											counter, src, dst, src, width, dst,
+											width, width, src, width, dst, width, src,
+											width, dst, counter, counter, dst, src);
+					}
+					else {
+						char *src = getarg (handle, insn, 1, 0);
+						char *dst = getarg (handle, insn, 0, 1);
+						esilprintf (op, "%s,%s", src, dst);
+					   free (src);
+					   free (dst);
+					}
 				}
 				break;
 			default:
@@ -772,8 +795,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0);
 				char *dst = getarg (handle, insn, 0, 0);
-				esilprintf (op, "%s,%s,^=,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
-					src, dst);
+				if (INSOP(0).mem.index) {
+					int width = INSOP(0).size;
+					esilprintf (op, "%s,%s,^=[%d],%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
+						src, dst, width);
+				} else {
+					esilprintf (op, "%s,%s,^=,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
+						src, dst);
+				}
 				free (src);
 				free (dst);
 			}
@@ -944,6 +973,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->stackptr = -INSOP(1).imm;
 				}
 			}
+			break;
+			/* Direction flag */
+		case X86_INS_CLD:
+			if (a->decode)
+				esilprintf (op, "0,df,=");
+			break;
+		case X86_INS_STD:
+			if (a->decode)
+				esilprintf (op, "1,df,=");
 			break;
 		}
 	}
