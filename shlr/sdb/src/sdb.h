@@ -27,8 +27,12 @@ extern "C" {
 #define SDB_MIN_KEY 1
 #define SDB_MAX_KEY 0xff
 
+#if __WINDOWS__
+#define SDB_MODE 0
+#else
 #define SDB_MODE 0644
 //#define SDB_MODE 0600
+#endif
 
 //#define SDB_RS '\x1e'
 #define SDB_RS ','

@@ -327,8 +327,10 @@ next_quote:
 	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;
-		if (!buf)
+		if (!buf) {
 			buf = strdup ("");
+			bufset = 1;
+		}
 		*buf = 0;
 		if (cmd[1]=='[') {
 			const char *eb = strchr (cmd, ']');

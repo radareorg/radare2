@@ -128,7 +128,7 @@ endif
 
 # windows compiler prefix
 WCP=i386-mingw32
-WCP=i686-pc-mingw32
+#WCP=i686-pc-mingw32
 
 w32: src/sdb-version.h
 	cd src ; \

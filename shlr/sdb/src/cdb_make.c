@@ -32,7 +32,6 @@ void cdb_alloc_free(void *x) {
 #else
 //5.2
 char *cdb_alloc(ut32 n) {
-	return malloc (n);
 #if __APPLE__
 	void *ret = NULL;
 	if (!posix_memalign (&ret, ALIGNMENT, n))
@@ -44,6 +43,7 @@ char *cdb_alloc(ut32 n) {
 	return malloc (n);
 #endif
 }
+
 void cdb_alloc_free(void *x) {
 	free (x);
 }
