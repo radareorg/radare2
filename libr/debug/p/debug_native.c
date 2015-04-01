@@ -1077,7 +1077,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			int i;
 #if __x86_64__
 #if !__ANDROID__
-			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &fpregs);
+			ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
 			eprintf ("---- x86-64 ----\n ");
 			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
 			eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
@@ -1121,7 +1121,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
             memcpy (buf, &fpregs, size);
             return sizeof (fpregs);
 #else
-            ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &fpregs);
+            ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
             eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
             eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
             eprintf ("ftw = 0x%04x              ", fpregs.ftw);
