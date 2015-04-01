@@ -33,7 +33,6 @@ static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
-eprintf ("DIV\n");
 	if (v.d) n.d /= v.d; else n.d = 0;
 	if (v.n) n.n /= v.n; else n.n = 0;
 	return n;
