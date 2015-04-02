@@ -2920,7 +2920,7 @@ static int cmd_print(void *data, const char *input) {
 		case ' ':
 		case '\0':
 			//len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
-			if (len < sizeof (ut32)) eprintf ("You should change the block size: b %lu\n", sizeof (ut32));
+			if (len < sizeof (ut32)) eprintf ("You should change the block size: b %d\n", (int)sizeof (ut32));
 			if (len % sizeof (ut32) != 0) len = len - (len % sizeof (ut32));
 			for (l=0; l<len; l+=sizeof (ut32))
 				r_print_date_unix (core->print, core->block+l, sizeof (ut32));
@@ -2928,14 +2928,14 @@ static int cmd_print(void *data, const char *input) {
 		case 'd':
 			//len must be multiple of 4 since r_print_date_dos read buf+3
 			//if block size is 1 or 5 for example it reads beyond the buffer
-			if (len < sizeof (ut32)) eprintf ("You should change the block size: b %lu\n", sizeof (ut32));
+			if (len < sizeof (ut32)) eprintf ("You should change the block size: b %d\n", (int)sizeof (ut32));
 			if (len % sizeof (ut32) != 0) len = len - (len % sizeof (ut32));
 			for (l=0; l<len; l+=sizeof (ut32))
 				r_print_date_dos (core->print, core->block+l, sizeof (ut32));
 			break;
 		case 'n':
 			core->print->big_endian = !core->print->big_endian;
-			if (len < sizeof (ut64)) eprintf ("You should change the block size: b %lu\n", sizeof (ut64));
+			if (len < sizeof (ut64)) eprintf ("You should change the block size: b %d\n", (int)sizeof (ut64));
 			if (len % sizeof (ut64) != 0) len = len - (len % sizeof (ut64));
 			for (l=0; l<len; l+=sizeof (ut64))
 				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
