@@ -733,12 +733,878 @@ printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
 	return R_TRUE;
 }
 
+static int PE_(r_bin_pe_init_resource)(struct PE_(r_bin_pe_obj_t)* bin) {
+	PE_(image_data_directory) *resource_dir = \
+		&bin->nt_headers->optional_header.DataDirectory[ \
+		PE_IMAGE_DIRECTORY_ENTRY_RESOURCE];
+	PE_DWord resource_dir_paddr = PE_(r_bin_pe_vaddr_to_paddr)
+		(bin, resource_dir->VirtualAddress);
+	if (resource_dir_paddr == 0) {
+		return R_FALSE;
+	}
+	if (!(bin->resource_directory = malloc (sizeof(*bin->resource_directory)))) {
+		r_sys_perror ("malloc (resource directory)");
+		return R_FALSE;
+	}
+	if (r_buf_read_at (bin->b, resource_dir_paddr, (ut8*)bin->resource_directory,
+			sizeof (*bin->resource_directory)) != sizeof (*bin->resource_directory)) {
+		eprintf ("Error: read (resource directory)\n");
+		free (bin->resource_directory);
+		bin->resource_directory = NULL;
+		return R_FALSE;
+	}
+	bin->resource_directory_offset = resource_dir_paddr;
+	return R_TRUE;
+}
+
+static void free_Var(Var *var) {
+	if (var) {
+		free(var->szKey);
+		free(var->Value);
+		free(var);
+	}
+}
+
+static void free_VarFileInfo(VarFileInfo *varFileInfo) {
+	if (varFileInfo) {
+		free(varFileInfo->szKey);
+		if (varFileInfo->Children) {
+			ut32 children = 0;
+			for (;children < varFileInfo->numOfChildren; children++) {
+				free_Var(varFileInfo->Children[children]);
+			}
+			free(varFileInfo->Children);
+		}
+		free(varFileInfo);
+	}
+}
+
+static void free_String(String *string) {
+	if (string) {
+		free(string->szKey);
+		free(string->Value);
+		free(string);
+	}
+}
+
+static void free_StringTable(StringTable *stringTable) {
+	if (stringTable) {
+		free(stringTable->szKey);
+		if (stringTable->Children) {
+			ut32 childrenST = 0;
+			for (;childrenST < stringTable->numOfChildren; childrenST++) {
+				free_String(stringTable->Children[childrenST]);
+			}
+			free(stringTable->Children);
+		}
+		free(stringTable);
+	}
+}
+
+static void free_StringFileInfo(StringFileInfo *stringFileInfo) {
+	if (stringFileInfo) {
+		free(stringFileInfo->szKey);
+		if (stringFileInfo->Children) {
+			ut32 childrenSFI = 0;
+			for (;childrenSFI < stringFileInfo->numOfChildren; childrenSFI++) {
+				free_StringTable(stringFileInfo->Children[childrenSFI]);
+			}
+			free(stringFileInfo->Children);
+		}
+		free(stringFileInfo);
+	}
+}
+
+#define align32(x) x = ((x & 0x3) == 0)? x: (x & ~0x3) + 0x4;
+
+static void free_VS_VERSIONINFO(VS_VERSIONINFO *vs_VersionInfo) {
+	if (vs_VersionInfo) {
+		free(vs_VersionInfo->szKey);
+		free(vs_VersionInfo->Value);
+		free_VarFileInfo(vs_VersionInfo->varFileInfo);
+		free_StringFileInfo(vs_VersionInfo->stringFileInfo);
+		free(vs_VersionInfo);
+	}
+}
+
+void PE_(free_VS_VERSIONINFO)(VS_VERSIONINFO *vs_VersionInfo) {
+	free_VS_VERSIONINFO(vs_VersionInfo);
+}
+
+static Var *Pe_r_bin_pe_parse_var(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord *curAddr) {
+	Var *var = calloc (1, sizeof(*var));
+	if (var == NULL) {
+		eprintf ("Error: calloc (Var)\n");
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&var->wLength, sizeof(var->wLength)) != sizeof(var->wLength)) {
+		eprintf ("Error: read (Var wLength)\n");
+		free_Var(var);
+		return NULL;
+	}
+	*curAddr += sizeof(var->wLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&var->wValueLength, sizeof(var->wValueLength)) != sizeof(var->wValueLength)) {
+		eprintf ("Error: read (Var wValueLength)\n");
+		free_Var(var);
+		return NULL;
+	}
+	*curAddr += sizeof(var->wValueLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&var->wType, sizeof(var->wType)) != sizeof(var->wType)) {
+		eprintf ("Error: read (Var wType)\n");
+		free_Var(var);
+		return NULL;
+	}
+	*curAddr += sizeof(var->wType);
+
+	if (var->wType != 0 && var->wType != 1) {
+		eprintf ("Error: check (Var wType)\n");
+		free_Var(var);
+		return NULL;
+	}
+
+	var->szKey = (ut16 *) malloc (TRANSLATION_UTF_16_LEN); //L"Translation"
+	if (var->szKey == NULL) {
+		eprintf ("Error: malloc (Var szKey)\n");
+		free_Var(var);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)var->szKey, TRANSLATION_UTF_16_LEN) != TRANSLATION_UTF_16_LEN) {
+		eprintf ("Error: read (Var szKey)\n");
+		free_Var(var);
+		return NULL;
+	}
+	*curAddr += TRANSLATION_UTF_16_LEN;
+
+	if (memcmp(var->szKey, TRANSLATION_UTF_16, TRANSLATION_UTF_16_LEN) != 0) {
+		eprintf ("Error: check (Var szKey)\n");
+		free_Var(var);
+		return NULL;
+	}
+
+	align32(*curAddr);
+
+	var->numOfValues = var->wValueLength / 4;
+	if (var->numOfValues == 0) {
+		eprintf ("Error: check (Var numOfValues)\n");
+		free_Var(var);
+		return NULL;
+	}
+
+	var->Value = (ut32 *) malloc (var->wValueLength);
+	if (var->Value == NULL) {
+		eprintf ("Error: malloc (Var Value)\n");
+		free_Var(var);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)var->Value, var->wValueLength) != var->wValueLength) {
+		eprintf ("Error: read (Var Value)\n");
+		free_Var(var);
+		return NULL;
+	}
+	*curAddr += var->wValueLength;
+
+	return var;
+}
+
+static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord *curAddr) {
+	VarFileInfo *varFileInfo = calloc (1, sizeof(*varFileInfo));
+	if (varFileInfo == NULL) {
+		eprintf ("Error: calloc (VarFileInfo)\n");
+		return NULL;
+	}
+
+	PE_DWord startAddr = *curAddr;
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&varFileInfo->wLength, sizeof(varFileInfo->wLength)) != sizeof(varFileInfo->wLength)) {
+		eprintf ("Error: read (VarFileInfo wLength)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+	*curAddr += sizeof(varFileInfo->wLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&varFileInfo->wValueLength, sizeof(varFileInfo->wValueLength)) != sizeof(varFileInfo->wValueLength)) {
+		eprintf ("Error: read (VarFileInfo wValueLength)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+	*curAddr += sizeof(varFileInfo->wValueLength);
+
+	if (varFileInfo->wValueLength != 0) {
+		eprintf ("Error: check (VarFileInfo wValueLength)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&varFileInfo->wType, sizeof(varFileInfo->wType)) != sizeof(varFileInfo->wType)) {
+		eprintf ("Error: read (VarFileInfo wType)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+	*curAddr += sizeof(varFileInfo->wType);
+
+	if (varFileInfo->wType != 0 && varFileInfo->wType != 1) {
+		eprintf ("Error: check (VarFileInfo wType)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+
+	varFileInfo->szKey = (ut16 *) malloc (VARFILEINFO_UTF_16_LEN); //L"VarFileInfo"
+	if (varFileInfo->szKey == NULL) {
+		eprintf ("Error: malloc (VarFileInfo szKey)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)varFileInfo->szKey, VARFILEINFO_UTF_16_LEN) != VARFILEINFO_UTF_16_LEN) {
+		eprintf ("Error: read (VarFileInfo szKey)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+	*curAddr += VARFILEINFO_UTF_16_LEN;
+
+	if (memcmp(varFileInfo->szKey, VARFILEINFO_UTF_16, VARFILEINFO_UTF_16_LEN) != 0) {
+		eprintf ("Error: check (VarFileInfo szKey)\n");
+		free_VarFileInfo(varFileInfo);
+		return NULL;
+	}
+
+	align32(*curAddr);
+
+	while (startAddr + varFileInfo->wLength > *curAddr) {
+		Var **tmp = (Var **) realloc(varFileInfo->Children, (varFileInfo->numOfChildren + 1) * sizeof(*varFileInfo->Children));
+		if (tmp == NULL) {
+			eprintf ("Error: realloc (VarFileInfo Children)\n");
+			free_VarFileInfo(varFileInfo);
+			return NULL;
+		}
+		varFileInfo->Children = tmp;
+		if ((varFileInfo->Children[varFileInfo->numOfChildren] = Pe_r_bin_pe_parse_var(bin, curAddr)) == NULL) {
+			eprintf ("Error: bad parsing Var\n");
+			free_VarFileInfo(varFileInfo);
+			return NULL;
+		}
+		varFileInfo->numOfChildren++;
+		align32(*curAddr);
+	}
+	return varFileInfo;
+}
+
+static String *Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord *curAddr) {
+	String *string = calloc (1, sizeof(*string));
+	if (string == NULL) {
+		eprintf ("Error: calloc (String)\n");
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&string->wLength, sizeof(string->wLength)) != sizeof(string->wLength)) {
+		eprintf ("Error: read (String wLength)\n");
+		free_String(string);
+		return NULL;
+	}
+	*curAddr += sizeof(string->wLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&string->wValueLength, sizeof(string->wValueLength)) != sizeof(string->wValueLength)) {
+		eprintf ("Error: read (String wValueLength)\n");
+		free_String(string);
+		return NULL;
+	}
+	*curAddr += sizeof(string->wValueLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&string->wType, sizeof(string->wType)) != sizeof(string->wType)) {
+		eprintf ("Error: read (String wType)\n");
+		free_String(string);
+		return NULL;
+	}
+	*curAddr += sizeof(string->wType);
+
+	if (string->wType != 0 && string->wType != 1) {
+		eprintf ("Error: check (String wType)\n");
+		free_String(string);
+		return NULL;
+	}
+
+	string->wKeyLen = string->wLength - string->wValueLength * 2 - sizeof(string->wLength) * 3;
+	string->szKey = (ut16 *) malloc (string->wKeyLen); //If there was padding, we would read it in string
+	if (string->szKey == NULL) {
+		eprintf ("Error: malloc (String szKey)\n");
+		free_String(string);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)string->szKey, string->wKeyLen) != string->wKeyLen) {
+		eprintf ("Error: read (String szKey)\n");
+		free_String(string);
+		return NULL;
+	}
+	*curAddr += string->wKeyLen;
+
+	align32(*curAddr);
+
+	string->Value = (ut16 *) malloc (string->wValueLength * 2);
+	if (string->Value == NULL) {
+		eprintf ("Error: malloc (String Value)\n");
+		free_String(string);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)string->Value, string->wValueLength * 2) != string->wValueLength * 2) {
+		eprintf ("Error: read (String Value)\n");
+		free_String(string);
+		return NULL;
+	}
+	*curAddr += string->wValueLength * 2;
+
+	return string;
+}
+
+static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord *curAddr) {
+	StringTable *stringTable = calloc (1, sizeof(*stringTable));
+	if (stringTable == NULL) {
+		eprintf ("Error: calloc (stringTable)\n");
+		return NULL;
+	}
+
+	PE_DWord startAddr = *curAddr;
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&stringTable->wLength, sizeof(stringTable->wLength)) != sizeof(stringTable->wLength)) {
+		eprintf ("Error: read (StringTable wLength)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+	*curAddr += sizeof(stringTable->wLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&stringTable->wValueLength, sizeof(stringTable->wValueLength)) != sizeof(stringTable->wValueLength)) {
+		eprintf ("Error: read (StringTable wValueLength)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+	*curAddr += sizeof(stringTable->wValueLength);
+
+	if (stringTable->wValueLength != 0) {
+		eprintf ("Error: check (StringTable wValueLength)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&stringTable->wType, sizeof(stringTable->wType)) != sizeof(stringTable->wType)) {
+		eprintf ("Error: read (StringTable wType)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+	*curAddr += sizeof(stringTable->wType);
+
+	if (stringTable->wType != 0 && stringTable->wType != 1) {
+		eprintf ("Error: check (StringTable wType)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+
+	stringTable->szKey = (ut16 *) malloc (EIGHT_HEX_DIG_UTF_16_LEN); //EIGHT_HEX_DIG_UTF_16_LEN
+	if (stringTable->szKey == NULL) {
+		eprintf ("Error: malloc (stringTable szKey)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)stringTable->szKey, EIGHT_HEX_DIG_UTF_16_LEN) != EIGHT_HEX_DIG_UTF_16_LEN) {
+		eprintf ("Error: read (StringTable szKey)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+	*curAddr += EIGHT_HEX_DIG_UTF_16_LEN;
+
+	align32(*curAddr);
+
+	while (startAddr + stringTable->wLength > *curAddr) {
+		String **tmp = (String **) realloc(stringTable->Children, (stringTable->numOfChildren + 1) * sizeof(*stringTable->Children));
+		if (tmp == NULL) {
+			eprintf ("Error: realloc (StringTable Children)\n");
+			free_StringTable(stringTable);
+			return NULL;
+		}
+		stringTable->Children = tmp;
+		if ((stringTable->Children[stringTable->numOfChildren] = Pe_r_bin_pe_parse_string(bin, curAddr)) == NULL) {
+			eprintf ("Error: bad parsing String\n");
+			free_StringTable(stringTable);
+			return NULL;
+		}
+		stringTable->numOfChildren++;
+		align32(*curAddr);
+	}
+
+	if (stringTable->numOfChildren == 0) {
+		eprintf ("Error: check (StringTable numOfChildren)\n");
+		free_StringTable(stringTable);
+		return NULL;
+	}
+
+	return stringTable;
+}
+
+static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord *curAddr) {
+	StringFileInfo *stringFileInfo = calloc (1, sizeof(*stringFileInfo));
+	if (stringFileInfo == NULL) {
+		eprintf ("Error: calloc (StringFileInfo)\n");
+		return NULL;
+	}
+
+	PE_DWord startAddr = *curAddr;
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&stringFileInfo->wLength, sizeof(stringFileInfo->wLength)) != sizeof(stringFileInfo->wLength)) {
+		eprintf ("Error: read (StringFileInfo wLength)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+	*curAddr += sizeof(stringFileInfo->wLength);
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&stringFileInfo->wValueLength, sizeof(stringFileInfo->wValueLength)) != sizeof(stringFileInfo->wValueLength)) {
+		eprintf ("Error: read (StringFileInfo wValueLength)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+	*curAddr += sizeof(stringFileInfo->wValueLength);
+
+	if (stringFileInfo->wValueLength != 0) {
+		eprintf ("Error: check (StringFileInfo wValueLength)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)&stringFileInfo->wType, sizeof(stringFileInfo->wType)) != sizeof(stringFileInfo->wType)) {
+		eprintf ("Error: read (StringFileInfo wType)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+	*curAddr += sizeof(stringFileInfo->wType);
+
+	if (stringFileInfo->wType != 0 && stringFileInfo->wType != 1) {
+		eprintf ("Error: check (StringFileInfo wType)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+
+	stringFileInfo->szKey = (ut16 *) malloc (STRINGFILEINFO_UTF_16_LEN); //L"StringFileInfo"
+	if (stringFileInfo->szKey == NULL) {
+		eprintf ("Error: malloc (StringFileInfo szKey)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)stringFileInfo->szKey, STRINGFILEINFO_UTF_16_LEN) != STRINGFILEINFO_UTF_16_LEN) {
+		eprintf ("Error: read (StringFileInfo szKey)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+	*curAddr += STRINGFILEINFO_UTF_16_LEN;
+
+	if (memcmp(stringFileInfo->szKey, STRINGFILEINFO_UTF_16, STRINGFILEINFO_UTF_16_LEN) != 0) {
+		eprintf ("Error: check (StringFileInfo szKey)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+
+	align32(*curAddr);
+
+	while (startAddr + stringFileInfo->wLength > *curAddr) {
+		StringTable **tmp = (StringTable **) realloc(stringFileInfo->Children, (stringFileInfo->numOfChildren + 1) * sizeof(*stringFileInfo->Children));
+		if (tmp == NULL) {
+			eprintf ("Error: realloc (StringFileInfo Children)\n");
+			free_StringFileInfo(stringFileInfo);
+			return NULL;
+		}
+		stringFileInfo->Children = tmp;
+		if ((stringFileInfo->Children[stringFileInfo->numOfChildren] = Pe_r_bin_pe_parse_string_table(bin, curAddr)) == NULL) {
+			eprintf ("Error: bad parsing StringTable\n");
+			free_StringFileInfo(stringFileInfo);
+			return NULL;
+		}
+		stringFileInfo->numOfChildren++;
+		align32(*curAddr);
+	}
+
+	if (stringFileInfo->numOfChildren  == 0) {
+		eprintf ("Error: check (StringFileInfo numOfChildren)\n");
+		free_StringFileInfo(stringFileInfo);
+		return NULL;
+	}
+
+	return stringFileInfo;
+}
+
+static VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord version_info_paddr) {
+	VS_VERSIONINFO *vs_VersionInfo = calloc (1, sizeof(*vs_VersionInfo));
+	if (vs_VersionInfo == NULL) {
+		eprintf ("Error: calloc (VS_VERSIONINFO)\n");
+		return NULL;
+	}
+
+	PE_DWord startAddr = version_info_paddr;
+	PE_DWord curAddr = version_info_paddr;
+
+	//align32(curAddr); // XXX: do we really need this? Because in msdn
+	//wLength is The length, in bytes, of the VS_VERSIONINFO structure.
+	//This length does not include any padding that aligns any subsequent
+	//version resource data on a 32-bit boundary.
+	//Mb we are in subsequent version resource data and not aligned.
+
+	if (r_buf_read_at(bin->b, curAddr, (ut8*)&vs_VersionInfo->wLength, sizeof(vs_VersionInfo->wLength)) != sizeof(vs_VersionInfo->wLength)) {
+		eprintf ("Error: read (VS_VERSIONINFO wLength)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+	curAddr += sizeof(vs_VersionInfo->wLength);
+
+	if (r_buf_read_at(bin->b, curAddr, (ut8*)&vs_VersionInfo->wValueLength, sizeof(vs_VersionInfo->wValueLength)) != sizeof(vs_VersionInfo->wValueLength)) {
+		eprintf ("Error: read (VS_VERSIONINFO wValueLength)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+	curAddr += sizeof(vs_VersionInfo->wValueLength);
+
+	if (r_buf_read_at(bin->b, curAddr, (ut8*)&vs_VersionInfo->wType, sizeof(vs_VersionInfo->wType)) != sizeof(vs_VersionInfo->wType)) {
+		eprintf ("Error: read (VS_VERSIONINFO wType)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+	curAddr += sizeof(vs_VersionInfo->wType);
+
+	if (vs_VersionInfo->wType != 0 && vs_VersionInfo->wType != 1) {
+		eprintf ("Error: check (VS_VERSIONINFO wType)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+
+	vs_VersionInfo->szKey = (ut16 *) malloc (VS_VERSION_INFO_UTF_16_LEN); //L"VS_VERSION_INFO"
+	if (vs_VersionInfo->szKey == NULL) {
+		eprintf ("Error: malloc (VS_VERSIONINFO szKey)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+
+	if (r_buf_read_at(bin->b, curAddr, (ut8*)vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16_LEN) != VS_VERSION_INFO_UTF_16_LEN) {
+		eprintf ("Error: read (VS_VERSIONINFO szKey)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+	curAddr += VS_VERSION_INFO_UTF_16_LEN;
+
+	if (memcmp(vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16, VS_VERSION_INFO_UTF_16_LEN) != 0) {
+		eprintf ("Error: check (VS_VERSIONINFO szKey)\n");
+		free_VS_VERSIONINFO(vs_VersionInfo);
+		return NULL;
+	}
+
+	align32(curAddr);
+
+	if (vs_VersionInfo->wValueLength) {
+		if (vs_VersionInfo->wValueLength != sizeof(*vs_VersionInfo->Value)) {
+			eprintf ("Error: check (VS_VERSIONINFO wValueLength != sizeof VS_FIXEDFILEINFO)\n");
+			free_VS_VERSIONINFO(vs_VersionInfo);
+			return NULL;
+		}
+
+		vs_VersionInfo->Value = (VS_FIXEDFILEINFO *) malloc (sizeof(*vs_VersionInfo->Value));
+		if (vs_VersionInfo->Value == NULL) {
+			eprintf ("Error: malloc (VS_VERSIONINFO Value)\n");
+			free_VS_VERSIONINFO(vs_VersionInfo);
+			return NULL;
+		}
+
+		if (r_buf_read_at(bin->b, curAddr, (ut8*)vs_VersionInfo->Value, sizeof(*vs_VersionInfo->Value)) != sizeof(*vs_VersionInfo->Value)) {
+			eprintf ("Error: read (VS_VERSIONINFO Value)\n");
+			free_VS_VERSIONINFO(vs_VersionInfo);
+			return NULL;
+		}
+
+		if (vs_VersionInfo->Value->dwSignature != 0xFEEF04BD) {
+			eprintf ("Error: check (VS_FIXEDFILEINFO signature)\n");
+			free_VS_VERSIONINFO(vs_VersionInfo);
+			return NULL;
+		}
+		curAddr += sizeof(*vs_VersionInfo->Value);
+
+		align32(curAddr);
+	}
+
+	if (startAddr + vs_VersionInfo->wLength > curAddr) {
+		char t = '\0';
+		if (r_buf_read_at(bin->b, curAddr + 3 * sizeof(ut16), (ut8*)&t, 1) != 1) {
+			eprintf ("Error: read (VS_VERSIONINFO Children V or S)\n");
+			free_VS_VERSIONINFO(vs_VersionInfo);
+			return NULL;
+		}
+		if (!(t == 'S' || t == 'V')) {
+			eprintf ("Error: bad type (VS_VERSIONINFO Children)\n");
+			free_VS_VERSIONINFO(vs_VersionInfo);
+			return NULL;
+		}
+		if (t == 'S') {
+			if ((vs_VersionInfo->stringFileInfo = Pe_r_bin_pe_parse_string_file_info(bin, &curAddr)) == NULL) {
+				eprintf ("Error: bad parsing (VS_VERSIONINFO StringFileInfo)\n");
+				free_VS_VERSIONINFO(vs_VersionInfo);
+				return NULL;
+			}
+		}
+		if (t == 'V') {
+			if ((vs_VersionInfo->varFileInfo = Pe_r_bin_pe_parse_var_file_info(bin, &curAddr)) == NULL) {
+				eprintf ("Error: bad parsing (VS_VERSIONINFO VarFileInfo)\n");
+				free_VS_VERSIONINFO(vs_VersionInfo);
+				return NULL;
+			}
+		}
+
+		align32(curAddr);
+
+		if (startAddr + vs_VersionInfo->wLength > curAddr) {
+			if (t == 'V') {
+				if ((vs_VersionInfo->stringFileInfo = Pe_r_bin_pe_parse_string_file_info(bin, &curAddr)) == NULL) {
+					eprintf ("Error: bad parsing (VS_VERSIONINFO StringFileInfo)\n");
+					free_VS_VERSIONINFO(vs_VersionInfo);
+					return NULL;
+				}
+			} else if (t == 'S') {
+				if ((vs_VersionInfo->varFileInfo = Pe_r_bin_pe_parse_var_file_info(bin, &curAddr)) == NULL) {
+					eprintf ("Error: bad parsing (VS_VERSIONINFO VarFileInfo)\n");
+					free_VS_VERSIONINFO(vs_VersionInfo);
+					return NULL;
+				}
+			}
+			if (startAddr + vs_VersionInfo->wLength > curAddr) {
+				eprintf ("Error: bad parsing (VS_VERSIONINFO wLength left)\n");
+				free_VS_VERSIONINFO(vs_VersionInfo);
+				return NULL;
+			}
+		}
+	}
+	return vs_VersionInfo;
+}
+
+static Sdb *Pe_r_bin_store_var(Var *var) {
+	char key[20];
+	if (var == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	int i = 0;
+	for (; i < var->numOfValues; i++) {
+		snprintf(key, 20, "%d", i);
+		sdb_num_set(sdb, key, var->Value[i], 0);
+	}
+	return sdb;
+}
+
+static Sdb *Pe_r_bin_store_var_file_info(VarFileInfo *varFileInfo) {
+	char key[20];
+	if (varFileInfo == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	int i = 0;
+	for (; i < varFileInfo->numOfChildren; i++) {
+		snprintf(key, 20, "var%d", i);
+		sdb_ns_set (sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]));
+	}
+	return sdb;
+}
+
+static Sdb *Pe_r_bin_store_string(String *string) {
+	if (string == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	char *encodedKey = sdb_encode((unsigned char *) string->szKey, string->wKeyLen);
+	if (encodedKey == NULL) {
+		sdb_free(sdb);
+		return NULL;
+	}
+	char *encodedVal = sdb_encode((unsigned char *) string->Value, string->wValueLength * 2);
+	if (encodedVal == NULL) {
+		free(encodedKey);
+		sdb_free(sdb);
+		return NULL;
+	}
+	sdb_set(sdb, "key", encodedKey, 0);
+	sdb_set(sdb, "value", encodedVal, 0);
+	return sdb;
+}
+
+static Sdb *Pe_r_bin_store_string_table(StringTable *stringTable) {
+	char key[20];
+	if (stringTable == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	char *encodedKey = sdb_encode((unsigned char *) stringTable->szKey, EIGHT_HEX_DIG_UTF_16_LEN);
+	if (encodedKey == NULL) {
+		sdb_free(sdb);
+		return NULL;
+	}
+	sdb_set(sdb, "key", encodedKey, 0);
+	int i = 0;
+	for (; i < stringTable->numOfChildren; i++) {
+		snprintf(key, 20, "string%d", i);
+		sdb_ns_set (sdb, key, Pe_r_bin_store_string(stringTable->Children[i]));
+	}
+	return sdb;
+}
+
+static Sdb *Pe_r_bin_store_string_file_info(StringFileInfo *stringFileInfo) {
+	char key[30];
+	if (stringFileInfo == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	int i = 0;
+	for (; i < stringFileInfo->numOfChildren; i++) {
+		snprintf(key, 30, "stringtable%d", i);
+		sdb_ns_set (sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]));
+	}
+	return sdb;
+}
+
+static Sdb *Pe_r_bin_store_fixed_file_info(VS_FIXEDFILEINFO *vs_fixedFileInfo) {
+	if (vs_fixedFileInfo == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	sdb_num_set(sdb, "Signature", vs_fixedFileInfo->dwSignature, 0);
+	sdb_num_set(sdb, "StrucVersion", vs_fixedFileInfo->dwStrucVersion, 0);
+	sdb_num_set(sdb, "FileVersionMS", vs_fixedFileInfo->dwFileVersionMS, 0);
+	sdb_num_set(sdb, "FileVersionLS", vs_fixedFileInfo->dwFileVersionLS, 0);
+	sdb_num_set(sdb, "ProductVersionMS", vs_fixedFileInfo->dwProductVersionMS, 0);
+	sdb_num_set(sdb, "ProductVersionLS", vs_fixedFileInfo->dwProductVersionLS, 0);
+	sdb_num_set(sdb, "FileFlagsMask", vs_fixedFileInfo->dwFileFlagsMask, 0);
+	sdb_num_set(sdb, "FileFlags", vs_fixedFileInfo->dwFileFlags, 0);
+	sdb_num_set(sdb, "FileOS", vs_fixedFileInfo->dwFileOS, 0);
+	sdb_num_set(sdb, "FileType", vs_fixedFileInfo->dwFileType, 0);
+	sdb_num_set(sdb, "FileSubtype", vs_fixedFileInfo->dwFileSubtype, 0);
+	sdb_num_set(sdb, "FileDateMS", vs_fixedFileInfo->dwFileDateMS, 0);
+	sdb_num_set(sdb, "FileDateLS", vs_fixedFileInfo->dwFileDateLS, 0);
+	return sdb;
+}
+
+static Sdb *Pe_r_bin_store_resource_version_info(VS_VERSIONINFO *vs_VersionInfo) {
+	if (vs_VersionInfo == NULL)
+		return NULL;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return NULL;
+	if (vs_VersionInfo->Value)
+		sdb_ns_set (sdb, "fixed_file_info", Pe_r_bin_store_fixed_file_info(vs_VersionInfo->Value));
+	if (vs_VersionInfo->varFileInfo)
+		sdb_ns_set (sdb, "var_file_info", Pe_r_bin_store_var_file_info(vs_VersionInfo->varFileInfo));
+	if (vs_VersionInfo->stringFileInfo)
+		sdb_ns_set (sdb, "string_file_info", Pe_r_bin_store_string_file_info(vs_VersionInfo->stringFileInfo));
+	return sdb;
+}
+
+void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin) {
+	char key[30];
+	if (bin == NULL || bin->resource_directory == NULL)
+		return;
+	int counter = 0;
+	Sdb *sdb = sdb_new0();
+	if (sdb == NULL)
+		return;
+	// XXX: assume there is only 3 layers in the tree
+	ut32 totalRes = bin->resource_directory->NumberOfNamedEntries + bin->resource_directory->NumberOfIdEntries;
+	ut32 curRes = bin->resource_directory->NumberOfNamedEntries;
+	for (; curRes < totalRes; curRes++) {
+		Pe_image_resource_directory_entry typeEntry;
+		if (r_buf_read_at (bin->b, bin->resource_directory_offset + sizeof (*bin->resource_directory) + curRes * sizeof (typeEntry),
+				(ut8*)&typeEntry, sizeof (typeEntry)) != sizeof (typeEntry)) {
+			eprintf ("Error: read (resource type directory entry)\n");
+			return;
+		}
+		if (!typeEntry.u1.s.NameIsString && typeEntry.u1.Id == PE_RESOURCE_ENTRY_VERSION) {
+			Pe_image_resource_directory identDir;
+			if (r_buf_read_at (bin->b, bin->resource_directory_offset + typeEntry.u2.s.OffsetToDirectory,
+					(ut8*)&identDir, sizeof (identDir)) != sizeof (identDir)) {
+				eprintf ("Error: read (resource identifier directory)\n");
+				return;
+			}
+			ut32 totalIdent = identDir.NumberOfNamedEntries + identDir.NumberOfIdEntries;
+			ut32 curIdent = 0;
+			for (; curIdent < totalIdent; curIdent++) {
+				Pe_image_resource_directory_entry identEntry;
+				if (r_buf_read_at (bin->b, bin->resource_directory_offset + typeEntry.u2.s.OffsetToDirectory + sizeof (identDir) +
+						curIdent * sizeof (identEntry), (ut8*)&identEntry, sizeof (identEntry)) != sizeof (identEntry)) {
+					eprintf ("Error: read (resource identifier entry)\n");
+					return;
+				}
+				if (!identEntry.u2.s.DataIsDirectory)
+					continue;
+				Pe_image_resource_directory langDir;
+				if (r_buf_read_at (bin->b, bin->resource_directory_offset + identEntry.u2.s.OffsetToDirectory,
+						(ut8*)&langDir, sizeof (langDir)) != sizeof (langDir)) {
+					eprintf ("Error: read (resource language directory)\n");
+					return;
+				}
+				ut32 totalLang = langDir.NumberOfNamedEntries + langDir.NumberOfIdEntries;
+				ut32 curLang = 0;
+				for (; curLang < totalLang; curLang++) {
+					Pe_image_resource_directory_entry langEntry;
+					if (r_buf_read_at (bin->b, bin->resource_directory_offset + identEntry.u2.s.OffsetToDirectory + sizeof (langDir) +
+							curLang * sizeof (langEntry), (ut8*)&langEntry, sizeof (langEntry)) != sizeof (langEntry)) {
+						eprintf ("Error: read (resource language entry)\n");
+						return;
+					}
+					if (langEntry.u2.s.DataIsDirectory)
+						continue;
+					Pe_image_resource_data_entry data;
+					if (r_buf_read_at (bin->b, bin->resource_directory_offset + langEntry.u2.OffsetToData,
+							(ut8*)&data, sizeof (data)) != sizeof (data)) {
+						eprintf ("Error: read (resource data entry)\n");
+						return;
+					}
+					PE_DWord data_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, data.OffsetToData);
+					if (data_paddr == 0) {
+						eprintf ("Error: bad RVA in resource data entry\n");
+						return;
+					}
+					PE_DWord cur_paddr = data_paddr;
+					if ((cur_paddr & 0x3) != 0) {
+						// XXX: mb align address and read structure?
+						eprintf ("Error: not aligned version info address\n");
+						continue;
+					}
+					while(cur_paddr < data_paddr + data.Size) {
+						VS_VERSIONINFO *vs_VersionInfo = Pe_r_bin_pe_parse_version_info(bin, cur_paddr);
+						if (vs_VersionInfo) {
+							snprintf(key, 30, "VS_VERSIONINFO%d", counter++);
+							sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info(vs_VersionInfo));
+						} else
+							break;
+						cur_paddr += vs_VersionInfo->wLength;
+						free_VS_VERSIONINFO(vs_VersionInfo);
+						align32(cur_paddr);
+					}
+				}
+			}
+		}
+	}
+	sdb_ns_set(bin->kv, "vs_version_info", sdb);
+	return;
+}
+
+
 static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->dos_header = NULL;
 	bin->nt_headers = NULL;
 	bin->section_header = NULL;
 	bin->export_directory = NULL;
 	bin->import_directory = NULL;
+	bin->resource_directory = NULL;
 	bin->delay_import_directory = NULL;
 	bin->endian = 0; /* TODO: get endian */
 	if (!PE_(r_bin_pe_init_hdr)(bin)) {
@@ -751,6 +1617,8 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	PE_(r_bin_pe_init_imports)(bin);
 	PE_(r_bin_pe_init_exports)(bin);
+	PE_(r_bin_pe_init_resource)(bin);
+	PE_(r_bin_store_all_resource_version_info)(bin);
 	bin->relocs = NULL;
 	return R_TRUE;
 }
@@ -1399,6 +2267,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->section_header);
 	free (bin->export_directory);
 	free (bin->import_directory);
+	free (bin->resource_directory);
 	free (bin->delay_import_directory);
 	r_buf_free (bin->b);
 	bin->b = NULL;

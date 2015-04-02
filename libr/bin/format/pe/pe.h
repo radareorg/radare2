@@ -70,11 +70,13 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_section_header)         *section_header;
 	PE_(image_export_directory)       *export_directory;
 	PE_(image_import_directory)       *import_directory;
+	Pe_image_resource_directory       *resource_directory;
 	PE_(image_delay_import_directory) *delay_import_directory;
 	// these values define the real offset into the untouched binary
 	ut64 nt_header_offset;
 	ut64 import_directory_offset;
 	ut64 export_directory_offset;
+	ut64 resource_directory_offset;
 	ut64 delay_import_directory_offset;
 
 	int import_directory_size;
@@ -94,6 +96,7 @@ typedef struct SDebugInfo{
 	char file_name[DBG_FILE_NAME_LEN];
 } SDebugInfo;
 
+void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin);
