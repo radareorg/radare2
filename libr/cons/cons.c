@@ -352,11 +352,13 @@ static int backup_size = 0;
 
 R_API void r_cons_push() {
 	if (!backup) {
-		backup = malloc (I.buffer_len);
+		if (I.buffer_len<1)
+			I.buffer_len = 1;
+		backup = I.buffer; //malloc (I.buffer_len);
 		backup_len = I.buffer_len;
 		backup_size = I.buffer_sz;
-		memcpy (backup, I.buffer, I.buffer_len);
 		I.buffer = malloc (I.buffer_sz);
+		memcpy (I.buffer, backup, I.buffer_len);
 		I.buffer_len = 0;
 	}
 }

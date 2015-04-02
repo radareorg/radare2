@@ -265,7 +265,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 
 static void print_compile_time(Sdb *binFileSdb) {
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", R_FALSE);
-	char *timeDateStamp_string = sdb_get(info_ns, "image_file_header.TimeDateStamp_string", 0);
+	const char *timeDateStamp_string = sdb_const_get (info_ns,
+		"image_file_header.TimeDateStamp_string", 0);
 	if (timeDateStamp_string)
 		pair ("compiled", timeDateStamp_string);
 }

@@ -692,7 +692,7 @@ if (step==2) {
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
 		if (col==2) printfmt("|");
-		if (p->flags & R_PRINT_FLAGS_REFS) {
+		if (p && p->flags & R_PRINT_FLAGS_REFS) {
 			ut64 *foo = (ut64*)(buf+i);
 			ut64 addr = *foo;
 			if (base==32) addr &= UT32_MAX;
