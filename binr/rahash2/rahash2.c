@@ -315,10 +315,6 @@ int main(int argc, char **argv) {
 	}
 	do_hash_seed (seed);
 	if (hashstr) {
-		if (from || to) {
-			eprintf ("TODO: -f and -t not supported yet with -s or -x\n");
-			return 1;
-		}
 #define INSIZE 32768
 		if (!strcmp (hashstr, "-")) {
 			int res = 0;
@@ -337,9 +333,26 @@ int main(int argc, char **argv) {
 				free (out);
 			}
 			hashstr = (char *)out;
+			/* out memleaks here, hashstr can't be freed */
 		} else {
 			hashstr_len = strlen (hashstr);
 		}
+		if (from) {
+			if (from>=hashstr_len) {
+				eprintf ("Invalid -f.\n");
+				return 1;
+			}
+		}
+		if (to) {
+			if (to>hashstr_len) {
+				eprintf ("Invalid -t.\n");
+				return 1;
+			}
+		} else {
+			to = hashstr_len;
+		}
+		hashstr = hashstr+from;
+		hashstr_len = to-from;
 		switch (b64mode) {
 		case 1: // encode
 			{
