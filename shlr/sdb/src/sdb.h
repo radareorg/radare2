@@ -213,6 +213,8 @@ void sdb_array_sort_num (Sdb* s, const char *key, ut32 cas);
 // set
 int sdb_array_add (Sdb* s, const char *key, const char *val, ut32 cas);
 int sdb_array_add_num (Sdb* s, const char *key, ut64 val, ut32 cas);
+int sdb_array_add_sorted (Sdb *s, const char *key, const char *val, ut32 cas);
+int sdb_array_add_sorted_num (Sdb *s, const char *key, ut64 val, ut32 cas);
 int sdb_array_remove (Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_remove_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 // helpers

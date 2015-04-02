@@ -443,6 +443,20 @@ next_quote:
 				snprintf (buf, 31, "%d", alength);
 			}
 			out_concat (buf);
+		} else if (cmd[1]=='!') {
+			if (cmd[2]=='+')
+				// [!+]key=aa	# add_sorted
+				sdb_array_add_sorted (s, p, val, 0);
+			else
+				// [!]key		# sort
+				sdb_array_sort (s, p, 0);
+		} else if (cmd[1]=='#') {
+				// [#+]key=num	# add_sorted_num
+			if (cmd[2]=='+')
+				// [#]key		# sort_num
+				sdb_array_add_sorted_num (s, p, sdb_atoi(val), 0);
+			else
+				sdb_array_sort_num (s, p, 0);
 		} else if (cmd[1]=='+'||cmd[1]=='-') {
 			if (cmd[1] == cmd[2]) {
 				// stack

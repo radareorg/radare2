@@ -135,8 +135,7 @@ SDB_API int sdb_alen(const char *str) {
 		if (!n) break;
 		p = n+1;
 	}
-	if (*p) len++;
-	return len;
+	return ++len;
 }
 
 SDB_API int sdb_alen_ignore_empty(const char *str) {
