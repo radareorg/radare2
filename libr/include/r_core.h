@@ -467,6 +467,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
+R_API void r_core_syscmd_mkdir(const char *dir);
 
 /* tasks */
 

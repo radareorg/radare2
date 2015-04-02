@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_core.h>
+#include <errno.h>
 
 #define FMT_RAW  1
 #define FMT_JSON 2
@@ -140,4 +141,17 @@ R_API void r_core_syscmd_cat(const char *file) {
 		} else eprintf ("No such file or directory\n");
 		free (filename);
 	} else eprintf ("Usage: cat [file]\n");
+}
+
+R_API void r_core_syscmd_mkdir(const char *dir) {
+	const char *p = strchr (dir, ' ');
+	if (p) {
+		char *dirname = strdup (p+1);
+		dirname = r_str_chop (dirname);
+		if (!r_sys_mkdir (dirname)) {
+			if (r_sys_mkdir_failed ())
+				eprintf ("Cannot create \"%s\"\n", dirname);
+		}
+		free (dirname);
+	} else eprintf ("Usage: mkdir [directory]\n");
 }
