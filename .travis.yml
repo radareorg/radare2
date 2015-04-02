@@ -49,7 +49,7 @@ env:
   - TESTS=asm.java
   #- TESTS=asm.mips
   - TESTS=asm.tms320
-  #- TESTS=asm.z80
+  - TESTS=asm.z80
   #- TESTS=asm.x86
   
   #- TESTS=commands         # r2 commands related
