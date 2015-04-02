@@ -1157,8 +1157,21 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	}
 #define infun(x,y) (y>=x->addr&&y<(x->addr+x->size))
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if ((!input) // || (( !*input && fcn->type!=R_ANAL_FCN_TYPE_LOC)
-			 || infun (fcn, addr) || !strcmp (fcn->name, *input?input+1:input)) {
+		int showFunc = 0;
+		if (input) {
+			showFunc = *input && (!strcmp (input, "$$"));
+			if (showFunc) {
+				showFunc  = infun(fcn, core->offset);
+			} else {
+				if (!strcmp (fcn->name, *input?input+1:input))
+					showFunc = 1;
+				showFunc = infun (fcn, addr);
+			}
+		} else {
+			showFunc = 1; //infun (fcn, addr);
+			// || (( !*input && fcn->type!=R_ANAL_FCN_TYPE_LOC)
+		}
+		if (showFunc) {
 			count++;
 			if (rad=='q') {
 				r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",

@@ -643,9 +643,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default: r_core_anal_fcn_list (core, NULL, 'q'); break; // "afl"
 		}
 		break;
-	case '*':
-		// alias for 'afl*'
-		r_core_anal_fcn_list (core, NULL, '*'); break; // "af*"
+	case '*': // "af*"
+		// like 'afl*', but only for 1 function
+		r_core_anal_fcn_list (core, "$$", '*'); break;
 		break;
 	case 'j':
 		// alias for 'aflj'
