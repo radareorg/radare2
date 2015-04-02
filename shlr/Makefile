@@ -45,7 +45,7 @@ endif
 preall: sdb/sdb${EXT_EXE} libgdbr libwind capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
-		$(MAKE) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
+		$(MAKE) -C $$a HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 clean mrproper:

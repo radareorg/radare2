@@ -1,3 +1,6 @@
+NAME=r_java
+LIBAR?=libr_java.a
+
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
@@ -28,7 +31,7 @@ all: out libr_java.a
 
 libr_java.a: ${OBJS}
 	rm -f libr_java.a
-	${CC_AR} libr_java.a ${OBJS}
+	${CC_AR} ${OBJS}
 	${RANLIB} libr_java.a
 
 out: ${OBJS} main.o

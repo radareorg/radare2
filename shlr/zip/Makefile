@@ -1,3 +1,6 @@
+NAME=rz
+LIBAR=librz.a
+
 include ../../config-user.mk
 include ../../libr/config.mk
 include ../../mk/${COMPILER}.mk
