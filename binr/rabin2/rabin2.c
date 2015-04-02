@@ -725,7 +725,7 @@ int main(int argc, char **argv) {
 }
 	if (action & ACTION_PDB_DWNLD) {
 		int ret;
-		char *file, *env_pdbserver = r_sys_getenv ("PDB_SERVER");
+		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info (core.bin);

@@ -112,7 +112,6 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static RBinInfo *info(RBinFile *arch) {
-	char *version;
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
