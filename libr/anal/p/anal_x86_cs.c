@@ -365,8 +365,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 						int width = INSOP(0).size;
-						char *src = cs_reg_name(handle, INSOP(1).mem.base);
-						char *dst = cs_reg_name(handle, INSOP(0).mem.base);
+						const char *src = cs_reg_name(handle, INSOP(1).mem.base);
+						const char *dst = cs_reg_name(handle, INSOP(0).mem.base);
 						const char *counter = (a->bits==16)?"cx":
 							(a->bits==32)?"ecx":"rcx";
 						esilprintf (op, "%s,!,?{,BREAK,},%s,0,+,%s,0,+,"\

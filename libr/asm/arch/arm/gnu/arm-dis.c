@@ -2188,7 +2188,7 @@ print_insn_coprocessor (bfd_vma pc,
 			      is_unpredictable = TRUE;
 			    u_reg = value;
 			  }
-			    if (value>=0 && value<= get_arm_regname_num_options ()) {
+			    if (value<= get_arm_regname_num_options ()) {
 				    func (stream, "%s", arm_regnames[value]);
 			    } else {
 				    func (stream, "r%d", (int)value);
@@ -3518,7 +3518,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 				  is_unpredictable = TRUE;
 				U_reg = value;
 			      }
-			    if (value>=0 && value<= get_arm_regname_num_options ()) {
+			    if (value<= get_arm_regname_num_options ()) {
 				    func (stream, "%s", arm_regnames[value]);
 			    } else {
 				    func (stream, "r%d", (int)value);
