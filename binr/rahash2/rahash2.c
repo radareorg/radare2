@@ -161,10 +161,13 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 						hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				for (j=from; j<to; j+=bsize) {
+					int len = ((j+bsize)<fsize)?  bsize:
+						(bsize>j)?(fsize-j):0;
+					if (j+len>to)
+						len = to-j;
 					r_io_pread (io, j, buf, bsize);
 					do_hash_internal (ctx, hashbit, buf,
-						((j+bsize)<fsize)?  bsize:
-						(bsize>j)?(fsize-j):0, rad, 0, ule);
+						len, rad, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
 					do_hash_internal (ctx, hashbit, s.buf,
@@ -233,6 +236,7 @@ static int do_help(int line) {
 	" -r          output radare commands\n"
 	" -s string   hash this string instead of files\n"
 	" -t to       stop hashing at given address\n"
+	" -x hexstr   hash this hexpair string instead of files\n"
 	" -v          show version information\n");
 	return 0;
 }
@@ -248,16 +252,27 @@ static void algolist() {
 	}
 }
 
+#define setHashString(x,y) {\
+	if (hashstr) { \
+		eprintf ("Hashstring already defined\n");\
+		return 1; \
+	}\
+	hashstr_hex = y; \
+	hashstr = x;\
+}
+
 int main(int argc, char **argv) {
 	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0, b64mode = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	char *hashstr = NULL;
+	int hashstr_len = 0;
+	int hashstr_hex = 0;
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:b:nBhf:t:kLq")) != -1) {
+	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:kLq")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i': iterations = atoi (optarg);
@@ -282,28 +297,55 @@ int main(int argc, char **argv) {
 		case 't': to = r_num_math (NULL, optarg); break;
 		case 'v': return blob_version ("rahash2");
 		case 'h': return do_help (0);
-		case 's': hashstr = optarg; break;
+		case 's': setHashString (optarg, 0); break;
+		case 'x': setHashString (optarg, 1); break;
+			break;
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}
 	}
-	do_hash_seed (seed);
-	if (hashstr && !strcmp (hashstr, "-")) {
-#define INSIZE 32768
-		int res = 0;
-		hashstr = malloc (INSIZE);
-		if (!hashstr)
-			return 1;
-		res = fread ((void*)hashstr, 1, INSIZE-1, stdin);
-		hashstr[res] = '\0';
+	if ((st64)from<0 || (st64)to<0) {
+		eprintf ("Invalid -f or -t offsets\n");
+		return 1;
 	}
+	if (from || to) {
+		if (from>=to) {
+			eprintf ("Invalid -f or -t offsets\n");
+			return 1;
+		}
+	}
+	do_hash_seed (seed);
 	if (hashstr) {
+		if (from || to) {
+			eprintf ("TODO: -f and -t not supported yet with -s or -x\n");
+			return 1;
+		}
+#define INSIZE 32768
+		if (!strcmp (hashstr, "-")) {
+			int res = 0;
+			hashstr = malloc (INSIZE);
+			if (!hashstr)
+				return 1;
+			res = fread ((void*)hashstr, 1, INSIZE-1, stdin);
+			hashstr[res] = '\0';
+			hashstr_len = res;
+		}
+		if (hashstr_hex) {
+			ut8 *out = malloc ((strlen (hashstr)+1)*2);
+			hashstr_len = r_hex_str2bin (hashstr, out);
+			if (hashstr_len<1) {
+				eprintf ("Invalid hex string\n");
+				free (out);
+			}
+			hashstr = (char *)out;
+		} else {
+			hashstr_len = strlen (hashstr);
+		}
 		switch (b64mode) {
 		case 1: // encode
 			{
-			int binlen = strlen (hashstr);
-			char *out = malloc (((binlen+1)*4)/3);
+			char *out = malloc (((hashstr_len+1)*4)/3);
 			if (out) {
-				r_base64_encode (out, (const ut8*)hashstr, binlen);
+				r_base64_encode (out, (const ut8*)hashstr, hashstr_len);
 				printf ("%s\n", out);
 				fflush (stdout);
 				free (out);
@@ -314,7 +356,8 @@ int main(int argc, char **argv) {
 			{
 			ut8 *out = malloc (INSIZE);
 			if (out) {
-				int outlen = r_base64_decode (out, (const char *)hashstr, strlen (hashstr));
+				int outlen = r_base64_decode (out,
+					(const char *)hashstr, hashstr_len);
 				write (1, out, outlen);
 				free (out);
 			}
@@ -323,15 +366,15 @@ int main(int argc, char **argv) {
 		default:
 			{
 			       char *str = (char *)hashstr;
-			       int strsz = strlen (hashstr);
+			       int strsz = hashstr_len;
 			       if (_s) {
 				       // alloc/concat/resize
 				       str = malloc (strsz + s.len);
 				       if (s.prefix) {
 					       memcpy (str, s.buf, s.len);
-					       strcpy (str+s.len, hashstr);
+					       memcpy (str+s.len, hashstr, hashstr_len);
 				       } else {
-					       strcpy (str, hashstr);
+					       memcpy (str, hashstr, hashstr_len);
 					       memcpy (str+strsz, s.buf, s.len);
 				       }
 				       strsz += s.len;
