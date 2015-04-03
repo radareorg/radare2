@@ -2211,22 +2211,54 @@ static int cmd_print(void *data, const char *input) {
 	case 'r': // "pr"
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: pr[glx] [size]\n");
-			r_cons_printf ("| prl: print raw with lines offsets\n");
-			r_cons_printf ("| prx: printable chars with real offset (hyew)\n");
-			r_cons_printf ("| prg: print raw gunzipped block\n");
+			r_cons_printf ("|Usage: pr[glx] [size]\n"
+			"| prl: print raw with lines offsets\n"
+			"| prx: printable chars with real offset (hyew)\n"
+			"| prg: print raw GUNZIPped block\n");
 			break;
 		case 'g': // "prg" // gunzip
-			{
+			switch (input[2]) {
+			case '?':
+				r_cons_printf ("|Usage: prg[io]\n"
+				"| prg: print gunzipped data of current block\n"
+				"| prgi: show consumed bytes when inflating\n"
+				"| prgo: show output bytes after inflating\n");
+				break;
+			case 'i':
+				 {
+				int sz, outlen = 0;
+				int inConsumed = 0;
+				ut8 *in, *out;
+				in = core->block;
+				sz = core->blocksize;
+				out = r_inflate (in, sz, &inConsumed, &outlen);
+				r_cons_printf ("%d\n", inConsumed);
+				free (out);
+				}
+				break;
+			case 'o':
+				 {
 				int sz, outlen = 0;
 				ut8 *in, *out;
 				in = core->block;
 				sz = core->blocksize;
-				out = r_inflate (in, sz, &outlen);
+				out = r_inflate (in, sz, NULL, &outlen);
+				r_cons_printf ("%d\n", outlen);
+				free (out);
+				}
+				break;
+			default:
+				 {
+				int sz, outlen = 0;
+				ut8 *in, *out;
+				in = core->block;
+				sz = core->blocksize;
+				out = r_inflate (in, sz, NULL, &outlen);
 				if (out) {
 					r_cons_memcat ((const char*)out, outlen);
 				}
 				free (out);
+				}
 			}
 			break;
 		/* TODO: compact */

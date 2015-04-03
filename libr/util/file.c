@@ -229,7 +229,7 @@ R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
 	if (outlen) *outlen = 0;
 	in = (ut8*)r_file_slurp (str, &sz);
 	if (!in) return NULL;
-	out = r_inflate (in, sz, outlen);
+	out = r_inflate (in, sz, NULL, outlen);
 	if (!out && origonfail) {
 		// if uncompression fails, return orig buffer ?
 		if (outlen)
