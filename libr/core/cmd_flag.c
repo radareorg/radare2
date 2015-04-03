@@ -280,16 +280,23 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 's':
 		switch (input[1]) {
+		case '+':
+			r_flag_space_push (core->flags, input+2);
+			break;
 		case 'r':
 			if (input[2]==' ')
 				r_flag_space_rename (core->flags, NULL, input+2);
 			else eprintf ("Usage: fsr [newname]\n");
 			break;
 		case '-':
-			if (input[2]=='*') {
-				r_flag_space_unset (core->flags, NULL);
+			if (input[2]) {
+				if (input[2]=='*') {
+					r_flag_space_unset (core->flags, NULL);
+				} else {
+					r_flag_space_unset (core->flags, input+2);
+				}
 			} else {
-				r_flag_space_unset (core->flags, input+3);
+				r_flag_space_pop (core->flags);
 			}
 			break;
 		case 'j':
@@ -499,6 +506,8 @@ static int cmd_flag(void *data, const char *input) {
 		"fs"," flagspace","select flagspace or create if it doesn't exist",
 		"fs","-flagspace","remove flagspace",
 		"fs","-*","remove all flagspaces",
+		"fs","+foo","push previous flagspace and set",
+		"fs","-","pop to the previous flagspace",
 		"fsm"," [addr]","move flags at given address to the current flagspace",
 		"fsr"," newname","rename selected flagspace",
 		"fS","[on]","sort flags by offset or name",

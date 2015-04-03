@@ -35,6 +35,7 @@ R_API RFlag * r_flag_new() {
 	f->flags->free = (RListFree) r_flag_item_free;
 	f->space_idx = -1;
 	f->space_idx2 = -1;
+	f->spacestack = r_list_newf (NULL);
 	f->ht_name = r_hashtable64_new ();
 	f->ht_off = r_hashtable64_new ();
 	for (i=0; i<R_FLAG_SPACES_MAX; i++)
@@ -68,6 +69,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	r_hashtable64_free (f->ht_off);
 	r_hashtable64_free (f->ht_name);
 	r_list_free (f->flags);
+	r_list_free (f->spacestack);
 	free (f);
 	return NULL;
 }

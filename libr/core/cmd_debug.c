@@ -909,8 +909,12 @@ free (rf);
 		}
 		break;
 	case '*':
-		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			r_cons_printf ("fs+regs\n");
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_color);
+			r_flag_space_pop (core->flags);
+			r_cons_printf ("fs-\n");
+		}
 		break;
 	case 'r': // "drr"
 		{

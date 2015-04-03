@@ -54,6 +54,7 @@ typedef struct r_flag_t {
 	struct btree_node *ntree; /* index by name */
 #endif
 	RList *flags;
+	RList *spacestack;
 } RFlag;
 
 /* compile time dependency */
@@ -106,6 +107,8 @@ R_API int r_flag_space_set(RFlag *f, const char *name);
 R_API int r_flag_space_unset (RFlag *f, const char *fs);
 R_API int r_flag_space_list(RFlag *f, int mode);
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
+R_API int r_flag_space_pop(RFlag *f);
+R_API int r_flag_space_push(RFlag *f, const char *name);
 #endif
 
 #ifdef __cplusplus

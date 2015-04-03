@@ -31,6 +31,31 @@ void flag_space_init(struct r_flag_t *f) {
 }
 #endif
 
+R_API int r_flag_space_push(RFlag *f, const char *name) {
+	int ret = R_FALSE;
+	if (name && *name) {
+		if (f->space_idx != -1 && f->spaces[f->space_idx]) {
+			r_list_push (f->spacestack, f->spaces[f->space_idx]);
+		} else {
+			r_list_push (f->spacestack, "*");
+		}
+		r_flag_space_set (f, name);
+		ret = R_TRUE;
+	}
+	return ret;
+}
+
+R_API int r_flag_space_pop(RFlag *f) {
+	char *p = r_list_pop (f->spacestack);
+	if (p) {
+		if (*p) {
+			r_flag_space_set (f, p);
+		}
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 R_API int r_flag_space_set(RFlag *f, const char *name) {
 	int i;
 	if (name == NULL || *name == '*') {
