@@ -103,7 +103,7 @@ static int cmd_section(void *data, const char *input) {
 					snprintf (file, sizeof (file), "%s", input+2);
 				} else snprintf (file, sizeof (file), "0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					s->vaddr, s->vaddr+s->size, r_str_rwx_i (s->rwx));
-				if (!r_file_dump (file, buf, s->size)) {
+				if (!r_file_dump (file, buf, s->size, 0)) {
 					eprintf ("Cannot write '%s'\n", file);
 					free (buf);
 					return R_FALSE;

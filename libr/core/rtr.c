@@ -671,7 +671,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 							r_config_get (core->config, "http.uproot"),
 							rs->path + 4);
 						eprintf ("UPLOADED '%s'\n", filename);
-						r_file_dump (filename, ret, retlen);
+						r_file_dump (filename, ret, retlen, 0);
 						free (filename);
 						snprintf (buf, sizeof (buf),
 							"<html><body><h2>uploaded %d bytes. Thanks</h2>\n", retlen);

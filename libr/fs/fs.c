@@ -282,7 +282,7 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 			item = r_fs_open (fs, npath);
 			if (item) {
 				r_fs_read (fs, item, 0, item->size);
-				r_file_dump (str, item->data, item->size);
+				r_file_dump (str, item->data, item->size, 0);
 				free (item->data);
 				r_fs_close (fs, item);
 			}
@@ -682,7 +682,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			file = r_fs_open (fs, s);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
-				r_file_dump (input, file->data, file->size);
+				r_file_dump (input, file->data, file->size, 0);
 				free (file->data);
 				r_fs_close (fs, file);
 			} else {

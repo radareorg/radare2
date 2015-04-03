@@ -224,7 +224,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 		if (strstr (cmd, "BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
-				if (r_file_dump (f, core->block, core->blocksize))
+				if (r_file_dump (f, core->block, core->blocksize, 0))
 					r_sys_setenv ("BLOCK", f);
 				free (f);
 			}

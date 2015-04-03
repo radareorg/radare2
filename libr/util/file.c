@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -390,12 +390,19 @@ R_API char *r_file_root(const char *root, const char *path) {
 	return ret;
 }
 
-R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
+R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	int ret;
 	FILE *fd;
-	if (!file || !*file || !buf)
+	if (!file || !*file || !buf) {
+		eprintf ("RET %p, buf %p\n", file, buf);
 		return R_FALSE;
-	fd = r_sandbox_fopen (file, "wb");
+	}
+	if (append) {
+		fd = r_sandbox_fopen (file, "awb");
+	} else {
+		r_sys_truncate (file, 0);
+		fd = r_sandbox_fopen (file, "wb");
+	}
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;

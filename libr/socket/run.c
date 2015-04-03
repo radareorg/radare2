@@ -593,7 +593,9 @@ R_API int r_run_start(RRunProfile *p) {
 		if (p->_pidfile) {
 			char pidstr[32];
 			snprintf (pidstr, sizeof (pidstr), "%d\n", getpid ());
-			r_file_dump (p->_pidfile, (const ut8*)pidstr, strlen (pidstr));
+			r_file_dump (p->_pidfile,
+				(const ut8*)pidstr,
+				strlen (pidstr), 0);
 		}
 #endif
 

@@ -1120,7 +1120,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 							r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
 							r_cons_set_raw (1);
 							r_cons_show_cursor (R_FALSE);
-							r_file_dump (buf, file->data, file->size);
+							r_file_dump (buf, file->data, file->size, 0);
 							r_fs_close (core->fs, file);
 							r_cons_printf ("Done\n");
 						} else r_cons_printf ("Cannot dump file\n");

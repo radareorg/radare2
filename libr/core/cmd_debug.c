@@ -548,7 +548,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				} else snprintf (file, sizeof (file),
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					map->addr, map->addr_end, r_str_rwx_i (map->perm));
-				if (!r_file_dump (file, buf, map->size)) {
+				if (!r_file_dump (file, buf, map->size, 0)) {
 					eprintf ("Cannot write '%s'\n", file);
 					free (buf);
 					return R_FALSE;

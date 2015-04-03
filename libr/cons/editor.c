@@ -66,7 +66,7 @@ static void filesave () {
 				lines[i]='\n';
 		}
 	}
-	if (r_file_dump (path, (const ut8*)lines, bytes))
+	if (r_file_dump (path, (const ut8*)lines, bytes, 0))
 		eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
 	else eprintf ("Cannot save file\n");
 	// restore back zeroes

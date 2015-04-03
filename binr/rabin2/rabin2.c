@@ -167,7 +167,7 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 		eprintf ("Invalid offsets\n");
 		res = R_FALSE;
 	} else {
-		if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size)) {
+		if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size, 0)) {
 			eprintf ("Error extracting %s\n", outfile);
 			res = R_FALSE;
 		} else {
@@ -253,7 +253,7 @@ static int rabin_dump_sections(char *scnname) {
 			}
 			r_buf_read_at (bin->cur->buf, section->paddr, buf, section->size);
 			if (output) {
-				r_file_dump (output, buf, section->size);
+				r_file_dump (output, buf, section->size, 0);
 			} else {
 				r_hex_bin2str (buf, section->size, ret);
 				printf ("%s\n", ret);
@@ -592,7 +592,7 @@ int main(int argc, char **argv) {
 		}
 		b = r_bin_create (bin, code, codelen, data, datalen);
 		if (b) {
-			if (r_file_dump (file, b->buf, b->length)) {
+			if (r_file_dump (file, b->buf, b->length, 0)) {
 				eprintf ("Dumped %d bytes in '%s'\n", b->length, file);
 				r_file_chmod (file, "+x", 0);
 			} else eprintf ("Error dumping into a.out\n");

@@ -117,7 +117,7 @@ static int cmd_project(void *data, const char *input) {
 				if (data) {
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
-						r_file_dump (str, data, strlen ((const char*)data));
+						r_file_dump (str, data, strlen ((const char*)data), 0);
 						free (str);
 					}
 					free (data);

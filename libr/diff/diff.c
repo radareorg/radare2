@@ -79,8 +79,8 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	ooa = oob = 0LL;
 	oop = -1;
 
-	r_file_dump (".a", a, la);
-	r_file_dump (".b", b, lb);
+	r_file_dump (".a", a, la, 0);
+	r_file_dump (".b", b, lb, 0);
 	r_sys_cmd ("radiff -d .a .b | rsc uncolor > .d");
 	fd = fopen (".d", "r");
 

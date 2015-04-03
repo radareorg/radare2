@@ -60,13 +60,17 @@ R_API int r_core_seek_base (RCore *core, const char *hex) {
 	return r_core_seek (core, addr, 1);
 }
 
-R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
+R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
 	ut64 i;
 	ut8 *buf;
 	int bs = core->blocksize;
 	FILE *fd;
-	r_sys_truncate (file, 0);
-	fd = r_sandbox_fopen (file, "wb");
+	if (append) {
+		fd = r_sandbox_fopen (file, "ab");
+	} else {
+		r_sys_truncate (file, 0);
+		fd = r_sandbox_fopen (file, "wb");
+	}
 	if (!fd) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;

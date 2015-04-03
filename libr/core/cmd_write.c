@@ -669,31 +669,45 @@ static int cmd_write(void *data, const char *input) {
 		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;
-	case 't': {
-		st64 sz = core->blocksize;
+	case 't': // "wt"
 		if (*str == '?') {
-			eprintf ("Usage: wt file [size]\n");
+			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
 			free (ostr);
 			return 0;
-		} else
-		if (*str != ' ') {
-			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-			snprintf(_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
-			filename = _fn;
-		}  else filename = str+1;
-		tmp = strchr (str+1, ' ');
-		if (tmp) {
-			sz = (st64) r_num_math (core->num, tmp+1);
-			*tmp = 0;
-			if (sz<1) eprintf ("Invalid length\n");
-			else r_core_dump (core, filename, core->offset, (ut64)sz);
 		} else {
-			if (!r_file_dump (filename, core->block, core->blocksize)) {
-				sz = 0;
-			} else sz = core->blocksize;
-		}
-		eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
-			sz, core->offset, filename);
+			int append = 0;
+			st64 sz = core->blocksize;
+			if (*str=='a') { // "wta"
+				append = 1;
+				str++;
+				if (str[0]==' ') {
+					filename = str+1;
+				} else {
+					const char* prefix = r_config_get (core->config, "cfg.prefixdump");
+					snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+					filename = _fn;
+				}
+			} else if (*str != ' ') {
+				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
+				snprintf(_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+				filename = _fn;
+			} else filename = str+1;
+			tmp = strchr (str+1, ' ');
+			if (tmp) {
+				sz = (st64) r_num_math (core->num, tmp+1);
+				if (!sz) {
+					sz = core->blocksize;
+				}
+				*tmp = 0;
+				if (sz<1) eprintf ("Invalid length\n");
+				else r_core_dump (core, filename, core->offset, (ut64)sz, append);
+			} else {
+				if (!r_file_dump (filename, core->block, core->blocksize, append)) {
+					sz = 0;
+				} else sz = core->blocksize;
+			}
+			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+				sz, core->offset, filename);
 		}
 		break;
 	case 'f':
