@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
 		case 'B': incremental = 0; break;
 		case 'b': bsize = (int)r_num_math (NULL, optarg); break;
 		case 'f': from = r_num_math (NULL, optarg); break;
-		case 't': to = r_num_math (NULL, optarg); break;
+		case 't': to = 1+r_num_math (NULL, optarg); break;
 		case 'v': return blob_version ("rahash2");
 		case 'h': return do_help (0);
 		case 's': setHashString (optarg, 0); break;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_print.h"
 #include "r_util.h"
@@ -22,6 +22,8 @@ R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
         ut32 minutes = (t&0x07e0)>>5;
         ut32 seconds = (t&0x001f)<<1;
 
+	// TODO: support p->datezone
+	// TODO: support p->datefmt
         /* la data de modificacio del fitxer, no de creacio del zip */
         p->printf("%d-%02d-%02d %d:%d:%d\n",
                 year, month, day, hour, minutes, seconds);
@@ -38,6 +40,7 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 		r_mem_copyendian ((ut8*)&t, buf, sizeof(time_t), p->big_endian);
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt[0]) {
+			t += p->datezone * (60*60);
 			time = (const struct tm*)gmtime((const time_t*)&t);
 			if (time) {
 				ret = strftime (s, sizeof (s), p->datefmt, time);
@@ -65,15 +68,16 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 
         l = time(0);
         localtime_r (&l, &curt);
+	// XXX localtime is affected by the timezone. 
 
         if ((curt.tm_wday >= 0 && curt.tm_wday < 7)
         &&  (curt.tm_mon >= 0 && curt.tm_mon < 12)) {
-		sprintf(str, "%s, %02d %s %d %02d:%02d:%02d GMT",
+		sprintf (str, "%s, %02d %s %d %02d:%02d:%02d GMT + %d",
 			week_str[curt.tm_wday],
 			curt.tm_mday,
 			month_str[curt.tm_mon],
 			curt.tm_year + 1900, curt.tm_hour,
-			curt.tm_min, curt.tm_sec);
+			curt.tm_min, curt.tm_sec, curt.tm_gmtoff / (60*60));
 		ret = sizeof(time_t);
 	}
 #else

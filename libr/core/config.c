@@ -368,6 +368,13 @@ static int cb_cfgdatefmt(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_timezone(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->print->datezone = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_cfgdebug(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1060,7 +1067,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);
 	SETPREF("cfg.plugins", "true", "Load plugins at startup (set to false for faster startup)");
 	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
-	SETCB("cfg.datefmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
+	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
+	SETICB("time.zone", 0, &cb_timezone, "timezone shift in hours +2, -1,..");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "set/unset the debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__ && !__CYGWIN__

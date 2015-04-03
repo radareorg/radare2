@@ -154,6 +154,7 @@ R_API RPrint *r_print_new() {
 	p->bytespace = 0;
 	p->interrupt = 0;
 	p->big_endian = CPU_ENDIAN;
+	p->datezone = 0;
 	p->col = 0;
 	p->width = 78;
 	p->cols = 16;

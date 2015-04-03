@@ -166,33 +166,33 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 				// rip ".dll"
 				symdllname[strlen(symdllname)-4]=0;
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
-							sdb_free (db);
-							db = NULL;
-							free (sdb_module);
-							sdb_module = strdup (symdllname);
-							filename = sdb_fmt (1, "%s.sdb", symdllname);
-							if (r_file_exists (filename)) {
-								db = sdb_new (NULL, filename, 0);
-							} else {
+					sdb_free (db);
+					db = NULL;
+					free (sdb_module);
+					sdb_module = strdup (symdllname);
+					filename = sdb_fmt (1, "%s.sdb", symdllname);
+					if (r_file_exists (filename)) {
+						db = sdb_new (NULL, filename, 0);
+					} else {
 #if __WINDOWS__
-								filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", symdllname);
+						filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", symdllname);
 #else
-								filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", symdllname);
+						filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", symdllname);
 #endif
-								if (r_file_exists (filename)) {
-									db = sdb_new (NULL, filename, 0);
-								}
-							}
+						if (r_file_exists (filename)) {
+							db = sdb_new (NULL, filename, 0);
 						}
-						if (db) {
-							// ordinal-1 because we enumerate starting at 0
-							symname = resolveModuleOrdinal (db, symdllname, import_ordinal-1);
-							if (symname) {
-								snprintf (import_name, 
-									PE_NAME_LENGTH,
-									"%s_%s", dll_name, symname);
-							}
-						}
+					}
+				}
+				if (db) {
+					// ordinal-1 because we enumerate starting at 0
+					symname = resolveModuleOrdinal (db, symdllname, import_ordinal-1);
+					if (symname) {
+						snprintf (import_name, 
+							PE_NAME_LENGTH,
+							"%s_%s", dll_name, symname);
+					}
+				}
 			} else {
 				import_ordinal ++;
 				ut64 off = PE_(r_bin_pe_vaddr_to_paddr)(bin, import_table);
@@ -303,11 +303,22 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	
 	// adding compile time to the SDB
 	{
-	time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
-	sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
-		bin->nt_headers->file_header.TimeDateStamp, 0);
-	sdb_set (bin->kv, "image_file_header.TimeDateStamp_string",
-		ctime (&ts), 0);
+	       struct timezone tz;
+	       struct timeval tv;
+	       int gmtoff;
+	       struct tm *lt;
+	       struct tm *t;
+	       time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
+	       sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
+		       bin->nt_headers->file_header.TimeDateStamp, 0);
+
+	       gettimeofday (&tv, &tz);
+	       gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
+	       ts += gmtoff;
+	       t = gmtime (&ts);
+	       // gmt offset for pe date is t->tm_gmtoff
+	       sdb_set (bin->kv, "image_file_header.TimeDateStamp_string",
+		       ctime (&ts), 0);
 	}
 
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||

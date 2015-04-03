@@ -2633,9 +2633,11 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '8':
-		if (input[1] == '?')
-			r_cons_printf("|Usage: p8 [len]          8bit hexpair list of bytes\n");
-		else r_print_bytes (core->print, core->block, len, "%02x");
+		if (input[1] == '?') {
+			r_cons_printf("|Usage: p8[j] [len]     8bit hexpair list of bytes (see pcj)\n");
+		} else if (input[1] == 'j') {
+			r_core_cmdf (core, "pcj %s", input+2);
+		} else r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f':
 		cmd_print_format (core, input, len);
@@ -2767,7 +2769,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p2"," [len]","8x8 2bpp-tiles",
 			 "p3"," [file]","print stereogram (3D)",
 			 "p6","[de] [len]", "base64 decode/encode",
-			 "p8"," [len]","8bit hexpair list of bytes",
+			 "p8","[j] [len]","8bit hexpair list of bytes",
 			 "pa","[ed] [hex|asm]", "pa:assemble  pad:disasm or pae: esil from hexpairs",
 			 "pA","[n_ops]", "show n_ops address and type",
 			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",

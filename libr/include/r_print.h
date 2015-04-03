@@ -36,6 +36,7 @@ typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
 	char datefmt[32];
+	int datezone;
 	int (*write)(const unsigned char *buf, int len);
 	int (*printf)(const char *str, ...);
 	int (*disasm)(void *p, ut64 addr);
