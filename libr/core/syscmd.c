@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <errno.h>
+#include <glob.h>
 
 #define FMT_RAW  1
 #define FMT_JSON 2
@@ -85,11 +86,15 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
 R_API void r_core_syscmd_ls(const char *input) {
 	const char *path = ".";
+	int i = 0;
+	int k = 0;
 	int printfmt = 0;
 	RListIter *iter;
 	RList *files;
 	char *name;
 	char *dir;
+	char *globbed_path;
+	glob_t globbuf;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
 		return;
@@ -104,28 +109,36 @@ R_API void r_core_syscmd_ls(const char *input) {
 			}
 		} else path = input+2;
 	}
-	if (r_file_is_regular (path)) {
-		showfile (0, path, path, printfmt);
-		return;
-	}
-	files = r_sys_dir (path);
+	glob(path, 0, NULL, &globbuf);
+	i = globbuf.gl_pathc;
+	if (printfmt == FMT_JSON && globbuf.gl_pathc > 1) r_cons_printf ("[");
+	while(i) {
+		globbed_path = globbuf.gl_pathv[--i];
+		if (r_file_is_regular (globbed_path)) {
+			showfile (k++, globbed_path, globbed_path, printfmt);
+			continue;
+		}
+		files = r_sys_dir (globbed_path);
 
-	if (path[strlen (path)-1] == '/')
-		dir = strdup (path);
-	else
-		dir = r_str_concat (strdup (path), "/");
-	int nth = 0;
-	if (printfmt == FMT_JSON) r_cons_printf ("[");
-	r_list_foreach (files, iter, name) {
-		char *n = r_str_concat (strdup (dir), name);
-		if (!n) break;
-		if (*n) showfile (nth, n, name, printfmt);
-		free (n);
-		nth++;
+		if (globbed_path[strlen (globbed_path)-1] == '/')
+			dir = strdup (globbed_path);
+		else
+			dir = r_str_concat (strdup (globbed_path), "/");
+		int nth = 0;
+		if (printfmt == FMT_JSON) r_cons_printf ("[");
+		r_list_foreach (files, iter, name) {
+			char *n = r_str_concat (strdup (dir), name);
+			if (!n) break;
+			if (*n) showfile (nth, n, name, printfmt);
+			free (n);
+			nth++;
+		}
+		if (printfmt == FMT_JSON) r_cons_printf ("]");
+		free (dir);
+		r_list_free (files);
 	}
-	if (printfmt == FMT_JSON) r_cons_printf ("]");
-	free (dir);
-	r_list_free (files);
+	if (printfmt == FMT_JSON && globbuf.gl_pathc > 1) r_cons_printf ("]");
+	globfree(&globbuf);
 }
 
 R_API void r_core_syscmd_cat(const char *file) {
