@@ -84,7 +84,7 @@ script:
   - ./configure --prefix=`pwd`/install > /dev/null  # TODO: Might enable some of the additional features.
   - make -s > /dev/null
   - make install > /dev/null
-  - PATH=`pwd`/install/bin:$PATH && \
-    LD_LIBRARY_PATH=`pwd`/install/lib:$LD_LIBRARY_PATH && \
-    cd radare2-regressions && \
-    VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
+  - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
+  - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
+  - cd radare2-regressions
+  - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
