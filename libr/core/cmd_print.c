@@ -1955,12 +1955,13 @@ static int cmd_print(void *data, const char *input) {
 
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
-				l = -l;
+				if (l<0)
+					l = -l;
 				if (block) {
 					if (*input == 'D'){ //pD
-						r_core_read_at (core, addr-l, block, core->blocksize);
+						r_core_read_at (core, addr-l, block, l); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
+							core, addr-l, block, l, l, 0, 1);
 					} else { //pd
 						const int bs = core->blocksize;
 						int instr_len;
