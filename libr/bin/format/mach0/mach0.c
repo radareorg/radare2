@@ -133,7 +133,8 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 
 static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	struct symtab_command st;
-	int len = r_buf_fread_at(bin->b, off, (ut8*)&st, bin->endian?"6I":"6i", 1);
+	int len = r_buf_fread_at (bin->b, off, (ut8*)&st,
+		bin->endian?"6I":"6i", 1);
 	if (len == -1) {
 		eprintf ("Error: read (symtab)\n");
 		return R_FALSE;
@@ -147,12 +148,14 @@ static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			return R_FALSE;
 		}
 		bin->symstrlen = st.strsize;
-		if (r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr, st.strsize) == -1) {
+		if (r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr,
+				st.strsize) == -1) {
 			eprintf ("Error: read (symstr)\n");
 			R_FREE (bin->symstr);
 			return R_FALSE;
 		}
-		if (!(bin->symtab = malloc (bin->nsymtab * sizeof (struct MACH0_(nlist))))) {
+		if (!(bin->symtab = malloc (bin->nsymtab *
+				sizeof (struct MACH0_(nlist))))) {
 			perror ("malloc (symtab)");
 			return R_FALSE;
 		}
@@ -395,13 +398,13 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
 			bin->nsegs++;
-			if (!parse_segments(bin, off)) {
+			if (!parse_segments (bin, off)) {
 				bin->nsegs--;
 				return R_FALSE;
 			}
 			break;
 		case LC_SYMTAB:
-			if (!parse_symtab(bin, off))
+			if (!parse_symtab (bin, off))
 				return R_FALSE;
 			break;
 		case LC_DYSYMTAB:
@@ -500,8 +503,28 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				eprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
 			}
 			break;
+		case LC_CODE_SIGNATURE:
+			//eprintf ("mach0: TODO: show code signature\n");
+			/* ut32 dataoff
+			// ut32 datasize */
+			break;
+		case LC_SOURCE_VERSION:
+			/* uint64_t  version;  */
+			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
+			//eprintf ("mach0: TODO: Show source version\n");
+			break;
+		case LC_SEGMENT_SPLIT_INFO:
+			/* TODO */
+			break;
+		case LC_FUNCTION_STARTS:
+			/* compressed table of function start addresses */
+			//eprintf ("mach0: TODO: LC_FUNCTION_STARTS\n");
+			break;
+		case LC_REEXPORT_DYLIB:
+			/* TODO */
+			break;
 		default:
-			///eprintf ("Unknown header command %x\n", lc.cmd);
+			//eprintf ("mach0: Unknown header command %x\n", lc.cmd);
 			break;
 		}
 	}
@@ -674,22 +697,73 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	return R_FALSE;
 }
 
+
+static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
+	ut64 ret = 0LL;
+	struct section_t *sections;
+	if ((sections = MACH0_(get_sections) (bin))) {
+		int i;
+		for (i = 0; !sections[i].last; i++) {
+			if (strstr(sections[i].name, "text")) {
+				ret =  sections[i].offset;
+				break;
+			}
+		}
+		free (sections);
+	}
+	return ret;
+}
+
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	const char *symstr;
 	struct symbol_t *symbols;
-	int from, to, i, j, s, stridx, symbols_size;
+	int from, to, i, j, s, stridx, symbols_size, symbols_count;
+	ut64 text_base = get_text_base (bin);
 
 	if (!bin || !bin->symtab || !bin->symstr)
 		return NULL;
-	symbols_size = (bin->dysymtab.nextdefsym + \
+	/* parse symbol table */
+	/* parse dynamic symbol table */
+	symbols_count = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
-			bin->dysymtab.iundefsym + \
-			bin->dysymtab.nundefsym + 1) * \
-			sizeof (struct symbol_t);
+			bin->dysymtab.nundefsym );
+	symbols_count += bin->nsymtab;
+	//symbols_count = bin->nsymtab;
+	symbols_size = (symbols_count+1)*2 * sizeof (struct symbol_t);
 
 	if (!(symbols = malloc (symbols_size)))
 		return NULL;
-	for (s = j = 0; s < 2; s++) {
+
+	j = 0; // symbol_idx
+	for (i=0; i<bin->nsymtab; i++) {
+		struct MACH0_(nlist) *st = &bin->symtab[i];
+#if 0
+		eprintf ("stridx %d -> section %d type %d value = %d\n",
+			st->n_un.n_strx, st->n_sect, st->n_type, st->n_value);
+#endif
+		stridx = st->n_un.n_strx;
+		if (stridx>=0 && stridx<bin->symstrlen)
+			symstr = (char*)bin->symstr+stridx;
+		else symstr = "???";
+		// 0 is for imports
+		// 1 is for symbols
+		// 2 is for func.eh (exception handlers?)
+		int section = st->n_sect;
+		if (section == 1) { // text ??st->n_type == 1) {
+			/* is symbol */
+			symbols[j].offset= st->n_value + text_base;
+			symbols[j].addr = addr_to_offset(bin, symbols[j].offset);
+			symbols[j].size = 0; /* find next symbol and crop */
+			if (st->n_type & N_EXT)
+				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+			else symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
+			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
+			symbols[j].last = 0;
+			j++;
+		}
+	}
+	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
 			from = bin->dysymtab.iextdefsym;
@@ -706,9 +780,17 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			break;
 #endif
 		}
+		if (from == to)
+			continue;
+#define OLD 1
+#if OLD
+               from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
+               to = R_MIN (to , symbols_size/sizeof(struct symbol_t));
+               to = R_MIN (to, bin->nsymtab);
+#else
 		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
-		to = R_MIN (to , symbols_size/sizeof(struct symbol_t));
-		to = R_MIN (to, bin->nsymtab);
+		to = symbols_count; //symbols_size/sizeof(struct symbol_t);
+#endif
 		if (to>0x40000) {
 			eprintf ("WARNING: corrupted mach0 header: symbol table is too big\n");
 			free (symbols);
