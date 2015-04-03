@@ -3,6 +3,9 @@
 #include "r_lib.h"
 #include "r_core.h"
 #include "r_lang.h"
+#if __WINDOWS__
+#include <windows.h>
+#endif
 
 static int lang_pipe_run(RLang *lang, const char *code, int len);
 static int lang_pipe_file(RLang *lang, const char *file) {
@@ -15,6 +18,25 @@ static void env(const char *s, int f) {
 //	eprintf ("%s %s\n", s, a);
 	free (a);
 }
+
+#if __WINDOWS__
+static int myCreateChildProcess(char * szCmdline);
+static int myCreateChildProcess(char * szCmdline) {
+	PROCESS_INFORMATION piProcInfo;
+	STARTUPINFO siStartInfo;
+	BOOL bSuccess = FALSE;
+	DWORD dwWritten;
+	ZeroMemory( &piProcInfo, sizeof(PROCESS_INFORMATION));
+	ZeroMemory( &siStartInfo, sizeof(STARTUPINFO) );
+	siStartInfo.cb = sizeof(STARTUPINFO);
+	bSuccess = CreateProcess(NULL,szCmdline,NULL,NULL,TRUE,0,NULL,NULL,&siStartInfo,&piProcInfo);
+	if ( ! bSuccess )
+		return R_FALSE;
+	CloseHandle(piProcInfo.hProcess);
+	CloseHandle(piProcInfo.hThread);
+	return R_TRUE;
+}
+#endif
 
 static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	int safe_in = dup (0);
@@ -48,7 +70,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			sleep (1);
 		}
 #endif
-		write (output[1], "", 1); // EOF
+		write (output[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
@@ -95,8 +117,46 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	waitpid(child, NULL, 0);
 	return R_TRUE;
 #else
-	eprintf ("Only supported on UNIX\n");
+#if __WINDOWS__
+	HANDLE hPipeInOut = NULL;
+	DWORD dwRead, dwWritten;
+	CHAR buf[1024];
+	BOOL bSuccess = FALSE;
+	SECURITY_ATTRIBUTES saAttr;
+	int res=0;
+	hPipeInOut = CreateNamedPipe("\\\\.\\pipe\\R2PIPE_IN" ,PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE |PIPE_READMODE_MESSAGE | PIPE_WAIT,PIPE_UNLIMITED_INSTANCES, 1024, 1024,0,NULL);
+	if (myCreateChildProcess(code)!=R_TRUE) {
+		//eprintf("Error spawning process: %s\n",code);
+		return R_TRUE;
+	}
+	bSuccess = ConnectNamedPipe(hPipeInOut, NULL);
+	if (!bSuccess) {
+		//eprintf("Error connecting pipe.\n");
+		return R_TRUE;
+	}
+	r_cons_break (NULL, NULL);
+	for (;;) {
+		/*if (r_cons_singleton ()->breaked) {
+			break;
+		}*/
+		memset (buf, 0, sizeof (buf));
+		bSuccess = ReadFile( hPipeInOut, buf, 1024, &dwRead, NULL);
+		if (!bSuccess || !buf[0]) {
+			break;
+		}
+		buf[sizeof(buf)-1] = 0;
+		res = lang->cmd_str ((RCore*)lang->user, buf);
+		if (res) {
+			WriteFile(hPipeInOut, res, strlen (res)+1, &dwWritten, NULL);
+			free (res);
+		} else {
+			WriteFile(hPipeInOut, "", 1, &dwWritten, NULL);
+		}
+	}
+	CloseHandle(hPipeInOut);
+	r_cons_break_end ();
 	return R_TRUE;
+#endif
 #endif
 }
 
