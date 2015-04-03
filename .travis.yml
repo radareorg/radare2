@@ -53,7 +53,7 @@ env:
   #- TESTS=asm.x86
   
   #- TESTS=commands         # r2 commands related
-  #- TESTS=tools            # tools related 
+  - TESTS=tools            # tools related 
 
   
 # Additional depencies like capstone are downloaded by the r2 makefiles.
