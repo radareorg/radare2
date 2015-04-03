@@ -180,6 +180,7 @@ static int cmd_help(void *data, const char *input) {
 		{
 			char *asnum, unit[32];
 			ut32 n32, s, a;
+			double d;
 			float f;
 
 			n = r_num_math (core->num, input+1);
@@ -189,6 +190,7 @@ static int cmd_help(void *data, const char *input) {
 			asnum  = r_num_as_string (NULL, n);
 			n32 = (ut32)n;
 			memcpy (&f, &n32, sizeof (f));
+			memcpy (&d, &n, sizeof (d));
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
 			a = n & 0x0fff;
@@ -204,7 +206,8 @@ static int cmd_help(void *data, const char *input) {
 			}
 			/* binary and floating point */
 			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
-			r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);
+			r_cons_printf ("%s %.01lf %ff %lf\n",
+				out, core->num->fvalue, f, d);
 		}
 		break;
 	case 'v':
