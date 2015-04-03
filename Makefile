@@ -9,7 +9,7 @@ DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
-R2VC=$(shell git rev-list --all | wc -l)
+R2VC=$(shell git rev-list --all --count)
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
