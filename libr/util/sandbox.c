@@ -20,6 +20,12 @@ R_API int r_sandbox_check_path (const char *path) {
 
 	if (!path) return 0;
 
+	root_len = strlen (R2_LIBDIR"/radare2");
+	if (!strncmp (path, R2_LIBDIR"/radare2", root_len))
+		return 1;
+	root_len = strlen (R2_DATDIR"/radare2");
+	if (!strncmp (path, R2_DATDIR"/radare2", root_len))
+		return 1;
 	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
 	root_len = strlen (R2_WWWROOT);
 	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
