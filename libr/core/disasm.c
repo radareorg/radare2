@@ -1784,16 +1784,23 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			if (ds->show_color) {
 				r_cons_printf (ds->pal_comment);
 			}
-			if (n==UT32_MAX || n==UT64_MAX) {
-				r_cons_printf ("  ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
-			} else if (n == n32 && (n32>-512 && n32 <512)) {
-				r_cons_printf ("  ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
-			} else {
+			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				const char *flag = "";
-				f = r_flag_get_i (core->flags, n);
+				f = r_flag_get_i (core->flags, p);
 				if (f) flag = f->name;
-				r_cons_printf ("  ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
-					p, ds->analop.refptr, n, flag);
+				r_cons_printf ("  ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
+			} else {
+				if (n==UT32_MAX || n==UT64_MAX) {
+					r_cons_printf ("  ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
+				} else if (n == n32 && (n32>-512 && n32 <512)) {
+					r_cons_printf ("  ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
+				} else {
+					const char *flag = "";
+					f = r_flag_get_i (core->flags, n);
+					if (f) flag = f->name;
+					r_cons_printf ("  ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
+							p, ds->analop.refptr, n, flag);
+				}
 			}
 			if (ds->show_color)
 				r_cons_printf (Color_RESET);

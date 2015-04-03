@@ -561,6 +561,12 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return (ut64)((int)(buf[23+1]+(buf[23+2]<<8)+
 		(buf[23+3]<<16)+(buf[23+4]<<24)))-bin->baddr;
 #endif
+	/* linux64 pie main */
+	if (buf[29] == 0x48 && buf[30] == 0x8d) { // lea rdi, qword [rip-0x21c4]
+		ut8 *p = buf+29+3;
+		st32 maindelta = p[0] | p[1]<<8 | p[2]<<16 | p[3]<<24;
+		return (ut64)(entry + 29 + maindelta) + 7;
+	}
 	return 0;
 }
 
