@@ -1598,33 +1598,46 @@ static int cmd_print(void *data, const char *input) {
 		free (new_arch);
 	}
 		break;
-	case 'b': { //pb
+	case 'b': { // "pb"
 		if (input[1]=='?') {
-			r_cons_printf("|Usage: p[bB] [len]       bitstream of N bytes\n");
+			r_cons_printf("|Usage: p[bB] [len] ([skip])  ; see also pB and pxb\n");
 		} else {
-			ut32 n;
-			int i, c;
-			char buf[32];
-#define P(x) (IS_PRINTABLE(x)?x:'.')
-#define SPLIT_BITS(x) memmove (x+5, x+4, 5); x[4]=0
-			for (i=c=0; i<len; i++,c++) {
-				if (c==0) r_print_offset (core->print, core->offset+i, 0, 0, 0);
-				r_str_bits (buf, core->block+i, 8, NULL);
-				SPLIT_BITS (buf);
-				r_cons_printf ("%s.%s  ", buf, buf+5);
-				if (c==3) {
-					const ut8 *b = core->block + i-3;
-					#define K(x) (b[3-x]<<(8*x))
-					n = K (0) | K (1) | K (2) | K (3);
-					r_cons_printf ("0x%08x  %c%c%c%c\n",
-						n, P (b[0]), P (b[1]), P (b[2]), P (b[3]));
-					c = -1;
+			int from, to;
+			const int size = len*8;
+			char *spc, *buf = malloc (size+1);
+			spc = strchr (input, ' ');
+			if (spc) {
+				len = r_num_math (core->num, spc+1);
+				if (len<1)
+					len = 1;
+				spc = strchr (spc+1, ' ');
+				if (spc) {
+					from = r_num_math (core->num, spc+1);
+				} else {
+					from = 0;
 				}
+				to = from+len;
+			} else {
+				from = 0;
+				to = size;
 			}
-			}
+			if (buf) {
+				int buf_len;
+				r_str_bits (buf, core->block, size, NULL);
+				buf_len = strlen (buf);
+				if (from>=buf_len) {
+					from = buf_len;
+				}
+				if (to<buf_len) {
+					buf[to] = 0;
+				}
+				r_cons_printf ("%s\n", buf+from);
+				free (buf);
+			} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+		}
 		}
 		break;
-	case 'B': { //pB
+	case 'B': { // "pB"
 		if (input[1]=='?') {
 			r_cons_printf ("|Usage: p[bB] [len]       bitstream of N bytes\n");
 		} else {
@@ -2267,6 +2280,7 @@ static int cmd_print(void *data, const char *input) {
 				"px/", "", "same as x/ in gdb (help x)",
 				"pxa", "", "show annotated hexdump",
 				"pxA", "", "show op analysis color map",
+				"pxb", "", "dump bits in hexdump form",
 				"pxe", "", "emoji hexdump! :)",
 				"pxf", "", "show hexdump of current function",
 				"pxh", "", "show hexadecimal half-words dump (16bit)",
@@ -2289,6 +2303,29 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'A': // "pxA"
 			cmd_print_pxA (core, len, input+1);
+			break;
+		case 'b': // "pxb"
+			{
+			ut32 n;
+			int i, c;
+			char buf[32];
+#define P(x) (IS_PRINTABLE(x)?x:'.')
+#define SPLIT_BITS(x) memmove (x+5, x+4, 5); x[4]=0
+			for (i=c=0; i<len; i++,c++) {
+				if (c==0) r_print_offset (core->print, core->offset+i, 0, 0, 0);
+				r_str_bits (buf, core->block+i, 8, NULL);
+				SPLIT_BITS (buf);
+				r_cons_printf ("%s.%s  ", buf, buf+5);
+				if (c==3) {
+					const ut8 *b = core->block + i-3;
+					#define K(x) (b[3-x]<<(8*x))
+					n = K (0) | K (1) | K (2) | K (3);
+					r_cons_printf ("0x%08x  %c%c%c%c\n",
+						n, P (b[0]), P (b[1]), P (b[2]), P (b[3]));
+					c = -1;
+				}
+			}
+			}
 			break;
 		case 'o': // "pxo"
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
@@ -2699,13 +2736,14 @@ static int cmd_print(void *data, const char *input) {
 			 "p3"," [file]","print stereogram (3D)",
 			 "p6","[de] [len]", "base64 decode/encode",
 			 "p8"," [len]","8bit hexpair list of bytes",
-			 "pa","[ed] [hex|asm]", "assemble (pa) disasm (pad) or esil (pae) from hexpairs",
+			 "pa","[ed] [hex|asm]", "pa:assemble  pad:disasm or pae: esil from hexpairs",
 			 "pA","[n_ops]", "show n_ops address and type",
+			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
 			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
-			 "p","[iI][df] [len]", "print N instructions/bytes (f=func) (see pi? and pdi)",
+			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 			 "pm"," [magic]","print libmagic data (pm? for more information)",
 			 "pr","[glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
 			 "p","[kK] [len]","print key in randomart (K is for mosaic)",
