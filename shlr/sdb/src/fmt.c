@@ -2,6 +2,7 @@
 
 #include "sdb.h"
 #include <stdarg.h>
+#include <string.h>
 
 // TODO: Add 'a' format for array of pointers null terminated??
 // XXX SLOW CONCAT

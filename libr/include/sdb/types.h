@@ -4,8 +4,6 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-
 
 #undef eprintf
 #define eprintf(x,y...) fprintf(stderr,x,##y)
@@ -41,6 +39,8 @@
 #else
 #define DIRSEP '/'
 #endif
+
+#include <unistd.h>
 
 #ifndef UNUSED
 #ifdef __GNUC__
