@@ -76,8 +76,9 @@ windist:
 	mkdir -p ${WINDIST}/radare2/${VERSION}/opcodes
 	cp -f libr/asm/d/*.sdb ${WINDIST}/radare2/${VERSION}/opcodes
 	mkdir -p ${WINDIST}/share/doc/radare2
-	mkdir -p ${WINDIST}/include/libr
-	cp libr/include/*.h ${WINDIST}/include/libr
+	mkdir -p ${WINDIST}/include/libr/sdb
+	cp -f libr/include/sdb/*.h ${WINDIST}/include/libr/sdb/
+	cp -f libr/include/*.h ${WINDIST}/include/libr
 	#mkdir -p ${WINDIST}/include/libr/sflib
 	cp -f doc/fortunes.* ${WINDIST}/share/doc/radare2
 	mv ${WINDIST} radare2-${WINBITS}-${VERSION}
