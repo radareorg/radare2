@@ -1,5 +1,9 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
+#if __WINDOWS__ && MINGW32 && !__CYGWIN__
+#include <stdlib.h>
+#endif
+
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
@@ -138,7 +142,11 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else
 	if (str[0]=='0' && str[1]=='x') {
+#if __WINDOWS__ && MINGW32 && !__CYGWIN__
+		ret = _strtoui64 (str+2, NULL, 16);
+#else
 		ret = strtoull (str+2, NULL, 16);
+#endif
 		//sscanf (str+2, "%"PFMT64x, &ret);
 	} else {
 		lch = str[len>0?len-1:0];
@@ -172,7 +180,11 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			break;
 		default:
 			//sscanf (str, "%"PFMT64d, &ret);
+#if __WINDOWS__ && MINGW32 && !__CYGWIN__
+			ret = _strtoui64 (str, NULL, 10);
+#else
 			ret = strtoull (str, NULL, 10);
+#endif
 			break;
 		}
 	}
