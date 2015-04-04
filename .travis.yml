@@ -52,7 +52,7 @@ env:
   - TESTS=asm.z80
   #- TESTS=asm.x86
   
-  #- TESTS=commands         # r2 commands related
+  - TESTS=commands         # r2 commands related
   - TESTS=tools            # tools related 
 
 # Force build on container-based infrastructure
