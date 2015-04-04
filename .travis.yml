@@ -18,7 +18,7 @@ env:
  
   #- Analysis
   #- TESTS=anal.arm
-  #- TESTS=anal.java
+  - TESTS=anal.java
   #- TESTS=anal.mips
   - TESTS=anal.others
   - TESTS=anal.x86
