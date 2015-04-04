@@ -9,7 +9,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_socket);
 
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
-#include "r_util.h"
+#include <r_util.h>
 #define R_NUM_USE_CALC 1
 
 R_API ut16 r_num_ntohs (ut16 foo) {

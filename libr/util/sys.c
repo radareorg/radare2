@@ -25,7 +25,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 //#  include <libproc.h>
 # endif
 #endif
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
@@ -34,7 +34,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__)
 # include <io.h>
 # include <winbase.h>
 #endif
@@ -175,7 +175,7 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_setenv(const char *key, const char *value) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) return 0;
 	if (value == NULL) {
 		unsetenv (key);
@@ -266,7 +266,7 @@ R_API char *r_sys_getenv(const char *key) {
 
 R_API char *r_sys_getdir(void) {
 	char *ret;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	char *cwd = _getcwd (NULL, 0);
 #else
 	char *cwd = getcwd (NULL, 0);
