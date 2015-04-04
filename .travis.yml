@@ -47,7 +47,7 @@ env:
   - TESTS=asm.gb
   - TESTS=asm.h8300
   - TESTS=asm.java
-  #- TESTS=asm.mips
+  - TESTS=asm.mips
   - TESTS=asm.tms320
   - TESTS=asm.z80
   #- TESTS=asm.x86
