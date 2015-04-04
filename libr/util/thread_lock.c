@@ -26,7 +26,7 @@ R_API int r_th_lock_wait(RThreadLock *thl) {
 #elif __WIN32__ || __WINDOWS__ && !defined(__CYGWIN__)
 	WaitForSingleObject (thl->lock, INFINITE);
 #else
-	while (r_th_lock_check ());
+	while (r_th_lock_check (thl));
 #endif
 	return 0;
 }
