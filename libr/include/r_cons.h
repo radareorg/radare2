@@ -166,7 +166,7 @@ typedef struct r_cons_t {
 
 	RConsEditorCallback editor;
 	void *user; // Used by <RCore*>
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	LPDWORD term_raw, term_buf;
