@@ -617,7 +617,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	char segname[17], sectname[17];
 	int i, j, to;
 
-	if (!bin->sects)
+	if (!bin || !bin->sects)
 		return NULL;
 	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
 	if (to<1)
