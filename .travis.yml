@@ -17,7 +17,7 @@ env:
   # TODO: run t.archos, once we have Linux tests in there.
  
   #- Analysis
-  #- TESTS=anal.arm
+  - TESTS=anal.arm
   - TESTS=anal.java
   #- TESTS=anal.mips
   - TESTS=anal.others
