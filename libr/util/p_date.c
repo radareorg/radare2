@@ -77,7 +77,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 			curt.tm_mday,
 			month_str[curt.tm_mon],
 			curt.tm_year + 1900, curt.tm_hour,
-			curt.tm_min, curt.tm_sec, curt.tm_gmtoff / (60*60));
+			curt.tm_min, curt.tm_sec, curt.tm_isdst);
 		ret = sizeof(time_t);
 	}
 #else
