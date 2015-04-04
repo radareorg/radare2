@@ -39,7 +39,7 @@ env:
   #- (dis)assemblers
   - TESTS=asm.8051
   - TESTS=asm.arc
-  #- TESTS=asm.arm
+  - TESTS=asm.arm
   - TESTS=asm.avr
   - TESTS=asm.cr16
   - TESTS=asm.dalvik
