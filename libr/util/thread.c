@@ -46,7 +46,7 @@ R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 		th->ready = R_FALSE;
 #if HAVE_PTHREAD
 		pthread_create(&th->tid, NULL, _r_th_launcher, th);
-#elif __WIN32__
+#elif __WIN32__ || __WINDOWS__ && !defined(__CYGWIN__)
 		th->tid = CreateThread(NULL, 0, _r_th_launcher, th, 0, &th->tid);
 #endif
 	}
