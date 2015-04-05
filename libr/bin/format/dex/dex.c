@@ -12,25 +12,43 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 	return version;
 }
 
+#define FAIL(x) { eprintf(x); goto fail; }
 struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	struct r_bin_dex_obj_t *bin = R_NEW0 (struct r_bin_dex_obj_t);;
-	if (!bin) return NULL;
+	if (!bin) {
+		goto fail;
+	}
 	bin->size = buf->length;
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
-		r_buf_free (bin->b);
-		free (bin);
-		return NULL;
+		goto fail;
 	}
-	// XXX: use r_buf_getc()
 	// XXX: this is not endian safe
+	// XXX: no need to dup all data!! just pointers to the bin->b
+	// XXX: return value not checked
 	/* header */
-	r_buf_read_at (bin->b, 0, (ut8*)&bin->header, sizeof (struct dex_header_t));
+	//r_buf_read_at (bin->b, 0, (ut8*)&bin->header, sizeof (struct dex_header_t));
+	bin->header = (*(struct dex_header_t*)bin->b->buf);
 
 	/* strings */
-	bin->strings = (ut32 *) malloc (bin->header.strings_size * sizeof (ut32) + 1);
+//eprintf ("strings size: %d\n", bin->header.strings_size);
+	#define STRINGS_SIZE ((bin->header.strings_size+1)*sizeof(ut32))
+	bin->strings = (ut32 *) calloc (bin->header.strings_size +1, sizeof (ut32));
+	if (!bin->strings) {
+		goto fail;
+	}
+
+	//bin->strings = bin->b->buf + bin->header.strings_offset;
+	int left;
+	bin->strings = r_buf_get_at (bin->b, bin->header.strings_offset, &left);
+	if (left< STRINGS_SIZE) {
+		FAIL ("Strings buffer is too small");
+	}
+
+#if 0
 	r_buf_read_at (bin->b, bin->header.strings_offset, (ut8*)bin->strings,
 			bin->header.strings_size * sizeof (ut32));
+#endif
 	/* classes */
 	bin->classes = (struct dex_class_t *) malloc (bin->header.class_size *
 			sizeof (struct dex_class_t) + 1);
@@ -53,6 +71,12 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	r_buf_read_at (bin->b, bin->header.fields_offset, (ut8*)bin->fields,
 			bin->header.fields_size * sizeof (struct dex_field_t));
 	return bin;
+fail:
+	if (bin) {
+		r_buf_free (bin->b);
+		free (bin);
+	}
+	return NULL;
 }
 
 // Move to r_util ??

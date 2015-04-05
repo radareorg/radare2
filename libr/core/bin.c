@@ -804,23 +804,61 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
+#define MYDB 1
+#if MYDB
+static Sdb *mydb = NULL;
+static RList *osymbols = NULL;
+static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name) {
+	RBinSymbol *symbol, *res = NULL;
+	RListIter *iter;
+	if (mydb && symbols != osymbols) {
+		sdb_free (mydb);
+		mydb = NULL;
+		osymbols = symbols;
+	}
+	if (mydb) {
+		symbol = (void*)(size_t)sdb_num_get (mydb, name, NULL);
+	} else {
+		mydb = sdb_new0 ();
+		r_list_foreach (symbols, iter, symbol) {
+			sdb_num_set (mydb, name, (ut64)(size_t)symbol, 0);
+			if (!res && !strcmp (symbol->name, name))
+				res = symbol;
+		}
+	}
+	return res;
+}
+#else
+static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name) {
+	RBinSymbol *symbol;
+	RListIter *iter;
+	r_list_foreach (symbols, iter, symbol) {
+		if (!res && !strcmp (symbol->name, name))
+			return symbol;
+	}
+	return NULL;
+}
+#endif
+
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 /* imp. is a prefix that can be rewritten by the symbol table */
 static ut64 impaddr(RBin *bin, int va, ut64 baddr, const char *name) {
-	RBinSymbol *symbol;
+	char impname[512];
 	RList *symbols;
-	RListIter *iter;
-	if (!name) return R_FALSE;
-	if ((symbols = r_bin_get_symbols (bin)) == NULL)
+	RBinSymbol *s;
+	if (!name || !*name) return R_FALSE;
+	if (!(symbols = r_bin_get_symbols (bin))) {
 		return R_FALSE;
-	r_list_foreach (symbols, iter, symbol) {
-		if (strncmp (symbol->name, "imp.", 4))
-			continue;
-		if (!strcmp (symbol->name+4, name))
-			return va? r_bin_get_vaddr (bin, baddr, symbol->paddr,
-				symbol->vaddr): symbol->paddr;
 	}
-	return 0;
+	snprintf (impname, sizeof (impname), "imp.%s", name);
+	s = get_symbol (bin, symbols, impname);
+	if (s) {
+		if (va) {
+			return r_bin_get_vaddr (bin, baddr, s->paddr, s->vaddr);
+		}
+		return s->paddr;
+	}
+	return 0LL;
 }
 
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name) {
@@ -912,6 +950,10 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 		}
 		if (!mode) r_cons_printf ("\n%i imports\n", i);
 	}
+#if MYDB
+	sdb_free (mydb);
+	mydb = NULL;
+#endif
 	return R_TRUE;
 }
 

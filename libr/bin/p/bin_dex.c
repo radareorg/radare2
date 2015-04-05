@@ -182,7 +182,7 @@ static RList* strings (RBinFile *arch) {
 			break;
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
-		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
+		if (len>1 && len < R_BIN_SIZEOF_STRINGS) {
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
 					(ut8*)&ptr->string, len);
 			ptr->string[(int) len+1]='\0';
@@ -460,8 +460,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 static RList* imports (RBinFile *arch) {
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
-	if (bin->imports_list)
+	if (bin->imports_list) {
 		return bin->imports_list;
+	}
 	dex_loadcode (arch, bin);
 	return bin->imports_list;
 #if 0
@@ -511,9 +512,8 @@ free (methodname);
 }
 static RList* methods (RBinFile *arch) {
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
-	if (bin->methods_list)
-		return bin->methods_list;
-	dex_loadcode (arch, bin);
+	if (!bin->methods_list)
+		dex_loadcode (arch, bin);
 	return bin->methods_list;
 }
 

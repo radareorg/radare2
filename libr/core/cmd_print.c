@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
-
 static char get_string_type (const ut8 *buf, ut64 len){
 	ut64 needle = 0;
 	int rc, i;
@@ -28,10 +27,10 @@ static char get_string_type (const ut8 *buf, ut64 len){
 				if (needle+1 < len){
 					r = buf[needle+1] << 8 | buf[needle];
 					rc = 2;
-				}else{
+				} else {
 					break;
 				}
-			}else{
+			} else {
 				rc = r_utf8_decode (buf+needle, len-needle, &r);
 				if(rc > 1) str_type = 'u';
 			}
