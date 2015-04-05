@@ -898,10 +898,15 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	int showfpu = R_FALSE;
 	int pid = dbg->pid;
 	int tid = dbg->tid;
 	if (size<1)
 		return R_FALSE;
+	if (type<0) {
+		showfpu = R_TRUE; // hack for debugging
+		type = -type;
+	}
 #if __WINDOWS__ && !__CYGWIN__
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
@@ -911,24 +916,26 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
 #if __MINGW64__
-		eprintf("working on this ....");
+		eprintf ("TODO: r_debug_native_reg_read fpu/mmx/xmm\n");
 #else
 		int i;
-		eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FloatSave.ControlWord);
-		eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FloatSave.StatusWord);
-		eprintf ("twd = 0x%08x ", (ut32)ctx.FloatSave.TagWord);
-		eprintf ("eof = 0x%08x\n", (ut32)ctx.FloatSave.ErrorOffset);
-		eprintf ("ese = 0x%08x\n", (ut32)ctx.FloatSave.ErrorSelector);
-		eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
-		eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
-		eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
-		for(i=0; i<8; i++) {
-			ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
-			a = a + (i * 4);
-			eprintf ("xmm%d = %08x %08x %08x %08x  ",i
-					, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
-			ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
-			eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+		if (showfpu) {
+			eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FloatSave.ControlWord);
+			eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FloatSave.StatusWord);
+			eprintf ("twd = 0x%08x ", (ut32)ctx.FloatSave.TagWord);
+			eprintf ("eof = 0x%08x\n", (ut32)ctx.FloatSave.ErrorOffset);
+			eprintf ("ese = 0x%08x\n", (ut32)ctx.FloatSave.ErrorSelector);
+			eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
+			eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
+			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
+			for(i=0; i<8; i++) {
+				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
+				a = a + (i * 4);
+				eprintf ("xmm%d = %08x %08x %08x %08x  ",i
+						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+				ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
+				eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+			}
 		}
 #endif
 	}
@@ -1071,13 +1078,14 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #if __linux__
 #if __x86_64__ || __i386__
 		{
-			int ret1 = 0;
-			struct user_fpregs_struct fpregs;
+		int ret1 = 0;
+		struct user_fpregs_struct fpregs;
 		if (type == R_REG_TYPE_FPU) {
 			int i;
 #if __x86_64__
 #if !__ANDROID__
-			ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+		ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+		if (showfpu) {
 			eprintf ("---- x86-64 ----\n ");
 			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
 			eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
@@ -1088,7 +1096,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
 			eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
 			eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
-			for(i=0;i<16;i++) {
+			for (i=0;i<16;i++) {
 				ut32 *a = (ut32*)&fpregs.xmm_space;
 				a = a + (i * 4);
 				eprintf ("xmm%d = %08x %08x %08x %08x   ",i
@@ -1107,30 +1115,30 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 							,c[0]
 							,(float) f[1]
 							,c[1]
-							);
-				}
-				else
-					eprintf("\n");
+						);
+				} else eprintf ("\n");
 			}
-			if (ret1 != 0) {
-				return R_FALSE;
-			}
-            if (sizeof (fpregs) < size) {
-				size = sizeof (fpregs);
-			}
-            memcpy (buf, &fpregs, size);
-            return sizeof (fpregs);
+		}
+		if (ret1 != 0) {
+			return R_FALSE;
+		}
+		if (sizeof (fpregs) < size) {
+			size = sizeof (fpregs);
+		}
+		memcpy (buf, &fpregs, size);
+		return sizeof (fpregs);
 #else
-            ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
-            eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
-            eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
-            eprintf ("ftw = 0x%04x              ", fpregs.ftw);
-            eprintf ("fop = 0x%04x\n", fpregs.fop);
-            eprintf ("rip = 0x%016"PFMT64x"  ", fpregs.rip);
-            eprintf ("rdp = 0x%016"PFMT64x"\n", fpregs.rdp);
-            eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
-            eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
-            for(i=0;i<8;i++) {
+		ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+		if (showfpu) {
+			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
+			eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
+			eprintf ("ftw = 0x%04x              ", fpregs.ftw);
+			eprintf ("fop = 0x%04x\n", fpregs.fop);
+			eprintf ("rip = 0x%016"PFMT64x"  ", fpregs.rip);
+			eprintf ("rdp = 0x%016"PFMT64x"\n", fpregs.rdp);
+			eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
+			eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
+			for(i=0;i<8;i++) {
 				ut64 *b = (ut64 *)&fpregs.st_space[i*4];
 				//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
 				ut32 *c =(ut32*)&fpregs.st_space;
@@ -1144,20 +1152,22 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 						,c[0]
 						,(float) f[1]
 						,c[1]
-						);
+					);
 			}
-			if (ret1 != 0)
-				return R_FALSE;
-			if (sizeof (fpregs) < size)
-				size = sizeof (fpregs);
-			memcpy (buf, &fpregs, size);
-			return sizeof (fpregs)
+		}
+		if (ret1 != 0)
+			return R_FALSE;
+		if (sizeof (fpregs) < size)
+			size = sizeof (fpregs);
+		memcpy (buf, &fpregs, size);
+		return sizeof (fpregs)
 #endif
 #elif __i386__
 #if !__ANDROID__
 			struct user_fpxregs_struct fpxregs;
 			ret1 = ptrace (PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret1==0) {
+				if (showfpu) {
 				eprintf ("---- x86-32 ----\n ");
 				eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
 				eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
@@ -1188,35 +1198,38 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 							,c[1]
 							);
 				}
+				}
 				if (sizeof (fpxregs) < size)
 					size = sizeof (fpxregs);
 				memcpy (buf, &fpxregs, size);
 				return sizeof (fpxregs);
 			} else {
 				ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				eprintf ("---- x86-32-noxmm ----\n ");
-				eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
-				eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
-				eprintf ("twd = 0x%04lx              ", fpregs.twd);
-				eprintf ("fip = 0x%04lx          \n", fpregs.fip);
-				eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
-				eprintf ("foo = 0x%04lx          \n", fpregs.foo);
-				eprintf ("fos = 0x%04lx              ", fpregs.fos);
-				for(i=0;i<8;i++) {
-					ut64 *b = (ut64 *)&fpregs.st_space[i*4];
-					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
-					ut32 *c =(ut32*)&fpregs.st_space;
-					float *f=(float *)&fpregs.st_space;
-					c=c+(i*4);
-					f=f+(i*4);
-					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
-							,(double)*((double*)&fpregs.st_space[i*4])
-							,*b
-							,(float) f[0]
-							,c[0]
-							,(float) f[1]
-							,c[1]
+				if (showfpu) {
+					eprintf ("---- x86-32-noxmm ----\n ");
+					eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
+					eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
+					eprintf ("twd = 0x%04lx              ", fpregs.twd);
+					eprintf ("fip = 0x%04lx          \n", fpregs.fip);
+					eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
+					eprintf ("foo = 0x%04lx          \n", fpregs.foo);
+					eprintf ("fos = 0x%04lx              ", fpregs.fos);
+					for(i=0;i<8;i++) {
+						ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+						//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+						ut32 *c =(ut32*)&fpregs.st_space;
+						float *f=(float *)&fpregs.st_space;
+						c=c+(i*4);
+						f=f+(i*4);
+						eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+								,(double)*((double*)&fpregs.st_space[i*4])
+								,*b
+								,(float) f[0]
+								,c[0]
+								,(float) f[1]
+								,c[1]
 							);
+					}
 				}
 				if (ret1 != 0)
 					return R_FALSE;
@@ -1227,24 +1240,26 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			}
 #else
 			ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			eprintf ("---- x86-32-noxmm ----\n ");
-			eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
-			eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
-			eprintf ("twd = 0x%04lx              ", fpregs.twd);
-			eprintf ("fip = 0x%04lx          \n", fpregs.fip);
-			eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
-			eprintf ("foo = 0x%04lx          \n", fpregs.foo);
-			eprintf ("fos = 0x%04lx              ", fpregs.fos);
-			for(i=0;i<8;i++) {
-				ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
-				double *d = (double*)b;
-				//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
-				ut32 *c =(ut32*)&fpregs.st_space;
-				float *f=(float *)&fpregs.st_space;
-				c=c+(i*4);
-				f=f+(i*4);
-				eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | %0.3f (0x%08x)\n"
-					,i ,d[0] ,b[0] ,f[0] ,c[0] ,f[1] ,c[1]);
+			if (showfpu) {
+				eprintf ("---- x86-32-noxmm ----\n ");
+				eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
+				eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
+				eprintf ("twd = 0x%04lx              ", fpregs.twd);
+				eprintf ("fip = 0x%04lx          \n", fpregs.fip);
+				eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
+				eprintf ("foo = 0x%04lx          \n", fpregs.foo);
+				eprintf ("fos = 0x%04lx              ", fpregs.fos);
+				for(i=0;i<8;i++) {
+					ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
+					double *d = (double*)b;
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpregs.st_space;
+					float *f=(float *)&fpregs.st_space;
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | %0.3f (0x%08x)\n"
+							,i ,d[0] ,b[0] ,f[0] ,c[0] ,f[1] ,c[1]);
+				}
 			}
 			if (ret1 != 0)
 				return R_FALSE;

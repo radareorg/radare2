@@ -866,7 +866,8 @@ free (rf);
 		}
 		break;
 	case 'm': // "drm"
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, R_FALSE);
+		/* Note, that negative type forces sync to print the regs from the backend */
+		r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, R_FALSE);
 		//r_debug_drx_list (core->dbg);
 		break;
 	case 'p': // "drp"
