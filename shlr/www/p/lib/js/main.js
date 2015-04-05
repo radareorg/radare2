@@ -6,6 +6,7 @@ $(document).ready( function() {
     select: function( event, ui ) {
       if (ui.tab.innerHTML.indexOf("Entropy") > -1) r2ui._ent.render();
       else if(ui.tab.innerHTML.indexOf("Strings") > -1) r2ui._str.render();
+      else if(ui.tab.innerHTML.indexOf("Types") > -1) r2ui._typ.render();
       else if(ui.tab.innerHTML.indexOf("Settings") > -1) r2ui._set.render();
       else if(ui.tab.innerHTML.indexOf("Projects") > -1) r2ui._prj.render();
       else if(ui.tab.innerHTML.indexOf("Hex") > -1) r2ui._hex.render();
@@ -42,11 +43,13 @@ $(document).ready( function() {
   var hex_panel = new HexPanel();
   var entropy_panel = new EntropyPanel();
   var strings_panel = new StringsPanel();
+  var types_panel = new TypesPanel();
   var settings_panel = new SettingsPanel();
   var projects_panel = new ProjectsPanel();
   r2ui._ent = entropy_panel;
   r2ui._dis = disasm_panel;
   r2ui._str = strings_panel;
+  r2ui._typ = types_panel;
   r2ui._set = settings_panel;
   r2ui._hex = hex_panel;
   r2ui._prj = projects_panel;
