@@ -1,19 +1,20 @@
 var TypesPanel = function () {
 	this.data = [];
+	this.optionSpacer = 300; //space in px for option buttons
 };
 
 TypesPanel.prototype.insertData = function(k, v, array) {
-	if(typeof array === 'undefined') { array = this.data};
+	if(typeof array === 'undefined') { array = this.data };
 	var kt = k[0].trim();
+
 	if(k.length == 1) {
-		console.log("case 1: " + array + " | " + kt + " | " + v);
 		array.push({
 			label: kt,
+			id: kt,
 			value: v
 		});
 		return;
 	} else if(array.length < 1) {
-		console.log("case 2: " + array + " | " + kt + " | " + v);
 		array.push({
 			label: kt ,
 			children: []
@@ -26,26 +27,17 @@ TypesPanel.prototype.insertData = function(k, v, array) {
 	for(var i in array) {
 		if(array[i].hasOwnProperty("label") && array[i].label === kt) {
 			if(array[i].hasOwnProperty("children")) {
-				console.log("case 3: " + array + " | " + kt + " | " + v);
 				this.insertData(k.slice(1), v, array[i].children);
 				return;
-			} else {
-				console.log("case 4: " + array + " | " + kt + " | " + v);
-				var obj = array[i];
-				if(k.length < 2) {
-					//array[i].children = [];
-					return;
-				} else {
-				 	array[i].children = [];
-				 	this.insertData(k.slice(1), v, array[i].children);
-				 	return;
-				}
+			} else if(k.length > 1) {
+				 array[i].children = [];
+				 this.insertData(k.slice(1), v, array[i].children);
+				 return;
 			}
 		}
 	}
 
-	//was not found in array, create it
-	console.log("case 5: " + array + " | " + kt + " | " + v);
+	//was not found in array, create + traverse
 	array.push({
 		label: kt
 	});
@@ -58,7 +50,6 @@ TypesPanel.prototype.insertData = function(k, v, array) {
 TypesPanel.prototype.generateContent = function() {
 	var ref = this;
 	r2.cmd("t", function(result) {
-
 		var strings = result.split("\n");
 
 		for(var i in strings) {
@@ -66,7 +57,7 @@ TypesPanel.prototype.generateContent = function() {
 
 			if(s.length < 2)
 				continue;
-		
+			
 			var k = s[0].split(".");
 			var v = s[1];
 		
@@ -74,24 +65,48 @@ TypesPanel.prototype.generateContent = function() {
 				continue;
 			}
 
-			console.log("inserting (k:" + k + ", v:" + v);
 			ref.insertData(k, v);					 
 	}
 	});	
 }
 
 TypesPanel.prototype.render = function() {
-	$("#types_tab").html('<div id="types" style="color:rgb(127,127,127);"></div>');
+	$("#types_tab").html('<div id="types" style="color:rgb(127,127,127); "></div>');
 
 	this.data = [];
+	this.maxstr = 0;
 	this.generateContent();
-	
-	$("#types").tree({
+	var $tree = $("#types");
+	$tree.tree({
 		data: this.data,
+		slide: false,
+		autoOpen: 0,
+		useContextMenu: false, //TODO custom context menu for add/remove/edit?
+		selectable: false,
 		onCreateLi: function(node, $li) {
+				var app = "";
 				if(typeof node.value !== 'undefined') {
-					$li.find(".jqtree-element").append(" (" + node.value + ")");
+					app += " (" + node.value + ")";
 				}
+				if(node.getLevel() === 2) {
+					//depth level 2 means we're dealing with an actual type
+					var w = r2ui._typ.optionSpacer;
+					if(node.children && node.children.length != 0) {
+						w -= 5; //sub 5px to compensate for fold icon
+					}
+
+					var style = 'font-size: 80%; font-style: normal; font-family: monospace;' +
+								' cursor: pointer; position: absolute; left:' + w + 'px';
+					app +=  '<i class="remove" style="' + style +
+						 '"' + 'data-node-name="' + node.name + '">[-]</i>';
+				}
+				$li.find(".jqtree-element").append(app);
 			}
 	});
+
+	$tree.on("click", ".remove", 
+		function(e) {
+			var label = $(e.target).data('node-name');
+			r2.cmd("t- " + label, function() { r2ui._typ.render(); });
+		});
 }
