@@ -1879,6 +1879,144 @@ static int esil_mem_subeq(RAnalEsil *esil) {
 	return 0;
 }
 
+static int esil_mem_modeq1 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		if (s == 0) {
+			eprintf ("esil_mem_modeq1: Division by zero!\n");
+			esil->trap = R_ANAL_TRAP_DIVBYZERO;
+			esil->trap_code = 0;
+		} else {
+			ret = 1;
+			r_anal_esil_push (esil, dst);
+			ret &= esil_peek1 (esil);
+			src1 = r_anal_esil_pop (esil);
+			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+				d = d % s;
+				r_anal_esil_pushnum (esil, d);
+				r_anal_esil_push (esil, dst);
+				ret &= esil_poke1 (esil);
+			} else	ret = 0;
+		}
+	}
+	if (!ret)
+		eprintf ("esil_mem_modeq1: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_modeq2 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		if (s == 0) {
+			eprintf ("esil_mem_modeq2: Division by zero!\n");
+			esil->trap = R_ANAL_TRAP_DIVBYZERO;
+			esil->trap_code = 0;
+		} else {
+			ret = 1;
+			r_anal_esil_push (esil, dst);
+			ret &= esil_peek2 (esil);
+			src1 = r_anal_esil_pop (esil);
+			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+				d = d % s;
+				r_anal_esil_pushnum (esil, d);
+				r_anal_esil_push (esil, dst);
+				ret &= esil_poke2 (esil);
+			} else	ret = 0;
+		}
+	}
+	if (!ret)
+		eprintf ("esil_mem_modeq2: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_modeq4 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		if (s == 0) {
+			eprintf ("esil_mem_modeq4: Division by zero!\n");
+			esil->trap = R_ANAL_TRAP_DIVBYZERO;
+			esil->trap_code = 0;
+		} else {
+			ret = 1;
+			r_anal_esil_push (esil, dst);
+			ret &= esil_peek4 (esil);
+			src1 = r_anal_esil_pop (esil);
+			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+				d = d % s;
+				r_anal_esil_pushnum (esil, d);
+				r_anal_esil_push (esil, dst);
+				ret &= esil_poke4 (esil);
+			} else	ret = 0;
+		}
+	}
+	if (!ret)
+		eprintf ("esil_mem_modeq4: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_modeq8 (RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		if (s == 0) {
+			eprintf ("esil_mem_modeq8: Division by zero!\n");
+			esil->trap = R_ANAL_TRAP_DIVBYZERO;
+			esil->trap_code = 0;
+		} else {
+			ret = 1;
+			r_anal_esil_push (esil, dst);
+			ret &= esil_peek8 (esil);
+			src1 = r_anal_esil_pop (esil);
+			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+				d = d % s;
+				r_anal_esil_pushnum (esil, d);
+				r_anal_esil_push (esil, dst);
+				ret &= esil_poke8 (esil);
+			} else	ret = 0;
+		}
+	}
+	if (!ret)
+		eprintf ("esil_mem_modeq8: invalid parameters\n");
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_modeq(RAnalEsil *esil) {
+	switch (esil->anal->bits) {
+		case 64: return esil_mem_modeq8 (esil);
+		case 32: return esil_mem_modeq4 (esil);
+		case 16: return esil_mem_modeq2 (esil);
+		case 8: return esil_mem_modeq1 (esil);
+	}
+	return 0;
+}
+
 static int esil_mem_diveq1 (RAnalEsil *esil) {
 	int ret = 0;
 	ut64 s, d;
@@ -1951,7 +2089,7 @@ static int esil_mem_diveq4 (RAnalEsil *esil) {
 	char *src1 = NULL;
 	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
-			eprintf ("esil_mem_diveq1: Division by zero!\n");
+			eprintf ("esil_mem_diveq4: Division by zero!\n");
 			esil->trap = R_ANAL_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
@@ -2723,6 +2861,11 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 	r_anal_esil_set_op (esil, "-=[2]", esil_mem_subeq2);
 	r_anal_esil_set_op (esil, "-=[4]", esil_mem_subeq4);
 	r_anal_esil_set_op (esil, "-=[8]", esil_mem_subeq8);
+	r_anal_esil_set_op (esil, "%=[]", esil_mem_modeq);
+	r_anal_esil_set_op (esil, "%=[1]", esil_mem_modeq1);
+	r_anal_esil_set_op (esil, "%=[2]", esil_mem_modeq2);
+	r_anal_esil_set_op (esil, "%=[4]", esil_mem_modeq4);
+	r_anal_esil_set_op (esil, "%=[8]", esil_mem_modeq8);
 	r_anal_esil_set_op (esil, "/=[]", esil_mem_diveq);
 	r_anal_esil_set_op (esil, "/=[1]", esil_mem_diveq1);
 	r_anal_esil_set_op (esil, "/=[2]", esil_mem_diveq2);
