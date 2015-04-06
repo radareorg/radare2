@@ -883,14 +883,14 @@ free (rf);
 		switch (str[1]) {
 		case '?':
 			{
-	const char *ptr, *help_msg[] = {
-		"Usage:", "drt", " [type] [size]    # debug register types",
-		"drt", "", "List all available register types",
-		"drt", " [size]", "Show all regs in the profile of size",
-		"drt", " [type]", "Show all regs in the profile of this type",
-		"drt", " [type] [size]", "Same as above for type and size",
-		NULL};
-		r_core_cmd_help (core, help_msg);
+			const char *help_msg[] = {
+				"Usage:", "drt", " [type] [size]    # debug register types",
+				"drt", "", "List all available register types",
+				"drt", " [size]", "Show all regs in the profile of size",
+				"drt", " [type]", "Show all regs in the profile of this type",
+				"drt", " [type] [size]", "Same as above for type and size",
+				NULL};
+			r_core_cmd_help (core, help_msg);
 			}
 			break;
 		case ' ':
