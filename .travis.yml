@@ -53,7 +53,7 @@ env:
   #- TESTS=asm.x86
   
   #- debugger
-  - TESTS=dbg.linux
+  #- TESTS=dbg.linux
   
   - TESTS=commands         # r2 commands related
   - TESTS=tools            # tools related 
