@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i': iterations = atoi (optarg);
-			if (iterations<1) {
+			if (iterations<0) {
 				eprintf ("error: -i argument must be positive\n");
 				return 1;
 			}
