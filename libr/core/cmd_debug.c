@@ -880,8 +880,47 @@ free (rf);
 		} else r_reg_set_profile (core->dbg->reg, str+2);
 		break;
 	case 't': // "drt"
-		for (i=0; (name=r_reg_get_type (i)); i++)
-			r_cons_printf ("%s\n", name);
+		switch (str[1]) {
+		case '?':
+			{
+	const char *ptr, *help_msg[] = {
+		"Usage:", "drt", " [type] [size]    # debug register types",
+		"drt", "", "List all available register types",
+		"drt", " [size]", "Show all regs in the profile of size",
+		"drt", " [type]", "Show all regs in the profile of this type",
+		"drt", " [type] [size]", "Same as above for type and size",
+		NULL};
+		r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case ' ':
+			{
+			int role = r_reg_get_name_idx (str+2);
+			const char *regname = r_reg_get_name (core->dbg->reg, role);
+			if (!regname)
+				regname = str+2;
+			size = atoi (regname);
+			if (size<1) {
+				char *arg = strchr (str+2, ' ');
+				if (arg) {
+					*arg++ = 0;
+					size = atoi (arg);
+					type = r_reg_type_by_name (str+2);
+
+				}
+				if (size<0)
+					size = 0;
+			}
+			if (type != R_REG_TYPE_LAST) {
+				r_debug_reg_sync (core->dbg, type, R_FALSE);
+				r_debug_reg_list (core->dbg, type, size, (int)(size_t)strchr (str,'*'), use_color);
+			} else eprintf ("cmd_debug_reg: Unknown type\n");
+			} break;
+		default:
+			for (i=0; (name = r_reg_get_type (i)); i++)
+				r_cons_printf ("%s\n", name);
+			break;
+		}
 		break;
 	case 'n':
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
@@ -1035,23 +1074,14 @@ free (rf);
 			free (string);
 			return;
 		} else {
-			int role = r_reg_get_name_idx (str+1);
-			const char *regname = r_reg_get_name (core->dbg->reg, role);
-			if (!regname)
-				regname = str+1;
-			size = atoi (regname);
-			if (size==0) {
-				arg = strchr (str+1, ' ');
-				if (arg && size==0) {
-					*arg='\0';
-					size = atoi (arg);
-				} else size = bits;
-				type = r_reg_type_by_name (str+1);
-			}
-			if (type != R_REG_TYPE_LAST) {
-				r_debug_reg_sync (core->dbg, type, R_FALSE);
-				r_debug_reg_list (core->dbg, type, size, str[0]=='*', use_color);
-			} else eprintf ("cmd_debug_reg: Unknown type\n");
+			ut64 off;
+			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, R_FALSE);
+			off = r_debug_reg_get (core->dbg, str+1);
+	//		r = r_reg_get (core->dbg->reg, str+1, 0);
+	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
+			r_cons_printf ("0x%08"PFMT64x"\n", off);
+			core->num->value = off;
+			//r_reg_get_value (core->dbg->reg, r));
 		}
 	}
 }
