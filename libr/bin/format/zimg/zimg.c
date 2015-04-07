@@ -5,7 +5,6 @@
 #include "zimg.h"
 
 
-#define FAIL(x) { eprintf(x); goto fail; }
 struct r_bin_zimg_obj_t* r_bin_zimg_new_buf(RBuffer *buf) {
 	struct r_bin_zimg_obj_t *bin = R_NEW0 (struct r_bin_zimg_obj_t);
 	if (!bin) {
