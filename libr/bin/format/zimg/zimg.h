@@ -5,7 +5,6 @@
 
 #define R_BIN_ZIMG_MAXSTR 256
 
-#pragma pack(4)
 struct zimg_header_t {
 	ut8 magic[8];
 	ut32 filler[6];
