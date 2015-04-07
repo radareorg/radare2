@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2013-2014 - pancake */
+/* sdb - LGPLv3 - Copyright 2013-2015 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -10,6 +10,7 @@
 #include "sdb.h"
 
 #if __WINDOWS__
+#include <windows.h>
 #define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
 #ifndef ERROR_ALREADY_EXISTS
 #define ERROR_ALREADY_EXISTS 183
