@@ -14,7 +14,7 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 
 #define FAIL(x) { eprintf(x); goto fail; }
 struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
-	struct r_bin_dex_obj_t *bin = R_NEW0 (struct r_bin_dex_obj_t);;
+	struct r_bin_dex_obj_t *bin = R_NEW0 (struct r_bin_dex_obj_t);
 	if (!bin) {
 		goto fail;
 	}
