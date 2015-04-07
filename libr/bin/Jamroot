@@ -55,6 +55,9 @@ EXTRA +=
 	<library>../../shlr/java
 ;
 
+# Linux Kernel zImage File
+OBJS += p/bin_zimg.c ;
+
 lib r_bin : $(OBJS) :
     <include>../include
     <include>mangling
