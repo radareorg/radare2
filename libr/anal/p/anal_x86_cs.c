@@ -647,7 +647,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case X86_INS_INT:
 			if (a->decode)
-				esilprintf (op, "%d,$", (int)INSOP(0).imm);
+				esilprintf (op, "%d,$", R_ABS((int)INSOP(0).imm));
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
 		case X86_INS_INT1:
@@ -1034,25 +1034,33 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
-#if 0
-static int x86_cs_custom_dup (RAnalEsil *esil)
+static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
 {
-	char *dup_me;
-	ut64 dup;
-	if (!esil)
+	int syscall;
+	ut64 eax, ebx, ecx, edx;
+	if (!esil || !esil->anal || (interrupt != 0x80))
 		return R_FALSE;
-	dup_me = r_anal_esil_pop (esil);
-	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
-		return R_FALSE;
-	free (dup_me);
-	return r_anal_esil_pushnum (esil, dup);
+	r_anal_esil_reg_read (esil, "eax", &eax);
+	r_anal_esil_reg_read (esil, "ebx", &ebx);
+	r_anal_esil_reg_read (esil, "ecx", &ecx);
+	r_anal_esil_reg_read (esil, "edx", &edx);
+	syscall = (int) eax;
+	if (syscall == 4) {		// write
+		char *src = malloc ((size_t)edx);
+		esil->anal->iob.read_at (esil->anal->iob.io, ecx, (ut8 *)src, (int)edx);	//XXX that should be r_anal_esil_mem_read but mem-read allways applies endianess -> mess. condret will fix that
+		write ((ut32)ebx, src, (size_t)edx);
+		free (src);
+		return R_TRUE;
+	}
+	eprintf ("syscall %d not implemented yet\n", syscall);
+	return R_FALSE;
 }
 
 static int esil_x86_cs_init (RAnalEsil *esil)
 {
 	if (!esil)
 		return R_FALSE;
-	r_anal_esil_set_op (esil, "DUP", x86_cs_custom_dup);
+	r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	return R_TRUE;
 }
 
@@ -1060,7 +1068,6 @@ static int esil_x86_cs_fini (RAnalEsil *esil)
 {
 	return R_TRUE;
 }
-#endif
 
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
@@ -1071,8 +1078,8 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.bits = 16|32|64,
 	.op = &analop,
 	//.set_reg_profile = &set_reg_profile,
-	//.esil_init = esil_x86_cs_init,
-	//.esil_fini = esil_x86_cs_fini,
+	.esil_init = esil_x86_cs_init,
+	.esil_fini = esil_x86_cs_fini,
 };
 
 #ifndef CORELIB
