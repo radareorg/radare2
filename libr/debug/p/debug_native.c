@@ -934,7 +934,8 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				eprintf ("xmm%d = %08x %08x %08x %08x  ",i
 						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
 				ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
-				eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+				eprintf ("st%d = %lg (0x%08"PFMT64x")\n", i,
+					(double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
 			}
 		}
 #endif

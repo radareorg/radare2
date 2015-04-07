@@ -91,3 +91,6 @@ script:
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
   - cd radare2-regressions
   - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
+
+notifications:
+  irc: "chat.freenode.net#radare"

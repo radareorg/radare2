@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_cons.h>
 #include <r_regex.h>		/* less / regex search */
@@ -8,17 +8,20 @@ static void printpage (const char *line, int *index,
 	int i;
 	const char *laddr;
 	r_cons_clear00 ();
+	if (from <0 || to <0)
+		return;
 	for (i=from; i<to; i++) {
 // TODO: chop column width, clear lines
 		laddr = line + index[i];
-		if(!ms[i].rm_eo) r_cons_printf ("%s\n", laddr);
-		else {		/* highlight a match */
+		if (ms[i].rm_eo) {/* highlight a match */
 			r_cons_memcat(laddr, ms[i].rm_so);
 			r_cons_invert(R_TRUE, R_TRUE);
 			r_cons_memcat(laddr + ms[i].rm_so,
 				      ms[i].rm_eo - ms[i].rm_so);
 			r_cons_invert(R_FALSE, R_TRUE);
 			r_cons_printf ("%s\n", laddr + ms[i].rm_eo);
+		} else {
+			r_cons_printf ("%s\n", laddr);
 		}
 	}
 	r_cons_flush ();
@@ -96,6 +99,7 @@ R_API void r_cons_less_str(const char *str) {
 		to = R_MIN (lines_count, from+h);
 		if (from+3>lines_count)
 			from = lines_count-3;
+		if (from<0) from = 0;
 		printpage (p, lines, ms, from, to);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);

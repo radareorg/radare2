@@ -21,20 +21,51 @@ R_API RAnalEsil *r_anal_esil_new() {
 	if (!esil) return NULL;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
+	esil->interrupts = sdb_new0 ();
 	return esil;
 }
 
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
 	char *h;
-	if (!code || !op || !strlen(op) || !esil || !esil->ops) {
+	if (!code || !op || !strlen(op) || !esil || !esil->ops)
 		return R_FALSE;
-	}
 	h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
-	if (!sdb_num_exists (esil->ops, h))
+	if (!sdb_num_exists (esil->ops, h)) {
 		eprintf ("can't set esil-op %s\n", op);
+		return R_FALSE;
+	}
 	return R_TRUE;
+}
+
+R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterrupt interruptcb) {
+	char t[128];
+	char *i;
+	if (!interruptcb || !esil || !esil->interrupts)
+		return R_FALSE;
+	i = sdb_itoa ((ut64) interrupt, t, 16);
+	sdb_num_set (esil->interrupts, i, (ut64)(size_t)interruptcb, 0);
+	if (!sdb_num_exists (esil->interrupts, i)) {
+		eprintf ("can't set interrupt-handler for interrupt %d\n", interrupt);
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
+R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
+	char t[128];
+	char *i;
+	RAnalEsilInterrupt icb;
+	if (!esil || !esil->interrupts)
+		return R_FALSE;
+	i = sdb_itoa ((ut64) interrupt, t, 16);
+	if (!sdb_num_exists (esil->interrupts, i)) {
+		eprintf ("Cannot find interrupt-handler for interrupt %d\n", interrupt);
+		return R_FALSE;
+	}
+	icb = (RAnalEsilInterrupt)(size_t)sdb_num_get (esil->interrupts, i, 0);
+	return icb (esil, interrupt);
 }
 
 R_API int r_anal_esil_set_offset(RAnalEsil *esil, ut64 off) {
@@ -50,6 +81,8 @@ R_API void r_anal_esil_free (RAnalEsil *esil) {
 		return;
 	sdb_free (esil->ops);
 	esil->ops = NULL;
+	sdb_free (esil->interrupts);
+	esil->interrupts = NULL;
 	sdb_free (esil->stats);
 	esil->stats = NULL;
 	r_anal_esil_stack_free (esil);
@@ -460,6 +493,7 @@ static int esil_xoreq(RAnalEsil *esil) {
 	return ret;
 }
 
+#if 0
 static int esil_interrupt_linux_i386(RAnalEsil *esil) {		//move this into a plugin
 	ut32 sn, ret = 0;
 	char *usn = r_anal_esil_pop (esil);
@@ -513,6 +547,7 @@ static int esil_interrupt_linux_i386(RAnalEsil *esil) {		//move this into a plug
 #undef rs
 	return 0;
 }
+#endif
 
 static int esil_trap(RAnalEsil *esil) {
 	ut64 s, d;
@@ -531,15 +566,14 @@ static int esil_trap(RAnalEsil *esil) {
 }
 
 static int esil_interrupt(RAnalEsil *esil) {
-	if (!esil || !esil->anal)
-		return -1;
-	if (esil->anal->cur && esil->anal->cur->esil_trap) {
-		return esil->anal->cur->esil_trap (esil);
+	ut64 interrupt;
+	char *i = r_anal_esil_pop (esil);
+	if (i && r_anal_esil_get_parm (esil, i, &interrupt)) {
+		free (i);
+		return r_anal_esil_fire_interrupt (esil, (int)interrupt);
 	}
-	// pop number
-	// resolve arguments and run interrupt handler
-	eprintf ("INTERRUPT: Not yet implemented\n");
-	return esil_interrupt_linux_i386 (esil);
+	free (i);
+	return R_FALSE;
 }
 
 static int esil_cmp(RAnalEsil *esil) {

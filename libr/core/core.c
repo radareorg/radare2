@@ -1390,7 +1390,13 @@ reaccept:
 				if (buf[0]!=2) {
 					r_core_seek (core, x, buf[0]);
 					x = core->offset;
-				} else x = r_io_desc_size (core->io, core->file->desc);
+				} else {
+					if (core->file) {
+						x = r_io_desc_size (core->io, core->file->desc);
+					} else {
+						x = 0;
+					}
+				}
 				buf[0] = RMT_SEEK | RMT_REPLY;
 				r_mem_copyendian (buf+1, (ut8*)&x, 8, !LE);
 				r_socket_write (c, buf, 9);

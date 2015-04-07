@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 #include <windows.h>
 #define USE_UTF8 0
 #else
@@ -85,11 +85,104 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	return len;
 }
 #endif
-
+#if __WINDOWS__ && !__CYGWIN__
+static int r_line_readchar_win(int * vch) {  // this function handle the input in console mode
+	ut8 buf[2];
+	*buf = '\0';
+	BOOL ret;
+	BOOL bCtrl=FALSE;
+	DWORD mode, out;
+	HANDLE h;
+	INPUT_RECORD irInBuf[128];
+	int i;
+do_it_again:
+	h = GetStdHandle (STD_INPUT_HANDLE);
+	GetConsoleMode (h, &mode);
+	SetConsoleMode (h, 0 ); // RAW
+	*vch=0;
+	ret= ReadConsoleInput(h,irInBuf,128,&out);
+	if (ret) {
+		for (i = 0; i < out; i++) {
+			if (irInBuf[i].EventType==KEY_EVENT) {
+				if (irInBuf[i].Event.KeyEvent.bKeyDown) {
+					buf[0]=irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
+					bCtrl=irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
+					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar==0) {
+						buf[0]=0;
+						switch(irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
+							case VK_DOWN: // key down
+								if (bCtrl)
+									*vch=140;
+								else
+									*vch=40;
+								break;
+							case VK_UP: // key up
+								if (bCtrl)
+									*vch=138;
+								else
+									*vch=38;
+								break;
+							case VK_RIGHT: // key right
+								if (bCtrl)
+									*vch=139;
+								else
+									*vch=39;
+								break;
+							case VK_LEFT: // key left
+								if (bCtrl)
+									*vch=137;
+								else
+									*vch=37;
+								break;
+							case 46: // key supr
+								if (bCtrl)
+									*vch=146;
+								else
+									*vch=46;
+								break;
+							case VK_PRIOR: // key home
+								if (bCtrl)
+									*vch=136;
+								else
+									*vch=36;
+								break;
+							case VK_NEXT: // key end
+								if (bCtrl)
+									*vch=135;
+								else
+									*vch=35;
+								break;
+							default:
+								/*eprintf("ch=%c VC=%d (%x) VSC=%d (%x) CKS=%d (%x) %i\n",
+										irInBuf[i].Event.KeyEvent.uChar.AsciiChar,
+										irInBuf[i].Event.KeyEvent.wVirtualKeyCode,irInBuf[i].Event.KeyEvent.wVirtualKeyCode,
+										irInBuf[i].Event.KeyEvent.wVirtualScanCode,irInBuf[i].Event.KeyEvent.wVirtualScanCode,
+										irInBuf[i].Event.KeyEvent.dwControlKeyState,irInBuf[i].Event.KeyEvent.dwControlKeyState,
+										bCtrl
+										);*/
+								buf[0]=0;
+								*vch=0;
+								break;
+						}
+					}
+				}
+			}
+		}
+	}
+	SetConsoleMode (h, mode);
+	if (buf[0]==0 && *vch==0)
+		goto do_it_again;
+	return buf[0];
+}
+#endif
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
+	#if 1 // new implementation for read input at windows by skuater. If something fail set this to 0
+	  int dummy=0;
+	  return r_line_readchar_win(&dummy);
+	#endif
 	BOOL ret;
 	DWORD mode, out;
 	HANDLE h;
@@ -98,7 +191,7 @@ static int r_line_readchar() {
 #endif
 
 do_it_again:
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
@@ -361,8 +454,391 @@ R_API void r_line_autocomplete() {
 R_API const char *r_line_readline() {
 	return r_line_readline_cb (NULL, NULL);
 }
+#if __WINDOWS__ && !__CYGWIN__
+R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
+	int columns = r_cons_get_size (NULL)-2;
+	const char *gcomp_line = "";
+	static int gcomp_idx = 0;
+	static int gcomp = 0;
+	signed char buf[10];
+	int ch, i=0; /* grep completion */
+	int vch=0;
+	char *tmp_ed_cmd, prev = 0;
+
+	I.buffer.index = I.buffer.length = 0;
+	I.buffer.data[0] = '\0';
+	if (I.contents) {
+		memmove (I.buffer.data, I.contents,
+			R_MIN (strlen (I.contents)+1, R_LINE_BUFSIZE-1));
+		I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
+		I.buffer.index = I.buffer.length = strlen (I.contents);
+	}
+	if (I.disable) {
+		if (!fgets (I.buffer.data, R_LINE_BUFSIZE-1, stdin))
+			return NULL;
+		I.buffer.data[strlen (I.buffer.data)] = '\0';
+		return (*I.buffer.data)? I.buffer.data : r_line_nullstr;
+	}
+
+	memset (&buf, 0, sizeof buf);
+	r_cons_set_raw (1);
+
+	if (I.echo) {
+		r_cons_clear_line (0);
+		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
+		fflush (stdout);
+	}
+	r_cons_singleton()->breaked = R_FALSE;
+	for (;;) {
+#if 0
+		if (I.echo) {
+			printf("  (");
+			for(i=1;i<argc;i++) {
+				if (I.buffer.length==0||!strncmp(argv[i], I.buffer.data, I.buffer.length)) {
+					len+=strlen(argv[i])+1;
+					if (len+I.buffer.length+4 >= columns) break;
+					printf("%s ", argv[i]);
+				}
+			}
+			printf(")");
+			fflush(stdout);
+		}
+#endif
+		I.buffer.data[I.buffer.length]='\0';
+		if (cb && !cb (user, I.buffer.data)) {
+			I.buffer.data[0] = 0;
+			I.buffer.length = 0;
+		}
+		ch = r_line_readchar_win (&vch);
+		//eprintf("des ch=%c(%d) vch=%d\n",ch,vch);
+		if (ch == -1) return NULL;
+		buf[0] = ch;
+		if (I.echo)
+			r_cons_clear_line (0);
+		columns = r_cons_get_size (NULL)-2;
+		if (columns<1)
+			columns = 40;
+		if (I.echo)
+			printf ("\r%*c\r", columns, ' ');
+		if (I.echo)
+			printf ("\r\x1b[2K\r"); //%*c\r", columns, ' ');
+		/* process special at vch codes first*/
+		switch (vch) {
+		case 37:     // left arrow
+			I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+			break;
+		case 38:     // up arrow
+			if (gcomp) gcomp_idx++;
+			else if (r_line_hist_up ()==-1)
+			 return NULL;
+			break;
+		case 39:   // right arrow
+			I.buffer.index = I.buffer.index<I.buffer.length?I.buffer.index+1: I.buffer.length;
+			break;
+		case 40:     // down arrow
+			if (gcomp) {
+			 if (gcomp_idx>0)
+				gcomp_idx--;
+			} else if (r_line_hist_down ()==-1)
+				return NULL;
+			break;
+		/* ctrl+arrows */
+		case 137:// ctrl+left arrow
+			// previous word
+			for (i=I.buffer.index; i>0; i--) {
+			 if (I.buffer.data[i] == ' ') {
+				 I.buffer.index = i-1;
+				 break;
+			 }
+			}
+			if (I.buffer.data[i] != ' ')
+			 I.buffer.index = 0;
+			break;
+		case 138:// ctrl+up arrow
+			//first
+			I.buffer.index = 0;
+			break;
+		case 139:// ctrl+right arrow
+			// next word
+			for (i=I.buffer.index; i<I.buffer.length; i++) {
+			 if (I.buffer.data[i] == ' ') {
+				 I.buffer.index = i+1;
+				 break;
+			 }
+			}
+			if (I.buffer.data[i] != ' ')
+			 I.buffer.index = I.buffer.length;
+			break;
+		case 140:// ctrl+down arrow
+			//end
+			I.buffer.index = I.buffer.length;
+			break;
+		case 36: // HOME
+			 I.buffer.index = 0;
+			 break;
+		case 35: // END
+			 I.buffer.index = I.buffer.length;
+			 break;
+		/*case 0x37: // HOME xrvt-unicode
+			//r_cons_readchar ();
+		case 0x38: // END xrvt-unicode
+			//r_cons_readchar ();*/
+		case 46: // supr
+			if (I.buffer.index<I.buffer.length)
+			 memmove (I.buffer.data+I.buffer.index,
+					 I.buffer.data+I.buffer.index+1,
+					 strlen (I.buffer.data+I.buffer.index+1)+1);
+			if (buf[1] == -1)
+			 return NULL;
+			break;
+
+		default:
+			 break;
+		}
+		vch=0;
+		switch (*buf) {
+		//case -1: // ^D
+		//	return NULL;
+		case 0:  // no key must by handle by the code up
+			// ignore
+			break;
+		case 1: // ^A
+			I.buffer.index = 0;
+			break;
+		case 2: // ^b // emacs left
+			I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+			break;
+		case 5: // ^E
+		        if (prev == 24) { // ^X = 0x18
+				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
+				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
+				if (tmp_ed_cmd) {
+					/* copied from yank (case 25) */
+					I.buffer.length = strlen (tmp_ed_cmd);
+					if (I.buffer.length < R_LINE_BUFSIZE) {
+						I.buffer.index = I.buffer.length;
+						strncpy (I.buffer.data, tmp_ed_cmd, R_LINE_BUFSIZE-1);
+						I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
+					} else I.buffer.length -= strlen (tmp_ed_cmd);
+					free (tmp_ed_cmd);
+				}
+			} else I.buffer.index = I.buffer.length;
+			break;
+		case 3: // ^C
+			if (I.echo)
+				eprintf ("^C\n");
+			I.buffer.index = I.buffer.length = 0;
+			*I.buffer.data = '\0';
+			r_cons_singleton()->breaked = R_TRUE;
+			goto _end;
+		case 4: // ^D
+			if (!I.buffer.data[0]) { /* eof */
+				if (I.echo)
+					printf ("^D\n");
+				r_cons_set_raw (R_FALSE);
+				return NULL;
+			}
+			if (I.buffer.index<I.buffer.length)
+				memmove (I.buffer.data+I.buffer.index,
+					I.buffer.data+I.buffer.index+1,
+					strlen (I.buffer.data+I.buffer.index+1)+1);
+			break;
+		case 10: // ^J -- ignore
+			return I.buffer.data;
+		case 11: // ^K -- ignore
+			break;
+		case 6: // ^f // emacs right
+			I.buffer.index = I.buffer.index<I.buffer.length?
+			I.buffer.index+1: I.buffer.length;
+			break;
+		case 12: // ^L -- right
+			I.buffer.index = (I.buffer.index<I.buffer.length)?
+				I.buffer.index+1 : I.buffer.length;
+			if (I.echo)
+				eprintf ("\x1b[2J\x1b[0;0H");
+			fflush (stdout);
+			break;
+		case 18: // ^R -- autocompletion
+			gcomp = 1;
+			break;
+		case 19: // ^S -- backspace
+			if (gcomp) gcomp--;
+			else {
+				I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+			}
+			break;
+		case 21: // ^U - cut
+			free (I.clipboard);
+			I.clipboard = strdup (I.buffer.data);
+			I.buffer.data[0] = '\0';
+			I.buffer.length = 0;
+			I.buffer.index = 0;
+			break;
+		case 23: // ^W ^w
+			if (I.buffer.index>0) {
+				for (i=I.buffer.index-1; i>0&&I.buffer.data[i]==' '; i--);
+				for (; i&&I.buffer.data[i]!=' '; i--);
+				if (!i) for (; i>0&&I.buffer.data[i]==' '; i--);
+				if (i>0) i++; else if (i<0) i=0;
+				if (I.buffer.index>I.buffer.length)
+					I.buffer.length = I.buffer.index;
+				memmove (I.buffer.data+i,
+					I.buffer.data+I.buffer.index,
+					I.buffer.length-I.buffer.index+1);
+				I.buffer.length = strlen (I.buffer.data);
+				I.buffer.index = i;
+			}
+			break;
+		case 24: // ^X -- do nothing but store in prev = *buf
+			break;
+		case 25: // ^Y - paste
+			if (I.clipboard != NULL) {
+				I.buffer.length += strlen(I.clipboard);
+				// TODO: support endless strings
+				if (I.buffer.length < R_LINE_BUFSIZE) {
+					I.buffer.index = I.buffer.length;
+					strcat (I.buffer.data, I.clipboard);
+				} else I.buffer.length -= strlen (I.clipboard);
+			}
+			break;
+		case 14: // ^n
+			if (gcomp) {
+				if (gcomp_idx>0)
+					gcomp_idx--;
+			} else r_line_hist_down ();
+			break;
+		case 16: // ^p
+			if (gcomp) {
+				gcomp_idx++;
+			} else r_line_hist_up ();
+			break;
+		case 8:
+		case 127:
+			if (I.buffer.index < I.buffer.length) {
+				if (I.buffer.index>0) {
+					int len = 0;
+					// TODO: WIP
+					len = 1;
+					I.buffer.index--;
+					memmove (I.buffer.data+I.buffer.index,
+						I.buffer.data+I.buffer.index+len,
+						strlen (I.buffer.data+I.buffer.index));
+					I.buffer.length -= len;
+					I.buffer.data[I.buffer.length] = 0;
+				}
+			} else {
+// OK
+				I.buffer.index = --I.buffer.length;
+				if (I.buffer.length<0) I.buffer.length=0;
+				I.buffer.data[I.buffer.length]='\0';
+			}
+			if (I.buffer.index<0)
+				I.buffer.index = 0;
+			break;
+		 /* tab */
+		case 9: // tab
+			r_line_autocomplete ();
+			break;
+		 /* enter */
+		case 13:
+			if (gcomp && I.buffer.length>0) {
+				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE-1);
+                I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
+				I.buffer.length = strlen (gcomp_line);
+			}
+			gcomp_idx = gcomp = 0;
+			goto _end;
+#if 0
+			// force command fit
+			for(i=1;i<argc;i++) {
+				if (I.buffer.length==0 || !strncmp(argv[i], I.buffer.data, I.buffer.length)) {
+					printf("%*c", columns, ' ');
+					printf("\r");
+					printf("\n\n(%s)\n\n", I.buffer.data);
+					r_cons_set_raw(0);
+					return I.buffer.data;
+				}
+			}
+#endif
+		default:
+			if (gcomp)
+				gcomp++;
+			if (I.buffer.index<I.buffer.length) {
+				for (i = ++I.buffer.length; i>I.buffer.index; i--)
+					I.buffer.data[i] = I.buffer.data[i-1];
+				I.buffer.data[I.buffer.index] = buf[0];
+			} else {
+				I.buffer.data[I.buffer.length]=buf[0];
+				I.buffer.length++;
+				if (I.buffer.length>(R_LINE_BUFSIZE-1))
+					I.buffer.length--;
+				I.buffer.data[I.buffer.length]='\0';
+			}
+			I.buffer.index++;
+			break;
+		}
+		prev = buf[0];
+		if (I.echo) {
+			if (gcomp) {
+				gcomp_line = "";
+				//if (I.buffer.length == 0)
+				//	gcomp = 0;
+				if (I.history.data != NULL)
+				for (i=0; i<I.history.size; i++) {
+					if (I.history.data[i] == NULL)
+						break;
+					if (strstr (I.history.data[i], I.buffer.data)) {
+						gcomp_line = I.history.data[i];
+						if (!gcomp_idx--)
+							break;
+					}
+				}
+				printf ("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
+			} else {
+				int chars = R_MAX (1, strlen (I.buffer.data)); // wtf?
+				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt)-2);
+				/* print line */
+				printf ("\r%s", I.prompt);
+				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
+				/* place cursor */
+				printf ("\r%s", I.prompt);
+				if (I.buffer.index>cols) {
+					printf ("< ");
+					i = I.buffer.index-cols;
+					if (i>sizeof (I.buffer.data)) {
+						i = sizeof (I.buffer.data)-1;
+					}
+				} else i = 0;
+				len = I.buffer.index-i;
+				if (len>0 && (i+len)<=I.buffer.length)
+					fwrite (I.buffer.data+i, 1, len, stdout);
+			}
+			fflush (stdout);
+		}
+	}
+_end:
+	r_cons_set_raw (0);
+	if (I.echo) {
+		printf ("\r%s%s\n", I.prompt, I.buffer.data);
+		fflush (stdout);
+	}
+
+	// should be here or not?
+	if (!memcmp (I.buffer.data, "!history", 8)) {
+	//if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
+		r_line_hist_list ();
+		return r_line_nullstr;
+	}
+	return I.buffer.data[0] != '\0'? I.buffer.data : r_line_nullstr;
+}
+#endif
 
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
+#if __WINDOWS__ && !__CYGWIN__
+ #if 1          // new implementation for read input at windows by skuater. If something fail set this to 0
+    return r_line_readline_cb_win(cb,user);
+ #endif
+#endif
 	int columns = r_cons_get_size (NULL)-2;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
@@ -435,7 +911,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 		if (I.echo)
 			printf ("\r%*c\r", columns, ' ');
 #else

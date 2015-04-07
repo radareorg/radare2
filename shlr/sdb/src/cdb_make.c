@@ -1,8 +1,5 @@
 /* Public domain. */
 
-#if __WINDOWS__ && !__CYGWIN__
-#include <malloc.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

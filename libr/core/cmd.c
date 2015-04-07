@@ -296,6 +296,18 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "d")) {
+					char *cmd = r_str_newf ("dmd -run '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
+				} else if (!strcmp (ext, "go")) {
+					char *cmd = r_str_newf ("go run '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
 					char *cmd = r_str_newf ("babel-node '%s'", file);
 					r_lang_use (core->lang, "pipe");
@@ -1338,16 +1350,17 @@ next2:
 
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
-	if (ptr>cmd) {
+	if (ptr && ptr>cmd) {
 		char *escape = ptr-1;
 		if (*escape == '\\') {
 			memmove (escape, ptr, strlen (escape));
 			ptr = NULL;
 		}
 	}
-	if (*cmd!='.' && ptr) {
+	if (ptr && *cmd!='.') {
 		*ptr = '\0';
 		ptr++;
+		cmd = r_str_chop (cmd);
 		r_cons_grep (ptr);
 	}
 

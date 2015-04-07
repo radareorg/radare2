@@ -8,7 +8,7 @@ CS_TAR=
 CS_URL=https://www.github.com/aquynh/capstone.git
 CS_UPD=20150407
 CS_BRA=next
-CS_TIP=5f22deb071c80d2c5f5dbfa52c77330a2c73b881
+CS_TIP=cbbbac24c3796af4db1c5a01f1c01bbcaf0b2d82
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
@@ -51,7 +51,7 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; $(MAKE) clean
 	cd sdb ; \
 		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} CFLAGS="${CFLAGS_SHARED} ${CFLAGS} -g" && \
+		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
 		cp -f src/sdb src/.sdb
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
