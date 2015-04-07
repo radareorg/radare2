@@ -942,6 +942,9 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 #define SIZEOF_FILE_NAME 255
 	int i = 0;
 
+	if (dbg_data == NULL)
+		return 0;
+
 	switch (dbg_dir_entry->Type) {
 	case IMAGE_DEBUG_TYPE_CODEVIEW:
 		if (strncmp((char *)dbg_data, "RSDS", 4) == 0) {
