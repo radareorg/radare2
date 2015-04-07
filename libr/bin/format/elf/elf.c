@@ -5,7 +5,6 @@
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
-#include <setjmp.h>
 #include "elf.h"
 
 static inline int __strnlen(const char *str, int len) {
@@ -1179,34 +1178,6 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	return ret;
 }
 
-///////////////
-// Should this be moved somewhere more global to solve the same problem elsewhere?
-static int ptr_test_installed;
-static jmp_buf ptr_test_jmpbuf;
-static void ptr_test_handler(int sig) {
-    if (ptr_test_installed)
-	longjmp(ptr_test_jmpbuf, 1);
-}
-
-static int is_bad_read_ptr(void *lp, int cb) {
-    int i;
-    int b1;
-    int ret = 1;
-    void (*prev_handler)(int);
-    ptr_test_installed = 1;
-    if (setjmp(ptr_test_jmpbuf)) {
-	ret = 0;
-	goto Ret;
-    }
-    prev_handler = signal(SIGSEGV, ptr_test_handler);
-    for (i = 0; i < cb; i++) 
-	b1 = ((char*)lp)[i];
-Ret:
-    ptr_test_installed = 0;
-    signal(SIGSEGV, prev_handler);
-    return ret;
-}
-/////////////////////
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
@@ -1367,11 +1338,7 @@ if (
 				}
 <<<<<<< HEAD
 
-                                //solves the segfault when bogus values are put into ELF header
-				if (is_bad_read_ptr(strtab+sym[k].st_name, ELF_STRING_LENGTH-1) == 0) {
-				    return NULL;
-				}
-
+                                
 				//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 				len = __strnlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 =======
