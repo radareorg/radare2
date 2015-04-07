@@ -8,6 +8,7 @@ TypesPanel.prototype.insertData = function(k, v, array) {
 	var kt = k[0].trim();
 
 	if(k.length == 1) {
+		//base case
 		array.push({
 			label: kt,
 			id: kt,
@@ -15,6 +16,7 @@ TypesPanel.prototype.insertData = function(k, v, array) {
 		});
 		return;
 	} else if(array.length < 1) {
+		//if current part of k's path doesn't exist, create it
 		array.push({
 			label: kt ,
 			children: []
@@ -70,12 +72,28 @@ TypesPanel.prototype.generateContent = function() {
 	});	
 }
 
-TypesPanel.prototype.render = function() {
-	$("#types_tab").html('<div id="types" style="color:rgb(127,127,127); "></div>');
+TypesPanel.prototype.createBarButtons = function() {
+	var $bar = $("#typesButtonBar");
+	var $addButton = $('<button id="addButton">Add type</button>');
+	//Can only do files once we can resolve the non-sandboxed path
+	//var $addFileButton = $('<input type="file" style="color: transparent" id="addFileButton"></button>');
 
-	this.data = [];
-	this.maxstr = 0;
-	this.generateContent();
+	$addButton.click(function() {
+		var str = prompt("Enter C string:");
+		r2.cmd('"td ' + str + '"', function() { r2ui._typ.render(); });
+	});
+
+// 	$addFileButton.change(function() {
+// 		var val = $("#addFileButton").val();
+// 		r2.cmd('to ' + val, function() { r2ui._typ.render(); });
+// 	});
+
+	$bar.append($addButton);
+// 	$bar.append($addFileButton);
+
+}
+
+TypesPanel.prototype.createTree = function() {
 	var $tree = $("#types");
 	$tree.tree({
 		data: this.data,
@@ -88,7 +106,7 @@ TypesPanel.prototype.render = function() {
 				if(typeof node.value !== 'undefined') {
 					app += " (" + node.value + ")";
 				}
-				if(node.getLevel() === 2) {
+				if(node.getLevel() == 2) {
 					//depth level 2 means we're dealing with an actual type
 					var w = r2ui._typ.optionSpacer;
 					if(node.children && node.children.length != 0) {
@@ -109,4 +127,18 @@ TypesPanel.prototype.render = function() {
 			var label = $(e.target).data('node-name');
 			r2.cmd("t- " + label, function() { r2ui._typ.render(); });
 		});
+}
+
+TypesPanel.prototype.render = function() {
+	$("#types_tab").html(
+		'<div id="typesButtonBar"></div>'
+		+ '<div id="types" style="color:rgb(127,127,127)"></div>');
+	
+	this.createBarButtons();
+
+	this.data = [];
+	this.maxstr = 0;
+	this.generateContent();
+	this.createTree();
+	
 }
