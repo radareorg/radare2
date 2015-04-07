@@ -52,7 +52,8 @@ static void filesave () {
 	if (!path) {
 		eprintf ("File: ");
 		buf[0] = 0;
-		fgets (buf, sizeof(buf), stdin);
+		fgets (buf, sizeof(buf)-1, stdin);
+		buf[sizeof(buf)-1] = 0;
 		i = strlen (buf);
 		if (i>0) {
 			buf[i-1] = 0;

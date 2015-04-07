@@ -321,6 +321,7 @@ int main(int argc, char **argv) {
 			if (!hashstr)
 				return 1;
 			res = fread ((void*)hashstr, 1, INSIZE-1, stdin);
+			if (res<1) res = 0;
 			hashstr[res] = '\0';
 			hashstr_len = res;
 		}
