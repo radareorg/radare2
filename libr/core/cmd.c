@@ -1373,10 +1373,12 @@ next2:
 	core->tmpseek = ptr? R_TRUE: R_FALSE;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;
-		ut8 *buf;
+		const char *tmpasm = NULL;
+		const char *tmpbits = NULL;
 		const char *offstr;
 		char *f, *ptr2 = strchr (ptr+1, '!');
 		int sz, len;
+		ut8 *buf;
 		addr = 0LL;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
@@ -1422,6 +1424,21 @@ repeat_arroba:
 				r_core_block_size (core, len);
 				memcpy (core->block, buf, core->blocksize);
 				free (buf);
+				break;
+			case 'a':
+				if (ptr[1]==':') {
+					char *q = strchr (ptr+2, ':');
+					tmpasm = r_config_get (core->config, "asm.arch");
+					if (q) {
+						*q++ = 0;
+						tmpbits = r_config_get (core->config, "asm.bits");
+						r_config_set (core->config, "asm.bits", q);
+					}
+					r_config_set (core->config, "asm.arch", ptr+2);
+					// TODO: handle asm.bits
+				} else {
+					eprintf ("Usage: pd 10 @a:arm:32\n");
+				}
 				break;
 			case 's':
 				len = strlen (ptr+3);
@@ -1487,6 +1504,14 @@ next_arroba:
 		if (ptr2) {
 			*ptr2 = '!';
 			r_core_block_size (core, tmpbsz);
+		}
+		if (tmpasm) {
+			r_config_set (core->config, "asm.arch", tmpasm);
+			tmpasm = NULL;
+		}
+		if (tmpbits) {
+			r_config_set (core->config, "asm.bits", tmpbits);
+			tmpbits = NULL;
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';

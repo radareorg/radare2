@@ -1208,12 +1208,14 @@ static void printraw (RCore *core, int len, int mode) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	ut64 offset = core->offset;
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;
 	ut32 tbs = core->blocksize;
 	ut8 *ptr = core->block;
 	RCoreAnalStats *as;
 	ut64 n, nbsz, obsz, fsz;
+	ut64 tmpseek = UT64_MAX;
 
 	l = len = core->blocksize;
 	if (input[0] && input[1]) {
@@ -1222,7 +1224,13 @@ static int cmd_print(void *data, const char *input) {
 			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a' && input[0]!='f') {
-				if (l>0) {
+				int n = (st32) r_num_math (core->num, input+1);
+				if (n<0) {
+					offset += n;
+					off = offset;
+					len = l = -n;
+					tmpseek = core->offset;
+				} else if (l>0) {
 					len = l;
 					if (l>tbs) {
 						if (input[0] == 'x' && input[1] == 'l') {
@@ -1270,6 +1278,10 @@ static int cmd_print(void *data, const char *input) {
 	core->num->value = len;
 	if (len>core->blocksize)
 		len = core->blocksize;
+
+	if (tmpseek != UT64_MAX) {
+		r_core_seek (core, off, SEEK_SET);
+	}
 	switch (*input) {
 	case 'w': //pw
 		if (input[1]=='n') {
@@ -2737,6 +2749,7 @@ static int cmd_print(void *data, const char *input) {
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			ut64 from, to;
 			int oldva = core->io->va;
+			int do_zoom = 1;
 
 			from = 0;
 			core->io->va = 0;
@@ -2748,11 +2761,13 @@ static int cmd_print(void *data, const char *input) {
 				if (!r_config_set (core->config, "zoom.byte", input+1)) {
 					eprintf ("Invalid zoom.byte mode (%s)\n", input+1);
 					free (oldzoom);
-					return R_FALSE;
+					do_zoom = 0;
 				}
 			}
-			r_print_zoom (core->print, core, printzoomcallback,
-				from, to, core->blocksize, (int)maxsize);
+			if (do_zoom) {
+				r_print_zoom (core->print, core, printzoomcallback,
+					from, to, core->blocksize, (int)maxsize);
+			}
 			if (oldzoom) {
 				r_config_set (core->config, "zoom.byte", oldzoom);
 				free (oldzoom);
@@ -2795,6 +2810,9 @@ static int cmd_print(void *data, const char *input) {
 	}
 	if (tbs != core->blocksize)
 		r_core_block_size (core, tbs);
+	if (tmpseek != UT64_MAX) {
+		r_core_seek (core, tmpseek, SEEK_SET);
+	}
 	return 0;
 }
 
