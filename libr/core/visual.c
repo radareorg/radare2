@@ -624,13 +624,30 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 	return ret;
 }
 
+void SetWindow(int Width, int Height) {
+#if __WINDOWS__
+    COORD coord;
+    coord.X = Width;
+    coord.Y = Height;
+
+    SMALL_RECT Rect;
+    Rect.Top = 0;
+    Rect.Left = 0;
+    Rect.Bottom = Height - 1;
+    Rect.Right = Width - 1;
+
+    HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleScreenBufferSize(Handle, coord);
+    SetConsoleWindowInfo(Handle, TRUE, &Rect);
+#endif
+}
+
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
 	int i, ret, offscreen, cols = core->print->cols, delta = 0;
 	int wheelspeed;
-
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
@@ -658,6 +675,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 	} else
 	switch (ch) {
+	case 0xf5:
+		SetWindow(81,25);
+		break;
+	case 0xcf5:
+		SetWindow(81,40);
+		break;
 	case 0x0d:
 		{
 			RAnalOp *op;
