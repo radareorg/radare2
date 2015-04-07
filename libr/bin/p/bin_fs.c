@@ -99,9 +99,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("unknown");
 	ret->machine = strdup ("any");
-	p = fsname (bytes, sz);
-	strncpy (ret->arch, p, sizeof (ret->arch)-1);
-	free (p);
+	ret->arch = fsname (bytes, sz);
 	ret->has_va = 0;
 	ret->bits = 32;
 	ret->big_endian = 0;
