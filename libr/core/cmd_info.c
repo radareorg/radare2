@@ -4,7 +4,7 @@
 static void pair(const char *a, const char *b) {
 	char ws[16];
 	int al = strlen (a);
-	if (!b) b = "";
+	if (!b) return; // b = "";
 	memset (ws, ' ', sizeof (ws));
 	al = PAIR_WIDTH - al;
 	if (al<0) al = 0;
@@ -70,19 +70,19 @@ static void r_core_file_info (RCore *core, int mode) {
 		switch (mode) {
 		case R_CORE_BIN_JSON:
 			r_cons_printf ("\"type\":\"%s\","
-			"\"os\":\"%s\","
-			"\"arch\":\"%s\","
+			/*"\"os\":\"%s\","*/
+			"\"machine\":\"%s\","
 			"\"bits\":%d,"
 			"\"endian\":\"%s\","
 			, STR(info->type)
-			, STR(info->os)
+			/*, STR(info->os)*/
 			, STR(info->machine)
 			, info->bits
 			, info->big_endian? "big": "little");
 			break;
 		default:
 			pair ("type", info->type);
-			pair ("os", info->os);
+			/*pair ("os", info->os);*/
 			pair ("machine", info->machine);
 			pair ("bits", sdb_fmt (0, "%d", info->bits));
 			pair ("endian", info->big_endian? "big": "little");
@@ -93,7 +93,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
-			r_cons_printf (",\"uri\":\"%s\"", cf->desc->uri);
+			/*r_cons_printf (",\"uri\":\"%s\"", cf->desc->uri);*/
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			r_cons_printf (",\"size\":%"PFMT64d, r_io_desc_size (core->io, cf->desc));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
@@ -123,7 +123,7 @@ static void r_core_file_info (RCore *core, int mode) {
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 				(ut64)core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
-			pair ("uri", cf->desc->uri);
+			/*pair ("uri", cf->desc->uri);*/
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
 		if (binfile && binfile->curxtr)
@@ -134,14 +134,17 @@ static void r_core_file_info (RCore *core, int mode) {
 }
 
 static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
+	RBinInfo *info = r_bin_get_info (core->bin);
 	if (core->file) {
 		if (mode == R_CORE_BIN_JSON)
-			r_cons_printf ("{\"bin\":");
-		r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-			mode, va, NULL, offset, NULL);
-		if (mode == R_CORE_BIN_JSON)
-			r_cons_printf (",\"core\":");
+			r_cons_printf ("{\"core\":");
 		r_core_file_info (core, mode);
+		if (!strncmp (info->type, "Executable file", 15)){
+				if (mode == R_CORE_BIN_JSON)
+					r_cons_printf (",\"bin\":");
+				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
+					mode, va, NULL, offset, NULL);
+		}
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("}\n");
 	} else eprintf ("No selected file\n");
