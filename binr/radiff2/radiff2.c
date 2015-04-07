@@ -276,6 +276,7 @@ int main(int argc, char **argv) {
 			r_core_gdiff (c, c2, R_TRUE);
 			r_core_diff_show (c, c2);
 		}
+		r_cons_flush ();
 		return 0;
 	}
 
