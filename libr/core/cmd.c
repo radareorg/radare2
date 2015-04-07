@@ -1338,16 +1338,17 @@ next2:
 
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
-	if (ptr>cmd) {
+	if (ptr && ptr>cmd) {
 		char *escape = ptr-1;
 		if (*escape == '\\') {
 			memmove (escape, ptr, strlen (escape));
 			ptr = NULL;
 		}
 	}
-	if (*cmd!='.' && ptr) {
+	if (ptr && *cmd!='.') {
 		*ptr = '\0';
 		ptr++;
+		cmd = r_str_chop (cmd);
 		r_cons_grep (ptr);
 	}
 
