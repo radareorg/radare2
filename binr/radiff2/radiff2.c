@@ -96,6 +96,7 @@ static int show_help(int v) {
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -c         count of changes\n"
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
+		"  -CC        same as above but run `aac` to find more functions\n"
 		"  -d         use delta diffing\n"
 		"  -f         print bare addresses only (diff.bare=1)\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
@@ -163,6 +164,7 @@ int main(int argc, char **argv) {
 	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;
+	int gdiff_mode = 0;
 	double sim;
 
 	while ((o = getopt (argc, argv, "a:b:Cnpg:Ojrhcdsvxt:")) != -1) {
@@ -188,6 +190,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'C':
 			mode = MODE_CODE;
+			gdiff_mode++;
 			break;
 		case 'n':
 			showbare = R_TRUE;
@@ -260,7 +263,7 @@ int main(int argc, char **argv) {
 		if (mode == MODE_GRAPH) {
 			const char* second = strstr (addr, ",");
 			if (!second) {
-				r_core_gdiff (c, c2, R_TRUE);
+				r_core_gdiff (c, c2, gdiff_mode);
 				r_core_anal_graph (c, r_num_math (c->num, addr),
 					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			} else {
@@ -273,7 +276,7 @@ int main(int argc, char **argv) {
 				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			}
 		} else {
-			r_core_gdiff (c, c2, R_TRUE);
+			r_core_gdiff (c, c2, gdiff_mode);
 			r_core_diff_show (c, c2);
 		}
 		r_cons_flush ();
