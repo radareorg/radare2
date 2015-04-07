@@ -124,7 +124,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	BOOL bSuccess = FALSE;
 	SECURITY_ATTRIBUTES saAttr;
 	int res=0;
-	hPipeInOut = CreateNamedPipe("\\\\.\\pipe\\R2PIPE_IN" ,PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE |PIPE_READMODE_MESSAGE | PIPE_WAIT,PIPE_UNLIMITED_INSTANCES, 1024, 1024,0,NULL);
+	hPipeInOut = CreateNamedPipe("\\\\.\\pipe\\R2PIPE_IN",
+		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
+		PIPE_READMODE_MESSAGE | \
+		PIPE_WAIT,PIPE_UNLIMITED_INSTANCES,
+		sizeof (buf), sizeof (buf), 0, NULL);
 	if (myCreateChildProcess(code)!=R_TRUE) {
 		//eprintf("Error spawning process: %s\n",code);
 		return R_TRUE;
@@ -140,7 +144,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			break;
 		}*/
 		memset (buf, 0, sizeof (buf));
-		bSuccess = ReadFile( hPipeInOut, buf, 1024, &dwRead, NULL);
+		bSuccess = ReadFile( hPipeInOut, buf, sizeof (buf), &dwRead, NULL);
 		if (!bSuccess || !buf[0]) {
 			break;
 		}

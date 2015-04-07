@@ -296,6 +296,18 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "d")) {
+					char *cmd = r_str_newf ("dmd -run '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
+				} else if (!strcmp (ext, "go")) {
+					char *cmd = r_str_newf ("go run '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
 					char *cmd = r_str_newf ("babel-node '%s'", file);
 					r_lang_use (core->lang, "pipe");
