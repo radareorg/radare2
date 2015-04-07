@@ -37,7 +37,7 @@ R_API int r_cons_controlz(int ch) {
 }
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
-#if __WINDOWS_
+#if __WINDOWS_ && !__CYGWIN__
 	return ch;
 #endif
 	I->mouse_event = 0;

@@ -624,8 +624,8 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 	return ret;
 }
 
+#if __WINDOWS__ && !__CYGWIN__
 void SetWindow(int Width, int Height) {
-#if __WINDOWS__
     COORD coord;
     coord.X = Width;
     coord.Y = Height;
@@ -639,8 +639,8 @@ void SetWindow(int Width, int Height) {
     HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleScreenBufferSize(Handle, coord);
     SetConsoleWindowInfo(Handle, TRUE, &Rect);
-#endif
 }
+#endif
 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
@@ -651,7 +651,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
-	
+
 	if (r_cons_singleton()->mouse_event) {
 		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 	} else {
@@ -675,12 +675,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 	} else
 	switch (ch) {
+#if __WINDOWS__ && !__CYGWIN__
 	case 0xf5:
 		SetWindow(81,25);
 		break;
 	case 0xcf5:
 		SetWindow(81,40);
 		break;
+#endif
 	case 0x0d:
 		{
 			RAnalOp *op;

@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 #include <windows.h>
 #define USE_UTF8 0
 #else
@@ -85,7 +85,7 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	return len;
 }
 #endif
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 static int r_line_readchar_win(int * vch) {  // this function handle the input in console mode
 	ut8 buf[2];
 	*buf = '\0';
@@ -178,7 +178,7 @@ do_it_again:
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	#if 1 // new implementation for read input at windows by skuater. If something fail set this to 0
 	  int dummy=0;
 	  return r_line_readchar_win(&dummy);
@@ -191,7 +191,7 @@ static int r_line_readchar() {
 #endif
 
 do_it_again:
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
@@ -454,7 +454,7 @@ R_API void r_line_autocomplete() {
 R_API const char *r_line_readline() {
 	return r_line_readline_cb (NULL, NULL);
 }
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	int columns = r_cons_get_size (NULL)-2;
 	const char *gcomp_line = "";
@@ -834,7 +834,7 @@ _end:
 #endif
 
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
  #if 1          // new implementation for read input at windows by skuater. If something fail set this to 0
     return r_line_readline_cb_win(cb,user);
  #endif
@@ -911,7 +911,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 		if (I.echo)
 			printf ("\r%*c\r", columns, ' ');
 #else
