@@ -9,9 +9,7 @@ static int cmd_project(void *data, const char *input) {
 	file = (input[0] && input[1])? arg: str;
 	switch (input[0]) {
 	case 'c':
-		if (!input[1]) {
-			eprintf ("TODO: Show project saving script to console\n");
-		} else if (input[1]==' ') {
+		if (input[1]==' ') {
 			r_core_project_cat (core, input+2);
 		} else eprintf ("Usage: Pc [prjname]\n");
 		break;
@@ -160,7 +158,6 @@ static int cmd_project(void *data, const char *input) {
 	default: {
 		const char* help_msg[] = {
 		"Usage:", "P[?osi] [file]", "Project management",
-		"Pc", "", "show what will be saved in the project script",
 		"Pc", " [file]", "show project script to console",
 		"Pd", " [file]", "delete project",
 		"Pi", " [file]", "show project information",
