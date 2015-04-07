@@ -863,6 +863,7 @@ typedef struct r_anal_esil_t {
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
 	Sdb *ops;
+	Sdb *interrupts;
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	Sdb *db_trace;
@@ -896,6 +897,7 @@ typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 
 typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 typedef int (*RAnalEsilLoopCB)(RAnalEsil *esil, RAnalOp *op);
+typedef int (*RAnalEsilInterrupt)(RAnalEsil *esil, int interrupt);
 
 typedef struct r_anal_plugin_t {
 	char *name;
@@ -1067,6 +1069,8 @@ R_API void r_anal_esil_stack_free (RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
+R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterrupt interruptcb);
+R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
