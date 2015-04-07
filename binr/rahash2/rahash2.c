@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i': iterations = atoi (optarg);
-			if (iterations<1) {
+			if (iterations<0) {
 				eprintf ("error: -i argument must be positive\n");
 				return 1;
 			}
@@ -303,12 +303,11 @@ int main(int argc, char **argv) {
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}
 	}
-	if ((st64)from<0 || (st64)to<0) {
-		eprintf ("Invalid -f or -t offsets\n");
-		return 1;
+	if ((st64)from>=0 && (st64)to<0) {
+		to = 0; // end of file
 	}
 	if (from || to) {
-		if (from>=to) {
+		if (to && from>=to) {
 			eprintf ("Invalid -f or -t offsets\n");
 			return 1;
 		}

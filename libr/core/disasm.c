@@ -1405,20 +1405,25 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 	int j,k;
 	if (!ds->show_bytes)
 		return;
+	if (ds->nb<1)
+		return;
 	strcpy (extra, " ");
 	if (ds->show_flag_in_bytes) {
 		flagstr = r_flag_get_liststr (core->flags, ds->at);
 	}
 	if (flagstr) {
 		str = flagstr;
-		k = ds->nb-strlen (flagstr)-1;
-		if (k<0) k = 0;
-		for (j=0; j<k; j++)
-			pad[j] = ' ';
-		pad[j] = '\0';
+		if (ds->nb>0) {
+			k = ds->nb-strlen (flagstr)-1;
+			if (k<0) k = 0;
+			for (j=0; j<k; j++)
+				pad[j] = ' ';
+			pad[j] = '\0';
+		} else pad[0] = 0;
 	} else {
 		if (ds->show_flag_in_bytes) {
 			k = ds->nb-1;
+			if (k<0) k = 0;
 			for (j=0; j<k; j++)
 				pad[j] = ' ';
 			pad[j] = '\0';
@@ -1436,19 +1441,20 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 			ds->p->cur_enabled = (ds->cursor != -1);
 			nstr = r_print_hexpair (ds->p, str, ds->index);
 			if (ds->p->bytespace) {
-				k = (ds->nb+ (ds->nb/2)) - r_str_ansi_len (nstr);
+				k = (ds->nb + (ds->nb/2)) - r_str_ansi_len (nstr);
 			} else {
 				k = ds->nb - r_str_ansi_len (nstr);
 			}
-			if (k<0) k = 0;
-			for (j=0; j<k; j++)
-				pad[j] = ' ';
-			pad[j] = 0;
-			if (ds->lbytes) {
-				// hack to align bytes left
-				strcpy (extra, pad);
-				*pad = 0;
-			}
+			if (k>0) {
+				for (j=0; j<k; j++)
+					pad[j] = ' ';
+				pad[j] = 0;
+				if (ds->lbytes) {
+					// hack to align bytes left
+					strcpy (extra, pad);
+					*pad = 0;
+				}
+			} else pad[0] = 0;
 			free (str);
 			str = nstr;
 		}
@@ -2478,7 +2484,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_core_read_at (core, addr, buf, count);
 				r_core_read_at (core, addr+count, buf+count, nb_bytes-count);
 			} else {
-				memset (buf, 0xff, nb_bytes);
+				if (nb_bytes>0)
+					memset (buf, 0xff, nb_bytes);
 			}
 		} else {
 			// If we are disassembling a positive number of lines, enable dis_opcodes

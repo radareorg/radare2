@@ -903,7 +903,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int tid = dbg->tid;
 	if (size<1)
 		return R_FALSE;
-	if (type<0) {
+	if (type<-1) {
 		showfpu = R_TRUE; // hack for debugging
 		type = -type;
 	}
