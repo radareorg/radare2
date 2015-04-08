@@ -1431,7 +1431,7 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 		eprintf ("Cannot deinitialize %s\n", name);
 		return;
 	}
-	snprintf (uri, sizeof (uri), "malloc://%d @ 0x%"PFMT64x"", (int)size, addr);
+	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
 	if (cf)
 		r_flag_set (core->flags, name, addr, size, 0);
