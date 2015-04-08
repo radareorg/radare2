@@ -303,50 +303,54 @@ static inline char *eon(char *n) {
 	return n;
 }
 
+/* padding looks like:
+  ([snatSNAT][0-9]+)*
+*/
 R_API int r_egg_padding (REgg *egg, const char *pad) {
-	int n;
-	ut8* xx, byte;
-	char *q, *p, *o = strdup (pad);
-	// parse pad string
-	for (p=o; *p; ) {
-		char t, f = *p++;
-		q = eon (p);
-		t = *q;
-		*q = 0;
-		n = atoi (p);
-		*q = t;
-		p = q;
-		if (n<1) {
-			eprintf ("Invalid padding length at %d\n", n);
+	int number;
+	ut8* buf, padding_byte;
+	char *p, *o = strdup (pad);
+
+	for (p=o; *p; ) { // parse pad string
+		const char f = *p++;
+		number = strtol(p, NULL, 10);
+
+		if (number<1) {
+			eprintf ("Invalid padding length at %d\n", number);
 			free (o);
 			return R_FALSE;
 		}
+		p = eon(p);
+
 		switch (f) {
-		case 's': case 'S': byte = 0; break;
-		case 'n': case 'N': byte = 0x90; break;
-		case 'a': case 'A': byte = 'A'; break;
-		case 't': case 'T': byte = 0xcc; break;
+		case 's': case 'S': padding_byte = 0; break;
+		case 'n': case 'N': padding_byte = 0x90; break;
+		case 'a': case 'A': padding_byte = 'A'; break;
+		case 't': case 'T': padding_byte = 0xcc; break;
 		default:
 			eprintf ("Invalid padding format (%c)\n", *p);
+			eprintf ("Valid ones are:\n");
+			eprintf ("	s S : NULL byte");
+			eprintf ("	n N : nop");
+			eprintf ("	a A : 0x41");
+			eprintf ("	t T : trap (0xcc)");
 			free (o);
 			return R_FALSE;
 		}
 
-		xx = malloc (n);
-		if (!xx) {
+		buf = malloc (number);
+		if (!buf) {
 			free (o);
 			return R_FALSE;
 		}
-		if (byte == 0) {
-			// TODO: add support for word-sized sequences
-			int i;
-			for (i=0; i<n; i++)
-				xx[i] = i;
-		} else memset (xx, byte, n);
-		if (f>='a' && f<='z')
-			r_buf_prepend_bytes (egg->bin, xx, n);
-		else r_buf_append_bytes (egg->bin, xx, n);
-		free (xx);
+
+		memset (buf, padding_byte, number);
+		if (f>='a' && f<='z') {
+			r_buf_prepend_bytes (egg->bin, buf, number);
+		} else {
+			r_buf_append_bytes (egg->bin, buf, number);
+		}
+		free (buf);
 	}
 	free (o);
 	return R_TRUE;
