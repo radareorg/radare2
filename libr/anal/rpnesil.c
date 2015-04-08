@@ -117,7 +117,6 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
 	}
-	r_mem_copyendian (buf, buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
 		for (i=0; i<len; i++)
@@ -137,7 +136,6 @@ R_API int r_anal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	int i, ret = 0;
 	if (!buf || !esil)
 		return 0;
-	r_mem_copyendian ((ut8*)buf, (ut8*)buf, len ,!esil->anal->big_endian);
 	if (esil->debug) {
 		eprintf ("0x%08"PFMT64x" <W ", addr);
 		for (i=0;i<len;i++)
@@ -1199,11 +1197,13 @@ static int esil_poke2(RAnalEsil *esil) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
 			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 				r_anal_esil_mem_read (esil, addr, (ut8 *)&num2, 2);
+				r_mem_copyendian ((ut8 *)&num2, (ut8 *)&num2, 2 ,!esil->anal->big_endian);
 				esil->old = num2;
 				esil->cur = (num & 0xffff);
 				esil->lastsz = 16;
 			}
 			num2 = (ut16)num;
+			r_mem_copyendian ((ut8 *)&num2, (ut8 *)&num2, 2 ,!esil->anal->big_endian);
 			ret = r_anal_esil_mem_write (esil, addr,
 				(const ut8*)&num2, 2);
 		}
@@ -1221,11 +1221,13 @@ static int esil_poke4(RAnalEsil *esil) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
 			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 				r_anal_esil_mem_read (esil, addr, (ut8 *)&num4, 4);
+				r_mem_copyendian ((ut8 *)&num4, (ut8 *)&num4, 4 ,!esil->anal->big_endian);
 				esil->old = num4;
 				esil->cur = (num & 0xffffffff);
 				esil->lastsz = 32;
 			}
 			num4 = (ut32)num;
+			r_mem_copyendian ((ut8 *)&num4, (ut8 *)&num4, 4 ,!esil->anal->big_endian);
 			ret = r_anal_esil_mem_write (esil, addr,
 				(const ut8*)&num4, 4);
 		}
@@ -1242,11 +1244,13 @@ static int esil_poke8(RAnalEsil *esil) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
 			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 				r_anal_esil_mem_read (esil, addr, (ut8 *)&num8, 8);
+				r_mem_copyendian ((ut8 *)&num8, (ut8 *)&num8, 8 ,!esil->anal->big_endian);
 				esil->old = num8;
 				esil->cur = num;
 				esil->lastsz = 64;
 			}
-			num8 = (ut64)num;
+			num8 = num;
+			r_mem_copyendian ((ut8 *)&num8, (ut8 *)&num8, 8 ,!esil->anal->big_endian);
 			ret = r_anal_esil_mem_write (esil, addr,
 				(const ut8*)&num8, sizeof (num8));
 		}
@@ -1288,9 +1292,10 @@ static int esil_peek2(RAnalEsil *esil) {
 	ut64 num;
 	char *dst = r_anal_esil_pop (esil);
 	if (dst && isregornum (esil, dst, &num)) {
-		ut8 buf[4];
+		ut8 buf[2];
 		ut16 *n16 = (ut16 *)&buf;
 		ret = r_anal_esil_mem_read (esil, num, buf, 2);
+		r_mem_copyendian (buf, buf, 2 ,!esil->anal->big_endian);
 		snprintf (res, sizeof (res), "0x%hx", *n16);
 		r_anal_esil_push (esil, res);
 		esil->lastsz = 16;
@@ -1308,6 +1313,7 @@ static int esil_peek4(RAnalEsil *esil) {
 		ut8 buf[4];
 		ut32 *n32 = (ut32 *)&buf;
 		ret = r_anal_esil_mem_read (esil, num, buf, 4);
+		r_mem_copyendian (buf, buf, 4 ,!esil->anal->big_endian);
 		snprintf (res, sizeof (res), "0x%x", *n32);
 		r_anal_esil_push (esil, res);
 		esil->lastsz = 32;
@@ -1325,6 +1331,7 @@ static int esil_peek8(RAnalEsil *esil) {
 		ut8 buf[8];
 		ut64 *n64 = (ut64 *)&buf;
 		ret = r_anal_esil_mem_read (esil, num, buf, sizeof (ut64));
+		r_mem_copyendian (buf, buf, 8 ,!esil->anal->big_endian);
 		snprintf (res, sizeof (res), "0x%"PFMT64x, *n64);
 		r_anal_esil_push (esil, res);
 		esil->lastsz = 64;

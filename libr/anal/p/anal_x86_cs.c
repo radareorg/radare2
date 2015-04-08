@@ -1038,7 +1038,7 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
 {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
-	if (!esil || !esil->anal || (interrupt != 0x80))
+	if (!esil || (interrupt != 0x80))
 		return R_FALSE;
 	r_anal_esil_reg_read (esil, "eax", &eax);
 	r_anal_esil_reg_read (esil, "ebx", &ebx);
@@ -1047,7 +1047,7 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
 	syscall = (int) eax;
 	if (syscall == 4) {		// write
 		char *src = malloc ((size_t)edx);
-		esil->anal->iob.read_at (esil->anal->iob.io, ecx, (ut8 *)src, (int)edx);	//XXX that should be r_anal_esil_mem_read but mem-read allways applies endianess -> mess. condret will fix that
+		r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
 		write ((ut32)ebx, src, (size_t)edx);
 		free (src);
 		return R_TRUE;
