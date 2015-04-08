@@ -2467,7 +2467,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	ut64 at;
 	int dis_opcodes = 0;
 	r_cons_printf ("[");
+	int limit_by = 'b';
 
+	if (nb_opcodes != 0) {
+		limit_by = 'o';
+	}
 	if (nb_opcodes) { // Disassemble `nb_opcodes` opcodes.
 		if (nb_opcodes < 0) {
 			int count, nbytes = 0;
@@ -2526,11 +2530,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_core_read_at (core, at, buf, nb_bytes);
 			i=0;
 		}
-		if (i>=nb_bytes) {
-			break;
-		}
-		if (j>=nb_opcodes) {
-			break;
+		if (limit_by == 'o') {
+			if (j>=nb_opcodes) {
+				break;
+			}
+		} else {
+			if (i>=nb_bytes) {
+				break;
+			}
 		}
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
 		if (ret<1) {
