@@ -23,7 +23,8 @@ if [ 1 = "${DOBUILD}" ]; then
 	if [ -f config-user.mk ]; then
 		${MAKE} mrproper > /dev/null 2>&1
 	fi
-	export CFLAGS="-fPIC -pie -D__ANDROID__=1"
+	export CFLAGS="-fPIC -pie "
+#-D__ANDROID__=1"
 	./configure-plugins
 	./configure --prefix=$PREFIX --with-nonpic --without-pic
 fi
