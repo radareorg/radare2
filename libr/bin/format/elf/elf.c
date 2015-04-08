@@ -1178,7 +1178,6 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	return ret;
 }
 
-
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr, i, j, k, len, newsize;
@@ -1336,19 +1335,15 @@ if (
 					free (strtab);
 					return NULL;
 				}
-<<<<<<< HEAD
-
                                 
 				//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 				len = __strnlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
-=======
 				{
 					int rest = strtab_section->sh_size - sym[k].st_name;
 					if (rest<0) rest = 0;
 					//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 					len = __strnlen (strtab+sym[k].st_name, R_MIN(ELF_STRING_LENGTH-1,rest));
 				}
->>>>>>> upstream/master
 				memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
