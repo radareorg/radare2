@@ -1001,6 +1001,13 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	} else {
 		cols *= 2;
 	}
+	if (show_offset) {
+		char offstr[128];
+		snprintf (offstr, sizeof(offstr),
+			"0x%08"PFMT64x"  ", core->offset+i);
+		if (strlen (offstr)>12)
+			cols -= ((strlen(offstr)-12)*2);
+	}
 	for (oi = i = c = 0; i< len; c++) {
 		if (i && !(c%cols)) {
 			show_offset = R_TRUE;
@@ -1029,9 +1036,9 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		case R_ANAL_OP_TYPE_CAST:
 		case R_ANAL_OP_TYPE_LENGTH:
 		case R_ANAL_OP_TYPE_CMOV:
-			text = "m.";
+			text = "mv";
 			bgcolor = pal->mov;
-			fgcolor = Color_RED;
+			fgcolor = Color_YELLOW;
 			break;
 		case R_ANAL_OP_TYPE_PUSH:
 		case R_ANAL_OP_TYPE_UPUSH:
@@ -1039,13 +1046,18 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			fgcolor = Color_WHITE;
 			text = "->";
 			break;
+		case R_ANAL_OP_TYPE_IO:
+			bgcolor = pal->swi;
+			fgcolor = Color_WHITE;
+			text = "io";
+			break;
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_SWI:
 		case R_ANAL_OP_TYPE_NEW:
 			//bgcolor = Color_BGRED;
 			bgcolor = pal->trap; //r_cons_swap_ground (pal->trap);
 			fgcolor = Color_WHITE;
-			text = "##";
+			text = "$$";
 			break;
 		case R_ANAL_OP_TYPE_POP:
 			text = "<-";
@@ -1060,7 +1072,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			text = "..";
 			break;
 		case R_ANAL_OP_TYPE_MUL:
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = R_TRUE;
 			text = "_*";
@@ -1068,49 +1080,49 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		case R_ANAL_OP_TYPE_DIV:
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			text = "_/";
 			break;
 		case R_ANAL_OP_TYPE_AND:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			text = "_&";
 			break;
 		case R_ANAL_OP_TYPE_XOR:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			text = "_^";
 			break;
 		case R_ANAL_OP_TYPE_OR:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			text = "_|";
 			break;
 		case R_ANAL_OP_TYPE_SHR:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			text = ">>";
 			break;
 		case R_ANAL_OP_TYPE_SHL:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_BLACK;
 			text = "<<";
 			break;
 		case R_ANAL_OP_TYPE_SUB:
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_WHITE;
 			text = "--";
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_YELLOW;
+			fgcolor = Color_WHITE;
 			text = "++";
 			break;
 		case R_ANAL_OP_TYPE_JMP:
@@ -1132,9 +1144,10 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		case R_ANAL_OP_TYPE_UCCALL:
 			bgcolor = r_cons_swap_ground (pal->call);
 			bgcolor_in_heap = R_TRUE;
-			fgcolor = Color_BLACK;
+			fgcolor = Color_WHITE;
 			text = "_C";
 			break;
+		case R_ANAL_OP_TYPE_ACMP:
 		case R_ANAL_OP_TYPE_CMP:
 			bgcolor = r_cons_swap_ground (pal->cmp);
 			bgcolor_in_heap = R_TRUE;
@@ -1153,7 +1166,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			bgcolor = r_cons_swap_ground (pal->invalid);
 			bgcolor_in_heap = R_TRUE;
 			fgcolor = Color_WHITE;
-			text = "II";
+			text = "XX";
 			break;
 #if 0
 		default:
@@ -1162,7 +1175,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			break;
 #endif
 		}
-		int opsz = R_MIN (op.size, 1);
+		int opsz = R_MAX (op.size, 1);
 		if (show_cursor) {
 			if (core->print->cur >=i && core->print->cur < i+opsz) 
 				r_cons_invert (1, 1);
@@ -2345,7 +2358,25 @@ static int cmd_print(void *data, const char *input) {
 			annotated_hexdump (core, input+2, len);
 			break;
 		case 'A': // "pxA"
-			cmd_print_pxA (core, len, input+1);
+			if (input[2]=='?') {
+				eprintf ("Usage: pxA [len]   # f.ex: pxA 4K\n"
+				" mv    move,lea,li\n"
+				" ->    push\n"
+				" <-    pop\n"
+				" io    in/out ops\n"
+				" $$    int/swi/trap/new\n"
+				" ..    nop\n"
+				" +-*/  math ops\n"
+				" |&^   bin ops\n"
+				" <<>>  shift ops\n"
+				" _J    jump\n"
+				" cJ    conditional jump\n"
+				" _C    call\n"
+				" ==    cmp/test\n"
+				" XX    invalid\n");
+			} else {
+				cmd_print_pxA (core, len, input+1);
+			}
 			break;
 		case 'b': // "pxb"
 			{

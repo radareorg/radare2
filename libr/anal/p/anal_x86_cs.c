@@ -373,6 +373,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_MOVSD:
 		case X86_INS_MOVSQ:
 		case X86_INS_MOVSS:
+		case X86_INS_MOVSX:
+		case X86_INS_MOVSXD:
 		case X86_INS_MOVSW:
 		case X86_INS_MOVD:
 		case X86_INS_MOVQ:
