@@ -1335,9 +1335,6 @@ if (
 					free (strtab);
 					return NULL;
 				}
-                                
-				//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
-				len = __strnlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 				{
 					int rest = strtab_section->sh_size - sym[k].st_name;
 					if (rest<0) rest = 0;
