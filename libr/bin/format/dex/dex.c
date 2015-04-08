@@ -40,7 +40,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 
 	//bin->strings = bin->b->buf + bin->header.strings_offset;
 	int left;
-	bin->strings = r_buf_get_at (bin->b, bin->header.strings_offset, &left);
+	bin->strings = (ut32 *)r_buf_get_at (bin->b, bin->header.strings_offset, &left);
 	if (left< STRINGS_SIZE) {
 		FAIL ("Strings buffer is too small");
 	}

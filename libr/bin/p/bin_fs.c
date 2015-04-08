@@ -81,7 +81,6 @@ static RList *strings(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	char *p;
 	const ut8 *bytes;
 	ut64 sz;
 
