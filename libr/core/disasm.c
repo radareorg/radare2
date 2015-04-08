@@ -2661,7 +2661,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		r_cons_printf ("}");
 		i += oplen;
-		j += oplen;
+		j ++;
 		line++;
 		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) \
 			|| (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes)) {
