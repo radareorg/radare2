@@ -323,7 +323,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	if (ds->show_trace) ds->ocols += 8;
 	if (ds->show_stackptr) ds->ocols += 4;
 	/* disasm */ ds->ocols += 20;
-	ds->nb = (ds->nbytes*2);
+	ds->nb = ds->nbytes? (1+ds->nbytes*2): 0;
 	ds->tries = 3;
 
 	if (core->print->cur_enabled) {
@@ -1443,7 +1443,7 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 			if (ds->p->bytespace) {
 				k = (ds->nb + (ds->nb/2)) - r_str_ansi_len (nstr);
 			} else {
-				k = ds->nb - r_str_ansi_len (nstr);
+				k = ds->nb - r_str_ansi_len (nstr)+1;
 			}
 			if (k>0) {
 				for (j=0; j<k; j++)
@@ -1454,7 +1454,9 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 					strcpy (extra, pad);
 					*pad = 0;
 				}
-			} else pad[0] = 0;
+			} else {
+				pad[0] = 0;
+			}
 			free (str);
 			str = nstr;
 		}
