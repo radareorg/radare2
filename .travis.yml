@@ -54,7 +54,7 @@ env:
   
   #- debugger
   #- TESTS=dbg.linux
-  
+  - TESTS=io               # IO
   - TESTS=commands         # r2 commands related
   - TESTS=tools            # tools related 
 
