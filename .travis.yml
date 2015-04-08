@@ -19,7 +19,7 @@ env:
   #- Analysis
   - TESTS=anal.arm
   - TESTS=anal.java
-  #- TESTS=anal.mips
+  - TESTS=anal.mips
   - TESTS=anal.others
   - TESTS=anal.x86
   - TESTS=esil
