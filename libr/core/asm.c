@@ -369,8 +369,15 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 
 	if (!hits)
 		return NULL;
-	buf_addr = addr - len;
-	buf_len = len;
+	if (len>addr) {
+		buf_addr = 0;
+		buf_len = len-addr;
+		len = buf_len;
+		addr = n;
+	} else {
+		buf_addr = addr - len;
+		buf_len = len;
+	}
 
 	buf = (ut8 *)malloc (buf_len);
 	if (!buf) {
