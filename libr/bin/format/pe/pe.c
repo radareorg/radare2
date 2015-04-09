@@ -306,15 +306,18 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	       struct timezone tz;
 	       struct timeval tv;
 	       int gmtoff;
+	       char *timestr;
 	       time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
 	       sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
 		       bin->nt_headers->file_header.TimeDateStamp, 0);
 	       gettimeofday (&tv, &tz);
 	       gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
 	       ts += gmtoff;
+	       timestr = r_str_chop (strdup (ctime (&ts)));
 	       // gmt offset for pe date is t->tm_gmtoff
-	       sdb_set (bin->kv, "image_file_header.TimeDateStamp_string",
-		       ctime (&ts), 0);
+	       sdb_set_owned (bin->kv,
+			"image_file_header.TimeDateStamp_string",
+			timestr, 0);
 	}
 
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
