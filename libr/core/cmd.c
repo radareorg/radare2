@@ -1406,7 +1406,7 @@ repeat_arroba:
 		if (ptr[0] && ptr[1]==':' && ptr[2]) {
 			usemyblock = 1;
 			switch (ptr[0]) {
-			case 'f':
+			case 'f': // "@f:"
 				f = r_file_slurp (ptr+2, &sz);
 				if (f) {
 					buf = malloc (sz);
@@ -1420,7 +1420,7 @@ repeat_arroba:
 				} else eprintf ("cannot open '%s'\n", ptr+3);
 				break;
 			case '8':
-			case 'b':
+			case 'b': // "@b:"
 				buf = malloc (strlen (ptr+2)+1);
 				if (!buf) {
 					eprintf ("cannot allocate\n");
@@ -1431,7 +1431,7 @@ repeat_arroba:
 				memcpy (core->block, buf, core->blocksize);
 				free (buf);
 				break;
-			case 'a':
+			case 'a': // "@a:"
 				if (ptr[1]==':') {
 					char *q = strchr (ptr+2, ':');
 					tmpasm = r_config_get (core->config, "asm.arch");
@@ -1446,8 +1446,8 @@ repeat_arroba:
 					eprintf ("Usage: pd 10 @a:arm:32\n");
 				}
 				break;
-			case 's':
-				len = strlen (ptr+3);
+			case 's': // "@s:"
+				len = strlen (ptr+2);
 				r_core_block_size (core, len);
 				memcpy (core->block, ptr+2, len);
 				break;
