@@ -391,13 +391,25 @@ R_API void r_cons_flush() {
 			r_cons_reset ();
 
 		} else if (I.buffer_len > CONS_MAX_USER) {
-			char buf[64];
-			char *buflen = r_num_units (buf, I.buffer_len);
-			if (!r_cons_yesno ('n',"Do you want to print %s chars? (y/N)",
-					buflen)) {
+#define COUNT_LINES 1
+#if COUNT_LINES
+			int i, lines = 0;
+			for (i=0; I.buffer[i]; i++) {
+				if (I.buffer[i]=='\n')
+					lines ++;
+			}
+			if (!r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset ();
 				return;
 			}
+#else
+			char buf[64];
+			char *buflen = r_num_units (buf, I.buffer_len);
+			if (!r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
+				r_cons_reset ();
+				return;
+			}
+#endif
 			// fix | more | less problem
 			r_cons_set_raw (1);
 		}
