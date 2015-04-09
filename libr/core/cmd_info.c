@@ -71,19 +71,19 @@ static void r_core_file_info (RCore *core, int mode) {
 		case R_CORE_BIN_JSON:
 			r_cons_printf ("\"type\":\"%s\","
 			/*"\"os\":\"%s\","*/
-			"\"machine\":\"%s\","
+			/*"\"machine\":\"%s\","*/
 			"\"bits\":%d,"
 			"\"endian\":\"%s\","
 			, STR(info->type)
 			/*, STR(info->os)*/
-			, STR(info->machine)
+			/*, STR(info->machine)*/
 			, info->bits
 			, info->big_endian? "big": "little");
 			break;
 		default:
 			pair ("type", info->type);
 			/*pair ("os", info->os);*/
-			pair ("machine", info->machine);
+			/*pair ("machine", info->machine);*/
 			pair ("bits", sdb_fmt (0, "%d", info->bits));
 			pair ("endian", info->big_endian? "big": "little");
 			break;
@@ -134,12 +134,12 @@ static void r_core_file_info (RCore *core, int mode) {
 }
 
 static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
-	RBinInfo *info = r_bin_get_info (core->bin);
+	RBinObject *obj = r_bin_cur_object (core->bin); 
 	if (core->file) {
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("{\"core\":");
 		r_core_file_info (core, mode);
-		if (!strncmp (info->type, "Executable file", 15)){
+		if (obj->bin_obj){
 				if (mode == R_CORE_BIN_JSON)
 					r_cons_printf (",\"bin\":");
 				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
