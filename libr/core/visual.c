@@ -430,7 +430,7 @@ static void visual_search (RCore *core) {
 R_API void r_core_visual_show_char (RCore *core, char ch) {
 	if (r_config_get_i (core->config, "scr.feedback")<2)
 		return;
-	if (!IS_PRINTABLE(ch))
+	if (!IS_PRINTABLE (ch))
 		return;
 	r_cons_gotoxy (1, 2);
 	r_cons_printf (".---.\n");
@@ -1541,13 +1541,11 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 static void r_core_visual_refresh (RCore *core) {
 	int w, h;
-	RCons *cons;
 	const char *vi, *vcmd;
 	if (!core) return;
 	w = r_cons_get_size (&h);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
-	cons = r_cons_singleton ();
-	cons->blankline = R_TRUE;
+	core->cons->blankline = R_TRUE;
 
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w<78) {
@@ -1595,7 +1593,7 @@ static void r_core_visual_refresh (RCore *core) {
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
 		// XXX: slow
-		cons->blankline = R_FALSE;
+		core->cons->blankline = R_FALSE;
 		r_cons_clear00 ();
 		r_cons_flush ();
 		{
@@ -1639,7 +1637,7 @@ static void r_core_visual_refresh (RCore *core) {
 
 	/* this is why there's flickering */
 	r_cons_visual_flush ();
-	cons->blankline = R_TRUE;
+	core->cons->blankline = R_TRUE;
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
@@ -1647,7 +1645,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	ut64 scrseek;
 	int wheel, flags, ch;
 
-	if (r_cons_get_size(&ch)<1 || ch<1) {
+	if (r_cons_get_size (&ch)<1 || ch<1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}

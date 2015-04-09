@@ -708,6 +708,8 @@ R_API void r_cons_set_raw(int is_raw) {
 #if EMSCRIPTEN
 	/* do nothing here */
 #elif __UNIX__ || __CYGWIN__
+	// enforce echo off
+	I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
 	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
 	else tcsetattr (0, TCSANOW, &I.term_buf);
 #elif __WINDOWS__
