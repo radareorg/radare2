@@ -1004,7 +1004,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	if (show_offset) {
 		char offstr[128];
 		snprintf (offstr, sizeof(offstr),
-			"0x%08"PFMT64x"  ", core->offset+i);
+			"0x%08"PFMT64x"  ", core->offset);
 		if (strlen (offstr)>12)
 			cols -= ((strlen(offstr)-12)*2);
 	}
