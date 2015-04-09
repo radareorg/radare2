@@ -791,8 +791,8 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
 		to = symbols_count; //symbols_size/sizeof(struct symbol_t);
 #endif
-		if (to>0x40000) {
-			eprintf ("WARNING: corrupted mach0 header: symbol table is too big\n");
+		if (to>0x500000) {
+			eprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
 			return NULL;
 		}
