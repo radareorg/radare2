@@ -289,7 +289,7 @@ static int bin_info (RCore *r, int mode) {
 		r_cons_printf ("{\"type\":\"%s\","
 			"\"class\":\"%s\","
 			/*"\"endian\":\"%s\","*/
-			/*"\"machine\":\"%s\","*/
+			"\"machine\":\"%s\","
 			"\"arch\":\"%s\","
 			"\"os\":\"%s\","
 			"\"lang\":\"%s\","
@@ -307,7 +307,7 @@ static int bin_info (RCore *r, int mode) {
 			STR(info->rclass), // type
 			STR(info->bclass), // class
 			/*info->big_endian? "big": "little",*/
-			/*STR(info->machine),*/
+			STR(info->machine),
 			STR(info->arch),
 			STR(info->os),
 			info->lang?info->lang:"",
@@ -391,7 +391,7 @@ static int bin_info (RCore *r, int mode) {
 			pair ("lang", info->lang? info->lang: "unknown");
 			pair ("arch", info->arch);
 			/*pair ("bits", sdb_fmt (0, "%d", info->bits));*/
-			/*pair ("machine", info->machine);*/
+			pair ("machine", info->machine);
 			pair ("os", info->os);
 			pair ("subsys", info->subsystem);
 			/*pair ("endian", info->big_endian? "big": "little");*/
