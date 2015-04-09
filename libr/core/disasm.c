@@ -2522,8 +2522,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// If using #opcodes, j is the offset from start address. i is the
 	// offset in current disassembly buffer (256 by default)
 	i=j=line=0;
+	// i = number of bytes
+	// j = number of instructions
 	for (;;) {
-		at = addr + j;
+		at = addr + i;
 		r_asm_set_pc (core->assembler, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
@@ -2660,8 +2662,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		r_cons_printf ("}");
-		i += oplen;
-		j ++;
+		i += oplen; // bytes
+		j ++; // instructions
 		line++;
 		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) \
 			|| (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes)) {
