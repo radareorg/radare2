@@ -34,9 +34,11 @@ binr/rasm2/rasm2.exe
 binr/rax2/rax2
 binr/rax2/rax2.exe
 config-user.mk
+libr/bin/d/dll/dll
 libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
+libr/include/r_version.h.tmp
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
