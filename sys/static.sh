@@ -26,7 +26,7 @@ if [ 1 = "${DOBUILD}" ]; then
 	export CFLAGS="-fPIC -pie "
 #-D__ANDROID__=1"
 	./configure-plugins
-	./configure --prefix=$PREFIX --with-nonpic --without-pic
+	./configure --prefix=$PREFIX --with-nonpic --without-pic --disable-loadlibs
 fi
 ${MAKE} -j 8
 BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 rasign2 r2agent radiff2"

@@ -43,6 +43,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+#if R2_LOADLIBS
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
 		return R_FALSE;
@@ -66,5 +67,6 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-extras/"R2_VERSION);
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
 	}
+#endif
 	return R_TRUE;
 }
