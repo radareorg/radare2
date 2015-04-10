@@ -214,7 +214,10 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		hdr->header_length = READ (buf, ut32);
 	}
 
-	if (buf_end-buf < 8) return NULL;
+	if (buf_end-buf < 8) {
+		sdb_free (s);
+		return NULL;
+	}
 	hdr->min_inst_len = READ (buf, ut8);
 	//hdr->max_ops_per_inst = READ (buf, ut8);
 	hdr->file_names = NULL;

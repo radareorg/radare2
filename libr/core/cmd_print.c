@@ -7,7 +7,7 @@ static char get_string_type (const ut8 *buf, ut64 len){
 
 	if (!buf)
 		return '?';
-	
+
 	while (needle < len){
 		rc = r_utf8_decode (buf+needle, len-needle, NULL);
 		if (!rc){
@@ -992,7 +992,8 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
 	RAnalOp op;
-	if (len<0 || len > core->blocksize) {
+
+	if (len < 0 || len > core->blocksize) {
 		eprintf ("Invalid length\n");
 		return 0;
 	}
@@ -1009,7 +1010,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			cols -= ((strlen(offstr)-12)*2);
 	}
 	for (oi = i = c = 0; i< len; c++) {
-		if (i && !(c%cols)) {
+		if (i && (cols != 0) && !(c % cols)) {
 			show_offset = R_TRUE;
 			r_cons_printf ("  %d\n", i-oi);
 			oi = i;

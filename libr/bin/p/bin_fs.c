@@ -87,7 +87,7 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!arch) return NULL;
 	bytes = r_buf_buffer (arch->buf);
 	if (!bytes) return NULL;
-	sz = arch ? r_buf_size (arch->buf): 0;
+	sz = arch->buf ? r_buf_size (arch->buf): 0;
 
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;

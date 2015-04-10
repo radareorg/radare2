@@ -556,9 +556,11 @@ R_API char *r_fs_name (RFS *fs, ut64 offset) {
 	return NULL;
 }
 
+#define PROMT_PATH_BUFSIZE 1024
+
 R_API int r_fs_prompt (RFS *fs, const char *root) {
-	char buf[1024];
-	char path[1024];
+	char buf[PROMT_PATH_BUFSIZE];
+	char path[PROMT_PATH_BUFSIZE];
 	char str[2048];
 	char *input;
 	RList *list = NULL;
@@ -607,7 +609,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		} else if (!strncmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
-			char opath[4096];
+			char opath[PROMT_PATH_BUFSIZE];
 			strncpy (opath, path, sizeof (opath)-1);
 			input = buf+3;
 			while (*input == ' ')
