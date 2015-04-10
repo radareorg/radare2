@@ -222,6 +222,7 @@ R_API RCons *r_cons_free () {
 	I.refcnt--;
 	if (I.refcnt != 0)
 		return NULL;
+	r_cons_pal_free ();
 	if (I.line) {
 		r_line_free ();
 		I.line = NULL;

@@ -7,7 +7,7 @@ R_API void r_cons_pal_free () {
 	int i;
 	RCons *cons = r_cons_singleton ();
 	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
-		free (cons->pal.list[i]);
+		R_FREE (cons->pal.list[i]);
 	}
 }
 
