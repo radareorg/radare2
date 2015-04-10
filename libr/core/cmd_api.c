@@ -301,7 +301,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro->nargs = r_str_word_set0 (ptr+1);
 	}
 
+#if 0
 	if (pbody) {
+#endif
 		for (lidx=0; pbody[lidx]; lidx++) {
 			if (pbody[lidx]==',')
 				pbody[lidx]='\n';
@@ -343,8 +345,8 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				codelen += lbufp;
 			}
 		}
-#endif
 	}
+#endif
 	if (macro_update == 0)
 		r_list_append (mac->macros, macro);
 	free (name);

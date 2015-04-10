@@ -7,7 +7,7 @@ static int blocksize = 0;
 static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
-	"x", "pd $r", 
+	"x", "pd $r",
 	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
 	"pxw", "pc", "pxA", "pxa"
 };
@@ -1709,7 +1709,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		if (color) flags |= R_PRINT_FLAGS_COLOR;
 		debug = r_config_get_i (core->config, "cfg.debug");
 		flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
-		r_print_set_flags (core->print, core->print->flags);
+		r_print_set_flags (core->print, flags);
 		scrseek = r_num_math (core->num,
 			r_config_get (core->config, "scr.seek"));
 		if (scrseek != 0LL)

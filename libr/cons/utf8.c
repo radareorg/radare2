@@ -209,8 +209,10 @@ R_API int r_cons_is_utf8() {
 	int fd = current_tty();
 	if (fd == -1)
 		return 0;
-	if (cursor_position(fd, &row, &col))
+	if (cursor_position(fd, &row, &col)) {
+		close (fd);
 		return 0;
+	}
 	write (1, "\xc3\x89\xc3\xa9", 4);
 	if (cursor_position (fd, &row2, &col2)) {
 		close (fd);
