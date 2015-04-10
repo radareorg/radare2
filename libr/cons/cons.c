@@ -63,7 +63,7 @@ R_API char *r_cons_color_random(int bg) {
 	case 14: return strdup (Color_GRAY);
 	case 15: return strdup (Color_BGRAY);
 	}
-	return Color_RESET;
+	return strdup (Color_RESET);
 }
 
 R_API void r_cons_color (int fg, int r, int g, int b) {
