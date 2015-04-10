@@ -7,7 +7,8 @@ R_API void r_cons_pal_free () {
 	int i;
 	RCons *cons = r_cons_singleton ();
 	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
-		R_FREE (cons->pal.list[i]);
+		if (cons->pal.list[i])
+			R_FREE (cons->pal.list[i]);
 	}
 }
 
@@ -61,7 +62,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.gui_background = Color_BLACK;
 	cons->pal.gui_alt_background = Color_WHITE;
 	cons->pal.gui_border = Color_BLACK;
-
+	
+	r_cons_pal_free ();
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
 	cons->pal.list[2] = strdup (Color_BGREEN);
@@ -112,6 +114,8 @@ R_API void r_cons_pal_random() {
 		r_cons_pal_set (k, val);
 	}
 	for (i=0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
+		if (cons->pal.list[i])
+			R_FREE (cons->pal.list[i]);
 		cons->pal.list[i] = r_cons_color_random (0);
 	}
 }
@@ -354,6 +358,7 @@ R_API const char *r_cons_pal_get_i (int n) {
 R_API const char *r_cons_pal_get (const char *key) {
 	int i;
 	char **p;
+	r_cons_printf ("%s\n", key);
 	for (i=0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
 			p = (char **)((char *)&(r_cons_singleton()->pal) + keys[i].off);

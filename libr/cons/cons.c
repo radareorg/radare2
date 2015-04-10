@@ -160,7 +160,17 @@ R_API int r_cons_enable_mouse (const int enable) {
 #endif
 }
 
+static void r_cons_pal_null (){
+	int i;
+	RCons *cons = r_cons_singleton ();
+	for (i = 0; i< R_CONS_PALETTE_LIST_SIZE; i++){
+		cons->pal.list[i] = NULL;	
+	}
+}
+
+
 R_API RCons *r_cons_new () {
+	int i;
 	I.refcnt++;
 	if (I.refcnt != 1)
 		return &I;
@@ -212,6 +222,7 @@ R_API RCons *r_cons_new () {
 	I.pager = NULL; /* no pager by default */
 	I.truecolor = 0;
 	I.mouse = 0;
+	r_cons_pal_null ();
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
 	r_cons_reset ();
