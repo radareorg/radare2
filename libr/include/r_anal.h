@@ -872,8 +872,6 @@ typedef struct r_anal_reil_arg {
 
 // Instruction arg1, arg2, arg3
 typedef struct r_anal_reil_inst {
-	ut64 addr;
-	ut64 seq_num; // Stores the seq number for the instrcution.
 	RAnalReilOpcode opcode;
 	RAnalReilArg *arg[3];
 } RAnalReilInst;
