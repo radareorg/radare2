@@ -70,7 +70,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		int _rwx = -1;
 		RIOSection *ios;
 		RListIter *iter;
-		if (!core->io) break;
+		if (core->io) {
 		// sections
 		r_list_foreach (core->io->sections, iter, ios) {
 			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {
@@ -88,6 +88,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 				if (strstr (ios->name, "stack"))
 					types |= R_ANAL_ADDR_TYPE_STACK;
 			}
+		}
 		}
 		if (_rwx != -1) {
 			if (_rwx & R_IO_EXEC)
