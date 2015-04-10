@@ -993,7 +993,10 @@ static int esil_addrinfo(RAnalEsil *esil) {
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearchKeyword kw = {0};
 	searchhits = 0;
+	int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
 	if (input[1]==' ') {
+		int hit_happens = 0;
+		int hit_combo = 0;
 		int kwidx = r_config_get_i (core->config, "search.kwidx");
 		char *res;
 		ut64 nres, addr = param->from;
@@ -1034,6 +1037,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				eprintf ("Cannot parse esil (%s)\n", input+2);
 				break;
 			}
+			hit_happens = R_FALSE;
 			res = r_anal_esil_pop (core->anal->esil);
 			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
 				if (nres) {
@@ -1043,7 +1047,9 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					kw.type = 0; //R_SEARCH_TYPE_ESIL;
 					kw.kwidx = kwidx;
 					kw.count++;
+					eprintf ("Hits: %d\r", kw.count);
 					kw.keyword_length = 0;
+					hit_happens = R_TRUE;
 				}
 			} else {
 				eprintf ("Cannot parse esil (%s)\n", input+2);
@@ -1053,6 +1059,16 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			}
 			r_anal_esil_stack_free (core->anal->esil);
 			free (res);
+
+			if (hit_happens) {
+				hit_combo ++;
+				if (hit_combo > hit_combo_limit) {
+					eprintf ("Hit combo limit reached. Stopping search. Use f-\n");
+					break;
+				}
+			} else {
+				hit_combo = 0;
+			}
 		}
 		r_config_set_i (core->config, "search.kwidx", kwidx +1);
 		r_cons_break_end ();

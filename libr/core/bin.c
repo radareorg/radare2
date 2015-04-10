@@ -824,7 +824,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name) {
 		mydb = sdb_new0 ();
 		r_list_foreach (symbols, iter, symbol) {
 			if (!sdb_num_add (mydb, symbol->name, (ut64)(size_t)symbol, 0)) {
-				eprintf ("DUP (%s)\n", symbol->name);
+			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			if (!res && !strcmp (symbol->name, name)) {
 				res = symbol;

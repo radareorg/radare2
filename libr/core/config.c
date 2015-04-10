@@ -1288,6 +1288,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
+	SETI("search.esilcombo", 8, "Stop search at a specific number of consecutive hits");
 	SETI("search.count", 0, "Start index number at search hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETPREF("search.flags", "true", "If enabled all search results are flagged, else just printed r2 commands");
