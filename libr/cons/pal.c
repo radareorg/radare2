@@ -358,7 +358,6 @@ R_API const char *r_cons_pal_get_i (int n) {
 R_API const char *r_cons_pal_get (const char *key) {
 	int i;
 	char **p;
-	r_cons_printf ("%s\n", key);
 	for (i=0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
 			p = (char **)((char *)&(r_cons_singleton()->pal) + keys[i].off);
