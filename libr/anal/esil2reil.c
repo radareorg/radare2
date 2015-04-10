@@ -138,15 +138,16 @@ void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
 		if (ins->arg[i]->type == ARG_REG) {
 			strncpy (tmp_buf, REIL_REG_PREFIX, sizeof(tmp_buf));
 			strncat (tmp_buf, ins->arg[i]->name, sizeof(tmp_buf));
-			printf ("%14s:%d", tmp_buf, ins->arg[i]->size);
+			printf ("%14s:%02d", tmp_buf, ins->arg[i]->size);
 			continue;
 		}
-		printf ("%14s:%d", ins->arg[i]->name, ins->arg[i]->size);
+		printf ("%14s:%02d", ins->arg[i]->name, ins->arg[i]->size);
 	}
 	printf("\n");
 }
 
 // Used to cast sizes during assignment. OR is used for casting.
+// Pushes the new *casted* src onto stack. Warning: Frees the original src!
 void reil_cast_size(RAnalEsil *esil, RAnalReilArg *src, RAnalReilArg *dst) {
 	// No need to case sizes if dst and src are of same size.
 	if (src->size == dst->size) {
@@ -235,7 +236,7 @@ static int reil_eq(RAnalEsil *esil) {
 		ins->arg[0] = reil_pop_arg (esil);
 		ins->arg[1] = R_NEW0 (RAnalReilArg);
 		reil_make_arg (esil, ins->arg[1], " ");
-		ins->arg[2] = dst;
+		ins->arg[2] = src;
 		reil_print_inst (esil, ins);
 		reil_free_inst(ins);
 		return R_TRUE;
@@ -562,8 +563,7 @@ static int reil_peekn(RAnalEsil *esil, ut8 n) {
 	reil_cast_size(esil, op1, op2);
 	esil->Reil->lastsz = 8 * n;
 
-	free (op2);
-	free (op1);
+    R_FREE (op2);
 	return R_TRUE;
 }
 
