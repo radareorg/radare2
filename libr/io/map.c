@@ -13,7 +13,10 @@ R_API int r_io_map_count (RIO *io) {
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap *map = R_NEW (RIOMap);
-	if (!map) return NULL;
+	if (!map || ((0xffffffffffffffff - size) < addr)) {					//prevent interger-overflow
+		free (map);
+		return NULL;
+	}
 	map->fd = fd;
 	map->flags = flags;
 	map->delta = delta;
