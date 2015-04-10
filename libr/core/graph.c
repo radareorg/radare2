@@ -489,9 +489,13 @@ static void reloadNodes(RCore *core) {
 
 static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
 #define BORDER 3
-	int x = n->x + can->sx;
-	int y = n->y + can->sy;
+	int x, y;
 	int doscroll = 0;
+
+	if (!n) return;
+
+	x = n->x + can->sx;
+	y = n->y + can->sy;
 	if (force) {
 		doscroll = 1;
 	} else {
@@ -535,7 +539,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	can->color = r_config_get_i (core->config, "scr.color");
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
-	//can->color = 0; 
+	//can->color = 0;
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return R_FALSE;
