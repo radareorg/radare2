@@ -37,7 +37,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	if (r_anal_get_fcn_in (core->anal, addr, 0))
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	// check registers
-	if (core->io->debug) {
+	if (core->io && core->io->debug) {
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'

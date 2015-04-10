@@ -473,13 +473,16 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				else
 					r_strht_set (core->print->formats, name, space);
+				free (name);
 				free (input);
+				free (space);
 				return;
 			}
 
 			if (strchr (name, '.') == NULL && r_strht_get (core->print->formats, name) == NULL) {
 				eprintf ("Warning: %s is not a valid format name\n", name);
 				free (name);
+				free (input);
 				return;
 			}
 			/* display a format */

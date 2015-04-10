@@ -19,8 +19,14 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
  *    4123421b
  */
 R_API char *r_hex_from_c(const char *code) {
-	char *out, *ret = malloc (strlen (code)*3);
+	char *out, *ret;
 	int parse_on = 0, is_hexa = 0;
+
+	if (code) {
+		ret = malloc (strlen (code) * 3);
+	} else {
+		ret = malloc (3);
+	}
 	*ret = 0;
 	out = ret;
 	if (code) {
@@ -36,7 +42,7 @@ R_API char *r_hex_from_c(const char *code) {
 					case 'r': *out++='0';*out++='d';break;
 					case 'n': *out++='0';*out++='a';break;
 					case 'x': break;
-					default: 
+					default:
 						  goto error;
 						  break;
 					}
