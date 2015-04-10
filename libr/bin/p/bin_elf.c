@@ -338,11 +338,13 @@ static RList* symbols(RBinFile *arch) {
 }
 
 static RList* imports(RBinFile *arch) {
-	struct Elf_(r_bin_elf_obj_t) *bin = arch->o->bin_obj;
+	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	struct r_bin_elf_symbol_t *import = NULL;
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 	int i;
+
+	if (arch && arch->o && arch->o->bin_obj) bin = arch->o->bin_obj;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
