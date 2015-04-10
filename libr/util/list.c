@@ -193,6 +193,7 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 			list->tail = new;
 		return new;
 	}
+	free (new);
 	return NULL;
 }
 

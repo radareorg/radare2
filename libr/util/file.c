@@ -34,7 +34,7 @@ R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 /*
 Example:
 	str = r_file_basename ("home/inisider/Downloads/user32.dll");
-	// str == user32.dll 
+	// str == user32.dll
 */
 R_API const char *r_file_basename (const char *path) {
 	const char *ptr = r_str_rchr (path, NULL, '/');
@@ -113,12 +113,14 @@ R_API ut64 r_file_size(const char *str) {
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
-	if (!memcmp (file, "~/", 2))
+	if (!memcmp (file, "~/", 2)) {
+		free (cwd);
 		return r_str_home (file+2);
-#if __UNIX__
+	}
+#if __UNIX__ || __CYGWIN__
 	if (cwd && *file != '/')
 		ret = r_str_newf ("%s/%s", cwd, file);
-#elif __WINDOWS__
+#elif __WINDOWS__ && !__CYGWIN__
 	if (cwd && !strchr (file, ':'))
 		ret = r_str_newf ("%s\\%s", cwd, file);
 #endif
@@ -211,7 +213,10 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	}
 	fseek (fd, 0, SEEK_SET);
 	ret = (char *)calloc (sz+1, 1);
-	if (!ret) return NULL;
+	if (!ret) {
+		fclose (fd);
+		return NULL;
+	}
 	rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
 		// eprintf ("r_file_slurp: fread: error\n");
