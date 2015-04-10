@@ -373,6 +373,7 @@ R_API int r_cons_eof(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set (const char *key, const char *val);
+R_API void r_cons_pal_free(void);
 R_API void r_cons_pal_init(const char *foo);
 R_API char *r_cons_pal_parse(const char *str);
 R_API void r_cons_pal_random(void);

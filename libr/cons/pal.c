@@ -2,6 +2,15 @@
 
 #include <r_cons.h>
 
+
+R_API void r_cons_pal_free () {
+	int i;
+	RCons *cons = r_cons_singleton ();
+	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
+		free (cons->pal.list[i]);
+	}
+}
+
 R_API void r_cons_pal_init(const char *foo) {
 	RCons *cons = r_cons_singleton ();
 	memset (&cons->pal, 0, sizeof (cons->pal));
