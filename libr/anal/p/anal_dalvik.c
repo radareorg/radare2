@@ -352,9 +352,29 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return sz;
 }
 
+static int set_reg_profile(RAnal *anal) {
+	const char *p = 
+	"=pc	ip\n"
+	"=sp	sp\n"
+	"=bp	bp\n"
+	"=a0	v0\n"
+	"=a1	v1\n"
+	"=a2	v2\n"
+	"=a3	v3\n"
+	"gpr	v0	.32	0	0\n"
+	"gpr	v1	.32	4	0\n"
+	"gpr	v2	.32	8	0\n"
+	"gpr	v3	.32	12	0\n"
+	"gpr	ip	.32	40	0\n"
+	"gpr	sp	.32	44	0\n"
+	;
+	return r_reg_set_profile_string (anal->reg, p);
+}
+
 struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = R_SYS_ARCH_DALVIK,
+	.set_reg_profile = &set_reg_profile,
 	.license = "LGPL3",
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
