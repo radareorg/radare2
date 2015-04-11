@@ -1563,9 +1563,14 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 				//beginline (core, ds, f);
 				// print label
 				{
+			        int delta = ds->analop.jump - f->addr;
 				const char *label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
-				if (label) r_cons_printf ("  ; %s.%s", f->name, label);
-				else r_cons_printf ("  ; %s", f->name);
+				if (label) { r_cons_printf ("  ; %s.%s", f->name, label);
+				} else {
+					RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
+if (f != f2)
+					r_cons_printf ("  ; %s+0x%x", f->name, delta);
+				}
 				}
 				handle_print_color_reset (core, ds);
 			}
