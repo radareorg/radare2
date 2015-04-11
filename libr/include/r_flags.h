@@ -20,9 +20,9 @@ extern "C" {
 // TODO: rename to r_flags_XXX api
 R_LIB_VERSION_HEADER(r_flag);
 
-#define R_FLAG_NAME_SIZE 256
-#define R_FLAG_BUF_SIZE 256
-#define R_FLAG_SPACES_MAX 256
+#define R_FLAG_NAME_SIZE 512
+#define R_FLAG_BUF_SIZE 512
+#define R_FLAG_SPACES_MAX 512
 
 typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];

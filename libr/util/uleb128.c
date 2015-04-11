@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014-2015 - pancake */
+
 #include <r_util.h>
 
 /* dex/dwarf uleb128 implementation */

@@ -377,13 +377,13 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				if (offset == -1)
 					sprintf (str, ", class+%i", vB);
 				else
-					sprintf (str, ", 0x%"PFMT64x, offset);
+					sprintf (str, ", 0x%"PFMT64x" ; 0x%x", offset, vB);
 			} else {
 				offset = R_ASM_GET_OFFSET(a, 'm', vB);
 				if (offset == -1)
 					sprintf (str, ", method+%i", vB);
 				else
-					sprintf (str, ", 0x%"PFMT64x, offset);
+					sprintf (str, ", 0x%"PFMT64x" ; 0x%x", offset, vB);
 
 			}
 			strasm = r_str_concat (strasm, str);
