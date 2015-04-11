@@ -141,7 +141,7 @@ void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
 		}
 		if (ins->arg[i]->type == ARG_REG) {
 			strncpy (tmp_buf, REIL_REG_PREFIX, sizeof(tmp_buf) - 1);
-			strncat (tmp_buf, ins->arg[i]->name, sizeof(tmp_buf) - 1);
+			strncat (tmp_buf, ins->arg[i]->name, sizeof(tmp_buf) - strlen(tmp_buf) - 1);
 			esil->anal->printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
 			continue;
 		}
@@ -274,6 +274,7 @@ static int reil_binop(RAnalEsil *esil, RAnalReilOpcode opcode) {
 	char tmp_buf[32];
 	ut8 dst_size;
 	RAnalReilArg *op2, *op1;
+	
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
