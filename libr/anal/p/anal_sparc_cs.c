@@ -106,6 +106,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case SPARC_INS_BRLZ:
 			case SPARC_INS_BRNZ:
 			case SPARC_INS_BRZ:
+			case SPARC_INS_FB:
 				switch (INSOP(0).type) {
 				case SPARC_OP_REG:
 					op->type = R_ANAL_OP_TYPE_CJMP;
