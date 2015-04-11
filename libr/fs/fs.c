@@ -139,6 +139,9 @@ R_API int r_fs_umount (RFS* fs, const char *path) {
 	int len;
 	RFSRoot *root;
 	RListIter *iter, *riter = NULL;
+
+	if (!path) return R_FALSE;
+
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);
 		if (r_fs_match (path, root->path, len))

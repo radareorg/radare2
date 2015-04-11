@@ -475,7 +475,6 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 					r_strht_set (core->print->formats, name, space);
 				free (name);
 				free (input);
-				free (space);
 				return;
 			}
 
