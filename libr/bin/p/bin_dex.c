@@ -423,7 +423,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				if (!method_name) method_name = strdup ("unknown");
 				flag_name = flagname (class_name, method_name);
 				dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
-				dprintf ("    { name: %d %d %s,\n", MC, MI, method_name);
+				dprintf ("    { name: %d %d %s,\n", (ut32)MC, (ut32)MI, method_name);
 				dprintf ("      idx: %u,\n", (ut32)MI);
 				dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
 				dprintf ("      code_offset: 0x%x },\n", (ut32)MC);

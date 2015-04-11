@@ -124,27 +124,31 @@ void reil_free_inst(RAnalReilInst *ins) {
 
 // Automatically increments the seq_num of the instruction.
 void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
+	char tmp_buf[32];
+	int i;
+
 	if ((!ins) || (!esil)) return;
 
-	int i;
-	char tmp_buf[32];
-	printf("%04llx.%03llx: %14s", esil->Reil->addr, esil->Reil->seq_num++, ops[ins->opcode]);
+	esil->anal->printf("%04"PFMT64x".%02"PFMT64x": %8s",
+		esil->Reil->addr,
+		esil->Reil->seq_num++,
+		ops[ins->opcode]);
 	for (i = 0; i < 3; i++) {
 		if (i != 0)
-			printf (",");
+			esil->anal->printf (" ,");
 		if (ins->arg[i]->type == ARG_NONE) {
-			printf ("%14s   ", ins->arg[i]->name);
+			esil->anal->printf ("%10s   ", ins->arg[i]->name);
 			continue;
 		}
 		if (ins->arg[i]->type == ARG_REG) {
-			strncpy (tmp_buf, REIL_REG_PREFIX, sizeof(tmp_buf));
-			strncat (tmp_buf, ins->arg[i]->name, sizeof(tmp_buf));
-			printf ("%14s:%02d", tmp_buf, ins->arg[i]->size);
+			strncpy (tmp_buf, REIL_REG_PREFIX, sizeof(tmp_buf)-1);
+			strncat (tmp_buf, ins->arg[i]->name, sizeof(tmp_buf)-1);
+			esil->anal->printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
 			continue;
 		}
-		printf ("%14s:%02d", ins->arg[i]->name, ins->arg[i]->size);
+		esil->anal->printf ("%10s:%02d", ins->arg[i]->name, ins->arg[i]->size);
 	}
-	printf("\n");
+	esil->anal->printf("\n");
 }
 
 // Used to cast sizes during assignment. OR is used for casting.
