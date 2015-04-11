@@ -414,11 +414,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				p = r_uleb128 (p, p_end-p, &MA);
 				p = r_uleb128 (p, p_end-p, &MC);
 
-#if 0
 				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
 				if (MC>0 && bin->code_to<MC) bin->code_to = MC;
-#endif
 
 				method_name = dex_method_name (bin, MI);
 				dprintf ("METHOD NAME %u\n", (ut32)MI);
