@@ -929,7 +929,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if __UNIX__
 	int stdout_fd, fds[2];
 #endif
-	int si, olen, ret = -1, pipecolor = -1;
+	int child, si, olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
 
 	if (r_sandbox_enable (0)) {
@@ -968,7 +968,10 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	stdout_fd = dup (1);
 	if (stdout_fd != -1) {
 		pipe (fds);
-		if (fork ()) {
+		child = r_sys_fork ();
+		if (child == -1) {
+			eprintf ("Cannot fork\n");
+		} else if (child) {
 			dup2 (fds[1], 1);
 			close (fds[1]);
 			close (fds[0]);

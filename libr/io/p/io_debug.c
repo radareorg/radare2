@@ -219,7 +219,7 @@ err_fork:
 // __UNIX__ (not windows)
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	char **argv;
-	int ret, status, pid = fork ();
+	int ret, status, pid = r_sys_fork ();
 	switch (pid) {
 	case -1:
 		perror ("fork_and_ptraceme");

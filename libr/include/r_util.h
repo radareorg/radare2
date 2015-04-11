@@ -504,6 +504,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 
 R_API ut64 r_sys_now(void);
+R_API int r_sys_fork(void);
 R_API int r_sys_stop (void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);

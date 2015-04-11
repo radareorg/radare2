@@ -506,7 +506,7 @@ R_API int r_run_start(RRunProfile *p) {
 	if (p->_timeout) {
 #if __UNIX__
 		int mypid = getpid ();
-		if (!fork ()) {
+		if (!r_sys_fork ()) {
 			sleep (p->_timeout);
 			if (!kill (mypid, 0))
 				eprintf ("\nrarun2: Interrupted by timeout\n");

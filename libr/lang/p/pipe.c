@@ -51,7 +51,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	env ("R2PIPE_IN", input[0]);
 	env ("R2PIPE_OUT", output[1]);
 
-	child = fork ();
+	child = r_sys_fork ();
 	if (child == -1) {
 		/* error */
 	} else if (child == 0) {

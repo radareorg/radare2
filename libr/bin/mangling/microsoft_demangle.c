@@ -795,7 +795,8 @@ DEF_STATE_ACTION(P)
 				case 'J': call_conv = "__fastcall __declspec(dllexport)"; break;
 				case 'K': call_conv = "default (none given)"; break;
 				default:
-					state->err = eDemanglerErrUncorrectMangledSymbol;
+					// XXX unify error messages into a single enum
+					state->err = (ETCStateMachineErr)eDemanglerErrUncorrectMangledSymbol;
 					break;
 			}
 
@@ -873,7 +874,8 @@ DEF_STATE_ACTION(P)
 			}
 
 			if (*(state->buff_for_parsing) != 'Z') {
-				state->state = eTCStateMachineErrUnsupportedTypeCode;
+				// XXX: invalid enum cast conversion
+				state->state = (ETCState) eTCStateMachineErrUnsupportedTypeCode;
 				goto FUNCTION_POINTER_err;
 			}
 
