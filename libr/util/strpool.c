@@ -26,7 +26,16 @@ R_API char *r_strpool_empty (RStrpool *p) {
 R_API char *r_strpool_alloc (RStrpool *p, int l) {
 	char *ret = p->str+p->len;
 	if ((p->len+l)>=p->size) {
-		p->size += R_STRPOOL_INC;
+		ut64 osize = p->size;
+		if (l>=R_STRPOOL_INC) {
+			p->size += l + R_STRPOOL_INC;
+		} else {
+			p->size += R_STRPOOL_INC;
+		}
+		if (p->size < osize) {
+			eprintf ("Underflow!\n");
+			return NULL;
+		}
 		ret = realloc (p->str, p->size);
 		if (!ret) return NULL;
 		p->str = ret;
