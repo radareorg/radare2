@@ -170,6 +170,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
 	RCons *cons = r_cons_singleton ();
+	r_cons_set_raw (0);
+	r_cons_show_cursor (1);
 	int ret = 0, color = cons->pal.input && *cons->pal.input;
 #if 0
 	int mouse = r_cons_enable_mouse (R_FALSE);

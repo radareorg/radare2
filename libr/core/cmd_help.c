@@ -427,6 +427,8 @@ static int cmd_help(void *data, const char *input) {
 		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // input num
+		r_cons_show_cursor (0);
+		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
 		} else
@@ -459,10 +461,12 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_flush ();
 			for (input++; *input==' '; input++);
 			// TODO: use prompt input
-			eprintf ("%s: ", input);
-			fgets (foo, sizeof (foo)-1, stdin);
+			snprintf (foo, sizeof (foo)-1, "%s: ", input);
+			r_line_set_prompt (foo);
+			r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
 			foo[strlen (foo)-1] = 0;
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen(foo)+1);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR,
+				foo, strlen (foo)+1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;
