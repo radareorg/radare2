@@ -370,7 +370,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	char *dir;
-	char headers[128];
+	char headers[128] = {0};
 
 	if (path && atoi (path)) {
 		port = path;
@@ -537,8 +537,6 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 
 		if (r_config_get_i (core->config, "http.cors")) {
 			sprintf (headers, "Access-Control-Allow-Origin: *\nAccess-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\n");
-		} else {
-			sprintf (headers, "");
 		}
 
 		if (!strcmp (rs->method, "OPTIONS")) {

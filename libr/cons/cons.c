@@ -170,7 +170,6 @@ static void r_cons_pal_null (){
 
 
 R_API RCons *r_cons_new () {
-	int i;
 	I.refcnt++;
 	if (I.refcnt != 1)
 		return &I;

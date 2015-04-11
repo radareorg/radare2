@@ -900,7 +900,6 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int showfpu = R_FALSE;
 	int pid = dbg->pid;
-	int tid = dbg->tid;
 	if (size<1)
 		return R_FALSE;
 	if (type<-1) {
@@ -908,6 +907,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		type = -type;
 	}
 #if __WINDOWS__ && !__CYGWIN__
+	int tid = dbg->tid;
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	if (!GetThreadContext (tid2handler (pid, tid), &ctx)) {
