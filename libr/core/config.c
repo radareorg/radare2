@@ -712,7 +712,7 @@ static int cb_scrcolumns(void* user, void* data) {
 static int cb_scrfgets(void* user, void* data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->i_value) 
+	if (node->i_value)
 		core->cons->user_fgets = NULL;
 	else core->cons->user_fgets = (void *)r_core_fgets;
 	return R_TRUE;
@@ -936,7 +936,7 @@ static int cb_anal_gp(RCore *core, RConfigNode *node) {
 
 static int cb_anal_from(RCore *core, RConfigNode *node) {
 	if (r_config_get_i (core->config, "anal.limits")) {
-		r_anal_set_limits (core->anal, 
+		r_anal_set_limits (core->anal,
 				r_config_get_i (core->config, "anal.from"),
 				r_config_get_i (core->config, "anal.to"));
 	}
@@ -946,7 +946,7 @@ static int cb_anal_from(RCore *core, RConfigNode *node) {
 static int cb_anal_limits(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
 	if (node->i_value) {
-		r_anal_set_limits (core->anal, 
+		r_anal_set_limits (core->anal,
 				r_config_get_i (core->config, "anal.from"),
 				r_config_get_i (core->config, "anal.to"));
 	} else {
@@ -1173,6 +1173,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("hex.stride", 0, &cb_hexstride, "Define the line stride in hexdump (default is 0)");
 
 	/* http */
+	SETPREF("http.cors", "false", "Enable CORS");
 	SETPREF("http.dirlist", "false", "Enable directory listing");
 	SETPREF("http.allow", "", "http firewall. only accept clients from the comma separated IP list");
 #if __WINDOWS__
