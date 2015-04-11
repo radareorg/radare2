@@ -34,10 +34,14 @@ R_API char *r_strpool_alloc (RStrpool *p, int l) {
 		}
 		if (p->size < osize) {
 			eprintf ("Underflow!\n");
+			p->size = osize;
 			return NULL;
 		}
 		ret = realloc (p->str, p->size);
-		if (!ret) return NULL;
+		if (!ret) {
+			p->size = osize;
+			return NULL;
+		}
 		p->str = ret;
 		ret += p->len;
 	}
