@@ -70,7 +70,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	if (len<1) len = out? strlen (out): 0;
 	if (!headers) headers = "";
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
-		"Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\r\nConnection: close\r\nContent-Length: %d\r\n\r\n",
+		"Connection: close\r\nContent-Length: %d\r\n\r\n",
 		code, strcode, headers, len);
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
 }

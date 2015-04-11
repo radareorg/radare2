@@ -370,6 +370,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	char *dir;
+	char headers[128];
 
 	if (path && atoi (path)) {
 		port = path;
@@ -533,6 +534,13 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		if (r_config_get_i (core->config, "http.dirlist"))
 			if (r_file_is_directory (rs->path))
 				dir = strdup (rs->path);
+
+		if (r_config_get_i (core->config, "http.cors")) {
+			sprintf (headers, "Access-Control-Allow-Origin: *\nAccess-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\n");
+		} else {
+			sprintf (headers, "");
+		}
+
 		if (!strcmp (rs->method, "OPTIONS")) {
 			r_socket_http_response (rs, 200, "", 0, NULL);
 		} else
@@ -542,7 +550,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
 					if (!rs->path[3] || (rs->path[3]=='/'&&!rs->path[4])) {
 						char *ptr = rtr_dir_files (uproot);
-						r_socket_http_response (rs, 200, ptr, 0, NULL);
+						r_socket_http_response (rs, 200, ptr, 0, headers);
 						free (ptr);
 					} else {
 						char *path = r_file_root (uproot, rs->path + 4);
@@ -550,20 +558,20 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 							int sz = 0;
 							char *f = r_file_slurp (path, &sz);
 							if (f) {
-								r_socket_http_response (rs, 200, f, sz, NULL);
+								r_socket_http_response (rs, 200, f, sz, headers);
 								free (f);
 							} else {
-								r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
+								r_socket_http_response (rs, 403, "Permission denied", 0, headers);
 								eprintf ("http: Cannot open '%s'\n", path);
 							}
 						} else {
 							if (dir) {
 								char *resp = rtr_dir_files (dir);
-								r_socket_http_response (rs, 404, resp, 0, NULL);
+								r_socket_http_response (rs, 404, resp, 0, headers);
 								free (resp);
 							} else {
 								eprintf ("File '%s' not found\n", path);
-								r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+								r_socket_http_response (rs, 404, "File not found\n", 0, headers);
 							}
 						}
 						free (path);
@@ -602,11 +610,13 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					// eprintf ("\nOUT LEN = %d\n", strlen (out));
 					if (out) {
 						char *res = r_str_uri_encode (out);
-						r_socket_http_response (rs, 200, out, 0,
-							"Content-Type: text/plain\n");
+						char newheaders [128];
+						snprintf(newheaders, sizeof(newheaders),
+							"Content-Type: text/plain\n%s", headers);
+						r_socket_http_response (rs, 200, out, 0, newheaders);
 						free (out);
 						free (res);
-					} else r_socket_http_response (rs, 200, "", 0, NULL);
+					} else r_socket_http_response (rs, 200, "", 0, headers);
 				}
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
@@ -620,7 +630,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					if (r_file_is_directory (path)) {
 						char res[128];
 						snprintf (res, sizeof (res),
-							"Location: %s/\n", rs->path);
+							"Location: %s/\n%s", rs->path, headers);
 						r_socket_http_response (rs, 302,
 							NULL, 0, res);
 						r_socket_http_close (rs);
@@ -635,24 +645,27 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
 						const char *contenttype = NULL;
+						char newheaders [128];
 						if (strstr (path, ".js")) contenttype = "Content-Type: application/javascript\n";
 						if (strstr (path, ".css")) contenttype = "Content-Type: text/css\n";
 						if (strstr (path, ".html")) contenttype = "Content-Type: text/html\n";
-						r_socket_http_response (rs, 200, f, sz, contenttype);
+						snprintf(newheaders, sizeof(newheaders),
+							"%s%s", contenttype, headers);
+						r_socket_http_response (rs, 200, f, sz, newheaders);
 						free (f);
 					} else {
-						r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
+						r_socket_http_response (rs, 403, "Permission denied", 0, headers);
 						eprintf ("http: Cannot open '%s'\n", path);
 					}
 				} else {
 					if (dir) {
 						char *resp = rtr_dir_files (dir);
 						eprintf ("Dirlisting %s\n", dir);
-						r_socket_http_response (rs, 404, resp, 0, NULL);
+						r_socket_http_response (rs, 404, resp, 0, headers);
 						free (resp);
 					} else {
 						eprintf ("File '%s' not found\n", path);
-						r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+						r_socket_http_response (rs, 404, "File not found\n", 0, headers);
 					}
 				}
 				free (path);
@@ -668,7 +681,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				if (ret) {
 					ut64 size = r_config_get_i (core->config, "http.maxsize");
 					if (size && retlen > size) {
-						r_socket_http_response (rs, 403, "403 File too big\n", 0, NULL);
+						r_socket_http_response (rs, 403, "403 File too big\n", 0, headers);
 					} else {
 						char *filename = r_file_root (
 							r_config_get (core->config, "http.uproot"),
@@ -678,15 +691,15 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 						free (filename);
 						snprintf (buf, sizeof (buf),
 							"<html><body><h2>uploaded %d bytes. Thanks</h2>\n", retlen);
-							r_socket_http_response (rs, 200, buf, 0, NULL);
+							r_socket_http_response (rs, 200, buf, 0, headers);
 					}
 					free (ret);
 				}
 			} else {
-				r_socket_http_response (rs, 403, "403 Forbidden\n", 0, NULL);
+				r_socket_http_response (rs, 403, "403 Forbidden\n", 0, headers);
 			}
 		} else {
-			r_socket_http_response (rs, 404, "Invalid protocol", 0, NULL);
+			r_socket_http_response (rs, 404, "Invalid protocol", 0, headers);
 		}
 		r_socket_http_close (rs);
 		free (dir);
