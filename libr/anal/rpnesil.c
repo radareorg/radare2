@@ -2649,8 +2649,9 @@ static int runword (RAnalEsil *esil, const char *word) {
 	}
 
 	if (esil->Reil && esil->Reil->skip) {
-		strncat (esil->Reil->if_buf, word, sizeof(esil->Reil->if_buf));
-		strncat (esil->Reil->if_buf, ",", sizeof(esil->Reil->if_buf));
+		int tmp_len = strlen (esil->Reil->if_buf);
+		strncat (esil->Reil->if_buf, word, sizeof(esil->Reil->if_buf) - tmp_len - 2);
+		strncat (esil->Reil->if_buf, ",", 1);
 		if (!strcmp (word, "}"))  {
 			r_anal_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
 			r_anal_esil_parse (esil, esil->Reil->if_buf);
