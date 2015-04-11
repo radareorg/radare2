@@ -1180,7 +1180,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		}
 		int opsz = R_MAX (op.size, 1);
 		if (show_cursor) {
-			if (core->print->cur >=i && core->print->cur < i+opsz) 
+			if (core->print->cur >=i && core->print->cur < i+opsz)
 				r_cons_invert (1, 1);
 		}
 		if (onechar) {
@@ -1195,16 +1195,18 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		}
 		if (show_color) {
 			if (!text) text = "  ";
-			r_cons_printf ("%s%s%s\x1b[0m", bgcolor, fgcolor, text); 
+			r_cons_printf ("%s%s%s\x1b[0m", bgcolor, fgcolor, text);
 		} else {
 			r_cons_printf ("%s", text? text: "  ");
 		}
 		if (show_cursor) {
-			if (core->print->cur >=i && core->print->cur < i+opsz) 
+			if (core->print->cur >=i && core->print->cur < i+opsz)
 				r_cons_invert (0, 1);
 		}
 		i += opsz;
 	}
+	if (bgcolor_in_heap) free (bgcolor);
+
 	return R_TRUE;
 }
 

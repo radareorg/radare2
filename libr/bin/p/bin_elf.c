@@ -315,7 +315,7 @@ static RList* symbols(RBinFile *arch) {
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
 		ptr->paddr = paddr;
-		ptr->vaddr = vaddr; 
+		ptr->vaddr = vaddr;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
@@ -344,7 +344,9 @@ static RList* imports(RBinFile *arch) {
 	RList *ret = NULL;
 	int i;
 
-	if (arch && arch->o && arch->o->bin_obj) bin = arch->o->bin_obj;
+	if (arch && arch->o && arch->o->bin_obj) {
+		bin = arch->o->bin_obj;
+	} else return NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;

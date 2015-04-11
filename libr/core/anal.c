@@ -70,6 +70,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		int _rwx = -1;
 		RIOSection *ios;
 		RListIter *iter;
+		if (!core->io) break;
 		// sections
 		r_list_foreach (core->io->sections, iter, ios) {
 			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {

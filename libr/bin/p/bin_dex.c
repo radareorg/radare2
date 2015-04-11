@@ -357,6 +357,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 #endif
 		if (c->class_data_offset==0) {
 			// no method here, just class definition
+			free (class_name);
+			free (super_name);
 			continue;
 		}
 		dprintf ("  class_data_offset: %d\n", c->class_data_offset);
