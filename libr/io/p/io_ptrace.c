@@ -201,6 +201,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 							pidpath = r_file_path (argv[0]);
 							r_str_argv_free (argv);
 							if (!pidpath) {
+								free (riop);
 								return NULL;
 							}
 						} else {

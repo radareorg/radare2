@@ -432,7 +432,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				/* add symbol */
 				if (flag_name && *flag_name) {
 					RBinSymbol *sym = R_NEW0 (RBinSymbol);
-					strncpy (sym->name, flag_name, sizeof (sym->name));
+					strncpy (sym->name, flag_name, sizeof (sym->name)-1);
 					strcpy (sym->type, "FUNC");
 					sym->paddr = sym->vaddr = MC;
 					if (MC>0) { /* avoid methods at 0 paddr */
