@@ -1568,8 +1568,15 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 				if (label) { r_cons_printf ("  ; %s.%s", f->name, label);
 				} else {
 					RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
-if (f != f2)
-					r_cons_printf ("  ; %s+0x%x", f->name, delta);
+					if (f != f2) {
+						if (delta>0) {
+							r_cons_printf ("  ; %s+0x%x", f->name, delta);
+						} else if (delta<0) {
+							r_cons_printf ("  ; %s-0x%x", f->name, -delta);
+						} else {
+							r_cons_printf ("  ; %s", f->name );
+						}
+					}
 				}
 				}
 				handle_print_color_reset (core, ds);
