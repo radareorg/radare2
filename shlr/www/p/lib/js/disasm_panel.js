@@ -17,7 +17,7 @@ var DisasmPanel = function () {
   this.instructions = [];
   this.scrolling = false;
 };
-DisasmPanel.prototype.render = function() {
+DisasmPanel.prototype.render = function(mode) {
 
   // r2ui.seek("$$", false);
   $("#center_panel").unbind( "click" );
@@ -153,7 +153,10 @@ DisasmPanel.prototype.render = function() {
     });
 
     // Show disasm panel and seek to entrypoint
-    this.display_flat();
+    if (mode === "flat")
+      this.display_flat();
+    else if (mode === "graph")
+      this.display_graph();
     var addr = null;
     if (this.selected_offset !== null) {
       addr = this.selected_offset;

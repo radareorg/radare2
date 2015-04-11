@@ -98,12 +98,12 @@ static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
 				ch = r_cons_readchar ();
 			}
 #if 0
-TODO: 
+TODO:
  i   insert hex/string/asm
  0-9 follow jumps
 #endif
 			switch (ch) {
-			case '?': 
+			case '?':
 				r_cons_clear00();
 				r_cons_printf ("Remote Visual keys:\n"
 				" hjkl : move\n"
@@ -185,7 +185,7 @@ TODO:
 				}
 				break;
 			case '@': autorefresh = R_TRUE; break;
-			case 'j': 
+			case 'j':
 				if (cmdidx==1) {
 					free (rtrcmd (T, "so")); break;
 				} else {
@@ -296,7 +296,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 		port = listenport? listenport: r_config_get (
 			core->config, "http.port");
 		sock = r_socket_new (0);
-		(void)r_socket_connect (sock, "localhost", 
+		(void)r_socket_connect (sock, "localhost",
 				//r_config_get (core->config, "http.bind"),
 			port, R_SOCKET_PROTO_TCP, timeout);
 		r_socket_free (sock);
@@ -471,7 +471,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		core->blocksize = origblksz;
 
 // backup and restore offset and blocksize
-		
+
 		/* this is blocking */
 		activateDieTime (core);
 		rs = r_socket_http_accept (s, timeout);
@@ -533,6 +533,9 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		if (r_config_get_i (core->config, "http.dirlist"))
 			if (r_file_is_directory (rs->path))
 				dir = strdup (rs->path);
+		if (!strcmp (rs->method, "OPTIONS")) {
+			r_socket_http_response (rs, 200, "", 0, NULL);
+		} else
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/up/", 4)) {
 				if (r_config_get_i (core->config, "http.upget")) {
@@ -654,7 +657,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				}
 				free (path);
 			}
-		} else 
+		} else
 		if (!strcmp (rs->method, "POST")) {
 			ut8 *ret;
 			int retlen;
