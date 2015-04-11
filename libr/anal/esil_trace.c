@@ -12,22 +12,26 @@ static RAnalEsilCallbacks ocbs = {0};
 
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	int ret = 0;
-	ut64 val = 0LL;
 	if (*name=='0') {
 		eprintf ("Register not found in profile\n");
 		return 0;
 	}
-	if (esil->cb.reg_read) {
-		(void)esil->cb.reg_read (esil, name, &val);
-	}
-	eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-	sdb_array_add (DB, KEY ("reg.read"), name, 0);
-	sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
 	if (ocbs.hook_reg_read) {
 		RAnalEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_reg_read (esil, name, res);
 		esil->cb = cbs;
+	}
+	if (!ret && esil->cb.reg_read) {
+		ret = esil->cb.reg_read (esil, name, res);
+	}
+	if (ret) {
+		ut64 val = *res;
+		eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
+		sdb_array_add (DB, KEY ("reg.read"), name, 0);
+		sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
+	} else {
+		eprintf ("[ESIL] REG READ %s FAILED\n", name);
 	}
 	return ret;
 }

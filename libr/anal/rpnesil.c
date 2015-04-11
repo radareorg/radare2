@@ -334,26 +334,26 @@ R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 	}
 	if (esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, num);
-		if (!ret)
-			return ret;
 	}
-	if (esil->cb.reg_write) {
-		return esil->cb.reg_write (esil, dst, num);
+	if (!ret && esil->cb.reg_write) {
+		ret = esil->cb.reg_write (esil, dst, num);
 	}
 	return ret;
 }
 
 R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num) {
 	int ret = 0;
-	if (num)
-		*num = 0LL;
+	ut64 localnum;
+	if (!num)
+		num = &localnum;
+	*num = 0LL;
 	if (esil->cb.hook_reg_read) {
 		ret = esil->cb.hook_reg_read (esil, regname, num);
 	}
 	if (!ret && esil->cb.reg_read) {
 		ret = esil->cb.reg_read (esil, regname, num);
 	}
-	if (ret && num && esil->debug) {
+	if (ret && esil->debug) {
 		eprintf ("%s=0x%"PFMT64x"\n", regname, *num);
 	}
 	return ret;
