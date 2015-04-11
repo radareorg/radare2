@@ -36,6 +36,8 @@ R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *nam
 		} else {
 			sdb_unset (DB, ADDR(addr), 0);
 		}
+	} else {
+		eprintf ("Cannot add\n");
 	}
 	return R_FALSE;
 }

@@ -53,6 +53,7 @@ static int cmd_flag(void *data, const char *input) {
 	// TODO: off+=cursor
 	if (*input)
 		str = strdup (input+1);
+rep:
 	switch (*input) {
 	case 'e':
 		switch (input[1]) {
@@ -188,9 +189,14 @@ static int cmd_flag(void *data, const char *input) {
 			bsze = r_num_math (core->num, s+1);
 		}
 		if (*str == '.') {
+input++;
+goto rep;
+#if 0
+eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+#endif
 		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
 		}
 		break;

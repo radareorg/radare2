@@ -1507,15 +1507,16 @@ static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f)
 	const char *label;
 	if (!core || !ds || !f)
 		return R_FALSE;
-	f = r_anal_get_fcn_in (core->anal, ds->at, 0);
+	if (!f)
+		f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
 	if (label) {
 		if (ds->show_color) {
 			r_cons_strcat (ds->color_label);
-			r_cons_printf (" .%s:  \n", label);
+			r_cons_printf (" .%s:\n", label);
 			handle_print_color_reset (core, ds);
 		} else {
-			r_cons_printf (" .%s:  \n", label);
+			r_cons_printf (" .%s:\n", label);
 		}
 		return 1;
 	}
@@ -1551,7 +1552,7 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 		return;
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
-	        //case R_ANAL_OP_TYPE_CJMP:
+	        case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			f = r_anal_get_fcn_in (core->anal,
 				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
@@ -1560,7 +1561,12 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 					r_cons_strcat (ds->color_fname);
 				handle_comment_align (core, ds);
 				//beginline (core, ds, f);
-				r_cons_printf ("  ; (%s)", f->name);
+				// print label
+				{
+				const char *label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
+				if (label) r_cons_printf ("  ; %s.%s", f->name, label);
+				else r_cons_printf ("  ; %s", f->name);
+				}
 				handle_print_color_reset (core, ds);
 			}
 			break;
@@ -2181,7 +2187,7 @@ toro:
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, ds->addr, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
 			}
