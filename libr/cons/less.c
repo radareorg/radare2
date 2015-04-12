@@ -2,28 +2,37 @@
 
 #include <r_cons.h>
 #include <r_regex.h>		/* less / regex search */
+#include <r_util.h>
 
-static void printpage (const char *line, int *index,
-		       RRegexMatch *ms, int from, int to) {
+static void printpage (const char *line, int *index, RRegexMatch *ms,
+		       int from, int to, int w) {
 	int i;
 	const char *laddr;
+	RStrpool *p = r_strpool_new(0);
+	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
+			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 	r_cons_clear00 ();
 	if (from <0 || to <0)
 		return;
 	for (i=from; i<to; i++) {
-// TODO: chop column width, clear lines
+		r_strpool_empty(p);
 		laddr = line + index[i];
 		if (ms[i].rm_eo) {/* highlight a match */
-			r_cons_memcat(laddr, ms[i].rm_so);
-			r_cons_invert(R_TRUE, R_TRUE);
-			r_cons_memcat(laddr + ms[i].rm_so,
-				      ms[i].rm_eo - ms[i].rm_so);
-			r_cons_invert(R_FALSE, R_TRUE);
-			r_cons_printf ("%s\n", laddr + ms[i].rm_eo);
+			r_strpool_memcat(p, laddr, ms[i].rm_so);
+			r_strpool_memcat(p, inv[0], linv[0]);
+			r_strpool_memcat(p, laddr + ms[i].rm_so,
+					 ms[i].rm_eo - ms[i].rm_so);
+			r_strpool_memcat(p, inv[1], linv[1]);
+			r_strpool_append(p, laddr + ms[i].rm_eo);
 		} else {
-			r_cons_printf ("%s\n", laddr);
+			r_strpool_append(p, laddr);
 		}
+		r_strpool_ansi_chop(p, w);
+		r_cons_reset_colors();
+		r_cons_printf ("%s\n", p->str);
 	}
+	r_strpool_free(p);
 	r_cons_flush ();
 }
 
@@ -85,7 +94,7 @@ static int all_matches(const char *s, RRegex *rx, RRegexMatch *ms,
 R_API void r_cons_less_str(const char *str) {
 	int lines_count;
 	RRegex *rx = NULL;
-	int h, ch, to, ui = 1, from = 0;
+	int w, h, ch, to, ui = 1, from = 0;
 	const char *sreg;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
@@ -93,14 +102,14 @@ R_API void r_cons_less_str(const char *str) {
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
 	r_cons_reset ();
-	h = 0;
+	w = h = 0;
 	while (ui) {
-		r_cons_get_size (&h);
+		w = r_cons_get_size (&h);
 		to = R_MIN (lines_count, from+h);
 		if (from+3>lines_count)
 			from = lines_count-3;
 		if (from<0) from = 0;
-		printpage (p, lines, ms, from, to);
+		printpage (p, lines, ms, from, to, w);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {

@@ -415,6 +415,7 @@ R_API char *r_str_newlen(const char *str, int len);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
+R_API int r_str_ansi_chop(char *str, int str_len, int n);
 R_API int r_str_ansi_filter(char *str, int len);
 R_API int r_str_word_count(const char *string);
 R_API int r_str_char_count(const char *string, char ch);
@@ -655,6 +656,8 @@ typedef struct {
 
 R_API RStrpool* r_strpool_new (int sz);
 R_API char *r_strpool_alloc (RStrpool *p, int l);
+R_API int r_strpool_memcat(RStrpool *p, const char *s, int len);
+R_API int r_strpool_ansi_chop(RStrpool *p, int n);
 R_API int r_strpool_append(RStrpool *p, const char *s);
 R_API void r_strpool_free (RStrpool *p);
 R_API int r_strpool_fit(RStrpool *p);

@@ -932,6 +932,41 @@ R_API int r_str_ansi_len(const char *str) {
 	return len-sub;
 }
 
+R_API int r_str_ansi_chop(char *str, int str_len, int n) {
+	/* suposed to chop a string with ansi controls to
+	 * max length of n */
+	char ch, ch2;
+	int back, i = 0, len = 0;
+	/* simple case - no need to cut */
+	if (n >= str_len){
+		str[str_len - 1] = 0;
+		return str_len - 1;
+	}
+	while ((i < str_len) && str[i] && (len < n)) {
+		ch = str[i];
+		ch2 = str[i+1];
+		back = i; 	/* index in the original array */
+		if (ch == 0x1b) {
+			if (ch2 == '\\') {
+				i++;
+			} else if (ch2 == ']') {
+				if (!strncmp (str+2+5, "rgb:", 4))
+					i += 18;
+			} else if (ch2 == '[') {
+				for (++i; (i < str_len) && str[i]
+					     && str[i]!='J' && str[i]!='m'
+					     && str[i]!='H';
+				     i++);
+			}
+		} else len++;
+
+		i++;
+	}
+	str[back] = 0;
+	return back;
+}
+
+
 // TODO: support wide char strings
 R_API int r_str_nlen(const char *str, int n) {
 	int len = 0;
