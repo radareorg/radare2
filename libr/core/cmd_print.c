@@ -2009,7 +2009,7 @@ static int cmd_print(void *data, const char *input) {
 						int instr_len;
 						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
 						ut32 prevaddr = core->offset;
-						r_core_seek(core, addr, R_TRUE);
+						r_core_seek(core, prevaddr - instr_len, R_TRUE);
 						block = realloc (block, R_MAX(instr_len, bs));
 						memcpy (block, core->block, bs);
 						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);

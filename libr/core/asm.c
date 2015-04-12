@@ -361,90 +361,61 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RList *hits = r_core_asm_hit_list_new();
 	RAsmOp op;
-	ut8 *buf;
-	ut64 buf_addr, instrlen = 0, at = 0;
-	ut32 idx = 0, hit_count = 0, buf_len = 0;
-	int numinstr, ii;
+	// len = n * 32;
+	// if (n > core->blocksize) n = core->blocksize;
+	ut8 *buf = (ut8 *)malloc(len);
+
+	ut64 instrlen = 0, at = 0;
+	ut32 idx = 0, hit_count = 0;
+	int numinstr, asmlen, ii;
 	RAsmCode *c;
 
-	if (!hits)
-		return NULL;
-	if (len>addr) {
-		buf_addr = 0;
-		buf_len = len-addr;
-		len = buf_len;
-		addr = n;
-	} else {
-		buf_addr = addr - len;
-		buf_len = len;
-	}
-
-	buf = (ut8 *)malloc (buf_len);
-	if (!buf) {
-		r_list_free (hits);
-		return NULL;
-	}
-
-	if (r_io_read_at (core->io, buf_addr, buf, buf_len) != buf_len) {
-		r_list_free (hits);
-		free (buf);
-		return NULL;
-	}
-	if (!memcmp (buf, "\xff\xff\xff\xff", R_MIN (4, buf_len))) {
-		eprintf ("error reading at 0x%08"PFMT64x"\n", buf_addr);
-		r_list_free (hits);
+	if (hits == NULL || buf == NULL ){
+		if (hits) {
+			r_list_purge (hits);
+			free (hits);
+		}
 		free (buf);
 		return NULL;
 	}
 
-	if (n<0) n = -n;
+	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
+		if (hits) {
+			r_list_purge (hits);
+			free (hits);
+		}
+		free (buf);
+		return NULL;
+	}
 
-	for (idx = 1; idx < len; idx++) {
-		if (r_cons_singleton ()->breaked)
-			break;
-		at = addr - idx;
-		hit_count = 0;
-		r_asm_set_pc (core->assembler, at);
-		// XXX: the disassemble errors are because of this line. mdisasm must not be used here
-		//c = r_asm_mdisassemble (core->assembler, buf+idx, buf_len-idx); //+buf_len-idx, idx);
-		c = r_asm_mdisassemble (core->assembler, buf+buf_len-idx, idx);
-		// XXX: relaying on string contents in the buf_asm is a bad idea
-		if (strstr (c->buf_asm, "invalid") || strstr (c->buf_asm, ".byte")) {
-			r_asm_code_free (c);
+	for (idx = 1; idx < len; ++idx) {
+		if (r_cons_singleton ()->breaked) break;
+		at = addr - idx; hit_count = 0;
+		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
+		if (strstr(c->buf_asm, "invalid") || strstr(c->buf_asm, ".byte")) {
+			r_asm_code_free(c);
 			continue;
 		}
-//eprintf ("-->(%x)(%s)\n", at, c->buf_asm);
-		for (numinstr = ii = 0; c->buf_asm[ii] ; ii++) {
-			if (c->buf_asm[ii] == '\n')
-				numinstr++;
+		numinstr = 0;
+		asmlen = strlen(c->buf_asm);
+		for(ii = 0; ii < asmlen; ++ii) {
+			if (c->buf_asm[ii] == '\n') ++numinstr;
 		}
-//eprintf ("mdisasm worked! for 0x%llx with %d\n", addr-len+idx, numinstr);
-		r_asm_code_free (c);
+		r_asm_code_free(c);
 		if (numinstr >= n || idx > 32 * n) {
-//eprintf ("idx = %d len = %d ninst = %d n = %d\n", idx, len, numinstr, n);
 			break;
 		}
-//eprintf ("idx = %d len = %d\n", idx, len);
 	}
 	at = addr - idx;
-
 	hit_count = 0;
-
-	for (hit_count = 0; hit_count < n; hit_count++) {
-		if (r_cons_singleton ()->breaked)
-			break;
-		r_asm_set_pc (core->assembler, at);
-		instrlen = r_asm_disassemble (core->assembler,
-			&op, buf+buf_len-(addr-at), addr-at); //addr-at);
-//		eprintf ("INST LEN = %d\n", instrlen);
-		if (instrlen<1) {
-			eprintf ("dissasm failed at %llx\n", at);
-			instrlen = 1;
-//			break;
-		}
-		add_hit_to_hits (hits, at, instrlen, R_TRUE);
+	r_asm_set_pc (core->assembler, at);
+	at = addr-idx;
+	for ( hit_count = 0; hit_count < n; hit_count++) {
+		instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
+		add_hit_to_hits(hits, at, instrlen, R_TRUE);
 		at += instrlen;
 	}
+	r_asm_set_pc (core->assembler, addr);
 	free (buf);
 	return hits;
 }

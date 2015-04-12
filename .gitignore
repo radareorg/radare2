@@ -51,3 +51,4 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/libsdb.so*
 shlr/capstone/
 radare2-w32-*
+radare2-regressions
