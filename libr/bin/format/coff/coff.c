@@ -44,7 +44,7 @@ const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
 }
 
 static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
-	if (sym->n_scnum < 1)
+	if (sym->n_scnum<1 || sym->n_scnum > obj->hdr.f_nscns)
 		return 0;
 	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
 	return 1;

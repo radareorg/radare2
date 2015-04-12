@@ -229,6 +229,8 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (!name || !*name)
+		return R_FALSE;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name))
 			return R_TRUE;

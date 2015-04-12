@@ -1974,8 +1974,8 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	RBinJavaAttrInfo *attr = NULL;
 	ut64 offset = 0;
 	RBinJavaAttrMetas* type_info = NULL;
-	if (((int)sz)<6) // why st64 when it can be int?
-		return NULL;
+	if (sz<0) return NULL;
+	if (((int)sz)<6) return NULL;
 	if (buffer) {
 		char* name = NULL;
 		ut16 name_idx = R_BIN_JAVA_USHORT (buffer, offset);
@@ -2836,6 +2836,21 @@ R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 		sym = r_bin_java_create_new_symbol_from_fm_type_meta (fm_type, bin->loadaddr);
 		if(sym) r_list_append (symbols, (void *) sym);
 	}
+
+	 {
+		RBinImport *imp;
+		RList *imports = r_bin_java_get_imports (bin);
+		int ord = 0;
+		r_list_foreach (imports, iter, imp) {
+			sym = R_NEW0 (RBinSymbol);
+			strcpy (sym->name, sdb_fmt(0, "imp.%s", imp->name));
+			strcpy (sym->type, "import");
+			sym->vaddr = sym->paddr = imp->ordinal;
+			sym->ordinal = imp->ordinal;
+			r_list_append (symbols, (void *)sym);
+		}
+	 }
+
 	return symbols;
 }
 
@@ -3251,7 +3266,8 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	attr->info.code_attr.attributes = r_list_newf (r_bin_java_attribute_free);
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
-			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, sz-offset, buf_offset+offset);
+			int size = (offset<sz)? sz-offset:0;
+			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, size, buf_offset+offset);
 			if (!_attr) {
 				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Method's Code Attribute: %d.\n", k);
 				break;

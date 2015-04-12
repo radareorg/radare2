@@ -9,13 +9,17 @@
 #include "te.h"
 
 ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
-	return bin->header->StrippedSize - sizeof(TE_image_file_header);
+	if (bin && bin->header)
+		return bin->header->StrippedSize - sizeof(TE_image_file_header);
+	return 0LL;
 }
 
 ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
+	if (!bin)
+		return 0LL;
 
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
 		eprintf ("Error: read (entry)\n");
@@ -92,6 +96,7 @@ static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 
 char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
 	char *arch;
+	if (!bin) return NULL;
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:
@@ -128,6 +133,8 @@ int r_bin_te_get_bits(struct r_bin_te_obj_t* bin) {
 RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	RBinAddr *entry = NULL;
 
+	if (!bin || !bin->header)
+		return NULL;
 	if ((entry = malloc(sizeof(RBinAddr))) == NULL) {
 		perror("malloc (entrypoint)");
 		return NULL;
@@ -141,12 +148,14 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 
 ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin)
 {
-	return (ut64)bin->header->ImageBase;
+	if (bin && bin->header)
+		return (ut64)bin->header->ImageBase;
+	return 0LL;
 }
 
 char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin) {
 	char *machine;
-
+	if (!bin) return NULL;
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
 		machine = strdup("Alpha");
@@ -240,6 +249,7 @@ char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin) {
 
 char* r_bin_te_get_os(struct r_bin_te_obj_t* bin) {
 	char *os;
+	if (!bin) return NULL;
 
 	switch (bin->header->Subsystem) {
 	case TE_IMAGE_SUBSYSTEM_NATIVE:
@@ -271,8 +281,11 @@ char* r_bin_te_get_os(struct r_bin_te_obj_t* bin) {
 
 struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	struct r_bin_te_section_t *sections = NULL;
-	TE_image_section_header *shdr = bin->section_header;
-	int i, sections_count = bin->header->NumberOfSections;
+	TE_image_section_header *shdr;
+	int i, sections_count;
+	if (!bin) return NULL;
+	shdr = bin->section_header;
+	sections_count = bin->header->NumberOfSections;
 
 	if ((sections = malloc((sections_count + 1) * sizeof(struct r_bin_te_section_t))) == NULL) {
 		perror ("malloc (sections)");
@@ -296,6 +309,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin) {
 	char *subsystem;
 
+	if (!bin) return NULL;
 	switch (bin->header->Subsystem) {
 	case TE_IMAGE_SUBSYSTEM_NATIVE:
 		subsystem = strdup("Native");

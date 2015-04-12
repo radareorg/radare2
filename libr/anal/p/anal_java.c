@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2014 - pancake and
+/* radare - Apache 2.0 - Copyright 2010-2015 - pancake and
  Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <string.h>
@@ -813,8 +813,8 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->jump = addr + (short)(USHORT (data, 1));
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
 	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
-		//op->jump = addr + (int)(short)(USHORT (data, 1));
-		//op->fail = addr + sz;
+		op->jump = (int)(short)(USHORT (data, 1));
+		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
 

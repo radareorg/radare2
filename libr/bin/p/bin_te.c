@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - xvilka */
+/* radare - LGPL - Copyright 2013-2015 - xvilka */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,7 +13,7 @@ static int check_bytes(const ut8 *buf, ut64 length);
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin && bin->kv) return bin->kv;
 	return NULL;
 }
 

@@ -10,6 +10,8 @@
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
 	while (IS_PRINTABLE(*str) && --len) {
+		if (((ut8)*str)==0xff)
+			break;
 		str++;
 		l++;
 	}
@@ -1336,12 +1338,18 @@ if (
 					return NULL;
 				}
 				{
-					int rest = strtab_section->sh_size - sym[k].st_name;
-					if (rest<0) rest = 0;
+					int rest = R_MIN (ELF_STRING_LENGTH,128)-1; //strtab_section->sh_size - sym[k].st_name;
 					//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
-					len = __strnlen (strtab+sym[k].st_name, R_MIN(ELF_STRING_LENGTH-1,rest));
+					int st_name = sym[k].st_name;
+					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
+					if (st_name<0 || st_name>=maxsize) {
+						len = 0;
+						ret[ret_ctr].name[0] = 0;
+					} else {
+						len = __strnlen (strtab+sym[k].st_name, rest);
+						memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
+					}
 				}
-				memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
 				#define s_bind(x) snprintf (ret[ret_ctr].bind, ELF_STRING_LENGTH, x);

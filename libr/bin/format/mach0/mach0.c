@@ -657,6 +657,8 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	int i, j, nsyms, stridx;
 	const char *symstr;
 
+	if (idx<0)
+		return 0;
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
 	symbol->name[0] = '\0';
@@ -1008,7 +1010,10 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 						int stridx = 0;
 						int iundefsym = bin->dysymtab.iundefsym;
 						if (iundefsym>=0 && iundefsym < bin->nsymtab) {
-							stridx = bin->symtab[iundefsym + j].n_un.n_strx;
+							int sidx = iundefsym +j;
+							if (sidx<0 || sidx>= bin->nsymtab)
+								continue;
+							stridx = bin->symtab[sidx].n_un.n_strx;
 							if (stridx < 0 || stridx >= bin->symstrlen)
 								continue;
 						}
@@ -1040,7 +1045,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					break;
 
 #define DO_BIND() do {\
-	if (sym_ord == -1)\
+	if (sym_ord == -1 || seg_idx == -1)\
 		break;\
 	relocs[i].addr = addr;\
 	relocs[i].offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\

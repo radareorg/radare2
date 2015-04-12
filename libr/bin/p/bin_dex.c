@@ -228,6 +228,8 @@ static char *getstr (RBinDexObj *bin, int idx) {
 	const ut8 buf[8], *buf2;
 	ut64 len;
 	int uleblen;
+	if (idx<0 || idx >= bin->header.strings_size || !bin->strings)
+		return NULL;
 	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, sizeof (buf));
 	len = dex_read_uleb128 (buf);
 	if (len<1)
