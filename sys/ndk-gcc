@@ -31,7 +31,7 @@ arm)
 	NDKPFX=${ARCH}-linux-androideabi
 	;;
 mips)
-	ANDROID_SDK_VERSION=${ANDROID_KITKAT} #mips
+	ANDROID_SDK_VERSION=${ANDROID_KITKAT}
 	NDKPFX=mipsel-linux-android
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then
@@ -39,7 +39,7 @@ mips)
 	fi
 	;;
 mips64)
-	ANDROID_SDK_VERSION=${ANDROID_KITKAT} #mips64
+	ANDROID_SDK_VERSION=${ANDROID_LOLIPOP}
 	NDKPFX=mips64el-linux-android
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then

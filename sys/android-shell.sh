@@ -8,10 +8,12 @@ fi
 export ANDROID=1
 case "${NDK_ARCH}" in
 mips64)
+	export NDK_ARCH
 	AR=mips64el-linux-android-ar
 	RANLIB=mips64el-linux-android-ranlib
 	;;
 mips)
+	export NDK_ARCH
 	AR=mipsel-linux-android-ar
 	RANLIB=mipsel-linux-android-ranlib
 	;;
