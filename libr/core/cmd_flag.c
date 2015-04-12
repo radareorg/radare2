@@ -286,6 +286,22 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		break;
 	case 's':
 		switch (input[1]) {
+		case '?':
+			{
+			const char *help_msg[] = {
+			"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
+			"fs","","display flagspaces",
+			"fs"," *","select all flagspaces",
+			"fs"," flagspace","select flagspace or create if it doesn't exist",
+			"fs","-flagspace","remove flagspace",
+			"fs","-*","remove all flagspaces",
+			"fs","+foo","push previous flagspace and set",
+			"fs","-","pop to the previous flagspace",
+			"fsm"," [addr]","move flags at given address to the current flagspace",
+			"fsr"," newname","rename selected flagspace",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 		case '+':
 			r_flag_space_push (core->flags, input+2);
 			break;
@@ -507,15 +523,6 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		//" fc [name] [cmt]  ; set execution command for a specific flag"
 		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
 		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
-		"fs","","display flagspaces",
-		"fs"," *","select all flagspaces",
-		"fs"," flagspace","select flagspace or create if it doesn't exist",
-		"fs","-flagspace","remove flagspace",
-		"fs","-*","remove all flagspaces",
-		"fs","+foo","push previous flagspace and set",
-		"fs","-","pop to the previous flagspace",
-		"fsm"," [addr]","move flags at given address to the current flagspace",
-		"fsr"," newname","rename selected flagspace",
 		"fS","[on]","sort flags by offset or name",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		NULL};
