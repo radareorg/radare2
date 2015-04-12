@@ -1709,6 +1709,38 @@ static int cmd_print(void *data, const char *input) {
 		case '?':
 			r_cons_printf ("|Usage: pi[defj] [num]\n");
 			break;
+		case 'a': // "pia" is like "pda", but with "pi" output
+			{
+				RAsmOp asmop;
+				char str[128];
+				char* buf_asm;
+				ut8 *buf = core->block;
+				if (l<1) l = len;
+				if (l>core->blocksize) {
+					buf = malloc (l+1);
+					r_core_read_at (core, core->offset, buf, l);
+				}
+				r_cons_break (NULL, NULL);
+				for (i=0; i<l; i++) {
+					r_asm_set_pc (core->assembler, core->offset+i);
+					if (r_cons_singleton ()->breaked)
+						break;
+					if (r_asm_disassemble (core->assembler, &asmop, buf+i, l-i) < 1) {
+						r_cons_printf ("???\n", core->offset+i);
+					} else {
+						r_parse_filter (core->parser, core->flags, asmop.buf_asm,
+								str, sizeof(str));
+						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
+								core->cons->pal.num);
+						r_cons_printf ("%s\n", buf_asm);
+						free (buf_asm);
+					}
+				}
+				r_cons_break_end ();
+				if (buf != core->block)
+					free (buf);
+			}
+			break;
 		case 'j': //pij is the same as pdj
 			cmd_pdj (core, input+2);
 			break;
