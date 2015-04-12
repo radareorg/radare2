@@ -1715,6 +1715,7 @@ static int cmd_print(void *data, const char *input) {
 				char str[128];
 				char* buf_asm;
 				ut8 *buf = core->block;
+				int colors_on = r_config_get_i (core->config, "scr.color");
 				if (l<1) l = len;
 				if (l>core->blocksize) {
 					buf = malloc (l+1);
@@ -1730,10 +1731,14 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						r_parse_filter (core->parser, core->flags, asmop.buf_asm,
 								str, sizeof(str));
-						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
-								core->cons->pal.num);
-						r_cons_printf ("%s\n", buf_asm);
-						free (buf_asm);
+						if (colors_on) {
+							buf_asm = r_print_colorize_opcode (str,
+									core->cons->pal.reg, core->cons->pal.num);
+							r_cons_printf ("%s\n", buf_asm);
+							free (buf_asm);
+						} else {
+							r_cons_printf ("%s\n", asmop.buf_asm);
+						}
 					}
 				}
 				r_cons_break_end ();
