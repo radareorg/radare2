@@ -372,8 +372,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 
 	if (hits == NULL || buf == NULL ){
 		if (hits) {
-			r_list_purge (hits);
-			free (hits);
+			r_list_free (hits);
 		}
 		free (buf);
 		return NULL;
@@ -381,8 +380,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
 		if (hits) {
-			r_list_purge (hits);
-			free (hits);
+			r_list_free (hits);
 		}
 		free (buf);
 		return NULL;
@@ -415,7 +413,6 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		add_hit_to_hits(hits, at, instrlen, R_TRUE);
 		at += instrlen;
 	}
-	r_asm_set_pc (core->assembler, addr);
 	free (buf);
 	return hits;
 }
