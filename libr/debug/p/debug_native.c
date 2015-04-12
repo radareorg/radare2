@@ -970,6 +970,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
         unsigned int gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
+	int tid = dbg->tid;
 
 #if 0
 	// if uncommented, it will break x86-32 debugging from x86-64 (ios simulator f.ex)

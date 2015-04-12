@@ -1612,11 +1612,9 @@ R_API RBinObject *r_bin_get_object(RBin *bin) {
 	return o;
 }
 
-
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->classes;
+	if (o) return o->classes;
 	return NULL;
 }
 
@@ -1626,7 +1624,6 @@ R_API RBinClass *r_bin_class_new (RBinFile *binfile, const char *name, const cha
 	RBinClass *c;
 	if (!o)
 		return NULL;
-
 	list = o->classes;
 	if (!name) return NULL;
 	c = r_bin_class_get (binfile, name);

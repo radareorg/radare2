@@ -8,9 +8,7 @@
 #include "../../asm/arch/dalvik/opcode.h"
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	int sz = 1;
-
-	sz = dalvik_opcodes[data[0]].len;
+	int sz = dalvik_opcodes[data[0]].len;
 	if (op == NULL)
 		return sz;
 
@@ -274,12 +272,20 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0xb8: // invokestatic
 		case 0xb6: // invokevirtual
 		case 0x6e: // invoke-virtual
-		case 0xef: // execute-inline/range
 		case 0xf0: // invoke-object-init-range
 		case 0xf9: // invoke-virtual-quick/range
 		case 0xfb: // invoke-super-quick/range
+			{
+			ut32 vB = (data[3]<<8) | data[2];
+			op->jump = anal->binb.get_offset (
+				anal->binb.bin, 'm', vB);
+			op->fail = addr + sz;
+			op->type = R_ANAL_OP_TYPE_CALL;
+			}
+			break;
 		case 0x27: // throw
 		case 0xee: // execute-inline
+		case 0xef: // execute-inline/range
 		case 0xed: // throw-verification-error
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;

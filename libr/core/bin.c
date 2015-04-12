@@ -1449,19 +1449,30 @@ static int bin_classes (RCore *r, int mode) {
 				iter->p?",":"", c->name, c->index);
 		}
 		r_cons_printf ("]");
-	} else
-	if (mode & R_CORE_BIN_SIMPLE) {
+	} else if (mode & R_CORE_BIN_SIMPLE) {
 		r_list_foreach (cs, iter, c) {
 			r_cons_printf ("0x%08"PFMT64x"  %s  %s\n",
 				c->index, c->name, c->super?c->super:"");
 		}
-	} else
-	if (mode & R_CORE_BIN_SET) {
+	} else if (mode & R_CORE_BIN_SET) {
 		// Nothing to set.
-	} else {
+		r_flag_space_set (r->flags, "classes");
 		r_list_foreach (cs, iter, c) {
+			char str[R_FLAG_NAME_SIZE+1];
+			char *name = strdup (c->name);
+			ut64 addr = c->index; //c->addr? c->addr : c->index;
+			r_name_filter (name, 0);
+			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
+			r_flag_set (r->flags, str, addr, 1, 0);
+		}
+	} else {
+		r_cons_printf ("fs classes\n");
+		r_list_foreach (cs, iter, c) {
+			char *name = strdup (c->name);
+			ut64 addr = c->index; //c->addr? c->addr : c->index;
+			r_name_filter (name, 0);
 			if (mode) {
-				r_cons_printf ("f class.%s @ %d\n", c->name, c->index);
+				r_cons_printf ("f class.%s @ 0x%"PFMT64x"\n", name, addr);
 				if (c->super)
 					r_cons_printf ("f super.%s.%s @ %d\n", c->name, c->super, c->index);
 				r_list_foreach (c->methods, iter2, methname) {
@@ -1476,6 +1487,7 @@ static int bin_classes (RCore *r, int mode) {
 				}
 			}
 			// TODO: show belonging methods and fields
+			free (name);
 		}
 	}
 	return R_TRUE;
@@ -1538,7 +1550,8 @@ static void bin_mem_print (RList *mems, int perms, int depth) {
 		if (mem) {
 			for (i=0; i < depth; i++)
 				r_cons_printf (" ");
-			r_cons_printf ("%8s addr=0x%016"PFMT64x" size=%6d perms=[%s]\n", mem->name, mem->addr, mem->size, r_str_rwx_i (mem->perms & perms));
+			r_cons_printf ("%8s addr=0x%016"PFMT64x" size=%6d perms=[%s]\n",
+				mem->name, mem->addr, mem->size, r_str_rwx_i (mem->perms & perms));
 			if (mem->mirrors)
 				bin_mem_print (mem->mirrors, (mem->perms & perms), (depth + 1));	//sorry, but anything else would be inefficient
 		}
