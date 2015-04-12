@@ -224,15 +224,15 @@ dump_stc (kd_packet_t *p) {
 
 	eprintf("New state : %08x\n", stc->state);
 	eprintf("eip : %016"PFMT64x" kthread : %016"PFMT64x"\n",
-			stc->pc, stc->kthread);
+			(ut64)stc->pc, (ut64)stc->kthread);
 	eprintf("On cpu %i/%i\n", stc->cpu + 1, stc->cpu_count);
 
 	if (stc->state == 0x3030) {
 		eprintf("ex\n");
 		eprintf("\tCode   : %08x\n", stc->exception.code);
 		eprintf("\tFlags  : %08x\n", stc->exception.flags);
-		eprintf("\tRecord : %016"PFMT64x"\n", stc->exception.ex_record);
-		eprintf("\tAddr   : %016"PFMT64x"\n", stc->exception.ex_addr);
+		eprintf("\tRecord : %016"PFMT64x"\n", (ut64)stc->exception.ex_record);
+		eprintf("\tAddr   : %016"PFMT64x"\n", (ut64)stc->exception.ex_addr);
 	}
 }
 
@@ -328,7 +328,7 @@ wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
 	int prot;
 
 	if (wind_read_at(ctx, (uint8_t *)&entry, address - 0x4, sizeof(mmvad_short)) != sizeof (mmvad_short)) {
-		eprintf("0x%"PFMT64x" Could not read the node!\n", address);
+		eprintf("0x%"PFMT64x" Could not read the node!\n", (ut64)address);
 		return 0;
 	}
 
@@ -342,7 +342,7 @@ wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
 	prot = (entry.flags >> 24)&0x1F;
 
 	eprintf ("Start 0x%016"PFMT64x" End 0x%016"PFMT64x" Prot 0x%08"PFMT64x"\n",
-		(uint64_t)start, (uint64_t)end, (uint64_t)prot);
+		(ut64)start, (ut64)end, (ut64)prot);
 
 	if (entry.left)
 		wind_walk_vadtree(ctx, entry.left, address);

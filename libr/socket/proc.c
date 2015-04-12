@@ -4,6 +4,7 @@
 /* proc IO is not related to socket io.. this is shitty!! */
 
 #include <r_socket.h>
+#include <r_util.h>
 #include <signal.h>
 
 #if __UNIX__

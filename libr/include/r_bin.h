@@ -274,7 +274,6 @@ typedef struct r_bin_class_t {
 	char *super;
 	char *visibility_str;
 	int index;
-	//ut64 addr;
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
 	int visibility;

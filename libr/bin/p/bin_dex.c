@@ -683,7 +683,7 @@ static RList* entries(RBinFile *arch) {
 static ut64 offset_of_method_idx(RBinFile *arch, struct r_bin_dex_obj_t *dex, int idx) {
 	int off = dex->header.method_offset +idx;
 	//(sizeof (struct dex_method_t)*idx);
-	const char *name = dex_method_name (dex, idx);
+	//const char *name = dex_method_name (dex, idx);
 	//eprintf ("idx=%d off=%d (%s)\n", idx, off, name);
 	//off = sdb_num_get (mdb, name, NULL);
 	off = sdb_num_get (mdb, sdb_fmt(0, "method.%d", idx), 0);
