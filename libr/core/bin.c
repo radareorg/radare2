@@ -1459,7 +1459,10 @@ static int bin_classes (RCore *r, int mode) {
 		r_flag_space_set (r->flags, "classes");
 		r_list_foreach (cs, iter, c) {
 			char str[R_FLAG_NAME_SIZE+1];
-			char *name = strdup (c->name);
+			char *name;
+			if (!c->name || !*c->name)
+				continue;
+			name = strdup (c->name);
 			ut64 addr = c->index; //c->addr? c->addr : c->index;
 			r_name_filter (name, 0);
 			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
