@@ -16,10 +16,13 @@
 #define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2]);
 
 // wrong endianness
-#define PUSH "2,sp,-=,sp,=[2]"
-#define POP  "sp,[2],2,sp,+="
-#define CALL(skipbytes) skipbytes",pc,+," PUSH
+#define PUSH1 "1,sp,+=,sp,=[1]"
+#define POP1  "sp,[1],1,sp,-=,"
+#define PUSH2 "1,sp,+=,sp,=[2],1,sp,+="
+#define POP2  "1,sp,-=,sp,[2],1,sp,-=,"
+#define CALL(skipbytes) skipbytes",pc,+," PUSH2
 #define JMP(skipbytes) skipbytes",+,pc,+="
+#define CJMP(target, skipbytes) "?{," ES_##target "" JMP(skipbytes) ",}"
 #define SJMP1 ES_L1 JMP("2")
 #define SJMP2 ES_L2 JMP("3")
 
@@ -36,10 +39,10 @@
 #define ES_L1 "%2$d,"
 #define ES_L2 "%3$d,"
 
-#define ACC_IB1 "[1]"
-#define ACC_IB2 "[1]"
-#define ACC_R0I "[1]"
-#define ACC_AI  "[1]"
+#define ACC_IB1 "[1],"
+#define ACC_IB2 "[1],"
+#define ACC_R0I "[1],"
+#define ACC_AI  "[1],"
 #define ACC_R0  ""
 #define ACC_R1  ""
 #define ACC_A   ""
@@ -94,8 +97,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0x90: /* mov  */ /* TODO */ break;
 	case 0xA0: /* orl  */ /* TODO */ break;
 	case 0xB0: /* anl  */ /* TODO */ break;
-	case 0xC0: /* push */ /* TODO */ break;
-	case 0xD0: /* pop  */ /* TODO */ break;
+	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
+	case 0xD0: /* pop  */ h(POP1 XW(IB1)); break;
 	case 0xE0: /* movx */ /* TODO */ break;
 	case 0xF0: /* movx */ /* TODO */ break;
 
@@ -108,7 +111,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 
 	case 0x02: /* ljmp  */ emitf(CALL("3")",%d,pc,=", (unsigned int)((buf[1]<<8)+buf[2])); break;
 	case 0x12: /* lcall */ /* TODO */ break;
-	case 0x22: /* ret   */ emitf(POP ",pc,="); break;
+	case 0x22: /* ret   */ emitf(POP2 "pc,="); break;
 	case 0x32: /* reti  */ /* TODO */ break;
 	case 0x72: /* orl   */ /* TODO */ break;
 	case 0x82: /* anl   */ /* TODO */ break;
@@ -184,7 +187,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0xA4:
 		/* mul */ /* TODO */ break;
 	case 0xA5:
-		/* ??? */ /* TODO */ break;
+		/* ??? */ emit("$$"); break;
 
 	case 0xA6: case 0xA7:
 		j (XR(IB1) XW(R0I)) break;
@@ -230,7 +233,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0xD4:
 		/* da   */ emit("A,--="); break;
 	case 0xD5:
-		/* djnz */ /* TODO */ break;
+		/* djnz */ h(XI(R0I, "--") "," XR(R0I) CJMP(L2, "2")); break;
 	case 0xD6:
 		/* xchd */ /* TODO */ break;
 	case 0xD7:
@@ -240,7 +243,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD:
 	case 0xDE: case 0xDF:
-		/* djnz */ /* TODO */ break;
+		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2"));
+		break;
 
 	case 0xE2: case 0xE3:
 		/* movx */ j(XRAM_BASE "r%0$d,+,[1]," XW(A)); break;
