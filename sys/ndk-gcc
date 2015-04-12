@@ -13,22 +13,25 @@ fi
 PROGDIR=`dirname $0`
 PROGDIR=`cd $PROGDIR && pwd`
 
+ANDROID_KITKAT=19
+ANDROID_LOLIPOP=21
+
 OS=`uname | tr 'A-Z' 'a-z'`
 [ "${OS}" = macos ] && OS=darwin
 
 ARCH2=${ARCH}
 case "${ARCH}" in
 aarch64)
-	ANDROID_SDK_VERSION=21
+	ANDROID_SDK_VERSION=${ANDROID_LOLIPOP}
 	NDKPFX=${ARCH}-linux-android
 	ARCH2=arm64
 	;;
 arm)
-	ANDROID_SDK_VERSION=21
+	ANDROID_SDK_VERSION=${ANDROID_KITKAT}
 	NDKPFX=${ARCH}-linux-androideabi
 	;;
 mips)
-	ANDROID_SDK_VERSION=21 #mips
+	ANDROID_SDK_VERSION=${ANDROID_KITKAT} #mips
 	NDKPFX=mipsel-linux-android
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then
@@ -36,7 +39,7 @@ mips)
 	fi
 	;;
 mips64)
-	ANDROID_SDK_VERSION=21 #mips64
+	ANDROID_SDK_VERSION=${ANDROID_KITKAT} #mips64
 	NDKPFX=mips64el-linux-android
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then
@@ -44,7 +47,7 @@ mips64)
 	fi
 	;;
 x86)
-	ANDROID_SDK_VERSION=21 #x86
+	ANDROID_SDK_VERSION=${ANDROID_KITKAT} #x86
 	NDKPFX=i686-android-linux
 	${NDKPFX}-gcc 2>/dev/null
 	if [ $? -gt 1 ]; then
