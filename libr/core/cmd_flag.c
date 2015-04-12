@@ -523,6 +523,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		//" fc [name] [cmt]  ; set execution command for a specific flag"
 		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
 		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
+		"fs"," ?+-*","manage flagspaces",
 		"fS","[on]","sort flags by offset or name",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		NULL};
