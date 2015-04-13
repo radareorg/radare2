@@ -388,7 +388,7 @@ static int bin_info (RCore *r, int mode) {
 			pair ("va", r_str_bool (info->has_va));
 			pair ("root", info->rclass);
 			pair ("class", info->bclass);
-			pair ("lang", info->lang? info->lang: "unknown");
+			pair ("lang", (info->lang && *info->lang)? info->lang: NULL);//"unknown");
 			pair ("arch", info->arch);
 			/*pair ("bits", sdb_fmt (0, "%d", info->bits));*/
 			pair ("machine", info->machine);
