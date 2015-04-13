@@ -69,28 +69,15 @@ static void r_core_file_info (RCore *core, int mode) {
 		fn = info->file;
 		switch (mode) {
 		case R_CORE_BIN_JSON:
-			r_cons_printf ("\"type\":\"%s\","
-			/*"\"os\":\"%s\","*/
-			/*"\"machine\":\"%s\","*/
-			"\"bits\":%d,"
-			"\"endian\":\"%s\","
-			, STR(info->type)
-			/*, STR(info->os)*/
-			/*, STR(info->machine)*/
-			, info->bits
-			, info->big_endian? "big": "little");
+			r_cons_printf ("\"type\":\"%s\"", STR(info->type));
 			break;
 		default:
 			pair ("type", info->type);
-			/*pair ("os", info->os);*/
-			/*pair ("machine", info->machine);*/
-			pair ("bits", sdb_fmt (0, "%d", info->bits));
-			pair ("endian", info->big_endian? "big": "little");
 			break;
 		}
 	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (cf && mode == R_CORE_BIN_JSON) {
-		r_cons_printf ("\"file\":\"%s\"", fn);
+		r_cons_printf (",\"file\":\"%s\"", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			/*r_cons_printf (",\"uri\":\"%s\"", cf->desc->uri);*/
@@ -123,7 +110,6 @@ static void r_core_file_info (RCore *core, int mode) {
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 				(ut64)core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
-			/*pair ("uri", cf->desc->uri);*/
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
 		if (binfile && binfile->curxtr)
