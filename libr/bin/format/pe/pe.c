@@ -133,7 +133,7 @@ static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
 	return NULL;
 }
 
-static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
+static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, const char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
 	char import_name[PE_NAME_LENGTH + 1], name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
 	PE_DWord import_table = 0, off = 0;
@@ -160,11 +160,14 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf (import_name, PE_NAME_LENGTH, "qq%s_Ordinal_%i", dll_name, import_ordinal);
+				snprintf (import_name, PE_NAME_LENGTH-1, "qq%s_Ordinal_%i", dll_name, import_ordinal);
 				//
-				symdllname=strdup(dll_name);
+				symdllname = strdup (dll_name);
 				// rip ".dll"
-				symdllname[strlen(symdllname)-4]=0;
+				int len = strlen (symdllname);
+				if (len<4) len = 0;
+				else len -=4;
+				symdllname[len]=0;//strlen(symdllname)-4]=0;
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
 					db = NULL;
