@@ -288,7 +288,7 @@ static int bin_info (RCore *r, int mode) {
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("{\"type\":\"%s\","
 			"\"class\":\"%s\","
-			/*"\"endian\":\"%s\","*/
+			"\"endian\":\"%s\","
 			"\"machine\":\"%s\","
 			"\"arch\":\"%s\","
 			"\"os\":\"%s\","
@@ -298,7 +298,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"nx\":%s,"
 			"\"crypto\":%s,"
 			"\"va\":%s,"
-			/*"\"bits\":%d,"*/
+			"\"bits\":%d,"
 			"\"stripped\":%s,"
 			"\"static\":%s,"
 			"\"linenums\":%s,"
@@ -306,7 +306,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"relocs\":%s}",
 			STR(info->rclass), // type
 			STR(info->bclass), // class
-			/*info->big_endian? "big": "little",*/
+			info->big_endian? "big": "little",
 			STR(info->machine),
 			STR(info->arch),
 			STR(info->os),
@@ -316,7 +316,7 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool (info->has_nx),
 			r_str_bool (info->has_crypto),
 			r_str_bool (info->has_va),
-			/*info->bits,*/
+			info->bits,
 			r_str_bool ((R_BIN_DBG_STRIPPED & info->dbg_info)),
 			r_str_bool (r_bin_is_static (r->bin)),//R_BIN_DBG_STATIC (info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_LINENUMS & info->dbg_info)),
@@ -379,8 +379,6 @@ static int bin_info (RCore *r, int mode) {
 			// if type is 'fs' show something different?
 			//r_cons_printf ("# File info\n");
 			
-			/*pair ("file", info->file);*/
-			/*pair ("type", info->type);*/
 			pair ("pic", r_str_bool (info->has_pi));
 			pair ("canary", r_str_bool (info->has_canary));
 			pair ("nx", r_str_bool (info->has_nx));
@@ -390,11 +388,11 @@ static int bin_info (RCore *r, int mode) {
 			pair ("class", info->bclass);
 			pair ("lang", (info->lang && *info->lang)? info->lang: NULL);//"unknown");
 			pair ("arch", info->arch);
-			/*pair ("bits", sdb_fmt (0, "%d", info->bits));*/
+			pair ("bits", sdb_fmt (0, "%d", info->bits));
 			pair ("machine", info->machine);
 			pair ("os", info->os);
 			pair ("subsys", info->subsystem);
-			/*pair ("endian", info->big_endian? "big": "little");*/
+			pair ("endian", info->big_endian? "big": "little");
 			pair ("strip", r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			pair ("static", r_str_bool (r_bin_is_static (r->bin)));
 			pair ("linenum", r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info));
