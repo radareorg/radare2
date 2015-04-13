@@ -7,7 +7,7 @@ if [ -z "${CPU}" ]; then
 	#CPU=arm64
 fi
 if [ -z "${IOSVER}" ]; then
-	IOSVER=8.1
+	IOSVER=8.3
 fi
 
 DEVROOT=/Applications/Xcode.app/Contents/Developer
