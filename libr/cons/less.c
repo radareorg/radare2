@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2015 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>		/* less / regex search */
@@ -8,15 +8,15 @@ static void printpage (const char *line, int *index, RRegexMatch *ms,
 		       int from, int to, int w) {
 	int i;
 	const char *laddr;
-	RStrpool *p = r_strpool_new(0);
+	RStrpool *p;
 	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
 			R_CONS_INVERT(R_FALSE, R_TRUE)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 	r_cons_clear00 ();
 	if (from <0 || to <0) {
-		free (p);
 		return;
 	}
+	p = r_strpool_new(0);
 	for (i=from; i<to; i++) {
 		r_strpool_empty(p);
 		laddr = line + index[i];
