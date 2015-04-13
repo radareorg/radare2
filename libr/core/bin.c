@@ -1467,6 +1467,7 @@ static int bin_classes (RCore *r, int mode) {
 			r_name_filter (name, 0);
 			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
 			r_flag_set (r->flags, str, addr, 1, 0);
+			free (name);
 		}
 	} else {
 		r_cons_printf ("fs classes\n");

@@ -1505,10 +1505,11 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret) {
 
 static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *label;
-	if (!core || !ds || !f)
+	if (!core || !ds)
 		return R_FALSE;
-	if (!f)
+	if (!f) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, 0);
+	}
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
 	if (label) {
 		if (ds->show_color) {

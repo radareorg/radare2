@@ -302,6 +302,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}
+			break;
 		case '+':
 			r_flag_space_push (core->flags, input+2);
 			break;

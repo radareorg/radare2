@@ -2852,12 +2852,13 @@ R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 		int ord = 0;
 		r_list_foreach (imports, iter, imp) {
 			sym = R_NEW0 (RBinSymbol);
-			strcpy (sym->name, sdb_fmt(0, "imp.%s", imp->name));
+			strncpy (sym->name, sdb_fmt(0, "imp.%s", imp->name), sizeof(sym->name));
 			strcpy (sym->type, "import");
 			sym->vaddr = sym->paddr = imp->ordinal;
 			sym->ordinal = imp->ordinal;
 			r_list_append (symbols, (void *)sym);
 		}
+		r_list_free (imports);
 	 }
 
 	return symbols;

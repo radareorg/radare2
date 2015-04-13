@@ -13,8 +13,10 @@ static void printpage (const char *line, int *index, RRegexMatch *ms,
 			R_CONS_INVERT(R_FALSE, R_TRUE)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 	r_cons_clear00 ();
-	if (from <0 || to <0)
+	if (from <0 || to <0) {
+		free (p);
 		return;
+	}
 	for (i=from; i<to; i++) {
 		r_strpool_empty(p);
 		laddr = line + index[i];
