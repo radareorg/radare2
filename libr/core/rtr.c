@@ -370,6 +370,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	char *dir;
+	int ret = 0;
 	char headers[128] = {0};
 
 	if (path && atoi (path)) {
@@ -391,18 +392,17 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	}
 	s = r_socket_new (R_FALSE);
 	{
-		const char *http_bind = r_config_get (core->config, "http.bind");
-		if (http_bind && *http_bind) {
-			if (!strcmp (http_bind, "::1")) {
+		if (host && *host) {
+			if (!strcmp (host, "::1")) {
 				s->local = R_TRUE;
-			} else if (!strcmp (http_bind, "localhost")) {
+			} else if (!strcmp (host, "localhost")) {
 				s->local = R_TRUE;
-			} else if (!strcmp (http_bind, "127.0.0.1")) {
+			} else if (!strcmp (host, "127.0.0.1")) {
 				s->local = R_TRUE;
-			} else if (!strcmp (http_bind, "local")) {
+			} else if (!strcmp (host, "local")) {
 				s->local = R_TRUE;
 				r_config_set (core->config, "http.bind", "localhost");
-			} else if (http_bind[0]=='0' || !strcmp (http_bind, "public")) {
+			} else if (host[0]=='0' || !strcmp (host, "public")) {
 				// public
 				r_config_set (core->config, "http.bind", "0.0.0.0");
 				s->local = R_FALSE;
@@ -597,6 +597,18 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					char *out, *cmd = rs->path+5;
 					r_str_uri_decode (cmd);
 					r_config_set (core->config, "scr.interactive", "false");
+					if (!strcmp (cmd, "=h*")) {
+						if (r_sandbox_enable (0)) {
+							out = NULL;
+						} else {
+							/* do stuff */
+							out = NULL;
+							r_socket_http_close (rs);
+							free (dir);
+							ret = -2;
+							goto the_end;
+						}
+					}
 					if (*cmd == ':') {
 						/* commands in /cmd/: starting with : do not show any output */
 						r_core_cmd0 (core, cmd+1);
@@ -702,15 +714,30 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		r_socket_http_close (rs);
 		free (dir);
 	}
+the_end:
+{
+	int timeout = r_config_get_i (core->config, "http.timeout");
+	const char *host = r_config_get (core->config, "http.bind");
+	const char *port = r_config_get (core->config, "http.port");
+	const char *cors = r_config_get (core->config, "http.cors");
+	const char *allow = r_config_get (core->config, "http.allow");
+	const char *httpui = r_config_get (core->config, "http.ui");
+        core->config = origcfg;
+	r_config_set_i (core->config, "http.timeout", timeout);
+	r_config_set (core->config, "http.bind", host);
+	r_config_set (core->config, "http.port", port);
+	r_config_set (core->config, "http.cors", cors);
+	r_config_set (core->config, "http.allow", allow);
+	r_config_set (core->config, "http.ui", httpui);
+}
+	r_cons_break_end ();
 	core->http_up = R_FALSE;
 	r_socket_free (s);
-	r_cons_break_end ();
-	core->config = origcfg;
 	r_config_free (newcfg);
 	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
 	r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
 	r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
-	return 0;
+	return ret;
 }
 
 static int r_core_rtr_http_thread (RThread *th) {
@@ -726,6 +753,7 @@ static RThread *httpthread = NULL;
 #define USE_THREADS 1
 
 R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+	int ret;
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return 1;
@@ -759,7 +787,10 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		}
 		return 0;
 	}
-	return r_core_rtr_http_run (core, launch, path);
+	do {
+		ret = r_core_rtr_http_run (core, launch, path);
+	} while (ret == -2);
+	return ret;
 }
 
 R_API void r_core_rtr_help(RCore *core) {
@@ -779,6 +810,7 @@ R_API void r_core_rtr_help(RCore *core) {
 	"\nhttp server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
 	"=h-", "", "stop background webserver",
+	"=h*", "", "restart current webserver",
 	"=h&", " port", "start http server in background)",
 	"=H", " port", "launch browser and listen for http",
 	"=H&", " port", "launch browser and listen for http in background",
