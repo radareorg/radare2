@@ -230,7 +230,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 
 R_API int r_cons_grep_line(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
-	const char delims[4][2] = { "|", ",", ";", "\t" };
+	const char delims[5][2] = { "|", ",", ";", "=", "\t" };
 	char *in, *out, *tok = NULL;
 	int hit = cons->grep.neg;
 	int i, j, outlen = 0;
