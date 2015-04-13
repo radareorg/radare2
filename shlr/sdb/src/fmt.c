@@ -23,7 +23,6 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 	if (n==-1) {
 		if (fmt) {
 			n = cyclic_n++;
-			eprintf ("N = %d\n", n);
 			if (cyclic_n>15)
 				cyclic_n = 0;
 		} else {

@@ -28,6 +28,7 @@ extern "C" {
 #define SDB_MAX_KEY 0xff
 
 #if __WINDOWS__ && !__CYGWIN__
+#include <windows.h>
 #define SDB_MODE 0
 #else
 #define SDB_MODE 0644

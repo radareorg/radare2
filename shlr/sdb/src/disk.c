@@ -10,7 +10,6 @@
 #include "sdb.h"
 
 #if __WINDOWS__
-#include <windows.h>
 #define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
 #ifndef ERROR_ALREADY_EXISTS
 #define ERROR_ALREADY_EXISTS 183
