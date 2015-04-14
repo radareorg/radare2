@@ -66,6 +66,7 @@ addons:
   apt:
     packages:
       - dc # GNU dc, used by r2r.
+      - cabextract
 
 install:
   - git clone `doc/repo REGRESSIONS`
