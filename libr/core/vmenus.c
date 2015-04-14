@@ -729,13 +729,16 @@ R_API void r_core_visual_config(RCore *core) {
 	int menu = 0;
 	old[0]='\0';
 
+
 	option = 0;
 	for (;;) {
 		r_cons_clear00 ();
+		r_cons_get_size (&delta);
+		delta /= 4;
 
 		switch (menu) {
 		case 0: // flag space
-			r_cons_printf ("\n Eval spaces:\n\n");
+			r_cons_printf ("[EvalSpace]\n");
 			hit = j = i = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (option==i) {
@@ -765,7 +768,7 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_printf ("\n Sel:%s \n\n", fs);
 			break;
 		case 1: // flag selection
-			r_cons_printf ("\n Eval variables: (%s)\n\n", fs);
+			r_cons_printf ("[EvalSpace < Variables: %s]\n", fs);
 			hit = 0;
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
@@ -794,7 +797,7 @@ R_API void r_core_visual_config(RCore *core) {
 						fs2, desc);
 		}
 
-		if (fs && !memcmp (fs, "asm.", 4))
+		if (fs && !strncmp (fs, "asm.", 4))
 			r_core_cmd (core, "pd 5", 0);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
