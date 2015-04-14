@@ -50,7 +50,7 @@ env:
   - TESTS=asm.mips
   - TESTS=asm.tms320
   - TESTS=asm.z80
-  #- TESTS=asm.x86
+  - TESTS=asm.x86
   
   #- debugger
   #- TESTS=dbg.linux
