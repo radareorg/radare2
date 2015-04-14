@@ -908,12 +908,15 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 #if __WINDOWS__ && !__CYGWIN__
 	int tid = dbg->tid;
+	HANDLE hProcess=tid2handler (pid, tid);
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (tid2handler (pid, tid), &ctx)) {
+	if (!GetThreadContext (hProcess, &ctx)) {
 		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
+		CloseHandle(hProcess);
 		return R_FALSE;
 	}
+	CloseHandle(hProcess);
 	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
 #if __MINGW64__
 		eprintf ("TODO: r_debug_native_reg_read fpu/mmx/xmm\n");
@@ -1414,10 +1417,15 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		#if __WINDOWS__
 		int tid = dbg->tid;
 		int pid = dbg->pid;
+		BOOL ret;
+		HANDLE hProcess;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
+		hProcess=tid2handler (pid, tid);
+		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
+		CloseHandle(hProcess);
+		return ret;
 		#endif
 		return R_FALSE;
 #endif
@@ -1429,11 +1437,16 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		int pid = dbg->pid;
 #if __WINDOWS__ && !__CYGWIN__
 		int tid = dbg->tid;
+		BOOL ret;
+		HANDLE hProcess;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
-		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
+		hProcess=tid2handler (pid, tid);
+		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
+		CloseHandle(hProcess);
+		return ret;
 #elif __linux__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, (void*)buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
@@ -1773,7 +1786,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #if __APPLE__
 	list = darwin_dbg_maps (dbg);
 #elif __WINDOWS__ && !__CYGWIN__
-	list = w32_dbg_maps (); // TODO: moar?
+	list = w32_dbg_maps (dbg); // TODO: moar?
 #else
 #if __sun
 	char path[1024];
