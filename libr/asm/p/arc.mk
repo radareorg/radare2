@@ -10,7 +10,9 @@ STATIC_OBJ+=${OBJ_ARC}
 SHARED_OBJ+=${SHARED_ARC}
 TARGET_ARC=asm_arc.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_ARC}
 
 ${TARGET_ARC}: ${OBJ_ARC}
 	${CC} $(call libname,asm_arc) ${LDFLAGS} ${CFLAGS} -o ${TARGET_ARC} ${OBJ_ARC} ${SHARED2_ARC}
+endif

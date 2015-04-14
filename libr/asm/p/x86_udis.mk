@@ -13,7 +13,9 @@ STATIC_OBJ+=${OBJ_X86}
 SHARED_OBJ+=${SHARED_X86}
 TARGET_X86=asm_x86_udis.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_X86}
 
 ${TARGET_X86}: ${OBJ_X86}
 	${CC} $(call libname,asm_x86) ${LDFLAGS} ${CFLAGS} -o ${TARGET_X86} ${OBJ_X86} ${SHARED2_X86}
+endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -6,13 +6,6 @@
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 
 #define USE_RARUN 0
-
-static void my_io_redirect (RIO *io, const char *ref, const char *file) {
-	free (io->referer);
-	io->referer = ref? strdup (ref): NULL;
-	free (io->redirect);
-	io->redirect = file? strdup (file): NULL;
-}
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || \
 	__NetBSD__ || __KFBSD__ || __OpenBSD__
@@ -22,6 +15,13 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #endif
 
 #if DEBUGGER && DEBUGGER_SUPPORTED
+
+static void my_io_redirect (RIO *io, const char *ref, const char *file) {
+	free (io->referer);
+	io->referer = ref? strdup (ref): NULL;
+	free (io->redirect);
+	io->redirect = file? strdup (file): NULL;
+}
 
 #define MAGIC_EXIT 123
 
@@ -391,7 +391,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_debug = {
-        //void *plugin;
 	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
 	.license = "LGPL3",
@@ -400,20 +399,13 @@ RIOPlugin r_io_plugin_debug = {
 	.lseek = NULL,
 	.system = NULL,
 	.isdbg = R_TRUE,
-        //void *widget;
-/*
-        struct debug_t *debug;
-        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
-	int fds[R_IO_NFDS];
-*/
 };
-#else // DEBUGGER
+#else
 struct r_io_plugin_t r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
-	.debug = (void *)(size_t)1,
 };
-#endif // DEBUGGER
+#endif
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {

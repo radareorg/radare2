@@ -14,7 +14,9 @@ OBJ_TMS320+=../arch/tms320/c55x_plus/c55plus.o \
 STATIC_OBJ+=${OBJ_TMS320}
 TARGET_TMS320=asm_tms320.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_TMS320}
 
 ${TARGET_TMS320}: ${OBJ_TMS320}
 	${CC} $(call libname,asm_tms320) ${LDFLAGS} ${CFLAGS} ${OBJ_TMS320}
+endif

@@ -5,7 +5,9 @@ OBJ_DCPU16=asm_dcpu16.o
 STATIC_OBJ+=${OBJ_DCPU16}
 TARGET_DCPU16=asm_dcpu16.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_DCPU16}
 
 ${TARGET_DCPU16}: ${OBJ_DCPU16}
 	${CC} $(call libname,asm_dcpu16) ${LDFLAGS} ${CFLAGS} -o asm_dcpu16.${EXT_SO} ${OBJ_DCPU16}
+endif

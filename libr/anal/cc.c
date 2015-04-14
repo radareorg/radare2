@@ -193,7 +193,7 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 		{
 		       const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 		       const char *esil = r_strbuf_get (&op->esil);
-		       if (esil && strstr (esil, sp)) {
+		       if (esil && sp && strstr (esil, sp)) {
 			       cc->nargs = 0;
 		       }
 		}

@@ -4,8 +4,10 @@ OBJ_ELF64+=../format/elf/elf64.o ../format/elf/elf64_write.o
 STATIC_OBJ+=${OBJ_ELF64}
 TARGET_ELF64=bin_elf64.${EXT_SO}
 
+ifeq (${WITHPIC},1)
 ALL_TARGETS+=${TARGET_ELF64}
 
 ${TARGET_ELF64}: ${OBJ_ELF64}
 	-${CC} $(call libname,bin_elf64) -shared ${CFLAGS} \
 	$(OBJ_ELF64) $(LINK) $(LDFLAGS)
+endif

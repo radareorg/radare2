@@ -1392,6 +1392,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 					ret = thread_set_state (tid, i386_THREAD_STATE,
 						(thread_state_t) regs, gp_count);
 				}
+				break;
 			}
 #else
 			ret = thread_set_state (tid, R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);

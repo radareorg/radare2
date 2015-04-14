@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
 
+#if DEBUGGER
 #if __APPLE__
 #include <mach/vm_map.h>
 #include <mach/mach_init.h>
@@ -355,4 +356,18 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 			break;
 	 }
 }
+#endif
+
+#else // DEBUGGER
+struct r_io_plugin_t r_io_plugin_self = {
+	.name = "self",
+	.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
+};
+
+#ifndef CORELIB
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_IO,
+	.data = &r_io_plugin_mach
+};
+#endif
 #endif
