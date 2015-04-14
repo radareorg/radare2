@@ -263,12 +263,13 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
-static void print_compile_time(Sdb *binFileSdb) {
+static const char* get_compile_time(Sdb *binFileSdb) {
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", R_FALSE);
 	const char *timeDateStamp_string = sdb_const_get (info_ns,
 		"image_file_header.TimeDateStamp_string", 0);
 	if (timeDateStamp_string)
-		pair ("compiled", timeDateStamp_string);
+		return timeDateStamp_string;
+	return NULL; 
 }
 
 static int bin_info (RCore *r, int mode) {
@@ -277,6 +278,7 @@ static int bin_info (RCore *r, int mode) {
 	char size_str[21];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
+	const char *compiled = get_compile_time (binfile->sdb);
 	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
 
 	if (!info) {
@@ -286,7 +288,7 @@ static int bin_info (RCore *r, int mode) {
 	}
 
 	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("{\"type\":\"%s\","
+		r_cons_printf ("{\"bintype\":\"%s\","
 			"\"class\":\"%s\","
 			"\"endian\":\"%s\","
 			"\"machine\":\"%s\","
@@ -302,8 +304,14 @@ static int bin_info (RCore *r, int mode) {
 			"\"stripped\":%s,"
 			"\"static\":%s,"
 			"\"linenums\":%s,"
-			"\"syms\":%s,"
-			"\"relocs\":%s}",
+			"\"lsyms\":%s,"
+			"\"relocs\":%s,"
+			"\"rpath\":\"%s\","
+			"\"binsz\":%s,"
+			"\"subsys\":\"%s\","
+			"\"guid\":\"%s\","
+			"\"dbg_file\":\"%s\","
+			"\"compiled\":\"%s\"}",
 			STR(info->rclass), // type
 			STR(info->bclass), // class
 			info->big_endian? "big": "little",
@@ -321,7 +329,13 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool (r_bin_is_static (r->bin)),//R_BIN_DBG_STATIC (info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_LINENUMS & info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
-			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)));
+			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)),
+			STR(info->rpath),
+			STR(size_str),
+			STR(info->subsystem),
+			info->guid ? info->guid : "",
+			info->debug_file_name ? info->debug_file_name : "",
+			compiled ? compiled : "");
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_cons_printf ("arch %s\n", info->arch);
@@ -384,7 +398,7 @@ static int bin_info (RCore *r, int mode) {
 			pair ("nx", r_str_bool (info->has_nx));
 			pair ("crypto", r_str_bool (info->has_crypto));
 			pair ("va", r_str_bool (info->has_va));
-			pair ("root", info->rclass);
+			pair ("bintype", info->rclass);
 			pair ("class", info->bclass);
 			pair ("lang", (info->lang && *info->lang)? info->lang: NULL);//"unknown");
 			pair ("arch", info->arch);
@@ -393,18 +407,18 @@ static int bin_info (RCore *r, int mode) {
 			pair ("os", info->os);
 			pair ("subsys", info->subsystem);
 			pair ("endian", info->big_endian? "big": "little");
-			pair ("strip", r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
+			pair ("stripped", r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			pair ("static", r_str_bool (r_bin_is_static (r->bin)));
 			pair ("linenum", r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info));
 			pair ("lsyms", r_str_bool (R_BIN_DBG_SYMS &info->dbg_info));
 			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
 			pair ("rpath", info->rpath);
 			pair ("binsz", size_str);
+			pair ("compiled", compiled);
 			if (info->guid && *info->guid)
 				pair ("guid", info->guid);
 			if (info->debug_file_name)
 				pair ("dbg_file", info->debug_file_name);
-			print_compile_time(binfile->sdb);
 
 			for (i=0; info->sum[i].type; i++) {
 				int len;
