@@ -1192,10 +1192,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} else {
 			if (last_printed_address > core->offset) {
 				int delta = (last_printed_address - core->offset);
-				r_core_seek (core, core->offset-delta, 1);
+				if (core->offset >delta)
+					r_core_seek (core, core->offset-delta, 1);
+				else
+					r_core_seek (core, 0, 1);
 			} else {
 				ut64 at = (core->offset>obs)?core->offset-obs:0;
-				r_core_seek (core, at, 1);
+				if (core->offset >obs)
+					r_core_seek (core, at, 1);
+				else
+					r_core_seek (core, 0, 1);
 			}
 		}
 		break;
