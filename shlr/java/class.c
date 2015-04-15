@@ -2852,8 +2852,9 @@ R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 		int ord = 0;
 		r_list_foreach (imports, iter, imp) {
 			sym = R_NEW0 (RBinSymbol);
-			strncpy (sym->name, sdb_fmt(0, "imp.%s", imp->name), sizeof(sym->name));
-			strcpy (sym->type, "import");
+			strncpy (sym->name, sdb_fmt(0, "imp.%s", imp->name),
+				sizeof (sym->name)-1);
+			strcpy (sym->type, "import"); // TODO. use const string ptr assign
 			sym->vaddr = sym->paddr = imp->ordinal;
 			sym->ordinal = imp->ordinal;
 			r_list_append (symbols, (void *)sym);

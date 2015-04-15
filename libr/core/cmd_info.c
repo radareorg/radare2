@@ -77,7 +77,13 @@ static void r_core_file_info (RCore *core, int mode) {
 		}
 	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (cf && mode == R_CORE_BIN_JSON) {
-		r_cons_printf (",\"file\":\"%s\"", fn ? fn : cf->desc->uri);
+		const char *uri = fn;
+		if (!uri) {
+			if (cf->desc && cf->desc->uri && *cf->desc->uri) {
+				uri = cf->desc->uri;
+			} else uri = "";
+		}
+		r_cons_printf (",\"file\":\"%s\"", uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);

@@ -1524,6 +1524,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 		if (r_buf_read_at (bin->b, bin->resource_directory_offset + sizeof (*bin->resource_directory) + curRes * sizeof (typeEntry),
 				(ut8*)&typeEntry, sizeof (typeEntry)) != sizeof (typeEntry)) {
 			eprintf ("Error: read (resource type directory entry)\n");
+			sdb_free (sdb);
 			return;
 		}
 		if (!typeEntry.u1.s.NameIsString && typeEntry.u1.Id == PE_RESOURCE_ENTRY_VERSION) {
@@ -1531,6 +1532,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 			if (r_buf_read_at (bin->b, bin->resource_directory_offset + typeEntry.u2.s.OffsetToDirectory,
 					(ut8*)&identDir, sizeof (identDir)) != sizeof (identDir)) {
 				eprintf ("Error: read (resource identifier directory)\n");
+				sdb_free (sdb);
 				return;
 			}
 			ut32 totalIdent = identDir.NumberOfNamedEntries + identDir.NumberOfIdEntries;
@@ -1548,6 +1550,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 				if (r_buf_read_at (bin->b, bin->resource_directory_offset + identEntry.u2.s.OffsetToDirectory,
 						(ut8*)&langDir, sizeof (langDir)) != sizeof (langDir)) {
 					eprintf ("Error: read (resource language directory)\n");
+					sdb_free (sdb);
 					return;
 				}
 				ut32 totalLang = langDir.NumberOfNamedEntries + langDir.NumberOfIdEntries;
@@ -1557,6 +1560,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 					if (r_buf_read_at (bin->b, bin->resource_directory_offset + identEntry.u2.s.OffsetToDirectory + sizeof (langDir) +
 							curLang * sizeof (langEntry), (ut8*)&langEntry, sizeof (langEntry)) != sizeof (langEntry)) {
 						eprintf ("Error: read (resource language entry)\n");
+						sdb_free (sdb);
 						return;
 					}
 					if (langEntry.u2.s.DataIsDirectory)
@@ -1565,11 +1569,13 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 					if (r_buf_read_at (bin->b, bin->resource_directory_offset + langEntry.u2.OffsetToData,
 							(ut8*)&data, sizeof (data)) != sizeof (data)) {
 						eprintf ("Error: read (resource data entry)\n");
+						sdb_free (sdb);
 						return;
 					}
 					PE_DWord data_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, data.OffsetToData);
 					if (data_paddr == 0) {
 						eprintf ("Error: bad RVA in resource data entry\n");
+						sdb_free (sdb);
 						return;
 					}
 					PE_DWord cur_paddr = data_paddr;
@@ -1583,8 +1589,9 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 						if (vs_VersionInfo) {
 							snprintf(key, 30, "VS_VERSIONINFO%d", counter++);
 							sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info(vs_VersionInfo));
-						} else
+						} else {
 							break;
+						}
 						cur_paddr += vs_VersionInfo->wLength;
 						free_VS_VERSIONINFO(vs_VersionInfo);
 						align32(cur_paddr);
@@ -1593,10 +1600,8 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 			}
 		}
 	}
-	sdb_ns_set(bin->kv, "vs_version_info", sdb);
-	return;
+	sdb_ns_set (bin->kv, "vs_version_info", sdb);
 }
-
 
 static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->dos_header = NULL;
