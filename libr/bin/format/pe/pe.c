@@ -817,7 +817,7 @@ static void free_StringFileInfo(StringFileInfo *stringFileInfo) {
 
 #define align32(x) x = ((x & 0x3) == 0)? x: (x & ~0x3) + 0x4;
 
-static void free_VS_VERSIONINFO(VS_VERSIONINFO *vs_VersionInfo) {
+static void free_VS_VERSIONINFO(PE_VS_VERSIONINFO *vs_VersionInfo) {
 	if (vs_VersionInfo) {
 		free(vs_VersionInfo->szKey);
 		free(vs_VersionInfo->Value);
@@ -827,7 +827,7 @@ static void free_VS_VERSIONINFO(VS_VERSIONINFO *vs_VersionInfo) {
 	}
 }
 
-void PE_(free_VS_VERSIONINFO)(VS_VERSIONINFO *vs_VersionInfo) {
+void PE_(free_VS_VERSIONINFO)(PE_VS_VERSIONINFO *vs_VersionInfo) {
 	free_VS_VERSIONINFO(vs_VersionInfo);
 }
 
@@ -1235,8 +1235,8 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_ob
 	return stringFileInfo;
 }
 
-static VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord version_info_paddr) {
-	VS_VERSIONINFO *vs_VersionInfo = calloc (1, sizeof(*vs_VersionInfo));
+static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord version_info_paddr) {
+	PE_VS_VERSIONINFO *vs_VersionInfo = calloc (1, sizeof(*vs_VersionInfo));
 	if (vs_VersionInfo == NULL) {
 		eprintf ("Error: calloc (VS_VERSIONINFO)\n");
 		return NULL;
@@ -1302,12 +1302,12 @@ static VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj_t)
 
 	if (vs_VersionInfo->wValueLength) {
 		if (vs_VersionInfo->wValueLength != sizeof(*vs_VersionInfo->Value)) {
-			eprintf ("Error: check (VS_VERSIONINFO wValueLength != sizeof VS_FIXEDFILEINFO)\n");
+			eprintf ("Error: check (VS_VERSIONINFO wValueLength != sizeof PE_VS_FIXEDFILEINFO)\n");
 			free_VS_VERSIONINFO(vs_VersionInfo);
 			return NULL;
 		}
 
-		vs_VersionInfo->Value = (VS_FIXEDFILEINFO *) malloc (sizeof(*vs_VersionInfo->Value));
+		vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO *) malloc (sizeof(*vs_VersionInfo->Value));
 		if (vs_VersionInfo->Value == NULL) {
 			eprintf ("Error: malloc (VS_VERSIONINFO Value)\n");
 			free_VS_VERSIONINFO(vs_VersionInfo);
@@ -1321,7 +1321,7 @@ static VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj_t)
 		}
 
 		if (vs_VersionInfo->Value->dwSignature != 0xFEEF04BD) {
-			eprintf ("Error: check (VS_FIXEDFILEINFO signature)\n");
+			eprintf ("Error: check (PE_VS_FIXEDFILEINFO signature)\n");
 			free_VS_VERSIONINFO(vs_VersionInfo);
 			return NULL;
 		}
@@ -1471,7 +1471,7 @@ static Sdb *Pe_r_bin_store_string_file_info(StringFileInfo *stringFileInfo) {
 	return sdb;
 }
 
-static Sdb *Pe_r_bin_store_fixed_file_info(VS_FIXEDFILEINFO *vs_fixedFileInfo) {
+static Sdb *Pe_r_bin_store_fixed_file_info(PE_VS_FIXEDFILEINFO *vs_fixedFileInfo) {
 	if (vs_fixedFileInfo == NULL)
 		return NULL;
 	Sdb *sdb = sdb_new0();
@@ -1493,7 +1493,7 @@ static Sdb *Pe_r_bin_store_fixed_file_info(VS_FIXEDFILEINFO *vs_fixedFileInfo) {
 	return sdb;
 }
 
-static Sdb *Pe_r_bin_store_resource_version_info(VS_VERSIONINFO *vs_VersionInfo) {
+static Sdb *Pe_r_bin_store_resource_version_info(PE_VS_VERSIONINFO *vs_VersionInfo) {
 	if (vs_VersionInfo == NULL)
 		return NULL;
 	Sdb *sdb = sdb_new0();
@@ -1579,7 +1579,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 						continue;
 					}
 					while(cur_paddr < data_paddr + data.Size) {
-						VS_VERSIONINFO *vs_VersionInfo = Pe_r_bin_pe_parse_version_info(bin, cur_paddr);
+						PE_VS_VERSIONINFO *vs_VersionInfo = Pe_r_bin_pe_parse_version_info(bin, cur_paddr);
 						if (vs_VersionInfo) {
 							snprintf(key, 30, "VS_VERSIONINFO%d", counter++);
 							sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info(vs_VersionInfo));

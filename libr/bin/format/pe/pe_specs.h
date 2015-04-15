@@ -457,56 +457,56 @@ typedef struct {
 	Var **Children; //Typically contains a list of languages that the application or DLL supports.
 } VarFileInfo;
 
-#define VS_FF_DEBUG        0x00000001L
-#define VS_FF_PRERELEASE   0x00000002L
-#define VS_FF_PATCHED      0x00000004L
-#define VS_FF_PRIVATEBUILD 0x00000008L
-#define VS_FF_INFOINFERRED 0x00000010L
-#define VS_FF_SPECIALBUILD 0x00000020L
+#define PE_VS_FF_DEBUG        0x00000001L
+#define PE_VS_FF_PRERELEASE   0x00000002L
+#define PE_VS_FF_PATCHED      0x00000004L
+#define PE_VS_FF_PRIVATEBUILD 0x00000008L
+#define PE_VS_FF_INFOINFERRED 0x00000010L
+#define PE_VS_FF_SPECIALBUILD 0x00000020L
 
-#define VOS_DOS        0x00010000L
-#define VOS_NT         0x00040000L
-#define VOS__WINDOWS16 0x00000001L
-#define VOS__WINDOWS32 0x00000004L
-#define VOS_OS216      0x00020000L
-#define VOS_OS232      0x00030000L
-#define VOS__PM16      0x00000002L
-#define VOS__PM32      0x00000003L
-#define VOS_UNKNOWN    0x00000000L
+#define PE_VOS_DOS        0x00010000L
+#define PE_VOS_NT         0x00040000L
+#define PE_VOS__WINDOWS16 0x00000001L
+#define PE_VOS__WINDOWS32 0x00000004L
+#define PE_VOS_OS216      0x00020000L
+#define PE_VOS_OS232      0x00030000L
+#define PE_VOS__PM16      0x00000002L
+#define PE_VOS__PM32      0x00000003L
+#define PE_VOS_UNKNOWN    0x00000000L
 
-#define VOS_DOS_WINDOWS16 0x00010001L
-#define VOS_DOS_WINDOWS32 0x00010004L
-#define VOS_NT_WINDOWS32  0x00040004L
-#define VOS_OS216_PM16    0x00020002L
-#define VOS_OS232_PM32    0x00030003L
+#define PE_VOS_DOS_WINDOWS16 0x00010001L
+#define PE_VOS_DOS_WINDOWS32 0x00010004L
+#define PE_VOS_NT_WINDOWS32  0x00040004L
+#define PE_VOS_OS216_PM16    0x00020002L
+#define PE_VOS_OS232_PM32    0x00030003L
 
-#define VFT_APP        0x00000001L
-#define VFT_DLL        0x00000002L
-#define VFT_DRV        0x00000003L
-#define VFT_FONT       0x00000004L
-#define VFT_STATIC_LIB 0x00000007L
-#define VFT_UNKNOWN    0x00000000L
-#define VFT_VXD        0x00000005L
+#define PE_VFT_APP        0x00000001L
+#define PE_VFT_DLL        0x00000002L
+#define PE_VFT_DRV        0x00000003L
+#define PE_VFT_FONT       0x00000004L
+#define PE_VFT_STATIC_LIB 0x00000007L
+#define PE_VFT_UNKNOWN    0x00000000L
+#define PE_VFT_VXD        0x00000005L
 
-#define VFT2_DRV_COMM              0x0000000AL
-#define VFT2_DRV_DISPLAY           0x00000004L
-#define VFT2_DRV_INSTALLABLE       0x00000008L
-#define VFT2_DRV_KEYBOARD          0x00000002L
-#define VFT2_DRV_LANGUAGE          0x00000003L
-#define VFT2_DRV_MOUSE             0x00000005L
-#define VFT2_DRV_NETWORK           0x00000006L
-#define VFT2_DRV_PRINTER           0x00000001L
-#define VFT2_DRV_SOUND             0x00000009L
-#define VFT2_DRV_SYSTEM            0x00000007L
-#define VFT2_DRV_VERSIONED_PRINTER 0x0000000CL
-#define VFT2_UNKNOWN               0x00000000L
+#define PE_VFT2_DRV_COMM              0x0000000AL
+#define PE_VFT2_DRV_DISPLAY           0x00000004L
+#define PE_VFT2_DRV_INSTALLABLE       0x00000008L
+#define PE_VFT2_DRV_KEYBOARD          0x00000002L
+#define PE_VFT2_DRV_LANGUAGE          0x00000003L
+#define PE_VFT2_DRV_MOUSE             0x00000005L
+#define PE_VFT2_DRV_NETWORK           0x00000006L
+#define PE_VFT2_DRV_PRINTER           0x00000001L
+#define PE_VFT2_DRV_SOUND             0x00000009L
+#define PE_VFT2_DRV_SYSTEM            0x00000007L
+#define PE_VFT2_DRV_VERSIONED_PRINTER 0x0000000CL
+#define PE_VFT2_UNKNOWN               0x00000000L
 
-#define VFT2_FONT_RASTER   0x00000001L
-#define VFT2_FONT_TRUETYPE 0x00000003L
-#define VFT2_FONT_VECTOR   0x00000002L
-#define VFT2_UNKNOWN       0x00000000L
+#define PE_VFT2_FONT_RASTER   0x00000001L
+#define PE_VFT2_FONT_TRUETYPE 0x00000003L
+#define PE_VFT2_FONT_VECTOR   0x00000002L
+#define PE_VFT2_UNKNOWN       0x00000000L
 
-typedef struct tagVS_FIXEDFILEINFO {
+typedef struct {
 	ut32 dwSignature; //Contains the value 0xFEEF04BD
 	ut32 dwStrucVersion;
 	ut32 dwFileVersionMS;
@@ -520,7 +520,7 @@ typedef struct tagVS_FIXEDFILEINFO {
 	ut32 dwFileSubtype;
 	ut32 dwFileDateMS;
 	ut32 dwFileDateLS;
-} VS_FIXEDFILEINFO;
+} PE_VS_FIXEDFILEINFO;
 
 typedef struct {
 	ut16             wLength; //whole structure size (padding not included (in case of multiply version info structures))
@@ -528,10 +528,10 @@ typedef struct {
 	ut16             wType; //1 text; 0 binary
 	ut16             *szKey; //L"VS_VERSION_INFO"
 	//ut16             Padding1; //pad for 32 boundary
-	VS_FIXEDFILEINFO *Value;
+	PE_VS_FIXEDFILEINFO *Value;
 	//ut16             Padding2; //pad for 32 boundary
 	VarFileInfo      *varFileInfo; //0 or 1 elements
 	StringFileInfo   *stringFileInfo; //0 or 1 elements
-} VS_VERSIONINFO;
+} PE_VS_VERSIONINFO;
 
 #endif
