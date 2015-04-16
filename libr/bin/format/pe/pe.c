@@ -1542,6 +1542,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 				if (r_buf_read_at (bin->b, bin->resource_directory_offset + typeEntry.u2.s.OffsetToDirectory + sizeof (identDir) +
 						curIdent * sizeof (identEntry), (ut8*)&identEntry, sizeof (identEntry)) != sizeof (identEntry)) {
 					eprintf ("Error: read (resource identifier entry)\n");
+					sdb_free (sdb);
 					return;
 				}
 				if (!identEntry.u2.s.DataIsDirectory)

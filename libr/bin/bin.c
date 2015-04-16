@@ -871,9 +871,10 @@ static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
 	if (!bf || !bf->rbin || !obj || !obj->info)
 		return R_FALSE;
 	iob = &(bf->rbin->iob);
-	io = iob ? iob->get_io (iob) : NULL;
-	if (!io || !iob)
-		return R_FALSE;
+	if (!iob) return R_FALSE;
+	if (!iob->get_io) return R_FALSE;
+	io = iob->get_io (iob);
+	if (!io) return R_FALSE;
 #if 0
 	// clear loaded sections
 	//r_io_section_clear (io);
