@@ -1822,6 +1822,11 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		switch (input[1]) {
+		case 'c': // "pdc"
+			r_core_pseudo_code (core, input+2);
+			pd_result = 0;
+			processed_cmd = R_TRUE;
+			break;
 		case 'i': // "pdi"
 			processed_cmd = R_TRUE;
 			if (*input == 'D')
@@ -2017,8 +2022,9 @@ static int cmd_print(void *data, const char *input) {
 				"pd", " -N", "disassemble N instructions backward",
 				"pD", " N", "disassemble N bytes",
 				"pda", "", "disassemble all possible opcodes (byte per byte)",
-				"pdj", "", "disassemble to json",
 				"pdb", "", "disassemble basic block",
+				"pdc", "", "pseudo diassembler output in C-link syntax",
+				"pdj", "", "disassemble to json",
 				"pdr", "", "recursive disassemble across the function graph",
 				"pdf", "", "disassemble function",
 				"pdi", "", "like 'pi', with offset and bytes",

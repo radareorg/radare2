@@ -22,21 +22,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "adc",  "1 += 2"},
 		{ "add",  "1 += 2"},
 		{ "and",  "1 &= 2"},
+		{ "not",  "1 = !1"},
 		{ "swap", "swap 1, 2"},
-		{ "call", "call 1"},
 		{ "cmovl","ifnot zf,1 = 2"},
-		{ "cmp",  "cmp 1, 2"},
 		{ "dec",  "1--"},
 		{ "div",  "1 /= 2"},
 		{ "inc",  "1++"},
 		{ "idiv",  "1 /= 2"},
 		{ "imul",  "1 *= 2"},
 		{ "in",   "1 = io[2]"},
-		{ "je",   "je 1"},
 		{ "jmp",  "goto 1"},
 		{ "lea",  "1 = 2"},
 		{ "mov",  "1 = 2"},
-		{ "movzx",  "1 = 2"},
+		{ "movzx", "1 = 2"},
+		{ "cmove", "1 = 2"},
+		{ "movsxd","1 = 2"},
 		{ "mul",  "1 *= 2"},
 		{ "neg",  "1 ~= 1"},
 		{ "nop",  ""},
@@ -50,7 +50,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "shl",  "1 <<<= 2"},
 		{ "shr",  "1 >>>= 2"},
 		{ "sub",  "1 -= 2"},
-		{ "test", "cmp 1, 2"},
+		{ "cmp", "if (1 == 2"},
+		{ "jg", "isGreater 1)"},
+		{ "ja", "isAbove 1)"},
+		{ "je", "isZero 1)"},
+		{ "jle", "isLessOrEqual 1)"},
+		{ "jge", "isGreaterOrEqual 1)"},
+		{ "jne", "notZero 1)"},
+		{ "call", "1 ()"},
+		{ "test", "if (1 == 2)"},
 		{ "xor",  "1 ^= 2"},
 		{ NULL }
 	};
@@ -68,7 +76,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w != NULL) {
-							strcpy(newstr+k, w);
+							strcpy (newstr+k, w);
 							k += strlen(w)-1;
 						}
 					} else newstr[k] = ops[i].str[j];

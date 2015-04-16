@@ -1470,7 +1470,7 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 static void handle_print_indent (RCore *core, RDisasmState *ds) {
 	if (ds->show_indent) {
 		char indent[128];
-		int num = ds->indent_level;
+		int num = ds->indent_level * 4;
 		if (num<0) num = 0;
 		if (num>=sizeof (indent))
 			num = sizeof(indent)-1;

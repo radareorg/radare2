@@ -98,7 +98,7 @@ typedef struct r_anal_type_var_t {
 	ut16 type; // contain (type || signedness || modifier)
 	ut8 size;
 	union {
-		ut8	 v8;
+		ut8  v8;
 		ut16 v16;
 		ut32 v32;
 		ut64 v64;
@@ -110,7 +110,7 @@ typedef struct r_anal_type_ptr_t {
 	ut16 type; // contain (type || signedness || modifier)
 	ut8 size;
 	union {
-		ut8 v8;
+		ut8  v8;
 		ut16 v16;
 		ut32 v32;
 		ut64 v64;
@@ -694,6 +694,8 @@ typedef struct r_anal_bb_t {
 	ut8 *op_bytes;
 	ut8 op_sz;
 	ut64 eflags;
+	/* deprecate ??? where is this used? */
+	/* iirc only java. we must use r_anal_bb_from_offset(); instead */
 	struct r_anal_bb_t *head;
 	struct r_anal_bb_t *tail;
 	struct r_anal_bb_t *next;
