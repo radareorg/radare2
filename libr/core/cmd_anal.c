@@ -78,8 +78,13 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_var_list_show (core->anal, fcn, core->offset);
 			goto end;
 		case '-':
-			r_anal_var_delete (core->anal, fcn->addr, type, 1, (int)
-				r_num_math (core->num, str+1));
+			if (fcn) {
+				r_anal_var_delete (core->anal, fcn->addr,
+					type, 1, (int)
+					r_num_math (core->num, str+1));
+			} else {
+				eprintf ("Cnnot find function here\n");
+			}
 			goto end;
 		case 'n':
 			str++;

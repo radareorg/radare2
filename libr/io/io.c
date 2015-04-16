@@ -540,7 +540,7 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 // TODO. this is a physical resize
 R_API int r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin) {
-		if (io->plugin->resize) {
+		if (io->plugin->resize && io->desc) {
 			int res = io->plugin->resize (io, io->desc, newsize);
 			if (res)
 				r_io_map_truncate_update (io, io->desc->fd, newsize);
