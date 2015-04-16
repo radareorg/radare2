@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -170,9 +170,11 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
 	RCons *cons = r_cons_singleton ();
-	r_cons_set_raw (0);
-	r_cons_show_cursor (1);
 	int ret = 0, color = cons->pal.input && *cons->pal.input;
+	if (cons->echo) {
+		r_cons_set_raw (0);
+		r_cons_show_cursor (1);
+	}
 #if 0
 	int mouse = r_cons_enable_mouse (R_FALSE);
 	r_cons_enable_mouse (R_FALSE);
@@ -224,7 +226,7 @@ R_API int r_cons_any_key(const char *msg) {
 static int readchar_win() {
 	int ch=0;
 	BOOL ret;
-	BOOL bCtrl=FALSE;
+	BOOL bCtrl = FALSE;
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf[128];
@@ -234,17 +236,17 @@ do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0 | ENABLE_MOUSE_INPUT); // RAW
-	ret= ReadConsoleInput(h,irInBuf,128,&out);
+	ret = ReadConsoleInput (h, irInBuf, 128, &out);
 	if (ret) {
 		for (i = 0; i < out; i++) {
 			if (irInBuf[i].EventType==MOUSE_EVENT) {
-				switch(irInBuf[i].Event.MouseEvent.dwEventFlags) {
-					case MOUSE_WHEELED:
-						if (irInBuf[i].Event.MouseEvent.dwButtonState & 0xFF000000)
-							ch='j';
-						else
-							ch='k';
-					break;
+				switch (irInBuf[i].Event.MouseEvent.dwEventFlags) {
+				case MOUSE_WHEELED:
+					if (irInBuf[i].Event.MouseEvent.dwButtonState & 0xFF000000)
+						ch='j';
+					else
+						ch='k';
+				break;
 				}
 			}
 			if (irInBuf[i].EventType==KEY_EVENT) {
