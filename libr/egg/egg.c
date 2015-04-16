@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_egg.h>
 #include "../config.h"
@@ -255,10 +255,11 @@ R_API int r_egg_compile(REgg *egg) {
 			egg->remit->init (egg);
 	}
 #endif
-	if (b && *b)
-	for (; *b; b++) {
-		r_egg_lang_parsechar (egg, *b);
-		// XXX: some parse fail errors are false positives :(
+	if (b && *b) {
+		for (; b[0]; b++) {
+			r_egg_lang_parsechar (egg, *b);
+			// XXX: some parse fail errors are false positives :(
+		}
 	}
 	if (egg->context>0) {
 		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);

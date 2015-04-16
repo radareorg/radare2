@@ -249,10 +249,11 @@ R_API char *r_buf_to_string(RBuffer *b) {
 R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
 	if (!b) return R_FALSE;
 	if (b->empty) b->length = b->empty = 0;
-	if (!(b->buf = realloc (b->buf, b->length+length))) {
+	if (!(b->buf = realloc (b->buf, 1+b->length+length))) {
 		return R_FALSE;
 	}
 	memmove (b->buf+b->length, buf, length);
+	b->buf[b->length+length] = 0;
 	b->length += length;
 	return R_TRUE;
 }
