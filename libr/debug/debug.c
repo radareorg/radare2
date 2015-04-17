@@ -624,21 +624,34 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 }
 
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+	RSyscallItem *si;
+	char regname[8];
 	const char *sysname;
-	int i, reg, ret = R_FALSE;
+	int i, reg, args, ret = R_FALSE;
 	if (!dbg || !dbg->h || r_debug_is_dead (dbg))
 		return R_FALSE;
 	if (!dbg->h->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
 		reg = (int)r_debug_reg_get (dbg, "a0"); // XXX
-		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
-		if (!sysname) sysname = "unknown";
-		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x")\n",
-			r_debug_reg_get (dbg, "pc"), reg, sysname,
-			r_debug_reg_get (dbg, "a0"),
-			r_debug_reg_get (dbg, "a1"),
-			r_debug_reg_get (dbg, "a2"));
+		si = r_syscall_get (dbg->anal->syscall, reg, -1);
+		if (si) {
+			sysname = si->name? si->name: "unknown";
+			args = si->args;
+		} else {
+			sysname = "unknown";
+			args = 3;
+		}
+		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (",
+			r_debug_reg_get (dbg, "pc"), reg, sysname);
+		for (i=0; i<args; i++) {
+			ut64 val;
+			snprintf (regname, sizeof (regname)-1, "a%d", i);
+			val = r_debug_reg_get (dbg, regname);
+			eprintf ("0x%"PFMT64x"%s", val, (i+1==args)?"":" ");
+		}
+		eprintf (")\n");
+		r_syscall_item_free (si);
 		return reg;
 	}
 
