@@ -38,7 +38,7 @@ Did you ever ordered a pizza using radare2?
 I thought we were friends. :_
 Welcome back, lazy human!
 Yo dawg!
----8<--------------------8<------------------8<-----------------8<--- --
+---8<--------------------8<------------------8<-----------------8<------
 I accidentally the kernel with radare2.
 I endians swap.
 This page intentionally left blank.
@@ -61,7 +61,6 @@ It's not you, it's me.
 This software comes with no brain included. Please use your own.
 rm: /: Permission denied.
 That's embarrassing.
-Connection with license server failed.
 In soviet Afghanistan, you debug radare2!
 Wow, my cat knows radare2 hotkeys better than me!
 Documentation is for weak people.
@@ -146,3 +145,14 @@ Too old to crash
 Finnished a beer
 ESIL ruined my life
 ESIL: The Aftersleep
+Please insert coin
+See you in shell
+Mess with the best, Die like the rest
+Sarah Connor?
+Log On. Hack In. Go Anywhere. Get Everything.
+phrack, better than java in the browser -- jvoisin
+Did you know that radare2 can decompile to assembly?
+Are you still there?
+Follow the white rabbit
+Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: the is no binary.
+Hello Mr. Anderson
