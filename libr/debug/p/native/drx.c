@@ -79,8 +79,8 @@
 
 int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	ut32 control = drx[DR_CONTROL];
-	if (n<0 || n>4) {
-		eprintf ("Invalid DRX index (0-4)\n");
+	if (n < 0 || n >= DR_NADDR) {
+		eprintf ("Invalid DRX index (0-%d)\n", DR_NADDR-1);
 		return R_FALSE;
 	}
 	switch (rwx) {
