@@ -1,112 +1,112 @@
 #!/bin/sh
 
-shellcheck ./env.sh
-shellcheck ./sys/duktape.sh
-shellcheck ./sys/android-arm.sh
-shellcheck ./sys/dist-bin.sh
-shellcheck ./sys/bokken.sh
-shellcheck ./sys/install.sh
-shellcheck ./sys/emscripten.sh
-shellcheck ./sys/build-harden.sh
-shellcheck ./sys/dist.sh
-shellcheck ./sys/swig.sh
-shellcheck ./sys/all.sh
-shellcheck ./sys/mingw32-python-deps.sh
-shellcheck ./sys/python-dist.sh
-shellcheck ./sys/ios-sdk-gcc
-shellcheck ./sys/vala.sh
-shellcheck ./sys/clone-r2-bindings.sh
-shellcheck ./sys/tiny.sh
-shellcheck ./sys/mingw32-deps.sh
-shellcheck ./sys/install-rev.sh
-shellcheck ./sys/uninstall.sh
-shellcheck ./sys/maemo.sh
-shellcheck ./sys/mingw32-python.sh
-shellcheck ./sys/gtkaml.sh
-shellcheck ./sys/jam.sh
-shellcheck ./sys/android-aarch64.sh
-shellcheck ./sys/mingw64-deps.sh
-shellcheck ./sys/osx-pkg.sh
-shellcheck ./sys/cherrypull.sh
-shellcheck ./sys/afl.sh
-shellcheck ./sys/python-deps.sh
-shellcheck ./sys/android-x86.sh
-shellcheck ./sys/lua.sh
-shellcheck ./sys/android-shell.sh
-shellcheck ./sys/asan.sh
-shellcheck ./sys/ndk-gcc
-shellcheck ./sys/mingw64.sh
-shellcheck ./sys/ios-static.sh
-shellcheck ./sys/python-bindist.sh
-shellcheck ./sys/full-uninstall.sh
-shellcheck ./sys/user.sh
-shellcheck ./sys/locdiff
-shellcheck ./sys/osx-pkg-uninstall.sh
-shellcheck ./sys/whereis.sh
-shellcheck ./sys/extras.sh
-shellcheck ./sys/android-mips.sh
-shellcheck ./sys/valabind.sh
-shellcheck ./sys/dist-all.sh
-shellcheck ./sys/clang-analyzer.sh
-shellcheck ./sys/farm/push.sh
-shellcheck ./sys/farm/check.sh
-shellcheck ./sys/farm/bins.sh
-shellcheck ./sys/farm/prepare.sh
-shellcheck ./sys/farm/html.sh
-shellcheck ./sys/farm/run.sh
-shellcheck ./sys/farm/daemon.sh
-shellcheck ./sys/ios-simulator.sh
-shellcheck ./sys/android-build.sh
-shellcheck ./sys/find-regression.sh
-shellcheck ./sys/indent.sh
-shellcheck ./sys/farm.sh
-shellcheck ./sys/static.sh
-shellcheck ./sys/clean.sh
-shellcheck ./sys/osx-pkg-uninstall.tool
-shellcheck ./sys/mingw32.sh
-shellcheck ./sys/ldconfig.sh
-shellcheck ./sys/build.sh
-shellcheck ./sys/python-r2pipe.sh
-shellcheck ./sys/android-mips64.sh
-shellcheck ./sys/ios-cydia.sh
-shellcheck ./sys/sync.sh
-shellcheck ./sys/gtk.sh
-shellcheck ./sys/python.sh
-shellcheck ./sys/update.sh
-shellcheck ./autogen.sh
-shellcheck ./binr/rax2/test-rax2.sh
-shellcheck ./binr/ragg2/ragg2-cc
-shellcheck ./binr/old.rarc2/rarc2-tool
-shellcheck ./configure
-shellcheck ./mk/rapi-list
-shellcheck ./doc/repo
-shellcheck ./doc/dexdump.sh
-shellcheck ./configure-plugins
-shellcheck ./libr/egg/t/t-fun5.sh
-shellcheck ./libr/egg/t/t-fun.sh
-shellcheck ./libr/egg/t/t-strlen.sh
-shellcheck ./libr/egg/t/t-fun4.sh
-shellcheck ./libr/egg/t/t-fun6.sh
-shellcheck ./libr/egg/t/t-nest2.sh
-shellcheck ./libr/egg/t/t-exit1.sh
-shellcheck ./libr/egg/t/t-looptail.sh
-shellcheck ./libr/egg/t/t-loop.sh
-shellcheck ./libr/egg/t/t-nest3.sh
-shellcheck ./libr/egg/t/t-nest.sh
-shellcheck ./libr/egg/t/t-fun3.sh
-shellcheck ./libr/egg/t/t-hello.sh
-shellcheck ./libr/egg/t/t-fun2.sh
-shellcheck ./libr/egg/t/t-loop2.sh
-shellcheck ./libr/symgraph.pl
-shellcheck ./libr/fs/p/makeplugin.sh
-shellcheck ./libr/depgraph.pl
-shellcheck ./libr/syscall/d/par.sh
-shellcheck ./libr/syscall/d/gen.sh
-shellcheck ./libr/stripsyms.sh
-shellcheck ./libr/asm/t/test.new
-shellcheck ./libr/asm/t/test.nz
-shellcheck ./libr/asm/t/test.arm
-shellcheck ./libr/asm/t/lops.sh
-shellcheck ./libr/asm/t/test.cmp
-shellcheck ./media/Radare2.iosapp/Radare2
-shellcheck ./configure.hook
+shellcheck --format=gcc ./env.sh
+shellcheck --format=gcc ./sys/duktape.sh
+shellcheck --format=gcc ./sys/android-arm.sh
+shellcheck --format=gcc ./sys/dist-bin.sh
+shellcheck --format=gcc ./sys/bokken.sh
+shellcheck --format=gcc ./sys/install.sh
+shellcheck --format=gcc ./sys/emscripten.sh
+shellcheck --format=gcc ./sys/build-harden.sh
+shellcheck --format=gcc ./sys/dist.sh
+shellcheck --format=gcc ./sys/swig.sh
+shellcheck --format=gcc ./sys/all.sh
+shellcheck --format=gcc ./sys/mingw32-python-deps.sh
+shellcheck --format=gcc ./sys/python-dist.sh
+shellcheck --format=gcc ./sys/ios-sdk-gcc
+shellcheck --format=gcc ./sys/vala.sh
+shellcheck --format=gcc ./sys/clone-r2-bindings.sh
+shellcheck --format=gcc ./sys/tiny.sh
+shellcheck --format=gcc ./sys/mingw32-deps.sh
+shellcheck --format=gcc ./sys/install-rev.sh
+shellcheck --format=gcc ./sys/uninstall.sh
+shellcheck --format=gcc ./sys/maemo.sh
+shellcheck --format=gcc ./sys/mingw32-python.sh
+shellcheck --format=gcc ./sys/gtkaml.sh
+shellcheck --format=gcc ./sys/jam.sh
+shellcheck --format=gcc ./sys/android-aarch64.sh
+shellcheck --format=gcc ./sys/mingw64-deps.sh
+shellcheck --format=gcc ./sys/osx-pkg.sh
+shellcheck --format=gcc ./sys/cherrypull.sh
+shellcheck --format=gcc ./sys/afl.sh
+shellcheck --format=gcc ./sys/python-deps.sh
+shellcheck --format=gcc ./sys/android-x86.sh
+shellcheck --format=gcc ./sys/lua.sh
+shellcheck --format=gcc ./sys/android-shell.sh
+shellcheck --format=gcc ./sys/asan.sh
+shellcheck --format=gcc ./sys/ndk-gcc
+shellcheck --format=gcc ./sys/mingw64.sh
+shellcheck --format=gcc ./sys/ios-static.sh
+shellcheck --format=gcc ./sys/python-bindist.sh
+shellcheck --format=gcc ./sys/full-uninstall.sh
+shellcheck --format=gcc ./sys/user.sh
+shellcheck --format=gcc ./sys/locdiff
+shellcheck --format=gcc ./sys/osx-pkg-uninstall.sh
+shellcheck --format=gcc ./sys/whereis.sh
+shellcheck --format=gcc ./sys/extras.sh
+shellcheck --format=gcc ./sys/android-mips.sh
+shellcheck --format=gcc ./sys/valabind.sh
+shellcheck --format=gcc ./sys/dist-all.sh
+shellcheck --format=gcc ./sys/clang-analyzer.sh
+shellcheck --format=gcc ./sys/farm/push.sh
+shellcheck --format=gcc ./sys/farm/check.sh
+shellcheck --format=gcc ./sys/farm/bins.sh
+shellcheck --format=gcc ./sys/farm/prepare.sh
+shellcheck --format=gcc ./sys/farm/html.sh
+shellcheck --format=gcc ./sys/farm/run.sh
+shellcheck --format=gcc ./sys/farm/daemon.sh
+shellcheck --format=gcc ./sys/ios-simulator.sh
+shellcheck --format=gcc ./sys/android-build.sh
+shellcheck --format=gcc ./sys/find-regression.sh
+shellcheck --format=gcc ./sys/indent.sh
+shellcheck --format=gcc ./sys/farm.sh
+shellcheck --format=gcc ./sys/static.sh
+shellcheck --format=gcc ./sys/clean.sh
+shellcheck --format=gcc ./sys/osx-pkg-uninstall.tool
+shellcheck --format=gcc ./sys/mingw32.sh
+shellcheck --format=gcc ./sys/ldconfig.sh
+shellcheck --format=gcc ./sys/build.sh
+shellcheck --format=gcc ./sys/python-r2pipe.sh
+shellcheck --format=gcc ./sys/android-mips64.sh
+shellcheck --format=gcc ./sys/ios-cydia.sh
+shellcheck --format=gcc ./sys/sync.sh
+shellcheck --format=gcc ./sys/gtk.sh
+shellcheck --format=gcc ./sys/python.sh
+shellcheck --format=gcc ./sys/update.sh
+shellcheck --format=gcc ./autogen.sh
+shellcheck --format=gcc ./binr/rax2/test-rax2.sh
+shellcheck --format=gcc ./binr/ragg2/ragg2-cc
+shellcheck --format=gcc ./binr/old.rarc2/rarc2-tool
+shellcheck --format=gcc ./configure
+shellcheck --format=gcc ./mk/rapi-list
+shellcheck --format=gcc ./doc/repo
+shellcheck --format=gcc ./doc/dexdump.sh
+shellcheck --format=gcc ./configure-plugins
+shellcheck --format=gcc ./libr/egg/t/t-fun5.sh
+shellcheck --format=gcc ./libr/egg/t/t-fun.sh
+shellcheck --format=gcc ./libr/egg/t/t-strlen.sh
+shellcheck --format=gcc ./libr/egg/t/t-fun4.sh
+shellcheck --format=gcc ./libr/egg/t/t-fun6.sh
+shellcheck --format=gcc ./libr/egg/t/t-nest2.sh
+shellcheck --format=gcc ./libr/egg/t/t-exit1.sh
+shellcheck --format=gcc ./libr/egg/t/t-looptail.sh
+shellcheck --format=gcc ./libr/egg/t/t-loop.sh
+shellcheck --format=gcc ./libr/egg/t/t-nest3.sh
+shellcheck --format=gcc ./libr/egg/t/t-nest.sh
+shellcheck --format=gcc ./libr/egg/t/t-fun3.sh
+shellcheck --format=gcc ./libr/egg/t/t-hello.sh
+shellcheck --format=gcc ./libr/egg/t/t-fun2.sh
+shellcheck --format=gcc ./libr/egg/t/t-loop2.sh
+shellcheck --format=gcc ./libr/symgraph.pl
+shellcheck --format=gcc ./libr/fs/p/makeplugin.sh
+shellcheck --format=gcc ./libr/depgraph.pl
+shellcheck --format=gcc ./libr/syscall/d/par.sh
+shellcheck --format=gcc ./libr/syscall/d/gen.sh
+shellcheck --format=gcc ./libr/stripsyms.sh
+shellcheck --format=gcc ./libr/asm/t/test.new
+shellcheck --format=gcc ./libr/asm/t/test.nz
+shellcheck --format=gcc ./libr/asm/t/test.arm
+shellcheck --format=gcc ./libr/asm/t/lops.sh
+shellcheck --format=gcc ./libr/asm/t/test.cmp
+shellcheck --format=gcc ./media/Radare2.iosapp/Radare2
+shellcheck --format=gcc ./configure.hook
