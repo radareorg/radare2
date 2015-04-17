@@ -249,7 +249,7 @@ static int cmd_write(void *data, const char *input) {
 				num = 1;
 			} else num = r_num_math (core->num, input+2);
 		}
-		switch (input[1]) {
+		switch (input[2] ? input[1] : 0) {
 		case '+':
 			cmd_write_inc (core, *input-'0', num);
 			break;
