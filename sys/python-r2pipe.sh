@@ -5,9 +5,9 @@ cd `dirname $PWD/$0`
 cd ..
 
 . ./sys/CONFIG
-echo =============
+echo "============="
 cat sys/CONFIG
-echo =============
+echo "============="
 cd radare2-bindings
 cd r2pipe/python
 ${SUDO} make install

@@ -91,7 +91,7 @@ esac
 #LDFLAGS="${LDFLAGS} -Wl,-dynamic-linker=/system/bin/linker"
 
 LDFLAGS="${LDFLAGS} --sysroot=${PLATFORM_ROOT}"
-#if [ -z "`echo $@ | grep shared`" ]; then
+#if [ -z "`echo "$@"" | grep shared`" ]; then
 #LDFLAGS="${LDFLAGS} ${PLATFORM_PATH}/lib/crtbegin_dynamic.o"
 #fi
 CC=${NDKPFX}-gcc
@@ -100,5 +100,5 @@ EXT_SO=so
 
 export PATH=${NDK_BINS}:$PATH
 export EXT_SO AR CC CFLAGS LDFLAGS PATH
-# echo ${CC} ${CFLAGS} ${LDFLAGS} $@
-${CC} ${CFLAGS} ${LDFLAGS} $@
+# echo ${CC} ${CFLAGS} ${LDFLAGS} "$@""
+${CC} ${CFLAGS} ${LDFLAGS} "$@"

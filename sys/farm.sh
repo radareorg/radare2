@@ -33,7 +33,7 @@ testcc() {
 }
 
 log() {
-	echo $@ ; echo $@ >> ${LOGFILE}
+	echo "$@" ; echo "$@" >> ${LOGFILE}
 }
 
 logchk() {

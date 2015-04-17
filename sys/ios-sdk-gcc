@@ -60,4 +60,4 @@ LDFLAGS="-L ${IOSROOT}/usr/lib/ ${LDFLAGS}"
 #fi
 
 # arm64
-${CC} ${CFLAGS} ${LDFLAGS} $@
+${CC} ${CFLAGS} ${LDFLAGS} "$@"

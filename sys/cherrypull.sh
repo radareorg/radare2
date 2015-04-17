@@ -7,7 +7,7 @@ RR=$1
 RB=$2
 N=$3
 
-git diff --exit-code 2>&1 >/dev/null
+git diff --exit-code >/dev/null 2>&1
 if [ $? != 0 ]; then
 	echo "ERROR: There are local changes that must be committed or reseted"
 	echo "ERROR: Cherrypulling process stopped to avoid data loss."

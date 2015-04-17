@@ -6,9 +6,9 @@ cd `dirname $PWD/$0`
 cd ..
 
 . ./sys/CONFIG
-echo =============
+echo "============="
 cat sys/CONFIG
-echo =============
+echo "============="
 
 [ -z "${PREFIX}" ] && PREFIX=/usr
 ID=`id -u` 

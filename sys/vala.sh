@@ -9,14 +9,14 @@ cd `dirname $PWD/$0`
 mkdir -p _work
 cd _work
 
-ccache --help 2>&1 > /dev/null
+ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then
 	[ -z "${CC}" ] && CC=gcc
 	CC="ccache ${CC}"
 	export CC
 fi
 
-valac --help 2>&1 >/dev/null
+valac --help > /dev/null 2>&1
 if [ ! $? = 0 ]; then
 	# must install from tarball
 	VV=0.13.4

@@ -8,7 +8,7 @@ if [ -d .git ]; then
 	git pull
 fi
 
-ccache --help 2>&1 > /dev/null
+ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then
 	[ -z "${CC}" ] && CC=gcc
 	CC="ccache ${CC}"

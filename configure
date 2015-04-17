@@ -397,7 +397,7 @@ USE_LIB_MAGIC="0"
 LIBMAGIC="-lr_magic"; fi
 printf 'checking pkg-config flags for capstone... '
 tmp=`pkg-config --cflags capstone 2>/dev/null`
-if [ '!' $? = 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
+if [ $? = 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
 else 
 CAPSTONE_CFLAGS=$tmp; 
 tmp=`pkg-config --libs capstone 2>/dev/null`
@@ -427,7 +427,7 @@ HAVE_GMP="0"
 check_library HAVE_LIB_SSL ssl 0 
 printf 'checking pkg-config flags for openssl... '
 tmp=`pkg-config --cflags openssl 2>/dev/null`
-if [ '!' $? = 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
+if [ $? = 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
 else 
 SSL_CFLAGS=$tmp; 
 tmp=`pkg-config --libs openssl 2>/dev/null`
