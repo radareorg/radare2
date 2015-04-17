@@ -45,7 +45,7 @@ logchk() {
 }
 
 logcmd() {
-	eval "( $@ ; logchk $? ) ${DOLOG}"
+	eval "( $* ; logchk $? ) ${DOLOG}"
 }
 
 r2uninstall() {
