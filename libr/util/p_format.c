@@ -935,6 +935,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const char *arg = NULL;
 	int viewflags = 0;
 	char namefmt[8], *field = NULL;
+	char *oarg = NULL;
 	static int slide=0, oldslide=0;
 	ut8 *buf;
 	if (!formatname)
@@ -1024,7 +1025,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		arg = orig;
 		for (idx=0; i<len && arg<argend && *arg; arg++) {
 			int size = 0, elem = 0; /* size of the array, element of the array */
-			char *fieldname = NULL, *fmtname = NULL, *oarg = NULL;
+			char *fieldname = NULL, *fmtname = NULL;
 			if (mode & R_PRINT_UNIONMODE) {
 				i = 0;
 			}
@@ -1058,6 +1059,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					dot = strchr (field, '.');
 				if (dot)
 					*dot = '\0';
+				if (oarg != NULL)
+					free (oarg);
 				oarg = fieldname = strdup(r_str_word_get0 (args, idx));
 				if (ISSTRUCT || tmp=='E' || tmp=='B') {
 					if (*fieldname == '(') {
@@ -1066,13 +1069,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						if (fieldname) *fieldname++ = '\0';
 						else {
 							eprintf ("Missing closing parenthesis in format ')'\n");
-							free (oarg);
-							oarg = NULL;
 							goto beach;
 						}
 					} else {
 						eprintf ("Missing name (%s)\n", fieldname);
-						free(oarg);
 						goto beach;
 					}
 				}
@@ -1087,8 +1087,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					char *end = strchr (field, ']');
 					if (end == NULL) {
 						eprintf ("Missing closing bracket\n");
-						free(oarg);
-						oarg = NULL;
 						goto beach;
 					}
 					*end = '\0';
@@ -1125,8 +1123,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					eprintf ("(SEGFAULT: cannot read memory at 0x%08"PFMT64x", Block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
 					p->printf("\n");
-					free (oarg);
-					oarg = NULL;
 					goto beach;
 				}
 				}
@@ -1163,8 +1159,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case '.': // skip 1 byte
 				if (size == -1) i++;
 				else i+=size;
-				free (oarg);
-				oarg = NULL;
 				continue;
 			case 'p': // pointer reference
 				tmp = (p->bits == 64)? 'q': 'x';
@@ -1375,8 +1369,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (tmp != 'D' && !invalid && fmtname==NULL && MUSTSEE)
 				p->printf ("\n");
 			last = tmp;
-			free (oarg);
-			oarg = NULL;
 		}
 		if (otimes>1) {
 			if (MUSTSEEJSON) p->printf ("]");
@@ -1387,6 +1379,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	}
 	if (mode & R_PRINT_JSON && slide==0) p->printf("]");
 beach:
+	if (oarg != NULL)
+		free (oarg);
 	free (buf);
 	free (field);
 	free (args);
