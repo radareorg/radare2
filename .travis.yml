@@ -35,6 +35,7 @@ env:
   - TESTS=format.mach0
   - TESTS=format.xbe
   - TESTS=format.firmware
+  - TESTS=format.others
 
   #- (dis)assemblers
   - TESTS=asm.8051
