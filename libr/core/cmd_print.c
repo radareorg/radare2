@@ -1183,8 +1183,8 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			if (core->print->cur >=i && core->print->cur < i+opsz)
 				r_cons_invert (1, 1);
 		}
+		char buf[2];
 		if (onechar) {
-			char buf[2];
 			if (text) {
 				if (text[0] == '_' || text[0] == '.')
 					buf[0] = text[1];
