@@ -2839,7 +2839,7 @@ static int cmd_print(void *data, const char *input) {
 				oldzoom = strdup (r_config_get (core->config, "zoom.byte"));
 				if (!r_config_set (core->config, "zoom.byte", input+1)) {
 					eprintf ("Invalid zoom.byte mode (%s)\n", input+1);
-					free (oldzoom);
+					R_FREE (oldzoom);
 					do_zoom = 0;
 				}
 			}
@@ -2849,7 +2849,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			if (oldzoom) {
 				r_config_set (core->config, "zoom.byte", oldzoom);
-				free (oldzoom);
+				R_FREE (oldzoom);
 			}
 			if (oldva)
 				core->io->va = oldva;
