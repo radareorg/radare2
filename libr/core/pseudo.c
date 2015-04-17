@@ -44,11 +44,13 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	r_cons_printf ("function %s () {", fcn->name);
 	int indent = 1;
 	int nindent = 1;
+
 	do {
 #define I_TAB 4
 #define K_ELSE(x) sdb_fmt(0,"else.%"PFMT64x,x)
 #define K_INDENT(x) sdb_fmt(0,"loc.%"PFMT64x,x)
 #define SET_INDENT(x) { memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
+		if (!bb) break;
 		r_cons_push ();
 		char *code = r_core_cmd_str (core, sdb_fmt(0,
 			"pDI %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
