@@ -85,7 +85,9 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
 R_API void r_core_syscmd_ls(const char *input) {
 	const char *path = ".";
-	char *p, *d = NULL;
+	char *d = NULL;
+	char *p = NULL;
+	char *homepath = NULL;
 	char *pattern = NULL;
 	int printfmt = 0;
 	RListIter *iter;
@@ -107,11 +109,25 @@ R_API void r_core_syscmd_ls(const char *input) {
 			}
 		} else path = input+2;
 	}
+
+	if (*path == '~')	{
+		homepath = r_str_home (path+2);
+		path = (const char *)homepath;
+	}
+	else if (*path == '$'){
+		if (!strncmp (path+1, "home", 4) || !strncmp (path+1, "HOME", 4)){
+			if (!*(path+6))
+				homepath = r_str_home (NULL);
+			else homepath = r_str_home (path+6);
+			path = (const char *)homepath;
+		}
+	}
+	
 	if (!r_file_is_directory (path)){
 		p = strrchr(path, '/');
 		if (p){
 			off = p - path;
-			d = (char *) calloc (1, off);
+			d = (char *) calloc (1, off+1);
 			if (!d) return;
 			memcpy (d, path, off);
 			path = (const char *)d;
@@ -145,6 +161,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 	if (printfmt == FMT_JSON) r_cons_printf ("]");
 	free (dir);
 	if (d) free (d);
+	if (homepath) free (homepath);
 	free (pattern);
 	r_list_free (files);
 }
