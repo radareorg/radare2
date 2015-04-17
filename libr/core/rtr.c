@@ -405,6 +405,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			} else if (host[0]=='0' || !strcmp (host, "public")) {
 				// public
 				r_config_set (core->config, "http.bind", "0.0.0.0");
+				host = "127.0.0.1";
 				s->local = R_FALSE;
 			} else {
 				s->local = R_TRUE;
