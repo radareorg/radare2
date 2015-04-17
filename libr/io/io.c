@@ -805,11 +805,18 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
+			if (desc == io->desc) {
+				cur = NULL;
+			}
 			r_io_map_del (io, nfd);
 			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, nfd, io->plugin);
-			if (io->plugin && io->plugin->close)
-				return io->plugin->close (desc);
+			if (io->plugin && io->plugin->close) {
+				int ret = io->plugin->close (desc);
+				if (desc == io->desc)
+					io->desc = NULL;
+				return ret;
+			}
 			r_io_desc_del (io, desc->fd);
 		}
 	}
