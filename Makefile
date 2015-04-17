@@ -250,6 +250,9 @@ tests:
 	fi
 	cd $(R2R) ; ${MAKE}
 
+quality:
+	./sys/shellcheck.sh
+
 include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
