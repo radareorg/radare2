@@ -45,7 +45,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		"wor"," [val]", ">>= shift right",
 		"wol"," [val]","<<= shift left",
 		"wo2"," [val]","2=  2 byte endian swap",
-		"wo4"," [val]", " 4=  4 byte endian swap",
+		"wo4"," [val]", "4=  4 byte endian swap",
 		"woD"," [len]","De Bruijn Pattern (syntax woD length @ addr)",
 		"woO"," [len]", "De Bruijn Pattern Offset (syntax: woO value)",
 		NULL
