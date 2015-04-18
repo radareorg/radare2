@@ -648,14 +648,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default: r_core_anal_fcn_list (core, NULL, 'q'); break; // "afl"
 		}
 		break;
-	case '*': // "af*"
-		// like 'afl*', but only for 1 function
-		r_core_anal_fcn_list (core, "$$", '*'); break;
-		break;
-	case 'j':
-		// alias for 'aflj'
-		r_core_anal_fcn_list (core, NULL, 'j'); break; // "afj"
-		break;
 	case 's': { // "afs"
 			  ut64 addr;
 			  RAnalFunction *f;
@@ -901,7 +893,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "af", " [name] ([addr]) (@ [addr])", "analyze functions (start at addr)",
 		 "af+", " addr size name [type] [diff]", "add function",
 		 "af-", " [addr]", "clean all function analysis data (or function at addr)",
-		 "af*", "", "output radare commands",
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
 		 "afb+", " fa a sz [j] [f] ([t]( [d]))","add bb to function @ fcnaddr",
@@ -911,7 +902,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-		 "afj", " [addr|fcn.name]", "show function(s) information in JSON",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
 		 "afo", " [fcn.name]", "show address for the function named like this",
 		 "afn", " name [addr]", "rename name for function at address (change flag too)",
