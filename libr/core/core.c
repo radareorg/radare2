@@ -1450,6 +1450,7 @@ reaccept:
 								ptr = (ut8 *) malloc (i+6);
 								if (!ptr) {
 									fclose (fd);
+									r_socket_close (c);
 									return R_FALSE;
 								}
 								r = fread (ptr+5, i, 1, fd);

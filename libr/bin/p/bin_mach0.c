@@ -116,13 +116,13 @@ static RList* sections(RBinFile *arch) {
 }
 
 static RList* symbols(RBinFile *arch) {
-	struct symbol_t *symbols = NULL;
-	RList *ret = r_list_new ();
-	RBinSymbol *ptr = NULL;
 	int i;
+	struct symbol_t *symbols = NULL;
+	RBinSymbol *ptr = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
+	RList *ret = r_list_newf (free);
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
+	if (!obj || !obj->bin_obj || !ret)
 		return NULL;
 
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj)))

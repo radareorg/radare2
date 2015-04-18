@@ -182,6 +182,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 					s->fd = -1;
 					return R_FALSE;
 				}
+				freeaddrinfo (res);
 				return R_TRUE;
 			}
 			if (ret<0) {

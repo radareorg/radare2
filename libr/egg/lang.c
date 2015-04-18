@@ -382,6 +382,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		rcc_pushstr (egg, str, mustfilter);
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
+	free (oldstr);
 	return ret;
 }
 

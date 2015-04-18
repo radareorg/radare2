@@ -1473,6 +1473,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	if (!Elf_(r_bin_elf_init) (bin)) {
 		return Elf_(r_bin_elf_free) (bin);
 	}
+	free (buf);
 	return bin;
 }
 

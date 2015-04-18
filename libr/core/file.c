@@ -76,6 +76,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// closing the file to make sure there are no collisions
 	// when the new memory maps are created.
 	path = strdup (ofilepath);
+	free (obinfilepath);
 	obinfilepath = strdup(ofilepath);
 
 	file = r_core_file_open (core, path, perm, baddr);

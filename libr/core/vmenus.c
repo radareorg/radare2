@@ -970,6 +970,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 			case '/':
+				if (root) R_FREE (root);
 				root = strdup ("/");
 				strncpy (path, root, sizeof (path)-1);
 				R_FREE (root);
