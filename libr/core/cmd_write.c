@@ -178,7 +178,7 @@ static int cmd_write(void *data, const char *input) {
 	char _fn[32];
 	ut64 off;
 	ut8 *buf;
-	st64 num;
+	st64 num = 0;
 	const char* help_msg[] = {
 		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
 		"w","[1248][+-][n]","increment/decrement byte,word..",
