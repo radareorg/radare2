@@ -307,6 +307,11 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case ARM_INS_POP:
+	case ARM_INS_FLDMDBX:
+	case ARM_INS_FLDMIAX:
+	case ARM_INS_LDMDA:
+	case ARM_INS_LDMDB:
+	case ARM_INS_LDMIB:
 	case ARM_INS_LDM:
 		op->type = R_ANAL_OP_TYPE_POP;
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
@@ -347,6 +352,9 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	case ARM_INS_VQMOVN:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
+	case ARM_INS_SVC:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case ARM_INS_AND:
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
@@ -375,6 +383,18 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	case ARM_INS_LDR:
 	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
+	case ARM_INS_LDRBT:
+	case ARM_INS_LDREX:
+	case ARM_INS_LDREXB:
+	case ARM_INS_LDREXD:
+	case ARM_INS_LDREXH:
+	case ARM_INS_LDRH:
+	case ARM_INS_LDRHT:
+	case ARM_INS_LDRSB:
+	case ARM_INS_LDRSBT:
+	case ARM_INS_LDRSH:
+	case ARM_INS_LDRSHT:
+	case ARM_INS_LDRT:
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -424,6 +444,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = (a->bits==16)? 2: 4;
+	op->stackop = R_ANAL_STACK_NULL;
 	op->delay = 0;
 	op->jump = op->fail = -1;
 	op->addr = addr;
