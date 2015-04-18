@@ -29,6 +29,7 @@
 #define ACTION_SIZE      0x40000
 #define ACTION_PDB       0x80000
 #define ACTION_PDB_DWNLD 0x100000
+#define ACTION_DLOPEN    0x200000
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
@@ -53,18 +54,19 @@ static int rabin_show_help(int v) {
 		" -A              list archs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
-		" -G [addr]       load address . offset to header\n"
 		" -B [addr]       override base address (pie bins)\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name\n"
 		" -e              entrypoint\n"
+		" -E              show loading offset (useful for non-ASLR libraries)"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -k [query]      perform sdb query on loaded file\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -g              same as -SMResiz (show all info)\n"
+		" -G [addr]       load address . offset to header\n"
 		" -h              this help\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -88,7 +90,6 @@ static int rabin_show_help(int v) {
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
 		" -v              display version and quit\n"
-		//" -V              show version information\n"
 		" -x              extract bins contained in file\n"
 		" -z              strings (from data section)\n"
 		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
@@ -390,7 +391,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:c:Ck:K:dD:Mm:n:N:@:isSIHelRwO:o:pPrvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:c:Ck:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPrvLhxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -457,6 +458,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'D': do_demangle = argv[optind]; break;
 		case 'e': set_action (ACTION_ENTRIES); break;
+		case 'E': set_action (ACTION_DLOPEN); break;
 		case 'M': set_action (ACTION_MAIN); break;
 		case 'l': set_action (ACTION_LIBS); break;
 		case 'R': set_action (ACTION_RELOCS); break;
@@ -505,7 +507,6 @@ int main(int argc, char **argv) {
 				  }
 				  free (p);
 			} break;
-		//case 'V': return blob_version ("rabin2");
 		case 'h':
 			  r_core_fini (&core);
 			  return rabin_show_help (1);
@@ -579,7 +580,7 @@ int main(int argc, char **argv) {
 		code = malloc (strlen (p)+1);
 		if (!code) {
 			r_core_fini (&core);
-		    return 1;
+			return 1;
 		}
 		codelen = r_hex_str2bin (p, code);
 		if (!arch) arch = "x86";
@@ -605,6 +606,17 @@ int main(int argc, char **argv) {
 		unset_action (ACTION_STRINGS);
 	}
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
+
+	if (file && *file && action&ACTION_DLOPEN) {
+		void *addr = r_lib_dl_open (file);
+		if (addr) {
+			printf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(addr));
+			r_lib_dl_close (addr);
+		} else
+			printf("Cannot open the '%s' library\n", file);
+		return 0;
+	}
+
 	if (file && *file) {
 		cf = r_core_file_open (&core, file, R_IO_READ, 0);
 		fd = cf ? r_core_file_cur_fd (&core) : -1;
