@@ -29,6 +29,9 @@ enum {
 	R_REG_NAME_A1,
 	R_REG_NAME_A2,
 	R_REG_NAME_A3,
+	R_REG_NAME_A4,
+	R_REG_NAME_A5,
+	R_REG_NAME_A6,
 	/* flags */
 	R_REG_NAME_ZF,
 	R_REG_NAME_SF,

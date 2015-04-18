@@ -118,7 +118,7 @@ install-doc-symlink:
 	cd doc ; for a in * ; do \
 		ln -fs "${PWD}/doc/$$a" "${PFX}/share/doc/radare2" ; done
 
-install: install-doc install-man install-www
+install love: install-doc install-man install-www
 	cd libr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}" PARENT=1
 	cd binr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}"
 	cd shlr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}"
@@ -256,4 +256,4 @@ quality:
 include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
-.PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png
+.PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
