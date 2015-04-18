@@ -991,6 +991,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	int onechar = r_config_get_i (core->config, "hex.onechar");
 	int show_cursor = core->print->cur_enabled;
 	int bgcolor_in_heap = R_FALSE;
+	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
 	RAnalOp op;
@@ -1183,7 +1184,6 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			if (core->print->cur >=i && core->print->cur < i+opsz)
 				r_cons_invert (1, 1);
 		}
-		char buf[2];
 		if (onechar) {
 			if (text) {
 				if (text[0] == '_' || text[0] == '.')
