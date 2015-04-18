@@ -1409,7 +1409,7 @@ repeat_arroba:
 		if (ptr[0] && ptr[1]==':' && ptr[2]) {
 			usemyblock = 1;
 			switch (ptr[0]) {
-			case 'f': // "@f:"
+			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr+2, &sz);
 				if (f) {
 					buf = malloc (sz);
@@ -1422,17 +1422,20 @@ repeat_arroba:
 					free (f);
 				} else eprintf ("cannot open '%s'\n", ptr+3);
 				break;
-			case '8':
-			case 'b': // "@b:"
-				buf = malloc (strlen (ptr+2)+1);
-				if (!buf) {
-					eprintf ("cannot allocate\n");
-					return R_FALSE;
-				}
-				len = r_hex_str2bin (ptr+2, buf);
-				r_core_block_size (core, len);
-				memcpy (core->block, buf, core->blocksize);
-				free (buf);
+			case 'b': // "@b:" // bits
+				r_config_set_i (core->config, "asm.bits",
+					r_num_math (core->num, ptr+2));
+				break;
+			case 'x': // "@x:" // hexpairs
+				if (ptr[1]==':') {
+					buf = malloc (strlen (ptr+2)+1);
+					if (buf) {
+						len = r_hex_str2bin (ptr+2, buf);
+						r_core_block_size (core, len);
+						memcpy (core->block, buf, core->blocksize);
+						free (buf);
+					} else eprintf ("cannot allocate\n");
+				} else eprintf ("Invalid @x: syntax\n");
 				break;
 			case 'a': // "@a:"
 				if (ptr[1]==':') {
@@ -1555,6 +1558,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
 		"x", " @@=off1 off2 ..", "manual list of offsets",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
+		// TODO: Add @@k sdb-query-expression-here
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		}
