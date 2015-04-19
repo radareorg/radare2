@@ -677,26 +677,20 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 	}
 	for (;;) {
+		if (r_cons_singleton()->breaked)
+			break;
+#if __linux__
+		// step is needed to avoid dupped contsc results
+		r_debug_step (dbg, 1);
+#endif
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
 		r_debug_wait (dbg);
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			eprintf ("--> eol\n");
+			eprintf ("--> cannot sync regs, process is probably dead\n");
 			return -1;
 		}
 		reg = show_syscall (dbg, "sn");
-#if 0
-		reg = (int)r_debug_reg_get (dbg, "sn");
-		if (reg == (int)UT64_MAX)
-			return -1;
-		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
-		if (!sysname) sysname = "unknown";
-		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x")\n",
-			r_debug_reg_get (dbg, "pc"), reg, sysname,
-			r_debug_reg_get (dbg, "a0"),
-			r_debug_reg_get (dbg, "a1"),
-			r_debug_reg_get (dbg, "a2"));
-#endif
 		if (n_sc == -1)
 			continue;
 		if (n_sc == 0) {

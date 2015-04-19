@@ -50,7 +50,7 @@ static int textlog_chat (RCore *core) {
 
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char *arg, *input2;
+	const char *arg, *input2;
 	int n, n2;
 
 	if (!input)
