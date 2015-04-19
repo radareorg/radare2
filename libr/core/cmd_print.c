@@ -1271,7 +1271,7 @@ static int cmd_print(void *data, const char *input) {
 	if (len > core->blocksize)
 		len = core->blocksize;
 
-	if (input[0] != 'd' && input[0] != 'm' && input[0]!='a') {
+	if (input[0] != 'd' && input[0] != 'm' && input[0]!='a' && input[0] != 'f') {
 		n = core->blocksize_max;
 		i = (int)n;
 		if (i != n) i = 0;
