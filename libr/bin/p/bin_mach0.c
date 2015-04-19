@@ -122,8 +122,12 @@ static RList* symbols(RBinFile *arch) {
 	RBinObject *obj = arch ? arch->o : NULL;
 	RList *ret = r_list_newf (free);
 
-	if (!obj || !obj->bin_obj || !ret)
+	if (!ret)
 		return NULL;
+	if (!obj || !obj->bin_obj) {
+		free (ret);
+		return NULL;
+	}
 
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj)))
 		return ret;

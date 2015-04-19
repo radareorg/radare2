@@ -721,10 +721,13 @@ int send_ack(libgdbr_t* g) {
 }
 
 int send_command(libgdbr_t* g, const char* command) {
-	uint8_t checksum = cmd_checksum (command);
+	uint8_t checksum;
 	int ret;
+
 	if (!g || !command)
 		return -1;
+
+	checksum = cmd_checksum (command);
 	ret = snprintf(g->send_buff, g->send_max,
 		"$%s#%.2x", command, checksum);
 	if (ret >= 0) {

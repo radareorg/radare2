@@ -161,6 +161,8 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
 	if (!strcmp (arg, "close")) {
 		//egg->remit->syscall_args ();
 	}
+	if (!item)
+		return;
 	egg->remit->syscall (egg, item->num);
 }
 

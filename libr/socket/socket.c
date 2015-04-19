@@ -180,6 +180,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 				if (ret == -1) {
 					close (s->fd);
 					s->fd = -1;
+					freeaddrinfo (res);
 					return R_FALSE;
 				}
 				freeaddrinfo (res);

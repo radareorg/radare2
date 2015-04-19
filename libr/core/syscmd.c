@@ -122,7 +122,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 			path = (const char *)homepath;
 		}
 	}
-	
+
 	if (!r_file_is_directory (path)){
 		p = strrchr(path, '/');
 		if (p){
@@ -136,9 +136,12 @@ R_API void r_core_syscmd_ls(const char *input) {
 			pattern = strdup (path);
 			path = ".";
 		}
-	} else pattern = strdup ("*");		
+	} else pattern = strdup ("*");
 	if (r_file_is_regular (path)) {
 		showfile (0, path, path, printfmt);
+		free (homepath);
+		free (pattern);
+		free (d);
 		return;
 	}
 	files = r_sys_dir (path);
