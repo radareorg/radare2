@@ -117,6 +117,9 @@ static void cmd_write_value (RCore *core, const char *input) {
 	ut64 addr8, off = 0LL;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 
+	if (!input)
+		return;
+
 	if (input[0])
 	switch (input[1]) {
 	case '?':
