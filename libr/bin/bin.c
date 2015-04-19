@@ -597,7 +597,6 @@ if (r_list_length (bin->binfiles)==0) {
 	if (sz == UT64_MAX)
 		return R_FALSE;
 	sz = R_MIN (file_sz, sz);
-
 	if (!buf_bytes) {
 		iob->desc_seek (io, desc, baseaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
