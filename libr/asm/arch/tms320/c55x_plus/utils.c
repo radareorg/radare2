@@ -7,6 +7,7 @@
 
 static char hex_str[] = "01234567890abcdef";
 
+// TODO: Add in a Coverity modelling file
 st8 *strcat_dup(st8 *s1, st8 *s2, st32 n_free)
 {
 	st8 *res;
