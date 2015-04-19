@@ -14,6 +14,53 @@ ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
 	return 0LL;
 }
 
+static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
+	if (!bin)
+		return R_FALSE;
+	if (!(bin->header = malloc(sizeof(TE_image_file_header)))) {
+		r_sys_perror ("malloc (header)");
+		return R_FALSE;
+	}
+	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof(TE_image_file_header)) == -1) {
+		eprintf("Error: read (header)\n");
+		return R_FALSE;
+	}
+	if (!bin->kv) {
+		eprintf("Error: sdb instance is empty\n");
+		return R_FALSE;
+	}
+
+	sdb_set (bin->kv, "te_machine.cparse", "enum te_machine { TE_IMAGE_FILE_MACHINE_UNKNOWN=0x0, TE_IMAGE_FILE_MACHINE_ALPHA=0x184, "
+	"TE_IMAGE_FILE_MACHINE_ALPHA64=0x284, TE_IMAGE_FILE_MACHINE_AM33=0x1d3, TE_IMAGE_FILE_MACHINE_AMD64=0x8664, "
+	"TE_IMAGE_FILE_MACHINE_ARM=0x1c0, TE_IMAGE_FILE_MACHINE_AXP64=0x184, TE_IMAGE_FILE_MACHINE_CEE=0xc0ee, "
+	"TE_IMAGE_FILE_MACHINE_CEF=0x0cef, TE_IMAGE_FILE_MACHINE_EBC=0x0ebc, TE_IMAGE_FILE_MACHINE_I386=0x014c, "
+	"TE_IMAGE_FILE_MACHINE_IA64=0x0200, TE_IMAGE_FILE_MACHINE_M32R=0x9041, TE_IMAGE_FILE_MACHINE_M68K=0x0268, "
+	"TE_IMAGE_FILE_MACHINE_MIPS16=0x0266, TE_IMAGE_FILE_MACHINE_MIPSFPU=0x0366, TE_IMAGE_FILE_MACHINE_MIPSFPU16=0x0466, "
+	"TE_IMAGE_FILE_MACHINE_POWERPC=0x01f0, TE_IMAGE_FILE_MACHINE_POWERPCFP=0x01f1, TE_IMAGE_FILE_MACHINE_R10000=0x0168, "
+	"TE_IMAGE_FILE_MACHINE_R3000=0x0162, TE_IMAGE_FILE_MACHINE_R4000=0x0166, TE_IMAGE_FILE_MACHINE_SH3=0x01a2, "
+	"TE_IMAGE_FILE_MACHINE_SH3DSP=0x01a3, TE_IMAGE_FILE_MACHINE_SH3E=0x01a4, TE_IMAGE_FILE_MACHINE_SH4=0x01a6, "
+	"TE_IMAGE_FILE_MACHINE_SH5=0x01a8, TE_IMAGE_FILE_MACHINE_THUMB=0x01c2, TE_IMAGE_FILE_MACHINE_TRICORE=0x0520, "
+	"TE_IMAGE_FILE_MACHINE_WCEMIPSV2=0x0169};", 0);
+	sdb_set (bin->kv, "te_subsystem.cparse", "enum te_subsystem { TE_IMAGE_SUBSYSTEM_UNKNOWN=0, TE_IMAGE_SUBSYSTEM_NATIVE=1, "
+	"TE_IMAGE_SUBSYSTEM_WINDOWS_GUI=2, TE_IMAGE_SUBSYSTEM_WINDOWS_CUI=3, "
+	"TE_IMAGE_SUBSYSTEM_POSIX_CUI=7, TE_IMAGE_SUBSYSTEM_WINDOWS_CE_GU=9, "
+	"TE_IMAGE_SUBSYSTEM_EFI_APPLICATION=10, TE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER=11, TE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER=12, "
+	"TE_IMAGE_SUBSYSTEM_EFI_ROM=13, TE_IMAGE_SUBSYSTEM_XBOX=14};", 0);
+	sdb_num_set (bin->kv, "te_header.offset", 0, 0);
+	sdb_set (bin->kv, "te_header.format", "[2]z[2]Bb[1]Bwxxq"
+		" Signature (te_machine)Machine NumberOfSections (te_subsystem)Subsystem StrippedSize AddressOfEntryPoint BaseOfCode ImageBase", 0);
+	sdb_num_set (bin->kv, "te_directory1_header.offset", 24, 0);
+	sdb_set (bin->kv, "te_directory1_header.format", "xx"
+		" VirtualAddress Size", 0);
+	sdb_num_set (bin->kv, "te_directory2_header.offset", 32, 0);
+	sdb_set (bin->kv, "te_directory2_header.format", "xx"
+		" VirtualAddress Size", 0);
+
+	if (strncmp ((char*)&bin->header->Signature, "VZ", 2))
+			return R_FALSE;
+	return R_TRUE;
+}
+
 ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
@@ -45,20 +92,6 @@ static TE_DWord r_bin_te_vaddr_to_paddr(struct r_bin_te_obj_t* bin, TE_DWord vad
 			return bin->section_header[i].PointerToRawData + (vaddr - section_base);
 	}
 	return 0;
-}
-
-static int r_bin_te_init_hdr(struct r_bin_te_obj_t* bin) {
-	if (!(bin->header = malloc(sizeof(TE_image_file_header)))) {
-		perror ("malloc (header)");
-		return R_FALSE;
-	}
-	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof(TE_image_file_header)) == -1) {
-		eprintf("Error: read (header)\n");
-		return R_FALSE;
-	}
-	if (strncmp ((char*)&bin->header->Signature, "VZ", 2))
-		return R_FALSE;
-	return R_TRUE;
 }
 
 static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
@@ -377,6 +410,7 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 struct r_bin_te_obj_t* r_bin_te_new_buf(struct r_buf_t *buf) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
 	if (!bin) return NULL;
+	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){

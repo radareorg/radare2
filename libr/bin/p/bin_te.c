@@ -18,13 +18,15 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
+	struct r_bin_te_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_te_new_buf (tbuf);
+	if (res)
+		sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -138,6 +140,9 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
+
+	sdb_num_set (arch->sdb, "te.bits", ret->bits, 0);
+
 	return ret;
 }
 
