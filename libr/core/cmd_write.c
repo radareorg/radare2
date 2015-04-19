@@ -209,6 +209,9 @@ static int cmd_write(void *data, const char *input) {
 		NULL
 	};
 
+	if (!input)
+		return 0;
+
 	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	str = ostr = strdup ((input&&*input)?input+1:"");
