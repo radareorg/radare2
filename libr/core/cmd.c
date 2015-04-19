@@ -1437,6 +1437,15 @@ repeat_arroba:
 					} else eprintf ("cannot allocate\n");
 				} else eprintf ("Invalid @x: syntax\n");
 				break;
+			case 'k':
+				 {
+					char *out = sdb_querys (core->sdb, NULL, 0, ptr+((ptr[1])?2:1));
+					if (out) {
+						r_core_seek (core, r_num_math (core->num, out), 1);
+						free (out);
+					}
+				 }
+				break;
 			case 'a': // "@a:"
 				if (ptr[1]==':') {
 					char *q = strchr (ptr+2, ':');
@@ -1557,6 +1566,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
 		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
 		"x", " @@=off1 off2 ..", "manual list of offsets",
+		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
 		NULL};
@@ -1581,6 +1591,31 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			r_core_cmd (core, cmd, 0);
 			r_cons_flush ();
 		} while (str != NULL);
+		break;
+	case 'k':
+		/* foreach list of items */
+		{
+		char *out = sdb_querys (core->sdb, NULL, 0, str+((str[1])?2:1));
+		if (out) {
+			each = out;
+			do {
+				while (*each==' ') each++;
+				if (!*each) break;
+				str = strchr (each, ' ');
+				if (str) {
+					*str = '\0';
+					addr = r_num_math (core->num, each);
+					*str = ' ';
+				} else addr = r_num_math (core->num, each);
+				//eprintf ("; 0x%08"PFMT64x":\n", addr);
+				each = str+1;
+				r_core_seek (core, addr, 1);
+				r_core_cmd (core, cmd, 0);
+				r_cons_flush ();
+			} while (str != NULL);
+			free (out);
+		}
+		}
 		break;
 	case '.':
 		if (each[1]=='(') {
