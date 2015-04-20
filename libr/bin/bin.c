@@ -643,8 +643,10 @@ if (r_list_length (bin->binfiles)==0) {
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
 		/* hack to force baseaddr, looks like rbinfilenewfrombytes() ignores the value */
-		if (binfile && binfile->o)
-			binfile->o->baddr = baseaddr;
+		if (loadaddr) {
+			if (binfile && binfile->o)
+				binfile->o->baddr = baseaddr;
+		}
 	}
 
 	free (buf_bytes);
