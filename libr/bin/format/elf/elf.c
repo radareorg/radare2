@@ -212,9 +212,8 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	/* bin is not an ELF */
 	if (!Elf_(r_bin_elf_init_ehdr) (bin))
 		return R_FALSE;
-
-        if (!Elf_(r_bin_elf_init_phdr) (bin))
-                eprintf ("Warning: Cannot initialize program headers\n");
+    if (!Elf_(r_bin_elf_init_phdr) (bin))
+        eprintf ("Warning: Cannot initialize program headers\n");
 	if (!Elf_(r_bin_elf_init_shdr) (bin))
 		eprintf ("Warning: Cannot initialize section headers\n");
 	if (!Elf_(r_bin_elf_init_strtab) (bin))
@@ -1180,6 +1179,191 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	return ret;
 }
 
+static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym){
+
+	#define s_bind(x) snprintf (ret->bind, ELF_STRING_LENGTH, x);
+	switch (ELF_ST_BIND(sym->st_info)) {
+	case STB_LOCAL:  s_bind ("LOCAL"); break;
+	case STB_GLOBAL: s_bind ("GLOBAL"); break;
+	case STB_NUM:    s_bind ("NUM"); break;
+	case STB_LOOS:   s_bind ("LOOS"); break;
+	case STB_HIOS:   s_bind ("HIOS"); break;
+	case STB_LOPROC: s_bind ("LOPROC"); break;
+	case STB_HIPROC: s_bind ("HIPROC"); break;
+	default:         s_bind ("UNKNOWN");
+	}
+	#define s_type(x) snprintf (ret->type, ELF_STRING_LENGTH, x);
+	switch (ELF_ST_TYPE (sym->st_info)) {
+	case STT_NOTYPE:  s_type ("NOTYPE"); break;
+	case STT_OBJECT:  s_type ("OBJECT"); break;
+	case STT_FUNC:    s_type ("FUNC"); break;
+	case STT_SECTION: s_type ("SECTION"); break;
+	case STT_FILE:    s_type ("FILE"); break;
+	case STT_COMMON:  s_type ("COMMON"); break;
+	case STT_TLS:     s_type ("TLS"); break;
+	case STT_NUM:     s_type ("NUM"); break;
+	case STT_LOOS:    s_type ("LOOS"); break;
+	case STT_HIOS:    s_type ("HIOS"); break;
+	case STT_LOPROC:  s_type ("LOPROC"); break;
+	case STT_HIPROC:  s_type ("HIPROC"); break;
+	default:          s_type ("UNKNOWN");
+	}
+}
+
+static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin, int type) {
+	Elf_(Sym) *sym = NULL;
+	Elf_(Dyn) *dyn_buf = NULL;
+	Elf_(Addr) addr_sym_table, strtabaddr = 0;
+	char *strtab = NULL;
+	size_t strsize = 0;
+	struct r_bin_elf_symbol_t *ret = NULL;
+	int entries;
+	int i, j, k, r, tsize, len, nsym, ret_ctr;
+	ut64 toffset;
+
+	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
+		return NULL;
+
+	for (i = 0; i < bin->ehdr.e_phnum ; i++){
+		if (bin->phdr[i].p_type == PT_DYNAMIC) break;
+	}
+	if (i == bin->ehdr.e_phnum){
+		// we didn't find the PT_DYNAMIC section
+		return NULL;
+	}
+	if (bin->phdr[i].p_filesz > bin->size){
+		// someone is cheating us
+		return NULL;
+	}
+	entries = bin->phdr[i].p_filesz / sizeof (Elf_(Dyn));
+	dyn_buf = (Elf_(Dyn)*)calloc (entries, sizeof (Elf_(Dyn)));
+	if (!dyn_buf) return NULL;
+	r = r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8 *)dyn_buf, bin->phdr[i].p_filesz);
+	if (r == -1 || r == 0){
+		free (dyn_buf);
+		return NULL;
+	}
+	for (j = 0; j < entries; j++) {
+		switch (dyn_buf[j].d_tag){
+		case DT_SYMTAB: addr_sym_table = dyn_buf[j].d_un.d_ptr - bin->baddr; break;
+		case DT_STRTAB: strtabaddr = dyn_buf[j].d_un.d_ptr - bin->baddr; break;
+		case DT_STRSZ: strsize = dyn_buf[j].d_un.d_val; break;
+		default: break;
+		}
+	}
+	if (!strtabaddr || strsize > ST32_MAX || strsize == 0){
+		free (dyn_buf);
+		return NULL;
+	}
+	strtab = (char *)calloc(1, strsize);
+	if (!strtab){
+		free (dyn_buf);
+		return NULL;
+	}
+	r = r_buf_read_at (bin->b, strtabaddr, (ut8 *)strtab, strsize);
+	if (r == 0 || r == -1){
+		free (strtab);
+		free (dyn_buf);
+		return NULL;
+	}
+	if (addr_sym_table){
+		//since ELF doesn't specify the symbol table size we are going to read until the end of the buffer
+		// this might be overkill. 
+		nsym = (bin->b->length - addr_sym_table) / sizeof (Elf_(Sym)); 
+		sym = (Elf_(Sym)*) calloc (nsym, sizeof (Elf_(Sym)));
+		if (!sym){
+			free (dyn_buf);
+			free (strtab);
+			return NULL;
+		}
+		r = r_buf_fread_at (bin->b, addr_sym_table , (ut8*)sym,
+#if R_BIN_ELF64
+					bin->endian? "I2cS2L": "i2cs2l",
+#else
+					bin->endian? "3I2cS": "3i2cs",
+#endif
+					nsym);
+		if (r == 0 || r == -1){
+			free (dyn_buf);
+			free (sym);
+			free (strtab);
+			return NULL;
+		}
+		for (j = k = ret_ctr = 0 ; j < nsym ; j++, k++){
+			if (k == 0) 
+				continue;
+			if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
+				if (sym[k].st_value)
+					toffset = sym[k].st_value;
+				else if ((toffset = Elf_(get_import_addr) (bin, k)) == -1)
+					toffset = 0;
+				tsize = 16;
+			} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
+			  ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE){
+				tsize = sym[k].st_size;
+				toffset = (ut64)sym[k].st_value;
+			} else continue;
+			if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL){
+				free (sym);
+				free (dyn_buf);
+				free (strtab);
+				return NULL;
+			}
+			
+			if (sym[k].st_name+2 > strsize)
+				// Since we are reading beyond the symbol table what's happening 
+				// is that some entry is trying to dereference the strtab beyond its capacity
+				// is not a symbol so is the end
+				goto done;
+
+			ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+			ret[ret_ctr].size = tsize;
+			{
+			   int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
+			   int st_name = sym[k].st_name;
+			   int maxsize = R_MIN (bin->b->length, strsize);
+			   if (st_name < 0 || st_name >= maxsize) {
+					len = 0;
+					ret[ret_ctr ].name[0] = 0;
+			   } else {
+					len = __strnlen (strtab+sym[k].st_name, rest);
+					memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
+			   }	
+			}
+			ret[ret_ctr].ordinal = k;
+			ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
+			fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
+			ret[ret_ctr].last = 0;
+			ret_ctr++;
+		}
+done:
+        {
+			ut8 *p = (ut8*)realloc (ret, (ret_ctr+1) * sizeof (struct r_bin_elf_symbol_t));
+			if (!p) {
+				free (ret);
+				free (dyn_buf);
+				free (strtab);
+				free (sym);
+				return NULL;
+			}
+			ret = (struct r_bin_elf_symbol_t *) p;
+		}
+		ret[ret_ctr].last = 1; 
+		if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
+			bin->imports_by_ord_size = ret_ctr;
+			bin->imports_by_ord = (RBinImport**)calloc (ret_ctr, sizeof (RBinImport*));
+		} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size) {
+			bin->symbols_by_ord_size = ret_ctr; 
+			bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
+		}
+	}
+	free (dyn_buf);
+	free (strtab);
+	free (sym);
+	return ret;
+}
+
+
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr, i, j, k, len, newsize;
@@ -1192,22 +1376,21 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	ut64 section_text_offset = 0LL;
 
 	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
-		return NULL;
+		//ok we don't give up 
+		return get_symbols_from_phdr (bin, type);
 
-	if (bin->ehdr.e_type== ET_REL) {
+	if (bin->ehdr.e_type == ET_REL) {
 		section_text = Elf_(r_bin_elf_get_section_by_name)(bin, ".text");
 		if (section_text) {
 			section_text_offset = section_text->sh_offset;
 		}
-	}
-
-	if (bin->ehdr.e_type == ET_REL) {
 		// XXX: we must obey shndx here
 		if ((sym_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".text")) == -1)
 			sym_offset = 0;
 		if ((data_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".rodata")) == -1)
 			data_offset = 0;
 	}
+
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
 		return R_FALSE;
 	if (shdr_size+8>bin->size)
@@ -1352,46 +1535,20 @@ if (
 				}
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
-				#define s_bind(x) snprintf (ret[ret_ctr].bind, ELF_STRING_LENGTH, x);
-				switch (ELF_ST_BIND(sym[k].st_info)) {
-				case STB_LOCAL:  s_bind ("LOCAL"); break;
-				case STB_GLOBAL: s_bind ("GLOBAL"); break;
-				case STB_NUM:    s_bind ("NUM"); break;
-				case STB_LOOS:   s_bind ("LOOS"); break;
-				case STB_HIOS:   s_bind ("HIOS"); break;
-				case STB_LOPROC: s_bind ("LOPROC"); break;
-				case STB_HIPROC: s_bind ("HIPROC"); break;
-				default:         s_bind ("UNKNOWN");
-				}
-				#define s_type(x) snprintf (ret[ret_ctr].type, ELF_STRING_LENGTH, x);
-				switch (ELF_ST_TYPE (sym[k].st_info)) {
-				case STT_NOTYPE:  s_type ("NOTYPE"); break;
-				case STT_OBJECT:  s_type ("OBJECT"); break;
-				case STT_FUNC:    s_type ("FUNC"); break;
-				case STT_SECTION: s_type ("SECTION"); break;
-				case STT_FILE:    s_type ("FILE"); break;
-				case STT_COMMON:  s_type ("COMMON"); break;
-				case STT_TLS:     s_type ("TLS"); break;
-				case STT_NUM:     s_type ("NUM"); break;
-				case STT_LOOS:    s_type ("LOOS"); break;
-				case STT_HIOS:    s_type ("HIOS"); break;
-				case STT_LOPROC:  s_type ("LOPROC"); break;
-				case STT_HIPROC:  s_type ("HIPROC"); break;
-				default:          s_type ("UNKNOWN");
-				}
+				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
 			free (sym);
 			sym = NULL;
 			{
-			ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
-			if (!p) {
-				free (ret);
-				free (strtab);
-				return NULL;
-			}
-			ret = (struct r_bin_elf_symbol_t *) p;
+				ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
+				if (!p) {
+					free (ret);
+					free (strtab);
+					return NULL;
+				}
+				ret = (struct r_bin_elf_symbol_t *) p;
 			}
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
 
@@ -1405,6 +1562,8 @@ if (
 		}
 	}
 	free (strtab);
+	// maybe it had some section header but not the symtab
+	if (!ret) return get_symbols_from_phdr (bin, type);
 	return ret;
 }
 
