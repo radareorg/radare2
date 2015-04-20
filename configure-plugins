@@ -135,8 +135,7 @@ else
 fi
 
 dosort () {
-
-  ( for a in $1 ; do echo $a ; done ) | ${SORT}
+  ( for a in $1 ; do echo $a ; done ) | tr _ Z | ${SORT} | tr Z _
   #( for a in $1 ; do echo $a ; done ) | sort -t. --key=1,1d
 }
 
