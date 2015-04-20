@@ -383,6 +383,7 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	return ret;
 }
 
+#if	0
 static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 	int ret = 0;
 	struct r_i8015_reg *ri;
@@ -403,6 +404,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 
 	return ret;
 }
+#endif
 
 static int set_reg_profile(RAnal *anal) {
 	char *p =
