@@ -1272,18 +1272,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.truecolor", "false", &cb_truecolor, "Manage color palette (0: ansi 16, 1: 256, 2: 16M)");
 	SETCB("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false", &cb_color, "Enable/Disable colors");
 	SETCB("scr.null", "false", &cb_scrnull, "if set shows no output (disable console)");
-#if 0
-	{
-		const char *val;
-		char *sval = r_sys_getenv ("LC_CTYPE");
-		r_str_case (sval, 0);
-		val = strcmp (sval, "utf-8")? "false": "true";
-		free (sval);
-		r_config_set_cb (cfg, "scr.utf8", val, &cb_utf8);
-	}
-#else
-	SETCB("scr.utf8", "false", &cb_utf8, "Show UTF-8 characters instead of ANSI");
-#endif
+	SETCB("scr.utf8", r_cons_is_utf8()?"true":"false",
+		&cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETPREF("scr.histsave", "true", "Always save history on exit");
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");

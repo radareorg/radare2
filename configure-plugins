@@ -5,7 +5,12 @@
 # update: 2010-01-14
 #
 
+LANG=C
+LC_ALL=C
 LOADLIBS=1
+
+export LANG
+export LC_ALL
 
 list () {
   for a in $STATIC ; do echo "static  $a" ; done

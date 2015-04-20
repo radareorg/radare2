@@ -56,9 +56,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "je", "isZero 1)"},
 		{ "jle", "isLessOrEqual 1)"},
 		{ "jge", "isGreaterOrEqual 1)"},
+		{ "jbe", "isBelowOrEqual 1)"},
 		{ "jne", "notZero 1)"},
 		{ "call", "1 ()"},
-		{ "test", "if (1 == 2)"},
+		{ "test", "if (1 == 2"},
 		{ "xor",  "1 ^= 2"},
 		{ NULL }
 	};
