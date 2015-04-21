@@ -2374,6 +2374,7 @@ static int cmd_anal(void *data, const char *input) {
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
+		"aap", "", "find and analyze function preludes",
 		NULL};
 	const char* help_msg[] = {
 		"Usage:", "a", "[8adefFghoprxstc] [...]",
@@ -2389,7 +2390,6 @@ static int cmd_anal(void *data, const char *input) {
 		"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
 		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
-		"ap", "", "find and analyze function preludes",
 		"ar", "", "like 'dr' but for the esil vm. (registers)",
 		"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
 		"as", " [num]", "analyze syscall using dbg.reg",
@@ -2452,6 +2452,12 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_cmd0 (core, "af @@= `isq~[0]`");
 			r_core_cmd0 (core, "af @ entry0");
 			break;
+		case 'p':
+			if (input[1]=='?') {
+				// TODO: accept parameters for ranges
+				r_cons_printf ("Usage: /aap   ; find in memory for function preludes");
+			} else r_core_search_preludes (core);
+			break;
 		case '\0': // "aa"
 		case 'a': 
 			r_cons_break (NULL, NULL);
@@ -2502,12 +2508,6 @@ static int cmd_anal(void *data, const char *input) {
 			r_config_set_i (core->config, "asm.lines", li);
 			r_config_set_i (core->config, "asm.xrefs", xr);
 		}
-		break;
-	case 'p':
-		if (input[1]=='?') {
-			// TODO: accept parameters for ranges
-			r_cons_printf ("Usage: ap   ; find in memory for function preludes");
-		} else r_core_search_preludes (core);
 		break;
 	case 'd':
 		switch (input[1]) {
