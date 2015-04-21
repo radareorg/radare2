@@ -108,7 +108,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "4,pc,+,lr,=,%s,pc,=", ARG(0));
 		break;
 	case ARM_INS_MOV:
-	case ARM_INS_MOVS:
 		r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
 		break;
 	case ARM_INS_SSUB16:
@@ -349,7 +348,6 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM_INS_MOV:
-	case ARM_INS_MOVS:
 	case ARM_INS_MOVT:
 	case ARM_INS_MOVW:
 	case ARM_INS_VMOVL:
