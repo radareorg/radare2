@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include "pe.h"
+#include <sys/time.h>
 #include <time.h>
 
 struct SCV_NB10_HEADER;
