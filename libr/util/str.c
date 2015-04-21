@@ -958,7 +958,7 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 					     && str[i]!='H';
 				     i++);
 			}
-		} else len++;
+		} else if ((str[i] & 0xc0) != 0x80) len++;
 
 		i++;
 	}
