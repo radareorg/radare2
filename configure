@@ -395,12 +395,13 @@ LIBMAGIC="-lmagic"
 else
 USE_LIB_MAGIC="0"
 LIBMAGIC="-lr_magic"; fi
+printf 'Using pkg-config: ${PKGCONFIG} '
 printf 'checking pkg-config flags for capstone... '
-tmp=`pkg-config --cflags capstone 2>/dev/null`
-if [ $? = 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
+tmp=`${PKGCONFIG} --cflags capstone 2>/dev/null`
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
 else 
 CAPSTONE_CFLAGS=$tmp; 
-tmp=`pkg-config --libs capstone 2>/dev/null`
+tmp=`${PKGCONFIG} --libs capstone 2>/dev/null`
 if [ $? = 0 ]; then 
 echo yes; HAVE_PKGCFG_CAPSTONE=1; 
 CAPSTONE_LDFLAGS=$tmp; fi; fi
@@ -425,12 +426,13 @@ LIBZIP="-lrz"; fi
 HAVE_LIB_GMP="0"
 HAVE_GMP="0"
 check_library HAVE_LIB_SSL ssl 0 
+printf 'Using pkg-config: ${PKGCONFIG} '
 printf 'checking pkg-config flags for openssl... '
-tmp=`pkg-config --cflags openssl 2>/dev/null`
-if [ $? = 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
+tmp=`${PKGCONFIG} --cflags openssl 2>/dev/null`
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
 else 
 SSL_CFLAGS=$tmp; 
-tmp=`pkg-config --libs openssl 2>/dev/null`
+tmp=`${PKGCONFIG} --libs openssl 2>/dev/null`
 if [ $? = 0 ]; then 
 echo yes; HAVE_PKGCFG_OPENSSL=1; 
 SSL_LDFLAGS=$tmp; fi; fi
