@@ -395,7 +395,8 @@ LIBMAGIC="-lmagic"
 else
 USE_LIB_MAGIC="0"
 LIBMAGIC="-lr_magic"; fi
-printf 'Using pkg-config: ${PKGCONFIG} '
+[ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
+echo 'Using PKGCONFIG: '${PKGCONFIG}
 printf 'checking pkg-config flags for capstone... '
 tmp=`${PKGCONFIG} --cflags capstone 2>/dev/null`
 if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0; 
@@ -426,7 +427,8 @@ LIBZIP="-lrz"; fi
 HAVE_LIB_GMP="0"
 HAVE_GMP="0"
 check_library HAVE_LIB_SSL ssl 0 
-printf 'Using pkg-config: ${PKGCONFIG} '
+[ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
+echo 'Using PKGCONFIG: '${PKGCONFIG}
 printf 'checking pkg-config flags for openssl... '
 tmp=`${PKGCONFIG} --cflags openssl 2>/dev/null`
 if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0; 
