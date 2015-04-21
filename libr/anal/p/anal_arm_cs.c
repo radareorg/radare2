@@ -303,6 +303,12 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	int i;
 	switch (insn->id) {
+	case ARM_INS_IT:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + insn->size;
+		op->fail = addr + insn->size + 2;
+			// XXX what if instruction is 4
+		break;
 	case ARM_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;

@@ -39,7 +39,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "eor",  "1 = 2 ^ 3"},
 		{ "fdv",  "1 = 2 / 3"},
 		{ "fml",  "1 = 2 * 3"},
-		{ "ldr",  "1 = 2 + 3"},
+		{ "ldr",  "1 = 2"},
 		{ "ldrb",  "1 = 2"},
 		{ "ldrsw",  "1 = 2 + 3"},
 		{ "lsl",  "1 = 2 << 3"},
@@ -53,8 +53,24 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "sbc",  "1 = 2 - 3"},
 		{ "sqt",  "1 = sqrt(2)"},
 		{ "str",  "2 + 3 = 1"},
+		{ "strh.w",  "2 + 3 = 1"},
 		{ "sub",  "1 = 2 - 3"},
+		{ "sub",  "1 -= 2"}, // THUMB
 		{ "swp",  "swap(1, 2)"},
+		/* arm thumb */
+		{ "movs",  "1 = 2"},
+		{ "movw",  "1 = 2"},
+		{ "movt",  "1 = 2"},
+		{ "vmov",  "1 = (float) 2 . 3"},
+		{ "vdiv.f64", "1 = (float) 2 / 3" },
+		{ "addw",  "1 = 2 + 3"},
+		{ "sub.w",  "1 = 2 - 3"},
+		{ "tst.w", "if (1 == 2)"},
+		{ "lsr.w", "1 = 2 >> 3"},
+		{ "lsl.w", "1 = 2 << 3"},
+		{ "pop.w",  "pop 1"},
+		{ "vpop",  "pop 1"},
+		{ "vpush",  "push 1"},
 		{ NULL }
 	};
 

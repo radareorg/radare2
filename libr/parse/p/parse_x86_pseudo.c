@@ -61,6 +61,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "call", "1 ()"},
 		{ "test", "if (1 == 2"},
 		{ "xor",  "1 ^= 2"},
+		//{ "strd",  "1 = 2 - 3"},
 		{ NULL }
 	};
 
