@@ -576,6 +576,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					op->stackop = R_ANAL_STACK_GET;
 					op->stackptr = regsz;
 					break;
+				default:
+					/* unhandled */
+					break;
 				}
 				break;
 			case X86_OP_IMM:
