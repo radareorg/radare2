@@ -130,6 +130,7 @@ R_API int r_debug_stop(RDebug *dbg) {
 	return R_FALSE;
 }
 
+
 R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 	if (dbg && dbg->h) {
 		if (arch & dbg->h->arch) {

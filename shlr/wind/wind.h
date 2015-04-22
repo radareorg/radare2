@@ -52,4 +52,6 @@ int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const 
 int wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count);
 int wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count);
 int wind_va_to_pa (WindCtx *ctx, uint64_t va, uint64_t *pa);
+int wind_break (WindCtx *ctx);
+int wind_break_read(WindCtx *ctx);
 #endif

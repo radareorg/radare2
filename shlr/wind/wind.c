@@ -1107,3 +1107,25 @@ wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, con
 	free(pkt);
 	return ret;
 }
+
+int
+wind_break (WindCtx *ctx) {
+	if (iob_write (ctx->io_ptr, (const uint8_t*)"b", 1) != 1) {
+		return 0;
+	}
+	return 1;
+}
+
+#if __WINDOWS__
+static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
+#endif
+int
+wind_break_read (WindCtx *ctx) {
+#if __WINDOWS__
+    HANDLE lib;
+	lib = LoadLibrary ("psapi.dll");
+	w32_CancelIoEx = (BOOL WINAPI (*)(HANDLE, LPOVERLAPPED))GetProcAddress (GetModuleHandle ("kernel32"),"CancelIoEx");
+	w32_CancelIoEx(ctx->io_ptr,NULL);
+#endif
+	return 1;
+}
