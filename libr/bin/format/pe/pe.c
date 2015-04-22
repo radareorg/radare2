@@ -2002,7 +2002,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				eprintf ("Error: read (libs - import dirs)\n");
 				break;
 			}
-			libs[index].name[len] = '\0';
+			libs[index].name[len-1] = '\0';
 			r_str_case (libs[index].name, 0);
 			if (r_strht_get (lib_map, libs[index].name) == NULL) {
 				r_strht_set (lib_map, libs[index].name, "a");
@@ -2031,7 +2031,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				eprintf ("Error: read (libs - delay import dirs)\n");
 				break;
 			}
-			libs[index].name[len] = '\0';
+			libs[index].name[len-1] = '\0';
 			r_str_case (libs[index].name, 0);
 			if (r_strht_get (lib_map, libs[index].name) == NULL) {
 				r_strht_set (lib_map, libs[index].name, "a");
