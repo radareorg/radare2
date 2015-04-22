@@ -2696,14 +2696,22 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	ut32 cur_buf_sz = fcn->size+1;
-	ut8 *buf = malloc (cur_buf_sz);
-	ut32 len = fcn->size;
+	ut32 cur_buf_sz = 0;
+	ut8 *buf = NULL;
+	ut32 len = 0;
 	int ret, idx = 0, i;
 	RListIter *bb_iter;
 	RAnalBlock *bb = NULL;
 	RDisasmState *ds;
-	RList *bb_list = r_list_new();
+	RList *bb_list = NULL;
+
+	if (!fcn)
+		return -1;
+
+	cur_buf_sz = fcn->size + 1;
+	buf = malloc (cur_buf_sz);
+	len = fcn->size;
+	bb_list = r_list_new();
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
