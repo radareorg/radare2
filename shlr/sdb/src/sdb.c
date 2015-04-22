@@ -153,6 +153,7 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	ut64 now = 0LL;
 	SdbKv *kv;
 	if (cas) *cas = 0;
+	if (vlen) *vlen = 0;
 	if (!s||!key) return NULL;
 	// TODO: optimize, iterate once
 	keylen = strlen (key)+1;
@@ -205,6 +206,7 @@ SDB_API char *sdb_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
 	if (!s || !key) return NULL;
 	keylen = strlen (key)+1;
 	hash = sdb_hash (key);//keylen-1);
+	if (vlen) *vlen = 0;
 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);

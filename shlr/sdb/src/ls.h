@@ -36,7 +36,6 @@ typedef int (*SdbListComparator)(void *a, void *b);
 SDB_API SdbList *ls_new(void);
 SDB_API SdbListIter *ls_append(SdbList *list, void *data);
 SDB_API SdbListIter *ls_prepend(SdbList *list, void *data);
-SDB_API int ls_length(SdbList *list);
 //SDB_API void ls_add_sorted(SdbList *list, void *data, SdbListComparator cmp);
 SDB_API void ls_sort(SdbList *list, SdbListComparator cmp);
 

@@ -84,13 +84,13 @@ SDB_API int sdb_json_unset (Sdb *s, const char *k, const char *p, ut32 cas) {
 SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
 	const char *beg[3];
 	const char *end[3];
-	int jslen, l, idx, len[3];
+	int l, idx, len[3], jslen = 0;
 	char *b, *str = NULL;
 	const char *js;
 	Rangstr rs;
 	ut32 c;
 
-	if (!s || !k)
+	if (!s || !k || !v)
 		return 0;
 	js = sdb_const_get_len (s, k, &jslen, &c);
 	if (!js) {
@@ -115,7 +115,8 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	}
 	rs = json_get (js, p);
 	if (!rs.p) {
-		char *b = malloc (jslen+strlen(k)+strlen (v)+32);
+		int b_len = jslen + strlen (k) + strlen (v) + 32;
+		char *b = malloc (b_len);
 		if (b) {
 			int curlen, is_str = isstring (v);
 			const char *q = is_str?"\"":"";
