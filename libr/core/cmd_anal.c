@@ -1251,6 +1251,10 @@ eprintf ("ESIL %s\n", op.esil);
 eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
 sleep (1);
 #endif
+	// Always increment pc register before executing op.esil
+	if (op.size<1) op.size = 1; // avoid inverted stepping
+	r_reg_setv (core->anal->reg, name, addr + op.size);
+
 	if (ret) {
 		//r_anal_esil_eval (core->anal, input+2);
 		RAnalEsil *esil = core->anal->esil;
@@ -1261,18 +1265,12 @@ sleep (1);
 		r_anal_esil_dumpstack (esil);
 		r_anal_esil_stack_free (esil);
 	}
-	ut64 newaddr = r_reg_getv (core->anal->reg, name);
 
 	ut64 follow = r_config_get_i (core->config, "dbg.follow");
 	if (follow>0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "pc");
 		if ((pc<core->offset) || (pc > (core->offset+follow)))
 			r_core_cmd0 (core, "sr pc");
-	}
-	if (addr == newaddr) {
-		if (op.size<1)
-			op.size = 1; // avoid inverted stepping
-		r_reg_setv (core->anal->reg, name, addr + op.size);
 	}
 	if (core->dbg->trace->enabled) {
 		RReg *reg = core->dbg->reg;
