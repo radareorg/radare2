@@ -176,7 +176,7 @@ function load_binary_details() {
     render_symbols(x);
   });
   // <div id="functions"></div>
-  r2.cmdj("afj", function(x) {
+  r2.cmdj("aflj", function(x) {
     render_functions(x);
   });
   // <div id="imports"></div>
@@ -209,7 +209,7 @@ function update_binary_details() {
     render_symbols(x);
   });
   // <div id="functions"></div>
-  r2.cmdj("afj", function(x) {
+  r2.cmdj("aflj", function(x) {
     render_functions(x);
   });
   // <div id="imports"></div>
