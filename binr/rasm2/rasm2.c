@@ -217,8 +217,12 @@ int main(int argc, char *argv[]) {
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
 	path = r_sys_getenv ("LIBR_PLUGINS");
 	if (!path || !*path)
-		path = R2_PREFIX"/lib/radare2/"R2_VERSION;
+		path = R2_LIBDIR"/radare2/"R2_VERSION;
 	r_lib_opendir (l, path);
+	if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
+		r_lib_opendir (l, R2_LIBDIR"/radare2-extras/"R2_VERSION);
+		r_lib_opendir (l, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
+	}
 
 
 	r_asm_use (a, R_SYS_ARCH);

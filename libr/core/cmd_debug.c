@@ -1142,6 +1142,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbe", " <addr>", "Enable breakpoint",
 		"dbs", " <addr>", "Toggle breakpoint",
 
+		"dbt", "", "Display backtrace",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
