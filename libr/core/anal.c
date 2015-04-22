@@ -675,11 +675,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			at, from, reftype, depth);
 		// do this to prevent stale usage and catch others who are using it
 		//memset(&core->anal->binb, 0, sizeof(RBinBind));
+		r_flag_space_push (core->flags, "functions");
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			r_flag_space_set (core->flags, "functions");
 			r_flag_set (core->flags, fcni->name,
 				fcni->addr, fcni->size, 0);
 		}
+		r_flag_space_pop (core->flags);
 		return result;
 	}
 
@@ -856,9 +857,10 @@ if (0) {
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", fcn->addr);
 #endif
 				/* Add flag */
-				r_flag_space_set (core->flags, "functions");
+				r_flag_space_push (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name,
 					fcn->addr, fcn->size, 0);
+				r_flag_space_pop (core->flags);
 			}
 			// XXX fixes overlined function ranges wtf  // fcn->addr = at;
 			/* TODO: Dupped analysis, needs more optimization */
@@ -972,8 +974,9 @@ error:
 						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
 				/* Add flag */
-				r_flag_space_set (core->flags, "functions");
+				r_flag_space_push (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
+				r_flag_space_pop (core->flags);
 			}
 			r_anal_fcn_insert (core->anal, fcn);
 #if 0

@@ -1415,6 +1415,8 @@ static int cmd_search(void *data, const char *input) {
 	}
 	core->in_search = R_TRUE;
 
+	r_flag_space_push(core->flags, "searches");
+
 	param.from = param.to = 0;
 	param.inverse = R_FALSE;
 	param.crypto_search = R_FALSE;
@@ -1933,5 +1935,6 @@ static int cmd_search(void *data, const char *input) {
 		do_string_search(core, &param);
 beach: 
 	core->in_search = R_FALSE;
+	r_flag_space_pop(core->flags);
 	return ret;
 }
