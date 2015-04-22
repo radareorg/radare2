@@ -360,7 +360,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				}
 				break;
 			default:
-				eprintf ("FINDUS\n");
+				eprintf ("Unsupported relocs for this arch\n");
 				break;
 			}
 		}
@@ -622,6 +622,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");
+	case EM_BLACKFIN:
+		return strdup ("blackfin");
 	case EM_SPARC:
 	case EM_SPARC32PLUS:
 	case EM_SPARCV9:
@@ -661,6 +663,7 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_RH32:        return strdup ("TRW RH-32");
 	case EM_RCE:         return strdup ("Motorola RCE");
 	case EM_ARM:         return strdup ("ARM");
+	case EM_BLACKFIN:    return strdup ("Analog Devices Blackfin");
 	case EM_FAKE_ALPHA:  return strdup ("Digital Alpha");
 	case EM_SH:          return strdup ("Hitachi SH");
 	case EM_SPARCV9:     return strdup ("SPARC v9 64-bit");
