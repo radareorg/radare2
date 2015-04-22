@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BUILD=1
-PREFIX="/data/data/org.radare.installer/radare2"
+PREFIX="/data/data/org.radare2.installer/radare2"
 
 type pax
 [ $? != 0 ] && exit 1
