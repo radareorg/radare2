@@ -1097,7 +1097,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.source", "", "Path to find source files");
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
-	SETPREF("dir.projects", "/data/data/org.radare.installer/radare2/projects", "Default path for projects");
+	SETPREF("dir.projects", "/data/data/org.radare2.installer/radare2/projects", "Default path for projects");
 #else
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 #endif
