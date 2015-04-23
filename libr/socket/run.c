@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2015 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -599,19 +599,15 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 #endif
 
-	if (p->_nice) {
-#if __UNIX__
-        errno = 0;
-        ret = nice(p->_nice);
-        if (ret == -1) {
-            if (errno != 0) {
-                return 1;
-            }
-        }
+		if (p->_nice) {
+#if __UNIX__ && !defined(__HAIKU__)
+			if (nice (p->_nice) == -1) {
+				return 1;
+			}
 #else
-	eprintf ("nice not supported for this platform\n");
+			eprintf ("nice not supported for this platform\n");
 #endif
-    }
+		}
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 	return 0;
