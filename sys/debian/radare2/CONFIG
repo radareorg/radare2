@@ -1,0 +1,6 @@
+PACKAGE=radare2
+VERSION=0.9.9.git
+ARCH=x86_64
+SECTION=user/shell
+PRIORITY=optional
+MAINTAINER=pancake <pancake@nopcode.org>

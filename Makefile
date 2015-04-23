@@ -42,6 +42,13 @@ plugins.cfg:
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
+deb debian:
+	./configure --prefix=/usr
+	$(MAKE) -j8
+	mkdir -p ${PWD}/sys/debian/radare2/root
+	$(MAKE) install DESTDIR=${PWD}/sys/debian/radare2/root
+	$(MAKE) -C ${PWD}/sys/debian/radare2
+
 w32:
 	sys/mingw32.sh
 
