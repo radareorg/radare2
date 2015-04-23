@@ -693,20 +693,18 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 	} else if (MUSTSEE) {
 		int j = i;
 		p->printf ("0x%08"PFMT64x" = ", seeki);
-		for (; j<len && ((size>0 || size==-1) && buf[j]) ; j++) {
+		for (; j<len && ((size==-1 || size-->0) && buf[j]) ; j++) {
 			if (IS_PRINTABLE (buf[j]))
 				p->printf ("%c", buf[j]);
 			else p->printf (".");
-			size--;
 		}
 	} else if (MUSTSEEJSON) {
 		int j = i;
 		p->printf ("%d,\"string\":\"", seeki);
-		for (; j<len && ((size>0 || size==-1) && buf[j]) ; j++) {
+		for (; j<len && ((size==-1 || size-->0) && buf[j]) ; j++) {
 			if (IS_PRINTABLE (buf[j]))
 				p->printf ("%c", buf[j]);
 			else p->printf (".");
-			size--;
 		}
 		p->printf ("\"}");
 	}
@@ -731,11 +729,10 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 	} else if (MUSTSEE) {
 		int j = i;
 		p->printf ("0x%08"PFMT64x" = ", seeki);
-		for (; j<len && ((size>0 || size==-1) && buf[j]) ; j+=2) {
+		for (; j<len && ((size==-1 || size-->0) && buf[j]) ; j+=2) {
 			if (IS_PRINTABLE (buf[j]))
 				p->printf ("%c", buf[j]);
 			else p->printf (".");
-			size--;
 		}
 	}
 }
