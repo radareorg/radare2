@@ -1424,10 +1424,6 @@ if (
 				continue;
 			}
 			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-			if (!strtab_section) {
-				/* oops. we have no strtab, skip */
-				continue;
-			}
 			if (strtab_section->sh_size > ST32_MAX) {
 				eprintf ("size (syms strtab)");
 				free (ret);
