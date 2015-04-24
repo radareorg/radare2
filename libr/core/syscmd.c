@@ -112,14 +112,14 @@ R_API void r_core_syscmd_ls(const char *input) {
 
 	if (*path == '~')	{
 		homepath = r_str_home (path+2);
-		path = (const char *)homepath;
+		if (homepath) path = (const char *)homepath;
 	}
 	else if (*path == '$'){
 		if (!strncmp (path+1, "home", 4) || !strncmp (path+1, "HOME", 4)){
 			if (!*(path+6))
 				homepath = r_str_home (NULL);
 			else homepath = r_str_home (path+6);
-			path = (const char *)homepath;
+			if (homepath) path = (const char *)homepath;
 		}
 	}
 
@@ -163,8 +163,8 @@ R_API void r_core_syscmd_ls(const char *input) {
 	}
 	if (printfmt == FMT_JSON) r_cons_printf ("]");
 	free (dir);
-	if (d) free (d);
-	if (homepath) free (homepath);
+	free (d);
+	free (homepath);
 	free (pattern);
 	r_list_free (files);
 }

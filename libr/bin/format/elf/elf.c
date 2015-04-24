@@ -1137,7 +1137,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_lib_t *ret = NULL;
-	int i, j, k;
+	int j, k;
 
 	if (!bin || !bin->phdr || !bin->dyn_buf)
 		return NULL;
@@ -1244,7 +1244,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 	Elf_(Sym) *sym = NULL;
 	Elf_(Addr) addr_sym_table = 0;
 	struct r_bin_elf_symbol_t *ret = NULL;
-	int i, j, k, r, tsize, len, nsym, ret_ctr;
+	int j, k, r, tsize, len, nsym, ret_ctr;
 	ut64 toffset;
 
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
