@@ -81,6 +81,10 @@ windist:
 	cp -f libr/include/*.h ${WINDIST}/include/libr
 	#mkdir -p ${WINDIST}/include/libr/sflib
 	cp -f doc/fortunes.* ${WINDIST}/share/doc/radare2
+	mkdir -p ${WINDIST}/share/radare2/${VERSION}/cons
+	cp -f libr/cons/d/* ${WINDIST}/share/radare2/${VERSION}/cons
+	mkdir -p ${WINDIST}/radare2/${VERSION}/hud
+	cp -f doc/hud ${WINDIST}/radare2/${VERSION}/hud/main
 	mv ${WINDIST} radare2-${WINBITS}-${VERSION}
 	rm -f radare2-${WINBITS}-${VERSION}.zip
 	zip -r radare2-${WINBITS}-${VERSION}.zip radare2-${WINBITS}-${VERSION}
