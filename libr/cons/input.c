@@ -63,10 +63,22 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		break;
 	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar ();
+#if defined(__HAIKU__)	
+		/* Haiku don use the '[' char for funcion keys */
+		if (ch > 'O') {/* only in f1..f12 funcion keys */
+			ch = 0xf1 + (ch&0xf);
+			break;
+		}
+	case '[': // function keys (2)
+		/* Haiku need ESC + [ for PageUp and PageDown  */
+		if (ch < 'A' || ch == '[')
+			ch = r_cons_readchar ();
+#else
 		ch = 0xf1 + (ch&0xf);
 		break;
 	case '[': // function keys (2)
 		ch = r_cons_readchar ();
+#endif
 		switch (ch) {
 		case '[':
 			ch = r_cons_readchar ();
