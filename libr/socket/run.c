@@ -179,7 +179,9 @@ static void setASLR(int enabled) {
 #if __ANDROID__
 		system ("echo 0 > "RVAS);
 #else
+#ifdef ADDR_NO_RANDOMIZE
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
+#endif
 			system ("echo 0 > "RVAS);
 #endif
 	}
