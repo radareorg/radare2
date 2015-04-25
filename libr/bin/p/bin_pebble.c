@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -81,8 +81,9 @@ static RList *strings(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	PebbleAppInfo pai;
-	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai))) {
+	PebbleAppInfo pai = {0};
+	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai));
+	if (reat != sizeof (pai)) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
@@ -91,8 +92,8 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->lang = NULL;
 	ret->file = strdup (arch->file);
 	ret->type = strdup ("pebble");
-	ret->bclass = strdup (pai.name);
-	ret->rclass = strdup (pai.company);
+	ret->bclass = r_str_ndup (pai.name, 32);
+	ret->rclass = r_str_ndup (pai.company, 32);
 	ret->os = strdup ("rtos");
 	ret->subsystem = strdup ("pebble");
 	ret->machine = strdup ("watch");

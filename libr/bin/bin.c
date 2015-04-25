@@ -365,6 +365,7 @@ static void r_bin_object_delete_items (RBinObject *o) {
 }
 
 R_API void r_bin_info_free (RBinInfo *rb) {
+	if (!rb) return;
 	free (rb->file);
 	free (rb->type);
 	free (rb->bclass);
