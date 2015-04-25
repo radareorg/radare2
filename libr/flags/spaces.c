@@ -107,24 +107,39 @@ R_API int r_flag_space_unset (RFlag *f, const char *fs) {
 	return count;
 }
 
+static int r_flag_space_count (RFlag *f, int n) {
+	RListIter *iter;
+	int count = 0;
+	RFlagItem *fi;
+	if (n!=-1) {
+		r_list_foreach (f->flags, iter, fi) {
+			if (fi->space == n) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
 R_API int r_flag_space_list(RFlag *f, int mode) {
 	const char *defspace = NULL;
-	int i, j = 0;
+	int count, i, j = 0;
 	if (mode == 'j')
 		r_cons_printf ("[");
 	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (!f->spaces[i]) continue;
+		count = r_flag_space_count (f, i);
 		if (mode=='j') {
-			r_cons_printf ("%s{\"name\":\"%s\"%s}",
+			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
 					j? ",":"", f->spaces[i],
 					(i==f->space_idx)?
-					",\"selected\":true":"");
+					",\"selected\":true":"", count);
 		} else if (mode=='*') {
 			r_cons_printf ("fs %s\n", f->spaces[i]);
 			if (i==f->space_idx) defspace = f->spaces[i];
 		} else {
-			r_cons_printf ("%02d %c %s\n", j++,
-					(i==f->space_idx)?'*':' ',
+			r_cons_printf ("%02d %2d %c %s\n", j++, count,
+					(i==f->space_idx)?'*':'.',
 					f->spaces[i]);
 		}
 		j++;

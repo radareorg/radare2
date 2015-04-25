@@ -10,7 +10,7 @@ static void flagbars(RCore *core) {
 	}
 	if (!total) // avoid a division by zero
 		return;
-	cols-=15;
+	cols -= 15;
 	r_cons_printf ("Total: %d\n", total);
 	r_list_foreach (core->flags->flags, iter, flag) {
 		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
