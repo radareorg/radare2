@@ -14,7 +14,7 @@
 #define NESTDEPTH 14
 #define ARRAYINDEX_COEF 10000
 
-#define MUSTSEE (mode & R_PRINT_MUSTSEE && mode & R_PRINT_ISFIELD)
+#define MUSTSEE (mode & R_PRINT_MUSTSEE && mode & R_PRINT_ISFIELD && !(mode & R_PRINT_JSON))
 #define MUSTSET (mode & R_PRINT_MUSTSET && mode & R_PRINT_ISFIELD && setval)
 #define MUSTSEEJSON (mode & R_PRINT_JSON && mode & R_PRINT_ISFIELD)
 
@@ -693,7 +693,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 	} else if (MUSTSEE) {
 		int j = i;
 		p->printf ("0x%08"PFMT64x" = ", seeki);
-		for (; j<len && ((size==-1 || size-->0) && buf[j]) ; j++) {
+		for (; j<len && ((size==-1 || size-- >0) && buf[j]) ; j++) {
 			if (IS_PRINTABLE (buf[j]))
 				p->printf ("%c", buf[j]);
 			else p->printf (".");
@@ -701,7 +701,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 	} else if (MUSTSEEJSON) {
 		int j = i;
 		p->printf ("%d,\"string\":\"", seeki);
-		for (; j<len && ((size==-1 || size-->0) && buf[j]) ; j++) {
+		for (; j<len && ((size==-1 || size-- >0) && buf[j]) ; j++) {
 			if (IS_PRINTABLE (buf[j]))
 				p->printf ("%c", buf[j]);
 			else p->printf (".");
@@ -1180,7 +1180,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 
 			/* json */
-			if (mode & R_PRINT_JSON) {
+			if (MUSTSEEJSON && mode & R_PRINT_JSON) {
 				if (oldslide<=slide) {
 					if (!first)
 						p->printf (",");
@@ -1327,7 +1327,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						mode, setval, nxtfield);
 					i+= (isptr) ? 4 : s;
 				} else {
-					p->printf ("[\n");
+					if (mode & R_PRINT_ISFIELD)
+						p->printf ("[\n");
 					while (size--) {
 						if (elem == -1 || elem == 0) {
 							mode |= R_PRINT_MUSTSEE;
@@ -1337,13 +1338,14 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						}
 						s = r_print_format_struct (p, seek+i,
 							buf+i, len-i, fmtname, slide, mode, setval, nxtfield);
-						if (size != 0 && elem == -1)
+						if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1)
 							p->printf (",\n");
 						if (elem > -1) elem--;
 						i+= (isptr) ? 4 : s;
 					}
-					if (MUSTSEEJSON) p->printf ("]]}");
-					else p->printf ("]");
+					if (mode & R_PRINT_ISFIELD)
+						p->printf ("]");
+					if (MUSTSEEJSON) p->printf ("]}]}");
 				}
 				oldslide = slide;
 				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
