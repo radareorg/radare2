@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2015 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -1183,6 +1183,9 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 #if R_BIN_MACH064
 	return 64;
 #else
+	if ((bin->hdr.cpusubtype & 0xff) == CPU_SUBTYPE_ARM_V7K) {
+		return 16;
+	}
 	return 32;
 #endif
 }
@@ -1314,7 +1317,13 @@ char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin) {
 			return strdup ("xscale");
 		case CPU_SUBTYPE_ARM_V7:
 			return strdup ("v7");
-		default:return strdup ("unknown ARM subtype");
+		case CPU_SUBTYPE_ARM_V7F:
+			return strdup ("v7f");
+		case CPU_SUBTYPE_ARM_V7K:
+			return strdup ("v7k");
+		default:
+			return r_str_newf ("unknown ARM subtype %d",
+				bin->hdr.cpusubtype&0xff);
 		}
 	case CPU_TYPE_SPARC:
 		switch (bin->hdr.cpusubtype & 0xff) {
