@@ -158,3 +158,4 @@ Do not try to sploit that binary - that's impossible. Instead, only try to reali
 Hello Mr. Anderson
 try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
+What about taking a break? Here, have this nice 0xCC.
