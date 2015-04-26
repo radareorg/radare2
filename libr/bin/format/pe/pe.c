@@ -135,7 +135,8 @@ static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
 }
 
 static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, const char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
-	char import_name[PE_NAME_LENGTH + 1], name[PE_NAME_LENGTH + 1];
+	char import_name[PE_NAME_LENGTH + 1];
+	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
 	PE_DWord import_table = 0, off = 0;
 	int i = 0;
@@ -161,7 +162,9 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf (import_name, PE_NAME_LENGTH-1, "qq%s_Ordinal_%i", dll_name, import_ordinal);
+eprintf ("DLLNAME(%s)\n", dll_name);
+				snprintf (import_name, PE_NAME_LENGTH, "qq%s_Ordinal_%i",
+					dll_name, import_ordinal);
 				//
 				symdllname = strdup (dll_name);
 				// rip ".dll"
@@ -607,6 +610,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	return R_TRUE;
 fail:
 	free (import_dir);
+	import_dir = NULL;
+	bin->import_directory = import_dir;
 	free (delay_import_dir);
 	return R_FALSE;
 }
@@ -1918,8 +1923,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0) {
 			dll_name_offset = curr_import_dir->Name;
-			if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
-					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+			int rr = r_buf_read_at (bin->b,
+				PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
+				(ut8*)dll_name, PE_NAME_LENGTH);
+			if (rr != PE_NAME_LENGTH) {
 				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
@@ -1949,7 +1956,8 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 		}
 
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
-			if (r_buf_read_at(bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+			int rr = r_buf_read_at (bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH);
+			if (rr <5) { //!= PE_NAME_LENGTH) {
 				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
@@ -1998,8 +2006,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				curr_import_dir->ForwarderChain != 0) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
-			if (len < 0) {
-				eprintf ("Error: read (libs - import dirs)\n");
+			if (len <2) { // minimum string length
+				eprintf ("Error: read (libs - import dirs) %d\n", len);
 				break;
 			}
 			libs[index].name[len-1] = '\0';
@@ -2027,7 +2035,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		while (curr_delay_import_dir->Name != 0 && curr_delay_import_dir->DelayImportNameTable != 0) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
-			if (len < 0) {
+			if (len != PE_STRING_LENGTH) {
 				eprintf ("Error: read (libs - delay import dirs)\n");
 				break;
 			}
