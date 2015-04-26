@@ -1338,8 +1338,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						}
 						s = r_print_format_struct (p, seek+i,
 							buf+i, len-i, fmtname, slide, mode, setval, nxtfield);
-						if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1)
-							p->printf (",\n");
+						if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1) {
+							p->printf (",");
+							if (MUSTSEE) p->printf ("\n");
+						}
 						if (elem > -1) elem--;
 						i+= (isptr) ? 4 : s;
 					}
