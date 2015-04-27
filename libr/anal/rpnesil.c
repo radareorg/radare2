@@ -194,13 +194,13 @@ static int esil_internal_parity_check (RAnalEsil *esil) {
 static int esil_internal_sign_check (RAnalEsil *esil) {
 	if (!esil || !esil->lastsz)						//XXX we must rethink of how we set esil->lastsz (check the src) (a,a,^=,%%z,z,= esil->lastsz will be 1 here not sizeof(a))
 		return R_FALSE;
-	return (esil->cur & (0x1<<(esil->lastsz-1)))>>(esil->lastsz-1);
+	return !!((esil->cur & (0x1<<(esil->lastsz-1)))>>(esil->lastsz-1));
 }
 
 static int esil_internal_overflow_check (RAnalEsil *esil) {
 	if (!esil ||  (esil->lastsz < 2))
 		return R_FALSE;
-	return (esil_internal_borrow_check (esil, esil->lastsz) ^ esil_internal_carry_check (esil, esil->lastsz-2));	//according to wikipedia this should work
+	return (esil_internal_carry_check (esil, esil->lastsz-1) ^ esil_internal_carry_check (esil, esil->lastsz-2));	//according to wikipedia this should work
 }															//cannot imagine any case wher both happens, maybe it's not that simple
 
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
