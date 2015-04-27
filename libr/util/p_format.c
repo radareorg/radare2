@@ -53,6 +53,22 @@ static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr
 	}
 }
 
+static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
+	int size=0, len = strlen(s);
+	ut64 addr;
+
+	if (s[0] == '*' && len >= 4) { // value pointed by the address
+		int offset = r_num_math (num, s+1);
+		updateAddr (buf, offset, endian, &addr, NULL);
+		return addr;
+	} else {
+		size = r_num_math (num, s); // this should handle also the flags, but doesn't work... :/
+		// eprintf ("SIZE: %s --> %d\n", s, size);
+	}
+	return size;
+}
+
+
 static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr64;
@@ -1039,7 +1055,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					goto beach;
 				}
 				*end = '\0';
-				size = r_num_math (NULL, arg+1);
+				size = r_get_size (p->num, buf, endian, arg+1);
 				arg = end + 1;
 				*end = ']';
 			} else {
@@ -1338,8 +1354,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						}
 						s = r_print_format_struct (p, seek+i,
 							buf+i, len-i, fmtname, slide, mode, setval, nxtfield);
-						if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1)
-							p->printf (",\n");
+						if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1) {
+							p->printf (",");
+							if (MUSTSEE) p->printf ("\n");
+						}
 						if (elem > -1) elem--;
 						i+= (isptr) ? 4 : s;
 					}

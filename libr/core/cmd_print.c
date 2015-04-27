@@ -445,6 +445,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		}
 	}
 	if (input[1]=='.') {
+		core->print->num = core->num;
 		/* print all stored format */
 		if (input[2]=='\0') {
 			RListIter *iter;
