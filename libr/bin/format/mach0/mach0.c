@@ -733,6 +733,9 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	//symbols_count = bin->nsymtab;
 	symbols_size = (symbols_count+1)*2 * sizeof (struct symbol_t);
 
+	if (symbols_size < 1)
+		return NULL;
+
 	if (!(symbols = malloc (symbols_size)))
 		return NULL;
 
