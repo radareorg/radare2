@@ -273,6 +273,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				break;
 		}
 repeat:
+		if ((len-idx)<5) {
+			break;
+		}
 		r_anal_op_fini (&op);
 		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {
 			FITFCNSZ();
