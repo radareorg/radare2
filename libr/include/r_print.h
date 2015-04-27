@@ -64,6 +64,7 @@ typedef struct r_print_t {
 	RPrintColorFor hasrefs;
 	RStrHT *formats;
 	RCons *cons;
+	RNum *num;
 } RPrint;
 
 #ifdef R_API
