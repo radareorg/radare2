@@ -252,7 +252,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 	while (buf+1 < buf_end) {
 		int maxlen = R_MIN ((size_t)(buf_end-buf)-1, 0xfff);
 		int len = r_str_nlen ((const char*)buf, maxlen);
-		char *str = r_str_ndup (buf, len);
+		char *str = r_str_ndup ((const char *)buf, len);
 		if (len<1 || len >= 0xfff) {
 			buf += 1;
 			break;

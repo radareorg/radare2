@@ -1894,12 +1894,25 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 	dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
 	if ((int)dbg_dir_offset<0 || dbg_dir_offset>= bin->size)
 		return R_FALSE;
+	if (dbg_dir_offset >= bin->b->length)
+		return R_FALSE;
 	img_dbg_dir_entry = (PE_(image_debug_directory_entry)*)(bin->b->buf + dbg_dir_offset);
+	if ((bin->b->length - dbg_dir_offset)< sizeof (PE_(image_debug_directory_entry))) {
+		return R_FALSE;
+	}
 	if (img_dbg_dir_entry) {
-		dbg_data = (ut8 *) malloc(img_dbg_dir_entry->SizeOfData);
-		r_buf_read_at(bin->b, img_dbg_dir_entry->PointerToRawData, dbg_data, img_dbg_dir_entry->SizeOfData);
-		result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
-		R_FREE(dbg_data);
+		ut32 dbg_data_poff = R_MIN (img_dbg_dir_entry->PointerToRawData, bin->b->length);
+		int dbg_data_len = R_MIN (img_dbg_dir_entry->SizeOfData, bin->b->length - dbg_data_poff);
+		if (dbg_data_len<1)  {
+			return R_FALSE;
+		}
+		dbg_data = (ut8 *) malloc (dbg_data_len + 1);
+		if (dbg_data) {
+			r_buf_read_at (bin->b, dbg_data_poff,
+				dbg_data, img_dbg_dir_entry->SizeOfData);
+			result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
+			R_FREE(dbg_data);
+		}
 	}
 	return result;
 }
