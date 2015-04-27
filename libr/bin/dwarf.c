@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake, Fedor Sakharov */
+/* radare - LGPL - Copyright 2012-2015 - pancake, Fedor Sakharov */
 
 #define D0 if(1)
 #define D1 if(1)
@@ -250,16 +250,16 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 
 	i = 0;
 	while (buf+1 < buf_end) {
-		int maxlen = R_MIN ((size_t)(buf_end-buf), 0xfff);
-		int len = r_str_nlen((const char*)buf, maxlen);
+		int maxlen = R_MIN ((size_t)(buf_end-buf)-1, 0xfff);
+		int len = r_str_nlen ((const char*)buf, maxlen);
+		char *str = r_str_ndup (buf, len);
 		if (len<1 || len >= 0xfff) {
 			buf += 1;
 			break;
 		}
-		if (f) {
-			fprintf(f, "INCLUDEDIR (%s)\n", buf);
-		}
-		add_sdb_include_dir (s, (const char *)buf, i);
+		if (f) fprintf (f, "INCLUDEDIR (%s)\n", buf);
+		add_sdb_include_dir (s, str, i);
+		free (str);
 		i++;
 		buf += len + 1;
 	}
@@ -269,8 +269,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 	for (i = 0; i < 2; i++) {
 		while (buf+1<buf_end) {
 			const char *filename = (const char *)buf;
+			int maxlen = R_MIN ((size_t)(buf_end-buf-1), 0xfff);
 			ut64 id_idx, mod_time, file_len;
-			size_t namelen, len = r_str_nlen (filename, (size_t)(buf_end-buf));
+			size_t namelen, len = r_str_nlen (filename, maxlen);
 
 			if (!len) {
 				buf++;
@@ -644,8 +645,9 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 		if (opcode == 0) {
 			ext_opcode = *buf;
 			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f, mode);
-			if (ext_opcode == DW_LNE_end_sequence)
+			if (ext_opcode == DW_LNE_end_sequence) {
 				break;
+			}
 		} else if (opcode >= hdr->opcode_base) {
 			buf = r_bin_dwarf_parse_spec_opcode (a, buf, len, hdr, regs, opcode, f, mode);
 		} else {
@@ -653,7 +655,6 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 		}
 		len = (int)(buf_end - buf);
 	}
-
 	return buf;
 }
 
@@ -690,7 +691,10 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 		if (!buf) return R_FALSE;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
-		tmplen = R_MIN (len, 4+hdr.unit_length.part1);
+		//tmplen = R_MIN (len-(buf_end-buf)-1, 4+hdr.unit_length.part1);
+		tmplen = (int)(buf_end - buf);
+		tmplen = R_MIN (tmplen, 4+hdr.unit_length.part1);
+		if (tmplen<1) break;
 		r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f, mode);
 		buf = buf_tmp + tmplen;
 		len = (int)(buf_end - buf);
