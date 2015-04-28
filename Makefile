@@ -10,6 +10,9 @@ WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
 R2VC=$(shell git rev-list --all --count)
+ifeq ($(R2VC),)
+R2VC=9999999
+endif
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
