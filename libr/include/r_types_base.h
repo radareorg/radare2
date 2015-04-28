@@ -82,11 +82,11 @@
 #define B4(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
 
 /* portable non-c99 inf/nan types */
-#ifndef INFINITY
+#if !defined(INFINITY)
 #define INFINITY (1.0f/0.0f)
 #endif
 
-#ifndef NAN
+#if !defined(NAN)
 #define NAN (0.0f/0.0f)
 #endif
 

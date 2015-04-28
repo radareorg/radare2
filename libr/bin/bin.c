@@ -238,9 +238,10 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		to = arch->buf->length;
 
 	if (arch->rawstr != 2) {
-		// in case of dump ignore here
-		if (to != 0 && to > 0xf00000) {
-			eprintf ("WARNING: bin_strings buffer is too big (0x%08"PFMT64x")\n", to-from);
+		ut64 size = to-from;
+		// in case of dump ignore here // only 2MB
+		if (size != 0 && size > 1024*1024*2) {
+			eprintf ("WARNING: bin_strings buffer is too big (0x%08"PFMT64x")\n", size);
 			return;
 		}
 	}
