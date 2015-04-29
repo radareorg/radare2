@@ -703,67 +703,43 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	return R_TRUE;
 }
 
+#define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return R_FALSE;} \
+	x=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
+
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
-	ut32 length;
+	ut32 length, offset;
 	ut16 version;
 	ut32 debug_info_offset;
 	ut8 address_size, segment_size;
 	const ut8 *buf = obuf;
 	int idx = 0;
 
-	if (!obuf) return R_FALSE;
+	if (!buf || len< 4) {
+		return R_FALSE;
+	}
 
-	length = *(ut32*)obuf;
-
+	READ_BUF (length, ut32);
 	if (f) {
 		printf("parse_aranges\n");
 		printf("length 0x%x\n", length);
 	}
 
-	if (length >= 0xfffffff0) {
-		if (idx+12>=len)
-			return R_FALSE;
-		idx += 12;
-		buf += 4;
-		buf += 8;
-	} else {
-		if (idx+4>=len)
-			return R_FALSE;
-		idx+=4;
-		buf += 4;
-	}
-
-	if (idx+2>=len)
+	if (idx+12>=len)
 		return R_FALSE;
-	version = *(ut16*)buf;
-	buf += 2;
-	idx += 2;
 
+	READ_BUF (version, ut16);
 	if (f) printf("Version %d\n", version);
 
-	if (idx+4>=len)
-		return R_FALSE;
-	debug_info_offset = *(ut32*)buf;
+	READ_BUF (debug_info_offset, ut32);
+	if (f) fprintf(f, "Debug info offset %d\n", debug_info_offset);
 
-	if (f)  fprintf(f, "Debug info offset %d\n", debug_info_offset);
-
-	buf += 4;
-	idx += 4;
-
-// ???
-	address_size = *(ut8*)buf;
-
+	READ_BUF (address_size, ut8);
 	if (f) fprintf(f, "address size %d\n", (int)address_size);
 
-	buf += 1;
-
-	segment_size = *(ut8*)buf;
-
+	READ_BUF (segment_size, ut8);
 	if (f) fprintf(f, "segment size %d\n", (int)segment_size);
 
-	buf += 1;
-
-	size_t offset = segment_size + address_size * 2;
+	offset = segment_size + address_size * 2;
 
 	if (offset) {
 		ut64 n = (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
@@ -771,20 +747,14 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 			return R_FALSE;
 		buf += n;
 		idx += n;
-	} else {
-	//	buf += 1;
 	}
 
 	while ((buf - obuf) < len) {
 		ut64 adr, length;
 		if ((idx+8)>=len)
 			break;
-		adr = *(ut64*)buf;
-		buf += 8;
-		idx += 8;
-		length = *(ut64*)buf;
-		buf += 8;
-		idx += 8;
+		READ_BUF (adr, ut64);
+		READ_BUF (length, ut64);
 		if (f) printf("length 0x%"PFMT64x" address 0x%"PFMT64x"\n", length, adr);
 	}
 
