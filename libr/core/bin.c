@@ -1551,7 +1551,13 @@ static int bin_libs (RCore *r, int mode) {
 			r_cons_printf ("%s\n", lib);
 			i++;
 		}
-		if (!mode) r_cons_printf ("\n%i libraries\n", i);
+		if (!mode) {
+			if (i==1) {
+				r_cons_printf ("\n%i library\n", i);
+			} else {
+				r_cons_printf ("\n%i libraries\n", i);
+			}
+		}
 	}
 	return R_TRUE;
 }
