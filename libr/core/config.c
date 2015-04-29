@@ -632,7 +632,8 @@ static int cb_iova(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
-		r_core_block_read (core, 0);
+		if (r_io_desc_get (core->io, core->io->raised))			//ugly fix for r2 -d ... "r2 is going to die soon ..."
+			r_core_block_read (core, 0);
 		// reload symbol information
 		if (r_list_length (r_bin_get_sections (core->bin))>0)
 			r_core_cmd0 (core, ".ia*");

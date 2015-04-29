@@ -294,8 +294,10 @@ R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 		read_from = io->desc->plugin->name;
 		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
 	} else if (!io->desc) {
-		if (io->files && r_list_length (io->files) != 0)
+		if (io->files && r_list_length (io->files) != 0) {
 			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
+			r_sys_backtrace ();
+		}
 		read_from = "FAILED";
 		bytes_read = 0;
 	} else {
