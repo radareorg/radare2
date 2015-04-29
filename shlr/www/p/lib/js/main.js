@@ -152,6 +152,8 @@ $(document).ready( function() {
     });
   });
 
+  $("#switch_button").click(function(){do_switchview()});
+
   // Render Disasm Panel
   r2ui._dis.render();
 });
@@ -348,7 +350,7 @@ function render_sections(sections) {
 function render_history(){
   var html = "<div>";
   for (var i in r2ui.history) {
-    if (i > r2ui.history_idx - 10 && i < r2ui.history_idx + 5) {
+    if (i > r2ui.history_idx - 8 && i < r2ui.history_idx + 3) {
       var flag = r2.get_flag_names(r2ui.history[i]);
       if (flag.length > 0) flag = flag[0];
       else flag = r2ui.history[i];
