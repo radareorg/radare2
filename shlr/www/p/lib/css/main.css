@@ -235,6 +235,40 @@ p {
   width: 0%;
 }
 
+#history_bar > h3 {
+  font-family: monospace;
+  font-size: 10pt;
+}
+
+#history_bar > span {
+  position: absolute;
+  vertical-align: middle;
+  background-color: #c0c0c0;
+  font-family: monospace;
+  font-size: 10pt;
+  bottom: 1px;
+  right: 0px;
+  width: 12%;
+  height:22px;
+  text-align:right;
+  padding-right: 5px;
+  cursor: pointer;
+  line-height: normal;
+}
+
+/*Hex panel */
+.hex {
+    font-family: monospace;
+    font-size: 10pt;
+    width: 650px;
+    height: 100%;
+}
+.hexdump {
+    float: left;
+    line-height: 20px;
+    width: 340px;
+}
+
 /*Hex panel */
 .hex {
     font-family: monospace;

@@ -467,6 +467,7 @@ function handleKeypress(inEvent) {
 }
 
 function do_switchview() {
+    $("#switch_button").text("loading ...");
     var address = get_address_from_class(r2ui._dis.selected);
     if (address !== undefined && address !== null) {
       if (r2ui._dis.display === "flat") r2ui._dis.display_graph();
@@ -474,6 +475,7 @@ function do_switchview() {
       r2ui.seek(address, true);
       scroll_to_address(address);
     }
+    $("#switch_button").text("switch view");
 }
 
 function do_jumpto(address) {
