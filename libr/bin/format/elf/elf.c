@@ -254,10 +254,14 @@ static int Elf_(r_bin_elf_init_dynamic_section) (struct Elf_(r_bin_elf_obj_t) *b
 	dyn = (Elf_(Dyn)*)calloc (entries, sizeof (Elf_(Dyn)));
 	if (!dyn) return R_FALSE;
 
-	if (!UT32_MUL (&dyn_size, entries, sizeof (Elf_(Dyn))))
+	if (!UT32_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
+		free (dyn);
 		return R_FALSE;
-	if (!dyn_size)
+	}
+	if (!dyn_size) {
+		free (dyn);
 		return R_FALSE;
+	}
 	if (bin->phdr[i].p_offset + dyn_size > bin->size){
 		free (dyn);
 		return R_FALSE;

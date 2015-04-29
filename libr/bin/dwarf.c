@@ -255,6 +255,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		char *str = r_str_ndup ((const char *)buf, len);
 		if (len<1 || len >= 0xfff) {
 			buf += 1;
+			free (str);
 			break;
 		}
 		if (f) fprintf (f, "INCLUDEDIR (%s)\n", buf);
