@@ -802,7 +802,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			return NULL;
 		}
 		for (i = from; i < to; i++, j++) {
-			symbols[j].offset = addr_to_offset(bin, bin->symtab[i].n_value);
+			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 			symbols[j].addr = bin->symtab[i].n_value;
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
 			if (bin->symtab[i].n_type & N_EXT)
@@ -812,9 +812,29 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			if (stridx>=0 && stridx<bin->symstrlen)
 				symstr = (char*)bin->symstr+stridx;
 			else symstr = "???";
-			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
-			symbols[j].last = 0;
+			{
+				int i = 0;
+				int len = 0;
+				len = bin->symstrlen - stridx;
+				if (len>0) {
+					for (i = 0; i<len; i++) {
+						if (symstr[i]==0xff || !symstr[i]) {
+							len = i;
+							break;
+						}
+					}
+					char *symstr_dup = r_str_ndup (symstr, len);
+					if (!symstr_dup) {
+						symbols[j].name[0] = 0;
+					} else {
+						strncpy (symbols[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH-1);
+					}
+					free (symstr_dup);
+				} else {
+					symbols[j].name[0] = 0;
+				}
+				symbols[j].last = 0;
+			}
 		}
 	}
 	to = R_MIN (bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
@@ -872,6 +892,9 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 
 	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 		return NULL;
+	if (bin->dysymtab.nundefsym<1 || bin->dysymtab.nundefsym>0xfffff) {
+		return NULL;
+	}
 	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct import_t))))
 		return NULL;
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
@@ -887,8 +910,31 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 		else symstr = "";
 		if (!*symstr)
 			continue;
-		strncpy (imports[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
-		imports[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
+			{
+				int i = 0;
+				int len = 0;
+				len = bin->symstrlen - stridx;
+				if (len>0) {
+					for (i = 0; i<len; i++) {
+						if (symstr[i]==0xff || !symstr[i]) {
+							len = i;
+							break;
+						}
+					}
+					char *symstr_dup = r_str_ndup (symstr, len);
+					if (!symstr_dup) {
+						imports[j].name[0] = 0;
+					} else {
+						strncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH-1);
+					}
+					free (symstr_dup);
+				} else {
+					imports[j].name[0] = 0;
+				}
+				imports[j].last = 0;
+			}
+		//strncpy (imports[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
+		//imports[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
 		imports[j].ord = i;
 		imports[j++].last = 0;
 	}
