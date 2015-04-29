@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014 - thatlemon@gmail.com */
+/* radare - LGPL - 2014-2015 - thatlemon@gmail.com, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -125,6 +125,10 @@ static RList* sections(RBinFile *arch) {
 
 	ret->free = free;
 
+	if (obj->header->sections < 1 || obj->header->sections>255) {
+		free (ret);
+		return NULL;
+	}
 	sect = calloc (obj->header->sections, sizeof (xbe_section));
 	if (!sect) {
 		free (ret);
@@ -140,7 +144,7 @@ static RList* sections(RBinFile *arch) {
 
 		r_buf_read_at (arch->buf, sect[i].name_addr - obj->header->base, (ut8 *)tmp, sizeof(tmp));
 
-		snprintf(item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
+		snprintf (item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
 		item->size  = sect[i].size;
@@ -160,10 +164,10 @@ static RList* sections(RBinFile *arch) {
 
 static RList* libs(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
+	int i, off, libs;
 	xbe_lib lib;
 	RList *ret;
 	char *s;
-	int i, off;
 
 	if (!arch || !arch->o)
 		return NULL;
@@ -189,7 +193,9 @@ static RList* libs(RBinFile *arch) {
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) r_list_append (ret, s);
 
-	for (i = 0; i < obj->header->lib_versions; i++) {
+	libs = obj->header->lib_versions;
+	if (libs<1) libs = 0;
+	for (i = 0; i < libs; i++) {
 		r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
 			obj->header->base + (i * sizeof (xbe_lib)),
 			(ut8 *)&lib, sizeof (xbe_lib));
@@ -219,7 +225,11 @@ static RList* symbols(RBinFile *arch) {
 
 //eprintf ("VA %llx  %llx\n", sym->paddr, sym->vaddr);
 	// PA -> VA translation
-	for (i = 0; found == R_FALSE && i < obj->header->sections; i++) {
+eprintf ("sections %d\n", obj->header->sections);
+	int limit = obj->header->sections;
+	if (limit * (sizeof(xbe_section)) >= arch->buf->length - obj->header->sechdr_addr)
+		limit = arch->buf->length;
+	for (i = 0; found == R_FALSE && i < limit; i++) {
 		r_buf_read_at (arch->buf, obj->header->sechdr_addr - \
 			obj->header->base + (sizeof (xbe_section) * i), \
 			(ut8 *)&sect, sizeof(sect));
@@ -232,8 +242,12 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	}
 
-	r_buf_read_at (arch->buf, sect.offset + (kt_addr - sect.vaddr), \
+	i = r_buf_read_at (arch->buf, sect.offset + (kt_addr - sect.vaddr), \
 		(ut8 *)&thunk_addr, sizeof (thunk_addr));
+	if (i != sizeof (thunk_addr)) {
+		free (ret);
+		return NULL;
+	}
 	for (i = 0; thunk_addr[i]; i++) {
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
@@ -271,8 +285,10 @@ static RBinInfo* info(RBinFile *arch) {
 
 	obj = arch->o->bin_obj;
 
+	memset (dbg_name, 0, sizeof (dbg_name));
 	r_buf_read_at (arch->buf, obj->header->debug_name_addr - \
 		obj->header->base, dbg_name, sizeof (dbg_name));
+	dbg_name[sizeof(dbg_name)-1] = 0;
 	ret->file = strdup ((char *)dbg_name);
 	ret->bclass = strdup ("program");
 	ret->machine = strdup ("Microsoft Xbox");
