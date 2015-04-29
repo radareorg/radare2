@@ -551,7 +551,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		count = 0;
 		do {
 			indx++;
-			if ( ((2+indx)*dir_size) > import_dir_size) {
+			if (((2+indx)*dir_size) > import_dir_size) {
 				break; //goto fail;
 			}
 			new_import_dir = (PE_(image_import_directory) *)realloc (
@@ -1964,7 +1964,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				break;
 			}
 			curr_import_dir++;
-			if (curr_import_dir+2 >= last) {
+			if ((void*)curr_import_dir >= last) {
 				break;
 			}
 		}
@@ -2027,8 +2027,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	if (bin->import_directory_offset + bin->import_directory_size > bin->b->length) {
 		eprintf ("import directory offset bigger than file\n");
-bin->import_directory_size = bin->b->length - bin->import_directory_offset;
-		return NULL;
+		bin->import_directory_size = bin->b->length - bin->import_directory_offset;
+		//return NULL;
 	}
 	RStrHT *lib_map = r_strht_new();
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
@@ -2044,14 +2044,14 @@ bin->import_directory_size = bin->b->length - bin->import_directory_offset;
 			//return NULL;
 		}
 		last = curr_import_dir + bin->import_directory_size;
-		while ((void*)(curr_import_dir+1) < last && (
+		while ((void*)(curr_import_dir+sizeof(*curr_import_dir)-1) < last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
 			if (libs[index].name[0] == 0) { // minimum string length
-				break;
+				goto next;
 			}
 			if (len <2 || libs[index].name[0] == 0) { // minimum string length
 				eprintf ("Error: read (libs - import dirs) %d\n", len);
@@ -2072,6 +2072,7 @@ bin->import_directory_size = bin->b->length - bin->import_directory_offset;
 					max_libs *= 2;
 				}
 			}
+next:
 			curr_import_dir++;
 			if ((void*)curr_import_dir >= last) {
 				eprintf ("eof in imports dir\n");
