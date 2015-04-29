@@ -114,6 +114,8 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 }
 
 R_API void r_anal_var_free (RAnalVar *av) {
+	free (av->name);
+	free (av->type);
 	free (av);
 }
 
@@ -279,6 +281,7 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 		}
 	}
 	free (varlist);
+	list->free = (RListFree)r_anal_var_free;
 	return list;
 }
 
