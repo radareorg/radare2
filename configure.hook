@@ -5,6 +5,6 @@ case "$1" in
 	;;
 *)
 	[ plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
-	./configure-plugins "$@"
+	./configure-plugins $*
 	;;
 esac

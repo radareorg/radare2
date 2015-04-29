@@ -8,5 +8,5 @@
 acr -p
 if [ -n "$1" ]; then
 	echo "./configure $*"
-	./configure "$@"
+	./configure $*
 fi

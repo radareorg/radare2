@@ -10,4 +10,4 @@ if [ $RET != 0 ]; then
 	echo "Your compiler doesn't supports ASAN."
 	exit 1
 fi
-exec sys/install.sh "$@"
+exec sys/install.sh $*
