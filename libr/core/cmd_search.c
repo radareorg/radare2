@@ -791,9 +791,14 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	//Options, like JSON, linear, ...
 	grep_arg = strchr (grep, ' ');
-	if (*grep && grep_arg) {
-		mode = *(grep_arg - 1);
+	if (*grep) {
+		if (grep_arg) {
+			mode = *(grep_arg - 1);
 		grep = grep_arg;
+		} else {
+			mode = *grep;
+			++grep;
+		}
 	}
 
 	if (*grep==' ') // grep mode
