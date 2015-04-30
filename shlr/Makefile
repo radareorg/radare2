@@ -51,9 +51,7 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; $(MAKE) clean
 	cd sdb ; \
 		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} \
-			CFLAGS='${HOST_CFLAGS} -fPIC' \
-			LDFLAGS='${HOST_LDFLAGS}' && \
+		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
 		cp -f src/sdb src/.sdb
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
