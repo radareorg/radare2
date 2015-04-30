@@ -310,19 +310,19 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	
 	// adding compile time to the SDB
 	{
-	       struct timezone tz;
-	       struct timeval tv;
-	       int gmtoff;
-	       char *timestr;
-	       time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
-	       sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
-		       bin->nt_headers->file_header.TimeDateStamp, 0);
-	       gettimeofday (&tv, &tz);
-	       gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
-	       ts += gmtoff;
-	       timestr = r_str_chop (strdup (ctime (&ts)));
-	       // gmt offset for pe date is t->tm_gmtoff
-	       sdb_set_owned (bin->kv,
+	    struct timezone tz;
+	    struct timeval tv;
+	    int gmtoff;
+	    char *timestr;
+	    time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
+	    sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
+	    	bin->nt_headers->file_header.TimeDateStamp, 0);
+	    gettimeofday (&tv, &tz);
+	    gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
+	    ts += gmtoff;
+	    timestr = r_str_chop (strdup (ctime (&ts)));
+	   // gmt offset for pe date is t->tm_gmtoff
+	    sdb_set_owned (bin->kv,
 			"image_file_header.TimeDateStamp_string",
 			timestr, 0);
 	}
@@ -1928,7 +1928,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	if (!bin)
 		return NULL;
 
-	if (bin->import_directory_offset+32 >= bin->b->length) {
+	if (bin->import_directory_offset+32 >= bin->size) {
 		return NULL;
 	}
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
@@ -1941,12 +1941,12 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 		if (bin->import_directory_size<1) {
 			return NULL;
 		}
-		if (bin->import_directory_offset+bin->import_directory_size > bin->b->length) {
+		if (bin->import_directory_offset+bin->import_directory_size > bin->size) {
 			eprintf ("Error: read (import directory too big)\n");
-			bin->import_directory_size = bin->b->length - bin->import_directory_offset;
+			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
-		last = curr_import_dir + bin->import_directory_size;
-		while (((void*)curr_import_dir+sizeof (*curr_import_dir)) < last && (
+		last = (char *)curr_import_dir + bin->import_directory_size;
+		while ((void*)curr_import_dir < last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
@@ -2043,8 +2043,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				bin->import_directory_offset, bin->import_directory_size, bin->b->length);
 			//return NULL;
 		}
-		last = curr_import_dir + bin->import_directory_size;
-		while ((void*)(curr_import_dir+sizeof(*curr_import_dir)-1) < last && (
+		last = (char *)curr_import_dir + bin->import_directory_size;
+		while ((void*)curr_import_dir < last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
