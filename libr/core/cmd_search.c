@@ -1534,9 +1534,11 @@ static int cmd_search(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage: /R", "", "Search for ROP gadgets",
 				"/R", " [filter-by-string]" , "Show gadgets",
-				"/R/", " [filter-by-string]" , "Show gadgets [regular expression]",
+				"/R/", " [filter-by-regexp]" , "Show gadgets [regular expression]",
 				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
+				"/R/l", " [filter-by-regexp]" , "Show gadgets in a linear manner [regular expression]",
 				"/Rj", " [filter-by-string]", "JSON output",
+				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == '/') {
