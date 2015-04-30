@@ -774,6 +774,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RList /*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
+	char* grep_arg = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	if (max_instr <= 0) {
@@ -789,9 +790,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
 
 	//Options, like JSON, linear, ...
-	if (*grep && *grep != ' ') {
-		mode = *grep;
-		grep++;
+	grep_arg = strchr (grep, ' ');
+	if (*grep && grep_arg) {
+		mode = *(grep_arg - 1);
+		grep = grep_arg;
 	}
 
 	if (*grep==' ') // grep mode
@@ -879,7 +881,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					epair->instr_offset = i+increment;
 					epair->delay_size = end_gadget.delay;
 					r_list_append(end_list, (void*)(intptr_t)epair);
-					
 				}
 				else {
 					epair->instr_offset = (intptr_t)i;
