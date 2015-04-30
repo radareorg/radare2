@@ -2040,7 +2040,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			// chop
 			bin->import_directory_size = bin->b->length - bin->import_directory_offset;
 			eprintf ("Warning: read libs (import directory too big) %d %d size %d\n",
-				bin->import_directory_offset, bin->import_directory_size, bin->b->length);
+				(int)bin->import_directory_offset, (int)bin->import_directory_size,
+				(int)bin->b->length);
 			//return NULL;
 		}
 		last = (char *)curr_import_dir + bin->import_directory_size;
