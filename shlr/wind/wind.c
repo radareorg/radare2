@@ -92,7 +92,7 @@ wind_get_profile (int bits, int build, int sp) {
 
 #define LOG_PKT(p) \
 { \
-	eprintf("Leader\t: %08x\nType\t: %08x\nLenght\t: %08x\nID\t: %08x\nCheck\t: %08x [%s]\n", \
+	eprintf("Leader\t: %08x\nType\t: %08x\nLength\t: %08x\nID\t: %08x\nCheck\t: %08x [%s]\n", \
 		(p)->leader, \
 		(p)->type, \
 		(p)->length, \
