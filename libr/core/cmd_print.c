@@ -2782,12 +2782,12 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 		case '\0':
-			for (l=0; l<len; l+=sizeof (time_t))
-				r_print_date_unix (core->print, core->block+l, sizeof (time_t));
+			for (l=0; l<len; l+=sizeof (ut32))
+				r_print_date_unix (core->print, core->block+l, sizeof (ut32));
 			break;
 		case 'd':
-			for (l=0; l<len; l+=4)
-				r_print_date_dos (core->print, core->block+l, 4);
+			for (l=0; l<len; l+=sizeof (ut32))
+				r_print_date_dos (core->print, core->block+l, sizeof (ut32));
 			break;
 		case 'n':
 			core->print->big_endian = !core->print->big_endian;
@@ -2798,9 +2798,9 @@ static int cmd_print(void *data, const char *input) {
 		case '?':{
 			const char* help_msg[] = {
 			"Usage: pt", "[dn]", "print timestamps",
-			"pt", "", "print unix time (32 bit `cfg.big_endian`",
-			"ptd","", "print dos time (32 bit `cfg.big_endian`",
-			"ptn","", "print ntfs time (64 bit `cfg.big_endian`",
+			"pt", "", "print unix time (32 bit `cfg.bigendian`)",
+			"ptd","", "print dos time (32 bit `cfg.bigendian`)",
+			"ptn","", "print ntfs time (64 bit `cfg.bigendian`)",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}

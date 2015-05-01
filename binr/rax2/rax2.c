@@ -259,9 +259,8 @@ static int rax (char *str, int len, int last) {
 	} else if (flags & 2048) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
-		p->big_endian = 0; // TODO: honor endian here
-		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 8, 0); // fix endian here
-		r_print_date_unix (p, (const ut8*)&n, sizeof (ut64));
+		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 4, !(flags & 2));
+		r_print_date_unix (p, (const ut8*)&n, sizeof (ut32));
 		r_print_free (p);
 		return R_TRUE;
 	} else if (flags & 4096) { // -E
