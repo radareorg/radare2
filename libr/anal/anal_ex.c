@@ -179,7 +179,12 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 		current_bb->op_sz = state->current_op->size;
 		current_bb->op_bytes = malloc(current_bb->op_sz);
 		if (current_bb->op_bytes) {
-			memcpy(current_bb->op_bytes, r_anal_state_get_buf_by_addr(state, addr), current_bb->op_sz);
+			int buf_len = r_anal_state_get_len( state, addr);
+			if (current_bb->op_sz <buf_len) {
+				eprintf ("Oops\n");
+				return NULL;
+			}
+			memcpy (current_bb->op_bytes, r_anal_state_get_buf_by_addr(state, addr), current_bb->op_sz);
 		}
 	}
 	state->current_bb = current_bb;
@@ -275,7 +280,9 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 
 		if ( state->current_bb_head == NULL ) {
 			state->current_bb_head = state->current_bb;
-			state->current_bb_head->type |= R_ANAL_BB_TYPE_HEAD;
+			if (state->current_bb_head) {
+				state->current_bb_head->type |= R_ANAL_BB_TYPE_HEAD;
+			}
 		}
 
 		if (past_bb) {
@@ -294,7 +301,9 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 			break;
 		}
 
-		bytes_consumed += state->current_bb->op_sz;
+		if (state->current_bb) {
+			bytes_consumed += state->current_bb->op_sz;
+		}
 		state->current_addr = state->next_addr;
 		r_anal_op_free (state->current_op);
 
