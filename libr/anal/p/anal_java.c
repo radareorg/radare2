@@ -745,6 +745,10 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 		for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
 			//ut32 value = (ut32)(UINT (data, pos));
+			if (pos+4>=len) {
+				// switch is too big cant read further
+				break;
+			}
 			int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
 			IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
 			caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
