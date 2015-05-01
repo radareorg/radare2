@@ -331,7 +331,7 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)),
 			STR(info->rpath),
-			STR(size_str),
+			size_str,
 			STR(info->subsystem),
 			info->guid ? info->guid : "",
 			info->debug_file_name ? info->debug_file_name : "",
