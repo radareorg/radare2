@@ -259,7 +259,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
-					bb->jump = bb->jumpbb->addr;
+					if (bb->jumpbb) {
+						bb->jump = bb->jumpbb->addr;
+					}
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 					bb->jump = bb->jumpbb->addr;
