@@ -300,7 +300,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 	if (MUSTSET) {
 		p->printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
-		char *timestr = strdup(ctime((time_t*)&addr));
+		char *timestr = strdup(asctime (gmtime ((time_t*)&addr)));
 		*(timestr+24) = '\0';
 		p->printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		if (size==-1) {
@@ -310,7 +310,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			while (size--) {
 				updateAddr (buf, i, endian, &addr, NULL);
 				free (timestr);
-				timestr = strdup (ctime((time_t*)&addr));
+				timestr = strdup (asctime (gmtime ((time_t*)&addr)));
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->printf ("%s", timestr);
@@ -325,7 +325,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 		}
 		free (timestr);
 	} else if (MUSTSEEJSON) {
-		char *timestr = strdup (ctime ((time_t*)&addr));
+		char *timestr = strdup (asctime (gmtime ((time_t*)&addr)));
 		*(timestr+24) = '\0';
 		if (size==-1) {
 			p->printf ("\"%s\"", timestr);
@@ -334,7 +334,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			while (size--) {
 				updateAddr (buf, i, endian, &addr, NULL);
 				free (timestr);
-				timestr = strdup (ctime((time_t*)&addr));
+				timestr = strdup (asctime (gmtime ((time_t*)&addr)));
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->printf ("\"%s\"", timestr);
