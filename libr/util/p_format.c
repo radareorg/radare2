@@ -170,6 +170,77 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 	}
 }
 
+static int r_print_format_uleb(const RPrint* p, int endian, int mode,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	int elem = -1;
+	int s = 0, sum = 0;
+	ut64 value = 0, offset = 0;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size/ARRAYINDEX_COEF-1;
+		size %= ARRAYINDEX_COEF;
+	}
+	// offset = seeki+((elem>=0)?16*elem:0);
+	if (MUSTSET) {
+		ut8 *tmp;
+		char *nbr;
+		do {
+			offset += s;
+			r_uleb128_decode (buf+offset, &s, &value);
+		} while (elem--);
+		tmp = (ut8*) r_uleb128_encode (r_num_math (NULL, setval), &s);
+		nbr = r_hex_bin2strdup (tmp, s);
+		p->printf ("\"wx %s\" @ 0x%08"PFMT64x"\n", nbr, seeki+offset);
+		free (tmp);
+		free (nbr);
+		// sum = size of the converted number
+	} else if (MUSTSEE) {
+		p->printf ("0x%08"PFMT64x" = ", seeki+offset);
+		if (size==-1) {
+			r_uleb128_decode (buf+offset, &s, &value);
+			p->printf ("%"PFMT64d, value);
+			sum = s;
+		} else {
+			p->printf ("[ ");
+			while (size--) {
+				if (elem == -1 || elem == 0) {
+					r_uleb128_decode (buf+i, &s, &value);
+					sum += s;
+					p->printf ("%"PFMT64d, value);
+					if (elem == 0) elem = -2;
+				}
+				if (size != 0 && elem == -1)
+					p->printf (", ");
+				if (elem > -1) elem--;
+				i+=s;
+			}
+			p->printf (" ]");
+		}
+	} else if (MUSTSEEJSON) {
+		if (size==-1) {
+			r_uleb128_decode (buf+offset, &s, &value);
+			p->printf ("\"%"PFMT64d"\"", value);
+			sum = s;
+		} else {
+			p->printf ("[ ");
+			while (size--) {
+				if (elem == -1 || elem == 0) {
+					r_uleb128_decode (buf+i, &s, &value);
+					sum += s;
+					p->printf ("\"%"PFMT64d"\"", value);
+					if (elem == 0) elem = -2;
+				}
+				if (size != 0 && elem == -1)
+					p->printf (", ");
+				if (elem > -1) elem--;
+				i+=s;
+			}
+			p->printf (" ]");
+		}
+		p->printf ("}");
+	}
+	return sum;
+}
+
 static void r_print_format_char(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
@@ -1224,6 +1295,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else
 			/* format chars */
 			switch (tmp) {
+			case 'u':
+				i+= r_print_format_uleb(p, endian, mode, setval, seeki, buf, i, size);
+				break;
 			case 't':
 				r_print_format_time(p, endian, mode, setval, seeki, buf, i, size);
 				i+= (size==-1) ? 4 : 4*size;
