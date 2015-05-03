@@ -18,9 +18,9 @@ struct r_bin_mz_reloc_t {
 };
 
 struct r_bin_mz_obj_t {
-	MZ_image_dos_header *dos_header;
-	void *dos_extended_header;
-	MZ_image_relocation_entry *relocation_entries;
+	const MZ_image_dos_header *dos_header;
+	const void *dos_extended_header;
+	const MZ_image_relocation_entry *relocation_entries;
 
 	int dos_extended_header_size;
 
@@ -30,9 +30,9 @@ struct r_bin_mz_obj_t {
 	Sdb *kv;
 };
 
-int r_bin_mz_get_entrypoint(struct r_bin_mz_obj_t *bin);
-struct r_bin_mz_segment_t *r_bin_mz_get_segments(struct r_bin_mz_obj_t *bin);
-struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(struct r_bin_mz_obj_t *bin);
+int r_bin_mz_get_entrypoint(const struct r_bin_mz_obj_t *bin);
+struct r_bin_mz_segment_t *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin);
+struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin);
 void *r_bin_mz_free(struct r_bin_mz_obj_t* bin);
 struct r_bin_mz_obj_t* r_bin_mz_new(const char* file);
-struct r_bin_mz_obj_t* r_bin_mz_new_buf(struct r_buf_t *buf);
+struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf);
