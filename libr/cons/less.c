@@ -127,6 +127,7 @@ R_API void r_cons_less_str(const char *str) {
 	int w, h, ch, to, ui = 1, from = 0, i;
 	const char *sreg;
 
+	if(str == NULL || str[0] == '\0') return;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
 
