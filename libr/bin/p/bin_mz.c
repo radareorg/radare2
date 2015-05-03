@@ -4,8 +4,8 @@
 #include <r_bin.h>
 #include "mz/mz.h"
 
-static Sdb * get_sdb (RBinObject *o) {
-	struct r_bin_mz_obj_t *bin;
+static Sdb * get_sdb(RBinObject *o) {
+	const struct r_bin_mz_obj_t *bin;
 	if (!o || !o->bin_obj) return NULL;
 	bin = (struct r_bin_mz_obj_t *) o->bin_obj;
 	if (bin && bin->kv) return bin->kv;
@@ -19,7 +19,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		return R_FALSE;
 	if (length <= 0x3d)
 		return R_FALSE;
-	if (!memcmp (buf, "MZ", 2) || !memcmp(buf, "ZM", 2))
+	if (!memcmp (buf, "MZ", 2) || !memcmp (buf, "ZM", 2))
 	{
 		ret = R_TRUE;
 
@@ -33,25 +33,25 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
 static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	struct r_bin_mz_obj_t *res = NULL;
+	const struct r_bin_mz_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
-	tbuf = r_buf_new();
+	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_mz_new_buf (tbuf);
 	if (res)
 		sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
-	return res;
+	return (void *)res;
 }
 
 static int load(RBinFile *arch) {
-	void *res;
+	const void *res;
 	const ut8 *bytes;
 	ut64 sz;
 
@@ -61,7 +61,7 @@ static int load(RBinFile *arch) {
 	bytes = r_buf_buffer (arch->buf);
 	sz = r_buf_size (arch->buf);
 	res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
-	arch->o->bin_obj = res;
+	arch->o->bin_obj = (void *)res;
 	return res? R_TRUE: R_FALSE;
 }
 
@@ -71,8 +71,8 @@ static int destroy(RBinFile *arch) {
 }
 
 static RList * entries(RBinFile *arch) {
-	RList *res;
     int entry;
+	RList *res = NULL;
 	RBinAddr *ptr = NULL;
 
 	if (!(res = r_list_new ()))
@@ -95,7 +95,7 @@ static RList * entries(RBinFile *arch) {
 static RList * sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	struct r_bin_mz_segment_t *segments = NULL;
+	const struct r_bin_mz_segment_t *segments = NULL;
 	int i;
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -105,8 +105,11 @@ static RList * sections(RBinFile *arch) {
 		return NULL;
 	}
 	for (i = 0; !segments[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection)))
-			break;
+		if (!(ptr = R_NEW0 (RBinSection))) {
+			free ((void *)segments);
+			r_list_free (ret);
+			return NULL;
+		}
 		sprintf ((char*)ptr->name, "seg_%03d", i);
 		ptr->size = segments[i].size;
 		ptr->vsize = segments[i].size;
@@ -115,21 +118,21 @@ static RList * sections(RBinFile *arch) {
 		ptr->srwx = r_str_rwx ("rwx");
 		r_list_append (ret, ptr);
 	}
-	free (segments);
+	free ((void *)segments);
 	return ret;
 }
 
 static RBinInfo * info(RBinFile *arch) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo * const ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
-	ret->file = strdup(arch->file);
-	ret->bclass = strdup("MZ");
-	ret->rclass = strdup("mz");
-	ret->os = strdup("DOS");
-	ret->arch = strdup("x86");
-	ret->machine = strdup("i386");
-	ret->type = strdup("EXEC (Executable file)");
-	ret->subsystem = strdup("DOS");
+	ret->file = strdup (arch->file);
+	ret->bclass = strdup ("MZ");
+	ret->rclass = strdup ("mz");
+	ret->os = strdup ("DOS");
+	ret->arch = strdup ("x86");
+	ret->machine = strdup ("i386");
+	ret->type = strdup ("EXEC (Executable file)");
+	ret->subsystem = strdup ("DOS");
 	ret->rpath = NULL;
 	ret->cpu = NULL;
 	ret->guid = NULL;
@@ -149,7 +152,7 @@ static RBinInfo * info(RBinFile *arch) {
 static RList * relocs(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinReloc *rel = NULL;
-	struct r_bin_mz_reloc_t *relocs = NULL;
+	const struct r_bin_mz_reloc_t *relocs = NULL;
 	int i;
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
@@ -163,14 +166,17 @@ static RList * relocs(RBinFile *arch) {
 		return ret;
 	for (i = 0; !relocs[i].last; i++) {
 
-		if (!(rel = R_NEW0 (RBinReloc)))
-			break;
+		if (!(rel = R_NEW0 (RBinReloc))) {
+			free ((void *)relocs);
+			r_list_free (ret);
+			return NULL;
+		}
 		rel->type = R_BIN_RELOC_16;
 		rel->vaddr = relocs[i].paddr;
 		rel->paddr = relocs[i].paddr;
 		r_list_append (ret, rel);
 	}
-	free (relocs);
+	free ((void *)relocs);
 	return ret;
 }
 
