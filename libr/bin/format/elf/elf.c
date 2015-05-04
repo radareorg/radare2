@@ -1533,6 +1533,14 @@ if (
 				free (strtab);
 				return NULL;
 			}
+			ret = calloc (nsym, sizeof (struct r_bin_elf_symbol_t));
+			if (!ret) {
+				eprintf ("Cannot allocate %d symbols\n", nsym);
+				free (ret);
+				free (sym);
+				free (strtab);
+				return NULL;
+			}
 			for (k = ret_ctr = 0; k < nsym; k++) {
 				if (k == 0)
 					continue;
@@ -1548,12 +1556,12 @@ if (
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
 				} else continue;
-				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
-					perror ("realloc (symbols|imports)");
-					free (strtab);
-					free (sym);
-					return NULL;
+#if SKIP_SYMBOLS_WITH_VALUE
+				if (sym[k].st_value) {
+					/* skip symbols with value */
+					continue;
 				}
+#endif
 #if 0
 				if (bin->laddr) {
 					int idx = sym[k].st_shndx;
@@ -1600,15 +1608,6 @@ if (
 			}
 			free (sym);
 			sym = NULL;
-			{
-				ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
-				if (!p) {
-					free (ret);
-					free (strtab);
-					return NULL;
-				}
-				ret = (struct r_bin_elf_symbol_t *) p;
-			}
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
 
 			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {

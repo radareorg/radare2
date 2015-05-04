@@ -2167,6 +2167,9 @@ R_API ut64 r_bin_java_parse_methods (RBinJavaObj *bin, const ut64 offset, const 
 	r_list_free (bin->methods_list);
 	bin->methods_list = r_list_newf (r_bin_java_fmtype_free);
 
+	if (offset + 2 >= len) {
+		return 0LL;
+	}
 	bin->methods_offset = offset;
 	bin->methods_count = R_BIN_JAVA_USHORT (fm_buf, 0);
 	adv += 2;

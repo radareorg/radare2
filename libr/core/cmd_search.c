@@ -774,6 +774,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RList /*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
+	char* grep_arg = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	if (max_instr <= 0) {
@@ -789,9 +790,15 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
 
 	//Options, like JSON, linear, ...
-	if (*grep && *grep != ' ') {
-		mode = *grep;
-		grep++;
+	grep_arg = strchr (grep, ' ');
+	if (*grep) {
+		if (grep_arg) {
+			mode = *(grep_arg - 1);
+		grep = grep_arg;
+		} else {
+			mode = *grep;
+			++grep;
+		}
 	}
 
 	if (*grep==' ') // grep mode
@@ -879,7 +886,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					epair->instr_offset = i+increment;
 					epair->delay_size = end_gadget.delay;
 					r_list_append(end_list, (void*)(intptr_t)epair);
-					
 				}
 				else {
 					epair->instr_offset = (intptr_t)i;
@@ -1202,8 +1208,12 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 		if (maxhits && count >= maxhits)
 			break;
-		if ((hits = r_core_asm_strsearch (core, input+2,
-				param->from, param->to, maxhits))) {
+
+		if (outmode == 0) hits = NULL;
+		else hits = r_core_asm_strsearch (core, input+2,
+				param->from, param->to, maxhits);
+
+		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_singleton()->breaked)
 					break;
@@ -1528,9 +1538,11 @@ static int cmd_search(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage: /R", "", "Search for ROP gadgets",
 				"/R", " [filter-by-string]" , "Show gadgets",
-				"/R/", " [filter-by-string]" , "Show gadgets [regular expression]",
+				"/R/", " [filter-by-regexp]" , "Show gadgets [regular expression]",
 				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
+				"/R/l", " [filter-by-regexp]" , "Show gadgets in a linear manner [regular expression]",
 				"/Rj", " [filter-by-string]", "JSON output",
+				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == '/') {

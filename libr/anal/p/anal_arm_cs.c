@@ -424,8 +424,17 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else if (insn->detail->arm.cc) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = (ut64) (ut32)IMM(0);
+			if (REGID(1)==ARM_REG_PC) {
+				op->jump = addr+op->size;
+			} else {
+				op->jump = (ut64) (ut32)IMM(0);
+				op->jump = addr+op->size;
+			}
 			op->fail = addr+op->size;
+			if (op->jump == op->fail) {
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->fail = UT64_MAX;
+			}
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = IMM(0);

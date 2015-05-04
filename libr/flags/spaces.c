@@ -123,7 +123,7 @@ static int r_flag_space_count (RFlag *f, int n) {
 
 R_API int r_flag_space_list(RFlag *f, int mode) {
 	const char *defspace = NULL;
-	int count, i, j = 0;
+	int count, len, i, j = 0;
 	if (mode == 'j')
 		r_cons_printf ("[");
 	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
@@ -132,13 +132,22 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 		if (mode=='j') {
 			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
 					j? ",":"", f->spaces[i],
-					(i==f->space_idx)?
-					",\"selected\":true":"", count);
+					(i==f->space_idx)? ",\"selected\":true":"",
+					count);
 		} else if (mode=='*') {
 			r_cons_printf ("fs %s\n", f->spaces[i]);
 			if (i==f->space_idx) defspace = f->spaces[i];
 		} else {
-			r_cons_printf ("%02d %2d %c %s\n", j++, count,
+			#define INDENT 5
+			char num0[64], num1[64], spaces[32];
+			snprintf (num0, sizeof (num0), "%d", i);
+			snprintf (num1, sizeof (num1), "%d", count);
+			memset(spaces, ' ', sizeof (spaces));
+			len = strlen (num0) + strlen (num1);
+			if (len<INDENT) {
+				spaces[INDENT-len] = 0;
+			} else spaces[0] = 0;
+			r_cons_printf ("%s%s %s %c %s\n", num0, spaces, num1,
 					(i==f->space_idx)?'*':'.',
 					f->spaces[i]);
 		}

@@ -1,8 +1,6 @@
 #!/bin/sh
-export CFLAGS="-fsanitize=address"
+export CFLAGS="-fsanitize=address -lasan"
 export LDFLAGS="-lasan"
-export HOST_CFLAGS="-fsanitize=address"
-export HOST_LDFLAGS="-lasan"
 echo 'int main(){return 0;}' > .a.c
 [ -z "${CC}" ] && CC=gcc
 ${CC} ${CFLAGS} ${LDFLAGS} -o .a.out .a.c

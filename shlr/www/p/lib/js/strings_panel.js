@@ -5,8 +5,8 @@ var StringsPanel = function () {
 
 StringsPanel.prototype.render = function() {
 	$('#strings_tab').html('<div id="strings" style="color:rgb(127,127,127);"></div>');
-	//Added String search bar and lenght bar
-	$('#strings').before('<div class="ui-toolbar ui-widget-header ui-helper-clearfix" style="padding:5px;"><input id="search_string" type="text" placeholder="Search "><input id="string_lenght" type="text" placeholder="Lenght" style="margin-left:50px;"></div>');
+	//Added String search bar and length bar
+	$('#strings').before('<div class="ui-toolbar ui-widget-header ui-helper-clearfix" style="padding:5px;"><input id="search_string" type="text" placeholder="Search "><input id="string_length" type="text" placeholder="Length" style="margin-left:50px;"></div>');
 	r2.cmdj("izj", function(strings) {
 		var data = [];
 		for (var i in strings) {
@@ -42,9 +42,9 @@ StringsPanel.prototype.render = function() {
 	    			str1=atob(f.string).slice(0,-1)
 	    			str1.toLowerCase();
 	    			// Searches all the occurence of the string with fixed length
-	    			if($('#string_lenght').val())
+	    			if($('#string_length').val())
 	    			{
-	    				len=$('#string_lenght').val();
+	    				len=$('#string_length').val();
 						if(str1.indexOf(str)>=0 && f.length==len)
 						{ 
 							var fd = {
@@ -83,9 +83,9 @@ StringsPanel.prototype.render = function() {
 	});
 }
 });
-// Filtering strings by the string lenght
-$('#string_lenght').change(function(){
-	if($('#string_lenght').val()==0 || $('#string_lenght').val()=='undefined' )
+// Filtering strings by the string length
+$('#string_length').change(function(){
+	if($('#string_length').val()==0 || $('#string_length').val()=='undefined' )
 		StringsPanel.prototype.render();
 	else{
 		r2.cmdj("izj", function(strings) {
@@ -96,9 +96,9 @@ $('#string_lenght').change(function(){
 	    		str.toLowerCase();
 	    		str1=atob(f.string).slice(0,-1)
 	    		str1.toLowerCase();
-	    		if(str.length>0 && $('#string_lenght').val())
+	    		if(str.length>0 && $('#string_length').val())
 	    		{
-	     				len=$('#string_lenght').val();
+	     				len=$('#string_length').val();
 	     				if(f.length==len && str1.indexOf(str)>=0)
 	     				{ 
 	     					var fd = {
@@ -116,7 +116,7 @@ $('#string_lenght').change(function(){
 	     			}
 	     			else
 	     			{
-	     				len=$('#string_lenght').val();
+	     				len=$('#string_length').val();
 	      				if(f.length==len)
 	      				{ 
 	      					var fd = {

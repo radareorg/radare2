@@ -331,7 +331,7 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)),
 			STR(info->rpath),
-			STR(size_str),
+			size_str,
 			STR(info->subsystem),
 			info->guid ? info->guid : "",
 			info->debug_file_name ? info->debug_file_name : "",
@@ -1551,7 +1551,13 @@ static int bin_libs (RCore *r, int mode) {
 			r_cons_printf ("%s\n", lib);
 			i++;
 		}
-		if (!mode) r_cons_printf ("\n%i libraries\n", i);
+		if (!mode) {
+			if (i==1) {
+				r_cons_printf ("\n%i library\n", i);
+			} else {
+				r_cons_printf ("\n%i libraries\n", i);
+			}
+		}
 	}
 	return R_TRUE;
 }
