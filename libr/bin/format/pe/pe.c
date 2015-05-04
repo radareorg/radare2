@@ -522,7 +522,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int dir_size = sizeof (PE_(image_import_directory));
 	int delay_import_size = sizeof (PE_(image_delay_import_directory));
 	int indx = 0;
-	int count = 0;
+	int rr, count = 0;
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
 	/// HACK to modify import size because of begin 0.. this may report wrong info con corkami tests
@@ -584,10 +584,15 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	indx = 0;
 	if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < bin->b->length)) {
+		ut64 off;
 		bin->delay_import_directory_offset = delay_import_dir_offset;
 		do {
 			indx++;
-
+			off = indx * delay_import_size;
+			if (off >= bin->b->length) {
+				eprintf ("Error: Cannot find end of import symbols\n");
+				break;
+			}
 			delay_import_dir = (PE_(image_delay_import_directory) *)realloc (
 				delay_import_dir, (indx * delay_import_size)+1);
 			if (delay_import_dir == 0) {
@@ -598,8 +603,9 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 			curr_delay_import_dir = delay_import_dir + (indx - 1);
 
-			if (r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
-					(ut8*)(curr_delay_import_dir), dir_size) == -1) {
+			rr = r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
+					(ut8*)(curr_delay_import_dir), dir_size);
+			if (rr != dir_size) {
 				eprintf("Error: read (delay import directory)\n");
 				goto fail;
 			}
