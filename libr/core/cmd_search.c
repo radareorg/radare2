@@ -1208,8 +1208,12 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 		if (maxhits && count >= maxhits)
 			break;
-		if ((hits = r_core_asm_strsearch (core, input+2,
-				param->from, param->to, maxhits))) {
+
+		if (outmode == 0) hits = NULL;
+		else hits = r_core_asm_strsearch (core, input+2,
+				param->from, param->to, maxhits);
+
+		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_singleton()->breaked)
 					break;
