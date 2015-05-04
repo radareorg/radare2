@@ -1828,6 +1828,16 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'c': /* search asm */
+		if (input[1] == '?') {
+			const char* help_msg[] = {
+				"Usage:", "/c [inst]", "Search for asm",
+				"/c ", "instr", "search for instruction 'instr'",
+				"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
+				"/cj ", "instr", "json output",
+				"/c* ", "instr", "r2 command output",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		}
 		do_asm_search (core, &param, input);
 		dosearch = 0;
 		break;
