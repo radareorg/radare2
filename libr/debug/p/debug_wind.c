@@ -70,7 +70,9 @@ static void wstatic_debug_break(void *u) {
     dbreak=1;
     wind_break_read(wctx);
 }
+
 static int r_debug_wind_wait (RDebug *dbg, int pid) {
+	#define STATE_EXCEPTION 0x3030
 	kd_packet_t *pkt;
 	kd_stc_64 *stc;
 	int ret;
@@ -89,7 +91,7 @@ _repeat_wait:
 
 		stc = (kd_stc_64 *)pkt->data;
 		// Handle exceptions only
-		if (stc->state == 0x3030) {
+		if (stc->state == STATE_EXCEPTION) {
 			wind_set_cpu (wctx, stc->cpu);
 			free (pkt);
 			dbg->reason = R_DBG_REASON_INT;
