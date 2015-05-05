@@ -95,6 +95,7 @@ typedef struct r_disam_options_t {
 	int oplen;
 	int varxs;
 	int vars;
+	int midflags;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_fname;
@@ -254,6 +255,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
+	ds->midflags = r_config_get_i (core->config, "asm.midflags");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	ds->filter = r_config_get_i (core->config, "asm.filter");
@@ -2130,8 +2132,9 @@ toro:
 	}
 
 	r_cons_break (NULL, NULL);
+	int inc = 0;
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
-			idx += ds->oplen,i++, ds->index += ds->oplen, ds->lines++) {
+			idx += inc,i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
@@ -2281,6 +2284,17 @@ toro:
 		}
 		free (ds->opstr);
 		ds->opstr = NULL;
+		inc = ds->oplen;
+		if (ds->midflags) {
+			int i;
+			for (i=1;i<ds->oplen; i++) {
+				RFlagItem *fi = r_flag_get_i(core->flags, ds->at+i);
+				if (fi) {
+					inc = i;
+					break;
+				}
+			}
+		}
 	}
 	if (nbuf == buf) {
 		free (buf);
