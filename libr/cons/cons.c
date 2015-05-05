@@ -129,6 +129,7 @@ static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
+		eprintf("{ctrl+c} pressed.\n");
 		return R_TRUE;
 	}
 	return R_FALSE;

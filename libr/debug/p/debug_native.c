@@ -10,6 +10,7 @@
 #include <sys/param.h>
 #include "native/drx.c" // x86 specific
 #include "native/reg.c" // x86 specific
+#include "r_cons.h"
 
 #if DEBUGGER
 
@@ -473,6 +474,7 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 #if __WINDOWS__ && !__CYGWIN__
+	eprintf("r_debug_native_continue: pid=%08x tid=%08x\n",pid,tid);
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
 		print_lasterr ((char *)__FUNCTION__);
 		eprintf ("debug_contp: error\n");
