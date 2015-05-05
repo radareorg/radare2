@@ -25,6 +25,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "asl",  "1 = 2 << 3"},
 		{ "asr",  "1 = 2 >> 3"},
 		{ "b",  "jmp 1"},
+		{ "cbz",  "if !1 jmp 2"},
+		{ "b.w",  "jmp 1"},
 		{ "b.gt",  "jmp ifgt 1"},
 		{ "b.le",  "jmp ifle 1"},
 		{ "beq lr",  "ifeq ret"},
@@ -41,11 +43,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "fml",  "1 = 2 * 3"},
 		{ "ldr",  "1 = 2"},
 		{ "ldrb",  "1 = 2"},
+		{ "ldr.w",  "1 = 2"},
 		{ "ldrsw",  "1 = 2 + 3"},
 		{ "lsl",  "1 = 2 << 3"},
 		{ "lsr",  "1 = 2 >> 3"},
 		{ "mov",  "1 = 2"},
 		{ "movz",  "1 = 2"},
+		{ "vmov.i32",  "1 = 2"},
 		{ "muf",  "1 = 2 * 3"},
 		{ "mul",  "1 = 2 * 3"},
 		{ "orr",  "1 = 2 | 3"},
@@ -71,6 +75,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "pop.w",  "pop 1"},
 		{ "vpop",  "pop 1"},
 		{ "vpush",  "push 1"},
+		{ "push.w",  "push 1"},
 		{ NULL }
 	};
 
