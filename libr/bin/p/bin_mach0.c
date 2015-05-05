@@ -129,6 +129,7 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	}
 
+		int wordsize = arch->o->info->bits;
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
@@ -145,6 +146,12 @@ static RList* symbols(RBinFile *arch) {
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset+obj->boffset;
 		ptr->size = symbols[i].size;
+			if (wordsize == 16) {
+				// if thumb, hint non-thumb symbols
+				if (!(ptr->paddr & 1)) {
+					ptr->bits = 32;
+				}
+			}
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}

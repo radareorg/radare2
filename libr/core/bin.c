@@ -1018,7 +1018,6 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
-		int is_thumb = 0;
 		char *name, *dname, *cname, *demname = NULL;
 		//ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
@@ -1030,9 +1029,15 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 			// XXX - need something to handle overloaded symbols (e.g. methods)
 			// void add (int i, int j);
 			// void add (float i, int j);
-			is_thumb = (is_arm && va && symbol->bits == 16); //vaddr &1);
-			if (is_thumb) {
-				r_anal_hint_set_bits (r->anal, addr, 16);
+			{
+				int is_thumb = (is_arm && va && symbol->bits == 16); //vaddr &1);
+				if (is_thumb)
+					r_anal_hint_set_bits (r->anal, addr, 16);
+			}
+			{
+				int is_not_thumb = (is_arm && info->bits==16 && symbol->bits == 32);
+				if (is_not_thumb)
+					r_anal_hint_set_bits (r->anal, addr, 32);
 			}
 
 			demname = NULL;

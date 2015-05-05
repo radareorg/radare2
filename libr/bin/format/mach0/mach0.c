@@ -877,7 +877,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		int section = st->n_sect;
 		if (section == 1) { // text ??st->n_type == 1) {
 			/* is symbol */
-			symbols[j].offset= st->n_value + text_base;
+			symbols[j].offset = st->n_value + text_base;
 			symbols[j].addr = addr_to_offset(bin, symbols[j].offset);
 			symbols[j].size = 0; /* find next symbol and crop */
 			if (st->n_type & N_EXT)
@@ -1108,14 +1108,14 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 	struct reloc_t *relocs;
 	int i = 0, len;
 
+	int wordsize = MACH0_(get_bits)(bin) / 8;
 	if (bin->dyld_info) {
 		ut8 *opcodes, *p, *end, type = 0, rel_type = 0;
-		int lib_ord, seg_idx = -1, sym_ord = -1, wordsize;
+		int lib_ord, seg_idx = -1, sym_ord = -1;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
 		ut64 addr = 0LL;
 
-		wordsize = MACH0_(get_bits)(bin) / 8;
 #define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
 			CASE(8);
@@ -1360,6 +1360,9 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 #if R_BIN_MACH064
 	return 64;
 #else
+	if (bin->entry & 1) {
+		return 16;
+	}
 	if ((bin->hdr.cpusubtype & 0xff) == CPU_SUBTYPE_ARM_V7K) {
 		return 16;
 	}
