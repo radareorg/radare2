@@ -1340,6 +1340,74 @@ static int esil_peek8(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_peek_some(RAnalEsil *esil) {
+	int i, ret = 0;
+	ut64 ptr, regs;
+	// pop ptr
+	char *count, *dst = r_anal_esil_pop (esil);
+	if (dst) {
+		// reg
+		isregornum (esil, dst, &ptr);
+		count = r_anal_esil_pop (esil);
+		if (count) {
+			isregornum (esil, count, &regs);
+			if (regs>0) {
+				ut32 num32;
+				for (i=0; i<regs; i++) {
+					char *foo = r_anal_esil_pop (esil);
+					if (!foo) {
+						eprintf ("Cannot pop in peek\n");
+						return 0;
+					}
+					ret = r_anal_esil_mem_read (esil, ptr,
+						(ut8*)&num32, sizeof (num32));
+					r_anal_esil_reg_write (esil, foo, num32);
+					ptr += 4;
+					free (foo);
+				}
+			}
+			free (dst);
+			free (count);
+			return 1;
+		}
+		free (dst);
+	}
+	return 0;
+}
+
+static int esil_poke_some(RAnalEsil *esil) {
+	int i, ret = 0;
+	ut64 ptr, regs;
+	char *count, *dst = r_anal_esil_pop (esil);
+	if (dst) {
+		// reg
+		isregornum (esil, dst, &ptr);
+		count = r_anal_esil_pop (esil);
+		if (count) {
+			isregornum (esil, count, &regs);
+			if (regs>0) {
+				ut64 num64;
+				ut32 num32;
+				for (i=0; i<regs; i++) {
+					char *foo = r_anal_esil_pop (esil);
+					isregornum (esil, foo, &num64);
+					/* TODO : implement peek here */
+					// read from $dst 
+					ret = r_anal_esil_mem_write (esil, ptr,
+						(const ut8*)&num32, sizeof (num32));
+					ptr += 4;
+					free (foo);
+				}
+			}
+			free (dst);
+			free (count);
+			return 1;
+		}
+		free (dst);
+	}
+	return 0;
+}
+
 static int esil_peek(RAnalEsil *esil) {
 	switch (esil->anal->bits) {
 		case 64: return esil_peek8 (esil);
@@ -2951,6 +3019,8 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 	r_anal_esil_set_op (esil, "--=[4]", esil_mem_deceq4);
 	r_anal_esil_set_op (esil, "--=[8]", esil_mem_deceq8);
 	r_anal_esil_set_op (esil, "[]", esil_peek);
+	r_anal_esil_set_op (esil, "[*]", esil_peek_some);
+	r_anal_esil_set_op (esil, "=[*]", esil_poke_some);
 	r_anal_esil_set_op (esil, "[1]", esil_peek1);
 	r_anal_esil_set_op (esil, "[2]", esil_peek2);
 	r_anal_esil_set_op (esil, "[4]", esil_peek4);

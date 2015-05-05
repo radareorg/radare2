@@ -963,6 +963,10 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 		use_color = NULL;
 	}
 	core->dbg->reg = core->anal->reg;
+	/* workaround for thumb */
+	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
+		bits = 32;
+	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
 }

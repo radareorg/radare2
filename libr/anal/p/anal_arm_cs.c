@@ -41,7 +41,9 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 		}
 		break;
 	case ARM_OP_MEM:
-		// TODO
+		break;
+	case ARM_OP_FP:
+		sprintf (buf, "%lf", insn->detail->arm.operands[n].fp);
 		break;
 	default:
 		break;
@@ -72,17 +74,48 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	}
 	// TODO: PREFIX CONDITIONAL
+
 	switch (insn->id) {
 	case ARM_INS_PUSH:
-		// TODO: increment stack
+#if 0
+PUSH { r4, r5, r6, r7, lr }
+4,sp,-=,lr,sp,=[4],
+4,sp,-=,r7,sp,=[4],
+4,sp,-=,r6,sp,=[4],
+4,sp,-=,r5,sp,=[4],
+4,sp,-=,r4,sp,=[4]
+
+20,sp,-=,r4,r5,r6,r7,lr,5,sp,=[*]
+#endif
+		r_strbuf_setf (&op->esil, "%d,sp,-=,",
+			4 * insn->detail->arm.op_count);
+		for (i=0; i<insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, "%s,", REG (i));
+		}
+		r_strbuf_appendf (&op->esil, "%d,sp,=[*]",
+			insn->detail->arm.op_count);
+		break;
 	case ARM_INS_STM:
+		r_strbuf_setf (&op->esil, "");
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[4],",
 				REG (i), ARG (0), i*4);
 		}
 		break;
 	case ARM_INS_POP:
-		// TODO: decrement stack
+#if 0
+POP { r4,r5, r6}
+r4,r5,r6,3,sp,[*],12,sp,+=
+#endif
+		r_strbuf_setf (&op->esil, "");
+		for (i=0; i<insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, "%s,", REG (i));
+		}
+		r_strbuf_appendf (&op->esil, "%d,sp,[*],",
+			insn->detail->arm.op_count);
+		r_strbuf_appendf (&op->esil, "%d,sp,+=",
+			4 * insn->detail->arm.op_count);
+		break;
 	case ARM_INS_LDM:
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
@@ -111,27 +144,46 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "%s,16,<<,%s,=", ARG(1), REG(0));
 		break;
 	case ARM_INS_MOV:
+	case ARM_INS_VMOV:
+	case ARM_INS_MOVW:
 		r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
 		break;
 	case ARM_INS_SSUB16:
 	case ARM_INS_SSUB8:
 	case ARM_INS_SUB:
-		if (!strcmp (ARG(0), ARG(1))) {
-			r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(2), ARG(0));
+		if (!strcmp (ARG(2), "")) {
+			if (!strcmp (ARG(0), ARG(1))) {
+				r_strbuf_appendf (&op->esil, "0,%s,=", ARG(0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,-=",
+					ARG(1), ARG(0));
+			}
 		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-				ARG(2), ARG(1), ARG(0));
+			if (!strcmp (ARG(0), ARG(1))) {
+				r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(2), ARG(0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
+					ARG(2), ARG(1), ARG(0));
+			}
 		}
 		break;
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
 	case ARM_INS_ADD:
-		if (!strcmp (ARG(0),ARG(1))) {
-			r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(0));
-		} else if (!strcmp (ARG(2),"0")) {
-			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), ARG(0));
+		if (!strcmp (ARG(2), "")) {
+			if (!strcmp (ARG(0), ARG(1))) {
+				r_strbuf_appendf (&op->esil, "2,%s,*=", ARG(0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(1), ARG(0));
+			}
 		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
+			if (!strcmp (ARG(0),ARG(1))) {
+				r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(0));
+			} else if (!strcmp (ARG(2),"0")) {
+				r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), ARG(0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
+			}
 		}
 		break;
 	case ARM_INS_STR:
@@ -349,6 +401,10 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 			op->ptr = addr + 8 + IMM(2);
 			op->refptr = 0;
 		}
+		break;
+	case ARM_INS_VMOV:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
 	case ARM_INS_MOV:
 	case ARM_INS_MOVT:
