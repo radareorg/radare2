@@ -1809,6 +1809,13 @@ static int cmd_debug(void *data, const char *input) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
 		return 0;
 	}
+	if (!strncmp (input, "ate", 3)) {
+		char str[128];
+		str[0] = 0;
+		r_print_date_get_now (core->print, str);
+		r_cons_printf ("%s\n", str);
+		return 0;
+	}
 
 	switch (input[0]) {
 	case 't':
