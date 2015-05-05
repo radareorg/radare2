@@ -1970,7 +1970,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				break;
 			}
 			curr_import_dir++;
-			if ((void*)curr_import_dir >= last) {
+			if (((void*)curr_import_dir + sizeof (PE_(image_import_directory))) >= last) {
 				break;
 			}
 		}
@@ -2081,8 +2081,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			}
 next:
 			curr_import_dir++;
-			if ((void*)curr_import_dir >= last) {
-				eprintf ("eof in imports dir\n");
+			if (((void*)curr_import_dir + sizeof (PE_(image_import_directory)))>= last) {
 				break;
 			}
 		}
