@@ -1,4 +1,4 @@
-/* radare - Copyright 2012 - pancake */
+/* radare - Copyright 2012-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -105,16 +105,23 @@ static int mips_j (ut8 *b, int op, int addr) {
 }
 
 static int getreg (const char *p) {
-	int n = (int) r_num_get (NULL, p);
-	if (n==0) {
-		if (strcmp (p, "0")) {
-			for (n=0; regs[n]; n++) {
-				if (!strcmp (p, regs[n]))
-					return n;
-			}
-		} else n = -1;
+	int n;
+	if (!p || !*p) {
+		eprintf ("Missing argument\n");
+		return -1;
 	}
-	return n;
+	n = (int) r_num_get (NULL, p);
+	if (n != 0) {
+		return 0;
+	}
+	if (strcmp (p, "0")) {
+		for (n=0; regs[n]; n++) {
+			if (!strcmp (p, regs[n]))
+				return n;
+		}
+		eprintf ("Invalid reg name (%s)\n", p);
+	}
+	return -1;
 }
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
