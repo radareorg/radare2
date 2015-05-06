@@ -428,7 +428,6 @@ static int cmd_help(void *data, const char *input) {
 		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // input num
-		r_cons_show_cursor (0);
 		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
@@ -472,6 +471,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		}
+		r_cons_set_raw (0);
 		break;
 	case 't': {
 		struct r_prof_t prof;
