@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -167,7 +167,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		if (ptr[0]=='0' && ptr[1]=='x' ){ //&& c==0) {
 			ut64 addr = r_num_get (NULL, ptr);
 			unsigned int addr32 = (ut32) addr;
-			if (addr & ~0xFFFFFFFF) {
+			if (addr>>32) {
 				// 64 bit fun
 			} else {
 				// 32 bit fun
@@ -201,6 +201,7 @@ beach:
 	if (outbuf) {
 		free (out);
 	}
+	out[len] =0;
 	return (int)len;
 }
 

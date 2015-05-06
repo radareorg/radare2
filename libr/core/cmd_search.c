@@ -1749,6 +1749,7 @@ static int cmd_search(void *data, const char *input) {
 		ignorecase = R_TRUE;
 	case 'j':
 		if (input[0] =='j') json = R_TRUE;
+		/* pass-thru */
 	case ' ': /* search string */
 		inp = strdup (input+1+ignorecase+json);
 		len = r_str_unescape (inp);
@@ -1806,26 +1807,37 @@ static int cmd_search(void *data, const char *input) {
 		} else eprintf ("Missing delta\n");
 		break;
 	case 'x': /* search hex */
-		r_search_reset (core->search, R_SEARCH_KEYWORD);
-		r_search_set_distance (core->search, (int)
-			r_config_get_i (core->config, "search.distance"));
-		// TODO: add support for binmask here
-		{
+		if (input[1]=='?') {
+			const char* help_msg[] = {
+				"Usage:", "/x [hexpairs]:[binmask]", "Search in memory",
+				"/x ", "9090cd80", "search for those bytes",
+				"/x ", "9090cd80:ffff7ff0", "search with binary mask",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		} else {
+			RSearchKeyword *kw;
 			char *s, *p = strdup (input+json+2);
-			s = strchr (p, ' ');
-			if (!s) s = strchr (p, ':');
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, (int)
+				r_config_get_i (core->config, "search.distance"));
+			s = strchr (p, ':');
 			if (s) {
 				*s++ = 0;
-				r_search_kw_add (core->search,
-						r_search_keyword_new_hex (p, s, NULL));
+				kw = r_search_keyword_new_hex (p, s, NULL);
 			} else {
-				r_search_kw_add (core->search,
-						r_search_keyword_new_hexmask (input+json+2, NULL));
+				kw = r_search_keyword_new_hexmask (p, NULL);
+			}
+			if (kw) {
+				r_search_kw_add (core->search, kw);
+				eprintf ("Searching %d bytes...\n",
+					kw->keyword_length);
+				r_search_begin (core->search);
+				dosearch = R_TRUE;
+			} else {
+				eprintf ("no keyword\n");
 			}
 			free (p);
 		}
-		r_search_begin (core->search);
-		dosearch = R_TRUE;
 		break;
 	case 'c': /* search asm */
 		if (input[1] == '?') {
