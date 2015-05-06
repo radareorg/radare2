@@ -44,6 +44,7 @@ static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, co
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sys/un.h>
 #include "transport.h"
 
