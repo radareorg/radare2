@@ -7,7 +7,7 @@ gmake --help >/dev/null 2>&1
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd $(dirname $0) ; cd ..
 
 # update
 if [ "$1" != "--without-pull" ]; then
