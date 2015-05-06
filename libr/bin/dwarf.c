@@ -21,7 +21,7 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-#define READ(x,y) *((y*)x); x += sizeof (y)
+#define READ(x,y) ((x+sizeof(y)<buf_end)? *((y*)x): 0); x += sizeof (y)
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -388,6 +388,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 {
 	// XXX - list is an unused parameter.
 	const ut8 *buf;
+	const ut8 *buf_end;
 	ut8 opcode;
 	ut64 addr;
 	buf = obuf;
@@ -400,6 +401,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 	if (!binfile || !obuf || !hdr || !regs) return NULL;
 
 	buf = r_leb128 (buf, &op_len);
+	buf_end = buf+len;
 	opcode = *buf++;
 
 	if (f) {
@@ -514,6 +516,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		ut8 opcode, FILE *f, int mode)
 {
 	const ut8* buf = obuf;
+	const ut8* buf_end = obuf+len;
 	ut64 addr = 0LL;
 	st64 sbuf;
 	ut8 adj_opcode;
@@ -1092,12 +1095,14 @@ static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf)
 	}
 }
 
-static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf,
+static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf, int obuf_len,
 		RBinDwarfAttrSpec *spec, RBinDwarfAttrValue *value,
 		const RBinDwarfCompUnitHdr *hdr,
 		const ut8 *debug_str, size_t debug_str_len)
 {
 	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + obuf_len;
+
 	size_t j;
 
 	if (!spec || !value || !hdr || !obuf) return NULL;
@@ -1275,7 +1280,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 			if (cu->dies[cu->length].length ==
 					cu->dies[cu->length].capacity)
 				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
-			buf = r_bin_dwarf_parse_attr_value (buf,
+			buf = r_bin_dwarf_parse_attr_value (buf, buf_end-buf,
 					&da->decls[abbr_code - 1].specs[i],
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
@@ -1285,11 +1290,11 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
 				if (s) {
 					sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
+					//sdb_add (s, "DW_AT_comp_dir", (const char *)comp_dir, 0);
 				}
 			}
 			cu->dies[cu->length].length++;
 		}
-
 		cu->length++;
 	}
 
