@@ -508,7 +508,11 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = MACH0_(get_main) (arch->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		ret->paddr = ret->vaddr = addr;
+		//if (arch->o->info && arch->o->info->bits == 16) {
+		// align for thumb
+		ret->vaddr = ((addr >>1)<<1);
+		//}
+		ret->paddr = ret->vaddr;
 		break;
 	}
 	return ret;
