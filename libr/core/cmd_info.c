@@ -260,6 +260,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
 		case 'e': RBININFO ("entries",R_CORE_BIN_ACC_ENTRIES); break;
+		case 'M': RBININFO ("main",R_CORE_BIN_ACC_MAIN); break;
 		case 'm': RBININFO ("memory",R_CORE_BIN_ACC_MEM); break;
 		case 'z':
 			if (input[1] == 'z') {
@@ -331,6 +332,7 @@ static int cmd_info(void *data, const char *input) {
 				"ik", " [query]", "Key-value database from RBinObject",
 				"il", "", "Libraries",
 				"im", "", "Show info about predefined memory allocation",
+				"iM", "", "Show main address",
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",
