@@ -112,7 +112,7 @@ static int getreg (const char *p) {
 	}
 	n = (int) r_num_get (NULL, p);
 	if (n != 0) {
-		return 0;
+		return n;
 	}
 	if (strcmp (p, "0")) {
 		for (n=0; regs[n]; n++) {
