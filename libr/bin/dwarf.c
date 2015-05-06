@@ -1273,7 +1273,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 
 		for (i = 0; i < da->decls[abbr_code - 1].length; i++) {
 			if (cu->dies[cu->length].length ==
-				cu->dies[cu->length].capacity)
+					cu->dies[cu->length].capacity)
 				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
 			buf = r_bin_dwarf_parse_attr_value (buf,
 					&da->decls[abbr_code - 1].specs[i],
@@ -1281,11 +1281,11 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					&cu->hdr, debug_str, debug_str_len);
 
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
-				char *comp_dir =
+				ut64 comp_dir = (ut64)(size_t)
 					cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
-
-				if (s)
-					sdb_add (s, "DW_AT_comp_dir", comp_dir, 0);
+				if (s) {
+					sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
+				}
 			}
 			cu->dies[cu->length].length++;
 		}
