@@ -64,7 +64,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		/* arm thumb */
 		{ "movs",  "1 = 2"},
 		{ "movw",  "1 = 2"},
-		{ "movt",  "1 = 2"},
+		{ "movt",  "1 |= 2 << 16"},
 		{ "vmov",  "1 = (float) 2 . 3"},
 		{ "vdiv.f64", "1 = (float) 2 / 3" },
 		{ "addw",  "1 = 2 + 3"},
