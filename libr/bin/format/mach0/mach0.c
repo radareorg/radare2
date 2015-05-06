@@ -1081,14 +1081,12 @@ static ut64 read_uleb128(ut8 **p) {
 			eprintf ("uleb128 too big for u64 (%d bits) - partial result: 0x%08"PFMT64x"\n", bit, r);
 			return r;
 		}
-
 		byte = *(*p)++;
 		r |= (byte & 0x7f) << bit;
 		bit += 7;
 	} while (byte & 0x80);
 	return r;
 }
-
 
 static st64 read_sleb128(ut8 **p) {
 	st64 r = 0, byte;
@@ -1159,7 +1157,10 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 			return relocs;
 		}
 		i = 0;
-		for (p = opcodes, end = opcodes + bind_size + lazy_size; p < end; p++) {
+		// that +2 is a minimum required for uleb128, this may be wrong,
+		// the correct fix would be to make ULEB() must use rutil's
+		// implementation that already checks for buffer boundaries
+		for (p = opcodes, end = opcodes + bind_size + lazy_size; p+2 < end; p++) {
 			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
 			switch (op) {
 #define ULEB() read_uleb128 (&p)
