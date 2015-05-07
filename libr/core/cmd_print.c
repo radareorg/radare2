@@ -444,7 +444,14 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			*eq = ' ';
 		}
 	}
-	if (input[1]=='.') {
+
+	int listFormats = 0;
+	if (input[1]=='.')
+		listFormats = 1;
+	if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS)
+		listFormats = 1;
+
+	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
 		if (input[2]=='\0') {
