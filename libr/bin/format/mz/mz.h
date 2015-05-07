@@ -25,6 +25,7 @@ struct r_bin_mz_obj_t {
 	int dos_extended_header_size;
 
 	int size;
+	int dos_file_size; /* Size of dos file from dos executable header */
 	const char *file;
 	struct r_buf_t *b;
 	Sdb *kv;

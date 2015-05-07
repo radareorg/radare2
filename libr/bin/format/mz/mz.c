@@ -15,7 +15,7 @@ int r_bin_mz_get_entrypoint(const struct r_bin_mz_obj_t *bin)
 	const short cs = (const short)bin->dos_header->cs;
 	const int paddr = ((bin->dos_header->header_paragraphs + cs) << 4) + \
             bin->dos_header->ip;
-	if (paddr >= 0 && paddr < bin->size)
+	if (paddr >= 0 && paddr < bin->dos_file_size)
 		return paddr;
 	else
 		return -1;
@@ -51,7 +51,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 	const ut16 stack_segment = bin->dos_header->ss;
 	const MZ_image_relocation_entry * const relocs = bin->relocation_entries;
 	const int num_relocs = bin->dos_header->num_relocs;
-	const ut64 last_parag = ((bin->size + 0xF) >> 4) - \
+	const ut64 last_parag = ((bin->dos_file_size + 0xF) >> 4) - \
             bin->dos_header->header_paragraphs;
 
 	btree_init (&tree);
@@ -59,9 +59,9 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 	for (i = 0; i < num_relocs; i++) {
 		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + \
                 relocs[i].offset;
-		if ((paddr + 2) < bin->size) {
+		if ((paddr + 2) < bin->dos_file_size) {
 			curr_seg = (ut16 *) (bin->b->buf + paddr);
-			/* Add segment only if it's located inside executable data */
+			/* Add segment only if it's located inside dos executable data */
 			if (*curr_seg <= last_parag)
 				btree_add (&tree, curr_seg, cmp_segs);
 		}
@@ -71,9 +71,10 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
     added. If relocations empty or there isn't first segment in relocations.)
     */
 	btree_add (&tree, (void *)&first_segment, cmp_segs);
-	/* Add segment address of stack segment if it's resides inside executable
+	/* Add segment address of stack segment if it's resides inside dos
+	executable.
     */
-	if (r_bin_mz_seg_to_paddr (bin, stack_segment) < bin->size) {
+	if (r_bin_mz_seg_to_paddr (bin, stack_segment) < bin->dos_file_size) {
 		btree_add (&tree, (void *)&stack_segment, cmp_segs);
 	}
 
@@ -102,7 +103,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 		ret[i].paddr = r_bin_mz_seg_to_paddr (bin, segments[i]);
 		ret[i - 1].size = ret[i].paddr - ret[i - 1].paddr;
 	}
-	ret[i - 1].size = bin->size - ret[i - 1].paddr;
+	ret[i - 1].size = bin->dos_file_size - ret[i - 1].paddr;
 	ret[i].last = 1;
 
 	free (segments);
@@ -126,8 +127,8 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin)
 	for (i = 0, j = 0; i < num_relocs; i++) {
 		relocs[j].paddr = r_bin_mz_seg_to_paddr (bin,
 			rel_entry[i].segment) + rel_entry[i].offset;
-		/* Add only relocations which resides inside executable */
-		if (relocs[j].paddr < bin->size) j++;
+		/* Add only relocations which resides inside dos executable */
+		if (relocs[j].paddr < bin->dos_file_size) j++;
 	}
 	relocs[j].last = 1;
 
@@ -146,7 +147,7 @@ void *r_bin_mz_free(struct r_bin_mz_obj_t* bin) {
 }
 
 static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
-	int relocations_size;
+	int relocations_size, dos_file_size;
 
 	if (!(bin->dos_header = malloc (sizeof(MZ_image_dos_header)))) {
 		r_sys_perror ("malloc (MZ_image_dos_header)");
@@ -158,11 +159,23 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 		return R_FALSE;
 	}
 
+	if (bin->dos_header->blocks_in_file < 1)
+		return R_FALSE;
+
+	dos_file_size = ((bin->dos_header->blocks_in_file - 1) << 9) + \
+			bin->dos_header->bytes_in_last_block;
+
+	bin->dos_file_size = dos_file_size;
+
+	if (dos_file_size > bin->size)
+		return R_FALSE;
+
     relocations_size = bin->dos_header->num_relocs * \
             sizeof(MZ_image_relocation_entry);
 
-    /* Check if relocation table doesn't exceed binary size */
-	if ((bin->dos_header->reloc_table_offset + relocations_size) > bin->size)
+    /* Check if relocation table doesn't exceed dos binary size */
+	if ((bin->dos_header->reloc_table_offset + relocations_size) > \
+			dos_file_size)
 		return R_FALSE;
 
 	sdb_num_set (bin->kv, "mz.initial.cs", bin->dos_header->cs, 0);
