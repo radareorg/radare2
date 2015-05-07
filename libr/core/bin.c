@@ -1627,7 +1627,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_DWARF))
 		ret &= bin_dwarf (core, mode);
 	if ((action & R_CORE_BIN_ACC_PDB))
-		ret &= bin_pdb (core, loadaddr, mode);
+		ret &= bin_pdb (core, baseaddr, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
 		ret &= bin_entry (core, mode, baseaddr, loadaddr, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
