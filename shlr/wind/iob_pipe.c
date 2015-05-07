@@ -80,23 +80,19 @@ static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int
 	int result;
 	fd_set readset;
 	int fd=(int)(size_t)p;
-	do {
-	   FD_ZERO(&readset);
-	   FD_SET(fd, &readset);
-	   result = select(fd + 1, &readset, NULL, NULL, NULL);
-	   if (result == 0) { // pipe closed
+	for (;;) {
+		FD_ZERO(&readset);
+		FD_SET(fd, &readset);
+		result = select (fd + 1, &readset, NULL, NULL, NULL);
+		if (result <1) { // pipe closed
+			if (errno == EINTR)
+				continue;
 			return -1;
-	   }
-	   else if (result > 0) { // data to read
-		   if (FD_ISSET(fd, &readset)) {
-			   return  recv((int)(size_t)p, buf, count, 0);
-		   }
 		}
-		else {
-		   //eprintf("Error on select()");//: %s\", strerror(errno));
-		   return -1;
+		if (FD_ISSET(fd, &readset)) {
+			return  recv((int)(size_t)p, buf, count, 0);
 		}
-	} while (result == -1 && errno == EINTR);
+	}
 	return EINTR;
 }
 
