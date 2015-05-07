@@ -975,8 +975,3 @@ R_API RCoreFile * r_core_file_cur (RCore *r) {
 	// Add any locks here
 	return r->file;
 }
-
-R_API int r_core_file_is_readonly(RCore *core)
-{
-	return core->file && core->file->desc && !(core->file->desc->flags & R_IO_WRITE);
-}

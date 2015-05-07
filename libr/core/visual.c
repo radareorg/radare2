@@ -735,7 +735,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'a':
-		if (r_core_file_is_readonly(core)) {
+		if (core->file && core->file->desc && !(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 			r_cons_any_key (NULL);
 			return R_TRUE;
@@ -881,7 +881,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'i':
 	case 'I':
-		if (r_core_file_is_readonly(core)) {
+		if (core->file && core->file->desc &&!(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 			r_cons_any_key (NULL);
 			return R_TRUE;

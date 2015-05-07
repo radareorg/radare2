@@ -20,9 +20,6 @@ static int readline_callback(void *_a, const char *str) {
 	r_cons_printf ("Write your favourite %s-%d opcode...\n\n",
 		r_config_get (a->core->config, "asm.arch"),
 		r_config_get_i (a->core->config, "asm.bits"));
-	if (r_core_file_is_readonly(a->core)) {
-		r_cons_printf ("File has been opened in read-only mode. To save results, use -w flag\n");
-	}
 	if (*str == '?') {
 		r_cons_printf ("0> ?\n\n"
 			"Visual assembler help:\n\n"
@@ -60,9 +57,8 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 	r_line_readline_cb (readline_callback, &cva);
 
 	if (cva.acode && cva.acode->len>0)
-		if (!r_core_file_is_readonly(core))
-			if (r_cons_yesno ('y', "Save changes? (Y/n)"))
-				r_core_cmdf (core, "wx %s @ 0x%"PFMT64x,
-					cva.acode->buf_hex, off);
+		if (r_cons_yesno ('y', "Save changes? (Y/n)"))
+			r_core_cmdf (core, "wx %s @ 0x%"PFMT64x,
+				cva.acode->buf_hex, off);
 	r_asm_code_free (cva.acode);
 }
