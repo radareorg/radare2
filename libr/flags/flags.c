@@ -277,28 +277,30 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 				return item;
 			/* remove old entry */
 			list2 = r_hashtable64_lookup (f->ht_off, item->offset);
-			if (list2)
-			/* No _safe loop necessary because we break immediately after the delete. */
-			r_list_foreach (list2, iter2, item2) {
-				if (item->namehash != item2->namehash)
-					continue;
-				if (item2->offset == item->offset) {
-					// r_list_delete (list2, iter2);
-					// delete without freeing contents
-					r_list_split_iter (list2, iter2);
-					free (iter2);
-					if (r_list_empty (list2)) {
-						r_list_free (list2);
-						r_hashtable64_remove (f->ht_off, item2->offset);
-						r_hashtable64_insert (f->ht_off, item2->offset, NULL);
+			if (list2) {
+				/* No _safe loop necessary because we break immediately after the delete. */
+				r_list_foreach (list2, iter2, item2) {
+					if (item->namehash != item2->namehash)
+						continue;
+					if (item->offset == item2->offset) {
+						// r_list_delete (list2, iter2);
+						// delete without freeing contents
+						r_list_split_iter (list2, iter2);
+						free (iter2);
+						if (r_list_empty (list2)) {
+							r_list_free (list2);
+							r_hashtable64_remove (f->ht_off, item2->offset);
+							r_hashtable64_insert (f->ht_off, item2->offset, NULL);
+						}
+						break;
 					}
-					break;
 				}
 			}
 
 			lol = r_hashtable64_lookup (f->ht_off, off);
 			if (lol == NULL) {
 				lol = r_list_new ();
+				r_hashtable64_remove (f->ht_off, off);
 				r_hashtable64_insert (f->ht_off, off, lol);
 			}
 			r_list_append (lol, item);
