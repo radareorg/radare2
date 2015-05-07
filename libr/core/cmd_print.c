@@ -454,7 +454,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
-		if (input[2]=='\0') {
+		if (input[1]==0 || input[2]=='\0') {
 			RListIter *iter;
 			RStrHT *sht = core->print->formats;
 			int *i;
@@ -465,11 +465,11 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				r_cons_printf ("pf.%s %s\n", key, val);
 			}
 			/* delete a format */
-		} else if (input[2]=='-') {
-			if (input[3]) r_strht_del (core->print->formats, input+3);
+		} else if (input[1] && input[2]=='-') {
+			if (input[2] && input[3]) r_strht_del (core->print->formats, input+3);
 			else r_strht_clear (core->print->formats);
 		} else {
-			char *name = strdup (input+2);
+			char *name = strdup (input+(input[1]?2:1));
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '='), *dot = strchr (name, '.');
 			/* store a new format */
