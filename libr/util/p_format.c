@@ -629,20 +629,21 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char* setval,
 }
 
 static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int size) {
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	int j;
+	size = (size==-1) ? 1 : size;
 	if (MUSTSET) {
 		p->printf ("?e pf X not yet implemented\n");
 	} else if (MUSTSEE) {
 		size = (size < 1) ? 1 : size;
 		p->printf ("0x%08"PFMT64x" = ", seeki);
 		j=0;
-		for (; j<10; j++)
-				p->printf ("%02x ", buf[j]);
+		for (; j<size; j++)
+				p->printf ("%02x ", buf[i+j]);
 		p->printf (" ... (");
 		for (j=0; j<size; j++)
 			if (IS_PRINTABLE (buf[j]))
-				p->printf ("%c", buf[j]);
+				p->printf ("%c", buf[i+j]);
 			else
 				p->printf (".");
 		p->printf (")");
@@ -911,7 +912,8 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			case 'c':
 			case 'b':
 			case '.':
-				size+=tabsize*1;
+			case 'X':
+				size += tabsize*1;
 				break;
 			case 'w':
 				size += tabsize*2;
@@ -1322,7 +1324,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				break;
 			case 'X':
 				size = r_print_format_hexpairs (p, endian, mode,
-					setval, seeki, buf, size);
+					setval, seeki, buf, i, size);
 				i += size;
 				break;
 			case 'T':
