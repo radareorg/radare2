@@ -74,11 +74,13 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	return NULL;
 }
 
-R_API void r_flag_list(RFlag *f, int rad) {
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 	int fs = -1;
 	RListIter *iter;
 	RFlagItem *flag;
 
+	if (pfx && !*pfx)
+		pfx = NULL;
 	switch (rad) {
 	case 'j': {
 		int first = 1;
@@ -117,10 +119,12 @@ R_API void r_flag_list(RFlag *f, int rad) {
 			 if (flag->alias) {
 				 r_cons_printf ("fa %s %s\n", flag->name, flag->alias);
 				 if (flag->comment && *flag->comment) 
-					 r_cons_printf ("\"fC %s %s\"\n", flag->name, flag->comment);
+					 r_cons_printf ("\"fC %s %s\"\n",
+						flag->name, flag->comment);
 			 } else {
-				 r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
+				 r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"%s%s %s\n",
 					 flag->name, flag->size, flag->offset,
+					 pfx?"+":"", pfx?pfx:"",
 					 flag->comment? flag->comment:"");
 			 }
 		 }
