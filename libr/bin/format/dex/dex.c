@@ -44,32 +44,60 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	if (left< STRINGS_SIZE) {
 		FAIL ("Strings buffer is too small");
 	}
-
 #if 0
 	r_buf_read_at (bin->b, bin->header.strings_offset, (ut8*)bin->strings,
 			bin->header.strings_size * sizeof (ut32));
 #endif
 	/* classes */
-	bin->classes = (struct dex_class_t *) malloc (bin->header.class_size *
-			sizeof (struct dex_class_t) + 1);
-	r_buf_read_at (bin->b, bin->header.class_offset, (ut8*)bin->classes,
-			bin->header.class_size * sizeof (struct dex_class_t));
+	int classes_size = bin->header.class_size * sizeof (struct dex_class_t);
+	if (bin->header.class_offset + classes_size >= bin->size) {
+		classes_size = bin->size - bin->header.class_offset;
+	}
+	if (classes_size<0) {
+		classes_size = 0;
+	}
+	bin->header.class_size = classes_size / sizeof (struct dex_class_t);
+	bin->classes = (struct dex_class_t *) malloc (classes_size);
+	r_buf_read_at (bin->b, bin->header.class_offset, (ut8*)bin->classes, classes_size);
 //{ ut8 *b = (ut8*)&bin->methods; eprintf ("CLASS %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]); }
+
+
 	/* methods */
-	bin->methods = (struct dex_method_t *) calloc (bin->header.method_size *
-			sizeof (struct dex_method_t) + 1, 1);
-	r_buf_read_at (bin->b, bin->header.method_offset, (ut8*)bin->methods,
-			bin->header.method_size * sizeof (struct dex_method_t));
+	int methods_size = bin->header.method_size * sizeof (struct dex_method_t);
+	if (bin->header.method_offset + methods_size >= bin->size) {
+		methods_size = bin->size - bin->header.method_offset;
+	}
+	if (methods_size<0) {
+		methods_size = 0;
+	}
+	bin->header.method_size = methods_size / sizeof (struct dex_method_t);
+	bin->methods = (struct dex_method_t *) calloc (methods_size, 1);
+	r_buf_read_at (bin->b, bin->header.method_offset, (ut8*)bin->methods, methods_size);
+
+
 	/* types */
-	bin->types = (struct dex_type_t *) calloc (bin->header.types_size *
-			sizeof (struct dex_type_t) + 1, 1);
-	r_buf_read_at (bin->b, bin->header.types_offset, (ut8*)bin->types,
-			bin->header.types_size * sizeof (struct dex_type_t));
+	int types_size = bin->header.types_size * sizeof (struct dex_type_t);
+	if (bin->header.types_offset + types_size >= bin->size) {
+		types_size = bin->size - bin->header.types_offset;
+	}
+	if (types_size<0) {
+		types_size = 0;
+	}
+	bin->header.types_size = types_size / sizeof (struct dex_type_t);
+	bin->types = (struct dex_type_t *) calloc (types_size, 1);
+	r_buf_read_at (bin->b, bin->header.types_offset, (ut8*)bin->types, types_size);
+
 	/* fields */
-	bin->fields = (struct dex_field_t *) calloc (bin->header.fields_size *
-			sizeof (struct dex_field_t) + 1, 1);
-	r_buf_read_at (bin->b, bin->header.fields_offset, (ut8*)bin->fields,
-			bin->header.fields_size * sizeof (struct dex_field_t));
+	int fields_size = bin->header.fields_size * sizeof (struct dex_type_t);
+	if (bin->header.fields_offset + fields_size >= bin->size) {
+		fields_size = bin->size - bin->header.fields_offset;
+	}
+	if (fields_size<0) {
+		fields_size = 0;
+	}
+	bin->header.fields_size = fields_size / sizeof (struct dex_field_t);
+	bin->fields = (struct dex_field_t *) calloc (fields_size, 1);
+	r_buf_read_at (bin->b, bin->header.fields_offset, (ut8*)bin->fields, fields_size);
 	return bin;
 fail:
 	if (bin) {
