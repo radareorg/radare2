@@ -1,5 +1,7 @@
 bic=logical bit clear
 b=branches the program counter to dst (pc aka r15)
+movw=write 16 bit value on lower bits
+movt=write 16 bit value on top of halfword
 eor=logical exclusive OR (XOR)
 oor=logical inclusive OR
 sub=substract
@@ -44,3 +46,9 @@ uxtab16=zero extend bytes to halfwords add halfwords
 uxtab=zero extend byte to word, add
 rsc=reverse substract with carry
 svc=supervisor call
+blx=branch link and optionally exchange to Thumb
+mov=move value between registers
+mov.w=move 3byte immediate into register
+movs=move byte into register
+tst.w=logical AND register value with 12-bit immediate value
+strd=store floating point value in memory

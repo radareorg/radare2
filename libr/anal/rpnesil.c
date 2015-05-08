@@ -678,8 +678,8 @@ static int esil_lsl(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			num <<= num2;
-			r_anal_esil_pushnum (esil, num);
+			ut64 res = num << num2;
+			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
 			eprintf ("esil_lsl: empty stack\n");
@@ -719,11 +719,11 @@ static int esil_lsr(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			num >>= num2;
-			r_anal_esil_pushnum (esil, num);
+			ut64 res = num >> num2;
+			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
-			eprintf ("esil_neg: empty stack\n");
+			eprintf ("esil_lsr: empty stack\n");
 		}
 	}
 	free (src);
