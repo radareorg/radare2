@@ -1095,7 +1095,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							int op = 0xc0;
 							if (arg[1]=='h') op |= 4;
 							data[l++] = 0xc6;
-							data[l++] = op | (getreg (arg)>>1);
+							data[l++] = op | getreg (arg);
 							data[l++] = getnum (a, arg2);
 							return l;
 						} else {
