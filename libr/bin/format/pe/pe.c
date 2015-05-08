@@ -145,6 +145,8 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 	char *symname;
 	char *filename;
 	char *symdllname;
+	if (!dll_name || *dll_name == '0')
+		return 0;
 	if ((off = PE_(r_bin_pe_vaddr_to_paddr)(bin, OriginalFirstThunk)) == 0 &&
 		(off = PE_(r_bin_pe_vaddr_to_paddr)(bin, FirstThunk)) == 0)
 		return 0;
@@ -2113,6 +2115,9 @@ next:
 				}
 			}
 			curr_delay_import_dir++;
+			if (curr_delay_import_dir+1>= (bin->b->buf+bin->size)) {
+				break;
+			}
 		}
 	}
 	r_strht_free (lib_map);
