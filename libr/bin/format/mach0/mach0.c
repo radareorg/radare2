@@ -1182,7 +1182,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
 					char *sym_name = (char*)p;
 					//ut8 sym_flags = imm;
-					while (*p++);
+					while (*p++ && p<end);
 					sym_ord = -1;
 					if (bin->symtab && bin->dysymtab.nundefsym<0xffff)
 					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
