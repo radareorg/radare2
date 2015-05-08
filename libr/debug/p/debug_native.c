@@ -36,12 +36,17 @@ static int r_debug_handle_signals (RDebug *dbg) {
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason = R_DBG_REASON_SIGNAL;
 		dbg->signum = siginfo.si_signo;
-		// siginfo.si_code -> USER, KERNEL or WHAT
-#if 0
-		eprintf ("[+] SIGNAL %d errno=%d code=%d ret=%d\n",
-			siginfo.si_signo, siginfo.si_errno,
-			siginfo.si_code, ret2);
-#endif
+		//dbg->stopaddr = siginfo.si_addr;
+		//dbg->errno = siginfo.si_errno;
+		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
+		switch (dbg->signum) {
+		case SIGSEGV:
+			eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
+				siginfo.si_signo, siginfo.si_errno,
+				siginfo.si_addr, siginfo.si_code, ret2);
+			break;
+		default:
+		}
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -542,8 +547,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	if (WIFSTOPPED (status)) {
 		dbg->signum = WSTOPSIG (status);
 		status = R_DBG_REASON_SIGNAL;
-	} else
-	if (status == 0 || ret == -1) {
+	} else if (status == 0 || ret == -1) {
 		status = R_DBG_REASON_DEAD;
 	} else {
 		if (ret != pid)
