@@ -43,9 +43,9 @@ static int r_debug_handle_signals (RDebug *dbg) {
 		case SIGSEGV:
 			eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
-				siginfo.si_addr, siginfo.si_code, ret2);
+				siginfo.si_addr, siginfo.si_code, ret);
 			break;
-		default:
+		default: break;
 		}
 		return R_TRUE;
 	}
