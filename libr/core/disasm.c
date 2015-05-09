@@ -507,6 +507,7 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 // XXX not here
 	static char *hint_arch = NULL;
+	static char *hint_syntax = NULL;
 	static int hint_bits = 0;
 	if (hint) {
 		r_anal_hint_free (hint);
@@ -516,6 +517,10 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 	if (hint_arch) {
 		r_config_set (core->config, "asm.arch", hint_arch);
 		hint_arch = NULL;
+	}
+	if (hint_syntax) {
+		r_config_set (core->config, "asm.syntax", hint_syntax);
+		hint_syntax = NULL;
 	}
 	if (hint_bits) {
 		r_config_set_i (core->config, "asm.bits", hint_bits);
@@ -527,6 +532,12 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 			if (!hint_arch) hint_arch = strdup (
 				r_config_get (core->config, "asm.arch"));
 			r_config_set (core->config, "asm.arch", hint->arch);
+		}
+		/* arch */
+		if (hint->syntax) {
+			if (!hint_syntax) hint_syntax = strdup (
+				r_config_get (core->config, "asm.syntax"));
+			r_config_set (core->config, "asm.syntax", hint->syntax);
 		}
 		/* bits */
 		if (hint->bits) {

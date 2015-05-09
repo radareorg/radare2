@@ -613,6 +613,7 @@ typedef struct r_anal_hint_t {
 	ut64 fail;
 	char *arch;
 	char *opcode;
+	char *syntax;
 	char *esil;
 	int size;
 	int bits;
@@ -1361,6 +1362,7 @@ R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from);
 R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
+R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int length);

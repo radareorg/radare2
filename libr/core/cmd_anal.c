@@ -580,7 +580,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 size = 0LL;
 			RAnalDiff *diff = NULL;
 			int type = R_ANAL_FCN_TYPE_FCN;
-
 			if (n > 2) {
 				switch(n) {
 				case 5:
@@ -2046,6 +2045,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		"ahc", " 0x804804", "override call/jump address",
 		"ahf", " 0x804840", "override fallback address for call",
 		"ahs", " 4", "set opcode size=4",
+		"ahS", " jz", "set asm.syntax=jz for this opcode",
 		"aho", " foo a0,33", "replace opcode string",
 		"ahe", " eax+=3", "set vm analysis string",
 		NULL };
@@ -2089,13 +2089,24 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				r_num_math (core->num, input+1));
 		break;
 	case 's': // set size (opcode length)
-		r_anal_hint_set_size (core->anal, core->offset, atoi (input+1));
+		if (input[1]) {
+			r_anal_hint_set_size (core->anal, core->offset, atoi (input+1));
+		} else eprintf ("Usage: ahs 16\n");
+		break;
+	case 'S': // set size (opcode length)
+		if (input[1]==' ') {
+			r_anal_hint_set_syntax (core->anal, core->offset, input+2);
+		} else eprintf ("Usage: ahS att\n");
 		break;
 	case 'o': // set opcode string
-		r_anal_hint_set_opcode (core->anal, core->offset, input+1);
+		if (input[1]==' ') {
+			r_anal_hint_set_opcode (core->anal, core->offset, input+2);
+		} else eprintf ("Usage: aho popall\n");
 		break;
 	case 'e': // set ESIL string
-		r_anal_hint_set_esil (core->anal, core->offset, input+1);
+		if (input[1]==' ') {
+			r_anal_hint_set_esil (core->anal, core->offset, input+2);
+		} else eprintf ("Usage: ahe r0,pc,=\n");
 		break;
 #if TODO
 	case 'e': // set endian
