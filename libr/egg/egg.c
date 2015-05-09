@@ -181,8 +181,8 @@ R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const
 
 R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 	char *out;
-	int outlen = (len*2)+1;
-	out = malloc (outlen);
+	int outlen = len*2; // two hexadecimal digits per byte
+	out = malloc (outlen+1);
 	if (!out) return R_FALSE;
 	r_hex_bin2str (b, len, out);
 	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
