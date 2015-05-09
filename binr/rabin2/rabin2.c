@@ -742,6 +742,13 @@ int main(int argc, char **argv) {
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info (core.bin);
 		char *path;
+
+		if (!info || !info->debug_file_name) {
+			eprintf ("Can't find debug filename\n");
+			r_core_fini (&core);
+			return 1;
+		}
+
 		if (info->file) {
 			path = r_file_dirname (info->file);
 		} else {
