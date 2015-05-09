@@ -344,31 +344,38 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	//printf ("src (%s)\n", r_egg_get_source (egg));
+	// assemble to binary
+	if (!r_egg_assemble (egg)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		goto fail;
+	}
+	if (encoder)
+		if (!r_egg_encode (egg, encoder))
+			eprintf ("Invalid encoder '%s'\n", encoder);
+
+	// add padding
+	if (padding)
+		r_egg_padding (egg, padding);
+
+	// add pattern
+	if (pattern)
+		r_egg_pattern (egg, r_num_math (NULL, pattern));
+
+	// apply patches
+	if (!egg->bin) {
+		egg->bin = r_buf_new ();
+	}
+	if (!(b = r_egg_get_bin (egg))) {
+		eprintf ("r_egg_get_bin: invalid egg :(\n");
+		goto fail;
+	}
+	r_egg_finalize (egg);
+
 	if (show_asm)
 		printf ("%s\n", r_egg_get_assembly (egg));
+
 	if (show_raw || show_hex || show_execute) {
-		if (!r_egg_assemble (egg)) {
-			eprintf ("r_egg_assemble: invalid assembly\n");
-			goto fail;
-		}
-		if (encoder)
-			if (!r_egg_encode (egg, encoder))
-				eprintf ("Invalid encoder '%s'\n", encoder);
-		if (padding)
-			r_egg_padding (egg, padding);
 
-		if (pattern)
-			r_egg_pattern (egg, r_num_math (NULL, pattern));
-		if (!egg->bin) {
-			egg->bin = r_buf_new ();
-		}
-
-		if (!(b = r_egg_get_bin (egg))) {
-			eprintf ("r_egg_get_bin: invalid egg :(\n");
-			goto fail;
-		}
-		r_egg_finalize (egg); // apply patches
 		if (show_execute)
 			return r_egg_run (egg);
 		b = r_egg_get_bin (egg);
