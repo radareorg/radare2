@@ -200,8 +200,9 @@ beach:
 	}
 	if (outbuf) {
 		free (out);
+	} else {
+		out[len] = 0;
 	}
-	out[len] =0;
 	return (int)len;
 }
 
