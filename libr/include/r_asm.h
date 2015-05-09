@@ -46,6 +46,7 @@ enum {
 	R_ASM_SYNTAX_INTEL,
 	R_ASM_SYNTAX_ATT,
 	R_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
+	R_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
 };
 
 enum {

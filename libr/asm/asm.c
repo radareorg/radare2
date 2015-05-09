@@ -298,6 +298,7 @@ R_API int r_asm_set_syntax(RAsm *a, int syntax) {
 	case R_ASM_SYNTAX_REGNUM:
 	case R_ASM_SYNTAX_INTEL:
 	case R_ASM_SYNTAX_ATT:
+	case R_ASM_SYNTAX_JZ:
 		a->syntax = syntax;
 		return R_TRUE;
 	default:
