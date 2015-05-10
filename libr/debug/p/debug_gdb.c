@@ -24,10 +24,13 @@ static int r_debug_gdb_step(RDebug *dbg) {
 }
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	gdbr_read_registers (desc);
 	int copy_size;
-	// read the len of the current area
 	int buflen = 0;
+	gdbr_read_registers (desc);
+	if (!desc) {
+		return -1;
+	}
+	// read the len of the current area
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size<desc->data_len) {
 		eprintf ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
