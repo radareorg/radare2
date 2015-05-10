@@ -1289,6 +1289,15 @@ static int cmd_print(void *data, const char *input) {
 			return R_FALSE;
 		}
 	}
+	if (input[0] == 'x' || input[0] == 'D'){
+		if (l > 0 && tmpseek == UT64_MAX){
+			if (!r_core_block_size (core,l)){
+				eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+						*input, input+2);
+				return R_FALSE;
+			}
+		}
+	}
 
 	if (input[0] && input[0]!='z' && input[1] == 'f') {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -2666,27 +2675,27 @@ static int cmd_print(void *data, const char *input) {
 		case 'l':
 			len = core->print->cols*len;
 		default: {
-				 int restore_block_size = 0;
-				 ut64 from = r_config_get_i (core->config, "diff.from");
-				 ut64 to = r_config_get_i (core->config, "diff.to");
-				 ut64 obsz = core->blocksize;
-				 if (from == to && from == 0) {
+			 	int restore_block_size = 0;
+				ut64 from = r_config_get_i (core->config, "diff.from");
+				ut64 to = r_config_get_i (core->config, "diff.to");
+				ut64 obsz = core->blocksize;
+				if (from == to && from == 0) {
 					 if (len != obsz) {
-						 if (!r_core_block_size (core, len)) {
+						if (!r_core_block_size (core, len)) {
 							 len = obsz;
-						 } else {
+						} else {
 							 restore_block_size = 1;
-						 }
+						}
 					 }
 					 r_print_hexdump (core->print, core->offset,
 							 core->block, len, 16, 1);
-				 } else {
+				} else {
 					 r_core_print_cmp (core, from, to);
-				 }
-				 if (restore_block_size) {
+				}
+				if (restore_block_size) {
 					 (void)r_core_block_size (core, obsz);
-				 }
-				 core->num->value = len;
+				}
+				core->num->value = len;
 			 }
 			break;
 		}
@@ -2891,13 +2900,13 @@ static int cmd_print(void *data, const char *input) {
 			 "pz"," [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",
 			 NULL
-		 };
-		 r_core_cmd_help (core, help_msg);
-		 }
-		 break;
+		};
+		r_core_cmd_help (core, help_msg);
+		}
+		break;
 	}
-	if (tbs != core->blocksize)
-		r_core_block_size (core, tbs);
+	/*if (tbs != core->blocksize)*/
+		/*r_core_block_size (core, tbs);*/
 	if (tmpseek != UT64_MAX) {
 		r_core_seek (core, tmpseek, SEEK_SET);
 	}
