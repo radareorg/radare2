@@ -1084,7 +1084,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 	ut8 *bump;
 	int ret = R_FALSE;
 	if (bsize == core->blocksize)
-		return R_FALSE;
+		return R_TRUE;
 	if (bsize<0 || bsize > core->blocksize_max) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return R_FALSE;
