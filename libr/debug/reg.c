@@ -67,16 +67,17 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	}
 	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt = "%4s = %#18"PFMT64x"%s";
+		fmt2 = "%4s %#18"PFMT64x"%s";
 		cols = 3;
 		kwhites = "         ";
 	} else {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt = "%4s = %#10"PFMT64x"%s";
+		fmt2 = "%4s %#10"PFMT64x"%s";
 		cols = 4;
 		kwhites = "    ";
 	}
+
 	if (rad=='j')
 		dbg->printf ("{");
 	if (type == -1) {
@@ -105,46 +106,28 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 			switch (rad) {
 			case 'j':
-				dbg->printf ("%s\"%s\":%"PFMT64d,
-					n?",":"", item->name, value);
+				dbg->printf ("%s\"%s\":%"PFMT64d, n?",":"", item->name, value);
 				break;
 			case '-':
 				dbg->printf ("f-%s\n", item->name);
 				break;
 			case 1:
 			case '*':
-				dbg->printf ("f %s 1 0x%"PFMT64x"\n",
-					item->name, value);
+				dbg->printf ("f %s 1 0x%"PFMT64x"\n", item->name, value);
 				break;
 			case 'd':
 			case 2:
 				 {
-					char *str, whites[16], content[128];
-					int len;
+					char *str, whites[16];
 					strcpy (whites, kwhites);
 					if (delta && use_color)
 						dbg->printf (use_color);
 					if (item->flags) {
 						str = r_reg_get_bvalue (dbg->reg, item);
-						len = strlen (str);
-						strcpy (whites, "        ");
-						len = (len>9)?9:(9-len);
-						whites[len] = 0;
-						dbg->printf (" %s = %s%s", item->name,
-							str, ((n+1)%cols)? whites: "\n");
-						free (str);
+						dbg->printf ("%s = %s%s", item->name, str, ((n+1)%cols)? whites: "\n");
+						free(str);
 					} else {
-						snprintf (content, sizeof(content), fmt2, item->name, value, "");
-						len = strlen (content);
-						len -= 4;
-						if (len>10) {
-							len -= 10;
-							len = (len>9)?9:(9-len);
-							whites[len] = 0;
-						}
-						dbg->printf (fmt2, item->name, value,
-							((n+1)%cols)? whites: "\n");
-
+						dbg->printf (fmt2, item->name, value, ((n+1)%cols)? whites: "\n");
 					}
 					if (delta && use_color)
 						dbg->printf (Color_RESET);
@@ -153,8 +136,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case 3:
 				if (delta) {
 					char woot[64];
-					snprintf (woot, sizeof (woot),
-						" was 0x%08"PFMT64x" delta %d\n", diff, delta);
+					snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x" delta %d\n", diff, delta);
 					dbg->printf (fmt, item->name, value, woot);
 				}
 				break;
