@@ -1140,7 +1140,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 								 break;
 							 case 0x31: // control + arrow
-								 r_cons_readchar ();
+								 ch = r_cons_readchar ();
+								 if (ch == 0x7e) { // HOME in screen/tmux
+									 // corresponding END is 0x34 below (the 0x7e is ignored there)
+									 I.buffer.index = 0;
+									 break;
+								 }
 								 r_cons_readchar ();
 								 ch = r_cons_readchar ();
 								 switch (ch) {
