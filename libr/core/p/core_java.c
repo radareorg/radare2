@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014 dso <adam.pridgen@thecoverofnight.com | dso@rice.edu> */
+/* radare - Apache - Copyright 2014-2015 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -128,79 +128,85 @@ typedef struct r_cmd_java_cms_t {
 	RCMDJavaCmdHandler handler;
 } RCmdJavaCmd;
 
+/* XXX : Most of those command arguments are absurd, must be reviewed + changed */
+
 #define CALC_SZ "calc_sz"
-#define CALC_SZ_ARGS "<addr>"
-#define CALC_SZ_DESC "calculate the classfile at location"
+#define CALC_SZ_ARGS " <addr>"
+#define CALC_SZ_DESC "calculate class file size at location"
 #define CALC_SZ_LEN 7
 
 #define ISVALID "is_valid"
-#define ISVALID_ARGS "<addr> <sz>"
+#define ISVALID_ARGS " <addr> <sz>"
 #define ISVALID_DESC "check buffer to see if it is a valid class file"
 #define ISVALID_LEN 8
 
 #define SET_ACC_FLAGS "set_flags"
-#define SET_ACC_FLAGS_ARGS "[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
+#define SET_ACC_FLAGS_ARGS " [addr cmf <value>]" //[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
 #define SET_ACC_FLAGS_DESC "set the access flags attributes for a field or method"
 #define SET_ACC_FLAGS_LEN 9
 
 #define PROTOTYPES "prototypes"
-#define PROTOTYPES_ARGS "< j | a | i | c | m | f>"
-#define PROTOTYPES_DESC "print prototypes for json or text for all bins, imports only, class, methods, and fields, methods only, or fields only"
+#define PROTOTYPES_ARGS " <jaicmf>" // < j | a | i | c | m | f>
+#define PROTOTYPES_DESC "show in JSON, or All,Imports,Class,Methods,Fields,Methods,Fields"
 #define PROTOTYPES_LEN 10
 
 #define RESOLVE_CP "resolve_cp"
-#define RESOLVE_CP_ARGS "< <s | t | e | c | a | d | g > idx>"
-#define RESOLVE_CP_DESC "resolve and print cp type or value @ idx. d = dump all,  g = summarize all, s = summary, a = address, t = type, c = get value, e = base64 enode the result"
+#define RESOLVE_CP_ARGS " [<stecadg> idx]"
+#define RESOLVE_CP_DESC "cp type or value @ idx. Summary,Type,b64Encode,Const,Addr,Dump,Gsumarize"
+//d = dump all,  g = summarize all, s = summary, a = address, t = type, c = get value, e = base64 enode the result"
 #define RESOLVE_CP_LEN 10
 
 #define CALC_FLAGS "calc_flags"
-#define CALC_FLAGS_ARGS "[ <l <[c|f|m]>> | <c [public,private,static...]>  | <f [public,private,static...]> | <m c [public,private,static...]>]"
-#define CALC_FLAGS_DESC "output a value for the given access flags: l = list all flags, c = class, f = field, m = method"
+#define CALC_FLAGS_ARGS " <lcfm> [visib.]"
+//[ <l <[c|f|m]>> | <c [public,private,static...]>  | <f [public,private,static...]> | <m c [public,private,static...]>]"
+#define CALC_FLAGS_DESC "value from access flags: ListAll, flags, Class, Field, Method"
 #define CALC_FLAGS_LEN 10
 
 #define FLAGS_STR_AT "flags_str_at"
-#define FLAGS_STR_AT_ARGS "[<c | f | m> <addr>]"
-#define FLAGS_STR_AT_DESC "output a string value for the given access flags @ addr: c = class, f = field, m = method"
+#define FLAGS_STR_AT_ARGS " <cfm> [addr]"
+#define FLAGS_STR_AT_DESC "string value from access flags @ addr: Class, Field, Method"
 #define FLAGS_STR_AT_LEN 12
 
 #define FLAGS_STR "flags_str"
-#define FLAGS_STR_ARGS "[<c | f | m> <acc_flags_value>]"
-#define FLAGS_STR_DESC "output a string value for the given access flags number: c = class, f = field, m = method"
+#define FLAGS_STR_ARGS " [<cfm> <access>]" //acc_flags_value>]"
+#define FLAGS_STR_DESC "string value for the flags number: Class, Field, Method"
 #define FLAGS_STR_LEN 9
 
 #define METHOD_INFO "m_info"
-#define METHOD_INFO_ARGS "[<[ p | c | <s idx> | <n idx>>]"
-#define METHOD_INFO_DESC "output method information at index : c = dump methods and ord , s = dump of all meta-data, n = method"
+#define METHOD_INFO_ARGS " [<p,c,s idx> | <n idx>]"
+//#define METHOD_INFO_DESC "method index info: c = dump methods and ord , s = dump of all meta-data, n = method"
+#define METHOD_INFO_DESC "method information at index (c:method+ord, s:metadata)"
 #define METHOD_INFO_LEN 6
 
 #define FIELD_INFO "f_info"
-#define FIELD_INFO_ARGS "[<[p |c | <s idx> | <n idx>>]"
-#define FIELD_INFO_DESC "output method information at index : c = dump field and ord , s = dump of all meta-data, n = method"
+#define FIELD_INFO_ARGS " [<p,c,s idx> | #idx]"
+#define FIELD_INFO_DESC "field information at index (c:field+ord, s:metadata)"
+// : c = dump field and ord , s = dump of all meta-data, n = method"
 #define FIELD_INFO_LEN 6
 
 #define HELP "help"
 #define HELP_DESC "displays this message"
-#define HELP_ARGS "NONE"
+#define HELP_ARGS ""
 #define HELP_LEN 4
 
 #define FIND_CP_CONST "find_cp_const"
-#define FIND_CP_CONST_ARGS "[ <a> | <idx>]"
-#define FIND_CP_CONST_DESC "find references to constant CP Object in code: a = all references, idx = specific reference"
+#define FIND_CP_CONST_ARGS " [a|#idx]"
+#define FIND_CP_CONST_DESC "find references to constant CP Object in code: AllReferences"
 #define FIND_CP_CONST_LEN 13
 
 #define FIND_CP_VALUE "find_cp_value"
-#define FIND_CP_VALUE_ARGS "[ <s | i | l | f | d > <value> ]"
+#define FIND_CP_VALUE_ARGS " [<silfd> V]"
 #define FIND_CP_VALUE_DESC "find references to CP constants by value"
 #define FIND_CP_VALUE_LEN 13
 
 #define REPLACE_CP_VALUE "replace_cp_value"
-#define REPLACE_CP_VALUE_ARGS "[ <idx> <value> ]"
+#define REPLACE_CP_VALUE_ARGS " [<idx> V]"
 #define REPLACE_CP_VALUE_DESC "replace CP constants with value if the no resizing is required"
 #define REPLACE_CP_VALUE_LEN 16
 
 #define REPLACE_CLASS_NAME "replace_classname_value"
-#define REPLACE_CLASS_NAME_ARGS "<class_name> <new_class_name>"
-#define REPLACE_CLASS_NAME_DESC "replace CP constants with value if the no resizing is required"
+#define REPLACE_CLASS_NAME_ARGS " <c> <nc>"
+#define REPLACE_CLASS_NAME_DESC "rename class name" //"replace CP constants with value if no resize needed"
 #define REPLACE_CLASS_NAME_LEN 23
 
 #define RELOAD_BIN "reload_bin"
@@ -209,28 +215,28 @@ typedef struct r_cmd_java_cms_t {
 #define RELOAD_BIN_LEN 10
 
 #define SUMMARY_INFO "summary"
-#define SUMMARY_INFO_ARGS "NONE"
+#define SUMMARY_INFO_ARGS ""
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
 #define SUMMARY_INFO_LEN 7
 
 #define LIST_CODE_REFS "lcr"
-#define LIST_CODE_REFS_ARGS "NONE | <addr>"
+#define LIST_CODE_REFS_ARGS " [addr]"
 #define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
 #define LIST_CODE_REFS_LEN 3
 
 #define PRINT_EXC "exc"
-#define PRINT_EXC_ARGS "NONE | <addr>"
+#define PRINT_EXC_ARGS " [<addr>]"
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
 #define PRINT_EXC_LEN 3
 
 #define YARA_CODE_REFS "yc_w_refs"
-#define YARA_CODE_REFS_ARGS "[name] [start] [count]"
+#define YARA_CODE_REFS_ARGS " [name] [start] [count]"
 #define YARA_CODE_REFS_DESC "yara code bytes extraction with a name starting at <start> to <count>"
 #define YARA_CODE_REFS_LEN 9
 
 #define INSERT_MREF "i_mref"
-#define INSERT_MREF_ARGS "<classname> <name> <descriptor in form of (Lpref;)Lref;"
-#define INSERT_MREF_DESC "append a method reference CP object to the end of the CP object array (creates all requisite objects)"
+#define INSERT_MREF_ARGS " C M S" //<meth> <desc>" //descriptor in form of (Lpref;)Lref;"
+#define INSERT_MREF_DESC "add Method to Class with given method signature" //append a method reference CP object to the end of the CP object array (creates all requisite objects)"
 #define INSERT_MREF_LEN 6
 
 
@@ -334,6 +340,7 @@ static const char * r_cmd_java_consumetok (const char *str1, const char b, size_
 	}
 	return p;
 }
+
 static const char * r_cmd_java_strtok (const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
@@ -356,18 +363,26 @@ static RAnal * get_anal (RCore *core) {
 }
 
 static void r_cmd_java_print_cmd_help (RCmdJavaCmd *cmd) {
-	eprintf ("[*] %s %s\n[+]\t %s\n\n", cmd->name, cmd->args, cmd->desc);
+	eprintf ("[*] %s %s\n[+] %s\n\n", cmd->name, cmd->args, cmd->desc);
 }
 
 static int r_cmd_java_handle_help (RCore * core, const char * input) {
 	ut32 i = 0;
-	eprintf ("\n%s %s\n", r_core_plugin_java.name, r_core_plugin_java.desc);
-	eprintf ("[*] Help Format: Command Arguments\n[+]\t Description\n\n");
-	for (i = 0; i <END_CMDS; i++)
-		r_cmd_java_print_cmd_help (JAVA_CMDS+i);
+	const char **help_msg = (const char**)malloc (sizeof(char *) * END_CMDS*4);
+	help_msg[0] = "Usage:";
+	help_msg[1] = "java [cmd] [arg..] ";
+	help_msg[2] = r_core_plugin_java.desc;
+	for (i = 0; i <END_CMDS; i++) {
+		RCmdJavaCmd *cmd = &JAVA_CMDS[i];
+		help_msg[3+(i*3)+0] = cmd->name;
+		help_msg[3+(i*3)+1] = cmd->args;
+		help_msg[3+(i*3)+2] = cmd->desc;
+	}
+	help_msg[3+(i*3)] = NULL;
+	r_core_cmd_help (core, help_msg);
+	free (help_msg);
 	return R_TRUE;
 }
-
 
 static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
@@ -401,12 +416,12 @@ static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd) {
 	}
 
 	r_cons_printf ("Summary for %s:\n", obj->file);
-	r_cons_printf ("\tSize 0x%"PFMT64x":\n", obj->size);
-	r_cons_printf ("\tConstants (size: 0x%"PFMT64x")Count: %d:\n", obj->cp_size, obj->cp_count);
-	r_cons_printf ("\tMethods (size: 0x%"PFMT64x")Count: %d:\n", obj->methods_size, obj->methods_count);
-	r_cons_printf ("\tFields (size: 0x%"PFMT64x")Count: %d:\n", obj->fields_size, obj->fields_count);
-	r_cons_printf ("\tAttributes (size: 0x%"PFMT64x")Count: %d:\n", obj->attrs_size, obj->attrs_count);
-	r_cons_printf ("\tInterfaces (size: 0x%"PFMT64x")Count: %d:\n", obj->interfaces_size, obj->interfaces_count);
+	r_cons_printf ("  Size 0x%"PFMT64x":\n", obj->size);
+	r_cons_printf ("  Constants  size: 0x%"PFMT64x" count: %d:\n", obj->cp_size, obj->cp_count);
+	r_cons_printf ("  Methods    size: 0x%"PFMT64x" count: %d:\n", obj->methods_size, obj->methods_count);
+	r_cons_printf ("  Fields     size: 0x%"PFMT64x" count: %d:\n", obj->fields_size, obj->fields_count);
+	r_cons_printf ("  Attributes size: 0x%"PFMT64x" count: %d:\n", obj->attrs_size, obj->attrs_count);
+	r_cons_printf ("  Interfaces size: 0x%"PFMT64x" count: %d:\n", obj->interfaces_size, obj->interfaces_count);
 
 	return R_TRUE;
 }
@@ -420,21 +435,25 @@ static RList * r_cmd_java_handle_find_cp_value_double (RCore *core, RBinJavaObj 
 	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0') ) return r_list_new();
 	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 8, R_BIN_JAVA_CP_DOUBLE);
 }
+
 static RList * r_cmd_java_handle_find_cp_value_float (RCore *core, RBinJavaObj *obj, const char *cmd) {
 	float value = cmd && *cmd ? atof (cmd) : 0.0;
 	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0') ) return r_list_new();
 	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 4, R_BIN_JAVA_CP_FLOAT);
 }
+
 static RList * r_cmd_java_handle_find_cp_value_long (RCore *core, RBinJavaObj *obj, const char *cmd) {
 	ut64 value = r_cmd_java_get_input_num_value (core, cmd);
 	if ( !r_cmd_java_is_valid_input_num_value (core, cmd) ) return r_list_new ();
 	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 8, R_BIN_JAVA_CP_LONG);
 }
+
 static RList * r_cmd_java_handle_find_cp_value_int (RCore *core, RBinJavaObj *obj, const char *cmd) {
 	ut32 value = (ut32) r_cmd_java_get_input_num_value (core, cmd);
 	if ( !r_cmd_java_is_valid_input_num_value (core, cmd) ) return r_list_new ();
 	return r_bin_java_find_cp_const_by_val ( obj, (const ut8 *) &value, 4, R_BIN_JAVA_CP_INTEGER);
 }
+
 static RList * r_cmd_java_handle_find_cp_value_str (RCore *core, RBinJavaObj *obj, const char *cmd) {
 	if (!cmd) return r_list_new();
 	IFDBG r_cons_printf ("Looking for str: %s (%d)\n", cmd, strlen (cmd));
@@ -1125,7 +1144,7 @@ static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 		}
 		res = R_TRUE;
 	} else if (obj && c_type == 'd') {
-		for (idx = 1; idx <=obj->cp_count; idx++) {
+		for (idx = 1; idx <= obj->cp_count; idx++) {
 			r_cmd_java_resolve_cp_summary (obj, idx);
 		}
 		res = R_TRUE;
@@ -1479,25 +1498,25 @@ static int r_cmd_java_print_class_definitions( RBinJavaObj *obj ) {
 	r_cons_printf ("\nclass %s { // @0x%04"PFMT64x"\n", class_name, obj->loadaddr);
 
 	if (the_fields && the_foffsets && r_list_length (the_fields) > 0) {
-		r_cons_printf ("\n\t// Fields defined in the class\n");
+		r_cons_printf ("\n  // Fields defined in the class\n");
 		ut32 idx = 0, end = r_list_length (the_fields);
 
 		while (idx < end) {
 			ut64 *addr = r_list_get_n (the_foffsets, idx);
 			str = r_list_get_n (the_fields, idx);
-			r_cons_printf("\t%s; // @0x%04"PFMT64x"\n", str, *addr);
+			r_cons_printf("  %s; // @0x%04"PFMT64x"\n", str, *addr);
 			idx++;
 		}
 	}
 
 	if (the_methods && the_moffsets && r_list_length (the_methods) > 0) {
-		r_cons_printf ("\n\t// Methods defined in the class\n");
+		r_cons_printf ("\n  // Methods defined in the class\n");
 		ut32 idx = 0, end = r_list_length (the_methods);
 
 		while (idx < end) {
 			ut64 *addr = r_list_get_n (the_moffsets, idx);
 			str = r_list_get_n (the_methods, idx);
-			r_cons_printf("\t%s; // @0x%04"PFMT64x"\n", str, *addr);
+			r_cons_printf ("  %s; // @0x%04"PFMT64x"\n", str, *addr);
 			idx++;
 		}
 	}
@@ -1970,7 +1989,6 @@ static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input) 
 	free (descriptor);
 	res = R_TRUE;
 	return res;
-
 }
 
 static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
@@ -1996,7 +2014,7 @@ static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
 
 		if (r_list_length (exc_table) == 0){
 			r_cons_printf (" Exception table for %s @ 0x%"PFMT64x":\n", method->name, start);
-			r_cons_printf ("\t[ NONE ]\n");
+			r_cons_printf (" [ NONE ]\n");
 		}
 		else{
 			r_cons_printf (" Exception table for %s (%d entries) @ 0x%"PFMT64x":\n", method->name,
@@ -2004,10 +2022,10 @@ static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
 		}
 		r_list_foreach (exc_table, exc_iter, exc_entry) {
 			char *class_info = r_bin_java_resolve_without_space (bin, exc_entry->catch_type);
-			r_cons_printf ("\tCatch Type: %d, %s @ 0x%"PFMT64x"\n", exc_entry->catch_type, class_info, exc_entry->file_offset+6);
-			r_cons_printf ("\t\tStart PC: (0x%"PFMT64x") 0x%"PFMT64x" @ 0x%"PFMT64x"\n", exc_entry->start_pc, exc_entry->start_pc+start, exc_entry->file_offset);
-			r_cons_printf ("\t\tEnd PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n", exc_entry->end_pc, exc_entry->end_pc+start, exc_entry->file_offset + 2);
-			r_cons_printf ("\t\tHandler PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n", exc_entry->handler_pc, exc_entry->handler_pc+start, exc_entry->file_offset+4);
+			r_cons_printf ("  Catch Type: %d, %s @ 0x%"PFMT64x"\n", exc_entry->catch_type, class_info, exc_entry->file_offset+6);
+			r_cons_printf ("  Start PC: (0x%"PFMT64x") 0x%"PFMT64x" @ 0x%"PFMT64x"\n", exc_entry->start_pc, exc_entry->start_pc+start, exc_entry->file_offset);
+			r_cons_printf ("  End PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n", exc_entry->end_pc, exc_entry->end_pc+start, exc_entry->file_offset + 2);
+			r_cons_printf ("  Handler PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n", exc_entry->handler_pc, exc_entry->handler_pc+start, exc_entry->file_offset+4);
 			free (class_info);
 		}
 	}
