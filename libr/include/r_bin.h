@@ -513,6 +513,7 @@ extern RBinPlugin r_bin_plugin_xbe;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
+extern RBinPlugin r_bin_plugin_omf;
 
 #ifdef __cplusplus
 }

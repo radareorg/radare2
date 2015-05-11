@@ -40,6 +40,9 @@ OBJS += p/bin_xtr_fatmach0.c format/mach0/fatmach0.c ;
 OBJS += p/bin_pe.c format/pe/pe.c ;
 OBJS += p/bin_pe64.c format/pe/pe64.c ;
 
+# OMF
+OBJS += p/bin_omf.c format/omf/omf.c
+
 # DEX
 OBJS += p/bin_dex.c format/dex/dex.c ;
 EXTRA +=
