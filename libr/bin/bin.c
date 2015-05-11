@@ -901,17 +901,17 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
-
 	o->baddr = baseaddr;
 	// XXX more checking will be needed here
-	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
+	// only use LoadBytes if buffer offset != 0
+	if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 		ut64 bsz = bytes_sz - offset;
 		if (sz<bsz) bsz = sz;
-		o->bin_obj = plugin->load_bytes (bytes+offset, sz, loadaddr, sdb);
+		o->bin_obj = plugin->load_bytes (binfile, bytes+offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
 			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
 				plugin->name);
-			sdb_free(o->kv);
+			sdb_free (o->kv);
 			free (o);
 			return NULL;
 		}
@@ -923,7 +923,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		binfile->o = o;
 		if (plugin->load (binfile)) {
 			binfile->sdb_info = o->kv;
-// mark as do not walk
+			// mark as do not walk
 			sdb_ns_set (binfile->sdb, "info", o->kv);
 		} else binfile->o = old_o;
 		o->obj_size = sz;
