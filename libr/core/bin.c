@@ -278,7 +278,10 @@ static int bin_info (RCore *r, int mode) {
 	char size_str[21];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
-	const char *compiled = get_compile_time (binfile->sdb);
+	const char *compiled = NULL;
+	if (binfile) {
+		compiled = get_compile_time (binfile->sdb);
+	}
 	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
 
 	if (!info) {
