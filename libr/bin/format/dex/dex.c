@@ -5,8 +5,9 @@
 #include "dex.h"
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
-	// TODO: ripe!!! pas
-	char *version = malloc (8);
+	char *version;
+	if (!bin) return NULL;
+	version = malloc (8);
 	memset (version, 0, 8);
 	memcpy (version, bin->b->buf+4, 3);
 	return version;
