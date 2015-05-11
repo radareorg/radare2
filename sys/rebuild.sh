@@ -11,7 +11,7 @@ RebuildJava() {
 	Rebuild shlr/java
 	Rebuild libr/asm
 	Rebuild libr/bin
-	Rebuild shlr/core
+	Rebuild libr/core
 }
 
 RebuildCapstone() {
