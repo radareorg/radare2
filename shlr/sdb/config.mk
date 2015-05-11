@@ -21,7 +21,7 @@ INSTALL_MAN=$(INSTALL) -m 444
 INSTALL_LIB=$(INSTALL) -c
 endif
 
-CFLAGS_STD?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -std=c99
+CFLAGS_STD=-std=c99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L 
 #CFLAGS+=-Wno-initializer-overrides
 CFLAGS+=${CFLAGS_STD}
 
@@ -59,15 +59,21 @@ AR?=${WCP}-ar
 endif
 endif
 
-LDFLAGS_SHARED?=-fPIC -shared
+#LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-shared
 
 ifeq (${OS},w32)
 EXEXT=.exe
 SOEXT=.dll
+LDFLAGS_SHARED=-shared
 endif
 
 # create .d files
 CFLAGS+=-MMD
+
+ifeq (${OS},w32)
+OSTYPE=MINGW32
+endif
 
 ifeq (${OS},Darwin)
 SOEXT=dylib

@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include "sdb.h"
 
-#if __WINDOWS__
+#if __SDB_WINDOWS__
 #define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
 #ifndef ERROR_ALREADY_EXISTS
 #define ERROR_ALREADY_EXISTS 183
@@ -50,6 +50,7 @@ SDB_API int sdb_disk_create (Sdb* s) {
 	memcpy (str, s->dir, nlen+1);
 	r_sys_rmkdir (str);
 	memcpy (str+nlen, ".tmp", 5);
+	close (s->fdump);
 	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, SDB_MODE);
 	if (s->fdump == -1) {
 		eprintf ("sdb: Cannot open '%s' for writing.\n", str);
@@ -70,16 +71,32 @@ SDB_API int sdb_disk_insert(Sdb* s, const char *key, const char *val) {
 
 #define IFRET(x) if(x)ret=0
 SDB_API int sdb_disk_finish (Sdb* s) {
-	int ret = 1;
+	int reopen = 0, ret = 1;
 	IFRET (!cdb_make_finish (&s->m));
 #if USE_MMAN
 	IFRET (fsync (s->fdump));
 #endif
 	IFRET (close (s->fdump));
 	s->fdump = -1;
+	// close current fd to avoid sharing violations
+	if (s->fd != -1) {
+		close (s->fd);
+		s->fd = -1;
+		reopen = 1;
+	}
+#if __SDB_WINDOWS__
+	if (MoveFileEx (s->ndump, s->dir, MOVEFILE_REPLACE_EXISTING)) {
+		//eprintf ("Error 0x%02x\n", GetLastError ());
+	}
+#else
 	IFRET (rename (s->ndump, s->dir));
+#endif
 	free (s->ndump);
 	s->ndump = NULL;
+	// reopen if was open before
+	if (reopen) {
+		sdb_open (s, s->dir);
+	}
 	return ret;
 }
 

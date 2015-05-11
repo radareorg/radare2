@@ -73,6 +73,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 		s->last = sdb_now ();
 		s->fd = -1;
 	}
+	s->journal = -1;
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL
@@ -122,6 +123,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	free (s->path);
 	ls_free (s->ns);
 	ht_free (s->ht);
+	sdb_journal_close (s);
 	if (s->fd != -1) {
 		close (s->fd);
 		s->fd = -1;
@@ -256,11 +258,12 @@ SDB_API int sdb_unset (Sdb* s, const char *key, ut32 cas) {
 SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
 	// remove 'value' from current key value.
 	// TODO: cas is ignored here
-	int vlen;
+	int vlen = 0;
 	char *p, *v = sdb_get_len (s, key, &vlen, NULL);
 	int mod = 0;
+	int valen = strlen (value);
 	while ((p = strstr (v, value))) {
-		memmove (p, p+vlen, strlen (p+vlen)+1);
+		memmove (p, p+valen, strlen (p+valen)+1);
 		mod = 1;
 	}
 	if (mod) sdb_set_owned (s, key, v, 0);
@@ -391,6 +394,9 @@ static int sdb_set_internal (Sdb* s, const char *key, char *val, int owned, ut32
 	if (!val) val = "";
 	if (!sdb_check_value (val))
 		return 0;
+	if (s->journal != -1) {
+		sdb_journal_log (s, key, val);
+	}
 	klen = strlen (key)+1;
 	vlen = strlen (val)+1;
 	hash = sdb_hash (key);
@@ -500,8 +506,9 @@ SDB_API int sdb_sync (Sdb* s) {
 	char *k, *v;
 	SdbKv *kv;
 
-	if (!s || !sdb_disk_create (s))
+	if (!s || !sdb_disk_create (s)) {
 		return 0;
+	}
 // TODO: use sdb_foreach here
 	sdb_dump_begin (s);
 	/* iterate over all keys in disk database */
@@ -537,6 +544,7 @@ SDB_API int sdb_sync (Sdb* s) {
 		}
 	}
 	sdb_disk_finish (s);
+	sdb_journal_clear (s);
 	// TODO: sdb_reset memory state?
 	return 1;
 }
@@ -741,6 +749,15 @@ SDB_API void sdb_config(Sdb *s, int options) {
 	s->options = options;
 	if (options & SDB_OPTION_SYNC) {
 		// sync on every query
+	}
+	if (options & SDB_OPTION_JOURNAL) {
+		// sync on every query
+		sdb_journal_open (s);
+		// load journaling if exists
+		sdb_journal_load (s);
+		sdb_journal_clear (s);
+	} else {
+		sdb_journal_close (s);
 	}
 	if (options & SDB_OPTION_NOSTAMP) {
 		// sync on every query

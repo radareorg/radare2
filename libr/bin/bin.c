@@ -904,7 +904,8 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->baddr = baseaddr;
 	// XXX more checking will be needed here
 	// only use LoadBytes if buffer offset != 0
-	if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
+	//if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
+	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 		ut64 bsz = bytes_sz - offset;
 		if (sz<bsz) bsz = sz;
 		o->bin_obj = plugin->load_bytes (binfile, bytes+offset, sz, loadaddr, sdb);

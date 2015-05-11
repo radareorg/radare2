@@ -20,24 +20,26 @@
 #define __MINGW__ 1
 #endif
 
-#if __CYGWIN__
-#define ULLFMT "ll"
-#define USE_MMAN 1
-#elif __WIN32__ || __MINGW__
-#define ULLFMT "I64"
-#define USE_MMAN 0
-#else
-#define ULLFMT "ll"
-#define USE_MMAN 1
-#endif
-
-#if __WIN32__ || __CYGWIN__ || __MINGW__
-#undef __WINDOWS__
-#define __WINDOWS__ 1
+#if __WIN32__ || __MINGW__ || __WINDOWS__
+#define __SDB_WINDOWS__ 1
 #include <windows.h>
 #define DIRSEP '\\'
 #else
+// CYGWIN AND UNIX
+#define __SDB_WINDOWS__ 0
 #define DIRSEP '/'
+#endif
+
+#include <inttypes.h>
+#if __CYGWIN__
+#define USE_MMAN 1
+#define ULLFMT "ll"
+#elif __SDB_WINDOWS__
+#define USE_MMAN 0
+#define ULLFMT "I64"
+#else
+#define ULLFMT "ll"
+#define USE_MMAN 1
 #endif
 
 #include <unistd.h>
@@ -48,12 +50,6 @@
 #else
 #define UNUSED
 #endif
-#endif
-
-#if __WIN32__ || __CYGWIN__ || __MINGW32__
-#define WINDOWS 1
-#else
-#define WINDOWS 0
 #endif
 
 #ifndef ut8
@@ -68,6 +64,10 @@
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
 #endif
+#undef R_MAX
+#define R_MAX(x,y) (((x)>(y))?(x):(y))
+#undef R_MIN
+#define R_MIN(x,y) (((x)>(y))?(y):(x))
 
 #include "config.h"
 

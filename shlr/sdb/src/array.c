@@ -36,15 +36,15 @@ static int astrcmp (const char *a, const char *b) {
 }
 
 static inline int cstring_cmp(const void *a, const void *b) { 
-    const char **va = (const char **)a;
-    const char **vb = (const char **)b;
-    return astrcmp(*va, *vb);
+	const char **va = (const char **)a;
+	const char **vb = (const char **)b;
+	return astrcmp(*va, *vb);
 }
 
 static inline int int_cmp(const void *a, const void *b) { 
-    const int *va = (const int *)a;
-    const int *vb = (const int *)b;
-    return *va  - *vb; 
+	const ut64 *va = (const ut64 *)a;
+	const ut64 *vb = (const ut64 *)b;
+	return (int)(*va  - *vb);
 } 
 
 SDB_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx, ut32 *cas) {
@@ -190,8 +190,9 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 	lval = strlen (val);
 	vals = sdb_fmt_array (val);
 	for (i=0; vals[i]; i++);
-	if (i>1)
-		qsort (vals, i, sizeof(void*), cstring_cmp);
+	if (i>1) {
+		qsort (vals, i, sizeof (ut64*), cstring_cmp);
+	}
 	nstr_p = nstr = malloc (lstr + lval + 3);
 	for (i=0; vals[i]; i++) {
 		while (str_p<str_e) {
@@ -488,16 +489,16 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 		return;
 	strs = sdb_fmt_array (str);
 	for(i=0; strs[i]; i++);
-	qsort(strs, i, sizeof(void*), cstring_cmp);
+	qsort (strs, i, sizeof (char**), cstring_cmp);
 	nstr = str;
 	for(i=0; strs[i]; i++) {
 		j = strlen(strs[i]);
-		memcpy(nstr, strs[i], j);
+		memcpy (nstr, strs[i], j);
 		nstr += j;
 		*(nstr++) = SDB_RS;
 	}
 	*(--nstr) = '\0';
-	sdb_set_owned(s, key, str, cas);
+	sdb_set_owned (s, key, str, cas);
 	free(strs);
 	return;
 }
@@ -509,15 +510,15 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 	if (!str || !*str)
 		return;
 	nums = sdb_fmt_array_num (str);
-	qsort(nums+1, *nums, sizeof(void*), int_cmp);
+	qsort (nums+1, (int)*nums, sizeof (ut64), int_cmp);
 	nstr = str;
-	for(i=0; i<*nums; i++)
-		*(nstr++)='d';
-	*nstr='\0';
-	ret = sdb_fmt_tostr(nums+1, str);
-	sdb_set_owned(s, key, ret, cas);
-	free(str);
-	free(nums);
+	for (i=0; i<*nums; i++)
+		*(nstr++) = 'q';
+	*nstr = '\0';
+	ret = sdb_fmt_tostr (nums+1, str);
+	sdb_set_owned (s, key, ret, cas);
+	free (str);
+	free (nums);
 	return;
 }
 

@@ -1,4 +1,4 @@
-/* Public domain - author D. J. Bernstein, modified by pancake - 2014 */
+/* Public domain - author D. J. Bernstein, modified by pancake - 2014-2015 */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,12 +10,12 @@
 
 /* XXX: this code must be rewritten . too slow */
 int cdb_getkvlen(int fd, ut32 *klen, ut32 *vlen) {
-	ut8 buf[4];
+	ut8 buf[4] = {0};
 	*klen = *vlen = 0;
 	if (fd == -1 || read (fd, buf, 4) != 4)
 		return 0;
 	*klen = (ut32)buf[0];
-	*vlen = (ut32)(buf[1] + ((ut32)buf[2]<<8) + ((ut32)buf[3]<<16));
+	*vlen = (ut32)(buf[1] | ((ut32)buf[2]<<8) | ((ut32)buf[3]<<16));
 	return 1;
 }
 

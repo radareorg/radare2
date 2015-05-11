@@ -16,8 +16,6 @@ extern "C" {
 #include "cdb_make.h"
 #include "sdb-version.h"
 
-#undef R_MAX
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
@@ -27,9 +25,16 @@ extern "C" {
 #define SDB_MIN_KEY 1
 #define SDB_MAX_KEY 0xff
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __SDB_WINDOWS__ && !__CYGWIN__
 #include <windows.h>
-#define SDB_MODE 0
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+extern void *__cdecl _aligned_malloc(size_t, size_t);
+extern char *strdup (const char *);
+//#define SDB_MODE 0
+#define SDB_MODE _S_IWRITE | _S_IREAD
 #else
 #define SDB_MODE 0644
 //#define SDB_MODE 0600
@@ -43,9 +48,10 @@ extern "C" {
 
 #define SDB_OPTION_NONE 0
 #define SDB_OPTION_ALL 0xff
-#define SDB_OPTION_SYNC 1
-#define SDB_OPTION_NOSTAMP 2
-#define SDB_OPTION_FS 4
+#define SDB_OPTION_SYNC    (1<<0)
+#define SDB_OPTION_NOSTAMP (1<<1)
+#define SDB_OPTION_FS      (1<<2)
+#define SDB_OPTION_JOURNAL (1<<3)
 
 // This size implies trailing zero terminator, this is 254 chars + 0
 #define SDB_KSZ 0xff
@@ -65,6 +71,7 @@ typedef struct sdb_t {
 	int fd;
 	int refs; // reference counter
 	int lock;
+	int journal;
 	struct cdb db;
 	struct cdb_make m;
 	SdbHash *ht;
@@ -146,6 +153,14 @@ int sdb_disk_unlink (Sdb* s);
 void sdb_dump_begin (Sdb* s);
 SdbKv *sdb_dump_next (Sdb* s);
 int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen);
+
+/* journaling */
+int sdb_journal_close(Sdb *s);
+int sdb_journal_open(Sdb *s);
+int sdb_journal_load(Sdb *s);
+int sdb_journal_log(Sdb *s, const char *key, const char *val);
+int sdb_journal_clear(Sdb *s);
+int sdb_journal_unlink(Sdb *s);
 
 /* numeric */
 char *sdb_itoa (ut64 n, char *s, int base);

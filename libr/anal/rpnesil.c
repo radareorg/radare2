@@ -1361,7 +1361,11 @@ static int esil_peek_some(RAnalEsil *esil) {
 					}
 					ret = r_anal_esil_mem_read (esil, ptr,
 						(ut8*)&num32, sizeof (num32));
-					r_anal_esil_reg_write (esil, foo, num32);
+					if (ret == sizeof (num32)) {
+						r_anal_esil_reg_write (esil, foo, num32);
+					} else {
+						eprintf ("Cannot peek from 0x%08"PFMT64x"\n", ptr);
+					}
 					ptr += 4;
 					free (foo);
 				}
@@ -1395,6 +1399,9 @@ static int esil_poke_some(RAnalEsil *esil) {
 					// read from $dst 
 					ret = r_anal_esil_mem_write (esil, ptr,
 						(const ut8*)&num32, sizeof (num32));
+					if (ret != sizeof (num32)) {
+						eprintf ("Cannot write at 0x%08"PFMT64x"\n", ptr);
+					}
 					ptr += 4;
 					free (foo);
 				}
