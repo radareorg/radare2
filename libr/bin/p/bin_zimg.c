@@ -24,7 +24,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || size == 0 || size == UT64_MAX) return NULL;
@@ -40,7 +40,7 @@ static int load(RBinFile *arch) {
 	ut64 size = arch ? r_buf_size (arch->buf): 0;
 
 	if (!arch || !arch->o) return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, size, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, size, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? R_TRUE: R_FALSE;
 }
 
@@ -56,7 +56,6 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-  
 	if (!buf || length < 8)
 		return R_FALSE;
 
@@ -64,9 +63,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	if (!memcmp (buf, "\x00\x00\xa0\xe1\x00\x00\xa0\xe1", 8)) {
 	        return R_TRUE;
 	}
-
 	// TODO: Add other architectures
-
 	return R_FALSE;
 }
 

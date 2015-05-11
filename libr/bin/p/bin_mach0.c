@@ -17,7 +17,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
@@ -32,11 +32,12 @@ static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 }
 
 static int load(RBinFile *arch) {
+	void *res;
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
 	if (!arch || !arch->o) return R_FALSE;
- 	void *res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+ 	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
 	if (!arch->o || !res) {
 		MACH0_(mach0_free) (res);

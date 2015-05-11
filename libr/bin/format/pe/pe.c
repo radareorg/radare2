@@ -2115,7 +2115,7 @@ next:
 				}
 			}
 			curr_delay_import_dir++;
-			if (curr_delay_import_dir+1>= (bin->b->buf+bin->size)) {
+			if ((const ut8*)(curr_delay_import_dir+1) >= (const ut8*)(bin->b->buf+bin->size)) {
 				break;
 			}
 		}

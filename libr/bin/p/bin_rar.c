@@ -37,14 +37,14 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	RBuffer *tbuf = NULL;
 	RRarBinObj *res = NULL;
-
-	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
-
+	if (!buf || sz == 0 || sz == UT64_MAX) {
+		return NULL;
+	}
 	res = R_NEW0 (RRarBinObj);
-	tbuf = r_buf_new();
+	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res->buf = tbuf;
 	res->kv = sdb;

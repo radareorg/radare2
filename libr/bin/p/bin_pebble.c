@@ -53,7 +53,7 @@ static int check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	// XXX: this may be wrong if check_bytes is true
 	return R_NOTNULL;
