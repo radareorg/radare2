@@ -643,7 +643,7 @@ static const ut8* r_bin_dwarf_parse_opcodes (const RBin *a, const ut8 *obuf,
 	buf = obuf;
 	buf_end = obuf + len;
 
-	while (buf && buf < buf_end) {
+	while (buf && buf+1 < buf_end) {
 		opcode = *buf++;
 		len--;
 		if (opcode == 0) {
