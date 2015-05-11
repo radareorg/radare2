@@ -145,7 +145,7 @@ Too old to crash
 Finnished a beer
 ESIL ruined my life
 ESIL: The Aftersleep
-Please insert coin
+Insert coin to continue..
 See you in shell
 Mess with the best, Die like the rest
 Sarah Connor?
