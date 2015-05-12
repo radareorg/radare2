@@ -141,6 +141,64 @@ static void synchronize(int sig UNUSED) {
 }
 #endif
 
+static int sdb_grep (const char *db, int fmt, const char *grep) {
+	char *k, *v;
+	const char *comma = "";
+	Sdb *s = sdb_new (NULL, db, 0);
+	if (!s) return 1;
+	sdb_config (s, options);
+	sdb_dump_begin (s);
+	if (fmt==MODE_JSON)
+		printf ("{");
+	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
+		if (!strstr (k, grep) && !strstr (v, grep)) {
+			continue;
+		}
+		switch (fmt) {
+		case MODE_JSON:
+			if (!strcmp (v, "true") || !strcmp (v, "false")) {
+				printf ("%s\"%s\":%s", comma, k, v);
+			} else if (sdb_isnum (v)) {
+				printf ("%s\"%s\":%llu", comma, k, sdb_atoi (v));
+			} else if (*v=='{' || *v=='[') {
+				printf ("%s\"%s\":%s", comma, k, v);
+			} else printf ("%s\"%s\":\"%s\"", comma, k, v);
+			comma = ",";
+			break;
+		case MODE_ZERO:
+			printf ("%s=%s", k, v);
+			fwrite ("", 1,1, stdout);
+			break;
+		default:
+			printf ("%s=%s\n", k, v);
+			break;
+		}
+#if 0
+		if (qf && strchr (v, SDB_RS)) {
+			for (p=v; *p; p++)
+				if (*p==SDB_RS)
+					*p = ',';
+			printf ("[]%s=%s\n", k, v);
+		} else {
+			printf ("%s=%s\n", k, v);
+		}
+#endif
+		free (k);
+		free (v);
+	}
+	switch (fmt) {
+	case MODE_ZERO:
+		fflush (stdout);
+		write (1, "", 1);
+		break;
+	case MODE_JSON:
+		printf ("}\n");
+		break;
+	}
+	sdb_free (s);
+	return 0;
+}
+
 static int sdb_dump (const char *db, int fmt) {
 	char *k, *v;
 	const char *comma = "";
@@ -350,7 +408,7 @@ static int dbdiff (const char *a, const char *b) {
 
 int main(int argc, const char **argv) {
 	char *line;
-	const char *arg;
+	const char *arg, *grep = NULL;
 	int i, ret, fmt = MODE_DFLT;
 	int db0 = 1, argi = 1;
 	int interactive = 0;
@@ -373,6 +431,14 @@ int main(int argc, const char **argv) {
 			if (db0>=argc) {
 				return showusage(1);
 			}
+			break;
+		case 'g':
+			db0+=2;
+			if (db0>=argc) {
+				return showusage(1);
+			}
+			grep = argv[2];
+			argi+=2;
 			break;
 		case 'J':
 			options |= SDB_OPTION_JOURNAL;
@@ -414,7 +480,11 @@ int main(int argc, const char **argv) {
 	}
 	/* sdb dbname */
 	if (argc-1 == db0) {
-		return sdb_dump (argv[db0], fmt);
+		if (grep) {
+			return sdb_grep (argv[db0], fmt, grep);
+		} else {
+			return sdb_dump (argv[db0], fmt);
+		}
 	}
 #if USE_MMAN
 	signal (SIGINT, terminate);

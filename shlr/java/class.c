@@ -1999,7 +1999,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	RBinJavaAttrMetas* type_info = NULL;
 
 	if (!buffer || ((int)sz)<4 || buf_offset<0) {
-		eprintf ("r_bin_Java_read_next_attr_from_buffer: invalid buffer size %d\n", sz);
+		eprintf ("r_bin_Java_read_next_attr_from_buffer: invalid buffer size %d\n", (int)sz);
 		return NULL;
 	}
 	name_idx = R_BIN_JAVA_USHORT (buffer, offset);
