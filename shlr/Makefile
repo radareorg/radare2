@@ -6,9 +6,11 @@ CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
 CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150504
+CS_UPD=20150512
 CS_BRA=next
-CS_TIP=239a35dba41d4696b764c2040244fd80f2a7102d
+CS_TIP=c42effd51cac83a4010f5a1517233a23aa1bedef
+# REVERT THIS COMMIT BECAUSE ITS WRONG
+CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
@@ -148,11 +150,16 @@ capstone-sync:
 		git clone $(CS_URL) ; \
 	fi
 	cd capstone ; \
+		git reset --hard @^^^ ; \
 		git checkout $(CS_BRA) ; \
 		git reset --hard $(CS_TIP) || \
 	( if [ -d .git ]; then \
 		git pull ; git reset --hard $(CS_TIP) ; \
 	else true ; fi)
+	if [ -n "${CS_REV}" ]; then \
+		cd capstone ; \
+		EDITOR=cat git revert ${CS_REV} ; \
+	fi
 
 .PHONY: capstone
 else
