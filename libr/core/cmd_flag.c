@@ -463,7 +463,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 	case '*':
 	case '\0':
 	case 'j':
-		r_flag_list (core->flags, *input, input+1);
+		r_flag_list (core->flags, *input, input[0]? input+1:"");
 		break;
 	case 'd':
 		{
