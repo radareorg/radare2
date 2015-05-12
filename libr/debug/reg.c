@@ -123,8 +123,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				if (n == 0);
 				else if (n % cols == 0)
 					dbg->printf ("\n");
-				else
-					dbg->printf ("  |  ");
+				else dbg->printf (" |");
 
 				// set color
 				if (delta && use_color)
@@ -134,8 +133,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				if (item->flags) {
 					char *str;
 					str = r_reg_get_bvalue (dbg->reg, item);
-					dbg->printf ("%s = %s", item->name, str);
-					free(str);
+					dbg->printf ("%s = %s\n", item->name, str);
+					free (str);
 				} else {
 					dbg->printf (fmt1, item->name, value);
 				}
