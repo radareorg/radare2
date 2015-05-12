@@ -1416,7 +1416,12 @@ static void get_nesttype_print_type(void *type, char **name)
 		print_base_type(base_type, &tmp_name);
 	} else {
 		ti = &t->type_data;
-		ti->get_print_type(ti, &tmp_name);
+		if (ti->get_print_type != NULL) {
+			ti->get_print_type(ti, &tmp_name);
+		} else {
+			// TODO: need to investigate why this branch can be...
+			printf("warning: strange for nesttype\n");
+		}
 	}
 
 	name_len = strlen("nesttype ");
