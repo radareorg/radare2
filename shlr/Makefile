@@ -158,6 +158,8 @@ capstone-sync:
 	else true ; fi)
 	if [ -n "${CS_REV}" ]; then \
 		cd capstone ; \
+		git config --global user.name "radare-travis"
+		git config --global user.email radare-travis@foo.com
 		EDITOR=cat git revert ${CS_REV} ; \
 	fi
 
