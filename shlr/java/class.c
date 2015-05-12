@@ -1798,7 +1798,7 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 	default:
 		return NULL;
 	case 0:
-		eprintf ("Invalid 0 tag in the constant pool\n");
+		IFDBG eprintf ("Invalid 0 tag in the constant pool\n");
 		return NULL;
 	}
 	return NULL;
@@ -3497,6 +3497,7 @@ R_API ut64 r_bin_java_exceptions_attr_calc_size(RBinJavaAttrInfo *attr) {
 R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
 	RBinJavaClassesAttribute *icattr;
 	RBinJavaAttrInfo *attr = NULL;
+	RBinJavaCPTypeObj *obj;
 	ut32 i = 0;
 	ut64 offset = 0, cur_location;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
@@ -3507,6 +3508,7 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_INNER_CLASSES_ATTR;
 	attr->info.inner_classes_attr.number_of_classes = R_BIN_JAVA_USHORT (buffer, offset);
+	offset += 2;
 	attr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		cur_location = buf_offset + offset;
@@ -3523,17 +3525,24 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 		icattr->file_offset = cur_location;
 		icattr->size = 8;
 
-		RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_name_idx);
+		obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_name_idx);
 		if (obj == NULL) {
-eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
+			eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
 		}
 		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-		if (icattr->name == NULL) {
-			icattr->name = r_str_dup (NULL, "NULL");
-			eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
-		}
-		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
+		if (icattr->name == NULL){
+			obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_class_info_idx);
+			if (obj == NULL){
+				eprintf ("BINCPLIST IS NULL %d\n", icattr->inner_class_info_idx);
+			}
+			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
+			if (icattr->name == NULL){
+				icattr->name = r_str_dup (NULL, "NULL");
+				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
+			}
+ 		}		
 
+		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
 		r_list_append (attr->info.inner_classes_attr.classes, (void *) icattr);
 	}
 	attr->size = offset;
