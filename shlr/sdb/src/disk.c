@@ -40,8 +40,9 @@ static inline int r_sys_rmkdir(char *dir) {
 SDB_API int sdb_disk_create (Sdb* s) {
 	int nlen;
 	char *str;
-	if (!s || !s->dir || s->fdump != -1)
+	if (!s || !s->dir || s->fdump >=0) {
 		return 0; // cannot re-create
+	}
 	free (s->ndump);
 	s->ndump = NULL;
 	nlen = strlen (s->dir);
@@ -95,7 +96,10 @@ SDB_API int sdb_disk_finish (Sdb* s) {
 	s->ndump = NULL;
 	// reopen if was open before
 	if (reopen) {
-		sdb_open (s, s->dir);
+		int rr = sdb_open (s, s->dir);
+		if (ret && rr<0) {
+			ret = 0;
+		}
 	}
 	return ret;
 }

@@ -670,7 +670,7 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 	len = cdb_datalen (&s->db);
 	if (len <1 || len == UT32_MAX)
 		return 0;
-	if (!(buf = malloc (len+1)))
+	if (!(buf = calloc (1, len+1)))
 		return 0;
 	cdb_read (&s->db, buf, len, pos);
 	buf[len] = 0;
