@@ -255,7 +255,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{REPLACE_CP_VALUE, REPLACE_CP_VALUE_ARGS, REPLACE_CP_VALUE_DESC, REPLACE_CP_VALUE_LEN, r_cmd_java_handle_replace_cp_value},
 	{REPLACE_CLASS_NAME, REPLACE_CLASS_NAME_ARGS, REPLACE_CLASS_NAME_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_replace_classname_value},
 	{RELOAD_BIN, RELOAD_BIN_ARGS, RELOAD_BIN_DESC, RELOAD_BIN_LEN, r_cmd_java_handle_reload_bin},
-	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_summary_info},
+	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, SUMMARY_INFO_LEN, r_cmd_java_handle_summary_info},
 	{LIST_CODE_REFS, LIST_CODE_REFS_ARGS, LIST_CODE_REFS_DESC, LIST_CODE_REFS_LEN, r_cmd_java_handle_list_code_references},
 	{PRINT_EXC, PRINT_EXC_ARGS, PRINT_EXC_DESC, PRINT_EXC_LEN, r_cmd_java_handle_print_exceptions},
 	{YARA_CODE_REFS, YARA_CODE_REFS_ARGS, YARA_CODE_REFS_DESC, YARA_CODE_REFS_LEN, r_cmd_java_handle_yara_code_extraction_refs},
@@ -985,7 +985,7 @@ static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 	}
 
 	if (*(cmd) == 's' || *(cmd) == 'n') {
-		idx = r_cmd_java_get_input_num_value (core, cmd+2);
+		idx = r_cmd_java_get_input_num_value (core, cmd+1);
 	}
 
 	switch (*(cmd)) {
@@ -1015,7 +1015,7 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	}
 
 	if (*(cmd) == 's' || *(cmd) == 'n') {
-		idx = r_cmd_java_get_input_num_value (core, cmd+2);
+		idx = r_cmd_java_get_input_num_value (core, cmd+1);
 	}
 
 	switch (*(cmd)) {
