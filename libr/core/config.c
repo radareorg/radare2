@@ -988,8 +988,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
-	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
-	SETCB("anal.recont", "false", &cb_analrecont, "Split functions into basic blocks in analysis.");
+	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis");
+	SETCB("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
 	SETCB("anal.trace", "false", &cb_anal_trace, "Record ESIL trace in log database");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
