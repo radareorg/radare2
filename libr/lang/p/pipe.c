@@ -20,20 +20,20 @@ static void env(const char *s, int f) {
 }
 
 #if __WINDOWS__
-static int myCreateChildProcess(char * szCmdline);
-static int myCreateChildProcess(char * szCmdline) {
+static int myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	BOOL bSuccess = FALSE;
 	DWORD dwWritten;
-	ZeroMemory( &piProcInfo, sizeof(PROCESS_INFORMATION));
-	ZeroMemory( &siStartInfo, sizeof(STARTUPINFO) );
+	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
+	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof(STARTUPINFO);
-	bSuccess = CreateProcess(NULL,szCmdline,NULL,NULL,TRUE,0,NULL,NULL,&siStartInfo,&piProcInfo);
-	if ( ! bSuccess )
+	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
+		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
+	if (!bSuccess)
 		return R_FALSE;
-	CloseHandle(piProcInfo.hProcess);
-	CloseHandle(piProcInfo.hThread);
+	CloseHandle (piProcInfo.hProcess);
+	CloseHandle (piProcInfo.hThread);
 	return R_TRUE;
 }
 #endif
@@ -70,7 +70,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			sleep (1);
 		}
 #endif
-		write (output[1], "", 1);
+		write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
@@ -90,7 +90,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			if (ret <1 || !buf[0]) {
 				break;
 			}
-			buf[sizeof(buf)-1] = 0;
+			buf[sizeof (buf)-1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
@@ -129,7 +129,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT,PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (myCreateChildProcess(code)!=R_TRUE) {
+	if (myCreateChildProcess (code)!=R_TRUE) {
 		//eprintf("Error spawning process: %s\n",code);
 		return R_TRUE;
 	}
