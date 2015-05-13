@@ -769,8 +769,10 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				core->cons->vline[LINE_CROSS]); // |-
 			r_cons_printf ("%s%s"Color_RESET" %d\n",
 				ds->color_floc, f->name, f->size);
+#if 0
 			r_cons_printf ("%s%s "Color_RESET,
 				ds->color_fline, core->cons->vline[LINE_VERT]); // |
+#endif
 		} else {
 			r_cons_printf ("%s %s %d\n%s ", core->cons->vline[LINE_CROSS],
 				f->name, f->size, core->cons->vline[LINE_VERT]); // |-
@@ -1561,41 +1563,42 @@ static void handle_print_import_name (RCore * core, RDisasmState *ds) {
 }
 
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
+	int delta;
+	const char *label;
 	RAnalFunction *f;
 	if (!ds->show_comments)
 		return;
 	switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_JMP:
-	        case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_CALL:
-			f = r_anal_get_fcn_in (core->anal,
-				ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-			if (f && !strstr (ds->opstr, f->name)) {
-				if (ds->show_color)
-					r_cons_strcat (ds->color_fname);
-				handle_comment_align (core, ds);
-				//beginline (core, ds, f);
-				// print label
-				{
-			        int delta = ds->analop.jump - f->addr;
-				const char *label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
-				if (label) { r_cons_printf ("  ; %s.%s", f->name, label);
-				} else {
-					RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
-					if (f != f2) {
-						if (delta>0) {
-							r_cons_printf ("  ; %s+0x%x", f->name, delta);
-						} else if (delta<0) {
-							r_cons_printf ("  ; %s-0x%x", f->name, -delta);
-						} else {
-							r_cons_printf ("  ; %s", f->name );
-						}
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		f = r_anal_get_fcn_in (core->anal,
+			ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
+		if (f && !strstr (ds->opstr, f->name)) {
+			if (ds->show_color)
+				r_cons_strcat (ds->color_fname);
+			handle_comment_align (core, ds);
+			//beginline (core, ds, f);
+			// print label
+			delta = ds->analop.jump - f->addr;
+			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
+			if (label) {
+				r_cons_printf ("  ; %s.%s", f->name, label);
+			} else {
+				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
+				if (f != f2) {
+					if (delta>0) {
+						r_cons_printf ("  ; %s+0x%x", f->name, delta);
+					} else if (delta<0) {
+						r_cons_printf ("  ; %s-0x%x", f->name, -delta);
+					} else {
+						r_cons_printf ("  ; %s", f->name);
 					}
 				}
-				}
-				handle_print_color_reset (core, ds);
 			}
-			break;
+			handle_print_color_reset (core, ds);
+		}
+		break;
 	}
 }
 
