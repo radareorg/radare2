@@ -193,7 +193,7 @@ static int cmd_rap(void *data, const char *input) {
 	case '!': r_io_system (core->io, input+1); break;
 	default: r_core_rtr_cmd (core, input);
 	}
-	return R_TRUE;
+	return 0;
 }
 
 static int cmd_yank(void *data, const char *input) {

@@ -258,7 +258,13 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 			free (str);
 			break;
 		}
-		if (f) fprintf (f, "INCLUDEDIR (%s)\n", buf);
+		if (*str != '/' && *str != '.') {
+			// no more paths in here
+			break;
+		}
+		if (f) {
+			fprintf (f, "INCLUDEDIR (%s)\n", str);
+		}
 		add_sdb_include_dir (s, str, i);
 		free (str);
 		i++;

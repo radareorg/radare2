@@ -48,10 +48,13 @@ env:
   - TESTS=asm.gb
   - TESTS=asm.h8300
   - TESTS=asm.java
+  - TESTS=asm.lh5801
   - TESTS=asm.mips
+  - TESTS=asm.msp430
   - TESTS=asm.tms320
-  - TESTS=asm.z80
+  - TESTS=asm.ws
   - TESTS=asm.x86
+  - TESTS=asm.z80
   
   #- debugger
   #- TESTS=dbg.linux
