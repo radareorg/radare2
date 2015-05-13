@@ -1951,10 +1951,15 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 
 R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 	RAnalFunction *f;
-	r_flag_unset_i (core->flags, off, NULL);
+	//r_flag_unset_i (core->flags, off, NULL);
 	r_anal_fcn_del_locs (core->anal, off);
 	f = r_anal_get_fcn_in (core->anal, off, 0);
-	if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
+	if (f) {
+		if (!strncmp (f->name, "fcn.", 4)) {
+			r_flag_unset (core->flags, f->name, NULL);
+		}
+		r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
+	}
 	r_anal_fcn_del (core->anal, off);
 }
 
