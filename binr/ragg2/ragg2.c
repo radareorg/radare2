@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_egg.h>
 #include <r_bin.h>
@@ -139,15 +139,20 @@ int main(int argc, char **argv) {
 			break;
 		case 'w':
 			{
-				char *p = strchr (optarg, ':');
+				char *arg = strdup (optarg);
+				char *p = strchr (arg, ':');
 				if (p) {
-					int len, off = r_num_math (NULL, optarg);
-					ut8 *b = malloc (strlen (optarg)+1);
-					len = r_hex_str2bin (p+1, b);
+					int len, off;
+					ut8 *b;
+					*p++ = 0;
+					off = r_num_math (NULL, arg);
+					b = malloc (strlen (optarg)+1);
+					len = r_hex_str2bin (p, b);
 					if (len>0) r_egg_patch (egg, off, (const ut8*)b, len);
 					else eprintf ("Invalid hexstr for -w\n");
 					free (b);
 				} else eprintf ("Missing colon in -w\n");
+				free (arg);
 			}
 			break;
 		case 'n': {
