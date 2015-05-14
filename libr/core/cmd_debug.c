@@ -1157,6 +1157,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbits", " <index>", "Swap Nth breakpoint trace",
 		//
 		"dbh", " x86", "Set/list breakpoint plugin handlers",
+		"drx", " number addr len rwx", "Modify hardware breakpoint",
+		"drx-", "number", "Clear hardware breakpoint",
 		NULL};
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
