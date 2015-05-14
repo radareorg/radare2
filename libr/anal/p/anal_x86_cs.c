@@ -655,12 +655,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				esilprintf (op, "%d,$", R_ABS((int)INSOP(0).imm));
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
+		case X86_INS_SYSCALL:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			break;
 		case X86_INS_INT1:
 		case X86_INS_INT3:
 		case X86_INS_INTO:
 		case X86_INS_VMCALL:
 		case X86_INS_VMMCALL:
-		case X86_INS_SYSCALL:
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			if (a->decode)
 				esilprintf (op, "%d,$", (int)INSOP(0).imm);

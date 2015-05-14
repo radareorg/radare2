@@ -33,6 +33,10 @@ if [ $? = 0 ]; then
 	export CC
 fi
 
+
+echo
+echo "export USE_R2_CAPSTONE=$USE_R2_CAPSTONE"
+echo
 # Set USE_R2_CAPSTONE env var to ignore syscapstone check
 if [ -z "${USE_R2_CAPSTONE}" ]; then
 pkg-config --atleast-version=3.0 capstone 2>/dev/null

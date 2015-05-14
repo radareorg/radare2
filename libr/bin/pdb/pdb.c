@@ -751,7 +751,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 					(!strcmp(tmp, "arglist"))) {
 				break;
 			} else {
-				pdb->printf("there is no support for type \"%s\" in PF structs\n", tmp);
+				eprintf ("there is no support for type \"%s\" in PF structs\n", tmp);
 				res_field[pos] = 'A';
 				return 0;
 			}
