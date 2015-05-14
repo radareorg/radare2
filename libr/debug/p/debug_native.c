@@ -516,6 +516,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 1;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
 		(int)(size_t)data) == 0;
 #endif
