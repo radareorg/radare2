@@ -349,7 +349,8 @@ static int r_debug_native_step(RDebug *dbg) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, pid, dbg->tid, dbg->signum);
-	ret=R_TRUE;
+	ret = R_TRUE;
+	r_debug_handle_signals (dbg);
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
@@ -375,6 +376,7 @@ static int r_debug_native_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+	r_debug_handle_signals (dbg);
 #endif
 #elif __BSD__
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
@@ -477,7 +479,6 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 #if __WINDOWS__ && !__CYGWIN__
 	eprintf("r_debug_native_continue: pid=%08x tid=%08x\n",pid,tid);
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
@@ -519,12 +520,14 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		(int)(size_t)data) == 0;
 #endif
 #elif __BSD__
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data) == 0;
 #elif __CYGWIN__
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 //eprintf ("SIG %d\n", dbg->signum);
 	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
@@ -1743,13 +1746,13 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	if (!dbg->process_handle) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
-	base = VirtualAllocEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	base = VirtualAllocEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
 		eprintf("Failed to allocate memory\n");
 		return map;
 	}
 	r_debug_map_sync (dbg);
-	map = r_debug_map_get (dbg, (ut64)base);
+	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;
 #else
 	// malloc not implemented for this platform
@@ -1772,7 +1775,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	if (!dbg->process_handle) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
-	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf("Failed to free memory\n");
 		return R_FALSE;
 	}

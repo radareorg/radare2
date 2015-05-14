@@ -93,7 +93,8 @@ return (0);
 //BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
 
 BOOL WINAPI DebugBreakProcess(
-  _In_  HANDLE Process
+  HANDLE Process
+  //_In_  HANDLE Process
 );
 static void (*gmbn)(HANDLE, HMODULE, LPTSTR, int) = NULL;
 static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
@@ -186,9 +187,9 @@ static int w32_dbg_init() {
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
-	w32_openprocess=(HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
+	w32_openprocess = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenProcess");
-	w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
+	w32_dbgbreak = (BOOL WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugBreakProcess");
 	// only windows vista :(
@@ -221,8 +222,8 @@ static int w32_dbg_init() {
 	return R_TRUE;
 }
 
-static HANDLE w32_t2h(pid_t tid) {
 #if 0
+static HANDLE w32_t2h(pid_t tid) {
 	TH_INFO *th = get_th (tid);
 	if(th == NULL) {
 		/* refresh thread list */
@@ -233,9 +234,8 @@ static HANDLE w32_t2h(pid_t tid) {
 			return NULL;
 	}
 	return th->ht;
-#endif
-	return NULL;
 }
+#endif
 
 inline static int w32_h2t(HANDLE h) {
 	if (w32_getthreadid != NULL) // >= Windows Vista
@@ -426,10 +426,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
 	ut8 PeHeader[1024];
-	DWORD cbNeeded=0;
 	char *mapname = NULL;
 	int NumSections, i;
-	int tid = dbg->tid;
+	//int tid = dbg->tid;
 	int pid = dbg->pid;
 	RList *list = r_list_new ();
 

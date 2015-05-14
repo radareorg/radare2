@@ -16,6 +16,7 @@ R_LIB_VERSION_HEADER(r_socket);
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #endif
 
 #if HAVE_LIB_SSL
@@ -26,6 +27,18 @@ R_LIB_VERSION_HEADER(r_socket);
 #if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32)
 #include <ws2tcpip.h>
 #endif
+
+typedef struct {
+	int magic;
+	int child;
+#if __WINDOWS__
+	HANDLE pipe;
+#else
+	int input[2];
+	int output[2];
+#endif
+} R2Pipe;
+
 
 typedef struct r_socket_t {
 	int fd;
@@ -188,6 +201,13 @@ R_API const char *r_run_help(void);
 R_API int r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
 R_API int r_run_parsefile (RRunProfile *p, const char *b);
+
+/* r2pipe */
+R_API int r2p_close(R2Pipe *r2p);
+R_API R2Pipe *r2p_open(const char *cmd);
+R_API int r2p_write(R2Pipe *r2p, const char *str);
+R_API char *r2p_read(R2Pipe *r2p);
+R_API void r2p_free (R2Pipe *r2p);
 
 #endif
 
