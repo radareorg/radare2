@@ -1201,7 +1201,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				}
 
 				dst -= offset;
-				if (dst>-0x80 && dst<0x7f) {
+				if (-0x80 <= (dst-2) && (dst-2) <= 0x7f) {
 					/* relative byte address */
 					data[l++] = 0xeb;
 					data[l++] = (char)(dst-2);
