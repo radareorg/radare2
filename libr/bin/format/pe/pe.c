@@ -1954,7 +1954,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
 		last = (char *)curr_import_dir + bin->import_directory_size;
-		while ((void*)curr_import_dir < last && (
+		while ((void*)(curr_import_dir+1) <= last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
@@ -1972,9 +1972,6 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				break;
 			}
 			curr_import_dir++;
-			if (((void*)curr_import_dir + sizeof (PE_(image_import_directory))) >= last) {
-				break;
-			}
 		}
 	}
 
@@ -2053,7 +2050,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			//return NULL;
 		}
 		last = (char *)curr_import_dir + bin->import_directory_size;
-		while ((void*)curr_import_dir < last && (
+		while ((void*)(curr_import_dir+1) <= last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
@@ -2083,9 +2080,6 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			}
 next:
 			curr_import_dir++;
-			if (((void*)curr_import_dir + sizeof (PE_(image_import_directory)))>= last) {
-				break;
-			}
 		}
 	}
 
