@@ -95,6 +95,7 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	pipe (r2p->output);
 	r2p->child = fork ();
 	if (r2p->child == -1) {
+		r2p_close (r2p);
 		return NULL;
 	}
 	env ("R2PIPE_IN", r2p->input[0]);

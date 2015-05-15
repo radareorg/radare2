@@ -14,13 +14,21 @@
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char fmt[4096];
-	int rv, rescount = -1;
+	char *bufn, bufnum[4096];
+	int i, rv, rescount = -1;
 	char *res, *r;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
+	bufn = bufnum;
+	*bufn = 0;
+	for (i=0; i<count; i++) {
+		int bufn_sz = sizeof (bufnum) - (bufn-bufnum);
+		snprintf (bufn, bufn_sz, "%s%d", i?",":"", buf[i]);
+		bufn += strlen (bufn);
+	}
 	snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"write\",\"address\":%"PFMT64d",\"data\":%s}",
-		io->off, "[]");
+		"{\"op\":\"write\",\"address\":%"PFMT64d",\"data\":[%s]}",
+		io->off, bufnum);
 	rv = r2p_write (R2P (fd), fmt);
 	if (rv <1) {
 		eprintf ("r2p_write: error\n");
@@ -59,7 +67,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, const int count) {
 		if (!arr) goto beach;
 		if (arr[1]!='[') goto beach;
 		arr += 2;
-		for (numi=bufi=0; *arr; arr++) {
+		for (num[0]=numi=bufi=0; *arr; arr++) {
 			switch (*arr) {
 			case '0'...'9':
 				num[numi++] = *arr;
