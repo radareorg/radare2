@@ -571,7 +571,7 @@ static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		const char* grep, int regex, RList* rx_list, struct endlist_pair *end_gadget,
-		RList* badstart) {
+		RList* badstart, int* max_count) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
@@ -589,6 +589,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	void* p;
 	int count = 0;
 
+	if (*max_count == 0) {
+		return NULL;
+	}
 	if (grep) {
 		start = grep;
 		end = strstr (grep, ";");
@@ -670,6 +673,7 @@ ret:
 		r_list_free(hitlist);
 		return NULL;
 	}
+	*max_count = *max_count - 1;
 	return hitlist;
 }
 
@@ -769,6 +773,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	boolt json_first = 1;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
+	int max_count = r_config_get_i(core->config, "search.count");
 	RList/*<RRegex>*/ *rx_list = NULL;
 	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
 	RList /*<intptr_t>*/ *badstart = r_list_new();
@@ -915,7 +920,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			next = end_gadget->instr_offset;
 			prev = 0;
 			// Start at just before the first end gadget.
-			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
+			for (i = next - ropdepth; i < (delta - 15 /* max insn size */) &&  max_count > 0; i+=increment) {
 				if (i <0) i = 0;
 				if (i < prev) i = prev;
 				if (r_cons_singleton()->breaked)
@@ -946,7 +951,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_asm_set_pc (core->assembler, from+i);
 					hitlist = construct_rop_gadget (core,
 						from+i, buf, i, grep, regexp,
-						rx_list, end_gadget, badstart);
+						rx_list, end_gadget, badstart, &max_count);
 					if (!hitlist)
 						continue;
 
