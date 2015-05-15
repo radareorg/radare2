@@ -1073,7 +1073,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	return imports;
 }
 
-static ut64 read_uleb128(ut8 **p) {
+static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	ut64 r = 0, byte;
 	int bit = 0;
 	do {
@@ -1081,18 +1081,20 @@ static ut64 read_uleb128(ut8 **p) {
 			eprintf ("uleb128 too big for u64 (%d bits) - partial result: 0x%08"PFMT64x"\n", bit, r);
 			return r;
 		}
-		byte = *(*p)++;
+		byte = **p;
+		if ((++(*p)) > end) r = 0;  break;
 		r |= (byte & 0x7f) << bit;
 		bit += 7;
 	} while (byte & 0x80);
 	return r;
 }
 
-static st64 read_sleb128(ut8 **p) {
+static st64 read_sleb128(ut8 **p, ut8 *end) {
 	st64 r = 0, byte;
 	int bit = 0;
 	do {
-		byte = *(*p)++;
+		byte = **p;
+		if ((++(*p)) > end) r = 0; break;
 		r |= (byte & 0x7f) << bit;
 		bit += 7;
 	} while (byte & 0x80);
@@ -1163,8 +1165,8 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		for (p = opcodes, end = opcodes + bind_size + lazy_size; p+2 < end; p++) {
 			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
 			switch (op) {
-#define ULEB() read_uleb128 (&p)
-#define SLEB() read_sleb128 (&p)
+#define ULEB() read_uleb128 (&p,end)
+#define SLEB() read_sleb128 (&p,end)
 				case BIND_OPCODE_DONE:
 					break;
 				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
