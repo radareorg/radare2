@@ -81,6 +81,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, const int count) {
 					num[numi = 0] = 0;
 				}
 				break;
+			case 'n':
+			case 'u':
+			case 'l':
+				break;
 			default:
 				goto beach;
 				break;
