@@ -67,7 +67,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, const int count) {
 		if (!arr) goto beach;
 		if (arr[1]!='[') goto beach;
 		arr += 2;
-		for (num[0]=numi=bufi=0; *arr; arr++) {
+		for (num[0]=numi=bufi=0; bufi<count && *arr; arr++) {
 			switch (*arr) {
 			case '0'...'9':
 				num[numi++] = *arr;
