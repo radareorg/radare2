@@ -1334,6 +1334,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 //					inf->comp_units[curr_unit].hdr.version);
 			return -1;
 		}
+		if (inf->comp_units[curr_unit].hdr.length > len) return -1;
 
 		inf->comp_units[curr_unit].hdr.abbrev_offset = READ (buf, ut32);
 		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
