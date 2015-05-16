@@ -117,17 +117,29 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 		}
 		if ((int)bin->nsects>0) {
 			if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
+				bin->nsects = sect;
 				return R_FALSE;
 			}
-			if (!size_sects || size_sects > bin->size)
+			if (!size_sects || size_sects > bin->size){
+				bin->nsects = sect;
 				return R_FALSE;
+			}
+
+			if (bin->segs[seg].cmdsize != sizeof (struct MACH0_(segment_command)) \
+					  + (sizeof (struct MACH0_(section))*bin->segs[seg].nsects)){
+				bin->nsects = sect;
+				return R_FALSE;
+			}
 
 			if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
-			  off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size)
+			  off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
+				bin->nsects = sect;
 				return R_FALSE;
+			}
 
 			if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
 				perror ("realloc (sects)");
+				bin->nsects = sect;
 				return R_FALSE;
 			}
 			len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
@@ -140,10 +152,12 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			    bin->nsects - sect);
 			if (len == 0 || len == -1) {
 				eprintf ("Error: read (sects)\n");
+				bin->nsects = sect;
 				return R_FALSE;
 			}
 		} else {
 			eprintf ("Warning: Invalid number of sections\n");
+			bin->nsects = sect;
 			return R_FALSE;
 		}
 	}
@@ -605,8 +619,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_LOAD_DYLIB:
 			bin->nlibs++;
-			if (!parse_dylib(bin, off))
+			if (!parse_dylib(bin, off)){
+				bin->nlibs--;
 				return R_FALSE;
+			}
 			break;
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY:
@@ -1116,6 +1132,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
 		ut64 addr = 0LL;
+		ut8 done = 0;
 
 #define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
@@ -1140,6 +1157,8 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (bin->dyld_info->lazy_bind_off > bin->size || \
 		  bin->dyld_info->lazy_bind_off + lazy_size > bin->size)
 			return NULL;
+		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
+			return NULL;
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
 		if (!(relocs = malloc ((bind_size + lazy_size) * sizeof (struct reloc_t))))
 			return NULL;
@@ -1162,12 +1181,14 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		// that +2 is a minimum required for uleb128, this may be wrong,
 		// the correct fix would be to make ULEB() must use rutil's
 		// implementation that already checks for buffer boundaries
-		for (p = opcodes, end = opcodes + bind_size + lazy_size; p+2 < end; p++) {
+		for (p = opcodes, end = opcodes + bind_size + lazy_size || done; p+2 < end; ) {
 			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
+			++p;
 			switch (op) {
 #define ULEB() read_uleb128 (&p,end)
 #define SLEB() read_sleb128 (&p,end)
 				case BIND_OPCODE_DONE:
+					done = 1;		
 					break;
 				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 					lib_ord = imm;
