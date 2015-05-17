@@ -1368,7 +1368,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case 'Z': // zero terminated wide string
 				r_print_format_nulltermwidestring (p, len, endian, mode, setval, seeki, buf, i, size);
 				if (size == -1)
-					i+=r_wstr_clen((char*)(buf+seeki))*2+2;
+					i+=r_wstr_clen((char*)(buf+i))*2+2;
 				else
 					while (size--) i+=2;
 				break;
