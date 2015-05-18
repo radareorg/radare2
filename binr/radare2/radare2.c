@@ -93,7 +93,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 static int main_help(int line) {
 	if (line<2)
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-|--|=\n");
+			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	if (line != 1) printf (
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
@@ -105,7 +105,7 @@ static int main_help(int line) {
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
 		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
-		" -d           use 'file' as a program to debug\n"
+		" -d           debug the executable 'file' or running process 'pid'\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
