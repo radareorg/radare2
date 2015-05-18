@@ -1689,7 +1689,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'j':
 		{
-			int count = 0;
+			int count = 1;
 			if (input[1] && input[2]) {
 				l = (int) r_num_get (core->num, input+1);
 				if (l>0) count = l;
