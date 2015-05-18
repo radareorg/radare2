@@ -14,6 +14,37 @@ static const char *printfmt[] = {
 static int autoblocksize = 1;
 static int obs = 0;
 
+#undef USE_THREADS
+#define USE_THREADS 1
+
+#if USE_THREADS
+static void visual_repeat_thread(RThread *th) {
+	RCore *core = th->user;
+	int i = 0;
+	for (;;) {
+		if (core->cons->breaked)
+			break;
+		r_core_visual_refresh (core);
+		r_cons_flush ();
+		r_cons_gotoxy (0, 0);
+		r_cons_printf ("[@%d] ", i++);
+		r_cons_flush ();
+		sleep (1);
+	}
+	r_th_kill (th);
+}
+
+static void visual_repeat(RCore *core) {
+	RThread *th = r_th_new (visual_repeat_thread, core, 0);
+	r_th_start (th, 1);
+	r_cons_break (NULL, NULL);
+	r_cons_any_key (NULL);
+	core->cons->breaked = R_TRUE;
+	r_th_wait (th);
+	r_cons_break_end ();
+}
+#endif
+
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
@@ -812,8 +843,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		}
 #else
+#if USE_THREADS
+		visual_repeat (core);
+#else
 		eprintf ("Unsupported on this platform\n");
 		r_cons_any_key (NULL);
+#endif
 #endif
 		break;
 	case 'C':
