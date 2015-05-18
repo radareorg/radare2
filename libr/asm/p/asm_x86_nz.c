@@ -907,7 +907,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			char *delta = NULL;
 			int argk = (*arg == '[');
 			addr = dst = r_num_math (NULL, arg2);
-			ptr = (ut8 *)&addr;
+			ptr = (ut8 *)&dst;
 			if (dst> UT32_MAX) {
 				if (a->bits==64) {
 					if (*arg=='r')
