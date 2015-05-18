@@ -114,8 +114,10 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		r_cons_break_end ();
 	}
 
+	close (input[0]);
 	close (input[1]);
 	close (output[0]);
+	close (output[1]);
 	close (safe_in);
 	waitpid(child, NULL, 0);
 	return R_TRUE;
