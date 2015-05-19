@@ -99,7 +99,8 @@ static int cmd_alias(void *data, const char *input) {
 			"Usage:", "$alias[=cmd] [args...]", "Alias commands",
 			"$", "", "list all defined aliases",
 			"$*", "", "same as above, but using r2 commands",
-			"$", "dis=af,pdf", "create command -analyze to show function",
+			"$", "dis='af;pdf'", "create command - analyze to show function",
+			"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 			"$", "dis=", "undefine alias",
 			"$", "dis", "execute the previously defined alias",
 			"$", "dis?", "show commands aliased by 'analyze'",
@@ -119,6 +120,14 @@ static int cmd_alias(void *data, const char *input) {
 	/* create alias */
 	if ((def && q && (def < q)) || (def && !q)) {
 		*def++ = 0;
+		size_t len = strlen(def);
+
+		/* Remove quotes */
+		if ((def[0] == '\'') && (def[len-1] == '\'')) {
+			def[len-1] = 0x00;
+			def++;
+		}
+
 		if (!q || (q && q>def)) {
 			if (*def) r_cmd_alias_set (core->rcmd, buf, def);
 			else r_cmd_alias_del (core->rcmd, buf);
@@ -151,6 +160,7 @@ static int cmd_alias(void *data, const char *input) {
 		for (i=0; i<count; i++)
 			r_cons_printf ("%s\n", keys[i]);
 
+	/* Execute alias */
 	} else {
 		char *v;
 		if (q) *q = 0;
@@ -160,18 +170,14 @@ static int cmd_alias(void *data, const char *input) {
 				char *out, *args = q+1;
 				out = malloc (strlen (v) + strlen (args) + 2);
 				if (out) { //XXX slow
-					r_str_replace_char (v, ',', ';');
 					strcpy (out, v);
-					r_str_replace_char (v, ';', ',');
 					strcat (out, " ");
 					strcat (out, args);
 					r_core_cmd0 (core, out);
 					free (out);
 				} else eprintf ("cannot malloc\n");
 			} else {
-				r_str_replace_char (v, ',', ';');
 				r_core_cmd0 (core, v);
-				r_str_replace_char (v, ';', ',');
 			}
 		} else {
 			eprintf ("unknown key '%s'\n", buf);
