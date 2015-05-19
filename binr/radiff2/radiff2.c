@@ -4,6 +4,9 @@
 #include <r_core.h>
 #include <r_hash.h>
 
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+
 enum {
 	MODE_DIFF,
 	MODE_DIST,
@@ -90,7 +93,7 @@ static RCore* opencore(const char *f) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdrspOv] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
@@ -99,6 +102,7 @@ static int show_help(int v) {
 		"  -CC        same as above but run `aac` to find more functions\n"
 		"  -d         use delta diffing\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
+		"  -j         print in json format\n"
 		"  -n         print bare addresses only (diff.bare=1)\n"
 		"  -O         code diffing with opcode bytes only\n"
 		"  -p         use physical addressing (io.va=0)\n"
@@ -316,7 +320,7 @@ int main(int argc, char **argv) {
 		r_diff_set_callback (d, &cb, 0);//(void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
 		if (diffmode == 'j')
-			printf("]}\n");
+			printf("]\n");
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
@@ -326,8 +330,12 @@ int main(int argc, char **argv) {
 		break;
 	}
 
-	if (showcount)
+	if (diffmode == 'j' && showcount)
+		printf (",\"count\":%d\}\n",count);
+	else if (showcount && diffmode != 'j')
 		printf ("%d\n", count);
+	else if (!showcount && diffmode == 'j')
+		printf ("\}\n");
 	free (bufa);
 	free (bufb);
 
