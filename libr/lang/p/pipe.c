@@ -80,6 +80,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else {
 		/* parent */
 		char *res, buf[1024];
+
+		/* Close pipe ends not required in the parent */
+		close(output[1]);
+		close(input[0]);
+
 		r_cons_break (NULL, NULL);
 		for (;;) {
 			if (r_cons_singleton ()->breaked) {

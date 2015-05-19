@@ -493,7 +493,7 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 				op->jump = addr+op->size;
 			} else {
 				op->jump = (ut64) (ut32)IMM(0);
-				op->jump = addr+op->size;
+			//	op->jump = addr+op->size;
 			}
 			op->fail = addr+op->size;
 			if (op->jump == op->fail) {

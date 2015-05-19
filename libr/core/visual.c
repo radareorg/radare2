@@ -14,6 +14,58 @@ static const char *printfmt[] = {
 static int autoblocksize = 1;
 static int obs = 0;
 
+#undef USE_THREADS
+#define USE_THREADS 1
+
+#if USE_THREADS
+static int visual_repeat_thread(RThread *th) {
+	RCore *core = th->user;
+	int i = 0;
+	for (;;) {
+		if (core->cons->breaked)
+			break;
+		r_core_visual_refresh (core);
+		r_cons_flush ();
+		r_cons_gotoxy (0, 0);
+		r_cons_printf ("[@%d] ", i++);
+		r_cons_flush ();
+		r_sys_sleep (1);
+	}
+	r_th_kill (th, 1);
+	return 0;
+}
+
+static void visual_repeat(RCore *core) {
+	int atport = r_config_get_i (core->config, "scr.atport");
+
+	if (atport) {
+#if __UNIX__ && !__APPLE__
+		int port = r_config_get_i (core->config, "http.port");
+		if (!r_core_rtr_http (core, '&', NULL)) {
+			const char *xterm = r_config_get (core->config, "cmd.xterm");
+			// TODO: this must be configurable
+			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
+			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
+		} else {
+			r_cons_any_key (NULL);
+		}
+#else
+		eprintf ("Unsupported on this platform\n");
+		r_cons_any_key (NULL);
+#endif
+	} else {
+		RThread *th = r_th_new (visual_repeat_thread, core, 0);
+		r_th_start (th, 1);
+		r_cons_break (NULL, NULL);
+		r_cons_any_key (NULL);
+		eprintf ("^C  \n");
+		core->cons->breaked = R_TRUE;
+		r_th_wait (th);
+		r_cons_break_end ();
+	}
+}
+#endif
+
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
@@ -799,22 +851,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, curset?0:1);
 		break;
 	case '@':
-#if __UNIX__ && !__APPLE__
-		{
-		int port = r_config_get_i (core->config, "http.port");
-		if (!r_core_rtr_http (core, '&', NULL)) {
-			const char *xterm = r_config_get (core->config, "cmd.xterm");
-			// TODO: this must be configurable
-			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
-			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
-		} else {
-			r_cons_any_key (NULL);
-		}
-		}
-#else
-		eprintf ("Unsupported on this platform\n");
-		r_cons_any_key (NULL);
-#endif
+		visual_repeat (core);
 		break;
 	case 'C':
 		color = color? 0: 1;
