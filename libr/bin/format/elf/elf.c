@@ -1140,6 +1140,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
 				if (bin->shdr[i].sh_size > bin->size || bin->shdr[i].sh_offset > bin->size)
 					break;
+				if (&ret[rel]+1 > ret+reloc_num)
+					break;
 				res = Elf_(r_bin_elf_read_reloc) (bin, &ret[rel],
 					1, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset + section_text_offset;
