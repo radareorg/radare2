@@ -20,7 +20,6 @@ static void pair(const char *a, const char *b) {
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 
 static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 laddr) {
-	ut64 addr = vaddr;
 	int has_info = 0;
 	if (bin && bin->cur && bin->cur->o && bin->cur->o->info)
 		has_info = 1;
@@ -45,12 +44,15 @@ static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 lad
 	case 0: // pa $ rabin2 -p
 		return paddr;
 	case 1: // va $ rabin2
-		addr = r_bin_get_vaddr (bin, baddr, paddr, vaddr);
+{
+		ut64 addr = r_bin_get_vaddr (bin, baddr, paddr, vaddr);
+#if 1
 		if (baddr>addr) {
 			addr += baddr;
 		}
-		eprintf ("=== %llx\n", addr);
+#endif
 		return addr;
+}
 	case 2: // la $ rabin2 -B
 		if (!baddr && !laddr)
 			return vaddr;
@@ -615,9 +617,11 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 			ut64 paddr = entry->paddr;
 			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->vaddr);
 			ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
-			vaddr = at;
+			if (at > vaddr) {
+				vaddr = at;
+			}
 			if (mode) {
-				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
+				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, vaddr);
 				r_cons_printf ("s entry%i\n", i);
 			} else {
 				if (!baddr) {
