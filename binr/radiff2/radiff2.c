@@ -266,20 +266,26 @@ int main(int argc, char **argv) {
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		if (mode == MODE_GRAPH) {
-			const char* second = strstr (addr, ",");
-			if (!second) {
-				r_core_gdiff (c, c2, gdiff_mode);
-				r_core_anal_graph (c, r_num_math (c->num, addr),
-					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
-			} else {
-				const ut64 off = strtoull(addr, 0, 16);
+			char *words = strdup (addr);
+			char *second = strstr (words, ",");
+			if (second) {
+				ut64 off;
+				*second++ = 0;
+				off = r_num_math (c->num, words);
 				// define the same function at each offset
 				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
-				r_core_anal_fcn (c2, strtoull (second+1, 0, 16),
+				r_core_anal_fcn (c2, r_num_math (c2->num, second),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_gdiff (c, c2, R_FALSE); // compute the diff
-				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
+				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+			} else {
+				r_core_anal_fcn (c, r_num_math (c->num, words), UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_anal_fcn (c2, r_num_math (c2->num, words), UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_gdiff (c, c2, gdiff_mode);
+				r_core_anal_graph (c, r_num_math (c->num, addr),
+					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			}
+			free (words);
 		} else {
 			r_core_gdiff (c, c2, gdiff_mode);
 			r_core_diff_show (c, c2);

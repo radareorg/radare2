@@ -1408,8 +1408,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RListIter *iter;
 	int count = 0;
 
-	if (r_list_empty (core->anal->fcns))
+	if (r_list_empty (core->anal->fcns)) {
+		eprintf ("No functions to diff\n");
 		return R_FALSE;
+	}
 
 	opts |= R_CORE_ANAL_GRAPHBODY;
 	reflines = r_config_get_i (core->config, "asm.lines");
