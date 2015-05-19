@@ -102,7 +102,7 @@ static int show_help(int v) {
 		"  -CC        same as above but run `aac` to find more functions\n"
 		"  -d         use delta diffing\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
-		"  -j         print in json format\n"
+		"  -j         output in json format\n"
 		"  -n         print bare addresses only (diff.bare=1)\n"
 		"  -O         code diffing with opcode bytes only\n"
 		"  -p         use physical addressing (io.va=0)\n"
@@ -204,6 +204,7 @@ int main(int argc, char **argv) {
 			break;
 		case 't':
 			threshold = atoi (optarg);
+			printf ("%s\n", optarg);
 			break;
 		case 'd':
 			delta = 1;
@@ -331,11 +332,11 @@ int main(int argc, char **argv) {
 	}
 
 	if (diffmode == 'j' && showcount)
-		printf (",\"count\":%d\}\n",count);
+		printf (",\"count\":%d}\n",count);
 	else if (showcount && diffmode != 'j')
 		printf ("%d\n", count);
 	else if (!showcount && diffmode == 'j')
-		printf ("\}\n");
+		printf ("}\n");
 	free (bufa);
 	free (bufb);
 
