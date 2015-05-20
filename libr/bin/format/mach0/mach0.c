@@ -961,7 +961,8 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 							break;
 						}
 					}
-					char *symstr_dup = r_str_ndup (symstr, len);
+					char *symstr_dup = NULL;
+					if (len>0) symstr_dup = r_str_ndup (symstr, len);
 					if (!symstr_dup) {
 						symbols[j].name[0] = 0;
 					} else {
