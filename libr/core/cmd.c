@@ -92,14 +92,15 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 
 static int cmd_alias(void *data, const char *input) {
 	int i;
-	char *p, *q, *buf;
+	char *def, *q, *desc, *buf;
 	RCore *core = (RCore *)data;
 	if (*input=='?') {
 		const char* help_msg[] = {
 			"Usage:", "$alias[=cmd] [args...]", "Alias commands",
 			"$", "", "list all defined aliases",
-			"$", "dis=af,pdf", "create command -analyze to show function",
 			"$*", "", "same as above, but using r2 commands",
+			"$", "dis='af;pdf'", "create command - analyze to show function",
+			"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 			"$", "dis=", "undefine alias",
 			"$", "dis", "execute the previously defined alias",
 			"$", "dis?", "show commands aliased by 'analyze'",
@@ -112,39 +113,59 @@ static int cmd_alias(void *data, const char *input) {
 	if (!buf) return 0;
 	*buf = '$'; // prefix aliases with a dash
 	memcpy (buf+1, input, i+1);
-	p = strchr (buf, '=');
 	q = strchr (buf, ' ');
-	if (p) {
-		*p++ = 0;
-		if (!q || (q && q>p)) {
-			if (*p) r_cmd_alias_set (core->rcmd, buf, p);
+	def = strchr (buf, '=');
+	desc = strchr (buf, '?');
+
+	/* create alias */
+	if ((def && q && (def < q)) || (def && !q)) {
+		*def++ = 0;
+		size_t len = strlen(def);
+
+		/* Remove quotes */
+		if ((def[0] == '\'') && (def[len-1] == '\'')) {
+			def[len-1] = 0x00;
+			def++;
+		}
+
+		if (!q || (q && q>def)) {
+			if (*def) r_cmd_alias_set (core->rcmd, buf, def);
 			else r_cmd_alias_del (core->rcmd, buf);
 		}
-	} else
-	if (buf[1]=='*') {
+
+	/* Show command for alias */
+	} else if (desc && !q) {
+		char *v;
+		*desc = 0;
+		v = r_cmd_alias_get (core->rcmd, buf);
+		if (v) {
+			r_cons_printf ("%s\n", v);
+			free (buf);
+			return 1;
+		} else {
+			eprintf ("unknown key '%s'\n", buf);
+		}
+
+	/* Show aliases */
+	} else if (buf[1]=='*') {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++) {
 			const char *v = r_cmd_alias_get (core->rcmd, keys[i]);
 			r_cons_printf ("%s=%s\n", keys[i], v);
 		}
-	} else
-	if (!buf[1]) {
+	} else if (!buf[1]) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++)
 			r_cons_printf ("%s\n", keys[i]);
+
+	/* Execute alias */
 	} else {
-		char *describe = strchr (buf, '?');
 		char *v;
 		if (q) *q = 0;
 		v = r_cmd_alias_get (core->rcmd, buf);
 		if (v) {
-			if (describe) {
-				r_cons_printf ("%s\n", v);
-				free (buf);
-				return 1;
-			}
 			if (q) {
 				char *out, *args = q+1;
 				out = malloc (strlen (v) + strlen (args) + 2);
@@ -152,17 +173,15 @@ static int cmd_alias(void *data, const char *input) {
 					strcpy (out, v);
 					strcat (out, " ");
 					strcat (out, args);
-					r_str_replace_char (out, ',', ';');
 					r_core_cmd0 (core, out);
-					r_str_replace_char (out, ';', ',');
 					free (out);
 				} else eprintf ("cannot malloc\n");
 			} else {
-				r_str_replace_char (v, ',', ';');
 				r_core_cmd0 (core, v);
-				r_str_replace_char (v, ';', ',');
 			}
-		} else eprintf ("unknown key '%s'\n", buf);
+		} else {
+			eprintf ("unknown key '%s'\n", buf);
+		}
 	}
 	free (buf);
 	return 0;

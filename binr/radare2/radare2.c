@@ -69,17 +69,22 @@ static int verify_version(int show) {
 // we should probably move this functionality into the r_debug API
 // r_debug_get_baddr
 static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
+	char *abspath;
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc)
 		return 0LL;
 	r_debug_attach (r->dbg, r->io->desc->fd);
 	r_debug_map_sync (r->dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) abspath = strdup (file);
 	r_list_foreach (r->dbg->maps, iter, map) {
-		if (!strcmp (file, map->name)) {
+		if (!strcmp (abspath, map->name)) {
+			free (abspath);
 			return map->addr;
 		}
 	}
+	free (abspath);
 	// fallback resolution (osx/w32?)
 	// we asume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (r->dbg->maps, iter, map) {
@@ -91,9 +96,10 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 }
 
 static int main_help(int line) {
-	if (line<2)
+	if (line<2) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+	}
 	if (line != 1) printf (
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"

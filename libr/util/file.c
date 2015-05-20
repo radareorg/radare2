@@ -113,20 +113,33 @@ R_API ut64 r_file_size(const char *str) {
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
-	if (!memcmp (file, "~/", 2)) {
-		free (cwd);
-		return r_str_home (file+2);
-	}
+	if (!strncmp (file, "~/", 2)) {
+		ret = r_str_home (file+2);
+	} else {
 #if __UNIX__ || __CYGWIN__
-	if (cwd && *file != '/')
-		ret = r_str_newf ("%s/%s", cwd, file);
+		if (cwd && *file != '/')
+			ret = r_str_newf ("%s/%s", cwd, file);
 #elif __WINDOWS__ && !__CYGWIN__
-	if (cwd && !strchr (file, ':'))
-		ret = r_str_newf ("%s\\%s", cwd, file);
+		if (cwd && !strchr (file, ':'))
+			ret = r_str_newf ("%s\\%s", cwd, file);
 #endif
+	}
 	free (cwd);
-// TODO: remove // and ./
-	return ret? ret: strdup (file);
+	if (!ret) ret = strdup (file);
+#if __UNIX__
+	{
+		char *abspath = realpath (ret, NULL);
+		if (abspath) {
+			free (ret);
+			ret = abspath;
+		}
+	}
+#else
+	/* remove ../ */
+	/* remove ./ */
+	/* remove // */
+#endif
+	return ret;
 }
 
 R_API char *r_file_path(const char *bin) {
