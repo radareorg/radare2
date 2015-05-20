@@ -891,17 +891,17 @@ static int esil_modeq(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_reg_read (esil, dst, &d)) {
-			if (s==0) {
-				eprintf ("esil_modeq: Division by zero!\n");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
-			} else {
+			if (s) {
 				if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 					esil->old = d;
 					esil->cur = d%s;
 					esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				}
 				r_anal_esil_reg_write (esil, dst, d%s);
+			} else {
+				eprintf ("esil_modeq: Division by zero!\n");
+				esil->trap = R_ANAL_TRAP_DIVBYZERO;
+				esil->trap_code = 0;
 			}
 			ret = 1;
 		} else {
@@ -946,17 +946,17 @@ static int esil_diveq (RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_reg_read (esil, dst, &d)) {
-			if (s == 0) {
-				eprintf ("esil_diveq: Division by zero!\n");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
-			} else  {
+			if (s) {
 				if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 					esil->old = d;
 					esil->cur = d/s;
 					esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				}
 				r_anal_esil_reg_write (esil, dst, d/s);
+			} else {
+				eprintf ("esil_diveq: Division by zero!\n");
+				esil->trap = R_ANAL_TRAP_DIVBYZERO;
+				esil->trap_code = 0;
 			}
 			ret = 1;
 		} else {
