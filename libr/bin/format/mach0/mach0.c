@@ -1181,14 +1181,14 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		// that +2 is a minimum required for uleb128, this may be wrong,
 		// the correct fix would be to make ULEB() must use rutil's
 		// implementation that already checks for buffer boundaries
-		for (p = opcodes, end = opcodes + bind_size + lazy_size || done; p+2 < end; ) {
+		for (p = opcodes, end = opcodes + bind_size + lazy_size ; (p+2 < end) && !done; ) {
 			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
 			++p;
 			switch (op) {
 #define ULEB() read_uleb128 (&p,end)
 #define SLEB() read_sleb128 (&p,end)
 				case BIND_OPCODE_DONE:
-					done = 1;		
+					done = 1;	
 					break;
 				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 					lib_ord = imm;
