@@ -39,6 +39,7 @@ R_API int r2p_close(R2Pipe *r2p) {
 		r2p->child = -1;
 	}
 #endif
+	free (r2p);
 	return 0;
 }
 
