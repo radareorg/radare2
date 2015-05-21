@@ -807,8 +807,13 @@ R_API void r_cons_zero() {
 
 R_API void r_cons_highlight (const char *word) {
 	char *rword, *res;
+	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
+			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 // that word str should ignore ansi scapes
 	if (word && *word) {
+		int word_len = strlen (word);
+
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
 				free (I.highlight);
@@ -817,10 +822,10 @@ R_API void r_cons_highlight (const char *word) {
 		} else {
 			I.highlight = strdup (word);
 		}
-		rword = malloc (strlen (word)+32);
-		strcpy (rword, "\x1b[0m\x1b[7m");
-		strcpy (rword+8, word);
-		strcpy (rword+8+strlen (word), "\x1b[0m");
+		rword = malloc (word_len + linv[0] + linv[1] + 1);
+		strcpy (rword, inv[0]);
+		strcpy (rword + linv[0], word);
+		strcpy (rword + linv[0] + word_len, inv[1]);
 		res = r_str_replace (I.buffer, word, rword, 1);
 		if (res) {
 			I.buffer = res;
