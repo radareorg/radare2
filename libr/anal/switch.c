@@ -3,6 +3,7 @@
 
 RAnalSwitchOp *switch_op_new() {
 	RAnalSwitchOp * swop = R_NEW0 (RAnalSwitchOp);
+	if (!swop) return NULL;
 	swop->cases = r_list_new ();
 	swop->cases->free = (void *)free;
 	swop->min_val = swop->def_val = swop->max_val = 0;
