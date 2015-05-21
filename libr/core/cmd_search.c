@@ -590,6 +590,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	int count = 0;
 
 	if (*max_count == 0) {
+		r_list_free (localbadstart);
 		return NULL;
 	}
 	if (grep) {
