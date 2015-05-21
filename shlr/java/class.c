@@ -3262,7 +3262,10 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) return NULL;
-	if (sz > buf_offset) return NULL;
+	if (sz > buf_offset) {
+		free (attr);
+		return NULL;
+	}
 	offset += 6;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_CODE_ATTR;
 	attr->info.code_attr.max_stack = R_BIN_JAVA_USHORT (buffer, offset);
