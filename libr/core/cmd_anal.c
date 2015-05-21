@@ -1683,6 +1683,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				"aos", " [esil]", "show sdb representation of esil expression (TODO)",
 				"aoe", " 4", "emulate 4 opcodes starting at current offset",
 				"ao", " 5", "display opcode analysis of 5 opcodes",
+				"ao*", "", "display opcode in r commands",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -1706,6 +1707,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'e':
 		eprintf ("TODO: See 'ae' command\n");
+		break;
+	case '*':
+		r_core_anal_hint_list (core->anal, input[0]);
 		break;
 	default:
 		{
