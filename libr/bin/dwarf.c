@@ -260,6 +260,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		}
 		if (*str != '/' && *str != '.') {
 			// no more paths in here
+			free (str);
 			break;
 		}
 		if (f) {
