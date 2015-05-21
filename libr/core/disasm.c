@@ -1699,7 +1699,12 @@ static void handle_comment_align (RCore *core, RDisasmState *ds) {
 	}
 	ll = r_cons_lastline ();
 	if (ll) {
+		int cstrlen = strlen (ll);
 		int cols, ansilen = r_str_ansi_len (ll);
+		int utf8len = r_utf8_strlen (ll);
+
+		int cells = utf8len - (cstrlen-ansilen);
+
 		cols = ds->interactive ? core->cons->columns : 1024;
 		//cols = r_cons_get_size (NULL);
 		if (cmtcol+16>=cols) {
@@ -1707,10 +1712,12 @@ static void handle_comment_align (RCore *core, RDisasmState *ds) {
 			r_cons_newline ();
 			r_cons_memset (' ', 10);
 #endif
-		} else if (ansilen < cmtcol) {
-			int len = cmtcol - ansilen;
+			int len = cmtcol - cells;
+			r_cons_memset (' ', len);
+		} else if (cells < cmtcol) {
+			int len = cmtcol - cells;
 			if (len < cols)
-				r_cons_memset (' ', cmtcol-ansilen);
+				r_cons_memset (' ', len);
 		}
 	}
 }
