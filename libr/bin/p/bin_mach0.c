@@ -262,6 +262,20 @@ static RList* libs(RBinFile *arch) {
 	return ret;
 }
 
+static int has_canary(RBinFile *arch) {
+    RList* imports_list = imports (arch);
+    RListIter *iter;
+    RBinImport *import;
+    r_list_foreach (imports_list, iter, import) {
+        if (!strcmp(import->name, "__stack_chk_fail") ) {
+            r_list_free (imports_list);
+            return 1;
+        }
+    }
+    r_list_free (imports_list);
+    return 0;
+}
+
 static RBinInfo* info(RBinFile *arch) {
 	int i;
 	char *str;
@@ -296,6 +310,7 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	}
 	ret->dbg_info = 0;
+	ret->has_canary = has_canary (arch);
 
 	// if contains a symbol named radr:// the file is stripped
 	if (!(symbols = MACH0_(get_symbols) (arch->o->bin_obj)))
