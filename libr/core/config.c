@@ -230,16 +230,36 @@ static int cb_asmbits(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
-	if (!r_anal_set_bits (core->anal, node->i_value))
+	if (!r_anal_set_bits (core->anal, node->i_value)) {
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
+	}
 	core->print->bits = node->i_value;
 	if (core->dbg  && core->anal && core->anal->cur) {
+		int load_from_debug = 0;
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
-		if (core->dbg->h && core->dbg->h->reg_profile && !core->anal->cur->set_reg_profile) {
-			char *rp = core->dbg->h->reg_profile (core->dbg);
-			r_reg_set_profile_string (core->dbg->reg, rp);
-			r_reg_set_profile_string (core->anal->reg, rp);
-			free (rp);
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			if (core->dbg->h && core->dbg->h->reg_profile) {
+				char *rp = core->dbg->h->reg_profile (core->dbg);
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
+			} else {
+				load_from_debug = 1;
+			}
+		} else {
+			if (core->anal->cur->set_reg_profile) {
+				core->anal->cur->set_reg_profile (core->anal);
+			} else {
+				load_from_debug = 1;
+			}
+		}
+		if (load_from_debug) {
+			if (core->dbg->h && core->dbg->h->reg_profile) {
+				char *rp = core->dbg->h->reg_profile (core->dbg);
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
+			}
 		}
 	}
 
