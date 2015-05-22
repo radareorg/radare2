@@ -430,6 +430,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					map->flags = s->rwx;
 					map->delta = 0;
 					if (!(map->flags & protection)) {
+						R_FREE (map);
 						continue;
 					}
 					r_list_append (list, map);
