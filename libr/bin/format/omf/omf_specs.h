@@ -70,10 +70,10 @@
 #define OMF_COMENT_EXT_BIG_E	0x06 // Target machine is big endian
 
 typedef struct {
-  ut8	type;
-  ut16	size;
-  void	*content;
-  ut8	checksum;
+	ut8 type;
+	ut16 size;
+	void *content;
+	ut8 checksum;
 } OMF_record;
 
 #endif

@@ -1,4 +1,3 @@
-
 #ifndef OMF_H_
 #define OMF_H_
 
@@ -9,48 +8,48 @@
 #include "omf_specs.h"
 
 typedef struct OMF_record_handler {
-  OMF_record			record;
-  struct OMF_record_handler	*next;
+	OMF_record record;
+	struct OMF_record_handler *next;
 } OMF_record_handler;
 
 typedef struct {
-  ut32	nb_elem;
-  void	*elems;
+	ut32 nb_elem;
+	void *elems;
 } OMF_multi_datas;
 
 typedef struct OMF_DATA{
-  ut64			paddr; // offset in file
-  ut64			size;
-  ut32			offset;
-  ut16			seg_idx;
-  struct OMF_DATA	*next;
+	ut64 paddr; // offset in file
+	ut64 size;
+	ut32 offset;
+	ut16 seg_idx;
+	struct OMF_DATA	*next;
 } OMF_data;
 
 // sections return by the plugin are the addr of datas because sections are 
 // separate on non contiguous block on the omf file
 typedef struct {
-  ut32		name_idx;
-  ut64		size;
-  ut8		bits;
-  ut64		vaddr;
-  OMF_data	*data;
+	ut32 name_idx;
+	ut64 size;
+	ut8 bits;
+	ut64 vaddr;
+	OMF_data *data;
 } OMF_segment;
 
 typedef struct {
-  char	*name;
-  ut16	seg_idx;
-  ut32	offset;
+	char *name;
+	ut16 seg_idx;
+	ut32 offset;
 } OMF_symbol;
 
 typedef struct {
-  ut8				bits;
-  char				**names;
-  ut32				nb_name;
-  OMF_segment			**sections;
-  ut32				nb_section;
-  OMF_symbol			**symbols;
-  ut32				nb_symbol;
-  OMF_record_handler		*records;
+	ut8 bits;
+	char **names;
+	ut32 nb_name;
+	OMF_segment **sections;
+	ut32 nb_section;
+	OMF_symbol **symbols;
+	ut32 nb_symbol;
+	OMF_record_handler *records;
 } r_bin_omf_obj;
 
 
