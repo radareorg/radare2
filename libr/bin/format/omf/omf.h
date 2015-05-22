@@ -53,7 +53,7 @@ typedef struct {
 } r_bin_omf_obj;
 
 
-int r_bin_checksum_omf_ok(const char *buf);
+int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size);
 r_bin_omf_obj *r_bin_internal_omf_load(const char *buf, ut64 size);
 void r_bin_free_all_omf_obj(r_bin_omf_obj *obj);
 int r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr);

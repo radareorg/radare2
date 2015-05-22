@@ -8,7 +8,6 @@
 static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
 	if (!buf || !size || size == UT64_MAX)
 		return NULL;
-
 	return r_bin_internal_omf_load((char *)buf, size);
 }
 
@@ -26,15 +25,14 @@ static int load(RBinFile *arch) {
 }
 
 static int destroy(RBinFile *arch) {
-	r_bin_free_all_omf_obj(arch->o->bin_obj);
+	r_bin_free_all_omf_obj (arch->o->bin_obj);
 	arch->o->bin_obj = NULL;
-
 	return R_TRUE;
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if ((*buf == 0x80 || *buf == 0x82) && \
-			r_bin_checksum_omf_ok((char *)buf))
+			r_bin_checksum_omf_ok((char *)buf, length))
 		return R_TRUE;
 	return R_FALSE;
 }
@@ -57,7 +55,7 @@ static RList *entries(RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 
-	if (!(addr = R_NEW(RBinAddr)))
+	if (!(addr = R_NEW0(RBinAddr)))
 		return ret;
 
 	if (!r_bin_omf_get_entry(arch->o->bin_obj, addr)) {
@@ -111,15 +109,16 @@ static RList *symbols(RBinFile *arch) {
 
 static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret;
-	if(!(ret = R_NEW0(RBinInfo)))
+
+	if(!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	ret->file = strdup(arch->file);
-	ret->bclass = strdup("OMF");
-	ret->rclass = strdup("omf");
-	ret->type = strdup("OMF (Relocatable Object Module Format)");
-	ret->os = strdup("any");
-	ret->machine = strdup("i386");
-	ret->arch = strdup("x86");
+	ret->file = strdup (arch->file);
+	ret->bclass = strdup ("OMF");
+	ret->rclass = strdup ("omf");
+	ret->type = strdup ("OMF (Relocatable Object Module Format)");
+	ret->os = strdup ("any");
+	ret->machine = strdup ("i386");
+	ret->arch = strdup ("x86");
 	ret->big_endian = R_FALSE;
 	ret->has_va = R_TRUE;
 	ret->bits = r_bin_omf_get_bits (arch->o->bin_obj);
