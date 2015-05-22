@@ -1319,6 +1319,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* rop */
 	SETI("rop.len", 5, "Maximum ROP gadget length");
 	SETPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
+	SETPREF("rop.nx", "false", "Include NX/XN/XD sections in ropsearch");
 
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");

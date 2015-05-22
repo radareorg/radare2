@@ -302,7 +302,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 			at, to, n, (c%2)?"[ #]":"[# ]");
 }
 
-R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
 	RList *list = NULL;
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
@@ -429,6 +429,9 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 					map->to = s->vaddr + s->size;
 					map->flags = s->rwx;
 					map->delta = 0;
+					if (!(map->flags & protection)) {
+						continue;
+					}
 					r_list_append (list, map);
 				}
 			}
@@ -516,6 +519,10 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 		}
 	}
 	return list;
+}
+
+R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+	return r_core_get_boundaries_prot (core, R_IO_EXEC|R_IO_WRITE|R_IO_READ, mode, from, to);
 }
 
 static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
@@ -774,15 +781,16 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	int max_count = r_config_get_i(core->config, "search.count");
-	
+
 	RList/*<RRegex>*/ *rx_list = NULL;
 	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
-	RList /*<intptr_t>*/ *badstart = r_list_new();
+	RList/*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
 	char* grep_arg = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
+	const ut8 prot = r_config_get_i (core->config, "rop.nx") ? R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
 	if (max_count == 0) {
 		max_count = -1;
 	}
@@ -830,7 +838,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	smode = r_config_get (core->config, "search.in");
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	if (!strncmp (smode, "dbg.", 4) || !strncmp (smode, "io.sections", 11))
-		list = r_core_get_boundaries (core, smode, &from, &to);
+		list = r_core_get_boundaries_prot (core, prot, smode, &from, &to);
+	else if (prot == R_IO_EXEC)
+		list = r_core_get_boundaries_prot (core, prot, smode, &from, &to);
 	else
 		list = NULL;
 
