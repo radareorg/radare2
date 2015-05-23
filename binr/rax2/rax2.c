@@ -370,8 +370,8 @@ int main (int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL);
 	if (argc == 1) {
-		r_num_free (num);
-		return use_stdin ();
+		/*r_num_free (num);*/
+		use_stdin ();
 	}
 	for (i=1; i<argc; i++) {
 		rax (argv[i], 0, i==argc-1);
