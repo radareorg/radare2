@@ -988,7 +988,6 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, int idx) {
 	int i, j, sym, wordsize;
 	ut32 stype;
-
 	wordsize = MACH0_(get_bits)(bin) / 8;
 	if (idx<0 || idx>= bin->nsymtab)
 		return 0;
@@ -1125,7 +1124,6 @@ static st64 read_sleb128(ut8 **p, ut8 *end) {
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 	struct reloc_t *relocs;
 	int i = 0, len;
-
 	int wordsize = MACH0_(get_bits)(bin) / 8;
 	if (bin->dyld_info) {
 		ut8 *opcodes, *p, *end, type = 0, rel_type = 0;

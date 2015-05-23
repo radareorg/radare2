@@ -124,14 +124,14 @@ static RList* symbols(RBinFile *arch) {
 	RBinObject *obj = arch ? arch->o : NULL;
 	RList *ret = r_list_newf (free);
 	const char *lang = "c";
-	int wordsize = MACH0_(get_bits) (arch->o->bin_obj);
-
+	int wordsize = 16;
 	if (!ret)
 		return NULL;
 	if (!obj || !obj->bin_obj) {
 		free (ret);
 		return NULL;
 	}
+	wordsize = MACH0_(get_bits) (obj->bin_obj);
 
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
@@ -296,7 +296,11 @@ static RBinInfo* info(RBinFile *arch) {
 	if ((str = MACH0_(get_class) (arch->o->bin_obj))) {
 		ret->bclass = str;
 	}
- 	ret->has_canary = bin->has_canary;
+	if (bin) {
+		ret->has_canary = bin->has_canary;
+		ret->dbg_info = bin->dbg_info;
+		ret->lang = bin->lang;
+	}
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(arch->o->bin_obj));
 	ret->subsystem = strdup ("darwin");
@@ -311,8 +315,6 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->bits = MACH0_(get_bits) (arch->o->bin_obj);
 		ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	}
-	ret->dbg_info = bin->dbg_info;
-	ret->lang = bin->lang;
 
 	ret->has_va = R_TRUE;
 	ret->has_pi = MACH0_(is_pie) (arch->o->bin_obj);
