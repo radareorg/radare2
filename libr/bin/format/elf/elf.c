@@ -988,6 +988,7 @@ static size_t Elf_(r_bin_elf_get_relocs_num)(struct Elf_(r_bin_elf_obj_t) *bin) 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		nidx = bin->shdr[i].sh_name;
 
+		if (bin->shdr[i].sh_size > bin->size) return 0;
 		if (nidx < 0 || !bin->shstrtab_section ||
 			!bin->shstrtab_size || nidx > bin->shstrtab_size) {
 			continue;
