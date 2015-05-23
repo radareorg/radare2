@@ -418,9 +418,9 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->entries) o->entries = cp->entries (binfile);
 	if (cp->fields) o->fields = cp->fields (binfile);
 	if (cp->imports) o->imports = cp->imports (binfile);
+	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
-	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	if (cp->relocs) o->relocs = cp->relocs (binfile);
 	if (cp->sections) o->sections = cp->sections (binfile);
 	if (cp->strings) o->strings = cp->strings (binfile);
