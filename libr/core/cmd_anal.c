@@ -1733,6 +1733,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 static void cmd_anal_calls(RCore *core, const char *input) {
 	int minop = 1; // 4
 	ut8 buf[32];
+	RBinFile *binfile;
 	RAnalOp op;
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -1742,6 +1743,15 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	if (len<1) {
 		len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+	}
+	binfile = r_core_bin_cur (core);
+	if (!binfile){
+		eprintf ("cur binfile null\n");
+		return;
+	}
+	if (len > binfile->size){
+		eprintf ("section size greater than file size\n");
+		return;
 	}
 	addr = core->offset;
 	addr_end = addr + len;
