@@ -180,6 +180,14 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_UPC] = "UPC",
 	[DW_LANG_D] = "D",
 	[DW_LANG_Python] = "Python",
+	[DW_LANG_Rust] = "Rust",
+	[DW_LANG_C11] = "C11",
+	[DW_LANG_Swift] = "Swift",
+	[DW_LANG_Julia] = "Julia",
+	[DW_LANG_Dylan] = "Dylan",
+	[DW_LANG_C_plus_plus_14] = "C++14",
+	[DW_LANG_Fortran03] = "Fortran03",
+	[DW_LANG_Fortran08] = "Fortran08"
 };
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {

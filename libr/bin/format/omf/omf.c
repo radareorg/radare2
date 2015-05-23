@@ -283,7 +283,6 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 }
 
 static int load_omf_data(const char *buf, OMF_record *record, ut64 global_ct) {
-  
 	ut16 seg_idx;
 	ut32 offset;
 	ut16 ct = 4;
@@ -627,7 +626,7 @@ r_bin_omf_obj *r_bin_internal_omf_load(const char *buf, ut64 size) {
 int r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
 	ut32 ct_sym = 0;
 	OMF_data *data;
-	ut32 *offset = 0;
+	ut32 offset = 0;
 	
 	while (ct_sym < obj->nb_symbol) {
 		if (!strcmp (obj->symbols[ct_sym]->name, "_start")) {
