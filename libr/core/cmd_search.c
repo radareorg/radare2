@@ -971,11 +971,13 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					if (!hitlist)
 						continue;
 
-					if (json) {
-						print_rop (core, hitlist, 'j', &json_first);
-					} else {
+
+					/* Print all chains from rop.len=X to rop.len=2 */
+					if (json) mode = 'j';
+					do {
 						print_rop (core, hitlist, mode, &json_first);
-					}
+						hitlist->head = hitlist->head->n;
+					} while (hitlist->head->n);
 				}
 
 				if (increment != 1) {
