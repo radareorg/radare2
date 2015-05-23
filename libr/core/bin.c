@@ -810,7 +810,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		} else {
 			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
-				ut64 addr = va? reloc->vaddr: reloc->paddr;
+				ut64 addr = va? reloc->vaddr : reloc->paddr;
 				r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
 					addr, reloc->paddr, bin_reloc_type_name (reloc));
 				if (reloc->import && reloc->import->name[0])

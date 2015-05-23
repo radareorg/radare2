@@ -44,6 +44,7 @@ typedef struct r_bin_elf_reloc_t {
 	ut64 rva;
 	ut16 section;
 	int last;
+	ut64 sto;
 } RBinElfReloc;
 
 typedef struct r_bin_elf_field_t {

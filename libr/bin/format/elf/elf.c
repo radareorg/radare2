@@ -1145,6 +1145,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				res = Elf_(r_bin_elf_read_reloc) (bin, &ret[rel],
 					1, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset + section_text_offset;
+				ret[rel].sto = section_text_offset;
 				ret[rel].offset = ret[rel].offset - bin->baddr;
 				ret[rel].last = 0;
 				if (res < 0)
