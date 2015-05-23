@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include <r_util.h>
 #include <r_print.h>
@@ -370,11 +370,11 @@ int main (int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL);
 	if (argc == 1) {
-		r_num_free (num);
-		return use_stdin ();
-	}
-	for (i=1; i<argc; i++) {
-		rax (argv[i], 0, i==argc-1);
+		use_stdin ();
+	} else {
+		for (i=1; i<argc; i++) {
+			rax (argv[i], 0, i==argc-1);
+		}
 	}
 	r_num_free (num);
 	return 0;
