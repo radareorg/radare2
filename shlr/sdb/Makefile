@@ -10,10 +10,12 @@ MKDIR=mkdir
 
 all: pkgconfig src/sdb-version.h
 	${MAKE} -C src
+ifeq ($(BUILD_MEMCACHE),1)
 	${MAKE} -C memcache
 ifneq (${HAVE_VALA},)
 	cd ${VALADIR} && ${MAKE}
 	cd ${VALADIR}/types && ${MAKE}
+endif
 endif
 
 .PHONY: test sdb.js pkgconfig
@@ -53,6 +55,14 @@ dist:
 	rm -rf sdb-${SDBVER}/.git*
 	tar czvf sdb-${SDBVER}.tar.gz sdb-${SDBVER}
 	pub sdb-${SDBVER}.tar.gz
+	rm -rf sdb-${SDBVER}
+
+w32dist:
+	rm -f sdb-${SDBVER}.zip
+	rm -rf sdb-${SDBVER}
+	mkdir -p sdb-${SDBVER}
+	cp src/sdb.exe sdb-${SDBVER}
+	zip -r sdb-${SDBVER}.zip sdb-${SDBVER}
 	rm -rf sdb-${SDBVER}
 
 install-dirs:

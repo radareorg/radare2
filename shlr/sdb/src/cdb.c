@@ -38,7 +38,7 @@ void cdb_init(struct cdb *c, int fd) {
 	c->map = NULL;
 	c->fd = fd;
 	cdb_findstart (c);
-	if (fd != -1 && !fstat (fd, &st) && st.st_size>4 && st.st_size != (off_t)UT32_MAX) {
+	if (fd != -1 && !fstat (fd, &st) && st.st_size>4 && st.st_size != (off_t)UT64_MAX) {
 #if USE_MMAN
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 #else

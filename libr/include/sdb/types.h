@@ -77,7 +77,7 @@
 #include "config.h"
 
 static inline int seek_set(int fd, off_t pos) {
-	return (fd==-1 || lseek (fd, (off_t) pos, SEEK_SET) == -1)? 0:1;
+	return ((fd==-1) || (lseek (fd, (off_t) pos, SEEK_SET) == -1))? 0:1;
 }
 
 static inline void ut32_pack(char s[4], ut32 u) {
