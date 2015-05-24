@@ -845,7 +845,7 @@ static int cmd_write(void *data, const char *input) {
 		default:
 			r_cons_printf ("|Usage: wa[of*] [arg]\n"
 				"| wa nop           : write nopcode using asm.arch and asm.bits\n"
-				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of sassembled opcode\n"
+				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of assembled opcode\n"
 				"| \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
 				"| waf foo.asm      : assemble file and write bytes\n"
 				"| wao nop          : convert current opcode into nops\n"
