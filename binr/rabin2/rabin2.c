@@ -761,6 +761,7 @@ int main(int argc, char **argv) {
 		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
 		opt.user_agent = (char *)r_config_get (core.config, "pdb.user_agent");
 		opt.path = path;
+		opt.extract = r_config_get_i(core.config, "pdb.extract");
 
 		init_pdb_downloader (&opt, &pdb_downloader);
 		ret = pdb_downloader.download (&pdb_downloader);

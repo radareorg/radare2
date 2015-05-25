@@ -77,11 +77,15 @@ static int download(struct SPDBDownloader *pd) {
 		res = 0;
 	}
 
-	if (res && (r_sys_cmd (extractor_cmd) != 0)) {
-		eprintf ("cab extrach has not been finished with sucess\n");
-		res = 0;
+	if (opt->extract == 1) {
+		if (res && (r_sys_cmd (extractor_cmd) != 0)) {
+			eprintf ("cab extrach has not been finished with sucess\n");
+			res = 0;
+		}
+
+		r_file_rm (abspath_to_archive);
 	}
-	r_file_rm (abspath_to_archive);
+
 	R_FREE (archive_name);
 	R_FREE (curl_cmd);
 	R_FREE (extractor_cmd);
@@ -96,6 +100,7 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt->symbol_server = strdup(opt->symbol_server);
 	pd->opt->user_agent = strdup (opt->user_agent);
 	pd->opt->path = strdup (opt->path);
+	pd->opt->extract = opt->extract;
 	pd->download = download;
 }
 
