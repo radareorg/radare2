@@ -216,15 +216,13 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		extra = (json) ? 3 : 1;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
-			i = (json) ? 0 : 1;
 			str = malloc (kw->keyword_length + 20);
-			r_core_read_at (core, addr, (ut8*)str+i, kw->keyword_length);
-			if (json) {
-				r_str_filter_zeroline (str, kw->keyword_length);
-			} else {
-				*str = '"';
-				r_str_filter_zeroline (str, kw->keyword_length+1);
-				strcpy (str+kw->keyword_length+1, "\"");
+			r_core_read_at (core, addr, (ut8*)str, kw->keyword_length);
+			r_str_filter_zeroline (str, kw->keyword_length+i);
+			{
+			char *ts = r_str_utf16_encode (str, kw->keyword_length);
+			s = r_str_newf ("\"%s\"", ts);
+			free (ts);
 			}
 			break;
 		default:
@@ -237,7 +235,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				r_core_read_at (core, addr, buf, kw->keyword_length);
 				if (json) {
 					strcpy (str, "0x");
-					p=str+2;
+					p = str+2;
 				}
 				for (i=0; i<len; i++) {
 					sprintf (p, "%02x", buf[i]);
@@ -247,10 +245,11 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			} else {
 				eprintf ("Cannot allocate %d\n", (len*2)+extra);
 			}
+			s = str;
+			str = NULL;
 			break;
 		}
 
-		s = r_str_utf16_encode (kw->bin_keyword, kw->keyword_length);
 		if (json) {
 			if (!first_hit) r_cons_printf (",");
 			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}",
