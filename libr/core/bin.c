@@ -558,7 +558,7 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	if (va) {
 		main_addr = binmain->vaddr;
 		if (baddr) {
-			main_addr &= 0xffff; // hacky way to remove base address
+			main_addr &= 0xfff; // hacky way to remove base address
 			main_addr += baddr;
 		}
 	} else {
