@@ -212,7 +212,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		int len, i, extra;
 		ut32 buf_sz = kw->keyword_length;
 		ut8 *buf = malloc (buf_sz);
-		char *str = NULL, *p = NULL;
+		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (json) ? 3 : 1;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
@@ -250,14 +250,16 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		}
 
+		s = r_str_utf16_encode (kw->bin_keyword, kw->keyword_length);
 		if (json) {
-			if (!first_hit) r_cons_printf(",");
+			if (!first_hit) r_cons_printf (",");
 			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}",
-					base_addr + addr, kw->kwidx, str);
+					base_addr + addr, kw->kwidx, s);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
-				base_addr + addr, searchprefix, kw->kwidx, kw->count, str);
+				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
 		}
+		free (s);
 
 		free (buf);
 		free (str);
