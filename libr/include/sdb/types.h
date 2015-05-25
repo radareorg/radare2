@@ -99,7 +99,7 @@ static inline void ut32_pack_big(char s[4], ut32 u) {
 }
 
 static inline void ut32_unpack(char s[4], ut32 *u) {
-	ut32 result;
+	ut32 result = 0;
 	result = (ut8) s[3];
 	result <<= 8;
 	result += (ut8) s[2];

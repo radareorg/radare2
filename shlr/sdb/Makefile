@@ -12,10 +12,10 @@ all: pkgconfig src/sdb-version.h
 	${MAKE} -C src
 ifeq ($(BUILD_MEMCACHE),1)
 	${MAKE} -C memcache
+endif
 ifneq (${HAVE_VALA},)
 	cd ${VALADIR} && ${MAKE}
 	cd ${VALADIR}/types && ${MAKE}
-endif
 endif
 
 .PHONY: test sdb.js pkgconfig
@@ -77,22 +77,26 @@ install: pkgconfig install-dirs
 	$(INSTALL_LIB) src/libsdb.${SOEXT} ${PFX}/lib
 	$(INSTALL_DATA) src/libsdb.a ${PFX}/lib
 	-if [ "$(SOEXT)" != "$(SOVER)" ]; then \
-	cd $(PFX)/lib ; \
-	mv libsdb.$(SOEXT) libsdb.$(SOVER) ; \
-	ln -s libsdb.$(SOVER) libsdb.$(SOEXT) ; \
-fi
+	  cd $(PFX)/lib ; \
+	  mv libsdb.$(SOEXT) libsdb.$(SOVER) ; \
+	  ln -s libsdb.$(SOVER) libsdb.$(SOEXT) ; \
+	fi
 	$(INSTALL_DATA) $(INCFILES) ${PFX}/include/sdb
 	$(INSTALL_PROGRAM) src/sdb ${PFX}/bin
+ifeq ($(BUILD_MEMCACHE),1)
 	$(INSTALL_DATA) memcache/libmcsdb.a ${PFX}/lib
 	$(INSTALL_DATA) memcache/mcsdb.h ${PFX}/include/sdb
 	$(INSTALL_PROGRAM) memcache/mcsdbd ${PFX}/bin
 	$(INSTALL_PROGRAM) memcache/mcsdbc ${PFX}/bin
-	$(INSTALL_DATA) pkgconfig/sdb.pc ${PFX}/lib/pkgconfig
 	$(INSTALL_DATA) pkgconfig/mcsdb.pc ${PFX}/lib/pkgconfig
+endif
+	$(INSTALL_DATA) pkgconfig/sdb.pc ${PFX}/lib/pkgconfig
 ifneq (${HAVE_VALA},)
 	$(INSTALL_DATA) ${VALADIR}/sdb.vapi ${PFX}/share/vala/vapi
-	$(INSTALL_DATA) ${VALADIR}/mcsdb.vapi ${PFX}/share/vala/vapi
 	cd ${VALADIR}/types && ${MAKE} install PFX=${PFX}
+ifeq ($(BUILD_MEMCACHE),1)
+	$(INSTALL_DATA) ${VALADIR}/mcsdb.vapi ${PFX}/share/vala/vapi
+endif
 endif
 
 deinstall uninstall:
