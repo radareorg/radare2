@@ -10,6 +10,8 @@ WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
 R2VC=$(shell git rev-list --all --count)
+USE_ZIP=YES
+ZIP=zip
 ifeq ($(R2VC),)
 R2VC=9999999
 endif
@@ -90,7 +92,9 @@ windist:
 	cp -f doc/hud ${WINDIST}/radare2/${VERSION}/hud/main
 	mv ${WINDIST} radare2-${WINBITS}-${VERSION}
 	rm -f radare2-${WINBITS}-${VERSION}.zip
-	zip -r radare2-${WINBITS}-${VERSION}.zip radare2-${WINBITS}-${VERSION}
+ifneq ($(USE_ZIP),NO)
+	$(ZIP) -r radare2-${WINBITS}-${VERSION}.zip radare2-${WINBITS}-${VERSION}
+endif
 
 clean: rmd
 	for a in shlr libr binr ; do (cd $$a ; ${MAKE} clean) ; done
