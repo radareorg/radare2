@@ -77,7 +77,7 @@ static int download(struct SPDBDownloader *pd) {
 		res = 0;
 	}
 
-	if (opt->extract == 1) {
+	if (opt->extract > 0) {
 		if (res && (r_sys_cmd (extractor_cmd) != 0)) {
 			eprintf ("cab extrach has not been finished with sucess\n");
 			res = 0;
