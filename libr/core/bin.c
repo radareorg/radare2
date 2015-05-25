@@ -556,10 +556,10 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	if (!binmain) return R_FALSE;
 
 	if (va) {
-		main_addr = binmain->vaddr;
 		if (baddr) {
-			main_addr &= 0xfff; // hacky way to remove base address
-			main_addr += baddr;
+			main_addr = baddr + binmain->paddr;
+		} else {
+			main_addr = binmain->vaddr;
 		}
 	} else {
 		main_addr = binmain->paddr;
@@ -578,7 +578,7 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 		} else {
 			r_cons_printf ("[Main]\n");
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x"\n",
-					main_addr);
+					main_addr, binmain->paddr);
 		}
 	}
 	return R_TRUE;
