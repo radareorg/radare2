@@ -550,23 +550,35 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 
 static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
+	RBinObject *binobj = r_bin_get_object(r->bin);
+	ut64 main_addr = 0LL;
+	ut64 baseaddr = binobj->baddr;
 	if (!binmain) return R_FALSE;
+
+	if (va) {
+		main_addr = binmain->vaddr;
+		if (baddr) {
+			main_addr &= 0xffff; // hacky way to remove base address
+			main_addr += baddr;
+		}
+	} else {
+		main_addr = binmain->paddr;
+	}
+
 	if ((mode & R_CORE_BIN_SIMPLE) || mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("%"PFMT64d, va? (baddr+binmain->vaddr):binmain->paddr);
-	} else
-	if ((mode & R_CORE_BIN_SET)) {
+		r_cons_printf ("%"PFMT64d, main_addr);
+	} else if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "symbols");
-		r_flag_set (r->flags, "main", va? (baddr+binmain->vaddr): binmain->paddr,
+		r_flag_set (r->flags, "main", main_addr,
 				r->blocksize, 0);
 	} else {
 		if (mode) {
 			r_cons_printf ("fs symbols\n");
-			r_cons_printf ("f main @ 0x%08"PFMT64x"\n",
-				va? baddr+binmain->vaddr: binmain->paddr);
+			r_cons_printf ("f main @ 0x%08"PFMT64x"\n", main_addr);
 		} else {
 			r_cons_printf ("[Main]\n");
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x"\n",
-					baddr+binmain->vaddr, binmain->paddr);
+					main_addr);
 		}
 	}
 	return R_TRUE;
