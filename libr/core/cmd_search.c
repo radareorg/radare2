@@ -1990,7 +1990,8 @@ static int cmd_search(void *data, const char *input) {
 	if (dosearch)
 		do_string_search(core, &param);
 beach: 
+	core->num->value = searchhits;
 	core->in_search = R_FALSE;
-	r_flag_space_pop(core->flags);
+	r_flag_space_pop (core->flags);
 	return ret;
 }
