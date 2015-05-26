@@ -505,7 +505,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					char *src = getarg (handle, insn, 1, 0, NULL);
 					char *dst = getarg (handle, insn, 0, 0, NULL);
-					esilprintf (op, "0,%s,%s,&,==,%%z,zf,=,%%p,pf,=,%%s,sf,=,0,cf,=,0,of,=",
+					esilprintf (op, "0,%s,%s,&,==,%%z,zf,=,%%p,flag_p,=,%%s,sf,=,0,cf,=,0,of,=",
 						src, dst);
 					free (src);
 					free (dst);
@@ -515,7 +515,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				if (a->decode) {
 					char *src = getarg (handle, insn, 1, 0, NULL);
 					char *dst = getarg (handle, insn, 0, 0, NULL);
-					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=,%%p,pf,=,%%s,sf,=",
+					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=,%%p,flag_p,=,%%s,sf,=",
 						src, dst, (INSOP(0).size*8));
 					free (src);
 					free (dst);
@@ -733,10 +733,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 					esilprintf (op, "sf,!,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JP:
-					esilprintf (op, "pf,?{,%s,%s,=,}", dst, pc);
+					esilprintf (op, "flag_p,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JNP:
-					esilprintf (op, "pf,!,?{,%s,%s,=,}", dst, pc);
+					esilprintf (op, "flag_p,!,?{,%s,%s,=,}", dst, pc);
 					break;
 				case X86_INS_JBE:
 					esilprintf (op, "zf,cf,|,?{,%s,%s,=,}", dst, pc);
@@ -829,7 +829,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0, NULL);
 				char *dst = getarg (handle, insn, 0, 1, "^");
-				esilprintf (op, "%s,%s,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
+				esilprintf (op, "%s,%s,%%z,zf,=,%%p,flag_p,=,0,cf,=,0,of,=,%%s,sf,=",
 					src, dst);
 				free (src);
 				free (dst);
@@ -1254,13 +1254,13 @@ static int set_reg_profile(RAnal *anal) {
 		 "gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
 		 "gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 		 "gpr	cf	.1	.1152	0	carry\n"
-		 "gpr	pf	.1	.1154	0	parity\n"
-		 "gpr	af	.1	.1156	0	adjust\n"
+		 "flg	flag_p	.1	.1154	0	parity\n"
+		 "flg	flag_a	.1	.1156	0	adjust\n"
 		 "gpr	zf	.1	.1158	0	zero\n"
 		 "gpr	sf	.1	.1159	0	sign\n"
-		 "gpr	tf	.1	.1160	0	trap\n"
-		 "gpr	if	.1	.1161	0	interrupt\n"
-		 "gpr	df	.1	.1162	0	direction\n"
+		 "flg	flag_t	.1	.1160	0	trap\n"
+		 "flg	flag_i	.1	.1161	0	interrupt\n"
+		 "flg	flag_d	.1	.1162	0	direction\n"
 		 "gpr	of	.1	.1163	0	overflow\n"
 
 		 "gpr	rsp	.64	152	0\n"
