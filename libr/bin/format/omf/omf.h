@@ -52,6 +52,9 @@ typedef struct {
 	OMF_record_handler *records;
 } r_bin_omf_obj;
 
+// this value was chosen arbitrarily to made the loader work correctly
+// if someone want to implement rellocation for omf he has to remove this
+#define OMF_BASE_ADDR 0x1000
 
 int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size);
 r_bin_omf_obj *r_bin_internal_omf_load(const char *buf, ut64 size);

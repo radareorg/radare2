@@ -44,7 +44,7 @@ static int check(RBinFile *arch) {
 }
 
 static ut64 baddr(RBinFile *arch) {
-	return 0;
+	return OMF_BASE_ADDR;
 }
 
 static RList *entries(RBinFile *arch) {
@@ -115,7 +115,8 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("OMF");
 	ret->rclass = strdup ("omf");
-	ret->type = strdup ("OMF (Relocatable Object Module Format)");
+	// the "E" is here to made rva return the same value for 16 bit en 32 bits files
+	ret->type = strdup ("E OMF (Relocatable Object Module Format)");
 	ret->os = strdup ("any");
 	ret->machine = strdup ("i386");
 	ret->arch = strdup ("x86");
