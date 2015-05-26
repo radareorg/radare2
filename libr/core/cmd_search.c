@@ -218,7 +218,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 			str = malloc (kw->keyword_length + 20);
 			r_core_read_at (core, addr, (ut8*)str, kw->keyword_length);
-			r_str_filter_zeroline (str, kw->keyword_length+i);
+			//r_str_filter_zeroline (str, kw->keyword_length+i);
 			{
 			char *ts = r_str_utf16_encode (str, kw->keyword_length);
 			s = r_str_newf ("\"%s\"", ts);
