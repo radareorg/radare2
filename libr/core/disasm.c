@@ -1701,7 +1701,7 @@ static void handle_comment_align (RCore *core, RDisasmState *ds) {
 	if (ll) {
 		int cstrlen = strlen (ll);
 		int cols, ansilen = r_str_ansi_len (ll);
-		int utf8len = r_utf8_strlen (ll);
+		int utf8len = r_utf8_strlen ((const ut8*)ll);
 
 		int cells = utf8len - (cstrlen-ansilen);
 

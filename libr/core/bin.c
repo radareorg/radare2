@@ -550,9 +550,9 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 
 static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
-	RBinObject *binobj = r_bin_get_object(r->bin);
 	ut64 main_addr = 0LL;
-	ut64 baseaddr = binobj->baddr;
+	//RBinObject *binobj = r_bin_get_object(r->bin);
+	//ut64 baseaddr = binobj->baddr;
 	if (!binmain) return R_FALSE;
 
 	if (va) {
