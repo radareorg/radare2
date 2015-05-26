@@ -634,7 +634,7 @@ int r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
 				eprintf ("Invalid segment index for symbol _start\n");
 				return R_FALSE;
 			}			
-			addr->vaddr = obj->sections[obj->symbols[ct_sym]->seg_idx - 1]->vaddr + obj->symbols[ct_sym]->offset;
+			addr->vaddr = obj->sections[obj->symbols[ct_sym]->seg_idx - 1]->vaddr + obj->symbols[ct_sym]->offset + OMF_BASE_ADDR;
 			data = obj->sections[obj->symbols[ct_sym]->seg_idx - 1]->data;
 			while (data) {
 				offset += data->size;
@@ -677,7 +677,7 @@ int r_bin_omf_send_sections(RList *list, OMF_segment *section, r_bin_omf_obj *ob
 		new->size = data->size;
 		new->vsize = data->size;
 		new->paddr = data->paddr;
-		new->vaddr = section->vaddr + data->offset;
+		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->srwx = R_BIN_SCN_EXECUTABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_READABLE;
 		r_list_append (list, new);
 		data = data->next;
@@ -707,5 +707,5 @@ ut64 r_bin_omf_get_vaddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
 		eprintf ("Invalid segment index for symbol %s\n", sym->name);
 		return 0;
 	}
-	return obj->sections[sym->seg_idx - 1]->vaddr + sym->offset;
+	return obj->sections[sym->seg_idx - 1]->vaddr + sym->offset + OMF_BASE_ADDR;
 }
