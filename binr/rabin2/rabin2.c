@@ -760,9 +760,12 @@ int main(int argc, char **argv) {
 		if (env_pdbserver && *env_pdbserver)
 			r_config_set (core.config, "pdb.server", env_pdbserver);
 		if (env_useragent && *env_useragent)
-			r_config_set (core.config, "pdb.user_agent", env_pdbextract);
+			r_config_set (core.config, "pdb.user_agent", env_useragent);
 		if (env_pdbextract && *env_pdbextract)
-			r_config_set_i (core.config, "pdb.extract", !(*env_pdbextract == '0'));
+			r_config_set_i (core.config, "pdb.extract",
+				!(*env_pdbextract == '0'));
+		free (env_pdbextract);
+		free (env_useragent);
 
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
