@@ -738,6 +738,8 @@ int main(int argc, char **argv) {
 	if (action & ACTION_PDB_DWNLD) {
 		int ret;
 		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
+		char *env_pdbextract = r_sys_getenv("PDB_EXTRACT");
+		char *env_useragent = r_sys_getenv("PDB_USER_AGENT");
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info (core.bin);
@@ -754,13 +756,20 @@ int main(int argc, char **argv) {
 		} else {
 			path = strdup (".");
 		}
+
 		if (env_pdbserver && *env_pdbserver)
 			r_config_set (core.config, "pdb.server", env_pdbserver);
+		if (env_useragent && *env_useragent)
+			r_config_set (core.config, "pdb.user_agent", env_pdbextract);
+		if (env_pdbextract && *env_pdbextract)
+			r_config_set_i (core.config, "pdb.extract", !(*env_pdbextract == '0'));
+
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
 		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
 		opt.user_agent = (char *)r_config_get (core.config, "pdb.user_agent");
 		opt.path = path;
+		opt.extract = r_config_get_i(core.config, "pdb.extract");
 
 		init_pdb_downloader (&opt, &pdb_downloader);
 		ret = pdb_downloader.download (&pdb_downloader);
