@@ -199,7 +199,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		l = p-in;
 		if (l > 0) {
 			memcpy (tline, in, l);
-			tl = r_str_ansi_filter (tline, l);
+			tl = r_str_ansi_filter (tline, NULL, NULL, l);
 			if (tl < 0)
 				ret = -1;
 			else ret = r_cons_grep_line (tline, tl);

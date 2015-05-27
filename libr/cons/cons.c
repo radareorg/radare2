@@ -806,14 +806,18 @@ R_API void r_cons_zero() {
 }
 
 R_API void r_cons_highlight (const char *word) {
-	char *rword, *res;
+	char *rword, *res, *clean;
 	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
 			R_CONS_INVERT(R_FALSE, R_TRUE)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
-// that word str should ignore ansi scapes
+	int l, *cpos;
+
 	if (word && *word) {
 		int word_len = strlen (word);
-
+		char *orig;
+		clean = I.buffer;
+		l = r_str_ansi_filter (clean, &orig, &cpos, 0);
+		I.buffer = orig;
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
 				free (I.highlight);
@@ -826,12 +830,17 @@ R_API void r_cons_highlight (const char *word) {
 		strcpy (rword, inv[0]);
 		strcpy (rword + linv[0], word);
 		strcpy (rword + linv[0] + word_len, inv[1]);
-		res = r_str_replace (I.buffer, word, rword, 1);
+		res = r_str_replace_thunked (I.buffer, clean, cpos,
+					     l, word, rword, 1);
 		if (res) {
 			I.buffer = res;
 			I.buffer_len = I.buffer_sz = strlen (res);
 		}
 		free (rword);
+		free (clean);
+		free (cpos);
+		/* don't free orig - it's assigned
+		 * to I.buffer and possibly realloc'd */
 	} else {
 		free (I.highlight);
 		I.highlight = NULL;
