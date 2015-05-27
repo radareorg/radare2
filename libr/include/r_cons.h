@@ -133,6 +133,13 @@ typedef struct r_cons_canvas_t {
 } RConsCanvas;
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+typedef int (*RConsClickCallback)(void *core, int x, int y);
+
+#if 0
+r_cons_click_begin();
+r_cons_click_end();
+r_cons_click_clear();
+#endif
 
 typedef struct r_cons_t {
 	RConsGrep grep;
@@ -185,6 +192,7 @@ typedef struct r_cons_t {
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
+	RConsClickCallback onclick;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
