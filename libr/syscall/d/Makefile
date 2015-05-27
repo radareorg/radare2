@@ -49,11 +49,14 @@ clean:
 	rm -f *.sdb
 
 ${SDB}:
-	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
-	cd "$(SDBPATH)/src-native" && CFLAGS="-w ${CPPFLAGS}" \
-		$(MAKE) -j 1 ARCH=xxx CC=${HOST_CC} clean sdb
-	cp -f "$(SDBPATH)/src-native/sdb" "$(SDBPATH)/sdb"
-	rm -rf "$(SDBPATH)/src-native"
+	@echo "Cannot find sdb/sdb"
+	@false
+
+#	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
+#	cd "$(SDBPATH)/src-native" && CFLAGS="-w ${CPPFLAGS}" \
+#		$(MAKE) -j 1 ARCH=xxx CC=${HOST_CC} clean sdb
+#	cp -f "$(SDBPATH)/src-native/sdb" "$(SDBPATH)/sdb"
+#	rm -rf "$(SDBPATH)/src-native"
 
 .PHONY: all clean install install-symlink symstall
 

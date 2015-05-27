@@ -377,10 +377,12 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		port = path;
 		path = NULL;
 	} else {
-		if (!strcmp (httpui, "p")
-		|| !strcmp (httpui, "enyo")
-		|| !strcmp (httpui, "t")) {
-			path = httpui;
+		if (core->file) {
+			if (!strcmp (httpui, "p")
+					|| !strcmp (httpui, "enyo")
+					|| !strcmp (httpui, "t")) {
+				path = httpui;
+			}
 		}
 	}
 
