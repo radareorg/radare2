@@ -796,15 +796,33 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				free (src);
 			}
 			// TODO: what if UJMP?
-			if (INSOP(0).type == X86_OP_IMM) {
+			switch (INSOP(0).type) {
+			case X86_OP_IMM:
 				op->jump = INSOP(0).imm;
 				op->type = R_ANAL_OP_TYPE_JMP;
 				if (a->decode) {
 					ut64 dst = INSOP(0).imm;
 					esilprintf (op, "0x%"PFMT64x",%s,=", dst, pc);
 				}
-			} else {
+				break;
+			case X86_OP_MEM:
+				{
+					cs_x86_op in = INSOP(0);
+					op->type = R_ANAL_OP_TYPE_UJMP;
+					if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
+						op->type = R_ANAL_OP_TYPE_UJMP;
+						op->ptr= in.mem.disp;
+						if (a->decode) {
+							esilprintf (op, "0x%"PFMT64x",[],%s,=", op->ptr, pc);
+						}
+					}
+				}
+				break;
+			case X86_OP_REG:
+			case X86_OP_FP:
+			default: // other?
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				break;
 			}
 			break;
 		case X86_INS_IN:
