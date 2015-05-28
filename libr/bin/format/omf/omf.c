@@ -24,14 +24,19 @@ static int is_valid_omf_type(ut8 type) {
 }
 
 int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size) {
-	ut16 size = *((ut16 *)(buf + 1));
+	ut16 size;
 	ut8 checksum = 0;
 
-	// Some compiler set checksum to 0
-	if (buf_size < size + 2) {
+	if (buf_size < 3) {
 		eprintf ("Invalid record (too short)\n");
 		return R_FALSE;
 	}
+	size = *((ut16 *)(buf + 1));
+	if (buf_size < size + 3) {
+		eprintf ("Invalid record (too short)\n");
+		return R_FALSE;
+	}
+	//Some compiler set checksum to 0
 	if (!buf[2 + size])
 		return R_TRUE;
 
@@ -79,11 +84,10 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 		return R_FALSE;
 	record->content = ret;
 
-	while (tmp_size < record->size + 2) {
+	while (tmp_size < record->size - 1) {
 		ret->nb_elem++;
 		tmp_size += buf[3 + tmp_size] + 1;
 	}
-
 	if (!(ret->elems = R_NEWS0 (char *, ret->nb_elem))) {
 		R_FREE(ret);
 		return R_FALSE;
@@ -126,7 +130,7 @@ static int load_omf_segdef(OMF_record *record, const char *buf, ut64 buf_size) {
 	if (!(ret = R_NEW0 (OMF_segment)))
 		return R_FALSE;
 	record->content = ret;
-	
+
 	if (record->size < 2) {
 		eprintf ("Invalid Segdef record (bad size)\n");
 		return R_FALSE;
@@ -333,6 +337,10 @@ static int load_omf_content(OMF_record *record, const char *buf, ut64 global_ct,
 		return load_omf_data (buf, record, global_ct);
 
 	// generic loader just copy data from buf to content
+	if (!record->size) {
+		eprintf("Invalid record (size to short)\n");
+		return R_FALSE;
+	}
 	if (!(record->content = R_NEWS0 (char, record->size)))
 		return R_FALSE;
 	((char *)record->content)[record->size - 1] = 0;
@@ -484,7 +492,7 @@ static int get_omf_data_info(r_bin_omf_obj *obj) {
 	OMF_data *tmp_data;
 
 	while ((tmp = get_next_omf_record_type (tmp, OMF_LEDATA))) {
-		if (((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1 > obj->nb_section) {
+		if (((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1 >= obj->nb_section) {
 			eprintf ("Invalid Ledata record (bad segment index)\n");
 			return R_FALSE;
 		}
@@ -670,7 +678,7 @@ int r_bin_omf_send_sections(RList *list, OMF_segment *section, r_bin_omf_obj *ob
 			return R_FALSE;
 
 		// if index == 0, it's mean there is no name
-		if (section->name_idx && section->name_idx < obj->nb_name)
+		if (section->name_idx && section->name_idx - 1 < obj->nb_name)
 			snprintf (new->name, R_BIN_SIZEOF_STRINGS, "%s_%d", obj->names[section->name_idx - 1], ct_name++);
 		else snprintf (new->name, R_BIN_SIZEOF_STRINGS, "no_name_%d", ct_name++);
 
