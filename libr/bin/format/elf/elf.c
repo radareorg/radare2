@@ -764,6 +764,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_PPC:
 	case EM_PPC64:
 		return strdup ("ppc");
+	case EM_PARISC:
+		return strdup ("hppa");
 	case EM_PROPELLER:
 		return strdup ("propeller");
 	case EM_SH: return strdup ("sh");
