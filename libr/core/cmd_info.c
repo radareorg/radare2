@@ -248,7 +248,16 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("\"%s\":",n); \
 	}\
 	r_core_bin_info (core,x,mode,va,NULL,offset,NULL);
-		case 'A': newline=0; r_bin_list_archs (core->bin, 1); break;
+		case 'A':
+			newline = 0;
+			if (input[1]=='j') {
+				r_cons_printf ("{");
+				r_bin_list_archs (core->bin, 'j');
+				r_cons_printf ("}\n");
+			} else {
+				r_bin_list_archs (core->bin, 1);
+			}
+			break;
 		case 'Z': RBININFO ("size",R_CORE_BIN_ACC_SIZE); break;
 		case 'S': RBININFO ("sections",R_CORE_BIN_ACC_SECTIONS); break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;

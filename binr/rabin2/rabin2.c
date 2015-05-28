@@ -690,51 +690,39 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
-	// XXX: TODO move this to libr/core/bin.c
-	if (action & ACTION_LISTARCHS || ((arch || bits || arch_name) &&
-		!r_bin_select (bin, arch, bits, arch_name))) {
-		if (rad == R_CORE_BIN_JSON) {
-			int i;
-			printf ("[");
-			for (i = 0; i < bin->narch; i++) {
-				if (r_bin_select_idx (bin, bin->file, i)) {
-					RBinObject *o = r_bin_cur_object (bin);
-					RBinInfo *info = o ? o->info : NULL;
-					printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",
-						i?",":"",info->arch, info->bits,
-						bin->cur->offset, info->machine);
-				}
-			}
-			printf ("]");
-		} else r_bin_list_archs (bin, 1);
-		free (arch_name);
-	}
-
+#if 0
 	// ASLR WTF
 	if (laddr != 0LL) {
 		//r_bin_set_baddr (bin, laddr);
 		//bin->cur->o->baddr = laddr;
 	}
-	r_config_set_i (core.config, "bin.laddr", laddr);
-
-	core.bin = bin;
-	filter.offset = at;
-	filter.name = name;
-
-	r_cons_new ()->is_interactive = R_FALSE;
-
+#endif
 #define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&x) {\
-		if (isradjson) r_cons_printf ("\"%s\":",n);\
+		if (isradjson) r_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
 		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr, chksum)) {\
 			if (isradjson) r_cons_printf ("false");\
 		};\
 		actions_done++;\
-		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
 	}\
 }
+	r_config_set_i (core.config, "bin.laddr", laddr);
+	core.bin = bin;
+	bin->printf = r_cons_printf;
+	filter.offset = at;
+	filter.name = name;
+	r_cons_new ()->is_interactive = R_FALSE;
+
+	if (isradjson) r_cons_printf ("{");
+
+	// List fatmach0 sub-binaries, etc
+	if (action & ACTION_LISTARCHS || ((arch || bits || arch_name) &&
+		!r_bin_select (bin, arch, bits, arch_name))) {
+		r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
+		actions_done++;
+		free (arch_name);
+	}
 	if (action & ACTION_PDB_DWNLD) {
 		int ret;
 		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
@@ -777,19 +765,19 @@ int main(int argc, char **argv) {
 		init_pdb_downloader (&opt, &pdb_downloader);
 		ret = pdb_downloader.download (&pdb_downloader);
 		if (isradjson) {
-			printf ("{\"pdb\":{\"file\":\"%s\",\"download\":%s}}\n",
-				opt.dbg_file, ret?"true":"false");
+			printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
+				actions_done?",":"", opt.dbg_file, ret?"true":"false");
 		} else {
 			printf ("PDB \"%s\" download %s\n",
 				opt.dbg_file, ret? "success": "failed");
 		}
+		actions_done++;
 		deinit_pdb_downloader (&pdb_downloader);
 
 		free (path);
 		r_core_fini (&core);
 		return 0;
 	}
-	if (isradjson) r_cons_printf ("{");
 	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("entries", ACTION_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
 	run_action ("main", ACTION_MAIN, R_CORE_BIN_ACC_MAIN);
