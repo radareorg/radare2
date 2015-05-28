@@ -483,7 +483,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					break;
 				default:
 					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
-					eprintf ("0x%llx - 0x%llx  i \n", (ut64)rel[k].r_offset, (ut64)rel[k].r_info);
+					eprintf ("0x%"PFMT64x" - 0x%"PFMT64x" i \n", (ut64)rel[k].r_offset, (ut64)rel[k].r_info);
 					free (rel);
 					return of;
 					break;

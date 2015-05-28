@@ -125,7 +125,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve blcok at %llx\n", jump);
+						eprintf ("failed to retrieve blcok at 0x%"PFMT64x"\n", jump);
 						break;
 					}
 					if (fail != UT64_MAX) {
@@ -133,7 +133,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 						indent++;
 						if (sdb_get (db, K_INDENT(bb->fail), 0)) {
 							/* do nothing here */
-							eprintf ("BlockAlready %llx\n", bb->addr);
+							eprintf ("BlockAlready 0x%"PFMT64x"\n", bb->addr);
 						} else {
 					//		r_cons_printf (" { RADICAL %llx\n", bb->addr);
 							sdb_array_push_num (db, "indent", fail, 0);

@@ -460,7 +460,6 @@ static void static_debug_native_break(void *d) {
 	static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 	static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
 	static void WINAPI (*w32_dbgbreaksimple)(void) = NULL;
-	int ret=0;
 	RDebug *dbg = (RDebug *)d;
 	HANDLE lib;
 	HANDLE hProcess;
