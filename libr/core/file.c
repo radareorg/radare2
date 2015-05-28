@@ -244,6 +244,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	return ret;
 }
 
+#if !__linux__
 static ut64 get_base_from_maps(RCore *core, const char *file) {
 	RDebugMap *map;
 	RListIter *iter;
@@ -263,6 +264,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 	}
 	return b;
 }
+#endif
 
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
