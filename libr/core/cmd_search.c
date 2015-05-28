@@ -792,6 +792,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	char* tok, *gregexp = NULL;
 	char* grep_arg = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const ut8 prot = r_config_get_i (core->config, "rop.nx") ? R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
 	if (max_count == 0) {
@@ -974,7 +975,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 					if (json) mode = 'j';
 
-					if (mode == 'l') {
+					if ((mode == 'l') && subchain) {
 						do {
 							print_rop (core, hitlist, mode, &json_first);
 							hitlist->head = hitlist->head->n;
