@@ -312,4 +312,226 @@ typedef struct {
 	ut32 PointerToRawData;
 } Pe32_image_debug_directory_entry, Pe64_image_debug_directory_entry;
 
+typedef struct {
+	ut32 Characteristics;
+	ut32 TimeDateStamp;
+	ut16 MajorVersion;
+	ut16 MinorVersion;
+	ut16 NumberOfNamedEntries;
+	ut16 NumberOfIdEntries;
+} Pe_image_resource_directory;
+
+typedef struct {
+	union {
+		struct {
+			ut32 NameOffset:31;
+			ut32 NameIsString:1;
+		} s;
+		ut32 Name;
+		ut16 Id;
+	} u1;
+	union {
+		ut32 OffsetToData;
+		struct {
+			ut32 OffsetToDirectory:31;
+			ut32 DataIsDirectory:1;
+		} s;
+	} u2;
+} Pe_image_resource_directory_entry;
+
+// Pe_image_resource_directory_string is unused. Did not find any PE with ASCII resource name.
+// Refer to https://msdn.microsoft.com/en-us/library/ms809762.aspx
+// "Peering Inside the PE: A Tour of the Win32 Portable Executable File Format"
+// "Yes, even PE files intended for non-UNICODE Win32 implementations use UNICODE here."
+typedef struct {
+	ut16 Length;
+	char *NameString;
+} Pe_image_resource_directory_string;
+
+typedef struct {
+	ut16 Length;
+	ut16 *NameString;
+} Pe_image_resource_directory_string_u;
+
+typedef struct {
+	ut32 OffsetToData;
+	ut32 Size;
+	ut32 CodePage;
+	ut32 Reserved;
+} Pe_image_resource_data_entry;
+
+#define PE_RESOURCE_ENTRY_CURSOR          1
+#define PE_RESOURCE_ENTRY_BITMAP          2
+#define PE_RESOURCE_ENTRY_ICON            3
+#define PE_RESOURCE_ENTRY_MENU            4
+#define PE_RESOURCE_ENTRY_DIALOG          5
+#define PE_RESOURCE_ENTRY_STRING          6
+#define PE_RESOURCE_ENTRY_FONTDIR         7
+#define PE_RESOURCE_ENTRY_FONT            8
+#define PE_RESOURCE_ENTRY_ACCELERATOR     9
+#define PE_RESOURCE_ENTRY_RCDATA         10
+#define PE_RESOURCE_ENTRY_MESSAGETABLE   11
+#define PE_RESOURCE_ENTRY_GROUP_CURSOR   12
+#define PE_RESOURCE_ENTRY_GROUP_ICON     14
+#define PE_RESOURCE_ENTRY_VERSION        16
+#define PE_RESOURCE_ENTRY_DLGINCLUDE     17
+#define PE_RESOURCE_ENTRY_PLUGPLAY       19
+#define PE_RESOURCE_ENTRY_VXD            20
+#define PE_RESOURCE_ENTRY_ANICURSOR      21
+#define PE_RESOURCE_ENTRY_ANIICON        22
+#define PE_RESOURCE_ENTRY_HTML           23
+#define PE_RESOURCE_ENTRY_MANIFEST       24
+
+#define STRINGFILEINFO_TEXT  "StringFileInfo"
+#define TRANSLATION_TEXT     "Translation"
+#define VARFILEINFO_TEXT     "VarFileInfo"
+#define VS_VERSION_INFO_TEXT "VS_VERSION_INFO"
+
+#define STRINGFILEINFO_TEXT_LEN  sizeof(STRINGFILEINFO_TEXT)
+#define TRANSLATION_TEXT_LEN     sizeof(TRANSLATION_TEXT)
+#define VARFILEINFO_TEXT_LEN     sizeof(VARFILEINFO_TEXT)
+#define VS_VERSION_INFO_TEXT_LEN sizeof(VS_VERSION_INFO_TEXT)
+
+#define EIGHT_HEX_DIG_UTF_16_LEN ((8 + 1) * 2)
+
+#define STRINGFILEINFO_UTF_16  "S\0t\0r\0i\0n\0g\0F\0i\0l\0e\0I\0n\0f\0o\0\0"
+#define TRANSLATION_UTF_16     "T\0r\0a\0n\0s\0l\0a\0t\0i\0o\0n\0\0"
+#define VARFILEINFO_UTF_16     "V\0a\0r\0F\0i\0l\0e\0I\0n\0f\0o\0\0"
+#define VS_VERSION_INFO_UTF_16 "V\0S\0_\0V\0E\0R\0S\0I\0O\0N\0_\0I\0N\0F\0O\0\0"
+
+#define STRINGFILEINFO_UTF_16_LEN  sizeof(STRINGFILEINFO_UTF_16)
+#define TRANSLATION_UTF_16_LEN     sizeof(TRANSLATION_UTF_16)
+#define VARFILEINFO_UTF_16_LEN     sizeof(VARFILEINFO_UTF_16)
+#define VS_VERSION_INFO_UTF_16_LEN sizeof(VS_VERSION_INFO_UTF_16)
+
+typedef struct {
+	ut16 wLength; //The length, in bytes, of this String structure.
+	ut16 wValueLength; //The size, in words, of the Value member.
+	ut16 wType; //1 text; 0 binary
+	ut16 wKeyLen;
+	ut16 *szKey; //An arbitrary Unicode string
+	//ut16 Padding;
+	ut16 *Value; //A zero-terminated string.
+} String;
+
+typedef struct {
+	ut16 wLength; //The length, in bytes, of this StringTable structure, including all structures indicated by the Children member.
+	ut16 wValueLength; //always 0
+	ut16 wType; //1 text; 0 binary
+	ut16 *szKey;
+		//An 8-digit hexadecimal number stored as a Unicode string.
+		//The four most significant digits represent the language identifier.
+		//The four least significant digits represent the code page for which the data is formatted
+	//ut16 Padding;
+	ut32 numOfChildren;
+	String **Children; //An array of one or more String structures
+} StringTable;
+
+typedef struct {
+	ut16 wLength; //The length, in bytes, of the entire StringFileInfo block, including all structures indicated by the Children member.
+	ut16 wValueLength; //always 0
+	ut16 wType; //1 text; 0 binary
+	ut16 *szKey; //L"StringFileInfo"
+	//ut16 Padding;
+	ut32 numOfChildren;
+	StringTable **Children; //An array of one or more StringTable structures
+} StringFileInfo;
+
+typedef struct {
+	ut16 wLength; //The length, in bytes, of the Var structure. (with pad)
+	ut16 wValueLength; //The length, in bytes, of the Value member.
+	ut16 wType; //1 text; 0 binary
+	ut16 *szKey; //L"Translation"
+	//ut16 Padding;
+	ut32 numOfValues;
+	ut32 *Value; //An array of one or more values that are language and code page identifier pairs
+} Var;
+
+typedef struct {
+	ut16 wLength; //The length, in bytes, of the entire VarFileInfo block, including all structures indicated by the Children member. (with pad)
+	ut16 wValueLength; //always 0
+	ut16 wType; //1 text; 0 binary
+	ut16 *szKey; //L"VarFileInfo"
+	//ut16 Padding;
+	ut32 numOfChildren;
+	Var **Children; //Typically contains a list of languages that the application or DLL supports.
+} VarFileInfo;
+
+#define PE_VS_FF_DEBUG        0x00000001L
+#define PE_VS_FF_PRERELEASE   0x00000002L
+#define PE_VS_FF_PATCHED      0x00000004L
+#define PE_VS_FF_PRIVATEBUILD 0x00000008L
+#define PE_VS_FF_INFOINFERRED 0x00000010L
+#define PE_VS_FF_SPECIALBUILD 0x00000020L
+
+#define PE_VOS_DOS        0x00010000L
+#define PE_VOS_NT         0x00040000L
+#define PE_VOS__WINDOWS16 0x00000001L
+#define PE_VOS__WINDOWS32 0x00000004L
+#define PE_VOS_OS216      0x00020000L
+#define PE_VOS_OS232      0x00030000L
+#define PE_VOS__PM16      0x00000002L
+#define PE_VOS__PM32      0x00000003L
+#define PE_VOS_UNKNOWN    0x00000000L
+
+#define PE_VOS_DOS_WINDOWS16 0x00010001L
+#define PE_VOS_DOS_WINDOWS32 0x00010004L
+#define PE_VOS_NT_WINDOWS32  0x00040004L
+#define PE_VOS_OS216_PM16    0x00020002L
+#define PE_VOS_OS232_PM32    0x00030003L
+
+#define PE_VFT_APP        0x00000001L
+#define PE_VFT_DLL        0x00000002L
+#define PE_VFT_DRV        0x00000003L
+#define PE_VFT_FONT       0x00000004L
+#define PE_VFT_STATIC_LIB 0x00000007L
+#define PE_VFT_UNKNOWN    0x00000000L
+#define PE_VFT_VXD        0x00000005L
+
+#define PE_VFT2_DRV_COMM              0x0000000AL
+#define PE_VFT2_DRV_DISPLAY           0x00000004L
+#define PE_VFT2_DRV_INSTALLABLE       0x00000008L
+#define PE_VFT2_DRV_KEYBOARD          0x00000002L
+#define PE_VFT2_DRV_LANGUAGE          0x00000003L
+#define PE_VFT2_DRV_MOUSE             0x00000005L
+#define PE_VFT2_DRV_NETWORK           0x00000006L
+#define PE_VFT2_DRV_PRINTER           0x00000001L
+#define PE_VFT2_DRV_SOUND             0x00000009L
+#define PE_VFT2_DRV_SYSTEM            0x00000007L
+#define PE_VFT2_DRV_VERSIONED_PRINTER 0x0000000CL
+#define PE_VFT2_UNKNOWN               0x00000000L
+
+#define PE_VFT2_FONT_RASTER   0x00000001L
+#define PE_VFT2_FONT_TRUETYPE 0x00000003L
+#define PE_VFT2_FONT_VECTOR   0x00000002L
+#define PE_VFT2_UNKNOWN       0x00000000L
+
+typedef struct {
+	ut32 dwSignature; //Contains the value 0xFEEF04BD
+	ut32 dwStrucVersion;
+	ut32 dwFileVersionMS;
+	ut32 dwFileVersionLS;
+	ut32 dwProductVersionMS;
+	ut32 dwProductVersionLS;
+	ut32 dwFileFlagsMask;
+	ut32 dwFileFlags;
+	ut32 dwFileOS;
+	ut32 dwFileType;
+	ut32 dwFileSubtype;
+	ut32 dwFileDateMS;
+	ut32 dwFileDateLS;
+} PE_VS_FIXEDFILEINFO;
+
+typedef struct {
+	ut16             wLength; //whole structure size (padding not included (in case of multiply version info structures))
+	ut16             wValueLength; //if 0 there is no Value
+	ut16             wType; //1 text; 0 binary
+	ut16             *szKey; //L"VS_VERSION_INFO"
+	//ut16             Padding1; //pad for 32 boundary
+	PE_VS_FIXEDFILEINFO *Value;
+	//ut16             Padding2; //pad for 32 boundary
+	VarFileInfo      *varFileInfo; //0 or 1 elements
+	StringFileInfo   *stringFileInfo; //0 or 1 elements
+} PE_VS_VERSIONINFO;
+
 #endif

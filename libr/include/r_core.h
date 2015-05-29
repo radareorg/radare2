@@ -208,8 +208,10 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
+R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn);
+R_API int r_core_visual_panels(RCore *core);
 R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
@@ -342,6 +344,7 @@ R_API int r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
 R_API int r_core_bin_refresh_strings(RCore *core);
+R_API int r_core_pseudo_code (RCore *core, const char *input);
 
 /* gdiff.c */
 R_API int r_core_gdiff(RCore *core1, RCore *core2, int anal_all);
@@ -380,7 +383,8 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_ACC_DWARF	0x800
 #define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
-#define R_CORE_BIN_ACC_ALL	0xFFF
+#define R_CORE_BIN_ACC_MEM	0x4000
+#define R_CORE_BIN_ACC_ALL	0x4FFF
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;
@@ -415,13 +419,14 @@ R_API int r_core_visual_comments (RCore *core);
 R_API int r_core_visual_prompt (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
+R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot (RCore *core, int protection, const char *mode, ut64 *from, ut64 *to);
 R_API RList* /*<RIOMap*>*/ r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
 R_API void r_core_hack_help(RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
-R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size);
+R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
 R_API void r_core_diff_show(RCore *core, RCore *core2);
 
 
@@ -464,6 +469,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
+R_API void r_core_syscmd_mkdir(const char *dir);
 
 /* tasks */
 

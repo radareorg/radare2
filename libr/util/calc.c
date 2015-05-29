@@ -33,7 +33,6 @@ static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
-eprintf ("DIV\n");
 	if (v.d) n.d /= v.d; else n.d = 0;
 	if (v.n) n.n /= v.n; else n.n = 0;
 	return n;
@@ -266,7 +265,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 
 #define isvalidchar(x) \
 	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
-	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || x=='/' || (x>='0'&&x<='9'))
+	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || (x>='0'&&x<='9'))
 
 	default:
 		{

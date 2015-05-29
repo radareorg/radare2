@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_core.h>
+#include <errno.h>
 
 #define FMT_RAW  1
 #define FMT_JSON 2
@@ -84,11 +85,16 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
 R_API void r_core_syscmd_ls(const char *input) {
 	const char *path = ".";
+	char *d = NULL;
+	char *p = NULL;
+	char *homepath = NULL;
+	char *pattern = NULL;
 	int printfmt = 0;
 	RListIter *iter;
 	RList *files;
 	char *name;
 	char *dir;
+	int off;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
 		return;
@@ -103,8 +109,39 @@ R_API void r_core_syscmd_ls(const char *input) {
 			}
 		} else path = input+2;
 	}
+
+	if (*path == '~')	{
+		homepath = r_str_home (path+2);
+		if (homepath) path = (const char *)homepath;
+	}
+	else if (*path == '$'){
+		if (!strncmp (path+1, "home", 4) || !strncmp (path+1, "HOME", 4)){
+			if (!*(path+6))
+				homepath = r_str_home (NULL);
+			else homepath = r_str_home (path+6);
+			if (homepath) path = (const char *)homepath;
+		}
+	}
+
+	if (!r_file_is_directory (path)){
+		p = strrchr(path, '/');
+		if (p){
+			off = p - path;
+			d = (char *) calloc (1, off+1);
+			if (!d) return;
+			memcpy (d, path, off);
+			path = (const char *)d;
+			pattern = strdup (p+1);
+		}else {
+			pattern = strdup (path);
+			path = ".";
+		}
+	} else pattern = strdup ("*");
 	if (r_file_is_regular (path)) {
 		showfile (0, path, path, printfmt);
+		free (homepath);
+		free (pattern);
+		free (d);
 		return;
 	}
 	files = r_sys_dir (path);
@@ -118,12 +155,17 @@ R_API void r_core_syscmd_ls(const char *input) {
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_concat (strdup (dir), name);
 		if (!n) break;
-		if (*n) showfile (nth, n, name, printfmt);
+		if (r_str_glob(name, pattern)){
+			if (*n) showfile (nth, n, name, printfmt);
+			nth++;
+		}
 		free (n);
-		nth++;
 	}
 	if (printfmt == FMT_JSON) r_cons_printf ("]");
 	free (dir);
+	free (d);
+	free (homepath);
+	free (pattern);
 	r_list_free (files);
 }
 
@@ -140,4 +182,17 @@ R_API void r_core_syscmd_cat(const char *file) {
 		} else eprintf ("No such file or directory\n");
 		free (filename);
 	} else eprintf ("Usage: cat [file]\n");
+}
+
+R_API void r_core_syscmd_mkdir(const char *dir) {
+	const char *p = strchr (dir, ' ');
+	if (p) {
+		char *dirname = strdup (p+1);
+		dirname = r_str_chop (dirname);
+		if (!r_sys_mkdir (dirname)) {
+			if (r_sys_mkdir_failed ())
+				eprintf ("Cannot create \"%s\"\n", dirname);
+		}
+		free (dirname);
+	} else eprintf ("Usage: mkdir [directory]\n");
 }

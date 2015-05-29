@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2015 - Fedor Sakharov */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -17,7 +17,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 
@@ -34,7 +34,7 @@ static int load(RBinFile *arch) {
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
 	if (!arch || !arch->o) return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? R_TRUE: R_FALSE;
 }
 
@@ -183,62 +183,63 @@ static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0(RBinInfo);
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->bclass, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "coff", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, "COFF (Executable file)", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS);
+	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->rclass = strdup ("coff");
+	ret->type = strdup ("COFF (Executable file)");
+	ret->os = strdup ("any");
+	ret->subsystem = strdup ("any");
 	ret->big_endian = obj->endian;
 	ret->has_va = R_FALSE;
 	ret->dbg_info = 0;
 
-	if (r_coff_is_stripped (obj))
+	if (r_coff_is_stripped (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
-	else {
-		if (!!!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG))
+	} else {
+		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG))
 			ret->dbg_info |= R_BIN_DBG_RELOCS;
-		if (!!!(obj->hdr.f_flags & COFF_FLAGS_TI_F_LNNO))
+		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_LNNO))
 			ret->dbg_info |= R_BIN_DBG_LINENUMS;
-		if (!!!(obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC))
+		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC))
 			ret->dbg_info |= R_BIN_DBG_SYMS;
 	}
 
 	switch (obj->hdr.f_magic) {
 	case COFF_FILE_MACHINE_I386:
-		strncpy(ret->machine, "i386", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("i386");
+		ret->arch = strdup ("x86");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_AMD64:
-		strncpy(ret->machine, "AMD 64", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("AMD64");
+		ret->arch = strdup ("x86");
 		ret->bits = 64;
 		break;
 	case COFF_FILE_MACHINE_H8300:
-		strncpy(ret->machine, "H8300", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "h8300", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("H8300");
+		ret->arch = strdup ("h8300");
 		ret->bits = 16;
 		break;
-
 	case COFF_FILE_TI_COFF:
-		if (obj->target_id == COFF_FILE_MACHINE_TMS320C54) {
-			strncpy(ret->machine, "c54x", R_BIN_SIZEOF_STRINGS);
-			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
+		switch (obj->target_id) {
+		case COFF_FILE_MACHINE_TMS320C54:
+			ret->machine = strdup ("c54x");
+			ret->arch = strdup ("tms320");
 			ret->bits = 32;
-		} else if (obj->target_id == COFF_FILE_MACHINE_TMS320C55) {
-			strncpy(ret->machine, "c55x", R_BIN_SIZEOF_STRINGS);
-			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
+			break;
+		case COFF_FILE_MACHINE_TMS320C55:
+			ret->machine = strdup ("c55x");
+			ret->arch = strdup ("tms320");
 			ret->bits = 32;
-		} else if (obj->target_id == COFF_FILE_MACHINE_TMS320C55PLUS) {
-			strncpy(ret->machine, "c55x+", R_BIN_SIZEOF_STRINGS);
-			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
+			break;
+		case COFF_FILE_MACHINE_TMS320C55PLUS:
+			ret->machine = strdup ("c55x+");
+			ret->arch = strdup ("tms320");
 			ret->bits = 32;
+			break;
 		}
 		break;
 	default:
-		strncpy (ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("unknown");
 	}
 
 	return ret;

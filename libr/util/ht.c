@@ -61,7 +61,13 @@
 
 static const struct {
 // XXX: this can be ut32 ...
-   ut32 max_entries, size, rehash;
+   //ut32 max_entries, size, rehash;
+#if HT64
+   ut64
+#else
+   ut32
+#endif
+   max_entries, size, rehash;
 } hash_sizes[] = {
     { 2,		5,		3	  },
     { 4,		7,		5	  },

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -53,7 +53,7 @@ static int check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	// XXX: this may be wrong if check_bytes is true
 	return R_NOTNULL;
@@ -82,22 +82,23 @@ static RList *strings(RBinFile *arch) {
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	PebbleAppInfo pai;
-	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai))) {
+	memset (&pai, 0, sizeof (pai));
+	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai));
+	if (reat != sizeof (pai)) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->lang = NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->type, "pebble", sizeof (ret->type)-1); // asm.arch
-	strncpy (ret->bclass, pai.name, sizeof (ret->bclass)-1);
-	strncpy (ret->rclass, pai.company, sizeof (ret->rclass)-1); // file.type
-	strncpy (ret->os, "rtos", sizeof (ret->os)-1);
-	strncpy (ret->subsystem, "pebble", sizeof (ret->subsystem)-1);
-	strncpy (ret->machine, "watch", sizeof (ret->machine)-1);
-	strcpy (ret->arch, "arm"); // ARM THUMB ONLY
+	ret->file = strdup (arch->file);
+	ret->type = strdup ("pebble");
+	ret->bclass = r_str_ndup (pai.name, 32);
+	ret->rclass = r_str_ndup (pai.company, 32);
+	ret->os = strdup ("rtos");
+	ret->subsystem = strdup ("pebble");
+	ret->machine = strdup ("watch");
+	ret->arch = strdup ("arm"); // thumb only
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;
@@ -110,6 +111,7 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai;
+	memset (&pai, 0, sizeof (pai));
 	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;

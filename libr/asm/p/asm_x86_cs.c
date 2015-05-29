@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #define USE_ITER_API 0
 
@@ -49,8 +49,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	if (a->syntax == R_ASM_SYNTAX_ATT)
+	if (a->syntax == R_ASM_SYNTAX_ATT) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+	} else {
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+	}
 	op->size = 1;
 #if USE_ITER_API
 	{
@@ -82,6 +85,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
 		}
 	}
+	if (a->syntax == R_ASM_SYNTAX_JZ) {
+		if (!strncmp (op->buf_asm, "je ", 3)) {
+			memcpy (op->buf_asm, "jz", 2);
+		} else if (!strncmp (op->buf_asm, "jne ", 4)) {
+			memcpy (op->buf_asm, "jnz", 3);
+		}
+	}
 #if USE_ITER_API
 	/* do nothing because it should be allocated once and freed in the_end */
 #else
@@ -107,8 +117,6 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 };
 
 
-extern const char *X86_group_name(csh handle, unsigned int id);
-
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
@@ -121,7 +129,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 			continue;
 		if (id == X86_GRP_MODE64)
 			continue;
-		name = X86_group_name (cd, id);
+		name = cs_group_name (cd, id);
 		if (!name) return 1;
 		if (name && !strstr (a->features, name)) {
 			return 0;

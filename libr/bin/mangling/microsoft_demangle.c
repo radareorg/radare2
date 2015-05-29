@@ -183,7 +183,10 @@ int get_template(char *buf, SStrInfo *str_info)
 			copy_string(&type_code_str, ", ", 0);
 		}
 
-		get_type_code_string(buf, &i, &str_type_code);
+		if (get_type_code_string(buf, &i, &str_type_code) != eDemanglerErrOK) {
+			len = 0;
+			goto get_template_err;
+		}
 		copy_string(&type_code_str, str_type_code, 0);
 
 		buf += i;
@@ -203,7 +206,7 @@ int get_template(char *buf, SStrInfo *str_info)
 	str_info->str_ptr = type_code_str.type_str;
 	str_info->len = type_code_str.curr_pos;
 
-	get_template_err:
+get_template_err:
 	it = r_list_iterator (abbr_names);
 	r_list_foreach (abbr_names, it, tmp) {
 		R_FREE(tmp);
@@ -407,10 +410,18 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		r_list_append(names_l, str_info);
 
 		read_len += len;
-		prev_pos = curr_pos + 1;
-		curr_pos = strchr(curr_pos + 1, '@');
-		if (curr_pos)
-			read_len++;
+		if ((len == 1)) {
+			if (*(prev_pos + 1) == '@') {
+				prev_pos = curr_pos;
+			} else {
+				prev_pos++;
+			}
+		} else {
+			prev_pos = curr_pos + 1;
+			curr_pos = strchr(curr_pos + 1, '@');
+			if (curr_pos)
+				read_len++;
+		}
 	}
 
 get_namespace_and_name_err:
@@ -518,17 +529,6 @@ DEF_STATE_ACTION(_)
 // or +2 -> skip abbreviated_num + '@'
 #define GET_USER_DEF_TYPE_NAME(data_struct_str) { \
 	copy_string(type_code_str, data_struct_str, 0); \
-	if (isdigit((int)*state->buff_for_parsing)) { \
-		char *tmp = r_list_get_n(abbr_names, *state->buff_for_parsing - '0'); \
-		if (!tmp) { \
-			state->err = eTCStateMachineErrUncorrectTypeCode; \
-			return; \
-		} \
-		copy_string(type_code_str, tmp, 0); \
-		state->amount_of_read_chars += 1; \
-		state->buff_for_parsing += 1; \
-		return; \
-	} \
 \
 	check_len = get_namespace_and_name(state->buff_for_parsing, type_code_str, 0); \
 	if (check_len) { \
@@ -795,7 +795,8 @@ DEF_STATE_ACTION(P)
 				case 'J': call_conv = "__fastcall __declspec(dllexport)"; break;
 				case 'K': call_conv = "default (none given)"; break;
 				default:
-					state->err = eDemanglerErrUncorrectMangledSymbol;
+					// XXX unify error messages into a single enum
+					state->err = (ETCStateMachineErr)eDemanglerErrUncorrectMangledSymbol;
 					break;
 			}
 
@@ -873,7 +874,8 @@ DEF_STATE_ACTION(P)
 			}
 
 			if (*(state->buff_for_parsing) != 'Z') {
-				state->state = eTCStateMachineErrUnsupportedTypeCode;
+				// XXX: invalid enum cast conversion
+				state->state = (ETCState) eTCStateMachineErrUnsupportedTypeCode;
 				goto FUNCTION_POINTER_err;
 			}
 
@@ -1085,6 +1087,8 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 	char *tmp = 0;
 	char *ptr64 = 0;
 	char *storage_class = 0;
+
+	type_code_str.type_str = NULL;
 
 	if (!init_type_code_str_struct(&func_str)) {
 		err = eDemanglerErrMemoryAllocation;

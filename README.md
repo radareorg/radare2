@@ -13,10 +13,6 @@
 
 [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416)
 
-# Issues and Pull Requests statistics
-
-[![Throughput Graph](https://graphs.waffle.io/radare/radare2/throughput.svg)](https://waffle.io/radare/radare2/metrics) 
-
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
@@ -35,9 +31,10 @@ radare2 is portable.
 
 Architectures:
 
-  6502, 8051, arm, arc, avr, bf, tms320 (c54x, c55x, c55+), gameboy
-  csr, dcpu16, dalvik, i8080, mips, m68k, mips, msil, snes, nios II,
-  sh, sparc, rar, powerpc, i386, x86-64, H8/300, malbolge, T8200
+6502, 8051, CRIS, H8/300, LH5801, LH5801, T8200, arc, arm, avr, bf, blackfin,
+csr, dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips,
+msil, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), x86-64,
+zimg.
 
 File Formats:
 
@@ -124,6 +121,12 @@ html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
     $ r2 -c=H /bin/ls
+    
+To use the webserver on Windows, you require a cmd instance 
+with administrator rights. To start the webserver use command
+in the project root.
+
+    radare2.exe -c=H rax2.exe
 
 # Pointers
 

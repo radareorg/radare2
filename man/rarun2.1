@@ -16,34 +16,64 @@ It is useful when you have to run a program using long arguments or pass long da
 .Pp
 The rr2 (rarun2) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
 .Bl -tag -width Fl
-.It Ar program
-path to program to be executed
-.It Ar stdout
-select file to replace stdout file descriptor
-.It Ar stdin
-select file to read data from stdin
-.It Ar input
-set string to be passed to the program via stdin
+.It Ar arg[0-3]
+set value for argument N passed to the program
+.It Ar aslr
+enable or disable ASLR
+.It Ar bits
+set 32 or 64 bit (if the architecture supports it)
 .It Ar chdir
 change directory before executing the program
 .It Ar chroot
 run the program in chroot. requires some previous setup
-.It Ar preload
-preload a library (not supported on Windows, only linux,osx,bsd)
+.It Ar core
+set no limit the core file size 
+.It Ar connect
+connect stdin/stdout/stderr to a socket
+.It Ar envfile
+set a file with lines like `var=value` to be used as env
+.It Ar input
+set string to be passed to the program via stdin
 .It Ar libpath
 override path where the dynamic loader will look for shared libraries
-.It Ar setuid
-set process uid
+.It Ar listen
+bound stdin/stdout/stderr to a listening socket
+.It Ar maxstack
+set the maximum size for the stack
+.It Ar maxproc
+set the maximum number of processes
+.It Ar maxfd
+set the maximum number of file descriptors
+.It Ar nice
+set the niceness level of the process
+.It Ar preload
+preload a library (not supported on Windows, only linux,osx,bsd)
+.It Ar program
+path to program to be executed
+.It Ar r2preload
+preload with libr2
+.It Ar setenv
+set value for given environment variable
+.It Ar setegid
+set effective process group id
 .It Ar seteuid
 set effective process uid
 .It Ar setgid
 set process group id
-.It Ar setegid
-set effective process group id
-.It Ar setenv
-set value for given environment variable
-.It Ar arg[0-3]
-set value for argument N passed to the program
+.It Ar setuid
+set process uid
+.It Ar sleep
+sleep for the given amount of seconds
+.It Ar stdin
+select file to read data from stdin
+.It Ar stdout
+select file to replace stdout file descriptor
+.It Ar system
+execute the given command
+.It Ar timeout
+set a timeout
+.It Ar unsetenv
+unset the whole environnement
 .El
 .Sh EXAMPLES
 Sample rarun2 script

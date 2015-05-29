@@ -1,18 +1,18 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2014-2015 - condret, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include "../arch/z80-cr/z80-cr.c"
+#include "../arch/z80_cr/z80_cr.c"
 
 static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass (op, buf, len);
 }
 
 RAsmPlugin r_asm_plugin_z80_cr = {
-	.name = "z80-cr",
+	.name = "z80.cr",
 	.desc = "Zilog Z80",
 	.license = "LGPL",
 	.arch = "z80",

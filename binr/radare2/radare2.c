@@ -69,17 +69,22 @@ static int verify_version(int show) {
 // we should probably move this functionality into the r_debug API
 // r_debug_get_baddr
 static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
+	char *abspath;
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc)
 		return 0LL;
 	r_debug_attach (r->dbg, r->io->desc->fd);
 	r_debug_map_sync (r->dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) abspath = strdup (file);
 	r_list_foreach (r->dbg->maps, iter, map) {
-		if (!strcmp (file, map->name)) {
+		if (!strcmp (abspath, map->name)) {
+			free (abspath);
 			return map->addr;
 		}
 	}
+	free (abspath);
 	// fallback resolution (osx/w32?)
 	// we asume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (r->dbg->maps, iter, map) {
@@ -91,9 +96,10 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 }
 
 static int main_help(int line) {
-	if (line<2)
+	if (line<2) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-|--|=\n");
+			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+	}
 	if (line != 1) printf (
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
@@ -105,7 +111,7 @@ static int main_help(int line) {
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
 		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
-		" -d           use 'file' as a program to debug\n"
+		" -d           debug the executable 'file' or running process 'pid'\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
@@ -262,7 +268,6 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	r_core_init (&r);
-	r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc>1 && !strcmp (argv[1], "-")) {
@@ -365,6 +370,10 @@ int main(int argc, char **argv, char **envp) {
 	if (help>1) return main_help (2);
 	else if (help) return main_help (0);
 
+	if (r_config_get_i (r.config, "cfg.plugins")) {
+		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
+	}
+
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
 		optind = 1;
@@ -421,7 +430,12 @@ int main(int argc, char **argv, char **envp) {
 			r_core_cmd0 (&r, "aa");
 		}
 	}
-	if (argv[optind] && !strcmp (argv[optind], "=")) {
+	if (argv[optind] && r_file_is_directory (argv[optind])) {
+		if (chdir (argv[optind])) {
+			eprintf ("Cannot open directory\n");
+			return 1;
+		}
+	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
 		int sz;
 		/* stdin/batch mode */
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
@@ -696,7 +710,8 @@ int main(int argc, char **argv, char **envp) {
 			(void)r_core_run_script (&r, global_rc);
 	}
 	if (do_analysis) {
-		r_core_cmd0 (&r, "aa");
+		//r_core_cmd0 (&r, "aa");
+		r_core_cmd0 (&r, "aaa");
 		r_cons_flush ();
 	}
 	/* run -i flags */
@@ -801,7 +816,8 @@ int main(int argc, char **argv, char **envp) {
 	if (isatty(0)) {
 #endif
 		 if (r_config_get_i(r.config, "scr.histsave") &&
-				r_config_get_i(r.config, "scr.interactive"))
+				r_config_get_i(r.config, "scr.interactive") &&
+				!r_sandbox_enable (0))
 			r_line_hist_save (R2_HOMEDIR"/history");
 #if __UNIX__
 	}

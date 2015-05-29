@@ -4,7 +4,7 @@
 static void pair(const char *a, const char *b) {
 	char ws[16];
 	int al = strlen (a);
-	if (!b) b = "";
+	if (!b) return; // b = "";
 	memset (ws, ' ', sizeof (ws));
 	al = PAIR_WIDTH - al;
 	if (al<0) al = 0;
@@ -69,35 +69,29 @@ static void r_core_file_info (RCore *core, int mode) {
 		fn = info->file;
 		switch (mode) {
 		case R_CORE_BIN_JSON:
-			r_cons_printf ("\"type\":\"%s\","
-			"\"os\":\"%s\","
-			"\"arch\":\"%s\","
-			"\"bits\":%d,"
-			"\"endian\":\"%s\","
-			, STR(info->type)
-			, STR(info->os)
-			, STR(info->machine)
-			, info->bits
-			, info->big_endian? "big": "little");
+			r_cons_printf ("\"type\":\"%s\"", STR(info->type));
 			break;
 		default:
 			pair ("type", info->type);
-			pair ("os", info->os);
-			pair ("arch", info->machine);
-			pair ("bits", sdb_fmt (0, "%d", info->bits));
-			pair ("endian", info->big_endian? "big": "little");
 			break;
 		}
 	} else fn = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (cf && mode == R_CORE_BIN_JSON) {
-		r_cons_printf ("\"file\":\"%s\"", fn);
+		const char *uri = fn;
+		if (!uri) {
+			if (cf->desc && cf->desc->uri && *cf->desc->uri) {
+				uri = cf->desc->uri;
+			} else uri = "";
+		}
+		r_cons_printf (",\"file\":\"%s\"", uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
-			r_cons_printf (",\"uri\":\"%s\"", cf->desc->uri);
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			r_cons_printf (",\"size\":%"PFMT64d, r_io_desc_size (core->io, cf->desc));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 				cf->desc->flags & 7 ));
+			r_cons_printf (",\"blksz\":\"%s\"", sdb_fmt (0, "0x%"PFMT64x,
+				(ut64)core->io->desc->obsz));
 			if (cf->desc->referer && *cf->desc->referer)
 				r_cons_printf ("\"referer\":\"%s\"", cf->desc->referer);
 		}
@@ -113,17 +107,16 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("}");
 	} else if (cf && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
-		pair ("file", fn);
+		pair ("file", fn ? fn : cf->desc->uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
 			if (cf->desc->referer && *cf->desc->referer)
 				pair ("referer", cf->desc->referer);
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
 			pair ("size", sdb_fmt (0,"0x%"PFMT64x, r_io_desc_size (core->io, cf->desc)));
-			pair ("blksize", sdb_fmt (0, "0x%"PFMT64x,
+			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 				(ut64)core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
-			pair ("uri", cf->desc->uri);
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
 		if (binfile && binfile->curxtr)
@@ -133,15 +126,28 @@ static void r_core_file_info (RCore *core, int mode) {
 	}
 }
 
+static int bin_is_executable (RBinObject *obj){
+	RListIter *it;
+	RBinSection* sec;
+	r_list_foreach (obj->sections, it, sec){
+		if (R_BIN_SCN_EXECUTABLE & sec->srwx)
+			return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
-	if (core->file) {
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	if (core->file && obj) {
 		if (mode == R_CORE_BIN_JSON)
-			r_cons_printf ("{\"bin\":");
-		r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-			mode, va, NULL, offset, NULL);
-		if (mode == R_CORE_BIN_JSON)
-			r_cons_printf (",\"core\":");
+			r_cons_printf ("{\"core\":");
 		r_core_file_info (core, mode);
+		if (bin_is_executable (obj)){
+				if (mode == R_CORE_BIN_JSON)
+					r_cons_printf (",\"bin\":");
+				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
+					mode, va, NULL, offset, NULL);
+		}
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("}\n");
 	} else eprintf ("No selected file\n");
@@ -174,6 +180,10 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("{");
 	if (!*input)
 		cmd_info_bin (core, offset, va, mode);
+	/* i* is an alias for iI* */
+	if (!strcmp (input, "*")) {
+		input = "I*";
+	}
 	while (*input) {
 		switch (*input) {
 		case 'b':
@@ -238,7 +248,16 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("\"%s\":",n); \
 	}\
 	r_core_bin_info (core,x,mode,va,NULL,offset,NULL);
-		case 'A': newline=0; r_bin_list_archs (core->bin, 1); break;
+		case 'A':
+			newline = 0;
+			if (input[1]=='j') {
+				r_cons_printf ("{");
+				r_bin_list_archs (core->bin, 'j');
+				r_cons_printf ("}\n");
+			} else {
+				r_bin_list_archs (core->bin, 1);
+			}
+			break;
 		case 'Z': RBININFO ("size",R_CORE_BIN_ACC_SIZE); break;
 		case 'S': RBININFO ("sections",R_CORE_BIN_ACC_SECTIONS); break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;
@@ -250,6 +269,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
 		case 'e': RBININFO ("entries",R_CORE_BIN_ACC_ENTRIES); break;
+		case 'M': RBININFO ("main",R_CORE_BIN_ACC_MAIN); break;
+		case 'm': RBININFO ("memory",R_CORE_BIN_ACC_MEM); break;
 		case 'z':
 			if (input[1] == 'z') {
 				/* TODO: reimplement in C to avoid forks */
@@ -294,7 +315,7 @@ static int cmd_info(void *data, const char *input) {
 				case R_CORE_BIN_RADARE: cmd_info (core, "i*IiesSz"); break;
 				case R_CORE_BIN_JSON: cmd_info (core, "iIiesSzj"); break;
 				default:
-				case R_CORE_BIN_SIMPLE: cmd_info (core, "iIiesSz"); break;
+				case R_CORE_BIN_SIMPLE: cmd_info (core, "iIiesSmz"); break;
 				}
 			}
 			break;
@@ -319,6 +340,8 @@ static int cmd_info(void *data, const char *input) {
 				"iI", "", "Binary info",
 				"ik", " [query]", "Key-value database from RBinObject",
 				"il", "", "Libraries",
+				"im", "", "Show info about predefined memory allocation",
+				"iM", "", "Show main address",
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",

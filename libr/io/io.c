@@ -192,7 +192,7 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
 		r_io_desc_add (io, desc);
 		if (io->autofd || !io->desc)
 			r_io_use_desc (io, desc);
-	} else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
+	}// else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
 
 	return desc;
 }
@@ -294,8 +294,10 @@ R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 		read_from = io->desc->plugin->name;
 		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
 	} else if (!io->desc) {
-		if (io->files && r_list_length (io->files) != 0)
+		if (io->files && r_list_length (io->files) != 0) {
 			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
+			r_sys_backtrace ();
+		}
 		read_from = "FAILED";
 		bytes_read = 0;
 	} else {
@@ -359,7 +361,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
-	if (!io) return 0;
+	if (!io || !buf || len<0)
+		return 0;
 	if (io->vio)
 		return r_io_read_cr (io, addr, buf, len);
 	if (io->sectonly && !r_list_empty (io->sections)) {
@@ -539,7 +542,7 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 // TODO. this is a physical resize
 R_API int r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin) {
-		if (io->plugin->resize) {
+		if (io->plugin->resize && io->desc) {
 			int res = io->plugin->resize (io, io->desc, newsize);
 			if (res)
 				r_io_map_truncate_update (io, io->desc->fd, newsize);
@@ -653,16 +656,21 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			ret = -1;
 		}
 	} else {
-		ret = write (io->desc->fd, buf, len);
+		if (io->desc) {
+			ret = write (io->desc->fd, buf, len);
+		} else ret = -1;
 	}
 	if (ret == -1) {
 		if (io->cached != 2) {
-			eprintf ("r_io_write: cannot write on fd %d\n", io->desc->fd);
+			eprintf ("r_io_write: cannot write on fd %d\n",
+				io->desc? io->desc->fd: -1);
 			r_io_cache_invalidate (io, io->off, io->off+1);
 		}
 	} else {
-		r_io_map_write_update (io, io->desc->fd, io->off, ret);
-		io->off += ret;
+		if (io->desc) {
+			r_io_map_write_update (io, io->desc->fd, io->off, ret);
+			io->off += ret;
+		}
 	}
 	free (data);
 	return ret;
@@ -799,11 +807,18 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
 		if (desc) {
-			r_io_map_del (io, -1);
+			if (desc == io->desc) {
+				cur = NULL;
+			}
+			r_io_map_del (io, nfd);
 			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, nfd, io->plugin);
-			if (io->plugin && io->plugin->close)
-				return io->plugin->close (desc);
+			if (io->plugin && io->plugin->close) {
+				int ret = io->plugin->close (desc);
+				if (desc == io->desc)
+					io->desc = NULL;
+				return ret;
+			}
 			r_io_desc_del (io, desc->fd);
 		}
 	}
@@ -840,6 +855,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->is_valid_offset = r_io_is_valid_offset;
 
 	bnd->desc_open = r_io_open_nomap;
+	bnd->desc_open_at = r_io_open_at;
 	bnd->desc_close = r_io_close;
 	bnd->desc_read = r_io_desc_read;
 	bnd->desc_size = r_io_desc_size;

@@ -1,10 +1,116 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_io.h>
 
 // TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
+
+// copied from riocacheread
+// ret # of bytes copied
+static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
+        int l, ret, da, db;
+        RListIter *iter;
+        RBufferSparse *c;
+
+        r_list_foreach (list, iter, c) {
+                if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
+                        if (ret>0) {
+                                da = ret;
+                                db = 0;
+                                l = c->size;
+                        } else if (ret<0) {
+                                da = 0;
+                                db = -ret;
+                                l = c->size-db;
+                        } else {
+                                da = 0;
+                                db = 0;
+                                l = c->size;
+                        }
+                        if ((l+da)>len) l = len-da;                                     //say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
+                        if (l<1) l = 1; // XXX: fail
+                        else memcpy (buf+da, c->data+db, l);
+                }
+        }
+        return len;
+}
+
+static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
+// TODO: make it more smart to reuse the already sparse items
+	RBufferSparse *s = R_NEW0 (RBufferSparse);
+	if (!s) return NULL;
+	s->from = addr;
+	s->to = addr + len;
+	s->size = len;
+	s->odata = NULL;
+	s->data = calloc (1, len);
+	if (!data) {
+		free (s);
+		return NULL;
+	}
+	if (data) {
+		memcpy (s->data, data, len);
+	} else {
+		memset (s->data, 0xff, len);
+	}
+	if (r_list_append (l, s) == NULL) return NULL;
+	return s;
+}
+
+//ret -1 if failed; # of bytes copied if success
+static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
+	RBufferSparse *s;
+	RListIter *iter;
+
+	r_list_foreach (l, iter, s) {
+		if (addr >= s->from && addr < s->to) {
+			int newlen = (addr+len) - s->to;
+			int delta = addr - s->from;
+			if (newlen> 0) {
+				// must realloc
+				ut8 *ndata = realloc (s->data, len + newlen);
+				if (ndata) {
+					s->data = ndata;	
+				} else {
+					eprintf ("sparse write fail\n");
+					return -1;
+				}
+			}
+			memcpy (s->data + delta, data, len);
+			/* write here */
+			return len;
+		}
+	}
+	if (sparse_append(l, addr, data, len) == NULL) return -1;
+	return len;
+}
+
+static int sparse_limits(RList *l, ut64 *min, ut64 *max) {
+	int set = R_FALSE;
+	RBufferSparse *s;
+	RListIter *iter;
+
+	if (min) *min = UT64_MAX;
+	
+	r_list_foreach (l, iter, s) {
+		if (set) {
+			set = R_TRUE;
+			if (min) *min = s->from;
+			if (max) *max = s->to;
+		} else {
+			if (min) {
+				if (s->from < *min)
+					*min = s->from;
+			}
+			if (max) {
+				if (s->to > *max)
+					*max = s->to;
+			}
+		}
+	}
+	return set;
+}
 
 R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
@@ -13,23 +119,40 @@ R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	return b;
 }
 
+R_API RBuffer *r_buf_new_sparse() {
+	RBuffer *b = r_buf_new ();
+	b->sparse = r_list_newf ((RListFree)free);
+	return b;
+}
+
 R_API RBuffer *r_buf_new() {
 	return R_NEW0 (RBuffer);
 }
 
 R_API const ut8 *r_buf_buffer (RBuffer *b) {
-	if (b) return b->buf;
-	return NULL;
+	if (!b) return NULL;
+	if (b->sparse)
+		return NULL;
+	return b->buf;
 }
 
 R_API ut64 r_buf_size (RBuffer *b) {
-	if (b && b->empty) return 0;
-	else if (b) return b->length;
+	if (!b) return 0LL;
+	if (b->sparse) {
+		ut64 max = 0LL;
+		if (sparse_limits (b->sparse, NULL, &max)) {
+			return max; // -min
+		}
+		return 0LL;
+	}
+	if (b->empty) return 0;
+	else return b->length;
 	return UT64_MAX;
 }
 
+// rename to new?
 R_API RBuffer *r_buf_mmap (const char *file, int flags) {
-	int rw = flags&R_IO_WRITE ? R_TRUE : R_FALSE;
+	int rw = flags & R_IO_WRITE ? R_TRUE : R_FALSE;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
 	b->mmap = r_file_mmap (file, rw, 0);
@@ -43,6 +166,7 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	return NULL; /* we just freed b, don't return it */
 }
 
+// TODO: rename to new_from_file ?
 R_API RBuffer *r_buf_file (const char *file) {
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
@@ -53,16 +177,33 @@ R_API RBuffer *r_buf_file (const char *file) {
 }
 
 R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
-	switch (whence) {
-	case 0: b->cur = b->base + addr; break;
-	case 1: b->cur = b->cur + addr; break;
-	case 2: b->cur = b->base + b->length + addr; break;
+	ut64 min, max = 0LL;
+	if (b->sparse) {
+		sparse_limits (b->sparse, &min, &max);
+		switch (whence) {
+		case R_IO_SEEK_SET: b->cur = addr; break;
+		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
+		case R_IO_SEEK_END: 
+			    if (sparse_limits (b->sparse, NULL, &max)) {
+				    return max; // -min
+			    }
+			    b->cur = max + addr; break; //b->base + b->length + addr; break;
+		}
+	} else {
+		min = b->base;
+		max = b->base + b->length;
+		switch (whence) {
+		//case 0: b->cur = b->base + addr; break;
+		case R_IO_SEEK_SET: b->cur = addr; break;
+		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
+		case R_IO_SEEK_END: b->cur = b->base + b->length + addr; break;
+		}
 	}
 	/* avoid out-of-bounds */
-	if (b->cur<b->base)
-		b->cur = b->base;
-	if ((b->cur-b->base)>b->length)
-		b->cur = b->base;
+	if (b->cur < min)
+		b->cur = min;
+	if (b->cur >= max)
+		b->cur = max;
 	return (int)b->cur;
 }
 
@@ -108,10 +249,11 @@ R_API char *r_buf_to_string(RBuffer *b) {
 R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
 	if (!b) return R_FALSE;
 	if (b->empty) b->length = b->empty = 0;
-	if (!(b->buf = realloc (b->buf, b->length+length))) {
+	if (!(b->buf = realloc (b->buf, 1+b->length+length))) {
 		return R_FALSE;
 	}
 	memmove (b->buf+b->length, buf, length);
+	b->buf[b->length+length] = 0;
 	b->length += length;
 	return R_TRUE;
 }
@@ -168,9 +310,22 @@ R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	return R_TRUE;
 }
 
+//ret copied length if successful, -1 if failed
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
-	if (!b || b->empty) return 0;
+	if (!b || b->empty)
+		return 0;
+	if (b->sparse) {
+		if (write) {
+			// create new with src + len
+			if (sparse_write (b->sparse, addr, src, len) <0) return -1;
+		} else {
+			// read from sparse and write into dst
+			memset (dst, 0xff, len);
+			if (sparse_read (b->sparse, addr, dst, len) <0) return -1;
+		}
+		return len;
+	}
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
 	if (len<1 || dst == NULL || addr > b->length)
 		return -1;
@@ -257,22 +412,26 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	return b->buf+addr;
 }
 
+//ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
 	if (!b || !buf || len<1) return 0;
 #if R_BUF_CUR != UT64_MAX
 #error R_BUF_CUR must be UT64_MAX
 #endif
-	if (addr == R_BUF_CUR)
+	if (addr == R_BUF_CUR) {
 		addr = b->cur;
-	if (addr < b->base || len<1)
-		return 0;
-	pa = addr - b->base;
-	if (pa+len > b->length) {
-		memset (buf, 0xff, len);
-		len = b->length - pa;
-		if (len<0)
+	}
+	if (!b->sparse) {
+		if (addr < b->base || len<1)
 			return 0;
+		pa = addr - b->base;
+		if (pa+len > b->length) {
+			memset (buf, 0xff, len);
+			len = b->length - pa;
+			if (len<0)
+				return 0;
+		}
 	}
 	// must be +pa, but maybe its missused?
 	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, R_FALSE);
@@ -283,6 +442,7 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_FALSE);
 }
 
+//ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 	if (!b) return 0;
 	if (b->empty) {
@@ -298,13 +458,17 @@ R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int
 }
 
 R_API void r_buf_deinit(RBuffer *b) {
+	if (b->sparse) {
+		r_list_free (b->sparse);
+		b->sparse = NULL;
+	}
 	if (b->mmap) {
 		r_file_mmap_free (b->mmap);
 		b->mmap = NULL;
 	} else free (b->buf);
 }
 
-R_API void r_buf_free(struct r_buf_t *b) {
+R_API void r_buf_free(RBuffer *b) {
 	if (!b) return;
 	r_buf_deinit (b);
 	free (b);

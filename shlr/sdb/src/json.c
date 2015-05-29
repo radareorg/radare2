@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2012-2014 - pancake */
+/* sdb - LGPLv3 - Copyright 2012-2015 - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"
@@ -84,14 +84,15 @@ SDB_API int sdb_json_unset (Sdb *s, const char *k, const char *p, ut32 cas) {
 SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
 	const char *beg[3];
 	const char *end[3];
-	int l, idx, len[3];
-	char *b, *js, *str = NULL;
+	int l, idx, len[3], jslen = 0;
+	char *b, *str = NULL;
+	const char *js;
 	Rangstr rs;
 	ut32 c;
 
-	if (!s || !k)
-		return 0; 
-	js = sdb_get (s, k, &c);
+	if (!s || !k || !v)
+		return 0;
+	js = sdb_const_get_len (s, k, &jslen, &c);
 	if (!js) {
 		b = malloc (strlen (p)+strlen (v)+8);
 		if (b) {
@@ -110,12 +111,12 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 		return 0;
 	}
 	if (cas && c != cas) {
-		free (js);
 		return 0;
 	}
 	rs = json_get (js, p);
 	if (!rs.p) {
-		char *b = malloc (strlen (js)+strlen(k)+strlen (v)+32);
+		int b_len = jslen + strlen (k) + strlen (v) + 32;
+		char *b = malloc (b_len);
 		if (b) {
 			int curlen, is_str = isstring (v);
 			const char *q = is_str?"\"":"";
@@ -127,11 +128,9 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 			strcpy (b+curlen, js+1);
 			// transfer ownership
 			sdb_set_owned (s, k, b, cas);
-			free (js);
 			return 1;
 		}
 		// invalid json?
-		free (js);
 		return 0;
 	} 
 #define WLEN(x) (int)(size_t)(end[x]-beg[x])
@@ -147,7 +146,7 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	}
 
 	beg[2] = rs.p + rs.t;
-	end[2] = js + strlen (js);
+	end[2] = js + jslen;
 	len[2] = WLEN (2);
 
 	// TODO: accelerate with small buffer in stack for small jsons
@@ -157,6 +156,8 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 		if (msz<1)
 			return 0;
 		str = malloc (msz);
+		if (!str)
+			return 0;
 		idx = len[0];
 		memcpy (str, beg[0], idx);
 		if (is_str) {
@@ -196,6 +197,7 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 			if (beg[2][0]=='"')
 				beg[2]++;
 			beg[2]++;
+			len[2]--;
 		}
 		str = malloc (len[0]+len[2]+1);
 		if (!str)
@@ -207,7 +209,6 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 		str[len[0]+len[2]] = 0;
 	}
 	sdb_set_owned (s, k, str, cas);
-	free (js);
 	return 1;
 }
 

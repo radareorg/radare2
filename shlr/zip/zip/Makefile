@@ -79,7 +79,7 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 OFILES=$(OBJS)
 
 #CFLAGS+=-g -ggdb -fPIC
-CFLAGS+=-I../../libr/include -I../include/
+CFLAGS+=-I../../../libr/include -I../include/
 LDFLAGS+=-L../../../libr/util
 LINKFLAGS=../zlib/libr_z.a
 #LDFLAGS=-shared

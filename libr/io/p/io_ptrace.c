@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -197,8 +197,17 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 						eprintf ("PIDPATH: %s\n", pidpath);
 					} else {
 						char **argv = r_str_argv (&io->referer[6], NULL);
-						pidpath = r_file_path (argv[0]);
-						r_str_argv_free (argv);
+						if (argv) {
+							pidpath = r_file_path (argv[0]);
+							r_str_argv_free (argv);
+							if (!pidpath) {
+								free (riop);
+								return NULL;
+							}
+						} else {
+							free (riop);
+							return NULL;
+						}
 					}
 				}
 				if (!pidpath) {

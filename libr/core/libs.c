@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include "r_core.h"
+#include "../config.h"
 
 #define CB(x,y) \
 static int __lib_##x##_cb(RLibPlugin *pl, void *user, void *data) { \
@@ -43,13 +44,19 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+#if R2_LOADLIBS
 	/* TODO: all those default plugin paths should be defined in r_lib */
+	if (!r_config_get_i (core->config, "cfg.plugins")) {
+		return R_FALSE;
+	}
 	if (!where) where = -1;
 	if (path) r_lib_opendir (core->lib, path);
-	if (where & R_CORE_LOADLIBS_CONFIG)
+	if (where & R_CORE_LOADLIBS_CONFIG) {
 		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
-	if (where & R_CORE_LOADLIBS_ENV)
+	}
+	if (where & R_CORE_LOADLIBS_ENV) {
 		r_lib_opendir (core->lib, getenv (R_LIB_ENV));
+	}
 	if (where & R_CORE_LOADLIBS_HOME) {
 		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
 		// eprintf ("OPENDIR (%s)\n", homeplugindir);
@@ -61,5 +68,6 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-extras/"R2_VERSION);
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
 	}
+#endif
 	return R_TRUE;
 }

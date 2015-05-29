@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -17,7 +17,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
@@ -32,11 +32,12 @@ static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 }
 
 static int load(RBinFile *arch) {
+	void *res;
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
 	if (!arch || !arch->o) return R_FALSE;
- 	void *res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+ 	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
 	if (!arch->o || !res) {
 		MACH0_(mach0_free) (res);
@@ -116,17 +117,26 @@ static RList* sections(RBinFile *arch) {
 }
 
 static RList* symbols(RBinFile *arch) {
-	struct symbol_t *symbols = NULL;
-	RList *ret = r_list_new ();
-	RBinSymbol *ptr = NULL;
+	struct MACH0_(obj_t) *bin;
 	int i;
+	struct symbol_t *symbols = NULL;
+	RBinSymbol *ptr = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
-
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
+	RList *ret = r_list_newf (free);
+	const char *lang = "c";
+	int wordsize = 16;
+	if (!ret)
 		return NULL;
+	if (!obj || !obj->bin_obj) {
+		free (ret);
+		return NULL;
+	}
+	wordsize = MACH0_(get_bits) (obj->bin_obj);
 
-	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj)))
+	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
+	}
+	bin = (struct MACH0_(obj_t) *) obj->bin_obj;
 	for (i = 0; !symbols[i].last; i++) {
 		if (!symbols[i].name[0] || symbols[i].addr<100) continue;
 		if (!(ptr = R_NEW0 (RBinSymbol)))
@@ -141,15 +151,30 @@ static RList* symbols(RBinFile *arch) {
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset+obj->boffset;
 		ptr->size = symbols[i].size;
+		if (wordsize == 16) {
+			// if thumb, hint non-thumb symbols
+			if (!(ptr->paddr & 1)) {
+				ptr->bits = 32;
+			}
+		}
 		ptr->ordinal = i;
+		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
+		if (!strncmp (ptr->name, "type.", 5)) {
+			lang = "go";
+		}
 		r_list_append (ret, ptr);
 	}
+	bin->lang = lang;
 	free (symbols);
 
 	return ret;
 }
 
 static RList* imports(RBinFile *arch) {
+	const char *_objc_class = "_OBJC_CLASS_$";
+	const int _objc_class_len = strlen (_objc_class);
+	const char *_objc_metaclass = "_OBJC_METACLASS_$";
+	const int _objc_metaclass_len = strlen (_objc_metaclass);
 	struct MACH0_(obj_t) *bin = arch ? arch->o->bin_obj : NULL;
 	struct import_t *imports = NULL;
 	const char *name, *type;
@@ -163,18 +188,18 @@ static RList* imports(RBinFile *arch) {
 
 	if (!(imports = MACH0_(get_imports) (arch->o->bin_obj)))
 		return ret;
+	bin->has_canary = R_FALSE;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		name = imports[i].name;
 		type = "FUNC";
 
-		// Objective-C class and dbginfoclass imports.
-		if (!strncmp (name, "_OBJC_CLASS_$", strlen ("_OBJC_CLASS_$"))) {
-			name += strlen ("_OBJC_CLASS_$");
+		if (!strncmp (name, _objc_class, _objc_class_len)) {
+			name += _objc_class_len;
 			type = "OBJC_CLASS";
-		} else if (!strncmp (name, "_OBJC_METACLASS_$", strlen ("_OBJC_METACLASS_$"))) {
-			name += strlen ("_OBJC_METACLASS_$");
+		} else if (!strncmp (name, _objc_metaclass, _objc_metaclass_len)) {
+			name += _objc_metaclass_len;
 			type = "OBJC_METACLASS";
 		}
 
@@ -187,6 +212,9 @@ static RList* imports(RBinFile *arch) {
 		ptr->ordinal = imports[i].ord;
 		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
 			bin->imports_by_ord[ptr->ordinal] = ptr;
+ 		if (!strcmp (name, "__stack_chk_fail") ) {
+			bin->has_canary = R_TRUE;
+		}
 		r_list_append (ret, ptr);
 	}
 	free (imports);
@@ -251,9 +279,8 @@ static RList* libs(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	int i;
+	struct MACH0_(obj_t) *bin = NULL;
 	char *str;
-	struct symbol_t *symbols = NULL;
 	RBinInfo *ret;
 	
 	if (!arch || !arch->o)
@@ -263,31 +290,23 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!ret)
 		return NULL;
 
-	ret->lang = "c";
+	bin = arch->o->bin_obj;
 	if (arch->file)
-		strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	else *ret->file = 0;
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+		ret->file = strdup (arch->file);
 	if ((str = MACH0_(get_class) (arch->o->bin_obj))) {
-		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
+		ret->bclass = str;
 	}
-	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, MACH0_(get_os) (arch->o->bin_obj),
-		R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
-	if ((str = MACH0_(get_cputype) (arch->o->bin_obj))) {
-		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
+	if (bin) {
+		ret->has_canary = bin->has_canary;
+		ret->dbg_info = bin->dbg_info;
+		ret->lang = bin->lang;
 	}
-	if ((str = MACH0_(get_cpusubtype) (arch->o->bin_obj))) {
-		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = MACH0_(get_filetype) (arch->o->bin_obj))) {
-		strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
+	ret->rclass = strdup ("mach0");
+	ret->os = strdup (MACH0_(get_os)(arch->o->bin_obj));
+	ret->subsystem = strdup ("darwin");
+	ret->arch = MACH0_(get_cputype) (arch->o->bin_obj);
+	ret->machine = MACH0_(get_cpusubtype) (arch->o->bin_obj);
+	ret->type = MACH0_(get_filetype) (arch->o->bin_obj);
 	ret->bits = 32;
 	ret->big_endian = 0;
 	if (arch && arch->o && arch->o->bin_obj) {
@@ -296,18 +315,6 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->bits = MACH0_(get_bits) (arch->o->bin_obj);
 		ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	}
-	ret->dbg_info = 0;
-
-	// if contains a symbol named radr:// the file is stripped
-	if (!(symbols = MACH0_(get_symbols) (arch->o->bin_obj)))
-		return ret;
-	for (i = 0; !symbols[i].last; i++) {
-		if (!strncmp (symbols[i].name, "radr://", 7)) {
-			ret->dbg_info = 1; // stripped
-			break;
-		}
-	}
-	free (symbols);
 
 	ret->has_va = R_TRUE;
 	ret->has_pi = MACH0_(is_pie) (arch->o->bin_obj);
@@ -510,7 +517,11 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = MACH0_(get_main) (arch->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		ret->paddr = ret->vaddr = addr;
+		//if (arch->o->info && arch->o->info->bits == 16) {
+		// align for thumb
+		ret->vaddr = ((addr >>1)<<1);
+		//}
+		ret->paddr = ret->vaddr;
 		break;
 	}
 	return ret;

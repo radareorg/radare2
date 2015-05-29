@@ -429,7 +429,11 @@ function render_instructions(instructions) {
     // ins.offset = "0x" + ins.offset.toString(16);
     if (ins.comment === undefined || ins.comment === null) ins.comment = "";
     else {
-      ins.comment = atob(ins.comment);
+      try {
+        ins.comment = atob(ins.comment);
+      } catch(e) {
+        console.log(ins.comment);
+      }
     }
     var dom = document.createElement('div');
     if (asm_lines) dom.className = "instructionbox enyo-selectable lines";
@@ -584,8 +588,8 @@ function html_for_instruction(ins) {
     var vars = JSON.parse(results[1]);
     var fvars = [];
     for (var i in vars) {
-      idump += '<div class="ec_flag">; ' + vars[i].kind + " " + results[1][i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + results[1][i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(results[1][i].name) + "</span> @ " + results[1][i].ref + '</div>';
-      fvars[fvars.length] = {name: results[1][i].name, id:  address_canonicalize(offset) + "_" + results[1][i].ref};
+      idump += '<div class="ec_flag">; ' + vars[i].kind + " " + vars[i].type  + " <span class='fvar id_" + address_canonicalize(offset) + "_" + vars[i].ref + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(vars[i].name) + "</span> @ " + vars[i].ref + '</div>';
+      fvars[fvars.length] = {name: vars[i].name, id:  address_canonicalize(offset) + "_" + vars[i].ref};
     }
     r2.varMap[ins.fcn_addr] = fvars;
     var args = JSON.parse(results[2]);
@@ -643,12 +647,12 @@ function html_for_instruction(ins) {
     for (var i in r2.varMap[ins.fcn_addr]) {
       var var_name = r2.varMap[ins.fcn_addr][i].name;
       var var_id = r2.varMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(var_name, "<span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span>");
+      opcode = opcode.replace(" " + var_name + " ", " <span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
     }
     for (var i in r2.argMap[ins.fcn_addr]) {
       var arg_name = r2.argMap[ins.fcn_addr][i];
       var arg_id = r2.argMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(arg_name, "<span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span>");
+      opcode = opcode.replace(" " + arg_name + " ", " <span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
     }
   }
 
@@ -668,6 +672,9 @@ function html_for_instruction(ins) {
     idump += '<div class="instructiondesc ec_' + ins.type + '">' + opcode + '</div> ';
   } else {
     idump += '<div class="instructiondesc">' + opcode + '</div> ';
+  }
+  if (ins.ptr_info) {
+    idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '">' + escapeHTML(ins.ptr_info) + '</span>';
   }
 
   if (ins.comment && asm_cmtright) {
@@ -691,7 +698,7 @@ var escapeHTML = (function () {
   'use strict';
   var chr = { '"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;' };
   return function (text) {
-    return text.replace(/[\"&<>]/g, function (a) { return chr[a]; });
+    return text? text.replace(/[\"&<>]/g, function (a) { return chr[a]; }): "";
   };
 }());
 
@@ -785,6 +792,7 @@ function fnum(a) {
 function get_address_from_class(t, type) {
   if (type === undefined) type = "addr";
   var prefix = type+"_";
+if (!t) return undefined;
   var l = t.className.split(" ").filter(function(x) { return x.substr(0,prefix.length) == type+"_"; });
   if (l.length != 1) return undefined;
   return l[0].split("_")[1].split(" ")[0];
@@ -814,7 +822,7 @@ Element.prototype.documentOffsetTop = function () {
 
 function scroll_to_address(address) {
   var elements = $(".insaddr.addr_" + address);
-  var top = elements[0].documentOffsetTop() - ( window.innerHeight / 2 );
+  var top = elements[0].documentOffsetTop() - window.innerHeight / 2;
   top = Math.max(0,top);
   $("#main_panel").scrollTo({'top':top, 'left':0});
 }

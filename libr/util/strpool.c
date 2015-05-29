@@ -26,9 +26,22 @@ R_API char *r_strpool_empty (RStrpool *p) {
 R_API char *r_strpool_alloc (RStrpool *p, int l) {
 	char *ret = p->str+p->len;
 	if ((p->len+l)>=p->size) {
-		p->size += R_STRPOOL_INC;
+		ut64 osize = p->size;
+		if (l>=R_STRPOOL_INC) {
+			p->size += l + R_STRPOOL_INC;
+		} else {
+			p->size += R_STRPOOL_INC;
+		}
+		if (p->size < osize) {
+			eprintf ("Underflow!\n");
+			p->size = osize;
+			return NULL;
+		}
 		ret = realloc (p->str, p->size);
-		if (!ret) return NULL;
+		if (!ret) {
+			p->size = osize;
+			return NULL;
+		}
 		p->str = ret;
 		ret += p->len;
 	}
@@ -36,12 +49,23 @@ R_API char *r_strpool_alloc (RStrpool *p, int l) {
 	return ret;
 }
 
+R_API int r_strpool_memcat(RStrpool *p, const char *s, int len) {
+	char *ptr = r_strpool_alloc (p, len);
+	if (!ptr) return -1;
+	memcpy (ptr, s, len);
+	return (size_t)(ptr-p->str);
+}
+
 R_API int r_strpool_append(RStrpool *p, const char *s) {
 	int l = strlen (s)+1;
-	char *ptr = r_strpool_alloc (p, l);
-	if (!ptr) return -1;
-	memcpy (ptr, s, l);
-	return (size_t)(ptr-p->str);
+	return r_strpool_memcat(p, s, l);
+}
+
+R_API int r_strpool_ansi_chop(RStrpool *p, int n){
+	/* p->str need not be a c-string */
+	int i = r_str_ansi_chop(p->str, p->len, n);
+	p->len = i;
+	return i;
 }
 
 R_API void r_strpool_free (RStrpool *p) {

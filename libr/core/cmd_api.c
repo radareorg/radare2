@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
@@ -20,9 +20,8 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 
 R_API RCmd *r_cmd_new () {
 	int i;
-	RCmd *cmd = R_NEW (RCmd);
+	RCmd *cmd = R_NEW0 (RCmd);
 	if (!cmd) return cmd;
-
 	cmd->lcmds = r_list_new ();
 	for (i=0;i<NCMDS;i++)
 		cmd->cmds[i] = NULL;
@@ -174,10 +173,14 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			if (cp->call (cmd->data, input))
 				return R_TRUE;
 		}
-		c = cmd->cmds[(ut8)input[0]];
-		if (c && c->callback)
-			ret = c->callback (cmd->data, input+1);
-		else ret = -1;
+		if (input[0] == -1) {
+			return -1;
+		}
+		c = cmd->cmds[((ut8)input[0]) & 0xff];
+		if (c && c->callback) {
+			const char *inp = (input && *input)? input+1: "";
+			ret = c->callback (cmd->data, inp);
+		} else ret = -1;
 	}
 	return ret;
 }
@@ -254,7 +257,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		return R_FALSE;
 	}
 
-	if (name[strlen (name)-1]==')') {
+	if (*name && name[1] && name[strlen (name)-1]==')') {
 		eprintf ("r_cmd_macro_add: missing macro body?\n");
 		free (name);
 		return -1;
@@ -298,7 +301,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro->nargs = r_str_word_set0 (ptr+1);
 	}
 
+#if 0
 	if (pbody) {
+#endif
 		for (lidx=0; pbody[lidx]; lidx++) {
 			if (pbody[lidx]==',')
 				pbody[lidx]='\n';
@@ -340,8 +345,8 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				codelen += lbufp;
 			}
 		}
-#endif
 	}
+#endif
 	if (macro_update == 0)
 		r_list_append (mac->macros, macro);
 	free (name);

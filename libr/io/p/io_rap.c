@@ -140,6 +140,9 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 	}
 	listenmode = (*ptr==':');
 	*port++ = 0;
+	if (!*port) {
+		return NULL;
+	}
 	p = atoi (port);
 	if ((file = strchr (port+1, '/'))) {
 		*file = 0;

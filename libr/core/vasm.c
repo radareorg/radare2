@@ -29,6 +29,7 @@ static int readline_callback(void *_a, const char *str) {
 			);
 	} else {
 		r_asm_code_free (a->acode);
+		r_asm_set_pc (a->core->assembler, a->core->offset);
 		a->acode = r_asm_massemble (a->core->assembler, str);
 		r_cons_printf ("%d> %s\n", a->acode? a->acode->len: 0, str);
 		if (a->acode && a->acode->len)
@@ -39,7 +40,7 @@ static int readline_callback(void *_a, const char *str) {
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, a->acode->buf_hex, xlen);
 		}
-		r_core_cmdf (a->core, "pd 7@b:%s @0x%"PFMT64x, a->codebuf, a->off);
+		r_core_cmdf (a->core, "pd 7@x:%s @0x%"PFMT64x, a->codebuf, a->off);
 	}
 	r_cons_flush ();
 	return 1;

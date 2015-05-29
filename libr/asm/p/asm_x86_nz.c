@@ -160,6 +160,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0xfe;
 		return l;
 	}
+	if (!strcmp (op, "ud2")) {
+		data[l++] = 0x0f;
+		data[l++] = 0x0b;
+		return l;
+	}
 	if (!strcmp (op, "rdtsc")) {
 		data[l++] = 0x0f;
 		data[l++] = 0x31;
@@ -200,7 +205,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			if (*tmp != '[')
 				arg = tmp+1;
 			else arg = tmp;
-		} 
+		}
 
 		data[l++] = 0x0f;
 		for (i=0;keys[i];i++) {
@@ -466,7 +471,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				return 0;
 			}
 			if (isnum (a, arg2)) { // reg, num
-				int n = atoi (arg2);
+				int n = getnum (a, arg2);
 				if (n>127 || n<-127) {
 					ut8 *ptr = (ut8 *)&n;
 					data[l++] = 0x81;
@@ -479,7 +484,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				} else {
 					data[l++] = 0x83;
 					data[l++] = 0xc0 | arg0 | (arg1<<3);
-					data[l++] = atoi (arg2);
+					data[l++] = getnum (a, arg2);
 				}
 				return l;
 			} else // reg, reg
@@ -512,7 +517,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					return -1;
 				}
 				if (!memcmp (arg+1, "rip", 3)) {
-					ut64 dst = r_num_math (a->num, arg+4);
+					ut64 dst = getnum (a, arg+4);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
 					data[l++] = 0xff;
@@ -564,18 +569,26 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				}
 			}
 		} else if (!strcmp (op, "inc")) {
-			if (arg[0]=='r') {
-				data[l++] = 0x48;
+			if (a->bits == 64) {
+				if (arg[0]=='r') {
+					data[l++] = 0x48;
+				}
 				data[l++] = 0xff;
 				data[l++] = 0xc0 | getreg (arg);
-			} else data[l++] = 0x40 | getreg (arg);
+			} else {
+				data[l++] = 0x40 | getreg (arg);
+			}
 			return l;
 		} else if (!strcmp (op, "dec")) {
-			if (arg[0]=='r') {
-				data[l++] = 0x48;
+			if (a->bits == 64) {
+				if (arg[0]=='r') {
+					data[l++] = 0x48;
+				}
 				data[l++] = 0xff;
 				data[l++] = 0xc8 | getreg (arg);
-			} else data[l++] = 0x48 | getreg (arg);
+			} else {
+				data[l++] = 0x48 | getreg (arg);
+			}
 			return l;
 		} else if (!strcmp (op, "push")) {
 			char *delta;
@@ -889,12 +902,11 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else if (!strcmp (op, "mov")) {
 			ut64 dst;
 			ut8 *ptr;
-			ut32 addr;
 			int pfx, arg0;
 			char *delta = NULL;
 			int argk = (*arg == '[');
-			addr = dst = r_num_math (NULL, arg2);
-			ptr = (ut8 *)&addr;
+			dst = r_num_math (NULL, arg2);
+			ptr = (ut8 *)&dst;
 			if (dst> UT32_MAX) {
 				if (a->bits==64) {
 					if (*arg=='r')
@@ -912,7 +924,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				} else {
 					eprintf ("Error: cannot encode 64bit value in 32bit mode\n");
 					return -1;
-				} 
+				}
 			}
 
 			if (!arg || !arg2) {
@@ -985,7 +997,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = getreg (arg)<<3 | r | 0x40;
 						data[l++] = 0;
 					} else data[l++] = getreg (arg) | r | 0x40;
-					data[l++] = atoi (delta) * N;
+					data[l++] = r_num_math (NULL, delta) * N;
 				} else {
 					int r = getreg (arg2);
 					if (r==4) { //ESP
@@ -1082,8 +1094,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							int op = 0xc0;
 							if (arg[1]=='h') op |= 4;
 							data[l++] = 0xc6;
-							data[l++] = op | (getreg (arg)>>1);
-							data[l++] = atoi (arg2);
+							data[l++] = op | getreg (arg);
+							data[l++] = getnum (a, arg2);
 							return l;
 						} else {
 							data[l++] = 0xb8 | getreg (arg);
@@ -1188,7 +1200,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				}
 
 				dst -= offset;
-				if (dst>-0x80 && dst<0x7f) {
+				if (-0x80 <= (dst-2) && (dst-2) <= 0x7f) {
 					/* relative byte address */
 					data[l++] = 0xeb;
 					data[l++] = (char)(dst-2);
@@ -1260,6 +1272,20 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else
 		if (!strcmp (op, "popa") || !strcmp (op, "popad")) {
 			data[l++] = 0x61;
+		} else
+		if (!strcmp (op, "cli")) {
+			data[l++] = 0xfa;
+		} else
+		if (!strcmp (op, "sti")) {
+			data[l++] = 0xfb;
+		} else
+		if (!strcmp (op, "sysret")) {
+			data[l++] = 0x0f;
+			data[l++] = 0x07;
+		} else
+		if (!strcmp (op, "sysexit")) {
+			data[l++] = 0x0f;
+			data[l++] = 0x35;
 		} else
 		if (!strcmp (op, "nop")) {
 			data[l++] = 0x90;

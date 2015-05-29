@@ -15,7 +15,7 @@ void r_list_iter_free (RListIter *list) {
 }
 
 RListIter *r_list_iter_get_next(RListIter *list) {
-	return list->n;
+	return list ? list->n : NULL;
 }
 
 void *r_list_iter_get_data(RListIter *list) {
@@ -32,7 +32,14 @@ RListIter *r_list_push (RList *list, void *item) {
 }
 
 RListIter *r_list_get_next (RListIter *list) {
-	return list->n;
+	return list ? list->n : NULL;
+}
+
+R_API void* r_list_first(RList *list) {
+	if (list && list->head) {
+		return list->head->data;
+	}
+	return NULL;
 }
 
 R_API void r_list_init(RList *list) {
@@ -86,23 +93,27 @@ R_API boolt r_list_delete_data (RList *list, void *ptr) {
 }
 
 R_API void r_list_delete (RList *list, RListIter *iter) {
-	r_list_split_iter (list, iter);
-	if (list->free && iter->data)
-		list->free (iter->data);
-	iter->data = NULL;
-	free (iter);
+	if (list && iter){
+		r_list_split_iter (list, iter);
+		if (list->free && iter->data)
+			list->free (iter->data);
+		iter->data = NULL;
+		free (iter);
+	}
 }
 
 R_API void r_list_split (RList *list, void *ptr) {
-	RListIter *iter = r_list_iterator (list);
-	while (iter) {
-		void *item = iter->data;
-		if (ptr == item) {
-			r_list_split_iter (list, iter);
-			free (iter);
-			break;
+	if (list){
+		RListIter *iter = r_list_iterator (list);
+		while (iter) {
+			void *item = iter->data;
+			if (ptr == item) {
+				r_list_split_iter (list, iter);
+				free (iter);
+				break;
+			}
+			iter = iter->n;
 		}
-		iter = iter->n;
 	}
 }
 
@@ -133,6 +144,7 @@ R_API int r_list_join (RList *list1, RList *list2) {
 
 R_API RList *r_list_new() {
 	RList *list = R_NEW0(RList);
+	if (!list) return NULL;
 	r_list_init (list);
 	return list;
 }
@@ -145,6 +157,7 @@ R_API RList *r_list_newf(RListFree f) {
 
 R_API RListIter *r_list_item_new (void *data) {
 	RListIter *new = R_NEW (RListIter);
+	if (!new) return NULL;
 	new->data = data;
 	return new;
 }
@@ -153,6 +166,7 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *new = NULL;
 	if (list && data) {
 		new = R_NEW (RListIter);
+		if (new == NULL) return new;
 		if (list->tail)
 			list->tail->n = new;
 		new->data = data;
@@ -167,32 +181,40 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 
 R_API RListIter *r_list_prepend(RList *list, void *data) {
 	RListIter *new = R_NEW (RListIter);
-	if (list->head)
-		list->head->p = new;
-	new->data = data;
-	new->n = list->head;
-	new->p = NULL;
-	list->head = new;
-	if (list->tail == NULL)
-		list->tail = new;
-	return new;
+	if (!new) return NULL;
+	if (list){
+		if (list->head)
+			list->head->p = new;
+		new->data = data;
+		new->n = list->head;
+		new->p = NULL;
+		list->head = new;
+		if (list->tail == NULL)
+			list->tail = new;
+		return new;
+	}
+	free (new);
+	return NULL;
 }
 
 R_API void *r_list_pop(RList *list) {
 	void *data = NULL;
 	RListIter *iter;
-	if (list->tail) {
-		iter = list->tail;
-		if (list->head == list->tail) {
-			list->head = list->tail = NULL;
-		} else {
-			list->tail = iter->p;
-			list->tail->n = NULL;
+	if (list){
+		if (list->tail) {
+			iter = list->tail;
+			if (list->head == list->tail) {
+				list->head = list->tail = NULL;
+			} else {
+				list->tail = iter->p;
+				list->tail->n = NULL;
+			}
+			data = iter->data;
+			free (iter);
 		}
-		data = iter->data;
-		free (iter);
+		return data;
 	}
-	return data;
+	return NULL;
 }
 
 R_API int r_list_del_n(RList *list, int n) {
@@ -263,12 +285,14 @@ R_API RList *r_list_clone (RList *list) {
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	RListIter *it;
 	RListIter *it2;
-	for (it = list->head; it && it->data; it = it->n) {
-		for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
-			if (cmp (it->data, it2->data)>0) {
-				void *t = it->data;
-				it->data = it2->data;
-				it2->data = t;
+	if (list) {
+		for (it = list->head; it && it->data; it = it->n) {
+			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+				if (cmp (it->data, it2->data)>0) {
+					void *t = it->data;
+					it->data = it2->data;
+					it2->data = t;
+				}
 			}
 		}
 	}

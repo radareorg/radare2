@@ -81,18 +81,18 @@ typedef struct r_bin_hash_t {
 } RBinHash;
 
 typedef struct r_bin_info_t {
-	char file[R_BIN_SIZEOF_STRINGS+1];
-	char type[R_BIN_SIZEOF_STRINGS+1];
-	char bclass[R_BIN_SIZEOF_STRINGS+1];
-	char rclass[R_BIN_SIZEOF_STRINGS+1];
-	char arch[R_BIN_SIZEOF_STRINGS+1];
-	char cpu[R_BIN_SIZEOF_STRINGS+1];
-	char machine[R_BIN_SIZEOF_STRINGS+1];
-	char os[R_BIN_SIZEOF_STRINGS+1];
-	char subsystem[R_BIN_SIZEOF_STRINGS+1];
-	char rpath[R_BIN_SIZEOF_STRINGS+1];
-	char guid[R_BIN_SIZEOF_STRINGS+1];
-	char debug_file_name[R_BIN_SIZEOF_STRINGS+1];
+	char *file;
+	char *type;
+	char *bclass;
+	char *rclass;
+	char *arch;
+	char *cpu;
+	char *machine;
+	char *os;
+	char *subsystem;
+	char *rpath;
+	char *guid;
+	char *debug_file_name;
 	const char *lang;
 	int bits;
 	int has_va;
@@ -129,6 +129,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
+	RList/*<??>*/ *mem;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
@@ -196,6 +197,7 @@ typedef struct r_bin_xtr_extract_t {
 
 R_API RBinXtrData * r_bin_xtrdata_new (void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count);
 R_API void r_bin_xtrdata_free (void /*RBinXtrData*/ *data);
+R_API void r_bin_info_free (RBinInfo *rb);
 
 typedef struct r_bin_xtr_plugin_t {
 	char *name;
@@ -223,7 +225,7 @@ typedef struct r_bin_plugin_t {
 	int (*fini)(void *user);
 	Sdb * (*get_sdb)(RBinObject *obj);
 	int (*load)(RBinFile *arch);
-	void *(*load_bytes)(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
+	void *(*load_bytes)(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
 	int (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
 	int (*check)(RBinFile *arch);
@@ -242,6 +244,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*libs)(RBinFile *arch);
 	RList* (*relocs)(RBinFile *arch);
 	RList* (*classes)(RBinFile *arch);
+	RList* (*mem)(RBinFile *arch);
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
@@ -336,6 +339,14 @@ typedef struct r_bin_field_t {
 	ut64 paddr;
 	ut32 visibility;
 } RBinField;
+
+typedef struct r_bin_mem_t {	//new toy for esil-init
+	char name[R_BIN_SIZEOF_STRINGS+1];
+	ut64 addr;
+	int size;
+	int perms;
+	RList *mirrors;		//for mirror access; stuff here should only create new maps not new fds
+} RBinMem;
 
 typedef struct r_bin_dbginfo_t {
 	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
@@ -474,6 +485,7 @@ R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut
 R_API void r_bin_demangle_list(RBin *bin);
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 
+R_API RList *r_bin_get_mem (RBin *bin);
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
 extern RBinPlugin r_bin_plugin_fs;
@@ -500,6 +512,8 @@ extern RBinPlugin r_bin_plugin_ninds;
 extern RBinPlugin r_bin_plugin_xbe;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
+extern RBinPlugin r_bin_plugin_zimg;
+extern RBinPlugin r_bin_plugin_omf;
 
 #ifdef __cplusplus
 }

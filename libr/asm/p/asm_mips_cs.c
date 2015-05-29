@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 #define R_IPI static
 #include "../arch/mips/mipsasm.c"
 
@@ -12,9 +12,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int mode, n, ret = -1;
 	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (a->cpu && *a->cpu) {
-		if (!strcmp (a->cpu, "gp64")) {
-			mode |= CS_MODE_MIPSGP64;
-		} else if (!strcmp (a->cpu, "micro")) {
+		if (!strcmp (a->cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
 		} else if (!strcmp (a->cpu, "r6")) {
 			mode |= CS_MODE_MIPS32R6;

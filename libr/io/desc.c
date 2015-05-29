@@ -80,6 +80,10 @@ R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
 R_API int r_io_desc_del(RIO *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
+	io->desc = NULL;
+	if (!r_list_empty (io->files)) {
+		io->desc = r_list_first (io->files);
+	}
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (io->files, iter, d) {
 		if (d->fd == fd || fd == -1) {

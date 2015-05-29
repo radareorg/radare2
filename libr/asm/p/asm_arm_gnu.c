@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -8,7 +8,6 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include "dis-asm.h"
-#include "../arch/arm/asm-arm.h"
 #include "../arch/arm/gnu/gnu-arm.h"
 
 #if 0
@@ -176,25 +175,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return opsize;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	const int is_thumb = a->bits==16? 1: 0;
-	int opsize;
-	ut32 opcode = armass_assemble (buf, a->pc, is_thumb);
-	if (opcode==UT32_MAX)
-		return -1;
-	if (is_thumb) {
-		const int o = opcode>>16;
-		opsize = (o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
-		r_mem_copyendian (op->buf, (void *)&opcode,
-			opsize, a->big_endian);
-	} else {
-		opsize = 4;
-		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
-	}
-// XXX. thumb endian assembler needs no swap
-	return opsize;
-}
-
 RAsmPlugin r_asm_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
@@ -203,7 +183,7 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble,
+	.assemble = NULL,
 	.license = "GPL3"
 };
 

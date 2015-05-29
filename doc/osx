@@ -31,5 +31,5 @@ $ cd binr/radare2
 $ make osxsign
 
 To create the package
-cd macports
-make
+
+$ sys/osx-pkg.sh

@@ -246,6 +246,9 @@ iretq=interrupt return (64 bit)
 jb=jump short if below/not above or equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
 jcxz=jump short if ecx register is 0
+je=jump short if equal (zf=1)
+jg=jump short if greater (zf=0 and sf=of)
+jge=jump short if greater or equal (sf=of)
 jl=jump short if less/not greater (sf!=of)
 jle=jump short if less or equal/not greater ((zf=1) or (sf!=of))
 jmp=jump
@@ -253,6 +256,7 @@ jmpe=jump to ia-64 instruction set
 jmpf=jump
 jnb=jump short if not below/above or equal/not carry (cf=0)
 jnbe=jump short if not below or equal/above (cf=0 and zf=0)
+jne=jump short if not equal (zf=0)
 jnl=jump short if not less/greater or equal (sf=of)
 jnle=jump short if not less nor equal/greater ((zf=0) and (sf=of))
 jno=jump short if not overflow (of=0)

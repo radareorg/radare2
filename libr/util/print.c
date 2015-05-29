@@ -154,6 +154,7 @@ R_API RPrint *r_print_new() {
 	p->bytespace = 0;
 	p->interrupt = 0;
 	p->big_endian = CPU_ENDIAN;
+	p->datezone = 0;
 	p->col = 0;
 	p->width = 78;
 	p->cols = 16;
@@ -673,6 +674,9 @@ if (step==2) {
 				r_print_cursor (p, j, 0);
 				j += 7;
 			} else {
+				if (j>=len) {
+					break;
+				}
 				r_print_byte (p, fmt, j, buf[j]);
 				if (j%2 || !pairs) {
 					if (col==1) {
@@ -689,7 +693,7 @@ if (step==2) {
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
 		if (col==2) printfmt("|");
-		if (p->flags & R_PRINT_FLAGS_REFS) {
+		if (p && p->flags & R_PRINT_FLAGS_REFS) {
 			ut64 *foo = (ut64*)(buf+i);
 			ut64 addr = *foo;
 			if (base==32) addr &= UT32_MAX;
@@ -818,19 +822,25 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlin
 		}
 	} else if (offlines) {
 		const ut8 *o, *q;
-		int mustbreak = 0, linenum = 1;
+		int i, mustbreak = 0, linenum = 1;
 		o = q = buf;
+		i = 0;
 		do {
 			p->printf ("%d 0x%08x ", linenum,
 				addr + (int)(size_t)(q-buf));
-			for (;*q && *q != '\n'; q++);
-			if (!*q)
+			for (; i<len && *q && *q != '\n'; q++, i++) {
+				// just loop
+			}
+			if ((i+1)>=len || !*q)
 				mustbreak = 1;
-			p->write (o, (int)(size_t)(q-o));
+			if ((q-o)>0) {
+				p->write (o, (int)(size_t)(q-o));
 
+			}
 			p->printf ("\n");
 			linenum++;
 			o = ++q;
+			i++;
 		} while (!mustbreak);
 	} else {
 		p->write (buf, len);
@@ -1044,6 +1054,8 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_MOD:
+	case R_ANAL_OP_TYPE_LENGTH:
 		return p->cons->pal.math;
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_OR:
@@ -1061,6 +1073,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 		return p->cons->pal.jmp;
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_UCJMP:
+	case R_ANAL_OP_TYPE_SWITCH:
 		return p->cons->pal.cjmp;
 	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_ACMP:
@@ -1070,6 +1083,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_CCALL:
 		return p->cons->pal.call;
+	case R_ANAL_OP_TYPE_NEW:
 	case R_ANAL_OP_TYPE_SWI:
 		return p->cons->pal.swi;
 	case R_ANAL_OP_TYPE_ILL:
@@ -1078,6 +1092,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_CRET:
 	case R_ANAL_OP_TYPE_RET:
 		return p->cons->pal.ret;
+	case R_ANAL_OP_TYPE_CAST:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 		return p->cons->pal.mov;

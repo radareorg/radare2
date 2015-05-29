@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -66,6 +66,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		char *var_def = sdb_fmt (2,"%c.%s,%d,%s", kind, type, size, name);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
+//	ls_sort (DB->ht->list, mystrcmp);
 	return R_TRUE;
 }
 
@@ -113,6 +114,8 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 }
 
 R_API void r_anal_var_free (RAnalVar *av) {
+	free (av->name);
+	free (av->type);
 	free (av);
 }
 
@@ -278,11 +281,20 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 		}
 	}
 	free (varlist);
+	list->free = (RListFree)r_anal_var_free;
 	return list;
+}
+
+static int var_comparator (const RAnalVar *a, const RAnalVar *b){
+	//avoid NULL dereference
+	if (a && b)
+		return a->delta > b->delta;
+	return R_FALSE;
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind) {
 	RList *list = r_anal_var_list(anal, fcn, kind);
+	r_list_sort (list, (RListComparator)var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
 	r_list_foreach (list, iter, var) {

@@ -11,6 +11,46 @@
 
 R_LIB_VERSION(r_core);
 
+static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
+	RCore *core = (RCore*)_user;
+	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
+	if (cmd && *cmd) {
+		ut64 oaddr = core->offset;
+		ut64 addr = fcn->addr;
+		r_core_seek (core, addr, 1);
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, oaddr, 1);
+	}
+	return 0;
+}
+
+static int on_fcn_delete (void *_anal, void* _user, RAnalFunction *fcn) {
+	RCore *core = (RCore*)_user;
+	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
+	if (cmd && *cmd) {
+		ut64 oaddr = core->offset;
+		ut64 addr = fcn->addr;
+		r_core_seek (core, addr, 1);
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, oaddr, 1);
+	}
+	return 0;
+}
+
+static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const char *oname) {
+	RCore *core = (RCore*)_user;
+	const char *cmd = r_config_get (core->config, "cmd.fcn.rename");
+	if (cmd && *cmd) {
+// XXX: wat do with old name here?
+		ut64 oaddr = core->offset;
+		ut64 addr = fcn->addr;
+		r_core_seek (core, addr, 1);
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, oaddr, 1);
+	}
+	return 0;
+}
+
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	const char *cmdbp;
 	int oecho = core->cons->echo; // should be configurable by user?
@@ -74,7 +114,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
-	char *ptr, *bptr;
+	char *ptr, *bptr, *out;
 	RFlagItem *flag;
 	RIOSection *s;
 	RAnalOp op;
@@ -129,30 +169,30 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str+2);
 		case 'k':
-			if (str[2]=='{') {
-				bptr = strdup (str+3);
-				ptr = strchr (bptr, '}');
-				if (ptr != NULL) {
-					char *out;
-					ut64 ret = 0LL;
-					ptr[0] = '\0';
-					out = sdb_querys (core->sdb, NULL, 0, bptr);
-					if (out && *out) {
-						// XXX avoid recursivity here
-						if (strstr (out, "$k{")) {
-							eprintf ("Recursivity is not permitted here\n");
-						} else {
-							ret = r_num_math (core->num, out);
-						}
-					}
-					free (bptr);
-					free (out);
-					return ret;
-				}
-				free (bptr);
-			} else {
+			if (str[2]!='{') {
 				eprintf ("Expected '{' after 'k'.\n");
+				break;
 			}
+			bptr = strdup (str+3);
+			ptr = strchr (bptr, '}');
+			if (ptr == NULL) {
+				// invalid json
+				free (bptr);
+				break;
+			}
+			*ptr = '\0';
+			ret = 0LL;
+			out = sdb_querys (core->sdb, NULL, 0, bptr);
+			if (out && *out) {
+				if (strstr (out, "$k{")) {
+					eprintf ("Recursivity is not permitted here\n");
+				} else {
+					ret = r_num_math (core->num, out);
+				}
+			}
+			free (bptr);
+			free (out);
+			return ret;
 			break;
 		case '{':
 			bptr = strdup (str+2);
@@ -177,7 +217,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'v': return op.val; // immediate value
 		case 'l': return op.size;
 		case 'b': return core->blocksize;
-		case 's': return r_io_desc_size (core->io, core->file->desc);
+		case 's':
+			if (core->file) {
+				return r_io_desc_size (core->io, core->file->desc);
+			}
+			return 0LL;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
 			s = r_io_section_vget (core->io, core->offset);
@@ -204,6 +248,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		break;
 	default:
 		if (*str>'A') {
+			// NOTE: functions override flags
+			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, str);
+			if (fcn) {
+				if (ok) *ok = R_TRUE;
+				return fcn->addr;
+			}
 #if 0
 			ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
 			if (addr != 0) {
@@ -232,7 +282,7 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
-	"?", "?v", "whereis", "which", "ls", "pwd", "cat", "less",
+	"?", "?v", "whereis", "which", "ls", "mkdir", "pwd", "cat", "less",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs",
@@ -575,6 +625,7 @@ static int __disasm(void *_core, ut64 addr) {
 }
 
 static void update_sdb(RCore *core) {
+	Sdb *d;
 	RBinObject *o;
 	if (!core)
 		return;
@@ -596,17 +647,16 @@ static void update_sdb(RCore *core) {
 		core->assembler->syscall->db->refs++;
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
 	}
-	{
-		Sdb *d = sdb_ns (DB, "debug", 1);
-		core->dbg->sgnls->refs++;
-		sdb_ns_set (d, "signals", core->dbg->sgnls);
-	}
+	d = sdb_ns (DB, "debug", 1);
+	core->dbg->sgnls->refs++;
+	sdb_ns_set (d, "signals", core->dbg->sgnls);
 }
 
 // dupped in cmd_type.c
 static char *getenumname(void *_core, const char *name, ut64 val) {
 	const char *isenum;
 	RCore *core = (RCore*)_core;
+
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		const char *q = sdb_fmt (0, "%s.0x%x", name, val);
@@ -619,23 +669,29 @@ static char *getenumname(void *_core, const char *name, ut64 val) {
 
 // TODO: dupped in cmd_type.c
 static char *getbitfield(void *_core, const char *name, ut64 val) {
-	const char *isenum;
+	const char *isenum, *q, *res;
+	RCore *core = (RCore*)_core;
 	char *ret = NULL;
 	int i;
-	RCore *core = (RCore*)_core;
+
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
-		int empty = 1;
+		int isFirst = R_TRUE;
 		ret = r_str_concatf (ret, "0x%08"PFMT64x" : ", val);
-		for (i=0; i< 32; i++) {
-			if (val & (1<<i)) {
-				const char *q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
-				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
-				if (!empty)
-					ret = r_str_concat (ret, " | ");
-				if (res) ret = r_str_concat (ret, res);
-				else ret = r_str_concatf (ret, "0x%x", (1<<i));
-				empty = 0;
+		for (i=0; i < 32; i++) {
+			if (!(val & (1<<i)))
+				continue;
+			q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
+			res = sdb_const_get (core->anal->sdb_types, q, 0);
+			if (isFirst) {
+				isFirst = R_FALSE;
+			} else {
+				ret = r_str_concat (ret, " | ");
+			}
+			if (res) {
+				ret = r_str_concat (ret, res);
+			} else {
+				ret = r_str_concatf (ret, "0x%x", (1<<i));
 			}
 		}
 	} else {
@@ -798,6 +854,7 @@ R_API int r_core_init(RCore *core) {
 		return R_FALSE;
 	}
 	core->lang = r_lang_new ();
+	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->cons->editor = (RConsEditorCallback)r_core_editor;
 	core->cons->user = (void*)core;
 	core->lang->printf = r_cons_printf;
@@ -807,6 +864,9 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->anal->cb.on_fcn_new = on_fcn_new;
+	core->anal->cb.on_fcn_delete = on_fcn_delete;
+	core->anal->cb.on_fcn_rename = on_fcn_rename;
 	core->assembler->syscall = \
 		core->anal->syscall; // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
@@ -950,7 +1010,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	int ret, rnv;
 	char line[4096];
 	char prompt[64];
-	const char *filename = "";
+	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 	const char *BEGIN = r->cons->pal.prompt;
 	const char *END = r->cons->pal.reset;
@@ -965,8 +1025,11 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 	if (!r_line_singleton ()->echo)
 		*prompt = 0;
-	if (r_config_get_i (r->config, "scr.fileprompt"))
-		filename = r->io->desc->name;
+	if (r_config_get_i (r->config, "scr.promptfile")) {
+		free (filename);
+		filename = r_str_newf ("\"%s\"",
+			r_file_basename (r->io->desc->name));
+	}
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
@@ -975,29 +1038,27 @@ R_API int r_core_prompt(RCore *r, int sync) {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				"%s%s%s[%04x:%04x]>%s ",
-				filename, *filename?" ":"",
-				BEGIN, a, b, END);
+				"%s%s[%04x:%04x]>%s ",
+				filename, BEGIN, a, b, END);
 		else
 #endif
 		snprintf (prompt, sizeof (prompt),
-			"%s%s[%04x:%04x]> ",
-			filename, *filename?" ":"",
-			a, b);
+			"%s[%04x:%04x]> ",
+			filename, a, b);
 	} else {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				"%s%s%s[0x%08"PFMT64x"]>%s ",
-				filename, *filename?" ":"",
-				BEGIN, r->offset, END);
+				"%s%s[0x%08"PFMT64x"]>%s ",
+				filename, BEGIN, r->offset, END);
 		else
 #endif
 		snprintf (prompt, sizeof (prompt),
-			"%s%s[0x%08"PFMT64x"]> ",
-			filename, *filename?" ":"",
-			r->offset);
+			"%s[0x%08"PFMT64x"]> ",
+			filename, r->offset);
 	}
+	free (filename);
+	filename = NULL;
 	r_line_set_prompt (prompt);
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) return R_CORE_CMD_EXIT; // ^D
@@ -1023,7 +1084,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 	ut8 *bump;
 	int ret = R_FALSE;
 	if (bsize == core->blocksize)
-		return R_FALSE;
+		return R_TRUE;
 	if (bsize<0 || bsize > core->blocksize_max) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return R_FALSE;
@@ -1165,8 +1226,12 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-							R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
-						pipefd = core->file->desc->fd;
+								R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
+						if (core->file && core->file->desc) {
+							pipefd = core->file->desc->fd;
+						} else {
+							pipefd = -1;
+						}
 						eprintf ("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
@@ -1325,7 +1390,13 @@ reaccept:
 				if (buf[0]!=2) {
 					r_core_seek (core, x, buf[0]);
 					x = core->offset;
-				} else x = r_io_desc_size (core->io, core->file->desc);
+				} else {
+					if (core->file) {
+						x = r_io_desc_size (core->io, core->file->desc);
+					} else {
+						x = 0;
+					}
+				}
 				buf[0] = RMT_SEEK | RMT_REPLY;
 				r_mem_copyendian (buf+1, (ut8*)&x, 8, !LE);
 				r_socket_write (c, buf, 9);
@@ -1379,6 +1450,7 @@ reaccept:
 								ptr = (ut8 *) malloc (i+6);
 								if (!ptr) {
 									fclose (fd);
+									r_socket_close (c);
 									return R_FALSE;
 								}
 								r = fread (ptr+5, i, 1, fd);
@@ -1458,9 +1530,14 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str) {
-	const char *editor;
+	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name, *ret = NULL;
 	int len, fd;
+
+	if (!editor || !*editor) {
+		return NULL;
+	}
+
 	if (file) {
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
@@ -1475,11 +1552,13 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 	if (str) write (fd, str, strlen (str));
 	close (fd);
 
-	editor = r_config_get (core->config, "cfg.editor");
-	if (!editor || !*editor || !strcmp (editor, "-")) {
+	if (name && (!editor || !*editor || !strcmp (editor, "-"))) {
 		r_cons_editor (name, NULL);
-	} else r_sys_cmdf ("%s '%s'", editor, name);
-	ret = r_file_slurp (name, &len);
+	} else {
+		if (editor && name)
+			r_sys_cmdf ("%s '%s'", editor, name);
+	}
+	ret = name? r_file_slurp (name, &len): 0;
 	if (ret) {
 		if (len && ret[len - 1] == '\n')
 			ret[len-1] = 0; // chop

@@ -2,36 +2,55 @@
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 
 CWD=`dirname $0`
+#CPU="armv7 arm64"
 if [ -z "${CPU}" ]; then
 	CPU=armv7
 	#CPU=arm64
 fi
 if [ -z "${IOSVER}" ]; then
-	IOSVER=8.1
+	IOSVER=8.3
+fi
+
+# USE_SIMULATOR=1
+if [ -z "${USE_SIMULATOR}" ]; then
+	USE_SIMULATOR=0
 fi
 
 DEVROOT=/Applications/Xcode.app/Contents/Developer
+if [ "${USE_SIMULATOR}" = 1 ]; then
+CPU=i386
+CFLAGS="${CFLAGS} -miphoneos-version-min=7.0"
+SDKROOT=${DEVROOT}/Platforms/iPhoneSimulator.platform
+IOSROOT=${SDKROOT}/Developer/SDKs/iPhoneSimulator${IOSVER}.sdk
+CFLAGS="${CFLAGS} -isysroot ${SDKROOT} -I${SDKROOT}"
+LDFLAGS="-static"
+else
 SDKROOT=${DEVROOT}/Platforms/iPhoneOS.platform
 IOSROOT=${SDKROOT}/Developer/SDKs/iPhoneOS${IOSVER}.sdk
-
 CFLAGS="-isysroot ${SDKROOT} -I${SDKROOT} -D__arm=1"
+fi
+
 LDFLAGS="-isysroot ${SDKROOT}"
 # -Wl, -syslibroot ${SDKROOT}"
 export PATH=${DEVROOT}/usr/bin:${SDKROOT}/Developer/usr/bin:${PATH}
 CC=${DEVROOT}/usr/bin/gcc
 LD=${CC}
-CFLAGS="${CFLAGS} -arch ${CPU}"
-if [ -z "${IOSINC}" ]; then
-	IOSINC=${CWD}/ios-include
-	IOSINC=/Users/pancake/prg/radare2/sys/ios-include
-fi
-if [ -n "${IOSINC}" ]; then
-	CFLAGS="${CFLAGS} -I${IOSINC}"
+for a in ${CPU} ; do
+	CFLAGS="${CFLAGS} -arch ${a}"
+done
+if [ "${USE_SIMULATOR}" != 1 ]; then
+	if [ -z "${IOSINC}" ]; then
+		IOSINC=${CWD}/ios-include
+		IOSINC=/Users/pancake/prg/radare2/sys/ios-include
+	fi
+	if [ -n "${IOSINC}" ]; then
+		CFLAGS="${CFLAGS} -I${IOSINC}"
+	fi
 fi
 CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
 #CFLAGS="${CFLAGS} -I${IOSROOT}/usr/include"
 LDFLAGS="-L ${IOSROOT}/usr/lib/system ${LDFLAGS}"
-LDFLAGS="-L ${IOSROOT}//usr/lib/ ${LDFLAGS}"
+LDFLAGS="-L ${IOSROOT}/usr/lib/ ${LDFLAGS}"
 
 # Workaround
 #if [ ! -e ${IOSROOT}/usr/lib/system/libcrypto.dylib ]; then
@@ -41,4 +60,4 @@ LDFLAGS="-L ${IOSROOT}//usr/lib/ ${LDFLAGS}"
 #fi
 
 # arm64
-${CC} ${CFLAGS} ${LDFLAGS} $@
+${CC} ${CFLAGS} ${LDFLAGS} $*

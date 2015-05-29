@@ -1,5 +1,6 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include <r_userconf.h>
 #if defined(__NetBSD__)
 # include <sys/param.h>
 # if __NetBSD_Prereq__(7,0,0)
@@ -25,7 +26,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 //#  include <libproc.h>
 # endif
 #endif
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
@@ -34,7 +35,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__)
 # include <io.h>
 # include <winbase.h>
 #endif
@@ -63,6 +64,18 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"rar", R_SYS_ARCH_RAR},
     {NULL, 0}
 };
+
+R_API int r_sys_fork() {
+#if HAVE_FORK
+#if __WINDOWS__
+	return -1;
+#else
+	return fork ();
+#endif
+#else
+	return -1;
+#endif
+}
 
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */
@@ -175,7 +188,7 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_setenv(const char *key, const char *value) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) return 0;
 	if (value == NULL) {
 		unsetenv (key);
@@ -266,7 +279,7 @@ R_API char *r_sys_getenv(const char *key) {
 
 R_API char *r_sys_getdir(void) {
 	char *ret;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	char *cwd = _getcwd (NULL, 0);
 #else
 	char *cwd = getcwd (NULL, 0);
@@ -306,7 +319,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		return R_FALSE;
 	}
 
-	switch ((pid = fork ())) {
+	switch ((pid = r_sys_fork ())) {
 	case -1:
 		return R_FALSE;
 	case 0:
@@ -427,7 +440,7 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 
 R_API int r_sys_cmdbg (const char *str) {
 #if __UNIX__
-	int ret, pid = fork ();
+	int ret, pid = r_sys_fork ();
 	if (pid == -1) return -1;
 	if (pid) return pid;
 	ret = r_sandbox_system (str, 0);
@@ -560,7 +573,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	cb = (void*)ptr;
 #if USE_FORK
 #if __UNIX__
-	pid = fork ();
+	pid = r_sys_fork ();
 	//pid = -1;
 #else
 	pid = -1;

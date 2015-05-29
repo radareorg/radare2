@@ -94,7 +94,7 @@ static int oc = '\n';
 static int mode = NORMAL;
 
 static char *find_include(const char *prefix, const char *file) {
-	char *pfx, *ret, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
+	char *pfx = NULL, *ret = NULL, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
 	//eprintf ("find_include (%s,%s)\n", prefix, file);
 	if (!prefix) prefix = "";
 	if (*prefix=='$') {
@@ -115,6 +115,7 @@ static char *find_include(const char *prefix, const char *file) {
 		while (str) {
 			if (ptr)
 				*ptr = 0;
+			free (ret);
 			ret = r_str_concatf (NULL, "%s/%s", pfx, file);
 			{
 				char *filepath = r_str_concatf (NULL, "%s/%s/%s", str, pfx, file);
@@ -326,7 +327,6 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	} else varxs = 0;
 	if (str[0]=='.') {
 		REggEmit *e = egg->remit;
-		ret = out;
 		idx = atoi (str+4) + delta + e->size;
 		if (!memcmp (str+1, "ret", 3)) {
 			strcpy (out, e->retvar);
@@ -364,9 +364,10 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str+4)));
 			else snprintf (out, 32, "%s", e->regs (egg, atoi (str+4)));
 		} else {
-			ret = strdup(str); /* TODO: show error, invalid var name? */
+			out = str; /* TODO: show error, invalid var name? */
 			eprintf ("Something is really wrong\n");
 		}
+		ret = strdup(out);
 	} else if (*str=='"' || *str=='\'') {
 		int mustfilter = *str=='"';
 		/* TODO: check for room in stackfixed area */
@@ -377,12 +378,12 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				stackfixed, len);
 		str[len]='\0';
 		snprintf (foo, sizeof (foo)-1, ".fix%d", nargs*16); /* XXX FIX DELTA !!!1 */
+		free(dstvar);
 		dstvar = strdup (skipspaces (foo));
 		rcc_pushstr (egg, str, mustfilter);
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
-	//free ((void *)_str);
-	return ret? strdup (ret): NULL; // memleak or wtf
+	return ret;
 }
 
 static void rcc_fun(REgg *egg, const char *str) {
@@ -834,6 +835,7 @@ static void rcc_next(REgg *egg) {
 		if (ocn) { // Used to call .var0()
 			/* XXX: Probably buggy and wrong */
 			*buf = 0;
+			free (str);
 			str = r_egg_mkvar (egg, buf, ocn, 0);
 			if (*buf)
 				e->get_result (egg, buf);
@@ -881,6 +883,7 @@ static void rcc_next(REgg *egg) {
 				} else type = '$';
 				vs = 'l'; // XXX: add support for != 'l' size
 				e->mathop (egg, ch, vs, type, eq, p);
+				free(p);
 			} else {
 				if (!strcmp (ptr, "break")) { // handle 'break;'
 					e->trap (egg);

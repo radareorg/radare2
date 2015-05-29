@@ -1,19 +1,20 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
+/* ugly global vars */
 static int magicdepth = 99; //XXX: do not use global var here
-
 static RMagic *ck = NULL; // XXX: Use RCore->magic
+static const char *ofile = NULL;
 
 static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
 	int found = 0, delta = 0, adelta = 0;
-	const char *cmdhit = r_config_get (core->config, "cmd.hit");
 #define NAH 32
 
-	if (--depth<0)
+	if (--depth<0) {
 		 return 0;
+	}
 	if (addr != core->offset) {
 #if 1
 		if (addr >= core->offset && (addr+NAH) < (core->offset + core->blocksize)) {
@@ -23,11 +24,24 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 #endif
 	}
-	if (((addr&7)==0) && ((addr&(7<<3))==0))
+	if (core->search->align) {
+		int mod = addr % core->search->align;
+		if (mod) {
+			eprintf ("Unaligned search at %d\n", mod);
+			return mod;
+		}
+	}
+	if (((addr&7)==0) && ((addr&(7<<8))==0))
 		eprintf ("0x%08"PFMT64x"\r", addr);
 	if (file) {
 		if (*file == ' ') file++;
 		if (!*file) file = NULL;
+	}
+	if (file && ofile && file != ofile) {
+		if (strcmp (file, ofile)) {
+			r_magic_free (ck);
+			ck = NULL;
+		}
 	}
 	if (ck==NULL) {
 		// TODO: Move RMagic into RCore
@@ -35,13 +49,16 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		// allocate once
 		ck = r_magic_new (0);
 		if (file) {
+			ofile = file;
 			if (r_magic_load (ck, file) == -1) {
 				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
+				ck = NULL;
 				return -1;
 			}
 		} else {
 			const char *magicpath = r_config_get (core->config, "dir.magic");
 			if (r_magic_load (ck, magicpath) == -1) {
+				ck = NULL;
 				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
 				return -1;
 			}
@@ -49,21 +66,35 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	}
 //repeat:
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
+	if (delta+2>core->blocksize) {
+		eprintf ("EOB\n");
+		return -1;
+	}
 	str = r_magic_buffer (ck, core->block+delta, core->blocksize-delta);
 	if (str) {
-		if (!v && !strcmp (str, "data")) {
-			r_magic_free (ck);
-			ck = NULL;
-			return -1;
+		const char *cmdhit;
+#if USE_LIB_MAGIC
+		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr(str, "ISO") || strstr(str, "no line terminator"))) {
+#else
+		if (!v && (!strcmp (str, "data"))) {
+#endif
+			int mod = core->search->align;
+			if (mod<1) mod = 1;
+			//r_magic_free (ck);
+			//ck = NULL;
+			//return -1;
+			return mod+1;
 		}
 		p = strdup (str);
 		fmt = p;
 		// processing newlinez
-		for (q=p; *q; q++)
+		for (q=p; *q; q++) {
 			if (q[0]=='\\' && q[1]=='n') {
 				*q = '\n';
 				strcpy (q+1, q+((q[2]==' ')? 3: 2));
 			}
+		}
+		cmdhit = r_config_get (core->config, "cmd.hit");
 		if (cmdhit && *cmdhit) {
 			r_core_cmd0 (core, cmdhit);
 		}
@@ -109,6 +140,12 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	r_magic_free (ck);
 	ck = NULL;
 #endif
+{
+	int mod = core->search->align;
+	if (mod) {
+		return mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+	}
+}
 	return adelta; //found;
 }
 

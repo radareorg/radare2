@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2008-2015 - pancake */
+
 #include <r_cons.h>
 // TWOK is a C implemnetation of 2048 game
 
@@ -135,6 +137,8 @@ R_API void r_cons_2048() {
 	r_cons_flush ();
 	twok_print();
 	r_cons_printf ("\n  [r2048.score] %d\n", score );
-	r_cons_any_key ();
+	do {
+		ch = r_cons_any_key ("Press 'q' to quit.");
+	} while (ch != 'q' && ch >= 1);
 	r_cons_set_raw (0);
 }

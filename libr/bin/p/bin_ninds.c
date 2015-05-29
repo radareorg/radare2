@@ -28,7 +28,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? R_TRUE : R_FALSE;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
 }
 
@@ -37,7 +37,7 @@ static int load(RBinFile *arch) {
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o)
 		return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
 
@@ -122,24 +122,24 @@ static RList* entries(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-
+	char filepath[1024];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-
-	if (!ret)
-		return NULL;
+	if (!ret) return NULL;
 
 	if (!arch || !arch->buf) {
 		free (ret);
 		return NULL;
 	}
 
-	strncpy(ret->file, (char *) loaded_header.title, 0xC);
-	strncat(ret->file, " - ", 3);
-	strncat(ret->file, (char *) loaded_header.gamecode, 0x4);
-	strncpy (ret->type, "ROM", sizeof (ret->type)-1);
-	strncpy (ret->machine, "Nintendo DS", sizeof (ret->machine)-1);
-	strncpy (ret->os, "any", sizeof (ret->os)-1);
-	strcpy (ret->arch, "arm");
+	strncpy(filepath, (char *) loaded_header.title, 0xC);
+	strncat(filepath, " - ", 3);
+	strncat(filepath, (char *) loaded_header.gamecode, 0x4);
+
+	ret->file = strdup (filepath);
+	ret->type = strdup ("ROM");
+	ret->machine = strdup ("Nintendo DS");
+	ret->os = strdup ("nds");
+	ret->arch = strdup ("arm");
 	ret->has_va = R_TRUE;
 	ret->bits = 32;
 

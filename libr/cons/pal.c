@@ -2,6 +2,16 @@
 
 #include <r_cons.h>
 
+
+R_API void r_cons_pal_free () {
+	int i;
+	RCons *cons = r_cons_singleton ();
+	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
+		if (cons->pal.list[i])
+			R_FREE (cons->pal.list[i]);
+	}
+}
+
 R_API void r_cons_pal_init(const char *foo) {
 	RCons *cons = r_cons_singleton ();
 	memset (&cons->pal, 0, sizeof (cons->pal));
@@ -52,7 +62,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.gui_background = Color_BLACK;
 	cons->pal.gui_alt_background = Color_WHITE;
 	cons->pal.gui_border = Color_BLACK;
-
+	
+	r_cons_pal_free ();
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
 	cons->pal.list[2] = strdup (Color_BGREEN);
@@ -103,6 +114,8 @@ R_API void r_cons_pal_random() {
 		r_cons_pal_set (k, val);
 	}
 	for (i=0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
+		if (cons->pal.list[i])
+			R_FREE (cons->pal.list[i]);
 		cons->pal.list[i] = r_cons_color_random (0);
 	}
 }
@@ -283,6 +296,22 @@ R_API void r_cons_pal_list (int rad) {
 			hasnext = (keys[i+1].name)?",":"";
 			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
 				keys[i].name, r, g, b, hasnext);
+			break;
+		case 'c': {
+			r = g = b = 0;
+			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
+			hasnext = (keys[i+1].name) ? "\n" : "";
+			//Need to replace the '.' char because this is not valid CSS
+			char *name = strdup(keys[i].name);
+			int j, len = strlen(name);
+			for(j=0; j < len; j++) {
+				if(name[j] == '.')
+					name[j] = '_';
+			}
+			r_cons_printf (".%s { color: rgb(%d, %d, %d); }%s",
+				name, r, g, b, hasnext);
+			free(name);
+			}
 			break;
 		case '*':
 		case 'r':

@@ -1,5 +1,7 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake */
 
+// XXX: should use the same code as libr/io/cache.c
+// one malloc per write
 #include <r_util.h>
 // TODO: optimize reallocs.. store RBuffer info.. wait. extend r_buf_ for that?
 

@@ -9,8 +9,10 @@ include ${CURDIR}capstone.mk
 STATIC_OBJ+=${OBJ_X86CS}
 TARGET_X86CS=asm_x86_cs.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_X86CS}
 
 ${TARGET_X86CS}: ${OBJ_X86CS}
 	${CC} $(call libname,asm_x86) ${LDFLAGS} ${CFLAGS} ${CS_CFLAGS} \
 		-o ${TARGET_X86CS} ${OBJ_X86CS} ${CS_LDFLAGS}
+endif

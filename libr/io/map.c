@@ -13,7 +13,10 @@ R_API int r_io_map_count (RIO *io) {
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap *map = R_NEW (RIOMap);
-	if (!map) return NULL;
+	if (!map || ((UT64_MAX - size) < addr)) {					//prevent interger-overflow
+		free (map);
+		return NULL;
+	}
 	map->fd = fd;
 	map->flags = flags;
 	map->delta = delta;
@@ -100,7 +103,7 @@ R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd) {
 				return map;
 		}
 	}
-	return map;
+	return NULL;
 }
 
 static RList *r_io_map_get_maps_in_range_prepend(RIO *io, ut64 addr, ut64 endaddr) {

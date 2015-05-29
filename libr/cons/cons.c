@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare2 - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_cons.h>
 #include <r_print.h>
@@ -63,7 +63,7 @@ R_API char *r_cons_color_random(int bg) {
 	case 14: return strdup (Color_GRAY);
 	case 15: return strdup (Color_BGRAY);
 	}
-	return Color_RESET;
+	return strdup (Color_RESET);
 }
 
 R_API void r_cons_color (int fg, int r, int g, int b) {
@@ -129,6 +129,7 @@ static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
+		eprintf("{ctrl+c} pressed.\n");
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -159,6 +160,15 @@ R_API int r_cons_enable_mouse (const int enable) {
 	return R_FALSE;
 #endif
 }
+
+static void r_cons_pal_null (){
+	int i;
+	RCons *cons = r_cons_singleton ();
+	for (i = 0; i< R_CONS_PALETTE_LIST_SIZE; i++){
+		cons->pal.list[i] = NULL;	
+	}
+}
+
 
 R_API RCons *r_cons_new () {
 	I.refcnt++;
@@ -212,6 +222,7 @@ R_API RCons *r_cons_new () {
 	I.pager = NULL; /* no pager by default */
 	I.truecolor = 0;
 	I.mouse = 0;
+	r_cons_pal_null ();
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
 	r_cons_reset ();
@@ -222,6 +233,7 @@ R_API RCons *r_cons_free () {
 	I.refcnt--;
 	if (I.refcnt != 0)
 		return NULL;
+	r_cons_pal_free ();
 	if (I.line) {
 		r_line_free ();
 		I.line = NULL;
@@ -346,6 +358,33 @@ R_API void r_cons_filter() {
 	/* TODO */
 }
 
+static char *backup = NULL;
+static int backup_len = 0;
+static int backup_size = 0;
+
+R_API void r_cons_push() {
+	if (!backup) {
+		if (I.buffer_len<1)
+			I.buffer_len = 1;
+		backup = I.buffer; //malloc (I.buffer_len);
+		backup_len = I.buffer_len;
+		backup_size = I.buffer_sz;
+		I.buffer = malloc (I.buffer_sz);
+		memcpy (I.buffer, backup, I.buffer_len);
+		I.buffer_len = 0;
+	}
+}
+
+R_API void r_cons_pop() {
+	if (backup) {
+		free (I.buffer);
+		I.buffer = backup;
+		I.buffer_len = backup_len;
+		I.buffer_sz = backup_size;
+		backup = NULL;
+	}
+}
+
 R_API void r_cons_flush() {
 	const char *tee = I.teefile;
 	if (I.noflush)
@@ -364,13 +403,25 @@ R_API void r_cons_flush() {
 			r_cons_reset ();
 
 		} else if (I.buffer_len > CONS_MAX_USER) {
-			char buf[64];
-			char *buflen = r_num_units (buf, I.buffer_len);
-			if (!r_cons_yesno ('n',"Do you want to print %s chars? (y/N)",
-					buflen)) {
+#define COUNT_LINES 1
+#if COUNT_LINES
+			int i, lines = 0;
+			for (i=0; I.buffer[i]; i++) {
+				if (I.buffer[i]=='\n')
+					lines ++;
+			}
+			if (!r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset ();
 				return;
 			}
+#else
+			char buf[64];
+			char *buflen = r_num_units (buf, I.buffer_len);
+			if (!r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
+				r_cons_reset ();
+				return;
+			}
+#endif
 			// fix | more | less problem
 			r_cons_set_raw (1);
 		}
@@ -519,6 +570,9 @@ R_API int r_cons_get_column() {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len) {
+	if (len<0 || (I.buffer_len + len)<0) {
+		return;
+	}
 	if (I.echo) {
 		write (2, str, len);
 	}
@@ -678,6 +732,8 @@ R_API void r_cons_set_raw(int is_raw) {
 #if EMSCRIPTEN
 	/* do nothing here */
 #elif __UNIX__ || __CYGWIN__
+	// enforce echo off
+	I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
 	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
 	else tcsetattr (0, TCSANOW, &I.term_buf);
 #elif __WINDOWS__
@@ -750,9 +806,18 @@ R_API void r_cons_zero() {
 }
 
 R_API void r_cons_highlight (const char *word) {
-	char *rword, *res;
-// that word str should ignore ansi scapes
+	char *rword, *res, *clean;
+	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
+			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
+	int l, *cpos;
+
 	if (word && *word) {
+		int word_len = strlen (word);
+		char *orig;
+		clean = I.buffer;
+		l = r_str_ansi_filter (clean, &orig, &cpos, 0);
+		I.buffer = orig;
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
 				free (I.highlight);
@@ -761,16 +826,21 @@ R_API void r_cons_highlight (const char *word) {
 		} else {
 			I.highlight = strdup (word);
 		}
-		rword = malloc (strlen (word)+32);
-		strcpy (rword, "\x1b[0m\x1b[7m");
-		strcpy (rword+8, word);
-		strcpy (rword+8+strlen (word), "\x1b[0m");
-		res = r_str_replace (I.buffer, word, rword, 1);
+		rword = malloc (word_len + linv[0] + linv[1] + 1);
+		strcpy (rword, inv[0]);
+		strcpy (rword + linv[0], word);
+		strcpy (rword + linv[0] + word_len, inv[1]);
+		res = r_str_replace_thunked (I.buffer, clean, cpos,
+					     l, word, rword, 1);
 		if (res) {
 			I.buffer = res;
 			I.buffer_len = I.buffer_sz = strlen (res);
 		}
 		free (rword);
+		free (clean);
+		free (cpos);
+		/* don't free orig - it's assigned
+		 * to I.buffer and possibly realloc'd */
 	} else {
 		free (I.highlight);
 		I.highlight = NULL;
@@ -787,4 +857,22 @@ R_API char *r_cons_lastline () {
 		b--;
 	}
 	return b;
+}
+
+/* swap color from foreground to background, returned value must be freed */
+R_API char *r_cons_swap_ground(const char *col) {
+	if (!strncmp (col, "\x1b[48;5;", 7)) {
+		/* rgb background */
+		return r_str_newf ("\x1b[38;5;%s", col+7);
+	} else if (!strncmp (col, "\x1b[38;5;", 7)) {
+		/* rgb foreground */
+		return r_str_newf ("\x1b[48;5;%s", col+7);
+	} else if (!strncmp (col, "\x1b[4", 3)) {
+		/* is background */
+		return r_str_newf ("\x1b[3%s", col+3);
+	} else if (!strncmp (col, "\x1b[3", 3)) {
+		/* is foreground */
+		return r_str_newf ("\x1b[4%s", col+3);
+	}
+	return strdup (col);
 }

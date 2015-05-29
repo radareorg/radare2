@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 typedef void (*HashHandler)(const ut8 *block, int len);
 
@@ -227,10 +227,10 @@ static int cmd_hash(void *data, const char *input) {
 	}
 
 	if (!osize) {
-		eprintf ( "Error: provided size must be size > 0\n" );
+		eprintf ("Error: provided size must be size > 0\n");
 	}
 
-	if (input[0]=='?' || handled_cmd == R_FALSE) {
+	if (*input == '?') {
 		const char *helpmsg[] = {
 		"Usage: #algo <size> @ addr", "", "",
 		" #"," comment","note the space after the sharp sign",
@@ -255,5 +255,5 @@ static int cmd_hash(void *data, const char *input) {
 	}
 	if (osize)
 		r_core_block_size (core, osize);
-	return 0;
+	return handled_cmd;
 }

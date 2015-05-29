@@ -420,7 +420,7 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 				eprintf ("Cannot allocate snapshot\n");
 				continue;
 			}
-			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);	
+			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);
                         r_print_hexdiff (core->print,
 				snap->addr, snap->data,
 				snap->addr, b,
@@ -477,6 +477,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"Usage:", "dm", " # Memory maps commands",
 		"dm", "", "List memory maps of target process",
 		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+		"dm.", "", "Show map name of current address",
 		"dm*", "", "List memmaps in radare commands",
 		"dm-", "<address>", "Deallocate memory map of <address>",
 		"dmd", " [file]", "Dump current debug map region to a file (from-to.dmp) (see Sd)",
@@ -498,6 +499,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 's':
 		cmd_debug_map_snapshot (core, input+1);
+		break;
+	case '.':
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				r_cons_printf ("%s\n", map->name);
+				break;
+			}
+		}
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
@@ -539,7 +548,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				} else snprintf (file, sizeof (file),
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					map->addr, map->addr_end, r_str_rwx_i (map->perm));
-				if (!r_file_dump (file, buf, map->size)) {
+				if (!r_file_dump (file, buf, map->size, 0)) {
 					eprintf ("Cannot write '%s'\n", file);
 					free (buf);
 					return R_FALSE;
@@ -704,6 +713,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drx", "", "Show all debug registers",
 				"drx", " number addr len rwx", "Modify hardware breakpoint",
 				"drx-", "number", "Clear hardware breakpoint",
+				"drm","","show fpu registers",
 				".dr", "*", "Include common register values in flags",
 				".dr", "-", "Unflag all registers",
 				NULL
@@ -856,8 +866,8 @@ free (rf);
 		}
 		break;
 	case 'm': // "drm"
-		r_cons_printf("aki andamos otra vez\n");
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, R_FALSE);
+		/* Note, that negative type forces sync to print the regs from the backend */
+		r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, R_FALSE);
 		//r_debug_drx_list (core->dbg);
 		break;
 	case 'p': // "drp"
@@ -870,8 +880,47 @@ free (rf);
 		} else r_reg_set_profile (core->dbg->reg, str+2);
 		break;
 	case 't': // "drt"
-		for (i=0; (name=r_reg_get_type (i)); i++)
-			r_cons_printf ("%s\n", name);
+		switch (str[1]) {
+		case '?':
+			{
+			const char *help_msg[] = {
+				"Usage:", "drt", " [type] [size]    # debug register types",
+				"drt", "", "List all available register types",
+				"drt", " [size]", "Show all regs in the profile of size",
+				"drt", " [type]", "Show all regs in the profile of this type",
+				"drt", " [type] [size]", "Same as above for type and size",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case ' ':
+			{
+			int role = r_reg_get_name_idx (str+2);
+			const char *regname = r_reg_get_name (core->dbg->reg, role);
+			if (!regname)
+				regname = str+2;
+			size = atoi (regname);
+			if (size<1) {
+				char *arg = strchr (str+2, ' ');
+				if (arg) {
+					*arg++ = 0;
+					size = atoi (arg);
+					type = r_reg_type_by_name (str+2);
+
+				}
+				if (size<0)
+					size = 0;
+			}
+			if (type != R_REG_TYPE_LAST) {
+				r_debug_reg_sync (core->dbg, type, R_FALSE);
+				r_debug_reg_list (core->dbg, type, size, (int)(size_t)strchr (str,'*'), use_color);
+			} else eprintf ("cmd_debug_reg: Unknown type\n");
+			} break;
+		default:
+			for (i=0; (name = r_reg_get_type (i)); i++)
+				r_cons_printf ("%s\n", name);
+			break;
+		}
 		break;
 	case 'n':
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
@@ -900,8 +949,12 @@ free (rf);
 		}
 		break;
 	case '*':
-		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			r_cons_printf ("fs+regs\n");
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_color);
+			r_flag_space_pop (core->flags);
+			r_cons_printf ("fs-\n");
+		}
 		break;
 	case 'r': // "drr"
 		{
@@ -976,7 +1029,7 @@ free (rf);
 					if (is_text) {
 						r_cons_printf (" \"%s\"", buf);
 					}
-				}	
+				}
 			}
 			r_cons_newline ();
 		}
@@ -1009,7 +1062,7 @@ free (rf);
 					r_cons_printf ("0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				} else {
-					r_cons_printf ("0x%08"PFMT64x" ->", str,
+					r_cons_printf ("0x%08"PFMT64x" ->",
 							r_reg_get_value (core->dbg->reg, r));
 					r_reg_set_value (core->dbg->reg, r,
 							r_num_math (core->num, arg+1));
@@ -1021,23 +1074,14 @@ free (rf);
 			free (string);
 			return;
 		} else {
-			int role = r_reg_get_name_idx (str+1);
-			const char *regname = r_reg_get_name (core->dbg->reg, role);
-			if (!regname)
-				regname = str+1;
-			size = atoi (regname);
-			if (size==0) {
-				arg = strchr (str+1, ' ');
-				if (arg && size==0) {
-					*arg='\0';
-					size = atoi (arg);
-				} else size = bits;
-				type = r_reg_type_by_name (str+1);
-			}
-			if (type != R_REG_TYPE_LAST) {
-				r_debug_reg_sync (core->dbg, type, R_FALSE);
-				r_debug_reg_list (core->dbg, type, size, str[0]=='*', use_color);
-			} else eprintf ("cmd_debug_reg: Unknown type\n");
+			ut64 off;
+			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, R_FALSE);
+			off = r_debug_reg_get (core->dbg, str+1);
+	//		r = r_reg_get (core->dbg->reg, str+1, 0);
+	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
+			r_cons_printf ("0x%08"PFMT64x"\n", off);
+			core->num->value = off;
+			//r_reg_get_value (core->dbg->reg, r));
 		}
 	}
 }
@@ -1098,6 +1142,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbe", " <addr>", "Enable breakpoint",
 		"dbs", " <addr>", "Toggle breakpoint",
 
+		"dbt", "", "Display backtrace",
+		"dbt=", "", "Display backtrace in one line",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
@@ -1112,6 +1158,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbits", " <index>", "Swap Nth breakpoint trace",
 		//
 		"dbh", " x86", "Set/list breakpoint plugin handlers",
+		"drx", " number addr len rwx", "Modify hardware breakpoint",
+		"drx-", "number", "Clear hardware breakpoint",
 		NULL};
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
@@ -1146,6 +1194,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			} else {
 				eprintf ("Cannot unset tracepoint\n");
 			}
+			break;
+		case '=':
+			addr = UT64_MAX;
+			if (input[2]==' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_list_reverse (list);
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("%s0x%08"PFMT64x,
+					(i?" > ":""), frame->addr);
+				i++;
+			}
+			r_cons_newline ();
+			r_list_purge (list);
 			break;
 		case 0:
 			addr = UT64_MAX;
@@ -1271,7 +1334,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			switch (input[3]) {
 			case 'e':
 				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-					bpi->trace = R_TRUE; 
+					bpi->trace = R_TRUE;
 				} else eprintf ("Cannot unset tracepoint\n");
 				break;
 			case 'd':
@@ -1688,7 +1751,7 @@ static void cmd_debug_step (RCore *core, const char *input) {
 			  r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			  step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
 			  break;
-		  default: 
+		  default:
 			  eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
 					  " 'f'lag, 'e'sil or 'i'nstruction matching\n");
 			  break;
@@ -1762,6 +1825,13 @@ static int cmd_debug(void *data, const char *input) {
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
+		return 0;
+	}
+	if (!strncmp (input, "ate", 3)) {
+		char str[128];
+		str[0] = 0;
+		r_print_date_get_now (core->print, str);
+		r_cons_printf ("%s\n", str);
 		return 0;
 	}
 

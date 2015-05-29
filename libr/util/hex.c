@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -19,8 +19,14 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
  *    4123421b
  */
 R_API char *r_hex_from_c(const char *code) {
-	char *out, *ret = malloc (strlen (code)*3);
+	char *out, *ret;
 	int parse_on = 0, is_hexa = 0;
+
+	if (code) {
+		ret = malloc (strlen (code) * 3);
+	} else {
+		ret = malloc (3);
+	}
 	*ret = 0;
 	out = ret;
 	if (code) {
@@ -36,7 +42,7 @@ R_API char *r_hex_from_c(const char *code) {
 					case 'r': *out++='0';*out++='d';break;
 					case 'n': *out++='0';*out++='a';break;
 					case 'x': break;
-					default: 
+					default:
 						  goto error;
 						  break;
 					}
@@ -161,7 +167,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		if (ptr[0]=='0' && ptr[1]=='x' ){ //&& c==0) {
 			ut64 addr = r_num_get (NULL, ptr);
 			unsigned int addr32 = (ut32) addr;
-			if (addr & ~0xFFFFFFFF) {
+			if (addr>>32) {
 				// 64 bit fun
 			} else {
 				// 32 bit fun
@@ -194,6 +200,8 @@ beach:
 	}
 	if (outbuf) {
 		free (out);
+	} else {
+		out[R_ABS(len)] = 0;
 	}
 	return (int)len;
 }

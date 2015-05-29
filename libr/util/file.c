@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -12,14 +12,6 @@
 #if __UNIX__
 #include <sys/mman.h>
 #endif
-
-R_API int r_what_os_am_i () {
-#if __UNIX__
-	return ON_NIX_OS;
-#elif __WINDOWS__ || __CYGWIN__ || __MINGW32__ || MINGW32
-	return ON_WINDOWS_OS;
-#endif
-}
 
 R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
@@ -42,7 +34,7 @@ R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 /*
 Example:
 	str = r_file_basename ("home/inisider/Downloads/user32.dll");
-	// str == user32.dll 
+	// str == user32.dll
 */
 R_API const char *r_file_basename (const char *path) {
 	const char *ptr = r_str_rchr (path, NULL, '/');
@@ -121,25 +113,42 @@ R_API ut64 r_file_size(const char *str) {
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
-	if (!memcmp (file, "~/", 2))
-		return r_str_home (file+2);
-#if __UNIX__
-	if (cwd && *file != '/')
-		ret = r_str_newf ("%s/%s", cwd, file);
-#elif __WINDOWS__
-	if (cwd && !strchr (file, ':'))
-		ret = r_str_newf ("%s\\%s", cwd, file);
+	if (!strncmp (file, "~/", 2)) {
+		ret = r_str_home (file+2);
+	} else {
+#if __UNIX__ || __CYGWIN__
+		if (cwd && *file != '/')
+			ret = r_str_newf ("%s/%s", cwd, file);
+#elif __WINDOWS__ && !__CYGWIN__
+		if (cwd && !strchr (file, ':'))
+			ret = r_str_newf ("%s\\%s", cwd, file);
 #endif
+	}
 	free (cwd);
-// TODO: remove // and ./
-	return ret? ret: strdup (file);
+	if (!ret) ret = strdup (file);
+#if __UNIX__
+	{
+		char *abspath = realpath (ret, NULL);
+		if (abspath) {
+			free (ret);
+			ret = abspath;
+		}
+	}
+#else
+	/* remove ../ */
+	/* remove ./ */
+	/* remove // */
+#endif
+	return ret;
 }
 
 R_API char *r_file_path(const char *bin) {
 	char file[1024];
-	char *path_env = (char *)r_sys_getenv ("PATH");
+	char *path_env;
 	char *path = NULL;
 	char *str, *ptr;
+	if (!bin) return NULL;
+	path_env = (char *)r_sys_getenv ("PATH");
 	if (path_env) {
 		str = path = strdup (path_env);
 		do {
@@ -195,6 +204,8 @@ R_API char *r_stdin_slurp (int *sz) {
 #endif
 }
 
+//r_file_slurp: load file *str, alloc new buffer, close file. ret &buffer
+//Caller must free(buffer)
 R_API char *r_file_slurp(const char *str, int *usz) {
 	size_t rsz;
 	char *ret;
@@ -215,6 +226,10 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	}
 	fseek (fd, 0, SEEK_SET);
 	ret = (char *)calloc (sz+1, 1);
+	if (!ret) {
+		fclose (fd);
+		return NULL;
+	}
 	rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
 		// eprintf ("r_file_slurp: fread: error\n");
@@ -233,7 +248,7 @@ R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
 	if (outlen) *outlen = 0;
 	in = (ut8*)r_file_slurp (str, &sz);
 	if (!in) return NULL;
-	out = r_inflate (in, sz, outlen);
+	out = r_inflate (in, sz, NULL, outlen);
 	if (!out && origonfail) {
 		// if uncompression fails, return orig buffer ?
 		if (outlen)
@@ -394,12 +409,19 @@ R_API char *r_file_root(const char *root, const char *path) {
 	return ret;
 }
 
-R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
+R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	int ret;
 	FILE *fd;
-	if (!file || !*file || !buf)
+	if (!file || !*file || !buf) {
+		eprintf ("RET %p, buf %p\n", file, buf);
 		return R_FALSE;
-	fd = r_sandbox_fopen (file, "wb");
+	}
+	if (append) {
+		fd = r_sandbox_fopen (file, "awb");
+	} else {
+		r_sys_truncate (file, 0);
+		fd = r_sandbox_fopen (file, "wb");
+	}
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
@@ -686,7 +708,7 @@ R_API char *r_file_tmpdir() {
 	char *path = r_sys_getenv ("TEMP");
 	if (!path) path = strdup ("C:\\WINDOWS\\Temp\\");
 #elif __ANDROID__
-	char *path = strdup ("/data/data/org.radare.installer/radare2/tmp");
+	char *path = strdup ("/data/data/org.radare2.installer/radare2/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {

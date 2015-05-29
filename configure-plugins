@@ -5,6 +5,13 @@
 # update: 2010-01-14
 #
 
+LANG=C
+LC_ALL=C
+LOADLIBS=1
+
+export LANG
+export LC_ALL
+
 list () {
   for a in $STATIC ; do echo "static  $a" ; done
   for a in $SHARED ; do echo "shared  $a" ; done
@@ -105,6 +112,7 @@ generate_configmk () {
 generate () {
   echo "configure-plugins: Generating libr/config.h .."
   cat libr/config.h.head > libr/config.h
+  echo "#define R2_LOADLIBS ${LOADLIBS}" >> libr/config.h
   generate_configh >> libr/config.h
   cat libr/config.h.tail >> libr/config.h
 
@@ -132,8 +140,7 @@ else
 fi
 
 dosort () {
-
-  ( for a in $1 ; do echo $a ; done ) | ${SORT}
+  ( for a in $1 ; do echo $a ; done ) | tr _ Z | ${SORT} | tr Z _
   #( for a in $1 ; do echo $a ; done ) | sort -t. --key=1,1d
 }
 
@@ -165,6 +172,7 @@ while : ; do
   "--static") MODE=static ; ;;
   "--shared") MODE=shared ; ;;
   "--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
+  "--disable-loadlibs") LOADLIBS=0 ;;
   "--list") sort_vars ; list ; ;;
   "-n") DONOTHING=1 ; ;;
   "-h"|"--help") help ; ;;
@@ -178,8 +186,8 @@ sort_vars
 
 [ ${DONOTHING} = 0 ] && generate
 
-echo ${SHARED}
-echo ${STATIC}
+echo SHARED: ${SHARED}
+echo STATIC: ${STATIC}
 
 save
 

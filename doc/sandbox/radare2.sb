@@ -1,0 +1,42 @@
+; Seatbelt script to sandbox radare2 in OSX
+; =========================================
+; --pancake <nopcode.org>
+;
+
+(version 1)
+(debug all)
+
+; (allow default)
+
+(deny network*)
+(deny system*)
+(deny sysctl*)
+(deny file-write*)
+(deny file-ioctl)
+(deny mach*)
+
+
+; disables debugger and ! shell escape
+(allow process*)
+(deny process-fork)
+
+; record trace log
+; (trace "r2.log")
+
+; (deny file-read* (subpath "."))
+; (allow file-read*)
+; (deny file-read*)
+
+(allow file-read*
+    (regex
+        #"^/Users/[^.]+/.config/radare2/$"
+	#"^/Users/[^.]+/*/radare2/"
+        #"^/usr/share/radare2/*"
+        #"^/usr/lib/system/*"
+        #"^/usr/bin/radare2"
+        #"^/usr/lib/libr*"
+        #"^/usr/bin/r2"
+        #"^/bin/ls"
+    )   
+)
+(deny default)

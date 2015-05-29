@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <sparc.h>
+#include <capstone/capstone.h>
+#include <capstone/sparc.h>
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
@@ -106,6 +106,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case SPARC_INS_BRLZ:
 			case SPARC_INS_BRNZ:
 			case SPARC_INS_BRZ:
+			case SPARC_INS_FB:
 				switch (INSOP(0).type) {
 				case SPARC_OP_REG:
 					op->type = R_ANAL_OP_TYPE_CJMP;

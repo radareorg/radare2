@@ -10,6 +10,7 @@ endif
 SHARED_OBJ+=${SHARED_JAVA}
 TARGET_JAVA=bin_java.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_JAVA}
 
 ${TARGET_JAVA}: ${OBJ_JAVA}
@@ -17,3 +18,4 @@ ${TARGET_JAVA}: ${OBJ_JAVA}
 		$(LINK) $(LDFLAGS) ${SHARED2_JAVA} \
 		${SHLR}/java/libr_java.a \
 		${SHLR}/sdb/src/libsdb.a
+endif

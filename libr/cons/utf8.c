@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2015 - pancake */
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
@@ -11,6 +11,11 @@
 
 #define   RD_EOF   -1
 #define   RD_EIO   -2
+
+/* select utf8 terminal detection method */
+#define UTF8_DETECT_ENV 1
+#define UTF8_DETECT_LOCALE 0
+#define UTF8_DETECT_CURSOR 0
 
 static inline int rd(const int fd) {
 	unsigned char   buffer[4];
@@ -87,6 +92,7 @@ int current_tty(void) {
 #endif
 }
 
+#if UTF8_DETECT_CURSOR
 /* As the tty for current cursor position.
  * This function returns 0 if success, errno code otherwise.
  * Actual errno will be unchanged.
@@ -201,22 +207,47 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	/* Done. */
 	return ret;
 }
-
+#endif
 
 R_API int r_cons_is_utf8() {
+	int ret = 0;
+#if UTF8_DETECT_ENV
+	char *sval = r_sys_getenv ("LC_CTYPE");
+	if (sval) {
+		r_str_case (sval, 0);
+		if (!strcmp (sval, "utf-8"))
+			ret = 1;
+		free (sval);
+	}
+#endif
+#if UTF8_DETECT_LOCALE
+#include <locale.h>
+	const char *ctype = setlocale(LC_CTYPE, NULL);
+	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
+		(strcasecmp(ctype, "UTF-8") == 0 || strcasecmp(ctype, "UTF8") == 0)) {
+		return 1;
+	}
+#endif
+#if UTF8_DETECT_CURSOR
 	int row = 0, col = 0;
 	int row2 = 0, col2 = 0;
 	int fd = current_tty();
 	if (fd == -1)
 		return 0;
-	if (cursor_position(fd, &row, &col))
+	if (cursor_position(fd, &row, &col)) {
+		close (fd);
 		return 0;
+	}
 	write (1, "\xc3\x89\xc3\xa9", 4);
-	if (cursor_position (fd, &row2, &col2))
+	if (cursor_position (fd, &row2, &col2)) {
+		close (fd);
 		return 0;
+	}
+	close (fd);
 	write (1, "\r    \r", 6);
-	close(fd);
 	return ((col2-col)==2);
+#endif
+	return ret;
 }
 #else
 R_API int r_cons_is_utf8() {

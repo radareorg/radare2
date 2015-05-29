@@ -9,6 +9,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	int notfirst = R_FALSE;
 	RListIter *iter;
 	RDebugMap *map;
+	if (!dbg) return;
+
 	switch (rad) {
 	case 'j':
 		dbg->printf ("[");
@@ -95,7 +97,7 @@ R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm
 
 R_API int r_debug_map_sync(RDebug *dbg) {
 	int ret = R_FALSE;
-	if (dbg->h && dbg->h->map_get) {
+	if (dbg && dbg->h && dbg->h->map_get) {
 		RList *newmaps = dbg->h->map_get (dbg);
 		if (newmaps) {
 			// XXX free all non-user maps // but not unallocate!! only unlink from list
@@ -109,7 +111,7 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 
 R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	RDebugMap *map = NULL;
-	if (dbg->h && dbg->h->map_alloc) {
+	if (dbg && dbg->h && dbg->h->map_alloc) {
 		map = dbg->h->map_alloc (dbg, addr, size);
 	}
 	return map;
@@ -118,7 +120,7 @@ R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	int ret = R_FALSE;
 	ut64 addr = map->addr;
-	if (dbg->h && dbg->h->map_dealloc) {
+	if (dbg && dbg->h && dbg->h->map_dealloc) {
 		if (dbg->h->map_dealloc (dbg, addr, map->size)) {
 			ret = R_TRUE;
 		}

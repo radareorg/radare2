@@ -2,17 +2,69 @@
 
 #include "r_core.h"
 
-#define NPF 6
+#define NPF 7
 static int blocksize = 0;
 static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
-	"x", "pd $r", 
+	"x", "pd $r",
 	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
-	"pxw", "pc", "pxa"
+	"pxw", "pc", "pxA", "pxa"
 };
 static int autoblocksize = 1;
 static int obs = 0;
+
+#undef USE_THREADS
+#define USE_THREADS 1
+
+#if USE_THREADS
+static int visual_repeat_thread(RThread *th) {
+	RCore *core = th->user;
+	int i = 0;
+	for (;;) {
+		if (core->cons->breaked)
+			break;
+		r_core_visual_refresh (core);
+		r_cons_flush ();
+		r_cons_gotoxy (0, 0);
+		r_cons_printf ("[@%d] ", i++);
+		r_cons_flush ();
+		r_sys_sleep (1);
+	}
+	r_th_kill (th, 1);
+	return 0;
+}
+
+static void visual_repeat(RCore *core) {
+	int atport = r_config_get_i (core->config, "scr.atport");
+
+	if (atport) {
+#if __UNIX__ && !__APPLE__
+		int port = r_config_get_i (core->config, "http.port");
+		if (!r_core_rtr_http (core, '&', NULL)) {
+			const char *xterm = r_config_get (core->config, "cmd.xterm");
+			// TODO: this must be configurable
+			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
+			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
+		} else {
+			r_cons_any_key (NULL);
+		}
+#else
+		eprintf ("Unsupported on this platform\n");
+		r_cons_any_key (NULL);
+#endif
+	} else {
+		RThread *th = r_th_new (visual_repeat_thread, core, 0);
+		r_th_start (th, 1);
+		r_cons_break (NULL, NULL);
+		r_cons_any_key (NULL);
+		eprintf ("^C  \n");
+		core->cons->breaked = R_TRUE;
+		r_th_wait (th);
+		r_cons_break_end ();
+	}
+}
+#endif
 
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
@@ -90,7 +142,7 @@ static void visual_help() {
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 	" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 	" @        set cmd.vprompt to run commands before the visual prompt\n"
-	" !        run r2048 game\n"
+	" !        enter into the visual panels mode\n"
 	" _        enter the hud\n"
 	" =        set cmd.vprompt (top row)\n"
 	" |        set cmd.cprompt (right column)\n"
@@ -208,7 +260,7 @@ R_API int r_core_visual_prompt (RCore *core) {
 		ret = R_TRUE;
 	} else {
 		ret = R_FALSE;
-		//r_cons_any_key ();
+		//r_cons_any_key (NULL);
 		r_cons_clear00 ();
 		showcursor (core, R_FALSE);
 	}
@@ -419,10 +471,10 @@ static void visual_search (RCore *core) {
 		} else ocursor = -1;
 		showcursor (core, R_TRUE);
 		eprintf ("FOUND IN %d\n", cursor);
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 	} else {
 		eprintf ("Cannot find bytes\n");
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 		r_cons_clear00 ();
 	}
 }
@@ -430,7 +482,7 @@ static void visual_search (RCore *core) {
 R_API void r_core_visual_show_char (RCore *core, char ch) {
 	if (r_config_get_i (core->config, "scr.feedback")<2)
 		return;
-	if (!IS_PRINTABLE(ch))
+	if (!IS_PRINTABLE (ch))
 		return;
 	r_cons_gotoxy (1, 2);
 	r_cons_printf (".---.\n");
@@ -491,6 +543,9 @@ static void setprintmode (RCore *core, int n) {
 		core->inc = r_asm_disassemble (core->assembler,
 			&op, core->block, 32);
 		break;
+	case 5: // "pxA"
+		core->inc = 256;
+		break;
 	}
 }
 
@@ -541,7 +596,7 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 		r_cons_printf ("[GOTO XREF]> \n");
 		if (r_list_empty (xrefs)) {
 			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (xrefs, iter, refi) {
@@ -590,7 +645,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 		r_cons_printf ("[GOTO REF]> \n");
 		if (r_list_empty (fun->refs)) {
 			r_cons_printf ("\tNo REF found at 0x%"PFMT64x"\n", core->offset);
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (fun->refs, iter, refi) {
@@ -621,17 +676,34 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 	return ret;
 }
 
+#if __WINDOWS__ && !__CYGWIN__
+void SetWindow(int Width, int Height) {
+    COORD coord;
+    coord.X = Width;
+    coord.Y = Height;
+
+    SMALL_RECT Rect;
+    Rect.Top = 0;
+    Rect.Left = 0;
+    Rect.Bottom = Height - 1;
+    Rect.Right = Width - 1;
+
+    HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleScreenBufferSize(Handle, coord);
+    SetConsoleWindowInfo(Handle, TRUE, &Rect);
+}
+#endif
+
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
 	int i, ret, offscreen, cols = core->print->cols, delta = 0;
 	int wheelspeed;
-
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
-	
+
 	if (r_cons_singleton()->mouse_event) {
 		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 	} else {
@@ -655,6 +727,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 	} else
 	switch (ch) {
+#if __WINDOWS__ && !__CYGWIN__
+	case 0xf5:
+		SetWindow(81,25);
+		break;
+	case 0xcf5:
+		SetWindow(81,40);
+		break;
+#endif
 	case 0x0d:
 		{
 			RAnalOp *op;
@@ -709,7 +789,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'a':
 		if (core->file && core->file->desc && !(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			return R_TRUE;
 		}
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
@@ -754,7 +834,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case '!':
-		r_cons_2048 ();
+		r_core_visual_panels (core);
 		break;
 	case 'o':
 		visual_offset (core);
@@ -771,22 +851,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, curset?0:1);
 		break;
 	case '@':
-#if __UNIX__ && !__APPLE__
-		{
-		int port = r_config_get_i (core->config, "http.port");
-		if (!r_core_rtr_http (core, '&', NULL)) {
-			const char *xterm = r_config_get (core->config, "cmd.xterm");
-			// TODO: this must be configurable
-			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
-			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
-		} else {
-			r_cons_any_key ();
-		}
-		}
-#else
-		eprintf ("Unsupported on this platform\n");
-		r_cons_any_key ();
-#endif
+		visual_repeat (core);
 		break;
 	case 'C':
 		color = color? 0: 1;
@@ -855,7 +920,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'I':
 		if (core->file && core->file->desc &&!(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			return R_TRUE;
 		}
 		showcursor (core, R_TRUE);
@@ -952,6 +1017,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 			break;
 		}
+		break;
+	case 't':
+		r_core_visual_types (core);
 		break;
 	case 'F':
 		r_core_visual_trackflags (core);
@@ -1161,10 +1229,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} else {
 			if (last_printed_address > core->offset) {
 				int delta = (last_printed_address - core->offset);
-				r_core_seek (core, core->offset-delta, 1);
+				if (core->offset >delta)
+					r_core_seek (core, core->offset-delta, 1);
+				else
+					r_core_seek (core, 0, 1);
 			} else {
 				ut64 at = (core->offset>obs)?core->offset-obs:0;
-				r_core_seek (core, at, 1);
+				if (core->offset >obs)
+					r_core_seek (core, at, 1);
+				else
+					r_core_seek (core, 0, 1);
 			}
 		}
 		break;
@@ -1251,7 +1325,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (!core->yank_buf) {
 			r_cons_strcat ("Can't paste, clipboard is empty.\n");
 			r_cons_flush ();
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else r_core_yank_paste (core, core->offset+cursor, 0);
 		break;
@@ -1422,19 +1496,17 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512], pcs[32];
-	int scrcols, pc;
 	if (!oldpc) oldpc = core->offset;
 	/* automatic block size */
+	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize)
 	switch (core->printidx) {
-	case 0:
-	case 5:
-		scrcols = r_config_get_i (core->config, "hex.cols");
-		r_core_block_size (core, core->cons->rows * scrcols);
+	case 0: // x"
+	case 6: // pxa
+		r_core_block_size (core, core->cons->rows * hexcols);
 		break;
 	case 3: // XXX pw
-		scrcols = r_config_get_i (core->config, "hex.cols");
-		r_core_block_size (core, core->cons->rows * scrcols);
+		r_core_block_size (core, core->cons->rows * hexcols);
 		break;
 	case 4: // XXX pc
 		r_core_block_size (core, core->cons->rows * 5);
@@ -1442,6 +1514,9 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	case 1: // pd
 	case 2: // pd+dbg
 		r_core_block_size (core, core->cons->rows * 5); // this is hacky
+		break;
+	case 5: // pxA
+		r_core_block_size (core, hexcols * core->cons->rows * 8);
 		break;
 	}
 
@@ -1509,13 +1584,11 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 static void r_core_visual_refresh (RCore *core) {
 	int w, h;
-	RCons *cons;
 	const char *vi, *vcmd;
 	if (!core) return;
 	w = r_cons_get_size (&h);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
-	cons = r_cons_singleton ();
-	cons->blankline = R_TRUE;
+	core->cons->blankline = R_TRUE;
 
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w<78) {
@@ -1563,7 +1636,7 @@ static void r_core_visual_refresh (RCore *core) {
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
 		// XXX: slow
-		cons->blankline = R_FALSE;
+		core->cons->blankline = R_FALSE;
 		r_cons_clear00 ();
 		r_cons_flush ();
 		{
@@ -1607,7 +1680,7 @@ static void r_core_visual_refresh (RCore *core) {
 
 	/* this is why there's flickering */
 	r_cons_visual_flush ();
-	cons->blankline = R_TRUE;
+	core->cons->blankline = R_TRUE;
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
@@ -1615,7 +1688,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	ut64 scrseek;
 	int wheel, flags, ch;
 
-	if (r_cons_get_size(&ch)<1 || ch<1) {
+	if (r_cons_get_size (&ch)<1 || ch<1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}

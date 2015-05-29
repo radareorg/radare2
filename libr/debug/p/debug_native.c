@@ -10,25 +10,17 @@
 #include <sys/param.h>
 #include "native/drx.c" // x86 specific
 #include "native/reg.c" // x86 specific
+#include "r_cons.h"
 
 #if DEBUGGER
 
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 # include <errno.h>
-# if !defined (__HAIKU__)
+# if !defined (__HAIKU__) && !defined (__CYGWIN__)
 #  include <sys/ptrace.h>
 # endif
 # include <sys/wait.h>
 # include <signal.h>
-
-#define __REAL_ANDROID__ 0
-#ifdef __ANDROID__
-#ifndef PTRACE_INTERRUPT
-#undef __REAL_ANDROID__
-#define __REAL_ANDROID__ 1
-#endif
-#endif
-
 #endif
 
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
@@ -44,12 +36,17 @@ static int r_debug_handle_signals (RDebug *dbg) {
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason = R_DBG_REASON_SIGNAL;
 		dbg->signum = siginfo.si_signo;
-		// siginfo.si_code -> USER, KERNEL or WHAT
-#if 0
-		eprintf ("[+] SIGNAL %d errno=%d code=%d ret=%d\n",
-			siginfo.si_signo, siginfo.si_errno,
-			siginfo.si_code, ret2);
-#endif
+		//dbg->stopaddr = siginfo.si_addr;
+		//dbg->errno = siginfo.si_errno;
+		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
+		switch (dbg->signum) {
+		case SIGSEGV:
+			eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
+				siginfo.si_signo, siginfo.si_errno,
+				siginfo.si_addr, siginfo.si_code, ret);
+			break;
+		default: break;
+		}
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -247,7 +244,7 @@ struct user_regs_struct_x86_32 {
   ut32 xcs; ut32 eflags; ut32 esp; ut32 xss;
 };
 
-#if __REAL_ANDROID__
+#if __ANDROID__
 
  #if __arm64__ || __aarch64__
  # define R_DEBUG_REG_T struct user_pt_regs
@@ -345,14 +342,15 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
 	int pid = dbg->pid;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	/* set TRAP flag */
 	CONTEXT regs __attribute__ ((aligned (16)));
-	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
+	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, pid, dbg->tid, dbg->signum);
-	ret=R_TRUE;
+	ret = R_TRUE;
+	r_debug_handle_signals (dbg);
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
@@ -378,6 +376,7 @@ static int r_debug_native_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+	r_debug_handle_signals (dbg);
 #endif
 #elif __BSD__
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
@@ -385,6 +384,9 @@ static int r_debug_native_step(RDebug *dbg) {
 		perror ("native-singlestep");
 		ret = R_FALSE;
 	} else ret = R_TRUE;
+#elif __CYGWIN__
+	#warning "r_debug_native_step not supported on this platform"
+	ret = R_FALSE;
 #else // linux
 	ut64 addr = 0; /* should be eip */
 	//ut32 data = 0;
@@ -425,12 +427,15 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 #endif
 	if (pid == dbg->pid)
 		return pid;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	dbg->process_handle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (dbg->process_handle != (HANDLE)NULL && DebugActiveProcess (pid))
 		ret = w32_first_thread (pid);
 	else ret = -1;
 	ret = w32_first_thread (pid);
+#elif __CYGWIN__
+	#warning "r_debug_native_attach not supported on this platform"
+	ret = -1;
 #elif __APPLE__ || __KFBSD__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
 	if (ret!=-1)
@@ -446,8 +451,11 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_native_detach(int pid) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return w32_detach (pid)? 0 : -1;
+#elif __CYGWIN__
+	#warning "r_debug_native_detach not supported on this platform"
+	return -1;
 #elif __APPLE__ || __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
@@ -471,8 +479,8 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
+	eprintf("r_debug_native_continue: pid=%08x tid=%08x\n",pid,tid);
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
 		print_lasterr ((char *)__FUNCTION__);
 		eprintf ("debug_contp: error\n");
@@ -508,20 +516,26 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 1;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
 		(int)(size_t)data) == 0;
 #endif
 #elif __BSD__
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data) == 0;
+#elif __CYGWIN__
+	#warning "r_debug_native_continue not supported on this platform"
+	return -1;
 #else
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 //eprintf ("SIG %d\n", dbg->signum);
 	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
 }
 
 static int r_debug_native_wait(RDebug *dbg, int pid) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return w32_dbg_wait (dbg, pid);
 #else
 	int ret, status = -1;
@@ -537,8 +551,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	if (WIFSTOPPED (status)) {
 		dbg->signum = WSTOPSIG (status);
 		status = R_DBG_REASON_SIGNAL;
-	} else
-	if (status == 0 || ret == -1) {
+	} else if (status == 0 || ret == -1) {
 		status = R_DBG_REASON_DEAD;
 	} else {
 		if (ret != pid)
@@ -672,7 +685,7 @@ static RList *r_debug_native_tids(int pid) {
 
 static RList *r_debug_native_pids(int pid) {
 	RList *list = r_list_new ();
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return w32_pids (pid, list);
 #elif __APPLE__
 	if (pid) {
@@ -796,7 +809,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 		eprintf ("No list?\n");
 		return NULL;
 	}
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return w32_thread_list (pid, list);
 #elif __APPLE__
 #if __arm__
@@ -895,16 +908,50 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	int showfpu = R_FALSE;
 	int pid = dbg->pid;
-	int tid = dbg->tid;
 	if (size<1)
 		return R_FALSE;
-#if __WINDOWS__
+	if (type<-1) {
+		showfpu = R_TRUE; // hack for debugging
+		type = -type;
+	}
+#if __WINDOWS__ && !__CYGWIN__
+	int tid = dbg->tid;
+	HANDLE hProcess=tid2handler (pid, tid);
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (tid2handler (dbg->pid, dbg->tid), &ctx)) {
+	if (!GetThreadContext (hProcess, &ctx)) {
 		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
+		CloseHandle(hProcess);
 		return R_FALSE;
+	}
+	CloseHandle(hProcess);
+	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
+#if __MINGW64__
+		eprintf ("TODO: r_debug_native_reg_read fpu/mmx/xmm\n");
+#else
+		int i;
+		if (showfpu) {
+			eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FloatSave.ControlWord);
+			eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FloatSave.StatusWord);
+			eprintf ("twd = 0x%08x ", (ut32)ctx.FloatSave.TagWord);
+			eprintf ("eof = 0x%08x\n", (ut32)ctx.FloatSave.ErrorOffset);
+			eprintf ("ese = 0x%08x\n", (ut32)ctx.FloatSave.ErrorSelector);
+			eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
+			eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
+			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
+			for(i=0; i<8; i++) {
+				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
+				a = a + (i * 4);
+				eprintf ("xmm%d = %08x %08x %08x %08x  ",i
+						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+				ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
+				eprintf ("st%d = %lg (0x%08"PFMT64x")\n", i,
+					(double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+			}
+		}
+#endif
 	}
 	if (sizeof (CONTEXT) < size)
 		size = sizeof (CONTEXT);
@@ -936,6 +983,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
         unsigned int gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
+	int tid = dbg->tid;
 
 #if 0
 	// if uncommented, it will break x86-32 debugging from x86-64 (ios simulator f.ex)
@@ -1021,7 +1069,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
-#if !__REAL_ANDROID__
+#if !__ANDROID__
 	{
 		int i;
 		for (i=0; i<8; i++) { // DR0-DR7
@@ -1045,59 +1093,198 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #if __linux__
 #if __x86_64__ || __i386__
 		{
-			int ret1 = 0;
-			struct user_fpregs_struct regs1;
-		if (type == R_REG_TYPE_MMX) {
+		int ret1 = 0;
+		struct user_fpregs_struct fpregs;
+		if (type == R_REG_TYPE_FPU) {
 			int i;
 #if __x86_64__
-			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &regs1);
-			eprintf ("cwd = 0x%04x  ; control   ", regs1.cwd);
-			eprintf ("swd = 0x%04x  ; status\n", regs1.swd);
-			eprintf ("ftw = 0x%04x              ", regs1.ftw);
-			eprintf ("fop = 0x%04x\n", regs1.fop);
-			eprintf ("rip = 0x%016"PFMT64x"  ", regs1.rip);
-			eprintf ("rdp = 0x%016"PFMT64x"\n", regs1.rdp);
-			eprintf ("mxcsr = 0x%08x        ", regs1.mxcsr);
-			eprintf ("mxcr_mask = 0x%08x\n", regs1.mxcr_mask);
-			#define FADDR ((double*)&regs1.st_space[i*4])
-			for(i=0;i<8;i++) {
-				ut16 *a = (ut16*)&regs1.xmm_space;
-				ut64 *b = (ut64 *)&regs1.st_space[i*4];
+#if !__ANDROID__
+		ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+		if (showfpu) {
+			eprintf ("---- x86-64 ----\n ");
+			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
+			eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
+			eprintf ("ftw = 0x%04x              ", fpregs.ftw);
+			eprintf ("fop = 0x%04x\n", fpregs.fop);
+			eprintf ("rip = 0x%016"PFMT64x"  ", (ut64)fpregs.rip);
+			eprintf ("rdp = 0x%016"PFMT64x"\n", (ut64)fpregs.rdp);
+			eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
+			eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
+			eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
+			for (i=0;i<16;i++) {
+				ut32 *a = (ut32*)&fpregs.xmm_space;
 				a = a + (i * 4);
-				eprintf ("mm%d = %04x %04x %04x %04x    ",
-					i, (int)a[0], (int)a[1], (int)a[2], (int)a[3]);
-				eprintf ("st%d = %lg (0x%08llx)\n", i, *FADDR, *b);
+				eprintf ("xmm%d = %08x %08x %08x %08x   ",i
+						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+				if (i<8) {
+					ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpregs.st_space;
+					float *f=(float *)&fpregs.st_space;
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+							,(double)*((double*)&fpregs.st_space[i*4])
+							,*b
+							,(float) f[0]
+							,c[0]
+							,(float) f[1]
+							,c[1]
+						);
+				} else eprintf ("\n");
 			}
+		}
+		if (ret1 != 0) {
+			return R_FALSE;
+		}
+		if (sizeof (fpregs) < size) {
+			size = sizeof (fpregs);
+		}
+		memcpy (buf, &fpregs, size);
+		return sizeof (fpregs);
+#else
+		ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+		if (showfpu) {
+			eprintf ("cwd = 0x%04x  ; control   ", fpregs.cwd);
+			eprintf ("swd = 0x%04x  ; status\n", fpregs.swd);
+			eprintf ("ftw = 0x%04x              ", fpregs.ftw);
+			eprintf ("fop = 0x%04x\n", fpregs.fop);
+			eprintf ("rip = 0x%016"PFMT64x"  ", fpregs.rip);
+			eprintf ("rdp = 0x%016"PFMT64x"\n", fpregs.rdp);
+			eprintf ("mxcsr = 0x%08x        ", fpregs.mxcsr);
+			eprintf ("mxcr_mask = 0x%08x\n", fpregs.mxcr_mask);
+			for(i=0;i<8;i++) {
+				ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+				//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+				ut32 *c =(ut32*)&fpregs.st_space;
+				float *f=(float *)&fpregs.st_space;
+				c=c+(i*4);
+				f=f+(i*4);
+				eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+						,(double)*((double*)&fpregs.st_space[i*4])
+						,*b
+						,(float) f[0]
+						,c[0]
+						,(float) f[1]
+						,c[1]
+					);
+			}
+		}
+		if (ret1 != 0)
+			return R_FALSE;
+		if (sizeof (fpregs) < size)
+			size = sizeof (fpregs);
+		memcpy (buf, &fpregs, size);
+		return sizeof (fpregs)
+#endif
 #elif __i386__
-#warning No MMX for linux32 yet
-			ret1 = ptrace (PTRACE_GETFPREGS, tid, NULL, &regs1);
-			eprintf ("cwd = 0x%04lx  ; control   ", regs1.cwd);
-			eprintf ("swd = 0x%04lx  ; status\n", regs1.swd);
-			eprintf ("twd = 0x%04lx              ", regs1.twd);
-			eprintf ("fip = 0x%04lx              ", regs1.fip);
-			eprintf ("fcs = 0x%04lx              ", regs1.fcs);
-			eprintf ("foo = 0x%04lx              ", regs1.foo);
-			eprintf ("fos = 0x%04lx              ", regs1.fos);
-			#define FADDR ((double*)&regs1.st_space[i*4])
-			for (i=0; i<8; i++) {
-				ut32 *ptr = (ut32*)&regs1.st_space[i*4];
-				ut64 n = *ptr;
-				eprintf ("st%d = %lg (0x%08llx)\n", i, (double)(n), n);
+#if !__ANDROID__
+			struct user_fpxregs_struct fpxregs;
+			ret1 = ptrace (PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
+			if (ret1==0) {
+				if (showfpu) {
+				eprintf ("---- x86-32 ----\n ");
+				eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+				eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
+				eprintf ("twd = 0x%04x ", fpxregs.twd);
+				eprintf ("fop = 0x%04x\n", fpxregs.fop);
+				eprintf ("fip = 0x%08x\n", fpxregs.fip);
+				eprintf ("fcs = 0x%08x\n", fpxregs.fcs);
+				eprintf ("foo = 0x%08x\n", fpxregs.foo);
+				eprintf ("fos = 0x%08x\n", fpxregs.fos);
+				eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
+				for(i=0;i<8;i++) {
+					ut32 *a = (ut32*)(&fpxregs.xmm_space);
+					ut64 *b = (ut64 *)(&fpxregs.st_space[i*4]);
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpxregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpxregs.st_space;
+					float *f = (float *)&fpxregs.st_space;
+					a = a + (i * 4);
+					eprintf ("xmm%d = %08x %08x %08x %08x   ",i
+							, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | %0.3f (0x%08x)\n", i
+							,(double)*((double*)(&fpxregs.st_space[i*4]))
+							,b[0]
+							,f[0]
+							,c[0]
+							,f[1]
+							,c[1]
+							);
+				}
+				}
+				if (sizeof (fpxregs) < size)
+					size = sizeof (fpxregs);
+				memcpy (buf, &fpxregs, size);
+				return sizeof (fpxregs);
+			} else {
+				ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+				if (showfpu) {
+					eprintf ("---- x86-32-noxmm ----\n ");
+					eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
+					eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
+					eprintf ("twd = 0x%04lx              ", fpregs.twd);
+					eprintf ("fip = 0x%04lx          \n", fpregs.fip);
+					eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
+					eprintf ("foo = 0x%04lx          \n", fpregs.foo);
+					eprintf ("fos = 0x%04lx              ", fpregs.fos);
+					for(i=0;i<8;i++) {
+						ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+						//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+						ut32 *c =(ut32*)&fpregs.st_space;
+						float *f=(float *)&fpregs.st_space;
+						c=c+(i*4);
+						f=f+(i*4);
+						eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | %0.3f (%08x) \n", i
+								,(double)*((double*)&fpregs.st_space[i*4])
+								,*b
+								,(float) f[0]
+								,c[0]
+								,(float) f[1]
+								,c[1]
+							);
+					}
+				}
+				if (ret1 != 0)
+					return R_FALSE;
+				if (sizeof (fpregs) < size)
+					size = sizeof (fpregs);
+				memcpy (buf, &fpregs, size);
+				return sizeof (fpregs);
 			}
+#else
+			ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
+			if (showfpu) {
+				eprintf ("---- x86-32-noxmm ----\n ");
+				eprintf ("cwd = 0x%04lx  ; control   ", fpregs.cwd);
+				eprintf ("swd = 0x%04lx  ; status\n", fpregs.swd);
+				eprintf ("twd = 0x%04lx              ", fpregs.twd);
+				eprintf ("fip = 0x%04lx          \n", fpregs.fip);
+				eprintf ("fcs = 0x%04lx              ", fpregs.fcs);
+				eprintf ("foo = 0x%04lx          \n", fpregs.foo);
+				eprintf ("fos = 0x%04lx              ", fpregs.fos);
+				for(i=0;i<8;i++) {
+					ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
+					double *d = (double*)b;
+					//eprintf ("st%d = %lg (0x%08llx)\n", i, (double)*((double*)&fpregs.st_space[i*4]), *b);
+					ut32 *c =(ut32*)&fpregs.st_space;
+					float *f=(float *)&fpregs.st_space;
+					c=c+(i*4);
+					f=f+(i*4);
+					eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | %0.3f (0x%08x)\n"
+							,i ,d[0] ,b[0] ,f[0] ,c[0] ,f[1] ,c[1]);
+				}
+			}
+			if (ret1 != 0)
+				return R_FALSE;
+			if (sizeof (fpregs) < size)
+				size = sizeof (fpregs);
+			memcpy (buf, &fpregs, size);
+			return sizeof (fpregs);
+#endif
 #endif
 		}
-			if (ret1 != 0) {
-				// if perror here says 'no such process' and the
-				// process exists still.. is because there's a
-				// missing call to 'wait'. and the process is not
-				// yet available to accept more ptrace queries.
-				return R_FALSE;
-			}
-			if (sizeof (regs1) < size) {
-				size = sizeof (regs1);
-			}
-			memcpy (buf, &regs1, size);
-			return sizeof (regs1);
 		}
 #endif
 #else
@@ -1126,7 +1313,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		ret = 1;
 #endif
         ////////////////////////////////////////////////
-  
+
         //////////////////////////////////
 		if (ret != 0) {
 			// if perror here says 'no such process' and the
@@ -1158,7 +1345,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			(caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 // XXX: this android check is only for arm
-#if !__REAL_ANDROID__
+#if !__ANDROID__
 		{
 		int i;
 		long *val = (long*)buf;
@@ -1192,6 +1379,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		}
 
 		/* TODO: thread cannot be selected */
+		if (1) return R_FALSE; // disable until fixed
 		if (inferior_thread_count>0) {
 			gp_count = ((dbg->bits == R_SYS_BITS_64))? 44:16;
 			// XXX: kinda spaguetti coz multi-arch
@@ -1217,6 +1405,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 					ret = thread_set_state (tid, i386_THREAD_STATE,
 						(thread_state_t) regs, gp_count);
 				}
+				break;
 			}
 #else
 			ret = thread_set_state (tid, R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
@@ -1229,17 +1418,24 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 				perror ("thread_set_state");
 				return R_FALSE;
 			}
-		} else eprintf ("There are no threads!\n");
+		} else {
+			eprintf ("There are no threads!\n");
+		}
 		return sizeof (R_DEBUG_REG_T);
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
 		#if __WINDOWS__
 		int tid = dbg->tid;
 		int pid = dbg->pid;
+		BOOL ret;
+		HANDLE hProcess;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
+		hProcess=tid2handler (pid, tid);
+		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
+		CloseHandle(hProcess);
+		return ret;
 		#endif
 		return R_FALSE;
 #endif
@@ -1249,13 +1445,18 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 	} else
 	if (type == R_REG_TYPE_GPR) {
 		int pid = dbg->pid;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 		int tid = dbg->tid;
+		BOOL ret;
+		HANDLE hProcess;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
-		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
+		hProcess=tid2handler (pid, tid);
+		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
+		CloseHandle(hProcess);
+		return ret;
 #elif __linux__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, (void*)buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
@@ -1343,7 +1544,7 @@ extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_
 // TODO: this loop MUST be cleaned up
 static RList *darwin_dbg_maps (RDebug *dbg) {
 	RDebugMap *mr;
-	char buf[128];
+	char buf[1024];
 	int i, print;
 	kern_return_t kret;
 	vm_region_basic_info_data_64_t info, prev_info;
@@ -1540,19 +1741,19 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	r_debug_map_sync (dbg); // update process memory maps
 	map = r_debug_map_get (dbg, (ut64)base);
 	return map;
-#elif __WINDOWS__
+#elif __WINDOWS__ && !__CYGWIN__
 	RDebugMap *map = NULL;
 	LPVOID base = NULL;
 	if (!dbg->process_handle) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
-	base = VirtualAllocEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	base = VirtualAllocEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
 		eprintf("Failed to allocate memory\n");
 		return map;
 	}
 	r_debug_map_sync (dbg);
-	map = r_debug_map_get (dbg, (ut64)base);
+	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;
 #else
 	// malloc not implemented for this platform
@@ -1571,11 +1772,11 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 		return R_FALSE;
 	}
 	return R_TRUE;
-#elif __WINDOWS__
+#elif __WINDOWS__ && !__CYGWIN__
 	if (!dbg->process_handle) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
-	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf("Failed to free memory\n");
 		return R_FALSE;
 	}
@@ -1594,8 +1795,8 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #endif
 #if __APPLE__
 	list = darwin_dbg_maps (dbg);
-#elif __WINDOWS__
-	list = w32_dbg_maps (); // TODO: moar?
+#elif __WINDOWS__ && !__CYGWIN__
+	list = w32_dbg_maps (dbg); // TODO: moar?
 #else
 #if __sun
 	char path[1024];
@@ -1821,7 +2022,7 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 
 // TODO: implement own-defined signals
 static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	// TODO: implement thread support signaling here
 	eprintf ("TODO: r_debug_native_kill\n");
 #if 0
@@ -1862,7 +2063,7 @@ static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
 static int r_debug_native_init(RDebug *dbg) {
 	dbg->h->desc = r_debug_desc_plugin_native;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return w32_dbg_init ();
 #else
 	return R_TRUE;
@@ -2121,7 +2322,7 @@ vm_prot_t unix_prot_to_darwin(int prot) {
 }
 #endif
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	DWORD old;
 	if (!dbg->process_handle) {
 			dbg->process_handle = tid2handler (dbg->pid, dbg->tid);

@@ -50,10 +50,16 @@ static int textlog_chat (RCore *core) {
 
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	const char *input2 = input + 1;
-	char *arg = strchr (input2, ' ');
-	int n = atoi (input2);
-	int n2 = arg? atoi (arg+1): 0;
+	const char *arg, *input2;
+	int n, n2;
+
+	if (!input)
+		return 1;
+
+	input2 = (input && *input) ? input+1 : "";
+	arg = strchr (input2, ' ');
+	n = atoi (input2);
+	n2 = arg ? atoi (arg+1) : 0;
 
 	switch (*input) {
 	case 'e': // shell: less

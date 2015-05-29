@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - xvilka */
+/* radare - LGPL - Copyright 2013-2015 - xvilka */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,18 +13,20 @@ static int check_bytes(const ut8 *buf, ut64 length);
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin && bin->kv) return bin->kv;
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	struct r_bin_te_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_te_new_buf (tbuf);
+	if (res)
+		sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -34,7 +36,7 @@ static int load(RBinFile *arch) {
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
 	if (!arch || !arch->o) return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? R_TRUE: R_FALSE;
 }
 
@@ -124,34 +126,23 @@ static RList* sections(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->bclass, "TE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "te", R_BIN_SIZEOF_STRINGS);
-	if ((str = r_bin_te_get_os (arch->o->bin_obj))) {
-		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = r_bin_te_get_arch (arch->o->bin_obj))) {
-		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = r_bin_te_get_machine (arch->o->bin_obj))) {
-		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	if ((str = r_bin_te_get_subsystem (arch->o->bin_obj))) {
-		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
-	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+	ret->file = strdup (arch->file);
+	ret->bclass = strdup ("TE");
+	ret->rclass = strdup ("te");
+	ret->os = r_bin_te_get_os (arch->o->bin_obj);
+	ret->arch = r_bin_te_get_arch (arch->o->bin_obj);
+	ret->machine = r_bin_te_get_machine (arch->o->bin_obj);
+	ret->subsystem = r_bin_te_get_subsystem (arch->o->bin_obj);
+	ret->type = strdup ("EXEC (Executable file)");
 	ret->bits = r_bin_te_get_bits (arch->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
+
+	sdb_num_set (arch->sdb, "te.bits", ret->bits, 0);
+
 	return ret;
 }
 

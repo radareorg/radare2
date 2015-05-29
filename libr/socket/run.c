@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2015 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -30,6 +30,7 @@
 #include <sys/resource.h>
 #include <signal.h>
 #include <grp.h>
+#include <errno.h>
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
 #endif
@@ -178,7 +179,9 @@ static void setASLR(int enabled) {
 #if __ANDROID__
 		system ("echo 0 > "RVAS);
 #else
+#ifdef ADDR_NO_RANDOMIZE
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
+#endif
 			system ("echo 0 > "RVAS);
 #endif
 	}
@@ -243,6 +246,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "seteuid")) p->_seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) p->_setgid = strdup (e);
 	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
+	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
 	else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b+3);
 		if (n>=0 && n<R_RUN_PROFILE_NARGS) {
@@ -322,7 +326,8 @@ R_API const char *r_run_help() {
 	"# setuid=2000\n"
 	"# seteuid=2000\n"
 	"# setgid=2001\n"
-	"# setegid=2001\n";
+	"# setegid=2001\n"
+	"# nice=5\n";
 }
 
 #if __UNIX__
@@ -503,7 +508,7 @@ R_API int r_run_start(RRunProfile *p) {
 	if (p->_timeout) {
 #if __UNIX__
 		int mypid = getpid ();
-		if (!fork ()) {
+		if (!r_sys_fork ()) {
 			sleep (p->_timeout);
 			if (!kill (mypid, 0))
 				eprintf ("\nrarun2: Interrupted by timeout\n");
@@ -590,9 +595,21 @@ R_API int r_run_start(RRunProfile *p) {
 		if (p->_pidfile) {
 			char pidstr[32];
 			snprintf (pidstr, sizeof (pidstr), "%d\n", getpid ());
-			r_file_dump (p->_pidfile, (const ut8*)pidstr, strlen (pidstr));
+			r_file_dump (p->_pidfile,
+				(const ut8*)pidstr,
+				strlen (pidstr), 0);
 		}
 #endif
+
+		if (p->_nice) {
+#if __UNIX__ && !defined(__HAIKU__)
+			if (nice (p->_nice) == -1) {
+				return 1;
+			}
+#else
+			eprintf ("nice not supported for this platform\n");
+#endif
+		}
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 	return 0;

@@ -191,6 +191,7 @@ typedef ut64 (*RIOSeek)(RIO *io, ut64 offset, int whence);
 
 typedef RIODesc* (*RIODescGetFD)(RIO *io, int fd);
 typedef RIODesc* (*RIODescOpen)(RIO *io, const char *file, int flags, int mode);
+typedef RIODesc* (*RIODescOpenAt)(RIO *io, const char *file, int flags, int mode, ut64 maddr);
 typedef int (*RIODescClose)(RIO *io, RIODesc *);
 typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
 typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset);
@@ -218,6 +219,7 @@ typedef struct r_io_bind_t {
 	RIOSectionSetArchBinID section_set_arch_bin_id;
 
 	RIODescOpen desc_open;
+	RIODescOpenAt desc_open_at;		//esil-gb needs that to allocate mem on init
 	RIODescClose desc_close;
 	RIODescRead desc_read;
 	RIODescSize desc_size;
@@ -451,6 +453,7 @@ R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len);
 /* plugins */
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;
+extern RIOPlugin r_io_plugin_sparse;
 extern RIOPlugin r_io_plugin_ptrace;
 extern RIOPlugin r_io_plugin_w32dbg;
 extern RIOPlugin r_io_plugin_mach;
@@ -468,6 +471,7 @@ extern RIOPlugin r_io_plugin_ihex;
 extern RIOPlugin r_io_plugin_self;
 extern RIOPlugin r_io_plugin_gzip;
 extern RIOPlugin r_io_plugin_windbg;
+extern RIOPlugin r_io_plugin_r2pipe;
 #endif
 
 #ifdef __cplusplus

@@ -2,9 +2,9 @@
 
 #include <r_core.h>
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
-int mousemode = 0;
-int small_nodes = 0;
-int simple_mode = 1;
+static int mousemode = 0;
+static int small_nodes = 0;
+static int simple_mode = 1;
 static void reloadNodes(RCore *core) ;
 #define OS_SIZE 128
 struct {
@@ -489,9 +489,13 @@ static void reloadNodes(RCore *core) {
 
 static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
 #define BORDER 3
-	int x = n->x + can->sx;
-	int y = n->y + can->sy;
+	int x, y;
 	int doscroll = 0;
+
+	if (!n) return;
+
+	x = n->x + can->sx;
+	y = n->y + can->sy;
 	if (force) {
 		doscroll = 1;
 	} else {
@@ -535,7 +539,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	can->color = r_config_get_i (core->config, "scr.color");
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
-	//can->color = 0; 
+	//can->color = 0;
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return R_FALSE;
@@ -654,10 +658,12 @@ repeat:
 			goto beach;
 		break;
 	case 9: // tab
-		curnode++;
-		if (!nodes[curnode].text)
-			curnode = 0;
-		updateSeek (can, &N, w, h, 0);
+		if (curnode+1<n_nodes) {
+			curnode++;
+			if (!nodes[curnode].text)
+				curnode = 0;
+			updateSeek (can, &N, w, h, 0);
+		}
 		break;
 	case '?':
 		r_cons_clear00 ();
@@ -678,7 +684,7 @@ repeat:
 		" z/Z  - step / step over\n"
 		" R    - relayout\n");
 		r_cons_flush ();
-		r_cons_any_key ();
+		r_cons_any_key (NULL);
 		break;
 	case 'R':
 	case 'r': Layout_depth (nodes, edges); break;
@@ -797,6 +803,7 @@ repeat:
 		// refresh graph
 	//	reloadNodes (core);
 		break;
+	case -1: // EOF
 	case 'q':
 		goto beach;
 	case 27: // ESC

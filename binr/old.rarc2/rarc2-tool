@@ -9,9 +9,9 @@ RF="-s"
 compile() {
 	spp -h >/dev/null 2>&1
 	if [ $? = 0 ]; then
-		spp -Darch=${ARCH} $@ | rarc2 $RF -a${ARCH} > .a.S || exit $?
+		spp -Darch=${ARCH} $* | rarc2 $RF -a${ARCH} > .a.S || exit $?
 	else
-		rarc2 $RF -a${ARCH} $@ > .a.S || exit $?
+		rarc2 $RF -a${ARCH} $* > .a.S || exit $?
 	fi
 }
 
@@ -40,7 +40,7 @@ done
 
 shift $((${OPTIND}-1))
 
-if [ -n "`echo $@`" ]; then
+if [ -n "`echo $*`" ]; then
 	if [ -n "$r" ]; then
 		RF=""
 		ARCH=x86
@@ -48,7 +48,7 @@ if [ -n "`echo $@`" ]; then
 	elif [ -n "$n" ]; then
 		RF=""
 	fi
-	compile $@
+	compile $*
 	if [ -n "$c" ]; then
 		# rasm2 and rabin2
 		rasm2 -a x86.olly -f .a.S > .a.x

@@ -10,7 +10,7 @@ static void flagbars(RCore *core) {
 	}
 	if (!total) // avoid a division by zero
 		return;
-	cols-=15;
+	cols -= 15;
 	r_cons_printf ("Total: %d\n", total);
 	r_list_foreach (core->flags->flags, iter, flag) {
 		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
@@ -53,6 +53,7 @@ static int cmd_flag(void *data, const char *input) {
 	// TODO: off+=cursor
 	if (*input)
 		str = strdup (input+1);
+rep:
 	switch (*input) {
 	case 'e':
 		switch (input[1]) {
@@ -188,9 +189,14 @@ static int cmd_flag(void *data, const char *input) {
 			bsze = r_num_math (core->num, s+1);
 		}
 		if (*str == '.') {
+input++;
+goto rep;
+#if 0
+eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+#endif
 		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
 		}
 		break;
@@ -244,7 +250,7 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *item = r_flag_get_i (core->flags,
 				r_num_math (core->num, input+2));
 			if (item)
-				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
+				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 		} else eprintf ("Missing arguments\n");
 		break;
 #if 0
@@ -280,16 +286,40 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 's':
 		switch (input[1]) {
+		case '?':
+			{
+			const char *help_msg[] = {
+			"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
+			"fs","","display flagspaces",
+			"fs"," *","select all flagspaces",
+			"fs"," flagspace","select flagspace or create if it doesn't exist",
+			"fs","-flagspace","remove flagspace",
+			"fs","-*","remove all flagspaces",
+			"fs","+foo","push previous flagspace and set",
+			"fs","-","pop to the previous flagspace",
+			"fsm"," [addr]","move flags at given address to the current flagspace",
+			"fsr"," newname","rename selected flagspace",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case '+':
+			r_flag_space_push (core->flags, input+2);
+			break;
 		case 'r':
 			if (input[2]==' ')
 				r_flag_space_rename (core->flags, NULL, input+2);
 			else eprintf ("Usage: fsr [newname]\n");
 			break;
 		case '-':
-			if (input[2]=='*') {
-				r_flag_space_unset (core->flags, NULL);
+			if (input[2]) {
+				if (input[2]=='*') {
+					r_flag_space_unset (core->flags, NULL);
+				} else {
+					r_flag_space_unset (core->flags, input+2);
+				}
 			} else {
-				r_flag_space_unset (core->flags, input+3);
+				r_flag_space_pop (core->flags);
 			}
 			break;
 		case 'j':
@@ -433,7 +463,7 @@ static int cmd_flag(void *data, const char *input) {
 	case '*':
 	case '\0':
 	case 'j':
-		r_flag_list (core->flags, *input);
+		r_flag_list (core->flags, *input, input[0]? input+1:"");
 		break;
 	case 'd':
 		{
@@ -494,13 +524,7 @@ static int cmd_flag(void *data, const char *input) {
 		//" fc [name] [cmt]  ; set execution command for a specific flag"
 		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
 		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
-		"fs","","display flagspaces",
-		"fs"," *","select all flagspaces",
-		"fs"," flagspace","select flagspace or create if it doesn't exist",
-		"fs","-flagspace","remove flagspace",
-		"fs","-*","remove all flagspaces",
-		"fsm"," [addr]","move flags at given address to the current flagspace",
-		"fsr"," newname","rename selected flagspace",
+		"fs"," ?+-*","manage flagspaces",
 		"fS","[on]","sort flags by offset or name",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		NULL};

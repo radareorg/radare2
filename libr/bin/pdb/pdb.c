@@ -751,7 +751,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 					(!strcmp(tmp, "arglist"))) {
 				break;
 			} else {
-				pdb->printf("there is no support for type \"%s\" in PF structs\n", tmp);
+				eprintf ("there is no support for type \"%s\" in PF structs\n", tmp);
 				res_field[pos] = 'A';
 				return 0;
 			}
@@ -858,14 +858,13 @@ static void print_types(R_PDB *pdb, int mode) {
 	int pos = 0;
 	char sym = ' ';
 	int is_first = 1;
-
-	char *name;
+	char *name = NULL;
 	int val = 0;
 	int offset = 0;
 	SType *t = 0;
 	STypeInfo *tf = 0;
 	RListIter *it = 0, *it2 = 0;
-	RList *plist = pdb->pdb_streams, *ptmp;
+	RList *plist = pdb->pdb_streams, *ptmp = NULL;
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
 	if (!tpi_stream) {
@@ -913,8 +912,8 @@ static void print_types(R_PDB *pdb, int mode) {
 			switch (mode) {
 			case 'd': pdb->printf ("%s: size 0x%x\n", name, val); break;
 			case 'r':
-				build_command_field(lt, &command_field);
-				build_name_field(name, &name_field);
+				build_command_field (lt, &command_field);
+				build_name_field (name, &name_field);
 				if (!alloc_format_flag_and_member_fields(ptmp,
 														&flags_format_field,
 														&members_amount,

@@ -5,8 +5,10 @@ CFLAGS+=-I./arch/8051/
 STATIC_OBJ+=${OBJ_8051}
 TARGET_8051=asm_8051.${EXT_SO}
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_8051}
 
 ${TARGET_8051}: ${OBJ_8051}
 	${CC} $(call libname,asm_8051) ${LDFLAGS} ${CFLAGS} \
 		-o asm_8051.${EXT_SO} ${OBJ_8051}
+endif

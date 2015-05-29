@@ -1,26 +1,58 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>		/* less / regex search */
+#include <r_util.h>
+#define NMATCHES 10		/* max number of matches per line */
 
-static void printpage (const char *line, int *index,
-		       RRegexMatch *ms, int from, int to) {
+static void color_line(const char *line, RStrpool *p, RRegexMatch *ms){
+
 	int i;
-	const char *laddr;
-	r_cons_clear00 ();
-	for (i=from; i<to; i++) {
-// TODO: chop column width, clear lines
-		laddr = line + index[i];
-		if(!ms[i].rm_eo) r_cons_printf ("%s\n", laddr);
-		else {		/* highlight a match */
-			r_cons_memcat(laddr, ms[i].rm_so);
-			r_cons_invert(R_TRUE, R_TRUE);
-			r_cons_memcat(laddr + ms[i].rm_so,
-				      ms[i].rm_eo - ms[i].rm_so);
-			r_cons_invert(R_FALSE, R_TRUE);
-			r_cons_printf ("%s\n", laddr + ms[i].rm_eo);
+	int offset = 0;
+
+	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
+			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
+
+	r_strpool_empty(p);
+	for (i = 0; i < NMATCHES; i++){
+		if (ms[i].rm_eo && (i < NMATCHES - 1)) {
+			/* highlight a match */
+			r_strpool_memcat (p, line + offset,
+					  ms[i].rm_so - offset);
+			r_strpool_memcat (p, inv[0], linv[0]);
+			r_strpool_memcat (p, line + ms[i].rm_so,
+					 ms[i].rm_eo - ms[i].rm_so);
+			r_strpool_memcat (p, inv[1], linv[1]);
+
+			offset = ms[i].rm_eo;
+
+		} else {
+			/* append final part of string w/o matches */
+			r_strpool_append(p, line + offset);
+			break;
 		}
 	}
+
+}
+
+static void printpage (const char *line, int *index, RRegexMatch **ms,
+		       int from, int to, int w) {
+	int i;
+	RStrpool *p;
+
+	r_cons_clear00 ();
+	if (from <0 || to <0) {
+		return;
+	}
+	p = r_strpool_new(0);
+	for (i=from; i<to; i++) {
+		color_line(line + index[i], p, ms[i]);
+		r_strpool_ansi_chop(p, w);
+		r_cons_reset_colors();
+		r_cons_printf ("%s\n", p->str);
+	}
+	r_strpool_free(p);
 	r_cons_flush ();
 }
 
@@ -45,35 +77,45 @@ static int *splitlines (char *s, int *lines_count) {
 	return lines;
 }
 
-static int next_match(int from, RRegexMatch *ms, int lcount){
+static int next_match(int from, RRegexMatch **ms, int lcount){
 	int l;
 	if(from > lcount - 2) return from;
 	for(l = from + 1; l < lcount; l++){
-		if(ms[l].rm_eo) return l;
+		/* if there's at least one match on the line */
+		if(ms[l][0].rm_eo) return l;
 	}
 	return from;
 }
 
-static int prev_match(int from, RRegexMatch *ms){
+static int prev_match(int from, RRegexMatch **ms){
 	int l;
 	if(from < 1) return from;
 	for(l = from - 1; l > 0; l--){
-		if(ms[l].rm_eo) return l;
+		if(ms[l][0].rm_eo) return l;
 	}
 	return from;
 }
 
-/* find all matches, ms[i] will contain match offsets relative to start
- * of string number i! */
-static int all_matches(const char *s, RRegex *rx, RRegexMatch *ms,
+static int all_matches(const char *s, RRegex *rx, RRegexMatch **ms,
 		       int *lines, int lcount){
-	int l, fnd, f = R_FALSE;
+	int num, l, fnd, f = R_FALSE;
 	RRegexMatch m;
+	int slen;
 	for(l = 0; l < lcount; l++){
-		fnd = r_regex_exec(rx, s + lines[l], 1, &m, 0);
-		if(!fnd){
-			ms[l] = m;
-			f = R_TRUE;
+		num = 0;
+		m.rm_so = 0;
+		const char *loff = s + lines[l]; /* current line offset */
+		m.rm_eo = slen = strlen(loff);
+		memset(ms[l], 0, NMATCHES * sizeof(RRegexMatch));
+		while(num < NMATCHES){
+			fnd = r_regex_exec(rx, loff, 1, &m, R_REGEX_STARTEND);
+			if(!fnd) {
+				ms[l][num] = m;
+				m.rm_so = m.rm_eo;
+				m.rm_eo = slen;
+				f = R_TRUE;
+				num++;
+			} else break; /* no more on this line */
 		}
 	}
 	return f;
@@ -82,27 +124,35 @@ static int all_matches(const char *s, RRegex *rx, RRegexMatch *ms,
 R_API void r_cons_less_str(const char *str) {
 	int lines_count;
 	RRegex *rx = NULL;
-	int h, ch, to, ui = 1, from = 0;
+	int w, h, ch, to, ui = 1, from = 0, i;
 	const char *sreg;
+
+	if(str == NULL || str[0] == '\0') return;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
-	RRegexMatch *ms = calloc(lines_count, sizeof(RRegexMatch));
+
+	RRegexMatch **ms = malloc(lines_count * sizeof(void *));
+	for(i = 0; i < lines_count; i++)
+		ms[i] = calloc(NMATCHES, sizeof(RRegexMatch));
+
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
 	r_cons_reset ();
-	h = 0;
+	w = h = 0;
 	while (ui) {
-		r_cons_get_size (&h);
+		w = r_cons_get_size (&h);
 		to = R_MIN (lines_count, from+h);
 		if (from+3>lines_count)
 			from = lines_count-3;
-		printpage (p, lines, ms, from, to);
+		if (from<0) from = 0;
+		printpage (p, lines, ms, from, to, w);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
 		case 'G': from = lines_count-1-h; break;
+		case -1: // EOF
 		case 'q': ui = 0; break;
 		case '\r':
 		case '\n':
@@ -112,6 +162,7 @@ R_API void r_cons_less_str(const char *str) {
 		case 'K': from = (from>=h)? from-h: 0;
 			break;
 		case '/': 	/* search */
+			r_cons_reset_colors();
 			r_line_set_prompt("/");
 			sreg = r_line_readline();
 			from = R_MIN(lines_count - 1, from);
@@ -119,7 +170,6 @@ R_API void r_cons_less_str(const char *str) {
 			if(sreg[0]){ /* prepare for a new search */
 				if(rx) r_regex_free(rx);
 				rx = r_regex_new(sreg, "");
-				memset (ms, 0, lines_count*sizeof(RRegexMatch));
 			} else { /* we got an empty string */
 				from = next_match(from, ms, lines_count);
 				break;
@@ -138,10 +188,12 @@ R_API void r_cons_less_str(const char *str) {
 			break;
 		}
 	}
+	for(i = 0; i < lines_count; i++) free(ms[i]);
+	free(ms);
 	if(rx) r_regex_free(rx);
 	free (lines);
 	free (p);
-	free (ms);
+	r_cons_reset_colors();
 	r_cons_set_raw (R_FALSE);
 	r_cons_show_cursor (R_TRUE);
 }

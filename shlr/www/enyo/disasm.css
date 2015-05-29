@@ -131,14 +131,14 @@ input:focus {outline: none; }
 }
 
 #minimap  {
-  border: 1px solid black;
+  /*border: 1px solid black;*/
   position:absolute;
   width:200px;
   height:200px;
-  z-index: 2;
+  z-index: 1000;
   background: #999;
-  opacity: 0.8;
-  filter: alpha(opacity=80); /* For IE8 and earlier */
+  /*opacity: 0.8;*/
+  filter: alpha(opacity=80); [> For IE8 and earlier <]
 }
 
 #minimap .basicblock {

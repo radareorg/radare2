@@ -2,7 +2,7 @@
 .Dt RAGG2 1
 .Sh NAME
 .Nm ragg2
-.Nd radare2 utility to run programs in exotic environments
+.Nd radare2 frontend for r_egg, compile programs into tiny binaries for x86-32/64 and arm.
 .Sh SYNOPSIS
 .Nm ragg2
 .Op Fl a Ar arch
@@ -80,6 +80,8 @@ use default output file (filename without extension or a.out)
 add include path
 .It Fl s
 show assembler code
+.It Fl r
+show raw bytes instead of hexpairs
 .It Fl x
 execute (just-in-time)
 .It Fl z

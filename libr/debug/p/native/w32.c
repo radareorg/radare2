@@ -91,13 +91,20 @@ return (0);
 #endif
 
 //BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
+
+BOOL WINAPI DebugBreakProcess(
+  HANDLE Process
+  //_In_  HANDLE Process
+);
 static void (*gmbn)(HANDLE, HMODULE, LPTSTR, int) = NULL;
 static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
 static BOOL WINAPI (*w32_detach)(DWORD) = NULL;
 static HANDLE WINAPI (*w32_openthread)(DWORD, BOOL, DWORD) = NULL;
-static HANDLE WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
+static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
+static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
+
 
 static void r_str_wtoc(char* d, const WCHAR* s) {
 	int i = 0;
@@ -180,7 +187,9 @@ static int w32_dbg_init() {
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
-	w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
+	w32_openprocess = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
+		GetProcAddress (GetModuleHandle ("kernel32"), "OpenProcess");
+	w32_dbgbreak = (BOOL WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugBreakProcess");
 	// only windows vista :(
@@ -199,7 +208,6 @@ static int w32_dbg_init() {
 		GetProcAddress (lib, "GetModuleBaseNameA");
 	gmi = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
 		GetProcAddress (lib, "GetModuleInformation");
-
 	if (w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL || 
 	   gmbn == NULL || gmi == NULL) {
 		// OOPS!
@@ -214,8 +222,8 @@ static int w32_dbg_init() {
 	return R_TRUE;
 }
 
-static HANDLE w32_t2h(pid_t tid) {
 #if 0
+static HANDLE w32_t2h(pid_t tid) {
 	TH_INFO *th = get_th (tid);
 	if(th == NULL) {
 		/* refresh thread list */
@@ -226,9 +234,8 @@ static HANDLE w32_t2h(pid_t tid) {
 			return NULL;
 	}
 	return th->ht;
-#endif
-	return NULL;
 }
+#endif
 
 inline static int w32_h2t(HANDLE h) {
 	if (w32_getthreadid != NULL) // >= Windows Vista
@@ -285,10 +292,10 @@ eprintf ("w32thread: Oops\n");
 static int debug_exception_event (unsigned long code) {
 	switch (code) {
 	case EXCEPTION_BREAKPOINT:
-		eprintf ("breakpoint\n");
+		//eprintf ("breakpoint\n");
 		break;
 	case EXCEPTION_SINGLE_STEP:
-		eprintf ("singlestep\n");
+		//eprintf ("singlestep\n");
 		break;
 	/* fatal exceptions */
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -298,6 +305,12 @@ static int debug_exception_event (unsigned long code) {
 	case EXCEPTION_STACK_OVERFLOW:
 		eprintf ("fatal exception\n");
 		break;
+#if __MINGW64__
+	case 0x4000001f: //STATUS_WX86_BREAKPOINT
+		eprintf("WOW64 Loaded.\n");
+		return 1;
+		break;
+#endif
 	default:
 		eprintf ("unknown exception\n");
 		break;
@@ -319,23 +332,16 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		}
 		/* save thread id */
 		tid = de.dwThreadId;
+		//pid = de.dwProcessId;
+		dbg->tid=tid;
 		/* get exception code */
 		code = de.dwDebugEventCode;
+		//eprintf("code: %x pid=%08x tid=%08x\n",code,pid,tid);
 		/* Ctrl-C? */
-		if (code == 0x2) {
-			// TODO: interrupted
-			//WS(event) = INT_EVENT;
-			break;
-		}
-		/* set state */
-		//WS(event) = UNKNOWN_EVENT;
 		/* get kind of event */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) created process (%d:%p)\n",
-				    pid, w32_h2t (de.u.CreateProcessInfo.
-					    hProcess),
-				 de.u.CreateProcessInfo.lpStartAddress);
+			eprintf ("(%d) created process (%d:%p)\n", pid, w32_h2t (de.u.CreateProcessInfo.hProcess), de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_PID;
@@ -359,8 +365,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
-			eprintf ("(%d) Loading %s library at %p\n",
-				pid, "", de.u.LoadDll.lpBaseOfDll);
+			eprintf ("(%d) Loading %s library at %p\n",pid, "", de.u.LoadDll.lpBaseOfDll);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_LIB;
@@ -372,7 +377,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
-			eprintf("OUTPUT_DBUG_STING\n");
+			eprintf("OUTPUT_DEBUG_STRING\n");
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			break;
@@ -383,9 +388,12 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			// XXX unknown ret = R_DBG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
-			next_event = debug_exception_event (
-				de.u.Exception.ExceptionRecord.ExceptionCode);
-			return R_DBG_REASON_TRAP;
+			next_event = debug_exception_event (de.u.Exception.ExceptionRecord.ExceptionCode);
+			if (!next_event)
+				return R_DBG_REASON_TRAP;
+			else 
+				r_debug_native_continue (dbg, pid, tid, -1);
+			break;
 		default:
 			eprintf ("Unknown event: %d\n", code);
 			return -1;
@@ -408,24 +416,81 @@ static inline int CheckValidPE(unsigned char * PeHeader) {
 	return 0;
 }
 
-static RList *w32_dbg_maps() {
-	SYSTEM_INFO SysInfo;
-	MEMORY_BASIC_INFORMATION mbi;
-	HANDLE hProcess = 0; // XXX NEEDS TO HAVE A VALUE
-	LPBYTE page;
-	char *mapname = NULL;
-	/* DEPRECATED */
-	ut8 PeHeader[1024];
-	MODULEINFO ModInfo;
+static RList *w32_dbg_maps(RDebug *dbg) {
+	HANDLE hProcess = 0;
+	HANDLE hModuleSnap = 0;
 	IMAGE_DOS_HEADER *dos_header;
 	IMAGE_NT_HEADERS *nt_headers;
 	IMAGE_SECTION_HEADER *SectionHeader;
-	int NumSections, i;
 	SIZE_T ret_len;
+	MODULEENTRY32 me32;
 	RDebugMap *mr;
+	ut8 PeHeader[1024];
+	char *mapname = NULL;
+	int NumSections, i;
+	//int tid = dbg->tid;
+	int pid = dbg->pid;
 	RList *list = r_list_new ();
 
-	memset (&SysInfo, 0, sizeof (SysInfo));
+	hModuleSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, pid );
+	if( hModuleSnap == NULL ) {
+		//print_lasterr ((char *)__FUNCTION__);
+		CloseHandle( hModuleSnap );
+		return NULL;
+	}
+	me32.dwSize = sizeof( MODULEENTRY32 );
+	if( !Module32First(hModuleSnap, &me32))	{
+		//print_lasterr ((char *)__FUNCTION__);
+		CloseHandle( hModuleSnap );
+		return NULL;
+	}
+	hProcess=w32_openprocess(PROCESS_QUERY_INFORMATION |PROCESS_VM_READ,FALSE, pid );
+	do {
+		ReadProcessMemory (WIN32_PI (hProcess), (const void *)me32.modBaseAddr,(LPVOID)PeHeader, sizeof (PeHeader), &ret_len);
+		if (ret_len == sizeof (PeHeader) && CheckValidPE (PeHeader)) {
+			dos_header = (IMAGE_DOS_HEADER *)PeHeader;
+			if (dos_header != NULL) {
+				nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header + dos_header->e_lfanew);
+				if (nt_headers != NULL) {
+					NumSections = nt_headers->FileHeader.NumberOfSections;
+					SectionHeader = (IMAGE_SECTION_HEADER *) ((char *)nt_headers + sizeof(IMAGE_NT_HEADERS));
+					mr = r_debug_map_new (me32.szModule,
+								(ut64)(size_t) (me32.modBaseAddr),
+								(ut64)(size_t) (me32.modBaseAddr +SectionHeader->VirtualAddress),
+								SectionHeader->Characteristics,
+								0);
+					if (mr != NULL)
+						r_list_append (list, mr);
+					if(NumSections > 0) {
+						mapname = (char *)malloc(MAX_PATH);
+						for (i=0; i<NumSections; i++) {
+							if (SectionHeader->Misc.VirtualSize>0) {
+								sprintf(mapname,"%s | %s",me32.szModule,SectionHeader->Name);
+								mr = r_debug_map_new (mapname,
+									(ut64)(size_t) (SectionHeader->VirtualAddress + me32.modBaseAddr),
+									(ut64)(size_t) (SectionHeader->VirtualAddress + me32.modBaseAddr + SectionHeader->Misc.VirtualSize),
+									SectionHeader->Characteristics, // XXX?
+									0);
+								if (mr != NULL)
+									r_list_append (list, mr);
+							}
+							SectionHeader++;
+						}
+						free (mapname);
+					}
+				}
+			}
+		}
+	} while(Module32Next(hModuleSnap, &me32));
+	CloseHandle( hModuleSnap );
+	CloseHandle( hProcess );
+	return( list );
+/*
+	SYSTEM_INFO SysInfo;
+	LPBYTE page;
+    MODULEINFO ModInfo;
+	MEMORY_BASIC_INFORMATION mbi;
+    memset (&SysInfo, 0, sizeof (SysInfo));
 	GetSystemInfo (&SysInfo); // TODO: check return value
 	if (gmi == NULL) {
 		eprintf ("w32dbg: no gmi\n");
@@ -436,6 +501,7 @@ static RList *w32_dbg_maps() {
 		return 0;
 	}
 
+#if !__MINGW64__	// TODO: Fix this , for win64 cant walk over all process memory, use psapi.dll to get modules
 	for (page=(LPBYTE)SysInfo.lpMinimumApplicationAddress;
 			page<(LPBYTE)SysInfo.lpMaximumApplicationAddress;) {
 		if (!VirtualQueryEx (WIN32_PI (hProcess), page, &mbi, sizeof (mbi)))  {
@@ -445,6 +511,7 @@ static RList *w32_dbg_maps() {
 			//return NULL;
 		}
 		if (mbi.Type == MEM_IMAGE) {
+			eprintf ("MEM_IMAGE  address = 0x%08X\n", page);
 			ReadProcessMemory (WIN32_PI (hProcess), (const void *)page,
 				(LPVOID)PeHeader, sizeof (PeHeader), &ret_len);
 
@@ -455,7 +522,7 @@ static RList *w32_dbg_maps() {
 				nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header
 						+ dos_header->e_lfanew);
 				if (nt_headers == NULL) {
-					/* skip before failing */
+					// skip before failing
 					break;
 				}
 				NumSections = nt_headers->FileHeader.NumberOfSections;
@@ -491,12 +558,12 @@ static RList *w32_dbg_maps() {
 			if (gmi (WIN32_PI (hProcess), (HMODULE) page,
 					(LPMODULEINFO) &ModInfo, sizeof(MODULEINFO)) == 0)
 				return NULL;
-/* THIS CODE SEGFAULTS WITH NO REASON. BYPASS IT! */
+// THIS CODE SEGFAULTS WITH NO REASON. BYPASS IT!
 #if 0
 		eprintf("--> 0x%08x\n", ModInfo.lpBaseOfDll);
 		eprintf("sz> 0x%08x\n", ModInfo.SizeOfImage);
 		eprintf("rs> 0x%08x\n", mbi.RegionSize);
-			/* avoid infinite loops */
+		//	 avoid infinite loops
 		//	if (ModInfo.SizeOfImage == 0)
 		//		return 0;
 		//	page += ModInfo.SizeOfImage;
@@ -510,12 +577,13 @@ static RList *w32_dbg_maps() {
 				// XXX leak
 				return NULL;
 			}
-
 			r_list_append (list, mr);
 			page += mbi.RegionSize; 
 		}
 	}
+#endif
 	return list;
+*/
 }
 
 static HANDLE tid2handler(int pid, int tid) {

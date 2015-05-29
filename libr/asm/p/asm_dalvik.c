@@ -17,6 +17,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int size = dalvik_opcodes[i].len;
 	int payload = 0;
 
+	op->buf_asm[0] = 0;
 	if (buf[0] == 0x00) { /* nop */
 		switch (buf[1]) {
 		case 0x01: /* packed-switch-payload */
@@ -110,8 +111,13 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case fmtopvAAcBBBBBBBB:
 			vA = (int) buf[1];
-			vB = buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24);
-			sprintf (str, " v%i, %#08x", vA, vB);
+			//vB = buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24);
+			vB = buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24);
+			{
+				float f;
+				memcpy (&f, &vB, sizeof (float));
+				snprintf (str, sizeof (str), " v%i, 0x%08x ; %ff", vA, vB, f);
+			}
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtopvAAcBBBB0000:
@@ -154,37 +160,42 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case fmtoppAA:
 			vA = (char) buf[1];
-			sprintf (str, " %i", vA*2); // vA : word -> byte
+			//sprintf (str, " %i", vA*2); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA*2)); // vA : word -> byte
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] <<8 | buf[2]);
-			sprintf (str, " %i", vA*2); // vA: word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA*2)); // vA : word -> byte
 			strasm = r_str_concat (strasm, str);
 			break;
-		case fmtopvAApBBBB:
+		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
 			vB = (int) (buf[3] <<8 | buf[2]);
-			sprintf (str, " v%i, %i", vA, vB);
+			//sprintf (str, " v%i, %i", vA, vB);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB*2));
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24));
-			sprintf (str, " %#08x", vA*2); // vA: word -> byte
+			//sprintf (str, " %#08x", vA*2); // vA: word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA*2)); // vA : word -> byte
 			strasm = r_str_concat (strasm, str);
 			break;
-		case fmtopvAvBpCCCC:
+		case fmtopvAvBpCCCC: // if-*
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (int) (buf[3] <<8 | buf[2]);
-			sprintf (str, " v%i, v%i, %i", vA, vB, vC);
+			//sprintf (str, " v%i, v%i, %i", vA, vB, vC);
+			snprintf (str, sizeof (str)," v%i, v%i, 0x%"PFMT64x,
+				vA, vB, a->pc + (vC*2));
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24));
-			sprintf (str, " v%i,%s%i ; 0x%08"PFMT64x,
-				vA, vB>0?" +":" ", vB*2, a->pc + (vB*2));
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x,
+				vA, a->pc + vB); // + (vB*2));
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtoptinlineI:
@@ -326,16 +337,17 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vC = (buf[5]<<8) | buf[4];
 			if (buf[0] == 0x25) { // filled-new-array/range
 				offset = R_ASM_GET_OFFSET(a, 'c', vB);
-				if (offset == -1)
+				if (offset == UT64_MAX)
 					sprintf (str, " {v%i..v%i}, class+%i", vC, vC+vA-1, vB);
 				else
 					sprintf (str, " {v%i..v%i}, 0x%"PFMT64x, vC, vC+vA-1, offset);
 			} else {
 				offset = R_ASM_GET_OFFSET(a, 'm', vB);
-				if (offset == -1)
+				if (offset == UT64_MAX)
 					sprintf (str, " {v%i..v%i}, method+%i", vC, vC+vA-1, vB);
-				else
+				else {
 					sprintf (str, " {v%i..v%i}, 0x%"PFMT64x, vC, vC+vA-1, offset);
+				}
 			}
 			strasm = r_str_concat (strasm, str);
 			break;
@@ -363,16 +375,18 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strasm = r_str_concat (strasm, str);
 			if (buf[0] == 0x24) { // filled-new-array
 				offset = R_ASM_GET_OFFSET(a, 'c', vB);
-				if (offset == -1)
+				if (offset == UT64_MAX) {
 					sprintf (str, ", class+%i", vB);
-				else
-					sprintf (str, ", 0x%"PFMT64x, offset);
+				} else {
+					sprintf (str, ", 0x%"PFMT64x" ; 0x%x", offset, vB);
+				}
 			} else {
 				offset = R_ASM_GET_OFFSET(a, 'm', vB);
-				if (offset == -1)
+				if (offset == UT64_MAX) {
 					sprintf (str, ", method+%i", vB);
-				else
-					sprintf (str, ", 0x%"PFMT64x, offset);
+				} else {
+					sprintf (str, ", 0x%"PFMT64x" ; 0x%x", offset, vB);
+				}
 
 			}
 			strasm = r_str_concat (strasm, str);
@@ -390,7 +404,8 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strncpy (op->buf_asm, strasm, sizeof (op->buf_asm)-1);
 			op->buf_asm[sizeof (op->buf_asm)-1] = 0;
 		} else {
-			op->buf_asm[0] = 0;
+			//op->buf_asm[0] = 0;
+			strcpy (op->buf_asm , "invalid");
 		}
 	} else if (len>0) {
 		strcpy (op->buf_asm, "invalid ");

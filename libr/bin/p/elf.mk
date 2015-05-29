@@ -5,7 +5,9 @@ STATIC_OBJ+=${OBJ_ELF}
 TARGET_ELF=bin_elf.${EXT_SO}
 LINK+=-lr_db -L../../db
 
+ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_ELF}
 
 ${TARGET_ELF}: ${OBJ_ELF}
 	-${CC} $(call libname,bin_elf) ${CFLAGS} ${OBJ_ELF} $(LINK) $(LDFLAGS)
+endif

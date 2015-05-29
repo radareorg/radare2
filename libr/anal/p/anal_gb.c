@@ -437,7 +437,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 	}
 }
 
-static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//load with [hl] as memref - What to do with ldd and ldi?
+static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//load with [hl] as memref
 {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
@@ -446,6 +446,10 @@ static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//lo
 	op->src[0]->absolute = R_TRUE;
 	op->dst->reg = r_reg_get (reg, regs_8[((data & 0x38)>>3)], R_REG_TYPE_GPR);
 	r_strbuf_setf (&op->esil, "hl,[1],%s,=", regs_8[((data & 0x38)>>3)]);
+	if (data == 0x3a)
+		r_strbuf_append (&op->esil, ",1,hl,-=");
+	if (data == 0x2a)
+		r_strbuf_set (&op->esil, "hl,[1],a,=,1,hl,+=");			//hack in concept
 }
 
 static inline void gb_anal_load (RReg *reg, RAnalOp *op, const ut8 *data)
@@ -494,6 +498,10 @@ static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data)
 		op->src[0]->reg = r_reg_get (reg, regs_8[((data[0] & 0x38)>>3)], R_REG_TYPE_GPR);
 		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[(data[0] & 0x38)>>3]);
 	}
+	if (data[0] == 0x32)
+		r_strbuf_append (&op->esil, ",1,hl,-=");
+	if (data[0] == 0x22)
+		r_strbuf_set (&op->esil, "a,hl,=[1],1,hl,+=");
 }
 
 static void gb_anal_store (RReg *reg, RAnalOp *op, const ut8 *data)
@@ -624,31 +632,36 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data) {
 
 static int gb_custom_daa (RAnalEsil *esil) {
 	ut8 a, H, C, Z;
+	ut64 n;
 	if (!esil || !esil->anal || !esil->anal->reg)
 		return R_FALSE;
-	H = r_reg_getv (esil->anal->reg, "H");
-	C = r_reg_getv (esil->anal->reg, "C");
-	a = r_reg_getv (esil->anal->reg, "a");
-	esil->old = a;
-	if (r_reg_getv (esil->anal->reg, "N")) {
+	r_anal_esil_reg_read (esil, "H", &n);
+	H = (ut8)n;
+	r_anal_esil_reg_read (esil, "C", &n);
+	C = (ut8)n;
+	r_anal_esil_reg_read (esil, "a", &n);
+	esil->old = n;
+	a = (ut8)n;
+	r_anal_esil_reg_read (esil, "N", &n);
+	if (n) {
 		if (C)
 			a = (a - 0x60) & 0xff;
-		else	r_reg_setv (esil->anal->reg, "C", 0);
+		else	r_anal_esil_reg_write (esil, "C", 0LL);
 		if (H)
 			a = (a - 0x06) & 0xff;
 	} else {
 		if (C || (a > 0x99)) {
 			a = (a + 0x60) & 0xff;
-			r_reg_setv (esil->anal->reg, "C", 1);
+			r_anal_esil_reg_write (esil, "C", 1LL);
 		}
 		if (H || ((a & 0x0f) > 0x09))
 			a += 0x06;;
 	}
 	esil->cur = a;
 	Z = (a == 0);
-	r_reg_setv (esil->anal->reg, "a", a);
-	r_reg_setv (esil->anal->reg, "Z", Z);
-	r_reg_setv (esil->anal->reg, "H", 0);
+	r_anal_esil_reg_write (esil, "a", (ut64)a);
+	r_anal_esil_reg_write (esil, "Z", (ut64)Z);
+	r_anal_esil_reg_write (esil, "H", 0LL);
 	return R_TRUE;
 }
 
@@ -816,13 +829,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x0a:
 		case 0x1a:
-		case 0x2a:
-		case 0x3a:
 		case 0xf2:
 			gb_anal_load (anal->reg, op, data);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
+		case 0x2a:
+		case 0x3a:
 		case 0x46:
 		case 0x4e:
 		case 0x56:
@@ -1435,6 +1448,15 @@ static int esil_gb_init (RAnalEsil *esil) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
+			if (esil->anal->reg) {		//initial values
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "mpc", -1), 0x100);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0xfffe);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "af", -1), 0x01b0);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "bc", -1), 0x0013);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "de", -1), 0x00d8);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "hl", -1), 0x014d);
+				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "ime", -1), R_TRUE);
+			}
 		}
 		esil->cb.user = user;
 	}

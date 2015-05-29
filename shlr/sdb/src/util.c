@@ -50,11 +50,20 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	static const char* lookup = "0123456789abcdef";
 	const int imax = 62;
 	int i = imax;
-	if (base > 16)
+	if (s) {
+		*s = 0;
+	}
+	if (base < 0)
+		base = -base;
+	if ((base > 16) || (base == 0))
 		return NULL;
 	if (!s) {
 		s = calloc (64, sizeof(char));
 		if (!s) return NULL;
+	}
+	if (!n) {
+		strcpy (s, "0");
+		return s;
 	}
 	s[imax+1] = '\0';
 	if (base <= 10) {
@@ -135,6 +144,21 @@ SDB_API int sdb_alen(const char *str) {
 		if (!n) break;
 		p = n+1;
 	}
+	return ++len;
+}
+
+SDB_API int sdb_alen_ignore_empty(const char *str) {
+	int len = 1;
+	const char *n, *p = str;
+	if (!p || !*p) return 0;
+	while (*p == SDB_RS) p++;
+	for (len=0; ; ) {
+		n = strchr (p, SDB_RS);
+		if (!n) break;
+		p = n+1;
+		if (*(p) == SDB_RS) continue;
+		len++;
+	}
 	if (*p) len++;
 	return len;
 }
@@ -188,11 +212,8 @@ SDB_API ut64 sdb_unow () {
 }
 
 SDB_API int sdb_isnum (const char *s) {
-	if (*s=='-' || *s=='+')
-		return 1;
-	if (*s>='0' && *s<='9')
-		return 1;
-	return 0;
+	const char vs = *s;
+	return ((vs=='-' || vs=='+') || (vs>='0' && vs<='9'));
 }
 
 SDB_API int sdb_num_base (const char *s) {
@@ -207,8 +228,7 @@ SDB_API int sdb_match (const char *str, const char *glob) {
 	if (*glob=='^') {
 		if (!strncmp (str, glob+1, strlen (glob+1)))
 			return 1;
-	} else
-	if (glob[strlen(glob)-1]=='$') {
+	} else if (glob[strlen(glob)-1]=='$') {
 		int glob_len = strlen (glob)-1;
 		int str_len = strlen (str);
 		if (str_len > glob_len) {
@@ -216,9 +236,9 @@ SDB_API int sdb_match (const char *str, const char *glob) {
 			if (!strncmp (str + n, glob, glob_len))
 				return 1;
 		}
-	} else
-	if (strstr (str, glob))
+	} else if (strstr (str, glob)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -267,4 +287,3 @@ SDB_API int sdb_isjson (const char *k) {
 		return 0;
 	return 1;
 }
-

@@ -6,9 +6,9 @@ cd `dirname $PWD/$0`
 cd ..
 
 . ./sys/CONFIG
-echo =============
+echo "============="
 cat sys/CONFIG
-echo =============
+echo "============="
 
 export PYTHON
 export DESTDIR

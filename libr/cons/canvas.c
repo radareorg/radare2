@@ -60,6 +60,8 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (!c) return 0;
 	x += c->sx;
 	y += c->sy;
+	if (x>c->w*2) return 0;
+	if (y>c->h*2) return 0;
 	if (x >= c->w) {
 		c->x = c->w;
 		ret = R_FALSE;
@@ -103,10 +105,9 @@ static char *getrow (char *p, char **n) {
 static char *prefixline(RConsCanvas *c, int *left) {
 	int x;
 	char *p;
-	if (!c)
-		return NULL;
+	if (!c) return NULL;
 	p = c->b + (c->y * c->w);
-	for (x = 0; x<c->x; x++) {
+	for (x = 0; p[x] && x<c->x; x++) {
 		if (p[x] == '\n')
 			p[x] = ' ';
 	}
@@ -257,13 +258,20 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
+	void *newbuf = NULL;
 	const int blen = (w+1) * h;
 	char *b = NULL;
 	if (!c || w < 0) return R_FALSE;
 	b = realloc (c->b, blen+1);
 	if (!b) return R_FALSE;
-	c->attrs = realloc(c->attrs,sizeof(*c->attrs)*blen+1);
-	if (!c->attrs) return R_FALSE;
+	c->b = b;
+	newbuf = realloc (c->attrs, sizeof (*c->attrs)*blen+1);
+	if (!newbuf) {
+		free (c->b);
+		free (c->attrs);
+		return R_FALSE;
+	}
+	c->attrs = newbuf;
 	c->blen = blen;
 	c->b = b;
 	c->w = w;
@@ -280,15 +288,22 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	char *row = NULL;
 	char corner = '=';
 
-	if (w < 0) return;
+	if (w < 1 || h<1) return;
+	if (x > c->w*2) return;
+	if (y > c->h*2) return;
 
 	if (color)
 		c->attr = color;
 	row = malloc (w+1);
+	if (!row)
+		return;
 	row[0] = roundcorners?'.':corner;
-	memset (row+1, '-', w-2);
-	row[w-1] = roundcorners?'.':corner;
-	row[w] = 0;
+	if (w>2)
+		memset (row+1, '-', w-2);
+	if (w>1)
+		row[w-1] = roundcorners?'.':corner;
+	if (w>=0)
+		row[w] = 0;
 	if (G(x, y)) {
 		W(row);
 	}

@@ -4,6 +4,7 @@
 /* proc IO is not related to socket io.. this is shitty!! */
 
 #include <r_socket.h>
+#include <r_util.h>
 #include <signal.h>
 
 #if __UNIX__
@@ -42,7 +43,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 	if (fcntl (sp->fd1[1], flags) < 0)
 		goto error;
 
-	sp->pid = fork ();
+	sp->pid = r_sys_fork ();
 	switch (sp->pid) {
 	case 0:
 		close (0);

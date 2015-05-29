@@ -285,6 +285,7 @@ typedef struct
 #define EM_ARC_A5	93		/* ARC Cores Tangent-A5 */
 #define EM_XTENSA	94		/* Tensilica Xtensa Architecture */
 #define EM_NUM		95
+#define EM_BLACKFIN	106		/* Analog Devices Blackfin */
 #define EM_AARCH64      183		/* ARMv8 */
 #define EM_PROPELLER	0x5072
 

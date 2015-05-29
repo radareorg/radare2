@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2014 - pancake */
+/* radare - LGPL - Copyright 2006-2015 - pancake */
 
 #include <errno.h>
 #include <r_types.h>
@@ -180,8 +180,10 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 				if (ret == -1) {
 					close (s->fd);
 					s->fd = -1;
+					freeaddrinfo (res);
 					return R_FALSE;
 				}
+				freeaddrinfo (res);
 				return R_TRUE;
 			}
 			if (ret<0) {

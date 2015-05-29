@@ -12,22 +12,26 @@ static RAnalEsilCallbacks ocbs = {0};
 
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	int ret = 0;
-	ut64 val = 0LL;
 	if (*name=='0') {
 		eprintf ("Register not found in profile\n");
 		return 0;
 	}
-	if (esil->cb.reg_read) {
-		(void)esil->cb.reg_read (esil, name, &val);
-	}
-	eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-	sdb_array_add (DB, KEY ("reg.read"), name, 0);
-	sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
 	if (ocbs.hook_reg_read) {
 		RAnalEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_reg_read (esil, name, res);
 		esil->cb = cbs;
+	}
+	if (!ret && esil->cb.reg_read) {
+		ret = esil->cb.reg_read (esil, name, res);
+	}
+	if (ret) {
+		ut64 val = *res;
+		eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
+		sdb_array_add (DB, KEY ("reg.read"), name, 0);
+		sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
+	} else {
+		eprintf ("[ESIL] REG READ %s FAILED\n", name);
 	}
 	return ret;
 }
@@ -55,9 +59,9 @@ static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	sdb_array_add_num (DB, KEY ("mem.read"), addr, 0);
 	r_hex_bin2str (buf, len, hexbuf);
 	sdb_set (DB, KEYAT ("mem.read.data", addr), hexbuf, 0);
+	eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	free (hexbuf);
 
-	eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	if (ocbs.hook_mem_read) {
 		RAnalEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
@@ -73,8 +77,9 @@ static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	sdb_array_add_num (DB, KEY ("mem.write"), addr, 0);
 	r_hex_bin2str (buf, len, hexbuf);
 	sdb_set (DB, KEYAT ("mem.write.data", addr), hexbuf, 0);
-	free (hexbuf);
 	eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
+	free (hexbuf);
+
 	if (ocbs.hook_mem_write) {
 		RAnalEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;

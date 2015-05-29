@@ -2,6 +2,7 @@
 
 #include "sdb.h"
 #include <stdarg.h>
+#include <string.h>
 
 // TODO: Add 'a' format for array of pointers null terminated??
 // XXX SLOW CONCAT
@@ -22,7 +23,6 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 	if (n==-1) {
 		if (fmt) {
 			n = cyclic_n++;
-			eprintf ("N = %d\n", n);
 			if (cyclic_n>15)
 				cyclic_n = 0;
 		} else {
@@ -179,13 +179,12 @@ SDB_API ut64* sdb_fmt_array_num(const char *list) {
 }
 
 SDB_API char** sdb_fmt_array(const char *list) {
-	char **retp, **ret = NULL;
+	char *_s, **retp, **ret = NULL;
 	const char *next, *ptr = list;
-	char *_s;
 	if (list && *list) {
 		int len = sdb_alen (list);
 		retp = ret = (char**) malloc (2*strlen (list) +
-			((len+1)*sizeof(char*)));
+			((len+1)*sizeof(char*))+1);
 		_s = (char*)ret + ((len+1)*sizeof(char*));
 		if (!ret) {
 			return NULL;

@@ -427,8 +427,11 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 		ins_res = strcat_dup(ins_res, ins_aux, 2);
 		*next_ins_pos = *next_ins_pos + 1;
 	} else {
-		ins_aux = decode_ins(hash_code, ins_pos, ins_off, &ins_len_dec, &reg_len_dec, &ret_ins_bits, magic_value, two_ins, err_code);
-		if(*err_code < 0) {
+		free (ins_aux);
+		ins_aux = decode_ins(hash_code, ins_pos, ins_off, &ins_len_dec,
+			&reg_len_dec, &ret_ins_bits, magic_value, two_ins, err_code);
+		if (*err_code < 0) {
+			free (ins_aux);
 			return NULL;
 		}
 		ins_res = strcat_dup(ins_aux, ins_res, 1);
@@ -565,7 +568,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 	case 36: res = ins_bits? strdup(" || local()") : NULL; break;
 	case 37: res = get_opers(ins_bits); break;
 	case 38:
-		res = ins_bits? "LO" : "HI";
+		res = ins_bits? "lo" : "hi";
 		res = strdup(res);
 		break;
 	case 39: res = get_cmp_op(ins_bits); break;
@@ -684,7 +687,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 		}
 
 		if (flag) {
-			res = strcat_dup("T3 = ", aux, 2);
+			res = strcat_dup("t3 = ", aux, 2);
 		} else {
 			res = aux;
 			*ret_reg_len = ret_len;
@@ -713,9 +716,9 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 			break;
 		if (reg_arg) {
 			if (*reg_arg == 'H') {
-				res = "HI(";
+				res = "hi(";
 			} else if (*reg_arg == 'L') {
-				res = "LO(";
+				res = "lo(";
 			} else if (*reg_arg == 'd') {
 				res = "dbl(";
 			} else if (*reg_arg == ')') {
@@ -771,7 +774,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 				aux = strcat_dup("volatile(", aux, 2);
 			}
 		}
-		res = flag? strcat_dup ("T3 = ", aux, 2): aux;
+		res = flag? strcat_dup ("t3 = ", aux, 2): aux;
 		break;
 	case 0:
 	case 1:
@@ -837,7 +840,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 		res = strdup(res);
 		break;
 	case 16:
-		res = (ins_bits != 0)? strdup("T3 = ") : NULL;
+		res = (ins_bits != 0)? strdup("t3 = ") : NULL;
 		break;
 	case 17:
 		if (!ins_bits)
@@ -846,7 +849,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 			res = "40";
 		} else {
 			if (*reg_arg == '(') {
-				res = "M40(";
+				res = "m40(";
 			} else if (*reg_arg == ')') {
 				res = ")";
 			} else {
@@ -857,11 +860,11 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 		break;
 	case 78:
 		if (!strncasecmp(ins_token, "q_SAT", 5)) {
-			res = ins_bits? "S": NULL;
+			res = ins_bits? "s": NULL;
 		} else if (!strncasecmp(ins_token, "q_CIRC", 6)) {
-			res = ins_bits? ".CR": NULL;
+			res = ins_bits? ".cr": NULL;
 		} else if (!strncasecmp(ins_token, "q_LINR", 6)) {
-			res = ins_bits? ".LR": NULL;
+			res = ins_bits? ".lr": NULL;
 		} else {
 			fprintf (stderr, "Invalid instruction %s\n!", ins_token);
 			*err_code = -1;

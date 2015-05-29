@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <systemz.h>
+#include <capstone/capstone.h>
+#include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
 
 

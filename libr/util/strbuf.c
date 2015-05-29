@@ -55,7 +55,7 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
-	int l = strlen (s)+1;
+	int l = strlen (s);
 	if ((sb->len+l+1)<sizeof (sb->buf)) {
 		memcpy (sb->buf+sb->len, s, l);
 		sb->ptr = NULL;

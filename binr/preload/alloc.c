@@ -22,7 +22,6 @@ struct
 	int size;
 } MCB, *MCB_P;
 
-
 static char *mem_start_p;
 static int max_mem;
 static int allocated_mem; /* this is the memory in use. */
@@ -42,7 +41,6 @@ void InitMem(char *ptr, int size_in_bytes) {
 	memset (mem_start_p, 0x00, max_mem);
 	/* This function is complete :-) */
 }
-
 
 R_API void *r_malloc(int elem_size) {
 	/* check whether any chunk (allocated before) is free first */
@@ -71,8 +69,7 @@ R_API void *r_malloc(int elem_size) {
 
 	if (flag != NO_MCB) {
 		p_mcb->is_available = 1;
-
-		if( flag == NEW_MCB) {
+		if (flag == NEW_MCB) {
 			p_mcb->size = elem_size + sizeof(MCB);
 		} else if( flag == REUSE_MCB) {
 			elem_size = p_mcb->size - sizeof(MCB);
@@ -100,8 +97,8 @@ void r_free(void *p) {
 
 #if __MAIN__
 int main() {
-#define MB 7
-#define R_MALLOC_MAX 1024*1024*MB
+#define MB 1024*1024
+#define R_MALLOC_MAX 2*MB
 
 #if R_ALLOC_USE_STACK
 	char B[R_MALLOC_MAX];
@@ -115,18 +112,17 @@ int main() {
 	close (fd);
 #endif
 
-//char *B = sbrk (1024*1024*MB);
 	InitMem (B, R_MALLOC_MAX);
 
-	char *a = r_malloc (1024);
+	char *a = r_malloc (10);
 	if (!a) {
 		printf ("cant malloc\n");
 		return 1;
 	}
 	strcpy (a, "hello");
-	char *b = r_malloc (1024);
+	char *b = r_malloc (10);
 	strcpy (b, "world");
-	printf ("%s %s\n", a, b);
+	printf ("%p: %s\n%p: %s\n", a, a, b, b);
 	r_free (b);
 	r_free (a);
 	return 0;

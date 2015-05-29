@@ -16,13 +16,13 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 #endif
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__)
 #include <windows.h>
 #include <wincon.h>
 #endif
@@ -133,6 +133,13 @@ typedef struct r_cons_canvas_t {
 } RConsCanvas;
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+typedef int (*RConsClickCallback)(void *core, int x, int y);
+
+#if 0
+r_cons_click_begin();
+r_cons_click_end();
+r_cons_click_clear();
+#endif
 
 typedef struct r_cons_t {
 	RConsGrep grep;
@@ -166,7 +173,7 @@ typedef struct r_cons_t {
 
 	RConsEditorCallback editor;
 	void *user; // Used by <RCore*>
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	LPDWORD term_raw, term_buf;
@@ -185,6 +192,7 @@ typedef struct r_cons_t {
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
+	RConsClickCallback onclick;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -324,6 +332,9 @@ R_API void r_cons_pipe_close(int fd);
 R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 #endif
 
+R_API void r_cons_push();
+R_API void r_cons_pop();
+
 /* control */
 R_API char *r_cons_editor (const char *file, const char *str);
 R_API void r_cons_reset(void);
@@ -339,6 +350,7 @@ R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
 R_API void r_cons_show_cursor (int cursor);
+R_API char *r_cons_swap_ground(const char *col);
 R_API void r_cons_set_raw(int b);
 R_API void r_cons_set_interactive(int b);
 R_API void r_cons_set_last_interactive(void);
@@ -363,12 +375,13 @@ R_API int r_cons_is_utf8(void);
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API int r_cons_controlz(int ch);
-R_API int  r_cons_readchar(void);
-R_API void r_cons_any_key(void);
-R_API int  r_cons_eof(void);
+R_API int r_cons_readchar(void);
+R_API int r_cons_any_key(const char *msg);
+R_API int r_cons_eof(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set (const char *key, const char *val);
+R_API void r_cons_pal_free(void);
 R_API void r_cons_pal_init(const char *foo);
 R_API char *r_cons_pal_parse(const char *str);
 R_API void r_cons_pal_random(void);

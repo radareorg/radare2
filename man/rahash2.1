@@ -12,6 +12,7 @@
 .Op Fl i Ar iterations
 .Op Fl S Ar seed
 .Op Fl f Ar from
+.Op Fl x Ar hexstr
 .Op Fl t Ar to
 .Op [file] ...
 .Sh DESCRIPTION
@@ -53,6 +54,8 @@ Start hashing at given address
 Stop hashing at given address
 .It Fl r
 Show output in radare commands
+.It Fl x Ar hexstr
+Hash the given hexpair string instead of using the 'source' and 'hash-file' arguments.
 .It Fl v
 Show version information
 .It Fl h

@@ -45,7 +45,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		"wor"," [val]", ">>= shift right",
 		"wol"," [val]","<<= shift left",
 		"wo2"," [val]","2=  2 byte endian swap",
-		"wo4"," [val]", " 4=  4 byte endian swap",
+		"wo4"," [val]", "4=  4 byte endian swap",
 		"woD"," [len]","De Bruijn Pattern (syntax woD length @ addr)",
 		"woO"," [len]", "De Bruijn Pattern Offset (syntax: woO value)",
 		NULL
@@ -114,9 +114,13 @@ static void cmd_write_value (RCore *core, const char *input) {
 	ut8 addr1;
 	ut16 addr2;
 	ut32 addr4, addr4_;
-	ut64 addr8, off;
+	ut64 addr8, off = 0LL;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 
+	if (!input)
+		return;
+
+	if (input[0])
 	switch (input[1]) {
 	case '?':
 		r_cons_printf ("|Usage: wv[size] [value]    # write value of given size\n"
@@ -129,8 +133,12 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case '4': type = 4; break;
 	case '8': type = 8; break;
 	}
-	off = r_num_math (core->num, input+2);
-	r_io_use_desc (core->io, core->file->desc);
+	if (input && input[0] && input[1] && input[2]) {
+		off = r_num_math (core->num, input+2);
+	}
+	if (core->file) {
+		r_io_use_desc (core->io, core->file->desc);
+	}
 	r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (type == 0)
 		type = (off&UT64_32U)? 8: 4;
@@ -173,16 +181,18 @@ static int cmd_write(void *data, const char *input) {
 	char _fn[32];
 	ut64 off;
 	ut8 *buf;
-	st64 num;
+	st64 num = 0;
 	const char* help_msg[] = {
 		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
 		"w","[1248][+-][n]","increment/decrement byte,word..",
 		"w"," foobar","write string 'foobar'",
+		"w0"," [len]","write 'len' bytes with value 0x00",
 		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 		"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
 		"waf"," file","assemble file and write bytes",
 		"wA"," r 0","alter/modify opcode at current seek (see wA?)",
 		"wb"," 010203","fill current block with cyclic hexpairs",
+		"wB","[-]0xVALUE","set or unset bits with given value",
 		"wc","","list all write changes",
 		"wc","[ir*?]","write cache undo/commit/reset/list (io.cache)",
 		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
@@ -202,9 +212,12 @@ static int cmd_write(void *data, const char *input) {
 		NULL
 	};
 
+	if (!input)
+		return 0;
+
 	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
-	str = ostr = strdup (input+1);
+	str = ostr = strdup ((input&&*input)?input+1:"");
 	_fn[0] = 0;
 
 	switch (*input) {
@@ -221,14 +234,28 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		break;
+	case '0':
+		{
+			ut64 len = r_num_math (core->num, input+2);
+			if (len>0) {
+				ut8 *buf = calloc (1, len);
+				if (buf) {
+					r_io_write (core->io, buf, len);
+					free (buf);
+				} else eprintf ("Cannot allocate %d bytes\n", (int)len);
+			}
+		}
+		break;
 	case '1':
 	case '2':
 	case '4':
 	case '8':
-		if (input[1]==input[2]) {
-			num = 1;
-		} else num = r_num_math (core->num, input+2);
-		switch (input[1]) {
+		if (input[1] && input[2]) {
+			if (input[1]==input[2]) {
+				num = 1;
+			} else num = r_num_math (core->num, input+2);
+		}
+		switch (input[2] ? input[1] : 0) {
 		case '+':
 			cmd_write_inc (core, *input-'0', num);
 			break;
@@ -242,18 +269,22 @@ static int cmd_write(void *data, const char *input) {
 	case '6':
 		{
 		int fail = 0;
-		if(input[2] != ' ') {
+		if(input[1] && input[2] != ' ') {
 			fail = 1;
 		}
 		ut8 *buf;
-		int len;
-		const char *str = input + 3;
-		int str_len = strlen(str) + 1;
-		if(!fail) {
-			switch(input[1]) {
+		int len, str_len;
+		const char *str;
+
+		if (input[1] && input[2] && input[3])
+			str = input + 3;
+		else str = "";
+		str_len = strlen (str) + 1;
+		if (!fail) {
+			switch (input[1]) {
 			case 'd':
-				buf = malloc(str_len);
-				len = r_base64_decode(buf, str, 0);
+				buf = malloc (str_len);
+				len = r_base64_decode (buf, str, 0);
 				if(len == 0) {
 					free(buf);
 					fail = 1;
@@ -644,31 +675,45 @@ static int cmd_write(void *data, const char *input) {
 		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;
-	case 't': {
-		st64 sz = core->blocksize;
+	case 't': // "wt"
 		if (*str == '?') {
-			eprintf ("Usage: wt file [size]\n");
+			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
 			free (ostr);
 			return 0;
-		} else
-		if (*str != ' ') {
-			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-			snprintf(_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
-			filename = _fn;
-		}  else filename = str+1;
-		tmp = strchr (str+1, ' ');
-		if (tmp) {
-			sz = (st64) r_num_math (core->num, tmp+1);
-			*tmp = 0;
-			if (sz<1) eprintf ("Invalid length\n");
-			else r_core_dump (core, filename, core->offset, (ut64)sz);
 		} else {
-			if (!r_file_dump (filename, core->block, core->blocksize)) {
-				sz = 0;
-			} else sz = core->blocksize;
-		}
-		eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
-			sz, core->offset, filename);
+			int append = 0;
+			st64 sz = core->blocksize;
+			if (*str=='a') { // "wta"
+				append = 1;
+				str++;
+				if (str[0]==' ') {
+					filename = str+1;
+				} else {
+					const char* prefix = r_config_get (core->config, "cfg.prefixdump");
+					snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+					filename = _fn;
+				}
+			} else if (*str != ' ') {
+				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
+				snprintf(_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+				filename = _fn;
+			} else filename = str+1;
+			tmp = strchr (str+1, ' ');
+			if (tmp) {
+				sz = (st64) r_num_math (core->num, tmp+1);
+				if (!sz) {
+					sz = core->blocksize;
+				}
+				*tmp = 0;
+				if (sz<1) eprintf ("Invalid length\n");
+				else r_core_dump (core, filename, core->offset, (ut64)sz, append);
+			} else {
+				if (!r_file_dump (filename, core->block, core->blocksize, append)) {
+					sz = 0;
+				} else sz = core->blocksize;
+			}
+			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+				sz, core->offset, filename);
 		}
 		break;
 	case 'f':
@@ -800,7 +845,7 @@ static int cmd_write(void *data, const char *input) {
 		default:
 			r_cons_printf ("|Usage: wa[of*] [arg]\n"
 				"| wa nop           : write nopcode using asm.arch and asm.bits\n"
-				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of sassembled opcode\n"
+				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of assembled opcode\n"
 				"| \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
 				"| waf foo.asm      : assemble file and write bytes\n"
 				"| wao nop          : convert current opcode into nops\n"
@@ -857,7 +902,7 @@ static int cmd_write(void *data, const char *input) {
 		cmd_write_op (core, input);
 		break;
 	case 'd':
-		if (input[1]==' ') {
+		if (input[1] && input[1]==' ') {
 			char *arg, *inp = strdup (input+2);
 			arg = strchr (inp, ' ');
 			if (arg) {
@@ -873,16 +918,18 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
 		break;
 	case 's':
-		len = r_str_unescape (str+1);
-		if (len>255) {
-			eprintf ("Too large\n");
-		} else {
-			ut8 ulen = (ut8)len;
-			r_core_write_at (core, core->offset, &ulen, 1);
-			r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
-			WSEEK (core, len);
-			r_core_block_read (core, 0);
-		}
+		if (str && *str && str[1]) {
+			len = r_str_unescape (str+1);
+			if (len>255) {
+				eprintf ("Too large\n");
+			} else {
+				ut8 ulen = (ut8)len;
+				r_core_write_at (core, core->offset, &ulen, 1);
+				r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
+				WSEEK (core, len);
+				r_core_block_read (core, 0);
+			}
+		} else eprintf ("Too short.\n");
 		break;
 	default:
 	case '?':

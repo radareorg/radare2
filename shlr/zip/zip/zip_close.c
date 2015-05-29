@@ -614,7 +614,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
         sprintf(temp, "%s.XXXXXX", za->zn);
     }
 
-#if _WIN32 || __MINGW32__
+#if __WIN32__ || __MINGW32__ || defined(_WIN32)
     if ((tfd=open(temp, O_RDWR|O_CREAT, 0644)) == -1) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	free(temp);
@@ -628,7 +628,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	return NULL;
     }
 #endif
-    
+
     if ((tfp=fdopen(tfd, "r+b")) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	close(tfd);

@@ -16,12 +16,12 @@ static int is_string (const ut8 *buf, int size, int *len) {
 			*len = i;
 			return 1;
 		}
+		if (buf[i]==10||buf[i]==13||buf[i]==9) {
+			continue;
+		}
 		if (buf[i]<32 || buf[i]>127) {
 			// not ascii text
 			return 0;
-		}
-		if (buf[i]==10||buf[i]==13||buf[i]==9) {
-			continue;
 		}
 		if (!IS_PRINTABLE (buf[i])) {
 			*len = i;

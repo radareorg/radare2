@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <mips.h>
+#include <capstone/capstone.h>
+#include <capstone/mips.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
@@ -169,7 +169,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		const char *arg1 = ARG(1);
 		const char *arg2 = ARG(2);
 		r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-			arg1, arg2, arg0);
+			arg2, arg1, arg0);
 		}
 		break;
 	/** signed -- sets overflow flag */

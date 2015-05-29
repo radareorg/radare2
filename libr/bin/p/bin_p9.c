@@ -28,7 +28,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return (void*)(size_t)check_bytes (buf, sz);
 }
 
@@ -154,26 +154,21 @@ static RList* libs(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	const char *archstr;
 	RBinInfo *ret = NULL;
-	int big_endian = 0;
-	int bits = 32;
-	int bina;
+	int bits=32, bina, big_endian = 0;
 
 	if (!(bina = r_bin_p9_get_arch (arch->buf->buf, &bits, &big_endian)))
 		return NULL;
 	if ((ret = R_NEW0 (RBinInfo)) == NULL)
 		return NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->bclass, "program", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rclass, "p9", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, "plan9", R_BIN_SIZEOF_STRINGS);
-	archstr = r_sys_arch_str (bina);
-	strncpy (ret->arch, archstr, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->machine, archstr, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->subsystem, "plan9", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+	ret->file = strdup (arch->file);
+	ret->bclass = strdup ("program");
+	ret->rclass = strdup ("p9");
+	ret->os = strdup ("Plan9");
+	ret->arch = strdup (r_sys_arch_str (bina));
+	ret->machine = strdup (ret->arch);
+	ret->subsystem = strdup ("plan9");
+	ret->type = strdup ("EXEC (executable file)");
 	ret->bits = bits;
 	ret->has_va = R_TRUE;
 	ret->big_endian = big_endian;

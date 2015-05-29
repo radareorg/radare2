@@ -2,16 +2,19 @@
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	const char *file, *arg = input+1;
+	const char *file, *arg = (input && *input)? input+1: NULL;
 	const char *fileproject = r_config_get (core->config, "file.project");
-	char *str = strdup (fileproject);
-	if (*arg==' ') arg++;
-	file = input[1]?arg:str;
+	char *str = NULL;
+
+	if (!input)
+		return R_FALSE;
+
+	str = strdup (fileproject);
+	if (arg && *arg==' ') arg++;
+	file = (input[0] && input[1])? arg: str;
 	switch (input[0]) {
 	case 'c':
-		if (!input[1]) {
-			eprintf ("TODO: Show project saving script to console\n");
-		} else if (input[1]==' ') {
+		if (input[1]==' ') {
 			r_core_project_cat (core, input+2);
 		} else eprintf ("Usage: Pc [prjname]\n");
 		break;
@@ -117,7 +120,7 @@ static int cmd_project(void *data, const char *input) {
 				if (data) {
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
-						r_file_dump (str, data, strlen ((const char*)data));
+						r_file_dump (str, data, strlen ((const char*)data), 0);
 						free (str);
 					}
 					free (data);
@@ -160,7 +163,6 @@ static int cmd_project(void *data, const char *input) {
 	default: {
 		const char* help_msg[] = {
 		"Usage:", "P[?osi] [file]", "Project management",
-		"Pc", "", "show what will be saved in the project script",
 		"Pc", " [file]", "show project script to console",
 		"Pd", " [file]", "delete project",
 		"Pi", " [file]", "show project information",

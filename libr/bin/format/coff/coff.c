@@ -28,9 +28,9 @@ int r_coff_is_stripped (struct r_bin_coff_obj *obj) {
 }
 
 const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
+// XXX: this must be fixed (fuzzy can make it crash)
+#if 0
 	union { char name[8]; struct { ut32 zero; ut32 offset; }; } *p = ptr;
-
-return NULL;
 	if (!ptr)
 		return NULL;
 	if (p->zero)
@@ -38,10 +38,13 @@ return NULL;
 
 	return (char *)obj->b->buf + obj->hdr.f_symptr + 
 		obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
+#else
+	return NULL;
+#endif
 }
 
 static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
-	if (sym->n_scnum < 1)
+	if (sym->n_scnum<1 || sym->n_scnum > obj->hdr.f_nscns)
 		return 0;
 	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
 	return 1;

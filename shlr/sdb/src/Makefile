@@ -2,7 +2,7 @@ include ../config.mk
 
 CFLAGS+= -g -ggdb
 OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o num.o base64.o
-OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o
+OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o
 
 SOBJ=$(subst .o,._o,${OBJ})
 

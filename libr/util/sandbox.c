@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -10,17 +10,24 @@ static int disabled = 0;
  * This function verifies that the given path is allowed. Paths are allowed only if they don't
  * contain .. components (which would indicate directory traversal) and they are relative.
  * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
- * paths are ok.
+ * path are ok.
  */
 R_API int r_sandbox_check_path (const char *path) {
+	size_t root_len;
 	char ch;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
 
 	if (!path) return 0;
 
+	root_len = strlen (R2_LIBDIR"/radare2");
+	if (!strncmp (path, R2_LIBDIR"/radare2", root_len))
+		return 1;
+	root_len = strlen (R2_DATDIR"/radare2");
+	if (!strncmp (path, R2_DATDIR"/radare2", root_len))
+		return 1;
 	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
-	size_t root_len = strlen (R2_WWWROOT);
+	root_len = strlen (R2_WWWROOT);
 	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
 			R2_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
 		path += strlen (R2_WWWROOT);
@@ -70,10 +77,13 @@ R_API int r_sandbox_system (const char *x, int n) {
 
 R_API int r_sandbox_creat (const char *path, int mode) {
 	if (enabled) {
+		return -1;
+#if 0
 		if (mode & O_CREAT) return -1;
 		if (mode & O_RDWR) return -1;
 		if (!r_sandbox_check_path (path))
 			return -1;
+#endif
 	}
 	return creat (path, mode);
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #ifndef R2_UTIL_H
 #define R2_UTIL_H
@@ -88,6 +88,16 @@ typedef struct r_mmap_t {
 #endif
 } RMmap;
 
+/* copied from RIOCache */
+typedef struct r_buf_cache_t {
+        ut64 from;
+        ut64 to;
+        int size;
+        ut8 *data;
+        ut8 *odata;
+        int written;
+} RBufferSparse;
+
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
@@ -95,6 +105,7 @@ typedef struct r_buf_t {
 	ut64 base;
 	RMmap *mmap;
 	ut8 empty;
+	RList *sparse;
 } RBuffer;
 
 /* r_cache */
@@ -264,10 +275,13 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 
 #define R_BUF_CUR UT64_MAX
+/* constructors */
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
+R_API RBuffer *r_buf_new_sparse();
+/* methods */
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_string(RBuffer *b, const char *str);
@@ -401,7 +415,9 @@ R_API char *r_str_newlen(const char *str, int len);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
-R_API int r_str_ansi_filter(char *str, int len);
+R_API int r_str_ansi_chop(char *str, int str_len, int n);
+R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len);
+R_API int r_str_ansi_filter_atleast(char *str, int len, int n);
 R_API int r_str_word_count(const char *string);
 R_API int r_str_char_count(const char *string, char ch);
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
@@ -441,6 +457,7 @@ R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode (const char *buf);
+R_API char *r_str_utf16_encode (const char *s, int len);
 R_API char *r_str_home(const char *str);
 R_API int r_str_nlen (const char *s, int n);
 R_API int r_wstr_clen (const char *s);
@@ -453,7 +470,8 @@ R_API void r_str_case(char *str, int up);
 R_API void r_str_chop_path (char *s);
 R_API ut8 r_str_contains_macro(const char *input_value);
 R_API void r_str_truncate_cmd(char *string);
-
+R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
+				  const char *key, const char *val, int g);
 R_API char *r_hex_from_c(const char *code);
 R_API int r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
@@ -471,7 +489,7 @@ R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
 R_API char *r_file_dirname (const char *path);
 R_API char *r_file_abspath(const char *file);
-R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *dstLen);
+R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
 R_API char *r_stdin_slurp (int *sz);
 R_API char *r_file_slurp(const char *str, int *usz);
@@ -480,7 +498,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 R_API char *r_file_slurp_random_line(const char *file);
 R_API char *r_file_slurp_random_line_count(const char *file, int *linecount);
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
-R_API boolt r_file_dump(const char *file, const ut8 *buf, int len);
+R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append);
 R_API boolt r_file_rm(const char *file);
 R_API boolt r_file_exists(const char *str);
 R_API boolt r_file_fexists(const char *fmt, ...);
@@ -488,13 +506,8 @@ R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 
-#define ON_WINDOWS_OS 0xA
-#define ON_NIX_OS 0xB
-
-R_API int r_what_os_am_i (void);
-
-
 R_API ut64 r_sys_now(void);
+R_API int r_sys_fork(void);
 R_API int r_sys_stop (void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
@@ -602,6 +615,8 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
 
 /* uleb */
 R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v);
+R_API const ut8 *r_uleb128_decode (const ut8 *data, int *datalen, ut64 *v);
+R_API const ut8 *r_uleb128_encode (const ut64 s, int *len);
 R_API const ut8 *r_leb128 (const ut8 *data, st64 *v);
 #endif
 
@@ -645,6 +660,8 @@ typedef struct {
 
 R_API RStrpool* r_strpool_new (int sz);
 R_API char *r_strpool_alloc (RStrpool *p, int l);
+R_API int r_strpool_memcat(RStrpool *p, const char *s, int len);
+R_API int r_strpool_ansi_chop(RStrpool *p, int n);
 R_API int r_strpool_append(RStrpool *p, const char *s);
 R_API void r_strpool_free (RStrpool *p);
 R_API int r_strpool_fit(RStrpool *p);

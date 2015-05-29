@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BUILD=1
-PREFIX="/data/data/org.radare.installer/radare2"
+PREFIX="/data/data/org.radare2.installer/radare2"
 
 type pax
 [ $? != 0 ] && exit 1
@@ -147,10 +147,10 @@ rm -f ${HERE}/${D}/${PREFIX}/lib/*.a
 rm -rf ${HERE}/${D}/${PREFIX}/share/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
-#WWWROOT="/data/data/org.radare.installer/radare2/share/radare2/${VERSION}/www"
-#ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
-#cp -rf ${WWWROOT} ${HERE}/${D}/data/data/org.radare.installer/www
-#chmod -R o+rx ${HERE}/${D}/data/data/org.radare.installer/www
+#WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
+#ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare2.installer/www
+#cp -rf ${WWWROOT} ${HERE}/${D}/data/data/org.radare2.installer/www
+#chmod -R o+rx ${HERE}/${D}/data/data/org.radare2.installer/www
 cd ${D}
 #sltar -c data | gzip > ../$D.tar.gz
 pax -w data | gzip > ../$D.tar.gz
@@ -171,3 +171,5 @@ if [ -n "$D2" ]; then
 fi
 echo `pwd`"/${D}.tar.gz"
 echo `pwd`"/${D}-${D2}.tar.gz"
+
+adb push `pwd`"/${D}-${D2}.tar.gz" /sdcard/radare2-android.tar.gz || true

@@ -294,6 +294,7 @@ static registers_t mips[] = {
 };
 
 int gdbr_init(libgdbr_t* g) {
+	if (!g) return -1;
 	memset (g ,0 , sizeof (libgdbr_t));
 	g->send_buff = (char*) calloc (2500, sizeof (char));
 	if (!g->send_buff) return -1;
@@ -322,6 +323,7 @@ int gdbr_init(libgdbr_t* g) {
 
 
 int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture) {
+	if (!g) return -1;
 	g->architecture = architecture;
 	switch (architecture) {
 		case ARCH_X86_32:
@@ -346,6 +348,7 @@ int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture) {
 }
 
 int gdbr_cleanup(libgdbr_t* g) {
+	if (!g) return -1;
 	free (g->data);
 	free (g->send_buff);
 	g->send_len = 0;
@@ -356,14 +359,15 @@ int gdbr_cleanup(libgdbr_t* g) {
 
 int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	int ret;
+	const char *message = "qSupported:multiprocess+;qRelocInsn+";
 	char tmp[255];
-	ret = snprintf (tmp, 255, "%d", port);
+	if (!g || !host) return -1;
+	ret = snprintf (tmp, sizeof(tmp)-1, "%d", port);
 	if (!ret) return -1;
 	ret = r_socket_connect_tcp (g->sock, host, tmp, 200);
 	if (!ret) return -1;
 	g->connected = 1;
 	// TODO add config possibility here
-	char* message = "qSupported:multiprocess+;qRelocInsn+";
 	ret = send_command(g, message);
 	if (ret < 0)
 		return ret;
@@ -373,13 +377,14 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 
 int gdbr_disconnect(libgdbr_t* g) {
 	// TODO Disconnect maybe send something to gdbserver
-	if (!r_socket_close (g->sock)) return -1;
+	if (!g || !r_socket_close (g->sock)) return -1;
 	g->connected = 0;
 	return 0;
 }
 
 int gdbr_read_registers(libgdbr_t* g) {
 	int ret = -1;
+	if (!g) return -1;
 	ret = send_command (g, CMD_READREGS);
 	if (ret < 0)
 		return ret;
@@ -393,7 +398,10 @@ int gdbr_read_registers(libgdbr_t* g) {
 
 int gdbr_read_memory(libgdbr_t* g, ut64 address, ut64 len) {
 	char command[255] = {};
-	int ret = snprintf(command, 255, "%s%016"PFMT64x",%"PFMT64d, CMD_READMEM, address, len);
+	int ret;
+	if (!g) return -1;
+	ret = snprintf (command, sizeof (command),
+		"%s%016"PFMT64x",%"PFMT64d, CMD_READMEM, address, len);
 	if (ret < 0)
 		return ret;
 	ret = send_command(g, command);
@@ -410,8 +418,13 @@ int gdbr_read_memory(libgdbr_t* g, ut64 address, ut64 len) {
 int gdbr_write_memory(libgdbr_t* g, ut64 address, const uint8_t* data, ut64 len) {
 	char command[255] = {};
 	int ret = 0;
-	int command_len = snprintf(command, 255, "%s%016"PFMT64x",%"PFMT64d":", CMD_WRITEMEM, address, len);
-	char* tmp = calloc(command_len + (len * 2), sizeof(ut8));
+	int command_len;
+	char* tmp;
+	if (!g || !data) return -1;
+	command_len = snprintf(command, 255,
+		"%s%016"PFMT64x",%"PFMT64d":",
+		CMD_WRITEMEM, address, len);
+	tmp = calloc (command_len + (len * 2), sizeof(ut8));
 	if (!tmp)
 		return -1;
 	memcpy (tmp, command, command_len);
@@ -439,7 +452,9 @@ int gdbr_continue(libgdbr_t* g, int thread_id) {
 
 int gdbr_send_command(libgdbr_t* g, char* command) {
 	int ret;
-	char* cmd = calloc ((strlen (command) * 2 + strlen (CMD_QRCMD) + 2), sizeof (char));
+	char* cmd;
+	if (!g || !command) return -1;
+	cmd = calloc ((strlen (command) * 2 + strlen (CMD_QRCMD) + 2), sizeof (char));
 	if (!cmd) return -1;
 	strcpy (cmd, CMD_QRCMD);
 	pack_hex (command, strlen (command), (cmd + strlen (CMD_QRCMD)));
@@ -455,8 +470,11 @@ int gdbr_send_command(libgdbr_t* g, char* command) {
 }	
 
 int gdbr_write_bin_registers(libgdbr_t* g){
-	uint64_t buffer_size = g->data_len * 2 + 8;
-	char* command = calloc (buffer_size, sizeof (char));
+	uint64_t buffer_size;
+	char* command;
+	if (!g) return -1;
+	buffer_size = g->data_len * 2 + 8;
+	command = calloc (buffer_size, sizeof (char));
 	if (!command) return -1;
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command+1);
@@ -471,9 +489,11 @@ int gdbr_write_bin_registers(libgdbr_t* g){
 }
 
 int gdbr_write_register(libgdbr_t* g, int index, char* value, int len) {
+	int ret;
 	char command[255] = {};
-	int ret = snprintf (command, 255, "%s%d=", CMD_WRITEREG, index);
-	memcpy(command + ret, value, len);
+	if (!g) return -1;
+	ret = snprintf (command, 255, "%s%d=", CMD_WRITEREG, index);
+	memcpy (command + ret, value, len);
 	pack_hex (value, len, (command + ret));
 	if (send_command (g, command) < 0)
 		return -1;
@@ -489,7 +509,8 @@ int gdbr_write_reg(libgdbr_t* g, const char* name, char* value, int len) {
 	// register through packet <P> was possible
 	static int P = 1;
 	int i = 0;
-	while ( g->registers[i].size > 0) {
+	if (!g) return -1;
+	while (g->registers[i].size > 0) {
 		if (strcmp (g->registers[i].name, name) == 0) {
 			break;
 		}
@@ -519,6 +540,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 	char* command, *reg, *buff;
 	// read current register set
 
+	if (!g) return -1;
 	gdbr_read_registers (g);
 	len = strlen (registers);
 	buff = calloc (len, sizeof(char));
@@ -540,7 +562,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 			if (strcmp(g->registers[i].name, reg) == 0) {
 				const uint64_t register_size = g->registers[i].size;
 				const uint64_t offset = g->registers[i].offset;
-				char* value = malloc (register_size * 2);
+				char* value = malloc ((register_size * 2)+1);
 				if (!value) {
 					free (buff);
 					return -1;
@@ -554,7 +576,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 				strcpy (value+(register_size * 2 - val_len), name_end);
 
 				for (x=0; x < register_size; x++) {
-					g->data[offset + register_size - x - 1] = hex2char(&value[x * 2]);
+					g->data[offset + register_size - x - 1] = hex2char (&value[x * 2]);
 				}
 				free(value);
 			}
@@ -594,6 +616,7 @@ int test_command(libgdbr_t* g, const char* command) {
 int send_vcont(libgdbr_t* g, const char* command, int thread_id) {
 	char tmp[255] = {};
 	int ret;
+	if (!g) return -1;
 	if (thread_id < 0) {
 		ret = snprintf (tmp, 255, "%s;%s", CMD_C, command);
 	} else {
@@ -612,6 +635,7 @@ int send_vcont(libgdbr_t* g, const char* command, int thread_id) {
 int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint type) {
 	char tmp[255] = {};
 	int ret = 0;
+	if (!g) return -1;
 	switch (type) {
 	case BREAKPOINT:
 		ret = snprintf (tmp, sizeof (tmp)-1,
@@ -660,6 +684,7 @@ int gdbr_remove_hwbp(libgdbr_t* g, ut64 address) {
 int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 	char tmp[255] = {};
 	int ret = 0;
+	if (!g) return -1;
 	switch (type) {
 	case BREAKPOINT:
 		ret = snprintf (tmp, sizeof (tmp)-1, "%s,%"PFMT64x",1", CMD_RBP, address);
@@ -688,6 +713,7 @@ int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 }
 
 int send_ack(libgdbr_t* g) {
+	if (!g) return -1;
 	g->send_buff[0] = '+';
 	g->send_len = 1;
 	send_packet (g);
@@ -695,8 +721,14 @@ int send_ack(libgdbr_t* g) {
 }
 
 int send_command(libgdbr_t* g, const char* command) {
-	uint8_t checksum = cmd_checksum (command);
-	int ret = snprintf(g->send_buff, g->send_max,
+	uint8_t checksum;
+	int ret;
+
+	if (!g || !command)
+		return -1;
+
+	checksum = cmd_checksum (command);
+	ret = snprintf(g->send_buff, g->send_max,
 		"$%s#%.2x", command, checksum);
 	if (ret >= 0) {
 		g->send_len = ret;

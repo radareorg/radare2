@@ -18,13 +18,21 @@ int _main() {
 	return 0;
 }
 
-int main() {
-	RRegex *rx = r_regex_new ("^hi", "");
+int main(int argc, char **argv) {
+	const char *needle = "^hi";
+	const char *haystack_1 = "patata";
+	const char *haystack_2 = "hillow";
+	if (argc>3) {
+		needle = argv[1];
+		haystack_1 = argv[2];
+		haystack_2 = argv[3];
+	} else printf ("Using default values\n");
+	RRegex *rx = r_regex_new (needle, "");
 	if (rx) {
-		int res = r_regex_exec (rx, "patata", 0, 0, 0);
-		printf ("result (patata) = %d\n", res);
-		res = r_regex_exec (rx, "hillow", 0, 0, 0);
-		printf ("result (hillow) = %d\n", res);
+		int res = r_regex_exec (rx, haystack_1, 0, 0, 0);
+		printf ("result (%s) = %d\n", haystack_1, res);
+		res = r_regex_exec (rx, haystack_2, 0, 0, 0);
+		printf ("result (%s) = %d\n", haystack_2, res);
 		r_regex_free (rx);
 	} else printf ("oops, cannot compile regexp\n");
 	return 0;

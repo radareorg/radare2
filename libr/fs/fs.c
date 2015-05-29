@@ -139,6 +139,9 @@ R_API int r_fs_umount (RFS* fs, const char *path) {
 	int len;
 	RFSRoot *root;
 	RListIter *iter, *riter = NULL;
+
+	if (!path) return R_FALSE;
+
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);
 		if (r_fs_match (path, root->path, len))
@@ -282,7 +285,7 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 			item = r_fs_open (fs, npath);
 			if (item) {
 				r_fs_read (fs, item, 0, item->size);
-				r_file_dump (str, item->data, item->size);
+				r_file_dump (str, item->data, item->size, 0);
 				free (item->data);
 				r_fs_close (fs, item);
 			}
@@ -556,9 +559,11 @@ R_API char *r_fs_name (RFS *fs, ut64 offset) {
 	return NULL;
 }
 
+#define PROMT_PATH_BUFSIZE 1024
+
 R_API int r_fs_prompt (RFS *fs, const char *root) {
-	char buf[1024];
-	char path[1024];
+	char buf[PROMT_PATH_BUFSIZE];
+	char path[PROMT_PATH_BUFSIZE];
 	char str[2048];
 	char *input;
 	RList *list = NULL;
@@ -607,7 +612,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		} else if (!strncmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
-			char opath[4096];
+			char opath[PROMT_PATH_BUFSIZE];
 			strncpy (opath, path, sizeof (opath)-1);
 			input = buf+3;
 			while (*input == ' ')
@@ -617,9 +622,17 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				if (p) p[(p==path)?1:0]=0;
 			} else {
 				strcat (path, "/");
-				if (*input=='/')
-					strcpy (path, input);
-				else strcat (path, input);
+				if (*input=='/') {
+					strncpy (path, input, sizeof (opath)-1);
+				} else {
+					if ((strlen (path)+strlen (input))>=sizeof (path)) {
+						// overflow
+						path[0] = 0;
+					} else {
+						strcat (path, input);
+					}
+				}
+				path[sizeof(path)-1] = 0;
 			}
 			r_str_chop_path (path);
 			list = r_fs_dir (fs, path);
@@ -674,7 +687,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			file = r_fs_open (fs, s);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
-				r_file_dump (input, file->data, file->size);
+				r_file_dump (input, file->data, file->size, 0);
 				free (file->data);
 				r_fs_close (fs, file);
 			} else {

@@ -9,7 +9,12 @@ DLIBDIR=$(call rmdblslash,$(DESTDIR)/$(LIBDIR))
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 R2BINS=$(shell cd binr ; echo r*2 r2agent)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
-R2VC=$(shell git rev-list --all | wc -l)
+R2VC=$(shell git rev-list --all --count)
+USE_ZIP=YES
+ZIP=zip
+ifeq ($(R2VC),)
+R2VC=9999999
+endif
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
@@ -35,7 +40,7 @@ all: plugins.cfg libr/include/r_version.h
 .PHONY: libr/include/r_version.h
 libr/include/r_version.h:
 	echo "#define R2_VERSION_COMMIT $(R2VC)" > $@.tmp
-	cmp $@.tmp $@ 2> /dev/null || mv $@.tmp $@
+	cmp $@.tmp $@ > /dev/null 2>&1 || mv $@.tmp $@
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
@@ -53,27 +58,43 @@ android:
 	sys/android-${NDK_ARCH}.sh
 
 w32dist:
-	rm -rf radare2-w32-${VERSION} w32dist
-	mkdir w32dist
-	for a in `find libr | grep -e dll$$`; do cp $$a w32dist ; done
-	for a in `find binr | grep -e exe$$`; do cp $$a w32dist ; done
-	rm -f w32dist/plugin.dll
-	mkdir -p w32dist/www
-	cp -rf shlr/www/* w32dist/www
-	mkdir -p w32dist/radare2/${VERSION}/magic
-	cp -f libr/magic/d/default/* w32dist/radare2/${VERSION}/magic
-	mkdir -p w32dist/radare2/${VERSION}/syscall
-	cp -f libr/syscall/d/*.sdb w32dist/radare2/${VERSION}/syscall
-	mkdir -p w32dist/radare2/${VERSION}/opcodes
-	cp -f libr/asm/d/*.sdb w32dist/radare2/${VERSION}/opcodes
-	mkdir -p w32dist/share/doc/radare2
-	mkdir -p w32dist/include/libr
-	cp libr/include/*.h w32dist/include/libr
-	#mkdir -p w32dist/include/libr/sflib
-	cp -f doc/fortunes.* w32dist/share/doc/radare2
-	mv w32dist radare2-w32-${VERSION}
-	rm -f radare2-w32-${VERSION}.zip
-	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
+	${MAKE} windist WINBITS=w32
+
+w64dist:
+	${MAKE} windist WINBITS=w64
+
+WINDIST=${WINBITS}dist
+
+windist:
+	[ -n "${WINBITS}" ] || exit 1
+	rm -rf radare2-${WINBITS}-${VERSION} ${WINDIST}
+	mkdir ${WINDIST}
+	for a in `find libr | grep -e dll$$`; do cp $$a ${WINDIST} ; done
+	for a in `find binr | grep -e exe$$`; do cp $$a ${WINDIST} ; done
+	rm -f ${WINDIST}/plugin.dll
+	mkdir -p ${WINDIST}/www
+	cp -rf shlr/www/* ${WINDIST}/www
+	mkdir -p ${WINDIST}/radare2/${VERSION}/magic
+	cp -f libr/magic/d/default/* ${WINDIST}/radare2/${VERSION}/magic
+	mkdir -p ${WINDIST}/radare2/${VERSION}/syscall
+	cp -f libr/syscall/d/*.sdb ${WINDIST}/radare2/${VERSION}/syscall
+	mkdir -p ${WINDIST}/radare2/${VERSION}/opcodes
+	cp -f libr/asm/d/*.sdb ${WINDIST}/radare2/${VERSION}/opcodes
+	mkdir -p ${WINDIST}/share/doc/radare2
+	mkdir -p ${WINDIST}/include/libr/sdb
+	cp -f libr/include/sdb/*.h ${WINDIST}/include/libr/sdb/
+	cp -f libr/include/*.h ${WINDIST}/include/libr
+	#mkdir -p ${WINDIST}/include/libr/sflib
+	cp -f doc/fortunes.* ${WINDIST}/share/doc/radare2
+	mkdir -p ${WINDIST}/share/radare2/${VERSION}/cons
+	cp -f libr/cons/d/* ${WINDIST}/share/radare2/${VERSION}/cons
+	mkdir -p ${WINDIST}/radare2/${VERSION}/hud
+	cp -f doc/hud ${WINDIST}/radare2/${VERSION}/hud/main
+	mv ${WINDIST} radare2-${WINBITS}-${VERSION}
+	rm -f radare2-${WINBITS}-${VERSION}.zip
+ifneq ($(USE_ZIP),NO)
+	$(ZIP) -r radare2-${WINBITS}-${VERSION}.zip radare2-${WINBITS}-${VERSION}
+endif
 
 clean: rmd
 	for a in shlr libr binr ; do (cd $$a ; ${MAKE} clean) ; done
@@ -108,7 +129,7 @@ install-doc-symlink:
 	cd doc ; for a in * ; do \
 		ln -fs "${PWD}/doc/$$a" "${PFX}/share/doc/radare2" ; done
 
-install: install-doc install-man install-www
+install love: install-doc install-man install-www
 	cd libr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}" PARENT=1
 	cd binr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}"
 	cd shlr && ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${DESTDIR}"
@@ -216,7 +237,7 @@ dist:
 	cd shlr && ${MAKE} capstone-sync
 	DIR=`basename $$PWD` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
-	CS_FILES=`cd shlr/capstone ; git ls-files | sed -e s,^,radare2-${VERSION}/shlr/capstone/,` ; \
+	CS_FILES=`cd shlr/capstone ; git ls-files | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e s,^,radare2-${VERSION}/shlr/capstone/,` ; \
 	cd .. && mv $${DIR} radare2-${VERSION} && \
 	${TAR} radare2-${VERSION}.tar $${FILES} $${CS_FILES} radare2-${VERSION}/ChangeLog ;\
 	${CZ} radare2-${VERSION}.tar ; \
@@ -240,7 +261,10 @@ tests:
 	fi
 	cd $(R2R) ; ${MAKE}
 
+quality:
+	./sys/shellcheck.sh
+
 include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
-.PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png
+.PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love

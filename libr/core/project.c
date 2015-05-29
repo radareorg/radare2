@@ -285,7 +285,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_str_write (fd, "# flags\n");
 		tmp = core->flags->space_idx;
 		core->flags->space_idx = -1;
-		r_flag_list (core->flags, R_TRUE);
+		r_flag_list (core->flags, R_TRUE, NULL);
 		core->flags->space_idx = tmp;
 		r_cons_flush ();
 		r_str_write (fd, "# eval\n");
@@ -306,7 +306,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		 }
 		r_core_cmd (core, "ax*", 0);
 		r_cons_flush ();
-		r_core_cmd (core, "af*", 0);
+		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "ah*", 0);
 		r_cons_flush ();

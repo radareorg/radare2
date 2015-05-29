@@ -6,9 +6,11 @@ CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
 CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150219
+CS_UPD=20150512
 CS_BRA=next
-CS_TIP=ced9a6ed92cb71a2f77285cb3587791613711500
+CS_TIP=ef5011297174e80c2f19290f717ebe04bee5f19b
+# REVERT THIS COMMIT BECAUSE ITS WRONG
+CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
@@ -51,7 +53,7 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; $(MAKE) clean
 	cd sdb ; \
 		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} CFLAGS="-fPIC ${HOST_CFLAGS} -g" && \
+		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
 		cp -f src/sdb src/.sdb
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
@@ -148,11 +150,19 @@ capstone-sync:
 		git clone $(CS_URL) ; \
 	fi
 	cd capstone ; \
+		git reset --hard @^^^ ; \
 		git checkout $(CS_BRA) ; \
 		git reset --hard $(CS_TIP) || \
 	( if [ -d .git ]; then \
 		git pull ; git reset --hard $(CS_TIP) ; \
 	else true ; fi)
+	if [ -n "${CS_REV}" ]; then \
+		cd capstone ; \
+		git config user.name || ( \
+		git config user.name "radare-travis" ; \
+		git config user.email radare-travis@foo.com ) ; \
+		EDITOR=cat git revert ${CS_REV} ; \
+	fi
 
 .PHONY: capstone
 else

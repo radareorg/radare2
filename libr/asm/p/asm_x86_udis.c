@@ -63,6 +63,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (opsize<1 || strstr (op->buf_asm, "invalid"))
 		opsize = 0;
 	op->size = opsize;
+	if (a->syntax == R_ASM_SYNTAX_JZ) {
+		if (!strncmp (op->buf_asm, "je ", 3)) {
+			memcpy (op->buf_asm, "jz", 2);
+		} else if (!strncmp (op->buf_asm, "jne ", 4)) {
+			memcpy (op->buf_asm, "jnz", 3);
+		}
+	}
 	return opsize;
 }
 

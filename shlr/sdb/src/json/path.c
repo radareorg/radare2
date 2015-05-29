@@ -107,6 +107,8 @@ Rangstr json_find (const char *s, Rangstr *rs) {
 	if (!s) return rangstr_null ();
 	len = strlen (s);
 	res = (len<RESFIXSZ)? resfix: malloc (len+1);
+	for (i=0;i<len;i++)
+		res[i]=0;
 	ret = js0n ((const unsigned char *)s, len, res);
 #define PFREE(x) if (x&&x!=resfix) free (x)
 	if (ret>0) {

@@ -1202,7 +1202,7 @@ static RFlirtNode* flirt_parse (const RAnal *anal, RBuffer *flirt_buf) {
 			eprintf ("Sorry we do not support the signatures version 5 compression.\n");
 			goto exit;
 		}
-		if (!(decompressed_buf = r_inflate(buf, size, &decompressed_size))) {
+		if (!(decompressed_buf = r_inflate(buf, size, NULL, &decompressed_size))) {
 			eprintf ("Decompressing failed.\n");
 			goto exit;
 		}

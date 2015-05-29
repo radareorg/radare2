@@ -180,6 +180,7 @@ static int cmd_help(void *data, const char *input) {
 		{
 			char *asnum, unit[32];
 			ut32 n32, s, a;
+			double d;
 			float f;
 
 			n = r_num_math (core->num, input+1);
@@ -189,6 +190,7 @@ static int cmd_help(void *data, const char *input) {
 			asnum  = r_num_as_string (NULL, n);
 			n32 = (ut32)n;
 			memcpy (&f, &n32, sizeof (f));
+			memcpy (&d, &n, sizeof (d));
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
 			a = n & 0x0fff;
@@ -204,7 +206,8 @@ static int cmd_help(void *data, const char *input) {
 			}
 			/* binary and floating point */
 			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
-			r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);
+			r_cons_printf ("%s %.01lf %ff %lf\n",
+				out, core->num->fvalue, f, d);
 		}
 		break;
 	case 'v':
@@ -271,7 +274,10 @@ static int cmd_help(void *data, const char *input) {
 			"*", "", "output of command in r2 script format (CC*)",
 			"j", "", "output of command in JSON format (pdj)",
 			"~", "?", "count number of lines (like wc -l)",
+			"~", "??", "show internal grep help",
 			"~", "..", "internal less",
+			"~", "{}", "json indent",
+			"~", "{}..", "json indent and less",
 			"~", "word", "grep for lines matching word",
 			"~", "!word", "grep for lines NOT matching word",
 			"~", "word[2]", "grep 3rd column of lines matching word",
@@ -280,9 +286,11 @@ static int cmd_help(void *data, const char *input) {
 			"@", " addr[!blocksize]", "temporary set a new blocksize",
 			"@@=", "1 2 3", " run the previous command at offsets 1, 2 and 3",
 			"@@", " hit*", "run the command on every flag matching 'hit*'",
+			"@a:", "arch[:bits]", "temporary set arch and bits",
+			"@b:", "bits", "temporary set asm.bits",
 			"@f:", "file", "temporary replace block with file contents",
 			"@s:", "string", "same as above but from a string",
-			"@b:", "909192", "from hex pairs string",
+			"@x:", "909192", "from hex pairs string",
 			">", "file", "pipe output of command to file",
 			">>", "file", "append to file",
 			"`", "pdi~push:0[0]`",  "replace output of command inside the line",
@@ -347,7 +355,7 @@ static int cmd_help(void *data, const char *input) {
 			out[len] = 0;
 			r_cons_printf ("%s\n", (const char*)out);
 			free (out);
-		} else if (!memcmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
+		} else if (!strncmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;
 			for (i=0; i<bits; i++)
@@ -420,6 +428,7 @@ static int cmd_help(void *data, const char *input) {
 		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // input num
+		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
 		} else
@@ -435,7 +444,7 @@ static int cmd_help(void *data, const char *input) {
 			core->num->value = r_core_yank_hud_path (core, input+2, 0) == R_TRUE;
 			} break;
 		case 'k':
-			r_cons_any_key ();
+			r_cons_any_key (NULL);
 			break;
 		case 'y':
 			for (input+=2; *input==' '; input++);
@@ -452,14 +461,17 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_flush ();
 			for (input++; *input==' '; input++);
 			// TODO: use prompt input
-			eprintf ("%s: ", input);
-			fgets (foo, sizeof (foo)-1, stdin);
-			foo[strlen (foo)-1] = 0;
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen(foo)+1);
+			snprintf (foo, sizeof (foo)-1, "%s: ", input);
+			r_line_set_prompt (foo);
+			r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
+			foo[strlen (foo)] = 0;
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR,
+				foo, strlen (foo)+1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;
 		}
+		r_cons_set_raw (0);
 		break;
 	case 't': {
 		struct r_prof_t prof;

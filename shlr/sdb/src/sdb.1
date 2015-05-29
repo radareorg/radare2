@@ -1,18 +1,30 @@
-.Dd Feb 17, 2014
+.Dd May 7, 2015
 .Dt SDB 1
 .Os
 .Sh NAME
 .Nm sdb
-.Nd simple key-value database with json and arrays
+.Nd simple key-value database baked by base64, json and arrays
 .Sh SYNOPSIS
 .Nm sdb
-.Op Fl hv
+.Op Fl 0dehjJv
 .Ar -|db
 .Ar -=
-.Ar [.script|expr ..]
+.Ar [.file|expr ..]
 .Sh DESCRIPTION
 SDB is a simple disk and memory string-based key-value database. It is based on CDB and uses
 .Bl -tag -width Fl
+.It Fl d
+Decode stdin as base64 and prints to result to stdout
+.It Fl D
+Find differences between two databases
+.It Fl e
+Encode stdin in base64 and prints to stdout
+.It Fl h
+Show help message
+.It Fl j
+Indent JSON from stdin if no more arguments, otherwise dump database as JSON.
+.It Fl J
+Enable journaling
 .It Fl h
 Show help message
 .It Fl v

@@ -15,7 +15,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	// XXX: this may be wrong if check_bytes is true
 	return R_NOTNULL;
@@ -46,15 +46,14 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->lang = NULL;
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
-	strncpy (ret->type, "bios", sizeof (ret->type)-1); // asm.arch
-	strncpy (ret->bclass, "1.0", sizeof (ret->bclass)-1);
-	strncpy (ret->rclass, "bios", sizeof (ret->rclass)-1); // file.type
-	strncpy (ret->os, "any", sizeof (ret->os)-1);
-	strncpy (ret->subsystem, "unknown", sizeof (ret->subsystem)-1);
-	strncpy (ret->machine, "pc", sizeof (ret->machine)-1);
-	strcpy (ret->arch, "x86");
+	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->type = strdup ("bios");
+	ret->bclass = strdup ("1.0");
+	ret->rclass = strdup ("bios");
+	ret->os = strdup ("any");
+	ret->subsystem = strdup ("unknown");
+	ret->machine = strdup ("pc");
+	ret->arch = strdup ("x86");
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;

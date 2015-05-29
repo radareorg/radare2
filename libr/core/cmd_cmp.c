@@ -430,12 +430,13 @@ static int cmd_cmp(void *data, const char *input) {
 			cmd_cmp_disasm (core, input+2, 'c');
 		} else {
 			ut32 oflags = core->print->flags;
-			ut64 addr;
+			ut64 addr = 0; // TOTHINK: Not sure what default address should be
 			if (input[1]=='c') { // "ccc"
 				core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
 				addr = r_num_math (core->num, input+3);
 			} else {
-				addr = r_num_math (core->num, input+2);
+				if (*input && input[1])
+					addr = r_num_math (core->num, input+2);
 			}
 			int col = core->cons->columns>123;
 			ut8 *b = malloc (core->blocksize);
@@ -480,6 +481,11 @@ static int cmd_cmp(void *data, const char *input) {
 				r_core_cmd_help(core, help_message);
 				return R_FALSE;
 				}
+			}
+
+			if (r_file_size (file2) <= 0) {
+				eprintf ("Cannot compare with file %s\n", file2);
+				return R_FALSE;
 			}
 
 			if (!(core2 = r_core_new ())) {

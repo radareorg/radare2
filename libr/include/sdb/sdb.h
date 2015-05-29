@@ -16,13 +16,29 @@ extern "C" {
 #include "cdb_make.h"
 #include "sdb-version.h"
 
-#undef R_MAX
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
+/* Key value sizes */
+#define SDB_MIN_VALUE 1
+#define SDB_MAX_VALUE 0xffffff
+#define SDB_MIN_KEY 1
+#define SDB_MAX_KEY 0xff
+
+#if __SDB_WINDOWS__ && !__CYGWIN__
+#include <windows.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+extern void *__cdecl _aligned_malloc(size_t, size_t);
+extern char *strdup (const char *);
+//#define SDB_MODE 0
+#define SDB_MODE _S_IWRITE | _S_IREAD
+#else
 #define SDB_MODE 0644
 //#define SDB_MODE 0600
+#endif
 
 //#define SDB_RS '\x1e'
 #define SDB_RS ','
@@ -32,9 +48,10 @@ extern "C" {
 
 #define SDB_OPTION_NONE 0
 #define SDB_OPTION_ALL 0xff
-#define SDB_OPTION_SYNC 1
-#define SDB_OPTION_NOSTAMP 2
-#define SDB_OPTION_FS 4
+#define SDB_OPTION_SYNC    (1<<0)
+#define SDB_OPTION_NOSTAMP (1<<1)
+#define SDB_OPTION_FS      (1<<2)
+#define SDB_OPTION_JOURNAL (1<<3)
 
 // This size implies trailing zero terminator, this is 254 chars + 0
 #define SDB_KSZ 0xff
@@ -54,6 +71,7 @@ typedef struct sdb_t {
 	int fd;
 	int refs; // reference counter
 	int lock;
+	int journal;
 	struct cdb db;
 	struct cdb_make m;
 	SdbHash *ht;
@@ -99,6 +117,7 @@ int  sdb_exists (Sdb*, const char *key);
 int  sdb_unset (Sdb*, const char *key, ut32 cas);
 int  sdb_unset_matching(Sdb *s, const char *k);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
+char *sdb_get_len (Sdb*, const char *key, int *vlen, ut32 *cas);
 const char *sdb_const_get (Sdb*, const char *key, ut32 *cas);
 const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas);
 int  sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
@@ -134,6 +153,14 @@ int sdb_disk_unlink (Sdb* s);
 void sdb_dump_begin (Sdb* s);
 SdbKv *sdb_dump_next (Sdb* s);
 int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen);
+
+/* journaling */
+int sdb_journal_close(Sdb *s);
+int sdb_journal_open(Sdb *s);
+int sdb_journal_load(Sdb *s);
+int sdb_journal_log(Sdb *s, const char *key, const char *val);
+int sdb_journal_clear(Sdb *s);
+int sdb_journal_unlink(Sdb *s);
 
 /* numeric */
 char *sdb_itoa (ut64 n, char *s, int base);
@@ -197,15 +224,20 @@ int sdb_array_insert (Sdb* s, const char *key, int idx, const char *val, ut32 ca
 int sdb_array_insert_num (Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
 int sdb_array_unset (Sdb* s, const char *key, int n, ut32 cas); // leaves empty bucket
 int sdb_array_delete (Sdb* s, const char *key, int n, ut32 cas);
+void sdb_array_sort (Sdb* s, const char *key, ut32 cas);
+void sdb_array_sort_num (Sdb* s, const char *key, ut32 cas);
 // set
 int sdb_array_add (Sdb* s, const char *key, const char *val, ut32 cas);
 int sdb_array_add_num (Sdb* s, const char *key, ut64 val, ut32 cas);
+int sdb_array_add_sorted (Sdb *s, const char *key, const char *val, ut32 cas);
+int sdb_array_add_sorted_num (Sdb *s, const char *key, ut64 val, ut32 cas);
 int sdb_array_remove (Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_remove_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 // helpers
 char *sdb_anext(char *str, char **next);
 const char *sdb_const_anext(const char *str, const char **next);
 int sdb_alen(const char *str);
+int sdb_alen_ignore_empty(const char *str);
 int sdb_array_size(Sdb* s, const char *key);
 int sdb_array_length(Sdb* s, const char *key);
 

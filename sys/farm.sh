@@ -33,7 +33,7 @@ testcc() {
 }
 
 log() {
-	echo $@ ; echo $@ >> ${LOGFILE}
+	echo $* ; echo $* >> ${LOGFILE}
 }
 
 logchk() {
@@ -45,7 +45,7 @@ logchk() {
 }
 
 logcmd() {
-	eval "( $@ ; logchk $? ) ${DOLOG}"
+	eval "( $* ; logchk $? ) ${DOLOG}"
 }
 
 r2uninstall() {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -41,6 +41,9 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'a'+('1'<<8): return R_REG_NAME_A1;
 	case 'a'+('2'<<8): return R_REG_NAME_A2;
 	case 'a'+('3'<<8): return R_REG_NAME_A3;
+	case 'a'+('4'<<8): return R_REG_NAME_A4;
+	case 'a'+('5'<<8): return R_REG_NAME_A5;
+	case 'a'+('6'<<8): return R_REG_NAME_A6;
 	}
 	return -1;
 }

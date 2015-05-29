@@ -202,7 +202,7 @@ R_API char *r_cons_message(const char *msg) {
 	r_cons_printf ("%s\n", msg);
 	r_cons_flush ();
 	r_cons_gotoxy (0, rows-2); // XXX
-	r_cons_any_key ();
+	r_cons_any_key (NULL);
 	return NULL;
 }
 

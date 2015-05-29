@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2014 - pancake and
+/* radare - Apache 2.0 - Copyright 2010-2015 - pancake and
  Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <string.h>
@@ -151,6 +151,8 @@ static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state
 static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *bb = state->current_bb;
 	RAnalBlock *current_head = state->current_bb_head;
+	if (!anal || !state || !bb || !current_head)
+		return 0;
 	if (current_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
 		r_anal_ex_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
 	}
@@ -259,7 +261,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
-					bb->jump = bb->jumpbb->addr;
+					if (bb->jumpbb) {
+						bb->jump = bb->jumpbb->addr;
+					}
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 					bb->jump = bb->jumpbb->addr;
@@ -275,10 +279,14 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
 					if (jmp_list)
 						bb->failbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
-					bb->fail = bb->failbb->addr;
+					if (bb->failbb) {
+						bb->fail = bb->failbb->addr;
+					}
 				} else {
 					bb->failbb = r_anal_state_search_bb (state, bb->fail);
-					bb->fail = bb->failbb->addr;
+					if (bb->failbb) {
+						bb->fail = bb->failbb->addr;
+					}
 				}
 
 				IFDBG eprintf (" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
@@ -325,6 +333,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_ILL:
 			IFDBG eprintf (" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
 			state->done = 1;
 			result = R_ANAL_RET_END;
@@ -744,6 +753,10 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 		for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
 			//ut32 value = (ut32)(UINT (data, pos));
+			if (pos+4>=len) {
+				// switch is too big cant read further
+				break;
+			}
 			int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
 			IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
 			caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
@@ -798,22 +811,27 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	op->eob = r_anal_ex_is_op_type_eop (op->type2);
 	IFDBG {
-		char *ot_str = r_anal_optype_to_string (op->type);
+		const char *ot_str = r_anal_optype_to_string (op->type);
 		eprintf ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.\n", JAVA_OPS[op_byte].name, addr, op->type2, op->type,  ot_str);
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 	}
 
-	if ( op->type == R_ANAL_OP_TYPE_CJMP ) {
+	if (len<4) {
+		// incomplete analysis here
+		return 0;
+	}
+	if (op->type == R_ANAL_OP_TYPE_CJMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		op->fail = addr + sz;
-		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
-	} else if ( op->type  == R_ANAL_OP_TYPE_JMP ) {
+		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n",
+			JAVA_OPS[op_byte].name, op->jump, op->fail);
+	} else if (op->type  == R_ANAL_OP_TYPE_JMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
 	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
-		//op->jump = addr + (int)(short)(USHORT (data, 1));
-		//op->fail = addr + sz;
+		op->jump = (int)(short)(USHORT (data, 1));
+		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
 

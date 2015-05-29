@@ -12,6 +12,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_list.h>
+#include <r_db.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,9 +21,9 @@ extern "C" {
 // TODO: rename to r_flags_XXX api
 R_LIB_VERSION_HEADER(r_flag);
 
-#define R_FLAG_NAME_SIZE 256
-#define R_FLAG_BUF_SIZE 256
-#define R_FLAG_SPACES_MAX 256
+#define R_FLAG_NAME_SIZE 512
+#define R_FLAG_BUF_SIZE 512
+#define R_FLAG_SPACES_MAX 512
 
 typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];
@@ -54,6 +55,7 @@ typedef struct r_flag_t {
 	struct btree_node *ntree; /* index by name */
 #endif
 	RList *flags;
+	RList *spacestack;
 } RFlag;
 
 /* compile time dependency */
@@ -77,7 +79,7 @@ R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
 #ifdef R_API
 R_API RFlag * r_flag_new(void);
 R_API RFlag * r_flag_free(RFlag *f);
-R_API void r_flag_list(RFlag *f, int rad);
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
@@ -106,6 +108,8 @@ R_API int r_flag_space_set(RFlag *f, const char *name);
 R_API int r_flag_space_unset (RFlag *f, const char *fs);
 R_API int r_flag_space_list(RFlag *f, int mode);
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
+R_API int r_flag_space_pop(RFlag *f);
+R_API int r_flag_space_push(RFlag *f, const char *name);
 #endif
 
 #ifdef __cplusplus

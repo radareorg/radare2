@@ -52,7 +52,8 @@ static void filesave () {
 	if (!path) {
 		eprintf ("File: ");
 		buf[0] = 0;
-		fgets (buf, sizeof(buf), stdin);
+		fgets (buf, sizeof(buf)-1, stdin);
+		buf[sizeof(buf)-1] = 0;
 		i = strlen (buf);
 		if (i>0) {
 			buf[i-1] = 0;
@@ -66,7 +67,7 @@ static void filesave () {
 				lines[i]='\n';
 		}
 	}
-	if (r_file_dump (path, (const ut8*)lines, bytes))
+	if (r_file_dump (path, (const ut8*)lines, bytes, 0))
 		eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
 	else eprintf ("Cannot save file\n");
 	// restore back zeroes

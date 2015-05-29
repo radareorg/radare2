@@ -62,9 +62,8 @@ static int cmd_egg(void *data, const char *input) {
 	switch (*input) {
 	case 's':
 		// TODO: pass args to r_core_syscall without vararg
-		if (input[1]=='?' || !input[1]) {
-			eprintf ("Usage: gs [syscallname] [parameters]\n");
-		} else {
+		switch (input[1]) {
+		case ' ':
 			oa = strdup (input+2);
 			p = strchr (oa+1, ' ');
 			if (p) {
@@ -74,12 +73,20 @@ static int cmd_egg(void *data, const char *input) {
 				r_core_syscall (core, oa, "");
 			}
 			free (oa);
+			break;
+		default:
+			eprintf ("Usage: gs [syscallname] [parameters]\n");
+			break;
 		}
 		break;
 	case ' ':
-		r_egg_load (egg, input+2, 0);
-		if (!cmd_egg_compile (egg))
-			eprintf ("Cannot compile '%s'\n", input+2);
+		if (input[1] && input[2]) {
+			r_egg_load (egg, input+2, 0);
+			if (!cmd_egg_compile (egg))
+				eprintf ("Cannot compile '%s'\n", input+2);
+		} else {
+			eprintf ("wat\n");
+		}
 		break;
 	case '\0':
 		if (!cmd_egg_compile (egg))

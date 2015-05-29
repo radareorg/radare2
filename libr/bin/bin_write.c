@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -30,5 +30,5 @@ R_API int r_bin_wr_output(RBin *bin, const char *filename) {
 
 	if (!binfile || !binfile->buf) return R_FALSE;
 	return r_file_dump (filename, binfile->buf->buf,
-			binfile->buf->length);
+			binfile->buf->length, 0);
 }

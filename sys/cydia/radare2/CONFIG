@@ -1,5 +1,5 @@
 PACKAGE=radare2
-VERSION=0.9.8.git9
+VERSION=0.9.8.git10
 ARCH=iphoneos-arm
 SECTION=user/shell
 PRIORITY=optional

@@ -1,8 +1,9 @@
-/* radare2 - LGPL - Copyright 2013-2014 - pancake */
+/* radare2 - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
+#include "../arch/arm/asm-arm.h"
 
 static int check_features(RAsm *a, cs_insn *insn);
 static csh cd;
@@ -72,6 +73,29 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	const int is_thumb = a->bits==16? 1: 0;
+	int opsize;
+	ut32 opcode = armass_assemble (buf, a->pc, is_thumb);
+	if (a->bits != 32 && a->bits != 16) {
+		eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
+		return -1;
+	}
+	if (opcode==UT32_MAX)
+		return -1;
+	if (is_thumb) {
+		const int o = opcode>>16;
+		opsize = (o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
+		r_mem_copyendian (op->buf, (void *)&opcode,
+			opsize, a->big_endian);
+	} else {
+		opsize = 4;
+		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
+	}
+// XXX. thumb endian assembler needs no swap
+	return opsize;
+}
+
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
@@ -82,17 +106,14 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL,
+	.assemble = &assemble,
 	.features = 
-			// arm32 and arm64
-			"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
-			"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
-			"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
-			"mulops,crc,dpvfp,v6m"
+		// arm32 and arm64
+		"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
+		"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
+		"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
+		"mulops,crc,dpvfp,v6m"
 };
-
-extern const char *ARM_group_name(csh handle, unsigned int id);
-extern const char *AArch64_group_name(csh handle, unsigned int id);
 
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
@@ -110,13 +131,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 		if (id == ARM_GRP_THUMB2)
 			continue;
 		if (id<128) continue;
-		if (a->bits == 64) {
-			// AARCH64
-			name = AArch64_group_name (cd, id);
-		} else {
-			// ARM
-			name = ARM_group_name (cd, id);
-		}
+		name = cs_group_name (cd, id);
 		if (!name) return 1;
 		if (!strstr (a->features, name)) {
 			//eprintf ("CANNOT FIND %s\n", name);

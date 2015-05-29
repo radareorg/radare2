@@ -229,6 +229,8 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (!name || !*name)
+		return R_FALSE;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name))
 			return R_TRUE;
@@ -241,6 +243,8 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (!a || !name)
+		return R_FALSE;
 	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, name)) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
@@ -294,6 +298,7 @@ R_API int r_asm_set_syntax(RAsm *a, int syntax) {
 	case R_ASM_SYNTAX_REGNUM:
 	case R_ASM_SYNTAX_INTEL:
 	case R_ASM_SYNTAX_ATT:
+	case R_ASM_SYNTAX_JZ:
 		a->syntax = syntax;
 		return R_TRUE;
 	default:
@@ -388,9 +393,12 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_asm_set_pc (a, a->pc + ret);
 		ret = r_asm_disassemble (a, &op, buf+idx, len-idx);
 		if (ret<1) {
-			eprintf ("disassemble error at offset %"PFMT64d"\n", idx);
-ret = 1;
-//			return acode;
+// TODO: this warning is sometimes useful
+//			eprintf ("disassemble error at offset %"PFMT64d"\n", idx);
+			//ret = 1;
+			ret = 1;
+			//acode->buf_asm[0] = 0;
+			//return acode;
 		}
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op.buf_asm, op.buf_asm);

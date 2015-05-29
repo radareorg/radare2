@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_egg.h>
 #include <r_bin.h>
 #include <getopt.c>
+#include "../blob/version.c"
 
 static int usage (int v) {
 	printf ("Usage: ragg2 [-FOLsrxvh] [-a arch] [-b bits] [-k os] [-o file] [-I /] [-i sc]\n"
@@ -10,33 +11,34 @@ static int usage (int v) {
 	if (v) printf (
 	" -a [arch]       select architecture (x86, mips, arm)\n"
 	" -b [bits]       register size (32, 64, ..)\n"
-	" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
-	" -f [format]     output format (raw, pe, elf, mach0)\n"
-	" -F              output native format (osx=mach0, linux=elf, ..)\n"
-	" -o [file]       output file\n"
-	" -O              use default output file (filename without extension or a.out)\n"
-	" -I [path]       add include path\n"
-	" -L              list all plugins (shellcodes and encoders)\n"
-	" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
-	" -e [encoder]    use specific encoder. see -L\n"
 	" -B [hexpairs]   append some hexpair bytes\n"
 	" -c [k=v]        set configuration options\n"
 	" -C [file]       append contents of file\n"
 	" -d [off:dword]  patch dword (4 bytes) at given offset\n"
 	" -D [off:qword]  patch qword (8 bytes) at given offset\n"
-	" -w [off:hex]    patch hexpairs at given offset\n"
+	" -e [encoder]    use specific encoder. see -L\n"
+	" -f [format]     output format (raw, pe, elf, mach0)\n"
+	" -F              output native format (osx=mach0, linux=elf, ..)\n"
+	" -h              show this help\n"
+	" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
+	" -I [path]       add include path\n"
+	" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
+	" -L              list all plugins (shellcodes and encoders)\n"
+	" -n [dword]      append 32bit number (4 bytes)\n"
+	" -N [dword]      append 64bit number (8 bytes)\n"
+	" -o [file]       output file\n"
+	" -O              use default output file (filename without extension or a.out)\n"
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
 	"                 NTAS : same as above, but at the end\n"
-	" -n [dword]      append 32bit number (4 bytes)\n"
-	" -N [dword]      append 64bit number (8 bytes)\n"
 	" -P [size]       prepend debrujn pattern\n"
-	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
+	" -s              show assembler\n"
+	" -v              show version\n"
+	" -w [off:hex]    patch hexpairs at given offset\n"
 	" -x              execute\n"
 	" -z              output in C string syntax\n"
-	" -v              show version\n"
-	" -h              show this help\n");
+	);
 	return 1;
 }
 
@@ -138,15 +140,20 @@ int main(int argc, char **argv) {
 			break;
 		case 'w':
 			{
-				char *p = strchr (optarg, ':');
+				char *arg = strdup (optarg);
+				char *p = strchr (arg, ':');
 				if (p) {
-					int len, off = r_num_math (NULL, optarg);
-					ut8 *b = malloc (strlen (optarg)+1);
-					len = r_hex_str2bin (p+1, b);
+					int len, off;
+					ut8 *b;
+					*p++ = 0;
+					off = r_num_math (NULL, arg);
+					b = malloc (strlen (optarg)+1);
+					len = r_hex_str2bin (p, b);
 					if (len>0) r_egg_patch (egg, off, (const ut8*)b, len);
 					else eprintf ("Invalid hexstr for -w\n");
 					free (b);
 				} else eprintf ("Missing colon in -w\n");
+				free (arg);
 			}
 			break;
 		case 'n': {
@@ -246,8 +253,7 @@ int main(int argc, char **argv) {
 		case 'h':
 			return usage (1);
 		case 'v':
-			printf ("ragg2 "R2_VERSION" "R2_INCDIR"/sflib\n");
-			return 0;
+			return blob_version("ragg2");
 		case 'z':
 			show_str = 1;
 			break;
@@ -267,6 +273,7 @@ int main(int argc, char **argv) {
 			format = "elf64";
 	}
 
+	// initialize egg
 	r_egg_setup (egg, arch, bits, 0, os);
 	if (file) {
 		if (!strcmp (file, "-")) {
@@ -286,12 +293,16 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+
+	// compile source code to assembly
 	if (!r_egg_compile (egg)) {
 		if (!fmt) {
 			eprintf ("r_egg_compile: fail\n");
 			return 1;
 		}
 	}
+
+	// add raw file
 	if (contents) {
 		int l;
 		char *buf = r_file_slurp (contents, &l);
@@ -300,12 +311,16 @@ int main(int argc, char **argv) {
 		} else eprintf ("Error loading '%s'\n", contents);
 		free (buf);
 	}
+
+	// add shellcode
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
 			return 1;
 		}
 	}
+
+	// add raw bytes
 	if (bytes) {
 		ut8 *b = malloc (strlen (bytes)+1);
 		int len = r_hex_str2bin (bytes, b);
@@ -319,7 +334,8 @@ int main(int argc, char **argv) {
 		free (bytes);
 		bytes = NULL;
 	}
-	/* create output file if needed */
+
+	/* set output (create output file if needed) */
 	if (ofileauto) {
 		int fd;
 		if (file) {
@@ -344,31 +360,38 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	//printf ("src (%s)\n", r_egg_get_source (egg));
+	// assemble to binary
+	if (!r_egg_assemble (egg)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		goto fail;
+	}
+	if (encoder)
+		if (!r_egg_encode (egg, encoder))
+			eprintf ("Invalid encoder '%s'\n", encoder);
+
+	// add padding
+	if (padding)
+		r_egg_padding (egg, padding);
+
+	// add pattern
+	if (pattern)
+		r_egg_pattern (egg, r_num_math (NULL, pattern));
+
+	// apply patches
+	if (!egg->bin) {
+		egg->bin = r_buf_new ();
+	}
+	if (!(b = r_egg_get_bin (egg))) {
+		eprintf ("r_egg_get_bin: invalid egg :(\n");
+		goto fail;
+	}
+	r_egg_finalize (egg);
+
 	if (show_asm)
 		printf ("%s\n", r_egg_get_assembly (egg));
+
 	if (show_raw || show_hex || show_execute) {
-		if (!r_egg_assemble (egg)) {
-			eprintf ("r_egg_assemble: invalid assembly\n");
-			goto fail;
-		}
-		if (encoder)
-			if (!r_egg_encode (egg, encoder))
-				eprintf ("Invalid encoder '%s'\n", encoder);
-		if (padding)
-			r_egg_padding (egg, padding);
 
-		if (pattern)
-			r_egg_pattern (egg, r_num_math (NULL, pattern));
-		if (!egg->bin) {
-			egg->bin = r_buf_new ();
-		}
-
-		if (!(b = r_egg_get_bin (egg))) {
-			eprintf ("r_egg_get_bin: invalid egg :(\n");
-			goto fail;
-		}
-		r_egg_finalize (egg); // apply patches
 		if (show_execute)
 			return r_egg_run (egg);
 		b = r_egg_get_bin (egg);

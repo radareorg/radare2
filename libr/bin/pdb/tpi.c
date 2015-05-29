@@ -135,12 +135,28 @@ static void get_sval_name(SVal *val, char **name)
 //		strcpy(name, scstr->name);
 	} else {
 		switch (val->value_or_type) {
+		case eLF_CHAR:
+		{
+			SVal_LF_CHAR *lf_char;
+			lf_char = (SVal_LF_CHAR *) val->name_or_val;
+			*name = lf_char->name.name;
+//			strcpy(name, lf_uchar->name.name);
+			break;
+		}
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
 			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
 			*name = lf_ulong->name.name;
 //			strcpy(name, lf_ulong->name.name);
+			break;
+		}
+		case eLF_LONG:
+		{
+			SVal_LF_LONG *lf_long;
+			lf_long = (SVal_LF_LONG *) val->name_or_val;
+			*name = lf_long->name.name;
+//			strcpy(name, lf_long->name.name);
 			break;
 		}
 		case eLF_USHORT:
@@ -579,6 +595,13 @@ static void get_sval_val(SVal *val, int *res)
 			*res = lf_ulong->value;
 			break;
 		}
+		case eLF_LONG:
+		{
+			SVal_LF_LONG *lf_long;
+			lf_long = (SVal_LF_LONG *) val->name_or_val;
+			*res = lf_long->value;
+			break;
+		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
@@ -586,6 +609,14 @@ static void get_sval_val(SVal *val, int *res)
 			*res = lf_ushort->value;
 			break;
 		}
+		case eLF_CHAR:
+		{
+			SVal_LF_CHAR *lf_char;
+			lf_char = (SVal_LF_CHAR *) val->name_or_val;
+			*res = lf_char->value;
+			break;
+		}
+
 		default:
 			*res = 0;
 			printf("get_sval_val::oops\n");
@@ -856,11 +887,27 @@ static void free_sval(SVal *val)
 			R_FREE(val->name_or_val);
 			break;
 		}
+		case eLF_LONG:
+		{
+			SVal_LF_LONG *lf_long;
+			lf_long = (SVal_LF_LONG *) val->name_or_val;
+			R_FREE(lf_long->name.name);
+			R_FREE(val->name_or_val);
+			break;
+		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
 			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
 			R_FREE(lf_ushort->name.name);
+			R_FREE(val->name_or_val);
+			break;
+		}
+		case eLF_CHAR:
+		{
+			SVal_LF_CHAR *lf_char;
+			lf_char = (SVal_LF_CHAR *) val->name_or_val;
+			R_FREE(lf_char->name.name);
 			R_FREE(val->name_or_val);
 			break;
 		}
@@ -998,24 +1045,25 @@ static void free_tpi_stream(void *stream)
 {
 	STpiStream *tpi_stream = (STpiStream *)stream;
 	RListIter *it;
-	SType *type = 0;
+	SType *type = NULL;
 
 	it = r_list_iterator(tpi_stream->types);
 	while (r_list_iter_next(it)) {
-		type = (SType *) r_list_iter_get(it);
-		if (type) {
-			if (type->type_data.free_) {
-				type->type_data.free_(&type->type_data);
-				type->type_data.free_ = 0;
-			}
+		type = (SType *) r_list_iter_get (it);
+		if (!type) {
+			continue;
+		}
+		if (type->type_data.free_) {
+			type->type_data.free_(&type->type_data);
+			type->type_data.free_ = 0;
 		}
 		if (type->type_data.type_info) {
 			free(type->type_data.type_info);
 			type->type_data.free_ = 0;
 			type->type_data.type_info = 0;
 		}
-		free(type);
-		type = 0;
+		free (type);
+		type = NULL;
 	}
 	r_list_free(tpi_stream->types);
 }
@@ -1368,7 +1416,15 @@ static void get_nesttype_print_type(void *type, char **name)
 		print_base_type(base_type, &tmp_name);
 	} else {
 		ti = &t->type_data;
-		ti->get_print_type(ti, &tmp_name);
+		if (ti->get_print_type != NULL) {
+			ti->get_print_type(ti, &tmp_name);
+		} else {
+			// TODO: need to investigate why this branch can be...
+			//	this is possible because there is no support for
+			// parsing METHODLIST...
+			// need to investigate for this theme
+			eprintf("warning: strange for nesttype\n");
+		}
 	}
 
 	name_len = strlen("nesttype ");
@@ -1519,6 +1575,29 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		val->name_or_val = sctr;
 	} else {
 		switch (val->value_or_type) {
+		case eLF_CHAR:
+		{
+			SVal_LF_CHAR lf_char;
+			READ(*read_bytes, 2, len, lf_char.value, leaf_data, char);
+			parse_sctring(&lf_char.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc(sizeof(SVal_LF_CHAR));
+			memcpy(val->name_or_val, &lf_char, sizeof(SVal_LF_CHAR));
+			break;
+
+		}
+		case eLF_LONG:
+		{
+			SVal_LF_LONG lf_long;
+			lf_long.value = 0;
+			// long = 4 bytes for Windows, but not in Linux x64,
+			// so here is using int instead of long when
+			// reading long value
+			READ(*read_bytes, 4, len, lf_long.value, leaf_data, int);
+			parse_sctring(&lf_long.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc(sizeof(SVal_LF_LONG));
+			memcpy(val->name_or_val, &lf_long, sizeof(SVal_LF_LONG));
+			break;
+		}
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG lf_ulong;

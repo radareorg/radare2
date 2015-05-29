@@ -130,6 +130,7 @@ R_API int r_debug_stop(RDebug *dbg) {
 	return R_FALSE;
 }
 
+
 R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 	if (dbg && dbg->h) {
 		if (arch & dbg->h->arch) {
@@ -453,12 +454,44 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 	return i;
 }
+#if __WINDOWS__
+static int winbreak=0;
+static void static_debug_native_break(void *d) {
+	static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
+	static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
+	static void WINAPI (*w32_dbgbreaksimple)(void) = NULL;
+	RDebug *dbg = (RDebug *)d;
+	HANDLE lib;
+	HANDLE hProcess;
+	lib = LoadLibrary ("kernel32.dll");
+	if (!w32_dbgbreak) {
+		w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
+				GetProcAddress (GetModuleHandle ("kernel32"),
+					"DebugBreakProcess");
+	}
+	if (!w32_openprocess) {
+		w32_openprocess=(HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
+				GetProcAddress (GetModuleHandle ("kernel32"),
+					"OpenProcess");
+	}
+	if (w32_dbgbreak!=NULL && w32_openprocess!=NULL) {
+		hProcess=w32_openprocess(PROCESS_ALL_ACCESS,FALSE, dbg->pid );
+		winbreak=1;
+		w32_dbgbreak(hProcess);
+		CloseHandle(lib);
+		CloseHandle(hProcess);
+	}
+}
+#endif
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	ut64 pc;
 	int retwait, ret = R_FALSE;
 	if (!dbg)
 		return R_FALSE;
+#if __WINDOWS__
+	r_cons_break(static_debug_native_break,dbg);
+#endif
 repeat:
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
@@ -467,6 +500,14 @@ repeat:
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->signum = 0;
 		retwait = r_debug_wait (dbg);
+#if __WINDOWS__
+		if (winbreak) {
+			int tmp=ret;
+			ret=dbg->tid;
+			dbg->tid=tmp;
+			winbreak=0;
+		}
+#endif
 		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
 		//r_debug_recoil (dbg);
 		if (r_debug_recoil (dbg) || dbg->reason == R_DBG_REASON_BP) {
@@ -623,23 +664,45 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+static int show_syscall(RDebug *dbg, const char *sysreg) {
 	const char *sysname;
+	char regname[8];
+	int reg, i, args;
+	RSyscallItem *si;
+	reg = (int)r_debug_reg_get (dbg, sysreg);
+	si = r_syscall_get (dbg->anal->syscall, reg, -1);
+	if (si) {
+		sysname = si->name? si->name: "unknown";
+		args = si->args;
+	} else {
+		sysname = "unknown";
+		args = 3;
+	}
+	eprintf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
+			r_debug_reg_get (dbg, "pc"), reg, sysname);
+	for (i=0; i<args; i++) {
+		ut64 val;
+		snprintf (regname, sizeof (regname)-1, "a%d", i);
+		val = r_debug_reg_get (dbg, regname);
+		if (((st64)val<0) && ((st64)val>-0xffff)) {
+			eprintf ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
+		} else {
+			eprintf ("0x%"PFMT64x"%s", val, (i+1==args)?"":" ");
+		}
+	}
+	eprintf (")\n");
+	r_syscall_item_free (si);
+	return reg;
+}
+
+R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	int i, reg, ret = R_FALSE;
 	if (!dbg || !dbg->h || r_debug_is_dead (dbg))
 		return R_FALSE;
 	if (!dbg->h->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
-		reg = (int)r_debug_reg_get (dbg, "a0"); // XXX
-		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
-		if (!sysname) sysname = "unknown";
-		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x")\n",
-			r_debug_reg_get (dbg, "pc"), reg, sysname,
-			r_debug_reg_get (dbg, "a0"),
-			r_debug_reg_get (dbg, "a1"),
-			r_debug_reg_get (dbg, "a2"));
-		return reg;
+		return show_syscall (dbg, "a0");
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
@@ -655,23 +718,20 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 	}
 	for (;;) {
+		if (r_cons_singleton()->breaked)
+			break;
+#if __linux__
+		// step is needed to avoid dupped contsc results
+		r_debug_step (dbg, 1);
+#endif
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
 		r_debug_wait (dbg);
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			eprintf ("--> eol\n");
+			eprintf ("--> cannot sync regs, process is probably dead\n");
 			return -1;
 		}
-		reg = (int)r_debug_reg_get (dbg, "sn");
-		if (reg == (int)UT64_MAX)
-			return -1;
-		sysname = r_syscall_get_i (dbg->anal->syscall, reg, -1);
-		if (!sysname) sysname = "unknown";
-		eprintf ("--> 0x%08"PFMT64x" syscall %d %s (0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x")\n",
-			r_debug_reg_get (dbg, "pc"), reg, sysname,
-			r_debug_reg_get (dbg, "a0"),
-			r_debug_reg_get (dbg, "a1"),
-			r_debug_reg_get (dbg, "a2"));
+		reg = show_syscall (dbg, "sn");
 		if (n_sc == -1)
 			continue;
 		if (n_sc == 0) {

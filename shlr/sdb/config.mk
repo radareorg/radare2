@@ -1,7 +1,9 @@
 DESTDIR?=
 PREFIX?=/usr
 
-SDBVER=0.9.2
+SDBVER=0.9.6
+
+BUILD_MEMCACHE=0
 
 INSTALL?=install
 
@@ -21,7 +23,7 @@ INSTALL_MAN=$(INSTALL) -m 444
 INSTALL_LIB=$(INSTALL) -c
 endif
 
-CFLAGS_STD?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -std=c99
+CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L 
 #CFLAGS+=-Wno-initializer-overrides
 CFLAGS+=${CFLAGS_STD}
 
@@ -59,43 +61,49 @@ AR?=${WCP}-ar
 endif
 endif
 
-LDFLAGS_SHARED?=-fPIC -shared
+#LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-shared
 
 ifeq (${OS},w32)
 EXEXT=.exe
 SOEXT=.dll
+LDFLAGS_SHARED=-shared
 endif
 
 # create .d files
 CFLAGS+=-MMD
 
+ifeq (${OS},w32)
+OSTYPE=MINGW32
+endif
+
 ifeq (${OS},Darwin)
 SOEXT=dylib
 SOVER=dylib
 LDFLAGS+=-dynamic
-ifeq (${ARCH},i386)
+  ifeq (${ARCH},i386)
 #CC+=-arch i386
 CC+=-arch x86_64
-endif
+  endif
 else
-ifneq (,$(findstring CYGWIN,${OSTYPE}))
+  ifneq (,$(findstring CYGWIN,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
 SOEXT=dll
 SOVER=${SOEXT}
 LDFLAGS_SHARED?=-shared
-else
-ifneq (,$(findstring MINGW32,${OSTYPE}))
+  else
+    ifneq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 SOEXT=dll
 SOVER=${SOEXT}
-else
+    else
 CFLAGS+=-fPIC
 SOVERSION=0
 SOEXT=so
 SOVER=${SOEXT}.${SDBVER}
 LDFLAGS_SHARED?=-fPIC 
-endif
-endif
+    endif
+  endif
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)
 endif
 
