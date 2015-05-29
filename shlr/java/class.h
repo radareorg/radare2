@@ -14,7 +14,7 @@
 #include "dsojson.h"
 
 #define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
-#if 0
+#if 1
 #define UINT(x,y) (ut32)(((x[y]&0xff)<<24) \
 |  ((x[y+1]&0xff)<<16)  \
 |  ((x[y+2]&0xff)<<8)   \
