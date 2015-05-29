@@ -339,11 +339,8 @@ sdb_set (db, sdb_itoa (off, buf, 16), name, 0);
 						break;
 					}
 				}
-#if 1
-#endif
 			}
 #endif
-//			r_hashtable64_remove (f->ht_off, XOROFF(item->offset));
 			/* update new entry */
 			item->offset = off;
 			item->size = size;
