@@ -57,6 +57,20 @@ static Edge edges[] = {
 #define L2(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(can, x,y,x2,y2,c,0)
 
+static void ostack_init() {
+	ostack.size = 0;
+	ostack.nodes[0] = 0;
+}
+
+static void ostack_push(int el) {
+	if (ostack.size < OS_SIZE)
+		ostack.nodes[++ostack.size] = el;
+}
+
+static int ostack_pop() {
+	return ostack.size > 0 ? ostack.nodes[--ostack.size] : 0;
+}
+
 static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	char title[128];
 	int delta_x = 0;
@@ -397,6 +411,10 @@ static int n_edges = 0;
 static int callgraph = 0;
 static int instep = 0;
 
+static Node *get_current_node() {
+	 return &nodes[curnode];
+}
+
 static int edgesFrom (int n) {
 	int i, count = 0;
 	for (i=0; edges[i].nth != -1; i++) {
@@ -515,9 +533,6 @@ static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
 }
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
-#define OS_INIT() ostack.size = 0; ostack.nodes[0] = 0;
-#define OS_PUSH(x) if (ostack.size<OS_SIZE) {ostack.nodes[++ostack.size]=x;}
-#define OS_POP() ((ostack.size>0)? ostack.nodes[--ostack.size]:0)
 	int wheelspeed;
 	int okey, key, cn, wheel;
 	int i, w, h;
@@ -527,7 +542,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	callgraph = 0;
 	mousemode = 0;
 
-	OS_INIT();
+	ostack_init();
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
@@ -552,9 +567,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 #endif
 
-#define N nodes[curnode]
 	reloadNodes (core);
-	updateSeek (can, &N, w, h, 1);
+	updateSeek (can, get_current_node(), w, h, 1);
 
 repeat:
 	w = r_cons_get_size (&h);
@@ -580,12 +594,11 @@ repeat:
 	case '|':
 		{ // TODO: edit
 		const char *buf = NULL;
-#define I core->cons
 		const char *cmd = r_config_get (core->config, "cmd.gprompt");
 		r_line_set_prompt ("cmd.gprompt> ");
-		I->line->contents = strdup (cmd);
+		core->cons->line->contents = strdup (cmd);
 		buf = r_line_readline ();
-		I->line->contents = NULL;
+		core->cons->line->contents = NULL;
 		r_config_set (core->config, "cmd.gprompt", buf);
 		}
 		break;
@@ -662,7 +675,7 @@ repeat:
 			curnode++;
 			if (!nodes[curnode].text)
 				curnode = 0;
-			updateSeek (can, &N, w, h, 0);
+			updateSeek (can, get_current_node(), w, h, 0);
 		}
 		break;
 	case '?':
@@ -698,14 +711,14 @@ repeat:
 				can->sx += wheelspeed;
 				break;
 			case 2: // node-y
-				N.y += wheelspeed;
+				get_current_node()->y += wheelspeed;
 				break;
 			case 3: // node-x
-				N.x += wheelspeed;
+				get_current_node()->x += wheelspeed;
 				break;
 			}
 		} else {
-			N.y++;
+			get_current_node()->y++;
 		}
 		break;
 	case 'k':
@@ -718,14 +731,14 @@ repeat:
 				can->sx -= wheelspeed;
 				break;
 			case 2: // node-y
-				N.y -= wheelspeed;
+				get_current_node()->y -= wheelspeed;
 				break;
 			case 3: // node-x
-				N.x -= wheelspeed;
+				get_current_node()->x -= wheelspeed;
 				break;
 			}
 		} else {
-			N.y--;
+			get_current_node()->y--;
 		}
 		break;
 	case 'm':
@@ -738,12 +751,12 @@ repeat:
 		if (mousemode<0)
 			mousemode = 3;
 		break;
-	case 'h': N.x--; break;
-	case 'l': N.x++; break;
-	case 'J': N.y+=5; break;
-	case 'K': N.y-=5; break;
-	case 'H': N.x-=5; break;
-	case 'L': N.x+=5; break;
+	case 'h': get_current_node()->x--; break;
+	case 'l': get_current_node()->x++; break;
+	case 'J': get_current_node()->y += 5; break;
+	case 'K': get_current_node()->y -= 5; break;
+	case 'H': get_current_node()->x -= 5; break;
+	case 'L': get_current_node()->x += 5; break;
 	// scroll
 	case '0': can->sx = can->sy = 0; break;
 	case 'w': can->sy -= 1; break;
@@ -764,29 +777,29 @@ repeat:
 		//Layout_depth (nodes, edges);
 		break;
 	case 'u':
-		curnode = OS_POP(); // wtf double push ?
-		updateSeek (can, &N, w, h, 0);
+		curnode = ostack_pop(); // wtf double push ?
+		updateSeek (can, get_current_node(), w, h, 0);
 		break;
 	case '.':
-		updateSeek (can, &N, w, h, 1);
+		updateSeek (can, get_current_node(), w, h, 1);
 		instep = 1;
 		break;
 	case 't':
 		cn = Edge_node (edges, curnode, 0);
 		if (cn != -1) {
 			curnode = cn;
-			OS_PUSH (cn);
+			ostack_push (cn);
 		}
-		updateSeek (can, &N, w, h, 0);
+		updateSeek (can, get_current_node(), w, h, 0);
 		// select jump node
 		break;
 	case 'f':
 		cn = Edge_node (edges, curnode, 1);
 		if (cn != -1) {
 			curnode = cn;
-			OS_PUSH (cn);
+			ostack_push (cn);
 		}
-		updateSeek (can, &N, w, h, 0);
+		updateSeek (can, get_current_node(), w, h, 0);
 		// select false node
 		break;
 	case '/':
