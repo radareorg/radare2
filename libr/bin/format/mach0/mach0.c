@@ -1089,44 +1089,65 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	return imports;
 }
 
-static ut64 read_uleb128(ut8 **p, ut8 *end) {
-	ut64 r = 0, byte;
-	int bit = 0;
+
+typedef struct _ulebr {
+	ut8 *p;
+} ulebr;
+
+
+static ut64 read_uleb128(ulebr *r, ut8 *end)
+{
+	ut64 result = 0;
+	int	 bit = 0;
+	ut64 slice = 0;
+	ut8 *p = r->p;
 	do {
-		if (bit > 63) {
-			eprintf ("uleb128 too big for u64 (%d bits) - partial result: 0x%08"PFMT64x"\n", bit, r);
-			return r;
+		if (p == end)
+			eprintf ("malformed uleb128");
+
+		slice = *p & 0x7f;
+
+		if (bit > 63)
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%0llX", bit, result);
+		else {
+			result |= (slice << bit);
+			bit += 7;
 		}
-		byte = **p;
-		if ((++(*p)) > end) r = 0;  break;
-		r |= (byte & 0x7f) << bit;
-		bit += 7;
-	} while (byte & 0x80);
-	return r;
+	} while (*p++ & 0x80);
+	r->p = p;
+	return result;
 }
 
-static st64 read_sleb128(ut8 **p, ut8 *end) {
-	st64 r = 0, byte;
+static st64 read_sleb128(ulebr *r, ut8 *end)
+{
+	st64 result = 0;
 	int bit = 0;
+	ut8 byte;
+	ut8 *p = r->p;
 	do {
-		byte = **p;
-		if ((++(*p)) > end) r = 0; break;
-		r |= (byte & 0x7f) << bit;
+		if (p == end)
+			eprintf ("malformed sleb128");
+		byte = *p++;
+		result |= (((st64)(byte & 0x7f)) << bit);
 		bit += 7;
 	} while (byte & 0x80);
-
-	// Sign extend negative numbers.
-	if (byte & 0x40)
-		r |= -1LL << bit;
-	return r;
+	// sign extend negative numbers
+	if ( (byte & 0x40) != 0 )
+		result |= (-1LL) << bit;
+	r->p = p;
+	return result;
 }
+
+
+
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 	struct reloc_t *relocs;
 	int i = 0, len;
+	ulebr ur = {NULL};
 	int wordsize = MACH0_(get_bits)(bin) / 8;
 	if (bin->dyld_info) {
-		ut8 *opcodes, *p, *end, type = 0, rel_type = 0;
+		ut8 *opcodes,*end, type = 0, rel_type = 0;
 		int lib_ord, seg_idx = -1, sym_ord = -1;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
@@ -1180,12 +1201,12 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		// that +2 is a minimum required for uleb128, this may be wrong,
 		// the correct fix would be to make ULEB() must use rutil's
 		// implementation that already checks for buffer boundaries
-		for (p = opcodes, end = opcodes + bind_size + lazy_size ; (p+2 < end) && !done; ) {
-			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
-			++p;
+		for (ur.p = opcodes, end = opcodes + bind_size + lazy_size ; (ur.p+2 < end) && !done; ) {
+			ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
+			++ur.p;
 			switch (op) {
-#define ULEB() read_uleb128 (&p,end)
-#define SLEB() read_sleb128 (&p,end)
+#define ULEB() read_uleb128 (&ur,end)
+#define SLEB() read_sleb128 (&ur,end)
 				case BIND_OPCODE_DONE:
 					done = 1;	
 					break;
@@ -1202,9 +1223,9 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 						lib_ord = (st8)(BIND_OPCODE_MASK | imm);
 					break;
 				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-					char *sym_name = (char*)p;
+					char *sym_name = (char*)ur.p;
 					//ut8 sym_flags = imm;
-					while (*p++ && p<end);
+					while (*ur.p++ && ur.p<end);
 					sym_ord = -1;
 					if (bin->symtab && bin->dysymtab.nundefsym<0xffff)
 					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
@@ -1238,7 +1259,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 							" has unexistent segment %d\n", seg_idx);
 						addr = 0LL;
 					} else {
-						addr = bin->segs[seg_idx].vmaddr + ULEB();
+						addr = bin->segs[seg_idx].vmaddr + ULEB(); 
 					}
 					break;
 				case BIND_OPCODE_ADD_ADDR_ULEB:
@@ -1286,7 +1307,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 #undef ULEB
 #undef SLEB
 				default:
-					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
+					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
 					free (opcodes);
 					relocs[i].last = 1;
 					return relocs;
