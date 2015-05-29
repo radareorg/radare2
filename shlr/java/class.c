@@ -3262,7 +3262,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) return NULL;
-	if (sz < 16) {//sz > buf_offset) {
+	if (sz < 16 || sz > buf_offset) {//sz > buf_offset) {
 		free (attr);
 		return NULL;
 	}
@@ -3320,6 +3320,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
 			int size = (offset<sz)? sz-offset:0;
+			if (size > sz || size <= 0) break;
 			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, size, buf_offset+offset);
 			if (!_attr) {
 				eprintf ("[X] r_bin_java_code_attr_new: Error unable to parse remainder of classfile after Method's Code Attribute: %d.\n", k);
