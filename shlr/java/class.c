@@ -3262,7 +3262,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) return NULL;
-	if (sz > buf_offset) {
+	if (sz < 16) {//sz > buf_offset) {
 		free (attr);
 		return NULL;
 	}
@@ -3282,15 +3282,22 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 		return attr;
 	}
 	R_BIN_JAVA_GLOBAL_BIN->current_code_attr = attr;
-	memset (attr->info.code_attr.code, 0, attr->info.code_attr.code_length);
-	memcpy (attr->info.code_attr.code, buffer+offset, attr->info.code_attr.code_length);
-	offset += attr->info.code_attr.code_length;
+	{
+		int len = attr->info.code_attr.code_length;
+		memset (attr->info.code_attr.code, 0, len);
+		if (offset + len >= sz) {
+			len = sz;
+			return attr;
+		}
+		memcpy (attr->info.code_attr.code, buffer+offset, len);
+		offset += len;
+	}
 	attr->info.code_attr.exception_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		cur_location = buf_offset+offset;
-		if (cur_location>sz)
+		if (cur_location+8>sz)
 			return attr;
 		exc_entry = R_NEW0(RBinJavaExceptionEntry);
 		exc_entry->file_offset = cur_location;
@@ -3718,18 +3725,21 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, u
 	attr->info.local_variable_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.local_variable_table_attr.local_variable_table = r_list_newf (r_bin_java_local_variable_table_attr_entry_free);
-	for(i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
+	for (i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
+		if (offset + 10 < sz) {
+			break;
+		}
 		cur_location = buf_offset + offset;
 		lvattr = R_NEW0 (RBinJavaLocalVariableAttribute);
-		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->length = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->length = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->name_idx = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->name_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->descriptor_idx = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->descriptor_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->index = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->index = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		lvattr->file_offset = cur_location;
 		lvattr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, lvattr->name_idx);
