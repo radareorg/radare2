@@ -1079,6 +1079,28 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				case 5: // end
 					 I.buffer.index = I.buffer.length;
 					 break;
+				case 'B':
+					 // previous word
+					 for (i = I.buffer.index - 2; i >= 0; i--) {
+						 if (I.buffer.data[i] == ' ' && I.buffer.data[i + 1] != ' ') {
+							 I.buffer.index = i + 1;
+							 break;
+						 }
+					 }
+					 if (i < 0)
+						 I.buffer.index = 0;
+					 break;
+				case 'F':
+					 // next word
+					 for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
+						 if (I.buffer.data[i] != ' ' && I.buffer.data[i - 1] == ' ') {
+							 I.buffer.index = i;
+							 break;
+						 }
+					 }
+					 if (i >= I.buffer.length)
+						 I.buffer.index = I.buffer.length;
+					 break;
 				default:
 					 buf[1] = r_line_readchar();
 					 if (buf[1] == -1)
