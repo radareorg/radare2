@@ -180,44 +180,47 @@ static void stamp_attr(RConsCanvas *c,int length){
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
-	int left, slen, i, linenum = 0;
+	int left, slen;
 	char *p, *s, *str;
 	char *line, *n;
-	int x, delta;
+	int x;
 
 	if (!c || !_s || !*_s)
 		return;
-	str = s = strdup (_s);
-	for (i=0; ; i++) {
+	str = n = strdup (_s);
+
+	do {
+		s = n;
 		line = getrow (s, &n);
 		if (!line)
 			break;
+
+		if (*line == '\0' && n)
+			continue;
+
 		p = prefixline (c, &left);
-		slen = R_MIN (left-1, strlen (line));
-		if (slen<1) {
+		slen = R_MIN (left - 1, strlen (line));
+		if (slen < 1)
 			break;
-		}
-		if (!G (c->x-c->sx+slen, c->y-c->sy)) {
+
+		if (!G (c->x - c->sx + slen, c->y - c->sy)) {
 			// TODO : chop slen
-			slen = (c->w - (c->x-c->sx));
-			if (slen<1)
+			slen = (c->w - (c->x - c->sx));
+			if (slen < 1)
 				break;
-			s = n;
+
 			continue;
 		}
-		delta = 0;
 		x = c->x - c->sx - slen;
-		// if (x<0) x = 0;
 		if (!G (x, c->y - c->sy))
 			continue;
-		stamp_attr(c,slen);
-		memcpy (p, line+delta, slen-delta);
+
+		stamp_attr(c, slen);
+		memcpy (p, line, slen);
+
 		if (!n) break;
-		s = n;
-		if (!G (c->x-c->sx, c->y+1 - c->sy)) 
-			break;
-		linenum ++;
-	}
+	} while (G (c->x - c->sx, c->y + 1 - c->sy));
+
 	free (str);
 }
 
