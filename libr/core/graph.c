@@ -145,8 +145,6 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 		W (n->text);
 	}
 
-	if (G (n->x + 1, n->y + 1))
-		W (title);
 	// TODO: check if node is traced or not and hsow proper color
 	// This info must be stored inside Node* from RCore*
 	if (cur) {
