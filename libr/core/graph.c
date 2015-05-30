@@ -10,6 +10,8 @@ static void reloadNodes(RCore *core) ;
 #define BORDER 3
 #define BORDER_WIDTH 4
 #define BORDER_HEIGHT 3
+#define MARGIN_TEXT_X 2
+#define MARGIN_TEXT_Y 2
 #define MAX_NODE_WIDTH 18
 
 #define OS_SIZE 128
@@ -117,12 +119,12 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 #endif
 	x = n->x + can->sx;
 	y = n->y + can->sy;
-	if (x < -2)
-		delta_x = -x - 2;
-	if (x + n->w < -2)
+	if (x < -MARGIN_TEXT_X)
+		delta_x = -x - MARGIN_TEXT_X;
+	if (x + n->w < -MARGIN_TEXT_X)
 		return;
 	if (y < -1)
-		delta_y = -y - 2;
+		delta_y = -y - MARGIN_TEXT_Y;
 
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
@@ -135,7 +137,7 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 	if (G(n->x + 1, n->y + 1))
 		W(title); // delta_x
 
-	(void)G(n->x + 2 + delta_x, n->y + 2);
+	(void)G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y);
 	// TODO: temporary crop depending on out of screen offsets
 	text = r_str_crop (n->text, delta_x, delta_y, n->w, n->h);
 	if (text) {
