@@ -77,31 +77,31 @@ static int ostack_pop() {
 	return ostack.size > 0 ? ostack.nodes[--ostack.size] : 0;
 }
 
-static void Node_print(RConsCanvas *can, Node *n, int cur) {
+static void small_Node_print(RConsCanvas *can, Node *n, int cur) {
 	char title[128];
+
+	if (!G (n->x + 2, n->y - 1))
+		return;
+	if (cur) {
+		W("[_@@_]");
+		(void)G (-can->sx, -can->sy + 2);
+		snprintf (title, sizeof (title) - 1,
+				"0x%08"PFMT64x":", n->addr);
+		W (title);
+		(void)G (-can->sx, -can->sy + 3);
+		W (n->text);
+	} else {
+		W("[____]");
+	}
+	return;
+}
+
+static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
+	char title[128];
+	char *text;
 	int delta_x = 0;
 	int delta_y = 0;
 	int x, y;
-
-	if (!can)
-		return;
-
-	if (small_nodes) {
-		if (!G (n->x + 2, n->y - 1))
-			return;
-		if (cur) {
-			W("[_@@_]");
-			(void)G (-can->sx, -can->sy + 2);
-			snprintf (title, sizeof (title) - 1,
-				"0x%08"PFMT64x":", n->addr);
-			W (title);
-			(void)G (-can->sx, -can->sy + 3);
-			W (n->text);
-		} else {
-			W("[____]");
-		}
-		return;
-	}
 
 	n->w = r_str_bounds (n->text, &n->h);
 	n->w += BORDER_WIDTH;
@@ -127,24 +127,24 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
-			"-[ 0x%08"PFMT64x" ]-", n->addr);
+				"-[ 0x%08"PFMT64x" ]-", n->addr);
 	} else {
 		snprintf (title, sizeof (title)-1,
-			"   0x%08"PFMT64x"   ", n->addr);
+				"   0x%08"PFMT64x"   ", n->addr);
 	}
-	if (G (n->x + 1, n->y + 1))
-		W (title); // delta_x
-	(void)G (n->x + 2 + delta_x, n->y + 2);
+	if (G(n->x + 1, n->y + 1))
+		W(title); // delta_x
+
+	(void)G(n->x + 2 + delta_x, n->y + 2);
 	// TODO: temporary crop depending on out of screen offsets
-	{
-		char *text = r_str_crop (n->text, delta_x, delta_y, n->w, n->h);
-		if (text) {
-			W (text);
-			free (text);
-		} else {
-			W (n->text);
-		}
+	text = r_str_crop (n->text, delta_x, delta_y, n->w, n->h);
+	if (text) {
+		W (text);
+		free (text);
+	} else {
+		W (n->text);
 	}
+
 	if (G (n->x + 1, n->y + 1))
 		W (title);
 	// TODO: check if node is traced or not and hsow proper color
@@ -154,6 +154,16 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	} else {
 		B (n->x, n->y, n->w, n->h);
 	}
+}
+
+static void Node_print(RConsCanvas *can, Node *n, int cur) {
+	if (!can)
+		return;
+
+	if (small_nodes)
+		small_Node_print(can, n, cur);
+	else
+		normal_Node_print(can, n, cur);
 }
 
 static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
