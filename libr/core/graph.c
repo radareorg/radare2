@@ -83,6 +83,9 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	int delta_y = 0;
 	int x, y;
 
+	if (!can)
+		return;
+
 	if (small_nodes) {
 		if (!G (n->x + 2, n->y - 1))
 			return;
@@ -99,9 +102,6 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 		}
 		return;
 	}
-
-	if (!can)
-		return;
 
 	n->w = r_str_bounds (n->text, &n->h);
 	n->w += BORDER_WIDTH;
