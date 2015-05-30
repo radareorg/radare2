@@ -710,8 +710,7 @@ int main(int argc, char **argv, char **envp) {
 			(void)r_core_run_script (&r, global_rc);
 	}
 	if (do_analysis) {
-		//r_core_cmd0 (&r, "aa");
-		r_core_cmd0 (&r, "aaa");
+		r_core_cmd0 (&r, "aa");
 		r_cons_flush ();
 	}
 	/* run -i flags */
