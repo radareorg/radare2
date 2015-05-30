@@ -134,8 +134,8 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 		snprintf (title, sizeof (title)-1,
 				"   0x%08"PFMT64x"   ", n->addr);
 	}
-	if (G(n->x + 1, n->y + 1))
-		W(title); // delta_x
+	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
+		W(title + delta_x);
 
 	(void)G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y);
 	// TODO: temporary crop depending on out of screen offsets
