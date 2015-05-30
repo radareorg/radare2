@@ -2400,7 +2400,6 @@ static int cmd_anal(void *data, const char *input) {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 		"aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
-		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aap", "", "find and analyze function preludes",
@@ -2488,15 +2487,13 @@ static int cmd_anal(void *data, const char *input) {
 			} else r_core_search_preludes (core);
 			break;
 		case '\0': // "aa"
-		case 'a': 
 			r_cons_break (NULL, NULL);
 			r_core_anal_all (core);
 			if (core->cons->breaked)
 				eprintf ("Interrupted\n");
 			r_cons_clear_line (1);
 			r_cons_break_end ();
-			if (input[1] == 'a') // "aaa"
-				r_core_cmd0 (core, ".afna @@ fcn.*"); break; // "aaa"
+			r_core_cmd0 (core, ".afna @@ fcn.*");
 			break;
 		default: r_core_cmd_help (core, help_msg_aa); break;
 		}
